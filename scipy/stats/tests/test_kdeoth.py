@@ -339,7 +339,7 @@ def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
 
     weights = np.arange(5, dtype=weights_type)
     dataset = np.arange(5, dtype=dataset_type)
-    k = stats.kde.gaussian_kde(dataset, bw_method=bw, weights=weights)
+    k = stats.gaussian_kde(dataset, bw_method=bw, weights=weights)
     points = np.arange(5, dtype=point_type)
     result = k(points)
     # weights are always cast to float64

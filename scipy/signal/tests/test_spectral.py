@@ -9,7 +9,7 @@ from scipy import signal
 from scipy.fft import fftfreq
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
                           spectrogram, stft, istft, check_COLA, check_NOLA)
-from scipy.signal.spectral import _spectral_helper
+from scipy.signal._spectral_py import _spectral_helper
 
 
 class TestPeriodogram:

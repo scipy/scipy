@@ -4,5 +4,5 @@ minimize(method='COBYLA')
 ----------------------------------------
 
 .. scipy-optimize:function:: scipy.optimize.minimize
-   :impl: scipy.optimize.cobyla._minimize_cobyla
+   :impl: scipy.optimize._cobyla_py._minimize_cobyla
    :method: COBYLA

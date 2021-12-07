@@ -12,9 +12,9 @@ from scipy._lib._util import _asarray_validated
 
 
 # Local imports
-from .misc import norm
+from ._misc import norm
 from .lapack import ztrsyl, dtrsyl
-from .decomp_schur import schur, rsf2csf
+from ._decomp_schur import schur, rsf2csf
 
 
 class SqrtmError(np.linalg.LinAlgError):
@@ -84,7 +84,10 @@ def _sqrtm_triu(T, blocksize=64):
             start += size
 
     # Within-block interactions (Cythonized)
-    within_block_loop(R, T, start_stop_pairs, nblocks)
+    try:
+        within_block_loop(R, T, start_stop_pairs, nblocks)
+    except RuntimeError as e:
+        raise SqrtmError(*e.args) from e
 
     # Between-block interactions (Cython would give no significant speedup)
     for j in range(nblocks):

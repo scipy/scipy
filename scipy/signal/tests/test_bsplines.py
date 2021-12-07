@@ -1,13 +1,12 @@
 # pylint: disable=missing-docstring
 import numpy as np
 from numpy import array
-from numpy.testing import (assert_equal,
-                           assert_allclose, assert_array_equal,
+from numpy.testing import (assert_allclose, assert_array_equal,
                            assert_almost_equal)
 import pytest
 from pytest import raises
 
-import scipy.signal.bsplines as bsp
+import scipy.signal._bsplines as bsp
 from scipy import signal
 
 

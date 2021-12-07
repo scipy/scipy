@@ -76,6 +76,7 @@ PUBLIC_SUBMODULES = [
     'interpolate',
     'io',
     'io.arff',
+    'io.matlab',
     'io.wavfile',
     'linalg',
     'linalg.blas',
@@ -98,6 +99,7 @@ PUBLIC_SUBMODULES = [
     'stats.mstats',
     'stats.contingency',
     'stats.qmc',
+    'stats.sampling'
 ]
 
 # Docs for these modules are included in the parent module
