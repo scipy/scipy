@@ -692,10 +692,10 @@ class levy_stable_gen(rv_continuous):
     To improve performance of piecewise and direct numerical integration one
     can specify ``levy_stable.quad_eps`` (defaults to 1.2e-14). This is used
     as both the absolute and relative quadrature tolerance for direct numerical
-    integration and as the relative quadrature tolerance for the piecewise method.
-    One can also specify ``levy_stable.piecewise_x_tol_near_zeta`` (defaults to
-    0.005) for how close x is to zeta before it is considered the same as x
-    [NO]. The exact check is
+    integration and as the relative quadrature tolerance for the piecewise
+    method. One can also specify ``levy_stable.piecewise_x_tol_near_zeta``
+    (defaults to 0.005) for how close x is to zeta before it is considered the
+    same as x [NO]. The exact check is
     ``abs(x0 - zeta) < piecewise_x_tol_near_zeta*alpha**(1/alpha)``. One can
     also specify ``levy_stable.piecewise_alpha_tol_near_one`` (defaults to
     0.005) for how close alpha is to 1 before being considered equal to 1.
