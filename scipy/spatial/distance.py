@@ -124,6 +124,7 @@ from ..special import rel_entr
 
 from . import _distance_pybind
 
+from .._lib.deprecation import _deprecated
 
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
@@ -806,6 +807,8 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else 0
 
 
+@_deprecated(f"Kulsinski has been deprecated from scipy.spatial.distance,"
+             f"it is superseded by scipy.spatial.distance.kulczynski1")
 def kulsinski(u, v, w=None):
     """
     Compute the Kulsinski dissimilarity between two boolean 1-D arrays.
