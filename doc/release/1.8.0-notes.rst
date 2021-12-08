@@ -26,8 +26,9 @@ For running on PyPy, PyPy3 6.0+ is required.
 Highlights of this release
 **************************
 
-- A sparse array API has been added for early testing and feedback; users
-  may expect backwards compatibility changes in future releases
+- A sparse array API has been added for early testing and feedback; this
+  work is ongoing, and users should expect minor API refinements over
+  the next few releases.
 - The sparse SVD library PROPACK is now vendored with SciPy, and an interface
   is exposed via `scipy.sparse.svds` with ``solver='PROPACK'``.
 - A new `scipy.stats.sampling` submodule that leverages the ``UNU.RAN`` C
@@ -114,9 +115,9 @@ Added the Chirp Z-transform and Zoom FFT available as `scipy.signal.CZT` and
 `scipy.sparse` improvements
 ===========================
 
-An array API has been added for early testing and feedback. This work is
-ongoing, and users may expect backwards compatibility changes in
-future releases. Please refer to the `scipy.sparse`
+An array API has been added for early testing and feedback; this
+work is ongoing, and users should expect minor API refinements over
+the next few releases. Please refer to the `scipy.sparse`
 docstring for more information.
 
 ``maximum_flow`` introduces optional keyword only argument, ``method``
