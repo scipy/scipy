@@ -456,7 +456,7 @@ class RBFInterpolator:
                     xnbr, ynbr, self.kernel, self.epsilon, self.powers, shift,
                     scale, coeffs
                     )
-                out[xidx] = np.dot(vec, self.coeffs)
+                out[xidx] = np.dot(vec, coeffs)
 
 
         out = out.view(self.d_dtype)
