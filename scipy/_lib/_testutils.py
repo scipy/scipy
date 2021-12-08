@@ -10,7 +10,8 @@ import numpy as np
 import inspect
 
 
-__all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc']
+__all__ = ['PytestTester', 'check_free_memory', '_TestPythranFunc',
+           'pytest_warns']
 
 
 class FPUModeChangeWarning(RuntimeWarning):
@@ -215,3 +216,25 @@ def _get_mem_available():
             return info['memfree'] + info['cached']
 
     return None
+
+
+def pytest_warns():
+    """
+    In pytest 6.x, one can use `pytest.warns(None)`, but `pytest.warns()`
+    will raise a TypeError.  In pytest 7.x, `pytest.warns(None)` triggers
+    a DeprecationWarning, with a message that recommends using
+    `pytest.warns()`.
+
+    This function is a compatibility shim that allows us to replace
+    `pytest.warns(None)` with `pytest_warns()`.  This function will
+    work with pytest 6 and 7.
+
+    Once version 7 of pytest is the minimum support version, we can
+    remove this function and replace its use with `pytest.warns()`.
+    """
+    import pytest
+
+    if int(pytest.__version__.split('.')[0]) > 6:
+        return pytest.warns()
+    else:
+        return pytest.warns(None)

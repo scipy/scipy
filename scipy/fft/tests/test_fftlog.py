@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import assert_allclose
 import pytest
-
+from scipy._lib._testutils import pytest_warns
 from scipy.fft._fftlog import fht, ifht, fhtoffset
 from scipy.special import poch
 
@@ -108,13 +108,13 @@ def test_fht_special_cases():
 
     # case 1: xp in M, xm in M => well-defined transform
     mu, bias = -4.0, 1.0
-    with pytest.warns(None) as record:
+    with pytest_warns() as record:
         fht(a, dln, mu, bias=bias)
         assert not record, 'fht warned about a well-defined transform'
 
     # case 2: xp not in M, xm in M => well-defined transform
     mu, bias = -2.5, 0.5
-    with pytest.warns(None) as record:
+    with pytest_warns() as record:
         fht(a, dln, mu, bias=bias)
         assert not record, 'fht warned about a well-defined transform'
 

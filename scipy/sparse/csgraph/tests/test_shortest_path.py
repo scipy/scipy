@@ -1,6 +1,7 @@
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_array_equal
 from pytest import raises as assert_raises
+from scipy._lib._testutils import pytest_warns
 from scipy.sparse.csgraph import (shortest_path, dijkstra, johnson,
                                   bellman_ford, construct_dist_matrix,
                                   NegativeCycleError)
@@ -27,9 +28,9 @@ directed_SP = [[0, 3, 3, 5, 7],
                [1, 4, 4, 0, 8],
                [2, 5, 5, 2, 0]]
 
-directed_sparse_zero_G = scipy.sparse.csr_matrix(([0, 1, 2, 3, 1], 
-                                            ([0, 1, 2, 3, 4], 
-                                             [1, 2, 0, 4, 3])), 
+directed_sparse_zero_G = scipy.sparse.csr_matrix(([0, 1, 2, 3, 1],
+                                            ([0, 1, 2, 3, 4],
+                                             [1, 2, 0, 4, 3])),
                                             shape = (5, 5))
 
 directed_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
@@ -38,9 +39,9 @@ directed_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
                       [np.inf, np.inf, np.inf, 0, 3],
                       [np.inf, np.inf, np.inf, 1, 0]]
 
-undirected_sparse_zero_G = scipy.sparse.csr_matrix(([0, 0, 1, 1, 2, 2, 1, 1], 
-                                              ([0, 1, 1, 2, 2, 0, 3, 4], 
-                                               [1, 0, 2, 1, 0, 2, 4, 3])), 
+undirected_sparse_zero_G = scipy.sparse.csr_matrix(([0, 0, 1, 1, 2, 2, 1, 1],
+                                              ([0, 1, 1, 2, 2, 0, 3, 4],
+                                               [1, 0, 2, 1, 0, 2, 4, 3])),
                                               shape = (5, 5))
 
 undirected_sparse_zero_SP = [[0, 0, 1, np.inf, np.inf],
@@ -118,6 +119,7 @@ def test_undirected():
         for directed_in in (True, False):
             check(method, directed_in)
 
+
 def test_directed_sparse_zero():
     # test directed sparse graph with zero-weight edge and two connected components
     def check(method):
@@ -127,6 +129,7 @@ def test_directed_sparse_zero():
 
     for method in methods:
         check(method)
+
 
 def test_undirected_sparse_zero():
     def check(method, directed_in):
@@ -312,7 +315,7 @@ def test_buffer(method):
 
 
 def test_NaN_warnings():
-    with pytest.warns(None) as record:
+    with pytest_warns() as record:
         shortest_path(np.array([[0, 1], [np.nan, 0]]))
     for r in record:
         assert r.category is not RuntimeWarning
