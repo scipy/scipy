@@ -8,12 +8,10 @@ import math
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
-from . import _ufuncs as ufuncs
+from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, hankel1, hankel2, yv, kv, ndtri,
-                      poch, binom, hyp0f1)
+                      psi, hankel1, hankel2, yv, kv, poch, binom)
 from . import _specfun
-from . import _orthogonal
 from ._comb import _comb_int
 
 
@@ -38,37 +36,27 @@ __all__ = [
     'fresnel_zeros',
     'fresnelc_zeros',
     'fresnels_zeros',
-    'gamma',
     'h1vp',
     'h2vp',
-    'hankel1',
-    'hankel2',
-    'hyp0f1',
-    'iv',
     'ivp',
     'jn_zeros',
     'jnjnp_zeros',
     'jnp_zeros',
     'jnyn_zeros',
-    'jv',
     'jvp',
     'kei_zeros',
     'keip_zeros',
     'kelvin_zeros',
     'ker_zeros',
     'kerp_zeros',
-    'kv',
     'kvp',
     'lmbda',
     'lpmn',
     'lpn',
     'lqmn',
     'lqn',
-    'mathieu_a',
-    'mathieu_b',
     'mathieu_even_coef',
     'mathieu_odd_coef',
-    'ndtri',
     'obl_cv_seq',
     'pbdn_seq',
     'pbdv_seq',
@@ -76,7 +64,6 @@ __all__ = [
     'perm',
     'polygamma',
     'pro_cv_seq',
-    'psi',
     'riccati_jn',
     'riccati_yn',
     'sinc',
@@ -85,7 +72,6 @@ __all__ = [
     'y1p_zeros',
     'yn_zeros',
     'ynp_zeros',
-    'yv',
     'yvp',
     'zeta'
 ]
@@ -1074,7 +1060,7 @@ def assoc_laguerre(x, n, k=0.0):
     reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
 
     """
-    return _orthogonal.eval_genlaguerre(n, k, x)
+    return _ufuncs.eval_genlaguerre(n, k, x)
 
 
 digamma = psi
@@ -1298,7 +1284,7 @@ def lpmn(m, n, z):
     if (m < 0):
         mp = -m
         mf, nf = mgrid[0:mp+1, 0:n+1]
-        with ufuncs.errstate(all='ignore'):
+        with _ufuncs.errstate(all='ignore'):
             if abs(z) < 1:
                 # Ferrer function; DLMF 14.9.3
                 fixarr = where(mf > nf, 0.0,
@@ -1381,7 +1367,7 @@ def clpmn(m, n, z, type=3):
     if (m < 0):
         mp = -m
         mf, nf = mgrid[0:mp+1, 0:n+1]
-        with ufuncs.errstate(all='ignore'):
+        with _ufuncs.errstate(all='ignore'):
             if type == 2:
                 fixarr = where(mf > nf, 0.0,
                                (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
@@ -2398,7 +2384,7 @@ def factorial(n, exact=False):
                 out[np.isnan(n)] = n[np.isnan(n)]
             return out
     else:
-        out = ufuncs._factorial(n)
+        out = _ufuncs._factorial(n)
         return out
 
 
@@ -2575,6 +2561,6 @@ def zeta(x, q=None, out=None):
 
     """
     if q is None:
-        return ufuncs._riemann_zeta(x, out)
+        return _ufuncs._riemann_zeta(x, out)
     else:
-        return ufuncs._zeta(x, q, out)
+        return _ufuncs._zeta(x, q, out)
