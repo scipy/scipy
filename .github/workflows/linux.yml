@@ -51,8 +51,8 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         run: ./tools/check_pyext_symbol_hiding.sh build
 
-  test_nightly:
-    name: Nightly CPython
+  test_numpy_main:
+    name: NumPy main
     if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')"
     runs-on: ubuntu-latest
     strategy:
