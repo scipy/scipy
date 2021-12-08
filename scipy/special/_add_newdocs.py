@@ -3801,7 +3801,7 @@ add_newdoc("expi",
 
         Ei(x) = \int_{-\infty}^x \frac{e^t}{t} dt.
 
-    For :math:`x > 0` the integral is understood as a Cauchy principle
+    For :math:`x > 0` the integral is understood as a Cauchy principal
     value.
 
     It is extended to the complex plane by analytic continuation of
@@ -9073,7 +9073,7 @@ add_newdoc("shichi",
       \gamma + \log(x) + \int_0^x \frac{\cosh{t} - 1}{t} dt
 
     where :math:`\gamma` is Euler's constant and :math:`\log` is the
-    principle branch of the logarithm.
+    principal branch of the logarithm.
 
     Parameters
     ----------
@@ -9126,7 +9126,7 @@ add_newdoc("sici",
       \gamma + \log(x) + \int_0^x \frac{\cos{t} - 1}{t}dt
 
     where :math:`\gamma` is Euler's constant and :math:`\log` is the
-    principle branch of the logarithm.
+    principal branch of the logarithm.
 
     Parameters
     ----------
