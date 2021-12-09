@@ -330,7 +330,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     if return_singular_vectors == True:
         return_u = True
         return_vh = True
-    else
+    else:
         return_u = (return_singular_vectors == 'u')
         return_vh = (return_singular_vectors == 'vh')
     if not transpose:
