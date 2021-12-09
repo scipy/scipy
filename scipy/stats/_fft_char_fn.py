@@ -2,7 +2,9 @@ import numpy as np
 from scipy.integrate._quadrature import _builtincoeffs
 
 # cotes numbers - see sequence from http://oeis.org/A100642
-Cotes_table = [[], [1]] + [v[2] for v in _builtincoeffs.values()]
+Cotes_table = np.asanyarray(
+    [[], [1]] + [v[2] for v in _builtincoeffs.values()], dtype=object
+)
 Cotes = np.array(
     [
         np.pad(r, (0, len(Cotes_table) - 1 - len(r)), mode='constant')
