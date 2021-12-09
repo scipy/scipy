@@ -13,6 +13,11 @@ from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
         _expm_multiply_interval)
 
 
+REAL_DTYPES = (np.int_, np.float64, np.longdouble)
+COMPLEX_DTYPES = (np.complex128, np.clongdouble)
+DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+
+
 def estimated(func):
     """If trace is estimated, it should warn.
 
@@ -290,3 +295,40 @@ class TestExpmActionInterval:
         if not nsuccesses:
             msg = 'failed to find a status-' + str(target_status) + ' interval'
             raise Exception(msg)
+
+
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("b_is_matrix", [False, True])
+def test_expm_multiply_dtype(dtype, b_is_matrix):
+    """Make sure that `expm_multiply` handles all numerical dtypes correctly."""
+    rng = np.random.default_rng(1234)
+    # test data
+    n = 21
+    b_shape = (n, 3) if b_is_matrix else (n, )
+    if dtype in REAL_DTYPES:
+        A = scipy.linalg.inv(rng.random((n, n))).astype(dtype)
+        B = rng.random(b_shape).astype(dtype)
+    else:
+        A = scipy.linalg.inv(
+            rng.random((n, n)) + 1j*rng.random((n, n))
+        ).astype(dtype)
+        B = (rng.random(b_shape) + 1j*rng.random(b_shape)).astype(dtype)
+
+    # single application
+    sol_mat = expm_multiply(A, B)
+    sol_op = estimated(expm_multiply)(aslinearoperator(A), B)
+    direct_sol = np.dot(scipy.linalg.expm(A), B)
+    assert_allclose(sol_mat, direct_sol)
+    assert_allclose(sol_op, direct_sol)
+    sol_op = expm_multiply(aslinearoperator(A), B, traceA=np.trace(A))
+    assert_allclose(sol_op, direct_sol)
+
+    # for time points
+    interval = {'start': 0.1, 'stop': 3.2, 'num': 13, 'endpoint': True}
+    samples = np.linspace(**interval)
+    X_mat = expm_multiply(A, B, **interval)
+    X_op = estimated(expm_multiply)(aslinearoperator(A), B, **interval)
+    for sol_mat, sol_op, t in zip(X_mat, X_op, samples):
+        direct_sol = scipy.linalg.expm(t*A).dot(B)
+        assert_allclose(sol_mat, direct_sol)
+        assert_allclose(sol_op, direct_sol)
