@@ -369,14 +369,23 @@ class RBFInterpolator:
         self.epsilon = epsilon
         self.powers = powers
 
-    def __chunk_evaluator(self, x, y, shift, scale, coeffs):
+    def __chunk_evaluator(self,
+                          x,
+                          y,
+                          shift,
+                          scale,
+                          coeffs,
+                          memory_budget=None):
+        """
+        Evaluate interpolation in chunks to save some memory
+        """
         nx, ndim = x.shape
         if self.neighbors is None:
             nnei = len(y)
         else:
             nnei = self.neighbors
         # in each chunk we consume the same space we already occupy
-        chunksize = (x.size + y.size) // ((self.powers.shape[0] + nnei)) + 1
+        chunksize = memory_budget // ((self.powers.shape[0] + nnei)) + 1
         out = np.empty((nx, self.d.shape[1]), dtype=float)
         for i in range(0, nx, chunksize):
             # i had to use copy() here because pythran doesnt seem to
@@ -409,10 +418,15 @@ class RBFInterpolator:
         if ndim != self.y.shape[1]:
             raise ValueError("Expected the second axis of `x` to have length "
                              f"{self.y.shape[1]}.")
-
+        # how many floats in memory we already have
+        memory_budget = x.size + self.y.size + self.d.size
         if self.neighbors is None:
-            out = self.__chunk_evaluator(x, self.y, self._shift, self._scale,
-                                         self._coeffs)
+            out = self.__chunk_evaluator(x,
+                                         self.y,
+                                         self._shift,
+                                         self._scale,
+                                         self._coeffs,
+                                         memory_budget=memory_budget)
         else:
             # Get the indices of the k nearest observation points to each
             # evaluation point.
@@ -451,8 +465,12 @@ class RBFInterpolator:
                     self.epsilon,
                     self.powers,
                 )
-                out[xidx] = self.__chunk_evaluator(xnbr, ynbr, shift, scale,
-                                                   coeffs)
+                out[xidx] = self.__chunk_evaluator(xnbr,
+                                                   ynbr,
+                                                   shift,
+                                                   scale,
+                                                   coeffs,
+                                                   memory_budget=memory_budget)
 
         out = out.view(self.d_dtype)
         out = out.reshape((nx, ) + self.d_shape)
