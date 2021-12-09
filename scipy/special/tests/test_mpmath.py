@@ -1170,7 +1170,7 @@ class TestSystematic:
     def test_log_ndtr(self):
         assert_mpmath_equal(sc.log_ndtr,
                             exception_to_nan(lambda z: mpmath.log(mpmath.ncdf(z))),
-                            [Arg()], n=600, dps=300)
+                            [Arg()], n=600, dps=300, rtol=1e-13)
 
     def test_log_ndtr_complex(self):
         assert_mpmath_equal(sc.log_ndtr,
