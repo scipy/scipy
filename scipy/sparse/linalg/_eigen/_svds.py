@@ -321,15 +321,18 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         s = svd(u, compute_uv=False)
         return s[::-1]
 
-    # compute the right singular vectors of X and update the left ones
+    # compute the left singular vectors of X and update the right ones
     # accordingly
     u, s, vh = svd(u, full_matrices=False)
     u = u[:, ::-1]
     s = s[::-1]
     vh = vh[::-1]
     if return_singular_vectors == True:
-        return_u = True
-        return_vh = True
+        if not transpose:
+            vh = vh @ _herm(eigvec)
+        else:
+            u, vh = eigvec @ _herm(vh), _herm(u)
+        return u, s, vh
     else:
         return_u = (return_singular_vectors == 'u')
         return_vh = (return_singular_vectors == 'vh')
