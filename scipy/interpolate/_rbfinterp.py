@@ -386,14 +386,19 @@ class RBFInterpolator:
             nnei = self.neighbors
         # in each chunk we consume the same space we already occupy
         chunksize = memory_budget // ((self.powers.shape[0] + nnei)) + 1
-        out = np.empty((nx, self.d.shape[1]), dtype=float)
-        for i in range(0, nx, chunksize):
-            # i had to use copy() here because pythran doesnt seem to
-            # accept views
-            vec = _evaluate(x[i:i + chunksize, :].copy(), y, self.kernel,
-                            self.epsilon, self.powers, shift, scale,
-                            coeffs[i:i + chunksize, :].copy())
-            out[i:i + chunksize, :] = np.dot(vec, coeffs)
+        if chunksize <= nx:
+            out = np.empty((nx, self.d.shape[1]), dtype=float)
+            for i in range(0, nx, chunksize):
+                # i had to use copy() here because pythran doesnt seem to
+                # accept views
+                vec = _evaluate(x[i:i + chunksize, :].copy(), y, self.kernel,
+                                self.epsilon, self.powers, shift, scale,
+                                coeffs[i:i + chunksize, :].copy())
+                out[i:i + chunksize, :] = np.dot(vec, coeffs)
+        else:
+            vec = _evaluate(x, y, self.kernel, self.epsilon, self.powers,
+                            shift, scale, coeffs)
+            out = np.dot(vec, coeffs)
         return out
 
     def __call__(self, x):
