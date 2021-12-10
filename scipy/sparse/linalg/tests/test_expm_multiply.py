@@ -300,24 +300,27 @@ class TestExpmActionInterval:
             raise Exception(msg)
 
 
-@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("dtype_a", DTYPES)
+@pytest.mark.parametrize("dtype_b", DTYPES)
 @pytest.mark.parametrize("b_is_matrix", [False, True])
-def test_expm_multiply_dtype(dtype, b_is_matrix):
+def test_expm_multiply_dtype(dtype_a, dtype_b, b_is_matrix):
     """Make sure that `expm_multiply` handles all numerical dtypes correctly."""
     assert_allclose_ = (partial(assert_allclose, rtol=1e-3, atol=1e-5)
-                        if dtype in IMPRECISE else assert_allclose)
+                        if {dtype_a, dtype_b} & IMPRECISE else assert_allclose)
     rng = np.random.default_rng(1234)
     # test data
     n = 21
     b_shape = (n, 3) if b_is_matrix else (n, )
-    if dtype in REAL_DTYPES:
-        A = scipy.linalg.inv(rng.random((n, n))).astype(dtype)
-        B = rng.random(b_shape).astype(dtype)
+    if dtype_a in REAL_DTYPES:
+        A = scipy.linalg.inv(rng.random([n, n])).astype(dtype_a)
     else:
         A = scipy.linalg.inv(
-            rng.random((n, n)) + 1j*rng.random((n, n))
-        ).astype(dtype)
-        B = (rng.random(b_shape) + 1j*rng.random(b_shape)).astype(dtype)
+            rng.random([n, n]) + 1j*rng.random([n, n])
+        ).astype(dtype_a)
+    if dtype_b in REAL_DTYPES:
+        B = rng.random(b_shape).astype(dtype_b)
+    else:
+        B = (rng.random(b_shape) + 1j*rng.random(b_shape)).astype(dtype_b)
 
     # single application
     sol_mat = expm_multiply(A, B)
