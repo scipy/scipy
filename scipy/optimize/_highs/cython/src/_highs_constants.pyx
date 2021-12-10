@@ -7,6 +7,9 @@ from .HConst cimport (
     HIGHS_CONST_I_INF,
     HIGHS_CONST_INF,
 
+    HighsDebugLevel_kHighsDebugLevelNone,
+    HighsDebugLevel_kHighsDebugLevelCheap,
+
     HighsModelStatusNOTSET,
     HighsModelStatusLOAD_ERROR,
     HighsModelStatusMODEL_ERROR,
@@ -55,6 +58,10 @@ from .SimplexConst cimport (
 # HConst
 CONST_I_INF = HIGHS_CONST_I_INF
 CONST_INF = HIGHS_CONST_INF
+
+# Debug level
+MESSAGE_LEVEL_NONE = HighsDebugLevel_kHighsDebugLevelNone
+MESSAGE_LEVEL_MINIMAL = HighsDebugLevel_kHighsDebugLevelCheap
 
 # HighsIO
 LOG_TYPE_INFO = kInfo

@@ -12,6 +12,14 @@ cdef extern from "HConst.h" nogil:
     const double kHighsZero
     const int kHighsThreadLimit
 
+    cdef enum HighsDebugLevel:
+      HighsDebugLevel_kHighsDebugLevelNone "kHighsDebugLevelNone" = 0
+      HighsDebugLevel_kHighsDebugLevelCheap "kHighsDebugLevelCheap"
+      HighsDebugLevel_kHighsDebugLevelCostly "kHighsDebugLevelCostly"
+      HighsDebugLevel_kHighsDebugLevelExpensive "kHighsDebugLevelExpensive"
+      HighsDebugLevel_kHighsDebugLevelMin "kHighsDebugLevelMin" = HighsDebugLevel_kHighsDebugLevelNone
+      HighsDebugLevel_kHighsDebugLevelMax "kHighsDebugLevelMax" = HighsDebugLevel_kHighsDebugLevelExpensive
+
     ctypedef enum HighsModelStatus:
         HighsModelStatusNOTSET "HighsModelStatus::kNotset" = 0
         HighsModelStatusLOAD_ERROR "HighsModelStatus::kLoadError"
@@ -32,7 +40,6 @@ cdef extern from "HConst.h" nogil:
         HighsModelStatusHIGHS_MODEL_STATUS_MIN "HighsModelStatus::kMin" = HighsModelStatusNOTSET
         HighsModelStatusHIGHS_MODEL_STATUS_MAX "HighsModelStatus::kMax" = HighsModelStatusUNKNOWN
 
-
     cdef enum HighsBasisStatus:
         HighsBasisStatusLOWER "HighsBasisStatus::kLower" = 0, # (slack) variable is at its lower bound [including fixed variables]
         HighsBasisStatusBASIC "HighsBasisStatus::kBasic" # (slack) variable is basic
@@ -40,7 +47,6 @@ cdef extern from "HConst.h" nogil:
         HighsBasisStatusZERO "HighsBasisStatus::kZero" # free variable is non-basic and set to zero
         HighsBasisStatusNONBASIC "HighsBasisStatus::kNonbasic" # nonbasic with no specific bound information - useful for users and postsolve
 
-                                        
     cdef enum SolverOption:
         SOLVER_OPTION_SIMPLEX "SolverOption::SOLVER_OPTION_SIMPLEX" = -1
         SOLVER_OPTION_CHOOSE "SolverOption::SOLVER_OPTION_CHOOSE"

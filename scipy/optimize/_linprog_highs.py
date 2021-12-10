@@ -21,7 +21,7 @@ from ._highs._highs_wrapper import _highs_wrapper
 from ._highs._highs_constants import (
     CONST_I_INF,
     CONST_INF,
-    LOG_TYPE_ERROR,
+    MESSAGE_LEVEL_MINIMAL,
 
     MODEL_STATUS_NOTSET,
     MODEL_STATUS_LOAD_ERROR,
@@ -343,7 +343,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'sense': 1,  # minimization
         'solver': solver,
         'time_limit': time_limit,
-        'highs_debug_level': LOG_TYPE_ERROR * disp,
+        'highs_debug_level': MESSAGE_LEVEL_MINIMAL * disp,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
