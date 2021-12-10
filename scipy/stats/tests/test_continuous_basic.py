@@ -558,8 +558,6 @@ def check_pdf_logpdf_at_endpoints(distfn, args, msg):
             "divide by zero encountered in true_divide",  # multiple distributions
             "divide by zero encountered in log",  # multiple distributions
             "invalid value encountered in add",  # genextreme
-            "invalid value encountered in subtract",
-            "invalid value encountered in multiply"  # recipinvgauss
             ]
         for msg in suppress_messsages:
             sup.filter(category=RuntimeWarning, message=msg)
