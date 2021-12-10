@@ -705,9 +705,8 @@ def _highs_wrapper(
             # Note: this is for all constraints (A_ub and A_eq)
             'slack': [rhs[ii] - solution.row_value[ii] for ii in range(numrow)],
 
-            # slacks in HiGHS appear as Ax - s, not Ax + s, so lambda is negated;
             # lambda are the lagrange multipliers associated with Ax=b
-            'lambda': [-1*solution.row_dual[ii] for ii in range(numrow)],
+            'lambda': [solution.row_dual[ii] for ii in range(numrow)],
             'marg_bnds': marg_bnds,
 
             'fun': info.objective_function_value,

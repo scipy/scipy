@@ -1675,6 +1675,7 @@ class LinprogHiGHSTests(LinprogCommonTests):
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
         # there should be nonzero crossover iterations for IPM (only)
+        # TODO: highs counts crossover iterations differently, so this test now fails
         assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
 
     def test_marginals(self):
