@@ -749,6 +749,9 @@ class LinprogCommonTests:
         res = linprog(c, A_ub, b_ub, A_eq, b_eq, bounds,
                       method=self.method, options=self.options)
         _assert_unbounded(res)
+        # Unboundedness detected in presolve
+        if self.options.get('presolve', True) and "highs" not in self.method:
+            assert_equal(res.nit, 0)
 
     def test_zero_row_1(self):
         c = [1, 2, 3]
