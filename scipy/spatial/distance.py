@@ -808,7 +808,7 @@ def jaccard(u, v, w=None):
 
 
 @_deprecated(f"Kulsinski has been deprecated from scipy.spatial.distance,"
-             f"it is superseded by scipy.spatial.distance.kulczynski1")
+             f" it is superseded by scipy.spatial.distance.kulczynski1")
 def kulsinski(u, v, w=None):
     """
     Compute the Kulsinski dissimilarity between two boolean 1-D arrays.
