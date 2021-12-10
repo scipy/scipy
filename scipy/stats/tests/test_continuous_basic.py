@@ -560,7 +560,6 @@ def check_pdf_logpdf_at_endpoints(distfn, args, msg):
             "divide by zero encountered in power",  # gengamma
             "invalid value encountered in add",  # genextreme
             "invalid value encountered in subtract",  # gengamma
-            "invalid value encountered in multiply"  # recipinvgauss
             ]
         for msg in suppress_messsages:
             sup.filter(category=RuntimeWarning, message=msg)
