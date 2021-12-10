@@ -57,7 +57,7 @@ MAJOR = 1
 MINOR = 8
 MICRO = 0
 ISRELEASED = False
-IS_RELEASE_BRANCH = False
+IS_RELEASE_BRANCH = True
 VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
 
 
@@ -540,9 +540,9 @@ def setup_package():
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
     np_minversion = '1.17.3'
-    np_maxversion = '9.9.99'
+    np_maxversion = '1.25.0'
     python_minversion = '3.8'
-    python_maxversion = '3.10'
+    python_maxversion = '3.11'
     if IS_RELEASE_BRANCH:
         req_np = 'numpy>={},<{}'.format(np_minversion, np_maxversion)
         req_py = '>={},<{}'.format(python_minversion, python_maxversion)
