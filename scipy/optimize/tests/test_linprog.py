@@ -2074,17 +2074,15 @@ class TestLinprogHiGHSSimplexDual(LinprogHiGHSTests):
     options = {}
 
     def test_lad_regression(self):
-        '''The scaled model should be optimal but unscaled model infeasible.'''
-        c, A_ub, b_ub, bnds = l1_regression_prob()
+        '''The scaled model should be optimal, i.e. not produce unscaled model infeasible.'''
+        c, A_ub, b_ub, bnds = l1_regression_prob(n=1000)
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bnds,
                       method=self.method, options=self.options)
-        assert_equal(res.status, 4)
-        assert_('An optimal solution to the scaled '
-                'model was found but' in res.message)
+        assert_equal(res.status, 0)
         assert_(res.x is not None)
         assert_(np.all(res.slack > -1e-6))
         assert_(np.all(res.x <= [np.inf if u is None else u for l, u in bnds]))
-        assert_(np.all(res.x >= [-np.inf if l is None else l for l, u in bnds]))
+        assert_(np.all(res.x >= [-np.inf if l is None else l - 1e-7 for l, u in bnds]))
 
 
 ###################################
