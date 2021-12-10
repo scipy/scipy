@@ -1,4 +1,5 @@
 """Test functions for the sparse.linalg._expm_multiply module."""
+from functools import partial
 from itertools import product
 
 import numpy as np
@@ -13,9 +14,11 @@ from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
         _expm_multiply_interval)
 
 
-REAL_DTYPES = (np.int_, np.float64, np.longdouble)
-COMPLEX_DTYPES = (np.complex128, np.clongdouble)
-DTYPES = REAL_DTYPES + COMPLEX_DTYPES
+IMPRECISE = {np.single, np.csingle}
+REAL_DTYPES = {np.intc, np.int_, np.longlong,
+               np.single, np.double, np.longdouble}
+COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
+DTYPES = REAL_DTYPES ^ COMPLEX_DTYPES
 
 
 def estimated(func):
@@ -301,6 +304,8 @@ class TestExpmActionInterval:
 @pytest.mark.parametrize("b_is_matrix", [False, True])
 def test_expm_multiply_dtype(dtype, b_is_matrix):
     """Make sure that `expm_multiply` handles all numerical dtypes correctly."""
+    assert_allclose_ = (partial(assert_allclose, rtol=1e-3, atol=1e-5)
+                        if dtype in IMPRECISE else assert_allclose)
     rng = np.random.default_rng(1234)
     # test data
     n = 21
@@ -318,10 +323,10 @@ def test_expm_multiply_dtype(dtype, b_is_matrix):
     sol_mat = expm_multiply(A, B)
     sol_op = estimated(expm_multiply)(aslinearoperator(A), B)
     direct_sol = np.dot(scipy.linalg.expm(A), B)
-    assert_allclose(sol_mat, direct_sol)
-    assert_allclose(sol_op, direct_sol)
+    assert_allclose_(sol_mat, direct_sol)
+    assert_allclose_(sol_op, direct_sol)
     sol_op = expm_multiply(aslinearoperator(A), B, traceA=np.trace(A))
-    assert_allclose(sol_op, direct_sol)
+    assert_allclose_(sol_op, direct_sol)
 
     # for time points
     interval = {'start': 0.1, 'stop': 3.2, 'num': 13, 'endpoint': True}
@@ -330,5 +335,5 @@ def test_expm_multiply_dtype(dtype, b_is_matrix):
     X_op = estimated(expm_multiply)(aslinearoperator(A), B, **interval)
     for sol_mat, sol_op, t in zip(X_mat, X_op, samples):
         direct_sol = scipy.linalg.expm(t*A).dot(B)
-        assert_allclose(sol_mat, direct_sol)
-        assert_allclose(sol_op, direct_sol)
+        assert_allclose_(sol_mat, direct_sol)
+        assert_allclose_(sol_op, direct_sol)
