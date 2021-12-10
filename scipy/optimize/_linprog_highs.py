@@ -22,6 +22,7 @@ from ._highs._highs_constants import (
     CONST_I_INF,
     CONST_INF,
     MESSAGE_LEVEL_MINIMAL,
+    HIGHS_OBJECTIVE_SENSE_MINIMIZE,
 
     MODEL_STATUS_NOTSET,
     MODEL_STATUS_LOAD_ERROR,
@@ -340,12 +341,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     options = {
         'presolve': presolve,
-        'sense': 1,  # minimization
+        'sense': HIGHS_OBJECTIVE_SENSE_MINIMIZE,
         'solver': solver,
         'time_limit': time_limit,
         'highs_debug_level': MESSAGE_LEVEL_MINIMAL * disp,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
+        'log_to_console': disp,
+        'output_flag': disp,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
         'simplex_dual_edge_weight_strategy':
             simplex_dual_edge_weight_strategy_enum,

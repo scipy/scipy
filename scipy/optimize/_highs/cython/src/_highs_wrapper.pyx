@@ -220,7 +220,9 @@ cdef apply_options(dict options, Highs & highs):
     for opt in set([
             'less_infeasible_DSE_check',
             'less_infeasible_DSE_choose_row',
+            'log_to_console',
             'mps_parser_type_free',
+            'output_flag',
             'run_as_hsol',
             'run_crossover',
             'simplex_initial_condition_check',
