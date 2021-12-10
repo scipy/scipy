@@ -657,12 +657,6 @@ def _highs_wrapper(
     cdef HighsModelStatus model_status = highs.getModelStatus()
     cdef HighsModelStatus scaled_model_status = highs.getModelStatus(True)
     cdef HighsModelStatus unscaled_model_status = model_status
-    if model_status != scaled_model_status:
-        if scaled_model_status == HighsModelStatusOPTIMAL:
-            # The scaled model has been solved to optimality, but not the
-            # unscaled model, flag this up, but report the scaled model
-            # status
-            model_status = scaled_model_status
 
     # We might need an info object if we can look up the solution and a place to put solution
     cdef HighsInfo info = highs.getHighsInfo() # it should always be safe to get the info object
