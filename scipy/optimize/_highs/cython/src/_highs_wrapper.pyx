@@ -125,15 +125,6 @@ cdef str _opt_warning(string name, val, valid_set=None):
 cdef apply_options(dict options, Highs & highs):
     '''Take options from dictionary and apply to HiGHS object.'''
 
-    # Send logging to dummy file to get rid of output from stdout
-    if options.get('message_level', None) == <int> kWarning:
-        highs.setHighsLogfile(NULL)
-        highs.setHighsOutput(NULL)
-    else:
-        # Empty file to send to stdout
-        highs.setHighsLogfile(stdout)
-        highs.setHighsOutput(stdout)
-
     # Initialize for error checking
     cdef HighsStatus opt_status = HighsStatusOK
 
@@ -145,7 +136,7 @@ cdef apply_options(dict options, Highs & highs):
             'ipm_iteration_limit',
             'keep_n_rows',
             'max_threads',
-            'message_level',
+            'highs_debug_level',
             'min_threads',
             'simplex_crash_strategy',
             'simplex_dual_edge_weight_strategy',
