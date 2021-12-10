@@ -10,16 +10,26 @@ from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
 
 from ._rbfinterp_pythran import _build_system, _evaluate, _polynomial_matrix
 
+
 __all__ = ["RBFInterpolator"]
+
 
 # These RBFs are implemented.
 _AVAILABLE = {
-    "linear", "thin_plate_spline", "cubic", "quintic", "multiquadric",
-    "inverse_multiquadric", "inverse_quadratic", "gaussian"
-}
+    "linear",
+    "thin_plate_spline",
+    "cubic",
+    "quintic",
+    "multiquadric",
+    "inverse_multiquadric",
+    "inverse_quadratic",
+    "gaussian"
+    }
+
 
 # The shape parameter does not need to be specified when using these RBFs.
 _SCALE_INVARIANT = {"linear", "thin_plate_spline", "cubic", "quintic"}
+
 
 # For RBFs that are conditionally positive definite of order m, the interpolant
 # should include polynomial terms with degree >= m - 1. Define the minimum
@@ -32,7 +42,7 @@ _NAME_TO_MIN_DEGREE = {
     "thin_plate_spline": 1,
     "cubic": 1,
     "quintic": 2
-}
+    }
 
 
 def _monomial_powers(ndim, degree):
@@ -95,8 +105,9 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
         Domain scaling used to create the polynomial matrix.
 
     """
-    lhs, rhs, shift, scale = _build_system(y, d, smoothing, kernel, epsilon,
-                                           powers)
+    lhs, rhs, shift, scale = _build_system(
+        y, d, smoothing, kernel, epsilon, powers
+        )
     _, _, coeffs, info = dgesv(lhs, rhs, overwrite_a=True, overwrite_b=True)
     if info < 0:
         raise ValueError(f"The {-info}-th argument had an illegal value.")
@@ -104,12 +115,14 @@ def _build_and_solve_system(y, d, smoothing, kernel, epsilon, powers):
         msg = "Singular matrix."
         nmonos = powers.shape[0]
         if nmonos > 0:
-            pmat = _polynomial_matrix((y - shift) / scale, powers)
+            pmat = _polynomial_matrix((y - shift)/scale, powers)
             rank = np.linalg.matrix_rank(pmat)
             if rank < nmonos:
-                msg = ("Singular matrix. The matrix of monomials evaluated at "
-                       "the data point coordinates does not have full column "
-                       f"rank ({rank}/{nmonos}).")
+                msg = (
+                    "Singular matrix. The matrix of monomials evaluated at "
+                    "the data point coordinates does not have full column "
+                    f"rank ({rank}/{nmonos})."
+                    )
 
         raise LinAlgError(msg)
 
@@ -265,9 +278,8 @@ class RBFInterpolator:
     >>> plt.show()
 
     """
-    def __init__(self,
-                 y,
-                 d,
+
+    def __init__(self, y, d,
                  neighbors=None,
                  smoothing=0.0,
                  kernel="thin_plate_spline",
@@ -283,7 +295,8 @@ class RBFInterpolator:
         d = np.asarray(d, dtype=d_dtype, order="C")
         if d.shape[0] != ny:
             raise ValueError(
-                f"Expected the first axis of `d` to have length {ny}.")
+                f"Expected the first axis of `d` to have length {ny}."
+                )
 
         d_shape = d.shape[1:]
         d = d.reshape((ny, -1))
@@ -296,10 +309,11 @@ class RBFInterpolator:
             smoothing = np.full(ny, smoothing, dtype=float)
         else:
             smoothing = np.asarray(smoothing, dtype=float, order="C")
-            if smoothing.shape != (ny, ):
+            if smoothing.shape != (ny,):
                 raise ValueError(
                     "Expected `smoothing` to be a scalar or have shape "
-                    f"({ny},).")
+                    f"({ny},)."
+                    )
 
         kernel = kernel.lower()
         if kernel not in _AVAILABLE:
@@ -311,7 +325,8 @@ class RBFInterpolator:
             else:
                 raise ValueError(
                     "`epsilon` must be specified if `kernel` is not one of "
-                    f"{_SCALE_INVARIANT}.")
+                    f"{_SCALE_INVARIANT}."
+                    )
         else:
             epsilon = float(epsilon)
 
@@ -327,7 +342,9 @@ class RBFInterpolator:
                     f"`degree` should not be below {min_degree} when `kernel` "
                     f"is '{kernel}'. The interpolant may not be uniquely "
                     "solvable, and the smoothing parameter may have an "
-                    "unintuitive effect.", UserWarning)
+                    "unintuitive effect.",
+                    UserWarning
+                    )
 
         if neighbors is None:
             nobs = ny
@@ -345,11 +362,12 @@ class RBFInterpolator:
             raise ValueError(
                 f"At least {powers.shape[0]} data points are required when "
                 f"`degree` is {degree} and the number of dimensions is {ndim}."
-            )
+                )
 
         if neighbors is None:
             shift, scale, coeffs = _build_and_solve_system(
-                y, d, smoothing, kernel, epsilon, powers)
+                y, d, smoothing, kernel, epsilon, powers
+                )
 
             # Make these attributes private since they do not always exist.
             self._shift = shift
