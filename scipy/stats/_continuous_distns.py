@@ -1344,6 +1344,12 @@ class cosine_gen(rv_continuous):
         # cosine.pdf(x) = 1/(2*pi) * (1+cos(x))
         return 1.0/2/np.pi*(1+np.cos(x))
 
+    def _logpdf(self, x):
+        c = np.cos(x)
+        return _lazywhere(c != -1, (c,),
+                          lambda c: np.log1p(c) - np.log(2*np.pi),
+                          fillvalue=-np.inf)
+
     def _cdf(self, x):
         return scu._cosine_cdf(x)
 
@@ -2870,7 +2876,10 @@ class gengamma_gen(rv_continuous):
         return np.exp(self._logpdf(x, a, c))
 
     def _logpdf(self, x, a, c):
-        return np.log(abs(c)) + sc.xlogy(c*a - 1, x) - x**c - sc.gammaln(a)
+        return _lazywhere((x != 0) | (c > 0), (x, c),
+                          lambda x, c: (np.log(abs(c)) + sc.xlogy(c*a - 1, x)
+                                        - x**c - sc.gammaln(a)),
+                          fillvalue=-np.inf)
 
     def _cdf(self, x, a, c):
         xc = x**c

@@ -4808,6 +4808,15 @@ def test_gengamma_edge():
     p = stats.gengamma.pdf(0, 1, 1)
     assert_equal(p, 1.0)
 
+
+def test_gengamma_endpoint_with_neg_c():
+    p = stats.gengamma.pdf(0, 1, -1)
+    assert p == 0.0
+    logp = stats.gengamma.logpdf(0, 1, -1)
+    assert logp == -np.inf
+
+
+def test_gengamma_munp():
     # Regression tests for gh-4724.
     p = stats.gengamma._munp(-2, 200, 1.)
     assert_almost_equal(p, 1./199/198)
@@ -6061,6 +6070,11 @@ def test_cosine_cdf_sf(x, expected):
 def test_cosine_ppf_isf(p, expected):
     assert_allclose(stats.cosine.ppf(p), expected)
     assert_allclose(stats.cosine.isf(p), -expected)
+
+
+def test_cosine_logpdf_endpoints():
+    logp = stats.cosine.logpdf([-np.pi, np.pi])
+    assert_equal(logp, [-np.inf, -np.inf])
 
 
 def test_distr_params_lists():
