@@ -395,7 +395,31 @@ class RBFInterpolator:
                           coeffs,
                           memory_budget=None):
         """
-        Evaluate interpolation in chunks to save some memory
+        Evaluate the interpolation why controlling memory consumption.
+        We chunk the input if we need more memory than specified.
+
+        Parameters
+        ----------
+        x : (Q, N) float ndarray
+            array of points on which to evaluate
+        y: (P, N) float ndarray
+            array of points on which we know function values
+        shift: (N, ) array
+            Domain shift used to create the polynomial matrix.
+        scale : (N,) float ndarray
+            Domain scaling used to create the polynomial matrix.
+        coeffs: (Q, P+R) float ndarray
+            Coefficients in front of basis functions
+        memory_budget: int
+            Total amount of memory (in units of sizeof(float)) we wish
+            to devote for storing the array of coefficients for
+            interpolated points. If we need more memory than that, we
+            chunk the input.
+
+        Returns
+        -------
+        (Q, ) float ndarray
+        Interpolated array
         """
         nx, ndim = x.shape
         if self.neighbors is None:
@@ -441,7 +465,8 @@ class RBFInterpolator:
         if ndim != self.y.shape[1]:
             raise ValueError("Expected the second axis of `x` to have length "
                              f"{self.y.shape[1]}.")
-        # how many floats in memory we already have
+        # how many floats in memory we already occupy
+        # We use that as a limit for chunking the evaluation
         memory_budget = x.size + self.y.size + self.d.size
         if self.neighbors is None:
             out = self.__chunk_evaluator(x,
