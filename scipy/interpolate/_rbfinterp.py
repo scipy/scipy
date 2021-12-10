@@ -387,13 +387,15 @@ class RBFInterpolator:
         self.epsilon = epsilon
         self.powers = powers
 
-    def __chunk_evaluator(self,
-                          x,
-                          y,
-                          shift,
-                          scale,
-                          coeffs,
-                          memory_budget=None):
+    def _chunk_evaluator(
+            self,
+            x,
+            y,
+            shift,
+            scale,
+            coeffs,
+            memory_budget=None
+    ):
         """
         Evaluate the interpolation why controlling memory consumption.
         We chunk the input if we need more memory than specified.
@@ -431,7 +433,7 @@ class RBFInterpolator:
         if chunksize <= nx:
             out = np.empty((nx, self.d.shape[1]), dtype=float)
             for i in range(0, nx, chunksize):
-                # i had to use copy() here because pythran doesnt seem to
+                # I had to use copy() here because pythran doesnt seem to
                 # accept views
                 vec = _evaluate(x[i:i + chunksize, :].copy(), y, self.kernel,
                                 self.epsilon, self.powers, shift, scale,
@@ -469,12 +471,13 @@ class RBFInterpolator:
         # We use that as a limit for chunking the evaluation
         memory_budget = x.size + self.y.size + self.d.size
         if self.neighbors is None:
-            out = self.__chunk_evaluator(x,
-                                         self.y,
-                                         self._shift,
-                                         self._scale,
-                                         self._coeffs,
-                                         memory_budget=memory_budget)
+            out = self._chunk_evaluator(
+                x,
+                self.y,
+                self._shift,
+                self._scale,
+                self._coeffs,
+                memory_budget=memory_budget)
         else:
             # Get the indices of the k nearest observation points to each
             # evaluation point.
@@ -513,12 +516,13 @@ class RBFInterpolator:
                     self.epsilon,
                     self.powers,
                 )
-                out[xidx] = self.__chunk_evaluator(xnbr,
-                                                   ynbr,
-                                                   shift,
-                                                   scale,
-                                                   coeffs,
-                                                   memory_budget=memory_budget)
+                out[xidx] = self._chunk_evaluator(
+                    xnbr,
+                    ynbr,
+                    shift,
+                    scale,
+                    coeffs,
+                    memory_budget=memory_budget)
 
         out = out.view(self.d_dtype)
         out = out.reshape((nx, ) + self.d_shape)
