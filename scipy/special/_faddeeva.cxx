@@ -4,7 +4,7 @@
 
 using namespace std;
 
-EXTERN_C_START
+extern "C" {
 
 npy_cdouble faddeeva_w(npy_cdouble zp)
 {
@@ -149,4 +149,4 @@ double faddeeva_voigt_profile(double x, double sigma, double gamma)
     return real(w) / sigma / SQRT_2PI;
 }
 
-EXTERN_C_END
+}  // extern "C"
