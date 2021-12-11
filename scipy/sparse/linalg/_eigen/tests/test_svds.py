@@ -2,6 +2,7 @@ import re
 import copy
 import numpy as np
 
+from numpy.random import random_sample
 from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
@@ -645,6 +646,18 @@ class SVDSCommonTests:
 
         # Check that the singular values are zero.
         assert_array_equal(s, 0)
+
+    @pytest.mark.parametrize("shape", ((10, 10), (10, 11), (11, 10)))
+    @pytest.mark.parametrize("dtype", (np.float32, np.complex64))
+    def test_small_sigma(self, shape, dtype):
+        A = random_sample(shape).astype(dtype)
+        u, s, vh = svd(A, full_matrices=False)
+        t = 10.0**(-np.arange(len(s))).astype(dtype)
+        A = (u*t).dot(vh)
+        k = 4
+        u, s, vh = svds(A, k, solver=self.solver)
+        t = np.sum(s > 0)
+        assert_equal(t, k)
 
 # --- Perform tests with each solver ---
 

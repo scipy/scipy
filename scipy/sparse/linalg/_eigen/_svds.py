@@ -327,7 +327,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     u = u[:, ::-1]
     s = s[::-1]
     vh = vh[::-1]
-    if return_singular_vectors == True:
+    if return_singular_vectors is True:
         if not transpose:
             vh = vh @ _herm(eigvec)
         else:
