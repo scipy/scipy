@@ -9,10 +9,18 @@
 #  ifndef LIBHIGHS_EXPORT
 #    ifdef libhighs_EXPORTS
         /* We are building this library */
-#      define LIBHIGHS_EXPORT __attribute__((visibility("default")))
+#        if defined(_MSC_VER)
+#          define LIBHIGHS_EXPORT __declspec(dllexport)
+#        else
+#          define LIBHIGHS_EXPORT __attribute__((visibility("default")))
+#        endif
 #    else
         /* We are using this library */
-#      define LIBHIGHS_EXPORT __attribute__((visibility("default")))
+#        if defined(_MSC_VER)
+#          define LIBHIGHS_EXPORT __declspec(dllexport)
+#        else
+#          define LIBHIGHS_EXPORT __attribute__((visibility("default")))
+#        endif
 #    endif
 #  endif
 
