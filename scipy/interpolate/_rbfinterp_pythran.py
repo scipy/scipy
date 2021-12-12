@@ -164,15 +164,17 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
     return lhs, rhs, shift, scale
 
 
-# pythran export _evaluate(float[:, :],
+# pythran export _build_evaluation_coefficients(float[:, :],
 #                          float[:, :],
 #                          str,
 #                          float,
 #                          int[:, :],
 #                          float[:],
 #                          float[:])
-def _evaluate(x, y, kernel, epsilon, powers, shift, scale):
-    """Evaluate the RBF interpolants at `x`.
+def _build_evaluation_coefficients(x, y, kernel, epsilon, powers,
+                                   shift, scale):
+    """Construct the coefficients needed to evaluate
+    the RBF.
 
     Parameters
     ----------

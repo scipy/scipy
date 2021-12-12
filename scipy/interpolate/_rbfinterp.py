@@ -8,7 +8,9 @@ from scipy.spatial import KDTree
 from scipy.special import comb
 from scipy.linalg.lapack import dgesv  # type: ignore[attr-defined]
 
-from ._rbfinterp_pythran import _build_system, _evaluate, _polynomial_matrix
+from ._rbfinterp_pythran import (_build_system,
+                                 _build_evaluation_coefficients,
+                                 _polynomial_matrix)
 
 
 __all__ = ["RBFInterpolator"]
@@ -435,12 +437,24 @@ class RBFInterpolator:
             for i in range(0, nx, chunksize):
                 # I had to use copy() here because pythran doesnt seem to
                 # accept views
-                vec = _evaluate(x[i:i + chunksize, :], y, self.kernel,
-                                self.epsilon, self.powers, shift, scale)
+                vec = _build_evaluation_coefficients(
+                    x[i:i + chunksize, :],
+                    y,
+                    self.kernel,
+                    self.epsilon,
+                    self.powers,
+                    shift,
+                    scale)
                 out[i:i + chunksize, :] = np.dot(vec, coeffs)
         else:
-            vec = _evaluate(x, y, self.kernel, self.epsilon, self.powers,
-                            shift, scale)
+            vec = _build_evaluation_coefficients(
+                x,
+                y,
+                self.kernel,
+                self.epsilon,
+                self.powers,
+                shift,
+                scale)
             out = np.dot(vec, coeffs)
         return out
 
