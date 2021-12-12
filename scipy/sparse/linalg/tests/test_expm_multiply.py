@@ -309,7 +309,7 @@ def test_expm_multiply_dtype(dtype_a, dtype_b, b_is_matrix):
                         if {dtype_a, dtype_b} & IMPRECISE else assert_allclose)
     rng = np.random.default_rng(1234)
     # test data
-    n = 21
+    n = 7
     b_shape = (n, 3) if b_is_matrix else (n, )
     if dtype_a in REAL_DTYPES:
         A = scipy.linalg.inv(rng.random([n, n])).astype(dtype_a)
@@ -318,7 +318,7 @@ def test_expm_multiply_dtype(dtype_a, dtype_b, b_is_matrix):
             rng.random([n, n]) + 1j*rng.random([n, n])
         ).astype(dtype_a)
     if dtype_b in REAL_DTYPES:
-        B = rng.random(b_shape).astype(dtype_b)
+        B = (2*rng.random(b_shape)).astype(dtype_b)
     else:
         B = (rng.random(b_shape) + 1j*rng.random(b_shape)).astype(dtype_b)
 
