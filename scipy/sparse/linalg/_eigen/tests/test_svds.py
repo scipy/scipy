@@ -647,12 +647,15 @@ class SVDSCommonTests:
         # Check that the singular values are zero.
         assert_array_equal(s, 0)
 
-    @pytest.mark.parametrize("shape", ((10, 10), (10, 11), (11, 10)))
-    @pytest.mark.parametrize("dtype", (np.float32, np.complex64))
+    @pytest.mark.parametrize("shape", ((20, 20), (20, 21), (21, 20)))
+    @pytest.mark.parametrize("dtype", (float, complex, np.float32))
     def test_small_sigma(self, shape, dtype):
         A = random_sample(shape).astype(dtype)
         u, s, vh = svd(A, full_matrices=False)
-        t = 10.0**(-np.arange(len(s))).astype(dtype)
+        if dtype == np.float32:
+            e = 10.0
+        else:
+            e = 100.0
         A = (u*t).dot(vh)
         k = 4
         u, s, vh = svds(A, k, solver=self.solver)
