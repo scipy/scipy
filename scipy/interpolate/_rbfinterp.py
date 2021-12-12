@@ -435,7 +435,7 @@ class RBFInterpolator:
             for i in range(0, nx, chunksize):
                 # I had to use copy() here because pythran doesnt seem to
                 # accept views
-                vec = _evaluate(x[i:i + chunksize, :].copy(), y, self.kernel,
+                vec = _evaluate(x[i:i + chunksize, :], y, self.kernel,
                                 self.epsilon, self.powers, shift, scale)
                 out[i:i + chunksize, :] = np.dot(vec, coeffs)
         else:
