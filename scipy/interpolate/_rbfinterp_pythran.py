@@ -170,9 +170,8 @@ def _build_system(y, d, smoothing, kernel, epsilon, powers):
 #                          float,
 #                          int[:, :],
 #                          float[:],
-#                          float[:],
-#                          float[:, :])
-def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
+#                          float[:])
+def _evaluate(x, y, kernel, epsilon, powers, shift, scale):
     """Evaluate the RBF interpolants at `x`.
 
     Parameters
@@ -191,8 +190,6 @@ def _evaluate(x, y, kernel, epsilon, powers, shift, scale, coeffs):
         Shifts the polynomial domain for numerical stability.
     scale : (N,) float ndarray
         Scales the polynomial domain for numerical stability.
-    coeffs : (P + R, S) float ndarray
-        Coefficients for each RBF and monomial.
 
     Returns
     -------
