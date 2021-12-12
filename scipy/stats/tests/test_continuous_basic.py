@@ -557,9 +557,7 @@ def check_pdf_logpdf_at_endpoints(distfn, args, msg):
         suppress_messsages = [
             "divide by zero encountered in true_divide",  # multiple distributions
             "divide by zero encountered in log",  # multiple distributions
-            "divide by zero encountered in power",  # gengamma
             "invalid value encountered in add",  # genextreme
-            "invalid value encountered in subtract",  # gengamma
             ]
         for msg in suppress_messsages:
             sup.filter(category=RuntimeWarning, message=msg)
