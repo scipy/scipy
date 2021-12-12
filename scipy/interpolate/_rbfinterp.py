@@ -412,7 +412,7 @@ class RBFInterpolator:
             Domain shift used to create the polynomial matrix.
         scale : (N,) float ndarray
             Domain scaling used to create the polynomial matrix.
-        coeffs: (Q, P+R) float ndarray
+        coeffs: (P+R, S) float ndarray
             Coefficients in front of basis functions
         memory_budget: int
             Total amount of memory (in units of sizeof(float)) we wish
