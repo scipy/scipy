@@ -1350,6 +1350,12 @@ class cosine_gen(rv_continuous):
         # cosine.pdf(x) = 1/(2*pi) * (1+cos(x))
         return 1.0/2/np.pi*(1+np.cos(x))
 
+    def _logpdf(self, x):
+        c = np.cos(x)
+        return _lazywhere(c != -1, (c,),
+                          lambda c: np.log1p(c) - np.log(2*np.pi),
+                          fillvalue=-np.inf)
+
     def _cdf(self, x):
         return scu._cosine_cdf(x)
 
@@ -2876,7 +2882,10 @@ class gengamma_gen(rv_continuous):
         return np.exp(self._logpdf(x, a, c))
 
     def _logpdf(self, x, a, c):
-        return np.log(abs(c)) + sc.xlogy(c*a - 1, x) - x**c - sc.gammaln(a)
+        return _lazywhere((x != 0) | (c > 0), (x, c),
+                          lambda x, c: (np.log(abs(c)) + sc.xlogy(c*a - 1, x)
+                                        - x**c - sc.gammaln(a)),
+                          fillvalue=-np.inf)
 
     def _cdf(self, x, a, c):
         xc = x**c
@@ -7287,16 +7296,25 @@ class recipinvgauss_gen(rv_continuous):
     def _pdf(self, x, mu):
         # recipinvgauss.pdf(x, mu) =
         #                     1/sqrt(2*pi*x) * exp(-(1-mu*x)**2/(2*x*mu**2))
-        return 1.0/np.sqrt(2*np.pi*x)*np.exp(-(1-mu*x)**2.0 / (2*x*mu**2.0))
+        return np.exp(self._logpdf(x, mu))
 
     def _logpdf(self, x, mu):
-        return -(1-mu*x)**2.0 / (2*x*mu**2.0) - 0.5*np.log(2*np.pi*x)
+        return _lazywhere(x > 0, (x, mu),
+                          lambda x, mu: (-(1 - mu*x)**2.0 / (2*x*mu**2.0)
+                                         - 0.5*np.log(2*np.pi*x)),
+                          fillvalue=-np.inf)
 
     def _cdf(self, x, mu):
         trm1 = 1.0/mu - x
         trm2 = 1.0/mu + x
         isqx = 1.0/np.sqrt(x)
-        return 1.0-_norm_cdf(isqx*trm1)-np.exp(2.0/mu)*_norm_cdf(-isqx*trm2)
+        return _norm_cdf(-isqx*trm1) - np.exp(2.0/mu)*_norm_cdf(-isqx*trm2)
+
+    def _sf(self, x, mu):
+        trm1 = 1.0/mu - x
+        trm2 = 1.0/mu + x
+        isqx = 1.0/np.sqrt(x)
+        return _norm_cdf(isqx*trm1) + np.exp(2.0/mu)*_norm_cdf(-isqx*trm2)
 
     def _rvs(self, mu, size=None, random_state=None):
         return 1.0/random_state.wald(mu, 1.0, size=size)
@@ -9053,6 +9071,7 @@ def _argus_phi(chi):
     for small chi.
     """
     return sc.gammainc(1.5, chi**2/2) / 2
+
 
 class argus_gen(rv_continuous):
     r"""

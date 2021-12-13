@@ -1270,6 +1270,7 @@ class TestLogistic:
                     -1.9287498479639178e-22, -7.124576406741286e-218]
         assert_allclose(y, expected, rtol=2e-15)
 
+
 class TestLogser:
     def setup_method(self):
         np.random.seed(1234)
@@ -3997,6 +3998,43 @@ class TestNct:
         assert_allclose(nct_stats, expected_stats, rtol=1e-9)
 
 
+class TestRecipInvGauss:
+
+    def test_pdf_endpoint(self):
+        p = stats.recipinvgauss.pdf(0, 0.6)
+        assert p == 0.0
+
+    def test_logpdf_endpoint(self):
+        logp = stats.recipinvgauss.logpdf(0, 0.6)
+        assert logp == -np.inf
+
+    def test_cdf_small_x(self):
+        # The expected value was computer with mpmath:
+        #
+        # import mpmath
+        #
+        # mpmath.mp.dps = 100
+        #
+        # def recipinvgauss_cdf_mp(x, mu):
+        #     x = mpmath.mpf(x)
+        #     mu = mpmath.mpf(mu)
+        #     trm1 = 1/mu - x
+        #     trm2 = 1/mu + x
+        #     isqx = 1/mpmath.sqrt(x)
+        #     return (mpmath.ncdf(-isqx*trm1)
+        #             - mpmath.exp(2/mu)*mpmath.ncdf(-isqx*trm2))
+        #
+        p = stats.recipinvgauss.cdf(0.05, 0.5)
+        expected = 6.590396159501331e-20
+        assert_allclose(p, expected, rtol=1e-14)
+
+    def test_sf_large_x(self):
+        # The expected value was computed with mpmath; see test_cdf_small.
+        p = stats.recipinvgauss.sf(80, 0.5)
+        expected = 2.699819200556787e-18
+        assert_allclose(p, expected, 5e-15)
+
+
 class TestRice:
     def test_rice_zero_b(self):
         # rice distribution should work with b=0, cf gh-2164
@@ -4871,6 +4909,15 @@ def test_gengamma_edge():
     p = stats.gengamma.pdf(0, 1, 1)
     assert_equal(p, 1.0)
 
+
+def test_gengamma_endpoint_with_neg_c():
+    p = stats.gengamma.pdf(0, 1, -1)
+    assert p == 0.0
+    logp = stats.gengamma.logpdf(0, 1, -1)
+    assert logp == -np.inf
+
+
+def test_gengamma_munp():
     # Regression tests for gh-4724.
     p = stats.gengamma._munp(-2, 200, 1.)
     assert_almost_equal(p, 1./199/198)
@@ -6124,6 +6171,11 @@ def test_cosine_cdf_sf(x, expected):
 def test_cosine_ppf_isf(p, expected):
     assert_allclose(stats.cosine.ppf(p), expected)
     assert_allclose(stats.cosine.isf(p), -expected)
+
+
+def test_cosine_logpdf_endpoints():
+    logp = stats.cosine.logpdf([-np.pi, np.pi])
+    assert_equal(logp, [-np.inf, -np.inf])
 
 
 def test_distr_params_lists():

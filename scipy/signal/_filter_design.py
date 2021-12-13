@@ -683,15 +683,25 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     z = np.exp(-1j * w)
     num = np.polyval(cr[::-1], z)
     den = np.polyval(c[::-1], z)
-    singular = np.absolute(den) < 10 * EPSILON
+    gd = np.real(num / den) - a.size + 1
+    singular = ~np.isfinite(gd)
+    near_singular = np.absolute(den) < 10 * EPSILON
+
     if np.any(singular):
+        gd[singular] = 0
         warnings.warn(
             "The group delay is singular at frequencies [{0}], setting to 0".
-            format(", ".join("{0:.3f}".format(ws) for ws in w[singular]))
+            format(", ".join("{0:.3f}".format(ws) for ws in w[singular])),
+            stacklevel=2
         )
 
-    gd = np.zeros_like(w)
-    gd[~singular] = np.real(num[~singular] / den[~singular]) - a.size + 1
+    elif np.any(near_singular):
+        warnings.warn(
+            "The filter's denominator is extremely small at frequencies [{0}], \
+            around which a singularity may be present".
+            format(", ".join("{0:.3f}".format(ws) for ws in w[near_singular])),
+            stacklevel=2
+        )
 
     w = w*fs/(2*pi)
 

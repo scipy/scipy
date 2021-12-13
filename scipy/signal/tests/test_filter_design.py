@@ -3970,8 +3970,7 @@ class TestGroupDelay:
 
     def test_singular(self):
         # Let's create a filter with zeros and poles on the unit circle and
-        # check if warning is raised and the group delay is set to zero at
-        # these frequencies.
+        # check if warnings are raised at those frequencies.
         z1 = np.exp(1j * 0.1 * pi)
         z2 = np.exp(1j * 0.25 * pi)
         p1 = np.exp(1j * 0.5 * pi)
@@ -3981,7 +3980,6 @@ class TestGroupDelay:
         w = np.array([0.1 * pi, 0.25 * pi, -0.5 * pi, -0.8 * pi])
 
         w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
-        assert_allclose(gd, 0)
 
     def test_backward_compat(self):
         # For backward compatibility, test if None act as a wrapper for default

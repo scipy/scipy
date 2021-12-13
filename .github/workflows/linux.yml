@@ -35,7 +35,7 @@ jobs:
       - name: Installing packages
         run: |      
           python3.8-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
-          python3.8-dbg -m pip install --upgrade pip 'setuptools<58.5' wheel
+          python3.8-dbg -m pip install --upgrade pip setuptools wheel
           python3.8-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pybind11
           python3.8-dbg -m pip install --upgrade mpmath gmpy2==2.1.0rc1 pythran threadpoolctl
           python3.8-dbg -m pip uninstall -y nose
@@ -51,8 +51,8 @@ jobs:
         if: ${{ github.event_name == 'pull_request' }}
         run: ./tools/check_pyext_symbol_hiding.sh build
 
-  test_nightly:
-    name: Nightly CPython
+  test_numpy_main:
+    name: NumPy main
     if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')"
     runs-on: ubuntu-latest
     strategy:

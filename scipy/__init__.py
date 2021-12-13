@@ -73,11 +73,12 @@ from numpy import __version__ as __numpy_version__
 # Import numpy symbols to scipy name space (DEPRECATED)
 from ._lib.deprecation import _deprecated
 import numpy as _num
-linalg = None
+# Ignore NumPy submodules with the same name as SciPy submodules
+_numpy_all = list(set(_num.__all__) - set(['fft', 'linalg']))
 _msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
         'use numpy.{0} instead')
 # deprecate callable objects, skipping classes
-for _key in _num.__all__:
+for _key in _numpy_all:
     _fun = getattr(_num, _key)
     if callable(_fun) and not isinstance(_fun, type):
         _fun = _deprecated(_msg.format(_key))(_fun)
@@ -100,14 +101,11 @@ for _key in _sci.__all__:
         _fun = _deprecated(_msg.format(_key))(_fun)
     globals()[_key] = _fun
 
-__all__ += _num.__all__
+__all__ += _numpy_all
 __all__ += ['randn', 'rand', 'ifft']
 
-del _num
-# Remove the linalg imported from NumPy so that the scipy.linalg package can be
-# imported.
-del linalg
-__all__.remove('linalg')
+del _num, _numpy_all, _sci
+del _msg, _fun, _key, _deprecated
 
 # We first need to detect if we're being called as part of the SciPy
 # setup procedure itself in a reliable manner.
@@ -138,7 +136,7 @@ else:
     from scipy._lib import _pep440
     # In maintenance branch, change to np_maxversion N+3 if numpy is at N
     # See setup.py for more details
-    np_minversion = '1.16.5'
+    np_minversion = '1.17.3'
     np_maxversion = '9.9.99'
     if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
             _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
@@ -155,6 +153,3 @@ else:
     from scipy._lib._testutils import PytestTester
     test = PytestTester(__name__)
     del PytestTester
-
-    # This makes "from scipy import fft" return scipy.fft, not np.fft
-    del fft
