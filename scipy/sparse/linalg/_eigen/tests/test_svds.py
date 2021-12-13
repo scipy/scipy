@@ -656,6 +656,7 @@ class SVDSCommonTests:
             e = 10.0
         else:
             e = 100.0
+        t = e**(-np.arange(len(s))).astype(dtype)
         A = (u*t).dot(vh)
         k = 4
         u, s, vh = svds(A, k, solver=self.solver)
