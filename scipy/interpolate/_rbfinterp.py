@@ -422,7 +422,7 @@ class RBFInterpolator:
 
         Returns
         -------
-        (Q, ) float ndarray
+        (Q, S) float ndarray
         Interpolated array
         """
         nx, ndim = x.shape
@@ -435,8 +435,6 @@ class RBFInterpolator:
         if chunksize <= nx:
             out = np.empty((nx, self.d.shape[1]), dtype=float)
             for i in range(0, nx, chunksize):
-                # I had to use copy() here because pythran doesnt seem to
-                # accept views
                 vec = _build_evaluation_coefficients(
                     x[i:i + chunksize, :],
                     y,
