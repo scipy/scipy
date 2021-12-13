@@ -2173,6 +2173,7 @@ def deconvolve(signal, divisor):
     --------
     numpy.polydiv : performs polynomial division (same operation, but
                     also accepts poly1d objects)
+
     """
     num = np.atleast_1d(signal)
     den = np.atleast_1d(divisor)
