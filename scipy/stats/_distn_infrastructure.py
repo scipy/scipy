@@ -1864,7 +1864,9 @@ class rv_continuous(rv_generic):
 
     # Could also define any of these
     def _logpdf(self, x, *args):
-        return log(self._pdf(x, *args))
+        p = self._pdf(x, *args)
+        with np.errstate(divide='ignore'):
+            return log(p)
 
     def _cdf_single(self, x, *args):
         _a, _b = self._get_support(*args)

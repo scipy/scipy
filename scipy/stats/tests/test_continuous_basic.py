@@ -551,23 +551,12 @@ def check_pdf_logpdf_at_endpoints(distfn, args, msg):
     points = np.array([0, 1])
     vals = distfn.ppf(points, *args)
     vals = vals[np.isfinite(vals)]
-    with npt.suppress_warnings() as sup:
-        # Several distributions incur divide by zero or encounter invalid values when computing
-        # the pdf or logpdf at the endpoints.
-        suppress_messsages = [
-            "divide by zero encountered in true_divide",  # multiple distributions
-            "divide by zero encountered in log",  # multiple distributions
-            "invalid value encountered in add",  # genextreme
-            ]
-        for msg in suppress_messsages:
-            sup.filter(category=RuntimeWarning, message=msg)
-
-        pdf = distfn.pdf(vals, *args)
-        logpdf = distfn.logpdf(vals, *args)
-        pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
-        logpdf = logpdf[np.isfinite(logpdf)]
-        msg += " - logpdf-log(pdf) relationship"
-        npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg)
+    pdf = distfn.pdf(vals, *args)
+    logpdf = distfn.logpdf(vals, *args)
+    pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
+    logpdf = logpdf[np.isfinite(logpdf)]
+    msg += " - logpdf-log(pdf) relationship"
+    npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg)
 
 
 def check_sf_logsf(distfn, args, msg):
