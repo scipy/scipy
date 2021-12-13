@@ -2478,6 +2478,7 @@ class genextreme_gen(rv_continuous):
         return _a, _b
 
     def _loglogcdf(self, x, c):
+        # Returns log(-log(cdf(x, c)))
         return _lazywhere((x == x) & (c != 0), (x, c),
                           lambda x, c: sc.log1p(-c*x)/c, -x)
 
@@ -2494,9 +2495,10 @@ class genextreme_gen(rv_continuous):
         pex2 = np.exp(logpex2)
         # Handle special cases
         np.putmask(logpex2, (c == 0) & (x == -np.inf), 0.0)
-        logpdf = np.where((cx == 1) | (cx == -np.inf),
-                          -np.inf,
-                          -pex2+logpex2-logex2)
+        logpdf = _lazywhere(~((cx == 1) | (cx == -np.inf)),
+                            (pex2, logpex2, logex2),
+                            lambda pex2, lpex2, lex2: -pex2 + lpex2 - lex2,
+                            fillvalue=-np.inf)
         np.putmask(logpdf, (c == 1) & (x == 1), 0.0)
         return logpdf
 
@@ -5592,7 +5594,9 @@ class maxwell_gen(rv_continuous):
         return _SQRT_2_OVER_PI*x*x*np.exp(-x*x/2.0)
 
     def _logpdf(self, x):
-        return _LOG_SQRT_2_OVER_PI + 2*np.log(x) - 0.5*x*x
+        # Allow x=0 without 'divide by zero' warnings
+        with np.errstate(divide='ignore'):
+            return _LOG_SQRT_2_OVER_PI + 2*np.log(x) - 0.5*x*x
 
     def _cdf(self, x):
         return sc.gammainc(1.5, x*x/2.0)
@@ -5655,7 +5659,9 @@ class mielke_gen(rv_continuous):
         return k*x**(k-1.0) / (1.0+x**s)**(1.0+k*1.0/s)
 
     def _logpdf(self, x, k, s):
-        return np.log(k) + np.log(x)*(k-1.0) - np.log1p(x**s)*(1.0+k*1.0/s)
+        # Allow x=0 without 'divide by zero' warnings.
+        with np.errstate(divide='ignore'):
+            return np.log(k) + np.log(x)*(k - 1) - np.log1p(x**s)*(1 + k/s)
 
     def _cdf(self, x, k, s):
         return x**k / (1.0+x**s)**(k*1.0/s)
@@ -7358,7 +7364,7 @@ class semicircular_gen(rv_continuous):
         return 2.0/np.pi*np.sqrt(1-x*x)
 
     def _logpdf(self, x):
-        return np.log(2/np.pi) + 0.5*np.log1p(-x*x)
+        return np.log(2/np.pi) + 0.5*sc.log1p(-x*x)
 
     def _cdf(self, x):
         return 0.5+1.0/np.pi*(x*np.sqrt(1-x*x) + np.arcsin(x))
