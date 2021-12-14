@@ -66,8 +66,22 @@ cdef extern from "numpy/npy_math.h":
 
 @cython.cdivision(True)
 cdef inline double binom(double n, double k) nogil:
-    cdef double kx, nx, num, den, dk, sgn
+    cdef double kx, nx, num, den, dk, sgn, kmn
     cdef int i
+    
+    # hardcode simple identities to save time
+    # https://functions.wolfram.com/GammaBetaErf/Binomial/03/01/01/
+    if k == 0:
+        return 1
+    if k == 1:
+        return k
+    if k == n:
+        return 1
+    if k == n + 1:
+        return 0
+    kmn = k - n
+    if floor(kmn) == kmn and kmn < 0:
+        return 0
 
     kx = floor(k)
 
