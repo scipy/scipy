@@ -1857,8 +1857,6 @@ class rv_continuous(rv_generic):
         return (self.ppf(q, *args))**m
 
     def _mom1_sc(self, m, *args):
-        if np.any(np.array(args) >= m):
-            return np.nan
         return integrate.quad(self._mom_integ1, 0, 1, args=(m,)+args)[0]
 
     def _pdf(self, x, *args):
