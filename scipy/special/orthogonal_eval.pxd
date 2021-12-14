@@ -69,13 +69,14 @@ cdef inline double binom(double n, double k) nogil:
     cdef double kx, nx, num, den, dk, sgn
     cdef int i
 
+    kx = floor(k)
+
     if n < 0:
         nx = floor(n)
-        if n == nx:
+        if n == nx and k == kx:
             # undefined
             return nan
 
-    kx = floor(k)
     if k == kx and (fabs(n) > 1e-8 or n == 0):
         # Integer case: use multiplication formula for less rounding error
         # for cases where the result is an integer.
