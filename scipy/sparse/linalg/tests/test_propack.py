@@ -119,14 +119,17 @@ def test_examples(precision, irl):
     }[precision]
 
     path_prefix = os.path.dirname(__file__)
+    # Test matrices from `illc1850.coord` and `mhd1280b.cua` distributed with
+    # PROPACK 2.1: http://sun.stanford.edu/~rmunk/PROPACK/
     relative_path = "propack_test_data.npz"
     filename = os.path.join(path_prefix, relative_path)
     data = np.load(filename, allow_pickle=True)
 
+    dtype = _dtype_map[precision]
     if precision in {'single', 'double'}:
-        A = data['A_real'].item().astype(precision)
+        A = data['A_real'].item().astype(dtype)
     elif precision in {'complex8', 'complex16'}:
-        A = data['A_complex'].item().astype(precision)
+        A = data['A_complex'].item().astype(dtype)
 
     k = 200
     u, s, vh, _ = _svdp(A, k, irl_mode=irl, random_state=0)
