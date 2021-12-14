@@ -84,9 +84,9 @@ cdef inline double binom(double n, double k) nogil:
         return 0
 
     kx = floor(k)
+    nx = floor(n)
 
     if n < 0:
-        nx = floor(n)
         if n == nx and k == kx:
             # undefined
             return nan
@@ -98,7 +98,6 @@ cdef inline double binom(double n, double k) nogil:
         # This cannot be used for small nonzero n due to loss of
         # precision.
 
-        nx = floor(n)
         if nx == n and kx > nx/2 and nx > 0:
             # Reduce kx by symmetry
             kx = nx - kx
@@ -123,7 +122,6 @@ cdef inline double binom(double n, double k) nogil:
         num = Gamma(1 + n) / fabs(k) + Gamma(1 + n) * n / (2*k**2) # + ...
         num /= pi * fabs(k)**n
         if k > 0:
-            kx = floor(k)
             if <int>kx == kx:
                 dk = k - kx
                 sgn = 1 if (<int>kx) % 2 == 0 else -1
@@ -132,7 +130,6 @@ cdef inline double binom(double n, double k) nogil:
                 sgn = 1
             return num * sin((dk-n)*pi) * sgn
         else:
-            kx = floor(k)
             if <int>kx == kx:
                 return 0
             else:
