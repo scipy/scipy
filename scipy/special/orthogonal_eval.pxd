@@ -102,7 +102,7 @@ cdef inline double binom(double n, double k) nogil:
             # Reduce kx by symmetry
             kx = nx - kx
 
-        if kx >= 0 and kx < 20:
+        if 0 <= kx < 20:
             num = 1.0
             den = 1.0
             for i in range(1, 1 + <int>kx):
