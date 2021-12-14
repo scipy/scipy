@@ -48,7 +48,7 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
-from ._hypotests import _all_partitions
+from ._hypotests import _all_partitions, _batch_generator
 from ._hypotests_pythran import _compute_outer_prob_inside_method
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
@@ -6064,9 +6064,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     or `b`, and the t-statistic is calculated. This process is performed
     repeatedly (`permutation` times), generating a distribution of the
     t-statistic under the null hypothesis, and the t-statistic of the observed
-    data is compared to this distribution to determine the p-value. When
-    ``permutations >= binom(n, k)``, an exact test is performed: the data are
-    partitioned between the groups in each distinct way exactly once.
+    data is compared to this distribution to determine the p-value.
+    Specifically, the p-value reported is the "achieved significance level"
+    (ASL) as defined in Chapter 15 of [3]_. Note that there are other ways of
+    estimating p-values using randomized permutation tests, for other options,
+    see the more general `permutation_test`.
+
+    When ``permutations >= binom(n, k)``, an exact test is performed: the data
+    are partitioned between the groups in each distinct way exactly once.
 
     The permutation test can be computationally expensive and not necessarily
     more accurate than the analytical test, but it does not make strong
@@ -6085,7 +6090,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     .. [2] https://en.wikipedia.org/wiki/Welch%27s_t-test
 
-    .. [3] http://en.wikipedia.org/wiki/Resampling_%28statistics%29
+    .. [3] B. Efron and R. J. Tibshirani. An Introduction to the Bootstrap
+           (1993).
 
     .. [4] Yuen, Karen K. "The Two-Sample Trimmed t for Unequal Population
            Variances." Biometrika, vol. 61, no. 1, 1974, pp. 165-170. JSTOR,
@@ -6276,31 +6282,42 @@ def _calculate_winsorized_variance(a, g, axis):
     return var_win
 
 
-def _data_partitions(data, permutations, size_a, axis=-1, random_state=None):
-    """All partitions of data into sets of given lengths, ignoring order"""
+def _permutation_distribution_t(data, permutations, size_a, equal_var,
+                                random_state=None):
+    """Generation permutaiton distribution of t statistic"""
 
     random_state = check_random_state(random_state)
-    if axis < 0:  # we'll be adding a new dimension at the end
-        axis = data.ndim + axis
 
     # prepare permutation indices
-    size = data.shape[axis]
+    size = data.shape[-1]
     # number of distinct combinations
     n_max = special.comb(size, size_a)
 
     if permutations < n_max:
-        indices = np.array([random_state.permutation(size)
-                            for i in range(permutations)]).T
+        perm_generator = (random_state.permutation(size)
+                          for i in range(permutations))
     else:
         permutations = n_max
-        indices = np.array([np.concatenate(z)
-                            for z in _all_partitions(size_a, size-size_a)]).T
+        perm_generator = (np.concatenate(z)
+                          for z in _all_partitions(size_a, size-size_a))
 
-    data = data.swapaxes(axis, -1)   # so we can index along a new dimension
-    data = data[..., indices]        # generate permutations
-    data = data.swapaxes(-2, axis)   # restore original axis order
-    data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
-    return data, permutations
+    t_stat = []
+    for indices in _batch_generator(perm_generator, batch=50):
+        # get one batch from perm_generator at a time as a list
+        indices = np.array(indices)
+        # generate permutations
+        data_perm = data[..., indices]
+        # move axis indexing permutations to position 0 to broadcast
+        # nicely with t_stat_observed, which doesn't have this dimension
+        data_perm = np.moveaxis(data_perm, -2, 0)
+
+        a = data_perm[..., :size_a]
+        b = data_perm[..., size_a:]
+        t_stat.append(_calc_t_stat(a, b, equal_var))
+
+    t_stat = np.concatenate(t_stat, axis=0)
+
+    return t_stat, permutations
 
 
 def _calc_t_stat(a, b, equal_var, axis=-1):
@@ -6369,12 +6386,9 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    mat_perm, permutations = _data_partitions(mat, permutations, size_a=na,
-                                              random_state=random_state)
-
-    a = mat_perm[..., :na]
-    b = mat_perm[..., na:]
-    t_stat = _calc_t_stat(a, b, equal_var)
+    t_stat, permutations = _permutation_distribution_t(
+        mat, permutations, size_a=na, equal_var=equal_var,
+        random_state=random_state)
 
     compare = {"less": np.less_equal,
                "greater": np.greater_equal,
