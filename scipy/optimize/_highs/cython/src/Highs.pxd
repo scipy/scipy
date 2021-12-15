@@ -23,7 +23,7 @@ cdef extern from "Highs.h":
         HighsStatus passHighsOptions(const HighsOptions& options)
         HighsStatus passModel(const HighsLp& lp)
         HighsStatus run()
-        HighsStatus setHighsLogfile(FILE* logfile);
+        HighsStatus setHighsLogfile(FILE* logfile)
         HighsStatus setHighsOutput(FILE* output)
         HighsStatus writeHighsOptions(const string filename, const bool report_only_non_default_values = true)
 

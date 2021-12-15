@@ -41,7 +41,6 @@ def _get_sources(CMakeLists: str, start_token: str, end_token: str):
         sources = [s.strip() for s in sources if s[0] != '#']
 
     sources = [str(_highs_dir(ret_path=True) / "src" / s) for s in sources]
-    print(sources)
     return sources
 
 

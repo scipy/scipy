@@ -2077,7 +2077,7 @@ class TestLinprogHiGHSSimplexDual(LinprogHiGHSTests):
 
     def test_lad_regression(self):
         '''The scaled model should be optimal, i.e. not produce unscaled model infeasible.'''
-        c, A_ub, b_ub, bnds = l1_regression_prob(n=1000)
+        c, A_ub, b_ub, bnds = l1_regression_prob()
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bnds,
                       method=self.method, options=self.options)
         assert_equal(res.status, 0)
