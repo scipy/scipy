@@ -87,7 +87,7 @@ cdef inline double binom(double n, double k) nogil:
     nx = floor(n)
 
     if n < 0:
-        if n == nx and k == kx:
+        if n == nx and k != kx:
             # undefined
             return nan
 
