@@ -34,7 +34,7 @@ from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
 from scipy.stats._hypotests import _batch_generator
-from scipy.stats._stats_py import (_calc_t_stat, _permutation_distribution_t,
+from scipy.stats._stats_py import (_permutation_distribution_t,
                             AlexanderGovernConstantInputWarning)
 
 

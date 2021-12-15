@@ -6066,9 +6066,9 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     t-statistic under the null hypothesis, and the t-statistic of the observed
     data is compared to this distribution to determine the p-value.
     Specifically, the p-value reported is the "achieved significance level"
-    (ASL) as defined in Chapter 15 of [3]_. Note that there are other ways of
-    estimating p-values using randomized permutation tests, for other options,
-    see the more general `permutation_test`.
+    (ASL) as defined in 4.4 of [3]_. Note that there are other ways of
+    estimating p-values using randomized permutation tests; for other
+    options, see the more general `permutation_test`.
 
     When ``permutations >= binom(n, k)``, an exact test is performed: the data
     are partitioned between the groups in each distinct way exactly once.
@@ -6090,8 +6090,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     .. [2] https://en.wikipedia.org/wiki/Welch%27s_t-test
 
-    .. [3] B. Efron and R. J. Tibshirani. An Introduction to the Bootstrap
-           (1993).
+    .. [3] B. Efron and T. Hastie. Computer Age Statistical Inference. (2016).
 
     .. [4] Yuen, Karen K. "The Two-Sample Trimmed t for Unequal Population
            Variances." Biometrika, vol. 61, no. 1, 1974, pp. 165-170. JSTOR,
@@ -6284,7 +6283,7 @@ def _calculate_winsorized_variance(a, g, axis):
 
 def _permutation_distribution_t(data, permutations, size_a, equal_var,
                                 random_state=None):
-    """Generation permutaiton distribution of t statistic"""
+    """Generation permutation distribution of t statistic"""
 
     random_state = check_random_state(random_state)
 
