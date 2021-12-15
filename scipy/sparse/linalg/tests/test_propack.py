@@ -137,6 +137,9 @@ def test_examples(precision, irl):
     # complex example matrix has many repeated singular values, so check only
     # beginning non-repeated singular vectors to avoid permutations
     sv_check = 27 if precision in {'complex8', 'complex16'} else k
+    u = u[:, :sv_check]
+    vh = vh[:sv_check, :]
+    s = s[:sv_check]
 
     # Check orthogonality of singular vectors
     assert_allclose(np.eye(u.shape[1]), u.conj().T @ u, atol=atol)
