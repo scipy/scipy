@@ -1675,7 +1675,8 @@ class LinprogHiGHSTests(LinprogCommonTests):
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
         # there should be nonzero crossover iterations for IPM (only)
-        # TODO: highs counts crossover iterations differently, so this test now fails
+        # TODO: highs counts crossover iterations differently, so this test
+        #       now fails
         if self.method == "highs-ipm":
             pytest.skip("HiGHS crossover iteration behavior changed!")
         assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
@@ -2076,15 +2077,20 @@ class TestLinprogHiGHSSimplexDual(LinprogHiGHSTests):
     options = {}
 
     def test_lad_regression(self):
-        '''The scaled model should be optimal, i.e. not produce unscaled model infeasible.'''
+        '''
+        The scaled model should be optimal, i.e. not produce unscaled model
+        infeasible.
+        '''
         c, A_ub, b_ub, bnds = l1_regression_prob()
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bnds,
                       method=self.method, options=self.options)
         assert_equal(res.status, 0)
         assert_(res.x is not None)
         assert_(np.all(res.slack > -1e-6))
-        assert_(np.all(res.x <= [np.inf if u is None else u for l, u in bnds]))
-        assert_(np.all(res.x >= [-np.inf if l is None else l - 1e-7 for l, u in bnds]))
+        assert_(np.all(res.x <= [np.inf if ub is None else ub
+                                 for lb, ub in bnds]))
+        assert_(np.all(res.x >= [-np.inf if lb is None else lb - 1e-7
+                                 for lb, ub in bnds]))
 
 
 ###################################

@@ -44,7 +44,7 @@ def _get_sources(CMakeLists: str, start_token: str, end_token: str):
     return sources
 
 
-def _get_version(CMakeLists: str, start_token: str, end_token: str =')'):
+def _get_version(CMakeLists: str, start_token: str, end_token: str = ')'):
     # Grab some more info about HiGHS from root CMakeLists
     CMakeLists = _highs_dir(ret_path=True) / CMakeLists
     with open(CMakeLists, 'r', encoding='utf-8') as f:
