@@ -67,11 +67,25 @@ cdef extern from "HConst.h" nogil:
         HighsOptionTypeDOUBLE "HighsOptionType::kDouble"
         HighsOptionTypeSTRING "HighsOptionType::kString"
 
-    ctypedef enum ObjSense:
-        ObjSenseMINIMIZE "ObjSense::kMinimize" = 1
-        ObjSenseMAXIMIZE "ObjSense::kMaximize" = -1
+    # workaround for lack of enum class support in Cython < 3.x
+    # cdef enum class ObjSense(int):
+    #     ObjSenseMINIMIZE "ObjSense::kMinimize" = 1
+    #     ObjSenseMAXIMIZE "ObjSense::kMaximize" = -1
 
-    cdef enum MatrixFormat:
-        MatrixFormatkColwise "MatrixFormat::kColwise" = 1
-        MatrixFormatkRowwise "MatrixFormat::kRowwise"
-        MatrixFormatkRowwisePartitioned "MatrixFormat::kRowwisePartitioned"
+    cdef cppclass ObjSense:
+        pass
+
+    cdef ObjSense ObjSenseMINIMIZE "ObjSense::kMinimize"
+    cdef ObjSense ObjSenseMAXIMIZE "ObjSense::kMaximize"
+
+    # cdef enum class MatrixFormat(int):
+    #     MatrixFormatkColwise "MatrixFormat::kColwise" = 1
+    #     MatrixFormatkRowwise "MatrixFormat::kRowwise"
+    #     MatrixFormatkRowwisePartitioned "MatrixFormat::kRowwisePartitioned"
+
+    cdef cppclass MatrixFormat:
+        pass
+
+    cdef MatrixFormat MatrixFormatkColwise "MatrixFormat::kColwise"
+    cdef MatrixFormat MatrixFormatkRowwise "MatrixFormat::kRowwise"
+    cdef MatrixFormat MatrixFormatkRowwisePartitioned "MatrixFormat::kRowwisePartitioned"
