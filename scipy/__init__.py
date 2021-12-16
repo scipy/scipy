@@ -70,7 +70,7 @@ _msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
         'use numpy.{0} instead')
 
 # deprecate callable objects from numpy, skipping classes and modules
-import types as _types
+import types as _types  # noqa: E402
 for _key in np.__all__:
     if _key.startswith('_'):
         continue
@@ -93,7 +93,7 @@ from numpy.fft import ifft
 ifft = _deprecated('scipy.ifft is deprecated and will be removed in SciPy '
                    '2.0.0, use scipy.fft.ifft instead')(ifft)
 
-from numpy.lib import scimath
+from numpy.lib import scimath  # noqa: E402
 _msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
         'use numpy.lib.scimath.{0} instead')
 for _key in scimath.__all__:
@@ -190,6 +190,6 @@ else:
             try:
                 return globals()[name]
             except KeyError:
-                raise AttributeError(f"Module 'scipy' has no attribute '{name}'")
-
-    del _importlib
+                raise AttributeError(
+                    f"Module 'scipy' has no attribute '{name}'"
+                )
