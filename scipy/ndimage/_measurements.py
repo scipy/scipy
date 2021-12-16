@@ -619,11 +619,11 @@ def sum_labels(input, labels=None, index=None):
     >>> from scipy import ndimage
     >>> input =  [0,1,2,3]
     >>> labels = [1,1,2,2]
-    >>> ndimage.sum(input, labels, index=[1,2])
+    >>> ndimage.sum_labels(input, labels, index=[1,2])
     [1.0, 5.0]
-    >>> ndimage.sum(input, labels, index=1)
+    >>> ndimage.sum_labels(input, labels, index=1)
     1
-    >>> ndimage.sum(input, labels)
+    >>> ndimage.sum_labels(input, labels)
     6
 
 
