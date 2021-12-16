@@ -1425,7 +1425,7 @@ class TestOptimizeSimple(CheckOptimize):
 
 @pytest.mark.parametrize(
     'method',
-     ['l-bfgs-b', 'tnc', 'Powell', 'Nelder-Mead']
+    ['l-bfgs-b', 'tnc', 'Powell', 'Nelder-Mead']
 )
 def test_minimize_with_scalar(method):
     # checks that minimize works with a scalar being provided to it.
