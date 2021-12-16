@@ -30,7 +30,7 @@ def basiclu_pre_build_hook(build_clib, build_info):
 
 def _get_sources(CMakeLists: str, start_token: str, end_token: str):
     # Read in sources from CMakeLists.txt
-    CMakeLists = _highs_dir(ret_path=True) / CMakeLists
+    CMakeLists = str(_highs_dir() / CMakeLists)
     with open(CMakeLists, 'r', encoding='utf-8') as f:
         s = f.read()
 
@@ -40,13 +40,13 @@ def _get_sources(CMakeLists: str, start_token: str, end_token: str):
         sources = s[start_idx:end_idx].split('\n')
         sources = [s.strip() for s in sources if s[0] != '#']
 
-    sources = [str(_highs_dir(ret_path=True) / "src" / s) for s in sources]
+    sources = [str(_highs_dir() / "src" / s) for s in sources]
     return sources
 
 
 def _get_version(CMakeLists: str, start_token: str, end_token: str = ')'):
     # Grab some more info about HiGHS from root CMakeLists
-    CMakeLists = _highs_dir(ret_path=True) / CMakeLists
+    CMakeLists = str(_highs_dir() / CMakeLists)
     with open(CMakeLists, 'r', encoding='utf-8') as f:
         s = f.read()
         start_idx = s.find(start_token) + len(start_token) + 1
@@ -66,7 +66,7 @@ def configuration(parent_package='', top_path=None):
     HIGHS_VERSION_PATCH = _get_version(
         'CMakeLists.txt', 'HIGHS_VERSION_PATCH')
     GITHASH = 'n/a'
-    HIGHS_DIR = str(_highs_dir(ret_path=True).resolve())
+    HIGHS_DIR = str(_highs_dir().resolve())
 
     # Here are the pound defines that HConfig.h would usually provide;
     # We provide an empty HConfig.h file and do the defs and undefs
@@ -96,7 +96,7 @@ def configuration(parent_package='', top_path=None):
     # (won't allow -std=c++11/14 option for C sources)
     basiclu_sources = _get_sources('src/CMakeLists.txt',
                                    'set(basiclu_sources\n', ')')
-    highs_root = _highs_dir(ret_path=True)
+    highs_root = _highs_dir()
     config.add_library(
         'basiclu',
         sources=basiclu_sources,

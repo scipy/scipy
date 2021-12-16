@@ -12,7 +12,7 @@ def check_boost_submodule():
 def check_highs_submodule():
     from scipy._lib._highs_utils import _highs_dir
 
-    if not os.path.exists(_highs_dir(ret_path=True) / 'README.md'):
+    if not os.path.exists(_highs_dir() / 'README.md'):
         raise RuntimeError("Missing the `highs` submodule! Run `git submodule "
                            "update --init` to fix this.")
 
