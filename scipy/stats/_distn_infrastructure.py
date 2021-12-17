@@ -1151,14 +1151,6 @@ class rv_generic:
                                               **{'moments': moments})
             else:
                 mu, mu2, g1, g2 = self._stats(*goodargs)
-            if g1 is None:
-                mu3 = None
-            else:
-                if mu2 is None:
-                    mu2 = self._munp(2, *goodargs)
-                if g2 is None:
-                    # (mu2**1.5) breaks down for nan and inf
-                    mu3 = g1 * np.power(mu2, 1.5)
 
             if 'm' in moments:
                 if mu is None:
@@ -1174,7 +1166,7 @@ class rv_generic:
                         mu = self._munp(1, *goodargs)
                     # if mean is inf then var is also inf
                     with np.errstate(invalid='ignore'):
-                        mu2 = np.where(np.isfinite(mu), mu2p - mu**2, np.inf)
+                        mu2 = np.where(~np.isinf(mu), mu2p - mu**2, np.inf)
                 out0 = default.copy()
                 place(out0, cond, mu2 * scale * scale)
                 output.append(out0)
@@ -1202,6 +1194,11 @@ class rv_generic:
                     if mu2 is None:
                         mu2p = self._munp(2, *goodargs)
                         mu2 = mu2p - mu * mu
+                    if g1 is None:
+                        mu3 = None
+                    else:
+                        # (mu2**1.5) breaks down for nan and inf
+                        mu3 = g1 * np.power(mu2, 1.5)
                     if mu3 is None:
                         mu3p = self._munp(3, *goodargs)
                         with np.errstate(invalid='ignore'):
