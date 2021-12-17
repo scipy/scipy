@@ -3867,6 +3867,7 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='asymp')
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='exact')
 
+    @pytest.mark.xslow
     def test_gh11184_bigger(self):
         # 10000, 10001, exact two-sided
         np.random.seed(123456)
@@ -3877,7 +3878,7 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'greater', 0.10597913208679133, 2.7947433906389253e-41, mode='asymp')
         self._testOne(x, y, 'less', 0.09658002199780022, 2.7947433906389253e-41, mode='asymp')
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_gh12999(self):
         np.random.seed(123456)
         for x in range(1000, 12000, 1000):
@@ -7126,7 +7127,7 @@ class TestMGCStat:
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_twosamp(self):
         np.random.seed(12345678)
 
