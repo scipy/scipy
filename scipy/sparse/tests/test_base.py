@@ -1569,19 +1569,11 @@ class _TestCommon:
         A = array([[1, 0, 2, 0], [0, 3, 4, 0], [0, 5, 0, 0], [0, 6, 7, 8]])
         B = self.spmatrix(A)
 
-        def check(dtype, exponent):
-            A1 = array(A, dtype=dtype)
-            B1 = self.spmatrix(A1)
-
-            ret_sp = B1**exponent
-            ret_np = np.linalg.matrix_power(A1, exponent)
-
+        for exponent in [0,1,2,3]:
+            ret_sp = B**exponent
+            ret_np = np.linalg.matrix_power(A, exponent)
             assert_array_equal(ret_sp.toarray(), ret_np)
             assert_equal(ret_sp.dtype, ret_np.dtype)
-
-        for dtype in self.checked_dtypes:
-            for exponent in [0,1,2,3]:
-                check(dtype, exponent)
 
         # invalid exponents
         for exponent in [-1, 2.2, 1 + 3j]:
