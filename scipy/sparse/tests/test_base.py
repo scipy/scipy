@@ -1570,10 +1570,10 @@ class _TestCommon:
         B = self.spmatrix(A)
 
         for exponent in [0,1,2,3]:
-            assert_array_equal(
-                (B**exponent).toarray(),
-                np.linalg.matrix_power(A, exponent)
-            )
+            ret_sp = B**exponent
+            ret_np = np.linalg.matrix_power(A, exponent)
+            assert_array_equal(ret_sp.toarray(), ret_np)
+            assert_equal(ret_sp.dtype, ret_np.dtype)
 
         # invalid exponents
         for exponent in [-1, 2.2, 1 + 3j]:
