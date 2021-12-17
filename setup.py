@@ -543,7 +543,7 @@ def setup_package():
     np_minversion = '1.17.3'
     np_maxversion = '9.9.99'
     python_minversion = '3.8'
-    python_maxversion = '3.11'
+    python_maxversion = '3.10'
     if IS_RELEASE_BRANCH:
         req_np = 'numpy>={},<{}'.format(np_minversion, np_maxversion)
         req_py = '>={},<{}'.format(python_minversion, python_maxversion)
