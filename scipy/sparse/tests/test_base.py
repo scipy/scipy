@@ -1354,6 +1354,16 @@ class _TestCommon:
         for dtype in self.math_dtypes:
             check(dtype)
 
+    # github issue #15210
+    def test_rmul_scalar_type_error(self):
+        def check(dtype):
+            dat = self.dat_dtypes[dtype]
+            with assert_raises(TypeError):
+                None * dat
+
+        for dtype in self.math_dtypes:
+            check(dtype)
+
     def test_add(self):
         def check(dtype):
             dat = self.dat_dtypes[dtype]

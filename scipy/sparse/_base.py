@@ -607,7 +607,7 @@ class spmatrix:
                 tr = other.transpose()
             except AttributeError:
                 tr = np.asarray(other).transpose()
-            return (self.transpose() @ tr).transpose()
+            return self.transpose()._mul_dispatch(tr).transpose()
 
     def __rmul__(self, other):  # other * self
         return self._rmul_dispatch(other)
