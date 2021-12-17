@@ -17,7 +17,7 @@ Functions
 
 import numpy as np
 
-from .optimize import OptimizeResult, OptimizeWarning
+from ._optimize import OptimizeResult, OptimizeWarning
 from warnings import warn
 from ._linprog_highs import _linprog_highs
 from ._linprog_ip import _linprog_ip
@@ -574,6 +574,21 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
       status: 0
      success: True
            x: array([10., -3.]) # may vary
+
+    You can use the ``options`` parameter, e.g.,
+    to restrict the maximum number of iterations.
+
+    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds],
+    ...               options={'maxiter': 4})
+    >>> print(res)
+        con: array([], dtype=float64)
+        fun: -21.35207150630407 # may vary
+    message: 'The iteration limit was reached before the algorithm converged.'
+        nit: 4
+      slack: array([37.19406046,  0.5727398 ])
+     status: 1
+    success: False
+          x: array([ 9.4021973 , -2.98746855])
 
     """
 

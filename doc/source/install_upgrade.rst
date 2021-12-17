@@ -5,7 +5,7 @@ Installing and upgrading
 
 Information on how to install SciPy and/or the SciPy Stack (a larger set of
 packages for scientific computing with Python) can be found at
-https://scipy.org/install.html .
+https://scipy.org/install/.
 
 It is recommended that users use a scientific Python distribution or binaries
 for their platform.  If building from source is required, documentation about

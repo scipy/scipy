@@ -44,7 +44,7 @@ def main():
                 changed = set(old_data.keys()) != set(key for key, _ in files)
             finally:
                 old_data.close()
-        except (IOError, OSError):
+        except OSError:
             # corrupted file
             changed = True
 

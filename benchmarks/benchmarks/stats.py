@@ -478,45 +478,20 @@ class BenchQMCDiscrepancy(Benchmark):
 
 
 class BenchQMCHalton(Benchmark):
-    param_names = ['d', 'scramble', 'n']
+    param_names = ['d', 'scramble', 'n', 'workers']
     params = [
         [1, 10],
         [True, False],
-        [10, 1_000, 100_000]
+        [10, 1_000, 100_000],
+        [1, 4]
     ]
 
-    def setup(self, d, scramble, n):
+    def setup(self, d, scramble, n, workers):
         self.rng = np.random.default_rng(1234)
 
-    def time_halton(self, d, scramble, n):
+    def time_halton(self, d, scramble, n, workers):
         seq = stats.qmc.Halton(d, scramble=scramble, seed=self.rng)
-        seq.random(n)
-
-
-class NumericalInverseHermite(Benchmark):
-
-    param_names = ['distribution']
-    params = [distcont]
-
-    def setup(self, *args):
-        self.rand = [np.random.normal(loc=i, size=1000) for i in range(3)]
-
-    def time_fni(self, distcase):
-        distname, shapes = distcase
-        slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
-        fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
-                      'norminvgauss', 'genhyperbolic', 'studentized_range'}
-
-        if distname in slow_dists or distname in fail_dists:
-            raise NotImplementedError("skipped")
-
-        dist = getattr(stats, distname)(*shapes)
-
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "overflow encountered")
-            sup.filter(RuntimeWarning, "divide by zero")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            stats.NumericalInverseHermite(dist)
+        seq.random(n, workers=workers)
 
 
 class DistanceFunctions(Benchmark):

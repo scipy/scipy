@@ -4,7 +4,7 @@ Functions for identifying peaks in signals.
 import math
 import numpy as np
 
-from scipy.signal.wavelets import cwt, ricker
+from scipy.signal._wavelets import cwt, ricker
 from scipy.stats import scoreatpercentile
 
 from ._peak_finding_utils import (

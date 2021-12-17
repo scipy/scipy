@@ -28,7 +28,8 @@ are:
 - Pillow_ (for image loading/saving)
 - scikits.umfpack_ (optionally used in ``sparse.linalg``)
 - mpmath_ (for more extended tests in ``special``)
-- pydata/sparse  (compatibility support in ``scipy.sparse``)
+- pydata/sparse (compatibility support in ``scipy.sparse``)
+- threadpoolctl_ (to control BLAS/LAPACK threading in test suite)
 
 *Unconditional build-time dependencies:*
 
@@ -221,3 +222,4 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _six: https://pypi.org/project/six
 .. _decorator: https://github.com/micheles/decorator
 .. _manylinux: https://github.com/pypa/manylinux/
+.. _threadpoolctl: https://github.com/joblib/threadpoolctl

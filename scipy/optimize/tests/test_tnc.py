@@ -1,14 +1,14 @@
 """
 Unit tests for TNC optimization routine from tnc.py
 """
-
+import pytest
 from numpy.testing import assert_allclose, assert_equal
 
 import numpy as np
 from math import pow
 
 from scipy import optimize
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 class TestTnc:
@@ -196,12 +196,12 @@ class TestTnc:
         xopt = [1, 1]
 
         x, nf, rc = optimize.fmin_tnc(fg, x, bounds=bounds, args=(100.0, ),
-                                      messages=optimize.tnc.MSG_NONE,
+                                      messages=optimize._tnc.MSG_NONE,
                                       maxfun=200)
 
         assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8,
                         err_msg="TNC failed with status: " +
-                                optimize.tnc.RCSTRINGS[rc])
+                                optimize._tnc.RCSTRINGS[rc])
 
     def test_tnc1b(self):
         x, bounds = [-2, 1], ([-np.inf, None], [-1.5, None])
@@ -209,12 +209,12 @@ class TestTnc:
 
         x, nf, rc = optimize.fmin_tnc(self.f1, x, approx_grad=True,
                                       bounds=bounds,
-                                      messages=optimize.tnc.MSG_NONE,
+                                      messages=optimize._tnc.MSG_NONE,
                                       maxfun=200)
 
         assert_allclose(self.f1(x), self.f1(xopt), atol=1e-4,
                         err_msg="TNC failed with status: " +
-                                optimize.tnc.RCSTRINGS[rc])
+                                optimize._tnc.RCSTRINGS[rc])
 
     def test_tnc1c(self):
         x, bounds = [-2, 1], ([-np.inf, None], [-1.5, None])
@@ -222,72 +222,72 @@ class TestTnc:
 
         x, nf, rc = optimize.fmin_tnc(self.f1, x, fprime=self.g1,
                                       bounds=bounds,
-                                      messages=optimize.tnc.MSG_NONE,
+                                      messages=optimize._tnc.MSG_NONE,
                                       maxfun=200)
 
         assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8,
                         err_msg="TNC failed with status: " +
-                                optimize.tnc.RCSTRINGS[rc])
+                                optimize._tnc.RCSTRINGS[rc])
 
     def test_tnc2(self):
         fg, x, bounds = self.fg1, [-2, 1], ([-np.inf, None], [1.5, None])
         xopt = [-1.2210262419616387, 1.5]
 
         x, nf, rc = optimize.fmin_tnc(fg, x, bounds=bounds,
-                                      messages=optimize.tnc.MSG_NONE,
+                                      messages=optimize._tnc.MSG_NONE,
                                       maxfun=200)
 
         assert_allclose(self.f1(x), self.f1(xopt), atol=1e-8,
                         err_msg="TNC failed with status: " +
-                                optimize.tnc.RCSTRINGS[rc])
+                                optimize._tnc.RCSTRINGS[rc])
 
     def test_tnc3(self):
         fg, x, bounds = self.fg3, [10, 1], ([-np.inf, None], [0.0, None])
         xopt = [0, 0]
 
         x, nf, rc = optimize.fmin_tnc(fg, x, bounds=bounds,
-                                      messages=optimize.tnc.MSG_NONE,
+                                      messages=optimize._tnc.MSG_NONE,
                                       maxfun=200)
 
         assert_allclose(self.f3(x), self.f3(xopt), atol=1e-8,
                         err_msg="TNC failed with status: " +
-                                optimize.tnc.RCSTRINGS[rc])
+                                optimize._tnc.RCSTRINGS[rc])
 
     def test_tnc4(self):
         fg, x, bounds = self.fg4, [1.125, 0.125], [(1, None), (0, None)]
         xopt = [1, 0]
 
         x, nf, rc = optimize.fmin_tnc(fg, x, bounds=bounds,
-                                      messages=optimize.tnc.MSG_NONE,
+                                      messages=optimize._tnc.MSG_NONE,
                                       maxfun=200)
 
         assert_allclose(self.f4(x), self.f4(xopt), atol=1e-8,
                         err_msg="TNC failed with status: " +
-                                optimize.tnc.RCSTRINGS[rc])
+                                optimize._tnc.RCSTRINGS[rc])
 
     def test_tnc5(self):
         fg, x, bounds = self.fg5, [0, 0], [(-1.5, 4),(-3, 3)]
         xopt = [-0.54719755119659763, -1.5471975511965976]
 
         x, nf, rc = optimize.fmin_tnc(fg, x, bounds=bounds,
-                                      messages=optimize.tnc.MSG_NONE,
+                                      messages=optimize._tnc.MSG_NONE,
                                       maxfun=200)
 
         assert_allclose(self.f5(x), self.f5(xopt), atol=1e-8,
                         err_msg="TNC failed with status: " +
-                                optimize.tnc.RCSTRINGS[rc])
+                                optimize._tnc.RCSTRINGS[rc])
 
     def test_tnc38(self):
         fg, x, bounds = self.fg38, np.array([-3, -1, -3, -1]), [(-10, 10)]*4
         xopt = [1]*4
 
         x, nf, rc = optimize.fmin_tnc(fg, x, bounds=bounds,
-                                      messages=optimize.tnc.MSG_NONE,
+                                      messages=optimize._tnc.MSG_NONE,
                                       maxfun=200)
 
         assert_allclose(self.f38(x), self.f38(xopt), atol=1e-8,
                         err_msg="TNC failed with status: " +
-                                optimize.tnc.RCSTRINGS[rc])
+                                optimize._tnc.RCSTRINGS[rc])
 
     def test_tnc45(self):
         fg, x, bounds = self.fg45, [2] * 5, [(0, 1), (0, 2), (0, 3),
@@ -295,9 +295,52 @@ class TestTnc:
         xopt = [1, 2, 3, 4, 5]
 
         x, nf, rc = optimize.fmin_tnc(fg, x, bounds=bounds,
-                                      messages=optimize.tnc.MSG_NONE,
+                                      messages=optimize._tnc.MSG_NONE,
                                       maxfun=200)
 
         assert_allclose(self.f45(x), self.f45(xopt), atol=1e-8,
                         err_msg="TNC failed with status: " +
-                                optimize.tnc.RCSTRINGS[rc])
+                                optimize._tnc.RCSTRINGS[rc])
+
+    def test_raising_exceptions(self):
+        # tnc was ported to cython from hand-crafted cpython code
+        # check that Exception handling works.
+        def myfunc(x):
+            raise RuntimeError("myfunc")
+
+        def myfunc1(x):
+            return optimize.rosen(x)
+
+        def callback(x):
+            raise ValueError("callback")
+
+        with pytest.raises(RuntimeError):
+            optimize.minimize(myfunc, [0, 1], method="TNC")
+
+        with pytest.raises(ValueError):
+            optimize.minimize(
+                myfunc1, [0, 1], method="TNC", callback=callback
+            )
+
+    def test_callback_shouldnt_affect_minimization(self):
+        # gh14879. The output of a TNC minimization was different depending
+        # on whether a callback was used or not. The two should be equivalent.
+        # The issue was that TNC was unscaling/scaling x, and this process was
+        # altering x in the process. Now the callback uses an unscaled
+        # temporary copy of x.
+        def callback(x):
+            pass
+
+        fun = optimize.rosen
+        bounds = [(0, 10)] * 4
+        x0 = [1, 2, 3, 4.]
+        res = optimize.minimize(
+            fun, x0, bounds=bounds, method="TNC", options={"maxfun": 1000}
+        )
+        res2 = optimize.minimize(
+            fun, x0, bounds=bounds, method="TNC", options={"maxfun": 1000},
+            callback=callback
+        )
+        assert_allclose(res2.x, res.x)
+        assert_allclose(res2.fun, res.fun)
+        assert_equal(res2.nfev, res.nfev)

@@ -16,7 +16,7 @@ import numpy as np
 
 
 # unconstrained minimization
-from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
+from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                        _minimize_bfgs, _minimize_newtoncg,
                        _minimize_scalar_brent, _minimize_scalar_bounded,
                        _minimize_scalar_golden, MemoizeJac)
@@ -27,10 +27,10 @@ from ._trustregion_exact import _minimize_trustregion_exact
 from ._trustregion_constr import _minimize_trustregion_constr
 
 # constrained minimization
-from .lbfgsb import _minimize_lbfgsb
-from .tnc import _minimize_tnc
-from .cobyla import _minimize_cobyla
-from .slsqp import _minimize_slsqp
+from ._lbfgsb_py import _minimize_lbfgsb
+from ._tnc import _minimize_tnc
+from ._cobyla_py import _minimize_cobyla
+from ._slsqp_py import _minimize_slsqp
 from ._constraints import (old_bound_to_new, new_bounds_to_old,
                            old_constraint_to_new, new_constraint_to_old,
                            NonlinearConstraint, LinearConstraint, Bounds)
@@ -59,7 +59,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         specify the function.
     x0 : ndarray, shape (n,)
         Initial guess. Array of real elements of size (n,),
-        where 'n' is the number of independent variables.
+        where ``n`` is the number of independent variables.
     args : tuple, optional
         Extra arguments passed to the objective function and its
         derivatives (`fun`, `jac` and `hess` functions).
@@ -84,7 +84,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
               see below for description.
 
         If not given, chosen to be one of ``BFGS``, ``L-BFGS-B``, ``SLSQP``,
-        depending if the problem has constraints or bounds.
+        depending on whether or not the problem has constraints or bounds.
     jac : {callable,  '2-point', '3-point', 'cs', bool}, optional
         Method for computing the gradient vector. Only for CG, BFGS,
         Newton-CG, L-BFGS-B, TNC, SLSQP, dogleg, trust-ncg, trust-krylov,
@@ -109,40 +109,35 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         obey any specified `bounds`.
     hess : {callable, '2-point', '3-point', 'cs', HessianUpdateStrategy}, optional
         Method for computing the Hessian matrix. Only for Newton-CG, dogleg,
-        trust-ncg, trust-krylov, trust-exact and trust-constr. If it is
-        callable, it should return the Hessian matrix:
+        trust-ncg, trust-krylov, trust-exact and trust-constr.
+        If it is callable, it should return the Hessian matrix:
 
             ``hess(x, *args) -> {LinearOperator, spmatrix, array}, (n, n)``
 
-        where x is a (n,) ndarray and `args` is a tuple with the fixed
-        parameters. LinearOperator and sparse matrix returns are only allowed
-        for 'trust-constr' method. Alternatively, the keywords
-        {'2-point', '3-point', 'cs'} select a finite difference scheme
-        for numerical estimation. Or, objects implementing the
-        `HessianUpdateStrategy` interface can be used to approximate
-        the Hessian. Available quasi-Newton methods implementing
-        this interface are:
+        where ``x`` is a (n,) ndarray and ``args`` is a tuple with the fixed
+        parameters.
+        The keywords {'2-point', '3-point', 'cs'} can also be used to select
+        a finite difference scheme for numerical estimation of the hessian.
+        Alternatively, objects implementing the `HessianUpdateStrategy`
+        interface can be used to approximate the Hessian. Available
+        quasi-Newton methods implementing this interface are:
 
             - `BFGS`;
             - `SR1`.
 
-        Whenever the gradient is estimated via finite-differences,
-        the Hessian cannot be estimated with options
-        {'2-point', '3-point', 'cs'} and needs to be
-        estimated using one of the quasi-Newton strategies.
-        'trust-exact' cannot use a finite-difference scheme, and must be used
-        with a callable returning an (n, n) array.
+        Not all of the options are available for each of the methods; for
+        availability refer to the notes.
     hessp : callable, optional
         Hessian of objective function times an arbitrary vector p. Only for
         Newton-CG, trust-ncg, trust-krylov, trust-constr.
-        Only one of `hessp` or `hess` needs to be given.  If `hess` is
-        provided, then `hessp` will be ignored.  `hessp` must compute the
+        Only one of `hessp` or `hess` needs to be given. If `hess` is
+        provided, then `hessp` will be ignored. `hessp` must compute the
         Hessian times an arbitrary vector:
 
             ``hessp(x, p, *args) ->  ndarray shape (n,)``
 
-        where x is a (n,) ndarray, p is an arbitrary vector with
-        dimension (n,) and `args` is a tuple with the fixed
+        where ``x`` is a (n,) ndarray, ``p`` is an arbitrary vector with
+        dimension (n,) and ``args`` is a tuple with the fixed
         parameters.
     bounds : sequence or `Bounds`, optional
         Bounds on variables for Nelder-Mead, L-BFGS-B, TNC, SLSQP, Powell, and
@@ -153,7 +148,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                is used to specify no bound.
 
     constraints : {Constraint, dict} or List of {Constraint, dict}, optional
-        Constraints definition (only for COBYLA, SLSQP and trust-constr).
+        Constraints definition. Only for COBYLA, SLSQP and trust-constr.
 
         Constraints for 'trust-constr' are defined as a single object or a
         list of objects specifying constraints to the optimization problem.
@@ -274,7 +269,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     quadratic subproblems are solved almost exactly [13]_. This
     algorithm requires the gradient and the Hessian (which is
     *not* required to be positive definite). It is, in many
-    situations, the Newton method to converge in fewer iteraction
+    situations, the Newton method to converge in fewer iterations
     and the most recommended for small and medium-size problems.
 
     **Bound-Constrained minimization**
@@ -339,8 +334,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     implemented in SciPy and the most appropriate for large-scale problems.
     For equality constrained problems it is an implementation of Byrd-Omojokun
     Trust-Region SQP method described in [17]_ and in [5]_, p. 549. When
-    inequality constraints  are imposed as well, it swiches to the trust-region
-    interior point  method described in [16]_. This interior point algorithm,
+    inequality constraints are imposed as well, it swiches to the trust-region
+    interior point method described in [16]_. This interior point algorithm,
     in turn, solves inequality constraints by introducing slack variables
     and solving a sequence of equality-constrained barrier problems
     for progressively smaller values of the barrier parameter.
@@ -354,9 +349,34 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     the gradient and the Hessian may be approximated using
     three finite-difference schemes: {'2-point', '3-point', 'cs'}.
     The scheme 'cs' is, potentially, the most accurate but it
-    requires the function to correctly handles complex inputs and to
+    requires the function to correctly handle complex inputs and to
     be differentiable in the complex plane. The scheme '3-point' is more
-    accurate than '2-point' but requires twice as many operations.
+    accurate than '2-point' but requires twice as many operations. If the
+    gradient is estimated via finite-differences the Hessian must be
+    estimated using one of the quasi-Newton strategies.
+
+    **Method specific options for the** `hess` **keyword**
+
+    +--------------+------+----------+-------------------------+-----+
+    | method/Hess  | None | callable | '2-point/'3-point'/'cs' | HUS |
+    +==============+======+==========+=========================+=====+
+    | Newton-CG    | x    | (n, n)   | x                       | x   |
+    |              |      | LO       |                         |     |
+    +--------------+------+----------+-------------------------+-----+
+    | dogleg       |      | (n, n)   |                         |     |
+    +--------------+------+----------+-------------------------+-----+
+    | trust-ncg    |      | (n, n)   | x                       | x   |
+    +--------------+------+----------+-------------------------+-----+
+    | trust-krylov |      | (n, n)   | x                       | x   |
+    +--------------+------+----------+-------------------------+-----+
+    | trust-exact  |      | (n, n)   |                         |     |
+    +--------------+------+----------+-------------------------+-----+
+    | trust-constr | x    | (n, n)   |  x                      | x   |
+    |              |      | LO       |                         |     |
+    |              |      | sp       |                         |     |
+    +--------------+------+----------+-------------------------+-----+
+
+    where LO=LinearOperator, sp=Sparse matrix, HUS=HessianUpdateStrategy
 
     **Custom minimizers**
 
@@ -493,7 +513,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     It should converge to the theoretical solution (1.4 ,1.7).
 
     """
-    x0 = np.asarray(x0)
+    x0 = np.atleast_1d(np.asarray(x0))
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)
 
@@ -543,9 +563,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if meth == 'cobyla' and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
-    # - callback
-    if (meth in ('cobyla',) and callback is not None):
-        warn('Method %s does not support callback.' % method, RuntimeWarning)
     # - return_all
     if (meth in ('l-bfgs-b', 'tnc', 'cobyla', 'slsqp') and
             options.get('return_all', False)):
@@ -601,53 +618,103 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
                       bounds=bounds, constraints=constraints,
                       callback=callback, **options)
 
+    constraints = standardize_constraints(constraints, x0, meth)
+
+    remove_vars = False
     if bounds is not None:
+        if meth in {"tnc", "slsqp", "l-bfgs-b"}:
+            # These methods can't take the finite-difference derivatives they
+            # need when a variable is fixed by the bounds. To avoid this issue,
+            # remove fixed variables from the problem.
+
+            # convert to new-style bounds so we only have to consider one case
+            bounds = standardize_bounds(bounds, x0, 'new')
+
+            # determine whether any variables are fixed
+            i_fixed = (bounds.lb == bounds.ub)
+
+            # determine whether finite differences are needed for any grad/jac
+            fd_needed = (not callable(jac))
+            for con in constraints:
+                if not callable(con.get('jac', None)):
+                    fd_needed = True
+
+            # If finite differences are ever used, remove all fixed variables
+            # Always remove fixed variables for TNC; see gh-14565
+            remove_vars = i_fixed.any() and (fd_needed or meth == "tnc")
+            if remove_vars:
+                x_fixed = (bounds.lb)[i_fixed]
+                x0 = x0[~i_fixed]
+                bounds = _remove_from_bounds(bounds, i_fixed)
+                fun = _remove_from_func(fun, i_fixed, x_fixed)
+                if callable(callback):
+                    callback = _remove_from_func(callback, i_fixed, x_fixed)
+                if callable(jac):
+                    jac = _remove_from_func(jac, i_fixed, x_fixed, remove=1)
+
+                # make a copy of the constraints so the user's version doesn't
+                # get changed. (Shallow copy is ok)
+                constraints = [con.copy() for con in constraints]
+                for con in constraints:  # yes, guaranteed to be a list
+                    con['fun'] = _remove_from_func(con['fun'], i_fixed,
+                                                   x_fixed, min_dim=1,
+                                                   remove=0)
+                    if callable(con.get('jac', None)):
+                        con['jac'] = _remove_from_func(con['jac'], i_fixed,
+                                                       x_fixed, min_dim=2,
+                                                       remove=1)
         bounds = standardize_bounds(bounds, x0, meth)
 
-    if constraints is not None:
-        constraints = standardize_constraints(constraints, x0, meth)
-
     if meth == 'nelder-mead':
-        return _minimize_neldermead(fun, x0, args, callback, bounds=bounds,
-                                    **options)
+        res = _minimize_neldermead(fun, x0, args, callback, bounds=bounds,
+                                   **options)
     elif meth == 'powell':
-        return _minimize_powell(fun, x0, args, callback, bounds, **options)
+        res = _minimize_powell(fun, x0, args, callback, bounds, **options)
     elif meth == 'cg':
-        return _minimize_cg(fun, x0, args, jac, callback, **options)
+        res = _minimize_cg(fun, x0, args, jac, callback, **options)
     elif meth == 'bfgs':
-        return _minimize_bfgs(fun, x0, args, jac, callback, **options)
+        res = _minimize_bfgs(fun, x0, args, jac, callback, **options)
     elif meth == 'newton-cg':
-        return _minimize_newtoncg(fun, x0, args, jac, hess, hessp, callback,
-                                  **options)
+        res = _minimize_newtoncg(fun, x0, args, jac, hess, hessp, callback,
+                                 **options)
     elif meth == 'l-bfgs-b':
-        return _minimize_lbfgsb(fun, x0, args, jac, bounds,
-                                callback=callback, **options)
+        res = _minimize_lbfgsb(fun, x0, args, jac, bounds,
+                               callback=callback, **options)
     elif meth == 'tnc':
-        return _minimize_tnc(fun, x0, args, jac, bounds, callback=callback,
-                             **options)
+        res = _minimize_tnc(fun, x0, args, jac, bounds, callback=callback,
+                            **options)
     elif meth == 'cobyla':
-        return _minimize_cobyla(fun, x0, args, constraints, **options)
+        res = _minimize_cobyla(fun, x0, args, constraints, callback=callback,
+                                **options)
     elif meth == 'slsqp':
-        return _minimize_slsqp(fun, x0, args, jac, bounds,
-                               constraints, callback=callback, **options)
+        res = _minimize_slsqp(fun, x0, args, jac, bounds,
+                              constraints, callback=callback, **options)
     elif meth == 'trust-constr':
-        return _minimize_trustregion_constr(fun, x0, args, jac, hess, hessp,
-                                            bounds, constraints,
-                                            callback=callback, **options)
-    elif meth == 'dogleg':
-        return _minimize_dogleg(fun, x0, args, jac, hess,
-                                callback=callback, **options)
-    elif meth == 'trust-ncg':
-        return _minimize_trust_ncg(fun, x0, args, jac, hess, hessp,
-                                   callback=callback, **options)
-    elif meth == 'trust-krylov':
-        return _minimize_trust_krylov(fun, x0, args, jac, hess, hessp,
-                                      callback=callback, **options)
-    elif meth == 'trust-exact':
-        return _minimize_trustregion_exact(fun, x0, args, jac, hess,
+        res = _minimize_trustregion_constr(fun, x0, args, jac, hess, hessp,
+                                           bounds, constraints,
                                            callback=callback, **options)
+    elif meth == 'dogleg':
+        res = _minimize_dogleg(fun, x0, args, jac, hess,
+                               callback=callback, **options)
+    elif meth == 'trust-ncg':
+        res = _minimize_trust_ncg(fun, x0, args, jac, hess, hessp,
+                                  callback=callback, **options)
+    elif meth == 'trust-krylov':
+        res = _minimize_trust_krylov(fun, x0, args, jac, hess, hessp,
+                                     callback=callback, **options)
+    elif meth == 'trust-exact':
+        res = _minimize_trustregion_exact(fun, x0, args, jac, hess,
+                                          callback=callback, **options)
     else:
         raise ValueError('Unknown solver %s' % method)
+
+    if remove_vars:
+        res.x = _add_to_array(res.x, i_fixed, x_fixed)
+        res.jac = _add_to_array(res.jac, i_fixed, np.nan)
+        if "hess_inv" in res:
+            res.hess_inv = None  # unknown
+
+    return res
 
 
 def minimize_scalar(fun, bracket=None, bounds=None, args=(),
@@ -674,10 +741,12 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
     method : str or callable, optional
         Type of solver.  Should be one of:
 
-            - 'Brent'     :ref:`(see here) <optimize.minimize_scalar-brent>`
-            - 'Bounded'   :ref:`(see here) <optimize.minimize_scalar-bounded>`
-            - 'Golden'    :ref:`(see here) <optimize.minimize_scalar-golden>`
+            - :ref:`Brent <optimize.minimize_scalar-brent>`
+            - :ref:`Bounded <optimize.minimize_scalar-bounded>`
+            - :ref:`Golden <optimize.minimize_scalar-golden>`
             - custom - a callable object (added in version 0.14.0), see below
+
+        See the 'Notes' section for details of each solver.
 
     tol : float, optional
         Tolerance for termination. For detailed control, use solver-specific
@@ -788,6 +857,11 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         else:
             options.setdefault('xtol', tol)
 
+    # replace boolean "disp" option, if specified, by an integer value.
+    disp = options.get('disp')
+    if isinstance(disp, bool):
+        options['disp'] = 2 * int(disp)
+
     if meth == '_custom':
         return method(fun, args=args, bracket=bracket, bounds=bounds, **options)
     elif meth == 'brent':
@@ -796,11 +870,6 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         if bounds is None:
             raise ValueError('The `bounds` parameter is mandatory for '
                              'method `bounded`.')
-        # replace boolean "disp" option, if specified, by an integer value, as
-        # expected by _minimize_scalar_bounded()
-        disp = options.get('disp')
-        if isinstance(disp, bool):
-            options['disp'] = 2 * int(disp)
         return _minimize_scalar_bounded(fun, bounds, args, **options)
     elif meth == 'golden':
         return _minimize_scalar_golden(fun, bracket, args, **options)
@@ -808,13 +877,54 @@ def minimize_scalar(fun, bracket=None, bounds=None, args=(),
         raise ValueError('Unknown solver %s' % method)
 
 
+def _remove_from_bounds(bounds, i_fixed):
+    """Removes fixed variables from a `Bounds` instance"""
+    lb = bounds.lb[~i_fixed]
+    ub = bounds.ub[~i_fixed]
+    return Bounds(lb, ub)  # don't mutate original Bounds object
+
+
+def _remove_from_func(fun_in, i_fixed, x_fixed, min_dim=None, remove=0):
+    """Wraps a function such that fixed variables need not be passed in"""
+    def fun_out(x_in, *args, **kwargs):
+        x_out = np.zeros_like(i_fixed, dtype=x_in.dtype)
+        x_out[i_fixed] = x_fixed
+        x_out[~i_fixed] = x_in
+        y_out = fun_in(x_out, *args, **kwargs)
+        y_out = np.array(y_out)
+
+        if min_dim == 1:
+            y_out = np.atleast_1d(y_out)
+        elif min_dim == 2:
+            y_out = np.atleast_2d(y_out)
+
+        if remove == 1:
+            y_out = y_out[..., ~i_fixed]
+        elif remove == 2:
+            y_out = y_out[~i_fixed, ~i_fixed]
+
+        return y_out
+    return fun_out
+
+
+def _add_to_array(x_in, i_fixed, x_fixed):
+    """Adds fixed variables back to an array"""
+    i_free = ~i_fixed
+    if x_in.ndim == 2:
+        i_free = i_free[:, None] @ i_free[None, :]
+    x_out = np.zeros_like(i_free, dtype=x_in.dtype)
+    x_out[~i_free] = x_fixed
+    x_out[i_free] = x_in.ravel()
+    return x_out
+
+
 def standardize_bounds(bounds, x0, meth):
     """Converts bounds to the form required by the solver."""
-    if meth in {'trust-constr', 'powell', 'nelder-mead'}:
+    if meth in {'trust-constr', 'powell', 'nelder-mead', 'new'}:
         if not isinstance(bounds, Bounds):
             lb, ub = old_bound_to_new(bounds)
             bounds = Bounds(lb, ub)
-    elif meth in ('l-bfgs-b', 'tnc', 'slsqp'):
+    elif meth in ('l-bfgs-b', 'tnc', 'slsqp', 'old'):
         if isinstance(bounds, Bounds):
             bounds = new_bounds_to_old(bounds.lb, bounds.ub, x0.shape[0])
     return bounds
@@ -824,9 +934,12 @@ def standardize_constraints(constraints, x0, meth):
     """Converts constraints to the form required by the solver."""
     all_constraint_types = (NonlinearConstraint, LinearConstraint, dict)
     new_constraint_types = all_constraint_types[:-1]
-    if isinstance(constraints, all_constraint_types):
+    if constraints is None:
+        constraints = []
+    elif isinstance(constraints, all_constraint_types):
         constraints = [constraints]
-    constraints = list(constraints)  # ensure it's a mutable sequence
+    else:
+        constraints = list(constraints)  # ensure it's a mutable sequence
 
     if meth == 'trust-constr':
         for i, con in enumerate(constraints):

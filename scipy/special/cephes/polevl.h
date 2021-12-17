@@ -61,7 +61,6 @@
 #ifndef CEPHES_POLEV
 #define CEPHES_POLEV
 
-#include "cephes.h"
 #include <numpy/npy_common.h>
 
 static NPY_INLINE double polevl(double x, const double coef[], int N)
