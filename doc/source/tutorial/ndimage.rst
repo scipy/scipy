@@ -971,7 +971,11 @@ Binary morphology
             [ True,  True,  True]], dtype=bool)
 
 Most binary morphology functions can be expressed in terms of the
-basic operations erosion and dilation.
+basic operations erosion and dilation, which can be seen here:
+
+  .. plot:: tutorial/examples/morphology_binary_dilation_erosion.py
+      :align: center
+      :include-source: 0
 
 - The :func:`binary_erosion` function implements binary erosion of
   arrays of arbitrary rank with the given structuring element. The
