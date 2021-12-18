@@ -17,6 +17,7 @@
 *.tmp
 *.vim
 tags
+.venv/
 .theia/
 .vscode/
 
@@ -283,6 +284,7 @@ scipy/stats/_mvnmodule.c
 scipy/stats/_statlibmodule.c
 scipy/stats/vonmises_cython.c
 scipy/stats/_stats.c
+scipy/stats/_levy_stable/levyst.c
 scipy/stats/_biasedurn.cxx
 scipy/stats/_biasedurn.pyx
 scipy/stats/biasedurn.cxx
