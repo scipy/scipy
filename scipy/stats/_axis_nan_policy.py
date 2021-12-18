@@ -108,7 +108,7 @@ def _remove_sentinel(samples, paired, sentinel):
 
 def _masked_arrays_2_sentinel_arrays(samples):
     # masked arrays in `samples` are converted to regular arrays, and values
-    # corresponding with masked elements ar replaced with a sentinel value
+    # corresponding with masked elements are replaced with a sentinel value
 
     # return without modifying arrays if none have a mask
     has_mask = False
@@ -134,7 +134,7 @@ def _masked_arrays_2_sentinel_arrays(samples):
             if np.any(sample == sentinel):
                 sentinel *= (1 - 2*eps)  # choose a new sentinel value
                 break
-        else: # when sentinel value is OK, break the while loop
+        else:  # when sentinel value is OK, break the while loop
             break
 
     # replace masked elements with sentinel value
