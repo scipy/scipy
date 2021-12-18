@@ -5972,8 +5972,13 @@ class kappa3_gen(rv_continuous):
         return (a/(q**-a - 1.0))**(1.0/a)
 
     def _stats(self, a):
-        outputs = [None if i < a else np.nan for i in range(1, 5)]
+        outputs = [None if np.any(i < a) else np.nan for i in range(1, 5)]
         return outputs[:]
+
+    def _mom1_sc(self, m, *args):
+        if np.any(m >= args[0]):
+            return np.nan
+        return integrate.quad(self._mom_integ1, 0, 1, args=(m,)+args)[0]
 
 
 kappa3 = kappa3_gen(a=0.0, name='kappa3')
