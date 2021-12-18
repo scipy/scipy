@@ -2625,6 +2625,11 @@ def gstd(a, axis=0, ddof=1):
     The default value for `ddof` is different to the default value (0) used
     by other ddof containing functions, such as ``np.std`` and ``np.nanstd``.
 
+    References
+    ----------
+    .. [1] Kirkwood, T. B., "Geometric means and measures of dispersion",
+           Biometrics, vol. 35, pp. 908-909, 1979
+
     Examples
     --------
     Find the geometric standard deviation of a log-normally distributed sample.
