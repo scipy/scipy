@@ -11,7 +11,7 @@ from . import _continuous_distns
 from . import _discrete_distns
 
 from ._continuous_distns import *
-from ._levy_stable_distn import levy_stable
+from ._levy_stable import levy_stable
 from ._discrete_distns import *
 from ._entropy import entropy
 

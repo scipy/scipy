@@ -97,6 +97,7 @@ def configuration(parent_package='', top_path=None):
     config.add_data_files('*.pyi')
 
     # add levy stable module
+    config.add_data_files(join('_levy_stable', '*.py'))
     config.add_library(
         'levyst',
         sources=[join('_levy_stable/c_src', 'levyst.c')],
