@@ -191,7 +191,7 @@ def _pdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
         # since S(1/2, 1, gamma, delta; <x>) ==
         # S(1/2, 1, gamma, gamma + delta; <x0>).
         _x = x0 + 1
-        if _x < 0:
+        if _x <= 0:
             return 0
 
         return 1 / np.sqrt(2 * np.pi * _x) / _x * np.exp(-1 / (2 * _x))
@@ -315,7 +315,7 @@ def _cdf_single_value_piecewise_Z0(x0, alpha, beta, **kwds):
         # since S(1/2, 1, gamma, delta; <x>) ==
         # S(1/2, 1, gamma, gamma + delta; <x0>).
         _x = x0 + 1
-        if _x < 0:
+        if _x <= 0:
             return 0
 
         return sc.erfc(np.sqrt(0.5 / _x))
