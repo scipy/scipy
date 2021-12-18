@@ -25,6 +25,11 @@ from .HConst cimport (
     HighsModelStatusREACHED_ITERATION_LIMIT,
 
     ObjSenseMINIMIZE,
+    kContinuous,
+    kInteger,
+    kSemiContinuous,
+    kSemiInteger,
+    kImplicitInteger,
 )
 from .HighsIO cimport (
     kInfo,
@@ -111,3 +116,10 @@ HIGHS_SIMPLEX_PRIMAL_EDGE_WEIGHT_STRATEGY_DEVEX = <int> SIMPLEX_PRIMAL_EDGE_WEIG
 
 # Objective sense
 HIGHS_OBJECTIVE_SENSE_MINIMIZE = <int> ObjSenseMINIMIZE
+
+# Variable types
+HIGHS_VAR_TYPE_CONTINUOUS = <int> kContinuous
+HIGHS_VAR_TYPE_INTEGER = <int> kInteger
+HIGHS_VAR_TYPE_SEMI_CONTINUOUS = <int> kSemiContinuous
+HIGHS_VAR_TYPE_SEMI_INTEGER = <int> kSemiInteger
+HIGHS_VAR_TYPE_IMPLICIT_INTEGER = <int> kImplicitInteger

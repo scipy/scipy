@@ -48,6 +48,8 @@ from ._highs._highs_constants import (
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
+
+    HIGHS_VAR_TYPE_CONTINUOUS,
 )
 from scipy.sparse import csc_matrix, vstack, issparse
 
@@ -82,6 +84,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    primal_feasibility_tolerance=None,
                    ipm_optimality_tolerance=None,
                    simplex_dual_edge_weight_strategy=None,
+                   integrality=None,
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -364,8 +367,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
+    if integrality is None or np.sum(integrality) == 0:
+        integrality = np.empty(0)
+    else:
+        integrality = np.array(integrality)
+
     res = _highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
-                         lb, ub, options)
+                         lb, ub, integrality.astype(np.uint8), options)
+    print(res)
 
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s
@@ -394,15 +403,15 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     # HiGHS will report OPTIMAL if the scaled model is solved to optimality
     # even if the unscaled original model is infeasible;
     # Catch that case here and provide a more useful message
-    if ((res['status'] == MODEL_STATUS_OPTIMAL) and
-            (res['unscaled_status'] != res['status'])):
-        _unscaled_status, unscaled_message = statuses[res["unscaled_status"]]
-        status, message = 4, ('An optimal solution to the scaled model was '
-                              f'found but was {unscaled_message} in the '
-                              'unscaled model. For more information run with '
-                              'the option `disp: True`.')
-    else:
-        status, message = statuses[res['status']]
+    # if ((res['status'] == MODEL_STATUS_OPTIMAL) and
+    #         (res['unscaled_status'] != res['status'])):
+    #     _unscaled_status, unscaled_message = statuses[res["unscaled_status"]]
+    #     status, message = 4, ('An optimal solution to the scaled model was '
+    #                           f'found but was {unscaled_message} in the '
+    #                           'unscaled model. For more information run with '
+    #                           'the option `disp: True`.')
+    # else:
+    status, message = statuses[res['status']]
 
     x = np.array(res['x']) if 'x' in res else None
     sol = {'x': x,

@@ -11,6 +11,7 @@ from libc.stdio cimport stdout
 from libcpp.string cimport string
 from libcpp.memory cimport unique_ptr
 from libcpp.map cimport map as cppmap
+from libcpp.cast cimport reinterpret_cast
 
 from .HighsIO cimport (
     kWarning,
@@ -41,7 +42,8 @@ from .HConst cimport (
     HighsBasisStatusLOWER,
     HighsBasisStatusUPPER,
 
-    MatrixFormatkColwise
+    MatrixFormatkColwise,
+    HighsVarType,
 )
 from .Highs cimport Highs
 from .HighsStatus cimport (
@@ -238,6 +240,9 @@ cdef apply_options(dict options, Highs & highs):
                 warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
 
+ctypedef HighsVarType* HighsVarType_ptr
+
+
 def _highs_wrapper(
         double[::1] c,
         int[::1] astart,
@@ -247,6 +252,7 @@ def _highs_wrapper(
         double[::1] rhs,
         double[::1] lb,
         double[::1] ub,
+        np.uint8_t[::1] integrality,
         dict options):
     '''Solve linear programs using HiGHS [1]_.
 
@@ -566,6 +572,7 @@ def _highs_wrapper(
     cdef int numcol = c.size
     cdef int numrow = rhs.size
     cdef int numnz = avalue.size
+    cdef int numintegrality = integrality.size
 
     # Fill up a HighsLp object
     cdef HighsLp lp
@@ -584,6 +591,13 @@ def _highs_wrapper(
     lp.a_matrix_.start_.resize(numcol + 1)
     lp.a_matrix_.index_.resize(numnz)
     lp.a_matrix_.value_.resize(numnz)
+
+    # only need to set integrality if it's not's empty
+    cdef HighsVarType * integrality_ptr = NULL
+    if numintegrality > 0:
+        lp.integrality_.resize(numintegrality)
+        integrality_ptr = reinterpret_cast[HighsVarType_ptr](&integrality[0])
+        lp.integrality_.assign(integrality_ptr, integrality_ptr + numcol)
 
     # Explicitly create pointers to pass to HiGHS C++ API;
     # do checking to make sure null memory-views are not
@@ -617,6 +631,7 @@ def _highs_wrapper(
         lp.col_cost_.empty()
         lp.col_lower_.empty()
         lp.col_upper_.empty()
+        lp.integrality_.empty()
     if numnz > 0:
         astart_ptr = &astart[0]
         aindex_ptr = &aindex[0]
@@ -629,6 +644,9 @@ def _highs_wrapper(
         lp.a_matrix_.index_.empty()
         lp.a_matrix_.value_.empty()
 
+    # TODO: debug statement, remove
+    print("is MIP?", lp.isMip())
+
     # Create the options
     cdef Highs highs
     apply_options(options, highs)
@@ -639,6 +657,7 @@ def _highs_wrapper(
     if init_status != HighsStatusOK:
         if init_status != HighsStatusWarning:
             err_model_status = HighsModelStatusMODEL_ERROR
+            print("in this error")
             return {
                 'status': <int> err_model_status,
                 'message': highs.modelStatusToString(err_model_status).decode(),
@@ -647,7 +666,9 @@ def _highs_wrapper(
     # Solve the LP
     highs.setBasis()
     cdef HighsStatus run_status = highs.run()
+    print(run_status)
     if run_status == HighsStatusError:
+        print("in this error instead")
         return {
             'status': <int> highs.getModelStatus(),
             'message': HighsStatusToString(run_status).decode(),
