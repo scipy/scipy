@@ -5439,17 +5439,20 @@ class kappa4_gen(rv_continuous):
                            default=np.nan)
 
     def _stats(self, h, k):
-        if h >= 0 and k >= 0:
-            maxr = 5
-        elif h < 0 and k >= 0:
-            maxr = int(-1.0/h*k)
-        elif k < 0:
-            maxr = int(-1.0/k)
-        else:
-            maxr = 5
+        maxr = np.where(np.logical_and(h >= 0, k >= 0), 5, np.nan)
+        maxr = np.where(np.logical_and(h < 0, k >= 0, np.isnan(maxr)),
+                        (-1.0/h*k).astype(int), maxr)
+        maxr = np.where(np.logical_and(k < 0, np.isnan(maxr)),
+                        (-1.0/k).astype(int), maxr)
+        maxr = np.where(np.isnan(maxr), 5, maxr)
 
-        outputs = [None if r < maxr else np.nan for r in range(1, 5)]
+        outputs = [None if np.any(r < maxr)  else np.nan for r in range(1, 5)]
         return outputs[:]
+
+    def _mom1_sc(self, m, *args):
+        if np.any(m >= args[0]):
+            return np.nan
+        return integrate.quad(self._mom_integ1, 0, 1, args=(m,)+args)[0]
 
 
 kappa4 = kappa4_gen(name='kappa4')

@@ -831,3 +831,13 @@ def test_kappa3_array_gh13582():
                     for moment in moments])
     res2 = np.array(stats.kappa3.stats(shapes, moments=moments))
     npt.assert_allclose(res, res2)
+
+
+def test_kappa4_array_gh13582():
+    h = [0.5, 1.5, 2.5, 3.5, 4.5]
+    k = [0.5, 1, 1.5, 2, 3]
+    moments = 'mvsk'
+    res = np.array([[stats.kappa4.stats(h[i], k[i], moments=moment)
+                   for i in range(5)] for moment in moments])
+    res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
+    npt.assert_allclose(res, res2)
