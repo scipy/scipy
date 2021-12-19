@@ -80,7 +80,8 @@ def _assert_allclose_sparse(a, b, **kwargs):
     assert_allclose(a, b, **kwargs)
 
 
-def _check_laplacian(A, desired_L, desired_d, normed, use_out_degree):
+def _check_laplacian(A, desired_L, desired_d,
+                     normed, use_out_degree, inplace):
     for arr_type in np.array, sparse.csr_matrix, sparse.coo_matrix:
         for t in int, float, complex:
             adj = arr_type(A, dtype=t)
@@ -93,39 +94,51 @@ def _check_laplacian(A, desired_L, desired_d, normed, use_out_degree):
             _assert_allclose_sparse(d, desired_d, atol=1e-12)
 
 
+@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+@pytest.mark.parametrize("inplace", [FASLE, TRUE])
+@pytest.mark.parametrize("normed", [FASLE, TRUE])
+@pytest.mark.parametrize("use_out_degree", [FASLE, TRUE])
 def test_asymmetric_laplacian():
     # adjacency matrix
     A = [[0, 1, 0],
          [4, 2, 0],
          [0, 0, 0]]
+    A = A.astype(dtype)
 
-    # Laplacian matrix using out-degree
-    L = [[1, -1, 0],
-         [-4, 4, 0],
-         [0, 0, 0]]
-    d = [1, 4, 0]
-    _check_laplacian(A, L, d, normed=False, use_out_degree=True)
+    if not normed and use_out_degree:
+        # Laplacian matrix using out-degree
+        L = [[1, -1, 0],
+             [-4, 4, 0],
+             [0, 0, 0]]
+        d = [1, 4, 0]
 
-    # normalized Laplacian matrix using out-degree
-    L = [[1, -0.5, 0],
-         [-2, 1, 0],
-         [0, 0, 0]]
-    d = [1, 2, 1]
-    _check_laplacian(A, L, d, normed=True, use_out_degree=True)
+    if normed and use_out_degree:
+        # normalized Laplacian matrix using out-degree
+        L = [[1, -0.5, 0],
+             [-2, 1, 0],
+             [0, 0, 0]]
+        d = [1, 2, 1]
 
-    # Laplacian matrix using in-degree
-    L = [[4, -1, 0],
-         [-4, 1, 0],
-         [0, 0, 0]]
-    d = [4, 1, 0]
-    _check_laplacian(A, L, d, normed=False, use_out_degree=False)
+    if not normed and not use_out_degree:
+        # Laplacian matrix using in-degree
+        L = [[4, -1, 0],
+             [-4, 1, 0],
+             [0, 0, 0]]
+        d = [4, 1, 0]
 
-    # normalized Laplacian matrix using in-degree
-    L = [[1, -0.5, 0],
-         [-2, 1, 0],
-         [0, 0, 0]]
-    d = [2, 1, 1]
-    _check_laplacian(A, L, d, normed=True, use_out_degree=False)
+    if normed and not use_out_degree:
+        # normalized Laplacian matrix using in-degree
+        L = [[1, -0.5, 0],
+             [-2, 1, 0],
+             [0, 0, 0]]
+        d = [2, 1, 1]
+
+    L = L.astype(dtype)
+    d = d.astype(dtype)
+    _check_laplacian(A, L, d,
+                     normed=normed,
+                     use_out_degree=use_out_degree,
+                     inplace=inplace)
 
 
 def test_sparse_formats():
