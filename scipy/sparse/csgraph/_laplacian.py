@@ -89,7 +89,7 @@ def _setdiag_dense(A, d):
 
 
 def _laplacian_sparse(graph, normed=False, axis=0,
-                      inplace=False):
+                      inplace=inplace):
     if graph.format in ('lil', 'dok'):
         m = graph.tocoo()
         needs_copy = False
@@ -117,7 +117,7 @@ def _laplacian_sparse(graph, normed=False, axis=0,
 
 
 def _laplacian_dense(graph, normed=False, axis=0,
-                     inplace=False):
+                     inplace=inplace):
     if type(graph) is np.ndarray and inplace:
         m = graph
     else:
