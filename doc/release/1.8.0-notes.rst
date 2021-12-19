@@ -423,6 +423,7 @@ Authors
 * Kai Striega
 * Diana Sukhoverkhova
 * Søren Fuglede Jørgensen
+* Masayuki Takagi +
 * Mike Taves
 * Ben Thompson +
 * Bas van Beek
@@ -443,7 +444,7 @@ Authors
 * Gang Zhao +
 * 赵丰 (Zhao Feng) +
 
-A total of 132 people contributed to this release.
+A total of 133 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -537,6 +538,10 @@ Issues closed for 1.8.0
 * `#15051 <https://github.com/scipy/scipy/issues/15051>`__: BUG: test failures on aarch in wheel builder repo
 * `#15064 <https://github.com/scipy/scipy/issues/15064>`__: MAINT: \`interpolation\` keyword is renamed to \`method\` in...
 * `#15103 <https://github.com/scipy/scipy/issues/15103>`__: BUG: scipy.stats.chi.mean returns nan for large df due to use...
+* `#15186 <https://github.com/scipy/scipy/issues/15186>`__: Fix use of \`pytest.warns(None)\` for pytest 7.0.0
+* `#15210 <https://github.com/scipy/scipy/issues/15210>`__: BUG: A sparse matrix raises a ValueError when \`__rmul__\` with...
+* `#15224 <https://github.com/scipy/scipy/issues/15224>`__: BUG: 0th power of sparse array/matrix always returns the identity...
+* `#15228 <https://github.com/scipy/scipy/issues/15228>`__: BUG: bounded L-BFGS-B doesn't work with a scalar.
 
 ***********************
 Pull requests for 1.8.0
@@ -899,4 +904,15 @@ Pull requests for 1.8.0
 * `#15144 <https://github.com/scipy/scipy/pull/15144>`__: BUG: Add missing import of 'errno' to runtests.py
 * `#15157 <https://github.com/scipy/scipy/pull/15157>`__: ENH: rebased version of gh-14279
 * `#15159 <https://github.com/scipy/scipy/pull/15159>`__: DOC: stats: fix a header in \`stats.sampling\` tutorial
+* `#15161 <https://github.com/scipy/scipy/pull/15161>`__: DOC: 1.8.0 relnotes update
+* `#15175 <https://github.com/scipy/scipy/pull/15175>`__: MAINT: 1.8.0 backports for relnotes and .gitignore
+* `#15181 <https://github.com/scipy/scipy/pull/15181>`__: BUG: The pytest decorator for conditional skipping is 'skipif'
+* `#15191 <https://github.com/scipy/scipy/pull/15191>`__: MAINT: version bounds before 1.8.0rc1
+* `#15192 <https://github.com/scipy/scipy/pull/15192>`__: MAINT: Replace use of \`pytest.warns(None)\` with \`warnings.catch_warnings\`
+* `#15194 <https://github.com/scipy/scipy/pull/15194>`__: BUG: stats: Fix numerical issues of recipinvgauss
+* `#15214 <https://github.com/scipy/scipy/pull/15214>`__: TST: sparse.linalg: store only PROPACK test matrices; generate...
+* `#15225 <https://github.com/scipy/scipy/pull/15225>`__: Make 0th power of a sparse array/matrix return the identity with...
+* `#15229 <https://github.com/scipy/scipy/pull/15229>`__: BUG: minimize should work with a scalar closes #15228
+* `#15232 <https://github.com/scipy/scipy/pull/15232>`__: BUG: Add rmul for sparse arrays
+* `#15236 <https://github.com/scipy/scipy/pull/15236>`__: BLD: update setup.py for Python 3.10
 
