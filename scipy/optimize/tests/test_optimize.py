@@ -1127,6 +1127,8 @@ class TestOptimizeSimple(CheckOptimize):
                 kwargs['iter'] = 5
             elif method == 'fmin_tnc':
                 kwargs['maxfun'] = 100
+            elif method in ('fmin', 'fmin_powell'):
+                kwargs['maxiter'] = 3500
             else:
                 kwargs['maxiter'] = 5
         else:
