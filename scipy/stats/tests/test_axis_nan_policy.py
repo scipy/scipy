@@ -679,6 +679,7 @@ def test_mixed_mask_nan_1():
     np.testing.assert_array_equal(res3, res)
     np.testing.assert_array_equal(res4, res)
 
+
 def test_mixed_mask_nan_2():
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # check for expected interaction between masks and nans
