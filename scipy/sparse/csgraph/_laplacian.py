@@ -13,7 +13,13 @@ from scipy.sparse import isspmatrix
 
 ###############################################################################
 # Graph laplacian
-def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
+def laplacian(
+    csgraph,
+    normed=False,
+    return_diag=False,
+    use_out_degree=False,
+    inplace=False,
+    ):
     """
     Return the Laplacian matrix of a directed graph.
 
@@ -28,6 +34,9 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
     use_out_degree : bool, optional
         If True, then use out-degree instead of in-degree.
         This distinction matters only if the graph is asymmetric.
+        Default: False.
+    inplace: bool, optional
+        If True, then change csgraph in place if possible, to save memory.
         Default: False.
 
     Returns
@@ -73,7 +82,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
 
     create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
     degree_axis = 1 if use_out_degree else 0
-    lap, d = create_lap(csgraph, normed=normed, axis=degree_axis)
+    lap, d = create_lap(csgraph, normed=normed, axis=degree_axis, inplace=False)
     if return_diag:
         return lap, d
     return lap
@@ -83,13 +92,14 @@ def _setdiag_dense(A, d):
     A.flat[::len(d)+1] = d
 
 
-def _laplacian_sparse(graph, normed=False, axis=0):
+def _laplacian_sparse(graph, normed=False, axis=0, inplace=False):
     if graph.format in ('lil', 'dok'):
         m = graph.tocoo()
         needs_copy = False
     else:
         m = graph
-        needs_copy = True
+        if not inplace:
+            needs_copy = True
     w = m.sum(axis=axis).getA1() - m.diagonal()
     if normed:
         m = m.tocoo(copy=needs_copy)
@@ -109,8 +119,11 @@ def _laplacian_sparse(graph, normed=False, axis=0):
     return m, w
 
 
-def _laplacian_dense(graph, normed=False, axis=0):
-    m = np.array(graph)
+def _laplacian_dense(graph, normed=False, axis=0, inplace=False):
+    if type(graph) is numpy.ndarray and inplace:
+        m = graph
+    else:
+        m = np.array(graph)
     np.fill_diagonal(m, 0)
     w = m.sum(axis=axis)
     if normed:
