@@ -78,7 +78,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
     degree_axis = 1 if use_out_degree else 0
     lap, d = create_lap(csgraph, normed=normed, axis=degree_axis,
-                        inplace=False)
+                        inplace=inplace)
     if return_diag:
         return lap, d
     return lap
@@ -89,7 +89,7 @@ def _setdiag_dense(A, d):
 
 
 def _laplacian_sparse(graph, normed=False, axis=0,
-                      inplace=inplace):
+                      inplace=False):
     if graph.format in ('lil', 'dok'):
         m = graph.tocoo()
         needs_copy = False
@@ -117,7 +117,7 @@ def _laplacian_sparse(graph, normed=False, axis=0,
 
 
 def _laplacian_dense(graph, normed=False, axis=0,
-                     inplace=inplace):
+                     inplace=False):
     if type(graph) is np.ndarray and inplace:
         m = graph
     else:
