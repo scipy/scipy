@@ -906,6 +906,7 @@ Pull requests for 1.8.0
 * `#15159 <https://github.com/scipy/scipy/pull/15159>`__: DOC: stats: fix a header in \`stats.sampling\` tutorial
 * `#15161 <https://github.com/scipy/scipy/pull/15161>`__: DOC: 1.8.0 relnotes update
 * `#15175 <https://github.com/scipy/scipy/pull/15175>`__: MAINT: 1.8.0 backports for relnotes and .gitignore
+* `#15181 <https://github.com/scipy/scipy/pull/15181>`__: BUG: The pytest decorator for conditional skipping is 'skipif'
 * `#15191 <https://github.com/scipy/scipy/pull/15191>`__: MAINT: version bounds before 1.8.0rc1
 * `#15192 <https://github.com/scipy/scipy/pull/15192>`__: MAINT: Replace use of \`pytest.warns(None)\` with \`warnings.catch_warnings\`
 * `#15194 <https://github.com/scipy/scipy/pull/15194>`__: BUG: stats: Fix numerical issues of recipinvgauss
