@@ -120,7 +120,7 @@ def _laplacian_sparse(graph, normed=False, axis=0, inplace=False):
 
 
 def _laplacian_dense(graph, normed=False, axis=0, inplace=False):
-    if type(graph) is numpy.ndarray and inplace:
+    if type(graph) is np.ndarray and inplace:
         m = graph
     else:
         m = np.array(graph)
