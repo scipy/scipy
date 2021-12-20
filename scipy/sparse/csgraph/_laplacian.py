@@ -90,9 +90,9 @@ def _setdiag_dense(A, d):
 
 def _laplacian_sparse(graph, normed=False, axis=0,
                       inplace=False):
+    needs_copy = False
     if graph.format in ('lil', 'dok'):
         m = graph.tocoo()
-        needs_copy = False
     else:
         m = graph
         if not inplace:
