@@ -2614,6 +2614,11 @@ def gstd(a, axis=0, ddof=1):
         An array of the geometric standard deviation. If `axis` is None or `a`
         is a 1d array a float is returned.
 
+    See Also
+    --------
+    gmean : Geometric mean
+    numpy.std : Standard deviation
+
     Notes
     -----
     As the calculation requires the use of logarithms the geometric standard
