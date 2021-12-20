@@ -25,7 +25,7 @@ def _explicit_laplacian(x, normed=False):
     return y
 
 
-def _check_symmetric_graph_laplacian(mat, normed):
+def _check_symmetric_graph_laplacian(mat, normed, inplace):
     if not hasattr(mat, 'shape'):
         mat = eval(mat, dict(np=np, sparse=sparse))
 
@@ -35,16 +35,17 @@ def _check_symmetric_graph_laplacian(mat, normed):
     else:
         sp_mat = sparse.csr_matrix(mat)
 
-    laplacian = csgraph.laplacian(mat, normed=normed)
+    laplacian = csgraph.laplacian(mat, normed=normed, inplace=inplace)
     n_nodes = mat.shape[0]
     if not normed:
         assert_array_almost_equal(laplacian.sum(axis=0), np.zeros(n_nodes))
     assert_array_almost_equal(laplacian.T, laplacian)
     assert_array_almost_equal(
-        laplacian, csgraph.laplacian(sp_mat, normed=normed).toarray())
+        laplacian, csgraph.laplacian(sp_mat, normed=normed, inplace=inplace
+                                    ).toarray())
 
     assert_array_almost_equal(laplacian,
-            _explicit_laplacian(mat, normed=normed))
+            _explicit_laplacian(mat, normed=normed, inplace=inplace))
 
 
 def test_laplacian_value_error():
@@ -146,5 +147,6 @@ def test_sparse_formats():
     for fmt in ('csr', 'csc', 'coo', 'lil', 'dok', 'dia', 'bsr'):
         mat = sparse.diags([1, 1], [-1, 1], shape=(4,4), format=fmt)
         for normed in True, False:
-            _check_symmetric_graph_laplacian(mat, normed)
+            for inplace in True, False:
+                _check_symmetric_graph_laplacian(mat, normed, inplace)
 
