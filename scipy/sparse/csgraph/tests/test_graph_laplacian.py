@@ -35,6 +35,7 @@ def _check_symmetric_graph_laplacian(mat, normed, inplace):
     else:
         sp_mat = sparse.csr_matrix(mat)
 
+    explicit_laplacian = _explicit_laplacian(mat, normed=normed)
     laplacian = csgraph.laplacian(mat, normed=normed, inplace=inplace)
     n_nodes = mat.shape[0]
     if not normed:
@@ -44,8 +45,7 @@ def _check_symmetric_graph_laplacian(mat, normed, inplace):
         laplacian, csgraph.laplacian(sp_mat, normed=normed,
                                      inplace=inplace).toarray())
 
-    assert_array_almost_equal(laplacian,
-            _explicit_laplacian(mat, normed=normed))
+    assert_array_almost_equal(laplacian, explicit_laplacian)
 
 
 def test_laplacian_value_error():
@@ -84,24 +84,25 @@ def _assert_allclose_sparse(a, b, **kwargs):
 
 
 def _check_laplacian(A, desired_L, desired_d,
-                     normed, use_out_degree, inplace):
-    for arr_type in np.array, sparse.csr_matrix, sparse.coo_matrix:
-        for t in int, float, complex:
-            adj = arr_type(A, dtype=t)
-            L = csgraph.laplacian(adj, normed=normed, return_diag=False,
-                                  use_out_degree=use_out_degree)
-            _assert_allclose_sparse(L, desired_L, atol=1e-12)
-            L, d = csgraph.laplacian(adj, normed=normed, return_diag=True,
-                                  use_out_degree=use_out_degree)
-            _assert_allclose_sparse(L, desired_L, atol=1e-12)
-            _assert_allclose_sparse(d, desired_d, atol=1e-12)
+                     normed, use_out_degree, inplace, dtype, arr_type):
+    adj = arr_type(A, dtype=dtype)
+    L, d = csgraph.laplacian(adj, normed=normed, return_diag=True,
+                          use_out_degree=use_out_degree)
+    _assert_allclose_sparse(L, desired_L, atol=1e-12)
+    _assert_allclose_sparse(d, desired_d, atol=1e-12)
 
 
-@pytest.mark.parametrize("dtype", [np.float32, np.float64])
+REAL_DTYPES = {np.intc, np.int_, np.longlong,
+               np.single, np.double, np.longdouble}
+COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
+# use sorted tuple to ensure fixed order of tests
+DTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("arr_type", [np.array, sparse.csr_matrix, sparse.coo_matrix])
 @pytest.mark.parametrize("inplace", [True, False])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
-def test_asymmetric_laplacian(use_out_degree, normed, inplace, dtype):
+def test_asymmetric_laplacian(use_out_degree, normed, inplace, dtype, arr_type):
     # adjacency matrix
     A = [[0, 1, 0],
          [4, 2, 0],
@@ -136,18 +137,20 @@ def test_asymmetric_laplacian(use_out_degree, normed, inplace, dtype):
              [0, 0, 0]]
         d = [2, 1, 1]
 
-    L = np.array(L).astype(dtype)
-    d = np.array(d).astype(dtype)
+    # L = np.array(L).astype(dtype)
+    # d = np.array(d).astype(dtype)
     _check_laplacian(A, L, d,
                      normed=normed,
                      use_out_degree=use_out_degree,
-                     inplace=inplace)
+                     inplace=inplace,
+                     dtype=dtype
+                    )
 
 
-def test_sparse_formats():
-    for fmt in ('csr', 'csc', 'coo', 'lil', 'dok', 'dia', 'bsr'):
-        mat = sparse.diags([1, 1], [-1, 1], shape=(4,4), format=fmt)
-        for normed in True, False:
-            for inplace in True, False:
-                _check_symmetric_graph_laplacian(mat, normed, inplace)
+@pytest.mark.parametrize("fmt", ['csr', 'csc', 'coo', 'lil', 'dok', 'dia', 'bsr'])
+@pytest.mark.parametrize("normed", [True, False])
+@pytest.mark.parametrize("inplace", [True, False])
+def test_sparse_formats(fmt, normed, inplace):
+    mat = sparse.diags([1, 1], [-1, 1], shape=(4,4), format=fmt)
+    _check_symmetric_graph_laplacian(mat, normed, inplace)
 
