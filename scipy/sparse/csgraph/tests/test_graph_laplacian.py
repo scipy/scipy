@@ -70,7 +70,8 @@ def test_symmetric_graph_laplacian():
     )
     for mat_str in symmetric_mats:
         for normed in True, False:
-            _check_symmetric_graph_laplacian(mat_str, normed)
+            for inplace in True, False:
+                _check_symmetric_graph_laplacian(mat, normed, inplace)
 
 
 def _assert_allclose_sparse(a, b, **kwargs):
@@ -105,7 +106,7 @@ def test_asymmetric_laplacian(use_out_degree, normed, inplace, dtype):
     A = [[0, 1, 0],
          [4, 2, 0],
          [0, 0, 0]]
-    A = A.astype(dtype)
+    A = np.array(A).astype(dtype)
 
     if not normed and use_out_degree:
         # Laplacian matrix using out-degree
@@ -135,8 +136,8 @@ def test_asymmetric_laplacian(use_out_degree, normed, inplace, dtype):
              [0, 0, 0]]
         d = [2, 1, 1]
 
-    L = L.astype(dtype)
-    d = d.astype(dtype)
+    L = np.array(L).astype(dtype)
+    d = np.array(d).astype(dtype)
     _check_laplacian(A, L, d,
                      normed=normed,
                      use_out_degree=use_out_degree,
