@@ -1,6 +1,6 @@
 import warnings
 
-from distutils.version import LooseVersion
+from scipy._lib import _pep440
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
@@ -30,7 +30,7 @@ except ImportError:
 
 def mpmath_check(min_ver):
     return pytest.mark.skipif(mpmath is None or
-                              LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
+                              _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
                               reason="mpmath version >= %s required" % min_ver)
 
 
