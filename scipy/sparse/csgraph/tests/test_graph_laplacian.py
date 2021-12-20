@@ -41,8 +41,8 @@ def _check_symmetric_graph_laplacian(mat, normed, inplace):
         assert_array_almost_equal(laplacian.sum(axis=0), np.zeros(n_nodes))
     assert_array_almost_equal(laplacian.T, laplacian)
     assert_array_almost_equal(
-        laplacian, csgraph.laplacian(sp_mat, normed=normed, inplace=inplace
-                                    ).toarray())
+        laplacian, csgraph.laplacian(sp_mat, normed=normed,
+                                     inplace=inplace).toarray())
 
     assert_array_almost_equal(laplacian,
             _explicit_laplacian(mat, normed=normed, inplace=inplace))
