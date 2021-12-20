@@ -23,7 +23,7 @@ import operator
 import platform
 import itertools
 import sys
-from distutils.version import LooseVersion
+from scipy._lib import _pep440
 
 import numpy as np
 from numpy import (arange, zeros, array, dot, asarray,
@@ -4821,7 +4821,7 @@ def cases_64bit():
                 if bool(msg):
                     marks += [pytest.mark.skip(reason=msg)]
 
-                if LooseVersion(pytest.__version__) >= LooseVersion("3.6.0"):
+                if _pep440.parse(pytest.__version__) >= _pep440.Version("3.6.0"):
                     markers = getattr(method, 'pytestmark', [])
                     for mark in markers:
                         if mark.name in ('skipif', 'skip', 'xfail', 'xslow'):

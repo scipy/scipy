@@ -3,11 +3,11 @@ import os
 import pytest
 import warnings
 
-from distutils.version import LooseVersion
 import numpy as np
 import numpy.testing as npt
 from scipy._lib._fpumode import get_fpu_mode
 from scipy._lib._testutils import FPUModeChangeWarning
+from scipy._lib import _pep440
 
 
 def pytest_configure(config):
@@ -20,7 +20,7 @@ def pytest_configure(config):
 
 
 def _get_mark(item, name):
-    if LooseVersion(pytest.__version__) >= LooseVersion("3.6.0"):
+    if _pep440.parse(pytest.__version__) >= _pep440.Version("3.6.0"):
         mark = item.get_closest_marker(name)
     else:
         mark = item.get_marker(name)
