@@ -100,7 +100,7 @@ def _check_laplacian(A, desired_L, desired_d,
 @pytest.mark.parametrize("inplace", [True, False])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
-def test_asymmetric_laplacian():
+def test_asymmetric_laplacian(use_out_degree, normed, inplace, dtype):
     # adjacency matrix
     A = [[0, 1, 0],
          [4, 2, 0],
