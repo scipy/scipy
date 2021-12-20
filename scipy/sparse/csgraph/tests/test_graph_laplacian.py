@@ -1,6 +1,7 @@
 # Author: Gael Varoquaux <gael.varoquaux@normalesup.org>
 #         Jake Vanderplas <vanderplas@astro.washington.edu>
 # License: BSD
+import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_array_almost_equal
 from pytest import raises as assert_raises
