@@ -1240,6 +1240,15 @@ class TestOptimizeSimple(CheckOptimize):
         if method == 'SLSQP':
             assert sol.status == 9  # Iteration limit reached
 
+    @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell'])
+    def test_user_warning(self, method):
+        x0 = np.zeros(10)
+        sf = ScalarFunction(optimize.rosen, x0, (), optimize.rosen_der,
+                            optimize.rosen_hess, None, None)
+        with pytest.warns(UserWarning, match=r'Maximum number of iterations'):
+            optimize.minimize(sf.fun, x0, method=method,
+                              options={"maxiter": 1, "disp": True})
+
     def test_respect_maxiter_trust_constr_ineq_constraints(self):
         # special case of minimization with trust-constr and inequality
         # constraints to check maxiter limit is obeyed when using internal
