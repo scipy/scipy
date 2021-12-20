@@ -143,8 +143,8 @@ def test_asymmetric_laplacian(use_out_degree, normed, inplace, dtype, arr_type):
                      normed=normed,
                      use_out_degree=use_out_degree,
                      inplace=inplace,
-                     dtype=dtype
-                    )
+                     dtype=dtype,
+                     arr_type=arr_type)
 
 
 @pytest.mark.parametrize("fmt", ['csr', 'csc', 'coo', 'lil', 'dok', 'dia', 'bsr'])
