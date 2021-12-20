@@ -45,7 +45,7 @@ def _check_symmetric_graph_laplacian(mat, normed, inplace):
                                      inplace=inplace).toarray())
 
     assert_array_almost_equal(laplacian,
-            _explicit_laplacian(mat, normed=normed, inplace=inplace))
+            _explicit_laplacian(mat, normed=normed))
 
 
 def test_laplacian_value_error():
@@ -68,7 +68,7 @@ def test_symmetric_graph_laplacian():
         'sparse.diags([1, 1], [-1, 1], shape=(4, 4)).todense()',
         'np.vander(np.arange(4)) + np.vander(np.arange(4)).T'
     )
-    for mat_str in symmetric_mats:
+    for mat in symmetric_mats:
         for normed in True, False:
             for inplace in True, False:
                 _check_symmetric_graph_laplacian(mat, normed, inplace)
