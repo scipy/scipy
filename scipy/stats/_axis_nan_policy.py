@@ -364,10 +364,18 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 samples = [sample.ravel() for sample in samples]
             else:
                 axis = np.atleast_1d(axis)
+                n_axes = len(axis)
+                # move all axes in `axis` to the end to be raveled
                 samples = [np.moveaxis(sample, axis, range(-len(axis), 0))
                            for sample in samples]
-                samples = [sample.reshape(sample.shape[:-len(axis)] + (-1,))
-                           for sample in samples]
+                shapes = [sample.shape for sample in samples]
+                # New shape is unchanged for all axes _not_ in `axis`
+                # At the end, we append the product of the shapes of the axes
+                # in `axis`. Appending -1 doesn't work for zero-size arrays!
+                new_shapes = [shape[:-n_axes] + (np.prod(shape[-n_axes:]),)
+                              for shape in shapes]
+                samples = [sample.reshape(new_shape)
+                           for sample, new_shape in zip(samples, new_shapes)]
             axis = -1  # work over the last axis
 
             # if axis is not needed, just handle nan_policy and return
