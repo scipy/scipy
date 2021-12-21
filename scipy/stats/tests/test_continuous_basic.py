@@ -834,10 +834,10 @@ def test_kappa3_array_gh13582():
 
 
 def test_kappa4_array_gh13582():
-    h = [0.5, 1.5, 2.5, 3.5, 4.5]
-    k = [0.5, 1, 1.5, 2, 3]
+    h = np.array([-1, -0.5, 0, 1, 2.5, 3.5, 4.5, -3])
+    k = np.array([-1, -0.5, 0, -2, 1, -1.5, 0, 3.5])
     moments = 'mvsk'
     res = np.array([[stats.kappa4.stats(h[i], k[i], moments=moment)
-                   for i in range(5)] for moment in moments])
+                   for i in range(8)] for moment in moments])
     res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
     npt.assert_allclose(res, res2)

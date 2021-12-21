@@ -5438,19 +5438,28 @@ class kappa4_gen(rv_continuous):
                            [q, h, k],
                            default=np.nan)
 
-    def _stats(self, h, k):
-        maxr = np.where(np.logical_and(h >= 0, k >= 0), 5, np.nan)
-        maxr = np.where(np.logical_and(h < 0, k >= 0, np.isnan(maxr)),
-                        (-1.0/h*k).astype(int), maxr)
-        maxr = np.where(np.logical_and(k < 0, np.isnan(maxr)),
-                        (-1.0/k).astype(int), maxr)
-        maxr = np.where(np.isnan(maxr), 5, maxr)
+    def _get_stats_info(self, h, k):
+        condlist = [
+            np.logical_and(h < 0, k >= 0),
+            k < 0,
+        ]
 
+        def f0(h, k):
+            return (-1.0/h*k).astype(int)
+
+        def f1(h, k):
+            return (-1.0/k).astype(int)
+
+        return _lazyselect(condlist, [f0, f1], [h, k], default=5)
+
+    def _stats(self, h, k):
+        maxr = self._get_stats_info(h, k)
         outputs = [None if np.any(r < maxr)  else np.nan for r in range(1, 5)]
         return outputs[:]
 
     def _mom1_sc(self, m, *args):
-        if np.any(m >= args[0]):
+        maxr = self._get_stats_info(args[0], args[1])
+        if np.any(m >= maxr):
             return np.nan
         return integrate.quad(self._mom_integ1, 0, 1, args=(m,)+args)[0]
 
