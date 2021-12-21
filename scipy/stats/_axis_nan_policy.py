@@ -100,34 +100,15 @@ def _broadcast_shapes_remove_axis(shapes, axis=None):
     Same as _broadcast_array_shapes, but given a sequence
     of array shapes `shapes` instead of the arrays themselves.
     """
-    n_dims = max([len(shape) for shape in shapes])
-    new_shapes = np.ones((len(shapes), n_dims), dtype=int)
-    for row, shape in zip(new_shapes, shapes):
-        row[len(row)-len(shape):] = shape  # can't use negative indices (-0:)
-    if axis is not None:
-        new_shapes = np.delete(new_shapes, axis, axis=1)
-    new_shape = np.max(new_shapes, axis=0)
-    new_shape *= new_shapes.all(axis=0)
-    if np.any(~((new_shapes == 1) | (new_shapes == new_shape))):
-        raise ValueError("Array shapes are incompatible for broadcasting.")
-    return tuple(new_shape)
+    shapes = _broadcast_shapes(shapes, axis)
+    shape = np.delete(shapes[0], axis)
+    return tuple(shape)
 
 
-def _broadcast_concatenate(xs, axis):
+def _broadcast_concatenate(arrays, axis):
     """Concatenate arrays along an axis with broadcasting."""
-    # prepend 1s to array shapes as needed
-    ndim = max([x.ndim for x in xs])
-    xs = [x.reshape([1]*(ndim-x.ndim) + list(x.shape)) for x in xs]
-    # move the axis we're concatenating along to the end
-    xs = [np.swapaxes(x, axis, -1) for x in xs]
-    # determine final shape of all but the last axis
-    shape = _broadcast_array_shapes_remove_axis(xs, axis=-1)
-    # broadcast along all but the last axis
-    xs = [np.broadcast_to(x, shape + (x.shape[-1],)) for x in xs]
-    # concatenate along last axis
-    res = np.concatenate(xs, axis=-1)
-    # move the last axis back to where it was
-    res = np.swapaxes(res, axis, -1)
+    arrays = _broadcast_arrays(arrays, axis)
+    res = np.concatenate(arrays, axis=axis)
     return res
 
 
