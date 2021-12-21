@@ -21,7 +21,7 @@ from ._highs._highs_wrapper import _highs_wrapper
 from ._highs._highs_constants import (
     CONST_I_INF,
     CONST_INF,
-    MESSAGE_LEVEL_MINIMAL,
+    MESSAGE_LEVEL_NONE,
     HIGHS_OBJECTIVE_SENSE_MINIMIZE,
 
     MODEL_STATUS_NOTSET,
@@ -347,7 +347,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         'sense': HIGHS_OBJECTIVE_SENSE_MINIMIZE,
         'solver': solver,
         'time_limit': time_limit,
-        'highs_debug_level': MESSAGE_LEVEL_MINIMAL * disp,
+        'highs_debug_level': MESSAGE_LEVEL_NONE * disp,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
         'log_to_console': disp,
@@ -374,7 +374,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     res = _highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
                          lb, ub, integrality.astype(np.uint8), options)
-    print(res)
 
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s
@@ -400,17 +399,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     # this needs to be updated if we start choosing the solver intelligently
     solvers = {"ipm": "highs-ipm", "simplex": "highs-ds", None: "highs-ds"}
 
-    # HiGHS will report OPTIMAL if the scaled model is solved to optimality
-    # even if the unscaled original model is infeasible;
-    # Catch that case here and provide a more useful message
-    # if ((res['status'] == MODEL_STATUS_OPTIMAL) and
-    #         (res['unscaled_status'] != res['status'])):
-    #     _unscaled_status, unscaled_message = statuses[res["unscaled_status"]]
-    #     status, message = 4, ('An optimal solution to the scaled model was '
-    #                           f'found but was {unscaled_message} in the '
-    #                           'unscaled model. For more information run with '
-    #                           'the option `disp: True`.')
-    # else:
+    # Convert to scipy-style status and message
     status, message = statuses[res['status']]
 
     x = np.array(res['x']) if 'x' in res else None
@@ -439,6 +428,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'message': message,
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
            'crossover_nit': res.get('crossover_nit'),
+           'mip_node_count': res.get('mip_node_count', 0),
+           'mip_dual_bound': res.get('mip_dual_bound', 0.0),
+           'mip_gap': res.get('mip_gap', 0.0),
            }
 
     return sol

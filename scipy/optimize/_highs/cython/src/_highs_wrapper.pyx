@@ -79,6 +79,7 @@ cdef OptionRecord * _r = NULL
 for _r in _ref_opts.records:
     _ref_opt_lookup[_r.name] = _r
 
+
 cdef str _opt_warning(string name, val, valid_set=None):
     cdef OptionRecord * r = _ref_opt_lookup[name]
 
@@ -568,7 +569,6 @@ def _highs_wrapper(
     .. [2] https://www.maths.ed.ac.uk/hall/HiGHS/HighsOptions.html
     '''
 
-
     cdef int numcol = c.size
     cdef int numrow = rhs.size
     cdef int numnz = avalue.size
@@ -644,9 +644,6 @@ def _highs_wrapper(
         lp.a_matrix_.index_.empty()
         lp.a_matrix_.value_.empty()
 
-    # TODO: debug statement, remove
-    print("is MIP?", lp.isMip())
-
     # Create the options
     cdef Highs highs
     apply_options(options, highs)
@@ -657,18 +654,14 @@ def _highs_wrapper(
     if init_status != HighsStatusOK:
         if init_status != HighsStatusWarning:
             err_model_status = HighsModelStatusMODEL_ERROR
-            print("in this error")
             return {
                 'status': <int> err_model_status,
                 'message': highs.modelStatusToString(err_model_status).decode(),
             }
 
     # Solve the LP
-    highs.setBasis()
     cdef HighsStatus run_status = highs.run()
-    print(run_status)
     if run_status == HighsStatusError:
-        print("in this error instead")
         return {
             'status': <int> highs.getModelStatus(),
             'message': HighsStatusToString(run_status).decode(),
@@ -684,7 +677,6 @@ def _highs_wrapper(
     cdef HighsSolution solution
     cdef HighsBasis basis
     cdef double[:, ::1] marg_bnds = np.zeros((2, numcol))  # marg_bnds[0, :]: lower
-                                                           # marg_bnds[1, :]: upper
 
     # If the status is bad, don't look up the solution
     if model_status != HighsModelStatusOPTIMAL:
@@ -730,4 +722,9 @@ def _highs_wrapper(
             'simplex_nit': info.simplex_iteration_count,
             'ipm_nit': info.ipm_iteration_count,
             'crossover_nit': info.crossover_iteration_count,
+
+            # MIP info
+            'mip_node_count': info.mip_node_count,
+            'mip_dual_bound': info.mip_dual_bound,
+            'mip_gap': info.mip_gap,
         }
