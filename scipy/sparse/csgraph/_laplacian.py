@@ -30,9 +30,10 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
         If True, then use out-degree instead of in-degree.
         This distinction matters only if the graph is asymmetric.
         Default: False.
-    inplace: bool, optional
-        If True, then change csgraph in place if possible, to save memory.
-        Default: False.
+    inplace: bool, optional, keyword only
+        If True, then change csgraph in place if possible,
+        avoiding doubling the memory use.
+        Default: False, for backward compatibility.
 
     Returns
     -------
@@ -47,9 +48,26 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     Notes
     -----
     The Laplacian matrix of a graph is sometimes referred to as the
-    "Kirchoff matrix" or the "admittance matrix", and is useful in many
+    "Kirchoff matrix" or just the "Laplacian", and is useful in many
     parts of spectral graph theory. In particular, the eigen-decomposition
-    of the laplacian matrix can give insight into many properties of the graph.
+    of the Laplacian can give insight into many properties of the graph, e.g.,
+    is commonly used for spectal data enmedding and clustering.
+    
+    Unless the `inplace=True` parameter is used, the constructed Laplacian
+    doubles the memory use.
+
+    The Laplacian preserved the `dtype` and the format of the input
+    adjacency matrix, except that sparse 'lil' and 'dok' formats are
+    converted into `coo` thus doubling the memory even with `inplace=True`
+    which is thus ignored.
+
+    If the input adjacency matrix is not symmetic, the Laplacian is also
+    non-symmetric and may need to be symmetrized before the eigen-decomposition.
+
+    Diagonal entries of the input adjacency matrix are ignored and replaced with
+    zeros for the purpose of normalization where `normed=True`. The normalization
+    uses the inverse square roots of row-sums of the input adjacency matrix, and
+    thus may fail if the row-sums contain zeros, negative, or complex values.
 
     Examples
     --------
