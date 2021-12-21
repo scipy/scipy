@@ -88,7 +88,7 @@ def _contains_nan(a, nan_policy='propagate'):
     try:
         # Calling np.sum to avoid creating a huge array into memory
         # e.g. np.isnan(a).any()
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid='ignore', over='ignore'):
             contains_nan = np.isnan(np.sum(a))
     except TypeError:
         # This can happen when attempting to sum things which are not
