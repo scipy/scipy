@@ -58,8 +58,8 @@ def _check_symmetric_graph_laplacian(mat, normed, inplace=False):
     assert_array_almost_equal(laplacian, explicit_laplacian)
 
     if inplace:
-        assert_array_almost_equal(laplacian, mat)
-        assert_array_almost_equal(laplacian, sp_mat)
+        assert_array_almost_equal(laplacian.toarray(), mat)
+        assert_array_almost_equal(sparse.csr_matrix(laplacian), sp_mat)
 
 
 def test_symmetric_graph_laplacian():
