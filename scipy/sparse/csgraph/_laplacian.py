@@ -62,12 +62,14 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     which is thus ignored.
 
     If the input adjacency matrix is not symmetic, the Laplacian is also
-    non-symmetric and may need to be symmetrized before the eigen-decomposition.
+    non-symmetric and may need to be symmetrized
+    before the eigen-decomposition.
 
-    Diagonal entries of the input adjacency matrix are ignored and replaced with
-    zeros for the purpose of normalization where `normed=True`. The normalization
-    uses the inverse square roots of row-sums of the input adjacency matrix, and
-    thus may fail if the row-sums contain zeros, negative, or complex values.
+    Diagonal entries of the input adjacency matrix are ignored and
+    replaced with zeros for the purpose of normalization where `normed=True`. 
+    The normalization uses the inverse square roots of row-sums of the input
+    adjacency matrix, and thus may fail if the row-sums contain
+    zeros, negative, or complex values.
 
     Examples
     --------
