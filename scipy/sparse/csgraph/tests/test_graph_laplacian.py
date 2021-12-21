@@ -10,6 +10,16 @@ from scipy import sparse
 from scipy.sparse import csgraph
 
 
+def test_laplacian_value_error():
+    for t in int, float, complex:
+        for m in ([1, 1],
+                  [[[1]]],
+                  [[1, 2, 3], [4, 5, 6]],
+                  [[1, 2], [3, 4], [5, 5]]):
+            A = np.array(m, dtype=t)
+            assert_raises(ValueError, csgraph.laplacian, A)
+
+
 def _explicit_laplacian(x, normed=False):
     if sparse.issparse(x):
         x = x.toarray()
@@ -25,7 +35,7 @@ def _explicit_laplacian(x, normed=False):
     return y
 
 
-def _check_symmetric_graph_laplacian(mat, normed, inplace):
+def _check_symmetric_graph_laplacian(mat, normed, inplace=False):
     if not hasattr(mat, 'shape'):
         mat = eval(mat, dict(np=np, sparse=sparse))
 
@@ -48,16 +58,6 @@ def _check_symmetric_graph_laplacian(mat, normed, inplace):
     assert_array_almost_equal(laplacian, explicit_laplacian)
 
 
-def test_laplacian_value_error():
-    for t in int, float, complex:
-        for m in ([1, 1],
-                  [[[1]]],
-                  [[1, 2, 3], [4, 5, 6]],
-                  [[1, 2], [3, 4], [5, 5]]):
-            A = np.array(m, dtype=t)
-            assert_raises(ValueError, csgraph.laplacian, A)
-
-
 def test_symmetric_graph_laplacian():
     symmetric_mats = (
         'np.arange(10) * np.arange(10)[:, np.newaxis]',
@@ -71,7 +71,7 @@ def test_symmetric_graph_laplacian():
     for mat in symmetric_mats:
         for normed in True, False:
             for inplace in True, False:
-                _check_symmetric_graph_laplacian(mat, normed, inplace)
+                _check_symmetric_graph_laplacian(mat, normed)
 
 
 def _assert_allclose_sparse(a, b, **kwargs):
@@ -112,7 +112,7 @@ def test_asymmetric_laplacian(use_out_degree, normed,
     A = [[0, 1, 0],
          [4, 2, 0],
          [0, 0, 0]]
-    A = np.array(A).astype(dtype)
+    A = arr_type(np.array(A), dtype=dtype)
 
     if not normed and use_out_degree:
         # Laplacian matrix using out-degree
@@ -142,8 +142,6 @@ def test_asymmetric_laplacian(use_out_degree, normed,
              [0, 0, 0]]
         d = [2, 1, 1]
 
-    # L = np.array(L).astype(dtype)
-    # d = np.array(d).astype(dtype)
     _check_laplacian(A, L, d,
                      normed=normed,
                      use_out_degree=use_out_degree,
