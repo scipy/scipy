@@ -14,7 +14,7 @@ from scipy.sparse import isspmatrix
 ###############################################################################
 # Graph laplacian
 def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
-              inplace=False):
+              *, inplace=False):
     """
     Return the Laplacian matrix of a directed graph.
 
