@@ -35,6 +35,18 @@ def _broadcast_shapes(shapes, axis=None):
     """
     Broadcast shapes, ignoring incompatibility of specified axes
     """
+    if not shapes:
+        return shapes
+
+    # input validation
+    if axis is not None:
+        axis = np.atleast_1d(axis)
+        axis_int = axis.astype(int)
+        if not np.array_equal(axis_int, axis):
+            raise ValueError('`axis` must be an integer, a '
+                             'tuple of integers, or `None`.')
+        axis = axis_int
+
     # First, ensure all shapes have same number of dimensions by prepending 1s.
     n_dims = max([len(shape) for shape in shapes])
     new_shapes = np.ones((len(shapes), n_dims), dtype=int)
@@ -43,8 +55,16 @@ def _broadcast_shapes(shapes, axis=None):
 
     # Remove the shape elements of the axes to be ignored, but remember them.
     if axis is not None:
-        axis = np.atleast_1d(axis)
         axis[axis < 0] = n_dims + axis[axis < 0]
+        axis = np.sort(axis)
+        if axis[-1] >= n_dims or axis[0] < 0:
+            message = (f"`axis` is out of bounds "
+                       f"for array of dimension {n_dims}")
+            raise ValueError(message)
+
+        if len(np.unique(axis)) != len(axis):
+            raise ValueError("`axis` must contain only distinct elements")
+
         removed_shapes = new_shapes[:, axis]
         new_shapes = np.delete(new_shapes, axis, axis=1)
 
@@ -337,12 +357,18 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # convert masked arrays to regular arrays with sentinel values
             samples, sentinel = _masked_arrays_2_sentinel_arrays(samples)
 
+            samples = _broadcast_arrays(samples, axis=axis)
+
+            # standardize to always work along last axis
             if axis is None:
                 samples = [sample.ravel() for sample in samples]
-                axis = 0
-            elif axis != int(axis):
-                raise ValueError('`axis` must be an integer')
-            axis = int(axis)
+            else:
+                axis = np.atleast_1d(axis)
+                samples = [np.moveaxis(sample, axis, range(-len(axis), 0))
+                           for sample in samples]
+                samples = [sample.reshape(sample.shape[:-len(axis)] + (-1,))
+                           for sample in samples]
+            axis = -1  # work over the last axis
 
             # if axis is not needed, just handle nan_policy and return
             ndims = np.array([sample.ndim for sample in samples])
