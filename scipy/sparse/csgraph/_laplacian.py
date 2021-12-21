@@ -53,12 +53,12 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     of the Laplacian can give insight into many properties of the graph, e.g.,
     is commonly used for spectal data enmedding and clustering.
 
-    Unless the `inplace=True` parameter is used, the constructed Laplacian
+    Unless the ``inplace=True`` parameter is used, the constructed Laplacian
     doubles the memory use.
 
-    The Laplacian preserved the `dtype` and the format of the input
+    The Laplacian preserved the type and the format of the input
     adjacency matrix, except that sparse 'lil' and 'dok' formats are
-    converted into `coo` thus doubling the memory even with `inplace=True`
+    converted into `coo` thus doubling the memory even with ``inplace=True``
     which is thus ignored.
 
     If the input adjacency matrix is not symmetic, the Laplacian is also
@@ -66,7 +66,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     before the eigen-decomposition.
 
     Diagonal entries of the input adjacency matrix are ignored and
-    replaced with zeros for the purpose of normalization where `normed=True`.
+    replaced with zeros for the purpose of normalization where ``normed=True``.
     The normalization uses the inverse square roots of row-sums of the input
     adjacency matrix, and thus may fail if the row-sums contain
     zeros, negative, or complex values.
