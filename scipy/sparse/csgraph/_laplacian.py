@@ -139,9 +139,9 @@ def _laplacian_sparse(graph, normed=False, axis=0,
 def _laplacian_dense(graph, normed=False, axis=0,
                      inplace=False):
     if inplace:
-            m = np.asarray(graph)
-        else:
-            m = np.array(graph)
+        m = np.asarray(graph)
+    else:
+        m = np.array(graph)
 
     np.fill_diagonal(m, 0)
     w = m.sum(axis=axis)
