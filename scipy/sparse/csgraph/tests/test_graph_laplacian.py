@@ -52,12 +52,11 @@ def _check_symmetric_graph_laplacian(mat, normed, inplace=False):
                                      inplace=inplace)
     assert_array_almost_equal(laplacian, sp_laplacian.toarray())
 
-    for tested in [laplacian, sp_laplacian]:
-        tested = np.asarray(tested)
+    for tested in [laplacian, sp_laplacian.toarray()]:
         if not normed:
             assert_array_almost_equal(tested.sum(axis=0), np.zeros(n_nodes))
         assert_array_almost_equal(tested.T, tested)
-        assert_array_almost_equal(tested, np.asarray(explicit_laplacian))
+        assert_array_almost_equal(tested, explicit_laplacian)
 
     if inplace:
         assert_array_almost_equal(laplacian, mat)
