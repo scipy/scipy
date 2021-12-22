@@ -30,7 +30,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
         If True, then use out-degree instead of in-degree.
         This distinction matters only if the graph is asymmetric.
         Default: False.
-    inplace: bool, optional, keyword only
+    inplace: bool, optional
         If True, then change csgraph in place if possible,
         avoiding doubling the memory use.
         Default: False, for backward compatibility.
