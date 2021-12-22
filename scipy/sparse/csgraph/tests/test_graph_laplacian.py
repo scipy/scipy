@@ -45,24 +45,23 @@ def _check_symmetric_graph_laplacian(mat, normed, inplace=False):
     else:
         sp_mat = sparse.csr_matrix(mat)
 
+    n_nodes = mat.shape[0]
     explicit_laplacian = _explicit_laplacian(mat, normed=normed)
     laplacian = csgraph.laplacian(mat, normed=normed, inplace=inplace)
-    n_nodes = mat.shape[0]
-    if not normed:
-        assert_array_almost_equal(laplacian.sum(axis=0), np.zeros(n_nodes))
-    assert_array_almost_equal(laplacian.T, laplacian)
-    assert_array_almost_equal(
-        laplacian, csgraph.laplacian(sp_mat, normed=normed,
-                                     inplace=inplace).toarray())
+    sp_laplacian = csgraph.laplacian(sp_mat, normed=normed,
+                                     inplace=inplace)
+    assert_array_almost_equal(laplacian, sp_laplacian.toarray())
 
-    assert_array_almost_equal(laplacian, explicit_laplacian)
+    for tested in laplacian sp_laplacian:
+        tested = np.asarray(tested)
+        if not normed:
+            assert_array_almost_equal(tested.sum(axis=0), np.zeros(n_nodes))
+        assert_array_almost_equal(tested.T, tested)
+        assert_array_almost_equal(tested, np.asarray(explicit_laplacian))
 
     if inplace:
-        assert_array_almost_equal(np.asarray(laplacian), mat)
-        if sparse.issparse(mat):
-            assert_array_almost_equal(laplacian, sp_mat)
-        else:
-            assert_array_almost_equal(sparse.csr_matrix(laplacian), sp_mat)
+        assert_array_almost_equal(laplacian, mat)
+        assert_array_almost_equal(sp_laplacian.toarray(), sp_mat.toarray())
 
 
 def test_symmetric_graph_laplacian():
