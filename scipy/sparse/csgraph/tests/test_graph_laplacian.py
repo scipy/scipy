@@ -35,7 +35,7 @@ def _explicit_laplacian(x, normed=False):
     return y
 
 
-def _check_symmetric_graph_laplacian(mat, normed, inplace=False):
+def _check_symmetric_graph_laplacian(mat, normed, copy=True):
     if not hasattr(mat, 'shape'):
         mat = eval(mat, dict(np=np, sparse=sparse))
 
@@ -47,9 +47,9 @@ def _check_symmetric_graph_laplacian(mat, normed, inplace=False):
 
     n_nodes = mat.shape[0]
     explicit_laplacian = _explicit_laplacian(mat, normed=normed)
-    laplacian = csgraph.laplacian(mat, normed=normed, inplace=inplace)
+    laplacian = csgraph.laplacian(mat, normed=normed, copy=copy)
     sp_laplacian = csgraph.laplacian(sp_mat, normed=normed,
-                                     inplace=inplace)
+                                     copy=copy)
     assert_array_almost_equal(laplacian, sp_laplacian.toarray())
 
     for tested in [laplacian, sp_laplacian.toarray()]:
@@ -58,7 +58,7 @@ def _check_symmetric_graph_laplacian(mat, normed, inplace=False):
         assert_array_almost_equal(tested.T, tested)
         assert_array_almost_equal(tested, explicit_laplacian)
 
-    if inplace:
+    if not copy:
         assert_array_almost_equal(laplacian, mat)
         assert_array_almost_equal(sp_laplacian.toarray(), sp_mat.toarray())
 
@@ -75,8 +75,8 @@ def test_symmetric_graph_laplacian():
     )
     for mat in symmetric_mats:
         for normed in True, False:
-            for inplace in True, False:
-                _check_symmetric_graph_laplacian(mat, normed)
+            for copy in True, False:
+                _check_symmetric_graph_laplacian(mat, normed, copy)
 
 
 def _assert_allclose_sparse(a, b, **kwargs):
@@ -89,7 +89,7 @@ def _assert_allclose_sparse(a, b, **kwargs):
 
 
 def _check_laplacian(A, desired_L, desired_d,
-                     normed, use_out_degree, inplace, dtype, arr_type):
+                     normed, use_out_degree, copy, dtype, arr_type):
     adj = arr_type(A, dtype=dtype)
     L, d = csgraph.laplacian(adj, normed=normed, return_diag=True,
                              use_out_degree=use_out_degree)
@@ -108,11 +108,11 @@ DTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
 @pytest.mark.parametrize("arr_type", [np.array,
                                       sparse.csr_matrix,
                                       sparse.coo_matrix])
-@pytest.mark.parametrize("inplace", [True, False])
+@pytest.mark.parametrize("copy", [True, False])
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
 def test_asymmetric_laplacian(use_out_degree, normed,
-                              inplace, dtype, arr_type):
+                              copy, dtype, arr_type):
     # adjacency matrix
     A = [[0, 1, 0],
          [4, 2, 0],
@@ -150,7 +150,7 @@ def test_asymmetric_laplacian(use_out_degree, normed,
     _check_laplacian(A, L, d,
                      normed=normed,
                      use_out_degree=use_out_degree,
-                     inplace=inplace,
+                     copy=copy,
                      dtype=dtype,
                      arr_type=arr_type)
 
@@ -158,7 +158,7 @@ def test_asymmetric_laplacian(use_out_degree, normed,
 @pytest.mark.parametrize("fmt", ['csr', 'csc', 'coo', 'lil',
                                  'dok', 'dia', 'bsr'])
 @pytest.mark.parametrize("normed", [True, False])
-@pytest.mark.parametrize("inplace", [True, False])
-def test_sparse_formats(fmt, normed, inplace):
+@pytest.mark.parametrize("copy", [True, False])
+def test_sparse_formats(fmt, normed, copy):
     mat = sparse.diags([1, 1], [-1, 1], shape=(4, 4), format=fmt)
-    _check_symmetric_graph_laplacian(mat, normed, inplace)
+    _check_symmetric_graph_laplacian(mat, normed, copy)
