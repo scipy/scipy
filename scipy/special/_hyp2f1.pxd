@@ -212,6 +212,12 @@ cdef inline double complex hyp2f1_complex(
             result *= hyp2f1_lopez_temme_series(c - a, c - b, c, z, 1500, EPS)
             return result
         return hyp2f1_lopez_temme_series(a, b, c, z, 1500, EPS)
+    if modulus_z < 1.1 and z.real < 0:
+        if 0 < b < a < c:
+            a, b = b, a
+        return zpow(1 - z, -a) * hyp2f1_series(
+            a, c - b, c, z/(z - 1), 1500, True, EPS
+        )
     # Fall through to original Fortran implementation.
     # -------------------------------------------------------------------------
     return double_complex_from_npy_cdouble(
