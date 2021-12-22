@@ -14,7 +14,7 @@ from scipy.sparse import isspmatrix
 ###############################################################################
 # Graph laplacian
 def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
-              *, inplace=False):
+              *, copy=True):
     """
     Return the Laplacian matrix of a directed graph.
 
@@ -30,10 +30,10 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
         If True, then use out-degree instead of in-degree.
         This distinction matters only if the graph is asymmetric.
         Default: False.
-    inplace: bool, optional
-        If True, then change csgraph in place if possible,
+    copy: bool, optional
+        If False, then change csgraph in place if possible,
         avoiding doubling the memory use.
-        Default: False, for backward compatibility.
+        Default: True, for backward compatibility.
 
     Returns
     -------
@@ -53,13 +53,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     of the Laplacian can give insight into many properties of the graph, e.g.,
     is commonly used for spectal data enmedding and clustering.
 
-    Unless the ``inplace=True`` parameter is used, the constructed Laplacian
-    doubles the memory use.
-
-    The Laplacian preserved the type and the format of the input
-    adjacency matrix, except that sparse 'lil' and 'dok' formats are
-    converted into `coo` thus doubling the memory even with ``inplace=True``
-    which is thus ignored.
+    The constructed Laplacian doubles the memory use if ``copy=True``.
 
     If the input adjacency matrix is not symmetic, the Laplacian is also
     non-symmetric and may need to be symmetrized
@@ -98,7 +92,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
     degree_axis = 1 if use_out_degree else 0
     lap, d = create_lap(csgraph, normed=normed, axis=degree_axis,
-                        inplace=inplace)
+                        copy=copy)
     if return_diag:
         return lap, d
     return lap
@@ -109,13 +103,13 @@ def _setdiag_dense(A, d):
 
 
 def _laplacian_sparse(graph, normed=False, axis=0,
-                      inplace=False):
+                      copy=True):
     needs_copy = False
     if graph.format in ('lil', 'dok'):
         m = graph.tocoo()
     else:
         m = graph
-        if not inplace:
+        if copy:
             needs_copy = True
     w = m.sum(axis=axis).getA1() - m.diagonal()
     if normed:
@@ -137,11 +131,11 @@ def _laplacian_sparse(graph, normed=False, axis=0,
 
 
 def _laplacian_dense(graph, normed=False, axis=0,
-                     inplace=False):
-    if inplace:
-        m = np.asarray(graph)
-    else:
+                     copy=True):
+    if copy:
         m = np.array(graph)
+    else:
+        m = np.asarray(graph)
 
     np.fill_diagonal(m, 0)
     w = m.sum(axis=axis)
