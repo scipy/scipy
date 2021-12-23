@@ -104,8 +104,8 @@ def _check_laplacian(A, desired_L, desired_d,
         if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
                             or np.issubdtype(mat.dtype, np.uint))):
             assert_array_almost_equal(L, mat)
-            if sp_mat.format == 'coo':
-                _assert_allclose_sparse(L, sp_mat)
+            if mat.format == 'coo':
+                _assert_allclose_sparse(L, mat)
 
 
 REAL_DTYPES = {np.intc, np.int_, np.longlong,
