@@ -85,10 +85,10 @@ def test_symmetric_graph_laplacian():
 def _assert_allclose_sparse(a, b, **kwargs):
     # helper function that can deal with sparse matrices
     if sparse.issparse(a):
-        a = a.toarray()
+        aa = a.toarray()
     if sparse.issparse(b):
-        b = a.toarray()
-    assert_allclose(a, b, **kwargs)
+        ba = b.toarray()
+    assert_allclose(aa, ba, **kwargs)
 
 
 def _check_laplacian(A, desired_L, desired_d,
