@@ -60,7 +60,7 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
 
     if not copy:
         assert_array_almost_equal(laplacian, mat)
-        # assert_array_almost_equal(sp_laplacian.toarray(), sp_mat.toarray())
+        # _assert_allclose_sparse(sp_laplacian, sp_mat)
 
 
 def test_symmetric_graph_laplacian():
@@ -92,9 +92,13 @@ def _check_laplacian(A, desired_L, desired_d,
                      normed, use_out_degree, copy, dtype, arr_type):
     adj = arr_type(A, dtype=dtype)
     L, d = csgraph.laplacian(adj, normed=normed, return_diag=True,
-                             use_out_degree=use_out_degree)
+                             use_out_degree=use_out_degree,
+                             copy=copy)
     _assert_allclose_sparse(L, desired_L, atol=1e-12)
     _assert_allclose_sparse(d, desired_d, atol=1e-12)
+
+    # if not copy:
+    #    _assert_allclose_sparse(laplacian, adj)
 
 
 REAL_DTYPES = {np.intc, np.int_, np.longlong,
