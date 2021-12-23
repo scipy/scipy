@@ -105,7 +105,7 @@ def _check_laplacian(A, desired_L, desired_d,
                             or np.issubdtype(mat.dtype, np.uint))):
             if type(mat) is np.ndarray:
                 assert_array_almost_equal(L, mat)
-            elif mat.format == 'coo' or sp_mat.format == 'dia':
+            elif mat.format == 'coo' or mat.format == 'dia':
                 _assert_allclose_sparse(L, mat)
 
 
