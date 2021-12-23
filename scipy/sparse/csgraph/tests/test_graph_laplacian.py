@@ -59,8 +59,11 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
         assert_array_almost_equal(tested, explicit_laplacian)
 
     if not copy:
-        assert_array_almost_equal(laplacian, mat)
-        # _assert_allclose_sparse(sp_laplacian, sp_mat)
+        if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
+                            or np.issubdtype(mat.dtype, np.uint))):
+            assert_array_almost_equal(laplacian, mat)
+            if sp_mat.format == 'coo'
+                _assert_allclose_sparse(sp_laplacian, sp_mat)
 
 
 def test_symmetric_graph_laplacian():
@@ -90,15 +93,19 @@ def _assert_allclose_sparse(a, b, **kwargs):
 
 def _check_laplacian(A, desired_L, desired_d,
                      normed, use_out_degree, copy, dtype, arr_type):
-    adj = arr_type(A, dtype=dtype)
-    L, d = csgraph.laplacian(adj, normed=normed, return_diag=True,
+    mat = arr_type(A, dtype=dtype)
+    L, d = csgraph.laplacian(mat, normed=normed, return_diag=True,
                              use_out_degree=use_out_degree,
                              copy=copy)
     _assert_allclose_sparse(L, desired_L, atol=1e-12)
     _assert_allclose_sparse(d, desired_d, atol=1e-12)
 
-    # if not copy:
-    #    _assert_allclose_sparse(laplacian, adj)
+    if not copy:
+        if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
+                            or np.issubdtype(mat.dtype, np.uint))):
+            assert_array_almost_equal(L, mat)
+            if sp_mat.format == 'coo'
+                _assert_allclose_sparse(L, sp_mat)
 
 
 REAL_DTYPES = {np.intc, np.int_, np.longlong,
