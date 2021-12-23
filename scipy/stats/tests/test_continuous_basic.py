@@ -33,13 +33,18 @@ not for numerically exact results.
 
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
-distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
-            'kappa4', 'vonmises_line', 'gausshyper', 'norminvgauss',
-            'geninvgauss', 'genhyperbolic']
+# For skipping test_cont_basic
 # distslow are sorted by speed (very slow to slow)
+distslow = ['recipinvgauss', 'vonmises', 'kappa4', 'vonmises_line',
+            'gausshyper', 'norminvgauss', 'geninvgauss', 'genhyperbolic',
+            'truncnorm']
 
-distxslow = ['studentized_range']
 # distxslow are sorted by speed (very slow to slow)
+distxslow = ['studentized_range', 'kstwo', 'ksone', 'wrapcauchy', 'genexpon']
+
+# For skipping test_moments, which is already marked slow
+distxslow_test_moments = ['studentized_range', 'vonmises', 'vonmises_line',
+                          'ksone', 'kstwo', 'recipinvgauss', 'genexpon']
 
 # skip check_fit_args (test is slow)
 skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
@@ -248,13 +253,11 @@ def cases_test_moments():
         if distname == 'levy_stable':
             continue
 
-        if distname == 'studentized_range':
-            msg = ("studentized_range is far too slow for this test and it is "
-                   "redundant with test_distributions::TestStudentizedRange::"
-                   "test_moment_against_mp")
+        if distname in distxslow_test_moments:
             yield pytest.param(distname, arg, True, True, True, True,
-                               marks=pytest.mark.xslow(reason=msg))
+                               marks=pytest.mark.xslow(reason="too slow"))
             continue
+
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
         cond3 = distname not in fail_loc_scale
