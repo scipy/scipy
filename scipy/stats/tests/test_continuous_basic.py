@@ -823,12 +823,13 @@ def test_broadcasting_in_moments_gh12192_regression():
     npt.assert_allclose(vals3, expected3, rtol=1e-8)
     assert vals3.shape == expected3.shape
 
+
 def test_kappa3_array_gh13582():
     # https://github.com/scipy/scipy/pull/15140#issuecomment-994958241
     shapes = [0.5, 1.5, 2.5, 3.5, 4.5]
     moments = 'mvsk'
-    res = np.array([[stats.kappa3.stats(shape, moments=moment) for shape in shapes]
-                    for moment in moments])
+    res = np.array([[stats.kappa3.stats(shape, moments=moment)
+                   for shape in shapes] for moment in moments])
     res2 = np.array(stats.kappa3.stats(shapes, moments=moments))
     npt.assert_allclose(res, res2)
 

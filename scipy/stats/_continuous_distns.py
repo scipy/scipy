@@ -5454,7 +5454,7 @@ class kappa4_gen(rv_continuous):
 
     def _stats(self, h, k):
         maxr = self._get_stats_info(h, k)
-        outputs = [None if np.any(r < maxr)  else np.nan for r in range(1, 5)]
+        outputs = [None if np.any(r < maxr) else np.nan for r in range(1, 5)]
         return outputs[:]
 
     def _mom1_sc(self, m, *args):
