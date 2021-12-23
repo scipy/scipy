@@ -62,7 +62,7 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
         if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
                             or np.issubdtype(mat.dtype, np.uint))):
             assert_array_almost_equal(laplacian, mat)
-            if sp_mat.format == 'coo'
+            if sp_mat.format == 'coo':
                 _assert_allclose_sparse(sp_laplacian, sp_mat)
 
 
@@ -104,7 +104,7 @@ def _check_laplacian(A, desired_L, desired_d,
         if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
                             or np.issubdtype(mat.dtype, np.uint))):
             assert_array_almost_equal(L, mat)
-            if sp_mat.format == 'coo'
+            if sp_mat.format == 'coo':
                 _assert_allclose_sparse(L, sp_mat)
 
 
