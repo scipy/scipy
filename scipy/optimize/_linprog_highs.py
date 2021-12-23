@@ -84,7 +84,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                    primal_feasibility_tolerance=None,
                    ipm_optimality_tolerance=None,
                    simplex_dual_edge_weight_strategy=None,
-                   integrality=None,
                    **unknown_options):
     r"""
     Solve the following linear programming problem using one of the HiGHS
@@ -325,7 +324,7 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         ),
     }
 
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     lb, ub = bounds.T.copy()  # separate bounds, copy->C-cntgs
     # highs_wrapper solves LHS <= A*x <= RHS, not equality constraints
