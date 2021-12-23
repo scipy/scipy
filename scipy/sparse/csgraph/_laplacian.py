@@ -53,7 +53,12 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     of the Laplacian can give insight into many properties of the graph, e.g.,
     is commonly used for spectal data enmedding and clustering.
 
-    The constructed Laplacian doubles the memory use if ``copy=True``.
+    The constructed Laplacian doubles the memory use if ``copy=True``,
+    which is the default. Choosing ``copy=False`` has no effect unless
+    the matrix is sparse in the ``coo`` format, or dense array, except
+    for the integer input with ``normed=True`` that forces the float output.
+
+    Sparse input is reformatted into ``coo``, except for ``dia``.
 
     If the input adjacency matrix is not symmetic, the Laplacian is also
     non-symmetric and may need to be symmetrized
