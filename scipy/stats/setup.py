@@ -87,26 +87,17 @@ def configuration(parent_package='', top_path=None):
     )
     ext._pre_build_hook = pre_build_hook
 
-    # add unuran subumodule
+    # add unuran submodule
     config.add_subpackage('_unuran')
 
     # add boost stats distributions
     config.add_subpackage('_boost')
 
+    # add levy stable submodule
+    config.add_subpackage('_levy_stable')
+
     # Type stubs
     config.add_data_files('*.pyi')
-
-    # add levy stable module
-    config.add_data_files(join('_levy_stable', '*.py'))
-    config.add_library(
-        'levyst',
-        sources=[join('_levy_stable/c_src', 'levyst.c')],
-        headers=[join('_levy_stable/c_src', 'levyst.h')]
-    )
-    config.add_extension(
-        '_levy_stable.levyst',
-        libraries=['levyst'],
-        sources=[join('_levy_stable', 'levyst.c')])
 
     return config
 
