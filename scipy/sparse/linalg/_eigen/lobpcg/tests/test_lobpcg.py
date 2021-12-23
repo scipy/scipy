@@ -315,7 +315,7 @@ def test_tolerance_float32():
     X = rnd.standard_normal((n, m))
     X = X.astype(np.float32)
     eigvals, _ = lobpcg(A, X, tol=1e-5, maxiter=50, verbosityLevel=0)
-    assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-5)
+    assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1.5e-5)
 
 
 def test_random_initial_float32():
