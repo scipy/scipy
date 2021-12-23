@@ -103,8 +103,9 @@ def _check_laplacian(A, desired_L, desired_d,
     if not copy:
         if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
                             or np.issubdtype(mat.dtype, np.uint))):
-            assert_array_almost_equal(L, mat)
-            if mat.format == 'coo':
+            if type(mat) is np.ndarray:
+                assert_array_almost_equal(L, mat)
+            elif mat.format == 'coo':
                 _assert_allclose_sparse(L, mat)
 
 
