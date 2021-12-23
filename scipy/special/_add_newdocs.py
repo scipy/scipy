@@ -697,15 +697,90 @@ add_newdoc("bdtrin",
     """)
 
 add_newdoc("binom",
-    """
-    binom(n, k)
+    r"""
+    binom(x, y)
 
-    Binomial coefficient
+    Binomial coefficient considered as a function of two real variables.
+
+    For real arguments, the binomial coefficient is defined as
+
+    .. math::
+
+        \binom{x}{y} = \frac{\Gamma(x + 1)}{\Gamma(y + 1)\Gamma(x - y + 1)} =
+            \frac{1}{(x + 1)\mathrm{B}(x - y + 1, y _ 1)}
+
+    Where :math:`\Gamma` is the Gamma function and :math:`\mathrm{B}` is
+    the Beta function [1]_. See `gamma` and `beta`.
+
+    Parameters
+    ----------
+    x, y: array_like
+       Real arguments to :math:`\binom{x}{y}`.
+
+    Returns
+    -------
+    ndarray
+        Value of binomial coefficient.
 
     See Also
     --------
     comb : The number of combinations of N things taken k at a time.
 
+    Notes
+    -----
+    The Gamma function has poles at non-positive integers and tends to either
+    positive or negative infinity depending on the direction on the real line
+    from which a pole is approached. When considered as a function of two real
+    variables, :math:`\binom{x}{y}` is thus undefined when `x` is a negative
+    integer.  `binom` returns ``nan`` when ``x`` is a negative integer. This
+    is the case even when ``x`` is a negative integer and ``y`` an integer,
+    contrary to the usual convention for defining :math:`\binom{n}{k}` when it
+    is considered as a function of two integer variables.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Binomial_coefficient
+
+    Examples
+    --------
+    >>> from scipy.special import binom, comb
+
+    It's illustrative to see the ways in which `binom` differs from the
+    function `comb`. Below we compare `binom` and `comb` with and without
+    ``exact=True``.
+
+    For positive `x` and `y`, `comb` calls `binom` internally when
+    ``exact=False``. For small values `comb` with ``exact=True`` agrees
+    with `binom`.
+    
+    >>> x, y = 3, 2
+    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
+    (3.0, 3.0, 3)
+
+    As expected, for larger values `comb` with ``exact=True`` no longer agrees
+    with `binom`.
+
+    >>> x, y = 43, 23
+    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
+    (960566918219.9999, 960566918219.9999, 960566918220)
+
+    Note that if `comb` is passed non integer arguments when ``exact=True``,
+    these will be truncated to integers, leading to inaccurate results.
+
+    >>> x, y = 3.9, 2.8
+    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
+    (4.2071983565457955, 4.2071983565457955, 3)
+
+    `binom` returns ``nan`` when ``x`` is a negative integer. `comb`
+    returns 0 whenever one of ``x`` or ``y`` is negative.
+
+    >>> x, y = -3, 2
+    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
+    (nan, 0.0, 0)
+
+    >>> x, y = -3.1, 2.2
+    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
+    (18.714147876804432, 0.0, 0)
     """)
 
 add_newdoc("btdtria",
