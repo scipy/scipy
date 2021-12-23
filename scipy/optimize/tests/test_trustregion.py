@@ -55,7 +55,7 @@ class TestTrustRegionSolvers:
         assert_allclose(sum(r['allvecs'][1:]), accumulator.accum)
 
     def test_dogleg_user_warning(self):
-        with pytest.warns(UserWarning, match=r'Maximum number of iterations'):
+        with pytest.warns(RuntimeWarning, match=r'Maximum number of iterations'):
             minimize(rosen, self.hard_guess, jac=rosen_der,
                      hess=rosen_hess, method='dogleg',
                      options={'disp': True, 'maxiter': 1}, )

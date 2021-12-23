@@ -887,12 +887,12 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         warnflag = 1
         msg = _status_message['maxfev']
         if disp:
-            warnings.warn(msg, UserWarning)
+            warnings.warn(msg, RuntimeWarning, 3)
     elif iterations >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
         if disp:
-            warnings.warn(msg, UserWarning)
+            warnings.warn(msg, RuntimeWarning, 3)
     else:
         msg = _status_message['success']
         if disp:
@@ -3254,17 +3254,17 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         warnflag = 1
         msg = _status_message['maxfev']
         if disp:
-            warnings.warn(msg, UserWarning)
+            warnings.warn(msg, RuntimeWarning, 3)
     elif iter >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
         if disp:
-            warnings.warn(msg, UserWarning)
+            warnings.warn(msg, RuntimeWarning, 3)
     elif np.isnan(fval) or np.isnan(x).any():
         warnflag = 3
         msg = _status_message['nan']
         if disp:
-            warnings.warn(msg, UserWarning)
+            warnings.warn(msg, RuntimeWarning, 3)
     else:
         msg = _status_message['success']
         if disp:
@@ -3545,9 +3545,9 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         if not success:
             if disp:
                 warnings.warn(
-                    "Warning: Either final optimization did not succeed "
+                    "Either final optimization did not succeed "
                     "or `finish` does not return `statuscode` as its last "
-                    "argument.", UserWarning)
+                    "argument.", RuntimeWarning)
 
     if full_output:
         return xmin, Jmin, grid, Jout

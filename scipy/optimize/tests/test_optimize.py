@@ -1240,14 +1240,20 @@ class TestOptimizeSimple(CheckOptimize):
         if method == 'SLSQP':
             assert sol.status == 9  # Iteration limit reached
 
-    @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell'])
-    def test_user_warning(self, method):
+    @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell',
+                                        'fmin', 'fmin_powell'])
+    def test_runtime_warning(self, method):
         x0 = np.zeros(10)
         sf = ScalarFunction(optimize.rosen, x0, (), optimize.rosen_der,
                             optimize.rosen_hess, None, None)
-        with pytest.warns(UserWarning, match=r'Maximum number of iterations'):
-            optimize.minimize(sf.fun, x0, method=method,
-                              options={"maxiter": 1, "disp": True})
+        options = {"maxiter": 1, "disp": True}
+        with pytest.warns(RuntimeWarning,
+                          match=r'Maximum number of iterations'):
+            if method.startswith('fmin'):
+                routine = getattr(optimize, method)
+                routine(sf.fun, x0, **options)
+            else:
+                optimize.minimize(sf.fun, x0, method=method, options=options)
 
     def test_respect_maxiter_trust_constr_ineq_constraints(self):
         # special case of minimization with trust-constr and inequality
@@ -2163,6 +2169,16 @@ class TestBrute:
 
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
+
+    def test_runtime_warning(self):
+        rng = np.random.default_rng(1234)
+
+        def func(z, *params):
+            return rng.random(1) * 1000  # never converged problem
+
+        with pytest.warns(RuntimeWarning,
+                          match=r'Either final optimization did not succeed'):
+            optimize.brute(func, self.rranges, args=self.params, disp=True)
 
 
 def test_cobyla_threadsafe():
