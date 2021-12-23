@@ -1,30 +1,31 @@
 """ Test functions for fftpack.basic module
 """
-from __future__ import division, absolute_import, print_function
-
 from numpy import arange, asarray, zeros, dot, exp, pi, double, cdouble
-
 from numpy.random import rand
+import numpy as np
+from concurrent import futures
+import os
 
 import scipy.fftpack
 import numpy.fft
-try:
+from .common import Benchmark, safe_import
+
+with safe_import() as exc:
     import scipy.fft as scipy_fft
     has_scipy_fft = True
-except ImportError:
-    scipy_fft = {}
+if exc.error:
     has_scipy_fft = False
 
-from .common import Benchmark
 
-try:
+with safe_import() as exc:
     import pyfftw.interfaces.numpy_fft as pyfftw_fft
     import pyfftw
     pyfftw.interfaces.cache.enable()
     has_pyfftw = True
-except ImportError:
-    pyfftw_fft = {}
+if exc.error:
+    pyfftw_fft = {}  # noqa: F811
     has_pyfftw = False
+
 
 class PyfftwBackend:
     """Backend for pyfftw"""
@@ -99,6 +100,28 @@ class Fft(Benchmark):
 
     def time_ifft(self, size, cmplx, module):
         self.ifft(self.x)
+
+
+class NextFastLen(Benchmark):
+    params = [
+        [12, 13,  # small ones
+         1021, 1024,  # 2 ** 10 and a prime
+         16381, 16384,  # 2 ** 14 and a prime
+         262139, 262144,  # 2 ** 17 and a prime
+         999983, 1048576,  # 2 ** 20 and a prime
+         ],
+    ]
+    param_names = ['size']
+
+    def setup(self, size):
+        if not has_scipy_fft:
+            raise NotImplementedError
+
+    def time_next_fast_len(self, size):
+        scipy_fft.next_fast_len.__wrapped__(size)
+
+    def time_next_fast_len_cached(self, size):
+        scipy_fft.next_fast_len(size)
 
 
 class RFft(Benchmark):
@@ -289,3 +312,43 @@ class FftnBackends(Benchmark):
 
     def time_ifft(self, size, cmplx, module):
         self.ifftn(self.x)
+
+
+class FftThreading(Benchmark):
+    params = [
+        ['100x100', '1000x100', '256x256', '512x512'],
+        [1, 8, 32, 100],
+        ['workers', 'threading']
+    ]
+    param_names = ['size', 'num_transforms', 'method']
+
+    def setup(self, size, num_transforms, method):
+        if not has_scipy_fft:
+            raise NotImplementedError
+
+        size = list(map(int, size.split("x")))
+        self.xs = [(random(size)+1j*random(size)).astype(np.complex128)
+                   for _ in range(num_transforms)]
+
+        if method == 'threading':
+            self.pool = futures.ThreadPoolExecutor(os.cpu_count())
+
+    def map_thread(self, func):
+        f = []
+        for x in self.xs:
+            f.append(self.pool.submit(func, x))
+        futures.wait(f)
+
+    def time_fft(self, size, num_transforms, method):
+        if method == 'threading':
+            self.map_thread(scipy_fft.fft)
+        else:
+            for x in self.xs:
+                scipy_fft.fft(x, workers=-1)
+
+    def time_fftn(self, size, num_transforms, method):
+        if method == 'threading':
+            self.map_thread(scipy_fft.fftn)
+        else:
+            for x in self.xs:
+                scipy_fft.fftn(x, workers=-1)

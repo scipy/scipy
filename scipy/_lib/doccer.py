@@ -1,8 +1,6 @@
 ''' Utilities to allow inserting docstring fragments for common
 parameters into function and method docstrings'''
 
-from __future__ import division, print_function, absolute_import
-
 import sys
 
 __all__ = ['docformat', 'inherit_docstring_from', 'indentcount_lines',
@@ -20,11 +18,11 @@ def docformat(docstring, docdict=None):
         docstring from function, possibly with dict formatting strings
     docdict : dict, optional
         dictionary with keys that match the dict formatting strings
-        and values that are docstring fragments to be inserted.  The
+        and values that are docstring fragments to be inserted. The
         indentation of the inserted docstrings is set to match the
         minimum indentation of the ``docstring`` by adding this
         indentation to all lines of the inserted string, except the
-        first
+        first.
 
     Returns
     -------
@@ -95,7 +93,7 @@ def inherit_docstring_from(cls):
     In the following, the docstring for Bar.func created using the
     docstring of `Foo.func`.
 
-    >>> class Foo(object):
+    >>> class Foo:
     ...     def func(self):
     ...         '''Do something useful.'''
     ...         return
@@ -257,14 +255,14 @@ def doc_replace(obj, oldval, newval):
 
     Parameters
     ----------
-    obj: object
-        The object to take the docstring from
-    oldval: string
-        The string to replace from the original docstring
-    newval: string
+    obj : object
+        The object to take the docstring from.
+    oldval : string
+        The string to replace from the original docstring.
+    newval : string
         The string to replace ``oldval`` with.
     """
-    # __doc__ may be None for optimized python (-OO)
+    # __doc__ may be None for optimized Python (-OO)
     doc = (obj.__doc__ or '').replace(oldval, newval)
 
     def inner(func):

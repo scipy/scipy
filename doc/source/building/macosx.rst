@@ -1,6 +1,6 @@
-===============================
-Building From Source on Mac OSX
-===============================
+==============================
+Building from source on macOS
+==============================
 
 .. note::
 
@@ -23,12 +23,12 @@ Apple ships its own version of Python with OS X. However, we
 Alternatively, use Python from one of the OS X package managers
 (Homebrew, MacPorts, Fink).
 
-Compilers (C/C++/FORTRAN/Cython)
---------------------------------
+Compilers (C/C++/FORTRAN/Cython/Pythran)
+----------------------------------------
 
-Though virtually any commercial C/C++ compiler may be used with SciPy, OS X
-comes with GNU C compilers pre-installed. The only thing missing is the GNU
-FORTRAN compiler.
+Though virtually any commercial C/C++ compiler may be used with SciPy, Clang C/C++ compiler,
+which is a Xcode command line tool, can be used for OS X.
+The only thing missing is the GNU FORTRAN compiler.
 
 We recommend gfortran; this is a free, open source, F95 compiler. We suggest you
 use the following binaries:
@@ -39,8 +39,9 @@ use the following binaries:
 
 See `this site <http://r.research.att.com/tools/>`__ for the most recent links.
 
-Unless you are building from released source packages, the `Cython
-<http://cython.org/>`__ compiler is also needed.
+`Cython <https://cython.org/>`__ and `Pythran <https://pythran.readthedocs.io>`__,
+two ahead-of-time compilers, are also needed.
+
 
 BLAS/LAPACK Installation
 ------------------------
@@ -111,7 +112,7 @@ source tree. Change directory first.
 If you have any problems installing SciPy on your Mac
 based on these instructions, please check the `scipy-users and
 scipy-dev mailing list archives
-<https://www.scipy.org/scipylib/mailing-lists.html>`__
+<https://www.scipy.org/mailing-lists>`__
 for possible solutions. If you
 are still stuck, feel free to join scipy-users for further
 assistance. Please have the following information ready:

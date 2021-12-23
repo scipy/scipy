@@ -2,8 +2,6 @@
 Author: Uwe Schmitt
 Sep 2008
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 from numpy.testing import assert_
@@ -14,7 +12,7 @@ from numpy import arange, dot
 from numpy.linalg import norm
 
 
-class TestNNLS(object):
+class TestNNLS:
 
     def test_nnls(self):
         a = arange(25.0).reshape(-1,5)

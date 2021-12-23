@@ -5,12 +5,10 @@ To run it in its simplest form::
   nosetests test_optimize.py
 
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
+from numpy.testing import assert_, assert_equal, assert_allclose
 from scipy.optimize import (minimize, rosen, rosen_der, rosen_hess,
                             rosen_hess_prod)
-from numpy.testing import assert_, assert_equal, assert_allclose
 
 
 class Accumulator:
@@ -27,7 +25,7 @@ class Accumulator:
             self.accum += x
 
 
-class TestTrustRegionSolvers(object):
+class TestTrustRegionSolvers:
 
     def setup_method(self):
         self.x_opt = [1.0, 1.0]

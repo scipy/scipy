@@ -1,5 +1,4 @@
 """Hessian update strategies for quasi-Newton optimization methods."""
-from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.linalg import norm
 from scipy.linalg import get_blas_funcs
@@ -9,7 +8,7 @@ from warnings import warn
 __all__ = ['HessianUpdateStrategy', 'BFGS', 'SR1']
 
 
-class HessianUpdateStrategy(object):
+class HessianUpdateStrategy:
     """Interface for implementing Hessian update strategies.
 
     Many optimization methods make use of Hessian (or inverse Hessian)
@@ -76,12 +75,12 @@ class HessianUpdateStrategy(object):
         Parameters
         ----------
         p : array_like
-            1-d array representing a vector.
+            1-D array representing a vector.
 
         Returns
         -------
         Hp : array
-            1-d  represents the result of multiplying the approximation matrix
+            1-D represents the result of multiplying the approximation matrix
             by vector p.
         """
         raise NotImplementedError("The method ``dot(p)``"
@@ -206,12 +205,12 @@ class FullHessianUpdateStrategy(HessianUpdateStrategy):
         Parameters
         ----------
         p : array_like
-            1-d array representing a vector.
+            1-D array representing a vector.
 
         Returns
         -------
         Hp : array
-            1-d  represents the result of multiplying the approximation matrix
+            1-D represents the result of multiplying the approximation matrix
             by vector p.
         """
         if self.approx_type == 'hess':
@@ -288,7 +287,7 @@ class BFGS(FullHessianUpdateStrategy):
             raise ValueError("`exception_strategy` must be 'skip_update' "
                              "or 'damp_update'.")
 
-        super(BFGS, self).__init__(init_scale)
+        super().__init__(init_scale)
         self.exception_strategy = exception_strategy
 
     def _update_inverse_hessian(self, ys, Hy, yHy, s):
@@ -405,7 +404,7 @@ class SR1(FullHessianUpdateStrategy):
 
     def __init__(self, min_denominator=1e-8, init_scale='auto'):
         self.min_denominator = min_denominator
-        super(SR1, self).__init__(init_scale)
+        super().__init__(init_scale)
 
     def _update_implementation(self, delta_x, delta_grad):
         # Auxiliary variables w and z

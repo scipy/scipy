@@ -959,7 +959,7 @@ c note..  vmnorm, fnorm, bnorm, idamax, ddot, and d1mach are function
 c routines.  all the others are subroutines.
 c
 c the intrinsic and external routines used by lsoda are..
-c dabs, dmax1, dmin1, dfloat, max0, min0, mod, dsign, dsqrt, and write.
+c dabs, dmax1, dmin1, dble, max0, min0, mod, dsign, dsqrt, and write.
 c
 c a block data subprogram is also included with the package,
 c for loading some of the variables in internal common.
@@ -1648,8 +1648,7 @@ c
  710  call xerrwv('lsoda--  repeated occurrences of illegal input    ',
      1   50, 302, 0, 0, 0, 0, 0, 0.0d0, 0.0d0)
 c
- 800  call xerrwv('lsoda--  run aborted.. apparent infinite loop     ',
-     1   50, 303, 2, 0, 0, 0, 0, 0.0d0, 0.0d0)
+ 800  istate = -8
       return
 c----------------------- end of subroutine lsoda -----------------------
       end

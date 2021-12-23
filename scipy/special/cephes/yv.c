@@ -23,7 +23,7 @@ double yv(double v, double x)
     }
     else if (v == floor(v)) {
         /* Zero in denominator. */
-	mtherr("yv", DOMAIN);
+	sf_error("yv", SF_ERROR_DOMAIN, NULL);
         return NPY_NAN;
     }
 
@@ -32,12 +32,12 @@ double yv(double v, double x)
 
     if (cephes_isinf(y)) {
         if (v > 0) {
-            mtherr("yv", OVERFLOW);
+            sf_error("yv", SF_ERROR_OVERFLOW, NULL);
             return -NPY_INFINITY;
         }
         else if (v < -1e10) {
             /* Whether it's +inf or -inf is numerically ill-defined. */
-            mtherr("yv", DOMAIN);
+            sf_error("yv", SF_ERROR_DOMAIN, NULL);
             return NPY_NAN;
         }
     }

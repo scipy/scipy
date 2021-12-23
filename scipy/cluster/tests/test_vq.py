@@ -1,20 +1,18 @@
 
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import sys
 
 import numpy as np
 from numpy.testing import (assert_array_equal, assert_array_almost_equal,
-                           assert_allclose, assert_equal, assert_)
-from scipy._lib._numpy_compat import suppress_warnings
+                           assert_allclose, assert_equal, assert_,
+                           suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
 
 from scipy.cluster.vq import (kmeans, kmeans2, py_vq, vq, whiten,
                               ClusterError, _krandinit)
 from scipy.cluster import _vq
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 TESTDATA_2D = np.array([
@@ -73,7 +71,7 @@ CODET2 = np.array([[11.0/3, 8.0/3],
 LABEL1 = np.array([0, 1, 2, 2, 2, 2, 1, 2, 1, 1, 1])
 
 
-class TestWhiten(object):
+class TestWhiten:
     def test_whiten(self):
         desired = np.array([[5.08738849, 2.97091878],
                             [3.19909255, 0.69660580],
@@ -113,7 +111,7 @@ class TestWhiten(object):
                 assert_raises(ValueError, whiten, obs)
 
 
-class TestVq(object):
+class TestVq:
     def test_py_vq(self):
         initc = np.concatenate(([[X[0]], [X[1]], [X[2]]]))
         for tp in np.array, matrix:
@@ -172,7 +170,7 @@ class TestVq(object):
         assert_array_equal(codes0, codes1)
 
 
-class TestKMean(object):
+class TestKMean:
     def test_large_features(self):
         # Generate a data set with large values, and run kmeans on it to
         # (regression for 1077).
@@ -256,7 +254,7 @@ class TestKMean(object):
 
         # minit='random' can give warnings, filter those
         with suppress_warnings() as sup:
-            sup.filter(message="One of the clusters is empty. Re-run")
+            sup.filter(message="One of the clusters is empty. Re-run.")
             kmeans2(data, 3, minit='random')
             kmeans2(data[:, :1], 3, minit='random')  # special case (1-D)
 
@@ -267,8 +265,13 @@ class TestKMean(object):
         datas = [data.reshape((200, 2)), data.reshape((20, 20))[:10]]
         k = int(1e6)
         for data in datas:
-            np.random.seed(1234)
-            init = _krandinit(data, k)
+            # check that np.random.Generator can be used (numpy >= 1.17)
+            if hasattr(np.random, 'default_rng'):
+                rng = np.random.default_rng(1234)
+            else:
+                rng = np.random.RandomState(1234)
+
+            init = _krandinit(data, k, rng)
             orig_cov = np.cov(data, rowvar=0)
             init_cov = np.cov(init, rowvar=0)
             assert_allclose(orig_cov, init_cov, atol=1e-2)
@@ -289,3 +292,45 @@ class TestKMean(object):
         res = kmeans(x, 1, thresh=1e16)
         assert_allclose(res[0], np.array([4.]))
         assert_allclose(res[1], 2.3999999999999999)
+
+    def test_kmeans2_kpp_low_dim(self):
+        # Regression test for gh-11462
+        prev_res = np.array([[-1.95266667, 0.898],
+                             [-3.153375, 3.3945]])
+        np.random.seed(42)
+        res, _ = kmeans2(TESTDATA_2D, 2, minit='++')
+        assert_allclose(res, prev_res)
+
+    def test_kmeans2_kpp_high_dim(self):
+        # Regression test for gh-11462
+        n_dim = 100
+        size = 10
+        centers = np.vstack([5 * np.ones(n_dim),
+                             -5 * np.ones(n_dim)])
+        np.random.seed(42)
+        data = np.vstack([
+            np.random.multivariate_normal(centers[0], np.eye(n_dim), size=size),
+            np.random.multivariate_normal(centers[1], np.eye(n_dim), size=size)
+        ])
+        res, _ = kmeans2(data, 2, minit='++')
+        assert_array_almost_equal(res, centers, decimal=0)
+
+    def test_kmeans_and_kmeans2_random_seed(self):
+
+        seed_list = [1234, np.random.RandomState(1234)]
+
+        # check that np.random.Generator can be used (numpy >= 1.17)
+        if hasattr(np.random, 'default_rng'):
+            seed_list.append(np.random.default_rng(1234))
+
+        for seed in seed_list:
+            # test for kmeans
+            res1, _ = kmeans(TESTDATA_2D, 2, seed=seed)
+            res2, _ = kmeans(TESTDATA_2D, 2, seed=seed)
+            assert_allclose(res1, res1)  # should be same results
+
+            # test for kmeans2
+            for minit in ["random", "points", "++"]:
+                res1, _ = kmeans2(TESTDATA_2D, 2, minit=minit, seed=seed)
+                res2, _ = kmeans2(TESTDATA_2D, 2, minit=minit, seed=seed)
+                assert_allclose(res1, res1)  # should be same results

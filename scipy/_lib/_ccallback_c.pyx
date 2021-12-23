@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from cpython.pycapsule cimport (
     PyCapsule_CheckExact, PyCapsule_New, PyCapsule_SetContext, PyCapsule_GetName, PyCapsule_GetPointer,
     PyCapsule_GetContext

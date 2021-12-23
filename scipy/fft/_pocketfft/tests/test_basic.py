@@ -1,17 +1,16 @@
 # Created by Pearu Peterson, September 2002
 
-from __future__ import division, print_function, absolute_import
-
 from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_array_less,
                            assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 from scipy.fft._pocketfft import (ifft, fft, fftn, ifftn,
-                                  rfft, irfft, rfftn, irfftn, fft2)
+                                  rfft, irfft, rfftn, irfftn, fft2,
+                                  hfft, ihfft, hfftn, ihfftn)
 
 from numpy import (arange, add, array, asarray, zeros, dot, exp, pi,
-                   swapaxes, double, cdouble)
+                   swapaxes, cdouble)
 import numpy as np
 import numpy.fft
 from numpy.random import rand
@@ -45,6 +44,10 @@ def _assert_close_in_norm(x, y, rtol, size, rdt):
 def random(size):
     return rand(*size)
 
+def swap_byteorder(arr):
+    """Returns the same array with swapped byteorder"""
+    dtype = arr.dtype.newbyteorder('S')
+    return arr.astype(dtype)
 
 def get_mat(n):
     data = arange(n)
@@ -74,14 +77,14 @@ def direct_idft(x):
 
 def direct_dftn(x):
     x = asarray(x)
-    for axis in range(len(x.shape)):
+    for axis in range(x.ndim):
         x = fft(x, axis=axis)
     return x
 
 
 def direct_idftn(x):
     x = asarray(x)
-    for axis in range(len(x.shape)):
+    for axis in range(x.ndim):
         x = ifft(x, axis=axis)
     return x
 
@@ -110,7 +113,7 @@ def direct_rdftn(x):
     return fftn(rfft(x), axes=range(x.ndim - 1))
 
 
-class _TestFFTBase(object):
+class _TestFFTBase:
     def setup_method(self):
         self.cdt = None
         self.rdt = None
@@ -176,7 +179,7 @@ class TestSingleFFT(_TestFFTBase):
         self.rdt = np.float32
 
 
-class TestFloat16FFT(object):
+class TestFloat16FFT:
 
     def test_1_argument_real(self):
         x1 = np.array([1, 2, 3, 4], dtype=np.float16)
@@ -195,7 +198,7 @@ class TestFloat16FFT(object):
         assert_array_almost_equal(y[1], direct_dft(x2.astype(np.float32)))
 
 
-class _TestIFFTBase(object):
+class _TestIFFTBase:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -298,7 +301,7 @@ class TestSingleIFFT(_TestIFFTBase):
         self.atol = 1e-4
 
 
-class _TestRFFTBase(object):
+class _TestRFFTBase:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -328,24 +331,24 @@ class _TestRFFTBase(object):
             rfft(x)
 
     # See gh-5790
-    class MockSeries(object):
+    class MockSeries:
         def __init__(self, data):
             self.data = np.asarray(data)
 
         def __getattr__(self, item):
             try:
                 return getattr(self.data, item)
-            except AttributeError:
+            except AttributeError as e:
                 raise AttributeError(("'MockSeries' object "
                                       "has no attribute '{attr}'".
-                                      format(attr=item)))
+                                      format(attr=item))) from e
 
     def test_non_ndarray_with_dtype(self):
         x = np.array([1., 2., 3., 4., 5.])
         xs = _TestRFFTBase.MockSeries(x)
 
         expected = [1, 2, 3, 4, 5]
-        out = rfft(xs)
+        rfft(xs)
 
         # Data should not have been overwritten
         assert_equal(x, expected)
@@ -371,7 +374,7 @@ class TestRFFTSingle(_TestRFFTBase):
         self.rdt = np.float32
 
 
-class _TestIRFFTBase(object):
+class _TestIRFFTBase:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -461,7 +464,7 @@ class TestIRFFTSingle(_TestIRFFTBase):
         self.ndec = 5
 
 
-class Testfft2(object):
+class Testfft2:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -470,7 +473,7 @@ class Testfft2(object):
         # fftn (and hence fft2) used to break when both axes and shape were
         # used
         x = numpy.ones((4, 4, 2))
-        y = fft2(x, shape=(8, 8), axes=(-3, -2))
+        y = fft2(x, s=(8, 8), axes=(-3, -2))
         y_r = numpy.fft.fftn(x, s=(8, 8), axes=(-3, -2))
         assert_array_almost_equal(y, y_r)
 
@@ -479,7 +482,7 @@ class Testfft2(object):
         assert_raises(ValueError, fft2, [[1, 1], [2, 2]], (4, -3))
 
 
-class TestFftnSingle(object):
+class TestFftnSingle:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -540,7 +543,7 @@ class TestFftnSingle(object):
         assert_array_almost_equal_nulp(y1, y2, 2e6)
 
 
-class TestFftn(object):
+class TestFftn:
     def setup_method(self):
         np.random.seed(1234)
 
@@ -699,10 +702,10 @@ class TestFftn(object):
                     [0, 0, 0, 0],
                     [0, 0, 0, 0]]
 
-        y = fftn(small_x, shape=(4, 4))
+        y = fftn(small_x, s=(4, 4))
         assert_array_almost_equal(y, fftn(large_x1))
 
-        y = fftn(small_x, shape=(3, 4))
+        y = fftn(small_x, s=(3, 4))
         assert_array_almost_equal(y, fftn(large_x1[:-1]))
 
     def test_shape_axes_argument(self):
@@ -713,9 +716,9 @@ class TestFftn(object):
                           [4, 5, 6, 0],
                           [7, 8, 9, 0],
                           [0, 0, 0, 0]])
-        y = fftn(small_x, shape=(4, 4), axes=(-2, -1))
+        y = fftn(small_x, s=(4, 4), axes=(-2, -1))
         assert_array_almost_equal(y, fftn(large_x1))
-        y = fftn(small_x, shape=(4, 4), axes=(-1, -2))
+        y = fftn(small_x, s=(4, 4), axes=(-1, -2))
 
         assert_array_almost_equal(y, swapaxes(
             fftn(swapaxes(large_x1, -1, -2)), -1, -2))
@@ -723,26 +726,25 @@ class TestFftn(object):
     def test_shape_axes_argument2(self):
         # Change shape of the last axis
         x = numpy.random.random((10, 5, 3, 7))
-        y = fftn(x, axes=(-1,), shape=(8,))
+        y = fftn(x, axes=(-1,), s=(8,))
         assert_array_almost_equal(y, fft(x, axis=-1, n=8))
 
         # Change shape of an arbitrary axis which is not the last one
         x = numpy.random.random((10, 5, 3, 7))
-        y = fftn(x, axes=(-2,), shape=(8,))
+        y = fftn(x, axes=(-2,), s=(8,))
         assert_array_almost_equal(y, fft(x, axis=-2, n=8))
 
         # Change shape of axes: cf #244, where shape and axes were mixed up
         x = numpy.random.random((4, 4, 2))
-        y = fftn(x, axes=(-3, -2), shape=(8, 8))
+        y = fftn(x, axes=(-3, -2), s=(8, 8))
         assert_array_almost_equal(y,
                                   numpy.fft.fftn(x, axes=(-3, -2), s=(8, 8)))
 
     def test_shape_argument_more(self):
         x = zeros((4, 4, 2))
         with assert_raises(ValueError,
-                           match="when given, axes and shape arguments"
-                           " have to be of the same length"):
-            fftn(x, shape=(8, 8, 2, 1))
+                           match="shape requires more axes than are present"):
+            fftn(x, s=(8, 8, 2, 1))
 
     def test_invalid_sizes(self):
         with assert_raises(ValueError,
@@ -760,7 +762,7 @@ class TestFftn(object):
         assert_allclose(fftn(x, axes=[]), x, atol=1e-7)
 
 
-class TestIfftn(object):
+class TestIfftn:
     dtype = None
     cdtype = None
 
@@ -806,7 +808,7 @@ class TestIfftn(object):
         x = numpy.random.random((2,2,2))
         assert_allclose(ifftn(x, axes=[]), x, atol=1e-7)
 
-class TestRfftn(object):
+class TestRfftn:
     dtype = None
     cdtype = None
 
@@ -851,20 +853,20 @@ class TestRfftn(object):
     def test_no_axes(self, func):
         with assert_raises(ValueError,
                            match="at least 1 axis must be transformed"):
-            y = func([], axes=[])
+            func([], axes=[])
 
     def test_complex_input(self):
         with assert_raises(TypeError, match="x must be a real sequence"):
             rfftn(np.zeros(10, dtype=np.complex64))
 
 
-class FakeArray(object):
+class FakeArray:
     def __init__(self, data):
         self._data = data
         self.__array_interface__ = data.__array_interface__
 
 
-class FakeArray2(object):
+class FakeArray2:
     def __init__(self, data):
         self._data = data
 
@@ -873,7 +875,7 @@ class FakeArray2(object):
 
 # TODO: Is this test actually valuable? The behavior it's testing shouldn't be
 # relied upon by users except for overwrite_x = False
-class TestOverwrite(object):
+class TestOverwrite:
     """Check input overwrite behavior of the FFT functions."""
 
     real_dtypes = [np.float32, np.float64, np.longfloat]
@@ -1000,5 +1002,21 @@ class TestOverwrite(object):
 def test_invalid_norm(func):
     x = np.arange(10, dtype=float)
     with assert_raises(ValueError,
-                       match='Invalid norm value o, should be None or "ortho"'):
+                       match='Invalid norm value \'o\', should be'
+                             ' "backward", "ortho" or "forward"'):
         func(x, norm='o')
+
+
+@pytest.mark.parametrize('func', [fft, ifft, fftn, ifftn,
+                                   irfft, irfftn, hfft, hfftn])
+def test_swapped_byte_order_complex(func):
+    rng = np.random.RandomState(1234)
+    x = rng.rand(10) + 1j * rng.rand(10)
+    assert_allclose(func(swap_byteorder(x)), func(x))
+
+
+@pytest.mark.parametrize('func', [ihfft, ihfftn, rfft, rfftn])
+def test_swapped_byte_order_real(func):
+    rng = np.random.RandomState(1234)
+    x = rng.rand(10)
+    assert_allclose(func(swap_byteorder(x)), func(x))

@@ -132,18 +132,16 @@ Raw function pointers (Fortran-style pointer arguments):
 
 """
 
-# Within scipy, these wrappers can be used via relative or absolute cimport.
+# Within SciPy, these wrappers can be used via relative or absolute cimport.
 # Examples:
 # from ..linalg cimport cython_blas
 # from scipy.linalg cimport cython_blas
 # cimport scipy.linalg.cython_blas as cython_blas
 # cimport ..linalg.cython_blas as cython_blas
 
-# Within scipy, if BLAS functions are needed in C/C++/Fortran,
+# Within SciPy, if BLAS functions are needed in C/C++/Fortran,
 # these wrappers should not be used.
 # The original libraries should be linked directly.
-
-from __future__ import absolute_import
 
 cdef extern from "fortran_defs.h":
     pass
@@ -181,18 +179,16 @@ Raw function pointers (Fortran-style pointer arguments):
 
 """
 
-# Within scipy, these wrappers can be used via relative or absolute cimport.
+# Within SciPy, these wrappers can be used via relative or absolute cimport.
 # Examples:
 # from ..linalg cimport cython_lapack
 # from scipy.linalg cimport cython_lapack
 # cimport scipy.linalg.cython_lapack as cython_lapack
 # cimport ..linalg.cython_lapack as cython_lapack
 
-# Within scipy, if LAPACK functions are needed in C/C++/Fortran,
+# Within SciPy, if LAPACK functions are needed in C/C++/Fortran,
 # these wrappers should not be used.
 # The original libraries should be linked directly.
-
-from __future__ import absolute_import
 
 cdef extern from "fortran_defs.h":
     pass
@@ -477,7 +473,7 @@ blas_pxd_preamble = """# Within scipy, these wrappers can be used via relative o
 # cimport scipy.linalg.cython_blas as cython_blas
 # cimport ..linalg.cython_blas as cython_blas
 
-# Within scipy, if BLAS functions are needed in C/C++/Fortran,
+# Within SciPy, if BLAS functions are needed in C/C++/Fortran,
 # these wrappers should not be used.
 # The original libraries should be linked directly.
 
@@ -494,14 +490,14 @@ def generate_blas_pxd(all_sigs):
     return blas_pxd_preamble + body
 
 
-lapack_pxd_preamble = """# Within scipy, these wrappers can be used via relative or absolute cimport.
+lapack_pxd_preamble = """# Within SciPy, these wrappers can be used via relative or absolute cimport.
 # Examples:
 # from ..linalg cimport cython_lapack
 # from scipy.linalg cimport cython_lapack
 # cimport scipy.linalg.cython_lapack as cython_lapack
 # cimport ..linalg.cython_lapack as cython_lapack
 
-# Within scipy, if LAPACK functions are needed in C/C++/Fortran,
+# Within SciPy, if LAPACK functions are needed in C/C++/Fortran,
 # these wrappers should not be used.
 # The original libraries should be linked directly.
 

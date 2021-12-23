@@ -1,13 +1,12 @@
 """Compute the action of the matrix exponential.
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg import aslinearoperator
+from scipy.sparse._sputils import is_pydata_spmatrix
 
 __all__ = ['expm_multiply']
 
@@ -16,6 +15,8 @@ def _exact_inf_norm(A):
     # A compatibility function which should eventually disappear.
     if scipy.sparse.isspmatrix(A):
         return max(abs(A).sum(axis=1).flat)
+    elif is_pydata_spmatrix(A):
+        return max(abs(A).sum(axis=1))
     else:
         return np.linalg.norm(A, np.inf)
 
@@ -24,23 +25,28 @@ def _exact_1_norm(A):
     # A compatibility function which should eventually disappear.
     if scipy.sparse.isspmatrix(A):
         return max(abs(A).sum(axis=0).flat)
+    elif is_pydata_spmatrix(A):
+        return max(abs(A).sum(axis=0))
     else:
         return np.linalg.norm(A, 1)
 
 
 def _trace(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
-        return A.diagonal().sum()
+    if is_pydata_spmatrix(A):
+        return A.to_scipy_sparse().trace()
     else:
-        return np.trace(A)
+        return A.trace()
 
 
 def _ident_like(A):
     # A compatibility function which should eventually disappear.
     if scipy.sparse.isspmatrix(A):
-        return scipy.sparse.construct.eye(A.shape[0], A.shape[1],
+        return scipy.sparse._construct.eye(A.shape[0], A.shape[1],
                 dtype=A.dtype, format=A.format)
+    elif is_pydata_spmatrix(A):
+        import sparse
+        return sparse.eye(A.shape[0], A.shape[1], dtype=A.dtype)
     else:
         return np.eye(A.shape[0], A.shape[1], dtype=A.dtype)
 
@@ -110,9 +116,9 @@ def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None):
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import expm, expm_multiply
     >>> A = csc_matrix([[1, 0], [0, 1]])
-    >>> A.todense()
-    matrix([[1, 0],
-            [0, 1]], dtype=int64)
+    >>> A.toarray()
+    array([[1, 0],
+           [0, 1]], dtype=int64)
     >>> B = np.array([np.exp(-1.), np.exp(-2.)])
     >>> B
     array([ 0.36787944,  0.13533528])
@@ -164,7 +170,8 @@ def _expm_multiply_simple(A, B, t=1.0, balance=False):
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
-        raise ValueError('the matrices A and B have incompatible shapes')
+        raise ValueError('shapes of matrices A {} and B {} are incompatible'
+                         .format(A.shape, B.shape))
     ident = _ident_like(A)
     n = A.shape[0]
     if len(B.shape) == 1:
@@ -522,7 +529,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     num : int, optional
         Number of time points to use.
     endpoint : bool, optional
-        If True, `stop` is the last time point.  Otherwise, it is not included.
+        If True, `stop` is the last time point. Otherwise, it is not included.
     balance : bool
         Indicates whether or not to apply balancing.
     status_only : bool
@@ -548,7 +555,8 @@ def _expm_multiply_interval(A, B, start=None, stop=None,
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected A to be like a square matrix')
     if A.shape[1] != B.shape[0]:
-        raise ValueError('the matrices A and B have incompatible shapes')
+        raise ValueError('shapes of matrices A {} and B {} are incompatible'
+                         .format(A.shape, B.shape))
     ident = _ident_like(A)
     n = A.shape[0]
     if len(B.shape) == 1:

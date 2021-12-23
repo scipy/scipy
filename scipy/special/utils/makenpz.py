@@ -5,13 +5,11 @@ Build a npz containing all data files in the directory.
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import os
 import numpy as np
 import argparse
 
-from distutils.util import newer
+from distutils.util import newer  # type: ignore
 
 
 def main():
@@ -46,7 +44,7 @@ def main():
                 changed = set(old_data.keys()) != set(key for key, _ in files)
             finally:
                 old_data.close()
-        except (IOError, OSError):
+        except OSError:
             # corrupted file
             changed = True
 

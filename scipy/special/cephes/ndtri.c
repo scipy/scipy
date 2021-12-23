@@ -144,7 +144,7 @@ double y0;
 	return NPY_INFINITY;
     }
     if (y0 < 0.0 || y0 > 1.0) {
-	mtherr("ndtri", DOMAIN);
+	sf_error("ndtri", SF_ERROR_DOMAIN, NULL);
 	return NPY_NAN;
     }
     code = 1;

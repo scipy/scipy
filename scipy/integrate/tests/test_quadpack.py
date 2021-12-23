@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import sys
 import math
 import numpy as np
@@ -7,10 +5,8 @@ from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
 from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
-from pytest import raises as assert_raises
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
-from scipy._lib.six import xrange
 from scipy._lib._ccallback import LowLevelCallable
 
 import ctypes
@@ -32,13 +28,10 @@ def get_clib_test_routine(name, restype, *argtypes):
     return ctypes.cast(ptr, ctypes.CFUNCTYPE(restype, *argtypes))
 
 
-class TestCtypesQuad(object):
+class TestCtypesQuad:
     def setup_method(self):
         if sys.platform == 'win32':
-            if sys.version_info < (3, 5):
-                files = [ctypes.util.find_msvcrt()]
-            else:
-                files = ['api-ms-win-crt-math-l1-1-0.dll']
+            files = ['api-ms-win-crt-math-l1-1-0.dll']
         elif sys.platform == 'darwin':
             files = ['libm.dylib']
         else:
@@ -53,7 +46,7 @@ class TestCtypesQuad(object):
         else:
             # This test doesn't work on some Linux platforms (Fedora for
             # example) that put an ld script in libm.so - see gh-5370
-            self.skipTest("Ctypes can't import libm.so")
+            pytest.skip("Ctypes can't import libm.so")
 
         restype = ctypes.c_double
         argtypes = (ctypes.c_double,)
@@ -95,7 +88,7 @@ class TestCtypesQuad(object):
         for j, func in enumerate(all_sigs):
             callback = LowLevelCallable(func)
             if func in legacy_only_sigs:
-                assert_raises(ValueError, quad, callback, 0, pi)
+                pytest.raises(ValueError, quad, callback, 0, pi)
             else:
                 assert_allclose(quad(callback, 0, pi)[0], 2.0)
 
@@ -104,10 +97,10 @@ class TestCtypesQuad(object):
             if func in legacy_sigs:
                 assert_allclose(quad(func, 0, pi)[0], 2.0)
             else:
-                assert_raises(ValueError, quad, func, 0, pi)
+                pytest.raises(ValueError, quad, func, 0, pi)
 
 
-class TestMultivariateCtypesQuad(object):
+class TestMultivariateCtypesQuad:
     def setup_method(self):
         restype = ctypes.c_double
         argtypes = (ctypes.c_int, ctypes.c_double)
@@ -133,7 +126,7 @@ class TestMultivariateCtypesQuad(object):
         assert_quad(quad(threadsafety, 0, 1), 0.9596976941318602)
 
 
-class TestQuad(object):
+class TestQuad:
     def test_typical(self):
         # 1) Typical function with two extra arguments:
         def myfunc(x, n, z):       # Bessel function integrand
@@ -280,7 +273,7 @@ class TestQuad(object):
                      2*8/3.0 * (b**4.0 - a**4.0))
 
 
-class TestNQuad(object):
+class TestNQuad:
     def test_fixed_limits(self):
         def func1(x0, x1, x2, x3):
             val = (x0**2 + x1*x2 - x3**3 + np.sin(x0) +
@@ -412,7 +405,7 @@ class TestNQuad(object):
 
     def test_dict_as_opts(self):
         try:
-            out = nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
+            nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
         except(TypeError):
             assert False
 

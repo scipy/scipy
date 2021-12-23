@@ -102,7 +102,7 @@ double a, b, x;
 
   done:
     if (pcanc > 1.0e-12)
-	mtherr("hyperg", PLOSS);
+	sf_error("hyperg", SF_ERROR_LOSS, NULL);
 
     return (psum);
 }
@@ -137,7 +137,7 @@ double *err;
 
     while (t > MACHEP) {
 	if (bn == 0) {		/* check bn first since if both   */
-	    mtherr("hyperg", SING);
+	    sf_error("hyperg", SF_ERROR_SINGULAR, NULL);
 	    return (NPY_INFINITY);	/* an and bn are zero it is     */
 	}
 	if (an == 0)		/* a singularity            */
@@ -377,6 +377,6 @@ double *err;
     /* series blew up: */
   error:
     *err = NPY_INFINITY;
-    mtherr("hyperg", TLOSS);
+    sf_error("hyperg", SF_ERROR_NO_RESULT, NULL);
     return (sum);
 }

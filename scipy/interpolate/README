@@ -26,7 +26,7 @@ Other available functions include
  UnivariateSpline             -- A more recent, object-oriented wrapper;
                                 finds a (possibly smoothed) interpolating
                                 spline.
- InterpolatedUnivariateSpline -- Identical to InivariateSpline, but with
+ InterpolatedUnivariateSpline -- Identical to UnivariateSpline, but with
 				less error checking
  LSQUnivariateSpline	      -- Appears to be identical to UnivariateSplin
 				with more error checking.  Uses weighted

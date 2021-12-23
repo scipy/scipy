@@ -1,36 +1,13 @@
 #include <Python.h>
 #include <numpy/npy_common.h>
-#include <numpy/npy_3kcompat.h>
-
-#ifdef OLDAPI
-#define MOD _ctest_oldapi
-#define MODSTR "_ctest_oldapi"
-#define PY3K_INIT PyInit__ctest_oldapi
-#define PY2K_INIT init_ctest_oldapi
-#else
-#define MOD _ctest
-#define MODSTR "_ctest"
-#define PY3K_INIT PyInit__ctest
-#define PY2K_INIT init_ctest
-#endif
 
 
-#if defined(OLDAPI) && PY_VERSION_HEX < 0x03000000
-static void
-_destructor(void *cobject, void *callback_data)
-{
-    PyMem_Free(callback_data);
-}    
-
-
-#else
 static void
 _destructor(PyObject *obj)
 {
     void *callback_data = PyCapsule_GetContext(obj);
     PyMem_Free(callback_data);
 }
-#endif
 
 
 static int
@@ -56,7 +33,7 @@ py_filter1d(PyObject *obj, PyObject *args)
 {
     npy_intp *callback_data = NULL;
     PyObject *capsule = NULL;
-    
+
     callback_data = PyMem_Malloc(sizeof(npy_intp));
     if (!callback_data) {
 	PyErr_NoMemory();
@@ -64,17 +41,12 @@ py_filter1d(PyObject *obj, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "n", callback_data)) goto error;
 
-#ifdef OLDAPI
-    capsule = NpyCapsule_FromVoidPtrAndDesc(_filter1d, callback_data, _destructor);
-    if (!capsule) goto error;
-#else
     capsule = PyCapsule_New(_filter1d, NULL, _destructor);
     if (!capsule) goto error;
     if (PyCapsule_SetContext(capsule, callback_data) != 0) {
 	Py_DECREF(capsule);
 	goto error;
     }
-#endif
     return capsule;
  error:
     PyMem_Free(callback_data);
@@ -105,7 +77,7 @@ py_filter2d(PyObject *obj, PyObject *args)
     PyObject *seq = NULL, *item = NULL, *capsule = NULL;
 
     if (!PyArg_ParseTuple(args, "O", &seq)) goto error;
-    
+
     size = PySequence_Length(seq);
     if (size == -1) goto error;
     callback_data = PyMem_Malloc(size*sizeof(double));
@@ -124,17 +96,12 @@ py_filter2d(PyObject *obj, PyObject *args)
 	if (PyErr_Occurred()) goto error;
     }
 
-#ifdef OLDAPI
-    capsule = NpyCapsule_FromVoidPtrAndDesc(_filter2d, callback_data, _destructor);
-    if (!capsule) goto error;
-#else
     capsule = PyCapsule_New(_filter2d, NULL, _destructor);
     if (!capsule) goto error;
     if (PyCapsule_SetContext(capsule, callback_data) != 0) {
 	Py_DECREF(capsule);
 	goto error;
     }
-#endif
     return capsule;
  error:
     PyMem_Free(callback_data);
@@ -168,17 +135,12 @@ py_transform(PyObject *obj, PyObject *args)
     }
     if (!PyArg_ParseTuple(args, "d", callback_data)) goto error;
 
-#ifdef OLDAPI
-    capsule = NpyCapsule_FromVoidPtrAndDesc(_transform, callback_data, _destructor);
-    if (!capsule) goto error;
-#else
     capsule = PyCapsule_New(_transform, NULL, _destructor);
     if (!capsule) goto error;
     if (PyCapsule_SetContext(capsule, callback_data) != 0) {
 	Py_DECREF(capsule);
 	goto error;
     }
-#endif
     return capsule;
  error:
     PyMem_Free(callback_data);
@@ -192,13 +154,12 @@ static PyMethodDef _CTestMethods[] = {
     {"filter2d", (PyCFunction)py_filter2d, METH_VARARGS, ""},
     {NULL, NULL, 0, NULL}
 };
-				      
-				      
+
+
 /* Initialize the module */
-#if PY_VERSION_HEX >= 0x03000000
-static struct PyModuleDef MOD = {
+static struct PyModuleDef _ctest = {
     PyModuleDef_HEAD_INIT,
-    MODSTR,
+    "_ctest",
     NULL,
     -1,
     _CTestMethods,
@@ -209,17 +170,7 @@ static struct PyModuleDef MOD = {
 };
 
 
-PyMODINIT_FUNC
-PY3K_INIT(void)
+PyObject *PyInit__ctest(void)
 {
-    return PyModule_Create(&MOD);
+    return PyModule_Create(&_ctest);
 }
-
-
-#else
-PyMODINIT_FUNC
-PY2K_INIT(void)
-{
-    Py_InitModule(MODSTR, _CTestMethods);
-}
-#endif

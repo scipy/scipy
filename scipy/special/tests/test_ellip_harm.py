@@ -3,12 +3,9 @@
 # Distributed under the same license as SciPy itself.
 #
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_allclose,
-                           assert_)
-from scipy._lib._numpy_compat import suppress_warnings
+                           assert_, suppress_warnings)
 from scipy.special._testutils import assert_func_equal
 from scipy.special import ellip_harm, ellip_harm_2, ellip_normal
 from scipy.integrate import IntegrationWarning
@@ -160,7 +157,7 @@ def test_ellip_norm():
     points = []
     for n in range(4):
         for p in range(1, 2*n+2):
-            points.append((h2, k2, n*np.ones(h2.size), p*np.ones(h2.size)))
+            points.append((h2, k2, np.full(h2.size, n), np.full(h2.size, p)))
     points = np.array(points)
     with suppress_warnings() as sup:
         sup.filter(IntegrationWarning, "The occurrence of roundoff error")

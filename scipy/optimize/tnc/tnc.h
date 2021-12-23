@@ -129,7 +129,7 @@ typedef void tnc_callback(double x[], void *state);
  * scale     : scaling factors to apply to each variable
  *             if NULL, the factors are up-low for interval bounded variables
  *             and 1+|x] for the others.
- * offset    : constant to substract to each variable
+ * offset    : constant to subtract to each variable
  *             if NULL, the constant are (up+low)/2 for interval bounded
  *             variables and x for the others.
  * messages  : see the tnc_message enum

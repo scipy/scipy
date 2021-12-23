@@ -1,5 +1,5 @@
 """
-.. note:
+.. note::
     If you are looking for overrides for NumPy-specific methods, see the
     documentation for :obj:`unumpy`. This page explains how to write
     back-ends and multimethods.
@@ -12,10 +12,12 @@ See the documentation of :obj:`generate_multimethod` on how to write multimethod
 
 Let's start with the simplest:
 
-``__ua_domain__`` defines the back-end *domain*. The domain consists of a string
-that, by convention, is the module for which a back-end is provided, along with
-related packages in the ecosystem. For example, the ``"numpy"`` domain may cover
-backends for NumPy itself, as well as SciPy and the numerical scikit packages.
+``__ua_domain__`` defines the back-end *domain*. The domain consists of period-
+separated string consisting of the modules you extend plus the submodule. For
+example, if a submodule ``module2.submodule`` extends ``module1``
+(i.e., it exposes dispatchables marked as types available in ``module1``),
+then the domain string should be ``"module1.module2.submodule"``.
+
 
 For the purpose of this demonstration, we'll be creating an object and setting
 its attributes directly. However, note that you can use a module or your own type
@@ -34,9 +36,10 @@ is certainly helpful. We expect core API designers/specifiers to write the
 multimethods, and implementors to override them. But, as is often the case,
 similar people write both.
 
-Without further ado, here's an example multimethTrueod:
+Without further ado, here's an example multimethod:
 
 >>> import uarray as ua
+>>> from uarray import Dispatchable
 >>> def override_me(a, b):
 ...   return Dispatchable(a, int),
 >>> def override_replacer(args, kwargs, dispatchables):
@@ -102,7 +105,7 @@ to the next back-end, which in this case, doesn't exist. The same applies to
 ...     overridden_me(1, "2")
 Traceback (most recent call last):
     ...
-uarray.backend.BackendNotImplementedError: ...
+uarray.BackendNotImplementedError: ...
 
 The last possibility is if we don't have ``__ua_convert__``, in which case the job is left
 up to ``__ua_function__``, but putting things back into arrays after conversion will not be
@@ -110,6 +113,5 @@ possible.
 """
 
 from ._backend import *
-from ._backend import _Function
 
-__version__ = 'v0.4+336.g4c712ad.scipy'
+__version__ = '0.8.2+14.gaf53966.scipy'

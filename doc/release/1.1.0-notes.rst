@@ -18,7 +18,7 @@ s). Our development attention will now shift to bug-fix releases on the
 
 This release requires Python 2.7 or 3.4+ and NumPy 1.8.2 or greater.
 
-This release has improved but not necessarily 100% compatibility with
+This release has improved but not necessarily 100% compatible with
 the `PyPy <https://pypy.org/>`__ Python implementation. For running on
 PyPy, PyPy 6.0+ and Numpy 1.15.0+ are required.
 
@@ -29,7 +29,7 @@ New features
 ------------------------------
 
 The argument ``tfirst`` has been added to the function
-`scipy.integrate.odeint`. This allows odeint to use the same user
+`scipy.integrate.odeint`. This allows ``odeint`` to use the same user
 functions as `scipy.integrate.solve_ivp` and `scipy.integrate.ode` without
 the need for wrapping them in a function that swaps the first two
 arguments.
@@ -68,25 +68,25 @@ values.
 
 The method ``trust-constr`` has been added to
 `scipy.optimize.minimize`. The method switches between two
-implementations depending on the problem definition. For equality
-constrained problems it is an implementation of a trust-region
+implementations depending on the problem definition. For equality-constrained
+problems it is an implementation of a trust-region
 sequential quadratic programming solver and, when inequality constraints
 are imposed, it switches to a trust-region interior point method. Both
 methods are appropriate for large scale problems. Quasi-Newton options
-BFGS and SR1 were implemented and can be used to approximate second
-order derivatives for this new method. Also, finite-differences can be
+BFGS and SR1 were implemented and can be used to approximate
+second-order derivatives for this new method. Also, finite-differences can be
 used to approximate either first-order or second-order derivatives.
 
 Random-to-Best/1/bin and Random-to-Best/1/exp mutation strategies were
 added to `scipy.optimize.differential_evolution` as ``randtobest1bin``
 and ``randtobest1exp``, respectively. Note: These names were already in
-use but implemented a different mutation strategy. See `Backwards
-incompatible changes <#backwards-incompatible-changes>`__, below. The
+use but implemented a different mutation strategy. See `Backwards-incompatible
+changes <#backwards-incompatible-changes>`__ below. The
 ``init`` keyword for the `scipy.optimize.differential_evolution`
 function can now accept an array. This array allows the user to specify
 the entire population.
 
-Add an ``adaptive`` option to Nelder-Mead to use step parameters adapted
+Added an ``adaptive`` option to Nelder-Mead to use step parameters adapted
 to the dimensionality of the problem.
 
 Minor improvements in `scipy.optimize.basinhopping`.
@@ -96,7 +96,7 @@ Minor improvements in `scipy.optimize.basinhopping`.
 
 Three new functions for peak finding in one-dimensional arrays were
 added. `scipy.signal.find_peaks` searches for peaks (local maxima) based
-on simple value comparison of neighbouring samples and returns those
+on simple value comparison of neighboring samples and returns those
 peaks whose properties match optionally specified conditions for their
 height, prominence, width, threshold and distance to each other.
 `scipy.signal.peak_prominences` and `scipy.signal.peak_widths` can directly
@@ -178,14 +178,14 @@ respectively. These strategies were renamed to ``currenttobest1bin`` and
 ``randtobest1exp`` strategies were corrected.
 
 Functions in the ndimage module now always return their output array.
-Before this most functions only returned the output array if it had been
+Before, most functions only returned the output array if it had been
 allocated by the function, and would return ``None`` if it had been
 provided by the user.
 
 Distance metrics in `scipy.spatial.distance` now require non-negative
 weights.
 
-`scipy.special.loggamma` returns now real-valued result when the input
+`scipy.special.loggamma` now returns real-valued result when the input
 is real-valued.
 
 Other changes

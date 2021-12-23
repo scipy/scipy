@@ -5,7 +5,7 @@ Burr12 Distribution
 ===================
 
 There are two shape parameters :math:`c,d > 0` and the support is :math:`x \in [0,\infty)`.
-The Burr12 distibution is also known as the Singh-Maddala distibution.
+The Burr12 distribution is also known as the Singh-Maddala distribution.
 
 
 

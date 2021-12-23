@@ -1,16 +1,12 @@
-from __future__ import division, print_function, absolute_import
-
 from math import sqrt, exp, cos, sin
 import numpy as np
 
-# Import testing parameters
-try:
-    from scipy.optimize._tstutils import methods, mstrings, functions, fstrings
-except ImportError:
-    pass
-from scipy.optimize import newton  # newton predates benchmarks
+from .common import Benchmark, safe_import
 
-from .common import Benchmark
+# Import testing parameters
+with safe_import():
+    from scipy.optimize._tstutils import methods, mstrings, functions, fstrings
+from scipy.optimize import newton  # newton predates benchmarks
 
 
 class Zeros(Benchmark):

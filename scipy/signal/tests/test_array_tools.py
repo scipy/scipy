@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 from numpy.testing import assert_array_equal
@@ -9,7 +7,7 @@ from scipy.signal._arraytools import (axis_slice, axis_reverse,
      odd_ext, even_ext, const_ext, zero_ext)
 
 
-class TestArrayTools(object):
+class TestArrayTools:
 
     def test_axis_slice(self):
         a = np.arange(12).reshape(3, 4)

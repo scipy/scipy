@@ -15,7 +15,7 @@ nature of the issue or pull request (``enhancement``, ``maintenance``,
 
 - ``easy-fix``: for issues suitable to be tackled by new contributors.
 - ``needs-work``: for pull requests that have review comments that haven't been
-  addressed for a while.
+  addressed.
 - ``needs-decision``: for issues or pull requests that need a decision.
 - ``needs-champion``: for pull requests that were not finished by the original
   author, but are worth resurrecting.
@@ -28,6 +28,14 @@ particular release should be set to the corresponding milestone.  After a pull
 request is merged, its milestone (and that of the issue it closes) should be
 set to the next upcoming release - this makes it easy to get an overview of
 changes and to add a complete list of those to the release notes.
+
+
+Pull request review workflow
+----------------------------
+
+When reviewing pull requests, please make use of pull request workflow
+features, see :ref:`pull-request-workflow-features`.
+
 
 Dealing with pull requests
 --------------------------
@@ -84,7 +92,7 @@ changes, deprecations, and "other changes" (anything else noteworthy enough,
 see older release notes for the kinds of things worth mentioning).
 
 Release note entries are maintained on the wiki, (e.g.
-https://github.com/scipy/scipy/wiki/Release-note-entries-for-SciPy-1.1.0).  The
+https://github.com/scipy/scipy/wiki/Release-note-entries-for-SciPy-1.2.0).  The
 release manager will gather content from there and integrate it into the html
 docs.  We use this mechanism to avoid merge conflicts that would happen if
 every PR touched the same file under ``doc/release/`` directly.
@@ -109,5 +117,5 @@ which is about Trac (what we used pre-GitHub) tickets.
 *PR naming convention:* Pull requests, issues and commit messages usually start
 with a three-letter abbreviation like ``ENH:`` or ``BUG:``.  This is useful to
 quickly see what the nature of the commit/PR/issue is.  For the full list of
-abbreviations, see `writing the commit message
-<https://docs.scipy.org/doc/numpy/dev/gitwash/development_workflow.html#writing-the-commit-message>`_.
+abbreviations, see :ref:`writing the commit message
+<numpy:writing-the-commit-message>`.

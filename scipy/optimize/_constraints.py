@@ -1,15 +1,21 @@
 """Constraints definition for minimize."""
-from __future__ import division, print_function, absolute_import
 import numpy as np
 from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
-from .optimize import OptimizeWarning
+from ._optimize import OptimizeWarning
 from warnings import warn
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import suppress_warnings
 from scipy.sparse import issparse
 
-class NonlinearConstraint(object):
+
+def _arr_to_scalar(x):
+    # If x is a numpy array, return x.item().  This will
+    # fail if the array has more than one element.
+    return x.item() if isinstance(x, np.ndarray) else x
+
+
+class NonlinearConstraint:
     """Nonlinear constraint on the variables.
 
     The constraint has the general inequality form::
@@ -87,6 +93,15 @@ class NonlinearConstraint(object):
     to correctly handles complex inputs and be analytically continuable to the
     complex plane. The scheme '3-point' is more accurate than '2-point' but
     requires twice as many operations.
+
+    Examples
+    --------
+    Constrain ``x[0] < sin(x[1]) + 1.9``
+
+    >>> from scipy.optimize import NonlinearConstraint
+    >>> con = lambda x: x[0] - np.sin(x[1])
+    >>> nlc = NonlinearConstraint(con, -np.inf, 1.9)
+
     """
     def __init__(self, fun, lb, ub, jac='2-point', hess=BFGS(),
                  keep_feasible=False, finite_diff_rel_step=None,
@@ -101,7 +116,7 @@ class NonlinearConstraint(object):
         self.keep_feasible = keep_feasible
 
 
-class LinearConstraint(object):
+class LinearConstraint:
     """Linear constraint on the variables.
 
     The constraint has the general inequality form::
@@ -139,7 +154,7 @@ class LinearConstraint(object):
         self.keep_feasible = keep_feasible
 
 
-class Bounds(object):
+class Bounds:
     """Bounds constraint on the variables.
 
     The constraint has the general inequality form::
@@ -151,7 +166,7 @@ class Bounds(object):
 
     Parameters
     ----------
-    lb, ub : array_like, optional
+    lb, ub : array_like
         Lower and upper bounds on independent variables. Each array must
         have the same size as x or be a scalar, in which case a bound will be
         the same for all the variables. Set components of `lb` and `ub` equal
@@ -165,18 +180,20 @@ class Bounds(object):
         Default is False. Has no effect for equality constraints.
     """
     def __init__(self, lb, ub, keep_feasible=False):
-        self.lb = lb
-        self.ub = ub
+        self.lb = np.asarray(lb)
+        self.ub = np.asarray(ub)
         self.keep_feasible = keep_feasible
 
     def __repr__(self):
+        start = f"{type(self).__name__}({self.lb!r}, {self.ub!r}"
         if np.any(self.keep_feasible):
-            return "{}({!r}, {!r}, keep_feasible={!r})".format(type(self).__name__, self.lb, self.ub, self.keep_feasible)
+            end = f", keep_feasible={self.keep_feasible!r})"
         else:
-            return "{}({!r}, {!r})".format(type(self).__name__, self.lb, self.ub)
+            end = ")"
+        return start + end
 
 
-class PreparedConstraint(object):
+class PreparedConstraint:
     """Constraint prepared from a user defined constraint.
 
     On creation it will check whether a constraint definition is valid and
@@ -278,8 +295,10 @@ def new_bounds_to_old(lb, ub, n):
     """Convert the new bounds representation to the old one.
 
     The new representation is a tuple (lb, ub) and the old one is a list
-    containing n tuples, i-th containing lower and upper bound on a i-th
+    containing n tuples, ith containing lower and upper bound on a ith
     variable.
+    If any of the entries in lb/ub are -np.inf/np.inf they are replaced by
+    None.
     """
     lb = np.asarray(lb)
     ub = np.asarray(ub)
@@ -288,8 +307,8 @@ def new_bounds_to_old(lb, ub, n):
     if ub.ndim == 0:
         ub = np.resize(ub, n)
 
-    lb = [x if x > -np.inf else None for x in lb]
-    ub = [x if x < np.inf else None for x in ub]
+    lb = [float(x) if x > -np.inf else None for x in lb]
+    ub = [float(x) if x < np.inf else None for x in ub]
 
     return list(zip(lb, ub))
 
@@ -298,12 +317,20 @@ def old_bound_to_new(bounds):
     """Convert the old bounds representation to the new one.
 
     The new representation is a tuple (lb, ub) and the old one is a list
-    containing n tuples, i-th containing lower and upper bound on a i-th
+    containing n tuples, ith containing lower and upper bound on a ith
     variable.
+    If any of the entries in lb/ub are None they are replaced by
+    -np.inf/np.inf.
     """
     lb, ub = zip(*bounds)
-    lb = np.array([x if x is not None else -np.inf for x in lb])
-    ub = np.array([x if x is not None else np.inf for x in ub])
+
+    # Convert occurrences of None to -inf or inf, and replace occurrences of
+    # any numpy array x with x.item(). Then wrap the results in numpy arrays.
+    lb = np.array([float(_arr_to_scalar(x)) if x is not None else -np.inf
+                   for x in lb])
+    ub = np.array([float(_arr_to_scalar(x)) if x is not None else np.inf
+                   for x in ub])
+
     return lb, ub
 
 
@@ -343,7 +370,7 @@ def new_constraint_to_old(con, x0):
 
         A = con.A
         if issparse(A):
-            A = A.todense()
+            A = A.toarray()
         fun = lambda x: np.dot(A, x)
         jac = lambda x: A
 
@@ -372,7 +399,7 @@ def new_constraint_to_old(con, x0):
             def j_eq(x):
                 dy = jac(x)
                 if issparse(dy):
-                    dy = dy.todense()
+                    dy = dy.toarray()
                 dy = np.atleast_2d(dy)
                 return dy[i_eq, :]
             ceq[0]["jac"] = j_eq
@@ -394,7 +421,7 @@ def new_constraint_to_old(con, x0):
                 dy = np.zeros((n_bound_below + n_bound_above, len(x0)))
                 dy_all = jac(x)
                 if issparse(dy_all):
-                    dy_all = dy_all.todense()
+                    dy_all = dy_all.toarray()
                 dy_all = np.atleast_2d(dy_all)
                 dy[:n_bound_below, :] = dy_all[i_bound_below]
                 dy[n_bound_below:, :] = -dy_all[i_bound_above]
@@ -418,12 +445,14 @@ def old_constraint_to_new(ic, con):
     # check type
     try:
         ctype = con['type'].lower()
-    except KeyError:
-        raise KeyError('Constraint %d has no type defined.' % ic)
-    except TypeError:
-        raise TypeError('Constraints must be a sequence of dictionaries.')
-    except AttributeError:
-        raise TypeError("Constraint's type must be a string.")
+    except KeyError as e:
+        raise KeyError('Constraint %d has no type defined.' % ic) from e
+    except TypeError as e:
+        raise TypeError(
+            'Constraints must be a sequence of dictionaries.'
+        ) from e
+    except AttributeError as e:
+        raise TypeError("Constraint's type must be a string.") from e
     else:
         if ctype not in ['eq', 'ineq']:
             raise ValueError("Unknown constraint type '%s'." % con['type'])

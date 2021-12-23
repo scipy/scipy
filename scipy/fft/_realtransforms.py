@@ -1,4 +1,3 @@
-import scipy.fftpack as _fftpack
 from ._basic import _dispatch
 from scipy._lib.uarray import Dispatchable
 import numpy as np
@@ -7,7 +6,8 @@ __all__ = ['dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn']
 
 
 @_dispatch
-def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+def dctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
+         workers=None, *, orthogonalize=None):
     """
     Return multidimensional Discrete Cosine Transform along the specified axes.
 
@@ -17,22 +17,31 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
-    shape : int or array_like of ints or None, optional
-        The shape of the result.  If both `shape` and `axes` (see below) are
-        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
-        length ``shape[i]``.
-        If any element of `shape` is -1, the size of the corresponding
-        dimension of `x` is used.
+    s : int or array_like of ints or None, optional
+        The shape of the result. If both `s` and `axes` (see below) are None,
+        `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
+        ``numpy.take(x.shape, axes, axis=0)``.
+        If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
+        ``s[i]``.
+        If any element of `s` is -1, the size of the corresponding dimension of
+        `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes along which the DCT is computed.
-        The default is over all axes.
-    norm : {None, 'ortho'}, optional
-        Normalization mode (see Notes). Default is None.
+        Axes over which the DCT is computed. If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see Notes). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    orthogonalize : bool, optional
+        Whether to use the orthogonalized DCT variant (see Notes).
+        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -51,7 +60,8 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     Examples
     --------
     >>> from scipy.fft import dctn, idctn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idctn(dctn(y)))
     True
 
@@ -60,9 +70,10 @@ def dctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+def idctn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
+          workers=None, orthogonalize=None):
     """
-    Return multidimensional Discrete Cosine Transform along the specified axes.
+    Return multidimensional Inverse Discrete Cosine Transform along the specified axes.
 
     Parameters
     ----------
@@ -70,22 +81,31 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3, 4}, optional
         Type of the DCT (see Notes). Default type is 2.
-    shape : int or array_like of ints or None, optional
-        The shape of the result.  If both `shape` and `axes` (see below) are
-        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
-        length ``shape[i]``.
-        If any element of `shape` is -1, the size of the corresponding
-        dimension of `x` is used.
+    s : int or array_like of ints or None, optional
+        The shape of the result.  If both `s` and `axes` (see below) are
+        None, `s` is ``x.shape``; if `s` is None but `axes` is
+        not None, then `s` is ``numpy.take(x.shape, axes, axis=0)``.
+        If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
+        ``s[i]``.
+        If any element of `s` is -1, the size of the corresponding dimension of
+        `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes along which the IDCT is computed.
-        The default is over all axes.
-    norm : {None, 'ortho'}, optional
-        Normalization mode (see Notes). Default is None.
+        Axes over which the IDCT is computed. If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see Notes). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    orthogonalize : bool, optional
+        Whether to use the orthogonalized IDCT variant (see Notes).
+        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -104,7 +124,8 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     Examples
     --------
     >>> from scipy.fft import dctn, idctn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idctn(dctn(y)))
     True
 
@@ -113,7 +134,8 @@ def idctn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+def dstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
+         workers=None, orthogonalize=None):
     """
     Return multidimensional Discrete Sine Transform along the specified axes.
 
@@ -123,22 +145,31 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3, 4}, optional
         Type of the DST (see Notes). Default type is 2.
-    shape : int or array_like of ints or None, optional
-        The shape of the result.  If both `shape` and `axes` (see below) are
-        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
-        length ``shape[i]``.
-        If any element of `shape` is -1, the size of the corresponding
-        dimension of `x` is used.
+    s : int or array_like of ints or None, optional
+        The shape of the result.  If both `s` and `axes` (see below) are None,
+        `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
+        ``numpy.take(x.shape, axes, axis=0)``.
+        If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
+        ``s[i]``.
+        If any element of `shape` is -1, the size of the corresponding dimension
+        of `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes along which the DCT is computed.
-        The default is over all axes.
-    norm : {None, 'ortho'}, optional
-        Normalization mode (see Notes). Default is None.
+        Axes over which the DST is computed. If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see Notes). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    orthogonalize : bool, optional
+        Whether to use the orthogonalized DST variant (see Notes).
+        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -157,7 +188,8 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     Examples
     --------
     >>> from scipy.fft import dstn, idstn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idstn(dstn(y)))
     True
 
@@ -166,9 +198,10 @@ def dstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
+def idstn(x, type=2, s=None, axes=None, norm=None, overwrite_x=False,
+          workers=None, orthogonalize=None):
     """
-    Return multidimensional Discrete Sine Transform along the specified axes.
+    Return multidimensional Inverse Discrete Sine Transform along the specified axes.
 
     Parameters
     ----------
@@ -176,22 +209,31 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
         The input array.
     type : {1, 2, 3, 4}, optional
         Type of the DST (see Notes). Default type is 2.
-    shape : int or array_like of ints or None, optional
-        The shape of the result.  If both `shape` and `axes` (see below) are
-        None, `shape` is ``x.shape``; if `shape` is None but `axes` is
-        not None, then `shape` is ``scipy.take(x.shape, axes, axis=0)``.
-        If ``shape[i] > x.shape[i]``, the i-th dimension is padded with zeros.
-        If ``shape[i] < x.shape[i]``, the i-th dimension is truncated to
-        length ``shape[i]``.
-        If any element of `shape` is -1, the size of the corresponding
-        dimension of `x` is used.
+    s : int or array_like of ints or None, optional
+        The shape of the result.  If both `s` and `axes` (see below) are None,
+        `s` is ``x.shape``; if `s` is None but `axes` is not None, then `s` is
+        ``numpy.take(x.shape, axes, axis=0)``.
+        If ``s[i] > x.shape[i]``, the ith dimension is padded with zeros.
+        If ``s[i] < x.shape[i]``, the ith dimension is truncated to length
+        ``s[i]``.
+        If any element of `s` is -1, the size of the corresponding dimension of
+        `x` is used.
     axes : int or array_like of ints or None, optional
-        Axes along which the IDST is computed.
-        The default is over all axes.
-    norm : {None, 'ortho'}, optional
-        Normalization mode (see Notes). Default is None.
+        Axes over which the IDST is computed. If not given, the last ``len(s)``
+        axes are used, or all axes if `s` is also not specified.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see Notes). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    orthogonalize : bool, optional
+        Whether to use the orthogonalized IDST variant (see Notes).
+        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -210,7 +252,8 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
     Examples
     --------
     >>> from scipy.fft import dstn, idstn
-    >>> y = np.random.randn(16, 16)
+    >>> rng = np.random.default_rng()
+    >>> y = rng.standard_normal((16, 16))
     >>> np.allclose(y, idstn(dstn(y)))
     True
 
@@ -219,9 +262,9 @@ def idstn(x, type=2, shape=None, axes=None, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
-    r"""
-    Return the Discrete Cosine Transform of arbitrary type sequence x.
+def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
+        orthogonalize=None):
+    r"""Return the Discrete Cosine Transform of arbitrary type sequence x.
 
     Parameters
     ----------
@@ -236,10 +279,19 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     axis : int, optional
         Axis along which the dct is computed; the default is over the
         last axis (i.e., ``axis=-1``).
-    norm : {None, 'ortho'}, optional
-        Normalization mode (see Notes). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see Notes). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    orthogonalize : bool, optional
+        Whether to use the orthogonalized DCT variant (see Notes).
+        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -255,33 +307,38 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     For a single dimension array ``x``, ``dct(x, norm='ortho')`` is equal to
     MATLAB ``dct(x)``.
 
-    For ``norm=None``, there is no scaling on `dct` and the `idct` is scaled by
-    ``1/N`` where ``N`` is the "logical" size of the DCT. For ``norm='ortho'``
-    both directions are scaled by the same factor ``1/sqrt(N)``.
+    .. warning:: For ``type in {1, 2, 3}``, ``norm="ortho"`` breaks the direct
+                 correspondence with the direct Fourier transform. To recover
+                 it you must specify ``orthogonalize=False``.
 
-    There are theoretically 8 types of the DCT, only the first 4 types are
-    implemented in scipy. 'The' DCT generally refers to DCT type 2, and 'the'
+    For ``norm="ortho"`` both the `dct` and `idct` are scaled by the same
+    overall factor in both directions. By default, the transform is also
+    orthogonalized which for types 1, 2 and 3 means the transform definition is
+    modified to give orthogonality of the DCT matrix (see below).
+
+    For ``norm="backward"``, there is no scaling on `dct` and the `idct` is
+    scaled by ``1/N`` where ``N`` is the "logical" size of the DCT. For
+    ``norm="forward"`` the ``1/N`` normalization is applied to the forward
+    `dct` instead and the `idct` is unnormalized.
+
+    There are, theoretically, 8 types of the DCT, only the first 4 types are
+    implemented in SciPy.'The' DCT generally refers to DCT type 2, and 'the'
     Inverse DCT generally refers to DCT type 3.
 
     **Type I**
 
     There are several definitions of the DCT-I; we use the following
-    (for ``norm=None``)
+    (for ``norm="backward"``)
 
     .. math::
 
        y_k = x_0 + (-1)^k x_{N-1} + 2 \sum_{n=1}^{N-2} x_n \cos\left(
        \frac{\pi k n}{N-1} \right)
 
-    If ``norm='ortho'``, ``x[0]`` and ``x[N-1]`` are multiplied by a scaling
-    factor of :math:`\sqrt{2}`, and ``y[k]`` is multiplied by a scaling factor
-    ``f``
-
-    .. math::
-
-        f = \begin{cases}
-         \frac{1}{2}\sqrt{\frac{1}{N-1}} & \text{if }k=0\text{ or }N-1, \\
-         \frac{1}{2}\sqrt{\frac{2}{N-1}} & \text{otherwise} \end{cases}
+    If ``orthogonalize=True``, ``x[0]`` and ``x[N-1]`` are multiplied by a
+    scaling factor of :math:`\sqrt{2}`, and ``y[0]`` and ``y[N-1]`` are divided
+    by :math:`\sqrt{2}`. When combined with ``norm="ortho"``, this makes the
+    corresponding matrix of coefficients orthonormal (``O @ O.T = np.eye(N)``).
 
     .. note::
        The DCT-I is only supported for input size > 1.
@@ -289,36 +346,28 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     **Type II**
 
     There are several definitions of the DCT-II; we use the following
-    (for ``norm=None``)
+    (for ``norm="backward"``)
 
     .. math::
 
        y_k = 2 \sum_{n=0}^{N-1} x_n \cos\left(\frac{\pi k(2n+1)}{2N} \right)
 
-    If ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor ``f``
-
-    .. math::
-       f = \begin{cases}
-       \sqrt{\frac{1}{4N}} & \text{if }k=0, \\
-       \sqrt{\frac{1}{2N}} & \text{otherwise} \end{cases}
-
-    Which makes the corresponding matrix of coefficients orthonormal
-    (``O @ O.T = np.eye(N)``).
+    If ``orthogonalize=True``, ``y[0]`` is divided by :math:`\sqrt{2}` which,
+    when combined with ``norm="ortho"``, makes the corresponding matrix of
+    coefficients orthonormal (``O @ O.T = np.eye(N)``).
 
     **Type III**
 
-    There are several definitions, we use the following (for ``norm=None``)
+    There are several definitions, we use the following (for
+    ``norm="backward"``)
 
     .. math::
 
        y_k = x_0 + 2 \sum_{n=1}^{N-1} x_n \cos\left(\frac{\pi(2k+1)n}{2N}\right)
 
-    or, for ``norm='ortho'``
-
-    .. math::
-
-       y_k = \frac{x_0}{\sqrt{N}} + \sqrt{\frac{2}{N}} \sum_{n=1}^{N-1} x_n
-       \cos\left(\frac{\pi(2k+1)n}{2N}\right)
+    If ``orthogonalize=True``, ``x[0]`` terms are multiplied by
+    :math:`\sqrt{2}` which, when combined with ``norm="ortho"``, makes the
+    corresponding matrix of coefficients orthonormal (``O @ O.T = np.eye(N)``).
 
     The (unnormalized) DCT-III is the inverse of the (unnormalized) DCT-II, up
     to a factor `2N`. The orthonormalized DCT-III is exactly the inverse of
@@ -327,17 +376,14 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     **Type IV**
 
     There are several definitions of the DCT-IV; we use the following
-    (for ``norm=None``)
+    (for ``norm="backward"``)
 
     .. math::
 
        y_k = 2 \sum_{n=0}^{N-1} x_n \cos\left(\frac{\pi(2k+1)(2n+1)}{4N} \right)
 
-    If ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor ``f``
-
-    .. math::
-
-        f = \frac{1}{\sqrt{2N}}
+    ``orthogonalize`` has no effect here, as the DCT-IV matrix is already
+    orthogonal up to a scale factor of ``2N``.
 
     References
     ----------
@@ -351,7 +397,7 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     Examples
     --------
     The Type 1 DCT is equivalent to the FFT (though faster) for real,
-    even-symmetrical inputs.  The output is also real and even-symmetrical.
+    even-symmetrical inputs. The output is also real and even-symmetrical.
     Half of the FFT input is used to generate half of the FFT output:
 
     >>> from scipy.fft import fft, dct
@@ -365,7 +411,8 @@ def dct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
+def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
+         workers=None, orthogonalize=None):
     """
     Return the Inverse Discrete Cosine Transform of an arbitrary type sequence.
 
@@ -382,10 +429,19 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     axis : int, optional
         Axis along which the idct is computed; the default is over the
         last axis (i.e., ``axis=-1``).
-    norm : {None, 'ortho'}, optional
-        Normalization mode (see Notes). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see Notes). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    orthogonalize : bool, optional
+        Whether to use the orthogonalized IDCT variant (see Notes).
+        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -401,6 +457,16 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     For a single dimension array `x`, ``idct(x, norm='ortho')`` is equal to
     MATLAB ``idct(x)``.
 
+    .. warning:: For ``type in {1, 2, 3}``, ``norm="ortho"`` breaks the direct
+                 correspondence with the inverse direct Fourier transform. To
+                 recover it you must specify ``orthogonalize=False``.
+
+    For ``norm="ortho"`` both the `dct` and `idct` are scaled by the same
+    overall factor in both directions. By default, the transform is also
+    orthogonalized which for types 1, 2 and 3 means the transform definition is
+    modified to give orthogonality of the IDCT matrix (see `dct` for the full
+    definitions).
+
     'The' IDCT is the IDCT-II, which is the same as the normalized DCT-III.
 
     The IDCT is equivalent to a normal DCT except for the normalization and
@@ -410,7 +476,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     Examples
     --------
     The Type 1 DCT is equivalent to the DFT for real, even-symmetrical
-    inputs.  The output is also real and even-symmetrical.  Half of the IFFT
+    inputs. The output is also real and even-symmetrical. Half of the IFFT
     input is used to generate half of the IFFT output:
 
     >>> from scipy.fft import ifft, idct
@@ -424,7 +490,8 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
+def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False, workers=None,
+        orthogonalize=None):
     r"""
     Return the Discrete Sine Transform of arbitrary type sequence x.
 
@@ -435,16 +502,25 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     type : {1, 2, 3, 4}, optional
         Type of the DST (see Notes). Default type is 2.
     n : int, optional
-        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        Length of the transform. If ``n < x.shape[axis]``, `x` is
         truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
         default results in ``n = x.shape[axis]``.
     axis : int, optional
         Axis along which the dst is computed; the default is over the
         last axis (i.e., ``axis=-1``).
-    norm : {None, 'ortho'}, optional
-        Normalization mode (see Notes). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see Notes). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    orthogonalize : bool, optional
+        Whether to use the orthogonalized DST variant (see Notes).
+        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -457,74 +533,86 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     Notes
     -----
-    For a single dimension array ``x``.
+    .. warning:: For ``type in {2, 3}``, ``norm="ortho"`` breaks the direct
+                 correspondence with the direct Fourier transform. To recover
+                 it you must specify ``orthogonalize=False``.
 
-    For ``norm=None``, there is no scaling on the `dst` and the `idst` is
-    scaled by ``1/N`` where ``N`` is the "logical" size of the DST. For
-    ``norm='ortho'`` both directions are scaled by the same factor
-    ``1/sqrt(N)``.
+    For ``norm="ortho"`` both the `dst` and `idst` are scaled by the same
+    overall factor in both directions. By default, the transform is also
+    orthogonalized which for types 2 and 3 means the transform definition is
+    modified to give orthogonality of the DST matrix (see below).
 
-    There are theoretically 8 types of the DST for different combinations of
+    For ``norm="backward"``, there is no scaling on the `dst` and the `idst` is
+    scaled by ``1/N`` where ``N`` is the "logical" size of the DST.
+
+    There are, theoretically, 8 types of the DST for different combinations of
     even/odd boundary conditions and boundary off sets [1]_, only the first
-    4 types are implemented in scipy.
+    4 types are implemented in SciPy.
 
     **Type I**
 
-    There are several definitions of the DST-I; we use the following
-    for ``norm=None``. DST-I assumes the input is odd around `n=-1` and `n=N`.
+    There are several definitions of the DST-I; we use the following for
+    ``norm="backward"``. DST-I assumes the input is odd around :math:`n=-1` and
+    :math:`n=N`.
 
     .. math::
 
         y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(k+1)(n+1)}{N+1}\right)
 
     Note that the DST-I is only supported for input size > 1.
-    The (unnormalized) DST-I is its own inverse, up to a factor `2(N+1)`.
+    The (unnormalized) DST-I is its own inverse, up to a factor :math:`2(N+1)`.
     The orthonormalized DST-I is exactly its own inverse.
+
+    ``orthogonalize`` has no effect here, as the DST-I matrix is already
+    orthogonal up to a scale factor of ``2N``.
 
     **Type II**
 
     There are several definitions of the DST-II; we use the following for
-    ``norm=None``. DST-II assumes the input is odd around `n=-1/2` and
-    `n=N-1/2`; the output is odd around :math:`k=-1` and even around `k=N-1`
+    ``norm="backward"``. DST-II assumes the input is odd around :math:`n=-1/2` and
+    :math:`n=N-1/2`; the output is odd around :math:`k=-1` and even around :math:`k=N-1`
 
     .. math::
 
         y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(k+1)(2n+1)}{2N}\right)
 
-    if ``norm='ortho'``, ``y[k]`` is multiplied by a scaling factor ``f``
-
-    .. math::
-
-        f = \begin{cases}
-        \sqrt{\frac{1}{4N}} & \text{if }k = 0, \\
-        \sqrt{\frac{1}{2N}} & \text{otherwise} \end{cases}
+    If ``orthogonalize=True``, ``y[0]`` is divided :math:`\sqrt{2}` which, when
+    combined with ``norm="ortho"``, makes the corresponding matrix of
+    coefficients orthonormal (``O @ O.T = np.eye(N)``).
 
     **Type III**
 
     There are several definitions of the DST-III, we use the following (for
-    ``norm=None``). DST-III assumes the input is odd around `n=-1` and even
-    around `n=N-1`
+    ``norm="backward"``). DST-III assumes the input is odd around :math:`n=-1` and
+    even around :math:`n=N-1`
 
     .. math::
 
         y_k = (-1)^k x_{N-1} + 2 \sum_{n=0}^{N-2} x_n \sin\left(
         \frac{\pi(2k+1)(n+1)}{2N}\right)
 
+    If ``orthogonalize=True``, ``x[0]`` is multiplied by :math:`\sqrt{2}`
+    which, when combined with ``norm="ortho"``, makes the corresponding matrix
+    of coefficients orthonormal (``O @ O.T = np.eye(N)``).
+
     The (unnormalized) DST-III is the inverse of the (unnormalized) DST-II, up
-    to a factor `2N`. The orthonormalized DST-III is exactly the inverse of the
+    to a factor :math:`2N`. The orthonormalized DST-III is exactly the inverse of the
     orthonormalized DST-II.
 
     **Type IV**
 
     There are several definitions of the DST-IV, we use the following (for
-    ``norm=None``). DST-IV assumes the input is odd around `n=-0.5` and even
-    around `n=N-0.5`
+    ``norm="backward"``). DST-IV assumes the input is odd around :math:`n=-0.5` and
+    even around :math:`n=N-0.5`
 
     .. math::
 
         y_k = 2 \sum_{n=0}^{N-1} x_n \sin\left(\frac{\pi(2k+1)(2n+1)}{4N}\right)
 
-    The (unnormalized) DST-IV is its own inverse, up to a factor `2N`. The
+    ``orthogonalize`` has no effect here, as the DST-IV matrix is already
+    orthogonal up to a scale factor of ``2N``.
+
+    The (unnormalized) DST-IV is its own inverse, up to a factor :math:`2N`. The
     orthonormalized DST-IV is exactly its own inverse.
 
     References
@@ -537,7 +625,8 @@ def dst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
 
 @_dispatch
-def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
+def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False,
+         workers=None, orthogonalize=None):
     """
     Return the Inverse Discrete Sine Transform of an arbitrary type sequence.
 
@@ -548,16 +637,25 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     type : {1, 2, 3, 4}, optional
         Type of the DST (see Notes). Default type is 2.
     n : int, optional
-        Length of the transform.  If ``n < x.shape[axis]``, `x` is
+        Length of the transform. If ``n < x.shape[axis]``, `x` is
         truncated.  If ``n > x.shape[axis]``, `x` is zero-padded. The
         default results in ``n = x.shape[axis]``.
     axis : int, optional
         Axis along which the idst is computed; the default is over the
         last axis (i.e., ``axis=-1``).
-    norm : {None, 'ortho'}, optional
-        Normalization mode (see Notes). Default is None.
+    norm : {"backward", "ortho", "forward"}, optional
+        Normalization mode (see Notes). Default is "backward".
     overwrite_x : bool, optional
         If True, the contents of `x` can be destroyed; the default is False.
+    workers : int, optional
+        Maximum number of workers to use for parallel computation. If negative,
+        the value wraps around from ``os.cpu_count()``.
+        See :func:`~scipy.fft.fft` for more details.
+    orthogonalize : bool, optional
+        Whether to use the orthogonalized IDST variant (see Notes).
+        Defaults to ``True`` when ``norm=="ortho"`` and ``False`` otherwise.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -570,6 +668,14 @@ def idst(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
 
     Notes
     -----
+    .. warning:: For ``type in {2, 3}``, ``norm="ortho"`` breaks the direct
+                 correspondence with the inverse direct Fourier transform.
+
+    For ``norm="ortho"`` both the `dst` and `idst` are scaled by the same
+    overall factor in both directions. By default, the transform is also
+    orthogonalized which for types 2 and 3 means the transform definition is
+    modified to give orthogonality of the DST matrix (see `dst` for the full
+    definitions).
 
     'The' IDST is the IDST-II, which is the same as the normalized DST-III.
 

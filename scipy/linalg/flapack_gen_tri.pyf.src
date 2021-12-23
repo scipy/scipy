@@ -3,7 +3,7 @@
 
 subroutine <prefix>gtsv(n, nrhs, dl, d, du, b, info)
     callstatement (*f2py_func)(&n, &nrhs, dl, d, du, b, &n, &info);
-    callprotoargument int*, int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, int*
+    callprotoargument F_INT*, F_INT*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, F_INT*, F_INT*
     integer intent(hide), depend(d) :: n = len(d)
     integer intent(hide), depend(b) :: nrhs = shape(b, 1)
     <ftype> dimension(n-1), intent(in,out,copy,out=du2), depend(d,n) :: dl
@@ -13,3 +13,128 @@ subroutine <prefix>gtsv(n, nrhs, dl, d, du, b, info)
     integer intent(out) :: info
 
 end subroutine <prefix>gtsv
+
+
+subroutine <prefix>gttrf(n, dl, d, du, du2, ipiv, info)
+    ! dl, d, du, du2, ipiv, info  = gttrf(dl, d, du, [overwrite_dl=0, overwrite_d=0, overwrite_du=0])
+    ! ?GTTRF computes an LU factorization of a tridiagonal matrix A
+    ! using elimination with partial pivoting and row interchanges.
+    !
+    ! The factorization has the form
+    !    A = L * U
+    !
+    ! where L is a product of permutation and unit lower bidiagonal
+    ! matrices and U is upper triangular with nonzeros in only the main
+    ! diagonal and first two superdiagonals.
+    callstatement (*f2py_func)(&n, dl, d, du, du2, ipiv, &info)
+    callprotoargument F_INT*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, F_INT*, F_INT*
+
+    integer intent(hide), depend(d) :: n = max(3, len(d))
+    <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: dl
+    <ftype> intent(in,out,copy), dimension(n) :: d
+    <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: du
+    <ftype> intent(out), depend(n), dimension(n-2) :: du2
+    integer intent(out), depend(n), dimension(n) :: ipiv
+    integer intent(out) :: info
+
+end subroutine <prefix>gttrf
+
+
+subroutine <prefix>gttrs(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info)
+    ! x, info  = gttrs(dl, d, du, du2, ipiv, b, trans="N", overwrite_b=0)
+    !
+    ! ?GTTRS solves one of the systems of equations:
+    ! A*X = B  or  A**T*X = B,
+    ! with a tridiagonal matrix A using the LU factorization computed
+    ! by ?GTTRF.
+    callstatement (*f2py_func)(trans, &n, &nrhs, dl, d, du, du2, ipiv, b, &ldb, &info)
+    callprotoargument char*, F_INT*, F_INT*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, F_INT*, <ctype>*, F_INT*, F_INT*
+    threadsafe
+
+    character optional, intent(in), check(*trans=='N'||*trans=='T'||*trans=='C') :: trans = "N"
+    integer intent(hide), depend(d) :: n = max(3, len(d))
+    integer intent(hide), depend(b) :: nrhs = max(1, shape(b, 1))
+    integer intent(hide), depend(n) :: ldb = max(1, n)
+    <ftype> intent(in), depend(n), dimension(n - 1) :: dl
+    <ftype> intent(in), dimension(n) :: d
+    <ftype> intent(in), depend(n), dimension(n - 1) :: du
+    <ftype> intent(in), depend(n), dimension(n - 2) :: du2
+    integer intent(in), depend(n), dimension(n) :: ipiv
+    <ftype> intent(in, out, copy, out=x), dimension(ldb, nrhs) :: b
+    integer intent(out) :: info
+
+end subroutine gttrs
+
+
+subroutine <prefix2>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,iwork,info)
+    ! ?GTSVX uses the LU factorization to compute the solution to a real
+    ! system of linear equations A * X = B or A**T * X = B,
+    ! where A is a tridiagonal matrix of order N and X and B are N-by-NRHS
+    ! matrices.
+    !
+    ! Error bounds on the solution and a condition estimate are also
+    !provided.
+    callstatement (*f2py_func)(fact,trans,&n,&nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info);
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
+
+    character optional, intent(in), check(*fact=='F'||*fact=='N') :: fact = 'N'
+    character optional, intent(in), check(*trans=='N'||*trans=='C'||*trans=='T') :: trans = 'N'
+    integer intent(hide), depend(d) :: n = len(d)
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftype2> intent(in), depend(n), dimension(MAX(0, n-1)) :: dl
+    <ftype2> intnet(in), dimension(n) :: d
+    <ftype2> intent(in), depend(n), dimension(MAX(0, n-1)) :: du
+    <ftype2> optional, intent(in,out), depend(n), dimension(MAX(0,n-1)) :: dlf
+    <ftype2> optional, intent(in,out), depend(n), dimension(n) :: df
+    <ftype2> optional, intent(in,out), depend(n), dimension(MAX(0,n-1)) :: duf
+    <ftype2> optional, intent(in,out), depend(n), dimension(MAX(0,n-2)) :: du2
+    integer optional, intent(in,out), depend(n), dimension(n) :: ipiv
+    <ftype2> intent(in), dimension(ldb, nrhs) :: b
+    integer intent(hide), check(ldb >= n), depend(b) :: ldb = max(1, shape(b, 0))
+    <ftype2> intent(out), dimension(ldx,nrhs) :: x
+    integer intent(hide) :: ldx = MAX(1, shape(b, 0))
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(out), dimension(nrhs),depend(nrhs) :: ferr
+    <ftype2> intent(out), dimension(nrhs),depend(nrhs) :: berr
+    <ftype2> intent(hide, cache), dimension(3*n),depend(n) :: work
+    integer intent(hide, cache), dimension(n), depend(n) :: iwork
+    integer intent(out) :: info
+
+end subroutine <prefix2>gtsvx
+
+
+subroutine <prefix2c>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,ldx,rcond,ferr,berr,work,rwork,info)
+    ! ?GTSVX uses the LU factorization to compute the solution to a
+    ! complex system of linear equations A * X = B or A**T * X = B,
+    ! where A is a tridiagonal matrix of order N and X and B are N-by-NRHS
+    ! matrices.
+    !
+    ! Error bounds on the solution and a condition estimate are also
+    !provided.
+    callstatement (*f2py_func)(fact,trans,&n,&nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info);
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,F_INT*
+
+    character optional, intent(in), check(*fact=='F'||*fact=='N') :: fact = 'N'
+    character optional, intent(in), check(*trans=='N'||*trans=='C'||*trans=='T') :: trans = 'N'
+    integer intent(hide), depend(d) :: n = len(d)
+    integer intent(hide), depend(b) :: nrhs = shape(b, 1)
+    <ftype2c> intent(in), depend(n), dimension(MAX(0, n-1)) :: dl
+    <ftype2c> intnet(in), dimension(n) :: d
+    <ftype2c> intent(in), depend(n), dimension(MAX(0, n-1)) :: du
+    <ftype2c> optional, intent(in,out), depend(n), dimension(MAX(0,n-1)) :: dlf
+    <ftype2c> optional, intent(in,out), depend(n), dimension(n) :: df
+    <ftype2c> optional, intent(in,out), depend(n), dimension(MAX(0,n-1)) :: duf
+    <ftype2c> optional, intent(in,out), depend(n), dimension(MAX(0,n-2)) :: du2
+    integer optional, intent(in,out), depend(n), dimension(n) :: ipiv
+    <ftype2c> intent(in), dimension(ldb, nrhs) :: b
+    integer intent(hide), check(ldb >= n), depend(b) :: ldb = max(1, shape(b, 0))
+    <ftype2c> intent(out), dimension(ldx,nrhs) :: x
+    integer intent(hide) :: ldx = MAX(1, shape(b, 0))
+    <ftype2> intent(out) :: rcond
+    <ftype2> intent(out), dimension(nrhs),depend(nrhs) :: ferr
+    <ftype2> intent(out), dimension(nrhs),depend(nrhs) :: berr
+    <ftype2c> dimension(2*n),depend(n),intent(hide,cache) :: work
+    <ftype2> intent(hide,cache),dimension(n),depend(n) :: rwork
+    integer intent(out) :: info
+
+end subroutine <prefix2c>gtsvx

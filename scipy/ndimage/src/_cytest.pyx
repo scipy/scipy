@@ -1,5 +1,3 @@
-from __future__ import absolute_import
-
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from cpython.pycapsule cimport (
     PyCapsule_New, PyCapsule_SetContext, PyCapsule_GetContext, PyCapsule_GetPointer
@@ -8,6 +6,7 @@ from cpython.pycapsule cimport (
 cimport numpy as np
 from numpy cimport npy_intp as intp
 
+np.import_array()
 
 cdef void _destructor(obj):
     cdef void *callback_data = PyCapsule_GetContext(obj)

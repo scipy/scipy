@@ -6,14 +6,10 @@
 # !! Complex calculations really aren't checked that carefully.
 # !! Only real valued complex numbers are used in tests.
 
-from __future__ import division, print_function, absolute_import
-
 from numpy import float32, float64, complex64, complex128, arange, array, \
                   zeros, shape, transpose, newaxis, common_type, conjugate
 
 from scipy.linalg import _fblas as fblas
-
-from scipy._lib.six import xrange
 
 from numpy.testing import assert_array_equal, \
     assert_allclose, assert_array_almost_equal, assert_
@@ -35,10 +31,10 @@ def matrixmultiply(a, b):
         b_is_vector = False
     assert_(a.shape[1] == b.shape[0])
     c = zeros((a.shape[0], b.shape[1]), common_type(a, b))
-    for i in xrange(a.shape[0]):
-        for j in xrange(b.shape[1]):
+    for i in range(a.shape[0]):
+        for j in range(b.shape[1]):
             s = 0
-            for k in xrange(a.shape[1]):
+            for k in range(a.shape[1]):
                 s += a[i, k] * b[k, j]
             c[i, j] = s
     if b_is_vector:
@@ -49,7 +45,7 @@ def matrixmultiply(a, b):
 # Test blas ?axpy
 
 
-class BaseAxpy(object):
+class BaseAxpy:
     ''' Mixin class for axpy tests '''
 
     def test_default_a(self):
@@ -132,7 +128,7 @@ class TestZaxpy(BaseAxpy):
 ##################################################
 # Test blas ?scal
 
-class BaseScal(object):
+class BaseScal:
     ''' Mixin class for scal testing '''
 
     def test_simple(self):
@@ -185,7 +181,7 @@ class TestZscal(BaseScal):
 ##################################################
 # Test blas ?copy
 
-class BaseCopy(object):
+class BaseCopy:
     ''' Mixin class for copy testing '''
 
     def test_simple(self):
@@ -263,7 +259,7 @@ class TestZcopy(BaseCopy):
 ##################################################
 # Test blas ?swap
 
-class BaseSwap(object):
+class BaseSwap:
     ''' Mixin class for swap tests '''
 
     def test_simple(self):
@@ -347,7 +343,7 @@ class TestZswap(BaseSwap):
 # This will be a mess to test all cases.
 
 
-class BaseGemv(object):
+class BaseGemv:
     ''' Mixin class for gemv tests '''
 
     def get_data(self, x_stride=1, y_stride=1):
@@ -506,7 +502,7 @@ class TestZgemv(BaseGemv):
 ### Test blas ?ger
 ### This will be a mess to test all cases.
 
-class BaseGer(object):
+class BaseGer:
     def get_data(self,x_stride=1,y_stride=1):
         from numpy.random import normal, seed
         seed(1234)

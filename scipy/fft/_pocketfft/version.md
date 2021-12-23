@@ -2,15 +2,17 @@
 pypocketfft version
 -------------------
 
-SciPy currently vendors [pypocketfft][repo] at:
+SciPy currently vendors [pypocketfft] at:
 
-    commit 656b2373624bfb83ad1bc9388fa6c561eb2bb9e0
-    Merge: 0276f55 20f3b84
+    commit bf2c431c21213b7c5e23c2f542009b0bd3ec1445
+    Merge: 8234f5c 9c252b2
     Author: Martin Reinecke <martin@mpa-garching.mpg.de>
-    Date:   Sat Jul 20 13:16:46 2019 +0200
+    Date:   Tue Oct 20 15:16:14 2020 +0200
 
-        Merge branch 'sincos' into 'master'
+        Merge branch 'good_size_keywords' into 'master'
 
-        DCT/DST support
+        Handle keyword args in good_size
 
-repo: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft
+        See merge request mtr/pypocketfft!41
+
+pypocketfft: https://gitlab.mpcdf.mpg.de/mtr/pypocketfft
