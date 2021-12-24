@@ -29,6 +29,10 @@ _test_fortran = py3.extension_module('_test_fortran',
 py3.install_sources([
     '__init__.py',
     '_fortran.py',
+    '_idl.py',
+    '_mmio.py',
+    '_netcdf.py',
+    'harwell_boeing.py',
     'idl.py',
     'mmio.py',
     'netcdf.py',
@@ -41,4 +45,4 @@ py3.install_sources([
 subdir('tests')
 subdir('matlab')
 subdir('arff')
-subdir('harwell_boeing')
+subdir('_harwell_boeing')

@@ -84,7 +84,7 @@ _iterative = py3.extension_module('_iterative',
   dependencies: [py3_dep, lapack],
   install: true,
   link_language: 'fortran',
-  subdir: 'scipy/sparse/linalg/isolve'
+  subdir: 'scipy/sparse/linalg/_isolve'
 )
 
 py3.install_sources([
@@ -99,7 +99,7 @@ py3.install_sources([
     'utils.py',
   ],
   pure: false,
-  subdir: 'scipy/sparse/linalg/isolve'
+  subdir: 'scipy/sparse/linalg/_isolve'
 )
 
 subdir('tests')

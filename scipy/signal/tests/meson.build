@@ -4,6 +4,7 @@ py3.install_sources([
     'test_array_tools.py',
     'test_bsplines.py',
     'test_cont2discrete.py',
+    'test_czt.py',
     'test_dltisys.py',
     'test_filter_design.py',
     'test_fir_filter_design.py',

@@ -10,7 +10,7 @@ _dummy_init_cyoptimize = custom_target('_dummy_init_cyoptimize',
     'c_zeros.pxd',
     '_zeros.pxd'
   ],
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 # FIXME: generated .pyx which has relative cimport in it doesn't work yet (see

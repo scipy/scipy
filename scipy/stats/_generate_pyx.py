@@ -21,7 +21,7 @@ def make_biasedurn(outdir):
     with open(biasedurn_base.with_suffix('.pyx.templ'), 'r') as src:
         contents = src.read()
 
-    outfile = outdir / 'biasedurn.pyx'
+    outfile = outdir / '_biasedurn.pyx'
     with open(outfile, 'w') as dest:
         dest.write(contents.format(NPY_OLD=str(bool(isNPY_OLD()))))
 

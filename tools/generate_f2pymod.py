@@ -29,8 +29,7 @@ def main():
     if args.infile.endswith(('.pyf.src', '.f.src')):
         code = process_file(args.infile)
         fname_pyf = os.path.join(args.outdir,
-                                 os.path.splitext(
-                                    os.path.split(args.infile)[1])[0])
+                                 os.path.splitext(os.path.split(args.infile)[1])[0])
 
         with open(fname_pyf, 'w') as f:
             f.write(code)
@@ -40,9 +39,9 @@ def main():
     # Now invoke f2py to generate the C API module file
     if args.infile.endswith(('.pyf.src', '.pyf')):
         p = subprocess.Popen([sys.executable, '-m', 'numpy.f2py', fname_pyf,
-                              '--build-dir', outdir_abs],
-                             stdout=subprocess.PIPE, stderr=subprocess.PIPE,
-                             cwd=os.getcwd())
+                            '--build-dir', outdir_abs], #'--quiet'],
+                            stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+                            cwd=os.getcwd())
         out, err = p.communicate()
         if not (p.returncode == 0):
             raise RuntimeError(f"Writing {args.outfile} with f2py failed!\n"

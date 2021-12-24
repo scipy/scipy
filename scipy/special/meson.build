@@ -73,7 +73,7 @@ _ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
     '_ufuncs_extra_code.pxi',
     '_ufuncs_extra_code_common.pxi'
   ],
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 _ufuncs_pxi_pxd_dep = declare_dependency(sources: _ufuncs_pxi_pxd_sources)
@@ -269,14 +269,15 @@ ufuncs_sources = [
 ufuncs_cxx_sources = [
   '_faddeeva.cxx',
   '_wright.cxx',
+  'ellint_carlson_wrap.cxx',
   'Faddeeva.cc',
   'sf_error.c',
   'wright.cc'
 ]
 
 
-if is_windows and host_machine.cpu_family() == 'x86'
-  use_math_defines = ['-DUSE_MATH_DEFINES']
+if is_windows
+  use_math_defines = ['-D_USE_MATH_DEFINES']
 else
   use_math_defines = []
 endif
@@ -313,12 +314,12 @@ specfun_lib = static_library('specfun',
 )
 
 specfun_module = custom_target('specfun_module',
-  output: 'specfunmodule.c',
+  output: '_specfunmodule.c',
   input: 'specfun.pyf',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-py3.extension_module('specfun',
+py3.extension_module('_specfun',
   [specfun_module, fortranobject_c],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
@@ -340,7 +341,7 @@ cython_special = custom_target('cython_special',
     'cython_special.pyx',
     'cython_special.pxd'
   ],
-  input: ['_generate_pyx.py', 'functions.json', 'add_newdocs.py'],
+  input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
   command: [py3, '@INPUT0@', '-o', '@OUTDIR@']
 )
 
@@ -378,11 +379,28 @@ py3.extension_module('_ufuncs',
   subdir: 'scipy/special'
 )
 
+ellint_files = [
+  'ellint_carlson_wrap.hh',
+  'ellint_carlson_cpp_lite/_rc.hh',
+  'ellint_carlson_cpp_lite/_rd.hh',
+  'ellint_carlson_cpp_lite/_rf.hh',
+  'ellint_carlson_cpp_lite/_rg.hh',
+  'ellint_carlson_cpp_lite/_rj.hh',
+  'ellint_carlson_cpp_lite/ellint_argcheck.hh',
+  'ellint_carlson_cpp_lite/ellint_arith_aux.hh',
+  'ellint_carlson_cpp_lite/ellint_arithmetic.hh',
+  'ellint_carlson_cpp_lite/ellint_carlson.hh',
+  'ellint_carlson_cpp_lite/ellint_common.hh',
+  'ellint_carlson_cpp_lite/ellint_typing.hh',
+]
+
+ellint_dep = declare_dependency(sources: ellint_files)
+
 py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources, cython_special[2], _cython_tree],
   cpp_args: [numpy_nodepr_api, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, npymath_lib, _ufuncs_pxi_pxd_dep],
+  dependencies: [py3_dep, npymath_lib, _ufuncs_pxi_pxd_dep, ellint_dep],
   override_options: ['cython_language=cpp'],
   install: true,
   subdir: 'scipy/special'
@@ -394,7 +412,7 @@ special_pxd = declare_dependency(sources: _cython_tree)
 _ellip_harm_pyx = custom_target('_ellip_harm_pyx',
   output: '_ellip_harm_2.pyx',
   input: '_ellip_harm_2.pyx',
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 py3.extension_module('_ellip_harm_2',
@@ -484,16 +502,22 @@ endforeach
 
 python_sources = [
   '__init__.py',
+  '_add_newdocs.py',
   '_basic.py',
   '_ellip_harm.py',
   '_lambertw.py',
   '_logsumexp.py',
   '_mptestutils.py',
+  '_orthogonal.py',
+  '_sf_error.py',
+  '_spfun_stats.py',
   '_spherical_bessel.py',
   '_testutils.py',
+  'add_newdocs.py',
   'basic.py',
   'orthogonal.py',
   'sf_error.py',
+  'specfun.py',
   'spfun_stats.py'
 ]
 

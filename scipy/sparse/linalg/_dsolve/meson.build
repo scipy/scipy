@@ -203,7 +203,7 @@ _superlu = py3.extension_module('_superlu',
   include_directories: [incdir_numpy, 'SuperLU/SRC'],
   dependencies: [py3_dep, lapack],
   install: true,
-  subdir: 'scipy/sparse/linalg/dsolve'
+  subdir: 'scipy/sparse/linalg/_dsolve'
 )
 
 py3.install_sources([
@@ -212,7 +212,7 @@ py3.install_sources([
     'linsolve.py'
   ],
   pure: false,
-  subdir: 'scipy/sparse/linalg/dsolve'
+  subdir: 'scipy/sparse/linalg/_dsolve'
 )
 
 subdir('tests')

@@ -3,7 +3,7 @@ py3.install_sources([
     'lobpcg.py'
   ],
   pure: false,
-  subdir: 'scipy/sparse/linalg/eigen/lobpcg'
+  subdir: 'scipy/sparse/linalg/_eigen/lobpcg'
 )
 
 subdir('tests')

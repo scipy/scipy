@@ -9,6 +9,10 @@ py3.extension_module('convolve',
 
 python_sources = [
   '__init__.py',
+  '_basic.py',
+  '_helper.py',
+  '_pseudo_diffs.py',
+  '_realtransforms.py',
   'basic.py',
   'helper.py',
   'pseudo_diffs.py',

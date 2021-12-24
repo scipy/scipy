@@ -33,6 +33,8 @@ py3.extension_module('__odrpack',
 python_sources = [
   '__init__.py',
   '_add_newdocs.py',
+  '_models.py',
+  '_odrpack.py',
   'models.py',
   'odrpack.py'
 ]

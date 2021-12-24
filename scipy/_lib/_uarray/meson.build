@@ -8,10 +8,12 @@
 
 compiler = meson.get_compiler('cpp')
 
-if compiler.get_id() == 'msvc'
+if compiler.get_id() in ['msvc', 'clang-cl']
   cpp_args = '/EHsc'
 elif compiler.has_argument('-fvisibility=hidden')
   cpp_args = '-fvisibility=hidden'
+else
+  cpp_args = ''
 endif
 
 py3.extension_module('_uarray',

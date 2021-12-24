@@ -3,5 +3,5 @@ py3.install_sources([
     'test_linsolve.py'
   ],
   pure: false,
-  subdir: 'scipy/sparse/linalg/dsolve/tests'
+  subdir: 'scipy/sparse/linalg/_dsolve/tests'
 )

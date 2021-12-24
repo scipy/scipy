@@ -134,6 +134,12 @@ highs_sources = [
   'src/util/stringutil.cpp'
 ]
 
+if cc.has_argument('-Wno-unused-but-set-variable')
+  Wno_unused_but_set = ['-Wno-unused-but-set-variable']
+else
+  Wno_unused_but_set = []
+endif
+
 _highs_wrapper = py3.extension_module('_highs_wrapper',
   ['cython/src/_highs_wrapper.pyx', highs_sources, ipx_sources],
   include_directories: [
@@ -154,7 +160,7 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
   dependencies: [py3_dep],
   cpp_args: [
     '-Wno-unused-variable',
-    '-Wno-unused-but-set-variable',
+    Wno_unused_but_set,
     highs_define_macros,
     '-UOPENMP',
     '-UEXT_PRESOLVE',

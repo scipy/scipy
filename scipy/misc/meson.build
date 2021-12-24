@@ -1,5 +1,7 @@
 python_sources = [
   '__init__.py',
+  '_common.py',
+  '_doccer.py',
   'common.py',
   'doccer.py'
 ]

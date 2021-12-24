@@ -11,7 +11,7 @@ _lib_pxd = custom_target('_lib_pxd',
     'ccallback.pxd',
     'messagestream.pxd',
   ],
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 _lib_pxd_dep = declare_dependency(sources: _lib_pxd)

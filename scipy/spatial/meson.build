@@ -1,7 +1,7 @@
 _spatial_pxd = custom_target('_spatial_pxd',
-  output: ['qhull.pxd', 'setlist.pxd'],
-  input: ['qhull.pxd', 'setlist.pxd'],
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  output: ['_qhull.pxd', 'setlist.pxd'],
+  input: ['_qhull.pxd', 'setlist.pxd'],
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 qhull_src = [
@@ -24,8 +24,8 @@ qhull_src = [
   'qhull_src/src/userprintf_rbox_r.c'
 ]
 
-qhull = py3.extension_module('qhull',
-  ['qhull.pyx', 'qhull_misc.h', 'qhull_misc.c'] + qhull_src,
+qhull = py3.extension_module('_qhull',
+  ['_qhull.pyx', 'qhull_misc.h', 'qhull_misc.c'] + qhull_src,
   c_args: '-Wno-cpp',
   include_directories: [
     incdir_numpy,
@@ -57,8 +57,8 @@ elif compiler.has_argument('-fvisibility=hidden')
   cpp_args = cpp_args + ['-fvisibility=hidden']
 endif
 
-ckdtree = py3.extension_module('ckdtree',
-  ckdtree_src + ['ckdtree.pyx'],
+ckdtree = py3.extension_module('_ckdtree',
+  ckdtree_src + ['_ckdtree.pyx'],
   # Cannot use -fnovisibility=hidden for Cython cpp, because it
   # conceals PyInit_ckdtree symbol, and prevents module load.
   cpp_args: ['-Wno-cpp'], # TODO: replace with numpy_nodepr_api
@@ -118,10 +118,10 @@ py3.install_sources([
 )
 
 py3.install_sources([
+    '_ckdtree.pyi',
+    '_qhull.pyi',
     '_voronoi.pyi',
-    'ckdtree.pyi',
-    'distance.pyi',
-    'qhull.pyi'
+    'distance.pyi'
   ],
   pure: false,
   subdir: 'scipy/spatial'
@@ -130,11 +130,14 @@ py3.install_sources([
 py3.install_sources([
     '__init__.py',
     '_geometric_slerp.py',
+    '_kdtree.py',
     '_plotutils.py',
     '_procrustes.py',
     '_spherical_voronoi.py',
+    'ckdtree.py',
     'distance.py',
-    'kdtree.py'
+    'kdtree.py',
+    'qhull.py'
   ],
   pure: false,
   subdir: 'scipy/spatial'

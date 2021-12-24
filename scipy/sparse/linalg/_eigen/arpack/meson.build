@@ -101,7 +101,7 @@ _arpack = py3.extension_module('_arpack',
   dependencies: [py3_dep, lapack],
   install: true,
   link_language: 'fortran',
-  subdir: 'scipy/sparse/linalg/eigen/arpack'
+  subdir: 'scipy/sparse/linalg/_eigen/arpack'
 )
 
 py3.install_sources([
@@ -110,7 +110,7 @@ py3.install_sources([
     'ARPACK/COPYING'
   ],
   pure: false,
-  subdir: 'scipy/sparse/linalg/eigen/arpack'
+  subdir: 'scipy/sparse/linalg/_eigen/arpack'
 )
 
 subdir('tests')

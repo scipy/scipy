@@ -4,7 +4,7 @@ py3.install_sources([
     'hb.py'
   ],
   pure: false,
-  subdir: 'scipy/io/harwell_boeing'
+  subdir: 'scipy/io/_harwell_boeing'
 )
 
 subdir('tests')

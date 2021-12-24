@@ -24,11 +24,10 @@ import subprocess
 import textwrap
 import warnings
 import sysconfig
+from tools.version_utils import write_version_py, get_version_info
+from tools.version_utils import IS_RELEASE_BRANCH
 import importlib
 
-from tools.version_utils import (
-    get_version_info, write_version_py, IS_RELEASE_BRANCH
-)
 
 if sys.version_info[:2] < (3, 8):
     raise RuntimeError("Python version >= 3.8 required.")
@@ -69,7 +68,6 @@ if os.path.exists('MANIFEST'):
 # avoid attempting to load components that aren't built yet.  While ugly, it's
 # a lot more robust than what was previously being used.
 builtins.__SCIPY_SETUP__ = True
-
 
 
 def check_submodules():
@@ -461,7 +459,7 @@ def setup_package():
         req_py = '>={}'.format(python_minversion)
 
     # Rewrite the version file every time
-    write_version_py()
+    write_version_py('.')
 
     cmdclass = {'sdist': sdist_checked}
 
@@ -525,7 +523,7 @@ def setup_package():
 
         # Version number is added to metadata inside configuration() if build
         # is run.
-        metadata['version'] = get_version_info()[0]
+        metadata['version'] = get_version_info('.')[0]
 
     setup(**metadata)
 

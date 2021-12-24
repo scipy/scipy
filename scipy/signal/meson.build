@@ -1,21 +1,21 @@
-correlate_nd_c = custom_target('correlate_nd',
-  output: 'correlate_nd.c',
-  input: 'correlate_nd.c.in',
+correlate_nd_c = custom_target('_correlate_nd',
+  output: '_correlate_nd.c',
+  input: '_correlate_nd.c.in',
   command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-lfilter_c = custom_target('lfilter',
-  output: 'lfilter.c',
-  input: 'lfilter.c.in',
+lfilter_c = custom_target('_lfilter',
+  output: '_lfilter.c',
+  input: '_lfilter.c.in',
   command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-sigtools = py3.extension_module('sigtools',
+sigtools = py3.extension_module('_sigtools',
   [
-    'sigtoolsmodule.c',
-    'firfilter.c',
-    'sigtools.h',
-    'medianfilter.c',
+    '_sigtoolsmodule.c',
+    '_firfilter.c',
+    '_sigtools.h',
+    '_medianfilter.c',
     lfilter_c,
     correlate_nd_c
   ],
@@ -98,14 +98,14 @@ foreach pyx_file: pyx_files
   )
 endforeach
 
-bspline_util = custom_target('bspline_util',
-  output: 'bspline_util.c',
-  input: 'bspline_util.c.in',
+bspline_util = custom_target('_bspline_util',
+  output: '_bspline_util.c',
+  input: '_bspline_util.c.in',
   command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
 )
 
 spline = py3.extension_module('_spline',
-  ['splinemodule.c', bspline_util],
+  ['_splinemodule.c', bspline_util],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np],
   dependencies: [py3_dep],
@@ -116,12 +116,22 @@ spline = py3.extension_module('_spline',
 py3.install_sources([
     '__init__.py',
     '_arraytools.py',
+    '_bsplines.py',
+    '_czt.py',
+    '_filter_design.py',
+    '_fir_filter_design.py',
+    '_lti_conversion.py',
+    '_ltisys.py',
     '_max_len_seq.py',
     '_max_len_seq_inner.py',
     '_peak_finding.py',
     '_savitzky_golay.py',
+    '_signaltools.py',
     '_spectral.py',
+    '_spectral_py.py',
     '_upfirdn.py',
+    '_waveforms.py',
+    '_wavelets.py',
     'bsplines.py',
     'filter_design.py',
     'fir_filter_design.py',

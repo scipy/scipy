@@ -6,7 +6,7 @@ _sparsetools_headers = custom_target('_sparsetools_headers',
     'other_impl.h',
     'sparsetools_impl.h',
   ],
-  input: '../generate_sparsetools.py',
+  input: '../_generate_sparsetools.py',
   command: [py3, '@INPUT@', '--no-force', '-o', '@OUTDIR@']
 )
 

@@ -133,12 +133,12 @@ py3.extension_module('_odepack',
 )
 
 vode_module = custom_target('vode_module',
-  output: ['vode-f2pywrappers.f', 'vodemodule.c'],
+  output: ['_vode-f2pywrappers.f', '_vodemodule.c'],
   input: 'vode.pyf',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-py3.extension_module('vode',
+py3.extension_module('_vode',
   [vode_module, fortranobject_c],
   link_with: [vode_lib],
   c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
@@ -150,12 +150,12 @@ py3.extension_module('vode',
 )
 
 lsoda_module = custom_target('lsoda_module',
-  output: ['lsoda-f2pywrappers.f', 'lsodamodule.c'],
+  output: ['_lsoda-f2pywrappers.f', '_lsodamodule.c'],
   input: 'lsoda.pyf',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-py3.extension_module('lsoda',
+py3.extension_module('_lsoda',
   [lsoda_module, fortranobject_c],
   link_with: [lsoda_lib, mach_lib],
   c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
@@ -219,9 +219,14 @@ py3.install_sources([
     '_ode.py',
     '_quad_vec.py',
     '_quadrature.py',
+    '_odepack_py.py',
+    '_quadpack_py.py',
+    'dop.py',
+    'lsoda.py',
     'odepack.py',
     'quadpack.py',
-    'setup.py'
+    'setup.py',
+    'vode.py',
   ],
   pure: false,
   subdir: 'scipy/integrate'

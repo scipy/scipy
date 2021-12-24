@@ -9,6 +9,7 @@ python_sources = [
   'test_ccallback.py',
   'test_deprecation.py',
   'test_import_cycles.py',
+  'test_public_api.py',
   'test_tmpdirs.py',
   'test_warnings.py',
 ]

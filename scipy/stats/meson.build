@@ -9,16 +9,16 @@ _stats_pxd = custom_target('_stats_pxd',
   output: [
     '__init__.py',
     '_stats.pxd',
-    'biasedurn.pxd',
+    '_biasedurn.pxd',
     'unuran.pxd',
   ],
   input: [
     '__init__.py',
     '_stats.pxd',
-    'biasedurn.pxd',
+    '_biasedurn.pxd',
     '_unuran/unuran.pxd',
   ],
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 statlib_lib = static_library('statlib_lib',
@@ -31,12 +31,12 @@ statlib_lib = static_library('statlib_lib',
 )
 
 statlib_module = custom_target('statlib_module',
-  output: ['statlib-f2pywrappers.f', 'statlibmodule.c'],
+  output: ['_statlib-f2pywrappers.f', '_statlibmodule.c'],
   input: 'statlib.pyf',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-statlib = py3.extension_module('statlib',
+statlib = py3.extension_module('_statlib',
   [statlib_module, fortranobject_c],
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
@@ -73,12 +73,12 @@ _stats = py3.extension_module('_stats',
 )
 
 mvn_module = custom_target('mvn_module',
-  output: ['mvn-f2pywrappers.f', 'mvnmodule.c'],
+  output: ['_mvn-f2pywrappers.f', '_mvnmodule.c'],
   input: 'mvn.pyf',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-mvn = py3.extension_module('mvn',
+mvn = py3.extension_module('_mvn',
   [mvn_module, 'mvndst.f', fortranobject_c],
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
@@ -119,7 +119,7 @@ _qmc_cy = py3.extension_module('_qmc_cy',
 
 _stats_gen_pyx = custom_target('_stats_gen_pyx',
   output: [
-    'biasedurn.pyx',
+    '_biasedurn.pyx',
     'beta_ufunc.pyx',
     'binom_ufunc.pyx',
     'func_defs.pxd',
@@ -132,7 +132,7 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@']
 )
 
-biasedurn = py3.extension_module('biasedurn',
+biasedurn = py3.extension_module('_biasedurn',
   [
     _stats_gen_pyx[0],
     'biasedurn/fnchyppr.cpp',
@@ -188,8 +188,12 @@ py3.install_sources([
     '_entropy.py',
     '_generate_pyx.py',
     '_hypotests.py',
+    '_kde.py',
     '_ksstats.py',
     '_mannwhitneyu.py',
+    '_morestats.py',
+    '_mstats_basic.py',
+    '_mstats_extras.py',
     '_multivariate.py',
     '_page_trend_test.py',
     '_qmc.py',
@@ -197,8 +201,11 @@ py3.install_sources([
     '_result_classes.py',
     '_rvs_sampling.py',
     '_stats_mstats_common.py',
+    '_stats_py.py',
     '_tukeylambda_stats.py',
+    '_variation.py',
     '_wilcoxon_data.py',
+    'biasedurn.py',
     'contingency.py',
     'distributions.py',
     'kde.py',
@@ -206,7 +213,10 @@ py3.install_sources([
     'mstats.py',
     'mstats_basic.py',
     'mstats_extras.py',
+    'mvn.py',
     'qmc.py',
+    'sampling.py',
+    'statlib.py',
     'stats.py'
   ],
   pure: false,
@@ -214,7 +224,7 @@ py3.install_sources([
 )
 
 py3.install_sources([
-    'biasedurn.pxd',
+    '_biasedurn.pxd',
     '_stats.pxd'
   ],
   pure: false,
@@ -230,6 +240,7 @@ py3.install_sources([
 )
 
 subdir('_boost')
+subdir('_levy_stable')
 subdir('_unuran')
 
 subdir('tests')

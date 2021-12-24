@@ -3,7 +3,7 @@
 __init__py = custom_target('__init__py',
   output: '__init__.py',
   input: '__init__.py',
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
 cython_linalg = custom_target('cython_linalg',
@@ -231,19 +231,39 @@ py3.extension_module('_decomp_update',
   subdir: 'scipy/linalg'
 )
 
+_cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
+  ['_cythonized_array_utils.pyx'],
+  c_args: numpy_nodepr_api,
+  dependencies: [py3_dep],
+  include_directories: [inc_np],
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
 python_sources = [
   '__init__.py',
+  '_basic.py',
+  '_decomp.py',
+  '_decomp_cholesky.py',
   '_decomp_cossin.py',
   '_decomp_ldl.py',
+  '_decomp_lu.py',
   '_decomp_polar.py',
+  '_decomp_qr.py',
   '_decomp_qz.py',
+  '_decomp_schur.py',
+  '_decomp_svd.py',
   '_expm_frechet.py',
+  '_flinalg_py.py',
   '_interpolative_backend.py',
+  '_matfuncs.py',
   '_matfuncs_inv_ssq.py',
   '_matfuncs_sqrtm.py',
+  '_misc.py',
   '_procrustes.py',
   '_sketches.py',
   '_solvers.py',
+  '_special_matrices.py',
   '_testutils.py',
   'basic.py',
   'blas.py',
@@ -267,6 +287,11 @@ py3.install_sources(
   subdir: 'scipy/linalg'
 )
 
+py3.install_sources(
+  ['_cythonized_array_utils.pyi'],
+  pure: false,
+  subdir: 'scipy/linalg'
+)
 
 # TODO: install (only) these pxd files. Neither py3.install_sources nor
 #       install_data accept generated data files. What

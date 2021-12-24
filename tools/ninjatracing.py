@@ -57,7 +57,7 @@ def read_targets(log, show_all):
     targets = {}
     last_end_seen = 0
     for line in log:
-        start, end, _, name, cmdhash = line.strip().split('\t')  # ignore restat
+        start, end, _, name, cmdhash = line.strip().split('\t') # Ignore restat.
         if not show_all and int(end) < last_end_seen:
             # An earlier time stamp means that this step is the first in a new
             # build, possibly an incremental build. Throw away the previous data
@@ -176,9 +176,9 @@ def main(argv):
     (options, args) = parser.parse_args()
 
     if len(args) == 0:
-        print('Must specify at least one .ninja_log file')
-        parser.print_help()
-        return 1
+      print('Must specify at least one .ninja_log file')
+      parser.print_help()
+      return 1
 
     entries = []
     for pid, log_file in enumerate(args):

@@ -1228,9 +1228,9 @@ def get_declaration(ufunc, c_name, c_proto, cy_proto, header,
         # redeclare the function, so that the assumed
         # signature is checked at compile time
         new_name = "%s \"%s\"" % (ufunc.cython_func_name(c_name), c_name)
-        defs.append("cdef extern from \"%s\":" % proto_h_filename)
+        defs.append(f'cdef extern from r"{proto_h_filename}":')
         defs.append("    cdef %s" % (cy_proto.replace('(*)', new_name)))
-        defs_h.append("#include \"%s\"" % header)
+        defs_h.append(f'#include "{header}"')
         defs_h.append("%s;" % (c_proto.replace('(*)', c_name)))
 
     return defs, defs_h, var_name
@@ -1490,7 +1490,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     if not args.outdir:
-        # raise ValueError(f"Missing `--outdir` argument to _generate_pyx.py")
+        #raise ValueError(f"Missing `--outdir` argument to _generate_pyx.py")
         # We're dealing with a distutils build here, write in-place:
         outdir_abs = os.path.abspath(os.path.dirname(__file__))
     else:

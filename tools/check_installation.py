@@ -36,17 +36,17 @@ changed_installed_path = {
 
 
 def main(install_dir):
-    INSTALL_DIR = os.path.join(ROOT_DIR, install_dir)
-    if not os.path.exists(INSTALL_DIR):
-        raise ValueError(f"Provided install dir {INSTALL_DIR} does not exist")
+    INSTALLED_DIR = os.path.join(ROOT_DIR, install_dir)
+    if not os.path.exists(INSTALLED_DIR):
+        raise ValueError(f"Provided install dir {INSTALLED_DIR} does not exist")
 
     scipy_test_files = get_test_files(SCIPY_DIR)
-    installed_test_files = get_test_files(INSTALL_DIR)
+    installed_test_files = get_test_files(INSTALLED_DIR)
 
     # Check test files detected in repo are installed
     for test_file in scipy_test_files.keys():
-        if test_file not in installed_test_files.keys():
-            raise Exception(f"{scipy_test_files[test_file]} is not installed")
+        if not test_file in installed_test_files.keys():
+            raise Exception("%s is not installed" % scipy_test_files[test_file])
 
     print("----------- All the test files were installed --------------")
 

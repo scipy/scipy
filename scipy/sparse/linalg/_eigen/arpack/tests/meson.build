@@ -3,5 +3,5 @@ py3.install_sources([
     'test_arpack.py'
   ],
   pure: false,
-  subdir: 'scipy/sparse/linalg/eigen/arpack/tests'
+  subdir: 'scipy/sparse/linalg/_eigen/arpack/tests'
 )
