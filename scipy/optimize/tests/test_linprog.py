@@ -2134,7 +2134,9 @@ class TestLinprogHiGHSMIP():
 
     def test_mip1(self):
         # solve non-relaxed magic square problem (finally!)
-        n = 3
+        # also check that values are all integers - they don't always
+        # come out of HiGHS that way
+        n = 4
         A, b, c, numbers, M = magic_square(n)
         bounds = [(0, 1)] * len(c)
         integrality = [1] * len(c)
@@ -2142,13 +2144,14 @@ class TestLinprogHiGHSMIP():
         res = linprog(c=c*0, A_eq=A, b_eq=b, bounds=bounds,
                       method=self.method, integrality=integrality)
 
-        x = np.round(res.x).astype('int')
-        s = (numbers.flatten()*x).reshape(n**2,n,n)
+        s = (numbers.flatten() * res.x).reshape(n**2, n, n)
         square = np.sum(s, axis=0)
         np.testing.assert_allclose(square.sum(axis=0), M)
         np.testing.assert_allclose(square.sum(axis=1), M)
         np.testing.assert_allclose(np.diag(square).sum(), M)
         np.testing.assert_allclose(np.diag(square[:, ::-1]).sum(), M)
+
+        np.testing.assert_equal(res.x, np.round(res.x))
 
     def test_mip2(self):
         # solve MIP with inequality constraints and all integer constraints

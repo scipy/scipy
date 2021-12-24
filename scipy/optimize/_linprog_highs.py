@@ -402,6 +402,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     status, message = statuses[res['status']]
 
     x = np.array(res['x']) if 'x' in res else None
+    if np.any(x) and integrality is not None:
+        mask = (integrality == 1) | (integrality == 3)
+        x[mask] = np.round(x[mask])
+
     sol = {'x': x,
            'slack': slack,
            'con': con,
