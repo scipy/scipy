@@ -33,13 +33,18 @@ not for numerically exact results.
 
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
-distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
-            'kappa4', 'vonmises_line', 'gausshyper', 'norminvgauss',
-            'geninvgauss', 'genhyperbolic']
+# For skipping test_cont_basic
 # distslow are sorted by speed (very slow to slow)
+distslow = ['recipinvgauss', 'vonmises', 'kappa4', 'vonmises_line',
+            'gausshyper', 'norminvgauss', 'geninvgauss', 'genhyperbolic',
+            'truncnorm']
 
-distxslow = ['studentized_range']
 # distxslow are sorted by speed (very slow to slow)
+distxslow = ['studentized_range', 'kstwo', 'ksone', 'wrapcauchy', 'genexpon']
+
+# For skipping test_moments, which is already marked slow
+distxslow_test_moments = ['studentized_range', 'vonmises', 'vonmises_line',
+                          'ksone', 'kstwo', 'recipinvgauss', 'genexpon']
 
 # skip check_fit_args (test is slow)
 skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
@@ -242,19 +247,17 @@ def test_levy_stable_random_state_property():
 def cases_test_moments():
     fail_normalization = set(['vonmises'])
     fail_higher = set(['vonmises', 'ncf'])
-    fail_loc_scale = set(['kappa3', 'kappa4'])  # see gh-13582
+    fail_loc_scale = set(['kappa4'])  # see gh-13582
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
             continue
 
-        if distname == 'studentized_range':
-            msg = ("studentized_range is far too slow for this test and it is "
-                   "redundant with test_distributions::TestStudentizedRange::"
-                   "test_moment_against_mp")
+        if distname in distxslow_test_moments:
             yield pytest.param(distname, arg, True, True, True, True,
-                               marks=pytest.mark.xslow(reason=msg))
+                               marks=pytest.mark.xslow(reason="too slow"))
             continue
+
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
         cond3 = distname not in fail_loc_scale
@@ -819,3 +822,12 @@ def test_broadcasting_in_moments_gh12192_regression():
                           [np.nan, np.nan, 6.78730736]])
     npt.assert_allclose(vals3, expected3, rtol=1e-8)
     assert vals3.shape == expected3.shape
+
+def test_kappa3_array_gh13582():
+    # https://github.com/scipy/scipy/pull/15140#issuecomment-994958241
+    shapes = [0.5, 1.5, 2.5, 3.5, 4.5]
+    moments = 'mvsk'
+    res = np.array([[stats.kappa3.stats(shape, moments=moment) for shape in shapes]
+                    for moment in moments])
+    res2 = np.array(stats.kappa3.stats(shapes, moments=moments))
+    npt.assert_allclose(res, res2)

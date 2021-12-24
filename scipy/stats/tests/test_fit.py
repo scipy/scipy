@@ -59,6 +59,7 @@ failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
 # Don't run the fit test on these:
 skip_fit = [
     'erlang',  # Subclass of gamma, generates a warning.
+    'genhyperbolic',  # too slow
 ]
 
 

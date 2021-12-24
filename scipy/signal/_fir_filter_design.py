@@ -459,7 +459,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         h -= left * sinc(left * m)
 
     # Get and apply the window function.
-    from ._signaltools import get_window
+    from .windows import get_window
     win = get_window(window, numtaps, fftbins=False)
     h *= win
 
@@ -667,7 +667,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
 
     if window is not None:
         # Create the window to apply to the filter coefficients.
-        from ._signaltools import get_window
+        from .windows import get_window
         wind = get_window(window, numtaps, fftbins=False)
     else:
         wind = 1

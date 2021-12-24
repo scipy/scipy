@@ -13,7 +13,7 @@ import numpy as np
 from numpy.lib import NumpyVersion
 from numpy.testing import assert_allclose, assert_equal
 from scipy import stats
-
+from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
 
 axis_nan_policy_cases = [
     # function, args, kwds, number of samples, paired, unpacker function
@@ -539,3 +539,184 @@ def test_empty(hypotest, args, kwds, n_samples, paired, unpacker):
                     stats._stats_py._broadcast_concatenate(samples, axis)
                 with pytest.raises(ValueError, match=message):
                     hypotest(*samples, *args, axis=axis, **kwds)
+
+
+def test_masked_array_2_sentinel_array():
+    # prepare arrays
+    np.random.seed(0)
+    A = np.random.rand(10, 11, 12)
+    B = np.random.rand(12)
+    mask = A < 0.5
+    A = np.ma.masked_array(A, mask)
+
+    # set arbitrary elements to special values
+    # (these values might have been considered for use as sentinel values)
+    max_float = np.finfo(np.float64).max
+    eps = np.finfo(np.float64).eps
+    A[3, 4, 1] = np.nan
+    A[4, 5, 2] = np.inf
+    A[5, 6, 3] = max_float
+    B[8] = np.nan
+    B[7] = np.inf
+    B[6] = max_float * (1 - 2*eps)
+
+    # convert masked A to array with sentinel value, don't modify B
+    out_arrays, sentinel = _masked_arrays_2_sentinel_arrays([A, B])
+    A_out, B_out = out_arrays
+
+    # check that good sentinel value was chosen (according to intended logic)
+    assert (sentinel != max_float) and (sentinel != max_float * (1 - 2*eps))
+    assert sentinel == max_float * (1 - 2*eps)**2
+
+    # check that output arrays are as intended
+    A_reference = A.data
+    A_reference[A.mask] = sentinel
+    np.testing.assert_array_equal(A_out, A_reference)
+    assert B_out is B
+
+
+def test_masked_stat_1d():
+    # basic test of _axis_nan_policy_factory with 1D masked sample
+    males = [19, 22, 16, 29, 24]
+    females = [20, 11, 17, 12]
+    res = stats.mannwhitneyu(males, females)
+
+    # same result when extra nan is omitted
+    females2 = [20, 11, 17, np.nan, 12]
+    res2 = stats.mannwhitneyu(males, females2, nan_policy='omit')
+    np.testing.assert_array_equal(res2, res)
+
+    # same result when extra element is masked
+    females3 = [20, 11, 17, 1000, 12]
+    mask3 = [False, False, False, True, False]
+    females3 = np.ma.masked_array(females3, mask=mask3)
+    res3 = stats.mannwhitneyu(males, females3)
+    np.testing.assert_array_equal(res3, res)
+
+    # same result when extra nan is omitted and additional element is masked
+    females4 = [20, 11, 17, np.nan, 1000, 12]
+    mask4 = [False, False, False, False, True, False]
+    females4 = np.ma.masked_array(females4, mask=mask4)
+    res4 = stats.mannwhitneyu(males, females4, nan_policy='omit')
+    np.testing.assert_array_equal(res4, res)
+
+    # same result when extra elements, including nan, are masked
+    females5 = [20, 11, 17, np.nan, 1000, 12]
+    mask5 = [False, False, False, True, True, False]
+    females5 = np.ma.masked_array(females5, mask=mask5)
+    res5 = stats.mannwhitneyu(males, females5, nan_policy='propagate')
+    res6 = stats.mannwhitneyu(males, females5, nan_policy='raise')
+    np.testing.assert_array_equal(res5, res)
+    np.testing.assert_array_equal(res6, res)
+
+
+@pytest.mark.parametrize(("axis"), range(-2, 2))
+def test_masked_stat_3d(axis):
+    # basic test of _axis_nan_policy_factory with 3D masked sample
+    np.random.seed(0)
+    a = np.random.rand(3, 4, 5)
+    b = np.random.rand(4, 5)
+    c = np.random.rand(4, 1)
+
+    mask_a = a < 0.1
+    mask_c = [False, False, False, True]
+    a_masked = np.ma.masked_array(a, mask=mask_a)
+    c_masked = np.ma.masked_array(c, mask=mask_c)
+
+    a_nans = a.copy()
+    a_nans[mask_a] = np.nan
+    c_nans = c.copy()
+    c_nans[mask_c] = np.nan
+
+    res = stats.kruskal(a_nans, b, c_nans, nan_policy='omit', axis=axis)
+    res2 = stats.kruskal(a_masked, b, c_masked, axis=axis)
+    np.testing.assert_array_equal(res, res2)
+
+
+def test_mixed_mask_nan_1():
+    # targeted test of _axis_nan_policy_factory with 2D masked sample:
+    # omitting samples with masks and nan_policy='omit' are equivalent
+    # also checks paired-sample sentinel value removal
+    m, n = 3, 20
+    axis = -1
+
+    np.random.seed(0)
+    a = np.random.rand(m, n)
+    b = np.random.rand(m, n)
+    mask_a1 = np.random.rand(m, n) < 0.2
+    mask_a2 = np.random.rand(m, n) < 0.1
+    mask_b1 = np.random.rand(m, n) < 0.15
+    mask_b2 = np.random.rand(m, n) < 0.15
+    mask_a1[2, :] = True
+
+    a_nans = a.copy()
+    b_nans = b.copy()
+    a_nans[mask_a1 | mask_a2] = np.nan
+    b_nans[mask_b1 | mask_b2] = np.nan
+
+    a_masked1 = np.ma.masked_array(a, mask=mask_a1)
+    b_masked1 = np.ma.masked_array(b, mask=mask_b1)
+    a_masked1[mask_a2] = np.nan
+    b_masked1[mask_b2] = np.nan
+
+    a_masked2 = np.ma.masked_array(a, mask=mask_a2)
+    b_masked2 = np.ma.masked_array(b, mask=mask_b2)
+    a_masked2[mask_a1] = np.nan
+    b_masked2[mask_b1] = np.nan
+
+    a_masked3 = np.ma.masked_array(a, mask=(mask_a1 | mask_a2))
+    b_masked3 = np.ma.masked_array(b, mask=(mask_b1 | mask_b2))
+
+    res = stats.wilcoxon(a_nans, b_nans, nan_policy='omit', axis=axis)
+    res1 = stats.wilcoxon(a_masked1, b_masked1, nan_policy='omit', axis=axis)
+    res2 = stats.wilcoxon(a_masked2, b_masked2, nan_policy='omit', axis=axis)
+    res3 = stats.wilcoxon(a_masked3, b_masked3, nan_policy='raise', axis=axis)
+    res4 = stats.wilcoxon(a_masked3, b_masked3,
+                          nan_policy='propagate', axis=axis)
+
+    np.testing.assert_array_equal(res1, res)
+    np.testing.assert_array_equal(res2, res)
+    np.testing.assert_array_equal(res3, res)
+    np.testing.assert_array_equal(res4, res)
+
+
+def test_mixed_mask_nan_2():
+    # targeted test of _axis_nan_policy_factory with 2D masked sample:
+    # check for expected interaction between masks and nans
+
+    # Cases here are
+    # [mixed nan/mask, all nans, all masked,
+    # unmasked nan, masked nan, unmasked non-nan]
+    a = [[1, np.nan, 2], [np.nan, np.nan, np.nan], [1, 2, 3],
+         [1, np.nan, 3], [1, np.nan, 3], [1, 2, 3]]
+    mask = [[1, 0, 1], [0, 0, 0], [1, 1, 1],
+            [0, 0, 0], [0, 1, 0], [0, 0, 0]]
+    a_masked = np.ma.masked_array(a, mask=mask)
+    b = [[4, 5, 6]]
+    ref1 = stats.ranksums([1, 3], [4, 5, 6])
+    ref2 = stats.ranksums([1, 2, 3], [4, 5, 6])
+
+    # nan_policy = 'omit'
+    # all elements are removed from first three rows
+    # middle element is removed from fourth and fifth rows
+    # no elements removed from last row
+    res = stats.ranksums(a_masked, b, nan_policy='omit', axis=-1)
+    stat_ref = [np.nan, np.nan, np.nan,
+                ref1.statistic, ref1.statistic, ref2.statistic]
+    p_ref = [np.nan, np.nan, np.nan,
+             ref1.pvalue, ref1.pvalue, ref2.pvalue]
+    np.testing.assert_array_equal(res.statistic, stat_ref)
+    np.testing.assert_array_equal(res.pvalue, p_ref)
+
+    # nan_policy = 'propagate'
+    # nans propagate in first, second, and fourth row
+    # all elements are removed by mask from third row
+    # middle element is removed from fifth row
+    # no elements removed from last row
+    res = stats.ranksums(a_masked, b, nan_policy='propagate', axis=-1)
+    stat_ref = [np.nan, np.nan, np.nan,
+                np.nan, ref1.statistic, ref2.statistic]
+    p_ref = [np.nan, np.nan, np.nan,
+             np.nan, ref1.pvalue, ref2.pvalue]
+    np.testing.assert_array_equal(res.statistic, stat_ref)
+    np.testing.assert_array_equal(res.pvalue, p_ref)

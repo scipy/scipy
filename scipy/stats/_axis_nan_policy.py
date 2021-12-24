@@ -74,7 +74,7 @@ def _broadcast_concatenate(xs, axis):
 
 # TODO: add support for `axis` tuples
 def _remove_nans(samples, paired):
-    "Remove nans from paired or unpaired samples"
+    "Remove nans from paired or unpaired 1D samples"
     # potential optimization: don't copy arrays that don't contain nans
     if not paired:
         return [sample[~np.isnan(sample)] for sample in samples]
@@ -86,6 +86,68 @@ def _remove_nans(samples, paired):
         nans = nans | np.isnan(sample)
     not_nans = ~nans
     return [sample[not_nans] for sample in samples]
+
+
+def _remove_sentinel(samples, paired, sentinel):
+    "Remove sentinel values from paired or unpaired 1D samples"
+    # could consolidate with `_remove_nans`, but it's not quite as simple as
+    # passing `sentinel=np.nan` because `(np.nan == np.nan) is False`
+
+    # potential optimization: don't copy arrays that don't contain sentinel
+    if not paired:
+        return [sample[sample != sentinel] for sample in samples]
+
+    # for paired samples, we need to remove the whole pair when any part
+    # has a nan
+    sentinels = (samples[0] == sentinel)
+    for sample in samples[1:]:
+        sentinels = sentinels | (sample == sentinel)
+    not_sentinels = ~sentinels
+    return [sample[not_sentinels] for sample in samples]
+
+
+def _masked_arrays_2_sentinel_arrays(samples):
+    # masked arrays in `samples` are converted to regular arrays, and values
+    # corresponding with masked elements are replaced with a sentinel value
+
+    # return without modifying arrays if none have a mask
+    has_mask = False
+    for sample in samples:
+        mask = getattr(sample, 'mask', False)
+        has_mask = has_mask or np.any(mask)
+    if not has_mask:
+        return samples, None  # None means there is no sentinel value
+
+    # Choose a sentinel value. We can't use `np.nan`, because sentinel (masked)
+    # values are always omitted, but there are different nan policies.
+    for i in range(len(samples)):
+        # Things get more complicated if the arrays are of different types.
+        # We could have different sentinel values for each array, but
+        # the purpose of this code is convenience, not efficiency.
+        samples[i] = samples[i].astype(np.float64, copy=False)
+
+    max_possible, eps = np.finfo(np.float64).max, np.finfo(np.float64).eps
+
+    sentinel = max_possible
+    while sentinel > 0:
+        for sample in samples:
+            if np.any(sample == sentinel):
+                sentinel *= (1 - 2*eps)  # choose a new sentinel value
+                break
+        else:  # when sentinel value is OK, break the while loop
+            break
+
+    # replace masked elements with sentinel value
+    out_samples = []
+    for sample in samples:
+        mask = getattr(sample, 'mask', False)
+        if np.any(mask):
+            mask = np.broadcast_to(mask, sample.shape)
+            sample = sample.data.copy()  # don't modify original array
+            sample[mask] = sentinel
+        out_samples.append(sample)
+
+    return out_samples, sentinel
 
 
 def _check_empty_inputs(samples, axis):
@@ -232,6 +294,9 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             nan_policy = kwds.pop('nan_policy', 'propagate')
             del args  # avoid the possibility of passing both `args` and `kwds`
 
+            # convert masked arrays to regular arrays with sentinel values
+            samples, sentinel = _masked_arrays_2_sentinel_arrays(samples)
+
             if axis is None:
                 samples = [sample.ravel() for sample in samples]
                 axis = 0
@@ -261,12 +326,14 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     # consider passing in contains_nans
                     samples = _remove_nans(samples, paired)
 
-                # ideally, this is what the behavior would be, but some
-                # existing functions raise exceptions, so overriding it
-                # would break backward compatibility.
+                # ideally, this is what the behavior would be:
                 # if is_too_small(samples):
                 #     return result_object(np.nan, np.nan)
+                # but some existing functions raise exceptions, and changing
+                # behavior of those would break backward compatibility.
 
+                if sentinel:
+                    samples = _remove_sentinel(samples, paired, sentinel)
                 return hypotest_fun_in(*samples, **kwds)
 
             # check for empty input
@@ -289,7 +356,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             contains_nan, _ = (
                 scipy.stats._stats_py._contains_nan(x, nan_policy))
 
-            if vectorized and not contains_nan:
+            if vectorized and not contains_nan and not sentinel:
                 return hypotest_fun_in(*samples, axis=axis, **kwds)
 
             # Addresses nan_policy == "omit"
@@ -297,6 +364,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 def hypotest_fun(x):
                     samples = np.split(x, split_indices)[:n_samp]
                     samples = _remove_nans(samples, paired)
+                    if sentinel:
+                        samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
                         return result_object(np.nan, np.nan)
                     return hypotest_fun_in(*samples, **kwds)
@@ -307,11 +376,19 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     if np.isnan(x).any():
                         return result_object(np.nan, np.nan)
                     samples = np.split(x, split_indices)[:n_samp]
+                    if sentinel:
+                        samples = _remove_sentinel(samples, paired, sentinel)
+                    if is_too_small(samples):
+                        return result_object(np.nan, np.nan)
                     return hypotest_fun_in(*samples, **kwds)
 
             else:
                 def hypotest_fun(x):
                     samples = np.split(x, split_indices)[:n_samp]
+                    if sentinel:
+                        samples = _remove_sentinel(samples, paired, sentinel)
+                    if is_too_small(samples):
+                        return result_object(np.nan, np.nan)
                     return hypotest_fun_in(*samples, **kwds)
 
             x = np.moveaxis(x, axis, -1)
