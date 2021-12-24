@@ -707,7 +707,7 @@ add_newdoc("binom",
     .. math::
 
         \binom{x}{y} = \frac{\Gamma(x + 1)}{\Gamma(y + 1)\Gamma(x - y + 1)} =
-            \frac{1}{(x + 1)\mathrm{B}(x - y + 1, y _ 1)}
+            \frac{1}{(x + 1)\mathrm{B}(x - y + 1, y + 1)}
 
     Where :math:`\Gamma` is the Gamma function and :math:`\mathrm{B}` is
     the Beta function [1]_. See `gamma` and `beta`.
