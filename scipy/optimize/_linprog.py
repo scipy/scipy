@@ -620,6 +620,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warn(warning_message, OptimizeWarning)
 
     if integrality and not meth == "highs":
+        integrality = None
         warning_message = ("Only `method='highs'` supports integer "
                            "constraints. Ignoring `integrality`.")
         warn(warning_message, OptimizeWarning)

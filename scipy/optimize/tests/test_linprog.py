@@ -401,23 +401,21 @@ class LinprogCommonTests:
 
     def test_integrality_without_highs(self):
         # ensure that using `integrality` parameter without `method='highs'`
-        # raises warning.
-        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
-        A_ub = np.array([[1, 1, 1]])
-        b_ub = np.array([7])
-        A_eq = np.array([[4, 2, 1]])
-        b_eq = np.array([12])
-        c = np.array([-3, -2, -1])
+        # raises warning and produces correct solution to relaxed problem
+        # source: https://en.wikipedia.org/wiki/Integer_programming#Example
+        A_ub = np.array([[-1, 1], [3, 2], [2, 3]])
+        b_ub = np.array([1, 12, 12])
+        c = -np.array([0, 1])
 
-        bounds = [(0, np.inf), (0, np.inf), (0, 1)]
-        integrality = [0, 1, 0]
+        bounds = [(0, np.inf)] * len(c)
+        integrality = [1] * len(c)
 
         with np.testing.assert_warns(OptimizeWarning):
-            res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
-                          bounds=bounds, method=self.method,
-                          integrality=integrality)
+            res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+                          method=self.method, integrality=integrality)
 
-        np.testing.assert_allclose(res.fun, -12)
+        np.testing.assert_allclose(res.x, [1.8, 2.8])
+        np.testing.assert_allclose(res.fun, -2.8)
 
     def test_invalid_inputs(self):
 
