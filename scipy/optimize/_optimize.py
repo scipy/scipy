@@ -3547,7 +3547,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
                 warnings.warn(
                     "Either final optimization did not succeed "
                     "or `finish` does not return `statuscode` as its last "
-                    "argument.", RuntimeWarning)
+                    "argument.", RuntimeWarning, 2)
 
     if full_output:
         return xmin, Jmin, grid, Jout
