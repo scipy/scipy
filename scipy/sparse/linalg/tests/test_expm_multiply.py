@@ -155,7 +155,7 @@ class TestExpmActionSimple:
                            "splu requires CSC matrix format")
                 sup.filter(SparseEfficiencyWarning,
                            "spsolve is more efficient when sparse b is in the CSC matrix format")
-                expected = scipy.linalg.expm(A).dot(B)
+                expected = scipy.sparse.linalg.expm(A).dot(B)
             assert_allclose(observed, expected)
             observed = estimated(expm_multiply)(aslinearoperator(A), B)
             assert_allclose(observed, expected)
@@ -188,18 +188,20 @@ class TestExpmActionInterval:
             B = np.random.randn(n, k)
             v = np.random.randn(n)
             for target in (B, v):
-                X = expm_multiply(A, target,
-                        start=start, stop=stop, num=num, endpoint=endpoint)
+                X = expm_multiply(A, target, start=start, stop=stop,
+                                  num=num, endpoint=endpoint)
                 samples = np.linspace(start=start, stop=stop,
-                        num=num, endpoint=endpoint)
+                                      num=num, endpoint=endpoint)
                 with suppress_warnings() as sup:
                     sup.filter(SparseEfficiencyWarning,
                                "splu requires CSC matrix format")
                     sup.filter(SparseEfficiencyWarning,
-                               "spsolve is more efficient when sparse b is in the CSC matrix format")
+                               "spsolve is more efficient when sparse b is in"
+                               " the CSC matrix format")
                     for solution, t in zip(X, samples):
-                        assert_allclose(solution,
-                                scipy.linalg.expm(t*A).dot(target))
+                        assert_allclose(
+                            solution, scipy.sparse.linalg.expm(t*A).dot(target)
+                        )
 
     def test_expm_multiply_interval_vector(self):
         np.random.seed(1234)

@@ -132,7 +132,9 @@ def expm_multiply(A, B, start=None, stop=None, num=None,
         or calculated exactly for sparse matrices. It is used to precondition
         `A`, thus an approximate trace is acceptable.
         For linear operators, `traceA` should be provided to ensure performance
-        as the estimation is not reliable.
+        as the estimation is not guaranteed to be reliable for all cases.
+
+        .. versionadded: 1.19.0
 
     Returns
     -------
@@ -257,7 +259,7 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
     if traceA is None:  # TODO: we need a good number for m3
         if is_linear_operator:
             warn("Trace of LinearOperator not available, it will be estimated."
-                 " Provide `traceA` to ensure performance.")
+                 " Provide `traceA` to ensure performance.", stacklevel=3)
         traceA = traceest(A, m3=10) if is_linear_operator else _trace(A)
     mu = traceA / float(n)
     A = A - mu * ident
@@ -653,7 +655,7 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     if traceA is None:  # TODO: we need a good number for m3
         if is_linear_operator:
             warn("Trace of LinearOperator not available, it will be estimated."
-                 " Provide `traceA` to ensure performance.")
+                 " Provide `traceA` to ensure performance.", stacklevel=3)
         traceA = traceest(A, m3=10) if is_linear_operator else _trace(A)
     mu = traceA / float(n)
 
