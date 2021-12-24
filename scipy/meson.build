@@ -1,6 +1,33 @@
 # Platform detection
 is_windows = host_machine.system() == 'windows'
 
+if is_windows
+  # For mingw-w64, link statically against the UCRT.
+  gcc_link_args = ['-lucrt', '-static']
+  if meson.get_compiler('c').get_id() == 'gcc'
+    add_global_link_arguments(gcc_link_args, language: ['c', 'cpp'])
+    # Force gcc to float64 long doubles for compatibility with MSVC
+    # builds, for C only.
+    add_global_arguments('-mlong-double-64', language: 'c')
+    # Manual add of MS_WIN64 macro when not using MSVC.
+    # https://bugs.python.org/issue28267
+    bitness = run_command('_build_utils/gcc_build_bitness.py').stdout().strip()
+    if bitness == '64'
+      add_global_arguments('-DMS_WIN64', language: ['c', 'cpp', 'fortran'])
+    endif
+  endif
+  if meson.get_compiler('fortran').get_id() == 'gcc'
+    add_global_link_arguments(gcc_link_args, language: ['fortran'])
+    # Flag needed to work around BLAS and LAPACK Gfortran dependence on
+    # undocumented C feature when passing single character string
+    # arguments.
+    # https://gcc.gnu.org/bugzilla/show_bug.cgi?id=90329
+    # https://github.com/wch/r-source/blob/838f9d5a7be08f2a8c08e47bcd28756f5d0aac90/src/gnuwin32/MkRules.rules#L121
+    add_global_arguments('-fno-optimize-sibling-calls',
+      language: ['fortran'])
+  endif
+endif
+
 # NumPy include directory - needed in all submodules
 incdir_numpy = run_command(py3,
   [
@@ -133,7 +160,7 @@ _cython_tree = custom_target('_cython_tree',
     'linalg.pxd',
     'special.pxd'
   ],
-  command: ['cp', '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@']
 )
 cython_tree = declare_dependency(sources: _cython_tree)
 
