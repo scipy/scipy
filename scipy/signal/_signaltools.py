@@ -5,7 +5,8 @@ import operator
 import math
 import timeit
 from scipy.spatial import cKDTree
-from . import _sigtools, dlti
+from . import _sigtools
+from ._ltisys import dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
