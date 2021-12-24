@@ -140,7 +140,7 @@ def magic_square(n):
     b = np.array(b_list, dtype=float)
     c = np.random.rand(A.shape[1])
 
-    return A, b, c, numbers
+    return A, b, c, numbers, M
 
 
 def lpgen_2d(m, n):
@@ -398,6 +398,26 @@ class LinprogCommonTests:
 
         assert_warns(OptimizeWarning, f,
                      c, A_ub=A_ub, b_ub=b_ub, options=o)
+
+    def test_integrality_without_highs(self):
+        # ensure that using `integrality` parameter without `method='highs'`
+        # raises warning.
+        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
+        A_ub = np.array([[1, 1, 1]])
+        b_ub = np.array([7])
+        A_eq = np.array([[4, 2, 1]])
+        b_eq = np.array([12])
+        c = np.array([-3, -2, -1])
+
+        bounds = [(0, np.inf), (0, np.inf), (0, 1)]
+        integrality = [0, 1, 0]
+
+        with np.testing.assert_warns(OptimizeWarning):
+            res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                          bounds=bounds, method=self.method,
+                          integrality=integrality)
+
+        np.testing.assert_allclose(res.fun, -12)
 
     def test_invalid_inputs(self):
 
@@ -1303,7 +1323,7 @@ class LinprogCommonTests:
         # leading to a non-optimal solution if A is rank-deficient.
         # https://github.com/scipy/scipy/issues/7044
 
-        A_eq, b_eq, c, N = magic_square(3)
+        A_eq, b_eq, c, _, _ = magic_square(3)
         with suppress_warnings() as sup:
             sup.filter(OptimizeWarning, "A_eq does not appear...")
             sup.filter(RuntimeWarning, "invalid value encountered")
@@ -1880,7 +1900,7 @@ class TestLinprogIPSparse(LinprogIPTests):
 
     def test_magic_square_sparse_no_presolve(self):
         # test linprog with a problem with a rank-deficient A_eq matrix
-        A_eq, b_eq, c, N = magic_square(3)
+        A_eq, b_eq, c, _, _ = magic_square(3)
         bounds = (0, 1)
 
         with suppress_warnings() as sup:
@@ -1898,7 +1918,7 @@ class TestLinprogIPSparse(LinprogIPTests):
 
     def test_sparse_solve_options(self):
         # checking that problem is solved with all column permutation options
-        A_eq, b_eq, c, N = magic_square(3)
+        A_eq, b_eq, c, _, _ = magic_square(3)
         with suppress_warnings() as sup:
             sup.filter(OptimizeWarning, "A_eq does not appear...")
             sup.filter(OptimizeWarning, "Invalid permc_spec option")
@@ -2048,7 +2068,7 @@ class TestLinprogRSCommon(LinprogRSTests):
         assert_equal(res.status, 6)
 
     def test_redundant_constraints_with_guess(self):
-        A, b, c, N = magic_square(3)
+        A, b, c, _, _ = magic_square(3)
         p = np.random.rand(*c.shape)
         with suppress_warnings() as sup:
             sup.filter(OptimizeWarning, "A_eq does not appear...")
@@ -2102,6 +2122,121 @@ class TestLinprogHiGHSIPM(LinprogHiGHSTests):
     method = "highs-ipm"
     options = {}
 
+
+###################################
+# HiGHS-MIP Option-Specific Tests #
+###################################
+
+
+class TestLinprogHiGHSMIP():
+    method = "highs"
+    options = {}
+
+    def test_mip1(self):
+        # solve non-relaxed magic square problem (finally!)
+        n = 3
+        A, b, c, numbers, M = magic_square(n)
+        bounds = [(0, 1)] * len(c)
+        integrality = [1] * len(c)
+
+        res = linprog(c=c*0, A_eq=A, b_eq=b, bounds=bounds,
+                      method=self.method, integrality=integrality)
+
+        x = np.round(res.x).astype('int')
+        s = (numbers.flatten()*x).reshape(n**2,n,n)
+        square = np.sum(s, axis=0)
+        np.testing.assert_allclose(square.sum(axis=0), M)
+        np.testing.assert_allclose(square.sum(axis=1), M)
+        np.testing.assert_allclose(np.diag(square).sum(), M)
+        np.testing.assert_allclose(np.diag(square[:, ::-1]).sum(), M)
+
+    def test_mip2(self):
+        # solve MIP with inequality constraints and all integer constraints
+        # source: slide 5,
+        # https://www.cs.upc.edu/~erodri/webpage/cps/theory/lp/milp/slides.pdf
+
+        A_ub = np.array([[2, -2], [-8, 10]])
+        b_ub = np.array([-1 ,13])
+        c = -np.array([1, 1])
+
+        bounds = [(0, np.inf)] * len(c)
+        integrality = [1] * len(c)
+
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+                      method=self.method, integrality=integrality)
+
+        np.testing.assert_allclose(res.x, [1, 2])
+        np.testing.assert_allclose(res.fun, -3)
+
+    def test_mip3(self):
+        # solve MIP with inequality constraints and all integer constraints
+        # source: https://en.wikipedia.org/wiki/Integer_programming#Example
+        A_ub = np.array([[-1, 1], [3, 2], [2, 3]])
+        b_ub = np.array([1, 12, 12])
+        c = -np.array([0, 1])
+
+        bounds = [(0, np.inf)] * len(c)
+        integrality = [1] * len(c)
+
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+                      method=self.method, integrality=integrality)
+
+        np.testing.assert_allclose(res.x, [1, 2])
+        np.testing.assert_allclose(res.fun, -2)
+
+    def test_mip4(self):
+        # solve MIP with inequality constraints and only one integer constraint
+        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
+        A_ub = np.array([[-1, -2], [-4, -1], [2, 1]])
+        b_ub = np.array([14, -33, 20])
+        c = np.array([8, 1])
+
+        bounds = [(0, np.inf)] * len(c)
+        integrality = [0, 1]
+
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
+                      method=self.method, integrality=integrality)
+
+        np.testing.assert_allclose(res.x, [6.5, 7])
+        np.testing.assert_allclose(res.fun, 59)
+
+    def test_mip5(self):
+        # solve MIP with inequality and inequality constraints
+        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
+        A_ub = np.array([[1, 1, 1]])
+        b_ub = np.array([7])
+        A_eq = np.array([[4, 2, 1]])
+        b_eq = np.array([12])
+        c = np.array([-3, -2, -1])
+
+        bounds = [(0, np.inf), (0, np.inf), (0, 1)]
+        integrality = [0, 1, 0]
+
+        res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+                      bounds=bounds, method=self.method,
+                      integrality=integrality)
+
+        np.testing.assert_allclose(res.x, [0, 6, 0])
+        np.testing.assert_allclose(res.fun, -12)
+
+    @pytest.mark.slow
+    def test_mip6(self):
+        # solve a larger MIP with only equality constraints
+        # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
+        A_eq = np.array([[22, 13, 26, 33, 21,  3, 14, 26],
+                         [39, 16, 22, 28, 26, 30, 23, 24],
+                         [18, 14, 29, 27, 30, 38, 26, 26],
+                         [41, 26, 28, 36, 18, 38, 16, 26]])
+        b_eq = np.array([7872, 10466, 11322, 12058])
+        c = np.array([2, 10, 13, 17, 7, 5, 7, 3])
+
+        bounds = [(0, np.inf)]*8
+        integrality = [1]*8
+
+        res = linprog(c=c, A_eq=A_eq, b_eq=b_eq, bounds=bounds,
+                      method=self.method, integrality=integrality)
+
+        np.testing.assert_allclose(res.fun, 1854)
 
 ###########################
 # Autoscale-Specific Tests#
