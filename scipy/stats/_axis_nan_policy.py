@@ -359,12 +359,11 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # convert masked arrays to regular arrays with sentinel values
             samples, sentinel = _masked_arrays_2_sentinel_arrays(samples)
 
-            samples = _broadcast_arrays(samples, axis=axis)
-
             # standardize to always work along last axis
             if axis is None:
                 samples = [sample.ravel() for sample in samples]
             else:
+                samples = _broadcast_arrays(samples, axis=axis)
                 axis = np.atleast_1d(axis)
                 n_axes = len(axis)
                 # move all axes in `axis` to the end to be raveled
