@@ -743,36 +743,35 @@ add_newdoc("binom",
 
     Examples
     --------
+    The following examples illustrate the ways in which `binom` differs from the
+    function `comb`.
+
     >>> from scipy.special import binom, comb
 
-    It's illustrative to see the ways in which `binom` differs from the
-    function `comb`. Below we compare `binom` and `comb` with and without
-    ``exact=True``.
+    When ``exact=False`` and ``x`` and ``y`` are both positive, `comb` calls
+    `binom` internally.
 
-    For positive `x` and `y`, `comb` calls `binom` internally when
-    ``exact=False``. For small values `comb` with ``exact=True`` agrees
-    with `binom`.
-    
     >>> x, y = 3, 2
     >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
     (3.0, 3.0, 3)
 
-    As expected, for larger values `comb` with ``exact=True`` no longer agrees
+    For larger values, `comb` with ``exact=True`` no longer agrees
     with `binom`.
 
     >>> x, y = 43, 23
     >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
     (960566918219.9999, 960566918219.9999, 960566918220)
 
-    Note that if `comb` is passed non integer arguments when ``exact=True``,
-    these will be truncated to integers, leading to inaccurate results.
+    Note that if ``exact=True``, non-integer arguments to  `comb` will be
+    truncated to integers, leading to inaccurate results.
 
     >>> x, y = 3.9, 2.8
     >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
     (4.2071983565457955, 4.2071983565457955, 3)
 
-    `binom` returns ``nan`` when ``x`` is a negative integer. `comb`
-    returns 0 whenever one of ``x`` or ``y`` is negative.
+    `binom` returns ``nan`` when ``x`` is a negative integer, but is generally
+    defined for negative arguments. `comb` returns 0 whenever one of ``x`` or 
+    ``y`` is negative.
 
     >>> x, y = -3, 2
     >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
