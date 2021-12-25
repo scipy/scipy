@@ -734,6 +734,10 @@ class LinprogCommonTests:
         _assert_success(res, desired_fun=-9.7087836730413404)
 
     def test_zero_column_2(self):
+        if self.method in {'highs-ds', 'highs-ipm'}:
+            # See upstream issue https://github.com/ERGO-Code/HiGHS/issues/648
+            pytest.xfail()
+
         np.random.seed(0)
         m, n = 2, 4
         c = np.random.rand(n)
@@ -750,7 +754,7 @@ class LinprogCommonTests:
                       method=self.method, options=self.options)
         _assert_unbounded(res)
         # Unboundedness detected in presolve
-        if self.options.get('presolve', True) and "highs" not in self.method:
+        if self.options.get('presolve', True):
             assert_equal(res.nit, 0)
 
     def test_zero_row_1(self):
@@ -2081,6 +2085,8 @@ class TestLinprogHiGHSSimplexDual(LinprogHiGHSTests):
         The scaled model should be optimal, i.e. not produce unscaled model
         infeasible.
         '''
+        # Test to ensure gh-13610 is resolved (mismatch between HiGHS scaled
+        # and unscaled model statuses)
         c, A_ub, b_ub, bnds = l1_regression_prob()
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bnds,
                       method=self.method, options=self.options)
