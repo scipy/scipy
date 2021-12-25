@@ -13,6 +13,7 @@ from . import _wilcoxon_data
 import scipy.stats._bootstrap as _bootstrap
 from scipy._lib._util import check_random_state
 from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
+from ._axis_nan_policy import _broadcast_arrays
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
@@ -1408,65 +1409,6 @@ def cramervonmises_2samp(x, y, method='auto'):
 
 attributes = ('statistic', 'pvalue', 'null_distribution')
 PermutationTestResult = make_dataclass('PermutationTestResult', attributes)
-
-
-def _broadcast_arrays(arrays, axis=None):
-    """
-    Broadcast shapes of arrays, ignoring incompatibility of specified axes
-    """
-    new_shapes = _broadcast_array_shapes(arrays, axis=axis)
-    if axis is None:
-        new_shapes = [new_shapes]*len(arrays)
-    return [np.broadcast_to(array, new_shape)
-            for array, new_shape in zip(arrays, new_shapes)]
-
-
-def _broadcast_array_shapes(arrays, axis=None):
-    """
-    Broadcast shapes of arrays, ignoring incompatibility of specified axes
-    """
-    shapes = [np.asarray(arr).shape for arr in arrays]
-    return _broadcast_shapes(shapes, axis)
-
-
-def _broadcast_shapes(shapes, axis=None):
-    """
-    Broadcast shapes, ignoring incompatibility of specified axes
-    """
-    # First, ensure all shapes have same number of dimensions by prepending 1s.
-    n_dims = max([len(shape) for shape in shapes])
-    new_shapes = np.ones((len(shapes), n_dims), dtype=int)
-    for row, shape in zip(new_shapes, shapes):
-        row[len(row)-len(shape):] = shape  # can't use negative indices (-0:)
-
-    # Remove the shape elements of the axes to be ignored, but remember them.
-    if axis is not None:
-        axis = np.atleast_1d(axis)
-        axis[axis < 0] = n_dims + axis[axis < 0]
-        removed_shapes = new_shapes[:, axis]
-        new_shapes = np.delete(new_shapes, axis, axis=1)
-
-    # If arrays are broadcastable, shape elements that are 1 may be replaced
-    # with a corresponding non-1 shape element. Assuming arrays are
-    # broadcastable, that final shape element can be found with:
-    new_shape = np.max(new_shapes, axis=0)
-    # except in case of an empty array:
-    new_shape *= new_shapes.all(axis=0)
-
-    # Among all arrays, there can only be one unique non-1 shape element.
-    # Therefore, if any non-1 shape element does not match what we found
-    # above, the arrays must not be broadcastable after all.
-    if np.any(~((new_shapes == 1) | (new_shapes == new_shape))):
-        raise ValueError("Array shapes are incompatible for broadcasting.")
-
-    if axis is not None:
-        # Add back the shape elements that were ignored
-        new_axis = axis - np.arange(len(axis))
-        new_shapes = [tuple(np.insert(new_shape, new_axis, removed_shape))
-                      for removed_shape in removed_shapes]
-        return new_shapes
-    else:
-        return tuple(new_shape)
 
 
 def _all_partitions_concatenated(ns):

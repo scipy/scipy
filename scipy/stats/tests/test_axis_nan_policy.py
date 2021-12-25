@@ -4,7 +4,7 @@
 # that support `axis` and `nan_policy` and additional tests for some associated
 # functions in stats._util.
 
-from itertools import product, combinations_with_replacement
+from itertools import product, combinations_with_replacement, permutations
 import re
 import pickle
 import pytest
@@ -610,7 +610,7 @@ def test_masked_stat_1d():
     np.testing.assert_array_equal(res6, res)
 
 
-@pytest.mark.parametrize(("axis"), range(-2, 2))
+@pytest.mark.parametrize(("axis"), range(-3, 3))
 def test_masked_stat_3d(axis):
     # basic test of _axis_nan_policy_factory with 3D masked sample
     np.random.seed(0)
@@ -720,3 +720,79 @@ def test_mixed_mask_nan_2():
              np.nan, ref1.pvalue, ref2.pvalue]
     np.testing.assert_array_equal(res.statistic, stat_ref)
     np.testing.assert_array_equal(res.pvalue, p_ref)
+
+
+def test_axis_None_vs_tuple():
+    # `axis` `None` should be equivalent to tuple with all axes
+    shape = (3, 8, 9, 10)
+    rng = np.random.default_rng(0)
+    x = rng.random(shape)
+    res = stats.kruskal(*x, axis=None)
+    res2 = stats.kruskal(*x, axis=(0, 1, 2))
+    np.testing.assert_array_equal(res, res2)
+
+
+def test_axis_None_vs_tuple_with_broadcasting():
+    # `axis` `None` should be equivalent to tuple with all axes,
+    # which should be equivalent to raveling the arrays before passing them
+    rng = np.random.default_rng(0)
+    x = rng.random((5, 1))
+    y = rng.random((1, 5))
+    x2, y2 = np.broadcast_arrays(x, y)
+
+    res0 = stats.mannwhitneyu(x.ravel(), y.ravel())
+    res1 = stats.mannwhitneyu(x, y, axis=None)
+    res2 = stats.mannwhitneyu(x, y, axis=(0, 1))
+    res3 = stats.mannwhitneyu(x2.ravel(), y2.ravel())
+
+    assert(res1 == res0)
+    assert(res2 == res0)
+    assert(res3 != res0)
+
+
+@pytest.mark.parametrize(("axis"),
+                         list(permutations(range(-3, 3), 2)) + [(-4, 1)])
+def test_other_axis_tuples(axis):
+    # Check that _axis_nan_policy_factory treates all `axis` tuples as expected
+    rng = np.random.default_rng(0)
+    shape_x = (4, 5, 6)
+    shape_y = (1, 6)
+    x = rng.random(shape_x)
+    y = rng.random(shape_y)
+    axis_original = axis
+
+    # convert axis elements to positive
+    axis = tuple([(i if i >= 0 else 3 + i) for i in axis])
+    axis = sorted(axis)
+
+    if len(set(axis)) != len(axis):
+        message = "`axis` must contain only distinct elements"
+        with pytest.raises(ValueError, match=re.escape(message)):
+            stats.mannwhitneyu(x, y, axis=axis_original)
+        return
+
+    if axis[0] < 0 or axis[-1] > 2:
+        message = "`axis` is out of bounds for array of dimension 3"
+        with pytest.raises(ValueError, match=re.escape(message)):
+            stats.mannwhitneyu(x, y, axis=axis_original)
+        return
+
+    res = stats.mannwhitneyu(x, y, axis=axis_original)
+
+    # reference behavior
+    not_axis = {0, 1, 2} - set(axis)  # which axis is not part of `axis`
+    not_axis = next(iter(not_axis))  # take it out of the set
+
+    x2 = x
+    shape_y_broadcasted = [1, 1, 6]
+    shape_y_broadcasted[not_axis] = shape_x[not_axis]
+    y2 = np.broadcast_to(y, shape_y_broadcasted)
+
+    m = x2.shape[not_axis]
+    x2 = np.moveaxis(x2, axis, (1, 2))
+    y2 = np.moveaxis(y2, axis, (1, 2))
+    x2 = np.reshape(x2, (m, -1))
+    y2 = np.reshape(y2, (m, -1))
+    res2 = stats.mannwhitneyu(x2, y2, axis=1)
+
+    np.testing.assert_array_equal(res, res2)

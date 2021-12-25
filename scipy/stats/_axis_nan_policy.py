@@ -12,6 +12,85 @@ from scipy._lib._docscrape import FunctionDoc, Parameter
 import inspect
 
 
+def _broadcast_arrays(arrays, axis=None):
+    """
+    Broadcast shapes of arrays, ignoring incompatibility of specified axes
+    """
+    new_shapes = _broadcast_array_shapes(arrays, axis=axis)
+    if axis is None:
+        new_shapes = [new_shapes]*len(arrays)
+    return [np.broadcast_to(array, new_shape)
+            for array, new_shape in zip(arrays, new_shapes)]
+
+
+def _broadcast_array_shapes(arrays, axis=None):
+    """
+    Broadcast shapes of arrays, ignoring incompatibility of specified axes
+    """
+    shapes = [np.asarray(arr).shape for arr in arrays]
+    return _broadcast_shapes(shapes, axis)
+
+
+def _broadcast_shapes(shapes, axis=None):
+    """
+    Broadcast shapes, ignoring incompatibility of specified axes
+    """
+    if not shapes:
+        return shapes
+
+    # input validation
+    if axis is not None:
+        axis = np.atleast_1d(axis)
+        axis_int = axis.astype(int)
+        if not np.array_equal(axis_int, axis):
+            raise ValueError('`axis` must be an integer, a '
+                             'tuple of integers, or `None`.')
+        axis = axis_int
+
+    # First, ensure all shapes have same number of dimensions by prepending 1s.
+    n_dims = max([len(shape) for shape in shapes])
+    new_shapes = np.ones((len(shapes), n_dims), dtype=int)
+    for row, shape in zip(new_shapes, shapes):
+        row[len(row)-len(shape):] = shape  # can't use negative indices (-0:)
+
+    # Remove the shape elements of the axes to be ignored, but remember them.
+    if axis is not None:
+        axis[axis < 0] = n_dims + axis[axis < 0]
+        axis = np.sort(axis)
+        if axis[-1] >= n_dims or axis[0] < 0:
+            message = (f"`axis` is out of bounds "
+                       f"for array of dimension {n_dims}")
+            raise ValueError(message)
+
+        if len(np.unique(axis)) != len(axis):
+            raise ValueError("`axis` must contain only distinct elements")
+
+        removed_shapes = new_shapes[:, axis]
+        new_shapes = np.delete(new_shapes, axis, axis=1)
+
+    # If arrays are broadcastable, shape elements that are 1 may be replaced
+    # with a corresponding non-1 shape element. Assuming arrays are
+    # broadcastable, that final shape element can be found with:
+    new_shape = np.max(new_shapes, axis=0)
+    # except in case of an empty array:
+    new_shape *= new_shapes.all(axis=0)
+
+    # Among all arrays, there can only be one unique non-1 shape element.
+    # Therefore, if any non-1 shape element does not match what we found
+    # above, the arrays must not be broadcastable after all.
+    if np.any(~((new_shapes == 1) | (new_shapes == new_shape))):
+        raise ValueError("Array shapes are incompatible for broadcasting.")
+
+    if axis is not None:
+        # Add back the shape elements that were ignored
+        new_axis = axis - np.arange(len(axis))
+        new_shapes = [tuple(np.insert(new_shape, new_axis, removed_shape))
+                      for removed_shape in removed_shapes]
+        return new_shapes
+    else:
+        return tuple(new_shape)
+
+
 def _broadcast_array_shapes_remove_axis(arrays, axis=None):
     """
     Broadcast shapes of arrays, dropping specified axes
@@ -41,34 +120,17 @@ def _broadcast_shapes_remove_axis(shapes, axis=None):
     Same as _broadcast_array_shapes, but given a sequence
     of array shapes `shapes` instead of the arrays themselves.
     """
-    n_dims = max([len(shape) for shape in shapes])
-    new_shapes = np.ones((len(shapes), n_dims), dtype=int)
-    for row, shape in zip(new_shapes, shapes):
-        row[len(row)-len(shape):] = shape  # can't use negative indices (-0:)
+    shapes = _broadcast_shapes(shapes, axis)
+    shape = shapes[0]
     if axis is not None:
-        new_shapes = np.delete(new_shapes, axis, axis=1)
-    new_shape = np.max(new_shapes, axis=0)
-    new_shape *= new_shapes.all(axis=0)
-    if np.any(~((new_shapes == 1) | (new_shapes == new_shape))):
-        raise ValueError("Array shapes are incompatible for broadcasting.")
-    return tuple(new_shape)
+        shape = np.delete(shape, axis)
+    return tuple(shape)
 
 
-def _broadcast_concatenate(xs, axis):
+def _broadcast_concatenate(arrays, axis):
     """Concatenate arrays along an axis with broadcasting."""
-    # prepend 1s to array shapes as needed
-    ndim = max([x.ndim for x in xs])
-    xs = [x.reshape([1]*(ndim-x.ndim) + list(x.shape)) for x in xs]
-    # move the axis we're concatenating along to the end
-    xs = [np.swapaxes(x, axis, -1) for x in xs]
-    # determine final shape of all but the last axis
-    shape = _broadcast_array_shapes_remove_axis(xs, axis=-1)
-    # broadcast along all but the last axis
-    xs = [np.broadcast_to(x, shape + (x.shape[-1],)) for x in xs]
-    # concatenate along last axis
-    res = np.concatenate(xs, axis=-1)
-    # move the last axis back to where it was
-    res = np.swapaxes(res, axis, -1)
+    arrays = _broadcast_arrays(arrays, axis)
+    res = np.concatenate(arrays, axis=axis)
     return res
 
 
@@ -297,12 +359,25 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # convert masked arrays to regular arrays with sentinel values
             samples, sentinel = _masked_arrays_2_sentinel_arrays(samples)
 
+            # standardize to always work along last axis
             if axis is None:
                 samples = [sample.ravel() for sample in samples]
-                axis = 0
-            elif axis != int(axis):
-                raise ValueError('`axis` must be an integer')
-            axis = int(axis)
+            else:
+                samples = _broadcast_arrays(samples, axis=axis)
+                axis = np.atleast_1d(axis)
+                n_axes = len(axis)
+                # move all axes in `axis` to the end to be raveled
+                samples = [np.moveaxis(sample, axis, range(-len(axis), 0))
+                           for sample in samples]
+                shapes = [sample.shape for sample in samples]
+                # New shape is unchanged for all axes _not_ in `axis`
+                # At the end, we append the product of the shapes of the axes
+                # in `axis`. Appending -1 doesn't work for zero-size arrays!
+                new_shapes = [shape[:-n_axes] + (np.prod(shape[-n_axes:]),)
+                              for shape in shapes]
+                samples = [sample.reshape(new_shape)
+                           for sample, new_shape in zip(samples, new_shapes)]
+            axis = -1  # work over the last axis
 
             # if axis is not needed, just handle nan_policy and return
             ndims = np.array([sample.ndim for sample in samples])
