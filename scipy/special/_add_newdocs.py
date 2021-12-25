@@ -696,7 +696,8 @@ add_newdoc("bdtrin",
            Functions, Inverses, and Other Parameters.
     """)
 
-add_newdoc("binom",
+add_newdoc(
+    "binom",
     r"""
     binom(x, y)
 
@@ -743,8 +744,8 @@ add_newdoc("binom",
 
     Examples
     --------
-    The following examples illustrate the ways in which `binom` differs from the
-    function `comb`.
+    The following examples illustrate the ways in which `binom` differs from
+    the function `comb`.
 
     >>> from scipy.special import binom, comb
 
@@ -770,7 +771,7 @@ add_newdoc("binom",
     (4.2071983565457955, 4.2071983565457955, 3)
 
     `binom` returns ``nan`` when ``x`` is a negative integer, but is otherwise
-    defined for negative arguments. `comb` returns 0 whenever one of ``x`` or 
+    defined for negative arguments. `comb` returns 0 whenever one of ``x`` or
     ``y`` is negative.
 
     >>> x, y = -3, 2
@@ -780,7 +781,8 @@ add_newdoc("binom",
     >>> x, y = -3.1, 2.2
     >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
     (18.714147876804432, 0.0, 0)
-    """)
+    """
+)
 
 add_newdoc("btdtria",
     r"""
