@@ -172,8 +172,7 @@ stages:
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.8 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools wheel --user && \
-            pip3 install numpy==1.17.3 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran --user && \
+            pip3 install setuptools==59.6.0 wheel numpy==1.17.3 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran==0.10.0 --user && \
             apt-get -y install gcc-5 g++-5 gfortran-8 wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
@@ -181,7 +180,7 @@ stages:
             cp -r \$target/lib/* /usr/lib && \
             cp \$target/include/* /usr/include && \
             cd ../scipy && \
-            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.8 setup.py install && \
+            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 pip3 install . && \
             python3.8 tools/openblas_support.py --check_version $(openblas_version) && \
             CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.8 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
       displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
@@ -243,7 +242,7 @@ stages:
         git submodule update --init
       displayName: 'Fetch submodules'
     - script: |
-        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install --upgrade pip "setuptools==59.6.0" wheel
       displayName: 'Install tools'
     - powershell: |
         $pyversion = python -c "import sys; print(sys.version.split()[0])"
@@ -285,7 +284,7 @@ stages:
         numpy==1.21.4
         Pillow
         pybind11
-        pythran
+        pythran==0.10.0
         pytest
         pytest-cov
         pytest-env
@@ -327,6 +326,7 @@ stages:
             refreshenv
         }
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
+        $env:SCIPY_USE_PYTHRAN=0
 
         mkdir dist
         pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
