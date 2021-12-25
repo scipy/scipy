@@ -769,7 +769,7 @@ add_newdoc("binom",
     >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
     (4.2071983565457955, 4.2071983565457955, 3)
 
-    `binom` returns ``nan`` when ``x`` is a negative integer, but is generally
+    `binom` returns ``nan`` when ``x`` is a negative integer, but is otherwise
     defined for negative arguments. `comb` returns 0 whenever one of ``x`` or 
     ``y`` is negative.
 
