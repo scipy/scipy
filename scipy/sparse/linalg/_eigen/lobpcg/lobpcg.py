@@ -343,10 +343,6 @@ def lobpcg(
                 aux += "%d constraint\n\n" % sizeY
         print(aux)
 
-    A = _makeOperator(A, (n, n))
-    B = _makeOperator(B, (n, n))
-    M = _makeOperator(M, (n, n))
-
     if (n - sizeY) < (5 * sizeX):
         warnings.warn(
             f"The problem size {n} minus the constraints size {sizeY} "
@@ -368,8 +364,15 @@ def lobpcg(
         else:
             eigvals = (0, sizeX - 1)
 
-        A_dense = A(np.eye(n, dtype=A.dtype))
-        B_dense = None if B is None else B(np.eye(n, dtype=B.dtype))
+        if isinstance(A, LinearOperator):
+            A_dense = A(np.eye(n, dtype=A.dtype))
+        else:
+            A_dense =np.asarray_chkfinite(A)
+
+        if isinstance(A, LinearOperator):
+            B_dense = None if B is None else B(np.eye(n, dtype=B.dtype))
+        else:
+            A_dense =np.asarray_chkfinite(A)
 
         vals, vecs = eigh(A_dense,
                           B_dense,
@@ -384,6 +387,10 @@ def lobpcg(
 
     if (residualTolerance is None) or (residualTolerance <= 0.0):
         residualTolerance = np.sqrt(1e-15) * n
+
+    A = _makeOperator(A, (n, n))
+    B = _makeOperator(B, (n, n))
+    M = _makeOperator(M, (n, n))
 
     # Apply constraints to X.
     if blockVectorY is not None:
