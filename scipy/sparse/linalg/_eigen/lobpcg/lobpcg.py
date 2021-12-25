@@ -22,6 +22,7 @@ import numpy as np
 from scipy.linalg import (inv, eigh, cho_factor, cho_solve,
                           cholesky, LinAlgError)
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
+from scipy.sparse import isspmatrix
 from numpy import block as bmat
 
 __all__ = ["lobpcg"]
@@ -366,12 +367,16 @@ def lobpcg(
 
         if isinstance(A, LinearOperator):
             A = A(np.eye(n, dtype=A.dtype))
+        elif isspmatrix(A):
+            A = np.toarray(A)
         else:
             A = np.asarray(A)
 
         if B is not None:
             if isinstance(B, LinearOperator):
                 B = B(np.eye(n, dtype=B.dtype))
+            elif isspmatrix(B):
+                B = np.toarray(B)
             else:
                 B = np.asarray(B)
 
