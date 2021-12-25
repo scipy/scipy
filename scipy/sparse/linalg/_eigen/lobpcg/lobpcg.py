@@ -21,7 +21,7 @@ import warnings
 import numpy as np
 from scipy.linalg import (inv, eigh, cho_factor, cho_solve,
                           cholesky, LinAlgError)
-from scipy.sparse.linalg import aslinearoperator
+from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from numpy import block as bmat
 
 __all__ = ["lobpcg"]
