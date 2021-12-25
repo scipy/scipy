@@ -367,12 +367,12 @@ def lobpcg(
         if isinstance(A, LinearOperator):
             A_dense = A(np.eye(n, dtype=A.dtype))
         else:
-            A_dense =np.asarray_chkfinite(A)
+            A_dense = np.asarray_chkfinite(A)
 
         if isinstance(A, LinearOperator):
             B_dense = None if B is None else B(np.eye(n, dtype=B.dtype))
         else:
-            A_dense =np.asarray_chkfinite(A)
+            A_dense = np.asarray_chkfinite(A)
 
         vals, vecs = eigh(A_dense,
                           B_dense,
