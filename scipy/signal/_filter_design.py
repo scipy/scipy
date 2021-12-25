@@ -3762,7 +3762,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
     except ZeroDivisionError:
         W0 = 1.0
         warnings.warn("Order is zero...check input parameters.",
-                      UserWarning, 2)
+                      RuntimeWarning, 2)
 
     # now convert this frequency back from lowpass prototype
     # to the original analog filter
