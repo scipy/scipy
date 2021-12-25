@@ -2078,7 +2078,7 @@ class TestLinprogHiGHSSimplexDual(LinprogHiGHSTests):
     def test_lad_regression(self):
         '''
         The scaled model should be optimal, i.e. not produce unscaled model
-        infeasible.
+        infeasible.  See https://github.com/ERGO-Code/HiGHS/issues/494.
         '''
         # Test to ensure gh-13610 is resolved (mismatch between HiGHS scaled
         # and unscaled model statuses)
