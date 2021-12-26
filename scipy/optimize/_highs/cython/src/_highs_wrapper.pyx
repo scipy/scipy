@@ -702,7 +702,7 @@ def _highs_wrapper(
             elif HighsBasisStatusUPPER == basis.col_status[ii]:
                 marg_bnds[1, ii] = solution.col_dual[ii]
 
-        return {
+        res = {
             'status': <int> model_status,
             'message': highs.modelStatusToString(model_status).decode(),
             'unscaled_status': <int> unscaled_model_status,
@@ -722,9 +722,13 @@ def _highs_wrapper(
             'simplex_nit': info.simplex_iteration_count,
             'ipm_nit': info.ipm_iteration_count,
             'crossover_nit': info.crossover_iteration_count,
-
-            # MIP info
-            'mip_node_count': info.mip_node_count,
-            'mip_dual_bound': info.mip_dual_bound,
-            'mip_gap': info.mip_gap,
         }
+
+        if highs.getLp().isMip():
+            res.update({
+                'mip_node_count': info.mip_node_count,
+                'mip_dual_bound': info.mip_dual_bound,
+                'mip_gap': info.mip_gap,
+            })
+
+        return res

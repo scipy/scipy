@@ -31,11 +31,13 @@ from ._highs._highs_constants import (
     MODEL_STATUS_SOLVE_ERROR,
     MODEL_STATUS_POSTSOLVE_ERROR,
     MODEL_STATUS_MODEL_EMPTY,
-    MODEL_STATUS_INFEASIBLE,
-    MODEL_STATUS_UNBOUNDED,
     MODEL_STATUS_OPTIMAL,
+    MODEL_STATUS_INFEASIBLE,
+    MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE,
+    MODEL_STATUS_UNBOUNDED,
     MODEL_STATUS_REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND
     as MODEL_STATUS_RDOVUB,
+    MODEL_STATUS_REACHED_OBJECTIVE_TARGET,
     MODEL_STATUS_REACHED_TIME_LIMIT,
     MODEL_STATUS_REACHED_ITERATION_LIMIT,
 
@@ -271,36 +273,41 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     statuses = {
         MODEL_STATUS_NOTSET: (
             4,
-            'HiGHS Status Code 0: HighsModelStatusNOTSET',
+            f'HiGHS Status Code {MODEL_STATUS_NOTSET}: HighsModelStatusNOTSET',
         ),
         MODEL_STATUS_LOAD_ERROR: (
             4,
-            'HiGHS Status Code 1: HighsModelStatusLOAD_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_LOAD_ERROR}: HighsModelStatusLOAD_ERROR',
         ),
         MODEL_STATUS_MODEL_ERROR: (
             2,
-            'HiGHS Status Code 2: HighsModelStatusMODEL_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_MODEL_ERROR}: HighsModelStatusMODEL_ERROR',
         ),
         MODEL_STATUS_PRESOLVE_ERROR: (
             4,
-            'HiGHS Status Code 4: HighsModelStatusPRESOLVE_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_PRESOLVE_ERROR}: HighsModelStatusPRESOLVE_ERROR',
         ),
         MODEL_STATUS_SOLVE_ERROR: (
             4,
-            'HiGHS Status Code 5: HighsModelStatusSOLVE_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_SOLVE_ERROR}: HighsModelStatusSOLVE_ERROR',
         ),
         MODEL_STATUS_POSTSOLVE_ERROR: (
             4,
-            'HiGHS Status Code 6: HighsModelStatusPOSTSOLVE_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_POSTSOLVE_ERROR}: HighsModelStatusPOSTSOLVE_ERROR',
         ),
         MODEL_STATUS_MODEL_EMPTY: (
             4,
-            'HiGHS Status Code 3: HighsModelStatusMODEL_EMPTY',
+            f'HiGHS Status Code {MODEL_STATUS_MODEL_EMPTY}: HighsModelStatusMODEL_EMPTY',
         ),
         MODEL_STATUS_RDOVUB: (
             4,
-            'HiGHS Status Code 10: '
+            f'HiGHS Status Code {MODEL_STATUS_RDOVUB}: '
             'HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND',
+        ),
+        MODEL_STATUS_REACHED_OBJECTIVE_TARGET: (
+            4,
+            f'HiGHS Status Code {MODEL_STATUS_REACHED_OBJECTIVE_TARGET}: '
+            'HighsModelStatusREACHED_OBJECTIVE_TARGET',
         ),
         MODEL_STATUS_INFEASIBLE: (
             2,
@@ -309,6 +316,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         MODEL_STATUS_UNBOUNDED: (
             3,
             "The problem is unbounded.",
+        ),
+        MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE: (
+            4,
+            "The problem is unbounded or infeasible.",
         ),
         MODEL_STATUS_OPTIMAL: (
             0,
