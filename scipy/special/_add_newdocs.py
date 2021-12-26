@@ -710,8 +710,8 @@ add_newdoc(
         \binom{x}{y} = \frac{\Gamma(x + 1)}{\Gamma(y + 1)\Gamma(x - y + 1)} =
             \frac{1}{(x + 1)\mathrm{B}(x - y + 1, y + 1)}
 
-    Where :math:`\Gamma` is the Gamma function and :math:`\mathrm{B}` is
-    the Beta function [1]_. See `gamma` and `beta`.
+    Where :math:`\Gamma` is the Gamma function (`gamma`) and :math:`\mathrm{B}`
+    is the Beta function (`beta`) [1]_.
 
     Parameters
     ----------
@@ -720,7 +720,7 @@ add_newdoc(
 
     Returns
     -------
-    ndarray
+    array_like
         Value of binomial coefficient.
 
     See Also
@@ -772,7 +772,7 @@ add_newdoc(
 
     `binom` returns ``nan`` when ``x`` is a negative integer, but is otherwise
     defined for negative arguments. `comb` returns 0 whenever one of ``x`` or
-    ``y`` is negative.
+    ``y`` is negative or ``x`` is less than ``y``.
 
     >>> x, y = -3, 2
     >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
@@ -781,6 +781,10 @@ add_newdoc(
     >>> x, y = -3.1, 2.2
     >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
     (18.714147876804432, 0.0, 0)
+
+    >>> x, y = 2.2, 3.1
+    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
+    (0.037399983365134115, 0.0, 0)
     """
 )
 
