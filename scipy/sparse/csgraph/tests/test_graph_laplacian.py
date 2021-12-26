@@ -46,7 +46,7 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
         sp_mat = sparse.csr_matrix(mat)
 
     mat_copy = np.copy(mat)
-    sp_mat_copy = sparse.csr_matrix.copy(sp_mat)
+    sp_mat_copy = sparse.csr_matrix(sp_mat, copy=True)
 
     n_nodes = mat.shape[0]
     explicit_laplacian = _explicit_laplacian(mat, normed=normed)
