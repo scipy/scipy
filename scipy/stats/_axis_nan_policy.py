@@ -263,7 +263,7 @@ _nan_policy_parameter = inspect.Parameter(_name,
 def _axis_nan_policy_factory(result_object, default_axis=0,
                              n_samples=1, paired=False,
                              result_unpacker=None, too_small=0,
-                             n_outputs=2):
+                             n_outputs=2, other_samples=[]):
     """Factory for a wrapper that adds axis/nan_policy params to a function.
 
     Parameters
@@ -303,6 +303,11 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
         with attributes ``statistic`` and ``pvalue`` use the default
         ``n_outputs=2``; summary statistics with scalar output use
         ``n_outputs=1``.
+    other_samples : sequence, default: []
+        The names of other parameters that should be treated as samples. For
+        example, `gmean` accepts as its first argument a sample `a` but
+        also `weights` as a fourth, optional arguemnt. In this case, we use
+        `n_samples=1` and other_samples=['weights'].
     """
 
     if result_unpacker is None:
@@ -351,13 +356,29 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
             # rename avoids UnboundLocalError
             if callable(n_samples):
+                # Future refactoring idea: no need for callable n_samples.
+                # Just replace `n_samples` and `other_samples` with a single
+                # list of the names of all samples, and treat all of them
+                # as `other_samples` are treated below.
                 n_samp = n_samples(kwds)
             else:
                 n_samp = n_samples or len(args)
 
+            # If necessary, rearrange function signature: accept other samples
+            # as positional args right after the first n_samp args
+            other_samp = [name for name in other_samples
+                          if kwds.get(name, None) is not None]
+            if not other_samp:
+                hypotest_fun_out = hypotest_fun_in
+            else:
+                def hypotest_fun_out(*samples, **kwds):
+                    new_kwds = dict(zip(other_samples, samples[n_samp:]))
+                    kwds.update(new_kwds)
+                    return hypotest_fun_in(*samples[:n_samp], **kwds)
+
             # Extract the things we need here
             samples = [np.atleast_1d(kwds.pop(param))
-                       for param in params[:n_samp]]
+                       for param in (params[:n_samp] + other_samp)]
             vectorized = True if 'axis' in params else False
             axis = kwds.pop('axis', default_axis)
             nan_policy = kwds.pop('nan_policy', 'propagate')
@@ -417,7 +438,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
                 if sentinel:
                     samples = _remove_sentinel(samples, paired, sentinel)
-                return hypotest_fun_in(*samples, **kwds)
+                return hypotest_fun_out(*samples, **kwds)
 
             # check for empty input
             # ideally, move this to the top, but some existing functions raise
@@ -438,7 +459,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 scipy.stats._stats_py._contains_nan(x, nan_policy))
 
             if vectorized and not contains_nan and not sentinel:
-                return hypotest_fun_in(*samples, axis=axis, **kwds)
+                return hypotest_fun_out(*samples, axis=axis, **kwds)
 
             # Addresses nan_policy == "omit"
             if contains_nan and nan_policy == 'omit':
@@ -450,7 +471,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     if is_too_small(samples):
                         res = np.full(n_outputs, np.nan)
                         return result_object(*res)
-                    return hypotest_fun_in(*samples, **kwds)
+                    return hypotest_fun_out(*samples, **kwds)
 
             # Addresses nan_policy == "propagate"
             elif contains_nan and nan_policy == 'propagate':
@@ -464,7 +485,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     if is_too_small(samples):
                         res = np.full(n_outputs, np.nan)
                         return result_object(*res)
-                    return hypotest_fun_in(*samples, **kwds)
+                    return hypotest_fun_out(*samples, **kwds)
 
             else:
                 def hypotest_fun(x):
@@ -474,7 +495,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     if is_too_small(samples):
                         res = np.full(n_outputs, np.nan)
                         return result_object(*res)
-                    return hypotest_fun_in(*samples, **kwds)
+                    return hypotest_fun_out(*samples, **kwds)
 
             x = np.moveaxis(x, axis, -1)
             res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
