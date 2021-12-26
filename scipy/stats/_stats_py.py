@@ -289,7 +289,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     if weights is not None:
         weights = np.asanyarray(weights, dtype=dtype)
 
-    return np.exp(np.average(log_a, axis=axis, weights=weights))
+    return np.exp(np.ma.average(log_a, axis=axis, weights=weights))
 
 
 def hmean(a, axis=0, dtype=None):
