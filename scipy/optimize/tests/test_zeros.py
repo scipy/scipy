@@ -12,7 +12,7 @@ import numpy as np
 from numpy import finfo, power, nan, isclose
 
 
-from scipy.optimize import zeros, newton, root_scalar
+from scipy.optimize import _zeros_py as zeros, newton, root_scalar
 
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 

@@ -1,5 +1,5 @@
 # Doing a local shallow clone - keeps the container secure
-# and much slimmer than using COPY directly or cloning a remote 
+# and much slimmer than using COPY directly or cloning a remote
 ARG BASE_CONTAINER=scipy/scipy-dev:latest
 FROM ${BASE_CONTAINER} as clone
 
@@ -38,6 +38,7 @@ WORKDIR ${WORKSPACE}
 # Build scipy to populate the cache used by ccache
 # Must re-activate conda to ensure the ccache flags are picked up
 RUN git submodule update --init --depth=1 -- scipy/_lib/boost
+RUN git submodule update --init --depth=1 -- scipy/sparse/linalg/_propack/PROPACK
 RUN git submodule update --init --depth=1 -- scipy/_lib/unuran
 RUN conda activate ${CONDA_ENV} && \
     python setup.py build_ext --inplace && \

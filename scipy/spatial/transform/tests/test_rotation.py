@@ -847,7 +847,7 @@ def test_reduction_scalar_calculation():
         for j, pj in enumerate(p):
             for k, rk in enumerate(r):
                 scalars[i, j, k] = np.abs((li * pj * rk).as_quat()[3])
-    scalars = np.reshape(np.rollaxis(scalars, 1), (scalars.shape[1], -1))
+    scalars = np.reshape(np.moveaxis(scalars, 1, 0), (scalars.shape[1], -1))
 
     max_ind = np.argmax(np.reshape(scalars, (len(p), -1)), axis=1)
     left_best_check = max_ind // len(r)
