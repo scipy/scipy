@@ -368,7 +368,7 @@ def lobpcg(
         if isinstance(A, LinearOperator):
             A = A(np.eye(n, dtype=A.dtype))
         elif isspmatrix(A):
-            A = np.toarray(A)
+            A = A.toarray()
         else:
             A = np.asarray(A)
 
@@ -376,7 +376,7 @@ def lobpcg(
             if isinstance(B, LinearOperator):
                 B = B(np.eye(n, dtype=B.dtype))
             elif isspmatrix(B):
-                B = np.toarray(B)
+                B = B.toarray()
             else:
                 B = np.asarray(B)
 
