@@ -260,10 +260,6 @@ def gmean(a, axis=0, dtype=None, weights=None):
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
 
-    Use masked arrays to ignore any non-finite values in the input or that
-    arise in the calculations such as Not a Number and infinity because masked
-    arrays automatically mask any non-finite values.
-
     References
     ----------
     .. [1] "Weighted Geometric Mean", *Wikipedia*, https://en.wikipedia.org/wiki/Weighted_geometric_mean.
