@@ -219,7 +219,8 @@ cdef inline double complex hyp2f1_complex(
             result *= hyp2f1_lopez_temme_series(c - a, c - b, c, z, 1500, EPS)
             return result
         return hyp2f1_lopez_temme_series(a, b, c, z, 1500, EPS)
-    # z/(z - 1) transformation (DLMF 15.8.1)
+    # z/(z - 1) transformation (DLMF 15.8.1). Avoids cancellation issues that
+    # occur with Maclaurin series for real(z) < 0.
     # ------------------------------------------------------------------------
     if modulus_z < 1.1 and z.real < 0:
         if 0 < b < a < c:
