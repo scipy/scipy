@@ -58,8 +58,13 @@ def directed_hausdorff(double[:,::1] ar1, double[:,::1] ar2, seed=0):
                 i_store = i
                 j_store = j
 
-        # always true on first iteration of for-j loop, after that only
-        # if d >= cmax
+        # Note: The reference paper by A. A. Taha and A. Hanbury has this line
+        # (Algorithm 2, line 16) as:
+        #
+        # if cmin > cmax:
+        #
+        # That logic is incorrect, as cmin could still be np.inf if breaking early.
+        # The logic here accounts for that case.
         if cmin >= cmax and d >= cmax:
             cmax = cmin
             i_ret = i_store

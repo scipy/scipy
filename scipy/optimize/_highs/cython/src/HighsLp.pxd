@@ -8,6 +8,7 @@ from libcpp.vector cimport vector
 from .HConst cimport HighsBasisStatus, ObjSense, HighsVarType
 from .HighsSparseMatrix cimport HighsSparseMatrix
 
+
 cdef extern from "HighsLp.h" nogil:
     # From HiGHS/src/lp_data/HighsLp.h
     cdef cppclass HighsLp:

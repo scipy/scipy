@@ -88,7 +88,7 @@ def _contains_nan(a, nan_policy='propagate'):
     try:
         # Calling np.sum to avoid creating a huge array into memory
         # e.g. np.isnan(a).any()
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid='ignore', over='ignore'):
             contains_nan = np.isnan(np.sum(a))
     except TypeError:
         # This can happen when attempting to sum things which are not
@@ -2614,6 +2614,11 @@ def gstd(a, axis=0, ddof=1):
         An array of the geometric standard deviation. If `axis` is None or `a`
         is a 1d array a float is returned.
 
+    See Also
+    --------
+    gmean : Geometric mean
+    numpy.std : Standard deviation
+
     Notes
     -----
     As the calculation requires the use of logarithms the geometric standard
@@ -2624,6 +2629,11 @@ def gstd(a, axis=0, ddof=1):
     deviation is ``exp(std(log(a)))``.
     The default value for `ddof` is different to the default value (0) used
     by other ddof containing functions, such as ``np.std`` and ``np.nanstd``.
+
+    References
+    ----------
+    .. [1] Kirkwood, T. B., "Geometric means and measures of dispersion",
+           Biometrics, vol. 35, pp. 908-909, 1979
 
     Examples
     --------

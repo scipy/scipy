@@ -752,6 +752,10 @@ class LinprogCommonTests:
         _assert_success(res, desired_fun=-9.7087836730413404)
 
     def test_zero_column_2(self):
+        if self.method in {'highs-ds', 'highs-ipm'}:
+            # See upstream issue https://github.com/ERGO-Code/HiGHS/issues/648
+            pytest.xfail()
+
         np.random.seed(0)
         m, n = 2, 4
         c = np.random.rand(n)
@@ -1687,10 +1691,9 @@ class LinprogHiGHSTests(LinprogCommonTests):
         assert_warns(OptimizeWarning, f, options=options)
 
     def test_crossover(self):
-        c = np.array([1, 1]) * -1  # maximize
-        A_ub = np.array([[1, 1]])
-        b_ub = [1]
-        res = linprog(c, A_ub=A_ub, b_ub=b_ub, A_eq=A_eq, b_eq=b_eq,
+        A_eq, b_eq, c, N = magic_square(4)
+        bounds = (0, 1)
+        res = linprog(c, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
         # there should be nonzero crossover iterations for IPM (only)
         # TODO: highs counts crossover iterations differently, so this test
@@ -2097,8 +2100,10 @@ class TestLinprogHiGHSSimplexDual(LinprogHiGHSTests):
     def test_lad_regression(self):
         '''
         The scaled model should be optimal, i.e. not produce unscaled model
-        infeasible.
+        infeasible.  See https://github.com/ERGO-Code/HiGHS/issues/494.
         '''
+        # Test to ensure gh-13610 is resolved (mismatch between HiGHS scaled
+        # and unscaled model statuses)
         c, A_ub, b_ub, bnds = l1_regression_prob()
         res = linprog(c, A_ub=A_ub, b_ub=b_ub, bounds=bnds,
                       method=self.method, options=self.options)

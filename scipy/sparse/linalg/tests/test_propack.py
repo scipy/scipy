@@ -108,130 +108,38 @@ def test_svdp(ctor, precision, irl, which):
             check_svdp(n, m, ctor, dtype, k, irl, which)
 
 
-def load_real(folder, precision, file='illc1850.coord'):
-    dtype = _dtype_map[precision]
-    path = os.path.join(folder, precision, 'Examples', file)
-    # Coordinate Text File
-    with open(path) as f:
-        m, n, nnz = (int(val) for val in f.readline().split())
-        coord = np.array([[float(val) for val in line.split()] for line in f])
-    i = coord[:, 0].astype(int) - 1
-    j = coord[:, 1].astype(int) - 1
-    data = coord[:, 2].astype(dtype)
-    A = coo_matrix((data, (i, j)))
-    return A
-
-
-def load_complex(folder, precision):
-    file = 'mhd1280b.cua'
-
-    dtype = _dtype_map[precision]
-    path = os.path.join(folder, precision, 'Examples', file)
-    with open(path, "r") as f:
-        contents = f.readlines()
-    file_metadata = contents[1].split()
-    matrix_metadata = contents[2].split()
-    datum_length = 15  # hard code rather than getting from contents[3]
-
-    n_header = 4
-    n_total, n_indptr, n_indices, n_data, _ = (int(n) for n in file_metadata)
-    m, n, nnz, _ = (int(n) for n in matrix_metadata[1:])
-
-    line_indptr = n_header
-    line_indices = line_indptr + n_indptr
-    line_data = line_indices + n_indices
-
-    def _concatenate_lines(lines):
-        return "".join([line.rstrip() for line in lines])
-
-    indptr = _concatenate_lines(contents[line_indptr:line_indices])
-    indptr = np.asarray([int(i) for i in indptr.split()])-1
-
-    indices = _concatenate_lines(contents[line_indices:line_data])
-    indices = np.asarray([int(i) for i in indices.split()])-1
-
-    data = _concatenate_lines(contents[line_data:])
-    data = np.asarray([float(data[i:i+datum_length])
-                       for i in range(0, len(data), datum_length)])
-    real, imag = data[::2], data[1::2]
-    data = real + imag*1.0j
-    data.astype(dtype)
-
-    return csc_matrix((data, indices, indptr), (m, n))
-
-
-def load_sigma(folder, precision="double", irl=False):
-    dtype = _dtype_map[precision]
-    s_name = "Sigma_IRL.ascii" if irl else "Sigma.ascii"
-    path = os.path.join(folder, precision, 'Examples', 'Output', s_name)
-    pydtype = {
-        np.complex64: complex,
-        np.complex128: complex,
-        np.float32: float,
-        np.float64: float,
-    }[dtype]
-    with open(path) as f:
-        data = np.array([pydtype(line.split()[1]) for line in f]).astype(dtype)
-    return data
-
-
-def load_uv(folder, precision="double", uv="U", irl=False):
-    dtype = _dtype_map[precision]
-    uv_name = (uv + "_IRL.ascii") if irl else (uv + ".ascii")
-    path = os.path.join(folder, precision, 'Examples', 'Output', uv_name)
-    with open(path) as f:
-        m, n = (int(val) for val in f.readline().split())
-        if precision in {'single', 'double'}:
-            data = np.array([dtype(val.strip()) for val in f], dtype=dtype)
-        else:
-            data = np.loadtxt(
-                path, dtype=dtype, skiprows=1, delimiter='\n',
-                converters={0: lambda s: complex(
-                    *[float(n) for n in s.decode()[1:-1].split(',')])})
-    return data.reshape((n, m)).T
-
-
 @pytest.mark.parametrize('precision', _dtype_testing)
 @pytest.mark.parametrize('irl', (False, True))
 def test_examples(precision, irl):
     atol = {
-        'single': 1e-3,
+        'single': 1e-4,
         'double': 1e-9,
         'complex8': 1e-4,
         'complex16': 1e-9,
     }[precision]
 
     path_prefix = os.path.dirname(__file__)
-    relative_path = ['..', '_propack', 'PROPACK']
-    folder = os.path.join(path_prefix, *relative_path)
+    # Test matrices from `illc1850.coord` and `mhd1280b.cua` distributed with
+    # PROPACK 2.1: http://sun.stanford.edu/~rmunk/PROPACK/
+    relative_path = "propack_test_data.npz"
+    filename = os.path.join(path_prefix, relative_path)
+    data = np.load(filename, allow_pickle=True)
 
-    A = {
-        'single': load_real,
-        'double': load_real,
-        'complex8': load_complex,
-        'complex16': load_complex,
-    }[precision](folder, precision)
-    s_expected = load_sigma(folder, precision, irl=irl)
-    u_expected = load_uv(folder, precision, "U", irl=irl)
-    vh_expected = load_uv(folder, precision, "V", irl=irl).T
+    dtype = _dtype_map[precision]
+    if precision in {'single', 'double'}:
+        A = data['A_real'].item().astype(dtype)
+    elif precision in {'complex8', 'complex16'}:
+        A = data['A_complex'].item().astype(dtype)
 
-    k = len(s_expected)
+    k = 200
     u, s, vh, _ = _svdp(A, k, irl_mode=irl, random_state=0)
-
-    # Check singular values
-    assert_allclose(s, s_expected.real, atol=atol)
 
     # complex example matrix has many repeated singular values, so check only
     # beginning non-repeated singular vectors to avoid permutations
     sv_check = 27 if precision in {'complex8', 'complex16'} else k
     u = u[:, :sv_check]
-    u_expected = u_expected[:, :sv_check]
     vh = vh[:sv_check, :]
-    vh_expected = vh_expected[:sv_check, :]
     s = s[:sv_check]
-
-    assert_allclose(np.abs(u), np.abs(u_expected), atol=atol)
-    assert_allclose(np.abs(vh), np.abs(vh_expected), atol=atol)
 
     # Check orthogonality of singular vectors
     assert_allclose(np.eye(u.shape[1]), u.conj().T @ u, atol=atol)
