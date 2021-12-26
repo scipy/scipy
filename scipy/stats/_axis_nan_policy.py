@@ -368,6 +368,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # as positional args right after the first n_samp args
             kwd_samp = [name for name in kwd_samples
                           if kwds.get(name, None) is not None]
+            n_kwd_samp = len(kwd_samp)
             if not kwd_samp:
                 hypotest_fun_out = hypotest_fun_in
             else:
@@ -464,7 +465,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # Addresses nan_policy == "omit"
             if contains_nan and nan_policy == 'omit':
                 def hypotest_fun(x):
-                    samples = np.split(x, split_indices)[:n_samp]
+                    samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     samples = _remove_nans(samples, paired)
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
@@ -479,7 +480,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     if np.isnan(x).any():
                         res = np.full(n_outputs, np.nan)
                         return result_object(*res)
-                    samples = np.split(x, split_indices)[:n_samp]
+                    samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
@@ -489,7 +490,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
             else:
                 def hypotest_fun(x):
-                    samples = np.split(x, split_indices)[:n_samp]
+                    samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
