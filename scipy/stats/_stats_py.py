@@ -219,7 +219,7 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
 # note that `weights` are paired with `x`
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
-        result_unpacker=lambda x: (x,), other_samples=['weights'])
+        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def gmean(a, axis=0, dtype=None, weights=None):
     """Compute the geometric mean along the specified axis.
 
