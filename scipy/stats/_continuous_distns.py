@@ -5289,7 +5289,7 @@ class kappa4_gen(rv_continuous):
 
     """
     def _argcheck(self, h, k):
-        return h == h
+        return np.full((h*k).shape, fill_value=True)
 
     def _get_support(self, h, k):
         condlist = [np.logical_and(h > 0, k > 0),
@@ -5459,7 +5459,7 @@ class kappa4_gen(rv_continuous):
 
     def _mom1_sc(self, m, *args):
         maxr = self._get_stats_info(args[0], args[1])
-        if np.any(m >= maxr):
+        if m >= maxr:
             return np.nan
         return integrate.quad(self._mom_integ1, 0, 1, args=(m,)+args)[0]
 
