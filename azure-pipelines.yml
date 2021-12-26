@@ -193,7 +193,7 @@ stages:
             cd ../scipy && \
             CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.8 setup.py install && \
             python3.8 tools/openblas_support.py --check_version $(openblas_version) && \
-            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.8 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
+            python3.8 runtests.py -n --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
       displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
     - task: PublishTestResults@2
       condition: succeededOrFailed()
