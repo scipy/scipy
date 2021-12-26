@@ -462,7 +462,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        return result_object(np.nan, np.nan)
+                        res = np.full(n_outputs, np.nan)
+                        return result_object(*res)
                     return hypotest_fun_in(*samples, **kwds)
 
             else:
@@ -471,7 +472,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        return result_object(np.nan, np.nan)
+                        res = np.full(n_outputs, np.nan)
+                        return result_object(*res)
                     return hypotest_fun_in(*samples, **kwds)
 
             x = np.moveaxis(x, axis, -1)

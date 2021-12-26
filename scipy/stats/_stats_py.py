@@ -216,6 +216,9 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0,
+        result_unpacker=lambda x: (x,))
 def gmean(a, axis=0, dtype=None, weights=None):
     """Compute the geometric mean along the specified axis.
 

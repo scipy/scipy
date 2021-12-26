@@ -5596,31 +5596,6 @@ class TestGeoMean:
         desired = array([v, v, v])
         check_equal_gmean(a, desired, axis=1, rtol=1e-14)
 
-    def test_2d_matrix_axis0(self):
-        #  Test a 2d list with axis=0
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
-        check_equal_gmean(matrix(a), desired, axis=0)
-
-        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        desired = matrix([1, 2, 3, 4])
-        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
-
-        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        desired = matrix(stats.gmean(a, axis=0))
-        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
-
-    def test_2d_matrix_axis1(self):
-        #  Test a 2d list with axis=1
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = matrix([[22.13363839, 64.02171746, 104.40086817]]).T
-        check_equal_gmean(matrix(a), desired, axis=1)
-
-        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        v = power(1 * 2 * 3 * 4, 1. / 4.)
-        desired = matrix([[v], [v], [v]])
-        check_equal_gmean(matrix(a), desired, axis=1, rtol=1e-14)
-
     def test_large_values(self):
         a = array([1e100, 1e200, 1e300])
         desired = 1e200
