@@ -5,6 +5,7 @@ Laplacian of a compressed-sparse graph
 # Authors: Aric Hagberg <hagberg@lanl.gov>
 #          Gael Varoquaux <gael.varoquaux@normalesup.org>
 #          Jake Vanderplas <vanderplas@astro.washington.edu>
+#          Andrew Knyazev <Andrew.Knyazev@ucdenver.edu>
 # License: BSD
 
 import numpy as np
