@@ -193,33 +193,36 @@ def lobpcg(
     the return tuple has the following format
     ``(lambda, V, lambda history, residual norms history)``.
 
-    In the following ``n`` denotes the matrix size and ``m`` the number
+    In the following ``n`` denotes the matrix size and ``k`` the number
     of required eigenvalues (smallest or largest).
 
-    The LOBPCG code internally solves eigenproblems of the size ``3m`` on every
-    iteration by calling the "standard" dense eigensolver, so if ``m`` is not
+    The LOBPCG code internally solves eigenproblems of the size ``3k`` on every
+    iteration by calling the "standard" dense eigensolver, so if ``k`` is not
     small enough compared to ``n``, it does not make sense to call the LOBPCG
     code, but rather one should use the "standard" eigensolver, e.g. numpy or
     scipy function in this case.
-    If one calls the LOBPCG algorithm for ``5m > n``, it will most likely break
+    If one calls the LOBPCG algorithm for ``5k > n``, it will most likely break
     internally, so the code tries to call the standard function instead.
 
     It is not that ``n`` should be large for the LOBPCG to work, but rather the
-    ratio ``n / m`` should be large. It you call LOBPCG with ``m=1``
+    ratio ``k / m`` should be large. It you call LOBPCG with ``k=1``
     and ``n=10``, it works though ``n`` is small. The method is intended
-    for extremely large ``n / m``.
+    for extremely large ``n / k``.
 
     The convergence speed depends basically on two factors:
 
-    1. How well relatively separated the seeking eigenvalues are from the rest
-       of the eigenvalues. One can try to vary ``m`` to make this better.
-
-    2. How well conditioned the problem is. This can be changed by using proper
-       preconditioning. For example, a rod vibration test problem (under tests
+    1. Relative separation of the seeking eigenvalues from the rest
+       of the eigenvalues. One can vary ``m`` to improve the absolute
+       separation and use proper preconditioning to shrink the spectral spread.
+       For example, a rod vibration test problem (under tests
        directory) is ill-conditioned for large ``n``, so convergence will be
        slow, unless efficient preconditioning is used. For this specific
        problem, a good simple preconditioner function would be a linear solve
-       for `A`, which is easy to code since A is tridiagonal.
+       for ``A``, which is easy to code since ``A`` is tridiagonal.
+
+    2. Quality of the initial approximations ``X`` to the seeking eigenvectors.
+       Randomly distributed around the origin vectors work well if no better
+       choice is known.
 
     References
     ----------
