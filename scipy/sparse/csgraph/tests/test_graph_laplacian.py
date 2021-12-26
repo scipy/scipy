@@ -56,7 +56,7 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
 
     if copy:
         assert_array_almost_equal(mat, mat_copy)
-        _assert_allclose_sparse(sp_map, sp_mat_copy)
+        _assert_allclose_sparse(sp_mat, sp_mat_copy)
     else:
         if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
                             or np.issubdtype(mat.dtype, np.uint))):
