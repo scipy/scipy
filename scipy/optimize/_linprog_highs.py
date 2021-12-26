@@ -21,7 +21,8 @@ from ._highs._highs_wrapper import _highs_wrapper
 from ._highs._highs_constants import (
     CONST_I_INF,
     CONST_INF,
-    MESSAGE_LEVEL_MINIMAL,
+    MESSAGE_LEVEL_NONE,
+    HIGHS_OBJECTIVE_SENSE_MINIMIZE,
 
     MODEL_STATUS_NOTSET,
     MODEL_STATUS_LOAD_ERROR,
@@ -30,15 +31,13 @@ from ._highs._highs_constants import (
     MODEL_STATUS_SOLVE_ERROR,
     MODEL_STATUS_POSTSOLVE_ERROR,
     MODEL_STATUS_MODEL_EMPTY,
-    MODEL_STATUS_PRIMAL_INFEASIBLE,
-    MODEL_STATUS_PRIMAL_UNBOUNDED,
+    MODEL_STATUS_INFEASIBLE,
+    MODEL_STATUS_UNBOUNDED,
     MODEL_STATUS_OPTIMAL,
     MODEL_STATUS_REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND
     as MODEL_STATUS_RDOVUB,
     MODEL_STATUS_REACHED_TIME_LIMIT,
     MODEL_STATUS_REACHED_ITERATION_LIMIT,
-    MODEL_STATUS_PRIMAL_DUAL_INFEASIBLE,
-    MODEL_STATUS_DUAL_INFEASIBLE,
 
     HIGHS_SIMPLEX_STRATEGY_CHOOSE,
     HIGHS_SIMPLEX_STRATEGY_DUAL,
@@ -301,11 +300,11 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             'HiGHS Status Code 10: '
             'HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND',
         ),
-        MODEL_STATUS_PRIMAL_INFEASIBLE: (
+        MODEL_STATUS_INFEASIBLE: (
             2,
             "The problem is infeasible.",
         ),
-        MODEL_STATUS_PRIMAL_UNBOUNDED: (
+        MODEL_STATUS_UNBOUNDED: (
             3,
             "The problem is unbounded.",
         ),
@@ -320,14 +319,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         MODEL_STATUS_REACHED_ITERATION_LIMIT: (
             1,
             "Iteration limit reached.",
-        ),
-        MODEL_STATUS_PRIMAL_DUAL_INFEASIBLE: (
-            2,
-            "The problem is primal/dual infeasible.",
-        ),
-        MODEL_STATUS_DUAL_INFEASIBLE: (
-            2,
-            "The problem is dual infeasible.",
         ),
     }
 
@@ -350,12 +341,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     options = {
         'presolve': presolve,
-        'sense': 1,  # minimization
+        'sense': HIGHS_OBJECTIVE_SENSE_MINIMIZE,
         'solver': solver,
         'time_limit': time_limit,
-        'message_level': MESSAGE_LEVEL_MINIMAL * disp,
+        'highs_debug_level': MESSAGE_LEVEL_NONE,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
+        'log_to_console': disp,
+        'output_flag': disp,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
         'simplex_dual_edge_weight_strategy':
             simplex_dual_edge_weight_strategy_enum,
