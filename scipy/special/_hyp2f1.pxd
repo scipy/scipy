@@ -216,7 +216,7 @@ cdef inline double complex hyp2f1_complex(
         if 0 < b < a < c:
             a, b = b, a
         return zpow(1 - z, -a) * hyp2f1_series(
-            a, c - b, c, z/(z - 1), 1500, True, EPS
+            a, c - b, c, z/(z - 1), 500, True, EPS
         )
     # Fall through to original Fortran implementation.
     # -------------------------------------------------------------------------
