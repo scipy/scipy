@@ -45,11 +45,25 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
     else:
         sp_mat = sparse.csr_matrix(mat)
 
+    mat_copy = np.copy(sp_mat)
+    sp_mat_copy = sparse.csr_matrix.copy(sp_mat)
+
     n_nodes = mat.shape[0]
     explicit_laplacian = _explicit_laplacian(mat, normed=normed)
     laplacian = csgraph.laplacian(mat, normed=normed, copy=copy)
     sp_laplacian = csgraph.laplacian(sp_mat, normed=normed,
                                      copy=copy)
+
+    if copy:
+        assert_array_almost_equal(mat, mat_copy)
+        _assert_allclose_sparse(sp_map, sp_mat_copy)
+    else:
+        if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
+                            or np.issubdtype(mat.dtype, np.uint))):
+            assert_array_almost_equal(laplacian, mat)
+            if sp_mat.format == 'coo':
+                _assert_allclose_sparse(sp_laplacian, sp_mat)
+
     assert_array_almost_equal(laplacian, sp_laplacian.toarray())
 
     for tested in [laplacian, sp_laplacian.toarray()]:
@@ -57,13 +71,6 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
             assert_array_almost_equal(tested.sum(axis=0), np.zeros(n_nodes))
         assert_array_almost_equal(tested.T, tested)
         assert_array_almost_equal(tested, explicit_laplacian)
-
-    if not copy:
-        if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
-                            or np.issubdtype(mat.dtype, np.uint))):
-            assert_array_almost_equal(laplacian, mat)
-            if sp_mat.format == 'coo':
-                _assert_allclose_sparse(sp_laplacian, sp_mat)
 
 
 def test_symmetric_graph_laplacian():
