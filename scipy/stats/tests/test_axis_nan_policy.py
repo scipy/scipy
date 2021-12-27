@@ -851,7 +851,10 @@ def test_gmean_mixed_mask_nan_weights():
                         nan_policy='raise', axis=axis)
     res4 = stats.gmean(a_masked3, weights=b_masked3,
                         nan_policy='propagate', axis=axis)
-    res5 = stats.mstats.gmean(a_masked3, weights=b_masked3,
+    # Would test with a_masked3/b_masked3, but there is a bug in np.average
+    # that causes a bug in _no_deco gmean with masked weights. Would use
+    # np.ma.average, but that causes other problems. See numpy/numpy#7330.
+    res5 = stats.mstats.gmean(a_masked4, weights=b_masked4,
                               axis=axis, _no_deco=True)
 
     np.testing.assert_array_equal(res1, res)
