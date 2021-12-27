@@ -5289,7 +5289,7 @@ class kappa4_gen(rv_continuous):
 
     """
     def _argcheck(self, h, k):
-        shape = np.broadcast_shapes(h.shape, k.shape)
+        shape = np.broadcast_arrays(h, k)[0].shape
         return np.full(shape, fill_value=True)
 
     def _get_support(self, h, k):
