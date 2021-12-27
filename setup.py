@@ -581,6 +581,8 @@ def setup_package():
     if "--force" in sys.argv:
         run_build = True
         sys.argv.remove('--force')
+    elif "--skip-build" in sys.argv:
+        run_build = False
     else:
         # Raise errors for unsupported commands, improve help output, etc.
         run_build = check_setuppy_command()
