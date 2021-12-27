@@ -59,17 +59,17 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     the matrix is sparse in the ``coo`` format, or dense array, except
     for the integer input with ``normed=True`` that forces the float output.
 
-    Sparse input is reformatted into ``coo``, except for ``dia``.
+    Sparse input is reformatted into ``coo``.
 
     If the input adjacency matrix is not symmetic, the Laplacian is also
-    non-symmetric and may need to be symmetrized
+    non-symmetric and may need to be symmetrized; e.g., ``lap += lap.T``,
     before the eigen-decomposition.
 
     Diagonal entries of the input adjacency matrix are ignored and
     replaced with zeros for the purpose of normalization where ``normed=True``.
     The normalization uses the inverse square roots of row-sums of the input
     adjacency matrix, and thus may fail if the row-sums contain
-    zeros, negative, or complex values.
+    zeros, negative, or complex with a non-zero imaginary part values.
 
     Examples
     --------
