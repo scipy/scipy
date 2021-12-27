@@ -5289,7 +5289,8 @@ class kappa4_gen(rv_continuous):
 
     """
     def _argcheck(self, h, k):
-        return np.full((h*k).shape, fill_value=True)
+        shape = np.broadcast_shapes(h.shape, k.shape)
+        return np.full(shape, fill_value=True)
 
     def _get_support(self, h, k):
         condlist = [np.logical_and(h > 0, k > 0),

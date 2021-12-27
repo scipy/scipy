@@ -838,8 +838,8 @@ def test_kappa4_array_gh13582():
     npt.assert_allclose(res, res2)
 
     # https://github.com/scipy/scipy/pull/15250#discussion_r775112913
-    h = np.array([-1, -1/4, -1/4,    1, -1, 0])
-    k = np.array([ 1,    1,  1/2, -1/3, -1, 0])
+    h = np.array([-1, -1/4, -1/4, 1, -1, 0])
+    k = np.array([1, 1, 1/2, -1/3, -1, 0])
     res = np.array([[stats.kappa4.stats(h[i], k[i], moments=moment)
                    for i in range(6)] for moment in moments])
     res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
