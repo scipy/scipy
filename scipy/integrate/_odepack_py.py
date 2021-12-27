@@ -78,7 +78,7 @@ def odeint(func, y0, t, args=(), Dfun=None, col_deriv=0, full_output=0,
         True if to return a dictionary of optional outputs as the second output
     printmessg : bool, optional
         Whether to print the convergence message
-    tfirst: bool, optional
+    tfirst : bool, optional
         If True, the first two arguments of `func` (and `Dfun`, if given)
         must ``t, y`` instead of the default ``y, t``.
 

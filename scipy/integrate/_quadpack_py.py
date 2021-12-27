@@ -568,7 +568,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     abserr : float
         An estimate of the error.
 
-    See also
+    See Also
     --------
     quad : single integral
     tplquad : triple integral

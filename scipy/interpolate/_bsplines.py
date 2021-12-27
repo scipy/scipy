@@ -427,7 +427,7 @@ class BSpline:
         ----------
         x : array_like
             points to evaluate the spline at.
-        nu: int, optional
+        nu : int, optional
             derivative to evaluate (default is 0).
         extrapolate : bool or 'periodic', optional
             whether to extrapolate based on the first and last intervals
