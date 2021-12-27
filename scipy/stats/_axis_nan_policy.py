@@ -367,7 +367,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # If necessary, rearrange function signature: accept other samples
             # as positional args right after the first n_samp args
             kwd_samp = [name for name in kwd_samples
-                          if kwds.get(name, None) is not None]
+                        if kwds.get(name, None) is not None]
             n_kwd_samp = len(kwd_samp)
             if not kwd_samp:
                 hypotest_fun_out = hypotest_fun_in
