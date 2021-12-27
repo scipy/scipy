@@ -758,7 +758,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     Returns
     -------
-    results  : float
+    results : float
         Result of the integration.
 
     Other Parameters
