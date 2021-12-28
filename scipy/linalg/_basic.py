@@ -1261,7 +1261,7 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
 
         .. versionadded:: 1.7.0
 
-    rtol: float, optional
+    rtol : float, optional
         Relative threshold term, default value is ``max(M, N) * eps`` where
         ``eps`` is the machine precision value of the datatype of ``a``.
 
@@ -1414,12 +1414,13 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     ----------
     a : (N, N) array_like
         Real symmetric or complex hermetian matrix to be pseudo-inverted
-    atol: float, optional
+
+    atol : float, optional
         Absolute threshold term, default value is 0.
 
         .. versionadded:: 1.7.0
 
-    rtol: float, optional
+    rtol : float, optional
         Relative threshold term, default value is ``N * eps`` where
         ``eps`` is the machine precision value of the datatype of ``a``.
 
@@ -1563,7 +1564,6 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     Notes
     -----
-
     This algorithm is particularly useful for eigenvalue and matrix
     decompositions and in many cases it is already called by various
     LAPACK routines.

@@ -254,8 +254,9 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
 
     See Also
     --------
-    cho_solve_banded : Solve a linear set equations, given the Cholesky factorization
-                of a banded Hermitian.
+    cho_solve_banded :
+        Solve a linear set equations, given the Cholesky factorization
+        of a banded Hermitian.
 
     Examples
     --------

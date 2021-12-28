@@ -1372,7 +1372,7 @@ def median_filter(input, size=None, footprint=None, output=None,
     median_filter : ndarray
         Filtered array. Has the same shape as `input`.
 
-    See also
+    See Also
     --------
     scipy.signal.medfilt2d
 
