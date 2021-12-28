@@ -256,11 +256,13 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
         raise ValueError('expected B to be like a matrix or a vector')
     u_d = 2**-53
     tol = u_d
-    if traceA is None:  # TODO: we need a good number for m3
+    if traceA is None:
         if is_linear_operator:
             warn("Trace of LinearOperator not available, it will be estimated."
                  " Provide `traceA` to ensure performance.", stacklevel=3)
-        traceA = traceest(A, m3=10) if is_linear_operator else _trace(A)
+        # m3=1 is bit arbitrary choice, a more accurate trace (larger m3) might
+        # speed up exponential calculation, but trace estimation is more costly
+        traceA = traceest(A, m3=1) if is_linear_operator else _trace(A)
     mu = traceA / float(n)
     A = A - mu * ident
     A_1_norm = onenormest(A) if is_linear_operator else _exact_1_norm(A)
@@ -652,11 +654,14 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         raise ValueError('expected B to be like a matrix or a vector')
     u_d = 2**-53
     tol = u_d
-    if traceA is None:  # TODO: we need a good number for m3
+    if traceA is None:
         if is_linear_operator:
             warn("Trace of LinearOperator not available, it will be estimated."
                  " Provide `traceA` to ensure performance.", stacklevel=3)
-        traceA = traceest(A, m3=10) if is_linear_operator else _trace(A)
+        # m3=5 is bit arbitrary choice, a more accurate trace (larger m3) might
+        # speed up exponential calculation, but trace estimation is also costly
+        # an educated guess would need to consider the number of time points
+        traceA = traceest(A, m3=5) if is_linear_operator else _trace(A)
     mu = traceA / float(n)
 
     # Get the linspace samples, attempting to preserve the linspace defaults.
