@@ -10,6 +10,7 @@ from scipy.sparse import (csc_matrix, csr_matrix, isspmatrix, isspmatrix_coo,
                           SparseEfficiencyWarning)
 from . import maximum_bipartite_matching
 
+np.import_array()
 
 include 'parameters.pxi'
 

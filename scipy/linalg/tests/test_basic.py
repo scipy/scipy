@@ -1625,7 +1625,7 @@ class TestSolveCirculant:
 
         x = solve_circulant(c, b, baxis=1, outaxis=-1)
         assert_equal(x.shape, (2, 3, 4))
-        assert_allclose(np.rollaxis(x, -1), expected)
+        assert_allclose(np.moveaxis(x, -1, 0), expected)
 
         # np.swapaxes(c, 1, 2) has shape (2, 4, 1); b.T has shape (4, 3).
         x = solve_circulant(np.swapaxes(c, 1, 2), b.T, caxis=1)

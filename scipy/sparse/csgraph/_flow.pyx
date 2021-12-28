@@ -9,6 +9,8 @@ cimport numpy as np
 
 include 'parameters.pxi'
 
+np.import_array()
+
 
 class MaximumFlowResult:
     """Represents the result of a maximum flow calculation.

@@ -8,6 +8,8 @@ cimport cython
 from scipy.sparse import csr_matrix, isspmatrix_csc, isspmatrix
 from scipy.sparse.csgraph._validation import validate_graph
 
+np.import_array()
+
 include 'parameters.pxi'
 
 def minimum_spanning_tree(csgraph, overwrite=False):

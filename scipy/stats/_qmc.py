@@ -526,7 +526,7 @@ def n_primes(n: IntNumber) -> List[int]:
     if len(primes) < n:
         big_number = 2000
         while 'Not enough primes':
-            primes = primes_from_2_to(big_number)[:n]  # type: ignore[misc]
+            primes = primes_from_2_to(big_number)[:n]  # type: ignore
             if len(primes) == n:
                 break
             big_number += 1000
@@ -1151,7 +1151,7 @@ class LatinHypercube(QMCEngine):
 
         oa_lhs_sample /= p
 
-        return oa_lhs_sample[:, :self.d]  # type: ignore[misc]
+        return oa_lhs_sample[:, :self.d]  # type: ignore
 
     def _random_cd(self, best_sample: np.ndarray) -> np.ndarray:
         """Optimal LHS on CD.
@@ -1545,7 +1545,7 @@ class MultivariateNormalQMC(QMCEngine):
             engine_dim = d
         if engine is None:
             self.engine = Sobol(d=engine_dim, scramble=True, seed=seed)  # type: QMCEngine
-        elif isinstance(engine, QMCEngine) and engine.d != 1:
+        elif isinstance(engine, QMCEngine):
             if engine.d != d:
                 raise ValueError("Dimension of `engine` must be consistent"
                                  " with dimensions of mean and covariance.")

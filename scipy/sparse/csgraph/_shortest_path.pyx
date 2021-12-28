@@ -22,6 +22,8 @@ cimport cython
 from libc.stdlib cimport malloc, free
 from numpy.math cimport INFINITY
 
+np.import_array()
+
 include 'parameters.pxi'
 
 

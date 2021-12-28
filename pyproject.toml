@@ -29,15 +29,19 @@ requires = [
     "numpy==1.20.0; python_version=='3.8' and platform_machine=='arm64' and platform_system=='Darwin'",
     "numpy==1.20.0; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
 
+    # Python 3.8 on s390x requires at least 1.17.5, see https://github.com/scipy/oldest-supported-numpy/issues/29
+    "numpy==1.17.5; python_version=='3.8' and platform_machine=='s390x' and platform_python_implementation != 'PyPy'",
+
     # default numpy requirements
-    "numpy==1.17.3; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
+    "numpy==1.17.3; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_machine!='s390x' and platform_python_implementation != 'PyPy'",
     "numpy==1.19.3; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
+    "numpy==1.21.4; python_version=='3.10' and platform_python_implementation != 'PyPy'",
 
     # For Python versions which aren't yet officially supported,
     # we specify an unpinned NumPy which allows source distributions
     # to be used and allows wheels to be used as soon as they
     # become available.
-    "numpy; python_version>='3.10'",
+    "numpy; python_version>='3.11'",
     "numpy; python_version>='3.8' and platform_python_implementation=='PyPy'",
 ]
 
@@ -66,6 +70,7 @@ classifiers = [
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3.8",
     "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
     "Topic :: Software Development :: Libraries",
     "Topic :: Scientific/Engineering",
     "Operating System :: Microsoft :: Windows",
@@ -83,7 +88,8 @@ test = [
     "pytest-xdist",
     "asv",
     "mpmath",
-    "gmpy2",
+    "gmpy2==2.1.0rc1",
+    "threadpoolctl",
     "scikit-umfpack",
 ]
 doc = [
@@ -102,7 +108,7 @@ dev = [
 
 [project.urls]
 homepage = "https://scipy.org/"
-documentation = "https://docs.scipy.org/doc/scipy/reference/"
+documentation = "https://docs.scipy.org/doc/scipy/"
 source = "https://github.com/scipy/scipy"
 download = "https://github.com/scipy/scipy/releases"
 tracker = "https://github.com/scipy/scipy/issues"

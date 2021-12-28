@@ -110,8 +110,7 @@ def get_state():
 
     See Also
     --------
-    set_state
-        Sets the state returned by this function.
+    set_state : Sets the state returned by this function.
     """
     return _uarray.get_state()
 
@@ -123,10 +122,8 @@ def reset_state():
 
     See Also
     --------
-    set_state
-        Context manager that sets the backend state.
-    get_state
-        Gets a state to be set by this context manager.
+    set_state : Context manager that sets the backend state.
+    get_state : Gets a state to be set by this context manager.
     """
     with set_state(get_state()):
         yield
@@ -139,8 +136,7 @@ def set_state(state):
 
     See Also
     --------
-    get_state
-        Gets a state to be set by this context manager.
+    get_state : Gets a state to be set by this context manager.
     """
     old_state = get_state()
     _uarray.set_state(state)
@@ -161,8 +157,7 @@ def create_multimethod(*args, **kwargs):
 
     See Also
     --------
-    generate_multimethod
-        Generates a multimethod.
+    generate_multimethod : Generates a multimethod.
     """
 
     def wrapper(a):
@@ -191,7 +186,7 @@ def generate_multimethod(
         return an (args, kwargs) pair with the dispatchables replaced inside the args/kwargs.
     domain : str
         A string value indicating the domain of this multimethod.
-    default: Optional[Callable], optional
+    default : Optional[Callable], optional
         The default implementation of this multimethod, where ``None`` (the default) specifies
         there is no default implementation.
 
@@ -230,7 +225,7 @@ def generate_multimethod(
 
     See Also
     --------
-    uarray
+    uarray :
         See the module documentation for how to override the method by creating backends.
     """
     kw_defaults, arg_defaults, opts = get_defaults(argument_extractor)
@@ -261,8 +256,8 @@ def set_backend(backend, coerce=False, only=False):
 
     See Also
     --------
-    skip_backend: A context manager that allows skipping of backends.
-    set_global_backend: Set a single, global backend for a domain.
+    skip_backend : A context manager that allows skipping of backends.
+    set_global_backend : Set a single, global backend for a domain.
     """
     try:
         return backend.__ua_cache__["set", coerce, only]
@@ -289,8 +284,8 @@ def skip_backend(backend):
 
     See Also
     --------
-    set_backend: A context manager that allows setting of backends.
-    set_global_backend: Set a single, global backend for a domain.
+    set_backend : A context manager that allows setting of backends.
+    set_global_backend : Set a single, global backend for a domain.
     """
     try:
         return backend.__ua_cache__["skip"]
@@ -351,8 +346,8 @@ def set_global_backend(backend, coerce=False, only=False, *, try_last=False):
 
     See Also
     --------
-    set_backend: A context manager that allows setting of backends.
-    skip_backend: A context manager that allows skipping of backends.
+    set_backend : A context manager that allows setting of backends.
+    skip_backend : A context manager that allows skipping of backends.
     """
     _uarray.set_global_backend(backend, coerce, only, try_last)
 
@@ -554,27 +549,25 @@ def determine_backend(value, dispatch_type, *, domain, only=True, coerce=False):
     dispatch_type
         The dispatch type associated with ``value``, aka
         ":ref:`marking <MarkingGlossary>`".
-    domain: string
+    domain : string
         The domain to query for backends and set.
-    coerce: bool
+    coerce : bool
         Whether or not to allow coercion to the backend's types. Implies ``only``.
-    only: bool
+    only : bool
         Whether or not this should be the last backend to try.
 
     See Also
     --------
-    set_backend: For when you know which backend to set
+    set_backend : For when you know which backend to set
 
     Notes
     -----
-
     Support is determined by the ``__ua_convert__`` protocol. Backends not
     supporting the type must return ``NotImplemented`` from their
     ``__ua_convert__`` if they don't support input of that type.
 
     Examples
     --------
-
     Suppose we have two backends ``BackendA`` and ``BackendB`` each supporting
     different types, ``TypeA`` and ``TypeB``. Neither supporting the other type:
 
@@ -626,33 +619,31 @@ def determine_backend_multi(
 
     Parameters
     ----------
-    dispatchables: Sequence[Union[uarray.Dispatchable, Any]]
+    dispatchables : Sequence[Union[uarray.Dispatchable, Any]]
         The dispatchables that must be supported
-    domain: string
+    domain : string
         The domain to query for backends and set.
-    coerce: bool
+    coerce : bool
         Whether or not to allow coercion to the backend's types. Implies ``only``.
-    only: bool
+    only : bool
         Whether or not this should be the last backend to try.
-    dispatch_type: Optional[Any]
+    dispatch_type : Optional[Any]
         The default dispatch type associated with ``dispatchables``, aka
         ":ref:`marking <MarkingGlossary>`".
 
     See Also
     --------
-    determine_backend: For a single dispatch value
-    set_backend: For when you know which backend to set
+    determine_backend : For a single dispatch value
+    set_backend : For when you know which backend to set
 
     Notes
     -----
-
     Support is determined by the ``__ua_convert__`` protocol. Backends not
     supporting the type must return ``NotImplemented`` from their
     ``__ua_convert__`` if they don't support input of that type.
 
     Examples
     --------
-
     :func:`determine_backend` allows the backend to be set from a single
     object. :func:`determine_backend_multi` allows multiple objects to be
     checked simultaneously for support in the backend. Suppose we have a

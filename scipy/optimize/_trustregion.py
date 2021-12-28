@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 import scipy.linalg
-from .optimize import (_check_unknown_options, _status_message,
+from ._optimize import (_check_unknown_options, _status_message,
                        OptimizeResult, _prepare_scalar_function)
 from scipy.optimize._hessian_update_strategy import HessianUpdateStrategy
 from scipy.optimize._differentiable_functions import FD_METHODS

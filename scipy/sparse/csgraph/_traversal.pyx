@@ -15,6 +15,8 @@ from scipy.sparse.csgraph._tools import reconstruct_path
 cimport cython
 from libc cimport stdlib
 
+np.import_array()
+
 include 'parameters.pxi'
 
 def connected_components(csgraph, directed=True, connection='weak',

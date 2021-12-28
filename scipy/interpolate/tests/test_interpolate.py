@@ -25,7 +25,7 @@ from scipy.integrate import nquad
 
 from scipy.special import binom
 
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 class TestInterp2D:
