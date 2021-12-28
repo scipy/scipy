@@ -1691,15 +1691,11 @@ class LinprogHiGHSTests(LinprogCommonTests):
         assert_warns(OptimizeWarning, f, options=options)
 
     def test_crossover(self):
-        A_eq, b_eq, c, N = magic_square(4)
+        A_eq, b_eq, c, _, _ = magic_square(4)
         bounds = (0, 1)
         res = linprog(c, A_eq=A_eq, b_eq=b_eq,
                       bounds=bounds, method=self.method, options=self.options)
         # there should be nonzero crossover iterations for IPM (only)
-        # TODO: highs counts crossover iterations differently, so this test
-        #       now fails
-        if self.method == "highs-ipm":
-            pytest.skip("HiGHS crossover iteration behavior changed!")
         assert_equal(res.crossover_nit == 0, self.method != "highs-ipm")
 
     def test_marginals(self):
@@ -2154,7 +2150,7 @@ class TestLinprogHiGHSMIP():
         np.testing.assert_allclose(np.diag(square).sum(), M)
         np.testing.assert_allclose(np.diag(square[:, ::-1]).sum(), M)
 
-        np.testing.assert_equal(res.x, np.round(res.x))
+        np.testing.assert_allclose(res.x, np.round(res.x), atol=1e-12)
 
     def test_mip2(self):
         # solve MIP with inequality constraints and all integer constraints

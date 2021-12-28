@@ -413,10 +413,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     status, message = statuses[res['status']]
 
     x = np.array(res['x']) if 'x' in res else None
-    if np.any(x) and integrality is not None:
-        mask = (integrality == 1) | (integrality == 3)
-        x[mask] = np.round(x[mask])
-
     sol = {'x': x,
            'slack': slack,
            'con': con,
@@ -442,9 +438,13 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'message': message,
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
            'crossover_nit': res.get('crossover_nit'),
-           'mip_node_count': res.get('mip_node_count', 0),
-           'mip_dual_bound': res.get('mip_dual_bound', 0.0),
-           'mip_gap': res.get('mip_gap', 0.0),
            }
+
+    if np.any(x) and integrality is not None:
+        res.update({
+            'mip_node_count': res.get('mip_node_count', 0),
+            'mip_dual_bound': res.get('mip_dual_bound', 0.0),
+            'mip_gap': res.get('mip_gap', 0.0),
+        })
 
     return sol
