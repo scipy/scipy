@@ -22,7 +22,7 @@ def configuration(parent_package='', top_path=None):
                                     get_f2py_int64_options,
                                     get_g77_abi_wrappers,
                                     uses_blas64)
-                                    
+
     if uses_blas64():
         lapack_opt = get_info('lapack_ilp64_opt', 2)
         pre_build_hook = (gfortran_legacy_flag_hook,
@@ -32,7 +32,7 @@ def configuration(parent_package='', top_path=None):
         lapack_opt = get_info('lapack_opt')
         pre_build_hook = gfortran_legacy_flag_hook
         f2py_options = None
-                                    
+
     lapack_opt = get_info('lapack_opt')
     if not lapack_opt:
         raise NotFoundError('no lapack/blas resources found')
@@ -67,13 +67,16 @@ def configuration(parent_package='', top_path=None):
 
         config.add_library(propack_lib,
                            sources=src,
-                           macros=[('_OPENMP',), ('SCIPY_USE_G77_CDOTC_WRAP', 1)])
-        config.add_extension(f'_{prefix}propack',
-                             sources=f'{prefix}propack.pyf',
-                             libraries=[propack_lib],
-                             extra_info=lapack_opt,
-                             undef_macros=['_OPENMP'],
-                             depends=['setup.py'] + src)
+                           macros=[('_OPENMP',),
+                                   ('SCIPY_USE_G77_CDOTC_WRAP', 1)])
+        ext = config.add_extension(f'_{prefix}propack',
+                                   sources=f'{prefix}propack.pyf',
+                                   libraries=[propack_lib],
+                                   extra_info=lapack_opt,
+                                   undef_macros=['_OPENMP'],
+                                   f2py_options=f2py_options,
+                                   depends=['setup.py'] + src)
+        ext._pre_build_hook = pre_build_hook
 
     return config
 
