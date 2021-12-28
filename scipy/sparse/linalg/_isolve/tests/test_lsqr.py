@@ -20,12 +20,12 @@ for jj in range(5):
 
 b = normal(size=n)
 
-tol = 1e-10
+tol = 2e-10
 show = False
 maxit = None
 
 
-def test_basic():
+def test_lsqr_basic():
     b_copy = b.copy()
     xo, *_ = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
     assert_array_equal(b_copy, b)
