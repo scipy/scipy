@@ -2421,12 +2421,14 @@ def factorial2(n, exact=False):
     array(105.00000000000001)
     >>> factorial2(7, exact=True)
     105
+    >>> factorial2(-10, exact=True)
+    0
 
     """
     if exact:
-        if n < -1:
+        if n < 0:
             return 0
-        if n <= 0:
+        if n == 0:
             return 1
         val = 1
         for k in range(n, 0, -2):
