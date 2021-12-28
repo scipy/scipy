@@ -43,7 +43,7 @@ def lu_factor(a, overwrite_a=False, check_finite=True):
         Pivot indices representing the permutation matrix P:
         row i of matrix was interchanged with row piv[i].
 
-    See also
+    See Also
     --------
     lu_solve : solve an equation system using the LU factorization of a matrix
 
@@ -115,7 +115,7 @@ def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
     x : array
         Solution to the system
 
-    See also
+    See Also
     --------
     lu_factor : LU factorize a matrix
 

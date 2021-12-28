@@ -489,10 +489,10 @@ def somersd(x, y=None, alternative='two-sided'):
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         1D array of rankings, treated as the (row) independent variable.
         Alternatively, a 2D contingency table.
-    y: array_like, optional
+    y : array_like, optional
         If `x` is a 1D array of rankings, `y` is a 1D array of rankings of the
         same length, treated as the (column) dependent variable.
         If `x` is 2D, `y` is ignored.

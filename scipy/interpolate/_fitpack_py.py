@@ -467,7 +467,7 @@ def sproot(tck, mest=10):
     Manipulating the tck-tuples directly is not recommended. In new code,
     prefer using the `BSpline` objects.
 
-    See also
+    See Also
     --------
     splprep, splrep, splint, spalde, splev
     bisplrep, bisplev

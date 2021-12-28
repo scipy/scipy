@@ -2184,7 +2184,8 @@ def comb(N, k, exact=False, repetition=False):
 
     See Also
     --------
-    binom : Binomial coefficient ufunc
+    binom : Binomial coefficient considered as a function of two real
+            variables.
 
     Notes
     -----

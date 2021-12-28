@@ -677,9 +677,9 @@ def khatri_rao(a, b):
 
     Parameters
     ----------
-    a:  (n, k) array_like
+    a : (n, k) array_like
         Input array
-    b:  (m, k) array_like
+    b : (m, k) array_like
         Input array
 
     Returns
