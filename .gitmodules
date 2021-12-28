@@ -10,7 +10,7 @@
 	shallow = true
 [submodule "scipy/sparse/linalg/_propack/PROPACK"]
 	path = scipy/sparse/linalg/_propack/PROPACK
-	url = https://github.com/scipy/PROPACK
+	url = https://github.com/mckib2/PROPACK
 	shallow = true
 [submodule "scipy/_lib/unuran"]
 	path = scipy/_lib/unuran
