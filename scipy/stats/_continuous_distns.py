@@ -5881,36 +5881,25 @@ class t_gen(rv_continuous):
         return random_state.standard_t(df, size=size)
 
     def _pdf(self, x, df):
-        # limiting case: fallback to the normal distribution
-        # The `fit` method and the sampling module calls `_pdf` without
-        # first converting `x` and `df` into arrays. As we use masking,
-        # we need `x` and `df` to always be arrays. So, we make sure they
-        # are arrays before masking.
-        x, df = np.asarray(x), np.asarray(df)
-        mask = (df == np.inf)
-        imask = ~mask
-        res = np.empty_like(x, dtype='d')
-        res[mask] = norm._pdf(x[mask])
-        #                                gamma((df+1)/2)
-        # t.pdf(x, df) = ---------------------------------------------------
-        #                sqrt(pi*df) * gamma(df/2) * (1+x**2/df)**((df+1)/2)
-        r = df[imask]*1.0
-        res[imask] = (np.exp(sc.gammaln((r+1)/2)-sc.gammaln(r/2))
-                      / (np.sqrt(r*np.pi)*(1+(x[imask]**2)/r)**((r+1)/2)))
-
-        return res
+        return _lazywhere(
+            df == np.inf, (x, df),
+            f=lambda x, df: norm._pdf(x),
+            f2=lambda x, df: (
+                np.exp(sc.gammaln((df+1)/2)-sc.gammaln(df/2))
+                / (np.sqrt(df*np.pi)*(1+(x**2)/df)**((df+1)/2))
+            )
+        )
 
     def _logpdf(self, x, df):
-        x, df = np.asarray(x), np.asarray(df)
-        mask = (df == np.inf)
-        imask = ~mask
-        res = np.empty_like(x, dtype='d')
-        res[mask] = norm._logpdf(x[mask])
-        r = df[imask]*1.0
-        res[imask] = (sc.gammaln((r+1)/2) - sc.gammaln(r/2)
-                      - (0.5*np.log(r*np.pi)
-                         + (r+1)/2*np.log(1+(x[imask]**2)/r)))
-        return res
+        return _lazywhere(
+            df == np.inf, (x, df),
+            f=lambda x, df: norm._logpdf(x),
+            f2=lambda x, df: (
+                sc.gammaln((df+1)/2) - sc.gammaln(df/2)
+                - (0.5*np.log(df*np.pi)
+                + (df+1)/2*np.log(1+(x**2)/df))
+            )
+        )
 
     def _cdf(self, x, df):
         return sc.stdtr(df, x)
@@ -5925,29 +5914,28 @@ class t_gen(rv_continuous):
         return -sc.stdtrit(df, q)
 
     def _stats(self, df):
-        mask = (df == np.inf)
-        imask = ~mask
-        mu = np.empty_like(df, dtype='d')
-        mu2 = np.empty_like(df, dtype='d')
-        g1 = np.empty_like(df, dtype='d')
-        g2 = np.empty_like(df, dtype='d')
-        if np.any(mask):
-            res = norm._stats()
-            mu[mask], mu2[mask], g1[mask], g2[mask] = (res[0], res[1],
-                                                       res[2], res[3])
-        gooddf = df[imask]
-        goodmu = np.where(gooddf > 1, 0.0, np.inf)
-        goodmu2 = _lazywhere(gooddf > 2, (gooddf,),
-                             lambda df_: df_ / (df_-2.0),
+        # 0.0, 1.0, 0.0, 0.0
+        cond = df == np.inf
+        mu = np.where(df > 1 | cond, 0.0, np.inf)
+
+        def _mu2_finitedf(df):
+            mu2 = _lazywhere(df > 2, (df,),
+                             lambda df: df / (df-2.0),
                              np.inf)
-        goodmu2 = np.where(gooddf <= 1, np.nan, goodmu2)
-        goodg1 = np.where(gooddf > 3, 0.0, np.nan)
-        goodg2 = _lazywhere(gooddf > 4, (gooddf,),
-                            lambda df_: 6.0 / (df_-4.0),
+            mu2 = np.where(df <= 1, np.nan, mu2)
+            return mu2
+
+        mu2 = _lazywhere(~cond, (df,), _mu2_finitedf, 1.0)
+        g1 = np.where(df > 3 | cond, 0.0, np.nan)
+
+        def _g2_finitedf(df):
+            g2 = _lazywhere(df > 4, (df,),
+                            lambda df: 6.0 / (df-4.0),
                             np.inf)
-        goodg2 = np.where(gooddf <= 2, np.nan, goodg2)
-        mu[imask], mu2[imask], g1[imask], g2[imask] = (goodmu, goodmu2,
-                                                       goodg1, goodg2)
+            g2 = np.where(df <= 2, np.nan, g2)
+            return g2
+
+        g2 = _lazywhere(~cond, (df,), _g2_finitedf, 0.0)
         return mu, mu2, g1, g2
 
     def _entropy(self, df):
