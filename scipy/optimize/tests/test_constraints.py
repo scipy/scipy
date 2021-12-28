@@ -201,3 +201,9 @@ def test_Bounds_input_validation():
     message = "`lb` and `ub` must have the same shape"
     with pytest.raises(ValueError, match=message):
         Bounds([1, 2], [1, 2, 3])
+
+
+def test_Bounds_residual():
+    bounds = Bounds(-2, 4)
+    x0 = [-1, 2]
+    np.testing.assert_allclose(bounds.residual(x0), ([1, 4], [5, 2]))
