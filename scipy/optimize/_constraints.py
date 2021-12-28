@@ -202,6 +202,30 @@ class Bounds:
             end = ")"
         return start + end
 
+    def residual(self, x):
+        """Calculate the residual (slack) between the input and the bounds
+
+        For a bound constraint of the form::
+
+            lb <= x <= ub
+
+        the lower and upper residuals between `x` and the bounds are values
+        ``sl`` and ``sb`` such that::
+
+            lb + sl == x == ub - sb
+
+        Parameters
+        ----------
+        x: array_like
+            Vector of independent variables
+
+        Returns
+        -------
+        sl, sb : array-like
+            The lower and upper residuals
+        """
+        return x - self.lb, self.ub - x
+
 
 class PreparedConstraint:
     """Constraint prepared from a user defined constraint.
