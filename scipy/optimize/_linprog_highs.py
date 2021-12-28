@@ -291,27 +291,33 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         ),
         MODEL_STATUS_LOAD_ERROR: (
             4,
-            f'HiGHS Status Code {MODEL_STATUS_LOAD_ERROR}: HighsModelStatusLOAD_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_LOAD_ERROR}: '
+            'HighsModelStatusLOAD_ERROR',
         ),
         MODEL_STATUS_MODEL_ERROR: (
             2,
-            f'HiGHS Status Code {MODEL_STATUS_MODEL_ERROR}: HighsModelStatusMODEL_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_MODEL_ERROR}: '
+            'HighsModelStatusMODEL_ERROR',
         ),
         MODEL_STATUS_PRESOLVE_ERROR: (
             4,
-            f'HiGHS Status Code {MODEL_STATUS_PRESOLVE_ERROR}: HighsModelStatusPRESOLVE_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_PRESOLVE_ERROR}: '
+            'HighsModelStatusPRESOLVE_ERROR',
         ),
         MODEL_STATUS_SOLVE_ERROR: (
             4,
-            f'HiGHS Status Code {MODEL_STATUS_SOLVE_ERROR}: HighsModelStatusSOLVE_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_SOLVE_ERROR}: '
+            'HighsModelStatusSOLVE_ERROR',
         ),
         MODEL_STATUS_POSTSOLVE_ERROR: (
             4,
-            f'HiGHS Status Code {MODEL_STATUS_POSTSOLVE_ERROR}: HighsModelStatusPOSTSOLVE_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_POSTSOLVE_ERROR}: '
+            'HighsModelStatusPOSTSOLVE_ERROR',
         ),
         MODEL_STATUS_MODEL_EMPTY: (
             4,
-            f'HiGHS Status Code {MODEL_STATUS_MODEL_EMPTY}: HighsModelStatusMODEL_EMPTY',
+            f'HiGHS Status Code {MODEL_STATUS_MODEL_EMPTY}: '
+            'HighsModelStatusMODEL_EMPTY',
         ),
         MODEL_STATUS_RDOVUB: (
             4,

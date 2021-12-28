@@ -2158,7 +2158,7 @@ class TestLinprogHiGHSMIP():
         # https://www.cs.upc.edu/~erodri/webpage/cps/theory/lp/milp/slides.pdf
 
         A_ub = np.array([[2, -2], [-8, 10]])
-        b_ub = np.array([-1 ,13])
+        b_ub = np.array([-1, 13])
         c = -np.array([1, 1])
 
         bounds = [(0, np.inf)] * len(c)
@@ -2225,7 +2225,7 @@ class TestLinprogHiGHSMIP():
     def test_mip6(self):
         # solve a larger MIP with only equality constraints
         # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
-        A_eq = np.array([[22, 13, 26, 33, 21,  3, 14, 26],
+        A_eq = np.array([[22, 13, 26, 33, 21, 3, 14, 26],
                          [39, 16, 22, 28, 26, 30, 23, 24],
                          [18, 14, 29, 27, 30, 38, 26, 26],
                          [41, 26, 28, 36, 18, 38, 16, 26]])
