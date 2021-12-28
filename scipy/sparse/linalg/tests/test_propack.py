@@ -112,7 +112,7 @@ def test_svdp(ctor, precision, irl, which):
 @pytest.mark.parametrize('irl', (False, True))
 def test_examples(precision, irl):
     atol = {
-        'single': 1e-4,
+        'single': 1e-3,
         'double': 1e-9,
         'complex8': 1e-4,
         'complex16': 1e-9,

@@ -17,10 +17,27 @@ def check_propack_submodule():
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
     from numpy.distutils.misc_util import Configuration
-    config = Configuration('_propack', parent_package, top_path)
+    from scipy._build_utils import (gfortran_legacy_flag_hook,
+                                    blas_ilp64_pre_build_hook,
+                                    get_f2py_int64_options,
+                                    get_g77_abi_wrappers,
+                                    uses_blas64)
+                                    
+    if uses_blas64():
+        lapack_opt = get_info('lapack_ilp64_opt', 2)
+        pre_build_hook = (gfortran_legacy_flag_hook,
+                          blas_ilp64_pre_build_hook(lapack_opt))
+        f2py_options = get_f2py_int64_options()
+    else:
+        lapack_opt = get_info('lapack_opt')
+        pre_build_hook = gfortran_legacy_flag_hook
+        f2py_options = None
+                                    
     lapack_opt = get_info('lapack_opt')
     if not lapack_opt:
         raise NotFoundError('no lapack/blas resources found')
+
+    config = Configuration('_propack', parent_package, top_path)
 
     #  ------------------------------------------------------------
     #  Set up the libraries.
@@ -46,22 +63,17 @@ def configuration(parent_package='', top_path=None):
         else:
             src = join('PROPACK', directory, '*.F')
 
+        src += get_g77_abi_wrappers(lapack_opt)
+
         config.add_library(propack_lib,
                            sources=src,
-                           macros=[('_OPENMP',)])
+                           macros=[('_OPENMP',), ('SCIPY_USE_G77_CDOTC_WRAP', 1)])
         config.add_extension(f'_{prefix}propack',
                              sources=f'{prefix}propack.pyf',
                              libraries=[propack_lib],
                              extra_info=lapack_opt,
-                             undef_macros=['_OPENMP'])
-
-        # add required data files to run example matrix tests
-        path_list = ['PROPACK', directory, 'Examples']
-        config.add_data_files('.', join(*path_list, '*.coord'))
-        config.add_data_files('.', join(*path_list, '*.diag'))
-        config.add_data_files('.', join(*path_list, '*.rra'))
-        config.add_data_files('.', join(*path_list, '*.cua'))
-        config.add_data_files('.', join(*path_list, 'Output', '*.ascii'))
+                             undef_macros=['_OPENMP'],
+                             depends=['setup.py'] + src)
 
     return config
 
