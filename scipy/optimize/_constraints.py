@@ -166,20 +166,21 @@ class Bounds:
 
     Parameters
     ----------
-    lb, ub : array_like
+    lb, ub : array_like, optional
         Lower and upper bounds on independent variables. Each array must
         have the same size as x or be a scalar, in which case a bound will be
         the same for all the variables. Set components of `lb` and `ub` equal
         to fix a variable. Use ``np.inf`` with an appropriate sign to disable
         bounds on all or some variables. Note that you can mix constraints of
         different types: interval, one-sided or equality, by setting different
-        components of `lb` and `ub` as necessary.
+        components of `lb` and `ub` as necessary. Defaults to lb = 0 and
+        ub = np.inf (non-negativity).
     keep_feasible : array_like of bool, optional
         Whether to keep the constraint components feasible throughout
         iterations. A single value set this property for all components.
         Default is False. Has no effect for equality constraints.
     """
-    def __init__(self, lb, ub, keep_feasible=False):
+    def __init__(self, lb=0, ub=np.inf, keep_feasible=False):
         self.lb = np.asarray(lb)
         self.ub = np.asarray(ub)
         self.keep_feasible = keep_feasible

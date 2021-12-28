@@ -188,3 +188,10 @@ def test_Bounds_array():
     b = Bounds(lb=[0.0, 0.0], ub=[1.0, 1.0])
     assert isinstance(b.lb, np.ndarray)
     assert isinstance(b.ub, np.ndarray)
+
+
+def test_Bounds_defaults():
+    b1 = Bounds()
+    b2 = Bounds(np.asarray(0), np.asarray(np.inf))
+    assert b1.lb == b2.lb
+    assert b1.ub == b2.ub
