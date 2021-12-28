@@ -5882,7 +5882,11 @@ class t_gen(rv_continuous):
 
     def _pdf(self, x, df):
         # limiting case: fallback to the normal distribution
-        x, df = np.broadcast_arrays(x, df)
+        # The `fit` method and the sampling module calls `_pdf` without
+        # first converting `x` and `df` into arrays. As we use masking,
+        # we need `x` and `df` to always be arrays. So, we make sure they
+        # are arrays before masking.
+        x, df = np.asarray(x), np.asarray(df)
         mask = (df == np.inf)
         imask = ~mask
         res = np.empty_like(x, dtype='d')
@@ -5897,7 +5901,7 @@ class t_gen(rv_continuous):
         return res
 
     def _logpdf(self, x, df):
-        x, df = np.broadcast_arrays(x, df)
+        x, df = np.asarray(x), np.asarray(df)
         mask = (df == np.inf)
         imask = ~mask
         res = np.empty_like(x, dtype='d')
@@ -5909,40 +5913,16 @@ class t_gen(rv_continuous):
         return res
 
     def _cdf(self, x, df):
-        x, df = np.broadcast_arrays(x, df)
-        mask = (df == np.inf)
-        imask = ~mask
-        res = np.empty_like(x, dtype='d')
-        res[mask] = norm._cdf(x[mask])
-        res[imask] = sc.stdtr(df[imask], x[imask])
-        return res
+        return sc.stdtr(df, x)
 
     def _sf(self, x, df):
-        x, df = np.broadcast_arrays(x, df)
-        mask = (df == np.inf)
-        imask = ~mask
-        res = np.empty_like(x, dtype='d')
-        res[mask] = norm._sf(x[mask])
-        res[imask] = sc.stdtr(df[imask], -x[imask])
-        return res
+        return sc.stdtr(df, -x)
 
     def _ppf(self, q, df):
-        q, df = np.broadcast_arrays(q, df)
-        mask = (df == np.inf)
-        imask = ~mask
-        res = np.empty_like(q, dtype='d')
-        res[mask] = norm._ppf(q[mask])
-        res[imask] = sc.stdtrit(df[imask], q[imask])
-        return res
+        return sc.stdtrit(df, q)
 
     def _isf(self, q, df):
-        q, df = np.broadcast_arrays(q, df)
-        mask = (df == np.inf)
-        imask = ~mask
-        res = np.empty_like(q, dtype='d')
-        res[mask] = norm._isf(q[mask])
-        res[imask] = -sc.stdtrit(df[imask], q[imask])
-        return res
+        return -sc.stdtrit(df, q)
 
     def _stats(self, df):
         mask = (df == np.inf)
