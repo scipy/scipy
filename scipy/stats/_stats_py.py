@@ -5445,7 +5445,8 @@ def _mgc_stat(distx, disty):
     Parameters
     ----------
     distx, disty : ndarray
-        `distx` and `disty` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
+        `distx` and `disty` have shapes `(n, p)` and `(n, q)` or
+        `(n, n)` and `(n, n)`
         if distance matrices.
 
     Returns
