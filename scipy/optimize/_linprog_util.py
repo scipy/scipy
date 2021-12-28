@@ -14,7 +14,7 @@ from collections import namedtuple
 
 _LPProblem = namedtuple('_LPProblem',
                         'c A_ub b_ub A_eq b_eq bounds x0 integrality')
-_LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
+_LPProblem.__new__.__defaults__ = (None,) * 7  # make c the only required arg
 _LPProblem.__doc__ = \
     """ Represents a linear-programming problem.
 
