@@ -1990,6 +1990,8 @@ class TestFactorialFunctions:
         assert_array_almost_equal([105., 384., 945.],
                                   special.factorial2([7, 8, 9], exact=False))
         assert_equal(special.factorial2(7, exact=True), 105)
+        assert_equal(special.factorial2(0, exact=True), 1)
+        assert_equal(special.factorial2(-0.5, exact=True), 0)
 
     def test_factorialk(self):
         assert_equal(special.factorialk(5, 1, exact=True), 120)
