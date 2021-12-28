@@ -2318,21 +2318,17 @@ def test_t_entropy():
 
 @pytest.mark.parametrize("methname", ["pdf", "logpdf", "cdf",
                                       "ppf", "sf", "isf"])
-def test_t_inf_df(methname):
-    t_dist = stats.t(df=np.inf, loc=3, scale=1)
+@pytest.mark.parametrize("df", [np.inf, [[np.inf, 1.], [2., np.inf]]])
+@pytest.mark.parametrize("x", [0.5, [0.5, 0.7]])
+def test_t_inf_df(methname, df, x):
+    t_dist = stats.t(df, loc=3, scale=1)
     norm_dist = stats.norm(loc=3, scale=1)
     t_meth = getattr(t_dist, methname)
     norm_meth = getattr(norm_dist, methname)
-    assert_equal(t_meth(0.5), norm_meth(0.5))
-    t_dist = stats.t(df=[[np.inf, 1.], [2., np.inf]],
-                     loc=3, scale=1)
-    norm_dist = stats.norm(loc=3, scale=1)
-    t_meth = getattr(t_dist, methname)
-    norm_meth = getattr(norm_dist, methname)
-    res = t_meth([0.5, 0.7])
-    assert_equal(res[0][0], norm_meth(0.5))
-    assert_equal(res[1][1], norm_meth(0.7))
 
+    res = np.diag(t_meth(x)) if np.ndim(df) else t_meth(x)
+    reference = norm_meth(x)
+    assert_equal(res, reference)
 
 def test_t_inf_df_stats_entropy():
     assert_equal(stats.t.stats(df=np.inf, loc=3, scale=1),
