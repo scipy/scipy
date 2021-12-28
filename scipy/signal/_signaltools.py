@@ -292,9 +292,9 @@ def correlation_lags(in1_len, in2_len, mode='full'):
 
     Parameters
     ----------
-    in1_size : int
+    in1_len : int
         First input size.
-    in2_size : int
+    in2_len : int
         Second input size.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output.
@@ -993,9 +993,9 @@ def _numeric_arrays(arrays, kinds='buifc'):
 
     Parameters
     ----------
-    ndarrays : array or list of arrays
+    arrays : array or list of arrays
         arrays to check if numeric.
-    numeric_kinds : string-like
+    kinds : string-like
         The dtypes of the arrays to be checked. If the dtype.kind of
         the ndarrays are not in this string the function returns False and
         otherwise returns True.

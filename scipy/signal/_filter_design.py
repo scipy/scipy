@@ -4399,10 +4399,10 @@ def _arc_jac_sn(w, m):
 
     Parameters
     ----------
-    w - complex scalar
+    w : complex scalar
         argument
 
-    m - scalar
+    m : scalar
         modulus; in interval [0, 1]
 
 
