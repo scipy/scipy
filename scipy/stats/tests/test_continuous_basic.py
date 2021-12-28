@@ -247,36 +247,33 @@ def test_levy_stable_random_state_property():
 def cases_test_moments():
     fail_normalization = set(['vonmises'])
     fail_higher = set(['vonmises', 'ncf'])
-    fail_loc_scale = set(['kappa4'])  # see gh-13582
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
             continue
 
         if distname in distxslow_test_moments:
-            yield pytest.param(distname, arg, True, True, True, True,
+            yield pytest.param(distname, arg, True, True, True,
                                marks=pytest.mark.xslow(reason="too slow"))
             continue
 
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
-        cond3 = distname not in fail_loc_scale
 
-        yield distname, arg, cond1, cond2, cond3, False
+        yield distname, arg, cond1, cond2, False
 
-        if not cond1 or not cond2 or not cond3:
+        if not cond1 or not cond2:
             # Run the distributions that have issues twice, once skipping the
             # not_ok parts, once with the not_ok parts but marked as knownfail
-            yield pytest.param(distname, arg, True, True, True, True,
+            yield pytest.param(distname, arg, True, True, True,
                                marks=pytest.mark.xfail)
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,'
-                         'loc_scale_ok,is_xfailing',
+                         'is_xfailing',
                          cases_test_moments())
-def test_moments(distname, arg, normalization_ok, higher_ok, loc_scale_ok,
-                 is_xfailing):
+def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
     try:
         distfn = getattr(stats, distname)
     except TypeError:
@@ -299,9 +296,6 @@ def test_moments(distname, arg, normalization_ok, higher_ok, loc_scale_ok,
             check_skew_expect(distfn, arg, m, v, s, distname)
             check_var_expect(distfn, arg, m, v, distname)
             check_kurt_expect(distfn, arg, m, v, k, distname)
-
-        if loc_scale_ok:
-            check_loc_scale(distfn, arg, m, v, distname)
 
         check_moment(distfn, arg, m, v, distname)
 
@@ -823,11 +817,36 @@ def test_broadcasting_in_moments_gh12192_regression():
     npt.assert_allclose(vals3, expected3, rtol=1e-8)
     assert vals3.shape == expected3.shape
 
+
 def test_kappa3_array_gh13582():
     # https://github.com/scipy/scipy/pull/15140#issuecomment-994958241
     shapes = [0.5, 1.5, 2.5, 3.5, 4.5]
     moments = 'mvsk'
-    res = np.array([[stats.kappa3.stats(shape, moments=moment) for shape in shapes]
-                    for moment in moments])
+    res = np.array([[stats.kappa3.stats(shape, moments=moment)
+                   for shape in shapes] for moment in moments])
     res2 = np.array(stats.kappa3.stats(shapes, moments=moments))
     npt.assert_allclose(res, res2)
+
+
+def test_kappa4_array_gh13582():
+    h = np.array([-0.5, 2.5, 3.5, 4.5, -3])
+    k = np.array([-0.5, 1, -1.5, 0, 3.5])
+    moments = 'mvsk'
+    res = np.array([[stats.kappa4.stats(h[i], k[i], moments=moment)
+                   for i in range(5)] for moment in moments])
+    res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
+    npt.assert_allclose(res, res2)
+
+    # https://github.com/scipy/scipy/pull/15250#discussion_r775112913
+    h = np.array([-1, -1/4, -1/4, 1, -1, 0])
+    k = np.array([1, 1, 1/2, -1/3, -1, 0])
+    res = np.array([[stats.kappa4.stats(h[i], k[i], moments=moment)
+                   for i in range(6)] for moment in moments])
+    res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
+    npt.assert_allclose(res, res2)
+
+    # https://github.com/scipy/scipy/pull/15250#discussion_r775115021
+    h = np.array([-1, -0.5, 1])
+    k = np.array([-1, -0.5, 0, 1])[:, None]
+    res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
+    assert res2.shape == (4, 4, 3)

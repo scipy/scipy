@@ -5289,7 +5289,8 @@ class kappa4_gen(rv_continuous):
 
     """
     def _argcheck(self, h, k):
-        return h == h
+        shape = np.broadcast_arrays(h, k)[0].shape
+        return np.full(shape, fill_value=True)
 
     def _get_support(self, h, k):
         condlist = [np.logical_and(h > 0, k > 0),
@@ -5438,18 +5439,30 @@ class kappa4_gen(rv_continuous):
                            [q, h, k],
                            default=np.nan)
 
-    def _stats(self, h, k):
-        if h >= 0 and k >= 0:
-            maxr = 5
-        elif h < 0 and k >= 0:
-            maxr = int(-1.0/h*k)
-        elif k < 0:
-            maxr = int(-1.0/k)
-        else:
-            maxr = 5
+    def _get_stats_info(self, h, k):
+        condlist = [
+            np.logical_and(h < 0, k >= 0),
+            k < 0,
+        ]
 
-        outputs = [None if r < maxr else np.nan for r in range(1, 5)]
+        def f0(h, k):
+            return (-1.0/h*k).astype(int)
+
+        def f1(h, k):
+            return (-1.0/k).astype(int)
+
+        return _lazyselect(condlist, [f0, f1], [h, k], default=5)
+
+    def _stats(self, h, k):
+        maxr = self._get_stats_info(h, k)
+        outputs = [None if np.any(r < maxr) else np.nan for r in range(1, 5)]
         return outputs[:]
+
+    def _mom1_sc(self, m, *args):
+        maxr = self._get_stats_info(args[0], args[1])
+        if m >= maxr:
+            return np.nan
+        return integrate.quad(self._mom_integ1, 0, 1, args=(m,)+args)[0]
 
 
 kappa4 = kappa4_gen(name='kappa4')
