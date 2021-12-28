@@ -219,7 +219,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     >>> plt.gcf().set_size_inches(6, 6)
     >>> plt.show()
 
-    See also
+    See Also
     --------
     LinearNDInterpolator :
         Piecewise linear interpolant in N dimensions.
