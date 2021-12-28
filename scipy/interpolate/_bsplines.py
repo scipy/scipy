@@ -1405,7 +1405,6 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     Notes
     -----
-
     The number of data points must be larger than the spline degree `k`.
 
     Knots `t` must satisfy the Schoenberg-Whitney conditions,
