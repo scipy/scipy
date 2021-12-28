@@ -21,7 +21,8 @@ def configuration(parent_package='', top_path=None):
                                     blas_ilp64_pre_build_hook,
                                     get_f2py_int64_options,
                                     get_g77_abi_wrappers,
-                                    uses_blas64)
+                                    uses_blas64,
+                                    needs_g77_abi_wrapper)
 
     if uses_blas64():
         lapack_opt = get_info('lapack_ilp64_opt', 2)
@@ -65,10 +66,13 @@ def configuration(parent_package='', top_path=None):
 
         src += get_g77_abi_wrappers(lapack_opt)
 
+        cmacros = [('_OPENMP',)]
+        if needs_g77_abi_wrapper(lapack_opt):
+            cmacros += [('SCIPY_USE_G77_CDOTC_WRAP', 1)]
+
         config.add_library(propack_lib,
                            sources=src,
-                           macros=[('_OPENMP',),
-                                   ('SCIPY_USE_G77_CDOTC_WRAP', 1)])
+                           macros=cmacros)
         ext = config.add_extension(f'_{prefix}propack',
                                    sources=f'{prefix}propack.pyf',
                                    libraries=[propack_lib],
