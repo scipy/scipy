@@ -180,10 +180,19 @@ class Bounds:
         iterations. A single value set this property for all components.
         Default is False. Has no effect for equality constraints.
     """
+    def _input_validation(self):
+        try:
+            res = np.broadcast_arrays(self.lb, self.ub, self.keep_feasible)
+            self.lb, self.ub, self.keep_feasible = res
+        except:
+            message = "`lb` and `ub` must have the same shape."
+            raise ValueError(message)
+
     def __init__(self, lb=0, ub=np.inf, keep_feasible=False):
-        self.lb = np.asarray(lb)
-        self.ub = np.asarray(ub)
-        self.keep_feasible = keep_feasible
+        self.lb = np.atleast_1d(lb)
+        self.ub = np.atleast_1d(ub)
+        self.keep_feasible = np.atleast_1d(keep_feasible).astype(bool)
+        self._input_validation()
 
     def __repr__(self):
         start = f"{type(self).__name__}({self.lb!r}, {self.ub!r}"
@@ -244,16 +253,15 @@ class PreparedConstraint:
             raise ValueError("`constraint` of an unknown type is passed.")
 
         m = fun.m
+
         lb = np.asarray(constraint.lb, dtype=float)
         ub = np.asarray(constraint.ub, dtype=float)
-        if lb.ndim == 0:
-            lb = np.resize(lb, m)
-        if ub.ndim == 0:
-            ub = np.resize(ub, m)
-
         keep_feasible = np.asarray(constraint.keep_feasible, dtype=bool)
-        if keep_feasible.ndim == 0:
-            keep_feasible = np.resize(keep_feasible, m)
+
+        lb = np.broadcast_to(lb, m)
+        ub = np.broadcast_to(ub, m)
+        keep_feasible = np.broadcast_to(keep_feasible, m)
+
         if keep_feasible.shape != (m,):
             raise ValueError("`keep_feasible` has a wrong shape.")
 
@@ -301,12 +309,8 @@ def new_bounds_to_old(lb, ub, n):
     If any of the entries in lb/ub are -np.inf/np.inf they are replaced by
     None.
     """
-    lb = np.asarray(lb)
-    ub = np.asarray(ub)
-    if lb.ndim == 0:
-        lb = np.resize(lb, n)
-    if ub.ndim == 0:
-        ub = np.resize(ub, n)
+    lb = np.broadcast_to(lb, n)
+    ub = np.broadcast_to(ub, n)
 
     lb = [float(x) if x > -np.inf else None for x in lb]
     ub = [float(x) if x < np.inf else None for x in ub]
