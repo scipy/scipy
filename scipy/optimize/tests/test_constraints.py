@@ -195,3 +195,9 @@ def test_Bounds_defaults():
     b2 = Bounds(np.asarray(0), np.asarray(np.inf))
     assert b1.lb == b2.lb
     assert b1.ub == b2.ub
+
+
+def test_Bounds_input_validation():
+    message = "`lb` and `ub` must have the same shape"
+    with pytest.raises(ValueError, match=message):
+        Bounds([1, 2], [1, 2, 3])
