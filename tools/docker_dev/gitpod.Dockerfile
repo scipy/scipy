@@ -39,6 +39,7 @@ WORKDIR ${WORKSPACE}
 # Must re-activate conda to ensure the ccache flags are picked up
 RUN git submodule update --init --depth=1 -- scipy/_lib/boost
 RUN git submodule update --init --depth=1 -- scipy/_lib/unuran
+RUN git submodule update --init --depth=1 -- scipy/_lib/highs
 RUN conda activate ${CONDA_ENV} && \
     python setup.py build_ext --inplace && \
     ccache -s
