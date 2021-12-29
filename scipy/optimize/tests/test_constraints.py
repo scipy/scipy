@@ -193,12 +193,12 @@ class TestBounds:
 
     def test_defaults(self):
         b1 = Bounds()
-        b2 = Bounds(np.asarray(0), np.asarray(np.inf))
+        b2 = Bounds(np.asarray(-np.inf), np.asarray(np.inf))
         assert b1.lb == b2.lb
         assert b1.ub == b2.ub
 
     def test_input_validation(self):
-        message = "`lb` and `ub` must have the same shape"
+        message = "`lb`, `ub`, and `keep_feasible` must be broadcastable."
         with pytest.raises(ValueError, match=message):
             Bounds([1, 2], [1, 2, 3])
 
