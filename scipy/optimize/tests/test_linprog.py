@@ -773,6 +773,9 @@ class LinprogCommonTests:
         _assert_unbounded(res)
         # Unboundedness detected in presolve
         if self.options.get('presolve', True) and "highs" not in self.method:
+        # HiGHS detects unboundedness or infeasibility in presolve
+        # It needs an iteration of simplex to be sure of unboundedness
+        # Other solvers report that the problem is unbounded if feasible
             assert_equal(res.nit, 0)
 
     def test_zero_row_1(self):
