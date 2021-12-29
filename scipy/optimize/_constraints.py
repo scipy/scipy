@@ -167,28 +167,28 @@ class Bounds:
     Parameters
     ----------
     lb, ub : array_like, optional
-        Lower and upper bounds on independent variables. Each array must
-        have the same size as x or be a scalar, in which case a bound will be
-        the same for all the variables. Set components of `lb` and `ub` equal
+        Lower and upper bounds on independent variables. `lb`, `ub`, and
+        `keep_feasible` must be the same shape or broadcastable.
+        Set components of `lb` and `ub` equal
         to fix a variable. Use ``np.inf`` with an appropriate sign to disable
         bounds on all or some variables. Note that you can mix constraints of
         different types: interval, one-sided or equality, by setting different
-        components of `lb` and `ub` as necessary. Defaults to lb = 0 and
-        ub = np.inf (non-negativity).
+        components of `lb` and `ub` as necessary. Defaults to ``lb = -np.inf``
+        and ``ub = np.inf`` (no bounds).
     keep_feasible : array_like of bool, optional
         Whether to keep the constraint components feasible throughout
-        iterations. A single value set this property for all components.
+        iterations. Must be broadcastable with `lb` and `ub`.
         Default is False. Has no effect for equality constraints.
     """
     def _input_validation(self):
         try:
             res = np.broadcast_arrays(self.lb, self.ub, self.keep_feasible)
             self.lb, self.ub, self.keep_feasible = res
-        except:
-            message = "`lb` and `ub` must have the same shape."
+        except ValueError:
+            message = "`lb`, `ub`, and `keep_feasible` must be broadcastable."
             raise ValueError(message)
 
-    def __init__(self, lb=0, ub=np.inf, keep_feasible=False):
+    def __init__(self, lb=-np.inf, ub=np.inf, keep_feasible=False):
         self.lb = np.atleast_1d(lb)
         self.ub = np.atleast_1d(ub)
         self.keep_feasible = np.atleast_1d(keep_feasible).astype(bool)
@@ -213,6 +213,10 @@ class Bounds:
         ``sl`` and ``sb`` such that::
 
             lb + sl == x == ub - sb
+
+        When all elements of ``sl`` and ``sb`` are positive, all elements of
+        ``x`` lie within the bounds; a negative element in ``sl`` or ``sb``
+        indicates that the corresponding element of ``x`` is out of bounds.
 
         Parameters
         ----------
