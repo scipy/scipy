@@ -20,6 +20,7 @@ project(
 )
 
 cc = meson.get_compiler('c')
+cpp = meson.get_compiler('cpp')
 # This argument is called -Wno-unused-but-set-variable by GCC, however Clang
 # doesn't recognize that.
 if cc.has_argument('-Wno-unused-but-set-variable')
