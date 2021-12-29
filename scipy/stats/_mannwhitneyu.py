@@ -1,8 +1,8 @@
 import numpy as np
-from dataclasses import make_dataclass
 from collections import namedtuple
 from scipy import special
 from scipy import stats
+from ._axis_nan_policy import _axis_nan_policy_factory
 
 
 def _broadcast_concatenate(x, y, axis):
@@ -178,6 +178,7 @@ def _mwu_choose_method(n1, n2, xy, method):
 MannwhitneyuResult = namedtuple('MannwhitneyuResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(MannwhitneyuResult, n_samples=2)
 def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
                  axis=0, method="auto"):
     r'''Perform the Mann-Whitney U rank test on two independent samples.
@@ -185,7 +186,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     The Mann-Whitney U test is a nonparametric test of the null hypothesis
     that the distribution underlying sample `x` is the same as the
     distribution underlying sample `y`. It is often used as a test of
-    of difference in location between distributions.
+    difference in location between distributions.
 
     Parameters
     ----------
@@ -292,7 +293,7 @@ def mannwhitneyu(x, y, use_continuity=True, alternative="two-sided",
     The null hypothesis is that the distribution of male diagnosis ages is
     the same as the distribution of female diagnosis ages. We decide
     that a confidence level of 95% is required to reject the null hypothesis
-    in favor of the alternative that that the distributions are different.
+    in favor of the alternative that the distributions are different.
     Since the number of samples is very small and there are no ties in the
     data, we can compare the observed test statistic against the *exact*
     distribution of the test statistic under the null hypothesis.

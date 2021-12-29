@@ -24,6 +24,7 @@ Note: This documentation is work in progress.
 
    stats/discrete
    stats/continuous
+   stats/sampling
 
 
 Random variables
@@ -199,6 +200,11 @@ seed an internal ``Generator`` object:
 
 For further info, see `NumPy's documentation
 <https://numpy.org/doc/stable/reference/random/index.html>`__.
+
+To learn more about the random number samplers implemented in SciPy, see
+:ref:`non-uniform random number sampling tutorial
+<non-uniform-random-number-sampling>` and :ref:`quasi monte carlo tutorial
+<quasi-monte-carlo>`
 
 Shifting and scaling
 ^^^^^^^^^^^^^^^^^^^^
@@ -1208,6 +1214,8 @@ because the p-value is very low and the MGC test statistic is relatively high.
 The MGC-map indicates a **strongly nonlinear relationship**. The optimal scale
 in this case is **equivalent to the local scale**, marked by a red spot on the
 map.
+
+.. _quasi-monte-carlo:
 
 Quasi-Monte Carlo
 -----------------

@@ -49,6 +49,16 @@ class TestBinnedStatistic:
 
         assert_allclose(stat1, stat2)
 
+    def test_empty_bins_std(self):
+        # tests that std returns gives nan for empty bins
+        x = self.x
+        u = self.u
+        print(binned_statistic(x, u, 'count', bins=1000))
+        stat1, edges1, bc = binned_statistic(x, u, 'std', bins=1000)
+        stat2, edges2, bc = binned_statistic(x, u, np.std, bins=1000)
+
+        assert_allclose(stat1, stat2)
+
     def test_non_finite_inputs_and_int_bins(self):
         # if either `values` or `sample` contain np.inf or np.nan throw
         # see issue gh-9010 for more
@@ -515,3 +525,18 @@ class TestBinnedStatistic:
         X = np.array([0, 0.42358226], dtype=np.float32)
         stat, _, _ = binned_statistic(X, None, 'count', bins=5)
         assert_allclose(stat, np.array([1, 0, 0, 0, 1], dtype=np.float64))
+
+    def test_gh14332(self):
+        # Test the wrong output when the `sample` is close to bin edge
+        x = []
+        size = 20
+        for i in range(size):
+            x += [1-0.1**i]
+ 
+        bins = np.linspace(0,1,11)
+        sum1, edges1, bc = binned_statistic_dd(x, np.ones(len(x)),
+                                               bins=[bins], statistic='sum')
+        sum2, edges2 = np.histogram(x, bins=bins)
+
+        assert_allclose(sum1, sum2)
+        assert_allclose(edges1[0], edges2)

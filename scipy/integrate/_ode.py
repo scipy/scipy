@@ -87,9 +87,9 @@ import warnings
 
 from numpy import asarray, array, zeros, isscalar, real, imag, vstack
 
-from . import vode as _vode
+from . import _vode
 from . import _dop
-from . import lsoda as _lsoda
+from . import _lsoda
 
 
 _dop_int_dtype = _dop.types.intvar.dtype
@@ -379,7 +379,7 @@ class ode:
         ----------
         name : str
             Name of the integrator.
-        integrator_params
+        **integrator_params
             Additional parameters for the integrator.
         """
         integrator = find_integrator(name)
@@ -672,7 +672,7 @@ class complex_ode(ode):
         ----------
         name : str
             Name of the integrator
-        integrator_params
+        **integrator_params
             Additional parameters for the integrator.
         """
         if name == 'zvode':

@@ -8,6 +8,7 @@ import logging
 import warnings
 from scipy import spatial
 from scipy.optimize import OptimizeResult, minimize
+from ._optimize import _wrap_scalar_function
 from scipy.optimize._shgo_lib.triangulation import Complex
 
 
@@ -457,7 +458,7 @@ class SHGO:
                               " Valid methods: {}").format(', '.join(methods)))
 
         # Initiate class
-        self.func = func
+        _, self.func = _wrap_scalar_function(func, args)
         self.bounds = bounds
         self.args = args
         self.callback = callback
@@ -504,8 +505,7 @@ class SHGO:
 
         # Define local minimization keyword arguments
         # Start with defaults
-        self.minimizer_kwargs = {'args': self.args,
-                                 'method': 'SLSQP',
+        self.minimizer_kwargs = {'method': 'SLSQP',
                                  'bounds': self.bounds,
                                  'options': {},
                                  'callback': self.callback
@@ -1358,7 +1358,7 @@ class SHGO:
                         break  # Breaks the g loop
 
             if eval_f:
-                self.F[i] = self.func(self.C[i, :], *self.args)
+                self.F[i] = self.func(self.C[i, :])
                 self.fn += 1
             elif self.infty_cons_sampl:
                 self.F[i] = np.inf

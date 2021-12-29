@@ -2,17 +2,22 @@ from collections import namedtuple
 from dataclasses import make_dataclass
 import numpy as np
 import warnings
-from itertools import combinations
+from itertools import combinations, permutations, product
 import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
+from ._common import ConfidenceInterval
 from ._continuous_distns import chi2, norm
-from scipy.special import gamma, kv, gammaln
+from scipy.special import gamma, kv, gammaln, comb, factorial
 from . import _wilcoxon_data
+import scipy.stats._bootstrap as _bootstrap
+from scipy._lib._util import check_random_state
 from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
+from ._axis_nan_policy import _broadcast_arrays
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
-           'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp']
+           'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
+           'permutation_test', 'tukey_hsd']
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -427,7 +432,7 @@ def _tau_b(A):
     return tau, p
 
 
-def _somers_d(A):
+def _somers_d(A, alternative='two-sided'):
     """Calculate Somers' D and p-value from contingency table."""
     # See [3] page 1740
 
@@ -444,10 +449,11 @@ def _somers_d(A):
     d = (PA - QA)/(NA2 - Sri2)
 
     S = _a_ij_Aij_Dij2(A) - (PA-QA)**2/NA
-    if S == 0:  # Avoid divide by zero
-        return d, 0
-    Z = (PA - QA)/(4*(S))**0.5
-    p = 2*norm.sf(abs(Z))  # 2-sided p-value
+
+    with np.errstate(divide='ignore'):
+        Z = (PA - QA)/(4*(S))**0.5
+
+    _, p = scipy.stats._stats_py._normtest_finish(Z, alternative)
 
     return d, p
 
@@ -456,7 +462,7 @@ SomersDResult = make_dataclass("SomersDResult",
                                ("statistic", "pvalue", "table"))
 
 
-def somersd(x, y=None):
+def somersd(x, y=None, alternative='two-sided'):
     r"""Calculates Somers' D, an asymmetric measure of ordinal association.
 
     Like Kendall's :math:`\tau`, Somers' :math:`D` is a measure of the
@@ -487,13 +493,19 @@ def somersd(x, y=None):
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         1D array of rankings, treated as the (row) independent variable.
         Alternatively, a 2D contingency table.
-    y: array_like
+    y : array_like, optional
         If `x` is a 1D array of rankings, `y` is a 1D array of rankings of the
         same length, treated as the (column) dependent variable.
         If `x` is 2D, `y` is ignored.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+        * 'two-sided': the rank correlation is nonzero
+        * 'less': the rank correlation is negative (less than zero)
+        * 'greater':  the rank correlation is positive (greater than zero)
 
     Returns
     -------
@@ -503,7 +515,7 @@ def somersd(x, y=None):
             correlation : float
                The Somers' :math:`D` statistic.
             pvalue : float
-               The two-sided p-value for a hypothesis test whose null
+               The p-value for a hypothesis test whose null
                hypothesis is an absence of association, :math:`D=0`.
                See notes for more information.
             table : 2D array
@@ -623,7 +635,7 @@ def somersd(x, y=None):
         table = x
     else:
         raise ValueError("x must be either a 1D or 2D array")
-    d, p = _somers_d(table)
+    d, p = _somers_d(table, alternative)
     return SomersDResult(d, p, table)
 
 
@@ -642,7 +654,7 @@ def _all_partitions(nx, ny):
         y = z[mask]
         yield x, y
 
-        
+
 def _compute_log_combinations(n):
     """Compute all log combination of C(n, k)."""
     gammaln_arr = gammaln(np.arange(n + 1) + 1)
@@ -988,8 +1000,8 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
       with `alternative` = "two-sided" (default one)
 
-    Boschloo's exact test uses the p-value of Fisher's exact test as a 
-    statistic, and Boschloo's p-value is the probability under the null 
+    Boschloo's exact test uses the p-value of Fisher's exact test as a
+    statistic, and Boschloo's p-value is the probability under the null
     hypothesis of observing such an extreme value of this statistic.
 
     Boschloo's and Barnard's are both more powerful than Fisher's exact
@@ -1397,3 +1409,978 @@ def cramervonmises_2samp(x, y, method='auto'):
             p = max(0, 1. - _cdf_cvm_inf(tn))
 
     return CramerVonMisesResult(statistic=t, pvalue=p)
+
+
+attributes = ('statistic', 'pvalue', 'null_distribution')
+PermutationTestResult = make_dataclass('PermutationTestResult', attributes)
+
+
+def _all_partitions_concatenated(ns):
+    """
+    Generate all partitions of indices of groups of given sizes, concatenated
+
+    `ns` is an iterable of ints.
+    """
+    def all_partitions(z, n):
+        for c in combinations(z, n):
+            x0 = set(c)
+            x1 = z - x0
+            yield [x0, x1]
+
+    def all_partitions_n(z, ns):
+        if len(ns) == 0:
+            yield [z]
+            return
+        for c in all_partitions(z, ns[0]):
+            for d in all_partitions_n(c[1], ns[1:]):
+                yield c[0:1] + d
+
+    z = set(range(np.sum(ns)))
+    for partitioning in all_partitions_n(z, ns[:]):
+        x = np.concatenate([list(partition)
+                            for partition in partitioning]).astype(int)
+        yield x
+
+
+def _batch_generator(iterable, batch):
+    """A generator that yields batches of elements from an iterable"""
+    iterator = iter(iterable)
+    if batch <= 0:
+        raise ValueError("`batch` must be positive.")
+    while True:
+        z = []
+        try:
+            # get elements from iterator `batch` at a time
+            for i in range(batch):
+                z.append(next(iterator))
+            yield z
+        except StopIteration:
+            # when there are no more elements, yield the final batch and stop
+            if z:
+                yield z
+            break
+
+
+def _calculate_null_both(data, statistic, n_permutations, batch,
+                         random_state=None):
+    """
+    Calculate null distribution for independent sample tests.
+    """
+    n_samples = len(data)
+
+    # compute number of permutations
+    # (distinct partitions of data into samples of these sizes)
+    n_obs_i = [sample.shape[-1] for sample in data]  # observations per sample
+    n_obs_ic = np.cumsum(n_obs_i)
+    n_obs = n_obs_ic[-1]  # total number of observations
+    n_max = np.prod([comb(n_obs_ic[i], n_obs_ic[i-1])
+                     for i in range(n_samples-1, 0, -1)])
+
+    # perm_generator is an iterator that produces permutations of indices
+    # from 0 to n_obs. We'll concatenate the samples, use these indices to
+    # permute the data, then split the samples apart again.
+    if n_permutations >= n_max:
+        exact_test = True
+        n_permutations = n_max
+        perm_generator = _all_partitions_concatenated(n_obs_i)
+    else:
+        exact_test = False
+        # Neither RandomState.permutation nor Generator.permutation
+        # can permute axis-slices independently. If this feature is
+        # added in the future, batches of the desired size should be
+        # generated in a single call.
+        perm_generator = (random_state.permutation(n_obs)
+                          for i in range(n_permutations))
+
+    batch = batch or int(n_permutations)
+    null_distribution = []
+
+    # First, concatenate all the samples. In batches, permute samples with
+    # indices produced by the `perm_generator`, split them into new samples of
+    # the original sizes, compute the statistic for each batch, and add these
+    # statistic values to the null distribution.
+    data = np.concatenate(data, axis=-1)
+    for indices in _batch_generator(perm_generator, batch=batch):
+        indices = np.array(indices)
+
+        # `indices` is 2D: each row is a permutation of the indices.
+        # We use it to index `data` along its last axis, which corresponds
+        # with observations.
+        # After indexing, the second to last axis of `data_batch` corresponds
+        # with permutations, and the last axis corresponds with observations.
+        data_batch = data[..., indices]
+
+        # Move the permutation axis to the front: we'll concatenate a list
+        # of batched statistic values along this zeroth axis to form the
+        # null distribution.
+        data_batch = np.moveaxis(data_batch, -2, 0)
+        data_batch = np.split(data_batch, n_obs_ic[:-1], axis=-1)
+        null_distribution.append(statistic(*data_batch, axis=-1))
+    null_distribution = np.concatenate(null_distribution, axis=0)
+
+    return null_distribution, n_permutations, exact_test
+
+
+def _calculate_null_pairings(data, statistic, n_permutations, batch,
+                             random_state=None):
+    """
+    Calculate null distribution for association tests.
+    """
+    n_samples = len(data)
+
+    # compute number of permutations (factorial(n) permutations of each sample)
+    n_obs_sample = data[0].shape[-1]  # observations per sample; same for each
+    n_max = factorial(n_obs_sample)**n_samples
+
+    # `perm_generator` is an iterator that produces a list of permutations of
+    # indices from 0 to n_obs_sample, one for each sample.
+    if n_permutations >= n_max:
+        exact_test = True
+        n_permutations = n_max
+        # cartesian product of the sets of all permutations of indices
+        perm_generator = product(*(permutations(range(n_obs_sample))
+                                   for i in range(n_samples)))
+    else:
+        exact_test = False
+        # Separate random permutations of indices for each sample.
+        # Again, it would be nice if RandomState/Generator.permutation
+        # could permute each axis-slice separately.
+        perm_generator = ([random_state.permutation(n_obs_sample)
+                           for i in range(n_samples)]
+                          for j in range(n_permutations))
+
+    batch = batch or int(n_permutations)
+    null_distribution = []
+
+    for indices in _batch_generator(perm_generator, batch=batch):
+        indices = np.array(indices)
+
+        # `indices` is 3D: the zeroth axis is for permutations, the next is
+        # for samples, and the last is for observations. Swap the first two
+        # to make the zeroth axis correspond with samples, as it does for
+        # `data`.
+        indices = np.swapaxes(indices, 0, 1)
+
+        # When we're done, `data_batch` will be a list of length `n_samples`.
+        # Each element will be a batch of random permutations of one sample.
+        # The zeroth axis of each batch will correspond with permutations,
+        # and the last will correspond with observations. (This makes it
+        # easy to pass into `statistic`.)
+        data_batch = [None]*n_samples
+        for i in range(n_samples):
+            data_batch[i] = data[i][..., indices[i]]
+            data_batch[i] = np.moveaxis(data_batch[i], -2, 0)
+
+        null_distribution.append(statistic(*data_batch, axis=-1))
+    null_distribution = np.concatenate(null_distribution, axis=0)
+
+    return null_distribution, n_permutations, exact_test
+
+
+def _calculate_null_samples(data, statistic, n_permutations, batch,
+                            random_state=None):
+    """
+    Calculate null distribution for paired-sample tests.
+    """
+    n_samples = len(data)
+
+    # By convention, the meaning of the "samples" permutations type for
+    # data with only one sample is to flip the sign of the observations.
+    # Achieve this by adding a second sample - the negative of the original.
+    if n_samples == 1:
+        data = [data[0], -data[0]]
+
+    # The "samples" permutation strategy is the same as the "pairings"
+    # strategy except the roles of samples and observations are flipped.
+    # So swap these axes, then we'll use the function for the "pairings"
+    # strategy to do all the work!
+    data = np.swapaxes(data, 0, -1)
+
+    # (Of course, the user's statistic doesn't know what we've done here,
+    # so we need to pass it what it's expecting.)
+    def statistic_wrapped(*data, axis):
+        data = np.swapaxes(data, 0, -1)
+        if n_samples == 1:
+            data = data[0:1]
+        return statistic(*data, axis=axis)
+
+    return _calculate_null_pairings(data, statistic_wrapped, n_permutations,
+                                    batch, random_state)
+
+
+def _permutation_test_iv(data, statistic, permutation_type, vectorized,
+                         n_resamples, batch, alternative, axis, random_state):
+    """Input validation for `permutation_test`."""
+
+    axis_int = int(axis)
+    if axis != axis_int:
+        raise ValueError("`axis` must be an integer.")
+
+    permutation_types = {'samples', 'pairings', 'independent'}
+    permutation_type = permutation_type.lower()
+    if permutation_type not in permutation_types:
+        raise ValueError(f"`permutation_type` must be in {permutation_types}.")
+
+    if vectorized not in {True, False}:
+        raise ValueError("`vectorized` must be `True` or `False`.")
+
+    if not vectorized:
+        statistic = _bootstrap._vectorize_statistic(statistic)
+
+    message = "`data` must be a tuple containing at least two samples"
+    try:
+        if len(data) < 2 and permutation_type == 'independent':
+            raise ValueError(message)
+    except TypeError:
+        raise TypeError(message)
+
+    data = _broadcast_arrays(data, axis)
+    data_iv = []
+    for sample in data:
+        sample = np.atleast_1d(sample)
+        if sample.shape[axis] <= 1:
+            raise ValueError("each sample in `data` must contain two or more "
+                             "observations along `axis`.")
+        sample = np.moveaxis(sample, axis_int, -1)
+        data_iv.append(sample)
+
+    n_resamples_int = (int(n_resamples) if not np.isinf(n_resamples)
+                       else np.inf)
+    if n_resamples != n_resamples_int or n_resamples_int <= 0:
+        raise ValueError("`n_resamples` must be a positive integer.")
+
+    if batch is None:
+        batch_iv = batch
+    else:
+        batch_iv = int(batch)
+        if batch != batch_iv or batch_iv <= 0:
+            raise ValueError("`batch` must be a positive integer or None.")
+
+    alternatives = {'two-sided', 'greater', 'less'}
+    alternative = alternative.lower()
+    if alternative not in alternatives:
+        raise ValueError(f"`alternative` must be in {alternatives}")
+
+    random_state = check_random_state(random_state)
+
+    return (data_iv, statistic, permutation_type, vectorized, n_resamples_int,
+            batch_iv, alternative, axis_int, random_state)
+
+
+def permutation_test(data, statistic, *, permutation_type='independent',
+                     vectorized=False, n_resamples=9999, batch=None,
+                     alternative="two-sided", axis=0, random_state=None):
+    r"""
+    Performs a permutation test of a given statistic on provided data.
+
+    For independent sample statistics, the null hypothesis is that the data are
+    randomly sampled from the same distribution.
+    For paired sample statistics, two null hypothesis can be tested:
+    that the data are paired at random or that the data are assigned to samples
+    at random.
+
+    Parameters
+    ----------
+    data : iterable of array-like
+        Contains the samples, each of which is an array of observations.
+        Dimensions of sample arrays must be compatible for broadcasting except
+        along `axis`.
+    statistic : callable
+        Statistic for which the p-value of the hypothesis test is to be
+        calculated. `statistic` must be a callable that accepts samples
+        as separate arguments (e.g. ``statistic(*data)``) and returns the
+        resulting statistic.
+        If `vectorized` is set ``True``, `statistic` must also accept a keyword
+        argument `axis` and be vectorized to compute the statistic along the
+        provided `axis` of the sample arrays.
+    permutation_type : {'independent', 'samples', 'pairings'}, optional
+        The type of permutations to be performed, in accordance with the
+        null hypothesis. The first two permutation types are for paired sample
+        statistics, in which all samples contain the same number of
+        observations and observations with corresponding indices along `axis`
+        are considered to be paired; the third is for independent sample
+        statistics.
+
+        - ``'samples'`` : observations are assigned to different samples
+          but remain paired with the same observations from other samples.
+          This permutation type is appropriate for paired sample hypothesis
+          tests such as the Wilcoxon signed-rank test and the paired t-test.
+        - ``'pairings'`` : observations are paired with different observations,
+          but they remain within the same sample. This permutation type is
+          appropriate for association/correlation tests with statistics such
+          as Spearman's :math:`\rho`, Kendall's :math:`\tau`, and Pearson's
+          :math:`r`.
+        - ``'independent'`` (default) : observations are assigned to different
+          samples. Samples may contain different numbers of observations. This
+          permutation type is appropriate for independent sample hypothesis
+          tests such as the Mann-Whitney :math:`U` test and the independent
+          sample t-test.
+
+          Please see the Notes section below for more detailed descriptions
+          of the permutation types.
+
+    vectorized : bool, default: ``False``
+        By default, `statistic` is assumed to calculate the statistic only for
+        1D arrays contained in `data`. If `vectorized` is set ``True``,
+        `statistic` must also accept a keyword argument `axis` and be
+        vectorized to compute the statistic along the provided `axis` of the ND
+        arrays in `data`. Use of a vectorized statistic can reduce computation
+        time.
+    n_resamples : int or np.inf, default: 9999
+        Number of random permutations (resamples) used to approximate the null
+        distribution. If greater than or equal to the number of distinct
+        permutations, the exact null distribution will be computed.
+        Note that the number of distinct permutations grows very rapidly with
+        the sizes of samples, so exact tests are feasible only for very small
+        data sets.
+    batch : int, optional
+        The number of permutations to process in each call to `statistic`.
+        Memory usage is O(`batch`*``n``), where ``n`` is the total size
+        of all samples, regardless of the value of `vectorized`. Default is
+        ``None``, in which case ``batch`` is the number of permutations.
+    alternative : {'two-sided', 'less', 'greater'}, optional
+        The alternative hypothesis for which the p-value is calculated.
+        For each alternative, the p-value is defined for exact tests as
+        follows.
+
+        - ``'greater'`` : the percentage of the null distribution that is
+          greater than or equal to the observed value of the test statistic.
+        - ``'less'`` : the percentage of the null distribution that is
+          less than or equal to the observed value of the test statistic.
+        - ``'two-sided'`` (default) : twice the smaller of the p-values above.
+
+        Note that p-values for randomized tests are calculated according to the
+        conservative (over-estimated) approximation suggested in [2]_ and [3]_
+        rather than the unbiased estimator suggested in [4]_. That is, when
+        calculating the proportion of the randomized null distribution that is
+        as extreme as the observed value of the test statistic, the values in
+        the numerator and denominator are both increased by one. An
+        interpretation of this adjustment is that the observed value of the
+        test statistic is always included as an element of the randomized
+        null distribution.
+        The convention used for two-sided p-values is not universal;
+        the observed test statistic and null distribution are returned in
+        case a different definition is preferred.
+
+    axis : int, default: 0
+        The axis of the (broadcasted) samples over which to calculate the
+        statistic. If samples have a different number of dimensions,
+        singleton dimensions are prepended to samples with fewer dimensions
+        before `axis` is considered.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        Pseudorandom number generator state used to generate permutations.
+
+        If `random_state` is ``None`` (default), the
+        `numpy.random.RandomState` singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance then that instance is used.
+
+    Returns
+    -------
+    statistic : float or ndarray
+        The observed test statistic of the data.
+    pvalue : float or ndarray
+        The p-value for the given alternative.
+    null_distribution : ndarray
+        The values of the test statistic generated under the null hypothesis.
+
+    Notes
+    -----
+
+    The three types of permutation tests supported by this function are
+    described below.
+
+    **Unpaired statistics** (``permutation_type='independent'``):
+
+    The null hypothesis associated with this permutation type is that all
+    observations are sampled from the same underlying distribution and that
+    they have been assigned to one of the samples at random.
+
+    Suppose ``data`` contains two samples; e.g. ``a, b = data``.
+    When ``1 < n_resamples < binom(n, k)``, where
+
+    * ``k`` is the number of observations in ``a``,
+    * ``n`` is the total number of observations in ``a`` and ``b``, and
+    * ``binom(n, k)`` is the binomial coefficient (``n`` choose ``k``),
+
+    the data are pooled (concatenated), randomly assigned to either the first
+    or second sample, and the statistic is calculated. This process is
+    performed repeatedly, `permutation` times, generating a distribution of the
+    statistic under the null hypothesis. The statistic of the original
+    data is compared to this distribution to determine the p-value.
+
+    When ``n_resamples >= binom(n, k)``, an exact test is performed: the data
+    are *partitioned* between the samples in each distinct way exactly once,
+    and the exact null distribution is formed.
+    Note that for a given partitioning of the data between the samples,
+    only one ordering/permutation of the data *within* each sample is
+    considered. For statistics that do not depend on the order of the data
+    within samples, this dramatically reduces computational cost without
+    affecting the shape of the null distribution (because the frequency/count
+    of each value is affected by the same factor).
+
+    For ``a = [a1, a2, a3, a4]`` and ``b = [b1, b2, b3]``, an example of this
+    permutation type is ``x = [b3, a1, a2, b2]`` and ``y = [a4, b1, a3]``.
+    Because only one ordering/permutation of the data *within* each sample
+    is considered in an exact test, a resampling like ``x = [b3, a1, b2, a2]``
+    and ``y = [a4, a3, b1]`` would *not* be considered distinct from the
+    example above.
+
+    ``permutation_type='independent'`` does not support one-sample statistics,
+    but it can be applied to statistics with more than two samples. In this
+    case, if ``n`` is an array of the number of observations within each
+    sample, the number of distinct partitions is::
+
+        np.product([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
+
+    **Paired statistics, permute pairings** (``permutation_type='pairings'``):
+
+    The null hypothesis associated with this permutation type is that
+    observations within each sample are drawn from the same underlying
+    distribution and that pairings with elements of other samples are
+    assigned at random.
+
+    Suppose ``data`` contains only one sample; e.g. ``a, = data``, and we
+    wish to consider all possible pairings of elements of ``a`` with elements
+    of a second sample, ``b``. Let ``n`` be the number of observations in
+    ``a``, which must also equal the number of observations in ``b``.
+
+    When ``1 < n_resamples < factorial(n)``, the elements of ``a`` are
+    randomly permuted. The user-supplied statistic accepts one data argument,
+    say ``a_perm``, and calculates the statistic considering ``a_perm`` and
+    ``b``. This process is performed repeatedly, `permutation` times,
+    generating a distribution of the statistic under the null hypothesis.
+    The statistic of the original data is compared to this distribution to
+    determine the p-value.
+
+    When ``n_resamples >= factorial(n)``, an exact test is performed:
+    ``a`` is permuted in each distinct way exactly once. Therefore, the
+    `statistic` is computed for each unique pairing of samples between ``a``
+    and ``b`` exactly once.
+
+    For ``a = [a1, a2, a3]`` and ``b = [b1, b2, b3]``, an example of this
+    permutation type is ``a_perm = [a3, a1, a2]`` while ``b`` is left
+    in its original order.
+
+    ``permutation_type='pairings'`` supports ``data`` containing any number
+    of samples, each of which must contain the same number of observations.
+    All samples provided in ``data`` are permuted *independently*. Therefore,
+    if ``m`` is the number of samples and ``n`` is the number of observations
+    within each sample, then the number of permutations in an exact test is::
+
+        factorial(n)**m
+
+    Note that if a two-sample statistic, for example, does not inherently
+    depend on the order in which observations are provided - only on the
+    *pairings* of observations - then only one of the two samples should be
+    provided in ``data``. This dramatically reduces computational cost without
+    affecting the shape of the null distribution (because the frequency/count
+    of each value is affected by the same factor).
+
+    **Paired statistics, permute samples** (``permutation_type='samples'``):
+
+    The null hypothesis associated with this permutation type is that
+    observations within each pair are drawn from the same underlying
+    distribution and that the sample to which they are assigned is random.
+
+    Suppose ``data`` contains two samples; e.g. ``a, b = data``.
+    Let ``n`` be the number of observations in ``a``, which must also equal
+    the number of observations in ``b``.
+
+    When ``1 < n_resamples < 2**n``, the elements of ``a`` are ``b`` are
+    randomly swapped between samples (maintaining their pairings) and the
+    statistic is calculated. This process is performed repeatedly,
+    `permutation` times,  generating a distribution of the statistic under the
+    null hypothesis. The statistic of the original data is compared to this
+    distribution to determine the p-value.
+
+    When ``n_resamples >= 2**n``, an exact test is performed: the observations
+    are assigned to the two samples in each distinct way (while maintaining
+    pairings) exactly once.
+
+    For ``a = [a1, a2, a3]`` and ``b = [b1, b2, b3]``, an example of this
+    permutation type is ``x = [b1, a2, b3]`` and ``y = [a1, b2, a3]``.
+
+    ``permutation_type='samples'`` supports ``data`` containing any number
+    of samples, each of which must contain the same number of observations.
+    If ``data`` contains more than one sample, paired observations within
+    ``data`` are exchanged between samples *independently*. Therefore, if ``m``
+    is the number of samples and ``n`` is the number of observations within
+    each sample, then the number of permutations in an exact test is::
+
+        factorial(m)**n
+
+    Several paired-sample statistical tests, such as the Wilcoxon signed rank
+    test and paired-sample t-test, can be performed considering only the
+    *difference* between two paired elements. Accordingly, if ``data`` contains
+    only one sample, then the null distribution is formed by independently
+    changing the *sign* of each observation.
+
+    References
+    ----------
+
+    .. [1] R. A. Fisher. The Design of Experiments, 6th Ed (1951).
+    .. [2] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+       Zero: Calculating Exact P-values When Permutations Are Randomly Drawn."
+       Statistical Applications in Genetics and Molecular Biology 9.1 (2010).
+    .. [3] M. D. Ernst. "Permutation Methods: A Basis for Exact Inference".
+       Statistical Science (2004).
+    .. [4] B. Efron and R. J. Tibshirani. An Introduction to the Bootstrap
+       (1993).
+
+    Examples
+    --------
+
+    Suppose we wish to test whether two samples are drawn from the same
+    distribution. Assume that the underlying distributions are unknown to us,
+    and that before observing the data, we hypothesized that the mean of the
+    first sample would be less than that of the second sample. We decide that
+    we will use the difference between the sample means as a test statistic,
+    and we will consider a p-value of 0.05 to be statistically significant.
+
+    For efficiency, we write the function defining the test statistic in a
+    vectorized fashion: the samples ``x`` and ``y`` can be ND arrays, and the
+    statistic will be calculated for each axis-slice along `axis`.
+
+    >>> def statistic(x, y, axis):
+    ...     return np.mean(x, axis=axis) - np.mean(y, axis=axis)
+
+    After collecting our data, we calculate the observed value of the test
+    statistic.
+
+    >>> from scipy.stats import norm
+    >>> rng = np.random.default_rng()
+    >>> x = norm.rvs(size=5, random_state=rng)
+    >>> y = norm.rvs(size=6, loc = 3, random_state=rng)
+    >>> statistic(x, y, 0)
+    -3.5411688580987266
+
+    Indeed, the test statistic is negative, suggesting that the true mean of
+    the distribution underlying ``x`` is less than that of the distribution
+    underlying ``y``. To determine the probability of this occuring by chance
+    if the two samples were drawn from the same distribution, we perform
+    a permutation test.
+
+    >>> from scipy.stats import permutation_test
+    >>> # because our statistic is vectorized, we pass `vectorized=True`
+    >>> # `n_resamples=np.inf` indicates that an exact test is to be performed
+    >>> res = permutation_test((x, y), statistic, vectorized=True,
+    ...                        n_resamples=np.inf, alternative='less')
+    >>> print(res.statistic)
+    -3.5411688580987266
+    >>> print(res.pvalue)
+    0.004329004329004329
+
+    The probability of obtaining a test statistic less than or equal to the
+    observed value under the null hypothesis is 0.4329%. This is less than our
+    chosen threshold of 5%, so we consider this to to be significant evidence
+    against the null hypothesis in favor of the alternative.
+
+    Because the size of the samples above was small, `permutation_test` could
+    perform an exact test. For larger samples, we resort to a randomized
+    permutation test.
+
+    >>> x = norm.rvs(size=100, random_state=rng)
+    >>> y = norm.rvs(size=120, loc=0.3, random_state=rng)
+    >>> res = permutation_test((x, y), statistic, n_resamples=100000,
+    ...                        vectorized=True, alternative='less',
+    ...                        random_state=rng)
+    >>> print(res.statistic)
+    -0.5230459671240913
+    >>> print(res.pvalue)
+    0.00016999830001699983
+
+    The approximate probability of obtaining a test statistic less than or
+    equal to the observed value under the null hypothesis is 0.0225%. This is
+    again less than our chosen threshold of 5%, so again we have significant
+    evidence to reject the null hypothesis in favor of the alternative.
+
+    For large samples and number of permutations, the result is comparable to
+    that of the corresponding asymptotic test, the independent sample t-test.
+
+    >>> from scipy.stats import ttest_ind
+    >>> res_asymptotic = ttest_ind(x, y, alternative='less')
+    >>> print(res_asymptotic.pvalue)
+    0.00012688101537979522
+
+    The permutation distribution of the test statistic is provided for
+    further investigation.
+
+    >>> import matplotlib.pyplot as plt
+    >>> plt.hist(res.null_distribution, bins=50)
+    >>> plt.title("Permutation distribution of test statistic")
+    >>> plt.xlabel("Value of Statistic")
+    >>> plt.ylabel("Frequency")
+
+    """
+    args = _permutation_test_iv(data, statistic, permutation_type, vectorized,
+                                n_resamples, batch, alternative, axis,
+                                random_state)
+    (data, statistic, permutation_type, vectorized, n_resamples, batch,
+     alternative, axis, random_state) = args
+
+    observed = statistic(*data, axis=-1)
+
+    null_calculators = {"pairings": _calculate_null_pairings,
+                        "samples": _calculate_null_samples,
+                        "independent": _calculate_null_both}
+    null_calculator_args = (data, statistic, n_resamples,
+                            batch, random_state)
+    calculate_null = null_calculators[permutation_type]
+    null_distribution, n_resamples, exact_test = (
+        calculate_null(*null_calculator_args))
+
+    # See References [2] and [3]
+    adjustment = 0 if exact_test else 1
+
+    def less(null_distribution, observed):
+        cmps = null_distribution <= observed
+        pvalues = (cmps.sum(axis=0) + adjustment) / (n_resamples + adjustment)
+        return pvalues
+
+    def greater(null_distribution, observed):
+        cmps = null_distribution >= observed
+        pvalues = (cmps.sum(axis=0) + adjustment) / (n_resamples + adjustment)
+        return pvalues
+
+    def two_sided(null_distribution, observed):
+        pvalues_less = less(null_distribution, observed)
+        pvalues_greater = greater(null_distribution, observed)
+        pvalues = np.minimum(pvalues_less, pvalues_greater) * 2
+        return pvalues
+
+    compare = {"less": less,
+               "greater": greater,
+               "two-sided": two_sided}
+
+    pvalues = compare[alternative](null_distribution, observed)
+    pvalues = np.clip(pvalues, 0, 1)
+
+    return PermutationTestResult(observed, pvalues, null_distribution)
+
+
+class TukeyHSDResult:
+    """Result of `scipy.stats.tukey_hsd`.
+
+    Attributes
+    ----------
+    statistic : float ndarray
+        The computed statistic of the test for each comparison. The element
+        at index ``(i, j)`` is the statistic for the comparison between groups
+        ``i`` and ``j``.
+    pvalue : float ndarray
+        The associated p-value from the studentized range distribution. The
+        element at index ``(i, j)`` is the p-value for the comparison
+        between groups ``i`` and ``j``.
+
+    Notes
+    -----
+    The string representation of this object displays the most recently
+    calculated confidence interval, and if none have been previously
+    calculated, it will evaluate ``confidence_interval()``.
+
+    References
+    ----------
+    .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
+           Method."
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+           28 November 2020.
+    """
+
+    def __init__(self, statistic, pvalue, _nobs, _ntreatments, _stand_err):
+        self.statistic = statistic
+        self.pvalue = pvalue
+        self._ntreatments = _ntreatments
+        self._nobs = _nobs
+        self._stand_err = _stand_err
+        self._ci = None
+        self._ci_cl = None
+
+    def __str__(self):
+        # Note: `__str__` prints the confidence intervals from the most
+        # recent call to `confidence_interval`. If it has not been called,
+        # it will be called with the default CL of .95.
+        if self._ci is None:
+            self.confidence_interval(confidence_level=.95)
+        s = ("Tukey's HSD Pairwise Group Comparisons"
+             f" ({self._ci_cl*100:.1f}% Confidence Interval)\n")
+        s += "Comparison  Statistic  p-value  Lower CI  Upper CI\n"
+        for i in range(self.pvalue.shape[0]):
+            for j in range(self.pvalue.shape[0]):
+                if i != j:
+                    s += (f" ({i} - {j}) {self.statistic[i, j]:>10.3f}"
+                          f"{self.pvalue[i, j]:>10.3f}"
+                          f"{self._ci.low[i, j]:>10.3f}"
+                          f"{self._ci.high[i, j]:>10.3f}\n")
+        return s
+
+    def confidence_interval(self, confidence_level=.95):
+        """Compute the confidence interval for the specified confidence level.
+
+        Parameters
+        ----------
+        confidence_level : float, optional
+            Confidence level for the computed confidence interval
+            of the estimated proportion. Default is .95.
+
+        Returns
+        -------
+        ci : ``ConfidenceInterval`` object
+            The object has attributes ``low`` and ``high`` that hold the
+            lower and upper bounds of the confidence intervals for each
+            comparison. The high and low values are accessible for each
+            comparison at index ``(i, j)`` between groups ``i`` and ``j``.
+
+        References
+        ----------
+        .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1.
+               Tukey's Method."
+               https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+               28 November 2020.
+
+        Examples
+        --------
+        >>> from scipy.stats import tukey_hsd
+        >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+        >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+        >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+        >>> result = tukey_hsd(group0, group1, group2)
+        >>> ci = result.confidence_interval()
+        >>> ci.low
+        array([[-3.649159, -8.249159, -3.909159],
+               [ 0.950841, -3.649159,  0.690841],
+               [-3.389159, -7.989159, -3.649159]])
+        >>> ci.high
+        array([[ 3.649159, -0.950841,  3.389159],
+               [ 8.249159,  3.649159,  7.989159],
+               [ 3.909159, -0.690841,  3.649159]])
+        """
+        # check to see if the supplied confidence level matches that of the
+        # previously computed CI.
+        if (self._ci is not None and self._ci_cl is not None and
+                confidence_level == self._ci_cl):
+            return self._ci
+
+        if not 0 < confidence_level < 1:
+            raise ValueError("Confidence level must be between 0 and 1.")
+        # determine the critical value of the studentized range using the
+        # appropriate confidence level, number of treatments, and degrees
+        # of freedom as determined by the number of data less the number of
+        # treatments. ("Confidence limits for Tukey's method")[1]. Note that
+        # in the cases of unequal sample sizes there will be a criterion for
+        # each group comparison.
+        params = (confidence_level, self._nobs, self._ntreatments - self._nobs)
+        srd = distributions.studentized_range.ppf(*params)
+        # also called maximum critical value, the Tukey criterion is the
+        # studentized range critical value * the square root of mean square
+        # error over the sample size.
+        tukey_criterion = srd * self._stand_err
+        # the confidence levels are determined by the
+        # `mean_differences` +- `tukey_criterion`
+        upper_conf = self.statistic + tukey_criterion
+        lower_conf = self.statistic - tukey_criterion
+        self._ci = ConfidenceInterval(low=lower_conf, high=upper_conf)
+        self._ci_cl = confidence_level
+        return self._ci
+
+
+def _tukey_hsd_iv(args):
+    if (len(args)) < 2:
+        raise ValueError("There must be more than 1 treatment.")
+    args = [np.asarray(arg) for arg in args]
+    for arg in args:
+        if arg.ndim != 1:
+            raise ValueError("Input samples must be one-dimensional.")
+        if arg.size <= 1:
+            raise ValueError("Input sample size must be greater than one.")
+        if np.isinf(arg).any():
+            raise ValueError("Input samples must be finite.")
+    return args
+
+
+def tukey_hsd(*args):
+    """Perform Tukey's HSD test for equality of means over multiple treatments.
+
+    Tukey's honestly significant difference (HSD) test performs pairwise
+    comparison of means for a set of samples. Whereas ANOVA (e.g. `f_oneway`)
+    assesses whether the true means underlying each sample are identical,
+    Tukey's HSD is a post hoc test used to compare the mean of each sample
+    to the mean of each other sample.
+
+    The null hypothesis is that the distributions underlying the samples all
+    have the same mean. The test statistic, which is computed for every
+    possible pairing of samples, is simply the difference between the sample
+    means. For each pair, the p-value is the probability under the null
+    hypothesis (and other assumptions; see notes) of observing such an extreme
+    value of the statistic, considering that many pairwise comparisons are
+    being performed. Confidence intervals for the difference between each pair
+    of means are also available.
+
+    Parameters
+    ----------
+    sample1, sample2, ... : array_like
+        The sample measurements for each group. There must be at least
+        two arguments.
+
+    Returns
+    -------
+    result : `~scipy.stats._result_classes.TukeyHSDResult` instance
+        The return value is an object with the following attributes:
+
+        statistic : float ndarray
+            The computed statistic of the test for each comparison. The element
+            at index ``(i, j)`` is the statistic for the comparison between
+            groups ``i`` and ``j``.
+        pvalue : float ndarray
+            The computed p-value of the test for each comparison. The element
+            at index ``(i, j)`` is the p-value for the comparison between
+            groups ``i`` and ``j``.
+
+        The object has the following methods:
+
+        confidence_interval(confidence_level=0.95):
+            Compute the confidence interval for the specified confidence level.
+
+    Notes
+    -----
+    The use of this test relies on several assumptions.
+
+    1. The observations are independent within and among groups.
+    2. The observations within each group are normally distributed.
+    3. The distributions from which the samples are drawn have the same finite
+       variance.
+
+    The original formulation of the test was for samples of equal size [6]_.
+    In case of unequal sample sizes, the test uses the Tukey-Kramer method
+    [4]_.
+
+    References
+    ----------
+    .. [1] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.7.1. Tukey's
+           Method."
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc471.htm,
+           28 November 2020.
+    .. [2] Abdi, Herve & Williams, Lynne. (2021). "Tukey's Honestly Significant
+           Difference (HSD) Test."
+           https://personal.utdallas.edu/~herve/abdi-HSD2010-pretty.pdf
+    .. [3] "One-Way ANOVA Using SAS PROC ANOVA & PROC GLM." SAS
+           Tutorials, 2007, www.stattutorials.com/SAS/TUTORIAL-PROC-GLM.htm.
+    .. [4] Kramer, Clyde Young. "Extension of Multiple Range Tests to Group
+           Means with Unequal Numbers of Replications." Biometrics, vol. 12,
+           no. 3, 1956, pp. 307-310. JSTOR, www.jstor.org/stable/3001469.
+           Accessed 25 May 2021.
+    .. [5] NIST/SEMATECH e-Handbook of Statistical Methods, "7.4.3.3.
+           The ANOVA table and tests of hypotheses about means"
+           https://www.itl.nist.gov/div898/handbook/prc/section4/prc433.htm,
+           2 June 2021.
+    .. [6] Tukey, John W. "Comparing Individual Means in the Analysis of
+           Variance." Biometrics, vol. 5, no. 2, 1949, pp. 99-114. JSTOR,
+           www.jstor.org/stable/3001913. Accessed 14 June 2021.
+
+
+    Examples
+    --------
+    Here are some data comparing the time to relief of three brands of
+    headache medicine, reported in minutes. Data adapted from [3]_.
+
+    >>> from scipy.stats import tukey_hsd
+    >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+    >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+    >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+
+    We would like to see if the means between any of the groups are
+    significantly different. First, visually examine a box and whisker plot.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.boxplot([group0, group1, group2])
+    >>> ax.set_xticklabels(["group0", "group1", "group2"]) # doctest: +SKIP
+    >>> ax.set_ylabel("mean") # doctest: +SKIP
+    >>> plt.show()
+
+    From the box and whisker plot, we can see overlap in the interquartile
+    ranges group 1 to group 2 and group 3, but we can apply the ``tukey_hsd``
+    test to determine if the difference between means is significant. We
+    set a significance level of .05 to reject the null hypothesis.
+
+    >>> res = tukey_hsd(group0, group1, group2)
+    >>> print(res)
+    Tukey's HSD Pairwise Group Comparisons (95.0% Confidence Interval)
+    Comparison  Statistic  p-value   Lower CI   Upper CI
+    (0 - 1)     -4.600      0.014     -8.249     -0.951
+    (0 - 2)     -0.260      0.980     -3.909      3.389
+    (1 - 0)      4.600      0.014      0.951      8.249
+    (1 - 2)      4.340      0.020      0.691      7.989
+    (2 - 0)      0.260      0.980     -3.389      3.909
+    (2 - 1)     -4.340      0.020     -7.989     -0.691
+
+    The null hypothesis is that each group has the same mean. The p-value for
+    comparisons between ``group0`` and ``group1`` as well as ``group1`` and
+    ``group2`` do not exceed .05, so we reject the null hypothesis that they
+    have the same means. The p-value of the comparison between ``group0``
+    and ``group2`` exceeds .05, so we accept the null hypothesis that there
+    is not a significant difference between their means.
+
+    We can also compute the confidence interval associated with our chosen
+    confidence level.
+
+    >>> group0 = [24.5, 23.5, 26.4, 27.1, 29.9]
+    >>> group1 = [28.4, 34.2, 29.5, 32.2, 30.1]
+    >>> group2 = [26.1, 28.3, 24.3, 26.2, 27.8]
+    >>> result = tukey_hsd(group0, group1, group2)
+    >>> conf = res.confidence_interval(confidence_level=.99)
+    >>> for ((i, j), l) in np.ndenumerate(conf.low):
+    ...     # filter out self comparisons
+    ...     if i != j:
+    ...         h = conf.high[i,j]
+    ...         print(f"({i} - {j}) {l:>6.3f} {h:>6.3f}")
+    (0 - 1) -9.480  0.280
+    (0 - 2) -5.140  4.620
+    (1 - 0) -0.280  9.480
+    (1 - 2) -0.540  9.220
+    (2 - 0) -4.620  5.140
+    (2 - 1) -9.220  0.540
+    """
+    args = _tukey_hsd_iv(args)
+    ntreatments = len(args)
+    means = np.asarray([np.mean(arg) for arg in args])
+    nsamples_treatments = np.asarray([a.size for a in args])
+    nobs = np.sum(nsamples_treatments)
+
+    # determine mean square error [5]. Note that this is sometimes called
+    # mean square error within.
+    mse = (np.sum([np.var(arg, ddof=1) for arg in args] *
+                  (nsamples_treatments - 1)) / (nobs - ntreatments))
+
+    # The calculation of the standard error differs when treatments differ in
+    # size. See ("Unequal sample sizes")[1].
+    if np.unique(nsamples_treatments).size == 1:
+        # all input groups are the same length, so only one value needs to be
+        # calculated [1].
+        normalize = 2 / nsamples_treatments[0]
+    else:
+        # to compare groups of differing sizes, we must compute a variance
+        # value for each individual comparison. Use broadcasting to get the
+        # resulting matrix. [3], verified against [4] (page 308).
+        normalize = 1 / nsamples_treatments + 1 / nsamples_treatments[None].T
+
+    # the standard error is used in the computation of the tukey criterion and
+    # finding the p-values.
+    stand_err = np.sqrt(normalize * mse / 2)
+
+    # the mean difference is the test statistic.
+    mean_differences = means[None].T - means
+
+    # Calculate the t-statistic to use within the survival function of the
+    # studentized range to get the p-value.
+    t_stat = np.abs(mean_differences) / stand_err
+
+    params = t_stat, ntreatments, nobs - ntreatments
+    pvalues = distributions.studentized_range.sf(*params)
+
+    return TukeyHSDResult(mean_differences, pvalues, ntreatments,
+                          nobs, stand_err)

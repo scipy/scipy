@@ -72,8 +72,8 @@ def configuration(parent_package='', top_path=None):
                                **lapack)
     ext._pre_build_hook = pre_build_hook
 
-    sources = ['moduleTNC.c', 'tnc.c']
-    config.add_extension('moduleTNC',
+    sources = ['_moduleTNC.c', 'tnc.c']
+    config.add_extension('_moduleTNC',
                          sources=[join('tnc', x) for x in sources],
                          depends=[join('tnc', 'tnc.h')],
                          **numpy_nodepr_api)
@@ -84,7 +84,7 @@ def configuration(parent_package='', top_path=None):
                          **numpy_nodepr_api)
 
     sources = ['minpack2.pyf', 'dcsrch.f', 'dcstep.f']
-    config.add_extension('minpack2',
+    config.add_extension('_minpack2',
                          sources=[join('minpack2', x) for x in sources],
                          **numpy_nodepr_api)
 
