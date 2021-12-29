@@ -241,18 +241,18 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                     `bounds`.
 
             mip_node_count : int
-                Only present when `integrality` is not `None`. The number of
-                subproblems or "nodes" solved by the MILP solver.
+                The number of subproblems or "nodes" solved by the MILP
+                solver. Only present when `integrality` is not `None`.
 
             mip_dual_bound : float
-                Only present when `integrality` is not `None`. The MILP
-                solver's final estimate of the lower bound on the optimal
-                solution.
+                The MILP solver's final estimate of the lower bound on the
+                optimal solution. Only present when `integrality` is not
+                `None`.
 
             mip_gap : float
-                Only present when `integrality` is not `None`. The difference
-                between the final objective function value and the final dual
-                bound.
+                The difference between the final objective function value
+                and the final dual bound. Only present when `integrality`
+                is not `None`.
 
     Notes
     -----
