@@ -7,6 +7,7 @@ def plot_voxels(varray, ax, title):
     ax.voxels(varray, edgecolor="k")
     ax.set_title(title, fontsize=30)
 
+
 fig = plt.figure(figsize=(16, 9))
 
 for i in [1,2,3]:
