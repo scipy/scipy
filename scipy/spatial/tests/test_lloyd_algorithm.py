@@ -2,7 +2,7 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose
 
-from scipy.spatial.distance import cdist
+from scipy.spatial.distance import pdist
 from scipy.spatial import lloyd_centroidal_voronoi_tessellation
 from scipy.spatial._lloyd_algorithm import _l1_norm
 
@@ -10,8 +10,7 @@ from scipy.spatial._lloyd_algorithm import _l1_norm
 def test_lloyd():
     # mindist
     def l2_norm(points):
-        l2 = cdist(points, points)
-        return np.min(l2[l2.nonzero()])
+        return pdist(points).min()
 
     # quite sensible seed as it can go up before going further down
     rng = np.random.RandomState(1809831)

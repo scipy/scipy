@@ -172,7 +172,7 @@ def scale(
 
     if not reverse:
         # Checking that sample is within the hypercube
-        if not ((sample.max() <= 1.) and (sample.min() >= 0.)):
+        if not (np.all(sample >= 0) and np.all(sample <= 1)):
             raise ValueError('Sample is not in unit hypercube')
 
         return sample * (upper - lower) + lower
@@ -302,7 +302,7 @@ def discrepancy(
     if not sample.ndim == 2:
         raise ValueError("Sample is not a 2D array")
 
-    if not ((sample.max() <= 1.) and (sample.min() >= 0.)):
+    if not (np.all(sample >= 0) and np.all(sample <= 1)):
         raise ValueError("Sample is not in unit hypercube")
 
     workers = _validate_workers(workers)
@@ -365,7 +365,7 @@ def update_discrepancy(
     if not sample.ndim == 2:
         raise ValueError('Sample is not a 2D array')
 
-    if not ((sample.max() <= 1.) and (sample.min() >= 0.)):
+    if not (np.all(sample >= 0) and np.all(sample <= 1)):
         raise ValueError('Sample is not in unit hypercube')
 
     # Checking that x_new is within the hypercube and 1D
@@ -382,7 +382,7 @@ def update_discrepancy(
 
 
 def _perturb_discrepancy(sample: np.ndarray, i1: int, i2: int, k: int,
-                         disc: float) -> float:
+                         disc: float):
     """Centered discrepancy after an elementary perturbation of a LHS.
 
     An elementary perturbation consists of an exchange of coordinates between

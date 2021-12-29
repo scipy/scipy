@@ -20,8 +20,7 @@ __all__ = ['lloyd_centroidal_voronoi_tessellation']
 
 
 def _l1_norm(points: np.ndarray) -> float:
-    l1 = distance.cdist(points, points, 'cityblock')
-    return np.min(l1[l1.nonzero()])
+    return distance.pdist(points, 'cityblock').min()
 
 
 def _lloyd_centroidal_voronoi_tessellation(
@@ -173,6 +172,12 @@ def lloyd_centroidal_voronoi_tessellation(
     >>> rng = np.random.default_rng()
     >>> points = rng.random((128, 2))
 
+    .. note::
+
+        The points need to be in :math:`[0, 1]^d`. `scipy.stats.qmc.scale`
+        can be used to scale the points from their
+        original bounds to :math:`[0, 1]^d`. And back to their original bounds.
+
     Compute the quality of the points using the L1 criterion.
 
     >>> def l1_norm(points):
@@ -219,8 +224,8 @@ def lloyd_centroidal_voronoi_tessellation(
                    ' of length maxiter')
             raise ValueError(msg) from exc
 
+    l1_old = _l1_norm(points=points)
     for i in range(maxiter):
-        l1_old = _l1_norm(points=points)
         points = _lloyd_centroidal_voronoi_tessellation(
                 points=points, decay=decay[i],
                 qhull_options=qhull_options,
@@ -230,5 +235,7 @@ def lloyd_centroidal_voronoi_tessellation(
 
         if abs(l1_new - l1_old) < tol:
             break
+        else:
+            l1_old = l1_new
 
     return points
