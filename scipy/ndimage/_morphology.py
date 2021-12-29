@@ -202,6 +202,11 @@ def generate_binary_structure(rank, connectivity):
             [False,  True, False],
             [False, False, False]]], dtype=bool)
 
+    Further example of a 3D binary_structure:
+
+    .. plot:: tutorial/examples/3D_binary_structure.py
+      :align: center
+      :include-source: 0
     """
     if connectivity < 1:
         connectivity = 1
