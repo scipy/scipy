@@ -2318,38 +2318,54 @@ def test_t_entropy():
 
 @pytest.mark.parametrize("methname", ["pdf", "logpdf", "cdf",
                                       "ppf", "sf", "isf"])
-@pytest.mark.parametrize("df", [np.inf, [[np.inf, 1.], [2., np.inf]]])
-@pytest.mark.parametrize("x", [0.5, [0.5, 0.7]])
-def test_t_inf_df(methname, df, x):
-    t_dist = stats.t(df, loc=3, scale=1)
+def test_t_inf_df(methname):
+    t_dist = stats.t(df=np.inf, loc=3, scale=1)
     norm_dist = stats.norm(loc=3, scale=1)
     t_meth = getattr(t_dist, methname)
     norm_meth = getattr(norm_dist, methname)
+    assert_equal(t_meth(0.5), norm_meth(0.5))
+    # diagonal entries (df[0][0], df[1][1]) infinite.
+    df = [[np.inf, 1.],
+          [2., np.inf]]
+    t_dist = stats.t(df=df, loc=3, scale=1)
+    norm_dist = stats.norm(loc=3, scale=1)
+    t_meth = getattr(t_dist, methname)
+    norm_meth = getattr(norm_dist, methname)
+    res = t_meth([0.5, 0.7])
+    # [0.5, 0.7] broadcasts to: [[0.5, 0.7],  => res[0][0] = norm_meth(0.5)
+    #                            [0.5, 0.7]]  => res[1][1] = norm_meth(0.7)
+    assert_equal(res[0][0], norm_meth(0.5))
+    assert_equal(res[1][1], norm_meth(0.7))
 
-    res = np.diag(t_meth(x)) if np.ndim(df) else t_meth(x)
-    reference = norm_meth(x)
-    assert_equal(res, reference)
 
 def test_t_inf_df_stats_entropy():
     assert_equal(stats.t.stats(df=np.inf, loc=3, scale=1),
                  stats.norm.stats(loc=3, scale=1))
     assert_equal(stats.t.entropy(df=np.inf, loc=3, scale=1),
                  stats.norm.entropy(loc=3, scale=1))
-    t_dist = stats.t(df=[[np.inf, 1.], [2., np.inf]],
-                     loc=3, scale=1)
+    # diagonal entries (df[0][0], df[1][1]) infinite.
+    df = [[np.inf, 1.],
+          [2., np.inf]]
+    t_dist = stats.t(df=df, loc=3, scale=1)
     norm_dist = stats.norm(loc=3, scale=1)
     res_stats = t_dist.stats('mvsk')
     res_entropy = t_dist.entropy()
+    # `res_stats`` is an tuple (mu, mu2, g1, g2). Verify that each of these
+    # moments agree with the norma distribution for res[0][0] and res[1][1].
     assert_equal([res_stats[i][0][0] for i in range(4)],
                  norm_dist.stats('mvsk'))
     assert_equal([res_stats[i][1][1] for i in range(4)],
                  norm_dist.stats('mvsk'))
+    # non-diagonal entries must match the t distribution.
     assert_equal([res_stats[i][0][1] for i in range(4)],
                  stats.t.stats(df=1, loc=3, moments='mvsk'))
     assert_equal([res_stats[i][1][0] for i in range(4)],
                  stats.t.stats(df=2, loc=3, moments='mvsk'))
+    # verify that the diagonal entries of `res_entropy` matches the normal
+    # distribution.
     assert_equal(res_entropy[0][0], norm_dist.entropy())
     assert_equal(res_entropy[1][1], norm_dist.entropy())
+    # non-diagonal entries must match the t distribution.
     assert_equal(res_entropy[0][1], stats.t.entropy(df=1, loc=3))
     assert_equal(res_entropy[1][0], stats.t.entropy(df=2, loc=3))
 
