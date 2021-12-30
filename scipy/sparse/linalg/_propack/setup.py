@@ -59,11 +59,15 @@ def configuration(parent_package='', top_path=None):
         src = list((pathlib.Path(
             __file__).parent / 'PROPACK' / directory).glob('*.F'))
         if _is_32bit():
+            # don't ask me why, 32-bit blows up without second.F
             src = [str(p) for p in src if 'risc' not in str(p)]
         else:
-            src = [str(p) for p in src if 'pentium' not in str(p)]
+            src = [str(p) for p in src
+                   if 'pentium' not in str(p) and 'second' not in str(p)]
 
-        src += get_g77_abi_wrappers(lapack_opt)
+        if not _is_32bit():
+            # don't ask me why, 32-bit blows up with this wrapper
+            src += get_g77_abi_wrappers(lapack_opt)
 
         cmacros = [('_OPENMP',)]
         if needs_g77_abi_wrapper(lapack_opt):
@@ -72,9 +76,7 @@ def configuration(parent_package='', top_path=None):
         config.add_library(propack_lib,
                            sources=src,
                            macros=cmacros,
-                           depends=['setup.py'],
-                           extra_f77_compile_args=['-O0']
-                                                  if _is_32bit() else [])
+                           depends=['setup.py'])
         ext = config.add_extension(f'_{prefix}propack',
                                    sources=f'{prefix}propack.pyf',
                                    libraries=[propack_lib],
