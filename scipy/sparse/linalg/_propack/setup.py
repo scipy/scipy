@@ -34,7 +34,6 @@ def configuration(parent_package='', top_path=None):
         pre_build_hook = gfortran_legacy_flag_hook
         f2py_options = None
 
-    lapack_opt = get_info('lapack_opt')
     if not lapack_opt:
         raise NotFoundError('no lapack/blas resources found')
 
