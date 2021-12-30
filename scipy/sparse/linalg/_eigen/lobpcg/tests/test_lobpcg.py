@@ -13,7 +13,7 @@ import pytest
 
 from numpy import ones, r_, diag
 from scipy.linalg import eig, eigh, toeplitz, orth
-from scipy.sparse import spdiags, diags, eye
+from scipy.sparse import spdiags, diags, eye, csr_matrix
 from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 
@@ -127,11 +127,30 @@ def test_diagonal():
     # and where we choose A to be the diagonal matrix whose entries are 1..n
     # and where B is chosen to be the identity matrix.
     vals = np.arange(1, n+1, dtype=float)
-    A = diags([vals], [0], (n, n))
-    B = eye(n)
+    A_s = diags([vals], [0], (n, n))
+    A_a = A_s.toarray()
+    def A_f(x):
+        return A_s @ x
+    A_lo = LinearOperator(matvec=A_f,
+                          matmat=A_f,
+                          shape=(n, n), dtype=float)
+
+    B_a = eye(n)
+    B_s = csr_matrix(B)
+    def B_f(x):
+        return B_a @ x
+    B_lo = LinearOperator(matvec=B_f,
+                          matmat=B_f,
+                          shape=(n, n), dtype=float)
 
     # Let the preconditioner M be the inverse of A.
-    M = diags([1./vals], [0], (n, n))
+    M_s = diags([1./vals], [0], (n, n))
+    M_a = M_s.toarray()
+    def M_f(x):
+        return M_s @ x
+    M_lo = LinearOperator(matvec=M_f,
+                          matmat=M_f,
+                          shape=(n, n), dtype=float)
 
     # Pick random initial vectors.
     X = rnd.random((n, m))
@@ -141,7 +160,11 @@ def test_diagonal():
     m_excluded = 3
     Y = np.eye(n, m_excluded)
 
-    eigvals, vecs = lobpcg(A, X, B, M=M, Y=Y, tol=1e-4, maxiter=40, largest=False)
+    for A in [A_a, A_s, A_lo]:
+        for B in [B_a, B_s, B_lo]:
+            for M in [M_a, M_s, M_lo]:
+                eigvals, vecs = lobpcg(A, X, B, M=M, Y=Y,
+                                       maxiter=40, largest=False)
 
     assert_allclose(eigvals, np.arange(1+m_excluded, 1+m_excluded+m))
     _check_eigen(A, eigvals, vecs, rtol=1e-3, atol=1e-3)
@@ -386,29 +409,33 @@ def test_diagonal_data_types():
         def Ms64precond(x):
             return Ms64 @ x
         Ms64precondLO = LinearOperator(matvec=Ms64precond,
-                                    matmat=Ms64precond,
-                                    shape=(n, n), dtype=float)
+                                       matmat=Ms64precond,
+                                       shape=(n, n),
+                                       dtype=float)
         Mf64 = Ms64.toarray()
 
         def Mf64precond(x):
             return Mf64 @ x
         Mf64precondLO = LinearOperator(matvec=Mf64precond,
-                                    matmat=Mf64precond,
-                                    shape=(n, n), dtype=float)
+                                       matmat=Mf64precond,
+                                       shape=(n, n),
+                                       dtype=float)
         Ms32 = Ms64.astype(np.float32)
 
         def Ms32precond(x):
             return Ms32 @ x
         Ms32precondLO = LinearOperator(matvec=Ms32precond,
-                                    matmat=Ms32precond,
-                                    shape=(n, n), dtype=np.float32)
+                                       matmat=Ms32precond,
+                                       shape=(n, n),
+                                       dtype=np.float32)
         Mf32 = Ms32.toarray()
 
         def Mf32precond(x):
             return Mf32 @ x
         Mf32precondLO = LinearOperator(matvec=Mf32precond,
-                                    matmat=Mf32precond,
-                                    shape=(n, n), dtype=np.float32)
+                                       matmat=Mf32precond,
+                                       shape=(n, n),
+                                       dtype=np.float32)
         listM = [None, Ms64precondLO, Mf64precondLO,
                  Ms32precondLO, Mf32precondLO]
 
