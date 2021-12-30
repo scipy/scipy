@@ -166,7 +166,7 @@ def test_diagonal(n, m, m_excluded):
 
     # Require that the returned eigenvectors be in the orthogonal complement
     # of the first few standard basis vectors.
-    if m_size > 0:
+    if m_excluded > 0:
         Y = np.eye(n, m_excluded)
     else:
         Y = None
