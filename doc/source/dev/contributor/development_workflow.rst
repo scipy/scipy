@@ -308,7 +308,7 @@ Checklist before submitting a PR
 .. _the wiki: https://github.com/scipy/scipy/wiki
 
 .. |differential_evolution| replace:: ``differential_evolution``
-.. _differential_evolution: https://github.com/scipy/scipy/blob/master/scipy/optimize/_differentialevolution.py
+.. _differential_evolution: https://github.com/scipy/scipy/blob/main/scipy/optimize/_differentialevolution.py
 
 .. |setup.py| replace:: ``setup.py``
-.. _setup.py: https://github.com/scipy/scipy/blob/master/setup.py
+.. _setup.py: https://github.com/scipy/scipy/blob/main/setup.py

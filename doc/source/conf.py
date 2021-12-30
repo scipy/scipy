@@ -501,7 +501,7 @@ def linkcode_resolve(domain, info):
             return "https://github.com/scipy/scipy/blob/%s/%s%s" % (
                 m.group(1), fn, linespec)
         elif 'dev' in scipy.__version__:
-            return "https://github.com/scipy/scipy/blob/master/%s%s" % (
+            return "https://github.com/scipy/scipy/blob/main/%s%s" % (
                 fn, linespec)
         else:
             return "https://github.com/scipy/scipy/blob/v%s/%s%s" % (
