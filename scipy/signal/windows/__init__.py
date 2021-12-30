@@ -30,6 +30,7 @@ The suite of window functions for filtering and spectral estimation.
    hann              -- Hann window
    hanning           -- Hann window
    kaiser            -- Kaiser window
+   kaiser_bessel_derived -- Kaiser-Bessel derived window
    nuttall           -- Nuttall's minimum 4-term Blackman-Harris window
    parzen            -- Parzen window
    taylor            -- Taylor window

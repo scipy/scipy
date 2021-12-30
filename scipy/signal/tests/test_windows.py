@@ -437,6 +437,37 @@ class TestKaiser:
                          0.5985765418119844])
 
 
+class TestKaiserBesselDerived:
+
+    def test_basic(self):
+        M = 100
+        w = windows.kaiser_bessel_derived(M, beta=4.0)
+        w2 = windows.get_window(('kaiser bessel derived', 4.0), M, fftbins=False)
+        assert_allclose(w, w2)
+
+        # Test for Princen-Bradley condition
+        assert_allclose(w[:M // 2] ** 2 + w[-M // 2:] ** 2, 1.)
+
+        assert_allclose(windows.kaiser_bessel_derived(2, beta=np.pi / 2)[:1],
+                        np.sqrt(2) / 2)
+
+        assert_allclose(windows.kaiser_bessel_derived(4, beta=np.pi / 2)[:2],
+                        [0.518562710536, 0.855039598640])
+
+        assert_allclose(windows.kaiser_bessel_derived(6, beta=np.pi / 2)[:3],
+                        [0.436168993154, 0.707106781187, 0.899864772847])
+
+    def test_exceptions(self):
+        M = 100
+        # Assert ValueError for odd window length
+        assert_raises(ValueError, windows.kaiser_bessel_derived,
+                      M + 1, beta=4.)
+
+        # Assert ValueError for non-symmetric setting
+        assert_raises(ValueError, windows.kaiser_bessel_derived,
+                      M, beta=4., sym=False)
+
+
 class TestNuttall:
 
     def test_basic(self):
@@ -711,7 +742,8 @@ def test_windowfunc_basics():
 
 
 def test_needs_params():
-    for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
+    for winstr in ['kaiser', 'ksr', 'kaiser_bessel_derived', 'kbd',
+                   'gaussian', 'gauss', 'gss',
                    'general gaussian', 'general_gaussian',
                    'general gauss', 'general_gauss', 'ggs',
                    'dss', 'dpss', 'general cosine', 'general_cosine',
