@@ -46,6 +46,7 @@ from . import windows
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
-           'hamming', 'kaiser', 'gaussian', 'general_gaussian', 'general_cosine',
-           'general_hamming', 'chebwin', 'cosine', 'hann',
-           'exponential', 'tukey', 'taylor', 'get_window', 'dpss']
+           'hamming', 'kaiser', 'kaiser_bessel_derived', 'gaussian',
+           'general_gaussian', 'general_cosine', 'general_hamming',
+           'chebwin', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',
+           'get_window', 'dpss']
