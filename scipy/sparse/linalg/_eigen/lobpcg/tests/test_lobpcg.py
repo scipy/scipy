@@ -114,13 +114,16 @@ def test_regression():
     w, _ = lobpcg(A, X)
     assert_allclose(w, [1])
 
-
-def test_diagonal():
-    """Check for diagonal matrices.
+@pytest.mark.filterwarnings("ignore:The problem size")
+@pytest.mark.parametrize('n, m, m_excluded', [(100, 4, 3), (4, 2, 0)])
+def test_diagonal(n, m, m_excluded):
+    """Test ``m-m_excluded`` eigenvalues and eigenvectors of
+    diagonal matrices of the size ``n`` varying matrix formats:
+    dense array, spare matrix, ``LinearOperator`` for both
+    matrixes in the generalized eigenvalue problem ``Av = cBv``
+    and for the preconditioner.
     """
     rnd = np.random.RandomState(0)
-    n = 100
-    m = 4
 
     # Define the generalized eigenvalue problem Av = cBv
     # where (c, v) is a generalized eigenpair,
@@ -159,13 +162,14 @@ def test_diagonal():
                           shape=(n, n), dtype=float)
 
     # Pick random initial vectors.
-    rnd = np.random.RandomState(0)
     X = rnd.normal(size=(n, m))
 
     # Require that the returned eigenvectors be in the orthogonal complement
     # of the first few standard basis vectors.
-    m_excluded = 3
-    Y = np.eye(n, m_excluded)
+    if m_size > 0:
+        Y = np.eye(n, m_excluded)
+    else:
+        Y = None
 
     for A in [A_a, A_s, A_lo]:
         for B in [B_a, B_s, B_lo]:
