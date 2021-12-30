@@ -160,7 +160,7 @@ def test_diagonal():
 
     # Pick random initial vectors.
     rnd = np.random.RandomState(0)
-    X = rng.normal(size=(n, m))
+    X = rnd.normal(size=(n, m))
 
     # Require that the returned eigenvectors be in the orthogonal complement
     # of the first few standard basis vectors.
