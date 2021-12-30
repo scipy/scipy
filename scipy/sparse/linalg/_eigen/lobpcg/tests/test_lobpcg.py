@@ -136,7 +136,7 @@ def test_diagonal():
                           shape=(n, n), dtype=float)
 
     B_a = eye(n)
-    B_s = csr_matrix(B)
+    B_s = csr_matrix(B_a)
     def B_f(x):
         return B_a @ x
     B_lo = LinearOperator(matvec=B_f,
