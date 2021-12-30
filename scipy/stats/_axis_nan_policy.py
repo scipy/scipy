@@ -447,7 +447,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # backward compatibility.
             empty_output = _check_empty_inputs(samples, axis)
             if empty_output is not None:
-                return result_object(*([empty_output]*n_outputs))
+                return result_object(*([empty_output.copy()
+                                        for i in range(n_outputs)]))
 
             # otherwise, concatenate all samples along axis, remembering where
             # each separate sample begins
