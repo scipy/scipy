@@ -2350,8 +2350,8 @@ def test_t_inf_df_stats_entropy():
     norm_dist = stats.norm(loc=3, scale=1)
     res_stats = t_dist.stats('mvsk')
     res_entropy = t_dist.entropy()
-    # `res_stats`` is an tuple (mu, mu2, g1, g2). Verify that each of these
-    # moments agree with the norma distribution for res[0][0] and res[1][1].
+    # `res_stats`` is a tuple (mu, mu2, g1, g2). Verify that each of these
+    # moments agrees with the normal distribution for res[0][0] and res[1][1].
     assert_equal([res_stats[i][0][0] for i in range(4)],
                  norm_dist.stats('mvsk'))
     assert_equal([res_stats[i][1][1] for i in range(4)],
