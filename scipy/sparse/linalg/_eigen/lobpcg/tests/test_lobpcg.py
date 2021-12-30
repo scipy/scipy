@@ -129,16 +129,20 @@ def test_diagonal():
     vals = np.arange(1, n+1, dtype=float)
     A_s = diags([vals], [0], (n, n))
     A_a = A_s.toarray()
+
     def A_f(x):
         return A_s @ x
+
     A_lo = LinearOperator(matvec=A_f,
                           matmat=A_f,
                           shape=(n, n), dtype=float)
 
     B_a = eye(n)
     B_s = csr_matrix(B_a)
+
     def B_f(x):
         return B_a @ x
+
     B_lo = LinearOperator(matvec=B_f,
                           matmat=B_f,
                           shape=(n, n), dtype=float)
@@ -146,14 +150,17 @@ def test_diagonal():
     # Let the preconditioner M be the inverse of A.
     M_s = diags([1./vals], [0], (n, n))
     M_a = M_s.toarray()
+
     def M_f(x):
         return M_s @ x
+
     M_lo = LinearOperator(matvec=M_f,
                           matmat=M_f,
                           shape=(n, n), dtype=float)
 
     # Pick random initial vectors.
-    X = rnd.random((n, m))
+    rnd = np.random.RandomState(0)
+    X = rng.normal(size=(n, m))
 
     # Require that the returned eigenvectors be in the orthogonal complement
     # of the first few standard basis vectors.
@@ -166,8 +173,9 @@ def test_diagonal():
                 eigvals, vecs = lobpcg(A, X, B, M=M, Y=Y,
                                        maxiter=40, largest=False)
 
-    assert_allclose(eigvals, np.arange(1+m_excluded, 1+m_excluded+m))
-    _check_eigen(A, eigvals, vecs, rtol=1e-3, atol=1e-3)
+                assert_allclose(eigvals, np.arange(1+m_excluded,
+                                                   1+m_excluded+m))
+                _check_eigen(A, eigvals, vecs, rtol=1e-3, atol=1e-3)
 
 
 def _check_eigen(M, w, V, rtol=1e-8, atol=1e-14):
