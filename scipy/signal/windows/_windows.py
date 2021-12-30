@@ -1258,7 +1258,8 @@ def kaiser_bessel_derived(M, beta, sym=True):
     >>> import matplotlib.pyplot as plt
     >>> N = 100
     >>> for alpha in [0.64, 2.55, 7.64, 31.83]:
-    ...     plt.plot(signal.windows.kaiser_bessel_derived(N, alpha), label=f"{alpha=}")
+    ...     plt.plot(signal.windows.kaiser_bessel_derived(N, alpha),
+    ...             label=f"{alpha=}")
     >>> plt.legend()
     >>> plt.grid(True)
     >>> plt.title("Kaiser-Bessel derived window")

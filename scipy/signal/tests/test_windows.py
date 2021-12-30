@@ -442,7 +442,8 @@ class TestKaiserBesselDerived:
     def test_basic(self):
         M = 100
         w = windows.kaiser_bessel_derived(M, beta=4.0)
-        w2 = windows.get_window(('kaiser bessel derived', 4.0), M, fftbins=False)
+        w2 = windows.get_window(('kaiser bessel derived', 4.0),
+                                M, fftbins=False)
         assert_allclose(w, w2)
 
         # Test for Princen-Bradley condition
