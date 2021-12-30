@@ -114,12 +114,13 @@ def test_regression():
     w, _ = lobpcg(A, X)
     assert_allclose(w, [1])
 
+
 @pytest.mark.filterwarnings("ignore:The problem size")
 @pytest.mark.parametrize('n, m, m_excluded', [(100, 4, 3), (4, 2, 0)])
 def test_diagonal(n, m, m_excluded):
-    """Test ``m-m_excluded`` eigenvalues and eigenvectors of
+    """Test ``m - m_excluded`` eigenvalues and eigenvectors of
     diagonal matrices of the size ``n`` varying matrix formats:
-    dense array, spare matrix, ``LinearOperator`` for both
+    dense array, spare matrix, and ``LinearOperator`` for both
     matrixes in the generalized eigenvalue problem ``Av = cBv``
     and for the preconditioner.
     """
