@@ -88,7 +88,7 @@ double expn(int n, double x)
     }
 
     if (x == 0.0) {
-	if (n < 2) {
+	if (n <= 1) {
 	    sf_error("expn", SF_ERROR_SINGULAR, NULL);
 	    return (NPY_INFINITY);
 	}
