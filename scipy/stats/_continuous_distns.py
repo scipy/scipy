@@ -5897,7 +5897,7 @@ class t_gen(rv_continuous):
             f2=lambda x, df: (
                 sc.gammaln((df+1)/2) - sc.gammaln(df/2)
                 - (0.5*np.log(df*np.pi)
-                + (df+1)/2*np.log(1+(x**2)/df))
+                   + (df+1)/2*np.log(1+(x**2)/df))
             )
         )
 
