@@ -148,12 +148,30 @@ class LinearConstraint:
         iterations. A single value set this property for all components.
         Default is False. Has no effect for equality constraints.
     """
+    def _input_validation(self):
+        if self.A.ndim != 2:
+            message = "`A` must have exactly two dimensions."
+            raise ValueError(message)
+
+        try:
+            shape = self.A.shape[0:1]
+            self.lb = np.broadcast_to(self.lb, shape)
+            self.ub = np.broadcast_to(self.ub, shape)
+            self.keep_feasible = np.broadcast_to(self.keep_feasible, shape)
+        except ValueError:
+            message = ("`lb`, `ub`, and `keep_feasible` must be broadcastable "
+                       "to shape `A.shape[0:1]`")
+            raise ValueError(message)
 
     def __init__(self, A, lb=-np.inf, ub=np.inf, keep_feasible=False):
-        self.A = A
-        self.lb = lb
-        self.ub = ub
-        self.keep_feasible = keep_feasible
+        if not issparse(A):
+            self.A = np.atleast_2d(A)
+        else:
+            self.A = A
+        self.lb = np.atleast_1d(lb)
+        self.ub = np.atleast_1d(ub)
+        self.keep_feasible = np.atleast_1d(keep_feasible).astype(bool)
+        self._input_validation()
 
 
 class Bounds:
@@ -399,7 +417,7 @@ def new_constraint_to_old(con, x0):
             jac = None
 
     else:  # LinearConstraint
-        if con.keep_feasible:
+        if np.any(con.keep_feasible):
             warn("Constraint option `keep_feasible` is ignored by this "
                  "method.", OptimizeWarning)
 
