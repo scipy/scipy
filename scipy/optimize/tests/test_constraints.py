@@ -226,3 +226,9 @@ class TestLinearConstraint:
         message = "`A` must have exactly two dimensions."
         with pytest.raises(ValueError, match=message):
             LinearConstraint(A)
+
+    def test_residual(self):
+        A = np.eye(2)
+        lc = LinearConstraint(A, -2, 4)
+        x0 = [-1, 2]
+        np.testing.assert_allclose(lc.residual(x0), ([1, 4], [5, 2]))
