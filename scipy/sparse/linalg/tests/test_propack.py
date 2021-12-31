@@ -111,10 +111,13 @@ def test_svdp(ctor, precision, irl, which):
 @pytest.mark.parametrize('precision', _dtype_testing)
 @pytest.mark.parametrize('irl', (False, True))
 def test_examples(precision, irl):
+    # Note: atol for complex8 bumped from 1e-4 to 1e-3 because of test failures
+    # with BLIS, Netlib, and MKL+AVX512 - see
+    # https://github.com/conda-forge/scipy-feedstock/pull/198#issuecomment-999180432
     atol = {
-        'single': 1e-4,
+        'single': 1.2e-4,
         'double': 1e-9,
-        'complex8': 1e-4,
+        'complex8': 1e-3,
         'complex16': 1e-9,
     }[precision]
 
