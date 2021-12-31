@@ -5914,28 +5914,29 @@ class t_gen(rv_continuous):
         return -sc.stdtrit(df, q)
 
     def _stats(self, df):
-        # 0.0, 1.0, 0.0, 0.0
-        cond = df == np.inf
-        mu = np.where(df > 1 | cond, 0.0, np.inf)
+        # infinite df -> normal distribution (0.0, 1.0, 0.0, 0.0)
+        infinite_df = np.isposinf(df)
 
-        def _mu2_finitedf(df):
-            mu2 = _lazywhere(df > 2, (df,),
-                             lambda df: df / (df-2.0),
-                             np.inf)
-            mu2 = np.where(df <= 1, np.nan, mu2)
-            return mu2
+        mu = np.where(df > 1, 0.0, np.inf)
 
-        mu2 = _lazywhere(~cond, (df,), _mu2_finitedf, 1.0)
-        g1 = np.where(df > 3 | cond, 0.0, np.nan)
+        condlist = ((df > 1) & (df <= 2),
+                    (df > 2) & np.isfinite(df),
+                    infinite_df)
+        choicelist = (lambda df: np.broadcast_to(np.inf, df.shape),
+                      lambda df: df / (df-2.0),
+                      lambda df: np.broadcast_to(1, df.shape))
+        mu2 = _lazyselect(condlist, choicelist, (df,), np.nan)
 
-        def _g2_finitedf(df):
-            g2 = _lazywhere(df > 4, (df,),
-                            lambda df: 6.0 / (df-4.0),
-                            np.inf)
-            g2 = np.where(df <= 2, np.nan, g2)
-            return g2
+        g1 = np.where(df > 3, 0.0, np.nan)
 
-        g2 = _lazywhere(~cond, (df,), _g2_finitedf, 0.0)
+        condlist = ((df > 2) & (df <= 4),
+                    (df > 4) & np.isfinite(df),
+                    infinite_df)
+        choicelist = (lambda df: np.broadcast_to(np.inf, df.shape),
+                      lambda df: 6.0 / (df-4.0),
+                      lambda df: np.broadcast_to(0, df.shape))
+        g2 = _lazyselect(condlist, choicelist, (df,), np.nan)
+
         return mu, mu2, g1, g2
 
     def _entropy(self, df):
