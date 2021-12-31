@@ -234,9 +234,9 @@ def get_build_ext_override():
             from pythran.dist import PythranBuildExt
             BaseBuildExt = PythranBuildExt[npy_build_ext]
             # Version check - a too old Pythran will give problems
-            if LooseVersion(pythran.__version__) < LooseVersion('0.9.12'):
+            if LooseVersion(pythran.__version__) < LooseVersion('0.10.0'):
                 raise RuntimeError("The installed `pythran` is too old, >= "
-                                   "0.9.12 is needed, {} detected. Please "
+                                   "0.10.0 is needed, {} detected. Please "
                                    "upgrade Pythran, or use `export "
                                    "SCIPY_USE_PYTHRAN=0`.".format(
                                    pythran.__version__))
