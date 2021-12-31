@@ -6338,20 +6338,25 @@ class t_gen(rv_continuous):
         return random_state.standard_t(df, size=size)
 
     def _pdf(self, x, df):
-        #                                gamma((df+1)/2)
-        # t.pdf(x, df) = ---------------------------------------------------
-        #                sqrt(pi*df) * gamma(df/2) * (1+x**2/df)**((df+1)/2)
-        r = np.asarray(df*1.0)
-        Px = (np.exp(sc.gammaln((r+1)/2)-sc.gammaln(r/2))
-              / (np.sqrt(r*np.pi)*(1+(x**2)/r)**((r+1)/2)))
-
-        return Px
+        return _lazywhere(
+            df == np.inf, (x, df),
+            f=lambda x, df: norm._pdf(x),
+            f2=lambda x, df: (
+                np.exp(sc.gammaln((df+1)/2)-sc.gammaln(df/2))
+                / (np.sqrt(df*np.pi)*(1+(x**2)/df)**((df+1)/2))
+            )
+        )
 
     def _logpdf(self, x, df):
-        r = df*1.0
-        lPx = (sc.gammaln((r+1)/2) - sc.gammaln(r/2)
-               - (0.5*np.log(r*np.pi) + (r+1)/2*np.log(1+(x**2)/r)))
-        return lPx
+        return _lazywhere(
+            df == np.inf, (x, df),
+            f=lambda x, df: norm._logpdf(x),
+            f2=lambda x, df: (
+                sc.gammaln((df+1)/2) - sc.gammaln(df/2)
+                - (0.5*np.log(df*np.pi)
+                   + (df+1)/2*np.log(1+(x**2)/df))
+            )
+        )
 
     def _cdf(self, x, df):
         return sc.stdtr(df, x)
@@ -6366,19 +6371,34 @@ class t_gen(rv_continuous):
         return -sc.stdtrit(df, q)
 
     def _stats(self, df):
+        # infinite df -> normal distribution (0.0, 1.0, 0.0, 0.0)
+        infinite_df = np.isposinf(df)
+
         mu = np.where(df > 1, 0.0, np.inf)
-        mu2 = _lazywhere(df > 2, (df,),
-                         lambda df: df / (df-2.0),
-                         np.inf)
-        mu2 = np.where(df <= 1, np.nan, mu2)
+
+        condlist = ((df > 1) & (df <= 2),
+                    (df > 2) & np.isfinite(df),
+                    infinite_df)
+        choicelist = (lambda df: np.broadcast_to(np.inf, df.shape),
+                      lambda df: df / (df-2.0),
+                      lambda df: np.broadcast_to(1, df.shape))
+        mu2 = _lazyselect(condlist, choicelist, (df,), np.nan)
+
         g1 = np.where(df > 3, 0.0, np.nan)
-        g2 = _lazywhere(df > 4, (df,),
-                        lambda df: 6.0 / (df-4.0),
-                        np.inf)
-        g2 = np.where(df <= 2, np.nan, g2)
+
+        condlist = ((df > 2) & (df <= 4),
+                    (df > 4) & np.isfinite(df),
+                    infinite_df)
+        choicelist = (lambda df: np.broadcast_to(np.inf, df.shape),
+                      lambda df: 6.0 / (df-4.0),
+                      lambda df: np.broadcast_to(0, df.shape))
+        g2 = _lazyselect(condlist, choicelist, (df,), np.nan)
+
         return mu, mu2, g1, g2
 
     def _entropy(self, df):
+        if df == np.inf:
+            return norm._entropy()
         half = df/2
         half1 = (df + 1)/2
         return (half1*(sc.digamma(half1) - sc.digamma(half))
