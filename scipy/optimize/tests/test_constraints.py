@@ -206,3 +206,12 @@ class TestBounds:
         bounds = Bounds(-2, 4)
         x0 = [-1, 2]
         np.testing.assert_allclose(bounds.residual(x0), ([1, 4], [5, 2]))
+
+
+class TestLinearConstraint:
+    def test_defaults(self):
+        A = np.eye(4)
+        lc = LinearConstraint(A)
+        lc2 = LinearConstraint(A, -np.inf, np.inf)
+        assert lc.lb == lc2.lb
+        assert lc.ub == lc2.ub
