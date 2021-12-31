@@ -619,10 +619,17 @@ class beta_gen(rv_continuous):
         return _boost._beta_sf(x, a, b)
 
     def _isf(self, x, a, b):
-        return _boost._beta_isf(x, a, b)
+        with warnings.catch_warnings():
+            # See gh-14901
+            message = "overflow encountered in _beta_isf"
+            warnings.filterwarnings('ignore', message=message)
+            return _boost._beta_isf(x, a, b)
 
     def _ppf(self, q, a, b):
-        return _boost._beta_ppf(q, a, b)
+        with warnings.catch_warnings():
+            message = "overflow encountered in _beta_ppf"
+            warnings.filterwarnings('ignore', message=message)
+            return _boost._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
         return(
