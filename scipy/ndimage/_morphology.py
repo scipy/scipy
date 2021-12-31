@@ -204,7 +204,7 @@ def generate_binary_structure(rank, connectivity):
 
     Further example of a 3D binary_structure:
 
-    .. plot:: tutorial/examples/3D_binary_structure.py
+    .. plot:: tutorial/examples/ndimage/3D_binary_structure.py
       :align: center
       :include-source: 0
     """
