@@ -449,6 +449,78 @@ struct util // hack to avoid duplicate symbols
     return bestfac;
     }
 
+  /* returns the largest composite of 2, 3, 5, 7 and 11 which is <= n */
+  static POCKETFFT_NOINLINE size_t prev_good_size_cmplx(size_t n)
+  {
+    if (n<=12)
+    {
+      return n;
+    }
+
+    size_t bestfound = 1;
+    size_t f11 = 1;
+    while (f11 < n)
+    {
+      size_t f117 = f11;
+      while(f117 <= n)
+      {
+        size_t f1175 = f117;
+        while(f1175 <= n)
+        {
+          size_t f11753 = f1175;
+          while(f11753 <= n)
+          {
+            size_t f117532 = f11753;
+            while(f117532 <= n)
+            {
+              if (f117532 > bestfound)
+              {
+                bestfound = f117532;
+              }
+              f117532 *= 2;
+            }
+            f11753 *=3;
+          }
+          f1175 *= 5;
+        }
+        f117 *= 7;
+      }
+      f11 *= 11;
+    }
+    return bestfound;
+  }
+
+  /* returns the largest composite of 2, 3, 5 which is <= n */
+  static POCKETFFT_NOINLINE size_t prev_good_size_real(size_t n)
+  {
+    if (n<=6)
+    {
+      return n;
+    }
+
+    size_t bestfound = 1;
+    size_t f5 = 1;
+    while(f5 <= n)
+    {
+      size_t f53 = f5;
+      while(f53 <= n)
+      {
+        size_t f532 = f53;
+        while(f532 <= n)
+        {
+          if (f532 > bestfound)
+          {
+            bestfound = f532;
+          }
+          f532 *= 2;
+        }
+        f53 *=3;
+      }
+      f5 *= 5;
+    }
+    return bestfound;
+  }
+
   static size_t prod(const shape_t &shape)
     {
     size_t res=1;
