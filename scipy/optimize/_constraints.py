@@ -173,6 +173,36 @@ class LinearConstraint:
         self.keep_feasible = np.atleast_1d(keep_feasible).astype(bool)
         self._input_validation()
 
+    def residual(self, x):
+        """
+        Calculate the residual between the constraint function and the limits
+
+        For a linear constraint of the form::
+
+            lb <= A@x <= ub
+
+        the lower and upper residuals between ``A@x`` and the limits are values
+        ``sl`` and ``sb`` such that::
+
+            lb + sl == A@x == ub - sb
+
+        When all elements of ``sl`` and ``sb`` are positive, all elements of
+        the constraint are satisfied; a negative element in ``sl`` or ``sb``
+        indicates that the corresponding element the constraint is not
+        satisfied.
+
+        Parameters
+        ----------
+        x: array_like
+            Vector of independent variables
+
+        Returns
+        -------
+        sl, sb : array-like
+            The lower and upper residuals
+        """
+        return self.A@x - self.lb, self.ub - self.A@x
+
 
 class Bounds:
     """Bounds constraint on the variables.
