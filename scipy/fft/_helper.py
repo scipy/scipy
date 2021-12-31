@@ -66,6 +66,7 @@ def next_fast_len(target, real=False):
 next_fast_len = update_wrapper(lru_cache()(_helper.good_size), next_fast_len)
 next_fast_len.__wrapped__ = _helper.good_size
 
+
 def prev_fast_len(target, real=False):
     """Find the previous fast size of input data to ``fft``.
     Useful for discarding a minimal number of samples before FFT.
@@ -81,7 +82,7 @@ def prev_fast_len(target, real=False):
     Parameters
     ----------
     target : int
-        Maximum Length to search until. Must be a positive integer.
+        Maximum length to search until. Must be a positive integer.
     real : bool, optional
         True if the FFT involves real input or output (e.g., `rfft` or `hfft`
         but not `fft`). Defaults to False.
@@ -123,8 +124,8 @@ def prev_fast_len(target, real=False):
     pass
 
 
-# Directly wrap the c-function prev_good_size but take the docstring etc., from the
-# prev_fast_len function above
+# Directly wrap the c-function prev_good_size but take the docstring etc.,
+# from the prev_fast_len function above
 prev_fast_len = update_wrapper(lru_cache()(_helper.prev_good_size), prev_fast_len)
 prev_fast_len.__wrapped__ = _helper.prev_good_size
 

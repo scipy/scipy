@@ -112,6 +112,7 @@ class TestNextFastLen:
         assert next_fast_len(11, real=True) == 12
         assert next_fast_len(target=7, real=False) == 7
 
+
 class TestPrevFastLen:
 
     def test_prev_fast_len(self):
@@ -138,8 +139,8 @@ class TestPrevFastLen:
 
     def testprev_fast_len_small(self):
         hams = {
-            1:1, 2:2, 3:3, 4:4, 5:5, 6:6, 7:6, 8:8, 14:12, 15:15,
-            16:16, 17:16, 1021:1000, 1536:1536, 51200000:51200000
+            1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 6, 8: 8, 14: 12, 15: 15,
+            16: 16, 17: 16, 1021: 1000, 1536: 1536, 51200000: 51200000
         }
         for x, y in hams.items():
             assert_equal(prev_fast_len(x, True), y)
