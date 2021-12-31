@@ -259,6 +259,14 @@ _nan_policy_parameter = inspect.Parameter(_name,
                                           inspect.Parameter.KEYWORD_ONLY,
                                           default='propagate')
 
+_standard_note_addition = (
+    """\nBeginning in SciPy 1.9, ``np.matrix`` inputs are converted to
+``np.ndarray``s before the calculation is performed. In this case, the
+output will be a scalar or ``np.ndarray`` of appropriate shape rather than
+a 2D ``np.matrix``. Similarly, while masked elements of masked arrays
+are ignored, the output will be a scalar or ``np.ndarray`` rather than a
+masked array with ``mask=False``.""").split('\n')
+
 
 def _axis_nan_policy_factory(result_object, default_axis=0,
                              n_samples=1, paired=False,
@@ -515,6 +523,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 _nan_policy_parameter_doc)
         else:
             doc['Parameters'].append(_nan_policy_parameter_doc)
+        doc['Notes'] += _standard_note_addition
         doc = str(doc).split("\n", 1)[1]  # remove signature
         axis_nan_policy_wrapper.__doc__ = str(doc)
 
@@ -527,6 +536,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             parameter_list.append(_nan_policy_parameter)
         sig = sig.replace(parameters=parameter_list)
         axis_nan_policy_wrapper.__signature__ = sig
+
 
         return axis_nan_policy_wrapper
     return axis_nan_policy_decorator

@@ -25,6 +25,7 @@ axis_nan_policy_cases = [
     (stats.wilcoxon, ('pratt',), {'mode': 'auto'}, 2, 2, True, None),
     (stats.wilcoxon, tuple(), dict(), 1, 2, True, None),
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     ]
 
 # If the message is one of those expected, put nans in

@@ -5528,18 +5528,6 @@ class TestHarMean:
         desired = np.array([0.0, 63.03939962, 103.80078637])
         assert_allclose(stats.hmean(a, axis=1), desired)
 
-    def test_2d_matrix_axis0(self):
-        #  Test a 2d list with axis=0
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
-        check_equal_hmean(matrix(a), desired, axis=0)
-
-    def test_2d_matrix_axis1(self):
-        #  Test a 2d list with axis=1
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = matrix([[19.2, 63.03939962, 103.80078637]]).T
-        check_equal_hmean(matrix(a), desired, axis=1)
-
 
 class TestGeoMean:
     def test_1d_list(self):
