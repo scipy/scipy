@@ -49,9 +49,9 @@ def direct(
     maxiter: int = 6000,
     locally_biased: bool = True,
     f_min: float = -np.inf,
-    f_min_per: float = 0.01,
-    vol_per: float = -1.0,
-    sigma_per: float = -1.0,
+    f_min_per: float = 0.0001,
+    vol_per: float = 1e-16,
+    sigma_per: float = 1e-8,
     callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
 ) -> OptimizeResult:
     r"""
