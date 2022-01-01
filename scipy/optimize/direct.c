@@ -40,9 +40,6 @@ direct(PyObject *self, PyObject *args)
     lower_bounds = (double*)PyArray_DATA((PyArrayObject*)lb);
     upper_bounds = (double*)PyArray_DATA((PyArrayObject*)ub);
     magic_eps_abs = 0.0;
-    volume_reltol /= 100.0;
-    sigma_reltol /= 100.0;
-    fglobal_reltol /= 100.0;
     force_stop = 0;
     direct_return_info info;
 

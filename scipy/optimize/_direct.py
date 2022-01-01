@@ -102,7 +102,7 @@ def direct(
 
         .. math::
 
-            100*(f_{min} - f_{global})/\max(1, |f_{global}|) \leq f_{glper}
+            (f_{min} - f_{global})/\max(1, |f_{global}|) \leq f_{glper}
 
         Default is 0.01.
     vol_per : float, optional

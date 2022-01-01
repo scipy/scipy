@@ -624,12 +624,12 @@
 /* +-----------------------------------------------------------------------+ */
 /* | JG 07/16/01 Use precalculated values to calculate volume.             | */
 /* +-----------------------------------------------------------------------+ */
-    delta = thirds[actdeep_div__] * 100;
+    delta = thirds[actdeep_div__];
     if (delta <= *volper) {
         *ierror = 4;
         if (logfile)
          fprintf(logfile, "DIRECT stopped: Volume of S_min is "
-             "%g%% < %g%% of the original volume.\n",
+             "%g < %g of the original volume.\n",
              delta, *volper);
         *numiter = t;
         goto L100;
@@ -654,7 +654,7 @@
 /* | global minimum value, terminate. This only makes sense if this optimal| */
 /* | value is known, that is, in test problems.                            | */
 /* +-----------------------------------------------------------------------+ */
-    if ((*minf - *fglobal) * 100 / divfactor <= *fglper) {
+    if ((*minf - *fglobal)/ divfactor <= *fglper) {
         *ierror = 3;
         if (logfile)
          fprintf(logfile, "DIRECT stopped: minf within fglper of global minimum.\n");

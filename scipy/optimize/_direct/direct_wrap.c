@@ -62,11 +62,6 @@ PyObject* direct_optimize(
      doublereal *l, *u;
      int i;
 
-     /* convert to percentages: */
-     volume_reltol *= 100;
-     sigma_reltol *= 100;
-     fglobal_reltol *= 100;
-
      /* make sure these are ignored if <= 0 */
      if (volume_reltol <= 0) volume_reltol = -1;
      if (sigma_reltol <= 0) sigma_reltol = -1;
