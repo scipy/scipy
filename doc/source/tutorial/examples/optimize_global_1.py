@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import optimize
 
+
 def eggholder(x):
     return (-(x[1] + 47) * np.sin(np.sqrt(abs(x[0]/2 + (x[1]  + 47))))
             -x[0] * np.sin(np.sqrt(abs(x[0] - (x[1]  + 47)))))
@@ -17,7 +18,7 @@ results = dict()
 results['shgo'] = optimize.shgo(eggholder, bounds)
 results['DA'] = optimize.dual_annealing(eggholder, bounds)
 results['DE'] = optimize.differential_evolution(eggholder, bounds)
-results['BH'] = optimize.basinhopping(eggholder, x0=(0, 0))
+results['BH'] = optimize.basinhopping(eggholder, x0=[0, 0])
 results['shgo_sobol'] = optimize.shgo(eggholder, bounds, n=256, iters=5,
                                       sampling_method='sobol')
 
@@ -48,3 +49,5 @@ ax.set_ylim([-4, 514*2])
 
 fig.tight_layout()
 plt.show()
+
+
