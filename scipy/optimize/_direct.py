@@ -150,7 +150,7 @@ def direct(
     few local minima.
 
     This code is based on the DIRECT 2.0.4 Fortran code by Gablonsky et al. at
-    http://www4.ncsu.edu/~ctk/SOFTWARE/DIRECTv204.tar.gz
+    https://ctk.math.ncsu.edu/SOFTWARE/DIRECTv204.tar.gz
     The C version was initially converted via f2c and then cleaned up and
     reorganized by Steven G. Johnson, August 2007. And this method wraps
     the C implementation.
