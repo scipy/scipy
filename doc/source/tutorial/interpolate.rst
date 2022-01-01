@@ -259,9 +259,9 @@ example that follows.
    Roots of spline
 
    >>> interpolate.sproot(tck)
-   array([3.1416])
+   array([3.1416])  # may vary
 
-   Notice that `sproot` failed to find an obvious solution at the edge of the
+   Notice that `sproot` may fail to find an obvious solution at the edge of the
    approximation interval, :math:`x = 0`. If we define the spline on a slightly
    larger interval, we recover both roots :math:`x = 0` and :math:`x = 2\pi`:
 
