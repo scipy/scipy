@@ -84,7 +84,7 @@ def direct(
         optimal hyperrectangle is chosen. Default is 0.0001.
     maxfun : int, optional
         Approximate upper bound on objective function evaluations.
-        Default is 2000.
+        Default is 20000.
     maxiter : int, optional
         Maximum number of iterations. Default is 6000.
     locally_biased : bool, optional
@@ -94,9 +94,8 @@ def direct(
         * ``locally_biased=False`` - use the original DIRECT algorithm
         * ``locally_biased=True`` - use the modified DIRECT-l algorithm
     f_min : float, optional
-        Function value of the global optimum.
-        By default it is a negative value whose absolute value is very large.
-        Set this value only if the global optimum is known.
+        Function value of the global optimum. Set this value only if the 
+        global optimum is known. Default is -np.inf.
     f_min_tol : float, optional
         Terminate the optimization once the relative error between 
         the current best minimum and the known global minimum `f_min` is 
@@ -104,7 +103,7 @@ def direct(
     vol_tol : float, optional
         Terminate the optimization once the volume of the hyperrectangle 
         containing the lowest function value is smaller than `vol_tol` 
-        of the original hyperrectangle. Default is 1e-16.
+        of the complete search space. Default is 1e-16.
     len_tol : float, optional
         Terminate the optimization once the maximal side length of the 
         hyperrectangle containing the lowest function value is smaller than 
@@ -129,27 +128,26 @@ def direct(
     optimization algorithm capable of minimizing a black box function with
     its variables subject to lower and upper bound constrains by sampling
     potential solutions in the search space. The algorithm starts by
-    normalising the hyperrectangle (set of all possible values that can
-    be taken by the input variables subject to the bound constraints) to
-    an n-dimensional unit hypercube. It samples the function at the
-    center of this hypercube and at 2n (n is the number of variables)
-    more points, 2 in each coordinate direction. Using these function
-    values, DIRECT then divides the domain into hyperrectangles, each
-    having exactly one of the sampling points as its center. In each
-    iteration, DIRECT chooses, using the iatol parameter, which defaults
-    to 1e-4, some of the existing hyperrectangles to be further divided.
-    This division process continues until the maximum iterations or
-    maximum function evaluations allowed are exceeded, or the function
-    value is within the desired percentage error of the global minimum
-    (if known). The locally biased variant of DIRECT
-    (originally called DIRECT_L) [2]_ is used by default. It makes the
-    search more locally biased and more efficient for cases with only a
-    few local minima.
+    normalising the search space to an n-dimensional unit hypercube. 
+    It samples the function at the center of this hypercube and at 2n 
+    (n is the number of variables) more points, 2 in each coordinate 
+    direction. Using these function values, DIRECT then divides the 
+    domain into hyperrectangles, each having exactly one of the sampling 
+    points as its center. In each iteration, DIRECT chooses, using the eps 
+    parameter, which defaults to 1e-4, some of the existing hyperrectangles 
+    to be further divided. This division process continues until either the maximum 
+    iterations or maximum function evaluations allowed are exceeded, or the volume or 
+    the side length of the hyperrectangle containing the minimal value found so far 
+    is lower than a certain tolerance. If `f_min` is specified, the optimization will 
+    stop once this function value is reached within a relative tolerance. 
+    The locally biased variant of DIRECT (originally called DIRECT_L) [2]_ is used by 
+    default. It makes the search more locally biased and more efficient for cases with 
+    only a few local minima.
 
     This code is based on the DIRECT 2.0.4 Fortran code by Gablonsky et al. at
     https://ctk.math.ncsu.edu/SOFTWARE/DIRECTv204.tar.gz
     The C version was initially converted via f2c and then cleaned up and
-    reorganized by Steven G. Johnson, August 2007. And this method wraps
+    reorganized by Steven G. Johnson, August 2007. This method wraps
     the C implementation.
 
     .. versionadded:: 1.9.0
