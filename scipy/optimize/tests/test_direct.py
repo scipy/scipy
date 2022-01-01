@@ -46,11 +46,11 @@ class TestDIRECT:
          (neg_inv_func, 4*[(-10, 10)],
           {'arg_min': np.array([0., 0., 0., 0.]), 'min': -np.inf,
            'arg_decimal': 7, 'decimal': 7,
-           'status': 1, 'success': False}),
+           'status': 4, 'success': True}),
          (dot_func, 4*[(-10, 10)],
           {'arg_min': np.array([-1., 2., -4., 3.]), 'min': 0.0,
-           'arg_decimal': 7, 'decimal': 7,
-           'status': 1, 'success': False}),
+           'arg_decimal': 3, 'decimal': 6,
+           'status': 4, 'success': True}),
         ])
     def test_algorithm(self, func, bounds, result):
         res = direct(func, bounds=bounds)
