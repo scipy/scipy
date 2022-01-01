@@ -48,7 +48,7 @@ jobs:
             python3 -m venv venv
             . venv/bin/activate
             pip install --install-option="--no-cython-compile" cython
-            pip install numpy
+            pip install numpy==1.21.5
             pip install -r doc_requirements.txt
             pip install nose mpmath argparse Pillow asv pythran
             pip install pybind11
