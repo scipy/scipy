@@ -5,6 +5,7 @@ py3.install_sources([
     'test_distance.py',
     'test_hausdorff.py',
     'test_kdtree.py',
+    'test_lloyd_algorithm.py',
     'test_qhull.py',
     'test_slerp.py',
     'test_spherical_voronoi.py'
