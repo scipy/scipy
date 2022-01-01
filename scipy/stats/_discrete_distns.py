@@ -16,7 +16,7 @@ from ._distn_infrastructure import (
     rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
     _check_shape)
 import scipy.stats._boost as _boost
-from .biasedurn import (_PyFishersNCHypergeometric,
+from ._biasedurn import (_PyFishersNCHypergeometric,
                         _PyWalleniusNCHypergeometric,
                         _PyStochasticLib3)
 
@@ -1535,7 +1535,7 @@ class _nchypergeom_gen(rv_discrete):
             return urn.moments()
 
         m, v = _moments1(M, n, N, odds) if ("m" in moments
-                                            or "v" in moments) else None
+                                            or "v" in moments) else (None, None)
         s, k = None, None
         return m, v, s, k
 

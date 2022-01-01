@@ -1,68 +1,29 @@
-''' Byteorder utilities for system - numpy byteorder encoding
+# This file is not meant for public use and will be removed in SciPy v2.0.0.
+# Use the `scipy.io.matlab` namespace for importing the functions
+# included below.
 
-Converts a variety of string codes for little endian, big endian,
-native byte order and swapped byte order to explicit NumPy endian
-codes - one of '<' (little endian) or '>' (big endian)
-
-'''
-import sys
-
-sys_is_le = sys.byteorder == 'little'
-native_code = sys_is_le and '<' or '>'
-swapped_code = sys_is_le and '>' or '<'
-
-aliases = {'little': ('little', '<', 'l', 'le'),
-           'big': ('big', '>', 'b', 'be'),
-           'native': ('native', '='),
-           'swapped': ('swapped', 'S')}
+import warnings
+from . import _byteordercodes
 
 
-def to_numpy_code(code):
-    """
-    Convert various order codings to NumPy format.
+__all__ = [  # noqa: F822
+    'aliases', 'native_code', 'swapped_code',
+    'sys_is_le', 'to_numpy_code'
+]
 
-    Parameters
-    ----------
-    code : str
-        The code to convert. It is converted to lower case before parsing.
-        Legal values are:
-        'little', 'big', 'l', 'b', 'le', 'be', '<', '>', 'native', '=',
-        'swapped', 's'.
 
-    Returns
-    -------
-    out_code : {'<', '>'}
-        Here '<' is the numpy dtype code for little endian,
-        and '>' is the code for big endian.
+def __dir__():
+    return __all__
 
-    Examples
-    --------
-    >>> import sys
-    >>> sys_is_le == (sys.byteorder == 'little')
-    True
-    >>> to_numpy_code('big')
-    '>'
-    >>> to_numpy_code('little')
-    '<'
-    >>> nc = to_numpy_code('native')
-    >>> nc == '<' if sys_is_le else nc == '>'
-    True
-    >>> sc = to_numpy_code('swapped')
-    >>> sc == '>' if sys_is_le else sc == '<'
-    True
 
-    """
-    code = code.lower()
-    if code is None:
-        return native_code
-    if code in aliases['little']:
-        return '<'
-    elif code in aliases['big']:
-        return '>'
-    elif code in aliases['native']:
-        return native_code
-    elif code in aliases['swapped']:
-        return swapped_code
-    else:
-        raise ValueError(
-            'We cannot handle byte order %s' % code)
+def __getattr__(name):
+    if name not in __all__:
+        raise AttributeError(
+            "scipy.io.matlab.byteordercodes is deprecated and has no attribute "
+            f"{name}. Try looking in scipy.io.matlab instead.")
+
+    warnings.warn(f"Please use `{name}` from the `scipy.io.matlab` namespace, "
+                  "the `scipy.io.matlab.byteordercodes` namespace is deprecated.",
+                  category=DeprecationWarning, stacklevel=2)
+
+    return getattr(_byteordercodes, name)

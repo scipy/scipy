@@ -68,8 +68,7 @@ Benchmarks
 ``````````
 The ``asv``-based benchmark system is in reasonable shape.  It is quite easy to
 add new benchmarks, however running the benchmarks is not very intuitive.
-Making this easier is a priority.  In addition, we should run them in our CI
-(gh-8779 is an ongoing attempt at this).
+Making this easier is a priority.
 
 
 Use of Cython
@@ -205,9 +204,10 @@ misc
 ``scipy.misc`` will be removed as a public module.  Most functions in it have
 been moved to another submodule or deprecated.  The few that are left:
 
-- ``info``, ``who`` : these are NumPy functions
 - ``derivative``, ``central_diff_weight`` : remove, possibly replacing them
   with more extensive functionality for numerical differentiation.
+- ``ascent``, ``face``, ``electrocardiogram`` : remove or move to the
+  appropriate subpackages (e.g. ``scipy.ndimage``, ``scipy.signal``).
 
 
 ndimage
@@ -256,9 +256,8 @@ Overall this module is in good shape. Two good global optimizers were added in
 1.2.0; large-scale optimizers is still a gap that could be filled.  Other
 things that are needed:
 
-- Many ideas for additional functionality (e.g. integer constraints, sparse
-  matrix support, performance improvements) in ``linprog``, see
-  `gh-9269 <https://github.com/scipy/scipy/issues/9269>`__.
+- Many ideas for additional functionality (e.g. integer constraints) in
+  ``linprog``, see `gh-9269 <https://github.com/scipy/scipy/issues/9269>`__.
 - Add functionality to the benchmark suite to compare results more easily
   (e.g. with summary plots).
 - deprecate the ``fmin_*`` functions in the documentation, ``minimize`` is
@@ -335,7 +334,7 @@ This module is in good shape.
 
 sparse.linalg
 `````````````
-Arpack is in good shape.
+ARPACK is in good shape.
 
 isolve:
 
@@ -346,24 +345,18 @@ isolve:
 
 dsolve:
 
-- add sparse Cholesky or incomplete Cholesky
-- add sparse QR
+- add license-compatible sparse Cholesky or incomplete Cholesky
+- add license-compatible sparse QR
 - improve interface to SuiteSparse UMFPACK
 - add interfaces to SuiteSparse CHOLMOD and SPQR
-
-Ideas for new features:
-
-- Wrappers for PROPACK for faster sparse SVD computation.
 
 
 spatial
 ```````
-QHull wrappers are in good shape, as is ``cKDTree``.
+QHull wrappers are in good shape, as is ``KDTree``.
 
 Needed:
 
-- ``KDTree`` will be removed, and ``cKDTree`` will be renamed to ``KDTree``
-  in a backwards-compatible way.
 - ``distance_wrap.c`` needs to be cleaned up (maybe rewrite in Cython).
 
 
@@ -431,10 +424,7 @@ The following improvements will help SciPy better serve this role.
   - Handle censored data (e.g. merge `gh-13699 <https://github.com/scipy/scipy/pull/13699>`__)
 
 - Implement additional widely used continuous and discrete probability
-  distributions:
-
-  - multivariate t distribution
-  - mixture distributions
+  distributions, e.g. mixture distributions.
 
 - Improve the core calculations provided by SciPy's probability distributions
   so they can robustly handle wide ranges of parameter values.  Specifically,
@@ -444,10 +434,11 @@ The following improvements will help SciPy better serve this role.
 
 In addition, we should:
 
+- Consistently handle ``nan_policy`` and ``axis`` arguments in all ``stats``
+  functions (where appropriate).
 - Continue work on making the function signatures of ``stats`` and
   ``stats.mstats`` more consistent, and add tests to ensure that that
   remains the case.
-- Improve statistical tests: consistently provide options for one- and
-  two-sided alternative hypotheses where applicable, return confidence
-  intervals for the test statistic, and implement exact p-value calculations -
-  considering the possibility of ties - where computationally feasible.
+- Improve statistical tests: return confidence intervals for the test
+  statistic, and implement exact p-value calculations - considering the
+  possibility of ties - where computationally feasible.

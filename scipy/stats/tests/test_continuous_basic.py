@@ -33,13 +33,18 @@ not for numerically exact results.
 
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
-distslow = ['kstwo', 'genexpon', 'ksone', 'recipinvgauss', 'vonmises',
-            'kappa4', 'vonmises_line', 'gausshyper', 'norminvgauss',
-            'geninvgauss', 'genhyperbolic']
+# For skipping test_cont_basic
 # distslow are sorted by speed (very slow to slow)
+distslow = ['recipinvgauss', 'vonmises', 'kappa4', 'vonmises_line',
+            'gausshyper', 'norminvgauss', 'geninvgauss', 'genhyperbolic',
+            'truncnorm']
 
-distxslow = ['studentized_range']
 # distxslow are sorted by speed (very slow to slow)
+distxslow = ['studentized_range', 'kstwo', 'ksone', 'wrapcauchy', 'genexpon']
+
+# For skipping test_moments, which is already marked slow
+distxslow_test_moments = ['studentized_range', 'vonmises', 'vonmises_line',
+                          'ksone', 'kstwo', 'recipinvgauss', 'genexpon']
 
 # skip check_fit_args (test is slow)
 skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
@@ -182,7 +187,7 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     check_freezing(distfn, arg)
 
     # Entropy
-    if distname not in ['kstwobign', 'kstwo']:
+    if distname not in ['kstwobign', 'kstwo', 'ncf']:
         check_entropy(distfn, arg, distname)
 
     if distfn.numargs == 0:
@@ -242,38 +247,33 @@ def test_levy_stable_random_state_property():
 def cases_test_moments():
     fail_normalization = set(['vonmises'])
     fail_higher = set(['vonmises', 'ncf'])
-    fail_loc_scale = set(['kappa3', 'kappa4'])  # see gh-13582
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
             continue
 
-        if distname == 'studentized_range':
-            msg = ("studentized_range is far too slow for this test and it is "
-                   "redundant with test_distributions::TestStudentizedRange::"
-                   "test_moment_against_mp")
-            yield pytest.param(distname, arg, True, True, True, True,
-                               marks=pytest.mark.xslow(reason=msg))
+        if distname in distxslow_test_moments:
+            yield pytest.param(distname, arg, True, True, True,
+                               marks=pytest.mark.xslow(reason="too slow"))
             continue
+
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
-        cond3 = distname not in fail_loc_scale
 
-        yield distname, arg, cond1, cond2, cond3, False
+        yield distname, arg, cond1, cond2, False
 
-        if not cond1 or not cond2 or not cond3:
+        if not cond1 or not cond2:
             # Run the distributions that have issues twice, once skipping the
             # not_ok parts, once with the not_ok parts but marked as knownfail
-            yield pytest.param(distname, arg, True, True, True, True,
+            yield pytest.param(distname, arg, True, True, True,
                                marks=pytest.mark.xfail)
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize('distname,arg,normalization_ok,higher_ok,'
-                         'loc_scale_ok,is_xfailing',
+                         'is_xfailing',
                          cases_test_moments())
-def test_moments(distname, arg, normalization_ok, higher_ok, loc_scale_ok,
-                 is_xfailing):
+def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
     try:
         distfn = getattr(stats, distname)
     except TypeError:
@@ -296,9 +296,6 @@ def test_moments(distname, arg, normalization_ok, higher_ok, loc_scale_ok,
             check_skew_expect(distfn, arg, m, v, s, distname)
             check_var_expect(distfn, arg, m, v, distname)
             check_kurt_expect(distfn, arg, m, v, k, distname)
-
-        if loc_scale_ok:
-            check_loc_scale(distfn, arg, m, v, distname)
 
         check_moment(distfn, arg, m, v, distname)
 
@@ -473,7 +470,7 @@ def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
 
 
 def check_sample_mean(sm, v, n, popmean):
-    # from stats.stats.ttest_1samp(a, popmean):
+    # from stats._stats_py.ttest_1samp(a, popmean):
     # Calculates the t-obtained for the independent samples T-test on ONE group
     # of scores a, given a population mean.
     #
@@ -551,26 +548,12 @@ def check_pdf_logpdf_at_endpoints(distfn, args, msg):
     points = np.array([0, 1])
     vals = distfn.ppf(points, *args)
     vals = vals[np.isfinite(vals)]
-    with npt.suppress_warnings() as sup:
-        # Several distributions incur divide by zero or encounter invalid values when computing
-        # the pdf or logpdf at the endpoints.
-        suppress_messsages = [
-            "divide by zero encountered in true_divide",  # multiple distributions
-            "divide by zero encountered in log",  # multiple distributions
-            "divide by zero encountered in power",  # gengamma
-            "invalid value encountered in add",  # genextreme
-            "invalid value encountered in subtract",  # gengamma
-            "invalid value encountered in multiply"  # recipinvgauss
-            ]
-        for msg in suppress_messsages:
-            sup.filter(category=RuntimeWarning, message=msg)
-
-        pdf = distfn.pdf(vals, *args)
-        logpdf = distfn.logpdf(vals, *args)
-        pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
-        logpdf = logpdf[np.isfinite(logpdf)]
-        msg += " - logpdf-log(pdf) relationship"
-        npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg)
+    pdf = distfn.pdf(vals, *args)
+    logpdf = distfn.logpdf(vals, *args)
+    pdf = pdf[(pdf != 0) & np.isfinite(pdf)]
+    logpdf = logpdf[np.isfinite(logpdf)]
+    msg += " - logpdf-log(pdf) relationship"
+    npt.assert_almost_equal(np.log(pdf), logpdf, decimal=7, err_msg=msg)
 
 
 def check_sf_logsf(distfn, args, msg):
@@ -833,3 +816,37 @@ def test_broadcasting_in_moments_gh12192_regression():
                           [np.nan, np.nan, 6.78730736]])
     npt.assert_allclose(vals3, expected3, rtol=1e-8)
     assert vals3.shape == expected3.shape
+
+
+def test_kappa3_array_gh13582():
+    # https://github.com/scipy/scipy/pull/15140#issuecomment-994958241
+    shapes = [0.5, 1.5, 2.5, 3.5, 4.5]
+    moments = 'mvsk'
+    res = np.array([[stats.kappa3.stats(shape, moments=moment)
+                   for shape in shapes] for moment in moments])
+    res2 = np.array(stats.kappa3.stats(shapes, moments=moments))
+    npt.assert_allclose(res, res2)
+
+
+def test_kappa4_array_gh13582():
+    h = np.array([-0.5, 2.5, 3.5, 4.5, -3])
+    k = np.array([-0.5, 1, -1.5, 0, 3.5])
+    moments = 'mvsk'
+    res = np.array([[stats.kappa4.stats(h[i], k[i], moments=moment)
+                   for i in range(5)] for moment in moments])
+    res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
+    npt.assert_allclose(res, res2)
+
+    # https://github.com/scipy/scipy/pull/15250#discussion_r775112913
+    h = np.array([-1, -1/4, -1/4, 1, -1, 0])
+    k = np.array([1, 1, 1/2, -1/3, -1, 0])
+    res = np.array([[stats.kappa4.stats(h[i], k[i], moments=moment)
+                   for i in range(6)] for moment in moments])
+    res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
+    npt.assert_allclose(res, res2)
+
+    # https://github.com/scipy/scipy/pull/15250#discussion_r775115021
+    h = np.array([-1, -0.5, 1])
+    k = np.array([-1, -0.5, 0, 1])[:, None]
+    res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
+    assert res2.shape == (4, 4, 3)

@@ -37,7 +37,7 @@ help:
 	@echo "  show      to show the html-scipyorg output"
 
 clean:
-	-rm -rf build/* source/generated
+	-rm -rf build/* source/reference/generated
 
 
 #------------------------------------------------------------------------------
@@ -55,8 +55,8 @@ clean:
 UPLOAD_DIR=/srv/docs_scipy_org/doc/scipy-$(RELEASE)
 
 SCIPYVER:=$(shell $(PYTHON) -c "import scipy; print(scipy.version.git_revision[:10])" 2>/dev/null)
-GITVER ?= $(shell cd ..; $(PYTHON) -c "from setup import git_version; \
-				print(git_version()[0][:10])")
+GITVER ?= $(shell cd ../tools; $(PYTHON) -c "from version_utils import git_version; \
+				print(git_version('..')[0][:10])")
 
 version-check:
 ifeq "$(GITVER)" "Unknown"
@@ -89,7 +89,7 @@ doc-dist: html-scipyorg html
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
 	mkdir -p build/dist
-	cp -r build/html-scipyorg build/dist/reference
+	cp -r build/html-scipyorg build/dist
 	touch build/dist/index.html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
 	cp build/latex/scipy-ref.pdf build/dist
@@ -159,4 +159,3 @@ linkcheck: version-check
 
 show:
 	@python -c "import webbrowser; webbrowser.open_new_tab('file://$(PWD)/build/html-scipyorg/index.html')"
-

@@ -3,7 +3,7 @@ import numpy as np
 from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
-from .optimize import OptimizeWarning
+from ._optimize import OptimizeWarning
 from warnings import warn
 from numpy.testing import suppress_warnings
 from scipy.sparse import issparse
@@ -370,7 +370,7 @@ def new_constraint_to_old(con, x0):
 
         A = con.A
         if issparse(A):
-            A = A.todense()
+            A = A.toarray()
         fun = lambda x: np.dot(A, x)
         jac = lambda x: A
 
@@ -399,7 +399,7 @@ def new_constraint_to_old(con, x0):
             def j_eq(x):
                 dy = jac(x)
                 if issparse(dy):
-                    dy = dy.todense()
+                    dy = dy.toarray()
                 dy = np.atleast_2d(dy)
                 return dy[i_eq, :]
             ceq[0]["jac"] = j_eq
@@ -421,7 +421,7 @@ def new_constraint_to_old(con, x0):
                 dy = np.zeros((n_bound_below + n_bound_above, len(x0)))
                 dy_all = jac(x)
                 if issparse(dy_all):
-                    dy_all = dy_all.todense()
+                    dy_all = dy_all.toarray()
                 dy_all = np.atleast_2d(dy_all)
                 dy[:n_bound_below, :] = dy_all[i_bound_below]
                 dy[n_bound_below:, :] = -dy_all[i_bound_above]

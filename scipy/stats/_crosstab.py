@@ -16,7 +16,7 @@ def crosstab(*args, levels=None, sparse=False):
 
     Parameters
     ----------
-    args : sequences
+    *args : sequences
         A sequence of sequences whose unique aligned elements are to be
         counted.  The sequences in args must all be the same length.
     levels : sequence, optional

@@ -1,5 +1,5 @@
 import numpy as np
-import scipy.stats.stats
+import scipy.stats._stats_py
 from . import distributions
 from .._lib._bunch import _make_tuple_bunch
 
@@ -146,6 +146,10 @@ def linregress(x, y=None, alternative='two-sided'):
     if x.size == 0 or y.size == 0:
         raise ValueError("Inputs must not be empty.")
 
+    if np.amax(x) == np.amin(x) and len(x) > 1:
+        raise ValueError("Cannot calculate a linear regression "
+                         "if all x values are identical")
+
     n = len(x)
     xmean = np.mean(x, None)
     ymean = np.mean(y, None)
@@ -183,7 +187,7 @@ def linregress(x, y=None, alternative='two-sided'):
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+        t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
 
         slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
@@ -239,7 +243,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     up_slope : float
         Upper bound of the confidence interval on `medslope`.
 
-    See also
+    See Also
     --------
     siegelslopes : a similar technique using repeated medians
 
@@ -388,7 +392,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     medintercept : float
         Estimate of the intercept of the regression line.
 
-    See also
+    See Also
     --------
     theilslopes : a similar technique without repeated medians
 

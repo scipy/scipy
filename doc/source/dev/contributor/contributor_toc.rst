@@ -27,6 +27,7 @@ Development environment
 - :ref:`quickstart-gitpod` presents a step-by-step process for using Gitpod for SciPy development; this process requires minimal setup and is newcomer friendly
 - :ref:`building` may have some helpful hints if you need to deviate from the guides above
 - :ref:`recommended-development-setup` includes additional notes about the development setup; all of this information is contained elsewhere, but it is retained as a legacy document
+- :ref:`meson` for how to use the Meson build system (experimental, it will replace the ``distutils``-based build in the future)
 
 .. _editing-scipy:
 

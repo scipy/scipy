@@ -47,7 +47,7 @@ numpy directly.
 
 Everything in the namespaces of scipy submodules is public.  In general, it is
 recommended to import functions from submodule namespaces.  For example, the
-function ``curve_fit`` (defined in scipy/optimize/minpack.py) should be
+function ``curve_fit`` (defined in scipy/optimize/_minpack_py.py) should be
 imported like this::
 
   from scipy import optimize
@@ -106,10 +106,7 @@ change is made.
 * `scipy.io`
 
   - `scipy.io.arff`
-  - ``scipy.io.harwell_boeing``
-  - ``scipy.io.idl``
-  - ``scipy.io.matlab``
-  - ``scipy.io.netcdf``
+  - `scipy.io.matlab`
   - `scipy.io.wavfile`
 
 * `scipy.linalg`
@@ -146,9 +143,11 @@ change is made.
 
 * `scipy.stats`
 
+  - `scipy.stats.contingency`
   - ``scipy.stats.distributions``
   - `scipy.stats.mstats`
   - `scipy.stats.qmc`
+  - `scipy.stats.sampling`
 
 .. toctree::
    :maxdepth: 1
@@ -175,6 +174,7 @@ change is made.
    stats
    stats.mstats
    stats.qmc
+   stats.sampling
    ccallback
 
 SciPy structure
@@ -218,6 +218,6 @@ following, a *SciPy module* is defined as a Python package, say
 
 See the existing SciPy submodules for guidance.
 
-For further details on NumPy distutils, see `NumPy Distutils - User's Guide <https://github.com/numpy/numpy/blob/master/doc/DISTUTILS.rst.txt>`_.
+For further details on NumPy distutils, see `NumPy Distutils - User's Guide <https://github.com/numpy/numpy/blob/main/doc/DISTUTILS.rst.txt>`_.
 
 .. _NumPy documentation style: https://numpydoc.readthedocs.io/en/latest/format.html

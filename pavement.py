@@ -20,7 +20,6 @@ which can be uploaded to Github Releases.
 import os
 import sys
 import subprocess
-import re
 import shutil
 import warnings
 from hashlib import md5
@@ -36,19 +35,19 @@ except ImportError as e:
 import paver
 import paver.doctools
 import paver.path
-from paver.easy import options, Bunch, task, needs, dry, sh, call_task, cmdopts
+from paver.easy import options, Bunch, task, needs, dry, sh, cmdopts
 
 sys.path.insert(0, os.path.dirname(__file__))
 try:
-    setup_py = __import__("setup")
-    FULLVERSION = setup_py.VERSION
+    version_utils = __import__("tools").version_utils
+    FULLVERSION = version_utils.VERSION
     # This is duplicated from setup.py
     if os.path.exists('.git'):
-        GIT_REVISION = setup_py.git_version()
+        GIT_REVISION = version_utils.git_version()
     else:
         GIT_REVISION = "Unknown"
 
-    if not setup_py.ISRELEASED:
+    if not version_utils.ISRELEASED:
         if GIT_REVISION == "Unknown":
             FULLVERSION += '.dev0+Unknown'
         else:
@@ -69,10 +68,10 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/1.8.0-notes.rst'
+RELEASE = 'doc/release/1.9.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v1.7.0'
+LOG_START = 'v1.8.0'
 LOG_END = 'master'
 
 
@@ -137,17 +136,17 @@ def pdf():
     ref = os.path.join(bdir_latex, "scipy-ref.pdf")
     shutil.copy(ref, os.path.join(destdir_pdf, "reference.pdf"))
 
-def tarball_name(type='gztar'):
+def tarball_name(type_name='gztar'):
     root = 'scipy-%s' % FULLVERSION
-    if type == 'gztar':
+    if type_name == 'gztar':
         return root + '.tar.gz'
-    elif type == 'xztar':
+    elif type_name == 'xztar':
         return root + '.tar.xz'
-    elif type == 'tar':
+    elif type_name == 'tar':
         return root + '.tar'
-    elif type == 'zip':
+    elif type_name == 'zip':
         return root + '.zip'
-    raise ValueError("Unknown type %s" % type)
+    raise ValueError("Unknown type %s" % type_name)
 
 @task
 def sdist():
