@@ -44,7 +44,7 @@ def direct(
     *,
     args: tuple = (),
     disp: bool = False,
-    iatol: float = 1e-4,
+    eps: float = 1e-4,
     maxfun: int = 20000,
     maxiter: int = 6000,
     locally_biased: bool = True,
@@ -79,7 +79,7 @@ def direct(
         completely specify the objective function.
     disp : bool, optional
         Prints the evaluated `func` at every iteration.
-    iatol : float, optional
+    eps : float, optional
         Ensures sufficient decrease in function value when a new potentially
         optimal hyperrectangle is chosen. Default is 0.0001.
     maxfun : int, optional
@@ -178,7 +178,7 @@ def direct(
         _func_wrap,
         np.asarray(lb), np.asarray(ub),
         args,
-        disp, iatol, maxfun, maxiter,
+        disp, eps, maxfun, maxiter,
         locally_biased,
         f_min, f_min_tol,
         vol_tol, len_tol, callback
