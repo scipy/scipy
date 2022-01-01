@@ -14,18 +14,6 @@ class TestDIRECT:
     MAXFEVAL = 20000
     MAXITER = 6000
 
-    def gp_func(x):
-        x1, x2 = x[0], x[1]
-        fact1a = (x1 + x2 + 1)**2
-        fact1b = 19 - 14*x1 + 3*x1**2 - 14*x2 + 6*x1*x2 + 3*x2**2
-        fact1 = 1 + fact1a*fact1b
-
-        fact2a = (2*x1 - 3*x2)**2
-        fact2b = 18 - 32*x1 + 12*x1**2 + 48*x2 - 36*x1*x2 + 27*x2**2
-        fact2 = 30 + fact2a*fact2b
-
-        return fact1*fact2
-
     def dot_func(x):
         if np.sum(np.abs(x)) > 20:
             return np.nan
@@ -39,10 +27,6 @@ class TestDIRECT:
 
     @pytest.mark.parametrize(
         ("func, bounds, result"), [
-         (gp_func, [[-2.0, 2.0], [-2.0, 2.0]],
-          {'arg_min': np.array([0.0, -1.0]), 'min': 3.0,
-           'arg_decimal': 4, 'decimal': 7,
-           'status': 1, 'success': False}),
          (neg_inv_func, 4*[(-10, 10)],
           {'arg_min': np.array([0., 0., 0., 0.]), 'min': -np.inf,
            'arg_decimal': 7, 'decimal': 7,
@@ -63,7 +47,7 @@ class TestDIRECT:
                             decimal=result['decimal'])
         assert_equal(res['success'], result['success'])
         assert_equal(res['status'], result['status'])
-        assert_(res['nfev'] >= self.MAXFEVAL)
+        assert_(res['nfev'] <= self.MAXFEVAL)
         assert_(res['nit'] <= self.MAXITER)
 
         def callback(x):
