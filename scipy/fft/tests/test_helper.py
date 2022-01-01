@@ -1,4 +1,5 @@
-from scipy.fft._helper import next_fast_len, prev_fast_len, _init_nd_shape_and_axes
+from scipy.fft._helper import next_fast_len, prev_fast_len
+from scipy.fft._helper import _init_nd_shape_and_axes
 from numpy.testing import assert_equal, assert_array_equal
 from pytest import raises as assert_raises
 import pytest
@@ -131,11 +132,15 @@ class TestPrevFastLen:
             _assert_n_smooth(m, 5)
 
     def test_np_integers(self):
-        ITYPES = [np.int16, np.int32, np.int64, np.uint16, np.uint32, np.uint64]
+        ITYPES = [np.int16, np.int32, np.int64, np.uint16, np.uint32, 
+                    np.uint64]
         for ityp in ITYPES:
             x = ityp(12345)
             testN = prev_fast_len(x)
             assert_equal(testN, prev_fast_len(int(x)))
+
+            testN = prev_fast_len(x, real=True)
+            assert_equal(testN, prev_fast_len(int(x), real=True))
 
     def testprev_fast_len_small(self):
         hams = {
@@ -144,6 +149,15 @@ class TestPrevFastLen:
         }
         for x, y in hams.items():
             assert_equal(prev_fast_len(x, True), y)
+
+        hams = {
+            1: 1, 2: 2, 3: 3, 4: 4, 5: 5, 6: 6, 7: 7, 8: 8, 9: 9, 10: 10,
+            11: 11, 12: 12, 13: 12, 14: 14, 15: 15, 16: 16, 17: 16, 18: 18,
+            19: 18, 20: 20, 21: 21, 22: 22, 120: 120, 121: 121, 122: 121,
+            1021: 1008, 1536: 1536, 51200000: 51200000
+        }
+        for x, y in hams.items():
+            assert_equal(prev_fast_len(x, False), y)
 
     @pytest.mark.xfail(sys.maxsize < 2**32,
                        reason="Hamming Numbers too large for 32-bit",

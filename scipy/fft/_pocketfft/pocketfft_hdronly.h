@@ -459,7 +459,7 @@ struct util // hack to avoid duplicate symbols
 
     size_t bestfound = 1;
     size_t f11 = 1;
-    while (f11 < n)
+    while (f11 <= n)
     {
       size_t f117 = f11;
       while(f117 <= n)
