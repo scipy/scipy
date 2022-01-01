@@ -644,7 +644,7 @@
     if (delta <= *sigmaper) {
         *ierror = 5;
         if (logfile)
-         fprintf(logfile, "DIRECT stopped: Measure of S_min "
+         fprintf(logfile, "DIRECT stopped: Side length of S_min "
              "= %g < %g.\n", delta, *sigmaper);
         *numiter = t;
         goto L100;
@@ -657,7 +657,8 @@
     if ((*minf - *fglobal)/ divfactor <= *fglper) {
         *ierror = 3;
         if (logfile)
-         fprintf(logfile, "DIRECT stopped: minf within fglper of global minimum.\n");
+         fprintf(logfile, "DIRECT stopped: found minimum within f_min_tol of "
+         "global minimum.\n");
         *numiter = t;
         goto L100;
     }

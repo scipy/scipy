@@ -29,12 +29,12 @@ ERROR_MESSAGES = (
 )
 
 SUCCESS_MESSAGES = (
-    ("The best function value found is within {} percent "
+    ("The best function value found is within a relative error={}"
      "of the (known) global optimum f_min"),
-    ("The volume of the hyper-rectangle with best function value found "
-     "is below vol_per={}"),
-    ("The measure of the hyper-rectangle with best function value found "
-     "is below sigma_per={}"),
+    ("The volume of the hyperrectangle containing the lowest function value " 
+     "found is below vol_tol={}"),
+    ("The side length of the hyperrectanglecontaining the lowest function value " 
+     "found is below len_tol={}"),
 )
 
 
@@ -49,9 +49,9 @@ def direct(
     maxiter: int = 6000,
     locally_biased: bool = True,
     f_min: float = -np.inf,
-    f_min_per: float = 0.0001,
-    vol_per: float = 1e-16,
-    sigma_per: float = 1e-8,
+    f_min_tol: float = 0.0001,
+    vol_tol: float = 1e-16,
+    len_tol: float = 1e-8,
     callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
 ) -> OptimizeResult:
     r"""
@@ -97,21 +97,18 @@ def direct(
         Function value of the global optimum.
         By default it is a negative value whose absolute value is very large.
         Set this value only if the global optimum is known.
-    f_min_per : float, optional
-        Terminate the optimization when the percent error satisfies:
-
-        .. math::
-
-            (f_{min} - f_{global})/\max(1, |f_{global}|) \leq f_{glper}
-
-        Default is 0.01.
-    vol_per : float, optional
-        Terminate the optimization once the volume of a hyperrectangle is less
-        than vol_per percent of the original hyper-rectangle.
-        Default is -1.
-    sigma_per : float, optional
-        Terminate the optimization once the measure of the hyperrectangle is
-        less than this argument. Default is -1.
+    f_min_tol : float, optional
+        Terminate the optimization once the relative error between 
+        the current best minimum and the known global minimum `f_min` is 
+        smaller than `f_min_tol`. Default is 0.0001.
+    vol_tol : float, optional
+        Terminate the optimization once the volume of the hyperrectangle 
+        containing the lowest function value is smaller than `vol_tol` 
+        of the original hyperrectangle. Default is 1e-16.
+    len_tol : float, optional
+        Terminate the optimization once the maximal side length of the 
+        hyperrectangle containing the lowest function value is smaller than 
+        `len_tol`. Default is 1e-8.
     callback : callable, `callback(xk)`, optional
         A function to follow the progress of the minimization. ``xk`` is
         the best solution found so far.
@@ -139,7 +136,7 @@ def direct(
     more points, 2 in each coordinate direction. Using these function
     values, DIRECT then divides the domain into hyperrectangles, each
     having exactly one of the sampling points as its center. In each
-    iteration, DIRECT chooses, using the epsilon parameter, which defaults
+    iteration, DIRECT chooses, using the iatol parameter, which defaults
     to 1e-4, some of the existing hyperrectangles to be further divided.
     This division process continues until the maximum iterations or
     maximum function evaluations allowed are exceeded, or the function
@@ -183,11 +180,11 @@ def direct(
         args,
         disp, iatol, maxfun, maxiter,
         locally_biased,
-        f_min, f_min_per,
-        vol_per, sigma_per, callback
+        f_min, f_min_tol,
+        vol_tol, len_tol, callback
     )
 
-    format_val = (maxfun, maxiter, f_min_per, vol_per, vol_per)
+    format_val = (maxfun, maxiter, f_min_tol, vol_tol, len_tol)
     if ret_code > 2:
         message = SUCCESS_MESSAGES[ret_code - 3].format(
                     format_val[ret_code - 1])
