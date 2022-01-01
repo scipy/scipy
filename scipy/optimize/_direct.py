@@ -152,7 +152,7 @@ def direct(
     reorganized by Steven G. Johnson, August 2007. And this method wraps
     the C implementation.
 
-    .. versionadded:: 1.8.0
+    .. versionadded:: 1.9.0
 
     References
     ----------
