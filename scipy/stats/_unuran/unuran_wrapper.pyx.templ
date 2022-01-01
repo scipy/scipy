@@ -430,8 +430,9 @@ cdef class Method:
         if self.urng == NULL:
             raise UNURANError(self._messages.get())
         self._check_errorcode(unur_set_urng(self.par, self.urng))
+        has_callback_wrapper = (self._callback_wrapper is not None)
         try:
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 init_unuran_callback(&callback, self._callback_wrapper)
             self.rng = unur_init(self.par)
             # set self.par = NULL because a call to `unur_init` destroys
@@ -445,7 +446,7 @@ cdef class Method:
             unur_distr_free(self.distr)
             self.distr = NULL
         finally:
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 release_unuran_callback(&callback)
 
     @cython.boundscheck(False)
@@ -465,12 +466,14 @@ cdef class Method:
             size_t i
             size_t size = len(out)
 
+        has_callback_wrapper = (self._callback_wrapper is not None)
+
         _lock.acquire()
         try:
             self._messages.clear()
             unur_set_stream(self._messages.handle)
 
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 init_unuran_callback(&callback, self._callback_wrapper)
             for i in range(size):
                 out[i] = unur_sample_cont(rng)
@@ -481,7 +484,7 @@ cdef class Method:
                 raise UNURANError(msg)
         finally:
             _lock.release()
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 release_unuran_callback(&callback)
 
     @cython.boundscheck(False)
@@ -501,12 +504,14 @@ cdef class Method:
             size_t i
             size_t size = len(out)
 
+        has_callback_wrapper = (self._callback_wrapper is not None)
+
         _lock.acquire()
         try:
             self._messages.clear()
             unur_set_stream(self._messages.handle)
 
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 init_unuran_callback(&callback, self._callback_wrapper)
             for i in range(size):
                 out[i] = unur_sample_discr(rng)
@@ -517,7 +522,7 @@ cdef class Method:
                 raise UNURANError(msg)
         finally:
             _lock.release()
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 release_unuran_callback(&callback)
 
     def rvs(self, size=None, random_state=None):
