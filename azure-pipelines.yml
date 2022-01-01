@@ -83,7 +83,7 @@ stages:
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "--upgrade numpy"
+        numpy_spec: "numpy==1.21.5"
         refguide_check: true
         asv_check: true
         use_wheel: true
