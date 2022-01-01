@@ -469,7 +469,7 @@ class VarWriter4:
         name : str
             name of variable
         shape : sequence
-           Shape of array as it will be read in matlab
+            Shape of array as it will be read in matlab
         P : int, optional
             code for mat4 data type, one of ``miDOUBLE, miSINGLE, miINT32,
             miINT16, miUINT16, miUINT8``

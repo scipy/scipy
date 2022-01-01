@@ -309,7 +309,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         ``(a, b]`` that, if any, only the eigenvalues between these values
         are returned. Only available with "evr", "evx", and "gvx" drivers. Use
         ``np.inf`` for the unconstrained ends.
-    driver: str, optional
+    driver : str, optional
         Defines which LAPACK driver should be used. Valid options are "ev",
         "evd", "evr", "evx" for standard problems and "gv", "gvd", "gvx" for
         generalized (where b is not None) problems. See the Notes section.
@@ -943,7 +943,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
         ``(a, b]`` that, if any, only the eigenvalues between these values
         are returned. Only available with "evr", "evx", and "gvx" drivers. Use
         ``np.inf`` for the unconstrained ends.
-    driver: str, optional
+    driver : str, optional
         Defines which LAPACK driver should be used. Valid options are "ev",
         "evd", "evr", "evx" for standard problems and "gv", "gvd", "gvx" for
         generalized (where b is not None) problems. See the Notes section of

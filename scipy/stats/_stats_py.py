@@ -2159,7 +2159,7 @@ def obrientransform(*args):
 
     Parameters
     ----------
-    args : tuple of array_like
+    *args : tuple of array_like
         Any number of arrays.
 
     Returns
@@ -4712,10 +4712,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
           * 'exact': computes the exact p-value, but can only be used if no ties
             are present. As the sample size increases, the 'exact' computation
             time may grow and the result may lose some precision.
-
-    variant: {'b', 'c'}, optional
+    variant : {'b', 'c'}, optional
         Defines which variant of Kendall's tau is returned. Default is 'b'.
-
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -5446,8 +5444,9 @@ def _mgc_stat(distx, disty):
 
     Parameters
     ----------
-    x, y : ndarray
-        `x` and `y` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
+    distx, disty : ndarray
+        `distx` and `disty` have shapes `(n, p)` and `(n, q)` or
+        `(n, n)` and `(n, n)`
         if distance matrices.
 
     Returns
@@ -5542,9 +5541,9 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
 
     Parameters
     ----------
-    sig_connect: ndarray
+    sig_connect : ndarray
         A binary matrix with 1's indicating the significant region.
-    stat_mgc_map: ndarray
+    stat_mgc_map : ndarray
         All local correlations within `[-1, 1]`.
 
     Returns
@@ -6348,10 +6347,10 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
         corresponding to `axis` (the zeroth, by default).
     axis : int, optional
         The axis over which to operate on a and b.
-    permutations: int, optional
+    permutations : int, optional
         Number of permutations used to calculate p-value. If greater than or
         equal to the number of distinct permutations, perform an exact test.
-    equal_var: bool, optional
+    equal_var : bool, optional
         If False, an equal variance (Welch's) t-test is conducted.  Otherwise,
         an ordinary t-test is conducted.
     random_state : {None, int, `numpy.random.Generator`}, optional
@@ -6931,8 +6930,8 @@ def _compute_dplus(cdfvals):
 
     Parameters
     ----------
-    cdfvals: array_like
-      Sorted array of CDF values between 0 and 1
+    cdfvals : array_like
+        Sorted array of CDF values between 0 and 1
 
     Returns
     -------
@@ -6947,8 +6946,8 @@ def _compute_dminus(cdfvals):
 
     Parameters
     ----------
-    cdfvals: array_like
-      Sorted array of CDF values between 0 and 1
+    cdfvals : array_like
+        Sorted array of CDF values between 0 and 1
 
     Returns
     -------
@@ -6993,7 +6992,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     statistic : float
         KS test statistic, either D, D+ or D- (depending on the value
         of 'alternative')
-    pvalue :  float
+    pvalue : float
         One-tailed or two-tailed p-value.
 
     See Also
@@ -7537,7 +7536,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     -------
     statistic : float
         KS test statistic, either D, D+ or D-.
-    pvalue :  float
+    pvalue : float
         One-tailed or two-tailed p-value.
 
     See Also

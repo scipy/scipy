@@ -98,7 +98,7 @@ class NearestNDInterpolator(NDInterpolatorBase):
 
         Parameters
         ----------
-        x1, x2, ... xn: array-like of float
+        x1, x2, ... xn : array-like of float
             Points where to interpolate data at.
             x1, x2, ... xn can be array-like of float with broadcastable shape.
             or x1 can be array-like of float with shape ``(..., ndim)``
@@ -219,7 +219,7 @@ def griddata(points, values, xi, method='linear', fill_value=np.nan,
     >>> plt.gcf().set_size_inches(6, 6)
     >>> plt.show()
 
-    See also
+    See Also
     --------
     LinearNDInterpolator :
         Piecewise linear interpolant in N dimensions.

@@ -515,7 +515,7 @@ class KDTree(cKDTree):
             was added.
 
             .. versionadded:: 1.6.0
-        return_length: bool, optional
+        return_length : bool, optional
             Return the number of points inside the radius instead of a list
             of the indices.
 

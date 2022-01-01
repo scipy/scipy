@@ -427,7 +427,7 @@ class BSpline:
         ----------
         x : array_like
             points to evaluate the spline at.
-        nu: int, optional
+        nu : int, optional
             derivative to evaluate (default is 0).
         extrapolate : bool or 'periodic', optional
             whether to extrapolate based on the first and last intervals
@@ -1405,7 +1405,6 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
 
     Notes
     -----
-
     The number of data points must be larger than the spline degree `k`.
 
     Knots `t` must satisfy the Schoenberg-Whitney conditions,

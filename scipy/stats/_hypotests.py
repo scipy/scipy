@@ -156,7 +156,7 @@ class CramerVonMisesResult:
 
 def _psi1_mod(x):
     """
-    psi1 is defined in equation 1.10 in Csorgo, S. and Faraway, J. (1996).
+    psi1 is defined in equation 1.10 in Csörgő, S. and Faraway, J. (1996).
     This implements a modified version by excluding the term V(x) / 12
     (here: _cdf_cvm_inf(x) / 12) to avoid evaluating _cdf_cvm_inf(x)
     twice in _cdf_cvm.
@@ -208,7 +208,7 @@ def _cdf_cvm_inf(x):
     """
     Calculate the cdf of the Cramér-von Mises statistic (infinite sample size).
 
-    See equation 1.2 in Csorgo, S. and Faraway, J. (1996).
+    See equation 1.2 in Csörgő, S. and Faraway, J. (1996).
 
     Implementation based on MAPLE code of Julian Faraway and R code of the
     function pCvM in the package goftest (v1.1.1), permission granted
@@ -245,12 +245,16 @@ def _cdf_cvm(x, n=None):
     Calculate the cdf of the Cramér-von Mises statistic for a finite sample
     size n. If N is None, use the asymptotic cdf (n=inf).
 
-    See equation 1.8 in Csorgo, S. and Faraway, J. (1996) for finite samples,
+    See equation 1.8 in Csörgő, S. and Faraway, J. (1996) for finite samples,
     1.2 for the asymptotic cdf.
 
     The function is not expected to be accurate for large values of x, say
     x > 2, when the cdf is very close to 1 and it might return values > 1
-    in that case, e.g. _cdf_cvm(2.0, 12) = 1.0000027556716846.
+    in that case, e.g. _cdf_cvm(2.0, 12) = 1.0000027556716846. Moreover, it
+    is not accurate for small values of n, especially close to the bounds of
+    the distribution's domain, [1/(12*n), n/3], where the value jumps to 0
+    and 1, respectively. These are limitations of the approximation by Csörgő
+    and Faraway (1996) implemented in this function.
     """
     x = np.asarray(x)
     if n is None:
@@ -317,7 +321,7 @@ def cramervonmises(rvs, cdf, args=()):
     ----------
     .. [1] Cramér-von Mises criterion, Wikipedia,
            https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion
-    .. [2] Csorgo, S. and Faraway, J. (1996). The Exact and Asymptotic
+    .. [2] Csörgő, S. and Faraway, J. (1996). The Exact and Asymptotic
            Distribution of Cramér-von Mises Statistics. Journal of the
            Royal Statistical Society, pp. 221-234.
 
@@ -489,10 +493,10 @@ def somersd(x, y=None, alternative='two-sided'):
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         1D array of rankings, treated as the (row) independent variable.
         Alternatively, a 2D contingency table.
-    y: array_like, optional
+    y : array_like, optional
         If `x` is a 1D array of rankings, `y` is a 1D array of rankings of the
         same length, treated as the (column) dependent variable.
         If `x` is 2D, `y` is ignored.

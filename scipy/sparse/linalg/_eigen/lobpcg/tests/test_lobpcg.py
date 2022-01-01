@@ -222,7 +222,7 @@ def test_fiedler_large_12():
 def test_failure_to_run_iterations():
     """Check that the code exists gracefully without breaking. Issue #10974.
     """
-    rnd = np.random.RandomState(0)
+    rnd = np.random.RandomState(4120349)
     X = rnd.standard_normal((100, 10))
     A = X @ X.T
     Q = rnd.standard_normal((X.shape[0], 4))
