@@ -587,14 +587,14 @@ class TestCurveFit:
             popt, pcov, infodict, errmsg, ier = curve_fit(
                 f, xdata, ydata, method=method, full_output=True)
             assert_allclose(popt, [2., 2.])
-            assert_("nfev" in infodict)
-            assert_("fvec" in infodict)
+            assert "nfev" in infodict
+            assert "fvec" in infodict
             if method == 'lm' or method is None:
-                assert_("fjac" in infodict)
-                assert_("ipvt" in infodict)
-                assert_("qtf" in infodict)
-            assert_(isinstance(errmsg, str))
-            assert_(ier in (1, 2, 3, 4))
+                assert "fjac" in infodict
+                assert "ipvt" in infodict
+                assert "qtf" in infodict
+            assert isinstance(errmsg, str)
+            assert ier in (1, 2, 3, 4)
 
     def test_bounds(self):
         def f(x, a, b):
