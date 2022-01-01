@@ -14,7 +14,6 @@ from warnings import warn
 
 import numpy as np
 
-
 # unconstrained minimization
 from .optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                        _minimize_bfgs, _minimize_newtoncg,
