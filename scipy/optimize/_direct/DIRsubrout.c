@@ -1501,9 +1501,9 @@ L50:
          " Maximum number of f-evaluations (maxf): %d\n"
          " Maximum number of iterations (MaxT): %d\n"
          " Value of f_global: %e\n"
-         " Global percentage wanted: %e\n"
-         " Volume percentage wanted: %e\n"
-         " Measure percentage wanted: %e\n",
+         " Global minimum tolerance set: %e\n"
+         " Volume tolerance set: %e\n"
+         " Length tolerance set: %e\n",
          imainver, isubver, isubsubver, *n, *eps, *maxf, *maxt,
          *fglobal, *fglper, *volper, *sigmaper);
      fprintf(logfile, *iepschange == 1
