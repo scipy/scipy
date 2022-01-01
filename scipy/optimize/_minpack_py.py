@@ -618,7 +618,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         `mesg`, and `ier`.
 
         .. versionadded:: 1.9
-    kwargs
+    **kwargs
         Keyword arguments passed to `leastsq` for ``method='lm'`` or
         `least_squares` otherwise.
 
