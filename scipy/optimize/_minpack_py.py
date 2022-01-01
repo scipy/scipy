@@ -643,9 +643,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         a dictionary of optional outputs with the keys:
 
         ``nfev``
-            The number of function calls. Methods ‘trf’ and ‘dogbox’ do not
+            The number of function calls. Methods 'trf' and 'dogbox' do not
             count function calls for numerical Jacobian approximation,
-            as opposed to ‘lm’ method.
+            as opposed to 'lm' method.
         ``fvec``
             The function values evaluated at the solution.
         ``fjac``
@@ -654,7 +654,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             Jacobian matrix, stored column wise.
             Together with ipvt, the covariance of the
             estimate can be approximated.
-            Method ‘lm’ only provides this information.
+            Method 'lm' only provides this information.
         ``ipvt``
             An integer array of length N which defines
             a permutation matrix, p, such that
@@ -662,10 +662,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
             with diagonal elements of nonincreasing
             magnitude. Column j of p is column ipvt(j)
             of the identity matrix.
-            Method ‘lm’ only provides this information.
+            Method 'lm' only provides this information.
         ``qtf``
             The vector (transpose(q) * fvec).
-            Method ‘lm’ only provides this information.
+            Method 'lm' only provides this information.
 
         .. versionadded:: 1.9
     mesg : str (returned only if `full_output` is True)
