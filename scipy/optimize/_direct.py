@@ -62,7 +62,7 @@ def direct(
 
     Parameters
     ----------
-    func: callable
+    func : callable
         The objective function to be minimized.
         ``func(x, *args) -> float``
         where ``x`` is an 1-D array with shape (n,) and args is a tuple of
