@@ -41,6 +41,7 @@ SUCCESS_MESSAGES = (
 def direct(
     func: Callable[[npt.ArrayLike, Tuple[Any]], float],
     bounds: Union[Iterable, Bounds],
+    *,
     args: tuple = (),
     disp: bool = False,
     eps: float = 1e-4,
