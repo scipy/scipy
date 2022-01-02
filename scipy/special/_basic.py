@@ -2402,7 +2402,8 @@ def factorial2(n, exact=False):
     ----------
     n : int or array_like
         Calculate ``n!!``.  Arrays are only supported with `exact` set
-        to False.  If ``n < 0``, the return value is 0.
+        to False.  If ``n < 0``, the return value is 0 if `exact` is set to
+        False. If `exact` is true then ``n`` can be an odd negative integer.
     exact : bool, optional
         The result can be approximated rapidly using the gamma-formula
         above (default).  If `exact` is set to True, calculate the
@@ -2421,18 +2422,21 @@ def factorial2(n, exact=False):
     array(105.00000000000001)
     >>> factorial2(7, exact=True)
     105
-    >>> factorial2(-10, exact=True)
-    0
+    >>> factorial2(-3, exact=True)
+    -1
 
     """
     if exact:
-        if n < 0:
-            return 0
-        if n == 0:
-            return 1
-        val = 1
-        for k in range(n, 0, -2):
-            val *= k
+        if not isscalar(n):
+            raise ValueError("Arrays are not supported for exact calculations.")
+        elif n in [0,-1]:
+            val = 1
+        elif n > 0 and isinstance(n, int):
+            val = factorialk(n, 2)
+        elif n < 0 and n % 2 == 1:
+            val = ((-1) ** ((n - 1) / 2) * n) / factorial2(-n, exact=True)
+        else:
+            raise ValueError("n must be a positive integer or an odd negative integer.")
         return val
     else:
         n = asarray(n)
