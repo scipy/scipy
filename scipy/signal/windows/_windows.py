@@ -1214,7 +1214,7 @@ def kaiser(M, beta, sym=True):
     return _truncate(w, needs_trunc)
 
 
-def kaiser_bessel_derived(M, beta, sym=True):
+def kaiser_bessel_derived(M, beta, *, sym=True):
     """Return a Kaiser-Bessel derived window.
 
     Parameters
