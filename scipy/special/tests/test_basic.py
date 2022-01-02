@@ -3616,8 +3616,10 @@ def test_pseudo_huber_small_r():
     assert_allclose(y, expected, rtol=1e-13)
 
 
-def test_user_warning():
-    with pytest.warns(UserWarning, match=r'Too many predicted coefficients'):
+def test_runtime_warning():
+    with pytest.warns(RuntimeWarning,
+                      match=r'Too many predicted coefficients'):
         mathieu_odd_coef(1000, 1000)
-    with pytest.warns(RuntimeWarning, match=r'Too many predicted coefficients'):
+    with pytest.warns(RuntimeWarning,
+                      match=r'Too many predicted coefficients'):
         mathieu_even_coef(1000, 1000)
