@@ -144,11 +144,11 @@
 /* | fglobal -- Function value of the global optimum. If this value is not | */
 /* |            known (that is, we solve a real problem, not a testproblem)| */
 /* |            set this value to -1.D100 and fglper (see below) to 0.D0.  | */
-/* |  fglper -- Terminate the optimization when the percent error          | */
-/* |                100(f_min - fglobal)/max(1,abs(fglobal)) < fglper.     | */
+/* |  fglper -- Terminate the optimization when the relative error          | */
+/* |                (f_min - fglobal)/max(1,abs(fglobal)) < fglper.     | */
 /* |  volper -- Terminate the optimization when the volume of the          | */
 /* |            hyperrectangle S with f(c(S)) = minf is less then volper   | */
-/* |            percent of the volume of the original hyperrectangle.      | */
+/* |            of the volume of the original hyperrectangle.      | */
 /* |sigmaper -- Terminate the optimization when the measure of the         | */
 /* |            hyperrectangle S with f(c(S)) = minf is less then sigmaper.| */
 /* |                                                                       | */
@@ -182,12 +182,12 @@
 /* |              2   Number of iterations is equal to maxT.               | */
 /* |              3   The best function value found is within fglper of    | */
 /* |                  the (known) global optimum, that is                  | */
-/* |                   100(minf - fglobal/max(1,|fglobal|))  < fglper.     | */
+/* |                   (minf - fglobal/max(1,|fglobal|))  < fglper.     | */
 /* |                  Note that this termination signal only occurs when   | */
 /* |                  the global optimal value is known, that is, a test   | */
 /* |                  function is optimized.                               | */
 /* |              4   The volume of the hyperrectangle with minf at its    | */
-/* |                  center is less than volper percent of the volume of  | */
+/* |                  center is less than volper of the volume of  | */
 /* |                  the original hyperrectangle.                         | */
 /* |              5   The measure of the hyperrectangle with minf at its   | */
 /* |                  center is less than sigmaper.                        | */
@@ -613,9 +613,9 @@
 /* |             minf is assumed. We then calculate the volume of this     | */
 /* |             hyperrectangle and store it in delta. This delta can be   | */
 /* |             used to stop DIRECT once the volume is below a certain    | */
-/* |             percentage of the original volume. Since the original     | */
+/* |             ratio of the original volume. Since the original     | */
 /* |             is 1 (scaled), we can stop once delta is below a certain  | */
-/* |             percentage, given by volper.                              | */
+/* |             threshold, given by volper.                              | */
 /* +-----------------------------------------------------------------------+ */
     *ierror = jones;
     jones = 0;
