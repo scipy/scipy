@@ -1268,7 +1268,6 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     >>> plt.tight_layout()
     >>> plt.show()
     """
-
     if not sym:
         raise ValueError(
             "Kaiser-Bessel Derived windows are only defined for symmetric "
