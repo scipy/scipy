@@ -336,6 +336,15 @@ class TestEig:
                 A, B = matrices(omega=k*5./100)
                 self._check_gen_eig(A, B)
 
+    def test_gen_eig_normalization(self):
+        # issue #11550 (normalization of eigenvectors)
+        seed(0)
+        A = random(size=(4, 4))
+        B = random(size=(4, 4))
+        for left in [True, False]:
+            D, V = eig(A, B, right=not left, left=left)
+            assert_allclose([norm(V[:, k]) for k in range(4)], 1.0)
+
     def test_make_eigvals(self):
         # Step through all paths in _make_eigvals
         seed(1234)

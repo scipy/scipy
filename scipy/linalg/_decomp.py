@@ -97,7 +97,7 @@ def _geneig(a1, b1, left, right, overwrite_a, overwrite_b,
             vr = _make_complex_eigvecs(w, vr, t)
 
     # the eigenvectors returned by the lapack function are NOT normalized
-    for i in range(vr.shape[0]):
+    for i in range(vr.shape[1]):
         if right:
             vr[:, i] /= norm(vr[:, i])
         if left:
