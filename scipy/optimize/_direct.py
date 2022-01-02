@@ -94,21 +94,21 @@ def direct(
         * ``locally_biased=False`` - use the original DIRECT algorithm
         * ``locally_biased=True`` - use the modified DIRECT-l algorithm
     f_min : float, optional
-        Function value of the global optimum. Set this value only if the 
+        Function value of the global optimum. Set this value only if the
         global optimum is known. Default is -np.inf.
     f_min_rtol : float, optional
-        Terminate the optimization once the relative error 
-        `(f - f_min)/f_min` between the current best minimum `f` and 
-        the known global minimum `f_min` is smaller than `f_min_tol`. 
+        Terminate the optimization once the relative error
+        `(f - f_min)/f_min` between the current best minimum `f` and
+        the known global minimum `f_min` is smaller than `f_min_tol`.
         Default is 0.0001.
     vol_tol : float, optional
-        Terminate the optimization once the volume of the hyperrectangle 
-        containing the lowest function value is smaller than `vol_tol` 
-        of the complete search space. Must lie between 0 and 1. 
+        Terminate the optimization once the volume of the hyperrectangle
+        containing the lowest function value is smaller than `vol_tol`
+        of the complete search space. Must lie between 0 and 1.
         Default is 1e-16.
     len_tol : float, optional
-        Terminate the optimization once the maximal side length of the 
-        hyperrectangle containing the lowest function value is smaller than 
+        Terminate the optimization once the maximal side length of the
+        hyperrectangle containing the lowest function value is smaller than
         `len_tol`. Must lie between 0 and 1. Default is 1e-8.
     callback : callable, `callback(xk)`, optional
         A function to follow the progress of the minimization. ``xk`` is
@@ -130,21 +130,21 @@ def direct(
     optimization algorithm capable of minimizing a black box function with
     its variables subject to lower and upper bound constrains by sampling
     potential solutions in the search space. The algorithm starts by
-    normalising the search space to an n-dimensional unit hypercube. 
-    It samples the function at the center of this hypercube and at 2n 
-    (n is the number of variables) more points, 2 in each coordinate 
-    direction. Using these function values, DIRECT then divides the 
-    domain into hyperrectangles, each having exactly one of the sampling 
-    points as its center. In each iteration, DIRECT chooses, using the eps 
-    parameter, which defaults to 1e-4, some of the existing hyperrectangles 
-    to be further divided. This division process continues until either the 
-    maximum number of iterations or maximum function evaluations allowed 
-    are exceeded, or the volume or the side length of the hyperrectangle 
-    containing the minimal value found so far is lower than a certain 
-    tolerance. If `f_min` is specified, the optimization will stop once 
-    this function value is reached within a relative tolerance. The locally 
-    biased variant of DIRECT (originally called DIRECT_L) [2]_ is used by 
-    default. It makes the search more locally biased and more efficient for 
+    normalising the search space to an n-dimensional unit hypercube.
+    It samples the function at the center of this hypercube and at 2n
+    (n is the number of variables) more points, 2 in each coordinate
+    direction. Using these function values, DIRECT then divides the
+    domain into hyperrectangles, each having exactly one of the sampling
+    points as its center. In each iteration, DIRECT chooses, using the eps
+    parameter, which defaults to 1e-4, some of the existing hyperrectangles
+    to be further divided. This division process continues until either the
+    maximum number of iterations or maximum function evaluations allowed
+    are exceeded, or the volume or the side length of the hyperrectangle
+    containing the minimal value found so far is lower than a certain
+    tolerance. If `f_min` is specified, the optimization will stop once
+    this function value is reached within a relative tolerance. The locally
+    biased variant of DIRECT (originally called DIRECT_L) [2]_ is used by
+    default. It makes the search more locally biased and more efficient for
     cases with only a few local minima.
 
     This code is based on the DIRECT 2.0.4 Fortran code by Gablonsky et al. at
