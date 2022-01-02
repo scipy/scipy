@@ -64,7 +64,7 @@ def direct(
     ----------
     func: callable
         The objective function to be minimized.
-        ``func(x, \*args) -> float``
+        ``func(x, *args) -> float``
         where ``x`` is an 1-D array with shape (n,) and args is a tuple of
         the fixed parameters needed to completely specify the function.
     bounds : sequence or `Bounds`
@@ -78,7 +78,7 @@ def direct(
         Any additional fixed parameters needed to
         completely specify the objective function.
     disp : bool, optional
-        Prints the evaluated `func` at every iteration.
+        If ``True``, print logging information about the optimization process.
     eps : float, optional
         Ensures sufficient decrease in function value when a new potentially
         optimal hyperrectangle is chosen. Default is 0.0001.
@@ -88,18 +88,19 @@ def direct(
     maxiter : int, optional
         Maximum number of iterations. Default is 6000.
     locally_biased : bool, optional
-        Whether to use the original [1]_ or modified [2]_ DIRECT algorithm.
-        Default is True. Possible values:
-
-        * ``locally_biased=False`` - use the original DIRECT algorithm
-        * ``locally_biased=True`` - use the modified DIRECT-l algorithm
+        If `True` (default), use the locally biased variant [2] of the
+        algorithm known as DIRECT_L. If `False`, use the original unbiased
+        DIRECT algorithm [1]. For hard problems with many local minima,
+        `False` is recommended.
     f_min : float, optional
         Function value of the global optimum. Set this value only if the
-        global optimum is known. Default is -np.inf.
+        global optimum is known. Default is ``-np.inf``, so that this
+        termination criterion is deactivated.
     f_min_rtol : float, optional
         Terminate the optimization once the relative error
         `(f - f_min)/f_min` between the current best minimum `f` and
-        the known global minimum `f_min` is smaller than `f_min_tol`.
+        the supplied global minimum `f_min` is smaller than `f_min_tol`.
+        This parameter is only used when `f_min` is also set.
         Default is 0.0001.
     vol_tol : float, optional
         Terminate the optimization once the volume of the hyperrectangle
@@ -110,9 +111,9 @@ def direct(
         Terminate the optimization once the maximal side length of the
         hyperrectangle containing the lowest function value is smaller than
         `len_tol`. Must lie between 0 and 1. Default is 1e-8.
-    callback : callable, `callback(xk)`, optional
-        A function to follow the progress of the minimization. ``xk`` is
-        the best solution found so far.
+    callback : callable, optional
+        A callback function with signature ``callback(xk)`` where ``xk``
+        represents the best function value found so far.
 
     Returns
     -------
@@ -126,7 +127,7 @@ def direct(
     Notes
     -----
 
-    DIRECT is a deterministic
+    DIRECT is a deterministic global
     optimization algorithm capable of minimizing a black box function with
     its variables subject to lower and upper bound constrains by sampling
     potential solutions in the search space. The algorithm starts by
@@ -136,7 +137,7 @@ def direct(
     direction. Using these function values, DIRECT then divides the
     domain into hyperrectangles, each having exactly one of the sampling
     points as its center. In each iteration, DIRECT chooses, using the eps
-    parameter, which defaults to 1e-4, some of the existing hyperrectangles
+    parameter which defaults to 1e-4, some of the existing hyperrectangles
     to be further divided. This division process continues until either the
     maximum number of iterations or maximum function evaluations allowed
     are exceeded, or the volume or the side length of the hyperrectangle
