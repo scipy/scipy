@@ -2428,15 +2428,16 @@ def factorial2(n, exact=False):
     """
     if exact:
         if not isscalar(n):
-            raise ValueError("Arrays are not supported for exact calculations.")
-        elif n in [0,-1]:
+            raise ValueError("n must be scalar.")
+        elif n in [0, -1]:
             val = 1
         elif n > 0 and isinstance(n, int):
             val = factorialk(n, 2)
         elif n < 0 and n % 2 == 1:
             val = ((-1) ** ((n - 1) / 2) * n) / factorial2(-n, exact=True)
         else:
-            raise ValueError("n must be a positive integer or an odd negative integer.")
+            raise ValueError("n must be a positive integer or an odd "
+                            "negative integer.")
         return val
     else:
         n = asarray(n)
