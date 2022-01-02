@@ -657,7 +657,7 @@
     if ((*minf - *fglobal)/ divfactor <= *fglper) {
         *ierror = 3;
         if (logfile)
-         fprintf(logfile, "DIRECT stopped: found minimum within f_min_tol of "
+         fprintf(logfile, "DIRECT stopped: found minimum within f_min_rtol of "
          "global minimum.\n");
         *numiter = t;
         goto L100;

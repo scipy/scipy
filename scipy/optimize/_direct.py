@@ -33,7 +33,7 @@ SUCCESS_MESSAGES = (
      "of the (known) global optimum f_min"),
     ("The volume of the hyperrectangle containing the lowest function value " 
      "found is below vol_tol={}"),
-    ("The side length of the hyperrectanglecontaining the lowest function value " 
+    ("The side length of the hyperrectangle containing the lowest function value " 
      "found is below len_tol={}"),
 )
 
@@ -49,7 +49,7 @@ def direct(
     maxiter: int = 6000,
     locally_biased: bool = True,
     f_min: float = -np.inf,
-    f_min_tol: float = 0.0001,
+    f_min_rtol: float = 0.0001,
     vol_tol: float = 1e-16,
     len_tol: float = 1e-8,
     callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
@@ -96,18 +96,20 @@ def direct(
     f_min : float, optional
         Function value of the global optimum. Set this value only if the 
         global optimum is known. Default is -np.inf.
-    f_min_tol : float, optional
-        Terminate the optimization once the relative error between 
-        the current best minimum and the known global minimum `f_min` is 
-        smaller than `f_min_tol`. Default is 0.0001.
+    f_min_rtol : float, optional
+        Terminate the optimization once the relative error 
+        `(f - f_min)/f_min` between the current best minimum `f` and 
+        the known global minimum `f_min` is smaller than `f_min_tol`. 
+        Default is 0.0001.
     vol_tol : float, optional
         Terminate the optimization once the volume of the hyperrectangle 
         containing the lowest function value is smaller than `vol_tol` 
-        of the complete search space. Default is 1e-16.
+        of the complete search space. Must lie between 0 and 1. 
+        Default is 1e-16.
     len_tol : float, optional
         Terminate the optimization once the maximal side length of the 
         hyperrectangle containing the lowest function value is smaller than 
-        `len_tol`. Default is 1e-8.
+        `len_tol`. Must lie between 0 and 1. Default is 1e-8.
     callback : callable, `callback(xk)`, optional
         A function to follow the progress of the minimization. ``xk`` is
         the best solution found so far.
@@ -179,11 +181,11 @@ def direct(
         args,
         disp, eps, maxfun, maxiter,
         locally_biased,
-        f_min, f_min_tol,
+        f_min, f_min_rtol,
         vol_tol, len_tol, callback
     )
 
-    format_val = (maxfun, maxiter, f_min_tol, vol_tol, len_tol)
+    format_val = (maxfun, maxiter, f_min_rtol, vol_tol, len_tol)
     if ret_code > 2:
         message = SUCCESS_MESSAGES[ret_code - 3].format(
                     format_val[ret_code - 1])
