@@ -1991,7 +1991,13 @@ class TestFactorialFunctions:
                                   special.factorial2([7, 8, 9], exact=False))
         assert_equal(special.factorial2(7, exact=True), 105)
         assert_equal(special.factorial2(0, exact=True), 1)
-        assert_equal(special.factorial2(-0.5, exact=True), 0)
+        assert_equal(special.factorial2(-1, exact=True), 1)
+        assert_equal(special.factorial2(-3, exact=True), -1)
+        assert_equal(special.factorial2(-5, exact=True), 1/3)
+        assert_raises(ValueError, special.factorial2, 1.5, True)
+        assert_raises(ValueError, special.factorial2, [1, 2], True)
+        assert_raises(ValueError, special.factorial2, -2, True)
+        assert_raises(ValueError, special.factorial2, -3.5, True)
 
     def test_factorialk(self):
         assert_equal(special.factorialk(5, 1, exact=True), 120)
