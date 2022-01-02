@@ -190,13 +190,13 @@ L12:
                 s_dim1 << 1)]];
             help2 = (f[(i___ << 1) + 1] - f[(j___ << 1) + 1]) / help2;
             if (help2 <= 0.) {
-             if (logfile)
-                  fprintf(logfile, "thirds > 0, help2 <= 0\n");
+/*              if (logfile)                                                 */
+/*                  fprintf(logfile, "thirds > 0, help2 <= 0\n");            */
             goto L60;
             }
             if (help2 < helplower) {
-             if (logfile)
-                  fprintf(logfile, "helplower = %g\n", help2);
+/*              if (logfile)                                                 */
+/*                  fprintf(logfile, "helplower = %g\n", help2);             */
             helplower = help2;
             }
         }
@@ -223,8 +223,8 @@ L12:
             goto L60;
             }
             if (help2 > helpgreater) {
-            if (logfile)
-                              fprintf(logfile, "helpgreater = %g\n", help2);
+/*            if (logfile)                                                   */
+/*                  fprintf(logfile, "helpgreater = %g\n", help2);           */
             helpgreater = help2;
             }
         }
@@ -244,8 +244,8 @@ L12:
         }
     } else {
         if (logfile)
-         fprintf(logfile, "helpgreater > helplower: %g  %g  %g\n",
-             helpgreater, helplower, helpgreater - helplower);
+/*         fprintf(logfile, "helpgreater > helplower: %g  %g  %g\n",         */
+/*             helpgreater, helplower, helpgreater - helplower);             */
         goto L60;
     }
     goto L40;
@@ -1510,8 +1510,8 @@ L50:
          ? "Epsilon is changed using the Jones formula.\n"
          : "Epsilon is constant.\n");
      fprintf(logfile, *algmethod == 0
-         ? "Jones original DIRECT algorithm is used.\n"
-         : "Our modification of the DIRECT algorithm is used.\n");
+         ? "Using original DIRECT algorithm .\n"
+         : "Using locally biased DIRECT_L algorithm.\n");
     }
 
     i__1 = *n;
