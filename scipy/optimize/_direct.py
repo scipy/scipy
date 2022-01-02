@@ -33,8 +33,8 @@ SUCCESS_MESSAGES = (
      "of the (known) global optimum f_min"),
     ("The volume of the hyperrectangle containing the lowest function value " 
      "found is below vol_tol={}"),
-    ("The side length of the hyperrectangle containing the lowest function value " 
-     "found is below len_tol={}"),
+    ("The side length of the hyperrectangle containing the lowest function "  
+     "value found is below len_tol={}"),
 )
 
 
