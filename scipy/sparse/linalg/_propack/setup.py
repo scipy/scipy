@@ -18,21 +18,12 @@ def configuration(parent_package='', top_path=None):
     from numpy.distutils.system_info import get_info, NotFoundError
     from numpy.distutils.misc_util import Configuration
     from scipy._build_utils import (gfortran_legacy_flag_hook,
-                                    blas_ilp64_pre_build_hook,
-                                    get_f2py_int64_options,
                                     get_g77_abi_wrappers,
-                                    uses_blas64,
                                     needs_g77_abi_wrapper)
 
-    if uses_blas64():
-        lapack_opt = get_info('lapack_ilp64_opt', 2)
-        pre_build_hook = (gfortran_legacy_flag_hook,
-                          blas_ilp64_pre_build_hook(lapack_opt))
-        f2py_options = get_f2py_int64_options()
-    else:
-        lapack_opt = get_info('lapack_opt')
-        pre_build_hook = gfortran_legacy_flag_hook
-        f2py_options = None
+    lapack_opt = get_info('lapack_opt')
+    pre_build_hook = gfortran_legacy_flag_hook
+    f2py_options = None
 
     if not lapack_opt:
         raise NotFoundError('no lapack/blas resources found')
