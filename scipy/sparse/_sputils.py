@@ -89,6 +89,11 @@ def downcast_intp_index(arr):
 
 
 def to_native(A):
+    import cupy as cp
+    import cupy.array_api as cpx
+    xp = np
+    if isinstance(A, (cpx._array_object.Array, cp.ndarray)):
+        xp = cp
     return np.asarray(A, dtype=A.dtype.newbyteorder('native'))
 
 
@@ -121,7 +126,12 @@ def getdata(obj, dtype=None, copy=False):
     This is a wrapper of `np.array(obj, dtype=dtype, copy=copy)`
     that will generate a warning if the result is an object array.
     """
-    data = np.array(obj, dtype=dtype, copy=copy)
+    import cupy as cp
+    import cupy.array_api as cpx
+    xp = np
+    if isinstance(obj, (cpx._array_object.Array, cp.ndarray)):
+        xp = cp
+    data = xp.array(obj, dtype=dtype, copy=copy)
     # Defer to getdtype for checking that the dtype is OK.
     # This is called for the validation only; we don't need the return value.
     getdtype(data.dtype)
