@@ -2571,7 +2571,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
         func = lambda x: np.mean(x, axis=0)
     else:  # center == 'trimmed'
         samples = tuple(_stats_py.trimboth(np.sort(sample), proportiontocut)
-                     for sample in samples)
+                        for sample in samples)
         func = lambda x: np.mean(x, axis=0)
 
     for j in range(k):
@@ -2819,7 +2819,8 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
     else:  # center == 'trimmed'
-        samples = tuple(_stats_py.trimboth(sample, proportiontocut) for sample in samples)
+        samples = tuple(_stats_py.trimboth(sample, proportiontocut)
+                        for sample in samples)
         func = lambda x: np.mean(x, axis=0)
 
     Ni = asarray([len(samples[j]) for j in range(k)])
