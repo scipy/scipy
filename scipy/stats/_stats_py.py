@@ -337,7 +337,8 @@ def hmean(a, axis=0, dtype=None, weights=None):
 
     References
     ----------
-    .. [1] "Weighted Harmonic Mean", *Wikipedia*, https://en.wikipedia.org/wiki/Harmonic_mean#Weighted_harmonic_mean
+    .. [1] "Weighted Harmonic Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Harmonic_mean#Weighted_harmonic_mean
 
     Examples
     --------
