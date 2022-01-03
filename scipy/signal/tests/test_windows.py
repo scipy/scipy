@@ -449,6 +449,11 @@ class TestKaiserBesselDerived:
         # Test for Princen-Bradley condition
         assert_allclose(w[:M // 2] ** 2 + w[-M // 2:] ** 2, 1.)
 
+        # Test actual values from other implementations
+        # M = 2:  sqrt(2) / 2
+        # M = 4:  0.518562710536, 0.855039598640
+        # M = 6:  0.436168993154, 0.707106781187, 0.899864772847
+        # Ref:https://github.com/scipy/scipy/pull/4747#issuecomment-172849418
         assert_allclose(windows.kaiser_bessel_derived(2, beta=np.pi / 2)[:1],
                         np.sqrt(2) / 2)
 
