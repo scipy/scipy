@@ -25,8 +25,10 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
         compressed-sparse graph, with shape (N, N).
     normed : bool, optional
         If True, then compute symmetric normalized Laplacian.
+        Default: False.
     return_diag : bool, optional
         If True, then also return an array related to vertex degrees.
+        Default: False.
     use_out_degree : bool, optional
         If True, then use out-degree instead of in-degree.
         This distinction matters only if the graph is asymmetric.
