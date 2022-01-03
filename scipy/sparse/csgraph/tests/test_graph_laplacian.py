@@ -3,7 +3,7 @@
 # License: BSD
 import pytest
 import numpy as np
-from numpy.testing import assert_allclose, assert_array_almost_equal
+from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 from scipy import sparse
 
@@ -55,22 +55,22 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
                                      copy=copy)
 
     if copy:
-        assert_array_almost_equal(mat, mat_copy)
+        assert_allclose(mat, mat_copy)
         _assert_allclose_sparse(sp_mat, sp_mat_copy)
     else:
         if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
                             or np.issubdtype(mat.dtype, np.uint))):
-            assert_array_almost_equal(laplacian, mat)
+            assert_allclose(laplacian, mat)
             if sp_mat.format == 'coo':
                 _assert_allclose_sparse(sp_laplacian, sp_mat)
 
-    assert_array_almost_equal(laplacian, sp_laplacian.toarray())
+    assert_allclose(laplacian, sp_laplacian.toarray())
 
     for tested in [laplacian, sp_laplacian.toarray()]:
         if not normed:
-            assert_array_almost_equal(tested.sum(axis=0), np.zeros(n_nodes))
-        assert_array_almost_equal(tested.T, tested)
-        assert_array_almost_equal(tested, explicit_laplacian)
+            assert_allclose(tested.sum(axis=0), np.zeros(n_nodes))
+        assert_allclose(tested.T, tested)
+        assert_allclose(tested, explicit_laplacian)
 
 
 def test_symmetric_graph_laplacian():
@@ -111,7 +111,7 @@ def _check_laplacian(A, desired_L, desired_d,
         if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
                             or np.issubdtype(mat.dtype, np.uint))):
             if type(mat) is np.ndarray:
-                assert_array_almost_equal(L, mat)
+                assert_allclose(L, mat)
             elif mat.format == 'coo':
                 _assert_allclose_sparse(L, mat)
 
