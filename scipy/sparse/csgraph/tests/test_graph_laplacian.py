@@ -1,5 +1,6 @@
 # Author: Gael Varoquaux <gael.varoquaux@normalesup.org>
 #         Jake Vanderplas <vanderplas@astro.washington.edu>
+#         Andrew Knyazev <Andrew.Knyazev@ucdenver.edu>
 # License: BSD
 import pytest
 import numpy as np
