@@ -292,7 +292,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     return np.exp(np.average(log_a, axis=axis, weights=weights))
 
 
-def hmean(a, axis=0, dtype=None):
+def hmean(a, axis=0, dtype=None, weights=None):
     """Calculate the harmonic mean along the specified axis.
 
     That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
@@ -310,6 +310,10 @@ def hmean(a, axis=0, dtype=None):
         dtype of `a`, unless `a` has an integer `dtype` with a precision less
         than that of the default platform integer. In that case, the default
         platform integer is used.
+    weights : array_like, optional
+        The weights array can either be 1-D (in which case its length must be
+        the size of `a` along the given `axis`) or of the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
 
     Returns
     -------
@@ -331,6 +335,10 @@ def hmean(a, axis=0, dtype=None):
     Use masked arrays to ignore any non-finite values in the input or that
     arise in the calculations such as Not a Number and infinity.
 
+    References
+    ----------
+    .. [1] "Weighted Harmonic Mean", *Wikipedia*, https://en.wikipedia.org/wiki/Harmonic_mean#Weighted_harmonic_mean
+
     Examples
     --------
     >>> from scipy.stats import hmean
@@ -342,18 +350,20 @@ def hmean(a, axis=0, dtype=None):
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
-    if np.all(a >= 0):
-        # Harmonic mean only defined if greater than or equal to to zero.
+    elif dtype:
+        # Must change the default dtype allowing array type
         if isinstance(a, np.ma.MaskedArray):
-            size = a.count(axis)
+            a = np.ma.asarray(a, dtype=dtype)
         else:
-            if axis is None:
-                a = a.ravel()
-                size = a.shape[0]
-            else:
-                size = a.shape[axis]
+            a = np.asarray(a, dtype=dtype)
+
+    if np.all(a >= 0):
+        # Harmonic mean only defined if greater than or equal to zero.
+        if weights is not None:
+            weights = np.asanyarray(weights, dtype=dtype)
+
         with np.errstate(divide='ignore'):
-            return size / np.sum(1.0 / a, axis=axis, dtype=dtype)
+            return 1.0 / np.average(1.0 / a, axis=axis, weights=weights)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater "
                          "than or equal to zero")
