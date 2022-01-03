@@ -202,9 +202,7 @@ def generate_binary_structure(rank, connectivity):
             [False,  True, False],
             [False, False, False]]], dtype=bool)
 
-    Further Examples
-    ----------------
-    `generate_binary_structure` in 3D:
+    This is a viusal presentation of `generate_binary_structure` in 3D:
 
     .. plot:: tutorial/examples/ndimage/3D_binary_structure.py
       :align: center
