@@ -2395,14 +2395,15 @@ def factorial2(n, exact=False):
     This is the factorial with every second value skipped.  E.g., ``7!! = 7 * 5
     * 3 * 1``.  It can be approximated numerically as::
 
-      n!! = special.gamma(n/2+1)*2**((m+1)/2)/sqrt(pi)  n odd
-          = 2**(n/2) * (n/2)!                           n even
+      n!! = 2 ** ((1 + 2*n - cos(pi * n))/4) * pi ** ((cos(pi * n) -1 )/4)
+            * gamma(1 + 0.5*n)
 
     Parameters
     ----------
-    n : int or array_like
-        Calculate ``n!!``.  Arrays are only supported with `exact` set
-        to False.  If ``n < 0``, the return value is 0.
+    n : float, complex, int or array_like
+        Calculate ``n!!``.  Arrays, floats and complex numbers are only
+        supported with `exact` set to False. If ``n < 0``, the return value
+        is 0.
     exact : bool, optional
         The result can be approximated rapidly using the gamma-formula
         above (default).  If `exact` is set to True, calculate the
@@ -2414,6 +2415,10 @@ def factorial2(n, exact=False):
         Double factorial of `n`, as an int or a float depending on
         `exact`.
 
+    References
+    ----------
+    ..[1] https://functions.wolfram.com/GammaBetaErf/Factorial2/27/01/0002/
+
     Examples
     --------
     >>> from scipy.special import factorial2
@@ -2421,6 +2426,8 @@ def factorial2(n, exact=False):
     array(105.00000000000001)
     >>> factorial2(7, exact=True)
     105
+    >>> factorial2(1j)
+    array(2.7171303558030684+0.2795273169425987j)
 
     """
     if exact:
@@ -2434,15 +2441,11 @@ def factorial2(n, exact=False):
         return val
     else:
         n = asarray(n)
-        vals = zeros(n.shape, 'd')
-        cond1 = (n % 2) & (n >= -1)
-        cond2 = (1-(n % 2)) & (n >= -1)
-        oddn = extract(cond1, n)
-        evenn = extract(cond2, n)
-        nd2o = oddn / 2.0
-        nd2e = evenn / 2.0
-        place(vals, cond1, gamma(nd2o + 1) / sqrt(pi) * pow(2.0, nd2o + 0.5))
-        place(vals, cond2, gamma(nd2e + 1) * pow(2.0, nd2e))
+        vals = (
+            2 ** ((1 + 2 * n - np.cos(pi * n)) / 4)
+            * pi ** ((np.cos(pi * n) - 1) / 4)
+            * gamma(1 + 0.5 * n)
+        )
         return vals
 
 
