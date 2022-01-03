@@ -3492,7 +3492,7 @@ def _first(arr, axis):
     return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
-def f_oneway(*args, axis=0):
+def f_oneway(*samples, axis=0):
     """Perform one-way ANOVA.
 
     The one-way ANOVA tests the null hypothesis that two or more groups have
