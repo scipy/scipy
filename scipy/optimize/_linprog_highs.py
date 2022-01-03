@@ -382,8 +382,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         lamda = res['lambda']
         marg_ineqlin = np.array(lamda[:len(b_ub)])
         marg_eqlin = np.array(lamda[len(b_ub):])
-        marg_upper = res['marg_bnds'][1, :]
-        marg_lower = res['marg_bnds'][0, :]
+        marg_upper = np.array(res['marg_bnds'][1, :])
+        marg_lower = np.array(res['marg_bnds'][0, :])
     else:
         marg_ineqlin, marg_eqlin = None, None
         marg_upper, marg_lower = None, None

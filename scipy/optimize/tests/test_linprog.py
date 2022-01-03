@@ -1176,6 +1176,10 @@ class LinprogCommonTests:
         assert_allclose(c @ res.x, res.fun)
         assert_allclose(b_eq - A_eq @ res.x, res.con, atol=1e-11)
         assert_allclose(b_ub - A_ub @ res.x, res.slack, atol=1e-11)
+        for key in ['eqlin', 'ineqlin', 'lower', 'upper']:
+            if key in res.keys():
+                assert isinstance(res[key]['marginals'], np.ndarray)
+                assert isinstance(res[key]['residual'], np.ndarray)
 
     #################
     # Bug Fix Tests #
