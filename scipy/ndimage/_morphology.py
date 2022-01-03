@@ -202,11 +202,24 @@ def generate_binary_structure(rank, connectivity):
             [False,  True, False],
             [False, False, False]]], dtype=bool)
 
-    This is a viusal presentation of `generate_binary_structure` in 3D:
-
-    .. plot:: tutorial/examples/ndimage/3D_binary_structure.py
-      :align: center
-      :include-source: 0
+    >>> import matplotlib.pyplot as plt
+    >>> import scipy.ndimage
+    >>> 
+    >>> def plot_voxels(varray, ax, title):
+    >>>     ax.view_init(20, 200)
+    >>>     ax.voxels(varray, edgecolor="k")
+    >>>     ax.set_title(title, fontsize=30)
+    >>> 
+    >>> 
+    >>> fig = plt.figure(figsize=(16, 9))
+    >>> 
+    >>> for i in [1, 2, 3]:
+    >>>     ax = fig.add_subplot(1, 3, i, projection="3d")
+    >>>     arrray = scipy.ndimage.generate_binary_structure(3, i)
+    >>>     plot_voxels(arrray, ax, title=f"rank=3 \n connectivity={i}")
+    >>> 
+    >>> plt.tight_layout()
+    >>> plt.show()
     """
     if connectivity < 1:
         connectivity = 1
