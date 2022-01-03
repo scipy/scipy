@@ -461,12 +461,16 @@ class TestKaiserBesselDerived:
     def test_exceptions(self):
         M = 100
         # Assert ValueError for odd window length
-        assert_raises(ValueError, windows.kaiser_bessel_derived,
-                      M + 1, beta=4.)
+        msg = "Kaiser-Bessel Derived windows are only defined for even " \
+              "number of points"
+        with assert_raises(ValueError, match=msg):
+            windows.kaiser_bessel_derived(M + 1, beta=4.)
 
         # Assert ValueError for non-symmetric setting
-        assert_raises(ValueError, windows.kaiser_bessel_derived,
-                      M, beta=4., sym=False)
+        msg = "Kaiser-Bessel Derived windows are only defined for " \
+              "symmetric shapes"
+        with assert_raises(ValueError, match=msg):
+            windows.kaiser_bessel_derived(M + 1, beta=4., sym=False)
 
 
 class TestNuttall:
