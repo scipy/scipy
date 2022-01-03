@@ -3690,7 +3690,8 @@ def f_oneway(*samples, axis=0):
 
     ssbn = 0
     for sample in samples:
-        ssbn += _square_of_sums(sample - offset, axis=axis) / sample.shape[axis]
+        ssbn += _square_of_sums(sample - offset,
+                                axis=axis) / sample.shape[axis]
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
