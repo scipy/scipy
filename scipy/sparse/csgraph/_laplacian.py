@@ -32,7 +32,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
         This distinction matters only if the graph is asymmetric.
         Default: False.
     copy: bool, optional
-        If False, then change csgraph in place if possible,
+        If False, then change `csgraph` in place if possible,
         avoiding doubling the memory use.
         Default: True, for backward compatibility.
 
