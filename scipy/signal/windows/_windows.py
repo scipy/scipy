@@ -1256,17 +1256,18 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
     >>> N = 100
     >>> for alpha in [0.64, 2.55, 7.64, 31.83]:
-    ...     plt.plot(signal.windows.kaiser_bessel_derived(N, alpha),
+    ...     ax.plot(signal.windows.kaiser_bessel_derived(N, alpha),
     ...             label=f"{alpha=}")
-    >>> plt.legend()
-    >>> plt.grid(True)
-    >>> plt.title("Kaiser-Bessel derived window")
-    >>> plt.ylabel("Amplitude")
-    >>> plt.xlabel("Sample")
-    >>> plt.tight_layout()
-    >>> plt.show()
+    >>> ax.grid(True)
+    >>> ax.set_title("Kaiser-Bessel derived window")
+    >>> ax.set_ylabel("Amplitude")
+    >>> ax.set_xlabel("Sample")
+    >>> fig.legend(loc="center")
+    >>> fig.tight_layout()
+    >>> fig.show()
     """
     if not sym:
         raise ValueError(
