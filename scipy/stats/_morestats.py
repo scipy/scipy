@@ -2375,7 +2375,7 @@ def ansari(x, y, alternative='two-sided'):
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
-def bartlett(*args):
+def bartlett(*samples):
     """Perform Bartlett's test for equal variances.
 
     Bartlett's test tests the null hypothesis that all input samples
@@ -2385,7 +2385,7 @@ def bartlett(*args):
 
     Parameters
     ----------
-    sample1, sample2,... : array_like
+    *samples : tuple of array_like
         arrays of sample data.  Only 1d arrays are accepted, they may have
         different lengths.
 
@@ -2449,20 +2449,20 @@ def bartlett(*args):
 
     """
     # Handle empty input and input that is not 1d
-    for a in args:
-        if np.asanyarray(a).size == 0:
+    for sample in samples:
+        if np.asanyarray(sample).size == 0:
             return BartlettResult(np.nan, np.nan)
-        if np.asanyarray(a).ndim > 1:
+        if np.asanyarray(sample).ndim > 1:
             raise ValueError('Samples must be one-dimensional.')
 
-    k = len(args)
+    k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
     Ni = np.empty(k)
     ssq = np.empty(k, 'd')
     for j in range(k):
-        Ni[j] = len(args[j])
-        ssq[j] = np.var(args[j], ddof=1)
+        Ni[j] = len(samples[j])
+        ssq[j] = np.var(samples[j], ddof=1)
     Ntot = np.sum(Ni, axis=0)
     spsq = np.sum((Ni - 1)*ssq, axis=0) / (1.0*(Ntot - k))
     numer = (Ntot*1.0 - k) * log(spsq) - np.sum((Ni - 1.0)*log(ssq), axis=0)
@@ -2477,7 +2477,7 @@ def bartlett(*args):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-def levene(*args, center='median', proportiontocut=0.05):
+def levene(*samples, center='median', proportiontocut=0.05):
     """Perform Levene test for equal variances.
 
     The Levene test tests the null hypothesis that all input samples
@@ -2487,7 +2487,7 @@ def levene(*args, center='median', proportiontocut=0.05):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : tuple of array_like
         The sample data, possibly with different lengths. Only one-dimensional
         samples are accepted.
     center : {'mean', 'median', 'trimmed'}, optional
@@ -2554,12 +2554,12 @@ def levene(*args, center='median', proportiontocut=0.05):
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
-    k = len(args)
+    k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
     # check for 1d input
     for j in range(k):
-        if np.asanyarray(args[j]).ndim > 1:
+        if np.asanyarray(samples[j]).ndim > 1:
             raise ValueError('Samples must be one-dimensional.')
 
     Ni = np.empty(k)
@@ -2570,19 +2570,19 @@ def levene(*args, center='median', proportiontocut=0.05):
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
     else:  # center == 'trimmed'
-        args = tuple(_stats_py.trimboth(np.sort(arg), proportiontocut)
-                     for arg in args)
+        samples = tuple(_stats_py.trimboth(np.sort(sample), proportiontocut)
+                     for sample in samples)
         func = lambda x: np.mean(x, axis=0)
 
     for j in range(k):
-        Ni[j] = len(args[j])
-        Yci[j] = func(args[j])
+        Ni[j] = len(samples[j])
+        Yci[j] = func(samples[j])
     Ntot = np.sum(Ni, axis=0)
 
     # compute Zij's
     Zij = [None] * k
     for i in range(k):
-        Zij[i] = abs(asarray(args[i]) - Yci[i])
+        Zij[i] = abs(asarray(samples[i]) - Yci[i])
 
     # compute Zbari
     Zbari = np.empty(k, 'd')
@@ -2715,7 +2715,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-def fligner(*args, center='median', proportiontocut=0.05):
+def fligner(*samples, center='median', proportiontocut=0.05):
     """Perform Fligner-Killeen test for equality of variance.
 
     Fligner's test tests the null hypothesis that all input samples
@@ -2724,7 +2724,7 @@ def fligner(*args, center='median', proportiontocut=0.05):
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : tuple of array_like
         Arrays of sample data.  Need not be the same length.
     center : {'mean', 'median', 'trimmed'}, optional
         Keyword argument controlling which function of the data is used in
@@ -2806,11 +2806,11 @@ def fligner(*args, center='median', proportiontocut=0.05):
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     # Handle empty input
-    for a in args:
-        if np.asanyarray(a).size == 0:
+    for sample in samples:
+        if np.asanyarray(sample).size == 0:
             return FlignerResult(np.nan, np.nan)
 
-    k = len(args)
+    k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
@@ -2819,14 +2819,14 @@ def fligner(*args, center='median', proportiontocut=0.05):
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
     else:  # center == 'trimmed'
-        args = tuple(_stats_py.trimboth(arg, proportiontocut) for arg in args)
+        samples = tuple(_stats_py.trimboth(sample, proportiontocut) for sample in samples)
         func = lambda x: np.mean(x, axis=0)
 
-    Ni = asarray([len(args[j]) for j in range(k)])
-    Yci = asarray([func(args[j]) for j in range(k)])
+    Ni = asarray([len(samples[j]) for j in range(k)])
+    Yci = asarray([func(samples[j]) for j in range(k)])
     Ntot = np.sum(Ni, axis=0)
     # compute Zij's
-    Zij = [abs(asarray(args[i]) - Yci[i]) for i in range(k)]
+    Zij = [abs(asarray(samples[i]) - Yci[i]) for i in range(k)]
     allZij = []
     g = [0]
     for i in range(k):
@@ -2834,12 +2834,12 @@ def fligner(*args, center='median', proportiontocut=0.05):
         g.append(len(allZij))
 
     ranks = _stats_py.rankdata(allZij)
-    a = distributions.norm.ppf(ranks / (2*(Ntot + 1.0)) + 0.5)
+    sample = distributions.norm.ppf(ranks / (2*(Ntot + 1.0)) + 0.5)
 
     # compute Aibar
-    Aibar = _apply_func(a, g, np.sum) / Ni
-    anbar = np.mean(a, axis=0)
-    varsq = np.var(a, axis=0, ddof=1)
+    Aibar = _apply_func(sample, g, np.sum) / Ni
+    anbar = np.mean(sample, axis=0)
+    varsq = np.var(sample, axis=0, ddof=1)
     Xsq = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
     pval = distributions.chi2.sf(Xsq, k - 1)  # 1 - cdf
     return FlignerResult(Xsq, pval)
@@ -3237,7 +3237,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     return WilcoxonResult(T, prob)
 
 
-def median_test(*args, ties='below', correction=True, lambda_=1,
+def median_test(*samples, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
     """Perform a Mood's median test.
 
@@ -3252,7 +3252,7 @@ def median_test(*args, ties='below', correction=True, lambda_=1,
 
     Parameters
     ----------
-    sample1, sample2, ... : array_like
+    *samples : tuple of array_like
         The set of samples.  There must be at least two samples.
         Each sample must be a one-dimensional sequence containing at least
         one value.  The samples are not required to have the same length.
@@ -3376,7 +3376,7 @@ def median_test(*args, ties='below', correction=True, lambda_=1,
     choice of `ties`.
 
     """
-    if len(args) < 2:
+    if len(samples) < 2:
         raise ValueError('median_test requires two or more samples.')
 
     ties_options = ['below', 'above', 'ignore']
@@ -3384,7 +3384,7 @@ def median_test(*args, ties='below', correction=True, lambda_=1,
         raise ValueError("invalid 'ties' option '%s'; 'ties' must be one "
                          "of: %s" % (ties, str(ties_options)[1:-1]))
 
-    data = [np.asarray(arg) for arg in args]
+    data = [np.asarray(sample) for sample in samples]
 
     # Validate the sizes and shapes of the arguments.
     for k, d in enumerate(data):

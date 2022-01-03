@@ -372,12 +372,12 @@ def test_axis_nan_policy_decorated_positional_args():
     x[0, 0, 0, 0] = np.nan
     stats.kruskal(*x)
 
-    message = "kruskal() got an unexpected keyword argument 'args'"
+    message = "kruskal() got an unexpected keyword argument 'samples'"
     with pytest.raises(TypeError, match=re.escape(message)):
-        stats.kruskal(args=x)
+        stats.kruskal(samples=x)
 
     with pytest.raises(TypeError, match=re.escape(message)):
-        stats.kruskal(*x, args=x)
+        stats.kruskal(*x, samples=x)
 
 
 def test_axis_nan_policy_decorated_keyword_samples():
