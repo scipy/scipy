@@ -209,7 +209,6 @@ def generate_binary_structure(rank, connectivity):
     .. plot:: tutorial/examples/ndimage/3D_binary_structure.py
       :align: center
       :include-source: 0
-      
     """
     if connectivity < 1:
         connectivity = 1
