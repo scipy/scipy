@@ -76,11 +76,11 @@ Clone your fork
    ``git branch -a`` to show you all branches.  You'll get something
    like::
 
-      * master
-      remotes/origin/master
+      * main
+      remotes/origin/main
 
-   This tells you that you are currently on the ``master`` branch, and
-   that you also have a ``remote`` connection to ``origin/master``.
+   This tells you that you are currently on the ``main`` branch, and
+   that you also have a ``remote`` connection to ``origin/main``.
    What remote repository is ``remote/origin``? Try ``git remote -v`` to
    see the URLs for the remote.  They will point to your github_ fork.
 
@@ -111,8 +111,8 @@ Just for your own satisfaction, show yourself that you now have a new
 To keep in sync with changes in SciPy, you want to set up your repository
 so it pulls from ``upstream`` by default.  This can be done with::
 
-   git config branch.master.remote upstream
-   git config branch.master.merge refs/heads/master
+   git config branch.main.remote upstream
+   git config branch.main.merge refs/heads/main
 
 Your config file should now look something like (from
 ``$ cat .git/config``)::
@@ -130,8 +130,8 @@ Your config file should now look something like (from
    [remote "upstream"]
            url = https://github.com/scipy/scipy.git
            fetch = +refs/heads/*:refs/remotes/upstream/*
-   [branch "master"]
+   [branch "main"]
            remote = upstream
-           merge = refs/heads/master
+           merge = refs/heads/main
 
 .. include:: git_links.inc

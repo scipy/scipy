@@ -155,7 +155,7 @@ def main(argv):
     if args.pep8:
         # Lint the source using the configuration in tox.ini.
         os.system("flake8 scipy benchmarks/benchmarks")
-        # Lint just the diff since branching off of master using a
+        # Lint just the diff since branching off of main using a
         # stricter configuration.
         lint_diff = os.path.join(ROOT_DIR, 'tools', 'lint_diff.py')
         os.system(lint_diff)

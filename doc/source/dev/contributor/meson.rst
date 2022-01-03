@@ -42,9 +42,9 @@ suite::
 Full details and explanation
 ============================
 
-To build SciPy, we need the SciPy ``master`` branch. Note that further work
+To build SciPy, we need the SciPy ``main`` branch. Note that further work
 on Meson integration is being done in the ``meson`` branch from ``@rgommers``'s
-fork. We stay with SciPy master here::
+fork. We stay with SciPy ``main`` here::
 
   git clone git@github.com:scipy/scipy.git
   git submodule update --init
@@ -102,7 +102,7 @@ running the tests should also work, for example::
 Current status (24 Dec '21) is that the full test suite passes on Linux, macOS
 and Windows with OpenBLAS, without any build warnings on Linux (with GCC 9 at
 least) and a moderate amount on the other platforms. There is CI (one job in
-SciPy master, and more on ``@rgommers``'s fork) to keep it that way.
+SciPy ``main``, and more on ``@rgommers``'s fork) to keep it that way.
 The current status is already good enough to work on both build related issues
 (e.g. build warnings, debugging some C/C++ extension) and on general SciPy
 development. It is already a much smoother/faster experience than
