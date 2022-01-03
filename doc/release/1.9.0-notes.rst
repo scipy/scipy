@@ -15,7 +15,7 @@ optimizations. Before upgrading, we recommend that users check that
 their own code does not use deprecated SciPy functionality (to do so,
 run your code with ``python -Wd`` and check for ``DeprecationWarning`` s).
 Our development attention will now shift to bug-fix releases on the
-1.9.x branch, and on adding new features on the master branch.
+1.9.x branch, and on adding new features on the main branch.
 
 This release requires Python 3.8+ and NumPy 1.17.3 or greater.
 

@@ -61,7 +61,7 @@ Making this easier is a priority.
 
 Moving to the Meson build system
 ````````````````````````````````
-Support for the Meson build system was merged into SciPy master in Dec 2021.
+Support for the Meson build system was merged into SciPy main in Dec 2021.
 This significantly improves build performance, and will fix multiple issues
 (e.g., our issues with Windows compilers, cross-compilation support). The aim
 is to make it the default build system for SciPy 1.9.0, and then remove support

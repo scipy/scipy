@@ -68,7 +68,7 @@ Dealing with pull requests
 Backporting
 -----------
 All pull requests (whether they contain enhancements, bug fixes or something else),
-should be made against master.  Only bug fixes are candidates for backporting
+should be made against main.  Only bug fixes are candidates for backporting
 to a maintenance branch.  The backport strategy for SciPy is to (a) only backport
 fixes that are important, and (b) to only backport when it's reasonably sure
 that a new bugfix release on the relevant maintenance branch will be made.
@@ -77,10 +77,10 @@ Typically, the developer who merges an important bugfix adds the
 whether and when the backport is done.  After the backport is completed, the
 ``backport-candidate`` label has to be removed again.
 
-A good strategy for a backport pull request is to combine several master
+A good strategy for a backport pull request is to combine several main
 branch pull requests, to reduce the burden on continuous integration tests
 and to reduce the merge commit cluttering of maintenance branch history. It
-is generally best to have a single commit for each of the master branch pull
+is generally best to have a single commit for each of the main branch pull
 requests represented in the backport pull request. This way, history is clear
 and can be reverted in a straightforward manner if needed.
 
