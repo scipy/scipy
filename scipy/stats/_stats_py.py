@@ -292,7 +292,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     return np.exp(np.average(log_a, axis=axis, weights=weights))
 
 
-def hmean(a, axis=0, dtype=None, weights=None):
+def hmean(a, axis=0, dtype=None, *, weights=None):
     """Calculate the harmonic mean along the specified axis.
 
     That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
@@ -314,6 +314,8 @@ def hmean(a, axis=0, dtype=None, weights=None):
         The weights array can either be 1-D (in which case its length must be
         the size of `a` along the given `axis`) or of the same shape as `a`.
         Default is None, which gives each value a weight of 1.0.
+
+    .. versionadded:: 1.9
 
     Returns
     -------
@@ -339,6 +341,8 @@ def hmean(a, axis=0, dtype=None, weights=None):
     ----------
     .. [1] "Weighted Harmonic Mean", *Wikipedia*,
            https://en.wikipedia.org/wiki/Harmonic_mean#Weighted_harmonic_mean
+    .. [2] Ferger, F., "The nature and use of the harmonic mean", Journal of
+           the American Statistical Association, vol. 26, pp. 36-40, 1931
 
     Examples
     --------

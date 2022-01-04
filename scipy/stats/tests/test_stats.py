@@ -5455,7 +5455,8 @@ def test_obrientransform():
     assert_array_almost_equal(result[0], expected, decimal=4)
 
 
-def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7, weights=None):
+def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7,
+                      weights=None):
     # Note this doesn't test when axis is not specified
     x = stats.gmean(array_like, axis=axis, dtype=dtype, weights=weights)
     assert_allclose(x, desired, rtol=rtol)
@@ -5550,13 +5551,13 @@ class TestHarMean:
         desired = 3
         check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
 
-    def test_weights_1d_array(self):
+    def test_weights_2d_array(self):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
-        a = np.array([2, 10, 6])
-        weights = np.array([10, 5, 3])
-        desired = 3
-        check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
+        a = np.array([[2, 10, 6], [7, 7, 7]])
+        weights = np.array([[10, 5, 3], [1, 1, 1]])
+        desired = np.array([3, 7])
+        check_equal_hmean(a, desired, axis=1, weights=weights, rtol=1e-5)
 
     def test_weights_masked_1d_array(self):
         # Desired result from:
