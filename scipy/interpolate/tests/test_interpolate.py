@@ -2415,13 +2415,35 @@ class TestRegularGridInterpolator:
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
         return points, values
 
+    def _get_sample_4d_3(self):
+        # create another 4-D grid of 7 points in each dimension
+        points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0)] * 4
+        values = np.asarray([0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0])
+        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
+        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
+        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
+        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
+        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        return points, values
+
+    def _get_sample_4d_4(self):
+        # create another 4-D grid of 2 points in each dimension
+        points = [(0.0, 1.0)] * 4
+        values = np.asarray([0.0, 1.0])
+        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
+        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
+        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
+        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
+        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        return points, values
+
     def test_list_input(self):
-        points, values = self._get_sample_4d()
+        points, values = self._get_sample_4d_3()
 
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
 
-        for method in ['linear', 'nearest']:
+        for method in ['linear', 'nearest', 'slinear', 'cubic', 'quintic']:
             interp = RegularGridInterpolator(points,
                                              values.tolist(),
                                              method=method)
@@ -2431,6 +2453,41 @@ class TestRegularGridInterpolator:
                                              method=method)
             v2 = interp(sample)
             assert_allclose(v1, v2)
+
+    def test_spline_dim_error(self):
+        points, values = self._get_sample_4d_4()
+        match = "points in dimension"
+
+        # Check error raise when creating interpolator
+        for method in ['cubic', 'quintic']:
+            with pytest.raises(ValueError, match=match):
+                RegularGridInterpolator(points, values, method=method)
+
+        # Check error raise when creating interpolator
+        interp = RegularGridInterpolator(points, values)
+        sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
+                             [0.5, 0.5, .5, .5]])
+        for method in ['cubic', 'quintic']:
+            with pytest.raises(ValueError, match=match):
+                interp(sample, method=method)
+
+    def test_linear_and_slinear_close_1(self):
+        points, values = self._get_sample_4d()
+        sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
+                             [0.5, 0.5, .5, .5]])
+        self._assert_linear_and_slinear_close(points, sample, values)
+
+    def test_linear_and_slinear_close_2(self):
+        points, values = self._get_sample_4d_2()
+        sample = np.asarray([0.1, 0.1, 10., 9.])
+        self._assert_linear_and_slinear_close(points, sample, values)
+
+    def _assert_linear_and_slinear_close(self, points, sample, values):
+        interp = RegularGridInterpolator(points, values, method="linear")
+        v1 = interp(sample)
+        interp = RegularGridInterpolator(points, values, method="slinear")
+        v2 = interp(sample)
+        assert_allclose(v1, v2)
 
     def test_complex(self):
         points, values = self._get_sample_4d()
@@ -2449,6 +2506,26 @@ class TestRegularGridInterpolator:
             v1 = interp(sample)
             v2 = rinterp(sample) + 1j*iinterp(sample)
             assert_allclose(v1, v2)
+
+    def test_complex_exception(self):
+        points, values = self._get_sample_4d_3()
+        points = np.asarray(points)
+        sample = np.asarray(
+            [[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8], [0.5, 0.5, .5, .5]])
+        points_comp = points - 2j * points
+        values_comp = values - 2j * values
+        sample_comp = sample - 2j * sample
+
+        match = "does not support complex value."
+        for method in ['slinear', 'cubic', 'quintic']:
+            with pytest.raises(ValueError, match=match):
+                RegularGridInterpolator(points_comp, values, method=method)
+            with pytest.raises(ValueError, match=match):
+                RegularGridInterpolator(points, values_comp, method=method)
+
+            interp = RegularGridInterpolator(points, values, method=method)
+            with pytest.raises(ValueError, match=match):
+                interp(sample_comp)
 
     def test_linear_xi1d(self):
         points, values = self._get_sample_4d_2()
