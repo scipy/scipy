@@ -466,8 +466,8 @@ class TestKaiserBesselDerived:
     def test_exceptions(self):
         M = 100
         # Assert ValueError for odd window length
-        msg = "Kaiser-Bessel Derived windows are only defined for even " \
-              "number of points"
+        msg = ("Kaiser-Bessel Derived windows are only defined for even "
+               "number of points")
         with assert_raises(ValueError, match=msg):
             windows.kaiser_bessel_derived(M + 1, beta=4.)
 
