@@ -1278,7 +1278,8 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     elif M % 2:
         raise ValueError(
             "Kaiser-Bessel Derived windows are only defined for even number "
-            "of points")
+            "of points"
+        )
 
     kaiser_window = kaiser(M // 2 + 1, beta)
     csum = np.cumsum(kaiser_window)
