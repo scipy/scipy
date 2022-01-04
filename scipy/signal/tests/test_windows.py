@@ -472,8 +472,8 @@ class TestKaiserBesselDerived:
             windows.kaiser_bessel_derived(M + 1, beta=4.)
 
         # Assert ValueError for non-symmetric setting
-        msg = "Kaiser-Bessel Derived windows are only defined for " \
-              "symmetric shapes"
+        msg = ("Kaiser-Bessel Derived windows are only defined for "
+               "symmetric shapes")
         with assert_raises(ValueError, match=msg):
             windows.kaiser_bessel_derived(M + 1, beta=4., sym=False)
 
