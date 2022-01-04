@@ -1,5 +1,7 @@
 """ Test functions for the sparse.linalg._eigen.lobpcg module
 """
+# Author: Andrew Knyazev <Andrew.Knyazev@ucdenver.edu>
+
 import itertools
 import platform
 import sys
