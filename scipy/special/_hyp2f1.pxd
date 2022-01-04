@@ -1,19 +1,21 @@
-"""
-Implementation of Gauss's hypergeometric function for complex values. This is
-an effort to incrementally translate the Fortran implementation from specfun.f
-into Cython so that it's easier to maintain and it's easier to correct defects
-in the original implementation.  Computation of Gauss's hypergeometric function
-involves handling a patchwork of special cases. The goal is to translate the
-cases into Cython little by little, falling back to the Fortran implementation
-for the cases that are yet to be handled. By default the Fortran original is
-followed as closely as possible except for situations when an improvement is
-obvious. Attempts are made to document the why behind certain decisions made by
-the original implementation, with references to the NIST Digital Library of
-Mathematical Functions [1] added where they are appropriate. The review paper
-by Pearson et al [2] is an excellent resource for best practices for numerical
-computation of hypergeometric functions, and the intent is to follow this paper
-when making improvements to and correcting defects in the original
-implementation.
+"""Implementation of Gauss's hypergeometric function for complex values.
+
+This implementation is based on the Fortran implementation by Shanjie Zhang and
+Jianming Jin included in specfun.f [1]_.  Computation of Gauss's hypergeometric
+function involves handling a patchwork of special cases. Zhang and Jin's
+implementation is being replaced case by case with this Cython implementation,
+which falls back to their implementation for the cases that are yet to be
+handled. By default the Zhang and Jin implementation has been followed as
+closely as possible except for situations where an improvement was
+obvious. We've attempted to document the reasons behind decisions made by Zhang
+and Jin and to document the reasons for deviating from their implementation
+when this has been done. References to the NIST Digital Library of Mathematical
+Functions [2]_ have been added where they are appropriate. The review paper by
+Pearson et al [3]_ is an excellent resource for best practices for numerical
+computation of hypergeometric functions. We have followed this review paper
+when making improvements to and correcting defects in Zhang and Jin's
+implementation. When Pearson et al propose several competing alternatives for a
+given case, we've used our best judgment to decide on the method to use.
 
 Author: Albert Steppi
 
@@ -21,19 +23,20 @@ Distributed under the same license as Scipy.
 
 References
 ----------
-[1] NIST Digital Library of Mathematical Functions. http://dlmf.nist.gov/,
-    Release 1.1.1 of 2021-03-15. F. W. J. Olver, A. B. Olde Daalhuis,
-    D. W. Lozier, B. I. Schneider, R. F. Boisvert, C. W. Clark, B. R. Miller,
-    B. V. Saunders, H. S. Cohl, and M. A. McClain, eds.
-[2] Pearson, J.W., Olver, S. & Porter, M.A.
-    "Numerical methods for the computation of the confluent and Gauss
-    hypergeometric functions."
-    Numer Algor 74, 821-866 (2017). https://doi.org/10.1007/s11075-016-0173-0
-[3] Raimundas Vidunas, "Degenerate Gauss Hypergeometric Functions",
-    Kyushu Journal of Mathematics, 2007, Volume 61, Issue 1, Pages 109-135,
-[4] López, J.L., Temme, N.M. New series expansions of the Gauss hypergeometric
-    function. Adv Comput Math 39, 349-365 (2013).
-    https://doi.org/10.1007/s10444-012-9283-y
+.. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+.. [2] NIST Digital Library of Mathematical Functions. http://dlmf.nist.gov/,
+       Release 1.1.1 of 2021-03-15. F. W. J. Olver, A. B. Olde Daalhuis,
+       D. W. Lozier, B. I. Schneider, R. F. Boisvert, C. W. Clark, B. R. Miller,
+       B. V. Saunders, H. S. Cohl, and M. A. McClain, eds.
+.. [3] Pearson, J.W., Olver, S. & Porter, M.A.
+       "Numerical methods for the computation of the confluent and Gauss
+       hypergeometric functions."
+       Numer Algor 74, 821-866 (2017). https://doi.org/10.1007/s11075-016-0173-0
+.. [4] Raimundas Vidunas, "Degenerate Gauss Hypergeometric Functions",
+       Kyushu Journal of Mathematics, 2007, Volume 61, Issue 1, Pages 109-135,
+.. [5] López, J.L., Temme, N.M. New series expansions of the Gauss hypergeometric
+       function. Adv Comput Math 39, 349-365 (2013).
+       https://doi.org/10.1007/s10444-012-9283-y
 """
 
 cimport cython
@@ -188,21 +191,25 @@ cdef inline double complex hyp2f1_complex(
     # --------------------------------------------------------------------------
     if modulus_z < 0.9 and z.real >= 0:
         # Apply Euler Hypergeometric Transformation (DLMF 15.8.1) to reduce
-        # size of a and b if possible. We follow the original Fortran
-        # implementation although there is very likely a better heuristic to
-        # determine when this transformation should be applied. As it stands,
-        # it hurts precision in some cases.
+        # size of a and b if possible. We follow Zhang and Jin's
+        # implementation [1] although there is very likely a better heuristic
+        # to determine when this transformation should be applied. As it
+        # stands, it hurts precision in some cases.
         if c - a < a and c - b < b:
             result = zpow(1 - z, c - a - b)
-            # Maximum number of terms 1500 comes from Fortran original.
+            # Maximum number of terms 1500 comes from Zhang and Jin.
             result *= hyp2f1_series(c - a, c - b, c, z, 1500, True, EPS)
             return result
-        # Maximum number of terms 1500 comes from Fortran original.
+        # Maximum number of terms 1500 comes from Zhang and Jin.
         return hyp2f1_series(a, b, c, z, 1500, True, EPS)
+    # Points near exp(iπ/3), exp(-iπ/3) not handled by any of the standard
+    # transformations. Use series of López and Temme [5]. These regions
+    # were not correctly handled by Zhang and Jin's implementation.
+    # -------------------------------------------------------------------------
     if 0.9 <= modulus_z < 1.1 and zabs(1 - z) >= 0.9 and z.real >= 0:
         # This condition for applying Euler Transformation (DLMF 15.8.1)
         # was determined empirically to work better for this case than that
-        # used in the original Fortran implementation for |z| < 0.9,
+        # used in Zhang and Jin's implementation for |z| < 0.9,
         # real(z) >= 0.
         if (
                 c - a <= a and c - b < b or
@@ -212,7 +219,16 @@ cdef inline double complex hyp2f1_complex(
             result *= hyp2f1_lopez_temme_series(c - a, c - b, c, z, 1500, EPS)
             return result
         return hyp2f1_lopez_temme_series(a, b, c, z, 1500, EPS)
-    # Fall through to original Fortran implementation.
+    # z/(z - 1) transformation (DLMF 15.8.1). Avoids cancellation issues that
+    # occur with Maclaurin series for real(z) < 0.
+    # ------------------------------------------------------------------------
+    if modulus_z < 1.1 and z.real < 0:
+        if 0 < b < a < c:
+            a, b = b, a
+        return zpow(1 - z, -a) * hyp2f1_series(
+            a, c - b, c, z/(z - 1), 500, True, EPS
+        )
+    # Fall through to Zhang and Jin's Fortran implementation.
     # -------------------------------------------------------------------------
     return double_complex_from_npy_cdouble(
         chyp2f1_wrap(a, b, c, npy_cdouble_from_double_complex(z))
@@ -260,7 +276,7 @@ cdef inline double complex hyp2f1_series(
         double complex previous = 0 + 0j
         double complex result = 1 + 0j
     for k in range(max_degree + 1):
-        # Follows the Fortran original exactly. Using *= degrades precision.
+        # Follows Zhang and Jin [1] exactly. Using *= degrades precision.
         # Todo: Check generated assembly to see what's going on.
         term = term * (a + k) * (b + k) / ((k + 1) * (c + k)) * z
         previous = result
