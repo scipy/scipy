@@ -3,6 +3,8 @@ Functions for acting on a axis of an array.
 """
 import numpy as np
 
+from scipy._lib._array_api_util import _concatenate, _get_namespace
+
 
 def axis_slice(a, start=None, stop=None, step=None, axis=-1):
     """Take a slice along axis 'axis' from 'a'.
@@ -97,10 +99,9 @@ def odd_ext(x, n, axis=-1):
     left_ext = axis_slice(x, start=n, stop=0, step=-1, axis=axis)
     right_end = axis_slice(x, start=-1, axis=axis)
     right_ext = axis_slice(x, start=-2, stop=-(n + 2), step=-1, axis=axis)
-    ext = np.concatenate((2 * left_end - left_ext,
-                          x,
-                          2 * right_end - right_ext),
-                         axis=axis)
+    ext = _concatenate(
+        (2 * left_end - left_ext, x, 2 * right_end - right_ext), axis=axis
+    )
     return ext
 
 
@@ -146,10 +147,7 @@ def even_ext(x, n, axis=-1):
                          % (n, x.shape[axis] - 1))
     left_ext = axis_slice(x, start=n, stop=0, step=-1, axis=axis)
     right_ext = axis_slice(x, start=-2, stop=-(n + 2), step=-1, axis=axis)
-    ext = np.concatenate((left_ext,
-                          x,
-                          right_ext),
-                         axis=axis)
+    ext = _concatenate((left_ext, x, right_ext), axis=axis)
     return ext
 
 
@@ -191,19 +189,17 @@ def const_ext(x, n, axis=-1):
     >>> plt.legend(loc='best')
     >>> plt.show()
     """
+    xp = _get_namespace(x)
     if n < 1:
         return x
     left_end = axis_slice(x, start=0, stop=1, axis=axis)
     ones_shape = [1] * x.ndim
     ones_shape[axis] = n
-    ones = np.ones(ones_shape, dtype=x.dtype)
+    ones = xp.ones(ones_shape, dtype=x.dtype)
     left_ext = ones * left_end
     right_end = axis_slice(x, start=-1, axis=axis)
     right_ext = ones * right_end
-    ext = np.concatenate((left_ext,
-                          x,
-                          right_ext),
-                         axis=axis)
+    ext = _concatenate((left_ext, x, right_ext), axis=axis)
     return ext
 
 
@@ -232,10 +228,11 @@ def zero_ext(x, n, axis=-1):
     array([[ 0,  0,  1,  2,  3,  4,  5,  0,  0],
            [ 0,  0,  0,  1,  4,  9, 16,  0,  0]])
     """
+    xp = _get_namespace(x)
     if n < 1:
         return x
     zeros_shape = list(x.shape)
     zeros_shape[axis] = n
-    zeros = np.zeros(zeros_shape, dtype=x.dtype)
-    ext = np.concatenate((zeros, x, zeros), axis=axis)
+    zeros = xp.zeros(zeros_shape, dtype=x.dtype)
+    ext = _concatenate((zeros, x, zeros), axis=axis)
     return ext
