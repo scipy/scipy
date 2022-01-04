@@ -1987,12 +1987,23 @@ class TestFactorialFunctions:
         assert np.isscalar(special.factorial(x, exact=exact))
 
     def test_factorial2(self):
-        assert_array_almost_equal(
-            [105.0, 384.0, 945.0, 1893.6651594423791, 1.75643648307146, inf, 1 / 3],
+        assert_allclose(
+            [
+                105.0,
+                384.0,
+                945.0,
+                1893.6651594423791,
+                1.75643648307146,
+                inf,
+                1 / 3,
+            ],
             special.factorial2([7, 8, 9, 9.5, 1.8, -6, -5], exact=False),
         )
-        assert_array_almost_equal(
-            [2.71713035 + 0.2795273169j, 2.708592198822e-14 + 1.957375178578e-13j],
+        assert_allclose(
+            [
+                2.71713035 + 0.2795273169j,
+                2.708592198822e-14 + 1.957375178578e-13j,
+            ],
             special.factorial2([1j, 3 + 2j]),
         )
         assert_equal(special.factorial2(7, exact=True), 105)
