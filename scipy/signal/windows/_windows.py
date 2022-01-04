@@ -1272,7 +1272,8 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     if not sym:
         raise ValueError(
             "Kaiser-Bessel Derived windows are only defined for symmetric "
-            "shapes")
+            "shapes"
+        )
     elif M < 1:
         return np.array([])
     elif M % 2:
