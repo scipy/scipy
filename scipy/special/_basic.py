@@ -2400,7 +2400,7 @@ def factorial2(n, exact=False):
 
     Parameters
     ----------
-    n : float, complex, int or array_like
+    n : int or array_like
         Calculate ``n!!``.  Arrays, floats and complex numbers are only
         supported with `exact` set to False. If ``n < 0``, the return value
         is 0.
