@@ -1236,6 +1236,10 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     w : ndarray
         The window, normalized to fulfil the Princen-Bradley condition.
 
+    See Also
+    --------
+    kaiser
+
     Notes
     -----
     It is designed to be suitable for use with the modified discrete cosine
