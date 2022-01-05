@@ -315,7 +315,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
         the size of `a` along the given `axis`) or of the same shape as `a`.
         Default is None, which gives each value a weight of 1.0.
 
-    .. versionadded:: 1.9
+        .. versionadded:: 1.9
 
     Returns
     -------
