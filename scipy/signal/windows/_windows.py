@@ -1250,13 +1250,15 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
 
     References
     ----------
-    .. [1] Wikipedia, "Kaiser window",
+    .. [1] Bosi, Marina, and Richard E. Goldberg. Introduction to Digital
+           Audio Coding and Standards. Dordrecht: Kluwer, 2003.
+    .. [2] Wikipedia, "Kaiser window",
            https://en.wikipedia.org/wiki/Kaiser_window
 
     Examples
     --------
     Plot the Kaiser-Bessel derived window based on the wikipedia
-    reference [1]_:
+    reference [2]_:
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
