@@ -1222,7 +1222,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     M : int
         Number of points in the output window. If zero or less, an empty
         array is returned. Note that this window is only defined for an even
-        number of points. It will raise `ValueError` otherwise.
+        number of points.
     beta : float
         Kaiser window shape parameter.
     sym : bool, optional
