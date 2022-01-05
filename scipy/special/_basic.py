@@ -2193,6 +2193,11 @@ def comb(N, k, exact=False, repetition=False):
     - If N < 0, or k < 0, then 0 is returned.
     - If k > N and repetition=False, then 0 is returned.
 
+    Raises
+    ------
+    ValueError
+        Raised when `exact` is True and non-integer arguements are parsed.
+
     Examples
     --------
     >>> from scipy.special import comb
