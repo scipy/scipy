@@ -16,6 +16,8 @@ References
 .. [3] A. V. Knyazev's C and MATLAB implementations:
        https://github.com/lobpcg/blopex
 """
+# Author: Andrew Knyazev <Andrew.Knyazev@ucdenver.edu>
+#         Robert Cimrman.
 
 import warnings
 import numpy as np
