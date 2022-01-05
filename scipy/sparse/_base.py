@@ -604,14 +604,17 @@ class spmatrix:
 
     def _rmul_dispatch(self, other):
         if isscalarlike(other):
-            return self._mul_dispatch(other)
+            return self._mul_scalar(other)
         else:
             # Don't use asarray unless we have to
             try:
                 tr = other.transpose()
             except AttributeError:
                 tr = np.asarray(other).transpose()
-            return self.transpose()._mul_dispatch(tr).transpose()
+            ret = self.transpose()._mul_dispatch(tr)
+            if ret is NotImplemented:
+                return NotImplemented
+            return ret.transpose()
 
     def __rmul__(self, other):  # other * self
         return self._rmul_dispatch(other)
