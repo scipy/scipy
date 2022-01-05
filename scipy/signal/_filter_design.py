@@ -3761,7 +3761,8 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
         W0 = (GPASS - 1.0) ** (-1.0 / (2.0 * ord))
     except ZeroDivisionError:
         W0 = 1.0
-        print("Warning, order is zero...check input parameters.")
+        warnings.warn("Order is zero...check input parameters.",
+                      RuntimeWarning, 2)
 
     # now convert this frequency back from lowpass prototype
     # to the original analog filter
