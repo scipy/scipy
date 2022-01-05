@@ -1291,9 +1291,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     kaiser_window = kaiser(M // 2 + 1, beta)
     csum = np.cumsum(kaiser_window)
     half_window = np.sqrt(csum[:-1] / csum[-1])
-    w = np.zeros(M)
-    w[:M//2] = half_window
-    w[-M//2:] = half_window[::-1]
+    w = np.concatenate((half_window, half_window[::-1]), axis=0)
     return w
 
 
