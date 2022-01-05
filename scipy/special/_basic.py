@@ -2209,9 +2209,7 @@ def comb(N, k, exact=False, repetition=False):
     if repetition:
         return comb(N + k - 1, k, exact)
     if exact:
-        if not isscalar(N) or not isscalar(k):
-            raise ValueError("Arguements must be scalar.")
-        elif int(N) != N or int(k) != k:
+        if int(N) != N or int(k) != k:
             raise ValueError("Arguements must be integers when exact is True.")
         return _comb_int(N, k)
     else:

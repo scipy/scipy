@@ -1319,7 +1319,6 @@ class TestCombinatorics:
         expected = 100891344545564193334812497256
         assert_equal(special.comb(100, 50, exact=True), expected)
 
-        assert_raises(ValueError, special.comb, [3,4], [1,2], True)
         assert_raises(ValueError, special.comb, 4.5, 3, True)
         assert_raises(ValueError, special.comb, 4, 3.5, True)
 
