@@ -1272,7 +1272,7 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     >>> ax.set_ylabel("Amplitude")
     >>> ax.set_xlabel("Sample")
     >>> ax.set_xticks([0, N, 2*N-1])
-    >>> ax.set_xticklabels(["0", "N", "2N+1"])
+    >>> ax.set_xticklabels(["0", "N", "2N+1"])  # doctest: +SKIP
     >>> ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.707, 0.8, 1.0])
     >>> fig.legend(loc="center")
     >>> fig.tight_layout()
