@@ -5641,8 +5641,8 @@ class nakagami_gen(rv_continuous):
 
     References
     ----------
-    .. [1] "Nakagami distribution",
-           https://en.wikipedia.org/wiki/Nakagami_distribution#Generation
+    .. [1] "Nakagami distribution", Wikipedia
+           https://en.wikipedia.org/wiki/Nakagami_distribution
     .. [2] M. Nakagami, "The m-distribution - A general formula of intensity
            distribution of rapid fading", Statistical methods in radio wave
            propagation, Pergamon Press, 1960, 3-36.
