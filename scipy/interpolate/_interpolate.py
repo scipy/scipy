@@ -2432,7 +2432,8 @@ class RegularGridInterpolator:
     which is indeed a close approximation to
     ``[f(2.1, 6.2, 8.3), f(3.3, 5.2, 7.1)]``.
 
-    Other examples are given :ref:`in the tutorial <tutorial-interpolate_regular_grid_interpolator>`.
+    Other examples are given
+    :ref:`in the tutorial <tutorial-interpolate_regular_grid_interpolator>`.
 
     See also
     --------

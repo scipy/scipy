@@ -189,10 +189,10 @@ using each method.
    ...     im = interp(test_points, method=method).reshape(80, 80)
    ...     axes[fig_index].imshow(im)
    ...     axes[fig_index].set_title(method)
+   ...     axes[fig_index].axis("off")
    ...     fig_index += 1
    >>> axes[fig_index].imshow(true_values)
    >>> axes[fig_index].set_title("True values")
-   >>> [axi.set_axis_off() for axi in axes.ravel()]  # all axis off
    >>> fig.tight_layout()
    >>> fig.show()
 
