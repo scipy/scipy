@@ -2285,7 +2285,7 @@ def hilbert(x, N=None, axis=-1):
         raise ValueError("N must be positive.")
 
     Xf = sp_fft.fft(x, N, axis=axis)
-    h = np.zeros(N)
+    h = np.zeros(N, dtype=Xf.dtype)
     if N % 2 == 0:
         h[0] = h[N // 2] = 1
         h[1:N // 2] = 2
@@ -2339,8 +2339,8 @@ def hilbert2(x, N=None):
                          "two positive integers")
 
     Xf = sp_fft.fft2(x, N, axes=(0, 1))
-    h1 = np.zeros(N[0], 'd')
-    h2 = np.zeros(N[1], 'd')
+    h1 = np.zeros(N[0], dtype=Xf.dtype)
+    h2 = np.zeros(N[1], dtype=Xf.dtype)
     for p in range(2):
         h = eval("h%d" % (p + 1))
         N1 = N[p]
