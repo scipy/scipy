@@ -973,8 +973,8 @@ Binary morphology
 This is a viusal presentation of `generate_binary_structure` in 3D:
 
   .. plot:: tutorial/examples/ndimage/3D_binary_structure.py
-    :align: center
-    :include-source: 0
+      :align: center
+      :include-source: 0
 
 Most binary morphology functions can be expressed in terms of the
 basic operations erosion and dilation, which can be seen here:
