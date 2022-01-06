@@ -7,11 +7,11 @@ name: Linux Meson tests
 on:
   push:
     branches:
-      - master
+      - main
       - maintenance/**
   pull_request:
     branches:
-      - master
+      - main
       - maintenance/**
 
 env:
@@ -73,7 +73,7 @@ jobs:
       # return the most recently created cache entry, according to the GitHub Action Docs.
       with:
         path: ${{ steps.prep-ccache.outputs.dir }}
-        # Restores ccache from either a previous build on this branch or on master
+        # Restores ccache from either a previous build on this branch or on main
         key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
         # This evaluates to `Linux Tests-3.9-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
         # need to be updated to be unique so that the cache is not restored from a different job altogether.
