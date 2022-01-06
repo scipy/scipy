@@ -5551,7 +5551,15 @@ class TestHarMean:
         desired = 3
         check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
 
-    def test_weights_2d_array(self):
+    def test_weights_2d_array_axis0(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        a = np.array([[2, 5], [10, 5], [6, 5]])
+        weights = np.array([[10, 1], [5, 1], [3, 1]])
+        desired = np.array([3, 5])
+        check_equal_hmean(a, desired, axis=0, weights=weights, rtol=1e-5)
+
+    def test_weights_2d_array_axis1(self):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
         a = np.array([[2, 10, 6], [7, 7, 7]])
