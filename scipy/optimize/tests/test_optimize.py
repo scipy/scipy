@@ -303,7 +303,7 @@ class CheckOptimizeParameterized(CheckOptimize):
 
             assert func_calls == self.funccalls
             assert_allclose(self.func(params), self.func(self.solution),
-                            atol=2.5e-6)
+                            atol=1e-6, rtol=4e-6)
 
             # Ensure that function call counts are 'known good'.
             # Generally, this takes 131 function calls. However, on some CI
