@@ -2008,7 +2008,7 @@ def test_powell_limits():
         assert (x >= bounds.lb).all() and (x <= bounds.ub).all()
         return a ** 2 + b ** 2
 
-    optimize.minimize(fun, x0=[0.6,20], method='Powell', bounds=bounds)
+    optimize.minimize(fun, x0=[0.6, 20], method='Powell', bounds=bounds)
 
 
 class TestRosen:
