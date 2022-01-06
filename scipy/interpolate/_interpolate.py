@@ -2467,8 +2467,8 @@ class RegularGridInterpolator:
         if method not in self.ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
         elif method in self.SPLINE_METHODS:
-            self._validate_input(points, method)
-            self._validate_input(values, method)
+            self._validate_not_complex(points, method)
+            self._validate_not_complex(values, method)
             self._validate_grid_dimensions(points, method)
         self.method = method
         self.bounds_error = bounds_error
@@ -2553,9 +2553,9 @@ class RegularGridInterpolator:
                                             norm_distances,
                                             out_of_bounds)
         elif method in self.SPLINE_METHODS:
+            self._validate_not_complex(xi, method)
             if is_method_changed:
                 self._validate_grid_dimensions(self.grid, method)
-                self._validate_input(xi, method)
             result = self._evaluate_spline(self.values.T, xi,
                                            self.SPLINE_DEGREE_MAP[method])
 
@@ -2585,8 +2585,8 @@ class RegularGridInterpolator:
         return self.values[tuple(idx_res)]
 
     @staticmethod
-    def _validate_input(input, method):
-        if np.iscomplexobj(input):
+    def _validate_not_complex(input_value, method):
+        if np.iscomplexobj(input_value):
             raise ValueError(f"method {method} does not support complex "
                              f"values. Use 'linear' or 'nearest'.")
 
