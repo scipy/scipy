@@ -31,7 +31,7 @@ the organization section.
 
    core-dev/index
    api-dev/api-dev-toc
-   governance/governance
+   governance
 
 .. This toctree defines previous/next for contributor guide documents
 .. toctree::
