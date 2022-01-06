@@ -117,7 +117,7 @@ the requirements outlined above.  In many cases the code review happens
 relatively quickly, but it's possible that it stalls.  If you have addressed
 all feedback already given, it's perfectly fine to ask on the mailing list
 again for review (after a reasonable amount of time, say a couple of weeks, has
-passed).  Once the review is completed, the PR is merged into the "master"
+passed).  Once the review is completed, the PR is merged into the "main"
 branch of SciPy.
 
 The above describes the requirements and process for adding code to SciPy.  It

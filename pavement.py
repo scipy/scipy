@@ -72,7 +72,7 @@ RELEASE = 'doc/release/1.9.0-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'v1.8.0'
-LOG_END = 'master'
+LOG_END = 'main'
 
 
 #-------------------------------------------------------

@@ -3,7 +3,7 @@ trigger:
   batch: False
   branches:
     include:
-      - master
+      - main
       - maintenance/*
   paths:
     include:
@@ -83,7 +83,7 @@ stages:
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "--upgrade numpy"
+        numpy_spec: "numpy==1.21.5"
         refguide_check: true
         asv_check: true
         use_wheel: true
@@ -129,7 +129,7 @@ stages:
         numpy_spec: "numpy==1.18.5"
         use_wheel: true
   - job: Lint
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'ubuntu-20.04'
     steps:
@@ -156,7 +156,7 @@ stages:
       displayName: 'Run Lint Checks'
       failOnStderr: true
   - job: Linux_Python_38_32bit_full
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'ubuntu-20.04'
     steps:
@@ -196,7 +196,7 @@ stages:
         summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
         reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
   - job: Windows
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'windows-latest'
     variables:
@@ -218,18 +218,18 @@ stages:
             TEST_MODE: full
             BITS: 64
             SCIPY_USE_PYTHRAN: 0
-          Python39-64bit-full-ilp64:
-            PYTHON_VERSION: '3.9'
+          Python310-64bit-full-ilp64:
+            PYTHON_VERSION: '3.10'
             PYTHON_ARCH: 'x64'
             TEST_MODE: full
             NPY_USE_BLAS_ILP64: 1
             BITS: 64
             OPENBLAS64_: $(OPENBLAS)
             SCIPY_USE_PYTHRAN: 1
-          Python310-64bit-full:
-            PYTHON_VERSION: '3.10'
+          Python39-64bit-fast:
+            PYTHON_VERSION: '3.9'
             PYTHON_ARCH: 'x64'
-            TEST_MODE: full
+            TEST_MODE: fast
             BITS: 64
             SCIPY_USE_PYTHRAN: 0
     steps:
