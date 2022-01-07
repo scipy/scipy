@@ -1102,7 +1102,7 @@ class TestSTFT:
         assert_raises(ValueError, check_NOLA, 'hann', 64, -32)
 
         x = np.zeros(1024)
-        z = np.array(stft(x), dtype=object)
+        z = stft(x)[2]
 
         assert_raises(ValueError, stft, x, window=np.ones((2,2)))
         assert_raises(ValueError, stft, x, window=np.ones(10), nperseg=256)
@@ -1116,8 +1116,9 @@ class TestSTFT:
         assert_raises(ValueError, istft, z, nperseg=-256)
         assert_raises(ValueError, istft, z, nperseg=256, noverlap=1024)
         assert_raises(ValueError, istft, z, nperseg=256, nfft=8)
-        assert_raises(ValueError, istft, z, nperseg=256, noverlap=0,
-                      window='hann')  # Doesn't meet COLA
+        with pytest.warns(UserWarning, match="NOLA condition failed, STFT " +
+                                             "may not be invertible"):
+            istft(z, nperseg=256, noverlap=0, window='hann')
         assert_raises(ValueError, istft, z, time_axis=0, freq_axis=0)
 
         assert_raises(ValueError, _spectral_helper, x, x, mode='foo')
