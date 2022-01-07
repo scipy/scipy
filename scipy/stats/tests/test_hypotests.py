@@ -1503,6 +1503,7 @@ class TestPermutationTest:
         assert res.statistic == res2.statistic
         assert_allclose(res.pvalue, res2.pvalue, atol=1e-2)
 
+    @pytest.mark.slow()
     def test_randomized_test_against_exact_samples(self):
         # check that the randomized and exact tests agree to reasonable
         # precision for permutation_type='samples'
@@ -1670,7 +1671,7 @@ class TestPermutationTest:
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
 
-    @pytest.mark.slow()
+    @pytest.mark.xslow()
     @pytest.mark.parametrize('axis', (-1, 2))
     def test_vectorized_nsamp_ptype_both(self, axis):
         # Test that permutation_test with permutation_type='independent' works
@@ -1816,7 +1817,7 @@ class TestPermutationTest:
 
         assert_allclose(res.pvalue, res2[1])
 
-    @pytest.mark.slow()
+    @pytest.mark.xslow()
     @pytest.mark.parametrize('axis', (-2, 1))
     def test_vectorized_nsamp_ptype_samples(self, axis):
         # Test that permutation_test with permutation_type='samples' works
@@ -1876,7 +1877,7 @@ class TestPermutationTest:
                   'expected_statistic': 32.5,
                   'expected_avg': 38.117647, 'expected_std': 5.172124}
 
-    @pytest.mark.slow()  # only the second case is slow, really
+    @pytest.mark.xslow()  # only the second case is slow, really
     @pytest.mark.parametrize('case', (tie_case_1, tie_case_2))
     def test_with_ties(self, case):
         """

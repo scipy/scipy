@@ -52,4 +52,4 @@ None currently
 Document history
 ----------------
 
-https://github.com/scipy/scipy/commits/master/doc/source/dev/governance/people.rst
+https://github.com/scipy/scipy/commits/main/doc/source/dev/governance/people.rst

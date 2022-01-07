@@ -3,7 +3,7 @@ trigger:
   batch: False
   branches:
     include:
-      - master
+      - main
       - maintenance/*
   paths:
     include:
@@ -18,10 +18,10 @@ pr:
     include:
     - '*'  # must quote since "*" is a YAML reserved character; we want a string
 
-# the version of OpenBLAS used is currently 0.3.15
+# the version of OpenBLAS used is currently 0.3.18
 # and should be updated to match scipy-wheels as appropriate
 variables:
-    openblas_version: 0.3.17
+    openblas_version: 0.3.18
     pre_wheels: https://pypi.anaconda.org/scipy-wheels-nightly/simple
     CCACHE_DIR: $(Pipeline.Workspace)/ccache
     SCIPY_AVAILABLE_MEM: 3G
@@ -83,7 +83,7 @@ stages:
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "--upgrade numpy"
+        numpy_spec: "numpy==1.21.5"
         refguide_check: true
         asv_check: true
         use_wheel: true
@@ -126,10 +126,10 @@ stages:
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "numpy==1.17.3"
+        numpy_spec: "numpy==1.18.5"
         use_wheel: true
   - job: Lint
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'ubuntu-20.04'
     steps:
@@ -156,7 +156,7 @@ stages:
       displayName: 'Run Lint Checks'
       failOnStderr: true
   - job: Linux_Python_38_32bit_full
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'ubuntu-20.04'
     steps:
@@ -172,8 +172,7 @@ stages:
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.8 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools wheel --user && \
-            pip3 install numpy==1.17.3 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran --user && \
+            pip3 install setuptools==59.6.0 wheel numpy==1.18.5 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath matplotlib==3.1.3 pythran==0.10.0 --user && \
             apt-get -y install gcc-5 g++-5 gfortran-8 wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
@@ -181,9 +180,9 @@ stages:
             cp -r \$target/lib/* /usr/lib && \
             cp \$target/include/* /usr/include && \
             cd ../scipy && \
-            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.8 setup.py install && \
+            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 pip3 install . && \
             python3.8 tools/openblas_support.py --check_version $(openblas_version) && \
-            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.8 runtests.py --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
+            python3.8 runtests.py -n --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
       displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
     - task: PublishTestResults@2
       condition: succeededOrFailed()
@@ -197,7 +196,7 @@ stages:
         summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
         reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
   - job: Windows
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'windows-latest'
     variables:
@@ -219,18 +218,18 @@ stages:
             TEST_MODE: full
             BITS: 64
             SCIPY_USE_PYTHRAN: 0
-          Python39-64bit-full-ilp64:
-            PYTHON_VERSION: '3.9'
+          Python310-64bit-full-ilp64:
+            PYTHON_VERSION: '3.10'
             PYTHON_ARCH: 'x64'
             TEST_MODE: full
             NPY_USE_BLAS_ILP64: 1
             BITS: 64
             OPENBLAS64_: $(OPENBLAS)
             SCIPY_USE_PYTHRAN: 1
-          Python310-64bit-full:
-            PYTHON_VERSION: '3.10'
+          Python39-64bit-fast:
+            PYTHON_VERSION: '3.9'
             PYTHON_ARCH: 'x64'
-            TEST_MODE: full
+            TEST_MODE: fast
             BITS: 64
             SCIPY_USE_PYTHRAN: 0
     steps:
@@ -243,7 +242,7 @@ stages:
         git submodule update --init
       displayName: 'Fetch submodules'
     - script: |
-        python -m pip install --upgrade pip setuptools wheel
+        python -m pip install --upgrade pip "setuptools==59.6.0" wheel
       displayName: 'Install tools'
     - powershell: |
         $pyversion = python -c "import sys; print(sys.version.split()[0])"
@@ -285,7 +284,7 @@ stages:
         numpy==1.21.4
         Pillow
         pybind11
-        pythran
+        pythran==0.10.0
         pytest
         pytest-cov
         pytest-env
@@ -327,6 +326,7 @@ stages:
             refreshenv
         }
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
+        $env:SCIPY_USE_PYTHRAN=0
 
         mkdir dist
         pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
@@ -337,7 +337,7 @@ stages:
     - powershell: |
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
         $env:SCIPY_USE_PYTHRAN=$(SCIPY_USE_PYTHRAN)
-        python runtests.py -n --mode=$(TEST_MODE) -- -n 2 --junitxml=junit/test-results.xml --cov=scipy --cov-report=xml --cov-report=html --durations=10
+        python runtests.py -n --mode=$(TEST_MODE) -- -n 2 --junitxml=junit/test-results.xml --durations=10
       displayName: 'Run SciPy Test Suite'
     - task: PublishTestResults@2
       condition: succeededOrFailed()
@@ -345,8 +345,3 @@ stages:
         testResultsFiles: '**/test-*.xml'
         failTaskOnFailedTests: true
         testRunTitle: 'Publish test results for Python $(python.version)'
-    - task: PublishCodeCoverageResults@1
-      inputs:
-        codeCoverageTool: Cobertura
-        summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
-        reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'

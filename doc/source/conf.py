@@ -71,7 +71,7 @@ templates_path = ['_templates']
 # The suffix of source filenames.
 source_suffix = '.rst'
 
-# The master toctree document.
+# The main toctree document.
 master_doc = 'index'
 
 # General substitutions.
@@ -187,7 +187,7 @@ html_theme_options = {
 
 if 'versionwarning' in tags:
     # Specific to docs.scipy.org deployment.
-    # See https://github.com/scipy/docs.scipy.org/blob/master/_static/versionwarning.js_t
+    # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
     src = ('var script = document.createElement("script");\n'
            'script.type = "text/javascript";\n'
            'script.src = "/doc/_static/versionwarning.js";\n'
@@ -501,7 +501,7 @@ def linkcode_resolve(domain, info):
             return "https://github.com/scipy/scipy/blob/%s/%s%s" % (
                 m.group(1), fn, linespec)
         elif 'dev' in scipy.__version__:
-            return "https://github.com/scipy/scipy/blob/master/%s%s" % (
+            return "https://github.com/scipy/scipy/blob/main/%s%s" % (
                 fn, linespec)
         else:
             return "https://github.com/scipy/scipy/blob/v%s/%s%s" % (

@@ -5,7 +5,8 @@ import operator
 import math
 import timeit
 from scipy.spatial import cKDTree
-from . import _sigtools, dlti
+from . import _sigtools
+from ._ltisys import dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
@@ -291,9 +292,9 @@ def correlation_lags(in1_len, in2_len, mode='full'):
 
     Parameters
     ----------
-    in1_size : int
+    in1_len : int
         First input size.
-    in2_size : int
+    in2_len : int
         Second input size.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output.
@@ -992,9 +993,9 @@ def _numeric_arrays(arrays, kinds='buifc'):
 
     Parameters
     ----------
-    ndarrays : array or list of arrays
+    arrays : array or list of arrays
         arrays to check if numeric.
-    numeric_kinds : string-like
+    kinds : string-like
         The dtypes of the arrays to be checked. If the dtype.kind of
         the ndarrays are not in this string the function returns False and
         otherwise returns True.

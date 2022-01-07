@@ -568,7 +568,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     abserr : float
         An estimate of the error.
 
-    See also
+    See Also
     --------
     quad : single integral
     tplquad : triple integral
@@ -646,20 +646,19 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     See Also
     --------
-    quad: Adaptive quadrature using QUADPACK
-    quadrature: Adaptive Gaussian quadrature
-    fixed_quad: Fixed-order Gaussian quadrature
-    dblquad: Double integrals
+    quad : Adaptive quadrature using QUADPACK
+    quadrature : Adaptive Gaussian quadrature
+    fixed_quad : Fixed-order Gaussian quadrature
+    dblquad : Double integrals
     nquad : N-dimensional integrals
-    romb: Integrators for sampled data
-    simpson: Integrators for sampled data
-    ode: ODE integrators
-    odeint: ODE integrators
-    scipy.special: For coefficients and roots of orthogonal polynomials
+    romb : Integrators for sampled data
+    simpson : Integrators for sampled data
+    ode : ODE integrators
+    odeint : ODE integrators
+    scipy.special : For coefficients and roots of orthogonal polynomials
 
     Examples
     --------
-
     Compute the triple integral of ``x * y * z``, over ``x`` ranging
     from 1 to 2, ``y`` ranging from 2 to 3, ``z`` ranging from 0 to 1.
 

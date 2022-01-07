@@ -518,7 +518,7 @@ class multivariate_normal_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def _cdf(self, x, mean, cov, maxpts, abseps, releps):
-        """Log of the multivariate normal cumulative distribution function.
+        """Multivariate normal cumulative distribution function.
 
         Parameters
         ----------
