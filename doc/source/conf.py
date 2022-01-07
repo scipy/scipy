@@ -189,7 +189,18 @@ html_favicon = '_static/favicon.ico'
 html_theme_options = {
   "logo_link": "index",
   "github_url": "https://github.com/scipy/scipy",
+  "navbar_start": ["navbar-logo", "version-switcher"],
+  "switcher": {
+      "json_url": "https://github.com/tupui/scipy/blob/version_switcher/doc/source"
+                  "/_static/version_switcher.json",
+      "url_template": "https://docs.scipy.org/doc/scipy-{version}/reference/",
+      "version_match": version,
+  }
 }
+
+if 'dev' in version:
+    html_theme_options["switcher"]["url_template"] = "http://scipy.github.io/devdocs/"
+    html_theme_options["switcher"]["version_match"] = "dev"
 
 if 'versionwarning' in tags:
     # Specific to docs.scipy.org deployment.
