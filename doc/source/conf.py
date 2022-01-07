@@ -189,7 +189,6 @@ html_favicon = '_static/favicon.ico'
 html_theme_options = {
   "logo_link": "index",
   "github_url": "https://github.com/scipy/scipy",
-  "navbar_start": ["navbar-logo", "version"],
 }
 
 if 'versionwarning' in tags:
@@ -200,14 +199,9 @@ if 'versionwarning' in tags:
            'script.src = "/doc/_static/versionwarning.js";\n'
            'document.head.appendChild(script);');
     html_context = {
-        'VERSIONCHECK_JS': src,
-        'versionwarning': True
+        'VERSIONCHECK_JS': src
     }
     html_js_files = ['versioncheck.js']
-else:
-    html_context = {
-        'versionwarning': False
-    }
 
 html_title = "%s v%s Manual" % (project, version)
 html_static_path = ['_static']
