@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy.ndimage
 
-# code for ball taken from 
+# code for ball taken from
 # https://github.com/scikit-image/scikit-image/blob/main/skimage/morphology/footprints.py#L225-L252
 # and therefore same as `from skimage.morphology import ball`
 
