@@ -12,7 +12,7 @@ from scipy.special._ufuncs import (_kolmogc, _kolmogci, _kolmogp,
 
 _rtol = 1e-10
 
-class TestSmirnov(object):
+class TestSmirnov:
     def test_nan(self):
         assert_(np.isnan(smirnov(1, np.nan)))
 
@@ -92,7 +92,7 @@ class TestSmirnov(object):
         assert_(np.all(dfs <= 0), msg='Not all diffs negative %s' % dfs)
 
 
-class TestSmirnovi(object):
+class TestSmirnovi:
     def test_nan(self):
         assert_(np.isnan(smirnovi(1, np.nan)))
 
@@ -188,7 +188,7 @@ class TestSmirnovi(object):
         FuncData(_smirnovci, dataset, (0, 1), 2, rtol=_rtol).check(dtypes=[int, float, float])
 
 
-class TestSmirnovp(object):
+class TestSmirnovp:
     def test_nan(self):
         assert_(np.isnan(_smirnovp(1, np.nan)))
 
@@ -245,7 +245,7 @@ class TestSmirnovp(object):
         FuncData(_smirnovp, dataset1, (0, 1), 2, rtol=_rtol).check(dtypes=[int, float, float])
 
 
-class TestKolmogorov(object):
+class TestKolmogorov:
     def test_nan(self):
         assert_(np.isnan(kolmogorov(np.nan)))
 
@@ -331,7 +331,7 @@ class TestKolmogorov(object):
         FuncData(_kci_kc, dataset, (0,), 1, rtol=_rtol).check()
 
 
-class TestKolmogi(object):
+class TestKolmogi:
     def test_nan(self):
         assert_(np.isnan(kolmogi(np.nan)))
 
@@ -391,7 +391,7 @@ class TestKolmogi(object):
         FuncData(_k_ki, dataset, (0,), 1, rtol=_rtol).check()
 
 
-class TestKolmogp(object):
+class TestKolmogp:
     def test_nan(self):
         assert_(np.isnan(_kolmogp(np.nan)))
 

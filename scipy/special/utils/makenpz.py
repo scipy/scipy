@@ -9,22 +9,30 @@ import os
 import numpy as np
 import argparse
 
-from distutils.util import newer
+from distutils.util import newer  # type: ignore
 
 
 def main():
     p = argparse.ArgumentParser(usage=(__doc__ or '').strip())
     p.add_argument('--use-timestamp', action='store_true', default=False,
                    help="don't rewrite npz file if it is newer than sources")
-    p.add_argument('dirname')
+    p.add_argument('dirname')  # for Meson: 'boost' or 'gsl'
+    p.add_argument("-o", "--outdir", type=str,
+                   help="Relative path to the output directory")
     args = p.parse_args()
 
-    inp = os.path.normpath(args.dirname)
-    outp = inp + ".npz"
+    if not args.outdir:
+        # We're dealing with a distutils build here, write in-place:
+        inp = os.path.normpath(args.dirname)
+        outp = inp + ".npz"
+    else:
+        inp = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                           '..', 'tests', 'data', args.dirname)
+        outdir_abs = os.path.join(os.getcwd(), args.outdir)
+        outp = os.path.join(outdir_abs, args.dirname + ".npz")
 
     # Skip rebuilding if no sources
     if os.path.isfile(outp) and not os.path.isdir(inp):
-        print("[makenpz] {} not rebuilt".format(outp))
         return
 
     # Find source files
@@ -44,21 +52,19 @@ def main():
                 changed = set(old_data.keys()) != set(key for key, _ in files)
             finally:
                 old_data.close()
-        except (IOError, OSError):
+        except OSError:
             # corrupted file
             changed = True
 
         changed = changed or any(newer(fn, outp) for key, fn in files)
         changed = changed or newer(__file__, outp)
         if not changed:
-            print("[makenpz] {} is already up to date".format(outp))
             return
 
     data = {}
     for key, fn in files:
         data[key] = np.loadtxt(fn)
 
-    print("[makenpz] generating {}".format(outp))
     np.savez_compressed(outp, **data)
 
 

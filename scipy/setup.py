@@ -1,5 +1,5 @@
 def configuration(parent_package='',top_path=None):
-    from scipy._build_utils.system_info import get_info, NotFoundError
+    from scipy._build_utils.system_info import get_info
     lapack_opt = get_info("lapack_opt")
 
     from numpy.distutils.misc_util import Configuration
@@ -25,7 +25,6 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('_build_utils')
     config.add_subpackage('_lib')
     config.make_config_py()
-    config.add_data_files('py.typed')
     return config
 
 

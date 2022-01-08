@@ -87,7 +87,7 @@ def make_nonnative(arrs):
     return [a.astype(a.dtype.newbyteorder()) for a in arrs]
 
 
-class BaseQRdeltas(object):
+class BaseQRdeltas:
     def setup_method(self):
         self.rtol = 10.0 ** -(np.finfo(self.dtype).precision-2)
         self.atol = 10 * np.finfo(self.dtype).eps
@@ -630,7 +630,7 @@ class TestQRdelete_D(BaseQRdelete):
 
 class BaseQRinsert(BaseQRdeltas):
     def generate(self, type, mode='full', which='row', p=1):
-        a, q, r = super(BaseQRinsert, self).generate(type, mode)
+        a, q, r = super().generate(type, mode)
 
         assert_(p > 0)
 
@@ -1172,7 +1172,7 @@ class TestQRinsert_D(BaseQRinsert):
 
 class BaseQRupdate(BaseQRdeltas):
     def generate(self, type, mode='full', p=1):
-        a, q, r = super(BaseQRupdate, self).generate(type, mode)
+        a, q, r = super().generate(type, mode)
 
         # super call set the seed...
         if p == 1:

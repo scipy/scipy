@@ -78,7 +78,7 @@ c     SCIPY error check:
       go to 240
 c if miter = 2, make n calls to f to approximate j. --------------------
  200  fac = vmnorm (n, savf, ewt)
-      r0 = 1000.0d0*dabs(h)*uround*dfloat(n)*fac
+      r0 = 1000.0d0*dabs(h)*uround*dble(n)*fac
       if (r0 .eq. 0.0d0) r0 = 1.0d0
       srur = wm(1)
       j1 = 2
@@ -142,7 +142,7 @@ c if miter = 5, make mband calls to f to approximate j. ----------------
       meb1 = meband - 1
       srur = wm(1)
       fac = vmnorm (n, savf, ewt)
-      r0 = 1000.0d0*dabs(h)*uround*dfloat(n)*fac
+      r0 = 1000.0d0*dabs(h)*uround*dble(n)*fac
       if (r0 .eq. 0.0d0) r0 = 1.0d0
       do 560 j = 1,mba
         do 530 i = j,n,mband

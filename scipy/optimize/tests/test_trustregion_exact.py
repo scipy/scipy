@@ -45,7 +45,7 @@ def random_entry(n, min_eig, max_eig, case):
     return A, g
 
 
-class TestEstimateSmallestSingularValue(object):
+class TestEstimateSmallestSingularValue:
 
     def test_for_ill_condiotioned_matrix(self):
 
@@ -70,7 +70,7 @@ class TestEstimateSmallestSingularValue(object):
         assert_array_almost_equal(abs(zmin), abs(zmin_svd), decimal=8)
 
 
-class TestSingularLeadingSubmatrix(object):
+class TestSingularLeadingSubmatrix:
 
     def test_for_already_singular_leading_submatrix(self):
 
@@ -150,7 +150,7 @@ class TestSingularLeadingSubmatrix(object):
         assert_array_almost_equal(quadratic_term, 0)
 
 
-class TestIterativeSubproblem(object):
+class TestIterativeSubproblem:
 
     def test_for_the_easy_case(self):
 

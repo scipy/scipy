@@ -26,6 +26,8 @@ def main():
     p = optparse.OptionParser(__doc__.strip())
     p.add_option("-d", "--debug", action="store_true",
                  help="print debug output")
+    p.add_option("-n", "--new", action="store_true",
+                 help="print debug output")
     options, args = p.parse_args()
 
     if len(args) != 1:
@@ -97,6 +99,18 @@ def main():
             surname = surname[4:]
         return (surname.lower(), forename.lower())
 
+    # generate set of all new authors
+    if vars(options)['new']:
+        new_authors = authors.difference(all_authors)
+        n_authors = list(new_authors)
+        n_authors.sort(key=name_key)
+        # Print some empty lines to separate
+        stdout_b.write(("\n\n").encode('utf-8'))
+        for author in n_authors:
+            stdout_b.write(("- %s\n" % author).encode('utf-8'))
+        # return for early exit so we only print new authors
+        return
+
     authors = list(authors)
     authors.sort(key=name_key)
 
@@ -133,7 +147,7 @@ def load_name_map(filename):
             if line.startswith(u"#") or not line:
                 continue
 
-            m = re.match(u'^(.*?)\s*<(.*?)>(.*?)\s*<(.*?)>\s*$', line)
+            m = re.match(r'^(.*?)\s*<(.*?)>(.*?)\s*<(.*?)>\s*$', line)
             if not m:
                 print("Invalid line in .mailmap: '{!r}'".format(line), file=sys.stderr)
                 sys.exit(1)
@@ -151,7 +165,7 @@ def load_name_map(filename):
 # Communicating with Git
 #------------------------------------------------------------------------------
 
-class Cmd(object):
+class Cmd:
     executable = None
 
     def __init__(self, executable):
