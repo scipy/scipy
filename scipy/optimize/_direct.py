@@ -163,7 +163,36 @@ def direct(
            79, 157-181 (1993)
     .. [2] Gablonsky, J., Kelley, C. A Locally-Biased form of the DIRECT
            Algorithm. Journal of Global Optimization 21, 27-37 (2001).
+
+    Examples
+    ----------
+    The following example is a 2-D problem with four local minima: minimizing
+    the Styblinski-Tang function
+    (https://en.wikipedia.org/wiki/Test_functions_for_optimization).
+
+    >>> from scipy.optimize import direct, Bounds
+    >>> def styblinski_tang(pos):
+    ...     x, y = pos
+    ...     return 0.5 * (x**4 - 16 * x**2 + 5 * x + y**4 - 16 * y**2 + 5 * y)
+    >>> bounds = Bounds([-4., -4.], [4., 4.])
+    >>> result = direct(styblinski_tang, bounds)
+    >>> result.x, result.fun, result.nfev
+    array([-2.90362242, -2.90362242]), -78.33233113735979, 20003
+
+    The correct global minimum was found but with a huge number of function
+    evaluations (20003). Loosening the termination criteria can be used to stop
+    DIRECT earlier.
+
+    >>> from scipy.optimize import direct, Bounds
+    >>> def styblinski_tang(pos):
+    ...     x, y = pos
+    ...     return 0.5 * (x**4 - 16 * x**2 + 5 * x + y**4 - 16 * y**2 + 5 * y)
+    >>> bounds = Bounds([-4., -4.], [4., 4.])
+    >>> result = direct(styblinski_tang, bounds, vol_tol = 1e-7)
+    >>> result.x, result.fun, result.nfev
+    array([-2.90321597, -2.9044353 ]), -78.33231560853986, 1113
     """
+
     if not isinstance(bounds, Bounds):
         lb, ub = old_bound_to_new(bounds)
         bounds = Bounds(lb, ub)
