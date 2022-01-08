@@ -94,7 +94,7 @@ def to_native(A):
     xp = np
     if isinstance(A, (cpx._array_object.Array, cp.ndarray)):
         xp = cp
-    return np.asarray(A, dtype=A.dtype.newbyteorder('native'))
+    return xp.asarray(A, dtype=A.dtype.newbyteorder('native'))
 
 
 def getdtype(dtype, a=None, default=None):
