@@ -168,7 +168,7 @@ def linprog_terse_callback(res):
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
             bounds=None, method='interior-point', callback=None,
-            options=None, x0=None):
+            options=None, x0=None, integrality=None):
     r"""
     Linear programming: minimize a linear objective function subject to linear
     equality and inequality constraints.
@@ -337,6 +337,22 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         'revised simplex' method, and can only be used if `x0` represents a
         basic feasible solution.
 
+    integrality : 1-D array, optional
+        Indicates the type of integrality constraint on each decision variable.
+
+        ``0`` : Continuous variable; no integrality constraint.
+
+        ``1`` : Integer variable; decision variable must be an integer
+        within `bounds`.
+
+        ``2`` : Semi-continuous variable; decision variable must be within
+        `bounds` or take value ``0``.
+
+        ``3`` : Semi-integer variable; decision variable must be an integer
+        within `bounds` or take value ``0``.
+
+        By default, all variables are continuous. This argument is currently
+        used only by the ``'highs'`` method and ignored otherwise.
 
     Returns
     -------
@@ -603,7 +619,13 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warning_message = "x0 is used only when method is 'revised simplex'. "
         warn(warning_message, OptimizeWarning)
 
-    lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0)
+    if integrality and not meth == "highs":
+        integrality = None
+        warning_message = ("Only `method='highs'` supports integer "
+                           "constraints. Ignoring `integrality`.")
+        warn(warning_message, OptimizeWarning)
+
+    lp = _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality)
     lp, solver_options = _parse_linprog(lp, options, meth)
     tol = solver_options.get('tol', 1e-9)
 
