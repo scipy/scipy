@@ -561,7 +561,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     if limits is None:
         return np.mean(a, axis)
     am = _mask_to_limits(a, limits, inclusive)
-    mean = am.mean(axis=axis)
+    mean = np.ma.filled(am.mean(axis=axis), fill_value=np.nan)
     return mean if mean.ndim > 0 else mean.item()
 
 
