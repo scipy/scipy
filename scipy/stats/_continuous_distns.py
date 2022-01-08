@@ -8925,15 +8925,16 @@ class rv_histogram(rv_continuous):
         self._histogram = histogram
         if len(histogram) != 2:
             raise ValueError("Expected length 2 for parameter histogram")
-        self._hpdf = np.asarray(histogram[0])
+        counts_per_bin = np.asarray(histogram[0])
+        counts_total = counts_per_bin.sum()
         self._hbins = np.asarray(histogram[1])
-        if len(self._hpdf) + 1 != len(self._hbins):
+        if len(counts_per_bin) + 1 != len(self._hbins):
             raise ValueError("Number of elements in histogram content "
                              "and histogram boundaries do not match, "
                              "expected n and n+1.")
         self._hbin_widths = self._hbins[1:] - self._hbins[:-1]
-        self._hpdf = self._hpdf / float(np.sum(self._hpdf * self._hbin_widths))
-        self._hcdf = np.cumsum(self._hpdf * self._hbin_widths)
+        self._hpdf = counts_per_bin / (counts_total * self._hbin_widths)
+        self._hcdf = np.cumsum(counts_per_bin) / counts_total
         self._hpdf = np.hstack([0.0, self._hpdf, 0.0])
         self._hcdf = np.hstack([0.0, self._hcdf])
         # Set support
