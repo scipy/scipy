@@ -292,7 +292,7 @@ Filters based on order statistics
   shape of the kernel by its non-zero elements.
 
 - The :func:`rank_filter` function calculates a multidimensional rank
-  filter. The *rank* may be less then zero, i.e., *rank* = -1
+  filter. The *rank* may be less than zero, i.e., *rank* = -1
   indicates the largest element. Either the sizes of a rectangular
   kernel or the footprint of the kernel must be provided. The *size*
   parameter, if provided, must be a sequence of sizes or a single
@@ -301,7 +301,7 @@ Filters based on order statistics
   defines the shape of the kernel by its non-zero elements.
 
 - The :func:`percentile_filter` function calculates a multidimensional
-  percentile filter. The *percentile* may be less then zero, i.e.,
+  percentile filter. The *percentile* may be less than zero, i.e.,
   *percentile* = -20 equals *percentile* = 80. Either the sizes of a
   rectangular kernel or the footprint of the kernel must be provided.
   The *size* parameter, if provided, must be a sequence of sizes or a
