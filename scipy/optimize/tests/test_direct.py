@@ -37,7 +37,7 @@ class TestDIRECT:
         _bounds = np.asarray(bounds)
 
         #test that result lies within bounds
-        assert_array_less(_bounds[:, 0], res.x )
+        assert_array_less(_bounds[:, 0], res.x)
         assert_array_less(res.x, _bounds[:, 1])
 
         #test accuracy
