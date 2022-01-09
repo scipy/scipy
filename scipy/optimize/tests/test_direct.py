@@ -71,3 +71,9 @@ class TestDIRECT:
         res = direct(self.sphere_2, bounds=bounds, len_tol = 1e-3)
         assert res.status == 5
         assert_allclose(res.x, np.zeros((4, )))
+
+    def test_f_min(self):
+        bounds = 4*[(-2, 10)]
+        res = direct(self.sphere_2, bounds=bounds, f_min = 1)
+        assert res.status == 3
+        assert res.fun < 1.0001
