@@ -3298,7 +3298,7 @@ def _endprint(x, flag, fval, maxfun, xtol, disp):
 
 
 def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
-          disp=False, workers=1):
+          disp=False, workers=1, *, integrality=None):
     """Minimize a function over a given range by brute force.
 
     Uses the "brute force" method, i.e., computes the function's value
@@ -3358,8 +3358,11 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         `multiprocessing.Pool.map` for evaluating the grid in parallel.
         This evaluation is carried out as ``workers(func, iterable)``.
         Requires that `func` be pickleable.
-
-        .. versionadded:: 1.3.0
+    integrality : 1-D array, optional
+        For each decision variable, a boolean value indicating whether the
+        decision variable is constrained to integer values. If any decision
+        variables are constrained to be integral, polishing will not be
+        performed (e.g. ``finish=None``).
 
     Returns
     -------
@@ -3469,6 +3472,15 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     gridpoint [-1.0 1.75] where the rounded function value is -2.892.
 
     """
+    if finish and (integrality is not None) and np.any(integrality):
+        message = ("Polishing is incompatible with integrality constraints; "
+                   "`finish` will be ignored.")
+        finish = None
+        warnings.warn(message, OptimizeWarning)
+
+    integrality = (np.broadcast_to(integrality, len(ranges)) if integrality
+                   else np.zeros(len(ranges), dtype=bool))
+
     N = len(ranges)
     if N > 40:
         raise ValueError("Brute Force not possible with more "
@@ -3477,12 +3489,23 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     for k in range(N):
         if type(lrange[k]) is not type(slice(None)):
             if len(lrange[k]) < 3:
-                lrange[k] = tuple(lrange[k]) + (complex(Ns),)
+                if integrality[k]:
+                    ub = np.floor(lrange[k][1])
+                    lb = min(np.ceil(lrange[k][0]), ub)
+                    lrange[k] = lb, ub
+                    n_ints_between_bounds = lrange[k][1] - lrange[k][0] + 1
+                    n_points = min(Ns, n_ints_between_bounds)
+                else:
+                    n_points = Ns
+                lrange[k] = tuple(lrange[k]) + (complex(n_points),)
             lrange[k] = slice(*lrange[k])
     if (N == 1):
         lrange = lrange[0]
 
     grid = np.mgrid[lrange]
+    for k in range(N):
+        if integrality[k]:
+            grid[k, ...] = np.round(grid[k, ...])
 
     # obtain an array of parameters that is iterable by a map-like callable
     inpt_shape = grid.shape

@@ -10,6 +10,7 @@ To run it in its simplest form::
 
 """
 import itertools
+import warnings
 import platform
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
@@ -20,6 +21,7 @@ import pytest
 from pytest import raises as assert_raises
 
 from scipy import optimize
+from scipy import stats
 from scipy.optimize._minimize import Bounds, NonlinearConstraint
 from scipy.optimize._minimize import MINIMIZE_METHODS, MINIMIZE_SCALAR_METHODS
 from scipy.optimize._linprog import LINPROG_METHODS
@@ -27,7 +29,7 @@ from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy.optimize._optimize import MemoizeJac, show_options
+from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeWarning
 
 
 def test_check_grad():
@@ -2179,6 +2181,35 @@ class TestBrute:
         with pytest.warns(RuntimeWarning,
                           match=r'Either final optimization did not succeed'):
             optimize.brute(func, self.rranges, args=self.params, disp=True)
+
+        message = "Polishing is incompatible with integrality constraints"
+        with pytest.warns(OptimizeWarning, match=message):
+            optimize.brute(func, self.rranges, args=self.params,
+                           integrality=True)
+
+    def test_integrality(self):
+        # test fitting discrete distribution to data
+        rng = np.random.default_rng(6519843218105)
+        dist = stats.nbinom
+        shapes = (5, 0.5)
+        x = dist.rvs(*shapes, size=10000, random_state=rng)
+
+        def func(free_params, *args):
+            dist, x = args
+            # negative log-likelihood function
+            ll = -np.log(dist.pmf(x, *free_params)).sum(axis=-1)
+            if np.isnan(ll):  # occurs when x is outside of support
+                ll = np.inf   # we don't want that
+            return ll
+
+        integrality = [True, False]
+        bounds = [(1, 18), (0, 0.95)]
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            res = optimize.brute(func, bounds, args=(dist, x), finish=False,
+                                 integrality=integrality, Ns=20)
+        assert_allclose(res, shapes, atol=1e-14)
 
 
 def test_cobyla_threadsafe():
