@@ -2205,10 +2205,8 @@ class TestBrute:
         integrality = [True, False]
         bounds = [(1, 18), (0, 0.95)]
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            res = optimize.brute(func, bounds, args=(dist, x), finish=False,
-                                 integrality=integrality, Ns=20)
+        res = optimize.brute(func, bounds, args=(dist, x), finish=False,
+                             integrality=integrality, Ns=20)
         assert_allclose(res, shapes, atol=1e-14)
 
 
