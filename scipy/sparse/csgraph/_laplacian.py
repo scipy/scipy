@@ -117,7 +117,7 @@ def _setdiag_dense(A, d):
     A.flat[::len(d)+1] = d
 
 
-def _laplacian_sparse(graph, normed=False, axis=0,
+def _laplacian_sparse(graph, normed, axis,
                       copy, aslinearoperator):
     if not aslinearoperator:
         needs_copy = False
@@ -147,7 +147,7 @@ def _laplacian_sparse(graph, normed=False, axis=0,
         return m, w
 
 
-def _laplacian_dense(graph, normed=False, axis=0,
+def _laplacian_dense(graph, normed, axis,
                      copy, aslinearoperator):
     if not aslinearoperator:
         if copy:
