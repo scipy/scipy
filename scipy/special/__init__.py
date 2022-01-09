@@ -624,6 +624,7 @@ Convenience functions
 .. autosummary::
    :toctree: generated/
 
+   abs2      -- Absolute square.
    cbrt      -- Cube root of `x`.
    exp10     -- 10**x.
    exp2      -- 2**x.

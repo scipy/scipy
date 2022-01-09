@@ -10159,3 +10159,32 @@ add_newdoc("ndtri_exp",
     --------
     log_ndtr, ndtri, ndtr
     """)
+
+add_newdoc("abs2",
+    r"""
+    abs2(z)
+    
+    Absolute square of z. Equivalent to (but faster than) `z.real**2 + z.imag**2`.
+    
+    Parameters
+    ----------
+    z : array_like
+        Real or complex argument
+    
+    Returns
+    -------
+    scalar or ndarray
+        Squared absolute of the argument (`x**2` for reals, `z.real**2 + z.imag**2` for complex).
+        
+    Examples
+    --------
+    >>> import scipy.special as sc
+    >>> sc.abs2(2.)
+    4.0
+    >>> sc.abs2([1., 2., 3.])
+    array([1., 4., 9.])
+    >>> sc.abs2(1+1j)
+    2.0
+    >>> sc.abs2([1+1j, 2+2j, 3+3j])
+    array([ 2.,  8., 18.])
+    """)

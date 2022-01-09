@@ -136,6 +136,12 @@
             "zeta": "dd->d"
         }
     },
+    "abs2": {
+        "_abs2.h": {
+            "abs2": "d->d",
+            "cabs2": "D->d"
+        }
+    },
     "agm": {
         "_agm.pxd": {
             "agm": "dd->d"
