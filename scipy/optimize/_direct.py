@@ -29,7 +29,7 @@ ERROR_MESSAGES = (
 )
 
 SUCCESS_MESSAGES = (
-    ("The best function value found is within a relative error={}"
+    ("The best function value found is within a relative error={} "
      "of the (known) global optimum f_min"),
     ("The volume of the hyperrectangle containing the lowest function value "
      "found is below vol_tol={}"),
@@ -194,14 +194,14 @@ def direct(
     """
 
     # convert bounds to new Bounds class if necessary
-    if isinstance(bounds, list) or isinstance(bounds, tuple):
-        lb, ub = old_bound_to_new(bounds)
-        bounds = Bounds(lb, ub)
-    elif isinstance(bounds, Bounds):
-        return
-    else:
-        raise ValueError("bounds must be a sequence or "
-                        "instance of Bounds class")
+    if not isinstance(bounds, Bounds):
+        if isinstance(bounds, list) or isinstance(bounds, tuple):
+            lb, ub = old_bound_to_new(bounds)
+            bounds = Bounds(lb, ub)
+        else:
+            message = ("bounds must be a sequence or "
+                      "instance of Bounds class")
+            raise ValueError(message)
 
     lb = np.ascontiguousarray(bounds.lb)
     ub = np.ascontiguousarray(bounds.ub)
