@@ -118,7 +118,7 @@ def _setdiag_dense(A, d):
 
 
 def _laplacian_sparse(graph, normed=False, axis=0,
-                      copy=copy, aslinearoperator=aslinearoperator):
+                      copy, aslinearoperator):
     if not aslinearoperator:
         needs_copy = False
         if graph.format in ('lil', 'dok'):
@@ -148,7 +148,7 @@ def _laplacian_sparse(graph, normed=False, axis=0,
 
 
 def _laplacian_dense(graph, normed=False, axis=0,
-                     copy=copy, aslinearoperator=aslinearoperator):
+                     copy, aslinearoperator):
     if not aslinearoperator:
         if copy:
             m = np.array(graph)
