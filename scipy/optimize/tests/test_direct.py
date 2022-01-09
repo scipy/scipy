@@ -10,7 +10,7 @@ from scipy.optimize import direct
 
 class TestDIRECT:
 
-    #actual maxeval is always a bit higher than 20000
+    # actual maxeval is always a bit higher than 20000
     MAXFEVAL = 20100
     MAXITER = 6000
 
@@ -36,11 +36,11 @@ class TestDIRECT:
         assert_allclose(res.x, result['arg_min'])
         _bounds = np.asarray(bounds)
 
-        #test that result lies within bounds
+        # test that result lies within bounds
         assert_array_less(_bounds[:, 0], res.x)
         assert_array_less(res.x, _bounds[:, 1])
 
-        #test accuracy
+        # test accuracy
         assert_allclose(res.fun, result['min'])
         assert res.success == result['success']
         assert res.status == result['status']
@@ -68,12 +68,12 @@ class TestDIRECT:
 
     def test_len_tol(self):
         bounds = 4*[(-10, 10)]
-        res = direct(self.sphere_2, bounds=bounds, len_tol = 1e-3)
+        res = direct(self.sphere_2, bounds=bounds, len_tol=1e-3)
         assert res.status == 5
         assert_allclose(res.x, np.zeros((4, )))
 
     def test_f_min(self):
         bounds = 4*[(-2, 10)]
-        res = direct(self.sphere_2, bounds=bounds, f_min = 1)
+        res = direct(self.sphere_2, bounds=bounds, f_min=1)
         assert res.status == 3
         assert res.fun < 1.0001

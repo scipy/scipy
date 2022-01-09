@@ -193,7 +193,7 @@ def direct(
     array([-2.90321597, -2.9044353 ]), -78.33231560853986, 1113
     """
 
-    #convert bounds to new Bounds class if necessary
+    # convert bounds to new Bounds class if necessary
     if isinstance(bounds, list) or isinstance(bounds, tuple):
         lb, ub = old_bound_to_new(bounds)
         bounds = Bounds(lb, ub)
@@ -201,37 +201,37 @@ def direct(
         return
     else:
         raise ValueError("bounds must be a sequence or "
-        "instance of Bounds class")
-        
+                        "instance of Bounds class")
+
     lb = np.ascontiguousarray(bounds.lb)
     ub = np.ascontiguousarray(bounds.ub)
 
-    #validate bounds
+    # validate bounds
     if not np.all(lb < ub):
         raise ValueError('Bounds are not consistent min < max')
     if not len(lb) == len(ub):
         raise ValueError('Bounds do not have the same dimensions')
 
-    #check for infs and nans
+    # check for infs and nans
     if (np.any(np.isinf(lb)) or np.any(np.isinf(ub))):
-        raise ValueError("Bounds must not be inf.") 
+        raise ValueError("Bounds must not be inf.")
     if (np.any(np.isnan(lb)) or np.any(np.isnan(ub))):
         raise ValueError("Bounds must not be NaN.")
 
-    #validate tolerances
+    # validate tolerances
     if (vol_tol < 0 or vol_tol > 1):
         raise ValueError("vol_tol must be between 0 and 1.")
     if (len_tol < 0 or len_tol > 1):
         raise ValueError("len_tol must be between 0 and 1.")
     if (f_min_rtol < 0 or len_tol > 1):
         raise ValueError("f_min_rtol must be between 0 and 1.")
-    
-    #validate maxfun and maxiter
+
+    # validate maxfun and maxiter
     if not isinstance(maxfun, int):
         raise ValueError("maxfun must be of type int.")
     if not isinstance(maxiter, int):
         raise ValueError("maxiter must be of type int.")
-      
+
     def _func_wrap(x, *args):
         x = np.asarray(x)
         f = func(x, *args)
