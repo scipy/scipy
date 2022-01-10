@@ -17,7 +17,7 @@ References
        https://github.com/lobpcg/blopex
 """
 # Author: Andrew Knyazev <Andrew.Knyazev@ucdenver.edu>
-#         Robert Cimrman.
+#         Robert Cimrman <https://github.com/rc>
 
 import warnings
 import numpy as np
