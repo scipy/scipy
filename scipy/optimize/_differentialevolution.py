@@ -628,31 +628,29 @@ class DifferentialEvolutionSolver:
                 self.polish = False
                 warnings.warn(message, OptimizeWarning)
 
-            self.integrality = np.broadcast_to(
+            integrality = np.broadcast_to(
                 integrality,
                 self.parameter_count
             )
-            self.integrality = np.asarray(self.integrality, bool)
+            integrality = np.asarray(integrality, bool)
             # For integrality parameters change the limits to only allow
             # integer values lying between the limits.
             lb, ub = np.copy(self.limits)
 
-            lb[lb > 0] = np.ceil(lb[lb > 0])
-            lb[lb < 0] = np.trunc(lb[lb < 0])
-            ub[ub > 0] = np.trunc(ub[ub > 0])
-            ub[ub < 0] = np.floor(ub[ub < 0])
+            lb = np.ceil(lb)
+            ub = np.floor(ub)
             if not (lb[integrality] <= ub[integrality]).all():
                 # there's a parameter that doesn't have an integer value
                 # lying between the limits
                 raise ValueError("One of the integrality constraints does not"
                                  " have any possible integer values between"
                                  " the lower/upper bounds.")
-            self.limits[0, self.integrality] = (
-                    lb[self.integrality] - (0.5 - _MACHEPS)
-            )
-            self.limits[1, self.integrality] = (
-                    ub[self.integrality] + (0.5 - _MACHEPS)
-            )
+            nlb = np.nextafter(lb[integrality] - 0.5, np.inf)
+            nub = np.nextafter(ub[integrality] + 0.5, -np.inf)
+
+            self.integrality = integrality
+            self.limits[0, self.integrality] = nlb
+            self.limits[1, self.integrality] = nub
         else:
             self.integrality = False
 
