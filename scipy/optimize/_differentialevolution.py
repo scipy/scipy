@@ -5,7 +5,7 @@ Added by Andrew Nelson 2014
 import warnings
 
 import numpy as np
-from scipy.optimize import OptimizeResult, minimize
+from scipy.optimize import OptimizeResult, minimize, OptimizeWarning
 from scipy.optimize._optimize import _status_message
 from scipy._lib._util import check_random_state, MapWrapper, _FunctionWrapper
 
@@ -24,7 +24,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
-                           workers=1, constraints=(), x0=None):
+                           workers=1, constraints=(), x0=None, *,
+                           integrality=None):
     """Finds the global minimum of a multivariate function.
 
     Differential Evolution is stochastic in nature (does not use gradient
@@ -193,6 +194,28 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
         .. versionadded:: 1.7.0
 
+    integrality : 1-D array, optional
+        For each decision variable, a boolean value indicating whether the
+        decision variable is constrained to integer values. The array is
+        broadcast to ``(len(x),)``.
+        If any decision variables are constrained to be integral, polishing
+        will switched off (e.g. ``polish=False``).
+        The solution vectors are passed to the objective function as
+        ``func(np.round(x[integrality]))``.
+        For variables considered as integers consider the bounds carefully.
+        For example, for a range of [0, 2] (acceptable values being
+        0, 1, 2), expand the bounds by +/- 0.5, setting the lower/upper bounds
+        to (-0.5, 2.5). Otherwise the rounding process will reduce the ability
+        of a value being able to take the lower/upper bound; only values lying
+        in [0, 0.5) are considered to be 0.0, but values lying in [0.5, 1.5)
+        (twice the range) are considered to be 1.0.
+        In addition the rounding process may cause a integral parameter to
+        exceed the given limits. For example the rounding process for a bound
+        of (0.2, 0.9) will result in values of 0, 1 being passed to the
+        objective function. An OptimizeWarning is emitted if this occurs.
+
+        .. versionadded:: 1.9.0
+
     Returns
     -------
     res : OptimizeResult
@@ -325,7 +348,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      updating=updating,
                                      workers=workers,
                                      constraints=constraints,
-                                     x0=x0) as solver:
+                                     x0=x0,
+                                     integrality=integrality) as solver:
         ret = solver.solve()
 
     return ret
@@ -486,6 +510,11 @@ class DifferentialEvolutionSolver:
         Provides an initial guess to the minimization. Once the population has
         been initialized this vector replaces the first (best) member. This
         replacement is done even if `init` is given an initial population.
+    integrality : 1-D array, optional
+        For each decision variable, a boolean value indicating whether the
+        decision variable is constrained to integer values. If any decision
+        variables are constrained to be integral, polishing will not be
+        performed (e.g. ``polish=False``).
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -511,7 +540,7 @@ class DifferentialEvolutionSolver:
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
-                 workers=1, constraints=(), x0=None):
+                 workers=1, constraints=(), x0=None, *, integrality=None):
 
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -597,6 +626,41 @@ class DifferentialEvolutionSolver:
         self.parameter_count = np.size(self.limits, 1)
 
         self.random_number_generator = check_random_state(seed)
+
+        # Which parameters are going to be integers?
+        if np.any(integrality):
+            # user has provided a truth value for integer constraints
+            if polish:
+                message = ("Polishing is incompatible with integrality"
+                           " constraints; `polish` will be ignored.")
+                self.polish = False
+                warnings.warn(message, OptimizeWarning)
+
+            self.integrality = np.broadcast_to(
+                integrality,
+                self.parameter_count
+            )
+            self.integrality = np.asarray(self.integrality, bool)
+            # See if rounding would allow a parameter to strictly exceed
+            # the stated limits. For example using bounds of (0.2, 9.8) for an
+            # integral parameter will utilise integers in the range:
+            #       [np.round(0.2), np.round(9.8)] == [0, 10]
+            # The values 0 and 10 are strictly outside the applied bounds.
+            # A design choice was made to raise a warning, but to still
+            # proceed. This is because the situation may be relatively common.
+            # Alternatives could be to raise a RuntimeError.
+            lb, ub = self.limits
+            round_exceeds_bounds = np.logical_or(
+                np.round(lb) < lb,
+                np.round(ub) < ub
+            )
+            if (round_exceeds_bounds[self.integrality]).any():
+                message = ("The rounding process involved in implementing"
+                           " integrality constraints will cause a parameter to"
+                           " exceed a lower/upper bound")
+                warnings.warn(message, OptimizeWarning)
+        else:
+            self.integrality = False
 
         # default population initialization is a latin hypercube design, but
         # there are other population initializations possible.
@@ -1235,7 +1299,13 @@ class DifferentialEvolutionSolver:
 
     def _scale_parameters(self, trial):
         """Scale from a number between 0 and 1 to parameters."""
-        return self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
+        # trial either has shape (N, ) or (L, N), where L is the number of
+        # solutions being scaled
+        scaled = self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
+        if np.any(self.integrality):
+            i = np.broadcast_to(self.integrality, scaled.shape)
+            scaled[i] = np.round(scaled[i])
+        return scaled
 
     def _unscale_parameters(self, parameters):
         """Scale from parameters to a number between 0 and 1."""

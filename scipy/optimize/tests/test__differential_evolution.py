@@ -6,11 +6,12 @@ import platform
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
                                                    _ConstraintWrapper)
-from scipy.optimize import differential_evolution
+from scipy.optimize import differential_evolution, OptimizeWarning
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
 from scipy.optimize import rosen
 from scipy.sparse import csr_matrix
+from scipy import stats
 from scipy._lib._pep440 import Version
 
 import numpy as np
@@ -1236,3 +1237,41 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(np.array(c1(res.x)) <= 0.001))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+    def test_integrality(self):
+        # test fitting discrete distribution to data
+        rng = np.random.default_rng(6519843218105)
+        dist = stats.nbinom
+        shapes = (5, 0.5)
+        x = dist.rvs(*shapes, size=10000, random_state=rng)
+
+        def func(free_params, *args):
+            dist, x = args
+            # negative log-likelihood function
+            ll = -np.log(dist.pmf(x, *free_params)).sum(axis=-1)
+            if np.isnan(ll):  # occurs when x is outside of support
+                ll = np.inf  # we don't want that
+            return ll
+
+        integrality = [True, False]
+        bounds = [(1, 18), (0, 0.95)]
+
+        res = differential_evolution(func, bounds, args=(dist, x),
+                                     integrality=integrality, polish=False,
+                                     seed=rng)
+        # tolerance has to be fairly relaxed for the second parameter
+        # because of the number of rvs samples generated. The more you generate
+        # the closer the parameter will come to the theoretical value (it will
+        # never be the theoretical value because they're random variates).
+        assert res.x[0] == 5
+        assert_allclose(res.x, shapes, rtol=0.02)
+
+    def test_integrality_limit_warning(self):
+        # if an integral constraint is applied then it's possible parameter
+        # values will escape the bounds. For example using bounds of (0.2, 9.8)
+        # will utilise integers in the range:
+        #       [np.round(0.2), np.round(9.8)] == [0, 10]
+        # The values 0 and 10 are strictly outside the applied bounds.
+        with pytest.warns(OptimizeWarning, match='The rounding process inv'):
+            differential_evolution(rosen, bounds=[(0, 5), (0.2, 0.5)],
+                                   integrality=[False, True], polish=False)
