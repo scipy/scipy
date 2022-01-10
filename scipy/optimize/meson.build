@@ -235,18 +235,14 @@ _dummy_init_optimize = custom_target('_dummy_init_optimize',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
-_bglu_dense_c = custom_target('_bglu_dense_c',
-  output: '_bglu_dense.c',
-  input: [
-    '_bglu_dense.pyx',
-    _cython_tree,
-    # _cython_blas_pxd
-  ],
-  command: [
-    cython, '-3', '--fast-fail',
-    '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
-  ]
-)
+cython_blas_gen = generator(cython_cli,
+  arguments : [
+    '@INPUT@',
+    '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : cython_linalg)
+
+_bglu_dense_c = cython_blas_gen.process('_bglu_dense.pyx')
 
 py3.extension_module('_bglu_dense',
   _bglu_dense_c,
