@@ -202,17 +202,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         will switched off (e.g. ``polish=False``).
         The solution vectors are passed to the objective function as
         ``func(np.round(x[integrality]))``.
-        For variables considered as integers consider the bounds carefully.
-        For example, for a range of [0, 2] (acceptable values being
-        0, 1, 2), expand the bounds by +/- 0.5, setting the lower/upper bounds
-        to (-0.5, 2.5). Otherwise the rounding process will reduce the ability
-        of a value being able to take the lower/upper bound; only values lying
-        in [0, 0.5) are considered to be 0.0, but values lying in [0.5, 1.5)
-        (twice the range) are considered to be 1.0.
-        In addition the rounding process may cause a integral parameter to
-        exceed the given limits. For example the rounding process for a bound
-        of (0.2, 0.9) will result in values of 0, 1 being passed to the
-        objective function. An OptimizeWarning is emitted if this occurs.
+        Only integer values lying between the lower and upper bounds are used.
+        If there are no integer values lying between the bounds then a
+        `ValueError` is raised.
 
         .. versionadded:: 1.9.0
 
@@ -641,24 +633,26 @@ class DifferentialEvolutionSolver:
                 self.parameter_count
             )
             self.integrality = np.asarray(self.integrality, bool)
-            # See if rounding would allow a parameter to strictly exceed
-            # the stated limits. For example using bounds of (0.2, 9.8) for an
-            # integral parameter will utilise integers in the range:
-            #       [np.round(0.2), np.round(9.8)] == [0, 10]
-            # The values 0 and 10 are strictly outside the applied bounds.
-            # A design choice was made to raise a warning, but to still
-            # proceed. This is because the situation may be relatively common.
-            # Alternatives could be to raise a RuntimeError.
-            lb, ub = self.limits
-            round_exceeds_bounds = np.logical_or(
-                np.round(lb) < lb,
-                np.round(ub) < ub
+            # For integrality parameters change the limits to only allow
+            # integer values lying between the limits.
+            lb, ub = np.copy(self.limits)
+
+            lb[lb > 0] = np.ceil(lb[lb > 0])
+            lb[lb < 0] = np.trunc(lb[lb < 0])
+            ub[ub > 0] = np.trunc(ub[ub > 0])
+            ub[ub < 0] = np.floor(ub[ub < 0])
+            if not (lb[integrality] <= ub[integrality]).all():
+                # there's a parameter that doesn't have an integer value
+                # lying between the limits
+                raise ValueError("One of the integrality constraints does not"
+                                 " have any possible integer values between"
+                                 " the lower/upper bounds.")
+            self.limits[0, self.integrality] = (
+                    lb[self.integrality] - (0.5 + _MACHEPS)
             )
-            if (round_exceeds_bounds[self.integrality]).any():
-                message = ("The rounding process involved in implementing"
-                           " integrality constraints will cause a parameter to"
-                           " exceed a lower/upper bound")
-                warnings.warn(message, OptimizeWarning)
+            self.limits[1, self.integrality] = (
+                    ub[self.integrality] + (0.5 - _MACHEPS)
+            )
         else:
             self.integrality = False
 

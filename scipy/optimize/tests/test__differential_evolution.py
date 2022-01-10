@@ -1266,12 +1266,38 @@ class TestDifferentialEvolutionSolver:
         assert res.x[0] == 5
         assert_allclose(res.x, shapes, rtol=0.02)
 
-    def test_integrality_limit_warning(self):
-        # if an integral constraint is applied then it's possible parameter
-        # values will escape the bounds. For example using bounds of (0.2, 9.8)
-        # will utilise integers in the range:
-        #       [np.round(0.2), np.round(9.8)] == [0, 10]
-        # The values 0 and 10 are strictly outside the applied bounds.
-        with pytest.warns(OptimizeWarning, match='The rounding process inv'):
-            differential_evolution(rosen, bounds=[(0, 5), (0.2, 0.5)],
-                                   integrality=[False, True], polish=False)
+    def test_integrality_limits(self):
+        f = lambda x: x
+        integrality = [True, False, True]
+        bounds = [(0.2, 1.1), (0.9, 2.2), (3.3, 4.9)]
+
+        # no integrality constraints
+        solver = DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
+                                             integrality=False)
+        assert_allclose(solver.limits[0], [0.2, 0.9, 3.3])
+        assert_allclose(solver.limits[1], [1.1, 2.2, 4.9])
+
+        # with integrality constraints
+        solver = DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
+                                             integrality=integrality)
+        assert_allclose(solver.limits[0], [0.5, 0.9, 3.5])
+        assert_allclose(solver.limits[1], [1.5, 2.2, 4.5])
+        assert_equal(solver.integrality, [True, False, True])
+        assert solver.polish == False
+
+        bounds = [(-1.2, -0.9), (0.9, 2.2), (-10.3, 4.1)]
+        solver = DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
+                                             integrality=integrality)
+        assert_allclose(solver.limits[0], [-1.5, 0.9, -10.5])
+        assert_allclose(solver.limits[1], [-0.5, 2.2, 4.5])
+
+        bounds = [(-10.2, -8.1), (0.9, 2.2), (-10.9, -9.9999)]
+        solver = DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
+                                             integrality=integrality)
+        assert_allclose(solver.limits[0], [-10.5, 0.9, -10.5])
+        assert_allclose(solver.limits[1], [-8.5, 2.2, -9.5])
+
+        bounds = [(-10.2, -10.1), (0.9, 2.2), (-10.9, -9.9999)]
+        with pytest.raises(ValueError, match='One of the integrality'):
+           DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
+                                       integrality=integrality)
