@@ -2142,9 +2142,9 @@ def deconvolve(signal, divisor):
 
     Parameters
     ----------
-    signal : 1-D array_like
+    signal : (N,) array_like
         Signal data, typically a recorded signal
-    divisor : 1-D array_like
+    divisor : (N,) array_like
         Divisor data, typically an impulse response or filter that was
         applied to the original signal
 
