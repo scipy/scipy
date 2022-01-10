@@ -255,6 +255,8 @@ _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
 
 python_sources = [
   '__init__.py',
+  '_api.py',
+  '_backend.py',
   '_basic.py',
   '_decomp.py',
   '_decomp_cholesky.py',
@@ -273,6 +275,7 @@ python_sources = [
   '_matfuncs_inv_ssq.py',
   '_matfuncs_sqrtm.py',
   '_misc.py',
+  '_multimethods.py',
   '_procrustes.py',
   '_sketches.py',
   '_solvers.py',
