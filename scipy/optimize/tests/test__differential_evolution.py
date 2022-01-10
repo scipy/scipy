@@ -9,7 +9,7 @@ from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
 from scipy.optimize import differential_evolution, OptimizeWarning
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
-from scipy.optimize import rosen
+from scipy.optimize import rosen, minimize
 from scipy.sparse import csr_matrix
 from scipy import stats
 from scipy._lib._pep440 import Version
@@ -1245,10 +1245,10 @@ class TestDifferentialEvolutionSolver:
         shapes = (5, 0.5)
         x = dist.rvs(*shapes, size=10000, random_state=rng)
 
-        def func(free_params, *args):
+        def func(p, *args):
             dist, x = args
             # negative log-likelihood function
-            ll = -np.log(dist.pmf(x, *free_params)).sum(axis=-1)
+            ll = -np.log(dist.pmf(x, *p)).sum(axis=-1)
             if np.isnan(ll):  # occurs when x is outside of support
                 ll = np.inf  # we don't want that
             return ll
@@ -1260,11 +1260,25 @@ class TestDifferentialEvolutionSolver:
                                      integrality=integrality, polish=False,
                                      seed=rng)
         # tolerance has to be fairly relaxed for the second parameter
-        # because of the number of rvs samples generated. The more you generate
-        # the closer the parameter will come to the theoretical value (it will
-        # never be the theoretical value because they're random variates).
+        # because we're fitting a distribution to random variates.
         assert res.x[0] == 5
         assert_allclose(res.x, shapes, rtol=0.02)
+
+        # check that we can still use integrality constraints with polishing
+        res2 = differential_evolution(func, bounds, args=(dist, x),
+                                     integrality=integrality, polish=True,
+                                     seed=rng)
+        def func2(p, *args):
+            n, dist, x = args
+            return func(np.array([n, p[0]]), dist, x)
+
+        # compare the DE derived solution to an LBFGSB solution (that doesn't
+        # have to find the integral values). Note we're setting x0 to be the
+        # output from the first DE result, thereby making the polishing step and
+        # this minimisation pretty much equivalent.
+        LBFGSB = minimize(func2, res2.x[1], args=(5, dist, x), bounds=[(0, 0.95)])
+        assert_allclose(res2.x[1], LBFGSB.x)
+        assert res2.fun <= res.fun
 
     def test_integrality_limits(self):
         f = lambda x: x

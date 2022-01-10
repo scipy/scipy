@@ -621,12 +621,12 @@ class DifferentialEvolutionSolver:
 
         # Which parameters are going to be integers?
         if np.any(integrality):
-            # user has provided a truth value for integer constraints
-            if polish:
-                message = ("Polishing is incompatible with integrality"
-                           " constraints; `polish` will be ignored.")
-                self.polish = False
-                warnings.warn(message, OptimizeWarning)
+            # # user has provided a truth value for integer constraints
+            # if polish:
+            #     message = ("Polishing is incompatible with integrality"
+            #                " constraints; `polish` will be ignored.")
+            #     self.polish = False
+            #     warnings.warn(message, OptimizeWarning)
 
             integrality = np.broadcast_to(
                 integrality,
@@ -944,6 +944,13 @@ class DifferentialEvolutionSolver:
             success=(warning_flag is not True))
 
         if self.polish:
+            if np.any(self.integrality):
+                # set the lower/upper bounds equal so that any integrality
+                # constraints work.
+                limits, integrality = self.limits, self.integrality
+                limits[0, integrality] = DE_result.x[integrality]
+                limits[1, integrality] = DE_result.x[integrality]
+
             polish_method = 'L-BFGS-B'
 
             if self._wrapped_constraints:
