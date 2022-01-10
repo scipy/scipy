@@ -648,7 +648,7 @@ class DifferentialEvolutionSolver:
                                  " have any possible integer values between"
                                  " the lower/upper bounds.")
             self.limits[0, self.integrality] = (
-                    lb[self.integrality] - (0.5 + _MACHEPS)
+                    lb[self.integrality] - (0.5 - _MACHEPS)
             )
             self.limits[1, self.integrality] = (
                     ub[self.integrality] + (0.5 - _MACHEPS)
