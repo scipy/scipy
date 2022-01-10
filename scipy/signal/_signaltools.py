@@ -2143,9 +2143,9 @@ def deconvolve(signal, divisor):
 
     Parameters
     ----------
-    signal : array_like
+    signal : (N,) array_like
         Signal data, typically a recorded signal
-    divisor : array_like
+    divisor : (N,) array_like
         Divisor data, typically an impulse response or filter that was
         applied to the original signal
 
@@ -2178,6 +2178,10 @@ def deconvolve(signal, divisor):
     """
     num = np.atleast_1d(signal)
     den = np.atleast_1d(divisor)
+    if num.ndim > 1:
+        raise ValueError("signal must be 1-D.")
+    if den.ndim > 1:
+        raise ValueError("divisor must be 1-D.")
     N = len(num)
     D = len(den)
     if D > N:
