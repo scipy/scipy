@@ -17,7 +17,7 @@ References
        https://github.com/lobpcg/blopex
 """
 # Author: Andrew Knyazev <Andrew.Knyazev@ucdenver.edu>
-#         Robert Cimrman <https://github.com/rc>
+#         Robert Cimrman <cimrman3@ntc.zcu.cz>
 
 import warnings
 import numpy as np
@@ -214,7 +214,7 @@ def lobpcg(
     The convergence speed depends basically on two factors:
 
     1. Relative separation of the seeking eigenvalues from the rest
-       of the eigenvalues. One can vary ``m`` to improve the absolute
+       of the eigenvalues. One can vary ``k`` to improve the absolute
        separation and use proper preconditioning to shrink the spectral spread.
        For example, a rod vibration test problem (under tests
        directory) is ill-conditioned for large ``n``, so convergence will be
