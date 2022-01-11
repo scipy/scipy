@@ -1266,8 +1266,8 @@ class TestDifferentialEvolutionSolver:
 
         # check that we can still use integrality constraints with polishing
         res2 = differential_evolution(func, bounds, args=(dist, x),
-                                     integrality=integrality, polish=True,
-                                     seed=rng)
+                                      integrality=integrality, polish=True,
+                                      seed=rng)
 
         def func2(p, *args):
             n, dist, x = args
