@@ -198,8 +198,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         For each decision variable, a boolean value indicating whether the
         decision variable is constrained to integer values. The array is
         broadcast to ``(len(x),)``.
-        If any decision variables are constrained to be integral, polishing
-        will switched off (e.g. ``polish=False``).
+        If any decision variables are constrained to be integral, they will not
+        be changed during polishing.
         The solution vectors are passed to the objective function as
         ``func(np.round(x[integrality]))``.
         Only integer values lying between the lower and upper bounds are used.
@@ -504,9 +504,15 @@ class DifferentialEvolutionSolver:
         replacement is done even if `init` is given an initial population.
     integrality : 1-D array, optional
         For each decision variable, a boolean value indicating whether the
-        decision variable is constrained to integer values. If any decision
-        variables are constrained to be integral, polishing will not be
-        performed (e.g. ``polish=False``).
+        decision variable is constrained to integer values. The array is
+        broadcast to ``(len(x),)``.
+        If any decision variables are constrained to be integral, they will not
+        be changed during polishing.
+        The solution vectors are passed to the objective function as
+        ``func(np.round(x[integrality]))``.
+        Only integer values lying between the lower and upper bounds are used.
+        If there are no integer values lying between the bounds then a
+        `ValueError` is raised. 
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -943,8 +949,7 @@ class DifferentialEvolutionSolver:
             message=status_message,
             success=(warning_flag is not True))
 
-        if (self.polish and
-                (np.count_nonzero(self.integrality) != self.parameter_count)):
+        if self.polish and not np.all(self.integrality):
             # can't polish if all the parameters are integers
             if np.any(self.integrality):
                 # set the lower/upper bounds equal so that any integrality
