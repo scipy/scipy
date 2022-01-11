@@ -943,7 +943,10 @@ class DifferentialEvolutionSolver:
             message=status_message,
             success=(warning_flag is not True))
 
-        if self.polish:
+        if (self.polish and
+                (np.count_nonzero(self.integrality) != self.parameter_count)
+        ):
+            # can't polish if all the parameters are integers
             if np.any(self.integrality):
                 # set the lower/upper bounds equal so that any integrality
                 # constraints work.
