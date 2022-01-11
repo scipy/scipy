@@ -2648,7 +2648,7 @@ class TestHilbert:
 
     @pytest.mark.parametrize('dtype', [np.float32, np.float64])
     def test_hilbert_types(self, dtype):
-        in_typed = np.array(32, dtype=dtype)
+        in_typed = np.zeros(32, dtype=dtype)
         assert_equal(np.real(signal.hilbert(in_typed)).dtype, dtype)
 
 
@@ -2671,8 +2671,8 @@ class TestHilbert2:
 
     @pytest.mark.parametrize('dtype', [np.float32, np.float64])
     def test_hilbert2_types(self, dtype):
-        in_typed = np.array(32, dtype=dtype)
-        assert_equal(np.real(signal.hilbert(in_typed)).dtype, dtype)
+        in_typed = np.zeros((2, 32), dtype=dtype)
+        assert_equal(np.real(signal.hilbert2(in_typed)).dtype, dtype)
 
 
 class TestPartialFractionExpansion:
