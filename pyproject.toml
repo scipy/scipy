@@ -1,3 +1,13 @@
+# This pyproject.toml file has unpinned dependencies - meaning it's suitable
+# for local development, CI runs, building packaging artifacts (wheels, conda
+# packages, rpm/deb/etc. Linux packages, and so on) for arbitrary end user and
+# packaging systems.
+# It is NOT SUITABLE to use directly for producing sdist/wheels to upload to
+# PyPI. Use the `tools/build-pypi-artifacts.py` script for that.
+#
+# Also important: meson-python uses `meson dist` under the hood, meaning that
+# changes to files that are not committed do not end up in the sdist/wheel!
+
 # Note that in maintenance branches, all build dependencies should
 # have an upper bound equal to the most recent already-released version
 # of the dependency. This to prevent that a future backwards-incompatible
@@ -8,38 +18,13 @@
 #     "pybind11>=2.4.3,<2.5.0",
 
 [build-system]
+build-backend = 'mesonpy'
 requires = [
-    "wheel",
-    "setuptools<60.0",  # do not increase, 60.0 enables vendored distutils
+    "meson-python>=0.4.0",
     "Cython>=0.29.18",
     "pybind11>=2.4.3",
     "pythran>=0.9.12",
-
-    # NumPy dependencies - to update these, sync from
-    # https://github.com/scipy/oldest-supported-numpy/, and then
-    # update minimum version to match our install_requires min version
-    # ----------------------------------------------------------------
-
-    # numpy 1.19 was the first minor release to provide aarch64 wheels, but
-    # wheels require fixes contained in numpy 1.19.2
-    "numpy==1.19.2; python_version=='3.8' and platform_machine=='aarch64' and platform_python_implementation != 'PyPy'",
-    # aarch64 for py39 is covered by default requirement below
-
-    # arm64 on Darwin supports Python 3.8 and above requires numpy>=1.20.0
-    "numpy==1.20.0; python_version=='3.8' and platform_machine=='arm64' and platform_system=='Darwin'",
-    "numpy==1.20.0; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
-
-    # default numpy requirements
-    "numpy==1.18.5; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
-    "numpy==1.19.3; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
-    "numpy==1.21.4; python_version=='3.10' and platform_python_implementation != 'PyPy'",
-
-    # For Python versions which aren't yet officially supported,
-    # we specify an unpinned NumPy which allows source distributions
-    # to be used and allows wheels to be used as soon as they
-    # become available.
-    "numpy; python_version>='3.11'",
-    "numpy; python_version>='3.8' and platform_python_implementation=='PyPy'",
+    "numpy>=1.18.5",
 ]
 
 [project]
@@ -60,6 +45,7 @@ maintainers = [
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
 requires-python = ">=3.8"
 dependencies = [
+    # TODO: update to "pin-compatible" once possible, see https://github.com/FFY00/meson-python/issues/29
     "numpy>=1.18.5",
 ]
 readme = "README.rst"
