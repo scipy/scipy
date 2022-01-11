@@ -1268,6 +1268,7 @@ class TestDifferentialEvolutionSolver:
         res2 = differential_evolution(func, bounds, args=(dist, x),
                                      integrality=integrality, polish=True,
                                      seed=rng)
+
         def func2(p, *args):
             n, dist, x = args
             return func(np.array([n, p[0]]), dist, x)
@@ -1313,5 +1314,5 @@ class TestDifferentialEvolutionSolver:
 
         bounds = [(-10.2, -10.1), (0.9, 2.2), (-10.9, -9.9999)]
         with pytest.raises(ValueError, match='One of the integrality'):
-           DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
-                                       integrality=integrality)
+            DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
+                                        integrality=integrality)
