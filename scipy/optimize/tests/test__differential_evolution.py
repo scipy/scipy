@@ -6,7 +6,7 @@ import platform
 
 from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
                                                    _ConstraintWrapper)
-from scipy.optimize import differential_evolution, OptimizeWarning
+from scipy.optimize import differential_evolution
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
 from scipy.optimize import rosen, minimize
@@ -1275,14 +1275,17 @@ class TestDifferentialEvolutionSolver:
 
         # compare the DE derived solution to an LBFGSB solution (that doesn't
         # have to find the integral values). Note we're setting x0 to be the
-        # output from the first DE result, thereby making the polishing step and
-        # this minimisation pretty much equivalent.
-        LBFGSB = minimize(func2, res2.x[1], args=(5, dist, x), bounds=[(0, 0.95)])
+        # output from the first DE result, thereby making the polishing step
+        # and this minimisation pretty much equivalent.
+        LBFGSB = minimize(func2, res2.x[1], args=(5, dist, x),
+                          bounds=[(0, 0.95)])
         assert_allclose(res2.x[1], LBFGSB.x)
         assert res2.fun <= res.fun
 
     def test_integrality_limits(self):
-        f = lambda x: x
+        def f(x):
+            return x
+
         integrality = [True, False, True]
         bounds = [(0.2, 1.1), (0.9, 2.2), (3.3, 4.9)]
 
@@ -1298,7 +1301,7 @@ class TestDifferentialEvolutionSolver:
         assert_allclose(solver.limits[0], [0.5, 0.9, 3.5])
         assert_allclose(solver.limits[1], [1.5, 2.2, 4.5])
         assert_equal(solver.integrality, [True, False, True])
-        assert solver.polish == False
+        assert solver.polish is False
 
         bounds = [(-1.2, -0.9), (0.9, 2.2), (-10.3, 4.1)]
         solver = DifferentialEvolutionSolver(f, bounds=bounds, polish=False,

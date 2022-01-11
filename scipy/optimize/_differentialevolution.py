@@ -5,7 +5,7 @@ Added by Andrew Nelson 2014
 import warnings
 
 import numpy as np
-from scipy.optimize import OptimizeResult, minimize, OptimizeWarning
+from scipy.optimize import OptimizeResult, minimize
 from scipy.optimize._optimize import _status_message
 from scipy._lib._util import check_random_state, MapWrapper, _FunctionWrapper
 
