@@ -2646,6 +2646,11 @@ class TestHilbert:
                            9.444121133484362e-17 - 0.79252210110103j])
         assert_almost_equal(aan[0], a0hilb, 14, 'N regression')
 
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_hilbert_types(self, dtype):
+        in_typed = np.array(32, dtype=dtype)
+        assert_equal(np.real(signal.hilbert(in_typed)).dtype, dtype)
+
 
 class TestHilbert2:
 
@@ -2663,6 +2668,11 @@ class TestHilbert2:
         assert_raises(ValueError, hilbert2, x, N=0)
         assert_raises(ValueError, hilbert2, x, N=(2, 0))
         assert_raises(ValueError, hilbert2, x, N=(2,))
+
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_hilbert2_types(self, dtype):
+        in_typed = np.array(32, dtype=dtype)
+        assert_equal(np.real(signal.hilbert(in_typed)).dtype, dtype)
 
 
 class TestPartialFractionExpansion:
