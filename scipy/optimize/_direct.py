@@ -200,7 +200,7 @@ def direct(
             bounds = Bounds(lb, ub)
         else:
             message = ("bounds must be a sequence or "
-                      "instance of Bounds class")
+                       "instance of Bounds class")
             raise ValueError(message)
 
     lb = np.ascontiguousarray(bounds.lb)
