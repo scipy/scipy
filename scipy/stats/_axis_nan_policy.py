@@ -260,11 +260,11 @@ _nan_policy_parameter = inspect.Parameter(_name,
                                           default='propagate')
 
 _standard_note_addition = (
-    """\nBeginning in SciPy 1.9, ``np.matrix`` inputs are converted to
-``np.ndarray``s before the calculation is performed. In this case, the
-output will be a scalar or ``np.ndarray`` of appropriate shape rather than
-a 2D ``np.matrix``. Similarly, while masked elements of masked arrays
-are ignored, the output will be a scalar or ``np.ndarray`` rather than a
+    """\nBeginning in SciPy 1.9, ``np.matrix`` inputs (not recommended for new
+code) are converted to ``np.ndarray``s before the calculation is performed. In
+this case, the output will be a scalar or ``np.ndarray`` of appropriate shape
+rather than a 2D ``np.matrix``. Similarly, while masked elements of masked
+arrays are ignored, the output will be a scalar or ``np.ndarray`` rather than a
 masked array with ``mask=False``.""").split('\n')
 
 

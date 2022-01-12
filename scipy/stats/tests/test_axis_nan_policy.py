@@ -816,13 +816,13 @@ def test_gmean_mixed_mask_nan_weights(weighted_fun_name):
     m, n = 3, 20
     axis = -1
 
-    np.random.seed(0)
-    a = np.random.rand(m, n)
-    b = np.random.rand(m, n)
-    mask_a1 = np.random.rand(m, n) < 0.2
-    mask_a2 = np.random.rand(m, n) < 0.1
-    mask_b1 = np.random.rand(m, n) < 0.15
-    mask_b2 = np.random.rand(m, n) < 0.15
+    rng = np.random.default_rng(6541968121)
+    a = rng.uniform(size=(m, n))
+    b = rng.uniform(size=(m, n))
+    mask_a1 = rng.uniform(size=(m, n)) < 0.2
+    mask_a2 = rng.uniform(size=(m, n)) < 0.1
+    mask_b1 = rng.uniform(size=(m, n)) < 0.15
+    mask_b2 = rng.uniform(size=(m, n)) < 0.15
     mask_a1[2, :] = True
 
     a_nans = a.copy()
@@ -847,21 +847,24 @@ def test_gmean_mixed_mask_nan_weights(weighted_fun_name):
     a_masked4 = np.ma.masked_array(a, mask=mask_all)
     b_masked4 = np.ma.masked_array(b, mask=mask_all)
 
-    res = weighted_fun(a_nans, weights=b_nans,
-                       nan_policy='omit', axis=axis)
-    res1 = weighted_fun(a_masked1, weights=b_masked1,
-                        nan_policy='omit', axis=axis)
-    res2 = weighted_fun(a_masked2, weights=b_masked2,
-                        nan_policy='omit', axis=axis)
-    res3 = weighted_fun(a_masked3, weights=b_masked3,
-                        nan_policy='raise', axis=axis)
-    res4 = weighted_fun(a_masked3, weights=b_masked3,
-                        nan_policy='propagate', axis=axis)
-    # Would test with a_masked3/b_masked3, but there is a bug in np.average
-    # that causes a bug in _no_deco gmean with masked weights. Would use
-    # np.ma.average, but that causes other problems. See numpy/numpy#7330.
-    res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
-                           axis=axis, _no_deco=True)
+    with np.testing.suppress_warnings() as sup:
+        message = 'invalid value encountered'
+        sup.filter(RuntimeWarning, message)
+        res = weighted_fun(a_nans, weights=b_nans,
+                           nan_policy='omit', axis=axis)
+        res1 = weighted_fun(a_masked1, weights=b_masked1,
+                            nan_policy='omit', axis=axis)
+        res2 = weighted_fun(a_masked2, weights=b_masked2,
+                            nan_policy='omit', axis=axis)
+        res3 = weighted_fun(a_masked3, weights=b_masked3,
+                            nan_policy='raise', axis=axis)
+        res4 = weighted_fun(a_masked3, weights=b_masked3,
+                            nan_policy='propagate', axis=axis)
+        # Would test with a_masked3/b_masked3, but there is a bug in np.average
+        # that causes a bug in _no_deco gmean with masked weights. Would use
+        # np.ma.average, but that causes other problems. See numpy/numpy#7330.
+        res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
+                               axis=axis, _no_deco=True)
 
     np.testing.assert_array_equal(res1, res)
     np.testing.assert_array_equal(res2, res)
