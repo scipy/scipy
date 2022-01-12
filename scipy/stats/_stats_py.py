@@ -259,12 +259,6 @@ def gmean(a, axis=0, dtype=None, weights=None):
     The geometric average is computed over a single dimension of the input
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
-    Beginning in SciPy 1.9, ``np.matrix`` inputs are converted to
-    ``np.ndarray``s before the calculation is performed. In this case, the
-    output will be a scalar or ``np.ndarray`` of appropriate shape rather than
-    a 2D ``np.matrix``. Similarly, while masked elements of masked arrays
-    are still ignored, the output will be a scalar or ``np.ndarray`` rather
-    than a masked array with ``mask=False``.
 
     References
     ----------
@@ -297,6 +291,9 @@ def gmean(a, axis=0, dtype=None, weights=None):
     return np.exp(np.average(log_a, axis=axis, weights=weights))
 
 
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def hmean(a, axis=0, dtype=None, *, weights=None):
     """Calculate the harmonic mean along the specified axis.
 
@@ -338,9 +335,6 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     The harmonic mean is computed over a single dimension of the input
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
-
-    Use masked arrays to ignore any non-finite values in the input or that
-    arise in the calculations such as Not a Number and infinity.
 
     References
     ----------
