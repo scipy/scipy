@@ -292,8 +292,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
 
 
 @_axis_nan_policy_factory(
-        lambda x: x, n_samples=1, n_outputs=1, too_small=0,
-        result_unpacker=lambda x: (x,))
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def hmean(a, axis=0, dtype=None, *, weights=None):
     """Calculate the harmonic mean along the specified axis.
 
