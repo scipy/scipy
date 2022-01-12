@@ -204,10 +204,10 @@ def _laplacian_dense(graph, normed, axis,
             def m_f(x):
                 return - m_a @ x
 
-          else:
+        else:
 
-              def m_f(x):
-                  return - m_a @ x
+            def m_f(x):
+                return - m_a @ x
 
         m = LinearOperator(matvec=m_f,
                            matmat=m_f,
