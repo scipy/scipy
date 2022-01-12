@@ -537,6 +537,5 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
         sig = sig.replace(parameters=parameter_list)
         axis_nan_policy_wrapper.__signature__ = sig
 
-
         return axis_nan_policy_wrapper
     return axis_nan_policy_decorator
