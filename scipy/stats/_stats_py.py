@@ -216,6 +216,10 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
+# note that `weights` are paired with `x`
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def gmean(a, axis=0, dtype=None, weights=None):
     """Compute the geometric mean along the specified axis.
 
@@ -236,8 +240,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
         that of the default platform integer. In that case, the default
         platform integer is used.
     weights : array_like, optional
-        The weights array can either be 1-D (in which case its length must be
-        the size of `a` along the given `axis`) or of the same shape as `a`.
+        The `weights` array must be broadcastable to the same shape as `a`.
         Default is None, which gives each value a weight of 1.0.
 
     Returns
@@ -256,10 +259,12 @@ def gmean(a, axis=0, dtype=None, weights=None):
     The geometric average is computed over a single dimension of the input
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
-
-    Use masked arrays to ignore any non-finite values in the input or that
-    arise in the calculations such as Not a Number and infinity because masked
-    arrays automatically mask any non-finite values.
+    Beginning in SciPy 1.9, ``np.matrix`` inputs are converted to
+    ``np.ndarray``s before the calculation is performed. In this case, the
+    output will be a scalar or ``np.ndarray`` of appropriate shape rather than
+    a 2D ``np.matrix``. Similarly, while masked elements of masked arrays
+    are still ignored, the output will be a scalar or ``np.ndarray`` rather
+    than a masked array with ``mask=False``.
 
     References
     ----------
