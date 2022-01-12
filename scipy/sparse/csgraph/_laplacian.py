@@ -10,6 +10,7 @@ Laplacian of a compressed-sparse graph
 
 import numpy as np
 from scipy.sparse import isspmatrix
+from scipy.sparse.linalg import LinearOperator#, aslinearoperator
 
 
 ###############################################################################
@@ -116,7 +117,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
     degree_axis = 1 if use_out_degree else 0
     if dtype is None:
-        dtype = graph.dtype
+        dtype = csgraph.dtype
 
     lap, d = create_lap(csgraph, normed=normed, axis=degree_axis,
                         copy=copy,
@@ -136,7 +137,6 @@ def _laplacian_sparse(graph, normed, axis,
     if aslinearoperator:
         w = graph.sum(axis=axis).getA1() - graph.diagonal()
         if normed:
-            m = m.tocoo(copy=needs_copy)
             isolated_node_mask = (w == 0)
             w = np.where(isolated_node_mask, 1, np.sqrt(w))
 
@@ -193,7 +193,7 @@ def _laplacian_sparse(graph, normed, axis,
 
 def _laplacian_dense(graph, normed, axis,
                      copy, aslinearoperator, dtype):
-    if not aslinearoperator:
+    if aslinearoperator:
         m_a = np.asarray(graph)
         w = m.sum(axis=axis)
 
