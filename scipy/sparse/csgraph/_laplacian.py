@@ -115,7 +115,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
 
     create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
     degree_axis = 1 if use_out_degree else 0
-    if dtype==None:
+    if dtype is None:
         dtype = graph.dtype
 
     lap, d = create_lap(csgraph, normed=normed, axis=degree_axis,
@@ -200,12 +200,14 @@ def _laplacian_dense(graph, normed, axis,
         if normed:
             isolated_node_mask = (w == 0)
             w = np.where(isolated_node_mask, 1, np.sqrt(w))
+
             def m_f(x):
                 return - m_a @ x
 
-            else:
-            def m_f(x):
-                return - m_a @ x
+          else:
+
+              def m_f(x):
+                  return - m_a @ x
 
         m = LinearOperator(matvec=m_f,
                            matmat=m_f,
