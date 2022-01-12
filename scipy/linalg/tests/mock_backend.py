@@ -14,8 +14,11 @@ class _MockFunction:
 
 
 method_names = [
-    # sketches
-    'clarkson_woodruff_transform'
+    # solvers
+    'solve_sylvester',
+    'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
+    'solve_lyapunov',
+    'solve_continuous_are', 'solve_discrete_are'
 ]
 
 for name in method_names:

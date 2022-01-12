@@ -213,9 +213,9 @@ from ._multimethods import *
 from .blas import *
 from .lapack import *
 from ._special_matrices import *
-from ._solvers import *
 from ._procrustes import *
 from ._decomp_update import *
+from ._sketches import *
 from ._decomp_cossin import *
 
 # Deprecated namespaces, to be removed in v2.0.0

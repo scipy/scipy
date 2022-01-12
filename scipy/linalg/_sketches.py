@@ -171,6 +171,5 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
            In Foundations and Trends in Theoretical Computer Science, 2014.
 
     """
-    print(type(input_matrix))
     S = cwt_matrix(sketch_size, input_matrix.shape[0], seed)
     return S.dot(input_matrix)

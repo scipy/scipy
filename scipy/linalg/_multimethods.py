@@ -5,8 +5,11 @@ from scipy.linalg import _api
 from scipy.linalg._backend import scalar_tuple_callable_array
 
 __all__ = [
-    # sketches
-    'clarkson_woodruff_transform'
+    # solvers
+    'solve_sylvester',
+    'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
+    'solve_lyapunov',
+    'solve_continuous_are', 'solve_discrete_are'
 ]
 
 
@@ -28,17 +31,64 @@ def _get_docs(func):
     return func
 
 
-def _input_sketch_seed_replacer(args, kwargs, dispatchables):
-    def self_method(input_matrix, sketch_size, seed=None, *args, **kwargs):
-        return (dispatchables[0], dispatchables[1],
-                dispatchables[2]) + args, kwargs
+def _a_b_q_replacer(args, kwargs, dispatchables):
+    def self_method(a, b, q, *args, **kwargs):
+        return dispatchables + args, kwargs
 
     return self_method(*args, **kwargs)
 
 
-@_create_linalg(_input_sketch_seed_replacer)
+@_create_linalg(_a_b_q_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
-def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
-    return (input_matrix, Dispatchable(sketch_size, int),
-            _mark_scalar_tuple_callable_array(seed))
+def solve_sylvester(a, b, q):
+    return a, b, q
+
+
+def _a_q_replacer(args, kwargs, dispatchables):
+    def self_method(a, q, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_a_q_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def solve_continuous_lyapunov(a, q):
+    return a, q
+
+
+@_create_linalg(_a_q_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def solve_lyapunov(a, q):
+    return a, q
+
+
+@_create_linalg(_a_q_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def solve_discrete_lyapunov(a, q, method=None):
+    return a, q
+
+
+def _a_b_q_r_e_s_replacer(args, kwargs, dispatchables):
+    def self_method(a, b, q, r, e=None, s=None, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_a_b_q_r_e_s_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
+    return a, b, q, r, e, s
+
+
+@_create_linalg(_a_b_q_r_e_s_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
+    return a, b, q, r, e, s
