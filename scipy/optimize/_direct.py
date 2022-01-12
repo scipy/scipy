@@ -98,9 +98,9 @@ def direct(
         termination criterion is deactivated.
     f_min_rtol : float, optional
         Terminate the optimization once the relative error
-        `(f - f_min)/f_min` between the current best minimum `f` and
-        the supplied global minimum `f_min` is smaller than `f_min_tol`.
-        This parameter is only used when `f_min` is also set.
+        `(f - f_min)/max(abs(f_min), 1)` between the current best minimum
+        `f` and the supplied global minimum `f_min` is smaller than
+        `f_min_rtol`. This parameter is only used when `f_min` is also set.
         Default is 0.0001.
     vol_tol : float, optional
         Terminate the optimization once the volume of the hyperrectangle
@@ -223,14 +223,24 @@ def direct(
         raise ValueError("vol_tol must be between 0 and 1.")
     if (len_tol < 0 or len_tol > 1):
         raise ValueError("len_tol must be between 0 and 1.")
-    if (f_min_rtol < 0 or len_tol > 1):
+    if (f_min_rtol < 0 or f_min_rtol > 1):
         raise ValueError("f_min_rtol must be between 0 and 1.")
 
     # validate maxfun and maxiter
     if not isinstance(maxfun, int):
         raise ValueError("maxfun must be of type int.")
+    if maxfun < 0:
+        raise ValueError("maxfun must be > 0.")
     if not isinstance(maxiter, int):
         raise ValueError("maxiter must be of type int.")
+    if maxiter < 0:
+        raise ValueError("maxiter must be > 0.")
+
+    #validate boolean parameters
+    if not isinstance(locally_biased, bool):
+        raise ValueError("locally_biased must be True or False.")
+    if not isinstance(disp, bool):
+        raise ValueError("disp must be of True or False.")
 
     def _func_wrap(x, *args):
         x = np.asarray(x)
