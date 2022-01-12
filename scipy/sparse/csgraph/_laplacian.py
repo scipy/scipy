@@ -15,7 +15,7 @@ from scipy.sparse import isspmatrix
 ###############################################################################
 # Graph laplacian
 def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
-              *, copy=True, aslinearoperator=False):
+              *, copy=True, aslinearoperator=False, dtype=None):
     """
     Return the Laplacian of a directed graph.
 
@@ -24,7 +24,7 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     csgraph : array_like or sparse matrix, 2 dimensions
         compressed-sparse graph, with shape (N, N).
     normed : bool, optional
-        If True, then compute symmetric normalized Laplacian.
+        If True, then compute symmetrically normalized Laplacian.
         Default: False.
     return_diag : bool, optional
         If True, then also return an array related to vertex degrees.
@@ -41,6 +41,13 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
         If True, then the output has the format of `LinearOperator`
         always avoiding doubling the memory use, ignoring `copy` value.
         Default: False, for backward compatibility.
+    dtype: None or one of numeric numpy dtypes, optional
+        The dtype of the output. If `dtype=None`, the dtype of the
+        output matches the dtype of the input csgraph, except for
+        the case `normed=True` and integer-like csgraph, where
+        the output dtype is 'float' allowing accurate normalization,
+        but dramatically increasing the memory use.
+        Default: None, for backward compatibility.
 
     Returns
     -------
@@ -79,6 +86,8 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     The normalization uses the inverse square roots of row-sums of the input
     adjacency matrix, and thus may fail if the row-sums contain
     zeros, negative, or complex with a non-zero imaginary part values.
+    The normalization is symmetric, making the normalized Laplacian also
+    symmetric if the input csgraph was symmetric.
 
     Examples
     --------
@@ -106,8 +115,13 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
 
     create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
     degree_axis = 1 if use_out_degree else 0
+    if dtype==None:
+        dtype = graph.dtype
+
     lap, d = create_lap(csgraph, normed=normed, axis=degree_axis,
-                        copy=copy, aslinearoperator=aslinearoperator)
+                        copy=copy,
+                        aslinearoperator=aslinearoperator,
+                        dtype=dtype)
     if return_diag:
         return lap, d
     return lap
@@ -118,8 +132,38 @@ def _setdiag_dense(A, d):
 
 
 def _laplacian_sparse(graph, normed, axis,
-                      copy, aslinearoperator):
-    if not aslinearoperator:
+                      copy, aslinearoperator, dtype):
+    if aslinearoperator:
+        w = graph.sum(axis=axis).getA1() - graph.diagonal()
+        if normed:
+            m = m.tocoo(copy=needs_copy)
+            isolated_node_mask = (w == 0)
+            w = np.where(isolated_node_mask, 1, np.sqrt(w))
+
+            def m_f(x):
+                return - graph @ x
+
+            m = LinearOperator(matvec=m_f,
+                               matmat=m_f,
+                               shape=graph.shape, dtype=dtype)
+
+            # m.data /= w[m.row]
+            # m.data /= w[m.col]
+            # m.data *= -1
+            # m.setdiag(1 - isolated_node_mask)
+
+        else:
+
+            def m_f(x):
+                return - graph @ x
+
+            m = LinearOperator(matvec=m_f,
+                               matmat=m_f,
+                               shape=graph.shape, dtype=dtype)
+
+        return m, w.astype(dtype, copy=False)
+
+    else:
         needs_copy = False
         if graph.format in ('lil', 'dok'):
             m = graph.tocoo()
@@ -144,12 +188,31 @@ def _laplacian_sparse(graph, normed, axis,
             m.data *= -1
             m.setdiag(w)
 
-        return m, w
+        return m.csr_matrix.astype(dtype, copy=False), w.astype(dtype)
 
 
 def _laplacian_dense(graph, normed, axis,
-                     copy, aslinearoperator):
+                     copy, aslinearoperator, dtype):
     if not aslinearoperator:
+        m_a = np.asarray(graph)
+        w = m.sum(axis=axis)
+
+        if normed:
+            isolated_node_mask = (w == 0)
+            w = np.where(isolated_node_mask, 1, np.sqrt(w))
+            def m_f(x):
+                return - m_a @ x
+
+            else:
+            def m_f(x):
+                return - m_a @ x
+
+        m = LinearOperator(matvec=m_f,
+                           matmat=m_f,
+                           shape=graph.shape, dtype=dtype)
+        return m, w.astype(dtype, copy=False)
+
+    else:
         if copy:
             m = np.array(graph)
         else:
@@ -168,4 +231,4 @@ def _laplacian_dense(graph, normed, axis,
             m *= -1
             _setdiag_dense(m, w)
 
-        return m, w
+        return m.astype(dtype, copy=False), w.astype(dtype, copy=False)
