@@ -14,11 +14,16 @@ _lib_pxd = custom_target('_lib_pxd',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
-_lib_pxd_dep = declare_dependency(sources: _lib_pxd)
+_lib_pxd_deps = declare_dependency(sources: _lib_pxd)
 
+_ccallback_c_pyx = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : [cython_tree, _lib_pxd_dep]
+  ).process('_ccallback_c.pyx')
 
 py3.extension_module('_ccallback_c',
-  '_ccallback_c.pyx',
+  _ccallback_c_pyx,
   include_directories: 'src',
   dependencies: py3_dep,
   install: true,

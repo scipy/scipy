@@ -167,9 +167,7 @@ cython_tree = declare_dependency(sources: _cython_tree)
 
 cython_cli = find_program('_build_utils/cythoner.py')
 cython_gen = generator(cython_cli,
-  arguments : [
-    '@INPUT@',
-    '@OUTPUT@'],
+  arguments : ['@INPUT@', '@OUTPUT@'],
   output : '@BASENAME@.c')
 
 # Ordering of subdirs: special and linalg come first, because other submodules
