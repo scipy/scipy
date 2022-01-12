@@ -3605,9 +3605,9 @@ def lfilter_zi(b, a):
 
     # Pad a or b with zeros so they are the same length.
     if len(a) < n:
-        a = np.r_[a, np.zeros(n - len(a))]
+        a = np.r_[a, np.zeros(n - len(a), dtype=a.dtype)]
     elif len(b) < n:
-        b = np.r_[b, np.zeros(n - len(b))]
+        b = np.r_[b, np.zeros(n - len(b), dtype=b.dtype)]
 
     IminusA = np.eye(n - 1, dtype=np.result_type(a, b)) - linalg.companion(a).T
     B = b[1:] - a[1:] * b[0]

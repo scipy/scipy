@@ -2209,6 +2209,12 @@ class TestLFilterZI:
         zi2 = lfilter_zi(2*b, 2*a)
         assert_allclose(zi2, zi1, rtol=1e-12)
 
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_types(self, dtype):
+        b = np.zeros((8), dtype=dtype)
+        a = np.array([1], dtype=dtype)
+        assert_equal(np.real(signal.lfilter_zi(b, a)).dtype, dtype)
+
 
 class TestFiltFilt:
     filtfilt_kind = 'tf'
