@@ -139,7 +139,6 @@ def get_build_ext_override():
             import pythran
             from pythran.dist import PythranBuildExt
             BaseBuildExt = PythranBuildExt[npy_build_ext]
-            # Version check - a too old Pythran will give problems
             importlib.import_module('scipy/_lib/_pep440')
             if _pep440.parse(pythran.__version__) < _pep440.Version('0.9.12'):
                 raise RuntimeError("The installed `pythran` is too old, >= "
@@ -252,6 +251,7 @@ def generate_cython():
         try:
             # Note, pip may not be installed or not have been used
             import pip
+            importlib.import_module('scipy/_lib/_pep440')
             if _pep440.parse(pip.__version__) < _pep440.Version('18.0.0'):
                 raise RuntimeError("Cython not found or too old. Possibly due "
                                    "to `pip` being too old, found version {}, "
