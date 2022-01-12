@@ -2389,7 +2389,7 @@ class rv_continuous(rv_generic):
             Starting value(s) for any shape-characterizing arguments (those not
             provided will be determined by a call to ``_fitstart(data)``).
             No default value.
-        kwds : floats, optional
+        **kwds : floats, optional
             - `loc`: initial guess of the distribution's location parameter.
             - `scale`: initial guess of the distribution's scale parameter.
 

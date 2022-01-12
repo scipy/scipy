@@ -11,9 +11,9 @@ def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
 
     Parameters
     ----------
-    forward: bool
+    forward : bool
         Transform direction (determines type and normalisation)
-    transform: {pypocketfft.dct, pypocketfft.dst}
+    transform : {pypocketfft.dct, pypocketfft.dst}
         The transform to perform
     """
     tmp = _asfarray(x)
@@ -63,9 +63,9 @@ def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
 
     Parameters
     ----------
-    forward: bool
+    forward : bool
         Transform direction (determines type and normalisation)
-    transform: {pypocketfft.dct, pypocketfft.dst}
+    transform : {pypocketfft.dct, pypocketfft.dst}
         The transform to perform
     """
     tmp = _asfarray(x)

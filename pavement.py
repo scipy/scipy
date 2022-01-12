@@ -39,15 +39,15 @@ from paver.easy import options, Bunch, task, needs, dry, sh, cmdopts
 
 sys.path.insert(0, os.path.dirname(__file__))
 try:
-    setup_py = __import__("setup")
-    FULLVERSION = setup_py.VERSION
+    version_utils = __import__("tools").version_utils
+    FULLVERSION = version_utils.VERSION
     # This is duplicated from setup.py
     if os.path.exists('.git'):
-        GIT_REVISION = setup_py.git_version()
+        GIT_REVISION = version_utils.git_version()
     else:
         GIT_REVISION = "Unknown"
 
-    if not setup_py.ISRELEASED:
+    if not version_utils.ISRELEASED:
         if GIT_REVISION == "Unknown":
             FULLVERSION += '.dev0+Unknown'
         else:
@@ -72,7 +72,7 @@ RELEASE = 'doc/release/1.9.0-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'v1.8.0'
-LOG_END = 'master'
+LOG_END = 'main'
 
 
 #-------------------------------------------------------

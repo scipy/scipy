@@ -294,7 +294,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0,
         result_unpacker=lambda x: (x,))
-def hmean(a, axis=0, dtype=None):
+def hmean(a, axis=0, dtype=None, *, weights=None):
     """Calculate the harmonic mean along the specified axis.
 
     That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
@@ -312,6 +312,12 @@ def hmean(a, axis=0, dtype=None):
         dtype of `a`, unless `a` has an integer `dtype` with a precision less
         than that of the default platform integer. In that case, the default
         platform integer is used.
+    weights : array_like, optional
+        The weights array can either be 1-D (in which case its length must be
+        the size of `a` along the given `axis`) or of the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
+
+        .. versionadded:: 1.9
 
     Returns
     -------
@@ -330,6 +336,13 @@ def hmean(a, axis=0, dtype=None):
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
 
+    References
+    ----------
+    .. [1] "Weighted Harmonic Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Harmonic_mean#Weighted_harmonic_mean
+    .. [2] Ferger, F., "The nature and use of the harmonic mean", Journal of
+           the American Statistical Association, vol. 26, pp. 36-40, 1931
+
     Examples
     --------
     >>> from scipy.stats import hmean
@@ -341,18 +354,20 @@ def hmean(a, axis=0, dtype=None):
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
-    if np.all(a >= 0):
-        # Harmonic mean only defined if greater than or equal to to zero.
+    elif dtype:
+        # Must change the default dtype allowing array type
         if isinstance(a, np.ma.MaskedArray):
-            size = a.count(axis)
+            a = np.ma.asarray(a, dtype=dtype)
         else:
-            if axis is None:
-                a = a.ravel()
-                size = a.shape[0]
-            else:
-                size = a.shape[axis]
+            a = np.asarray(a, dtype=dtype)
+
+    if np.all(a >= 0):
+        # Harmonic mean only defined if greater than or equal to zero.
+        if weights is not None:
+            weights = np.asanyarray(weights, dtype=dtype)
+
         with np.errstate(divide='ignore'):
-            return size / np.sum(1.0 / a, axis=axis, dtype=dtype)
+            return 1.0 / np.average(1.0 / a, axis=axis, weights=weights)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater "
                          "than or equal to zero")
@@ -524,7 +539,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
 
     Returns
     -------
-    tmean : float
+    tmean : ndarray
         Trimmed mean.
 
     See Also
@@ -543,10 +558,10 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     a = asarray(a)
     if limits is None:
-        return np.mean(a, None)
-
-    am = _mask_to_limits(a.ravel(), limits, inclusive)
-    return am.mean(axis=axis)
+        return np.mean(a, axis)
+    am = _mask_to_limits(a, limits, inclusive)
+    mean = np.ma.filled(am.mean(axis=axis), fill_value=np.nan)
+    return mean if mean.ndim > 0 else mean.item()
 
 
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
@@ -2158,7 +2173,7 @@ def obrientransform(*args):
 
     Parameters
     ----------
-    args : tuple of array_like
+    *args : tuple of array_like
         Any number of arrays.
 
     Returns
@@ -4711,10 +4726,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
           * 'exact': computes the exact p-value, but can only be used if no ties
             are present. As the sample size increases, the 'exact' computation
             time may grow and the result may lose some precision.
-
-    variant: {'b', 'c'}, optional
+    variant : {'b', 'c'}, optional
         Defines which variant of Kendall's tau is returned. Default is 'b'.
-
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -5445,8 +5458,9 @@ def _mgc_stat(distx, disty):
 
     Parameters
     ----------
-    x, y : ndarray
-        `x` and `y` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
+    distx, disty : ndarray
+        `distx` and `disty` have shapes `(n, p)` and `(n, q)` or
+        `(n, n)` and `(n, n)`
         if distance matrices.
 
     Returns
@@ -5541,9 +5555,9 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
 
     Parameters
     ----------
-    sig_connect: ndarray
+    sig_connect : ndarray
         A binary matrix with 1's indicating the significant region.
-    stat_mgc_map: ndarray
+    stat_mgc_map : ndarray
         All local correlations within `[-1, 1]`.
 
     Returns
@@ -6347,10 +6361,10 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
         corresponding to `axis` (the zeroth, by default).
     axis : int, optional
         The axis over which to operate on a and b.
-    permutations: int, optional
+    permutations : int, optional
         Number of permutations used to calculate p-value. If greater than or
         equal to the number of distinct permutations, perform an exact test.
-    equal_var: bool, optional
+    equal_var : bool, optional
         If False, an equal variance (Welch's) t-test is conducted.  Otherwise,
         an ordinary t-test is conducted.
     random_state : {None, int, `numpy.random.Generator`}, optional
@@ -6930,8 +6944,8 @@ def _compute_dplus(cdfvals):
 
     Parameters
     ----------
-    cdfvals: array_like
-      Sorted array of CDF values between 0 and 1
+    cdfvals : array_like
+        Sorted array of CDF values between 0 and 1
 
     Returns
     -------
@@ -6946,8 +6960,8 @@ def _compute_dminus(cdfvals):
 
     Parameters
     ----------
-    cdfvals: array_like
-      Sorted array of CDF values between 0 and 1
+    cdfvals : array_like
+        Sorted array of CDF values between 0 and 1
 
     Returns
     -------
@@ -6992,7 +7006,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     statistic : float
         KS test statistic, either D, D+ or D- (depending on the value
         of 'alternative')
-    pvalue :  float
+    pvalue : float
         One-tailed or two-tailed p-value.
 
     See Also
@@ -7536,7 +7550,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     -------
     statistic : float
         KS test statistic, either D, D+ or D-.
-    pvalue :  float
+    pvalue : float
         One-tailed or two-tailed p-value.
 
     See Also

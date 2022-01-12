@@ -5,6 +5,7 @@
 import operator
 import numpy as np
 import math
+import warnings
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
@@ -1157,7 +1158,7 @@ def mathieu_even_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        print("Warning, too many predicted coefficients.")
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
     kd = 1
     m = int(floor(m))
     if m % 2:
@@ -1214,7 +1215,7 @@ def mathieu_odd_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        print("Warning, too many predicted coefficients.")
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
     kd = 4
     m = int(floor(m))
     if m % 2:
@@ -2184,7 +2185,8 @@ def comb(N, k, exact=False, repetition=False):
 
     See Also
     --------
-    binom : Binomial coefficient ufunc
+    binom : Binomial coefficient considered as a function of two real
+            variables.
 
     Notes
     -----

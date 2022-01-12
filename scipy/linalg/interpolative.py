@@ -471,7 +471,7 @@ def rand(*shape):
 
     Parameters
     ----------
-    shape
+    *shape
         Shape of output array
 
     """

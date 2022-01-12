@@ -74,6 +74,45 @@ class TestTrimmedStats:
         y2 = stats.tmean(X, limits=None)
         assert_approx_equal(y1, y2, significant=self.dprec)
 
+        x_2d = arange(63, dtype=float64).reshape(9, 7)
+        y = stats.tmean(x_2d, axis=None)
+        assert_approx_equal(y, x_2d.mean(), significant=self.dprec)
+
+        y = stats.tmean(x_2d, axis=0)
+        assert_array_almost_equal(y, x_2d.mean(axis=0), decimal=8)
+
+        y = stats.tmean(x_2d, axis=1)
+        assert_array_almost_equal(y, x_2d.mean(axis=1), decimal=8)
+
+        y = stats.tmean(x_2d, limits=(2, 61), axis=None)
+        assert_approx_equal(y, 31.5, significant=self.dprec)
+
+        y = stats.tmean(x_2d, limits=(2, 21), axis=0)
+        y_true = [14, 11.5, 9, 10, 11, 12, 13]
+        assert_array_almost_equal(y, y_true, decimal=8)
+
+        y = stats.tmean(x_2d, limits=(2, 21), inclusive=(True, False), axis=0)
+        y_true = [10.5, 11.5, 9, 10, 11, 12, 13]
+        assert_array_almost_equal(y, y_true, decimal=8)
+
+        x_2d_with_nan = np.array(x_2d)
+        x_2d_with_nan[-1, -3:] = np.nan
+        y = stats.tmean(x_2d_with_nan, limits=(1, 13), axis=0)
+        y_true = [7, 4.5, 5.5, 6.5, np.nan, np.nan, np.nan]
+        assert_array_almost_equal(y, y_true, decimal=8)
+
+        with suppress_warnings() as sup:
+            sup.record(RuntimeWarning, "Mean of empty slice")
+
+            y = stats.tmean(x_2d, limits=(2, 21), axis=1)
+            y_true = [4, 10, 17, 21, np.nan, np.nan, np.nan, np.nan, np.nan]
+            assert_array_almost_equal(y, y_true, decimal=8)
+
+            y = stats.tmean(x_2d, limits=(2, 21),
+                            inclusive=(False, True), axis=1)
+            y_true = [4.5, 10, 17, 21, np.nan, np.nan, np.nan, np.nan, np.nan]
+            assert_array_almost_equal(y, y_true, decimal=8)
+
     def test_tvar(self):
         y = stats.tvar(X, limits=(2, 8), inclusive=(True, True))
         assert_approx_equal(y, 4.6666666666666661, significant=self.dprec)
@@ -5455,14 +5494,17 @@ def test_obrientransform():
     assert_array_almost_equal(result[0], expected, decimal=4)
 
 
-def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7, weights=None):
+def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7,
+                      weights=None):
     # Note this doesn't test when axis is not specified
     x = stats.gmean(array_like, axis=axis, dtype=dtype, weights=weights)
     assert_allclose(x, desired, rtol=rtol)
     assert_equal(x.dtype, dtype)
 
-def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
-    x = stats.hmean(array_like, axis=axis, dtype=dtype)
+
+def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7,
+                      weights=None):
+    x = stats.hmean(array_like, axis=axis, dtype=dtype, weights=weights)
     assert_allclose(x, desired, rtol=rtol)
     assert_equal(x.dtype, dtype)
 
@@ -5527,6 +5569,38 @@ class TestHarMean:
         a = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([0.0, 63.03939962, 103.80078637])
         assert_allclose(stats.hmean(a, axis=1), desired)
+
+    def test_weights_1d_list(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        weights = [10, 5, 3]
+        a = [2, 10, 6]
+        desired = 3
+        check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
+
+    def test_weights_2d_array_axis0(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        a = np.array([[2, 5], [10, 5], [6, 5]])
+        weights = np.array([[10, 1], [5, 1], [3, 1]])
+        desired = np.array([3, 5])
+        check_equal_hmean(a, desired, axis=0, weights=weights, rtol=1e-5)
+
+    def test_weights_2d_array_axis1(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        a = np.array([[2, 10, 6], [7, 7, 7]])
+        weights = np.array([[10, 5, 3], [1, 1, 1]])
+        desired = np.array([3, 7])
+        check_equal_hmean(a, desired, axis=1, weights=weights, rtol=1e-5)
+
+    def test_weights_masked_1d_array(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        a = np.array([2, 10, 6, 42])
+        weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
+        desired = 3
+        check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
 
 
 class TestGeoMean:

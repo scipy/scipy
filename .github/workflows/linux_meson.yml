@@ -1,0 +1,100 @@
+name: Linux Meson tests
+
+# This is a single job: Python 3.9, building with Meson, using -Werror to
+# ensure we remain at zero build warnings. Other Meson CI jobs are running
+# on https://github.com/rgommers/scipy/tree/meson
+
+on:
+  push:
+    branches:
+      - main
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+env:
+  CCACHE_DIR: "${{ github.workspace }}/.ccache"
+  INSTALLDIR: "installdir"
+
+jobs:
+  test_meson:
+    name: Meson build
+    # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
+    if: "github.repository != '' || github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')"
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Ubuntu dependencies
+      run: |
+        # NOTE: not the same OpenBLAS version as in upstream CI (I'm being lazy here)
+        sudo apt-get update
+        sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+
+    - name: Caching Python dependencies
+      uses: actions/cache@v2
+      id: cache
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip
+
+    - name: Install Python packages
+      run: |
+        python -m pip install numpy setuptools wheel cython pytest pytest-xdist pybind11 mpmath gmpy2 pythran ninja meson==0.60.3
+
+    - name:  Prepare compiler cache
+      id:    prep-ccache
+      shell: bash
+      run: |
+        mkdir -p "${CCACHE_DIR}"
+        echo "::set-output name=dir::$CCACHE_DIR"
+        NOW=$(date -u +"%F-%T")
+        echo "::set-output name=timestamp::${NOW}"
+
+    - name: Setup compiler cache
+      uses:  actions/cache@v2
+      id:    cache-ccache
+      # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
+      # NOTE: The caching strategy is modeled in a way that it will always have a unique cache key for each workflow run
+      # (even if the same workflow is run multiple times). The restore keys are not unique and for a partial match, they will
+      # return the most recently created cache entry, according to the GitHub Action Docs.
+      with:
+        path: ${{ steps.prep-ccache.outputs.dir }}
+        # Restores ccache from either a previous build on this branch or on main
+        key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-${{ steps.prep-ccache.outputs.timestamp }}
+        # This evaluates to `Linux Tests-3.9-ccache-linux-` which is not unique. As the CI matrix is expanded, this will
+        # need to be updated to be unique so that the cache is not restored from a different job altogether.
+        restore-keys: |
+          ${{ github.workflow }}-${{ matrix.python-version }}-ccache-linux-
+
+    - name: Setup build and install scipy
+      run: |
+        python dev.py -j 2 --build-only --werror
+
+    - name: Ccache performance
+      shell: bash -l {0}
+      run: ccache -s
+
+    - name: Check installation
+      run: |
+        pushd tools
+        python check_installation.py ${{ env.INSTALLDIR }}
+        popd
+
+    - name: Test SciPy
+      run: |
+        export OMP_NUM_THREADS=2
+        python dev.py -n -j 2

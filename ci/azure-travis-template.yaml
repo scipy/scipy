@@ -67,7 +67,7 @@ steps:
     pip install --upgrade pip==20.2.4 setuptools wheel &&
     pip install ${{parameters.other_spec}}
     cython
-    gmpy2==2.1.0rc1
+    gmpy2
     threadpoolctl
     mpmath
     pythran
@@ -141,14 +141,14 @@ steps:
       COVERAGE: '--coverage --gcov'
     ${{ if or(eq(parameters.use_wheel, true), eq(parameters.use_sdist, true))}}:
       USE_WHEEL_BUILD: '--no-build'
-  # Only run tests on master for the coverage build
+  # Only run tests on main for the coverage build
   ${{ if eq(parameters.coverage, false) }}:
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
   displayName: 'Run tests'
-- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/master'), eq(parameters.refguide_check, true)) }}:
+- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), eq(parameters.refguide_check, true)) }}:
   - script: python runtests.py -g --refguide-check
     displayName: 'Refguide Check'
-- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/master'), eq(parameters.asv_check, true)) }}:
+- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), eq(parameters.asv_check, true)) }}:
   - script: |
       set -euo pipefail
       cd benchmarks
@@ -157,7 +157,7 @@ steps:
       ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null
 - script: ./tools/check_pyext_symbol_hiding.sh build
   displayName: "Check dynamic symbol hiding works"
-  condition: ne(variables['Build.SourceBranch'], 'refs/heads/master')
+  condition: ne(variables['Build.SourceBranch'], 'refs/heads/main')
   failOnStderr: true
 - ${{ if eq(parameters.coverage, true) }}:
   - script: |

@@ -31,7 +31,7 @@ class Reader(object):
         Parameters
         ----------
         data : str
-           String with lines separated by '\n'.
+           String with lines separated by '\\n'.
 
         """
         if isinstance(data, list):

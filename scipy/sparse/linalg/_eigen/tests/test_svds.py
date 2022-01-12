@@ -365,8 +365,8 @@ class SVDSCommonTests:
         # not necessarily identical - results
         res1a = svds(A, k, solver=self.solver, random_state=random_state)
         res2a = svds(A, k, solver=self.solver, random_state=random_state)
-        _check_svds(A, k, *res1a, rtol=1e-6)
-        _check_svds(A, k, *res2a, rtol=1e-6)
+        _check_svds(A, k, *res1a, atol=2e-10, rtol=1e-6)
+        _check_svds(A, k, *res2a, atol=2e-10, rtol=1e-6)
 
         message = "Arrays are not equal"
         with pytest.raises(AssertionError, match=message):

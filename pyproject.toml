@@ -10,7 +10,7 @@
 [build-system]
 requires = [
     "wheel",
-    "setuptools",
+    "setuptools<60.0",  # do not increase, 60.0 enables vendored distutils
     "Cython>=0.29.18",
     "pybind11>=2.4.3",
     "pythran>=0.9.12",
@@ -22,18 +22,15 @@ requires = [
 
     # numpy 1.19 was the first minor release to provide aarch64 wheels, but
     # wheels require fixes contained in numpy 1.19.2
-    "numpy==1.19.2; python_version=='3.8' and platform_machine=='aarch64'",
+    "numpy==1.19.2; python_version=='3.8' and platform_machine=='aarch64' and platform_python_implementation != 'PyPy'",
     # aarch64 for py39 is covered by default requirement below
 
     # arm64 on Darwin supports Python 3.8 and above requires numpy>=1.20.0
     "numpy==1.20.0; python_version=='3.8' and platform_machine=='arm64' and platform_system=='Darwin'",
     "numpy==1.20.0; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
 
-    # Python 3.8 on s390x requires at least 1.17.5, see https://github.com/scipy/oldest-supported-numpy/issues/29
-    "numpy==1.17.5; python_version=='3.8' and platform_machine=='s390x' and platform_python_implementation != 'PyPy'",
-
     # default numpy requirements
-    "numpy==1.17.3; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_machine!='s390x' and platform_python_implementation != 'PyPy'",
+    "numpy==1.18.5; python_version=='3.8' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_machine!='aarch64' and platform_python_implementation != 'PyPy'",
     "numpy==1.19.3; python_version=='3.9' and (platform_machine!='arm64' or platform_system!='Darwin') and platform_python_implementation != 'PyPy'",
     "numpy==1.21.4; python_version=='3.10' and platform_python_implementation != 'PyPy'",
 
@@ -57,7 +54,7 @@ maintainers = [
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
 requires-python = ">=3.8"
 dependencies = [
-    "numpy>=1.17.3",
+    "numpy>=1.18.5",
 ]
 readme = "README.rst"
 classifiers = [
@@ -88,7 +85,7 @@ test = [
     "pytest-xdist",
     "asv",
     "mpmath",
-    "gmpy2==2.1.0rc1",
+    "gmpy2",
     "threadpoolctl",
     "scikit-umfpack",
 ]
