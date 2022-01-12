@@ -203,6 +203,11 @@ unuran_defines = [
   '-D_ISOC99_SOURCE=1'
 ]
 
+_unuran_wrap_pyx = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : [_cython_tree, _lib_pxd],
+  ).process(_stats_gen_pyx[7])  # unuran_wrapper.pyx
 
 statlib = py3.extension_module('unuran_wrapper',
   [
@@ -210,7 +215,7 @@ statlib = py3.extension_module('unuran_wrapper',
     unuran_sources
   ],
   c_args: unuran_defines,
-  dependencies: [py3_dep, _lib_pxd_dep],
+  dependencies: [py3_dep],
   include_directories: [inc_np, unuran_include_dirs],
   install: true,
   subdir: 'scipy/stats/_unuran'
