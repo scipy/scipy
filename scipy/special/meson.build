@@ -345,18 +345,10 @@ cython_special = custom_target('cython_special',
   command: [py3, '@INPUT0@', '-o', '@OUTDIR@']
 )
 
-
-# FIXME: the generated ninja.build file is missing the dependency between
-#       copying these files into the build dir and the `.pyx -> .c` stage.
-#       For the `.c -> .so` stage the dependency (see `||` in the `build.ninja`
-#       file) is picked up correctly. This only shows up when running the build
-#       with `-j 1` (when the steps are run in parallel, the copying of sources
-#       seems to always happen quickly enough. This will likely only be fixed
-#       by the "structured sources" PR on the Meson repo.
 py3.extension_module('_ufuncs',
   [
     ufuncs_sources,
-    cython_special[0],  # _ufuncs.pyx
+    cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
   c_args: [numpy_nodepr_api, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
@@ -364,7 +356,6 @@ py3.extension_module('_ufuncs',
     py3_dep,
     lapack,
     npymath_lib,
-    _ufuncs_pxi_pxd_dep,  # This is not added correctly by Meson (see above)
     cython_tree
   ],
   link_with: [
