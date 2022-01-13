@@ -1,5 +1,5 @@
 rotation = py3.extension_module('_rotation',
-  ['_rotation.pyx'],
+  [cython_gen.process('_rotation.pyx')],
   c_args: '-Wno-cpp', # TODO: replace with numpy_nodepr_api
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
