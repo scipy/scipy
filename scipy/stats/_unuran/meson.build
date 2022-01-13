@@ -205,7 +205,7 @@ unuran_defines = [
 
 statlib = py3.extension_module('unuran_wrapper',
   [
-    _unuran_wrap_pyx,
+    unuran_wrap_pyx,
     unuran_sources
   ],
   c_args: unuran_defines,

@@ -118,18 +118,27 @@ _qmc_cy = py3.extension_module('_qmc_cy',
 
 _stats_gen_pyx = custom_target('_stats_gen_pyx',
   output: [
-    '_biasedurn.pyx',
-    'beta_ufunc.pyx',
-    'binom_ufunc.pyx',
-    'func_defs.pxd',
-    'hypergeom_ufunc.pyx',
-    'nbinom_ufunc.pyx',
-    'templated_pyufunc.pxd',
-    'unuran_wrapper.pyx'
+    '_biasedurn.pyx',  # 0 (used in this directory)
+    'beta_ufunc.pyx',  # 1 (used in stats/_boost - S_B)
+    'binom_ufunc.pyx',  # 2 (S_B)
+    'func_defs.pxd',  # 3 (S_B)
+    'hypergeom_ufunc.pyx',  # 4 (S_B)
+    'nbinom_ufunc.pyx',  # 5 (S_B)
+    'templated_pyufunc.pxd',  # 6 (S_B)
+    'unuran_wrapper.pyx'  # 7 (used in stats/_unuran)
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@']
 )
+
+# Build recipes defined here to get correct output path when used from
+# other subdirs.
+beta_ufunc_pyx = cython_gen_cpp.process(_stats_gen_pyx[1])
+binom_ufunc_pyx = cython_gen_cpp.process(_stats_gen_pyx[2])
+hypergeom_ufunc_pyx = cython_gen_cpp.process(_stats_gen_pyx[4])
+nbinom_ufunc_pyx = cython_gen_cpp.process(_stats_gen_pyx[5])
+# Extra dependency from _lib
+unuran_wrap_pyx = lib_cython_gen.process(_stats_gen_pyx[7])
 
 biasedurn = py3.extension_module('_biasedurn',
   [
@@ -239,11 +248,6 @@ py3.install_sources([
 
 subdir('_boost')
 subdir('_levy_stable')
-
-# unuran_wrapper.pyx -> c build used in _unuran subdir
-# Defined here to get correct output path.
-_unuran_wrap_pyx = lib_cython_gen.process(_stats_gen_pyx[7])
-
 subdir('_unuran')
 
 subdir('tests')
