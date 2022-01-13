@@ -2654,7 +2654,7 @@ class TestHilbert:
 
     @pytest.mark.parametrize('dtype', [np.float32, np.float64])
     def test_hilbert_types(self, dtype):
-        in_typed = np.zeros(32, dtype=dtype)
+        in_typed = np.zeros(8, dtype=dtype)
         assert_equal(np.real(signal.hilbert(in_typed)).dtype, dtype)
 
 
