@@ -188,7 +188,7 @@ def _laplacian_sparse(graph, normed, axis,
             m.data *= -1
             m.setdiag(w)
 
-        return m.csr_matrix.astype(dtype, copy=False), w.astype(dtype)
+        return m.astype(dtype, copy=False), w.astype(dtype)
 
 
 def _laplacian_dense(graph, normed, axis,
