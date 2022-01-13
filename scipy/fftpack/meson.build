@@ -1,5 +1,5 @@
 py3.extension_module('convolve',
-  'convolve.pyx',
+  cython_gen.process('convolve.pyx'),
   include_directories: inc_np,
   dependencies: py3_dep,
   install: true,

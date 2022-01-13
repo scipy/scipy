@@ -93,7 +93,7 @@ fitpack_lib = static_library('fitpack_lib',
 )
 
 interpnd = py3.extension_module('interpnd',
-  ['interpnd.pyx'],
+  spt_cython_gen.process('interpnd.pyx'),
   c_args: numpy_nodepr_api,
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
@@ -101,24 +101,8 @@ interpnd = py3.extension_module('interpnd',
   subdir: 'scipy/interpolate'
 )
 
-_ppoly_c = custom_target('_ppoly_c',
-  output: '_ppoly.c',
-  input: [
-    '_ppoly.pyx',
-    _cython_tree,
-    # _cython_lapack_pxd
-  ],
-  command: [
-    cython, '-3', '--fast-fail',
-    '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
-  ]
-)
-
-# TODO: Depends on cython_lapack.pxd which cannot
-# be added a dependency here. Once it is possible,
-# uncomment the below part.
 py3.extension_module('_ppoly',
-  _ppoly_c,
+  linalg_cython_gen.process('_ppoly.pyx'),
   c_args: numpy_nodepr_api,
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
@@ -127,7 +111,7 @@ py3.extension_module('_ppoly',
 )
 
 _bspl = py3.extension_module('_bspl',
-  ['_bspl.pyx'],
+  cython_gen.process('_bspl.pyx'),
   c_args: numpy_nodepr_api,
   include_directories: ['src/', incdir_numpy],
   dependencies: [py3_dep],

@@ -17,7 +17,7 @@ py3.extension_module('_nd_image',
 )
 
 py3.extension_module('_ni_label',
-  'src/_ni_label.pyx',
+  cython_gen.process('src/_ni_label.pyx'),
   include_directories: incdir_numpy,
   dependencies: py3_dep,
   install: true,
@@ -34,7 +34,7 @@ py3.extension_module('_ctest',
 )
 
 py3.extension_module('_cytest',
-  'src/_cytest.pyx',
+  cython_gen.process('src/_cytest.pyx'),
   include_directories: incdir_numpy,
   dependencies: py3_dep,
   install: true,
