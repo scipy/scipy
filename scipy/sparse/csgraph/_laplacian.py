@@ -10,7 +10,8 @@ Laplacian of a compressed-sparse graph
 
 import numpy as np
 from scipy.sparse import isspmatrix
-from scipy.sparse.linalg import LinearOperator#, aslinearoperator
+from scipy.sparse.linalg import LinearOperator
+# , aslinearoperator
 
 
 ###############################################################################
@@ -195,7 +196,7 @@ def _laplacian_dense(graph, normed, axis,
                      copy, aslinearoperator, dtype):
     if aslinearoperator:
         m_a = np.asarray(graph)
-        w = m.sum(axis=axis)
+        w = m_a.sum(axis=axis)
 
         if normed:
             isolated_node_mask = (w == 0)
