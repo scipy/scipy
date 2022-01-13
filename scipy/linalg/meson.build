@@ -155,7 +155,7 @@ py3.extension_module('_interpolative',
 
 # _solve_toeplitz
 py3.extension_module('_solve_toeplitz',
-  '_solve_toeplitz.pyx',
+  cython_gen.process('_solve_toeplitz.pyx'),
   c_args: numpy_nodepr_api,
   include_directories: inc_np,
   dependencies: py3_dep,
@@ -165,7 +165,7 @@ py3.extension_module('_solve_toeplitz',
 
 # _matfuncs_sqrtm_triu:
 py3.extension_module('_matfuncs_sqrtm_triu',
-  '_matfuncs_sqrtm_triu.pyx',
+  cython_gen.process('_matfuncs_sqrtm_triu.pyx'),
   c_args: numpy_nodepr_api,
   include_directories: inc_np,
   dependencies: py3_dep,
@@ -185,8 +185,7 @@ fwrappers = static_library('fwrappers',
 
 cython_blas = py3.extension_module('cython_blas',
   [
-    cython_linalg[0],  # cython_blas.pyx
-    cython_linalg[2],  # cython_blas.pxd
+    cython_gen.process(cython_linalg[0]),  # cython_blas.pyx
     cython_linalg[4],  # _blas_subroutines.h
     'fortran_defs.h'
   ],
@@ -200,7 +199,7 @@ cython_blas = py3.extension_module('cython_blas',
 
 cython_lapack = py3.extension_module('cython_lapack',
   [
-    cython_linalg[1],  # cython_lapack.pyx
+    cython_gen.process(cython_linalg[1]),  # cython_lapack.pyx
     cython_linalg[3],  # cython_lapack.pxd
     cython_linalg[5],  # _lapack_subroutines.h
     'fortran_defs.h'
@@ -221,7 +220,7 @@ _decomp_update_pyx = custom_target('_decomp_update',
 
 py3.extension_module('_decomp_update',
   [
-    _decomp_update_pyx,
+    cython_gen.process(_decomp_update_pyx),
     _cython_tree, __init__py,
     cython_linalg[3]
   ],
@@ -232,7 +231,7 @@ py3.extension_module('_decomp_update',
 )
 
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
-  ['_cythonized_array_utils.pyx'],
+  cython_gen.process('_cythonized_array_utils.pyx'),
   c_args: numpy_nodepr_api,
   dependencies: [py3_dep],
   include_directories: [inc_np],
