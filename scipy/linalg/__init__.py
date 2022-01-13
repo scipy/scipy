@@ -199,7 +199,6 @@ from ._misc import *
 from ._cythonized_array_utils import *
 from ._backend import *
 from ._basic import *
-from ._decomp import *
 from ._decomp_lu import *
 from ._decomp_ldl import *
 from ._decomp_cholesky import *

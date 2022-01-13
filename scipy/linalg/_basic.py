@@ -11,7 +11,7 @@ from ._flinalg_py import get_flinalg_funcs
 from .lapack import get_lapack_funcs, _compute_lwork
 from ._misc import LinAlgError, _datacopied, LinAlgWarning
 from ._decomp import _asarray_validated
-from . import _decomp, _decomp_svd
+from . import _decomp_svd
 from ._solve_toeplitz import levinson
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
@@ -1476,7 +1476,8 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
 
     """
     a = _asarray_validated(a, check_finite=check_finite)
-    s, u = _decomp.eigh(a, lower=lower, check_finite=False)
+    from ._multimethods import eigh
+    s, u = eigh(a, lower=lower, check_finite=False)
     t = u.dtype.char.lower()
     maxS = np.max(np.abs(s))
 

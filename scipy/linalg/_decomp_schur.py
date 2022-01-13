@@ -7,7 +7,7 @@ from numpy.linalg import norm
 # Local imports.
 from ._misc import LinAlgError, _datacopied
 from .lapack import get_lapack_funcs
-from ._decomp import eigvals
+
 
 __all__ = ['schur', 'rsf2csf']
 
@@ -275,7 +275,7 @@ def rsf2csf(T, Z, check_finite=True):
     N = T.shape[0]
     t = _commonType(Z, T, array([3.0], 'F'))
     Z, T = _castCopy(t, Z, T)
-
+    from ._multimethods import eigvals
     for m in range(N-1, 0, -1):
         if abs(T[m, m-1]) > eps*(abs(T[m-1, m-1]) + abs(T[m, m])):
             mu = eigvals(T[m-1:m+1, m-1:m+1]) - T[m, m]

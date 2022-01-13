@@ -12,7 +12,11 @@ fnames = [
     'solve_sylvester',
     'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
     'solve_lyapunov',
-    'solve_continuous_are', 'solve_discrete_are'
+    'solve_continuous_are', 'solve_discrete_are',
+    # decomp (eigen value problems)
+    'eig', 'eigvals', 'eigh', 'eigvalsh',
+    'eig_banded', 'eigvals_banded',
+    'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf'
 ]
 
 
