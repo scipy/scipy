@@ -166,9 +166,16 @@ _cython_tree = custom_target('_cython_tree',
 cython_tree = declare_dependency(sources: _cython_tree)
 
 cython_cli = find_program('_build_utils/cythoner.py')
+
 cython_gen = generator(cython_cli,
   arguments : ['@INPUT@', '@OUTPUT@'],
-  output : '@BASENAME@.c')
+  output : '@BASENAME@.c',
+  depends : _cython_tree)
+
+cython_gen_cpp = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@', '--cplus'],
+  output : '@BASENAME@.cpp',
+  depends : [_cython_tree])
 
 # Ordering of subdirs: special and linalg come first, because other submodules
 # have dependencies on cython_special.pxd and cython_linalg.pxd. After those,

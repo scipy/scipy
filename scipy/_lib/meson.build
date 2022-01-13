@@ -14,8 +14,6 @@ _lib_pxd = custom_target('_lib_pxd',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
-_lib_pxd_dep = declare_dependency(sources: _lib_pxd)
-
 _ccallback_c_pyx = generator(cython_cli,
   arguments : ['@INPUT@', '@OUTPUT@'],
   output : '@BASENAME@.c',

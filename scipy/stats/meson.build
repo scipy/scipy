@@ -90,7 +90,7 @@ mvn = py3.extension_module('_mvn',
 )
 
 _sobol = py3.extension_module('_sobol',
-  ['_sobol.pyx'],
+  cython_gen.process('_sobol.pyx'),
   c_args: numpy_nodepr_api,
   dependencies: [py3_dep],
   include_directories: [inc_np],
@@ -108,11 +108,10 @@ py3.install_sources([
 pthread = dependency('threads')
 
 _qmc_cy = py3.extension_module('_qmc_cy',
-  '_qmc_cy.pyx',
+  cython_gen_cpp.process('_qmc_cy.pyx'),
   cpp_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
   dependencies: [py3_dep, pthread],
   include_directories: [inc_np],
-  override_options: ['cython_language=cpp'],
   install: true,
   subdir: 'scipy/stats'
 )
@@ -134,7 +133,7 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
 
 biasedurn = py3.extension_module('_biasedurn',
   [
-    _stats_gen_pyx[0],
+    cython_gen_cpp.process(_stats_gen_pyx[0]),  # _biasedurn.pyx
     'biasedurn/fnchyppr.cpp',
     'biasedurn/impls.cpp',
     'biasedurn/stoc1.cpp',
@@ -145,8 +144,7 @@ biasedurn = py3.extension_module('_biasedurn',
   ],
   cpp_args: ['-DR_BUILD', numpy_nodepr_api],
   include_directories: [inc_np],
-  dependencies: [py3_dep, npyrandom_lib, npymath_lib, cython_tree],
-  override_options: ['cython_language=cpp'],
+  dependencies: [py3_dep, npyrandom_lib, npymath_lib],
   install: true,
   subdir: 'scipy/stats'
 )
@@ -241,6 +239,14 @@ py3.install_sources([
 
 subdir('_boost')
 subdir('_levy_stable')
+
+# pyx -> c build used in _unuran
+_unuran_wrap_pyx = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : [_cython_tree, _lib_pxd]
+  ).process(_stats_gen_pyx[7])  # unuran_wrapper.pyx
+
 subdir('_unuran')
 
 subdir('tests')
