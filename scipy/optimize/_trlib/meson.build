@@ -1,6 +1,6 @@
 _trlib = py3.extension_module('_trlib',
   [
-    '_trlib.pyx',
+    lib_cython_gen.process('_trlib.pyx'),
     'trlib_krylov.c',
     'trlib_eigen_inverse.c',
     'trlib_leftmost.c',
