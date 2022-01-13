@@ -450,7 +450,7 @@ py3.extension_module('_comb',
 )
 
 py3.extension_module('_test_round',
-  '_test_round.pyx',
+  cython_gen.process('_test_round.pyx'),
   include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
   dependencies: [py3_dep, npymath_lib],
   install: true,
