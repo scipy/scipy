@@ -10,7 +10,7 @@ slib = py3.extension_module('_hierarchy',
 )
 
 slib = py3.extension_module('_optimal_leaf_ordering',
-  linalg_cython_gen.process('_optimal_leaf_ordering.pyx',
+  linalg_cython_gen.process('_optimal_leaf_ordering.pyx'),
   c_args: [
    '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
   ],
@@ -20,22 +20,8 @@ slib = py3.extension_module('_optimal_leaf_ordering',
   subdir: 'scipy/cluster'
 )
 
-# _vq
-_vq_c = custom_target('_vq',
-  output: '_vq.c',
-  input: [
-    '_vq.pyx',
-    _cython_tree,
-    # _cython_blas_pxd, cython_lapack_pxd
-  ],
-  command: [
-    cython, '-3', '--fast-fail',
-    '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
-  ]
-)
-
 slib = py3.extension_module('_vq',
-  _vq_c,
+  linalg_cython_gen.process('_vq.pyx'),
   c_args: [
    '-Wno-cpp'  # TODO: replace with numpy_nodepr_api
   ],
