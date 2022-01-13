@@ -10,7 +10,7 @@ pyx_files = [
 
 foreach pyx_file: pyx_files
   py3.extension_module(pyx_file[0],
-    pyx_file[1],
+    cython_gen.process(pyx_file[1]),
     include_directories: inc_np,
     dependencies: py3_dep,
     install: true,
