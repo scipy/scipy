@@ -14,14 +14,15 @@ _lib_pxd = custom_target('_lib_pxd',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
-_ccallback_c_pyx = generator(cython_cli,
+# Cython pyx -> c generator with _lib_pxd dependency
+lib_cython_gen = generator(cython_cli,
   arguments : ['@INPUT@', '@OUTPUT@'],
   output : '@BASENAME@.c',
-  depends : [_cython_tree, _lib_pxd]
-  ).process('_ccallback_c.pyx')
+  depends : [_cython_tree, _lib_pxd])
+
 
 py3.extension_module('_ccallback_c',
-  _ccallback_c_pyx,
+  lib_cython_gen.process('_ccallback_c.pyx'),
   include_directories: 'src',
   dependencies: py3_dep,
   install: true,
@@ -44,30 +45,16 @@ py3.extension_module('_fpumode',
   subdir: 'scipy/_lib'
 )
 
-_test_dep_call_pyx = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
-  output : '@BASENAME@.c',
-  depends : [_cython_tree]
-  ).process('_test_deprecation_call.pyx')
-
-
 py3.extension_module('_test_deprecation_call',
-  _test_dep_call_pyx,
+  cython_gen.process('_test_deprecation_call.pyx'),
   include_directories: 'src',
   dependencies: py3_dep,
   install: true,
   subdir: 'scipy/_lib'
 )
 
-_test_dep_def_pyx = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
-  output : '@BASENAME@.c',
-  depends : [_cython_tree]
-  ).process('_test_deprecation_def.pyx')
-
-
 py3.extension_module('_test_deprecation_def',
-  _test_dep_def_pyx,
+  cython_gen.process('_test_deprecation_def.pyx'),
   include_directories: 'src',
   dependencies: py3_dep,
   install: true,
@@ -96,14 +83,8 @@ configure_file(
   configuration: conf_memstream
 )
 
-_messagestream_pyx = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
-  output : '@BASENAME@.c',
-  depends : [_cython_tree, _lib_pxd]
-  ).process('messagestream.pyx')
-
 py3.extension_module('messagestream',
-  _messagestream_pyx,
+  lib_cython_gen.process('messagestream.pyx'),
   include_directories: 'src',
   dependencies: py3_dep,
   install: true,

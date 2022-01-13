@@ -240,12 +240,9 @@ py3.install_sources([
 subdir('_boost')
 subdir('_levy_stable')
 
-# pyx -> c build used in _unuran
-_unuran_wrap_pyx = generator(cython_cli,
-  arguments : ['@INPUT@', '@OUTPUT@'],
-  output : '@BASENAME@.c',
-  depends : [_cython_tree, _lib_pxd]
-  ).process(_stats_gen_pyx[7])  # unuran_wrapper.pyx
+# unuran_wrapper.pyx -> c build used in _unuran subdir
+# Defined here to get correct output path.
+_unuran_wrap_pyx = lib_cython_gen.process(_stats_gen_pyx[7])
 
 subdir('_unuran')
 
