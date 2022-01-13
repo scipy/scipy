@@ -236,7 +236,7 @@ def direct(
     if maxiter < 0:
         raise ValueError("maxiter must be > 0.")
 
-    #validate boolean parameters
+    # validate boolean parameters
     if not isinstance(locally_biased, bool):
         raise ValueError("locally_biased must be True or False.")
     if not isinstance(disp, bool):
