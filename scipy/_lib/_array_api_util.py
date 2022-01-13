@@ -20,6 +20,8 @@ def _get_namespace(*arrays):
     """
     Returns the module that implements Array API compatible functions or NumPy.
 
+    .. versionadded:: 1.9.0
+
     Parameters
     ----------
     *arrays : sequence of array_like
