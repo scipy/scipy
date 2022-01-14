@@ -750,7 +750,7 @@ def minimum_cost_flow(csgraph, demand, cost):
     to reduce the problem to the integral case by scaling all capacities
     accordingly.
 
-    Solving a minimum cost flow problem has many practical uses such as 
+    Solving a minimum cost flow problem has many practical uses such as
     in assignment problem, covers and matching in bipartite graphs [2]_.
 
     We have ported the Python implementation of NetworkX [3]_ to Cython.
@@ -861,7 +861,7 @@ cdef void _initialize_spanning_tree(
 ) nogil:
     """Initialises a spanning tree which can be a feasible solution to the
     input minimum cost flow problem.
-    
+
     The _network_simplex function then performs the algorithm to iteratively
     update this tree until an optimal solution is achieved.
     """
@@ -893,8 +893,7 @@ cdef void _initialize_spanning_tree(
         last_descendent_dft[v] = v
 
     # next_vertex_dft initialization
-    next_vertex_dft[0] = 1
-    for v in range(1, n_verts):
+    for v in range(n_verts):
         next_vertex_dft[v] = v + 1
     next_vertex_dft[n_verts] = 0
 
@@ -907,9 +906,9 @@ cdef inline ITYPE_t _reduced_cost(
     ITYPE_t[:] edge_targets,         # IN
     ITYPE_t[:] edge_flow             # IN
 ) nogil:
-    """Returns the reduced cost of an edge computed using 
+    """Returns the reduced cost of an edge computed using
     potentials of the vertices of the given edge and its weight.
-    
+
     The reduced cost is needed to determine whether adding the
     edge to current spanning tree improves circulation or not.
     """
@@ -975,9 +974,9 @@ cdef return_struct _find_entering_edges(
     We have used the NetworkX implementation of this function.
     However, we don't use yield and instead manually maintain
     the state of this function using return_struct defined above.
-    
+
     Following is the explanation from `networkx.algorithms.flow.networksimplex`:
-    
+
         "Entering edges are found by combining Dantzig's rule and Bland's
         rule. The edges are cyclically grouped into blocks of size B. Within
         each block, Dantzig's rule is applied to find an entering edge. The
@@ -1114,7 +1113,7 @@ cdef void _find_cycle(
 ) nogil:
     """Return the nodes and edges on the cycle containing edge i == (p, q) when the
     latter is added to the spanning tree.
-    
+
     The cycle is oriented in the direction from p to q.
     """
     cdef:
