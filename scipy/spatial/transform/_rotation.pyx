@@ -1163,7 +1163,7 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
-    def as_quat(self, order='xyzw'):
+    def as_quat(self, *, order='xyzw'):
         """Represent as quaternions.
 
         Rotations in 3 dimensions can be represented using unit norm
