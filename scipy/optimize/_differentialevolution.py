@@ -200,8 +200,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         broadcast to ``(len(x),)``.
         If any decision variables are constrained to be integral, they will not
         be changed during polishing.
-        The solution vectors are passed to the objective function as
-        ``func(np.round(x[integrality]))``.
         Only integer values lying between the lower and upper bounds are used.
         If there are no integer values lying between the bounds then a
         `ValueError` is raised.
@@ -508,11 +506,9 @@ class DifferentialEvolutionSolver:
         broadcast to ``(len(x),)``.
         If any decision variables are constrained to be integral, they will not
         be changed during polishing.
-        The solution vectors are passed to the objective function as
-        ``func(np.round(x[integrality]))``.
         Only integer values lying between the lower and upper bounds are used.
         If there are no integer values lying between the bounds then a
-        `ValueError` is raised. 
+        `ValueError` is raised.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -628,12 +624,6 @@ class DifferentialEvolutionSolver:
         # Which parameters are going to be integers?
         if np.any(integrality):
             # # user has provided a truth value for integer constraints
-            # if polish:
-            #     message = ("Polishing is incompatible with integrality"
-            #                " constraints; `polish` will be ignored.")
-            #     self.polish = False
-            #     warnings.warn(message, OptimizeWarning)
-
             integrality = np.broadcast_to(
                 integrality,
                 self.parameter_count
