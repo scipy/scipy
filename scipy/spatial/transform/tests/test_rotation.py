@@ -1139,6 +1139,10 @@ def test_align_vectors_invalid_input():
                        match="Expected `weights` to have number of values"):
         Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[1, 2])
 
+    with pytest.raises(ValueError,
+                       match="`weights` may not contain negative values"):
+        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[-1])
+
 
 def test_random_rotation_shape():
     rnd = np.random.RandomState(0)
