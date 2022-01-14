@@ -8,13 +8,14 @@ channels:
   - conda-forge
 dependencies:
   - python
+  - setuptools<60.0
   - cython
   - compilers
   - numpy
   - openblas
   - libblas=*=*openblas  # helps avoid pulling in MKL
   - pybind11
-  - pythran>=0.9.11
+  - pythran>=0.9.12
   - conda-build  # to allow `conda develop .`
   # For testing and benchmarking
   - pytest
@@ -36,3 +37,4 @@ dependencies:
   # Some optional test dependencies
   - mpmath
   - gmpy2
+  - threadpoolctl

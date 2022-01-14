@@ -6,6 +6,7 @@ cimport numpy as np
 
 from scipy._lib.messagestream cimport MessageStream
 
+np.import_array()
 
 class TRLIBQuadraticSubproblem(BaseQuadraticSubproblem):
 

@@ -568,8 +568,9 @@ def argsreduce(cond, *args):
         newargs = [newargs, ]
 
     if np.all(cond):
-        # Nothing to do
-        return newargs
+        # broadcast arrays with cond
+        *newargs, cond = np.broadcast_arrays(*newargs, cond)
+        return [arg.ravel() for arg in newargs]
 
     s = cond.shape
     # np.extract returns flattened arrays, which are not broadcastable together
@@ -1150,14 +1151,6 @@ class rv_generic:
                                               **{'moments': moments})
             else:
                 mu, mu2, g1, g2 = self._stats(*goodargs)
-            if g1 is None:
-                mu3 = None
-            else:
-                if mu2 is None:
-                    mu2 = self._munp(2, *goodargs)
-                if g2 is None:
-                    # (mu2**1.5) breaks down for nan and inf
-                    mu3 = g1 * np.power(mu2, 1.5)
 
             if 'm' in moments:
                 if mu is None:
@@ -1173,7 +1166,7 @@ class rv_generic:
                         mu = self._munp(1, *goodargs)
                     # if mean is inf then var is also inf
                     with np.errstate(invalid='ignore'):
-                        mu2 = np.where(np.isfinite(mu), mu2p - mu**2, np.inf)
+                        mu2 = np.where(~np.isinf(mu), mu2p - mu**2, np.inf)
                 out0 = default.copy()
                 place(out0, cond, mu2 * scale * scale)
                 output.append(out0)
@@ -1201,6 +1194,11 @@ class rv_generic:
                     if mu2 is None:
                         mu2p = self._munp(2, *goodargs)
                         mu2 = mu2p - mu * mu
+                    if g1 is None:
+                        mu3 = None
+                    else:
+                        # (mu2**1.5) breaks down for nan and inf
+                        mu3 = g1 * np.power(mu2, 1.5)
                     if mu3 is None:
                         mu3p = self._munp(3, *goodargs)
                         with np.errstate(invalid='ignore'):
@@ -1270,9 +1268,17 @@ class rv_generic:
             scale parameter (default=1)
 
         """
-        args, loc, scale = self._parse_args(*args, **kwds)
-        if not (self._argcheck(*args) and (scale > 0)):
-            return nan
+        shapes, loc, scale = self._parse_args(*args, **kwds)
+        args = np.broadcast_arrays(*(*shapes, loc, scale))
+        *shapes, loc, scale = args
+
+        i0 = np.logical_and(self._argcheck(*shapes), scale > 0)
+        i1 = np.logical_and(i0, loc == 0)
+        i2 = np.logical_and(i0, loc != 0)
+
+        args = argsreduce(i0, *shapes, loc, scale)
+        *shapes, loc, scale = args
+
         if (floor(n) != n):
             raise ValueError("Moment must be an integer.")
         if (n < 0):
@@ -1283,21 +1289,46 @@ class rv_generic:
                 mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
             else:
                 mdict = {}
-            mu, mu2, g1, g2 = self._stats(*args, **mdict)
-        val = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, args)
+            mu, mu2, g1, g2 = self._stats(*shapes, **mdict)
+        val = np.empty(loc.shape)  # val needs to be indexed by loc
+        val[...] = _moment_from_stats(n, mu, mu2, g1, g2, self._munp, shapes)
 
         # Convert to transformed  X = L + S*Y
         # E[X^n] = E[(L+S*Y)^n] = L^n sum(comb(n, k)*(S/L)^k E[Y^k], k=0...n)
-        if loc == 0:
-            return scale**n * val
-        else:
-            result = 0
-            fac = float(scale) / float(loc)
+        result = zeros(i0.shape)
+        place(result, ~i0, self.badvalue)
+
+        if i1.any():
+            res1 = scale[loc == 0]**n * val[loc == 0]
+            place(result, i1, res1)
+
+        if i2.any():
+            mom = [mu, mu2, g1, g2]
+            arrs = [i for i in mom if i is not None]
+            idx = [i for i in range(4) if mom[i] is not None]
+            if any(idx):
+                arrs = argsreduce(loc != 0, *arrs)
+                j = 0
+                for i in idx:
+                    mom[i] = arrs[j]
+                    j += 1
+            mu, mu2, g1, g2 = mom
+            args = argsreduce(loc != 0, *shapes, loc, scale, val)
+            *shapes, loc, scale, val = args
+
+            res2 = zeros(loc.shape, dtype='d')
+            fac = scale / loc
             for k in range(n):
-                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp, args)
-                result += comb(n, k, exact=True)*(fac**k) * valk
-            result += fac**n * val
-            return result * loc**n
+                valk = _moment_from_stats(k, mu, mu2, g1, g2, self._munp,
+                                          shapes)
+                res2 += comb(n, k, exact=True)*fac**k * valk
+            res2 += fac**n * val
+            res2 *= loc**n
+            place(result, i2, res2)
+
+        if result.ndim == 0:
+            return result.item()
+        return result
 
     def median(self, *args, **kwds):
         """Median of the distribution.
@@ -1830,7 +1861,9 @@ class rv_continuous(rv_generic):
 
     # Could also define any of these
     def _logpdf(self, x, *args):
-        return log(self._pdf(x, *args))
+        p = self._pdf(x, *args)
+        with np.errstate(divide='ignore'):
+            return log(p)
 
     def _cdf_single(self, x, *args):
         _a, _b = self._get_support(*args)
@@ -2356,7 +2389,7 @@ class rv_continuous(rv_generic):
             Starting value(s) for any shape-characterizing arguments (those not
             provided will be determined by a call to ``_fitstart(data)``).
             No default value.
-        kwds : floats, optional
+        **kwds : floats, optional
             - `loc`: initial guess of the distribution's location parameter.
             - `scale`: initial guess of the distribution's scale parameter.
 

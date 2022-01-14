@@ -12,11 +12,13 @@ Result classes
 
    RelativeRiskResult
    BinomTestResult
+   TukeyHSDResult
 
 """
 
-__all__ = ['BinomTestResult', 'RelativeRiskResult']
+__all__ = ['BinomTestResult', 'RelativeRiskResult', 'TukeyHSDResult']
 
 
 from ._binomtest import BinomTestResult
 from ._relative_risk import RelativeRiskResult
+from ._hypotests import TukeyHSDResult

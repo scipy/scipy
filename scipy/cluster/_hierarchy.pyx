@@ -11,6 +11,7 @@ cdef extern from "numpy/npy_math.h":
 
 ctypedef unsigned char uchar
 
+np.import_array()
 
 # _hierarchy_distance_update.pxi includes the definition of linkage_distance_update
 # and the distance update functions for the supported linkage methods.

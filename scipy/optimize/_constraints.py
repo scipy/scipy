@@ -3,7 +3,7 @@ import numpy as np
 from ._hessian_update_strategy import BFGS
 from ._differentiable_functions import (
     VectorFunction, LinearVectorFunction, IdentityVectorFunction)
-from .optimize import OptimizeWarning
+from ._optimize import OptimizeWarning
 from warnings import warn
 from numpy.testing import suppress_warnings
 from scipy.sparse import issparse
@@ -166,23 +166,33 @@ class Bounds:
 
     Parameters
     ----------
-    lb, ub : array_like
-        Lower and upper bounds on independent variables. Each array must
-        have the same size as x or be a scalar, in which case a bound will be
-        the same for all the variables. Set components of `lb` and `ub` equal
+    lb, ub : array_like, optional
+        Lower and upper bounds on independent variables. `lb`, `ub`, and
+        `keep_feasible` must be the same shape or broadcastable.
+        Set components of `lb` and `ub` equal
         to fix a variable. Use ``np.inf`` with an appropriate sign to disable
         bounds on all or some variables. Note that you can mix constraints of
         different types: interval, one-sided or equality, by setting different
-        components of `lb` and `ub` as necessary.
+        components of `lb` and `ub` as necessary. Defaults to ``lb = -np.inf``
+        and ``ub = np.inf`` (no bounds).
     keep_feasible : array_like of bool, optional
         Whether to keep the constraint components feasible throughout
-        iterations. A single value set this property for all components.
+        iterations. Must be broadcastable with `lb` and `ub`.
         Default is False. Has no effect for equality constraints.
     """
-    def __init__(self, lb, ub, keep_feasible=False):
-        self.lb = np.asarray(lb)
-        self.ub = np.asarray(ub)
-        self.keep_feasible = keep_feasible
+    def _input_validation(self):
+        try:
+            res = np.broadcast_arrays(self.lb, self.ub, self.keep_feasible)
+            self.lb, self.ub, self.keep_feasible = res
+        except ValueError:
+            message = "`lb`, `ub`, and `keep_feasible` must be broadcastable."
+            raise ValueError(message)
+
+    def __init__(self, lb=-np.inf, ub=np.inf, keep_feasible=False):
+        self.lb = np.atleast_1d(lb)
+        self.ub = np.atleast_1d(ub)
+        self.keep_feasible = np.atleast_1d(keep_feasible).astype(bool)
+        self._input_validation()
 
     def __repr__(self):
         start = f"{type(self).__name__}({self.lb!r}, {self.ub!r}"
@@ -191,6 +201,34 @@ class Bounds:
         else:
             end = ")"
         return start + end
+
+    def residual(self, x):
+        """Calculate the residual (slack) between the input and the bounds
+
+        For a bound constraint of the form::
+
+            lb <= x <= ub
+
+        the lower and upper residuals between `x` and the bounds are values
+        ``sl`` and ``sb`` such that::
+
+            lb + sl == x == ub - sb
+
+        When all elements of ``sl`` and ``sb`` are positive, all elements of
+        ``x`` lie within the bounds; a negative element in ``sl`` or ``sb``
+        indicates that the corresponding element of ``x`` is out of bounds.
+
+        Parameters
+        ----------
+        x: array_like
+            Vector of independent variables
+
+        Returns
+        -------
+        sl, sb : array-like
+            The lower and upper residuals
+        """
+        return x - self.lb, self.ub - x
 
 
 class PreparedConstraint:
@@ -243,16 +281,15 @@ class PreparedConstraint:
             raise ValueError("`constraint` of an unknown type is passed.")
 
         m = fun.m
+
         lb = np.asarray(constraint.lb, dtype=float)
         ub = np.asarray(constraint.ub, dtype=float)
-        if lb.ndim == 0:
-            lb = np.resize(lb, m)
-        if ub.ndim == 0:
-            ub = np.resize(ub, m)
-
         keep_feasible = np.asarray(constraint.keep_feasible, dtype=bool)
-        if keep_feasible.ndim == 0:
-            keep_feasible = np.resize(keep_feasible, m)
+
+        lb = np.broadcast_to(lb, m)
+        ub = np.broadcast_to(ub, m)
+        keep_feasible = np.broadcast_to(keep_feasible, m)
+
         if keep_feasible.shape != (m,):
             raise ValueError("`keep_feasible` has a wrong shape.")
 
@@ -300,12 +337,8 @@ def new_bounds_to_old(lb, ub, n):
     If any of the entries in lb/ub are -np.inf/np.inf they are replaced by
     None.
     """
-    lb = np.asarray(lb)
-    ub = np.asarray(ub)
-    if lb.ndim == 0:
-        lb = np.resize(lb, n)
-    if ub.ndim == 0:
-        ub = np.resize(ub, n)
+    lb = np.broadcast_to(lb, n)
+    ub = np.broadcast_to(ub, n)
 
     lb = [float(x) if x > -np.inf else None for x in lb]
     ub = [float(x) if x < np.inf else None for x in ub]
@@ -370,7 +403,7 @@ def new_constraint_to_old(con, x0):
 
         A = con.A
         if issparse(A):
-            A = A.todense()
+            A = A.toarray()
         fun = lambda x: np.dot(A, x)
         jac = lambda x: A
 
@@ -399,7 +432,7 @@ def new_constraint_to_old(con, x0):
             def j_eq(x):
                 dy = jac(x)
                 if issparse(dy):
-                    dy = dy.todense()
+                    dy = dy.toarray()
                 dy = np.atleast_2d(dy)
                 return dy[i_eq, :]
             ceq[0]["jac"] = j_eq
@@ -421,7 +454,7 @@ def new_constraint_to_old(con, x0):
                 dy = np.zeros((n_bound_below + n_bound_above, len(x0)))
                 dy_all = jac(x)
                 if issparse(dy_all):
-                    dy_all = dy_all.todense()
+                    dy_all = dy_all.toarray()
                 dy_all = np.atleast_2d(dy_all)
                 dy[:n_bound_below, :] = dy_all[i_bound_below]
                 dy[n_bound_below:, :] = -dy_all[i_bound_above]
