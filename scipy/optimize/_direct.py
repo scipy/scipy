@@ -242,9 +242,12 @@ def direct(
     if not isinstance(disp, bool):
         raise ValueError("disp must be of True or False.")
 
-    def _func_wrap(x, args):
+    def _func_wrap(x, args=None):
         x = np.asarray(x)
-        f = func(x, *args)
+        if args is None:
+            f = func(x)
+        else:
+            f = func(x, *args)
         return f
 
     x, fun, ret_code, nfev, nit = _direct(

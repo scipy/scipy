@@ -77,3 +77,16 @@ class TestDIRECT:
         res = direct(self.sphere_2, bounds=bounds, f_min=1)
         assert res.status == 3
         assert res.fun < 1.0001
+
+    def circle_with_args(self, x, a, b):
+        return np.square(x[0] - a) + np.square(x[1] - b).sum()
+
+    def test_f_circle_with_args(self):
+        bounds = 2*[(-2.0, 2.0)]
+
+        #this fails with TypeError
+        res = direct(self.circle_with_args, bounds, args=(1, 1), maxfun=1250)
+        assert res.nfev < 1250
+        assert res.status == 4
+        assert res.success
+        assert_allclose(res.x, np.array([1., 1.]))
