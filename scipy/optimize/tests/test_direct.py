@@ -84,7 +84,6 @@ class TestDIRECT:
     def test_f_circle_with_args(self):
         bounds = 2*[(-2.0, 2.0)]
 
-        #this fails with TypeError
         res = direct(self.circle_with_args, bounds, args=(1, 1), maxfun=1250)
         assert res.nfev < 1250
         assert res.status == 4
