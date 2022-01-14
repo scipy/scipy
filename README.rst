@@ -7,13 +7,13 @@
       </h1>
     </p>
 
-.. image:: https://img.shields.io/circleci/project/github/scipy/scipy/master.svg?label=CircleCI
+.. image:: https://img.shields.io/circleci/project/github/scipy/scipy/main.svg?label=CircleCI
   :target: https://circleci.com/gh/scipy/scipy
 
-.. image:: https://dev.azure.com/scipy-org/SciPy/_apis/build/status/scipy.scipy?branchName=master
-  :target: https://dev.azure.com/scipy-org/SciPy/_build/latest?definitionId=1?branchName=master
+.. image:: https://dev.azure.com/scipy-org/SciPy/_apis/build/status/scipy.scipy?branchName=main
+  :target: https://dev.azure.com/scipy-org/SciPy/_build/latest?definitionId=1?branchName=main
 
-.. image:: https://github.com/scipy/scipy/workflows/macOS%20tests/badge.svg?branch=master
+.. image:: https://github.com/scipy/scipy/workflows/macOS%20tests/badge.svg?branch=main
   :target: https://github.com/scipy/scipy/actions?query=workflow%3A%22macOS+tests%22
 
 .. image:: https://img.shields.io/pypi/dm/scipy.svg?label=Pypi%20downloads
@@ -22,7 +22,7 @@
 .. image:: https://img.shields.io/conda/dn/conda-forge/scipy.svg?label=Conda%20downloads
   :target: https://anaconda.org/conda-forge/scipy
 
-.. image:: https://codecov.io/gh/scipy/scipy/branch/master/graph/badge.svg
+.. image:: https://codecov.io/gh/scipy/scipy/branch/main/graph/badge.svg
   :target: https://codecov.io/gh/scipy/scipy
 
 .. image:: https://img.shields.io/badge/stackoverflow-Ask%20questions-blue.svg

@@ -14,7 +14,6 @@ from warnings import warn
 
 import numpy as np
 
-
 # unconstrained minimization
 from ._optimize import (_minimize_neldermead, _minimize_powell, _minimize_cg,
                         _minimize_bfgs, _minimize_newtoncg,
@@ -513,7 +512,15 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     It should converge to the theoretical solution (1.4 ,1.7).
 
     """
-    x0 = np.asarray(x0)
+    x0 = np.atleast_1d(np.asarray(x0))
+
+    if x0.ndim != 1:
+        message = ('Use of `minimize` with `x0.ndim != 1` is deprecated. '
+                   'Currently, singleton dimensions will be removed from '
+                   '`x0`, but an error may be raised in the future.')
+        warn(message, DeprecationWarning, stacklevel=2)
+        x0 = np.squeeze(x0)
+
     if x0.dtype.kind in np.typecodes["AllInteger"]:
         x0 = np.asarray(x0, dtype=float)
 
@@ -563,9 +570,6 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if meth == 'cobyla' and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
-    # - callback
-    if (meth in ('cobyla',) and callback is not None):
-        warn('Method %s does not support callback.' % method, RuntimeWarning)
     # - return_all
     if (meth in ('l-bfgs-b', 'tnc', 'cobyla', 'slsqp') and
             options.get('return_all', False)):
@@ -687,7 +691,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         res = _minimize_tnc(fun, x0, args, jac, bounds, callback=callback,
                             **options)
     elif meth == 'cobyla':
-        res = _minimize_cobyla(fun, x0, args, constraints, **options)
+        res = _minimize_cobyla(fun, x0, args, constraints, callback=callback,
+                                **options)
     elif meth == 'slsqp':
         res = _minimize_slsqp(fun, x0, args, jac, bounds,
                               constraints, callback=callback, **options)

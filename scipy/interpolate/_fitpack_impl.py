@@ -687,7 +687,7 @@ def sproot(tck, mest=10):
     zeros : ndarray
         An array giving the roots of the spline.
 
-    See also
+    See Also
     --------
     splprep, splrep, splint, spalde, splev
     bisplrep, bisplev

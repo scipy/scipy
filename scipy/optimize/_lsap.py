@@ -9,7 +9,6 @@
 # Author: Brian M. Clapper, Gael Varoquaux
 # License: 3-clause BSD
 
-import numpy as np
 from . import _lsap_module
 
 

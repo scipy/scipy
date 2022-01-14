@@ -195,13 +195,13 @@ def check_maxiter(solver, case):
 
 
 def test_maxiter():
-    case = params.Poisson1D
-    for solver in params.solvers:
-        if solver in case.skip:
-            continue
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
-            check_maxiter(solver, case)
+    for case in params.cases:
+        for solver in params.solvers:
+            if solver in case.skip + case.nonconvergence:
+                continue
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning, ".*called without specifying.*")
+                check_maxiter(solver, case)
 
 
 def assert_normclose(a, b, tol=1e-8):
@@ -253,7 +253,11 @@ def check_precond_dummy(solver, case):
     A = case.A
 
     M,N = A.shape
-    spdiags([1.0/A.diagonal()], [0], M, N)
+    # Ensure the diagonal elements of A are non-zero before calculating
+    # 1.0/A.diagonal()
+    diagOfA = A.diagonal()
+    if np.count_nonzero(diagOfA) == len(diagOfA):
+        spdiags([1.0/diagOfA], [0], M, N)
 
     b = case.b
     x0 = 0*b
@@ -277,13 +281,13 @@ def check_precond_dummy(solver, case):
 
 
 def test_precond_dummy():
-    case = params.Poisson1D
-    for solver in params.solvers:
-        if solver in case.skip:
-            continue
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
-            check_precond_dummy(solver, case)
+    for case in params.cases:
+        for solver in params.solvers:
+            if solver in case.skip + case.nonconvergence:
+                continue
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning, ".*called without specifying.*")
+                check_precond_dummy(solver, case)
 
 
 def check_precond_inverse(solver, case):
@@ -330,8 +334,8 @@ def check_precond_inverse(solver, case):
     assert_(matvec_count[0] <= 3, repr(matvec_count))
 
 
-def test_precond_inverse():
-    case = params.Poisson1D
+@pytest.mark.parametrize("case", [params.Poisson1D, params.Poisson2D])
+def test_precond_inverse(case):
     for solver in params.solvers:
         if solver in case.skip:
             continue

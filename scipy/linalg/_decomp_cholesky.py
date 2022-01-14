@@ -130,7 +130,7 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     LinAlgError
         Raised if decomposition fails.
 
-    See also
+    See Also
     --------
     cho_solve : Solve a linear set equations using the Cholesky factorization
                 of a matrix.
@@ -175,7 +175,7 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     x : array
         The solution to the system A x = b
 
-    See also
+    See Also
     --------
     cho_factor : Cholesky factorization of a matrix
 
@@ -252,10 +252,11 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     c : (u + 1, M) ndarray
         Cholesky factorization of a, in the same banded format as ab
 
-    See also
+    See Also
     --------
-    cho_solve_banded : Solve a linear set equations, given the Cholesky factorization
-                of a banded Hermitian.
+    cho_solve_banded :
+        Solve a linear set equations, given the Cholesky factorization
+        of a banded Hermitian.
 
     Examples
     --------
@@ -309,7 +310,7 @@ def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     x : array
         The solution to the system A x = b
 
-    See also
+    See Also
     --------
     cholesky_banded : Cholesky factorization of a banded matrix
 

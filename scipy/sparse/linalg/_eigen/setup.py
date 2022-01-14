@@ -7,6 +7,8 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage(('arpack'))
     config.add_subpackage(('lobpcg'))
 
+    config.add_data_dir('tests')
+
     return config
 
 

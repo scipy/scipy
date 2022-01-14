@@ -30,7 +30,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
         Left preconditioner L
     rpsolve : callable
         Right preconditioner R
-    CU : list of (ndarray, ndarray)
+    cs : list of (ndarray, ndarray)
         Columns of matrices C and U in GCROT
     outer_v : list of ndarrays
         Augmentation vectors in LGMRES

@@ -9,16 +9,15 @@ from scipy._lib._util import _prune_array
 
 from ._base import spmatrix, isspmatrix, SparseEfficiencyWarning
 from ._data import _data_matrix, _minmax_mixin
-from ._dia import dia_matrix
 from . import _sparsetools
 from ._sparsetools import (get_csr_submatrix, csr_sample_offsets, csr_todense,
                            csr_sample_values, csr_row_index, csr_row_slice,
                            csr_column_index1, csr_column_index2)
 from ._index import IndexMixin
 from ._sputils import (upcast, upcast_char, to_native, isdense, isshape,
-                      getdtype, isscalarlike, isintlike, get_index_dtype,
-                      downcast_intp_index, get_sum_dtype, check_shape,
-                      matrix, asmatrix, is_pydata_spmatrix)
+                       getdtype, isscalarlike, isintlike, get_index_dtype,
+                       downcast_intp_index, get_sum_dtype, check_shape,
+                       is_pydata_spmatrix)
 
 
 class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
@@ -50,9 +49,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             else:
                 if len(arg1) == 2:
                     # (data, ij) format
-                    from ._coo import coo_matrix
-                    other = self.__class__(coo_matrix(arg1, shape=shape,
-                                                      dtype=dtype))
+                    other = self.__class__(
+                        self._coo_container(arg1, shape=shape, dtype=dtype)
+                    )
                     self._set_self(other)
                 elif len(arg1) == 3:
                     # (data, indices, indptr) format
@@ -82,8 +81,9 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             except Exception as e:
                 raise ValueError("unrecognized {}_matrix constructor usage"
                                  "".format(self.format)) from e
-            from ._coo import coo_matrix
-            self._set_self(self.__class__(coo_matrix(arg1, dtype=dtype)))
+            self._set_self(self.__class__(
+                self._coo_container(arg1, dtype=dtype)
+            ))
 
         # Read matrix dimensions given, if any
         if shape is not None:
@@ -354,7 +354,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         M, N = self._swap(self.shape)
         y = result if result.flags.c_contiguous else result.T
         csr_todense(M, N, self.indptr, self.indices, self.data, y)
-        return matrix(result, copy=False)
+        return self._container(result, copy=False)
 
     def _add_sparse(self, other):
         return self._binopt(other, '_plus_')
@@ -386,23 +386,31 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 return other._mul_sparse_matrix(self.tocsc())
             # Row vector times matrix. other is a row.
             elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
-                other = dia_matrix((other.toarray().ravel(), [0]),
-                                   shape=(other.shape[1], other.shape[1]))
+                other = self._dia_container(
+                    (other.toarray().ravel(), [0]),
+                    shape=(other.shape[1], other.shape[1])
+                )
                 return self._mul_sparse_matrix(other)
             # self is a row.
             elif self.shape[0] == 1 and self.shape[1] == other.shape[1]:
-                copy = dia_matrix((self.toarray().ravel(), [0]),
-                                  shape=(self.shape[1], self.shape[1]))
+                copy = self._dia_container(
+                    (self.toarray().ravel(), [0]),
+                    shape=(self.shape[1], self.shape[1])
+                )
                 return other._mul_sparse_matrix(copy)
             # Column vector times matrix. other is a column.
             elif other.shape[1] == 1 and self.shape[0] == other.shape[0]:
-                other = dia_matrix((other.toarray().ravel(), [0]),
-                                   shape=(other.shape[0], other.shape[0]))
+                other = self._dia_container(
+                    (other.toarray().ravel(), [0]),
+                    shape=(other.shape[0], other.shape[0])
+                )
                 return other._mul_sparse_matrix(self)
             # self is a column.
             elif self.shape[1] == 1 and self.shape[0] == other.shape[0]:
-                copy = dia_matrix((self.toarray().ravel(), [0]),
-                                  shape=(self.shape[0], self.shape[0]))
+                copy = self._dia_container(
+                    (self.toarray().ravel(), [0]),
+                    shape=(self.shape[0], self.shape[0])
+                )
                 return copy._mul_sparse_matrix(other)
             else:
                 raise ValueError("inconsistent shapes")
@@ -420,7 +428,6 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         elif self.shape == (1, 1):
             return np.multiply(self.toarray()[0, 0], other)
 
-        from ._coo import coo_matrix
         ret = self.tocoo()
         # Matching shapes.
         if self.shape == other.shape:
@@ -435,9 +442,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError("inconsistent shapes")
             row = np.repeat(np.arange(other.shape[0]), len(ret.row))
             col = np.tile(ret.col, other.shape[0])
-            return coo_matrix((data.view(np.ndarray).ravel(), (row, col)),
-                              shape=(other.shape[0], self.shape[1]),
-                              copy=False)
+            return self._coo_container(
+                (data.view(np.ndarray).ravel(), (row, col)),
+                shape=(other.shape[0], self.shape[1]),
+                copy=False
+            )
         # Sparse column vector times...
         elif self.shape[1] == 1:
             if other.shape[0] == 1:  # Dense row vector.
@@ -448,9 +457,11 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
                 raise ValueError("inconsistent shapes")
             row = np.repeat(ret.row, other.shape[1])
             col = np.tile(np.arange(other.shape[1]), len(ret.col))
-            return coo_matrix((data.view(np.ndarray).ravel(), (row, col)),
-                              shape=(self.shape[0], other.shape[1]),
-                              copy=False)
+            return self._coo_container(
+                (data.view(np.ndarray).ravel(), (row, col)),
+                shape=(self.shape[0], other.shape[1]),
+                copy=False
+            )
         # Sparse matrix times dense row vector.
         elif other.shape[0] == 1 and self.shape[1] == other.shape[1]:
             data = np.multiply(ret.data, other[:, ret.col].ravel())
@@ -599,7 +610,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
 
             major_index, value = self._minor_reduce(np.add)
             ret[major_index] = value
-            ret = asmatrix(ret)
+            ret = self._ascontainer(ret)
             if axis % 2 == 1:
                 ret = ret.T
 
@@ -666,7 +677,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         csr_sample_values(M, N, self.indptr, self.indices, self.data,
                           major.size, major.ravel(), minor.ravel(), val)
         if major.ndim == 1:
-            return asmatrix(val)
+            return self._ascontainer(val)
         return self.__class__(val.reshape(major.shape))
 
     def _get_columnXarray(self, row, col):
@@ -1027,9 +1038,10 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
         _sparsetools.expandptr(major_dim, self.indptr, major_indices)
         row, col = self._swap((major_indices, minor_indices))
 
-        from ._coo import coo_matrix
-        return coo_matrix((self.data, (row, col)), self.shape, copy=copy,
-                          dtype=self.dtype)
+        return self._coo_container(
+            (self.data, (row, col)), self.shape, copy=copy,
+            dtype=self.dtype
+        )
 
     tocoo.__doc__ = spmatrix.tocoo.__doc__
 
@@ -1277,7 +1289,7 @@ class _cs_matrix(_data_matrix, _minmax_mixin, IndexMixin):
             out[row, col] = 0
             r = r.tocoo()
             out[r.row, r.col] = r.data
-            out = matrix(out)
+            out = self._container(out)
         else:
             # integers types go with nan <-> 0
             out = r

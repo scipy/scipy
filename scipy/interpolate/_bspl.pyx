@@ -4,7 +4,6 @@ Routines for evaluating and manipulating B-splines.
 """
 
 import numpy as np
-from scipy.sparse import csr_matrix
 cimport numpy as cnp
 
 cimport cython
@@ -419,15 +418,15 @@ def _norm_eq_lsq(const double[::1] x,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _make_design_matrix(const double[::1] x,
-                const double[::1] t,
-                int k):
+                        const double[::1] t,
+                        int k):
     """
     Returns a design matrix in CSR format
     
     Parameters
     ----------
     x : array_like, shape (n,)
-        Points to evaluate the spline at.   
+        Points to evaluate the spline at.
     t : array_like, shape (nt,)
         Sorted 1D array of knots.
     k : int
@@ -435,15 +434,14 @@ def _make_design_matrix(const double[::1] x,
 
     Returns
     -------
-    design_matrix : `csr_matrix` object
-        Sparse matrix in CSR format where in each row all the basis
+    data, (row_idx, col_idx)
+        Constructor parameters for a CSR matrix: in each row all the basis
         elements are evaluated at the certain point (first row - x[0],
         ..., last row - x[-1]).
     """
     cdef:
         cnp.npy_intp i, ind
         cnp.npy_intp n = x.shape[0]
-        cnp.npy_intp nt = t.shape[0]
         double[::1] wrk = np.empty(2*k+2, dtype=float)
         double[::1] data = np.zeros(n * (k + 1), dtype=float)
         cnp.ndarray[long, ndim=1] row_ind = np.zeros(n * (k + 1), dtype=int)
@@ -460,4 +458,4 @@ def _make_design_matrix(const double[::1] x,
                                                             ,ind + 1
                                                             ,dtype=int)
 
-    return csr_matrix((np.asarray(data), (row_ind, col_ind)), (n, nt - k - 1))       
+    return np.asarray(data), (row_ind, col_ind)

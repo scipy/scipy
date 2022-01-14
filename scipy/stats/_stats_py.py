@@ -56,7 +56,7 @@ from ._axis_nan_policy import (_axis_nan_policy_factory,
 
 # Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
-           'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
+           'tmin', 'tmax', 'tstd', 'tsem', 'moment',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
            'normaltest', 'jarque_bera', 'itemfreq',
            'scoreatpercentile', 'percentileofscore',
@@ -88,7 +88,7 @@ def _contains_nan(a, nan_policy='propagate'):
     try:
         # Calling np.sum to avoid creating a huge array into memory
         # e.g. np.isnan(a).any()
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid='ignore', over='ignore'):
             contains_nan = np.isnan(np.sum(a))
     except TypeError:
         # This can happen when attempting to sum things which are not
@@ -216,6 +216,10 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
+# note that `weights` are paired with `x`
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def gmean(a, axis=0, dtype=None, weights=None):
     """Compute the geometric mean along the specified axis.
 
@@ -236,8 +240,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
         that of the default platform integer. In that case, the default
         platform integer is used.
     weights : array_like, optional
-        The weights array can either be 1-D (in which case its length must be
-        the size of `a` along the given `axis`) or of the same shape as `a`.
+        The `weights` array must be broadcastable to the same shape as `a`.
         Default is None, which gives each value a weight of 1.0.
 
     Returns
@@ -256,10 +259,6 @@ def gmean(a, axis=0, dtype=None, weights=None):
     The geometric average is computed over a single dimension of the input
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
-
-    Use masked arrays to ignore any non-finite values in the input or that
-    arise in the calculations such as Not a Number and infinity because masked
-    arrays automatically mask any non-finite values.
 
     References
     ----------
@@ -292,7 +291,10 @@ def gmean(a, axis=0, dtype=None, weights=None):
     return np.exp(np.average(log_a, axis=axis, weights=weights))
 
 
-def hmean(a, axis=0, dtype=None):
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
+def hmean(a, axis=0, dtype=None, *, weights=None):
     """Calculate the harmonic mean along the specified axis.
 
     That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
@@ -310,6 +312,12 @@ def hmean(a, axis=0, dtype=None):
         dtype of `a`, unless `a` has an integer `dtype` with a precision less
         than that of the default platform integer. In that case, the default
         platform integer is used.
+    weights : array_like, optional
+        The weights array can either be 1-D (in which case its length must be
+        the size of `a` along the given `axis`) or of the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
+
+        .. versionadded:: 1.9
 
     Returns
     -------
@@ -328,8 +336,12 @@ def hmean(a, axis=0, dtype=None):
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
 
-    Use masked arrays to ignore any non-finite values in the input or that
-    arise in the calculations such as Not a Number and infinity.
+    References
+    ----------
+    .. [1] "Weighted Harmonic Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Harmonic_mean#Weighted_harmonic_mean
+    .. [2] Ferger, F., "The nature and use of the harmonic mean", Journal of
+           the American Statistical Association, vol. 26, pp. 36-40, 1931
 
     Examples
     --------
@@ -342,18 +354,20 @@ def hmean(a, axis=0, dtype=None):
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
-    if np.all(a >= 0):
-        # Harmonic mean only defined if greater than or equal to to zero.
+    elif dtype:
+        # Must change the default dtype allowing array type
         if isinstance(a, np.ma.MaskedArray):
-            size = a.count(axis)
+            a = np.ma.asarray(a, dtype=dtype)
         else:
-            if axis is None:
-                a = a.ravel()
-                size = a.shape[0]
-            else:
-                size = a.shape[axis]
+            a = np.asarray(a, dtype=dtype)
+
+    if np.all(a >= 0):
+        # Harmonic mean only defined if greater than or equal to zero.
+        if weights is not None:
+            weights = np.asanyarray(weights, dtype=dtype)
+
         with np.errstate(divide='ignore'):
-            return size / np.sum(1.0 / a, axis=axis, dtype=dtype)
+            return 1.0 / np.average(1.0 / a, axis=axis, weights=weights)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater "
                          "than or equal to zero")
@@ -525,7 +539,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
 
     Returns
     -------
-    tmean : float
+    tmean : ndarray
         Trimmed mean.
 
     See Also
@@ -544,10 +558,10 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     a = asarray(a)
     if limits is None:
-        return np.mean(a, None)
-
-    am = _mask_to_limits(a.ravel(), limits, inclusive)
-    return am.mean(axis=axis)
+        return np.mean(a, axis)
+    am = _mask_to_limits(a, limits, inclusive)
+    mean = np.ma.filled(am.mean(axis=axis), fill_value=np.nan)
+    return mean if mean.ndim > 0 else mean.item()
 
 
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
@@ -964,65 +978,6 @@ def _moment(a, moment, axis, *, mean=None):
             if n % 2:
                 s *= a_zero_mean
         return np.mean(s, axis)
-
-
-def variation(a, axis=0, nan_policy='propagate', ddof=0):
-    """Compute the coefficient of variation.
-
-    The coefficient of variation is the standard deviation divided by the
-    mean.  This function is equivalent to::
-
-        np.std(x, axis=axis, ddof=ddof) / np.mean(x)
-
-    The default for ``ddof`` is 0, but many definitions of the coefficient
-    of variation use the square root of the unbiased sample variance
-    for the sample standard deviation, which corresponds to ``ddof=1``.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-    axis : int or None, optional
-        Axis along which to calculate the coefficient of variation. Default
-        is 0. If None, compute over the whole array `a`.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-        * 'propagate': returns nan
-        * 'raise': throws an error
-        * 'omit': performs the calculations ignoring nan values
-
-    ddof : int, optional
-        Delta degrees of freedom.  Default is 0.
-
-    Returns
-    -------
-    variation : ndarray
-        The calculated variation along the requested axis.
-
-    References
-    ----------
-    .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
-       Probability and Statistics Tables and Formulae. Chapman & Hall: New
-       York. 2000.
-
-    Examples
-    --------
-    >>> from scipy.stats import variation
-    >>> variation([1, 2, 3, 4, 5])
-    0.47140452079103173
-
-    """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.variation(a, axis, ddof)
-
-    return a.std(axis, ddof=ddof) / a.mean(axis)
 
 
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
@@ -2218,7 +2173,7 @@ def obrientransform(*args):
 
     Parameters
     ----------
-    args : tuple of array_like
+    *args : tuple of array_like
         Any number of arrays.
 
     Returns
@@ -2673,6 +2628,11 @@ def gstd(a, axis=0, ddof=1):
         An array of the geometric standard deviation. If `axis` is None or `a`
         is a 1d array a float is returned.
 
+    See Also
+    --------
+    gmean : Geometric mean
+    numpy.std : Standard deviation
+
     Notes
     -----
     As the calculation requires the use of logarithms the geometric standard
@@ -2683,6 +2643,11 @@ def gstd(a, axis=0, ddof=1):
     deviation is ``exp(std(log(a)))``.
     The default value for `ddof` is different to the default value (0) used
     by other ddof containing functions, such as ``np.std`` and ``np.nanstd``.
+
+    References
+    ----------
+    .. [1] Kirkwood, T. B., "Geometric means and measures of dispersion",
+           Biometrics, vol. 35, pp. 908-909, 1979
 
     Examples
     --------
@@ -4761,10 +4726,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
           * 'exact': computes the exact p-value, but can only be used if no ties
             are present. As the sample size increases, the 'exact' computation
             time may grow and the result may lose some precision.
-
-    variant: {'b', 'c'}, optional
+    variant : {'b', 'c'}, optional
         Defines which variant of Kendall's tau is returned. Default is 'b'.
-
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -5495,8 +5458,9 @@ def _mgc_stat(distx, disty):
 
     Parameters
     ----------
-    x, y : ndarray
-        `x` and `y` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
+    distx, disty : ndarray
+        `distx` and `disty` have shapes `(n, p)` and `(n, q)` or
+        `(n, n)` and `(n, n)`
         if distance matrices.
 
     Returns
@@ -5591,9 +5555,9 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
 
     Parameters
     ----------
-    sig_connect: ndarray
+    sig_connect : ndarray
         A binary matrix with 1's indicating the significant region.
-    stat_mgc_map: ndarray
+    stat_mgc_map : ndarray
         All local correlations within `[-1, 1]`.
 
     Returns
@@ -6397,10 +6361,10 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
         corresponding to `axis` (the zeroth, by default).
     axis : int, optional
         The axis over which to operate on a and b.
-    permutations: int, optional
+    permutations : int, optional
         Number of permutations used to calculate p-value. If greater than or
         equal to the number of distinct permutations, perform an exact test.
-    equal_var: bool, optional
+    equal_var : bool, optional
         If False, an equal variance (Welch's) t-test is conducted.  Otherwise,
         an ordinary t-test is conducted.
     random_state : {None, int, `numpy.random.Generator`}, optional
@@ -6980,8 +6944,8 @@ def _compute_dplus(cdfvals):
 
     Parameters
     ----------
-    cdfvals: array_like
-      Sorted array of CDF values between 0 and 1
+    cdfvals : array_like
+        Sorted array of CDF values between 0 and 1
 
     Returns
     -------
@@ -6996,8 +6960,8 @@ def _compute_dminus(cdfvals):
 
     Parameters
     ----------
-    cdfvals: array_like
-      Sorted array of CDF values between 0 and 1
+    cdfvals : array_like
+        Sorted array of CDF values between 0 and 1
 
     Returns
     -------
@@ -7042,7 +7006,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     statistic : float
         KS test statistic, either D, D+ or D- (depending on the value
         of 'alternative')
-    pvalue :  float
+    pvalue : float
         One-tailed or two-tailed p-value.
 
     See Also
@@ -7586,7 +7550,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     -------
     statistic : float
         KS test statistic, either D, D+ or D-.
-    pvalue :  float
+    pvalue : float
         One-tailed or two-tailed p-value.
 
     See Also

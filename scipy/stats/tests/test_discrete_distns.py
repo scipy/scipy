@@ -4,7 +4,9 @@ from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
                          nchypergeom_fisher, nchypergeom_wallenius, randint)
 
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
+from numpy.testing import (
+    assert_almost_equal, assert_equal, assert_allclose, suppress_warnings
+)
 from scipy.special import binom as special_binom
 from scipy.optimize import root_scalar
 from scipy.integrate import quad
@@ -415,8 +417,11 @@ class TestNCH():
 
             return root_scalar(fun, bracket=(xl, xu)).root
 
-        assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
-                        mean(N, m1, n, w), rtol=2e-2)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning,
+                       message="invalid value encountered in mean")
+            assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
+                            mean(N, m1, n, w), rtol=2e-2)
 
         @np.vectorize
         def variance(N, m1, n, w):
@@ -426,8 +431,14 @@ class TestNCH():
             b = (n-u)*(u + m2 - n)
             return N*a*b / ((N-1) * (m1*b + m2*a))
 
-        assert_allclose(nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),
-                        variance(N, m1, n, w), rtol=5e-2)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning,
+                       message="invalid value encountered in mean")
+            assert_allclose(
+                nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),
+                variance(N, m1, n, w),
+                rtol=5e-2
+            )
 
         @np.vectorize
         def pmf(x, N, m1, n, w):

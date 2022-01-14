@@ -21,7 +21,8 @@ from ._highs._highs_wrapper import _highs_wrapper
 from ._highs._highs_constants import (
     CONST_I_INF,
     CONST_INF,
-    MESSAGE_LEVEL_MINIMAL,
+    MESSAGE_LEVEL_NONE,
+    HIGHS_OBJECTIVE_SENSE_MINIMIZE,
 
     MODEL_STATUS_NOTSET,
     MODEL_STATUS_LOAD_ERROR,
@@ -30,15 +31,15 @@ from ._highs._highs_constants import (
     MODEL_STATUS_SOLVE_ERROR,
     MODEL_STATUS_POSTSOLVE_ERROR,
     MODEL_STATUS_MODEL_EMPTY,
-    MODEL_STATUS_PRIMAL_INFEASIBLE,
-    MODEL_STATUS_PRIMAL_UNBOUNDED,
     MODEL_STATUS_OPTIMAL,
+    MODEL_STATUS_INFEASIBLE,
+    MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE,
+    MODEL_STATUS_UNBOUNDED,
     MODEL_STATUS_REACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND
     as MODEL_STATUS_RDOVUB,
+    MODEL_STATUS_REACHED_OBJECTIVE_TARGET,
     MODEL_STATUS_REACHED_TIME_LIMIT,
     MODEL_STATUS_REACHED_ITERATION_LIMIT,
-    MODEL_STATUS_PRIMAL_DUAL_INFEASIBLE,
-    MODEL_STATUS_DUAL_INFEASIBLE,
 
     HIGHS_SIMPLEX_STRATEGY_CHOOSE,
     HIGHS_SIMPLEX_STRATEGY_DUAL,
@@ -49,6 +50,8 @@ from ._highs._highs_constants import (
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DANTZIG,
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_DEVEX,
     HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
+
+    HIGHS_VAR_TYPE_CONTINUOUS,
 )
 from scipy.sparse import csc_matrix, vstack, issparse
 
@@ -237,6 +240,20 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                     function with respect to the lower and upper
                     `bounds`.
 
+            mip_node_count : int
+                The number of subproblems or "nodes" solved by the MILP
+                solver. Only present when `integrality` is not `None`.
+
+            mip_dual_bound : float
+                The MILP solver's final estimate of the lower bound on the
+                optimal solution. Only present when `integrality` is not
+                `None`.
+
+            mip_gap : float
+                The difference between the final objective function value
+                and the final dual bound. Only present when `integrality`
+                is not `None`.
+
     Notes
     -----
     The result fields `ineqlin`, `eqlin`, `lower`, and `upper` all contain
@@ -270,44 +287,59 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     statuses = {
         MODEL_STATUS_NOTSET: (
             4,
-            'HiGHS Status Code 0: HighsModelStatusNOTSET',
+            f'HiGHS Status Code {MODEL_STATUS_NOTSET}: HighsModelStatusNOTSET',
         ),
         MODEL_STATUS_LOAD_ERROR: (
             4,
-            'HiGHS Status Code 1: HighsModelStatusLOAD_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_LOAD_ERROR}: '
+            'HighsModelStatusLOAD_ERROR',
         ),
         MODEL_STATUS_MODEL_ERROR: (
             2,
-            'HiGHS Status Code 2: HighsModelStatusMODEL_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_MODEL_ERROR}: '
+            'HighsModelStatusMODEL_ERROR',
         ),
         MODEL_STATUS_PRESOLVE_ERROR: (
             4,
-            'HiGHS Status Code 4: HighsModelStatusPRESOLVE_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_PRESOLVE_ERROR}: '
+            'HighsModelStatusPRESOLVE_ERROR',
         ),
         MODEL_STATUS_SOLVE_ERROR: (
             4,
-            'HiGHS Status Code 5: HighsModelStatusSOLVE_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_SOLVE_ERROR}: '
+            'HighsModelStatusSOLVE_ERROR',
         ),
         MODEL_STATUS_POSTSOLVE_ERROR: (
             4,
-            'HiGHS Status Code 6: HighsModelStatusPOSTSOLVE_ERROR',
+            f'HiGHS Status Code {MODEL_STATUS_POSTSOLVE_ERROR}: '
+            'HighsModelStatusPOSTSOLVE_ERROR',
         ),
         MODEL_STATUS_MODEL_EMPTY: (
             4,
-            'HiGHS Status Code 3: HighsModelStatusMODEL_EMPTY',
+            f'HiGHS Status Code {MODEL_STATUS_MODEL_EMPTY}: '
+            'HighsModelStatusMODEL_EMPTY',
         ),
         MODEL_STATUS_RDOVUB: (
             4,
-            'HiGHS Status Code 10: '
+            f'HiGHS Status Code {MODEL_STATUS_RDOVUB}: '
             'HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND',
         ),
-        MODEL_STATUS_PRIMAL_INFEASIBLE: (
+        MODEL_STATUS_REACHED_OBJECTIVE_TARGET: (
+            4,
+            f'HiGHS Status Code {MODEL_STATUS_REACHED_OBJECTIVE_TARGET}: '
+            'HighsModelStatusREACHED_OBJECTIVE_TARGET',
+        ),
+        MODEL_STATUS_INFEASIBLE: (
             2,
             "The problem is infeasible.",
         ),
-        MODEL_STATUS_PRIMAL_UNBOUNDED: (
+        MODEL_STATUS_UNBOUNDED: (
             3,
             "The problem is unbounded.",
+        ),
+        MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE: (
+            4,
+            "The problem is unbounded or infeasible.",
         ),
         MODEL_STATUS_OPTIMAL: (
             0,
@@ -321,17 +353,9 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
             1,
             "Iteration limit reached.",
         ),
-        MODEL_STATUS_PRIMAL_DUAL_INFEASIBLE: (
-            2,
-            "The problem is primal/dual infeasible.",
-        ),
-        MODEL_STATUS_DUAL_INFEASIBLE: (
-            2,
-            "The problem is dual infeasible.",
-        ),
     }
 
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     lb, ub = bounds.T.copy()  # separate bounds, copy->C-cntgs
     # highs_wrapper solves LHS <= A*x <= RHS, not equality constraints
@@ -350,12 +374,14 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
 
     options = {
         'presolve': presolve,
-        'sense': 1,  # minimization
+        'sense': HIGHS_OBJECTIVE_SENSE_MINIMIZE,
         'solver': solver,
         'time_limit': time_limit,
-        'message_level': MESSAGE_LEVEL_MINIMAL * disp,
+        'highs_debug_level': MESSAGE_LEVEL_NONE,
         'dual_feasibility_tolerance': dual_feasibility_tolerance,
         'ipm_optimality_tolerance': ipm_optimality_tolerance,
+        'log_to_console': disp,
+        'output_flag': disp,
         'primal_feasibility_tolerance': primal_feasibility_tolerance,
         'simplex_dual_edge_weight_strategy':
             simplex_dual_edge_weight_strategy_enum,
@@ -371,8 +397,13 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     lb = _replace_inf(lb)
     ub = _replace_inf(ub)
 
+    if integrality is None or np.sum(integrality) == 0:
+        integrality = np.empty(0)
+    else:
+        integrality = np.array(integrality)
+
     res = _highs_wrapper(c, A.indptr, A.indices, A.data, lhs, rhs,
-                         lb, ub, options)
+                         lb, ub, integrality.astype(np.uint8), options)
 
     # HiGHS represents constraints as lhs/rhs, so
     # Ax + s = b => Ax = b - s
@@ -389,8 +420,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
         lamda = res['lambda']
         marg_ineqlin = np.array(lamda[:len(b_ub)])
         marg_eqlin = np.array(lamda[len(b_ub):])
-        marg_upper = res['marg_bnds'][1, :]
-        marg_lower = res['marg_bnds'][0, :]
+        marg_upper = np.array(res['marg_bnds'][1, :])
+        marg_lower = np.array(res['marg_bnds'][0, :])
     else:
         marg_ineqlin, marg_eqlin = None, None
         marg_upper, marg_lower = None, None
@@ -398,18 +429,8 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     # this needs to be updated if we start choosing the solver intelligently
     solvers = {"ipm": "highs-ipm", "simplex": "highs-ds", None: "highs-ds"}
 
-    # HiGHS will report OPTIMAL if the scaled model is solved to optimality
-    # even if the unscaled original model is infeasible;
-    # Catch that case here and provide a more useful message
-    if ((res['status'] == MODEL_STATUS_OPTIMAL) and
-            (res['unscaled_status'] != res['status'])):
-        _unscaled_status, unscaled_message = statuses[res["unscaled_status"]]
-        status, message = 4, ('An optimal solution to the scaled model was '
-                              f'found but was {unscaled_message} in the '
-                              'unscaled model. For more information run with '
-                              'the option `disp: True`.')
-    else:
-        status, message = statuses[res['status']]
+    # Convert to scipy-style status and message
+    status, message = statuses[res['status']]
 
     x = np.array(res['x']) if 'x' in res else None
     sol = {'x': x,
@@ -438,5 +459,12 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
            'nit': res.get('simplex_nit', 0) or res.get('ipm_nit', 0),
            'crossover_nit': res.get('crossover_nit'),
            }
+
+    if np.any(x) and integrality is not None:
+        res.update({
+            'mip_node_count': res.get('mip_node_count', 0),
+            'mip_dual_bound': res.get('mip_dual_bound', 0.0),
+            'mip_gap': res.get('mip_gap', 0.0),
+        })
 
     return sol

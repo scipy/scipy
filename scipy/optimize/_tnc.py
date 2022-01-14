@@ -345,7 +345,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     finite_diff_rel_step : None or array_like, optional
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
-        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
@@ -413,11 +413,15 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         else:
             maxfun = max(100, 10*len(x0))
 
-    rc, nf, nit, x = moduleTNC.minimize(func_and_grad, x0, low, up, scale,
-                                        offset, messages, maxCGit, maxfun,
-                                        eta, stepmx, accuracy, fmin, ftol,
-                                        xtol, pgtol, rescale, callback)
-
+    rc, nf, nit, x, funv, jacv = moduleTNC.tnc_minimize(
+        func_and_grad, x0, low, up, scale,
+        offset, messages, maxCGit, maxfun,
+        eta, stepmx, accuracy, fmin, ftol,
+        xtol, pgtol, rescale, callback
+    )
+    # the TNC documentation states: "On output, x, f and g may be very
+    # slightly out of sync because of scaling". Therefore re-evaluate
+    # func_and_grad so they are synced.
     funv, jacv = func_and_grad(x)
 
     return OptimizeResult(x=x, fun=funv, jac=jacv, nfev=sf.nfev,

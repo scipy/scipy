@@ -28,16 +28,16 @@ __docformat__ = "restructuredtext en"
 import warnings
 import sys
 from numpy import (atleast_1d, eye, argmin, zeros, shape, squeeze,
-                   asarray, sqrt, Inf, asfarray, isinf)
+                   asarray, sqrt, Inf, asfarray)
 import numpy as np
 from scipy.sparse.linalg import LinearOperator
 from ._linesearch import (line_search_wolfe1, line_search_wolfe2,
-                         line_search_wolfe2 as line_search,
-                         LineSearchWarning)
+                          line_search_wolfe2 as line_search,
+                          LineSearchWarning)
 from ._numdiff import approx_derivative
 from ._hessian_update_strategy import HessianUpdateStrategy
 from scipy._lib._util import getfullargspec_no_self as _getfullargspec
-from scipy._lib._util import MapWrapper, check_random_state, rng_integers
+from scipy._lib._util import MapWrapper, check_random_state
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
 
 
@@ -887,12 +887,12 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
         warnflag = 1
         msg = _status_message['maxfev']
         if disp:
-            print('Warning: ' + msg)
+            warnings.warn(msg, RuntimeWarning, 3)
     elif iterations >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
         if disp:
-            print('Warning: ' + msg)
+            warnings.warn(msg, RuntimeWarning, 3)
     else:
         msg = _status_message['success']
         if disp:
@@ -1278,7 +1278,7 @@ def _minimize_bfgs(fun, x0, args=(), jac=None, callback=None,
     finite_diff_rel_step : None or array_like, optional
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
-        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
@@ -1593,7 +1593,7 @@ def _minimize_cg(fun, x0, args=(), jac=None, callback=None,
     finite_diff_rel_step : None or array_like, optional
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of the jacobian. The absolute step
-        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
@@ -3254,17 +3254,17 @@ def _minimize_powell(func, x0, args=(), callback=None, bounds=None,
         warnflag = 1
         msg = _status_message['maxfev']
         if disp:
-            print("Warning: " + msg)
+            warnings.warn(msg, RuntimeWarning, 3)
     elif iter >= maxiter:
         warnflag = 2
         msg = _status_message['maxiter']
         if disp:
-            print("Warning: " + msg)
+            warnings.warn(msg, RuntimeWarning, 3)
     elif np.isnan(fval) or np.isnan(x).any():
         warnflag = 3
         msg = _status_message['nan']
         if disp:
-            print("Warning: " + msg)
+            warnings.warn(msg, RuntimeWarning, 3)
     else:
         msg = _status_message['success']
         if disp:
@@ -3544,9 +3544,10 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
             success = res[-1] == 0
         if not success:
             if disp:
-                print("Warning: Either final optimization did not succeed "
-                      "or `finish` does not return `statuscode` as its last "
-                      "argument.")
+                warnings.warn(
+                    "Either final optimization did not succeed "
+                    "or `finish` does not return `statuscode` as its last "
+                    "argument.", RuntimeWarning, 2)
 
     if full_output:
         return xmin, Jmin, grid, Jout

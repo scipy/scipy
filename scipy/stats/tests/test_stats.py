@@ -10,13 +10,11 @@ import os
 import warnings
 from collections import namedtuple
 from itertools import product
-from copy import deepcopy
 
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose, assert_warns, suppress_warnings,
-                           assert_string_equal,
                            assert_array_less)
 import pytest
 from pytest import raises as assert_raises
@@ -75,6 +73,45 @@ class TestTrimmedStats:
         y1 = stats.tmean(X, limits=(2, 8), inclusive=(False, False))
         y2 = stats.tmean(X, limits=None)
         assert_approx_equal(y1, y2, significant=self.dprec)
+
+        x_2d = arange(63, dtype=float64).reshape(9, 7)
+        y = stats.tmean(x_2d, axis=None)
+        assert_approx_equal(y, x_2d.mean(), significant=self.dprec)
+
+        y = stats.tmean(x_2d, axis=0)
+        assert_array_almost_equal(y, x_2d.mean(axis=0), decimal=8)
+
+        y = stats.tmean(x_2d, axis=1)
+        assert_array_almost_equal(y, x_2d.mean(axis=1), decimal=8)
+
+        y = stats.tmean(x_2d, limits=(2, 61), axis=None)
+        assert_approx_equal(y, 31.5, significant=self.dprec)
+
+        y = stats.tmean(x_2d, limits=(2, 21), axis=0)
+        y_true = [14, 11.5, 9, 10, 11, 12, 13]
+        assert_array_almost_equal(y, y_true, decimal=8)
+
+        y = stats.tmean(x_2d, limits=(2, 21), inclusive=(True, False), axis=0)
+        y_true = [10.5, 11.5, 9, 10, 11, 12, 13]
+        assert_array_almost_equal(y, y_true, decimal=8)
+
+        x_2d_with_nan = np.array(x_2d)
+        x_2d_with_nan[-1, -3:] = np.nan
+        y = stats.tmean(x_2d_with_nan, limits=(1, 13), axis=0)
+        y_true = [7, 4.5, 5.5, 6.5, np.nan, np.nan, np.nan]
+        assert_array_almost_equal(y, y_true, decimal=8)
+
+        with suppress_warnings() as sup:
+            sup.record(RuntimeWarning, "Mean of empty slice")
+
+            y = stats.tmean(x_2d, limits=(2, 21), axis=1)
+            y_true = [4, 10, 17, 21, np.nan, np.nan, np.nan, np.nan, np.nan]
+            assert_array_almost_equal(y, y_true, decimal=8)
+
+            y = stats.tmean(x_2d, limits=(2, 21),
+                            inclusive=(False, True), axis=1)
+            y_true = [4.5, 10, 17, 21, np.nan, np.nan, np.nan, np.nan, np.nan]
+            assert_array_almost_equal(y, y_true, decimal=8)
 
     def test_tvar(self):
         y = stats.tvar(X, limits=(2, 8), inclusive=(True, True))
@@ -2942,39 +2979,6 @@ class TestMoments:
         mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
 
-    def test_variation(self):
-        # variation = samplestd / mean
-        y = stats.variation(self.scalar_testcase)
-        assert_approx_equal(y, 0.0)
-        y = stats.variation(self.testcase)
-        assert_approx_equal(y, 0.44721359549996, 10)
-
-        x = np.arange(10.)
-        x[9] = np.nan
-        assert_equal(stats.variation(x), np.nan)
-        assert_almost_equal(stats.variation(x, nan_policy='omit'),
-                            0.6454972243679028)
-        assert_raises(ValueError, stats.variation, x, nan_policy='raise')
-        assert_raises(ValueError, stats.variation, x, nan_policy='foobar')
-
-    def test_variation_propagate_nan(self):
-        # Check that the shape of the result is the same for inputs
-        # with and without nans, cf gh-5817
-        a = np.arange(8).reshape(2, -1).astype(float)
-        a[1, 0] = np.nan
-        vv = stats.variation(a, axis=1, nan_policy="propagate")
-        np.testing.assert_allclose(vv, [0.7453559924999299, np.nan], atol=1e-15)
-
-    def test_variation_ddof(self):
-        # test variation with delta degrees of freedom
-        # regression test for gh-13341
-        a = array([1, 2, 3, 4, 5])
-        nan_a = array([1, 2, 3, np.nan, 4, 5, np.nan])
-        y = stats.variation(a, ddof=1)
-        nan_y = stats.variation(nan_a, nan_policy="omit", ddof=1)
-        assert_approx_equal(y, 0.5270462766947299)
-        np.testing.assert_equal(y, nan_y)
-
     def test_skewness(self):
         # Scalar test case
         y = stats.skew(self.scalar_testcase)
@@ -3902,6 +3906,7 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='asymp')
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='exact')
 
+    @pytest.mark.xslow
     def test_gh11184_bigger(self):
         # 10000, 10001, exact two-sided
         np.random.seed(123456)
@@ -3912,7 +3917,7 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'greater', 0.10597913208679133, 2.7947433906389253e-41, mode='asymp')
         self._testOne(x, y, 'less', 0.09658002199780022, 2.7947433906389253e-41, mode='asymp')
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_gh12999(self):
         np.random.seed(123456)
         for x in range(1000, 12000, 1000):
@@ -5489,14 +5494,17 @@ def test_obrientransform():
     assert_array_almost_equal(result[0], expected, decimal=4)
 
 
-def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7, weights=None):
+def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7,
+                      weights=None):
     # Note this doesn't test when axis is not specified
     x = stats.gmean(array_like, axis=axis, dtype=dtype, weights=weights)
     assert_allclose(x, desired, rtol=rtol)
     assert_equal(x.dtype, dtype)
 
-def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
-    x = stats.hmean(array_like, axis=axis, dtype=dtype)
+
+def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7,
+                      weights=None):
+    x = stats.hmean(array_like, axis=axis, dtype=dtype, weights=weights)
     assert_allclose(x, desired, rtol=rtol)
     assert_equal(x.dtype, dtype)
 
@@ -5562,17 +5570,37 @@ class TestHarMean:
         desired = np.array([0.0, 63.03939962, 103.80078637])
         assert_allclose(stats.hmean(a, axis=1), desired)
 
-    def test_2d_matrix_axis0(self):
-        #  Test a 2d list with axis=0
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
-        check_equal_hmean(matrix(a), desired, axis=0)
+    def test_weights_1d_list(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        weights = [10, 5, 3]
+        a = [2, 10, 6]
+        desired = 3
+        check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
 
-    def test_2d_matrix_axis1(self):
-        #  Test a 2d list with axis=1
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = matrix([[19.2, 63.03939962, 103.80078637]]).T
-        check_equal_hmean(matrix(a), desired, axis=1)
+    def test_weights_2d_array_axis0(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        a = np.array([[2, 5], [10, 5], [6, 5]])
+        weights = np.array([[10, 1], [5, 1], [3, 1]])
+        desired = np.array([3, 5])
+        check_equal_hmean(a, desired, axis=0, weights=weights, rtol=1e-5)
+
+    def test_weights_2d_array_axis1(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        a = np.array([[2, 10, 6], [7, 7, 7]])
+        weights = np.array([[10, 5, 3], [1, 1, 1]])
+        desired = np.array([3, 7])
+        check_equal_hmean(a, desired, axis=1, weights=weights, rtol=1e-5)
+
+    def test_weights_masked_1d_array(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        a = np.array([2, 10, 6, 42])
+        weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
+        desired = 3
+        check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
 
 
 class TestGeoMean:
@@ -5629,31 +5657,6 @@ class TestGeoMean:
         v = power(1 * 2 * 3 * 4, 1. / 4.)
         desired = array([v, v, v])
         check_equal_gmean(a, desired, axis=1, rtol=1e-14)
-
-    def test_2d_matrix_axis0(self):
-        #  Test a 2d list with axis=0
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
-        check_equal_gmean(matrix(a), desired, axis=0)
-
-        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        desired = matrix([1, 2, 3, 4])
-        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
-
-        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        desired = matrix(stats.gmean(a, axis=0))
-        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
-
-    def test_2d_matrix_axis1(self):
-        #  Test a 2d list with axis=1
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = matrix([[22.13363839, 64.02171746, 104.40086817]]).T
-        check_equal_gmean(matrix(a), desired, axis=1)
-
-        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        v = power(1 * 2 * 3 * 4, 1. / 4.)
-        desired = matrix([[v], [v], [v]])
-        check_equal_gmean(matrix(a), desired, axis=1, rtol=1e-14)
 
     def test_large_values(self):
         a = array([1e100, 1e200, 1e300])
@@ -7161,7 +7164,7 @@ class TestMGCStat:
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_twosamp(self):
         np.random.seed(12345678)
 

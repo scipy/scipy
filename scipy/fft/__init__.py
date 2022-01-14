@@ -32,6 +32,7 @@ Fast Fourier Transforms (FFTs)
 
 Discrete Sin and Cosine Transforms (DST and DCT)
 ================================================
+
 .. autosummary::
    :toctree: generated/
 
@@ -94,7 +95,7 @@ from numpy.fft import fftfreq, rfftfreq, fftshift, ifftshift
 from ._pocketfft.helper import set_workers, get_workers
 
 __all__ = [
-    'fft', 'ifft', 'fft2','ifft2', 'fftn', 'ifftn',
+    'fft', 'ifft', 'fft2', 'ifft2', 'fftn', 'ifftn',
     'rfft', 'irfft', 'rfft2', 'irfft2', 'rfftn', 'irfftn',
     'hfft', 'ihfft', 'hfft2', 'ihfft2', 'hfftn', 'ihfftn',
     'fftfreq', 'rfftfreq', 'fftshift', 'ifftshift',

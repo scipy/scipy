@@ -17,6 +17,7 @@
 *.tmp
 *.vim
 tags
+.venv/
 .theia/
 .vscode/
 
@@ -77,6 +78,8 @@ setup.cfg
 .libs
 .eggs
 pip-wheel-metadata
+# install directory for Meson
+installdir/
 
 # Paver generated files #
 #########################
@@ -194,6 +197,7 @@ scipy/linalg/cython_lapack.pxd
 scipy/linalg/cython_lapack.pyx
 scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/linalg/_matfuncs_sqrtm_triu.c
+scipy/linalg/_matfuncs_sqrtm_triu.cpp
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c
@@ -206,6 +210,8 @@ scipy/optimize/__nnls/__nnlsmodule.c
 scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
 scipy/optimize/_trlib/_trlib.c
+scipy/optimize/tnc/moduleTNC.c
+scipy/optimize/tnc/_moduleTNC.c
 scipy/signal/_peak_finding_utils.c
 scipy/signal/_spectral.c
 scipy/signal/_spectral.cpp
@@ -272,12 +278,16 @@ scipy/special/cython_special.pxd
 scipy/special/cython_special.pyx
 scipy/special/_specfunmodule.c
 scipy/special/tests/data/*.npz
+scipy/special/ellint_carlson_cpp_lite/Makefile
+scipy/special/ellint_carlson_cpp_lite/cellint.*
+scipy/special/ellint_carlson_cpp_lite/tests
 scipy/stats/_rank.c
 scipy/stats/_mvn-f2pywrappers.f
 scipy/stats/_mvnmodule.c
 scipy/stats/_statlibmodule.c
 scipy/stats/vonmises_cython.c
 scipy/stats/_stats.c
+scipy/stats/_levy_stable/levyst.c
 scipy/stats/_biasedurn.cxx
 scipy/stats/_biasedurn.pyx
 scipy/stats/biasedurn.cxx

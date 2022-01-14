@@ -80,6 +80,19 @@ def multigammaln(a, d):
     R. J. Muirhead, Aspects of multivariate statistical theory (Wiley Series in
     probability and mathematical statistics).
 
+    Examples
+    --------
+    >>> from scipy.special import multigammaln, gammaln
+    >>> a = 23.5
+    >>> d = 10
+    >>> multigammaln(a, d)
+    454.1488605074416
+
+    Verify that the result agrees with the logarithm of the equation
+    shown above:
+
+    >>> d*(d-1)/4*np.log(np.pi) + gammaln(a - 0.5*np.arange(0, d)).sum()
+    454.1488605074416
     """
     a = np.asarray(a)
     if not np.isscalar(d) or (np.floor(d) != d):

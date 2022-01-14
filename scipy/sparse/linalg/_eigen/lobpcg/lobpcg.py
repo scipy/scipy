@@ -243,8 +243,16 @@ def lobpcg(
     >>> import numpy as np
     >>> from scipy.sparse import spdiags, issparse
     >>> from scipy.sparse.linalg import lobpcg, LinearOperator
+
+    The square matrix size:
+
     >>> n = 100
     >>> vals = np.arange(1, n + 1)
+
+    The first mandatory input parameter, in this test
+    a sparse 2D array representing the square matrix
+    of the eigenvalue problem to solve:
+
     >>> A = spdiags(vals, 0, n, n)
     >>> A.toarray()
     array([[  1.,   0.,   0., ...,   0.,   0.,   0.],
@@ -255,15 +263,20 @@ def lobpcg(
            [  0.,   0.,   0., ...,   0.,  99.,   0.],
            [  0.,   0.,   0., ...,   0.,   0., 100.]])
 
-    Constraints:
-
-    >>> Y = np.eye(n, 3)
-
     Initial guess for eigenvectors, should have linearly independent
-    columns. Column dimension = number of requested eigenvalues.
+    columns. The second mandatory input parameter, a 2D array with the
+    row dimension determining the number of requested eigenvalues.
+    If no initial approximations available, randomly oriented vectors
+    commonly work best, e.g., with components normally disrtibuted
+    around zero or uniformly distributed on the interval [-1 1].
 
     >>> rng = np.random.default_rng()
-    >>> X = rng.random((n, 3))
+    >>> X = rng.normal(size=(n, 3))
+
+    Constraints - an optional input parameter is a 2D array comprising
+    of column vectors that the eigenvectors must be orthogonal to:
+
+    >>> Y = np.eye(n, 3)
 
     Preconditioner in the inverse of A in this example:
 

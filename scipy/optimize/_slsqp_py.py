@@ -15,14 +15,13 @@ Functions
 
 __all__ = ['approx_jacobian', 'fmin_slsqp']
 
-import warnings
 import numpy as np
 from scipy.optimize._slsqp import slsqp
 from numpy import (zeros, array, linalg, append, asfarray, concatenate, finfo,
                    sqrt, vstack, exp, inf, isfinite, atleast_1d)
 from ._optimize import (OptimizeResult, _check_unknown_options,
-                       _prepare_scalar_function, _clip_x_for_func,
-                       _check_clip_x)
+                        _prepare_scalar_function, _clip_x_for_func,
+                        _check_clip_x)
 from ._numdiff import approx_derivative
 from ._constraints import old_bound_to_new, _arr_to_scalar
 
@@ -235,7 +234,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     finite_diff_rel_step : None or array_like, optional
         If `jac in ['2-point', '3-point', 'cs']` the relative step size to
         use for numerical approximation of `jac`. The absolute step
-        size is computed as ``h = rel_step * sign(x0) * max(1, abs(x0))``,
+        size is computed as ``h = rel_step * sign(x) * max(1, abs(x))``,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.

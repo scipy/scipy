@@ -65,7 +65,7 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
     LinAlgError
         If SVD computation does not converge.
 
-    See also
+    See Also
     --------
     svdvals : Compute singular values of a matrix.
     diagsvd : Construct the Sigma matrix, given the vector s.
@@ -300,7 +300,7 @@ def orth(A, rcond=None):
         Orthonormal basis for the range of A.
         K = effective rank of A, as determined by rcond
 
-    See also
+    See Also
     --------
     svd : Singular value decomposition of a matrix
     null_space : Matrix null space
@@ -347,7 +347,7 @@ def null_space(A, rcond=None):
         Orthonormal basis for the null space of A.
         K = dimension of effective null space, as determined by rcond
 
-    See also
+    See Also
     --------
     svd : Singular value decomposition of a matrix
     orth : Matrix range

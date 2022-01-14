@@ -5,37 +5,35 @@ from libcpp cimport bool
 from libcpp.string cimport string
 from libcpp.vector cimport vector
 
-from .HConst cimport HighsBasisStatus
+from .HConst cimport HighsBasisStatus, ObjSense, HighsVarType
+from .HighsSparseMatrix cimport HighsSparseMatrix
+
 
 cdef extern from "HighsLp.h" nogil:
     # From HiGHS/src/lp_data/HighsLp.h
     cdef cppclass HighsLp:
-        int numCol_
-        int numRow_
+        int num_col_
+        int num_row_
 
-        vector[int] Astart_
-        vector[int] Aindex_
-        vector[double] Avalue_
-        vector[double] colCost_
-        vector[double] colLower_
-        vector[double] colUpper_
-        vector[double] rowLower_
-        vector[double] rowUpper_
+        vector[double] col_cost_
+        vector[double] col_lower_
+        vector[double] col_upper_
+        vector[double] row_lower_
+        vector[double] row_upper_
+
+        HighsSparseMatrix a_matrix_
 
         ObjSense sense_
         double offset_
 
         string model_name_
-        string lp_name_
 
         vector[string] row_names_
         vector[string] col_names_
 
-        vector[int] integrality_
+        vector[HighsVarType] integrality_
 
-    ctypedef enum ObjSense:
-        ObjSenseMINIMIZE "ObjSense::MINIMIZE" = 1
-        ObjSenseMAXIMIZE "ObjSense::MAXIMIZE" = -1
+        bool isMip() const
 
     cdef cppclass HighsSolution:
         vector[double] col_value
