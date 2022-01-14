@@ -580,7 +580,7 @@ cdef class Rotation:
         return self._quat.shape[0]
 
     @classmethod
-    def from_quat(cls, quat, order='xyzw'):
+    def from_quat(cls, quat, *, order='xyzw'):
         """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [1]_.
