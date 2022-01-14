@@ -717,6 +717,32 @@ class TestGennorm:
         pdf2 = stats.norm.pdf(points, scale=2**-.5)
         assert_almost_equal(pdf1, pdf2)
 
+    def test_rvs(self):
+        np.random.seed(0)
+        # 0 < beta < 1
+        dist = stats.gennorm(0.5)
+        rvs = dist.rvs(size=1000)
+        assert stats.kstest(rvs, dist.cdf).pvalue > 0.1
+        # beta = 1
+        dist = stats.gennorm(1)
+        rvs = dist.rvs(size=1000)
+        rvs_laplace = stats.laplace.rvs(size=1000)
+        assert stats.ks_2samp(rvs, rvs_laplace).pvalue > 0.1
+        # beta = 2
+        dist = stats.gennorm(2)
+        rvs = dist.rvs(size=1000)
+        rvs_norm = stats.norm.rvs(size=1000)
+        assert stats.ks_2samp(rvs * (2)**(1/2), rvs_norm).pvalue > 0.1
+
+    def test_rvs_broadcasting(self):
+        np.random.seed(0)
+        dist = stats.gennorm([[0.5, 1.], [2., 5.]])
+        rvs = dist.rvs(size=[1000, 2, 2])
+        assert stats.kstest(rvs[:, 0, 0], stats.gennorm(0.5).cdf)[1] > 0.1
+        assert stats.kstest(rvs[:, 0, 1], stats.gennorm(1.0).cdf)[1] > 0.1
+        assert stats.kstest(rvs[:, 1, 0], stats.gennorm(2.0).cdf)[1] > 0.1
+        assert stats.kstest(rvs[:, 1, 1], stats.gennorm(5.0).cdf)[1] > 0.1
+
 
 class TestHalfgennorm:
     def test_expon(self):
