@@ -595,6 +595,9 @@ cdef class Rotation:
             or 'wxyz' (scalar first).
             Default is 'xyzw'.
 
+            .. versionadded:: 1.9.0
+
+
         Returns
         -------
         rotation : `Rotation` instance
