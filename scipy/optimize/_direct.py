@@ -242,7 +242,7 @@ def direct(
     if not isinstance(disp, bool):
         raise ValueError("disp must be of True or False.")
 
-    def _func_wrap(x, *args):
+    def _func_wrap(x, args):
         x = np.asarray(x)
         f = func(x, *args)
         return f
