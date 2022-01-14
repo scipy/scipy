@@ -1179,6 +1179,9 @@ cdef class Rotation:
             'xyzw' (scalar last) or 'wxyz' (scalar first).
             Default is 'xyzw'.
 
+            .. versionadded:: 1.9.0
+
+
         Returns
         -------
         quat : `numpy.ndarray`, shape (4,) or (N, 4)
