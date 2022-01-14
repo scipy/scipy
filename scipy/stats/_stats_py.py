@@ -33,6 +33,7 @@ from collections import namedtuple
 
 import numpy as np
 from numpy import array, asarray, ma
+from numpy.lib import NumpyVersion
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
@@ -55,13 +56,13 @@ from ._axis_nan_policy import (_axis_nan_policy_factory,
 
 # Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
-           'tmin', 'tmax', 'tstd', 'tsem', 'moment', 'variation',
+           'tmin', 'tmax', 'tstd', 'tsem', 'moment',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
            'normaltest', 'jarque_bera', 'itemfreq',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
-           'sem', 'zmap', 'zscore', 'iqr', 'gstd', 'median_absolute_deviation',
-           'median_abs_deviation',
+           'sem', 'zmap', 'zscore', 'gzscore', 'iqr', 'gstd',
+           'median_absolute_deviation', 'median_abs_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
            'f_oneway', 'F_onewayConstantInputWarning',
            'F_onewayBadInputSizesWarning',
@@ -87,7 +88,7 @@ def _contains_nan(a, nan_policy='propagate'):
     try:
         # Calling np.sum to avoid creating a huge array into memory
         # e.g. np.isnan(a).any()
-        with np.errstate(invalid='ignore'):
+        with np.errstate(invalid='ignore', over='ignore'):
             contains_nan = np.isnan(np.sum(a))
     except TypeError:
         # This can happen when attempting to sum things which are not
@@ -215,6 +216,10 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
+# note that `weights` are paired with `x`
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def gmean(a, axis=0, dtype=None, weights=None):
     """Compute the geometric mean along the specified axis.
 
@@ -235,8 +240,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
         that of the default platform integer. In that case, the default
         platform integer is used.
     weights : array_like, optional
-        The weights array can either be 1-D (in which case its length must be
-        the size of `a` along the given `axis`) or of the same shape as `a`.
+        The `weights` array must be broadcastable to the same shape as `a`.
         Default is None, which gives each value a weight of 1.0.
 
     Returns
@@ -255,10 +259,6 @@ def gmean(a, axis=0, dtype=None, weights=None):
     The geometric average is computed over a single dimension of the input
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
-
-    Use masked arrays to ignore any non-finite values in the input or that
-    arise in the calculations such as Not a Number and infinity because masked
-    arrays automatically mask any non-finite values.
 
     References
     ----------
@@ -291,7 +291,10 @@ def gmean(a, axis=0, dtype=None, weights=None):
     return np.exp(np.average(log_a, axis=axis, weights=weights))
 
 
-def hmean(a, axis=0, dtype=None):
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
+def hmean(a, axis=0, dtype=None, *, weights=None):
     """Calculate the harmonic mean along the specified axis.
 
     That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
@@ -309,6 +312,12 @@ def hmean(a, axis=0, dtype=None):
         dtype of `a`, unless `a` has an integer `dtype` with a precision less
         than that of the default platform integer. In that case, the default
         platform integer is used.
+    weights : array_like, optional
+        The weights array can either be 1-D (in which case its length must be
+        the size of `a` along the given `axis`) or of the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
+
+        .. versionadded:: 1.9
 
     Returns
     -------
@@ -327,8 +336,12 @@ def hmean(a, axis=0, dtype=None):
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
 
-    Use masked arrays to ignore any non-finite values in the input or that
-    arise in the calculations such as Not a Number and infinity.
+    References
+    ----------
+    .. [1] "Weighted Harmonic Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Harmonic_mean#Weighted_harmonic_mean
+    .. [2] Ferger, F., "The nature and use of the harmonic mean", Journal of
+           the American Statistical Association, vol. 26, pp. 36-40, 1931
 
     Examples
     --------
@@ -341,18 +354,20 @@ def hmean(a, axis=0, dtype=None):
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
-    if np.all(a >= 0):
-        # Harmonic mean only defined if greater than or equal to to zero.
+    elif dtype:
+        # Must change the default dtype allowing array type
         if isinstance(a, np.ma.MaskedArray):
-            size = a.count(axis)
+            a = np.ma.asarray(a, dtype=dtype)
         else:
-            if axis is None:
-                a = a.ravel()
-                size = a.shape[0]
-            else:
-                size = a.shape[axis]
+            a = np.asarray(a, dtype=dtype)
+
+    if np.all(a >= 0):
+        # Harmonic mean only defined if greater than or equal to zero.
+        if weights is not None:
+            weights = np.asanyarray(weights, dtype=dtype)
+
         with np.errstate(divide='ignore'):
-            return size / np.sum(1.0 / a, axis=axis, dtype=dtype)
+            return 1.0 / np.average(1.0 / a, axis=axis, weights=weights)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater "
                          "than or equal to zero")
@@ -524,7 +539,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
 
     Returns
     -------
-    tmean : float
+    tmean : ndarray
         Trimmed mean.
 
     See Also
@@ -543,10 +558,10 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     a = asarray(a)
     if limits is None:
-        return np.mean(a, None)
-
-    am = _mask_to_limits(a.ravel(), limits, inclusive)
-    return am.mean(axis=axis)
+        return np.mean(a, axis)
+    am = _mask_to_limits(a, limits, inclusive)
+    mean = np.ma.filled(am.mean(axis=axis), fill_value=np.nan)
+    return mean if mean.ndim > 0 else mean.item()
 
 
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
@@ -963,65 +978,6 @@ def _moment(a, moment, axis, *, mean=None):
             if n % 2:
                 s *= a_zero_mean
         return np.mean(s, axis)
-
-
-def variation(a, axis=0, nan_policy='propagate', ddof=0):
-    """Compute the coefficient of variation.
-
-    The coefficient of variation is the standard deviation divided by the
-    mean.  This function is equivalent to::
-
-        np.std(x, axis=axis, ddof=ddof) / np.mean(x)
-
-    The default for ``ddof`` is 0, but many definitions of the coefficient
-    of variation use the square root of the unbiased sample variance
-    for the sample standard deviation, which corresponds to ``ddof=1``.
-
-    Parameters
-    ----------
-    a : array_like
-        Input array.
-    axis : int or None, optional
-        Axis along which to calculate the coefficient of variation. Default
-        is 0. If None, compute over the whole array `a`.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan.
-        The following options are available (default is 'propagate'):
-
-        * 'propagate': returns nan
-        * 'raise': throws an error
-        * 'omit': performs the calculations ignoring nan values
-
-    ddof : int, optional
-        Delta degrees of freedom.  Default is 0.
-
-    Returns
-    -------
-    variation : ndarray
-        The calculated variation along the requested axis.
-
-    References
-    ----------
-    .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
-       Probability and Statistics Tables and Formulae. Chapman & Hall: New
-       York. 2000.
-
-    Examples
-    --------
-    >>> from scipy.stats import variation
-    >>> variation([1, 2, 3, 4, 5])
-    0.47140452079103173
-
-    """
-    a, axis = _chk_asarray(a, axis)
-
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.variation(a, axis, ddof)
-
-    return a.std(axis, ddof=ddof) / a.mean(axis)
 
 
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
@@ -2217,7 +2173,7 @@ def obrientransform(*args):
 
     Parameters
     ----------
-    args : tuple of array_like
+    *args : tuple of array_like
         Any number of arrays.
 
     Returns
@@ -2469,6 +2425,94 @@ def zscore(a, axis=0, ddof=0, nan_policy='propagate'):
     return zmap(a, a, axis=axis, ddof=ddof, nan_policy=nan_policy)
 
 
+def gzscore(a, *, axis=0, ddof=0, nan_policy='propagate'):
+    """
+    Compute the geometric standard score.
+
+    Compute the geometric z score of each strictly positive value in the
+    sample, relative to the geometric mean and standard deviation.
+    Mathematically the geometric z score can be evaluated as::
+
+        gzscore = log(a/gmu) / log(gsigma)
+
+    where ``gmu`` (resp. ``gsigma``) is the geometric mean (resp. standard
+    deviation).
+
+    Parameters
+    ----------
+    a : array_like
+        Sample data.
+    axis : int or None, optional
+        Axis along which to operate. Default is 0. If None, compute over
+        the whole array `a`.
+    ddof : int, optional
+        Degrees of freedom correction in the calculation of the
+        standard deviation. Default is 0.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.  Note that when the value is 'omit',
+        nans in the input also propagate to the output, but they do not affect
+        the geometric z scores computed for the non-nan values.
+
+    Returns
+    -------
+    gzscore : array_like
+        The geometric z scores, standardized by geometric mean and geometric
+        standard deviation of input array `a`.
+
+    See Also
+    --------
+    gmean : Geometric mean
+    gstd : Geometric standard deviation
+    zscore : Standard score
+
+    Notes
+    -----
+    This function preserves ndarray subclasses, and works also with
+    matrices and masked arrays (it uses ``asanyarray`` instead of
+    ``asarray`` for parameters).
+
+    .. versionadded:: 1.8
+
+    Examples
+    --------
+    Draw samples from a log-normal distribution:
+
+    >>> from scipy.stats import zscore, gzscore
+    >>> import matplotlib.pyplot as plt
+
+    >>> rng = np.random.default_rng()
+    >>> mu, sigma = 3., 1.  # mean and standard deviation
+    >>> x = rng.lognormal(mu, sigma, size=500)
+
+    Display the histogram of the samples:
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(x, 50)
+    >>> plt.show()
+
+    Display the histogram of the samples standardized by the classical zscore.
+    Distribution is rescaled but its shape is unchanged.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(zscore(x), 50)
+    >>> plt.show()
+
+    Demonstrate that the distribution of geometric zscores is rescaled and
+    quasinormal:
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(gzscore(x), 50)
+    >>> plt.show()
+
+    """
+    a = np.asanyarray(a)
+    log = ma.log if isinstance(a, ma.MaskedArray) else np.log
+
+    return zscore(log(a), axis=axis, ddof=ddof, nan_policy=nan_policy)
+
+
 def zmap(scores, compare, axis=0, ddof=0, nan_policy='propagate'):
     """
     Calculate the relative z-scores.
@@ -2584,6 +2628,11 @@ def gstd(a, axis=0, ddof=1):
         An array of the geometric standard deviation. If `axis` is None or `a`
         is a 1d array a float is returned.
 
+    See Also
+    --------
+    gmean : Geometric mean
+    numpy.std : Standard deviation
+
     Notes
     -----
     As the calculation requires the use of logarithms the geometric standard
@@ -2594,6 +2643,11 @@ def gstd(a, axis=0, ddof=1):
     deviation is ``exp(std(log(a)))``.
     The default value for `ddof` is different to the default value (0) used
     by other ddof containing functions, such as ``np.std`` and ``np.nanstd``.
+
+    References
+    ----------
+    .. [1] Kirkwood, T. B., "Geometric means and measures of dispersion",
+           Biometrics, vol. 35, pp. 908-909, 1979
 
     Examples
     --------
@@ -2715,18 +2769,18 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     rng : Two-element sequence containing floats in range of [0,100] optional
         Percentiles over which to compute the range. Each must be
         between 0 and 100, inclusive. The default is the true IQR:
-        `(25, 75)`. The order of the elements is not important.
+        ``(25, 75)``. The order of the elements is not important.
     scale : scalar or str, optional
         The numerical value of scale will be divided out of the final
         result. The following string values are recognized:
 
           * 'raw' : No scaling, just return the raw IQR.
-            **Deprecated!**  Use `scale=1` instead.
+            **Deprecated!**  Use ``scale=1`` instead.
           * 'normal' : Scale by
             :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
 
-        The default is 1.0. The use of scale='raw' is deprecated.
-        Array-like scale is also allowed, as long
+        The default is 1.0. The use of ``scale='raw'`` is deprecated.
+        Array-like `scale` is also allowed, as long
         as it broadcasts correctly to the output such that
         ``out / scale`` is a valid operation. The output dimensions
         depend on the input array, `x`, the `axis` argument, and the
@@ -2738,22 +2792,24 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-    interpolation : {'linear', 'lower', 'higher', 'midpoint',
-                     'nearest'}, optional
+    interpolation : str, optional
 
         Specifies the interpolation method to use when the percentile
-        boundaries lie between two data points `i` and `j`.
+        boundaries lie between two data points ``i`` and ``j``.
         The following options are available (default is 'linear'):
 
-          * 'linear': `i + (j - i) * fraction`, where `fraction` is the
-            fractional part of the index surrounded by `i` and `j`.
-          * 'lower': `i`.
-          * 'higher': `j`.
-          * 'nearest': `i` or `j` whichever is nearest.
-          * 'midpoint': `(i + j) / 2`.
+          * 'linear': ``i + (j - i)*fraction``, where ``fraction`` is the
+            fractional part of the index surrounded by ``i`` and ``j``.
+          * 'lower': ``i``.
+          * 'higher': ``j``.
+          * 'nearest': ``i`` or ``j`` whichever is nearest.
+          * 'midpoint': ``(i + j)/2``.
+
+        For NumPy >= 1.22.0, the additional options provided by the ``method``
+        keyword of `numpy.percentile` are also valid.
 
     keepdims : bool, optional
-        If this is set to `True`, the reduced axes are left in the
+        If this is set to True, the reduced axes are left in the
         result as dimensions with size one. With this option, the result
         will broadcast correctly against the original array `x`.
 
@@ -2768,27 +2824,6 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
     See Also
     --------
     numpy.std, numpy.var
-
-    Notes
-    -----
-    This function is heavily dependent on the version of `numpy` that is
-    installed. Versions greater than 1.11.0b3 are highly recommended, as they
-    include a number of enhancements and fixes to `numpy.percentile` and
-    `numpy.nanpercentile` that affect the operation of this function. The
-    following modifications apply:
-
-    Below 1.10.0 : `nan_policy` is poorly defined.
-        The default behavior of `numpy.percentile` is used for 'propagate'. This
-        is a hybrid of 'omit' and 'propagate' that mostly yields a skewed
-        version of 'omit' since NaNs are sorted to the end of the data. A
-        warning is raised if there are NaNs in the data.
-    Below 1.9.0: `numpy.nanpercentile` does not exist.
-        This means that `numpy.percentile` is used regardless of `nan_policy`
-        and a warning is issued. See previous item for a description of the
-        behavior.
-    Below 1.9.0: `keepdims` and `interpolation` are not supported.
-        The keywords get ignored with a warning if supplied with non-default
-        values. However, multiple axes are still supported.
 
     References
     ----------
@@ -2849,8 +2884,12 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         raise ValueError("range must not contain NaNs")
 
     rng = sorted(rng)
-    pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,
-                          keepdims=keepdims)
+    if NumpyVersion(np.__version__) >= '1.22.0':
+        pct = percentile_func(x, rng, axis=axis, method=interpolation,
+                              keepdims=keepdims)
+    else:
+        pct = percentile_func(x, rng, axis=axis, interpolation=interpolation,
+                              keepdims=keepdims)
     out = np.subtract(pct[1], pct[0])
 
     if scale != 1.0:
@@ -3761,7 +3800,7 @@ def alexandergovern(*args, nan_policy='propagate'):
 
     We use `alexandergovern` to test the null hypothesis that all cities
     have the same mean APR against the alternative that the cities do not
-    all have the same mean APR. We decide that a sigificance level of 5%
+    all have the same mean APR. We decide that a significance level of 5%
     is required to reject the null hypothesis in favor of the alternative.
 
     >>> atlanta = [13.75, 13.75, 13.5, 13.5, 13.0, 13.0, 13.0, 12.75, 12.5]
@@ -4687,10 +4726,8 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
           * 'exact': computes the exact p-value, but can only be used if no ties
             are present. As the sample size increases, the 'exact' computation
             time may grow and the result may lose some precision.
-
-    variant: {'b', 'c'}, optional
+    variant : {'b', 'c'}, optional
         Defines which variant of Kendall's tau is returned. Default is 'b'.
-
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -5181,7 +5218,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         Requires that `func` be pickleable. The default is ``1``.
     is_twosamp : bool, optional
         If `True`, a two sample test will be run. If ``x`` and ``y`` have
-        shapes ``(n, p)`` and ``(m, p)``, this optional will be overriden and
+        shapes ``(n, p)`` and ``(m, p)``, this optional will be overridden and
         set to ``True``. Set to ``True`` if ``x`` and ``y`` both have shapes
         ``(n, p)`` and a two sample test is desired. The default is ``False``.
         Note that this will not run if inputs are distance matrices.
@@ -5421,8 +5458,9 @@ def _mgc_stat(distx, disty):
 
     Parameters
     ----------
-    x, y : ndarray
-        `x` and `y` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
+    distx, disty : ndarray
+        `distx` and `disty` have shapes `(n, p)` and `(n, q)` or
+        `(n, n)` and `(n, n)`
         if distance matrices.
 
     Returns
@@ -5491,7 +5529,7 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
     threshold = distributions.beta.ppf(per_sig, threshold, threshold) * 2 - 1
 
     # the global scale at is the statistic calculated at maximial nearest
-    # neighbors. Threshold is the maximium on the global and local scales
+    # neighbors. Threshold is the maximum on the global and local scales
     threshold = max(threshold, stat_mgc_map[m - 1][n - 1])
 
     # find the largest connected component of significant correlations
@@ -5517,9 +5555,9 @@ def _smooth_mgc_map(sig_connect, stat_mgc_map):
 
     Parameters
     ----------
-    sig_connect: ndarray
+    sig_connect : ndarray
         A binary matrix with 1's indicating the significant region.
-    stat_mgc_map: ndarray
+    stat_mgc_map : ndarray
         All local correlations within `[-1, 1]`.
 
     Returns
@@ -6061,7 +6099,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     called Yuen's t-test, this is an extension of Welch's t-test, with the
     difference being the use of winsorized means in calculation of the variance
     and the trimmed sample size in calculation of the statistic. Trimming is
-    reccomended if the underlying distribution is long-tailed or contaminated
+    recommended if the underlying distribution is long-tailed or contaminated
     with outliers [4]_.
 
     References
@@ -6323,10 +6361,10 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
         corresponding to `axis` (the zeroth, by default).
     axis : int, optional
         The axis over which to operate on a and b.
-    permutations: int, optional
+    permutations : int, optional
         Number of permutations used to calculate p-value. If greater than or
         equal to the number of distinct permutations, perform an exact test.
-    equal_var: bool, optional
+    equal_var : bool, optional
         If False, an equal variance (Welch's) t-test is conducted.  Otherwise,
         an ordinary t-test is conducted.
     random_state : {None, int, `numpy.random.Generator`}, optional
@@ -6906,8 +6944,8 @@ def _compute_dplus(cdfvals):
 
     Parameters
     ----------
-    cdfvals: array_like
-      Sorted array of CDF values between 0 and 1
+    cdfvals : array_like
+        Sorted array of CDF values between 0 and 1
 
     Returns
     -------
@@ -6922,8 +6960,8 @@ def _compute_dminus(cdfvals):
 
     Parameters
     ----------
-    cdfvals: array_like
-      Sorted array of CDF values between 0 and 1
+    cdfvals : array_like
+        Sorted array of CDF values between 0 and 1
 
     Returns
     -------
@@ -6968,7 +7006,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     statistic : float
         KS test statistic, either D, D+ or D- (depending on the value
         of 'alternative')
-    pvalue :  float
+    pvalue : float
         One-tailed or two-tailed p-value.
 
     See Also
@@ -7512,7 +7550,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     -------
     statistic : float
         KS test statistic, either D, D+ or D-.
-    pvalue :  float
+    pvalue : float
         One-tailed or two-tailed p-value.
 
     See Also

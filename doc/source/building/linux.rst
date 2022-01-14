@@ -29,7 +29,7 @@ SciPy depend on
   <https://github.com/xianyi/OpenBLAS/>`__, or `MKL
   <https://software.intel.com/en-us/intel-mkl>`__.
 
-* C and Fortran compilers (typically ``gcc`` and ``gfortran``).
+* C, C++, and Fortran compilers (typically ``gcc``, ``g++``, and ``gfortran``).
 
 * Python header files (typically a package named ``python3-dev`` or ``python3-devel``)
 
@@ -69,7 +69,7 @@ Debian / Ubuntu
 
 To build from source, the following packages are needed::
 
-   sudo apt-get install gcc gfortran python3-dev libopenblas-dev liblapack-dev
+   sudo apt-get install gcc g++ gfortran python3-dev libopenblas-dev liblapack-dev
 
 To customize which BLAS is used, you can set up a `site.cfg` file. See
 the `site.cfg.example` file in the numpy source for the options you

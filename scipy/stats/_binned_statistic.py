@@ -751,8 +751,9 @@ def _bin_numbers(sample, nbin, edges, dedges):
             raise ValueError('The smallest edge difference is numerically 0.')
         decimal = int(-np.log10(dedges_min)) + 6
         # Find which points are on the rightmost edge.
-        on_edge = np.where(np.around(sample[:, i], decimal) ==
-                           np.around(edges[i][-1], decimal))[0]
+        on_edge = np.where((sample[:, i] >= edges[i][-1]) &
+                           (np.around(sample[:, i], decimal) ==
+                            np.around(edges[i][-1], decimal)))[0]
         # Shift these points one bin to the left.
         sampBin[i][on_edge] -= 1
 

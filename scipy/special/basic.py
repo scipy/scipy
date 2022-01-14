@@ -4,6 +4,9 @@
 
 import warnings
 from . import _basic
+from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
+                      psi, hankel1, hankel2, yv, kv)
+
 
 __all__ = [  # noqa: F822
     'ai_zeros',

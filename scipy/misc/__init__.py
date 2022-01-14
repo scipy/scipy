@@ -22,6 +22,9 @@ Various utilities that don't have another home.
 from ._common import *
 from . import _common
 
+# Deprecated namespaces, to be removed in v2.0.0
+from . import common, doccer
+
 __all__ = _common.__all__
 
 del _common

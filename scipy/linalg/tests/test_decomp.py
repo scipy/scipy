@@ -39,7 +39,7 @@ from numpy import (array, diag, ones, full, linalg, argsort, zeros, arange,
 from numpy.random import seed, random
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
@@ -2526,8 +2526,8 @@ def test_aligned_mem_float():
     eig(z.T, overwrite_a=True)
 
 
-@pytest.mark.skip(platform.machine() == 'ppc64le',
-                  reason="crashes on ppc64le")
+@pytest.mark.skipif(platform.machine() == 'ppc64le',
+                    reason="crashes on ppc64le")
 def test_aligned_mem():
     """Check linalg works with non-aligned memory (float64)"""
     # Allocate 804 bytes of memory (allocated on boundary)

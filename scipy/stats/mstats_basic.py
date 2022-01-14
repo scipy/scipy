@@ -29,7 +29,15 @@ __all__ = [  # noqa: F822
     'ttest_ind','ttest_rel','tvar',
     'variation',
     'winsorize',
-    'brunnermunzel',
+    'brunnermunzel', 'ma', 'masked', 'nomask', 'namedtuple',
+    'distributions', 'stats_linregress', 'stats_LinregressResult',
+    'stats_theilslopes', 'stats_siegelslopes', 'ModeResult',
+    'SpearmanrResult', 'KendalltauResult', 'PointbiserialrResult',
+    'Ttest_1sampResult', 'Ttest_indResult', 'Ttest_relResult',
+    'MannwhitneyuResult', 'KruskalResult', 'trimdoc', 'trim1',
+    'DescribeResult', 'stde_median', 'SkewtestResult', 'KurtosistestResult',
+    'NormaltestResult', 'F_onewayResult', 'FriedmanchisquareResult',
+    'BrunnerMunzelResult'
 ]
 
 

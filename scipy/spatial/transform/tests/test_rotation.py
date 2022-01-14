@@ -695,7 +695,7 @@ def test_as_euler_degenerate_symmetric_axes():
 def test_inv():
     rnd = np.random.RandomState(0)
     n = 10
-    p = Rotation.from_quat(rnd.normal(size=(n, 4)))
+    p = Rotation.random(num=n, random_state=rnd)
     q = p.inv()
 
     p_mat = p.as_matrix()
@@ -712,7 +712,7 @@ def test_inv():
 
 def test_inv_single_rotation():
     rnd = np.random.RandomState(0)
-    p = Rotation.from_quat(rnd.normal(size=(4,)))
+    p = Rotation.random(random_state=rnd)
     q = p.inv()
 
     p_mat = p.as_matrix()
@@ -725,7 +725,7 @@ def test_inv_single_rotation():
     assert_array_almost_equal(res1, eye)
     assert_array_almost_equal(res2, eye)
 
-    x = Rotation.from_quat(rnd.normal(size=(1, 4)))
+    x = Rotation.random(num=1, random_state=rnd)
     y = x.inv()
 
     x_matrix = x.as_matrix()
@@ -1040,7 +1040,7 @@ def test_align_vectors_no_rotation():
 
 def test_align_vectors_no_noise():
     rnd = np.random.RandomState(0)
-    c = Rotation.from_quat(rnd.normal(size=4))
+    c = Rotation.random(random_state=rnd)
     b = rnd.normal(size=(5, 3))
     a = c.apply(b)
 
@@ -1078,7 +1078,7 @@ def test_align_vectors_scaled_weights():
 def test_align_vectors_noise():
     rnd = np.random.RandomState(0)
     n_vectors = 100
-    rot = Rotation.from_euler('xyz', rnd.normal(size=3))
+    rot = Rotation.random(random_state=rnd)
     vectors = rnd.normal(size=(n_vectors, 3))
     result = rot.apply(vectors)
 
@@ -1138,6 +1138,10 @@ def test_align_vectors_invalid_input():
     with pytest.raises(ValueError,
                        match="Expected `weights` to have number of values"):
         Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[1, 2])
+
+    with pytest.raises(ValueError,
+                       match="`weights` may not contain negative values"):
+        Rotation.align_vectors([[1, 2, 3]], [[1, 2, 3]], weights=[-1])
 
 
 def test_random_rotation_shape():

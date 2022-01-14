@@ -94,7 +94,7 @@ def argstoarray(*args):
 
     Parameters
     ----------
-    args : sequences
+    *args : sequences
         Group of sequences.
 
     Returns
@@ -751,7 +751,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
     use_missing : {False, True}, optional
         Whether missing data should be allocated a rank of 0 (False) or the
         average rank (True)
-    method: {'auto', 'asymptotic', 'exact'}, optional
+    method : {'auto', 'asymptotic', 'exact'}, optional
         Defines which method is used to calculate the p-value [1]_.
         'asymptotic' uses a normal approximation valid for large samples.
         'exact' computes the exact p-value, but can only be used if no ties
@@ -1060,7 +1060,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     up_slope : float
         Upper bound of the confidence interval on `medslope`.
 
-    See also
+    See Also
     --------
     siegelslopes : a similar technique with repeated medians
 
@@ -1115,7 +1115,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     medintercept : float
         Estimate of the intercept of the regression line.
 
-    See also
+    See Also
     --------
     theilslopes : a similar technique without repeated medians
 
@@ -3274,11 +3274,11 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     ----------
     x, y : array_like
         Array of samples, should be one-dimensional.
-    alternative :  'less', 'two-sided', or 'greater', optional
+    alternative : 'less', 'two-sided', or 'greater', optional
         Whether to get the p-value for the one-sided hypothesis ('less'
         or 'greater') or for the two-sided hypothesis ('two-sided').
         Defaults value is 'two-sided' .
-    distribution: 't' or 'normal', optional
+    distribution : 't' or 'normal', optional
         Whether to get the p-value by t-distribution or by standard normal
         distribution.
         Defaults value is 't' .

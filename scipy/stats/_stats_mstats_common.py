@@ -243,7 +243,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     up_slope : float
         Upper bound of the confidence interval on `medslope`.
 
-    See also
+    See Also
     --------
     siegelslopes : a similar technique using repeated medians
 
@@ -392,7 +392,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     medintercept : float
         Estimate of the intercept of the regression line.
 
-    See also
+    See Also
     --------
     theilslopes : a similar technique without repeated medians
 

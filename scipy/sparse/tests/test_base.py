@@ -23,7 +23,7 @@ import operator
 import platform
 import itertools
 import sys
-from distutils.version import LooseVersion
+from scipy._lib import _pep440
 
 import numpy as np
 from numpy import (arange, zeros, array, dot, asarray,
@@ -42,8 +42,8 @@ import scipy.sparse as sparse
 from scipy.sparse import (csc_matrix, csr_matrix, dok_matrix,
         coo_matrix, lil_matrix, dia_matrix, bsr_matrix,
         eye, isspmatrix, SparseEfficiencyWarning)
-from scipy.sparse.sputils import (supported_dtypes, isscalarlike,
-                                  get_index_dtype, asmatrix, matrix)
+from scipy.sparse._sputils import (supported_dtypes, isscalarlike,
+                                   get_index_dtype, asmatrix, matrix)
 from scipy.sparse.linalg import splu, expm, inv
 
 from scipy._lib.decorator import decorator
@@ -144,10 +144,10 @@ def with_64bit_maxval_limit(maxval_limit=None, random=False, fixed_dtype=None,
     @decorator
     def deco(func, *a, **kw):
         backup = []
-        modules = [scipy.sparse.bsr, scipy.sparse.coo, scipy.sparse.csc,
-                   scipy.sparse.csr, scipy.sparse.dia, scipy.sparse.dok,
-                   scipy.sparse.lil, scipy.sparse.sputils,
-                   scipy.sparse.compressed, scipy.sparse.construct]
+        modules = [scipy.sparse._bsr, scipy.sparse._coo, scipy.sparse._csc,
+                   scipy.sparse._csr, scipy.sparse._dia, scipy.sparse._dok,
+                   scipy.sparse._lil, scipy.sparse._sputils,
+                   scipy.sparse._compressed, scipy.sparse._construct]
         try:
             for mod in modules:
                 backup.append((mod, 'get_index_dtype',
@@ -1570,10 +1570,10 @@ class _TestCommon:
         B = self.spmatrix(A)
 
         for exponent in [0,1,2,3]:
-            assert_array_equal(
-                (B**exponent).toarray(),
-                np.linalg.matrix_power(A, exponent)
-            )
+            ret_sp = B**exponent
+            ret_np = np.linalg.matrix_power(A, exponent)
+            assert_array_equal(ret_sp.toarray(), ret_np)
+            assert_equal(ret_sp.dtype, ret_np.dtype)
 
         # invalid exponents
         for exponent in [-1, 2.2, 1 + 3j]:
@@ -3415,7 +3415,7 @@ class _TestMinMax:
     def test_numpy_minmax(self):
         # See gh-5987
         # xref gh-7460 in 'numpy'
-        from scipy.sparse import data
+        from scipy.sparse import _data
 
         dat = array([[0, 1, 2],
                      [3, -4, 5],
@@ -3426,7 +3426,7 @@ class _TestMinMax:
         # implemented 'min' and 'max' because they are
         # the ones with the compatibility issues with
         # the 'numpy' implementation.
-        if isinstance(datsp, data._minmax_mixin):
+        if isinstance(datsp, _data._minmax_mixin):
             assert_array_equal(np.min(datsp), np.min(dat))
             assert_array_equal(np.max(datsp), np.max(dat))
 
@@ -4348,6 +4348,13 @@ class TestDIA(sparse_test_class(getset=False, slicing=False, slicing_assign=Fals
     def test_getnnz_axis(self):
         pass
 
+    def test_convert_gh14555(self):
+        # regression test for gh-14555
+        m = dia_matrix(([[1, 1, 0]], [-1]), shape=(4, 2))
+        expected = m.toarray()
+        assert_array_equal(m.tocsc().toarray(), expected)
+        assert_array_equal(m.tocsr().toarray(), expected)
+
 
 TestDIA.init_class()
 
@@ -4814,7 +4821,7 @@ def cases_64bit():
                 if bool(msg):
                     marks += [pytest.mark.skip(reason=msg)]
 
-                if LooseVersion(pytest.__version__) >= LooseVersion("3.6.0"):
+                if _pep440.parse(pytest.__version__) >= _pep440.Version("3.6.0"):
                     markers = getattr(method, 'pytestmark', [])
                     for mark in markers:
                         if mark.name in ('skipif', 'skip', 'xfail', 'xslow'):

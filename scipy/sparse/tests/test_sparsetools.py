@@ -7,7 +7,7 @@ import numpy as np
 from numpy.testing import assert_equal, assert_, assert_allclose
 from scipy.sparse import (_sparsetools, coo_matrix, csr_matrix, csc_matrix,
                           bsr_matrix, dia_matrix)
-from scipy.sparse.sputils import supported_dtypes
+from scipy.sparse._sputils import supported_dtypes
 from scipy._lib._testutils import check_free_memory
 
 import pytest

@@ -1,22 +1,25 @@
-from functools import partial
 import math
 import threading
 import pickle
 import pytest
+from copy import deepcopy
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from numpy.lib import NumpyVersion
-from scipy.stats import (
+from scipy.stats.sampling import (
     TransformedDensityRejection,
     DiscreteAliasUrn,
+    DiscreteGuideTable,
     NumericalInversePolynomial,
-    NaiveRatioUniforms
+    NumericalInverseHermite,
+    SimpleRatioUniforms,
+    UNURANError
 )
-from scipy.stats import UNURANError
 from scipy import stats
 from scipy import special
 from scipy.stats import chisquare, cramervonmises
 from scipy.stats._distr_params import distdiscrete, distcont
+from scipy._lib._util import check_random_state
 
 
 # common test data: this data can be shared between all the tests.
@@ -25,39 +28,23 @@ from scipy.stats._distr_params import distdiscrete, distcont
 # Normal distribution shared between all the continuous methods
 class StandardNormal:
     def pdf(self, x):
-        return np.exp(-0.5 * x*x)
+        # normalization constant needed for NumericalInverseHermite
+        return 1./np.sqrt(2.*np.pi) * np.exp(-0.5 * x*x)
 
     def dpdf(self, x):
-        return -x * np.exp(-0.5 * x*x)
+        return 1./np.sqrt(2.*np.pi) * -x * np.exp(-0.5 * x*x)
 
     def cdf(self, x):
         return special.ndtr(x)
 
 
-# A binomial distribution to share between all the discrete methods
-class Binomial:
-    def __init__(self, n, p):
-        self.n = n
-        self.p = p
-
-    def pmf(self, k):
-        return self.p**k * (1-self.p)**(self.n-k)
-
-    def cdf(self, k):
-        k = np.asarray(k)
-        return stats.binom._cdf(k, self.n, self.p)
-
-    def support(self):
-        return 0, self.n
-
-
 all_methods = [
     ("TransformedDensityRejection", {"dist": StandardNormal()}),
     ("DiscreteAliasUrn", {"dist": [0.02, 0.18, 0.8]}),
+    ("DiscreteGuideTable", {"dist": [0.02, 0.18, 0.8]}),
     ("NumericalInversePolynomial", {"dist": StandardNormal()}),
-    ("NaiveRatioUniforms", {"dist": StandardNormal(),
-                            "u_min": -np.exp(-0.5) * np.sqrt(2),
-                            "u_max": np.exp(-0.5) * np.sqrt(2), "v_max": 1.0})
+    ("NumericalInverseHermite", {"dist": StandardNormal()}),
+    ("SimpleRatioUniforms", {"dist": StandardNormal(), "mode": 0})
 ]
 
 # Make sure an internal error occurs in UNU.RAN when invalid callbacks are
@@ -145,14 +132,14 @@ nan_domains = [
                          nan_domains)  # type: ignore[operator]
 @pytest.mark.parametrize("method, kwargs", all_methods)
 def test_bad_domain(domain, err, msg, method, kwargs):
-    Method = getattr(stats, method)
+    Method = getattr(stats.sampling, method)
     with pytest.raises(err, match=msg):
         Method(**kwargs, domain=domain)
 
 
 @pytest.mark.parametrize("method, kwargs", all_methods)
 def test_random_state(method, kwargs):
-    Method = getattr(stats, method)
+    Method = getattr(stats.sampling, method)
 
     # simple seed that works for any version of NumPy
     seed = 123
@@ -254,7 +241,7 @@ def test_threading_behaviour():
 
 @pytest.mark.parametrize("method, kwargs", all_methods)
 def test_pickle(method, kwargs):
-    Method = getattr(stats, method)
+    Method = getattr(stats.sampling, method)
     rng1 = Method(**kwargs, random_state=123)
     obj = pickle.dumps(rng1)
     rng2 = pickle.loads(obj)
@@ -273,6 +260,27 @@ def test_rvs_size(size):
         if np.isscalar(size):
             size = (size, )
         assert rng.rvs(size).shape == size
+
+
+def test_with_scipy_distribution():
+    # test if the setup works with SciPy's rv_frozen distributions
+    dist = stats.norm()
+    urng = np.random.default_rng(0)
+    rng = NumericalInverseHermite(dist, random_state=urng)
+    u = np.linspace(0, 1, num=100)
+    check_cont_samples(rng, dist, dist.stats())
+    assert_allclose(dist.ppf(u), rng.ppf(u))
+    # test if it works with `loc` and `scale`
+    dist = stats.norm(loc=10., scale=5.)
+    rng = NumericalInverseHermite(dist, random_state=urng)
+    check_cont_samples(rng, dist, dist.stats())
+    assert_allclose(dist.ppf(u), rng.ppf(u))
+    # check for discrete distributions
+    dist = stats.binom(10, 0.2)
+    rng = DiscreteAliasUrn(dist, random_state=urng)
+    domain = dist.support()
+    pv = dist.pmf(np.arange(domain[0], domain[1]+1))
+    check_discr_samples(rng, pv, dist.stats())
 
 
 def check_cont_samples(rng, dist, mv_ex):
@@ -452,11 +460,6 @@ class TestTransformedDensityRejection:
         with pytest.raises(ValueError, match=msg):
             TransformedDensityRejection(StandardNormal(), c=-1.)
 
-    def test_bad_variant(self):
-        msg = r"Invalid option for the `variant`"
-        with pytest.raises(ValueError, match=msg):
-            TransformedDensityRejection(StandardNormal(), variant='foo')
-
     u = [np.linspace(0, 1, num=1000), [], [[]], [np.nan],
          [-np.inf, np.nan, np.inf], 0,
          [[np.nan, 0.5, 0.1], [0.2, 0.4, np.inf], [-2, 3, 4]]]
@@ -466,8 +469,7 @@ class TestTransformedDensityRejection:
         # Increase the `max_squeeze_hat_ratio` so the ppf_hat is more
         # accurate.
         rng = TransformedDensityRejection(StandardNormal(),
-                                          max_squeeze_hat_ratio=0.9999,
-                                          max_intervals=10000)
+                                          max_squeeze_hat_ratio=0.9999)
         # Older versions of NumPy throw RuntimeWarnings for comparisons
         # with nan.
         with suppress_warnings() as sup:
@@ -592,7 +594,7 @@ class TestDiscreteAliasUrn:
     @pytest.mark.parametrize("domain", inf_domain)
     def test_inf_domain(self, domain):
         with pytest.raises(ValueError, match=r"must be finite"):
-            DiscreteAliasUrn(Binomial(10, 0.2), domain=domain)
+            DiscreteAliasUrn(stats.binom(10, 0.2), domain=domain)
 
     def test_bad_urn_factor(self):
         with pytest.warns(RuntimeWarning, match=r"relative urn size < 1."):
@@ -766,8 +768,7 @@ class TestNumericalInversePolynomial:
     @pytest.mark.parametrize("x", x)
     def test_cdf(self, x):
         dist = StandardNormal()
-        rng = NumericalInversePolynomial(dist, keep_cdf=True,
-                                         u_resolution=1e-14)
+        rng = NumericalInversePolynomial(dist, u_resolution=1e-14)
         # Older versions of NumPy throw RuntimeWarnings for comparisons
         # with nan.
         with suppress_warnings() as sup:
@@ -795,7 +796,6 @@ class TestNumericalInversePolynomial:
 
     bad_orders = [1, 4.5, 20, np.inf, np.nan]
     bad_u_resolution = [1e-20, 1e-1, np.inf, np.nan]
-    bad_max_intervals = [10, 10000000, 1000.5, np.inf, np.nan]
 
     @pytest.mark.parametrize("order", bad_orders)
     def test_bad_orders(self, order):
@@ -812,20 +812,9 @@ class TestNumericalInversePolynomial:
             NumericalInversePolynomial(StandardNormal(),
                                        u_resolution=u_resolution)
 
-    @pytest.mark.parametrize("max_intervals", bad_max_intervals)
-    def test_bad_max_intervals(self, max_intervals):
-        msg = (r"`max_intervals` must be an integer in the range "
-               r"\[100, 1000000\].")
-        with pytest.raises(ValueError, match=msg):
-            NumericalInversePolynomial(StandardNormal(),
-                                       max_intervals=max_intervals)
-
     def test_bad_args(self):
         dist = StandardNormal()
         rng = NumericalInversePolynomial(dist)
-        msg = r"CDF is not available."
-        with pytest.raises(ValueError, match=msg):
-            rng.cdf([1, 2, 3])
         msg = r"`sample_size` must be greater than or equal to 1000."
         with pytest.raises(ValueError, match=msg):
             rng.u_error(10)
@@ -841,104 +830,461 @@ class TestNumericalInversePolynomial:
             rng.u_error()
 
 
-class Gamma:
-    def __init__(self, p):
-        self.p = p
+class TestNumericalInverseHermite:
+    #         /  (1 +sin(2 Pi x))/2  if |x| <= 1
+    # f(x) = <
+    #         \  0        otherwise
+    # Taken from UNU.RAN test suite (from file t_hinv.c)
+    class dist0:
+        def pdf(self, x):
+            return 0.5*(1. + np.sin(2.*np.pi*x))
 
-    def pdf(self, x):
-        return x**(self.p - 1) * math.exp(-x)
+        def dpdf(self, x):
+            return np.pi*np.cos(2.*np.pi*x)
 
-    def cdf(self, x):
-        return stats.gamma.cdf(x, self.p)
+        def cdf(self, x):
+            return (1. + 2.*np.pi*(1 + x) - np.cos(2.*np.pi*x)) / (4.*np.pi)
 
-    @staticmethod
-    def support():
-        return 0, np.inf
+        def support(self):
+            return -1, 1
 
+    #         /  Max(sin(2 Pi x)),0)Pi/2  if -1 < x <0.5
+    # f(x) = <
+    #         \  0        otherwise
+    # Taken from UNU.RAN test suite (from file t_hinv.c)
+    class dist1:
+        def pdf(self, x):
+            if (x <= -0.5):
+                return np.sin((2. * np.pi) * x) * 0.5 * np.pi
+            if (x < 0.):
+                return 0.
+            if (x <= 0.5):
+                return np.sin((2. * np.pi) * x) * 0.5 * np.pi
 
-class TestNaiveRatioUniforms:
+        def dpdf(self, x):
+            if (x <= -0.5):
+                return np.cos((2. * np.pi) * x) * np.pi * np.pi
+            if (x < 0.):
+                return 0.
+            if (x <= 0.5):
+                return np.cos((2. * np.pi) * x) * np.pi * np.pi
 
-    def test_rv_generation_default(self):
-        # use default settings (r=1, center=0)
-        # exponential distribution
-        class Exponential():
-            def pdf(self, x):
-                return np.exp(-x)
+        def cdf(self, x):
+            if (x <= -0.5):
+                return 0.25 * (1 - np.cos((2. * np.pi) * x))
+            if (x < 0.):
+                return 0.5
+            if (x <= 0.5):
+                return 0.75 - 0.25 * np.cos((2. * np.pi) * x)
 
-            def cdf(self, x):
-                return 1 - np.exp(-x)
+        def support(self):
+            return -1, 0.5
 
-        dist = Exponential()
-        rng = NaiveRatioUniforms(dist, v_max=1, u_min=0, u_max=2*np.exp(-1),
-                                 random_state=76525)
+    dists = [dist0(), dist1()]
 
-        check_cont_samples(rng, dist, (1, 1))
+    # exact mean and variance of the distributions in the list dists
+    mv0 = [-1/(2*np.pi), 1/3 - 1/(4*np.pi*np.pi)]
+    mv1 = [-1/4, 3/8-1/(2*np.pi*np.pi) - 1/16]
+    mvs = [mv0, mv1]
 
-    @pytest.mark.parametrize("r", [0.36, 1.0, 1.43])
-    def test_rv_generation_r(self, r):
-        # test different values of r
-        # note: u_max, u_min are attained at the points -/+ sqrt((r+1)/r)
+    @pytest.mark.parametrize("dist, mv_ex",
+                             zip(dists, mvs))
+    @pytest.mark.parametrize("order", [3, 5])
+    def test_basic(self, dist, mv_ex, order):
+        rng = NumericalInverseHermite(dist, order=order, random_state=42)
+        check_cont_samples(rng, dist, mv_ex)
+
+    # test domains with inf + nan in them. need to write a custom test for
+    # this because not all methods support infinite tails.
+    @pytest.mark.parametrize("domain, err, msg", inf_nan_domains)
+    def test_inf_nan_domains(self, domain, err, msg):
+        with pytest.raises(err, match=msg):
+            NumericalInverseHermite(StandardNormal(), domain=domain)
+
+    @pytest.mark.xslow
+    @pytest.mark.parametrize(("distname", "shapes"), distcont)
+    def test_basic_all_scipy_dists(self, distname, shapes):
+        slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
+        fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
+                      'norminvgauss', 'genhyperbolic', 'studentized_range',
+                      'vonmises', 'kappa4', 'invgauss', 'wald'}
+
+        if distname in slow_dists:
+            pytest.skip("Distribution is too slow")
+        if distname in fail_dists:
+            # specific reasons documented in gh-13319
+            # https://github.com/scipy/scipy/pull/13319#discussion_r626188955
+            pytest.xfail("Fails - usually due to inaccurate CDF/PDF")
+
+        np.random.seed(0)
+
+        dist = getattr(stats, distname)(*shapes)
+
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "overflow encountered")
+            sup.filter(RuntimeWarning, "divide by zero")
+            sup.filter(RuntimeWarning, "invalid value encountered")
+            fni = NumericalInverseHermite(dist)
+
+        x = np.random.rand(10)
+        p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
+        u_tol = np.max(np.abs(dist.cdf(fni.ppf(x)) - x))
+
+        assert p_tol < 1e-8
+        assert u_tol < 1e-12
+
+    def test_input_validation(self):
+        match = r"`order` must be either 1, 3, or 5."
+        with pytest.raises(ValueError, match=match):
+            NumericalInverseHermite(StandardNormal(), order=2)
+
+        match = "`cdf` required but not found"
+        with pytest.raises(ValueError, match=match):
+            NumericalInverseHermite("norm")
+
+        match = "could not convert string to float"
+        with pytest.raises(ValueError, match=match):
+            NumericalInverseHermite(StandardNormal(),
+                                    u_resolution='ekki')
+
+        match = "`max_intervals' must be..."
+        with pytest.raises(ValueError, match=match):
+            NumericalInverseHermite(StandardNormal(), max_intervals=-1)
+
+        match = "`qmc_engine` must be an instance of..."
+        with pytest.raises(ValueError, match=match):
+            fni = NumericalInverseHermite(StandardNormal())
+            fni.qrvs(qmc_engine=0)
+
+        if NumpyVersion(np.__version__) >= '1.18.0':
+            # issues with QMCEngines and old NumPy
+            fni = NumericalInverseHermite(StandardNormal())
+
+            match = "`d` must be consistent with dimension of `qmc_engine`."
+            with pytest.raises(ValueError, match=match):
+                fni.qrvs(d=3, qmc_engine=stats.qmc.Halton(2))
+
+    rngs = [None, 0, np.random.RandomState(0)]
+    if NumpyVersion(np.__version__) >= '1.18.0':
+        rngs.append(np.random.default_rng(0))  # type: ignore
+    sizes = [(None, tuple()), (8, (8,)), ((4, 5, 6), (4, 5, 6))]
+
+    @pytest.mark.parametrize('rng', rngs)
+    @pytest.mark.parametrize('size_in, size_out', sizes)
+    def test_RVS(self, rng, size_in, size_out):
         dist = StandardNormal()
-        y = np.sqrt((r+1)/r)
-        u = (dist.pdf(y))**(r/(r+1)) * y
-        v_max = (dist.pdf(0))**(1/(r+1))
-        rng = NaiveRatioUniforms(dist, r=r, u_min=-u, u_max=u, v_max=v_max,
-                                 random_state=7303)
-        check_cont_samples(rng, dist, (0, 1))
+        fni = NumericalInverseHermite(dist)
 
-    @pytest.mark.parametrize("p", [1.5, 2.83])
-    def test_rv_generation_mode_shift(self, p):
-        # test mode shift with Gamma(p) distribution, mode=p-1
-        # note: the pdf is bounded only if p >= 1
-        # note: u_max, u_min can be computed explicitly
-        def u_bound(x, p, m):
-            if x < 0:
-                return 0
-            return (x - m) * x**((p-1)/2) * math.exp(-x/2)
-        dist = Gamma(p)
-        m = p-1
-        h = (p+1+m)/2
-        k = np.sqrt(h**2 - m*(p-1))
-        u_min, u_max = u_bound(h-k, p, m), u_bound(h+k, p, m)
-        v_max = np.sqrt(dist.pdf(m))
-        rng = NaiveRatioUniforms(dist, center=m, u_min=u_min, u_max=u_max,
-                                 v_max=v_max, random_state=357)
-        check_cont_samples(rng, dist, (p, p))
+        rng2 = deepcopy(rng)
+        rvs = fni.rvs(size=size_in, random_state=rng)
+        if size_in is not None:
+            assert(rvs.shape == size_out)
 
-    def test_setup_no_bounds(self):
+        if rng2 is not None:
+            rng2 = check_random_state(rng2)
+            uniform = rng2.uniform(size=size_in)
+            rvs2 = stats.norm.ppf(uniform)
+            assert_allclose(rvs, rvs2)
+
+    if NumpyVersion(np.__version__) >= '1.18.0':
+        qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(3, seed=0)]
+    else:
+        qrngs = []
+    # `size=None` should not add anything to the shape, `size=1` should
+    sizes = [(None, tuple()), (1, (1,)), (4, (4,)),
+             ((4,), (4,)), ((2, 4), (2, 4))]  # type: ignore
+    # Neither `d=None` nor `d=1` should add anything to the shape
+    ds = [(None, tuple()), (1, tuple()), (3, (3,))]
+
+    @pytest.mark.parametrize('qrng', qrngs)
+    @pytest.mark.parametrize('size_in, size_out', sizes)
+    @pytest.mark.parametrize('d_in, d_out', ds)
+    def test_QRVS(self, qrng, size_in, size_out, d_in, d_out):
         dist = StandardNormal()
-        u_bound = np.exp(-0.5) * np.sqrt(2)
-        v_max = 1.0
+        fni = NumericalInverseHermite(dist)
 
-        # no bound
-        rng = NaiveRatioUniforms(dist, random_state=7303)
-        check_cont_samples(rng, dist, (0, 1))
-        # just v_max
-        rng = NaiveRatioUniforms(dist, v_max=v_max, random_state=7303)
-        check_cont_samples(rng, dist, (0, 1))
-        # just one u-bound is missing
-        msg = 'Only one of the values of u_min and u_max is None.'
-        with pytest.warns(RuntimeWarning, match=msg):
-            rng = NaiveRatioUniforms(dist, u_max=u_bound, random_state=7303)
-            check_cont_samples(rng, dist, (0, 1))
+        # If d and qrng.d are inconsistent, an error is raised
+        if d_in is not None and qrng is not None and qrng.d != d_in:
+            match = "`d` must be consistent with dimension of `qmc_engine`."
+            with pytest.raises(ValueError, match=match):
+                fni.qrvs(size_in, d=d_in, qmc_engine=qrng)
+            return
 
-    def test_exceptions(self):
+        # Sometimes d is really determined by qrng
+        if d_in is None and qrng is not None and qrng.d != 1:
+            d_out = (qrng.d,)
+
+        shape_expected = size_out + d_out
+
+        qrng2 = deepcopy(qrng)
+        qrvs = fni.qrvs(size=size_in, d=d_in, qmc_engine=qrng)
+        if size_in is not None:
+            assert(qrvs.shape == shape_expected)
+
+        if qrng2 is not None:
+            uniform = qrng2.random(np.prod(size_in) or 1)
+            qrvs2 = stats.norm.ppf(uniform).reshape(shape_expected)
+            assert_allclose(qrvs, qrvs2, atol=1e-12)
+
+    def test_QRVS_size_tuple(self):
+        # QMCEngine samples are always of shape (n, d). When `size` is a tuple,
+        # we set `n = prod(size)` in the call to qmc_engine.random, transform
+        # the sample, and reshape it to the final dimensions. When we reshape,
+        # we need to be careful, because the _columns_ of the sample returned
+        # by a QMCEngine are "independent"-ish, but the elements within the
+        # columns are not. We need to make sure that this doesn't get mixed up
+        # by reshaping: qrvs[..., i] should remain "independent"-ish of
+        # qrvs[..., i+1], but the elements within qrvs[..., i] should be
+        # transformed from the same low-discrepancy sequence.
+        if NumpyVersion(np.__version__) <= '1.18.0':
+            pytest.skip("QMC doesn't play well with old NumPy")
+
         dist = StandardNormal()
-        # need u_min < u_max
-        msg = r"`u_min` must be smaller than `u_max`."
+        fni = NumericalInverseHermite(dist)
+
+        size = (3, 4)
+        d = 5
+        qrng = stats.qmc.Halton(d, seed=0)
+        qrng2 = stats.qmc.Halton(d, seed=0)
+
+        uniform = qrng2.random(np.prod(size))
+
+        qrvs = fni.qrvs(size=size, d=d, qmc_engine=qrng)
+        qrvs2 = stats.norm.ppf(uniform)
+
+        for i in range(d):
+            sample = qrvs[..., i]
+            sample2 = qrvs2[:, i].reshape(size)
+            assert_allclose(sample, sample2, atol=1e-12)
+
+    def test_inaccurate_CDF(self):
+        # CDF function with inaccurate tail cannot be inverted; see gh-13319
+        # https://github.com/scipy/scipy/pull/13319#discussion_r626188955
+        shapes = (2.3098496451481823, 0.6268795430096368)
+        match = ("98 : one or more intervals very short; possibly due to "
+                 "numerical problems with a pole or very flat tail")
+
+        # fails with default tol
+        with pytest.warns(RuntimeWarning, match=match):
+            NumericalInverseHermite(stats.beta(*shapes))
+
+        # no error with coarser tol
+        NumericalInverseHermite(stats.beta(*shapes), u_resolution=1e-8)
+
+    def test_custom_distribution(self):
+        dist1 = StandardNormal()
+        fni1 = NumericalInverseHermite(dist1)
+
+        dist2 = stats.norm()
+        fni2 = NumericalInverseHermite(dist2)
+
+        assert_allclose(fni1.rvs(random_state=0), fni2.rvs(random_state=0))
+
+    u = [
+        # check the correctness of the PPF for equidistant points between
+        # 0.02 and 0.98.
+        np.linspace(0., 1., num=10000),
+        # test the PPF method for empty arrays
+        [], [[]],
+        # test if nans and infs return nan result.
+        [np.nan], [-np.inf, np.nan, np.inf],
+        # test if a scalar is returned for a scalar input.
+        0,
+        # test for arrays with nans, values greater than 1 and less than 0,
+        # and some valid values.
+        [[np.nan, 0.5, 0.1], [0.2, 0.4, np.inf], [-2, 3, 4]]
+    ]
+
+    @pytest.mark.parametrize("u", u)
+    def test_ppf(self, u):
+        dist = StandardNormal()
+        rng = NumericalInverseHermite(dist, u_resolution=1e-12)
+        # Older versions of NumPy throw RuntimeWarnings for comparisons
+        # with nan.
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in greater")
+            sup.filter(RuntimeWarning, "invalid value encountered in "
+                                       "greater_equal")
+            sup.filter(RuntimeWarning, "invalid value encountered in less")
+            sup.filter(RuntimeWarning, "invalid value encountered in "
+                                       "less_equal")
+            res = rng.ppf(u)
+            expected = stats.norm.ppf(u)
+        assert_allclose(res, expected, rtol=1e-9, atol=3e-10)
+        assert res.shape == expected.shape
+
+    def test_u_error(self):
+        dist = StandardNormal()
+        rng = NumericalInverseHermite(dist, u_resolution=1e-10)
+        max_error, mae = rng.u_error()
+        assert max_error < 1e-10
+        assert mae <= max_error
+        with suppress_warnings() as sup:
+            # ignore warning about u-resolution being too small.
+            sup.filter(RuntimeWarning)
+            rng = NumericalInverseHermite(dist, u_resolution=1e-14)
+        max_error, mae = rng.u_error()
+        assert max_error < 1e-14
+        assert mae <= max_error
+
+    def test_deprecations(self):
+        msg = ("`tol` has been deprecated and replaced with `u_resolution`. "
+               "It will be completely removed in a future release.")
+        with pytest.warns(DeprecationWarning, match=msg):
+            NumericalInverseHermite(StandardNormal(), tol=1e-12)
+
+
+class TestDiscreteGuideTable:
+    basic_fail_dists = {
+        'nchypergeom_fisher',  # numerical errors on tails
+        'nchypergeom_wallenius',  # numerical errors on tails
+        'randint'  # fails on 32-bit ubuntu
+    }
+
+    def test_guide_factor_gt3_raises_warning(self):
+        pv = [0.1, 0.3, 0.6]
+        urng = np.random.default_rng()
+        with pytest.warns(RuntimeWarning):
+            DiscreteGuideTable(pv, random_state=urng, guide_factor=7)
+
+    def test_guide_factor_zero_raises_warning(self):
+        pv = [0.1, 0.3, 0.6]
+        urng = np.random.default_rng()
+        with pytest.warns(RuntimeWarning):
+            DiscreteGuideTable(pv, random_state=urng, guide_factor=0)
+
+    def test_negative_guide_factor_raises_warning(self):
+        # This occurs from the UNU.RAN wrapper automatically.
+        # however it already gives a useful warning
+        # Here we just test that a warning is raised.
+        pv = [0.1, 0.3, 0.6]
+        urng = np.random.default_rng()
+        with pytest.warns(RuntimeWarning):
+            DiscreteGuideTable(pv, random_state=urng, guide_factor=-1)
+
+    @pytest.mark.parametrize("distname, params", distdiscrete)
+    def test_basic(self, distname, params):
+        if distname in self.basic_fail_dists:
+            msg = ("DGT fails on these probably because of large domains "
+                   "and small computation errors in PMF.")
+            pytest.skip(msg)
+
+        if not isinstance(distname, str):
+            dist = distname
+        else:
+            dist = getattr(stats, distname)
+
+        dist = dist(*params)
+        domain = dist.support()
+
+        if not np.isfinite(domain[1] - domain[0]):
+            # DGT only works with finite domain. So, skip the distributions
+            # with infinite tails.
+            pytest.skip("DGT only works with a finite domain.")
+
+        k = np.arange(domain[0], domain[1]+1)
+        pv = dist.pmf(k)
+        mv_ex = dist.stats('mv')
+        rng = DiscreteGuideTable(dist, random_state=42)
+        check_discr_samples(rng, pv, mv_ex)
+
+    u = [
+        # the correctness of the PPF for equidistant points between 0 and 1.
+        np.linspace(0, 1, num=10000),
+        # test the PPF method for empty arrays
+        [], [[]],
+        # test if nans and infs return nan result.
+        [np.nan], [-np.inf, np.nan, np.inf],
+        # test if a scalar is returned for a scalar input.
+        0,
+        # test for arrays with nans, values greater than 1 and less than 0,
+        # and some valid values.
+        [[np.nan, 0.5, 0.1], [0.2, 0.4, np.inf], [-2, 3, 4]]
+    ]
+
+    @pytest.mark.parametrize('u', u)
+    def test_ppf(self, u):
+        n, p = 4, 0.1
+        dist = stats.binom(n, p)
+        rng = DiscreteGuideTable(dist, random_state=42)
+
+        # Older versions of NumPy throw RuntimeWarnings for comparisons
+        # with nan.
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "invalid value encountered in greater")
+            sup.filter(RuntimeWarning, "invalid value encountered in "
+                                       "greater_equal")
+            sup.filter(RuntimeWarning, "invalid value encountered in less")
+            sup.filter(RuntimeWarning, "invalid value encountered in "
+                                       "less_equal")
+
+            res = rng.ppf(u)
+            expected = stats.binom.ppf(u, n, p)
+        assert_equal(res.shape, expected.shape)
+        assert_equal(res, expected)
+
+    @pytest.mark.parametrize("pv, msg", bad_pv_common)
+    def test_bad_pv(self, pv, msg):
         with pytest.raises(ValueError, match=msg):
-            NaiveRatioUniforms(dist, v_max=1, u_min=3, u_max=1)
-        with pytest.raises(ValueError, match=msg):
-            NaiveRatioUniforms(dist, v_max=1, u_min=1, u_max=1)
-        # need v_max > 0
-        msg = r'`v_max` must be positive.'
-        with pytest.raises(ValueError, match=msg):
-            NaiveRatioUniforms(dist, v_max=-1, u_min=1, u_max=3)
-        with pytest.raises(ValueError, match=msg):
-            NaiveRatioUniforms(dist, v_max=0, u_min=1, u_max=3)
-        # need r > 0
-        msg = r'`r` must be positive.'
-        with pytest.raises(ValueError, match=msg):
-            NaiveRatioUniforms(dist, r=0, v_max=1, u_min=1, u_max=3)
-        with pytest.raises(ValueError, match=msg):
-            NaiveRatioUniforms(dist, r=-0.24, v_max=1, u_min=1, u_max=3)
+            DiscreteGuideTable(pv)
+
+    # DGT doesn't support infinite tails. So, it should throw an error when
+    # inf is present in the domain.
+    inf_domain = [(-np.inf, np.inf), (np.inf, np.inf), (-np.inf, -np.inf),
+                  (0, np.inf), (-np.inf, 0)]
+
+    @pytest.mark.parametrize("domain", inf_domain)
+    def test_inf_domain(self, domain):
+        with pytest.raises(ValueError, match=r"must be finite"):
+            DiscreteGuideTable(stats.binom(10, 0.2), domain=domain)
+
+
+class TestSimpleRatioUniforms:
+    # pdf with piecewise linear function as transformed density
+    # with T = -1/sqrt with shift. Taken from UNU.RAN test suite
+    # (from file t_srou.c)
+    class dist:
+        def __init__(self, shift):
+            self.shift = shift
+            self.mode = shift
+
+        def pdf(self, x):
+            x -= self.shift
+            y = 1. / (abs(x) + 1.)
+            return 0.5 * y * y
+
+        def cdf(self, x):
+            x -= self.shift
+            if x <= 0.:
+                return 0.5 / (1. - x)
+            else:
+                return 1. - 0.5 / (1. + x)
+
+    dists = [dist(0.), dist(10000.)]
+
+    # exact mean and variance of the distributions in the list dists
+    mv1 = [0., np.inf]
+    mv2 = [10000., np.inf]
+    mvs = [mv1, mv2]
+
+    @pytest.mark.parametrize("dist, mv_ex",
+                             zip(dists, mvs))
+    def test_basic(self, dist, mv_ex):
+        rng = SimpleRatioUniforms(dist, mode=dist.mode, random_state=42)
+        check_cont_samples(rng, dist, mv_ex)
+        rng = SimpleRatioUniforms(dist, mode=dist.mode,
+                                  cdf_at_mode=dist.cdf(dist.mode),
+                                  random_state=42)
+        check_cont_samples(rng, dist, mv_ex)
+
+    # test domains with inf + nan in them. need to write a custom test for
+    # this because not all methods support infinite tails.
+    @pytest.mark.parametrize("domain, err, msg", inf_nan_domains)
+    def test_inf_nan_domains(self, domain, err, msg):
+        with pytest.raises(err, match=msg):
+            SimpleRatioUniforms(StandardNormal(), domain=domain)
+
+    def test_bad_args(self):
+        # pdf_area < 0
+        with pytest.raises(ValueError, match=r"`pdf_area` must be > 0"):
+            SimpleRatioUniforms(StandardNormal(), mode=0, pdf_area=-1)

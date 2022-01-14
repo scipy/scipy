@@ -7,7 +7,8 @@ from . import _doccer
 
 __all__ = [  # noqa: F822
     'docformat', 'inherit_docstring_from', 'indentcount_lines',
-    'filldoc', 'unindent_dict', 'unindent_string'
+    'filldoc', 'unindent_dict', 'unindent_string', 'extend_notes_in_docstring',
+    'replace_notes_in_docstring'
 ]
 
 

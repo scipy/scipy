@@ -6,7 +6,7 @@ import numpy as np
 import scipy.linalg
 import scipy.sparse.linalg
 from scipy.sparse.linalg import aslinearoperator
-from scipy.sparse.sputils import is_pydata_spmatrix
+from scipy.sparse._sputils import is_pydata_spmatrix
 
 __all__ = ['expm_multiply']
 
@@ -33,18 +33,16 @@ def _exact_1_norm(A):
 
 def _trace(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
-        return A.diagonal().sum()
-    elif is_pydata_spmatrix(A):
-        return A.to_scipy_sparse().diagonal().sum()
+    if is_pydata_spmatrix(A):
+        return A.to_scipy_sparse().trace()
     else:
-        return np.trace(A)
+        return A.trace()
 
 
 def _ident_like(A):
     # A compatibility function which should eventually disappear.
     if scipy.sparse.isspmatrix(A):
-        return scipy.sparse.construct.eye(A.shape[0], A.shape[1],
+        return scipy.sparse._construct.eye(A.shape[0], A.shape[1],
                 dtype=A.dtype, format=A.format)
     elif is_pydata_spmatrix(A):
         import sparse

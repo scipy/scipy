@@ -8,14 +8,14 @@
 	path = scipy/_lib/boost
 	url = https://github.com/scipy/boost-headers-only
 	shallow = true
-	active = false
-	ignore = all
 [submodule "scipy/sparse/linalg/_propack/PROPACK"]
 	path = scipy/sparse/linalg/_propack/PROPACK
 	url = https://github.com/scipy/PROPACK
 	shallow = true
-	active = false
-	ignore = all
 [submodule "scipy/_lib/unuran"]
 	path = scipy/_lib/unuran
 	url = https://github.com/scipy/unuran.git
+[submodule "HiGHS"]
+	path = scipy/_lib/highs
+	url = https://github.com/scipy/highs
+	shallow = true

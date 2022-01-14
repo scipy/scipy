@@ -23,7 +23,7 @@ result)::
 
 Compare change in benchmark results with another branch::
 
-    python runtests.py --bench-compare master sparse.Arithmetic
+    python runtests.py --bench-compare main sparse.Arithmetic
 
 Run benchmarks against the system-installed SciPy rather than rebuild::
 

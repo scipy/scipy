@@ -36,7 +36,11 @@ _evalfuns = ['eval_legendre', 'eval_chebyt', 'eval_chebyu',
              'eval_sh_jacobi']
 
 __all__ = _polyfuns + list(_rootfuns_map.keys()) + _evalfuns + [  # noqa: F822
-    'poch', 'binom'
+    'poch', 'binom', 'exp', 'inf', 'floor', 'around', 'hstack', 'arange',
+    'linalg', 'airy', 'cephes', 'specfun', 'orthopoly1d', 'newfun',
+    'oldfun', 'p_roots', 't_roots', 'u_roots', 'c_roots', 's_roots',
+    'j_roots', 'l_roots', 'la_roots', 'h_roots', 'he_roots', 'cg_roots',
+    'ps_roots', 'ts_roots', 'us_roots', 'js_roots'
 ]
 
 

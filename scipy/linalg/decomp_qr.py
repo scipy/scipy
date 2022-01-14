@@ -5,7 +5,9 @@
 import warnings
 from . import _decomp_qr
 
-__all__ = ['qr', 'qr_multiply', 'rq']  # noqa: F822
+__all__ = [  # noqa: F822
+    'qr', 'qr_multiply', 'rq', 'get_lapack_funcs', 'safecall'
+]
 
 
 def __dir__():

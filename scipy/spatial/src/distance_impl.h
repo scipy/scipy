@@ -644,34 +644,6 @@ pdist_minkowski(const double *X, double *dm, npy_intp num_rows,
     return 0;
 }
 
-/* Old weighting type which is inconsistent with other distance metrics.
-   Remove in SciPy 1.8 along with wminkowski. */
-static NPY_INLINE int
-pdist_old_weighted_minkowski(const double *X, double *dm, npy_intp num_rows,
-                             const npy_intp num_cols, const double p, const double *w)
-{
-    npy_intp i, j;
-
-    // Covert from old style weights to new weights
-    double * new_weights = malloc(num_cols * sizeof(double));
-    if (!new_weights) {
-        return 1;
-    }
-    for (i = 0; i < num_cols; ++i) {
-        new_weights[i] = pow(w[i], p);
-    }
-
-    for (i = 0; i < num_rows; ++i) {
-        const double *u = X + (num_cols * i);
-        for (j = i + 1; j < num_rows; ++j, ++dm) {
-            const double *v = X + (num_cols * j);
-            *dm = weighted_minkowski_distance(u, v, num_cols, p, new_weights);
-        }
-    }
-    free(new_weights);
-    return 0;
-}
-
 static NPY_INLINE int
 pdist_weighted_minkowski(const double *X, double *dm, npy_intp num_rows,
                          const npy_intp num_cols, const double p, const double *w)
@@ -893,37 +865,6 @@ cdist_minkowski(const double *XA, const double *XB, double *dm,
             *dm = minkowski_distance(u, v, num_cols, p);
         }
     }
-    return 0;
-}
-
-/* Old weighting type which is inconsistent with other distance metrics.
-   Remove in SciPy 1.8 along with wminkowski. */
-static NPY_INLINE int
-cdist_old_weighted_minkowski(const double *XA, const double *XB, double *dm,
-                             const npy_intp num_rowsA, const npy_intp num_rowsB,
-                             const npy_intp num_cols, const double p,
-                             const double *w)
-{
-    npy_intp i, j;
-
-    // Covert from old style weights to new weights
-    double * new_weights = malloc(num_cols * sizeof(double));
-    if (!new_weights) {
-      return 1;
-    }
-
-    for (i = 0; i < num_cols; ++i) {
-      new_weights[i] = pow(w[i], p);
-    }
-
-    for (i = 0; i < num_rowsA; ++i) {
-        const double *u = XA + (num_cols * i);
-        for (j = 0; j < num_rowsB; ++j, ++dm) {
-            const double *v = XB + (num_cols * j);
-            *dm = weighted_minkowski_distance(u, v, num_cols, p, new_weights);
-        }
-    }
-    free(new_weights);
     return 0;
 }
 
