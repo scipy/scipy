@@ -114,8 +114,7 @@ and ``python3`` are aliased to ``pip`` and ``python``, respectively.
 Now that you have all external dependencies, navigate to the directory where
 you cloned the source code into. Download the submodules::
 
-    git submodule init
-    git submodule update
+    git submodule update --init
 
 And build SciPy (this takes a while)::
 
