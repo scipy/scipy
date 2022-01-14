@@ -508,7 +508,7 @@ cdef class Rotation:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def __init__(self, quat, normalize=True, copy=True):
+    def __init__(self, quat, normalize=True, copy=True, order='xyzw'):
         self._single = False
         quat = np.asarray(quat, dtype=float)
 
@@ -531,6 +531,21 @@ cdef class Rotation:
                     raise ValueError("Found zero norm quaternions in `quat`.")
         else:
             self._quat = quat.copy() if copy else quat
+
+        cdef double x, y, z, w
+        if order == 'wxyz':
+            # Convert to internal 'xyzw' format
+            for ind in range(len(quat)):
+                w = self._quat[ind, 0]
+                x = self._quat[ind, 1]
+                y = self._quat[ind, 2]
+                z = self._quat[ind, 3]
+                self._quat[ind, 0] = x
+                self._quat[ind, 1] = y
+                self._quat[ind, 2] = z
+                self._quat[ind, 3] = w
+        elif order != 'xyzw':
+            raise ValueError("`order` must be 'xywz' or 'wxyz'")
 
     def __getstate__(self):
         return np.asarray(self._quat, dtype=float), self._single
@@ -565,7 +580,7 @@ cdef class Rotation:
         return self._quat.shape[0]
 
     @classmethod
-    def from_quat(cls, quat):
+    def from_quat(cls, quat, order='xyzw'):
         """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [1]_.
@@ -573,9 +588,12 @@ cdef class Rotation:
         Parameters
         ----------
         quat : array_like, shape (N, 4) or (4,)
-            Each row is a (possibly non-unit norm) quaternion in scalar-last
-            (x, y, z, w) format. Each quaternion will be normalized to unit
-            norm.
+            Each row is a (possibly non-unit norm) quaternion. Each quaternion
+            will be normalized to unit norm.
+        order : str
+            The order of the quaternion elements. Either 'xyzw' (scalar last)
+            or 'wxyz' (scalar first).
+            Default is 'xyzw'.
 
         Returns
         -------
@@ -624,7 +642,7 @@ cdef class Rotation:
         >>> r.as_quat()
         array([0.        , 0.        , 0.70710678, 0.70710678])
         """
-        return cls(quat, normalize=True)
+        return cls(quat, normalize=True, order=order)
 
     @classmethod
     @cython.boundscheck(False)
@@ -1142,14 +1160,21 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
-    def as_quat(self):
+    def as_quat(self, order='xyzw'):
         """Represent as quaternions.
 
         Rotations in 3 dimensions can be represented using unit norm
         quaternions [1]_. The mapping from quaternions to rotations is
         two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
         reverses the sign of each component, represent the same spatial
-        rotation. The returned value is in scalar-last (x, y, z, w) format.
+        rotation.
+
+        Parameters
+        ----------
+        order : str
+            The order of the quaternion elements in the return value. Either
+            'xyzw' (scalar last) or 'wxyz' (scalar first).
+            Default is 'xyzw'.
 
         Returns
         -------
@@ -1187,10 +1212,27 @@ cdef class Rotation:
         (2, 4)
 
         """
+        quat = self._quat
+        cdef double x, y, z, w
+        if order == 'wxyz':
+            quat = self._quat.copy()
+            # Convert from internal 'xyzw' format
+            for ind in range(len(quat)):
+                x = quat[ind, 0]
+                y = quat[ind, 1]
+                z = quat[ind, 2]
+                w = quat[ind, 3]
+                quat[ind, 0] = w
+                quat[ind, 1] = x
+                quat[ind, 2] = y
+                quat[ind, 3] = z
+        elif order != 'xyzw':
+            raise ValueError("`order` must be 'xywz' or 'wxyz'")
+
         if self._single:
-            return np.array(self._quat[0], copy=True)
+            return np.array(quat[0], copy=True)
         else:
-            return np.array(self._quat, copy=True)
+            return np.array(quat, copy=True)
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
