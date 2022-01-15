@@ -33,8 +33,8 @@ SUCCESS_MESSAGES = (
      "of the (known) global optimum f_min"),
     ("The volume of the hyperrectangle containing the lowest function value "
      "found is below vol_tol={}"),
-    ("The side length of the hyperrectangle containing the lowest function "
-     "value found is below len_tol={}"),
+    ("The side length measureof the hyperrectangle containing the lowest "
+     "function value found is below len_tol={}"),
 )
 
 
@@ -49,7 +49,7 @@ def direct(
     maxiter: int = 6000,
     locally_biased: bool = True,
     f_min: float = -np.inf,
-    f_min_rtol: float = 0.0001,
+    f_min_rtol: float = 1e-4,
     vol_tol: float = 1e-16,
     len_tol: float = 1e-8,
     callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
@@ -81,7 +81,9 @@ def direct(
         If ``True``, print logging information about the optimization process.
     eps : float, optional
         Ensures sufficient decrease in function value when a new potentially
-        optimal hyperrectangle is chosen. Default is 0.0001.
+        optimal hyperrectangle is chosen. In consequence, `eps` serves as a
+        tradeoff between local and global search: the smaller, the more local
+        the search becomes. Default is 1e-4.
     maxfun : int, optional
         Approximate upper bound on objective function evaluations.
         Default is 20000.
@@ -101,14 +103,17 @@ def direct(
         `(f - f_min)/max(abs(f_min), 1)` between the current best minimum
         `f` and the supplied global minimum `f_min` is smaller than
         `f_min_rtol`. This parameter is only used when `f_min` is also set.
-        Default is 0.0001.
+        Default is 1e-4.
     vol_tol : float, optional
         Terminate the optimization once the volume of the hyperrectangle
         containing the lowest function value is smaller than `vol_tol`
         of the complete search space. Must lie between 0 and 1.
         Default is 1e-16.
     len_tol : float, optional
-        Terminate the optimization once the maximal side length of the
+        If `locally_biased==True`, terminate the optimization once half of
+        maximal side length of the hyperrectangle containing the lowest
+        function value is smaller than `len_tol`. If `locally_biased==False`,
+        terminate the optimization once half of the diagonal of the
         hyperrectangle containing the lowest function value is smaller than
         `len_tol`. Must lie between 0 and 1. Default is 1e-8.
     callback : callable, optional
