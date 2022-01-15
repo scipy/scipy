@@ -6,20 +6,11 @@ fortran_ignore_warnings = [
   '-Wno-unused-variable'
 ]
 
-_direct_lib = static_library('_direct_lib',
-  [
-   '_direct/direct_wrap.c',
-   '_direct/DIRect.c',
-   '_direct/DIRsubrout.c',
-   '_direct/DIRserial.c',
-   '_direct/direct.h',
-   '_direct/direct-internal.h'
-  ]
-)
-
 _directmodule = py3.extension_module('_directmodule',
-  'direct.c',
-  link_with: _direct_lib,
+  ['_direct/direct_wrap.c', '_direct/DIRect.c',
+   '_direct/DIRsubrout.c', '_direct/DIRserial.c',
+   'direct.h', '_direct/direct-internal.h',
+   'direct.c'],
   c_args: numpy_nodepr_api,
   include_directories: include_dirs,
   dependencies: [py3_dep],
