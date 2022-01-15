@@ -731,8 +731,8 @@ class TestGennorm:
         # beta = 2
         dist = stats.gennorm(2)
         rvs = dist.rvs(size=1000)
-        rvs_norm = stats.norm.rvs(size=1000)
-        assert stats.ks_2samp(rvs * (2)**(1/2), rvs_norm).pvalue > 0.1
+        rvs_norm = stats.norm.rvs(scale=1/2**0.5, size=1000)
+        assert stats.ks_2samp(rvs, rvs_norm).pvalue > 0.1
 
     def test_rvs_broadcasting(self):
         np.random.seed(0)
