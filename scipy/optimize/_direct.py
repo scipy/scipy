@@ -208,8 +208,8 @@ def direct(
                        "instance of Bounds class")
             raise ValueError(message)
 
-    lb = np.ascontiguousarray(bounds.lb)
-    ub = np.ascontiguousarray(bounds.ub)
+    lb = np.ascontiguousarray(bounds.lb, dtype=np.float64)
+    ub = np.ascontiguousarray(bounds.ub, dtype=np.float64)
 
     # validate bounds
     if not np.all(lb < ub):
@@ -245,7 +245,7 @@ def direct(
     if not isinstance(locally_biased, bool):
         raise ValueError("locally_biased must be True or False.")
     if not isinstance(disp, bool):
-        raise ValueError("disp must be of True or False.")
+        raise ValueError("disp must be True or False.")
 
     def _func_wrap(x, args=None):
         x = np.asarray(x)
