@@ -565,7 +565,7 @@ cdef class Rotation:
         return self._quat.shape[0]
 
     @classmethod
-    def from_quat(cls, quat, order='xyzw'):
+    def from_quat(cls, quat, *, order='xyzw'):
         """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [1]_.
@@ -579,6 +579,9 @@ cdef class Rotation:
             The order of the quaternion elements. Either 'xyzw' (scalar last)
             or 'wxyz' (scalar first).
             Default is 'xyzw'.
+
+            .. versionadded:: 1.9.0
+
 
         Returns
         -------
@@ -1152,7 +1155,7 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
-    def as_quat(self, order='xyzw'):
+    def as_quat(self, *, order='xyzw'):
         """Represent as quaternions.
 
         Rotations in 3 dimensions can be represented using unit norm
@@ -1167,6 +1170,9 @@ cdef class Rotation:
             The order of the quaternion elements in the return value. Either
             'xyzw' (scalar last) or 'wxyz' (scalar first).
             Default is 'xyzw'.
+
+            .. versionadded:: 1.9.0
+
 
         Returns
         -------
