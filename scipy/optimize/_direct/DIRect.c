@@ -644,7 +644,7 @@
     if (delta <= *sigmaper) {
         *ierror = 5;
         if (logfile)
-         fprintf(logfile, "DIRECT stopped: Side length of S_min "
+         fprintf(logfile, "DIRECT stopped: Side length measure of S_min "
              "= %g < %g.\n", delta, *sigmaper);
         *numiter = t;
         goto L100;
