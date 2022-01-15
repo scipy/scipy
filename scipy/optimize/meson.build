@@ -6,6 +6,27 @@ fortran_ignore_warnings = [
   '-Wno-unused-variable'
 ]
 
+_direct_lib = static_library('_direct_lib',
+  [
+   '_direct/direct_wrap.c',
+   '_direct/DIRect.c',
+   '_direct/DIRsubrout.c',
+   '_direct/DIRserial.c',
+   '_direct/direct.h',
+   '_direct/direct-internal.h'
+  ]
+)
+
+_directmodule = py3.extension_module('_directmodule',
+  'direct.c',
+  link_with: _direct_lib,
+  c_args: numpy_nodepr_api,
+  include_directories: include_dirs,
+  dependencies: [py3_dep],
+  install: true,
+  subdir: 'scipy/optimize'
+)
+
 minpack_lib = static_library('minpack',
   [
     'minpack/chkder.f',
@@ -139,27 +160,6 @@ _cobyla = py3.extension_module('_cobyla',
   dependencies: [py3_dep],
   install: true,
   link_language: 'fortran',
-  subdir: 'scipy/optimize'
-)
-
-_direct_lib = static_library('_direct_lib',
-  [
-   '_direct/direct_wrap.c',
-   '_direct/DIRect.c',
-   '_direct/DIRsubrout.c',
-   '_direct/DIRserial.c',
-   '_direct/direct.h',
-   '_direct/direct-internal.h'
-  ]
-)
-
-_directmodule = py3.extension_module('_directmodule',
-  'direct.c',
-  link_with: _direct_lib,
-  c_args: numpy_nodepr_api,
-  include_directories: [inc_np, '_direct'],
-  dependencies: [py3_dep],
-  install: true,
   subdir: 'scipy/optimize'
 )
 

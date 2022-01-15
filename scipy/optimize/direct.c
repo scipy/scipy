@@ -1,9 +1,6 @@
-#ifndef PY_SSIZE_T_CLEAN
-#define PY_SSIZE_T_CLEAN
-#endif /* PY_SSIZE_T_CLEAN */
 #include "Python.h"
 #include "numpy/arrayobject.h"
-#include "_direct/direct.h"
+#include "direct.h"
 #define MY_ALLOC(p, t, n, ret_code) p = (t *) malloc(sizeof(t) * (n)); \
                           if (!(p)) { *ret_code = DIRECT_OUT_OF_MEMORY; }
 #define MY_FREE(p) if (p) free(p)
@@ -21,7 +18,7 @@ direct(PyObject *self, PyObject *args)
     direct_algorithm algorithm;
     direct_return_code ret_code;
 
-    if (!PyArg_ParseTuple(args, "OOOOidiiiddddO", 
+    if (!PyArg_ParseTuple(args, "OOOOidiiiddddO",
                           &f, &lb, &ub, &f_args, &disp, &magic_eps,
                           &max_feval, &max_iter, (int*) &algorithm,
                           &fglobal, &fglobal_reltol,
