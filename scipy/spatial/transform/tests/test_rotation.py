@@ -128,7 +128,7 @@ def test_quaternion_ordering_invalid_input():
 def test_quaternion_ordering_scalar_first(num):
     x = Rotation.random(num=num, random_state=0).as_quat(order='wxyz')
     rot = Rotation.from_quat(x, order='wxyz')
-    assert_array_almost_equal(x, rot.as_quat(order='wxyz'))
+    assert_allclose(x, rot.as_quat(order='wxyz'))
 
 
 def test_as_matrix_from_generic_input():
