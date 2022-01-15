@@ -76,8 +76,6 @@ _ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
-_ufuncs_pxi_pxd_dep = declare_dependency(sources: _ufuncs_pxi_pxd_sources)
-
 amos_sources = [
   'amos/dgamln.f',
   'amos/zabs.f',

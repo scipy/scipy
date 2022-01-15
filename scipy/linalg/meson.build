@@ -31,10 +31,6 @@ linalg_cython_gen = generator(cython_cli,
   output : '@BASENAME@.c',
   depends : [_cython_tree, cython_linalg])
 
-# TKTK - remove when cleared from tree.
-# cython_blas_pxd = declare_dependency(sources: cython_linalg[2])
-# cython_lapack_pxd = declare_dependency(sources: cython_linalg[3])
-
 # fblas
 fblas_module = custom_target('fblas_module',
   output: ['_fblasmodule.c', '_fblas-f2pywrappers.f'],
