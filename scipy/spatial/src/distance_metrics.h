@@ -530,11 +530,11 @@ struct RogerstanimotoDistance {
     }
 };
 
-struct KulsinskiDistance {
+struct Kulczynski1Distance {
     template <typename T>
     struct Acc {
-        Acc(): ntt(0), ndiff(0), n(0) {}
-        T ntt, ndiff, n;
+        Acc(): ntt(0), ndiff(0) {}
+        T ntt, ndiff;
     };
 
     template <typename T>
@@ -543,17 +543,15 @@ struct KulsinskiDistance {
             Acc<T> acc;
             acc.ntt = (x != 0) & (y != 0);
             acc.ndiff = (x != 0) != (y != 0);
-            acc.n = 1;
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (acc.ndiff - acc.ntt + acc.n) / (acc.ndiff + acc.n);
+            return acc.ntt / acc.ndiff;
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
             acc.ntt = a.ntt + b.ntt;
             acc.ndiff = a.ndiff + b.ndiff;
-            acc.n = a.n + b.n;
             return acc;
         });
     }
@@ -564,17 +562,15 @@ struct KulsinskiDistance {
             Acc<T> acc;
             acc.ntt = w * ((x != 0) & (y != 0));
             acc.ndiff = w * ((x != 0) != (y != 0));
-            acc.n = w;
             return acc;
         },
         [](const Acc<T>& acc) INLINE_LAMBDA {
-            return (acc.ndiff - acc.ntt + acc.n) / (acc.ndiff + acc.n);
+            return acc.ntt / acc.ndiff;
         },
         [](const Acc<T>& a, const Acc<T>& b) INLINE_LAMBDA {
             Acc<T> acc;
             acc.ntt = a.ntt + b.ntt;
             acc.ndiff = a.ndiff + b.ndiff;
-            acc.n = a.n + b.n;
             return acc;
         });
     }

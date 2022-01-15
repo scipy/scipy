@@ -572,9 +572,9 @@ PYBIND11_MODULE(_distance_pybind, m) {
               return pdist(out, x, w, JaccardDistance{});
           },
           "x"_a, "w"_a=py::none(), "out"_a=py::none());
-    m.def("pdist_kulsinski",
+    m.def("pdist_kulczynski1",
           [](py::object x, py::object w, py::object out) {
-              return pdist(out, x, w, KulsinskiDistance{});
+              return pdist(out, x, w, Kulczynski1Distance{});
           },
           "x"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("pdist_rogerstanimoto",
@@ -655,9 +655,9 @@ PYBIND11_MODULE(_distance_pybind, m) {
               return cdist(out, x, y, w, JaccardDistance{});
           },
           "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
-    m.def("cdist_kulsinski",
+    m.def("cdist_kulczynski1",
           [](py::object x, py::object y, py::object w, py::object out) {
-              return cdist(out, x, y, w, KulsinskiDistance{});
+              return cdist(out, x, y, w, Kulczynski1Distance{});
           },
           "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("cdist_hamming",
