@@ -508,7 +508,7 @@ cdef class Rotation:
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def __init__(self, quat, normalize=True, copy=True, order='xyzw'):
+    def __init__(self, quat, normalize=True, copy=True):
         self._single = False
         quat = np.asarray(quat, dtype=float)
 
@@ -531,21 +531,6 @@ cdef class Rotation:
                     raise ValueError("Found zero norm quaternions in `quat`.")
         else:
             self._quat = quat.copy() if copy else quat
-
-        cdef double x, y, z, w
-        if order == 'wxyz':
-            # Convert to internal 'xyzw' format
-            for ind in range(len(quat)):
-                w = self._quat[ind, 0]
-                x = self._quat[ind, 1]
-                y = self._quat[ind, 2]
-                z = self._quat[ind, 3]
-                self._quat[ind, 0] = x
-                self._quat[ind, 1] = y
-                self._quat[ind, 2] = z
-                self._quat[ind, 3] = w
-        elif order != 'xyzw':
-            raise ValueError("`order` must be 'xywz' or 'wxyz'")
 
     def __getstate__(self):
         return np.asarray(self._quat, dtype=float), self._single
@@ -642,7 +627,14 @@ cdef class Rotation:
         >>> r.as_quat()
         array([0.        , 0.        , 0.70710678, 0.70710678])
         """
-        return cls(quat, normalize=True, order=order)
+        if order == 'wxyz':
+            # Convert to internal 'xyzw' format
+            quat = np.asarray(quat)
+            quat = np.roll(quat, -1, axis=quat.ndim - 1)
+        elif order != 'xyzw':
+            raise ValueError("`order` must be 'xywz' or 'wxyz'")
+
+        return cls(quat, normalize=True)
 
     @classmethod
     @cython.boundscheck(False)
@@ -1213,19 +1205,9 @@ cdef class Rotation:
 
         """
         quat = self._quat
-        cdef double x, y, z, w
         if order == 'wxyz':
-            quat = self._quat.copy()
             # Convert from internal 'xyzw' format
-            for ind in range(len(quat)):
-                x = quat[ind, 0]
-                y = quat[ind, 1]
-                z = quat[ind, 2]
-                w = quat[ind, 3]
-                quat[ind, 0] = w
-                quat[ind, 1] = x
-                quat[ind, 2] = y
-                quat[ind, 3] = z
+            quat = np.roll(quat, 1, axis=1)
         elif order != 'xyzw':
             raise ValueError("`order` must be 'xywz' or 'wxyz'")
 
