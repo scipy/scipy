@@ -55,8 +55,8 @@ def direct(
     callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
 ) -> OptimizeResult:
     r"""
-    Finds the global minimum of a multivariate function using the
-    deterministic DIRECT (Dividing Rectangles) algorithm.
+    Finds the global minimum of a function using the
+    DIRECT algorithm.
 
     The algorithm is due to Jones et al. [1]_.
 
@@ -145,13 +145,12 @@ def direct(
     parameter which defaults to 1e-4, some of the existing hyperrectangles
     to be further divided. This division process continues until either the
     maximum number of iterations or maximum function evaluations allowed
-    are exceeded, or the volume or the side length of the hyperrectangle
-    containing the minimal value found so far is lower than a certain
-    tolerance. If `f_min` is specified, the optimization will stop once
-    this function value is reached within a relative tolerance. The locally
-    biased variant of DIRECT (originally called DIRECT_L) [2]_ is used by
-    default. It makes the search more locally biased and more efficient for
-    cases with only a few local minima.
+    are exceeded, or the hyperrectangle containing the minimal value found
+    so far becomes small enough. If `f_min` is specified, the optimization
+    will stop once this function value is reached within a relative tolerance.
+    The locally biased variant of DIRECT (originally called DIRECT_L) [2]_ is
+    used by default. It makes the search more locally biased and more
+    efficient for cases with only a few local minima.
 
     This code is based on the DIRECT 2.0.4 Fortran code by Gablonsky et al. at
     https://ctk.math.ncsu.edu/SOFTWARE/DIRECTv204.tar.gz
