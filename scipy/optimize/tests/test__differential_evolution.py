@@ -1309,6 +1309,13 @@ class TestDifferentialEvolutionSolver:
         assert_allclose(solver.limits[0], [-1.5, 0.9, -10.5])
         assert_allclose(solver.limits[1], [-0.5, 2.2, 4.5])
 
+        # A lower bound of -1.2 is converted to
+        # np.nextafter(np.ceil(-1.2) - 0.5, np.inf)
+        # with a similar process to the upper bound. Check that the
+        # conversions work
+        assert_allclose(np.round(solver.limits[0]), [-1.0, 1.0, -10.0])
+        assert_allclose(np.round(solver.limits[1]), [-1.0, 2.0, 4.0])
+
         bounds = [(-10.2, -8.1), (0.9, 2.2), (-10.9, -9.9999)]
         solver = DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
                                              integrality=integrality)
