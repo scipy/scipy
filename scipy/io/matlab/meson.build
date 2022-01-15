@@ -7,6 +7,7 @@ streams = py3.extension_module('_streams',
 
 mio_utils = py3.extension_module('_mio_utils',
   cython_gen.process('_mio_utils.pyx'),
+  c_args: ['-Wno-cpp'],
 #  c_args: numpy_nodepr_api, TODO: Uncomment once NumPy API usage is fixed
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
@@ -16,6 +17,7 @@ mio_utils = py3.extension_module('_mio_utils',
 
 mio5_utils = py3.extension_module('_mio5_utils',
   cython_gen.process('_mio5_utils.pyx'),
+  c_args: ['-Wno-cpp'],
 #  c_args: numpy_nodepr_api, TODO: Uncomment once NumPy API usage is fixed
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],

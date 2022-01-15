@@ -264,6 +264,7 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
     '-Wno-format-truncation',
     '-Wno-non-virtual-dtor',
     '-Wno-class-memaccess',
+    '-Wp,-w',  # __STDC_FORMAT_MACROS redefinition warning.
     Wno_unused_but_set,
     highs_define_macros,
     numpy_nodepr_api,

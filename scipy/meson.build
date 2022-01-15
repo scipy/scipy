@@ -177,6 +177,8 @@ cython_gen_cpp = generator(cython_cli,
   output : '@BASENAME@.cpp',
   depends : [_cython_tree])
 
+c_undefined_ok = ['-Wno-maybe-uninitialized']
+
 # Ordering of subdirs: special and linalg come first, because other submodules
 # have dependencies on cython_special.pxd and cython_linalg.pxd. After those,
 # subdirs with the most heavy builds should come first (that parallelizes

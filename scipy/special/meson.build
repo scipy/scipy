@@ -359,7 +359,7 @@ py3.extension_module('_ufuncs',
     ufuncs_sources,
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
-  c_args: [numpy_nodepr_api, use_math_defines],
+  c_args: [numpy_nodepr_api, use_math_defines, c_undefined_ok],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies: [
     py3_dep,
@@ -409,7 +409,7 @@ py3.extension_module('_ufuncs_cxx',
 
 py3.extension_module('_ellip_harm_2',
   [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.c'],
-  c_args: numpy_nodepr_api,
+  c_args: [numpy_nodepr_api, c_undefined_ok],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies: [py3_dep, lapack],
   install: true,
@@ -425,7 +425,7 @@ py3.extension_module('cython_special',
     'specfun_wrappers.c',
     'sf_error.c'
   ],
-  c_args: [numpy_nodepr_api, use_math_defines],
+  c_args: [numpy_nodepr_api, use_math_defines, c_undefined_ok],
   include_directories: [inc_np, '../_lib', '../_build_utils/src', 'cephes'],
   dependencies: [py3_dep, npymath_lib, lapack],
   link_with: [

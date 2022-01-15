@@ -193,6 +193,7 @@ cython_blas = py3.extension_module('cython_blas',
     cython_linalg[4],  # _blas_subroutines.h
     'fortran_defs.h'
   ],
+  c_args: ['-Wno-cpp'],
   link_with: fwrappers,
   include_directories: inc_np,
   dependencies: [py3_dep, blas],
@@ -208,6 +209,7 @@ cython_lapack = py3.extension_module('cython_lapack',
     cython_linalg[5],  # _lapack_subroutines.h
     'fortran_defs.h'
   ],
+  c_args: ['-Wno-cpp'],
   link_with: fwrappers,
   include_directories: inc_np,
   dependencies: [py3_dep, blas],
@@ -228,6 +230,7 @@ py3.extension_module('_decomp_update',
     _cython_tree, __init__py,
     cython_linalg[3]
   ],
+  c_args: ['-Wno-cpp'],
   include_directories: inc_np,
   dependencies: py3_dep,
   install: true,
@@ -236,7 +239,7 @@ py3.extension_module('_decomp_update',
 
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   cython_gen.process('_cythonized_array_utils.pyx'),
-  c_args: numpy_nodepr_api,
+  c_args: [numpy_nodepr_api, c_undefined_ok],
   dependencies: [py3_dep],
   include_directories: [inc_np],
   install: true,

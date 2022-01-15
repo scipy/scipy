@@ -1,5 +1,6 @@
 py3.extension_module('convolve',
   cython_gen.process('convolve.pyx'),
+  c_args: ['-Wno-cpp'],
   include_directories: inc_np,
   dependencies: py3_dep,
   install: true,

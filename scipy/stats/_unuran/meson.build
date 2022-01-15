@@ -208,7 +208,7 @@ statlib = py3.extension_module('unuran_wrapper',
     unuran_wrap_pyx,
     unuran_sources
   ],
-  c_args: unuran_defines,
+  c_args: [unuran_defines, '-Wno-cpp'],
   dependencies: [py3_dep],
   include_directories: [inc_np, unuran_include_dirs],
   install: true,

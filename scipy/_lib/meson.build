@@ -23,6 +23,7 @@ lib_cython_gen = generator(cython_cli,
 
 py3.extension_module('_ccallback_c',
   lib_cython_gen.process('_ccallback_c.pyx'),
+  c_args: ['-Wno-discarded-qualifiers'],
   include_directories: 'src',
   dependencies: py3_dep,
   install: true,

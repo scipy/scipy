@@ -101,7 +101,7 @@ _distance_pybind = py3.extension_module('_distance_pybind',
 
 _voronoi = py3.extension_module('_voronoi',
   [cython_gen.process('_voronoi.pyx')],
-  c_args: numpy_nodepr_api,
+  c_args: [numpy_nodepr_api, c_undefined_ok],
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
   install: true,

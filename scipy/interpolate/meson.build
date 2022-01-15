@@ -94,7 +94,7 @@ fitpack_lib = static_library('fitpack_lib',
 
 interpnd = py3.extension_module('interpnd',
   spt_cython_gen.process('interpnd.pyx'),
-  c_args: numpy_nodepr_api,
+  c_args: [numpy_nodepr_api, '-Wno-discarded-qualifiers'],
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
   install: true,
