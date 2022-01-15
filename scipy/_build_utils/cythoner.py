@@ -19,8 +19,8 @@ def main():
 
     sbp.run(['cython', '-3', '--fast-fail',
              '--output-file', out_fname,
-             '--include-dir', os.getcwd()] + sys.argv[3:] +
-             [in_fname],
+             '--include-dir', os.getcwd()] +
+            sys.argv[3:] + [in_fname],
             check=True)
 
 
