@@ -8397,7 +8397,8 @@ class gennorm_gen(rv_continuous):
            generalized Gaussian densities." Journal of Statistical
            Computation and Simulation 79.11 (2009): 1317-1329
 
-    .. [3] "Simulate data from a generalized Gaussian distribution",
+    .. [3] Wicklin, Rick. "Simulate data from a generalized Gaussian
+           distribution" in The DO Loop blog, September 21, 2016,
            https://blogs.sas.com/content/iml/2016/09/21/simulate-generalized-gaussian-sas.html
 
     %(example)s
