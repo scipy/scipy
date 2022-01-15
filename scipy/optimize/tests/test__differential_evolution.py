@@ -9,8 +9,9 @@ from scipy.optimize._differentialevolution import (DifferentialEvolutionSolver,
 from scipy.optimize import differential_evolution
 from scipy.optimize._constraints import (Bounds, NonlinearConstraint,
                                          LinearConstraint)
-from scipy.optimize import rosen
+from scipy.optimize import rosen, minimize
 from scipy.sparse import csr_matrix
+from scipy import stats
 from scipy._lib._pep440 import Version
 
 import numpy as np
@@ -1236,3 +1237,92 @@ class TestDifferentialEvolutionSolver:
         assert_(np.all(np.array(c1(res.x)) <= 0.001))
         assert_(np.all(res.x >= np.array(bounds)[:, 0]))
         assert_(np.all(res.x <= np.array(bounds)[:, 1]))
+
+    def test_integrality(self):
+        # test fitting discrete distribution to data
+        rng = np.random.default_rng(6519843218105)
+        dist = stats.nbinom
+        shapes = (5, 0.5)
+        x = dist.rvs(*shapes, size=10000, random_state=rng)
+
+        def func(p, *args):
+            dist, x = args
+            # negative log-likelihood function
+            ll = -np.log(dist.pmf(x, *p)).sum(axis=-1)
+            if np.isnan(ll):  # occurs when x is outside of support
+                ll = np.inf  # we don't want that
+            return ll
+
+        integrality = [True, False]
+        bounds = [(1, 18), (0, 0.95)]
+
+        res = differential_evolution(func, bounds, args=(dist, x),
+                                     integrality=integrality, polish=False,
+                                     seed=rng)
+        # tolerance has to be fairly relaxed for the second parameter
+        # because we're fitting a distribution to random variates.
+        assert res.x[0] == 5
+        assert_allclose(res.x, shapes, rtol=0.02)
+
+        # check that we can still use integrality constraints with polishing
+        res2 = differential_evolution(func, bounds, args=(dist, x),
+                                      integrality=integrality, polish=True,
+                                      seed=rng)
+
+        def func2(p, *args):
+            n, dist, x = args
+            return func(np.array([n, p[0]]), dist, x)
+
+        # compare the DE derived solution to an LBFGSB solution (that doesn't
+        # have to find the integral values). Note we're setting x0 to be the
+        # output from the first DE result, thereby making the polishing step
+        # and this minimisation pretty much equivalent.
+        LBFGSB = minimize(func2, res2.x[1], args=(5, dist, x),
+                          bounds=[(0, 0.95)])
+        assert_allclose(res2.x[1], LBFGSB.x)
+        assert res2.fun <= res.fun
+
+    def test_integrality_limits(self):
+        def f(x):
+            return x
+
+        integrality = [True, False, True]
+        bounds = [(0.2, 1.1), (0.9, 2.2), (3.3, 4.9)]
+
+        # no integrality constraints
+        solver = DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
+                                             integrality=False)
+        assert_allclose(solver.limits[0], [0.2, 0.9, 3.3])
+        assert_allclose(solver.limits[1], [1.1, 2.2, 4.9])
+
+        # with integrality constraints
+        solver = DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
+                                             integrality=integrality)
+        assert_allclose(solver.limits[0], [0.5, 0.9, 3.5])
+        assert_allclose(solver.limits[1], [1.5, 2.2, 4.5])
+        assert_equal(solver.integrality, [True, False, True])
+        assert solver.polish is False
+
+        bounds = [(-1.2, -0.9), (0.9, 2.2), (-10.3, 4.1)]
+        solver = DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
+                                             integrality=integrality)
+        assert_allclose(solver.limits[0], [-1.5, 0.9, -10.5])
+        assert_allclose(solver.limits[1], [-0.5, 2.2, 4.5])
+
+        # A lower bound of -1.2 is converted to
+        # np.nextafter(np.ceil(-1.2) - 0.5, np.inf)
+        # with a similar process to the upper bound. Check that the
+        # conversions work
+        assert_allclose(np.round(solver.limits[0]), [-1.0, 1.0, -10.0])
+        assert_allclose(np.round(solver.limits[1]), [-1.0, 2.0, 4.0])
+
+        bounds = [(-10.2, -8.1), (0.9, 2.2), (-10.9, -9.9999)]
+        solver = DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
+                                             integrality=integrality)
+        assert_allclose(solver.limits[0], [-10.5, 0.9, -10.5])
+        assert_allclose(solver.limits[1], [-8.5, 2.2, -9.5])
+
+        bounds = [(-10.2, -10.1), (0.9, 2.2), (-10.9, -9.9999)]
+        with pytest.raises(ValueError, match='One of the integrality'):
+            DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
+                                        integrality=integrality)
