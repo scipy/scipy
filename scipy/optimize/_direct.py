@@ -55,8 +55,8 @@ def direct(
     callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
 ) -> OptimizeResult:
     r"""
-    Solve an optimization problem using the DIRECT
-    (Dividing Rectangles) algorithm.
+    Finds the global minimum of a multivariate function using the
+    deterministic DIRECT (Dividing Rectangles) algorithm.
 
     The algorithm is due to Jones et al. [1]_.
 
