@@ -17,7 +17,8 @@ from scipy.sparse.linalg import LinearOperator
 ###############################################################################
 # Graph laplacian
 def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
-              *, copy=True, aslinearoperator=False, dtype=None):
+              *, copy=True,
+              aslinearoperator=False, dtype=None, symmetrized=False):
     """
     Return the Laplacian of a directed graph.
 
@@ -50,6 +51,14 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
         the output dtype is 'float' allowing accurate normalization,
         but dramatically increasing the memory use.
         Default: None, for backward compatibility.
+    symmetrized: bool, optional
+        If True, then the output Laplacian is symmertic/Hermitian.
+        The symmetrization is done by `csgraph + csgraph.T.conj`
+        without dividing by 2 to preserve integer dtypes if possible.
+        The symmetrization will increase the memory footprint of
+        sparse matrices unless the sparsity pattern is symmetric or
+        `aslinearoperator=True`.
+        Default: False, for backward compatibility.
 
     Returns
     -------
@@ -123,7 +132,8 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     lap, d = create_lap(csgraph, normed=normed, axis=degree_axis,
                         copy=copy,
                         aslinearoperator=aslinearoperator,
-                        dtype=dtype)
+                        dtype=dtype,
+                        symmetrized=symmetrized)
     if return_diag:
         return lap, d
     return lap
@@ -134,7 +144,9 @@ def _setdiag_dense(A, d):
 
 
 def _laplacian_sparse(graph, normed, axis,
-                      copy, aslinearoperator, dtype):
+                      copy,
+                      aslinearoperator, dtype,
+                      symmetrized):
     if aslinearoperator:
         w = graph.sum(axis=axis).getA1() - graph.diagonal()
         if normed:
@@ -172,6 +184,10 @@ def _laplacian_sparse(graph, normed, axis,
             m = graph
             if copy:
                 needs_copy = True
+
+        if symmetrized:
+            m = m + m.T.conj
+
         w = m.sum(axis=axis).getA1() - m.diagonal()
         if normed:
             m = m.tocoo(copy=needs_copy)
@@ -193,7 +209,9 @@ def _laplacian_sparse(graph, normed, axis,
 
 
 def _laplacian_dense(graph, normed, axis,
-                     copy, aslinearoperator, dtype):
+                     copy,
+                     aslinearoperator, dtype,
+                     symmetrized):
     if aslinearoperator:
         m_a = np.asarray(graph)
         w = m_a.sum(axis=axis)
@@ -220,6 +238,8 @@ def _laplacian_dense(graph, normed, axis,
             m = np.array(graph)
         else:
             m = np.asarray(graph)
+        if symmetrized:
+            m = m + m.T.conj
 
         np.fill_diagonal(m, 0)
         w = m.sum(axis=axis)
