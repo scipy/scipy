@@ -220,7 +220,7 @@ def lobpcg(
        directory) is ill-conditioned for large ``n``, so convergence will be
        slow, unless efficient preconditioning is used. For this specific
        problem, a good simple preconditioner function would be a linear solve
-       for ``A``, which is easy to code since ``A`` is tridiagonal.
+       for `A`, which is easy to code since `A` is tridiagonal.
 
     2. Quality of the initial approximations ``X`` to the seeking eigenvectors.
        Randomly distributed around the origin vectors work well if no better
