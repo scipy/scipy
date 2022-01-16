@@ -13,7 +13,12 @@ __all__ = [
     # decomp (eigen value problems)
     'eig', 'eigvals', 'eigh', 'eigvalsh',
     'eig_banded', 'eigvals_banded',
-    'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf'
+    'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf',
+    # matrix functions
+    'expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm',
+    'tanhm', 'logm', 'funm', 'signm', 'sqrtm',
+    'expm_frechet', 'expm_cond', 'fractional_matrix_power',
+    'khatri_rao'
 ]
 
 
@@ -216,3 +221,124 @@ def _w_v_replacer(args, kwargs, dispatchables):
 @_get_docs
 def cdf2rdf(w, v):
     return w, v
+
+
+############################## Matrix functions ################################
+
+def _A_replacer(args, kwargs, dispatchables):
+    def self_method(A, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def fractional_matrix_power(A, t):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def logm(A, disp=True):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def expm(A):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def cosm(A):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def sinm(A):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def tanm(A):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def coshm(A):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def sinhm(A):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def tanhm(A):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def funm(A, func, disp=True):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def signm(A, disp=True):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def sqrtm(A, disp=True, blocksize=64):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def expm_cond(A, check_finite=True):
+    return (A, )
+
+
+def _A_E_replacer(args, kwargs, dispatchables):
+    def self_method(A, E, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_A_E_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
+    return A, E
+
+
+@_create_linalg(_a_b_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def khatri_rao(a, b):
+    return a, b

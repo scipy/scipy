@@ -207,7 +207,6 @@ from ._decomp_qz import *
 from ._decomp_svd import *
 from ._decomp_schur import *
 from ._decomp_polar import *
-from ._matfuncs import *
 from ._multimethods import *
 from .blas import *
 from .lapack import *

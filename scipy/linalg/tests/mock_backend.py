@@ -22,7 +22,12 @@ method_names = [
     # decomp (eigen value problems)
     'eig', 'eigvals', 'eigh', 'eigvalsh',
     'eig_banded', 'eigvals_banded',
-    'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf'
+    'eigh_tridiagonal', 'eigvalsh_tridiagonal', 'hessenberg', 'cdf2rdf',
+    # matrix functions
+    'expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm',
+    'tanhm', 'logm', 'funm', 'signm', 'sqrtm',
+    'expm_frechet', 'expm_cond', 'fractional_matrix_power',
+    'khatri_rao'
 ]
 
 for name in method_names:
