@@ -80,6 +80,21 @@ def _linprog_highs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
         are also available.
+    integrality : 1-D array, optional
+        Indicates the type of integrality constraint on each decision variable.
+
+        ``0`` : Continuous variable; no integrality constraint.
+
+        ``1`` : Integer variable; decision variable must be an integer
+        within `bounds`.
+
+        ``2`` : Semi-continuous variable; decision variable must be within
+        `bounds` or take value ``0``.
+
+        ``3`` : Semi-integer variable; decision variable must be an integer
+        within `bounds` or take value ``0``.
+
+        By default, all variables are continuous.
 
     Options
     -------

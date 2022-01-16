@@ -111,8 +111,12 @@ Inside the ``scipy-dev`` environment, install the python-level dependencies::
 Note that when the virtual environment is active, the system-wide names ``pip3``
 and ``python3`` are aliased to ``pip`` and ``python``, respectively.
 
-Now that you have all needed dependencies, navigate to the directory where
-you cloned the source code into, and build SciPy (this takes a while)::
+Now that you have all external dependencies, navigate to the directory where
+you cloned the source code into. Download the submodules::
+
+    git submodule update --init
+
+And build SciPy (this takes a while)::
 
     python setup.py build
 
