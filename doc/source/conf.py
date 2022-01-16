@@ -191,8 +191,7 @@ html_theme_options = {
   "github_url": "https://github.com/scipy/scipy",
   "navbar_start": ["navbar-logo", "version-switcher"],
   "switcher": {
-      "json_url": "https://github.com/tupui/scipy/blob/version_switcher/doc/source"
-                  "/_static/version_switcher.json",
+      "json_url": "https://github.com/tupui/scipy/blob/version_switcher/doc/source/_static/version_switcher.json",
       "url_template": "https://docs.scipy.org/doc/scipy-{version}/reference/",
       "version_match": version,
   }
