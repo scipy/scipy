@@ -3,9 +3,9 @@
    f2c output hand-cleaned by SGJ (August 2007).
 */
 
+#include "direct-internal.h"
 #include <math.h>
 // #include "numpy/ndarrayobject.h"
-#include "direct-internal.h"
 
 /* Table of constant values */
 
