@@ -32,6 +32,8 @@ from collections.abc import Iterable
 import warnings
 import numpy
 
+from scipy.array_compatibility import get_namespace
+
 
 def _extend_mode_to_code(mode):
     """Convert an extension mode to the corresponding integer code.
@@ -71,25 +73,26 @@ def _normalize_sequence(input, rank):
 
 
 def _get_output(output, input, shape=None, complex_output=False):
+    xp, _ = get_namespace(input)
     if shape is None:
         shape = input.shape
     if output is None:
         if not complex_output:
-            output = numpy.zeros(shape, dtype=input.dtype.name)
+            output = xp.zeros(shape, dtype=input.dtype)
         else:
-            complex_type = numpy.promote_types(input.dtype, numpy.complex64)
-            output = numpy.zeros(shape, dtype=complex_type)
+            complex_type = xp.promote_types(input.dtype, numpy.complex64)
+            output = xp.zeros(shape, dtype=complex_type)
     elif isinstance(output, (type, numpy.dtype)):
         # Classes (like `np.float32`) and dtypes are interpreted as dtype
         if complex_output and numpy.dtype(output).kind != 'c':
             warnings.warn("promoting specified output dtype to complex")
-            output = numpy.promote_types(output, numpy.complex64)
-        output = numpy.zeros(shape, dtype=output)
+            output = xp.promote_types(output, numpy.complex64)
+        output = xp.zeros(shape, dtype=output)
     elif isinstance(output, str):
         output = numpy.sctypeDict[output]
         if complex_output and numpy.dtype(output).kind != 'c':
             raise RuntimeError("output must have complex dtype")
-        output = numpy.zeros(shape, dtype=output)
+        output = xp.zeros(shape, dtype=output)
     elif output.shape != shape:
         raise RuntimeError("output shape not correct")
     elif complex_output and output.dtype.kind != 'c':
