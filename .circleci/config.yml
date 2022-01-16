@@ -30,7 +30,7 @@ jobs:
               echo "Merging $(cat merge.txt)";
               git remote add upstream https://github.com/scipy/scipy.git;
               git pull --ff-only upstream "refs/pull/$(cat merge.txt)/merge";
-              git fetch upstream master;
+              git fetch upstream maintenance/1.8.x;
             fi
 
       - run:
@@ -179,4 +179,4 @@ workflows:
             - build_docs
           filters:
             branches:
-              only: master
+              only: maintenance/1.8.x
