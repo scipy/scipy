@@ -16,8 +16,6 @@ References
 .. [3] A. V. Knyazev's C and MATLAB implementations:
        https://github.com/lobpcg/blopex
 """
-# Author: Andrew Knyazev <Andrew.Knyazev@ucdenver.edu>
-#         Robert Cimrman <cimrman3@ntc.zcu.cz>
 
 import warnings
 import numpy as np
@@ -207,7 +205,7 @@ def lobpcg(
     internally, so the code tries to call the standard function instead.
 
     It is not that ``n`` should be large for the LOBPCG to work, but rather the
-    ratio ``k / m`` should be large. It you call LOBPCG with ``k=1``
+    ratio ``n / k`` should be large. It you call LOBPCG with ``k=1``
     and ``n=10``, it works though ``n`` is small. The method is intended
     for extremely large ``n / k``.
 
