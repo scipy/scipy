@@ -454,8 +454,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     # casting types in the process.
     # This recreates the results without that issue
     # View of a, rotated so the requested axis is last
-    in_dims = list(range(a.ndim))
-    a_view = np.transpose(a, in_dims[:axis] + in_dims[axis+1:] + [axis])
+    a_view = np.moveaxis(a, axis, -1)
 
     inds = np.ndindex(a_view.shape[:-1])
     modes = np.empty(a_view.shape[:-1], dtype=a.dtype)
