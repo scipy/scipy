@@ -1,11 +1,11 @@
 #ifndef DIRECT_INTERNAL_H
 #define DIRECT_INTERNAL_H
 
+#include "../direct.h"
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
-#include "../direct.h"
 
 #ifdef __cplusplus
 extern "C"
