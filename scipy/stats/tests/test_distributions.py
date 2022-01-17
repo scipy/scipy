@@ -6340,7 +6340,7 @@ def test_histogram_non_uniform():
     # Tests rv_histogram works even for non-uniform bin widths
     counts, bins = ([1, 1], [0, 1, 1001])
     dist = stats.rv_histogram((counts, bins))
-    np.testing.assert_array_equal(
+    np.testing.assert_allclose(
         dist.pdf([0.5, 200]),
         np.array([0.5, 0.0005]))
     assert dist.median() == 1
