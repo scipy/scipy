@@ -21,6 +21,15 @@ _stats_pxd = custom_target('_stats_pxd',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
+stats_special_cython_gen = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : [
+    _cython_tree,
+    _ufuncs_pxi_pxd_sources,
+    _stats_pxd,
+    cython_special])
+
 statlib_lib = static_library('statlib_lib',
   [
     'statlib/ansari.f',
@@ -48,23 +57,8 @@ statlib = py3.extension_module('_statlib',
   subdir: 'scipy/stats'
 )
 
-# Relies on cython_special
-_stats_c = custom_target('_stats_c',
-  output: '_stats.c',
-  input: [
-    '_stats.pyx',
-    _cython_tree,
-    _stats_pxd[0],  # __init__.py
-    cython_special[7],  # cython_special.pxd
-  ],
-  command: [
-    cython, '-3', '--fast-fail',
-    '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
-  ]
-)
-
 _stats = py3.extension_module('_stats',
-  _stats_c,
+  stats_special_cython_gen.process('_stats.pyx'),
   c_args: '-Wno-cpp',  # Replace with numpy_nodepr_api after Cython 3.0 is out
   dependencies: [py3_dep],
   include_directories: [inc_np],
