@@ -268,16 +268,60 @@ def check_precond_dummy(solver, case):
         x, info = solver(A, b, M1=precond, M2=precond, x0=x0, tol=tol)
     else:
         x, info = solver(A, b, M=precond, x0=x0, tol=tol)
-    assert_equal(info,0)
+    assert_equal(info, 0)
     assert_normclose(A.dot(x), b, tol)
 
     A = aslinearoperator(A)
     A.psolve = identity
     A.rpsolve = identity
+    if solver is qmr:
+        def assert_array_normclose(a, b, tol=1e-8):
+            d = b - a
+            d2 = d * d
+            residual = np.sqrt(max(d2.sum(axis=0)))
+            tolerance = tol * bNorm
+            msg = f"residual ({residual}) not smaller than " \
+                  f"tolerance ({tolerance})"
+            assert_(residual < tolerance, msg=msg)
 
-    x, info = solver(A, b, x0=x0, tol=tol)
-    assert_equal(info,0)
-    assert_normclose(A@x, b, tol=tol)
+        bNorm = norm(b)
+        bArray = np.array([b, b, b]).T
+
+        x, infoX = solver(A, b, x0=x0, tol=tol)
+        y, infoY = solver(A, b, M1=precond, x0=x0, tol=tol)
+        z, infoZ = solver(A, b, M2=precond, x0=x0, tol=tol)
+        assert_equal(abs(infoX) + abs(infoY) + abs(infoZ), 0)
+        xyz = np.array([x, y, z]).T
+        assert_array_normclose(A@xyz, bArray, tol)
+
+        del A.rpsolve
+        x, infoX = solver(A, b, x0=x0, tol=tol)
+        y, infoY = solver(A, b, M1=precond, x0=x0, tol=tol)
+        z, infoZ = solver(A, b, M2=precond, x0=x0, tol=tol)
+        assert_equal(abs(infoX) + abs(infoY) + abs(infoZ), 0)
+        xyz = np.array([x, y, z]).T
+        assert_array_normclose(A@xyz, bArray, tol)
+
+        del A.psolve
+        A.rpsolve = identity
+        x, infoX = solver(A, b, x0=x0, tol=tol)
+        y, infoY = solver(A, b, M1=precond, x0=x0, tol=tol)
+        z, infoZ = solver(A, b, M2=precond, x0=x0, tol=tol)
+        assert_equal(abs(infoX) + abs(infoY) + abs(infoZ), 0)
+        xyz = np.array([x, y, z]).T
+        assert_array_normclose(A@xyz, bArray, tol)
+
+        del A.rpsolve
+        x, infoX = solver(A, b, x0=x0, tol=tol)
+        y, infoY = solver(A, b, M1=precond, x0=x0, tol=tol)
+        z, infoZ = solver(A, b, M2=precond, x0=x0, tol=tol)
+        assert_equal(abs(infoX) + abs(infoY) + abs(infoZ), 0)
+        xyz = np.array([x, y, z]).T
+        assert_array_normclose(A@xyz, bArray, tol)
+    else:
+        x, info = solver(A, b, x0=x0, tol=tol)
+        assert_equal(info, 0)
+        assert_normclose(A@x, b, tol=tol)
 
 
 def test_precond_dummy():
@@ -344,6 +388,19 @@ def test_precond_inverse(case):
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
             check_precond_inverse(solver, case)
+
+
+def test_gmres_basic():
+    A = np.vander(np.arange(10) + 1)[:, ::-1]
+    b = np.zeros(10)
+    b[0] = 1
+    np.linalg.solve(A, b)
+
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning, ".*called without specifying.*")
+        x_gm, err = gmres(A, b, restart=5, maxiter=1)
+
+    assert_allclose(x_gm[0], 0.359, rtol=1e-2)
 
 
 def test_reentrancy():
@@ -577,17 +634,6 @@ class TestQMR:
 
 
 class TestGMRES:
-    def test_basic(self):
-        A = np.vander(np.arange(10) + 1)[:, ::-1]
-        b = np.zeros(10)
-        b[0] = 1
-
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x_gm, err = gmres(A, b, restart=5, maxiter=1)
-
-        assert_allclose(x_gm[0], 0.359, rtol=1e-2)
-
     def test_callback(self):
 
         def store_residual(r, rvec):
