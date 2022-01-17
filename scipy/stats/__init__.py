@@ -468,6 +468,7 @@ from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite  # noqa
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
+from ._distn_infrastructure import fit
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

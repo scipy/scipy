@@ -11,6 +11,14 @@ import types
 import warnings
 import inspect
 from itertools import zip_longest
+from collections import namedtuple
+from dataclasses import make_dataclass, field
+
+
+try:
+    import matplotlib.pyplot as plt
+except ModuleNotFoundError:
+    plt = None
 
 from scipy._lib import doccer
 from scipy._lib._util import _lazywhere
@@ -1495,6 +1503,23 @@ class rv_generic:
         place(out_a, 1-cond, self.badvalue)
         place(out_b, 1-cond, self.badvalue)
         return out_a, out_b
+
+    def _get_shape_info(self):
+        return self._shape_info()
+
+
+class ShapeInfo:
+    def __init__(self, shape_name, integrality=False, domain=(-np.inf, np.inf),
+                 inclusive = (True, True)):
+        self.shape_name = shape_name
+        self.integrality = integrality
+
+        domain = list(domain)
+        if not inclusive[0]:
+            domain[0] = np.nextafter(domain[0], np.inf)
+        if not inclusive[1]:
+            domain[1] = np.nextafter(domain[1], -np.inf)
+        self.domain = domain
 
 
 def _get_fixed_fit_value(kwds, names):
@@ -3836,3 +3861,302 @@ def get_distribution_names(namespace_pairs, rv_base_class):
         if isinstance(value, rv_base_class):
             distn_names.append(name)
     return distn_names, distn_gen_names
+
+
+def _combine_bounds(name, bounds_type, user_bounds, shape_domain,
+                    integral):
+    """Intersection of user-defined bounds and distribution PDF/PMF domain"""
+
+    user_bounds = np.atleast_1d(user_bounds)
+
+    if user_bounds.shape != (2,):
+        if bounds_type == "shape_bounds":
+            message = ("The element of `shape_bounds` corresponding with "
+                       f"distribution parameter `{name}` must be a tuple "
+                       "containing exactly two elements: "
+                       "the lower and upper bound of the shape parameter.")
+        else:
+            message = (f"{bounds_type} must be a tuple containing exactly "
+                       "two elements: the lower and upper bound of the "
+                       "parameter.")
+        raise ValueError(message)
+
+    if not np.all(np.isfinite(user_bounds)):
+        message = (f"All elements of {bounds_type} must be finite.")
+        raise ValueError(message)
+
+    if user_bounds[0] > user_bounds[1]:
+        message = (f"There are no values for {name} on the interval "
+                   f"{user_bounds}.")
+        raise ValueError(message)
+
+    bounds = (max(user_bounds[0], shape_domain[0]),
+              min(user_bounds[1], shape_domain[1]))
+
+    if integral and (np.ceil(bounds[0]) > np.floor(bounds[1])):
+        message = (f"There are no integer values for {name} on the interval "
+                   f"defined by the user-provided bounds and the domain "
+                   "of the distribution.")
+        raise ValueError(message)
+    elif not integral and (bounds[0] > bounds[1]):
+        message = (f"There are no values for {name} on the interval "
+                   f"defined by the user-provided bounds and the domain "
+                   "of the distribution.")
+        raise ValueError(message)
+
+    return bounds
+
+
+class FitResult:
+    def __init__(self, dist, data, nllf, res):
+        self.dist = dist
+        self.data = data
+
+        self.pxf = getattr(dist, "pmf", None) or getattr(dist, "pdf", None)
+
+
+        self.success = getattr(res, "success", None)
+        self.message = getattr(res, "message", None)
+
+        if isinstance(dist, rv_continuous):
+            FitShapes = namedtuple('FitShapes',
+                                   dist.shapes.split(", ") + ['loc', 'scale'])
+        elif isinstance(dist, rv_discrete):
+            FitShapes = namedtuple('FitShapes',
+                                   dist.shapes.split(", ") + ['loc'])
+
+        self.fit_params = FitShapes(*res.x)
+        self.objective_val = getattr(res, "fun", None)
+        if self.objective_val is None:
+            self.objective_val = nllf(res.x)
+        self.nllf = nllf
+
+
+    def __repr__(self):
+        keys = ["dist", "data", "nllf", "fit_params", "objective_val",
+                "success", "message"]
+        m = max(map(len, keys)) + 1
+        return '\n'.join([key.rjust(m) + ': ' + repr(getattr(self, key))
+                          for key in keys if getattr(self, key) is not None])
+
+    def plot(self):
+        figure, ax = plt.subplots(nrows=1, ncols=1)
+        fit_params = np.atleast_1d(self.fit_params)
+        support = self.dist.support(*fit_params)
+        x = np.arange(support[0], support[1]+1)
+        y = self.pxf(x, *fit_params)
+        if isinstance(self.dist, stats.rv_continuous):
+            options = dict(density=True, bins=50, align='mid')
+        else:
+            options = dict(density=True, bins=x, align='left')
+
+        l1 = ax.plot(x, y, '--', label='Distribution PMF, Fitted Shapes')
+        l2 = ax.hist(self.data, label='Histogram of Data', **options)
+        ax.set_title(f"{self.dist.name} Fit")
+        handles, labels = ax.get_legend_handles_labels()
+        ax.legend(handles, ('Fit Distribution PMF',
+                            'Histogram of Data'))
+        plt.show()
+        return figure, ax
+
+
+def fit(dist, data, shape_bounds, *, loc_bounds=None, scale_bounds=None,
+        optimizer=optimize.differential_evolution):
+    """Fit a discrete or continuous distribution to data
+
+    Given a distribution, data, and bounds for the shape parameters of the
+    distribution, return maximum likelihood estimates of the shape parameters.
+
+    Parameters
+    ----------
+    dist : scipy.stats.rv_generic
+        The object representing the distribution to be fit to the data.
+    data : 1D array_like
+        The data to which the distribution is to be fit. If the data contain
+        any of ``np.nan``, ``np.inf``, or -``np.inf``, the fit method will
+        raise a ``ValueError``.
+    shape_bounds : dict or sequence of tuples
+        If a dictionary, each key is the name of a shape parameter of the
+        distribution, and the corresponding value is a a tuple containing the
+        lower and upper bound on that shape parameter. No entry is required
+        for a shape parameter if the distribution is defined only for a finite
+        range of values of that parameter; e.g., some distributions have
+        parameters which must be on the interval [0, 1]. However, the
+        optimization is more likely to converge to the maximum likelihood
+        estimate if tight bounds containing the maximum likelihood estimate
+        are provided.
+
+        If a sequence, element *i* is a tuple containing the lower and upper
+        bound on the *i*\ th shape parameter of the distribution. In this case,
+        bounds for all distribution shape parameters must be provided.
+
+        If a shape parameter is to be held as fixed (e.g. if it is known), the
+        lower and upper bounds may be equal. If a user-provided lower or upper
+        bound is beyond a bound of the domain for which the distribution is
+        defined, the bound of the distribution's domain will replace the
+        user-provided value. Similarly, shape parameters which must be integral
+        will be constrained to integral values within the user-provided bounds.
+    loc_bounds : tuple, optional
+        Lower and upper bound on the distribution's location parameter ``loc``.
+    scale_bounds : tuple, optional
+        Lower and upper bound on the distribution's scale parameter ``scale``.
+    optimizer : callable, optional
+        `optimizer` is a callable that accepts the following positional
+        arguments.
+
+        fun : callable
+            The objective function to be optimized. `fun` accepts one argument
+            ``x``, candidate shape parameters of the distribution, and returns
+            the negative log-likelihood function given ``x``, `dist`, and the
+            provided `data`.
+            The job of `optimizer` is to find values of the decision variables
+            that minimizes `fun`.
+        bounds : sequence of tuples
+            The bounds on values of the decision variables; each element will
+            be a tuple containing the lower and upper bound on a decision
+            variable.
+
+        If the distribution has any shape parameters that must be integral or
+        if the distribution is discrete and the location parameter is not
+        fixed, `optimizer` must also accept the following *keyword* argument.
+
+        integral : array_like of bools
+            For each decision variable, True if the decision variable is
+            must be constrained to integer values and False if the decision
+            variable is continuous.
+
+        `optimizer` must return an object, such as an instance of
+        `scipy.optimize.OptimizeResult`, which holds the optimal values of
+        the decision variables in an attribute ``x``. If attributes
+        ``fun``, ``status``, or ``message`` are provided, they will be
+        included in the result object returned by `fit`.
+
+    Returns
+    -------
+    result : object
+        An object with the following fields.
+
+        fit_params : namedtuple
+            A namedtuple containig the maximum likelihood estimates of the
+            shape parameters, location, and (if applicable) scale of the
+            distribution.
+        fun : sequence of tuples
+            The value of the negative log likelihood function evaluated with
+            the fitted shapes.
+        success : bool or None
+            Whether the optimizer considered the optimization to terminate
+            successfully or not.
+        message : str or None
+            Any status message provided by the optimizer.
+
+    See Also
+    --------
+    rv_continuous,  rv_discrete
+
+    Examples
+    --------
+    To be added.
+
+    """
+    # TODO: fix bug with inifinite bounds
+    # TODO: unit tests
+    # TODO: examples
+    # TODO: add ShapeInfo to other distributions
+    # TODO: PR
+
+    # --- Input Validation / Standardization --- #
+
+    # distribution input validation and information collection
+    if isinstance(dist, rv_continuous):
+        loc_bounds = loc_bounds or (0, 0)
+        scale_bounds = scale_bounds or (1, 1)
+        loc_scale_integrality = [False, False]
+        pxf = getattr(dist, "pdf", None)
+        discrete = False
+    elif isinstance(dist, rv_discrete):
+        loc_bounds = loc_bounds or (0, 0)
+        loc_scale_integrality = [True]
+        pxf = getattr(dist, "pmf", None)
+        discrete = True
+    else:
+        message = ("`dist` must be an instance of `rv_continuous` "
+                   "or `rv_discrete.`")
+        raise ValueError(message)
+
+    # data input validation
+    data = np.asarray(data)
+    if data.ndim != 1:
+        message = "`data` must be exactly one-dimensional."
+        raise ValueError(message)
+    if not np.all(np.isfinite(data)):
+        message = "All elements of `data` must be finite."
+        raise ValueError(message)
+
+     # shape_bounds input validation and information collection
+    shape_info = dist._get_shape_info()
+
+    n_shapes = len(shape_info)
+    if isinstance(shape_bounds, dict):
+        shape_bounds = shape_bounds.copy()  # don't mutate the user's object
+        shape_bounds_array = np.empty((n_shapes, 2))
+        for i in range(n_shapes):
+            shape_name = shape_info[i].shape_name
+            shape_bound = (shape_bounds.pop(shape_name, None)
+                           or shape_info[i].domain)
+            shape_bounds_array[i] = shape_bound
+        if shape_bounds:
+            message = ("Bounds provided for the following unrecognized shapes "
+                       f"will be ignored: {shape_bounds.keys()}")
+        shape_bounds = shape_bounds_array
+    else:
+        shape_bounds = np.asarray(shape_bounds, dtype=float)
+        if shape_bounds.shape != (n_shapes, 2):
+            message = (f"`shape_bounds` must have {n_shapes} elements, tuples "
+                       "containing the lower and upper bounds for the following "
+                       f"shape parameters: {dist.shapes}")
+            raise ValueError(message)
+
+    validated_shape_bounds = []
+    for i in range(n_shapes):
+        name = shape_info[i].shape_name
+        user_bounds = shape_bounds[i]
+        shape_domain = shape_info[i].domain
+        integral = shape_info[i].integrality
+        bound_type = "shape_bounds"
+        combined = _combine_bounds(name, bound_type, user_bounds, shape_domain,
+                                   integral)
+        validated_shape_bounds.append(combined)
+
+    # loc_bounds and scale_bounds input validation
+    loc_bounds = _combine_bounds("loc", "loc_bounds", loc_bounds,
+                                 (-np.inf, np.inf), discrete)
+    loc_bounds = [loc_bounds]
+
+    if discrete and scale_bounds is not None:
+        message = ("`dist` is an instance of `rv_discrete`, which does not "
+                   "have `scale`. `scale_bounds` will be ignored.")
+        warnings.warn(message, RuntimeWarning)
+    if discrete:
+        scale_bounds = []
+    else:
+        scale_bounds = [_combine_bounds("scale", "scale_bounds", scale_bounds,
+                                        (0, np.inf), False)]
+
+    bounds = validated_shape_bounds + loc_bounds + scale_bounds
+    integrality = ([shape.integrality for shape in shape_info]
+                   + loc_scale_integrality)
+
+    # --- MLE Fitting --- #
+    def nllf(free_params, data=data):  # bind data NOW
+        # negative log-likelihood function
+        ll = -np.log(pxf(data, *free_params)).sum(axis=-1)
+        if np.isnan(ll):  # occurs when x is outside of support
+            ll = np.inf   # we don't want that
+        return ll
+
+    if np.any(integrality):
+        res = optimizer(nllf, bounds, integrality=integrality)
+    else:
+        res = optimizer(nllf, bounds)
+
+    return FitResult(dist, data, nllf, res)

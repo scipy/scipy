@@ -16,11 +16,12 @@ import numpy as np
 
 from ._distn_infrastructure import (
     rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
-    _check_shape)
+    _check_shape, ShapeInfo)
 import scipy.stats._boost as _boost
 from ._biasedurn import (_PyFishersNCHypergeometric,
                         _PyWalleniusNCHypergeometric,
                         _PyStochasticLib3)
+
 
 class binom_gen(rv_discrete):
     r"""A binomial discrete random variable.
@@ -50,6 +51,10 @@ class binom_gen(rv_discrete):
     hypergeom, nbinom, nhypergeom
 
     """
+    def _shape_info(self):
+        return [ShapeInfo("n", True, (0, np.inf), (True, False)),
+                ShapeInfo("p", False, (0, 1), (True, True))]
+
     def _rvs(self, n, p, size=None, random_state=None):
         return random_state.binomial(n, p, size)
 
