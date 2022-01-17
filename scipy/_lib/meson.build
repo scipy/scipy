@@ -90,6 +90,7 @@ py3.extension_module('messagestream',
 
 python_sources = [
   '__init__.py',
+  '_array_api_utils.py',
   '_bunch.py',
   '_ccallback.py',
   '_disjoint_set.py',
