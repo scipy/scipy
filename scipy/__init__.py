@@ -167,7 +167,8 @@ else:
         'sparse',
         'spatial',
         'special',
-        'stats'
+        'stats',
+        'utils'
     ]
 
     __all__ = submodules + [
