@@ -136,10 +136,14 @@
             "zeta": "dd->d"
         }
     },
-    "abs2": {
-        "_abs2.h": {
-            "abs2": "d->d",
-            "cabs2": "D->d"
+    "_abs_sq": {
+        "_abs2.h++": {
+            "cabs2": "Dd->d",
+            "cabs2f": "Ff->f",
+            "cabs2g": "Gg->g",
+            "abs2": "dd->d",
+            "abs2f": "ff->f",
+            "abs2g": "gg->g"
         }
     },
     "agm": {

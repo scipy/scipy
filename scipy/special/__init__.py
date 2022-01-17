@@ -624,7 +624,7 @@ Convenience functions
 .. autosummary::
    :toctree: generated/
 
-   abs2      -- Absolute square.
+   abs_sq    -- Absolute square.
    cbrt      -- Cube root of `x`.
    exp10     -- 10**x.
    exp2      -- 2**x.
@@ -652,6 +652,8 @@ from ._ufuncs import *
 
 from . import _basic
 from ._basic import *
+
+from ._abs2 import abs_sq
 
 from ._logsumexp import logsumexp, softmax, log_softmax
 
