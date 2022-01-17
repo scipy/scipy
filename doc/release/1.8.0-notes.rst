@@ -30,7 +30,9 @@ Highlights of this release
   work is ongoing, and users should expect minor API refinements over
   the next few releases.
 - The sparse SVD library PROPACK is now vendored with SciPy, and an interface
-  is exposed via `scipy.sparse.svds` with ``solver='PROPACK'``.
+  is exposed via `scipy.sparse.svds` with ``solver='PROPACK'``. It is currently
+  default-off, but can be optionally enabled at source build time for
+  friendly testing with an environment variable setting of ``USE_PROPACK=1``.
 - A new `scipy.stats.sampling` submodule that leverages the ``UNU.RAN`` C
   library to sample from arbitrary univariate non-uniform continuous and
   discrete distributions
@@ -137,7 +139,9 @@ nonsingular non-Hermitian linear systems in `scipy.sparse.linalg.tfqmr`.
 
 The sparse SVD library PROPACK is now vendored with SciPy, and an interface is
 exposed via `scipy.sparse.svds` with ``solver='PROPACK'``. For some problems,
-this may be faster and/or more accurate than the default, ARPACK.
+this may be faster and/or more accurate than the default, ARPACK. PROPACK
+functionality is currently opt-in--you must specify ``USE_PROPACK=1`` at
+source build time to use it.
 
 ``sparse.linalg`` iterative solvers now have a nonzero initial guess option,
 which may be specified as ``x0 = 'Mb'``.
