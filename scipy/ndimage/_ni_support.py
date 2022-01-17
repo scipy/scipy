@@ -32,7 +32,7 @@ from collections.abc import Iterable
 import warnings
 import numpy
 
-from scipy.array_compatibility import get_namespace
+from scipy.misc.array_compatibility import get_namespace
 
 
 def _extend_mode_to_code(mode):
