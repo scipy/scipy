@@ -6,7 +6,7 @@ _csparsetools_pyx = custom_target('_csparsetools_pyx',
 
 py3.extension_module('_csparsetools',
   cython_gen.process(_csparsetools_pyx),
-  c_args: ['-Wno-cpp'],
+  c_args: [c_no_warn_depr_np_api],
   include_directories: inc_np,
   dependencies: py3_dep,
   install: true,

@@ -179,6 +179,11 @@ cython_gen_cpp = generator(cython_cli,
 
 c_undefined_ok = ['-Wno-maybe-uninitialized']
 
+# Suppress warning for deprecated Numpy API.
+# (Suppress warning messages emitted by #warning directives).
+# Replace with numpy_nodepr_api after Cython 3.0 is out
+c_no_warn_depr_np_api = ['-Wno-cpp']
+
 # Ordering of subdirs: special and linalg come first, because other submodules
 # have dependencies on cython_special.pxd and cython_linalg.pxd. After those,
 # subdirs with the most heavy builds should come first (that parallelizes
