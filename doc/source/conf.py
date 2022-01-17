@@ -198,7 +198,6 @@ html_theme_options = {
 }
 
 if 'dev' in version:
-    html_theme_options["switcher"]["url_template"] = "http://scipy.github.io/devdocs/"
     html_theme_options["switcher"]["version_match"] = "dev"
 
 if 'versionwarning' in tags:
