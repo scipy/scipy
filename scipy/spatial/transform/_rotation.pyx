@@ -565,7 +565,7 @@ cdef class Rotation:
         return self._quat.shape[0]
 
     @classmethod
-    def from_quat(cls, quat, *, order='xyzw'):
+    def from_quat(cls, quat):
         """Initialize from quaternions.
 
         3D rotations can be represented using unit-norm quaternions [1]_.
@@ -573,15 +573,9 @@ cdef class Rotation:
         Parameters
         ----------
         quat : array_like, shape (N, 4) or (4,)
-            Each row is a (possibly non-unit norm) quaternion. Each quaternion
-            will be normalized to unit norm.
-        order : str
-            The order of the quaternion elements. Either 'xyzw' (scalar last)
-            or 'wxyz' (scalar first).
-            Default is 'xyzw'.
-
-            .. versionadded:: 1.9.0
-
+            Each row is a (possibly non-unit norm) quaternion in scalar-last
+            (x, y, z, w) format. Each quaternion will be normalized to unit
+            norm.
 
         Returns
         -------
@@ -630,13 +624,6 @@ cdef class Rotation:
         >>> r.as_quat()
         array([0.        , 0.        , 0.70710678, 0.70710678])
         """
-        if order == 'wxyz':
-            # Convert to internal 'xyzw' format
-            quat = np.asarray(quat)
-            quat = np.roll(quat, -1, axis=quat.ndim - 1)
-        elif order != 'xyzw':
-            raise ValueError("`order` must be 'xywz' or 'wxyz'")
-
         return cls(quat, normalize=True)
 
     @classmethod
@@ -1155,24 +1142,14 @@ cdef class Rotation:
         else:
             return cls(quat, normalize=False, copy=False)
 
-    def as_quat(self, *, order='xyzw'):
+    def as_quat(self):
         """Represent as quaternions.
 
         Rotations in 3 dimensions can be represented using unit norm
         quaternions [1]_. The mapping from quaternions to rotations is
         two-to-one, i.e. quaternions ``q`` and ``-q``, where ``-q`` simply
         reverses the sign of each component, represent the same spatial
-        rotation.
-
-        Parameters
-        ----------
-        order : str
-            The order of the quaternion elements in the return value. Either
-            'xyzw' (scalar last) or 'wxyz' (scalar first).
-            Default is 'xyzw'.
-
-            .. versionadded:: 1.9.0
-
+        rotation. The returned value is in scalar-last (x, y, z, w) format.
 
         Returns
         -------
@@ -1210,17 +1187,10 @@ cdef class Rotation:
         (2, 4)
 
         """
-        quat = self._quat
-        if order == 'wxyz':
-            # Convert from internal 'xyzw' format
-            quat = np.roll(quat, 1, axis=1)
-        elif order != 'xyzw':
-            raise ValueError("`order` must be 'xywz' or 'wxyz'")
-
         if self._single:
-            return np.array(quat[0], copy=True)
+            return np.array(self._quat[0], copy=True)
         else:
-            return np.array(quat, copy=True)
+            return np.array(self._quat, copy=True)
 
     @cython.boundscheck(False)
     @cython.wraparound(False)

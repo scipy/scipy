@@ -114,23 +114,6 @@ def test_as_matrix_from_square_input():
     assert_array_almost_equal(mat[3], np.eye(3))
 
 
-def test_quaternion_ordering_invalid_input():
-    x = np.array([0, 0, 0, 1])
-    with pytest.raises(ValueError, match="`order` must be 'xywz' or 'wxyz'"):
-        Rotation.from_quat(x, order='yzwx')
-
-    rot = Rotation.identity()
-    with pytest.raises(ValueError, match="`order` must be 'xywz' or 'wxyz'"):
-        rot.as_quat(order='yzwx')
-
-
-@pytest.mark.parametrize("num", [None, 1])
-def test_quaternion_ordering_scalar_first(num):
-    x = Rotation.random(num=num, random_state=0).as_quat(order='wxyz')
-    rot = Rotation.from_quat(x, order='wxyz')
-    assert_allclose(x, rot.as_quat(order='wxyz'))
-
-
 def test_as_matrix_from_generic_input():
     quats = [
             [0, 0, 1, 1],
