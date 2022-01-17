@@ -22,7 +22,7 @@ requires = [
 
     # numpy 1.19 was the first minor release to provide aarch64 wheels, but
     # wheels require fixes contained in numpy 1.19.2
-    "numpy==1.19.2; python_version=='3.8' and platform_machine=='aarch64'",
+    "numpy==1.19.2; python_version=='3.8' and platform_machine=='aarch64' and platform_python_implementation != 'PyPy'",
     # aarch64 for py39 is covered by default requirement below
 
     # arm64 on Darwin supports Python 3.8 and above requires numpy>=1.20.0

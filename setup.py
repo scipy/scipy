@@ -24,7 +24,7 @@ import subprocess
 import textwrap
 import warnings
 import sysconfig
-from distutils.version import LooseVersion
+import importlib
 
 
 if sys.version_info[:2] < (3, 8):
@@ -233,8 +233,8 @@ def get_build_ext_override():
             import pythran
             from pythran.dist import PythranBuildExt
             BaseBuildExt = PythranBuildExt[npy_build_ext]
-            # Version check - a too old Pythran will give problems
-            if LooseVersion(pythran.__version__) < LooseVersion('0.10.0'):
+            importlib.import_module('scipy/_lib/_pep440')
+            if _pep440.parse(pythran.__version__) < _pep440.Version('0.10.0'):
                 raise RuntimeError("The installed `pythran` is too old, >= "
                                    "0.10.0 is needed, {} detected. Please "
                                    "upgrade Pythran, or use `export "
@@ -345,7 +345,8 @@ def generate_cython():
         try:
             # Note, pip may not be installed or not have been used
             import pip
-            if LooseVersion(pip.__version__) < LooseVersion('18.0.0'):
+            importlib.import_module('scipy/_lib/_pep440')
+            if _pep440.parse(pip.__version__) < _pep440.Version('18.0.0'):
                 raise RuntimeError("Cython not found or too old. Possibly due "
                                    "to `pip` being too old, found version {}, "
                                    "needed is >= 18.0.0.".format(
@@ -581,6 +582,8 @@ def setup_package():
     if "--force" in sys.argv:
         run_build = True
         sys.argv.remove('--force')
+    elif "--skip-build" in sys.argv:
+        run_build = False
     else:
         # Raise errors for unsupported commands, improve help output, etc.
         run_build = check_setuppy_command()

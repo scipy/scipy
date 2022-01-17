@@ -84,13 +84,21 @@ def warning_calls():
 def test_warning_calls_filters(warning_calls):
     bad_filters, bad_stacklevels = warning_calls
 
-    # There is still one simplefilter occurrence in optimize.py that could be removed.
-    bad_filters = [item for item in bad_filters
-                   if 'optimize.py' not in item]
-    # The filterwarnings calls in sparse are needed.
-    bad_filters = [item for item in bad_filters
-                   if os.path.join('sparse', '__init__.py') not in item
-                   and os.path.join('sparse', 'sputils.py') not in item]
+    # We try not to add filters in the code base, because those filters aren't
+    # thread-safe. We aim to only filter in tests with
+    # np.testing.suppress_warnings. However, in some cases it may prove
+    # necessary to filter out warnings, because we can't (easily) fix the root
+    # cause for them and we don't want users to see some warnings when they use
+    # SciPy correctly. So we list exceptions here.  Add new entries only if
+    # there's a good reason.
+    allowed_filters = (
+        os.path.join('optimize', '_optimize.py'),
+        os.path.join('sparse', '__init__.py'),  # np.matrix pending-deprecation
+        os.path.join('stats', '_discrete_distns.py'),  # gh-14901
+        os.path.join('stats', '_continuous_distns.py'),
+    )
+    bad_filters = [item for item in bad_filters if item.split(':')[0] not in
+                   allowed_filters]
 
     if bad_filters:
         raise AssertionError(
