@@ -24,7 +24,7 @@ def _explicit_laplacian(x, normed=False):
     x = np.asarray(x)
     y = -1.0 * x
     for j in range(y.shape[0]):
-        y[j, j] = x[j, j + 1 :].sum() + x[j, :j].sum()
+        y[j, j] = x[j, j + 1:].sum() + x[j, :j].sum()
     if normed:
         d = np.diag(y).copy()
         d[d == 0] = 1.0
@@ -112,8 +112,8 @@ def _check_laplacian(
         copy=copy,
         dtype=dtype,
     )
-    assert L.dtype is dtype
-    assert d.dtype is dtype
+    assert L.dtype == dtype
+    assert d.dtype == dtype
     _assert_allclose_sparse(L, desired_L, atol=1e-12)
     _assert_allclose_sparse(d, desired_d, atol=1e-12)
 
