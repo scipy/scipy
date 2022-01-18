@@ -78,10 +78,11 @@ def laplacian(
     Notes
     -----
     The Laplacian matrix of a graph is sometimes referred to as the
-    "Kirchoff matrix" or just the "Laplacian", and is useful in many
-    parts of spectral graph theory. In particular, the eigen-decomposition
-    of the Laplacian can give insight into many properties of the graph, e.g.,
-    is commonly used for spectal data enmedding and clustering.
+    "Kirchhoff matrix" or just the "Laplacian", and is useful in many
+    parts of spectral graph theory.
+    In particular, the eigen-decomposition of the Laplacian can give
+    insight into many properties of the graph, e.g.,
+    is commonly used for spectral data embedding and clustering.
 
     The constructed Laplacian doubles the memory use if ``copy=True`` and
     `aslinearoperator=False` which is the default.
@@ -151,7 +152,9 @@ def _setdiag_dense(A, d):
     A.flat[:: len(d) + 1] = d
 
 
-def _laplacian_sparse(graph, normed, axis, copy, aslinearoperator, dtype, symmetrized):
+def _laplacian_sparse(
+    graph, normed, axis, copy, aslinearoperator, dtype, symmetrized
+):
     if dtype is None:
         dtype = graph.dtype
 
@@ -164,7 +167,9 @@ def _laplacian_sparse(graph, normed, axis, copy, aslinearoperator, dtype, symmet
             def m_f(x):
                 return -graph @ x
 
-            m = LinearOperator(matvec=m_f, matmat=m_f, shape=graph.shape, dtype=dtype)
+            m = LinearOperator(
+                matvec=m_f, matmat=m_f, shape=graph.shape, dtype=dtype
+            )
 
             # m.data /= w[m.row]
             # m.data /= w[m.col]
@@ -176,7 +181,9 @@ def _laplacian_sparse(graph, normed, axis, copy, aslinearoperator, dtype, symmet
             def m_f(x):
                 return -graph @ x
 
-            m = LinearOperator(matvec=m_f, matmat=m_f, shape=graph.shape, dtype=dtype)
+            m = LinearOperator(
+                matvec=m_f, matmat=m_f, shape=graph.shape, dtype=dtype
+            )
 
         return m, w.astype(dtype, copy=False)
 
@@ -212,7 +219,9 @@ def _laplacian_sparse(graph, normed, axis, copy, aslinearoperator, dtype, symmet
         return m.astype(dtype, copy=False), w.astype(dtype)
 
 
-def _laplacian_dense(graph, normed, axis, copy, aslinearoperator, dtype, symmetrized):
+def _laplacian_dense(
+    graph, normed, axis, copy, aslinearoperator, dtype, symmetrized
+):
 
     if dtype is None:
         dtype = graph.dtype
@@ -243,7 +252,9 @@ def _laplacian_dense(graph, normed, axis, copy, aslinearoperator, dtype, symmetr
             def m_f(x):
                 return -m @ x
 
-        m = LinearOperator(matvec=m_f, matmat=m_f, shape=graph.shape, dtype=dtype)
+        m = LinearOperator(
+            matvec=m_f, matmat=m_f, shape=graph.shape, dtype=dtype
+        )
         return m, w.astype(dtype, copy=False)
 
     else:
