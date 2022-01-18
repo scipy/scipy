@@ -201,6 +201,8 @@ class TestFit:
             stats.fit(self.dist, self.data, shape_bounds)
 
         message = "The intersection of user-provided bounds for `n`"
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data)
         shape_bounds = [(-np.inf, np.inf), (0, 1)]
         with pytest.raises(ValueError, match=message):
             stats.fit(self.dist, self.data, shape_bounds)

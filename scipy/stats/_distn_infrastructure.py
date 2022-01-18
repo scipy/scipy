@@ -3918,10 +3918,10 @@ class FitResult:
         self.message = getattr(res, "message", None)
 
         shape_names = [] if dist.shapes is None else dist.shapes.split(", ")
-        if isinstance(dist, rv_continuous):
+        if getattr(dist, "pdf", False):
             FitShapes = namedtuple('FitShapes',
                                    shape_names + ['loc', 'scale'])
-        elif isinstance(dist, rv_discrete):
+        elif getattr(dist, "pmf", False):
             FitShapes = namedtuple('FitShapes',
                                    shape_names + ['loc'])
 
@@ -4058,7 +4058,6 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     To be added.
 
     """
-    # TODO: fix bug with no shape_bounds provided when needed
     # TODO: fix bug with nothing to fit
     # TODO: unit tests
     # TODO: examples
@@ -4068,20 +4067,18 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     # --- Input Validation / Standardization --- #
 
     # distribution input validation and information collection
-    if isinstance(dist, rv_continuous):
+    if getattr(dist, "pdf", False):  # can't use isinstance for types
         loc_bounds = loc_bounds or (0, 0)
         scale_bounds = scale_bounds or (1, 1)
         loc_scale_integrality = [False, False]
         pxf = getattr(dist, "pdf", None)
         discrete = False
-    elif isinstance(dist, rv_discrete):
+    elif getattr(dist, "pmf", False):
         loc_bounds = loc_bounds or (0, 0)
         loc_scale_integrality = [True]
         pxf = getattr(dist, "pmf", None)
         discrete = True
     else:
-        print(dist)
-        print(isinstance(dist, rv_continuous))
         message = ("`dist` must be an instance of `rv_continuous` "
                    "or `rv_discrete.`")
         raise ValueError(message)
@@ -4101,8 +4098,9 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
 
     n_shapes = len(shape_info)
     if shape_bounds is None or np.array(shape_bounds).size == 0:
-        shape_bounds = np.empty((0, 2))
-    elif isinstance(shape_bounds, dict):
+        shape_bounds = {}
+
+    if isinstance(shape_bounds, dict):
         shape_bounds = shape_bounds.copy()  # don't mutate the user's object
         shape_bounds_array = np.empty((n_shapes, 2))
         for i in range(n_shapes):
