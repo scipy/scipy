@@ -7,6 +7,8 @@ import pytest
 from scipy import stats
 
 from .test_continuous_basic import distcont
+from .test_discrete_basic import distdiscrete
+
 
 # this is not a proper statistical test for convergence, but only
 # verifies that the estimate and true values don't differ by too much
@@ -256,3 +258,31 @@ class TestFit:
         scale_bounds = (1, np.inf)
         with pytest.raises(ValueError, match=message):
             stats.fit(stats.norm, self.data, scale_bounds=scale_bounds)
+
+    @pytest.mark.parametrize("dist_name", ['binom', 'norm'])
+    def test_basic_fit(self, dist_name):
+        N = 1000
+        dist_data = dict(distcont + distdiscrete)
+        rng = np.random.default_rng(654634816187)
+        dist = getattr(stats, dist_name)
+        shapes = dist_data[dist_name]
+        shape_bounds = np.array([shapes, shapes]).T
+        shape_bounds[:, 0] /= 10  # essentially all shapes are > 0
+        shape_bounds[:, 1] *= 10
+        loc_bounds = (0, 10)
+        scale_bounds = (0, 10)
+        loc = rng.uniform(*loc_bounds)
+        scale = rng.uniform(*scale_bounds)
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            if getattr(dist, 'pmf', False):
+                loc = np.floor(loc)
+                data = dist.rvs(*shapes, size=N, loc=loc, random_state=rng)
+                res = stats.fit(dist, data, shape_bounds=shape_bounds, loc_bounds=loc_bounds)
+                ref = list(shapes) + [loc]
+            if getattr(dist, 'pdf', False):
+                data = dist.rvs(*shapes, size=N, loc=loc, scale=scale, random_state=rng)
+                res = stats.fit(dist, data, shape_bounds=shape_bounds, scale_bounds=scale_bounds, loc_bounds=loc_bounds)
+                ref = list(shapes) + [loc] + [scale]
+
+        assert_allclose(res.fit_params, ref, rtol=5e-2, atol=1e-2)
