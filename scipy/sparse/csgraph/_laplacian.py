@@ -2,23 +2,26 @@
 Laplacian of a compressed-sparse graph
 """
 
-# Authors: Aric Hagberg <hagberg@lanl.gov>
-#          Gael Varoquaux <gael.varoquaux@normalesup.org>
-#          Jake Vanderplas <vanderplas@astro.washington.edu>
-#          Andrew Knyazev <Andrew.Knyazev@ucdenver.edu>
-# License: BSD
-
 import numpy as np
 from scipy.sparse import isspmatrix
 from scipy.sparse.linalg import LinearOperator
+
 # , aslinearoperator
 
 
 ###############################################################################
 # Graph laplacian
-def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
-              *, copy=True,
-              aslinearoperator=False, dtype=None, symmetrized=False):
+def laplacian(
+    csgraph,
+    normed=False,
+    return_diag=False,
+    use_out_degree=False,
+    *,
+    copy=True,
+    aslinearoperator=False,
+    dtype=None,
+    symmetrized=False
+):
     """
     Return the Laplacian of a directed graph.
 
@@ -119,48 +122,49 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
            [  0,  -4,  -8, -12,  24]])
     """
     if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
-        raise ValueError('csgraph must be a square matrix or array')
+        raise ValueError("csgraph must be a square matrix or array")
 
-    if normed and (np.issubdtype(csgraph.dtype, np.signedinteger)
-                   or np.issubdtype(csgraph.dtype, np.uint)):
+    if normed and (
+        np.issubdtype(csgraph.dtype, np.signedinteger)
+        or np.issubdtype(csgraph.dtype, np.uint)
+    ):
         csgraph = csgraph.astype(dtype)
 
     create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
     degree_axis = 1 if use_out_degree else 0
 
-    lap, d = create_lap(csgraph, normed=normed, axis=degree_axis,
-                        copy=copy,
-                        aslinearoperator=aslinearoperator,
-                        dtype=dtype,
-                        symmetrized=symmetrized)
+    lap, d = create_lap(
+        csgraph,
+        normed=normed,
+        axis=degree_axis,
+        copy=copy,
+        aslinearoperator=aslinearoperator,
+        dtype=dtype,
+        symmetrized=symmetrized,
+    )
     if return_diag:
         return lap, d
     return lap
 
 
 def _setdiag_dense(A, d):
-    A.flat[::len(d)+1] = d
+    A.flat[:: len(d) + 1] = d
 
 
-def _laplacian_sparse(graph, normed, axis,
-                      copy,
-                      aslinearoperator, dtype,
-                      symmetrized):
+def _laplacian_sparse(graph, normed, axis, copy, aslinearoperator, dtype, symmetrized):
     if dtype is None:
-        dtype = csgraph.dtype
+        dtype = graph.dtype
 
     if aslinearoperator:
         w = graph.sum(axis=axis).getA1() - graph.diagonal()
         if normed:
-            isolated_node_mask = (w == 0)
+            isolated_node_mask = w == 0
             w = np.where(isolated_node_mask, 1, np.sqrt(w))
 
             def m_f(x):
-                return - graph @ x
+                return -graph @ x
 
-            m = LinearOperator(matvec=m_f,
-                               matmat=m_f,
-                               shape=graph.shape, dtype=dtype)
+            m = LinearOperator(matvec=m_f, matmat=m_f, shape=graph.shape, dtype=dtype)
 
             # m.data /= w[m.row]
             # m.data /= w[m.col]
@@ -170,17 +174,15 @@ def _laplacian_sparse(graph, normed, axis,
         else:
 
             def m_f(x):
-                return - graph @ x
+                return -graph @ x
 
-            m = LinearOperator(matvec=m_f,
-                               matmat=m_f,
-                               shape=graph.shape, dtype=dtype)
+            m = LinearOperator(matvec=m_f, matmat=m_f, shape=graph.shape, dtype=dtype)
 
         return m, w.astype(dtype, copy=False)
 
     else:
         needs_copy = False
-        if graph.format in ('lil', 'dok'):
+        if graph.format in ("lil", "dok"):
             m = graph.tocoo()
         else:
             m = graph
@@ -193,14 +195,14 @@ def _laplacian_sparse(graph, normed, axis,
         w = m.sum(axis=axis).getA1() - m.diagonal()
         if normed:
             m = m.tocoo(copy=needs_copy)
-            isolated_node_mask = (w == 0)
+            isolated_node_mask = w == 0
             w = np.where(isolated_node_mask, 1, np.sqrt(w))
             m.data /= w[m.row]
             m.data /= w[m.col]
             m.data *= -1
             m.setdiag(1 - isolated_node_mask)
         else:
-            if m.format == 'dia':
+            if m.format == "dia":
                 m = m.copy()
             else:
                 m = m.tocoo(copy=needs_copy)
@@ -210,13 +212,10 @@ def _laplacian_sparse(graph, normed, axis,
         return m.astype(dtype, copy=False), w.astype(dtype)
 
 
-def _laplacian_dense(graph, normed, axis,
-                     copy,
-                     aslinearoperator, dtype,
-                     symmetrized):
+def _laplacian_dense(graph, normed, axis, copy, aslinearoperator, dtype, symmetrized):
 
     if dtype is None:
-        dtype = csgraph.dtype
+        dtype = graph.dtype
 
     if copy:
         m = np.array(graph)
@@ -233,27 +232,25 @@ def _laplacian_dense(graph, normed, axis,
         w = m.sum(axis=axis)
 
         if normed:
-            isolated_node_mask = (w == 0)
+            isolated_node_mask = w == 0
             w = np.where(isolated_node_mask, 1, np.sqrt(w))
 
             def m_f(x):
-                return - m @ x
+                return -m @ x
 
         else:
 
             def m_f(x):
-                return - m @ x
+                return -m @ x
 
-        m = LinearOperator(matvec=m_f,
-                           matmat=m_f,
-                           shape=graph.shape, dtype=dtype)
+        m = LinearOperator(matvec=m_f, matmat=m_f, shape=graph.shape, dtype=dtype)
         return m, w.astype(dtype, copy=False)
 
     else:
         np.fill_diagonal(m, 0)
         w = m.sum(axis=axis)
         if normed:
-            isolated_node_mask = (w == 0)
+            isolated_node_mask = w == 0
             w = np.where(isolated_node_mask, 1, np.sqrt(w))
             m /= w
             m /= w[:, np.newaxis]
