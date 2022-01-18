@@ -54,7 +54,8 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
     symmetrized: bool, optional
         If True, then the output Laplacian is symmertic/Hermitian.
         The symmetrization is done by `csgraph + csgraph.T.conj`
-        without dividing by 2 to preserve integer dtypes if possible.
+        without dividing by 2 to preserve integer dtypes if possible
+        prior to the construction of the Laplacian.
         The symmetrization will increase the memory footprint of
         sparse matrices unless the sparsity pattern is symmetric or
         `aslinearoperator=True`.
@@ -122,12 +123,10 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
 
     if normed and (np.issubdtype(csgraph.dtype, np.signedinteger)
                    or np.issubdtype(csgraph.dtype, np.uint)):
-        csgraph = csgraph.astype(float)
+        csgraph = csgraph.astype(dtype)
 
     create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
     degree_axis = 1 if use_out_degree else 0
-    if dtype is None:
-        dtype = csgraph.dtype
 
     lap, d = create_lap(csgraph, normed=normed, axis=degree_axis,
                         copy=copy,
@@ -147,6 +146,9 @@ def _laplacian_sparse(graph, normed, axis,
                       copy,
                       aslinearoperator, dtype,
                       symmetrized):
+    if dtype is None:
+        dtype = csgraph.dtype
+
     if aslinearoperator:
         w = graph.sum(axis=axis).getA1() - graph.diagonal()
         if normed:
@@ -212,21 +214,35 @@ def _laplacian_dense(graph, normed, axis,
                      copy,
                      aslinearoperator, dtype,
                      symmetrized):
+
+    if dtype is None:
+        dtype = csgraph.dtype
+
+    if copy:
+        m = np.array(graph)
+    else:
+        m = np.asarray(graph)
+
+    if dtype is None:
+        dtype = m.dtype
+
+    if symmetrized:
+        m = m + m.T.conj
+
     if aslinearoperator:
-        m_a = np.asarray(graph)
-        w = m_a.sum(axis=axis)
+        w = m.sum(axis=axis)
 
         if normed:
             isolated_node_mask = (w == 0)
             w = np.where(isolated_node_mask, 1, np.sqrt(w))
 
             def m_f(x):
-                return - m_a @ x
+                return - m @ x
 
         else:
 
             def m_f(x):
-                return - m_a @ x
+                return - m @ x
 
         m = LinearOperator(matvec=m_f,
                            matmat=m_f,
@@ -234,13 +250,6 @@ def _laplacian_dense(graph, normed, axis,
         return m, w.astype(dtype, copy=False)
 
     else:
-        if copy:
-            m = np.array(graph)
-        else:
-            m = np.asarray(graph)
-        if symmetrized:
-            m = m + m.T.conj
-
         np.fill_diagonal(m, 0)
         w = m.sum(axis=axis)
         if normed:
