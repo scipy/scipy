@@ -4,6 +4,13 @@ _spatial_pxd = custom_target('_spatial_pxd',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
+# pyx -> c, pyx -> cpp generators, depending on copied pxd files.
+# _qhull.pyx depends also on _lib/messagestream
+spt_cython_gen = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : [_cython_tree, _spatial_pxd, _lib_pxd])
+
 qhull_src = [
   'qhull_src/src/geom2_r.c',
   'qhull_src/src/geom_r.c',
@@ -25,7 +32,8 @@ qhull_src = [
 ]
 
 qhull = py3.extension_module('_qhull',
-  ['_qhull.pyx', 'qhull_misc.h', 'qhull_misc.c'] + qhull_src,
+  [spt_cython_gen.process('_qhull.pyx'),
+    'qhull_misc.h', 'qhull_misc.c'] + qhull_src,
   c_args: '-Wno-cpp',
   include_directories: [
     incdir_numpy,
@@ -58,7 +66,7 @@ elif compiler.has_argument('-fvisibility=hidden')
 endif
 
 ckdtree = py3.extension_module('_ckdtree',
-  ckdtree_src + ['_ckdtree.pyx'],
+  ckdtree_src + [cython_gen_cpp.process('_ckdtree.pyx')],
   # Cannot use -fnovisibility=hidden for Cython cpp, because it
   # conceals PyInit_ckdtree symbol, and prevents module load.
   cpp_args: ['-Wno-cpp'], # TODO: replace with numpy_nodepr_api
@@ -69,7 +77,6 @@ ckdtree = py3.extension_module('_ckdtree',
     'ckdtree/src'
   ],
   dependencies: [py3_dep],
-  override_options: ['cython_language=cpp'],
   install: true,
   subdir: 'scipy/spatial'
 )
@@ -93,8 +100,8 @@ _distance_pybind = py3.extension_module('_distance_pybind',
 )
 
 _voronoi = py3.extension_module('_voronoi',
-  ['_voronoi.pyx'],
-  c_args: numpy_nodepr_api,
+  [cython_gen.process('_voronoi.pyx')],
+  c_args: [numpy_nodepr_api, c_undefined_ok],
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
   install: true,
@@ -102,7 +109,7 @@ _voronoi = py3.extension_module('_voronoi',
 )
 
 _hausdorff = py3.extension_module('_hausdorff',
-  ['_hausdorff.pyx'],
+  [cython_gen.process('_hausdorff.pyx')],
   c_args: numpy_nodepr_api,
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],

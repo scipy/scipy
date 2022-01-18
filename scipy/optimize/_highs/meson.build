@@ -245,7 +245,7 @@ highs_lib = static_library('highs',
 )
 
 _highs_wrapper = py3.extension_module('_highs_wrapper',
-  ['cython/src/_highs_wrapper.pyx'],
+  cython_gen_cpp.process('cython/src/_highs_wrapper.pyx'),
   include_directories: [
     inc_np,
     'cython/src/',
@@ -264,17 +264,19 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
     '-Wno-format-truncation',
     '-Wno-non-virtual-dtor',
     '-Wno-class-memaccess',
+    # Pass despite __STDC_FORMAT_MACROS redefinition warning.
+    # Remove after merge of https://github.com/ERGO-Code/HiGHS/pull/674
+    '-Wp,-w',
     Wno_unused_but_set,
     highs_define_macros,
     numpy_nodepr_api,
   ],
-  override_options: ['cython_language=cpp'],
   install: true,
   subdir: 'scipy/optimize/_highs'
 )
 
 _highs_constants = py3.extension_module('_highs_constants',
-  'cython/src/_highs_constants.pyx',
+  cython_gen_cpp.process('cython/src/_highs_constants.pyx'),
   include_directories: [
     'cython/src/',
     'src',
@@ -284,7 +286,6 @@ _highs_constants = py3.extension_module('_highs_constants',
     '../../_lib/highs/src/simplex/'
   ],
   dependencies: [py3_dep],
-  override_options: ['cython_language=cpp'],
   install: true,
   subdir: 'scipy/optimize/_highs'
 )
