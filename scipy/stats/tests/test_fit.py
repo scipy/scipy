@@ -1,4 +1,5 @@
 import os
+import re
 
 import numpy as np
 from numpy.testing import assert_allclose
@@ -140,3 +141,116 @@ def test_expon_fit():
     data = [0, 0, 0, 0, 2, 2, 2, 2]
     phat = stats.expon.fit(data, floc=0)
     assert_allclose(phat, [0, 1.0], atol=1e-3)
+
+
+class TestFit:
+    dist = stats.binom
+    rng = np.random.default_rng(49126169847)
+    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)
+    shape_bounds_a = [(1, 10), (0, 1)]
+    shape_bounds_d = {'n': (1, 10), 'p': (0, 1)}
+
+    def test_dist_iv(self):
+        message = "`dist` must be an instance of..."
+        with pytest.raises(ValueError, match=message):
+            stats.fit(10, self.data, self.shape_bounds_a)
+
+    def test_data_iv(self):
+        message = "`data` must be exactly one-dimensional."
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, [[1, 2, 3]], self.shape_bounds_a)
+
+        message = "All elements of `data` must be finite numbers."
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, [1, 2, 3, np.nan], self.shape_bounds_a)
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, [1, 2, 3, np.inf], self.shape_bounds_a)
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, ['1', '2', '3'], self.shape_bounds_a)
+
+    def test_shape_bounds_iv(self):
+        message = "Bounds provided for the following unrecognized shapes..."
+        shape_bounds = {'n': (1, 10), 'p': (0, 1), '1': (0, 10)}
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.fit(self.dist, self.data, shape_bounds)
+
+        message = "`shape_bounds` must have 2 elements..."
+        shape_bounds = [(1, 10)]
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_a[:1])
+        shape_bounds = [(1, 10, 3), (0, 1, 0.5)]
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, shape_bounds)
+        shape_bounds = [(1), (0)]
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, shape_bounds)
+
+        message = "There are no values for `p` on the interval..."
+        shape_bounds = {'n': (1, 10), 'p': (1, 0)}
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, shape_bounds)
+
+        message = "There are no values for `n` on the interval..."
+        shape_bounds = [(10, 1), (0, 1)]
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, shape_bounds)
+
+        message = "There are no integer values for `n` on the interval..."
+        shape_bounds = [(1.4, 1.6), (0, 1)]
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, shape_bounds)
+
+        message = "The intersection of user-provided bounds for `n`"
+        shape_bounds = [(-np.inf, np.inf), (0, 1)]
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, shape_bounds)
+
+    def test_loc_bounds_iv(self):
+        message = "`loc_bounds` must be a tuple containing exactly two..."
+        loc_bounds = (0, 1, 2)
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_a,
+                      loc_bounds=loc_bounds)
+
+        message = "There are no values for `loc` on the interval..."
+        loc_bounds = (10, 0)
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_a,
+                      loc_bounds=loc_bounds)
+
+        message = "There are no integer values for `loc` on the interval..."
+        loc_bounds = (0.4, 0.6)
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_a,
+                      loc_bounds=loc_bounds)
+
+        message = "The intersection of user-provided bounds for `loc`"
+        loc_bounds = (-np.inf, np.inf)
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_a,
+                      loc_bounds=loc_bounds)
+
+    def test_scale_bounds_iv(self):
+
+        message = "`binom` is an instance of `rv_discrete`..."
+        scale_bounds = (1, 10)
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_a,
+                      scale_bounds=scale_bounds)
+
+        message = "`scale_bounds` must be a tuple containing exactly two..."
+        scale_bounds = (0, 1, 2)
+        with pytest.raises(ValueError, match=message):
+            stats.fit(stats.norm, self.data, scale_bounds=scale_bounds)
+        with pytest.raises(ValueError, match=message):
+            stats.fit(stats.norm, self.data, [], scale_bounds=scale_bounds)
+
+        message = "There are no values for `scale` on the interval..."
+        scale_bounds = (10, 0)
+        with pytest.raises(ValueError, match=message):
+            stats.fit(stats.norm, self.data, scale_bounds=scale_bounds)
+
+        message = "The intersection of user-provided bounds for `scale`"
+        scale_bounds = (1, np.inf)
+        with pytest.raises(ValueError, match=message):
+            stats.fit(stats.norm, self.data, scale_bounds=scale_bounds)
