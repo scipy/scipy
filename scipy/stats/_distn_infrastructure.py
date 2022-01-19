@@ -17,6 +17,7 @@ from dataclasses import make_dataclass, field
 
 try:
     import matplotlib.pyplot as plt
+    from matplotlib.ticker import MaxNLocator
 except ModuleNotFoundError:
     plt = None
 
@@ -4010,6 +4011,8 @@ class FitResult:
             y = self.pxf(x, *fit_params)
             ax.plot(x[:-1], y[:-1], '--', label='Fit Distribution PMF')
             options = dict(density=True, bins=x, align='left')
+            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
         else:
             x = np.linspace(lb, ub, 200)
             y = self.pxf(x, *fit_params)
