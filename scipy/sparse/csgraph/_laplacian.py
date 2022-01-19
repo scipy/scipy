@@ -129,7 +129,7 @@ def laplacian(
         np.issubdtype(csgraph.dtype, np.signedinteger)
         or np.issubdtype(csgraph.dtype, np.uint)
     ):
-        csgraph = csgraph.astype(dtype)
+        csgraph = csgraph.astype(np.float64)
 
     create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
     degree_axis = 1 if use_out_degree else 0
