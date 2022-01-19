@@ -1082,6 +1082,9 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     return vals
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+)
 def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     """Compute the kurtosis (Fisher or Pearson) of a dataset.
 
