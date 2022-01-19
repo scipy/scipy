@@ -1,14 +1,17 @@
 # Platform detection
 is_windows = host_machine.system() == 'windows'
+is_mingw = is_windows and cc.get_id() == 'gcc'
 
 if is_windows
   # For mingw-w64, link statically against the UCRT.
   gcc_link_args = ['-lucrt', '-static']
-  if meson.get_compiler('c').get_id() == 'gcc'
+  if is_mingw
     add_global_link_arguments(gcc_link_args, language: ['c', 'cpp'])
     # Force gcc to float64 long doubles for compatibility with MSVC
     # builds, for C only.
     add_global_arguments('-mlong-double-64', language: 'c')
+    # Make fprintf("%zd") work (see https://github.com/rgommers/scipy/issues/118)
+    add_global_arguments('-D__USE_MINGW_ANSI_STDIO=1', language: ['c', 'cpp'])
     # Manual add of MS_WIN64 macro when not using MSVC.
     # https://bugs.python.org/issue28267
     bitness = run_command('_build_utils/gcc_build_bitness.py').stdout().strip()
