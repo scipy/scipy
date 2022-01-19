@@ -5,6 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 import pytest
 from scipy import stats
+from scipy.optimize import differential_evolution
 
 from .test_continuous_basic import distcont
 from .test_discrete_basic import distdiscrete
@@ -151,6 +152,11 @@ class TestFit:
     data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)
     shape_bounds_a = [(1, 10), (0, 1)]
     shape_bounds_d = {'n': (1, 10), 'p': (0, 1)}
+    atol = 5e-2
+    rtol = 1e-2
+    opt = (lambda *args, **kwds:
+           differential_evolution(*args, seed=2, **kwds))
+
 
     def test_dist_iv(self):
         message = "`dist` must be an instance of..."
@@ -259,9 +265,10 @@ class TestFit:
         with pytest.raises(ValueError, match=message):
             stats.fit(stats.norm, self.data, scale_bounds=scale_bounds)
 
-    @pytest.mark.parametrize("dist_name", ['binom', 'norm'])
+    @pytest.mark.parametrize("dist_name", ['binom', 'bernoulli', 'betabinom',
+                                           'nbinom', 'norm'])
     def test_basic_fit(self, dist_name):
-        N = 1000
+        N = 5000
         dist_data = dict(distcont + distdiscrete)
         rng = np.random.default_rng(654634816187)
         dist = getattr(stats, dist_name)
@@ -278,11 +285,34 @@ class TestFit:
             if getattr(dist, 'pmf', False):
                 loc = np.floor(loc)
                 data = dist.rvs(*shapes, size=N, loc=loc, random_state=rng)
-                res = stats.fit(dist, data, shape_bounds=shape_bounds, loc_bounds=loc_bounds)
+                res = stats.fit(dist, data, shape_bounds=shape_bounds,
+                                loc_bounds=loc_bounds, optimizer=self.opt)
                 ref = list(shapes) + [loc]
             if getattr(dist, 'pdf', False):
-                data = dist.rvs(*shapes, size=N, loc=loc, scale=scale, random_state=rng)
-                res = stats.fit(dist, data, shape_bounds=shape_bounds, scale_bounds=scale_bounds, loc_bounds=loc_bounds)
+                data = dist.rvs(*shapes, size=N, loc=loc, scale=scale,
+                                random_state=rng)
+                res = stats.fit(dist, data, shape_bounds=shape_bounds,
+                                loc_bounds=loc_bounds,
+                                scale_bounds=scale_bounds, optimizer=self.opt)
                 ref = list(shapes) + [loc] + [scale]
 
-        assert_allclose(res.fit_params, ref, rtol=5e-2, atol=1e-2)
+        assert_allclose(res.fit_params, ref, **self.tols)
+
+    def test_missing_shape_bounds(self):
+        # some disributions have small domains w.r.t. a parameter, e.g.
+        # $p \in [0, 1]$ for binomial, binomial distributions
+        # User does not need to provide these because the intersection of the
+        # user's bounds (none) and the distribution's domain is finite
+        N = 1000
+        rng = np.random.default_rng(654634816187)
+
+        n, p, loc = 10, 0.65, 0
+        data = stats.binom.rvs(n, p, loc=loc, size=N, random_state=rng)
+        shape_bounds = {'n': (0, 20)}
+        res = stats.fit(stats.binom, data, shape_bounds, optimizer=self.opt)
+        assert_allclose(res.fit_params, (n, p, loc), **self.tols)
+
+        p, loc = 0.314159, 0
+        data = stats.bernoulli.rvs(p, loc=loc, size=N, random_state=rng)
+        res = stats.fit(stats.bernoulli, data, optimizer=self.opt)
+        assert_allclose(res.fit_params, (p, loc), **self.tols)

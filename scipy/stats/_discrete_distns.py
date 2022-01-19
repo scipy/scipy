@@ -131,6 +131,9 @@ class bernoulli_gen(binom_gen):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [ShapeInfo("p", False, (0, 1), (True, True))]
+
     def _rvs(self, p, size=None, random_state=None):
         return binom_gen._rvs(self, 1, p, size=size, random_state=random_state)
 
@@ -207,6 +210,10 @@ class betabinom_gen(rv_discrete):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [ShapeInfo("n", True, (0, np.inf), (True, False)),
+                ShapeInfo("a", False, (0, np.inf), (False, False)),
+                ShapeInfo("b", False, (0, np.inf), (False, False))]
 
     def _rvs(self, n, a, b, size=None, random_state=None):
         p = random_state.beta(a, b, size)
@@ -303,6 +310,10 @@ class nbinom_gen(rv_discrete):
     hypergeom, binom, nhypergeom
 
     """
+    def _shape_info(self):
+        return [ShapeInfo("n", True, (0, np.inf), (True, False)),
+                ShapeInfo("p", False, (0, 1), (True, True))]
+
     def _rvs(self, n, p, size=None, random_state=None):
         return random_state.negative_binomial(n, p, size)
 

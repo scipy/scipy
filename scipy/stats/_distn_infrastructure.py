@@ -3943,14 +3943,14 @@ class FitResult:
         figure, ax = plt.subplots(nrows=1, ncols=1)
         fit_params = np.atleast_1d(self.fit_params)
         support = self.dist.support(*fit_params)
-        x = np.arange(support[0], support[1]+1)
+        x = np.arange(support[0], min(support[1], max(self.data))+2)
         y = self.pxf(x, *fit_params)
         if isinstance(self.dist, stats.rv_continuous):
             options = dict(density=True, bins=50, align='mid')
         else:
             options = dict(density=True, bins=x, align='left')
 
-        l1 = ax.plot(x, y, '--', label='Distribution PMF, Fitted Shapes')
+        l1 = ax.plot(x[:-1], y[:-1], '--', label='Distribution PMF, Fitted Shapes')
         l2 = ax.hist(self.data, label='Histogram of Data', **options)
         ax.set_title(f"{self.dist.name} Fit")
         handles, labels = ax.get_legend_handles_labels()
@@ -4154,7 +4154,8 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     # --- MLE Fitting --- #
     def nllf(free_params, data=data):  # bind data NOW
         # negative log-likelihood function
-        ll = -np.log(pxf(data, *free_params)).sum(axis=-1)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            ll = -np.log(pxf(data, *free_params)).sum(axis=-1)
         if np.isnan(ll):  # occurs when x is outside of support
             ll = np.inf   # we don't want that
         return ll
