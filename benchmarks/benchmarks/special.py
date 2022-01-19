@@ -9,6 +9,8 @@ with safe_import():
     from scipy.special import comb
 with safe_import():
     from scipy.special import loggamma
+with safe_import():
+    from scipy.special import abs_sq
 
 
 class Airy(Benchmark):
@@ -65,3 +67,33 @@ class Expn(Benchmark):
 
     def time_expn_large_n(self):
         expn(self.n, self.x)
+
+
+class AbsSq(Benchmark):
+
+    def setup(self):
+        rng = np.random.default_rng()
+        self.z32 = rng.random((500, 500), np.float32) + 1j * rng.random((500, 500), np.float32)
+        self.z64 = rng.random((500, 500)) + 1j * rng.random((500, 500))
+        self.z128 = self.z64.astype(np.complex128)
+        self.d32 = rng.random((500, 500), np.float32)
+        self.d64 = rng.random((500, 500))
+        self.d128 = self.d64.astype(np.float128)
+
+    def time_long_double_complex(self):
+        abs_sq(self.z128)
+
+    def time_double_complex(self):
+        abs_sq(self.z64)
+
+    def time_float_complex(self):
+        abs_sq(self.z32)
+
+    def time_long_double(self):
+        abs_sq(self.d128)
+
+    def time_double(self):
+        abs_sq(self.d64)
+
+    def time_float(self):
+        abs_sq(self.d32)

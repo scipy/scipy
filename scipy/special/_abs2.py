@@ -32,5 +32,5 @@ def abs_sq(z):
     array([ 2.,  8., 18.])
     """
     if not isinstance(z, np.ndarray):
-        z = np.array(z)
+        z = np.asanyarray(z, order='K')
     return _abs_sq(z, z.flat[0].real)
