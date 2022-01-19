@@ -9,6 +9,9 @@ from scipy.sparse.linalg._interface import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg  # type: ignore[no-redef]
 if os.environ.get("USE_PROPACK"):
     from scipy.sparse.linalg._svdp import _svdp
+    HAS_PROPACK = True
+else:
+    HAS_PROPACK = False
 
 arpack_int = _arpack.timing.nbx.dtype
 __all__ = ['svds']
@@ -312,6 +315,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                                  largest=largest, )
 
     elif solver == 'propack':
+        if not HAS_PROPACK:
+            raise ValueError("`solver='propack'` is opt-in due to potential issues on Windows, "
+                             "it can be enabled by setting the `USE_PROPACK` environment "
+                             "variable before importing scipy")
         jobu = return_singular_vectors in {True, 'u'}
         jobv = return_singular_vectors in {True, 'vh'}
         irl_mode = (which == 'SM')

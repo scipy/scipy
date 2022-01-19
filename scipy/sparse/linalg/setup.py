@@ -1,4 +1,3 @@
-import os
 
 def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -12,8 +11,7 @@ def configuration(parent_package='', top_path=None):
     config.add_data_dir('tests')
 
     # PROPACK
-    if os.environ.get("USE_PROPACK"):
-        config.add_subpackage('_propack')
+    config.add_subpackage('_propack')
 
     return config
 

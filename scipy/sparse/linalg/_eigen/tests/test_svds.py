@@ -1,3 +1,4 @@
+import os
 import re
 import copy
 import numpy as np
@@ -8,10 +9,10 @@ import pytest
 from scipy.linalg import hilbert, svd
 from scipy.sparse import csc_matrix, isspmatrix
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-try:
+if os.environ.get("USE_PROPACK"):
     import scipy.sparse.linalg._svdp
     has_propack = True
-except ImportError:
+else:
     has_propack = False
 
 from scipy.sparse.linalg import svds
