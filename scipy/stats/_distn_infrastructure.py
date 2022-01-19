@@ -3907,23 +3907,19 @@ def _combine_bounds(name, bounds_type, user_bounds, shape_domain,
 
 
 class FitResult:
-    def __init__(self, dist, data, nllf, res):
+    def __init__(self, dist, data, discrete, nllf, res):
         self.dist = dist
         self.data = data
-
+        self.discrete = discrete
         self.pxf = getattr(dist, "pmf", None) or getattr(dist, "pdf", None)
-
-
         self.success = getattr(res, "success", None)
         self.message = getattr(res, "message", None)
 
         shape_names = [] if dist.shapes is None else dist.shapes.split(", ")
         if getattr(dist, "pdf", False):
-            FitShapes = namedtuple('FitShapes',
-                                   shape_names + ['loc', 'scale'])
+            FitShapes = namedtuple('FitShapes', shape_names + ['loc', 'scale'])
         elif getattr(dist, "pmf", False):
-            FitShapes = namedtuple('FitShapes',
-                                   shape_names + ['loc'])
+            FitShapes = namedtuple('FitShapes', shape_names + ['loc'])
 
         self.fit_params = FitShapes(*res.x)
         self.objective_val = getattr(res, "fun", None)
@@ -3943,19 +3939,23 @@ class FitResult:
         figure, ax = plt.subplots(nrows=1, ncols=1)
         fit_params = np.atleast_1d(self.fit_params)
         support = self.dist.support(*fit_params)
-        x = np.arange(support[0], min(support[1], max(self.data))+2)
-        y = self.pxf(x, *fit_params)
-        if isinstance(self.dist, stats.rv_continuous):
-            options = dict(density=True, bins=50, align='mid')
-        else:
-            options = dict(density=True, bins=x, align='left')
+        lb = support[0] if np.isfinite(support[0]) else min(self.data)
+        ub = support[1] if np.isfinite(support[1]) else max(self.data)
 
-        l1 = ax.plot(x[:-1], y[:-1], '--', label='Distribution PMF, Fitted Shapes')
-        l2 = ax.hist(self.data, label='Histogram of Data', **options)
+        if self.discrete:
+            x = np.arange(lb, ub + 2)
+            y = self.pxf(x, *fit_params)
+            ax.plot(x[:-1], y[:-1], '--', label='Fit Distribution PMF')
+            options = dict(density=True, bins=x, align='left')
+        else:
+            x = np.linspace(lb, ub, 200)
+            y = self.pxf(x, *fit_params)
+            ax.plot(x, y, '--', label='Fit Distribution PDF')
+            options = dict(density=True, bins=50, align='mid')
+
+        ax.hist(self.data, label="Histogram of Data", **options)
         ax.set_title(f"{self.dist.name} Fit")
-        handles, labels = ax.get_legend_handles_labels()
-        ax.legend(handles, ('Fit Distribution PMF',
-                            'Histogram of Data'))
+        ax.legend(*ax.get_legend_handles_labels())
         plt.show()
         return figure, ax
 
@@ -4059,6 +4059,8 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
 
     """
     # TODO: fix bug with nothing to fit
+    # TODO: do we want to use nnlf?
+    # TODO: are we happy suppressing RuntimeWarnings caused by infs?
     # TODO: examples
     # TODO: PR
 
@@ -4163,4 +4165,4 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     else:
         res = optimizer(nllf, bounds)
 
-    return FitResult(dist, data, nllf, res)
+    return FitResult(dist, data, discrete, nllf, res)
