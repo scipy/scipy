@@ -1504,6 +1504,49 @@ class rv_generic:
         place(out_b, 1-cond, self.badvalue)
         return out_a, out_b
 
+    def nnlf(self, theta, x):
+        """Negative loglikelihood function.
+
+        Notes
+        -----
+        This is ``-sum(log pdf(x, theta), axis=0)`` where `theta` are the
+        parameters (including loc and scale).
+        """
+        loc, scale, args = self._unpack_loc_scale(theta)
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+        x = asarray((x-loc) / scale)
+        n_log_scale = len(x) * log(scale)
+        if np.any(~self._support_mask(x, *args)):
+            return inf
+        return self._nnlf(x, *args) + n_log_scale
+
+    def _nnlf_and_penalty(self, x, args):
+        cond0 = ~self._support_mask(x, *args)
+        n_bad = np.count_nonzero(cond0, axis=0)
+        if n_bad > 0:
+            x = argsreduce(~cond0, x)[0]
+        logpxf = self._logpxf(x, *args)
+        finite_logpxf = np.isfinite(logpxf)
+        n_bad += np.sum(~finite_logpxf, axis=0)
+        if n_bad > 0:
+            penalty = n_bad * log(_XMAX) * 100
+            return -np.sum(logpxf[finite_logpxf], axis=0) + penalty
+        return -np.sum(logpxf, axis=0)
+
+    def _penalized_nnlf(self, theta, x):
+        """Penalized negative loglikelihood function.
+
+        i.e., - sum (log pdf(x, theta), axis=0) + penalty
+        where theta are the parameters (including loc and scale)
+        """
+        loc, scale, args = self._unpack_loc_scale(theta)
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+        x = asarray((x-loc) / scale)
+        n_log_scale = len(x) * log(scale)
+        return self._nnlf_and_penalty(x, args) + n_log_scale
+
     def _get_shape_info(self):
         return self._shape_info()
 
@@ -1890,6 +1933,11 @@ class rv_continuous(rv_generic):
         with np.errstate(divide='ignore'):
             return log(p)
 
+    def _logpxf(self, x, *args):
+        # continuous distributions have PDF, discrete have PMF, but in
+        # fitting to data, the distinction is not important
+        return self.logpdf(x, *args)
+
     def _cdf_single(self, x, *args):
         _a, _b = self._get_support(*args)
         return integrate.quad(self._pdf, _a, x, args=args)[0]
@@ -2241,9 +2289,6 @@ class rv_continuous(rv_generic):
             return output[()]
         return output
 
-    def _nnlf(self, x, *args):
-        return -np.sum(self._logpdf(x, *args), axis=0)
-
     def _unpack_loc_scale(self, theta):
         try:
             loc = theta[-2]
@@ -2253,48 +2298,8 @@ class rv_continuous(rv_generic):
             raise ValueError("Not enough input arguments.") from e
         return loc, scale, args
 
-    def nnlf(self, theta, x):
-        """Negative loglikelihood function.
-
-        Notes
-        -----
-        This is ``-sum(log pdf(x, theta), axis=0)`` where `theta` are the
-        parameters (including loc and scale).
-        """
-        loc, scale, args = self._unpack_loc_scale(theta)
-        if not self._argcheck(*args) or scale <= 0:
-            return inf
-        x = asarray((x-loc) / scale)
-        n_log_scale = len(x) * log(scale)
-        if np.any(~self._support_mask(x, *args)):
-            return inf
-        return self._nnlf(x, *args) + n_log_scale
-
-    def _nnlf_and_penalty(self, x, args):
-        cond0 = ~self._support_mask(x, *args)
-        n_bad = np.count_nonzero(cond0, axis=0)
-        if n_bad > 0:
-            x = argsreduce(~cond0, x)[0]
-        logpdf = self._logpdf(x, *args)
-        finite_logpdf = np.isfinite(logpdf)
-        n_bad += np.sum(~finite_logpdf, axis=0)
-        if n_bad > 0:
-            penalty = n_bad * log(_XMAX) * 100
-            return -np.sum(logpdf[finite_logpdf], axis=0) + penalty
-        return -np.sum(logpdf, axis=0)
-
-    def _penalized_nnlf(self, theta, x):
-        """Penalized negative loglikelihood function.
-
-        i.e., - sum (log pdf(x, theta), axis=0) + penalty
-        where theta are the parameters (including loc and scale)
-        """
-        loc, scale, args = self._unpack_loc_scale(theta)
-        if not self._argcheck(*args) or scale <= 0:
-            return inf
-        x = asarray((x-loc) / scale)
-        n_log_scale = len(x) * log(scale)
-        return self._nnlf_and_penalty(x, args) + n_log_scale
+    def _nnlf(self, x, *args):
+        return -np.sum(self._logpdf(x, *args), axis=0)
 
     def _fitstart(self, data, args=None):
         """Starting point for fit (shape arguments + loc + scale)."""
@@ -3131,6 +3136,11 @@ class rv_discrete(rv_generic):
     def _logpmf(self, k, *args):
         return log(self._pmf(k, *args))
 
+    def _logpxf(self, k, *args):
+        # continuous distributions have PDF, discrete have PMF, but in
+        # fitting to data, the distinction is not important
+        return self.logpmf(k, *args)
+
     def _cdf_single(self, k, *args):
         _a, _b = self._get_support(*args)
         m = arange(int(_a), k+1)
@@ -3493,6 +3503,18 @@ class rv_discrete(rv_generic):
         if output.ndim == 0:
             return output[()]
         return output
+
+    def _unpack_loc_scale(self, theta):
+        try:
+            loc = theta[-1]
+            scale = 1
+            args = tuple(theta[:-1])
+        except IndexError as e:
+            raise ValueError("Not enough input arguments.") from e
+        return loc, scale, args
+
+    def _nnlf(self, x, *args):
+        return -np.sum(self._logpmf(x, *args), axis=0)
 
     def _entropy(self, *args):
         if hasattr(self, 'pk'):
@@ -3907,6 +3929,33 @@ def _combine_bounds(name, bounds_type, user_bounds, shape_domain,
 
 
 class FitResult:
+    r"""Result of fitting a discrete or continuous distribution to data
+
+    Attributes
+    ----------
+    dist : scipy.stats.rv_continuous or scipy.stats.rv_discrete
+        The distribution of which parameters were fit.
+    data : 1D array_like
+        The data to which the distribution was fit.
+    nllf : callable
+        The negative log-likehood function for the given `data`. Accepts a
+        single tuple containing the shapes, location, and scale of the
+        distribution.
+    params : namedtuple
+        A namedtuple containing the maximum likelihood estimates of the
+        shape parameters, location, and (if applicable) scale of the
+        distribution.
+    objective_val : float
+        The value of the negative log likelihood function evaluated with
+        the fitted shapes, i.e. ``result.nllf(result.params)``.
+    success : bool or None
+        Whether the optimizer considered the optimization to terminate
+        successfully or not.
+    message : str or None
+        Any status message provided by the optimizer.
+
+    """
+
     def __init__(self, dist, data, discrete, nllf, res):
         self.dist = dist
         self.data = data
@@ -3921,7 +3970,7 @@ class FitResult:
         elif getattr(dist, "pmf", False):
             FitShapes = namedtuple('FitShapes', shape_names + ['loc'])
 
-        self.fit_params = FitShapes(*res.x)
+        self.params = FitShapes(*res.x)
         self.objective_val = getattr(res, "fun", None)
         if self.objective_val is None:
             self.objective_val = nllf(res.x)
@@ -3929,15 +3978,29 @@ class FitResult:
 
 
     def __repr__(self):
-        keys = ["dist", "data", "nllf", "fit_params", "objective_val",
+        keys = ["dist", "data", "nllf", "params", "objective_val",
                 "success", "message"]
         m = max(map(len, keys)) + 1
         return '\n'.join([key.rjust(m) + ': ' + repr(getattr(self, key))
                           for key in keys if getattr(self, key) is not None])
 
     def plot(self):
+        """Visualize the fit result.
+
+        Superposes the PDF/PMF of the fitted distribution over a normalized
+        histogram of the data.
+
+        Available only if ``matplotlib`` is installed.
+
+        Returns
+        -------
+        fig : matplotlib.figure.Figure
+            A matplotlib Figure object.
+        ax : matplotlib.axes.Axes
+            A matplotlib Axes object.
+        """
         figure, ax = plt.subplots(nrows=1, ncols=1)
-        fit_params = np.atleast_1d(self.fit_params)
+        fit_params = np.atleast_1d(self.params)
         support = self.dist.support(*fit_params)
         lb = support[0] if np.isfinite(support[0]) else min(self.data)
         ub = support[1] if np.isfinite(support[1]) else max(self.data)
@@ -3969,7 +4032,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
 
     Parameters
     ----------
-    dist : scipy.stats.rv_generic
+    dist : scipy.stats.rv_continuous or scipy.stats.rv_discrete
         The object representing the distribution to be fit to the data.
     data : 1D array_like
         The data to which the distribution is to be fit. If the data contain
@@ -3977,14 +4040,11 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
         raise a ``ValueError``.
     shape_bounds : dict or sequence of tuples
         If a dictionary, each key is the name of a shape parameter of the
-        distribution, and the corresponding value is a a tuple containing the
-        lower and upper bound on that shape parameter. No entry is required
-        for a shape parameter if the distribution is defined only for a finite
-        range of values of that parameter; e.g., some distributions have
-        parameters which must be on the interval [0, 1]. However, the
-        optimization is more likely to converge to the maximum likelihood
-        estimate if tight bounds containing the maximum likelihood estimate
-        are provided.
+        distribution, and the corresponding value is a tuple containing the
+        lower and upper bound on that shape parameter.  If the distribution is
+        defined only for a finite range of values of that parameter, no entry
+        for that parameter is required; e.g., some distributions have
+        parameters which must be on the interval [0, 1].
 
         If a sequence, element *i* is a tuple containing the lower and upper
         bound on the *i*\ th shape parameter of the distribution. In this case,
@@ -4020,7 +4080,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
         if the distribution is discrete and the location parameter is not
         fixed, `optimizer` must also accept the following *keyword* argument.
 
-        integral : array_like of bools
+        integrality : array_like of bools
             For each decision variable, True if the decision variable is
             must be constrained to integer values and False if the decision
             variable is continuous.
@@ -4033,16 +4093,24 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
 
     Returns
     -------
-    result : object
+    result : FitResult
         An object with the following fields.
 
-        fit_params : namedtuple
-            A namedtuple containig the maximum likelihood estimates of the
+        dist : scipy.stats.rv_continuous or scipy.stats.rv_discrete
+            The distribution object passed to `fit` as `dist`
+        data : 1D array_like
+            The data passed to `fit` as `data`
+        nllf : callable
+            The negative log-likehood function for the given `data`. Accepts a
+            single tuple containing the shapes, location, and scale of the
+            distribution.
+        params : namedtuple
+            A namedtuple containing the maximum likelihood estimates of the
             shape parameters, location, and (if applicable) scale of the
             distribution.
-        fun : sequence of tuples
+        objective_val : float
             The value of the negative log likelihood function evaluated with
-            the fitted shapes.
+            the fitted shapes, i.e. ``result.nllf(result.params)``.
         success : bool or None
             Whether the optimizer considered the optimization to terminate
             successfully or not.
@@ -4053,16 +4121,88 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     --------
     rv_continuous,  rv_discrete
 
+    Notes
+    -----
+    Optimization is more likely to converge to the maximum likelihood estimate
+    when the user provides tight bounds containing the maximum likelihood
+    estimate. For example, when fitting a binomial distribution to data, the
+    number of experiments underlying each sample may be known, in which case
+    the corresponding shape parameter ``n`` can be fixed.
+
     Examples
     --------
-    To be added.
+    Suppose we wish to fit a distribution to the following data.
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng()
+    >>> dist = stats.nbinom
+    >>> shapes = (5, 0.5)
+    >>> data = dist.rvs(*shapes, size=1000, random_state=rng)
+
+    Suppose we do not know how the data were generated, but we suspect that
+    it follows a negative binomial distribution with parameters *n* and *p*\.
+    (See `scipy.stats.nbinom`.) We believe that the parameter *n* was fewer
+    than 30, and we know that the parameter *p* must lie on the interval
+    [0, 1]. We record this information in a variable `shape_bounds` and pass
+    this information to `fit`.
+
+    >>> shape_bounds = [(0, 30), (0, 1)]
+    >>> res = stats.fit(dist, data, shape_bounds)
+
+    `fit` searches within the user-specified `shape_bounds` for the
+    values that best match the data (in the sense of maximum likelihood
+    estimation). In this case, it found shape values similar to those
+    from which the data were actually generated.
+
+    >>> res.params
+    FitShapes(n=5.0, p=0.5028157644634368, loc=0.0)  # may vary
+
+    We can visualize the results by superposing the probability mass function
+    of the distribution (with the shapes fit to the data) over a normalized
+    histogram of the data.
+
+    >>> res.plot()
+
+    Note that the estimate for *n* was exactly integral; this is because
+    the domain of the `nbinom` PMF includes only integral *n*, and the `nbinom`
+    object "knows" that. `nbinom` also knows that the shape *p* must be a
+    value between 0 and 1. In such a case - when the domain of the distribution
+    with respect to a parameter is finite - we are not required to specify
+    bounds for the parameter.
+
+    >>> shape_bounds = {'n': (0, 30)}  # omit parameter p using a `dict`
+    >>> res2 = stats.fit(dist, data, shape_bounds)
+    >>> np.testing.assert_allclose(res.params, res2.params)
+    True
+
+    If we wish to force the distribution to be fit with *n* fixed at 6, we can
+    set both the lower and upper bounds on *n* to 6. Note, however, that the
+    value of the objective function being optimized is worse (higher) in this
+    case.
+
+    >>> shape_bounds = {'n': (6, 6)}  # fix parameter `n`
+    >>> res3 = stats.fit(dist, data, shape_bounds)
+    >>> res3.params
+    FitShapes(n=6.0, p=0.5486556076755706, loc=0.0)  # may vary
+    >>> res3.objective_val > res.objective_val
+    True
+
+    Note that any `optimizer` parameter allows us to control the optimizer
+    used to perform the fitting. The default optimizer is
+    `scipy.optimize.differential_evolution` with its own default settings,
+    but we can easily change these settings by creating our own optimizer
+    with different defaults.
+
+    >>> from scipy.optimize import differential_evolution
+    >>> def optimizer(fun, bounds, *, integrality):
+    ...     return differential_evolution(fun, bounds, strategy='best2bin',
+    ...                                   seed=rng, integrality=integrality)
+    >>> shape_bounds = [(0, 30), (0, 1)]
+    >>> res4 = stats.fit(dist, data, shape_bounds, optimizer=optimizer)
+    >>> res4.params
+    FitShapes(n=5.0, p=0.5032774713044523, loc=0.0)  # may vary
 
     """
-    # TODO: fix bug with nothing to fit
-    # TODO: do we want to use nnlf?
-    # TODO: are we happy suppressing RuntimeWarnings caused by infs?
-    # TODO: examples
-    # TODO: PR
 
     # --- Input Validation / Standardization --- #
 
@@ -4071,12 +4211,10 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
         loc_bounds = loc_bounds or (0, 0)
         scale_bounds = scale_bounds or (1, 1)
         loc_scale_integrality = [False, False]
-        pxf = getattr(dist, "pdf", None)
         discrete = False
     elif getattr(dist, "pmf", False):
         loc_bounds = loc_bounds or (0, 0)
         loc_scale_integrality = [True]
-        pxf = getattr(dist, "pmf", None)
         discrete = True
     else:
         message = ("`dist` must be an instance of `rv_continuous` "
@@ -4153,16 +4291,13 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
 
     # --- MLE Fitting --- #
     def nllf(free_params, data=data):  # bind data NOW
-        # negative log-likelihood function
-        with np.errstate(divide='ignore', invalid='ignore'):
-            ll = -np.log(pxf(data, *free_params)).sum(axis=-1)
-        if np.isnan(ll):  # occurs when x is outside of support
-            ll = np.inf   # we don't want that
-        return ll
+        with np.errstate(invalid='ignore', divide='ignore'):
+            return dist._penalized_nnlf(free_params, data)
 
-    if np.any(integrality):
-        res = optimizer(nllf, bounds, integrality=integrality)
-    else:
-        res = optimizer(nllf, bounds)
+    with np.errstate(invalid='ignore', divide='ignore'):
+        if np.any(integrality):
+            res = optimizer(nllf, bounds, integrality=integrality)
+        else:
+            res = optimizer(nllf, bounds)
 
     return FitResult(dist, data, discrete, nllf, res)
