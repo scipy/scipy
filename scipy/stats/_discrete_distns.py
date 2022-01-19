@@ -403,6 +403,10 @@ class geom_gen(rv_discrete):
     %(example)s
 
     """
+
+    def _shape_info(self):
+        return [ShapeInfo("p", False, (0, 1), (True, True))]
+
     def _rvs(self, p, size=None, random_state=None):
         return random_state.geometric(p, size=size)
 
@@ -509,6 +513,11 @@ class hypergeom_gen(rv_discrete):
     nhypergeom, binom, nbinom
 
     """
+    def _shape_info(self):
+        return [ShapeInfo("M", True, (0, np.inf), (True, False)),
+                ShapeInfo("n", True, (0, np.inf), (True, False)),
+                ShapeInfo("N", True, (0, np.inf), (True, False))]
+
     def _rvs(self, M, n, N, size=None, random_state=None):
         return random_state.hypergeometric(n, M-n, N, size=size)
 
@@ -687,6 +696,11 @@ class nhypergeom_gen(rv_discrete):
 
     """
 
+    def _shape_info(self):
+        return [ShapeInfo("M", True, (0, np.inf), (True, False)),
+                ShapeInfo("n", True, (0, np.inf), (True, False)),
+                ShapeInfo("r", True, (0, np.inf), (True, False))]
+
     def _get_support(self, M, n, r):
         return 0, n
 
@@ -767,6 +781,10 @@ class logser_gen(rv_discrete):
     %(example)s
 
     """
+
+    def _shape_info(self):
+        return [ShapeInfo("p", False, (0, 1), (True, True))]
+
     def _rvs(self, p, size=None, random_state=None):
         # looks wrong for p>0.5, too few k=1
         # trying to use generic is worse, no k=1 at all
@@ -822,6 +840,9 @@ class poisson_gen(rv_discrete):
     %(example)s
 
     """
+
+    def _shape_info(self):
+        return [ShapeInfo("mu", False, (0, np.inf), (True, False))]
 
     # Override rv_discrete._argcheck to allow mu=0.
     def _argcheck(self, mu):
@@ -892,6 +913,9 @@ class planck_gen(rv_discrete):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [ShapeInfo("lambda", False, (0, np.inf), (False, False))]
+
     def _argcheck(self, lambda_):
         return lambda_ > 0
 
@@ -957,6 +981,10 @@ class boltzmann_gen(rv_discrete):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [ShapeInfo("lambda", False, (0, np.inf), (False, False)),
+                ShapeInfo("N", True, (0, np.inf), (False, False))]
+
     def _argcheck(self, lambda_, N):
         return (lambda_ > 0) & (N > 0)
 
@@ -1021,6 +1049,11 @@ class randint_gen(rv_discrete):
     %(example)s
 
     """
+
+    def _shape_info(self):
+        return [ShapeInfo("low", True, (-np.inf, np.inf), (False, False)),
+                ShapeInfo("high", True, (-np.inf, np.inf), (False, False))]
+
     def _argcheck(self, low, high):
         return (high > low)
 
@@ -1119,6 +1152,10 @@ class zipf_gen(rv_discrete):
     True
 
     """
+
+    def _shape_info(self):
+        return [ShapeInfo("a", False, (1, np.inf), (False, False))]
+
     def _rvs(self, a, size=None, random_state=None):
         return random_state.zipf(a, size=size)
 
@@ -1211,6 +1248,11 @@ class zipfian_gen(rv_discrete):
     True
 
     """
+
+    def _shape_info(self):
+        return [ShapeInfo("a", False, (0, np.inf), (True, False)),
+                ShapeInfo("n", True, (0, np.inf), (False, False))]
+
     def _argcheck(self, a, n):
         # we need np.asarray here because moment (maybe others) don't convert
         return (a >= 0) & (n > 0) & (n == np.asarray(n, dtype=int))
@@ -1273,6 +1315,10 @@ class dlaplace_gen(rv_discrete):
     %(example)s
 
     """
+
+    def _shape_info(self):
+        return [ShapeInfo("a", False, (0, np.inf), (False, False))]
+
     def _pmf(self, k, a):
         # dlaplace.pmf(k) = tanh(a/2) * exp(-a*abs(k))
         return tanh(a/2.0) * exp(-a * abs(k))
@@ -1356,6 +1402,10 @@ class skellam_gen(rv_discrete):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [ShapeInfo("mu1", False, (0, np.inf), (False, False)),
+                ShapeInfo("mu2", False, (0, np.inf), (False, False))]
+
     def _rvs(self, mu1, mu2, size=None, random_state=None):
         n = size
         return (random_state.poisson(mu1, n) -
@@ -1420,6 +1470,9 @@ class yulesimon_gen(rv_discrete):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [ShapeInfo("alpha", False, (0, np.inf), (False, False))]
+
     def _rvs(self, alpha, size=None, random_state=None):
         E1 = random_state.standard_exponential(size)
         E2 = random_state.standard_exponential(size)
@@ -1511,6 +1564,12 @@ class _nchypergeom_gen(rv_discrete):
 
     rvs_name = None
     dist = None
+
+    def _shape_info(self):
+        return [ShapeInfo("M", True, (0, np.inf), (True, False)),
+                ShapeInfo("n", True, (0, np.inf), (True, False)),
+                ShapeInfo("N", True, (0, np.inf), (True, False)),
+                ShapeInfo("odds", False, (0, np.inf), (False, False))]
 
     def _get_support(self, M, n, N, odds):
         N, m1, n = M, n, N  # follow Wikipedia notation

@@ -4059,9 +4059,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
 
     """
     # TODO: fix bug with nothing to fit
-    # TODO: unit tests
     # TODO: examples
-    # TODO: add ShapeInfo to other distributions
     # TODO: PR
 
     # --- Input Validation / Standardization --- #

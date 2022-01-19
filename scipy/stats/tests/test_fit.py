@@ -8,7 +8,7 @@ from scipy import stats
 from scipy.optimize import differential_evolution
 
 from .test_continuous_basic import distcont
-from .test_discrete_basic import distdiscrete
+from scipy.stats._distr_params import distdiscrete
 
 
 # this is not a proper statistical test for convergence, but only
@@ -154,9 +154,10 @@ class TestFit:
     shape_bounds_d = {'n': (1, 10), 'p': (0, 1)}
     atol = 5e-2
     rtol = 1e-2
-    opt = (lambda *args, **kwds:
-           differential_evolution(*args, seed=2, **kwds))
+    tols = {'atol': atol, 'rtol': rtol}
 
+    def opt(self, *args, **kwds):
+        return differential_evolution(*args, seed=0, **kwds)
 
     def test_dist_iv(self):
         message = "`dist` must be an instance of..."
@@ -265,15 +266,20 @@ class TestFit:
         with pytest.raises(ValueError, match=message):
             stats.fit(stats.norm, self.data, scale_bounds=scale_bounds)
 
-    @pytest.mark.parametrize("dist_name", ['binom', 'bernoulli', 'betabinom',
-                                           'nbinom', 'norm'])
+    # these distributions are tested separately
+    skip_basic_fit = {'hypergeom', 'nhypergeom', 'boltzmann', 'randint',
+                      'yulesimon', 'nchypergeom_fisher',
+                      'nchypergeom_wallenius'}
+    @pytest.mark.parametrize("dist_name", dict(distdiscrete))
     def test_basic_fit(self, dist_name):
+        if dist_name in self.skip_basic_fit:
+            pytest.skip("Tested separately.")
         N = 5000
         dist_data = dict(distcont + distdiscrete)
         rng = np.random.default_rng(654634816187)
         dist = getattr(stats, dist_name)
         shapes = dist_data[dist_name]
-        shape_bounds = np.array([shapes, shapes]).T
+        shape_bounds = np.array([shapes, shapes], dtype=np.float64).T
         shape_bounds[:, 0] /= 10  # essentially all shapes are > 0
         shape_bounds[:, 1] *= 10
         loc_bounds = (0, 10)
@@ -298,6 +304,88 @@ class TestFit:
 
         assert_allclose(res.fit_params, ref, **self.tols)
 
+    def test_hypergeom(self):
+        # hypergeometric distribution (M, n, N) \equiv (M, N, n)
+        N = 1000
+        rng = np.random.default_rng(654634816187)
+        shapes = (20, 7, 12)
+        data = stats.hypergeom.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = [(0, 30)]*3
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = stats.fit(stats.hypergeom, data, shape_bounds, optimizer=self.opt)
+        assert_allclose(res.fit_params[:-1], (20, 12, 7), **self.tols)
+
+    def test_nhypergeom(self):
+        # DE doesn't find optimum for the bounds in `test_basic_fit`. NBD.
+        N = 2000
+        rng = np.random.default_rng(654634816187)
+        shapes = (20, 7, 12)
+        data = stats.nhypergeom.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = [(0, 30)]*3
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = stats.fit(stats.nhypergeom, data, shape_bounds, optimizer=self.opt)
+        assert_allclose(res.fit_params[:-1], (20, 7, 12), **self.tols)
+
+    def test_boltzmann(self):
+        # Boltzmann distribution shape is very insensitive to parameter N
+        N = 1000
+        rng = np.random.default_rng(654634816187)
+        shapes = (1.4, 19, 4)
+        data = stats.boltzmann.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = [(0, 30)]*2
+        loc_bounds = (0, 10)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = stats.fit(stats.boltzmann, data, shape_bounds, loc_bounds=loc_bounds, optimizer=self.opt)
+        assert_allclose(res.fit_params[0], 1.4, **self.tols)
+        assert_allclose(res.fit_params[2], 4, **self.tols)
+
+    def test_randint(self):
+        # randint is overparameterized; test_basic_fit finds equally good fit
+        N = 5000
+        rng = np.random.default_rng(654634816187)
+        shapes = (7, 31)
+        data = stats.randint.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = [(0, 70), (0, 310)]
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = stats.fit(stats.randint, data, shape_bounds, optimizer=self.opt)
+        assert_allclose(res.fit_params[:2], shapes, **self.tols)
+
+    def test_yulesimon(self):
+        # yulesimon fit is not very sensitive to alpha except for small alpha
+        N = 5000
+        rng = np.random.default_rng(654634816187)
+        params = (1.5, 4)
+        data = stats.yulesimon.rvs(*params, size=N, random_state=rng)
+        shape_bounds = [(0.15, 15)]
+        loc_bounds = (0, 10)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = stats.fit(stats.yulesimon, data, shape_bounds, loc_bounds=loc_bounds, optimizer=self.opt)
+        assert_allclose(res.fit_params, params, **self.tols)
+
+    def test_nchypergeom_fisher(self):
+        # The NC hypergeometric distributions are more challenging
+        N = 5000
+        rng = np.random.default_rng(654634816187)
+        shapes = (14, 8, 6, 0.5)
+        data = stats.nchypergeom_fisher.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = [(0, 20), (8, 8), (0, 10), (0, 1)]
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = stats.fit(stats.nchypergeom_fisher, data, shape_bounds, optimizer=self.opt)
+        assert_allclose(res.fit_params[:-1], shapes, **self.tols)
+
+    def test_nchypergeom_wallenius(self):
+        # The NC hypergeometric distributions are more challenging
+        N = 5000
+        rng = np.random.default_rng(654634816187)
+        shapes = (14, 8, 6, 0.5)
+        data = stats.nchypergeom_wallenius.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = [(0, 20), (0, 10), (0, 10), (0, 0.5)]
+
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = stats.fit(stats.nchypergeom_wallenius, data, shape_bounds, optimizer=self.opt)
+        assert_allclose(res.fit_params[:-1], shapes, **self.tols)
+
     def test_missing_shape_bounds(self):
         # some disributions have small domains w.r.t. a parameter, e.g.
         # $p \in [0, 1]$ for binomial, binomial distributions
@@ -309,10 +397,12 @@ class TestFit:
         n, p, loc = 10, 0.65, 0
         data = stats.binom.rvs(n, p, loc=loc, size=N, random_state=rng)
         shape_bounds = {'n': (0, 20)}
-        res = stats.fit(stats.binom, data, shape_bounds, optimizer=self.opt)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = stats.fit(stats.binom, data, shape_bounds, optimizer=self.opt)
         assert_allclose(res.fit_params, (n, p, loc), **self.tols)
 
         p, loc = 0.314159, 0
         data = stats.bernoulli.rvs(p, loc=loc, size=N, random_state=rng)
-        res = stats.fit(stats.bernoulli, data, optimizer=self.opt)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = stats.fit(stats.bernoulli, data, optimizer=self.opt)
         assert_allclose(res.fit_params, (p, loc), **self.tols)
