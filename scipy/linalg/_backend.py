@@ -1,6 +1,8 @@
 import scipy._lib.uarray as ua
 from scipy.linalg import _api
+from scipy.sparse import issparse
 import numpy as np
+
 
 __all__ = [
     'register_backend', 'set_backend',
@@ -31,8 +33,8 @@ class _ScipyLinalgBackend:
 
     @ua.wrap_single_convertor
     def __ua_convert__(value, dispatch_type, coerce):
-        if value is None:
-            return None
+        if value is None or issparse(value):
+            return value
 
         if dispatch_type is np.ndarray:
             if not coerce and not isinstance(value, np.ndarray):

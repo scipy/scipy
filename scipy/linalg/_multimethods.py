@@ -4,6 +4,12 @@ from scipy._lib.uarray import Dispatchable, all_of_type, create_multimethod
 from scipy.linalg import _api
 from scipy.linalg._backend import scalar_tuple_callable_array
 
+# they don't need to be dispatchabled
+from ._api import (hilbert, helmert, invhilbert, pascal, invpascal, dft,
+                   block_diag)
+
+
+
 __all__ = [
     # solvers
     'solve_sylvester',
@@ -18,7 +24,14 @@ __all__ = [
     'expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm',
     'tanhm', 'logm', 'funm', 'signm', 'sqrtm',
     'expm_frechet', 'expm_cond', 'fractional_matrix_power',
-    'khatri_rao'
+    'khatri_rao',
+    # sketches
+    'clarkson_woodruff_transform',
+    # special matrices
+    'tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
+    'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
+    'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
+    'fiedler', 'fiedler_companion', 'convolution_matrix'
 ]
 
 
@@ -342,3 +355,154 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
 @_get_docs
 def khatri_rao(a, b):
     return a, b
+
+############################### sketches #######################################
+
+
+def _inputmatrix_replacer(args, kwargs, dispatchables):
+    def self_method(input_matrix, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_inputmatrix_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
+    return (input_matrix, )
+
+
+############################### special matrices ###############################
+
+def _N_M_k_dtype_replacer(args, kwargs, dispatchables):
+    def self_method(N, M=None, k=0, dtype=None, *args, **kwargs):
+        return (N, M, k, dispatchables[0]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_N_M_k_dtype_replacer)
+@all_of_type(np.dtype)
+@_get_docs
+def tri(N, M=None, k=0, dtype=None):
+    return (dtype, )
+
+
+def _m_replacer(args, kwargs, dispatchables):
+    def self_method(m, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_m_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def tril(m, k=0):
+    return (m, )
+
+
+@_create_linalg(_m_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def triu(m, k=0):
+    return (m, )
+
+
+def _c_r_replacer(args, kwargs, dispatchables):
+    def self_method(c, r=None, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_c_r_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def toeplitz(c, r=None):
+    return c, r
+
+
+@_create_linalg(_c_r_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def hankel(c, r=None):
+    return c, r
+
+
+def _c_replacer(args, kwargs, dispatchables):
+    def self_method(c, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_c_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def circulant(c):
+    return (c, )
+
+
+def _n_dtype_replacer(args, kwargs, dispatchables):
+    def self_method(n, dtype=int, *args, **kwargs):
+        return (n, dispatchables[0]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_n_dtype_replacer)
+@all_of_type(np.dtype)
+@_get_docs
+def hadamard(n, dtype=int):
+    return (dtype, )
+
+
+def _f_s_replacer(args, kwargs, dispatchables):
+    def self_method(f, s, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_f_s_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def leslie(f, s):
+    return f, s
+
+
+@_create_linalg(_a_b_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def kron(a, b):
+    return a, b
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def companion(a):
+    return (a, )
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def fiedler(a):
+    return (a, )
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def fiedler_companion(a):
+    return (a, )
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def convolution_matrix(a, n, mode='full'):
+    return (a, )

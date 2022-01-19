@@ -27,7 +27,13 @@ method_names = [
     'expm', 'cosm', 'sinm', 'tanm', 'coshm', 'sinhm',
     'tanhm', 'logm', 'funm', 'signm', 'sqrtm',
     'expm_frechet', 'expm_cond', 'fractional_matrix_power',
-    'khatri_rao'
+    'khatri_rao',
+    # sketches
+    'clarkson_woodruff_transform',
+    # special matrices
+    'tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
+    'hadamard', 'leslie', 'kron', 'companion',
+    'fiedler', 'fiedler_companion', 'convolution_matrix'
 ]
 
 for name in method_names:
