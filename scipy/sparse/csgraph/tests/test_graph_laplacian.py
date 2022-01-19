@@ -114,8 +114,8 @@ def _check_laplacian(
     )
     assert L.dtype == dtype
     assert d.dtype == dtype
-    desired_L = desired_L.astype(dtype)
-    desired_d = desired_d.astype(dtype)
+    desired_L = np.asarray(desired_L).astype(dtype)
+    desired_d = np.asarray(desired_d).astype(dtype)
     _assert_allclose_sparse(L, desired_L, atol=1e-12)
     _assert_allclose_sparse(d, desired_d, atol=1e-12)
 
