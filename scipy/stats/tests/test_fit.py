@@ -274,8 +274,9 @@ class TestFit:
 
     @pytest.mark.parametrize("dist_name", dict(distdiscrete))
     def test_basic_fit(self, dist_name):
-        if dist_name in self.skip_basic_fit:
+        if dist_name in self.skip_basic_fit or not isinstance(dist_name, str):
             pytest.skip("Tested separately.")
+
         N = 5000
         dist_data = dict(distcont + distdiscrete)
         rng = np.random.default_rng(self.seed)
