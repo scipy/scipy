@@ -3965,9 +3965,9 @@ class FitResult:
         self.message = getattr(res, "message", None)
 
         shape_names = [] if dist.shapes is None else dist.shapes.split(", ")
-        if getattr(dist, "pdf", False):
+        if not discrete:
             FitShapes = namedtuple('FitShapes', shape_names + ['loc', 'scale'])
-        elif getattr(dist, "pmf", False):
+        else:
             FitShapes = namedtuple('FitShapes', shape_names + ['loc'])
 
         self.params = FitShapes(*res.x)
@@ -4032,8 +4032,8 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
         optimizer=optimize.differential_evolution):
     r"""Fit a discrete or continuous distribution to data
 
-    Given a distribution, data, and bounds for the shape parameters of the
-    distribution, return maximum likelihood estimates of the shape parameters.
+    Given a distribution, data, and bounds on the parameters of the
+    distribution, return maximum likelihood estimates of the parameters.
 
     Parameters
     ----------
@@ -4284,7 +4284,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     if discrete and scale_bounds is not None:
         message = (f"`{dist.name}` is an instance of `rv_discrete`, which "
                    "does not have `scale`. `scale_bounds` will be ignored.")
-        warnings.warn(message, RuntimeWarning)
+        warnings.warn(message, RuntimeWarning, stacklevel=2)
     if discrete:
         scale_bounds = []
     else:

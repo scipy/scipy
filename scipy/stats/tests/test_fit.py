@@ -400,8 +400,8 @@ class TestFit:
         assert_allclose(res.params[:-1], shapes, **self.tols)
 
     def test_missing_shape_bounds(self):
-        # some disributions have small domains w.r.t. a parameter, e.g.
-        # $p \in [0, 1]$ for binomial, binomial distributions
+        # some distributions have a small domain w.r.t. a parameter, e.g.
+        # $p \in [0, 1]$ for binomial distribution
         # User does not need to provide these because the intersection of the
         # user's bounds (none) and the distribution's domain is finite
         N = 1000
