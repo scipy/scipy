@@ -271,6 +271,7 @@ class TestFit:
     skip_basic_fit = {'nhypergeom', 'boltzmann', 'nbinom',
                       'randint', 'yulesimon', 'nchypergeom_fisher',
                       'nchypergeom_wallenius'}
+
     @pytest.mark.parametrize("dist_name", dict(distdiscrete))
     def test_basic_fit(self, dist_name):
         if dist_name in self.skip_basic_fit:

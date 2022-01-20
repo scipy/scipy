@@ -349,6 +349,7 @@ Transformations
 .. autosummary::
    :toctree: generated/
 
+   fit
    boxcox
    boxcox_normmax
    boxcox_llf

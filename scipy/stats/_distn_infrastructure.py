@@ -12,7 +12,7 @@ import warnings
 import inspect
 from itertools import zip_longest
 from collections import namedtuple
-from dataclasses import make_dataclass, field
+import dataclasses
 
 
 try:
@@ -3977,7 +3977,6 @@ class FitResult:
             self.objective_val = nllf(res.x)
         self.nllf = nllf
 
-
     def __repr__(self):
         keys = ["dist", "data", "nllf", "params", "objective_val",
                 "success", "message"]
@@ -4234,7 +4233,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
         message = "All elements of `data` must be finite numbers."
         raise ValueError(message)
 
-     # shape_bounds input validation and information collection
+    # shape_bounds input validation and information collection
     shape_info = dist._get_shape_info()
 
     n_shapes = len(shape_info)
