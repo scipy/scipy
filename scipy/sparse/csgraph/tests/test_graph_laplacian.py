@@ -24,7 +24,7 @@ def _explicit_laplacian(x, normed=False):
     x = np.asarray(x)
     y = -1.0 * x
     for j in range(y.shape[0]):
-        y[j, j] = x[j, j + 1:].sum() + x[j, :j].sum()
+        y[j, j] = x[j, j + 1 :].sum() + x[j, :j].sum()
     if normed:
         d = np.diag(y).copy()
         d[d == 0] = 1.0
@@ -113,8 +113,8 @@ def _check_laplacian_dtype_none(
         dtype=None,
     )
     if normed and (
-                  np.issubdtype(mat.dtype, np.signedinteger)
-                  or np.issubdtype(mat.dtype, np.uint)
+        np.issubdtype(mat.dtype, np.signedinteger)
+        or np.issubdtype(mat.dtype, np.uint)
     ):
         assert L.dtype == np.float64
         assert d.dtype == np.float64
@@ -199,6 +199,7 @@ def test_asymmetric_laplacian(use_out_degree, normed, copy, dtype, arr_type):
     # adjacency matrix
     A = [[0, 1, 0], [4, 2, 0], [0, 0, 0]]
     A = arr_type(np.array(A), dtype=dtype)
+    A_copy = A.copy()
 
     if not normed and use_out_degree:
         # Laplacian matrix using out-degree
@@ -230,8 +231,9 @@ def test_asymmetric_laplacian(use_out_degree, normed, copy, dtype, arr_type):
         dtype=dtype,
         arr_type=arr_type,
     )
+
     _check_laplacian_dtype(
-        A,
+        A_copy,
         L,
         d,
         normed=normed,
