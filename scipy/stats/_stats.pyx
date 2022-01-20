@@ -602,6 +602,15 @@ cdef double _studentized_range_pdf(int n, double[2] integration_var,
     return math.exp(log_terms) * math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
 
 
+cdef double _studentized_range_pdf_asymptotic(double z, void *user_data) nogil:
+    # evaluates the integrand of equation (2) by Lund, Lund, page 205. [4]
+    # destined to be used in a LowLevelCallable
+    q = (<double *> user_data)[0]
+    k = (<double *> user_data)[1]
+
+    return k * (k - 1) * _phi(z) * _phi(z + q) * math.pow(_Phi(z + q) - _Phi(z), k - 2)
+
+
 cdef double _studentized_range_moment(int n, double[3] integration_var,
                                       void *user_data) nogil:
     # destined to be used in a LowLevelCallable
