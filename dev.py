@@ -64,12 +64,12 @@ sys.path.pop(0)
 current_sys_path = sys.path.copy()
 
 from argparse import ArgumentParser, REMAINDER
-import contextlib
 import shutil
 import subprocess
 import time
 import datetime
 import importlib.util
+from sysconfig import get_path
 
 try:
     from types import ModuleType as new_module
@@ -316,10 +316,7 @@ def main(argv):
             current_python_path = os.environ.get('PYTHONPATH', None)
             print("Unable to import {} from: {}".format(PROJECT_MODULE,
                                                        current_python_path))
-            from sysconfig import get_path
-            py_path = get_path('platlib')
-            site_dir = os.path.join(PATH_INSTALLED,
-                                    runtests.get_path_suffix(py_path, 3))
+            site_dir = get_site_packages()
             print("Trying to import scipy from development installed path at:",
                   site_dir)
             sys.path.insert(0, site_dir)
@@ -447,6 +444,15 @@ def install_project(show_build_log):
     return
 
 
+def import_module(mod_name, mod_path):
+    # https://bugs.python.org/msg255901
+    import importlib.util as impu
+    spec = impu.spec_from_file_location(mod_name, mod_path)
+    mod = impu.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def copy_openblas():
     cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -457,12 +463,26 @@ def copy_openblas():
     if not lib_path.stem == 'lib':
         raise RuntimeError(f'Expecting "lib" at end of "{lib_path}"')
     bin_path = lib_path.parent / 'bin'
-    out_path = Path(PATH_INSTALLED) / '.libs'
-    out_path.mkdir(exist_ok=True)
+    scipy_path = Path(get_site_packages()) / 'scipy'
+    libs_path = scipy_path / '.libs'
+    libs_path.mkdir(exist_ok=True)
     for dll_fn in bin_path.glob('*.dll'):
-        out_fname = out_path / dll_fn.parts[-1]
+        out_fname = libs_path / dll_fn.parts[-1]
+        print(f'Copying {dll_fn} to {out_fname}')
         out_fname.write_bytes(dll_fn.read_bytes())
+    # Write _distributor_init.py to scipy dir to load .libs DLLs.
+    openblas_support = import_module('openblas_support',
+                                     Path(ROOT_DIR) /
+                                     'tools' /
+                                     'openblas_support.py')
+    openblas_support.make_init(scipy_path)
     return 0
+
+
+def get_site_packages():
+    py_path = get_path('platlib')
+    return os.path.join(PATH_INSTALLED,
+                        runtests.get_path_suffix(py_path, 3))
 
 
 def build_project(args):
@@ -473,9 +493,7 @@ def build_project(args):
     -------
     site_dir
         site-packages directory where it was installed
-
     """
-
     root_ok = [os.path.exists(os.path.join(ROOT_DIR, fn))
                for fn in PROJECT_ROOT_FILES]
     if not all(root_ok):
@@ -508,10 +526,7 @@ def build_project(args):
     if not os.path.exists(os.path.join(build_dir, 'build.ninja')):
         setup_build(args, env)
 
-    from sysconfig import get_path
-    py_path = get_path('platlib')
-    site_dir = os.path.join(PATH_INSTALLED,
-                            runtests.get_path_suffix(py_path, 3))
+    site_dir = get_site_packages()
 
     cmd = ["ninja", "-C", "build"]
     if args.parallel > 1:
