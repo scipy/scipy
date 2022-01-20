@@ -117,7 +117,9 @@ _lbfgsb = py3.extension_module('_lbfgsb',
 )
 
 moduleTNC = py3.extension_module('_moduleTNC',
-  ['tnc/tnc.h', 'tnc/_moduleTNC.pyx', 'tnc/tnc.c'],
+  ['tnc/tnc.h',
+    cython_gen.process('tnc/_moduleTNC.pyx'),
+    'tnc/tnc.c'],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py, 'tnc'],
   dependencies: [py3_dep],
@@ -220,7 +222,7 @@ if use_pythran
   )
 else
   _group_columns = py3.extension_module('_group_columns',
-    ['_group_columns.pyx'],
+    cython_gen.process('_group_columns.pyx'),
     include_directories: [inc_np],
     dependencies: [py3_dep],
     install: true,
@@ -228,25 +230,20 @@ else
   )
 endif
 
-# Needed to trick Cython, it won't do a relative import outside a package
+# Needed to trick Cython, it won't do a relative import outside a
+# package
 _dummy_init_optimize = custom_target('_dummy_init_optimize',
   output: '__init__.py',
   input: '__init__.py',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
-_bglu_dense_c = custom_target('_bglu_dense_c',
-  output: '_bglu_dense.c',
-  input: [
-    '_bglu_dense.pyx',
-    _cython_tree,
-    # _cython_blas_pxd
-  ],
-  command: [
-    cython, '-3', '--fast-fail',
-    '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
-  ]
-)
+opt_gen = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : [_cython_tree, cython_linalg, _dummy_init_optimize])
+
+_bglu_dense_c = opt_gen.process('_bglu_dense.pyx')
 
 py3.extension_module('_bglu_dense',
   _bglu_dense_c,

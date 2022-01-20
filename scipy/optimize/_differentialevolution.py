@@ -24,7 +24,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            mutation=(0.5, 1), recombination=0.7, seed=None,
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
-                           workers=1, constraints=(), x0=None):
+                           workers=1, constraints=(), x0=None, *,
+                           integrality=None):
     """Finds the global minimum of a multivariate function.
 
     Differential Evolution is stochastic in nature (does not use gradient
@@ -193,6 +194,18 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
         .. versionadded:: 1.7.0
 
+    integrality : 1-D array, optional
+        For each decision variable, a boolean value indicating whether the
+        decision variable is constrained to integer values. The array is
+        broadcast to ``(len(x),)``.
+        If any decision variables are constrained to be integral, they will not
+        be changed during polishing.
+        Only integer values lying between the lower and upper bounds are used.
+        If there are no integer values lying between the bounds then a
+        `ValueError` is raised.
+
+        .. versionadded:: 1.9.0
+
     Returns
     -------
     res : OptimizeResult
@@ -325,7 +338,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      updating=updating,
                                      workers=workers,
                                      constraints=constraints,
-                                     x0=x0) as solver:
+                                     x0=x0,
+                                     integrality=integrality) as solver:
         ret = solver.solve()
 
     return ret
@@ -486,6 +500,15 @@ class DifferentialEvolutionSolver:
         Provides an initial guess to the minimization. Once the population has
         been initialized this vector replaces the first (best) member. This
         replacement is done even if `init` is given an initial population.
+    integrality : 1-D array, optional
+        For each decision variable, a boolean value indicating whether the
+        decision variable is constrained to integer values. The array is
+        broadcast to ``(len(x),)``.
+        If any decision variables are constrained to be integral, they will not
+        be changed during polishing.
+        Only integer values lying between the lower and upper bounds are used.
+        If there are no integer values lying between the bounds then a
+        `ValueError` is raised.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -511,7 +534,7 @@ class DifferentialEvolutionSolver:
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
-                 workers=1, constraints=(), x0=None):
+                 workers=1, constraints=(), x0=None, *, integrality=None):
 
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -597,6 +620,35 @@ class DifferentialEvolutionSolver:
         self.parameter_count = np.size(self.limits, 1)
 
         self.random_number_generator = check_random_state(seed)
+
+        # Which parameters are going to be integers?
+        if np.any(integrality):
+            # # user has provided a truth value for integer constraints
+            integrality = np.broadcast_to(
+                integrality,
+                self.parameter_count
+            )
+            integrality = np.asarray(integrality, bool)
+            # For integrality parameters change the limits to only allow
+            # integer values lying between the limits.
+            lb, ub = np.copy(self.limits)
+
+            lb = np.ceil(lb)
+            ub = np.floor(ub)
+            if not (lb[integrality] <= ub[integrality]).all():
+                # there's a parameter that doesn't have an integer value
+                # lying between the limits
+                raise ValueError("One of the integrality constraints does not"
+                                 " have any possible integer values between"
+                                 " the lower/upper bounds.")
+            nlb = np.nextafter(lb[integrality] - 0.5, np.inf)
+            nub = np.nextafter(ub[integrality] + 0.5, -np.inf)
+
+            self.integrality = integrality
+            self.limits[0, self.integrality] = nlb
+            self.limits[1, self.integrality] = nub
+        else:
+            self.integrality = False
 
         # default population initialization is a latin hypercube design, but
         # there are other population initializations possible.
@@ -887,7 +939,15 @@ class DifferentialEvolutionSolver:
             message=status_message,
             success=(warning_flag is not True))
 
-        if self.polish:
+        if self.polish and not np.all(self.integrality):
+            # can't polish if all the parameters are integers
+            if np.any(self.integrality):
+                # set the lower/upper bounds equal so that any integrality
+                # constraints work.
+                limits, integrality = self.limits, self.integrality
+                limits[0, integrality] = DE_result.x[integrality]
+                limits[1, integrality] = DE_result.x[integrality]
+
             polish_method = 'L-BFGS-B'
 
             if self._wrapped_constraints:
@@ -1235,7 +1295,13 @@ class DifferentialEvolutionSolver:
 
     def _scale_parameters(self, trial):
         """Scale from a number between 0 and 1 to parameters."""
-        return self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
+        # trial either has shape (N, ) or (L, N), where L is the number of
+        # solutions being scaled
+        scaled = self.__scale_arg1 + (trial - 0.5) * self.__scale_arg2
+        if np.any(self.integrality):
+            i = np.broadcast_to(self.integrality, scaled.shape)
+            scaled[i] = np.round(scaled[i])
+        return scaled
 
     def _unscale_parameters(self, parameters):
         """Scale from parameters to a number between 0 and 1."""

@@ -21,6 +21,15 @@ _stats_pxd = custom_target('_stats_pxd',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
+stats_special_cython_gen = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : [
+    _cython_tree,
+    _ufuncs_pxi_pxd_sources,
+    _stats_pxd,
+    cython_special])
+
 statlib_lib = static_library('statlib_lib',
   [
     'statlib/ansari.f',
@@ -48,23 +57,8 @@ statlib = py3.extension_module('_statlib',
   subdir: 'scipy/stats'
 )
 
-# Relies on cython_special
-_stats_c = custom_target('_stats_c',
-  output: '_stats.c',
-  input: [
-    '_stats.pyx',
-    _cython_tree,
-    _stats_pxd[0],  # __init__.py
-    cython_special[7],  # cython_special.pxd
-  ],
-  command: [
-    cython, '-3', '--fast-fail',
-    '@INPUT0@', '-o', '@OUTPUT@', '-I', '@BUILD_ROOT@'
-  ]
-)
-
 _stats = py3.extension_module('_stats',
-  _stats_c,
+  stats_special_cython_gen.process('_stats.pyx'),
   c_args: '-Wno-cpp',  # Replace with numpy_nodepr_api after Cython 3.0 is out
   dependencies: [py3_dep],
   include_directories: [inc_np],
@@ -90,7 +84,7 @@ mvn = py3.extension_module('_mvn',
 )
 
 _sobol = py3.extension_module('_sobol',
-  ['_sobol.pyx'],
+  cython_gen.process('_sobol.pyx'),
   c_args: numpy_nodepr_api,
   dependencies: [py3_dep],
   include_directories: [inc_np],
@@ -108,33 +102,41 @@ py3.install_sources([
 pthread = dependency('threads')
 
 _qmc_cy = py3.extension_module('_qmc_cy',
-  '_qmc_cy.pyx',
+  cython_gen_cpp.process('_qmc_cy.pyx'),
   cpp_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
   dependencies: [py3_dep, pthread],
   include_directories: [inc_np],
-  override_options: ['cython_language=cpp'],
   install: true,
   subdir: 'scipy/stats'
 )
 
 _stats_gen_pyx = custom_target('_stats_gen_pyx',
   output: [
-    '_biasedurn.pyx',
-    'beta_ufunc.pyx',
-    'binom_ufunc.pyx',
-    'func_defs.pxd',
-    'hypergeom_ufunc.pyx',
-    'nbinom_ufunc.pyx',
-    'templated_pyufunc.pxd',
-    'unuran_wrapper.pyx'
+    '_biasedurn.pyx',  # 0 (used in this directory)
+    'beta_ufunc.pyx',  # 1 (used in stats/_boost - S_B)
+    'binom_ufunc.pyx',  # 2 (S_B)
+    'func_defs.pxd',  # 3 (S_B)
+    'hypergeom_ufunc.pyx',  # 4 (S_B)
+    'nbinom_ufunc.pyx',  # 5 (S_B)
+    'templated_pyufunc.pxd',  # 6 (S_B)
+    'unuran_wrapper.pyx'  # 7 (used in stats/_unuran)
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@']
 )
 
+# Build recipes defined here to get correct output path when used from
+# other subdirs.
+beta_ufunc_pyx = cython_gen_cpp.process(_stats_gen_pyx[1])
+binom_ufunc_pyx = cython_gen_cpp.process(_stats_gen_pyx[2])
+hypergeom_ufunc_pyx = cython_gen_cpp.process(_stats_gen_pyx[4])
+nbinom_ufunc_pyx = cython_gen_cpp.process(_stats_gen_pyx[5])
+# Extra dependency from _lib
+unuran_wrap_pyx = lib_cython_gen.process(_stats_gen_pyx[7])
+
 biasedurn = py3.extension_module('_biasedurn',
   [
-    _stats_gen_pyx[0],
+    cython_gen_cpp.process(_stats_gen_pyx[0]),  # _biasedurn.pyx
     'biasedurn/fnchyppr.cpp',
     'biasedurn/impls.cpp',
     'biasedurn/stoc1.cpp',
@@ -145,8 +147,7 @@ biasedurn = py3.extension_module('_biasedurn',
   ],
   cpp_args: ['-DR_BUILD', numpy_nodepr_api],
   include_directories: [inc_np],
-  dependencies: [py3_dep, npyrandom_lib, npymath_lib, cython_tree],
-  override_options: ['cython_language=cpp'],
+  dependencies: [py3_dep, npyrandom_lib, npymath_lib],
   install: true,
   subdir: 'scipy/stats'
 )

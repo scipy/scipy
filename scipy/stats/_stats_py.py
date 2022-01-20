@@ -456,8 +456,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     # casting types in the process.
     # This recreates the results without that issue
     # View of a, rotated so the requested axis is last
-    in_dims = list(range(a.ndim))
-    a_view = np.transpose(a, in_dims[:axis] + in_dims[axis+1:] + [axis])
+    a_view = np.moveaxis(a, axis, -1)
 
     inds = np.ndindex(a_view.shape[:-1])
     modes = np.empty(a_view.shape[:-1], dtype=a.dtype)
@@ -1083,6 +1082,9 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     return vals
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+)
 def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     """Compute the kurtosis (Fisher or Pearson) of a dataset.
 

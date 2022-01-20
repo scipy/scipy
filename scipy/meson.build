@@ -165,6 +165,25 @@ _cython_tree = custom_target('_cython_tree',
 )
 cython_tree = declare_dependency(sources: _cython_tree)
 
+cython_cli = find_program('_build_utils/cythoner.py')
+
+cython_gen = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : _cython_tree)
+
+cython_gen_cpp = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@', '--cplus'],
+  output : '@BASENAME@.cpp',
+  depends : [_cython_tree])
+
+c_undefined_ok = ['-Wno-maybe-uninitialized']
+
+# Suppress warning for deprecated Numpy API.
+# (Suppress warning messages emitted by #warning directives).
+# Replace with numpy_nodepr_api after Cython 3.0 is out
+c_no_warn_depr_np_api = ['-Wno-cpp']
+
 # Ordering of subdirs: special and linalg come first, because other submodules
 # have dependencies on cython_special.pxd and cython_linalg.pxd. After those,
 # subdirs with the most heavy builds should come first (that parallelizes
