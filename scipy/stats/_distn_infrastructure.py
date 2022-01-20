@@ -12,7 +12,6 @@ import warnings
 import inspect
 from itertools import zip_longest
 from collections import namedtuple
-import dataclasses
 
 
 try:
@@ -1554,7 +1553,7 @@ class rv_generic:
 
 class ShapeInfo:
     def __init__(self, shape_name, integrality=False, domain=(-np.inf, np.inf),
-                 inclusive = (True, True)):
+                 inclusive=(True, True)):
         self.shape_name = shape_name
         self.integrality = integrality
 
@@ -4174,8 +4173,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
 
     >>> shape_bounds = {'n': (0, 30)}  # omit parameter p using a `dict`
     >>> res2 = stats.fit(dist, data, shape_bounds)
-    >>> np.testing.assert_allclose(res.params, res2.params)
-    True
+    >>> res.params
 
     If we wish to force the distribution to be fit with *n* fixed at 6, we can
     set both the lower and upper bounds on *n* to 6. Note, however, that the
@@ -4257,8 +4255,8 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
         shape_bounds = np.asarray(shape_bounds, dtype=float)
         if shape_bounds.shape != (n_shapes, 2):
             message = (f"`shape_bounds` must have {n_shapes} elements, tuples "
-                       "containing the lower and upper bounds for the following "
-                       f"shape parameters: {dist.shapes}")
+                       "containing the lower and upper bounds for the "
+                       f"following shape parameters: {dist.shapes}")
             raise ValueError(message)
 
     validated_shape_bounds = []
