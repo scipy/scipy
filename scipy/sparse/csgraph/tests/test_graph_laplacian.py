@@ -110,6 +110,43 @@ def _check_laplacian(
         return_diag=True,
         use_out_degree=use_out_degree,
         copy=copy,
+        dtype=None,
+    )
+    if normed and (
+                  np.issubdtype(mat.dtype, np.signedinteger)
+                  or np.issubdtype(mat.dtype, np.uint)
+    ):
+        assert L.dtype == np.float64
+        assert d.dtype == np.float64
+        _assert_allclose_sparse(L, desired_L, atol=1e-12)
+        _assert_allclose_sparse(d, desired_d, atol=1e-12)
+    else:
+        assert L.dtype == dtype
+        assert d.dtype == dtype
+        desired_L = np.asarray(desired_L).astype(dtype)
+        desired_d = np.asarray(desired_d).astype(dtype)
+        _assert_allclose_sparse(L, desired_L, atol=1e-12)
+        _assert_allclose_sparse(d, desired_d, atol=1e-12)
+
+    if not copy:
+        if not (
+            normed
+            and (
+                np.issubdtype(mat.dtype, np.signedinteger)
+                or np.issubdtype(mat.dtype, np.uint)
+            )
+        ):
+            if type(mat) is np.ndarray:
+                assert_allclose(L, mat)
+            elif mat.format == "coo":
+                _assert_allclose_sparse(L, mat)
+
+    L, d = csgraph.laplacian(
+        mat,
+        normed=normed,
+        return_diag=True,
+        use_out_degree=use_out_degree,
+        copy=copy,
         dtype=dtype,
     )
     assert L.dtype == dtype
