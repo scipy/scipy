@@ -50,6 +50,8 @@ else:
 
 import sys
 import os
+from pathlib import Path
+import platform
 # the following multiprocessing import is necessary to prevent tests that use
 # multiprocessing from hanging on >= Python3.8 (macOS) using pytest. Just the
 # import is enough...
@@ -428,15 +430,39 @@ def install_project(show_build_log):
             raise
     elapsed = datetime.datetime.now() - start_time
 
-    if ret == 0:
-        print("Installation OK")
-    else:
+    if ret != 0:
         if not show_build_log:
             with open(log_filename, 'r') as f:
                 print(f.read())
         print("Installation failed! ({0} elapsed)".format(elapsed))
         sys.exit(1)
+
+    # On Windows we also need openblas lib installed
+    if platform.system() == 'Windows':
+        ret = copy_openblas()
+    if ret != 0:
+        print("OpenBLAS copy failed!")
+        sys.exit(1)
+    print("Installation OK")
     return
+
+
+def copy_openblas():
+    cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(result.stderrr)
+        return result.returncode
+    lib_path = Path(result.stdout.strip())
+    if not lib_path.stem == 'lib':
+        raise RuntimeError(f'Expecting "lib" at end of "{lib_path}"')
+    bin_path = lib_path.parent / 'bin'
+    out_path = Path(PATH_INSTALLED) / '.libs'
+    out_path.mkdir(exist_ok=True)
+    for dll_fn in bin_path.glob('*.dll'):
+        out_fname = out_path / dll_fn.parts[-1]
+        out_fname.write_bytes(dll_fn.read_bytes())
+    return 0
 
 
 def build_project(args):
