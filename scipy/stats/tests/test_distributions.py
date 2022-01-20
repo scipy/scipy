@@ -5209,6 +5209,38 @@ class TestStudentizedRange:
             k, df, _, _ = stats.studentized_range._fitstart([1, 2, 3])
         assert_(stats.studentized_range._argcheck(k, df))
 
+    def test_infinite_df(self):
+        # Check that the CDF and PDF infinite and normal integrators
+        # roughly match for a high df case
+        res = stats.studentized_range.pdf(3, 10, np.inf)
+        res_finite = stats.studentized_range.pdf(3, 10, 99999)
+        assert_allclose(res, res_finite, atol=1e-4, rtol=1e-4)
+
+        res = stats.studentized_range.cdf(3, 10, np.inf)
+        res_finite = stats.studentized_range.cdf(3, 10, 99999)
+        assert_allclose(res, res_finite, atol=1e-4, rtol=1e-4)
+
+    def test_df_cutoff(self):
+        # Test that the CDF and PDF properly switch integrators at df=100,000.
+        # The infinite integrator should be different enough that it fails
+        # an allclose assertion. Also sanity check that using the same
+        # integrator does pass the allclose with a 1-df difference, which should
+        # be tiny.
+
+        res = stats.studentized_range.pdf(3, 10, 100000)
+        res_finite = stats.studentized_range.pdf(3, 10, 99999)
+        res_sanity = stats.studentized_range.pdf(3, 10, 99998)
+        assert_raises(AssertionError, assert_allclose, res, res_finite,
+                      atol=1e-6, rtol=1e-6)
+        assert_allclose(res_finite, res_sanity, atol=1e-6, rtol=1e-6)
+
+        res = stats.studentized_range.cdf(3, 10, 100000)
+        res_finite = stats.studentized_range.cdf(3, 10, 99999)
+        res_sanity = stats.studentized_range.cdf(3, 10, 99998)
+        assert_raises(AssertionError, assert_allclose, res, res_finite,
+                      atol=1e-6, rtol=1e-6)
+        assert_allclose(res_finite, res_sanity, atol=1e-6, rtol=1e-6)
+
 
 def test_540_567():
     # test for nan returned in tickets 540, 567
