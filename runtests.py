@@ -141,7 +141,7 @@ def main(argv):
     if args.pep8:
         # Lint the source using the configuration in tox.ini.
         os.system("flake8 scipy benchmarks/benchmarks")
-        # Lint just the diff since branching off of master using a
+        # Lint just the diff since branching off of main using a
         # stricter configuration.
         lint_diff = os.path.join(ROOT_DIR, 'tools', 'lint_diff.py')
         os.system(lint_diff)
@@ -333,6 +333,21 @@ def main(argv):
         sys.exit(1)
 
 
+def get_path_suffix(current_path, levels=3):
+    """
+    This utility function is only needed for a single use further down,
+    in order to grab the last `levels` subdirs from the input path.
+    It'll always resolve to something like ``lib/python3.X/site-packages``.
+    Site-packages is actually 3 levels deep on all platforms, so this
+    function should suffice.
+    """
+    current_new = current_path
+    for i in range(levels):
+        current_new = os.path.dirname(current_new)
+
+    return os.path.relpath(current_path, current_new)
+
+
 def build_project(args):
     """
     Build a dev version of the project.
@@ -365,8 +380,8 @@ def build_project(args):
         env['OPT'] = '-O0 -ggdb'
         env['FOPT'] = '-O0 -ggdb'
         if args.gcov:
-            import distutils.sysconfig
-            cvars = distutils.sysconfig.get_config_vars()
+            from sysconfig import get_config_vars
+            cvars = get_config_vars()
             env['OPT'] = '-O0 -ggdb'
             env['FOPT'] = '-O0 -ggdb'
             env['CC'] = env.get('CC', cvars['CC']) + ' --coverage'
@@ -385,8 +400,10 @@ def build_project(args):
             '--single-version-externally-managed',
             '--record=' + dst_dir + 'tmp_install_log.txt']
 
-    from distutils.sysconfig import get_python_lib
-    site_dir = get_python_lib(prefix=dst_dir, plat_specific=True)
+    from sysconfig import get_path
+    py_path = get_path('platlib')
+    site_dir = os.path.join(dst_dir, get_path_suffix(py_path, 3))
+
     # easy_install won't install to a path that Python by default cannot see
     # and isn't on the PYTHONPATH. Plus, it has to exist.
     if not os.path.exists(site_dir):

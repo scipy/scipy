@@ -11,9 +11,10 @@ from libc.stdio cimport stdout
 from libcpp.string cimport string
 from libcpp.memory cimport unique_ptr
 from libcpp.map cimport map as cppmap
+from libcpp.cast cimport reinterpret_cast
 
 from .HighsIO cimport (
-    ML_NONE,
+    kWarning,
 )
 from .HConst cimport (
     HighsModelStatus,
@@ -24,8 +25,8 @@ from .HConst cimport (
     HighsModelStatusPRESOLVE_ERROR,
     HighsModelStatusSOLVE_ERROR,
     HighsModelStatusPOSTSOLVE_ERROR,
-    HighsModelStatusPRIMAL_INFEASIBLE,
-    HighsModelStatusPRIMAL_UNBOUNDED,
+    HighsModelStatusINFEASIBLE,
+    HighsModelStatusUNBOUNDED,
     HighsModelStatusOPTIMAL,
     HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND,
     HighsModelStatusREACHED_TIME_LIMIT,
@@ -37,8 +38,12 @@ from .HConst cimport (
     HighsOptionTypeDOUBLE,
     HighsOptionTypeSTRING,
 
+    HighsBasisStatus,
     HighsBasisStatusLOWER,
     HighsBasisStatusUPPER,
+
+    MatrixFormatkColwise,
+    HighsVarType,
 )
 from .Highs cimport Highs
 from .HighsStatus cimport (
@@ -62,7 +67,7 @@ from .HighsOptions cimport (
     OptionRecordDouble,
     OptionRecordString,
 )
-from .HighsModelUtils cimport utilPrimalDualStatusToString
+from .HighsModelUtils cimport utilBasisStatusToString
 
 np.import_array()
 
@@ -73,6 +78,7 @@ cdef cppmap[string, OptionRecord*] _ref_opt_lookup
 cdef OptionRecord * _r = NULL
 for _r in _ref_opts.records:
     _ref_opt_lookup[_r.name] = _r
+
 
 cdef str _opt_warning(string name, val, valid_set=None):
     cdef OptionRecord * r = _ref_opt_lookup[name]
@@ -122,15 +128,6 @@ cdef str _opt_warning(string name, val, valid_set=None):
 cdef apply_options(dict options, Highs & highs):
     '''Take options from dictionary and apply to HiGHS object.'''
 
-    # Send logging to dummy file to get rid of output from stdout
-    if options.get('message_level', None) == <int> ML_NONE:
-        highs.setHighsLogfile(NULL)
-        highs.setHighsOutput(NULL)
-    else:
-        # Empty file to send to stdout
-        highs.setHighsLogfile(stdout)
-        highs.setHighsOutput(stdout)
-
     # Initialize for error checking
     cdef HighsStatus opt_status = HighsStatusOK
 
@@ -142,7 +139,7 @@ cdef apply_options(dict options, Highs & highs):
             'ipm_iteration_limit',
             'keep_n_rows',
             'max_threads',
-            'message_level',
+            'highs_debug_level',
             'min_threads',
             'simplex_crash_strategy',
             'simplex_dual_edge_weight_strategy',
@@ -226,7 +223,9 @@ cdef apply_options(dict options, Highs & highs):
     for opt in set([
             'less_infeasible_DSE_check',
             'less_infeasible_DSE_choose_row',
+            'log_to_console',
             'mps_parser_type_free',
+            'output_flag',
             'run_as_hsol',
             'run_crossover',
             'simplex_initial_condition_check',
@@ -242,6 +241,9 @@ cdef apply_options(dict options, Highs & highs):
                 warn(_opt_warning(opt.encode(), val), OptimizeWarning)
 
 
+ctypedef HighsVarType* HighsVarType_ptr
+
+
 def _highs_wrapper(
         double[::1] c,
         int[::1] astart,
@@ -251,6 +253,7 @@ def _highs_wrapper(
         double[::1] rhs,
         double[::1] lb,
         double[::1] ub,
+        np.uint8_t[::1] integrality,
         dict options):
     '''Solve linear programs using HiGHS [1]_.
 
@@ -566,25 +569,35 @@ def _highs_wrapper(
     .. [2] https://www.maths.ed.ac.uk/hall/HiGHS/HighsOptions.html
     '''
 
-
     cdef int numcol = c.size
     cdef int numrow = rhs.size
     cdef int numnz = avalue.size
+    cdef int numintegrality = integrality.size
 
     # Fill up a HighsLp object
     cdef HighsLp lp
-    lp.numCol_ = numcol
-    lp.numRow_ = numrow
+    lp.num_col_ = numcol
+    lp.num_row_ = numrow
+    lp.a_matrix_.num_col_ = numcol
+    lp.a_matrix_.num_row_ = numrow
+    lp.a_matrix_.format_ = MatrixFormatkColwise
 
-    lp.colCost_.resize(numcol)
-    lp.colLower_.resize(numcol)
-    lp.colUpper_.resize(numcol)
+    lp.col_cost_.resize(numcol)
+    lp.col_lower_.resize(numcol)
+    lp.col_upper_.resize(numcol)
 
-    lp.rowLower_.resize(numrow)
-    lp.rowUpper_.resize(numrow)
-    lp.Astart_.resize(numcol + 1)
-    lp.Aindex_.resize(numnz)
-    lp.Avalue_.resize(numnz)
+    lp.row_lower_.resize(numrow)
+    lp.row_upper_.resize(numrow)
+    lp.a_matrix_.start_.resize(numcol + 1)
+    lp.a_matrix_.index_.resize(numnz)
+    lp.a_matrix_.value_.resize(numnz)
+
+    # only need to set integrality if it's not's empty
+    cdef HighsVarType * integrality_ptr = NULL
+    if numintegrality > 0:
+        lp.integrality_.resize(numintegrality)
+        integrality_ptr = reinterpret_cast[HighsVarType_ptr](&integrality[0])
+        lp.integrality_.assign(integrality_ptr, integrality_ptr + numcol)
 
     # Explicitly create pointers to pass to HiGHS C++ API;
     # do checking to make sure null memory-views are not
@@ -602,33 +615,34 @@ def _highs_wrapper(
     if numrow > 0:
         rowlower_ptr = &lhs[0]
         rowupper_ptr = &rhs[0]
-        lp.rowLower_.assign(rowlower_ptr, rowlower_ptr + numrow)
-        lp.rowUpper_.assign(rowupper_ptr, rowupper_ptr + numrow)
+        lp.row_lower_.assign(rowlower_ptr, rowlower_ptr + numrow)
+        lp.row_upper_.assign(rowupper_ptr, rowupper_ptr + numrow)
     else:
-        lp.rowLower_.empty()
-        lp.rowUpper_.empty()
+        lp.row_lower_.empty()
+        lp.row_upper_.empty()
     if numcol > 0:
         colcost_ptr = &c[0]
         collower_ptr = &lb[0]
         colupper_ptr = &ub[0]
-        lp.colCost_.assign(colcost_ptr, colcost_ptr + numcol)
-        lp.colLower_.assign(collower_ptr, collower_ptr + numcol)
-        lp.colUpper_.assign(colupper_ptr, colupper_ptr + numcol)
+        lp.col_cost_.assign(colcost_ptr, colcost_ptr + numcol)
+        lp.col_lower_.assign(collower_ptr, collower_ptr + numcol)
+        lp.col_upper_.assign(colupper_ptr, colupper_ptr + numcol)
     else:
-        lp.colCost_.empty()
-        lp.colLower_.empty()
-        lp.colUpper_.empty()
+        lp.col_cost_.empty()
+        lp.col_lower_.empty()
+        lp.col_upper_.empty()
+        lp.integrality_.empty()
     if numnz > 0:
         astart_ptr = &astart[0]
         aindex_ptr = &aindex[0]
         avalue_ptr = &avalue[0]
-        lp.Astart_.assign(astart_ptr, astart_ptr + numcol + 1)
-        lp.Aindex_.assign(aindex_ptr, aindex_ptr + numnz)
-        lp.Avalue_.assign(avalue_ptr, avalue_ptr + numnz)
+        lp.a_matrix_.start_.assign(astart_ptr, astart_ptr + numcol + 1)
+        lp.a_matrix_.index_.assign(aindex_ptr, aindex_ptr + numnz)
+        lp.a_matrix_.value_.assign(avalue_ptr, avalue_ptr + numnz)
     else:
-        lp.Astart_.empty()
-        lp.Aindex_.empty()
-        lp.Avalue_.empty()
+        lp.a_matrix_.start_.empty()
+        lp.a_matrix_.index_.empty()
+        lp.a_matrix_.value_.empty()
 
     # Create the options
     cdef Highs highs
@@ -642,11 +656,10 @@ def _highs_wrapper(
             err_model_status = HighsModelStatusMODEL_ERROR
             return {
                 'status': <int> err_model_status,
-                'message': highs.highsModelStatusToString(err_model_status).decode(),
+                'message': highs.modelStatusToString(err_model_status).decode(),
             }
 
     # Solve the LP
-    highs.setBasis()
     cdef HighsStatus run_status = highs.run()
     if run_status == HighsStatusError:
         return {
@@ -658,26 +671,19 @@ def _highs_wrapper(
     cdef HighsModelStatus model_status = highs.getModelStatus()
     cdef HighsModelStatus scaled_model_status = highs.getModelStatus(True)
     cdef HighsModelStatus unscaled_model_status = model_status
-    if model_status != scaled_model_status:
-        if scaled_model_status == HighsModelStatusOPTIMAL:
-            # The scaled model has been solved to optimality, but not the
-            # unscaled model, flag this up, but report the scaled model
-            # status
-            model_status = scaled_model_status
 
     # We might need an info object if we can look up the solution and a place to put solution
     cdef HighsInfo info = highs.getHighsInfo() # it should always be safe to get the info object
     cdef HighsSolution solution
     cdef HighsBasis basis
     cdef double[:, ::1] marg_bnds = np.zeros((2, numcol))  # marg_bnds[0, :]: lower
-                                                           # marg_bnds[1, :]: upper
 
     # If the status is bad, don't look up the solution
     if model_status != HighsModelStatusOPTIMAL:
         return {
             'status': <int> model_status,
-            'message': f'model_status is {highs.highsModelStatusToString(model_status).decode()}; '
-                       f'primal_status is {utilPrimalDualStatusToString(<int> info.primal_status)}',
+            'message': f'model_status is {highs.modelStatusToString(model_status).decode()}; '
+                       f'primal_status is {utilBasisStatusToString(<HighsBasisStatus> info.primal_solution_status)}',
             'simplex_nit': info.simplex_iteration_count,
             'ipm_nit': info.ipm_iteration_count,
             'fun': None,
@@ -696,9 +702,9 @@ def _highs_wrapper(
             elif HighsBasisStatusUPPER == basis.col_status[ii]:
                 marg_bnds[1, ii] = solution.col_dual[ii]
 
-        return {
+        res = {
             'status': <int> model_status,
-            'message': highs.highsModelStatusToString(model_status).decode(),
+            'message': highs.modelStatusToString(model_status).decode(),
             'unscaled_status': <int> unscaled_model_status,
 
             # Primal solution
@@ -708,9 +714,8 @@ def _highs_wrapper(
             # Note: this is for all constraints (A_ub and A_eq)
             'slack': [rhs[ii] - solution.row_value[ii] for ii in range(numrow)],
 
-            # slacks in HiGHS appear as Ax - s, not Ax + s, so lambda is negated;
             # lambda are the lagrange multipliers associated with Ax=b
-            'lambda': [-1*solution.row_dual[ii] for ii in range(numrow)],
+            'lambda': [solution.row_dual[ii] for ii in range(numrow)],
             'marg_bnds': marg_bnds,
 
             'fun': info.objective_function_value,
@@ -718,3 +723,12 @@ def _highs_wrapper(
             'ipm_nit': info.ipm_iteration_count,
             'crossover_nit': info.crossover_iteration_count,
         }
+
+        if highs.getLp().isMip():
+            res.update({
+                'mip_node_count': info.mip_node_count,
+                'mip_dual_bound': info.mip_dual_bound,
+                'mip_gap': info.mip_gap,
+            })
+
+        return res

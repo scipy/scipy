@@ -247,7 +247,7 @@ def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
            [-0.21754047, -0.83009894, -0.51343148],
            [ 0.57458399, -0.53413598,  0.62012256]])
 
-    See also
+    See Also
     --------
     ordqz
     """
@@ -333,7 +333,7 @@ def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
 
     .. versionadded:: 0.17.0
 
-    See also
+    See Also
     --------
     qz
 

@@ -20,18 +20,23 @@ for jj in range(5):
 
 b = normal(size=n)
 
-tol = 1e-10
+# tolerance for atol/btol keywords of lsqr()
+tol = 2e-10
+# tolerances for testing the results of the lsqr() call with assert_allclose
+# These tolerances are a bit fragile - see discussion in gh-15301.
+atol_test = 4e-10
+rtol_test = 2e-8
 show = False
 maxit = None
 
 
-def test_basic():
+def test_lsqr_basic():
     b_copy = b.copy()
     xo, *_ = lsqr(G, b, show=show, atol=tol, btol=tol, iter_lim=maxit)
     assert_array_equal(b_copy, b)
 
     svx = np.linalg.solve(G, b)
-    assert_allclose(xo, svx, atol=tol, rtol=tol)
+    assert_allclose(xo, svx, atol=atol_test, rtol=rtol_test)
 
     # Now the same but with damp > 0.
     # This is equivalent to solving the extented system:
@@ -44,7 +49,7 @@ def test_basic():
     Gext = np.r_[G, damp * np.eye(G.shape[1])]
     bext = np.r_[b, np.zeros(G.shape[1])]
     svx, *_ = np.linalg.lstsq(Gext, bext, rcond=None)
-    assert_allclose(xo, svx, atol=tol, rtol=tol)
+    assert_allclose(xo, svx, atol=atol_test, rtol=rtol_test)
 
 
 def test_gh_2466():

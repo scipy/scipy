@@ -31,7 +31,7 @@ the organization section.
 
    core-dev/index
    api-dev/api-dev-toc
-   governance/governance
+   governance
 
 .. This toctree defines previous/next for contributor guide documents
 .. toctree::
@@ -48,6 +48,8 @@ the organization section.
    contributor/public_cython_api
    contributor/adding_new
    contributor/continuous_integration
+   contributor/meson
+   contributor/using_act
 
 .. These files are not intended to be in any toctree. because they have not
    been maintained.They should only be reached via the contributor guide if

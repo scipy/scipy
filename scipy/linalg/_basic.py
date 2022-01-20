@@ -87,7 +87,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
     assume_a : str, optional
         Valid entries are explained above.
-    transposed: bool, optional
+    transposed : bool, optional
         If True, ``a^T x = b`` for real matrices, raises `NotImplementedError`
         for complex matrices (only for True).
 
@@ -1256,12 +1256,12 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     ----------
     a : (M, N) array_like
         Matrix to be pseudo-inverted.
-    atol: float, optional
+    atol : float, optional
         Absolute threshold term, default value is 0.
 
         .. versionadded:: 1.7.0
 
-    rtol: float, optional
+    rtol : float, optional
         Relative threshold term, default value is ``max(M, N) * eps`` where
         ``eps`` is the machine precision value of the datatype of ``a``.
 
@@ -1414,12 +1414,13 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     ----------
     a : (N, N) array_like
         Real symmetric or complex hermetian matrix to be pseudo-inverted
-    atol: float, optional
+
+    atol : float, optional
         Absolute threshold term, default value is 0.
 
         .. versionadded:: 1.7.0
 
-    rtol: float, optional
+    rtol : float, optional
         Relative threshold term, default value is ``N * eps`` where
         ``eps`` is the machine precision value of the datatype of ``a``.
 
@@ -1563,7 +1564,6 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     Notes
     -----
-
     This algorithm is particularly useful for eigenvalue and matrix
     decompositions and in many cases it is already called by various
     LAPACK routines.
@@ -1676,10 +1676,10 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (result entirely NaNs) if the inputs do contain infinities or NaNs.
-    keep_b_shape: bool
+    keep_b_shape : bool
         Whether to convert a (M,) dimensional b into a (M, 1) dimensional
         matrix.
-    enforce_square: bool, optional
+    enforce_square : bool, optional
         If True (default), this verifies that the Toeplitz matrix is square.
 
     Returns

@@ -35,10 +35,9 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
         Matrix exponential of A.
     expm_frechet_AE : ndarray
         Frechet derivative of the matrix exponential of A in the direction E.
-
     For ``compute_expm = False``, only `expm_frechet_AE` is returned.
 
-    See also
+    See Also
     --------
     expm : Compute the exponential of a matrix.
 
@@ -323,7 +322,7 @@ def expm_frechet_kronform(A, method=None, check_finite=True):
     This function is used to help compute the condition number
     of the matrix exponential.
 
-    See also
+    See Also
     --------
     expm : Compute a matrix exponential.
     expm_frechet : Compute the Frechet derivative of the matrix exponential.
@@ -376,7 +375,7 @@ def expm_cond(A, check_finite=True):
 
     .. versionadded:: 0.14.0
 
-    See also
+    See Also
     --------
     expm : Compute the exponential of a matrix.
     expm_frechet : Compute the Frechet derivative of the matrix exponential.

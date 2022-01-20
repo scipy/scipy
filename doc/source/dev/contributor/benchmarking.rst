@@ -112,9 +112,9 @@ To run a benchmark defined in a class, such as ``KleeMinty`` from
    python runtests.py --bench optimize_linprog.KleeMinty
 
 To compare benchmark results between the active branch and another, such
-as ``master``::
+as ``main``::
 
-   python runtests.py --bench-compare master optimize_linprog.KleeMinty
+   python runtests.py --bench-compare main optimize_linprog.KleeMinty
 
 All of the commands above display the results in plain text in the
 console, and the results are not saved for comparison with future
@@ -173,12 +173,12 @@ check out the ``asv find`` command and the ``--quick``,
 .. _Benchmarking SciPy: https://youtu.be/edLQ8KRpupQ
 .. _airspeed velocity (asv) documentation: https://asv.readthedocs.io/en/stable/
 .. _airspeed velocity of an unladen scipy: https://pv.github.io/scipy-bench/
-.. _SciPy benchmarks readme: https://github.com/scipy/scipy/blob/master/benchmarks/README.rst
+.. _SciPy benchmarks readme: https://github.com/scipy/scipy/blob/main/benchmarks/README.rst
 .. _Klee-Minty hypercube problem: https://en.wikipedia.org/wiki/Klee%E2%80%93Minty_cube
 .. _KleeMinty.time_klee_minty: https://pv.github.io/scipy-bench/#optimize_linprog.KleeMinty.time_klee_minty
 
 .. |optimize-linprog-py| replace:: ``scipy/benchmarks/benchmarks/optimize_linprog.py``
-.. _optimize-linprog-py: https://github.com/scipy/scipy/blob/master/benchmarks/benchmarks/optimize_linprog.py
+.. _optimize-linprog-py: https://github.com/scipy/scipy/blob/main/benchmarks/benchmarks/optimize_linprog.py
 
 .. |7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32| replace:: ``7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32``
 .. _7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32: https://github.com/scipy/scipy/commit/7fa17f2369e0e5ad055b23cc1a5ee079f9e8ca32

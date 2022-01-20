@@ -717,7 +717,7 @@ class spmatrix:
 
             if other == 0:
                 from ._construct import eye
-                E = eye(M)
+                E = eye(M, dtype=self.dtype)
                 if self._is_array:
                     from ._arrays import dia_array
                     E = dia_array(E)

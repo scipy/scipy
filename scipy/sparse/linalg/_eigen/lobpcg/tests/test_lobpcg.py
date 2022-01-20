@@ -222,7 +222,7 @@ def test_fiedler_large_12():
 def test_failure_to_run_iterations():
     """Check that the code exists gracefully without breaking. Issue #10974.
     """
-    rnd = np.random.RandomState(0)
+    rnd = np.random.RandomState(4120349)
     X = rnd.standard_normal((100, 10))
     A = X @ X.T
     Q = rnd.standard_normal((X.shape[0], 4))
@@ -315,7 +315,7 @@ def test_tolerance_float32():
     X = rnd.standard_normal((n, m))
     X = X.astype(np.float32)
     eigvals, _ = lobpcg(A, X, tol=1e-5, maxiter=50, verbosityLevel=0)
-    assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1e-5)
+    assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1.5e-5)
 
 
 def test_random_initial_float32():

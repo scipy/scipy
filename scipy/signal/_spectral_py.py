@@ -1650,6 +1650,7 @@ def _spectral_helper(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None,
         segments, so that all of the signal is included in the output.
         Defaults to `False`. Padding occurs after boundary extension, if
         `boundary` is not `None`, and `padded` is `True`.
+
     Returns
     -------
     freqs : ndarray

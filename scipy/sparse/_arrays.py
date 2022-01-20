@@ -46,6 +46,9 @@ class _sparray:
     def __mul__(self, *args, **kwargs):
         return self.multiply(*args, **kwargs)
 
+    def __rmul__(self, *args, **kwargs):
+        return self.multiply(*args, **kwargs)
+
 
 def _matrix_doc_to_array(docstr):
     # For opimized builds with stripped docstrings

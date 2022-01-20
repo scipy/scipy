@@ -53,7 +53,7 @@ DEFAULT_ROOT = 'scipy'
 def process_pyx(fromfile, tofile, cwd):
     try:
         from Cython.Compiler.Version import version as cython_version
-        from distutils.version import LooseVersion
+        from scipy._lib import _pep440
 
         # Try to find pyproject.toml
         pyproject_toml = join(dirname(__file__), '..', 'pyproject.toml')
@@ -82,9 +82,9 @@ def process_pyx(fromfile, tofile, cwd):
 
         # Note: we only check lower bound, for upper bound we rely on pip
         # respecting pyproject.toml. Reason: we want to be able to build/test
-        # with more recent Cython locally or on master, upper bound is for
+        # with more recent Cython locally or on main, upper bound is for
         # sdist in a release.
-        if LooseVersion(cython_version) < LooseVersion(min_required_version):
+        if _pep440.parse(cython_version) < _pep440.Version(min_required_version):
             raise Exception('Building SciPy requires Cython >= {}, found '
                             '{}'.format(min_required_version, cython_version))
 
