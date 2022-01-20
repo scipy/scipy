@@ -100,7 +100,7 @@ def _assert_allclose_sparse(a, b, **kwargs):
     assert_allclose(a, b, **kwargs)
 
 
-def _check_laplacian(
+def _check_laplacian_dtype_none(
     A, desired_L, desired_d, normed, use_out_degree, copy, dtype, arr_type
 ):
     mat = arr_type(A, dtype=dtype)
@@ -141,6 +141,11 @@ def _check_laplacian(
             elif mat.format == "coo":
                 _assert_allclose_sparse(L, mat)
 
+
+def _check_laplacian_dtype(
+    A, desired_L, desired_d, normed, use_out_degree, copy, dtype, arr_type
+):
+    mat = arr_type(A, dtype=dtype)
     L, d = csgraph.laplacian(
         mat,
         normed=normed,
@@ -215,7 +220,17 @@ def test_asymmetric_laplacian(use_out_degree, normed, copy, dtype, arr_type):
         L = [[1, -0.5, 0], [-2, 1, 0], [0, 0, 0]]
         d = [2, 1, 1]
 
-    _check_laplacian(
+    _check_laplacian_dtype_none(
+        A,
+        L,
+        d,
+        normed=normed,
+        use_out_degree=use_out_degree,
+        copy=copy,
+        dtype=dtype,
+        arr_type=arr_type,
+    )
+    _check_laplacian_dtype(
         A,
         L,
         d,
