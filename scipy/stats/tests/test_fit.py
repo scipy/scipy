@@ -146,10 +146,10 @@ def test_expon_fit():
 
 
 class TestFit:
-    dist = stats.binom
+    dist = stats.binom  # type: ignore[attr-defined]
     seed = 654634816187
     rng = np.random.default_rng(seed)
-    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)
+    data = stats.binom.rvs(5, 0.5, size=100, random_state=rng)  # type: ignore[attr-defined] # noqa
     shape_bounds_a = [(1, 10), (0, 1)]
     shape_bounds_d = {'n': (1, 10), 'p': (0, 1)}
     atol = 5e-2
@@ -271,7 +271,7 @@ class TestFit:
                       'randint', 'yulesimon', 'nchypergeom_fisher',
                       'nchypergeom_wallenius'}
 
-    @pytest.mark.parametrize("dist_name", dict(distdiscrete))
+    @pytest.mark.parametrize("dist_name", dict(distdiscrete))  # type: ignore[arg-type]
     def test_basic_fit(self, dist_name):
         if dist_name in self.skip_basic_fit or not isinstance(dist_name, str):
             pytest.skip("Tested separately.")

@@ -15,8 +15,8 @@ from collections import namedtuple
 
 
 try:
-    import matplotlib.pyplot as plt
-    from matplotlib.ticker import MaxNLocator
+    import matplotlib.pyplot as plt  # type: ignore[import]
+    from matplotlib.ticker import MaxNLocator  # type: ignore[import]
 except ModuleNotFoundError:
     plt = None
 
@@ -3998,6 +3998,10 @@ class FitResult:
         ax : matplotlib.axes.Axes
             A matplotlib Axes object.
         """
+        if plt is None:
+            message = "matplotlib must be installed to use method `plot`."
+            raise ValueError(message)
+
         figure, ax = plt.subplots(nrows=1, ncols=1)
         fit_params = np.atleast_1d(self.params)
         support = self.dist.support(*fit_params)
@@ -4079,7 +4083,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
 
         If the distribution has any shape parameters that must be integral or
         if the distribution is discrete and the location parameter is not
-        fixed, `optimizer` must also accept the following *keyword* argument.
+        fixed, `optimizer` must also accept the following keyword argument.
 
         integrality : array_like of bools
             For each decision variable, True if the decision variable is
@@ -4133,6 +4137,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     Examples
     --------
     Suppose we wish to fit a distribution to the following data.
+
     >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
@@ -4174,6 +4179,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     >>> shape_bounds = {'n': (0, 30)}  # omit parameter p using a `dict`
     >>> res2 = stats.fit(dist, data, shape_bounds)
     >>> res.params
+    FitShapes(n=5.0, p=0.5016492009232932, loc=0.0)  # may vary
 
     If we wish to force the distribution to be fit with *n* fixed at 6, we can
     set both the lower and upper bounds on *n* to 6. Note, however, that the

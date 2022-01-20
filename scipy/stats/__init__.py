@@ -349,7 +349,6 @@ Transformations
 .. autosummary::
    :toctree: generated/
 
-   fit
    boxcox
    boxcox_normmax
    boxcox_llf
@@ -389,6 +388,14 @@ Random variate generation / CDF Inversion
 
    rvs_ratio_uniforms
    NumericalInverseHermite
+
+Distribution Fitting
+--------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   fit
 
 Circular statistical functions
 ------------------------------
