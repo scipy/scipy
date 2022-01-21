@@ -13,13 +13,6 @@ import inspect
 from itertools import zip_longest
 from collections import namedtuple
 
-
-try:
-    import matplotlib.pyplot as plt  # type: ignore[import]
-    from matplotlib.ticker import MaxNLocator  # type: ignore[import]
-except ModuleNotFoundError:
-    plt = None
-
 from scipy._lib import doccer
 from scipy._lib._util import _lazywhere
 from ._distr_params import distcont, distdiscrete
@@ -3141,7 +3134,7 @@ class rv_discrete(rv_generic):
         # continuous distributions have PDF, discrete have PMF, but sometimes
         # the distinction doesn't matter. This lets us use `_logpxf` for both
         # discrete and continuous distributions.
-        return self._logpmf(k, *args)
+        return self.logpmf(k, *args)
 
     def _unpack_loc_scale(self, theta):
         try:
@@ -3965,11 +3958,11 @@ class FitResult:
 
         shape_names = [] if dist.shapes is None else dist.shapes.split(", ")
         if not discrete:
-            FitShapes = namedtuple('FitShapes', shape_names + ['loc', 'scale'])
+            FitParams = namedtuple('FitParams', shape_names + ['loc', 'scale'])
         else:
-            FitShapes = namedtuple('FitShapes', shape_names + ['loc'])
+            FitParams = namedtuple('FitParams', shape_names + ['loc'])
 
-        self.params = FitShapes(*res.x)
+        self.params = FitParams(*res.x)
         self.objective_val = getattr(res, "fun", None)
         if self.objective_val is None:
             self.objective_val = nllf(res.x)
@@ -3982,7 +3975,7 @@ class FitResult:
         return '\n'.join([key.rjust(m) + ': ' + repr(getattr(self, key))
                           for key in keys if getattr(self, key) is not None])
 
-    def plot(self):
+    def plot(self, ax=None):
         """Visualize the fit result.
 
         Superposes the PDF/PMF of the fitted distribution over a normalized
@@ -3990,18 +3983,26 @@ class FitResult:
 
         Available only if ``matplotlib`` is installed.
 
+        Parameters
+        ----------
+        ax : matplotlib.axes.Axes
+            Axes object to draw the plot onto, otherwise uses the current Axes.
+
         Returns
         -------
-        fig : matplotlib.figure.Figure
-            A matplotlib Figure object.
         ax : matplotlib.axes.Axes
-            A matplotlib Axes object.
+            The matplotlib Axes object on which the plot was drawn.
         """
-        if plt is None:
+        try:
+            from matplotlib.ticker import MaxNLocator  # type: ignore[import]
+        except ModuleNotFoundError:
             message = "matplotlib must be installed to use method `plot`."
             raise ValueError(message)
 
-        figure, ax = plt.subplots(nrows=1, ncols=1)
+        if ax is None:
+            import matplotlib.pyplot as plt  # type: ignore[import]
+            ax = plt.gca()
+
         fit_params = np.atleast_1d(self.params)
         support = self.dist.support(*fit_params)
         lb = support[0] if np.isfinite(support[0]) else min(self.data)
@@ -4010,21 +4011,21 @@ class FitResult:
         if self.discrete:
             x = np.arange(lb, ub + 2)
             y = self.pxf(x, *fit_params)
-            ax.plot(x[:-1], y[:-1], '--', label='Fit Distribution PMF')
-            options = dict(density=True, bins=x, align='left')
+            ax.vlines(x[:-1], 0, y[:-1], label='Fit Distribution PMF',
+                      color='C0')
+            options = dict(density=True, bins=x, align='left', color='C1')
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
 
         else:
             x = np.linspace(lb, ub, 200)
             y = self.pxf(x, *fit_params)
-            ax.plot(x, y, '--', label='Fit Distribution PDF')
-            options = dict(density=True, bins=50, align='mid')
+            ax.plot(x, y, '--', label='Fit Distribution PDF', color='C0')
+            options = dict(density=True, bins=50, align='mid', color='C1')
 
         ax.hist(self.data, label="Histogram of Data", **options)
         ax.set_title(f"{self.dist.name} Fit")
         ax.legend(*ax.get_legend_handles_labels())
-        plt.show()
-        return figure, ax
+        return ax
 
 
 def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
@@ -4160,13 +4161,15 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     from which the data were actually generated.
 
     >>> res.params
-    FitShapes(n=5.0, p=0.5028157644634368, loc=0.0)  # may vary
+    FitParams(n=5.0, p=0.5028157644634368, loc=0.0)  # may vary
 
     We can visualize the results by superposing the probability mass function
     of the distribution (with the shapes fit to the data) over a normalized
     histogram of the data.
 
+    >>> import matplotlib.pyplot as plt  # matplotlib must be installed to plot
     >>> res.plot()
+    >>> plt.show()
 
     Note that the estimate for *n* was exactly integral; this is because
     the domain of the `nbinom` PMF includes only integral *n*, and the `nbinom`
@@ -4178,7 +4181,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     >>> shape_bounds = {'n': (0, 30)}  # omit parameter p using a `dict`
     >>> res2 = stats.fit(dist, data, shape_bounds)
     >>> res.params
-    FitShapes(n=5.0, p=0.5016492009232932, loc=0.0)  # may vary
+    FitParams(n=5.0, p=0.5016492009232932, loc=0.0)  # may vary
 
     If we wish to force the distribution to be fit with *n* fixed at 6, we can
     set both the lower and upper bounds on *n* to 6. Note, however, that the
@@ -4188,7 +4191,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     >>> shape_bounds = {'n': (6, 6)}  # fix parameter `n`
     >>> res3 = stats.fit(dist, data, shape_bounds)
     >>> res3.params
-    FitShapes(n=6.0, p=0.5486556076755706, loc=0.0)  # may vary
+    FitParams(n=6.0, p=0.5486556076755706, loc=0.0)  # may vary
     >>> res3.objective_val > res.objective_val
     True
 
@@ -4205,19 +4208,19 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     >>> shape_bounds = [(0, 30), (0, 1)]
     >>> res4 = stats.fit(dist, data, shape_bounds, optimizer=optimizer)
     >>> res4.params
-    FitShapes(n=5.0, p=0.5032774713044523, loc=0.0)  # may vary
+    FitParams(n=5.0, p=0.5032774713044523, loc=0.0)  # may vary
 
     """
 
     # --- Input Validation / Standardization --- #
 
     # distribution input validation and information collection
-    if getattr(dist, "pdf", False):  # can't use isinstance for types
+    if hasattr(dist, "pdf"):  # can't use isinstance for types
         loc_bounds = loc_bounds or (0, 0)
         scale_bounds = scale_bounds or (1, 1)
         loc_scale_integrality = [False, False]
         discrete = False
-    elif getattr(dist, "pmf", False):
+    elif hasattr(dist, "pmf"):
         loc_bounds = loc_bounds or (0, 0)
         loc_scale_integrality = [True]
         discrete = True

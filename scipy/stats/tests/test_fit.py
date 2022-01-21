@@ -290,7 +290,7 @@ class TestFit:
                       'randint', 'yulesimon', 'nchypergeom_fisher',
                       'nchypergeom_wallenius'}
 
-    @pytest.mark.parametrize("dist_name", dict(distdiscrete))  # type: ignore[arg-type]
+    @pytest.mark.parametrize("dist_name", dict(distdiscrete))  # type: ignore[arg-type]  # noqa
     def test_basic_fit(self, dist_name):
         if dist_name in self.skip_basic_fit or not isinstance(dist_name, str):
             pytest.skip("Tested separately.")
