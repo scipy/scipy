@@ -451,8 +451,8 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
     bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
 
-            1. Instance of `Bounds` class.
-            2. Sequence of ``(min, max)`` pairs for each element in `x`.
+        1. Instance of `Bounds` class.
+        2. Sequence of ``(min, max)`` pairs for each element in `x`.
 
     args : tuple, optional
         Any additional fixed parameters needed to completely specify the
