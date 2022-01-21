@@ -6615,22 +6615,23 @@ class TestCombinePvalues:
         # 0.5 here is because logistic = log(u) - log(1-u), i.e. no 2 factors
         assert_approx_equal(0.5 * (Z_f-Z_p), Z, significant=4)
 
-    @pytest.mark.parametrize("variant", ["single","all"])
+    @pytest.mark.parametrize("variant", ["single", "all"])
     @pytest.mark.parametrize("method",
-            ["fisher","pearson","tippett","stouffer","mudholkar_george"])
-    def test_monotony(self,variant,method):
+                             ["fisher", "pearson", "tippett",
+                                 "stouffer", "mudholkar_george"])
+    def test_monotony(self, variant, method):
         # Test that result increases monotonously with respect to input.
-        changing_values = np.linspace(0.1,0.9,10)
+        changing_values = np.linspace(0.1, 0.9, 10)
         pvalues = np.random.random(7)
         combined_pvalues = []
         for changing_value in changing_values:
-            if variant=="single":
+            if variant == "single":
                 pvalues[0] = changing_value
             else:
-                pvalues = np.full(7,changing_value)
+                pvalues = np.full(7, changing_value)
             combined_p = stats.combine_pvalues(pvalues, method=method)[1]
             combined_pvalues.append(combined_p)
-        assert np.all(np.diff(combined_pvalues)>=0)
+        assert np.all(np.diff(combined_pvalues) >= 0)
 
 class TestCdfDistanceValidation:
     """
