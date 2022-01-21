@@ -291,15 +291,10 @@ def main(argv):
         sys.exit(0)
     else:
         try:
-            __import__(PROJECT_MODULE)
-            test = sys.modules[PROJECT_MODULE].test
-            version = sys.modules[PROJECT_MODULE].__version__
-            mod_path = sys.modules[PROJECT_MODULE].__file__
-            mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
+            test, version, mod_path = import_module()
         except ImportError:
-            current_python_path = os.environ.get('PYTHONPATH', None)
-            print("Unable to import {} from: {}".format(PROJECT_MODULE,
-                                                        current_python_path))
+            # this may fail when running with --no-build, so try to detect
+            # an installed scipy in a subdir inside a repo
             dst_dir = os.path.join(ROOT_DIR, 'build', 'testenv')
             from sysconfig import get_path
             py_path = get_path('platlib')
@@ -309,11 +304,7 @@ def main(argv):
             sys.path.insert(0, site_dir)
             os.environ['PYTHONPATH'] = \
                 os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
-            __import__(PROJECT_MODULE)
-            test = sys.modules[PROJECT_MODULE].test
-            version = sys.modules[PROJECT_MODULE].__version__
-            mod_path = sys.modules[PROJECT_MODULE].__file__
-            mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
+            test, version, mod_path = import_module()
 
 
     if args.submodule:
@@ -356,6 +347,18 @@ def main(argv):
         sys.exit(0)
     else:
         sys.exit(1)
+
+
+def import_module():
+    """
+    Function of import project module.
+    """
+    __import__(PROJECT_MODULE)
+    test = sys.modules[PROJECT_MODULE].test
+    version = sys.modules[PROJECT_MODULE].__version__
+    mod_path = sys.modules[PROJECT_MODULE].__file__
+    mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
+    return test, version, mod_path
 
 
 def get_path_suffix(current_path, levels=3):
