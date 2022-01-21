@@ -8212,7 +8212,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
     elif method == 'pearson':
         statistic = -2 * np.sum(np.log1p(-pvalues))
-        pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
+        pval = 1-distributions.chi2.sf(statistic, 2 * len(pvalues))
     elif method == 'mudholkar_george':
         normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
         statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
@@ -8222,7 +8222,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
                                   * approx_factor, nu)
     elif method == 'tippett':
         statistic = np.min(pvalues)
-        pval = distributions.beta.sf(statistic, 1, len(pvalues))
+        pval = distributions.beta.cdf(statistic, 1, len(pvalues))
     elif method == 'stouffer':
         if weights is None:
             weights = np.ones_like(pvalues)
