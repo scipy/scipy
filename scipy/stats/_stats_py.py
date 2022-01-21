@@ -8160,8 +8160,12 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
       uses the product of individual p-values: :math:`\\prod_i p_i`.
       (Mind that this product is not the combined p-value.)
       This method emphasises small p-values.
+      Note that the test statistic used internally and returned by this method
+      is :math:`-2\\sum_i \log(p_i)` for numerical reasons.
     * Pearson's method uses :math:`\\left \\prod_i (1-p_i) \\right)^{-1}` [2]_.
       It thus emphasises large p-values.
+      Note that the test statistic used internally and returned by this method
+      is :math:`-2\\sum_i \log(1-p_i)` for numerical reasons.
     * Mudholkar and George compromise between Fisher's and Pearson's method by
       averaging their statistics [4]_. Their method emphasises extreme p-values,
       both close to 1 and 0.
