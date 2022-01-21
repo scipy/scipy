@@ -8146,49 +8146,57 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     uniform distribution on the interval [0,1]. If this function is applied to
     tests with a discrete statistics such as any rank test or contingency-table
     test, it will yield systematically wrong results, e.g. Fisher's method will
-    systematically overestimate the p-value [8]_. This problem becomes less severe
+    systematically overestimate the p-value [1]_. This problem becomes less severe
     for large sample sizes when the discrete distributions become approximately
     continuous.
 
-    Fisher's method (also known as Fisher's combined probability test) [1]_ uses
-    a chi-squared statistic to compute a combined p-value. The closely related
-    Stouffer's Z-score method [2]_ uses Z-scores rather than p-values. The
-    advantage of Stouffer's method is that it is straightforward to introduce
-    weights, which can make Stouffer's method more powerful than Fisher's
-    method when the p-values are from studies of different size [6]_ [7]_.
-    The Pearson's method uses :math:`log(1-p_i)` inside the sum whereas Fisher's
-    method uses :math:`log(p_i)` [4]_. For Fisher's and Pearson's method, the
-    sum of the logarithms is multiplied by -2 in the implementation. This
-    quantity has a chi-square distribution that determines the p-value. The
-    `mudholkar_george` method is the difference of the Fisher's and Pearson's
-    test statistics, each of which include the -2 factor [4]_. However, the
-    `mudholkar_george` method does not include these -2 factors. The test
-    statistic of `mudholkar_george` is the sum of logisitic random variables and
-    equation 3.6 in [3]_ is used to approximate the p-value based on Student's
-    t-distribution.
+    The differences between the methods can be best illustrated by their statistics
+    and what aspects of a combination of p-values they emphasise when considering
+    significance [2]_. For example, methods emphasising large p-values are more 
+    sensitive to strong false and true negatives; conversely methods focussing on
+    small p-values are sensitive to positives.
+
+    * Fisher's method (also known as Fisher's combined probability test) [3]_
+      uses the product of individual p-values: :math:`\\prod_i p_i`.
+      (Mind that this product is not the combined p-value.)
+      This method emphasises small p-values.
+    * Pearson's method uses :math:`\\left \\prod_i (1-p_i) \\right)^{-1}` [2]_.
+      It thus emphasises large p-values.
+    * Mudholkar and George compromise between Fisher's and Pearson's method by
+      averaging their statistics [4]_. Their method emphasises extreme p-values,
+      both close to 1 and 0.
+    * Stouffer's method [5]_ uses Z-scores and the statistic:
+      :math:`\\sum_i \\Phi^{-1} (p_i)`, where `\\Phi` is the CDF of the
+      standard normal distribution. The advantage of this method is that it is
+      straightforward to introduce weights, which can make Stouffer's method more 
+      powerful than Fisher's method when the p-values are from studies of different
+      size [6]_ [7]_.
+    * Tippett's method uses the smallest p-value as a statistic.
+      (Mind that this minimum is not the combined p-value.)
 
     Fisher's method may be extended to combine p-values from dependent tests
-    [5]_. Extensions such as Brown's method and Kost's method are not currently
+    [8]_. Extensions such as Brown's method and Kost's method are not currently
     implemented.
 
     .. versionadded:: 0.15.0
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Fisher%27s_method
-    .. [2] https://en.wikipedia.org/wiki/Fisher%27s_method#Relation_to_Stouffer.27s_Z-score_method
-    .. [3] George, E. O., and G. S. Mudholkar. "On the convolution of logistic
-           random variables." Metrika 30.1 (1983): 1-13.
-    .. [4] Heard, N. and Rubin-Delanchey, P. "Choosing between methods of
+    .. [1] Kincaid, W. M., "The Combination of Tests Based on Discrete Distributions."
+           Journal of the American Statistical Association 57, no. 297 (1962), 10-19.
+    .. [2] Heard, N. and Rubin-Delanchey, P. "Choosing between methods of
            combining p-values."  Biometrika 105.1 (2018): 239-246.
-    .. [5] Whitlock, M. C. "Combining probability from independent tests: the
+    .. [3] https://en.wikipedia.org/wiki/Fisher%27s_method
+    .. [4] George, E. O., and G. S. Mudholkar. "On the convolution of logistic
+           random variables." Metrika 30.1 (1983): 1-13.
+    .. [5] https://en.wikipedia.org/wiki/Fisher%27s_method#Relation_to_Stouffer.27s_Z-score_method
+    .. [6] Whitlock, M. C. "Combining probability from independent tests: the
            weighted Z-method is superior to Fisher's approach." Journal of
            Evolutionary Biology 18, no. 5 (2005): 1368-1373.
-    .. [6] Zaykin, Dmitri V. "Optimally weighted Z-test is a powerful method
+    .. [7] Zaykin, Dmitri V. "Optimally weighted Z-test is a powerful method
            for combining probabilities in meta-analysis." Journal of
            Evolutionary Biology 24, no. 8 (2011): 1836-1841.
-    .. [7] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
-	.. [8] Kincaid, W. M., "The Combination of Tests Based on Discrete Distributions." Journal of the American Statistical Association 57, no. 297 (1962), 10-19.
+    .. [8] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
 
     """
     pvalues = np.asarray(pvalues)
