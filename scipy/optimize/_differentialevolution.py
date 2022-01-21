@@ -209,11 +209,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         .. versionadded:: 1.9.0
 
     vectorized : bool, optional
-        If ``vectorized is True``, `func` is sent an `x` array of shape
-        ``(N, M)`` and is expected to return an array of shape ``(M,)``.
+        If ``vectorized is True``, `func` is sent an `x` array with
+        ``x.shape == (N, M)``, and is expected to return an array of shape
+        ``(M,)``.
         This option is an alternative to the parallelization offered by
         `workers`, and may help in optimization speed. This keyword is
-        ignored if the `workers` keyword has ``workers != 1``.
+        ignored if ``workers != 1``.
         This option will override the `updating` keyword to
         ``updating='deferred'``.
 
@@ -524,11 +525,12 @@ class DifferentialEvolutionSolver:
         If there are no integer values lying between the bounds then a
         `ValueError` is raised.
     vectorized : bool, optional
-        If ``vectorized is True``, `func` is sent an `x` array of shape
-        ``(N, M)`` and is expected to return an array of shape ``(M,)``.
+        If ``vectorized is True``, `func` is sent an `x` array with
+        ``x.shape == (N, M)``, and is expected to return an array of shape
+        ``(M,)``.
         This option is an alternative to the parallelization offered by
         `workers`, and may help in optimization speed. This keyword is
-        ignored if the `workers` keyword has ``workers != 1``.
+        ignored if ``workers != 1``.
         This option will override the `updating` keyword to
         ``updating='deferred'``.
     """
