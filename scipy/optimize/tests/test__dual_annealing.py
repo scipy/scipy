@@ -5,8 +5,7 @@
 """
 Unit tests for the dual annealing global optimizer
 """
-from scipy.optimize import dual_annealing
-from scipy.optimize import Bounds
+from scipy.optimize import dual_annealing, Bounds
 
 from scipy.optimize._dual_annealing import EnergyState
 from scipy.optimize._dual_annealing import LocalSearchWrapper
