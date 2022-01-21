@@ -11,10 +11,9 @@ import warnings
 
 import numpy as np
 from scipy.optimize import OptimizeResult
-from scipy.optimize import minimize
+from scipy.optimize import minimize, Bounds
 from scipy.special import gammaln
 from scipy._lib._util import check_random_state
-from scipy.optimize import Bounds
 from scipy.optimize._constraints import new_bounds_to_old
 
 __all__ = ['dual_annealing']
@@ -451,11 +450,10 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         completely specify the function.
     bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
-        1. Instance of `Bounds` class.
-        2. ``(min, max)`` pairs for each element in ``x``, defining the finite
-        lower and upper bounds for the optimizing argument of `func`. It is
-        required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
-        to determine the number of parameters in ``x``.
+
+            1. Instance of `Bounds` class.
+            2. Sequence of ``(min, max)`` pairs for each element in `x`.
+
     args : tuple, optional
         Any additional fixed parameters needed to completely specify the
         objective function.
