@@ -8107,12 +8107,14 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 def combine_pvalues(pvalues, method='fisher', weights=None):
     """
-    Combine p-values from independent tests bearing upon the same hypothesis.
+    Combine p-values from independent tests that bear upon the same hypothesis
+    and are based on continuous distributions.
 
     Parameters
     ----------
     pvalues : array_like, 1-D
-        Array of p-values assumed to come from independent tests.
+        Array of p-values assumed to come from independent tests based on
+        continuous distributions.
     method : {'fisher', 'pearson', 'tippett', 'stouffer',
               'mudholkar_george'}, optional
 
@@ -8139,6 +8141,15 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     Notes
     -----
+    All methods assume tests based on continuous distributions, i.e., the
+    distribution of p-values under the null hypothesis must be the continuous
+    uniform distribution on the interval [0,1]. If this function is applied to
+    tests with a discrete statistics such as any rank test or contingency-table
+    test, it will yield systematically wrong results, e.g. Fisher's method will
+    systematically overestimate the p-value [8]_. This problem becomes less severe
+    for large sample sizes when the discrete distributions become approximately
+    continuous.
+
     Fisher's method (also known as Fisher's combined probability test) [1]_ uses
     a chi-squared statistic to compute a combined p-value. The closely related
     Stouffer's Z-score method [2]_ uses Z-scores rather than p-values. The
@@ -8177,6 +8188,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
            for combining probabilities in meta-analysis." Journal of
            Evolutionary Biology 24, no. 8 (2011): 1836-1841.
     .. [7] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
+	.. [8] Kincaid, W. M., "The Combination of Tests Based on Discrete Distributions." Journal of the American Statistical Association 57, no. 297 (1962), 10-19.
 
     """
     pvalues = np.asarray(pvalues)
