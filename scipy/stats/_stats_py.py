@@ -8115,20 +8115,19 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     pvalues : array_like, 1-D
         Array of p-values assumed to come from independent tests based on
         continuous distributions.
-    method : {'fisher', 'pearson', 'tippett', 'stouffer',
-              'mudholkar_george'}, optional
+    method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'}, optional
 
         Name of method to use to combine p-values.
         The following methods are available (default is 'fisher'):
 
-          * 'fisher': Fisher's method (Fisher's combined probability test), the
-            sum of the logarithm of the p-values
-          * 'pearson': Pearson's method (similar to Fisher's but uses sum of the
-            complement of the p-values inside the logarithms)
-          * 'tippett': Tippett's method (minimum of p-values)
-          * 'stouffer': Stouffer's Z-score method
-          * 'mudholkar_george': the difference of Fisher's and Pearson's methods
-            divided by 2
+        * 'fisher': Fisher's method (Fisher's combined probability test), the
+          sum of the logarithm of the p-values
+        * 'pearson': Pearson's method (similar to Fisher's but uses sum of the
+          complement of the p-values inside the logarithms)
+        * 'tippett': Tippett's method (minimum of p-values)
+        * 'stouffer': Stouffer's Z-score method
+        * 'mudholkar_george': the difference of Fisher's and Pearson's methods
+          divided by 2
     weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
