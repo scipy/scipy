@@ -8235,8 +8235,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     else:
         raise ValueError(
-            "Invalid method '%s'. Options are 'fisher', 'pearson', \
-            'mudholkar_george', 'tippett', 'or 'stouffer'", method)
+            "Invalid method '%s'. Valid methods are 'fisher', 'pearson', \
+            'mudholkar_george', 'tippett', and 'stouffer'", method)
 
     return (statistic, pval)
 
