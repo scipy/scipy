@@ -122,15 +122,21 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
     'unuran_wrapper.pyx'  # 7 (used in stats/_unuran)
   ],
   input: '_generate_pyx.py',
-  command: [py3, '@INPUT@', '-o', '@OUTDIR@']
+  command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
+  depends: _stats_pxd
 )
+
+cython_stats_gen_cpp = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@', '--cplus'],
+  output : '@BASENAME@.cpp',
+  depends : [_cython_tree, _stats_gen_pyx])
 
 # Build recipes defined here to get correct output path when used from
 # other subdirs.
-beta_ufunc_pyx = cython_gen_cpp.process(_stats_gen_pyx[1])
-binom_ufunc_pyx = cython_gen_cpp.process(_stats_gen_pyx[2])
-hypergeom_ufunc_pyx = cython_gen_cpp.process(_stats_gen_pyx[4])
-nbinom_ufunc_pyx = cython_gen_cpp.process(_stats_gen_pyx[5])
+beta_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[1])
+binom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[2])
+hypergeom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[4])
+nbinom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[5])
 # Extra dependency from _lib
 unuran_wrap_pyx = lib_cython_gen.process(_stats_gen_pyx[7])
 
@@ -143,7 +149,6 @@ biasedurn = py3.extension_module('_biasedurn',
     'biasedurn/stoc3.cpp',
     'biasedurn/stocR.h',
     'biasedurn/wnchyppr.cpp',
-    _stats_pxd
   ],
   cpp_args: ['-DR_BUILD', numpy_nodepr_api],
   include_directories: [inc_np],
