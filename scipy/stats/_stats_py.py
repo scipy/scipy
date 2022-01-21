@@ -8161,7 +8161,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
       This method emphasises small p-values.
       Note that the test statistic used internally and returned by this method
       is :math:`-2\\sum_i \log(p_i)` for numerical reasons.
-    * Pearson's method uses :math:`\\left( \\prod_i (1-p_i) \\right)^{-1}` [2]_.
+    * Pearson's method uses :math:`\\prod_i \\frac{1}{1-p_i}` [2]_.
       It thus emphasises large p-values.
       Note that the test statistic used internally and returned by this method
       is :math:`-2\\sum_i \log(1-p_i)` for numerical reasons.
