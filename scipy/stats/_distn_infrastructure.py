@@ -1499,7 +1499,6 @@ class rv_generic:
 
     def nnlf(self, theta, x):
         """Negative loglikelihood function.
-
         Notes
         -----
         This is ``-sum(log pdf(x, theta), axis=0)`` where `theta` are the
@@ -1532,7 +1531,6 @@ class rv_generic:
 
     def _penalized_nnlf(self, theta, x):
         """Penalized negative loglikelihood function.
-
         i.e., - sum (log pdf(x, theta), axis=0) + penalty
         where theta are the parameters (including loc and scale)
         """
