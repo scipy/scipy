@@ -8145,35 +8145,35 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     uniform distribution on the interval [0,1]. If this function is applied to
     tests with a discrete statistics such as any rank test or contingency-table
     test, it will yield systematically wrong results, e.g. Fisher's method will
-    systematically overestimate the p-value [1]_. This problem becomes less severe
-    for large sample sizes when the discrete distributions become approximately
-    continuous.
+    systematically overestimate the p-value [1]_. This problem becomes less
+    severe for large sample sizes when the discrete distributions become
+    approximately continuous.
 
-    The differences between the methods can be best illustrated by their statistics
-    and what aspects of a combination of p-values they emphasise when considering
-    significance [2]_. For example, methods emphasising large p-values are more 
-    sensitive to strong false and true negatives; conversely methods focussing on
-    small p-values are sensitive to positives.
+    The differences between the methods can be best illustrated by their
+    statistics and what aspects of a combination of p-values they emphasise
+    when considering significance [2]_. For example, methods emphasising large
+    p-values are more sensitive to strong false and true negatives; conversely
+    methods focussing on small p-values are sensitive to positives.
 
     * Fisher's method (also known as Fisher's combined probability test) [3]_
       uses the product of individual p-values: :math:`\\prod_i p_i`.
       (Mind that this product is not the combined p-value.)
       This method emphasises small p-values.
       Note that the test statistic used internally and returned by this method
-      is :math:`-2\\sum_i \log(p_i)` for numerical reasons.
+      is :math:`-2\\sum_i \\log(p_i)` for numerical reasons.
     * Pearson's method uses :math:`\\prod_i \\frac{1}{1-p_i}` [2]_.
       It thus emphasises large p-values.
       Note that the test statistic used internally and returned by this method
-      is :math:`-2\\sum_i \log(1-p_i)` for numerical reasons.
+      is :math:`-2\\sum_i \\log(1-p_i)` for numerical reasons.
     * Mudholkar and George compromise between Fisher's and Pearson's method by
-      averaging their statistics [4]_. Their method emphasises extreme p-values,
-      both close to 1 and 0.
+      averaging their statistics [4]_. Their method emphasises extreme
+      p-values, both close to 1 and 0.
     * Stouffer's method [5]_ uses Z-scores and the statistic:
       :math:`\\sum_i \\Phi^{-1} (p_i)`, where :math:`\\Phi` is the CDF of the
       standard normal distribution. The advantage of this method is that it is
-      straightforward to introduce weights, which can make Stouffer's method more
-      powerful than Fisher's method when the p-values are from studies of different
-      size [6]_ [7]_.
+      straightforward to introduce weights, which can make Stouffer's method
+      more powerful than Fisher's method when the p-values are from studies
+      of different size [6]_ [7]_.
     * Tippett's method uses the smallest p-value as a statistic.
       (Mind that this minimum is not the combined p-value.)
 
@@ -8185,8 +8185,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     References
     ----------
-    .. [1] Kincaid, W. M., "The Combination of Tests Based on Discrete Distributions."
-           Journal of the American Statistical Association 57, no. 297 (1962), 10-19.
+    .. [1] Kincaid, W. M., "The Combination of Tests Based on Discrete
+           Distributions." Journal of the American Statistical Association 57,
+           no. 297 (1962), 10-19.
     .. [2] Heard, N. and Rubin-Delanchey, P. "Choosing between methods of
            combining p-values."  Biometrika 105.1 (2018): 239-246.
     .. [3] https://en.wikipedia.org/wiki/Fisher%27s_method
