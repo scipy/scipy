@@ -6615,6 +6615,21 @@ class TestCombinePvalues:
         # 0.5 here is because logistic = log(u) - log(1-u), i.e. no 2 factors
         assert_approx_equal(0.5 * (Z_f-Z_p), Z, significant=4)
 
+    def test_monotony_all(self):
+        # Test that result increases monotonously with respect to input.
+        changing_values = np.linspace(0.1,0.9,10)
+        for method in ["fisher","pearson","tippett","stouffer","mudholkar_george"]:
+            for variant in ["single","all"]:
+                pvalues = np.random.random(7)
+                combined_pvalues = []
+                for changing_value in changing_values:
+                    if variant=="single":
+                        pvalues[0] = changing_value
+                    else:
+                        pvalues = np.full(7,changing_value)
+                    combined_p = stats.combine_pvalues(pvalues, method=method)[1]
+                    combined_pvalues.append(combined_p)
+                assert np.all(np.diff(combined_pvalues)>=0)
 
 class TestCdfDistanceValidation:
     """
