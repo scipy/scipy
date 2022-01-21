@@ -197,7 +197,7 @@ def _laplacian_sparse(
                 needs_copy = True
 
         if symmetrized:
-            m = m + m.T.conj
+            m += m.T.conj()
 
         w = m.sum(axis=axis).getA1() - m.diagonal()
         if normed:
@@ -235,7 +235,7 @@ def _laplacian_dense(
         dtype = m.dtype
 
     if symmetrized:
-        m = m + m.T.conj
+        m += m.T.conj()
 
     if aslinearoperator:
         w = m.sum(axis=axis)
