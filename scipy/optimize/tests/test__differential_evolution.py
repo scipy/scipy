@@ -631,14 +631,14 @@ class TestDifferentialEvolutionSolver:
             return [x[0] + x[1]]
 
         def constr_f2(x):
-            return [x[0]**2 + x[1], x[0] - x[1]]
+            return np.array([x[0]**2 + x[1], x[0] - x[1]])
 
         nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
 
         solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
                                              constraints=(nlc))
 
-        cv = solver._constraint_violation_fn([1.0, 1.0])
+        cv = solver._constraint_violation_fn(np.array([1.0, 1.0]))
         assert_almost_equal(cv, 0.1)
 
         nlc2 = NonlinearConstraint(constr_f2, -np.inf, 1.8)
@@ -647,15 +647,25 @@ class TestDifferentialEvolutionSolver:
 
         # for multiple constraints the constraint violations should
         # be concatenated.
-        cv = solver._constraint_violation_fn([1.2, 1.])
-        assert_almost_equal(cv, [0.3, 0.64, 0])
+        xs = [(1.2, 1), (2.0, 2.0), (0.5, 0.5)]
+        vs = [(0.3, 0.64, 0.0), (2.1, 4.2, 0.0), (0, 0, 0)]
 
-        cv = solver._constraint_violation_fn([2., 2.])
-        assert_almost_equal(cv, [2.1, 4.2, 0])
+        for x, v in zip(xs, vs):
+            cv = solver._constraint_violation_fn(np.array(x))
+            assert_almost_equal(cv, np.atleast_2d(v))
 
-        # should accept valid values
-        cv = solver._constraint_violation_fn([0.5, 0.5])
-        assert_almost_equal(cv, [0., 0., 0.])
+        # vectorized calculation of a series of solutions
+        assert_allclose(
+            solver._constraint_violation_fn(np.array(xs)), np.array(vs)
+        )
+
+        # the following line is used in _calculate_population_feasibilities.
+        # _constraint_violation_fn returns an (1, C) array when
+        # x.shape == (N,), i.e. a single solution. Therefore this list
+        # comprehension will should generate (M, 1, C) array.
+        constraint_violation = np.array([solver._constraint_violation_fn(x)
+                                         for x in np.array(xs)])
+        assert constraint_violation.shape == (3, 1, 3)
 
     def test_constraint_population_feasibilities(self):
         def constr_f(x):
@@ -678,25 +688,29 @@ class TestDifferentialEvolutionSolver:
         assert cv.shape == (2, 1)
 
         nlc2 = NonlinearConstraint(constr_f2, -np.inf, 1.8)
-        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
-                                             constraints=(nlc, nlc2))
 
-        feas, cv = solver._calculate_population_feasibilities(
-            np.array([[0.5, 0.5], [0.6, 0.5]]))
-        assert_equal(feas, [False, False])
-        assert_almost_equal(cv, np.array([[0.1, 0.2, 0], [0.3, 0.64, 0]]))
+        for vectorize in [False, True]:
+            solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                                 constraints=(nlc, nlc2),
+                                                 vectorized=vectorize,
+                                                 updating='deferred')
 
-        feas, cv = solver._calculate_population_feasibilities(
-            np.array([[0.5, 0.5], [1., 1.]]))
-        assert_equal(feas, [False, False])
-        assert_almost_equal(cv, np.array([[0.1, 0.2, 0], [2.1, 4.2, 0]]))
-        assert cv.shape == (2, 3)
+            feas, cv = solver._calculate_population_feasibilities(
+                np.array([[0.5, 0.5], [0.6, 0.5]]))
+            assert_equal(feas, [False, False])
+            assert_almost_equal(cv, np.array([[0.1, 0.2, 0], [0.3, 0.64, 0]]))
 
-        feas, cv = solver._calculate_population_feasibilities(
-            np.array([[0.25, 0.25], [1., 1.]]))
-        assert_equal(feas, [True, False])
-        assert_almost_equal(cv, np.array([[0.0, 0.0, 0.], [2.1, 4.2, 0]]))
-        assert cv.shape == (2, 3)
+            feas, cv = solver._calculate_population_feasibilities(
+                np.array([[0.5, 0.5], [1., 1.]]))
+            assert_equal(feas, [False, False])
+            assert_almost_equal(cv, np.array([[0.1, 0.2, 0], [2.1, 4.2, 0]]))
+            assert cv.shape == (2, 3)
+
+            feas, cv = solver._calculate_population_feasibilities(
+                np.array([[0.25, 0.25], [1., 1.]]))
+            assert_equal(feas, [True, False])
+            assert_almost_equal(cv, np.array([[0.0, 0.0, 0.], [2.1, 4.2, 0]]))
+            assert cv.shape == (2, 3)
 
     def test_constraint_solve(self):
         def constr_f(x):
@@ -788,11 +802,28 @@ class TestDifferentialEvolutionSolver:
         assert (pc.violation(x0) > 0).any()
         assert (pc.violation([0.25, 21, 31]) == 0).all()
 
+        # check vectorized Bounds constraint
+        xs = np.arange(1, 16).reshape(5, 3)
+        violations = []
+        for x in xs:
+            violations.append(pc.violation(x))
+        np.testing.assert_allclose(pc.violation(xs.T), np.array(violations).T)
+
         x0 = np.array([1, 2, 3, 4])
         A = np.array([[1, 2, 3, 4], [5, 0, 0, 6], [7, 0, 8, 0]])
         pc = _ConstraintWrapper(LinearConstraint(A, -np.inf, 0), x0)
         assert (pc.violation(x0) > 0).any()
         assert (pc.violation([-10, 2, -10, 4]) == 0).all()
+
+        # check vectorized LinearConstraint, for 7 lots of parameter vectors
+        # with each parameter vector being 4 long, with 3 constraints
+        # xs is the same shape as stored in the differential evolution
+        # population, but it's sent to the violation function as (len(x), M)
+        xs = np.arange(1, 29).reshape(7, 4)
+        violations = []
+        for x in xs:
+            violations.append(pc.violation(x))
+        np.testing.assert_allclose(pc.violation(xs.T), np.array(violations).T)
 
         pc = _ConstraintWrapper(LinearConstraint(csr_matrix(A), -np.inf, 0),
                                 x0)
@@ -809,17 +840,31 @@ class TestDifferentialEvolutionSolver:
 
     def test_constraint_wrapper_violation(self):
         def cons_f(x):
-            return np.array([x[0] ** 2 + x[1], x[0] ** 2 - x[1]])
+            # written in vectorised form to accept an array of (N, M)
+            # returning (C, M)
+            # where N is the number of parameters,
+            # M is the number of points to be examined,
+            # and C is the number of constraints
+            return np.array([x[0] ** 2 + x[1],
+                             x[0] ** 2 - x[1]])
 
         nlc = NonlinearConstraint(cons_f, [-1, -0.8500], [2, 2])
         pc = _ConstraintWrapper(nlc, [0.5, 1])
         assert np.size(pc.bounds[0]) == 2
 
-        assert_array_equal(pc.violation([0.5, 1]), [0., 0.])
-        assert_almost_equal(pc.violation([0.5, 1.2]), [0., 0.1])
-        assert_almost_equal(pc.violation([1.2, 1.2]), [0.64, 0])
-        assert_almost_equal(pc.violation([0.1, -1.2]), [0.19, 0])
-        assert_almost_equal(pc.violation([0.1, 2]), [0.01, 1.14])
+        xs = [(0.5, 1), (0.5, 1.2), (1.2, 1.2), (0.1, -1.2), (0.1, 2.0)]
+        vs = [(0, 0), (0, 0.1), (0.64, 0), (0.19, 0), (0.01, 1.14)]
+
+        for x, v in zip(xs, vs):
+            assert_almost_equal(pc.violation(x), v)
+
+        # now check that we can vectorize the constraint wrapper
+        np.testing.assert_almost_equal(pc.violation(np.array(xs).T),
+                                       np.array(vs).T)
+        assert pc.fun(np.array(xs).T).shape == (2, len(xs))
+        assert pc.violation(np.array(xs).T).shape == (2, len(xs))
+        assert pc.num_constr == 2
+        assert pc.parameter_count == 2
 
     def test_L1(self):
         # Lampinen ([5]) test problem 1
@@ -1332,9 +1377,9 @@ class TestDifferentialEvolutionSolver:
             return np.sum(x**2)
 
         def quadratic_vec(x):
-            return np.sum(x**2, axis=-1)
+            return np.sum(x**2, axis=0)
 
-        # A vectorized function needs to accept (M, len(x)) and return (M,)
+        # A vectorized function needs to accept (len(x), M) and return (M,)
         with pytest.raises(RuntimeError, match='The vectorized function'):
             differential_evolution(quadratic, self.bounds,
                                    vectorized=True, updating='deferred')
@@ -1351,10 +1396,10 @@ class TestDifferentialEvolutionSolver:
                                    updating='deferred')
 
         def rosen_vec(x):
-            # accept an (M, len(x0)) array, returning a (M,) array
-            v = 100 * (x[..., 1:] - x[..., :-1]**2.0)**2.0
-            v += (1 - x[..., :-1])**2.0
-            return np.sum(v, axis=-1)
+            # accept an (len(x0), M) array, returning a (M,) array
+            v = 100 * (x[1:] - x[:-1]**2.0)**2.0
+            v += (1 - x[:-1])**2.0
+            return np.squeeze(v)
 
         bounds = [(0, 10), (0, 10)]
         res1 = differential_evolution(rosen, bounds, updating='deferred',
@@ -1366,3 +1411,31 @@ class TestDifferentialEvolutionSolver:
         assert_allclose(res1.x, res2.x)
         assert res1.nfev == res2.nfev
         assert res1.nit == res2.nit
+
+    def test_vectorized_constraints(self):
+        def constr_f(x):
+            return np.array([x[0] + x[1]])
+
+        def constr_f2(x):
+            return np.array([x[0]**2 + x[1], x[0] - x[1]])
+
+        nlc1 = NonlinearConstraint(constr_f, -np.inf, 1.9)
+        nlc2 = NonlinearConstraint(constr_f2, (0.9, 0.5), (2.0, 2.0))
+
+        def rosen_vec(x):
+            # accept an (len(x0), M) array, returning a (M,) array
+            v = 100 * (x[1:] - x[:-1]**2.0)**2.0
+            v += (1 - x[:-1])**2.0
+            return np.squeeze(v)
+
+        bounds = [(0, 10), (0, 10)]
+
+        res1 = differential_evolution(rosen, bounds, updating='deferred',
+                                      seed=1, constraints=[nlc1, nlc2],
+                                      polish=False)
+        res2 = differential_evolution(rosen_vec, bounds, vectorized=True,
+                                      updating='deferred', seed=1,
+                                      constraints=[nlc1, nlc2],
+                                      polish=False)
+        # the two minimisation runs should be functionally equivalent
+        assert_allclose(res1.x, res2.x)
