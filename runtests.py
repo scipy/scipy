@@ -301,7 +301,7 @@ def main(argv):
         except ImportError:
             current_python_path = os.environ.get('PYTHONPATH', None)
             print("Unable to import {} from: {}".format(PROJECT_MODULE,
-                                                       current_python_path))
+                                                        current_python_path))
             dst_dir = os.path.join(ROOT_DIR, 'build', 'testenv')
             from sysconfig import get_path
             py_path = get_path('platlib')
@@ -340,6 +340,8 @@ def main(argv):
     cwd = os.getcwd()
     try:
         os.chdir(test_dir)
+        print("Running tests for {} version:{}, installed at:{}".format(
+              PROJECT_MODULE, version, mod_path))
         result = test(args.mode,
                       verbose=args.verbose,
                       extra_argv=extra_argv,
