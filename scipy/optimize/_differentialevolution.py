@@ -584,9 +584,9 @@ class DifferentialEvolutionSolver:
             self._updating = 'deferred'
 
         if vectorized and workers != 1:
-                warnings.warn("differential_evolution: the 'workers' keyword"
-                              " overrides the 'vectorized' keyword")
-                self.vectorized = vectorized = False
+            warnings.warn("differential_evolution: the 'workers' keyword"
+                          " overrides the 'vectorized' keyword")
+            self.vectorized = vectorized = False
 
         if vectorized and updating == 'immediate':
             warnings.warn("differential_evolution: the 'vectorized' keyword"
