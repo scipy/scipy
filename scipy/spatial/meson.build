@@ -78,7 +78,7 @@ _distance_wrap = py3.extension_module('_distance_wrap',
   'src/distance_wrap.c',
   c_args: numpy_nodepr_api,
   include_directories: [incdir_numpy, '../_lib'],
-  dependencies: [py3_dep, npymath_lib],
+  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/spatial'
 )
