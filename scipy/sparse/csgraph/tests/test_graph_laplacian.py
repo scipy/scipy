@@ -252,3 +252,13 @@ def test_asymmetric_laplacian(use_out_degree, normed, copy, dtype, arr_type):
 def test_sparse_formats(fmt, normed, copy):
     mat = sparse.diags([1, 1], [-1, 1], shape=(4, 4), format=fmt)
     _check_symmetric_graph_laplacian(mat, normed, copy)
+
+
+def test_laplacian_symmetrized():
+    # adjacency matrix
+    mat = np.arange(9).reshape(3, 3)
+    Ls, ds = csgraph.laplacian(mat, symmetrized=True)
+    mat += mat.T
+    L, d = csgraph.laplacian(mat)
+    assert_allclose(Ls, L+L.T)
+    assert_allclose(ds, 2*d)
