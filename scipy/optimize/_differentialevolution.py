@@ -25,7 +25,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            callback=None, disp=False, polish=True,
                            init='latinhypercube', atol=0, updating='immediate',
                            workers=1, constraints=(), x0=None, *,
-                           integrality=None):
+                           integrality=None, vectorized=False):
     """Finds the global minimum of a multivariate function.
 
     Differential Evolution is stochastic in nature (does not use gradient
@@ -177,6 +177,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         This evaluation is carried out as ``workers(func, iterable)``.
         This option will override the `updating` keyword to
         ``updating='deferred'`` if ``workers != 1``.
+        This option overrides the `vectorized` keyword if ``workers != 1``.
         Requires that `func` be pickleable.
 
         .. versionadded:: 1.2.0
@@ -203,6 +204,17 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Only integer values lying between the lower and upper bounds are used.
         If there are no integer values lying between the bounds then a
         `ValueError` is raised.
+
+        .. versionadded:: 1.9.0
+
+    vectorized : bool, optional
+        If ``vectorized is True``, `func` is sent an array of shape
+        ``(M, len(x))`` and is expected to return an array of shape ``(M,)``.
+        This option is an alternative to the parallelization offered by
+        `workers`, and may help in optimization speed. This keyword is
+        ignored if the `workers` keyword has ``workers != 1``.
+        This option will override the `updating` keyword to
+        ``updating='deferred'``.
 
         .. versionadded:: 1.9.0
 
@@ -272,9 +284,22 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     Now repeat, but with parallelization.
 
-    >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = differential_evolution(rosen, bounds, updating='deferred',
     ...                                 workers=2)
+    >>> result.x, result.fun
+    (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
+
+    If the function is vectorized, then this might be an alternative approach
+    to parallelization. Vectorization may require the objective function to be
+    rewritten slightly.
+
+    >>> def rosen_vec(x):
+    ...     # accept an (M, len(x0)) array, returning a (M,) array
+    ...     v = 100 * (x[..., 1:] - x[..., :-1]**2.0)**2.0
+    ...     v += (1 - x[..., :-1])**2.0
+    ...     return np.sum(v, axis=-1)
+    >>> result = differential_evolution(rosen_vec, bounds, updating='deferred',
+    ...                                 vectorized=True)
     >>> result.x, result.fun
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
@@ -339,7 +364,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                                      workers=workers,
                                      constraints=constraints,
                                      x0=x0,
-                                     integrality=integrality) as solver:
+                                     integrality=integrality,
+                                     vectorized=vectorized) as solver:
         ret = solver.solve()
 
     return ret
@@ -509,6 +535,14 @@ class DifferentialEvolutionSolver:
         Only integer values lying between the lower and upper bounds are used.
         If there are no integer values lying between the bounds then a
         `ValueError` is raised.
+    vectorized : bool, optional
+        If ``vectorized is True``, `func` is sent an array of shape
+        ``(M, len(x))`` and is expected to return an array of shape ``(M,)``.
+        This option is an alternative to the parallelization offered by
+        `workers`, and may help in optimization speed. This keyword is
+        ignored if the `workers` keyword has ``workers != 1``.
+        This option will override the `updating` keyword to
+        ``updating='deferred'``.
     """
 
     # Dispatch of mutation strategy method (binomial or exponential).
@@ -534,7 +568,8 @@ class DifferentialEvolutionSolver:
                  tol=0.01, mutation=(0.5, 1), recombination=0.7, seed=None,
                  maxfun=np.inf, callback=None, disp=False, polish=True,
                  init='latinhypercube', atol=0, updating='immediate',
-                 workers=1, constraints=(), x0=None, *, integrality=None):
+                 workers=1, constraints=(), x0=None, *, integrality=None,
+                 vectorized=False):
 
         if strategy in self._binomial:
             self.mutation_func = getattr(self, self._binomial[strategy])
@@ -551,6 +586,8 @@ class DifferentialEvolutionSolver:
         if updating in ['immediate', 'deferred']:
             self._updating = updating
 
+        self.vectorized = vectorized
+
         # want to use parallelisation, but updating is immediate
         if workers != 1 and updating == 'immediate':
             warnings.warn("differential_evolution: the 'workers' keyword has"
@@ -558,7 +595,25 @@ class DifferentialEvolutionSolver:
                           " updating='deferred'", UserWarning)
             self._updating = 'deferred'
 
+        if vectorized and workers != 1:
+                warnings.warn("differential_evolution: the 'workers' keyword"
+                              " overrides the 'vectorized' keyword")
+                self.vectorized = vectorized = False
+
+        if vectorized and updating == 'immediate':
+            warnings.warn("differential_evolution: the 'vectorized' keyword"
+                          " has overridden updating='immediate' to updating"
+                          "='deferred'", UserWarning)
+            self._updating = 'deferred'
+
         # an object with a map method.
+        if vectorized:
+            def maplike_for_vectorized_func(func, x):
+                # send an array (M, len(x)) to the user func,
+                # expect to receive (M,)
+                return np.atleast_1d(func(x))
+            workers = maplike_for_vectorized_func
+
         self._mapwrapper = MapWrapper(workers)
 
         # relative and absolute tolerances for convergence
@@ -1027,6 +1082,7 @@ class DifferentialEvolutionSolver:
         try:
             calc_energies = list(self._mapwrapper(self.func,
                                                   parameters_pop[0:nfevs]))
+
             calc_energies = np.squeeze(calc_energies)
         except (TypeError, ValueError) as e:
             # wrong number of arguments for _mapwrapper
@@ -1037,6 +1093,10 @@ class DifferentialEvolutionSolver:
             ) from e
 
         if calc_energies.size != nfevs:
+            if self.vectorized:
+                raise RuntimeError("The vectorized function must return an"
+                                   " array of shape (M,) when given an array"
+                                   " of shape (M, len(x))")
             raise RuntimeError("func(x, *args) must return a scalar value")
 
         energies[0:nfevs] = calc_energies

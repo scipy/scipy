@@ -1326,3 +1326,43 @@ class TestDifferentialEvolutionSolver:
         with pytest.raises(ValueError, match='One of the integrality'):
             DifferentialEvolutionSolver(f, bounds=bounds, polish=False,
                                         integrality=integrality)
+
+    def test_vectorized(self):
+        def quadratic(x):
+            return np.sum(x**2)
+
+        def quadratic_vec(x):
+            return np.sum(x**2, axis=-1)
+
+        # A vectorized function needs to accept (M, len(x)) and return (M,)
+        with pytest.raises(RuntimeError, match='The vectorized function'):
+            differential_evolution(quadratic, self.bounds,
+                                   vectorized=True, updating='deferred')
+
+        # vectorized overrides the updating keyword, check for warning
+        with warns(UserWarning, match="differential_evolution: the 'vector"):
+            differential_evolution(quadratic_vec, self.bounds,
+                                   vectorized=True)
+
+        # vectorized defers to the workers keyword, check for warning
+        with warns(UserWarning, match="differential_evolution: the 'workers"):
+            differential_evolution(quadratic_vec, self.bounds,
+                                   vectorized=True, workers=map,
+                                   updating='deferred')
+
+        def rosen_vec(x):
+            # accept an (M, len(x0)) array, returning a (M,) array
+            v = 100 * (x[..., 1:] - x[..., :-1]**2.0)**2.0
+            v += (1 - x[..., :-1])**2.0
+            return np.sum(v, axis=-1)
+
+        bounds = [(0, 10), (0, 10)]
+        res1 = differential_evolution(rosen, bounds, updating='deferred',
+                                      seed=1)
+        res2 = differential_evolution(rosen_vec, bounds, vectorized=True,
+                                      updating='deferred', seed=1)
+
+        # the two minimisation runs should be functionally equivalent
+        assert_allclose(res1.x, res2.x)
+        assert res1.nfev == res2.nfev
+        assert res1.nit == res2.nit
