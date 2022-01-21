@@ -1521,6 +1521,9 @@ class rv_generic:
             return inf
         return self._nnlf(x, *args) + n_log_scale
 
+    def _nnlf(self, x, *args):
+        return -np.sum(self._logpxf(x, *args), axis=0)
+
     def _nnlf_and_penalty(self, x, args):
         cond0 = ~self._support_mask(x, *args)
         n_bad = np.count_nonzero(cond0, axis=0)
@@ -1934,9 +1937,10 @@ class rv_continuous(rv_generic):
             return log(p)
 
     def _logpxf(self, x, *args):
-        # continuous distributions have PDF, discrete have PMF, but in
-        # fitting to data, the distinction is not important
-        return self.logpdf(x, *args)
+        # continuous distributions have PDF, discrete have PMF, but sometimes
+        # the distinction doesn't matter. This lets us use `_logpxf` for both
+        # discrete and continuous distributions.
+        return self._logpdf(x, *args)
 
     def _cdf_single(self, x, *args):
         _a, _b = self._get_support(*args)
@@ -2297,9 +2301,6 @@ class rv_continuous(rv_generic):
         except IndexError as e:
             raise ValueError("Not enough input arguments.") from e
         return loc, scale, args
-
-    def _nnlf(self, x, *args):
-        return -np.sum(self._logpdf(x, *args), axis=0)
 
     def _fitstart(self, data, args=None):
         """Starting point for fit (shape arguments + loc + scale)."""
@@ -3137,9 +3138,19 @@ class rv_discrete(rv_generic):
         return log(self._pmf(k, *args))
 
     def _logpxf(self, k, *args):
-        # continuous distributions have PDF, discrete have PMF, but in
-        # fitting to data, the distinction is not important
-        return self.logpmf(k, *args)
+        # continuous distributions have PDF, discrete have PMF, but sometimes
+        # the distinction doesn't matter. This lets us use `_logpxf` for both
+        # discrete and continuous distributions.
+        return self._logpmf(k, *args)
+
+    def _unpack_loc_scale(self, theta):
+        try:
+            loc = theta[-1]
+            scale = 1
+            args = tuple(theta[:-1])
+        except IndexError as e:
+            raise ValueError("Not enough input arguments.") from e
+        return loc, scale, args
 
     def _cdf_single(self, k, *args):
         _a, _b = self._get_support(*args)
@@ -3503,18 +3514,6 @@ class rv_discrete(rv_generic):
         if output.ndim == 0:
             return output[()]
         return output
-
-    def _unpack_loc_scale(self, theta):
-        try:
-            loc = theta[-1]
-            scale = 1
-            args = tuple(theta[:-1])
-        except IndexError as e:
-            raise ValueError("Not enough input arguments.") from e
-        return loc, scale, args
-
-    def _nnlf(self, x, *args):
-        return -np.sum(self._logpmf(x, *args), axis=0)
 
     def _entropy(self, *args):
         if hasattr(self, 'pk'):
