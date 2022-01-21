@@ -257,8 +257,8 @@ def test_sparse_formats(fmt, normed, copy):
 def test_laplacian_symmetrized():
     # adjacency matrix
     mat = np.arange(9).reshape(3, 3)
-    Ls, ds = csgraph.laplacian(mat, symmetrized=True)
+    Ls, ds = csgraph.laplacian(mat, return_diag=True,symmetrized=True)
     mat += mat.T
-    L, d = csgraph.laplacian(mat)
+    L, d = csgraph.laplacian(mat, return_diag=True)
     assert_allclose(Ls, L+L.T)
     assert_allclose(ds, 2*d)
