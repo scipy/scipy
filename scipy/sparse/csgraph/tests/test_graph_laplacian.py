@@ -264,7 +264,7 @@ def test_laplacian_symmetrized(arr_type):
     Ls, ds = csgraph.laplacian(mat, return_diag=True,symmetrized=True)
     mat += mat.T
     Lss, dss = csgraph.laplacian(mat, return_diag=True)
-    if arr_type==np.asarray:
+    if arr_type == np.asarray:
         assert_allclose(Ls, L + L.T)
         assert_allclose(Ls, Lss)
     else:
