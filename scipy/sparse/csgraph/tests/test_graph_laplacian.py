@@ -260,16 +260,19 @@ def test_sparse_formats(fmt, normed, copy):
 def test_laplacian_symmetrized(arr_type):
     # adjacency matrix
     mat = arr_type(np.arange(9).reshape(3, 3))
-    L, d = csgraph.laplacian(mat, return_diag=True)
+    L1, d1 = csgraph.laplacian(mat, return_diag=True)
+    L2, d2 = csgraph.laplacian(mat,
+                               return_diag=True,
+                               use_out_degree=True)
     Ls, ds = csgraph.laplacian(mat, return_diag=True, symmetrized=True)
     mat += mat.T
     Lss, dss = csgraph.laplacian(mat, return_diag=True)
     if arr_type == np.asarray:
-        assert_allclose(Ls, L + L.T)
+        assert_allclose(Ls, L1 + L2.T)
         assert_allclose(Ls, Lss)
     else:
-        _assert_allclose_sparse(Ls, L + L.T)
+        _assert_allclose_sparse(Ls, L1 + L2.T)
         _assert_allclose_sparse(Ls, Lss)
 
-    assert_allclose(ds, 2 * d)
+    assert_allclose(ds, d1 + d2)
     assert_allclose(ds, dss)
