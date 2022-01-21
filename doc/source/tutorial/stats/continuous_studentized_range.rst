@@ -38,8 +38,8 @@ When :math:`\nu` exceeds 100,000, the asymptotic approximation of :math:`F(x; k,
    :nowrap:
 
     \begin{eqnarray*}
-    F(x; k, \nu=\infty) = k(k-1) \int_{-\infty}^{\infty} \phi(z)\phi(x + z)
-    [\Phi(x + z) - \Phi(z)]^{k-1} \,dz
+    f(x; k, \nu=\infty) = k(k-1) \int_{-\infty}^{\infty} \phi(z)\phi(x + z)
+    [\Phi(x + z) - \Phi(z)]^{k-2} \,dz
     \end{eqnarray*}
 
 
