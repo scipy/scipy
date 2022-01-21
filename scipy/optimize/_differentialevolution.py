@@ -193,6 +193,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         Provides an initial guess to the minimization. Once the population has
         been initialized this vector replaces the first (best) member. This
         replacement is done even if `init` is given an initial population.
+        ``x0.shape == (N,)``.
 
         .. versionadded:: 1.7.0
 
@@ -515,6 +516,7 @@ class DifferentialEvolutionSolver:
         Provides an initial guess to the minimization. Once the population has
         been initialized this vector replaces the first (best) member. This
         replacement is done even if `init` is given an initial population.
+        ``x0.shape == (N,)``.
     integrality : 1-D array, optional
         For each decision variable, a boolean value indicating whether the
         decision variable is constrained to integer values. The array is
@@ -1120,8 +1122,8 @@ class DifferentialEvolutionSolver:
 
     def _constraint_violation_fn(self, x):
         """
-        Calculates total constraint violation for all the constraints, for a set of
-        solutions.
+        Calculates total constraint violation for all the constraints, for a
+        set of solutions.
 
         Parameters
         ----------
