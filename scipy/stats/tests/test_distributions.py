@@ -5250,8 +5250,8 @@ class TestStudentizedRange:
         # Test that the CDF and PDF properly switch integrators at df=100,000.
         # The infinite integrator should be different enough that it fails
         # an allclose assertion. Also sanity check that using the same
-        # integrator does pass the allclose with a 1-df difference, which should
-        # be tiny.
+        # integrator does pass the allclose with a 1-df difference, which
+        # should be tiny.
 
         res = stats.studentized_range.pdf(3, 10, 100000)
         res_finite = stats.studentized_range.pdf(3, 10, 99999)
