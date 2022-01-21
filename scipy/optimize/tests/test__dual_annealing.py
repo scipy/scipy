@@ -340,7 +340,9 @@ class TestDualAnnealing:
         assert_allclose(rate, accept_rate)
 
     def test_bounds_class(self):
-        func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
+        def func(x):
+            f = np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
+            return f
         lw = [-5.12] * 10
         up = [5.12] * 10
         bounds = Bounds(lw, up)
