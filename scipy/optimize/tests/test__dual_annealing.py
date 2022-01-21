@@ -345,10 +345,11 @@ class TestDualAnnealing:
         lw = [-5.12] * 10
         up = [5.12] * 10
         bounds = Bounds(lw, up)
-        ret = dual_annealing(func, bounds=bounds, seed=1234)
-        assert_allclose(ret.x,
-                        [-4.26437714e-09, -3.91699361e-09, -1.86149218e-09,
-                         -3.97165720e-09, -6.29151648e-09, -6.53145322e-09,
-                         -3.93616815e-09, -6.55623025e-09, -6.05775280e-09,
-                         -5.00668935e-09], atol=4e-8)
-        assert_allclose(ret.fun, 0.000000, atol=5e-13)
+        ret_bounds_class = dual_annealing(func, bounds=bounds, seed=1234)
+
+        bounds_old = list(zip(lw, up))
+        ret_bounds_list = dual_annealing(func, bounds=bounds_old, seed=1234)
+        assert_allclose(ret_bounds_list.x, ret_bounds_class.x, atol=1e-7)
+
+        assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-7)
+        assert_allclose(ret_bounds_list.fun, 0.000000, atol=5e-13)
