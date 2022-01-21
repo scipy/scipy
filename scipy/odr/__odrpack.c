@@ -1118,7 +1118,7 @@ PyObject *odr(PyObject * self, PyObject * args, PyObject * kwds)
         }
       if (PyArray_DIMS(work)[0] < lwork)
         {
-          printf("%ld %lld\n", PyArray_DIMS(work)[0], (long long)lwork);
+          printf("%lld %lld\n", (long long)PyArray_DIMS(work)[0], (long long)lwork);
           PYERR(PyExc_ValueError, "work is too small");
         }
     }
