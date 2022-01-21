@@ -5182,7 +5182,11 @@ class TestStudentizedRange:
         src_case = case_result["src_case"]
         mp_result = case_result["mp_result"]
         mkv = src_case["m"], src_case["k"], src_case["v"]
-        res = stats.studentized_range.moment(*mkv)
+
+        # Silence invalid value encountered warnings. Actual problems will be
+        # caught by the result comparison.
+        with np.errstate(invalid='ignore'):
+            res = stats.studentized_range.moment(*mkv)
 
         assert_allclose(res, mp_result,
                         atol=src_case["expected_atol"],
@@ -5221,7 +5225,12 @@ class TestStudentizedRange:
     def test_moment_vectorization(self):
         # Test moment broadcasting. Calls `_munp` directly because
         # `rv_continuous.moment` is broken at time of writing. See gh-12192
-        m = stats.studentized_range._munp([1, 2], [4, 5], [10, 11])
+
+        # Silence invalid value encountered warnings. Actual problems will be
+        # caught by the result comparison.
+        with np.errstate(invalid='ignore'):
+            m = stats.studentized_range._munp([1, 2], [4, 5], [10, 11])
+
         assert_allclose(m.shape, (2,))
 
         with pytest.raises(ValueError, match="...could not be broadcast..."):
