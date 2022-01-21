@@ -261,7 +261,7 @@ def test_laplacian_symmetrized(arr_type):
     # adjacency matrix
     mat = arr_type(np.arange(9).reshape(3, 3))
     L, d = csgraph.laplacian(mat, return_diag=True)
-    Ls, ds = csgraph.laplacian(mat, return_diag=True,symmetrized=True)
+    Ls, ds = csgraph.laplacian(mat, return_diag=True, symmetrized=True)
     mat += mat.T
     Lss, dss = csgraph.laplacian(mat, return_diag=True)
     if arr_type == np.asarray:
