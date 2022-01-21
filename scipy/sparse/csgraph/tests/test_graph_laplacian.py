@@ -254,11 +254,14 @@ def test_sparse_formats(fmt, normed, copy):
     _check_symmetric_graph_laplacian(mat, normed, copy)
 
 
-def test_laplacian_symmetrized():
+@pytest.mark.parametrize(
+    "arr_type", [np.asarray, sparse.csr_matrix, sparse.coo_matrix]
+)
+def test_laplacian_symmetrized(arr_type):
     # adjacency matrix
-    mat = np.arange(9).reshape(3, 3)
+    mat = arr_type(np.arange(9).reshape(3, 3))
     Ls, ds = csgraph.laplacian(mat, return_diag=True,symmetrized=True)
-    mat += mat.T
+    mat += mat.T()
     L, d = csgraph.laplacian(mat, return_diag=True)
     assert_allclose(Ls, L+L.T)
-    assert_allclose(ds, 2*d)
+    assert_allclose(ds, d)
