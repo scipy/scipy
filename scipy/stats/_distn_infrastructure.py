@@ -3134,7 +3134,7 @@ class rv_discrete(rv_generic):
         # continuous distributions have PDF, discrete have PMF, but sometimes
         # the distinction doesn't matter. This lets us use `_logpxf` for both
         # discrete and continuous distributions.
-        return self.logpmf(k, *args)
+        return self._logpmf(k, *args)
 
     def _unpack_loc_scale(self, theta):
         try:

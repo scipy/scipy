@@ -1604,6 +1604,10 @@ class _nchypergeom_gen(rv_discrete):
 
     def _pmf(self, x, M, n, N, odds):
 
+        x, M, n, N, odds = np.broadcast_arrays(x, M, n, N, odds)
+        if x.size == 0:  # np.vectorize doesn't work with zero size input
+            return np.empty_like(x)
+
         @np.vectorize
         def _pmf1(x, M, n, N, odds):
             urn = self.dist(N, n, M, odds, 1e-12)
