@@ -290,8 +290,6 @@ def main(argv):
     if args.build_only:
         sys.exit(0)
     else:
-        # __import__(PROJECT_MODULE)
-        # test = sys.modules[PROJECT_MODULE].test
         try:
             __import__(PROJECT_MODULE)
             test = sys.modules[PROJECT_MODULE].test
