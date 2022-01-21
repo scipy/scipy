@@ -142,8 +142,8 @@ def test_expon_fit():
 
 
 @pytest.mark.parametrize("dist, params",
-                         [(stats.norm, (0.5, 2.5)), # loc, scale
-                          (stats.binom, (10, 0.3, 2))])  # n, p, loc
+                         [(stats.norm, (0.5, 2.5)),  # type: ignore[attr-defined] # noqa
+                          (stats.binom, (10, 0.3, 2))])  # type: ignore[attr-defined] # noqa
 def test_nnlf_and_related_methods(dist, params):
     rng = np.random.default_rng(983459824)
 
