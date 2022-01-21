@@ -6,6 +6,8 @@
 Unit tests for the dual annealing global optimizer
 """
 from scipy.optimize import dual_annealing
+from scipy.optimize import Bounds
+
 from scipy.optimize._dual_annealing import EnergyState
 from scipy.optimize._dual_annealing import LocalSearchWrapper
 from scipy.optimize._dual_annealing import ObjectiveFunWrapper
@@ -336,3 +338,16 @@ class TestDualAnnealing:
         rate = 0 if pqv <= 0 else np.exp(np.log(pqv) / (1 - accept_param))
 
         assert_allclose(rate, accept_rate)
+
+    def test_bounds_class(self):
+        func = lambda x: np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
+        lw = [-5.12] * 10
+        up = [5.12] * 10
+        bounds = Bounds(lw, up)
+        ret = dual_annealing(func, bounds=bounds, seed=1234)
+        assert_allclose(ret.x,
+                        [-4.26437714e-09, -3.91699361e-09, -1.86149218e-09,
+                         -3.97165720e-09, -6.29151648e-09, -6.53145322e-09,
+                         -3.93616815e-09, -6.55623025e-09, -6.05775280e-09,
+                         -5.00668935e-09], atol=4e-8)
+        assert_allclose(ret.fun, 0.000000, atol=5e-13)
