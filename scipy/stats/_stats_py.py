@@ -8171,7 +8171,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     * Stouffer's method [5]_ uses Z-scores and the statistic:
       :math:`\\sum_i \\Phi^{-1} (p_i)`, where :math:`\\Phi` is the CDF of the
       standard normal distribution. The advantage of this method is that it is
-      straightforward to introduce weights, which can make Stouffer's method more 
+      straightforward to introduce weights, which can make Stouffer's method more
       powerful than Fisher's method when the p-values are from studies of different
       size [6]_ [7]_.
     * Tippett's method uses the smallest p-value as a statistic.
