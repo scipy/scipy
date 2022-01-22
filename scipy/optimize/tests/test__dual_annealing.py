@@ -339,17 +339,27 @@ class TestDualAnnealing:
         assert_allclose(rate, accept_rate)
 
     def test_bounds_class(self):
+        # test that result does not depend on the bounds type
         def func(x):
             f = np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
             return f
         lw = [-5.12] * 10
         up = [5.12] * 10
+
+        # set upper bound to global minimum for a few dimensions
+        up[0] = 0.0
+        up[1] = 0.0
+        up[2] = 0.0
+
+        # run optimizations
         bounds = Bounds(lw, up)
         ret_bounds_class = dual_annealing(func, bounds=bounds, seed=1234)
 
         bounds_old = list(zip(lw, up))
         ret_bounds_list = dual_annealing(func, bounds=bounds_old, seed=1234)
-        assert_allclose(ret_bounds_list.x, ret_bounds_class.x, atol=1e-7)
 
-        assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-7)
-        assert_allclose(ret_bounds_list.fun, 0.000000, atol=5e-13)
+        # test that found minima, function evaluations and iterations match
+        assert_allclose(ret_bounds_list.x, ret_bounds_class.x, atol=1e-9)
+        assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-9)
+        assert ret_bounds_list.nfev == ret_bounds_class.nfev
+        assert ret_bounds_list.nit == ret_bounds_class.nit
