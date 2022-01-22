@@ -343,13 +343,15 @@ class TestDualAnnealing:
         def func(x):
             f = np.sum(x * x - 10 * np.cos(2 * np.pi * x)) + 10 * np.size(x)
             return f
-        lw = [-5.12] * 10
-        up = [5.12] * 10
+        lw = [-5.12] * 5
+        up = [5.12] * 5
 
-        # set upper bound to global minimum for a few dimensions
-        up[0] = 0.0
-        up[1] = 0.0
-        up[2] = 0.0
+        # Unbounded global minimum is all zeros. Most bounds below will force
+        # a DV away from unbounded minimum and be active at solution.
+        up[0] = -2.0
+        up[1] = -1.0
+        lw[3] = 1.0
+        lw[4] = 2.0
 
         # run optimizations
         bounds = Bounds(lw, up)
