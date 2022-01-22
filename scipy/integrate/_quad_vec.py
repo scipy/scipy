@@ -122,6 +122,9 @@ def quad_vec(f, a, b, epsabs=1e-200, epsrel=1e-8, norm='2', cache_size=100e6, li
         Vector norm to use for error estimation.
     cache_size : int, optional
         Number of bytes to use for memoization.
+    limit : float or int, optional
+        An upper bound on the number of subintervals used in the adaptive
+        algorithm.
     workers : int or map-like callable, optional
         If `workers` is an integer, part of the computation is done in
         parallel subdivided to this many tasks (using
