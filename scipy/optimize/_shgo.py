@@ -413,7 +413,7 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
 
     # if necessary, convert bounds class to old bounds
     if isinstance(bounds, Bounds):
-        bounds = new_bounds_to_old(Bounds.lb, Bounds.ub, len(Bounds.lb))
+        bounds = new_bounds_to_old(bounds.lb, bounds.ub, len(bounds.lb))
 
     # Initiate SHGO class
     shc = SHGO(func, bounds, args=args, constraints=constraints, n=n,

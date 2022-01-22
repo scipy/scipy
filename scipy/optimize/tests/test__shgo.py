@@ -651,13 +651,15 @@ class TestShgoArguments:
 
     def test_18_bounds_class(self):
         # test that new and old bounds yield same result
+        def f(x):
+            return x[0] ** 2 + x[1] ** 2
         lb = [-6., -6.]
-        ub = [1., 1.]
+        ub = [0., 0.]
         bounds_old = list(zip(lb, ub))
         bounds_new = Bounds(lb, ub)
 
-        res_old_bounds = shgo(StructTest1.f, bounds_old)
-        res_new_bounds = shgo(StructTest1.f, bounds_new)
+        res_old_bounds = shgo(f, bounds_old)
+        res_new_bounds = shgo(f, bounds_new)
 
         assert res_new_bounds.nfev == res_old_bounds.nfev
         assert res_new_bounds.message == res_old_bounds.message
