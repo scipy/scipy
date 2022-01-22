@@ -7,7 +7,8 @@ import time
 import logging
 import warnings
 from scipy import spatial
-from scipy.optimize import OptimizeResult, minimize
+from scipy.optimize import OptimizeResult, minimize, Bounds
+from scipy.optimize._constraints import new_bounds_to_old
 from ._optimize import _wrap_scalar_function
 from scipy.optimize._shgo_lib.triangulation import Complex
 
@@ -410,6 +411,11 @@ def shgo(func, bounds, args=(), constraints=None, n=None, iters=1,
     (-5.062616992290714e-14, -2.9594104944408173e-12, 0.0)
 
     """
+
+    # if necessary, convert bounds class to old bounds
+    if isinstance(bounds, Bounds):
+        bounds = new_bounds_to_old(Bounds.lb, Bounds.ub, len(Bounds.lb))
+
     # Initiate SHGO class
     shc = SHGO(func, bounds, args=args, constraints=constraints, n=n,
                iters=iters, callback=callback,
