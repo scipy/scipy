@@ -1,6 +1,7 @@
 # Platform detection
 is_windows = host_machine.system() == 'windows'
 
+cython_c_args = []
 if is_windows
   # For mingw-w64, link statically against the UCRT.
   gcc_link_args = ['-lucrt', '-static']
@@ -15,6 +16,10 @@ if is_windows
     if bitness == '64'
       add_global_arguments('-DMS_WIN64', language: ['c', 'cpp', 'fortran'])
     endif
+    # Silence warnings emitted by PyOS_snprintf for (%zd), see
+    # https://github.com/rgommers/scipy/issues/118.
+    # Use as c_args for extensions containing Cython code
+    cython_c_args += ['-Wno-format-extra-args', '-Wno-format']
   endif
   if meson.get_compiler('fortran').get_id() == 'gcc'
     add_global_link_arguments(gcc_link_args, language: ['fortran'])
@@ -182,7 +187,8 @@ c_undefined_ok = ['-Wno-maybe-uninitialized']
 # Suppress warning for deprecated Numpy API.
 # (Suppress warning messages emitted by #warning directives).
 # Replace with numpy_nodepr_api after Cython 3.0 is out
-c_no_warn_depr_np_api = ['-Wno-cpp']
+cython_c_args += ['-Wno-cpp']
+cython_cpp_args = cython_c_args
 
 # Ordering of subdirs: special and linalg come first, because other submodules
 # have dependencies on cython_special.pxd and cython_linalg.pxd. After those,

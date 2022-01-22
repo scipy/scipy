@@ -1,5 +1,6 @@
 streams = py3.extension_module('_streams',
   cython_gen.process('_streams.pyx'),
+  c_args: cython_c_args,
   dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/io/matlab'
@@ -7,8 +8,7 @@ streams = py3.extension_module('_streams',
 
 mio_utils = py3.extension_module('_mio_utils',
   cython_gen.process('_mio_utils.pyx'),
-  c_args: [c_no_warn_depr_np_api],
-#  c_args: numpy_nodepr_api, TODO: Uncomment once NumPy API usage is fixed
+  c_args: cython_c_args,
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
   install: true,
@@ -17,8 +17,7 @@ mio_utils = py3.extension_module('_mio_utils',
 
 mio5_utils = py3.extension_module('_mio5_utils',
   cython_gen.process('_mio5_utils.pyx'),
-  c_args: [c_no_warn_depr_np_api],
-#  c_args: numpy_nodepr_api, TODO: Uncomment once NumPy API usage is fixed
+  c_args: cython_c_args,
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
   install: true,

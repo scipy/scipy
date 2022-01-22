@@ -1,8 +1,6 @@
 slib = py3.extension_module('_hierarchy',
   linalg_cython_gen.process('_hierarchy.pyx'),
-  c_args: [
-   '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
-  ],
+  c_args: cython_c_args,
   include_directories: [inc_np],
   dependencies: [py3_dep],
   install: true,
@@ -11,9 +9,7 @@ slib = py3.extension_module('_hierarchy',
 
 slib = py3.extension_module('_optimal_leaf_ordering',
   linalg_cython_gen.process('_optimal_leaf_ordering.pyx'),
-  c_args: [
-   '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
-  ],
+  c_args: cython_c_args,
   include_directories: [inc_np],
   dependencies: [py3_dep],
   install: true,
@@ -22,9 +18,7 @@ slib = py3.extension_module('_optimal_leaf_ordering',
 
 slib = py3.extension_module('_vq',
   linalg_cython_gen.process('_vq.pyx'),
-  c_args: [
-   '-Wno-cpp'  # TODO: replace with numpy_nodepr_api
-  ],
+  c_args: cython_c_args,
   include_directories: [inc_np],
   dependencies: [py3_dep],
   install: true,
