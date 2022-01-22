@@ -665,7 +665,7 @@ class TestShgoArguments:
         assert res_new_bounds.message == res_old_bounds.message
         assert res_new_bounds.success == res_old_bounds.success
         numpy.testing.assert_allclose(res_new_bounds.x,
-                                        res_old_bounds.x)
+                                      res_old_bounds.x)
 
 
 # Failure test functions
