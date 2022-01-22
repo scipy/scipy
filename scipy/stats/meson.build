@@ -152,6 +152,7 @@ biasedurn = py3.extension_module('_biasedurn',
   ],
   cpp_args: ['-DR_BUILD', cython_cpp_args],
   include_directories: [inc_np],
+  # Note that we're not using npymath directly, it is needed to use npyrandom
   dependencies: [py3_dep, npyrandom_lib, npymath_lib],
   install: true,
   subdir: 'scipy/stats'
