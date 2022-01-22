@@ -1496,6 +1496,50 @@ class rv_generic:
         place(out_b, 1-cond, self.badvalue)
         return out_a, out_b
 
+    def nnlf(self, theta, x):
+        """Negative loglikelihood function.
+        Notes
+        -----
+        This is ``-sum(log pdf(x, theta), axis=0)`` where `theta` are the
+        parameters (including loc and scale).
+        """
+        loc, scale, args = self._unpack_loc_scale(theta)
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+        x = asarray((x-loc) / scale)
+        n_log_scale = len(x) * log(scale)
+        if np.any(~self._support_mask(x, *args)):
+            return inf
+        return self._nnlf(x, *args) + n_log_scale
+
+    def _nnlf(self, x, *args):
+        return -np.sum(self._logpxf(x, *args), axis=0)
+
+    def _nnlf_and_penalty(self, x, args):
+        cond0 = ~self._support_mask(x, *args)
+        n_bad = np.count_nonzero(cond0, axis=0)
+        if n_bad > 0:
+            x = argsreduce(~cond0, x)[0]
+        logpxf = self._logpxf(x, *args)
+        finite_logpxf = np.isfinite(logpxf)
+        n_bad += np.sum(~finite_logpxf, axis=0)
+        if n_bad > 0:
+            penalty = n_bad * log(_XMAX) * 100
+            return -np.sum(logpxf[finite_logpxf], axis=0) + penalty
+        return -np.sum(logpxf, axis=0)
+
+    def _penalized_nnlf(self, theta, x):
+        """Penalized negative loglikelihood function.
+        i.e., - sum (log pdf(x, theta), axis=0) + penalty
+        where theta are the parameters (including loc and scale)
+        """
+        loc, scale, args = self._unpack_loc_scale(theta)
+        if not self._argcheck(*args) or scale <= 0:
+            return inf
+        x = asarray((x-loc) / scale)
+        n_log_scale = len(x) * log(scale)
+        return self._nnlf_and_penalty(x, args) + n_log_scale
+
 
 def _get_fixed_fit_value(kwds, names):
     """
@@ -1865,6 +1909,12 @@ class rv_continuous(rv_generic):
         with np.errstate(divide='ignore'):
             return log(p)
 
+    def _logpxf(self, x, *args):
+        # continuous distributions have PDF, discrete have PMF, but sometimes
+        # the distinction doesn't matter. This lets us use `_logpxf` for both
+        # discrete and continuous distributions.
+        return self._logpdf(x, *args)
+
     def _cdf_single(self, x, *args):
         _a, _b = self._get_support(*args)
         return integrate.quad(self._pdf, _a, x, args=args)[0]
@@ -2216,9 +2266,6 @@ class rv_continuous(rv_generic):
             return output[()]
         return output
 
-    def _nnlf(self, x, *args):
-        return -np.sum(self._logpdf(x, *args), axis=0)
-
     def _unpack_loc_scale(self, theta):
         try:
             loc = theta[-2]
@@ -2227,49 +2274,6 @@ class rv_continuous(rv_generic):
         except IndexError as e:
             raise ValueError("Not enough input arguments.") from e
         return loc, scale, args
-
-    def nnlf(self, theta, x):
-        """Negative loglikelihood function.
-
-        Notes
-        -----
-        This is ``-sum(log pdf(x, theta), axis=0)`` where `theta` are the
-        parameters (including loc and scale).
-        """
-        loc, scale, args = self._unpack_loc_scale(theta)
-        if not self._argcheck(*args) or scale <= 0:
-            return inf
-        x = asarray((x-loc) / scale)
-        n_log_scale = len(x) * log(scale)
-        if np.any(~self._support_mask(x, *args)):
-            return inf
-        return self._nnlf(x, *args) + n_log_scale
-
-    def _nnlf_and_penalty(self, x, args):
-        cond0 = ~self._support_mask(x, *args)
-        n_bad = np.count_nonzero(cond0, axis=0)
-        if n_bad > 0:
-            x = argsreduce(~cond0, x)[0]
-        logpdf = self._logpdf(x, *args)
-        finite_logpdf = np.isfinite(logpdf)
-        n_bad += np.sum(~finite_logpdf, axis=0)
-        if n_bad > 0:
-            penalty = n_bad * log(_XMAX) * 100
-            return -np.sum(logpdf[finite_logpdf], axis=0) + penalty
-        return -np.sum(logpdf, axis=0)
-
-    def _penalized_nnlf(self, theta, x):
-        """Penalized negative loglikelihood function.
-
-        i.e., - sum (log pdf(x, theta), axis=0) + penalty
-        where theta are the parameters (including loc and scale)
-        """
-        loc, scale, args = self._unpack_loc_scale(theta)
-        if not self._argcheck(*args) or scale <= 0:
-            return inf
-        x = asarray((x-loc) / scale)
-        n_log_scale = len(x) * log(scale)
-        return self._nnlf_and_penalty(x, args) + n_log_scale
 
     def _fitstart(self, data, args=None):
         """Starting point for fit (shape arguments + loc + scale)."""
@@ -3105,6 +3109,21 @@ class rv_discrete(rv_generic):
 
     def _logpmf(self, k, *args):
         return log(self._pmf(k, *args))
+
+    def _logpxf(self, k, *args):
+        # continuous distributions have PDF, discrete have PMF, but sometimes
+        # the distinction doesn't matter. This lets us use `_logpxf` for both
+        # discrete and continuous distributions.
+        return self._logpmf(k, *args)
+
+    def _unpack_loc_scale(self, theta):
+        try:
+            loc = theta[-1]
+            scale = 1
+            args = tuple(theta[:-1])
+        except IndexError as e:
+            raise ValueError("Not enough input arguments.") from e
+        return loc, scale, args
 
     def _cdf_single(self, k, *args):
         _a, _b = self._get_support(*args)
