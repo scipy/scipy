@@ -365,4 +365,3 @@ class TestDualAnnealing:
         assert_allclose(ret_bounds_class.x, np.arange(-2, 3), atol=1e-8)
         assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-9)
         assert ret_bounds_list.nfev == ret_bounds_class.nfev
-        assert ret_bounds_list.nit == ret_bounds_class.nit
