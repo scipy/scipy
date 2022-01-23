@@ -33,6 +33,8 @@ __all__ = ['UNURANError', 'TransformedDensityRejection', 'DiscreteAliasUrn',
 
 cdef extern from "Python.h":
     PyObject *PyErr_Occurred()
+    void PyErr_Fetch(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
+    void PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 
 
 # Internal API for handling Python callbacks.
@@ -430,8 +432,9 @@ cdef class Method:
         if self.urng == NULL:
             raise UNURANError(self._messages.get())
         self._check_errorcode(unur_set_urng(self.par, self.urng))
+        has_callback_wrapper = (self._callback_wrapper is not None)
         try:
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 init_unuran_callback(&callback, self._callback_wrapper)
             self.rng = unur_init(self.par)
             # set self.par = NULL because a call to `unur_init` destroys
@@ -445,7 +448,7 @@ cdef class Method:
             unur_distr_free(self.distr)
             self.distr = NULL
         finally:
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 release_unuran_callback(&callback)
 
     @cython.boundscheck(False)
@@ -464,24 +467,35 @@ cdef class Method:
             unur_gen *rng = self.rng
             size_t i
             size_t size = len(out)
+            PyObject *type
+            PyObject *value
+            PyObject *traceback
+
+        has_callback_wrapper = (self._callback_wrapper is not None)
+        error = 0
 
         _lock.acquire()
         try:
             self._messages.clear()
             unur_set_stream(self._messages.handle)
 
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 init_unuran_callback(&callback, self._callback_wrapper)
             for i in range(size):
                 out[i] = unur_sample_cont(rng)
                 if PyErr_Occurred():
+                    error = 1
                     return
             msg = self._messages.get()
             if msg:
                 raise UNURANError(msg)
         finally:
+            if error:
+                PyErr_Fetch(&type, &value, &traceback)
             _lock.release()
-            if self._callback_wrapper is not None:
+            if error:
+                PyErr_Restore(type, value, traceback)
+            if has_callback_wrapper:
                 release_unuran_callback(&callback)
 
     @cython.boundscheck(False)
@@ -500,24 +514,35 @@ cdef class Method:
             unur_gen *rng = self.rng
             size_t i
             size_t size = len(out)
+            PyObject *type
+            PyObject *value
+            PyObject *traceback
+
+        has_callback_wrapper = (self._callback_wrapper is not None)
+        error = 0
 
         _lock.acquire()
         try:
             self._messages.clear()
             unur_set_stream(self._messages.handle)
 
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 init_unuran_callback(&callback, self._callback_wrapper)
             for i in range(size):
                 out[i] = unur_sample_discr(rng)
                 if PyErr_Occurred():
+                    error = 1
                     return
             msg = self._messages.get()
             if msg:
                 raise UNURANError(msg)
         finally:
+            if error:
+                PyErr_Fetch(&type, &value, &traceback)
             _lock.release()
-            if self._callback_wrapper is not None:
+            if error:
+                PyErr_Restore(type, value, traceback)
+            if has_callback_wrapper:
                 release_unuran_callback(&callback)
 
     def rvs(self, size=None, random_state=None):
@@ -1452,6 +1477,11 @@ cdef class NumericalInversePolynomial(Method):
         cdef:
             size_t i
             ccallback_t callback
+            PyObject *type
+            PyObject *value
+            PyObject *traceback
+
+        error = 0
 
         _lock.acquire()
         try:
@@ -1461,11 +1491,16 @@ cdef class NumericalInversePolynomial(Method):
             for i in range(N):
                 out[i] = unur_pinv_eval_approxcdf(self.rng, x[i])
                 if PyErr_Occurred():
+                    error = 1
                     return
                 if out[i] == UNUR_INFINITY or out[i] == -UNUR_INFINITY:
                     raise UNURANError(self._messages.get())
         finally:
+            if error:
+                PyErr_Fetch(&type, &value, &traceback)
             _lock.release()
+            if error:
+                PyErr_Restore(type, value, traceback)
             release_unuran_callback(&callback)
 
     def cdf(self, x):

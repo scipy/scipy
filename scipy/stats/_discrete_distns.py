@@ -3,6 +3,8 @@
 #          SciPy Developers 2004-2011
 #
 from functools import partial
+import warnings
+
 from scipy import special
 from scipy.special import entr, logsumexp, betaln, gammaln as gamln, zeta
 from scipy._lib._util import _lazywhere, rng_integers
@@ -333,10 +335,17 @@ class nbinom_gen(rv_discrete):
         return _boost._nbinom_sf(k, n, p)
 
     def _isf(self, x, n, p):
-        return _boost._nbinom_isf(x, n, p)
+        with warnings.catch_warnings():
+            # See gh-14901
+            message = "overflow encountered in _nbinom_isf"
+            warnings.filterwarnings('ignore', message=message)
+            return _boost._nbinom_isf(x, n, p)
 
     def _ppf(self, q, n, p):
-        return _boost._nbinom_ppf(q, n, p)
+        with warnings.catch_warnings():
+            message = "overflow encountered in _nbinom_ppf"
+            warnings.filterwarnings('ignore', message=message)
+            return _boost._nbinom_ppf(q, n, p)
 
     def _stats(self, n, p):
         return(

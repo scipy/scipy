@@ -346,19 +346,6 @@ def test_precond_inverse(case):
             check_precond_inverse(solver, case)
 
 
-def test_gmres_basic():
-    A = np.vander(np.arange(10) + 1)[:, ::-1]
-    b = np.zeros(10)
-    b[0] = 1
-    np.linalg.solve(A, b)
-
-    with suppress_warnings() as sup:
-        sup.filter(DeprecationWarning, ".*called without specifying.*")
-        x_gm, err = gmres(A, b, restart=5, maxiter=1)
-
-    assert_allclose(x_gm[0], 0.359, rtol=1e-2)
-
-
 def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
     reentrant = [lgmres, minres, gcrotmk]
@@ -590,6 +577,17 @@ class TestQMR:
 
 
 class TestGMRES:
+    def test_basic(self):
+        A = np.vander(np.arange(10) + 1)[:, ::-1]
+        b = np.zeros(10)
+        b[0] = 1
+
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, ".*called without specifying.*")
+            x_gm, err = gmres(A, b, restart=5, maxiter=1)
+
+        assert_allclose(x_gm[0], 0.359, rtol=1e-2)
+
     def test_callback(self):
 
         def store_residual(r, rvec):

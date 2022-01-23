@@ -59,6 +59,7 @@ failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
 # Don't run the fit test on these:
 skip_fit = [
     'erlang',  # Subclass of gamma, generates a warning.
+    'genhyperbolic',  # too slow
 ]
 
 
@@ -139,3 +140,22 @@ def test_expon_fit():
     data = [0, 0, 0, 0, 2, 2, 2, 2]
     phat = stats.expon.fit(data, floc=0)
     assert_allclose(phat, [0, 1.0], atol=1e-3)
+
+
+@pytest.mark.parametrize("dist, params",
+                         [(stats.norm, (0.5, 2.5)),  # type: ignore[attr-defined] # noqa
+                          (stats.binom, (10, 0.3, 2))])  # type: ignore[attr-defined] # noqa
+def test_nnlf_and_related_methods(dist, params):
+    rng = np.random.default_rng(983459824)
+
+    if hasattr(dist, 'pdf'):
+        logpxf = dist.logpdf
+    else:
+        logpxf = dist.logpmf
+
+    x = dist.rvs(*params, size=100, random_state=rng)
+    ref = -logpxf(x, *params).sum()
+    res1 = dist.nnlf(params, x)
+    res2 = dist._penalized_nnlf(params, x)
+    assert_allclose(res1, ref)
+    assert_allclose(res2, ref)

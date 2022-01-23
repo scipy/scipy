@@ -17,6 +17,7 @@
 *.tmp
 *.vim
 tags
+.venv/
 .theia/
 .vscode/
 
@@ -77,6 +78,8 @@ setup.cfg
 .libs
 .eggs
 pip-wheel-metadata
+# install directory for Meson
+installdir/
 
 # Paver generated files #
 #########################
@@ -208,6 +211,7 @@ scipy/optimize/slsqp/_slsqpmodule.c
 scipy/optimize/_lsq/givens_elimination.c
 scipy/optimize/_trlib/_trlib.c
 scipy/optimize/tnc/moduleTNC.c
+scipy/optimize/tnc/_moduleTNC.c
 scipy/signal/_peak_finding_utils.c
 scipy/signal/_spectral.c
 scipy/signal/_spectral.cpp
@@ -283,6 +287,7 @@ scipy/stats/_mvnmodule.c
 scipy/stats/_statlibmodule.c
 scipy/stats/vonmises_cython.c
 scipy/stats/_stats.c
+scipy/stats/_levy_stable/levyst.c
 scipy/stats/_biasedurn.cxx
 scipy/stats/_biasedurn.pyx
 scipy/stats/biasedurn.cxx

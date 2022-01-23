@@ -36,6 +36,7 @@ from scipy import special
 import scipy.special._ufuncs as cephes
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
+from scipy.special import mathieu_odd_coef, mathieu_even_coef
 
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
@@ -3600,3 +3601,25 @@ def test_pseudo_huber():
     z = np.array(np.random.randn(10, 2).tolist() + [[0, 0.5], [0.5, 0]])
     w = np.vectorize(xfunc, otypes=[np.float64])(z[:,0], z[:,1])
     assert_func_equal(special.pseudo_huber, w, z, rtol=1e-13, atol=1e-13)
+
+
+def test_pseudo_huber_small_r():
+    delta = 1.0
+    r = 1e-18
+    y = special.pseudo_huber(delta, r)
+    # expected computed with mpmath:
+    #     import mpmath
+    #     mpmath.mp.dps = 200
+    #     r = mpmath.mpf(1e-18)
+    #     expected = float(mpmath.sqrt(1 + r**2) - 1)
+    expected = 5.0000000000000005e-37
+    assert_allclose(y, expected, rtol=1e-13)
+
+
+def test_runtime_warning():
+    with pytest.warns(RuntimeWarning,
+                      match=r'Too many predicted coefficients'):
+        mathieu_odd_coef(1000, 1000)
+    with pytest.warns(RuntimeWarning,
+                      match=r'Too many predicted coefficients'):
+        mathieu_even_coef(1000, 1000)

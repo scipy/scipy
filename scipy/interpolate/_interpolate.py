@@ -2644,7 +2644,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     >>> print(interpn(points, values, point))
     [12.63]
 
-    See also
+    See Also
     --------
     NearestNDInterpolator : Nearest neighbor interpolation on unstructured
                             data in N dimensions

@@ -110,7 +110,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     See `splev` for evaluation of the spline and its derivatives.
     The number of dimensions N must be smaller than 11.
 
-    The number of coefficients in the `c` array is ``k+1`` less then the number
+    The number of coefficients in the `c` array is ``k+1`` less than the number
     of knots, ``len(t)``. This is in contrast with `splrep`, which zero-pads
     the array of coefficients to have the same length as the array of knots.
     These additional coefficients are ignored by evaluation routines, `splev`
@@ -467,7 +467,7 @@ def sproot(tck, mest=10):
     Manipulating the tck-tuples directly is not recommended. In new code,
     prefer using the `BSpline` objects.
 
-    See also
+    See Also
     --------
     splprep, splrep, splint, spalde, splev
     bisplrep, bisplev

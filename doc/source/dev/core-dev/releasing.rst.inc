@@ -12,7 +12,7 @@ SciPy version:
 #. Build all release artifacts (sources, installers, docs).
 #. Upload the release artifacts.
 #. Announce the release.
-#. Port relevant changes to release notes and build scripts to master.
+#. Port relevant changes to release notes and build scripts to main.
 
 In this guide we attempt to describe in detail how to perform each of the above
 steps.  In addition to those steps, which have to be performed by the release
@@ -44,7 +44,7 @@ Bug-fix versions don't need a beta or RC, and can be done much quicker.
 Ideally the final release is identical to the last RC, however there may be
 minor difference - it's up to the release manager to judge the risk of that.
 Typically, if compiled code or complex pure Python code changes then a new RC
-is needed, while a simple bug-fix that's backported from master doesn't require
+is needed, while a simple bug-fix that's backported from main doesn't require
 a new RC.
 
 To propose a schedule, send a list with estimated dates for branching and
@@ -62,13 +62,13 @@ release notes.
 Maintenance branches are named ``maintenance/<major>.<minor>.x`` (e.g. 0.19.x).
 To create one, simply push a branch with the correct name to the scipy repo.
 Immediately after, push a commit where you increment the version number on the
-master branch and add release notes for that new version.  Send an email to
+main branch and add release notes for that new version.  Send an email to
 scipy-dev to let people know that you've done this.
 
 
 Updating upper bounds of dependencies
 -------------------------------------
-In master we do not set upper bounds, because we want to test new releases or
+In main we do not set upper bounds, because we want to test new releases or
 development versions of dependencies there. In a maintenance branch however,
 the goal is to be able to create releases that stay working for years. Hence
 correct upper bounds must be set. The following places must be updated after
@@ -244,4 +244,4 @@ and test against their own code) and report issues on Github or scipy-dev.
 
 After the final release is done, port relevant changes to release notes, build
 scripts, author name mapping in ``tools/authors.py`` and any other changes that
-were only made on the maintenance branch to master.
+were only made on the maintenance branch to main.

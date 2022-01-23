@@ -3,8 +3,7 @@
 
 import numpy as np
 
-import scipy.linalg
-import scipy.sparse.linalg
+import scipy.sparse
 from scipy.sparse.linalg import aslinearoperator
 from scipy.sparse._sputils import is_pydata_spmatrix
 
@@ -307,7 +306,8 @@ def _onenormest_matrix_power(A, p,
     #XXX Eventually turn this into an API function in the  _onenormest module,
     #XXX and remove its underscore,
     #XXX but wait until expm_multiply goes into scipy.
-    return scipy.sparse.linalg.onenormest(aslinearoperator(A) ** p)
+    from scipy.sparse.linalg._onenormest import onenormest
+    return onenormest(aslinearoperator(A) ** p)
 
 class LazyOperatorNormInfo:
     """

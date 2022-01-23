@@ -314,7 +314,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     ----------
     xi : array_like
         A sorted list of x-coordinates, of length N.
-    yi :  array_like
+    yi : array_like
         A 1-D array of real values. `yi`'s length along the interpolation
         axis must be equal to the length of `xi`. If N-D array, use axis
         parameter to select correct axis.
@@ -548,7 +548,7 @@ class CubicSpline(CubicHermiteSpline):
 
     Notes
     -----
-    Parameters `bc_type` and ``interpolate`` work independently, i.e. the
+    Parameters `bc_type` and ``extrapolate`` work independently, i.e. the
     former controls only construction of a spline, and the latter only
     evaluation.
 
