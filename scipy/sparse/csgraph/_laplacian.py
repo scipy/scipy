@@ -6,6 +6,7 @@ import numpy as np
 from scipy.sparse import isspmatrix
 from scipy.sparse.linalg import LinearOperator
 
+
 ###############################################################################
 # Graph laplacian
 def laplacian(
@@ -68,7 +69,8 @@ def laplacian(
     lap : ndarray, or sparse matrix, or `LinearOperator`
         The N x N Laplacian of csgraph. It will be a NumPy array (dense)
         if the input was dense, or a sparse matrix otherwise, or
-        the format of a function or `LinearOperator` if `form` is `function` or `lo`.
+        the format of a function or `LinearOperator` if
+        `form` equals `function` or `lo`, correspondingly.
     diag : ndarray, optional
         The length-N main diagonal of the Laplacian matrix.
         For the normalized Laplacian, this is the array of square roots
@@ -179,7 +181,7 @@ def _setdiag_dense(m, d):
 
 
 def _md_normed(m, d):
-    return lambda v: v - d * (m @ v) * d
+    return lambda v: v - d * (m @ v) * d[np.newaxis, :]
 
 
 def _md(m, d):
