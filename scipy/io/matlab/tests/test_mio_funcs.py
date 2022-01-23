@@ -5,7 +5,7 @@ of mat file.
 import os.path
 import io
 
-from scipy.io.matlab.mio5 import MatFile5Reader
+from scipy.io.matlab._mio5 import MatFile5Reader
 
 test_data_path = os.path.join(os.path.dirname(__file__), 'data')
 

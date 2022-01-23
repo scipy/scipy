@@ -10,35 +10,32 @@ import os
 import warnings
 from collections import namedtuple
 from itertools import product
-from copy import deepcopy
 
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_array_equal, assert_approx_equal,
                            assert_allclose, assert_warns, suppress_warnings,
-                           assert_string_equal)
+                           assert_array_less)
 import pytest
 from pytest import raises as assert_raises
 import numpy.ma.testutils as mat
 from numpy import array, arange, float32, float64, power
 import numpy as np
 
-from scipy._lib._util import check_random_state
-from scipy import special
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
-import scipy.stats.mstats_basic as mstats_basic
+import scipy.stats._mstats_basic as mstats_basic
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
 from .common_tests import check_named_results
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
-from scipy.stats._distr_params import distcont
 from numpy.lib import NumpyVersion
-from scipy.stats.stats import (_broadcast_concatenate,
-                               AlexanderGovernConstantInputWarning)
-from scipy.stats.stats import _calc_t_stat, _data_partitions
+from scipy.stats._axis_nan_policy import _broadcast_concatenate
+from scipy.stats._stats_py import (_calc_t_stat, _data_partitions,
+                            AlexanderGovernConstantInputWarning)
+
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
     and headings found in the STATISTICS QUIZ of Leland Wilkinson.  These are
@@ -76,6 +73,45 @@ class TestTrimmedStats:
         y1 = stats.tmean(X, limits=(2, 8), inclusive=(False, False))
         y2 = stats.tmean(X, limits=None)
         assert_approx_equal(y1, y2, significant=self.dprec)
+
+        x_2d = arange(63, dtype=float64).reshape(9, 7)
+        y = stats.tmean(x_2d, axis=None)
+        assert_approx_equal(y, x_2d.mean(), significant=self.dprec)
+
+        y = stats.tmean(x_2d, axis=0)
+        assert_array_almost_equal(y, x_2d.mean(axis=0), decimal=8)
+
+        y = stats.tmean(x_2d, axis=1)
+        assert_array_almost_equal(y, x_2d.mean(axis=1), decimal=8)
+
+        y = stats.tmean(x_2d, limits=(2, 61), axis=None)
+        assert_approx_equal(y, 31.5, significant=self.dprec)
+
+        y = stats.tmean(x_2d, limits=(2, 21), axis=0)
+        y_true = [14, 11.5, 9, 10, 11, 12, 13]
+        assert_array_almost_equal(y, y_true, decimal=8)
+
+        y = stats.tmean(x_2d, limits=(2, 21), inclusive=(True, False), axis=0)
+        y_true = [10.5, 11.5, 9, 10, 11, 12, 13]
+        assert_array_almost_equal(y, y_true, decimal=8)
+
+        x_2d_with_nan = np.array(x_2d)
+        x_2d_with_nan[-1, -3:] = np.nan
+        y = stats.tmean(x_2d_with_nan, limits=(1, 13), axis=0)
+        y_true = [7, 4.5, 5.5, 6.5, np.nan, np.nan, np.nan]
+        assert_array_almost_equal(y, y_true, decimal=8)
+
+        with suppress_warnings() as sup:
+            sup.record(RuntimeWarning, "Mean of empty slice")
+
+            y = stats.tmean(x_2d, limits=(2, 21), axis=1)
+            y_true = [4, 10, 17, 21, np.nan, np.nan, np.nan, np.nan, np.nan]
+            assert_array_almost_equal(y, y_true, decimal=8)
+
+            y = stats.tmean(x_2d, limits=(2, 21),
+                            inclusive=(False, True), axis=1)
+            y_true = [4.5, 10, 17, 21, np.nan, np.nan, np.nan, np.nan, np.nan]
+            assert_array_almost_equal(y, y_true, decimal=8)
 
     def test_tvar(self):
         y = stats.tvar(X, limits=(2, 8), inclusive=(True, True))
@@ -1862,6 +1898,12 @@ class TestRegression:
         assert_array_equal(result, (np.nan,)*5)
         assert_equal(result.intercept_stderr, np.nan)
 
+    def test_identical_x(self):
+        x = np.zeros(10)
+        y = np.random.random(10)
+        msg = "Cannot calculate a linear regression"
+        with assert_raises(ValueError, match=msg):
+            stats.linregress(x, y)
 
 def test_theilslopes():
     # Basic slope test.
@@ -2124,6 +2166,14 @@ class TestMode:
         vals = stats.mode(arr, axis=1)
         assert_equal(vals[0], np.array([[10], [10], [20], [30], [30]]))
         assert_equal(vals[1], np.array([[2], [4], [3], [4], [3]]))
+
+    @pytest.mark.parametrize('axis', np.arange(-4, 0))
+    def test_negative_axes_gh_15375(self, axis):
+        np.random.seed(984213899)
+        a = np.random.rand(10, 11, 12, 13)
+        res0 = stats.mode(a, axis=a.ndim+axis)
+        res1 = stats.mode(a, axis=axis)
+        np.testing.assert_array_equal(res0, res1)
 
     def test_strings(self):
         data1 = ['rain', 'showers', 'showers']
@@ -2450,6 +2500,20 @@ class TestZmapZscore:
         z = stats.zscore(x)
         assert_equal(z, x)
 
+    def test_gzscore_normal_array(self):
+        z = stats.gzscore([1, 2, 3, 4])
+        desired = ([-1.526072095151, -0.194700599824, 0.584101799472,
+                    1.136670895503])
+        assert_allclose(desired, z)
+
+    def test_gzscore_masked_array(self):
+        x = np.array([1, 2, -1, 3, 4])
+        mx = np.ma.masked_array(x, mask=[0, 0, 1, 0, 0])
+        z = stats.gzscore(mx)
+        desired = ([-1.526072095151, -0.194700599824, np.inf, 0.584101799472,
+                    1.136670895503])
+        assert_allclose(desired, z)
+
 
 class TestMedianAbsDeviation:
     def setup_class(self):
@@ -2663,7 +2727,7 @@ class TestIQR:
         q = stats.iqr(o)
 
         assert_equal(stats.iqr(x, axis=(0, 1)), q)
-        x = np.rollaxis(x, -1, 0)               # x.shape = (10, 71, 23)
+        x = np.moveaxis(x, -1, 0)               # x.shape = (10, 71, 23)
         assert_equal(stats.iqr(x, axis=(2, 1)), q)
         x = x.swapaxes(0, 1)                    # x.shape = (71, 10, 23)
         assert_equal(stats.iqr(x, axis=(0, 2)), q)
@@ -2732,6 +2796,14 @@ class TestIQR:
         assert_equal(stats.iqr(x, interpolation='midpoint'), 2)
         assert_equal(stats.iqr(x, rng=(25, 80), interpolation='midpoint'), 2.5)
         assert_equal(stats.iqr(y, interpolation='midpoint'), 2)
+
+        # Check all method= values new in numpy 1.22.0 are accepted
+        if NumpyVersion(np.__version__) >= '1.22.0':
+            for method in ('inverted_cdf', 'averaged_inverted_cdf',
+                           'closest_observation', 'interpolated_inverted_cdf',
+                           'hazen', 'weibull', 'median_unbiased',
+                           'normal_unbiased'):
+                stats.iqr(y, interpolation=method)
 
         assert_raises(ValueError, stats.iqr, x, interpolation='foobar')
 
@@ -2914,39 +2986,6 @@ class TestMoments:
         a[1, 0] = np.nan
         mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
-
-    def test_variation(self):
-        # variation = samplestd / mean
-        y = stats.variation(self.scalar_testcase)
-        assert_approx_equal(y, 0.0)
-        y = stats.variation(self.testcase)
-        assert_approx_equal(y, 0.44721359549996, 10)
-
-        x = np.arange(10.)
-        x[9] = np.nan
-        assert_equal(stats.variation(x), np.nan)
-        assert_almost_equal(stats.variation(x, nan_policy='omit'),
-                            0.6454972243679028)
-        assert_raises(ValueError, stats.variation, x, nan_policy='raise')
-        assert_raises(ValueError, stats.variation, x, nan_policy='foobar')
-
-    def test_variation_propagate_nan(self):
-        # Check that the shape of the result is the same for inputs
-        # with and without nans, cf gh-5817
-        a = np.arange(8).reshape(2, -1).astype(float)
-        a[1, 0] = np.nan
-        vv = stats.variation(a, axis=1, nan_policy="propagate")
-        np.testing.assert_allclose(vv, [0.7453559924999299, np.nan], atol=1e-15)
-
-    def test_variation_ddof(self):
-        # test variation with delta degrees of freedom
-        # regression test for gh-13341
-        a = array([1, 2, 3, 4, 5])
-        nan_a = array([1, 2, 3, np.nan, 4, 5, np.nan])
-        y = stats.variation(a, ddof=1)
-        nan_y = stats.variation(nan_a, nan_policy="omit", ddof=1)
-        assert_approx_equal(y, 0.5270462766947299)
-        np.testing.assert_equal(y, nan_y)
 
     def test_skewness(self):
         # Scalar test case
@@ -3875,6 +3914,7 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='asymp')
         self._testOne(x, y, 'two-sided', 0.11292880151060758, 2.7755575615628914e-15, mode='exact')
 
+    @pytest.mark.xslow
     def test_gh11184_bigger(self):
         # 10000, 10001, exact two-sided
         np.random.seed(123456)
@@ -3884,6 +3924,18 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'two-sided', 0.10597913208679133, 2.7755575615628914e-15, mode='exact')
         self._testOne(x, y, 'greater', 0.10597913208679133, 2.7947433906389253e-41, mode='asymp')
         self._testOne(x, y, 'less', 0.09658002199780022, 2.7947433906389253e-41, mode='asymp')
+
+    @pytest.mark.xslow
+    def test_gh12999(self):
+        np.random.seed(123456)
+        for x in range(1000, 12000, 1000):
+            vals1 = np.random.normal(size=(x))
+            vals2 = np.random.normal(size=(x + 10), loc=0.5)
+            exact = stats.ks_2samp(vals1, vals2, mode='exact').pvalue
+            asymp = stats.ks_2samp(vals1, vals2, mode='asymp').pvalue
+            # these two p-values should be in line with each other
+            assert_array_less(exact, 3 * asymp)
+            assert_array_less(asymp, 3 * exact)
 
     @pytest.mark.slow
     def testLargeBoth(self):
@@ -3912,9 +3964,12 @@ class TestKSTwoSamples:
     @pytest.mark.slow
     def test_some_code_paths(self):
         # Check that some code paths are executed
-        from scipy.stats.stats import _count_paths_outside_method, _compute_prob_inside_method
+        from scipy.stats._stats_py import (
+            _count_paths_outside_method,
+            _compute_outer_prob_inside_method
+        )
 
-        _compute_prob_inside_method(1, 1, 1, 1)
+        _compute_outer_prob_inside_method(1, 1, 1, 1)
         _count_paths_outside_method(1000, 1, 1, 1001)
 
         assert_raises(FloatingPointError, _count_paths_outside_method, 1100, 1099, 1, 1)
@@ -3977,7 +4032,8 @@ def test_ttest_rel():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t, p = stats.ttest_rel(np.rollaxis(rvs1_3D, 2), np.rollaxis(rvs2_3D, 2),
+    t, p = stats.ttest_rel(np.moveaxis(rvs1_3D, 2, 0),
+                           np.moveaxis(rvs2_3D, 2, 0),
                            axis=2)
     assert_array_almost_equal(np.abs(t), tr)
     assert_array_almost_equal(np.abs(p), pr)
@@ -4074,7 +4130,7 @@ def test_ttest_rel_empty_1d_returns_nan():
     # Two empty inputs should return a Ttest_relResult containing nan
     # for both values.
     result = stats.ttest_rel([], [])
-    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.Ttest_relResult)
     assert_equal(result, (np.nan, np.nan))
 
 
@@ -4087,7 +4143,7 @@ def test_ttest_rel_axis_size_zero(b, expected_shape):
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
     result = stats.ttest_rel(a, b, axis=-1)
-    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.Ttest_relResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
     assert_equal(result.pvalue, expected_value)
@@ -4101,7 +4157,7 @@ def test_ttest_rel_nonaxis_size_zero():
     a = np.empty((1, 8, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_rel(a, b, axis=1)
-    assert isinstance(result, stats.stats.Ttest_relResult)
+    assert isinstance(result, stats._stats_py.Ttest_relResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -4159,7 +4215,8 @@ def test_ttest_ind():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t, p = stats.ttest_ind(np.rollaxis(rvs1_3D, 2), np.rollaxis(rvs2_3D, 2),
+    t, p = stats.ttest_ind(np.moveaxis(rvs1_3D, 2, 0),
+                           np.moveaxis(rvs2_3D, 2, 0),
                            axis=2)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
@@ -4786,13 +4843,14 @@ def test_ttest_ind_with_uneq_var():
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (2, 3))
 
-    t,p = stats.ttest_ind(np.rollaxis(rvs1_3D,2), np.rollaxis(rvs2_3D,2),
-                                   axis=2, equal_var=False)
+    t, p = stats.ttest_ind(np.moveaxis(rvs1_3D, 2, 0),
+                           np.moveaxis(rvs2_3D, 2, 0),
+                           axis=2, equal_var=False)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
     assert_equal(t.shape, (3, 2))
-    args = _desc_stats(np.rollaxis(rvs1_3D, 2),
-                       np.rollaxis(rvs2_3D, 2), axis=2)
+    args = _desc_stats(np.moveaxis(rvs1_3D, 2, 0),
+                       np.moveaxis(rvs2_3D, 2, 0), axis=2)
     t, p = stats.ttest_ind_from_stats(*args, equal_var=False)
     assert_array_almost_equal(np.abs(t), np.abs(tr))
     assert_array_almost_equal(np.abs(p), pr)
@@ -4837,7 +4895,7 @@ def test_ttest_ind_empty_1d_returns_nan():
     # Two empty inputs should return a Ttest_indResult containing nan
     # for both values.
     result = stats.ttest_ind([], [])
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     assert_equal(result, (np.nan, np.nan))
 
 
@@ -4850,7 +4908,7 @@ def test_ttest_ind_axis_size_zero(b, expected_shape):
     # given by the broadcast nonaxis dimensions.
     a = np.empty((3, 1, 0))
     result = stats.ttest_ind(a, b, axis=-1)
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     expected_value = np.full(expected_shape, fill_value=np.nan)
     assert_equal(result.statistic, expected_value)
     assert_equal(result.pvalue, expected_value)
@@ -4864,7 +4922,7 @@ def test_ttest_ind_nonaxis_size_zero():
     a = np.empty((1, 8, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_ind(a, b, axis=1)
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -4878,7 +4936,7 @@ def test_ttest_ind_nonaxis_size_zero_different_lengths():
     a = np.empty((1, 7, 0))
     b = np.empty((5, 8, 1))
     result = stats.ttest_ind(a, b, axis=1)
-    assert isinstance(result, stats.stats.Ttest_indResult)
+    assert isinstance(result, stats._stats_py.Ttest_indResult)
     assert_equal(result.statistic.shape, (5, 0))
     assert_equal(result.pvalue.shape, (5, 0))
 
@@ -5444,14 +5502,17 @@ def test_obrientransform():
     assert_array_almost_equal(result[0], expected, decimal=4)
 
 
-def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7, weights=None):
+def check_equal_gmean(array_like, desired, axis=None, dtype=None, rtol=1e-7,
+                      weights=None):
     # Note this doesn't test when axis is not specified
     x = stats.gmean(array_like, axis=axis, dtype=dtype, weights=weights)
     assert_allclose(x, desired, rtol=rtol)
     assert_equal(x.dtype, dtype)
 
-def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7):
-    x = stats.hmean(array_like, axis=axis, dtype=dtype)
+
+def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7,
+                      weights=None):
+    x = stats.hmean(array_like, axis=axis, dtype=dtype, weights=weights)
     assert_allclose(x, desired, rtol=rtol)
     assert_equal(x.dtype, dtype)
 
@@ -5517,17 +5578,37 @@ class TestHarMean:
         desired = np.array([0.0, 63.03939962, 103.80078637])
         assert_allclose(stats.hmean(a, axis=1), desired)
 
-    def test_2d_matrix_axis0(self):
-        #  Test a 2d list with axis=0
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = matrix([[22.88135593, 39.13043478, 52.90076336, 65.45454545]])
-        check_equal_hmean(matrix(a), desired, axis=0)
+    def test_weights_1d_list(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        weights = [10, 5, 3]
+        a = [2, 10, 6]
+        desired = 3
+        check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
 
-    def test_2d_matrix_axis1(self):
-        #  Test a 2d list with axis=1
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = matrix([[19.2, 63.03939962, 103.80078637]]).T
-        check_equal_hmean(matrix(a), desired, axis=1)
+    def test_weights_2d_array_axis0(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        a = np.array([[2, 5], [10, 5], [6, 5]])
+        weights = np.array([[10, 1], [5, 1], [3, 1]])
+        desired = np.array([3, 5])
+        check_equal_hmean(a, desired, axis=0, weights=weights, rtol=1e-5)
+
+    def test_weights_2d_array_axis1(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        a = np.array([[2, 10, 6], [7, 7, 7]])
+        weights = np.array([[10, 5, 3], [1, 1, 1]])
+        desired = np.array([3, 7])
+        check_equal_hmean(a, desired, axis=1, weights=weights, rtol=1e-5)
+
+    def test_weights_masked_1d_array(self):
+        # Desired result from:
+        # https://www.hackmath.net/en/math-problem/35871
+        a = np.array([2, 10, 6, 42])
+        weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
+        desired = 3
+        check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
 
 
 class TestGeoMean:
@@ -5584,31 +5665,6 @@ class TestGeoMean:
         v = power(1 * 2 * 3 * 4, 1. / 4.)
         desired = array([v, v, v])
         check_equal_gmean(a, desired, axis=1, rtol=1e-14)
-
-    def test_2d_matrix_axis0(self):
-        #  Test a 2d list with axis=0
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = matrix([[35.56893304, 49.32424149, 61.3579244, 72.68482371]])
-        check_equal_gmean(matrix(a), desired, axis=0)
-
-        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        desired = matrix([1, 2, 3, 4])
-        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
-
-        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        desired = matrix(stats.gmean(a, axis=0))
-        check_equal_gmean(matrix(a), desired, axis=0, rtol=1e-14)
-
-    def test_2d_matrix_axis1(self):
-        #  Test a 2d list with axis=1
-        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
-        desired = matrix([[22.13363839, 64.02171746, 104.40086817]]).T
-        check_equal_gmean(matrix(a), desired, axis=1)
-
-        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
-        v = power(1 * 2 * 3 * 4, 1. / 4.)
-        desired = matrix([[v], [v], [v]])
-        check_equal_gmean(matrix(a), desired, axis=1, rtol=1e-14)
 
     def test_large_values(self):
         a = array([1e100, 1e200, 1e300])
@@ -5946,7 +6002,7 @@ class TestTrim:
         a = np.random.randint(20, size=(5, 6, 4, 7))
         for axis in [0, 1, 2, 3, -1]:
             res1 = stats.trim_mean(a, 2/6., axis=axis)
-            res2 = stats.trim_mean(np.rollaxis(a, axis), 2/6.)
+            res2 = stats.trim_mean(np.moveaxis(a, axis, 0), 2/6.)
             assert_equal(res1, res2)
 
         res1 = stats.trim_mean(a, 2/6., axis=None)
@@ -7116,7 +7172,7 @@ class TestMGCStat:
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_twosamp(self):
         np.random.seed(12345678)
 
@@ -7172,188 +7228,6 @@ class TestMGCStat:
                                                                random_state=1)
         assert_approx_equal(stat_dist, 0.163, significant=1)
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
-
-
-class TestNumericalInverseHermite:
-    @pytest.mark.parametrize(("distname", "shapes"), distcont)
-    def test_basic(self, distname, shapes):
-        slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
-        fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
-                      'norminvgauss', 'genhyperbolic', 'studentized_range'}
-
-        if distname in slow_dists:
-            pytest.skip("Distribution is too slow")
-        if distname in fail_dists:
-            # specific reasons documented in gh-13319
-            # https://github.com/scipy/scipy/pull/13319#discussion_r626188955
-            pytest.xfail("Fails - usually due to inaccurate CDF/PDF")
-
-        np.random.seed(0)
-
-        dist = getattr(stats, distname)(*shapes)
-
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "overflow encountered")
-            sup.filter(RuntimeWarning, "divide by zero")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            fni = stats.NumericalInverseHermite(dist)
-
-        x = np.random.rand(10)
-        p_tol = np.max(np.abs(dist.ppf(x)-fni.ppf(x))/np.abs(dist.ppf(x)))
-        u_tol = np.max(np.abs(dist.cdf(fni.ppf(x)) - x))
-
-        assert p_tol < 1e-8
-        assert u_tol < 1e-12
-
-    def test_input_validation(self):
-        match = "`dist` must have methods `pdf`, `cdf`, and `ppf`"
-        with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite("norm")
-
-        match = "could not convert string to float"
-        with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite(stats.norm(), tol='ekki')
-
-        match = "`max_intervals' must be..."
-        with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite(stats.norm(), max_intervals=-1)
-
-        match = "`qmc_engine` must be an instance of..."
-        with pytest.raises(ValueError, match=match):
-            fni = stats.NumericalInverseHermite(stats.norm())
-            fni.qrvs(qmc_engine=0)
-
-        if NumpyVersion(np.__version__) >= '1.18.0':
-            # issues with QMCEngines and old NumPy
-            fni = stats.NumericalInverseHermite(stats.norm())
-
-            match = "`d` must be consistent with dimension of `qmc_engine`."
-            with pytest.raises(ValueError, match=match):
-                fni.qrvs(d=3, qmc_engine=stats.qmc.Halton(2))
-
-    rngs = [None, 0, np.random.RandomState(0)]
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        rngs.append(np.random.default_rng(0))  # type: ignore
-    sizes = [(None, tuple()), (8, (8,)), ((4, 5, 6), (4, 5, 6))]
-
-    @pytest.mark.parametrize('rng', rngs)
-    @pytest.mark.parametrize('size_in, size_out', sizes)
-    def test_RVS(self, rng, size_in, size_out):
-        dist = stats.norm()
-        fni = stats.NumericalInverseHermite(dist)
-
-        rng2 = deepcopy(rng)
-        rvs = fni.rvs(size=size_in, random_state=rng)
-        assert(rvs.shape == size_out)
-
-        if rng2 is not None:
-            rng2 = check_random_state(rng2)
-            uniform = rng2.uniform(size=size_in)
-            rvs2 = stats.norm.ppf(uniform)
-            assert_allclose(rvs, rvs2)
-
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(3, seed=0)]
-    else:
-        qrngs = []
-    # `size=None` should not add anything to the shape, `size=1` should
-    sizes = [(None, tuple()), (1, (1,)), (4, (4,)),
-             ((4,), (4,)), ((2, 4), (2, 4))]  # type: ignore
-    # Neither `d=None` nor `d=1` should add anything to the shape
-    ds = [(None, tuple()), (1, tuple()), (3, (3,))]
-
-    @pytest.mark.parametrize('qrng', qrngs)
-    @pytest.mark.parametrize('size_in, size_out', sizes)
-    @pytest.mark.parametrize('d_in, d_out', ds)
-    def test_QRVS(self, qrng, size_in, size_out, d_in, d_out):
-        dist = stats.norm()
-        fni = stats.NumericalInverseHermite(dist)
-
-        # If d and qrng.d are inconsistent, an error is raised
-        if d_in is not None and qrng is not None and qrng.d != d_in:
-            match = "`d` must be consistent with dimension of `qmc_engine`."
-            with pytest.raises(ValueError, match=match):
-                fni.qrvs(size_in, d=d_in, qmc_engine=qrng)
-            return
-
-        # Sometimes d is really determined by qrng
-        if d_in is None and qrng is not None and qrng.d != 1:
-            d_out = (qrng.d,)
-
-        shape_expected = size_out + d_out
-
-        qrng2 = deepcopy(qrng)
-        qrvs = fni.qrvs(size=size_in, d=d_in, qmc_engine=qrng)
-        assert(qrvs.shape == shape_expected)
-
-        if qrng2 is not None:
-            uniform = qrng2.random(np.prod(size_in) or 1)
-            qrvs2 = stats.norm.ppf(uniform).reshape(shape_expected)
-            assert_allclose(qrvs, qrvs2, atol=1e-12)
-
-    def test_QRVS_size_tuple(self):
-        # QMCEngine samples are always of shape (n, d). When `size` is a tuple,
-        # we set `n = prod(size)` in the call to qmc_engine.random, transform
-        # the sample, and reshape it to the final dimensions. When we reshape,
-        # we need to be careful, because the _columns_ of the sample returned
-        # by a QMCEngine are "independent"-ish, but the elements within the
-        # columns are not. We need to make sure that this doesn't get mixed up
-        # by reshaping: qrvs[..., i] should remain "independent"-ish of
-        # qrvs[..., i+1], but the elements within qrvs[..., i] should be
-        # transformed from the same low-discrepancy sequence.
-        if NumpyVersion(np.__version__) <= '1.18.0':
-            pytest.skip("QMC doesn't play well with old NumPy")
-
-        dist = stats.norm()
-        fni = stats.NumericalInverseHermite(dist)
-
-        size = (3, 4)
-        d = 5
-        qrng = stats.qmc.Halton(d, seed=0)
-        qrng2 = stats.qmc.Halton(d, seed=0)
-
-        uniform = qrng2.random(np.prod(size))
-
-        qrvs = fni.qrvs(size=size, d=d, qmc_engine=qrng)
-        qrvs2 = stats.norm.ppf(uniform)
-
-        for i in range(d):
-            sample = qrvs[..., i]
-            sample2 = qrvs2[:, i].reshape(size)
-            assert_allclose(sample, sample2, atol=1e-12)
-
-    def test_inaccurate_CDF(self):
-        # CDF function with inaccurate tail cannot be inverted; see gh-13319
-        # https://github.com/scipy/scipy/pull/13319#discussion_r626188955
-        shapes = (2.3098496451481823, 0.6268795430096368)
-        match = "The interpolating spline could not be created."
-
-        # fails with default tol
-        with pytest.raises(ValueError, match=match):
-            stats.NumericalInverseHermite(stats.beta(*shapes))
-
-        # no error with coarser tol
-        stats.NumericalInverseHermite(stats.beta(*shapes), tol=1e-10)
-
-    def test_custom_distribution(self):
-        class MyNormal:
-
-            def pdf(self, x):
-                return 1/np.sqrt(2*np.pi) * np.exp(-x**2 / 2)
-
-            def cdf(self, x):
-                return special.ndtr(x)
-
-            def ppf(self, x):
-                return special.ndtri(x)
-
-        dist1 = MyNormal()
-        fni1 = stats.NumericalInverseHermite(dist1)
-
-        dist2 = stats.norm()
-        fni2 = stats.NumericalInverseHermite(dist2)
-
-        assert_allclose(fni1.rvs(random_state=0), fni2.rvs(random_state=0))
 
 
 class TestPageTrendTest:

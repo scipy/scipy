@@ -1,11 +1,11 @@
 name: Build Base Docker Image
 
-# Triggered only if environment.yml in master changes
+# Triggered only if environment.yml in main changes
 # Pushes a Docker image with all dev dependencies to Docker Hub
 on:
   push:
     branches:
-      - master
+      - main
     paths:
       - 'environment.yml'
 

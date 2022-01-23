@@ -9,7 +9,7 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('tests')
     config.add_subpackage('matlab')
     config.add_subpackage('arff')
-    config.add_subpackage('harwell_boeing')
+    config.add_subpackage('_harwell_boeing')
     return config
 
 

@@ -9,7 +9,7 @@ from scipy import signal
 from scipy.fft import fftfreq
 from scipy.signal import (periodogram, welch, lombscargle, csd, coherence,
                           spectrogram, stft, istft, check_COLA, check_NOLA)
-from scipy.signal.spectral import _spectral_helper
+from scipy.signal._spectral_py import _spectral_helper
 
 
 class TestPeriodogram:
@@ -329,7 +329,7 @@ class TestWelch:
     def test_detrend_external_nd_0(self):
         x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((2,1,10))
-        x = np.rollaxis(x, 2, 0)
+        x = np.moveaxis(x, 2, 0)
         f, p = welch(x, nperseg=10, axis=0,
                      detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)
@@ -669,7 +669,7 @@ class TestCSD:
     def test_detrend_external_nd_0(self):
         x = np.arange(20, dtype=np.float64) + 0.04
         x = x.reshape((2,1,10))
-        x = np.rollaxis(x, 2, 0)
+        x = np.moveaxis(x, 2, 0)
         f, p = csd(x, x, nperseg=10, axis=0,
                    detrend=lambda seg: signal.detrend(seg, axis=0, type='l'))
         assert_allclose(p, np.zeros_like(p), atol=1e-15)

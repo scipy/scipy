@@ -14,6 +14,8 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
+np.import_array()
+
 __all__ = ['sort_vertices_of_regions']
 
 # array-filling placeholder that can never occur

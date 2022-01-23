@@ -113,6 +113,9 @@ class ScalarFunction:
         self.g_updated = False
         self.H_updated = False
 
+        self._lowest_x = None
+        self._lowest_f = np.inf
+
         finite_diff_options = {}
         if grad in FD_METHODS:
             finite_diff_options["method"] = grad
@@ -141,6 +144,11 @@ class ScalarFunction:
                         "The user-provided objective function "
                         "must return a scalar value."
                     ) from e
+
+            if fx < self._lowest_f:
+                self._lowest_x = x
+                self._lowest_f = fx
+
             return fx
 
         def update_fun():

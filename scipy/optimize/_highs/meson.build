@@ -1,0 +1,315 @@
+highs_define_macros = [
+  '-DCMAKE_BUILD_TYPE="RELEASE"',
+  '-DHiGHSRELEASE',
+  '-DIPX_ON="ON"',
+  '-DHIGHS_GITHASH="n/a"',
+  '-DHIGHS_COMPILATION_DATE="2021-07-09"',  # cannot generate dynamically
+  '-DHIGHS_VERSION_MAJOR=1',  # don't care about this, look at CMakelists.txt
+  '-DHIGHS_VERSION_MINOR=0',
+  '-DHIGHS_VERSION_PATCH=0',
+  '-DHIGHS_DIR=' + meson.current_source_dir() / '..' / '..' / '_lib' / 'highs',
+  '-UOPENMP',
+  '-UEXT_PRESOLVE',
+  '-USCIP_DEV',
+  '-UHiGHSDEV',
+  '-UOSI_FOUND'
+]
+
+basiclu_lib = static_library('basiclu',
+  [
+    '../../_lib/highs/src/ipm/basiclu/src/basiclu_factorize.c',
+    '../../_lib/highs/src/ipm/basiclu/src/basiclu_get_factors.c',
+    '../../_lib/highs/src/ipm/basiclu/src/basiclu_initialize.c',
+    '../../_lib/highs/src/ipm/basiclu/src/basiclu_object.c',
+    '../../_lib/highs/src/ipm/basiclu/src/basiclu_solve_dense.c',
+    '../../_lib/highs/src/ipm/basiclu/src/basiclu_solve_for_update.c',
+    '../../_lib/highs/src/ipm/basiclu/src/basiclu_solve_sparse.c',
+    '../../_lib/highs/src/ipm/basiclu/src/basiclu_update.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_build_factors.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_condest.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_dfs.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_factorize_bump.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_file.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_garbage_perm.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_initialize.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_internal.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_markowitz.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_matrix_norm.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_pivot.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_residual_test.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_setup_bump.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_singletons.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_solve_dense.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_solve_for_update.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_solve_sparse.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_solve_symbolic.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_solve_triangular.c',
+    '../../_lib/highs/src/ipm/basiclu/src/lu_update.c'
+  ],
+  include_directories: [
+    'src',
+    '../../_lib/highs/src',
+    '../../_lib/highs/src/ipm/basiclu/include'
+  ],
+  c_args: [
+    '-Wno-unused-variable', highs_define_macros
+  ]
+)
+
+# Deal with non-portable (or GCC-specific) compiler flags
+if cc.has_argument('-Wno-unused-but-set-variable')
+  Wno_unused_but_set = ['-Wno-unused-but-set-variable']
+else
+  Wno_unused_but_set = []
+endif
+
+highs_flags = [
+  '-Wno-sign-compare',
+  '-Wno-switch',
+  '-Wno-non-virtual-dtor',
+]
+if cpp.has_argument('-Wno-format-truncation')
+  highs_flags += '-Wno-format-truncation'
+endif
+if cpp.has_argument('-Wno-class-memaccess')  # added in GCC 8
+  highs_flags += '-Wno-class-memaccess'
+endif
+
+ipx_lib = static_library('ipx',
+  [
+    '../../_lib/highs/src/ipm/ipx/src/basiclu_kernel.cc',
+    '../../_lib/highs/src/ipm/ipx/src/basiclu_wrapper.cc',
+    '../../_lib/highs/src/ipm/ipx/src/basis.cc',
+    '../../_lib/highs/src/ipm/ipx/src/conjugate_residuals.cc',
+    '../../_lib/highs/src/ipm/ipx/src/control.cc',
+    '../../_lib/highs/src/ipm/ipx/src/crossover.cc',
+    '../../_lib/highs/src/ipm/ipx/src/diagonal_precond.cc',
+    '../../_lib/highs/src/ipm/ipx/src/forrest_tomlin.cc',
+    '../../_lib/highs/src/ipm/ipx/src/guess_basis.cc',
+    '../../_lib/highs/src/ipm/ipx/src/indexed_vector.cc',
+    '../../_lib/highs/src/ipm/ipx/src/info.cc',
+    '../../_lib/highs/src/ipm/ipx/src/ipm.cc',
+    '../../_lib/highs/src/ipm/ipx/src/ipx_c.cc',
+    '../../_lib/highs/src/ipm/ipx/src/iterate.cc',
+    '../../_lib/highs/src/ipm/ipx/src/kkt_solver.cc',
+    '../../_lib/highs/src/ipm/ipx/src/kkt_solver_basis.cc',
+    '../../_lib/highs/src/ipm/ipx/src/kkt_solver_diag.cc',
+    '../../_lib/highs/src/ipm/ipx/src/linear_operator.cc',
+    '../../_lib/highs/src/ipm/ipx/src/lp_solver.cc',
+    '../../_lib/highs/src/ipm/ipx/src/lu_factorization.cc',
+    '../../_lib/highs/src/ipm/ipx/src/lu_update.cc',
+    '../../_lib/highs/src/ipm/ipx/src/maxvolume.cc',
+    '../../_lib/highs/src/ipm/ipx/src/model.cc',
+    '../../_lib/highs/src/ipm/ipx/src/normal_matrix.cc',
+    '../../_lib/highs/src/ipm/ipx/src/sparse_matrix.cc',
+    '../../_lib/highs/src/ipm/ipx/src/sparse_utils.cc',
+    '../../_lib/highs/src/ipm/ipx/src/splitted_normal_matrix.cc',
+    '../../_lib/highs/src/ipm/ipx/src/starting_basis.cc',
+    '../../_lib/highs/src/ipm/ipx/src/symbolic_invert.cc',
+    '../../_lib/highs/src/ipm/ipx/src/timer.cc',
+    '../../_lib/highs/src/ipm/ipx/src/utils.cc'
+  ],
+  include_directories: [
+    '../../_lib/highs/src/ipm/ipx/include/',
+    '../../_lib/highs/src/ipm/basiclu/include/',
+    '../../_lib/highs/src/',
+    '../../_lib/highs/extern/',
+    'cython/src/'
+  ],
+  cpp_args: [
+    '-Wno-unused-variable',
+    highs_flags,
+    highs_define_macros
+  ]
+)
+
+highs_lib = static_library('highs',
+  [
+    '../../_lib/highs/extern/filereaderlp/reader.cpp',
+    '../../_lib/highs/src/io/Filereader.cpp',
+    '../../_lib/highs/src/io/FilereaderLp.cpp',
+    '../../_lib/highs/src/io/FilereaderEms.cpp',
+    '../../_lib/highs/src/io/FilereaderMps.cpp',
+    '../../_lib/highs/src/io/HighsIO.cpp',
+    '../../_lib/highs/src/io/HMPSIO.cpp',
+    '../../_lib/highs/src/io/HMpsFF.cpp',
+    '../../_lib/highs/src/io/LoadOptions.cpp',
+    '../../_lib/highs/src/ipm/IpxWrapper.cpp',
+    '../../_lib/highs/src/lp_data/Highs.cpp',
+    '../../_lib/highs/src/lp_data/HighsDebug.cpp',
+    '../../_lib/highs/src/lp_data/HighsInfo.cpp',
+    '../../_lib/highs/src/lp_data/HighsInfoDebug.cpp',
+    '../../_lib/highs/src/lp_data/HighsDeprecated.cpp',
+    '../../_lib/highs/src/lp_data/HighsInterface.cpp',
+    '../../_lib/highs/src/lp_data/HighsLp.cpp',
+    '../../_lib/highs/src/lp_data/HighsLpUtils.cpp',
+    '../../_lib/highs/src/lp_data/HighsModelUtils.cpp',
+    '../../_lib/highs/src/lp_data/HighsRanging.cpp',
+    '../../_lib/highs/src/lp_data/HighsSolution.cpp',
+    '../../_lib/highs/src/lp_data/HighsSolutionDebug.cpp',
+    '../../_lib/highs/src/lp_data/HighsSolve.cpp',
+    '../../_lib/highs/src/lp_data/HighsStatus.cpp',
+    '../../_lib/highs/src/lp_data/HighsOptions.cpp',
+    '../../_lib/highs/src/mip/HighsMipSolver.cpp',
+    '../../_lib/highs/src/mip/HighsMipSolverData.cpp',
+    '../../_lib/highs/src/mip/HighsDomain.cpp',
+    '../../_lib/highs/src/mip/HighsDynamicRowMatrix.cpp',
+    '../../_lib/highs/src/mip/HighsLpRelaxation.cpp',
+    '../../_lib/highs/src/mip/HighsSeparation.cpp',
+    '../../_lib/highs/src/mip/HighsSeparator.cpp',
+    '../../_lib/highs/src/mip/HighsTableauSeparator.cpp',
+    '../../_lib/highs/src/mip/HighsModkSeparator.cpp',
+    '../../_lib/highs/src/mip/HighsPathSeparator.cpp',
+    '../../_lib/highs/src/mip/HighsCutGeneration.cpp',
+    '../../_lib/highs/src/mip/HighsSearch.cpp',
+    '../../_lib/highs/src/mip/HighsConflictPool.cpp',
+    '../../_lib/highs/src/mip/HighsCutPool.cpp',
+    '../../_lib/highs/src/mip/HighsCliqueTable.cpp',
+    '../../_lib/highs/src/mip/HighsGFkSolve.cpp',
+    '../../_lib/highs/src/mip/HighsTransformedLp.cpp',
+    '../../_lib/highs/src/mip/HighsLpAggregator.cpp',
+    '../../_lib/highs/src/mip/HighsDebugSol.cpp',
+    '../../_lib/highs/src/mip/HighsImplications.cpp',
+    '../../_lib/highs/src/mip/HighsPrimalHeuristics.cpp',
+    '../../_lib/highs/src/mip/HighsPseudocost.cpp',
+    '../../_lib/highs/src/mip/HighsRedcostFixing.cpp',
+    '../../_lib/highs/src/mip/HighsNodeQueue.cpp',
+    '../../_lib/highs/src/model/HighsHessian.cpp',
+    '../../_lib/highs/src/model/HighsHessianUtils.cpp',
+    '../../_lib/highs/src/model/HighsModel.cpp',
+    '../../_lib/highs/src/parallel/HighsTaskExecutor.cpp',
+    '../../_lib/highs/src/presolve/ICrashX.cpp',
+    '../../_lib/highs/src/presolve/HAggregator.cpp',
+    '../../_lib/highs/src/presolve/HighsLpPropagator.cpp',
+    '../../_lib/highs/src/presolve/HighsPostsolveStack.cpp',
+    '../../_lib/highs/src/presolve/HighsSymmetry.cpp',
+    '../../_lib/highs/src/presolve/HPreData.cpp',
+    '../../_lib/highs/src/presolve/HPresolve.cpp',
+    '../../_lib/highs/src/presolve/PresolveAnalysis.cpp',
+    '../../_lib/highs/src/presolve/PresolveComponent.cpp',
+    '../../_lib/highs/src/presolve/Presolve.cpp',
+    '../../_lib/highs/src/presolve/PresolveUtils.cpp',
+    '../../_lib/highs/src/qpsolver/basis.cpp',
+    '../../_lib/highs/src/qpsolver/solver.cpp',
+    '../../_lib/highs/src/qpsolver/ratiotest.cpp',
+    '../../_lib/highs/src/simplex/HEkk.cpp',
+    '../../_lib/highs/src/simplex/HEkkControl.cpp',
+    '../../_lib/highs/src/simplex/HEkkDebug.cpp',
+    '../../_lib/highs/src/simplex/HEkkPrimal.cpp',
+    '../../_lib/highs/src/simplex/HEkkDual.cpp',
+    '../../_lib/highs/src/simplex/HEkkDualRHS.cpp',
+    '../../_lib/highs/src/simplex/HEkkDualRow.cpp',
+    '../../_lib/highs/src/simplex/HEkkDualMulti.cpp',
+    '../../_lib/highs/src/simplex/HEkkInterface.cpp',
+    '../../_lib/highs/src/simplex/HighsSimplexAnalysis.cpp',
+    '../../_lib/highs/src/simplex/HSimplex.cpp',
+    '../../_lib/highs/src/simplex/HSimplexDebug.cpp',
+    '../../_lib/highs/src/simplex/HSimplexNla.cpp',
+    '../../_lib/highs/src/simplex/HSimplexNlaDebug.cpp',
+    '../../_lib/highs/src/simplex/HSimplexNlaFreeze.cpp',
+    '../../_lib/highs/src/simplex/HSimplexNlaProductForm.cpp',
+    '../../_lib/highs/src/simplex/HSimplexReport.cpp',
+    '../../_lib/highs/src/test/DevKkt.cpp',
+    '../../_lib/highs/src/test/KktCh2.cpp',
+    '../../_lib/highs/src/util/HFactor.cpp',
+    '../../_lib/highs/src/util/HFactorDebug.cpp',
+    '../../_lib/highs/src/util/HFactorExtend.cpp',
+    '../../_lib/highs/src/util/HFactorRefactor.cpp',
+    '../../_lib/highs/src/util/HFactorUtils.cpp',
+    '../../_lib/highs/src/util/HighsHash.cpp',
+    '../../_lib/highs/src/util/HighsLinearSumBounds.cpp',
+    '../../_lib/highs/src/util/HighsMatrixPic.cpp',
+    '../../_lib/highs/src/util/HighsMatrixUtils.cpp',
+    '../../_lib/highs/src/util/HighsSort.cpp',
+    '../../_lib/highs/src/util/HighsSparseMatrix.cpp',
+    '../../_lib/highs/src/util/HighsUtils.cpp',
+    '../../_lib/highs/src/util/HSet.cpp',
+    '../../_lib/highs/src/util/HVectorBase.cpp',
+    '../../_lib/highs/src/util/stringutil.cpp',
+    '../../_lib/highs/src/interfaces/highs_c_api.cpp'
+  ],
+  include_directories: [
+    'src/',
+    '../../_lib/highs/extern/',
+    '../../_lib/highs/src/',
+    '../../_lib/highs/src/io/',
+    '../../_lib/highs/src/ipm/ipx/include/',
+    '../../_lib/highs/src/lp_data/',
+    '../../_lib/highs/src/util/',
+  ],
+  cpp_args: [
+    '-Wno-unused-variable',
+    highs_flags,
+    highs_define_macros
+  ]
+)
+
+_highs_wrapper = py3.extension_module('_highs_wrapper',
+  cython_gen_cpp.process('cython/src/_highs_wrapper.pyx'),
+  include_directories: [
+    inc_np,
+    'cython/src/',
+    'src/',
+    '../../_lib/highs/src/',
+    '../../_lib/highs/src/io/',
+    '../../_lib/highs/src/lp_data/',
+    '../../_lib/highs/src/util/'
+  ],
+  link_with: [highs_lib, ipx_lib, basiclu_lib],
+  dependencies: [py3_dep],
+  cpp_args: [
+    '-Wno-unused-variable',
+    '-Wno-sign-compare',
+    '-Wno-switch',
+    '-Wno-format-truncation',
+    '-Wno-non-virtual-dtor',
+    '-Wno-class-memaccess',
+    # Pass despite __STDC_FORMAT_MACROS redefinition warning.
+    # Remove after merge of https://github.com/ERGO-Code/HiGHS/pull/674
+    '-Wp,-w',
+    Wno_unused_but_set,
+    highs_define_macros,
+    numpy_nodepr_api,
+  ],
+  install: true,
+  subdir: 'scipy/optimize/_highs'
+)
+
+_highs_constants = py3.extension_module('_highs_constants',
+  cython_gen_cpp.process('cython/src/_highs_constants.pyx'),
+  include_directories: [
+    'cython/src/',
+    'src',
+    '../../_lib/highs/src/',
+    '../../_lib/highs/src/io/',
+    '../../_lib/highs/src/lp_data/',
+    '../../_lib/highs/src/simplex/'
+  ],
+  dependencies: [py3_dep],
+  install: true,
+  subdir: 'scipy/optimize/_highs'
+)
+
+py3.install_sources([
+    'cython/src/HConst.pxd',
+    'cython/src/Highs.pxd',
+    'cython/src/HighsIO.pxd',
+    'cython/src/HighsInfo.pxd',
+    'cython/src/HighsLp.pxd',
+    'cython/src/HighsLpUtils.pxd',
+    'cython/src/HighsModelUtils.pxd',
+    'cython/src/HighsOptions.pxd',
+    'cython/src/HighsRuntimeOptions.pxd',
+    'cython/src/HighsStatus.pxd',
+    'cython/src/SimplexConst.pxd',
+    'cython/src/highs_c_api.pxd'
+  ],
+  pure: false,
+  subdir: 'scipy/optimize/_highs/src/cython'
+)
+
+py3.install_sources(
+  ['__init__.py'],
+  pure: false,
+  subdir: 'scipy/optimize/_highs'
+)

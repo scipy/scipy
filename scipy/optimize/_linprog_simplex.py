@@ -30,7 +30,7 @@ References
 
 import numpy as np
 from warnings import warn
-from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
+from ._optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
 from ._linprog_util import _postsolve
 
 
