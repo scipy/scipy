@@ -276,3 +276,28 @@ def test_laplacian_symmetrized(arr_type):
 
     assert_allclose(ds, d1 + d2)
     assert_allclose(ds, dss)
+
+
+@pytest.mark.parametrize(
+    "arr_type", [np.asarray, sparse.csr_matrix, sparse.coo_matrix]
+)
+@pytest.mark.parametrize("normed", [True, False])
+@pytest.mark.parametrize("form", ['function', 'lo'])
+def test_format(arr_type, normed, form):
+    n = 3
+    mat = arr_type(np.arange(n * n).reshape(n, n))
+    Lo, do = csgraph.laplacian(mat, return_diag=True, normed=normed)
+    La, da = csgraph.laplacian(mat, return_diag=True, normed=normed, form='array')
+    assert_allclose(do, da)
+    if arr_type == np.asarray:
+        assert_allclose(Lo, La)
+    else:
+        _assert_allclose_sparse(Lo, La)
+
+    L, d = csgraph.laplacian(mat, return_diag=True, normed=normed, form=form)
+    assert_allclose(d, do)
+    L = L(np.eye(n, dtype=L.dtype))
+    if arr_type == np.asarray:
+        assert_allclose(L, La)
+    else:
+        _assert_allclose_sparse(L, La)
