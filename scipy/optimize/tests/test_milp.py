@@ -33,9 +33,9 @@ def test_milp_iv():
     message = ("`integrality` must contain integers 0-3 and be broadcastable "
                "to `c.shape`.")
     with pytest.raises(ValueError, match=message):
-        milp([1, 2, 3], integrality = [1, 2])
+        milp([1, 2, 3], integrality=[1, 2])
     with pytest.raises(ValueError, match=message):
-        milp([1, 2, 3], integrality = [1, 5, 3])
+        milp([1, 2, 3], integrality=[1, 5, 3])
 
     message = "`lb`, `ub`, and `keep_feasible` must be broadcastable."
     with pytest.raises(ValueError, match=message):
@@ -50,6 +50,7 @@ def test_milp_iv():
         milp([1, 2, 3], bounds=([1, 2, 3], ["3+4", 4, 5]))
     with pytest.raises(ValueError, match=message):
         milp([1, 2, 3], bounds=([1, 2, 3], [set(), 4, 5]))
+
 
 def test_milp_options(capsys):
     message = "Unrecognized options detected: {'ekki'}..."
@@ -69,7 +70,7 @@ def test_milp_options(capsys):
     captured = capsys.readouterr()
     assert "Presolve is switched off" in captured.out
     assert "Time Limit Reached" in captured.out
-    assert res.success == False
+    assert res.success is False
 
 
 def test_result():
@@ -106,6 +107,7 @@ def test_result():
     assert isinstance(res.message, str)
     assert (res.fun is res.mip_dual_bound is res.mip_gap
             is res.mip_node_count is res.x is None)
+
 
 def test_milp_optional_args():
     # check that arguments other than `c` are indeed optional
