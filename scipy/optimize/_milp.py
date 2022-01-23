@@ -1,7 +1,7 @@
 import warnings
 import numpy as np
 from scipy.sparse import csc_array, vstack
-from ._highs._highs_wrapper import _highs_wrapper
+from ._highs._highs_wrapper import _highs_wrapper  # type: ignore[import]
 from ._constraints import LinearConstraint, Bounds
 from ._optimize import OptimizeResult
 
@@ -106,7 +106,7 @@ def _milp_iv(c, integrality, bounds, constraints, options):
         raise ValueError(message)
 
     # constraints IV
-    if not constraints: # constraints is None, empty sequence, False, 0, etc.
+    if not constraints:
         constraints = [LinearConstraint(np.empty((0, c.size)),
                                         np.empty((0,)), np.empty((0,)))]
     A, b_l, b_u = _constraints_to_components(constraints)
@@ -204,22 +204,23 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
         precision, and the matrices of constraint coefficients are converted to
         instances of `scipy.sparse.csc_array`. The ``keep_feasible`` parameter
         of `LinearConstraint` objects is ignored.
+    options : dict, optional
+        A dictionary of solver options. The following keys
+        are recognized.
 
-    Options
-    -------
-    disp : bool (default: ``False``)
-        Set to ``True`` if indicators of optimization status are to be
-        printed to the console during optimization.
-    presolve : bool (default: ``True``)
-        Presolve attempts to identify trivial infeasibilities,
-        identify trivial unboundedness, and simplify the problem before
-        sending it to the main solver. It is generally recommended
-        to keep the default setting ``True``; set to ``False`` if
-        presolve is to be disabled.
-    time_limit : float
-        The maximum time in seconds allotted to solve the problem;
-        default is the largest possible value for a ``double`` on the
-        platform.
+        disp : bool (default: ``False``)
+            Set to ``True`` if indicators of optimization status are to be
+            printed to the console during optimization.
+        presolve : bool (default: ``True``)
+            Presolve attempts to identify trivial infeasibilities,
+            identify trivial unboundedness, and simplify the problem before
+            sending it to the main solver. It is generally recommended
+            to keep the default setting ``True``; set to ``False`` if
+            presolve is to be disabled.
+        time_limit : float
+            The maximum time in seconds allotted to solve the problem;
+            default is the largest possible value for a ``double`` on the
+            platform.
 
     Returns
     -------
@@ -340,7 +341,6 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
 
     highs_res = _highs_wrapper(c, indptr, indices, data, b_l, b_u,
                                lb, ub, integrality, options)
-
 
     res = {}
 
