@@ -618,9 +618,9 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
     our chosen threshold of 5%, so we cannot consider this to to be significant
     evidence against the null hypothesis.
 
-    Note that the this p-value essentially matches that of `stats.skewtest`,
-    which relies on an asymptotic distribution of a test statistic based on
-    the sample skewness.
+    Note that this p-value essentially matches that of
+    `scipy.stats.skewtest`, which relies on an asymptotic distribution of a
+    test statistic based on the sample skewness.
 
     >>> stats.skewtest(x).pvalue
     0.6892046027110614
