@@ -187,14 +187,10 @@ def direct(
     evaluations (20003). Loosening the termination tolerances `vol_tol` and
     `len_tol` can be used to stop DIRECT earlier.
 
-    >>> from scipy.optimize import direct, Bounds
-    >>> def styblinski_tang(pos):
-    ...     x, y = pos
-    ...     return 0.5 * (x**4 - 16 * x**2 + 5 * x + y**4 - 16 * y**2 + 5 * y)
-    >>> bounds = Bounds([-4., -4.], [4., 4.])
     >>> result = direct(styblinski_tang, bounds, vol_tol = 1e-7)
     >>> result.x, result.fun, result.nfev
     array([-2.90321597, -2.9044353 ]), -78.33231560853986, 1113
+
     """
 
     # convert bounds to new Bounds class if necessary
