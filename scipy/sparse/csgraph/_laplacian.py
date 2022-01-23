@@ -6,9 +6,6 @@ import numpy as np
 from scipy.sparse import isspmatrix
 from scipy.sparse.linalg import LinearOperator
 
-# , aslinearoperator
-
-
 ###############################################################################
 # Graph laplacian
 def laplacian(
@@ -18,7 +15,7 @@ def laplacian(
     use_out_degree=False,
     *,
     copy=True,
-    aslinearoperator=False,
+    form="array",
     dtype=None,
     symmetrized=False
 ):
@@ -43,10 +40,12 @@ def laplacian(
         If False, then change `csgraph` in place if possible,
         avoiding doubling the memory use.
         Default: True, for backward compatibility.
-    aslinearoperator: bool, optional
-        If True, then the output has the format of `LinearOperator`
-        always avoiding doubling the memory use, ignoring `copy` value.
-        Default: False, for backward compatibility.
+    form: `array`, or `function`, or `lo`
+        Determins the format of the output.
+        E.g., `lo` results in the format of `LinearOperator`.
+        Choosing `function`, or `lo` always avoids doubling
+        the memory use, ignoring `copy` value.
+        Default: `array`, for backward compatibility.
     dtype: None or one of numeric numpy dtypes, optional
         The dtype of the output. If `dtype=None`, the dtype of the
         output matches the dtype of the input csgraph, except for
@@ -61,7 +60,7 @@ def laplacian(
         prior to the construction of the Laplacian.
         The symmetrization will increase the memory footprint of
         sparse matrices unless the sparsity pattern is symmetric or
-        `aslinearoperator=True`.
+        `form` is `function` or `lo`.
         Default: False, for backward compatibility.
 
     Returns
@@ -69,7 +68,7 @@ def laplacian(
     lap : ndarray, or sparse matrix, or `LinearOperator`
         The N x N Laplacian of csgraph. It will be a NumPy array (dense)
         if the input was dense, or a sparse matrix otherwise, or
-        the format of `LinearOperator` if `aslinearoperator=True`.
+        the format of a function or `LinearOperator` if `form` is `function` or `lo`.
     diag : ndarray, optional
         The length-N main diagonal of the Laplacian matrix.
         For the normalized Laplacian, this is the array of square roots
@@ -85,12 +84,12 @@ def laplacian(
     is commonly used for spectral data embedding and clustering.
 
     The constructed Laplacian doubles the memory use if ``copy=True`` and
-    `aslinearoperator=False` which is the default.
-    Choosing ``copy=False`` has no effect unless `aslinearoperator=True`
+    `form=`array`` which is the default.
+    Choosing ``copy=False`` has no effect unless `form=`array``
     or the matrix is sparse in the ``coo`` format, or dense array, except
     for the integer input with ``normed=True`` that forces the float output.
 
-    Sparse input is reformatted into ``coo`` if `aslinearoperator=False`,
+    Sparse input is reformatted into ``coo`` if `form=`array``,
     which is the default.
 
     If the input adjacency matrix is not symmetic, the Laplacian is also
@@ -115,12 +114,39 @@ def laplacian(
            [ 0,  2,  4,  6,  8],
            [ 0,  3,  6,  9, 12],
            [ 0,  4,  8, 12, 16]])
-    >>> csgraph.laplacian(G, normed=False)
+    >>> csgraph.laplacian(G)
     array([[  0,   0,   0,   0,   0],
            [  0,   9,  -2,  -3,  -4],
            [  0,  -2,  16,  -6,  -8],
            [  0,  -3,  -6,  21, -12],
            [  0,  -4,  -8, -12,  24]])
+    >>> G = np.arange(9).reshape(3, 3)
+    >>> G
+    array([[0, 1, 2],
+           [3, 4, 5],
+           [6, 7, 8]])
+    >>> L_in_degree = csgraph.laplacian(G)
+    >>> L_in_degree
+    array([[ 9, -1, -2],
+           [-3,  8, -5],
+           [-6, -7,  7]])
+    >>> L_out_degree = csgraph.laplacian(G, use_out_degree=True)
+    >>> L_out_degree
+    array([[ 3, -1, -2],
+           [-3,  8, -5],
+           [-6, -7, 13]])
+    >>> L_in_degree + L_out_degree.T
+    array([[ 12,  -4,  -8],
+            [ -4,  16, -12],
+            [ -8, -12,  20]])
+    >>> csgraph.laplacian(G, symmetrized=True)
+    array([[ 12,  -4,  -8],
+           [ -4,  16, -12],
+           [ -8, -12,  20]])
+    >>> csgraph.laplacian(G + G.T)
+    array([[ 12,  -4,  -8],
+           [ -4,  16, -12],
+           [ -8, -12,  20]])
     """
     if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
         raise ValueError("csgraph must be a square matrix or array")
@@ -139,7 +165,7 @@ def laplacian(
         normed=normed,
         axis=degree_axis,
         copy=copy,
-        aslinearoperator=aslinearoperator,
+        form=form,
         dtype=dtype,
         symmetrized=symmetrized,
     )
@@ -148,44 +174,46 @@ def laplacian(
     return lap
 
 
-def _setdiag_dense(A, d):
-    A.flat[:: len(d) + 1] = d
+def _setdiag_dense(m, d):
+    m.flat[:: len(d) + 1] = d
 
 
-def _laplacian_sparse(
-    graph, normed, axis, copy, aslinearoperator, dtype, symmetrized
-):
+def _md_normed(m, d):
+    return lambda v: v - d * (m @ v) * d
+
+
+def _md(m, d):
+    return lambda v: d * v - m @ v
+
+
+def _linearoperator(mv, shape, dtype):
+    mv_as_lo = LinearOperator(matvec=mv, matmat=mv, shape=shape, dtype=dtype)
+    return mv_as_lo
+
+
+def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
     if dtype is None:
         dtype = graph.dtype
 
-    if aslinearoperator:
-        w = graph.sum(axis=axis).getA1() - graph.diagonal()
+    if form != "array":
+        diag = graph.sum(axis=axis).getA1() - graph.diagonal()
+
         if normed:
-            isolated_node_mask = w == 0
-            w = np.where(isolated_node_mask, 1, np.sqrt(w))
-
-            def m_f(x):
-                return -graph @ x
-
-            m = LinearOperator(
-                matvec=m_f, matmat=m_f, shape=graph.shape, dtype=dtype
-            )
-
-            # m.data /= w[m.row]
-            # m.data /= w[m.col]
-            # m.data *= -1
-            # m.setdiag(1 - isolated_node_mask)
-
+            isolated_node_mask = diag == 0
+            w = np.where(isolated_node_mask, 1, np.sqrt(diag))
+            md_normed = _md_normed(graph, w)
+            if form == "function":
+                return md_normed, diag.astype(dtype, copy=False)
+            elif form == "lo":
+                m = _linearoperator(md_normed, shape=graph.shape, dtype=dtype)
+                return m, diag.astype(dtype, copy=False)
         else:
-
-            def m_f(x):
-                return -graph @ x
-
-            m = LinearOperator(
-                matvec=m_f, matmat=m_f, shape=graph.shape, dtype=dtype
-            )
-
-        return m, w.astype(dtype, copy=False)
+            md_md = _md(graph, diag)
+            if form == "function":
+                return md_md, diag.astype(dtype, copy=False)
+            elif form == "lo":
+                m = _linearoperator(md_md, shape=graph.shape, dtype=dtype)
+                return m, diag.astype(dtype, copy=False)
 
     else:
         needs_copy = False
@@ -219,9 +247,7 @@ def _laplacian_sparse(
         return m.astype(dtype, copy=False), w.astype(dtype)
 
 
-def _laplacian_dense(
-    graph, normed, axis, copy, aslinearoperator, dtype, symmetrized
-):
+def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
 
     if dtype is None:
         dtype = graph.dtype
@@ -237,25 +263,24 @@ def _laplacian_dense(
     if symmetrized:
         m += m.T.conj()
 
-    if aslinearoperator:
-        w = m.sum(axis=axis)
-
+    if form != "array":
+        diag = m.sum(axis=axis)
         if normed:
-            isolated_node_mask = w == 0
-            w = np.where(isolated_node_mask, 1, np.sqrt(w))
-
-            def m_f(x):
-                return -m @ x
-
+            isolated_node_mask = diag == 0
+            w = np.where(isolated_node_mask, 1, np.sqrt(diag))
+            md_normed = _md_normed(graph, w)
+            if form == "function":
+                return md_normed, diag.astype(dtype, copy=False)
+            elif form == "lo":
+                m = _linearoperator(md_normed, shape=graph.shape, dtype=dtype)
+                return m, diag.astype(dtype, copy=False)
         else:
-
-            def m_f(x):
-                return -m @ x
-
-        m = LinearOperator(
-            matvec=m_f, matmat=m_f, shape=graph.shape, dtype=dtype
-        )
-        return m, w.astype(dtype, copy=False)
+            md_md = _md(graph, diag)
+            if form == "function":
+                return md_md, diag.astype(dtype, copy=False)
+            elif form == "lo":
+                m = _linearoperator(md_md, shape=graph.shape, dtype=dtype)
+                return m, diag.astype(dtype, copy=False)
 
     else:
         np.fill_diagonal(m, 0)
