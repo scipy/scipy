@@ -1164,17 +1164,18 @@ class DifferentialEvolutionSolver:
             # those shapes, as an incorrect shape indicates that the
             # user constraint function didn't return the right thing, and
             # the reshape operation will fail. Intercept the wrong shape
-            # to give a reasonable error message.
+            # to give a reasonable error message. I'm not sure what failure
+            # modes an inventive user will come up with.
             if c.shape[-1] != con.num_constr or (S > 1 and c.shape[0] != S):
-                raise ValueError("An array returned from a Constraint has the"
-                                 " wrong shape. If `vectorized is False` then"
-                                 " the Constraint should return an array of"
-                                 " shape (M,). If `vectorized is True` then"
-                                 " the Constraint must return an array of"
-                                 " shape (M, S), where S is the number of"
-                                 " solution vectors and M is the number of"
-                                 " constraint components in a given Constraint"
-                                 " object.")
+                raise RuntimeError("An array returned from a Constraint has"
+                                   " the wrong shape. If `vectorized is False`"
+                                   " the Constraint should return an array of"
+                                   " shape (M,). If `vectorized is True` then"
+                                   " the Constraint must return an array of"
+                                   " shape (M, S), where S is the number of"
+                                   " solution vectors and M is the number of"
+                                   " constraint components in a given"
+                                   " Constraint object.")
 
             # the violation function may return a 1D array, but is it a
             # sequence of constraints for one solution (S=1, M>=1), or the
@@ -1608,8 +1609,19 @@ class _ConstraintWrapper:
         # expect ev to have shape (num_constr, S) or (num_constr,)
         ev = self.fun(np.asarray(x))
 
-        excess_lb = np.maximum(self.bounds[0] - ev.T, 0)
-        excess_ub = np.maximum(ev.T - self.bounds[1], 0)
+        try:
+            excess_lb = np.maximum(self.bounds[0] - ev.T, 0)
+            excess_ub = np.maximum(ev.T - self.bounds[1], 0)
+        except ValueError as e:
+            raise RuntimeError("An array returned from a Constraint has"
+                               " the wrong shape. If `vectorized is False`"
+                               " the Constraint should return an array of"
+                               " shape (M,). If `vectorized is True` then"
+                               " the Constraint must return an array of"
+                               " shape (M, S), where S is the number of"
+                               " solution vectors and M is the number of"
+                               " constraint components in a given"
+                               " Constraint object.") from e
 
         v = (excess_lb + excess_ub).T
         return v

@@ -667,6 +667,22 @@ class TestDifferentialEvolutionSolver:
                                          for x in np.array(xs)])
         assert constraint_violation.shape == (3, 1, 3)
 
+        # we need reasonable error messages if the constraint function doesn't
+        # return the right thing
+        def constr_f3(x):
+            # returns (S, M), rather than (M, S)
+            return constr_f2(x).T
+
+        nlc2 = NonlinearConstraint(constr_f3, -np.inf, 1.8)
+        solver = DifferentialEvolutionSolver(rosen, [(0, 2), (0, 2)],
+                                             constraints=(nlc, nlc2),
+                                             vectorized=False)
+        solver.vectorized = True
+        with pytest.raises(
+                RuntimeError, match="An array returned from a Constraint"
+        ):
+            solver._constraint_violation_fn(np.array(xs))
+
     def test_constraint_population_feasibilities(self):
         def constr_f(x):
             return [x[0] + x[1]]
@@ -1380,7 +1396,7 @@ class TestDifferentialEvolutionSolver:
             return np.sum(x**2, axis=0)
 
         # A vectorized function needs to accept (len(x), S) and return (S,)
-        with pytest.raises(RuntimeError, match='The vectorized function'):
+        with pytest.raises(RuntimeError, test_constraint_violation_fn):
             differential_evolution(quadratic, self.bounds,
                                    vectorized=True, updating='deferred')
 
