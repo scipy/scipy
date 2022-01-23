@@ -1396,7 +1396,7 @@ class TestDifferentialEvolutionSolver:
             return np.sum(x**2, axis=0)
 
         # A vectorized function needs to accept (len(x), S) and return (S,)
-        with pytest.raises(RuntimeError, 'The vectorized function'):
+        with pytest.raises(RuntimeError, match='The vectorized function'):
             differential_evolution(quadratic, self.bounds,
                                    vectorized=True, updating='deferred')
 
