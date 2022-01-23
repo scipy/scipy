@@ -33,7 +33,13 @@ method_names = [
     # special matrices
     'tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
     'hadamard', 'leslie', 'kron', 'companion',
-    'fiedler', 'fiedler_companion', 'convolution_matrix'
+    'fiedler', 'fiedler_companion', 'convolution_matrix',
+    # decompositions
+    'cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
+    'cho_solve_banded', 'ldl', 'lu', 'lu_solve', 'lu_factor',
+    'polar', 'qr', 'qr_multiply', 'rq', 'qz', 'ordqz', 'schur', 'rsf2csf',
+    'svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space',
+    'qr_delete', 'qr_insert', 'qr_update'
 ]
 
 for name in method_names:

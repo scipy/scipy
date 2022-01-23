@@ -6,7 +6,7 @@ from scipy.linalg._backend import scalar_tuple_callable_array
 
 # they don't need to be dispatchabled
 from ._api import (hilbert, helmert, invhilbert, pascal, invpascal, dft,
-                   block_diag)
+                   block_diag, cossin)
 
 
 
@@ -31,7 +31,13 @@ __all__ = [
     'tri', 'tril', 'triu', 'toeplitz', 'circulant', 'hankel',
     'hadamard', 'leslie', 'kron', 'block_diag', 'companion',
     'helmert', 'hilbert', 'invhilbert', 'pascal', 'invpascal', 'dft',
-    'fiedler', 'fiedler_companion', 'convolution_matrix'
+    'fiedler', 'fiedler_companion', 'convolution_matrix',
+    # decompositions
+    'cholesky', 'cho_factor', 'cho_solve', 'cholesky_banded',
+    'cho_solve_banded', 'cossin', 'ldl', 'lu', 'lu_solve', 'lu_factor',
+    'polar', 'qr', 'qr_multiply', 'rq', 'qz', 'ordqz', 'schur', 'rsf2csf',
+    'svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space',
+    'qr_delete', 'qr_insert', 'qr_update'
 ]
 
 
@@ -506,3 +512,273 @@ def fiedler_companion(a):
 @_get_docs
 def convolution_matrix(a, n, mode='full'):
     return (a, )
+
+
+################################# decompositions ###############################
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def cholesky(a, lower=False, overwrite_a=False, check_finite=True):
+    return (a, )
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
+    return (a, )
+
+
+def _clower_b_replacer(args, kwargs, dispatchables):
+    def self_method(c_and_lower, b, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_clower_b_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
+    return _mark_scalar_tuple_callable_array(c_and_lower), b
+
+
+def _ab_replacer(args, kwargs, dispatchables):
+    def self_method(ab, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_ab_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
+    return (ab, )
+
+
+def _cblower_b_replacer(args, kwargs, dispatchables):
+    def self_method(cb_and_lower, b, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_cblower_b_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
+    return _mark_scalar_tuple_callable_array(cb_and_lower), b
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
+    return (A, )
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def lu_factor(a, overwrite_a=False, check_finite=True):
+    return (a, )
+
+
+def _lupiv_b_replacer(args, kwargs, dispatchables):
+    def self_method(lu_and_piv, b, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_lupiv_b_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def lu_solve(lu_and_piv, b, trans=0, overwrite_b=False, check_finite=True):
+    return _mark_scalar_tuple_callable_array(lu_and_piv), b
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def lu(a, permute_l=False, overwrite_a=False, check_finite=True):
+    return (a, )
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def polar(a, side="right"):
+    return (a, )
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
+       check_finite=True):
+    return (a, )
+
+
+def _a_c_replacer(args, kwargs, dispatchables):
+    def self_method(a, c, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_a_c_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
+                overwrite_a=False, overwrite_c=False):
+    return a, c
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
+    return (a, )
+
+
+def _A_B_replacer(args, kwargs, dispatchables):
+    def self_method(A, B, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_A_B_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def qz(A, B, output='real', lwork=None, sort=None, overwrite_a=False,
+       overwrite_b=False, check_finite=True):
+    return A, B
+
+
+@_create_linalg(_A_B_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def ordqz(A, B, sort='lhp', output='real', overwrite_a=False,
+          overwrite_b=False, check_finite=True):
+    return A, B
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
+          check_finite=True):
+    return (a, )
+
+
+def _T_Z_replacer(args, kwargs, dispatchables):
+    def self_method(T, Z, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_T_Z_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def rsf2csf(T, Z, check_finite=True):
+    return T, Z
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
+        check_finite=True, lapack_driver='gesdd'):
+    return (a, )
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def svdvals(a, overwrite_a=False, check_finite=True):
+    return (a, )
+
+
+def _s_replacer(args, kwargs, dispatchables):
+    def self_method(s, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_s_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def diagsvd(s, M, N):
+    return (s, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def orth(A, rcond=None):
+    return (A, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def null_space(A, rcond=None):
+    return (A, )
+
+
+@_create_linalg(_A_B_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def subspace_angles(A, B):
+    return A, B
+
+
+def _Q_R_replacer(args, kwargs, dispatchables):
+    def self_method(Q, R, k, *args, **kwargs):
+        return dispatchables + (k, ) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_Q_R_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False,
+              check_finite=True):
+    return Q, R
+
+
+def _Q_R_u_replacer(args, kwargs, dispatchables):
+    def self_method(Q, R, u, k, *args, **kwargs):
+        return dispatchables + (k, ) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_Q_R_u_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False,
+              check_finite=True):
+    return Q, R, u
+
+
+def _Q_R_u_v_replacer(args, kwargs, dispatchables):
+    def self_method(Q, R, u, v, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_Q_R_u_v_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
+    return Q, R, u, v

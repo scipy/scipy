@@ -1,5 +1,4 @@
 import numpy as np
-from scipy.linalg import svd
 
 
 __all__ = ['polar']
@@ -98,7 +97,7 @@ def polar(a, side="right"):
     a = np.asarray(a)
     if a.ndim != 2:
         raise ValueError("`a` must be a 2-D array.")
-
+    from ._multimethods import svd
     w, s, vh = svd(a, full_matrices=False)
     u = w.dot(vh)
     if side == 'right':
