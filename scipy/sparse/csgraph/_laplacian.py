@@ -185,7 +185,7 @@ def _md_normed(m, d):
 
 
 def _md(m, d):
-    return lambda v: d * v - m @ v
+    return lambda v: v * d[np.newaxis, :] - m @ v
 
 
 def _linearoperator(mv, shape, dtype):
@@ -203,12 +203,12 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
         if normed:
             isolated_node_mask = diag == 0
             w = np.where(isolated_node_mask, 1, np.sqrt(diag))
-            md_normed = _md_normed(graph, w)
+            md_normed = _md_normed(graph, 1. / w)
             if form == "function":
                 return md_normed, diag.astype(dtype, copy=False)
             elif form == "lo":
                 m = _linearoperator(md_normed, shape=graph.shape, dtype=dtype)
-                return m, diag.astype(dtype, copy=False)
+                return m, w.astype(dtype, copy=False)
         else:
             md_md = _md(graph, diag)
             if form == "function":
@@ -270,12 +270,12 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
         if normed:
             isolated_node_mask = diag == 0
             w = np.where(isolated_node_mask, 1, np.sqrt(diag))
-            md_normed = _md_normed(graph, w)
+            md_normed = _md_normed(graph, 1. / w)
             if form == "function":
                 return md_normed, diag.astype(dtype, copy=False)
             elif form == "lo":
                 m = _linearoperator(md_normed, shape=graph.shape, dtype=dtype)
-                return m, diag.astype(dtype, copy=False)
+                return m, w.astype(dtype, copy=False)
         else:
             md_md = _md(graph, diag)
             if form == "function":
