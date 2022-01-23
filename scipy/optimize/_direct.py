@@ -69,19 +69,19 @@ def direct(
         the fixed parameters needed to completely specify the function.
     bounds : sequence or `Bounds`
         Bounds for variables. There are two ways to specify the bounds:
+        
         1. Instance of `Bounds` class.
-        2. ``(min, max)`` pairs for each element in ``x``, defining the finite
-        lower and upper bounds for the optimizing argument of `func`. It is
-        required to have ``len(bounds) == len(x)``. ``len(bounds)`` is used
-        to determine the number of parameters in ``x``.
+        2. ``(min, max)`` pairs for each element in ``x``.
+        
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
     disp : bool, optional
         If ``True``, print logging information about the optimization process.
     eps : float, optional
-        Ensures sufficient decrease in function value when a new potentially
-        optimal hyperrectangle is chosen. In consequence, `eps` serves as a
+        Minimal required difference of the objective function values
+        between the current best hyperrectangle and the next potentially
+        optimal hyperrectangle to be divided. In consequence, `eps` serves as a
         tradeoff between local and global search: the smaller, the more local
         the search becomes. Default is 1e-4.
     maxfun : int, optional
@@ -99,23 +99,23 @@ def direct(
         global optimum is known. Default is ``-np.inf``, so that this
         termination criterion is deactivated.
     f_min_rtol : float, optional
-        Terminate the optimization once the relative error
-        `(f - f_min)/max(abs(f_min), 1)` between the current best minimum
-        `f` and the supplied global minimum `f_min` is smaller than
-        `f_min_rtol`. This parameter is only used when `f_min` is also set.
-        Default is 1e-4.
+        Terminate the optimization once the relative error between the
+        current best minimum `f` and the supplied global minimum `f_min`
+        is smaller than `f_min_rtol`. This parameter is only used if
+        `f_min` is also set. Default is 1e-4.
     vol_tol : float, optional
         Terminate the optimization once the volume of the hyperrectangle
         containing the lowest function value is smaller than `vol_tol`
         of the complete search space. Must lie between 0 and 1.
         Default is 1e-16.
     len_tol : float, optional
-        If `locally_biased==True`, terminate the optimization once half of
-        maximal side length of the hyperrectangle containing the lowest
-        function value is smaller than `len_tol`. If `locally_biased==False`,
-        terminate the optimization once half of the diagonal of the
-        hyperrectangle containing the lowest function value is smaller than
-        `len_tol`. Must lie between 0 and 1. Default is 1e-8.
+        If `locally_biased=True`, terminate the optimization once half of
+        the normalized maximal side length of the hyperrectangle containing
+        the lowest function value is smaller than `len_tol`.
+        If `locally_biased=False`, terminate the optimization once half of
+        the normalized diagonal of the hyperrectangle containing the lowest
+        function value is smaller than `len_tol`. Must lie between 0 and 1.
+        Default is 1e-8.
     callback : callable, optional
         A callback function with signature ``callback(xk)`` where ``xk``
         represents the best function value found so far.
@@ -154,9 +154,9 @@ def direct(
 
     This code is based on the DIRECT 2.0.4 Fortran code by Gablonsky et al. at
     https://ctk.math.ncsu.edu/SOFTWARE/DIRECTv204.tar.gz
-    The C version was initially converted via f2c and then cleaned up and
-    reorganized by Steven G. Johnson, August 2007. This method wraps
-    the C implementation.
+    This original version was initially converted via f2c and then cleaned up
+    and reorganized by Steven G. Johnson, August 2007, for the nlopt project.
+    This method wraps the C implementation.
 
     .. versionadded:: 1.9.0
 
