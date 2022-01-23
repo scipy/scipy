@@ -300,7 +300,6 @@ Statistical tests
    combine_pvalues
    jarque_bera
    page_trend_test
-   permutation_test
    tukey_hsd
 
 .. autosummary::
