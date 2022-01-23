@@ -37,7 +37,6 @@ def test_milp_iv():
     with pytest.raises(ValueError, match=message):
         milp([1, 2, 3], integrality = [1, 5, 3])
 
-
     message = "`lb`, `ub`, and `keep_feasible` must be broadcastable."
     with pytest.raises(ValueError, match=message):
         milp([1, 2, 3], bounds=([1, 2], [3, 4, 5]))
@@ -91,22 +90,22 @@ def test_result():
     assert res.status == 1
     assert not res.success
     assert isinstance(res.message, str)
-    assert (res.fun == res.mip_dual_bound == res.mip_gap
-            == res.mip_node_count == res.x == None)
+    assert (res.fun is res.mip_dual_bound is res.mip_gap
+            is res.mip_node_count is res.x is None)
 
     res = milp(1, bounds=(1, -1))
     assert res.status == 2
     assert res.success
     assert isinstance(res.message, str)
-    assert (res.fun == res.mip_dual_bound == res.mip_gap
-            == res.mip_node_count == res.x == None)
+    assert (res.fun is res.mip_dual_bound is res.mip_gap
+            is res.mip_node_count is res.x is None)
 
     res = milp(-1)
     assert res.status == 3
     assert res.success
     assert isinstance(res.message, str)
-    assert (res.fun == res.mip_dual_bound == res.mip_gap
-            == res.mip_node_count == res.x == None)
+    assert (res.fun is res.mip_dual_bound is res.mip_gap
+            is res.mip_node_count is res.x is None)
 
 def test_milp_optional_args():
     # check that arguments other than `c` are indeed optional
@@ -235,7 +234,7 @@ def test_milp_6():
     # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
     # TODO: figure out why this intermittently segfaults!
     integrality = 1
-    A_eq = np.array([[22, 13, 26, 33, 21,  3, 14, 26],
+    A_eq = np.array([[22, 13, 26, 33, 21, 3, 14, 26],
                      [39, 16, 22, 28, 26, 30, 23, 24],
                      [18, 14, 29, 27, 30, 38, 26, 26],
                      [41, 26, 28, 36, 18, 38, 16, 26]])
