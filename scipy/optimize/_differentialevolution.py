@@ -133,7 +133,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
             - 'halton'
             - 'random'
             - array specifying the initial population. The array should have
-              shape ``(M, N)``, where M is the total population size and N is
+              shape ``(S, N)``, where S is the total population size and N is
               the number of parameters.
               `init` is clipped to `bounds` before use.
 
@@ -211,8 +211,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     vectorized : bool, optional
         If ``vectorized is True``, `func` is sent an `x` array with
-        ``x.shape == (N, M)``, and is expected to return an array of shape
-        ``(M,)``.
+        ``x.shape == (N, S)``, and is expected to return an array of shape
+        ``(S,)``, where `S` is the number of solution vectors to be calculated.
+        If constraints are applied, each of the functions used to construct
+        a `Constraint` object should accept an `x` array with
+        ``x.shape == (N, S)``, and return an array of shape ``(M, S)``, where
+        `M` is the number of constraint components.
         This option is an alternative to the parallelization offered by
         `workers`, and may help in optimization speed. This keyword is
         ignored if ``workers != 1``.
@@ -466,7 +470,7 @@ class DifferentialEvolutionSolver:
             - 'halton'
             - 'random'
             - array specifying the initial population. The array should have
-              shape ``(M, N)``, where M is the total population size and
+              shape ``(S, N)``, where S is the total population size and
               N is the number of parameters.
               `init` is clipped to `bounds` before use.
 
@@ -528,8 +532,12 @@ class DifferentialEvolutionSolver:
         `ValueError` is raised.
     vectorized : bool, optional
         If ``vectorized is True``, `func` is sent an `x` array with
-        ``x.shape == (N, M)``, and is expected to return an array of shape
-        ``(M,)``.
+        ``x.shape == (N, S)``, and is expected to return an array of shape
+        ``(S,)``, where `S` is the number of solution vectors to be calculated.
+        If constraints are applied, each of the functions used to construct
+        a `Constraint` object should accept an `x` array with
+        ``x.shape == (N, S)``, and return an array of shape ``(M, S)``, where
+        `M` is the number of constraint components.
         This option is an alternative to the parallelization offered by
         `workers`, and may help in optimization speed. This keyword is
         ignored if ``workers != 1``.
@@ -553,7 +561,7 @@ class DifferentialEvolutionSolver:
 
     __init_error_msg = ("The population initialization method must be one of "
                         "'latinhypercube' or 'random', or an array of shape "
-                        "(M, N) where N is the number of parameters and M>5")
+                        "(S, N) where N is the number of parameters and S>5")
 
     def __init__(self, func, bounds, args=(),
                  strategy='best1bin', maxiter=1000, popsize=15,
@@ -601,9 +609,9 @@ class DifferentialEvolutionSolver:
         # an object with a map method.
         if vectorized:
             def maplike_for_vectorized_func(func, x):
-                # send an array (N, M) to the user func,
-                # expect to receive (M,). Transposition is required because
-                # internally the population is held as (M, N)
+                # send an array (N, S) to the user func,
+                # expect to receive (S,). Transposition is required because
+                # internally the population is held as (S, N)
                 return np.atleast_1d(func(x.T))
             workers = maplike_for_vectorized_func
 
@@ -857,7 +865,7 @@ class DifferentialEvolutionSolver:
         ----------
         init : np.ndarray
             Array specifying subset of the initial population. The array should
-            have shape (M, N), where N is the number of parameters.
+            have shape (S, N), where N is the number of parameters.
             The population is clipped to the lower and upper bounds.
         """
         # make sure you're using a float array
@@ -867,7 +875,7 @@ class DifferentialEvolutionSolver:
                 popn.shape[1] != self.parameter_count or
                 len(popn.shape) != 2):
             raise ValueError("The population supplied needs to have shape"
-                             " (M, len(x)), where M > 4.")
+                             " (S, len(x)), where S > 4.")
 
         # scale values and clip to bounds, assigning to population
         self.population = np.clip(self._unscale_parameters(popn), 0, 1)
@@ -1090,8 +1098,8 @@ class DifferentialEvolutionSolver:
         if calc_energies.size != nfevs:
             if self.vectorized:
                 raise RuntimeError("The vectorized function must return an"
-                                   " array of shape (M,) when given an array"
-                                   " of shape (len(x), M)")
+                                   " array of shape (S,) when given an array"
+                                   " of shape (len(x), S)")
             raise RuntimeError("func(x, *args) must return a scalar value")
 
         energies[0:nfevs] = calc_energies
@@ -1128,29 +1136,51 @@ class DifferentialEvolutionSolver:
         Parameters
         ----------
         x : ndarray
-            Solution vector(s). Has shape (M, N), or (N,), where M is the
+            Solution vector(s). Has shape (S, N), or (N,), where S is the
             number of solutions to investigate and N is the number of
             parameters.
 
         Returns
         -------
         cv : ndarray
-            Total violation of constraints. Has shape ``(M, C)``, where C is
-            the total number of constraints (which is not necessarily equal to
-            len(self._wrapped_constraints)).
+            Total violation of constraints. Has shape ``(S, M)``, where M is
+            the total number of constraint components (which is not necessarily
+            equal to len(self._wrapped_constraints)).
         """
-        # how many solutions you're calculating constraint violations for
-        M = np.size(x) // self.parameter_count
-        _out = np.zeros((M, self.total_constraints))
+        # how many solution vectors you're calculating constraint violations
+        # for
+        S = np.size(x) // self.parameter_count
+        _out = np.zeros((S, self.total_constraints))
         offset = 0
         for con in self._wrapped_constraints:
-            # violation has shape (C, M), so have to transpose
+            # the input/output of the (vectorized) constraint function is
+            # {(N, S), (N,)} --> (M, S)
+            # The input to _constraint_violation_fn is (S, N) or (N,), so
+            # transpose to pass it to the constraint. The output is transposed
+            # from (M, S) to (S, M) for further use.
             c = con.violation(x.T).T
+
+            # The shape of c should be (M,), (1, M), or (S, M). Check for
+            # those shapes, as an incorrect shape indicates that the
+            # user constraint function didn't return the right thing, and
+            # the reshape operation will fail. Intercept the wrong shape
+            # to give a reasonable error message.
+            if c.shape[-1] != con.num_constr or (S > 1 and c.shape[0] != S):
+                raise ValueError("An array returned from a Constraint has the"
+                                 " wrong shape. If `vectorized is False` then"
+                                 " the Constraint should return an array of"
+                                 " shape (M,). If `vectorized is True` then"
+                                 " the Constraint must return an array of"
+                                 " shape (M, S), where S is the number of"
+                                 " solution vectors and M is the number of"
+                                 " constraint components in a given Constraint"
+                                 " object.")
+
             # the violation function may return a 1D array, but is it a
-            # sequence of constraints for one solution (M=1, C>=1), or the
+            # sequence of constraints for one solution (S=1, M>=1), or the
             # value of a single constraint for a sequence of solutions
-            # (M>=1, C=1)
-            c = np.reshape(c, (M, con.num_constr))
+            # (S>=1, M=1)
+            c = np.reshape(c, (S, con.num_constr))
             _out[:, offset:offset + con.num_constr] = c
             offset += con.num_constr
 
@@ -1171,8 +1201,8 @@ class DifferentialEvolutionSolver:
         feasible, constraint_violation : ndarray, ndarray
             Boolean array of feasibility for each population member, and an
             array of the constraint violation for each population member.
-            constraint_violation has shape ``(np.size(population, 0), C)``,
-            where C is the number of constraints.
+            constraint_violation has shape ``(np.size(population, 0), M)``,
+            where M is the number of constraints.
         """
         num_members = np.size(population, 0)
         if not self._wrapped_constraints:
@@ -1182,18 +1212,18 @@ class DifferentialEvolutionSolver:
         parameters_pop = self._scale_parameters(population)
 
         if self.vectorized:
-            # (M, C)
+            # (S, M)
             constraint_violation = np.array(
                 self._constraint_violation_fn(parameters_pop)
             )
         else:
-            # (M, 1, C)
+            # (S, 1, M)
             constraint_violation = np.array([self._constraint_violation_fn(x)
                                              for x in parameters_pop])
             # if you use the list comprehension in the line above it will
-            # create an array of shape (M, 1, C), because each iteration
-            # generates an array of (1, C). In comparison the vectorized
-            # version returns (M, C). It's therefore necessary to remove axis 1
+            # create an array of shape (S, 1, M), because each iteration
+            # generates an array of (1, M). In comparison the vectorized
+            # version returns (S, M). It's therefore necessary to remove axis 1
             constraint_violation = constraint_violation[:, 0]
 
         feasible = ~(np.sum(constraint_violation, axis=1) > 0)
@@ -1565,17 +1595,17 @@ class _ConstraintWrapper:
         Parameters
         ----------
         x : array-like
-            Vector of independent variables, (N, M), where N is number of
-            parameters and M is the number of solutions to be investigated.
+            Vector of independent variables, (N, S), where N is number of
+            parameters and S is the number of solutions to be investigated.
 
         Returns
         -------
         excess : array-like
             How much the constraint is exceeded by, for each of the
             constraints specified by `_ConstraintWrapper.fun`.
-            Has shape (C, M) where C is the number of constraints.
+            Has shape (M, S) where M is the number of constraint components.
         """
-        # expect ev to have shape (num_constr, M) or (num_constr,)
+        # expect ev to have shape (num_constr, S) or (num_constr,)
         ev = self.fun(np.asarray(x))
 
         excess_lb = np.maximum(self.bounds[0] - ev.T, 0)

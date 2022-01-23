@@ -660,9 +660,9 @@ class TestDifferentialEvolutionSolver:
         )
 
         # the following line is used in _calculate_population_feasibilities.
-        # _constraint_violation_fn returns an (1, C) array when
+        # _constraint_violation_fn returns an (1, M) array when
         # x.shape == (N,), i.e. a single solution. Therefore this list
-        # comprehension will should generate (M, 1, C) array.
+        # comprehension should generate (S, 1, M) array.
         constraint_violation = np.array([solver._constraint_violation_fn(x)
                                          for x in np.array(xs)])
         assert constraint_violation.shape == (3, 1, 3)
@@ -840,11 +840,11 @@ class TestDifferentialEvolutionSolver:
 
     def test_constraint_wrapper_violation(self):
         def cons_f(x):
-            # written in vectorised form to accept an array of (N, M)
-            # returning (C, M)
+            # written in vectorised form to accept an array of (N, S)
+            # returning (M, S)
             # where N is the number of parameters,
-            # M is the number of points to be examined,
-            # and C is the number of constraints
+            # S is the number of solution vectors to be examined,
+            # and M is the number of constraint components
             return np.array([x[0] ** 2 + x[1],
                              x[0] ** 2 - x[1]])
 
@@ -1379,7 +1379,7 @@ class TestDifferentialEvolutionSolver:
         def quadratic_vec(x):
             return np.sum(x**2, axis=0)
 
-        # A vectorized function needs to accept (len(x), M) and return (M,)
+        # A vectorized function needs to accept (len(x), S) and return (S,)
         with pytest.raises(RuntimeError, match='The vectorized function'):
             differential_evolution(quadratic, self.bounds,
                                    vectorized=True, updating='deferred')
@@ -1396,7 +1396,7 @@ class TestDifferentialEvolutionSolver:
                                    updating='deferred')
 
         def rosen_vec(x):
-            # accept an (len(x0), M) array, returning a (M,) array
+            # accept an (len(x0), S) array, returning a (S,) array
             v = 100 * (x[1:] - x[:-1]**2.0)**2.0
             v += (1 - x[:-1])**2.0
             return np.squeeze(v)
@@ -1423,7 +1423,7 @@ class TestDifferentialEvolutionSolver:
         nlc2 = NonlinearConstraint(constr_f2, (0.9, 0.5), (2.0, 2.0))
 
         def rosen_vec(x):
-            # accept an (len(x0), M) array, returning a (M,) array
+            # accept an (len(x0), S) array, returning a (S,) array
             v = 100 * (x[1:] - x[:-1]**2.0)**2.0
             v += (1 - x[:-1])**2.0
             return np.squeeze(v)
