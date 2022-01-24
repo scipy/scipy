@@ -231,7 +231,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
         \exp \left( \frac{ \sum_{i=1}^n w_i \ln a_i }{ \sum_{i=1}^n w_i }
                    \right) \, ,
 
-    and, with equal weights, it falls backs to:
+    and, with equal weights, it gives:
 
     .. math::
 
@@ -318,7 +318,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
 
         \frac{ \sum_{i=1}^n w_i }{ \sum_{i=1}^n \frac{w_i}{a_i} } \, ,
 
-    and, with equal weights, it falls backs to:
+    and, with equal weights, it gives:
 
     .. math::
 
