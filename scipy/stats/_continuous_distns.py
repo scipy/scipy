@@ -29,6 +29,7 @@ from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
+from scipy.optimize import root_scalar
 
 
 def _remove_optimizer_parameters(kwds):
@@ -6121,8 +6122,75 @@ class pareto_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
-        if floc is None:
-            return super().fit(data, **kwds)
+
+        if floc is None and fscale is None:
+            # Optimization over a system of equations is possible when the
+            # location of the data is not set. The optimization requires that
+            # the scale be free, but the shape may be fixed.
+
+            def get_shape(scale, location):
+                # Return the fixed shape or numerically optimal shape based on
+                # the input parameters and data.
+                if fshape is None:
+                    return (data.shape[0] /
+                            np.sum(np.log((data - location) / scale)))
+                else:
+                    return fshape
+
+            def get_location(scale):
+                # Return the numerically optimal location.
+                return np.min(data) - scale
+
+            def dLdScale(shape, scale):
+                # The partial derivative of the log-likelihood function w.r.t.
+                # the scale.
+                return data.shape[0] * shape / scale
+
+            def dLdLocation(shape, location):
+                # The partial derivative of the log-likelihood function w.r.t.
+                # the location.
+                return (shape + 1) * np.sum(1 / (data - location))
+
+            def fun_to_solve(scale):
+                # optimize over the scale, setting the solving for the root
+                location = get_location(scale)
+                shape = get_shape(scale, location)
+                return (dLdLocation(shape, location) - dLdScale(shape, scale)) ** 2
+
+            # set brackets for `root_scalar` to use when optimizing over the
+            # scale. Bracketing requires that the upper and lower values
+            # have different signs to ensure that a root is between them. There
+            # is a constraint on
+            lbrack, rbrack = .1, np.max(data)
+
+            def interval_contains_root(lbrack, rbrack):
+                # returns true if the signs disagree.
+                return (np.sign(fun_to_solve(lbrack)) !=
+                        np.sign(fun_to_solve(rbrack)))
+
+            if not interval_contains_root(lbrack, rbrack):
+                # iteratively increase the bounds until the bracket includes
+                # a sign change.
+                print(lbrack, rbrack)
+                while True:
+                    lbrack = lbrack / 2
+                    if interval_contains_root(lbrack, rbrack):
+                        break
+                    rbrack = rbrack * 2
+                    if interval_contains_root(lbrack, rbrack):
+                        break
+                print(lbrack, rbrack)
+            # the condition that the signs are different is now satisfied
+
+            res = root_scalar(fun_to_solve, bracket=[lbrack, rbrack])
+
+            if res.converged:
+                floc = get_location(res.root)
+                fshape = get_shape(res.root, floc)
+                return fshape, floc, res.root
+            else:
+                return super().fit(data, **kwds)
+
         if np.any(data - floc < (fscale if fscale else 0)):
             raise FitDataError("pareto", lower=1, upper=np.inf)
         data = data - floc

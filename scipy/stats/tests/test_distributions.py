@@ -1440,7 +1440,7 @@ class TestPareto:
     @pytest.mark.parametrize("rvs_loc", [0, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 5])
     def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale):
-        data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
+        data = stats.pareto.rvs(size=500, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc)
         args = [data, (stats.pareto._fitstart(data), )]
         func = stats.pareto._reduce_func(args, {})[1]
@@ -1461,6 +1461,20 @@ class TestPareto:
         # fit than the super method
         _assert_less_or_close_loglike(stats.pareto, data, func, floc=0,
                                       fscale=rvs_scale/2)
+
+        # previously, the overridden fit method required `floc` to be fixed
+        # in order to find a fit. Those assertions are above. However,
+        # the addition of solving a system of partial derivatives makes it
+        # possible to fit data when `floc` is free.
+        _assert_less_or_close_loglike(stats.pareto, data, func)
+
+        # When `floc` is free, the fit method optimizes over the scale with a
+        # system of partial derivatives. It is possible to fix the shape in
+        # this system, even to a non-optimal value and still get a better fit.
+        _assert_less_or_close_loglike(stats.pareto, data, func, f0=rvs_shape)
+        _assert_less_or_close_loglike(stats.pareto, data, func, f0=rvs_shape+1)
+
+        # seed that produces issues: 176979
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.pareto)
