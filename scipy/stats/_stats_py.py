@@ -8115,7 +8115,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     pvalues : array_like, 1-D
         Array of p-values assumed to come from independent tests based on
         continuous distributions.
-    method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'}, optional
+    method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'}
 
         Name of method to use to combine p-values.
         The following methods are available (default is 'fisher'):
