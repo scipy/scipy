@@ -162,8 +162,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         trial vectors can take advantage of continuous improvements in the best
         solution.
         With ``'deferred'``, the best solution vector is updated once per
-        generation. Only ``'deferred'`` is compatible with parallelization, and
-        the `workers` keyword can over-ride this option.
+        generation. Only ``'deferred'`` is compatible with parallelization or
+        vectorization, and the `workers` and `vectorized` keywords can
+        over-ride this option.
 
         .. versionadded:: 1.2.0
 
@@ -475,13 +476,14 @@ class DifferentialEvolutionSolver:
         where and `atol` and `tol` are the absolute and relative tolerance
         respectively.
     updating : {'immediate', 'deferred'}, optional
-        If `immediate` the best solution vector is continuously updated within
-        a single generation. This can lead to faster convergence as trial
-        vectors can take advantage of continuous improvements in the best
+        If ``'immediate'``, the best solution vector is continuously updated
+        within a single generation [4]_. This can lead to faster convergence as
+        trial vectors can take advantage of continuous improvements in the best
         solution.
-        With `deferred` the best solution vector is updated once per
-        generation. Only `deferred` is compatible with parallelization, and the
-        `workers` keyword can over-ride this option.
+        With ``'deferred'``, the best solution vector is updated once per
+        generation. Only ``'deferred'`` is compatible with parallelization or
+        vectorization, and the `workers` and `vectorized` keywords can
+        over-ride this option.
     workers : int or map-like callable, optional
         If `workers` is an int the population is subdivided into `workers`
         sections and evaluated in parallel
