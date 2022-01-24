@@ -214,7 +214,7 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
 
 
 def gmean(a, axis=0, dtype=None, weights=None):
-    """Compute the weighted geometric mean along the specified axis.
+    r"""Compute the weighted geometric mean along the specified axis.
 
     The weighted geometric mean of the array :math:`a_i` associated to weights
     :math:`w_i` is:
@@ -222,7 +222,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     .. math::
 
         \exp \left( \frac{ \sum_{i=1}^n w_i \log a_i }{ \sum_{i=1}^n w_i }
-        \right) \, ,
+                   \right) \, ,
 
     and, with equal weights, it falls backs to:
 
@@ -282,7 +282,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
     >>> gmean([1, 2, 3, 4, 5, 6, 7])
     3.3800151591412964
     >>> gmean([1, 4, 7], weights=[3, 1, 3])
-    3.6254165153852687
+    2.80668351922014
 
     """
     if not isinstance(a, np.ndarray):
@@ -304,7 +304,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
 
 
 def hmean(a, axis=0, dtype=None, *, weights=None):
-    """Calculate the weighted harmonic mean along the specified axis.
+    r"""Calculate the weighted harmonic mean along the specified axis.
 
     The weighted harmonic mean of the array :math:`a_i` associated to weights
     :math:`w_i` is:
