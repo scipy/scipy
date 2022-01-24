@@ -234,7 +234,6 @@ def test_milp_5():
 def test_milp_6():
     # solve a larger MIP with only equality constraints
     # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
-    # TODO: figure out why this intermittently segfaults!
     integrality = 1
     A_eq = np.array([[22, 13, 26, 33, 21, 3, 14, 26],
                      [39, 16, 22, 28, 26, 30, 23, 24],
