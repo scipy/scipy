@@ -24,7 +24,7 @@ def _explicit_laplacian(x, normed=False):
     x = np.asarray(x)
     y = -1.0 * x
     for j in range(y.shape[0]):
-        y[j, j] = x[j, j + 1:].sum() + x[j, :j].sum()
+        y[j, j] = x[j, j + 1 :].sum() + x[j, :j].sum()
     if normed:
         d = np.diag(y).copy()
         d[d == 0] = 1.0
@@ -261,9 +261,7 @@ def test_laplacian_symmetrized(arr_type):
     # adjacency matrix
     mat = arr_type(np.arange(9).reshape(3, 3))
     L1, d1 = csgraph.laplacian(mat, return_diag=True)
-    L2, d2 = csgraph.laplacian(mat,
-                               return_diag=True,
-                               use_out_degree=True)
+    L2, d2 = csgraph.laplacian(mat, return_diag=True, use_out_degree=True)
     Ls, ds = csgraph.laplacian(mat, return_diag=True, symmetrized=True)
     mat += mat.T
     Lss, dss = csgraph.laplacian(mat, return_diag=True)
@@ -282,19 +280,34 @@ def test_laplacian_symmetrized(arr_type):
     "arr_type", [np.asarray, sparse.csr_matrix, sparse.coo_matrix]
 )
 @pytest.mark.parametrize("normed", [True, False])
-@pytest.mark.parametrize("form", ['function', 'lo'])
-def test_format(arr_type, normed, form):
+@pytest.mark.parametrize("use_out_degree", [True, False])
+@pytest.mark.parametrize("form", ["function", "lo"])
+def test_format(arr_type, normed, use_out_degree, form):
     n = 3
     mat = arr_type(np.arange(n * n).reshape(n, n))
-    Lo, do = csgraph.laplacian(mat, return_diag=True, normed=normed)
-    La, da = csgraph.laplacian(mat, return_diag=True, normed=normed, form='array')
+    Lo, do = csgraph.laplacian(
+        mat, return_diag=True, normed=normed, use_out_degree=use_out_degree
+    )
+    La, da = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        normed=normed,
+        use_out_degree=use_out_degree,
+        form="array",
+    )
     assert_allclose(do, da)
     if arr_type == np.asarray:
         assert_allclose(Lo, La)
     else:
         _assert_allclose_sparse(Lo, La)
 
-    L, d = csgraph.laplacian(mat, return_diag=True, normed=normed, form=form)
+    L, d = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        normed=normed,
+        use_out_degree=use_out_degree,
+        form=form,
+    )
     assert_allclose(d, do)
     L = L(np.eye(n, dtype=mat.dtype))
     if arr_type == np.asarray:
