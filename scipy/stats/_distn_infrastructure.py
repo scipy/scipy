@@ -495,8 +495,8 @@ class rv_frozen:
     def std(self):
         return self.dist.std(*self.args, **self.kwds)
 
-    def moment(self, order=None):
-        return self.dist.moment(order, *self.args, **self.kwds)
+    def moment(self, order=None, **kwds):
+        return self.dist.moment(order, *self.args, **self.kwds, **kwds)
 
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
@@ -507,8 +507,8 @@ class rv_frozen:
     def logpmf(self, k):
         return self.dist.logpmf(k, *self.args, **self.kwds)
 
-    def interval(self, confidence=None):
-        return self.dist.interval(confidence, *self.args, **self.kwds)
+    def interval(self, confidence=None, **kwds):
+        return self.dist.interval(confidence, *self.args, **self.kwds, **kwds)
 
     def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
         # expect method only accepts shape parameters as positional args
