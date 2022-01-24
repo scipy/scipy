@@ -242,8 +242,9 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
             ``4`` : Other; see message for details.
 
         success : bool
-            True when an optimal solution is found, the problem is determined
-            to be infeasible, or the problem is determined to be unbounded.
+            ``True`` when an optimal solution is found, the problem is
+            determined to be infeasible, or the problem is determined
+            to be unbounded.
 
         message : str
             A string descriptor of the exit status of the algorithm.
@@ -252,7 +253,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
         ``None``, depending on the solution status.
 
         x : ndarray
-            The values of the decision variables that minimizes the
+            The values of the decision variables that minimize the
             objective function while satisfying the constraints.
         fun : float
             The optimal value of the objective function ``c @ x``.
@@ -347,7 +348,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     status_map = {7: 0, 13: 1, 8: 2, 10: 3}
     res['status'] = status_map.get(highs_res.get('status', None), 4)
     res['success'] = res['status'] in {0, 2, 3}
-    res['message'] = highs_res.get('message', 'No message provided by HiGHs')
+    res['message'] = highs_res.get('message', 'No message provided by HiGHS')
 
     x = highs_res.get('x', None)
     res['x'] = np.array(x) if x is not None else None
