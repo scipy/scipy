@@ -15,6 +15,7 @@ from scipy._lib._util import _lazywhere
 from .._distn_infrastructure import rv_continuous
 from .._continuous_distns import uniform, expon, _norm_pdf, _norm_cdf
 from .levyst import Nolan
+from scipy._lib.doccer import inherit_docstring_from
 
 
 __all__ = ["levy_stable", "levy_stable_gen", "pdf_from_cf_with_fft"]
@@ -786,35 +787,8 @@ class levy_stable_gen(rv_continuous):
             )
         return pz
 
+    @inherit_docstring_from(rv_continuous)
     def rvs(self, *args, **kwds):
-        """Random variates of the Levy-stable distribution.
-
-        Parameters
-        ----------
-        alpha, beta : array_like
-            The shape parameters of the distribution. See the `levy_stable`
-            object docstring for more information.
-        loc : array_like, optional
-            Location parameter (default=0).
-        size : int or tuple of ints, optional
-            Defining number of random variates (Default is 1). Note that `size`
-            has to be given as keyword, not as positional argument.
-        random_state : {None, int, `numpy.random.Generator`,
-                        `numpy.random.RandomState`}, optional
-
-            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-            singleton is used.
-            If `seed` is an int, a new ``RandomState`` instance is used,
-            seeded with `seed`.
-            If `seed` is already a ``Generator`` or ``RandomState`` instance
-            then that instance is used.
-
-        Returns
-        -------
-        rvs : ndarray or scalar
-            Random variates of given `size`.
-
-        """
         X1 = super().rvs(*args, **kwds)
 
         discrete = kwds.pop("discrete", None)  # noqa
@@ -838,26 +812,8 @@ class levy_stable_gen(rv_continuous):
     def _rvs(self, alpha, beta, size=None, random_state=None):
         return _rvs_Z1(alpha, beta, size, random_state)
 
+    @inherit_docstring_from(rv_continuous)
     def pdf(self, x, *args, **kwds):
-        """Probability density function of the Levy-stable distribution
-
-        Parameters
-        ----------
-        x : array_like
-            quantiles
-        alpha, beta : array_like
-            The shape parameters of the distribution. See the `levy_stable`
-            object docstring for more information.
-        loc : array_like, optional
-            location parameter (default=0)
-        scale : array_like, optional
-            scale parameter (default=1)
-
-        Returns
-        -------
-        pdf : ndarray
-            Probability density function evaluated at x
-        """
         # override base class version to correct
         # location for S1 parameterization
         if self._parameterization() == "S0":
@@ -1002,27 +958,8 @@ class levy_stable_gen(rv_continuous):
 
         return data_out.T[0]
 
+    @inherit_docstring_from(rv_continuous)
     def cdf(self, x, *args, **kwds):
-        """
-        Cumulative distribution function of the Levy-stable distribution
-
-        Parameters
-        ----------
-        x : array_like
-            quantiles
-        alpha, beta : array_like
-            The shape parameters of the distribution. See the `levy_stable`
-            object docstring for more information.
-        loc : array_like, optional
-            location parameter (default=0)
-        scale : array_like, optional
-            scale parameter (default=1)
-
-        Returns
-        -------
-        pdf : ndarray
-            Cumulative distribution function evaluated at x
-        """
         # override base class version to correct
         # location for S1 parameterization
         # NOTE: this is near identical to pdf() above
