@@ -6618,7 +6618,7 @@ class TestCombinePvalues:
     @pytest.mark.parametrize("variant", ["single", "all"])
     @pytest.mark.parametrize("method",
                              ["fisher", "pearson", "tippett",
-                                 "stouffer", "mudholkar_george"])
+                              "stouffer", "mudholkar_george"])
     def test_monotony(self, variant, method):
         # Test that result increases monotonously with respect to input.
         changing_values = np.linspace(0.1, 0.9, 10)
