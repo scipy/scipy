@@ -6622,7 +6622,8 @@ class TestCombinePvalues:
     def test_monotony(self, variant, method):
         # Test that result increases monotonously with respect to input.
         changing_values = np.linspace(0.1, 0.9, 10)
-        pvalues = np.random.random(7)
+        rng = np.random.default_rng(278448169958891062669391462690811630763)
+        pvalues = rng.random(7)
         combined_pvalues = []
         for changing_value in changing_values:
             if variant == "single":
