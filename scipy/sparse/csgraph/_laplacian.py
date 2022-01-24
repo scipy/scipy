@@ -211,7 +211,7 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
                 m = _linearoperator(md_normed, shape=graph.shape, dtype=dtype)
                 return m, w.astype(dtype, copy=False)
         else:
-            md_md = _md(graph, graph_sum)
+            md_md = _md(graph, diag)
             if form == "function":
                 return md_md, diag.astype(dtype, copy=False)
             elif form == "lo":
@@ -272,14 +272,14 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
         if normed:
             isolated_node_mask = diag == 0
             w = np.where(isolated_node_mask, 1, np.sqrt(diag))
-            md_normed = _md_normed(graph, 1.0 / w)
+            md_normed = _md_normed(m, 1.0 / w)
             if form == "function":
                 return md_normed, w.astype(dtype, copy=False)
             elif form == "lo":
                 m = _linearoperator(md_normed, shape=graph.shape, dtype=dtype)
                 return m, w.astype(dtype, copy=False)
         else:
-            md_md = _md(graph, diag)
+            md_md = _md(m, diag)
             if form == "function":
                 return md_md, diag.astype(dtype, copy=False)
             elif form == "lo":
