@@ -274,7 +274,7 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
             w = np.where(isolated_node_mask, 1, np.sqrt(diag))
             md_normed = _md_normed(graph, 1.0 / w)
             if form == "function":
-                return md_normed, diag.astype(dtype, copy=False)
+                return md_normed, w.astype(dtype, copy=False)
             elif form == "lo":
                 m = _linearoperator(md_normed, shape=graph.shape, dtype=dtype)
                 return m, w.astype(dtype, copy=False)
