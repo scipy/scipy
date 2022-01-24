@@ -290,8 +290,22 @@ def main(argv):
     if args.build_only:
         sys.exit(0)
     else:
-        __import__(PROJECT_MODULE)
-        test = sys.modules[PROJECT_MODULE].test
+        try:
+            test, version, mod_path = import_module()
+        except ImportError:
+            # this may fail when running with --no-build, so try to detect
+            # an installed scipy in a subdir inside a repo
+            dst_dir = os.path.join(ROOT_DIR, 'build', 'testenv')
+            from sysconfig import get_path
+            py_path = get_path('platlib')
+            site_dir = os.path.join(dst_dir, get_path_suffix(py_path, 3))
+            print("Trying to import scipy from development installed path at:",
+                  site_dir)
+            sys.path.insert(0, site_dir)
+            os.environ['PYTHONPATH'] = \
+                os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+            test, version, mod_path = import_module()
+
 
     if args.submodule:
         tests = [PROJECT_MODULE + "." + args.submodule]
@@ -315,6 +329,8 @@ def main(argv):
     cwd = os.getcwd()
     try:
         os.chdir(test_dir)
+        print("Running tests for {} version:{}, installed at:{}".format(
+              PROJECT_MODULE, version, mod_path))
         result = test(args.mode,
                       verbose=args.verbose,
                       extra_argv=extra_argv,
@@ -331,6 +347,18 @@ def main(argv):
         sys.exit(0)
     else:
         sys.exit(1)
+
+
+def import_module():
+    """
+    Function of import project module.
+    """
+    __import__(PROJECT_MODULE)
+    test = sys.modules[PROJECT_MODULE].test
+    version = sys.modules[PROJECT_MODULE].__version__
+    mod_path = sys.modules[PROJECT_MODULE].__file__
+    mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
+    return test, version, mod_path
 
 
 def get_path_suffix(current_path, levels=3):
