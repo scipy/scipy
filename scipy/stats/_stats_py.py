@@ -221,7 +221,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
 
     .. math::
 
-        \exp \left( \frac{ \sum_{i=1}^n w_i \log a_i }{ \sum_{i=1}^n w_i }
+        \exp \left( \frac{ \sum_{i=1}^n w_i \ln a_i }{ \sum_{i=1}^n w_i }
                    \right) \, ,
 
     and, with equal weights, it falls backs to:
