@@ -15,6 +15,7 @@ from ._data import _data_matrix, _minmax_mixin
 from ._sputils import (upcast, upcast_char, to_native, isshape, getdtype,
                        getdata, get_index_dtype, downcast_intp_index,
                        check_shape, check_reshape_kwargs)
+from scipy.utils.array_compatibility import get_namespace
 
 import operator
 
@@ -155,8 +156,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                     self._shape = check_shape((M, N))
 
                 idx_dtype = get_index_dtype(maxval=max(self.shape))
-                self.row = np.array(row, copy=copy, dtype=idx_dtype)
-                self.col = np.array(col, copy=copy, dtype=idx_dtype)
+                xp, _ = get_namespace(row)
+                # TODO: Removed dtype and copy, due to being unsupported
+                self.row = xp.asarray(row)
+                self.col = xp.asarray(col)
                 self.data = getdata(obj, copy=copy, dtype=dtype)
                 self.has_canonical_format = False
         else:
@@ -191,7 +194,11 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                 self.has_canonical_format = True
 
         if dtype is not None:
-            self.data = self.data.astype(dtype, copy=False)
+            xp, array_api = get_namespace(self.data)
+            if array_api:
+                self.data = xp.astype(self.data, dtype)
+            else:
+                self.data = self.data.astype(dtype)
 
         self._check()
 
@@ -238,8 +245,8 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     def getnnz(self, axis=None):
         if axis is None:
-            nnz = len(self.data)
-            if nnz != len(self.row) or nnz != len(self.col):
+            nnz = self.data.shape[0]
+            if nnz != self.row.shape[0] or nnz != self.col.shape[0]:
                 raise ValueError('row, column, and data array must all be the '
                                  'same length')
 
@@ -272,20 +279,21 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         if self.col.dtype.kind != 'i':
             warn("col index array has non-integer dtype (%s) "
                     % self.col.dtype.name)
-
+        xp, _ = get_namespace(self.row, self.col)
         idx_dtype = get_index_dtype(maxval=max(self.shape))
-        self.row = np.asarray(self.row, dtype=idx_dtype)
-        self.col = np.asarray(self.col, dtype=idx_dtype)
+        # TODO: Removed dtype as it is not supported (numpy.int32)
+        self.row = xp.asarray(self.row)
+        self.col = xp.asarray(self.col)
         self.data = to_native(self.data)
 
         if self.nnz > 0:
-            if self.row.max() >= self.shape[0]:
+            if xp.max(self.row) >= self.shape[0]:
                 raise ValueError('row index exceeds matrix dimensions')
-            if self.col.max() >= self.shape[1]:
+            if xp.max(self.col) >= self.shape[1]:
                 raise ValueError('column index exceeds matrix dimensions')
-            if self.row.min() < 0:
+            if xp.min(self.row) < 0:
                 raise ValueError('negative row index found')
-            if self.col.min() < 0:
+            if xp.min(self.col) < 0:
                 raise ValueError('negative column index found')
 
     def transpose(self, axes=None, copy=False):
@@ -394,8 +402,14 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             M,N = self.shape
             idx_dtype = get_index_dtype((self.row, self.col),
                                         maxval=max(self.nnz, N))
-            row = self.row.astype(idx_dtype, copy=False)
-            col = self.col.astype(idx_dtype, copy=False)
+            xp, array_api = get_namespace(self.row, self.col)
+            if array_api:
+                # TODO: Removed dtype, unsupported
+                row = xp.astype(self.row, idx_dtype)
+                col = xp.astype(self.col, idx_dtype)
+            else:
+                row = self.row.astype(idx_dtype, copy=False)
+                col = self.col.astype(idx_dtype, copy=False)
 
             indptr = np.empty(M + 1, dtype=idx_dtype)
             indices = np.empty_like(col, dtype=idx_dtype)
@@ -428,11 +442,15 @@ class coo_matrix(_data_matrix, _minmax_mixin):
                  "is inefficient" % len(diags), SparseEfficiencyWarning)
 
         #initialize and fill in data array
+        xp, array_api = get_namespace(self.col)
         if self.data.size == 0:
-            data = np.zeros((0, 0), dtype=self.dtype)
+            data = xp.zeros((0, 0), dtype=self.dtype)
         else:
-            data = np.zeros((len(diags), self.col.max()+1), dtype=self.dtype)
-            data[diag_idx, self.col] = self.data
+            data = xp.zeros((len(diags), xp.max(self.col) + 1), dtype=self.dtype)
+            if array_api:
+                data._array[diag_idx, self.col] = self.data
+            else:
+                data[diag_idx, self.col] = self.data
 
         return self._dia_container((data, diags), shape=self.shape)
 
@@ -499,9 +517,10 @@ class coo_matrix(_data_matrix, _minmax_mixin):
             new_data[:] = values
 
         # Update the internal structure.
-        self.row = np.concatenate((self.row[keep], new_row))
-        self.col = np.concatenate((self.col[keep], new_col))
-        self.data = np.concatenate((self.data[keep], new_data))
+        xp, _ = get_namespace(self.row, self.col)
+        self.row = xp.asarray(np.concatenate((self.row[xp.asarray(keep)], new_row)))
+        self.col = xp.asarray(np.concatenate((self.col[xp.asarray(keep)], new_col)))
+        self.data = xp.asarray(np.concatenate((self.data[xp.asarray(keep)], new_data)))
         self.has_canonical_format = False
 
     # needed by _data_matrix
@@ -511,7 +530,12 @@ class coo_matrix(_data_matrix, _minmax_mixin):
         (i.e. .row and .col) are copied.
         """
         if copy:
-            return self.__class__((data, (self.row.copy(), self.col.copy())),
+            xp, array_api = get_namespace(self.col)
+            col, row = self.col, self.row
+            if array_api:
+                col = xp.asarray(self.col._array.copy())
+                row = xp.asarray(self.row._array.copy())
+            return self.__class__((data, (row, col)),
                                    shape=self.shape, dtype=data.dtype)
         else:
             return self.__class__((data, (self.row, self.col)),
@@ -530,17 +554,28 @@ class coo_matrix(_data_matrix, _minmax_mixin):
 
     def _sum_duplicates(self, row, col, data):
         # Assumes (data, row, col) not in canonical format.
-        if len(data) == 0:
+        if data.shape[0] == 0:
             return row, col, data
         order = np.lexsort((row, col))
-        row = row[order]
-        col = col[order]
-        data = data[order]
+        xp, array_api = get_namespace(row, col)
+        if array_api:
+            row = xp.asarray(row._array[order])
+            col = xp.asarray(col._array[order])
+            data = xp.asarray(data._array[order])
+        else:
+            row = row[order]
+            col = col[order]
+            data = data[order]
         unique_mask = ((row[1:] != row[:-1]) |
                        (col[1:] != col[:-1]))
         unique_mask = np.append(True, unique_mask)
-        row = row[unique_mask]
-        col = col[unique_mask]
+        xp, array_api = get_namespace(row, col)
+        if array_api:
+            row = xp.asarray(row._array[unique_mask])
+            col = xp.asarray(col._array[unique_mask])
+        else:
+            row = row[unique_mask]
+            col = col[unique_mask]
         unique_inds, = np.nonzero(unique_mask)
         data = np.add.reduceat(data, unique_inds, dtype=self.dtype)
         return row, col, data

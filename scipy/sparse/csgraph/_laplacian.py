@@ -10,6 +10,7 @@ Laplacian of a compressed-sparse graph
 
 import numpy as np
 from scipy.sparse import isspmatrix
+from scipy.utils.array_compatibility import get_namespace
 
 
 ###############################################################################
@@ -119,6 +120,7 @@ def _laplacian_sparse(graph, normed=False, axis=0,
         m = graph
         if copy:
             needs_copy = True
+    xp, _ = get_namespace(m.data)
     w = m.sum(axis=axis).getA1() - m.diagonal()
     if normed:
         m = m.tocoo(copy=needs_copy)
@@ -128,6 +130,7 @@ def _laplacian_sparse(graph, normed=False, axis=0,
         m.data /= w[m.col]
         m.data *= -1
         m.setdiag(1 - isolated_node_mask)
+        m.data = xp.asarray(m.data)
     else:
         if m.format == 'dia':
             m = m.copy()

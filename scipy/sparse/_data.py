@@ -10,6 +10,7 @@ import numpy as np
 
 from ._base import spmatrix, _ufuncs_with_fixed_point_at_zero
 from ._sputils import isscalarlike, validateaxis, matrix
+from scipy.utils.array_compatibility import get_namespace
 
 __all__ = []
 
@@ -89,7 +90,12 @@ class _data_matrix(spmatrix):
     conj.__doc__ = spmatrix.conj.__doc__
 
     def copy(self):
-        return self._with_data(self.data.copy(), copy=True)
+        xp, array_api = get_namespace(self.data)
+        if array_api:
+            data = xp.asarray(self.data._array.copy())
+        else:
+            data = self.data
+        return self._with_data(data, copy=True)
 
     copy.__doc__ = spmatrix.copy.__doc__
 

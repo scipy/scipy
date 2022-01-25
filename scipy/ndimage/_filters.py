@@ -37,6 +37,9 @@ from . import _ni_support
 from . import _nd_image
 from . import _ni_docstrings
 
+from scipy.utils.array_compatibility import get_namespace
+
+
 __all__ = ['correlate1d', 'convolve1d', 'gaussian_filter1d', 'gaussian_filter',
            'prewitt', 'sobel', 'generic_laplace', 'laplace',
            'gaussian_laplace', 'generic_gradient_magnitude',
@@ -329,7 +332,8 @@ def gaussian_filter(input, sigma, order=0, output=None,
     >>> ax2.imshow(result)
     >>> plt.show()
     """
-    input = numpy.asarray(input)
+    xp, _ = get_namespace(input)
+    input = xp.asarray(input)
     output = _ni_support._get_output(output, input)
     orders = _ni_support._normalize_sequence(order, input.ndim)
     sigmas = _ni_support._normalize_sequence(sigma, input.ndim)
