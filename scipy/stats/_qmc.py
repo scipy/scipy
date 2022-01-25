@@ -253,10 +253,10 @@ def discrepancy(
     ----------
     .. [1] Fang et al. "Design and modeling for computer experiments".
        Computer Science and Data Analysis Series, 2006.
-    .. [2] Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets.
+    .. [2] Zhou Y.-D. et al. "Mixture discrepancy for quasi-random point sets."
        Journal of Complexity, 29 (3-4) , pp. 283-301, 2013.
     .. [3] T. T. Warnock. "Computational investigations of low discrepancy
-       point sets". Applications of Number Theory to Numerical
+       point sets." Applications of Number Theory to Numerical
        Analysis, Academic Press, pp. 319-343, 1972.
 
     Examples
@@ -579,7 +579,7 @@ def van_der_corput(
     References
     ----------
     .. [1] A. B. Owen. "A randomized Halton algorithm in R",
-       arXiv:1706.02808, 2017.
+       :arxiv:`1706.02808`, 2017.
 
     """
     if base < 2:
@@ -794,7 +794,7 @@ class Halton(QMCEngine):
        points in evaluating multi-dimensional integrals", Numerische
        Mathematik, 1960.
     .. [2] A. B. Owen. "A randomized Halton algorithm in R",
-       arXiv:1706.02808, 2017.
+       :arxiv:`1706.02808`, 2017.
 
     Examples
     --------
@@ -1218,7 +1218,7 @@ class Sobol(QMCEngine):
     d : int
         Dimensionality of the sequence. Max dimensionality is 21201.
     scramble : bool, optional
-        If True, use Owen scrambling. Otherwise no scrambling is done.
+        If True, use LMS+shift scrambling. Otherwise, no scrambling is done.
         Default is True.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
@@ -1230,12 +1230,14 @@ class Sobol(QMCEngine):
     Notes
     -----
     Sobol' sequences [1]_ provide :math:`n=2^m` low discrepancy points in
-    :math:`[0,1)^{d}`. Scrambling them [2]_ makes them suitable for singular
+    :math:`[0,1)^{d}`. Scrambling them [3]_ makes them suitable for singular
     integrands, provides a means of error estimation, and can improve their
-    rate of convergence.
+    rate of convergence. The scrambling strategy which is implemented is a
+    (left) linear matrix scramble (LMS) followed by a digital random shift
+    (LMS+shift) [2]_.
 
     There are many versions of Sobol' sequences depending on their
-    'direction numbers'. This code uses direction numbers from [3]_. Hence,
+    'direction numbers'. This code uses direction numbers from [4]_. Hence,
     the maximum number of dimension is 21201. The direction numbers have been
     precomputed with search criterion 6 and can be retrieved at
     https://web.maths.unsw.edu.au/~fkuo/sobol/.
@@ -1244,7 +1246,7 @@ class Sobol(QMCEngine):
 
        Sobol' sequences are a quadrature rule and they lose their balance
        properties if one uses a sample size that is not a power of 2, or skips
-       the first point, or thins the sequence [4]_.
+       the first point, or thins the sequence [5]_.
 
        If :math:`n=2^m` points are not enough then one should take :math:`2^M`
        points for :math:`M>m`. When scrambling, the number R of independent
@@ -1256,19 +1258,18 @@ class Sobol(QMCEngine):
 
     References
     ----------
-    .. [1] I. M. Sobol. The distribution of points in a cube and the accurate
-       evaluation of integrals. Zh. Vychisl. Mat. i Mat. Phys., 7:784-802,
+    .. [1] I. M. Sobol', "The distribution of points in a cube and the accurate
+       evaluation of integrals." Zh. Vychisl. Mat. i Mat. Phys., 7:784-802,
        1967.
-
-    .. [2] Art B. Owen. Scrambling Sobol and Niederreiter-Xing points.
+    .. [2] J. Matousek, "On the L2-discrepancy for anchored boxes."
+       J. of Complexity 14, 527-556, 1998.
+    .. [3] Art B. Owen, "Scrambling Sobol and Niederreiter-Xing points."
        Journal of Complexity, 14(4):466-489, December 1998.
-
-    .. [3] S. Joe and F. Y. Kuo. Constructing sobol sequences with better
-       two-dimensional projections. SIAM Journal on Scientific Computing,
+    .. [4] S. Joe and F. Y. Kuo, "Constructing sobol sequences with better
+       two-dimensional projections." SIAM Journal on Scientific Computing,
        30(5):2635-2654, 2008.
-
-    .. [4] Art B. Owen. On dropping the first Sobol' point. arXiv 2008.08051,
-       2020.
+    .. [5] Art B. Owen, "On dropping the first Sobol' point."
+       :arxiv:`2008.08051`, 2020.
 
     Examples
     --------
