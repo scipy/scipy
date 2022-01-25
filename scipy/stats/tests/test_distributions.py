@@ -1340,6 +1340,9 @@ class TestGumbel_r_l:
 
 
 class TestPareto:
+    def setup_method(self):
+        np.random.seed(1234)
+
     def test_stats(self):
         # Check the stats() method with some simple values. Also check
         # that the calculations do not trigger RuntimeWarnings.
@@ -1463,18 +1466,31 @@ class TestPareto:
                                       fscale=rvs_scale/2)
 
         # previously, the overridden fit method required `floc` to be fixed
-        # in order to find a fit. Those assertions are above. However,
-        # the addition of solving a system of partial derivatives makes it
-        # possible to fit data when `floc` is free.
+        # in order to find a fit. Those assertions are above that utilize
+        # purely analytical solution are above. However, solving a system of
+        # partial derivatives makes it possible to fit data when `floc` is free.
         _assert_less_or_close_loglike(stats.pareto, data, func)
 
         # When `floc` is free, the fit method optimizes over the scale with a
         # system of partial derivatives. It is possible to fix the shape in
         # this system, even to a non-optimal value and still get a better fit.
         _assert_less_or_close_loglike(stats.pareto, data, func, f0=rvs_shape)
-        _assert_less_or_close_loglike(stats.pareto, data, func, f0=rvs_shape+1)
+        _assert_less_or_close_loglike(stats.pareto, data, func,
+                                      f0=rvs_shape + 1)
+    @pytest.mark.filterwarnings("ignore:invalid value encountered in "
+                                "double_scalars")
+    def test_fit_known_bad_seed(self):
+        # Tests a know seed and set of parameters that would produce a set
+        # of parameters that violate the support of Pareto if the fit method
+        # did not check the constraint `fscale + floc <= min(data)`.
+        np.random.seed(2535619)
+        shape, location, scale = 1, 0, 1
+        data = stats.pareto.rvs(shape, location, scale, size=100)
 
-        # seed that produces issues: 176979
+        args = [data, (stats.pareto._fitstart(data), )]
+        func = stats.pareto._reduce_func(args, {})[1]
+
+        _assert_less_or_close_loglike(stats.pareto, data, func)
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.pareto)

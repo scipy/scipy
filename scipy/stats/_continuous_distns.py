@@ -6126,15 +6126,17 @@ class pareto_gen(rv_continuous):
         if floc is None and fscale is None:
             # Optimization over a system of equations is possible when the
             # location of the data is not set. The optimization requires that
-            # the scale be free, but the shape may be fixed.
+            # the scale be free, but the shape may be fixed. The equations
+            # are from the partial derivatives of the log-likelihood function.
 
             def get_shape(scale, location):
-                # Return the fixed shape or numerically optimal shape based on
-                # the input parameters and data.
+                # The partial derivative with respect to the shape can be
+                # solved in closed form for the shape.
                 if fshape is None:
                     return (data.shape[0] /
                             np.sum(np.log((data - location) / scale)))
                 else:
+                    # if `fshape` is fixed, return that instead.
                     return fshape
 
             def get_location(scale):
@@ -6152,44 +6154,49 @@ class pareto_gen(rv_continuous):
                 return (shape + 1) * np.sum(1 / (data - location))
 
             def fun_to_solve(scale):
-                # optimize over the scale, setting the solving for the root
+                # optimize over the scale, setting the partial derivatives
+                # w.r.t. to location and scale equal.
                 location = get_location(scale)
                 shape = get_shape(scale, location)
-                return (dLdLocation(shape, location) - dLdScale(shape, scale)) ** 2
-
-            # set brackets for `root_scalar` to use when optimizing over the
-            # scale. Bracketing requires that the upper and lower values
-            # have different signs to ensure that a root is between them. There
-            # is a constraint on
-            lbrack, rbrack = .1, np.max(data)
+                return dLdLocation(shape, location) - dLdScale(shape, scale)
 
             def interval_contains_root(lbrack, rbrack):
                 # returns true if the signs disagree.
                 return (np.sign(fun_to_solve(lbrack)) !=
                         np.sign(fun_to_solve(rbrack)))
-
+            # set brackets for `root_scalar` to use when optimizing over the
+            # scale such that a root is likely between them.
+            lbrack, rbrack = .1, np.max(data)
+            # if a root is not between the brackets, iteratively expand them
+            # until they include a sign change, checking after each bracket is
+            # modified.
             if not interval_contains_root(lbrack, rbrack):
-                # iteratively increase the bounds until the bracket includes
-                # a sign change.
-                print(lbrack, rbrack)
                 while True:
-                    lbrack = lbrack / 2
+                    lbrack /= 2
                     if interval_contains_root(lbrack, rbrack):
                         break
-                    rbrack = rbrack * 2
+                    rbrack *= 2
                     if interval_contains_root(lbrack, rbrack):
                         break
-                print(lbrack, rbrack)
-            # the condition that the signs are different is now satisfied
-
             res = root_scalar(fun_to_solve, bracket=[lbrack, rbrack])
 
             if res.converged:
-                floc = get_location(res.root)
-                fshape = get_shape(res.root, floc)
-                return fshape, floc, res.root
+                fscale = res.root
+                floc = get_location(fscale)
+                fshape = get_shape(fscale, floc)
+
+                # The Pareto distribution requires that its parameters satisfy
+                # the condition `fscale + floc <= min(data)`. If this condition
+                # is not satisfied, reduce the scale with `np.nextafter` to
+                # ensure that data does not fall outside of the support.
+                if not ((fscale + floc) <= np.min(data)):
+                    fscale = np.nextafter(fscale, 0)
+                return fshape, floc, fscale
             else:
                 return super().fit(data, **kwds)
+        elif floc is None:
+            # fitting free `floc` requires free `fscale`.
+            return super().fit(data, **kwds)
 
         if np.any(data - floc < (fscale if fscale else 0)):
             raise FitDataError("pareto", lower=1, upper=np.inf)
@@ -6197,7 +6204,6 @@ class pareto_gen(rv_continuous):
 
         # Source: Evans, Hastings, and Peacock (2000), Statistical
         # Distributions, 3rd. Ed., John Wiley and Sons. Page 149.
-
         if fscale is None:
             fscale = np.min(data)
         if fshape is None:
