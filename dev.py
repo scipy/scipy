@@ -68,7 +68,7 @@ import shutil
 import subprocess
 import time
 import datetime
-import importlib.util
+import importlib.util as impu
 from sysconfig import get_path
 
 try:
@@ -80,14 +80,22 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 PATH_INSTALLED = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                    'installdir')
 
-# To import runtests.py
-fname = os.path.join(ROOT_DIR, 'runtests.py')
-spec = importlib.util.spec_from_file_location('runtests', str(fname))
-runtests = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(runtests)
 
-# Reassign sys.path as it is changed by importlib above
+def import_module_from_path(mod_name, mod_path):
+    """ Import module with name `mod_name` from file path `mod_path`
+    """
+    spec = impu.spec_from_file_location(mod_name, mod_path)
+    mod = impu.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+# Import runtests.py
+runtests = import_module_from_path('runtests', Path(ROOT_DIR) / 'runtests.py')
+
+# Reassign sys.path as it is changed by import above
 sys.path = current_sys_path
+
 
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
@@ -444,15 +452,6 @@ def install_project(show_build_log):
     return
 
 
-def import_module(mod_name, mod_path):
-    # https://bugs.python.org/msg255901
-    import importlib.util as impu
-    spec = impu.spec_from_file_location(mod_name, mod_path)
-    mod = impu.module_from_spec(spec)
-    spec.loader.exec_module(mod)
-    return mod
-
-
 def copy_openblas():
     cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
     result = subprocess.run(cmd, capture_output=True, text=True)
@@ -471,10 +470,9 @@ def copy_openblas():
         print(f'Copying {dll_fn} to {out_fname}')
         out_fname.write_bytes(dll_fn.read_bytes())
     # Write _distributor_init.py to scipy dir to load .libs DLLs.
-    openblas_support = import_module('openblas_support',
-                                     Path(ROOT_DIR) /
-                                     'tools' /
-                                     'openblas_support.py')
+    openblas_support = import_module_from_path(
+        'openblas_support',
+        Path(ROOT_DIR) / 'tools' / 'openblas_support.py')
     openblas_support.make_init(scipy_path)
     return 0
 
