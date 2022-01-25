@@ -211,7 +211,7 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
                 m = _linearoperator(md_normed, shape=graph.shape, dtype=dtype)
                 return m, w.astype(dtype, copy=False)
         else:
-            md_md = _md(graph, diag)
+            md_md = _md(graph, graph_sum)
             if form == "function":
                 return md_md, diag.astype(dtype, copy=False)
             elif form == "lo":
