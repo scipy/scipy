@@ -73,13 +73,12 @@ class AbsSq(Benchmark):
 
     def setup(self):
         rng = np.random.default_rng()
-        self.z64 = rng.random((500, 500), np.float32) + \
-                   1j * rng.random((500, 500), np.float32)
-        self.z128 = rng.random((500, 500)) + 1j * rng.random((500, 500))
-        self.z256 = self.z128.astype(np.complex256)
-        self.d32 = rng.random((500, 500), np.float32)
         self.d64 = rng.random((500, 500))
+        self.d32 = self.d64.astype(np.float32)
         self.d128 = self.d64.astype(np.float128)
+        self.z128 = self.d64 + 1j * rng.random((500, 500))
+        self.z64 = self.z128.astype(np.complex64)
+        self.z256 = self.z128.astype(np.complex256)
 
     def time_long_double_complex(self):
         abs_sq(self.z256)
