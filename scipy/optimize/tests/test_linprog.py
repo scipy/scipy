@@ -1238,7 +1238,9 @@ class LinprogCommonTests:
         assert_(res.success)
         assert_(res.nit)
         assert_(not res.status)
-        assert_(res.message == "Optimization terminated successfully.")
+        if 'highs' not in self.method:
+            # HiGHS status/message tested separately
+            assert_(res.message == "Optimization terminated successfully.")
         assert_allclose(c @ res.x, res.fun)
         assert_allclose(b_eq - A_eq @ res.x, res.con, atol=1e-11)
         assert_allclose(b_ub - A_ub @ res.x, res.slack, atol=1e-11)
