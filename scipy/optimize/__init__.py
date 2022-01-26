@@ -239,10 +239,6 @@ Linear programming / MILP
    :toctree: generated/
 
    milp -- Mixed integer linear programming.
-
-.. autosummary::
-   :toctree: generated/
-
    linprog -- Unified interface for minimizers of linear programming problems.
 
 The `linprog` function supports the following methods:

@@ -185,6 +185,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
 
         By default, all variables are continuous. `integrality` is converted
         to an array of integers before the problem is solved.
+
     bounds : scipy.optimize.Bounds, optional
         Bounds on the decision variables. Lower and upper bounds are converted
         to double precision arrays before the problem is solved. The
@@ -205,8 +206,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
         instances of `scipy.sparse.csc_array`. The ``keep_feasible`` parameter
         of `LinearConstraint` objects is ignored.
     options : dict, optional
-        A dictionary of solver options. The following keys
-        are recognized.
+        A dictionary of solver options. The following keys are recognized.
 
         disp : bool (default: ``False``)
             Set to ``True`` if indicators of optimization status are to be
@@ -214,13 +214,10 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
         presolve : bool (default: ``True``)
             Presolve attempts to identify trivial infeasibilities,
             identify trivial unboundedness, and simplify the problem before
-            sending it to the main solver. It is generally recommended
-            to keep the default setting ``True``; set to ``False`` if
-            presolve is to be disabled.
-        time_limit : float
-            The maximum time in seconds allotted to solve the problem;
-            default is the largest possible value for a ``double`` on the
-            platform.
+            sending it to the main solver.
+        time_limit : float, optional
+            The maximum time in seconds allotted to solve the problem.
+            Default is no time limit.
 
     Returns
     -------
@@ -268,7 +265,9 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
 
     Notes
     -----
-    `milp` is a wrapper of the HiGHS linear optimization software [1]_.
+    `milp` is a wrapper of the HiGHS linear optimization software [1]_. The
+    algorithm is deterministic, and it typically finds the global optimum of
+    moderately challenging mixed-integer linear programs (when it exists).
 
     References
     ----------
