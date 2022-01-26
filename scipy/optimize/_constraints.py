@@ -188,7 +188,7 @@ class LinearConstraint:
 
         When all elements of ``sl`` and ``sb`` are positive, all elements of
         the constraint are satisfied; a negative element in ``sl`` or ``sb``
-        indicates that the corresponding element the constraint is not
+        indicates that the corresponding element of the constraint is not
         satisfied.
 
         Parameters
