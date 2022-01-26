@@ -333,8 +333,9 @@ stages:
         }
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
 
-        mkdir dist
-        pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
+        # Still testing distutils here (`pip wheel --no-use-pep517` cannot be
+        # used, so back to `setup.py` it is ...)
+        python tools/suppress_output.py python setup.py bdist_wheel
         ls dist -r | Foreach-Object {
             pip install $_.FullName
         }
