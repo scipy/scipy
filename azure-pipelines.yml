@@ -328,7 +328,9 @@ stages:
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
 
         mkdir dist
-        pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
+        # Use `--no-use-pep517` to test the distutils-based build, rather than
+        # the Meson one.
+        pip wheel --no-build-isolation --no-use-pep517 -v -v -v --wheel-dir=dist .
         ls dist -r | Foreach-Object {
             pip install $_.FullName
         }

@@ -64,7 +64,7 @@ steps:
   displayName: 'Add ccache to path'
 - script: >-
     pip install --upgrade ${{parameters.numpy_spec}} &&
-    pip install --upgrade pip setuptools==59.6.0 wheel &&
+    pip install --upgrade pip setuptools==59.6.0 wheel build &&
     pip install ${{parameters.other_spec}}
     cython
     gmpy2
@@ -108,14 +108,16 @@ steps:
       echo "setup.py build"
       python tools/suppress_output.py python setup.py build
       echo "pip wheel"
-      python tools/suppress_output.py pip wheel --no-build-isolation .
+      # Use `--no-use-pep517` to test the distutils-based build, rather than
+      # the Meson one.
+      python tools/suppress_output.py pip wheel --no-build-isolation --no-use-pep517 .
       pip install --no-cache-dir scipy*.whl
     displayName: 'Install SciPy from Wheel'
 - ${{ if eq(parameters.use_sdist, true) }}:
   - script: |
       set -euo pipefail
-      echo "setup.py sdist"
-      python tools/suppress_output.py python setup.py sdist
+      echo "Build sdist via `build` (uses pyproject.toml)"
+      python tools/suppress_output.py python -m build --sdist
       # Move out of source directory to avoid finding local scipy
       cd dist
       echo "pip install"
