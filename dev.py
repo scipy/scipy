@@ -479,7 +479,7 @@ def copy_openblas():
 
 def get_site_packages():
     plat_path = Path(get_path('platlib'))
-    return Path(PATH_INSTALLED) / plat_path.relative_to(sys.exec_prefix)
+    return str(Path(PATH_INSTALLED) / plat_path.relative_to(sys.exec_prefix))
 
 
 def build_project(args):
