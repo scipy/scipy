@@ -7,16 +7,19 @@ from ._optimize import OptimizeResult
 
 
 def _constraints_to_components(constraints):
-    # convert sequence of constraints to a single set of components A, b_l, b_u
+    """
+    Convert sequence of constraints to a single set of components A, b_l, b_u.
 
-    # `constraints` could be
-    # 1. A LinearConstraint
-    # 2. A tuple representing a LinearConstraint
-    # 3. An invalid object
-    # 4. A sequence of composed entirely of objects of type 1/2
-    # 5. A sequence containing at least one object of type 3
-    # We want to accept 1, 2, and 4 and reject 3 and 5
+    `constraints` could be
 
+    1. A LinearConstraint
+    2. A tuple representing a LinearConstraint
+    3. An invalid object
+    4. A sequence of composed entirely of objects of type 1/2
+    5. A sequence containing at least one object of type 3
+
+    We want to accept 1, 2, and 4 and reject 3 and 5.
+    """
     message = ("`constraints` must be a sequence of "
                "`scipy.optimize.LinearConstraint` objects.")
     As = []
@@ -30,8 +33,8 @@ def _constraints_to_components(constraints):
         # Reject case 3
         try:
             iter(constraints)
-        except TypeError:
-            raise ValueError(message)
+        except TypeError as exc:
+            raise ValueError(message) from exc
 
         # Accept case 2 by standardizing as case 4
         if len(constraints) == 3:
@@ -49,8 +52,8 @@ def _constraints_to_components(constraints):
         if not isinstance(constraint, LinearConstraint):
             try:
                 constraint = LinearConstraint(*constraint)
-            except TypeError:
-                raise ValueError(message)
+            except TypeError as exc:
+                raise ValueError(message) from exc
         As.append(csc_array(constraint.A))
         b_ls.append(np.atleast_1d(constraint.lb).astype(np.double))
         b_us.append(np.atleast_1d(constraint.ub).astype(np.double))
@@ -68,7 +71,6 @@ def _constraints_to_components(constraints):
 
 
 def _milp_iv(c, integrality, bounds, constraints, options):
-
     # objective IV
     c = np.atleast_1d(c).astype(np.double)
     if c.ndim != 1:
@@ -94,16 +96,16 @@ def _milp_iv(c, integrality, bounds, constraints, options):
         message = "`bounds` must be an instance of `scipy.optimize.Bounds`."
         try:
             bounds = Bounds(*bounds)
-        except TypeError:
-            raise ValueError(message)
+        except TypeError as exc:
+            raise ValueError(message) from exc
 
     try:
         lb = np.broadcast_to(bounds.lb, c.shape).astype(np.double)
         ub = np.broadcast_to(bounds.ub, c.shape).astype(np.double)
-    except (ValueError, TypeError):
+    except (ValueError, TypeError) as exc:
         message = ("`bounds.lb` and `bounds.ub` must contain reals and "
                    "be broadcastable to `c.shape`.")
-        raise ValueError(message)
+        raise ValueError(message) from exc
 
     # constraints IV
     if not constraints:
@@ -146,7 +148,9 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     where :math:`x` is a vector of decision variables;
     :math:`c`, :math:`b_l`, :math:`b_u`, :math:`l`, and :math:`u` are vectors;
     :math:`A` is a matrix, and :math:`X_i` is the set of indices of
-    decision variables that must be integral.
+    decision variables that must be integral. (In this context, a
+    variable that can assume only integer values is said to be "integral";
+    it has an "integrality" constraint.)
 
     Alternatively, that's:
 
@@ -335,7 +339,6 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     integers.
 
     """
-
     args_iv = _milp_iv(c, integrality, bounds, constraints, options)
     c, integrality, lb, ub, indptr, indices, data, b_l, b_u, options = args_iv
 
