@@ -52,6 +52,7 @@ def test_milp_iv():
         milp([1, 2, 3], bounds=([1, 2, 3], [set(), 4, 5]))
 
 
+@pytest.mark.xfail(strict=True, reason="Needs to be fixed in `_highs_wrapper`")
 def test_milp_options(capsys):
     message = "Unrecognized options detected: {'ekki'}..."
     options = {'ekki': True}
@@ -62,10 +63,6 @@ def test_milp_options(capsys):
     options = {"disp": True, "presolve": False, "time_limit": 0.05}
     res = milp(c=c, constraints=(A, b, b), bounds=(0, 1), integrality=1,
                options=options)
-
-    # This shows that captured.out tests work
-    # Need to pass this test when the following print statement is _removed_.
-    print("Time Limit Reached, Presolve is switched off")
 
     captured = capsys.readouterr()
     assert "Presolve is switched off" in captured.out
