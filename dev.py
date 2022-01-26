@@ -160,7 +160,12 @@ def main(argv):
                         help="Run mypy on the codebase")
     parser.add_argument("--doc", action="append", nargs="?",
                         const="html-scipyorg", help="Build documentation")
+    parser.add_argument("--win-cp-openblas", action="store_true",
+                        help="If set, and on Windows, copy OpenBLAS lib to "
+                        "install directory after meson install")
     args = parser.parse_args(argv)
+    if args.win_cp_openblas and platform.system() != 'Windows':
+        raise RuntimeError('--win-cp-openblas only has effect on Windows')
 
     if args.pep8:
         # Lint the source using the configuration in tox.ini.
@@ -442,34 +447,33 @@ def install_project(show_build_log):
         print("Installation failed! ({0} elapsed)".format(elapsed))
         sys.exit(1)
 
-    # On Windows we also need openblas lib installed
-    if platform.system() == 'Windows':
-        ret = copy_openblas()
-    if ret != 0:
-        print("OpenBLAS copy failed!")
-        sys.exit(1)
     print("Installation OK")
     return
 
 
 def copy_openblas():
+    # Get OpenBLAS lib path from pkg-config
     cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         print(result.stderrr)
         return result.returncode
-    lib_path = Path(result.stdout.strip())
-    if not lib_path.stem == 'lib':
-        raise RuntimeError(f'Expecting "lib" at end of "{lib_path}"')
-    bin_path = lib_path.parent / 'bin'
+    openblas_lib_path = Path(result.stdout.strip())
+    if not openblas_lib_path.stem == 'lib':
+        raise RuntimeError(f'Expecting "lib" at end of "{openblas_lib_path}"')
+    # Look in bin subdirectory for OpenBLAS binaries.
+    bin_path = openblas_lib_path.parent / 'bin'
+    # Locate, make output .libs directory in Scipy install directory.
     scipy_path = Path(get_site_packages()) / 'scipy'
     libs_path = scipy_path / '.libs'
     libs_path.mkdir(exist_ok=True)
+    # Copy DLL files from OpenBLAS install to scipy install .libs subdir.
     for dll_fn in bin_path.glob('*.dll'):
         out_fname = libs_path / dll_fn.parts[-1]
         print(f'Copying {dll_fn} to {out_fname}')
         out_fname.write_bytes(dll_fn.read_bytes())
-    # Write _distributor_init.py to scipy dir to load .libs DLLs.
+    # Write _distributor_init.py to scipy dir; this loads .libs DLLs at
+    # run-time.
     openblas_support = import_module_from_path(
         'openblas_support',
         Path(ROOT_DIR) / 'tools' / 'openblas_support.py')
@@ -539,6 +543,13 @@ def build_project(args):
         sys.exit(1)
 
     install_project(args.show_build_log)
+
+    if args.win_cp_openblas and platform.system() == 'Windows':
+        if copy_openblas() == 0:
+            print('OpenBLAS copied')
+        else:
+            print("OpenBLAS copy failed!")
+            sys.exit(1)
 
     return site_dir
 
