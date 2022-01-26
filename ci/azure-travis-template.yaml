@@ -53,6 +53,7 @@ steps:
     sudo apt-get install -y
     libatlas-base-dev
     liblapack-dev
+    libopenblas-dev
     pkg-config
     gfortran
     libgmp-dev
