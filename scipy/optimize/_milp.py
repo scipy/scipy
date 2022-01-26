@@ -220,7 +220,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
             identify trivial unboundedness, and simplify the problem before
             sending it to the main solver.
         time_limit : float, optional
-            The maximum time in seconds allotted to solve the problem.
+            The maximum number of seconds allotted to solve the problem.
             Default is no time limit.
 
     Returns
