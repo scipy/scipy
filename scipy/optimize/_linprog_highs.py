@@ -75,8 +75,8 @@ def _highs_to_scipy_status_message(highs_status, highs_message):
         MODEL_STATUS_REACHED_ITERATION_LIMIT: (1, "Iteration limit reached. "),
         MODEL_STATUS_INFEASIBLE: (2, "The problem is infeasible. "),
         MODEL_STATUS_UNBOUNDED: (3, "The problem is unbounded. "),
-        MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE: (4,
-            "The problem is unbounded or infeasible. ")}
+        MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE: (4, "The problem is unbounded "
+                                               "or infeasible. ")}
     unrecognized = (4, "The HiGHS status code was not recognized. ")
     scipy_status, scipy_message = (
         scipy_statuses_messages.get(highs_status, unrecognized))
