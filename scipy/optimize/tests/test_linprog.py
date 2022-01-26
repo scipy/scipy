@@ -289,6 +289,40 @@ def test_choose_solver():
     _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
 
 
+def test_highs_status_message(self):
+    res = linprog(1, method='highs')
+    msg = "Optimization terminated successfully. (HiGHS Status 7:..."
+    assert res.status == 0
+    assert res.message == msg
+
+    A, b, c, numbers, M = magic_square(6)
+    bounds = [(0, 1)] * len(c)
+    integrality = [1] * len(c)
+    options = {"time_limit": 0.1}
+    res = linprog(c=c, A_eq=A, b_eq=b, bounds=bounds, method='highs',
+                  options=options, integrality=integrality)
+    msg = "Time limit reached.  (HiGHS Status 7:..."
+    assert res.status == 1
+    assert res.message == msg
+
+    options = {"maxiter": 10}
+    res = linprog(c=c, A_eq=A, b_eq=b, bounds=bounds, method='highs',
+                  options=options, integrality=integrality)
+    msg = "Iteration limit reached.  (HiGHS Status 7:..."
+    assert res.status == 1
+    assert res.message == msg
+
+    res = linprog(1, bounds=(1, -1), method='highs')
+    msg = "The problem is infeasible. (HiGHS Status 7:..."
+    assert res.status == 2
+    assert res.message == msg
+
+    res = linprog(-1, method='highs')
+    msg = "The problem is unbounded. (HiGHS Status 7:..."
+    assert res.status == 3
+    assert res.message == msg
+
+
 A_ub = None
 b_ub = None
 A_eq = None
