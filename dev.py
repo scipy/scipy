@@ -314,8 +314,10 @@ def main(argv):
             current_python_path = os.environ.get('PYTHONPATH', None)
             print("Unable to import {} from: {}".format(PROJECT_MODULE,
                                                        current_python_path))
-            from distutils.sysconfig import get_python_lib
-            site_dir = get_python_lib(prefix=PATH_INSTALLED, plat_specific=True)
+            from sysconfig import get_path
+            py_path = get_path('platlib')
+            site_dir = os.path.join(PATH_INSTALLED,
+                                    runtests.get_path_suffix(py_path, 3))
             print("Trying to import scipy from development installed path at:",
                   site_dir)
             sys.path.insert(0, site_dir)
@@ -462,8 +464,8 @@ def build_project(args):
         env['OPT'] = '-O0 -ggdb'
         env['FOPT'] = '-O0 -ggdb'
         if args.gcov:
-            import distutils.sysconfig
-            cvars = distutils.sysconfig.get_config_vars()
+            from sysconfig import get_config_vars
+            cvars = get_config_vars()
             env['OPT'] = '-O0 -ggdb'
             env['FOPT'] = '-O0 -ggdb'
             env['CC'] = env.get('CC', cvars['CC']) + ' --coverage'
@@ -480,8 +482,10 @@ def build_project(args):
     if not os.path.exists(os.path.join(build_dir, 'build.ninja')):
         setup_build(args, env)
 
-    from distutils.sysconfig import get_python_lib
-    site_dir = get_python_lib(prefix=PATH_INSTALLED, plat_specific=True)
+    from sysconfig import get_path
+    py_path = get_path('platlib')
+    site_dir = os.path.join(PATH_INSTALLED,
+                            runtests.get_path_suffix(py_path, 3))
 
     cmd = ["ninja", "-C", "build"]
     if args.parallel > 1:

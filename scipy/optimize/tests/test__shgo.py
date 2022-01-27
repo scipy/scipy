@@ -2,7 +2,7 @@ import logging
 import numpy
 import pytest
 from pytest import raises as assert_raises, warns
-from scipy.optimize import shgo
+from scipy.optimize import shgo, Bounds
 from scipy.optimize._shgo import SHGO
 
 
@@ -648,6 +648,25 @@ class TestShgoArguments:
             return numpy.random.uniform(size=(n,d))
 
         run_test(test1_1, n=30, sampling_method=sample)
+
+    def test_18_bounds_class(self):
+        # test that new and old bounds yield same result
+        def f(x):
+            return x[0] ** 2 + x[1] ** 2
+        lb = [-6., -6.]
+        ub = [0., 0.]
+        bounds_old = list(zip(lb, ub))
+        bounds_new = Bounds(lb, ub)
+
+        res_old_bounds = shgo(f, bounds_old)
+        res_new_bounds = shgo(f, bounds_new)
+
+        assert res_new_bounds.nfev == res_old_bounds.nfev
+        assert res_new_bounds.message == res_old_bounds.message
+        assert res_new_bounds.success == res_old_bounds.success
+        numpy.testing.assert_allclose(res_new_bounds.x,
+                                      res_old_bounds.x)
+
 
 # Failure test functions
 class TestShgoFailures:
