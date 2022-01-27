@@ -48,11 +48,36 @@ BLAS/LAPACK Installation
 
 You will also need to install a library providing the BLAS and LAPACK
 interfaces. ATLAS, OpenBLAS, and MKL all work. OpenBLAS can be installed
-via `Homebrew <https://brew.sh/>`.
+via `Homebrew <https://brew.sh/>`_.
 
 As of SciPy version 1.2.0, we do not support compiling against the system
 Accelerate library for BLAS and LAPACK. It does not support a sufficiently
 recent LAPACK interface.
+
+Install libraries from Homebrew:
+
+.. code-block:: shell
+
+     brew install openblas lapack
+
+Before installing SciPy, you might also need to setup environment variables
+that tell where to LAPACK library, and also some C compiler options
+to make it pass on macOS clang:
+
+.. code-block:: shell
+
+    # Was needed on macOS Big Sur 11.6
+    export CFLAGS=-Wno-error=implicit-function-declaration
+
+    # Tell where to find LAPACK include files for building C interfaces
+    export LDFLAGS="-L/usr/local/opt/lapack/lib"
+    export CPPFLAGS="-I/usr/local/opt/lapack/include"
+    export PKG_CONFIG_PATH="/usr/local/opt/lapack/lib/pkgconfig"
+
+    export LAPACK=/usr/local/opt/lapack/lib/liblapack.dylib
+    export BLAS=/usr/local/opt/openblas/lib/libblas.dylib 
+
+`More information in this StackOverflow answer <https://stackoverflow.com/a/70880741/315168>`_.
 
 Version-specific notes
 ----------------------
