@@ -438,3 +438,58 @@ class TestFit:
         data = dist.rvs(p, loc=loc, size=N, random_state=rng)
         res = stats.fit(dist, data, optimizer=self.opt)
         assert_allclose(res.params, (p, loc), **self.tols)
+
+    def test_fit_only_loc_scale(self):
+        # fit only loc
+        N = 5000
+        rng = np.random.default_rng(self.seed)
+
+        dist = stats.norm
+        loc, scale = 1.5, 1
+        data = dist.rvs(loc=loc, size=N, random_state=rng)
+        loc_bounds = (0, 5)
+        res = stats.fit(dist, data, loc_bounds=loc_bounds,
+                        optimizer=self.opt)
+        assert_allclose(res.params, (loc, scale), **self.tols)
+
+        # fit only scale
+        loc, scale = 0, 2.5
+        data = dist.rvs(scale=scale, size=N, random_state=rng)
+        scale_bounds = (0, 5)
+        res = stats.fit(dist, data, scale_bounds=scale_bounds,
+                        optimizer=self.opt)
+        assert_allclose(res.params, (loc, scale), **self.tols)
+
+        # fit only loc and scale
+        dist = stats.norm
+        loc, scale = 1.5, 2.5
+        data = dist.rvs(loc=loc, scale=scale, size=N, random_state=rng)
+        res = stats.fit(dist, data, loc_bounds=loc_bounds,
+                        scale_bounds=scale_bounds, optimizer=self.opt)
+        assert_allclose(res.params, (loc, scale), **self.tols)
+
+    @pytest.mark.xfail(strict=True, reason="gh-15433 needs to be fixed")
+    def test_everything_fixed(self):
+        N = 5000
+        rng = np.random.default_rng(self.seed)
+
+        dist = stats.norm
+        loc, scale = 1.5, 2.5
+        data = dist.rvs(loc=loc, scale=scale, size=N, random_state=rng)
+
+        # loc, scale fixed to 0, 1 by default
+        res = stats.fit(dist, data)
+        assert_allclose(res.params, (0, 1), **self.tols)
+
+        # loc, scale explicitly fixed
+        res = stats.fit(dist, data, loc_bounds=(loc, loc),
+                        scale_bounds=(scale, scale))
+        assert_allclose(res.params, (loc, scale), **self.tols)
+
+        # `n` gets fixed during polishing
+        dist = stats.binom
+        n, p, loc = 10, 0.65, 0
+        data = dist.rvs(n, p, loc=loc, size=N, random_state=rng)
+        shape_bounds = {'n': (0, 20), 'p': (0.65, 0.65)}
+        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
+        assert_allclose(res.params, (n, p, loc), **self.tols)
