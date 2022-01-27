@@ -4038,7 +4038,12 @@ class FitResult:
             ax.set_xlabel('x')
             ax.set_ylabel('PDF')
 
-        ax.hist(self.data, label="Histogram of Data", **options)
+        if len(self.data) > 50 or self.discrete:
+            ax.hist(self.data, label="Histogram of Data", **options)
+        else:
+            ax.plot(self.data, np.zeros_like(self.data), "*",
+                    label='Data', color='C1')
+
         ax.set_title(f"{self.dist.name} Fit")
         ax.legend(*ax.get_legend_handles_labels())
         return ax
