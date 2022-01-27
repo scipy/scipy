@@ -20,8 +20,9 @@ def _constraints_to_components(constraints):
 
     We want to accept 1, 2, and 4 and reject 3 and 5.
     """
-    message = ("`constraints` must be a sequence of "
-               "`scipy.optimize.LinearConstraint` objects.")
+    message = ("`constraints` (or each element within `constraints`) must be "
+               "convertible into an instance of "
+               "`scipy.optimize.LinearConstraint`.")
     As = []
     b_ls = []
     b_us = []
@@ -93,7 +94,8 @@ def _milp_iv(c, integrality, bounds, constraints, options):
     if bounds is None:
         bounds = Bounds(0, np.inf)
     elif not isinstance(bounds, Bounds):
-        message = "`bounds` must be an instance of `scipy.optimize.Bounds`."
+        message = ("`bounds` must be convertible into an instance of "
+                   "`scipy.optimize.Bounds`.")
         try:
             bounds = Bounds(*bounds)
         except TypeError as exc:
@@ -111,7 +113,13 @@ def _milp_iv(c, integrality, bounds, constraints, options):
     if not constraints:
         constraints = [LinearConstraint(np.empty((0, c.size)),
                                         np.empty((0,)), np.empty((0,)))]
-    A, b_l, b_u = _constraints_to_components(constraints)
+    try:
+        A, b_l, b_u = _constraints_to_components(constraints)
+    except ValueError as exc:
+        message = ("`constraints` (or each element within `constraints`) must "
+                   "be convertible into an instance of "
+                   "`scipy.optimize.LinearConstraint`.")
+        raise ValueError(message) from exc
 
     if A.shape != (b_l.size, c.size):
         message = "The shape of `A` must be (len(b_l), len(c))."

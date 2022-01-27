@@ -17,17 +17,17 @@ def test_milp_iv():
     with pytest.raises(ValueError, match=message):
         milp(np.zeros((3, 4)))
 
-    message = "`bounds` must be an instance of..."
+    message = "`bounds` must be convertible into an instance of..."
     with pytest.raises(ValueError, match=message):
         milp(1, bounds=10)
 
-    message = "`constraints` must be a sequence of..."
-    with pytest.raises(ValueError, match=message):
+    message = "`constraints` (or each element within `constraints`) must be"
+    with pytest.raises(ValueError, match=re.escape(message)):
         milp(1, constraints=10)
-
-    message = "The shape of `A` must be (len(b_l), len(c))."
     with pytest.raises(ValueError, match=re.escape(message)):
         milp(np.zeros(3), constraints=([[1, 2, 3]], [2, 3], [2, 3]))
+
+    message = "The shape of `A` must be (len(b_l), len(c))."
     with pytest.raises(ValueError, match=re.escape(message)):
         milp(np.zeros(3), constraints=([[1, 2]], [2], [2]))
 
