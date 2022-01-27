@@ -37,7 +37,11 @@ __all__ = [
     'cho_solve_banded', 'cossin', 'ldl', 'lu', 'lu_solve', 'lu_factor',
     'polar', 'qr', 'qr_multiply', 'rq', 'qz', 'ordqz', 'schur', 'rsf2csf',
     'svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space',
-    'qr_delete', 'qr_insert', 'qr_update'
+    'qr_delete', 'qr_insert', 'qr_update',
+    # basic
+    'solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
+    'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
+    'pinv', 'pinv2', 'pinvh', 'matrix_balance', 'matmul_toeplitz'
 ]
 
 
@@ -782,3 +786,149 @@ def _Q_R_u_v_replacer(args, kwargs, dispatchables):
 @_get_docs
 def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
     return Q, R, u, v
+
+
+################################ basic #########################################
+
+
+@_create_linalg(_a_b_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
+          overwrite_b=False, debug=None, check_finite=True, assume_a='gen',
+          transposed=False):
+    return a, b
+
+
+@_create_linalg(_a_b_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
+                     overwrite_b=False, debug=None, check_finite=True):
+    return a, b
+
+
+def _lu_ab_b_replacer(args, kwargs, dispatchables):
+    def self_method(l_and_u, ab, b, *args, **kwargs):
+        return (l_and_u, ) + dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_lu_ab_b_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
+                 debug=None, check_finite=True):
+    return ab, b
+
+
+def _ab_b_replacer(args, kwargs, dispatchables):
+    def self_method(ab, b, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_ab_b_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
+                  check_finite=True):
+    return ab, b
+
+
+def _corcr_b_replacer(args, kwargs, dispatchables):
+    def self_method(c_or_cr, b, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_corcr_b_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def solve_toeplitz(c_or_cr, b, check_finite=True):
+    return _mark_scalar_tuple_callable_array(c_or_cr), b
+
+
+def _c_b_replacer(args, kwargs, dispatchables):
+    def self_method(c, b, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_c_b_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def solve_circulant(c, b, singular='raise', tol=None,
+                    caxis=-1, baxis=0, outaxis=0):
+    return c, b
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def inv(a, overwrite_a=False, check_finite=True):
+    return (a, )
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def det(a, overwrite_a=False, check_finite=True):
+    return (a, )
+
+
+@_create_linalg(_a_b_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
+          check_finite=True, lapack_driver=None):
+    return a, b
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
+         cond=None, rcond=None):
+    return (a, )
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
+    return (a, )
+
+
+@_create_linalg(_a_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
+          check_finite=True, cond=None, rcond=None):
+    return (a, )
+
+
+@_create_linalg(_A_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def matrix_balance(A, permute=True, scale=True, separate=False,
+                   overwrite_a=False):
+    return (A, )
+
+
+def _corcr_x_replacer(args, kwargs, dispatchables):
+    def self_method(c_or_cr, x, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+@_create_linalg(_corcr_x_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def matmul_toeplitz(c_or_cr, x, check_finite=False, workers=None):
+    return _mark_scalar_tuple_callable_array(c_or_cr), x

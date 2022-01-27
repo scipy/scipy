@@ -33,7 +33,11 @@ fnames = [
     'cho_solve_banded', 'ldl', 'lu', 'lu_solve', 'lu_factor',
     'polar', 'qr', 'qr_multiply', 'rq', 'qz', 'ordqz', 'schur', 'rsf2csf',
     'svd', 'svdvals', 'diagsvd', 'orth', 'subspace_angles', 'null_space',
-    'qr_delete', 'qr_insert', 'qr_update'
+    'qr_delete', 'qr_insert', 'qr_update',
+    # basic
+    'solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
+    'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
+    'pinv', 'pinv2', 'pinvh', 'matrix_balance', 'matmul_toeplitz'
 ]
 
 

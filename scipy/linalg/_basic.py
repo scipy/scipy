@@ -14,6 +14,7 @@ from ._decomp import _asarray_validated
 
 from ._solve_toeplitz import levinson
 
+
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
            'pinv', 'pinv2', 'pinvh', 'matrix_balance', 'matmul_toeplitz']

@@ -198,7 +198,6 @@ Low-level routines
 from ._misc import *
 from ._cythonized_array_utils import *
 from ._backend import *
-from ._basic import *
 from ._multimethods import *
 from .blas import *
 from .lapack import *
