@@ -203,14 +203,13 @@ unuran_defines = [
   '-D_ISOC99_SOURCE=1'
 ]
 
-
 statlib = py3.extension_module('unuran_wrapper',
   [
-    _stats_gen_pyx[7],  # unuran_wrapper.pyx
+    unuran_wrap_pyx,
     unuran_sources
   ],
-  c_args: unuran_defines,
-  dependencies: [py3_dep, _lib_pxd_dep],
+  c_args: [unuran_defines, c_no_warn_depr_np_api],
+  dependencies: [py3_dep],
   include_directories: [inc_np, unuran_include_dirs],
   install: true,
   subdir: 'scipy/stats/_unuran'

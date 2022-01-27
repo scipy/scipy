@@ -221,10 +221,21 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def gmean(a, axis=0, dtype=None, weights=None):
-    """Compute the geometric mean along the specified axis.
+    r"""Compute the weighted geometric mean along the specified axis.
 
-    Return the geometric average of the array elements.
-    That is:  n-th root of (x1 * x2 * ... * xn)
+    The weighted geometric mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \exp \left( \frac{ \sum_{i=1}^n w_i \ln a_i }{ \sum_{i=1}^n w_i }
+                   \right) \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \sqrt[n]{ \prod_{i=1}^n a_i } \, .
 
     Parameters
     ----------
@@ -262,7 +273,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
 
     References
     ----------
-    .. [1] "Weighted Geometric Mean", *Wikipedia*, https://en.wikipedia.org/wiki/Weighted_geometric_mean.
+    .. [1] "Weighted Geometric Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Weighted_geometric_mean.
 
     Examples
     --------
@@ -271,6 +283,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
     2.0
     >>> gmean([1, 2, 3, 4, 5, 6, 7])
     3.3800151591412964
+    >>> gmean([1, 4, 7], weights=[3, 1, 3])
+    2.80668351922014
 
     """
     if not isinstance(a, np.ndarray):
@@ -295,9 +309,20 @@ def gmean(a, axis=0, dtype=None, weights=None):
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def hmean(a, axis=0, dtype=None, *, weights=None):
-    """Calculate the harmonic mean along the specified axis.
+    r"""Calculate the weighted harmonic mean along the specified axis.
 
-    That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
+    The weighted harmonic mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \frac{ \sum_{i=1}^n w_i }{ \sum_{i=1}^n \frac{w_i}{a_i} } \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \frac{ n }{ \sum_{i=1}^n \frac{1}{a_i} } \, .
 
     Parameters
     ----------
@@ -350,6 +375,8 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     1.6000000000000001
     >>> hmean([1, 2, 3, 4, 5, 6, 7])
     2.6997245179063363
+    >>> hmean([1, 4, 7], weights=[3, 1, 3])
+    1.9029126213592233
 
     """
     if not isinstance(a, np.ndarray):
@@ -979,6 +1006,9 @@ def _moment(a, moment, axis, *, mean=None):
         return np.mean(s, axis)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+)
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
     r"""Compute the sample skewness of a data set.
 
@@ -1082,6 +1112,9 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     return vals
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+)
 def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     """Compute the kurtosis (Fisher or Pearson) of a dataset.
 
