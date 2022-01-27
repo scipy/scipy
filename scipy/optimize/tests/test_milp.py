@@ -76,7 +76,8 @@ def test_result():
     res = milp(c=c, constraints=(A, b, b), bounds=(0, 1), integrality=1)
     assert res.status == 0
     assert res.success
-    assert isinstance(res.message, str)
+    msg = "Optimization terminated successfully. (HiGHS Status 7:"
+    assert res.message.startswith(msg)
     assert isinstance(res.x, np.ndarray)
     assert isinstance(res.fun, float)
     assert isinstance(res.mip_node_count, int)
@@ -88,21 +89,24 @@ def test_result():
                options={'time_limit': 0.05})
     assert res.status == 1
     assert not res.success
-    assert isinstance(res.message, str)
+    msg = "Time limit reached. (HiGHS Status 13:"
+    assert res.message.startswith(msg)
     assert (res.fun is res.mip_dual_bound is res.mip_gap
             is res.mip_node_count is res.x is None)
 
     res = milp(1, bounds=(1, -1))
     assert res.status == 2
     assert res.success
-    assert isinstance(res.message, str)
+    msg = "The problem is infeasible. (HiGHS Status 8:"
+    assert res.message.startswith(msg)
     assert (res.fun is res.mip_dual_bound is res.mip_gap
             is res.mip_node_count is res.x is None)
 
     res = milp(-1)
     assert res.status == 3
     assert res.success
-    assert isinstance(res.message, str)
+    msg = "The problem is unbounded. (HiGHS Status 10:"
+    assert res.message.startswith(msg)
     assert (res.fun is res.mip_dual_bound is res.mip_gap
             is res.mip_node_count is res.x is None)
 
@@ -180,13 +184,11 @@ def test_milp_3():
 
     # solve original problem
     res = milp(c=c, constraints=constraints, integrality=integrality)
-    assert res.message == 'Optimal'
     assert_allclose(res.fun, -2)
     assert_allclose(res.x, [1, 2])
 
     # solve relaxed problem
     res = milp(c=c, constraints=constraints)
-    assert res.message == 'Optimal'
     assert_allclose(res.fun, -2.8)
     assert_allclose(res.x, [1.8, 2.8])
 
@@ -204,7 +206,6 @@ def test_milp_4():
 
     res = milp(c, integrality=integrality, bounds=bounds,
                constraints=constraints)
-    assert res.message == 'Optimal'
     assert_allclose(res.fun, 59)
     assert_allclose(res.x, [6.5, 7])
 
