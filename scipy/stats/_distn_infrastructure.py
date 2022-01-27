@@ -4008,9 +4008,9 @@ class FitResult:
         """
         try:
             from matplotlib.ticker import MaxNLocator  # type: ignore[import]
-        except ModuleNotFoundError:
+        except ModuleNotFoundError as exc:
             message = "matplotlib must be installed to use method `plot`."
-            raise ValueError(message)
+            raise ValueError(message) from exc
 
         if ax is None:
             import matplotlib.pyplot as plt  # type: ignore[import]
@@ -4028,12 +4028,15 @@ class FitResult:
                       color='C0')
             options = dict(density=True, bins=x, align='left', color='C1')
             ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-
+            ax.set_xlabel('k')
+            ax.set_ylabel('PMF')
         else:
             x = np.linspace(lb, ub, 200)
             y = self.pxf(x, *fit_params)
             ax.plot(x, y, '--', label='Fit Distribution PDF', color='C0')
             options = dict(density=True, bins=50, align='mid', color='C1')
+            ax.set_xlabel('x')
+            ax.set_ylabel('PDF')
 
         ax.hist(self.data, label="Histogram of Data", **options)
         ax.set_title(f"{self.dist.name} Fit")
@@ -4205,7 +4208,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     >>> res3.nllf() > res.nllf()
     True
 
-    Note that any `optimizer` parameter allows us to control the optimizer
+    The `optimizer` parameter allows us to control the optimizer
     used to perform the fitting. The default optimizer is
     `scipy.optimize.differential_evolution` with its own default settings,
     but we can easily change these settings by creating our own optimizer
@@ -4221,7 +4224,6 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     FitParams(n=5.0, p=0.5032774713044523, loc=0.0)  # may vary
 
     """
-
     # --- Input Validation / Standardization --- #
 
     # distribution input validation and information collection
