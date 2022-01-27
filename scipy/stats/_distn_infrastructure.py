@@ -3927,17 +3927,10 @@ class FitResult:
         The distribution of which parameters were fit.
     data : 1D array_like
         The data to which the distribution was fit.
-    nllf : callable
-        The negative log-likehood function for the given `data`. Accepts a
-        single tuple containing the shapes, location, and scale of the
-        distribution.
     params : namedtuple
         A namedtuple containing the maximum likelihood estimates of the
         shape parameters, location, and (if applicable) scale of the
         distribution.
-    objective_val : float
-        The value of the negative log likelihood function evaluated with
-        the fitted shapes, i.e. ``result.nllf(result.params)``.
     success : bool or None
         Whether the optimizer considered the optimization to terminate
         successfully or not.
@@ -3946,7 +3939,7 @@ class FitResult:
 
     """
 
-    def __init__(self, dist, data, discrete, nllf, res):
+    def __init__(self, dist, data, discrete, res):
         self.dist = dist
         self.data = data
         self.discrete = discrete
@@ -3961,17 +3954,39 @@ class FitResult:
             FitParams = namedtuple('FitParams', shape_names + ['loc'])
 
         self.params = FitParams(*res.x)
-        self.objective_val = getattr(res, "fun", None)
-        if self.objective_val is None:
-            self.objective_val = nllf(res.x)
-        self.nllf = nllf
 
     def __repr__(self):
-        keys = ["dist", "data", "nllf", "params", "objective_val",
-                "success", "message"]
+        keys = ["dist", "data", "params", "success", "message"]
         m = max(map(len, keys)) + 1
         return '\n'.join([key.rjust(m) + ': ' + repr(getattr(self, key))
                           for key in keys if getattr(self, key) is not None])
+
+    def nllf(self, params=None, data=None):
+        """Negative log-likelihood function
+
+        Evaluates the negative of the log-likelihood function of the provided
+        data at the provided parameters.
+
+        Parameters
+        ----------
+        params : tuple, optional
+            The shape parameters, location, and (if applicable) scale of the
+            distribution as a single tuple. Default is the maximum likelihood
+            estimates (``self.params``).
+        data : array_like, optional
+            The data for which the log-likelihood function is to be evaluated.
+            Default is the data to which the distribution was fit
+            (``self.data``).
+
+        Returns
+        -------
+        nllf : float
+            The negative of the log-likelihood function.
+
+        """
+        params = params if params is not None else self.params
+        data = data if data is not None else self.data
+        return self.dist.nnlf(theta=params, x=data)
 
     def plot(self, ax=None):
         """Visualize the fit result.
@@ -4111,9 +4126,6 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
             A namedtuple containing the maximum likelihood estimates of the
             shape parameters, location, and (if applicable) scale of the
             distribution.
-        objective_val : float
-            The value of the negative log likelihood function evaluated with
-            the fitted shapes, i.e. ``result.nllf(result.params)``.
         success : bool or None
             Whether the optimizer considered the optimization to terminate
             successfully or not.
@@ -4190,7 +4202,7 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
     >>> res3 = stats.fit(dist, data, shape_bounds)
     >>> res3.params
     FitParams(n=6.0, p=0.5486556076755706, loc=0.0)  # may vary
-    >>> res3.objective_val > res.objective_val
+    >>> res3.nllf() > res.nllf()
     True
 
     Note that any `optimizer` parameter allows us to control the optimizer
@@ -4306,4 +4318,4 @@ def fit(dist, data, shape_bounds=None, *, loc_bounds=None, scale_bounds=None,
         else:
             res = optimizer(nllf, bounds)
 
-    return FitResult(dist, data, discrete, nllf, res)
+    return FitResult(dist, data, discrete, res)
