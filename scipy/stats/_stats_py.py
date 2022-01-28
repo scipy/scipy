@@ -1006,6 +1006,9 @@ def _moment(a, moment, axis, *, mean=None):
         return np.mean(s, axis)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+)
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
     r"""Compute the sample skewness of a data set.
 

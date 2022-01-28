@@ -4,6 +4,7 @@ from scipy.sparse import csc_array, vstack
 from ._highs._highs_wrapper import _highs_wrapper  # type: ignore[import]
 from ._constraints import LinearConstraint, Bounds
 from ._optimize import OptimizeResult
+from ._linprog_highs import _highs_to_scipy_status_message
 
 
 def _constraints_to_components(constraints):
@@ -355,11 +356,14 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
 
     res = {}
 
-    status_map = {7: 0, 13: 1, 8: 2, 10: 3}
-    res['status'] = status_map.get(highs_res.get('status', None), 4)
+    # Convert to scipy-style status and message
+    highs_status = highs_res.get('status', None)
+    highs_message = highs_res.get('message', None)
+    status, message = _highs_to_scipy_status_message(highs_status,
+                                                     highs_message)
+    res['status'] = status
+    res['message'] = message
     res['success'] = res['status'] in {0, 2, 3}
-    res['message'] = highs_res.get('message', 'No message provided by HiGHS')
-
     x = highs_res.get('x', None)
     res['x'] = np.array(x) if x is not None else None
     res['fun'] = highs_res.get('fun', None)
