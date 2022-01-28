@@ -5,6 +5,7 @@
 import operator
 import numpy as np
 import math
+import warnings
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
@@ -2182,6 +2183,11 @@ def comb(N, k, exact=False, repetition=False):
     val : int, float, ndarray
         The total number of combinations.
 
+        .. deprecated:: 1.7.4
+            If ``exact=True`` then ``N`` and ``k`` are cast to integers which
+            may lose precision if they are non-integers. This behaviour is
+            deprecated.    
+
     See Also
     --------
     binom : Binomial coefficient considered as a function of two real
@@ -2192,11 +2198,6 @@ def comb(N, k, exact=False, repetition=False):
     - Array arguments accepted only for exact=False case.
     - If N < 0, or k < 0, then 0 is returned.
     - If k > N and repetition=False, then 0 is returned.
-
-    Raises
-    ------
-    ValueError
-        Raised when `exact` is True and non-integer arguements are parsed.
 
     Examples
     --------
@@ -2215,7 +2216,7 @@ def comb(N, k, exact=False, repetition=False):
         return comb(N + k - 1, k, exact)
     if exact:
         if int(N) != N or int(k) != k:
-            raise ValueError("Arguements must be integers when exact is True.")
+            warnings.warn("Non-integer arguments when exact is True is deprecated.", DeprecationWarning)
         return _comb_int(N, k)
     else:
         k, N = asarray(k), asarray(N)
