@@ -1255,10 +1255,10 @@ class rv_generic:
     def moment(self, order=None, *args, **kwds):
         """non-central moment of distribution of specified order.
 
-        .. deprecated:: 1.8.0
-           Parameter `n` will be removed in SciPy 1.10.0, it is replaced by
-           parameter `order` because the latter works even when distributions
-           have shape parameters `n`.
+        .. deprecated:: 1.9.0
+           Parameter `n` is replaced by parameter `order` to avoid name
+           collisions with the shape parameter `n` of several distributions.
+           Parameter `n` will be removed in the second release after 1.9.0.
 
         Parameters
         ----------
@@ -1273,9 +1273,11 @@ class rv_generic:
             scale parameter (default=1)
 
         """
-        # 1.8.0 - function was originally written with parameter `n`, but this
-        # was also the name of many distribution shape parameters
-        # This block can be eliminated in 1.10.0
+        # This function was originally written with parameter `n`, but `n`
+        # is also the name of many distribution shape parameters.
+        # This block allows the function to accept both `n` and its
+        # replacement `order` during a deprecation period; it can be removed
+        # in the second release after 1.9.0.
         # The logic to provide a DeprecationWarning only when `n` is passed
         # as a keyword, accept the new keyword `order`, and otherwise be
         # backward-compatible deserves explanation. We need to look out for
@@ -1522,10 +1524,11 @@ class rv_generic:
     def interval(self, confidence=None, *args, **kwds):
         """Confidence interval with equal areas around the median.
 
-        .. deprecated:: 1.8.0
-           Parameter `alpha` will be removed in SciPy 1.10.0, it is replaced by
-           parameter `confidence` because the latter works even when
-           distributions have shape parameters `alpha`.
+        .. deprecated:: 1.9.0
+           Parameter `alpha` is replaced by parameter `confidence` to avoid
+           name collisions with the shape parameter `alpha` of some
+           distributions. Parameter `alpha` will be removed in the second
+           release after 1.9.0.
 
         Parameters
         ----------
@@ -1547,10 +1550,12 @@ class rv_generic:
             possible values.
 
         """
-        # 1.8.0 - function was originally written with parameter `alpha`,
-        # but this was also the name of some distribution shape parameters
+        # This function was originally written with parameter `alpha`, but
+        # `alpha` is also the name of a shape parameter of two distributions.
+        # This block allows the function to accept both `alpha` and its
+        # replacement `confidence` during a deprecation period; it can be
+        # removed in the second release after 1.9.0.
         # See description of logic in `moment` method.
-        # This block can be eliminated in 1.10.0
         has_shape_alpha = (self.shapes is not None
                            and "alpha" in (self.shapes.split(", ")))
         got_confidence = confidence is not None
