@@ -347,6 +347,36 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
                 assert_equal(res1dc, res1da)
 
 
+@pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
+                          "paired", "unpacker"), axis_nan_policy_cases)
+@pytest.mark.parametrize("axis", (None, 0, -1, (0, 2), (1, -1), (0, 1, 2, 3)))
+def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
+                  axis):
+    # test if keepdims parameter works correctly
+    if not unpacker:
+        def unpacker(res):
+            return res
+    rng = np.random.default_rng(0)
+    data = [rng.random((2, 3, 3, 4)) for _ in range(n_samples)]
+    expected_shape = list(data[0].shape)
+    if axis is None:
+        expected_shape = [1, 1, 1, 1]
+    else:
+        if isinstance(axis, int):
+            expected_shape[axis] = 1
+        else:
+            for ax in axis:
+                expected_shape[ax] = 1
+    expected_shape = tuple(expected_shape)
+    res = unpacker(hypotest(*data, axis=axis, keepdims=True, *args, **kwds))
+    res_base = unpacker(hypotest(*data, axis=axis, keepdims=False, *args,
+                                 **kwds))
+    for r, r_base in zip(res, res_base):
+        assert r.shape == expected_shape
+        r = np.squeeze(r, axis=axis)
+        assert_equal(r, r_base)
+
+
 @pytest.mark.parametrize(("axis"), (0, 1, 2))
 def test_axis_nan_policy_decorated_positional_axis(axis):
     # Test for correct behavior of function decorated with

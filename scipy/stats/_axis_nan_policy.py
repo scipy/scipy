@@ -226,6 +226,25 @@ def _check_empty_inputs(samples, axis):
     return output
 
 
+def _add_reduced_axes(res, reduced_axes, n_outputs,
+                      result_object):
+    res_expanded = []
+    if n_outputs == 1:
+        # Since NumPy 1.18, `expand_dims` supports tuple axis. As SciPy
+        # supports any NumPy >= 1.17, we can't guarantee support for tuple
+        # axis by NumPy. This for loop can be removed when support for
+        # NumPy 1.17 is dropped.
+        for a in reduced_axes:
+            res = np.expand_dims(res, axis=a)
+        res_expanded.append(res)
+    else:
+        for r in res:
+            for a in reduced_axes:
+                r = np.expand_dims(r, axis=a)
+            res_expanded.append(r)
+    return result_object(*res_expanded)
+
+
 # Standard docstring / signature entries for `axis` and `nan_policy`
 _name = 'axis'
 _type = "int or None, default: 0"
@@ -258,6 +277,18 @@ _nan_policy_parameter_doc = Parameter(_name, _type, _desc)
 _nan_policy_parameter = inspect.Parameter(_name,
                                           inspect.Parameter.KEYWORD_ONLY,
                                           default='propagate')
+
+_name = 'keepdims'
+_type = "bool, default: False"
+_desc = (
+    """If this is set to True, the axes which are reduced are left
+in the result as dimensions with size one. With this option,
+the result will broadcast correctly against the input array."""
+    .split('\n'))
+_keepdims_parameter_doc = Parameter(_name, _type, _desc)
+_keepdims_parameter = inspect.Parameter(_name,
+                                        inspect.Parameter.KEYWORD_ONLY,
+                                        default=False)
 
 _standard_note_addition = (
     """\nBeginning in SciPy 1.9, ``np.matrix`` inputs (not recommended for new
@@ -362,6 +393,12 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # Consolidate other positional and keyword args into `kwds`
             kwds.update(d_args)
 
+            keepdims = kwds.get("keepdims")
+            if keepdims is not None:
+                # remove keepdims to avoid passing it to the underlying
+                # hypotest function
+                kwds.pop("keepdims")
+
             # rename avoids UnboundLocalError
             if callable(n_samples):
                 # Future refactoring idea: no need for callable n_samples.
@@ -398,10 +435,15 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
             # standardize to always work along last axis
             if axis is None:
+                # when axis=None, take the maximum of all dimensions since
+                # all the dimensions are reduced.
+                max_dims = max([sample.ndim for sample in samples])
+                reduced_axes = np.arange(max_dims)
                 samples = [sample.ravel() for sample in samples]
             else:
                 samples = _broadcast_arrays(samples, axis=axis)
                 axis = np.atleast_1d(axis)
+                reduced_axes = axis
                 n_axes = len(axis)
                 # move all axes in `axis` to the end to be raveled
                 samples = [np.moveaxis(sample, axis, range(-len(axis), 0))
@@ -447,7 +489,11 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
                 if sentinel:
                     samples = _remove_sentinel(samples, paired, sentinel)
-                return hypotest_fun_out(*samples, **kwds)
+                res = hypotest_fun_out(*samples, **kwds)
+                if keepdims:
+                    return _add_reduced_axes(res, reduced_axes, n_outputs,
+                                             result_object)
+                return res
 
             # check for empty input
             # ideally, move this to the top, but some existing functions raise
@@ -455,6 +501,10 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # backward compatibility.
             empty_output = _check_empty_inputs(samples, axis)
             if empty_output is not None:
+                if keepdims:
+                    empty_output = _add_reduced_axes(empty_output,
+                                                     reduced_axes, 1,
+                                                     lambda x: x)
                 return result_object(*([empty_output.copy()
                                         for i in range(n_outputs)]))
 
@@ -469,7 +519,11 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 scipy.stats._stats_py._contains_nan(x, nan_policy))
 
             if vectorized and not contains_nan and not sentinel:
-                return hypotest_fun_out(*samples, axis=axis, **kwds)
+                res = hypotest_fun_out(*samples, axis=axis, **kwds)
+                if keepdims:
+                    return _add_reduced_axes(res, reduced_axes,
+                                             n_outputs, result_object)
+                return res
 
             # Addresses nan_policy == "omit"
             if contains_nan and nan_policy == 'omit':
@@ -509,6 +563,10 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
             x = np.moveaxis(x, axis, -1)
             res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
+            if keepdims:
+                return _add_reduced_axes(result_unpacker(res),
+                                         reduced_axes, n_outputs,
+                                         result_object)
             return result_object(*result_unpacker(res))
 
         doc = FunctionDoc(axis_nan_policy_wrapper)
@@ -523,6 +581,11 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 _nan_policy_parameter_doc)
         else:
             doc['Parameters'].append(_nan_policy_parameter_doc)
+        if 'keepdims' in parameter_names:
+            doc['Parameters'][parameter_names.index('keepdims')] = (
+                _keepdims_parameter_doc)
+        else:
+            doc['Parameters'].append(_keepdims_parameter_doc)
         doc['Notes'] += _standard_note_addition
         doc = str(doc).split("\n", 1)[1]  # remove signature
         axis_nan_policy_wrapper.__doc__ = str(doc)
@@ -534,6 +597,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             parameter_list.append(_axis_parameter)
         if 'nan_policy' not in parameters:
             parameter_list.append(_nan_policy_parameter)
+        if 'keepdims' not in parameters:
+            parameter_list.append(_keepdims_parameter)
         sig = sig.replace(parameters=parameter_list)
         axis_nan_policy_wrapper.__signature__ = sig
 
