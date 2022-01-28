@@ -3,7 +3,7 @@ trigger:
   batch: False
   branches:
     include:
-      - master
+      - main
       - maintenance/*
   paths:
     include:
@@ -129,7 +129,7 @@ stages:
         numpy_spec: "numpy==1.18.5"
         use_wheel: true
   - job: Lint
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'ubuntu-20.04'
     steps:
@@ -156,7 +156,7 @@ stages:
       displayName: 'Run Lint Checks'
       failOnStderr: true
   - job: Linux_Python_38_32bit_full
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'ubuntu-20.04'
     steps:
@@ -196,7 +196,7 @@ stages:
         summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
         reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
   - job: Windows
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'windows-latest'
     variables:

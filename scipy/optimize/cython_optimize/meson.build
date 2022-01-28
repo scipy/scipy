@@ -24,12 +24,19 @@ _zeros_pyx = custom_target('_zeros_pyx',
   ]
 )
 
+cy_opt_gen = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : [_cython_tree,
+    _dummy_init_optimize,
+    _dummy_init_cyoptimize])
+
 _zeros = py3.extension_module('_zeros',
-   [_zeros_pyx, _cython_tree, _dummy_init_optimize, _dummy_init_cyoptimize],
-   include_directories: inc_np,
-   dependencies: [py3_dep],
-   install: true,
-   subdir: 'scipy/optimize/cython_optimize'
+  cy_opt_gen.process(_zeros_pyx),
+  include_directories: inc_np,
+  dependencies: [py3_dep],
+  install: true,
+  subdir: 'scipy/optimize/cython_optimize'
 )
 
 py3.install_sources([

@@ -1,5 +1,6 @@
 """Trust-region optimization."""
 import math
+import warnings
 
 import numpy as np
 import scipy.linalg
@@ -279,7 +280,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if warnflag == 0:
             print(status_messages[warnflag])
         else:
-            print('Warning: ' + status_messages[warnflag])
+            warnings.warn(status_messages[warnflag], RuntimeWarning, 3)
         print("         Current function value: %f" % m.fun)
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)

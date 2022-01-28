@@ -89,3 +89,19 @@ cdef extern from "HConst.h" nogil:
     cdef MatrixFormat MatrixFormatkColwise "MatrixFormat::kColwise"
     cdef MatrixFormat MatrixFormatkRowwise "MatrixFormat::kRowwise"
     cdef MatrixFormat MatrixFormatkRowwisePartitioned "MatrixFormat::kRowwisePartitioned"
+
+    # cdef enum class HighsVarType(int):
+    #     kContinuous "HighsVarType::kContinuous"
+    #     kInteger "HighsVarType::kInteger"
+    #     kSemiContinuous "HighsVarType::kSemiContinuous"
+    #     kSemiInteger "HighsVarType::kSemiInteger"
+    #     kImplicitInteger "HighsVarType::kImplicitInteger"
+
+    cdef cppclass HighsVarType:
+        pass
+
+    cdef HighsVarType kContinuous "HighsVarType::kContinuous"
+    cdef HighsVarType kInteger "HighsVarType::kInteger"
+    cdef HighsVarType kSemiContinuous "HighsVarType::kSemiContinuous"
+    cdef HighsVarType kSemiInteger "HighsVarType::kSemiInteger"
+    cdef HighsVarType kImplicitInteger "HighsVarType::kImplicitInteger"
