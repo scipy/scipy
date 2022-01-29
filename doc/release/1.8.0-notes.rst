@@ -555,13 +555,14 @@ Issues closed for 1.8.0
 * `#15103 <https://github.com/scipy/scipy/issues/15103>`__: BUG: scipy.stats.chi.mean returns nan for large df due to use...
 * `#15186 <https://github.com/scipy/scipy/issues/15186>`__: Fix use of \`pytest.warns(None)\` for pytest 7.0.0
 * `#15206 <https://github.com/scipy/scipy/issues/15206>`__: BUG: Minor issue with suggestions in scipy.sparse DeprecationWarnings...
-* `#15210 <https://github.com/scipy/scipy/issues/15210>`__: BUG: A sparse matrix raises a ValueError when \`__rmul__\` with...
 * `#15224 <https://github.com/scipy/scipy/issues/15224>`__: BUG: 0th power of sparse array/matrix always returns the identity...
 * `#15228 <https://github.com/scipy/scipy/issues/15228>`__: BUG: bounded L-BFGS-B doesn't work with a scalar.
 * `#15254 <https://github.com/scipy/scipy/issues/15254>`__: BUG: \`DeprecationWarning: distutils Version classes are deprecated\`
 * `#15267 <https://github.com/scipy/scipy/issues/15267>`__: Windows CI jobs have a build issue with Pythran 0.11
+* `#15276 <https://github.com/scipy/scipy/issues/15276>`__: Boost and PROPACK git submodules are too easy to commit changes...
 * `#15316 <https://github.com/scipy/scipy/issues/15316>`__: BUG: Failed to install scipy 1.7.x with pypy 3.7 in aarch64
 * `#15339 <https://github.com/scipy/scipy/issues/15339>`__: BUG: \`highs-ds\` returns memoryviews instead of np.arrays for...
+* `#15375 <https://github.com/scipy/scipy/issues/15375>`__: BUG: axis argument to scipy.stats.mode does not accept negative...
 
 ***********************
 Pull requests for 1.8.0
@@ -938,12 +939,14 @@ Pull requests for 1.8.0
 * `#15232 <https://github.com/scipy/scipy/pull/15232>`__: BUG: Add rmul for sparse arrays
 * `#15236 <https://github.com/scipy/scipy/pull/15236>`__: BLD: update setup.py for Python 3.10
 * `#15248 <https://github.com/scipy/scipy/pull/15248>`__: MAINT: 1.8.0rc2 backports
+* `#15249 <https://github.com/scipy/scipy/pull/15249>`__: FIX: PROPACK MKL compatibility
 * `#15253 <https://github.com/scipy/scipy/pull/15253>`__: BUG: special: fix \`stdtr\` and \`stdtrit\` for infinite df
 * `#15256 <https://github.com/scipy/scipy/pull/15256>`__: MAINT: use PEP440 vs. distutils
 * `#15268 <https://github.com/scipy/scipy/pull/15268>`__: CI: pin setuptools to 59.6.0 and Pythran to 0.10.0 for Windows...
 * `#15270 <https://github.com/scipy/scipy/pull/15270>`__: MAINT: rename \`moduleTNC\` extension back to \`_moduleTNC\`
 * `#15271 <https://github.com/scipy/scipy/pull/15271>`__: TST: slightly bump test tolerance for a new lobpcg test
 * `#15275 <https://github.com/scipy/scipy/pull/15275>`__: MAINT: Fix imports in \`signal._signaltools\`
+* `#15278 <https://github.com/scipy/scipy/pull/15278>`__: MAINT: remove non-default settings (except \`shallow\`) in \`.gitmodules\`
 * `#15288 <https://github.com/scipy/scipy/pull/15288>`__: BLD Respect the --skip-build flag in setup.py
 * `#15293 <https://github.com/scipy/scipy/pull/15293>`__: BUG: fix Hausdorff int overflow
 * `#15301 <https://github.com/scipy/scipy/pull/15301>`__: TST: update \`sparse.linalg\` tests for failures due to tolerances
@@ -958,4 +961,7 @@ Pull requests for 1.8.0
 * `#15341 <https://github.com/scipy/scipy/pull/15341>`__: BUG: \`highs-ds\` returns memoryviews instead of np.arrays for...
 * `#15397 <https://github.com/scipy/scipy/pull/15397>`__: BUG: ensured vendored pep440 is imported
 * `#15416 <https://github.com/scipy/scipy/pull/15416>`__: BUG: Fix PyUFunc for wasm targets
+* `#15418 <https://github.com/scipy/scipy/pull/15418>`__: MAINT: 1.8.0 rc3 backports round 1
+* `#15421 <https://github.com/scipy/scipy/pull/15421>`__: BUG: stats: mode: fix negative axis issue with np.moveaxis instead...
+* `#15432 <https://github.com/scipy/scipy/pull/15432>`__: MAINT: release branch PROPACK switch (default off)
 

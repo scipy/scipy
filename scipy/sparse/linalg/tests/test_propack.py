@@ -8,6 +8,9 @@ from pytest import raises as assert_raises
 from scipy.sparse.linalg._svdp import _svdp
 from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
 
+if not os.environ.get("USE_PROPACK"):
+    pytestmark = pytest.mark.skip("USE_PROPACK not set")
+
 TOLS = {
     np.float32: 1e-4,
     np.float64: 1e-8,
