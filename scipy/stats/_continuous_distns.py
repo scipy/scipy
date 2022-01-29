@@ -6,6 +6,7 @@
 import warnings
 from collections.abc import Iterable
 from functools import wraps
+import math
 import ctypes
 
 import numpy as np
@@ -26,6 +27,7 @@ from ._distn_infrastructure import (
     get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape)
 from ._ksstats import kolmogn, kolmognp, kolmogni
+from ._multivariate import multivariate_normal
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
@@ -7065,17 +7067,48 @@ class skew_norm_gen(rv_continuous):
         return 2.*_norm_pdf(x)*_norm_cdf(a*x)
 
     def _cdf_single(self, x, *args):
-        _a, _b = self._get_support(*args)
-        if x <= 0:
-            cdf = integrate.quad(self._pdf, _a, x, args=args)[0]
+        """
+        This method implements the method discussed in [1]. As stated in the
+        paper, the cdf value is calculated by assuming the skewness is
+        non-negative. For negative values of skewness, we use the reflection
+        property: P(x;-shape) = 1 - P(-x;shape).
+
+        As recommented in the conclusion section of [1],
+        * when shape==1, we use ``norm_cdf(Q)`` which provide exact results
+            accross all Q.
+        * we use equation 14 when Q < 0, which is an approximation for the
+            lower tail of the distribution.
+        * we use equation 3 elsewhere since it is accurate for the "central
+            portion" of the distribution (10^-20 <= cdf <= 1 - 10^-20) and
+            upper tail (cdf > 1 - 10^-20).
+
+        References
+        ----------
+        [1] Amsler, C., Papadopoulos, A. & Schmidt, P. Evaluating the cdf of
+            the Skew Normal distribution. Empir Econ 60, 3171–3202 (2021).
+            https://doi.org/10.1007/s00181-020-01868-6
+        """
+        q = x
+        (shape,) = args
+        orig_shape = shape
+
+        if orig_shape < 0:
+            shape = -shape
+            q = -q
+
+        if shape == 1:
+            # exact approximation across all values of q
+            cdf = sc.ndtr(q) ** 2
+        elif q < 0:
+            z = (1 + shape ** 2) * q * q
+            cdf = math.exp(-0.5 * z) / (math.pi * shape * z)
         else:
-            t1 = integrate.quad(self._pdf, _a, 0, args=args)[0]
-            t2 = integrate.quad(self._pdf, 0, x, args=args)[0]
-            cdf = t1 + t2
-        if cdf > 1:
-            # Presumably numerical noise, e.g. 1.0000000000000002
-            cdf = 1.0
-        return cdf
+            q = np.c_[np.zeros_like(q), q]
+            # construct the covariance of the bivariate standard normal
+            corr = -shape / math.sqrt(1 + shape ** 2)
+            cov = ((1, corr), (corr, 1))
+            cdf = 2 * multivariate_normal.cdf(q, cov=cov)
+        return (1 - cdf) if orig_shape < 0 else cdf
 
     def _sf(self, x, a):
         return self._cdf(-x, -a)
