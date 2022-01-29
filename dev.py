@@ -50,6 +50,8 @@ else:
 
 import sys
 import os
+from pathlib import Path
+import platform
 # the following multiprocessing import is necessary to prevent tests that use
 # multiprocessing from hanging on >= Python3.8 (macOS) using pytest. Just the
 # import is enough...
@@ -62,12 +64,12 @@ sys.path.pop(0)
 current_sys_path = sys.path.copy()
 
 from argparse import ArgumentParser, REMAINDER
-import contextlib
 import shutil
 import subprocess
 import time
 import datetime
 import importlib.util
+from sysconfig import get_path
 
 try:
     from types import ModuleType as new_module
@@ -78,14 +80,21 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 PATH_INSTALLED = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                    'installdir')
 
-# To import runtests.py
-fname = os.path.join(ROOT_DIR, 'runtests.py')
-spec = importlib.util.spec_from_file_location('runtests', str(fname))
-runtests = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(runtests)
 
-# Reassign sys.path as it is changed by importlib above
+def import_module_from_path(mod_name, mod_path):
+    """Import module with name `mod_name` from file path `mod_path`"""
+    spec = importlib.util.spec_from_file_location(mod_name, mod_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+# Import runtests.py
+runtests = import_module_from_path('runtests', Path(ROOT_DIR) / 'runtests.py')
+
+# Reassign sys.path as it is changed by the `runtests` import above
 sys.path = current_sys_path
+
 
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
@@ -113,7 +122,8 @@ def main(argv):
                               "HTML output goes to build/lcov/"))
     parser.add_argument("--mode", "-m", default="fast",
                         help="'fast', 'full', or something that could be "
-                             "passed to nosetests -A [default: fast]")
+                             "passed to `pytest -m` as a marker expression "
+                             "[default: fast]")
     parser.add_argument("--submodule", "-s", default=None,
                         help="Submodule whose tests to run (cluster,"
                              " constants, ...)")
@@ -150,7 +160,16 @@ def main(argv):
                         help="Run mypy on the codebase")
     parser.add_argument("--doc", action="append", nargs="?",
                         const="html-scipyorg", help="Build documentation")
+    parser.add_argument("--win-cp-openblas", action="store_true",
+                        help="If set, and on Windows, copy OpenBLAS lib to "
+                        "install directory after meson install. "
+                        "Note: this argument may be removed in the future "
+                        "once a `site.cfg`-like mechanism to select BLAS/LAPACK "
+                        "libraries is implemented for Meson")
     args = parser.parse_args(argv)
+
+    if args.win_cp_openblas and platform.system() != 'Windows':
+        raise RuntimeError('--win-cp-openblas only has effect on Windows')
 
     if args.pep8:
         # Lint the source using the configuration in tox.ini.
@@ -314,10 +333,7 @@ def main(argv):
             current_python_path = os.environ.get('PYTHONPATH', None)
             print("Unable to import {} from: {}".format(PROJECT_MODULE,
                                                        current_python_path))
-            from sysconfig import get_path
-            py_path = get_path('platlib')
-            site_dir = os.path.join(PATH_INSTALLED,
-                                    runtests.get_path_suffix(py_path, 3))
+            site_dir = get_site_packages()
             print("Trying to import scipy from development installed path at:",
                   site_dir)
             sys.path.insert(0, site_dir)
@@ -428,15 +444,60 @@ def install_project(show_build_log):
             raise
     elapsed = datetime.datetime.now() - start_time
 
-    if ret == 0:
-        print("Installation OK")
-    else:
+    if ret != 0:
         if not show_build_log:
             with open(log_filename, 'r') as f:
                 print(f.read())
         print("Installation failed! ({0} elapsed)".format(elapsed))
         sys.exit(1)
+
+    print("Installation OK")
     return
+
+
+def copy_openblas():
+    """
+    Copies OpenBLAS DLL to the SciPy install dir, and also overwrites the
+    default `_distributor_init.py` file with the one we use for wheels uploaded
+    to PyPI so that DLL gets loaded.
+
+    Assumes pkg-config is installed and aware of OpenBLAS.
+    """
+    # Get OpenBLAS lib path from pkg-config
+    cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(result.stderrr)
+        return result.returncode
+
+    openblas_lib_path = Path(result.stdout.strip())
+    if not openblas_lib_path.stem == 'lib':
+        raise RuntimeError(f'Expecting "lib" at end of "{openblas_lib_path}"')
+
+    # Look in bin subdirectory for OpenBLAS binaries.
+    bin_path = openblas_lib_path.parent / 'bin'
+    # Locate, make output .libs directory in Scipy install directory.
+    scipy_path = Path(get_site_packages()) / 'scipy'
+    libs_path = scipy_path / '.libs'
+    libs_path.mkdir(exist_ok=True)
+    # Copy DLL files from OpenBLAS install to scipy install .libs subdir.
+    for dll_fn in bin_path.glob('*.dll'):
+        out_fname = libs_path / dll_fn.parts[-1]
+        print(f'Copying {dll_fn} to {out_fname}')
+        out_fname.write_bytes(dll_fn.read_bytes())
+
+    # Write _distributor_init.py to scipy install dir; this ensures the .libs
+    # file is on the DLL search path at run-time, so OpenBLAS gets found
+    openblas_support = import_module_from_path(
+        'openblas_support',
+        Path(ROOT_DIR) / 'tools' / 'openblas_support.py')
+    openblas_support.make_init(scipy_path)
+    return 0
+
+
+def get_site_packages():
+    plat_path = Path(get_path('platlib'))
+    return str(Path(PATH_INSTALLED) / plat_path.relative_to(sys.exec_prefix))
 
 
 def build_project(args):
@@ -446,10 +507,10 @@ def build_project(args):
     Returns
     -------
     site_dir
-        site-packages directory where it was installed
-
+        Directory where the built SciPy version was installed. This is a custom
+        prefix, followed by a relative path matching the one the system would
+        use for the site-packages of the active Python interpreter.
     """
-
     root_ok = [os.path.exists(os.path.join(ROOT_DIR, fn))
                for fn in PROJECT_ROOT_FILES]
     if not all(root_ok):
@@ -482,10 +543,7 @@ def build_project(args):
     if not os.path.exists(os.path.join(build_dir, 'build.ninja')):
         setup_build(args, env)
 
-    from sysconfig import get_path
-    py_path = get_path('platlib')
-    site_dir = os.path.join(PATH_INSTALLED,
-                            runtests.get_path_suffix(py_path, 3))
+    site_dir = get_site_packages()
 
     cmd = ["ninja", "-C", "build"]
     if args.parallel > 1:
@@ -501,6 +559,13 @@ def build_project(args):
         sys.exit(1)
 
     install_project(args.show_build_log)
+
+    if args.win_cp_openblas and platform.system() == 'Windows':
+        if copy_openblas() == 0:
+            print('OpenBLAS copied')
+        else:
+            print("OpenBLAS copy failed!")
+            sys.exit(1)
 
     return site_dir
 
