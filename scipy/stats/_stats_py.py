@@ -376,7 +376,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
-def mode(a, axis=0, nan_policy='propagate', *, keepdims=None):
+def mode(a, axis=0, nan_policy='propagate'):
     """Return an array of the modal (most common) value in the passed array.
 
     If there is more than one such value, only the smallest is returned.
@@ -396,13 +396,6 @@ def mode(a, axis=0, nan_policy='propagate', *, keepdims=None):
           * 'propagate': returns nan
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
-    keepdims : bool, optional
-        If this is set to True, the axes which are reduced are left in the
-        result as dimensions with size one. With this option, the result will
-        broadcast correctly against the input array. Beginning in SciPy 1.9.0,
-        the default behavior is to remove the reduced dimensions, consistent
-        with other NumPy and scipy.stats reduction functions, and this
-        option will be removed in a future release.
 
     Returns
     -------
@@ -428,16 +421,6 @@ def mode(a, axis=0, nan_policy='propagate', *, keepdims=None):
     ModeResult(mode=3, count=3)
 
     """
-    message = ("In SciPy 1.8.0 and before, the default behavior of `mode` was "
-               "equivalent to `keepdims=True, but this was inconsistent with "
-               "other NumPy and `scipy.stats` reduction functions. Parameter "
-               "`keepdims` was added in SciPy 1.9.0 to ameliorate the change "
-               "in default behavior. Nonetheless, use of this parameter is "
-               "deprecated, and like other reduction functions, `mode` will "
-               "always consume dimension `axis` in a future release.")
-    if keepdims is not None:
-        warnings.warn(message, DeprecationWarning, stacklevel=2)
-
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
         return ModeResult(np.array([]), np.array([]))
@@ -463,10 +446,6 @@ def mode(a, axis=0, nan_policy='propagate', *, keepdims=None):
             oldcounts = np.maximum(counts, oldcounts)
             oldmostfreq = mostfrequent
 
-        if keepdims:
-            mostfrequent = np.expand_dims(mostfrequent, axis)
-            oldcounts = np.expand_dims(oldcounts, axis)
-
         return ModeResult(mostfrequent[()], oldcounts[()])
 
     def _mode1D(a):
@@ -485,9 +464,6 @@ def mode(a, axis=0, nan_policy='propagate', *, keepdims=None):
     for ind in inds:
         modes[ind], counts[ind] = _mode1D(a_view[ind])
 
-    if keepdims:
-        modes = np.expand_dims(modes, axis)
-        counts = np.expand_dims(counts, axis)
     return ModeResult(modes[()], counts[()])
 
 

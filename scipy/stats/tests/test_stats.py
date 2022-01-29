@@ -2272,20 +2272,6 @@ class TestMode:
         np.testing.assert_array_equal(res.mode.shape, reference_shape)
         np.testing.assert_array_equal(res.count.shape, reference_shape)
 
-    @pytest.mark.parametrize('axis', np.arange(-3, 3))
-    def test_keepdims_gh_9955(self, axis):
-        rng = np.random.default_rng(984213899)
-        a = rng.uniform(size=(3, 4, 5))
-        res0 = stats.mode(a, axis=axis)
-        with pytest.warns(DeprecationWarning):
-            res1 = stats.mode(a, axis=axis, keepdims=True)
-        reference_shape = list(a.shape)
-        reference_shape[axis] = 1
-        np.testing.assert_array_equal(res1.mode.shape, reference_shape)
-        np.testing.assert_array_equal(res1.count.shape, reference_shape)
-        np.testing.assert_array_equal(np.squeeze(res1.mode), res0.mode)
-        np.testing.assert_array_equal(np.squeeze(res1.count), res0.count)
-
 
 class TestSEM:
 
