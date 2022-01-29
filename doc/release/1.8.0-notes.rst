@@ -559,6 +559,7 @@ Issues closed for 1.8.0
 * `#15228 <https://github.com/scipy/scipy/issues/15228>`__: BUG: bounded L-BFGS-B doesn't work with a scalar.
 * `#15254 <https://github.com/scipy/scipy/issues/15254>`__: BUG: \`DeprecationWarning: distutils Version classes are deprecated\`
 * `#15267 <https://github.com/scipy/scipy/issues/15267>`__: Windows CI jobs have a build issue with Pythran 0.11
+* `#15276 <https://github.com/scipy/scipy/issues/15276>`__: Boost and PROPACK git submodules are too easy to commit changes...
 * `#15316 <https://github.com/scipy/scipy/issues/15316>`__: BUG: Failed to install scipy 1.7.x with pypy 3.7 in aarch64
 * `#15339 <https://github.com/scipy/scipy/issues/15339>`__: BUG: \`highs-ds\` returns memoryviews instead of np.arrays for...
 * `#15375 <https://github.com/scipy/scipy/issues/15375>`__: BUG: axis argument to scipy.stats.mode does not accept negative...
@@ -945,6 +946,7 @@ Pull requests for 1.8.0
 * `#15270 <https://github.com/scipy/scipy/pull/15270>`__: MAINT: rename \`moduleTNC\` extension back to \`_moduleTNC\`
 * `#15271 <https://github.com/scipy/scipy/pull/15271>`__: TST: slightly bump test tolerance for a new lobpcg test
 * `#15275 <https://github.com/scipy/scipy/pull/15275>`__: MAINT: Fix imports in \`signal._signaltools\`
+* `#15278 <https://github.com/scipy/scipy/pull/15278>`__: MAINT: remove non-default settings (except \`shallow\`) in \`.gitmodules\`
 * `#15288 <https://github.com/scipy/scipy/pull/15288>`__: BLD Respect the --skip-build flag in setup.py
 * `#15293 <https://github.com/scipy/scipy/pull/15293>`__: BUG: fix Hausdorff int overflow
 * `#15301 <https://github.com/scipy/scipy/pull/15301>`__: TST: update \`sparse.linalg\` tests for failures due to tolerances
