@@ -279,7 +279,7 @@ def test_laplacian_symmetrized(arr_type):
 @pytest.mark.parametrize(
     "arr_type", [np.asarray, sparse.csr_matrix, sparse.coo_matrix]
 )
-@pytest.mark.parametrize("normed", [False])
+@pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
 @pytest.mark.parametrize("form", ["function", "lo"])
 def test_format(arr_type, normed, use_out_degree, form):
