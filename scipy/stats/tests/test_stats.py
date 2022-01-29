@@ -2265,7 +2265,7 @@ class TestMode:
     @pytest.mark.parametrize('dtype', [np.float64, 'object'])
     def test_mode_shape_gh_9955(self, axis, dtype):
         rng = np.random.default_rng(984213899)
-        a = rng.uniform(size=(3, 4, 5)).astype(dtype)
+        a = rng.random(size=(3, 4, 5), dtype=dtype)
         res = stats.mode(a, axis=axis)
         reference_shape = list(a.shape)
         reference_shape.pop(axis)
