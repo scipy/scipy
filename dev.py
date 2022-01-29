@@ -68,7 +68,7 @@ import shutil
 import subprocess
 import time
 import datetime
-import importlib.util as impu
+import importlib.util
 from sysconfig import get_path
 
 try:
@@ -82,10 +82,9 @@ PATH_INSTALLED = os.path.join(os.path.abspath(os.path.dirname(__file__)),
 
 
 def import_module_from_path(mod_name, mod_path):
-    """ Import module with name `mod_name` from file path `mod_path`
-    """
-    spec = impu.spec_from_file_location(mod_name, mod_path)
-    mod = impu.module_from_spec(spec)
+    """Import module with name `mod_name` from file path `mod_path`"""
+    spec = importlib.util.spec_from_file_location(mod_name, mod_path)
+    mod = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(mod)
     return mod
 
@@ -93,7 +92,7 @@ def import_module_from_path(mod_name, mod_path):
 # Import runtests.py
 runtests = import_module_from_path('runtests', Path(ROOT_DIR) / 'runtests.py')
 
-# Reassign sys.path as it is changed by import above
+# Reassign sys.path as it is changed by the `runtests` import above
 sys.path = current_sys_path
 
 
@@ -123,7 +122,8 @@ def main(argv):
                               "HTML output goes to build/lcov/"))
     parser.add_argument("--mode", "-m", default="fast",
                         help="'fast', 'full', or something that could be "
-                             "passed to nosetests -A [default: fast]")
+                             "passed to `pytest -m` as a marker expression "
+                             "[default: fast]")
     parser.add_argument("--submodule", "-s", default=None,
                         help="Submodule whose tests to run (cluster,"
                              " constants, ...)")
@@ -162,8 +162,12 @@ def main(argv):
                         const="html-scipyorg", help="Build documentation")
     parser.add_argument("--win-cp-openblas", action="store_true",
                         help="If set, and on Windows, copy OpenBLAS lib to "
-                        "install directory after meson install")
+                        "install directory after meson install. "
+                        "Note: this argument may be removed in the future "
+                        "once a `site.cfg`-like mechanism to select BLAS/LAPACK "
+                        "libraries is implemented for Meson")
     args = parser.parse_args(argv)
+
     if args.win_cp_openblas and platform.system() != 'Windows':
         raise RuntimeError('--win-cp-openblas only has effect on Windows')
 
@@ -452,15 +456,24 @@ def install_project(show_build_log):
 
 
 def copy_openblas():
+    """
+    Copies OpenBLAS DLL to the SciPy install dir, and also overwrites the
+    default `_distributor_init.py` file with the one we use for wheels uploaded
+    to PyPI so that DLL gets loaded.
+
+    Assumes pkg-config is installed and aware of OpenBLAS.
+    """
     # Get OpenBLAS lib path from pkg-config
     cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
     result = subprocess.run(cmd, capture_output=True, text=True)
     if result.returncode != 0:
         print(result.stderrr)
         return result.returncode
+
     openblas_lib_path = Path(result.stdout.strip())
     if not openblas_lib_path.stem == 'lib':
         raise RuntimeError(f'Expecting "lib" at end of "{openblas_lib_path}"')
+
     # Look in bin subdirectory for OpenBLAS binaries.
     bin_path = openblas_lib_path.parent / 'bin'
     # Locate, make output .libs directory in Scipy install directory.
@@ -472,8 +485,9 @@ def copy_openblas():
         out_fname = libs_path / dll_fn.parts[-1]
         print(f'Copying {dll_fn} to {out_fname}')
         out_fname.write_bytes(dll_fn.read_bytes())
-    # Write _distributor_init.py to scipy dir; this loads .libs DLLs at
-    # run-time.
+
+    # Write _distributor_init.py to scipy install dir; this ensures the .libs
+    # file is on the DLL search path at run-time, so OpenBLAS gets found
     openblas_support = import_module_from_path(
         'openblas_support',
         Path(ROOT_DIR) / 'tools' / 'openblas_support.py')
@@ -493,7 +507,9 @@ def build_project(args):
     Returns
     -------
     site_dir
-        site-packages directory where it was installed
+        Directory where the built SciPy version was installed. This is a custom
+        prefix, followed by a relative path matching the one the system would
+        use for the site-packages of the active Python interpreter.
     """
     root_ok = [os.path.exists(os.path.join(ROOT_DIR, fn))
                for fn in PROJECT_ROOT_FILES]
