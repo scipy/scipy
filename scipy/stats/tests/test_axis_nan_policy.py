@@ -349,7 +349,7 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
 
 @pytest.mark.parametrize(("hypotest", "args", "kwds", "n_samples", "n_outputs",
                           "paired", "unpacker"), axis_nan_policy_cases)
-@pytest.mark.parametrize("axis", (None, 0, -1, (0, 2), (1, -1), (0, 1, 2, 3)))
+@pytest.mark.parametrize("axis", (None, 0, -1, (0, 2), (1, -1), (3, 1, 2, 0)))
 def test_keepdims(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker,
                   axis):
     # test if keepdims parameter works correctly
@@ -413,6 +413,9 @@ def test_axis_nan_policy_decorated_positional_args():
     message = "kruskal() got an unexpected keyword argument 'args'"
     with pytest.raises(TypeError, match=re.escape(message)):
         stats.kruskal(args=x)
+
+    with pytest.raises(TypeError, match=re.escape(message)):
+        stats.kruskal(args=x, axis=None)
 
     with pytest.raises(TypeError, match=re.escape(message)):
         stats.kruskal(*x, args=x)

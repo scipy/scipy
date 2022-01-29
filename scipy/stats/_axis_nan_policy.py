@@ -31,15 +31,11 @@ def _broadcast_array_shapes(arrays, axis=None):
     return _broadcast_shapes(shapes, axis)
 
 
-def _broadcast_shapes(shapes, axis=None):
+def _process_axis(axis, shapes):
     """
-    Broadcast shapes, ignoring incompatibility of specified axes
+    Validate, remove negative elements, and sort axis tuple
     """
-    if not shapes:
-        return shapes
-
-    # input validation
-    if axis is not None:
+    if (axis is not None) and shapes:
         axis = np.atleast_1d(axis)
         axis_int = axis.astype(int)
         if not np.array_equal(axis_int, axis):
@@ -47,14 +43,7 @@ def _broadcast_shapes(shapes, axis=None):
                              'tuple of integers, or `None`.')
         axis = axis_int
 
-    # First, ensure all shapes have same number of dimensions by prepending 1s.
-    n_dims = max([len(shape) for shape in shapes])
-    new_shapes = np.ones((len(shapes), n_dims), dtype=int)
-    for row, shape in zip(new_shapes, shapes):
-        row[len(row)-len(shape):] = shape  # can't use negative indices (-0:)
-
-    # Remove the shape elements of the axes to be ignored, but remember them.
-    if axis is not None:
+        n_dims = max(len(shape) for shape in shapes)
         axis[axis < 0] = n_dims + axis[axis < 0]
         axis = np.sort(axis)
         if axis[-1] >= n_dims or axis[0] < 0:
@@ -65,6 +54,27 @@ def _broadcast_shapes(shapes, axis=None):
         if len(np.unique(axis)) != len(axis):
             raise ValueError("`axis` must contain only distinct elements")
 
+    return axis
+
+
+def _broadcast_shapes(shapes, axis=None):
+    """
+    Broadcast shapes, ignoring incompatibility of specified axes
+    """
+    if not shapes:
+        return shapes
+
+    # input validation
+    axis = _process_axis(axis, shapes)
+
+    # First, ensure all shapes have same number of dimensions by prepending 1s.
+    n_dims = max([len(shape) for shape in shapes])
+    new_shapes = np.ones((len(shapes), n_dims), dtype=int)
+    for row, shape in zip(new_shapes, shapes):
+        row[len(row)-len(shape):] = shape  # can't use negative indices (-0:)
+
+    # Remove the shape elements of the axes to be ignored, but remember them.
+    if axis is not None:
         removed_shapes = new_shapes[:, axis]
         new_shapes = np.delete(new_shapes, axis, axis=1)
 
@@ -226,22 +236,33 @@ def _check_empty_inputs(samples, axis):
     return output
 
 
+def _expand_dims(arr, axes):
+    """
+    Insert new axes that will appear at the `axis` position in the expanded
+    array shape.
+    """
+    # Since NumPy 1.18, `expand_dims` supports tuple axis. As SciPy
+    # supports any NumPy >= 1.17, we can't guarantee support for tuple
+    # axis by NumPy. This for loop can be removed when support for
+    # NumPy 1.17 is dropped.
+    for axis in axes:
+        arr = np.expand_dims(arr, axis=axis)
+    return arr
+
+
 def _add_reduced_axes(res, reduced_axes, n_outputs,
                       result_object):
+    """
+    Add reduced axes back to all the arrays in the result object
+    if keepdims = True. `res` should either be an instance of the
+    result_object or a tuple of results.
+    """
     res_expanded = []
     if n_outputs == 1:
-        # Since NumPy 1.18, `expand_dims` supports tuple axis. As SciPy
-        # supports any NumPy >= 1.17, we can't guarantee support for tuple
-        # axis by NumPy. This for loop can be removed when support for
-        # NumPy 1.17 is dropped.
-        for a in reduced_axes:
-            res = np.expand_dims(res, axis=a)
-        res_expanded.append(res)
+        res_expanded.append(_expand_dims(res, reduced_axes))
     else:
         for r in res:
-            for a in reduced_axes:
-                r = np.expand_dims(r, axis=a)
-            res_expanded.append(r)
+            res_expanded.append(_expand_dims(r, reduced_axes))
     return result_object(*res_expanded)
 
 
@@ -393,12 +414,6 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # Consolidate other positional and keyword args into `kwds`
             kwds.update(d_args)
 
-            keepdims = kwds.get("keepdims")
-            if keepdims is not None:
-                # remove keepdims to avoid passing it to the underlying
-                # hypotest function
-                kwds.pop("keepdims")
-
             # rename avoids UnboundLocalError
             if callable(n_samples):
                 # Future refactoring idea: no need for callable n_samples.
@@ -428,6 +443,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             vectorized = True if 'axis' in params else False
             axis = kwds.pop('axis', default_axis)
             nan_policy = kwds.pop('nan_policy', 'propagate')
+            keepdims = kwds.pop("keepdims", False)
             del args  # avoid the possibility of passing both `args` and `kwds`
 
             # convert masked arrays to regular arrays with sentinel values
@@ -437,13 +453,17 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             if axis is None:
                 # when axis=None, take the maximum of all dimensions since
                 # all the dimensions are reduced.
-                max_dims = max([sample.ndim for sample in samples])
-                reduced_axes = np.arange(max_dims)
+                if samples:
+                    max_dims = max([sample.ndim for sample in samples])
+                    reduced_axes = np.arange(max_dims)
+                else:
+                    reduced_axes = axis
                 samples = [sample.ravel() for sample in samples]
             else:
                 samples = _broadcast_arrays(samples, axis=axis)
                 axis = np.atleast_1d(axis)
-                reduced_axes = axis
+                shapes = [sample.shape for sample in samples]
+                reduced_axes = _process_axis(axis, shapes)
                 n_axes = len(axis)
                 # move all axes in `axis` to the end to be raveled
                 samples = [np.moveaxis(sample, axis, range(-len(axis), 0))
@@ -491,8 +511,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     samples = _remove_sentinel(samples, paired, sentinel)
                 res = hypotest_fun_out(*samples, **kwds)
                 if keepdims:
-                    return _add_reduced_axes(res, reduced_axes, n_outputs,
-                                             result_object)
+                    res = _add_reduced_axes(res, reduced_axes, n_outputs,
+                                            result_object)
                 return res
 
             # check for empty input
@@ -521,8 +541,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             if vectorized and not contains_nan and not sentinel:
                 res = hypotest_fun_out(*samples, axis=axis, **kwds)
                 if keepdims:
-                    return _add_reduced_axes(res, reduced_axes,
-                                             n_outputs, result_object)
+                    res = _add_reduced_axes(res, reduced_axes, n_outputs,
+                                            result_object)
                 return res
 
             # Addresses nan_policy == "omit"
