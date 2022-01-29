@@ -2426,7 +2426,10 @@ def factorial2(n, exact=False):
     """
     if exact:
         if n < -1:
-            return 0
+            if n % 2 != 0:
+                return (factorial2(n + 2, exact)) / (n + 2)
+            else:
+                return ValueError
         if n <= 0:
             return 1
         val = 1
