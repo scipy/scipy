@@ -75,7 +75,10 @@ py3.extension_module('_flapack',
     g77_abi_wrappers,
     deprecated_lapack_routines
   ],
-  c_args: numpy_nodepr_api,
+  c_args: [
+    numpy_nodepr_api,
+    '-Wno-empty-body',  # comes from `callstatement`s in flapack_other.pyf.src
+  ],
   include_directories: [inc_np, inc_f2py],
   dependencies: [py3_dep, lapack],
   install: true,
