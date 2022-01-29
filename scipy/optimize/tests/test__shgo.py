@@ -652,7 +652,7 @@ class TestShgoArguments:
     def test_18_bounds_class(self):
         # test that new and old bounds yield same result
         def f(x):
-            return np.square(x).sum()
+            return numpy.square(x).sum()
 
         lb = [-6., 1., -5.]
         ub = [-1., 3., 5.]
