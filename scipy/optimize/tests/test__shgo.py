@@ -652,9 +652,10 @@ class TestShgoArguments:
     def test_18_bounds_class(self):
         # test that new and old bounds yield same result
         def f(x):
-            return x[0] ** 2 + x[1] ** 2
-        lb = [-6., -6.]
-        ub = [0., 0.]
+            return np.square(x).sum()
+
+        lb = [-6., 1., -5.]
+        ub = [-1., 3., 5.]
         bounds_old = list(zip(lb, ub))
         bounds_new = Bounds(lb, ub)
 
