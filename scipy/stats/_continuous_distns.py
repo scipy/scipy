@@ -6123,30 +6123,23 @@ class pareto_gen(rv_continuous):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
 
-        if floc is None and fscale is None:
+        ndata = data.shape[0]
+
+        def get_shape(scale, location):
+            # The partial derivative w.r.t. the shape can be solved in
+            # closed form for the shape.
+            return ndata / np.sum(np.log((data - location) / scale))
+
+        if floc is fscale is None:
             # Optimization over a system of equations is possible when the
             # location of the data is not set. The optimization requires that
             # the scale be free, but the shape may be fixed. The equations
             # are from the partial derivatives of the log-likelihood function.
 
-            def get_shape(scale, location):
-                # The partial derivative with respect to the shape can be
-                # solved in closed form for the shape.
-                if fshape is None:
-                    return (data.shape[0] /
-                            np.sum(np.log((data - location) / scale)))
-                else:
-                    # if `fshape` is fixed, return that instead.
-                    return fshape
-
-            def get_location(scale):
-                # Return the numerically optimal location.
-                return np.min(data) - scale
-
             def dLdScale(shape, scale):
                 # The partial derivative of the log-likelihood function w.r.t.
                 # the scale.
-                return data.shape[0] * shape / scale
+                return ndata * shape / scale
 
             def dLdLocation(shape, location):
                 # The partial derivative of the log-likelihood function w.r.t.
@@ -6156,58 +6149,55 @@ class pareto_gen(rv_continuous):
             def fun_to_solve(scale):
                 # optimize over the scale, setting the partial derivatives
                 # w.r.t. to location and scale equal.
-                location = get_location(scale)
-                shape = get_shape(scale, location)
+                location = np.min(data) - scale
+                shape = fshape or get_shape(scale, location)
                 return dLdLocation(shape, location) - dLdScale(shape, scale)
 
             def interval_contains_root(lbrack, rbrack):
-                # returns true if the signs disagree.
+                # return true if the signs disagree.
                 return (np.sign(fun_to_solve(lbrack)) !=
                         np.sign(fun_to_solve(rbrack)))
+
             # set brackets for `root_scalar` to use when optimizing over the
             # scale such that a root is likely between them.
             lbrack, rbrack = .1, np.max(data)
             # if a root is not between the brackets, iteratively expand them
             # until they include a sign change, checking after each bracket is
             # modified.
-            if not interval_contains_root(lbrack, rbrack):
-                while True:
-                    lbrack /= 2
-                    if interval_contains_root(lbrack, rbrack):
-                        break
-                    rbrack *= 2
-                    if interval_contains_root(lbrack, rbrack):
-                        break
+            while not interval_contains_root(lbrack, rbrack):
+                lbrack /= 2
+                rbrack *= 2
             res = root_scalar(fun_to_solve, bracket=[lbrack, rbrack])
 
             if res.converged:
                 fscale = res.root
-                floc = get_location(fscale)
-                fshape = get_shape(fscale, floc)
+                floc = np.min(data) - fscale
+                fshape = fshape or get_shape(fscale, floc)
 
                 # The Pareto distribution requires that its parameters satisfy
-                # the condition `fscale + floc <= min(data)`. If this condition
+                # the condition `fscale + floc <= min(data)`. However, to
+                # avoid numerical issues, we require that `fscale + floc`
+                # is strictly less than `min(data)`. If this condition
                 # is not satisfied, reduce the scale with `np.nextafter` to
                 # ensure that data does not fall outside of the support.
-                if not ((fscale + floc) <= np.min(data)):
+                if not (fscale + floc) < np.min(data):
+                    fscale = np.min(data) - floc
                     fscale = np.nextafter(fscale, 0)
                 return fshape, floc, fscale
             else:
                 return super().fit(data, **kwds)
         elif floc is None:
-            # fitting free `floc` requires free `fscale`.
-            return super().fit(data, **kwds)
+            floc = np.min(data) - fscale
 
         if np.any(data - floc < (fscale if fscale else 0)):
             raise FitDataError("pareto", lower=1, upper=np.inf)
-        data = data - floc
 
         # Source: Evans, Hastings, and Peacock (2000), Statistical
         # Distributions, 3rd. Ed., John Wiley and Sons. Page 149.
         if fscale is None:
-            fscale = np.min(data)
+            fscale = np.min(data) - floc
         if fshape is None:
-            fshape = 1/((1/len(data)) * np.sum(np.log(data/fscale)))
+            fshape = get_shape(fscale, floc)
         return fshape, floc, fscale
 
 
