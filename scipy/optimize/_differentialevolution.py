@@ -594,18 +594,18 @@ class DifferentialEvolutionSolver:
         if workers != 1 and updating == 'immediate':
             warnings.warn("differential_evolution: the 'workers' keyword has"
                           " overridden updating='immediate' to"
-                          " updating='deferred'", UserWarning)
+                          " updating='deferred'", UserWarning, stacklevel=2)
             self._updating = 'deferred'
 
         if vectorized and workers != 1:
             warnings.warn("differential_evolution: the 'workers' keyword"
-                          " overrides the 'vectorized' keyword")
+                          " overrides the 'vectorized' keyword", stacklevel=2)
             self.vectorized = vectorized = False
 
         if vectorized and updating == 'immediate':
             warnings.warn("differential_evolution: the 'vectorized' keyword"
                           " has overridden updating='immediate' to updating"
-                          "='deferred'", UserWarning)
+                          "='deferred'", UserWarning, stacklevel=2)
             self._updating = 'deferred'
 
         # an object with a map method.
