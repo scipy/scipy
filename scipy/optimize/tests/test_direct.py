@@ -113,3 +113,21 @@ class TestDIRECT:
         result = direct(styblinski_tang, bounds, maxiter=50)
         assert result.success is False
         assert result.status == 2
+
+    def test_bounds_variants(self):
+        # test that new and old bounds yield same result
+        def f(x):
+            return numpy.square(x).sum()
+
+        lb = [-6., 1., -5.]
+        ub = [-1., 3., 5.]
+        bounds_old = list(zip(lb, ub))
+        bounds_new = Bounds(lb, ub)
+
+        res_old_bounds = direct(f, bounds_old)
+        res_new_bounds = direct(f, bounds_new)
+
+        assert res_new_bounds.nfev == res_old_bounds.nfev
+        assert res_new_bounds.message == res_old_bounds.message
+        assert res_new_bounds.success == res_old_bounds.success
+        assert_allclose(res_new_bounds.x, res_old_bounds.x)
