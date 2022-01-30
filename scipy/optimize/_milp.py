@@ -75,8 +75,9 @@ def _constraints_to_components(constraints):
 def _milp_iv(c, integrality, bounds, constraints, options):
     # objective IV
     c = np.atleast_1d(c).astype(np.double)
-    if c.ndim != 1:
-        message = "`c` must be a one-dimensional array."
+    if c.ndim != 1 or c.size == 0 or not np.all(np.isfinite(c)):
+        message = ("`c` must be a one-dimensional array of finite numbers "
+                   "with at least one element.")
         raise ValueError(message)
 
     # integrality IV

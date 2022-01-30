@@ -13,9 +13,13 @@ from scipy.optimize import milp, Bounds, LinearConstraint
 
 def test_milp_iv():
 
-    message = "`c` must be a one-dimensional array"
+    message = "`c` must be a one-dimensional array of finite numbers with"
     with pytest.raises(ValueError, match=message):
         milp(np.zeros((3, 4)))
+    with pytest.raises(ValueError, match=message):
+        milp([])
+    with pytest.raises(ValueError, match=message):
+        milp(None)
 
     message = "`bounds` must be convertible into an instance of..."
     with pytest.raises(ValueError, match=message):
