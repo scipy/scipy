@@ -89,3 +89,27 @@ class TestDIRECT:
         assert res.status == 4
         assert res.success
         assert_allclose(res.x, np.array([1., 1.]))
+
+    def test_failure_maxfun(self):
+        # test that if optimization runs for the maximal number of
+        # evaluations, success = False is returned
+        def styblinski_tang(pos):
+            x, y = pos
+            return 0.5 * (x**4 - 16 * x**2 + 5 * x + y**4 - 16 * y**2 + 5 * y)
+
+        bounds = Bounds([-4., -4.], [4., 4.])
+        result = direct(styblinski_tang, bounds, maxfun = 100)
+        assert result.success == False
+        assert result.status == 1
+        
+    def test_failure_maxiter(self):
+        # test that if optimization runs for the maximal number of
+        # iterations, success = False is returned
+        def styblinski_tang(pos):
+            x, y = pos
+            return 0.5 * (x**4 - 16 * x**2 + 5 * x + y**4 - 16 * y**2 + 5 * y)
+
+        bounds = Bounds([-4., -4.], [4., 4.])
+        result = direct(styblinski_tang, bounds, maxiter = 50)
+        assert result.success == False
+        assert result.status == 2
