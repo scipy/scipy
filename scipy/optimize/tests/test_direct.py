@@ -5,7 +5,7 @@ from numpy.testing import (assert_allclose,
                            assert_array_less)
 import pytest
 import numpy as np
-from scipy.optimize import direct
+from scipy.optimize import direct, Bounds
 
 
 class TestDIRECT:
