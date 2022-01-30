@@ -117,7 +117,7 @@ class TestDIRECT:
     def test_bounds_variants(self):
         # test that new and old bounds yield same result
         def f(x):
-            return numpy.square(x).sum()
+            return np.square(x).sum()
 
         lb = [-6., 1., -5.]
         ub = [-1., 3., 5.]
