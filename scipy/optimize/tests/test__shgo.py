@@ -665,7 +665,7 @@ class TestShgoArguments:
         assert res_new_bounds.nfev == res_old_bounds.nfev
         assert res_new_bounds.message == res_old_bounds.message
         assert res_new_bounds.success == res_old_bounds.success
-        x_opt = numpy.array([-1., 1., 0])
+        x_opt = numpy.array([-1., 1., 0.])
         numpy.testing.assert_allclose(res_new_bounds.x, x_opt)
         numpy.testing.assert_allclose(res_new_bounds.x,
                                       res_old_bounds.x)
