@@ -101,7 +101,7 @@ class TestDIRECT:
         result = direct(styblinski_tang, bounds, maxfun = 100)
         assert result.success == False
         assert result.status == 1
-        
+
     def test_failure_maxiter(self):
         # test that if optimization runs for the maximal number of
         # iterations, success = False is returned
