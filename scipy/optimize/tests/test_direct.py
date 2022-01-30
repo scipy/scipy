@@ -98,8 +98,8 @@ class TestDIRECT:
             return 0.5 * (x**4 - 16 * x**2 + 5 * x + y**4 - 16 * y**2 + 5 * y)
 
         bounds = Bounds([-4., -4.], [4., 4.])
-        result = direct(styblinski_tang, bounds, maxfun = 100)
-        assert result.success == False
+        result = direct(styblinski_tang, bounds, maxfun=100)
+        assert not result.success == True
         assert result.status == 1
 
     def test_failure_maxiter(self):
@@ -110,6 +110,6 @@ class TestDIRECT:
             return 0.5 * (x**4 - 16 * x**2 + 5 * x + y**4 - 16 * y**2 + 5 * y)
 
         bounds = Bounds([-4., -4.], [4., 4.])
-        result = direct(styblinski_tang, bounds, maxiter = 50)
-        assert result.success == False
+        result = direct(styblinski_tang, bounds, maxiter=50)
+        assert not result.success == True
         assert result.status == 2
