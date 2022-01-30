@@ -283,8 +283,10 @@ def test_laplacian_symmetrized(arr_type):
 @pytest.mark.parametrize("use_out_degree", [True, False])
 @pytest.mark.parametrize("form", ["function", "lo"])
 def test_format(arr_type, normed, use_out_degree, form):
-    n = 3
-    mat = arr_type(np.arange(n * n).reshape(n, n))
+    #n = 3
+    #mat = arr_type(np.arange(n * n).reshape(n, n))
+    mat = [[0, 1, 0], [4, 2, 0], [0, 0, 0]]
+    #mat = arr_type(np.array(mat), dtype=dtype)
     Lo, do = csgraph.laplacian(
         mat, return_diag=True, normed=normed, use_out_degree=use_out_degree
     )

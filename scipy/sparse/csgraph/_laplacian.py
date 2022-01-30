@@ -267,7 +267,6 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
         m += m.T.conj()
 
     if form != "array":
-        # np.fill_diagonal(m, 0)
         graph_sum = m.sum(axis=axis)
         diag = graph_sum - graph.diagonal()
         if normed:
