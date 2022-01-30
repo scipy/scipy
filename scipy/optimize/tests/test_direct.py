@@ -99,7 +99,7 @@ class TestDIRECT:
 
         bounds = Bounds([-4., -4.], [4., 4.])
         result = direct(styblinski_tang, bounds, maxfun=100)
-        assert not result.success == True
+        assert result.succes is False
         assert result.status == 1
 
     def test_failure_maxiter(self):
@@ -111,5 +111,5 @@ class TestDIRECT:
 
         bounds = Bounds([-4., -4.], [4., 4.])
         result = direct(styblinski_tang, bounds, maxiter=50)
-        assert not result.success == True
+        assert result.succes is False
         assert result.status == 2
