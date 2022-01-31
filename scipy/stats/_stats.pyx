@@ -753,3 +753,81 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
                 estimate[j, k] += values_[i, k] * arg
 
     return np.asarray(estimate)
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0):
+    """
+    def gaussian_kernel_estimate(points, real[:, :] values, xi, precision)
+    Evaluate the log of the estimated pdf on a provided set of points.
+    Parameters
+    ----------
+    points : array_like with shape (n, d)
+        Data points to estimate from in d dimensions.
+    values : real[:, :] with shape (n, p)
+        Multivariate values associated with the data points.
+    xi : array_like with shape (m, d)
+        Coordinates to evaluate the estimate at in d dimensions.
+    precision : array_like with shape (d, d)
+        Precision matrix for the Gaussian kernel.
+    Returns
+    -------
+    estimate : double[:, :] with shape (m, p)
+        The log of the multivariate Gaussian kernel estimate evaluated at the input coordinates.
+    """
+    cdef:
+        real[:, :] points_, xi_, values_
+        real[:, :] whitening, estimate, max_
+        real[:, :, :] estimate_
+        int i, j, k
+        int n, d, m, p
+        real arg, residual, log_arg, log_norm
+
+    n = points.shape[0]
+    d = points.shape[1]
+    m = xi.shape[0]
+    p = values.shape[1]
+
+    if xi.shape[1] != d:
+        raise ValueError("points and xi must have same trailing dim")
+    if precision.shape[0] != d or precision.shape[1] != d:
+        raise ValueError("precision matrix must match data dims")
+
+    # Rescale the data
+    whitening = np.linalg.cholesky(precision).astype(dtype, copy=False)
+    points_ = np.dot(points, whitening).astype(dtype, copy=False)
+    xi_ = np.dot(xi, whitening).astype(dtype, copy=False)
+    values_ = values.astype(dtype, copy=False)
+    values_ = np.log(values_).astype(dtype, copy=False)
+
+    # Evaluate the normalisation
+    log_norm = (- d / 2) * math.log(2 * PI)
+    for i in range(d):
+        log_norm += math.log(whitening[i, i])
+
+    # Create the result array and evaluate the weighted sum
+    estimate = np.zeros((m, p), dtype)
+    max_ = np.zeros((m, p), dtype) - 99999999
+    estimate_ = np.zeros((m, p, n), dtype)
+    for j in range(m):
+        for i in range(n):
+            arg = 0
+            log_arg = 0
+            for k in range(d):
+                residual = (points_[i, k] - xi_[j, k])
+                arg += residual * residual
+
+            log_arg = -arg / 2 + log_norm
+            for k in range(p):
+                estimate_[j, k, i] = values_[i, k] + log_arg
+                if max_[j, k] < estimate_[j, k, i]:
+                    max_[j, k] = estimate_[j, k, i]
+
+        for k in range(p):
+            for i in range(n):
+                estimate[j, k] += math.exp(estimate_[j, k, i] - max_[j, k])
+            estimate[j, k] = math.log(estimate[j, k])
+            estimate[j, k] += max_[j, k]
+
+    return np.asarray(estimate)
