@@ -90,9 +90,9 @@ def direct(
     maxiter : int, optional
         Maximum number of iterations. Default is 6000.
     locally_biased : bool, optional
-        If `True` (default), use the locally biased variant [2] of the
+        If `True` (default), use the locally biased variant [2]_ of the
         algorithm known as DIRECT_L. If `False`, use the original unbiased
-        DIRECT algorithm [1]. For hard problems with many local minima,
+        DIRECT algorithm [1]_. For hard problems with many local minima,
         `False` is recommended.
     f_min : float, optional
         Function value of the global optimum. Set this value only if the
@@ -134,7 +134,7 @@ def direct(
 
     DIRECT is a deterministic global
     optimization algorithm capable of minimizing a black box function with
-    its variables subject to lower and upper bound constrains by sampling
+    its variables subject to lower and upper bound constraints by sampling
     potential solutions in the search space. The algorithm starts by
     normalising the search space to an n-dimensional unit hypercube.
     It samples the function at the center of this hypercube and at 2n
@@ -187,12 +187,11 @@ def direct(
     evaluations (20003). Loosening the termination tolerances `vol_tol` and
     `len_tol` can be used to stop DIRECT earlier.
 
-    >>> result = direct(styblinski_tang, bounds, vol_tol = 1e-7)
+    >>> result = direct(styblinski_tang, bounds, vol_tol=1e-7)
     >>> result.x, result.fun, result.nfev
     array([-2.90321597, -2.9044353 ]), -78.33231560853986, 1113
 
     """
-
     # convert bounds to new Bounds class if necessary
     if not isinstance(bounds, Bounds):
         if isinstance(bounds, list) or isinstance(bounds, tuple):
