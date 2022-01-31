@@ -1214,7 +1214,7 @@ class DifferentialEvolutionSolver:
             # shortcut for no constraints
             return np.ones(num_members, bool), np.zeros((num_members, 1))
 
-        (S, N)
+        # (S, N)
         parameters_pop = self._scale_parameters(population)
 
         if self.vectorized:
