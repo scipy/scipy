@@ -1076,17 +1076,16 @@ class DifferentialEvolutionSolver:
             right-padded with np.inf. Has shape ``(np.size(population, 0),)``
         """
         num_members = np.size(population, 0)
-        # these are the number of function evals left to stay under the
+        # S is the number of function evals left to stay under the
         # maxfun budget
-        nfevs = min(num_members,
-                    self.maxfun - self._nfev)
+        S = min(num_members, self.maxfun - self._nfev)
 
         energies = np.full(num_members, np.inf)
 
         parameters_pop = self._scale_parameters(population)
         try:
             calc_energies = list(
-                self._mapwrapper(self.func, parameters_pop[0:nfevs])
+                self._mapwrapper(self.func, parameters_pop[0:S])
             )
             calc_energies = np.squeeze(calc_energies)
         except (TypeError, ValueError) as e:
@@ -1097,16 +1096,19 @@ class DifferentialEvolutionSolver:
                 "returning a sequence of numbers the same length as 'iterable'"
             ) from e
 
-        if calc_energies.size != nfevs:
+        if calc_energies.size != S:
             if self.vectorized:
                 raise RuntimeError("The vectorized function must return an"
                                    " array of shape (S,) when given an array"
                                    " of shape (len(x), S)")
             raise RuntimeError("func(x, *args) must return a scalar value")
 
-        energies[0:nfevs] = calc_energies
+        energies[0:S] = calc_energies
 
-        self._nfev += nfevs
+        if self.vectorized:
+            self._nfev += 1
+        else:
+            self._nfev += S
 
         return energies
 
@@ -1212,6 +1214,7 @@ class DifferentialEvolutionSolver:
             # shortcut for no constraints
             return np.ones(num_members, bool), np.zeros((num_members, 1))
 
+        (S, N)
         parameters_pop = self._scale_parameters(population)
 
         if self.vectorized:

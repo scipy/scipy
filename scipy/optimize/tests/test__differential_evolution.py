@@ -1411,11 +1411,11 @@ class TestDifferentialEvolutionSolver:
                                    vectorized=True, workers=map,
                                    updating='deferred')
 
+        ncalls = [0]
+
         def rosen_vec(x):
-            # accept an (len(x0), S) array, returning a (S,) array
-            v = 100 * (x[1:] - x[:-1]**2.0)**2.0
-            v += (1 - x[:-1])**2.0
-            return np.squeeze(v)
+            ncalls[0] += 1
+            return rosen(x)
 
         bounds = [(0, 10), (0, 10)]
         res1 = differential_evolution(rosen, bounds, updating='deferred',
@@ -1425,7 +1425,7 @@ class TestDifferentialEvolutionSolver:
 
         # the two minimisation runs should be functionally equivalent
         assert_allclose(res1.x, res2.x)
-        assert res1.nfev == res2.nfev
+        assert ncalls[0] == res2.nfev
         assert res1.nit == res2.nit
 
     def test_vectorized_constraints(self):
