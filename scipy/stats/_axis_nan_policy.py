@@ -39,8 +39,8 @@ def _process_axis(axis, n_dims):
         axis = np.atleast_1d(axis)
         axis_int = axis.astype(int)
         if not np.array_equal(axis_int, axis):
-            raise ValueError('`axis` must be an integer, a '
-                             'tuple of integers, or `None`.')
+            raise np.AxisError('`axis` must be an integer, a '
+                               'tuple of integers, or `None`.')
         axis = axis_int
 
         axis[axis < 0] = n_dims + axis[axis < 0]
@@ -48,10 +48,10 @@ def _process_axis(axis, n_dims):
         if axis[-1] >= n_dims or axis[0] < 0:
             message = (f"`axis` is out of bounds "
                        f"for array of dimension {n_dims}")
-            raise ValueError(message)
+            raise np.AxisError(message)
 
         if len(np.unique(axis)) != len(axis):
-            raise ValueError("`axis` must contain only distinct elements")
+            raise np.AxisError("`axis` must contain only distinct elements")
 
     return axis
 
@@ -68,8 +68,8 @@ def _broadcast_shapes(shapes, axis=None):
         axis = np.atleast_1d(axis)
         axis_int = axis.astype(int)
         if not np.array_equal(axis_int, axis):
-            raise ValueError('`axis` must be an integer, a '
-                             'tuple of integers, or `None`.')
+            raise np.AxisError('`axis` must be an integer, a '
+                               'tuple of integers, or `None`.')
         axis = axis_int
 
     # First, ensure all shapes have same number of dimensions by prepending 1s.
@@ -85,10 +85,10 @@ def _broadcast_shapes(shapes, axis=None):
         if axis[-1] >= n_dims or axis[0] < 0:
             message = (f"`axis` is out of bounds "
                        f"for array of dimension {n_dims}")
-            raise ValueError(message)
+            raise np.AxisError(message)
 
         if len(np.unique(axis)) != len(axis):
-            raise ValueError("`axis` must contain only distinct elements")
+            raise np.AxisError("`axis` must contain only distinct elements")
 
         removed_shapes = new_shapes[:, axis]
         new_shapes = np.delete(new_shapes, axis, axis=1)
