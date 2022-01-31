@@ -219,10 +219,13 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         ``x.shape == (N, S)``, and return an array of shape ``(M, S)``, where
         `M` is the number of constraint components.
         This option is an alternative to the parallelization offered by
-        `workers`, and may help in optimization speed. This keyword is
-        ignored if ``workers != 1``.
+        `workers`, and may help in optimization speed by reducing interpreter
+        overhead from multiple function calls. This keyword is ignored if
+        ``workers != 1``.
         This option will override the `updating` keyword to
         ``updating='deferred'``.
+        See the notes section for further discussion on when to use
+        ``'vectorized'``, and when to use ``'workers'``.
 
         .. versionadded:: 1.9.0
 
@@ -276,6 +279,20 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     convergence as trial vectors can immediately benefit from improved
     solutions. To use the original Storn and Price behaviour, updating the best
     solution once per iteration, set ``updating='deferred'``.
+    The ``'deferred'`` approach is compatible with both parallelization and
+    vectorization (``'workers'`` and ``'vectorized'`` keywords). These may
+    improve minimization speed by using computer resources more efficiently.
+    The ``'workers'`` distribute calculations over multiple processors. By
+    default the Python `multiprocessing` module is used, but other approaches
+    are also possible, such as the Message Passing Interface (MPI) used on
+    clusters [6]_ [7]_. The overhead from these approaches (creating new
+    Processes, etc) may be significant, meaning that computational speed
+    doesn't necessarily scale with the number of processors used.
+    Parallelization is best suited to computationally expensive objective
+    functions. If the objective function is less expensive, then
+    ``'vectorized'`` may aid by only calling the objective function once per
+    iteration, rather than multiple times for all the population members; the
+    interpreter overhead is reduced.
 
     .. versionadded:: 0.15.0
 
@@ -341,6 +358,8 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
            evolution algorithm. Proceedings of the 2002 Congress on
            Evolutionary Computation. CEC'02 (Cat. No. 02TH8600). Vol. 2. IEEE,
            2002.
+    .. [6] https://mpi4py.readthedocs.io/en/stable/
+    .. [7] https://schwimmbad.readthedocs.io/en/latest/
     """
 
     # using a context manager means that any created Pool objects are
