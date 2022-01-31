@@ -31,11 +31,11 @@ def _broadcast_array_shapes(arrays, axis=None):
     return _broadcast_shapes(shapes, axis)
 
 
-def _process_axis(axis, shapes):
+def _process_axis(axis, n_dims):
     """
     Validate, remove negative elements, and sort axis tuple
     """
-    if (axis is not None) and shapes:
+    if axis is not None:
         axis = np.atleast_1d(axis)
         axis_int = axis.astype(int)
         if not np.array_equal(axis_int, axis):
@@ -43,7 +43,6 @@ def _process_axis(axis, shapes):
                              'tuple of integers, or `None`.')
         axis = axis_int
 
-        n_dims = max(len(shape) for shape in shapes)
         axis[axis < 0] = n_dims + axis[axis < 0]
         axis = np.sort(axis)
         if axis[-1] >= n_dims or axis[0] < 0:
@@ -65,7 +64,13 @@ def _broadcast_shapes(shapes, axis=None):
         return shapes
 
     # input validation
-    axis = _process_axis(axis, shapes)
+    if axis is not None:
+        axis = np.atleast_1d(axis)
+        axis_int = axis.astype(int)
+        if not np.array_equal(axis_int, axis):
+            raise ValueError('`axis` must be an integer, a '
+                             'tuple of integers, or `None`.')
+        axis = axis_int
 
     # First, ensure all shapes have same number of dimensions by prepending 1s.
     n_dims = max([len(shape) for shape in shapes])
@@ -75,6 +80,16 @@ def _broadcast_shapes(shapes, axis=None):
 
     # Remove the shape elements of the axes to be ignored, but remember them.
     if axis is not None:
+        axis[axis < 0] = n_dims + axis[axis < 0]
+        axis = np.sort(axis)
+        if axis[-1] >= n_dims or axis[0] < 0:
+            message = (f"`axis` is out of bounds "
+                       f"for array of dimension {n_dims}")
+            raise ValueError(message)
+
+        if len(np.unique(axis)) != len(axis):
+            raise ValueError("`axis` must contain only distinct elements")
+
         removed_shapes = new_shapes[:, axis]
         new_shapes = np.delete(new_shapes, axis, axis=1)
 
@@ -250,13 +265,17 @@ def _expand_dims(arr, axes):
     return arr
 
 
-def _add_reduced_axes(res, reduced_axes, n_outputs,
+def _add_reduced_axes(res, reduced_axes, n_outputs, keepdims,
                       result_object):
     """
     Add reduced axes back to all the arrays in the result object
     if keepdims = True. `res` should either be an instance of the
     result_object or a tuple of results.
     """
+    if not keepdims:
+        if n_outputs == 1:
+            return result_object(res)
+        return result_object(*res)
     res_expanded = []
     if n_outputs == 1:
         res_expanded.append(_expand_dims(res, reduced_axes))
@@ -450,20 +469,19 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             samples, sentinel = _masked_arrays_2_sentinel_arrays(samples)
 
             # standardize to always work along last axis
+            n_dims = np.array([sample.ndim for sample in samples])
+            reduced_axes = axis
             if axis is None:
-                # when axis=None, take the maximum of all dimensions since
-                # all the dimensions are reduced.
                 if samples:
-                    max_dims = max([sample.ndim for sample in samples])
-                    reduced_axes = np.arange(max_dims)
-                else:
-                    reduced_axes = axis
+                    # when axis=None, take the maximum of all dimensions since
+                    # all the dimensions are reduced.
+                    reduced_axes = np.arange(np.max(n_dims))
                 samples = [sample.ravel() for sample in samples]
             else:
                 samples = _broadcast_arrays(samples, axis=axis)
                 axis = np.atleast_1d(axis)
-                shapes = [sample.shape for sample in samples]
-                reduced_axes = _process_axis(axis, shapes)
+                if samples:
+                    reduced_axes = _process_axis(axis, np.max(n_dims))
                 n_axes = len(axis)
                 # move all axes in `axis` to the end to be raveled
                 samples = [np.moveaxis(sample, axis, range(-len(axis), 0))
@@ -494,7 +512,10 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 # propagate nans in a sensible way
                 if any(contains_nans) and nan_policy == 'propagate':
                     res = np.full(n_outputs, np.nan)
-                    return result_object(*res)
+                    if n_outputs == 1:
+                        res = res.item()
+                    return _add_reduced_axes(res, reduced_axes, n_outputs,
+                                             keepdims, result_object)
 
                 # Addresses nan_policy == "omit"
                 if any(contains_nans) and nan_policy == 'omit':
@@ -510,10 +531,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 if sentinel:
                     samples = _remove_sentinel(samples, paired, sentinel)
                 res = hypotest_fun_out(*samples, **kwds)
-                if keepdims:
-                    res = _add_reduced_axes(res, reduced_axes, n_outputs,
-                                            result_object)
-                return res
+                return _add_reduced_axes(res, reduced_axes, n_outputs,
+                                         keepdims, result_object)
 
             # check for empty input
             # ideally, move this to the top, but some existing functions raise
@@ -521,10 +540,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # backward compatibility.
             empty_output = _check_empty_inputs(samples, axis)
             if empty_output is not None:
-                if keepdims:
-                    empty_output = _add_reduced_axes(empty_output,
-                                                     reduced_axes, 1,
-                                                     lambda x: x)
+                empty_output = _add_reduced_axes(empty_output, reduced_axes,
+                                                 1, keepdims, lambda x: x)
                 return result_object(*([empty_output.copy()
                                         for i in range(n_outputs)]))
 
@@ -540,10 +557,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
             if vectorized and not contains_nan and not sentinel:
                 res = hypotest_fun_out(*samples, axis=axis, **kwds)
-                if keepdims:
-                    res = _add_reduced_axes(res, reduced_axes, n_outputs,
-                                            result_object)
-                return res
+                return _add_reduced_axes(res, reduced_axes, n_outputs,
+                                         keepdims, result_object)
 
             # Addresses nan_policy == "omit"
             if contains_nan and nan_policy == 'omit':
@@ -583,11 +598,10 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
             x = np.moveaxis(x, axis, -1)
             res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
-            if keepdims:
-                return _add_reduced_axes(result_unpacker(res),
-                                         reduced_axes, n_outputs,
-                                         result_object)
-            return result_object(*result_unpacker(res))
+            if n_outputs > 1:
+                res = result_unpacker(res)
+            return _add_reduced_axes(res, reduced_axes, n_outputs, keepdims,
+                                     result_object)
 
         doc = FunctionDoc(axis_nan_policy_wrapper)
         parameter_names = [param.name for param in doc['Parameters']]
