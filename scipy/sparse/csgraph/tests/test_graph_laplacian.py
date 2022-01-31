@@ -279,23 +279,27 @@ def test_laplacian_symmetrized(arr_type):
 @pytest.mark.parametrize(
     "arr_type", [np.asarray, sparse.csr_matrix, sparse.coo_matrix]
 )
+@pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("normed", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
 @pytest.mark.parametrize("form", ["function", "lo"])
-def test_format(arr_type, normed, use_out_degree, form):
+def test_format(dtype, arr_type, normed, use_out_degree, form):
     n = 3
-    #mat = arr_type(np.arange(n * n).reshape(n, n))
-    dtype = np.float64
     mat = [[0, 1, 0], [4, 2, 0], [0, 0, 0]]
     mat = arr_type(np.array(mat), dtype=dtype)
     Lo, do = csgraph.laplacian(
-        mat, return_diag=True, normed=normed, use_out_degree=use_out_degree
+        mat,
+        return_diag=True,
+        normed=normed,
+        use_out_degree=use_out_degree,
+        dtype=dtype,
     )
     La, da = csgraph.laplacian(
         mat,
         return_diag=True,
         normed=normed,
         use_out_degree=use_out_degree,
+        dtype=dtype,
         form="array",
     )
     assert_allclose(do, da)
@@ -309,6 +313,7 @@ def test_format(arr_type, normed, use_out_degree, form):
         return_diag=True,
         normed=normed,
         use_out_degree=use_out_degree,
+        dtype=dtype,
         form=form,
     )
     assert_allclose(d, do)
