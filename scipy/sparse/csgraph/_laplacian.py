@@ -181,7 +181,7 @@ def _setdiag_dense(m, d):
 
 
 def _md_normed(m, d, nd):
-    return lambda v: nd * (v * d[np.newaxis, :] - m @ v) * nd[np.newaxis, :]
+    return lambda v: nd * (v * d[np.newaxis, :] - m @ v) * nd[:, np.newaxis]
 
 
 def _md(m, d):
