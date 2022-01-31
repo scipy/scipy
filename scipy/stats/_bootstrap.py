@@ -30,11 +30,16 @@ def _vectorize_statistic(statistic):
         split_indices = np.cumsum(lengths)[:-1]
         z = _broadcast_concatenate(data, axis)
 
+        # move working axis to position 0 so that new dimensions in the output
+        # of `statistic` are _prepended_. ("This axis is removed, and replaced
+        # with new dimensions...")
+        z = np.moveaxis(z, axis, 0)
+
         def stat_1d(z):
             data = np.split(z, split_indices)
             return statistic(*data)
 
-        return np.apply_along_axis(stat_1d, axis, z)[()]
+        return np.apply_along_axis(stat_1d, 0, z)[()]
     return stat_nd
 
 
