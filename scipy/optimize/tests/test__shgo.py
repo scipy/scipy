@@ -652,9 +652,10 @@ class TestShgoArguments:
     def test_18_bounds_class(self):
         # test that new and old bounds yield same result
         def f(x):
-            return x[0] ** 2 + x[1] ** 2
-        lb = [-6., -6.]
-        ub = [0., 0.]
+            return numpy.square(x).sum()
+
+        lb = [-6., 1., -5.]
+        ub = [-1., 3., 5.]
         bounds_old = list(zip(lb, ub))
         bounds_new = Bounds(lb, ub)
 
@@ -664,6 +665,8 @@ class TestShgoArguments:
         assert res_new_bounds.nfev == res_old_bounds.nfev
         assert res_new_bounds.message == res_old_bounds.message
         assert res_new_bounds.success == res_old_bounds.success
+        x_opt = numpy.array([-1., 1., 0.])
+        numpy.testing.assert_allclose(res_new_bounds.x, x_opt)
         numpy.testing.assert_allclose(res_new_bounds.x,
                                       res_old_bounds.x)
 
