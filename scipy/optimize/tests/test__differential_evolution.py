@@ -652,7 +652,7 @@ class TestDifferentialEvolutionSolver:
 
         for x, v in zip(xs, vs):
             cv = solver._constraint_violation_fn(np.array(x))
-            assert_almost_equal(cv, np.atleast_2d(v))
+            assert_allclose(cv, np.atleast_2d(v))
 
         # vectorized calculation of a series of solutions
         assert_allclose(
@@ -872,11 +872,11 @@ class TestDifferentialEvolutionSolver:
         vs = [(0, 0), (0, 0.1), (0.64, 0), (0.19, 0), (0.01, 1.14)]
 
         for x, v in zip(xs, vs):
-            assert_almost_equal(pc.violation(x), v)
+            assert_allclose(pc.violation(x), v)
 
         # now check that we can vectorize the constraint wrapper
-        np.testing.assert_almost_equal(pc.violation(np.array(xs).T),
-                                       np.array(vs).T)
+        assert_allclose(pc.violation(np.array(xs).T),
+                        np.array(vs).T)
         assert pc.fun(np.array(xs).T).shape == (2, len(xs))
         assert pc.violation(np.array(xs).T).shape == (2, len(xs))
         assert pc.num_constr == 2
