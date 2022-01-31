@@ -120,7 +120,7 @@ moduleTNC = py3.extension_module('_moduleTNC',
   ['tnc/tnc.h',
     cython_gen.process('tnc/_moduleTNC.pyx'),
     'tnc/tnc.c'],
-  c_args: numpy_nodepr_api,
+  c_args: cython_c_args,
   include_directories: [inc_np, inc_f2py, 'tnc'],
   dependencies: [py3_dep],
   install: true,
@@ -223,6 +223,7 @@ if use_pythran
 else
   _group_columns = py3.extension_module('_group_columns',
     cython_gen.process('_group_columns.pyx'),
+    c_args: cython_c_args,
     include_directories: [inc_np],
     dependencies: [py3_dep],
     install: true,
@@ -247,7 +248,7 @@ _bglu_dense_c = opt_gen.process('_bglu_dense.pyx')
 
 py3.extension_module('_bglu_dense',
   _bglu_dense_c,
-  c_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
+  c_args: cython_c_args,
   include_directories: [inc_np],
   dependencies: [py3_dep],
   install: true,

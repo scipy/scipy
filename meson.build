@@ -27,6 +27,14 @@ if cc.has_argument('-Wno-unused-but-set-variable')
   add_global_arguments('-Wno-unused-but-set-variable', language : 'c')
 endif
 
+# We need -lm for all C code (assuming it uses math functions, which is safe to
+# assume for SciPy). For C++ it isn't needed, because libstdc++/libc++ is
+# guaranteed to depend on it. For Fortran code, Meson already adds `-lm`.
+m_dep = cc.find_library('m', required : false)
+if m_dep.found()
+  add_project_link_arguments('-lm', language : 'c')
+endif
+
 # Adding at project level causes many spurious -lgfortran flags.
 add_languages('fortran', native: false)
 
