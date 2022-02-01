@@ -77,8 +77,6 @@ except ImportError:  # old Python
     from imp import new_module
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-PATH_INSTALLED = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                   'installdir')
 
 
 def import_module_from_path(mod_name, mod_path):
@@ -166,7 +164,15 @@ def main(argv):
                         "Note: this argument may be removed in the future "
                         "once a `site.cfg`-like mechanism to select BLAS/LAPACK "
                         "libraries is implemented for Meson")
+    parser.add_argument("--build-dir", default="build",
+                        help="Relative path to the build directory.")
+    parser.add_argument("--install-prefix", default="installdir",
+                        help="Relative path to the install directory.")
     args = parser.parse_args(argv)
+
+    global PATH_INSTALLED
+    PATH_INSTALLED = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                                  args.install_prefix)
 
     if args.win_cp_openblas and platform.system() != 'Windows':
         raise RuntimeError('--win-cp-openblas only has effect on Windows')
@@ -250,7 +256,7 @@ def main(argv):
         sys.exit(0)
 
     if args.coverage:
-        dst_dir = os.path.join(ROOT_DIR, 'build', 'coverage')
+        dst_dir = os.path.join(ROOT_DIR, args.build_dir, 'coverage')
         fn = os.path.join(dst_dir, 'coverage_html.js')
         if os.path.isdir(dst_dir) and os.path.isfile(fn):
             shutil.rmtree(dst_dir)
@@ -358,7 +364,7 @@ def main(argv):
     if not args.no_build:
         test_dir = site_dir
     else:
-        test_dir = os.path.join(ROOT_DIR, 'build', 'test')
+        test_dir = os.path.join(ROOT_DIR, args.build_dir, 'test')
         if not os.path.isdir(test_dir):
             os.makedirs(test_dir)
 
@@ -392,7 +398,7 @@ def setup_build(args, env):
     """
     Setting up meson-build
     """
-    cmd = ["meson", "setup", "build", "--prefix", PATH_INSTALLED]
+    cmd = ["meson", "setup", args.build_dir, "--prefix", PATH_INSTALLED]
     if args.werror:
         cmd += ["--werror"]
     # Setting up meson build
@@ -405,14 +411,14 @@ def setup_build(args, env):
     return
 
 
-def install_project(show_build_log):
+def install_project(args):
     """
     Installs the project after building.
     """
-    cmd = ["meson", "install", "-C", "build"]
+    cmd = ["meson", "install", "-C", args.build_dir]
     log_filename = os.path.join(ROOT_DIR, 'meson-install.log')
     start_time = datetime.datetime.now()
-    if show_build_log:
+    if args.show_build_log:
         ret = subprocess.call(cmd, cwd=ROOT_DIR)
     else:
         print("Installing, see meson-install.log...")
@@ -445,7 +451,7 @@ def install_project(show_build_log):
     elapsed = datetime.datetime.now() - start_time
 
     if ret != 0:
-        if not show_build_log:
+        if not args.show_build_log:
             with open(log_filename, 'r') as f:
                 print(f.read())
         print("Installation failed! ({0} elapsed)".format(elapsed))
@@ -537,7 +543,7 @@ def build_project(args):
             env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) +\
                 ' --coverage'
 
-    build_dir = os.path.join(ROOT_DIR, 'build')
+    build_dir = os.path.join(ROOT_DIR, args.build_dir)
 
     # Check if meson is already setup
     if not os.path.exists(os.path.join(build_dir, 'build.ninja')):
@@ -545,7 +551,7 @@ def build_project(args):
 
     site_dir = get_site_packages()
 
-    cmd = ["ninja", "-C", "build"]
+    cmd = ["ninja", "-C", args.build_dir]
     if args.parallel > 1:
         cmd += ["-j", str(args.parallel)]
 
@@ -558,7 +564,7 @@ def build_project(args):
         print("Build failed!")
         sys.exit(1)
 
-    install_project(args.show_build_log)
+    install_project(args)
 
     if args.win_cp_openblas and platform.system() == 'Windows':
         if copy_openblas() == 0:
