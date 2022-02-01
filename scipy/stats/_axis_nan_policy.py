@@ -31,31 +31,6 @@ def _broadcast_array_shapes(arrays, axis=None):
     return _broadcast_shapes(shapes, axis)
 
 
-def _process_axis(axis, n_dims):
-    """
-    Validate, remove negative elements, and sort axis tuple
-    """
-    if axis is not None:
-        axis = np.atleast_1d(axis)
-        axis_int = axis.astype(int)
-        if not np.array_equal(axis_int, axis):
-            raise np.AxisError('`axis` must be an integer, a '
-                               'tuple of integers, or `None`.')
-        axis = axis_int
-
-        axis[axis < 0] = n_dims + axis[axis < 0]
-        axis = np.sort(axis)
-        if axis[-1] >= n_dims or axis[0] < 0:
-            message = (f"`axis` is out of bounds "
-                       f"for array of dimension {n_dims}")
-            raise np.AxisError(message)
-
-        if len(np.unique(axis)) != len(axis):
-            raise np.AxisError("`axis` must contain only distinct elements")
-
-    return axis
-
-
 def _broadcast_shapes(shapes, axis=None):
     """
     Broadcast shapes, ignoring incompatibility of specified axes
@@ -63,33 +38,16 @@ def _broadcast_shapes(shapes, axis=None):
     if not shapes:
         return shapes
 
-    # input validation
-    if axis is not None:
-        axis = np.atleast_1d(axis)
-        axis_int = axis.astype(int)
-        if not np.array_equal(axis_int, axis):
-            raise np.AxisError('`axis` must be an integer, a '
-                               'tuple of integers, or `None`.')
-        axis = axis_int
-
-    # First, ensure all shapes have same number of dimensions by prepending 1s.
     n_dims = max([len(shape) for shape in shapes])
+    # input validation
+    axis = _process_axis(axis, n_dims)
+    # First, ensure all shapes have same number of dimensions by prepending 1s.
     new_shapes = np.ones((len(shapes), n_dims), dtype=int)
     for row, shape in zip(new_shapes, shapes):
         row[len(row)-len(shape):] = shape  # can't use negative indices (-0:)
 
     # Remove the shape elements of the axes to be ignored, but remember them.
     if axis is not None:
-        axis[axis < 0] = n_dims + axis[axis < 0]
-        axis = np.sort(axis)
-        if axis[-1] >= n_dims or axis[0] < 0:
-            message = (f"`axis` is out of bounds "
-                       f"for array of dimension {n_dims}")
-            raise np.AxisError(message)
-
-        if len(np.unique(axis)) != len(axis):
-            raise np.AxisError("`axis` must contain only distinct elements")
-
         removed_shapes = new_shapes[:, axis]
         new_shapes = np.delete(new_shapes, axis, axis=1)
 
@@ -114,6 +72,31 @@ def _broadcast_shapes(shapes, axis=None):
         return new_shapes
     else:
         return tuple(new_shape)
+
+
+def _process_axis(axis, n_dims):
+    """
+    Validate, remove negative elements, and sort axis tuple
+    """
+    if axis is not None:
+        axis = np.atleast_1d(axis)
+        axis_int = axis.astype(int)
+        if not np.array_equal(axis_int, axis):
+            raise np.AxisError('`axis` must be an integer, a '
+                               'tuple of integers, or `None`.')
+        axis = axis_int
+
+        axis[axis < 0] = n_dims + axis[axis < 0]
+        axis = np.sort(axis)
+        if axis[-1] >= n_dims or axis[0] < 0:
+            message = (f"`axis` is out of bounds "
+                       f"for array of dimension {n_dims}")
+            raise np.AxisError(message)
+
+        if len(np.unique(axis)) != len(axis):
+            raise np.AxisError("`axis` must contain only distinct elements")
+
+    return axis
 
 
 def _broadcast_array_shapes_remove_axis(arrays, axis=None):
