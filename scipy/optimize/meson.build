@@ -45,22 +45,11 @@ _minpack = py3.extension_module('_minpack',
   subdir: 'scipy/optimize'
 )
 
-cpp_args = []
-link_args = []
-if host_machine.system() == 'darwin'
-  if compiler.has_argument('-mmacosx-version-min=10.9')
-    cpp_args = ['-mmacosx-version-min=10.9']
-    link_args = ['-mmacosx-version-min=10.9']
-  endif
-endif
-
 rectangular_lasp = static_library('rectangular_lasp',
   [
     'rectangular_lsap/rectangular_lsap.h',
     'rectangular_lsap/rectangular_lsap.cpp'
   ],
-  cpp_args: cpp_args,
-  link_args: link_args
 )
 
 py3.extension_module('_lsap_module',
