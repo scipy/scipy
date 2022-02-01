@@ -759,7 +759,7 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
 @cython.boundscheck(False)
 def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0):
     """
-    def gaussian_kernel_estimate(points, real[:, :] values, xi, precision)
+    def gaussian_kernel_estimate_log(points, real[:, :] values, xi, precision)
     Evaluate the log of the estimated pdf on a provided set of points.
     Parameters
     ----------
@@ -808,7 +808,7 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
 
     # Create the result array and evaluate the weighted sum
     estimate = np.zeros((m, p), dtype)
-    max_ = np.zeros((m, p), dtype) - 99999999
+    max_ = np.zeros((m, p), dtype) - np.inf
     estimate_ = np.zeros((m, p, n), dtype)
     for j in range(m):
         for i in range(n):
