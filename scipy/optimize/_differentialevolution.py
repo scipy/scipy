@@ -339,9 +339,19 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     ...     arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
     ...     return -20. * np.exp(arg1) - np.exp(arg2) + 20. + np.e
     >>> bounds = [(-5, 5), (-5, 5)]
-    >>> result = differential_evolution(ackley, bounds)
-    >>> result.x, result.fun
-    (array([ 0.,  0.]), 4.4408920985006262e-16)
+    >>> result = differential_evolution(ackley, bounds, seed=1)
+    >>> result.x, result.fun, result.nfev
+    (array([0., 0.]), 4.440892098500626e-16, 3063)
+
+    The Ackley function is written in a vectorized manner, so the
+    ``'vectorized'`` keyword can be employed. Note the reduced number of
+    function evaluations.
+
+    >>> result = differential_evolution(
+    ...     ackley, bounds, vectorized=True, updating='deferred', seed=1
+    ... )
+    >>> result.x, result.fun, result.nfev
+    (array([0., 0.]), 4.440892098500626e-16, 190)
 
     References
     ----------
