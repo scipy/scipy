@@ -38,16 +38,33 @@ def _broadcast_shapes(shapes, axis=None):
     if not shapes:
         return shapes
 
-    n_dims = max([len(shape) for shape in shapes])
     # input validation
-    axis = _process_axis(axis, n_dims)
+    if axis is not None:
+        axis = np.atleast_1d(axis)
+        axis_int = axis.astype(int)
+        if not np.array_equal(axis_int, axis):
+            raise np.AxisError('`axis` must be an integer, a '
+                               'tuple of integers, or `None`.')
+        axis = axis_int
+
     # First, ensure all shapes have same number of dimensions by prepending 1s.
+    n_dims = max([len(shape) for shape in shapes])
     new_shapes = np.ones((len(shapes), n_dims), dtype=int)
     for row, shape in zip(new_shapes, shapes):
         row[len(row)-len(shape):] = shape  # can't use negative indices (-0:)
 
     # Remove the shape elements of the axes to be ignored, but remember them.
     if axis is not None:
+        axis[axis < 0] = n_dims + axis[axis < 0]
+        axis = np.sort(axis)
+        if axis[-1] >= n_dims or axis[0] < 0:
+            message = (f"`axis` is out of bounds "
+                       f"for array of dimension {n_dims}")
+            raise np.AxisError(message)
+
+        if len(np.unique(axis)) != len(axis):
+            raise np.AxisError("`axis` must contain only distinct elements")
+
         removed_shapes = new_shapes[:, axis]
         new_shapes = np.delete(new_shapes, axis, axis=1)
 
@@ -72,31 +89,6 @@ def _broadcast_shapes(shapes, axis=None):
         return new_shapes
     else:
         return tuple(new_shape)
-
-
-def _process_axis(axis, n_dims):
-    """
-    Validate, remove negative elements, and sort axis tuple
-    """
-    if axis is not None:
-        axis = np.atleast_1d(axis)
-        axis_int = axis.astype(int)
-        if not np.array_equal(axis_int, axis):
-            raise np.AxisError('`axis` must be an integer, a '
-                               'tuple of integers, or `None`.')
-        axis = axis_int
-
-        axis[axis < 0] = n_dims + axis[axis < 0]
-        axis = np.sort(axis)
-        if axis[-1] >= n_dims or axis[0] < 0:
-            message = (f"`axis` is out of bounds "
-                       f"for array of dimension {n_dims}")
-            raise np.AxisError(message)
-
-        if len(np.unique(axis)) != len(axis):
-            raise np.AxisError("`axis` must contain only distinct elements")
-
-    return axis
 
 
 def _broadcast_array_shapes_remove_axis(arrays, axis=None):
@@ -234,20 +226,6 @@ def _check_empty_inputs(samples, axis):
     return output
 
 
-def _expand_dims(arr, axes):
-    """
-    Insert new axes that will appear at the `axis` position in the expanded
-    array shape.
-    """
-    # Since NumPy 1.18, `expand_dims` supports tuple axis. As SciPy
-    # supports any NumPy >= 1.17, we can't guarantee support for tuple
-    # axis by NumPy. This for loop can be removed when support for
-    # NumPy 1.17 is dropped.
-    for axis in axes:
-        arr = np.expand_dims(arr, axis=axis)
-    return arr
-
-
 def _add_reduced_axes(res, reduced_axes, n_outputs, keepdims,
                       result_object):
     """
@@ -261,10 +239,10 @@ def _add_reduced_axes(res, reduced_axes, n_outputs, keepdims,
         return result_object(*res)
     res_expanded = []
     if n_outputs == 1:
-        res_expanded.append(_expand_dims(res, reduced_axes))
+        res_expanded.append(np.expand_dims(res, reduced_axes))
     else:
         for r in res:
-            res_expanded.append(_expand_dims(r, reduced_axes))
+            res_expanded.append(np.expand_dims(r, reduced_axes))
     return result_object(*res_expanded)
 
 
@@ -452,19 +430,17 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             samples, sentinel = _masked_arrays_2_sentinel_arrays(samples)
 
             # standardize to always work along last axis
-            n_dims = np.array([sample.ndim for sample in samples])
             reduced_axes = axis
             if axis is None:
                 if samples:
                     # when axis=None, take the maximum of all dimensions since
                     # all the dimensions are reduced.
-                    reduced_axes = np.arange(np.max(n_dims))
+                    n_dims = np.max([sample.ndim for sample in samples])
+                    reduced_axes = tuple(range(n_dims))
                 samples = [sample.ravel() for sample in samples]
             else:
                 samples = _broadcast_arrays(samples, axis=axis)
                 axis = np.atleast_1d(axis)
-                if samples:
-                    reduced_axes = _process_axis(axis, np.max(n_dims))
                 n_axes = len(axis)
                 # move all axes in `axis` to the end to be raveled
                 samples = [np.moveaxis(sample, axis, range(-len(axis), 0))
