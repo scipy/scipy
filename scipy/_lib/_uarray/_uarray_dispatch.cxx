@@ -1283,8 +1283,9 @@ PyObject * Function::call(PyObject * args_, PyObject * kwargs_) {
         if (new_args.args == nullptr)
           return LoopReturn::Error;
 
-        PyObject * args[] = {backend, reinterpret_cast<PyObject *>(this),
-                             new_args.args.get(), new_args.kwargs.get()};
+        PyObject * args[] = {
+            backend, reinterpret_cast<PyObject *>(this), new_args.args.get(),
+            new_args.kwargs.get()};
         result = py_ref::steal(Q_PyObject_VectorcallMethod(
             identifiers.ua_function.get(), args,
             array_size(args) | Q_PY_VECTORCALL_ARGUMENTS_OFFSET, nullptr));
@@ -1560,9 +1561,9 @@ PyObject * determine_backend(PyObject * /*self*/, PyObject * args) {
           return LoopReturn::Continue;
         }
 
-        PyObject * convert_args[] = {backend, dispatchables_tuple.get(),
-                                     (coerce && coerce_backend) ? Py_True
-                                                                : Py_False};
+        PyObject * convert_args[] = {
+            backend, dispatchables_tuple.get(),
+            (coerce && coerce_backend) ? Py_True : Py_False};
 
         auto res = py_ref::steal(Q_PyObject_VectorcallMethod(
             identifiers.ua_convert.get(), convert_args,
@@ -1761,15 +1762,16 @@ PyMethodDef method_defs[] = {
     {NULL} /* Sentinel */
 };
 
-PyModuleDef uarray_module = {PyModuleDef_HEAD_INIT,
-                             /* m_name= */ "uarray._uarray",
-                             /* m_doc= */ nullptr,
-                             /* m_size= */ -1,
-                             /* m_methods= */ method_defs,
-                             /* m_slots= */ nullptr,
-                             /* m_traverse= */ globals_traverse,
-                             /* m_clear= */ globals_clear,
-                             /* m_free= */ globals_free};
+PyModuleDef uarray_module = {
+    PyModuleDef_HEAD_INIT,
+    /* m_name= */ "uarray._uarray",
+    /* m_doc= */ nullptr,
+    /* m_size= */ -1,
+    /* m_methods= */ method_defs,
+    /* m_slots= */ nullptr,
+    /* m_traverse= */ globals_traverse,
+    /* m_clear= */ globals_clear,
+    /* m_free= */ globals_free};
 
 } // namespace
 
