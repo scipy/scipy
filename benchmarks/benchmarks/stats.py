@@ -337,6 +337,14 @@ class GaussianKDE(Benchmark):
         # test gaussian_kde evaluate on many points
         self.kernel(self.positions)
 
+    def time_gaussian_kde_logpdf_few_points(self):
+        # test gaussian_kde logpdfa small number of points
+        self.kernel.logpdf(self.positions[:, :10])
+
+    def time_gaussian_kde_logpdf_many_points(self):
+        # test gaussian_kde logpdfmany points
+        self.kernel.logpdf(self.positions)
+
 
 class GroupSampling(Benchmark):
     param_names = ['dim']

@@ -611,8 +611,9 @@ class gaussian_kde:
         else:
             raise TypeError('%s has unexpected item size %d' %
                             (output_dtype, itemsize))
-        result = gaussian_kernel_estimate_log[spec](self.dataset.T, self.weights[:, None],
-                                                points.T, self.inv_cov, output_dtype)
+        result = gaussian_kernel_estimate_log[spec](
+            self.dataset.T, self.weights[:, None], points.T,
+            self.inv_cov, output_dtype)
         return result[:, 0]
 
     @property
