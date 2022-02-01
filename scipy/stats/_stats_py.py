@@ -8144,7 +8144,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     pvalues : array_like, 1-D
         Array of p-values assumed to come from independent tests.
     method : {'fisher', 'pearson', 'tippett', 'stouffer',
-              'mudholkar_george'}, optional
+              'mudholkar_george', 'friston', 'nichols'}, optional
 
         Name of method to use to combine p-values.
         The following methods are available (default is 'fisher'):
@@ -8157,6 +8157,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
           * 'stouffer': Stouffer's Z-score method
           * 'mudholkar_george': the difference of Fisher's and Pearson's methods
             divided by 2
+          * 'friston': Friston's method (maximum of p-values to the power of the
+            number of p-values)
+          * 'nichols': Nichols' method (maximum of p-values)
     weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
@@ -8184,7 +8187,10 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     `mudholkar_george` method does not include these -2 factors. The test
     statistic of `mudholkar_george` is the sum of logisitic random variables and
     equation 3.6 in [3]_ is used to approximate the p-value based on Student's
-    t-distribution.
+    t-distribution. Nichols' method [8]_ computes the combined p-value as the
+    maximum of the original p-values. Friston's method [9]_ similarly uses the
+    maximum, but raise it to the power of the number of p-values to compute the
+    combined p-value.
 
     Fisher's method may be extended to combine p-values from dependent tests
     [5]_. Extensions such as Brown's method and Kost's method are not currently
@@ -8207,6 +8213,10 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
            for combining probabilities in meta-analysis." Journal of
            Evolutionary Biology 24, no. 8 (2011): 1836-1841.
     .. [7] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
+    .. [8] Nichols, T., et al. "Valid conjunction inference with the minimum statistic."
+           Neuroimage 25, no. 3 (2005): 653-60.
+    .. [9] Friston, K.J., et al. "Multisubject fMRI studies and conjunction
+           analyses." Neuroimage 10, no. 4 (1999): 385-96.
 
     """
     pvalues = np.asarray(pvalues)
@@ -8242,11 +8252,18 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         Zi = distributions.norm.isf(pvalues)
         statistic = np.dot(weights, Zi) / np.linalg.norm(weights)
         pval = distributions.norm.sf(statistic)
+    elif method == 'friston':
+        statistic = np.max(pvalues)
+        pval = statistic**len(pvalues)
+    elif method == 'nichols':
+        statistic = np.max(pvalues)
+        pval = statistic
 
     else:
         raise ValueError(
             "Invalid method '%s'. Options are 'fisher', 'pearson', \
-            'mudholkar_george', 'tippett', 'or 'stouffer'", method)
+            'mudholkar_george', 'tippett', 'stouffer', 'friston', \
+            or 'nichols'", method)
 
     return (statistic, pval)
 

@@ -6615,6 +6615,14 @@ class TestCombinePvalues:
         # 0.5 here is because logistic = log(u) - log(1-u), i.e. no 2 factors
         assert_approx_equal(0.5 * (Z_f-Z_p), Z, significant=4)
 
+    def test_friston(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='friston')
+        assert_approx_equal(p, 0.027, significant=4)
+
+    def test_nichols(self):
+        Z, p = stats.combine_pvalues([.01, .2, .3], method='nichols')
+        assert_approx_equal(p, 0.3, significant=4)
+
 
 class TestCdfDistanceValidation:
     """
