@@ -318,9 +318,8 @@ def test_format(dtype, arr_type, normed, use_out_degree, form):
     )
     assert_allclose(d, do)
     assert d.dtype == dtype
-    L = L(np.eye(n, dtype=mat.dtype))
-    assert L.dtype == dtype
-    # if arr_type == np.asarray:
-    #     assert_allclose(L, Lo)
-    # else:
-    #     _assert_allclose_sparse(L, Lo)
+    L = L(np.eye(n, dtype=mat.dtype)).astype(dtype)
+    if arr_type == np.asarray:
+        assert_allclose(L, Lo)
+    else:
+        _assert_allclose_sparse(L, Lo)
