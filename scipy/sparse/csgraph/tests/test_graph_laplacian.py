@@ -257,23 +257,54 @@ def test_sparse_formats(fmt, normed, copy):
 @pytest.mark.parametrize(
     "arr_type", [np.asarray, sparse.csr_matrix, sparse.coo_matrix]
 )
-def test_laplacian_symmetrized(arr_type):
+@pytest.mark.parametrize("form", ["array", "function", "lo"])
+def test_laplacian_symmetrized(arr_type, form):
     # adjacency matrix
     mat = arr_type(np.arange(9).reshape(3, 3))
-    L1, d1 = csgraph.laplacian(mat, return_diag=True)
-    L2, d2 = csgraph.laplacian(mat, return_diag=True, use_out_degree=True)
-    Ls, ds = csgraph.laplacian(mat, return_diag=True, symmetrized=True)
+    L_in, d_in = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        form=form,
+    )
+    L_out, d_out = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        use_out_degree=True,
+        form=form,
+    )
+    Ls, ds = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        symmetrized=True,
+        form=form,
+    )
+    Ls_normed, ds_normed = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        symmetrized=True,
+        normed=True,
+        form=form,
+    )
     mat += mat.T
-    Lss, dss = csgraph.laplacian(mat, return_diag=True)
+    Lss, dss = csgraph.laplacian(mat, return_diag=True, form=form)
+    Lss_normed, dss_normed = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        normed=True,
+        form=form,
+    )
     if arr_type == np.asarray:
-        assert_allclose(Ls, L1 + L2.T)
+        assert_allclose(Ls, L_in + L_out.T)
         assert_allclose(Ls, Lss)
+        assert_allclose(Ls_normed, Lss_normed)
     else:
-        _assert_allclose_sparse(Ls, L1 + L2.T)
+        _assert_allclose_sparse(Ls, L_in + L_out.T)
         _assert_allclose_sparse(Ls, Lss)
+        _assert_allclose_sparse(Ls_normed, Lss_normed)
 
-    assert_allclose(ds, d1 + d2)
+    assert_allclose(ds, d_in + d_out)
     assert_allclose(ds, dss)
+    assert_allclose(ds_normed, dss_normed)
 
 
 @pytest.mark.parametrize(
