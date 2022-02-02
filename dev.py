@@ -409,7 +409,12 @@ def setup_build(args, env):
     """
     cmd = ["meson", "setup", args.build_dir, "--prefix", PATH_INSTALLED]
     build_dir = Path(args.build_dir)
-    if os.path.exists(build_dir / 'build.ninja'):
+    if (os.path.exists(build_dir) and not os.path.exists(build_dir
+                                                         / 'meson-info')):
+        if len(os.listdir(build_dir)):
+            raise RuntimeError("Can't build into non-empty directory "
+                               f"'{str(build_dir.absolute())}'")
+    else:
         build_options_file = (build_dir / "meson-info"
                               / "intro-buildoptions.json")
         with open(build_options_file) as f:
@@ -439,6 +444,12 @@ def install_project(args):
     """
     Installs the project after building.
     """
+    if os.path.exists(PATH_INSTALLED):
+        installdir = get_site_packages()
+        non_empty = len(os.listdir(PATH_INSTALLED))
+        if non_empty and not os.path.exists(installdir):
+            raise RuntimeError("Can't install in non-empty directory: "
+                               f"'{PATH_INSTALLED}'")
     cmd = ["meson", "install", "-C", args.build_dir]
     log_filename = os.path.join(ROOT_DIR, 'meson-install.log')
     start_time = datetime.datetime.now()
