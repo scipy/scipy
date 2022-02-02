@@ -69,6 +69,7 @@ import subprocess
 import time
 import datetime
 import importlib.util
+import json
 from sysconfig import get_path
 
 try:
@@ -165,14 +166,22 @@ def main(argv):
                         "once a `site.cfg`-like mechanism to select BLAS/LAPACK "
                         "libraries is implemented for Meson")
     parser.add_argument("--build-dir", default="build",
-                        help="Relative path to the build directory.")
-    parser.add_argument("--install-prefix", default="installdir",
-                        help="Relative path to the install directory.")
+                        help="Relative path to the build directory. "
+                             "Default is 'build'")
+    parser.add_argument("--install-prefix", default=None,
+                        help="Relative path to the install directory. "
+                             "Default is <build-dir>-install.")
     args = parser.parse_args(argv)
 
     global PATH_INSTALLED
-    PATH_INSTALLED = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                                  args.install_prefix)
+    build_dir = Path(args.build_dir)
+    install_dir = args.install_prefix
+    if not install_dir:
+        install_dir = build_dir.parent / (build_dir.stem + "-install")
+    PATH_INSTALLED = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)),
+        install_dir
+    )
 
     if args.win_cp_openblas and platform.system() != 'Windows':
         raise RuntimeError('--win-cp-openblas only has effect on Windows')
@@ -399,6 +408,21 @@ def setup_build(args, env):
     Setting up meson-build
     """
     cmd = ["meson", "setup", args.build_dir, "--prefix", PATH_INSTALLED]
+    build_dir = Path(args.build_dir)
+    if os.path.exists(build_dir / 'build.ninja'):
+        build_options_file = (build_dir / "meson-info"
+                              / "intro-buildoptions.json")
+        with open(build_options_file) as f:
+            build_options = json.load(f)
+        installdir = None
+        for option in build_options:
+            if option["name"] == "prefix":
+                installdir = option["value"]
+                break
+        if installdir != PATH_INSTALLED:
+            cmd += ["--reconfigure"]
+        else:
+            return
     if args.werror:
         cmd += ["--werror"]
     # Setting up meson build
@@ -456,6 +480,10 @@ def install_project(args):
                 print(f.read())
         print("Installation failed! ({0} elapsed)".format(elapsed))
         sys.exit(1)
+
+    # ignore everything in the install directory.
+    with open(Path(PATH_INSTALLED) / ".gitignore", "w") as f:
+        f.write("*")
 
     print("Installation OK")
     return
@@ -543,11 +571,7 @@ def build_project(args):
             env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) +\
                 ' --coverage'
 
-    build_dir = os.path.join(ROOT_DIR, args.build_dir)
-
-    # Check if meson is already setup
-    if not os.path.exists(os.path.join(build_dir, 'build.ninja')):
-        setup_build(args, env)
+    setup_build(args, env)
 
     site_dir = get_site_packages()
 
