@@ -69,7 +69,7 @@ import subprocess
 import time
 import datetime
 import importlib.util
-import json
+import json  # noqa: E402
 from sysconfig import get_path
 
 try:
