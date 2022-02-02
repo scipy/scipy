@@ -414,7 +414,7 @@ def setup_build(args, env):
         if len(os.listdir(build_dir)):
             raise RuntimeError("Can't build into non-empty directory "
                                f"'{str(build_dir.absolute())}'")
-    else:
+    if os.path.exists(build_dir):
         build_options_file = (build_dir / "meson-info"
                               / "intro-buildoptions.json")
         with open(build_options_file) as f:
