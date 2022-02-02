@@ -409,11 +409,10 @@ def setup_build(args, env):
     """
     cmd = ["meson", "setup", args.build_dir, "--prefix", PATH_INSTALLED]
     build_dir = Path(args.build_dir)
-    if (os.path.exists(build_dir) and not os.path.exists(build_dir
-                                                         / 'meson-info')):
-        if len(os.listdir(build_dir)):
+    if build_dir.exists() and not (build_dir / 'meson-info').exists():
+        if list(build_dir.iterdir()):
             raise RuntimeError("Can't build into non-empty directory "
-                               f"'{str(build_dir.absolute())}'")
+                               f"'{build_dir.absolute()}'")
     if os.path.exists(build_dir):
         build_options_file = (build_dir / "meson-info"
                               / "intro-buildoptions.json")
