@@ -8157,8 +8157,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
           * 'stouffer': Stouffer's Z-score method
           * 'mudholkar_george': the difference of Fisher's and Pearson's methods
             divided by 2
-          * 'friston': Friston's method (maximum of p-values to the power of the
-            number of p-values)
+          * 'friston': Friston's method (maximum of p-values to the power of
+            the number of p-values)
           * 'nichols': Nichols' method (maximum of p-values)
     weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
@@ -8213,8 +8213,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
            for combining probabilities in meta-analysis." Journal of
            Evolutionary Biology 24, no. 8 (2011): 1836-1841.
     .. [7] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
-    .. [8] Nichols, T., et al. "Valid conjunction inference with the minimum statistic."
-           Neuroimage 25, no. 3 (2005): 653-60.
+    .. [8] Nichols, T., et al. "Valid conjunction inference with the minimum
+           statistic." Neuroimage 25, no. 3 (2005): 653-60.
     .. [9] Friston, K.J., et al. "Multisubject fMRI studies and conjunction
            analyses." Neuroimage 10, no. 4 (1999): 385-96.
 
