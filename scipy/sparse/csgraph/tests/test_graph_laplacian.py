@@ -295,24 +295,20 @@ def test_laplacian_symmetrized(arr_type, form):
         form=form,
     )
 
-    for L in [L_in, L_out, Ls, Ls_normed, Lss, Lss_normed]:
-        if form == "function":
-            L = L(np.eye(n, dtype=mat.dtype))()
-        elif form == "lo":
-            L = L.A
-
-    if arr_type == np.asarray:
-        assert_allclose(Ls, L_in + L_out.T)
-        assert_allclose(Ls, Lss)
-        assert_allclose(Ls_normed, Lss_normed)
-    else:
-        _assert_allclose_sparse(Ls, L_in + L_out.T)
-        _assert_allclose_sparse(Ls, Lss)
-        _assert_allclose_sparse(Ls_normed, Lss_normed)
-
     assert_allclose(ds, d_in + d_out)
     assert_allclose(ds, dss)
     assert_allclose(ds_normed, dss_normed)
+
+    d = {}
+    for L in ["L_in", "L_out", "Ls", "Ls_normed", "Lss", "Lss_normed"]:
+        if form == "array":
+            d[L] = eval(L)
+        else:
+            d[L] = eval(L)(np.eye(n, dtype=mat.dtype))
+
+    _assert_allclose_sparse(d["Ls"], d["L_in"] + d["L_out"].T)
+    _assert_allclose_sparse(d["Ls"], d["Lss"])
+    _assert_allclose_sparse(d["Ls_normed"], d["Lss_normed"])
 
 
 @pytest.mark.parametrize(
@@ -342,10 +338,7 @@ def test_format(dtype, arr_type, normed, use_out_degree, form):
         form="array",
     )
     assert_allclose(do, da)
-    if arr_type == np.asarray:
-        assert_allclose(Lo, La)
-    else:
-        _assert_allclose_sparse(Lo, La)
+    _assert_allclose_sparse(Lo, La)
 
     L, d = csgraph.laplacian(
         mat,
@@ -358,7 +351,4 @@ def test_format(dtype, arr_type, normed, use_out_degree, form):
     assert_allclose(d, do)
     assert d.dtype == dtype
     L = L(np.eye(n, dtype=mat.dtype)).astype(dtype)
-    if arr_type == np.asarray:
-        assert_allclose(L, Lo)
-    else:
-        _assert_allclose_sparse(L, Lo)
+    _assert_allclose_sparse(L, Lo)
