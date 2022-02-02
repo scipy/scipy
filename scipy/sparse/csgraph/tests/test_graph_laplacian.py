@@ -24,7 +24,7 @@ def _explicit_laplacian(x, normed=False):
     x = np.asarray(x)
     y = -1.0 * x
     for j in range(y.shape[0]):
-        y[j, j] = x[j, j + 1:].sum() + x[j, :j].sum()
+        y[j, j] = x[j, j + 1 :].sum() + x[j, :j].sum()
     if normed:
         d = np.diag(y).copy()
         d[d == 0] = 1.0
@@ -295,9 +295,11 @@ def test_laplacian_symmetrized(arr_type, form):
         form=form,
     )
 
-    if form != "array":
-        for L in [L_in, L_out, Ls, Ls_normed, Lss, Lss_normed]:
-            L = L(np.eye(n, dtype=mat.dtype))
+    for L in [L_in, L_out, Ls, Ls_normed, Lss, Lss_normed]:
+        if form == "function":
+            L = L(np.eye(n, dtype=mat.dtype))()
+        elif form == "lo":
+            L = L.A
 
     if arr_type == np.asarray:
         assert_allclose(Ls, L_in + L_out.T)
