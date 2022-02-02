@@ -8,7 +8,7 @@ How to build SciPy with Meson
 
    The change over from a `numpy.distutils` to a Meson based build is still a
    work in progress. There may be rough edges, and not all platforms and build
-   configurations are supported yet. These instructions shouls work reliably on
+   configurations are supported yet. These instructions should work reliably on
    Linux with a conda environment and OpenBLAS as the BLAS/LAPACK library.
    macOS still has one known issue which may occasionally lead to issues
    (however, multiple testers have reported success, it's not deterministic -
