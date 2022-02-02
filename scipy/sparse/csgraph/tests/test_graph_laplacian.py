@@ -260,7 +260,8 @@ def test_sparse_formats(fmt, normed, copy):
 @pytest.mark.parametrize("form", ["array", "function", "lo"])
 def test_laplacian_symmetrized(arr_type, form):
     # adjacency matrix
-    mat = arr_type(np.arange(9).reshape(3, 3))
+    n = 3
+    mat = arr_type(np.arange(n * n).reshape(n, n))
     L_in, d_in = csgraph.laplacian(
         mat,
         return_diag=True,
@@ -293,6 +294,11 @@ def test_laplacian_symmetrized(arr_type, form):
         normed=True,
         form=form,
     )
+
+    if form != "array":
+        for L in [L_in, L_out, Ls, Ls_normed, Lss, Lss_normed]:
+            L = L(np.eye(n, dtype=mat.dtype))
+
     if arr_type == np.asarray:
         assert_allclose(Ls, L_in + L_out.T)
         assert_allclose(Ls, Lss)
