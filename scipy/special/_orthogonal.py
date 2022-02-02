@@ -258,9 +258,10 @@ def roots_jacobi(n, alpha, beta, mu=False):
         return roots_gegenbauer(m, alpha+0.5, mu)
 
     if (alpha + beta) <= 1000:
-        mu0 = 2.0**(alpha+beta+1)*_ufuncs.beta(alpha+1, beta+1)
+        mu0 = 2.0**(alpha+beta+1) * _ufuncs.beta(alpha+1, beta+1)
     else:
-        mu0 = np.exp((alpha + beta + 1) * np.log(2.0) + _ufuncs.betaln(alpha+1, beta+1))
+        mu0 = np.exp((alpha + beta + 1) * np.log(2.0)
+                     + _ufuncs.betaln(alpha+1, beta+1))
     a = alpha
     b = beta
     if a + b == 0.0:
@@ -1494,9 +1495,13 @@ def roots_gegenbauer(n, alpha, mu=False):
               / _ufuncs.gamma(alpha + 1)
     else:
         inv_rt_alpha = 1. / np.sqrt(alpha)
-        mu0 = np.sqrt(np.pi) * (inv_rt_alpha - 0.125 * inv_rt_alpha ** 3 + 0.0078125 * inv_rt_alpha ** 5
-                                + 0.00488281 * inv_rt_alpha ** 7 - 0.000640869 * inv_rt_alpha ** 9
-                                - 0.00152206 * inv_rt_alpha ** 11 + 0.000207186 * inv_rt_alpha ** 13)
+        mu0 = np.sqrt(np.pi) * (inv_rt_alpha
+                                - 0.125 * inv_rt_alpha ** 3
+                                + 0.0078125 * inv_rt_alpha ** 5
+                                + 0.00488281 * inv_rt_alpha ** 7
+                                - 0.000640869 * inv_rt_alpha ** 9
+                                - 0.00152206 * inv_rt_alpha ** 11
+                                + 0.000207186 * inv_rt_alpha ** 13)
     an_func = lambda k: 0.0 * k
     bn_func = lambda k: np.sqrt(k * (k + 2 * alpha - 1)
                         / (4 * (k + alpha) * (k + alpha - 1)))
