@@ -930,7 +930,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
         function is an ndarray of shape (n,) (never a scalar even if n=1).
         It must return a 1-D array_like of shape (m,) or a scalar.
 
-        .. versionchanged:: 1.8.0
+        .. versionchanged:: 1.9.0
             `f` is now able to return a 1-D array-like, with the :math:`(m, n)`
             Jacobian being estimated.
 
