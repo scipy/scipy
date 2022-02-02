@@ -776,8 +776,11 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
     estimate : double[:, :] with shape (m, p)
         The log of the multivariate Gaussian kernel estimate evaluated at the input coordinates.
     """
+
+    # This implementation is derived from `gaussian_kernel_estimate`, huge thanks to the authors.
+
     cdef:
-        real[:, :] points_, xi_, values_
+        real[:, :] points_, xi_, values_, log_values_
         real[:, :] whitening, estimate, max_
         real[:, :, :] estimate_
         int i, j, k
@@ -799,7 +802,12 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
     points_ = np.dot(points, whitening).astype(dtype, copy=False)
     xi_ = np.dot(xi, whitening).astype(dtype, copy=False)
     values_ = values.astype(dtype, copy=False)
-    values_ = np.log(values_).astype(dtype, copy=False)
+
+    # Log transformation of values_. It is faster than np.log(values_).
+    log_values_ = np.zeros((n, p), dtype)
+    for i in range(n):
+        for k in range(p):
+            log_values_[i, k] = math.log(values_[i, k])
 
     # Evaluate the normalisation
     log_norm = (- d / 2) * math.log(2 * PI)
@@ -820,10 +828,13 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
 
             log_arg = -arg / 2 + log_norm
             for k in range(p):
-                estimate_[j, k, i] = values_[i, k] + log_arg
+                estimate_[j, k, i] = log_values_[i, k] + log_arg
+
+                # Collect max value for logsumexp
                 if max_[j, k] < estimate_[j, k, i]:
                     max_[j, k] = estimate_[j, k, i]
 
+        # Calculate logsumexp
         for k in range(p):
             for i in range(n):
                 estimate[j, k] += math.exp(estimate_[j, k, i] - max_[j, k])
