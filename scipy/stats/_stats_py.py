@@ -402,7 +402,7 @@ ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
 def mode(a, axis=0, nan_policy='propagate'):
-    """Return an array of the modal (most common) value in the passed array.
+    r"""Return an array of the modal (most common) value in the passed array.
 
     If there is more than one such value, only one is returned.
     The bin-count for the modal bins is also returned.
@@ -429,6 +429,19 @@ def mode(a, axis=0, nan_policy='propagate'):
     count : ndarray
         Array of counts for each mode.
 
+    Notes
+    -----
+    Input `a` is converted to an `np.ndarray` before taking the mode.
+    To avoid the possibility of unexpected conversions, convert `a` to an
+    `np.ndarray` of the desired type before using `mode`.
+
+    The mode of object arrays is calculated using `collections.Counter`, which
+    treats NaNs with different binary representations as distinct.
+
+    The mode of arrays with other dtypes is calculated using `np.unique`, which
+    treats all NaNs - even those with different binary representations - as
+    equivalent.
+
     Examples
     --------
     >>> a = np.array([[6, 8, 3, 0],
@@ -446,7 +459,6 @@ def mode(a, axis=0, nan_policy='propagate'):
     ModeResult(mode=3, count=3)
 
     """
-    a_orig = a
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
         return ModeResult(np.array([]), np.array([]))
@@ -456,11 +468,6 @@ def mode(a, axis=0, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.mode(a, axis)
-
-    if contains_nan:
-        # When sequences are converted to numerical arrays, NumPy sometimes
-        # changes the binary representation of some NaNs. Avoid this.
-        a = np.asarray(a_orig, dtype=object)
 
     if a.dtype == object:
         def _mode1D(a):
