@@ -11,7 +11,7 @@ on:
       - maintenance/**
 
 env:
-  INSTALLDIR: "installdir"
+  INSTALLDIR: "build-install"
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
 
 jobs:
