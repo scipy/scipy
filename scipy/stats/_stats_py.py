@@ -440,12 +440,12 @@ def mode(a, axis=0, nan_policy='propagate'):
     ...               [4, 7, 5, 9]])
     >>> from scipy import stats
     >>> stats.mode(a)
-    ModeResult(mode=array([[3, 1, 0, 0]]), count=array([[1, 1, 1, 1]]))
+    ModeResult(mode=array([3, 1, 0, 0]), count=array([1, 1, 1, 1]))
 
     To get mode of whole array, specify ``axis=None``:
 
     >>> stats.mode(a, axis=None)
-    ModeResult(mode=array([3]), count=array([3]))
+    ModeResult(mode=3, count=3)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -462,18 +462,18 @@ def mode(a, axis=0, nan_policy='propagate'):
         # Fall back to a slower method since np.unique does not work with NaN
         scores = set(np.ravel(a))  # get ALL unique values
         testshape = list(a.shape)
-        testshape[axis] = 1
+        testshape.pop(axis)
         oldmostfreq = np.zeros(testshape, dtype=a.dtype)
         oldcounts = np.zeros(testshape, dtype=int)
 
         for score in scores:
             template = (a == score)
-            counts = np.sum(template, axis, keepdims=True)
+            counts = np.sum(template, axis)
             mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
             oldcounts = np.maximum(counts, oldcounts)
             oldmostfreq = mostfrequent
 
-        return ModeResult(mostfrequent, oldcounts)
+        return ModeResult(mostfrequent[()], oldcounts[()])
 
     def _mode1D(a):
         vals, cnts = np.unique(a, return_counts=True)
@@ -490,9 +490,8 @@ def mode(a, axis=0, nan_policy='propagate'):
     counts = np.empty(a_view.shape[:-1], dtype=np.int_)
     for ind in inds:
         modes[ind], counts[ind] = _mode1D(a_view[ind])
-    newshape = list(a.shape)
-    newshape[axis] = 1
-    return ModeResult(modes.reshape(newshape), counts.reshape(newshape))
+
+    return ModeResult(modes[()], counts[()])
 
 
 def _mask_to_limits(a, limits, inclusive):
