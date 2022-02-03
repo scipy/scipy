@@ -1,4 +1,5 @@
 import pickle
+import re
 
 import numpy as np
 import numpy.testing as npt
@@ -308,7 +309,7 @@ def check_pickling(distfn, args):
         pickled_fit_function = pickle.dumps(fit_function)
         unpickled_fit_function = pickle.loads(pickled_fit_function)
         assert fit_function.__name__ == unpickled_fit_function.__name__ == "fit"
-    
+
     # restore the random_state
     distfn.random_state = rndm
 
@@ -335,3 +336,117 @@ def check_rvs_broadcast(distfunc, distname, allargs, shape, shape_only, otype):
         np.random.seed(123)
         expected = rvs(*allargs)
         assert_allclose(sample, expected, rtol=1e-13)
+
+
+def check_deprecation_warning_gh5982_moment(distfn, arg, distname):
+    # See description of cases that need to be tested in the definition of
+    # scipy.stats.rv_generic.moment
+    shapes = [] if distfn.shapes is None else distfn.shapes.split(", ")
+    kwd_shapes = dict(zip(shapes, arg or []))  # dictionary of shape kwds
+    n = kwd_shapes.pop('n', None)
+
+    message1 = "moment() missing 1 required positional argument"
+    message2 = "_parse_args() missing 1 required positional argument: 'n'"
+    message3 = "moment() got multiple values for first argument"
+
+    if 'n' in shapes:
+        expected = distfn.mean(n=n, **kwd_shapes)
+
+        # A1
+        res = distfn.moment(1, n=n, **kwd_shapes)
+        assert_allclose(res, expected)
+
+        # A2
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.moment(n=n, **kwd_shapes)
+
+        # A3
+        # if `n` is not provided at all
+        with assert_raises(TypeError, match=re.escape(message2)):
+            distfn.moment(1, **kwd_shapes)
+        # if `n` is provided as a positional argument
+        res = distfn.moment(1, *arg)
+        assert_allclose(res, expected)
+
+        # A4
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.moment(**kwd_shapes)
+
+    else:
+        expected = distfn.mean(**kwd_shapes)
+
+        # B1
+        with assert_raises(TypeError, match=re.escape(message3)):
+            res = distfn.moment(1, n=1, **kwd_shapes)
+
+        # B2
+        with np.testing.assert_warns(DeprecationWarning):
+            res = distfn.moment(n=1, **kwd_shapes)
+            assert_allclose(res, expected)
+
+        # B3
+        res = distfn.moment(1, *arg)
+        assert_allclose(res, expected)
+
+        # B4
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.moment(**kwd_shapes)
+
+
+def check_deprecation_warning_gh5982_interval(distfn, arg, distname):
+    # See description of cases that need to be tested in the definition of
+    # scipy.stats.rv_generic.moment
+    shapes = [] if distfn.shapes is None else distfn.shapes.split(", ")
+    kwd_shapes = dict(zip(shapes, arg or []))  # dictionary of shape kwds
+    alpha = kwd_shapes.pop('alpha', None)
+
+    def my_interval(*args, **kwds):
+        return (distfn.ppf(0.25, *args, **kwds),
+                distfn.ppf(0.75, *args, **kwds))
+
+    message1 = "interval() missing 1 required positional argument"
+    message2 = "_parse_args() missing 1 required positional argument: 'alpha'"
+    message3 = "interval() got multiple values for first argument"
+
+    if 'alpha' in shapes:
+        expected = my_interval(alpha=alpha, **kwd_shapes)
+
+        # A1
+        res = distfn.interval(0.5, alpha=alpha, **kwd_shapes)
+        assert_allclose(res, expected)
+
+        # A2
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.interval(alpha=alpha, **kwd_shapes)
+
+        # A3
+        # if `alpha` is not provided at all
+        with assert_raises(TypeError, match=re.escape(message2)):
+            distfn.interval(0.5, **kwd_shapes)
+        # if `alpha` is provided as a positional argument
+        res = distfn.interval(0.5, *arg)
+        assert_allclose(res, expected)
+
+        # A4
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.interval(**kwd_shapes)
+
+    else:
+        expected = my_interval(**kwd_shapes)
+
+        # B1
+        with assert_raises(TypeError, match=re.escape(message3)):
+            res = distfn.interval(0.5, alpha=1, **kwd_shapes)
+
+        # B2
+        with np.testing.assert_warns(DeprecationWarning):
+            res = distfn.interval(alpha=0.5, **kwd_shapes)
+            assert_allclose(res, expected)
+
+        # B3
+        res = distfn.interval(0.5, *arg)
+        assert_allclose(res, expected)
+
+        # B4
+        with assert_raises(TypeError, match=re.escape(message1)):
+            distfn.interval(**kwd_shapes)
