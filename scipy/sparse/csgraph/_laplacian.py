@@ -187,11 +187,14 @@ def _md(m, d):
 def _md_normed(m, d, nd):
     md_sym = _md(m, d)
     return lambda v: nd * md_sym(v) * nd[:, np.newaxis]
-    # return lambda v: nd * (v * d[np.newaxis, :] - m @ v) * nd[:, np.newaxis]
 
 
 def _md_sym(m, d):
-    return lambda v: v * d[np.newaxis, :] - m @ v - m.T.conj @ v
+    return (
+        lambda v: v * d[np.newaxis, :]
+        - m @ v
+        - np.transpose(np.conjugate(np.transpose(np.conjugate(v)) @ m))
+    )
 
 
 def _md_normed_sym(m, d, nd):
@@ -219,18 +222,24 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
         if normed:
             isolated_node_mask = diag == 0
             w = np.where(isolated_node_mask, 1, np.sqrt(diag))
-            md_normed = _md_normed(graph, graph_sum, 1.0 / w)
+            if symmetrized:
+                md = _md_normed_sym(graph, graph_sum, 1.0 / w)
+            else:
+                md = _md_normed(graph, graph_sum, 1.0 / w)
             if form == "function":
-                return md_normed, w.astype(dtype, copy=False)
+                return md, w.astype(dtype, copy=False)
             elif form == "lo":
-                m = _linearoperator(md_normed, shape=graph.shape, dtype=dtype)
+                m = _linearoperator(md, shape=graph.shape, dtype=dtype)
                 return m, w.astype(dtype, copy=False)
         else:
-            md_md = _md(graph, graph_sum)
+            if symmetrized:
+                md = _md_sym(graph, graph_sum)
+            else:
+                md = _md(graph, graph_sum)
             if form == "function":
-                return md_md, diag.astype(dtype, copy=False)
+                return md, diag.astype(dtype, copy=False)
             elif form == "lo":
-                m = _linearoperator(md_md, shape=graph.shape, dtype=dtype)
+                m = _linearoperator(md, shape=graph.shape, dtype=dtype)
                 return m, diag.astype(dtype, copy=False)
 
     else:
@@ -289,18 +298,24 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
         if normed:
             isolated_node_mask = diag == 0
             w = np.where(isolated_node_mask, 1, np.sqrt(diag))
-            md_normed = _md_normed(m, graph_sum, 1.0 / w)
+            if symmetrized:
+                md = _md_normed_sym(m, graph_sum, 1.0 / w)
+            else:
+                md = _md_normed(m, graph_sum, 1.0 / w)
             if form == "function":
-                return md_normed, w.astype(dtype, copy=False)
+                return md, w.astype(dtype, copy=False)
             elif form == "lo":
-                m = _linearoperator(md_normed, shape=graph.shape, dtype=dtype)
+                m = _linearoperator(md, shape=graph.shape, dtype=dtype)
                 return m, w.astype(dtype, copy=False)
         else:
-            md_md = _md(m, graph_sum)
+            if symmetrized:
+                md = _md_sym(m, graph_sum)
+            else:
+                md = _md(m, graph_sum)
             if form == "function":
-                return md_md, diag.astype(dtype, copy=False)
+                return md, diag.astype(dtype, copy=False)
             elif form == "lo":
-                m = _linearoperator(md_md, shape=graph.shape, dtype=dtype)
+                m = _linearoperator(md, shape=graph.shape, dtype=dtype)
                 return m, diag.astype(dtype, copy=False)
 
     else:
