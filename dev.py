@@ -409,6 +409,7 @@ def setup_build(args, env):
     """
     cmd = ["meson", "setup", args.build_dir, "--prefix", PATH_INSTALLED]
     build_dir = Path(args.build_dir)
+    run_dir = os.getcwd()
     if build_dir.exists() and not (build_dir / 'meson-info').exists():
         if list(build_dir.iterdir()):
             raise RuntimeError("Can't build into non-empty directory "
@@ -424,13 +425,14 @@ def setup_build(args, env):
                 installdir = option["value"]
                 break
         if installdir != PATH_INSTALLED:
-            cmd += ["--reconfigure"]
+            run_dir = os.path.join(run_dir, build_dir)
+            cmd = ["meson", "--reconfigure", "--prefix", PATH_INSTALLED]
         else:
             return
     if args.werror:
         cmd += ["--werror"]
     # Setting up meson build
-    ret = subprocess.call(cmd, env=env, cwd=ROOT_DIR)
+    ret = subprocess.call(cmd, env=env, cwd=run_dir)
     if ret == 0:
         print("Meson build setup OK")
     else:
