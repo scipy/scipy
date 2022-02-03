@@ -190,13 +190,13 @@ def _md_normed(m, d, nd):
     # return lambda v: nd * (v * d[np.newaxis, :] - m @ v) * nd[:, np.newaxis]
 
 
-# def _md_sym(m, d):
-#     return lambda v: v * d[np.newaxis, :] - m @ v - m.T.conj @ v
+def _md_sym(m, d):
+    return lambda v: v * d[np.newaxis, :] - m @ v - m.T.conj @ v
 
 
-# def _md_normed_sym(m, d, nd):
-#     md_sym = _md_sym(m, d)
-#     return lambda v: nd * md_sym(v) * nd[:, np.newaxis]
+def _md_normed_sym(m, d, nd):
+    md_sym = _md_sym(m, d)
+    return lambda v: nd * md_sym(v) * nd[:, np.newaxis]
 
 
 def _linearoperator(mv, shape, dtype):
@@ -210,7 +210,11 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
 
     if form != "array":
         graph_sum = graph.sum(axis=axis).getA1()
-        diag = graph_sum - graph.diagonal()
+        graph_diagonal = graph.diagonal()
+        diag = graph_sum - graph_diagonal
+        if symmetrized:
+            graph_sum += graph.sum(axis=1 - axis).getA1()
+            diag = graph_sum - graph_diagonal - graph_diagonal
 
         if normed:
             isolated_node_mask = diag == 0
