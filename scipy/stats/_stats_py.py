@@ -29,7 +29,7 @@ References
 import warnings
 import math
 from math import gcd
-from collections import namedtuple
+from collections import namedtuple, Counter
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -404,7 +404,7 @@ ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 def mode(a, axis=0, nan_policy='propagate'):
     """Return an array of the modal (most common) value in the passed array.
 
-    If there is more than one such value, only the smallest is returned.
+    If there is more than one such value, only one is returned.
     The bin-count for the modal bins is also returned.
 
     Parameters
@@ -418,7 +418,7 @@ def mode(a, axis=0, nan_policy='propagate'):
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
+          * 'propagate': treats nan as it would treat any other value
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
 
@@ -446,6 +446,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     ModeResult(mode=3, count=3)
 
     """
+    a_orig = a
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
         return ModeResult(np.array([]), np.array([]))
@@ -456,26 +457,20 @@ def mode(a, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.mode(a, axis)
 
-    if a.dtype == object and np.nan in set(a.ravel()):
-        # Fall back to a slower method since np.unique does not work with NaN
-        scores = set(np.ravel(a))  # get ALL unique values
-        testshape = list(a.shape)
-        testshape.pop(axis)
-        oldmostfreq = np.zeros(testshape, dtype=a.dtype)
-        oldcounts = np.zeros(testshape, dtype=int)
+    if contains_nan:
+        # When sequences are converted to numerical arrays, NumPy sometimes
+        # changes the binary representation of some NaNs. Avoid this.
+        a = np.asarray(a_orig, dtype=object)
 
-        for score in scores:
-            template = (a == score)
-            counts = np.sum(template, axis)
-            mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
-            oldcounts = np.maximum(counts, oldcounts)
-            oldmostfreq = mostfrequent
-
-        return ModeResult(mostfrequent[()], oldcounts[()])
-
-    def _mode1D(a):
-        vals, cnts = np.unique(a, return_counts=True)
-        return vals[cnts.argmax()], cnts.max()
+    if a.dtype == object:
+        def _mode1D(a):
+            cntr = Counter(a)
+            mode = max(cntr, key=lambda x: cntr[x])
+            return mode, cntr[mode]
+    else:
+        def _mode1D(a):
+            vals, cnts = np.unique(a, return_counts=True)
+            return vals[cnts.argmax()], cnts.max()
 
     # np.apply_along_axis will convert the _mode1D tuples to a numpy array,
     # casting types in the process.
