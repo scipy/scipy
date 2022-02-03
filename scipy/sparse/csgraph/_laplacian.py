@@ -278,12 +278,14 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
     if dtype is None:
         dtype = m.dtype
 
-    if symmetrized:
-        m += m.T.conj()
-
     if form != "array":
         graph_sum = m.sum(axis=axis)
-        diag = graph_sum - graph.diagonal()
+        graph_diagonal = m.diagonal()
+        diag = graph_sum - graph_diagonal
+        if symmetrized:
+            graph_sum += m.sum(axis=1 - axis)
+            diag = graph_sum - graph_diagonal - graph_diagonal
+
         if normed:
             isolated_node_mask = diag == 0
             w = np.where(isolated_node_mask, 1, np.sqrt(diag))
@@ -302,6 +304,8 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
                 return m, diag.astype(dtype, copy=False)
 
     else:
+        if symmetrized:
+            m += m.T.conj()
         np.fill_diagonal(m, 0)
         w = m.sum(axis=axis)
         if normed:
