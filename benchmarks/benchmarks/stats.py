@@ -338,11 +338,11 @@ class GaussianKDE(Benchmark):
         self.kernel(self.positions)
 
     def time_gaussian_kde_logpdf_few_points(self):
-        # test gaussian_kde logpdfa small number of points
+        # test gaussian_kde logpdf on a small number of points
         self.kernel.logpdf(self.positions[:, :10])
 
     def time_gaussian_kde_logpdf_many_points(self):
-        # test gaussian_kde logpdfmany points
+        # test gaussian_kde logpdf on many points
         self.kernel.logpdf(self.positions)
 
 
