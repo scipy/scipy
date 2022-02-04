@@ -1671,8 +1671,7 @@ class rv_generic:
         return self._nnlf_and_penalty(x, args) + n_log_scale
 
 
-
-class ShapeInfo:
+class _ShapeInfo:
     def __init__(self, name, integrality=False, domain=(-np.inf, np.inf),
                  inclusive=(True, True)):
         self.name = name
@@ -2922,8 +2921,8 @@ class rv_continuous(rv_generic):
 
     def _param_info(self):
         shape_info = self._shape_info()
-        loc_info = ShapeInfo("loc", False, (-np.inf, np.inf), (False, False))
-        scale_info = ShapeInfo("scale", False, (0, np.inf), (False, False))
+        loc_info = _ShapeInfo("loc", False, (-np.inf, np.inf), (False, False))
+        scale_info = _ShapeInfo("scale", False, (0, np.inf), (False, False))
         param_info = shape_info + [loc_info, scale_info]
         return param_info
 
@@ -3738,7 +3737,7 @@ class rv_discrete(rv_generic):
 
     def _param_info(self):
         shape_info = self._shape_info()
-        loc_info = ShapeInfo("loc", True, (-np.inf, np.inf), (False, False))
+        loc_info = _ShapeInfo("loc", True, (-np.inf, np.inf), (False, False))
         param_info = shape_info + [loc_info]
         return param_info
 
@@ -4418,8 +4417,8 @@ def fit(dist, data, bounds=None, *, optimizer=optimize.differential_evolution):
                 user_bounds = np.empty((0, 2))
         except ValueError as e:
             message = ("Each element of a `bounds` sequence must be a tuple "
-                       "containing two elements: the lower and upper bound of a "
-                       "distribution parameter.")
+                       "containing two elements: the lower and upper bound of "
+                       "a distribution parameter.")
             raise ValueError(message) from e
         if (user_bounds.ndim != 2 or user_bounds.shape[1] != 2):
             message = ("Each element of `bounds` must be a tuple specifying "

@@ -456,5 +456,4 @@ class TestFit:
         res = stats.fit(dist, data, bounds)
         message = "Optimization converged to parameter values that are"
         assert res.message.startswith(message)
-        assert res.success == False
-
+        assert res.success is False

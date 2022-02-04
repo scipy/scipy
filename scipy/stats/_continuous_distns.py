@@ -25,7 +25,7 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (
     get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-    rv_continuous, _skew, _get_fixed_fit_value, _check_shape, ShapeInfo)
+    rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
@@ -5661,7 +5661,7 @@ class nakagami_gen(rv_continuous):
 
     """
     def _shape_info(self):
-        return [ShapeInfo("nu", False, (0, np.inf), (False, True))]
+        return [_ShapeInfo("nu", False, (0, np.inf), (False, True))]
 
     def _pdf(self, x, nu):
         return np.exp(self._logpdf(x, nu))
