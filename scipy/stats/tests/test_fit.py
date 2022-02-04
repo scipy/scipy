@@ -468,7 +468,6 @@ class TestFit:
                         scale_bounds=scale_bounds, optimizer=self.opt)
         assert_allclose(res.params, (loc, scale), **self.tols)
 
-    @pytest.mark.xfail(strict=True, reason="gh-15433 needs to be fixed")
     def test_everything_fixed(self):
         N = 5000
         rng = np.random.default_rng(self.seed)
