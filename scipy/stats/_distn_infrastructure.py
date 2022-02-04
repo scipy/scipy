@@ -4197,28 +4197,28 @@ def fit(dist, data, bounds=None, *, optimizer=optimize.differential_evolution):
         The data to which the distribution is to be fit. If the data contain
         any of ``np.nan``, ``np.inf``, or -``np.inf``, the fit method will
         raise a ``ValueError``.
-    bounds : dict or sequence of tuples
-        If a dictionary, each key is the name of a shape parameter of the
+    bounds : dict or sequence of tuples, optional
+        If a dictionary, each key is the name of a parameter of the
         distribution, and the corresponding value is a tuple containing the
-        lower and upper bound on that shape parameter.  If the distribution is
+        lower and upper bound on that parameter.  If the distribution is
         defined only for a finite range of values of that parameter, no entry
         for that parameter is required; e.g., some distributions have
-        parameters which must be on the interval [0, 1].
+        parameters which must be on the interval [0, 1]. Bounds for parameters
+        location (``loc``) and scale (``scale``) are optional; by default,
+        they are fixed to 0 and 1, respectively.
 
         If a sequence, element *i* is a tuple containing the lower and upper
-        bound on the *i*\ th shape parameter of the distribution. In this case,
-        bounds for all distribution shape parameters must be provided.
+        bound on the *i*\ th parameter of the distribution. In this case,
+        bounds for *all* distribution shape parameters must be provided.
+        Optionally, bounds for location and scale may follow the
+        distribution shape parameters.
 
-        If a shape parameter is to be held as fixed (e.g. if it is known), the
+        If a shape is to be held fixed (e.g. if it is known), the
         lower and upper bounds may be equal. If a user-provided lower or upper
         bound is beyond a bound of the domain for which the distribution is
         defined, the bound of the distribution's domain will replace the
-        user-provided value. Similarly, shape parameters which must be integral
+        user-provided value. Similarly, parameters which must be integral
         will be constrained to integral values within the user-provided bounds.
-    loc_bounds : tuple, optional
-        Lower and upper bound on the distribution's location parameter ``loc``.
-    scale_bounds : tuple, optional
-        Lower and upper bound on the distribution's scale parameter ``scale``.
     optimizer : callable, optional
         `optimizer` is a callable that accepts the following positional
         arguments.
