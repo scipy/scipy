@@ -5235,6 +5235,13 @@ class TestStudentizedRange:
             k, df, _, _ = stats.studentized_range._fitstart([1, 2, 3])
         assert_(stats.studentized_range._argcheck(k, df))
 
+    def test_clipping(self):
+        # The result of this computation was -9.9253938401489e-14, but p-values
+        # should not be negative. The result from mpmath is 0.
+        q, k, v = 34.6413996195345746, 3, 339
+        p = stats.studentized_range.sf(q, k, v)
+        assert_equal(p, 0)
+
 
 def test_540_567():
     # test for nan returned in tickets 540, 567
