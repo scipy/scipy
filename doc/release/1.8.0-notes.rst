@@ -2,8 +2,6 @@
 SciPy 1.8.0 Release Notes
 =========================
 
-.. note:: Scipy 1.8.0 is not released yet!
-
 .. contents::
 
 SciPy 1.8.0 is the culmination of 6 months of hard work. It contains
@@ -563,6 +561,7 @@ Issues closed for 1.8.0
 * `#15316 <https://github.com/scipy/scipy/issues/15316>`__: BUG: Failed to install scipy 1.7.x with pypy 3.7 in aarch64
 * `#15339 <https://github.com/scipy/scipy/issues/15339>`__: BUG: \`highs-ds\` returns memoryviews instead of np.arrays for...
 * `#15375 <https://github.com/scipy/scipy/issues/15375>`__: BUG: axis argument to scipy.stats.mode does not accept negative...
+* `#15517 <https://github.com/scipy/scipy/issues/15517>`__: BUG: Link to mailing list seems broken
 
 ***********************
 Pull requests for 1.8.0
@@ -964,4 +963,5 @@ Pull requests for 1.8.0
 * `#15418 <https://github.com/scipy/scipy/pull/15418>`__: MAINT: 1.8.0 rc3 backports round 1
 * `#15421 <https://github.com/scipy/scipy/pull/15421>`__: BUG: stats: mode: fix negative axis issue with np.moveaxis instead...
 * `#15432 <https://github.com/scipy/scipy/pull/15432>`__: MAINT: release branch PROPACK switch (default off)
+* `#15515 <https://github.com/scipy/scipy/pull/15515>`__: MAINT: fix broken link and remove CI badges
 
