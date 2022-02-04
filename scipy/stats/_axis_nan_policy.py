@@ -226,24 +226,14 @@ def _check_empty_inputs(samples, axis):
     return output
 
 
-def _add_reduced_axes(res, reduced_axes, n_outputs, keepdims,
-                      result_object):
+def _add_reduced_axes(res, reduced_axes, keepdims):
     """
     Add reduced axes back to all the arrays in the result object
     if keepdims = True. `res` should either be an instance of the
     result_object or a tuple of results.
     """
-    if not keepdims:
-        if n_outputs == 1:
-            return result_object(res)
-        return result_object(*res)
-    res_expanded = []
-    if n_outputs == 1:
-        res_expanded.append(np.expand_dims(res, reduced_axes))
-    else:
-        for r in res:
-            res_expanded.append(np.expand_dims(r, reduced_axes))
-    return result_object(*res_expanded)
+    return ([np.expand_dims(output, reduced_axes) for output in res] if keepdims
+            else res)
 
 
 # Standard docstring / signature entries for `axis` and `nan_policy`
@@ -352,7 +342,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
     if result_unpacker is None:
         def result_unpacker(res):
-            return res[..., 0], res[..., 1]
+            return res
 
     def is_too_small(samples):
         for sample in samples:
@@ -471,10 +461,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 # propagate nans in a sensible way
                 if any(contains_nans) and nan_policy == 'propagate':
                     res = np.full(n_outputs, np.nan)
-                    if n_outputs == 1:
-                        res = res.item()
-                    return _add_reduced_axes(res, reduced_axes, n_outputs,
-                                             keepdims, result_object)
+                    res = _add_reduced_axes(res, reduced_axes, keepdims)
+                    return result_object(*res)
 
                 # Addresses nan_policy == "omit"
                 if any(contains_nans) and nan_policy == 'omit':
@@ -490,8 +478,9 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 if sentinel:
                     samples = _remove_sentinel(samples, paired, sentinel)
                 res = hypotest_fun_out(*samples, **kwds)
-                return _add_reduced_axes(res, reduced_axes, n_outputs,
-                                         keepdims, result_object)
+                res = result_unpacker(res)
+                res = _add_reduced_axes(res, reduced_axes, keepdims)
+                return result_object(*res)
 
             # check for empty input
             # ideally, move this to the top, but some existing functions raise
@@ -499,10 +488,9 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # backward compatibility.
             empty_output = _check_empty_inputs(samples, axis)
             if empty_output is not None:
-                empty_output = _add_reduced_axes(empty_output, reduced_axes,
-                                                 1, keepdims, lambda x: x)
-                return result_object(*([empty_output.copy()
-                                        for i in range(n_outputs)]))
+                res = [empty_output.copy() for i in range(n_outputs)]
+                res = _add_reduced_axes(res, reduced_axes, keepdims)
+                return result_object(*res)
 
             # otherwise, concatenate all samples along axis, remembering where
             # each separate sample begins
@@ -516,8 +504,9 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
             if vectorized and not contains_nan and not sentinel:
                 res = hypotest_fun_out(*samples, axis=axis, **kwds)
-                return _add_reduced_axes(res, reduced_axes, n_outputs,
-                                         keepdims, result_object)
+                res = result_unpacker(res)
+                res = _add_reduced_axes(res, reduced_axes, keepdims)
+                return result_object(*res)
 
             # Addresses nan_policy == "omit"
             if contains_nan and nan_policy == 'omit':
@@ -555,12 +544,11 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                         return result_object(*res)
                     return hypotest_fun_out(*samples, **kwds)
 
-            x = np.moveaxis(x, axis, -1)
-            res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
-            if n_outputs > 1:
-                res = result_unpacker(res)
-            return _add_reduced_axes(res, reduced_axes, n_outputs, keepdims,
-                                     result_object)
+            x = np.moveaxis(x, axis, 0)
+            res = np.apply_along_axis(hypotest_fun, axis=0, arr=x)
+            res = result_unpacker(res)
+            res = _add_reduced_axes(res, reduced_axes, keepdims)
+            return result_object(*res)
 
         doc = FunctionDoc(axis_nan_policy_wrapper)
         parameter_names = [param.name for param in doc['Parameters']]
