@@ -641,7 +641,7 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
     0.701070107010701
 
     The probability of obtaining a test statistic less than or equal to the
-    observed value under the null hypothesis is 67.77%. This is greater than
+    observed value under the null hypothesis is ~70%. This is greater than
     our chosen threshold of 5%, so we cannot consider this to to be significant
     evidence against the null hypothesis.
 
@@ -657,7 +657,7 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
 
     >>> x = stats.skewnorm.rvs(a=1, size=7, random_state=rng)
     >>> # stats.skewtest(x) would produce an error due to small sample
-    >>> res = monte_carlo_test(x, rvs, statistic, vectorized=True)  # OK
+    >>> res = monte_carlo_test(x, rvs, statistic, vectorized=True)
 
     The Monte Carlo distribution of the test statistic is provided for
     further investigation.
