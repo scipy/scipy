@@ -59,7 +59,7 @@ statlib = py3.extension_module('_statlib',
 
 _stats = py3.extension_module('_stats',
   stats_special_cython_gen.process('_stats.pyx'),
-  c_args: '-Wno-cpp',  # Replace with numpy_nodepr_api after Cython 3.0 is out
+  c_args: cython_c_args,
   dependencies: [py3_dep],
   include_directories: [inc_np],
   install: true,
@@ -85,7 +85,7 @@ mvn = py3.extension_module('_mvn',
 
 _sobol = py3.extension_module('_sobol',
   cython_gen.process('_sobol.pyx'),
-  c_args: numpy_nodepr_api,
+  c_args: cython_c_args,
   dependencies: [py3_dep],
   include_directories: [inc_np],
   install: true,
@@ -103,7 +103,7 @@ pthread = dependency('threads')
 
 _qmc_cy = py3.extension_module('_qmc_cy',
   cython_gen_cpp.process('_qmc_cy.pyx'),
-  cpp_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
+  cpp_args: cython_cpp_args,
   dependencies: [py3_dep, pthread],
   include_directories: [inc_np],
   install: true,
@@ -150,8 +150,9 @@ biasedurn = py3.extension_module('_biasedurn',
     'biasedurn/stocR.h',
     'biasedurn/wnchyppr.cpp',
   ],
-  cpp_args: ['-DR_BUILD', numpy_nodepr_api],
+  cpp_args: ['-DR_BUILD', cython_cpp_args],
   include_directories: [inc_np],
+  # Note that we're not using npymath directly, it is needed to use npyrandom
   dependencies: [py3_dep, npyrandom_lib, npymath_lib],
   install: true,
   subdir: 'scipy/stats'

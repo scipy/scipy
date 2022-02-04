@@ -1,6 +1,6 @@
 py3.extension_module('convolve',
   cython_gen.process('convolve.pyx'),
-  c_args: [c_no_warn_depr_np_api],
+  c_args: cython_c_args,
   include_directories: inc_np,
   dependencies: py3_dep,
   install: true,
