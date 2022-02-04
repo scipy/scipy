@@ -996,7 +996,7 @@ def _optimize_result_for_equal_bounds(
 
     if constraints:
         message = ("All independent variables were fixed by bounds at values"
-                   " that satisfy the constraints")
+                   " that satisfy the constraints.")
         constraints = standardize_constraints(constraints, x0, 'new')
 
     maxcv = 0
