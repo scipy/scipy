@@ -315,7 +315,8 @@ class BaseMixin:
                 res = least_squares(
                     fun_rosenbrock_cropped, x0, jac, x_scale=x_scale,
                     tr_solver=tr_solver, method=self.method)
-                assert_allclose(res.cost, 0, atol=1e-14)
+                assert res.nfev < 40
+                assert_allclose(res.cost, 0, atol=1e-13)
 
     def test_fun_wrong_dimensions(self):
         assert_raises(ValueError, least_squares, fun_wrong_dimensions,
