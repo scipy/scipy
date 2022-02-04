@@ -197,21 +197,28 @@ class TestFit:
             stats.fit(self.dist, ['1', '2', '3'], self.shape_bounds_a)
 
     def test_shape_bounds_iv(self):
-        message = "Bounds provided for the following unrecognized shapes..."
+        message = "Bounds provided for the following unrecognized..."
         shape_bounds = {'n': (1, 10), 'p': (0, 1), '1': (0, 10)}
         with pytest.warns(RuntimeWarning, match=message):
             stats.fit(self.dist, self.data, shape_bounds)
 
-        message = "`shape_bounds` must have 2 elements..."
-        shape_bounds = [(1, 10)]
+        message = "Each element of a `bounds` sequence must be a tuple..."
+        shape_bounds = [(1, 10, 3), (0, 1)]
         with pytest.raises(ValueError, match=message):
-            stats.fit(self.dist, self.data, self.shape_bounds_a[:1])
+            stats.fit(self.dist, self.data, shape_bounds)
+
+        message = "Each element of `bounds` must be a tuple specifying..."
         shape_bounds = [(1, 10, 3), (0, 1, 0.5)]
         with pytest.raises(ValueError, match=message):
             stats.fit(self.dist, self.data, shape_bounds)
-        shape_bounds = [(1), (0)]
+        shape_bounds = [1, 0]
         with pytest.raises(ValueError, match=message):
             stats.fit(self.dist, self.data, shape_bounds)
+
+        message = "`bounds` must contain at least 2 elements..."
+        shape_bounds = [(1, 10)]
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_a[:1])
 
         message = "There are no values for `p` on the interval..."
         shape_bounds = {'n': (1, 10), 'p': (1, 0)}
@@ -235,56 +242,6 @@ class TestFit:
         with pytest.raises(ValueError, match=message):
             stats.fit(self.dist, self.data, shape_bounds)
 
-    def test_loc_bounds_iv(self):
-        message = "`loc_bounds` must be a tuple containing exactly two..."
-        loc_bounds = (0, 1, 2)
-        with pytest.raises(ValueError, match=message):
-            stats.fit(self.dist, self.data, self.shape_bounds_a,
-                      loc_bounds=loc_bounds)
-
-        message = "There are no values for `loc` on the interval..."
-        loc_bounds = (10, 0)
-        with pytest.raises(ValueError, match=message):
-            stats.fit(self.dist, self.data, self.shape_bounds_a,
-                      loc_bounds=loc_bounds)
-
-        message = "There are no integer values for `loc` on the interval..."
-        loc_bounds = (0.4, 0.6)
-        with pytest.raises(ValueError, match=message):
-            stats.fit(self.dist, self.data, self.shape_bounds_a,
-                      loc_bounds=loc_bounds)
-
-        message = "The intersection of user-provided bounds for `loc`"
-        loc_bounds = (-np.inf, np.inf)
-        with pytest.raises(ValueError, match=message):
-            stats.fit(self.dist, self.data, self.shape_bounds_a,
-                      loc_bounds=loc_bounds)
-
-    def test_scale_bounds_iv(self):
-
-        message = "`binom` is an instance of `rv_discrete`..."
-        scale_bounds = (1, 10)
-        with pytest.warns(RuntimeWarning, match=message):
-            stats.fit(self.dist, self.data, self.shape_bounds_a,
-                      scale_bounds=scale_bounds)
-
-        message = "`scale_bounds` must be a tuple containing exactly two..."
-        scale_bounds = (0, 1, 2)
-        with pytest.raises(ValueError, match=message):
-            stats.fit(stats.norm, self.data, scale_bounds=scale_bounds)
-        with pytest.raises(ValueError, match=message):
-            stats.fit(stats.norm, self.data, [], scale_bounds=scale_bounds)
-
-        message = "There are no values for `scale` on the interval..."
-        scale_bounds = (10, 0)
-        with pytest.raises(ValueError, match=message):
-            stats.fit(stats.norm, self.data, scale_bounds=scale_bounds)
-
-        message = "The intersection of user-provided bounds for `scale`"
-        scale_bounds = (1, np.inf)
-        with pytest.raises(ValueError, match=message):
-            stats.fit(stats.norm, self.data, scale_bounds=scale_bounds)
-
     # these distributions are tested separately
     skip_basic_fit = {'nhypergeom', 'boltzmann', 'nbinom',
                       'randint', 'yulesimon', 'nchypergeom_fisher',
@@ -299,28 +256,24 @@ class TestFit:
         dist_data = dict(distcont + distdiscrete)
         rng = np.random.default_rng(self.seed)
         dist = getattr(stats, dist_name)
-        shapes = dist_data[dist_name]
-        shape_bounds = np.array([shapes, shapes], dtype=np.float64).T
-        shape_bounds[:, 0] /= 10  # essentially all shapes are > 0
-        shape_bounds[:, 1] *= 10
-        loc_bounds = (0, 10)
-        scale_bounds = (0, 10)
-        loc = rng.uniform(*loc_bounds)
-        scale = rng.uniform(*scale_bounds)
+        shapes = np.array(dist_data[dist_name])
+        bounds = np.empty((len(shapes) + 2, 2), dtype=np.float64)
+        bounds[:-2, 0] = shapes/10  # essentially all shapes are > 0
+        bounds[:-2, 1] = shapes*10
+        bounds[-2] = (0, 10)
+        bounds[-1] = (0, 10)
+        loc = rng.uniform(*bounds[-2])
+        scale = rng.uniform(*bounds[-1])
+        ref = list(dist_data[dist_name]) + [loc, scale]
 
         if getattr(dist, 'pmf', False):
-            loc = np.floor(loc)
-            data = dist.rvs(*shapes, size=N, loc=loc, random_state=rng)
-            res = stats.fit(dist, data, shape_bounds=shape_bounds,
-                            loc_bounds=loc_bounds, optimizer=self.opt)
-            ref = list(shapes) + [loc]
+            ref = ref[:-1]
+            ref[-1] = np.floor(loc)
+            data = dist.rvs(*ref, size=N, random_state=rng)
+            res = stats.fit(dist, data, bounds[:-1], optimizer=self.opt)
         if getattr(dist, 'pdf', False):
-            data = dist.rvs(*shapes, size=N, loc=loc, scale=scale,
-                            random_state=rng)
-            res = stats.fit(dist, data, shape_bounds=shape_bounds,
-                            loc_bounds=loc_bounds,
-                            scale_bounds=scale_bounds, optimizer=self.opt)
-            ref = list(shapes) + [loc] + [scale]
+            data = dist.rvs(*ref, size=N, random_state=rng)
+            res = stats.fit(dist, data, bounds, optimizer=self.opt)
 
         assert_allclose(res.params, ref, **self.tols)
 
@@ -354,10 +307,8 @@ class TestFit:
         dist = stats.boltzmann
         shapes = (1.4, 19, 4)
         data = dist.rvs(*shapes, size=N, random_state=rng)
-        shape_bounds = [(0, 30)]*2
-        loc_bounds = (0, 10)
-        res = stats.fit(dist, data, shape_bounds, loc_bounds=loc_bounds,
-                        optimizer=self.opt)
+        bounds = [(0, 30)]*2 + [(0, 10)]
+        res = stats.fit(dist, data, bounds, optimizer=self.opt)
         assert_allclose(res.params[0], 1.4, **self.tols)
         assert_allclose(res.params[2], 4, **self.tols)
 
@@ -390,10 +341,8 @@ class TestFit:
         dist = stats.yulesimon
         params = (1.5, 4)
         data = dist.rvs(*params, size=N, random_state=rng)
-        shape_bounds = [(0.15, 15)]
-        loc_bounds = (0, 10)
-        res = stats.fit(dist, data, shape_bounds, loc_bounds=loc_bounds,
-                        optimizer=self.opt)
+        bounds = [(0.15, 15), (0, 10)]
+        res = stats.fit(dist, data, bounds, optimizer=self.opt)
         assert_allclose(res.params, params, **self.tols)
 
     def test_nchypergeom_fisher(self):
@@ -448,24 +397,24 @@ class TestFit:
         loc, scale = 1.5, 1
         data = dist.rvs(loc=loc, size=N, random_state=rng)
         loc_bounds = (0, 5)
-        res = stats.fit(dist, data, loc_bounds=loc_bounds,
-                        optimizer=self.opt)
+        bounds = {'loc': loc_bounds}
+        res = stats.fit(dist, data, bounds, optimizer=self.opt)
         assert_allclose(res.params, (loc, scale), **self.tols)
 
         # fit only scale
         loc, scale = 0, 2.5
         data = dist.rvs(scale=scale, size=N, random_state=rng)
         scale_bounds = (0, 5)
-        res = stats.fit(dist, data, scale_bounds=scale_bounds,
-                        optimizer=self.opt)
+        bounds = {'scale': scale_bounds}
+        res = stats.fit(dist, data, bounds, optimizer=self.opt)
         assert_allclose(res.params, (loc, scale), **self.tols)
 
         # fit only loc and scale
         dist = stats.norm
         loc, scale = 1.5, 2.5
         data = dist.rvs(loc=loc, scale=scale, size=N, random_state=rng)
-        res = stats.fit(dist, data, loc_bounds=loc_bounds,
-                        scale_bounds=scale_bounds, optimizer=self.opt)
+        bounds = {'loc': loc_bounds, 'scale': scale_bounds}
+        res = stats.fit(dist, data, bounds, optimizer=self.opt)
         assert_allclose(res.params, (loc, scale), **self.tols)
 
     def test_everything_fixed(self):
@@ -481,8 +430,8 @@ class TestFit:
         assert_allclose(res.params, (0, 1), **self.tols)
 
         # loc, scale explicitly fixed
-        res = stats.fit(dist, data, loc_bounds=(loc, loc),
-                        scale_bounds=(scale, scale))
+        bounds = {'loc': (loc, loc), 'scale': (scale, scale)}
+        res = stats.fit(dist, data, bounds)
         assert_allclose(res.params, (loc, scale), **self.tols)
 
         # `n` gets fixed during polishing
@@ -492,3 +441,20 @@ class TestFit:
         shape_bounds = {'n': (0, 20), 'p': (0.65, 0.65)}
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
         assert_allclose(res.params, (n, p, loc), **self.tols)
+
+    def test_failure(self):
+        N = 5000
+        rng = np.random.default_rng(self.seed)
+
+        dist = stats.nbinom
+        shapes = (5, 0.5)
+        data = dist.rvs(*shapes, size=N, random_state=rng)
+
+        assert data.min() == 0
+        # With lower bounds on location at 0.5, likelihood is zero
+        bounds = [(0, 30), (0, 1), (0.5, 10)]
+        res = stats.fit(dist, data, bounds)
+        message = "Optimization converged to parameter values that are"
+        assert res.message.startswith(message)
+        assert res.success == False
+
