@@ -28,7 +28,7 @@ from scipy.optimize._root import ROOT_METHODS
 from scipy.optimize._root_scalar import ROOT_SCALAR_METHODS
 from scipy.optimize._qap import QUADRATIC_ASSIGNMENT_METHODS
 from scipy.optimize._differentiable_functions import ScalarFunction, FD_METHODS
-from scipy.optimize._optimize import MemoizeJac, show_options, OptimizeWarning
+from scipy.optimize._optimize import MemoizeJac, show_options
 
 
 def test_check_grad():
@@ -2217,7 +2217,7 @@ class TestBrute:
         res = optimize.brute(func, bounds, args=(dist, x), finish=opt,
                              integrality=integrality, Ns=20)
         assert not np.allclose(res, shapes, atol=1e-3)
-        assert_allclose(res, (5, 0.49893084697989243), atol=1e-10)
+        assert_allclose(res, (5, 0.49893084697989243), atol=1e-5)
 
 
 def test_cobyla_threadsafe():
