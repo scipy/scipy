@@ -15,6 +15,7 @@ from scipy._lib._util import _lazywhere
 from .._distn_infrastructure import rv_continuous
 from .._continuous_distns import uniform, expon, _norm_pdf, _norm_cdf
 from .levyst import Nolan
+from scipy._lib.doccer import inherit_docstring_from
 
 
 __all__ = ["levy_stable", "levy_stable_gen", "pdf_from_cf_with_fft"]
@@ -786,6 +787,7 @@ class levy_stable_gen(rv_continuous):
             )
         return pz
 
+    @inherit_docstring_from(rv_continuous)
     def rvs(self, *args, **kwds):
         X1 = super().rvs(*args, **kwds)
 
@@ -810,6 +812,7 @@ class levy_stable_gen(rv_continuous):
     def _rvs(self, alpha, beta, size=None, random_state=None):
         return _rvs_Z1(alpha, beta, size, random_state)
 
+    @inherit_docstring_from(rv_continuous)
     def pdf(self, x, *args, **kwds):
         # override base class version to correct
         # location for S1 parameterization
@@ -955,6 +958,7 @@ class levy_stable_gen(rv_continuous):
 
         return data_out.T[0]
 
+    @inherit_docstring_from(rv_continuous)
     def cdf(self, x, *args, **kwds):
         # override base class version to correct
         # location for S1 parameterization

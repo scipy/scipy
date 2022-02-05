@@ -165,7 +165,7 @@ Note that modes mirror and reflect differ only in whether the sample at the
 boundary is repeated upon reflection. For mode mirror, the point of symmetry is
 exactly at the final sample, so that value is not repeated. This mode is also
 known as whole-sample symmetric since the point of symmetry falls on the final
-sample. Similarly, reflect is often refered to as half-sample symmetric as the
+sample. Similarly, reflect is often referred to as half-sample symmetric as the
 point of symmetry is half a sample beyond the array boundary.
 
 .. note::
