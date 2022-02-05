@@ -3360,9 +3360,19 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         Requires that `func` be pickleable.
     integrality : 1-D array, optional
         For each decision variable, a boolean value indicating whether the
-        decision variable is constrained to integer values. If any decision
-        variables are constrained to be integral, polishing will not be
-        performed (e.g. ``finish=None``).
+        decision variable is constrained to integer values. The array is
+        broadcast to ``(len(ranges),)``.
+        If both `integrality` and `finish` are supplied, the `finish` callable
+        must accept a keyword argument `bounds` to set lower and upper bounds
+        on decision variables. This will be used to fix decision variables that
+        are constrained to be integral; only continuous variables will be
+        polished.
+        Only integer values lying between the lower and upper bounds of
+        `ranges` are used. If there are no integer values lying between the
+        bounds, a `ValueError` is raised.
+
+        .. versionadded:: 1.9.0
+           Added `integrality` paramaeter
 
     Returns
     -------
@@ -3472,14 +3482,10 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     gridpoint [-1.0 1.75] where the rounded function value is -2.892.
 
     """
-    if finish and (integrality is not None) and np.any(integrality):
-        message = ("Polishing is incompatible with integrality constraints; "
-                   "`finish` will be ignored.")
-        finish = None
-        warnings.warn(message, OptimizeWarning)
-
-    integrality = (np.broadcast_to(integrality, len(ranges)) if integrality
-                   else np.zeros(len(ranges), dtype=bool))
+    if np.any(integrality):
+        # # user has provided a truth value for integer constraints
+        integrality = np.broadcast_to(integrality, len(ranges))
+        integrality = np.asarray(integrality, bool)
 
     N = len(ranges)
     if N > 40:
@@ -3489,7 +3495,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     for k in range(N):
         if type(lrange[k]) is not type(slice(None)):
             if len(lrange[k]) < 3:
-                if integrality[k]:
+                if np.any(integrality) and integrality[k]:
                     ub = np.floor(lrange[k][1])
                     lb = min(np.ceil(lrange[k][0]), ub)
                     lrange[k] = lb, ub
@@ -3503,9 +3509,10 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         lrange = lrange[0]
 
     grid = np.mgrid[lrange]
-    for k in range(N):
-        if integrality[k]:
-            grid[k, ...] = np.round(grid[k, ...])
+    if np.any(integrality):
+        for k in range(N):
+            if integrality[k]:
+                grid[k, ...] = np.round(grid[k, ...])
 
     # obtain an array of parameters that is iterable by a map-like callable
     inpt_shape = grid.shape
@@ -3541,7 +3548,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
         grid = grid[0]
         xmin = xmin[0]
 
-    if callable(finish):
+    if callable(finish) and not np.all(integrality):
         # set up kwargs for `finish` function
         finish_args = _getfullargspec(finish).args
         finish_kwargs = dict()
@@ -3553,6 +3560,10 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
             # pass 'disp' as `options`
             # (e.g., if `finish` is `minimize`)
             finish_kwargs['options'] = {'disp': disp}
+        if np.any(integrality):
+            bounds = [(x, x) if i else (None, None)
+                      for x, i in zip(xmin, integrality)]
+            finish_kwargs['bounds'] = bounds
 
         # run minimizer
         res = finish(func, xmin, args=args, **finish_kwargs)

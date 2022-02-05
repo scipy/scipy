@@ -2181,13 +2181,16 @@ class TestBrute:
                           match=r'Either final optimization did not succeed'):
             optimize.brute(func, self.rranges, args=self.params, disp=True)
 
-        message = "Polishing is incompatible with integrality constraints"
-        with pytest.warns(OptimizeWarning, match=message):
-            optimize.brute(func, self.rranges, args=self.params,
-                           integrality=True)
-
     def test_integrality(self):
-        # test fitting discrete distribution to data
+        # This test shows that `brute` is treating the integer-constrained
+        # variable and the continuous variable differently, and both are
+        # treated exactly as expected. (The continuous second variable is
+        # tested at all of np.linspace(0, 0.95, 20), so 0.05 is one of those
+        # values. Also, if it were treated as a continuous variable, the
+        # integer constrained value would take on one of the values in
+        # np.linspace(1, 18, 20) - it couldn't be exactly 5.) So the point of
+        # this test is not that brute can do distribution fitting, it's just
+        # that brute is doing what it's intended to do.
         rng = np.random.default_rng(6519843218105)
         dist = stats.nbinom
         shapes = (5, 0.5)
@@ -2207,6 +2210,14 @@ class TestBrute:
         res = optimize.brute(func, bounds, args=(dist, x), finish=False,
                              integrality=integrality, Ns=20)
         assert_allclose(res, shapes, atol=1e-14)
+
+        # check that specifying `finish` changes the solution
+        def opt(*args, **kwds):
+            return optimize.minimize(*args, method='tnc', **kwds)
+        res = optimize.brute(func, bounds, args=(dist, x), finish=opt,
+                             integrality=integrality, Ns=20)
+        assert not np.allclose(res, shapes, atol=1e-3)
+        assert_allclose(res, (5, 0.49893084697989243), atol=1e-10)
 
 
 def test_cobyla_threadsafe():
