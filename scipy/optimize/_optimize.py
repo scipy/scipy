@@ -3297,6 +3297,9 @@ def _endprint(x, flag, fval, maxfun, xtol, disp):
     return
 
 
+# def _tuple_to_slice(tup):
+
+
 def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
           disp=False, workers=1, *, integrality=None):
     """Minimize a function over a given range by brute force.
@@ -3493,26 +3496,24 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
                          "than 40 variables.")
     lrange = list(ranges)
     for k in range(N):
-        if type(lrange[k]) is not type(slice(None)):
+        if not isinstance(lrange[k], slice):
             if len(lrange[k]) < 3:
-                if np.any(integrality) and integrality[k]:
-                    ub = np.floor(lrange[k][1])
-                    lb = min(np.ceil(lrange[k][0]), ub)
-                    lrange[k] = lb, ub
-                    n_ints_between_bounds = lrange[k][1] - lrange[k][0] + 1
-                    n_points = min(Ns, n_ints_between_bounds)
-                else:
-                    n_points = Ns
-                lrange[k] = tuple(lrange[k]) + (complex(n_points),)
+                lrange[k] = tuple(lrange[k]) + (complex(Ns),)
             lrange[k] = slice(*lrange[k])
-    if (N == 1):
-        lrange = lrange[0]
 
-    grid = np.mgrid[lrange]
-    if np.any(integrality):
-        for k in range(N):
-            if integrality[k]:
-                grid[k, ...] = np.round(grid[k, ...])
+    for k in range(N):
+        grid_k = np.mgrid[lrange[k]]
+        if np.any(integrality) and integrality[k]:
+            grid_k = _make_grid_integral(grid_k)
+            if grid_k.size == 0:
+                message = (f"Variable {k} must be integral, but there are no "
+                           f"integers within the range defined by range[{k}].")
+                raise ValueError(message)
+        lrange[k] = grid_k
+
+    grid = np.asarray(np.meshgrid(*lrange))
+    if N == 1:
+        grid = grid[0]
 
     # obtain an array of parameters that is iterable by a map-like callable
     inpt_shape = grid.shape
@@ -3601,6 +3602,27 @@ class _Brute_Wrapper:
     def __call__(self, x):
         # flatten needed for one dimensional case.
         return self.f(np.asarray(x).flatten(), *self.args)
+
+
+def _make_grid_integral(grid):
+    """
+    Round a 1D grid to integers, keeping only unique integers in original range
+
+    Parameters
+    ----------
+    grid : 1D array
+
+    Returns
+    -------
+    temp : 1D array
+
+    """
+    temp = np.unique(np.round(grid))
+    if temp[0] < grid[0]:
+        temp = temp[1:]
+    if temp[-1] > grid[-1]:
+        temp = temp[:-1]
+    return temp
 
 
 def show_options(solver=None, method=None, disp=True):
