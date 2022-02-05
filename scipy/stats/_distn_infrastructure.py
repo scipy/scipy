@@ -4183,7 +4183,8 @@ class FitResult:
         return ax
 
 
-def fit(dist, data, bounds=None, *, optimizer=optimize.differential_evolution):
+def fit(dist, data, bounds=None, *, guess=None,
+        optimizer=optimize.differential_evolution):
     r"""Fit a discrete or continuous distribution to data
 
     Given a distribution, data, and bounds on the parameters of the
@@ -4219,9 +4220,25 @@ def fit(dist, data, bounds=None, *, optimizer=optimize.differential_evolution):
         defined, the bound of the distribution's domain will replace the
         user-provided value. Similarly, parameters which must be integral
         will be constrained to integral values within the user-provided bounds.
+    guess : dict or array_like, optional
+        If a dictionary, each key is the name of a parameter of the
+        distribution, and the corresponding value is a guess for the value
+        of the parameter.
+
+        If a sequence, element *i* is a guess for the *i*\ th parameter of the
+        distribution. In this case, guesses for *all* distribution shape
+        parameters must be provided.
+
+        If `guess` is not provided, guesses for the decision variables will
+        not be passed to the optimizer. If `guess` is provided, guesses for
+        any missing parameters will be set at the mean of the lower and
+        upper bounds. Guesses for parameters which must be integral will be
+        rounded to integral values, and guesses that lie outside the
+        intersection of the user-provided bounds and the domain of the
+        distribution will be clipped.
     optimizer : callable, optional
         `optimizer` is a callable that accepts the following positional
-        arguments.
+        argument.
 
         fun : callable
             The objective function to be optimized. `fun` accepts one argument
@@ -4230,10 +4247,19 @@ def fit(dist, data, bounds=None, *, optimizer=optimize.differential_evolution):
             provided `data`.
             The job of `optimizer` is to find values of the decision variables
             that minimizes `fun`.
+
+        `optimizer` must also accepts the following keyword argument.
+
         bounds : sequence of tuples
             The bounds on values of the decision variables; each element will
             be a tuple containing the lower and upper bound on a decision
             variable.
+
+        If `guess` is provided, `optimizer` must also accept the following
+        keyword argument.
+
+        x0 : array_like
+            The guesses for each decision variable.
 
         If the distribution has any shape parameters that must be integral or
         if the distribution is discrete and the location parameter is not
@@ -4364,6 +4390,7 @@ def fit(dist, data, bounds=None, *, optimizer=optimize.differential_evolution):
     """
     # --- Input Validation / Standardization --- #
     user_bounds = bounds
+    user_guess = guess
 
     # distribution input validation and information collection
     if hasattr(dist, "pdf"):  # can't use isinstance for types
@@ -4391,6 +4418,11 @@ def fit(dist, data, bounds=None, *, optimizer=optimize.differential_evolution):
     param_info = dist._param_info()
 
     n_params = len(param_info)
+    n_shapes = n_params - (1 if discrete else 2)
+    param_list = [param.name for param in param_info]
+    param_names = ", ".join(param_list)
+    shape_names = ", ".join(param_list[:n_shapes])
+
     if user_bounds is None:
         user_bounds = {}
 
@@ -4405,12 +4437,10 @@ def fit(dist, data, bounds=None, *, optimizer=optimize.differential_evolution):
             user_bounds_array[i] = user_bound
         if user_bounds:
             message = ("Bounds provided for the following unrecognized "
-                       "parameters will be ignored: "
-                       f"{', '.join(user_bounds.keys())}")
+                       f"parameters will be ignored: {set(user_bounds)}")
             warnings.warn(message, RuntimeWarning, stacklevel=2)
 
     else:
-        n_shapes = n_params - (1 if discrete else 2)
         try:
             user_bounds = np.asarray(user_bounds, dtype=float)
             if user_bounds.size == 0:
@@ -4425,10 +4455,17 @@ def fit(dist, data, bounds=None, *, optimizer=optimize.differential_evolution):
                        "the lower and upper bounds of a shape parameter")
             raise ValueError(message)
         if user_bounds.shape[0] < n_shapes:
-            message = (f"`bounds` must contain at least {n_shapes} elements: "
-                       "tuples specifying the lower and upper bounds of all "
-                       f"shape parameters {dist.shapes}")
+            message = (f"A `bounds` sequence must contain at least {n_shapes} "
+                       "elements: tuples specifying the lower and upper "
+                       f"bounds of all shape parameters {shape_names}.")
             raise ValueError(message)
+        if user_bounds.shape[0] > n_params:
+            message = ("A `bounds` sequence may not contain more than "
+                       f"{n_params} elements: tuples specifying the lower and "
+                       "upper bounds of distribution parameters "
+                       f"{param_names}.")
+            raise ValueError(message)
+
         user_bounds_array = np.empty((n_params, 2))
         user_bounds_array[n_shapes:] = list(default_bounds.values())
         user_bounds_array[:len(user_bounds)] = user_bounds
@@ -4443,8 +4480,75 @@ def fit(dist, data, bounds=None, *, optimizer=optimize.differential_evolution):
         combined = _combine_bounds(name, user_bound, param_domain, integral)
         validated_bounds.append(combined)
 
-    bounds = validated_bounds
+    bounds = np.asarray(validated_bounds)
     integrality = [param.integrality for param in param_info]
+
+    # guess input validation
+
+    if user_guess is None:
+        guess_array = None
+    elif isinstance(user_guess, dict):
+        default_guess = {param.name: np.mean(bound)
+                         for param, bound in zip(param_info, bounds)}
+        unrecognized = set(user_guess) - set(default_guess)
+        if unrecognized:
+            message = ("Guesses provided for the following unrecognized "
+                       f"parameters will be ignored: {unrecognized}")
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
+        default_guess.update(user_guess)
+
+        message = ("Each element of `guess` must be a scalar "
+                   "guess for a distribution parameter.")
+        try:
+            guess_array = np.asarray([default_guess[param.name]
+                                      for param in param_info], dtype=float)
+        except ValueError as e:
+            raise ValueError(message) from e
+
+    else:
+        message = ("Each element of `guess` must be a scalar "
+                   "guess for a distribution parameter.")
+        try:
+            user_guess = np.asarray(user_guess, dtype=float)
+        except ValueError as e:
+            raise ValueError(message) from e
+        if user_guess.ndim != 1:
+            raise ValueError(message)
+        if user_guess.shape[0] < n_shapes:
+            message = (f"A `guess` sequence must contain at least {n_shapes} "
+                       "elements: scalar guesses for the distribution shape "
+                       f"parameters {shape_names}.")
+            raise ValueError(message)
+        if user_guess.shape[0] > n_params:
+            message = ("A `guess` sequence may not contain more than "
+                       f"{n_params} elements: scalar guesses for the "
+                       f"distribution parameters {param_names}.")
+            raise ValueError(message)
+
+        guess_array = np.mean(bounds, axis=1)
+        guess_array[:len(user_guess)] = user_guess
+
+    if guess_array is not None:
+        guess_rounded = guess_array.copy()
+
+        guess_rounded[integrality] = np.round(guess_rounded[integrality])
+        rounded = np.where(guess_rounded != guess_array)[0]
+        for i in rounded:
+            message = (f"Guess for parameter `{param_info[i].name}` "
+                       f"rounded from {guess_array[i]} to {guess_rounded[i]}.")
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
+
+        guess_clipped = np.clip(guess_rounded, bounds[:, 0], bounds[:, 1])
+        clipped = np.where(guess_clipped != guess_rounded)[0]
+        for i in clipped:
+            message = (f"Guess for parameter `{param_info[i].name}` "
+                       f"clipped from {guess_rounded[i]} to "
+                       f"{guess_clipped[i]}.")
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
+
+        guess = guess_clipped
+    else:
+        guess = None
 
     # --- MLE Fitting --- #
     def nllf(free_params, data=data):  # bind data NOW
@@ -4452,9 +4556,13 @@ def fit(dist, data, bounds=None, *, optimizer=optimize.differential_evolution):
             return dist._penalized_nnlf(free_params, data)
 
     with np.errstate(invalid='ignore', divide='ignore'):
+        kwds = {}
+        if bounds is not None:
+            kwds['bounds'] = bounds
         if np.any(integrality):
-            res = optimizer(nllf, bounds, integrality=integrality)
-        else:
-            res = optimizer(nllf, bounds)
+            kwds['integrality'] = integrality
+        if guess is not None:
+            kwds['x0'] = guess
+        res = optimizer(nllf, **kwds)
 
     return FitResult(dist, data, discrete, res)

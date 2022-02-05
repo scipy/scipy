@@ -196,7 +196,7 @@ class TestFit:
         with pytest.raises(ValueError, match=message):
             stats.fit(self.dist, ['1', '2', '3'], self.shape_bounds_a)
 
-    def test_shape_bounds_iv(self):
+    def test_bounds_iv(self):
         message = "Bounds provided for the following unrecognized..."
         shape_bounds = {'n': (1, 10), 'p': (0, 1), '1': (0, 10)}
         with pytest.warns(RuntimeWarning, match=message):
@@ -215,10 +215,15 @@ class TestFit:
         with pytest.raises(ValueError, match=message):
             stats.fit(self.dist, self.data, shape_bounds)
 
-        message = "`bounds` must contain at least 2 elements..."
+        message = "A `bounds` sequence must contain at least 2 elements..."
         shape_bounds = [(1, 10)]
         with pytest.raises(ValueError, match=message):
-            stats.fit(self.dist, self.data, self.shape_bounds_a[:1])
+            stats.fit(self.dist, self.data, shape_bounds)
+
+        message = "A `bounds` sequence may not contain more than 3 elements..."
+        bounds = [(1, 10), (1, 10), (1, 10), (1, 10)]
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, bounds)
 
         message = "There are no values for `p` on the interval..."
         shape_bounds = {'n': (1, 10), 'p': (1, 0)}
@@ -241,6 +246,53 @@ class TestFit:
         shape_bounds = [(-np.inf, np.inf), (0, 1)]
         with pytest.raises(ValueError, match=message):
             stats.fit(self.dist, self.data, shape_bounds)
+
+    def test_guess_iv(self):
+        message = "Guesses provided for the following unrecognized..."
+        guess = {'n': 1, 'p': 0.5, '1': 255}
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
+
+        message = "Each element of `guess` must be a scalar..."
+        guess = {'n': 1, 'p': 'hi'}
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
+        guess = [1, 'f']
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
+        guess = [[1, 2]]
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
+
+        message = "A `guess` sequence must contain at least 2..."
+        guess = [1]
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
+
+        message = "A `guess` sequence may not contain more than 3..."
+        guess = [1, 2, 3, 4]
+        with pytest.raises(ValueError, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
+
+        message = "Guess for parameter `n` rounded..."
+        guess = {'n': 4.5, 'p': -0.5}
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
+
+        message = "Guess for parameter `loc` rounded..."
+        guess = [5, 0.5, 0.5]
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
+
+        message = "Guess for parameter `p` clipped..."
+        guess = {'n': 5, 'p': -0.5}
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
+
+        message = "Guess for parameter `loc` clipped..."
+        guess = [5, 0.5, 1]
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
 
     # these distributions are tested separately
     skip_basic_fit = {'nhypergeom', 'boltzmann', 'nbinom',
@@ -457,3 +509,19 @@ class TestFit:
         message = "Optimization converged to parameter values that are"
         assert res.message.startswith(message)
         assert res.success is False
+
+    def test_guess(self):
+        # Test that guess helps DE find the desired solution
+        N = 2000
+        rng = np.random.default_rng(self.seed)
+        dist = stats.nhypergeom
+        params = (20, 7, 12, 0)
+        bounds = [(2, 200), (0.7, 70), (1.2, 120), (0, 10)]
+
+        data = dist.rvs(*params, size=N, random_state=rng)
+
+        res = stats.fit(dist, data, bounds, optimizer=self.opt)
+        assert not np.allclose(res.params, params, **self.tols)
+
+        res = stats.fit(dist, data, bounds, guess=params, optimizer=self.opt)
+        assert_allclose(res.params, params, **self.tols)
