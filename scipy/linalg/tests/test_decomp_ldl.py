@@ -92,7 +92,7 @@ def test_permutations():
 
 
 @pytest.mark.parametrize("dtype", [float32, float64])
-@pytest.mark.parametrize("n", [30, 750])
+@pytest.mark.parametrize("n", [30, 150])
 def test_ldl_type_size_combinations_real(n, dtype):
     seed(1234)
     msg = ("Failed for size: {}, dtype: {}".format(n, dtype))
@@ -109,7 +109,7 @@ def test_ldl_type_size_combinations_real(n, dtype):
 
 
 @pytest.mark.parametrize("dtype", [complex64, complex128])
-@pytest.mark.parametrize("n", [30, 750])
+@pytest.mark.parametrize("n", [30, 150])
 def test_ldl_type_size_combinations_complex(n, dtype):
     seed(1234)
     msg1 = ("Her failed for size: {}, dtype: {}".format(n, dtype))
