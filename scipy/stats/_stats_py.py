@@ -8108,7 +8108,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 def combine_pvalues(pvalues, method='fisher', weights=None):
     """
     Combine p-values from independent tests that bear upon the same hypothesis.
-    
+
     These methods are intended only for combining p-values from hypothesis
     tests based upon continuous distributions.
 
@@ -8117,7 +8117,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     test statistic (different for each method) is computed and a combined
     p-value is calculated based upon the distribution of this test statistic
     under the null hypothesis.
-    
+
     Parameters
     ----------
     pvalues : array_like, 1-D
@@ -8126,7 +8126,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'}
 
         Name of method to use to combine p-values.
-        
+
         The available methods are listed below (default 'fisher'). The
         quantities listed are the test statistics associated with the methods.
 
