@@ -2061,8 +2061,9 @@ class TestMode:
         # mode should treat np.nan as it would any other object when
         # nan_policy='propagate'
         a = [2, np.nan, 1, np.nan]
-        res = stats.mode(a)
-        assert np.isnan(res.mode) and res.count == 2
+        if NumpyVersion(np.__version__) >= '1.21.0':
+            res = stats.mode(a)
+            assert np.isnan(res.mode) and res.count == 2
 
         # mode should work on object arrays. There were issues when
         # objects do not support comparison operations.

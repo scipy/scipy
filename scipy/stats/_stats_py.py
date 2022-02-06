@@ -438,9 +438,10 @@ def mode(a, axis=0, nan_policy='propagate'):
     The mode of object arrays is calculated using `collections.Counter`, which
     treats NaNs with different binary representations as distinct.
 
-    The mode of arrays with other dtypes is calculated using `np.unique`, which
-    treats all NaNs - even those with different binary representations - as
-    equivalent.
+    The mode of arrays with other dtypes is calculated using `np.unique`.
+    In NumPy versions 1.21 and after, all NaNs - even those with different
+    binary representations - are treated as equivalent and counted as separate
+    instances of the same value.
 
     Examples
     --------
