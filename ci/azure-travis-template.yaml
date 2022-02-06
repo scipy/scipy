@@ -87,7 +87,7 @@ steps:
   - script: sudo apt-get install -y wamerican-small
     displayName: 'Install word list (for csgraph tutorial)'
 - ${{ if eq(parameters.asv_check, true) }}:
-  - script: pip install "asv>=0.4.1"
+  - script: pip install "asv==0.4.2"
     displayName: 'Install asv'
 - script: pip uninstall -y nose
   displayName: 'Uninstall Nose'
