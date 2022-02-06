@@ -66,7 +66,8 @@ if use_pythran
   )
 else
   _max_len_seq_inner = py3.extension_module('_max_len_seq_inner',
-    ['_max_len_seq_inner.pyx'],
+    [cython_gen.process('_max_len_seq_inner.pyx')],
+    c_args: cython_c_args,
     include_directories: [inc_np],
     dependencies: [py3_dep],
     install: true,
@@ -74,7 +75,8 @@ else
   )
 
   _spectral = py3.extension_module('_spectral',
-    ['_spectral.pyx'],
+    [cython_gen.process('_spectral.pyx')],
+    c_args: cython_c_args,
     include_directories: [inc_np],
     dependencies: [py3_dep],
     install: true,
@@ -90,7 +92,8 @@ pyx_files = [
 
 foreach pyx_file: pyx_files
   py3.extension_module(pyx_file[0],
-    pyx_file[1],
+    cython_gen.process(pyx_file[1]),
+    c_args: cython_c_args,
     include_directories: [inc_np],
     dependencies: [py3_dep],
     install: true,

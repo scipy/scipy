@@ -97,7 +97,7 @@ use of ``gpg2`` will otherwise proceed via an inaccessible graphical
 password prompt.
 
 To make your key more readily identifiable as you, consider sending your key
-to public keyservers, with a command such as::
+to public key servers, with a command such as::
 
     gpg --send-keys <yourkeyid>
 
