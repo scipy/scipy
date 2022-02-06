@@ -6620,8 +6620,8 @@ class TestCombinePvalues:
         "method",
         ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"],
     )
-    def test_monotony(self, variant, method):
-        # Test that result increases monotonously with respect to input.
+    def test_monotonicity(self, variant, method):
+        # Test that result increases monotonically with respect to input.
         changing_values = np.linspace(0.1, 0.9, 10)
         rng = np.random.default_rng(278448169958891062669391462690811630763)
         pvalues = rng.random(7)
