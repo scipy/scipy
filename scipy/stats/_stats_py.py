@@ -8126,7 +8126,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'}
 
         Name of method to use to combine p-values.
-        The following methods are available (default is 'fisher'):
+        
+        The available methods are listed below (default 'fisher'). The
+        quantities listed are the test statistics associated with the methods.
 
         * 'fisher': Fisher's method (Fisher's combined probability test), the
           sum of the logarithm of the p-values
