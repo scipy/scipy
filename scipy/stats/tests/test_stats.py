@@ -6615,24 +6615,32 @@ class TestCombinePvalues:
         # 0.5 here is because logistic = log(u) - log(1-u), i.e. no 2 factors
         assert_approx_equal(0.5 * (Z_f-Z_p), Z, significant=4)
 
-    @pytest.mark.parametrize("variant", ["single", "all"])
+    @pytest.mark.parametrize("variant", ["single", "all", "random"])
     @pytest.mark.parametrize(
         "method",
         ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"],
     )
     def test_monotonicity(self, variant, method):
         # Test that result increases monotonically with respect to input.
-        changing_values = np.linspace(0.1, 0.9, 10)
+        m, n = 10, 7
         rng = np.random.default_rng(278448169958891062669391462690811630763)
-        pvalues = rng.random(7)
-        combined_pvalues = []
-        for changing_value in changing_values:
-            if variant == "single":
-                pvalues[0] = changing_value
-            else:
-                pvalues = np.full(7, changing_value)
-            combined_p = stats.combine_pvalues(pvalues, method=method)[1]
-            combined_pvalues.append(combined_p)
+
+        # `pvaluess` is an m × n array of p values. Each row corresponds to
+        # a set of p values to be combined with p values increasing
+        # monotonically down one column (single), simultaneously down each
+        # column (all), or independently down each column (random).
+        if variant == "single":
+            pvaluess = np.full((m, n), rng.random(n))
+            pvaluess[:, 0] = np.linspace(0.1, 0.9, m)
+        elif variant == "all":
+            pvaluess = np.full((n, m), np.linspace(0.1, 0.9, m)).T
+        elif variant == "random":
+            pvaluess = np.sort(rng.uniform(0, 1, size=(m, n)), axis=0)
+
+        combined_pvalues = [
+            stats.combine_pvalues(pvalues, method=method)[1]
+            for pvalues in pvaluess
+        ]
         assert np.all(np.diff(combined_pvalues) >= 0)
 
 class TestCdfDistanceValidation:
