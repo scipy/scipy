@@ -8109,7 +8109,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     """
     Combine p-values from independent tests that bear upon the same hypothesis.
     
-    These methods are intended only for use to combine p-values from hypothesis
+    These methods are intended only for combining p-values from hypothesis
     tests based upon continuous distributions.
 
     Each method assumes that under the null hypothesis, the p-values were
