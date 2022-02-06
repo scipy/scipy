@@ -116,7 +116,7 @@ class TestDIRECT:
         f_min = 1.
         bounds = 4*[(-2., 10.)]
         res = direct(self.sphere_2, bounds=bounds, f_min=f_min,
-                      f_min_rtol=f_min_rtol)
+                     f_min_rtol=f_min_rtol)
         assert res.status == 3
         assert res.success
         assert res.fun < f_min + f_min_rtol * f_min
