@@ -8112,6 +8112,12 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     These methods are intended only for use to combine p-values from hypothesis
     tests based upon continuous distributions.
 
+    Each method assumes that under the null hypothesis, the p-values were
+    generated independently and uniformly at random in the interval [0, 1].  A
+    test statistic (different for each method) is computed and a combined
+    p-value is calculated based upon the distribution of this test statistic
+    under the null hypothesis.
+    
     Parameters
     ----------
     pvalues : array_like, 1-D
