@@ -6616,9 +6616,10 @@ class TestCombinePvalues:
         assert_approx_equal(0.5 * (Z_f-Z_p), Z, significant=4)
 
     @pytest.mark.parametrize("variant", ["single", "all"])
-    @pytest.mark.parametrize("method",
-                             ["fisher", "pearson", "tippett",
-                              "stouffer", "mudholkar_george"])
+    @pytest.mark.parametrize(
+        "method",
+        ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"],
+    )
     def test_monotony(self, variant, method):
         # Test that result increases monotonously with respect to input.
         changing_values = np.linspace(0.1, 0.9, 10)
