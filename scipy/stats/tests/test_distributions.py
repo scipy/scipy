@@ -5237,7 +5237,8 @@ class TestStudentizedRange:
 
     def test_clipping(self):
         # The result of this computation was -9.9253938401489e-14 on some
-        # systems. The result is very nearly zero, but should not be zero.
+        # systems. The correct result is very nearly zero, but should not be
+        # negative.
         q, k, v = 34.6413996195345746, 3, 339
         p = stats.studentized_range.sf(q, k, v)
         assert_allclose(p, 0, atol=1e-10)
