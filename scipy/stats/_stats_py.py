@@ -8112,9 +8112,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     These methods are intended only for combining p-values from hypothesis
     tests based upon continuous distributions.
 
-    Each method assumes that under the null hypothesis, the p-values were
-    generated independently and uniformly at random in the interval [0, 1].  A
-    test statistic (different for each method) is computed and a combined
+    Each method assumes that under the null hypothesis, the p-values are
+    sampled independently and uniformly from the interval [0, 1]. A test
+    statistic (different for each method) is computed and a combined
     p-value is calculated based upon the distribution of this test statistic
     under the null hypothesis.
 
@@ -8127,17 +8127,13 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
         Name of method to use to combine p-values.
 
-        The available methods are listed below (default 'fisher'). The
-        quantities listed are the test statistics associated with the methods.
+        The available methods are (see Notes for details):
 
-        * 'fisher': Fisher's method (Fisher's combined probability test), the
-          sum of the logarithm of the p-values
-        * 'pearson': Pearson's method (similar to Fisher's but uses sum of the
-          complement of the p-values inside the logarithms)
-        * 'tippett': Tippett's method (minimum of p-values)
+        * 'fisher': Fisher's method (Fisher's combined probability test)
+        * 'pearson': Pearson's method
+        * 'mudholkar_george': Mudholkar's and George's method
+        * 'tippett': Tippett's method
         * 'stouffer': Stouffer's Z-score method
-        * 'mudholkar_george': the difference of Fisher's and Pearson's methods
-          divided by 2
     weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
@@ -8150,14 +8146,11 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     Notes
     -----
-    All methods assume tests based on continuous distributions, i.e., the
-    distribution of p-values under the null hypothesis must be the continuous
-    uniform distribution on the interval [0,1]. If this function is applied to
-    tests with a discrete statistics such as any rank test or contingency-table
-    test, it will yield systematically wrong results, e.g. Fisher's method will
-    systematically overestimate the p-value [1]_. This problem becomes less
-    severe for large sample sizes when the discrete distributions become
-    approximately continuous.
+    If this function is applied to tests with a discrete statistics such as
+    any rank test or contingency-table test, it will yield systematically
+    wrong results, e.g. Fisher's method will systematically overestimate the
+    p-value [1]_. This problem becomes less severe for large sample sizes
+    when the discrete distributions become approximately continuous.
 
     The differences between the methods can be best illustrated by their
     statistics and what aspects of a combination of p-values they emphasise
@@ -8165,16 +8158,14 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     p-values are more sensitive to strong false and true negatives; conversely
     methods focussing on small p-values are sensitive to positives.
 
-    * Fisher's method (also known as Fisher's combined probability test) [3]_
-      uses the product of individual p-values: :math:`\\prod_i p_i`.
-      (Mind that this product is not the combined p-value.)
-      This method emphasises small p-values.
-      Note that the test statistic used internally and returned by this method
-      is :math:`-2\\sum_i \\log(p_i)` for numerical reasons.
-    * Pearson's method uses :math:`\\prod_i \\frac{1}{1-p_i}` [2]_.
+    * The statistics of Fisher's method (also known as Fisher's combined
+      probability test) [3]_ is :math:`-2\\sum_i \\log(p_i)`, which is
+      equivalent (as a test statistics) to the product of individual p-values:
+      :math:`\\prod_i p_i`. Under the null hypothesis, this statistics follows
+      a :math:`\\chi^2` distribution. This method emphasises small p-values.
+    * Pearson's method uses :math:`-2\\sum_i\\log(1-p_i)`, which is equivalent
+      to :math:`-\\prod_i \\frac{1}{1-p_i}` [2]_.
       It thus emphasises large p-values.
-      Note that the test statistic used internally and returned by this method
-      is :math:`-2\\sum_i \\log(1-p_i)` for numerical reasons.
     * Mudholkar and George compromise between Fisher's and Pearson's method by
       averaging their statistics [4]_. Their method emphasises extreme
       p-values, both close to 1 and 0.
