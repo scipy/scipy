@@ -11,7 +11,8 @@ import ctypes
 import numpy as np
 
 from scipy._lib.doccer import (extend_notes_in_docstring,
-                               replace_notes_in_docstring)
+                               replace_notes_in_docstring,
+                               inherit_docstring_from)
 from scipy._lib._ccallback import LowLevelCallable
 from scipy import optimize
 from scipy import integrate
@@ -2832,21 +2833,15 @@ class erlang_gen(gamma_gen):
 
     # Trivial override of the fit method, so we can monkey-patch its
     # docstring.
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        The Erlang distribution is generally defined to have integer values
+        for the shape parameter.  This is not enforced by the `erlang` class.
+        When fitting the distribution, it will generally return a non-integer
+        value for the shape parameter.  By using the keyword argument
+        `f0=<integer>`, the fit method can be constrained to fit the data to
+        a specific integer shape parameter.""")
     def fit(self, data, *args, **kwds):
         return super().fit(data, *args, **kwds)
-
-    if fit.__doc__:
-        fit.__doc__ = (rv_continuous.fit.__doc__ +
-            """
-            Notes
-            -----
-            The Erlang distribution is generally defined to have integer values
-            for the shape parameter.  This is not enforced by the `erlang` class.
-            When fitting the distribution, it will generally return a non-integer
-            value for the shape parameter.  By using the keyword argument
-            `f0=<integer>`, the fit method can be constrained to fit the data to
-            a specific integer shape parameter.
-            """)
 
 
 erlang = erlang_gen(a=0.0, name='erlang')
@@ -3293,6 +3288,7 @@ class gumbel_r_gen(rv_continuous):
         return _EULER + 1.
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
@@ -3387,6 +3383,7 @@ class gumbel_l_gen(rv_continuous):
         return _EULER + 1.
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         # The fit method of `gumbel_r` can be used for this distribution with
         # small modifications. The process to do this is
@@ -3777,6 +3774,7 @@ class invgauss_gen(rv_continuous):
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         method = kwds.get('method', 'mle')
 
@@ -4741,6 +4739,7 @@ class logistic_gen(rv_continuous):
         return 2.0
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
@@ -5640,11 +5639,21 @@ class nakagami_gen(rv_continuous):
 
         f(x, \nu) = \frac{2 \nu^\nu}{\Gamma(\nu)} x^{2\nu-1} \exp(-\nu x^2)
 
-    for :math:`x >= 0`, :math:`\nu > 0`.
+    for :math:`x >= 0`, :math:`\nu > 0`. The distribution was introduced in
+    [2]_, see also [1]_ for further information.
 
     `nakagami` takes ``nu`` as a shape parameter for :math:`\nu`.
 
     %(after_notes)s
+
+    References
+    ----------
+    .. [1] "Nakagami distribution", Wikipedia
+           https://en.wikipedia.org/wiki/Nakagami_distribution
+    .. [2] M. Nakagami, "The m-distribution - A general formula of intensity
+           distribution of rapid fading", Statistical methods in radio wave
+           propagation, Pergamon Press, 1960, 3-36.
+           :doi:`10.1016/B978-0-08-009306-2.50005-4`
 
     %(example)s
 
@@ -5677,6 +5686,10 @@ class nakagami_gen(rv_continuous):
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
+
+    def _rvs(self, nu, size=None, random_state=None):
+        # this relationship can be found in [1] or by a direct calculation
+        return np.sqrt(random_state.standard_gamma(nu, size=size) / nu)
 
     def _fitstart(self, data, args=None):
         if args is None:
@@ -6119,6 +6132,7 @@ class pareto_gen(rv_continuous):
         return 1 + 1.0/c - np.log(c)
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
@@ -8447,6 +8461,14 @@ class gennorm_gen(rv_continuous):
     .. [1] "Generalized normal distribution, Version 1",
            https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1
 
+    .. [2] Nardon, Martina, and Paolo Pianca. "Simulation techniques for
+           generalized Gaussian densities." Journal of Statistical
+           Computation and Simulation 79.11 (2009): 1317-1329
+
+    .. [3] Wicklin, Rick. "Simulate data from a generalized Gaussian
+           distribution" in The DO Loop blog, September 21, 2016,
+           https://blogs.sas.com/content/iml/2016/09/21/simulate-generalized-gaussian-sas.html
+
     %(example)s
 
     """
@@ -8479,6 +8501,17 @@ class gennorm_gen(rv_continuous):
 
     def _entropy(self, beta):
         return 1. / beta - np.log(.5 * beta) + sc.gammaln(1. / beta)
+
+    def _rvs(self, beta, size=None, random_state=None):
+        # see [2]_ for the algorithm
+        # see [3]_ for reference implementation in SAS
+        z = random_state.gamma(1/beta, size=size)
+        y = z ** (1/beta)
+        # convert y to array to ensure masking support
+        y = np.asarray(y)
+        mask = random_state.random(size=y.shape) < 0.5
+        y[mask] = -y[mask]
+        return y
 
 
 gennorm = gennorm_gen(name='gennorm')

@@ -10,7 +10,7 @@ _levyst = static_library('_levyst',
 )
 
 levyst = py3.extension_module('levyst',
-  ['levyst.pyx'],
+  cython_gen.process('levyst.pyx'),
   c_args: numpy_nodepr_api,
   include_directories: [inc_np],
   dependencies: [py3_dep],

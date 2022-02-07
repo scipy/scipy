@@ -1320,7 +1320,7 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
     ----------
     %(input)s
     rank : int
-        The rank parameter may be less then zero, i.e., rank = -1
+        The rank parameter may be less than zero, i.e., rank = -1
         indicates the largest element.
     %(size_foot)s
     %(output)s
@@ -1409,7 +1409,7 @@ def percentile_filter(input, percentile, size=None, footprint=None,
     ----------
     %(input)s
     percentile : scalar
-        The percentile parameter may be less then zero, i.e.,
+        The percentile parameter may be less than zero, i.e.,
         percentile = -20 equals percentile = 80
     %(size_foot)s
     %(output)s

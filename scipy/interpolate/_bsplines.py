@@ -393,7 +393,7 @@ class BSpline:
         In each row of the design matrix all the basis elements are evaluated
         at the certain point (first row - x[0], ..., last row - x[-1]).
 
-        `nt` is a lenght of the vector of knots: as far as there are
+        `nt` is a length of the vector of knots: as far as there are
         `nt - k - 1` basis elements, `nt` should be not less than `2 * k + 2`
         to have at least `k + 1` basis element.
 

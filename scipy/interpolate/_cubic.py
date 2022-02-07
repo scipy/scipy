@@ -548,7 +548,7 @@ class CubicSpline(CubicHermiteSpline):
 
     Notes
     -----
-    Parameters `bc_type` and ``interpolate`` work independently, i.e. the
+    Parameters `bc_type` and ``extrapolate`` work independently, i.e. the
     former controls only construction of a spline, and the latter only
     evaluation.
 
