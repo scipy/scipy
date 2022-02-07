@@ -592,7 +592,7 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
     After collecting our data, we calculate the observed value of the test
     statistic.
 
-    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+    >>> rng = np.random.default_rng()
     >>> x = stats.skewnorm.rvs(a=1, size=50, random_state=rng)
     >>> statistic(x, axis=0)
     0.12457412450240658
@@ -636,10 +636,12 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
     further investigation.
 
     >>> import matplotlib.pyplot as plt
-    >>> plt.hist(res.null_distribution, bins=50)
-    >>> plt.title("Monte Carlo distribution of test statistic")
-    >>> plt.xlabel("Value of Statistic")
-    >>> plt.ylabel("Frequency")
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(res.null_distribution, bins=50)
+    >>> ax.set_title("Monte Carlo distribution of test statistic")
+    >>> ax.set_xlabel("Value of Statistic")
+    >>> ax.set_ylabel("Frequency")
+    >>> plt.show()
 
     """
     args = _monte_carlo_test_iv(sample, rvs, statistic, vectorized,
