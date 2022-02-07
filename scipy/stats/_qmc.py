@@ -170,7 +170,7 @@ def scale(
 
     if not reverse:
         # Checking that sample is within the hypercube
-        if not ((sample.max() <= 1.) and (sample.min() >= 0.)):
+        if (sample.max() > 1.) or (sample.min() < 0.):
             raise ValueError('Sample is not in unit hypercube')
 
         return sample * (upper - lower) + lower
@@ -300,7 +300,7 @@ def discrepancy(
     if not sample.ndim == 2:
         raise ValueError("Sample is not a 2D array")
 
-    if not ((sample.max() <= 1.) and (sample.min() >= 0.)):
+    if (sample.max() > 1.) or (sample.min() < 0.):
         raise ValueError("Sample is not in unit hypercube")
 
     workers = int(workers)
@@ -373,7 +373,7 @@ def update_discrepancy(
     if not sample.ndim == 2:
         raise ValueError('Sample is not a 2D array')
 
-    if not ((sample.max() <= 1.) and (sample.min() >= 0.)):
+    if (sample.max() > 1.) or (sample.min() < 0.):
         raise ValueError('Sample is not in unit hypercube')
 
     # Checking that x_new is within the hypercube and 1D
