@@ -6150,7 +6150,7 @@ class pareto_gen(rv_continuous):
             return ndata / np.sum(np.log((data - location) / scale))
 
         if floc is fscale is None:
-            # The support of the distribution is (x - loc)/scale > 0
+            # The support of the distribution is `(x - loc)/scale > 0`.
             # The method of Lagrange multipliers turns this constraint
             # into an equation that can be solved numerically.
             # See gh-12545 for details.
@@ -6179,7 +6179,8 @@ class pareto_gen(rv_continuous):
 
             # set brackets for `root_scalar` to use when optimizing over the
             # scale such that a root is likely between them.
-            lbrack, rbrack = .1, np.max(data)
+            brack_start = np.abs(np.max(data))
+            lbrack, rbrack = brack_start / 2, brack_start * 2
             # if a root is not between the brackets, iteratively expand them
             # until they include a sign change, checking after each bracket is
             # modified.
@@ -6188,7 +6189,6 @@ class pareto_gen(rv_continuous):
                 lbrack /= 2
                 rbrack *= 2
             res = root_scalar(fun_to_solve, bracket=[lbrack, rbrack])
-
             if res.converged:
                 scale = res.root
                 loc = np.min(data) - scale
@@ -6201,21 +6201,20 @@ class pareto_gen(rv_continuous):
                 # is not satisfied, reduce the scale with `np.nextafter` to
                 # ensure that data does not fall outside of the support.
                 if not (scale + loc) < np.min(data):
-                    scale = np.min(data) - floc
+                    scale = np.min(data) - loc
                     scale = np.nextafter(scale, 0)
                 return shape, loc, scale
             else:
                 return super().fit(data, **kwds)
         elif floc is None:
             loc = np.min(data) - fscale
-
+        else:
+            loc = floc
         # Source: Evans, Hastings, and Peacock (2000), Statistical
         # Distributions, 3rd. Ed., John Wiley and Sons. Page 149.
-        if fscale is None:
-            fscale = np.min(data) - floc
-        if fshape is None:
-            fshape = get_shape(fscale, floc)
-        return fshape, floc, fscale
+        scale = fscale or np.min(data) - loc
+        shape = fshape or get_shape(scale, loc)
+        return shape, loc, scale
 
 
 

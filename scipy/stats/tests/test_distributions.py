@@ -1511,6 +1511,13 @@ class TestPareto:
         assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
                       fscale=3)
 
+    def test_negative_data(self):
+        # The purpose of this test is to make sure that no warnings are raised
+        # for all negative data.
+        data = stats.pareto.rvs(loc=-130, b=1, size=100)
+        assert np.all(data < 0)
+        _ = stats.pareto.fit(data)
+
 
 class TestGenpareto:
     def test_ab(self):
@@ -5234,8 +5241,7 @@ class TestStudentizedRange:
 
     @pytest.mark.slow
     def test_moment_vectorization(self):
-        # Test moment broadcasting. Calls `_munp` directly because
-        # `rv_continuous.moment` is broken at time of writing. See gh-12192
+        # Test moment broadcasting. Calls `_munp` directly         # `rv_continuous.moment` is broken at time of writing. See gh-12192
         m = stats.studentized_range._munp([1, 2], [4, 5], [10, 11])
         assert_allclose(m.shape, (2,))
 
