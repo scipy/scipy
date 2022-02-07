@@ -1756,7 +1756,10 @@ def cyclic_sd(x, y, *, fs=16., fc=4., sym=True, window='hann', nperseg=None,
 
     References
     ----------
-    .. [1] J. Antoni, "Cyclic Spectral Analysis in Practice", Mech Syst Signal
+    .. [1] W. Gardner, "Measurement of spectral correlation", IEEE Trans
+           Acoust. vol. 34, pp. 1111-1123, 1986.
+
+    .. [2] J. Antoni, "Cyclic Spectral Analysis in Practice", Mech Syst Signal
            Process. vol. 21, pp. 597-630, 2007.
 
     Examples
