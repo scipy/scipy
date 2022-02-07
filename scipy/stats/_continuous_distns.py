@@ -6179,7 +6179,7 @@ class pareto_gen(rv_continuous):
 
             # set brackets for `root_scalar` to use when optimizing over the
             # scale such that a root is likely between them.
-            brack_start = np.abs(np.max(data))
+            brack_start = np.ptp(data)
             lbrack, rbrack = brack_start / 2, brack_start * 2
             # if a root is not between the brackets, iteratively expand them
             # until they include a sign change, checking after each bracket is
