@@ -8164,7 +8164,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
       :math:`\\prod_i p_i`. Under the null hypothesis, this statistics follows
       a :math:`\\chi^2` distribution. This method emphasises small p-values.
     * Pearson's method uses :math:`-2\\sum_i\\log(1-p_i)`, which is equivalent
-      to :math:`-\\prod_i \\frac{1}{1-p_i}` [2]_.
+      to :math:`\\prod_i \\frac{1}{1-p_i}` [2]_.
       It thus emphasises large p-values.
     * Mudholkar and George compromise between Fisher's and Pearson's method by
       averaging their statistics [4]_. Their method emphasises extreme
@@ -8212,8 +8212,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         statistic = -2 * np.sum(np.log(pvalues))
         pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
     elif method == 'pearson':
-        statistic = -2 * np.sum(np.log1p(-pvalues))
-        pval = distributions.chi2.cdf(statistic, 2 * len(pvalues))
+        statistic = 2 * np.sum(np.log1p(-pvalues))
+        pval = distributions.chi2.cdf(-statistic, 2 * len(pvalues))
     elif method == 'mudholkar_george':
         normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
         statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
