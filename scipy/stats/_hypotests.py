@@ -1447,18 +1447,10 @@ def _batch_generator(iterable, batch):
     iterator = iter(iterable)
     if batch <= 0:
         raise ValueError("`batch` must be positive.")
-    while True:
-        z = []
-        try:
-            # get elements from iterator `batch` at a time
-            for i in range(batch):
-                z.append(next(iterator))
-            yield z
-        except StopIteration:
-            # when there are no more elements, yield the final batch and stop
-            if z:
-                yield z
-            break
+    z = [item for i, item in zip(range(batch), iterator)]
+    while z:  # we don't want StopIteration without yielding an empty list
+        yield z
+        z = [item for i, item in zip(range(batch), iterator)]
 
 
 def _calculate_null_both(data, statistic, n_permutations, batch,
