@@ -9773,7 +9773,7 @@ add_newdoc("yn",
     ----------
     n : array_like
         Order (integer).
-    z : array_like
+    x : array_like
         Argument (float).
 
     Returns
