@@ -253,9 +253,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
             ``4`` : Other; see message for details.
 
         success : bool
-            ``True`` when an optimal solution is found, the problem is
-            determined to be infeasible, or the problem is determined
-            to be unbounded.
+            ``True`` when an optimal solution is found and ``False`` otherwise.
 
         message : str
             A string descriptor of the exit status of the algorithm.
@@ -364,7 +362,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
                                                      highs_message)
     res['status'] = status
     res['message'] = message
-    res['success'] = res['status'] in {0, 2, 3}
+    res['success'] = (status == 0)
     x = highs_res.get('x', None)
     res['x'] = np.array(x) if x is not None else None
     res['fun'] = highs_res.get('fun', None)

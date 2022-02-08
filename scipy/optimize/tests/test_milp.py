@@ -72,7 +72,7 @@ def test_milp_options(capsys):
     captured = capsys.readouterr()
     assert "Presolve is switched off" in captured.out
     assert "Time Limit Reached" in captured.out
-    assert res.success is False
+    assert not res.success
 
 
 def test_result():
@@ -100,7 +100,7 @@ def test_result():
 
     res = milp(1, bounds=(1, -1))
     assert res.status == 2
-    assert res.success
+    assert not res.success
     msg = "The problem is infeasible. (HiGHS Status 8:"
     assert res.message.startswith(msg)
     assert (res.fun is res.mip_dual_bound is res.mip_gap
@@ -108,7 +108,7 @@ def test_result():
 
     res = milp(-1)
     assert res.status == 3
-    assert res.success
+    assert not res.success
     msg = "The problem is unbounded. (HiGHS Status 10:"
     assert res.message.startswith(msg)
     assert (res.fun is res.mip_dual_bound is res.mip_gap
