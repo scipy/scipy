@@ -596,8 +596,8 @@ class gaussian_kde:
                 points = reshape(points, (self.d, 1))
                 m = 1
             else:
-                msg = "points have dimension %s, dataset has dimension %s" % (d,
-                    self.d)
+                msg = f"points have dimension {d}, " \
+                      f"dataset has dimension {self.d}"
                 raise ValueError(msg)
 
         output_dtype = np.common_type(self.covariance, points)
@@ -609,8 +609,8 @@ class gaussian_kde:
         elif itemsize in (12, 16):
             spec = 'long double'
         else:
-            raise TypeError('%s has unexpected item size %d' %
-                            (output_dtype, itemsize))
+            raise ValueError(
+                f"{output_dtype} has unexpected item size {itemsize}")
         result = gaussian_kernel_estimate_log[spec](
             self.dataset.T, self.weights[:, None], points.T,
             self.inv_cov, output_dtype)

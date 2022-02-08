@@ -347,6 +347,20 @@ def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
                                           k.factor)
 
 
+def test_pdf_logpdf_validation():
+
+    # Arrange
+    xn = np.random.randn(2, 10)
+    gkde = stats.gaussian_kde(xn)
+    xs = np.random.randn(3, 10)
+
+    # Act / Assert
+    with pytest.raises(ValueError,
+                       match="points have dimension 3, "
+                             "dataset has dimension 2"):
+        gkde.logpdf(xs)
+
+
 def test_pdf_logpdf():
     np.random.seed(1)
     n_basesample = 50

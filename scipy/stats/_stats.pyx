@@ -792,11 +792,6 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
     m = xi.shape[0]
     p = values.shape[1]
 
-    if xi.shape[1] != d:
-        raise ValueError("points and xi must have same trailing dim")
-    if precision.shape[0] != d or precision.shape[1] != d:
-        raise ValueError("precision matrix must match data dims")
-
     # Rescale the data
     whitening = np.linalg.cholesky(precision).astype(dtype, copy=False)
     points_ = np.dot(points, whitening).astype(dtype, copy=False)
