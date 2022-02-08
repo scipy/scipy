@@ -5210,7 +5210,8 @@ add_newdoc("hankel1",
 
     See also
     --------
-    hankel1e : this function with leading exponential behavior stripped off.
+    hankel1e : ndarray
+        This function with leading exponential behavior stripped off.
 
     References
     ----------
@@ -5238,7 +5239,8 @@ add_newdoc("hankel1e",
 
     Returns
     -------
-    out : Values of the exponentially scaled Hankel function.
+    out : ndarray
+        Values of the exponentially scaled Hankel function.
 
     Notes
     -----
@@ -5276,7 +5278,8 @@ add_newdoc("hankel2",
 
     Returns
     -------
-    out : Values of the Hankel function of the second kind.
+    out : ndarray
+        Values of the Hankel function of the second kind.
 
     Notes
     -----
@@ -5322,7 +5325,8 @@ add_newdoc("hankel2e",
 
     Returns
     -------
-    out : Values of the exponentially scaled Hankel function of the second kind.
+    out : ndarray
+        Values of the exponentially scaled Hankel function of the second kind.
 
     Notes
     -----
@@ -6828,7 +6832,7 @@ add_newdoc("kn",
     ----------
     n : array_like of int
         Order of Bessel functions (floats will truncate with a warning)
-    z : array_like of float
+    x : array_like of float
         Argument at which to evaluate the Bessel functions
 
     Returns
