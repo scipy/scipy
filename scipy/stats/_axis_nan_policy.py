@@ -231,8 +231,8 @@ def _add_reduced_axes(res, reduced_axes, keepdims):
     Add reduced axes back to all the arrays in the result object
     if keepdims = True.
     """
-    return ([np.expand_dims(output, reduced_axes) for output in res] if keepdims
-            else res)
+    return ([np.expand_dims(output, reduced_axes) for output in res]
+            if keepdims else res)
 
 
 # Standard docstring / signature entries for `axis` and `nan_policy`
