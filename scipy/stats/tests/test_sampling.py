@@ -312,10 +312,10 @@ def check_discr_samples(rng, pv, mv_ex):
     assert pval > 0.1
 
 
-@pytest.mark.parametrize('method', ["NumericalInverseHermite", "NumericalInversePolynomial"])
+@pytest.mark.parametrize('method', ["NumericalInverseHermite",
+                                    "NumericalInversePolynomial"])
 class TestQRVS:
-    def test_qrvs(self, method):
-        # input validation
+    def test_input_validation(self, method):
         match = "`qmc_engine` must be an instance of..."
         with pytest.raises(ValueError, match=match):
             Method = getattr(stats.sampling, method)
@@ -344,7 +344,8 @@ class TestQRVS:
     @pytest.mark.parametrize('qrng', qrngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
     @pytest.mark.parametrize('d_in, d_out', ds)
-    def test_QRVS(self, qrng, size_in, size_out, d_in, d_out, method):
+    def test_QRVS_shape_consistency(self, qrng, size_in, size_out,
+                                    d_in, d_out, method):
         dist = StandardNormal()
         Method = getattr(stats.sampling, method)
         gen = Method(dist)
@@ -403,7 +404,6 @@ class TestQRVS:
             sample = qrvs[..., i]
             sample2 = qrvs2[:, i].reshape(size)
             assert_allclose(sample, sample2, atol=1e-12)
-
 
 
 class TestTransformedDensityRejection:
@@ -1066,7 +1066,6 @@ class TestNumericalInverseHermite:
             uniform = rng2.uniform(size=size_in)
             rvs2 = stats.norm.ppf(uniform)
             assert_allclose(rvs, rvs2)
-
 
     def test_inaccurate_CDF(self):
         # CDF function with inaccurate tail cannot be inverted; see gh-13319
