@@ -108,6 +108,14 @@ numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 
 
 # TODO: 64-bit BLAS and LAPACK
+#
+# Note that this works as long as BLAS and LAPACK are detected properly via
+# pkg-config. By default we look for OpenBLAS, other libraries can be configured via
+# `meson configure -Dblas=blas -Dlapack=lapack` (example to build with Netlib
+# BLAS and LAPACK).
+# For MKL and for auto-detecting one of multiple libs, we'll need a custom
+# dependency in Meson (like is done for scalapack) - see
+# https://github.com/mesonbuild/meson/issues/2835
 blas = dependency(get_option('blas'))
 lapack = dependency(get_option('lapack'))
 
