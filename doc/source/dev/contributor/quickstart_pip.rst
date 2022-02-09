@@ -106,7 +106,7 @@ Building SciPy
 
 Inside the ``scipy-dev`` environment, install the python-level dependencies::
 
-    python -m pip install numpy pytest cython pythran pybind11
+    python -m pip install numpy pytest cython pythran pybind11 meson ninja
 
 Note that when the virtual environment is active, the system-wide names ``pip3``
 and ``python3`` are aliased to ``pip`` and ``python``, respectively.
@@ -116,12 +116,15 @@ you cloned the source code into. Download the submodules::
 
     git submodule update --init
 
-And build SciPy (this takes a while)::
+Now configure the build system (note that BLAS/LAPACK arguments are needed
+because we used system-provided libraries; if you use e.g. OpenBLAS, these
+arguments can be omitted)::
 
-    python setup.py build
+    meson setup build -Dblas=blas -Dlapack=lapack
 
-Optionally, test it::
+Finally, build SciPy and test it (this takes a while; subsequent rebuilds will be
+much faster)::
 
-    python runtests.py
+    python dev.py
 
 
