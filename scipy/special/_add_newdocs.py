@@ -6838,7 +6838,8 @@ add_newdoc("kn",
     Returns
     -------
     out : ndarray
-        Value of the Modified Bessel function of the second kind, :math:`K_n(x)`.
+        Value of the Modified Bessel function of the second kind,
+        :math:`K_n(x)`.
 
     Notes
     -----
