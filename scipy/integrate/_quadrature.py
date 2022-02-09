@@ -37,7 +37,7 @@ if trapezoid.__doc__:
 # Note: alias kept for backwards compatibility. Rename was done
 # because trapz is a slur in colloquial English (see gh-12924).
 def trapz(y, x=None, dx=1.0, axis=-1):
-    """`An alias of `trapezoid`.
+    """An alias of `trapezoid`.
 
     `trapz` is kept for backwards compatibility. For new code, prefer
     `trapezoid` instead.
@@ -287,7 +287,7 @@ def tupleset(t, i, value):
 # Note: alias kept for backwards compatibility. Rename was done
 # because cumtrapz is a slur in colloquial English (see gh-12924).
 def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
-    """`An alias of `cumulative_trapezoid`.
+    """An alias of `cumulative_trapezoid`.
 
     `cumtrapz` is kept for backwards compatibility. For new code, prefer
     `cumulative_trapezoid` instead.
@@ -421,7 +421,7 @@ def _basic_simpson(y, start, stop, x, dx, axis):
 # Note: alias kept for backwards compatibility. simps was renamed to simpson
 # because the former is a slur in colloquial English (see gh-12924).
 def simps(y, x=None, dx=1.0, axis=-1, even='avg'):
-    """`An alias of `simpson`.
+    """An alias of `simpson`.
 
     `simps` is kept for backwards compatibility. For new code, prefer
     `simpson` instead.
