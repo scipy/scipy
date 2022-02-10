@@ -169,16 +169,16 @@ class SVDSCommonTests:
 
         required_length = (A.shape[0] if self.solver == 'propack'
                            else min(A.shape))
-        message = f"`v0` must have shape \\({required_length},\\)."
+        message = f"`v0` must have shape ({required_length},)."
         if n != required_length:
-            with pytest.raises(ValueError, match=message):
+            with pytest.raises(ValueError, match=re.escape(message)):
                 svds(A, k=k, v0=v0, solver=self.solver)
 
     def test_svds_input_validation_v0_2(self):
         A = np.ones((10, 10))
         v0 = np.ones((1, 10))
-        message = f"`v0` must have shape \\({A.shape[0]},\\)."
-        with pytest.raises(ValueError, match=message):
+        message = f"`v0` must have shape (10,)."
+        with pytest.raises(ValueError, match=re.escape(message)):
             svds(A, k=1, v0=v0, solver=self.solver)
 
     @pytest.mark.parametrize("v0", ("hi", 1, np.ones(10, dtype=int)))
