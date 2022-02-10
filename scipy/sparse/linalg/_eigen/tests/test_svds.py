@@ -177,7 +177,7 @@ class SVDSCommonTests:
     def test_svds_input_validation_v0_2(self):
         A = np.ones((10, 10))
         v0 = np.ones((1, 10))
-        message = f"`v0` must have shape \\({A[0]},\\)."
+        message = f"`v0` must have shape \\({A.shape[0]},\\)."
         with pytest.raises(ValueError, match=message):
             svds(A, k=1, v0=v0, solver=self.solver)
 
