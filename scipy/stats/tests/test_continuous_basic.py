@@ -116,13 +116,19 @@ fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                    'vonmises', 'vonmises_line', 'rv_histogram_instance',
                    'truncnorm', 'studentized_range'])
 
-_h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
+# rv_histogram instances, with uniform and non-uniform bins;
+# stored as (dist, arg) tuples for cases_test_cont_basic
+# and cases_test_moments.
+_h1 = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
-histogram_test_instance = stats.rv_histogram(_h)
+_h2 = np.histogram([1, 1], bins=[0, 1, 10])
+histogram_test_instances = [
+    (stats.rv_histogram(_h), tuple())
+    for _h in (_h1, _h2)]
 
 
 def cases_test_cont_basic():
-    for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
+    for distname, arg in distcont[:] + histogram_test_instances:
         if distname == 'levy_stable':
             continue
         elif distname in distslow:
@@ -248,7 +254,7 @@ def cases_test_moments():
     fail_normalization = set(['vonmises'])
     fail_higher = set(['vonmises', 'ncf'])
 
-    for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
+    for distname, arg in distcont[:] + histogram_test_instances:
         if distname == 'levy_stable':
             continue
 
