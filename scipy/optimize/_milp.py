@@ -331,6 +331,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
     >>> integrality = np.ones_like(c)
 
     We solve the problem like:
+
     >>> from scipy.optimize import milp
     >>> res = milp(c=c, constraints=constraints, integrality=integrality)
     >>> res.x
@@ -338,6 +339,7 @@ def milp(c, *, integrality=None, bounds=None, constraints=None, options=None):
 
     Note that had we solved the relaxed problem (without integrality
     constraints):
+
     >>> res = milp(c=c, constraints=constraints)  # OR:
     >>> # from scipy.optimize import linprog; res = linprog(c, A, b_u)
     >>> res.x
