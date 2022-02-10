@@ -1986,7 +1986,7 @@ class TestLinprogIPSpecific:
         res2 = linprog(c, A_ub=A, b_ub=b, method=self.method)  # default solver
         assert_allclose(res1.fun, res2.fun,
                         err_msg="linprog default solver unexpected result",
-                        rtol=1e-15, atol=1e-15)
+                        rtol=2e-15, atol=1e-15)
 
     def test_unbounded_below_no_presolve_original(self):
         # formerly caused segfault in TravisCI w/ "cholesky":True
