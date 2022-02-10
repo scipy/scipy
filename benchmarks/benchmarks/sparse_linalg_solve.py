@@ -36,6 +36,8 @@ class Bench(Benchmark):
         ['dense', 'spsolve', 'cg', 'minres', 'gmres', 'lgmres', 'gcrotmk',
          'tfqmr']
     ]
+    mapping = {'spsolve': spsolve, 'cg': cg, 'minres': minres, 'gmres': gmres,
+               'lgmres': lgmres, 'gcrotmk': gcrotmk, 'tfqmr': tfqmr}
     param_names = ['(n,n)', 'solver']
 
     def setup(self, n, solver):
@@ -52,7 +54,7 @@ class Bench(Benchmark):
         if solver == 'dense':
             linalg.solve(self.P_dense, self.b)
         else:
-            eval(solver)(self.P_sparse, self.b)
+            self.mapping[solver](self.P_sparse, self.b)
 
 
 class Lgmres(Benchmark):
