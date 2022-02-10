@@ -20,11 +20,10 @@ First, you will also need the compilers for C, C++ and Fortran::
 
     sudo apt install -y gcc g++ gfortran
 
-SciPy also requires BLAS and LAPACK libraries. You can install several variants
-(ATLAS, OpenBLAS etc), but here we take the simplest option::
+SciPy also requires BLAS and LAPACK libraries. There are multiple variants,
+and here we install OpenBLAS, which is the SciPy default::
 
-    sudo apt install -y liblapack-dev
-
+    sudo apt install -y libopenblas-dev pkg-config
 
 Installing the python-level dependencies
 ----------------------------------------
@@ -115,12 +114,6 @@ Now that you have all external dependencies, navigate to the directory where
 you cloned the source code into. Download the submodules::
 
     git submodule update --init
-
-Now configure the build system (note that BLAS/LAPACK arguments are needed
-because we used system-provided libraries; if you use e.g. OpenBLAS, these
-arguments can be omitted)::
-
-    meson setup build -Dblas=blas -Dlapack=lapack
 
 Finally, build SciPy and test it (this takes a while; subsequent rebuilds will be
 much faster)::
