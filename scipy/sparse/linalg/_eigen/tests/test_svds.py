@@ -166,10 +166,10 @@ class SVDSCommonTests:
         if transpose:
             A = A.T
         k = 2
-        message = "`v0` must have shape"
 
         required_length = (A.shape[0] if self.solver == 'propack'
                            else min(A.shape))
+        message = f"`v0` must have shape \\({required_length},\\)."
         if n != required_length:
             with pytest.raises(ValueError, match=message):
                 svds(A, k=k, v0=v0, solver=self.solver)
@@ -177,7 +177,7 @@ class SVDSCommonTests:
     def test_svds_input_validation_v0_2(self):
         A = np.ones((10, 10))
         v0 = np.ones((1, 10))
-        message = "`v0` must have shape"
+        message = f"`v0` must have shape \\({A[0]},\\)."
         with pytest.raises(ValueError, match=message):
             svds(A, k=1, v0=v0, solver=self.solver)
 
