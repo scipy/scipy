@@ -809,10 +809,10 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
     # Create the result array and evaluate the weighted sum
     estimate = np.zeros((m, p), dtype)
     zeros_max = np.zeros((p,), dtype) - np.inf
-    zeros_estimate_ = np.zeros((p, n), dtype)
+    empty_estimate_ = np.empty((p, n), dtype)
     for j in range(m):
         max_ = zeros_max.copy()
-        estimate_ = zeros_estimate_.copy()
+        estimate_ = empty_estimate_.copy()
         for i in range(n):
             arg = 0
             log_arg = 0
