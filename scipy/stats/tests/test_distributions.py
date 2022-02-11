@@ -1366,9 +1366,6 @@ class TestGumbel_r_l:
 
 
 class TestPareto:
-    def setup_method(self):
-        np.random.seed(1234)
-
     def test_stats(self):
         # Check the stats() method with some simple values. Also check
         # that the calculations do not trigger RuntimeWarnings.
@@ -1437,14 +1434,18 @@ class TestPareto:
         expected = (scale/x)**b   # 2.25e-18
         assert_allclose(p, expected)
 
+    @pytest.fixture(scope='class')
+    def rng(self):
+        return np.random.default_rng(1234)
+
     @pytest.mark.filterwarnings("ignore:invalid value encountered in "
                                 "double_scalars")
     @pytest.mark.parametrize("rvs_shape", [1, 2])
     @pytest.mark.parametrize("rvs_loc", [0, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 5])
-    def test_fit(self, rvs_shape, rvs_loc, rvs_scale):
+    def test_fit(self, rvs_shape, rvs_loc, rvs_scale, rng):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
-                                loc=rvs_loc)
+                                loc=rvs_loc, random_state=rng)
 
         # shape can still be fixed with multiple names
         shape_mle_analytical1 = stats.pareto.fit(data, floc=0, f0=1.04)[0]
@@ -1455,7 +1456,7 @@ class TestPareto:
 
         # data can be shifted with changes to `loc`
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
-                                loc=(rvs_loc + 2))
+                                loc=(rvs_loc + 2), random_state=rng)
         shape_mle_a, loc_mle_a, scale_mle_a = stats.pareto.fit(data, floc=2)
         assert_equal(scale_mle_a + 2, data.min())
 
@@ -1474,9 +1475,9 @@ class TestPareto:
                              [p for p in product([True, False], repeat=3)
                               if False in p])
     def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
-                                   fix_shape, fix_loc, fix_scale):
+                                   fix_shape, fix_loc, fix_scale, rng):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
-                                loc=rvs_loc)
+                                loc=rvs_loc, random_state=rng)
         args = [data, (stats.pareto._fitstart(data), )]
         func = stats.pareto._reduce_func(args, {})[1]
 
@@ -1496,9 +1497,9 @@ class TestPareto:
         # Tests a known seed and set of parameters that would produce a result
         # would violate the support of Pareto if the fit method did not check
         # the constraint `fscale + floc < min(data)`.
-        np.random.seed(2535619)
         shape, location, scale = 1, 0, 1
-        data = stats.pareto.rvs(shape, location, scale, size=100)
+        data = stats.pareto.rvs(shape, location, scale, size=100,
+                                random_state=np.random.default_rng(2535619))
         args = [data, (stats.pareto._fitstart(data), )]
         func = stats.pareto._reduce_func(args, {})[1]
         _assert_less_or_close_loglike(stats.pareto, data, func)
@@ -1511,10 +1512,10 @@ class TestPareto:
         assert_raises(FitDataError, stats.pareto.fit, [5, 2, 3], floc=1,
                       fscale=3)
 
-    def test_negative_data(self):
+    def test_negative_data(self, rng):
         # The purpose of this test is to make sure that no warnings are raised
         # for all negative data.
-        data = stats.pareto.rvs(loc=-130, b=1, size=100)
+        data = stats.pareto.rvs(loc=-130, b=1, size=100, random_state=rng)
         assert np.all(data < 0)
         _ = stats.pareto.fit(data)
 
