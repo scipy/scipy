@@ -353,9 +353,8 @@ def test_pdf_logpdf_validation():
     gkde = stats.gaussian_kde(xn)
     xs = rng.standard_normal((3, 10))
 
-    with pytest.raises(ValueError,
-                       match="points have dimension 3, "
-                             "dataset has dimension 2"):
+    msg = "points have dimension 3, dataset has dimension 2"
+    with pytest.raises(ValueError, match=msg):
         gkde.logpdf(xs)
 
 
