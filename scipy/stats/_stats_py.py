@@ -443,7 +443,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     .. deprecated:: 1.9.0
         Support for object arrays has been deprecated and will be removed in
         the second release after SciPy 1.9.0.
-        `pandas.DataFrame.mode <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html>`_  # noqa: E501
+        `pandas.DataFrame.mode <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html>`_
         can be used instead.
 
     The mode of arrays with other dtypes is calculated using `np.unique`.
