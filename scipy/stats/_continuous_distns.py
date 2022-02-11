@@ -6155,12 +6155,12 @@ class pareto_gen(rv_continuous):
             # into an equation that can be solved numerically.
             # See gh-12545 for details.
 
-            def dLdScale(shape, scale):
+            def dL_dScale(shape, scale):
                 # The partial derivative of the log-likelihood function w.r.t.
                 # the scale.
                 return ndata * shape / scale
 
-            def dLdLocation(shape, location):
+            def dL_dLocation(shape, location):
                 # The partial derivative of the log-likelihood function w.r.t.
                 # the location.
                 return (shape + 1) * np.sum(1 / (data - location))
@@ -6170,7 +6170,7 @@ class pareto_gen(rv_continuous):
                 # w.r.t. to location and scale equal and solving.
                 location = np.min(data) - scale
                 shape = fshape or get_shape(scale, location)
-                return dLdLocation(shape, location) - dLdScale(shape, scale)
+                return dL_dLocation(shape, location) - dL_dScale(shape, scale)
 
             def interval_contains_root(lbrack, rbrack):
                 # return true if the signs disagree.
@@ -6215,7 +6215,6 @@ class pareto_gen(rv_continuous):
         scale = fscale or np.min(data) - loc
         shape = fshape or get_shape(scale, loc)
         return shape, loc, scale
-
 
 
 pareto = pareto_gen(a=1.0, name="pareto")
