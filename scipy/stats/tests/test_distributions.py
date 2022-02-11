@@ -5242,7 +5242,7 @@ class TestStudentizedRange:
 
     @pytest.mark.slow
     def test_moment_vectorization(self):
-        # Test moment broadcasting. Calls `_munp` directly
+        # Test moment broadcasting. Calls `_munp` directly because
         # `rv_continuous.moment` is broken at time of writing. See gh-12192
         m = stats.studentized_range._munp([1, 2], [4, 5], [10, 11])
         assert_allclose(m.shape, (2,))
