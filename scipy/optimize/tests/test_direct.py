@@ -183,5 +183,5 @@ class TestDIRECT:
 
     def test_segmentation_fault(self):
         bounds = [(-5., 20.) ] * 100
-        result = direct(self.sphere_2, bounds, maxfun=10000000)
-        assert result.fun < 1e-8
+        result = direct(self.sphere_2, bounds, maxfun=10000000,
+                        maxiter=1000000)
