@@ -68,7 +68,7 @@ class SphericalVoronoi:
         of the vertices belonging to the n-th point in points
 
     Methods
-    ----------
+    -------
     calculate_areas
         Calculates the areas of the Voronoi regions. For 2D point sets, the
         regions are circular arcs. The sum of the areas is `2 * pi * radius`.
@@ -176,7 +176,7 @@ class SphericalVoronoi:
 
         self.radius = float(radius)
         self.points = np.array(points).astype(np.double)
-        self._dim = len(points[0])
+        self._dim = self.points.shape[1]
         if center is None:
             self.center = np.zeros(self._dim)
         else:

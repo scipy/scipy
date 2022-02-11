@@ -215,7 +215,7 @@ class _kde_subclass1(stats.gaussian_kde):
 class _kde_subclass2(stats.gaussian_kde):
     def __init__(self, dataset):
         self.covariance_factor = self.scotts_factor
-        super(_kde_subclass2, self).__init__(dataset)
+        super().__init__(dataset)
 
 
 class _kde_subclass3(stats.gaussian_kde):
@@ -339,7 +339,7 @@ def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
 
     weights = np.arange(5, dtype=weights_type)
     dataset = np.arange(5, dtype=dataset_type)
-    k = stats.kde.gaussian_kde(dataset, bw_method=bw, weights=weights)
+    k = stats.gaussian_kde(dataset, bw_method=bw, weights=weights)
     points = np.arange(5, dtype=point_type)
     result = k(points)
     # weights are always cast to float64
@@ -396,6 +396,7 @@ def test_pdf_logpdf_weighted():
     assert_almost_equal(pdf, pdf2, decimal=12)
 
 
+@pytest.mark.xslow
 def test_logpdf_overflow():
     # regression test for gh-12988; testing against linalg instability for
     # very high dimensionality kde

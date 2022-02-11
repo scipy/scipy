@@ -33,7 +33,6 @@ IGNORE_PATTERNS = [
 
     # Data files not needed by scipy special tests.
     "ibeta_derivative_",
-    r"ellint_r[cdfjg]_[^d]",
     r"ellint_d2?_",
     "jacobi_",
     "heuman_lambda_",
@@ -43,6 +42,7 @@ IGNORE_PATTERNS = [
     "trig_",
     "powm1_data.ipp",
 ]
+
 
 def _raw_data(line):
     items = line.split(',')
@@ -57,8 +57,8 @@ def _raw_data(line):
 
 def parse_ipp_file(filename):
     print(filename)
-    a = open(filename, 'r')
-    lines = a.readlines()
+    with open(filename, 'r') as a:
+        lines = a.readlines()
     data = {}
     i = 0
     while (i < len(lines)):
@@ -67,7 +67,7 @@ def parse_ipp_file(filename):
         if m:
             d = int(m.group(1))
             n = int(m.group(2))
-            print("d = {0}, n = {1}".format(d, n))
+            print(f"d = {d}, n = {n}")
             cdata = []
             i += 1
             line = lines[i]
@@ -84,7 +84,7 @@ def parse_ipp_file(filename):
                     i += 1
                     line = lines[i]
             if not len(cdata) == n:
-                raise ValueError("parsed data: %d, expected %d" % (len(cdata), n))
+                raise ValueError(f"parsed data: {len(cdata)}, expected {n}")
             data[m.group(3)] = cdata
         else:
             i += 1
@@ -121,5 +121,5 @@ if __name__ == '__main__':
                 continue
 
             path = os.path.join(BOOST_SRC, filename)
-            print("================= %s ===============" % path)
+            print(f"================= {path} ===============")
             dump_datasets(path)

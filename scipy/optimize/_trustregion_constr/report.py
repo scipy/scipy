@@ -1,10 +1,12 @@
 """Progress report printers."""
 
+from __future__ import annotations
+from typing import List
 
-class ReportBase(object):
-    COLUMN_NAMES = NotImplemented
-    COLUMN_WIDTHS = NotImplemented
-    ITERATION_FORMATS = NotImplemented
+class ReportBase:
+    COLUMN_NAMES: List[str] = NotImplemented
+    COLUMN_WIDTHS: List[int] = NotImplemented
+    ITERATION_FORMATS: List[str] = NotImplemented
 
     @classmethod
     def print_header(cls):
@@ -17,12 +19,6 @@ class ReportBase(object):
 
     @classmethod
     def print_iteration(cls, *args):
-        # args[3] is obj func. It should really be a float. However,
-        # trust-constr typically provides a length 1 array. We have to coerce
-        # it to a float, otherwise the string format doesn't work.
-        args = list(args)
-        args[3] = float(args[3])
-
         iteration_format = ["{{:{}}}".format(x) for x in cls.ITERATION_FORMATS]
         fmt = "|" + "|".join(iteration_format) + "|"
         print(fmt.format(*args))

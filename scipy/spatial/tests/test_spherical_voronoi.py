@@ -95,7 +95,7 @@ def _sample_sphere(n, dim, seed=None):
     return points
 
 
-class TestSphericalVoronoi(object):
+class TestSphericalVoronoi:
 
     def setup_method(self):
         self.points = np.array([
@@ -127,6 +127,11 @@ class TestSphericalVoronoi(object):
         assert_equal(s3.radius, 1)
         assert_array_equal(s4.center, center)
         assert_equal(s4.radius, radius)
+
+        # Test a non-sequence/-ndarray based array-like
+        s5 = SphericalVoronoi(memoryview(self.points))  # type: ignore[arg-type]
+        assert_array_equal(s5.center, np.array([0, 0, 0]))
+        assert_equal(s5.radius, 1)
 
     def test_vertices_regions_translation_invariance(self):
         sv_origin = SphericalVoronoi(self.points)
@@ -347,3 +352,13 @@ class TestSphericalVoronoi(object):
         assert sv.points.dtype is np.dtype(np.float64)
         assert sv.center.dtype is np.dtype(np.float64)
         assert isinstance(sv.radius, float)
+
+    def test_region_types(self):
+        # Tests that region integer type does not change
+        # See Issue #13412
+        sv = SphericalVoronoi(self.points)
+        dtype = type(sv.regions[0][0])
+        sv.sort_vertices_of_regions()
+        assert type(sv.regions[0][0]) == dtype
+        sv.sort_vertices_of_regions()
+        assert type(sv.regions[0][0]) == dtype

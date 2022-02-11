@@ -48,7 +48,7 @@ def norm(x, ord=None, axis=None):
     _multi_svd_norm, are not yet available for sparse matrix.
 
     This docstring is modified based on numpy.linalg.norm.
-    https://github.com/numpy/numpy/blob/master/numpy/linalg/linalg.py
+    https://github.com/numpy/numpy/blob/main/numpy/linalg/linalg.py
 
     The following norms can be calculated:
 

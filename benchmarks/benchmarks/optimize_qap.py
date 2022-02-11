@@ -1,11 +1,14 @@
 import numpy as np
-from .common import Benchmark
+from .common import Benchmark, safe_import
 import os
 
-try:
+with safe_import():
     from scipy.optimize import quadratic_assignment
-except ImportError:
-    pass
+
+
+# XXX this should probably have an is_xslow with selected tests.
+# Even with this, it takes ~30 seconds to collect the ones to run
+# (even if they will all be skipped in the `setup` function).
 
 
 class QuadraticAssignment(Benchmark):
@@ -53,6 +56,6 @@ class QuadraticAssignment(Benchmark):
 
     def track_score(self, method, qap_prob):
         res = quadratic_assignment(self.A, self.B, self.method)
-        score = int(res['score'])
+        score = int(res['fun'])
         percent_diff = (score - self.opt_solution) / self.opt_solution
         return percent_diff
