@@ -180,3 +180,8 @@ class TestDIRECT:
         result = direct(self.styblinski_tang, bounds, eps=eps, vol_tol=1e-6)
         assert result.status == 4
         assert result.success
+
+    def test_segmentation_fault(self):
+        bounds = [(-5., 20.) ] * 100
+        result = direct(self.sphere_2, bounds, maxfun=10000000)
+        assert result.fun < 1e-8
