@@ -764,11 +764,11 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
     Parameters
     ----------
     points : array_like with shape (n, d)
-        Data points to estimate from in d dimensions.
+        Data points to estimate from in ``d`` dimensions.
     values : real[:, :] with shape (n, p)
         Multivariate values associated with the data points.
     xi : array_like with shape (m, d)
-        Coordinates to evaluate the estimate at in d dimensions.
+        Coordinates to evaluate the estimate at in ``d`` dimensions.
     precision : array_like with shape (d, d)
         Precision matrix for the Gaussian kernel.
     Returns
@@ -776,9 +776,6 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
     estimate : double[:, :] with shape (m, p)
         The log of the multivariate Gaussian kernel estimate evaluated at the input coordinates.
     """
-
-    # This implementation is derived from `gaussian_kernel_estimate`, huge thanks to the authors.
-
     cdef:
         real[:, :] points_, xi_, values_, log_values_
         real[:, :] whitening, estimate, max_
@@ -799,7 +796,7 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
     values_ = values.astype(dtype, copy=False)
 
     # Log transformation of values_. It is faster than np.log(values_).
-    log_values_ = np.zeros((n, p), dtype)
+    log_values_ = np.empty((n, p), dtype)
     for i in range(n):
         for k in range(p):
             log_values_[i, k] = math.log(values_[i, k])
@@ -836,4 +833,4 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
             estimate[j, k] = math.log(estimate[j, k])
             estimate[j, k] += max_[j, k]
 
-    return np.asarray(estimate)
+    return estimate
