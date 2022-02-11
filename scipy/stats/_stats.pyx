@@ -781,8 +781,8 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
 
     cdef:
         real[:, :] points_, xi_, values_, log_values_
-        real[:, :] whitening, estimate, max_
-        real[:, :, :] estimate_
+        real[:, :] whitening, estimate, estimate_, zeros_estimate_
+        real[:] max_, zeros_max
         int i, j, k
         int n, d, m, p
         real arg, residual, log_arg, log_norm
@@ -799,7 +799,7 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
     values_ = values.astype(dtype, copy=False)
 
     # Log transformation of values_. It is faster than np.log(values_).
-    log_values_ = np.zeros((n, p), dtype)
+    log_values_ = np.empty((n, p), dtype)
     for i in range(n):
         for k in range(p):
             log_values_[i, k] = math.log(values_[i, k])
@@ -811,9 +811,11 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
 
     # Create the result array and evaluate the weighted sum
     estimate = np.zeros((m, p), dtype)
-    max_ = np.zeros((m, p), dtype) - np.inf
-    estimate_ = np.zeros((m, p, n), dtype)
+    zeros_max = np.zeros((p,), dtype) - np.inf
+    zeros_estimate_ = np.zeros((p, n), dtype)
     for j in range(m):
+        max_ = zeros_max.copy()
+        estimate_ = zeros_estimate_.copy()
         for i in range(n):
             arg = 0
             log_arg = 0
@@ -823,17 +825,17 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
 
             log_arg = -arg / 2 + log_norm
             for k in range(p):
-                estimate_[j, k, i] = log_values_[i, k] + log_arg
+                estimate_[k, i] = log_values_[i, k] + log_arg
 
                 # Collect max value for logsumexp
-                if max_[j, k] < estimate_[j, k, i]:
-                    max_[j, k] = estimate_[j, k, i]
+                if max_[k] < estimate_[k, i]:
+                    max_[k] = estimate_[k, i]
 
         # Calculate logsumexp
         for k in range(p):
             for i in range(n):
-                estimate[j, k] += math.exp(estimate_[j, k, i] - max_[j, k])
+                estimate[j, k] += math.exp(estimate_[k, i] - max_[k])
             estimate[j, k] = math.log(estimate[j, k])
-            estimate[j, k] += max_[j, k]
+            estimate[j, k] += max_[k]
 
-    return np.asarray(estimate)
+    return estimate
