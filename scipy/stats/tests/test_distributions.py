@@ -2236,12 +2236,12 @@ class TestPowerlaw(object):
             _assert_less_or_close_loglike(stats.powerlaw, data, ll)
 
     @pytest.mark.parametrize("a", [.5, 1, 1.5])
-    @pytest.mark.parametrize("loc", [0, 1])
-    @pytest.mark.parametrize("scale", [1, 5])
+    @pytest.mark.parametrize("loc", [0])
+    @pytest.mark.parametrize("scale", [1])
     @pytest.mark.parametrize("fa", [True, False])
     @pytest.mark.parametrize("floc", [True, False])
     @pytest.mark.parametrize("fscale", [True, False])
-    @pytest.mark.parametrize("seed", [1412304, 8435792])
+    @pytest.mark.parametrize("seed", [1412304])
     def test_fit_MLE_comp_optimzer_combinations(self, a, loc, scale, fa, floc,
                                                 fscale, seed):
         # the two parametrized seeds exhibit failures for these two previous
