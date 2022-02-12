@@ -155,9 +155,12 @@ class _PSD:
         # Compute the symmetric eigendecomposition.
         # Note that eigh takes care of array conversion, chkfinite,
         # and assertion that the matrix is square.
+        M = np.asarray(M)
         s, u = scipy.linalg.eigh(M, lower=lower, check_finite=check_finite)
 
         eps = _eigvalsh_to_eps(s, cond, rcond)
+        if not np.allclose(M, M.T, atol=1e-10):
+            raise ValueError('the input matrix must be symmetric')
         if np.min(s) < -eps:
             raise ValueError('the input matrix must be positive semidefinite')
         d = s[s > eps]
