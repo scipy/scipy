@@ -462,7 +462,10 @@ def test_vectorize_statistic(axis):
 # --- Test Monte Carlo Hypothesis Test --- #
 
 class TestMonteCarloHypothesisTest:
-    atol = 1e-2  # for comparing p-value
+    atol = 2.5e-2  # for comparing p-value
+
+    def rvs(self, rvs_in, rs):
+        return lambda *args, **kwds: rvs_in(*args, random_state=rs, **kwds)
 
     def test_input_validation(self):
         # test that the appropriate error messages are raised for invalid input
@@ -512,8 +515,8 @@ class TestMonteCarloHypothesisTest:
     def test_batch(self):
         # make sure that the `batch` parameter is respected by checking the
         # maximum batch size provided in calls to `statistic`
-        np.random.seed(0)
-        x = np.random.rand(10)
+        rng = np.random.default_rng(23492340193)
+        x = rng.random(10)
 
         def statistic(x, axis):
             batch_size = 1 if x.ndim == 1 else len(x)
@@ -523,21 +526,21 @@ class TestMonteCarloHypothesisTest:
         statistic.counter = 0
         statistic.batch_size = 0
 
-        kwds = {'sample': x, 'rvs': stats.norm.rvs, 'statistic': statistic,
+        kwds = {'sample': x, 'statistic': statistic,
                 'n_resamples': 1000, 'vectorized': True}
 
-        np.random.seed(1)  # reset stats.norm.rvs
+        kwds['rvs'] = self.rvs(stats.norm.rvs, np.random.default_rng(32842398))
         res1 = monte_carlo_test(batch=1, **kwds)
         assert_equal(statistic.counter, 1001)
         assert_equal(statistic.batch_size, 1)
 
-        np.random.seed(1)
+        kwds['rvs'] = self.rvs(stats.norm.rvs, np.random.default_rng(32842398))
         statistic.counter = 0
         res2 = monte_carlo_test(batch=50, **kwds)
         assert_equal(statistic.counter, 21)
         assert_equal(statistic.batch_size, 50)
 
-        np.random.seed(1)
+        kwds['rvs'] = self.rvs(stats.norm.rvs, np.random.default_rng(32842398))
         statistic.counter = 0
         res3 = monte_carlo_test(**kwds)
         assert_equal(statistic.counter, 2)
@@ -550,18 +553,18 @@ class TestMonteCarloHypothesisTest:
     def test_axis(self, axis):
         # test that Nd-array samples are handled correctly for valid values
         # of the `axis` parameter
+        rng = np.random.default_rng(2389234)
+        norm_rvs = self.rvs(stats.norm.rvs, rng)
 
-        np.random.seed(0)
         size = [2, 3, 4]
         size[axis] = 100
-        x = stats.norm.rvs(size=size)
-
+        x = norm_rvs(size=size)
         expected = stats.skewtest(x, axis=axis)
 
         def statistic(x, axis):
             return stats.skewtest(x, axis=axis).statistic
 
-        res = monte_carlo_test(x, stats.norm.rvs, statistic, vectorized=True,
+        res = monte_carlo_test(x, norm_rvs, statistic, vectorized=True,
                                n_resamples=20000, axis=axis)
 
         assert_allclose(res.statistic, expected.statistic)
@@ -571,39 +574,41 @@ class TestMonteCarloHypothesisTest:
     @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
     def test_against_ks_1samp(self, alternative, a):
         # test that monte_carlo_test can reproduce pvalue of ks_1samp
-        np.random.seed(0)
-        x = stats.skewnorm.rvs(a=a, size=30)
+        rng = np.random.default_rng(65723433)
 
+        x = stats.skewnorm.rvs(a=a, size=30, random_state=rng)
         expected = stats.ks_1samp(x, stats.norm.cdf, alternative=alternative)
 
         def statistic1d(x):
             return stats.ks_1samp(x, stats.norm.cdf, mode='asymp',
                                   alternative=alternative).statistic
 
-        res = monte_carlo_test(x, stats.norm.rvs, statistic1d,
+        norm_rvs = self.rvs(stats.norm.rvs, rng)
+        res = monte_carlo_test(x, norm_rvs, statistic1d,
                                n_resamples=1000, vectorized=False,
                                alternative=alternative)
 
         assert_allclose(res.statistic, expected.statistic)
         if alternative == 'greater':
-            assert_allclose(res.pvalue, expected.pvalue, atol=2*self.atol)
+            assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
         elif alternative == 'less':
-            assert_allclose(1-res.pvalue, expected.pvalue, atol=2*self.atol)
+            assert_allclose(1-res.pvalue, expected.pvalue, atol=self.atol)
 
     @pytest.mark.parametrize('hypotest', (stats.skewtest, stats.kurtosistest))
     @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
     @pytest.mark.parametrize('a', np.linspace(-2, 2, 5))  # skewness
     def test_against_normality_tests(self, hypotest, alternative, a):
         # test that monte_carlo_test can reproduce pvalue of normality tests
-        np.random.seed(0)
-        x = stats.skewnorm.rvs(a=a, size=150)
+        rng = np.random.default_rng(85723405)
 
+        x = stats.skewnorm.rvs(a=a, size=150, random_state=rng)
         expected = hypotest(x, alternative=alternative)
 
         def statistic(x, axis):
             return hypotest(x, axis=axis).statistic
 
-        res = monte_carlo_test(x, stats.norm.rvs, statistic, vectorized=True,
+        norm_rvs = self.rvs(stats.norm.rvs, rng)
+        res = monte_carlo_test(x, norm_rvs, statistic, vectorized=True,
                                alternative=alternative)
 
         assert_allclose(res.statistic, expected.statistic)
@@ -612,37 +617,39 @@ class TestMonteCarloHypothesisTest:
     @pytest.mark.parametrize('a', np.arange(-2, 3))  # skewness parameter
     def test_against_normaltest(self, a):
         # test that monte_carlo_test can reproduce pvalue of normaltest
-        np.random.seed(0)
-        x = stats.skewnorm.rvs(a=a, size=150)
+        rng = np.random.default_rng(12340513)
 
+        x = stats.skewnorm.rvs(a=a, size=150, random_state=rng)
         expected = stats.normaltest(x)
 
         def statistic(x, axis):
             return stats.normaltest(x, axis=axis).statistic
 
-        res = monte_carlo_test(x, stats.norm.rvs, statistic, vectorized=True,
+        norm_rvs = self.rvs(stats.norm.rvs, rng)
+        res = monte_carlo_test(x, norm_rvs, statistic, vectorized=True,
                                alternative='greater')
 
         assert_allclose(res.statistic, expected.statistic)
-        assert_allclose(res.pvalue, expected.pvalue, atol=2*self.atol)
+        assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
     @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
     def test_against_cramervonmises(self, a):
         # test that monte_carlo_test can reproduce pvalue of cramervonmises
-        np.random.seed(0)
-        x = stats.skewnorm.rvs(a=a, size=30)
+        rng = np.random.default_rng(234874135)
 
+        x = stats.skewnorm.rvs(a=a, size=30, random_state=rng)
         expected = stats.cramervonmises(x, stats.norm.cdf)
 
         def statistic1d(x):
             return stats.cramervonmises(x, stats.norm.cdf).statistic
 
-        res = monte_carlo_test(x, stats.norm.rvs, statistic1d,
+        norm_rvs = self.rvs(stats.norm.rvs, rng)
+        res = monte_carlo_test(x, norm_rvs, statistic1d,
                                n_resamples=1000, vectorized=False,
                                alternative='greater')
 
         assert_allclose(res.statistic, expected.statistic)
-        assert_allclose(res.pvalue, expected.pvalue, atol=3*self.atol)
+        assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
     @pytest.mark.parametrize('dist_name', ('norm', 'logistic'))
     @pytest.mark.parametrize('i', range(5))
@@ -654,8 +661,10 @@ class TestMonteCarloHypothesisTest:
 
         # find the skewness for which the sample statistic matches one of the
         # critical values provided by `stats.anderson`
+
         def fun(a):
-            x = stats.tukeylambda.rvs(a, size=100, random_state=0)
+            rng = np.random.default_rng(394295467)
+            x = stats.tukeylambda.rvs(a, size=100, random_state=rng)
             expected = stats.anderson(x, dist_name)
             return expected.statistic - expected.critical_values[i]
         with suppress_warnings() as sup:
@@ -666,7 +675,8 @@ class TestMonteCarloHypothesisTest:
         # get the significance level (p-value) associated with that critical
         # value
         a = sol.x[0]
-        x = stats.tukeylambda.rvs(a, size=100, random_state=0)
+        rng = np.random.default_rng(394295467)
+        x = stats.tukeylambda.rvs(a, size=100, random_state=rng)
         expected = stats.anderson(x, dist_name)
         expected_stat = expected.statistic
         expected_p = expected.significance_level[i]/100
@@ -675,10 +685,10 @@ class TestMonteCarloHypothesisTest:
         def statistic1d(x):
             return stats.anderson(x, dist_name).statistic
 
-        np.random.seed(0)
+        dist_rvs = self.rvs(getattr(stats, dist_name).rvs, rng)
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning)
-            res = monte_carlo_test(x, getattr(stats, dist_name).rvs,
+            res = monte_carlo_test(x, dist_rvs,
                                    statistic1d, n_resamples=1000,
                                    vectorized=False, alternative='greater')
 
