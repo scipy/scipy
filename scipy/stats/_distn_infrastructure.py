@@ -4404,6 +4404,14 @@ def fit(dist, data, bounds=None, *, guess=None,
                    "or `rv_discrete.`")
         raise ValueError(message)
 
+    try:
+        param_info = dist._param_info()
+    except AttributeError as e:
+        message = (f"Distribution `{dist.name}` is not yet supported by "
+                   "`scipy.stats.fit` because shape information has "
+                   "not been defined.")
+        raise ValueError(message) from e
+
     # data input validation
     data = np.asarray(data)
     if data.ndim != 1:
@@ -4415,8 +4423,6 @@ def fit(dist, data, bounds=None, *, guess=None,
         raise ValueError(message)
 
     # bounds input validation and information collection
-    param_info = dist._param_info()
-
     n_params = len(param_info)
     n_shapes = n_params - (1 if discrete else 2)
     param_list = [param.name for param in param_info]

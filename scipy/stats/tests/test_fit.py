@@ -183,6 +183,10 @@ class TestFit:
         with pytest.raises(ValueError, match=message):
             stats.fit(10, self.data, self.shape_bounds_a)
 
+        message = "Distribution `laplace` is not yet supported by..."
+        with pytest.raises(ValueError, match=message):
+            stats.fit(stats.laplace, self.data)
+
     def test_data_iv(self):
         message = "`data` must be exactly one-dimensional."
         with pytest.raises(ValueError, match=message):
