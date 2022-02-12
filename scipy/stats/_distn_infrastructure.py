@@ -4438,8 +4438,9 @@ def fit(dist, data, bounds=None, *, guess=None,
         user_bounds_array = np.empty((n_params, 2))
         for i in range(n_params):
             param_name = param_info[i].name
-            user_bound = (user_bounds.pop(param_name, None)
-                          or param_info[i].domain)
+            user_bound = user_bounds.pop(param_name, None)
+            if user_bound is None:
+                user_bound = param_info[i].domain
             user_bounds_array[i] = user_bound
         if user_bounds:
             message = ("Bounds provided for the following unrecognized "

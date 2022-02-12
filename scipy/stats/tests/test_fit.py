@@ -434,7 +434,7 @@ class TestFit:
         dist = stats.binom
         n, p, loc = 10, 0.65, 0
         data = dist.rvs(n, p, loc=loc, size=N, random_state=rng)
-        shape_bounds = {'n': (0, 20)}
+        shape_bounds = {'n': np.array([0, 20])}  # check arrays are OK, too
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
         assert_allclose(res.params, (n, p, loc), **self.tols)
 
