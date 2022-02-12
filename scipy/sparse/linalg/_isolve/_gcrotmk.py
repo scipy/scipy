@@ -355,12 +355,12 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
             x = axpy(u, x, x.shape[0], yc)
             r = axpy(c, r, r.shape[0], -yc)
 
+    # -- initial callback
+    if callback is not None:
+        callback(x)
+
     # GCROT main iteration
     for j_outer in range(maxiter):
-        # -- callback
-        if callback is not None:
-            callback(x)
-
         beta = nrm2(r)
 
         # -- check stopping condition
@@ -443,6 +443,10 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         gamma = dot(cx, r)
         r = axpy(cx, r, r.shape[0], -gamma)  # r -= gamma*cx
         x = axpy(ux, x, x.shape[0], gamma)  # x += gamma*ux
+
+        # -- callback
+        if callback is not None:
+            callback(x)
 
         # Truncate CU
         if truncate == 'oldest':

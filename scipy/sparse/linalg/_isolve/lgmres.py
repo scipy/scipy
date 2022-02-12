@@ -150,12 +150,12 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
     ptol_max_factor = 1.0
 
+    # -- initial callback
+    if callback is not None:
+        callback(x)
+
     for k_outer in range(maxiter):
         r_outer = matvec(x) - b
-
-        # -- callback
-        if callback is not None:
-            callback(x)
 
         # -- determine input type routines
         if axpy is None:
@@ -229,6 +229,10 @@ def lgmres(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
 
         # -- Apply step
         x += dx
+
+        # -- callback
+        if callback is not None:
+            callback(x)
     else:
         # didn't converge ...
         return postprocess(x), maxiter

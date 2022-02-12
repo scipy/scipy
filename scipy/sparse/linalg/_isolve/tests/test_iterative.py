@@ -190,8 +190,18 @@ def check_maxiter(solver, case):
 
     x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback)
 
-    assert_equal(len(residuals), 1)
+    # Because GMRES includes inner and outer iterations and "callback" is
+    # called only when an outer iteration is performed, "len(residuals)"
+    # equals 1 when "maxiter" equals 1
+    assert_equal(len(residuals), 1 if solver is gmres else 2)
     assert_equal(info, 1)
+
+    # To test the first element of "residuals" is the initial residual norm
+    if solver is gmres:
+        residuals = []
+        x, info = solver(A, b, x0=x0, tol=tol, maxiter=2, callback=callback,
+                         callback_type='x')
+    assert_equal(residuals[0], norm(b - A@x0))
 
 
 def test_maxiter():

@@ -173,6 +173,8 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
     info = 0
     ftflag = True
     iter_ = maxiter
+    if callback is not None:
+        callback(x)
     while True:
         olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
@@ -245,6 +247,8 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
     info = 0
     ftflag = True
     iter_ = maxiter
+    if callback is not None:
+        callback(x)
     while True:
         olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
@@ -312,6 +316,8 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     info = 0
     ftflag = True
     iter_ = maxiter
+    if callback is not None:
+        callback(x)
     while True:
         olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
@@ -383,6 +389,8 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
     info = 0
     ftflag = True
     iter_ = maxiter
+    if callback is not None:
+        callback(x)
     while True:
         olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
@@ -773,6 +781,8 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     info = 0
     ftflag = True
     iter_ = maxiter
+    if callback is not None:
+        callback(x)
     while True:
         olditer = iter_
         x, iter_, resid, info, ndx1, ndx2, sclr1, sclr2, ijob = \
