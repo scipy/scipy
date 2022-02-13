@@ -1995,10 +1995,24 @@ class TestFactorialFunctions:
         assert_equal(special.factorial2(-1, exact=True), 1)
         assert_equal(special.factorial2(-3, exact=True), -1)
         assert_equal(special.factorial2(-5, exact=True), 1/3)
-        assert_raises(ValueError, special.factorial2, 1.5, True)
-        assert_raises(ValueError, special.factorial2, [1, 2], True)
-        assert_raises(ValueError, special.factorial2, -2, True)
-        assert_raises(ValueError, special.factorial2, -3.5, True)
+        with assert_raises(
+            ValueError, match="n must be a positive integer or an odd "
+                              "negative integer."
+        ):
+            special.factorial2(1.5, exact=True)
+        with assert_raises(ValueError, match="n must be scalar."):
+            special.factorial2([1, 2], exact=True)
+        with assert_raises(
+            ValueError, match="n must be a positive integer or an odd "
+                              "negative integer."
+        ):
+            special.factorial2(-2, exact=True)
+        with assert_raises(
+            ValueError, match="n must be a positive integer or an odd "
+                              "negative integer."
+        ):
+            special.factorial2(-3.5, exact=True)
+
 
     def test_factorialk(self):
         assert_equal(special.factorialk(5, 1, exact=True), 120)
