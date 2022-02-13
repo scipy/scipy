@@ -2216,7 +2216,10 @@ def comb(N, k, exact=False, repetition=False):
         return comb(N + k - 1, k, exact)
     if exact:
         if int(N) != N or int(k) != k:
-            warnings.warn("Non-integer arguments when exact is True is deprecated.", DeprecationWarning)
+            warnings.warn(
+                "Non-integer arguments when exact is True are deprecated.",
+                DeprecationWarning,
+            )
         return _comb_int(N, k)
     else:
         k, N = asarray(k), asarray(N)
