@@ -3269,10 +3269,10 @@ for name in ['logpmf', 'pmf', 'mean', 'cov', 'rvs']:
 
 
 class special_ortho_group_gen(multi_rv_generic):
-    r"""A matrix-valued SO(N) random variable.
+    r"""A Special Orthogonal matrix (SO(N)) random variable.
 
     Return a random rotation matrix, drawn from the Haar distribution
-    (the only uniform distribution on SO(n)).
+    (the only uniform distribution on SO(n)) with a determinant of +1.
 
     The `dim` keyword specifies the dimension N.
 
@@ -3423,7 +3423,7 @@ class special_ortho_group_frozen(multi_rv_frozen):
 
 
 class ortho_group_gen(multi_rv_generic):
-    r"""A matrix-valued O(N) random variable.
+    r"""An Orthogonal matrix (O(N)) random variable.
 
     Return a random orthogonal matrix, drawn from the O(N) Haar
     distribution (the only uniform distribution on O(N)).
