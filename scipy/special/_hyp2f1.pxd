@@ -121,13 +121,21 @@ cdef inline double complex hyp2f1_complex(
     # Todo: Actually check for overflow instead of using a fixed tolerance for
     # all parameter combinations like in the Fortran original. This will have to
     # wait until all points in the neighborhood of z = 1 are handled in Cython.
-    if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
+    # Note that in the following three conditions, we avoid the case where
+    # c is a non-positive integer. This is because if c is a non-positive
+    # integer and we have not returned already, then one of a or b must
+    # be a negative integer and the desired result can be computed as a
+    # polynomial with finite sum.
+    if (
+            fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0 and
+            not c_non_pos_int
+    ):
         return NPY_INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
-    if z == 1.0 and c - a - b > 0:
+    if z == 1.0 and c - a - b > 0 and not c_non_pos_int:
         return gamma_ratio(c, c - a - b, c - a, c - b)
     # Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26).
-    if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS:
+    if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS and not c_non_pos_int:
         return gamma_ratio(
             a - b + 1, 0.5*a + 1, a + 1, 0.5*a - b + 1
         )
@@ -370,6 +378,20 @@ cdef inline double gamma_ratio_lanczos(
         double factor_v
         double factor_w
         double factor_x
+        int numerator_has_pole
+        int denominator_has_pole
+    numerator_has_pole = 0
+    denominator_has_pole = 0
+    # The below implementation may incorrectly return finite results
+    # at poles of the gamma function. Handle these cases explicitly.
+    if u == trunc(u) and u <= 0 or v == trunc(v) and v <= 0:
+        numerator_has_pole = 1
+    if w == trunc(w) and w <= 0 or x == trunc(x) and x <= 0:
+        denominator_has_pole = 1
+    # if numerator_has_pole:
+    #     return NPY_NAN
+    # if denominator_has_pole:
+    #     return 0
     g = lanczos_g
     lanczos_part = 1
     factor_part = 1
