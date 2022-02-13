@@ -2438,7 +2438,7 @@ def factorial2(n, exact=False):
             val = ((-1) ** ((n - 1) / 2) * n) / factorial2(-n, exact=True)
         else:
             raise ValueError("n must be a positive integer or an odd "
-                            "negative integer.")
+                             "negative integer.")
         return val
     else:
         n = asarray(n)
