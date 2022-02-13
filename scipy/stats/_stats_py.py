@@ -4173,10 +4173,8 @@ def pearsonr(x, y, *, alternative='two-sided'):
     --------
     >>> from scipy import stats
     >>> res = stats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
-    >>> res.statistic
-    -0.7426106572325056
-    >>> res.pvalue
-    0.15055580885344558
+    >>> res
+    PearsonRResult(statistic=-0.7426106572325056, pvalue=0.15055580885344558)
     >>> res.confidence_interval()
     ConfidenceInterval(low=-0.9816918044786463, high=0.40501116769030976)
 
@@ -4185,12 +4183,13 @@ def pearsonr(x, y, *, alternative='two-sided'):
     of x. For simplicity, assume that x is standard normal, a=0, b=1 and let
     e follow a normal distribution with mean zero and standard deviation s>0.
 
+    >>> rng = np.random.default_rng()
     >>> s = 0.5
-    >>> x = stats.norm.rvs(size=500)
-    >>> e = stats.norm.rvs(scale=s, size=500)
+    >>> x = stats.norm.rvs(size=500, random_state=rng)
+    >>> e = stats.norm.rvs(scale=s, size=500, random_state=rng)
     >>> y = x + e
-    >>> stats.pearsonr(x, y).pvalue
-    0.9029601878969703  # may vary
+    >>> stats.pearsonr(x, y).statistic
+    0.9001942438244763
 
     This should be close to the exact value given by
 
@@ -4210,9 +4209,8 @@ def pearsonr(x, y, *, alternative='two-sided'):
     by symmetry. The following lines of code illustrate this observation:
 
     >>> y = np.abs(x)
-    >>> res = stats.pearsonr(x, y)
-    >>> res.statistic, res.pvalue
-    (-0.016172891856853524, 0.7182823678751942) # may vary
+    >>> stats.pearsonr(x, y)
+    PearsonRResult(statistic=-0.05444919272687482, pvalue=0.22422294836207743)
 
     A non-zero correlation coefficient can be misleading. For example, if X has
     a standard normal distribution, define y = x if x < 0 and y = 0 otherwise.
@@ -4220,9 +4218,8 @@ def pearsonr(x, y, *, alternative='two-sided'):
     implying a high level of correlation:
 
     >>> y = np.where(x < 0, x, 0)
-    >>> res = stats.pearsonr(x, y)
-    >>> res.statistic, res.pvalue
-    (0.8537091583771509, 3.183461621422181e-143) # may vary
+    >>> stats.pearsonr(x, y)
+    PearsonRResult(statistic=0.861985781588, pvalue=4.813432002751103e-149)
 
     This is unintuitive since there is no dependence of x and y if x is larger
     than zero which happens in about half of the cases if we sample x and y.
