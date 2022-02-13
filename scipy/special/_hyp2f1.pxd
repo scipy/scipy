@@ -72,7 +72,7 @@ cdef extern from 'specfun_wrappers.h':
     ) nogil
 
 
-# Small value from the Fortran original.
+# Small value from Zhang and Jin's Fortran implementation.
 DEF EPS = 1e-15
 
 DEF SQRT_PI = 1.7724538509055159  # sqrt(M_PI)
