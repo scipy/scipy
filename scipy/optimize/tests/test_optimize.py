@@ -77,6 +77,11 @@ def test_check_grad():
                   x_sinx, der_x_sinx, x0,
                   direction='random_projection', seed=1234)
 
+    # checking can be done for derivatives of vector valued functions
+    r = optimize.check_grad(himmelblau_grad, himmelblau_hess, himmelblau_x0,
+                            direction='all', seed=1234)
+    assert r < 5e-7
+
 
 class CheckOptimize:
     """ Base test case for a simple constrained entropy maximization problem
@@ -1127,6 +1132,8 @@ class TestOptimizeSimple(CheckOptimize):
                 kwargs['iter'] = 5
             elif method == 'fmin_tnc':
                 kwargs['maxfun'] = 100
+            elif method in ('fmin', 'fmin_powell'):
+                kwargs['maxiter'] = 3500
             else:
                 kwargs['maxiter'] = 5
         else:
@@ -1237,6 +1244,21 @@ class TestOptimizeSimple(CheckOptimize):
         # method specific tests
         if method == 'SLSQP':
             assert sol.status == 9  # Iteration limit reached
+
+    @pytest.mark.parametrize('method', ['Nelder-Mead', 'Powell',
+                                        'fmin', 'fmin_powell'])
+    def test_runtime_warning(self, method):
+        x0 = np.zeros(10)
+        sf = ScalarFunction(optimize.rosen, x0, (), optimize.rosen_der,
+                            optimize.rosen_hess, None, None)
+        options = {"maxiter": 1, "disp": True}
+        with pytest.warns(RuntimeWarning,
+                          match=r'Maximum number of iterations'):
+            if method.startswith('fmin'):
+                routine = getattr(optimize, method)
+                routine(sf.fun, x0, **options)
+            else:
+                optimize.minimize(sf.fun, x0, method=method, options=options)
 
     def test_respect_maxiter_trust_constr_ineq_constraints(self):
         # special case of minimization with trust-constr and inequality
@@ -2153,6 +2175,16 @@ class TestBrute:
         assert_allclose(resbrute1[-1], resbrute[-1])
         assert_allclose(resbrute1[0], resbrute[0])
 
+    def test_runtime_warning(self):
+        rng = np.random.default_rng(1234)
+
+        def func(z, *params):
+            return rng.random(1) * 1000  # never converged problem
+
+        with pytest.warns(RuntimeWarning,
+                          match=r'Either final optimization did not succeed'):
+            optimize.brute(func, self.rranges, args=self.params, disp=True)
+
 
 def test_cobyla_threadsafe():
 
@@ -2517,6 +2549,50 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
         assert_allclose(res.x[[0, 2]], fd_res.x, rtol=2e-6)
 
 
+@pytest.mark.parametrize('method', eb_data["methods"])
+def test_all_bounds_equal(method):
+    # this only tests methods that have parameters factored out when lb==ub
+    # it does not test other methods that work with bounds
+    def f(x, p1=1):
+        return np.linalg.norm(x) + p1
+
+    bounds = [(1, 1), (2, 2)]
+    x0 = (1.0, 3.0)
+    res = optimize.minimize(f, x0, bounds=bounds, method=method)
+    assert res.success
+    assert_allclose(res.fun, f([1.0, 2.0]))
+    assert res.nfev == 1
+    assert res.message == 'All independent variables were fixed by bounds.'
+
+    args = (2,)
+    res = optimize.minimize(f, x0, bounds=bounds, method=method, args=args)
+    assert res.success
+    assert_allclose(res.fun, f([1.0, 2.0], 2))
+
+    if method.upper() == 'SLSQP':
+        def con(x):
+            return np.sum(x)
+        nlc = NonlinearConstraint(con, -np.inf, 0.0)
+        res = optimize.minimize(
+            f, x0, bounds=bounds, method=method, constraints=[nlc]
+        )
+        assert res.success is False
+        assert_allclose(res.fun, f([1.0, 2.0]))
+        assert res.nfev == 1
+        message = "All independent variables were fixed by bounds, but"
+        assert res.message.startswith(message)
+
+        nlc = NonlinearConstraint(con, -np.inf, 4)
+        res = optimize.minimize(
+            f, x0, bounds=bounds, method=method, constraints=[nlc]
+        )
+        assert res.success is True
+        assert_allclose(res.fun, f([1.0, 2.0]))
+        assert res.nfev == 1
+        message = "All independent variables were fixed by bounds at values"
+        assert res.message.startswith(message)
+
+
 def test_eb_constraints():
     # make sure constraint functions aren't overwritten when equal bounds
     # are employed, and a parameter is factored out. GH14859
@@ -2632,3 +2708,13 @@ class TestGlobalOptimization:
             assert hasattr(result, "fun")
             assert hasattr(result, "nfev")
             assert hasattr(result, "nit")
+
+
+def test_approx_fprime():
+    # check that approx_fprime (serviced by approx_derivative) works for
+    # jac and hess
+    g = optimize.approx_fprime(himmelblau_x0, himmelblau)
+    assert_allclose(g, himmelblau_grad(himmelblau_x0), rtol=5e-6)
+
+    h = optimize.approx_fprime(himmelblau_x0, himmelblau_grad)
+    assert_allclose(h, himmelblau_hess(himmelblau_x0), rtol=5e-6)

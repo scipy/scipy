@@ -387,7 +387,7 @@ Other changes
 
 SciPy now has a formal governance structure.  It consists of a BDFL (Pauli
 Virtanen) and a Steering Committee.  See `the governance document
-<https://github.com/scipy/scipy/blob/master/doc/source/dev/governance/governance.rst>`_
+<https://github.com/scipy/scipy/blob/main/doc/source/dev/governance/governance.rst>`_
 for details.
 
 It is now possible to build SciPy on Windows with MSVC + gfortran!  Continuous

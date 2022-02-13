@@ -82,7 +82,7 @@ def process_pyx(fromfile, tofile, cwd):
 
         # Note: we only check lower bound, for upper bound we rely on pip
         # respecting pyproject.toml. Reason: we want to be able to build/test
-        # with more recent Cython locally or on master, upper bound is for
+        # with more recent Cython locally or on main, upper bound is for
         # sdist in a release.
         if _pep440.parse(cython_version) < _pep440.Version(min_required_version):
             raise Exception('Building SciPy requires Cython >= {}, found '

@@ -717,6 +717,32 @@ class TestGennorm:
         pdf2 = stats.norm.pdf(points, scale=2**-.5)
         assert_almost_equal(pdf1, pdf2)
 
+    def test_rvs(self):
+        np.random.seed(0)
+        # 0 < beta < 1
+        dist = stats.gennorm(0.5)
+        rvs = dist.rvs(size=1000)
+        assert stats.kstest(rvs, dist.cdf).pvalue > 0.1
+        # beta = 1
+        dist = stats.gennorm(1)
+        rvs = dist.rvs(size=1000)
+        rvs_laplace = stats.laplace.rvs(size=1000)
+        assert stats.ks_2samp(rvs, rvs_laplace).pvalue > 0.1
+        # beta = 2
+        dist = stats.gennorm(2)
+        rvs = dist.rvs(size=1000)
+        rvs_norm = stats.norm.rvs(scale=1/2**0.5, size=1000)
+        assert stats.ks_2samp(rvs, rvs_norm).pvalue > 0.1
+
+    def test_rvs_broadcasting(self):
+        np.random.seed(0)
+        dist = stats.gennorm([[0.5, 1.], [2., 5.]])
+        rvs = dist.rvs(size=[1000, 2, 2])
+        assert stats.kstest(rvs[:, 0, 0], stats.gennorm(0.5).cdf)[1] > 0.1
+        assert stats.kstest(rvs[:, 0, 1], stats.gennorm(1.0).cdf)[1] > 0.1
+        assert stats.kstest(rvs[:, 1, 0], stats.gennorm(2.0).cdf)[1] > 0.1
+        assert stats.kstest(rvs[:, 1, 1], stats.gennorm(5.0).cdf)[1] > 0.1
+
 
 class TestHalfgennorm:
     def test_expon(self):
@@ -2314,6 +2340,53 @@ def test_t_entropy():
     expected = [2.5310242469692907, 1.9602792291600821,
                 1.459327578078393, 1.4289633653182439]
     assert_allclose(stats.t.entropy(df), expected, rtol=1e-13)
+
+
+@pytest.mark.parametrize("methname", ["pdf", "logpdf", "cdf",
+                                      "ppf", "sf", "isf"])
+@pytest.mark.parametrize("df_infmask", [[0, 0], [1, 1], [0, 1],
+                                        [[0, 1, 0], [1, 1, 1]],
+                                        [[1, 0], [0, 1]],
+                                        [[0], [1]]])
+def test_t_inf_df(methname, df_infmask):
+    np.random.seed(0)
+    df_infmask = np.asarray(df_infmask, dtype=bool)
+    df = np.random.uniform(0, 10, size=df_infmask.shape)
+    x = np.random.randn(*df_infmask.shape)
+    df[df_infmask] = np.inf
+    t_dist = stats.t(df=df, loc=3, scale=1)
+    t_dist_ref = stats.t(df=df[~df_infmask], loc=3, scale=1)
+    norm_dist = stats.norm(loc=3, scale=1)
+    t_meth = getattr(t_dist, methname)
+    t_meth_ref = getattr(t_dist_ref, methname)
+    norm_meth = getattr(norm_dist, methname)
+    res = t_meth(x)
+    assert_equal(res[df_infmask], norm_meth(x[df_infmask]))
+    assert_equal(res[~df_infmask], t_meth_ref(x[~df_infmask]))
+
+
+@pytest.mark.parametrize("df_infmask", [[0, 0], [1, 1], [0, 1],
+                                        [[0, 1, 0], [1, 1, 1]],
+                                        [[1, 0], [0, 1]],
+                                        [[0], [1]]])
+def test_t_inf_df_stats_entropy(df_infmask):
+    np.random.seed(0)
+    df_infmask = np.asarray(df_infmask, dtype=bool)
+    df = np.random.uniform(0, 10, size=df_infmask.shape)
+    df[df_infmask] = np.inf
+    res = stats.t.stats(df=df, loc=3, scale=1, moments='mvsk')
+    res_ex_inf = stats.norm.stats(loc=3, scale=1, moments='mvsk')
+    res_ex_noinf = stats.t.stats(df=df[~df_infmask], loc=3, scale=1,
+                                 moments='mvsk')
+    for i in range(4):
+        assert_equal(res[i][df_infmask], res_ex_inf[i])
+        assert_equal(res[i][~df_infmask], res_ex_noinf[i])
+
+    res = stats.t.entropy(df=df, loc=3, scale=1)
+    res_ex_inf = stats.norm.entropy(loc=3, scale=1)
+    res_ex_noinf = stats.t.entropy(df=df[~df_infmask], loc=3, scale=1)
+    assert_equal(res[df_infmask], res_ex_inf)
+    assert_equal(res[~df_infmask], res_ex_noinf)
 
 
 class TestRvDiscrete:
@@ -6457,6 +6530,7 @@ class TestNakagami:
         x1 = stats.nakagami.isf(sf, nu)
         assert_allclose(x1, x0, rtol=1e-13)
 
+    @pytest.mark.xfail(reason="Fit of nakagami not reliable, see gh-10908.")
     @pytest.mark.parametrize('nu', [1.6, 2.5, 3.9])
     @pytest.mark.parametrize('loc', [25.0, 10, 35])
     @pytest.mark.parametrize('scale', [13, 5, 20])

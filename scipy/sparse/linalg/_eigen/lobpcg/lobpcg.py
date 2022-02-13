@@ -21,7 +21,8 @@ import warnings
 import numpy as np
 from scipy.linalg import (inv, eigh, cho_factor, cho_solve,
                           cholesky, LinAlgError)
-from scipy.sparse.linalg import aslinearoperator
+from scipy.sparse.linalg import LinearOperator, aslinearoperator
+from scipy.sparse import isspmatrix
 from numpy import block as bmat
 
 __all__ = ["lobpcg"]
@@ -192,33 +193,36 @@ def lobpcg(
     the return tuple has the following format
     ``(lambda, V, lambda history, residual norms history)``.
 
-    In the following ``n`` denotes the matrix size and ``m`` the number
+    In the following ``n`` denotes the matrix size and ``k`` the number
     of required eigenvalues (smallest or largest).
 
-    The LOBPCG code internally solves eigenproblems of the size ``3m`` on every
-    iteration by calling the "standard" dense eigensolver, so if ``m`` is not
+    The LOBPCG code internally solves eigenproblems of the size ``3k`` on every
+    iteration by calling the "standard" dense eigensolver, so if ``k`` is not
     small enough compared to ``n``, it does not make sense to call the LOBPCG
     code, but rather one should use the "standard" eigensolver, e.g. numpy or
     scipy function in this case.
-    If one calls the LOBPCG algorithm for ``5m > n``, it will most likely break
+    If one calls the LOBPCG algorithm for ``5k > n``, it will most likely break
     internally, so the code tries to call the standard function instead.
 
     It is not that ``n`` should be large for the LOBPCG to work, but rather the
-    ratio ``n / m`` should be large. It you call LOBPCG with ``m=1``
+    ratio ``n / k`` should be large. It you call LOBPCG with ``k=1``
     and ``n=10``, it works though ``n`` is small. The method is intended
-    for extremely large ``n / m``.
+    for extremely large ``n / k``.
 
     The convergence speed depends basically on two factors:
 
-    1. How well relatively separated the seeking eigenvalues are from the rest
-       of the eigenvalues. One can try to vary ``m`` to make this better.
-
-    2. How well conditioned the problem is. This can be changed by using proper
-       preconditioning. For example, a rod vibration test problem (under tests
+    1. Relative separation of the seeking eigenvalues from the rest
+       of the eigenvalues. One can vary ``k`` to improve the absolute
+       separation and use proper preconditioning to shrink the spectral spread.
+       For example, a rod vibration test problem (under tests
        directory) is ill-conditioned for large ``n``, so convergence will be
        slow, unless efficient preconditioning is used. For this specific
        problem, a good simple preconditioner function would be a linear solve
-       for `A`, which is easy to code since A is tridiagonal.
+       for `A`, which is easy to code since `A` is tridiagonal.
+
+    2. Quality of the initial approximations `X` to the seeking eigenvectors.
+       Randomly distributed around the origin vectors work well if no better
+       choice is known.
 
     References
     ----------
@@ -343,10 +347,6 @@ def lobpcg(
                 aux += "%d constraint\n\n" % sizeY
         print(aux)
 
-    A = _makeOperator(A, (n, n))
-    B = _makeOperator(B, (n, n))
-    M = _makeOperator(M, (n, n))
-
     if (n - sizeY) < (5 * sizeX):
         warnings.warn(
             f"The problem size {n} minus the constraints size {sizeY} "
@@ -368,11 +368,23 @@ def lobpcg(
         else:
             eigvals = (0, sizeX - 1)
 
-        A_dense = A(np.eye(n, dtype=A.dtype))
-        B_dense = None if B is None else B(np.eye(n, dtype=B.dtype))
+        if isinstance(A, LinearOperator):
+            A = A(np.eye(n, dtype=A.dtype))
+        elif isspmatrix(A):
+            A = A.toarray()
+        else:
+            A = np.asarray(A)
 
-        vals, vecs = eigh(A_dense,
-                          B_dense,
+        if B is not None:
+            if isinstance(B, LinearOperator):
+                B = B(np.eye(n, dtype=B.dtype))
+            elif isspmatrix(B):
+                B = B.toarray()
+            else:
+                B = np.asarray(B)
+
+        vals, vecs = eigh(A,
+                          B,
                           eigvals=eigvals,
                           check_finite=False)
         if largest:
@@ -384,6 +396,10 @@ def lobpcg(
 
     if (residualTolerance is None) or (residualTolerance <= 0.0):
         residualTolerance = np.sqrt(1e-15) * n
+
+    A = _makeOperator(A, (n, n))
+    B = _makeOperator(B, (n, n))
+    M = _makeOperator(M, (n, n))
 
     # Apply constraints to X.
     if blockVectorY is not None:

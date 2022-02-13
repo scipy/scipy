@@ -44,7 +44,6 @@
 #endif
 #include <Python.h>
 #include <numpy/arrayobject.h>
-#include <numpy/npy_math.h>
 
 #include <stdio.h>
 #include <math.h>

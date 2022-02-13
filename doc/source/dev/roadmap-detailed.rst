@@ -28,10 +28,6 @@ API changes
 In general, we want to evolve the API to remove known warts as much as possible,
 *however as much as possible without breaking backwards compatibility*.
 
-Also, it should be made (even) more clear what is public and what is private in
-SciPy.  Everything private should be named starting with an underscore as much
-as possible.
-
 
 Test coverage
 `````````````
@@ -50,18 +46,10 @@ particular) is necessary.
 
 Documentation
 `````````````
-The main website, scipy.org, needs to be rewritten. As discussed in the `mail
-list
-<https://mail.python.org/pipermail/scipy-dev/2019-September/023731.html>`_, the
-SciPy stack is not relevant anymore and this website should be made about
-SciPy only following the example of numpy.org. There is a lot of new content
-to write
-
-Otherwise, the documentation is in good shape. Expanding of current docstrings
-and putting them in the standard NumPy format should continue, so the number of
-reST errors and glitches in the html docs decreases.  Most modules also have a
-tutorial in the reference guide that is a good introduction, however there are
-a few missing or incomplete tutorials - this should be fixed.
+The documentation is in good shape. Expanding of current docstrings - adding
+examples, references, and better explanations - should continue.  Most modules
+also have a tutorial in the reference guide that is a good introduction,
+however there are a few missing or incomplete tutorials - this should be fixed.
 
 
 Benchmarks
@@ -71,41 +59,58 @@ add new benchmarks, however running the benchmarks is not very intuitive.
 Making this easier is a priority.
 
 
+Moving to the Meson build system
+````````````````````````````````
+Support for the Meson build system was merged into SciPy main in Dec 2021.
+This significantly improves build performance, and will fix multiple issues
+(e.g., our issues with Windows compilers, cross-compilation support). The aim
+is to make it the default build system for SciPy 1.9.0, and then remove support
+for ``numpy.distutils``/``setuptools`` in SciPy 1.10.0. For more details, see
+`gh-13615 <https://github.com/scipy/scipy/issues/13615>`_.
+
+
 Use of Cython
 `````````````
-Regarding Cython code:
-
-- It's not clear how much functionality can be Cythonized without making the
-  .so files too large.  This needs measuring.
-- Cython's old syntax for using NumPy arrays should be removed and replaced
-  with Cython memoryviews.
+Cython's old syntax for using NumPy arrays should be removed and replaced with
+Cython memoryviews. When Cython 3.0 is released, the last use of the deprecated
+NumPy C API (by Cython, everything in SciPy was fixed) will disappear. Then we
+can define ``NPY_NO_DEPRECATED_API`` unconditionally.
 
 
-Windows build issues
-````````````````````
-SciPy critically relies on Fortran code. This is still problematic on Windows.
-There are currently only two options: using Intel Fortran, or using MSVC +
-gfortran.  The former is expensive, while the latter works (it's what we use
-for releases) but is quite hard to do correctly.  For allowing contributors and
-end users to reliably build SciPy on Windows, using the Flang compiler looks
-like the best way forward long-term.
+Use of Pythran
+``````````````
+Pythran is still an optional build dependency, and can be disabled with
+``SCIPY_USE_PYTHRAN=0``. The aim is to make it a hard dependency - for that to
+happen it must be clear that the maintenance burden is low enough (Meson will
+help here, because it removes the monkey patching that is now done to enable
+Pythran).
 
 
 Continuous integration
 ``````````````````````
-Continuous integration is in good shape, it currently covers the Windows, macOS
-and Linux, ARM64 and ppc64le platforms, as well as a range of versions of our
-dependencies and building release quality wheels.
+Continuous integration currently covers 32/64-bit Windows, macOS on x86-64, and
+32/64-bit Linux on x86, and Linux on aarch64 - as well as a range of versions
+of our dependencies and building release quality wheels. Reliability of CI has
+not been good recently (H2 2021), due to the large amount of configurations to
+support and some CI jobs needing an overhaul. We aim to reduce build times,
+improve caching, move more jobs to GitHub Actions, drop TravisCI and Appveyor
+in the `scipy-wheels repo <https://github.com/MacPython/scipy-wheels>`_,
+move from ``multibuild`` to ``cibuildwheel`` for building wheels for releases,
+and make the set of configurations in CI jobs more orthogonal.
 
 
 Size of binaries
 ````````````````
-SciPy binaries are quite large (e.g. an unzipped manylinux wheel for 1.4.1 is
-91 MB), and this can be problematic - for example for use in AWS Lambda, which
-has a 250 MB size limit. We aim to keep binary size as low as possible; when
-adding new compiled extensions, this needs checking. Stripping of debug symbols
-in ``multibuild`` can likely be improved (see `this issue
-<https://github.com/matthew-brett/multibuild/issues/162>`__).
+SciPy binaries are quite large (e.g. an unzipped manylinux wheel for 1.7.3 is
+39 MB on PyPI and 122 MB after installation), and this can be problematic - for
+example for use in AWS Lambda, which has a 250 MB size limit. We aim to keep
+binary size as low as possible; when adding new compiled extensions, this needs
+checking. Stripping of debug symbols in ``multibuild`` can perhaps be improved
+(see `this issue <https://github.com/matthew-brett/multibuild/issues/162>`__).
+An effort should be made to slim down where possible, and not add new large
+files. In the future, things that are being considered (very tentatively) and
+may help are separating out the bundled` ``libopenblas`` and removing support
+for ``long double``.
 
 
 Modules
@@ -113,7 +118,8 @@ Modules
 
 cluster
 ```````
-This module is in good shape.
+``dendrogram`` needs a rewrite, it has a number of hard to fix open issues and
+feature requests.
 
 
 constants
@@ -148,6 +154,7 @@ Ideas for new features:
 - Transparent tensor-product splines.
 - NURBS support.
 - Mesh refinement and coarsening of B-splines and corresponding tensor products.
+
 
 io
 ``
@@ -307,9 +314,15 @@ sparse
 ``````
 The sparse matrix formats are mostly feature-complete, however the main issue
 is that they act like ``numpy.matrix`` (which will be deprecated in NumPy at
-some point).  What we want is sparse arrays, that act like ``numpy.ndarray``.
-This is being worked on in https://github.com/pydata/sparse, which is quite far
-along.  The tentative plan is:
+some point).
+
+What we want is sparse arrays, that act like ``numpy.ndarray``. In SciPy
+``1.8.0`` a new set of classes (``csr_array`` et al.) has been added - these
+need testing in the real world, as well as a few extra features like 1-D array
+support.
+An alternative (more ambitious, and unclear if it will materialize at this
+point) plan is being worked on in https://github.com/pydata/sparse.  The
+tentative plan for that was/is:
 
 - Start depending on ``pydata/sparse`` once it's feature-complete enough (it
   still needs a CSC/CSR equivalent) and okay performance-wise.
@@ -334,16 +347,17 @@ This module is in good shape.
 
 sparse.linalg
 `````````````
-ARPACK is in good shape.
+There are a significant number of open issues for ``_arpack`` and ``lobpcg``.
+``_propack`` is new in 1.8.0, TBD how robust it will turn out to be.
 
-isolve:
+``_isolve``:
 
 - callback keyword is inconsistent
 - tol keyword is broken, should be relative tol
 - Fortran code not re-entrant (but we don't solve, maybe re-use from
   PyKrilov)
 
-dsolve:
+``_dsolve``:
 
 - add license-compatible sparse Cholesky or incomplete Cholesky
 - add license-compatible sparse QR
@@ -355,9 +369,10 @@ spatial
 ```````
 QHull wrappers are in good shape, as is ``KDTree``.
 
-Needed:
-
-- ``distance_wrap.c`` needs to be cleaned up (maybe rewrite in Cython).
+A rewrite of ``spatial.distance`` metrics in C++ is in progress - this should
+improve performance, make behaviour (e.g., for various non-float64 input
+dtypes) more consistent, and fix a few remaining issues with definitions of the
+math implement by a few of the metrics.
 
 
 special

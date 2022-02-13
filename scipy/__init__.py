@@ -57,13 +57,6 @@ Utility tools
 
 """
 
-
-def __dir__():
-    return ['LowLevelCallable', 'test']
-
-
-__all__ = __dir__()
-
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:
     raise ImportError(
@@ -72,39 +65,43 @@ from numpy import __version__ as __numpy_version__
 
 # Import numpy symbols to scipy name space (DEPRECATED)
 from ._lib.deprecation import _deprecated
-import numpy as _num
-# Ignore NumPy submodules with the same name as SciPy submodules
-_numpy_all = list(set(_num.__all__) - set(['fft', 'linalg']))
+import numpy as np
 _msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
         'use numpy.{0} instead')
-# deprecate callable objects, skipping classes
-for _key in _numpy_all:
-    _fun = getattr(_num, _key)
+
+# deprecate callable objects from numpy, skipping classes and modules
+import types as _types  # noqa: E402
+for _key in np.__all__:
+    if _key.startswith('_'):
+        continue
+    _fun = getattr(np, _key)
+    if isinstance(_fun, _types.ModuleType):
+        continue
     if callable(_fun) and not isinstance(_fun, type):
         _fun = _deprecated(_msg.format(_key))(_fun)
     globals()[_key] = _fun
+del np, _types
+
 from numpy.random import rand, randn
 _msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
         'use numpy.random.{0} instead')
 rand = _deprecated(_msg.format('rand'))(rand)
 randn = _deprecated(_msg.format('randn'))(randn)
+
 # fft is especially problematic, so was removed in SciPy 1.6.0
 from numpy.fft import ifft
 ifft = _deprecated('scipy.ifft is deprecated and will be removed in SciPy '
                    '2.0.0, use scipy.fft.ifft instead')(ifft)
-import numpy.lib.scimath as _sci
+
+from numpy.lib import scimath  # noqa: E402
 _msg = ('scipy.{0} is deprecated and will be removed in SciPy 2.0.0, '
         'use numpy.lib.scimath.{0} instead')
-for _key in _sci.__all__:
-    _fun = getattr(_sci, _key)
+for _key in scimath.__all__:
+    _fun = getattr(scimath, _key)
     if callable(_fun):
         _fun = _deprecated(_msg.format(_key))(_fun)
     globals()[_key] = _fun
-
-__all__ += _numpy_all
-__all__ += ['randn', 'rand', 'ifft']
-
-del _num, _numpy_all, _sci
+del scimath
 del _msg, _fun, _key, _deprecated
 
 # We first need to detect if we're being called as part of the SciPy
@@ -116,9 +113,9 @@ except NameError:
 
 
 if __SCIPY_SETUP__:
-    import sys as _sys
-    _sys.stderr.write('Running from SciPy source directory.\n')
-    del _sys
+    import sys
+    sys.stderr.write('Running from SciPy source directory.\n')
+    del sys
 else:
     try:
         from scipy.__config__ import show as show_config
@@ -132,11 +129,12 @@ else:
 
     # Allow distributors to run custom init code
     from . import _distributor_init
+    del _distributor_init
 
     from scipy._lib import _pep440
     # In maintenance branch, change to np_maxversion N+3 if numpy is at N
     # See setup.py for more details
-    np_minversion = '1.17.3'
+    np_minversion = '1.18.5'
     np_maxversion = '9.9.99'
     if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
             _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
@@ -145,7 +143,6 @@ else:
                       f" is required for this version of SciPy (detected "
                       f"version {__numpy_version__}",
                       UserWarning)
-
     del _pep440
 
     from scipy._lib._ccallback import LowLevelCallable
@@ -153,3 +150,46 @@ else:
     from scipy._lib._testutils import PytestTester
     test = PytestTester(__name__)
     del PytestTester
+
+    submodules = [
+        'cluster',
+        'fft',
+        'fftpack',
+        'integrate',
+        'interpolate',
+        'io',
+        'linalg',
+        'misc',
+        'ndimage',
+        'odr',
+        'optimize',
+        'signal',
+        'sparse',
+        'spatial',
+        'special',
+        'stats'
+    ]
+
+    __all__ = submodules + [
+        'LowLevelCallable',
+        'test',
+        'show_config',
+        '__version__',
+        '__numpy_version__'
+    ]
+
+    def __dir__():
+        return __all__
+
+    import importlib as _importlib
+
+    def __getattr__(name):
+        if name in submodules:
+            return _importlib.import_module(f'scipy.{name}')
+        else:
+            try:
+                return globals()[name]
+            except KeyError:
+                raise AttributeError(
+                    f"Module 'scipy' has no attribute '{name}'"
+                )

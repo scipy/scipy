@@ -185,20 +185,20 @@ the alternative is many low-level operations in Python.
 .. _cimport: https://cython.readthedocs.io/en/latest/src/userguide/sharing_declarations.html
 
 .. |cdef| replace:: ``cdef``
-.. _cdef: https://github.com/scipy/scipy/blob/master/scipy/optimize/setup.py
+.. _cdef: https://github.com/scipy/scipy/blob/main/scipy/optimize/setup.py
 
 .. _Cython decorators: https://cython.readthedocs.io/en/latest/src/userguide/numpy_tutorial.html
 
 .. |linprog-rs| replace:: ``scipy.optimize._linprog_rs.py``
-.. _linprog-rs: https://github.com/scipy/scipy/blob/master/scipy/optimize/_linprog_rs.py
+.. _linprog-rs: https://github.com/scipy/scipy/blob/main/scipy/optimize/_linprog_rs.py
 
 .. |bglu-dense| replace:: ``/scipy/optimize/_bglu_dense.pyx``
-.. _bglu-dense: https://github.com/scipy/scipy/blob/master/scipy/optimize/_bglu_dense.pyx
+.. _bglu-dense: https://github.com/scipy/scipy/blob/main/scipy/optimize/_bglu_dense.pyx
 
 .. |distutils| replace:: ``numpy.distutils``
 .. _distutils: https://docs.scipy.org/doc/numpy/reference/distutils.html
 
 .. |optimize-setup| replace:: ``scipy/optimize/setup.py``
-.. _optimize-setup: https://github.com/scipy/scipy/blob/master/scipy/optimize/setup.py
+.. _optimize-setup: https://github.com/scipy/scipy/blob/main/scipy/optimize/setup.py
 
 .. _Cythonizing SciPy Code: https://youtu.be/K9bF7cjUJ7c

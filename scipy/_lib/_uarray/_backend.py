@@ -191,7 +191,7 @@ def generate_multimethod(
         return an (args, kwargs) pair with the dispatchables replaced inside the args/kwargs.
     domain : str
         A string value indicating the domain of this multimethod.
-    default : Optional[Callable], optional
+    default: Optional[Callable], optional
         The default implementation of this multimethod, where ``None`` (the default) specifies
         there is no default implementation.
 
@@ -554,16 +554,16 @@ def determine_backend(value, dispatch_type, *, domain, only=True, coerce=False):
     dispatch_type
         The dispatch type associated with ``value``, aka
         ":ref:`marking <MarkingGlossary>`".
-    domain : string
+    domain: string
         The domain to query for backends and set.
-    coerce : bool
+    coerce: bool
         Whether or not to allow coercion to the backend's types. Implies ``only``.
-    only : bool
+    only: bool
         Whether or not this should be the last backend to try.
 
     See Also
     --------
-    set_backend : For when you know which backend to set
+    set_backend: For when you know which backend to set
 
     Notes
     -----
