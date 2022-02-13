@@ -125,27 +125,12 @@ cdef inline double complex hyp2f1_complex(
         return NPY_INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
     if z == 1.0 and c - a - b > 0:
-        result = Gamma(c) * Gamma(c - a - b)
-        result /= Gamma(c - a) * Gamma(c - b)
-        # Try again with lanczos approximation if there has been
-        # underflow or overflow.
-        if zisnan(result) or zisinf(result) or result == 0.0:
-            result = gamma_ratio_lanczos(c, c - a - b, c - a)
-        return result
+        return gamma_ratio(c, c - a - b, c - a, c - b)
     # Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26).
     if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS:
-        # The computation below has been simplified through
-        # Legendre duplication for the Gamma function (DLMF 5.5.5).
-        result = SQRT_PI * pow(2, -a) * Gamma(c)
-        result /= Gamma(1 + 0.5*a - b) * Gamma(0.5 + 0.5*a)
-        # Try again with lanczos approximation if there has been
-        # underflow or overflow. Legendre duplication is not used here
-        # to avoid excessive complexity in the implementation.
-        if zisnan(result) or zisinf(result) or result == 0.0:
-            result = gamma_ratio_lanczos(
-                a - b + 1, 0.5*a + 1, a + 1
-            )
-        return result
+        return gamma_ratio(
+            a - b + 1, 0.5*a + 1, a + 1, 0.5*a - b + 1
+        )
     # Reduces to a polynomial when a or b is a negative integer.
     # If a and b are both negative integers, we take care to terminate
     # the series at a or b of smaller magnitude. This is to ensure proper
@@ -329,12 +314,40 @@ cdef inline double complex hyp2f1_lopez_temme_series(
     return result
 
 
+cdef inline double gamma_ratio(
+        double u, double v, double w, double x
+) nogil:
+    """Computes a ratio of gamma functions.
+
+    Computes gamma(u)*gamma(v)/(gamma(w)*gamma(x)).
+
+    It is assumed that x = u + v - w, but it is left to the user to
+    ensure this. Calculating u + v - w within the function itself can
+    lead to unnecessary floating point error.
+
+    Checks for overflow or underflow and trys again using the lanczos
+    approximation if needed.
+    """
+    cdef double result
+    result = Gamma(u) * Gamma(v)
+    result /= Gamma(w) * Gamma(x)
+    # Try again with lanczos approximation if there has been
+    # underflow or overflow.
+    if zisnan(result) or zisinf(result) or result == 0.0:
+        result = gamma_ratio_lanczos(u, v, w, x)
+    return result
+    
+
 cdef inline double gamma_ratio_lanczos(
-        double u, double v, double w
+        double u, double v, double w, double x
 ) nogil:
     """Compute ratio of gamma functions using lanczos approximation.
 
-    Computes gamma(u)*gamma(v)/(gamma(w)*gamma(u + v - w))
+    Computes gamma(u)*gamma(v)/(gamma(w)*gamma(x))
+
+    It is assumed that x = u + v - w, but it is left to the user to
+    ensure this. Calculating u + v - w within the function itself can
+    lead to unnecessary floating point error.
 
     The lanczos approximation takes the form
 
@@ -356,7 +369,7 @@ cdef inline double gamma_ratio_lanczos(
         double factor_u
         double factor_v
         double factor_w
-        double factor_last
+        double factor_x
     g = lanczos_g
     lanczos_part = 1
     factor_part = 1
@@ -385,14 +398,14 @@ cdef inline double gamma_ratio_lanczos(
     else:
         lanczos_part *= lanczos_sum_expg_scaled(1 - w)*sin(M_PI*w)*M_1_PI
         factor_w = (1 - w + g - 0.5)
-    if u + v - w >= 0.5:
-        lanczos_part /= lanczos_sum_expg_scaled(u + v - w)
-        factor_last = (u + v - w + g - 0.5)
+    if x >= 0.5:
+        lanczos_part /= lanczos_sum_expg_scaled(x)
+        factor_x = (x + g - 0.5)
     else:
-        lanczos_part *= lanczos_sum_expg_scaled(1 + w - u - v)
-        lanczos_part *= sin(M_PI*(u + v - w))*M_1_PI
-        factor_last = (1 + w - u - v + g - 0.5)
-    factor_part *= pow(factor_u/factor_last, u - 0.5)
-    factor_part *= pow(factor_v/factor_last, v - 0.5)
-    factor_part *= pow(factor_last/factor_w, w - 0.5)
+        lanczos_part *= lanczos_sum_expg_scaled(1 - x)
+        lanczos_part *= sin(M_PI*x)*M_1_PI
+        factor_x = (1 - x + g - 0.5)
+    factor_part *= pow(factor_u/factor_x, u - 0.5)
+    factor_part *= pow(factor_v/factor_x, v - 0.5)
+    factor_part *= pow(factor_x/factor_w, w - 0.5)
     return factor_part * lanczos_part
