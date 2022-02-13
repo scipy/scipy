@@ -2183,7 +2183,7 @@ def comb(N, k, exact=False, repetition=False):
     val : int, float, ndarray
         The total number of combinations.
 
-        .. deprecated:: 1.7.4
+        .. deprecated:: 1.9.0
             If ``exact=True`` then ``N`` and ``k`` are cast to integers which
             may lose precision if they are non-integers. This behaviour is
             deprecated.    
