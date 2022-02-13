@@ -4490,8 +4490,21 @@ def fit(dist, data, bounds=None, *, guess=None,
     bounds = np.asarray(validated_bounds)
     integrality = [param.integrality for param in param_info]
 
-    # guess input validation
+    # return early if `dist.fit` has override and results are in bounds
+    analytical_fit = {"norm", "laplace"}
+    message = ("Analytical MLEs were available, but they were not within the "
+               "provided bounds.")
+    if dist.name in analytical_fit:
+        params = dist.fit(data)
+        if (params >= bounds[:, 0]).all() and (params <= bounds[:, 1]).all():
+            res_data = {"x": params, "success": True,
+                        "message": "Analytical MLEs calculated."}
+            res = optimize.OptimizeResult(res_data)
+            return FitResult(dist, data, discrete, res)
+        else:
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
 
+    # guess input validation
     if user_guess is None:
         guess_array = None
     elif isinstance(user_guess, dict):

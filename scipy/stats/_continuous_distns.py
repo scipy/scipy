@@ -4384,6 +4384,9 @@ class laplace_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _rvs(self, size=None, random_state=None):
         return random_state.laplace(0, 1, size=size)
 

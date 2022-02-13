@@ -183,9 +183,9 @@ class TestFit:
         with pytest.raises(ValueError, match=message):
             stats.fit(10, self.data, self.shape_bounds_a)
 
-        message = "Distribution `laplace` is not yet supported by..."
+        message = "Distribution `weibull_min` is not yet supported by..."
         with pytest.raises(ValueError, match=message):
-            stats.fit(stats.laplace, self.data)
+            stats.fit(stats.weibull_min, self.data)
 
     def test_data_iv(self):
         message = "`data` must be exactly one-dimensional."
@@ -529,3 +529,16 @@ class TestFit:
 
         res = stats.fit(dist, data, bounds, guess=params, optimizer=self.opt)
         assert_allclose(res.params, params, **self.tols)
+
+    def test_analytical_fit(self):
+        # Test distribution for which analytical fits are available
+        rng = np.random.default_rng(self.seed)
+        data = rng.random(15)
+        message = "Analytical MLEs are available for distribution `laplace`"
+        with pytest.warns(RuntimeWarning, match=message):
+            res = stats.fit(stats.laplace, data, [(0, 1), (0, 1)],
+                            optimizer=self.opt)
+            assert res.message == "Optimization terminated successfully."
+        ref = stats.fit(stats.laplace, data)
+        assert ref.message == "Analytical MLEs calculated."
+        assert_allclose(res.nllf(), ref.nllf())
