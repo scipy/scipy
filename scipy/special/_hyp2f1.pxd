@@ -360,6 +360,13 @@ cdef inline double gamma_ratio_lanczos(
     g = lanczos_g
     lanczos_part = 1
     factor_part = 1
+    # Due to the argument of the second gamma function in the denominator
+    # being u + v - w, the factors of the lanczos approximation cancel
+    # nicely. The impact of applying the reflection principle when an
+    # argument is less than 0.5 is relatively straightforward, but the
+    # logic of the code is somewhat tricky. The best way to understand is
+    # to study the code from back to front, starting with the result and
+    # working backwards through how it was calculated.
     if u >= 0.5:
         lanczos_part *= lanczos_sum_expg_scaled(u)
         factor_u = (u + g - 0.5)
