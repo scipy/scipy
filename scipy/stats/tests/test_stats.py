@@ -375,20 +375,25 @@ class TestCorrPearsonr(object):
         assert_equal(r, -1)
         assert_equal(p, 1)
 
-    # Expected values computed with R 3.6.2 cor.test, except for r and the
-    # p-value for alternative='two-sided', which were computed with mpmath.
+    # Expected values computed with R 3.6.2 cor.test, e.g.
+    # options(digits=16)
+    # x <- c(1, 2, 3, 4)
+    # y <- c(0, 1, 0.5, 1)
+    # cor.test(x, y, method = "pearson", alternative = "g")
+    # correlation coeffficient and p-value for alternative='two-sided' calculated with
+    # mpmath agree to 16 digits.
     @pytest.mark.parametrize('alternative, pval, rlow, rhigh',
                              [('two-sided',
-                               0.325800137536758, -0.814939, 0.992307),
+                               0.3258001375368, 0.3258001375368, 0.9923069752362500),
                               ('less',
-                               0.8370999, -1, 0.9856009),
+                               0.8370999312316, -1, 0.985600937290653),
                               ('greater',
-                               0.1629001, -0.6785654, 1)])
+                               0.1629000687684, -0.6785654158217636, 1)])
     def test_basic_example(self, alternative, pval, rlow, rhigh):
         x = [1, 2, 3, 4]
         y = [0, 1, 0.5, 1]
         result = stats.pearsonr(x, y, alternative=alternative)
-        assert_allclose(result.r, 0.674199862463242, rtol=1e-12)
+        assert_allclose(result.r, 0.6741998624632421, rtol=1e-12)
         assert_allclose(result.pvalue, pval, rtol=1e-6)
         ci = result.fishers_ci()
         assert_allclose(ci, (rlow, rhigh), rtol=1e-6)

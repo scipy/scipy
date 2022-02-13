@@ -124,27 +124,33 @@ def pearsonr(x, y, *, alternative='two-sided'):
     y : (N,) array_like
         Input array.
     alternative : {'two-sided', 'greater', 'less'}, optional
-        Indicates the alternative hypothesis. The default value is
-        'two-sided'.
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+        
+        * 'two-sided': the correlation is nonzero
+        * 'less': the correlation is negative (less than zero)
+        * 'greater':  the correlation is positive (greater than zero)
+        
+        .. versionadded:: 1.9.0
 
     Returns
     -------
     result : PearsonRResult
         An object with the following attributes:
 
-        * `r` : float
+        r : float
             Pearson product-moment correlation coefficent
-        * `pvalue` : float
+        pvalue : float
             P-value.
-        * `alternative` : str
+        alternative : str
             The `alternative` that was given to `pearsonr` to create the
             result.
-        * `n` : int
+        n : int
             The length of `x` and `y` that were given to `pearsonr`.
 
         The object has the following method:
 
-        * `fishers_ci(confidence_level=0.95)`
+        fishers_ci(confidence_level=0.95)
             This method computes the confidence interval of the correlation
             coeffficient `r`, for the given confidence level.
             The confidence interval is returned in a ``namedtuple`` with
