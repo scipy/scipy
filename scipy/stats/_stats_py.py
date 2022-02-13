@@ -4011,7 +4011,7 @@ class PearsonRResult(PearsonRResultBase):
         The confidence interval for the correlation coefficient.
 
         Compute the confidence interval for the correlation coefficient
-        ``r`` with the given confidence level.
+        ``statistic`` with the given confidence level.
 
         The confidence interval is computed using the Fisher transformation
         F(r) = arctanh(r) [1]_.  When the sample pairs are drawn from a
@@ -4070,7 +4070,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
     Returns
     -------
-    result : PearsonRResult
+    result : `~scipy.stats._result_classes.PearsonRResult`
         An object with the following attributes:
 
         statistic : float
@@ -4087,7 +4087,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
         confidence_interval(confidence_level=0.95)
             This method computes the confidence interval of the correlation
-            coeffficient `r`, for the given confidence level.
+            coeffficient `statistic`, for the given confidence level.
             The confidence interval is returned in a ``namedtuple`` with
             fields `low` and `high`.  See the Notes for more details.
 
@@ -4156,7 +4156,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
     be 1, the two-sided p-value for a sample of length 2 is always 1.
 
     For backwards compatibility, the object that is returned also behaves
-    like a tuple of length two that holds ``r`` and the p-value.
+    like a tuple of length two that holds the statistic and the p-value.
 
     References
     ----------
