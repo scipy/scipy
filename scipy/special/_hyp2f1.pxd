@@ -1,5 +1,4 @@
 """Implementation of Gauss's hypergeometric function for complex values.
-
 This implementation is based on the Fortran implementation by Shanjie Zhang and
 Jianming Jin included in specfun.f [1]_.  Computation of Gauss's hypergeometric
 function involves handling a patchwork of special cases. Zhang and Jin's
@@ -42,10 +41,10 @@ References
 cimport cython
 from numpy cimport npy_cdouble
 from libc.stdint cimport uint64_t, UINT64_MAX
-from libc.math cimport fabs, exp, M_LN2, M_PI, pow, trunc
+from libc.math cimport fabs, exp, M_LN2, log, M_PI, M_1_PI, pow, sin, trunc
 
 from . cimport sf_error
-from ._cephes cimport Gamma, gammasgn, lgam
+from ._cephes cimport Gamma, gammasgn, lanczos_sum_expg_scaled, lgam
 from ._complexstuff cimport (
     double_complex_from_npy_cdouble,
     npy_cdouble_from_double_complex,
@@ -56,6 +55,8 @@ from ._complexstuff cimport (
     zpow,
 )
 
+cdef extern from "cephes/lanczos.h":
+    double lanczos_g
 
 cdef extern from "numpy/npy_math.h":
     double NPY_NAN
@@ -126,14 +127,10 @@ cdef inline double complex hyp2f1_complex(
     if z == 1.0 and c - a - b > 0:
         result = Gamma(c) * Gamma(c - a - b)
         result /= Gamma(c - a) * Gamma(c - b)
-        # Try again with logs if there has been an overflow.
+        # Try again with lanczos approximation if there has been
+        # underflow or overflow.
         if zisnan(result) or zisinf(result) or result == 0.0:
-            result = exp(
-                lgam(c) - lgam(c - a) +
-                lgam(c - a - b) - lgam(c - b)
-            )
-            result *= gammasgn(c) * gammasgn(c - a - b)
-            result *= gammasgn(c - a) * gammasgn(c - b)
+            result = gamma_ratio_lanczos(c, c - a - b, c - a)
         return result
     # Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26).
     if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS:
@@ -141,14 +138,13 @@ cdef inline double complex hyp2f1_complex(
         # Legendre duplication for the Gamma function (DLMF 5.5.5).
         result = SQRT_PI * pow(2, -a) * Gamma(c)
         result /= Gamma(1 + 0.5*a - b) * Gamma(0.5 + 0.5*a)
-        # Try again with logs if there has been an overflow.
+        # Try again with lanczos approximation if there has been
+        # underflow or overflow. Legendre duplication is not used here
+        # to avoid excessive complexity in the implementation.
         if zisnan(result) or zisinf(result) or result == 0.0:
-            result = exp(
-                LOG_PI_2 + lgam(c) - a * M_LN2 +
-                -lgam(1 + 0.5*a - b) - lgam(0.5 + 0.5*a)
+            result = gamma_ratio_lanczos(
+                a - b + 1, 0.5*a + 1, a + 1
             )
-            result *= gammasgn(c) * gammasgn(1 + 0.5*a - b)
-            result *= gammasgn(0.5 + 0.5*a)
         return result
     # Reduces to a polynomial when a or b is a negative integer.
     # If a and b are both negative integers, we take care to terminate
@@ -331,3 +327,65 @@ cdef inline double complex hyp2f1_lopez_temme_series(
         sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
         result = zpack(NPY_NAN, NPY_NAN)
     return result
+
+
+cdef inline double gamma_ratio_lanczos(
+        double u, double v, double w
+) nogil:
+    """Compute ratio of gamma functions using lanczos approximation.
+
+    Computes gamma(u)*gamma(v)/(gamma(w)*gamma(u + v - w))
+
+    The lanczos approximation takes the form
+
+    gamma(x) = fac * lanczos_sum_expg_scaled(x)
+    
+    where fac = ((x + lanczos_g - 0.5)/e)**(x - 0.5).
+
+    The terms can be combined analytically to avoid underflow and overflow.
+    The formula above is only valid for x >= 0.5, but can be extended to
+    x < 0.5 with the reflection principle. This implementation priortizes
+    simplifying the logic of when to apply the reflection principle over
+    using the most efficient analytical combination of terms for each
+    case.
+    """
+    cdef:
+        double g
+        double lanczos_part,
+        double factor_part
+        double factor_u
+        double factor_v
+        double factor_w
+        double factor_last
+    g = lanczos_g
+    lanczos_part = 1
+    factor_part = 1
+    if u >= 0.5:
+        lanczos_part *= lanczos_sum_expg_scaled(u)
+        factor_u = (u + g - 0.5)
+    else:
+        lanczos_part /= lanczos_sum_expg_scaled(1 - u)*sin(M_PI*u)*M_1_PI
+        factor_u = (1 - u + g - 0.5)
+    if v >= 0.5:
+        lanczos_part *= lanczos_sum_expg_scaled(v)
+        factor_v = (v + g - 0.5)
+    else:
+        lanczos_part /= lanczos_sum_expg_scaled(1 - v)*sin(M_PI*v)*M_1_PI
+        factor_v = (1 - v + g - 0.5)
+    if w >= 0.5:
+        lanczos_part /= lanczos_sum_expg_scaled(w)
+        factor_w = (w + g - 0.5)
+    else:
+        lanczos_part *= lanczos_sum_expg_scaled(1 - w)*sin(M_PI*w)*M_1_PI
+        factor_w = (1 - w + g - 0.5)
+    if u + v - w >= 0.5:
+        lanczos_part /= lanczos_sum_expg_scaled(u + v - w)
+        factor_last = (u + v - w + g - 0.5)
+    else:
+        lanczos_part *= lanczos_sum_expg_scaled(1 + w - u - v)
+        lanczos_part *= sin(M_PI*(u + v - w))*M_1_PI
+        factor_last = (1 + w - u - v + g - 0.5)
+    factor_part *= pow(factor_u/factor_last, u - 0.5)
+    factor_part *= pow(factor_v/factor_last, v - 0.5)
+    factor_part *= pow(factor_last/factor_w, w - 0.5)
+    return factor_part * lanczos_part
