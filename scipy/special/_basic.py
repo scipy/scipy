@@ -2186,7 +2186,7 @@ def comb(N, k, exact=False, repetition=False):
         .. deprecated:: 1.9.0
             If ``exact=True`` then ``N`` and ``k`` are cast to integers which
             may lose precision if they are non-integers. This behaviour is
-            deprecated.    
+            deprecated.
 
     See Also
     --------
