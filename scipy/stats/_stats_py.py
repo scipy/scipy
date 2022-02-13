@@ -3996,11 +3996,15 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
 ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
 
 PearsonRResultBase = _make_tuple_bunch('PearsonRResultBase',
-                                       ['statistic', 'pvalue'],
-                                       ['alternative', 'n'])
+                                       ['statistic', 'pvalue'], [])
 
 
 class PearsonRResult(PearsonRResultBase):
+
+    def __init__(self, statistic, pvalue, alternative, n):
+        super().__init__(statistic, pvalue)
+        self.alternative = alternative
+        self.n = n
 
     def confidence_interval(self, confidence_level=0.95):
         """

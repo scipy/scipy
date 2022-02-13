@@ -147,8 +147,11 @@ def __init__(self, {arg_list}, **extra_fields):
         self.__dict__[key] = val
 
 def __setattr__(self, key, val):
-    raise AttributeError("can't set attribute %r of class %r"
-                         % (key, self.__class__.__name__))
+    if key in {repr(field_names)}:
+        raise AttributeError("can't set attribute %r of class %r"
+                             % (key, self.__class__.__name__))
+    else:
+        self.__dict__[key] = val
 """
     del arg_list
     namespace = {'_tuple_new': tuple_new,
