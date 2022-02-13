@@ -432,7 +432,7 @@ class TestCorrPearsonr:
     # mpmath agree to 16 digits.
     @pytest.mark.parametrize('alternative, pval, rlow, rhigh',
                              [('two-sided',
-                               0.3258001375368, 0.3258001375368, 0.9923069752362500),
+                               0.325800137536, -0.814938968841, 0.99230697523),
                               ('less',
                                0.8370999312316, -1, 0.985600937290653),
                               ('greater',
@@ -443,7 +443,7 @@ class TestCorrPearsonr:
         result = stats.pearsonr(x, y, alternative=alternative)
         assert_allclose(result.r, 0.6741998624632421, rtol=1e-12)
         assert_allclose(result.pvalue, pval, rtol=1e-6)
-        ci = result.fishers_ci()
+        ci = result.fisher_ci()
         assert_allclose(ci, (rlow, rhigh), rtol=1e-6)
 
     def test_length3_r_exactly_negative_one(self):
