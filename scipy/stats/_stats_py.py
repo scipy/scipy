@@ -4299,7 +4299,8 @@ def pearsonr(x, y, *, alternative='two-sided'):
         raise ValueError('alternative must be one of '
                          '["two-sided", "less", "greater"]')
 
-    return PearsonRResult(statistic=r, pvalue=prob, n=n, alternative=alternative)
+    return PearsonRResult(statistic=r, pvalue=prob, n=n, 
+                          alternative=alternative)
 
 
 def fisher_exact(table, alternative='two-sided'):

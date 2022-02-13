@@ -13,6 +13,7 @@ Result classes
    RelativeRiskResult
    BinomTestResult
    TukeyHSDResult
+   PearsonRResult
 
 """
 
