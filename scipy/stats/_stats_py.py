@@ -3942,7 +3942,7 @@ class PearsonRConstantInputWarning(RuntimeWarning):
 
     def __init__(self, msg=None):
         if msg is None:
-            msg = ("An input array is constant; the correlation coefficent "
+            msg = ("An input array is constant; the correlation coefficient "
                    "is not defined.")
         self.args = (msg,)
 
@@ -3953,7 +3953,7 @@ class PearsonRNearConstantInputWarning(RuntimeWarning):
     def __init__(self, msg=None):
         if msg is None:
             msg = ("An input array is nearly constant; the computed "
-                   "correlation coefficent may be inaccurate.")
+                   "correlation coefficient may be inaccurate.")
         self.args = (msg,)
 
 
