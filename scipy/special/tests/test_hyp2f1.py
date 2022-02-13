@@ -175,6 +175,16 @@ class TestHyp2f1:
                     rtol=1e-13,
                 ),
             ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-2,
+                    b=1.2,
+                    c=-4,
+                    z=1 + 0j,
+                    expected=1.8200000000000001 + 0j,
+                    rtol=1e-15,
+                ),
+            ),
         ]
     )
     def test_c_non_positive_int(self, hyp2f1_test_case):
@@ -212,6 +222,68 @@ class TestHyp2f1:
                     z=1 + 0j,
                     expected=1.3396562400934e117 + 0j,
                     rtol=1e-12,
+                ),
+            ),
+            # Note that here even mpmath produces different results for
+            # results that should be equivalent.
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=9.2,
+                    b=621.5,
+                    c=700.1,
+                    z=(1+0j),
+                    expected=(952726652.4158565+0j),
+                    rtol=1e-13,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=621.5,
+                    b=9.2,
+                    c=700.1,
+                    z=(1+0j),
+                    expected=(952726652.4160284+0j),
+                    rtol=5e-12,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-101.2,
+                    b=-400.4,
+                    c=-172.1,
+                    z=(1+0j),
+                    expected=(2.2253618341394838e+37+0j),
+                    rtol=1e-13,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-400.4,
+                    b=-101.2,
+                    c=-172.1,
+                    z=(1+0j),
+                    expected=(2.2253618341394838e+37+0j),
+                    rtol=5e-13,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=172.5,
+                    b=-201.3,
+                    c=151.2,
+                    z=(1+0j),
+                    expected=(7.072266653650905e-135+0j),
+                    rtol=5e-13,
+                ),
+            ),
+            pytest.param(
+                Hyp2f1TestCase(
+                    a=-201.3,
+                    b=172.5,
+                    c=151.2,
+                    z=(1+0j),
+                    expected=(7.072266653650905e-135+0j),
+                    rtol=5e-13,
                 ),
             ),
             pytest.param(
