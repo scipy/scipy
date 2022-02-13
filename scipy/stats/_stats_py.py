@@ -3996,13 +3996,13 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
 ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
 
 PearsonRResultBase = _make_tuple_bunch('PearsonRResultBase',
-                                       ['r', 'pvalue'],
+                                       ['statistic', 'pvalue'],
                                        ['alternative', 'n'])
 
 
 class PearsonRResult(PearsonRResultBase):
 
-    def fisher_ci(self, confidence_level=0.95):
+    def confidence_interval(self, confidence_level=0.95):
         """
         The confidence interval for the correlation coefficient.
 
@@ -4026,8 +4026,8 @@ class PearsonRResult(PearsonRResultBase):
             The confidence interval is returned in a ``namedtuple`` with
             fields `low` and `high`.
         """
-        return _pearsonr_fisher_ci(self.r, self.n, confidence_level,
-                                    self.alternative)
+        return _pearsonr_fisher_ci(self.statistic, self.n, confidence_level,
+                                   self.alternative)
 
 
 def pearsonr(x, y, *, alternative='two-sided'):
@@ -4069,7 +4069,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
     result : PearsonRResult
         An object with the following attributes:
 
-        r : float
+        statistic : float
             Pearson product-moment correlation coefficent
         pvalue : float
             P-value.
@@ -4081,7 +4081,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
         The object has the following method:
 
-        fisher_ci(confidence_level=0.95)
+        confidence_interval(confidence_level=0.95)
             This method computes the confidence interval of the correlation
             coeffficient `r`, for the given confidence level.
             The confidence interval is returned in a ``namedtuple`` with
@@ -4121,9 +4121,8 @@ def pearsonr(x, y, *, alternative='two-sided'):
     is 0), the probability density function of the sample correlation
     coefficient r is ([1]_, [2]_):
 
-               (1 - r**2)**(n/2 - 2)
-        f(r) = ---------------------
-                  B(1/2, n/2 - 1)
+    .. math::
+        f(r) = \frac{{(1-r^2)}^{n/2-2}}{\mathrm{B}(\frac{1}{2},\frac{n}{2}-1)}
 
     where n is the number of samples, and B is the beta function.  This
     is sometimes referred to as the exact distribution of r.  This is
@@ -4170,12 +4169,13 @@ def pearsonr(x, y, *, alternative='two-sided'):
     --------
     >>> from scipy import stats
     >>> res = stats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
-    >>> res.r
+    >>> res.statistic
     -0.7426106572325056
     >>> res.pvalue
     0.15055580885344558
-    >>> res.fisher_ci()
-    ConfidenceInterval(low=-0.9816918044786463, high=0.4050111676903099)
+    >>> res.confidence_interval()
+    ConfidenceInterval(low=-0.9816918044786463, high=0.40501116769030976)
+
     There is a linear dependence between x and y if y = a + b*x + e, where
     a,b are constants and e is a random error term, assumed to be independent
     of x. For simplicity, assume that x is standard normal, a=0, b=1 and let
@@ -4207,7 +4207,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
     >>> y = np.abs(x)
     >>> res = stats.pearsonr(x, y)
-    >>> res.r, res.pvalue
+    >>> res.statistic, res.pvalue
     (-0.016172891856853524, 0.7182823678751942) # may vary
 
     A non-zero correlation coefficient can be misleading. For example, if X has
@@ -4217,7 +4217,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
     >>> y = np.where(x < 0, x, 0)
     >>> res = stats.pearsonr(x, y)
-    >>> res.r, res.pvalue
+    >>> res.statistic, res.pvalue
     (0.8537091583771509, 3.183461621422181e-143) # may vary
 
     This is unintuitive since there is no dependence of x and y if x is larger
@@ -4237,7 +4237,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
     # If an input is constant, the correlation coefficient is not defined.
     if (x == x[0]).all() or (y == y[0]).all():
         warnings.warn(PearsonRConstantInputWarning())
-        result = PearsonRResult(r=np.nan, pvalue=np.nan, n=n,
+        result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
                                 alternative=alternative)
         return result
 
@@ -4248,7 +4248,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
     if n == 2:
         r = dtype(np.sign(x[1] - x[0])*np.sign(y[1] - y[0]))
-        result = PearsonRResult(r=r, pvalue=1.0, n=n,
+        result = PearsonRResult(statistic=r, pvalue=1.0, n=n,
                                 alternative=alternative)
         return result
 
@@ -4298,7 +4298,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
         raise ValueError('alternative must be one of '
                          '["two-sided", "less", "greater"]')
 
-    return PearsonRResult(r=r, pvalue=prob, n=n, alternative=alternative)
+    return PearsonRResult(statistic=r, pvalue=prob, n=n, alternative=alternative)
 
 
 def fisher_exact(table, alternative='two-sided'):

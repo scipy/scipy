@@ -428,8 +428,8 @@ class TestCorrPearsonr:
     # x <- c(1, 2, 3, 4)
     # y <- c(0, 1, 0.5, 1)
     # cor.test(x, y, method = "pearson", alternative = "g")
-    # correlation coeffficient and p-value for alternative='two-sided' calculated with
-    # mpmath agree to 16 digits.
+    # correlation coeffficient and p-value for alternative='two-sided'
+    # calculated with mpmath agree to 16 digits.
     @pytest.mark.parametrize('alternative, pval, rlow, rhigh',
                              [('two-sided',
                                0.325800137536, -0.814938968841, 0.99230697523),
@@ -441,9 +441,9 @@ class TestCorrPearsonr:
         x = [1, 2, 3, 4]
         y = [0, 1, 0.5, 1]
         result = stats.pearsonr(x, y, alternative=alternative)
-        assert_allclose(result.r, 0.6741998624632421, rtol=1e-12)
+        assert_allclose(result.statistic, 0.6741998624632421, rtol=1e-12)
         assert_allclose(result.pvalue, pval, rtol=1e-6)
-        ci = result.fisher_ci()
+        ci = result.confidence_interval()
         assert_allclose(ci, (rlow, rhigh), rtol=1e-6)
 
     def test_length3_r_exactly_negative_one(self):
