@@ -1319,8 +1319,16 @@ class TestCombinatorics:
         expected = 100891344545564193334812497256
         assert_equal(special.comb(100, 50, exact=True), expected)
 
-        assert_raises(DeprecationWarning, special.comb, 4.5, 3, True)
-        assert_raises(DeprecationWarning, special.comb, 4, 3.5, True)
+        with pytest.warns(
+            DeprecationWarning,
+            match="Non-integer arguments when exact is True are deprecated.",
+        ):
+            special.comb(4.5, 3, exact=True)
+        with pytest.warns(
+            DeprecationWarning,
+            match="Non-integer arguments when exact is True are deprecated.",
+        ):
+            special.comb(4, 3.5, exact=True)
 
     def test_comb_with_np_int64(self):
         n = 70
