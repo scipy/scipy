@@ -1,4 +1,5 @@
 """Implementation of Gauss's hypergeometric function for complex values.
+
 This implementation is based on the Fortran implementation by Shanjie Zhang and
 Jianming Jin included in specfun.f [1]_.  Computation of Gauss's hypergeometric
 function involves handling a patchwork of special cases. Zhang and Jin's
@@ -343,6 +344,11 @@ cdef inline double gamma_ratio(
     # underflow or overflow.
     if zisnan(result) or zisinf(result) or result == 0.0:
         result = gamma_ratio_lanczos(u, v, w, x)
+    # If things don't work out, try again with an equivalent expression
+    # rather than working out analytically the best way to combine terms
+    # for each situation.
+    if zisnan(result) or zisinf(result) or result == 0.0:
+        result = gamma_ratio_lanczos(u, v, x, w)
     return result
     
 
@@ -388,10 +394,10 @@ cdef inline double gamma_ratio_lanczos(
         numerator_has_pole = 1
     if w == trunc(w) and w <= 0 or x == trunc(x) and x <= 0:
         denominator_has_pole = 1
-    # if numerator_has_pole:
-    #     return NPY_NAN
-    # if denominator_has_pole:
-    #     return 0
+    if numerator_has_pole:
+        return NPY_NAN
+    if denominator_has_pole:
+        return 0
     g = lanczos_g
     lanczos_part = 1
     factor_part = 1
