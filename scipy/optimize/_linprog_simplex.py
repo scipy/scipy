@@ -30,7 +30,7 @@ References
 
 import numpy as np
 from warnings import warn
-from .optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
+from ._optimize import OptimizeResult, OptimizeWarning, _check_unknown_options
 from ._linprog_util import _postsolve
 
 
@@ -451,6 +451,8 @@ def _linprog_simplex(c, c0, A, b, callback, postsolve_args,
 
         A @ x == b
             x >= 0
+
+    User-facing documentation is in _linprog_doc.py.
 
     Parameters
     ----------

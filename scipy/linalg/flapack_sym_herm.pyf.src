@@ -757,8 +757,8 @@ subroutine <prefix2>syevr(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,m
     integer optional,intent(in),check(compute_v==1||compute_v==0):: compute_v = 1
     character optional,intent(in),check(*range=='A'||*range=='V' ||*range=='I') :: range='A'
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
-    integer optional,intent(in),check(il>=1) :: il=1
-    integer optional,intent(in),check(iu>=il||iu<=n),depend(il,n) :: iu=n
+    integer optional,intent(in),check(il>=1&&il<=n),depend(n) :: il=1
+    integer optional,intent(in),check(n>=iu&&iu>=il),depend(n,il) :: iu=n
     <ftype2> optional,intent(in) :: vl=0.0
     <ftype2> optional,intent(in),check(vu>=vl),depend(vl) :: vu=1.0
     <ftype2> intent(in) :: abstol=0.0
@@ -827,8 +827,8 @@ subroutine <prefix2c>heevr(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,
     integer optional,intent(in),check(compute_v==1||compute_v==0):: compute_v = 1
     character optional,intent(in),check(*range=='A'||*range=='V' ||*range=='I') :: range='A'
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
-    integer optional,intent(in),check(il>=1) :: il=1
-    integer optional,intent(in),check(iu>=il||iu<=n),depend(il,n) :: iu=n
+    integer optional,intent(in),check(il>=1&&il<=n),depend(n) :: il=1
+    integer optional,intent(in),check(n>=iu&&iu>=il),depend(n,il) :: iu=n
     <ftype2> optional,intent(in) :: vl=0.0
     <ftype2> optional,intent(in),check(vu>vl),depend(vl) :: vu=1.0
     <ftype2> intent(in) :: abstol=0.0
@@ -905,15 +905,15 @@ subroutine <prefix2>syevx(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,m
     character optional,intent(in),check(*range=='A'||*range=='V' ||*range=='I') :: range='A'
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer intent(hide),depend(a) :: n=shape(a,0)
-    integer optional,intent(in) :: il=1
-    integer optional,intent(in),depend(n) :: iu=n
+    integer optional,intent(in),check(il>=1&&il<=n),depend(n) :: il=1
+    integer optional,intent(in),check(n>=iu&&iu>=il),depend(n,il) :: iu=n
     <ftype2> optional,intent(in) :: vl=0.0
     <ftype2> optional,intent(in),check(vu>vl),depend(vl) :: vu=1.0
-    <ftype2> intent(in) :: abstol=0.0
+    <ftype2> optional,intent(in) :: abstol=0.0
     integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1) :: lwork=max(8*n,1)
 
     <ftype2> intent(in,copy),check(shape(a,0)==shape(a,1)),dimension(n,n) :: a
-    integer intent(hide),depend(n) :: lda=max(1,n)
+    integer intent(hide),depend(a) :: lda=max(1,shape(a,0))
     integer intent(hide),depend(z) :: ldz=max(1,shape(z,0))
     <ftype2>  intent(hide),dimension(lwork),depend(lwork) :: work
     integer intent(hide),dimension(5*n),depend(n) :: iwork
@@ -956,37 +956,37 @@ subroutine <prefix2>syevx_lwork(lower,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,work,
 
 end subroutine <prefix2>syevx_lwork
 
-subroutine <prefix2c>heevx(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,work,lwork,rwork,iwork,ifail,info)
+subroutine <prefix2c>heevx(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,m,ldz,work,lwork,rwork,iwork,ifail,info)
     ! (C/Z)HEEVX computes selected eigenvalues and, optionally, eigenvectors
     ! of a complex Hermitian matrix A.  Eigenvalues and eigenvectors can
     ! be selected by specifying either a range of values or a range of
     ! indices for the desired eigenvalues.
 
-    callstatement (*f2py_func)((compute_v?"V":"N"),range,(lower?"L":"U"),&n,a,&lda,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,&lwork,&rwork,iwork,ifail,&info)
+    callstatement (*f2py_func)((compute_v?"V":"N"),range,(lower?"L":"U"),&n,a,&lda,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,&lwork,rwork,iwork,ifail,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
     
     integer optional,intent(in),check(compute_v==1||compute_v==0):: compute_v = 1
     character optional,intent(in),check(*range=='A'||*range=='V' ||*range=='I') :: range='A'
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
-    integer intent(hide),depend(a) :: n=shape(a,0)
-    integer optional,intent(in) :: il=1
-    integer optional,intent(in),depend(n) :: iu=n
+    integer optional,intent(in),check(il>=1&&il<=n),depend(n) :: il=1
+    integer optional,intent(in),check(n>=iu&&iu>=il),depend(n,il) :: iu=n
     <ftype2> optional,intent(in) :: vl=0.0
     <ftype2> optional,intent(in),check(vu>vl),depend(vl) :: vu=1.0
-    <ftype2> intent(in) :: abstol=0.0
+    <ftype2> optional,intent(in) :: abstol=0.0
     integer optional,intent(in),depend(n),check(lwork>=1||lwork==-1) :: lwork=max(2*n,1)
 
     <ftype2c> intent(in,copy),check(shape(a,0)==shape(a,1)),dimension(n,n) :: a
-    integer intent(hide),depend(n) :: lda=max(1,n)
+    integer intent(hide),depend(a) :: n=shape(a,0)
+    integer intent(hide),depend(a) :: lda=max(1,shape(a,0))
     integer intent(hide),depend(z) :: ldz=max(1,shape(z,0))
-    <ftype2c>  intent(hide),dimension(lwork),depend(lwork) :: work
+    <ftype2c> intent(hide),dimension(lwork),depend(lwork) :: work
     integer intent(hide),dimension(5*n),depend(n) :: iwork
-    <ftype2> intent(hide),dimenion(7*n),depend(n) :: rwork
+    <ftype2> intent(hide),dimension(7*n),depend(n) :: rwork
 
     <ftype2> intent(out),dimension(n),depend(n) :: w
-    <ftype2c> intent(out),dimension((compute_v?MAX(0,n):0),(compute_v?(*range=='I'?iu-il+1:MAX(1,n)):0)),depend(n,compute_v,range,iu,il) :: z
+    <ftype2c> intent(out),dimension((compute_v*n),(compute_v?(*range=='I'?iu-il+1:MAX(1,n)):0)),depend(compute_v,range,n,iu,il) :: z
     integer intent(out) :: m
-    integer intent(out),dimension((compute_v?n:0)),depend(compute_v,n):: ifail
+    integer intent(out),dimension(compute_v*n),depend(compute_v,n):: ifail
     integer intent(out) :: info
     
 end subroutine <prefix2c>heevx

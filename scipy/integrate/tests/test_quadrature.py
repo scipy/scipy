@@ -8,7 +8,7 @@ from scipy.integrate import (quadrature, romberg, romb, newton_cotes,
                              quad, simpson, simps, fixed_quad, AccuracyWarning)
 
 
-class TestFixedQuad(object):
+class TestFixedQuad:
     def test_scalar(self):
         n = 4
         func = lambda x: x**(2*n - 1)
@@ -26,7 +26,7 @@ class TestFixedQuad(object):
         assert_allclose(got, expected, rtol=1e-12)
 
 
-class TestQuadrature(object):
+class TestQuadrature:
     def quad(self, x, a, b, args):
         raise NotImplementedError
 
@@ -161,7 +161,7 @@ class TestQuadrature(object):
                      simps(y, x=x, dx=0.5, even='first'))
 
 
-class TestCumulative_trapezoid(object):
+class TestCumulative_trapezoid:
     def test_1d(self):
         x = np.linspace(-2, 2, num=5)
         y = x

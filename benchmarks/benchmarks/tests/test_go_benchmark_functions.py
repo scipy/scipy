@@ -6,7 +6,7 @@ from .. import go_benchmark_functions as gbf
 import inspect
 
 
-class TestGoBenchmarkFunctions(object):
+class TestGoBenchmarkFunctions:
 
     def setup_method(self):
         bench_members = inspect.getmembers(gbf, inspect.isclass)
