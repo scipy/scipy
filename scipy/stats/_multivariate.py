@@ -159,7 +159,8 @@ class _PSD:
         # Compute the symmetric eigendecomposition.
         # Note that eigh takes care of array conversion, chkfinite,
         # and assertion that the matrix is square.
-        if check_symmetric and not scipy.linalg.issymmetric(M):
+        M = np.asarray(M)
+        if check_symmetric and not scipy.linalg.issymmetric(M, atol=1e-10):
             raise ValueError('the input matrix must be symmetric')
         s, u = scipy.linalg.eigh(M, lower=lower, check_finite=check_finite)
 
