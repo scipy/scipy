@@ -233,7 +233,7 @@ class TestHyp2f1:
                     c=700.1,
                     z=(1+0j),
                     expected=(952726652.4158565+0j),
-                    rtol=1e-13,
+                    rtol=5e-13,
                 ),
             ),
             pytest.param(
