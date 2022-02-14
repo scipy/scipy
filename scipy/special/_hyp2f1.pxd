@@ -42,7 +42,7 @@ References
 cimport cython
 from numpy cimport npy_cdouble
 from libc.stdint cimport uint64_t, UINT64_MAX
-from libc.math cimport fabs, exp, M_LN2, log, M_PI, M_1_PI, pow, sin, trunc
+from libc.math cimport fabs, exp, M_LN2, M_PI, M_1_PI, pow, sin, trunc
 
 from . cimport sf_error
 from ._cephes cimport Gamma, gammasgn, lanczos_sum_expg_scaled, lgam
