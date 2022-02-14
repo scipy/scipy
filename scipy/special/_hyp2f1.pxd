@@ -384,19 +384,14 @@ cdef inline double gamma_ratio_lanczos(
         double factor_v
         double factor_w
         double factor_x
-        int numerator_has_pole
-        int denominator_has_pole
-    numerator_has_pole = 0
-    denominator_has_pole = 0
     # The below implementation may incorrectly return finite results
     # at poles of the gamma function. Handle these cases explicitly.
     if u == trunc(u) and u <= 0 or v == trunc(v) and v <= 0:
-        numerator_has_pole = 1
-    if w == trunc(w) and w <= 0 or x == trunc(x) and x <= 0:
-        denominator_has_pole = 1
-    if numerator_has_pole:
+        # Return nan if numerator has pole. Diverges to +- infinity
+        # depending on direction so value is undefined.
         return NPY_NAN
-    if denominator_has_pole:
+    if w == trunc(w) and w <= 0 or x == trunc(x) and x <= 0:
+        # Return 0 if denominator has pole but not numerator.
         return 0
     g = lanczos_g
     lanczos_part = 1
