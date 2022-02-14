@@ -315,8 +315,7 @@ class TestMultivariateNormal:
 
     def test_exception_symmetric_cov(self):
         cov = [[1, 0], [1, 1]]
-        err_info = assert_raises(ValueError, _PSD, cov)
-        assert err_info.value.args[0] == 'the input matrix must be symmetric'
+        assert_raises(ValueError, _PSD, cov)
 
     def test_exception_singular_cov(self):
         np.random.seed(1234)
