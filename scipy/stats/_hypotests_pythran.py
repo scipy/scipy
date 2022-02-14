@@ -14,6 +14,7 @@ def _Dij(A, i, j):
     # See `somersd` References [2] bottom of page 309
     return A[i+1:, :j].sum() + A[:i, j+1:].sum()
 
+
 #pythran export _concordant_pairs(float[:,:])
 #pythran export _concordant_pairs(int[:,:])
 def _concordant_pairs(A):
@@ -26,6 +27,7 @@ def _concordant_pairs(A):
             count += A[i, j]*_Aij(A, i, j)
     return count
 
+
 #pythran export _discordant_pairs(float[:,:])
 #pythran export _discordant_pairs(int[:,:])
 def _discordant_pairs(A):
@@ -37,6 +39,7 @@ def _discordant_pairs(A):
         for j in range(n):
             count += A[i, j]*_Dij(A, i, j)
     return count
+
 
 #pythran export _a_ij_Aij_Dij2(float[:,:])
 #pythran export _a_ij_Aij_Dij2(int[:,:])
