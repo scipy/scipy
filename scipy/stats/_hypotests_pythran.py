@@ -26,9 +26,9 @@ def _concordant_pairs(A):
             count += A[i, j]*_Aij(A, i, j)
     return count
 
-#pythran export _Q(float[:,:])
-#pythran export _Q(int[:,:])
-def _Q(A):
+#pythran export _discordant_pairs(float[:,:])
+#pythran export _discordant_pairs(int[:,:])
+def _discordant_pairs(A):
     """Twice the number of discordant pairs, excluding ties."""
     # See `somersd` References [2] bottom of page 309
     m, n = A.shape
