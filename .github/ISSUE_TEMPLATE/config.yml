@@ -1,6 +1,5 @@
 blank_issues_enabled: true
 contact_links:
-    about: Ask questions and discuss with other scipy community members
   - name: Stack Overflow
     url: https://stackoverflow.com/questions/tagged/scipy
     about: Please ask and answer usage questions on Stack Overflow
