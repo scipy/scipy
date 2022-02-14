@@ -428,7 +428,7 @@ class TestCorrPearsonr:
     # x <- c(1, 2, 3, 4)
     # y <- c(0, 1, 0.5, 1)
     # cor.test(x, y, method = "pearson", alternative = "g")
-    # correlation coeffficient and p-value for alternative='two-sided'
+    # correlation coefficient and p-value for alternative='two-sided'
     # calculated with mpmath agree to 16 digits.
     @pytest.mark.parametrize('alternative, pval, rlow, rhigh',
                              [('two-sided',

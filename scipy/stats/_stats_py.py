@@ -4000,7 +4000,27 @@ PearsonRResultBase = _make_tuple_bunch('PearsonRResultBase',
 
 
 class PearsonRResult(PearsonRResultBase):
+    """
+    Result of `scipy.stats.pearsonr`
 
+    Attributes
+    ----------
+    statistic : float
+        Pearson product-moment correlation coefficent.
+    pvalue : float
+        P-value.
+    alternative : str
+        The value of `alternative` that was passed to `pearsonr`.
+    n : int
+        The length of `x` and `y` that were given to `pearsonr`.
+
+    Methods
+    -------
+    confidence_interval(confidence_level=0.95)
+        Computes the confidence interval of the correlation
+        coefficient `statistic` for the given confidence level.
+
+    """
     def __init__(self, statistic, pvalue, alternative, n):
         super().__init__(statistic, pvalue)
         self.alternative = alternative
@@ -4029,6 +4049,11 @@ class PearsonRResult(PearsonRResultBase):
         ci : namedtuple
             The confidence interval is returned in a ``namedtuple`` with
             fields `low` and `high`.
+
+        References
+        ----------
+        .. [1] "Pearson correlation coefficient", Wikipedia,
+               https://en.wikipedia.org/wiki/Pearson_correlation_coefficient        
         """
         return _pearsonr_fisher_ci(self.statistic, self.n, confidence_level,
                                    self.alternative)
@@ -4074,12 +4099,11 @@ def pearsonr(x, y, *, alternative='two-sided'):
         An object with the following attributes:
 
         statistic : float
-            Pearson product-moment correlation coefficent
+            Pearson product-moment correlation coefficent.
         pvalue : float
             P-value.
         alternative : str
-            The `alternative` that was given to `pearsonr` to create the
-            result.
+            The value of `alternative` that was passed to `pearsonr`.
         n : int
             The length of `x` and `y` that were given to `pearsonr`.
 
@@ -4087,7 +4111,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
         confidence_interval(confidence_level=0.95)
             This method computes the confidence interval of the correlation
-            coeffficient `statistic`, for the given confidence level.
+            coefficient `statistic` for the given confidence level.
             The confidence interval is returned in a ``namedtuple`` with
             fields `low` and `high`.  See the Notes for more details.
 
@@ -4299,7 +4323,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
         raise ValueError('alternative must be one of '
                          '["two-sided", "less", "greater"]')
 
-    return PearsonRResult(statistic=r, pvalue=prob, n=n, 
+    return PearsonRResult(statistic=r, pvalue=prob, n=n,
                           alternative=alternative)
 
 
