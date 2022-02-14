@@ -551,7 +551,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         Extra arguments to pass to `func`.
     epsabs : float, optional
         Absolute tolerance passed directly to the inner 1-D quadrature
-        integration. Default is 1.49e-8. `dblquad`` tries to obtain
+        integration. Default is 1.49e-8. ``dblquad`` tries to obtain
         an accuracy of ``abs(i-result) <= max(epsabs, epsrel*abs(i))``
         where ``i`` = inner integral of ``func(y, x)`` from ``gfun(x)``
         to ``hfun(x)``, and ``result`` is the numerical approximation.

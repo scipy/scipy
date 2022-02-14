@@ -44,11 +44,14 @@ fblas_module = custom_target('fblas_module',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
+# Note: we're linking LAPACK on purpose here. For some routines (e.g., spmv)
+# the float/double routines are in BLAS while the complex routines are in
+# LAPACK - we have historically put these in `_fblas`.
 py3.extension_module('_fblas',
   [fblas_module, fortranobject_c, g77_abi_wrappers],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, blas],
+  dependencies: [py3_dep, blas, lapack],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -75,7 +78,10 @@ py3.extension_module('_flapack',
     g77_abi_wrappers,
     deprecated_lapack_routines
   ],
-  c_args: numpy_nodepr_api,
+  c_args: [
+    numpy_nodepr_api,
+    '-Wno-empty-body',  # comes from `callstatement`s in flapack_other.pyf.src
+  ],
   include_directories: [inc_np, inc_f2py],
   dependencies: [py3_dep, lapack],
   install: true,
@@ -166,7 +172,7 @@ py3.extension_module('_interpolative',
 # _solve_toeplitz
 py3.extension_module('_solve_toeplitz',
   linalg_init_cython_gen.process('_solve_toeplitz.pyx'),
-  c_args: numpy_nodepr_api,
+  c_args: cython_c_args,
   include_directories: inc_np,
   dependencies: py3_dep,
   install: true,
@@ -176,7 +182,7 @@ py3.extension_module('_solve_toeplitz',
 # _matfuncs_sqrtm_triu:
 py3.extension_module('_matfuncs_sqrtm_triu',
   linalg_init_cython_gen.process('_matfuncs_sqrtm_triu.pyx'),
-  c_args: numpy_nodepr_api,
+  c_args: cython_c_args,
   include_directories: inc_np,
   dependencies: py3_dep,
   install: true,
@@ -199,10 +205,10 @@ cython_blas = py3.extension_module('cython_blas',
     cython_linalg[4],  # _blas_subroutines.h
     'fortran_defs.h'
   ],
-  c_args: [c_no_warn_depr_np_api],
+  c_args: cython_c_args,
   link_with: fwrappers,
   include_directories: inc_np,
-  dependencies: [py3_dep, blas],
+  dependencies: [py3_dep, blas, lapack],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -214,10 +220,10 @@ cython_lapack = py3.extension_module('cython_lapack',
     cython_linalg[5],  # _lapack_subroutines.h
     'fortran_defs.h'
   ],
-  c_args: [c_no_warn_depr_np_api],
+  c_args: cython_c_args,
   link_with: fwrappers,
   include_directories: inc_np,
-  dependencies: [py3_dep, blas],
+  dependencies: [py3_dep, blas, lapack],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -231,7 +237,7 @@ _decomp_update_pyx = custom_target('_decomp_update',
 
 py3.extension_module('_decomp_update',
   linalg_cython_gen.process(_decomp_update_pyx),
-  c_args: [c_no_warn_depr_np_api],
+  c_args: cython_c_args,
   include_directories: inc_np,
   dependencies: py3_dep,
   install: true,
@@ -240,7 +246,7 @@ py3.extension_module('_decomp_update',
 
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   linalg_init_cython_gen.process('_cythonized_array_utils.pyx'),
-  c_args: [numpy_nodepr_api, c_undefined_ok],
+  c_args: [cython_c_args, c_undefined_ok],
   dependencies: [py3_dep],
   include_directories: [inc_np],
   install: true,

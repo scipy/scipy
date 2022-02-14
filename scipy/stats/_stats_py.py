@@ -29,7 +29,7 @@ References
 import warnings
 import math
 from math import gcd
-from collections import namedtuple
+from collections import namedtuple, Counter
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -48,7 +48,7 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
-from ._hypotests import _all_partitions
+from ._hypotests import _all_partitions, _batch_generator
 from ._hypotests_pythran import _compute_outer_prob_inside_method
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
@@ -221,10 +221,21 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def gmean(a, axis=0, dtype=None, weights=None):
-    """Compute the geometric mean along the specified axis.
+    r"""Compute the weighted geometric mean along the specified axis.
 
-    Return the geometric average of the array elements.
-    That is:  n-th root of (x1 * x2 * ... * xn)
+    The weighted geometric mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \exp \left( \frac{ \sum_{i=1}^n w_i \ln a_i }{ \sum_{i=1}^n w_i }
+                   \right) \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \sqrt[n]{ \prod_{i=1}^n a_i } \, .
 
     Parameters
     ----------
@@ -262,7 +273,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
 
     References
     ----------
-    .. [1] "Weighted Geometric Mean", *Wikipedia*, https://en.wikipedia.org/wiki/Weighted_geometric_mean.
+    .. [1] "Weighted Geometric Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Weighted_geometric_mean.
 
     Examples
     --------
@@ -271,6 +283,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
     2.0
     >>> gmean([1, 2, 3, 4, 5, 6, 7])
     3.3800151591412964
+    >>> gmean([1, 4, 7], weights=[3, 1, 3])
+    2.80668351922014
 
     """
     if not isinstance(a, np.ndarray):
@@ -295,9 +309,20 @@ def gmean(a, axis=0, dtype=None, weights=None):
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def hmean(a, axis=0, dtype=None, *, weights=None):
-    """Calculate the harmonic mean along the specified axis.
+    r"""Calculate the weighted harmonic mean along the specified axis.
 
-    That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
+    The weighted harmonic mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \frac{ \sum_{i=1}^n w_i }{ \sum_{i=1}^n \frac{w_i}{a_i} } \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \frac{ n }{ \sum_{i=1}^n \frac{1}{a_i} } \, .
 
     Parameters
     ----------
@@ -350,6 +375,8 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     1.6000000000000001
     >>> hmean([1, 2, 3, 4, 5, 6, 7])
     2.6997245179063363
+    >>> hmean([1, 4, 7], weights=[3, 1, 3])
+    1.9029126213592233
 
     """
     if not isinstance(a, np.ndarray):
@@ -377,9 +404,9 @@ ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
 def mode(a, axis=0, nan_policy='propagate'):
-    """Return an array of the modal (most common) value in the passed array.
+    r"""Return an array of the modal (most common) value in the passed array.
 
-    If there is more than one such value, only the smallest is returned.
+    If there is more than one such value, only one is returned.
     The bin-count for the modal bins is also returned.
 
     Parameters
@@ -393,7 +420,7 @@ def mode(a, axis=0, nan_policy='propagate'):
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
+          * 'propagate': treats nan as it would treat any other value
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
 
@@ -404,6 +431,20 @@ def mode(a, axis=0, nan_policy='propagate'):
     count : ndarray
         Array of counts for each mode.
 
+    Notes
+    -----
+    Input `a` is converted to an `np.ndarray` before taking the mode.
+    To avoid the possibility of unexpected conversions, convert `a` to an
+    `np.ndarray` of the desired type before using `mode`.
+
+    The mode of object arrays is calculated using `collections.Counter`, which
+    treats NaNs with different binary representations as distinct.
+
+    The mode of arrays with other dtypes is calculated using `np.unique`.
+    In NumPy versions 1.21 and after, all NaNs - even those with different
+    binary representations - are treated as equivalent and counted as separate
+    instances of the same value.
+
     Examples
     --------
     >>> a = np.array([[6, 8, 3, 0],
@@ -413,12 +454,12 @@ def mode(a, axis=0, nan_policy='propagate'):
     ...               [4, 7, 5, 9]])
     >>> from scipy import stats
     >>> stats.mode(a)
-    ModeResult(mode=array([[3, 1, 0, 0]]), count=array([[1, 1, 1, 1]]))
+    ModeResult(mode=array([3, 1, 0, 0]), count=array([1, 1, 1, 1]))
 
     To get mode of whole array, specify ``axis=None``:
 
     >>> stats.mode(a, axis=None)
-    ModeResult(mode=array([3]), count=array([3]))
+    ModeResult(mode=3, count=3)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -431,26 +472,15 @@ def mode(a, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.mode(a, axis)
 
-    if a.dtype == object and np.nan in set(a.ravel()):
-        # Fall back to a slower method since np.unique does not work with NaN
-        scores = set(np.ravel(a))  # get ALL unique values
-        testshape = list(a.shape)
-        testshape[axis] = 1
-        oldmostfreq = np.zeros(testshape, dtype=a.dtype)
-        oldcounts = np.zeros(testshape, dtype=int)
-
-        for score in scores:
-            template = (a == score)
-            counts = np.sum(template, axis, keepdims=True)
-            mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
-            oldcounts = np.maximum(counts, oldcounts)
-            oldmostfreq = mostfrequent
-
-        return ModeResult(mostfrequent, oldcounts)
-
-    def _mode1D(a):
-        vals, cnts = np.unique(a, return_counts=True)
-        return vals[cnts.argmax()], cnts.max()
+    if a.dtype == object:
+        def _mode1D(a):
+            cntr = Counter(a)
+            mode = max(cntr, key=lambda x: cntr[x])
+            return mode, cntr[mode]
+    else:
+        def _mode1D(a):
+            vals, cnts = np.unique(a, return_counts=True)
+            return vals[cnts.argmax()], cnts.max()
 
     # np.apply_along_axis will convert the _mode1D tuples to a numpy array,
     # casting types in the process.
@@ -463,9 +493,8 @@ def mode(a, axis=0, nan_policy='propagate'):
     counts = np.empty(a_view.shape[:-1], dtype=np.int_)
     for ind in inds:
         modes[ind], counts[ind] = _mode1D(a_view[ind])
-    newshape = list(a.shape)
-    newshape[axis] = 1
-    return ModeResult(modes.reshape(newshape), counts.reshape(newshape))
+
+    return ModeResult(modes[()], counts[()])
 
 
 def _mask_to_limits(a, limits, inclusive):
@@ -979,6 +1008,9 @@ def _moment(a, moment, axis, *, mean=None):
         return np.mean(s, axis)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+)
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
     r"""Compute the sample skewness of a data set.
 
@@ -6089,9 +6121,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     or `b`, and the t-statistic is calculated. This process is performed
     repeatedly (`permutation` times), generating a distribution of the
     t-statistic under the null hypothesis, and the t-statistic of the observed
-    data is compared to this distribution to determine the p-value. When
-    ``permutations >= binom(n, k)``, an exact test is performed: the data are
-    partitioned between the groups in each distinct way exactly once.
+    data is compared to this distribution to determine the p-value.
+    Specifically, the p-value reported is the "achieved significance level"
+    (ASL) as defined in 4.4 of [3]_. Note that there are other ways of
+    estimating p-values using randomized permutation tests; for other
+    options, see the more general `permutation_test`.
+
+    When ``permutations >= binom(n, k)``, an exact test is performed: the data
+    are partitioned between the groups in each distinct way exactly once.
 
     The permutation test can be computationally expensive and not necessarily
     more accurate than the analytical test, but it does not make strong
@@ -6110,7 +6147,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     .. [2] https://en.wikipedia.org/wiki/Welch%27s_t-test
 
-    .. [3] http://en.wikipedia.org/wiki/Resampling_%28statistics%29
+    .. [3] B. Efron and T. Hastie. Computer Age Statistical Inference. (2016).
 
     .. [4] Yuen, Karen K. "The Two-Sample Trimmed t for Unequal Population
            Variances." Biometrika, vol. 61, no. 1, 1974, pp. 165-170. JSTOR,
@@ -6301,31 +6338,42 @@ def _calculate_winsorized_variance(a, g, axis):
     return var_win
 
 
-def _data_partitions(data, permutations, size_a, axis=-1, random_state=None):
-    """All partitions of data into sets of given lengths, ignoring order"""
+def _permutation_distribution_t(data, permutations, size_a, equal_var,
+                                random_state=None):
+    """Generation permutation distribution of t statistic"""
 
     random_state = check_random_state(random_state)
-    if axis < 0:  # we'll be adding a new dimension at the end
-        axis = data.ndim + axis
 
     # prepare permutation indices
-    size = data.shape[axis]
+    size = data.shape[-1]
     # number of distinct combinations
     n_max = special.comb(size, size_a)
 
     if permutations < n_max:
-        indices = np.array([random_state.permutation(size)
-                            for i in range(permutations)]).T
+        perm_generator = (random_state.permutation(size)
+                          for i in range(permutations))
     else:
         permutations = n_max
-        indices = np.array([np.concatenate(z)
-                            for z in _all_partitions(size_a, size-size_a)]).T
+        perm_generator = (np.concatenate(z)
+                          for z in _all_partitions(size_a, size-size_a))
 
-    data = data.swapaxes(axis, -1)   # so we can index along a new dimension
-    data = data[..., indices]        # generate permutations
-    data = data.swapaxes(-2, axis)   # restore original axis order
-    data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
-    return data, permutations
+    t_stat = []
+    for indices in _batch_generator(perm_generator, batch=50):
+        # get one batch from perm_generator at a time as a list
+        indices = np.array(indices)
+        # generate permutations
+        data_perm = data[..., indices]
+        # move axis indexing permutations to position 0 to broadcast
+        # nicely with t_stat_observed, which doesn't have this dimension
+        data_perm = np.moveaxis(data_perm, -2, 0)
+
+        a = data_perm[..., :size_a]
+        b = data_perm[..., size_a:]
+        t_stat.append(_calc_t_stat(a, b, equal_var))
+
+    t_stat = np.concatenate(t_stat, axis=0)
+
+    return t_stat, permutations
 
 
 def _calc_t_stat(a, b, equal_var, axis=-1):
@@ -6394,12 +6442,9 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    mat_perm, permutations = _data_partitions(mat, permutations, size_a=na,
-                                              random_state=random_state)
-
-    a = mat_perm[..., :na]
-    b = mat_perm[..., na:]
-    t_stat = _calc_t_stat(a, b, equal_var)
+    t_stat, permutations = _permutation_distribution_t(
+        mat, permutations, size_a=na, equal_var=equal_var,
+        random_state=random_state)
 
     compare = {"less": np.less_equal,
                "greater": np.greater_equal,

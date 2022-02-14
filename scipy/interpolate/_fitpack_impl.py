@@ -996,7 +996,7 @@ def bisplev(x, y, tck, dx=0, dy=0):
     Return a rank-2 array of spline function values (or spline derivative
     values) at points given by the cross-product of the rank-1 arrays `x` and
     `y`.  In special cases, return an array or just a float if either `x` or
-    `y` or both are floats.  Based on BISPEV from FITPACK.
+    `y` or both are floats.  Based on BISPEV and PARDER from FITPACK.
 
     Parameters
     ----------

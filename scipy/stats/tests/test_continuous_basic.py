@@ -14,7 +14,9 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_edge_support, check_named_args,
                            check_random_state_property,
                            check_meth_dtype, check_ppf_dtype, check_cmplx_deriv,
-                           check_pickling, check_rvs_broadcast, check_freezing)
+                           check_pickling, check_rvs_broadcast, check_freezing,
+                           check_deprecation_warning_gh5982_moment,
+                           check_deprecation_warning_gh5982_interval)
 from scipy.stats._distr_params import distcont
 
 """
@@ -159,6 +161,8 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     check_cdf_logcdf(distfn, arg, distname)
     check_sf_logsf(distfn, arg, distname)
     check_ppf_broadcast(distfn, arg, distname)
+    check_deprecation_warning_gh5982_moment(distfn, arg, distname)
+    check_deprecation_warning_gh5982_interval(distfn, arg, distname)
 
     alpha = 0.01
     if distname == 'rv_histogram_instance':
@@ -711,54 +715,55 @@ def test_burr_fisk_moment_gh13234_regression():
 
 def test_moments_with_array_gh12192_regression():
     # array loc and scalar scale
-    vals0 = stats.norm.moment(n=1, loc=np.array([1, 2, 3]), scale=1)
+    vals0 = stats.norm.moment(order=1, loc=np.array([1, 2, 3]), scale=1)
     expected0 = np.array([1., 2., 3.])
     npt.assert_equal(vals0, expected0)
 
     # array loc and invalid scalar scale
-    vals1 = stats.norm.moment(n=1, loc=np.array([1, 2, 3]), scale=-1)
+    vals1 = stats.norm.moment(order=1, loc=np.array([1, 2, 3]), scale=-1)
     expected1 = np.array([np.nan, np.nan, np.nan])
     npt.assert_equal(vals1, expected1)
 
     # array loc and array scale with invalid entries
-    vals2 = stats.norm.moment(n=1, loc=np.array([1, 2, 3]), scale=[-3, 1, 0])
+    vals2 = stats.norm.moment(order=1, loc=np.array([1, 2, 3]),
+                              scale=[-3, 1, 0])
     expected2 = np.array([np.nan, 2., np.nan])
     npt.assert_equal(vals2, expected2)
 
     # (loc == 0) & (scale < 0)
-    vals3 = stats.norm.moment(n=2, loc=0, scale=-4)
+    vals3 = stats.norm.moment(order=2, loc=0, scale=-4)
     expected3 = np.nan
     npt.assert_equal(vals3, expected3)
     assert isinstance(vals3, expected3.__class__)
 
     # array loc with 0 entries and scale with invalid entries
-    vals4 = stats.norm.moment(n=2, loc=[1, 0, 2], scale=[3, -4, -5])
+    vals4 = stats.norm.moment(order=2, loc=[1, 0, 2], scale=[3, -4, -5])
     expected4 = np.array([10., np.nan, np.nan])
     npt.assert_equal(vals4, expected4)
 
     # all(loc == 0) & (array scale with invalid entries)
-    vals5 = stats.norm.moment(n=2, loc=[0, 0, 0], scale=[5., -2, 100.])
+    vals5 = stats.norm.moment(order=2, loc=[0, 0, 0], scale=[5., -2, 100.])
     expected5 = np.array([25., np.nan, 10000.])
     npt.assert_equal(vals5, expected5)
 
     # all( (loc == 0) & (scale < 0) )
-    vals6 = stats.norm.moment(n=2, loc=[0, 0, 0], scale=[-5., -2, -100.])
+    vals6 = stats.norm.moment(order=2, loc=[0, 0, 0], scale=[-5., -2, -100.])
     expected6 = np.array([np.nan, np.nan, np.nan])
     npt.assert_equal(vals6, expected6)
 
     # scalar args, loc, and scale
-    vals7 = stats.chi.moment(n=2, df=1, loc=0, scale=0)
+    vals7 = stats.chi.moment(order=2, df=1, loc=0, scale=0)
     expected7 = np.nan
     npt.assert_equal(vals7, expected7)
     assert isinstance(vals7, expected7.__class__)
 
     # array args, scalar loc, and scalar scale
-    vals8 = stats.chi.moment(n=2, df=[1, 2, 3], loc=0, scale=0)
+    vals8 = stats.chi.moment(order=2, df=[1, 2, 3], loc=0, scale=0)
     expected8 = np.array([np.nan, np.nan, np.nan])
     npt.assert_equal(vals8, expected8)
 
     # array args, array loc, and array scale
-    vals9 = stats.chi.moment(n=2, df=[1, 2, 3], loc=[1., 0., 2.],
+    vals9 = stats.chi.moment(order=2, df=[1, 2, 3], loc=[1., 0., 2.],
                              scale=[1., -3., 0.])
     expected9 = np.array([3.59576912, np.nan, np.nan])
     npt.assert_allclose(vals9, expected9, rtol=1e-8)
@@ -779,7 +784,7 @@ def test_moments_with_array_gh12192_regression():
     loc = np.array(loc).reshape((-1, 1))
     scale = np.array(scale)
 
-    vals11 = stats.beta.moment(n=2, a=a, b=b, loc=loc, scale=scale)
+    vals11 = stats.beta.moment(order=2, a=a, b=b, loc=loc, scale=scale)
 
     a, b, loc, scale = np.broadcast_arrays(a, b, loc, scale)
 
@@ -787,29 +792,29 @@ def test_moments_with_array_gh12192_regression():
         with np.errstate(invalid='ignore', divide='ignore'):
             i = i[0]  # just get the index
             # check against same function with scalar input
-            expected = stats.beta.moment(n=2, a=a[i], b=b[i],
+            expected = stats.beta.moment(order=2, a=a[i], b=b[i],
                                          loc=loc[i], scale=scale[i])
             np.testing.assert_equal(vals11[i], expected)
 
 
 def test_broadcasting_in_moments_gh12192_regression():
-    vals0 = stats.norm.moment(n=1, loc=np.array([1, 2, 3]), scale=[[1]])
+    vals0 = stats.norm.moment(order=1, loc=np.array([1, 2, 3]), scale=[[1]])
     expected0 = np.array([[1., 2., 3.]])
     npt.assert_equal(vals0, expected0)
     assert vals0.shape == expected0.shape
 
-    vals1 = stats.norm.moment(n=1, loc=np.array([[1], [2], [3]]),
+    vals1 = stats.norm.moment(order=1, loc=np.array([[1], [2], [3]]),
                               scale=[1, 2, 3])
     expected1 = np.array([[1., 1., 1.], [2., 2., 2.], [3., 3., 3.]])
     npt.assert_equal(vals1, expected1)
     assert vals1.shape == expected1.shape
 
-    vals2 = stats.chi.moment(n=1, df=[1., 2., 3.], loc=0., scale=1.)
+    vals2 = stats.chi.moment(order=1, df=[1., 2., 3.], loc=0., scale=1.)
     expected2 = np.array([0.79788456, 1.25331414, 1.59576912])
     npt.assert_allclose(vals2, expected2, rtol=1e-8)
     assert vals2.shape == expected2.shape
 
-    vals3 = stats.chi.moment(n=1, df=[[1.], [2.], [3.]], loc=[0., 1., 2.],
+    vals3 = stats.chi.moment(order=1, df=[[1.], [2.], [3.]], loc=[0., 1., 2.],
                              scale=[-1., 0., 3.])
     expected3 = np.array([[np.nan, np.nan, 4.39365368],
                           [np.nan, np.nan, 5.75994241],

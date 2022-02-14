@@ -56,6 +56,35 @@ from ._highs._highs_constants import (
 from scipy.sparse import csc_matrix, vstack, issparse
 
 
+def _highs_to_scipy_status_message(highs_status, highs_message):
+    """Converts HiGHS status number/message to SciPy status number/message"""
+
+    scipy_statuses_messages = {
+        None: (4, "HiGHS did not provide a status code. "),
+        MODEL_STATUS_NOTSET: (4, ""),
+        MODEL_STATUS_LOAD_ERROR: (4, ""),
+        MODEL_STATUS_MODEL_ERROR: (2, ""),
+        MODEL_STATUS_PRESOLVE_ERROR: (4, ""),
+        MODEL_STATUS_SOLVE_ERROR: (4, ""),
+        MODEL_STATUS_POSTSOLVE_ERROR: (4, ""),
+        MODEL_STATUS_MODEL_EMPTY: (4, ""),
+        MODEL_STATUS_RDOVUB: (4, ""),
+        MODEL_STATUS_REACHED_OBJECTIVE_TARGET: (4, ""),
+        MODEL_STATUS_OPTIMAL: (0, "Optimization terminated successfully. "),
+        MODEL_STATUS_REACHED_TIME_LIMIT: (1, "Time limit reached. "),
+        MODEL_STATUS_REACHED_ITERATION_LIMIT: (1, "Iteration limit reached. "),
+        MODEL_STATUS_INFEASIBLE: (2, "The problem is infeasible. "),
+        MODEL_STATUS_UNBOUNDED: (3, "The problem is unbounded. "),
+        MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE: (4, "The problem is unbounded "
+                                               "or infeasible. ")}
+    unrecognized = (4, "The HiGHS status code was not recognized. ")
+    scipy_status, scipy_message = (
+        scipy_statuses_messages.get(highs_status, unrecognized))
+    scipy_message = (f"{scipy_message}"
+                     f"(HiGHS Status {highs_status}: {highs_message})")
+    return scipy_status, scipy_message
+
+
 def _replace_inf(x):
     # Replace `np.inf` with CONST_INF
     infs = np.isinf(x)
@@ -284,77 +313,6 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
                  HIGHS_SIMPLEX_DUAL_EDGE_WEIGHT_STRATEGY_STEEPEST_EDGE,
                  None: None})
 
-    statuses = {
-        MODEL_STATUS_NOTSET: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_NOTSET}: HighsModelStatusNOTSET',
-        ),
-        MODEL_STATUS_LOAD_ERROR: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_LOAD_ERROR}: '
-            'HighsModelStatusLOAD_ERROR',
-        ),
-        MODEL_STATUS_MODEL_ERROR: (
-            2,
-            f'HiGHS Status Code {MODEL_STATUS_MODEL_ERROR}: '
-            'HighsModelStatusMODEL_ERROR',
-        ),
-        MODEL_STATUS_PRESOLVE_ERROR: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_PRESOLVE_ERROR}: '
-            'HighsModelStatusPRESOLVE_ERROR',
-        ),
-        MODEL_STATUS_SOLVE_ERROR: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_SOLVE_ERROR}: '
-            'HighsModelStatusSOLVE_ERROR',
-        ),
-        MODEL_STATUS_POSTSOLVE_ERROR: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_POSTSOLVE_ERROR}: '
-            'HighsModelStatusPOSTSOLVE_ERROR',
-        ),
-        MODEL_STATUS_MODEL_EMPTY: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_MODEL_EMPTY}: '
-            'HighsModelStatusMODEL_EMPTY',
-        ),
-        MODEL_STATUS_RDOVUB: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_RDOVUB}: '
-            'HighsModelStatusREACHED_DUAL_OBJECTIVE_VALUE_UPPER_BOUND',
-        ),
-        MODEL_STATUS_REACHED_OBJECTIVE_TARGET: (
-            4,
-            f'HiGHS Status Code {MODEL_STATUS_REACHED_OBJECTIVE_TARGET}: '
-            'HighsModelStatusREACHED_OBJECTIVE_TARGET',
-        ),
-        MODEL_STATUS_INFEASIBLE: (
-            2,
-            "The problem is infeasible.",
-        ),
-        MODEL_STATUS_UNBOUNDED: (
-            3,
-            "The problem is unbounded.",
-        ),
-        MODEL_STATUS_UNBOUNDED_OR_INFEASIBLE: (
-            4,
-            "The problem is unbounded or infeasible.",
-        ),
-        MODEL_STATUS_OPTIMAL: (
-            0,
-            "Optimization terminated successfully.",
-        ),
-        MODEL_STATUS_REACHED_TIME_LIMIT: (
-            1,
-            "Time limit reached.",
-        ),
-        MODEL_STATUS_REACHED_ITERATION_LIMIT: (
-            1,
-            "Iteration limit reached.",
-        ),
-    }
-
     c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     lb, ub = bounds.T.copy()  # separate bounds, copy->C-cntgs
@@ -430,7 +388,10 @@ def _linprog_highs(lp, solver, time_limit=None, presolve=True,
     solvers = {"ipm": "highs-ipm", "simplex": "highs-ds", None: "highs-ds"}
 
     # Convert to scipy-style status and message
-    status, message = statuses[res['status']]
+    highs_status = res.get('status', None)
+    highs_message = res.get('message', None)
+    status, message = _highs_to_scipy_status_message(highs_status,
+                                                     highs_message)
 
     x = np.array(res['x']) if 'x' in res else None
     sol = {'x': x,

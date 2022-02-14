@@ -2942,7 +2942,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     Parameters
     ----------
     N : int
-        The order of the filter.
+        The order of the filter. For 'bandpass' and 'bandstop' filters,
+        the resulting order of the final second-order sections ('sos')
+        matrix is ``2*N``, with `N` the number of biquad sections
+        of the desired system.
     Wn : array_like
         The critical frequency or frequencies. For lowpass and highpass
         filters, Wn is a scalar; for bandpass and bandstop filters,
