@@ -2463,8 +2463,8 @@ def factorialk(n, k, exact=True):
     Parameters
     ----------
     n : int
-        Calculate multifactorial. If `n` < 1 - `k`, the return value is 0.
-        Otherwise if `n` <= 0, the return value is 1.
+        Calculate multifactorial. If ``n < 1 - k``, the return value is 0.
+        Otherwise if ``n <= 0``, the return value is 1.
     k : int
         Order of multifactorial.
     exact : bool, optional
