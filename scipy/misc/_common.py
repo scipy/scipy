@@ -178,10 +178,11 @@ def ascent():
     """
     import pickle
     import os
+    import numpy as np
     fname = os.path.join(os.path.dirname(__file__),'ascent.dat')
     with open(fname, 'rb') as f:
         ascent = array(pickle.load(f))
-    return ascent
+    return ascent.astype(np.uint8)
 
 
 def face(gray=False):
