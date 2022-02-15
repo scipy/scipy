@@ -130,6 +130,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Might be somewhat arbitrary for the `trf` method as it generates a
         sequence of strictly feasible iterates and active_mask is determined
         within a tolerance threshold.
+    x_unbounded : ndarray, shape (n,)
+        Unbounded least squares solution (minimize 0.5 * ||A x - b||**2).
     nit : int
         Number of iterations. Zero if the unconstrained solution is optimal.
     status : int
@@ -291,7 +293,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
         return OptimizeResult(
             x=x_lsq, fun=r, cost=cost, optimality=g_norm,
-            active_mask=np.zeros(n), nit=0, status=termination_status,
+            active_mask=np.zeros(n), x_unbounded=x_lsq,
+            nit=0, status=termination_status,
             message=termination_message, success=True)
 
     if method == 'trf':
@@ -300,6 +303,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     elif method == 'bvls':
         res = bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose)
 
+    res.x_unbounded = x_lsq
     res.message = TERMINATION_MESSAGES[res.status]
     res.success = res.status > 0
 
