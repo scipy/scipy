@@ -282,11 +282,11 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     if lsmr_max_iter is not None and lsmr_max_iter <= 0:
         raise ValueError("`lsmr_max_iter` must be None or positive integer.")
-    
+
     if not (isinstance(lsmr_tol, float) and lsmr_tol > 0 or
             isinstance(lsmr_tol, str) and lsmr_tol == 'auto' or
             lsmr_tol is None):
-        raise ValueError("`lsmr_tol` must be None, 'auto', or a positive float.")
+        raise ValueError("`lsmr_tol` must be None, 'auto', or positive float.")
 
     if lsq_solver == 'exact':
         x_lsq = np.linalg.lstsq(A, b, rcond=-1)[0]
