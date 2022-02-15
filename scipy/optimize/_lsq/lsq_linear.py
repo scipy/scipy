@@ -272,11 +272,19 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     if np.any(lb >= ub):
         raise ValueError("Each lower bound must be strictly less than each "
                          "upper bound.")
+    
+    if not (isinstance(lsmr_tol, float) and lsmr_tol > 0 or
+            isinstance(lsmr_tol, str) and lsmr_tol == 'auto' or
+            lsmr_tol is None):
+        raise ValueError("`lsmr_tol` must be None, 'auto', or a positive float.")
 
     if lsq_solver == 'exact':
         x_lsq = np.linalg.lstsq(A, b, rcond=-1)[0]
     elif lsq_solver == 'lsmr':
-        x_lsq = lsmr(A, b, atol=tol, btol=tol)[0]
+        first_lsmr_tol = lsmr_tol  # tol of first call to lsmr
+        if lsmr_tol is None or lsmr_tol == 'auto':
+            first_lsmr_tol = 1e-2 * tol  # default if lsmr_tol not defined
+        x_lsq = lsmr(A, b, atol=first_lsmr_tol, btol=first_lsmr_tol)[0]
 
     if in_bounds(x_lsq, lb, ub):
         r = A @ x_lsq - b
