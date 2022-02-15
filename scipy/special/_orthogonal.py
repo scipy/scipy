@@ -182,8 +182,8 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     dy = df(n, x)
     x -= y/dy
 
-    # fm and dy can be very large/small,
-    # so we log-normalize them for maximum precision
+    # fm and dy may contain very large/small values, so we
+    # log-normalize them to maintain precision in the product fm*dy
     fm = f(n-1, x)
     log_fm = np.log(np.abs(fm))
     log_dy = np.log(np.abs(dy))
@@ -262,7 +262,7 @@ def roots_jacobi(n, alpha, beta, mu=False):
     if (alpha + beta) <= 1000:
         mu0 = 2.0**(alpha+beta+1) * _ufuncs.beta(alpha+1, beta+1)
     else:
-        # Do log computations to maintain precision for very large parameters
+        # Avoid overflows in pow and beta for very large parameters
         mu0 = np.exp((alpha + beta + 1) * np.log(2.0)
                      + _ufuncs.betaln(alpha+1, beta+1))
     a = alpha
@@ -1497,9 +1497,9 @@ def roots_gegenbauer(n, alpha, mu=False):
         mu0 = (np.sqrt(np.pi) * _ufuncs.gamma(alpha + 0.5)) \
               / _ufuncs.gamma(alpha + 1)
     else:
-        # For large alpha we use a Taylor series expansion at a -> inf,
+        # For large alpha we use a Taylor series expansion around inf,
         # expressed as a 6th order polynomial of a^-1 and using Horner's
-        # method to save both computation and precision.
+        # method to minimize computation and maximize precision
         inv_alpha = 1. / alpha
         coeffs = np.array([0.000207186, -0.00152206, -0.000640869,
                            0.00488281, 0.0078125, -0.125, 1.])

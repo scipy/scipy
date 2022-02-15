@@ -545,18 +545,18 @@ def test_roots_gegenbauer():
     vgq(rootf(50), evalf(50), weightf(50), -1., 1., 25, atol=1e-12)
     vgq(rootf(50), evalf(50), weightf(50), -1., 1., 100, atol=1e-11)
 
+    # Alpha=170 is where the approximation used in roots_gegenbauer changes
     vgq(rootf(170), evalf(170), weightf(170), -1., 1., 5, atol=1e-13)
     vgq(rootf(170), evalf(170), weightf(170), -1., 1., 25, atol=1e-12)
     vgq(rootf(170), evalf(170), weightf(170), -1., 1., 100, atol=1e-11)
-
     vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 5, atol=1e-13)
     vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 25, atol=1e-12)
     vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 100, atol=1e-11)
 
+    # Test for failures, e.g. overflows, resulting from large alphas
     vgq(rootf(238), evalf(238), weightf(238), -1., 1., 5, atol=1e-13)
     vgq(rootf(238), evalf(238), weightf(238), -1., 1., 25, atol=1e-12)
     vgq(rootf(238), evalf(238), weightf(238), -1., 1., 100, atol=1e-11)
-
     vgq(rootf(512.5), evalf(512.5), weightf(512.5), -1., 1., 5, atol=1e-12)
     vgq(rootf(512.5), evalf(512.5), weightf(512.5), -1., 1., 25, atol=1e-11)
     vgq(rootf(512.5), evalf(512.5), weightf(512.5), -1., 1., 100, atol=1e-10)
