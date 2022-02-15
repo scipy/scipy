@@ -200,7 +200,8 @@ class SparseMixin:
         res = lsq_linear(A, b, (lb, ub))
         assert_allclose(res.optimality, 0.0, atol=1e-6)
 
-        res = lsq_linear(A, b, (lb, ub), lsmr_tol=1e-13)
+        res = lsq_linear(A, b, (lb, ub), lsmr_tol=1e-13,
+                         lsmr_max_iter=1500)
         assert_allclose(res.optimality, 0.0, atol=1e-6)
 
         res = lsq_linear(A, b, (lb, ub), lsmr_tol='auto')

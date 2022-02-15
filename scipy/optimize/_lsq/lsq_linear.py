@@ -32,7 +32,8 @@ TERMINATION_MESSAGES = {
 
 
 def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
-               lsq_solver=None, lsmr_tol=None, max_iter=None, verbose=0):
+               lsq_solver=None, lsmr_tol=None, lsmr_max_iter=None,
+               max_iter=None, verbose=0):
     r"""Solve a linear least-squares problem with bounds on the variables.
 
     Given a m-by-n design matrix A and a target vector b with m elements,
@@ -96,6 +97,12 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         tolerance will be adjusted based on the optimality of the current
         iterate, which can speed up the optimization process, but is not always
         reliable.
+    lsmr_max_iter : None or int, optional
+        Maximum number of iterations for the lsmr least squares solver,
+        if it is used (by setting ``lsq_solver='lsmr'``). If None (default), it
+        uses lsmr's default of ``min(m, n)`` where `m` and `n` are the
+        number of rows and columns of `A`, respectively. Has no effect if
+        ``lsq_solver='exact'``.
     max_iter : None or int, optional
         Maximum number of iterations before termination. If None (default), it
         is set to 100 for ``method='trf'`` or to the number of variables for
@@ -272,6 +279,9 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     if np.any(lb >= ub):
         raise ValueError("Each lower bound must be strictly less than each "
                          "upper bound.")
+
+    if lsmr_max_iter is not None and lsmr_max_iter <= 0:
+        raise ValueError("`lsmr_max_iter` must be None or positive integer.")
     
     if not (isinstance(lsmr_tol, float) and lsmr_tol > 0 or
             isinstance(lsmr_tol, str) and lsmr_tol == 'auto' or
@@ -284,7 +294,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         first_lsmr_tol = lsmr_tol  # tol of first call to lsmr
         if lsmr_tol is None or lsmr_tol == 'auto':
             first_lsmr_tol = 1e-2 * tol  # default if lsmr_tol not defined
-        x_lsq = lsmr(A, b, atol=first_lsmr_tol, btol=first_lsmr_tol)[0]
+        x_lsq = lsmr(A, b, maxiter=lsmr_max_iter,
+                     atol=first_lsmr_tol, btol=first_lsmr_tol)[0]
 
     if in_bounds(x_lsq, lb, ub):
         r = A @ x_lsq - b
@@ -307,7 +318,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     if method == 'trf':
         res = trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol,
-                         max_iter, verbose)
+                         lsmr_max_iter, max_iter, verbose)
     elif method == 'bvls':
         res = bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose)
 
