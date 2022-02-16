@@ -102,6 +102,7 @@ test = [
     "gmpy2",
     "threadpoolctl",
     "scikit-umfpack",
+    "pooch",
 ]
 doc = [
     "sphinx!=4.1.0",

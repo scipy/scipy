@@ -26,14 +26,15 @@ def test_ascent():
     assert_equal(ascent().shape, (512, 512))
 
     # hash check
-    assert _has_hash(os.path.join(data.path, "ascent.dat") , registry["ascent.dat"])
+    assert _has_hash(os.path.join(data.path, "ascent.dat"),
+                     registry["ascent.dat"])
 
 
 def test_face():
     assert_equal(face().shape, (768, 1024, 3))
 
     # hash check
-    assert _has_hash(os.path.join(data.path, "face.dat") , registry["face.dat"])
+    assert _has_hash(os.path.join(data.path, "face.dat"), registry["face.dat"])
 
 
 def test_electrocardiogram():
@@ -45,4 +46,4 @@ def test_electrocardiogram():
     assert_almost_equal(ecg.std(), 0.5992473991177294)
 
     # hash check
-    assert _has_hash(os.path.join(data.path, "ecg.dat") , registry["ecg.dat"])
+    assert _has_hash(os.path.join(data.path, "ecg.dat"), registry["ecg.dat"])
