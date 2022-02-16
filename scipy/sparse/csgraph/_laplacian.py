@@ -106,6 +106,10 @@ def laplacian(
     The normalization is symmetric, making the normalized Laplacian also
     symmetric if the input csgraph was symmetric.
 
+    References
+    ----------
+    .. [1] Laplacian matrix. https://en.wikipedia.org/wiki/Laplacian_matrix
+
     Examples
     --------
     >>> from scipy.sparse import csgraph
