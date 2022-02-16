@@ -1,5 +1,4 @@
 import pooch
-from pooch import file_hash
 from numpy import array, frombuffer, load
 from ._registry import registry, registry_urls
 import os
@@ -16,15 +15,8 @@ data = pooch.create(
     # using individual urls in the registry.
     base_url="https://github.com/scipy/",
     registry=registry,
-    urls=registry_urls,
+    urls=registry_urls
 )
-
-
-def _has_hash(path, expected_hash):
-    """Check if the provided path has the expected hash."""
-    if not os.path.exists(path):
-        return False
-    return file_hash(path) == expected_hash
 
 
 def ascent():
