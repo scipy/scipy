@@ -181,8 +181,8 @@ def ascent():
     import numpy as np
     fname = os.path.join(os.path.dirname(__file__),'ascent.dat')
     with open(fname, 'rb') as f:
-        ascent = array(pickle.load(f))
-    return ascent.astype(np.uint8)
+        ascent = np.array(pickle.load(f), dtype=np.uint8)
+    return ascent
 
 
 def face(gray=False):
