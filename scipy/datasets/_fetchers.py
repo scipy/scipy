@@ -1,5 +1,4 @@
 import pooch
-from pooch import file_hash
 from numpy import array, frombuffer, load
 from ._registry import registry, registry_urls
 import os
@@ -12,19 +11,12 @@ data = pooch.create(
     path=pooch.os_cache("scipy-data"),
 
     # The remote data is on Github
-    base_url="https://github.com/scipy-datasets/datasets/blob/{version}/",
-    # If this is a development version, get the data from the "main" branch
-    version_dev="main",
+    # base_url is a required param, even though we override this
+    # using individual urls in the registry.
+    base_url="https://github.com/scipy-datasets/",
     registry=registry,
-    urls=registry_urls,
+    urls=registry_urls
 )
-
-
-def _has_hash(path, expected_hash):
-    """Check if the provided path has the expected hash."""
-    if not os.path.exists(path):
-        return False
-    return file_hash(path) == expected_hash
 
 
 def ascent():

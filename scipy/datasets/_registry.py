@@ -3,12 +3,6 @@
 ##########################################################################
 
 
-data_repo_map = {
-	"ascent": "dataset-ascent",
-	"electrocardiogram": "dataset-ecg",
-	"face": "dataset-face"
-}
-
 # To generate the SHA256 hash, use the command
 # openssl sha256 <filename>
 registry = {
