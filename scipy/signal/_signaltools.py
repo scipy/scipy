@@ -1565,7 +1565,7 @@ def wiener(im, mysize=None, noise=None):
     Examples
     --------
 
-    >>> from scipy.misc import face
+    >>> from scipy.datasets import face
     >>> from scipy.signal import wiener
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
