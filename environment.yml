@@ -17,6 +17,8 @@ dependencies:
   - pybind11
   - pythran>=0.9.12
   - conda-build  # to allow `conda develop .`
+  # scipy.datasets dependency
+  - pooch
   # For testing and benchmarking
   - pytest
   - pytest-cov

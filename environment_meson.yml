@@ -20,6 +20,8 @@ dependencies:
   - pybind11
   - pythran>=0.9.12
   - conda-build
+  # scipy.datasets dependency
+  - pooch
   # For testing and benchmarking
   - pytest
   - pytest-cov
