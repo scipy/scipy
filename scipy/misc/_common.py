@@ -178,10 +178,10 @@ def ascent():
     """
     import pickle
     import os
-    import numpy as np
+
     fname = os.path.join(os.path.dirname(__file__),'ascent.dat')
     with open(fname, 'rb') as f:
-        ascent = np.array(pickle.load(f), dtype=np.uint8)
+        ascent = array(pickle.load(f), dtype='uint8')
     return ascent
 
 
