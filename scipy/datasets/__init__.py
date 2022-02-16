@@ -14,3 +14,8 @@ from ._fetchers import face, ascent, electrocardiogram
 
 
 __all__ = ['ascent', 'electrocardiogram', 'face']
+
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester
