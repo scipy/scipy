@@ -42,6 +42,7 @@ PUBLIC_MODULES = ["scipy." + s for s in [
     "cluster.vq",
     "cluster.hierarchy",
     "constants",
+    "datasets",
     "fft",
     "fftpack",
     "integrate",
