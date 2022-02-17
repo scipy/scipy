@@ -164,6 +164,25 @@ def test_nnlf_and_related_methods(dist, params):
     assert_allclose(res2, ref)
 
 
+def cases_test_fit():
+    skip_basic_fit = {'nhypergeom', 'boltzmann', 'nbinom',
+                      'randint', 'yulesimon', 'nchypergeom_fisher',
+                      'nchypergeom_wallenius'}
+    slow_basic_fit = {'binom'}
+    xslow_basic_fit = {'skellam', 'hypergeom', 'zipfian', 'betabinom'}
+
+    for dist in dict(distdiscrete):
+        if dist in skip_basic_fit or not isinstance(dist, str):
+            reason = "tested separately"
+            yield pytest.param(dist, marks=pytest.mark.skip(reason=reason))
+        elif dist in slow_basic_fit:
+            reason = "too slow (>= 0.25s)"
+            yield pytest.param(dist, marks=pytest.mark.slow(reason=reason))
+        elif dist in xslow_basic_fit:
+            reason = "too slow (>= 1.0s)"
+            yield pytest.param(dist, marks=pytest.mark.xslow(reason=reason))
+
+
 class TestFit:
     dist = stats.binom  # type: ignore[attr-defined]
     seed = 654634816187
@@ -297,24 +316,6 @@ class TestFit:
         guess = [5, 0.5, 1]
         with pytest.warns(RuntimeWarning, match=message):
             stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
-
-    def cases_test_fit():
-        skip_basic_fit = {'nhypergeom', 'boltzmann', 'nbinom',
-                          'randint', 'yulesimon', 'nchypergeom_fisher',
-                          'nchypergeom_wallenius'}
-        slow_basic_fit = {'binom'}
-        xslow_basic_fit = {'skellam', 'hypergeom', 'zipfian', 'betabinom'}
-
-        for dist in dict(distdiscrete):
-            if dist in skip_basic_fit or not isinstance(dist, str):
-                msg = "tested separately"
-                yield pytest.param(dist, marks=pytest.mark.skip(reason=msg))
-            elif dist in slow_basic_fit:
-                msg = "too slow (>= 0.25s)"
-                yield pytest.param(dist, marks=pytest.mark.slow(reason=msg))
-            elif dist in xslow_basic_fit:
-                msg = "too slow (>= 1.0s)"
-                yield pytest.param(dist, marks=pytest.mark.xslow(reason=msg))
 
     @pytest.mark.parametrize("dist_name", cases_test_fit())
     def test_basic_fit(self, dist_name):

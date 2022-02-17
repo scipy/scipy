@@ -4051,10 +4051,6 @@ class FitResult:
 
     Attributes
     ----------
-    dist : scipy.stats.rv_continuous or scipy.stats.rv_discrete
-        The distribution of which parameters were fit.
-    data : 1D array_like
-        The data to which the distribution was fit.
     params : namedtuple
         A namedtuple containing the maximum likelihood estimates of the
         shape parameters, location, and (if applicable) scale of the
@@ -4068,8 +4064,8 @@ class FitResult:
     """
 
     def __init__(self, dist, data, discrete, res):
-        self.dist = dist
-        self.data = data
+        self._dist = dist
+        self._data = data
         self.discrete = discrete
         self.pxf = getattr(dist, "pmf", None) or getattr(dist, "pdf", None)
 
@@ -4090,7 +4086,7 @@ class FitResult:
         self.message = getattr(res, "message", None)
 
     def __repr__(self):
-        keys = ["dist", "data", "params", "success", "message"]
+        keys = ["params", "success", "message"]
         m = max(map(len, keys)) + 1
         return '\n'.join([key.rjust(m) + ': ' + repr(getattr(self, key))
                           for key in keys if getattr(self, key) is not None])
@@ -4109,8 +4105,7 @@ class FitResult:
             estimates (``self.params``).
         data : array_like, optional
             The data for which the log-likelihood function is to be evaluated.
-            Default is the data to which the distribution was fit
-            (``self.data``).
+            Default is the data to which the distribution was fit.
 
         Returns
         -------
@@ -4119,8 +4114,8 @@ class FitResult:
 
         """
         params = params if params is not None else self.params
-        data = data if data is not None else self.data
-        return self.dist.nnlf(theta=params, x=data)
+        data = data if data is not None else self._data
+        return self._dist.nnlf(theta=params, x=data)
 
     def plot(self, ax=None):
         """Visualize the fit result.
@@ -4151,9 +4146,9 @@ class FitResult:
             ax = plt.gca()
 
         fit_params = np.atleast_1d(self.params)
-        support = self.dist.support(*fit_params)
-        lb = support[0] if np.isfinite(support[0]) else min(self.data)
-        ub = support[1] if np.isfinite(support[1]) else max(self.data)
+        support = self._dist.support(*fit_params)
+        lb = support[0] if np.isfinite(support[0]) else min(self._data)
+        ub = support[1] if np.isfinite(support[1]) else max(self._data)
 
         if self.discrete:
             x = np.arange(lb, ub + 2)
@@ -4172,13 +4167,13 @@ class FitResult:
             ax.set_xlabel('x')
             ax.set_ylabel('PDF')
 
-        if len(self.data) > 50 or self.discrete:
-            ax.hist(self.data, label="Histogram of Data", **options)
+        if len(self._data) > 50 or self.discrete:
+            ax.hist(self._data, label="Histogram of Data", **options)
         else:
-            ax.plot(self.data, np.zeros_like(self.data), "*",
+            ax.plot(self._data, np.zeros_like(self._data), "*",
                     label='Data', color='C1')
 
-        ax.set_title(f"{self.dist.name} Fit")
+        ax.set_title(f"{self._dist.name} Fit")
         ax.legend(*ax.get_legend_handles_labels())
         return ax
 
@@ -4278,17 +4273,9 @@ def fit(dist, data, bounds=None, *, guess=None,
 
     Returns
     -------
-    result : FitResult
+    result : `~scipy.stats._result_classes.FitResult`
         An object with the following fields.
 
-        dist : scipy.stats.rv_continuous or scipy.stats.rv_discrete
-            The distribution object passed to `fit` as `dist`
-        data : 1D array_like
-            The data passed to `fit` as `data`
-        nllf : callable
-            The negative log-likehood function for the given `data`. Accepts a
-            single tuple containing the shapes, location, and scale of the
-            distribution.
         params : namedtuple
             A namedtuple containing the maximum likelihood estimates of the
             shape parameters, location, and (if applicable) scale of the
@@ -4298,6 +4285,18 @@ def fit(dist, data, bounds=None, *, guess=None,
             successfully or not.
         message : str or None
             Any status message provided by the optimizer.
+
+        The object has the following method:
+
+        nllf(params=None, data=None)
+            By default, the negative log-likehood function at the fitted
+            `params` for the given `data`. Accepts a tuple containing
+            alternative shapes, location, and scale of the distribution and
+            an array of alternative data.
+
+        plot(ax=None)
+            Superposes the PDF/PMF of the fitted distribution over a normalized
+            histogram of the data.
 
     See Also
     --------
