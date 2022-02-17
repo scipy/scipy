@@ -2238,9 +2238,9 @@ class TestPowerlaw(object):
     @pytest.mark.parametrize("a", [.5, 1, 1.5])
     @pytest.mark.parametrize("loc", [0])
     @pytest.mark.parametrize("scale", [1])
-    @pytest.mark.parametrize("fa", [True, False])
-    @pytest.mark.parametrize("floc", [True, False])
-    @pytest.mark.parametrize("fscale", [True, False])
+    @pytest.mark.parametrize("fa", [False])
+    @pytest.mark.parametrize("floc", [False])
+    @pytest.mark.parametrize("fscale", [False])
     @pytest.mark.parametrize("seed", [1412304])
     def test_fit_MLE_comp_optimzer_combinations(self, a, loc, scale, fa, floc,
                                                 fscale, seed):
