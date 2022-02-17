@@ -62,7 +62,7 @@ def main():
             names.update((name,))
 
         # Look for "thanks to" messages in the commit log
-        m = re.search(r'([Tt]hanks to|[Cc]ourtesy of) ([A-Z][A-Za-z]*? [A-Z][A-Za-z]*? [A-Z][A-Za-z]*|[A-Z][A-Za-z]*? [A-Z]\. [A-Z][A-Za-z]*|[A-Z][A-Za-z ]*? [A-Z][A-Za-z]*|[a-z0-9]+)($|\.| )', line)
+        m = re.search(r'([Tt]hanks to|[Cc]ourtesy of|Co-authored-by:) ([A-Z][A-Za-z]*? [A-Z][A-Za-z]*? [A-Z][A-Za-z]*|[A-Z][A-Za-z]*? [A-Z]\. [A-Z][A-Za-z]*|[A-Z][A-Za-z ]*? [A-Z][A-Za-z]*|[a-z0-9]+)($|\.| )', line)
         if m:
             name = m.group(2)
             if name not in (u'this',):
@@ -77,12 +77,12 @@ def main():
 
     # Find all authors before the named range
     for line in git.pipe('log', '--pretty=@@@%an@@@%n@@@%cn@@@%n%b',
-                         '%s' % (rev1,)):
+                         f'{rev1}'):
         analyze_line(line, all_authors)
 
     # Find authors in the named range
     for line in git.pipe('log', '--pretty=@@@%an@@@%n@@@%cn@@@%n%b',
-                         '%s..%s' % (rev1, rev2)):
+                         f'{rev1}..{rev2}'):
         analyze_line(line, authors, disp=options.debug)
 
     # Sort
