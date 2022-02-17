@@ -76,7 +76,7 @@ steps:
     pytest-xdist
   displayName: 'Install common python dependencies'
 - ${{ if eq(parameters.test_mode, 'full') }}:
-  - script: pip install matplotlib scikit-umfpack scikit-sparse
+  - script: pip install matplotlib scikit-umfpack scikit-sparse pooch
     displayName: 'Install full mode dependencies'
 - ${{ if eq(parameters.coverage, true) }}:
   - script: pip install pytest-cov coverage codecov
