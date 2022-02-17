@@ -1,12 +1,19 @@
 """
-doit way defining actions and targets -
+Command to run the tasks -
 doit -f <filename.py>
 
 Targeted run -
 doit -f updated_cli.py doc_build
+
+Command to list the tasks -
+doit -f updated_cli.py list
 """
 from doit.task import clean_targets
 
+"""
+Setting config variable 
+TODO: move the variables to dedicated config file 
+"""
 DOIT_CONFIG = {'verbosity': 2}
 
 
