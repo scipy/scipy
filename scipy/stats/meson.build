@@ -193,6 +193,7 @@ py3.install_sources([
     '_distn_infrastructure.py',
     '_distr_params.py',
     '_entropy.py',
+    '_fit.py',
     '_generate_pyx.py',
     '_hypotests.py',
     '_kde.py',
