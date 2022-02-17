@@ -5661,7 +5661,7 @@ class nakagami_gen(rv_continuous):
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("nu", False, (0, np.inf), (False, True))]
+        return [_ShapeInfo("nu", False, (0, np.inf), (False, False))]
 
     def _pdf(self, x, nu):
         return np.exp(self._logpdf(x, nu))
