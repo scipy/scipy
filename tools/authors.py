@@ -114,6 +114,10 @@ def main():
         # return for early exit so we only print new authors
         return
 
+    try:
+        authors.pop('GitHub')
+    except KeyError:
+        pass
     # Order by name. Could order by count with authors.most_common()
     authors = sorted(authors.items(), key=lambda i: name_key(i[0]))
 
@@ -127,8 +131,6 @@ Authors
     for author, count in authors:
         # remove @ if only GH handle is available
         author_clean = author.strip('@')
-        if author == 'GitHub':
-            continue
 
         if author in all_authors:
             stdout_b.write((f"* {author_clean} ({count})\n").encode('utf-8'))
