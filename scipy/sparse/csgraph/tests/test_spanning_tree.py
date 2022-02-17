@@ -40,7 +40,7 @@ def test_minimum_spanning_tree():
         'Graph was not properly modified to contain MST.')
 
     # Ensure results are correct for all data types
-    for t in (np.int8, np.int16, np.int32, np.int64, np.float32, np.float64):
+    for t in (np.int8, np.float32, np.float64):
         csgraph = csr_matrix(graph, dtype=t)
 
         mintree = minimum_spanning_tree(csgraph, overwrite=False)
