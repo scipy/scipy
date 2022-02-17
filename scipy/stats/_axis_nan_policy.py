@@ -300,8 +300,8 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
     tuple_to_result : callable
         Callable that returns an object of the type returned by the function
         being wrapped (e.g. the namedtuple or dataclass returned by a
-        statistical test) provided a tuple of separate components (e.g.
-        statistic, pvalue).
+        statistical test) provided the separate components (e.g. statistic,
+        pvalue).
     default_axis : int, default: 0
         The default value of the axis argument. Standard is 0 except when
         backwards compatibility demands otherwise (e.g. `None`).
