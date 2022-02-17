@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 """
-git-authors [OPTIONS] REV1..REV2
+List the authors who contributed within a given revision interval::
 
-List the authors who contributed within a given revision interval.
+    python tools/authors.py REV1..REV2
+
+`REVx` being a commit hash.
 
 To change the name mapping, edit .mailmap on the top-level of the
 repository.
@@ -122,10 +124,15 @@ Authors
 """)
 
     for author in authors:
+        # remove @ if only GH handle is available
+        author_clean = author.strip('@')
+        if author == 'GitHub':
+            continue
+
         if author in all_authors:
-            stdout_b.write(("* %s\n" % author).encode('utf-8'))
+            stdout_b.write(("* %s\n" % author_clean).encode('utf-8'))
         else:
-            stdout_b.write(("* %s +\n" % author).encode('utf-8'))
+            stdout_b.write(("* %s +\n" % author_clean).encode('utf-8'))
 
     stdout_b.write(("""
 A total of %(count)d people contributed to this release.
