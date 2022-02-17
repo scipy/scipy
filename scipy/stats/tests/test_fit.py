@@ -298,15 +298,26 @@ class TestFit:
         with pytest.warns(RuntimeWarning, match=message):
             stats.fit(self.dist, self.data, self.shape_bounds_d, guess=guess)
 
-    # these distributions are tested separately
-    skip_basic_fit = {'nhypergeom', 'boltzmann', 'nbinom',
-                      'randint', 'yulesimon', 'nchypergeom_fisher',
-                      'nchypergeom_wallenius'}
+    def cases_test_fit():
+        skip_basic_fit = {'nhypergeom', 'boltzmann', 'nbinom',
+                          'randint', 'yulesimon', 'nchypergeom_fisher',
+                          'nchypergeom_wallenius'}
+        slow_basic_fit = {'binom'}
+        xslow_basic_fit = {'skellam', 'hypergeom', 'zipfian', 'betabinom'}
 
-    @pytest.mark.parametrize("dist_name", dict(distdiscrete))  # type: ignore[arg-type]  # noqa
+        for dist in dict(distdiscrete):
+            if dist in skip_basic_fit or not isinstance(dist, str):
+                msg = "tested separately"
+                yield pytest.param(dist, marks=pytest.mark.skip(reason=msg))
+            elif dist in slow_basic_fit:
+                msg = "too slow (>= 0.25s)"
+                yield pytest.param(dist, marks=pytest.mark.slow(reason=msg))
+            elif dist in xslow_basic_fit:
+                msg = "too slow (>= 1.0s)"
+                yield pytest.param(dist, marks=pytest.mark.xslow(reason=msg))
+
+    @pytest.mark.parametrize("dist_name", cases_test_fit())
     def test_basic_fit(self, dist_name):
-        if dist_name in self.skip_basic_fit or not isinstance(dist_name, str):
-            pytest.skip("Tested separately.")
 
         N = 5000
         dist_data = dict(distcont + distdiscrete)
@@ -345,6 +356,7 @@ class TestFit:
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
         assert_allclose(res.params[:-1], shapes, **self.tols)
 
+    @pytest.mark.xslow
     def test_nhypergeom(self):
         # DE doesn't find optimum for the bounds in `test_basic_fit`. NBD.
         N = 2000
@@ -401,6 +413,7 @@ class TestFit:
         res = stats.fit(dist, data, bounds, optimizer=self.opt)
         assert_allclose(res.params, params, **self.tols)
 
+    @pytest.mark.xslow
     def test_nchypergeom_fisher(self):
         # The NC hypergeometric distributions are more challenging
         N = 5000
@@ -412,6 +425,7 @@ class TestFit:
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
         assert_allclose(res.params[:-1], shapes, **self.tols)
 
+    @pytest.mark.xslow
     def test_nchypergeom_wallenius(self):
         # The NC hypergeometric distributions are more challenging
         N = 5000
@@ -514,6 +528,7 @@ class TestFit:
         assert res.message.startswith(message)
         assert res.success is False
 
+    @pytest.mark.xslow
     def test_guess(self):
         # Test that guess helps DE find the desired solution
         N = 2000
