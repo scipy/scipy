@@ -60,7 +60,7 @@ class MilpMagicSquare(Benchmark):
 
     def time_magic_square(self, n):
         res = milp(c=self.c*0, constraints=self.constraints,
-                      bounds=(0, 1), integrality=True)
+                   bounds=(0, 1), integrality=True)
         assert res.status == 0
         x = np.round(res.x)
         s = (self.numbers.flatten() * x).reshape(n**2, n, n)
