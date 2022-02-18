@@ -1,19 +1,23 @@
 """
+About:
+------
+Command to list the tasks -
+doit -f updated_cli.py list
+
+Checking all the info for a task-
+doit -f updated_cli.py info <task_name>
+
 Command to run the tasks -
 doit -f <filename.py>
 
-Targeted run -
+Targeted run for individual task -
 doit -f updated_cli.py doc_build
-
-Command to list the tasks -
-doit -f updated_cli.py list
 """
+# TODO: move the variables to dedicated config file
+# TODO: improve doc messaging
+
 from doit.task import clean_targets
 
-"""
-Setting config variable 
-TODO: move the variables to dedicated config file 
-"""
 DOIT_CONFIG = {'verbosity': 2}
 
 
@@ -21,36 +25,27 @@ def init_task():
     print("initiating build")
 
 
-def make_task(func):
-    """make decorated function a task-creator"""
-    func.create_doit_tasks = func
-    return func
+def enter_module_to_test():
+    name_module = input("Enter the module to test: ")
+    return name_module
 
 
-@make_task
-def task_build():
+def task_scipy_build():
     """
-    Runs the build action with options (Hardcoded currently)
+    Scipy build actions
     """
-    return {'actions': ["python dev.py --build-only"],
-            'file_dep': ["dev.py"],
-            'doc': 'initial build task',
-            'clean': [clean_targets, init_task],
-            }
+    name_module = enter_module_to_test()
+    task_list = ["python dev.py --build-only", f"python dev.py --no-build -s % {name_module}"]
+    for task_ in task_list:
+        task_name = task_.split(' ')[2]
+        yield{'name': task_name,
+              'doc': 'initial build task',
+              'actions': [task_],
+              'file_dep': ["dev.py"],
+              'clean': [clean_targets, init_task]
+              }
 
 
-@make_task
-def task_test_action():
-    """
-    Runs cluster test tasks
-    """
-    return {'actions': ["python dev.py --no-build -s cluster"],
-            'file_dep': ["dev.py"],
-            'doc': 'cluster test task'
-            }
-
-
-@make_task
 def task_doc_build():
     """
     Runs document build tasks
