@@ -322,6 +322,7 @@ class multivariate_normal_gen(multi_rv_generic):
     >>> fig1 = plt.figure()
     >>> ax = fig1.add_subplot(111)
     >>> ax.plot(x, y)
+    >>> plt.show()
 
     Alternatively, the object may be called (as a function) to fix the mean
     and covariance parameters, returning a "frozen" multivariate normal
@@ -2432,6 +2433,7 @@ class invwishart_gen(wishart_gen):
     >>> ig[:3]
     array([  1.20546865e-15,   5.42497807e-06,   4.45813929e-03])
     >>> plt.plot(x, iw)
+    >>> plt.show()
 
     The input quantiles can be any shape of array, as long as the last
     axis labels the components.
@@ -3264,7 +3266,7 @@ class special_ortho_group_gen(multi_rv_generic):
     r"""A Special Orthogonal matrix (SO(N)) random variable.
 
     Return a random rotation matrix, drawn from the Haar distribution
-    (the only uniform distribution on SO(n)) with a determinant of +1.
+    (the only uniform distribution on SO(N)) with a determinant of +1.
 
     The `dim` keyword specifies the dimension N.
 
@@ -3277,7 +3279,14 @@ class special_ortho_group_gen(multi_rv_generic):
     ----------
     dim : scalar
         Dimension of matrices
-    %(_doc_random_state)s
+    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+        Used for drawing random variates.
+        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is `None`.
 
     Notes
     -----
@@ -3285,7 +3294,7 @@ class special_ortho_group_gen(multi_rv_generic):
     https://github.com/mdp-toolkit/mdp-toolkit
 
     Return a random rotation matrix, drawn from the Haar distribution
-    (the only uniform distribution on SO(n)).
+    (the only uniform distribution on SO(N)).
     The algorithm is described in the paper
     Stewart, G.W., "The efficient generation of random orthogonal
     matrices with an application to condition estimators", SIAM Journal
@@ -3880,11 +3889,14 @@ class multivariate_t_gen(multi_rv_generic):
 
     >>> from scipy.stats import multivariate_t
     >>> rv = multivariate_t([1.0, -0.5], [[2.1, 0.3], [0.3, 1.5]], df=2)
+    >>> # Frozen object with the same methods but holding the given location,
+    >>> # scale, and degrees of freedom fixed.
+
+    Create a contour plot of the PDF.
 
     >>> import matplotlib.pyplot as plt
     >>> x, y = np.mgrid[-1:3:.01, -2:1.5:.01]
     >>> pos = np.dstack((x, y))
-    >>> rv = multivariate_t([1.0, -0.5], [[2.1, 0.3], [0.3, 1.5]], df=2)
     >>> fig, ax = plt.subplots(1, 1)
     >>> ax.set_aspect('equal')
     >>> plt.contourf(x, y, rv.pdf(pos))
