@@ -2132,6 +2132,9 @@ class TestItemfreq:
 
 
 class TestMode:
+
+    deprecation_msg = r"Support for non-numeric arrays has been deprecated"
+
     def test_empty(self):
         vals, counts = stats.mode([])
         assert_equal(vals, np.array([]))
@@ -2178,9 +2181,7 @@ class TestMode:
 
     def test_strings(self):
         data1 = ['rain', 'showers', 'showers']
-        with pytest.warns(DeprecationWarning,
-                          match=r"Support for non-numeric arrays has been "
-                                r"deprecated"):
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
             vals = stats.mode(data1)
         assert_equal(vals[0], 'showers')
         assert_equal(vals[1], 2)
@@ -2189,9 +2190,7 @@ class TestMode:
         objects = [10, True, np.nan, 'hello', 10]
         arr = np.empty((5,), dtype=object)
         arr[:] = objects
-        with pytest.warns(DeprecationWarning,
-                          match=r"Support for non-numeric arrays has been "
-                                r"deprecated"):
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
             vals = stats.mode(arr)
         assert_equal(vals[0], 10)
         assert_equal(vals[1], 2)
@@ -2220,9 +2219,7 @@ class TestMode:
         arr[:] = points
         assert_(len(set(points)) == 4)
         assert_equal(np.unique(arr).shape, (4,))
-        with pytest.warns(DeprecationWarning,
-                          match=r"Support for non-numeric arrays has been "
-                                r"deprecated"):
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
             vals = stats.mode(arr)
 
         assert_equal(vals[0], Point(2))
@@ -2261,18 +2258,14 @@ class TestMode:
         # regression test for gh-9645: `mode` fails for object arrays w/ndim > 1
         data = [['Oxidation'], ['Oxidation'], ['Polymerization'], ['Reduction']]
         ar = np.array(data, dtype=object)
-        with pytest.warns(DeprecationWarning,
-                          match=r"Support for non-numeric arrays has been "
-                                r"deprecated"):
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
             m = stats.mode(ar, axis=0)
         assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1,)
         assert np.all(m.count == 2) and m.count.shape == (1,)
 
         data1 = data + [[np.nan]]
         ar1 = np.array(data1, dtype=object)
-        with pytest.warns(DeprecationWarning,
-                          match=r"Support for non-numeric arrays has been "
-                                r"deprecated"):
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
             m = stats.mode(ar1, axis=0)
         assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1,)
         assert np.all(m.count == 2) and m.count.shape == (1,)
@@ -2283,9 +2276,7 @@ class TestMode:
         rng = np.random.default_rng(984213899)
         a = rng.uniform(size=(3, 4, 5)).astype(dtype)
         if dtype == 'object':
-            with pytest.warns(DeprecationWarning,
-                              match=r"Support for non-numeric arrays has "
-                                    r"been deprecated"):
+            with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
                 res = stats.mode(a, axis=axis)
         else:
             res = stats.mode(a, axis=axis)
@@ -2305,16 +2296,12 @@ class TestMode:
         # mode should work on object arrays. There were issues when
         # objects do not support comparison operations.
         a = np.array(a, dtype='object')
-        with pytest.warns(DeprecationWarning,
-                          match=r"Support for non-numeric arrays has been "
-                                r"deprecated"):
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
             res = stats.mode(a)
         assert np.isnan(res.mode) and res.count == 2
 
         a = np.array([10, True, 'hello', 10], dtype='object')
-        with pytest.warns(DeprecationWarning,
-                          match=r"Support for non-numeric arrays has been "
-                                r"deprecated"):
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
             res = stats.mode(a)
         assert_array_equal(res, (10, 2))
 
