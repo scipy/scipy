@@ -264,11 +264,25 @@ mvn_docdict_noparams = {
 
 
 class multivariate_normal_gen(multi_rv_generic):
-    r"""
-    A multivariate normal random variable.
+    r"""A multivariate normal random variable.
 
     The `mean` keyword specifies the mean. The `cov` keyword specifies the
     covariance matrix.
+
+    Methods
+    -------
+    pdf(x, mean=None, cov=1, allow_singular=False)
+        Probability density function.
+    logpdf(x, mean=None, cov=1, allow_singular=False)
+        Log of the probability density function.
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
+        Cumulative distribution function.
+    logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
+        Log of the cumulative distribution function.
+    rvs(mean=None, cov=1, size=1, random_state=None)
+        Draw random samples from a multivariate normal distribution.
+    entropy()
+        Compute the differential entropy of the multivariate normal.
 
     Parameters
     ----------
