@@ -8605,22 +8605,22 @@ add_newdoc("pdtr",
     Parameters
     ----------
     k : array_like
-        Nonnegative real argument
+        Number of occurances (nonnegative, real)
     m : array_like
-        Nonnegative real shape parameter
+        Shape parameter (nonnegative, real)
     out : ndarray
         Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Poisson cumulative distribution function
 
     See Also
     --------
     pdtrc : Poisson survival function
     pdtrik : inverse of `pdtr` with respect to `k`
     pdtri : inverse of `pdtr` with respect to `m`
-
-    Returns
-    -------
-    scalar or ndarray
-        Values of the Poisson cumulative distribution function
 
     References
     ----------
@@ -8645,34 +8645,95 @@ add_newdoc("pdtr",
 
 add_newdoc("pdtrc",
     """
-    pdtrc(k, m)
+    pdtrc(k, m, out=None)
 
     Poisson survival function
 
     Returns the sum of the terms from k+1 to infinity of the Poisson
     distribution: sum(exp(-m) * m**j / j!, j=k+1..inf) = gammainc(
     k+1, m). Arguments must both be non-negative doubles.
+
+    Parameters
+    ----------
+    k : array_like
+        Number of occurances (nonnegative, real)
+    m : array_like
+        Shape parameter (nonnegative, real)
+    out : ndarray
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the Poisson survival function
+
+    See Also
+    --------
+    pdtr : Poisson cumulative distribution function
+    pdtrik : inverse of `pdtr` with respect to `k`
+    pdtri : inverse of `pdtr` with respect to `m`
+
     """)
 
 add_newdoc("pdtri",
     """
-    pdtri(k, y)
+    pdtri(k, y, out=None)
 
     Inverse to `pdtr` vs m
 
     Returns the Poisson variable `m` such that the sum from 0 to `k` of
     the Poisson density is equal to the given probability `y`:
-    calculated by gammaincinv(k+1, y). `k` must be a nonnegative
+    calculated by ``gammaincinv(k + 1, y)``. `k` must be a nonnegative
     integer and `y` between 0 and 1.
+
+    Parameters
+    ----------
+    k : array_like
+        Number of occurances (nonnegative, real)
+    y : array_like
+        Probability
+    out : ndarray
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        Values of the shape paramter `m` such that ``pdtr(k, m) = p``
+
+    See Also
+    --------
+    pdtr : Poisson cumulative distribution function
+    pdtrc : Poisson survival function
+    pdtrik : inverse of `pdtr` with respect to `k`
+
     """)
 
 add_newdoc("pdtrik",
     """
-    pdtrik(p, m)
+    pdtrik(p, m, out=None)
 
-    Inverse to `pdtr` vs k
+    Inverse to `pdtr` vs `m`.
 
-    Returns the quantile k such that ``pdtr(k, m) = p``
+    Parameters
+    ----------
+    m : array_like
+        Shape parameter (nonnegative, real)
+    p : array_like
+        Probability
+    out : ndarray
+        Optional output array for the function results
+
+    Returns
+    -------
+    scalar or ndarray
+        The number of occurances `k` such that ``pdtr(k, m) = p``
+
+    See Also
+    --------
+    pdtr : Poisson cumulative distribution function
+    pdtrc : Poisson survival function
+    pdtri : inverse of `pdtr` with respect to `m`
+
     """)
 
 add_newdoc("poch",
