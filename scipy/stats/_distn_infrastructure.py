@@ -93,8 +93,8 @@ isf(q, %(shapes)s, loc=0, scale=1)
     Inverse survival function (inverse of ``sf``).
 """
 _doc_moment = """\
-moment(n, %(shapes)s, loc=0, scale=1)
-    Non-central moment of order n
+moment(order, %(shapes)s, loc=0, scale=1)
+    Non-central moment of the specified order.
 """
 _doc_stats = """\
 stats(%(shapes)s, loc=0, scale=1, moments='mv')
@@ -135,9 +135,8 @@ std(%(shapes)s, loc=0, scale=1)
     Standard deviation of the distribution.
 """
 _doc_interval = """\
-interval(alpha, %(shapes)s, loc=0, scale=1)
-    Endpoints of the range that contains fraction alpha [0, 1] of the
-    distribution
+interval(confidence, %(shapes)s, loc=0, scale=1)
+    Confidence interval with equal areas around the median.
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
                            _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf,
