@@ -445,7 +445,7 @@ def mode(a, axis=0, nan_policy='propagate'):
         in the second release after SciPy 1.9.0. `pandas.DataFrame.mode`_ can
         be used instead.
 
-        .. _pandas.DataFrame.mode: <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html>  # noqa: E501
+        .. _pandas.DataFrame.mode: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html
 
     The mode of arrays with other dtypes is calculated using `np.unique`.
     In NumPy versions 1.21 and after, all NaNs - even those with different
@@ -468,7 +468,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     >>> stats.mode(a, axis=None)
     ModeResult(mode=3, count=3)
 
-    """
+    """  # noqa: E501
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
         return ModeResult(np.array([]), np.array([]))
