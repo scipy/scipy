@@ -586,12 +586,13 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
         if Pxy.shape[-1] > 1:
             if average == 'median':
                 # np.median must be passed real arrays for the desired result
+                bias = _median_bias(Pxy.shape[-1])
                 if np.iscomplexobj(Pxy):
                     Pxy = (np.median(np.real(Pxy), axis=-1)
                            + 1j * np.median(np.imag(Pxy), axis=-1))
-                    Pxy /= _median_bias(Pxy.shape[-1])
                 else:
-                    Pxy = np.median(Pxy, axis=-1) / _median_bias(Pxy.shape[-1])
+                    Pxy = np.median(Pxy, axis=-1)
+                Pxy /= bias
             elif average == 'mean':
                 Pxy = Pxy.mean(axis=-1)
             else:
