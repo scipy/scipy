@@ -15,7 +15,7 @@ def less_than_or_close(a, b):
     return np.allclose(a, b) or (a < b)
 
 
-class TestExpmActionSimple(object):
+class TestExpmActionSimple:
     """
     These tests do not consider the case of multiple time steps in one call.
     """
@@ -131,7 +131,7 @@ class TestExpmActionSimple(object):
         assert_allclose(observed, expected)
 
 
-class TestExpmActionInterval(object):
+class TestExpmActionInterval:
 
     def test_sparse_expm_multiply_interval(self):
         np.random.seed(1234)

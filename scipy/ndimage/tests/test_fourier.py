@@ -121,6 +121,12 @@ class TestNdimageFourier:
         a = fft.ifft(a, shape[0], 0)
         assert_almost_equal(ndimage.sum(a.real), 1.0, decimal=dec)
 
+    def test_fourier_ellipsoid_unimplemented_ndim(self):
+        # arrays with ndim > 3 raise NotImplementedError
+        x = numpy.ones((4, 6, 8, 10), dtype=numpy.complex128)
+        with pytest.raises(NotImplementedError):
+            a = ndimage.fourier_ellipsoid(x, 3)
+
     def test_fourier_ellipsoid_1d_complex(self):
         # expected result of 1d ellipsoid is the same as for fourier_uniform
         for shape in [(32, ), (31, )]:
