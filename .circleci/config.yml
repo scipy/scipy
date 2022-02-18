@@ -50,7 +50,8 @@ jobs:
             pip install --install-option="--no-cython-compile" cython
             pip install numpy==1.21.5
             pip install -r doc_requirements.txt
-            pip install nose mpmath argparse Pillow asv pythran
+            # `asv` pin because of slowdowns reported in gh-15568
+            pip install nose mpmath argparse Pillow "asv==0.4.2" pythran
             pip install pybind11
 
       - run:
