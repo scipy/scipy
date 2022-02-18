@@ -1699,6 +1699,7 @@ class wishart_gen(multi_rv_generic):
     >>> c = chi2.pdf(x, 3); c[:5]
     array([ 0.00126156,  0.10892176,  0.14793434,  0.17400548,  0.1929669 ])
     >>> plt.plot(x, w)
+    >>> plt.show()
 
     The input quantiles can be any shape of array, as long as the last
     axis labels the components.
@@ -3276,6 +3277,7 @@ class special_ortho_group_gen(multi_rv_generic):
     ----------
     dim : scalar
         Dimension of matrices
+    %(_doc_random_state)s
 
     Notes
     -----
@@ -3433,11 +3435,6 @@ class ortho_group_gen(multi_rv_generic):
     rvs(dim=None, size=1, random_state=None)
         Draw random samples from O(N).
 
-    Parameters
-    ----------
-    dim : scalar
-        Dimension of matrices
-
     Notes
     -----
     This class is closely related to `special_ortho_group`.
@@ -3534,11 +3531,6 @@ class random_correlation_gen(multi_rv_generic):
     -------
     rvs(eigs=None, random_state=None)
         Draw random correlation matrices, all with eigenvalues eigs.
-
-    Parameters
-    ----------
-    eigs : 1d ndarray
-        Eigenvalues of correlation matrix.
 
     Notes
     -----
@@ -3724,11 +3716,6 @@ class unitary_group_gen(multi_rv_generic):
     rvs(dim=None, size=1, random_state=None)
         Draw random samples from U(N).
 
-    Parameters
-    ----------
-    dim : scalar
-        Dimension of matrices
-
     Notes
     -----
     This class is similar to `ortho_group`.
@@ -3893,8 +3880,6 @@ class multivariate_t_gen(multi_rv_generic):
 
     >>> from scipy.stats import multivariate_t
     >>> rv = multivariate_t([1.0, -0.5], [[2.1, 0.3], [0.3, 1.5]], df=2)
-    >>> # Frozen object with the same methods but holding the given location,
-    >>> # scale, and degrees of freedom fixed.
 
     >>> import matplotlib.pyplot as plt
     >>> x, y = np.mgrid[-1:3:.01, -2:1.5:.01]
