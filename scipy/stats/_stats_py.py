@@ -442,9 +442,10 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     .. deprecated:: 1.9.0
         Support for non-numeric arrays has been deprecated and will be removed
-        in the second release after SciPy 1.9.0.
-        `pandas.DataFrame.mode <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html>`_  # noqa: E501
-        can be used instead.
+        in the second release after SciPy 1.9.0. `pandas.DataFrame.mode`_ can
+        be used instead.
+
+        .. _pandas.DataFrame.mode: <https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html>  # noqa: E501
 
     The mode of arrays with other dtypes is calculated using `np.unique`.
     In NumPy versions 1.21 and after, all NaNs - even those with different
