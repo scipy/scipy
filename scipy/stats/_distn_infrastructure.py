@@ -11,6 +11,7 @@ import types
 import warnings
 import inspect
 from itertools import zip_longest
+from collections import namedtuple
 
 from scipy._lib import doccer
 from scipy._lib._util import _lazywhere
@@ -92,8 +93,8 @@ isf(q, %(shapes)s, loc=0, scale=1)
     Inverse survival function (inverse of ``sf``).
 """
 _doc_moment = """\
-moment(n, %(shapes)s, loc=0, scale=1)
-    Non-central moment of order n
+moment(order, %(shapes)s, loc=0, scale=1)
+    Non-central moment of the specified order.
 """
 _doc_stats = """\
 stats(%(shapes)s, loc=0, scale=1, moments='mv')
@@ -134,9 +135,8 @@ std(%(shapes)s, loc=0, scale=1)
     Standard deviation of the distribution.
 """
 _doc_interval = """\
-interval(alpha, %(shapes)s, loc=0, scale=1)
-    Endpoints of the range that contains fraction alpha [0, 1] of the
-    distribution
+interval(confidence, %(shapes)s, loc=0, scale=1)
+    Confidence interval with equal areas around the median.
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
                            _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf,
@@ -1670,6 +1670,20 @@ class rv_generic:
         return self._nnlf_and_penalty(x, args) + n_log_scale
 
 
+class _ShapeInfo:
+    def __init__(self, name, integrality=False, domain=(-np.inf, np.inf),
+                 inclusive=(True, True)):
+        self.name = name
+        self.integrality = integrality
+
+        domain = list(domain)
+        if np.isfinite(domain[0]) and not inclusive[0]:
+            domain[0] = np.nextafter(domain[0], np.inf)
+        if np.isfinite(domain[1]) and not inclusive[1]:
+            domain[1] = np.nextafter(domain[1], -np.inf)
+        self.domain = domain
+
+
 def _get_fixed_fit_value(kwds, names):
     """
     Given names such as `['f0', 'fa', 'fix_a']`, check that there is
@@ -2904,6 +2918,12 @@ class rv_continuous(rv_generic):
             vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
         return vals
 
+    def _param_info(self):
+        shape_info = self._shape_info()
+        loc_info = _ShapeInfo("loc", False, (-np.inf, np.inf), (False, False))
+        scale_info = _ShapeInfo("scale", False, (0, np.inf), (False, False))
+        param_info = shape_info + [loc_info, scale_info]
+        return param_info
 
 # Helpers for the discrete distributions
 def _drv2_moment(self, n, *args):
@@ -3713,6 +3733,12 @@ class rv_discrete(rv_generic):
         x0 = self.ppf(0.5, *args)
         res = _expect(fun, lb, ub, x0, self.inc, maxcount, tolerance, chunksize)
         return res / invfac
+
+    def _param_info(self):
+        shape_info = self._shape_info()
+        loc_info = _ShapeInfo("loc", True, (-np.inf, np.inf), (False, False))
+        param_info = shape_info + [loc_info]
+        return param_info
 
 
 def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
