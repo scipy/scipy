@@ -4016,7 +4016,7 @@ class PearsonRResult(PearsonRResultBase):
 
     Methods
     -------
-    confidence_interval(confidence_level=0.95)
+    confidence_interval
         Computes the confidence interval of the correlation
         coefficient `statistic` for the given confidence level.
 
