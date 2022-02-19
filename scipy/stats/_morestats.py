@@ -3133,6 +3133,9 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             raise ValueError('The samples x and y must have the same length.')
         d = x - y
 
+    if len(d) == 0:
+        return WilcoxonResult(np.nan, np.nan)
+
     if mode == "auto":
         if len(d) <= 50:
             mode = "exact"
