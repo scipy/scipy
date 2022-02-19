@@ -13,6 +13,10 @@ with safe_import():
 
 
 # MIPLIB 2017 benchmarks included with permission of the authors
+# The MIPLIB benchmark problem set was downloaded from https://miplib.zib.de/.
+# An MPS converter (scikit-glpk) was used to load the data into Python. The
+# arrays were arranged to the format required by `milp` and saved to `npz`
+# format using `np.savez`.
 milp_problems = ["piperout-27"]
 
 
@@ -29,8 +33,8 @@ class MilpMiplibBenchmarks(Benchmark):
 
         c, A_ub, b_ub, A_eq, b_eq, bounds, integrality = self.data[prob]
 
-        lb = [l for l, u in bounds]
-        ub = [u for l, u in bounds]
+        lb = [li for li, ui in bounds]
+        ub = [ui for li, ui in bounds]
 
         cons = []
         if A_ub is not None:
