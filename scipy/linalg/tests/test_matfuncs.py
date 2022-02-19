@@ -45,7 +45,7 @@ def _get_al_mohy_higham_2012_experiment_1():
     return A
 
 
-class TestSignM(object):
+class TestSignM:
 
     def test_nils(self):
         a = array([[29.2, -24.2, 69.5, 49.8, 7.],
@@ -88,7 +88,7 @@ class TestSignM(object):
         #XXX: what would be the correct result?
 
 
-class TestLogM(object):
+class TestLogM:
 
     def test_nils(self):
         a = array([[-2., 25., 0., 0., 0., 0., 0.],
@@ -234,7 +234,7 @@ class TestLogM(object):
         assert_allclose(logm(E), L, atol=1e-14)
 
 
-class TestSqrtM(object):
+class TestSqrtM:
     def test_round_trip_random_float(self):
         np.random.seed(1234)
         for n in range(1, 6):
@@ -413,7 +413,7 @@ class TestSqrtM(object):
         assert_allclose(sqrtm(M), R, atol=1e-14)
 
 
-class TestFractionalMatrixPower(object):
+class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):
         np.random.seed(1234)
         for p in range(1, 5):
@@ -598,7 +598,7 @@ class TestFractionalMatrixPower(object):
         assert_allclose(fractional_matrix_power(M, 0.5), R, atol=1e-14)
 
 
-class TestExpM(object):
+class TestExpM:
     def test_zero(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
@@ -631,7 +631,7 @@ class TestExpM(object):
         assert result.size == 0
 
 
-class TestExpmFrechet(object):
+class TestExpmFrechet:
 
     def test_expm_frechet(self):
         # a test of the basic functionality
@@ -768,7 +768,7 @@ def _relative_error(f, A, perturbation):
     return norm(X_prime - X) / norm(X)
 
 
-class TestExpmConditionNumber(object):
+class TestExpmConditionNumber:
     def test_expm_cond_smoke(self):
         np.random.seed(1234)
         for n in range(1, 4):
@@ -837,7 +837,7 @@ class TestExpmConditionNumber(object):
             assert_array_less(p_best_relerr, (1 + 2*eps) * eps * kappa)
 
 
-class TestKhatriRao(object):
+class TestKhatriRao:
 
     def test_basic(self):
         a = khatri_rao(array([[1, 2], [3, 4]]),

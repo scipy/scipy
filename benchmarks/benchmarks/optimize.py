@@ -3,7 +3,7 @@ import time
 import inspect
 import json
 import traceback
-from collections import defaultdict, OrderedDict
+from collections import defaultdict
 
 import numpy as np
 
@@ -16,7 +16,7 @@ with safe_import():
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
-                                dual_annealing, OptimizeResult)
+                                dual_annealing)
     from scipy.optimize._minimize import MINIMIZE_METHODS
 
 
@@ -433,7 +433,7 @@ class BenchGlobal(Benchmark):
     """
     timeout = 300
 
-    _functions = OrderedDict([
+    _functions = dict([
         item for item in inspect.getmembers(gbf, inspect.isclass)
         if (issubclass(item[1], gbf.Benchmark) and
             item[0] not in ('Benchmark') and

@@ -95,7 +95,7 @@ def _sample_sphere(n, dim, seed=None):
     return points
 
 
-class TestSphericalVoronoi(object):
+class TestSphericalVoronoi:
 
     def setup_method(self):
         self.points = np.array([
@@ -127,6 +127,11 @@ class TestSphericalVoronoi(object):
         assert_equal(s3.radius, 1)
         assert_array_equal(s4.center, center)
         assert_equal(s4.radius, radius)
+
+        # Test a non-sequence/-ndarray based array-like
+        s5 = SphericalVoronoi(memoryview(self.points))  # type: ignore[arg-type]
+        assert_array_equal(s5.center, np.array([0, 0, 0]))
+        assert_equal(s5.radius, 1)
 
     def test_vertices_regions_translation_invariance(self):
         sv_origin = SphericalVoronoi(self.points)

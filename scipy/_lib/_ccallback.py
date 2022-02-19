@@ -6,7 +6,7 @@ PyCFuncPtr = ctypes.CFUNCTYPE(ctypes.c_void_p).__bases__[0]
 
 ffi = None
 
-class CData(object):
+class CData:
     pass
 
 def _import_cffi():
