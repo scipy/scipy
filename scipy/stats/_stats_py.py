@@ -4053,7 +4053,7 @@ class PearsonRResult(PearsonRResultBase):
         References
         ----------
         .. [1] "Pearson correlation coefficient", Wikipedia,
-               https://en.wikipedia.org/wiki/Pearson_correlation_coefficient        
+               https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
         """
         return _pearsonr_fisher_ci(self.statistic, self.n, confidence_level,
                                    self.alternative)
