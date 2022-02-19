@@ -4008,11 +4008,7 @@ class PearsonRResult(PearsonRResultBase):
     statistic : float
         Pearson product-moment correlation coefficent.
     pvalue : float
-        P-value.
-    alternative : str
-        The value of `alternative` that was passed to `pearsonr`.
-    n : int
-        The length of `x` and `y` that were given to `pearsonr`.
+        The p-value associated with the chosen alternative.
 
     Methods
     -------
@@ -4023,8 +4019,8 @@ class PearsonRResult(PearsonRResultBase):
     """
     def __init__(self, statistic, pvalue, alternative, n):
         super().__init__(statistic, pvalue)
-        self.alternative = alternative
-        self.n = n
+        self._alternative = alternative
+        self._n = n
 
     def confidence_interval(self, confidence_level=0.95):
         """
@@ -4055,8 +4051,8 @@ class PearsonRResult(PearsonRResultBase):
         .. [1] "Pearson correlation coefficient", Wikipedia,
                https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
         """
-        return _pearsonr_fisher_ci(self.statistic, self.n, confidence_level,
-                                   self.alternative)
+        return _pearsonr_fisher_ci(self.statistic, self._n, confidence_level,
+                                   self._alternative)
 
 
 def pearsonr(x, y, *, alternative='two-sided'):
@@ -4064,15 +4060,17 @@ def pearsonr(x, y, *, alternative='two-sided'):
     Pearson correlation coefficient and p-value for testing non-correlation.
 
     The Pearson correlation coefficient [1]_ measures the linear relationship
-    between two datasets.  The calculation of the p-value relies on the
-    assumption that each dataset is normally distributed.  (See Kowalski [3]_
-    for a discussion of the effects of non-normality of the input on the
-    distribution of the correlation coefficient.)  Like other correlation
+    between two datasets. Like other correlation
     coefficients, this one varies between -1 and +1 with 0 implying no
     correlation. Correlations of -1 or +1 imply an exact linear relationship.
     Positive correlations imply that as x increases, so does y. Negative
     correlations imply that as x increases, y decreases.
 
+    This function also performs a test of the null hypothesis that the
+    distributions underlying the samples are uncorrelated and normally
+    distributed. (See Kowalski [3]_
+    for a discussion of the effects of non-normality of the input on the
+    distribution of the correlation coefficient.)
     The p-value roughly indicates the probability of an uncorrelated system
     producing datasets that have a Pearson correlation at least as extreme
     as the one computed from these datasets.
@@ -4101,11 +4099,7 @@ def pearsonr(x, y, *, alternative='two-sided'):
         statistic : float
             Pearson product-moment correlation coefficent.
         pvalue : float
-            P-value.
-        alternative : str
-            The value of `alternative` that was passed to `pearsonr`.
-        n : int
-            The length of `x` and `y` that were given to `pearsonr`.
+            The p-value associated with the chosen alternative.
 
         The object has the following method:
 
