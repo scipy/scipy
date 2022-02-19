@@ -7,6 +7,7 @@
     Additional tests by a host of SciPy developers.
 """
 import os
+import re
 import warnings
 from collections import namedtuple
 from itertools import product
@@ -3896,7 +3897,8 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='asymp')
         self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='asymp')
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+            message = "ks_2samp: Exact calculation unsuccessful."
+            sup.filter(RuntimeWarning, message)
             self._testOne(x, y, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='exact')
             self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
         with warnings.catch_warnings(record=True) as w:
@@ -3917,7 +3919,8 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='asymp')
 
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+            message = "ks_2samp: Exact calculation unsuccessful."
+            sup.filter(RuntimeWarning, message)
             self._testOne(x, y, 'greater', 6600.0 / n1 / n2, 0.9573185808092622, mode='exact')
             self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='exact')
         with warnings.catch_warnings(record=True) as w:
@@ -3981,7 +3984,8 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673)
         self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724)
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+            message = "ks_2samp: Exact calculation unsuccessful."
+            sup.filter(RuntimeWarning, message)
             self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673, mode='exact')
             self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724, mode='exact')
 
@@ -7486,3 +7490,25 @@ class TestPageTrendTest:
         with assert_raises(TypeError, match="`ranked` must be boolean."):
             stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
                                   ranked="ekki")
+
+
+rng = np.random.default_rng(902340982)
+x = rng.random(10)
+y = rng.random(10)
+
+
+@pytest.mark.parametrize("fun, args",
+                         [(stats.wilcoxon, (x,)),
+                          (stats.ks_1samp, (x, stats.norm.cdf)),
+                          (stats.ks_2samp, (x, y)),
+                          (stats.kstest, (x, y)),
+                          ])
+def test_rename_mode_method(fun, args):
+
+    res = fun(*args, method='exact')
+    res2 = fun(*args, mode='exact')
+    assert_equal(res, res2)
+
+    err = rf"{fun.__name__}() got multiple values for argument"
+    with pytest.raises(TypeError, match=re.escape(err)):
+        fun(*args, method='exact', mode='exact')

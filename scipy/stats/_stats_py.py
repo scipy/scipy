@@ -38,7 +38,8 @@ from numpy.lib import NumpyVersion
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
 from scipy._lib._util import (check_random_state, MapWrapper,
-                              rng_integers, float_factorial)
+                              rng_integers, _rename_parameter)
+
 import scipy.special as special
 from scipy import linalg
 from . import distributions
@@ -7019,7 +7020,8 @@ def _compute_dminus(cdfvals):
     return (cdfvals - np.arange(0.0, n)/n).max()
 
 
-def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
+@_rename_parameter("method", "mode")
+def ks_1samp(x, cdf, args=(), alternative='two-sided', method=None):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7038,7 +7040,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+    method : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7132,6 +7134,10 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     KstestResult(statistic=0.128678487493..., pvalue=0.066569081515...)
 
     """
+    mode = method
+    if mode is None:
+        mode = "auto"
+
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
@@ -7343,7 +7349,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
+@_rename_parameter("method", "mode")
+def ks_2samp(data1, data2, alternative='two-sided', method=None):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7359,7 +7366,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'asymp'}, optional
+    method : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7402,7 +7409,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     If the KS statistic is small or the p-value is high, then we cannot
     reject the null hypothesis in favor of the alternative.
 
-    If the mode is 'auto', the computation is exact if the sample sizes are
+    If the method is 'auto', the computation is exact if the sample sizes are
     less than 10000.  For larger sizes, the computation uses the
     Kolmogorov-Smirnov distributions to compute an approximate value.
 
@@ -7450,6 +7457,10 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     KstestResult(statistic=0.12166666666666667, pvalue=0.05401863039081145)
 
     """
+    mode = method
+    if mode is None:
+        mode = "auto"
+
     if mode not in ['auto', 'exact', 'asymp']:
         raise ValueError(f'Invalid value for mode: {mode}')
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
@@ -7499,7 +7510,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
             mode = 'asymp'
             if original_mode == 'exact':
                 warnings.warn(f"ks_2samp: Exact calculation unsuccessful. "
-                              f"Switching to mode={mode}.", RuntimeWarning)
+                              f"Switching to method={mode}.", RuntimeWarning)
 
     if mode == 'asymp':
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
@@ -7549,7 +7560,8 @@ def _parse_kstest_args(data1, data2, args, N):
     return data1, data2, cdf
 
 
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
+@_rename_parameter("method", "mode")
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method=None):
     """
     Performs the (one-sample or two-sample) Kolmogorov-Smirnov test for
     goodness of fit.
@@ -7583,7 +7595,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+    method : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7677,6 +7689,9 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     KstestResult(statistic=0.128678487493..., pvalue=0.066569081515...)
 
     """
+    if method is None:
+        method = "auto"
+
     # to not break compatibility with existing code
     if alternative == 'two_sided':
         alternative = 'two-sided'
@@ -7685,8 +7700,8 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative,
-                        mode=mode)
-    return ks_2samp(xvals, yvals, alternative=alternative, mode=mode)
+                        method=method)
+    return ks_2samp(xvals, yvals, alternative=alternative, method=method)
 
 
 def tiecorrect(rankvals):

@@ -41,6 +41,7 @@ import warnings
 from collections import namedtuple
 
 from . import distributions
+from scipy._lib._util import _rename_parameter
 import scipy.special as special
 import scipy.stats._stats_py
 
@@ -1474,7 +1475,8 @@ def kruskal(*args):
 kruskalwallis = kruskal
 
 
-def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
+@_rename_parameter("method", "mode")
+def ks_1samp(x, cdf, args=(), alternative="two-sided", method='auto'):
     """
     Computes the Kolmogorov-Smirnov test on one sample of masked values.
 
@@ -1491,7 +1493,7 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
         Distribution parameters, used if `cdf` is a string.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Indicates the alternative hypothesis.  Default is 'two-sided'.
-    mode : {'auto', 'exact', 'asymp'}, optional
+    method : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -1507,13 +1509,16 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
         Corresponding p-value.
 
     """
+    if method is None:
+        method = "auto"
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
     return scipy.stats._stats_py.ks_1samp(
-        x, cdf, args=args, alternative=alternative, mode=mode)
+        x, cdf, args=args, alternative=alternative, method=method)
 
 
-def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
+@_rename_parameter("method", "mode")
+def ks_2samp(data1, data2, alternative="two-sided", method='auto'):
     """
     Computes the Kolmogorov-Smirnov test on two samples.
 
@@ -1527,7 +1532,7 @@ def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
         Second data set
     alternative : {'two-sided', 'less', 'greater'}, optional
         Indicates the alternative hypothesis.  Default is 'two-sided'.
-    mode : {'auto', 'exact', 'asymp'}, optional
+    method : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -1543,19 +1548,23 @@ def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
         Corresponding p-value.
 
     """
+    if method is None:
+        method = "auto"
     # Ideally this would be accomplished by
     # ks_2samp = scipy.stats._stats_py.ks_2samp
     # but the circular dependencies between _mstats_basic and stats prevent that.
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
-    return scipy.stats._stats_py.ks_2samp(data1, data2, alternative=alternative,
-                                      mode=mode)
+    return scipy.stats._stats_py.ks_2samp(data1, data2,
+                                          alternative=alternative,
+                                          method=method)
 
 
 ks_twosamp = ks_2samp
 
 
-def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
+@_rename_parameter("method", "mode")
+def kstest(data1, data2, args=(), alternative='two-sided', method='auto'):
     """
 
     Parameters
@@ -1565,15 +1574,17 @@ def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
     args : tuple, sequence, optional
         Distribution parameters, used if `data1` or `data2` are strings.
     alternative : str, as documented in stats.kstest
-    mode : str, as documented in stats.kstest
+    method : str, as documented in stats.kstest
 
     Returns
     -------
     tuple of (K-S statistic, probability)
 
     """
+    if method is None:
+        method = "auto"
     return scipy.stats._stats_py.kstest(data1, data2, args,
-                                    alternative=alternative, mode=mode)
+                                        alternative=alternative, method=method)
 
 
 def trima(a, limits=None, inclusive=(True,True)):
