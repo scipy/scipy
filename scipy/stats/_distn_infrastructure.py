@@ -200,7 +200,7 @@ Generate random numbers:
 And compare the histogram:
 
 >>> ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
->>> ax.set_xlim([x[0], x[-1]])
+>>> # ax.set_xlim([x[0], x[-1]])
 >>> ax.legend(loc='best', frameon=False)
 >>> plt.show()
 
