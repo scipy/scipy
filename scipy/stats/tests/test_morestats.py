@@ -1455,12 +1455,12 @@ class TestWilcoxon:
         _, p = stats.wilcoxon(x, y, alternative="greater", mode="exact")
         assert_almost_equal(p, 0.5795889, decimal=6)
 
-
     # These inputs were chosen to give a W statistic that is either the
     # center of the distribution (when the length of the support is odd), or
     # the value to the left of the center (when the length of the support is
     # even).  Also, the numbers are chosen so that the W statistic is the
     # sum of the positive values.
+
     @pytest.mark.parametrize('x', [[-1, -2, 3],
                                    [-1, 2, -3, -4, 5],
                                    [-1, -2, 3, -4, -5, -6, 7, 8]])
