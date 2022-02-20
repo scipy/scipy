@@ -175,7 +175,7 @@ end subroutine <prefix2>rotm
 
 
 subroutine <prefix>swap(n,x,offx,incx,y,offy,incy)
-  ! Swap two arrays: x <-> y
+  ! Swap two arrays, `x` and `y`
 
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
   callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*

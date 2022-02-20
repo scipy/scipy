@@ -113,6 +113,9 @@ class ScalarFunction:
         self.g_updated = False
         self.H_updated = False
 
+        self._lowest_x = None
+        self._lowest_f = np.inf
+
         finite_diff_options = {}
         if grad in FD_METHODS:
             finite_diff_options["method"] = grad
@@ -131,7 +134,22 @@ class ScalarFunction:
             # Send a copy because the user may overwrite it.
             # Overwriting results in undefined behaviour because
             # fun(self.x) will change self.x, with the two no longer linked.
-            return fun(np.copy(x), *args)
+            fx = fun(np.copy(x), *args)
+            # Make sure the function returns a true scalar
+            if not np.isscalar(fx):
+                try:
+                    fx = np.asarray(fx).item()
+                except (TypeError, ValueError) as e:
+                    raise ValueError(
+                        "The user-provided objective function "
+                        "must return a scalar value."
+                    ) from e
+
+            if fx < self._lowest_f:
+                self._lowest_x = x
+                self._lowest_f = fx
+
+            return fx
 
         def update_fun():
             self.f = fun_wrapped(self.x)

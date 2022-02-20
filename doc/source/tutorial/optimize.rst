@@ -759,7 +759,6 @@ optimization was successful, and more.  For brevity, we won't show the full
 output of the other optimizers::
 
    >>> results['DE'] = optimize.differential_evolution(eggholder, bounds)
-   >>> results['BH'] = optimize.basinhopping(eggholder, bounds)
 
 :func:`shgo` has a second method, which returns all local minima rather than
 only what it thinks is the global minimum::
@@ -779,7 +778,6 @@ We'll now plot all found minima on a heatmap of the function::
    >>> def plot_point(res, marker='o', color=None):
    ...     ax.plot(512+res.x[0], 512+res.x[1], marker=marker, color=color, ms=10)
 
-   >>> plot_point(results['BH'], color='y')  # basinhopping           - yellow
    >>> plot_point(results['DE'], color='c')  # differential_evolution - cyan
    >>> plot_point(results['DA'], color='w')  # dual_annealing.        - white
 

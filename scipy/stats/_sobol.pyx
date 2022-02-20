@@ -6,6 +6,8 @@ cimport numpy as cnp
 import os
 import numpy as np
 
+cnp.import_array()
+
 # Parameters are linked to the direction numbers list.
 # See `initialize_direction_numbers` for more details.
 # Declared using DEF to be known at compilation time for ``poly`` et ``vinit``
@@ -77,7 +79,7 @@ def initialize_direction_numbers():
         # read in as dataframe, explicitly use zero values
         df = pd.DataFrame(rows).fillna(0).astype(int)
 
-        # peform conversion
+        # perform conversion
         df["poly"] = 2 * df["a"] + 2 ** df["s"] + 1
 
         # ensure columns are properly ordered
@@ -91,11 +93,19 @@ def initialize_direction_numbers():
         np.savez_compressed("./_sobol_direction_numbers", vinit=vs, poly=poly)
 
     """
-    global is_initialized, poly, vinit
+    cdef int[:] dns_poly
+    cdef int[:, :] dns_vinit
+
+    global is_initialized
     if not is_initialized:
         dns = np.load(os.path.join(os.path.dirname(__file__), "_sobol_direction_numbers.npz"))
-        poly = dns["poly"]
-        vinit = dns["vinit"]
+        dns_poly = dns["poly"].astype(np.intc)
+        dns_vinit = dns["vinit"].astype(np.intc)
+        for i in range(MAXDIM):
+            poly[i] = dns_poly[i]
+        for i in range(MAXDIM):
+            for j in range(MAXDEG):
+                vinit[i][j] = dns_vinit[i, j]
         is_initialized = True
 
 

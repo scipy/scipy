@@ -1,5 +1,8 @@
 import pathlib
-from shutil import copyfile
+import subprocess
+import sys
+import os
+import argparse
 
 
 def isNPY_OLD():
@@ -12,49 +15,61 @@ def isNPY_OLD():
     return ver < (1, 19)
 
 
-def make_biasedurn():
+def make_biasedurn(outdir):
     '''Substitute True/False values for NPY_OLD Cython build variable.'''
-    biasedurn_base = (pathlib.Path(__file__).parent / 'biasedurn').absolute()
+    biasedurn_base = (pathlib.Path(__file__).parent / '_biasedurn').absolute()
     with open(biasedurn_base.with_suffix('.pyx.templ'), 'r') as src:
         contents = src.read()
-    with open(biasedurn_base.with_suffix('.pyx'), 'w') as dest:
+
+    outfile = outdir / '_biasedurn.pyx'
+    with open(outfile, 'w') as dest:
         dest.write(contents.format(NPY_OLD=str(bool(isNPY_OLD()))))
 
 
-def make_boost():
-    # create target directory
-    (pathlib.Path(__file__).parent / '_boost/src').mkdir(exist_ok=True,
-                                                         parents=True)
-    src_dir = pathlib.Path(__file__).parent / '_boost/src'
+def make_unuran(srcdir, outdir):
+    """Substitute True/False values for NPY_OLD Cython build variable."""
+    import re
+    with open(srcdir / "unuran_wrapper.pyx.templ", "r") as src:
+        contents = src.read()
+    with open(outdir / "unuran_wrapper.pyx", "w") as dest:
+        dest.write(re.sub("DEF NPY_OLD = isNPY_OLD",
+                          f"DEF NPY_OLD = {isNPY_OLD()}",
+                          contents))
 
-    # copy contents of include into directory to satisfy Cython
-    # PXD include conditions
-    inc_dir = pathlib.Path(__file__).parent / '_boost/include'
-    src = 'templated_pyufunc.pxd'
-    copyfile(inc_dir / src, src_dir / src)
 
-    # generate the PXD and PYX wrappers
-    from _boost.include.gen_func_defs_pxd import (  # type: ignore
-        _gen_func_defs_pxd)
-    from _boost.include.code_gen import _ufunc_gen  # type: ignore
-    from _boost._info import (  # type: ignore
-        _x_funcs, _no_x_funcs, _klass_mapper)
-    _gen_func_defs_pxd(
-        f'{src_dir}/func_defs.pxd',
-        x_funcs=_x_funcs,
-        no_x_funcs=_no_x_funcs)
-    for b, s in _klass_mapper.items():
-        _ufunc_gen(
-            scipy_dist=s.scipy_name,
-            types=['NPY_FLOAT', 'NPY_DOUBLE', 'NPY_LONGDOUBLE'],
-            ctor_args=s.ctor_args,
-            filename=f'{src_dir}/{s.scipy_name}_ufunc.pyx',
-            boost_dist=f'{b}_distribution',
-            x_funcs=_x_funcs,
-            no_x_funcs=_no_x_funcs,
-        )
+def make_boost(outdir, distutils_build=False):
+    # Call code generator inside _boost directory
+    code_gen = pathlib.Path(__file__).parent / '_boost/include/code_gen.py'
+    if distutils_build:
+        subprocess.run([sys.executable, str(code_gen), '-o', outdir,
+                        '--distutils-build', 'True'], check=True)
+    else:
+        subprocess.run([sys.executable, str(code_gen), '-o', outdir],
+                       check=True)
 
 
 if __name__ == '__main__':
-    make_biasedurn()
-    make_boost()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--outdir", type=str,
+                        help="Path to the output directory")
+    args = parser.parse_args()
+
+    if not args.outdir:
+        # We're dealing with a distutils build here, write in-place:
+        outdir_abs = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
+        make_biasedurn(outdir_abs)
+
+        outdir_abs_boost = outdir_abs / '_boost' / 'src'
+        if not os.path.exists(outdir_abs_boost):
+            os.makedirs(outdir_abs_boost)
+        make_boost(outdir_abs_boost, distutils_build=True)
+
+        outdir_abs_unuran = outdir_abs / '_unuran'
+        make_unuran(outdir_abs_unuran, outdir_abs_unuran)
+    else:
+        # Meson build
+        srcdir_abs = pathlib.Path(os.path.abspath(os.path.dirname(__file__)))
+        outdir_abs = pathlib.Path(os.getcwd()) / args.outdir
+        make_biasedurn(outdir_abs)
+        make_boost(outdir_abs)
+        make_unuran(srcdir_abs / '_unuran', outdir_abs)

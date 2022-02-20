@@ -50,12 +50,12 @@ C
         EPS=1.0D-15
         PI=3.141592653589793D0
         SQ2=DSQRT(2.0D0)
-        CA0=CDEXP(-.25D0*Z*Z)
+        CA0=EXP(-.25D0*Z*Z)
         VA0=0.5D0*(1.0D0-N)
         IF (N.EQ.0.0) THEN
            CDN=CA0
         ELSE
-           IF (CDABS(Z).EQ.0.0) THEN
+           IF (ABS(Z).EQ.0.0) THEN
               IF (VA0.LE.0.0.AND.VA0.EQ.INT(VA0)) THEN
                  CDN=0.0D0
               ELSE
@@ -77,7 +77,7 @@ C
                  CR=-CR*SQ2*Z/M
                  CDW=GM*CR
                  CDN=CDN+CDW
-                 IF (CDABS(CDW).LT.CDABS(CDN)*EPS) GO TO 20
+                 IF (ABS(CDW).LT.ABS(CDN)*EPS) GO TO 20
 10            CONTINUE
 20            CDN=CB0*CDN
            ENDIF
@@ -99,10 +99,10 @@ C                ZD --- S'(z)
 C       =========================================================
 C
         IMPLICIT DOUBLE PRECISION (E,P,W)
-        IMPLICIT COMPLEX *16 (C,S,Z)
+        IMPLICIT COMPLEX *16 (C,S,Z,D)
         EPS=1.0D-14
         PI=3.141592653589793D0
-        W0=CDABS(Z)
+        W0=ABS(Z)
         ZP=0.5D0*PI*Z*Z
         ZP2=ZP*ZP
         Z0=(0.0D0,0.0D0)
@@ -116,7 +116,7 @@ C
               CR=-.5D0*CR*(4.0D0*K-1.0D0)/K/(2.0D0*K+1.0D0)
      &          /(4.0D0*K+3.0D0)*ZP2
               S=S+CR
-              WB=CDABS(S)
+              WB=ABS(S)
               IF (DABS(WB-WB0).LT.EPS.AND.K.GT.10) GO TO 30
 10            WB0=WB
         ELSE IF (W0.GT.2.5.AND.W0.LT.4.5) THEN
@@ -129,23 +129,42 @@ C
               IF (K.NE.INT(K/2)*2) S=S+CF
               CF1=CF0
 15            CF0=CF
-           S=CDSQRT(2.0D0/(PI*ZP))*CDSIN(ZP)/CF*S
+           S=2.0D0/(PI*Z)*SIN(ZP)/CF*S
         ELSE
+C          Auxiliary functions f(z) and g(z) can be computed using an
+C          asymptotic expansion in the right quadrant |arg(z)| <= pi/4, not pi/2
+C          as sometimes suggested. Use the symmetry S(z) = -iS(-iz).
+C          Interestingly, most of the expansion code is the same across
+C          the quadrants. (The forth power in Z is the equalizer here.)
+C          Only one constant has to be adapted.
+           IF (DIMAG(Z).GT.-DBLE(Z).AND.DIMAG(Z).LE.DBLE(Z)) THEN
+C            right quadrant
+             D=DCMPLX(.5D0,0.0D0)
+           ELSE IF (DIMAG(Z).GT.DBLE(Z).AND.DIMAG(Z).GE.-DBLE(Z)) THEN
+C            upper quadrant
+             D=DCMPLX(0.0D0,-.5D0)
+           ELSE IF (DIMAG(Z).LT.-DBLE(Z).AND.DIMAG(Z).GE.DBLE(Z)) THEN
+C            left quadrant
+             D=DCMPLX(-.5D0,0.0D0)
+           ELSE
+C            lower quadrant
+             D=DCMPLX(0.0D0,.5D0)
+           ENDIF
            CR=(1.0D0,0.0D0)
            CF=(1.0D0,0.0D0)
            DO 20 K=1,20
               CR=-.25D0*CR*(4.0D0*K-1.0D0)*(4.0D0*K-3.0D0)/ZP2
 20            CF=CF+CR
-           CR=1.0D0
-           CG=CR
+           CR=(1.0D0,0.0D0)
+           CG=(1.0D0,0.0D0)
            DO 25 K=1,12
               CR=-.25D0*CR*(4.0D0*K+1.0D0)*(4.0D0*K-1.0D0)/ZP2
 25            CG=CG+CR
-           CG = CG/(PI*Z*Z)
-           S=.5D0-(CF*CDCOS(ZP)+CG*CDSIN(ZP))/(PI*Z)
+           CG=CG/(PI*Z*Z)
+           S=D-(CF*COS(ZP)+CG*SIN(ZP))/(PI*Z)
         ENDIF
 30      ZF=S
-        ZD=CDSIN(0.5*PI*Z*Z)
+        ZD=SIN(0.5*PI*Z*Z)
         RETURN
         END
 
@@ -285,12 +304,12 @@ C
         if (NTYPE.EQ.2) THEN
 C       sqrt(1 - z^2) with branch cut on |x|>1
            ZS=(1.0D0-Z*Z)
-           ZQ=-CDSQRT(ZS)
+           ZQ=-SQRT(ZS)
            LS=-1
         ELSE
 C       sqrt(z^2 - 1) with branch cut between [-1, 1]
            ZS=(Z*Z-1.0D0)
-           ZQ=CDSQRT(ZS)
+           ZQ=SQRT(ZS)
            IF (X.LT.0D0) THEN
               ZQ=-ZQ
            END IF
@@ -338,7 +357,7 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         EPS=1.0D-15
         PI=3.141592653589793D0
-        EP=DEXP(-.25D0*X*X)
+        EP=EXP(-.25D0*X*X)
         VA0=1.0D0+0.5D0*VA
         IF (X.EQ.0.0) THEN
            IF (VA0.LE.0.0.AND.VA0.EQ.INT(VA0).OR.VA.EQ.0.0) THEN
@@ -1230,8 +1249,8 @@ C
         PI=3.141592653589793D0
         DO 30 L=1,0,-1
            V0=V-L
-           CWS=CDSQRT(1.0D0-(Z/V0)*(Z/V0))
-           CETA=CWS+CDLOG(Z/V0/(1.0D0+CWS))
+           CWS=SQRT(1.0D0-(Z/V0)*(Z/V0))
+           CETA=CWS+LOG(Z/V0/(1.0D0+CWS))
            CT=1.0D0/CWS
            CT2=CT*CT
            DO 15 K=1,KM
@@ -1245,12 +1264,12 @@ C
            CSJ=(1.0D0,0.0D0)
            DO 20 K=1,KM
 20            CSJ=CSJ+CF(K)*VR**K
-           CBJV=CDSQRT(CT/(2.0D0*PI*V0))*CDEXP(V0*CETA)*CSJ
+           CBJV=SQRT(CT/(2.0D0*PI*V0))*EXP(V0*CETA)*CSJ
            IF (L.EQ.1) CFJ=CBJV
            CSY=(1.0D0,0.0D0)
            DO 25 K=1,KM
 25            CSY=CSY+(-1)**K*CF(K)*VR**K
-           CBYV=-CDSQRT(2.0D0*CT/(PI*V0))*CDEXP(-V0*CETA)*CSY
+           CBYV=-SQRT(2.0D0*CT/(PI*V0))*EXP(-V0*CETA)*CSY
            IF (L.EQ.1) CFY=CBYV
 30      CONTINUE
         CDJV=-V/Z*CBJV+CFJ
@@ -1574,7 +1593,7 @@ C       ==========================================================
               ER=ER+R
               IF (DABS(ER-W).LE.EPS*DABS(ER)) GO TO 15
 10            W=ER
-15         C0=2.0D0/DSQRT(PI)*X*DEXP(-X2)
+15         C0=2.0D0/DSQRT(PI)*X*EXP(-X2)
            ER0=C0*ER
         ELSE
            ER=1.0D0
@@ -1582,7 +1601,7 @@ C       ==========================================================
            DO 20 K=1,12
               R=-R*(K-0.5D0)/X2
 20            ER=ER+R
-           C0=DEXP(-X2)/(X*DSQRT(PI))
+           C0=EXP(-X2)/(X*DSQRT(PI))
            ER0=1.0D0-C0*ER
         ENDIF
         IF (Y.EQ.0.0D0) THEN
@@ -1591,28 +1610,28 @@ C       ==========================================================
         ELSE
            CS=DCOS(2.0D0*X*Y)
            SS=DSIN(2.0D0*X*Y)
-           ER1=DEXP(-X2)*(1.0D0-CS)/(2.0D0*PI*X)
-           EI1=DEXP(-X2)*SS/(2.0D0*PI*X)
+           ER1=EXP(-X2)*(1.0D0-CS)/(2.0D0*PI*X)
+           EI1=EXP(-X2)*SS/(2.0D0*PI*X)
            ER2=0.0D0
            W1=0.0D0
            DO 25 N=1,100
-              ER2=ER2+DEXP(-.25D0*N*N)/(N*N+4.0D0*X2)*(2.0D0*X
+              ER2=ER2+EXP(-.25D0*N*N)/(N*N+4.0D0*X2)*(2.0D0*X
      &            -2.0D0*X*DCOSH(N*Y)*CS+N*DSINH(N*Y)*SS)
               IF (DABS((ER2-W1)/ER2).LT.EPS) GO TO 30
 25            W1=ER2
-30         C0=2.0D0*DEXP(-X2)/PI
+30         C0=2.0D0*EXP(-X2)/PI
            ERR=ER0+ER1+C0*ER2
            EI2=0.0D0
            W2=0.0D0
            DO 35 N=1,100
-              EI2=EI2+DEXP(-.25D0*N*N)/(N*N+4.0D0*X2)*(2.0D0*X
+              EI2=EI2+EXP(-.25D0*N*N)/(N*N+4.0D0*X2)*(2.0D0*X
      &            *DCOSH(N*Y)*SS+N*DSINH(N*Y)*CS)
               IF (DABS((EI2-W2)/EI2).LT.EPS) GO TO 40
 35            W2=EI2
 40         ERI=EI1+C0*EI2
         ENDIF
         CER = DCMPLX(ERR, ERI)
-        CDER=2.0D0/DSQRT(PI)*CDEXP(-Z*Z)
+        CDER=2.0D0/DSQRT(PI)*EXP(-Z*Z)
         RETURN
         END
 
@@ -1962,7 +1981,7 @@ C
            DO 35 K=1,11
               R=R/X
 35            TI=TI+A(K)*R
-           TL0=TI/DSQRT(2*PI*X)*DEXP(X)+S0
+           TL0=TI/DSQRT(2*PI*X)*EXP(X)+S0
         ENDIF
         RETURN
         END
@@ -1993,12 +2012,12 @@ C
            RETURN
         ENDIF
         LS=1
-        IF (CDABS(Z).GT.1.0D0) LS=-1
-        CQ0=0.5D0*CDLOG(LS*(1.0D0+Z)/(1.0D0-Z))
+        IF (ABS(Z).GT.1.0D0) LS=-1
+        CQ0=0.5D0*LOG(LS*(1.0D0+Z)/(1.0D0-Z))
         CQ1=Z*CQ0-1.0D0
         CQN(0)=CQ0
         CQN(1)=CQ1
-        IF (CDABS(Z).LT.1.0001D0) THEN
+        IF (ABS(Z).LT.1.0001D0) THEN
            CQF0=CQ0
            CQF1=CQ1
            DO 15 K=2,N
@@ -2007,10 +2026,10 @@ C
               CQF0=CQF1
 15            CQF1=CQF2
         ELSE
-           IF (CDABS(Z).GT.1.1D0) THEN
+           IF (ABS(Z).GT.1.1D0) THEN
               KM=40+N
            ELSE
-              KM=(40+N)*INT(-1.0-1.8*LOG(CDABS(Z-1.0)))
+              KM=(40+N)*INT(-1.0-1.8*LOG(ABS(Z-1.0)))
            ENDIF
            CQF2=0.0D0
            CQF1=1.0D0
@@ -2163,7 +2182,7 @@ C
               ER=ER+R
               IF (DABS(R).LE.DABS(ER)*EPS) GO TO 15
 10         CONTINUE
-15         C0=2.0D0/DSQRT(PI)*X*DEXP(-X2)
+15         C0=2.0D0/DSQRT(PI)*X*EXP(-X2)
            ERR=C0*ER
         ELSE
            ER=1.0D0
@@ -2171,7 +2190,7 @@ C
            DO 20 K=1,12
               R=-R*(K-0.5D0)/X2
 20            ER=ER+R
-           C0=DEXP(-X2)/(DABS(X)*DSQRT(PI))
+           C0=EXP(-X2)/(DABS(X)*DSQRT(PI))
            ERR=1.0D0-C0*ER
            IF (X.LT.0.0) ERR=-ERR
         ENDIF
@@ -2191,8 +2210,8 @@ C       ====================================================
 C
         IMPLICIT COMPLEX *16 (C,Z)
         DOUBLE PRECISION A0,PI
-        A0=CDABS(Z)
-        C0=CDEXP(-Z*Z)
+        A0=ABS(Z)
+        C0=EXP(-Z*Z)
         PI=3.141592653589793D0
         Z1=Z
         IF (DBLE(Z).LT.0.0) THEN
@@ -2215,7 +2234,7 @@ C
            DO 10 K=1,120
               CR=CR*Z1*Z1/(K+0.5D0)
               CS=CS+CR
-              IF (CDABS(CR/CS).LT.1.0D-15) GO TO 15
+              IF (ABS(CR/CS).LT.1.0D-15) GO TO 15
 10         CONTINUE
 15         CER=2.0D0*C0*CS/DSQRT(PI)
         ELSE
@@ -2232,7 +2251,7 @@ C
            DO 20 K=1,20
               CR=-CR*(K-0.5D0)/(Z1*Z1)
               CL=CL+CR
-              IF (CDABS(CR/CL).LT.1.0D-15) GO TO 25
+              IF (ABS(CR/CL).LT.1.0D-15) GO TO 25
 20         CONTINUE
 25         CER=1.0D0-C0*CL/DSQRT(PI)
         ENDIF
@@ -2419,7 +2438,7 @@ C
      &         -11.9094395D0)*T+40.394734D0)*T-48.0524115D0)
      &         *T+28.1221478D0)*T-8.6556013D0)*T+1.4780044D0)
      &         *T-.0493843D0)*T+.1332055D0)*T+.3989314D0
-           TTI=TTI*DEXP(X)/(DSQRT(X)*X)
+           TTI=TTI*EXP(X)/(DSQRT(X)*X)
         ENDIF
         IF (X.EQ.0.0D0) THEN
            TTK=1.0D+300
@@ -2434,13 +2453,13 @@ C
            T=2.0D0/X
            TTK=(((.06084D0*T-.280367D0)*T+.590944D0)*T
      &         -.850013D0)*T+1.234684D0
-           TTK=TTK*DEXP(-X)/(DSQRT(X)*X)
+           TTK=TTK*EXP(-X)/(DSQRT(X)*X)
         ELSE
            T=4.0D0/X
            TTK=(((((.02724D0*T-.1110396D0)*T+.2060126D0)*T
      &         -.2621446D0)*T+.3219184D0)*T-.5091339D0)*T
      &         +1.2533141D0
-           TTK=TTK*DEXP(-X)/(DSQRT(X)*X)
+           TTK=TTK*EXP(-X)/(DSQRT(X)*X)
         ENDIF
         RETURN
         END
@@ -2596,7 +2615,7 @@ C
               R=R/X
 20            TTI=TTI+C(K)*R
            RC=X*DSQRT(2.0D0*PI*X)
-           TTI=TTI*DEXP(X)/RC
+           TTI=TTI*EXP(X)/RC
         ENDIF
         IF (X.LE.12.0D0) THEN
            E0=(.5D0*DLOG(X/2.0D0)+EL)*DLOG(X/2.0D0)
@@ -2619,7 +2638,7 @@ C
               R=-R/X
 35            TTK=TTK+C(K)*R
            RC=X*DSQRT(2.0D0/PI*X)
-           TTK=TTK*DEXP(-X)/RC
+           TTK=TTK*EXP(-X)/RC
         ENDIF
         RETURN
         END
@@ -2822,8 +2841,8 @@ C       DLMF 13.4.4, integration up to C=12/X
               DO 10 K=1,30
                  T1=D+G*T(K)
                  T2=D-G*T(K)
-                 F1=DEXP(-X*T1)*T1**A1*(1.0D0+T1)**B1
-                 F2=DEXP(-X*T2)*T2**A1*(1.0D0+T2)**B1
+                 F1=EXP(-X*T1)*T1**A1*(1.0D0+T1)**B1
+                 F2=EXP(-X*T2)*T2**A1*(1.0D0+T2)**B1
                  S=S+W(K)*(F1+F2)
 10            CONTINUE
               HU1=HU1+S*G
@@ -2847,8 +2866,8 @@ C       integration u from 0 to 1, i.e. t from C=12/X to infinity
                  T2=D-G*T(K)
                  T3=C/(1.0D0-T1)
                  T4=C/(1.0D0-T2)
-                 F1=T3*T3/C*DEXP(-X*T3)*T3**A1*(1.0D0+T3)**B1
-                 F2=T4*T4/C*DEXP(-X*T4)*T4**A1*(1.0D0+T4)**B1
+                 F1=T3*T3/C*EXP(-X*T3)*T3**A1*(1.0D0+T3)**B1
+                 F2=T4*T4/C*EXP(-X*T4)*T4**A1*(1.0D0+T4)**B1
                  S=S+W(K)*(F1+F2)
 30            CONTINUE
               HU2=HU2+S*G
@@ -3025,7 +3044,7 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         PI=3.141592653589793D0
         EPS=1.0D-12
-        QE=DEXP(0.25*X*X)
+        QE=EXP(0.25*X*X)
         A0=DABS(X)**(-VA-1.0D0)*DSQRT(2.0D0/PI)*QE
         R=1.0D0
         PV=1.0D0
@@ -3074,7 +3093,7 @@ C
         PI=3.141592653589793D0
         RP2=.63661977236758D0
         CI=(0.0D0,1.0D0)
-        A0=CDABS(Z)
+        A0=ABS(Z)
         Z1=Z
         Z2=Z*Z
         N=INT(V)
@@ -3106,7 +3125,7 @@ C
               DO 15 K=1,40
                  CR=-0.25D0*CR*Z2/(K*(K+VL))
                  CJVL=CJVL+CR
-                 IF (CDABS(CR).LT.CDABS(CJVL)*1.0D-15) GO TO 20
+                 IF (ABS(CR).LT.ABS(CJVL)*1.0D-15) GO TO 20
 15            CONTINUE
 20            VG=1.0D0+VL
               CALL GAMMA2(VG,GA)
@@ -3134,9 +3153,9 @@ C
 35               CQZ=CQZ+CRQ
               CQZ=0.125D0*(VV-1.0)*CQZ/Z1
               ZK=Z1-(0.5D0*(J+V0)+0.25D0)*PI
-              CA0=CDSQRT(RP2/Z1)
-              CCK=CDCOS(ZK)
-              CSK=CDSIN(ZK)
+              CA0=SQRT(RP2/Z1)
+              CCK=COS(ZK)
+              CSK=SIN(ZK)
               IF (J.EQ.0) THEN
                  CJV0=CA0*(CPZ*CCK-CQZ*CSK)
                  CYV0=CA0*(CPZ*CSK+CQZ*CCK)
@@ -3155,7 +3174,7 @@ C
                  DO 45 K=1,40
                     CR=-0.25D0*CR*Z2/(K*(K-VL))
                     CJVL=CJVL+CR
-                    IF (CDABS(CR).LT.CDABS(CJVL)*1.0D-15) GO TO 50
+                    IF (ABS(CR).LT.ABS(CJVL)*1.0D-15) GO TO 50
 45               CONTINUE
 50               VG=1.0D0-VL
                  CALL GAMMA2(VG,GB)
@@ -3166,7 +3185,7 @@ C
               CYV0=(CJV0*DCOS(PV0)-CJU0)/DSIN(PV0)
               CYV1=(CJV1*DCOS(PV1)-CJU1)/DSIN(PV1)
            ELSE
-              CEC=CDLOG(Z1/2.0D0)+.5772156649015329D0
+              CEC=LOG(Z1/2.0D0)+.5772156649015329D0
               CS0=(0.0D0,0.0D0)
               W0=0.0D0
               CR0=(1.0D0,0.0D0)
@@ -3186,8 +3205,8 @@ C
            ENDIF
         ENDIF
         IF (DBLE(Z).LT.0.0D0) THEN
-           CFAC0=CDEXP(PV0*CI)
-           CFAC1=CDEXP(PV1*CI)
+           CFAC0=EXP(PV0*CI)
+           CFAC1=EXP(PV1*CI)
            IF (DIMAG(Z).LT.0.0D0) THEN
               CYV0=CFAC0*CYV0-2.0D0*CI*DCOS(PV0)*CJV0
               CYV1=CFAC1*CYV1-2.0D0*CI*DCOS(PV1)*CJV1
@@ -3224,8 +3243,8 @@ C
               IF (K.LE.N) CBJ(K)=CF
               CF2=CF1
 75            CF1=CF
-           IF (CDABS(CJV0).GT.CDABS(CJV1)) CS=CJV0/CF
-           IF (CDABS(CJV0).LE.CDABS(CJV1)) CS=CJV1/CF2
+           IF (ABS(CJV0).GT.ABS(CJV1)) CS=CJV0/CF
+           IF (ABS(CJV0).LE.ABS(CJV1)) CS=CJV1/CF2
            DO 80 K=0,N
 80            CBJ(K)=CS*CBJ(K)
         ENDIF
@@ -3234,15 +3253,15 @@ C
 85         CDJ(K)=-(K+V0)/Z*CBJ(K)+CBJ(K-1)
         CBY(0)=CYV0
         CBY(1)=CYV1
-        YA0=CDABS(CYV0)
+        YA0=ABS(CYV0)
         LB=0
         CG0=CYV0
         CG1=CYV1
         DO 90 K=2,N
            CYK=2.0D0*(V0+K-1.0D0)/Z*CG1-CG0
-           IF (CDABS(CYK).GT.1.0D+290) GO TO 90
-           YAK=CDABS(CYK)
-           YA1=CDABS(CG0)
+           IF (ABS(CYK).GT.1.0D+290) GO TO 90
+           YAK=ABS(CYK)
+           YA1=ABS(CG0)
            IF (YAK.LT.YA0.AND.YAK.LT.YA1) LB=K
            CBY(K)=CYK
            CG0=CG1
@@ -3268,7 +3287,7 @@ C
         CP11=CH0
         CP21=CH2
         IF (LB.EQ.N) CBJ(LB+1)=2.0D0*(LB+V0)/Z*CBJ(LB)-CBJ(LB-1)
-        IF (CDABS(CBJ(0)).GT.CDABS(CBJ(1))) THEN
+        IF (ABS(CBJ(0)).GT.ABS(CBJ(1))) THEN
            CBY(LB+1)=(CBJ(LB+1)*CYV0-2.0D0*CP11/(PI*Z))/CBJ(0)
            CBY(LB)=(CBJ(LB)*CYV0+2.0D0*CP12/(PI*Z))/CBJ(0)
         ELSE
@@ -3290,8 +3309,8 @@ C
            CYL1=CYL2
 115        CYL2=CYLK
         DO 120 K=2,N
-           WA=CDABS(CBY(K))
-           IF (WA.LT.CDABS(CBY(K-1))) LB=K
+           WA=ABS(CBY(K))
+           IF (WA.LT.ABS(CBY(K-1))) LB=K
 120     CONTINUE
         GO TO 95
 125     CDY(0)=V0/Z*CBY(0)-CBY(1)
@@ -3330,7 +3349,7 @@ C
         PI=3.141592653589793D0
         RP2=.63661977236758D0
         CI=(0.0D0,1.0D0)
-        A0=CDABS(Z)
+        A0=ABS(Z)
         Z1=Z
         Z2=Z*Z
         N=INT(V)
@@ -3358,7 +3377,7 @@ C
            DO 15 K=1,40
               CR=-0.25D0*CR*Z2/(K*(K+V0))
               CJV0=CJV0+CR
-              IF (CDABS(CR).LT.CDABS(CJV0)*1.0D-15) GO TO 20
+              IF (ABS(CR).LT.ABS(CJV0)*1.0D-15) GO TO 20
 15         CONTINUE
 20         VG=1.0D0+V0
            CALL GAMMA2(VG,GA)
@@ -3383,9 +3402,9 @@ C
 30            CQZ=CQZ+CRQ
            CQZ=0.125D0*(VV-1.0)*CQZ/Z1
            ZK=Z1-(0.5D0*V0+0.25D0)*PI
-           CA0=CDSQRT(RP2/Z1)
-           CCK=CDCOS(ZK)
-           CSK=CDSIN(ZK)
+           CA0=SQRT(RP2/Z1)
+           CCK=COS(ZK)
+           CSK=SIN(ZK)
            CJV0=CA0*(CPZ*CCK-CQZ*CSK)
            CYV0=CA0*(CPZ*CSK+CQZ*CCK)
         ENDIF
@@ -3396,7 +3415,7 @@ C
               DO 35 K=1,40
                  CR=-0.25D0*CR*Z2/(K*(K-V0))
                  CJVN=CJVN+CR
-                 IF (CDABS(CR).LT.CDABS(CJVN)*1.0D-15) GO TO 40
+                 IF (ABS(CR).LT.ABS(CJVN)*1.0D-15) GO TO 40
 35            CONTINUE
 40            VG=1.0D0-V0
               CALL GAMMA2(VG,GB)
@@ -3404,7 +3423,7 @@ C
               CJU0=CJVN*CB
               CYV0=(CJV0*DCOS(PV0)-CJU0)/DSIN(PV0)
            ELSE
-              CEC=CDLOG(Z1/2.0D0)+.5772156649015329D0
+              CEC=LOG(Z1/2.0D0)+.5772156649015329D0
               CS0=(0.0D0,0.0D0)
               W0=0.0D0
               CR0=(1.0D0,0.0D0)
@@ -3433,7 +3452,7 @@ C
         DO 55 K=0,N
 55         CBJ(K)=CS*CBJ(K)
         IF (DBLE(Z).LT.0.0D0) THEN
-           CFAC0=CDEXP(PV0*CI)
+           CFAC0=EXP(PV0*CI)
            IF (DIMAG(Z).LT.0.0D0) THEN
               CYV0=CFAC0*CYV0-2.0D0*CI*DCOS(PV0)*CJV0
            ELSE IF (DIMAG(Z).GT.0.0D0) THEN
@@ -3441,9 +3460,9 @@ C
            ENDIF
            DO 60 K=0,N
               IF (DIMAG(Z).LT.0.0D0) THEN
-                 CBJ(K)=CDEXP(-PI*(K+V0)*CI)*CBJ(K)
+                 CBJ(K)=EXP(-PI*(K+V0)*CI)*CBJ(K)
               ELSE IF (DIMAG(Z).GT.0.0D0) THEN
-                 CBJ(K)=CDEXP(PI*(K+V0)*CI)*CBJ(K)
+                 CBJ(K)=EXP(PI*(K+V0)*CI)*CBJ(K)
               ENDIF
 60         CONTINUE
            Z1=Z1
@@ -3628,7 +3647,7 @@ C
               S=S+R
               IF (DABS(R/S).LT.1.0D-15) GO TO 15
 10         CONTINUE
-15         GIN=DEXP(XAM)*S
+15         GIN=EXP(XAM)*S
            CALL GAMMA2(A,GA)
            GIP=GIN/GA
            GIM=GA-GIN
@@ -3637,7 +3656,7 @@ C
            DO 20 K=60,1,-1
               T0=(K-A)/(1.0D0+K/(X+T0))
 20         CONTINUE
-           GIM=DEXP(XAM)/(X+T0)
+           GIM=EXP(XAM)/(X+T0)
            CALL GAMMA2(A,GA)
            GIN=GA-GIM
            GIP=1.0D0-GIM/GA
@@ -3673,13 +3692,13 @@ C
            T=5.0D0/X
            TI=(((-.015166D0*T-.0202292D0)*T+.1294122D0)*T
      &        -.0302912D0)*T+.4161224D0
-           TI=TI*DEXP(X)/DSQRT(X)
+           TI=TI*EXP(X)/DSQRT(X)
         ELSE
            T=8.0D0/X
            TI=(((((-.0073995D0*T+.017744D0)*T-.0114858D0)*T
      &        +.55956D-2)*T+.59191D-2)*T+.0311734D0)*T
      &        +.3989423D0
-           TI=TI*DEXP(X)/DSQRT(X)
+           TI=TI*EXP(X)/DSQRT(X)
         ENDIF
         IF (X.EQ.0.0D0) THEN
            TK=0.0D0
@@ -3694,19 +3713,19 @@ C
            T=2.0D0/X
            TK=(((.0160395D0*T-.0781715D0)*T+.185984D0)*T
      &        -.3584641D0)*T+1.2494934D0
-           TK=PI/2.0D0-TK*DEXP(-X)/DSQRT(X)
+           TK=PI/2.0D0-TK*EXP(-X)/DSQRT(X)
         ELSE IF (X.GT.4.0.AND.X.LE.7.0D0) THEN
            T=4.0D0/X
            TK=(((((.37128D-2*T-.0158449D0)*T+.0320504D0)*T
      &        -.0481455D0)*T+.0787284D0)*T-.1958273D0)*T
      &        +1.2533141D0
-           TK=PI/2.0D0-TK*DEXP(-X)/DSQRT(X)
+           TK=PI/2.0D0-TK*EXP(-X)/DSQRT(X)
         ELSE
            T=7.0D0/X
            TK=(((((.33934D-3*T-.163271D-2)*T+.417454D-2)*T
      &        -.933944D-2)*T+.02576646D0)*T-.11190289D0)*T
      &        +1.25331414D0
-           TK=PI/2.0D0-TK*DEXP(-X)/DSQRT(X)
+           TK=PI/2.0D0-TK*EXP(-X)/DSQRT(X)
         ENDIF
         RETURN
         END
@@ -3754,7 +3773,7 @@ C
               R=R/X
 20            TI=TI+A(K)*R
            RC1=1.0D0/DSQRT(2.0D0*PI*X)
-           TI=RC1*DEXP(X)*TI
+           TI=RC1*EXP(X)*TI
         ENDIF
         IF (X.LT.12.0D0) THEN
            E0=EL+DLOG(X/2.0D0)
@@ -3779,7 +3798,7 @@ C
               R=-R/X
 35            TK=TK+A(K)*R
            RC2=DSQRT(PI/(2.0D0*X))
-           TK=PI/2.0D0-RC2*TK*DEXP(-X)
+           TK=PI/2.0D0-RC2*TK*EXP(-X)
         ENDIF
         RETURN
         END
@@ -4366,7 +4385,7 @@ C
         NV=INT(V)
         V0=V-NV
         NA=ABS(NV)
-        EP=DEXP(-.25D0*X*X)
+        EP=EXP(-.25D0*X*X)
         JA=0
         IF (NA.GE.1) JA=1
         IF (V.GE.0.0) THEN
@@ -4555,7 +4574,7 @@ C
            ZGD=(ZD-ZQ*ZFD)/ZP
            Z=Z-ZFD/ZGD
            W0=W
-           W=CDABS(Z)
+           W=ABS(Z)
            IF (IT.LE.50.AND.DABS((W-W0)/W).GT.1.0D-11) GO TO 15
 35         ZO(NR)=Z
         RETURN
@@ -5090,8 +5109,8 @@ C
         CALL CJK(KM,A)
         DO 30 L=1,0,-1
            V0=V-L
-           CWS=CDSQRT(1.0D0+(Z/V0)*(Z/V0))
-           CETA=CWS+CDLOG(Z/V0/(1.0D0+CWS))
+           CWS=SQRT(1.0D0+(Z/V0)*(Z/V0))
+           CETA=CWS+LOG(Z/V0/(1.0D0+CWS))
            CT=1.0D0/CWS
            CT2=CT*CT
            DO 15 K=1,KM
@@ -5105,12 +5124,12 @@ C
            CSI=(1.0D0,0.0D0)
            DO 20 K=1,KM
 20            CSI=CSI+CF(K)*VR**K
-           CBIV=CDSQRT(CT/(2.0D0*PI*V0))*CDEXP(V0*CETA)*CSI
+           CBIV=SQRT(CT/(2.0D0*PI*V0))*EXP(V0*CETA)*CSI
            IF (L.EQ.1) CFI=CBIV
            CSK=(1.0D0,0.0D0)
            DO 25 K=1,KM
 25            CSK=CSK+(-1)**K*CF(K)*VR**K
-           CBKV=CDSQRT(PI*CT/(2.0D0*V0))*CDEXP(-V0*CETA)*CSK
+           CBKV=SQRT(PI*CT/(2.0D0*V0))*EXP(-V0*CETA)*CSK
            IF (L.EQ.1) CFK=CBKV
 30      CONTINUE
         CDIV=CFI-V/Z*CBIV
@@ -5260,7 +5279,7 @@ C          Asymptotic expansion (the series is not convergent)
            DO 25 K=1,20
               R=R*K/X
 25            EI=EI+R
-           EI=DEXP(X)/X*EI
+           EI=EXP(X)/X*EI
         ENDIF
         RETURN
         END
@@ -5323,7 +5342,7 @@ C
               T0=K/(1.0D0+K/(X+T0))
 20         CONTINUE
            T=1.0D0/(X+T0)
-           E1=DEXP(-X)*T
+           E1=EXP(-X)*T
         ENDIF
         RETURN
         END
@@ -5375,7 +5394,7 @@ C       preparing terms for DLMF 13.3.1
                  HG=HG+RG
                  IF (HG.NE.0D0.AND.DABS(RG/HG).LT.1.0D-15) THEN
 C       DLMF 13.2.39 (cf. above)
-                    IF (X0.LT.0.0D0) HG=HG*DEXP(X0)
+                    IF (X0.LT.0.0D0) HG=HG*EXP(X0)
                     GO TO 25
                  ENDIF
 15            CONTINUE
@@ -5401,12 +5420,12 @@ C       DLMF 13.7.2 & 13.2.4, SUM2 corresponds to first sum
                  SUM1=SUM1+R1
 20               SUM2=SUM2+R2
               IF (X0.GE.0.0D0) THEN
-                 HG1=DBLE(CDEXP(CTB-CTBA))*X**(-A)*DCOS(PI*A)*SUM1
-                 HG2=DBLE(CDEXP(CTB-CTA+X))*X**(A-B)*SUM2
+                 HG1=DBLE(EXP(CTB-CTBA))*X**(-A)*DCOS(PI*A)*SUM1
+                 HG2=DBLE(EXP(CTB-CTA+X))*X**(A-B)*SUM2
               ELSE
 C       DLMF 13.2.39 (cf. above)
-                 HG1=DBLE(CDEXP(CTB-CTBA+X0))*X**(-A)*DCOS(PI*A)*SUM1
-                 HG2=DBLE(CDEXP(CTB-CTA))*X**(A-B)*SUM2
+                 HG1=DBLE(EXP(CTB-CTBA+X0))*X**(-A)*DCOS(PI*A)*SUM1
+                 HG2=DBLE(EXP(CTB-CTA))*X**(A-B)*SUM2
               ENDIF
               HG=HG1+HG2
            ENDIF
@@ -5655,11 +5674,11 @@ C
         ELSE IF (A.EQ.-1.0D0) THEN
            CHG=1.0D0-Z/B
         ELSE IF (A.EQ.B) THEN
-           CHG=CDEXP(Z)
+           CHG=EXP(Z)
         ELSE IF (A-B.EQ.1.0D0) THEN
-           CHG=(1.0D0+Z/B)*CDEXP(Z)
+           CHG=(1.0D0+Z/B)*EXP(Z)
         ELSE IF (A.EQ.1.0D0.AND.B.EQ.2.0D0) THEN
-           CHG=(CDEXP(Z)-1.0D0)/Z
+           CHG=(EXP(Z)-1.0D0)/Z
         ELSE IF (A.EQ.INT(A).AND.A.LT.0.0D0) THEN
            M=INT(-A)
            CR=(1.0D0,0.0D0)
@@ -5684,13 +5703,13 @@ C
            NS=0
            DO 30 N=0,NL
               IF (A0.GE.2.0D0) A=A+1.0D0
-              IF (CDABS(Z).LT.20.0D0+ABS(B).OR.A.LT.0.0D0) THEN
+              IF (ABS(Z).LT.20.0D0+ABS(B).OR.A.LT.0.0D0) THEN
                  CHG=(1.0D0,0.0D0)
                  CRG=(1.0D0,0.0D0)
                  DO 15 J=1,500
                     CRG=CRG*(A+J-1.0D0)/(J*(B+J-1.0D0))*Z
                     CHG=CHG+CRG
-                    IF (CDABS((CHG-CHW)/CHG).LT.1.D-15) GO TO 25
+                    IF (ABS((CHG-CHW)/CHG).LT.1.D-15) GO TO 25
                     CHW=CHG
 15               CONTINUE
               ELSE
@@ -5724,10 +5743,10 @@ C
                  ENDIF
                  IF (PHI.GT.-0.5*PI.AND.PHI.LT.1.5*PI) NS=1
                  IF (PHI.GT.-1.5*PI.AND.PHI.LE.-0.5*PI) NS=-1
-                 CFAC=CDEXP(NS*CI*PI*A)
+                 CFAC=EXP(NS*CI*PI*A)
                  IF (Y.EQ.0.0D0) CFAC=DCOS(PI*A)
-                 CHG1=CDEXP(CG2-CG3)*Z**(-A)*CFAC*CS1
-                 CHG2=CDEXP(CG2-CG1+Z)*Z**(A-B)*CS2
+                 CHG1=EXP(CG2-CG3)*Z**(-A)*CFAC*CS1
+                 CHG2=EXP(CG2-CG1+Z)*Z**(A-B)*CS2
                  CHG=CHG1+CHG2
               ENDIF
 25            IF (N.EQ.0) CY0=CHG
@@ -5740,7 +5759,7 @@ C
                  CY1=CHG
 35               A=A+1.0D0
            ENDIF
-           IF (X0.LT.0.0D0) CHG=CHG*CDEXP(-Z)
+           IF (X0.LT.0.0D0) CHG=CHG*EXP(-Z)
         ENDIF
         A=A1
         Z=Z0
@@ -5776,14 +5795,14 @@ C
         ISFER=0
         L0=C.EQ.INT(C).AND.C.LT.0.0D0
         L1=DABS(1.0D0-X).LT.EPS.AND.Y.EQ.0.0D0.AND.C-A-B.LE.0.0D0
-        L2=CDABS(Z+1.0D0).LT.EPS.AND.DABS(C-A+B-1.0D0).LT.EPS
+        L2=ABS(Z+1.0D0).LT.EPS.AND.DABS(C-A+B-1.0D0).LT.EPS
         L3=A.EQ.INT(A).AND.A.LT.0.0D0
         L4=B.EQ.INT(B).AND.B.LT.0.0D0
         L5=C-A.EQ.INT(C-A).AND.C-A.LE.0.0D0
         L6=C-B.EQ.INT(C-B).AND.C-B.LE.0.0D0
         AA=A
         BB=B
-        A0=CDABS(Z)
+        A0=ABS(Z)
         IF (A0.GT.0.95D0) EPS=1.0D-8
         PI=3.141592653589793D0
         EL=.5772156649015329D0
@@ -5836,7 +5855,7 @@ C
               DO 20 K=1,500
                  ZR0=ZR0*(A+K-1.0D0)*(C-B+K-1.0D0)/(K*(C+K-1.0D0))*Z1
                  ZHF=ZHF+ZR0
-                 IF (CDABS(ZHF-ZW).LT.CDABS(ZHF)*EPS) GO TO 25
+                 IF (ABS(ZHF-ZW).LT.ABS(ZHF)*EPS) GO TO 25
 20               ZW=ZHF
 25            ZHF=ZC0*ZHF
            ELSE IF (A0.GE.0.90D0) THEN
@@ -5870,7 +5889,7 @@ C
 40                     ZF0=ZF0+ZR0
                     DO 45 K=1,M
 45                     SP0=SP0+1.0D0/(A+K-1.0D0)+1.0/(B+K-1.0D0)-1.D0/K
-                    ZF1=PA+PB+SP0+2.0D0*EL+CDLOG(1.0D0-Z)
+                    ZF1=PA+PB+SP0+2.0D0*EL+LOG(1.0D0-Z)
                     DO 55 K=1,500
                        SP=SP+(1.0D0-A)/(K*(A+K-1.0D0))+(1.0D0-B)/
      &                    (K*(B+K-1.0D0))
@@ -5879,11 +5898,11 @@ C
                           SM=SM+(1.0D0-A)/((J+K)*(A+J+K-1.0D0))
      &                       +1.0D0/(B+J+K-1.0D0)
 50                     CONTINUE
-                       ZP=PA+PB+2.0D0*EL+SP+SM+CDLOG(1.0D0-Z)
+                       ZP=PA+PB+2.0D0*EL+SP+SM+LOG(1.0D0-Z)
                        ZR1=ZR1*(A+M+K-1.0D0)*(B+M+K-1.0D0)/(K*(M+K))
      &                     *(1.0D0-Z)
                        ZF1=ZF1+ZR1*ZP
-                       IF (CDABS(ZF1-ZW).LT.CDABS(ZF1)*EPS) GO TO 60
+                       IF (ABS(ZF1-ZW).LT.ABS(ZF1)*EPS) GO TO 60
 55                     ZW=ZF1
 60                  ZHF=ZF0*ZC0+ZF1*ZC1
                  ELSE IF (M.LT.0) THEN
@@ -5896,17 +5915,17 @@ C
 65                     ZF0=ZF0+ZR0
                     DO 70 K=1,M
 70                     SP0=SP0+1.0D0/K
-                    ZF1=PA+PB-SP0+2.0D0*EL+CDLOG(1.0D0-Z)
+                    ZF1=PA+PB-SP0+2.0D0*EL+LOG(1.0D0-Z)
                     DO 80 K=1,500
                        SP=SP+(1.0D0-A)/(K*(A+K-1.0D0))+(1.0D0-B)/(K*
      &                    (B+K-1.0D0))
                        SM=0.0D0
                        DO 75 J=1,M
 75                        SM=SM+1.0D0/(J+K)
-                       ZP=PA+PB+2.0D0*EL+SP-SM+CDLOG(1.0D0-Z)
+                       ZP=PA+PB+2.0D0*EL+SP-SM+LOG(1.0D0-Z)
                        ZR1=ZR1*(A+K-1.D0)*(B+K-1.D0)/(K*(M+K))*(1.D0-Z)
                        ZF1=ZF1+ZR1*ZP
-                       IF (CDABS(ZF1-ZW).LT.CDABS(ZF1)*EPS) GO TO 85
+                       IF (ABS(ZF1-ZW).LT.ABS(ZF1)*EPS) GO TO 85
 80                     ZW=ZF1
 85                  ZHF=ZF0*ZC0+ZF1*ZC1
                  ENDIF
@@ -5928,7 +5947,7 @@ C
                     ZR1=ZR1*(C-A+K-1.0D0)*(C-B+K-1.0D0)/(K*(C-A-B+K))
      &                  *(1.0D0-Z)
                     ZHF=ZHF+ZR0+ZR1
-                    IF (CDABS(ZHF-ZW).LT.CDABS(ZHF)*EPS) GO TO 95
+                    IF (ABS(ZHF-ZW).LT.ABS(ZHF)*EPS) GO TO 95
 90                  ZW=ZHF
 95               ZHF=ZHF+ZC0+ZC1
               ENDIF
@@ -5944,7 +5963,7 @@ C
               DO 100 K=1,1500
                  ZR=ZR*(A+K-1.0D0)*(B+K-1.0D0)/(K*(C+K-1.0D0))*Z
                  ZHF=ZHF+ZR
-                 IF (CDABS(ZHF-ZW).LE.CDABS(ZHF)*EPS) GO TO 105
+                 IF (ABS(ZHF-ZW).LE.ABS(ZHF)*EPS) GO TO 105
 100              ZW=ZHF
 105           ZHF=Z00*ZHF
            ENDIF
@@ -5968,7 +5987,7 @@ C
                  ZR0=ZR0*(A+K-1.0D0)*(A-C+K)/((A-B+K)*K*Z)
                  ZR1=ZR1*(B+K-1.0D0)*(B-C+K)/((B-A+K)*K*Z)
                  ZHF=ZHF+ZR0+ZR1
-                 IF (CDABS((ZHF-ZW)/ZHF).LE.EPS) GO TO 115
+                 IF (ABS((ZHF-ZW)/ZHF).LE.EPS) GO TO 115
 110              ZW=ZHF
 115           ZHF=ZHF+ZC0+ZC1
            ELSE
@@ -6003,7 +6022,7 @@ C
               SP=-2.0D0*EL-PA-PCA
               DO 125 J=1,MAB
 125              SP=SP+1.0D0/J
-              ZP0=SP+CDLOG(-Z)
+              ZP0=SP+LOG(-Z)
               SQ=1.0D0
               DO 130 J=1,MAB
 130              SQ=SQ*(B+J-1.0D0)*(B-C+J)/J
@@ -6024,9 +6043,9 @@ C
                  DO 140 J=K+1,K+MAB
 140                 SJ2=SJ2+1.0D0/J
                  ZP=-2.0D0*EL-PA-PAC+SJ2-1.0D0/(K+A-C)
-     &              -PI/DTAN(PI*(K+A-C))+CDLOG(-Z)
+     &              -PI/DTAN(PI*(K+A-C))+LOG(-Z)
                  ZF1=ZF1+RK2*ZR*ZP
-                 WS=CDABS(ZF1)
+                 WS=ABS(ZF1)
                  IF (DABS((WS-W0)/WS).LT.EPS) GO TO 150
 145              W0=WS
 150           ZHF=ZF0+ZF1
@@ -6122,8 +6141,8 @@ C
               DO 40 K=1,16
                  R=R*XR1
 40               SU2=SU2+A(K)*R
-              APT=Q0-DEXP(-XE)*XP6*SU1
-              BPT=2.0D0*DEXP(XE)*XP6*SU2
+              APT=Q0-EXP(-XE)*XP6*SU1
+              BPT=2.0D0*EXP(XE)*XP6*SU2
               SU3=1.0D0
               R=1.0D0
               XR2=1.0D0/(XE*XE)
@@ -6256,7 +6275,7 @@ C
         PI=3.141592653589793D0
         R2P=.63661977236758D0
         Y0=DABS(DIMAG(Z))
-        A0=CDABS(Z)
+        A0=ABS(Z)
         NM=N
         IF (A0.LT.1.0D-100) THEN
            DO 10 K=0,N
@@ -6299,11 +6318,11 @@ C
            IF (Y0.LE.1.0D0) THEN
               CS0=CBS+CF
            ELSE
-              CS0=(CBS+CF)/CDCOS(Z)
+              CS0=(CBS+CF)/COS(Z)
            ENDIF
            DO 20 K=0,NM
 20            CBJ(K)=CBJ(K)/CS0
-           CE=CDLOG(Z/2.0D0)+EL
+           CE=LOG(Z/2.0D0)+EL
            CBY(0)=R2P*(CE*CBJ(0)-4.0D0*CSU/CS0)
            CBY(1)=R2P*(-CBJ(0)/Z+(CE-1.0D0)*CBJ(1)-4.0D0*CSV/CS0)
         ELSE
@@ -6322,9 +6341,9 @@ C
            CQ0=-0.125D0/Z
            DO 30 K=1,4
 30            CQ0=CQ0+B(K)*Z**(-2*K-1)
-           CU=CDSQRT(R2P/Z)
-           CBJ0=CU*(CP0*CDCOS(CT1)-CQ0*CDSIN(CT1))
-           CBY0=CU*(CP0*CDSIN(CT1)+CQ0*CDCOS(CT1))
+           CU=SQRT(R2P/Z)
+           CBJ0=CU*(CP0*COS(CT1)-CQ0*SIN(CT1))
+           CBY0=CU*(CP0*SIN(CT1)+CQ0*COS(CT1))
            CBJ(0)=CBJ0
            CBY(0)=CBY0
            CT2=Z-0.75D0*PI
@@ -6334,8 +6353,8 @@ C
            CQ1=0.375D0/Z
            DO 40 K=1,4
 40            CQ1=CQ1+B1(K)*Z**(-2*K-1)
-           CBJ1=CU*(CP1*CDCOS(CT2)-CQ1*CDSIN(CT2))
-           CBY1=CU*(CP1*CDSIN(CT2)+CQ1*CDCOS(CT2))
+           CBJ1=CU*(CP1*COS(CT2)-CQ1*SIN(CT2))
+           CBY1=CU*(CP1*SIN(CT2)+CQ1*COS(CT2))
            CBJ(1)=CBJ1
            CBY(1)=CBY1
            DO 45 K=2,NM
@@ -6347,11 +6366,11 @@ C
         CDJ(0)=-CBJ(1)
         DO 50 K=1,NM
 50         CDJ(K)=CBJ(K-1)-K/Z*CBJ(K)
-        IF (CDABS(CBJ(0)).GT.1.0D0) THEN
+        IF (ABS(CBJ(0)).GT.1.0D0) THEN
            CBY(1)=(CBJ(1)*CBY(0)-2.0D0/(PI*Z))/CBJ(0)
         ENDIF
         DO 55 K=2,NM
-           IF (CDABS(CBJ(K-1)).GE.CDABS(CBJ(K-2))) THEN
+           IF (ABS(CBJ(K-1)).GE.ABS(CBJ(K-2))) THEN
               CYY=(CBJ(K)*CBY(K-1)-2.0D0/(PI*Z))/CBJ(K-1)
            ELSE
               CYY=(CBJ(K)*CBY(K-2)-4.0D0*(K-1.0D0)/(PI*Z*Z))/CBJ(K-2)
@@ -6419,14 +6438,14 @@ C
            BS=BS+2.0D0*F
            F0=F1
 15         F1=F
-        S0=DEXP(X)/(BS-F)
+        S0=EXP(X)/(BS-F)
         DO 20 K=0,NM
 20         BI(K)=S0*BI(K)
         IF (X.LE.8.0D0) THEN
            BK(0)=-(DLOG(0.5D0*X)+EL)*BI(0)+S0*SK0
            BK(1)=(1.0D0/X-BI(1)*BK(0))/BI(0)
         ELSE
-           A0=DSQRT(PI/(2.0D0*X))*DEXP(-X)
+           A0=DSQRT(PI/(2.0D0*X))*EXP(-X)
            K0=16
            IF (X.GE.25.0) K0=10
            IF (X.GE.80.0) K0=8
@@ -6620,7 +6639,7 @@ C
         EL=0.5772156649015329D0
         RP2=2.0D0/PI
         CI=(0.0D0,1.0D0)
-        A0=CDABS(Z)
+        A0=ABS(Z)
         Z2=Z*Z
         Z1=Z
         IF (A0.EQ.0.0D0) THEN
@@ -6639,14 +6658,14 @@ C
            DO 10 K=1,40
               CR=-0.25D0*CR*Z2/(K*K)
               CBJ0=CBJ0+CR
-              IF (CDABS(CR).LT.CDABS(CBJ0)*1.0D-15) GO TO 15
+              IF (ABS(CR).LT.ABS(CBJ0)*1.0D-15) GO TO 15
 10         CONTINUE
 15         CBJ1=(1.0D0,0.0D0)
            CR=(1.0D0,0.0D0)
            DO 20 K=1,40
               CR=-0.25D0*CR*Z2/(K*(K+1.0D0))
               CBJ1=CBJ1+CR
-              IF (CDABS(CR).LT.CDABS(CBJ1)*1.0D-15) GO TO 25
+              IF (ABS(CR).LT.ABS(CBJ1)*1.0D-15) GO TO 25
 20         CONTINUE
 25         CBJ1=0.5D0*Z1*CBJ1
            W0=0.0D0
@@ -6657,9 +6676,9 @@ C
               CR=-0.25D0*CR/(K*K)*Z2
               CP=CR*W0
               CS=CS+CP
-              IF (CDABS(CP).LT.CDABS(CS)*1.0D-15) GO TO 35
+              IF (ABS(CP).LT.ABS(CS)*1.0D-15) GO TO 35
 30         CONTINUE
-35         CBY0=RP2*(CDLOG(Z1/2.0D0)+EL)*CBJ0-RP2*CS
+35         CBY0=RP2*(LOG(Z1/2.0D0)+EL)*CBJ0-RP2*CS
            W1=0.0D0
            CR=(1.0D0,0.0D0)
            CS=(1.0D0,0.0D0)
@@ -6668,9 +6687,9 @@ C
               CR=-0.25D0*CR/(K*(K+1))*Z2
               CP=CR*(2.0D0*W1+1.0D0/(K+1.0D0))
               CS=CS+CP
-              IF (CDABS(CP).LT.CDABS(CS)*1.0D-15) GO TO 45
+              IF (ABS(CP).LT.ABS(CS)*1.0D-15) GO TO 45
 40         CONTINUE
-45         CBY1=RP2*((CDLOG(Z1/2.0D0)+EL)*CBJ1-1.0D0/Z1-.25D0*Z1*CS)
+45         CBY1=RP2*((LOG(Z1/2.0D0)+EL)*CBJ1-1.0D0/Z1-.25D0*Z1*CS)
         ELSE
            DATA A/-.703125D-01,.112152099609375D+00,
      &            -.5725014209747314D+00,.6074042001273483D+01,
@@ -6706,9 +6725,9 @@ C
            CQ0=-0.125D0/Z1
            DO 55 K=1,K0
 55            CQ0=CQ0+B(K)*Z1**(-2*K-1)
-           CU=CDSQRT(RP2/Z1)
-           CBJ0=CU*(CP0*CDCOS(CT1)-CQ0*CDSIN(CT1))
-           CBY0=CU*(CP0*CDSIN(CT1)+CQ0*CDCOS(CT1))
+           CU=SQRT(RP2/Z1)
+           CBJ0=CU*(CP0*COS(CT1)-CQ0*SIN(CT1))
+           CBY0=CU*(CP0*SIN(CT1)+CQ0*COS(CT1))
            CT2=Z1-.75D0*PI
            CP1=(1.0D0,0.0D0)
            DO 60 K=1,K0
@@ -6716,8 +6735,8 @@ C
            CQ1=0.375D0/Z1
            DO 65 K=1,K0
 65            CQ1=CQ1+B1(K)*Z1**(-2*K-1)
-           CBJ1=CU*(CP1*CDCOS(CT2)-CQ1*CDSIN(CT2))
-           CBY1=CU*(CP1*CDSIN(CT2)+CQ1*CDCOS(CT2))
+           CBJ1=CU*(CP1*COS(CT2)-CQ1*SIN(CT2))
+           CBY1=CU*(CP1*SIN(CT2)+CQ1*COS(CT2))
         ENDIF
         IF (DBLE(Z).LT.0.0) THEN
            IF (DIMAG(Z).LT.0.0) CBY0=CBY0-2.0D0*CI*CBJ0
@@ -7027,7 +7046,7 @@ C             in order to make AIRYZO efficient
                  R=R*XR1
                  SBI=SBI+CK(K)*R
 60               SBD=SBD+DK(K)*R
-              XP1=DEXP(-XE)
+              XP1=EXP(-XE)
               AI=0.5D0*RP*XF*XP1*SAI
               BI=RP*XF/XP1*SBI
               AD=-.5D0*RP/XF*XP1*SAD
@@ -7221,13 +7240,13 @@ C       ===========================================================
 C
         IMPLICIT DOUBLE PRECISION (A-B,D-H,O-Y)
         IMPLICIT COMPLEX*16 (C,Z)
-        CB0=Z**N*CDEXP(-.25D0*Z*Z)
+        CB0=Z**N*EXP(-.25D0*Z*Z)
         CR=(1.0D0,0.0D0)
         CDN=(1.0D0,0.0D0)
         DO 10 K=1,16
            CR=-0.5D0*CR*(2.0*K-N-1.0)*(2.0*K-N-2.0)/(K*Z*Z)
            CDN=CDN+CR
-           IF (CDABS(CR).LT.CDABS(CDN)*1.0D-12) GO TO 15
+           IF (ABS(CR).LT.ABS(CDN)*1.0D-12) GO TO 15
 10      CONTINUE
 15      CDN=CB0*CDN
         RETURN
@@ -7287,7 +7306,7 @@ C
            ZGD=(ZD-ZQ*ZFD)/ZP
            Z=Z-ZFD/ZGD
            W0=W
-           W=CDABS(Z)
+           W=ABS(Z)
            IF (IT.LE.50.AND.DABS((W-W0)/W).GT.1.0D-12) GO TO 15
 35         ZO(NR)=Z
         RETURN
@@ -7316,7 +7335,7 @@ C
      &         +8.6347608925D0)*X+0.2677737343D0
            ES2=(((X+9.5733223454D0)*X+25.6329561486D0)*X
      &         +21.0996530827D0)*X+3.9584969228D0
-           E1=DEXP(-X)/X*ES1/ES2
+           E1=EXP(-X)/X*ES1/ES2
         ENDIF
         RETURN
         END
@@ -7557,7 +7576,7 @@ C
            Y=Y1
         ENDIF
         IF (KF.EQ.1) THEN
-           G0=DEXP(GR)
+           G0=EXP(GR)
            GR=G0*DCOS(GI)
            GI=G0*DSIN(GI)
         ENDIF
@@ -7748,7 +7767,7 @@ C
               GL=GL-DLOG(X0-1.0D0)
 15            X0=X0-1.0D0
         ENDIF
-20      IF (KF.EQ.1) GL=DEXP(GL)
+20      IF (KF.EQ.1) GL=EXP(GL)
         RETURN
         END
 
@@ -7807,7 +7826,7 @@ C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         PI=3.141592653589793D0
         EPS=1.0D-12
-        EP=DEXP(-.25*X*X)
+        EP=EXP(-.25*X*X)
         A0=DABS(X)**VA*EP
         R=1.0D0
         PD=1.0D0
@@ -7893,7 +7912,7 @@ C
            K0=12
            IF (X.GE.35.0) K0=9
            IF (X.GE.50.0) K0=7
-           CA=DEXP(X)/DSQRT(2.0D0*PI*X)
+           CA=EXP(X)/DSQRT(2.0D0*PI*X)
            BI0=1.0D0
            XR=1.0D0/X
            DO 35 K=1,K0
@@ -7958,9 +7977,9 @@ C
         DIMENSION CPB(0:*),CPD(0:*)
         PI=3.141592653589793D0
         X=DBLE(Z)
-        A0=CDABS(Z)
+        A0=ABS(Z)
         C0=(0.0D0,0.0D0)
-        CA0=CDEXP(-0.25D0*Z*Z)
+        CA0=EXP(-0.25D0*Z*Z)
         N0=0
         IF (N.GE.0) THEN
            CF0=CA0
@@ -7974,7 +7993,7 @@ C
 10            CF1=CF
         ELSE
            N0=-N
-           IF (X.LE.0.0.OR.CDABS(Z).EQ.0.0) THEN
+           IF (X.LE.0.0.OR.ABS(Z).EQ.0.0) THEN
               CF0=CA0
               CPB(0)=CF0
               Z1=-Z
@@ -8074,11 +8093,11 @@ C
            BI0=((((((((.00392377D0*T-.01647633D0)*T
      &         +.02635537D0)*T-.02057706D0)*T+.916281D-2)*T
      &         -.157565D-2)*T+.225319D-2)*T+.01328592D0)*T
-     &         +.39894228D0)*DEXP(X)/DSQRT(X)
+     &         +.39894228D0)*EXP(X)/DSQRT(X)
            BI1=((((((((-.420059D-2*T+.01787654D0)*T
      &         -.02895312D0)*T+.02282967D0)*T-.01031555D0)*T
      &         +.163801D-2)*T-.00362018D0)*T-.03988024D0)*T
-     &         +.39894228D0)*DEXP(X)/DSQRT(X)
+     &         +.39894228D0)*EXP(X)/DSQRT(X)
         ENDIF
         IF (X.LE.2.0D0) THEN
            T=X/2.0D0
@@ -8094,10 +8113,10 @@ C
            T2=T*T
            BK0=((((((.00053208D0*T-.0025154D0)*T+.00587872D0)
      &         *T-.01062446D0)*T+.02189568D0)*T-.07832358D0)
-     &         *T+1.25331414D0)*DEXP(-X)/DSQRT(X)
+     &         *T+1.25331414D0)*EXP(-X)/DSQRT(X)
            BK1=((((((-.00068245D0*T+.00325614D0)*T
      &         -.00780353D0)*T+.01504268D0)*T-.0365562D0)*T+
-     &         .23498619D0)*T+1.25331414D0)*DEXP(-X)/DSQRT(X)
+     &         .23498619D0)*T+1.25331414D0)*EXP(-X)/DSQRT(X)
         ENDIF
         DI0=BI1
         DI1=BI0-BI1/X
@@ -8202,7 +8221,12 @@ C          Expansion up to order Q^1 (Abramowitz & Stegun 20.2.27-28)
               JM=M/2
            END IF
 C          Check for overflow
-           IF (JM+1.GT.251) GOTO 6
+           IF (JM+1.GT.251) THEN
+              FNAN=DNAN()
+              DO 7666 I=1,251
+ 7666            FC(I)=FNAN
+              RETURN
+           ENDIF
 C          Proceed using the simplest expansion
            IF (KD.EQ.1.OR.KD.EQ.2) THEN
               IF (M.EQ.0) THEN
@@ -8242,7 +8266,7 @@ C          Proceed using the simplest expansion
         KM=INT(QM+0.5*M)
         IF (KM.GT.251) THEN
 C          Overflow, generate NaNs
- 6         FNAN=DNAN()
+           FNAN=DNAN()
            DO 7 I=1,251
  7            FC(I)=FNAN
            RETURN
@@ -8671,7 +8695,7 @@ C
         EPS=1.0D-15
         PI=3.141592653589793D0
         SQ2=DSQRT(2.0D0)
-        EP=DEXP(-.25D0*X*X)
+        EP=EXP(-.25D0*X*X)
         VA0=0.5D0*(1.0D0-VA)
         IF (VA.EQ.0.0) THEN
            PD=EP
@@ -8721,7 +8745,7 @@ C
         PI=3.141592653589793D0
         EL=0.5772156649015328D0
         X=DBLE(Z)
-        A0=CDABS(Z)
+        A0=ABS(Z)
 C       Continued fraction converges slowly near negative real axis,
 C       so use power series in a wedge around it until radius 40.0
         XT=-2*DABS(DIMAG(Z))
@@ -8734,15 +8758,15 @@ C          Power series
            DO 10 K=1,500
               CR=-CR*K*Z/(K+1.0D0)**2
               CE1=CE1+CR
-              IF (CDABS(CR).LE.CDABS(CE1)*1.0D-15) GO TO 15
+              IF (ABS(CR).LE.ABS(CE1)*1.0D-15) GO TO 15
 10         CONTINUE
 15         CONTINUE
            IF (X.LE.0.0.AND.DIMAG(Z).EQ.0.0) THEN
 C     Careful on the branch cut -- use the sign of the imaginary part
 C     to get the right sign on the factor if pi.
-              CE1=-EL-CDLOG(-Z)+Z*CE1-DSIGN(PI,DIMAG(Z))*(0.0D0,1.0D0)
+              CE1=-EL-LOG(-Z)+Z*CE1-DSIGN(PI,DIMAG(Z))*(0.0D0,1.0D0)
            ELSE
-              CE1=-EL-CDLOG(Z)+Z*CE1
+              CE1=-EL-LOG(Z)+Z*CE1
            ENDIF
         ELSE
 C          Continued fraction https://dlmf.nist.gov/6.9
@@ -8763,9 +8787,9 @@ C                         Z +   1 +   Z +   1 +   Z +   1 +   Z +
               ZDC=(Z*ZD - 1)*ZDC
               ZC=ZC + ZDC
 
-              IF (CDABS(ZDC).LE.CDABS(ZC)*1.0D-15.AND.K.GT.20) GO TO 25
+              IF (ABS(ZDC).LE.ABS(ZC)*1.0D-15.AND.K.GT.20) GO TO 25
 20         CONTINUE
-25         CE1=CDEXP(-Z)*ZC
+25         CE1=EXP(-Z)*ZC
            IF (X.LE.0.0.AND.DIMAG(Z).EQ.0.0) CE1=CE1-PI*(0.0D0,1.0D0)
         ENDIF
         RETURN
@@ -9196,8 +9220,8 @@ C
               QP0=QP0+RS
 85            QN0=QN0+FAC*RS
            XD=X/DSQRT(2.0D0)
-           XE1=DEXP(XD)
-           XE2=DEXP(-XD)
+           XE1=EXP(XD)
+           XE2=EXP(-XD)
            XC1=1.D0/DSQRT(2.0D0*PI*X)
            XC2=DSQRT(.5D0*PI/X)
            CP0=DCOS(XD+0.125D0*PI)
@@ -9413,7 +9437,7 @@ C       ===========================================================
            ZGD=(ZD-ZQ*ZFD)/ZP
            Z=Z-ZFD/ZGD
            W0=W
-           W=CDABS(Z)
+           W=ABS(Z)
            IF (IT.LE.50.AND.DABS((W-W0)/W).GT.1.0D-12) GO TO 15
            ZO(NR)=Z
 35      CONTINUE
@@ -9510,8 +9534,8 @@ C
               ENDIF
 10         CONTINUE
            YD=X/DSQRT(2.0D0)
-           YE1=DEXP(YD+TPR)
-           YE2=DEXP(-YD+TNR)
+           YE1=EXP(YD+TPR)
+           YE2=EXP(-YD+TNR)
            YC1=1.0D0/DSQRT(2.0D0*PI*X)
            YC2=DSQRT(PI/(2.0D0*X))
            CSP=DCOS(YD+TPI)
@@ -10154,7 +10178,7 @@ C
 15         CONTINUE
 20         BI0=BI0*A1
         ELSE
-           CA=DEXP(X)/DSQRT(2.0D0*PI*X)
+           CA=EXP(X)/DSQRT(2.0D0*PI*X)
            SUM=1.0D0
            R=1.0D0
            DO 25 K=1,K0
@@ -10215,7 +10239,7 @@ C
 60            BK0=0.5D0*PI*SUM/DSIN(PIV)
            ENDIF
         ELSE
-           CB=DEXP(-X)*DSQRT(0.5D0*PI/X)
+           CB=EXP(-X)*DSQRT(0.5D0*PI/X)
            SUM=1.0D0
            R=1.0D0
            DO 65 K=1,K0
@@ -10486,7 +10510,7 @@ C
               IF (L.EQ.2) VI2=A0/GP2*VIL
 70         CONTINUE
         ELSE
-           C0=DEXP(X)/DSQRT(2.0D0*PI*X)
+           C0=EXP(X)/DSQRT(2.0D0*PI*X)
            DO 80 L=1,2
               VV=VV0*L*L
               VSL=1.0D0
@@ -10516,7 +10540,7 @@ C
               IF (L.EQ.2) VK2=0.5D0*UU0*PI*(SUM*A0-VI2)
 95         CONTINUE
         ELSE
-           C0=DEXP(-X)*DSQRT(0.5D0*PI/X)
+           C0=EXP(-X)*DSQRT(0.5D0*PI/X)
            DO 105 L=1,2
               VV=VV0*L*L
               SUM=1.0D0
@@ -10560,7 +10584,7 @@ C
         DIMENSION CBI(0:*),CDI(0:*),CBK(0:*),CDK(0:*)
         Z1=Z
         Z2=Z*Z
-        A0=CDABS(Z)
+        A0=ABS(Z)
         PI=3.141592653589793D0
         CI=(0.0D0,1.0D0)
         N=INT(V)
@@ -10598,11 +10622,11 @@ C
            DO 15 K=1,50
               CR=0.25D0*CR*Z2/(K*(K+V0))
               CI0=CI0+CR
-              IF (CDABS(CR/CI0).LT.1.0D-15) GO TO 20
+              IF (ABS(CR/CI0).LT.1.0D-15) GO TO 20
 15         CONTINUE
 20         CBI0=CI0*CA1
         ELSE
-           CA=CDEXP(Z1)/CDSQRT(2.0D0*PI*Z1)
+           CA=EXP(Z1)/SQRT(2.0D0*PI*Z1)
            CS=(1.0D0,0.0D0)
            CR=(1.0D0,0.0D0)
            DO 25 K=1,K0
@@ -10628,7 +10652,7 @@ C
 35         CBI(K)=CS*CBI(K)
         IF (A0.LE.9.0) THEN
            IF (V0.EQ.0.0) THEN
-              CT=-CDLOG(0.5D0*Z1)-0.5772156649015329D0
+              CT=-LOG(0.5D0*Z1)-0.5772156649015329D0
               CS=(0.0D0,0.0D0)
               W0=0.0D0
               CR=(1.0D0,0.0D0)
@@ -10637,7 +10661,7 @@ C
                  CR=0.25D0*CR/(K*K)*Z2
                  CP=CR*(W0+CT)
                  CS=CS+CP
-                 IF (K.GE.10.AND.CDABS(CP/CS).LT.1.0D-15) GO TO 45
+                 IF (K.GE.10.AND.ABS(CP/CS).LT.1.0D-15) GO TO 45
 40            CONTINUE
 45            CBK0=CT+CS
            ELSE
@@ -10653,12 +10677,12 @@ C
                  CR2=0.25D0*CR2*Z2/(K*(K+V0))
                  CP=CA2*CR1-CA1*CR2
                  CSU=CSU+CP
-                 IF (K.GE.10.AND.CDABS(CP/CSU).LT.1.0D-15) GO TO 55
+                 IF (K.GE.10.AND.ABS(CP/CSU).LT.1.0D-15) GO TO 55
 50            CONTINUE
 55            CBK0=0.5D0*PI*CSU/DSIN(PIV)
            ENDIF
         ELSE
-           CB=CDEXP(-Z1)*CDSQRT(0.5D0*PI/Z1)
+           CB=EXP(-Z1)*SQRT(0.5D0*PI/Z1)
            CS=(1.0D0,0.0D0)
            CR=(1.0D0,0.0D0)
            DO 60 K=1,K0
@@ -10669,7 +10693,7 @@ C
         CBK(0)=CBK0
         IF (DBLE(Z).LT.0.0) THEN
            DO 65 K=0,N
-              CVK=CDEXP((K+V0)*PI*CI)
+              CVK=EXP((K+V0)*PI*CI)
               IF (DIMAG(Z).LT.0.0D0) THEN
                  CBK(K)=CVK*CBK(K)+PI*CI*CBI(K)
                  CBI(K)=CBI(K)/CVK
@@ -10721,7 +10745,7 @@ C
         DIMENSION CBI(0:*),CDI(0:*),CBK(0:*),CDK(0:*)
         PI=3.141592653589793D0
         CI=(0.0D0,1.0D0)
-        A0=CDABS(Z)
+        A0=ABS(Z)
         Z1=Z
         Z2=Z*Z
         N=INT(V)
@@ -10759,11 +10783,11 @@ C
            DO 15 K=1,50
               CR=0.25D0*CR*Z2/(K*(K+V0))
               CI0=CI0+CR
-              IF (CDABS(CR).LT.CDABS(CI0)*1.0D-15) GO TO 20
+              IF (ABS(CR).LT.ABS(CI0)*1.0D-15) GO TO 20
 15         CONTINUE
 20         CBI0=CI0*CA1
         ELSE
-           CA=CDEXP(Z1)/CDSQRT(2.0D0*PI*Z1)
+           CA=EXP(Z1)/SQRT(2.0D0*PI*Z1)
            CS=(1.0D0,0.0D0)
            CR=(1.0D0,0.0D0)
            DO 25 K=1,K0
@@ -10789,7 +10813,7 @@ C
 35         CBI(K)=CS*CBI(K)
         IF (A0.LE.9.0) THEN
            IF (V0.EQ.0.0) THEN
-              CT=-CDLOG(0.5D0*Z1)-0.5772156649015329D0
+              CT=-LOG(0.5D0*Z1)-0.5772156649015329D0
               CS=(0.0D0,0.0D0)
               W0=0.0D0
               CR=(1.0D0,0.0D0)
@@ -10798,7 +10822,7 @@ C
                  CR=0.25D0*CR/(K*K)*Z2
                  CP=CR*(W0+CT)
                  CS=CS+CP
-                 IF (K.GE.10.AND.CDABS(CP/CS).LT.1.0D-15) GO TO 45
+                 IF (K.GE.10.AND.ABS(CP/CS).LT.1.0D-15) GO TO 45
 40            CONTINUE
 45            CBK0=CT+CS
            ELSE
@@ -10814,14 +10838,14 @@ C
                  CR1=0.25D0*CR1*Z2/(K*(K-V0))
                  CR2=0.25D0*CR2*Z2/(K*(K+V0))
                  CSU=CSU+CA2*CR1-CA1*CR2
-                 WS=CDABS(CSU)
+                 WS=ABS(CSU)
                  IF (K.GE.10.AND.DABS(WS-WS0)/WS.LT.1.0D-15) GO TO 55
                  WS0=WS
 50            CONTINUE
 55            CBK0=0.5D0*PI*CSU/DSIN(PIV)
            ENDIF
         ELSE
-           CB=CDEXP(-Z1)*CDSQRT(0.5D0*PI/Z1)
+           CB=EXP(-Z1)*SQRT(0.5D0*PI/Z1)
            CS=(1.0D0,0.0D0)
            CR=(1.0D0,0.0D0)
            DO 60 K=1,K0
@@ -10841,7 +10865,7 @@ C
 65         CG1=CGK
         IF (DBLE(Z).LT.0.0) THEN
            DO 70 K=0,N
-              CVK=CDEXP((K+V0)*PI*CI)
+              CVK=EXP((K+V0)*PI*CI)
               IF (DIMAG(Z).LT.0.0D0) THEN
                  CBK(K)=CVK*CBK(K)+PI*CI*CBI(K)
                  CBI(K)=CBI(K)/CVK
@@ -10874,10 +10898,10 @@ C                ZD --- C'(z)
 C       =========================================================
 C
         IMPLICIT DOUBLE PRECISION (E,P,W)
-        IMPLICIT COMPLEX *16 (C,S,Z)
+        IMPLICIT COMPLEX *16 (C,S,Z,D)
         EPS=1.0D-14
         PI=3.141592653589793D0
-        W0=CDABS(Z)
+        W0=ABS(Z)
         ZP=0.5D0*PI*Z*Z
         ZP2=ZP*ZP
         Z0=(0.0D0,0.0D0)
@@ -10891,7 +10915,7 @@ C
               CR=-.5D0*CR*(4.0D0*K-3.0D0)/K/(2.0D0*K-1.0D0)
      &          /(4.0D0*K+1.0D0)*ZP2
               C=C+CR
-              WA=CDABS(C)
+              WA=ABS(C)
               IF (DABS((WA-WA0)/WA).LT.EPS.AND.K.GT.10) GO TO 30
 10            WA0=WA
         ELSE IF (W0.GT.2.5.AND.W0.LT.4.5) THEN
@@ -10904,8 +10928,22 @@ C
               IF (K.EQ.INT(K/2)*2) C=C+CF
               CF1=CF0
 15            CF0=CF
-           C=CDSQRT(2.0D0/(PI*ZP))*CDSIN(ZP)/CF*C
+           C=2.0D0/(PI*Z)*SIN(ZP)/CF*C
         ELSE
+C          See comment at CFS(), use C(z) = iC(-iz)
+           IF (DIMAG(Z).GT.-DBLE(Z).AND.DIMAG(Z).LE.DBLE(Z)) THEN
+C            right quadrant
+             D=DCMPLX(.5D0,0.0D0)
+           ELSE IF (DIMAG(Z).GT.DBLE(Z).AND.DIMAG(Z).GE.-DBLE(Z)) THEN
+C            upper quadrant
+             D=DCMPLX(0.0D0,.5D0)
+           ELSE IF (DIMAG(Z).LT.-DBLE(Z).AND.DIMAG(Z).GE.DBLE(Z)) THEN
+C            left quadrant
+             D=DCMPLX(-.5D0,0.0D0)
+           ELSE
+C            lower quadrant
+             D=DCMPLX(0.0D0,-.5D0)
+           ENDIF
            CR=(1.0D0,0.0D0)
            CF=(1.0D0,0.0D0)
            DO 20 K=1,20
@@ -10916,10 +10954,10 @@ C
            DO 25 K=1,12
               CR=-.25D0*CR*(4.0D0*K+1.0D0)*(4.0D0*K-1.0D0)/ZP2
 25            CG=CG+CR
-           C=.5D0+(CF*CDSIN(ZP)-CG*CDCOS(ZP))/(PI*Z)
+           C=D+(CF*SIN(ZP)-CG*COS(ZP))/(PI*Z)
         ENDIF
 30      ZF=C
-        ZD=CDCOS(0.5*PI*Z*Z)
+        ZD=COS(0.5*PI*Z*Z)
         RETURN
         END
 
@@ -11233,7 +11271,7 @@ C
 10            EN(K)=1.0D0/(K-1.0)
            RETURN
         ELSE IF (X.LE.1.0) THEN
-           EN(0)=DEXP(-X)/X
+           EN(0)=EXP(-X)/X
            S0=0.0D0
            DO 40 L=1,N
               RP=1.0D0
@@ -11256,14 +11294,14 @@ C
 35            EN(L)=ENS-S
 40         CONTINUE
         ELSE
-           EN(0)=DEXP(-X)/X
+           EN(0)=EXP(-X)/X
            M=15+INT(100.0/X)
            DO 50 L=1,N
               T0=0.0D0
               DO 45 K=M,1,-1
 45               T0=(L+K-1.0D0)/(1.0D0+K/(X+T0))
               T=1.0D0/(X+T0)
-50            EN(L)=DEXP(-X)*T
+50            EN(L)=EXP(-X)*T
         ENDIF
         END
 
@@ -11291,7 +11329,7 @@ C
 10            DK(K)=-1.0D+300
            RETURN
         ENDIF
-        SK(0)=0.5D0*PI/X*DEXP(-X)
+        SK(0)=0.5D0*PI/X*EXP(-X)
         SK(1)=SK(0)*(1.0D0+1.0D0/X)
         F0=SK(0)
         F1=SK(1)
@@ -11322,11 +11360,11 @@ C       ============================================
 C
         IMPLICIT DOUBLE PRECISION (A-H,O-Z)
         DIMENSION EN(0:N)
-        EN(0)=DEXP(-X)/X
+        EN(0)=EXP(-X)/X
         CALL E1XB(X,E1)
         EN(1)=E1
         DO 10 K=2,N
-           EK=(DEXP(-X)-X*E1)/(K-1.0D0)
+           EK=(EXP(-X)-X*E1)/(K-1.0D0)
            EN(K)=EK
 10         E1=EK
         RETURN
@@ -11389,7 +11427,7 @@ C
         NV=INT(V)
         V0=V-NV
         NA=ABS(NV)
-        QE=DEXP(0.25D0*X*X)
+        QE=EXP(0.25D0*X*X)
         Q2P=DSQRT(2.0D0/PI)
         JA=0
         IF (NA.GE.1) JA=1
@@ -11513,13 +11551,13 @@ C
 10         CONTINUE
            RETURN
         ENDIF
-        XC=CDABS(Z)
+        XC=ABS(Z)
         LS=0
         IF (DIMAG(Z).EQ.0.0D0.OR.XC.LT.1.0D0) LS=1
         IF (XC.GT.1.0D0) LS=-1
-        ZQ=CDSQRT(LS*(1.0D0-Z*Z))
+        ZQ=SQRT(LS*(1.0D0-Z*Z))
         ZS=LS*(1.0D0-Z*Z)
-        CQ0=0.5D0*CDLOG(LS*(1.0D0+Z)/(1.0D0-Z))
+        CQ0=0.5D0*LOG(LS*(1.0D0+Z)/(1.0D0-Z))
         IF (XC.LT.1.0001D0) THEN
            CQM(0,0)=CQ0
            CQM(0,1)=Z*CQ0-1.0D0
@@ -11708,7 +11746,7 @@ C
         DIMENSION CBI(0:N),CDI(0:N),CBK(0:N),CDK(0:N)
         PI=3.141592653589793D0
         EL=0.57721566490153D0
-        A0=CDABS(Z)
+        A0=ABS(Z)
         NM=N
         IF (A0.LT.1.0D-100) THEN
            DO 10 K=0,N
@@ -11741,14 +11779,14 @@ C
            CBS=CBS+2.0D0*CF
            CF0=CF1
 15         CF1=CF
-        CS0=CDEXP(Z1)/(CBS-CF)
+        CS0=EXP(Z1)/(CBS-CF)
         DO 20 K=0,NM
 20         CBI(K)=CS0*CBI(K)
         IF (A0.LE.9.0) THEN
-           CBK(0)=-(CDLOG(0.5D0*Z1)+EL)*CBI(0)+CS0*CSK0
+           CBK(0)=-(LOG(0.5D0*Z1)+EL)*CBI(0)+CS0*CSK0
            CBK(1)=(1.0D0/Z1-CBI(1)*CBK(0))/CBI(0)
         ELSE
-           CA0=CDSQRT(PI/(2.0D0*Z1))*CDEXP(-Z1)
+           CA0=SQRT(PI/(2.0D0*Z1))*EXP(-Z1)
            K0=16
            IF (A0.GE.25.0) K0=10
            IF (A0.GE.80.0) K0=8
@@ -11814,7 +11852,7 @@ C
         IMPLICIT DOUBLE PRECISION (A,B,P,W,X,Y)
         IMPLICIT COMPLEX*16 (C,Z)
         DIMENSION CBI(0:N),CDI(0:N),CBK(0:N),CDK(0:N)
-        A0=CDABS(Z)
+        A0=ABS(Z)
         NM=N
         IF (A0.LT.1.0D-100) THEN
            DO 10 K=0,N
@@ -11853,7 +11891,7 @@ C
         DO 50 K=0,NM
 50         CBI(K)=CS*CBI(K)
         DO 60 K=2,NM
-           IF (CDABS(CBI(K-1)).GT.CDABS(CBI(K-2))) THEN
+           IF (ABS(CBI(K-1)).GT.ABS(CBI(K-2))) THEN
               CKK=(1.0D0/Z-CBI(K)*CBK(K-1))/CBI(K-1)
            ELSE
               CKK=(CBI(K)*CBK(K-2)+2.0D0*(K-1.0D0)/(Z*Z))/CBI(K-2)
@@ -11923,8 +11961,8 @@ C
         CALL FCOEF(KD,M,Q,A,FG)
         IC=INT(M/2)+1
         IF (KD.EQ.4) IC=M/2
-        C1=DEXP(-X)
-        C2=DEXP(X)
+        C1=EXP(-X)
+        C2=EXP(X)
         U1=DSQRT(Q)*C1
         U2=DSQRT(Q)*C2
         CALL JYNB(KM+1,U1,NM,BJ1,DJ1,BY1,DY1)
@@ -12024,7 +12062,7 @@ C
         DIMENSION A(12),B(12),A1(10)
         PI=3.141592653589793D0
         CI=(0.0D0,1.0D0)
-        A0=CDABS(Z)
+        A0=ABS(Z)
         Z2=Z*Z
         Z1=Z
         IF (A0.EQ.0.0D0) THEN
@@ -12045,14 +12083,14 @@ C
            DO 10 K=1,50
               CR=0.25D0*CR*Z2/(K*K)
               CBI0=CBI0+CR
-              IF (CDABS(CR/CBI0).LT.1.0D-15) GO TO 15
+              IF (ABS(CR/CBI0).LT.1.0D-15) GO TO 15
 10         CONTINUE
 15         CBI1=(1.0D0,0.0D0)
            CR=(1.0D0,0.0D0)
            DO 20 K=1,50
               CR=0.25D0*CR*Z2/(K*(K+1))
               CBI1=CBI1+CR
-              IF (CDABS(CR/CBI1).LT.1.0D-15) GO TO 25
+              IF (ABS(CR/CBI1).LT.1.0D-15) GO TO 25
 20         CONTINUE
 25         CBI1=0.5D0*Z1*CBI1
         ELSE
@@ -12071,7 +12109,7 @@ C
            K0=12
            IF (A0.GE.35.0) K0=9
            IF (A0.GE.50.0) K0=7
-           CA=CDEXP(Z1)/CDSQRT(2.0D0*PI*Z1)
+           CA=EXP(Z1)/SQRT(2.0D0*PI*Z1)
            CBI0=(1.0D0,0.0D0)
            ZR=1.0D0/Z1
            DO 30 K=1,K0
@@ -12084,14 +12122,14 @@ C
         ENDIF
         IF (A0.LE.9.0) THEN
            CS=(0.0D0,0.0D0)
-           CT=-CDLOG(0.5D0*Z1)-0.5772156649015329D0
+           CT=-LOG(0.5D0*Z1)-0.5772156649015329D0
            W0=0.0D0
            CR=(1.0D0,0.0D0)
            DO 40 K=1,50
               W0=W0+1.0D0/K
               CR=0.25D0*CR/(K*K)*Z2
               CS=CS+CR*(W0+CT)
-              IF (CDABS((CS-CW)/CS).LT.1.0D-15) GO TO 45
+              IF (ABS((CS-CW)/CS).LT.1.0D-15) GO TO 45
 40            CW=CS
 45         CBK0=CT+CS
         ELSE

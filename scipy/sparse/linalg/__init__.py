@@ -60,6 +60,7 @@ Iterative methods for linear equation systems:
    minres -- Use MINimum RESidual iteration to solve Ax = b
    qmr -- Use Quasi-Minimal Residual iteration to solve A x = b
    gcrotmk -- Solve a matrix equation using the GCROT(m,k) algorithm
+   tfqmr -- Use Transpose-Free Quasi-Minimal Residual iteration to solve A x = b
 
 Iterative methods for least-squares problems:
 
@@ -88,6 +89,14 @@ Singular values problems:
 
    svds -- Compute k singular values/vectors for a sparse matrix
 
+The `svds` function supports the following solvers:
+
+.. toctree::
+
+    sparse.linalg.svds-arpack
+    sparse.linalg.svds-lobpcg
+    sparse.linalg.svds-propack
+
 Complete or incomplete LU factorizations
 
 .. autosummary::
@@ -108,14 +117,17 @@ Exceptions
 
 """
 
-from .isolve import *
-from .dsolve import *
-from .interface import *
-from .eigen import *
-from .matfuncs import *
+from ._isolve import *
+from ._dsolve import *
+from ._interface import *
+from ._eigen import *
+from ._matfuncs import *
 from ._onenormest import *
 from ._norm import *
 from ._expm_multiply import *
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import isolve, dsolve, interface, eigen, matfuncs
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 
