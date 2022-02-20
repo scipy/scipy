@@ -3299,11 +3299,35 @@ def trimboth(a, proportiontocut, axis=0):
 
     Examples
     --------
+    Create an array of 10 values and trim 10% of those values from each end:
+
     >>> from scipy import stats
-    >>> a = np.arange(20)
-    >>> b = stats.trimboth(a, 0.1)
-    >>> b.shape
-    (16,)
+    >>> a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> stats.trimboth(a, 0.1)
+    array([1, 3, 2, 4, 5, 6, 7, 8])
+
+    Note that the elements of the input array are trimmed by value, but the
+    output array is not necessarily sorted.
+
+    The proportion to trim is rounded down to the nearest integer. For
+    instance, trimming 25% of the values from each end of an array of 10
+    values will return an array of 6 values:
+
+    >>> b = np.arange(10)
+    >>> stats.trimboth(b, 1/4).shape
+    (6,)
+
+    Multidimensional arrays can be trimmed along any axis or across the entire
+    array:
+
+    >>> c = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
+    >>> d = np.array([a, b, c])
+    >>> stats.trimboth(d, 0.4, axis=0).shape
+    (1, 10)
+    >>> stats.trimboth(d, 0.4, axis=1).shape
+    (3, 2)
+    >>> stats.trimboth(d, 0.4, axis=None).shape
+    (6,)
 
     """
     a = np.asarray(a)
@@ -3357,11 +3381,36 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
     Examples
     --------
+    Create an array of 10 values and trim 20% of its lowest values:
+
     >>> from scipy import stats
-    >>> a = np.arange(20)
-    >>> b = stats.trim1(a, 0.5, 'left')
-    >>> b
-    array([10, 11, 12, 13, 14, 16, 15, 17, 18, 19])
+    >>> a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> stats.trim1(a, 0.2, 'left')
+    array([2, 4, 3, 5, 6, 7, 8, 9])
+
+    Note that the elements of the input array are trimmed by value, but the
+    output array is not necessarily sorted.
+
+    The proportion to trim is rounded down to the nearest integer. For
+    instance, trimming 25% of the values from an array of 10 values will
+    return an array of 8 values:
+
+
+    >>> b = np.arange(10)
+    >>> stats.trim1(b, 1/4).shape
+    (8,)
+
+    Multidimensional arrays can be trimmed along any axis or across the entire
+    array:
+
+    >>> c = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
+    >>> d = np.array([a, b, c])
+    >>> stats.trim1(d, 0.8, axis=0).shape
+    (1, 10)
+    >>> stats.trim1(d, 0.8, axis=1).shape
+    (2, 10)
+    >>> stats.trim1(d, 0.8, axis=None).shape
+    (6,)
 
     """
     a = np.asarray(a)
