@@ -413,7 +413,7 @@ def test_compute_global_jac():
     J = construct_global_jac(n, m, k, i_jac, j_jac, h, df_dy, df_dy_middle,
                              df_dp, df_dp_middle, dbc_dya, dbc_dyb, dbc_dp)
     J = J.toarray()
-    assert_allclose(J, J_true, rtol=1e-8, atol=1e-9)
+    assert_allclose(J, J_true, rtol=2e-8, atol=2e-8)
 
 
 def test_parameter_validation():

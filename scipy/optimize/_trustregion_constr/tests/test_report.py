@@ -17,7 +17,7 @@ def test_gh12922():
     # checks that verbose reporting works with trust-constr for
     # general constraints
     def objective(x):
-        return np.array([(np.sum((x+1)**2))])
+        return np.array([(np.sum((x+1)**4))])
 
     cons = {'type': 'ineq', 'fun': lambda x: -x[0]**2}
     n = 25

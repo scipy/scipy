@@ -1,7 +1,7 @@
+#include <Python.h>
+
 #include <stdlib.h>
 #include <stdarg.h>
-
-#include <Python.h>
 
 #include "sf_error.h"
 

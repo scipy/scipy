@@ -7,7 +7,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
 import pytest
 from pytest import raises as assert_raises
 
-import scipy.spatial.qhull as qhull
+import scipy.spatial._qhull as qhull
 from scipy.spatial import cKDTree as KDTree
 from scipy.spatial import Voronoi
 
