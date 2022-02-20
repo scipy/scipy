@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import numpy as np
 from numpy.testing import assert_array_equal, assert_equal
 from scipy.optimize._constraints import (NonlinearConstraint, Bounds,
@@ -158,7 +157,7 @@ def test_nonlinear_constraint():
 def test_concatenation():
     rng = np.random.RandomState(0)
     n = 4
-    x0 = np.random.rand(n)
+    x0 = rng.rand(n)
 
     f1 = x0
     J1 = np.eye(n)

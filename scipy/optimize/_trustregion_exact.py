@@ -1,6 +1,4 @@
 """Nearly exact trust-region optimization subproblem."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from scipy.linalg import (norm, get_lapack_funcs, solve_triangular,
                           cho_solve)
@@ -35,7 +33,7 @@ def _minimize_trustregion_exact(fun, x0, args=(), jac=None, hess=None,
     if jac is None:
         raise ValueError('Jacobian is required for trust region '
                          'exact minimization.')
-    if hess is None:
+    if not callable(hess):
         raise ValueError('Hessian matrix is required for trust region '
                          'exact minimization.')
     return _minimize_trust_region(fun, x0, args=args, jac=jac, hess=hess,
@@ -61,7 +59,7 @@ def estimate_smallest_singular_value(U):
 
     Notes
     -----
-    The procedure is based on [1]_ and is done in two steps. First it finds
+    The procedure is based on [1]_ and is done in two steps. First, it finds
     a vector ``e`` with components selected from {+1, -1} such that the
     solution ``w`` from the system ``U.T w = e`` is as large as possible.
     Next it estimate ``U v = w``. The smallest singular value is close
@@ -215,12 +213,12 @@ class IterativeSubproblem(BaseQuadraticSubproblem):
     def __init__(self, x, fun, jac, hess, hessp=None,
                  k_easy=0.1, k_hard=0.2):
 
-        super(IterativeSubproblem, self).__init__(x, fun, jac, hess)
+        super().__init__(x, fun, jac, hess)
 
         # When the trust-region shrinks in two consecutive
         # calculations (``tr_radius < previous_tr_radius``)
         # the lower bound ``lambda_lb`` may be reused,
-        # facilitating  the convergence.  To indicate no
+        # facilitating  the convergence. To indicate no
         # previous value is known at first ``previous_tr_radius``
         # is set to -1  and ``lambda_lb`` to None.
         self.previous_tr_radius = -1

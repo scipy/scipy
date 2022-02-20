@@ -1,32 +1,34 @@
-from __future__ import division, print_function, absolute_import
+from __future__ import annotations
+from typing import List, Tuple, Callable, Optional
 
-from itertools import product
-
-from numpy.testing import assert_allclose
 import pytest
-
+from itertools import product
+from numpy.testing import assert_allclose, suppress_warnings
 from scipy import special
 from scipy.special import cython_special
 
 
+bint_points = [True, False]
 int_points = [-10, -1, 1, 10]
 real_points = [-10.0, -1.0, 1.0, 10.0]
 complex_points = [complex(*tup) for tup in product(real_points, repeat=2)]
 
 
 CYTHON_SIGNATURE_MAP = {
+    'b': 'bint',
     'f': 'float',
     'd': 'double',
     'g': 'long double',
     'F': 'float complex',
     'D': 'double complex',
     'G': 'long double complex',
-    'i':'int',
+    'i': 'int',
     'l': 'long'
 }
 
 
 TEST_POINTS = {
+    'b': bint_points,
     'f': real_points,
     'd': real_points,
     'g': real_points,
@@ -38,13 +40,13 @@ TEST_POINTS = {
 }
 
 
-PARAMS = [
+PARAMS: List[Tuple[Callable, Callable, Tuple[str, ...], Optional[str]]] = [
     (special.agm, cython_special.agm, ('dd',), None),
     (special.airy, cython_special._airy_pywrap, ('d', 'D'), None),
     (special.airye, cython_special._airye_pywrap, ('d', 'D'), None),
-    (special.bdtr, cython_special.bdtr, ('lld', 'ddd'), None),
-    (special.bdtrc, cython_special.bdtrc, ('lld', 'ddd'), None),
-    (special.bdtri, cython_special.bdtri, ('lld', 'ddd'), None),
+    (special.bdtr, cython_special.bdtr, ('dld', 'ddd'), None),
+    (special.bdtrc, cython_special.bdtrc, ('dld', 'ddd'), None),
+    (special.bdtri, cython_special.bdtri, ('dld', 'ddd'), None),
     (special.bdtrik, cython_special.bdtrik, ('ddd',), None),
     (special.bdtrin, cython_special.bdtrin, ('ddd',), None),
     (special.bei, cython_special.bei, ('d',), None),
@@ -81,11 +83,19 @@ PARAMS = [
     (special.ellipj, cython_special._ellipj_pywrap, ('dd',), None),
     (special.ellipkinc, cython_special.ellipkinc, ('dd',), None),
     (special.ellipkm1, cython_special.ellipkm1, ('d',), None),
+    (special.ellipk, cython_special.ellipk, ('d',), None),
+    (special.elliprc, cython_special.elliprc, ('dd', 'DD'), None),
+    (special.elliprd, cython_special.elliprd, ('ddd', 'DDD'), None),
+    (special.elliprf, cython_special.elliprf, ('ddd', 'DDD'), None),
+    (special.elliprg, cython_special.elliprg, ('ddd', 'DDD'), None),
+    (special.elliprj, cython_special.elliprj, ('dddd', 'DDDD'), None),
     (special.entr, cython_special.entr, ('d',), None),
     (special.erf, cython_special.erf, ('d', 'D'), None),
     (special.erfc, cython_special.erfc, ('d', 'D'), None),
     (special.erfcx, cython_special.erfcx, ('d', 'D'), None),
     (special.erfi, cython_special.erfi, ('d', 'D'), None),
+    (special.erfinv, cython_special.erfinv, ('d',), None),
+    (special.erfcinv, cython_special.erfcinv, ('d',), None),
     (special.eval_chebyc, cython_special.eval_chebyc, ('dd', 'dD', 'ld'), None),
     (special.eval_chebys, cython_special.eval_chebys, ('dd', 'dD', 'ld'),
      'd and l differ for negative int'),
@@ -180,7 +190,9 @@ PARAMS = [
     (special.kv, cython_special.kv, ('dd', 'dD'), None),
     (special.kve, cython_special.kve, ('dd', 'dD'), None),
     (special.log1p, cython_special.log1p, ('d', 'D'), None),
+    (special.log_expit, cython_special.log_expit, ('f', 'd', 'g'), None),
     (special.log_ndtr, cython_special.log_ndtr, ('d', 'D'), None),
+    (special.ndtri_exp, cython_special.ndtri_exp, ('d',), None),
     (special.loggamma, cython_special.loggamma, ('D',), None),
     (special.logit, cython_special.logit, ('f', 'd', 'g'), None),
     (special.lpmv, cython_special.lpmv, ('ddd',), None),
@@ -223,8 +235,8 @@ PARAMS = [
     (special.pbdv, cython_special._pbdv_pywrap, ('dd',), None),
     (special.pbvv, cython_special._pbvv_pywrap, ('dd',), None),
     (special.pbwa, cython_special._pbwa_pywrap, ('dd',), None),
-    (special.pdtr, cython_special.pdtr, ('ld', 'dd'), None),
-    (special.pdtrc, cython_special.pdtrc, ('ld', 'dd'), None),
+    (special.pdtr, cython_special.pdtr, ('dd', 'dd'), None),
+    (special.pdtrc, cython_special.pdtrc, ('dd', 'dd'), None),
     (special.pdtri, cython_special.pdtri, ('ld', 'dd'), None),
     (special.pdtrik, cython_special.pdtrik, ('dd',), None),
     (special.poch, cython_special.poch, ('dd',), None),
@@ -241,6 +253,10 @@ PARAMS = [
     (special.rel_entr, cython_special.rel_entr, ('dd',), None),
     (special.rgamma, cython_special.rgamma, ('d', 'D'), None),
     (special.round, cython_special.round, ('d',), None),
+    (special.spherical_jn, cython_special.spherical_jn, ('ld', 'ldb', 'lD', 'lDb'), None),
+    (special.spherical_yn, cython_special.spherical_yn, ('ld', 'ldb', 'lD', 'lDb'), None),
+    (special.spherical_in, cython_special.spherical_in, ('ld', 'ldb', 'lD', 'lDb'), None),
+    (special.spherical_kn, cython_special.spherical_kn, ('ld', 'ldb', 'lD', 'lDb'), None),
     (special.shichi, cython_special._shichi_pywrap, ('d', 'D'), None),
     (special.sici, cython_special._sici_pywrap, ('d', 'D'), None),
     (special.sindg, cython_special.sindg, ('d',), None),
@@ -254,7 +270,9 @@ PARAMS = [
     (special.struve, cython_special.struve, ('dd',), None),
     (special.tandg, cython_special.tandg, ('d',), None),
     (special.tklmbda, cython_special.tklmbda, ('dd',), None),
+    (special.voigt_profile, cython_special.voigt_profile, ('ddd',), None),
     (special.wofz, cython_special.wofz, ('D',), None),
+    (special.wright_bessel, cython_special.wright_bessel, ('ddd',), None),
     (special.wrightomega, cython_special.wrightomega, ('D',), None),
     (special.xlog1py, cython_special.xlog1py, ('dd', 'DD'), None),
     (special.xlogy, cython_special.xlogy, ('dd', 'DD'), None),
@@ -272,22 +290,21 @@ IDS = [x[0].__name__ for x in PARAMS]
 
 
 def _generate_test_points(typecodes):
-    axes = tuple(map(lambda x: TEST_POINTS[x], typecodes))
+    axes = tuple(TEST_POINTS[x] for x in typecodes)
     pts = list(product(*axes))
     return pts
 
 
 def test_cython_api_completeness():
     # Check that everything is tested
-    skip = {'hyp2f0', 'hyp1f2', 'hyp3f0'}
     for name in dir(cython_special):
         func = getattr(cython_special, name)
-        if callable(func) and not (name.startswith('_') or name in skip):
+        if callable(func) and not name.startswith('_'):
             for _, cyfun, _, _ in PARAMS:
                 if cyfun is func:
                     break
             else:
-                raise RuntimeError("{} missing from tests!".format(name))
+                raise RuntimeError(f"{name} missing from tests!")
 
 
 @pytest.mark.parametrize("param", PARAMS, ids=IDS)
@@ -297,7 +314,8 @@ def test_cython_api(param):
         pytest.xfail(reason=knownfailure)
 
     # Check which parameters are expected to be fused types
-    values = [set() for code in specializations[0]]
+    max_params = max(len(spec) for spec in specializations)
+    values = [set() for _ in range(max_params)]
     for typecodes in specializations:
         for j, v in enumerate(typecodes):
             values[j].add(v)
@@ -326,6 +344,8 @@ def test_cython_api(param):
         # Test it
         pts = _generate_test_points(typecodes)
         for pt in pts:
-            pyval = pyfunc(*pt)
-            cyval = cy_spec_func(*pt)
+            with suppress_warnings() as sup:
+                sup.filter(DeprecationWarning)
+                pyval = pyfunc(*pt)
+                cyval = cy_spec_func(*pt)
             assert_allclose(cyval, pyval, err_msg="{} {} {}".format(pt, typecodes, signature))

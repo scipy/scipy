@@ -1,24 +1,14 @@
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
 
-try:
-    from scipy.special import ai_zeros, bi_zeros, erf, expn
-except ImportError:
-    pass
+from .common import Benchmark, with_attributes, safe_import
 
-try:
+with safe_import():
+    from scipy.special import ai_zeros, bi_zeros, erf, expn
+with safe_import():
     # wasn't always in scipy.special, so import separately
     from scipy.special import comb
-except ImportError:
-    pass
-
-try:
+with safe_import():
     from scipy.special import loggamma
-except ImportError:
-    pass
-
-from .common import Benchmark, with_attributes
 
 
 class Airy(Benchmark):
@@ -31,7 +21,7 @@ class Airy(Benchmark):
 
 class Erf(Benchmark):
     def setup(self, *args):
-        self.rand = np.random.rand(1e5)
+        self.rand = np.random.rand(100000)
 
     def time_real(self, offset):
         erf(self.rand + offset)

@@ -215,7 +215,9 @@ Continuous Distributions in `scipy.stats`
    continuous_betaprime
    continuous_bradford
    continuous_burr
+   continuous_burr12
    continuous_cauchy
+   continuous_skewcauchy
    continuous_chi
    continuous_chi2
    continuous_cosine
@@ -237,6 +239,8 @@ Continuous Distributions in `scipy.stats`
    continuous_genextreme
    continuous_gengamma
    continuous_genhalflogistic
+   continuous_genhyperbolic
+   continuous_geninvgauss
    continuous_gennorm
    continuous_gilbrat
    continuous_gompertz
@@ -253,14 +257,17 @@ Continuous Distributions in `scipy.stats`
    continuous_johnsonsb
    continuous_johnsonsu
    continuous_ksone
+   continuous_kstwo
    continuous_kstwobign
    continuous_laplace
+   continuous_laplace_asymmetric
    continuous_levy_l
    continuous_levy
    continuous_logistic
    continuous_loglaplace
    continuous_loggamma
    continuous_lognorm
+   continuous_loguniform
    continuous_maxwell
    continuous_mielke
    continuous_nakagami
@@ -277,11 +284,11 @@ Continuous Distributions in `scipy.stats`
    continuous_rdist
    continuous_rayleigh
    continuous_rice
-   continuous_reciprocal
    continuous_recipinvgauss
    continuous_semicircular
+   continuous_studentized_range
    continuous_t
-   continuous_trapz
+   continuous_trapezoid
    continuous_triang
    continuous_truncexpon
    continuous_truncnorm

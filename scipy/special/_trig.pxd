@@ -4,49 +4,13 @@
 # than sin(z), cos(z).
 #
 from libc.math cimport sin, cos, sinh, cosh, exp, fabs, fmod, M_PI
+
+from ._cephes cimport sinpi as dsinpi, cospi as dcospi
 from ._complexstuff cimport number_t, double_complex, zpack
 
 cdef extern from "numpy/npy_math.h":
     double npy_copysign(double x, double y) nogil
     double NPY_INFINITY
-
-DEF TOL = 2.220446049250313e-16
-
-
-cdef inline double dsinpi(double x) nogil:
-    """Compute sin(pi*x) for real arguments."""
-    cdef:
-        double s = 1.0
-        double r
-
-    if x < 0.0:
-        x = -x
-        s = -1.0
-
-    r = fmod(x, 2.0)
-    if r < 0.5:
-        return s*sin(M_PI*r)
-    elif r > 1.5:
-        return s*sin(M_PI*(r - 2.0))
-    else:
-        return -s*sin(M_PI*(r - 1.0))
-
-
-cdef inline double dcospi(double x) nogil:
-    """Compute cos(pi*x) for real arguments."""
-    cdef double r
-
-    if x < 0.0:
-        x = -x
-
-    r = fmod(x, 2.0)
-    if r == 0.5:
-        # We don't want to return -0.0
-        return 0.0
-    if r < 1.0:
-        return -sin(M_PI*(r - 0.5))
-    else:
-        return sin(M_PI*(r - 1.5))
 
 
 cdef inline double complex csinpi(double complex z) nogil:

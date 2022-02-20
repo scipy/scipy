@@ -6,7 +6,7 @@ c     prefixes: d,z,s,c   (double,complex double,float,complex float)
 c     suffixes: _c,_r     (column major order,row major order)
 
       subroutine dlu_c(p,l,u,a,m,n,k,piv,info,permute_l,m1)
-      integer m,n,piv(k),i,j,k,permute_l,m1
+      integer m,n,piv(k),i,j,k,permute_l,m1,info
       double precision l(m,k),u(k,n),a(m,n)
       double precision p(m1,m1)
 
@@ -55,7 +55,7 @@ cf2py callprotoargument double*,double*,double*,double*,int*,int*,int*,int*,int*
       end
 
       subroutine zlu_c(p,l,u,a,m,n,k,piv,info,permute_l,m1)
-      integer m,n,piv(k),i,j,k,permute_l,m1
+      integer m,n,piv(k),i,j,k,permute_l,m1,info
       complex*16 l(m,k),u(k,n),a(m,n)
       double precision p(m1,m1)
 
@@ -104,7 +104,7 @@ cf2py callprotoargument double*,complex_double*,complex_double*,complex_double*,
       end
 
       subroutine slu_c(p,l,u,a,m,n,k,piv,info,permute_l,m1)
-      integer m,n,piv(k),i,j,k,permute_l,m1
+      integer m,n,piv(k),i,j,k,permute_l,m1,info
       real l(m,k),u(k,n),a(m,n)
       real p(m1,m1)
 
@@ -153,7 +153,7 @@ cf2py callprotoargument float*,float*,float*,float*,int*,int*,int*,int*,int*,int
       end
 
       subroutine clu_c(p,l,u,a,m,n,k,piv,info,permute_l,m1)
-      integer m,n,piv(k),i,j,k,permute_l,m1
+      integer m,n,piv(k),i,j,k,permute_l,m1,info
       complex l(m,k),u(k,n),a(m,n)
       real p(m1,m1)
 

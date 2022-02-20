@@ -1,14 +1,10 @@
 """Benchmarks for peak finding related functions."""
 
-from __future__ import division, print_function, absolute_import
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     from scipy.signal import find_peaks, peak_prominences, peak_widths
     from scipy.misc import electrocardiogram
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 class FindPeaks(Benchmark):

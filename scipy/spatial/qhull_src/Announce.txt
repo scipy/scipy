@@ -1,7 +1,8 @@
 
- Qhull 2015.2  2016/01/18
+ Qhull 2019.1  2019/06/21
 
         http://www.qhull.org
+        http://github.com/qhull/qhull/wiki
         git@github.com:qhull/qhull.git
         http://www.geomview.org
 
@@ -25,7 +26,7 @@ Download qhull-96.ps for:
         Barber, C. B., D.P. Dobkin, and H.T. Huhdanpaa, "The
         Quickhull Algorithm for Convex Hulls," ACM Trans. on
         Mathematical Software, 22(4):469-483, Dec. 1996.
-        http://www.acm.org/pubs/citations/journals/toms/1996-22-4/p469-barber/
+        http://portal.acm.org/citation.cfm?doid=235815.235821
         http://citeseerx.ist.psu.edu/viewdoc/summary?doi=10.1.1.117.405
 
 Abstract:

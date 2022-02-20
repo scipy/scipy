@@ -1,23 +1,23 @@
-from __future__ import division, print_function, absolute_import
 import pytest
 
 from math import sqrt, exp, sin, cos
+from functools import lru_cache
 
 from numpy.testing import (assert_warns, assert_,
                            assert_allclose,
                            assert_equal,
-                           assert_array_equal)
+                           assert_array_equal,
+                           suppress_warnings)
 import numpy as np
 from numpy import finfo, power, nan, isclose
 
 
-from scipy.optimize import zeros, newton, root_scalar
+from scipy.optimize import _zeros_py as zeros, newton, root_scalar
 
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
 # Import testing parameters
 from scipy.optimize._tstutils import get_tests, functions as tstutils_functions, fstrings as tstutils_fstrings
-from scipy._lib._numpy_compat import suppress_warnings
 
 TOL = 4*np.finfo(float).eps  # tolerance
 
@@ -54,7 +54,13 @@ def f2_2(x):
     return exp(x) + cos(x)
 
 
-class TestBasic(object):
+# lru cached function
+@lru_cache()
+def f_lrucached(x):
+    return x
+
+
+class TestBasic:
 
     def run_check_by_name(self, name, smoothness=0, **kwargs):
         a = .5
@@ -82,6 +88,15 @@ class TestBasic(object):
             assert_(r.converged)
             assert_allclose(zero, 1.0, atol=xtol, rtol=rtol,
                             err_msg='method %s, function %s' % (name, fname))
+
+    def run_check_lru_cached(self, method, name):
+        # check that https://github.com/scipy/scipy/issues/10846 is fixed
+        a = -1
+        b = 1
+        zero, r = method(f_lrucached, a, b, full_output=True)
+        assert_(r.converged)
+        assert_allclose(zero, 0,
+                        err_msg='method %s, function %s' % (name, 'f_lrucached'))
 
     def _run_one_test(self, tc, method, sig_args_keys=None,
                       sig_kwargs_keys=None, **kwargs):
@@ -116,10 +131,11 @@ class TestBasic(object):
         # The methods have one of two base signatures:
         # (f, a, b, **kwargs)  # newton
         # (func, x0, **kwargs)  # bisect/brentq/...
-        sig = _getargspec(method)  # ArgSpec with args, varargs, varkw, defaults
-        nDefaults = len(sig[3])
-        nRequired = len(sig[0]) - nDefaults
-        sig_args_keys = sig[0][:nRequired]
+        sig = _getfullargspec(method)  # FullArgSpec with args, varargs, varkw, defaults, ...
+        assert_(not sig.kwonlyargs)
+        nDefaults = len(sig.defaults)
+        nRequired = len(sig.args) - nDefaults
+        sig_args_keys = sig.args[:nRequired]
         sig_kwargs_keys = []
         if name in ['secant', 'newton', 'halley']:
             if name in ['newton', 'halley']:
@@ -172,16 +188,19 @@ class TestBasic(object):
 
     def test_bisect(self):
         self.run_check(zeros.bisect, 'bisect')
+        self.run_check_lru_cached(zeros.bisect, 'bisect')
         self.run_check_by_name('bisect')
         self.run_collection('aps', zeros.bisect, 'bisect', smoothness=1)
 
     def test_ridder(self):
         self.run_check(zeros.ridder, 'ridder')
+        self.run_check_lru_cached(zeros.ridder, 'ridder')
         self.run_check_by_name('ridder')
         self.run_collection('aps', zeros.ridder, 'ridder', smoothness=1)
 
     def test_brentq(self):
         self.run_check(zeros.brentq, 'brentq')
+        self.run_check_lru_cached(zeros.brentq, 'brentq')
         self.run_check_by_name('brentq')
         # Brentq/h needs a lower tolerance to be specified
         self.run_collection('aps', zeros.brentq, 'brentq', smoothness=1,
@@ -189,12 +208,14 @@ class TestBasic(object):
 
     def test_brenth(self):
         self.run_check(zeros.brenth, 'brenth')
+        self.run_check_lru_cached(zeros.brenth, 'brenth')
         self.run_check_by_name('brenth')
         self.run_collection('aps', zeros.brenth, 'brenth', smoothness=1,
                             xtol=1e-14, rtol=1e-14)
 
     def test_toms748(self):
         self.run_check(zeros.toms748, 'toms748')
+        self.run_check_lru_cached(zeros.toms748, 'toms748')
         self.run_check_by_name('toms748')
         self.run_collection('aps', zeros.toms748, 'toms748', smoothness=1)
 
@@ -320,6 +341,25 @@ class TestBasic(object):
         x = zeros.newton(f1, x0, args=args)
         assert_allclose(x, x_expected)
 
+    def test_array_newton_complex(self):
+        def f(x):
+            return x + 1+1j
+
+        def fprime(x):
+            return 1.0
+
+        t = np.full(4, 1j)
+        x = zeros.newton(f, t, fprime=fprime)
+        assert_allclose(f(x), 0.)
+
+        # should work even if x0 is not complex
+        t = np.ones(4)
+        x = zeros.newton(f, t, fprime=fprime)
+        assert_allclose(f(x), 0.)
+
+        x = zeros.newton(f, t)
+        assert_allclose(f(x), 0.)
+
     def test_array_secant_active_zero_der(self):
         """test secant doesn't continue to iterate zero derivatives"""
         x = zeros.newton(lambda x, *a: x*x - a[0], x0=[4.123, 5],
@@ -368,7 +408,7 @@ class TestBasic(object):
     def test_newton_full_output(self):
         # Test the full_output capability, both when converging and not.
         # Use simple polynomials, to avoid hitting platform dependencies
-        # (e.g. exp & trig) in number of iterations
+        # (e.g., exp & trig) in number of iterations
 
         x0 = 3
         expected_counts = [(6, 7), (5, 10), (3, 9)]
@@ -407,7 +447,7 @@ class TestBasic(object):
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc, disp=False)
         with pytest.raises(RuntimeError, match='Derivative was zero'):
-            result = zeros.newton(func, 0.0, dfunc)
+            zeros.newton(func, 0.0, dfunc)
 
     def test_newton_does_not_modify_x0(self):
         # https://github.com/scipy/scipy/issues/9964
@@ -415,6 +455,13 @@ class TestBasic(object):
         x0_copy = x0.copy()  # Copy to test for equality.
         newton(np.sin, x0, np.cos)
         assert_array_equal(x0, x0_copy)
+
+    def test_maxiter_int_check(self):
+        for method in [zeros.bisect, zeros.newton, zeros.ridder, zeros.brentq,
+                       zeros.brenth, zeros.toms748]:
+            with pytest.raises(TypeError,
+                    match="'float' object cannot be interpreted as an integer"):
+                method(f1, 0.0, 1.0, maxiter=72.45)
 
 
 def test_gh_5555():
@@ -453,6 +500,21 @@ def test_gh_5557():
     for method in methods:
         res = method(f, 0, 1, xtol=atol, rtol=rtol)
         assert_allclose(0.6, res, atol=atol, rtol=rtol)
+
+
+def test_brent_underflow_in_root_bracketing():
+    # Tetsing if an interval [a,b] brackets a zero of a function
+    # by checking f(a)*f(b) < 0 is not reliable when the product
+    # underflows/overflows. (reported in issue# 13737)
+
+    underflow_scenario = (-450.0, -350.0, -400.0)
+    overflow_scenario = (350.0, 450.0, 400.0)
+
+    for a, b, root in [underflow_scenario, overflow_scenario]:
+        c = np.exp(root)
+        for method in [zeros.brenth, zeros.brentq]:
+            res = method(lambda x: np.exp(x)-c, a, b)
+            assert_allclose(root, res)
 
 
 class TestRootResults:
@@ -661,7 +723,7 @@ def test_gh_9608_preserve_array_shape():
         )
 
     def fpp_array(x):
-        return 2*np.ones(np.shape(x), dtype=np.float32)
+        return np.full(np.shape(x), 2, dtype=np.float32)
 
     result = zeros.newton(
         f, x0_array, fprime=fp, fprime2=fpp_array, full_output=True
@@ -701,8 +763,8 @@ def test_gh9551_raise_error_if_disp_true():
 
     assert_warns(RuntimeWarning, zeros.newton, f, 1.0, f_p, disp=False)
     with pytest.raises(
-        RuntimeError,
-        match=r'^Derivative was zero\. Failed to converge after \d+ iterations, value is [+-]?\d*\.\d+\.$'):
-        result = zeros.newton(f, 1.0, f_p)
+            RuntimeError,
+            match=r'^Derivative was zero\. Failed to converge after \d+ iterations, value is [+-]?\d*\.\d+\.$'):
+        zeros.newton(f, 1.0, f_p)
     root = zeros.newton(f, complex(10.0, 10.0), f_p)
     assert_allclose(root, complex(0.0, 1.0))

@@ -7,7 +7,6 @@ MODE is either 'html' or 'tex'.
 
 """
 import sys
-import io
 import re, optparse
 
 def main():
@@ -22,23 +21,16 @@ def main():
     if mode not in ('html', 'tex'):
         p.error('unknown mode %s' % mode)
 
-    def _open(fn, *args, **kwargs):
-        r"""Handle UTF-8 encoding when loading under Py3"""
-        # Issue is that default encoding under Py3 is
-        # locale dependent (might even be ASCII),
-        # so need to specify the encoding.  Py2 doesn't care.
-        if sys.version_info.major < 3:
-            return open(fn, *args, **kwargs)
-        return io.open(fn, *args, encoding='utf-8', **kwargs)
-
     for fn in args:
-        with _open(fn, 'r') as f:
+        # default encoding under Py3 is locale dependent (might even be ASCII),
+        # so need to specify the encoding.
+        with open(fn, 'r', encoding='utf-8') as f:
             if mode == 'html':
                 lines = process_html(fn, f.readlines())
             elif mode == 'tex':
                 lines = process_tex(f.readlines())
 
-        with _open(fn, 'w') as f:
+        with open(fn, 'w', encoding='utf-8') as f:
             f.write("".join(lines))
 
 

@@ -30,7 +30,7 @@ Benchmark suite
 ---------------
 
 The benchmark suite has switched to using `Airspeed Velocity
-<http://spacetelescope.github.io/asv/>`__ for benchmarking. You can
+<https://asv.readthedocs.io/en/stable/>`__ for benchmarking. You can
 run the suite locally via ``python runtests.py --bench``. For more
 details, see ``benchmarks/README.rst``.
 

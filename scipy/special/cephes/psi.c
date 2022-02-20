@@ -159,14 +159,14 @@ double psi(double x)
 	return NPY_NAN;
     }
     else if (x == 0) {
-	mtherr("psi", SING);
+	sf_error("psi", SF_ERROR_SINGULAR, NULL);
 	return npy_copysign(NPY_INFINITY, -x);
     }
     else if (x < 0.0) {
 	/* argument reduction before evaluating tan(pi * x) */
 	r = modf(x, &q);
 	if (r == 0.0) {
-	    mtherr("psi", SING);
+	    sf_error("psi", SF_ERROR_SINGULAR, NULL);
 	    return NPY_NAN;
 	}
 	y = -NPY_PI / tan(NPY_PI * r);

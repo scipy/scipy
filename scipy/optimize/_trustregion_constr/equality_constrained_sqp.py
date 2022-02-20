@@ -1,6 +1,5 @@
 """Byrd-Omojokun Trust-Region SQP method."""
 
-from __future__ import division, print_function, absolute_import
 from scipy.sparse import eye as speye
 from .projections import projections
 from .qp_subproblem import modified_dogleg, projected_cg, box_intersections

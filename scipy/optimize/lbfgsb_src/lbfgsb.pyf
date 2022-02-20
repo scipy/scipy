@@ -22,6 +22,10 @@ python module _lbfgsb ! in
             double precision dimension(29),intent(inout) :: dsave
             integer intent(in) :: maxls
         end subroutine setulb
+
+        ! Fake common block for indicating the integer size
+        integer :: intvar
+        common /types/ intvar
     end interface 
 end python module _lbfgsb
 

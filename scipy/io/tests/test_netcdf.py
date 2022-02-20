@@ -1,6 +1,4 @@
 ''' Tests for netcdf '''
-from __future__ import division, print_function, absolute_import
-
 import os
 from os.path import join as pjoin, dirname
 import shutil
@@ -11,12 +9,11 @@ from glob import glob
 from contextlib import contextmanager
 
 import numpy as np
-from numpy.testing import assert_, assert_allclose, assert_equal
+from numpy.testing import (assert_, assert_allclose, assert_equal,
+                           break_cycles, suppress_warnings, IS_PYPY)
 from pytest import raises as assert_raises
 
-from scipy.io.netcdf import netcdf_file, IS_PYPY
-
-from scipy._lib._numpy_compat import suppress_warnings
+from scipy.io import netcdf_file
 from scipy._lib._tmpdirs import in_tempdir
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
@@ -56,9 +53,9 @@ def assert_mask_matches(arr, expected_mask):
 
     Parameters
     ----------
-    arr: ndarray or MaskedArray
+    arr : ndarray or MaskedArray
         Array to test.
-    expected_mask: array_like of booleans
+    expected_mask : array_like of booleans
         A list giving the expected mask.
     '''
 
@@ -103,7 +100,7 @@ def test_read_write_files():
         # mmap.  When n * n_bytes(var_type) is not divisible by 4, this
         # raised an error in pupynere 1.0.12 and scipy rev 5893, because
         # calculated vsize was rounding up in units of 4 - see
-        # https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html
+        # https://www.unidata.ucar.edu/software/netcdf/guide_toc.html
         with open('simple.nc', 'rb') as fobj:
             with netcdf_file(fobj) as f:
                 # by default, don't use mmap for file-like
@@ -134,17 +131,19 @@ def test_read_write_files():
             check_simple(f)
             assert_equal(f.variables['app_var'][:], 42)
 
-    except:  # noqa: E722
+    finally:
+        if IS_PYPY:
+            # windows cannot remove a dead file held by a mmap
+            # that has not been collected in PyPy
+            break_cycles()
+            break_cycles()
         os.chdir(cwd)
         shutil.rmtree(tmpdir)
-        raise
-    os.chdir(cwd)
-    shutil.rmtree(tmpdir)
 
 
 def test_read_write_sio():
     eg_sio1 = BytesIO()
-    with make_simple(eg_sio1, 'w') as f1:
+    with make_simple(eg_sio1, 'w'):
         str_val = eg_sio1.getvalue()
 
     eg_sio2 = BytesIO(str_val)
@@ -233,9 +232,9 @@ def test_encoded_fill_value():
 def test_read_example_data():
     # read any example data files
     for fname in glob(pjoin(TEST_DATA_PATH, '*.nc')):
-        with netcdf_file(fname, 'r') as f:
+        with netcdf_file(fname, 'r'):
             pass
-        with netcdf_file(fname, 'r', mmap=False) as f:
+        with netcdf_file(fname, 'r', mmap=False):
             pass
 
 
@@ -285,7 +284,7 @@ def test_write_invalid_dtype():
 def test_flush_rewind():
     stream = BytesIO()
     with make_simple(stream, mode='w') as f:
-        x = f.createDimension('x',4)
+        x = f.createDimension('x',4)  # x is used in createVariable
         v = f.createVariable('v', 'i2', ['x'])
         v[:] = 1
         f.flush()
@@ -421,13 +420,13 @@ def test_append_recordDimension():
             # Open the file in append mode and add data
             with netcdf_file('withRecordDimension.nc', 'a') as f:
                 f.variables['time'].data = np.append(f.variables["time"].data, i)
-                f.variables['testData'][i, :, :] = np.ones((dataSize, dataSize))*i
+                f.variables['testData'][i, :, :] = np.full((dataSize, dataSize), i)
                 f.flush()
 
             # Read the file and check that append worked
             with netcdf_file('withRecordDimension.nc') as f:
                 assert_equal(f.variables['time'][-1], i)
-                assert_equal(f.variables['testData'][-1, :, :].copy(), np.ones((dataSize, dataSize))*i)
+                assert_equal(f.variables['testData'][-1, :, :].copy(), np.full((dataSize, dataSize), i))
                 assert_equal(f.variables['time'].data.shape[0], i+1)
                 assert_equal(f.variables['testData'].data.shape[0], i+1)
 

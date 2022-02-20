@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import print_function
 import sys, os, re
 import glob
 from datetime import date
@@ -7,12 +6,23 @@ import warnings
 
 import numpy as np
 
+# Currently required to build scipy.fft docs
+os.environ['_SCIPY_BUILDING_DOC'] = 'True'
+
 # Check Sphinx version
 import sphinx
-if sphinx.__version__ < "1.6":
-    raise RuntimeError("Sphinx 1.6 or newer required")
+if sphinx.__version__ < "2.0":
+    raise RuntimeError("Sphinx 2.0 or newer required")
 
-needs_sphinx = '1.6'
+needs_sphinx = '2.0'
+
+# Workaround for sphinx-doc/sphinx#6573
+# ua._Function should not be treated as an attribute
+from sphinx.util import inspect
+import scipy._lib.uarray as ua
+old_isdesc = inspect.isdescriptor
+inspect.isdescriptor = (lambda obj: old_isdesc(obj)
+                        and not isinstance(obj, ua._Function))
 
 # -----------------------------------------------------------------------------
 # General configuration
@@ -33,6 +43,7 @@ extensions = [
     'sphinx.ext.mathjax',
     'sphinx.ext.intersphinx',
     'numpydoc',
+    'sphinx_panels',
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
@@ -50,13 +61,17 @@ matplotlib.use('agg')
 import matplotlib.pyplot as plt
 plt.ioff()
 
+# sphinx-panels shouldn't add bootstrap css since the pydata-sphinx-theme
+# already loads it
+panels_add_bootstrap_css = False
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
 
 # The suffix of source filenames.
 source_suffix = '.rst'
 
-# The master toctree document.
+# The main toctree document.
 master_doc = 'index'
 
 # General substitutions.
@@ -96,24 +111,30 @@ add_function_parentheses = False
 
 # If true, sectionauthor and moduleauthor directives will be shown in the
 # output. They are ignored by default.
-show_authors = False
+# show_authors = False
 
 # The name of the Pygments (syntax highlighting) style to use.
-pygments_style = 'sphinx'
+# pygments_style = 'sphinx'
 
-# Enusre all our internal links work
+# Ensure all our internal links work
 nitpicky = True
+nitpick_ignore = [
+    # This ignores errors for classes (OptimizeResults, sparse.dok_matrix)
+    # which inherit methods from `dict`. missing references to builtins get
+    # ignored by default (see https://github.com/sphinx-doc/sphinx/pull/7254),
+    # but that fix doesn't work for inherited methods.
+    ("py:class", "a shallow copy of D"),
+    ("py:class", "a set-like object providing a view on D's keys"),
+    ("py:class", "a set-like object providing a view on D's items"),
+    ("py:class", "an object providing a view on D's values"),
+    ("py:class", "None.  Remove all items from D."),
+    ("py:class", "(k, v), remove and return some (key, value) pair as a"),
+    ("py:class", "None.  Update D from dict/iterable E and F."),
+    ("py:class", "v, remove specified key and return the corresponding value."),
+]
+
 exclude_patterns = [  # glob-style
-    # these are all included directly in dev/index.rst:
-    'dev/decisions.rst',
-    'dev/deprecations.rst',
-    'dev/distributing.rst',
-    'dev/github.rst',
-    'dev/licensing.rst',
-    'dev/modules.rst',
-    'dev/newfeatures.rst',
-    'dev/releasing.rst',
-    'dev/versioning.rst',
+
 ]
 
 # be strict about warnings in our examples, we should write clean code
@@ -124,23 +145,23 @@ warnings.filterwarnings('error')
 warnings.filterwarnings('default', module='sphinx')  # internal warnings
 # global weird ones that can be safely ignored
 for key in (
-        "'U' mode is deprecated",  # sphinx io
-        "OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
-        "Using or importing the ABCs from",  # 3.5 importlib._bootstrap
+        r"'U' mode is deprecated",  # sphinx io
+        r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
+        r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
+        r"'contextfunction' is renamed to 'pass_context'",  # Jinja
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)
+warnings.filterwarnings(  # matplotlib<->pyparsing issue
+    'ignore', message="Exception creating Regex for oneOf.*",
+    category=SyntaxWarning)
 # warnings in examples (mostly) that we allow
 # TODO: eventually these should be eliminated!
 for key in (
         'invalid escape sequence',  # numpydoc 0.8 has some bad escape chars
-        '\nWARNING. The coefficients',  # interpolate.LSQSphereBivariateSpline
         'The integral is probably divergent',  # stats.mielke example
         'underflow encountered in square',  # signal.filtfilt underflow
-        'slepian is deprecated',  # signal.windows.slepian deprecation
         'underflow encountered in multiply',  # scipy.spatial.HalfspaceIntersection
-        '`frechet_l` is deprecated',  # stats.frechet_l
-        '`frechet_r` is deprecated',  # stats.frechet_r
         'underflow encountered in nextafter',  # tuterial/interpolate.rst
         # stats.skewnorm, stats.norminvgauss, stats.gaussian_kde,
         # tutorial/stats.rst (twice):
@@ -153,46 +174,48 @@ for key in (
 # HTML output
 # -----------------------------------------------------------------------------
 
-themedir = os.path.join(os.pardir, 'scipy-sphinx-theme', '_theme')
-if os.path.isdir(themedir):
-    html_theme = 'scipy'
-    html_theme_path = [themedir]
+html_theme = 'pydata_sphinx_theme'
 
-    if 'scipyorg' in tags:
-        # Build for the scipy.org website
-        html_theme_options = {
-            "edit_link": True,
-            "sidebar": "right",
-            "scipy_org_logo": True,
-            "rootlinks": [("https://scipy.org/", "SciPy.org"),
-                          ("https://docs.scipy.org/", "Docs")]
-        }
-    else:
-        # Default build
-        html_theme_options = {
-            "edit_link": False,
-            "sidebar": "left",
-            "scipy_org_logo": False,
-            "rootlinks": []
-        }
-        html_logo = '_static/scipyshiny_small.png'
-        html_sidebars = {'index': ['indexsidebar.html', 'searchbox.html']}
+html_logo = '_static/logo.svg'
+html_favicon = '_static/favicon.ico'
+
+html_theme_options = {
+  "logo_link": "index",
+  "github_url": "https://github.com/scipy/scipy",
+  "navbar_start": ["navbar-logo", "version"],
+}
+
+if 'versionwarning' in tags:
+    # Specific to docs.scipy.org deployment.
+    # See https://github.com/scipy/docs.scipy.org/blob/main/_static/versionwarning.js_t
+    src = ('var script = document.createElement("script");\n'
+           'script.type = "text/javascript";\n'
+           'script.src = "/doc/_static/versionwarning.js";\n'
+           'document.head.appendChild(script);');
+    html_context = {
+        'VERSIONCHECK_JS': src,
+        'versionwarning': True
+    }
+    html_js_files = ['versioncheck.js']
 else:
-    # Build without scipy.org sphinx theme present
-    if 'scipyorg' in tags:
-        raise RuntimeError("Get the scipy-sphinx-theme first, "
-                           "via git submodule init & update")
-    else:
-        html_style = 'scipy_fallback.css'
-        html_logo = '_static/scipyshiny_small.png'
-        html_sidebars = {'index': ['indexsidebar.html', 'searchbox.html']}
+    html_context = {
+        'versionwarning': False
+    }
 
-html_title = "%s v%s Reference Guide" % (project, version)
+html_title = "%s v%s Manual" % (project, version)
 html_static_path = ['_static']
 html_last_updated_fmt = '%b %d, %Y'
 
+html_css_files = [
+    "scipy.css",
+]
+
+# html_additional_pages = {
+#     'index': 'indexcontent.html',
+# }
 html_additional_pages = {}
-html_domain_indices = True
+html_use_modindex = True
+html_domain_indices = False
 html_copy_source = False
 html_file_suffix = '.html'
 
@@ -320,8 +343,10 @@ latex_elements = {
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
     'python': ('https://docs.python.org/dev', None),
-    'numpy': ('https://docs.scipy.org/doc/numpy', None),
+    'numpy': ('https://numpy.org/devdocs', None),
+    'neps': ('https://numpy.org/neps', None),
     'matplotlib': ('https://matplotlib.org', None),
+    'asv': ('https://asv.readthedocs.io/en/stable/', None),
 }
 
 
@@ -342,7 +367,8 @@ np_docscrape.ClassDoc.extra_public_methods = [  # should match class.rst
 # Autosummary
 # -----------------------------------------------------------------------------
 
-autosummary_generate = glob.glob("*.rst")
+autosummary_generate = True
+
 
 # -----------------------------------------------------------------------------
 # Autodoc
@@ -351,6 +377,8 @@ autosummary_generate = glob.glob("*.rst")
 autodoc_default_options = {
     'inherited-members': None,
 }
+autodoc_typehints = 'none'
+
 
 # -----------------------------------------------------------------------------
 # Coverage checker
@@ -473,7 +501,7 @@ def linkcode_resolve(domain, info):
             return "https://github.com/scipy/scipy/blob/%s/%s%s" % (
                 m.group(1), fn, linespec)
         elif 'dev' in scipy.__version__:
-            return "https://github.com/scipy/scipy/blob/master/%s%s" % (
+            return "https://github.com/scipy/scipy/blob/main/%s%s" % (
                 fn, linespec)
         else:
             return "https://github.com/scipy/scipy/blob/v%s/%s%s" % (

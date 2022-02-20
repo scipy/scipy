@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import threading
 
 import scipy._lib.decorator
@@ -12,14 +10,14 @@ class ReentrancyError(RuntimeError):
     pass
 
 
-class ReentrancyLock(object):
+class ReentrancyLock:
     """
     Threading lock that raises an exception for reentrant calls.
 
     Calls from different threads are serialized, and nested calls from the
     same thread result to an error.
 
-    The object can be used as a context manager, or to decorate functions
+    The object can be used as a context manager or to decorate functions
     via the decorate() method.
 
     """

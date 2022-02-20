@@ -14,8 +14,6 @@ include .coveragerc
 include site.cfg.example
 include tox.ini pytest.ini
 recursive-include tools *
-# Cached Cython signatures
-include cythonize.dat
 # Exclude what we don't want to include
 recursive-exclude scipy/linalg/src/id_dist/src *_subr_*.f
 prune benchmarks/env
@@ -29,3 +27,6 @@ prune doc/build
 prune doc/source/generated
 prune */__pycache__
 global-exclude *.pyc *~ *.bak *.swp *.pyo
+# Exclude license file that we append to the main license when running
+# `python setup.py sdist`
+exclude LICENSES_bundled.txt

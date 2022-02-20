@@ -1,6 +1,4 @@
 """Frechet derivative of the matrix exponential."""
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import scipy.linalg
 
@@ -18,7 +16,7 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     E : (N, N) array_like
         Matrix direction in which to take the Frechet derivative.
     method : str, optional
-        Choice of algorithm.  Should be one of
+        Choice of algorithm. Should be one of
 
         - `SPS` (default)
         - `blockEnlarge`
@@ -37,10 +35,9 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
         Matrix exponential of A.
     expm_frechet_AE : ndarray
         Frechet derivative of the matrix exponential of A in the direction E.
-
     For ``compute_expm = False``, only `expm_frechet_AE` is returned.
 
-    See also
+    See Also
     --------
     expm : Compute the exponential of a matrix.
 
@@ -69,15 +66,17 @@ def expm_frechet(A, E, method=None, compute_expm=True, check_finite=True):
     Examples
     --------
     >>> import scipy.linalg
-    >>> A = np.random.randn(3, 3)
-    >>> E = np.random.randn(3, 3)
+    >>> rng = np.random.default_rng()
+    >>> A = rng.standard_normal((3, 3))
+    >>> E = rng.standard_normal((3, 3))
     >>> expm_A, expm_frechet_AE = scipy.linalg.expm_frechet(A, E)
     >>> expm_A.shape, expm_frechet_AE.shape
     ((3, 3), (3, 3))
 
     >>> import scipy.linalg
-    >>> A = np.random.randn(3, 3)
-    >>> E = np.random.randn(3, 3)
+    >>> rng = np.random.default_rng()
+    >>> A = rng.standard_normal((3, 3))
+    >>> E = rng.standard_normal((3, 3))
     >>> expm_A, expm_frechet_AE = scipy.linalg.expm_frechet(A, E)
     >>> M = np.zeros((6, 6))
     >>> M[:3, :3] = A; M[:3, 3:] = E; M[3:, 3:] = A
@@ -286,12 +285,12 @@ def vec(M):
 
     Parameters
     ----------
-    M : 2d array_like
+    M : 2-D array_like
         Input matrix
 
     Returns
     -------
-    v : 1d ndarray
+    v : 1-D ndarray
         Output vector
 
     """
@@ -315,7 +314,7 @@ def expm_frechet_kronform(A, method=None, check_finite=True):
 
     Returns
     -------
-    K : 2d ndarray with shape (N*N, N*N)
+    K : 2-D ndarray with shape (N*N, N*N)
         Kronecker form of the Frechet derivative of the matrix exponential.
 
     Notes
@@ -323,7 +322,7 @@ def expm_frechet_kronform(A, method=None, check_finite=True):
     This function is used to help compute the condition number
     of the matrix exponential.
 
-    See also
+    See Also
     --------
     expm : Compute a matrix exponential.
     expm_frechet : Compute the Frechet derivative of the matrix exponential.
@@ -356,7 +355,7 @@ def expm_cond(A, check_finite=True):
 
     Parameters
     ----------
-    A : 2d array_like
+    A : 2-D array_like
         Square input matrix with shape (N, N).
     check_finite : bool, optional
         Whether to check that the input matrix contains only finite numbers.
@@ -372,11 +371,11 @@ def expm_cond(A, check_finite=True):
     Notes
     -----
     A faster estimate for the condition number in the 1-norm
-    has been published but is not yet implemented in scipy.
+    has been published but is not yet implemented in SciPy.
 
     .. versionadded:: 0.14.0
 
-    See also
+    See Also
     --------
     expm : Compute the exponential of a matrix.
     expm_frechet : Compute the Frechet derivative of the matrix exponential.

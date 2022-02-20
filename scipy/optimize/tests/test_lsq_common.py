@@ -1,10 +1,7 @@
-from __future__ import division, absolute_import, print_function
-
 from numpy.testing import assert_, assert_allclose, assert_equal
 from pytest import raises as assert_raises
 import numpy as np
 
-from scipy.sparse.linalg import LinearOperator
 from scipy.optimize._lsq.common import (
     step_size_to_bound, find_active_constraints, make_strictly_feasible,
     CL_scaling_vector, intersect_trust_region, build_quadratic_1d,
@@ -12,7 +9,7 @@ from scipy.optimize._lsq.common import (
     left_multiplied_operator, right_multiplied_operator)
 
 
-class TestBounds(object):
+class TestBounds:
     def test_step_size_to_bounds(self):
         lb = np.array([-1.0, 2.5, 10.0])
         ub = np.array([1.0, 5.0, 100.0])
@@ -116,7 +113,7 @@ class TestBounds(object):
         assert_equal(dv, [0.0, 1.0, -1.0, 0.0])
 
 
-class TestQuadraticFunction(object):
+class TestQuadraticFunction:
     def setup_method(self):
         self.J = np.array([
             [0.1, 0.2],
@@ -216,7 +213,7 @@ class TestQuadraticFunction(object):
         assert_allclose(values, [6.35, 0.59, 0.0])
 
 
-class TestTrustRegion(object):
+class TestTrustRegion:
     def test_intersect(self):
         Delta = 1.0
 

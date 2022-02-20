@@ -1,11 +1,9 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 import scipy.interpolate as interp
 from numpy.testing import assert_almost_equal
 
 
-class TestRegression(object):
+class TestRegression:
     def test_spalde_scalar_input(self):
         """Ticket #629"""
         x = np.linspace(0,10)

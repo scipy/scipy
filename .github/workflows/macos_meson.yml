@@ -1,0 +1,116 @@
+name: macOS tests (meson)
+
+on:
+  push:
+    branches:
+      - main
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+env:
+  INSTALLDIR: "build-install"
+  CCACHE_DIR: "${{ github.workspace }}/.ccache"
+
+jobs:
+  test_meson:
+    name: Meson build
+    # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
+    if: "github.repository != '' || github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
+    runs-on: macos-latest
+    strategy:
+      matrix:
+        python-version: ["3.10"]
+
+    steps:
+    - uses: actions/checkout@v2
+      with:
+        submodules: recursive
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Ccache
+      run: |
+        brew install ccache
+
+    - name:  Prepare compiler cache
+      id:    prep-ccache
+      shell: bash -l {0}
+      run: |
+        mkdir -p "${CCACHE_DIR}"
+        echo "::set-output name=dir::$CCACHE_DIR"
+        NOW=$(date -u +"%F-%T")
+        echo "::set-output name=timestamp::${NOW}"
+
+    - name: Setup compiler cache
+      uses:  actions/cache@v2
+      id:    cache-ccache
+      # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
+      # NOTE: The caching strategy is modeled in a way that it will always have
+      # a unique cache key for each workflow run (even if the same workflow is
+      # run multiple times). The restore keys are not unique and for a partial
+      # match, they will return the most recently created cache entry,
+      # according to the GitHub Action Docs.
+      with:
+        path: ${{ steps.prep-ccache.outputs.dir }}
+        key:  ${{ github.workflow }}-${{ matrix.python-version }}-ccache-macos-${{ steps.prep-ccache.outputs.timestamp }}
+        # This evaluates to `macOS Tests-3.10-ccache-macos-` which is not
+        # unique. As the CI matrix is expanded, this will need to be updated to
+        # be unique so that the cache is not restored from a different job altogether.
+        restore-keys: |
+          ${{ github.workflow }}-${{ matrix.python-version }}-ccache-macos-
+
+    - name: Setup Conda
+      uses: conda-incubator/setup-miniconda@v2
+      with:
+        python-version: ${{ matrix.python-version }}
+        mamba-version: "*"
+        channels: conda-forge
+        channel-priority: true
+        activate-environment: scipy-meson
+        use-only-tar-bz2: true
+
+    - name: Cache conda
+      uses: actions/cache@v2
+      env:
+        # Increase this value to reset cache if environment_meson.yml has not changed
+        CACHE_NUMBER: 0
+      with:
+        path: /usr/local/miniconda/envs/scipy-meson
+        key:
+          ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment_meson.yml') }}
+      id: envcache
+
+    - name: Update Conda Environment
+      run: mamba env update -n scipy-meson -f environment_meson.yml
+
+    - name: Build and Install SciPy
+      shell: bash -l {0}
+      run: |
+        conda activate scipy-meson
+        python -m pip install meson==0.61.1
+        # Python.org installers still use 10.9, so let's use that too. Note
+        # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
+        # this number in the future (if needed) should not be a problem.
+        # Conda-forge is still at 10.9, see:
+        # https://conda-forge.org/docs/maintainer/knowledge_base.html#requiring-newer-macos-sdks
+        export MACOSX_DEPLOYMENT_TARGET=10.9
+        export MACOSX_SDK_VERSION=10.9
+        CC="ccache $CC" python dev.py -j 2 --build-only
+
+    - name: Test SciPy
+      shell: bash -l {0}
+      run: |
+        conda activate scipy-meson
+        export OMP_NUM_THREADS=2
+        python dev.py -n -j 2
+
+    - name: Ccache statistics
+      shell: bash -l {0}
+      run: |
+        ccache -s

@@ -1,7 +1,0 @@
-      SUBROUTINE SINQI (N,WSAVE)
-      IMPLICIT NONE
-      INTEGER :: N
-      REAL :: WSAVE(*)
-      CALL COSQI (N,WSAVE)
-      RETURN
-      END
