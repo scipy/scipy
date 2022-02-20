@@ -3430,8 +3430,8 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
     The proportion to trim is rounded down to the nearest integer. For
     instance, trimming 25% of the values from an array of 10 values will
-
     return an array of 8 values:
+
 
     >>> b = np.arange(10)
     >>> stats.trim1(b, 1/4).shape
