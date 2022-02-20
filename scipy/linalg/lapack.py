@@ -48,7 +48,6 @@ All functions
 .. autosummary::
    :toctree: generated/
 
-
    sgbsv
    dgbsv
    cgbsv
@@ -114,6 +113,9 @@ All functions
    cgehrd_lwork
    zgehrd_lwork
 
+   sgejsv
+   dgejsv
+
    sgels
    dgels
    cgels
@@ -163,6 +165,21 @@ All functions
    dgeqrf
    cgeqrf
    zgeqrf
+
+   sgeqrf_lwork
+   dgeqrf_lwork
+   cgeqrf_lwork
+   zgeqrf_lwork
+
+   sgeqrfp
+   dgeqrfp
+   cgeqrfp
+   zgeqrfp
+
+   sgeqrfp_lwork
+   dgeqrfp_lwork
+   cgeqrfp_lwork
+   zgeqrfp_lwork
 
    sgerqf
    dgerqf
@@ -254,6 +271,11 @@ All functions
    cgtsv
    zgtsv
 
+   sgtsvx
+   dgtsvx
+   cgtsvx
+   zgtsvx
+
    chbevd
    zhbevd
 
@@ -269,11 +291,26 @@ All functions
    cheev
    zheev
 
+   cheev_lwork
+   zheev_lwork
+
    cheevd
    zheevd
 
+   cheevd_lwork
+   zheevd_lwork
+
    cheevr
    zheevr
+
+   cheevr_lwork
+   zheevr_lwork
+
+   cheevx
+   zheevx
+
+   cheevx_lwork
+   zheevx_lwork
 
    chegst
    zhegst
@@ -281,11 +318,17 @@ All functions
    chegv
    zhegv
 
+   chegv_lwork
+   zhegv_lwork
+
    chegvd
    zhegvd
 
    chegvx
    zhegvx
+
+   chegvx_lwork
+   zhegvx_lwork
 
    chesv
    zhesv
@@ -349,6 +392,11 @@ All functions
    dlauum
    clauum
    zlauum
+
+   sorcsd
+   dorcsd
+   sorcsd_lwork
+   dorcsd_lwork
 
    sorghr
    dorghr
@@ -440,10 +488,55 @@ All functions
    cpotrs
    zpotrs
 
+   sppcon
+   dppcon
+   cppcon
+   zppcon
+
+   sppsv
+   dppsv
+   cppsv
+   zppsv
+
+   spptrf
+   dpptrf
+   cpptrf
+   zpptrf
+
+   spptri
+   dpptri
+   cpptri
+   zpptri
+
+   spptrs
+   dpptrs
+   cpptrs
+   zpptrs
+
    sptsv
    dptsv
    cptsv
    zptsv
+
+   sptsvx
+   dptsvx
+   cptsvx
+   zptsvx
+
+   spttrf
+   dpttrf
+   cpttrf
+   zpttrf
+
+   spttrs
+   dpttrs
+   cpttrs
+   zpttrs
+
+   spteqr
+   dpteqr
+   cpteqr
+   zpteqr
 
    crot
    zrot
@@ -496,11 +589,26 @@ All functions
    ssyev
    dsyev
 
+   ssyev_lwork
+   dsyev_lwork
+
    ssyevd
    dsyevd
 
+   ssyevd_lwork
+   dsyevd_lwork
+
    ssyevr
    dsyevr
+
+   ssyevr_lwork
+   dsyevr_lwork
+
+   ssyevx
+   dsyevx
+
+   ssyevx_lwork
+   dsyevx_lwork
 
    ssygst
    dsygst
@@ -508,11 +616,17 @@ All functions
    ssygv
    dsygv
 
+   ssygv_lwork
+   dsygv_lwork
+
    ssygvd
    dsygvd
 
    ssygvx
    dsygvx
+
+   ssygvx_lwork
+   dsygvx_lwork
 
    ssysv
    dsysv
@@ -555,6 +669,11 @@ All functions
    csytrf_lwork
    zsytrf_lwork
 
+   stbtrs
+   dtbtrs
+   ctbtrs
+   ztbtrs
+
    stfsm
    dtfsm
    ctfsm
@@ -570,10 +689,20 @@ All functions
    ctfttr
    ztfttr
 
+   stgexc
+   dtgexc
+   ctgexc
+   ztgexc
+
    stgsen
    dtgsen
    ctgsen
    ztgsen
+
+   stgsen_lwork
+   dtgsen_lwork
+   ctgsen_lwork
+   ztgsen_lwork
 
    stpttf
    dtpttf
@@ -645,6 +774,16 @@ All functions
    cgemqrt
    zgemqrt
 
+   sgttrf
+   dgttrf
+   cgttrf
+   zgttrf
+
+   sgttrs
+   dgttrs
+   cgttrs
+   zgttrs
+
    stpqrt
    dtpqrt
    ctpqrt
@@ -654,6 +793,12 @@ All functions
    dtpmqrt
    ctpmqrt
    ztpmqrt
+
+   cuncsd
+   zuncsd
+
+   cuncsd_lwork
+   zuncsd_lwork
 
    cunmrz
    zunmrz
@@ -668,17 +813,23 @@ All functions
 # Author: Pearu Peterson, March 2002
 #
 
-from __future__ import division, print_function, absolute_import
 import numpy as _np
 from .blas import _get_funcs, _memoize_get_funcs
 from scipy.linalg import _flapack
+from re import compile as regex_compile
 try:
     from scipy.linalg import _clapack
 except ImportError:
     _clapack = None
 
+try:
+    from scipy.linalg import _flapack_64
+    HAS_ILP64 = True
+except ImportError:
+    HAS_ILP64 = False
+    _flapack_64 = None
+
 # Backward compatibility
-from .blas import find_best_blas_type as find_best_lapack_type
 from scipy._lib._util import DeprecatedImport as _DeprecatedImport
 clapack = _DeprecatedImport("scipy.linalg.blas.clapack", "scipy.linalg.lapack")
 flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
@@ -717,8 +868,33 @@ _lapack_alias = {
 }
 
 
+# Place guards against docstring rendering issues with special characters
+p1 = regex_compile(r'with bounds (?P<b>.*?)( and (?P<s>.*?) storage){0,1}\n')
+p2 = regex_compile(r'Default: (?P<d>.*?)\n')
+
+
+def backtickrepl(m):
+    if m.group('s'):
+        return ('with bounds ``{}`` with ``{}`` storage\n'
+                ''.format(m.group('b'), m.group('s')))
+    else:
+        return 'with bounds ``{}``\n'.format(m.group('b'))
+
+
+for routine in [ssyevr, dsyevr, cheevr, zheevr,
+                ssyevx, dsyevx, cheevx, zheevx,
+                ssygvd, dsygvd, chegvd, zhegvd]:
+    if routine.__doc__:
+        routine.__doc__ = p1.sub(backtickrepl, routine.__doc__)
+        routine.__doc__ = p2.sub('Default ``\\1``\n', routine.__doc__)
+    else:
+        continue
+
+del regex_compile, p1, p2, backtickrepl
+
+
 @_memoize_get_funcs
-def get_lapack_funcs(names, arrays=(), dtype=None):
+def get_lapack_funcs(names, arrays=(), dtype=None, ilp64=False):
     """Return available LAPACK function objects from names.
 
     Arrays are used to determine the optimal prefix of LAPACK routines.
@@ -735,6 +911,11 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
 
     dtype : str or dtype, optional
         Data-type specifier. Not used if `arrays` is non-empty.
+
+    ilp64 : {True, False, 'preferred'}, optional
+        Whether to return ILP64 routine variant.
+        Choosing 'preferred' returns ILP64 routine if available, and
+        otherwise the 32-bit routine. Default: False
 
     Returns
     -------
@@ -760,7 +941,8 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     flavor.
 
     >>> import scipy.linalg as LA
-    >>> a = np.random.rand(3,2)
+    >>> rng = np.random.default_rng()
+    >>> a = rng.random((3,2))
     >>> x_lange = LA.get_lapack_funcs('lange', (a,))
     >>> x_lange.typecode
     'd'
@@ -775,20 +957,38 @@ def get_lapack_funcs(names, arrays=(), dtype=None):
     commonly denoted as ``###_lwork``. Below is an example for ``?sysv``
 
     >>> import scipy.linalg as LA
-    >>> a = np.random.rand(1000,1000)
-    >>> b = np.random.rand(1000,1)*1j
+    >>> rng = np.random.default_rng()
+    >>> a = rng.random((1000, 1000))
+    >>> b = rng.random((1000, 1)) * 1j
     >>> # We pick up zsysv and zsysv_lwork due to b array
     ... xsysv, xlwork = LA.get_lapack_funcs(('sysv', 'sysv_lwork'), (a, b))
     >>> opt_lwork, _ = xlwork(a.shape[0])  # returns a complex for 'z' prefix
     >>> udut, ipiv, x, info = xsysv(a, b, lwork=int(opt_lwork.real))
 
     """
-    return _get_funcs(names, arrays, dtype,
-                      "LAPACK", _flapack, _clapack,
-                      "flapack", "clapack", _lapack_alias)
+    if isinstance(ilp64, str):
+        if ilp64 == 'preferred':
+            ilp64 = HAS_ILP64
+        else:
+            raise ValueError("Invalid value for 'ilp64'")
+
+    if not ilp64:
+        return _get_funcs(names, arrays, dtype,
+                          "LAPACK", _flapack, _clapack,
+                          "flapack", "clapack", _lapack_alias,
+                          ilp64=False)
+    else:
+        if not HAS_ILP64:
+            raise RuntimeError("LAPACK ILP64 routine requested, but Scipy "
+                               "compiled only with 32-bit BLAS")
+        return _get_funcs(names, arrays, dtype,
+                          "LAPACK", _flapack_64, None,
+                          "flapack_64", None, _lapack_alias,
+                          ilp64=True)
 
 
 _int32_max = _np.iinfo(_np.int32).max
+_int64_max = _np.iinfo(_np.int64).max
 
 
 def _compute_lwork(routine, *args, **kwargs):
@@ -813,18 +1013,20 @@ def _compute_lwork(routine, *args, **kwargs):
 
     """
     dtype = getattr(routine, 'dtype', None)
+    int_dtype = getattr(routine, 'int_dtype', None)
     ret = routine(*args, **kwargs)
     if ret[-1] != 0:
         raise ValueError("Internal work array size computation failed: "
                          "%d" % (ret[-1],))
 
     if len(ret) == 2:
-        return _check_work_float(ret[0].real, dtype)
+        return _check_work_float(ret[0].real, dtype, int_dtype)
     else:
-        return tuple(_check_work_float(x.real, dtype) for x in ret[:-1])
+        return tuple(_check_work_float(x.real, dtype, int_dtype)
+                     for x in ret[:-1])
 
 
-def _check_work_float(value, dtype):
+def _check_work_float(value, dtype, int_dtype):
     """
     Convert LAPACK-returned work array size float to integer,
     carefully for single-precision types.
@@ -836,7 +1038,14 @@ def _check_work_float(value, dtype):
         value = _np.nextafter(value, _np.inf, dtype=_np.float32)
 
     value = int(value)
-    if value < 0 or value > _int32_max:
-        raise ValueError("Too large work array required -- computation cannot "
-                         "be performed with standard 32-bit LAPACK.")
+    if int_dtype.itemsize == 4:
+        if value < 0 or value > _int32_max:
+            raise ValueError("Too large work array required -- computation "
+                             "cannot be performed with standard 32-bit"
+                             " LAPACK.")
+    elif int_dtype.itemsize == 8:
+        if value < 0 or value > _int64_max:
+            raise ValueError("Too large work array required -- computation"
+                             " cannot be performed with standard 64-bit"
+                             " LAPACK.")
     return value

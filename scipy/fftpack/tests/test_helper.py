@@ -1,7 +1,5 @@
 # Created by Pearu Peterson, September 2002
 
-from __future__ import division, print_function, absolute_import
-
 __usage__ = """
 Build fftpack:
   python setup_fftpack.py build
@@ -11,14 +9,12 @@ Run tests if fftpack is not installed:
   python tests/test_helper.py [<level>]
 """
 
-from pytest import raises as assert_raises
-from numpy.testing import assert_array_almost_equal, assert_equal, assert_
-from scipy.fftpack import fftshift,ifftshift,fftfreq,rfftfreq
+from numpy.testing import assert_array_almost_equal
+from scipy.fftpack import fftshift, ifftshift, fftfreq, rfftfreq
 
 from numpy import pi, random
-import numpy as np
 
-class TestFFTShift(object):
+class TestFFTShift:
 
     def test_definition(self):
         x = [0,1,2,3,4,-4,-3,-2,-1]
@@ -36,7 +32,7 @@ class TestFFTShift(object):
             assert_array_almost_equal(ifftshift(fftshift(x)),x)
 
 
-class TestFFTFreq(object):
+class TestFFTFreq:
 
     def test_definition(self):
         x = [0,1,2,3,4,-4,-3,-2,-1]
@@ -47,7 +43,7 @@ class TestFFTFreq(object):
         assert_array_almost_equal(10*pi*fftfreq(10,pi),x)
 
 
-class TestRFFTFreq(object):
+class TestRFFTFreq:
 
     def test_definition(self):
         x = [0,1,1,2,2,3,3,4,4]

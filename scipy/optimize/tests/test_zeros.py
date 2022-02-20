@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 import pytest
 
 from math import sqrt, exp, sin, cos
@@ -7,18 +6,18 @@ from functools import lru_cache
 from numpy.testing import (assert_warns, assert_,
                            assert_allclose,
                            assert_equal,
-                           assert_array_equal)
+                           assert_array_equal,
+                           suppress_warnings)
 import numpy as np
 from numpy import finfo, power, nan, isclose
 
 
-from scipy.optimize import zeros, newton, root_scalar
+from scipy.optimize import _zeros_py as zeros, newton, root_scalar
 
-from scipy._lib._util import getargspec_no_self as _getargspec
+from scipy._lib._util import getfullargspec_no_self as _getfullargspec
 
 # Import testing parameters
 from scipy.optimize._tstutils import get_tests, functions as tstutils_functions, fstrings as tstutils_fstrings
-from scipy._lib._numpy_compat import suppress_warnings
 
 TOL = 4*np.finfo(float).eps  # tolerance
 
@@ -61,7 +60,7 @@ def f_lrucached(x):
     return x
 
 
-class TestBasic(object):
+class TestBasic:
 
     def run_check_by_name(self, name, smoothness=0, **kwargs):
         a = .5
@@ -132,10 +131,11 @@ class TestBasic(object):
         # The methods have one of two base signatures:
         # (f, a, b, **kwargs)  # newton
         # (func, x0, **kwargs)  # bisect/brentq/...
-        sig = _getargspec(method)  # ArgSpec with args, varargs, varkw, defaults
-        nDefaults = len(sig[3])
-        nRequired = len(sig[0]) - nDefaults
-        sig_args_keys = sig[0][:nRequired]
+        sig = _getfullargspec(method)  # FullArgSpec with args, varargs, varkw, defaults, ...
+        assert_(not sig.kwonlyargs)
+        nDefaults = len(sig.defaults)
+        nRequired = len(sig.args) - nDefaults
+        sig_args_keys = sig.args[:nRequired]
         sig_kwargs_keys = []
         if name in ['secant', 'newton', 'halley']:
             if name in ['newton', 'halley']:
@@ -341,6 +341,25 @@ class TestBasic(object):
         x = zeros.newton(f1, x0, args=args)
         assert_allclose(x, x_expected)
 
+    def test_array_newton_complex(self):
+        def f(x):
+            return x + 1+1j
+
+        def fprime(x):
+            return 1.0
+
+        t = np.full(4, 1j)
+        x = zeros.newton(f, t, fprime=fprime)
+        assert_allclose(f(x), 0.)
+
+        # should work even if x0 is not complex
+        t = np.ones(4)
+        x = zeros.newton(f, t, fprime=fprime)
+        assert_allclose(f(x), 0.)
+
+        x = zeros.newton(f, t)
+        assert_allclose(f(x), 0.)
+
     def test_array_secant_active_zero_der(self):
         """test secant doesn't continue to iterate zero derivatives"""
         x = zeros.newton(lambda x, *a: x*x - a[0], x0=[4.123, 5],
@@ -389,7 +408,7 @@ class TestBasic(object):
     def test_newton_full_output(self):
         # Test the full_output capability, both when converging and not.
         # Use simple polynomials, to avoid hitting platform dependencies
-        # (e.g. exp & trig) in number of iterations
+        # (e.g., exp & trig) in number of iterations
 
         x0 = 3
         expected_counts = [(6, 7), (5, 10), (3, 9)]
@@ -428,7 +447,7 @@ class TestBasic(object):
         dfunc = lambda x: 2*x
         assert_warns(RuntimeWarning, zeros.newton, func, 0.0, dfunc, disp=False)
         with pytest.raises(RuntimeError, match='Derivative was zero'):
-            result = zeros.newton(func, 0.0, dfunc)
+            zeros.newton(func, 0.0, dfunc)
 
     def test_newton_does_not_modify_x0(self):
         # https://github.com/scipy/scipy/issues/9964
@@ -481,6 +500,21 @@ def test_gh_5557():
     for method in methods:
         res = method(f, 0, 1, xtol=atol, rtol=rtol)
         assert_allclose(0.6, res, atol=atol, rtol=rtol)
+
+
+def test_brent_underflow_in_root_bracketing():
+    # Tetsing if an interval [a,b] brackets a zero of a function
+    # by checking f(a)*f(b) < 0 is not reliable when the product
+    # underflows/overflows. (reported in issue# 13737)
+
+    underflow_scenario = (-450.0, -350.0, -400.0)
+    overflow_scenario = (350.0, 450.0, 400.0)
+
+    for a, b, root in [underflow_scenario, overflow_scenario]:
+        c = np.exp(root)
+        for method in [zeros.brenth, zeros.brentq]:
+            res = method(lambda x: np.exp(x)-c, a, b)
+            assert_allclose(root, res)
 
 
 class TestRootResults:
@@ -729,8 +763,8 @@ def test_gh9551_raise_error_if_disp_true():
 
     assert_warns(RuntimeWarning, zeros.newton, f, 1.0, f_p, disp=False)
     with pytest.raises(
-        RuntimeError,
-        match=r'^Derivative was zero\. Failed to converge after \d+ iterations, value is [+-]?\d*\.\d+\.$'):
-        result = zeros.newton(f, 1.0, f_p)
+            RuntimeError,
+            match=r'^Derivative was zero\. Failed to converge after \d+ iterations, value is [+-]?\d*\.\d+\.$'):
+        zeros.newton(f, 1.0, f_p)
     root = zeros.newton(f, complex(10.0, 10.0), f_p)
     assert_allclose(root, complex(0.0, 1.0))

@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 
 def configuration(parent_package='',top_path=None):
     from numpy.distutils.misc_util import Configuration
@@ -11,7 +9,7 @@ def configuration(parent_package='',top_path=None):
     config.add_data_dir('tests')
     config.add_subpackage('matlab')
     config.add_subpackage('arff')
-    config.add_subpackage('harwell_boeing')
+    config.add_subpackage('_harwell_boeing')
     return config
 
 

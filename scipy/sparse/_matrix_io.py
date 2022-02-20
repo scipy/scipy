@@ -1,19 +1,11 @@
-from __future__ import division, print_function, absolute_import
-
-import sys
 import numpy as np
 import scipy.sparse
-
-from scipy._lib._version import NumpyVersion
 
 __all__ = ['save_npz', 'load_npz']
 
 
-if NumpyVersion(np.__version__) >= '1.10.0':
-    # Make loading safe vs. malicious input
-    PICKLE_KWARGS = dict(allow_pickle=False)
-else:
-    PICKLE_KWARGS = dict()
+# Make loading safe vs. malicious input
+PICKLE_KWARGS = dict(allow_pickle=False)
 
 
 def save_npz(file, matrix, compressed=True):
@@ -46,9 +38,9 @@ def save_npz(file, matrix, compressed=True):
     >>> sparse_matrix
     <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
-    >>> sparse_matrix.todense()
-    matrix([[0, 0, 3],
-            [4, 0, 0]], dtype=int64)
+    >>> sparse_matrix.toarray()
+    array([[0, 0, 3],
+           [4, 0, 0]], dtype=int64)
 
     >>> scipy.sparse.save_npz('/tmp/sparse_matrix.npz', sparse_matrix)
     >>> sparse_matrix = scipy.sparse.load_npz('/tmp/sparse_matrix.npz')
@@ -56,9 +48,9 @@ def save_npz(file, matrix, compressed=True):
     >>> sparse_matrix
     <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
-    >>> sparse_matrix.todense()
-    matrix([[0, 0, 3],
-            [4, 0, 0]], dtype=int64)
+    >>> sparse_matrix.toarray()
+    array([[0, 0, 3],
+           [4, 0, 0]], dtype=int64)
     """
     arrays_dict = {}
     if matrix.format in ('csc', 'csr', 'bsr'):
@@ -96,7 +88,7 @@ def load_npz(file):
 
     Raises
     ------
-    IOError
+    OSError
         If the input file does not exist or cannot be read.
 
     See Also
@@ -113,9 +105,9 @@ def load_npz(file):
     >>> sparse_matrix
     <2x3 sparse matrix of type '<class 'numpy.int64'>'
        with 2 stored elements in Compressed Sparse Column format>
-    >>> sparse_matrix.todense()
-    matrix([[0, 0, 3],
-            [4, 0, 0]], dtype=int64)
+    >>> sparse_matrix.toarray()
+    array([[0, 0, 3],
+           [4, 0, 0]], dtype=int64)
 
     >>> scipy.sparse.save_npz('/tmp/sparse_matrix.npz', sparse_matrix)
     >>> sparse_matrix = scipy.sparse.load_npz('/tmp/sparse_matrix.npz')
@@ -123,28 +115,28 @@ def load_npz(file):
     >>> sparse_matrix
     <2x3 sparse matrix of type '<class 'numpy.int64'>'
         with 2 stored elements in Compressed Sparse Column format>
-    >>> sparse_matrix.todense()
-    matrix([[0, 0, 3],
-            [4, 0, 0]], dtype=int64)
+    >>> sparse_matrix.toarray()
+    array([[0, 0, 3],
+           [4, 0, 0]], dtype=int64)
     """
 
     with np.load(file, **PICKLE_KWARGS) as loaded:
         try:
             matrix_format = loaded['format']
-        except KeyError:
-            raise ValueError('The file {} does not contain a sparse matrix.'.format(file))
+        except KeyError as e:
+            raise ValueError('The file {} does not contain a sparse matrix.'.format(file)) from e
 
         matrix_format = matrix_format.item()
 
-        if sys.version_info[0] >= 3 and not isinstance(matrix_format, str):
+        if not isinstance(matrix_format, str):
             # Play safe with Python 2 vs 3 backward compatibility;
             # files saved with SciPy < 1.0.0 may contain unicode or bytes.
             matrix_format = matrix_format.decode('ascii')
 
         try:
             cls = getattr(scipy.sparse, '{}_matrix'.format(matrix_format))
-        except AttributeError:
-            raise ValueError('Unknown matrix format "{}"'.format(matrix_format))
+        except AttributeError as e:
+            raise ValueError('Unknown matrix format "{}"'.format(matrix_format)) from e
 
         if matrix_format in ('csc', 'csr', 'bsr'):
             return cls((loaded['data'], loaded['indices'], loaded['indptr']), shape=loaded['shape'])

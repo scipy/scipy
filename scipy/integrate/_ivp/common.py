@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 from itertools import groupby
 from warnings import warn
 import numpy as np
@@ -120,7 +119,7 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
     return min(100 * h0, h1)
 
 
-class OdeSolution(object):
+class OdeSolution:
     """Continuous ODE solution.
 
     It is organized as a collection of `DenseOutput` objects which represent

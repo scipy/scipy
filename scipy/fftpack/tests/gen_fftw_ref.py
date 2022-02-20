@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from subprocess import Popen, PIPE, STDOUT
 
 import numpy as np

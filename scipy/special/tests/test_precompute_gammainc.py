@@ -1,6 +1,4 @@
-from __future__ import division, print_function, absolute_import
-
-import numpy as np
+import numpy as np  # np is actually used, in the decorators below.
 import pytest
 
 from scipy.special._testutils import MissingModule, check_version
@@ -11,7 +9,7 @@ from scipy.special._precompute.gammainc_asy import (
 from scipy.special._precompute.gammainc_data import gammainc, gammaincc
 
 try:
-    import sympy
+    import sympy  # type: ignore[import]
 except ImportError:
     sympy = MissingModule('sympy')
 

@@ -31,10 +31,8 @@ Black dashed line
     The line z = 0.7*|v| + 12
 
 """
-from __future__ import absolute_import, division, print_function
-
 import numpy as np
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt  # type: ignore[import]
 
 import mpmath
 

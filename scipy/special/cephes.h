@@ -9,9 +9,9 @@ extern "C" {
 
 extern int airy(double x, double *ai, double *aip, double *bi, double *bip);
 
-extern double bdtrc(int k, int n, double p);
-extern double bdtr(int k, int n, double p);
-extern double bdtri(int k, int n, double y);
+extern double bdtrc(double k, int n, double p);
+extern double bdtr(double k, int n, double p);
+extern double bdtri(double k, int n, double y);
 
 extern double besselpoly(double a, double lambda, double nu);
 
@@ -92,6 +92,8 @@ extern double ndtr(double a);
 extern double log_ndtr(double a);
 extern double erfc(double a);
 extern double erf(double x);
+extern double erfinv(double y);
+extern double erfcinv(double y);
 extern double ndtri(double y0);
 
 extern double pdtrc(double k, double m);
@@ -110,7 +112,9 @@ extern int sici(double x, double *si, double *ci);
 
 extern double radian(double d, double m, double s);
 extern double sindg(double x);
+extern double sinpi(double x);
 extern double cosdg(double x);
+extern double cospi(double x);
 
 extern double spence(double x);
 

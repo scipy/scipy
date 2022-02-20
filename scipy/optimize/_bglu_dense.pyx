@@ -1,7 +1,5 @@
 # Author: Matt Haberland
 
-from __future__ import division, absolute_import, print_function
-
 cimport cython
 import numpy as np
 cimport numpy as np
@@ -12,6 +10,8 @@ try:
     from time import process_time as timer
 except ImportError:
     from time import clock as timer
+
+np.import_array()
 
 __all__ = ['LU', 'BGLU']
 
@@ -179,7 +179,7 @@ def _consider_refactor(method):
     return f
 
 
-cdef class LU(object):
+cdef class LU:
     """
     Represents PLU factorization of a basis matrix with naive rank-one updates
     """

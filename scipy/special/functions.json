@@ -1,8 +1,20 @@
 {
+    "_cosine_cdf": {
+        "_cosine.h": {
+            "cosine_cdf": "d->d"
+        }
+    },
+    "_cosine_invcdf": {
+        "_cosine.h": {
+            "cosine_invcdf": "d->d"
+        }
+    },
     "_cospi": {
+	"cephes.h": {
+	    "cospi": "d->d"
+	},
         "_trig.pxd": {
-            "ccospi": "D->D",
-            "dcospi": "d->d"
+            "ccospi": "D->D"
         }
     },
     "_ellip_harm": {
@@ -19,7 +31,7 @@
         }
     },
     "_lambertw": {
-        "lambertw.pxd": {
+        "_lambertw.pxd": {
             "lambertw_scalar": "Dld->D"
         }
     },
@@ -44,9 +56,11 @@
         }
     },
     "_sinpi": {
+	"cephes.h": {
+	    "sinpi": "d->d"
+	},
         "_trig.pxd": {
-            "csinpi": "D->D",
-            "dsinpi": "d->d"
+            "csinpi": "D->D"
         }
     },
     "_spherical_in": {
@@ -144,7 +158,7 @@
             "bdtr_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "bdtr": "iid->d"
+            "bdtr": "did->d"
         }
     },
     "bdtrc": {
@@ -152,7 +166,7 @@
             "bdtrc_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "bdtrc": "iid->d"
+            "bdtrc": "did->d"
         }
     },
     "bdtri": {
@@ -160,7 +174,7 @@
             "bdtri_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "bdtri": "iid->d"
+            "bdtri": "did->d"
         }
     },
     "bdtrik": {
@@ -349,6 +363,41 @@
 	    "ellipk": "d->d"
 	}
     },
+    "_factorial": {
+	"_factorial.pxd": {
+	    "_factorial": "d->d"
+	}
+    },
+    "elliprc": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RC": "dd->d",
+	    "cellint_RC": "DD->D"
+	}
+    },
+    "elliprd": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RD": "ddd->d",
+	    "cellint_RD": "DDD->D"
+	}
+    },
+    "elliprf": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RF": "ddd->d",
+	    "cellint_RF": "DDD->D"
+	}
+    },
+    "elliprg": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RG": "ddd->d",
+	    "cellint_RG": "DDD->D"
+	}
+    },
+    "elliprj": {
+	"ellint_carlson_wrap.hh++": {
+	    "fellint_RJ": "dddd->d",
+	    "cellint_RJ": "DDDD->D"
+	}
+    },
     "entr": {
         "_convex_analysis.pxd": {
             "entr": "d->d"
@@ -380,6 +429,16 @@
         "_faddeeva.h++": {
             "faddeeva_erfi": "d->d",
             "faddeeva_erfi_complex": "D->D"
+        }
+    },
+    "erfinv": {
+        "cephes.h": {
+            "erfinv": "d->d"
+        }
+    },
+    "erfcinv": {
+        "cephes.h": {
+            "erfcinv": "d->d"
         }
     },
     "eval_chebyc": {
@@ -506,7 +565,7 @@
         }
     },
     "expit": {
-        "_logit.h": {
+        "_logit.h++": {
             "expit": "d->d",
             "expitf": "f->f",
             "expitl": "g->g"
@@ -667,8 +726,8 @@
         "cephes.h": {
             "hyp2f1": "dddd->d"
         },
-        "specfun_wrappers.h": {
-            "chyp2f1_wrap": "dddD->D"
+        "_hyp2f1.pxd": {
+            "hyp2f1_complex": "dddD->D"
         }
     },
     "hyperu": {
@@ -885,6 +944,13 @@
             "log1p": "d->d"
         }
     },
+    "log_expit": {
+        "_logit.h++": {
+            "log_expit": "d->d",
+            "log_expitf": "f->f",
+            "log_expitl": "g->g"
+        }
+    },
     "log_ndtr": {
         "_faddeeva.h++": {
             "faddeeva_log_ndtr": "D->D"
@@ -900,7 +966,7 @@
         }
     },
     "logit": {
-        "_logit.h": {
+        "_logit.h++": {
             "logit": "d->d",
             "logitf": "f->f",
             "logitl": "g->g"
@@ -1386,8 +1452,18 @@
         }
     },
     "_riemann_zeta": {
-	"cephes.h": {
-	    "riemann_zeta": "d->d"
+        "cephes.h": {
+            "riemann_zeta": "d->d"
+        }
+    },
+    "wright_bessel": {
+        "_wright_bessel.pxd": {
+            "wright_bessel_scalar": "ddd->d"
+        }
+    },
+    "ndtri_exp": {
+	"_ndtri_exp.pxd": {
+	    "ndtri_exp": "d->d"
 	}
     }
 }

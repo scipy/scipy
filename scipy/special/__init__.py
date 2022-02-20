@@ -59,6 +59,11 @@ Elliptic functions and integrals
    ellipkinc -- Incomplete elliptic integral of the first kind.
    ellipe    -- Complete elliptic integral of the second kind.
    ellipeinc -- Incomplete elliptic integral of the second kind.
+   elliprc   -- Degenerate symmetric integral RC.
+   elliprd   -- Symmetric elliptic integral of the second kind.
+   elliprf   -- Completely-symmetric elliptic integral of the first kind.
+   elliprg   -- Completely-symmetric elliptic integral of the second kind.
+   elliprj   -- Symmetric elliptic integral of the third kind.
 
 Bessel functions
 ----------------
@@ -66,22 +71,31 @@ Bessel functions
 .. autosummary::
    :toctree: generated/
 
-   jv       -- Bessel function of the first kind of real order and complex argument.
-   jve      -- Exponentially scaled Bessel function of order `v`.
-   yn       -- Bessel function of the second kind of integer order and real argument.
-   yv       -- Bessel function of the second kind of real order and complex argument.
-   yve      -- Exponentially scaled Bessel function of the second kind of real order.
-   kn       -- Modified Bessel function of the second kind of integer order `n`
-   kv       -- Modified Bessel function of the second kind of real order `v`
-   kve      -- Exponentially scaled modified Bessel function of the second kind.
-   iv       -- Modified Bessel function of the first kind of real order.
-   ive      -- Exponentially scaled modified Bessel function of the first kind.
-   hankel1  -- Hankel function of the first kind.
-   hankel1e -- Exponentially scaled Hankel function of the first kind.
-   hankel2  -- Hankel function of the second kind.
-   hankel2e -- Exponentially scaled Hankel function of the second kind.
+   jv            -- Bessel function of the first kind of real order and \
+                    complex argument.
+   jve           -- Exponentially scaled Bessel function of order `v`.
+   yn            -- Bessel function of the second kind of integer order and \
+                    real argument.
+   yv            -- Bessel function of the second kind of real order and \
+                    complex argument.
+   yve           -- Exponentially scaled Bessel function of the second kind \
+                    of real order.
+   kn            -- Modified Bessel function of the second kind of integer \
+                    order `n`
+   kv            -- Modified Bessel function of the second kind of real order \
+                    `v`
+   kve           -- Exponentially scaled modified Bessel function of the \
+                    second kind.
+   iv            -- Modified Bessel function of the first kind of real order.
+   ive           -- Exponentially scaled modified Bessel function of the \
+                    first kind.
+   hankel1       -- Hankel function of the first kind.
+   hankel1e      -- Exponentially scaled Hankel function of the first kind.
+   hankel2       -- Hankel function of the second kind.
+   hankel2e      -- Exponentially scaled Hankel function of the second kind.
+   wright_bessel -- Wright's generalized Bessel function.
 
-The following is not an universal function:
+The following is not a universal function:
 
 .. autosummary::
    :toctree: generated/
@@ -241,6 +255,7 @@ Raw statistical functions
    ndtr         -- Gaussian cumulative distribution function.
    log_ndtr     -- Logarithm of Gaussian cumulative distribution function.
    ndtri        -- Inverse of `ndtr` vs x.
+   ndtri_exp    -- Inverse of `log_ndtr` vs x.
    chndtr       -- Non-central chi square cumulative distribution function.
    chndtridf    -- Inverse to `chndtr` vs `df`.
    chndtrinc    -- Inverse to `chndtr` vs `nc`.
@@ -251,7 +266,8 @@ Raw statistical functions
    kolmogi      -- Inverse function to `kolmogorov`.
    tklmbda      -- Tukey-Lambda cumulative distribution function.
    logit        -- Logit ufunc for ndarrays.
-   expit        -- Expit ufunc for ndarrays.
+   expit        -- Logistic sigmoid function.
+   log_expit    -- Logarithm of the logistic sigmoid function.
    boxcox       -- Compute the Box-Cox transformation.
    boxcox1p     -- Compute the Box-Cox transformation of 1 + `x`.
    inv_boxcox   -- Compute the inverse of the Box-Cox transformation.
@@ -583,23 +599,24 @@ Other special functions
 .. autosummary::
    :toctree: generated/
 
-   agm        -- Arithmetic, Geometric Mean.
-   bernoulli  -- Bernoulli numbers B0..Bn (inclusive).
-   binom      -- Binomial coefficient
-   diric      -- Periodic sinc function, also called the Dirichlet function.
-   euler      -- Euler numbers E0..En (inclusive).
-   expn       -- Exponential integral E_n.
-   exp1       -- Exponential integral E_1 of complex argument z.
-   expi       -- Exponential integral Ei.
-   factorial  -- The factorial of a number or array of numbers.
-   factorial2 -- Double factorial.
-   factorialk -- Multifactorial of n of order k, n(!!...!).
-   shichi     -- Hyperbolic sine and cosine integrals.
-   sici       -- Sine and cosine integrals.
-   softmax    -- Softmax function.
-   spence     -- Spence's function, also known as the dilogarithm.
-   zeta       -- Riemann zeta function.
-   zetac      -- Riemann zeta function minus 1.
+   agm         -- Arithmetic, Geometric Mean.
+   bernoulli   -- Bernoulli numbers B0..Bn (inclusive).
+   binom       -- Binomial coefficient
+   diric       -- Periodic sinc function, also called the Dirichlet function.
+   euler       -- Euler numbers E0..En (inclusive).
+   expn        -- Exponential integral E_n.
+   exp1        -- Exponential integral E_1 of complex argument z.
+   expi        -- Exponential integral Ei.
+   factorial   -- The factorial of a number or array of numbers.
+   factorial2  -- Double factorial.
+   factorialk  -- Multifactorial of n of order k, n(!!...!).
+   shichi      -- Hyperbolic sine and cosine integrals.
+   sici        -- Sine and cosine integrals.
+   softmax     -- Softmax function.
+   log_softmax -- Logarithm of softmax function.
+   spence      -- Spence's function, also known as the dilogarithm.
+   zeta        -- Riemann zeta function.
+   zetac       -- Riemann zeta function minus 1.
 
 Convenience functions
 ---------------------
@@ -627,9 +644,7 @@ Convenience functions
 
 """
 
-from __future__ import division, print_function, absolute_import
-
-from .sf_error import SpecialFunctionWarning, SpecialFunctionError
+from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
 from . import _ufuncs
 from ._ufuncs import *
@@ -637,18 +652,18 @@ from ._ufuncs import *
 from . import _basic
 from ._basic import *
 
-from ._logsumexp import logsumexp, softmax
+from ._logsumexp import logsumexp, softmax, log_softmax
 
-from . import orthogonal
-from .orthogonal import *
+from . import _orthogonal
+from ._orthogonal import *
 
-from .spfun_stats import multigammaln
+from ._spfun_stats import multigammaln
 from ._ellip_harm import (
     ellip_harm,
     ellip_harm_2,
     ellip_normal
 )
-from .lambertw import lambertw
+from ._lambertw import lambertw
 from ._spherical_bessel import (
     spherical_jn,
     spherical_yn,
@@ -656,12 +671,15 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
-__all__ = _ufuncs.__all__ + _basic.__all__ + orthogonal.__all__ + [
+# Deprecated namespaces, to be removed in v2.0.0
+from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
+
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
-    'orthogonal',  # Not public, but kept in __all__ for back-compat
     'logsumexp',
     'softmax',
+    'log_softmax',
     'multigammaln',
     'ellip_harm',
     'ellip_harm_2',

@@ -1,14 +1,11 @@
 """benchmarks for the scipy.sparse.csgraph module"""
-from __future__ import print_function, absolute_import
 import numpy as np
 import scipy.sparse
 
-try:
-    from scipy.sparse.csgraph import laplacian
-except ImportError:
-    pass
+from .common import Benchmark, safe_import
 
-from .common import Benchmark
+with safe_import():
+    from scipy.sparse.csgraph import laplacian
 
 
 class Laplacian(Benchmark):

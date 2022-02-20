@@ -7,8 +7,6 @@ Original C version by Damian Eads.
 Translated to Cython by David Warde-Farley, October 2009.
 """
 
-from __future__ import absolute_import
-
 cimport cython
 import numpy as np
 cimport numpy as np
@@ -77,7 +75,7 @@ cdef int _vq(vq_type *obs, vq_type *code_book,
         The number of features of each observation.
     nobs : int
         The number of observations.
-    codes : vq_type*
+    codes : int32_t*
         The pointer to the new codes array.
     low_dist : vq_type*
         low_dist[i] is the Euclidean distance from obs[i] to the corresponding
@@ -327,7 +325,7 @@ def update_cluster_means(np.ndarray obs, np.ndarray labels, int nc):
 
     Notes
     -----
-    The empty clusters will be set to all zeros and the curresponding elements
+    The empty clusters will be set to all zeros and the corresponding elements
     in `has_members` will be `False`. The upper level function should decide
     how to deal with them.
     """

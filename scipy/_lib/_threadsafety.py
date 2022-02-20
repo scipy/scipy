@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import threading
 
 import scipy._lib.decorator
@@ -12,7 +10,7 @@ class ReentrancyError(RuntimeError):
     pass
 
 
-class ReentrancyLock(object):
+class ReentrancyLock:
     """
     Threading lock that raises an exception for reentrant calls.
 

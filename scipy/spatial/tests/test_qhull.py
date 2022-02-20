@@ -1,17 +1,13 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 import copy
-import pytest
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal,
                            assert_, assert_allclose, assert_array_equal)
 import pytest
 from pytest import raises as assert_raises
-from scipy._lib.six import xrange
 
-import scipy.spatial.qhull as qhull
+import scipy.spatial._qhull as qhull
 from scipy.spatial import cKDTree as KDTree
 from scipy.spatial import Voronoi
 
@@ -116,7 +112,7 @@ def _add_inc_data(name, chunksize):
         nmin = 12
 
     chunks = [points[:nmin]]
-    for j in xrange(nmin, len(points), chunksize):
+    for j in range(nmin, len(points), chunksize):
         chunks.append(points[j:j+chunksize])
 
     new_name = "%s-chunk-%d" % (name, chunksize)
@@ -129,7 +125,7 @@ for name in DATASETS:
         _add_inc_data(name, chunksize)
 
 
-class Test_Qhull(object):
+class Test_Qhull:
     def test_swapping(self):
         # Check that Qhull state swapping works
 
@@ -173,7 +169,7 @@ class Test_Qhull(object):
         Voronoi(points)
 
 
-class TestUtilities(object):
+class TestUtilities:
     """
     Check that utility functions work.
 
@@ -300,7 +296,6 @@ class TestUtilities(object):
         # or, (ii) the centroid is in the simplex
 
         def barycentric_transform(tr, x):
-            ndim = tr.shape[1]
             r = tr[:,-1,:]
             Tinv = tr[:,:-1,:]
             return np.einsum('ijk,ik->ij', Tinv, x - r)
@@ -308,11 +303,8 @@ class TestUtilities(object):
         eps = np.finfo(float).eps
 
         c = barycentric_transform(tri.transform, centroids)
-        olderr = np.seterr(invalid="ignore")
-        try:
+        with np.errstate(invalid="ignore"):
             ok = np.isnan(c).all(axis=1) | (abs(c - sc)/sc < 0.1).all(axis=1)
-        finally:
-            np.seterr(**olderr)
 
         assert_(ok.all(), "%s %s" % (err_msg, np.nonzero(~ok)))
 
@@ -362,7 +354,7 @@ class TestUtilities(object):
 
         npoints = {2: 70, 3: 11, 4: 5, 5: 3}
 
-        for ndim in xrange(2, 6):
+        for ndim in range(2, 6):
             # Generate an uniform grid in n-d unit cube
             x = np.linspace(0, 1, npoints[ndim])
             grid = np.c_[list(map(np.ravel, np.broadcast_arrays(*np.ix_(*([x]*ndim)))))].T
@@ -391,7 +383,7 @@ class TestUtilities(object):
                                                unit_cube_tol=2*eps)
 
 
-class TestVertexNeighborVertices(object):
+class TestVertexNeighborVertices:
     def _check(self, tri):
         expected = [set() for j in range(tri.points.shape[0])]
         for s in tri.simplices:
@@ -424,7 +416,7 @@ class TestVertexNeighborVertices(object):
         self._check(tri)
 
 
-class TestDelaunay(object):
+class TestDelaunay:
     """
     Check that triangulation works.
 
@@ -439,9 +431,9 @@ class TestDelaunay(object):
 
     def test_nd_simplex(self):
         # simple smoke test: triangulate a n-dimensional simplex
-        for nd in xrange(2, 8):
+        for nd in range(2, 8):
             points = np.zeros((nd+1, nd))
-            for j in xrange(nd):
+            for j in range(nd):
                 points[j,j] = 1.0
             points[-1,:] = 1.0
 
@@ -468,8 +460,8 @@ class TestDelaunay(object):
         yp = np.r_[y, y]
 
         # shouldn't fail on duplicate points
-        tri = qhull.Delaunay(np.c_[x, y])
-        tri2 = qhull.Delaunay(np.c_[xp, yp])
+        qhull.Delaunay(np.c_[x, y])
+        qhull.Delaunay(np.c_[xp, yp])
 
     def test_pathological(self):
         # both should succeed
@@ -851,7 +843,6 @@ class TestVoronoi:
         nregion = int(output[1][1])
         regions = [[int(y)-1 for y in x[1:]]
                    for x in output[2+nvertex:2+nvertex+nregion]]
-        nridge = int(output[2+nvertex+nregion][0])
         ridge_points = [[int(y) for y in x[1:3]]
                         for x in output[3+nvertex+nregion:]]
         ridge_vertices = [[int(y)-1 for y in x[3:]]
@@ -974,9 +965,9 @@ class TestVoronoi:
                     return tuple(set([remap(y) for y in x]))
                 try:
                     return vertex_map[x]
-                except KeyError:
+                except KeyError as e:
                     raise AssertionError("incremental result has spurious vertex at %r"
-                                         % (objx.vertices[x],))
+                                         % (objx.vertices[x],)) from e
 
             def simplified(x):
                 items = set(map(sorted_tuple, x))
@@ -998,7 +989,7 @@ class TestVoronoi:
             # XXX: compare ridge_points --- not clear exactly how to do this
 
 
-class Test_HalfspaceIntersection(object):
+class Test_HalfspaceIntersection:
     def assert_unordered_allclose(self, arr1, arr2, rtol=1e-7):
         """Check that every line in arr1 is only once in arr2"""
         assert_equal(arr1.shape, arr2.shape)

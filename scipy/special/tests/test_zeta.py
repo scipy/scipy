@@ -1,8 +1,6 @@
-from __future__ import division, print_function, absolute_import
-
 import scipy.special as sc
 import numpy as np
-from numpy.testing import assert_, assert_equal, assert_allclose
+from numpy.testing import assert_equal, assert_allclose
 
 
 def test_zeta():

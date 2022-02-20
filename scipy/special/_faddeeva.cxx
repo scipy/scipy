@@ -4,7 +4,7 @@
 
 using namespace std;
 
-EXTERN_C_START
+extern "C" {
 
 npy_cdouble faddeeva_w(npy_cdouble zp)
 {
@@ -128,6 +128,20 @@ double faddeeva_voigt_profile(double x, double sigma, double gamma)
     const double INV_SQRT_2 = 0.707106781186547524401;
     const double SQRT_2PI = 2.5066282746310002416123552393401042;
 
+    if(sigma == 0){
+        if (gamma == 0){
+            if (std::isnan(x))
+                return x;
+            if (x == 0)
+                return NPY_INFINITY;
+            return 0;
+        }
+        return gamma / NPY_PI / (x*x + gamma*gamma);
+    }
+    if (gamma == 0){
+        return 1 / SQRT_2PI / sigma * exp(-(x/sigma)*(x/sigma) / 2);
+    }
+
     double zreal = x / sigma * INV_SQRT_2;
     double zimag = gamma / sigma * INV_SQRT_2;
     std::complex<double> z(zreal, zimag);
@@ -135,4 +149,4 @@ double faddeeva_voigt_profile(double x, double sigma, double gamma)
     return real(w) / sigma / SQRT_2PI;
 }
 
-EXTERN_C_END
+}  // extern "C"

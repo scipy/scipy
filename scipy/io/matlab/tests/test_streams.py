@@ -2,18 +2,11 @@
 
 """
 
-from __future__ import division, print_function, absolute_import
-
 import os
-import sys
 import zlib
 
 from io import BytesIO
 
-if sys.version_info[0] >= 3:
-    cStringIO = BytesIO
-else:
-    from cStringIO import StringIO as cStringIO
 
 from tempfile import mkstemp
 from contextlib import contextmanager
@@ -23,11 +16,9 @@ import numpy as np
 from numpy.testing import assert_, assert_equal
 from pytest import raises as assert_raises
 
-from scipy.io.matlab.streams import (make_stream,
-    GenericStream, cStringStream, FileStream, ZlibInputStream,
+from scipy.io.matlab._streams import (make_stream,
+    GenericStream, ZlibInputStream,
     _read_into, _read_string, BLOCK_SIZE)
-
-IS_PYPY = ('__pypy__' in sys.modules)
 
 
 @contextmanager
@@ -39,7 +30,7 @@ def setup_test_file():
         fs.write(val)
     with open(fname, 'rb') as fs:
         gs = BytesIO(val)
-        cs = cStringIO(val)
+        cs = BytesIO(val)
         yield fs, gs, cs
     os.unlink(fname)
 
@@ -48,9 +39,6 @@ def test_make_stream():
     with setup_test_file() as (fs, gs, cs):
         # test stream initialization
         assert_(isinstance(make_stream(gs), GenericStream))
-        if sys.version_info[0] < 3 and not IS_PYPY:
-            assert_(isinstance(make_stream(cs), cStringStream))
-            assert_(isinstance(make_stream(fs), FileStream))
 
 
 def test_tell_seek():
@@ -87,19 +75,19 @@ def test_read():
             assert_equal(res, b'a\x00st')
             res = _read_into(st, 4)
             assert_equal(res, b'ring')
-            assert_raises(IOError, _read_into, st, 2)
+            assert_raises(OSError, _read_into, st, 2)
             # read alloc
             st.seek(0)
             res = _read_string(st, 4)
             assert_equal(res, b'a\x00st')
             res = _read_string(st, 4)
             assert_equal(res, b'ring')
-            assert_raises(IOError, _read_string, st, 2)
+            assert_raises(OSError, _read_string, st, 2)
 
 
-class TestZlibInputStream(object):
+class TestZlibInputStream:
     def _get_data(self, size):
-        data = np.random.randint(0, 256, size).astype(np.uint8).tostring()
+        data = np.random.randint(0, 256, size).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data)
         stream = BytesIO(compressed_data)
         return stream, len(compressed_data), data
@@ -131,7 +119,7 @@ class TestZlibInputStream(object):
 
     def test_read_max_length(self):
         size = 1234
-        data = np.random.randint(0, 256, size).astype(np.uint8).tostring()
+        data = np.random.randint(0, 256, size).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data)
         compressed_stream = BytesIO(compressed_data + b"abbacaca")
         stream = ZlibInputStream(compressed_stream, len(compressed_data))
@@ -139,10 +127,10 @@ class TestZlibInputStream(object):
         stream.read(len(data))
         assert_equal(compressed_stream.tell(), len(compressed_data))
 
-        assert_raises(IOError, stream.read, 1)
+        assert_raises(OSError, stream.read, 1)
 
     def test_read_bad_checksum(self):
-        data = np.random.randint(0, 256, 10).astype(np.uint8).tostring()
+        data = np.random.randint(0, 256, 10).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data)
 
         # break checksum
@@ -176,15 +164,15 @@ class TestZlibInputStream(object):
         d3 = stream.read(11)
         assert_equal(d3, data[p:p+11])
 
-        assert_raises(IOError, stream.seek, 10, 2)
-        assert_raises(IOError, stream.seek, -1, 1)
+        assert_raises(OSError, stream.seek, 10, 2)
+        assert_raises(OSError, stream.seek, -1, 1)
         assert_raises(ValueError, stream.seek, 1, 123)
 
         stream.seek(10000, 1)
-        assert_raises(IOError, stream.read, 12)
+        assert_raises(OSError, stream.read, 12)
 
     def test_seek_bad_checksum(self):
-        data = np.random.randint(0, 256, 10).astype(np.uint8).tostring()
+        data = np.random.randint(0, 256, 10).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data)
 
         # break checksum
@@ -207,7 +195,7 @@ class TestZlibInputStream(object):
     def test_all_data_read_overlap(self):
         COMPRESSION_LEVEL = 6
 
-        data = np.arange(33707000).astype(np.uint8).tostring()
+        data = np.arange(33707000).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data, COMPRESSION_LEVEL)
         compressed_data_len = len(compressed_data)
 
@@ -223,7 +211,7 @@ class TestZlibInputStream(object):
     def test_all_data_read_bad_checksum(self):
         COMPRESSION_LEVEL = 6
 
-        data = np.arange(33707000).astype(np.uint8).tostring()
+        data = np.arange(33707000).astype(np.uint8).tobytes()
         compressed_data = zlib.compress(data, COMPRESSION_LEVEL)
         compressed_data_len = len(compressed_data)
 

@@ -104,7 +104,7 @@
  * int k, n;
  * double p, y, bdtri();
  *
- * p = bdtr( k, n, y );
+ * p = bdtri( k, n, y );
  *
  * DESCRIPTION:
  *
@@ -147,32 +147,31 @@
  */
 
 #include "mconf.h"
+#include <numpy/npy_math.h>
 
-double bdtrc(k, n, p)
-int k, n;
-double p;
+double bdtrc(double k, int n, double p)
 {
     double dk, dn;
+    double fk = floor(k);
 
-    if (npy_isnan(p)) {
+    if (npy_isnan(p) || npy_isnan(k)) {
 	return NPY_NAN;
     }
-    if ((p < 0.0) || (p > 1.0)) {
-	goto domerr;
-    }
-    if (k < 0) {
-	return 1.0;
-    }
 
-    if (n < k) {
-      domerr:
+    if (p < 0.0 || p > 1.0 || n < fk) {
 	sf_error("bdtrc", SF_ERROR_DOMAIN, NULL);
 	return NPY_NAN;
     }
 
-    if (k == n)
-	return (0.0);
-    dn = n - k;
+    if (fk < 0) {
+	return 1.0;
+    }
+
+    if (fk == n) {
+        return 0.0;
+    }
+
+    dn = n - fk;
     if (k == 0) {
 	if (p < .01)
 	    dk = -expm1(dn * log1p(-p));
@@ -180,71 +179,77 @@ double p;
 	    dk = 1.0 - pow(1.0 - p, dn);
     }
     else {
-	dk = k + 1;
+	dk = fk + 1;
 	dk = incbet(dk, dn, p);
     }
-    return (dk);
+    return dk;
 }
 
 
 
-double bdtr(k, n, p)
-int k, n;
-double p;
+double bdtr(double k, int n, double p)
 {
     double dk, dn;
+    double fk = floor(k);
 
-    if ((p < 0.0) || (p > 1.0))
-	goto domerr;
-    if ((k < 0) || (n < k)) {
-      domerr:
-	sf_error("bdtr", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+    if (npy_isnan(p) || npy_isnan(k)) {
+	return NPY_NAN;
     }
 
-    if (k == n)
-	return (1.0);
+    if (p < 0.0 || p > 1.0 || fk < 0 || n < fk) {
+        sf_error("bdtr", SF_ERROR_DOMAIN, NULL);
+        return NPY_NAN;
+    }
 
-    dn = n - k;
-    if (k == 0) {
+    if (fk == n)
+	return 1.0;
+
+    dn = n - fk;
+    if (fk == 0) {
 	dk = pow(1.0 - p, dn);
     }
     else {
-	dk = k + 1;
+	dk = fk + 1.;
 	dk = incbet(dn, dk, 1.0 - p);
     }
-    return (dk);
+    return dk;
 }
 
 
-double bdtri(k, n, y)
-int k, n;
-double y;
+double bdtri(double k, int n, double y)
 {
-    double dk, dn, p;
+    double p, dn, dk;
+    double fk = floor(k);
 
-    if ((y < 0.0) || (y > 1.0))
-	goto domerr;
-    if ((k < 0) || (n <= k)) {
-      domerr:
-	sf_error("bdtri", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+    if (npy_isnan(k)) {
+	return NPY_NAN;
     }
 
-    dn = n - k;
-    if (k == 0) {
-	if (y > 0.8)
+    if (y < 0.0 || y > 1.0 || fk < 0.0 || n <= fk) {
+	sf_error("bdtri", SF_ERROR_DOMAIN, NULL);
+	return NPY_NAN;
+    }
+
+    dn = n - fk;
+
+    if (fk == n)
+	return 1.0;
+
+    if (fk == 0) {
+	if (y > 0.8) {
 	    p = -expm1(log1p(y - 1.0) / dn);
-	else
+	}
+	else {
 	    p = 1.0 - pow(y, 1.0 / dn);
+	}
     }
     else {
-	dk = k + 1;
+	dk = fk + 1;
 	p = incbet(dn, dk, 0.5);
 	if (p > 0.5)
 	    p = incbi(dk, dn, 1.0 - y);
 	else
 	    p = 1.0 - incbi(dn, dk, y);
     }
-    return (p);
+    return p;
 }

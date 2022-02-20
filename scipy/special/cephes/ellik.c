@@ -84,7 +84,7 @@ double ellik(double phi,  double m)
 	return (phi);
     a = 1.0 - m;
     if (a == 0.0) {
-	if (fabs(phi) >= NPY_PI_2) {
+	if (fabs(phi) >= (double)NPY_PI_2) {
 	    sf_error("ellik", SF_ERROR_SINGULAR, NULL);
 	    return (NPY_INFINITY);
 	}

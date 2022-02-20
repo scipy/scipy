@@ -6,7 +6,7 @@ from numpy.testing import assert_equal
 import scipy.special as sc
 
 
-class TestHyperu(object):
+class TestHyperu:
 
     def test_negative_x(self):
         a, b, x = np.meshgrid(
@@ -19,8 +19,13 @@ class TestHyperu(object):
     def test_special_cases(self):
         assert sc.hyperu(0, 1, 1) == 1.0
 
+    @pytest.mark.parametrize('a', [0.5, 1, np.nan])
+    @pytest.mark.parametrize('b', [1, 2, np.nan])
+    @pytest.mark.parametrize('x', [0.25, 3, np.nan])
+    def test_nan_inputs(self, a, b, x):
+        assert np.isnan(sc.hyperu(a, b, x)) == np.any(np.isnan([a, b, x]))
 
-class TestHyp1f1(object):
+class TestHyp1f1:
 
     @pytest.mark.parametrize('a, b, x', [
         (np.nan, 1, 1),
@@ -91,3 +96,12 @@ class TestHyp1f1(object):
             atol=0,
             rtol=1e-15
         )
+
+    @pytest.mark.parametrize('a, b, x, desired', [
+        (-1, -2, 2, 2),
+        (-1, -4, 10, 3.5),
+        (-2, -2, 1, 2.5)
+    ])
+    def test_gh_11099(self, a, b, x, desired):
+        # All desired results computed using Mpmath
+        assert sc.hyp1f1(a, b, x) == desired

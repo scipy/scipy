@@ -20,22 +20,22 @@
 #define ABSQ(z) (z).real*(z).real + (z).imag*(z).imag;
 #define ZCONVINF(func,z)                                                \
     do {                                                                \
-        if (REAL((z)) == 1.0e300) {                                     \
+        if ((double)REAL((z)) == (double)1.0e300) {                     \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
             REAL((z)) = NPY_INFINITY;                                   \
         }                                                               \
-        if (REAL((z)) == -1.0e300) {                                    \
+        if ((double)REAL((z)) == (double)-1.0e300) {                    \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
             REAL((z)) = -NPY_INFINITY;                                  \
         }                                                               \
     } while (0)
 #define CONVINF(func, x)                                                \
     do {                                                                \
-        if ((x) == 1.0e300) {                                           \
+        if ((double)(x) == (double)1.0e300) {                           \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
             (x)=NPY_INFINITY;                                           \
         }                                                               \
-        if ((x)==-1.0e300) {                                            \
+        if ((double)(x) == (double)-1.0e300) {                          \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
             (x)=-NPY_INFINITY;                                          \
         }                                                               \

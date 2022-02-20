@@ -1,24 +1,21 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_equal, \
     assert_array_equal, assert_array_almost_equal, assert_array_less, assert_
-from scipy._lib.six import xrange
 
-from scipy.signal import wavelets
+import scipy.signal._wavelets as wavelets
 
 
-class TestWavelets(object):
+class TestWavelets:
     def test_qmf(self):
         assert_array_equal(wavelets.qmf([1, 1]), [1, -1])
 
     def test_daub(self):
-        for i in xrange(1, 15):
+        for i in range(1, 15):
             assert_equal(len(wavelets.daub(i)), i * 2)
 
     def test_cascade(self):
-        for J in xrange(1, 7):
-            for i in xrange(1, 5):
+        for J in range(1, 7):
+            for i in range(1, 5):
                 lpcoef = wavelets.daub(i)
                 k = len(lpcoef)
                 x, phi, psi = wavelets.cascade(lpcoef, J)
@@ -152,4 +149,3 @@ class TestWavelets(object):
         flat_wavelet = lambda l, w: np.full(w, 1 / w)
         cwt_dat = wavelets.cwt(test_data, flat_wavelet, widths)
         assert_array_almost_equal(cwt_dat, np.mean(test_data))
-

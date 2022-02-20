@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import os
 
 from numpy.distutils.core import setup
@@ -37,15 +35,6 @@ def configuration(parent_package='', top_path=None):
                          sources=["src/_ctest.c"],
                          include_dirs=[get_include()],
                          **numpy_nodepr_api)
-
-    _define_macros = [("OLDAPI", 1)]
-    if 'define_macros' in numpy_nodepr_api:
-        _define_macros.extend(numpy_nodepr_api['define_macros'])
-
-    config.add_extension("_ctest_oldapi",
-                         sources=["src/_ctest.c"],
-                         include_dirs=[get_include()],
-                         define_macros=_define_macros)
 
     config.add_extension("_cytest",
                          sources=["src/_cytest.c"])

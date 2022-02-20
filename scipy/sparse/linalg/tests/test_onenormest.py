@@ -1,8 +1,6 @@
 """Test functions for the sparse.linalg._onenormest module
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_
 import pytest
@@ -40,7 +38,7 @@ class MatrixProductOperator(scipy.sparse.linalg.LinearOperator):
         return MatrixProductOperator(self.B.T, self.A.T)
 
 
-class TestOnenormest(object):
+class TestOnenormest:
 
     @pytest.mark.xslow
     def test_onenormest_table_3_t_2(self):
@@ -222,7 +220,7 @@ class TestOnenormest(object):
         np.random.seed(1234)
         A = scipy.sparse.rand(50, 50, 0.1)
 
-        s0 = scipy.linalg.norm(A.todense(), 1)
+        s0 = scipy.linalg.norm(A.toarray(), 1)
         s1, v = scipy.sparse.linalg.onenormest(A, compute_v=True)
         s2, w = scipy.sparse.linalg.onenormest(A, compute_w=True)
         s3, v2, w2 = scipy.sparse.linalg.onenormest(A, compute_w=True, compute_v=True)
@@ -232,7 +230,7 @@ class TestOnenormest(object):
         assert_allclose(A.dot(v), w, rtol=1e-9)
 
 
-class TestAlgorithm_2_2(object):
+class TestAlgorithm_2_2:
 
     def test_randn_inv(self):
         np.random.seed(1234)

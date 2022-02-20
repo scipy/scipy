@@ -16,10 +16,11 @@ Rotations in 3 dimensions
    Slerp
    RotationSpline
 """
-from __future__ import division, print_function, absolute_import
-
-from .rotation import Rotation, Slerp
+from ._rotation import Rotation, Slerp
 from ._rotation_spline import RotationSpline
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import rotation
 
 __all__ = ['Rotation', 'Slerp', 'RotationSpline']
 

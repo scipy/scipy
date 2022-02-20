@@ -1,11 +1,9 @@
 #
 # Created by: Pearu Peterson, March 2002
 #
-""" Test functions for scipy.linalg.matfuncs module
+""" Test functions for scipy.linalg._matfuncs module
 
 """
-from __future__ import division, print_function, absolute_import
-
 import math
 
 import numpy as np
@@ -13,15 +11,14 @@ from numpy import array, eye, exp, random
 from numpy.linalg import matrix_power
 from numpy.testing import (
         assert_allclose, assert_, assert_array_almost_equal, assert_equal,
-        assert_array_almost_equal_nulp)
-from scipy._lib._numpy_compat import suppress_warnings
+        assert_array_almost_equal_nulp, suppress_warnings)
 
 from scipy.sparse import csc_matrix, SparseEfficiencyWarning
-from scipy.sparse.construct import eye as speye
-from scipy.sparse.linalg.matfuncs import (expm, _expm,
+from scipy.sparse._construct import eye as speye
+from scipy.sparse.linalg._matfuncs import (expm, _expm,
         ProductOperator, MatrixPowerOperator,
         _onenorm_matrix_power_nnm)
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 from scipy.linalg import logm
 from scipy.special import factorial, binom
 import scipy.sparse
@@ -71,7 +68,7 @@ def test_onenorm_matrix_power_nnm():
             assert_allclose(observed, expected)
 
 
-class TestExpM(object):
+class TestExpM:
     def test_zero_ndarray(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
@@ -510,18 +507,17 @@ class TestExpM(object):
         # Nilpotent exponential, used to trigger a failure (gh-8029)
 
         for scale in [1.0, 1e-3, 1e-6]:
-            for n in range(120):
+            for n in range(0, 80, 3):
+                sc = scale ** np.arange(n, -1, -1)
+                if np.any(sc < 1e-300):
+                    break
+
                 A = np.diag(np.arange(1, n + 1), -1) * scale
                 B = expm(A)
-
-                sc = scale**np.arange(n, -1, -1)
-                if np.any(sc < 1e-300):
-                    continue
 
                 got = B
                 expected = binom(np.arange(n + 1)[:,None],
                                  np.arange(n + 1)[None,:]) * sc[None,:] / sc[:,None]
-                err = abs(expected - got).max()
                 atol = 1e-13 * abs(expected).max()
                 assert_allclose(got, expected, atol=atol)
 
@@ -536,8 +532,26 @@ class TestExpM(object):
             B = expm(np.matrix(A))
         assert_allclose(B, B0)
 
+    def test_exp_sinch_overflow(self):
+        # Check overflow in intermediate steps is fixed (gh-11839)
+        L = np.array([[1.0, -0.5, -0.5, 0.0, 0.0, 0.0, 0.0],
+                      [0.0, 1.0, 0.0, -0.5, -0.5, 0.0, 0.0],
+                      [0.0, 0.0, 1.0, 0.0, 0.0, -0.5, -0.5],
+                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
+                      [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
 
-class TestOperators(object):
+        E0 = expm(-L)
+        E1 = expm(-2**11 * L)
+        E2 = E0
+        for j in range(11):
+            E2 = E2 @ E2
+
+        assert_allclose(E1, E2)
+
+
+class TestOperators:
 
     def test_product_operator(self):
         random.seed(1234)
@@ -565,4 +579,3 @@ class TestOperators(object):
             op = MatrixPowerOperator(A, p)
             assert_allclose(op.matmat(B), matrix_power(A, p).dot(B))
             assert_allclose(op.T.matmat(B), matrix_power(A, p).T.dot(B))
-

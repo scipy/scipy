@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -17,7 +18,7 @@
 static void
 traverse_no_checking(const ckdtree *self,
                      const int return_length,
-                     std::vector<ckdtree_intp_t> *results,
+                     std::vector<ckdtree_intp_t> &results,
                      const ckdtreenode *node)
 {
     const ckdtree_intp_t *indices = self->raw_indices;
@@ -30,9 +31,9 @@ traverse_no_checking(const ckdtree *self,
         const ckdtree_intp_t end = lnode->end_idx;
         for (i = start; i < end; ++i) {
             if (return_length) {
-                (*results)[0] ++;
+                results[0] ++;
             } else {
-                results->push_back(indices[i]);
+                results.push_back(indices[i]);
             }
         }
     }
@@ -46,7 +47,7 @@ traverse_no_checking(const ckdtree *self,
 template <typename MinMaxDist> static void
 traverse_checking(const ckdtree *self,
                   const int return_length,
-                  std::vector<ckdtree_intp_t> *results,
+                  std::vector<ckdtree_intp_t> &results,
                   const ckdtreenode *node,
                   RectRectDistanceTracker<MinMaxDist> *tracker
 )
@@ -87,9 +88,9 @@ traverse_checking(const ckdtree *self,
 
             if (d <= tub) {
                 if(return_length) {
-                    (*results)[0] ++;
+                    results[0] ++;
                 } else {
-                    results->push_back((ckdtree_intp_t) indices[i]);
+                    results.push_back((ckdtree_intp_t) indices[i]);
                 }
             }
         }
@@ -109,11 +110,13 @@ int
 query_ball_point(const ckdtree *self, const double *x,
                  const double *r, const double p, const double eps,
                  const ckdtree_intp_t n_queries,
-                 std::vector<ckdtree_intp_t> **results, const int return_length)
+                 std::vector<ckdtree_intp_t> *results,
+                 const bool return_length,
+                 const bool sort_output)
 {
 #define HANDLE(cond, kls) \
     if(cond) { \
-        if(return_length) results[i]->push_back(0); \
+        if(return_length) results[i].push_back(0); \
         RectRectDistanceTracker<kls> tracker(self, point, rect, p, eps, r[i]); \
         traverse_checking(self, return_length, results[i], self->ctree, &tracker); \
     } else
@@ -139,6 +142,10 @@ query_ball_point(const ckdtree *self, const double *x,
             HANDLE(ckdtree_isinf(p), BoxMinkowskiDistPinf)
             HANDLE(1, BoxMinkowskiDistPp)
             {}
+        }
+
+        if (!return_length && sort_output) {
+            std::sort(results[i].begin(), results[i].end());
         }
     }
     return 0;

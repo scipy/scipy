@@ -1,14 +1,8 @@
-from __future__ import division, absolute_import, print_function
-
 import numpy as np
+from .common import Benchmark, safe_import
 
-try:
-    import scipy.linalg.lapack as la
+with safe_import():
     import scipy.linalg.blas as bla
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 class GetBlasLapackFuncs(Benchmark):

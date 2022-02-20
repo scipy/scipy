@@ -1,13 +1,10 @@
 import numpy as np
 
 import scipy.sparse
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     from scipy.sparse.csgraph import maximum_flow
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
 class MaximumFlow(Benchmark):

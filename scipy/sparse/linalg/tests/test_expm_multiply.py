@@ -1,12 +1,9 @@
 """Test functions for the sparse.linalg._expm_multiply module
 """
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy.testing import assert_allclose, assert_, assert_equal
-from scipy._lib._numpy_compat import suppress_warnings
-
+from numpy.testing import (assert_allclose, assert_, assert_equal,
+                           suppress_warnings)
 from scipy.sparse import SparseEfficiencyWarning
 import scipy.linalg
 from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
@@ -18,7 +15,7 @@ def less_than_or_close(a, b):
     return np.allclose(a, b) or (a < b)
 
 
-class TestExpmActionSimple(object):
+class TestExpmActionSimple:
     """
     These tests do not consider the case of multiple time steps in one call.
     """
@@ -134,7 +131,7 @@ class TestExpmActionSimple(object):
         assert_allclose(observed, expected)
 
 
-class TestExpmActionInterval(object):
+class TestExpmActionInterval:
 
     def test_sparse_expm_multiply_interval(self):
         np.random.seed(1234)

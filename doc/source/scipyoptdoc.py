@@ -8,7 +8,7 @@ Proper docstrings for scipy.optimize.minimize et al.
 Usage::
 
     .. scipy-optimize:function:: scipy.optimize.minimize
-       :impl: scipy.optimize.optimize._minimize_nelder_mead
+       :impl: scipy.optimize._optimize._minimize_nelder_mead
        :method: Nelder-Mead
 
 Produces output similar to autodoc, except
@@ -20,8 +20,6 @@ Produces output similar to autodoc, except
 - See Also link to the actual function documentation is inserted
 
 """
-from __future__ import division, absolute_import, print_function
-
 import os, sys, re, pydoc
 import sphinx
 import inspect
@@ -36,13 +34,7 @@ from numpydoc.numpydoc import mangle_docstrings
 from docutils.parsers.rst import Directive
 from docutils.statemachine import ViewList
 from sphinx.domains.python import PythonDomain
-from scipy._lib._util import getargspec_no_self
-
-
-if sys.version_info[0] >= 3:
-    sixu = lambda s: s
-else:
-    sixu = lambda s: unicode(s, 'unicode_escape')
+from scipy._lib._util import getfullargspec_no_self
 
 
 def setup(app):
@@ -68,7 +60,7 @@ class ScipyOptimizeInterfaceDomain(PythonDomain):
     name = 'scipy-optimize'
 
     def __init__(self, *a, **kw):
-        super(ScipyOptimizeInterfaceDomain, self).__init__(*a, **kw)
+        super().__init__(*a, **kw)
         self.directives = dict(self.directives)
         self.directives['function'] = wrap_mangling_directive(self.directives['function'])
 
@@ -85,12 +77,12 @@ def wrap_mangling_directive(base_directive):
             # Interface function
             name = self.arguments[0].strip()
             obj = _import_object(name)
-            args, varargs, keywords, defaults = getargspec_no_self(obj)
+            args, varargs, keywords, defaults = getfullargspec_no_self(obj)[:4]
 
             # Implementation function
             impl_name = self.options['impl']
             impl_obj = _import_object(impl_name)
-            impl_args, impl_varargs, impl_keywords, impl_defaults = getargspec_no_self(impl_obj)
+            impl_args, impl_varargs, impl_keywords, impl_defaults = getfullargspec_no_self(impl_obj)[:4]
 
             # Format signature taking implementation into account
             args = list(args)
@@ -119,11 +111,15 @@ def wrap_mangling_directive(base_directive):
                 else:
                     options.append((opt_name, None))
             set_default('options', dict(options))
-            set_default('method', self.options['method'].strip())
+            if 'method' in self.options and 'method' in args:
+                set_default('method', self.options['method'].strip())
+            elif 'solver' in self.options and 'solver' in args:
+                set_default('solver', self.options['solver'].strip())
 
+            special_args = {'fun', 'x0', 'args', 'tol', 'callback', 'method',
+                            'options', 'solver'}
             for arg in list(args):
-                if arg not in impl_args and arg not in ('fun', 'x0', 'args', 'tol',
-                                                        'callback', 'method', 'options'):
+                if arg not in impl_args and arg not in special_args:
                     remove_arg(arg)
 
             # XXX deprecation that we should fix someday using Signature (?)
