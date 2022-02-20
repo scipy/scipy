@@ -3432,7 +3432,6 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     instance, trimming 25% of the values from an array of 10 values will
     return an array of 8 values:
 
-
     >>> b = np.arange(10)
     >>> stats.trim1(b, 1/4).shape
     (8,)
@@ -3445,7 +3444,7 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     >>> stats.trim1(d, 0.8, axis=0).shape
     (1, 10)
     >>> stats.trim1(d, 0.8, axis=1).shape
-    (2, 10)
+    (3, 2)
     >>> stats.trim1(d, 0.8, axis=None).shape
     (6,)
 
@@ -3471,7 +3470,9 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
     atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
-    return atmp[lowercut:uppercut]
+    sl = [slice(None)] * atmp.ndim
+    sl[axis] = slice(lowercut, uppercut)
+    return atmp[tuple(sl)]
 
 
 def trim_mean(a, proportiontocut, axis=0):
