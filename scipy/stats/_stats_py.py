@@ -3432,13 +3432,14 @@ def trim1(a, proportiontocut, tail='right', axis=0):
     instance, trimming 25% of the values from an array of 10 values will
 
     return an array of 8 values:
+
     >>> b = np.arange(10)
     >>> stats.trim1(b, 1/4).shape
     (8,)
 
     Multidimensional arrays can be trimmed along any axis or across the entire
-
     array:
+
     >>> c = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
     >>> d = np.array([a, b, c])
     >>> stats.trim1(d, 0.8, axis=0).shape
