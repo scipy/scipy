@@ -3356,6 +3356,7 @@ def trimboth(a, proportiontocut, axis=0):
 
     Multidimensional arrays can be trimmed along any axis or across the entire
     array:
+
     >>> c = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
     >>> d = np.array([a, b, c])
     >>> stats.trimboth(d, 0.4, axis=0).shape
@@ -3429,12 +3430,14 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
     The proportion to trim is rounded down to the nearest integer. For
     instance, trimming 25% of the values from an array of 10 values will
+
     return an array of 8 values:
     >>> b = np.arange(10)
     >>> stats.trim1(b, 1/4).shape
     (8,)
 
     Multidimensional arrays can be trimmed along any axis or across the entire
+
     array:
     >>> c = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
     >>> d = np.array([a, b, c])
