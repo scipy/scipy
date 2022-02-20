@@ -636,7 +636,7 @@ class levy_stable_gen(rv_continuous):
 
     See Also
     --------
-    levy, levy_l
+    levy, levy_l, cauchy, norm
 
     Notes
     -----
@@ -675,6 +675,20 @@ class levy_stable_gen(rv_continuous):
 
     where :math:`-\infty < t < \infty`. This integral does not have a known
     closed form.
+
+    `levy_stable` generalizes several distributions.  Where possible, they
+    should be used instead.  Specifically, when the shape parameters
+    assume the values in the table below, the corresponding equivalent
+    distribution should be used.
+
+    =========  ========  ===========
+    ``alpha``  ``beta``   Equivalent
+    =========  ========  ===========
+     1/2       -1        `levy_l`
+     1/2       1         `levy`
+     1         0         `cauchy`
+     2         any       `norm` (with ``scale=sqrt(2)``)
+    =========  ========  ===========
 
     Evaluation of the pdf uses Nolan's piecewise integration approach with the
     Zolotarev :math:`M` parameterization by default. There is also the option
