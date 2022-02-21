@@ -5938,8 +5938,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Notes
     -----
-    The statistic is calculated as ``(mean1 - mean2)/se``, where ``se`` is the 
-    standard error. Therefore, the statistic will be positive when `mean1` is 
+    The statistic is calculated as ``(mean1 - mean2)/se``, where ``se`` is the
+    standard error. Therefore, the statistic will be positive when `mean1` is
     greater than `mean2` and negative when `mean1` is less than `mean2`.
 
     References
@@ -6199,10 +6199,10 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     recommended if the underlying distribution is long-tailed or contaminated
     with outliers [4]_.
 
-    The statistic is calculated as ``(np.mean(a) - np.mean(b))/se``, where 
+    The statistic is calculated as ``(np.mean(a) - np.mean(b))/se``, where
     ``se`` is the standard error. Therefore, the statistic will be positive
-    when the sample mean of `a` is greater than the sample mean of `b` and 
-    negative when the sample mean of `a` is less than the sample mean of 
+    when the sample mean of `a` is greater than the sample mean of `b` and
+    negative when the sample mean of `a` is less than the sample mean of
     `b`.
     References
     ----------
