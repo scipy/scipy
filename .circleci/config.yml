@@ -1,4 +1,4 @@
-version: 2
+version: 2.1
 
 # Aliases to reuse
 _defaults: &defaults
@@ -12,7 +12,7 @@ _debian: &debian
   name: install Debian dependencies
   command: |
     sudo apt-get update
-    sudo apt-get install libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-plain-generic latexmk texlive-xetex fonts-freefont-otf
+    sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-plain-generic latexmk texlive-xetex fonts-freefont-otf
 
 jobs:
 # Build SciPy from source
@@ -44,13 +44,17 @@ jobs:
 
       - restore_cache:
           keys:
-              - packages-{{ .Branch }}
+              - deps_ccache-{{ .Branch }}
+              - deps_ccache
+
+      - restore_cache:
+          keys:
+              - installdir-{{ .Branch }}
+              - installdir
 
       - run:
           name: setup Python venv
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
             pip install --install-option="--no-cython-compile" cython
             pip install numpy==1.21.5
             pip install -r doc_requirements.txt
@@ -58,35 +62,26 @@ jobs:
             pip install nose mpmath argparse Pillow "asv==0.4.2" pythran
             pip install pybind11 ninja meson
 
-      - save_cache:
-          key: packages-{{ .Branch }}
-          paths:
-            - venv
-
-      - restore_cache:
-          keys:
-              - build-{{ .Branch }}
-
-      - restore_cache:
-          keys:
-              - installdir-{{ .Branch }}
-
       - run:
           name: build SciPy
           command: |
-            . venv/bin/activate
-            export SHELL=$(which bash)
             python dev.py -j 2 --build-only
 
       - save_cache:
-          key: build-{{ .Branch }}
+          key: deps_ccache-{{ .Branch }}
           paths:
-            - build
+            - ~/.ccache
+            - ~/.cache/pip
 
       - save_cache:
           key: installdir-{{ .Branch }}
           paths:
             - installdir
+
+      - run:
+          name: ccache performance
+          command: |
+            ccache -s
 
       - persist_to_workspace:
           root: ~/
@@ -106,13 +101,12 @@ jobs:
       - restore_cache:
           keys:
               - doc-{{ .Branch }}
+              - doc
 
       - run:
           name: build docs
           no_output_timeout: 25m
           command: |
-            . venv/bin/activate
-            export SHELL=$(which bash)
             python dev.py -n -j2 --doc html-scipyorg --doc latex
             make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
             cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
@@ -149,10 +143,9 @@ jobs:
       - run:
           name: run asv
           command: |
-            . venv/bin/activate
             pip install --upgrade pip
             pip install pyfftw cffi pytest
-            export PYTHONPATH=$PWD/build/testenv/lib/python3.8/site-packages
+            export PYTHONPATH=$PWD/build/lib/python3.8/site-packages
             cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
