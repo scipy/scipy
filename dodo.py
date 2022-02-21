@@ -66,4 +66,4 @@ def task_doc_build():
     return {'actions': None,
             'basename': 'doc-build',
             'doc': 'Initializing document build tasks',
-            'task_dep': ['build', 'doc_compile']}
+            'task_dep': ['build', 'doc-compile']}
