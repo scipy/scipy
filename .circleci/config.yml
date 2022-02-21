@@ -12,7 +12,7 @@ _debian: &debian
   name: install Debian dependencies
   command: |
     sudo apt-get update
-    sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-plain-generic latexmk texlive-xetex fonts-freefont-otf
+    sudo apt-get install libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-plain-generic latexmk texlive-xetex fonts-freefont-otf
 
 jobs:
 # Build SciPy from source
@@ -44,10 +44,7 @@ jobs:
 
       - restore_cache:
           keys:
-              - packages-{{ .Branch }}-1
-      - restore_cache:
-          keys:
-              - build-{{ .Branch }}-1
+              - packages-{{ .Branch }}
 
       - run:
           name: setup Python venv
@@ -59,24 +56,37 @@ jobs:
             pip install -r doc_requirements.txt
             # `asv` pin because of slowdowns reported in gh-15568
             pip install nose mpmath argparse Pillow "asv==0.4.2" pythran
-            pip install pybind11
+            pip install pybind11 ninja meson
 
       - save_cache:
-          key: packages-{{ .Branch }}-1
+          key: packages-{{ .Branch }}
           paths:
             - venv
+
+      - restore_cache:
+          keys:
+              - build-{{ .Branch }}
+
+      - restore_cache:
+          keys:
+              - installdir-{{ .Branch }}
 
       - run:
           name: build SciPy
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)
-            python setup.py build_ext --inplace -j2
+            python dev.py -j 2 --build-only
 
       - save_cache:
-          key: build-{{ .Branch }}-1
+          key: build-{{ .Branch }}
           paths:
             - build
+
+      - save_cache:
+          key: installdir-{{ .Branch }}
+          paths:
+            - installdir
 
       - persist_to_workspace:
           root: ~/
@@ -95,7 +105,7 @@ jobs:
 
       - restore_cache:
           keys:
-              - doc-{{ .Branch }}-1
+              - doc-{{ .Branch }}
 
       - run:
           name: build docs
@@ -103,14 +113,12 @@ jobs:
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)
-            python setup.py install
-            make -C doc html-scipyorg
-            make -C doc latex
+            python dev.py -n -j2 --doc html-scipyorg --doc latex
             make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
             cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
 
       - save_cache:
-          key: doc-{{ .Branch }}-1
+          key: doc-{{ .Branch }}
           paths:
             - doc/build
 
