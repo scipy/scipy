@@ -221,6 +221,8 @@ add_newdoc("wrightomega",
     ----------
     z : array_like
         Points at which to evaluate the Wright Omega function
+    out : ndarray, optional
+        Optional output array for the function values
 
     Returns
     -------
