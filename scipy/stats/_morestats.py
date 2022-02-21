@@ -11,6 +11,7 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 
 from scipy import optimize
 from scipy import special
+from scipy._lib._bunch import _make_tuple_bunch
 from . import _statlib
 from . import _stats_py
 from ._stats_py import find_repeats, _contains_nan, _normtest_finish
@@ -2979,7 +2980,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     return z, pval
 
 
-WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
+WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'],
+                                   ['zstatistic'])
 
 
 @_axis_nan_policy_factory(WilcoxonResult, paired=True,
@@ -3234,7 +3236,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         else:
             prob = np.sum(cnt[:r_plus + 1]) / 2**count
 
-    return WilcoxonResult(T, prob)
+    return WilcoxonResult(T, prob, zstatistic=None if mode == 'exact' else z)
 
 
 def median_test(*args, ties='below', correction=True, lambda_=1,
