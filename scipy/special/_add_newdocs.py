@@ -8605,7 +8605,7 @@ add_newdoc("pdtr",
     Parameters
     ----------
     k : array_like
-        Number of occurances (nonnegative, real)
+        Number of occurrences (nonnegative, real)
     m : array_like
         Shape parameter (nonnegative, real)
     out : ndarray
@@ -8656,7 +8656,7 @@ add_newdoc("pdtrc",
     Parameters
     ----------
     k : array_like
-        Number of occurances (nonnegative, real)
+        Number of occurrences (nonnegative, real)
     m : array_like
         Shape parameter (nonnegative, real)
     out : ndarray
@@ -8689,7 +8689,7 @@ add_newdoc("pdtri",
     Parameters
     ----------
     k : array_like
-        Number of occurances (nonnegative, real)
+        Number of occurrences (nonnegative, real)
     y : array_like
         Probability
     out : ndarray
@@ -8726,7 +8726,7 @@ add_newdoc("pdtrik",
     Returns
     -------
     scalar or ndarray
-        The number of occurances `k` such that ``pdtr(k, m) = p``
+        The number of occurrences `k` such that ``pdtr(k, m) = p``
 
     See Also
     --------
