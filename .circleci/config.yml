@@ -135,7 +135,6 @@ jobs:
 
       - run:
           name: run asv
-          no_output_timeout: 25m
           command: |
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
             cd benchmarks
