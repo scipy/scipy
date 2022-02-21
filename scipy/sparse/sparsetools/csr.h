@@ -5,6 +5,7 @@
 #include <vector>
 #include <algorithm>
 #include <functional>
+#include <numeric>
 
 #include "util.h"
 #include "dense.h"
@@ -1621,6 +1622,75 @@ int csr_sample_offsets(const I n_row,
     }
     return 0;
 }
+
+/*
+ * Stack CSR matrices in A horizontally (column wise)
+ *
+ * Input Arguments:
+ *   I  n_blocks                      - number of matrices in A
+ *   I  n_row                         - number of rows in any matrix in A
+ *   I  n_col_cat[n_blocks]           - number of columns in each matrix in A concatenated
+ *   I  Ap_cat[n_blocks*(n_row + 1)]  - row indices of each matrix in A concatenated
+ *   I  Aj_cat[nnz(A)]                - column indices of each matrix in A concatenated
+ *   T  Ax_cat[nnz(A)]                - nonzeros of each matrix in A concatenated
+ *
+ * Output Arguments:
+ *   I Bp  - row pointer
+ *   I Bj  - column indices
+ *   T Bx  - nonzeros
+ *
+ * Note:
+ *   All output arrays Bp, Bj, Bx must be preallocated
+ *
+ *   Complexity: Linear.  Specifically O(nnz(A) + n_blocks)
+ *
+ */
+template <class I, class T>
+void csr_hstack(const I n_blocks,
+                const I n_row,
+                const I n_col_cat[],
+                const I Ap_cat[],
+                const I Aj_cat[],
+                const T Ax_cat[],
+                      I Bp[],
+                      I Bj[],
+                      T Bx[])
+{
+    // First, mark the blocks in the input data while
+    // computing their column offsets:
+    std::vector<I> col_offset(n_blocks);
+    std::vector<const I*> bAp(n_blocks);
+    std::vector<const I*> bAj(n_blocks);
+    std::vector<const T*> bAx(n_blocks);
+    col_offset[0] = 0;
+    bAp[0] = Ap_cat;
+    bAj[0] = Aj_cat;
+    bAx[0] = Ax_cat;
+    for (I b = 1; b < n_blocks; b++){
+        col_offset[b] = col_offset[b - 1] + n_col_cat[b - 1];
+        bAp[b] = bAp[b - 1] + (n_row + 1);
+        bAj[b] = bAj[b - 1] + bAp[b - 1][n_row];
+        bAx[b] = bAx[b - 1] + bAp[b - 1][n_row];
+    }
+
+    // Next, build the full output matrix:
+    Bp[0] = 0;
+    I s = 0;
+    for(I i = 0; i < n_row; i++){
+        for (I b = 0; b < n_blocks; b++){
+            I jj_start = bAp[b][i];
+            I jj_end = bAp[b][i + 1];
+            I offset = col_offset[b];
+            std::transform(&bAj[b][jj_start], &bAj[b][jj_end],
+                           &Bj[s], [&](I x){return (x + offset);});
+            std::copy(&bAx[b][jj_start], &bAx[b][jj_end], &Bx[s]);
+            s += jj_end - jj_start;
+        }
+        Bp[i + 1] = s;
+    }
+
+}
+
 
 /*
  * A test function checking the error handling

@@ -15,7 +15,7 @@ A = np.array([
 b = np.array([0.074, 1.014, -0.383])
 
 
-class BaseMixin(object):
+class BaseMixin:
     def setup_method(self):
         self.rnd = np.random.RandomState(0)
 
@@ -166,7 +166,7 @@ class BaseMixin(object):
         assert_(abs(cost_bvls - cost_trf) < cost_trf*1e-10)
 
 
-class SparseMixin(object):
+class SparseMixin:
     def test_sparse_and_LinearOperator(self):
         m = 5000
         n = 1000

@@ -78,7 +78,7 @@ def test_getfullargspec_no_self():
     assert_equal(argspec, FullArgSpec(['func', 'iterable'], None, None, None,
                                       [], None, {}))
 
-    class _rv_generic(object):
+    class _rv_generic:
         def _rvs(self, a, b=2, c=3, *args, size=None, **kwargs):
             return None
 

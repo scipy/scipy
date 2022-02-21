@@ -1,14 +1,17 @@
 
-def configuration(parent_package='',top_path=None):
+def configuration(parent_package='', top_path=None):
     from numpy.distutils.misc_util import Configuration
 
-    config = Configuration('linalg',parent_package,top_path)
+    config = Configuration('linalg', parent_package, top_path)
 
-    config.add_subpackage(('isolve'))
-    config.add_subpackage(('dsolve'))
-    config.add_subpackage(('eigen'))
+    config.add_subpackage('_isolve')
+    config.add_subpackage('_dsolve')
+    config.add_subpackage('_eigen')
 
     config.add_data_dir('tests')
+
+    # PROPACK
+    config.add_subpackage('_propack')
 
     return config
 

@@ -8,7 +8,7 @@ from scipy.sparse.linalg import LinearOperator
 FD_METHODS = ('2-point', '3-point', 'cs')
 
 
-class ScalarFunction(object):
+class ScalarFunction:
     """Scalar function and its derivatives.
 
     This class defines a scalar function F: R^n->R and methods for
@@ -103,6 +103,7 @@ class ScalarFunction(object):
                              "to be estimated using one of the "
                              "quasi-Newton strategies.")
 
+        # the astype call ensures that self.x is a copy of x0
         self.x = np.atleast_1d(x0).astype(float)
         self.n = self.x.size
         self.nfev = 0
@@ -111,6 +112,9 @@ class ScalarFunction(object):
         self.f_updated = False
         self.g_updated = False
         self.H_updated = False
+
+        self._lowest_x = None
+        self._lowest_f = np.inf
 
         finite_diff_options = {}
         if grad in FD_METHODS:
@@ -127,7 +131,25 @@ class ScalarFunction(object):
         # Function evaluation
         def fun_wrapped(x):
             self.nfev += 1
-            return fun(x, *args)
+            # Send a copy because the user may overwrite it.
+            # Overwriting results in undefined behaviour because
+            # fun(self.x) will change self.x, with the two no longer linked.
+            fx = fun(np.copy(x), *args)
+            # Make sure the function returns a true scalar
+            if not np.isscalar(fx):
+                try:
+                    fx = np.asarray(fx).item()
+                except (TypeError, ValueError) as e:
+                    raise ValueError(
+                        "The user-provided objective function "
+                        "must return a scalar value."
+                    ) from e
+
+            if fx < self._lowest_f:
+                self._lowest_x = x
+                self._lowest_f = fx
+
+            return fx
 
         def update_fun():
             self.f = fun_wrapped(self.x)
@@ -139,7 +161,7 @@ class ScalarFunction(object):
         if callable(grad):
             def grad_wrapped(x):
                 self.ngev += 1
-                return np.atleast_1d(grad(x, *args))
+                return np.atleast_1d(grad(np.copy(x), *args))
 
             def update_grad():
                 self.g = grad_wrapped(self.x)
@@ -156,25 +178,25 @@ class ScalarFunction(object):
 
         # Hessian Evaluation
         if callable(hess):
-            self.H = hess(x0, *args)
+            self.H = hess(np.copy(x0), *args)
             self.H_updated = True
             self.nhev += 1
 
             if sps.issparse(self.H):
                 def hess_wrapped(x):
                     self.nhev += 1
-                    return sps.csr_matrix(hess(x, *args))
+                    return sps.csr_matrix(hess(np.copy(x), *args))
                 self.H = sps.csr_matrix(self.H)
 
             elif isinstance(self.H, LinearOperator):
                 def hess_wrapped(x):
                     self.nhev += 1
-                    return hess(x, *args)
+                    return hess(np.copy(x), *args)
 
             else:
                 def hess_wrapped(x):
                     self.nhev += 1
-                    return np.atleast_2d(np.asarray(hess(x, *args)))
+                    return np.atleast_2d(np.asarray(hess(np.copy(x), *args)))
                 self.H = np.atleast_2d(np.asarray(self.H))
 
             def update_hess():
@@ -207,7 +229,8 @@ class ScalarFunction(object):
                 self._update_grad()
                 self.x_prev = self.x
                 self.g_prev = self.g
-
+                # ensure that self.x is a copy of x. Don't store a reference
+                # otherwise the memoization doesn't work properly.
                 self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
@@ -215,6 +238,8 @@ class ScalarFunction(object):
                 self._update_hess()
         else:
             def update_x(x):
+                # ensure that self.x is a copy of x. Don't store a reference
+                # otherwise the memoization doesn't work properly.
                 self.x = np.atleast_1d(x).astype(float)
                 self.f_updated = False
                 self.g_updated = False
@@ -262,7 +287,7 @@ class ScalarFunction(object):
         return self.f, self.g
 
 
-class VectorFunction(object):
+class VectorFunction:
     """Vector function and its derivatives.
 
     This class defines a vector function F: R^n->R^m and methods for
@@ -523,7 +548,7 @@ class VectorFunction(object):
         return self.H
 
 
-class LinearVectorFunction(object):
+class LinearVectorFunction:
     """Linear vector function and its derivatives.
 
     Defines a linear function F = A x, where x is N-D vector and
@@ -588,4 +613,4 @@ class IdentityVectorFunction(LinearVectorFunction):
         else:
             A = np.eye(n)
             sparse_jacobian = False
-        super(IdentityVectorFunction, self).__init__(A, x0, sparse_jacobian)
+        super().__init__(A, x0, sparse_jacobian)

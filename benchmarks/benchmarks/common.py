@@ -11,7 +11,7 @@ import itertools
 import random
 
 
-class Benchmark(object):
+class Benchmark:
     """
     Base class with sensible options
     """
@@ -144,7 +144,7 @@ def with_attributes(**attrs):
     return decorator
 
 
-class safe_import(object):
+class safe_import:
 
     def __enter__(self):
         self.error = False

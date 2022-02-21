@@ -8,17 +8,25 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_kurt_expect, check_entropy,
                            check_private_entropy, check_edge_support,
                            check_named_args, check_random_state_property,
-                           check_pickling, check_rvs_broadcast, check_freezing)
-from scipy.stats._distr_params import distdiscrete
+                           check_pickling, check_rvs_broadcast, check_freezing,
+                           check_deprecation_warning_gh5982_moment,
+                           check_deprecation_warning_gh5982_interval)
+from scipy.stats._distr_params import distdiscrete, invdistdiscrete
 
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
 distdiscrete += [[stats.rv_discrete(values=vals), ()]]
+
+# For these distributions, test_discrete_basic only runs with test mode full
+distslow = {'zipfian', 'nhypergeom'}
 
 
 def cases_test_discrete_basic():
     seen = set()
     for distname, arg in distdiscrete:
-        yield distname, arg, distname not in seen
+        if distname in distslow:
+            yield pytest.param(distname, arg, distname, marks=pytest.mark.slow)
+        else:
+            yield distname, arg, distname not in seen
         seen.add(distname)
 
 
@@ -38,6 +46,8 @@ def test_discrete_basic(distname, arg, first_case):
     check_pmf_cdf(distfn, arg, distname)
     check_oth(distfn, arg, supp, distname + ' oth')
     check_edge_support(distfn, arg)
+    check_deprecation_warning_gh5982_moment(distfn, arg, distname)
+    check_deprecation_warning_gh5982_interval(distfn, arg, distname)
 
     alpha = 0.01
     check_discrete_chisquare(distfn, arg, rvs, alpha,
@@ -48,7 +58,9 @@ def test_discrete_basic(distname, arg, first_case):
         meths = [distfn.pmf, distfn.logpmf, distfn.cdf, distfn.logcdf,
                  distfn.logsf]
         # make sure arguments are within support
-        spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0, }
+        # for some distributions, this needs to be overridden
+        spec_k = {'randint': 11, 'hypergeom': 4, 'bernoulli': 0,
+                  'nchypergeom_wallenius': 6}
         k = spec_k.get(distname, 1)
         check_named_args(distfn, k, arg, locscale_defaults, meths)
         if distname != 'sample distribution':
@@ -98,7 +110,8 @@ def test_rvs_broadcast(dist, shape_args):
     # implementation detail of the distribution, not a requirement.  If
     # the implementation the rvs() method of a distribution changes, this
     # test might also have to be changed.
-    shape_only = dist in ['betabinom', 'skellam', 'yulesimon', 'dlaplace']
+    shape_only = dist in ['betabinom', 'skellam', 'yulesimon', 'dlaplace',
+                          'nchypergeom_fisher', 'nchypergeom_wallenius']
 
     try:
         distfunc = getattr(stats, dist)
@@ -137,6 +150,31 @@ def test_ppf_with_loc(dist, args):
             [_a-1+loc, _b+loc],
             [distfn.ppf(0.0, *args, loc=loc), distfn.ppf(1.0, *args, loc=loc)]
             )
+
+
+@pytest.mark.parametrize('dist, args', distdiscrete)
+def test_isf_with_loc(dist, args):
+    try:
+        distfn = getattr(stats, dist)
+    except TypeError:
+        distfn = dist
+    # check with a negative, no and positive relocation.
+    np.random.seed(1942349)
+    re_locs = [np.random.randint(-10, -1), 0, np.random.randint(1, 10)]
+    _a, _b = distfn.support(*args)
+    for loc in re_locs:
+        expected = _b + loc, _a - 1 + loc
+        res = distfn.isf(0., *args, loc=loc), distfn.isf(1., *args, loc=loc)
+        npt.assert_array_equal(expected, res)
+    # test broadcasting behaviour
+    re_locs = [np.random.randint(-10, -1, size=(5, 3)),
+               np.zeros((5, 3)),
+               np.random.randint(1, 10, size=(5, 3))]
+    _a, _b = distfn.support(*args)
+    for loc in re_locs:
+        expected = _b + loc, _a - 1 + loc
+        res = distfn.isf(0., *args, loc=loc), distfn.isf(1., *args, loc=loc)
+        npt.assert_array_equal(expected, res)
 
 
 def check_cdf_ppf(distfn, arg, supp, msg):
@@ -273,29 +311,11 @@ def test_methods_with_lists(method, distname, args):
                         rtol=1e-15, atol=1e-15)
 
 
-@pytest.mark.parametrize(
-    'dist, x, args',
-    [  # In each of the following, at least one shape parameter is invalid
-        (stats.hypergeom, np.arange(5), (3, 3, 4)),
-        (stats.nhypergeom, np.arange(-2, 5), (5, 2, 8)),
-        (stats.bernoulli, np.arange(5), (1.5, )),
-        (stats.binom, np.arange(15), (10, 1.5)),
-        (stats.betabinom, np.arange(15), (10, -0.4, -0.5)),
-        (stats.boltzmann, np.arange(5), (-1, 4)),
-        (stats.dlaplace, np.arange(5), (-0.5, )),
-        (stats.geom, np.arange(5), (1.5, )),
-        (stats.logser, np.arange(5), (1.5, )),
-        (stats.nbinom, np.arange(15), (10, 1.5)),
-        (stats.planck, np.arange(5), (-0.5, )),
-        (stats.poisson, np.arange(5), (-0.5, )),
-        (stats.randint, np.arange(5), (5, 2)),
-        (stats.skellam, np.arange(5), (-5, -2)),
-        (stats.zipf, np.arange(5), (-2, )),
-        (stats.yulesimon, np.arange(5), (-2, ))
-    ]
-)
-def test_cdf_gh13280_regression(dist, x, args):
+@pytest.mark.parametrize('distname, args', invdistdiscrete)
+def test_cdf_gh13280_regression(distname, args):
     # Test for nan output when shape parameters are invalid
+    dist = getattr(stats, distname)
+    x = np.arange(-2, 15)
     vals = dist.cdf(x, *args)
     expected = np.nan
     npt.assert_equal(vals, expected)
