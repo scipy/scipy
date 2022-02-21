@@ -1475,7 +1475,7 @@ def kruskal(*args):
 kruskalwallis = kruskal
 
 
-@_rename_parameter("method", "mode")
+@_rename_parameter("mode", "method")
 def ks_1samp(x, cdf, args=(), alternative="two-sided", method='auto'):
     """
     Computes the Kolmogorov-Smirnov test on one sample of masked values.
@@ -1517,7 +1517,7 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", method='auto'):
         x, cdf, args=args, alternative=alternative, method=method)
 
 
-@_rename_parameter("method", "mode")
+@_rename_parameter("mode", "method")
 def ks_2samp(data1, data2, alternative="two-sided", method='auto'):
     """
     Computes the Kolmogorov-Smirnov test on two samples.
@@ -1563,7 +1563,7 @@ def ks_2samp(data1, data2, alternative="two-sided", method='auto'):
 ks_twosamp = ks_2samp
 
 
-@_rename_parameter("method", "mode")
+@_rename_parameter("mode", "method")
 def kstest(data1, data2, args=(), alternative='two-sided', method='auto'):
     """
 

@@ -2984,7 +2984,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
 WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
 
 
-@_rename_parameter("method", "mode")
+@_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(WilcoxonResult, paired=True,
                           n_samples=lambda kwds: 2
                           if kwds.get('y', None) is not None else 1)

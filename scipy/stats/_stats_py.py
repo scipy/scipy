@@ -7020,7 +7020,7 @@ def _compute_dminus(cdfvals):
     return (cdfvals - np.arange(0.0, n)/n).max()
 
 
-@_rename_parameter("method", "mode")
+@_rename_parameter("mode", "method")
 def ks_1samp(x, cdf, args=(), alternative='two-sided', method=None):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
@@ -7349,7 +7349,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-@_rename_parameter("method", "mode")
+@_rename_parameter("mode", "method")
 def ks_2samp(data1, data2, alternative='two-sided', method=None):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
@@ -7560,7 +7560,7 @@ def _parse_kstest_args(data1, data2, args, N):
     return data1, data2, cdf
 
 
-@_rename_parameter("method", "mode")
+@_rename_parameter("mode", "method")
 def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method=None):
     """
     Performs the (one-sample or two-sample) Kolmogorov-Smirnov test for
