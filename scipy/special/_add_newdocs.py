@@ -4588,9 +4588,13 @@ add_newdoc("fdtridfd",
 
     See Also
     --------
-    fdtr, fdtrc, fdtri, fdtridfn
+    fdtr, fdtrc, fdtri
 
     """)
+
+'''
+commented out as fdtridfn seems to have bugs and is not in functions.json
+see: https://github.com/scipy/scipy/pull/15622#discussion_r811440983
 
 add_newdoc(
     "fdtridfn",
@@ -4624,6 +4628,7 @@ add_newdoc(
 
 
     """)
+'''
 
 add_newdoc("fresnel",
     r"""
@@ -7879,7 +7884,7 @@ add_newdoc("mathieu_modcem1",
 
 add_newdoc("mathieu_modcem2",
     """
-    mathieu_modcem2(m, q, x, out=None, out=None)
+    mathieu_modcem2(m, q, x, out=None)
 
     Even modified Mathieu function of the second kind and its derivative
 
