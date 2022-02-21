@@ -92,8 +92,8 @@ jobs:
 
       - restore_cache:
           keys:
-              - doc-{{ .Branch }}
-              - doc
+              - documentation-{{ .Branch }}
+              - documentation
 
       - run:
           name: build docs
@@ -105,7 +105,7 @@ jobs:
             cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
 
       - save_cache:
-          key: doc-{{ .Branch }}
+          key: documentation-{{ .Branch }}
           paths:
             - ~/repo/doc/build
 
