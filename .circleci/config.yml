@@ -47,11 +47,6 @@ jobs:
               - deps_ccache-{{ .Branch }}
               - deps_ccache
 
-      - restore_cache:
-          keys:
-              - installdir-{{ .Branch }}
-              - installdir
-
       - run:
           name: setup Python venv
           command: |
@@ -74,11 +69,6 @@ jobs:
           paths:
             - ~/.ccache
             - ~/.cache/pip
-
-      - save_cache:
-          key: installdir-{{ .Branch }}
-          paths:
-            - installdir
 
       - run:
           name: ccache performance
@@ -117,7 +107,7 @@ jobs:
       - save_cache:
           key: doc-{{ .Branch }}
           paths:
-            - doc/build
+            - ~/repo/doc/build
 
       - store_artifacts:
           path: doc/build/html-scipyorg
