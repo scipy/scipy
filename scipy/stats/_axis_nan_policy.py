@@ -320,7 +320,7 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
     if result_unpacker is None:
         def result_unpacker(res):
-            return res[..., 0], res[..., 1]
+            return res
 
     def is_too_small(samples):
         for sample in samples:
@@ -479,23 +479,20 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return result_object(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_outputs, np.nan)
+                    return result_unpacker(hypotest_fun_out(*samples, **kwds))
 
             # Addresses nan_policy == "propagate"
             elif contains_nan and nan_policy == 'propagate':
                 def hypotest_fun(x):
                     if np.isnan(x).any():
-                        res = np.full(n_outputs, np.nan)
-                        return result_object(*res)
+                        return np.full(n_outputs, np.nan)
                     samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return result_object(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_outputs, np.nan)
+                    return result_unpacker(hypotest_fun_out(*samples, **kwds))
 
             else:
                 def hypotest_fun(x):
@@ -503,13 +500,12 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return result_object(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_outputs, np.nan)
+                    return result_unpacker(hypotest_fun_out(*samples, **kwds))
 
-            x = np.moveaxis(x, axis, -1)
-            res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
-            return result_object(*result_unpacker(res))
+            x = np.moveaxis(x, axis, 0)
+            res = np.apply_along_axis(hypotest_fun, axis=0, arr=x)
+            return result_object(*res)
 
         doc = FunctionDoc(axis_nan_policy_wrapper)
         parameter_names = [param.name for param in doc['Parameters']]
