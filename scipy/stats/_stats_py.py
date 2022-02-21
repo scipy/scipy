@@ -7021,7 +7021,7 @@ def _compute_dminus(cdfvals):
 
 
 @_rename_parameter("mode", "method")
-def ks_1samp(x, cdf, args=(), alternative='two-sided', method=None):
+def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7135,8 +7135,6 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', method=None):
 
     """
     mode = method
-    if mode is None:
-        mode = "auto"
 
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
@@ -7350,7 +7348,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
 
 
 @_rename_parameter("mode", "method")
-def ks_2samp(data1, data2, alternative='two-sided', method=None):
+def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7458,8 +7456,6 @@ def ks_2samp(data1, data2, alternative='two-sided', method=None):
 
     """
     mode = method
-    if mode is None:
-        mode = "auto"
 
     if mode not in ['auto', 'exact', 'asymp']:
         raise ValueError(f'Invalid value for mode: {mode}')
@@ -7561,7 +7557,7 @@ def _parse_kstest_args(data1, data2, args, N):
 
 
 @_rename_parameter("mode", "method")
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method=None):
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     """
     Performs the (one-sample or two-sample) Kolmogorov-Smirnov test for
     goodness of fit.
@@ -7689,9 +7685,6 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method=None):
     KstestResult(statistic=0.128678487493..., pvalue=0.066569081515...)
 
     """
-    if method is None:
-        method = "auto"
-
     # to not break compatibility with existing code
     if alternative == 'two_sided':
         alternative = 'two-sided'

@@ -2989,7 +2989,7 @@ WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
                           n_samples=lambda kwds: 2
                           if kwds.get('y', None) is not None else 1)
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
-             alternative="two-sided", method=None):
+             alternative="two-sided", method='auto'):
     """Calculate the Wilcoxon signed-rank test.
 
     The Wilcoxon signed-rank test tests the null hypothesis that two
@@ -3114,8 +3114,6 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     """
     mode = method
-    if mode is None:
-        mode = "auto"
 
     if mode not in ["auto", "approx", "exact"]:
         raise ValueError("mode must be either 'auto', 'approx' or 'exact'")

@@ -1509,8 +1509,6 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", method='auto'):
         Corresponding p-value.
 
     """
-    if method is None:
-        method = "auto"
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
     return scipy.stats._stats_py.ks_1samp(
@@ -1548,8 +1546,6 @@ def ks_2samp(data1, data2, alternative="two-sided", method='auto'):
         Corresponding p-value.
 
     """
-    if method is None:
-        method = "auto"
     # Ideally this would be accomplished by
     # ks_2samp = scipy.stats._stats_py.ks_2samp
     # but the circular dependencies between _mstats_basic and stats prevent that.
@@ -1581,8 +1577,6 @@ def kstest(data1, data2, args=(), alternative='two-sided', method='auto'):
     tuple of (K-S statistic, probability)
 
     """
-    if method is None:
-        method = "auto"
     return scipy.stats._stats_py.kstest(data1, data2, args,
                                         alternative=alternative, method=method)
 
