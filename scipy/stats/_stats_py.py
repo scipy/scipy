@@ -5727,6 +5727,13 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     pvalue : float or array
         Two-sided p-value.
 
+    Notes
+    -----
+    The statistic is calculated as ``(np.mean(a) - popmean)/se``, where
+    ``se`` is the standard error. Therefore, the statistic will be positive
+    when the sample mean is greater than the population mean and negative when
+    the sample mean is less than the population mean.
+
     Examples
     --------
     >>> from scipy import stats
@@ -5897,7 +5904,9 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Notes
     -----
-    .. versionadded:: 0.16.0
+    The statistic is calculated as ``(mean1 - mean2)/se``, where ``se`` is the
+    standard error. Therefore, the statistic will be positive when `mean1` is
+    greater than `mean2` and negative when `mean1` is less than `mean2`.
 
     References
     ----------
@@ -6150,6 +6159,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     and the trimmed sample size in calculation of the statistic. Trimming is
     recommended if the underlying distribution is long-tailed or contaminated
     with outliers [4]_.
+
+    The statistic is calculated as ``(np.mean(a) - np.mean(b))/se``, where
+    ``se`` is the standard error. Therefore, the statistic will be positive
+    when the sample mean of `a` is greater than the sample mean of `b` and
+    negative when the sample mean of `a` is less than the sample mean of
+    `b`.
 
     References
     ----------
@@ -6546,6 +6561,11 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     than the threshold, e.g. 1%, 5% or 10%, then we reject the null
     hypothesis of equal averages. Small p-values are associated with
     large t-statistics.
+
+    The statistic is calculated as ``np.mean(a - b)/se``, where ``se`` is the
+    standard error. Therefore, the statistic will be positive when the sample
+    mean of ``a - b`` is greater than zero and negative when the sample mean of
+    ``a - b`` is less than zero.
 
     References
     ----------
