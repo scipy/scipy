@@ -42,7 +42,7 @@ add_newdoc("_cosine_cdf",
 
     Returns
     -------
-    float
+    scalar or ndarray
         The cosine distribution CDF evaluated at `x`.
 
     """)
@@ -68,7 +68,7 @@ add_newdoc("_cosine_invcdf",
 
     Returns
     -------
-    float
+    scalar or ndarray
         The inverse of the cosine distribution CDF evaluated at `p`.
 
     """)
@@ -103,7 +103,7 @@ add_newdoc("sph_harm",
 
     Returns
     -------
-    y_mn : complex float
+    y_mn : complex scalar or ndarray
        The harmonic :math:`Y^m_n` sampled at ``theta`` and ``phi``.
 
     Notes
@@ -222,7 +222,7 @@ add_newdoc("wrightomega",
 
     Returns
     -------
-    omega : ndarray
+    omega : scalar or ndarray
         Values of the Wright Omega function
 
     Notes
@@ -277,7 +277,7 @@ add_newdoc("agm",
 
     Returns
     -------
-    float
+    scalar or ndarray
         The arithmetic-geometric mean of `a` and `b`.
 
     Examples
@@ -322,7 +322,7 @@ add_newdoc("airy",
 
     Returns
     -------
-    Ai, Aip, Bi, Bip : ndarrays
+    Ai, Aip, Bi, Bip : 4-tuple of scalar or ndarray
         Airy functions Ai and Bi, and their derivatives Aip and Bip.
 
     Notes
@@ -402,7 +402,7 @@ add_newdoc("airye",
 
     Returns
     -------
-    eAi, eAip, eBi, eBip : array_like
+    eAi, eAip, eBi, eBip : 4-tuple of scalar or ndarray
         Exponentially scaled Airy functions eAi and eBi, and their derivatives
         eAip and eBip
 
@@ -482,7 +482,7 @@ add_newdoc("bdtr",
 
     Returns
     -------
-    y : ndarray
+    y : scalar or ndarray
         Probability of `floor(k)` or fewer successes in `n` independent events with
         success probabilities of `p`.
 
@@ -526,7 +526,7 @@ add_newdoc("bdtrc",
 
     Returns
     -------
-    y : ndarray
+    y : scalar or ndarray
         Probability of `floor(k) + 1` or more successes in `n` independent
         events with success probabilities of `p`.
 
@@ -574,7 +574,7 @@ add_newdoc("bdtri",
 
     Returns
     -------
-    p : ndarray
+    p : scalar or ndarray
         The event probability such that `bdtr(\lfloor k \rfloor, n, p) = y`.
 
     See also
@@ -619,7 +619,7 @@ add_newdoc("bdtrik",
 
     Returns
     -------
-    k : ndarray
+    k : scalar or ndarray
         The number of successes `k` such that `bdtr(k, n, p) = y`.
 
     See also
@@ -669,7 +669,7 @@ add_newdoc("bdtrin",
 
     Returns
     -------
-    n : ndarray
+    n : scalar or ndarray
         The number of events `n` such that `bdtr(k, n, p) = y`.
 
     See also
@@ -720,7 +720,7 @@ add_newdoc(
 
     Returns
     -------
-    array_like
+    scalar or ndarray
         Value of binomial coefficient.
 
     See Also
@@ -812,7 +812,7 @@ add_newdoc("btdtria",
 
     Returns
     -------
-    a : ndarray
+    a : scalar or ndarray
         The value of the shape parameter `a` such that `btdtr(a, b, x) = p`.
 
     See Also
@@ -865,7 +865,7 @@ add_newdoc("btdtrib",
 
     Returns
     -------
-    b : ndarray
+    b : scalar or ndarray
         The value of the shape parameter `b` such that `btdtr(a, b, x) = p`.
 
     See Also
@@ -1105,7 +1105,7 @@ add_newdoc("beta",
 
     Parameters
     ----------
-    a, b : array-like
+    a, b : array_like
         Real-valued arguments
     out : ndarray, optional
         Optional output array for the function result
@@ -1171,9 +1171,9 @@ add_newdoc("betainc",
 
     Parameters
     ----------
-    a, b : array-like
+    a, b : array_like
            Positive, real-valued parameters
-    x : array-like
+    x : array_like
         Real-valued such that :math:`0 \leq x \leq 1`,
         the upper limit of integration
     out : ndarray, optional
@@ -1181,7 +1181,7 @@ add_newdoc("betainc",
 
     Returns
     -------
-    array-like
+    scalar or ndarray
         Value of the incomplete beta function
 
     See Also
@@ -1257,16 +1257,16 @@ add_newdoc("betaincinv",
 
     Parameters
     ----------
-    a, b : array-like
+    a, b : array_like
         Positive, real-valued parameters
-    y : array-like
+    y : array_like
         Real-valued input
     out : ndarray, optional
         Optional output array for function values
 
     Returns
     -------
-    array-like
+    scalar or ndarray
         Value of the inverse of the incomplete beta function
 
     See Also
@@ -1305,6 +1305,25 @@ add_newdoc("betaln",
     Natural logarithm of absolute value of beta function.
 
     Computes ``ln(abs(beta(a, b)))``.
+
+    Parameters
+    ----------
+    a, b : array_like
+        Positive, real-valued parameters
+    out : ndarray, optional
+        Optional output array for function values
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the betaln function
+
+    See Also
+    --------
+    gamma : the gamma function
+    betainc :  the incomplete beta function
+    beta : the beta function
+
     """)
 
 add_newdoc("boxcox",
@@ -1330,7 +1349,7 @@ add_newdoc("boxcox",
 
     Returns
     -------
-    y : array
+    y : scalar or ndarray
         Transformed data.
 
     Notes
@@ -1370,7 +1389,7 @@ add_newdoc("boxcox1p",
 
     Returns
     -------
-    y : array
+    y : scalar or ndarray
         Transformed data.
 
     Notes
@@ -1407,7 +1426,7 @@ add_newdoc("inv_boxcox",
 
     Returns
     -------
-    x : array
+    x : scalar or ndarray
         Transformed data.
 
     Notes
@@ -1443,7 +1462,7 @@ add_newdoc("inv_boxcox1p",
 
     Returns
     -------
-    x : array
+    x : scalar or ndarray
         Transformed data.
 
     Notes
@@ -1484,7 +1503,7 @@ add_newdoc("btdtr",
 
     Returns
     -------
-    I : ndarray
+    I : scalar or ndarray
         Cumulative distribution function of the beta distribution with
         parameters `a` and `b` at `x`.
 
@@ -1529,7 +1548,7 @@ add_newdoc("btdtri",
 
     Returns
     -------
-    x : ndarray
+    x : scalar or ndarray
         The quantile corresponding to `p`.
 
     See Also
@@ -1564,7 +1583,7 @@ add_newdoc("cbrt",
 
     Returns
     -------
-    float
+    scalar or ndarray
         The cube root of each value in `x`.
 
     Examples
@@ -1793,6 +1812,26 @@ add_newdoc("chndtr",
 
     Non-central chi square cumulative distribution function
 
+    Parameters
+    ----------
+    x : array_like
+        Upper bound of the integral
+    df : array_like
+        Degrees of freedom
+    nc : array_like
+        Non-centrality parameter
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    x : scalar or ndarray
+        Value of the non-central chi square cumulative distribution function.
+
+    See Also
+    --------
+    chndtrix, chndtridf, chndtrinc
+
     """)
 
 add_newdoc("chndtrix",
@@ -1800,6 +1839,29 @@ add_newdoc("chndtrix",
     chndtrix(p, df, nc)
 
     Inverse to `chndtr` vs `x`
+
+    Parameters
+    ----------
+    p : array_like
+        Probability
+    df : array_like
+        Degrees of freedom
+    nc : array_like
+        Non-centrality parameter
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    x : scalar or ndarray
+        Value so that the probability a non-central Chi square random variable
+        with `df` degrees of freedom and non-centrality, `nc`, is greater than
+        `x` equals `p`.
+
+    See Also
+    --------
+    chndtr, chndtridf, chndtrinc
+
     """)
 
 add_newdoc("chndtridf",
@@ -1807,6 +1869,27 @@ add_newdoc("chndtridf",
     chndtridf(x, p, nc)
 
     Inverse to `chndtr` vs `df`
+
+    Parameters
+    ----------
+    x : array_like
+        Upper bound of the integral
+    p : array_like
+        Probability
+    nc : array_like
+        Non-centrality parameter
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    df : scalar or ndarray
+        Degrees of freedom
+
+    See Also
+    --------
+    chndtr, chndtrix, chndtrinc
+
     """)
 
 add_newdoc("chndtrinc",
@@ -1814,6 +1897,28 @@ add_newdoc("chndtrinc",
     chndtrinc(x, df, p)
 
     Inverse to `chndtr` vs `nc`
+
+
+    Parameters
+    ----------
+    x : array_like
+        Upper bound of the integral
+    df : array_like
+        Degrees of freedom
+    p : array_like
+        Probability
+    out : ndarray, optional
+        Optional output array for the function results
+
+    Returns
+    -------
+    nc : scalar or ndarray
+        Non-centrality
+
+    See Also
+    --------
+    chndtr, chndtrix, chndtrinc
+
     """)
 
 add_newdoc("cosdg",
@@ -1935,6 +2040,16 @@ add_newdoc("dawsn",
 
         exp(-x**2) * integral(exp(t**2), t=0..x).
 
+    Parameters
+    ----------
+    x : array_like
+        Function parameter.
+
+    Returns
+    -------
+    y : scalar or ndarray
+        Value of the integral.
+
     See Also
     --------
     wofz, erf, erfc, erfcx, erfi
@@ -1973,7 +2088,7 @@ add_newdoc("ellipe",
 
     Returns
     -------
-    E : ndarray
+    E : scalar or ndarray
         Value of the elliptic integral.
 
     Notes
@@ -2069,7 +2184,7 @@ add_newdoc("ellipeinc",
 
     Returns
     -------
-    E : ndarray
+    E : scalar or ndarray
         Value of the elliptic integral.
 
     Notes
@@ -2132,7 +2247,7 @@ add_newdoc("ellipj",
 
     Returns
     -------
-    sn, cn, dn, ph : ndarrays
+    sn, cn, dn, ph : 4-tuple of scalar or ndarray
         The returned functions::
 
             sn(u|m), cn(u|m), dn(u|m)
@@ -2185,7 +2300,7 @@ add_newdoc("ellipkm1",
 
     Returns
     -------
-    K : ndarray
+    K : scalar or ndarray
         Value of the elliptic integral.
 
     Notes
@@ -2236,7 +2351,7 @@ add_newdoc("ellipk",
 
     Returns
     -------
-    K : array_like
+    K : scalar or ndarray
         Value of the elliptic integral.
 
     Notes
@@ -2296,7 +2411,7 @@ add_newdoc("ellipkinc",
 
     Returns
     -------
-    K : ndarray
+    K : scalar or ndarray
         Value of the elliptic integral
 
     Notes
@@ -2359,7 +2474,7 @@ add_newdoc(
 
     Returns
     -------
-    R : ndarray
+    R : scalar or ndarray
         Value of the integral. If `y` is real and negative, the Cauchy
         principal value is returned. If both of `x` and `y` are real, the
         return value is real. Otherwise, the return value is complex.
@@ -2417,7 +2532,7 @@ add_newdoc(
 
     Returns
     -------
-    R : ndarray
+    R : scalar or ndarray
         Value of the integral. If all of `x`, `y`, and `z` are real, the
         return value is real. Otherwise, the return value is complex.
 
@@ -2472,7 +2587,7 @@ add_newdoc(
 
     Returns
     -------
-    R : ndarray
+    R : scalar or ndarray
         Value of the integral. If all of `x`, `y`, and `z` are real, the return
         value is real. Otherwise, the return value is complex.
 
@@ -2527,7 +2642,7 @@ add_newdoc(
 
     Returns
     -------
-    R : ndarray
+    R : scalar or ndarray
         Value of the integral. If all of `x`, `y`, and `z` are real, the return
         value is real. Otherwise, the return value is complex.
 
@@ -2613,7 +2728,7 @@ add_newdoc(
 
     Returns
     -------
-    R : ndarray
+    R : scalar or ndarray
         Value of the integral. If all of `x`, `y`, `z`, and `p` are real, the
         return value is real. Otherwise, the return value is complex.
 
@@ -2693,7 +2808,7 @@ add_newdoc("entr",
 
     Returns
     -------
-    res : ndarray
+    res : scalar or ndarray
         The value of the elementwise entropy function at the given points `x`.
 
     See Also
@@ -2723,7 +2838,7 @@ add_newdoc("erf",
 
     Returns
     -------
-    res : ndarray
+    res : scalar or ndarray
         The values of the error function at the given points `x`.
 
     See Also
@@ -2902,7 +3017,7 @@ add_newdoc("erfinv",
 
     Returns
     -------
-    erfinv : ndarray
+    erfinv : scalar or ndarray
         The inverse of erf of y, element-wise)
 
     See Also
@@ -2948,7 +3063,7 @@ add_newdoc("erfcinv",
 
     Returns
     -------
-    erfcinv : ndarray
+    erfcinv : scalar or ndarray
         The inverse of erfc of y, element-wise
 
     See Also
@@ -3009,7 +3124,7 @@ add_newdoc("eval_jacobi",
 
     Returns
     -------
-    P : ndarray
+    P : scalar or ndarray
         Values of the Jacobi polynomial
 
     See Also
@@ -3054,7 +3169,7 @@ add_newdoc("eval_sh_jacobi",
 
     Returns
     -------
-    G : ndarray
+    G : scalar or ndarray
         Values of the shifted Jacobi polynomial.
 
     See Also
@@ -3102,7 +3217,7 @@ add_newdoc("eval_gegenbauer",
 
     Returns
     -------
-    C : ndarray
+    C : scalar or ndarray
         Values of the Gegenbauer polynomial
 
     See Also
@@ -3147,7 +3262,7 @@ add_newdoc("eval_chebyt",
 
     Returns
     -------
-    T : ndarray
+    T : scalar or ndarray
         Values of the Chebyshev polynomial
 
     See Also
@@ -3199,7 +3314,7 @@ add_newdoc("eval_chebyu",
 
     Returns
     -------
-    U : ndarray
+    U : scalar or ndarray
         Values of the Chebyshev polynomial
 
     See Also
@@ -3244,7 +3359,7 @@ add_newdoc("eval_chebys",
 
     Returns
     -------
-    S : ndarray
+    S : scalar or ndarray
         Values of the Chebyshev polynomial
 
     See Also
@@ -3301,7 +3416,7 @@ add_newdoc("eval_chebyc",
 
     Returns
     -------
-    C : ndarray
+    C : scalar or ndarray
         Values of the Chebyshev polynomial
 
     See Also
@@ -3359,7 +3474,7 @@ add_newdoc("eval_sh_chebyt",
 
     Returns
     -------
-    T : ndarray
+    T : scalar or ndarray
         Values of the shifted Chebyshev polynomial
 
     See Also
@@ -3404,7 +3519,7 @@ add_newdoc("eval_sh_chebyu",
 
     Returns
     -------
-    U : ndarray
+    U : scalar or ndarray
         Values of the shifted Chebyshev polynomial
 
     See Also
@@ -3449,7 +3564,7 @@ add_newdoc("eval_legendre",
 
     Returns
     -------
-    P : ndarray
+    P : scalar or ndarray
         Values of the Legendre polynomial
 
     See Also
@@ -3529,7 +3644,7 @@ add_newdoc("eval_sh_legendre",
 
     Returns
     -------
-    P : ndarray
+    P : scalar or ndarray
         Values of the shifted Legendre polynomial
 
     See Also
@@ -3580,7 +3695,7 @@ add_newdoc("eval_genlaguerre",
 
     Returns
     -------
-    L : ndarray
+    L : scalar or ndarray
         Values of the generalized Laguerre polynomial
 
     See Also
@@ -3626,7 +3741,7 @@ add_newdoc("eval_laguerre",
 
     Returns
     -------
-    L : ndarray
+    L : scalar or ndarray
         Values of the Laguerre polynomial
 
     See Also
@@ -3669,7 +3784,7 @@ add_newdoc("eval_hermite",
 
     Returns
     -------
-    H : ndarray
+    H : scalar or ndarray
         Values of the Hermite polynomial
 
     See Also
@@ -3713,7 +3828,7 @@ add_newdoc("eval_hermitenorm",
 
     Returns
     -------
-    He : ndarray
+    He : scalar or ndarray
         Values of the Hermite polynomial
 
     See Also
@@ -3752,7 +3867,7 @@ add_newdoc("exp1",
     ----------
     z: array_like
         Real or complex argument.
-    out: ndarray, optional
+    out : ndarray, optional
         Optional output array for the function results
 
     Returns
@@ -3825,7 +3940,7 @@ add_newdoc("exp10",
 
     Returns
     -------
-    float
+    scalar or ndarray
         ``10**x``, computed element-wise.
 
     Examples
@@ -3854,7 +3969,7 @@ add_newdoc("exp2",
 
     Returns
     -------
-    float
+    scalar or ndarray
         ``2**x``, computed element-wise.
 
     Examples
@@ -3890,9 +4005,9 @@ add_newdoc("expi",
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         Real or complex valued argument
-    out: ndarray, optional
+    out : ndarray, optional
         Optional output array for the function results
 
     Returns
@@ -3974,7 +4089,7 @@ add_newdoc('expit',
 
     Returns
     -------
-    out : ndarray
+    scalar or ndarray
         An ndarray of the same shape as x. Its entries
         are `expit` of the corresponding entry of x.
 
@@ -4034,7 +4149,7 @@ add_newdoc("expm1",
 
     Returns
     -------
-    float
+    scalar or ndarray
         ``exp(x) - 1`` computed element-wise.
 
     Examples
@@ -4078,11 +4193,11 @@ add_newdoc("expn",
 
     Parameters
     ----------
-    n: array_like
+    n : array_like
         Non-negative integers
-    x: array_like
+    x : array_like
         Real argument
-    out: ndarray, optional
+    out : ndarray, optional
         Optional output array for the function results
 
     Returns
@@ -4150,7 +4265,7 @@ add_newdoc("exprel",
 
     Returns
     -------
-    float
+    scalar or ndarray
         ``(exp(x) - 1)/x``, computed element-wise.
 
     See Also
@@ -4211,7 +4326,7 @@ add_newdoc("fdtr",
 
     Returns
     -------
-    y : ndarray
+    y : scalar or ndarray
         The CDF of the F-distribution with parameters `dfn` and `dfd` at `x`.
 
     Notes
@@ -4251,7 +4366,7 @@ add_newdoc("fdtrc",
 
     Returns
     -------
-    y : ndarray
+    y : scalar or ndarray
         The complemented F-distribution function with parameters `dfn` and
         `dfd` at `x`.
 
@@ -4295,7 +4410,7 @@ add_newdoc("fdtri",
 
     Returns
     -------
-    x : ndarray
+    x : scalar or ndarray
         The quantile corresponding to `p`.
 
     Notes
@@ -4330,6 +4445,25 @@ add_newdoc("fdtridfd",
     Inverse to `fdtr` vs dfd
 
     Finds the F density argument dfd such that ``fdtr(dfn, dfd, x) == p``.
+
+    Parameters
+    ----------
+    dfn : array_like
+        First parameter (positive float).
+    p : array_like
+        Cumulative probability, in [0, 1].
+    x : array_like
+        Argument (nonnegative float).
+
+    Returns
+    -------
+    dfd : scalar or ndarray
+        `dfd` such that ``fdtr(dfn, dfd, x) == p``.
+
+    See Also
+    --------
+    fdtr, fdtrc, fdtri, fdtridfn
+
     """)
 
 add_newdoc("fdtridfn",
@@ -4339,6 +4473,27 @@ add_newdoc("fdtridfn",
     Inverse to `fdtr` vs dfn
 
     finds the F density argument dfn such that ``fdtr(dfn, dfd, x) == p``.
+
+
+    Parameters
+    ----------
+    p : array_like
+        Cumulative probability, in [0, 1].
+    dfd : array_like
+        Second parameter (positive float).
+    x : array_like
+        Argument (nonnegative float).
+
+    Returns
+    -------
+    dfn : scalar or ndarray
+        `dfn` such that ``fdtr(dfn, dfd, x) == p``.
+
+    See Also
+    --------
+    fdtr, fdtrc, fdtri, fdtridfd
+
+
     """)
 
 add_newdoc("fresnel",
@@ -4901,7 +5056,7 @@ add_newdoc("gdtr",
 
     Returns
     -------
-    F : ndarray
+    F : scalar or ndarray
         The CDF of the gamma distribution with parameters `a` and `b`
         evaluated at `x`.
 
@@ -4947,7 +5102,7 @@ add_newdoc("gdtrc",
 
     Returns
     -------
-    F : ndarray
+    F : scalar or ndarray
         The survival function of the gamma distribution with parameters `a`
         and `b` evaluated at `x`.
 
@@ -4995,7 +5150,7 @@ add_newdoc("gdtria",
 
     Returns
     -------
-    a : ndarray
+    a : scalar or ndarray
         Values of the `a` parameter such that `p = gdtr(a, b, x)`.  `1/a`
         is the "scale" parameter of the gamma distribution.
 
@@ -5064,7 +5219,7 @@ add_newdoc("gdtrib",
 
     Returns
     -------
-    b : ndarray
+    b : scalar or ndarray
         Values of the `b` parameter such that `p = gdtr(a, b, x)`.  `b` is
         the "shape" parameter of the gamma distribution.
 
@@ -5135,7 +5290,7 @@ add_newdoc("gdtrix",
 
     Returns
     -------
-    x : ndarray
+    x : scalar or ndarray
         Values of the `x` parameter such that `p = gdtr(a, b, x)`.
 
     See Also
@@ -5192,7 +5347,8 @@ add_newdoc("hankel1",
 
     Returns
     -------
-    out : Values of the Hankel function of the first kind.
+    scalar or ndarray
+        Values of the Hankel function of the first kind.
 
     Notes
     -----
@@ -5239,7 +5395,7 @@ add_newdoc("hankel1e",
 
     Returns
     -------
-    out : ndarray
+    scalar or ndarray
         Values of the exponentially scaled Hankel function.
 
     Notes
@@ -5278,7 +5434,7 @@ add_newdoc("hankel2",
 
     Returns
     -------
-    out : ndarray
+    scalar or ndarray
         Values of the Hankel function of the second kind.
 
     Notes
@@ -5325,7 +5481,7 @@ add_newdoc("hankel2e",
 
     Returns
     -------
-    out : ndarray
+    scalar or ndarray
         Values of the exponentially scaled Hankel function of the second kind.
 
     Notes
@@ -5367,7 +5523,7 @@ add_newdoc("huber",
 
     Returns
     -------
-    res : ndarray
+    scalar or ndarray
         The computed Huber loss function values.
 
     Notes
@@ -5706,7 +5862,7 @@ add_newdoc("i0",
 
     Returns
     -------
-    I : ndarray
+    I : scalar or ndarray
         Value of the modified Bessel function of order 0 at `x`.
 
     Notes
@@ -5744,7 +5900,7 @@ add_newdoc("i0e",
 
     Returns
     -------
-    I : ndarray
+    I : scalar or ndarray
         Value of the exponentially scaled modified Bessel function of order 0
         at `x`.
 
@@ -5789,7 +5945,7 @@ add_newdoc("i1",
 
     Returns
     -------
-    I : ndarray
+    I : scalar or ndarray
         Value of the modified Bessel function of order 1 at `x`.
 
     Notes
@@ -5827,7 +5983,7 @@ add_newdoc("i1e",
 
     Returns
     -------
-    I : ndarray
+    I : scalar or ndarray
         Value of the exponentially scaled modified Bessel function of order 1
         at `x`.
 
@@ -5936,7 +6092,7 @@ add_newdoc("it2struve0",
 
     Returns
     -------
-    I : ndarray
+    I : scalar or ndarray
         The value of the integral.
 
     See also
@@ -5966,18 +6122,18 @@ add_newdoc("itairy",
     Parameters
     ----------
 
-    x: array_like
+    x : array_like
         Upper limit of integration (float).
 
     Returns
     -------
-    Apt
+    Apt : scalar or ndarray
         Integral of Ai(t) from 0 to x.
-    Bpt
+    Bpt : scalar or ndarray
         Integral of Bi(t) from 0 to x.
-    Ant
+    Ant : scalar or ndarray
         Integral of Ai(-t) from 0 to x.
-    Bnt
+    Bnt : scalar or ndarray
         Integral of Bi(-t) from 0 to x.
 
     Notes
@@ -6071,7 +6227,7 @@ add_newdoc("itmodstruve0",
 
     Returns
     -------
-    I : ndarray
+    I : scalar or ndarray
         The integral of :math:`L_0` from 0 to `x`.
 
     Notes
@@ -6103,7 +6259,7 @@ add_newdoc("itstruve0",
 
     Returns
     -------
-    I : ndarray
+    I : scalar or ndarray
         The integral of :math:`H_0` from 0 to `x`.
 
     See also
@@ -6139,7 +6295,7 @@ add_newdoc("iv",
 
     Returns
     -------
-    out : ndarray
+    out : scalar or ndarray
         Values of the modified Bessel function.
 
     Notes
@@ -6200,7 +6356,7 @@ add_newdoc("ive",
 
     Returns
     -------
-    out : ndarray
+    out : scalar or ndarray
         Values of the exponentially scaled modified Bessel function.
 
     Notes
@@ -6246,7 +6402,7 @@ add_newdoc("j0",
 
     Returns
     -------
-    J : ndarray
+    J : scalar or ndarray
         Value of the Bessel function of the first kind of order 0 at `x`.
 
     Notes
@@ -6293,7 +6449,7 @@ add_newdoc("j1",
 
     Returns
     -------
-    J : ndarray
+    J : scalar or ndarray
         Value of the Bessel function of the first kind of order 1 at `x`.
 
     Notes
@@ -6325,15 +6481,27 @@ add_newdoc("jn",
 
     Bessel function of the first kind of integer order and real argument.
 
-    Notes
-    -----
-    `jn` is an alias of `jv`.
-    Not to be confused with the spherical Bessel functions (see `spherical_jn`).
+    Parameters
+    ----------
+    n : array_like
+        order of the Bessel function
+    x : array_like
+        argument of the Bessel function
+
+    Returns
+    -------
+    scalar or ndarray
+        The value of the bessel function
 
     See also
     --------
     jv
     spherical_jn : spherical Bessel functions.
+
+    Notes
+    -----
+    `jn` is an alias of `jv`.
+    Not to be confused with the spherical Bessel functions (see `spherical_jn`).
 
     """)
 
@@ -6352,8 +6520,13 @@ add_newdoc("jv",
 
     Returns
     -------
-    J : ndarray
+    J : scalar or ndarray
         Value of the Bessel function, :math:`J_v(z)`.
+
+    See also
+    --------
+    jve : :math:`J_v` with leading exponential behavior stripped off.
+    spherical_jn : spherical Bessel functions.
 
     Notes
     -----
@@ -6376,11 +6549,6 @@ add_newdoc("jv",
     term is explicitly omitted for `v` values such that `v = floor(v)`.
 
     Not to be confused with the spherical Bessel functions (see `spherical_jn`).
-
-    See also
-    --------
-    jve : :math:`J_v` with leading exponential behavior stripped off.
-    spherical_jn : spherical Bessel functions.
 
     References
     ----------
@@ -6408,7 +6576,7 @@ add_newdoc("jve",
 
     Returns
     -------
-    J : ndarray
+    J : scalar or ndarray
         Value of the exponentially scaled Bessel function.
 
     Notes
@@ -6454,7 +6622,7 @@ add_newdoc("k0",
 
     Returns
     -------
-    K : ndarray
+    K : scalar or ndarray
         Value of the modified Bessel function :math:`K_0` at `x`.
 
     Notes
@@ -6492,7 +6660,7 @@ add_newdoc("k0e",
 
     Returns
     -------
-    K : ndarray
+    K : scalar or ndarray
         Value of the exponentially scaled modified Bessel function K of order
         0 at `x`.
 
@@ -6527,7 +6695,7 @@ add_newdoc("k1",
 
     Returns
     -------
-    K : ndarray
+    K : scalar or ndarray
         Value of the modified Bessel function K of order 1 at `x`.
 
     Notes
@@ -6565,7 +6733,7 @@ add_newdoc("k1e",
 
     Returns
     -------
-    K : ndarray
+    K : scalar or ndarray
         Value of the exponentially scaled modified Bessel function K of order
         1 at `x`.
 
@@ -6676,7 +6844,7 @@ add_newdoc("kelvin",
 
     Returns
     -------
-    Be, Ke, Bep, Kep
+    Be, Ke, Bep, Kep : 4-tuple of scalar or ndarray
         The tuple (Be, Ke, Bep, Kep) contains complex numbers
         representing the real and imaginary Kelvin functions and their
         derivatives evaluated at `x`.  For example, kelvin(x)[0].real =
@@ -6896,7 +7064,7 @@ add_newdoc("kolmogi",
 
     Returns
     -------
-    float
+    scalar or ndarray
         The value(s) of kolmogi(p)
 
     Notes
@@ -6943,7 +7111,7 @@ add_newdoc("kolmogorov",
 
     Returns
     -------
-    float
+    scalar or ndarray
         The value(s) of kolmogorov(y)
 
     Notes
@@ -7053,7 +7221,7 @@ add_newdoc("kv",
 
     Returns
     -------
-    out : ndarray
+    scalar or ndarray
         The results. Note that input must be of complex type to get complex
         output, e.g. ``kv(3, -2+0j)`` instead of ``kv(3, -2)``.
 
@@ -7120,7 +7288,7 @@ add_newdoc("kve",
 
     Returns
     -------
-    out : ndarray
+    scalar or ndarray
         The exponentially scaled modified Bessel function of the second kind.
 
     Notes
@@ -7210,7 +7378,7 @@ add_newdoc('log_expit',
 
     Returns
     -------
-    out : ndarray
+    out : scalar or ndarray
         The computed values, an ndarray of the same shape as ``x``.
 
     See Also
@@ -7271,7 +7439,7 @@ add_newdoc('logit',
 
     Returns
     -------
-    out : ndarray
+    scalar or ndarray
         An ndarray of the same shape as x. Its entries
         are logit of the corresponding entry of x.
 
@@ -7347,7 +7515,7 @@ add_newdoc("lpmv",
 
     Returns
     -------
-    pmv : ndarray
+    pmv : scalar or ndarray
         Value of the associated Legendre function.
 
     See Also
@@ -7374,8 +7542,23 @@ add_newdoc("mathieu_a",
 
     Characteristic value of even Mathieu functions
 
-    Returns the characteristic value for the even solution,
-    ``ce_m(z, q)``, of Mathieu's equation.
+    Parameters
+    ----------
+    m : array_like
+        Order of the function
+    q : array_like
+        Parameter of the function
+
+    Returns
+    -------
+    scalar or ndarray
+        Characteristic value for the even solution, ``ce_m(z, q)``, of
+        Mathieu's equation.
+
+    See Also
+    --------
+    mathieu_b, mathieu_cem, mathieu_sem
+
     """)
 
 add_newdoc("mathieu_b",
@@ -7384,8 +7567,23 @@ add_newdoc("mathieu_b",
 
     Characteristic value of odd Mathieu functions
 
-    Returns the characteristic value for the odd solution,
-    ``se_m(z, q)``, of Mathieu's equation.
+    Parameters
+    ----------
+    m : array_like
+        Order of the function
+    q : array_like
+        Parameter of the function
+
+    Returns
+    -------
+    scalar or ndarray
+        Characteristic value for the odd solution, ``se_m(z, q)``, of Mathieu's
+        equation.
+
+    See Also
+    --------
+    mathieu_a, mathieu_cem, mathieu_sem
+
     """)
 
 add_newdoc("mathieu_cem",
@@ -7400,19 +7598,24 @@ add_newdoc("mathieu_cem",
 
     Parameters
     ----------
-    m
+    m : array_like
         Order of the function
-    q
+    q : array_like
         Parameter of the function
-    x
+    x : array_like
         Argument of the function, *given in degrees, not radians*
 
     Returns
     -------
-    y
+    y : scalar or ndarray
         Value of the function
-    yp
+    yp : scalar or ndarray
         Value of the derivative vs x
+
+    See Also
+    --------
+    mathieu_a, mathieu_b, mathieu_sem
+
     """)
 
 add_newdoc("mathieu_modcem1",
@@ -7425,12 +7628,26 @@ add_newdoc("mathieu_modcem1",
     ``Mc1m(x, q)``, and its derivative at `x` for order `m` and parameter
     `q`.
 
+    Parameters
+    ----------
+    m : array_like
+        Order of the function
+    q : array_like
+        Parameter of the function
+    x : array_like
+        Argument of the function, *given in degrees, not radians*
+
     Returns
     -------
-    y
+    y : scalar or ndarray
         Value of the function
-    yp
+    yp : scalar or ndarray
         Value of the derivative vs x
+
+    See Also
+    --------
+    mathieu_modsem1
+
     """)
 
 add_newdoc("mathieu_modcem2",
@@ -7443,12 +7660,26 @@ add_newdoc("mathieu_modcem2",
     Mc2m(x, q), and its derivative at `x` (given in degrees) for order `m`
     and parameter `q`.
 
+    Parameters
+    ----------
+    m : array_like
+        Order of the function
+    q : array_like
+        Parameter of the function
+    x : array_like
+        Argument of the function, *given in degrees, not radians*
+
     Returns
     -------
-    y
+    y : scalar or ndarray
         Value of the function
-    yp
+    yp : scalar or ndarray
         Value of the derivative vs x
+
+    See Also
+    --------
+    mathieu_modsem2
+
     """)
 
 add_newdoc("mathieu_modsem1",
@@ -7461,12 +7692,26 @@ add_newdoc("mathieu_modsem1",
     Ms1m(x, q), and its derivative at `x` (given in degrees) for order `m`
     and parameter `q`.
 
+    Parameters
+    ----------
+    m : array_like
+        Order of the function
+    q : array_like
+        Parameter of the function
+    x : array_like
+        Argument of the function, *given in degrees, not radians*
+
     Returns
     -------
-    y
+    y : scalar or ndarray
         Value of the function
-    yp
+    yp : scalar or ndarray
         Value of the derivative vs x
+
+    See Also
+    --------
+    mathieu_modcem1
+
     """)
 
 add_newdoc("mathieu_modsem2",
@@ -7479,12 +7724,26 @@ add_newdoc("mathieu_modsem2",
     Ms2m(x, q), and its derivative at `x` (given in degrees) for order `m`
     and parameter q.
 
+    Parameters
+    ----------
+    m : array_like
+        Order of the function
+    q : array_like
+        Parameter of the function
+    x : array_like
+        Argument of the function, *given in degrees, not radians*
+
     Returns
     -------
-    y
+    y : scalar or ndarray
         Value of the function
-    yp
+    yp : scalar or ndarray
         Value of the derivative vs x
+
+    See Also
+    --------
+    mathieu_modcem2
+
     """)
 
 add_newdoc("mathieu_sem",
@@ -7499,19 +7758,24 @@ add_newdoc("mathieu_sem",
 
     Parameters
     ----------
-    m
+    m : array_like
         Order of the function
-    q
+    q : array_like
         Parameter of the function
-    x
+    x : array_like
         Argument of the function, *given in degrees, not radians*.
 
     Returns
     -------
-    y
+    y : scalar or ndarray
         Value of the function
-    yp
+    yp : scalar or ndarray
         Value of the derivative vs x
+
+    See Also
+    --------
+    mathieu_a, mathieu_b, mathieu_cem
+
     """)
 
 add_newdoc("modfresnelm",
@@ -7520,12 +7784,22 @@ add_newdoc("modfresnelm",
 
     Modified Fresnel negative integrals
 
+    Parameters
+    ----------
+    x : array_like
+        Function argument
+
     Returns
     -------
-    fm
+    fm : scalar or ndarray
         Integral ``F_-(x)``: ``integral(exp(-1j*t*t), t=x..inf)``
-    km
+    km : scalar or ndarray
         Integral ``K_-(x)``: ``1/sqrt(pi)*exp(1j*(x*x+pi/4))*fp``
+
+    See Also
+    --------
+    modfresnelp
+
     """)
 
 add_newdoc("modfresnelp",
@@ -7534,12 +7808,22 @@ add_newdoc("modfresnelp",
 
     Modified Fresnel positive integrals
 
+    Parameters
+    ----------
+    x : array_like
+        Function argument
+
     Returns
     -------
-    fp
+    fp : scalar or ndarray
         Integral ``F_+(x)``: ``integral(exp(1j*t*t), t=x..inf)``
-    kp
+    kp : scalar or ndarray
         Integral ``K_+(x)``: ``1/sqrt(pi)*exp(-1j*(x*x+pi/4))*fp``
+
+    See Also
+    --------
+    modfresnelm
+
     """)
 
 add_newdoc("modstruve",
@@ -7566,7 +7850,7 @@ add_newdoc("modstruve",
 
     Returns
     -------
-    L : ndarray
+    L : scalar or ndarray
         Value of the modified Struve function of order `v` at `x`.
 
     Notes
@@ -7618,7 +7902,7 @@ add_newdoc("nbdtr",
 
     Returns
     -------
-    F : ndarray
+    F : scalar or ndarray
         The probability of `k` or fewer failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
@@ -7674,7 +7958,7 @@ add_newdoc("nbdtrc",
 
     Returns
     -------
-    F : ndarray
+    F : scalar or ndarray
         The probability of `k + 1` or more failures before `n` successes in a
         sequence of events with individual success probability `p`.
 
@@ -7718,7 +8002,7 @@ add_newdoc("nbdtri",
 
     Returns
     -------
-    p : ndarray
+    p : scalar or ndarray
         Probability of success in a single event (float) such that
         `nbdtr(k, n, p) = y`.
 
@@ -7760,7 +8044,7 @@ add_newdoc("nbdtrik",
 
     Returns
     -------
-    k : ndarray
+    k : scalar or ndarray
         The maximum number of allowed failures such that `nbdtr(k, n, p) = y`.
 
     See also
@@ -7816,7 +8100,7 @@ add_newdoc("nbdtrin",
 
     Returns
     -------
-    n : ndarray
+    n : scalar or ndarray
         The number of successes `n` such that `nbdtr(k, n, p) = y`.
 
     See also
@@ -7880,7 +8164,7 @@ add_newdoc("ncfdtr",
 
     Returns
     -------
-    cdf : float or ndarray
+    cdf : scalar or ndarray
         The calculated CDF.  If all inputs are scalar, the return will be a
         float.  Otherwise it will be an array.
 
@@ -7963,7 +8247,7 @@ add_newdoc("ncfdtri",
 
     Returns
     -------
-    f : float
+    f : scalar or ndarray
         Quantiles, i.e., the upper limit of integration.
 
     See Also
@@ -8014,7 +8298,7 @@ add_newdoc("ncfdtridfd",
 
     Returns
     -------
-    dfd : float
+    dfd : scalar or ndarray
         Degrees of freedom of the denominator sum of squares.
 
     See Also
@@ -8072,7 +8356,7 @@ add_newdoc("ncfdtridfn",
 
     Returns
     -------
-    dfn : float
+    dfn : scalar or ndarray
         Degrees of freedom of the numerator sum of squares.
 
     See Also
@@ -8130,7 +8414,7 @@ add_newdoc("ncfdtrinc",
 
     Returns
     -------
-    nc : float
+    nc : scalar or ndarray
         Noncentrality parameter.
 
     See Also
@@ -8175,7 +8459,7 @@ add_newdoc("nctdtr",
 
     Returns
     -------
-    cdf : float or ndarray
+    cdf : scalar or ndarray
         The calculated CDF. If all inputs are scalar, the return will be a
         float. Otherwise, it will be an array.
 
@@ -8224,6 +8508,18 @@ add_newdoc("nctdtridf",
     t : array_like
         Quantiles, i.e., the upper limit of integration.
 
+    Returns
+    -------
+    cdf : scalar or ndarray
+        The calculated CDF. If all inputs are scalar, the return will be a
+        float. Otherwise, it will be an array.
+
+    See Also
+    --------
+    nctdtr :  CDF of the non-central `t` distribution.
+    nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
+    nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
+
     """)
 
 add_newdoc("nctdtrinc",
@@ -8243,6 +8539,17 @@ add_newdoc("nctdtrinc",
     t : array_like
         Quantiles, i.e., the upper limit of integration.
 
+    Returns
+    -------
+    nc : scalar or ndarray
+        Noncentrality parameter
+
+    See Also
+    --------
+    nctdtr :  CDF of the non-central `t` distribution.
+    nctdtrit : Inverse CDF (iCDF) of the non-central t distribution.
+    nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
+
     """)
 
 add_newdoc("nctdtrit",
@@ -8261,6 +8568,17 @@ add_newdoc("nctdtrit",
         Noncentrality parameter. Should be in range (-1e6, 1e6).
     p : array_like
         CDF values, in range (0, 1].
+
+    Returns
+    -------
+    t : scalar or ndarray
+        Quantiles
+
+    See Also
+    --------
+    nctdtr :  CDF of the non-central `t` distribution.
+    nctdtridf : Calculate degrees of freedom, given CDF and iCDF values.
+    nctdtrinc : Calculate non-centrality parameter, given CDF iCDF values.
 
     """)
 
@@ -8284,15 +8602,12 @@ add_newdoc("ndtr",
 
     Returns
     -------
-    ndarray
+    scalar or ndarray
         The value of the normal CDF evaluated at `x`
 
     See Also
     --------
-    erf
-    erfc
-    scipy.stats.norm
-    log_ndtr
+    erf, erfc, scipy.stats.norm, log_ndtr
 
     """)
 
@@ -8314,7 +8629,7 @@ add_newdoc("nrdtrimn",
 
     Returns
     -------
-    mn : float or ndarray
+    mn : scalar or ndarray
         The mean of the normal distribution.
 
     See Also
@@ -8335,12 +8650,12 @@ add_newdoc("nrdtrisd",
         CDF values, in range (0, 1].
     x : array_like
         Quantiles, i.e. the upper limit of integration.
-    mn : float or ndarray
+    mn : scalar or ndarray
         The mean of the normal distribution.
 
     Returns
     -------
-    std : array_like
+    std : scalar or ndarray
         Standard deviation.
 
     See Also
@@ -8367,7 +8682,7 @@ add_newdoc("log_ndtr",
 
     Returns
     -------
-    ndarray
+    scalar or ndarray
         The value of the log of the normal CDF evaluated at `x`
 
     See Also
@@ -8388,6 +8703,21 @@ add_newdoc("ndtri",
     Returns the argument x for which the area under the Gaussian
     probability density function (integrated from minus infinity to `x`)
     is equal to y.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability
+
+    Returns
+    -------
+    x : scalar or ndarray
+        Value of x such that ``ndtr(x) == p``.
+
+    See Also
+    --------
+    ndtr
+
     """)
 
 add_newdoc("obl_ang1",
@@ -8400,12 +8730,28 @@ add_newdoc("obl_ang1",
     and its derivative (with respect to `x`) for mode parameters m>=0
     and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
 
+    Parameters
+    ----------
+    m : array_like
+        Mode parameter m (nonnegative)
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+    x : array_like
+        Parameter x (|x| < 1.0)
+
     Returns
     -------
-    s
+    s : scalar or ndarray
         Value of the function
-    sp
+    sp : scalar or ndarray
         Value of the derivative vs x
+
+    See Also
+    --------
+    obl_ang1_cv
+
     """)
 
 add_newdoc("obl_ang1_cv",
@@ -8419,12 +8765,30 @@ add_newdoc("obl_ang1_cv",
     and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
 
+    Parameters
+    ----------
+    m : array_like
+        Mode parameter m (nonnegative)
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+    cv : array_like
+        Characteristic value
+    x : array_like
+        Parameter x (|x| < 1.0)
+
     Returns
     -------
-    s
+    s : scalar or ndarray
         Value of the function
-    sp
+    sp : scalar or ndarray
         Value of the derivative vs x
+
+    See Also
+    --------
+    obl_ang1
+
     """)
 
 add_newdoc("obl_cv",
@@ -8435,6 +8799,21 @@ add_newdoc("obl_cv",
 
     Computes the characteristic value of oblate spheroidal wave
     functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
+
+    Parameters
+    ----------
+    m : array_like
+        Mode parameter m (nonnegative)
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+
+    Returns
+    -------
+    cv : scalar or ndarray
+        Characteristic value
+
     """)
 
 add_newdoc("obl_rad1",
@@ -8447,12 +8826,28 @@ add_newdoc("obl_rad1",
     and its derivative (with respect to `x`) for mode parameters m>=0
     and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
 
+    Parameters
+    ----------
+    m : array_like
+        Mode parameter m (nonnegative)
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+    x : array_like
+        Parameter x (|x| < 1.0)
+
     Returns
     -------
-    s
+    s : scalar or ndarray
         Value of the function
-    sp
+    sp : scalar or ndarray
         Value of the derivative vs x
+
+    See Also
+    --------
+    obl_rad1_cv
+
     """)
 
 add_newdoc("obl_rad1_cv",
@@ -8466,12 +8861,30 @@ add_newdoc("obl_rad1_cv",
     and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
 
+    Parameters
+    ----------
+    m : array_like
+        Mode parameter m (nonnegative)
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+    cv : array_like
+        Characteristic value
+    x : array_like
+        Parameter x (|x| < 1.0)
+
     Returns
     -------
-    s
+    s : scalar or ndarray
         Value of the function
-    sp
+    sp : scalar or ndarray
         Value of the derivative vs x
+
+    See Also
+    --------
+    obl_rad1
+
     """)
 
 add_newdoc("obl_rad2",
@@ -8484,12 +8897,28 @@ add_newdoc("obl_rad2",
     and its derivative (with respect to `x`) for mode parameters m>=0
     and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
 
+    Parameters
+    ----------
+    m : array_like
+        Mode parameter m (nonnegative)
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+    x : array_like
+        Parameter x (|x| < 1.0)
+
     Returns
     -------
-    s
+    s : scalar or ndarray
         Value of the function
-    sp
+    sp : scalar or ndarray
         Value of the derivative vs x
+
+    See Also
+    --------
+    obl_rad2_cv
+
     """)
 
 add_newdoc("obl_rad2_cv",
@@ -8503,12 +8932,29 @@ add_newdoc("obl_rad2_cv",
     and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
 
+    Parameters
+    ----------
+    m : array_like
+        Mode parameter m (nonnegative)
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+    cv : array_like
+        Characteristic value
+    x : array_like
+        Parameter x (|x| < 1.0)
+
     Returns
     -------
-    s
+    s : scalar or ndarray
         Value of the function
-    sp
+    sp : scalar or ndarray
         Value of the derivative vs x
+
+    See Also
+    --------
+    obl_rad2
     """)
 
 add_newdoc("pbdv",
@@ -8520,11 +8966,18 @@ add_newdoc("pbdv",
     Returns (d, dp) the parabolic cylinder function Dv(x) in d and the
     derivative, Dv'(x) in dp.
 
+    Parameters
+    ----------
+    v : array_like
+        Real parameter
+    x : array_like
+        Real argument
+
     Returns
     -------
-    d
+    d : scalar or ndarray
         Value of the function
-    dp
+    dp : scalar or ndarray
         Value of the derivative vs x
     """)
 
@@ -8539,9 +8992,9 @@ add_newdoc("pbvv",
 
     Returns
     -------
-    v
+    v : scalar or ndarray
         Value of the function
-    vp
+    vp : scalar or ndarray
         Value of the derivative vs x
     """)
 
@@ -8807,11 +9260,22 @@ add_newdoc("pro_ang1",
     and its derivative (with respect to `x`) for mode parameters m>=0
     and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
 
+    Parameters
+    ----------
+    m : array_like
+        Nonnegative mode parameter m
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+    x : array_like
+        Real parameter (|x| < 1.0)
+
     Returns
     -------
-    s
+    s : scalar or ndarray
         Value of the function
-    sp
+    sp : scalar or ndarray
         Value of the derivative vs x
     """)
 
@@ -8826,11 +9290,24 @@ add_newdoc("pro_ang1_cv",
     and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
 
+    Parameters
+    ----------
+    m : array_like
+        Nonnegative mode parameter m
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+    cv : array_like
+        Characteristic value
+    x : array_like
+        Real parameter (|x| < 1.0)
+
     Returns
     -------
-    s
+    s : scalar or ndarray
         Value of the function
-    sp
+    sp : scalar or ndarray
         Value of the derivative vs x
     """)
 
@@ -8842,6 +9319,20 @@ add_newdoc("pro_cv",
 
     Computes the characteristic value of prolate spheroidal wave
     functions of order `m`, `n` (n>=m) and spheroidal parameter `c`.
+
+    Parameters
+    ----------
+    m : array_like
+        Nonnegative mode parameter m
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+
+    Returns
+    -------
+    cv : scalar or ndarray
+        Characteristic value
     """)
 
 add_newdoc("pro_rad1",
@@ -8854,11 +9345,22 @@ add_newdoc("pro_rad1",
     and its derivative (with respect to `x`) for mode parameters m>=0
     and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
 
+    Parameters
+    ----------
+    m : array_like
+        Nonnegative mode parameter m
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+    x : array_like
+        Real parameter (|x| < 1.0)
+
     Returns
     -------
-    s
+    s : scalar or ndarray
         Value of the function
-    sp
+    sp : scalar or ndarray
         Value of the derivative vs x
     """)
 
@@ -8873,11 +9375,24 @@ add_newdoc("pro_rad1_cv",
     and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
 
+    Parameters
+    ----------
+    m : array_like
+        Nonnegative mode parameter m
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+    cv : array_like
+        Characteristic value
+    x : array_like
+        Real parameter (|x| < 1.0)
+
     Returns
     -------
-    s
+    s : scalar or ndarray
         Value of the function
-    sp
+    sp : scalar or ndarray
         Value of the derivative vs x
     """)
 
@@ -8891,11 +9406,24 @@ add_newdoc("pro_rad2",
     and its derivative (with respect to `x`) for mode parameters m>=0
     and n>=m, spheroidal parameter `c` and ``|x| < 1.0``.
 
+    Parameters
+    ----------
+    m : array_like
+        Nonnegative mode parameter m
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+    cv : array_like
+        Characteristic value
+    x : array_like
+        Real parameter (|x| < 1.0)
+
     Returns
     -------
-    s
+    s : scalar or ndarray
         Value of the function
-    sp
+    sp : scalar or ndarray
         Value of the derivative vs x
     """)
 
@@ -8910,11 +9438,24 @@ add_newdoc("pro_rad2_cv",
     and n>=m, spheroidal parameter `c` and ``|x| < 1.0``. Requires
     pre-computed characteristic value.
 
+    Parameters
+    ----------
+    m : array_like
+        Nonnegative mode parameter m
+    n : array_like
+        Mode parameter n (>= m)
+    c : array_like
+        Spheroidal parameter
+    cv : array_like
+        Characteristic value
+    x : array_like
+        Real parameter (|x| < 1.0)
+
     Returns
     -------
-    s
+    s : scalar or ndarray
         Value of the function
-    sp
+    sp : scalar or ndarray
         Value of the derivative vs x
     """)
 
@@ -8928,14 +9469,14 @@ add_newdoc("pseudo_huber",
 
     Parameters
     ----------
-    delta : ndarray
+    delta : array_like
         Input array, indicating the soft quadratic vs. linear loss changepoint.
-    r : ndarray
+    r : array_like
         Input array, possibly representing residuals.
 
     Returns
     -------
-    res : ndarray
+    res : scalar or ndarray
         The computed Pseudo-Huber loss function values.
 
     Notes
@@ -8963,7 +9504,7 @@ add_newdoc("psi",
 
     Returns
     -------
-    digamma : ndarray
+    digamma : scalar or ndarray
         Computed values of ``psi``.
 
     Notes
@@ -9229,9 +9770,9 @@ add_newdoc("shichi",
 
     Returns
     -------
-    si : ndarray
+    si : scalar or ndarray
         Hyperbolic sine integral at ``x``
-    ci : ndarray
+    ci : scalar or ndarray
         Hyperbolic cosine integral at ``x``
 
     Notes
@@ -9282,9 +9823,9 @@ add_newdoc("sici",
 
     Returns
     -------
-    si : ndarray
+    si : scalar or ndarray
         Sine integral at ``x``
-    ci : ndarray
+    ci : scalar or ndarray
         Cosine integral at ``x``
 
     Notes
@@ -9364,7 +9905,7 @@ add_newdoc("smirnov",
 
     Returns
     -------
-    float
+    scalar or ndarray
         The value(s) of smirnov(n, d), Prob(Dn+ >= d) (Also Prob(Dn- >= d))
 
     Notes
@@ -9458,7 +9999,7 @@ add_newdoc("smirnovi",
 
     Returns
     -------
-    float
+    scalar or ndarray
         The value(s) of smirnovi(n, p), the critical values.
 
     Notes
@@ -9516,7 +10057,7 @@ add_newdoc("spence",
 
     Returns
     -------
-    s : ndarray
+    s : scalar or ndarray
         Computed values of Spence's function
 
     Notes
@@ -9542,6 +10083,22 @@ add_newdoc("stdtr",
        gamma((df+1)/2)/(sqrt(df*pi)*gamma(df/2)) *
        integral((1+x**2/df)**(-df/2-1/2), x=-inf..t)
 
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom
+    t : array_like
+        Upper bound of the integral
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the Student t CDF at t
+
+    See Also
+    --------
+    stdtridf : inverse of stdtr with respect to `df`
+    stdtrit : inverse of stdtr with respect to `t`
     """)
 
 add_newdoc("stdtridf",
@@ -9551,6 +10108,23 @@ add_newdoc("stdtridf",
     Inverse of `stdtr` vs df
 
     Returns the argument df such that stdtr(df, t) is equal to `p`.
+
+    Parameters
+    ----------
+    p : array_like
+        Probability
+    t : array_like
+        Upper bound of the integral
+
+    Returns
+    -------
+    df : scalar or ndarray
+        Value of `df` such that ``stdtr(df, t) == p``
+
+    See Also
+    --------
+    stdtr : Student t CDF
+    stdtrit : inverse of stdtr with respect to `t`
     """)
 
 add_newdoc("stdtrit",
@@ -9560,6 +10134,24 @@ add_newdoc("stdtrit",
     Inverse of `stdtr` vs `t`
 
     Returns the argument `t` such that stdtr(df, t) is equal to `p`.
+
+    Parameters
+    ----------
+    df : array_like
+        Degrees of freedom
+    p : array_like
+        Probability
+
+    Returns
+    -------
+    t : scalar or ndarray
+        Value of `t` such that ``stdtr(df, t) == p``
+
+    See Also
+    --------
+    stdtr : Student t CDF
+    stdtridf : inverse of stdtr with respect to `df`
+
     """)
 
 add_newdoc("struve",
@@ -9586,7 +10178,7 @@ add_newdoc("struve",
 
     Returns
     -------
-    H : ndarray
+    H : scalar or ndarray
         Value of the Struve function of order `v` at `x`.
 
     Notes
@@ -9653,6 +10245,15 @@ add_newdoc("tklmbda",
 
     Tukey-Lambda cumulative distribution function
 
+    Parameters
+    ----------
+    x, lmbda : array_like
+        Parameters
+
+    Returns
+    -------
+    cdf : scalar or ndarray
+        Value of the Tukey-Lambda CDF
     """)
 
 add_newdoc("wofz",
@@ -9664,6 +10265,16 @@ add_newdoc("wofz",
     Returns the value of the Faddeeva function for complex argument::
 
         exp(-z**2) * erfc(-i*z)
+
+    Parameters
+    ----------
+    z : array_like
+        complex argument
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the Faddeeva function
 
     See Also
     --------
@@ -9706,7 +10317,7 @@ add_newdoc("xlogy",
 
     Returns
     -------
-    z : array_like
+    z : scalar or ndarray
         Computed x*log(y)
 
     Notes
@@ -9731,7 +10342,7 @@ add_newdoc("xlog1py",
 
     Returns
     -------
-    z : array_like
+    z : scalar or ndarray
         Computed x*log1p(y)
 
     Notes
@@ -9754,7 +10365,7 @@ add_newdoc("y0",
 
     Returns
     -------
-    Y : ndarray
+    Y : scalar or ndarray
         Value of the Bessel function of the second kind of order 0 at `x`.
 
     Notes
@@ -9799,7 +10410,7 @@ add_newdoc("y1",
 
     Returns
     -------
-    Y : ndarray
+    Y : scalar or ndarray
         Value of the Bessel function of the second kind of order 1 at `x`.
 
     Notes
@@ -9840,7 +10451,7 @@ add_newdoc("yn",
 
     Returns
     -------
-    Y : ndarray
+    Y : scalar or ndarray
         Value of the Bessel function, :math:`Y_n(x)`.
 
     Notes
@@ -9876,7 +10487,7 @@ add_newdoc("yv",
 
     Returns
     -------
-    Y : ndarray
+    Y : scalar or ndarray
         Value of the Bessel function of the second kind, :math:`Y_v(x)`.
 
     Notes
@@ -9928,7 +10539,7 @@ add_newdoc("yve",
 
     Returns
     -------
-    Y : ndarray
+    Y : scalar or ndarray
         Value of the exponentially scaled Bessel function.
 
     Notes
@@ -9984,7 +10595,7 @@ add_newdoc("zetac",
 
     Returns
     -------
-    out : array_like
+    scalar or ndarray
         Values of zeta(x) - 1.
 
     See Also
@@ -10113,14 +10724,14 @@ add_newdoc("loggamma",
 
     Parameters
     ----------
-    z : array-like
+    z : array_like
         Values in the complex plain at which to compute ``loggamma``
     out : ndarray, optional
         Output array for computed values of ``loggamma``
 
     Returns
     -------
-    loggamma : ndarray
+    loggamma : scalar or ndarray
         Values of ``loggamma`` at z.
 
     Notes
@@ -10230,6 +10841,11 @@ add_newdoc("wright_bessel",
         b >= 0
     x : array_like of float
         x >= 0
+
+    Returns
+    -------
+    scalar or ndarray
+        Value of the Wright's generalized Bessel function
 
     Notes
     -----
