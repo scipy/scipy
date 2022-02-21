@@ -1,18 +1,17 @@
-"""Test functions for the sparse.linalg.interface module
+"""Test functions for the sparse.linalg._interface module
 """
 
 from functools import partial
 from itertools import product
 import operator
-import pytest
 from pytest import raises as assert_raises, warns
 from numpy.testing import assert_, assert_equal
 
 import numpy as np
 import scipy.sparse as sparse
 
-from scipy.sparse.linalg import interface
-from scipy.sparse.sputils import matrix
+import scipy.sparse.linalg._interface as interface
+from scipy.sparse._sputils import matrix
 
 
 class TestLinearOperator:

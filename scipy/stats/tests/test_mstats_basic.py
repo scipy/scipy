@@ -18,7 +18,7 @@ from numpy.ma.testutils import (assert_equal, assert_almost_equal,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_,
     assert_allclose, assert_array_equal)
 from numpy.testing import suppress_warnings
-from scipy.stats import mstats_basic
+from scipy.stats import _mstats_basic
 
 class TestMquantiles:
     def test_mquantiles_limit_keyword(self):
@@ -406,6 +406,37 @@ class TestCorr:
         assert_almost_equal(output['seasonal p-value'].round(2),
                             [0.18,0.53,0.20,0.04])
 
+    @pytest.mark.parametrize("method", ("exact", "asymptotic"))
+    @pytest.mark.parametrize("alternative", ("two-sided", "greater", "less"))
+    def test_kendalltau_mstats_vs_stats(self, method, alternative):
+        # Test that mstats.kendalltau and stats.kendalltau with
+        # nan_policy='omit' matches behavior of stats.kendalltau
+        # Accuracy of the alternatives is tested in stats/tests/test_stats.py
+
+        np.random.seed(0)
+        n = 50
+        x = np.random.rand(n)
+        y = np.random.rand(n)
+        mask = np.random.rand(n) > 0.5
+
+        x_masked = ma.array(x, mask=mask)
+        y_masked = ma.array(y, mask=mask)
+        res_masked = mstats.kendalltau(
+            x_masked, y_masked, method=method, alternative=alternative)
+
+        x_compressed = x_masked.compressed()
+        y_compressed = y_masked.compressed()
+        res_compressed = stats.kendalltau(
+            x_compressed, y_compressed, method=method, alternative=alternative)
+
+        x[mask] = np.nan
+        y[mask] = np.nan
+        res_nan = stats.kendalltau(
+            x, y, method=method, nan_policy='omit', alternative=alternative)
+
+        assert_allclose(res_masked, res_compressed)
+        assert_allclose(res_nan, res_compressed)
+
     def test_kendall_p_exact_medium(self):
         # Test for the exact method with medium samples (some n >= 171)
         # expected values generated using SymPy
@@ -418,10 +449,10 @@ class TestCorr:
                         (200, 9797): 0.74753983745929675209,
                         (201, 9656): 0.40959218958120363618}
         for nc, expected in expectations.items():
-            res = mstats_basic._kendall_p_exact(nc[0], nc[1])
+            res = _mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_kendall_p_exact_large(self):
         # Test for the exact method with large samples (n >= 171)
         # expected values generated using SymPy
@@ -433,7 +464,7 @@ class TestCorr:
                         (1601, 630304): 0.34465255088058593946}
 
         for nc, expected in expectations.items():
-            res = mstats_basic._kendall_p_exact(nc[0], nc[1])
+            res = _mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
 
     def test_pointbiserial(self):
@@ -637,6 +668,31 @@ class TestMoments:
         y = mstats.skew(self.testcase)
         assert_almost_equal(y,0.0,10)
 
+        # test that skew works on multidimensional masked arrays
+        correct_2d = ma.array(
+            np.array([0.6882870394455785, 0, 0.2665647526856708,
+                      0, -0.05211472114254485]),
+            mask=np.array([False, False, False, True, False], dtype=bool)
+        )
+        assert_allclose(mstats.skew(self.testcase_2d, 1), correct_2d)
+        for i, row in enumerate(self.testcase_2d):
+            assert_almost_equal(mstats.skew(row), correct_2d[i])
+
+        correct_2d_bias_corrected = ma.array(
+            np.array([1.685952043212545, 0.0, 0.3973712716070531, 0,
+                      -0.09026534484117164]),
+            mask=np.array([False, False, False, True, False], dtype=bool)
+        )
+        assert_allclose(mstats.skew(self.testcase_2d, 1, bias=False),
+                        correct_2d_bias_corrected)
+        for i, row in enumerate(self.testcase_2d):
+            assert_almost_equal(mstats.skew(row, bias=False),
+                                correct_2d_bias_corrected[i])
+
+        # Check consistency between stats and mstats implementations
+        assert_allclose(mstats.skew(self.testcase_2d[2, :]),
+                        stats.skew(self.testcase_2d[2, :]))
+
     def test_kurtosis(self):
         # Set flags for axis = 0 and fisher=0 (Pearson's definition of kurtosis
         # for compatibility with Matlab)
@@ -838,11 +894,25 @@ def test_regress_simple():
     assert_almost_equal(result.stderr, 0.002395781449783862)
     assert_almost_equal(result.intercept_stderr, 0.13866936078570702)
 
+
+def test_linregress_identical_x():
+    x = np.zeros(10)
+    y = np.random.random(10)
+    msg = "Cannot calculate a linear regression if all x values are identical"
+    with assert_raises(ValueError, match=msg):
+        mstats.linregress(x, y)
+
+
 def test_theilslopes():
     # Test for basic slope and intercept.
     slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1])
     assert_almost_equal(slope, 0.5)
     assert_almost_equal(intercept, 0.5)
+
+    slope, intercept, lower, upper = mstats.theilslopes([0, 1, 1],
+                                                        method='joint')
+    assert_almost_equal(slope, 0.5)
+    assert_almost_equal(intercept, 0.0)
 
     # Test for correct masking.
     y = np.ma.array([0, 1, 100, 1], mask=[False, False, True, False])
@@ -850,11 +920,24 @@ def test_theilslopes():
     assert_almost_equal(slope, 1./3)
     assert_almost_equal(intercept, 2./3)
 
+    slope, intercept, lower, upper = mstats.theilslopes(y,
+                                                        method='joint')
+    assert_almost_equal(slope, 1./3)
+    assert_almost_equal(intercept, 0.0)
+
     # Test of confidence intervals from example in Sen (1968).
     x = [1, 2, 3, 4, 10, 12, 18]
     y = [9, 15, 19, 20, 45, 55, 78]
     slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07)
     assert_almost_equal(slope, 4)
+    assert_almost_equal(intercept, 4.0)
+    assert_almost_equal(upper, 4.38, decimal=2)
+    assert_almost_equal(lower, 3.71, decimal=2)
+
+    slope, intercept, lower, upper = mstats.theilslopes(y, x, 0.07,
+                                                        method='joint')
+    assert_almost_equal(slope, 4)
+    assert_almost_equal(intercept, 6.0)
     assert_almost_equal(upper, 4.38, decimal=2)
     assert_almost_equal(lower, 3.71, decimal=2)
 
@@ -1654,8 +1737,8 @@ class TestCompareWithStats:
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
 
-                assert_equal(r[0][0], rm[0][0])
-                assert_equal(r[0][1], rm[0][1])
+                assert_allclose(r[0][0], rm[0][0], rtol=2e-15)
+                assert_allclose(r[0][1], rm[0][1], rtol=1e-15)
 
     def test_normaltest(self):
         with np.errstate(over='raise'), suppress_warnings() as sup:
@@ -1762,9 +1845,9 @@ class TestCompareWithStats:
 
     def test_nametuples_agree(self):
         result = stats.kstest([1, 2], [3, 4])
-        assert_(isinstance(result, stats.stats.KstestResult))
-        result2 = stats.stats.Ks_2sampResult(result.statistic, result.pvalue)
-        assert_(isinstance(result2, stats.stats.Ks_2sampResult))
+        assert_(isinstance(result, stats._stats_py.KstestResult))
+        result2 = stats._stats_py.Ks_2sampResult(result.statistic, result.pvalue)
+        assert_(isinstance(result2, stats._stats_py.Ks_2sampResult))
         assert_equal(result, result2)
 
 

@@ -362,7 +362,7 @@ class _TestRBFInterpolator:
     def test_pickleable(self):
         # Make sure we can pickle and unpickle the interpolant without any
         # changes in the behavior.
-        seq = Halton(1, scramble=False, seed=np.random.RandomState())
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
 
         x = 3*seq.random(50)
         xitp = 3*seq.random(50)

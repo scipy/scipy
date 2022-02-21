@@ -1,5 +1,5 @@
 import numpy as np
-import scipy.stats.stats
+import scipy.stats._stats_py
 from . import distributions
 from .._lib._bunch import _make_tuple_bunch
 
@@ -146,6 +146,10 @@ def linregress(x, y=None, alternative='two-sided'):
     if x.size == 0 or y.size == 0:
         raise ValueError("Inputs must not be empty.")
 
+    if np.amax(x) == np.amin(x) and len(x) > 1:
+        raise ValueError("Cannot calculate a linear regression "
+                         "if all x values are identical")
+
     n = len(x)
     xmean = np.mean(x, None)
     ymean = np.mean(y, None)
@@ -183,7 +187,7 @@ def linregress(x, y=None, alternative='two-sided'):
         # n-2 degrees of freedom because 2 has been used up
         # to estimate the mean and standard deviation
         t = r * np.sqrt(df / ((1.0 - r + TINY)*(1.0 + r + TINY)))
-        t, prob = scipy.stats.stats._ttest_finish(df, t, alternative)
+        t, prob = scipy.stats._stats_py._ttest_finish(df, t, alternative)
 
         slope_stderr = np.sqrt((1 - r**2) * ssym / ssxm / df)
 
@@ -199,7 +203,7 @@ def linregress(x, y=None, alternative='two-sided'):
                             intercept_stderr=intercept_stderr)
 
 
-def theilslopes(y, x=None, alpha=0.95):
+def theilslopes(y, x=None, alpha=0.95, method='separate'):
     r"""
     Computes the Theil-Sen estimator for a set of points (x, y).
 
@@ -216,19 +220,30 @@ def theilslopes(y, x=None, alpha=0.95):
         Confidence degree between 0 and 1. Default is 95% confidence.
         Note that `alpha` is symmetric around 0.5, i.e. both 0.1 and 0.9 are
         interpreted as "find the 90% confidence interval".
+    method : {'joint', 'separate'}, optional
+        Method to be used for computing estimate for intercept.
+        Following methods are supported,
+
+            * 'joint': Uses np.median(y - medslope * x) as intercept.
+            * 'separate': Uses np.median(y) - medslope * np.median(x)
+                          as intercept.
+
+        The default is 'separate'.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
     medslope : float
         Theil slope.
     medintercept : float
-        Intercept of the Theil line, as ``median(y) - medslope*median(x)``.
+        Intercept of the Theil line.
     lo_slope : float
         Lower bound of the confidence interval on `medslope`.
     up_slope : float
         Upper bound of the confidence interval on `medslope`.
 
-    See also
+    See Also
     --------
     siegelslopes : a similar technique using repeated medians
 
@@ -237,9 +252,10 @@ def theilslopes(y, x=None, alpha=0.95):
     The implementation of `theilslopes` follows [1]_. The intercept is
     not defined in [1]_, and here it is defined as ``median(y) -
     medslope*median(x)``, which is given in [3]_. Other definitions of
-    the intercept exist in the literature. A confidence interval for
-    the intercept is not given as this question is not addressed in
-    [1]_.
+    the intercept exist in the literature such as  ``median(y - medslope*x)``
+    in [4]_. The approach to compute the intercept can be determined by the
+    parameter ``method``. A confidence interval for the intercept is not
+    given as this question is not addressed in [1]_.
 
     References
     ----------
@@ -250,6 +266,7 @@ def theilslopes(y, x=None, alpha=0.95):
            53:, pp. 386-392, pp. 521-525, pp. 1397-1412, 1950.
     .. [3] W.L. Conover, "Practical nonparametric statistics", 2nd ed.,
            John Wiley and Sons, New York, pp. 493.
+    .. [4] https://en.wikipedia.org/wiki/Theil%E2%80%93Sen_estimator
 
     Examples
     --------
@@ -264,7 +281,7 @@ def theilslopes(y, x=None, alpha=0.95):
     Compute the slope, intercept and 90% confidence interval.  For comparison,
     also compute the least-squares fit with `linregress`:
 
-    >>> res = stats.theilslopes(y, x, 0.90)
+    >>> res = stats.theilslopes(y, x, 0.90, method='separate')
     >>> lsq_res = stats.linregress(x, y)
 
     Plot the results. The Theil-Sen regression line is shown in red, with the
@@ -283,6 +300,9 @@ def theilslopes(y, x=None, alpha=0.95):
     >>> plt.show()
 
     """
+    if method not in ['joint', 'separate']:
+        raise ValueError(("method must be either 'joint' or 'separate'."
+                          "'{}' is invalid.".format(method)))
     # We copy both x and y so we can use _find_repeats.
     y = np.array(y).flatten()
     if x is None:
@@ -299,7 +319,10 @@ def theilslopes(y, x=None, alpha=0.95):
     slopes = deltay[deltax > 0] / deltax[deltax > 0]
     slopes.sort()
     medslope = np.median(slopes)
-    medinter = np.median(y) - medslope * np.median(x)
+    if method == 'joint':
+        medinter = np.median(y - medslope * x)
+    else:
+        medinter = np.median(y) - medslope * np.median(x)
     # Now compute confidence intervals
     if alpha > 0.5:
         alpha = 1. - alpha
@@ -369,7 +392,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     medintercept : float
         Estimate of the intercept of the regression line.
 
-    See also
+    See Also
     --------
     theilslopes : a similar technique without repeated medians
 

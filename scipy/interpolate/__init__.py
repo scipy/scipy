@@ -163,25 +163,28 @@ Additional tools
 ``pchip`` is an alias of `PchipInterpolator` for backward compatibility
 (should not be used in new code).
 """
-from .interpolate import *
-from .fitpack import *
+from ._interpolate import *
+from ._fitpack_py import *
 
 # New interface to fitpack library:
-from .fitpack2 import *
+from ._fitpack2 import *
 
-from .rbf import Rbf
+from ._rbf import Rbf
 
 from ._rbfinterp import *
 
-from .polyint import *
+from ._polyint import *
 
 from ._cubic import *
 
-from .ndgriddata import *
+from ._ndgriddata import *
 
 from ._bsplines import *
 
 from ._pade import *
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import fitpack, fitpack2, interpolate, ndgriddata, polyint, rbf
 
 __all__ = [s for s in dir() if not s.startswith('_')]
 

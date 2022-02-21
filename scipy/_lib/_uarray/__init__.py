@@ -1,5 +1,5 @@
 """
-.. note::
+.. note:
     If you are looking for overrides for NumPy-specific methods, see the
     documentation for :obj:`unumpy`. This page explains how to write
     back-ends and multimethods.
@@ -113,5 +113,4 @@ possible.
 """
 
 from ._backend import *
-
-__version__ = '0.8.2+14.gaf53966.scipy'
+__version__ = '0.8.8.dev0+aa94c5a4.scipy'
