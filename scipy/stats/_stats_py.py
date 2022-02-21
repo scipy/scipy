@@ -438,6 +438,13 @@ def mode(a, axis=0, nan_policy='propagate'):
     The mode of object arrays is calculated using `collections.Counter`, which
     treats NaNs with different binary representations as distinct.
 
+    .. deprecated:: 1.9.0
+        Support for non-numeric arrays has been deprecated and will be removed
+        in the second release after SciPy 1.9.0. `pandas.DataFrame.mode`_ can
+        be used instead.
+
+        .. _pandas.DataFrame.mode: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html
+
     The mode of arrays with other dtypes is calculated using `np.unique`.
     In NumPy versions 1.21 and after, all NaNs - even those with different
     binary representations - are treated as equivalent and counted as separate
@@ -459,7 +466,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     >>> stats.mode(a, axis=None)
     ModeResult(mode=3, count=3)
 
-    """
+    """  # noqa: E501
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
         return ModeResult(np.array([]), np.array([]))
@@ -469,6 +476,13 @@ def mode(a, axis=0, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.mode(a, axis)
+
+    if not np.issubdtype(a.dtype, np.number):
+        warnings.warn("Support for non-numeric arrays has been deprecated "
+                      "and will be removed in the second release after "
+                      "1.9.0. `pandas.DataFrame.mode` can be used instead, "
+                      "see https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html.",  # noqa: E501
+                      DeprecationWarning, stacklevel=2)
 
     if a.dtype == object:
         def _mode1D(a):
