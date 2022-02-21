@@ -4,7 +4,7 @@ from io import BytesIO
 
 import numpy as np
 from numpy.testing import (assert_equal, assert_, assert_array_equal,
-                           suppress_warnings)
+                           break_cycles, suppress_warnings, IS_PYPY)
 import pytest
 from pytest import raises, warns
 
@@ -290,6 +290,18 @@ def test_unsupported_mmap():
             rate, data = wavfile.read(datafile(filename), mmap=True)
 
 
+def test_rifx():
+    # Compare equivalent RIFX and RIFF files
+    for rifx, riff in {('test-44100Hz-be-1ch-4bytes.wav',
+                        'test-44100Hz-le-1ch-4bytes.wav'),
+                       ('test-8000Hz-be-3ch-5S-24bit.wav',
+                        'test-8000Hz-le-3ch-5S-24bit.wav')}:
+        rate1, data1 = wavfile.read(datafile(rifx), mmap=False)
+        rate2, data2 = wavfile.read(datafile(riff), mmap=False)
+        assert_equal(rate1, rate2)
+        assert_equal(data1, data2)
+
+
 def test_read_unknown_filetype_fail():
     # Not an RIFF
     for mmap in [False, True]:
@@ -349,7 +361,27 @@ def test_read_incomplete_chunk():
                 wavfile.read(fp, mmap=mmap)
 
 
-def _check_roundtrip(realfile, rate, dtype, channels, tmpdir):
+def test_read_inconsistent_header():
+    # File header's size fields contradict each other
+    for mmap in [False, True]:
+        filename = 'test-8000Hz-le-3ch-5S-24bit-inconsistent.wav'
+        with open(datafile(filename), 'rb') as fp:
+            with raises(ValueError, match="header is invalid"):
+                wavfile.read(fp, mmap=mmap)
+
+
+# signed 8-bit integer PCM is not allowed
+# unsigned > 8-bit integer PCM is not allowed
+# 8- or 16-bit float PCM is not expected
+# g and q are platform-dependent, so not included
+@pytest.mark.parametrize("dt_str", ["<i2", "<i4", "<i8", "<f4", "<f8",
+                                    ">i2", ">i4", ">i8", ">f4", ">f8", '|u1'])
+@pytest.mark.parametrize("channels", [1, 2, 5])
+@pytest.mark.parametrize("rate", [8000, 32000])
+@pytest.mark.parametrize("mmap", [False, True])
+@pytest.mark.parametrize("realfile", [False, True])
+def test_write_roundtrip(realfile, mmap, rate, channels, dt_str, tmpdir):
+    dtype = np.dtype(dt_str)
     if realfile:
         tmpfile = str(tmpdir.join('temp.wav'))
     else:
@@ -365,30 +397,20 @@ def _check_roundtrip(realfile, rate, dtype, channels, tmpdir):
 
     wavfile.write(tmpfile, rate, data)
 
-    for mmap in [False, True]:
-        rate2, data2 = wavfile.read(tmpfile, mmap=mmap)
+    rate2, data2 = wavfile.read(tmpfile, mmap=mmap)
 
-        assert_equal(rate, rate2)
-        assert_(data2.dtype.byteorder in ('<', '=', '|'), msg=data2.dtype)
-        assert_array_equal(data, data2)
-        # also test writing (gh-12176)
-        if realfile:
+    assert_equal(rate, rate2)
+    assert_(data2.dtype.byteorder in ('<', '=', '|'), msg=data2.dtype)
+    assert_array_equal(data, data2)
+    # also test writing (gh-12176)
+    if realfile:
+        data2[0] = 0
+    else:
+        with pytest.raises(ValueError, match='read-only'):
             data2[0] = 0
-        else:
-            with pytest.raises(ValueError, match='read-only'):
-                data2[0] = 0
 
-
-def test_write_roundtrip(tmpdir):
-    for realfile in (False, True):
-        # signed 8-bit integer PCM is not allowed
-        # unsigned > 8-bit integer PCM is not allowed
-        # 8- or 16-bit float PCM is not expected
-        # g and q are platform-dependent, so not included
-        for dt_str in {'|u1',
-                       '<i2', '<i4', '<i8', '<f4', '<f8',
-                       '>i2', '>i4', '>i8', '>f4', '>f8'}:
-            for rate in (8000, 32000):
-                for channels in (1, 2, 5):
-                    dt = np.dtype(dt_str)
-                    _check_roundtrip(realfile, rate, dt, channels, tmpdir)
+    if realfile and mmap and IS_PYPY and sys.platform == 'win32':
+        # windows cannot remove a dead file held by a mmap but not collected
+        # in PyPy; since the filename gets reused in this test, clean this up
+        break_cycles()
+        break_cycles()

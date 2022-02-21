@@ -1,11 +1,15 @@
-from __future__ import division, print_function, absolute_import
+from __future__ import annotations
 
 __all__ = ['geometric_slerp']
 
 import warnings
+from typing import TYPE_CHECKING
 
 import numpy as np
 from scipy.spatial.distance import euclidean
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 
 def _geometric_slerp(start, end, t):
@@ -28,10 +32,12 @@ def _geometric_slerp(start, end, t):
     return start * c[:, np.newaxis] + end * s[:, np.newaxis]
 
 
-def geometric_slerp(start,
-                    end,
-                    t,
-                    tol=1e-7):
+def geometric_slerp(
+    start: npt.ArrayLike,
+    end: npt.ArrayLike,
+    t: npt.ArrayLike,
+    tol: float = 1e-7,
+) -> np.ndarray:
     """
     Geometric spherical linear interpolation.
 
@@ -46,13 +52,13 @@ def geometric_slerp(start,
     end : (n_dimensions, ) array-like
         Single n-dimensional input coordinate in a 1-D array-like
         object. `n` must be greater than 1.
-    t: float or (n_points,) array-like
-        A float or array-like of doubles representing interpolation
+    t : float or (n_points,) 1D array-like
+        A float or 1D array-like of doubles representing interpolation
         parameters, with values required in the inclusive interval
         between 0 and 1. A common approach is to generate the array
         with ``np.linspace(0, 1, n_pts)`` for linearly spaced points.
         Ascending, descending, and scrambled orders are permitted.
-    tol: float
+    tol : float
         The absolute tolerance for determining if the start and end
         coordinates are antipodes.
 
@@ -170,6 +176,11 @@ def geometric_slerp(start,
 
     start = np.asarray(start, dtype=np.float64)
     end = np.asarray(end, dtype=np.float64)
+    t = np.asarray(t)
+
+    if t.ndim > 1:
+        raise ValueError("The interpolation parameter "
+                         "value must be one dimensional.")
 
     if start.ndim != 1 or end.ndim != 1:
         raise ValueError("Start and end coordinates "
@@ -185,7 +196,7 @@ def geometric_slerp(start,
                          "space")
 
     if np.array_equal(start, end):
-        return [start] * np.asarray(t).size
+        return np.linspace(start, start, t.size)
 
     # for points that violate equation for n-sphere
     for coord in [start, end]:

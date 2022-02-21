@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.linalg import solve_banded
-from .rotation import Rotation
+from ._rotation import Rotation
 
 
 def _create_skew_matrix(x):
@@ -114,7 +114,7 @@ def _angular_acceleration_nonlinear_term(rotvecs, rotvecs_dot):
     ----------
     rotvecs : ndarray, shape (n, 3)
         Set of rotation vectors.
-    rotvecs_dot: ndarray, shape (n, 3)
+    rotvecs_dot : ndarray, shape (n, 3)
         Set of rotation vector derivatives.
 
     Returns
@@ -248,7 +248,7 @@ def _create_block_3_diagonal_matrix(A, B, d):
     return result
 
 
-class RotationSpline(object):
+class RotationSpline:
     """Interpolate rotations with continuous angular rate and acceleration.
 
     The rotation vectors between each consecutive orientation are cubic

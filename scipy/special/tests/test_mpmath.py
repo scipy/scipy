@@ -8,7 +8,7 @@ from numpy import pi
 import pytest
 import itertools
 
-from distutils.version import LooseVersion
+from scipy._lib import _pep440
 
 import scipy.special as sc
 from scipy.special._testutils import (
@@ -23,7 +23,7 @@ from scipy.special._ufuncs import (
     _igam_fac)
 
 try:
-    import mpmath  # type: ignore[import]
+    import mpmath
 except ImportError:
     mpmath = MissingModule('mpmath')
 
@@ -674,7 +674,7 @@ HYPERKW = dict(maxprec=200, maxterms=200)
 
 @pytest.mark.slow
 @check_version(mpmath, '0.17')
-class TestSystematic(object):
+class TestSystematic:
 
     def test_airyai(self):
         # oscillating function, limit range
@@ -1720,7 +1720,7 @@ class TestSystematic(object):
                                "systems and gh-8095 for another bad "
                                "point"))
     def test_rf(self):
-        if LooseVersion(mpmath.__version__) >= LooseVersion("1.0.0"):
+        if _pep440.parse(mpmath.__version__) >= _pep440.Version("1.0.0"):
             # no workarounds needed
             mppoch = mpmath.rf
         else:

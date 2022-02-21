@@ -5,15 +5,16 @@ Method agnostic utility functions for linear progamming
 import numpy as np
 import scipy.sparse as sps
 from warnings import warn
-from .optimize import OptimizeWarning
+from ._optimize import OptimizeWarning
 from scipy.optimize._remove_redundancy import (
     _remove_redundancy_svd, _remove_redundancy_pivot_sparse,
     _remove_redundancy_pivot_dense, _remove_redundancy_id
     )
 from collections import namedtuple
 
-_LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
-_LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
+_LPProblem = namedtuple('_LPProblem',
+                        'c A_ub b_ub A_eq b_eq bounds x0 integrality')
+_LPProblem.__new__.__defaults__ = (None,) * 7  # make c the only required arg
 _LPProblem.__doc__ = \
     """ Represents a linear-programming problem.
 
@@ -65,7 +66,7 @@ _LPProblem.__doc__ = \
     """
 
 
-def _check_sparse_inputs(options, A_ub, A_eq):
+def _check_sparse_inputs(options, meth, A_ub, A_eq):
     """
     Check the provided ``A_ub`` and ``A_eq`` matrices conform to the specified
     optional sparsity variables.
@@ -88,6 +89,8 @@ def _check_sparse_inputs(options, A_ub, A_eq):
                 Set to True to print convergence messages.
 
         For method-specific options, see :func:`show_options('linprog')`.
+    method : str, optional
+        The algorithm used to solve the standard form problem.
 
     Returns
     -------
@@ -115,8 +118,17 @@ def _check_sparse_inputs(options, A_ub, A_eq):
     if _sparse_presolve and A_ub is not None:
         A_ub = sps.coo_matrix(A_ub)
 
+    sparse_constraint = sps.issparse(A_eq) or sps.issparse(A_ub)
+
+    preferred_methods = {"highs", "highs-ds", "highs-ipm"}
+    dense_methods = {"simplex", "revised simplex"}
+    if meth in dense_methods and sparse_constraint:
+        raise ValueError(f"Method '{meth}' does not support sparse "
+                         "constraint matrices. Please consider using one of "
+                         f"{preferred_methods}.")
+
     sparse = options.get('sparse', False)
-    if not sparse and (sps.issparse(A_eq) or sps.issparse(A_ub)):
+    if not sparse and sparse_constraint and meth == 'interior-point':
         options['sparse'] = True
         warn("Sparse constraint matrix detected; setting 'sparse':True.",
              OptimizeWarning, stacklevel=4)
@@ -247,7 +259,7 @@ def _clean_inputs(lp):
             basic feasible solution.
 
     """
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     if c is None:
         raise TypeError
@@ -336,9 +348,9 @@ def _clean_inputs(lp):
         b_eq = _format_b_constraints(b_eq)
     except ValueError as e:
         raise TypeError(
-            "Invalid input for linprog: b_eq must be a 1-D array of "
-            "numerical values, each representing the upper bound of an "
-            "inequality constraint (row) in A_eq") from e
+            "Invalid input for linprog: b_eq must be a dense, 1-D array of "
+            "numerical values, each representing the right hand side of an "
+            "equality constraint (row) in A_eq") from e
     else:
         if b_eq.shape != (n_eq,):
             raise ValueError(
@@ -437,7 +449,7 @@ def _clean_inputs(lp):
     i_none = np.isnan(bounds_clean[:, 1])
     bounds_clean[i_none, 1] = np.inf
 
-    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds_clean, x0)
+    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds_clean, x0, integrality)
 
 
 def _presolve(lp, rr, rr_method, tol=1e-9):
@@ -561,7 +573,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
     #  * loop presolve until no additional changes are made
     #  * implement additional efficiency improvements in redundancy removal [2]
 
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, _ = lp
 
     revstack = []               # record of variables eliminated from problem
     # constant term in cost function may be added if variables are eliminated
@@ -882,7 +894,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
             c0, x, revstack, complete, status, message)
 
 
-def _parse_linprog(lp, options):
+def _parse_linprog(lp, options, meth):
     """
     Parse the provided linear programming problem
 
@@ -986,7 +998,8 @@ def _parse_linprog(lp, options):
         options = {}
 
     solver_options = {k: v for k, v in options.items()}
-    solver_options, A_ub, A_eq = _check_sparse_inputs(solver_options, lp.A_ub, lp.A_eq)
+    solver_options, A_ub, A_eq = _check_sparse_inputs(solver_options, meth,
+                                                      lp.A_ub, lp.A_eq)
     # Convert lists to numpy arrays, etc...
     lp = _clean_inputs(lp._replace(A_ub=A_ub, A_eq=A_eq))
     return lp, solver_options
@@ -1077,7 +1090,7 @@ def _get_Abc(lp, c0):
            programming." Athena Scientific 1 (1997): 997.
 
     """
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     if sps.issparse(A_eq):
         sparse = True
@@ -1343,7 +1356,8 @@ def _postsolve(x, postsolve_args, complete=False):
     # note that all the inputs are the ORIGINAL, unmodified versions
     # no rows, columns have been removed
 
-    (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), revstack, C, b_scale = postsolve_args
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = postsolve_args[0]
+    revstack, C, b_scale = postsolve_args[1:]
 
     x = _unscale(x, C, b_scale)
 

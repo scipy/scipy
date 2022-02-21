@@ -47,10 +47,8 @@ drum head anchored at the edge:
    >>> z = np.array([drumhead_height(1, 1, r, theta, 0.5) for r in radius])
 
    >>> import matplotlib.pyplot as plt
-   >>> from mpl_toolkits.mplot3d import Axes3D
-   >>> from matplotlib import cm
    >>> fig = plt.figure()
-   >>> ax = Axes3D(fig, rect=(0, 0.05, 0.95, 0.95))
+   >>> ax = fig.add_axes(rect=(0, 0.05, 0.95, 0.95), projection='3d')
    >>> ax.plot_surface(x, y, z, rstride=1, cstride=1, cmap='RdBu_r', vmin=-0.5, vmax=0.5)
    >>> ax.set_xlabel('X')
    >>> ax.set_ylabel('Y')

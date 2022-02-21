@@ -38,6 +38,6 @@ int NI_GeometricTransform(PyArrayObject*, int (*)(npy_intp*, double*, int, int,
                                                     PyArrayObject*, PyArrayObject*, int, int,
                                                     double, int);
 int NI_ZoomShift(PyArrayObject*, PyArrayObject*, PyArrayObject*,
-                                 PyArrayObject*, int, int, double, int);
+                                 PyArrayObject*, int, int, double, int, int);
 
 #endif

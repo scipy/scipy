@@ -24,7 +24,7 @@ def _deprecated(msg, stacklevel=2):
     return wrap
 
 
-class _DeprecationHelperStr(object):
+class _DeprecationHelperStr:
     """
     Helper class used by deprecate_cython_api
     """
