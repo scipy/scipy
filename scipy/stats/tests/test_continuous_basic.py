@@ -107,9 +107,9 @@ fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                    'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
                    'logistic', 'loguniform', 'maxwell', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
-                   'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance',
-                   'truncnorm', 'studentized_range'])
+                   'reciprocal', 'rice', 'skewnorm', 't', 'truncweibull_min',
+                   'tukeylambda', 'vonmises', 'vonmises_line',
+                   'rv_histogram_instance', 'truncnorm', 'studentized_range'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
