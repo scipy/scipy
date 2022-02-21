@@ -5763,9 +5763,10 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
     Notes
     -----
-    The null hypothesis is determined as ``numpy.mean(a, axis) - popmean = 0``.
-    This is significant when determining which side of the t-distribution
-    the one-sided statistic should be taken from (``less`` or ``greater``).
+    The statistic is calculated as ``(np.mean(a) - popmean)/se``, where
+    ``se`` is the standard error. Therefore, the statistic will be positive
+    when the sample mean is greater than the population mean and negative when
+    the sample mean is less than the population mean.
 
     Examples
     --------
@@ -5937,9 +5938,9 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Notes
     -----
-    The null hypothesis is determined as ``mean1 - mean2 = 0``. This is
-    significant when determining which side of the t-distribution
-    the one-sided statistic should be taken from (``less`` or ``greater``).
+    The statistic is calculated as ``(mean1 - mean2)/se``, where ``se`` is the 
+    standard error. Therefore, the statistic will be positive when `mean1` is 
+    greater than `mean2` and negative when `mean1` is less than `mean2`.
 
     References
     ----------
@@ -6198,11 +6199,11 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     recommended if the underlying distribution is long-tailed or contaminated
     with outliers [4]_.
 
-    The null hypothesis is determined as
-    ``numpy.mean(a, axis) - numpy.mean(b, axis) = 0``. This is significant when
-    determining which side of the t-distribution the one-sided statistic
-    should be taken from (``less`` or ``greater``).
-
+    The statistic is calculated as ``(np.mean(a) - np.mean(b))/se``, where 
+    ``se`` is the standard error. Therefore, the statistic will be positive
+    when the sample mean of `a` is greater than the sample mean of `b` and 
+    negative when the sample mean of `a` is less than the sample mean of 
+    `b`.
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
@@ -6592,9 +6593,10 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     hypothesis of equal averages. Small p-values are associated with
     large t-statistics.
 
-    The null hypothesis is determined as ``numpy.mean(a - b, axis) = 0``.
-    This is significant when determining which side of the t-distribution
-    the one-sided statistic should be taken from (``less`` or ``greater``).
+    The statistic is calculated as ``np.mean(a - b)/se``, where ``se`` is the
+    standard error. Therefore, the statistic will be positive when the sample
+    mean of ``a - b`` is greater than zero and negative when the sample mean of
+    ``a - b`` is less than zero.
 
     References
     ----------
