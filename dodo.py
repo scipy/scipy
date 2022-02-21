@@ -14,7 +14,7 @@ Targeted run for individual task-
 Examples:
         $ doit build
         $ doit test -f <module name>
-        $ doit doc
+        $ doit doc-build
 """
 
 from doit.task import clean_targets
@@ -56,12 +56,14 @@ def task_doc_compile():
     Runs document build tasks
     """
     return {'actions': ["python dev.py --doc"],
+            'basename': 'doc-compile',
             'file_dep': ["dev.py"],
             'doc': 'Initializing document build task'
             }
 
 
-def task_doc():
+def task_doc_build():
     return {'actions': None,
+            'basename': 'doc-build',
             'doc': 'Initializing document build tasks',
             'task_dep': ['build', 'doc_compile']}
