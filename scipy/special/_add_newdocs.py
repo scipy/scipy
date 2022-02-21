@@ -7103,11 +7103,6 @@ add_newdoc("ker",
     >>> sc.ker(x)
     array([ 0.28670621, -0.04166451, -0.06702923, -0.03617885])
 
-    References
-    ----------
-    .. [dlmf] NIST, Digital Library of Mathematical Functions,
-        https://dlmf.nist.gov/10.61
-
     """)
 
 add_newdoc("kerp",
@@ -9021,7 +9016,7 @@ add_newdoc("obl_ang1",
     c : array_like
         Spheroidal parameter
     x : array_like
-        Parameter x (|x| < 1.0)
+        Parameter x (``|x| < 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -9060,7 +9055,7 @@ add_newdoc("obl_ang1_cv",
     cv : array_like
         Characteristic value
     x : array_like
-        Parameter x (|x| < 1.0)
+        Parameter x (``|x| < 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -9123,7 +9118,7 @@ add_newdoc("obl_rad1",
     c : array_like
         Spheroidal parameter
     x : array_like
-        Parameter x (|x| < 1.0)
+        Parameter x (``|x| < 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -9162,7 +9157,7 @@ add_newdoc("obl_rad1_cv",
     cv : array_like
         Characteristic value
     x : array_like
-        Parameter x (|x| < 1.0)
+        Parameter x (``|x| < 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -9198,7 +9193,7 @@ add_newdoc("obl_rad2",
     c : array_like
         Spheroidal parameter
     x : array_like
-        Parameter x (|x| < 1.0)
+        Parameter x (``|x| < 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -9237,7 +9232,7 @@ add_newdoc("obl_rad2_cv",
     cv : array_like
         Characteristic value
     x : array_like
-        Parameter x (|x| < 1.0)
+        Parameter x (``|x| < 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -9580,7 +9575,7 @@ add_newdoc("pro_ang1",
     c : array_like
         Spheroidal parameter
     x : array_like
-        Real parameter (|x| < 1.0)
+        Real parameter (``|x| < 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -9614,7 +9609,7 @@ add_newdoc("pro_ang1_cv",
     cv : array_like
         Characteristic value
     x : array_like
-        Real parameter (|x| < 1.0)
+        Real parameter (``|x| < 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -9671,7 +9666,7 @@ add_newdoc("pro_rad1",
     c : array_like
         Spheroidal parameter
     x : array_like
-        Real parameter (|x| < 1.0)
+        Real parameter (``|x| < 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -9705,7 +9700,7 @@ add_newdoc("pro_rad1_cv",
     cv : array_like
         Characteristic value
     x : array_like
-        Real parameter (|x| < 1.0)
+        Real parameter (``|x| < 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -9738,7 +9733,7 @@ add_newdoc("pro_rad2",
     cv : array_like
         Characteristic value
     x : array_like
-        Real parameter (|x| < 1.0)
+        Real parameter (``|x| < 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
@@ -9772,7 +9767,7 @@ add_newdoc("pro_rad2_cv",
     cv : array_like
         Characteristic value
     x : array_like
-        Real parameter (|x| < 1.0)
+        Real parameter (``|x| < 1.0``)
     out : ndarray, optional
         Optional output array for the function results
 
