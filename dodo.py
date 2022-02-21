@@ -1,20 +1,21 @@
 """
-Info:
+Info: Run tests, builds and other tasks using doit
 --------------------------
-Command to list the tasks -
+Command to list the tasks-
 doit list
 
-Command to run all the tasks -
-doit
-
-Checking all the info for a task-
+Command to check all the info for a task-
 doit info <task_name>
 
-Targeted run for individual task -
-doit doc_build
+Help command-
+doit help <task name>
+
+Targeted run for individual task-
+Examples:
+        $ doit build
+        $ doit test -f <module name>
+        $ doit doc
 """
-# TODO: move the variables to dedicated config file
-# TODO: improve doc messaging
 
 from doit.task import clean_targets
 
@@ -22,35 +23,45 @@ DOIT_CONFIG = {'verbosity': 2}
 
 
 def init_task():
-    print("initiating build")
+    print("initiating scipy tasks")
 
 
-def enter_module_to_test():
-    name_module = input("Enter the module to test: ")
-    return name_module
-
-
-def task_scipy_build():
+def task_build():
     """
-    Scipy build actions
+    Scipy build task
     """
-    name_module = enter_module_to_test()
-    task_list = ["python dev.py --build-only", f"python dev.py --no-build -s % {name_module}"]
-    for task_ in task_list:
-        task_name = task_.split(' ')[2]
-        yield{'name': task_name,
-              'doc': 'initial build task',
-              'actions': [task_],
-              'file_dep': ["dev.py"],
-              'clean': [clean_targets, init_task]
-              }
+    return {'actions': ["python dev.py --build-only"],
+            'file_dep': ["dev.py"],
+            'doc': 'Initializing build task'
+            }
 
 
-def task_doc_build():
+def task_test():
+    """
+    Runs the tests for a given module
+    """
+    return {'actions': ["python dev.py --no-build -s %(module)s"],
+            'file_dep': ["dev.py"],
+            'doc': 'Initializing tests for the chosen module',
+            'params': [{'name': 'module',
+                        'short': 'f',
+                        'default': '',
+                        'type': str,
+                        'help': 'Enter the module name to run tests'}],
+            }
+
+
+def task_doc_compile():
     """
     Runs document build tasks
     """
     return {'actions': ["python dev.py --doc"],
             'file_dep': ["dev.py"],
-            'doc': 'doc build task'
+            'doc': 'Initializing document build task'
             }
+
+
+def task_doc():
+    return {'actions': None,
+            'doc': 'Initializing document build tasks',
+            'task_dep': ['build', 'doc_compile']}
