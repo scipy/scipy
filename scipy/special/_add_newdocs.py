@@ -3064,7 +3064,8 @@ add_newdoc("erfcx",
 
     """)
 
-add_newdoc("erfinv",
+add_newdoc(
+    "erfinv",
     """
     erfinv(y, out=None)
 
@@ -3113,7 +3114,8 @@ add_newdoc("erfinv",
 
     """)
 
-add_newdoc("erfcinv",
+add_newdoc(
+    "erfcinv",
     """
     erfcinv(y, out=None)
 
@@ -4588,7 +4590,8 @@ add_newdoc("fdtridfd",
 
     """)
 
-add_newdoc("fdtridfn",
+add_newdoc(
+    "fdtridfn",
     """
     fdtridfn(p, dfd, x, out=None)
 
@@ -6679,7 +6682,8 @@ add_newdoc("jn",
     Notes
     -----
     `jn` is an alias of `jv`.
-    Not to be confused with the spherical Bessel functions (see `spherical_jn`).
+    Not to be confused with the spherical Bessel functions (see
+    `spherical_jn`).
 
     """)
 
