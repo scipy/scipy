@@ -6204,6 +6204,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     when the sample mean of `a` is greater than the sample mean of `b` and
     negative when the sample mean of `a` is less than the sample mean of
     `b`.
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
