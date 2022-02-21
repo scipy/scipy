@@ -681,36 +681,19 @@ def _rename_parameter(old_name, new_name, dep_version=None):
     """
     def decorator(fun):
         @functools.wraps(fun)
-        def wrapper(*args, **kwds):
-
-            # Check for intersection between positional and keyword args
-            params = list(inspect.signature(fun).parameters)
-            d_args = dict(zip(params, args))
-            intersection = set(d_args) & set(kwds)
-            if intersection:
-                message = (f"{fun.__name__}() got multiple values "
-                           f"for argument '{list(intersection)[0]}'")
-                raise TypeError(message)
-
-            # Consolidate other positional and keyword args into `kwds`
-            kwds.update(d_args)
-
-            new_param = kwds.get(new_name, None)
-            got_new = new_param is not None
-            got_keyword_old = kwds.get(old_name, None) is not None
-
-            if got_keyword_old and dep_version:
-                message = (f"Use of keyword argument `{old_name}` is "
-                           f"deprecated and replaced by `{new_name}`.  "
-                           f"Support for `{old_name}` will be removed two "
-                           f"feature releases after SciPy {dep_version}.")
-                warnings.warn(message, DeprecationWarning, stacklevel=2)
-            if got_keyword_old and got_new:
-                message = (f"{fun.__name__}() got multiple values for "
-                           f"argument now known as `{new_name}`")
-                raise TypeError(message)
-
-            kwds[new_name] = kwds.pop(old_name, new_param)
-            return fun(**kwds)
+        def wrapper(*args, **kwargs):
+            if old_name in kwargs:
+                if new_name in kwargs:
+                    message = (f"{fun.__name__}() got multiple values for "
+                               f"argument now known as `{new_name}`")
+                    raise TypeError(message)
+                if dep_version:
+                    message = (f"Use of keyword argument `{old_name}` is "
+                               f"deprecated and replaced by `{new_name}`.  "
+                               f"Support for `{old_name}` will be removed two "
+                               f"feature releases after SciPy {dep_version}.")
+                    warnings.warn(message, DeprecationWarning, stacklevel=2)
+                kwargs[new_name] = kwargs.pop(old_name)
+            return fun(*args, **kwargs)
         return wrapper
     return decorator
