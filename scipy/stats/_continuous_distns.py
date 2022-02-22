@@ -6449,10 +6449,10 @@ class powerlaw_gen(rv_continuous):
 
             print("universal_slte1")
             loc = floc if floc is not None else np.nextafter(data.min(), -np.inf)
-            scale = fscale or np.ptp(data)
+            scale = fscale or np.nextafter(np.ptp(data), np.inf)
             shape = fshape or shape_universal(data, loc, scale)
-            scale = np.nextafter(scale, np.inf)
 
+            # ensure that the fitted parameters match the constraints of the distribution
             if scale + loc <= data.max():
                 diff = data.max() - (scale + loc)
                 scale = scale + np.abs(diff)
@@ -6465,10 +6465,6 @@ class powerlaw_gen(rv_continuous):
 
         if shape <= 1:
             return shape, loc, scale
-
-        # def shape_universal(data, loc, scale):
-        #     mask = data !+ loc
-        #     return -len(data) / np.sum(np.log((data[~mask] - loc)/scale))
 
         def location_sgt1(data, scale):
             return data.max() - scale
