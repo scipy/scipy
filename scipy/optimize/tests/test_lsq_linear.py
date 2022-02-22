@@ -1,8 +1,8 @@
 import numpy as np
 from numpy.linalg import lstsq
-from numpy.testing import assert_allclose, assert_equal, assert_
+from numpy.testing import assert_allclose, assert_equal, assert_, assert_raises
 
-from scipy.sparse import rand
+from scipy.sparse import rand, coo_matrix
 from scipy.sparse.linalg import aslinearoperator
 from scipy.optimize import lsq_linear
 
@@ -207,6 +207,25 @@ class SparseMixin:
         res = lsq_linear(A, b, (lb, ub), lsmr_tol='auto')
         assert_allclose(res.optimality, 0.0, atol=1e-6)
 
+    def test_sparse_ill_conditioned(self):
+        # Sparse matrix with condition number of ~4 million
+        data = np.array([1., 1., 1., 1. + 1e-6, 1.])
+        row = np.array([0, 0, 1, 2, 2])
+        col = np.array([0, 2, 1, 0, 2])
+        A = coo_matrix((data, (row, col)), shape=(3, 3))
+
+        # Get the exact solution
+        exact_sol = lsq_linear(A.toarray(), b, lsq_solver='exact')
+
+        # Default lsmr arguments should not fully converge the solution
+        default_lsmr_sol = lsq_linear(A, b, lsq_solver='lsmr')
+        with assert_raises(AssertionError):
+            assert_allclose(exact_sol.x, default_lsmr_sol.x)
+
+        # By increasing the maximum lsmr iters, it will converge
+        conv_lsmr = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=10)
+        assert_allclose(exact_sol.x, conv_lsmr.x)
+
 
 class TestTRF(BaseMixin, SparseMixin):
     method = 'trf'
@@ -216,3 +235,31 @@ class TestTRF(BaseMixin, SparseMixin):
 class TestBVLS(BaseMixin):
     method = 'bvls'
     lsq_solvers = ['exact']
+
+
+class TestErrorChecking:
+    def test_option_lsmr_tol(self):
+        # Should work with a positive float, string equal to 'auto', or None
+        _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_tol=1e-2)
+        _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_tol='auto')
+        _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_tol=None)
+
+        # Should raise error with negative float, strings
+        # other than 'auto', and integers
+        with assert_raises(ValueError):
+            _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_tol=-0.1)
+        with assert_raises(ValueError):
+            _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_tol='foo')
+        with assert_raises(ValueError):
+            _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_tol=1)
+
+    def test_option_lsmr_max_iter(self):
+        # Should work with positive integers or None
+        _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=1)
+        _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=None)
+
+        # Should raise error with 0 or negative max iter
+        with assert_raises(ValueError):
+            _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=0)
+        with assert_raises(ValueError):
+            _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=-1)

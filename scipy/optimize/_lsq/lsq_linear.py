@@ -280,11 +280,11 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         raise ValueError("Each lower bound must be strictly less than each "
                          "upper bound.")
 
-    if lsmr_max_iter is not None and lsmr_max_iter <= 0:
+    if lsmr_max_iter is not None and lsmr_max_iter < 1:
         raise ValueError("`lsmr_max_iter` must be None or positive integer.")
 
-    if not (isinstance(lsmr_tol, float) and lsmr_tol > 0 or
-            isinstance(lsmr_tol, str) and lsmr_tol == 'auto' or
+    if not ((isinstance(lsmr_tol, float) and lsmr_tol > 0) or
+            (isinstance(lsmr_tol, str) and lsmr_tol == 'auto') or
             lsmr_tol is None):
         raise ValueError("`lsmr_tol` must be None, 'auto', or positive float.")
 
