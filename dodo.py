@@ -15,17 +15,14 @@ Examples:
         $ doit build
         $ doit test -f <module name>
         $ doit doc-build
+        $ doit release-notes
+        $ doit release-authors
 """
-
-from doit import create_after
 
 DOIT_CONFIG = {'verbosity': 2}
 
 
 # def paver_write_release_task():
-#     """
-#     Write Release task contents from pavement.py
-#     """
 #    # TODO: create a new script or add contents here
 
 
@@ -66,7 +63,8 @@ def task_doc_compile():
 
 
 """
-Task dependency group
+Task dependency group for document build
+- task_doc_build()
 """
 
 
