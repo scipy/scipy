@@ -70,6 +70,7 @@ def task_bench():
     """
     return {'actions': ["python dev.py --bench %(param)s integrate.SolveBVP"],
             'doc': 'Task: Initializing benchmarking task',
+            'file_dep': ["dev.py"],
             'params': [{'name': 'param',
                         'short': 'p',
                         'default': '',
