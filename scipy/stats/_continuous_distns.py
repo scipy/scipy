@@ -6450,27 +6450,54 @@ class powerlaw_gen(rv_continuous):
             scale = fscale or np.nextafter(np.nextafter(np.ptp(data), np.inf), np.inf)
             shape = fshape or shape_universal(data, loc, scale)
 
-            if scale + loc >= data.max():
+            if scale + loc <= data.max():
                 diff = data.max() - (scale + loc)
-                scale = scale + (np.abs(diff))# * 1.05)
+                scale = scale + (np.abs(diff))
 
             # When the scale is small, increase it by the inverse of how small it is.
-            return shape, loc, scale #* (1 + .5/scale/1000)
+            return shape, loc, scale 
 
         shape, loc, scale = universal_slte1(data)
 
         if shape <= 1:
             return shape, loc, scale
 
-        def shape_universal(data, loc, scale):
-            mask = data <= loc
-            return -len(data) / np.sum(np.log((data[~mask] - loc)/scale))
+        # def shape_universal(data, loc, scale):
+        #     mask = data !+ loc
+        #     return -len(data) / np.sum(np.log((data[~mask] - loc)/scale))
 
         def location_sgt1(data, scale):
             return data.max() - scale
 
         def scale_sgt1(data, loc):
-            return np.nextafter(data.max() - loc, np.inf)
+            return data.max() - loc
+
+        if fshape:
+            # if the shape and one other parameter are specified, we can compute completely
+            # analytically.
+            if floc:
+                scale = scale_sgt1(data, floc)
+                return fshape, floc, scale
+            if fscale:
+                loc = location_sgt1(data, fscale)
+                return fshape, loc, scale
+            else:
+                # if only the shape is specified, find the root for the remaining parameters
+                # in the same way as if all were free. 
+                pass
+        elif floc:
+            # shape is free, floc fixed
+            if fscale:
+                # only shape is free
+                return shape_universal(data, floc, fscale), floc, fscale
+            else:
+                # only the location is fixed
+                scale = scale_sgt1(data, floc)
+                return shape_universal(data, floc, scale), floc, scale
+        elif fscale:
+            # fscale is the only fixed parameter
+            loc = location_sgt1(data, fscale)
+            return shape_universal(data, loc, fscale), loc, fscale
 
         def dldu(data, shape, scale):
             return - data.shape[0] * shape / scale
@@ -6494,14 +6521,16 @@ class powerlaw_gen(rv_continuous):
                     np.sign(fun_to_solve(rbrack)))
 
         while not interval_contains_root(lbrack, rbrack) and rbrack != np.inf:
-            print(rbrack)
             rbrack *= 2
+            print(rbrack)
 
         root = root_scalar(fun_to_solve, bracket=(lbrack, rbrack))
         
         scale = root.root
         loc = location_sgt1(data, scale)
         shape = shape_universal(data, loc, scale)
+
+
         return shape, loc, scale
 
 
