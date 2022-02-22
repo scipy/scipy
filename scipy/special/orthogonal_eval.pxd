@@ -71,11 +71,7 @@ cdef inline double binom(double n, double k) nogil:
     
     # hardcode simple identities to save time
     # https://functions.wolfram.com/GammaBetaErf/Binomial/03/01/01/
-    if k == 0:
-        return 1
-    if k == 1:
-        return k
-    if k == n:
+    if k == 0 or k == 1 or k == n:
         return 1
     if k == n + 1:
         return 0
