@@ -141,7 +141,7 @@ def select_step(x, A_h, g_h, c_h, p, p_h, d, lb, ub, theta):
 
 
 def trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol,
-               lsmr_max_iter, max_iter, verbose):
+               max_iter, verbose, lsmr_max_iter):
     m, n = A.shape
     x, _ = reflective_transformation(x_lsq, lb, ub)
     x = make_strictly_feasible(x, lb, ub, rstep=0.1)

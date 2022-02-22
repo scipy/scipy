@@ -32,8 +32,8 @@ TERMINATION_MESSAGES = {
 
 
 def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
-               lsq_solver=None, lsmr_tol=None, lsmr_max_iter=None,
-               max_iter=None, verbose=0):
+               lsq_solver=None, lsmr_tol=None, max_iter=None,
+               verbose=0, lsmr_max_iter=None,):
     r"""Solve a linear least-squares problem with bounds on the variables.
 
     Given a m-by-n design matrix A and a target vector b with m elements,
@@ -97,12 +97,6 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         tolerance will be adjusted based on the optimality of the current
         iterate, which can speed up the optimization process, but is not always
         reliable.
-    lsmr_max_iter : None or int, optional
-        Maximum number of iterations for the lsmr least squares solver,
-        if it is used (by setting ``lsq_solver='lsmr'``). If None (default), it
-        uses lsmr's default of ``min(m, n)`` where `m` and `n` are the
-        number of rows and columns of `A`, respectively. Has no effect if
-        ``lsq_solver='exact'``.
     max_iter : None or int, optional
         Maximum number of iterations before termination. If None (default), it
         is set to 100 for ``method='trf'`` or to the number of variables for
@@ -113,6 +107,12 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
             * 0 : work silently (default).
             * 1 : display a termination report.
             * 2 : display progress during iterations.
+    lsmr_max_iter : None or int, optional
+        Maximum number of iterations for the lsmr least squares solver,
+        if it is used (by setting ``lsq_solver='lsmr'``). If None (default), it
+        uses lsmr's default of ``min(m, n)`` where `m` and `n` are the
+        number of rows and columns of `A`, respectively. Has no effect if
+        ``lsq_solver='exact'``.
 
     Returns
     -------
@@ -318,7 +318,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     if method == 'trf':
         res = trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol,
-                         lsmr_max_iter, max_iter, verbose)
+                         max_iter, verbose, lsmr_max_iter)
     elif method == 'bvls':
         res = bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose)
 
