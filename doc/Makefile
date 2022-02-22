@@ -16,8 +16,8 @@ PAPEROPT_a4     = -D "latex_elements.papersize=a4paper"
 PAPEROPT_letter = -D "latex_elements.papersize=letterpaper"
 ALLSPHINXOPTS   = -d build/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
 
-.PHONY: help clean html web pickle htmlhelp latex changes linkcheck \
-        dist dist-build version-check
+.PHONY: help clean html latex changes linkcheck \
+        dist version-check
 
 #------------------------------------------------------------------------------
 
