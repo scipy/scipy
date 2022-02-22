@@ -2218,6 +2218,16 @@ class TestLaplace:
         p1 = stats.laplace.sf(-x)
         assert p1 == 1.0
 
+    def test_sf(self):
+        x = 200
+        p = stats.laplace.sf(x)
+        assert_allclose(p, np.exp(-x)/2, rtol=1e-13)
+
+    def test_isf(self):
+        p = 1e-25
+        x = stats.laplace.isf(p)
+        assert_allclose(x, -np.log(2*p), rtol=1e-13)
+
 class TestPowerlaw(object):
     @pytest.mark.parametrize('a', [.5, 1.5, 5])
     def test_fit_shape(self, a):
@@ -2265,29 +2275,12 @@ class TestPowerlaw(object):
 
         _assert_less_or_close_loglike(stats.powerlaw, data, func, **kwds)
 
-
     def test_fit_warnings(self):
         assert_fit_warnings(stats.powerlaw)
-        # `floc` must be less than or equal to the minimum of the data.
-        with assert_raises(ValueError) as e:
-            stats.powerlaw.fit([1, 2, 3], floc=1.2)
-        assert "requires loc < min(data)" in str(e.value)
         # test for error that fscale + floc <= np.max(data)
         with assert_raises(ValueError) as e:
             stats.powerlaw.fit([1, 2, 4], floc=0, fscale=3)
-        assert "requires loc + scale > max(data)" in str(e.value)
-
-
-class TestInvGamma(object):
-    def test_sf(self):
-        x = 200
-        p = stats.laplace.sf(x)
-        assert_allclose(p, np.exp(-x)/2, rtol=1e-13)
-
-    def test_isf(self):
-        p = 1e-25
-        x = stats.laplace.isf(p)
-        assert_allclose(x, -np.log(2*p), rtol=1e-13)
+        assert r" Maximum likelihood estimation with 'powerlaw' requires" in str(e.value)
 
 
 class TestInvGamma:

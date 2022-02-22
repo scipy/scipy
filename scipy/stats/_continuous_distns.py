@@ -6437,16 +6437,25 @@ class powerlaw_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         data, fshape, floc, fscale = _check_fit_input_parameters(self, data,
                                                                  args, kwds)
+
         def shape_universal(data, loc, scale):
+            # The first-order necessary condition on `shape` can be solved in
+            # closed form
             mask = data != loc
             return -len(data) / np.sum(np.log((data[mask] - loc)/scale))
         
-        
-        # First, attempt to fit under assumption that `shape <= 1`. If the shape is 
-        # greater than 1, then we need to fit under the assumption that `shape > 1`.
+        # First, attempt to fit under assumption that `shape <= 1`. 
         def universal_slte1(data):
             loc = floc if floc is not None else np.nextafter(data.min(), -np.inf)
             scale = fscale or np.ptp(data)
+
+            # The Powerlaw distribution requires that its parameters satisfy
+            # the condition `fscale + floc >= max(data)`. However, to
+            # avoid numerical issues, we require that `fscale + floc`
+            # is strictly less than `max(data)`. If this condition
+            # is not satisfied, even with previous use of `np.nextafter`, 
+            # increase the scale or location, whichever is free, with the amount
+            # to ensure that data does not fall outside of the support.
             if scale + loc <= data.max():
                 diff = data.max() - (scale + loc)
                 if fscale is None:
@@ -6454,7 +6463,9 @@ class powerlaw_gen(rv_continuous):
                 elif floc is None:
                     loc = loc + np.abs(diff)
                 else:
-                    raise ValueError(1)
+                    # If both the scale and the location are fixed, and the above 
+                    # condition is not satisfied, then we cannot fit the data.
+                    raise FitDataError("powerlaw", lower=0, upper=1)
             shape = fshape or shape_universal(data, loc, scale)
             return shape, loc, scale 
 
@@ -6468,320 +6479,67 @@ class powerlaw_gen(rv_continuous):
         # analytical functions for this new assumption.
 
         def location_sgt1(data, scale):
+            # analytical solution for `loc` when `shape > 1` based on the scale.
             return data.max() - scale
 
         def scale_sgt1(data, loc):
+            # analytical solution for `scale` when `shape > 1` based on the location.
             return data.max() - loc
 
-        if fshape:
-            # if the shape and one other parameter are specified, we can compute completely
-            # analytically.
-            if floc:
-                scale = scale_sgt1(data, floc)
-                return fshape, floc, scale
-            if fscale:
+        # if the location or scale is fixed, an analytical solution is available.
+        if {floc, fscale} != {None}:
+            if floc is not None:
+                scale = fscale or scale_sgt1(data, floc)
+                return (fshape or shape_universal(data, floc, scale)), floc, scale
+            if fscale is not None:
                 loc = location_sgt1(data, fscale)
-                return fshape, loc, scale
-            else:
-                # if only the shape is specified, find the root for the remaining parameters
-                # in the same way as if all were free. 
-                pass
-        elif floc:
-            # shape is free, floc fixed
-            if fscale:
-                # only shape is free
-                return shape_universal(data, floc, fscale), floc, fscale
-            else:
-                # only the location is fixed
-                scale = scale_sgt1(data, floc)
-                return shape_universal(data, floc, scale), floc, scale
-        elif fscale:
-            # fscale is the only fixed parameter
-            loc = location_sgt1(data, fscale)
-            return shape_universal(data, loc, fscale), loc, fscale
+                return (fshape or shape_universal(data, loc, scale)), loc, fscale
 
-        def dldu(data, shape, scale):
+        # The support of the distribution is `(x - loc)/scale > 0`.
+        # If all parameters are free, or only the shape is fixed, the
+        # method of Legrange multipliers turns this constraint into an
+        # equation that can be solved numerically. 
+
+        def dL_dLocation(data, shape, scale):
+            # The partial derivative of the log-likelihood function w.r.t.
+            # the location.
             return - data.shape[0] * shape / scale
 
-        def dldsigma(data, shape, loc):
+        def dL_dScale(data, shape, loc):
+            # The partial derivative of the log-likelihood function w.r.t.
+            # the scale.
             mask = data != loc
             return (shape - 1) * np.sum(1 / (loc - data[mask]))
 
         def fun_to_solve(loc):
+            # optimize the location by setting the partial derivatives
+            # w.r.t. to location and scale equal and solving.
             scale = scale_sgt1(data, loc)
             shape = shape_universal(data, loc, scale)
-            return dldu(data, shape, scale) - dldsigma(data, shape, loc)
+            return dL_dLocation(data, shape, scale) - dL_dScale(data, shape, loc)
 
-        from scipy.optimize import root_scalar
-
+        # set brackets for `root_scalar` to use when optimizing over the
+        # location such that a root is likely between them.
         lbrack, rbrack = data.min() - 1, np.nextafter(data.min(), -np.inf)
+
         def interval_contains_root(lbrack, rbrack):
             # Check if the interval (lbrack, rbrack) contains the root.
             return (np.sign(fun_to_solve(lbrack)) !=
                     np.sign(fun_to_solve(rbrack)))
 
-        while not interval_contains_root(lbrack, rbrack) and rbrack != np.inf:
-            rbrack *= 2
+        # if a root is not between the brackets, iteratively the left bracket
+        # until they include a sign change. The right bracket is already against
+        # the maximum permisable value for this data so it is unmodified.
+        while not interval_contains_root(lbrack, rbrack) and lbrack != -np.inf:
+            rbrack -= np.abs(lbrack)
 
-        root = root_scalar(fun_to_solve, bracket=(lbrack, rbrack))
+        root = optimize.root_scalar(fun_to_solve, bracket=(lbrack, rbrack))
         
         loc = root.root
         scale = scale_sgt1(data, loc)
-        shape = shape_universal(data, loc, scale)
+        shape = fshape or shape_universal(data, loc, scale)
 
         return shape, loc, scale
-
-
-        # # fitting data to the powerlaw distribution has different analytical
-        # # formula depending on whether the shape is above or below 1.
-
-        # # The analytical solution for the shape is the same whether it is above
-        # # or below 1.
-        # def get_shape(loc, fscale, data):
-        #     mask = data != loc
-        #     return len(data) / np.sum(np.log(fscale / (data[mask] - loc)))
-
-        # def get_scale_shape_gt1(data, loc):
-        #     # analytical solution for the scale when `shape > 1`.
-        #     return np.max(data) - loc
-
-        # def get_location_shape_gt1(data, scale):
-        #     return np.max(data) - scale
-
-        # def fit_all_free_fshape_gt(data, get_location, get_scale, *args):
-        #     # get_location = kwds['get_location']
-        #     # get_scale = kwds['get_scale']
-        #     # this method is used when all the parameters are free and when
-        #     # the shape is fixed
-        #     # fshape = kwds.get('fshape')
-
-        #     args = [data, (self._fitstart(data),)]
-        #     ll_comp = self._reduce_func(args, {})[1]
-
-        #     def fun_to_solve(loc):
-        #         scale = get_scale(data, loc)
-        #         shape = fshape or get_shape(loc, scale, data)
-        #         return ll_comp((shape, loc, scale), data)
-
-        #     # initialize brackets for location
-        #     s_max = np.max(data) - np.min(data)
-        #     lbrack = np.min(data) - s_max
-        #     rbrack = (1-np.finfo(float).eps) * np.min(data)
-
-        #     def interval_contains_root(lbrack, rbrack):
-        #         # return true if the signs disagree.
-        #         return (np.sign(fun_to_solve(lbrack)) !=
-        #                 np.sign(fun_to_solve(rbrack)))
-        #     # if a root is not between the brackets, iteratively expand them
-        #     # until they include a sign change, checking after each bracket is
-        #     # modified. The range of the location is `(-inf, inf)`, so the
-        #     # brackets must be expanded across zero.
-        #     while (not interval_contains_root(lbrack, rbrack)
-        #            and (lbrack > -np.inf or rbrack < np.inf)):
-        #         lbrack -= np.abs(lbrack)
-        #         rbrack += np.abs(rbrack)
-
-        #     res = optimize.minimize_scalar(fun_to_solve, bracket=[lbrack, rbrack])
-        #     if res.x:
-        #         loc = res.x
-        #         scale = get_scale(data, loc)
-        #         shape = get_shape(loc, scale, data)
-        #         return shape, loc, scale
-        #     else:
-        #         return None, None, None
-
-        # # Analytical formulas to be used under the assumption that `shape < 1`
-        # def get_scale_shape_lt1(data):
-        #     return np.max(data) - np.min(data)
-
-        # def get_location_shape_lt1(data):
-        #     return np.min(data)
-
-        # def fit_all_free_shape_lt1(data, get_location, get_scale):
-        #     loc = get_location(data)
-        #     scale = get_scale(data)
-        #     shape = get_shape(loc, scale, data)
-        #     return shape, loc, scale
-
-        # # a generic fitting routing that allows for parametrization of
-        # # the methods to determine the shape, location, and scale.
-        # def parametrized_fit(fshape, floc, fscale, data, get_location,
-        #                      get_scale, fit_fixed_shape, fit_all_free):
-        #     if floc is fscale is fshape is None:
-        #         return fit_all_free(data, get_location, get_scale)
-        #     raise NotImplementedError(1)
-
-        # # First, attempt to fit the data under the a priori that `shape < 1`.
-        # # If the returned shape is not less than one, then continue to
-        # # fit where `shape > 1`.
-        # args = (fshape, floc, fscale, data, get_location_shape_lt1, get_scale_shape_lt1,
-        #         _, fit_all_free_shape_lt1)
-        # shape, loc, scale = parametrized_fit(*args)
-        # # if the assumption that the shape < 1 is not consistent with the
-        # # result of the fitting, try to fit under the assumption that the
-        # # shape is >= 1.
-        # if (shape > 1 or shape is None):
-        #     args = (fshape, floc, fscale, data, get_location_shape_gt1,
-        #             get_scale_shape_gt1, fit_all_free_fshape_gt,
-        #             fit_all_free_fshape_gt)
-        #     shape, loc, scale = parametrized_fit(*args)
-        #     if shape is None:
-        #         # if the attempt to fit the data under the assumption that
-        #         # `a` > 1 fails, but the fit under the assumption that `a` < 1
-        #         # results in an `a` that is greater than 1, we conclude that
-        #         # `a` is equal to 1, and the location and scale from the
-        #         # a < 1 case are used.
-        #         return (1, loc, scale)
-        #     else:
-        #         # if a fit for a > 1 is successfully obtained, return it.
-        #         return shape, loc, scale
-        # else:
-        #     return shape, loc, scale
-
-        # ndata = data.shape[0]
-        #
-        # # analytical equations for fitting the powerlaw distribution require
-        # # equations for two scenarios: when `shape >= 1` and when
-        # # `0 < shape < 1`.
-        #
-        # def get_shape(loc, scale, data):
-        #     mask = data != loc
-        #     return ndata / np.sum(np.log(scale / (data[mask] - loc)))
-        #
-        # def get_scale_shape_gt_1(loc, data):
-        #     # the analytical formula for the scale when `shape > 1`.
-        #     return np.max(data) - loc
-        #
-        # def get_location_shape_gt_1(scale, data):
-        #     # the analytical formula for the location when `shape > 1`.
-        #     return np.max(data) - scale
-        #
-        # def fit_all_free_shape_gt_1(data):
-        #     # We have analytical solutions for the shape and the scale that are dependent on the location,
-        #     # so we can solve for the location by wrapping the log-likelihood
-        #     # function and passing in the analytical solutions.
-        #     args = [data, (self._fitstart(data),)]
-        #     ll = self._reduce_func(args, {})[1]
-        #
-        #     def fun_to_solve(loc):
-        #         scale = get_scale_shape_gt_1(data, floc)
-        #         shape = get_scale_shape_gt_1(loc, scale, data)
-        #         return ll(shape, loc, scale, data)
-        #
-        #     # initalize some brackets for the location
-        #     s_max = np.max(data) - np.min(data)
-        #     lbrack = np.min(data) - s_max
-        #     rbrack = (1-np.finfo(float).eps)*np.min(data)
-        #
-        #     def interval_contains_root(lbrack, rbrack):
-        #         # return true if the signs disagree.
-        #         return (np.sign(fun_to_solve(lbrack)) !=
-        #                 np.sign(fun_to_solve(rbrack)))
-        #     # if a root is not between the brackets, iteratively expand them
-        #     # until they include a sign change, checking after each bracket is
-        #     # modified. The range of the location is `(-inf, inf)`.
-        #     while (not interval_contains_root(lbrack, rbrack)
-        #            and (lbrack > -np.inf or rbrack < np.inf)):
-        #         lbrack -= np.abs(lbrack)
-        #         rbrack *= 2
-        #
-        #     res = optimize.root_scalar(fun_to_solve, bracket=[lbrack, rbrack])
-        #     if res.root:
-        #         loc = res.root
-        #         scale = get_scale_shape_gt_1(loc)
-        #         shape = get_shape(loc, scale, data)
-        #         return shape, loc, scale
-        #     else:
-        #         return super().fit(data, **kwds)
-        #
-        # def fit_shape_lt_1(data):
-        #     loc = data.min()
-        #     scale = np.max(data) - np.min(data)
-        #     shape = get_shape(loc, scale, data)
-        #     return loc, scale, shape
-        #
-        #
-        #
-        #
-        # def parametrized_fit(fshape, floc, fscale, data,
-        #                      fit_all_free):
-        #     if floc is fscale is fshape is None:
-        #         return fit_all_free(data)
-        #     elif floc is not None:
-        #         # `floc` is fixed, `shape` and `scale` may be deterermined
-        #         # through analytical equations
-        #         if floc > np.min(data):
-        #             # a constraint to fitting is that the location < np.min
-        #             raise ValueError("Invalid values in `data`.  Maximum"
-        #                              " likelihood estimation with 'powerlaw'"
-        #                              " requires loc < min(data).")
-        #         if fscale is None:
-        #             # use the formula for `max(data) - floc` when location
-        #             # is fixed.
-        #             scale = np.max(data) - floc
-        #         else:
-        #             if fscale + floc <= np.max(data):
-        #                 # fitting with fixed scale and fixed location requires
-        #                 # that loc + scale > max(data)
-        #                 raise ValueError("Invalid values in `data`.  Maximum"
-        #                                  " likelihood estimation with"
-        #                                  " 'powerlaw' requires loc + scale >"
-        #                                  " max(data).")
-        #             scale = fscale
-        #         shape = get_shape(floc, scale, data)
-        #         return loc, scale, shape
-        #
-        #
-
-
-
-
-
-
-        # def get_scale(loc, data):
-        #     if fscale is None:
-        #         return data.max() - loc
-        #     elif fscale + loc <= np.max(data):
-        #         # fitting with fixed scale and fixed location requires
-        #         # that loc + scale > max(data)
-        #         raise ValueError("Invalid values in `data`.  Maximum"
-        #                          " likelihood estimation with"
-        #                          " 'powerlaw' requires loc + scale >"
-        #                          " max(data).")
-        #     else:
-        #         return fscale
-        #
-        # def get_shape(loc, scale, data):
-        #     if floc:
-        #         mask = data != loc
-        #     else:
-        #         mask = np.ones_like(data)
-        #     return ndata / (np.sum(np.log(scale / (data[mask] - loc))))
-        #
-        # def get_location(scale, data):
-        #     return data.max() - scale
-        #
-        #
-        # if floc is not None:
-        #     # when only `floc` is fixed, the shape and scale can be
-        #     # analytically determined
-        #     scale = get_scale(floc, data)
-        #     shape = get_shape(floc, scale, data)
-        #     return floc, scale, shape
-        # else:
-        #
-        #
-        #
-        # if fshape is floc is fscale is None:
-        #     # when all parameters are free, the maximum likelihood solution
-        #     # satisfies the constraint that `scale + loc - max(data) = 0`.
-        #
-        # def get_shape(loc, scale, data):
-        #     # The first-order necessary condition on `shape` can be solved in
-        #     # closed form
-        #     mask = data != loc
-        #     return (- ndata / (np.sum(np.log(scale / (data[mask] - loc)))))
-
 
 
 powerlaw = powerlaw_gen(a=0.0, b=1.0, name="powerlaw")
