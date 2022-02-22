@@ -6445,26 +6445,27 @@ class powerlaw_gen(rv_continuous):
         # First, attempt to fit under assumption that `shape <= 1`. If the shape is 
         # greater than 1, then we need to fit under the assumption that `shape > 1`.
         def universal_slte1(data):
-            print(f"shape, loc, scale : {fshape, floc, fscale}")
-
-            print("universal_slte1")
             loc = floc if floc is not None else np.nextafter(data.min(), -np.inf)
-            scale = fscale or np.nextafter(np.ptp(data), np.inf)
-            shape = fshape or shape_universal(data, loc, scale)
-
-            # ensure that the fitted parameters match the constraints of the distribution
+            scale = fscale or np.ptp(data)
             if scale + loc <= data.max():
                 diff = data.max() - (scale + loc)
-                scale = scale + np.abs(diff)
-
-            # When the scale is small, increase it by the inverse of how small it is.
-            print(f"shape, loc, scale : {shape, loc, scale}")
+                if fscale is None:
+                    scale = scale + np.abs(diff)
+                elif floc is None:
+                    loc = loc + np.abs(diff)
+                else:
+                    raise ValueError(1)
+            shape = fshape or shape_universal(data, loc, scale)
             return shape, loc, scale 
 
         shape, loc, scale = universal_slte1(data)
 
+        # If the `shape <= 1`, then fitting has succeeded with the assumption `shape <= 1`.
         if shape <= 1:
             return shape, loc, scale
+
+        # if `shape > 1`, then we need to fit under the assumption that `shape > 1` and redefine
+        # analytical functions for this new assumption.
 
         def location_sgt1(data, scale):
             return data.max() - scale
@@ -6511,7 +6512,6 @@ class powerlaw_gen(rv_continuous):
             shape = shape_universal(data, loc, scale)
             return dldu(data, shape, scale) - dldsigma(data, shape, loc)
 
-
         from scipy.optimize import root_scalar
 
         lbrack, rbrack = data.min() - 1, np.nextafter(data.min(), -np.inf)
@@ -6522,14 +6522,12 @@ class powerlaw_gen(rv_continuous):
 
         while not interval_contains_root(lbrack, rbrack) and rbrack != np.inf:
             rbrack *= 2
-            print(rbrack)
 
         root = root_scalar(fun_to_solve, bracket=(lbrack, rbrack))
         
         loc = root.root
         scale = scale_sgt1(data, loc)
         shape = shape_universal(data, loc, scale)
-
 
         return shape, loc, scale
 
