@@ -65,28 +65,6 @@ def task_doc_compile():
             }
 
 
-# def task_release_authors():
-#     """
-#     Creates author list
-#     """
-#     return {'actions': ["python tools/authors.py"],
-#             'basename': 'release-authors',
-#             'file_dep': ["tools/authors.py"],
-#             'doc': 'Task: Initializing create author list'
-#             }
-#
-#
-# def task_release_notes():
-#     """
-#     Creates release notes
-#     """
-#     return {'actions': ["paver write_release_and_log"],
-#             'basename': 'release-notes',
-#             'file_dep': ["pavement.py"],
-#             'doc': 'Task: Initializing create release notes'
-#             }
-
-
 """
 Task dependency group
 """
@@ -100,16 +78,6 @@ def task_doc_build():
             'basename': 'doc-build',
             'doc': 'Task Group: Initializing document build tasks',
             'task_dep': ['build', 'doc-compile']}
-
-
-# def task_release_authors_notes():
-#     """
-#     Task group with dependency for release notes/authors
-#     """
-#     return {'actions': None,
-#             'basename': 'release-authors-notes',
-#             'doc': 'Task Group: Initializing release tasks',
-#             'task_dep': ['release-authors', 'release-notes']}
 
 
 def gen_release_tasks():
