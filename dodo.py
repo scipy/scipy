@@ -17,13 +17,16 @@ Examples:
         $ doit doc-build
 """
 
-from doit.task import clean_targets
+from doit import create_after
 
 DOIT_CONFIG = {'verbosity': 2}
 
 
-def init_task():
-    print("initiating scipy tasks")
+# def paver_write_release_task():
+#     """
+#     Write Release task contents from pavement.py
+#     """
+#    # TODO: create a new script or add contents here
 
 
 def task_build():
@@ -32,7 +35,7 @@ def task_build():
     """
     return {'actions': ["python dev.py --build-only"],
             'file_dep': ["dev.py"],
-            'doc': 'Initializing build task'
+            'doc': 'Task: Initializing build task'
             }
 
 
@@ -42,7 +45,7 @@ def task_test():
     """
     return {'actions': ["python dev.py --no-build -s %(module)s"],
             'file_dep': ["dev.py"],
-            'doc': 'Initializing tests for the chosen module',
+            'doc': 'Task: Initializing tests for the chosen module',
             'params': [{'name': 'module',
                         'short': 'f',
                         'default': '',
@@ -58,12 +61,73 @@ def task_doc_compile():
     return {'actions': ["python dev.py --doc"],
             'basename': 'doc-compile',
             'file_dep': ["dev.py"],
-            'doc': 'Initializing document build task'
+            'doc': 'Task: Initializing document build task'
             }
 
 
+# def task_release_authors():
+#     """
+#     Creates author list
+#     """
+#     return {'actions': ["python tools/authors.py"],
+#             'basename': 'release-authors',
+#             'file_dep': ["tools/authors.py"],
+#             'doc': 'Task: Initializing create author list'
+#             }
+#
+#
+# def task_release_notes():
+#     """
+#     Creates release notes
+#     """
+#     return {'actions': ["paver write_release_and_log"],
+#             'basename': 'release-notes',
+#             'file_dep': ["pavement.py"],
+#             'doc': 'Task: Initializing create release notes'
+#             }
+
+
+"""
+Task dependency group
+"""
+
+
 def task_doc_build():
+    """
+    Task group with dependency for document build
+    """
     return {'actions': None,
             'basename': 'doc-build',
-            'doc': 'Initializing document build tasks',
+            'doc': 'Task Group: Initializing document build tasks',
             'task_dep': ['build', 'doc-compile']}
+
+
+# def task_release_authors_notes():
+#     """
+#     Task group with dependency for release notes/authors
+#     """
+#     return {'actions': None,
+#             'basename': 'release-authors-notes',
+#             'doc': 'Task Group: Initializing release tasks',
+#             'task_dep': ['release-authors', 'release-notes']}
+
+
+def gen_release_tasks():
+    """
+    Task generator for release tasks
+    """
+    yield {'actions': ["python tools/authors.py"],
+           'basename': 'release-authors',
+           'file_dep': ["tools/authors.py"],
+           'doc': 'Task: Initializing create author list'}
+    yield {'actions': ["paver write_release_and_log"],
+           'basename': 'release-notes',
+           'file_dep': ["pavement.py"],
+           'doc': 'Task: Initializing create release notes'}
+
+
+def task_release():
+    """
+    Call to task generator
+    """
+    yield gen_release_tasks()
