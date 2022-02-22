@@ -17,6 +17,8 @@ Examples:
         $ doit doc-build
         $ doit release-notes
         $ doit release-authors
+        $ doit bench -p -s
+        $ doit bench -p -t
 """
 
 DOIT_CONFIG = {'verbosity': 2}
@@ -59,6 +61,20 @@ def task_doc_compile():
             'basename': 'doc-compile',
             'file_dep': ["dev.py"],
             'doc': 'Task: Initializing document build task'
+            }
+
+
+def task_bench():
+    """
+    Runs benchmark tasks
+    """
+    return {'actions': ["python dev.py --bench %(param)s integrate.SolveBVP"],
+            'doc': 'Task: Initializing benchmarking task',
+            'params': [{'name': 'param',
+                        'short': 'p',
+                        'default': '',
+                        'type': str,
+                        'help': 'Enter flag parameter options: -s or -t'}],
             }
 
 
