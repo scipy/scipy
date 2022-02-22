@@ -103,6 +103,7 @@ def laplacian(
     The normalization uses the inverse square roots of row-sums of the input
     adjacency matrix, and thus may fail if the row-sums contain
     zeros, negative, or complex with a non-zero imaginary part values.
+
     The normalization is symmetric, making the normalized Laplacian also
     symmetric if the input csgraph was symmetric.
 
