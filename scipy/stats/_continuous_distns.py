@@ -6452,21 +6452,25 @@ class powerlaw_gen(rv_continuous):
 
             if scale + loc >= data.max():
                 diff = data.max() - (scale + loc)
-                scale = scale + (np.abs(diff) * 1.05)
+                scale = scale + (np.abs(diff))# * 1.05)
 
             # When the scale is small, increase it by the inverse of how small it is.
-            return shape, loc, scale * (1 + .5/scale/1000)
+            return shape, loc, scale #* (1 + .5/scale/1000)
 
         shape, loc, scale = universal_slte1(data)
 
         if shape <= 1:
             return shape, loc, scale
 
+        def shape_universal(data, loc, scale):
+            mask = data <= loc
+            return -len(data) / np.sum(np.log((data[~mask] - loc)/scale))
+
         def location_sgt1(data, scale):
             return data.max() - scale
 
         def scale_sgt1(data, loc):
-            return np.nextafter(data.max() - loc, np.inf) * EPS
+            return np.nextafter(data.max() - loc, np.inf)
 
         def dldu(data, shape, scale):
             return - data.shape[0] * shape / scale
@@ -6475,27 +6479,28 @@ class powerlaw_gen(rv_continuous):
             mask = data != loc
             return (shape - 1) * np.sum(1 / (loc - data[mask]))
 
-        def fun_to_solve(loc):
-            scale = scale_sgt1(data, loc)
+        def fun_to_solve(scale):
+            loc = location_sgt1(data, scale)
             shape = shape_universal(data, loc, scale)
             return dldu(data, shape, scale) - dldsigma(data, shape, loc)
 
+
         from scipy.optimize import root_scalar
 
-        lbrack, rbrack = (data.min() - 1, data.min())
+        lbrack, rbrack = 0.001, 1
         def interval_contains_root(lbrack, rbrack):
-            # return true if the signs disagree.
+            # Check if the interval (lbrack, rbrack) contains the root.
             return (np.sign(fun_to_solve(lbrack)) !=
                     np.sign(fun_to_solve(rbrack)))
 
-        sign = np.sign(lbrack)
-        while not interval_contains_root(lbrack, rbrack):
-            lbrack = lbrack * 2 * sign
+        while not interval_contains_root(lbrack, rbrack) and rbrack != np.inf:
+            print(rbrack)
+            rbrack *= 2
 
         root = root_scalar(fun_to_solve, bracket=(lbrack, rbrack))
         
-        loc = root.root
-        scale = scale_sgt1(data, loc)
+        scale = root.root
+        loc = location_sgt1(data, scale)
         shape = shape_universal(data, loc, scale)
         return shape, loc, scale
 
