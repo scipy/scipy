@@ -473,7 +473,7 @@ def linkcode_resolve(domain, info):
             return None
 
     # Use the original function object if it is wrapped.
-    obj = obj.__wrapped__ if hasattr(obj, "__wrapped__") else obj
+    obj = getattr(obj, "__wrapped__", obj)
     # SciPy's distributions are instances of *_gen. Point to this
     # class since it contains the implementation of all the methods.
     if isinstance(obj, (rv_generic, multi_rv_generic)):
