@@ -117,7 +117,7 @@ jobs:
 
       - run:
           name: build docs
-          no_output_timeout: 25m
+          no_output_timeout: 30m
           command: |
             export SPHINXOPTS="-D version={{ .Branch }} -D release={{ .Branch }}"
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
