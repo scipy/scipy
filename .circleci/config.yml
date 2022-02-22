@@ -97,7 +97,7 @@ jobs:
 
       - run:
           name: build docs
-          no_output_timeout: 25m
+          no_output_timeout: 20m
           command: |
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
             python dev.py -n -j2 --doc html-scipyorg --doc latex
