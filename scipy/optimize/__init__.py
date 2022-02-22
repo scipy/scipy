@@ -232,12 +232,13 @@ The `root` function supports the following methods:
    optimize.root-krylov
    optimize.root-dfsane
 
-Linear programming
-==================
+Linear programming / MILP
+=========================
 
 .. autosummary::
    :toctree: generated/
 
+   milp -- Mixed integer linear programming.
    linprog -- Unified interface for minimizers of linear programming problems.
 
 The `linprog` function supports the following methods:
@@ -420,6 +421,7 @@ from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 from ._shgo import shgo
 from ._dual_annealing import dual_annealing
 from ._qap import quadratic_assignment
+from ._milp import milp
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

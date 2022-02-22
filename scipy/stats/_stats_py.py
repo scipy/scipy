@@ -440,6 +440,13 @@ def mode(a, axis=0, nan_policy='propagate'):
     The mode of object arrays is calculated using `collections.Counter`, which
     treats NaNs with different binary representations as distinct.
 
+    .. deprecated:: 1.9.0
+        Support for non-numeric arrays has been deprecated and will be removed
+        in the second release after SciPy 1.9.0. `pandas.DataFrame.mode`_ can
+        be used instead.
+
+        .. _pandas.DataFrame.mode: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html
+
     The mode of arrays with other dtypes is calculated using `np.unique`.
     In NumPy versions 1.21 and after, all NaNs - even those with different
     binary representations - are treated as equivalent and counted as separate
@@ -461,7 +468,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     >>> stats.mode(a, axis=None)
     ModeResult(mode=3, count=3)
 
-    """
+    """  # noqa: E501
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
         return ModeResult(np.array([]), np.array([]))
@@ -471,6 +478,13 @@ def mode(a, axis=0, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.mode(a, axis)
+
+    if not np.issubdtype(a.dtype, np.number):
+        warnings.warn("Support for non-numeric arrays has been deprecated "
+                      "and will be removed in the second release after "
+                      "1.9.0. `pandas.DataFrame.mode` can be used instead, "
+                      "see https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html.",  # noqa: E501
+                      DeprecationWarning, stacklevel=2)
 
     if a.dtype == object:
         def _mode1D(a):
@@ -3336,11 +3350,35 @@ def trimboth(a, proportiontocut, axis=0):
 
     Examples
     --------
+    Create an array of 10 values and trim 10% of those values from each end:
+
     >>> from scipy import stats
-    >>> a = np.arange(20)
-    >>> b = stats.trimboth(a, 0.1)
-    >>> b.shape
-    (16,)
+    >>> a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> stats.trimboth(a, 0.1)
+    array([1, 3, 2, 4, 5, 6, 7, 8])
+
+    Note that the elements of the input array are trimmed by value, but the
+    output array is not necessarily sorted.
+
+    The proportion to trim is rounded down to the nearest integer. For
+    instance, trimming 25% of the values from each end of an array of 10
+    values will return an array of 6 values:
+
+    >>> b = np.arange(10)
+    >>> stats.trimboth(b, 1/4).shape
+    (6,)
+
+    Multidimensional arrays can be trimmed along any axis or across the entire
+    array:
+
+    >>> c = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
+    >>> d = np.array([a, b, c])
+    >>> stats.trimboth(d, 0.4, axis=0).shape
+    (1, 10)
+    >>> stats.trimboth(d, 0.4, axis=1).shape
+    (3, 2)
+    >>> stats.trimboth(d, 0.4, axis=None).shape
+    (6,)
 
     """
     a = np.asarray(a)
@@ -3394,11 +3432,35 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
     Examples
     --------
+    Create an array of 10 values and trim 20% of its lowest values:
+
     >>> from scipy import stats
-    >>> a = np.arange(20)
-    >>> b = stats.trim1(a, 0.5, 'left')
-    >>> b
-    array([10, 11, 12, 13, 14, 16, 15, 17, 18, 19])
+    >>> a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> stats.trim1(a, 0.2, 'left')
+    array([2, 4, 3, 5, 6, 7, 8, 9])
+
+    Note that the elements of the input array are trimmed by value, but the
+    output array is not necessarily sorted.
+
+    The proportion to trim is rounded down to the nearest integer. For
+    instance, trimming 25% of the values from an array of 10 values will
+    return an array of 8 values:
+
+    >>> b = np.arange(10)
+    >>> stats.trim1(b, 1/4).shape
+    (8,)
+
+    Multidimensional arrays can be trimmed along any axis or across the entire
+    array:
+
+    >>> c = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
+    >>> d = np.array([a, b, c])
+    >>> stats.trim1(d, 0.8, axis=0).shape
+    (1, 10)
+    >>> stats.trim1(d, 0.8, axis=1).shape
+    (3, 2)
+    >>> stats.trim1(d, 0.8, axis=None).shape
+    (6,)
 
     """
     a = np.asarray(a)
@@ -3422,7 +3484,9 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
     atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
-    return atmp[lowercut:uppercut]
+    sl = [slice(None)] * atmp.ndim
+    sl[axis] = slice(lowercut, uppercut)
+    return atmp[tuple(sl)]
 
 
 def trim_mean(a, proportiontocut, axis=0):
@@ -5712,6 +5776,13 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     pvalue : float or array
         Two-sided p-value.
 
+    Notes
+    -----
+    The statistic is calculated as ``(np.mean(a) - popmean)/se``, where
+    ``se`` is the standard error. Therefore, the statistic will be positive
+    when the sample mean is greater than the population mean and negative when
+    the sample mean is less than the population mean.
+
     Examples
     --------
     >>> from scipy import stats
@@ -5882,7 +5953,9 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Notes
     -----
-    .. versionadded:: 0.16.0
+    The statistic is calculated as ``(mean1 - mean2)/se``, where ``se`` is the
+    standard error. Therefore, the statistic will be positive when `mean1` is
+    greater than `mean2` and negative when `mean1` is less than `mean2`.
 
     References
     ----------
@@ -6140,6 +6213,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     and the trimmed sample size in calculation of the statistic. Trimming is
     recommended if the underlying distribution is long-tailed or contaminated
     with outliers [4]_.
+
+    The statistic is calculated as ``(np.mean(a) - np.mean(b))/se``, where
+    ``se`` is the standard error. Therefore, the statistic will be positive
+    when the sample mean of `a` is greater than the sample mean of `b` and
+    negative when the sample mean of `a` is less than the sample mean of
+    `b`.
 
     References
     ----------
@@ -6529,6 +6608,11 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     than the threshold, e.g. 1%, 5% or 10%, then we reject the null
     hypothesis of equal averages. Small p-values are associated with
     large t-statistics.
+
+    The statistic is calculated as ``np.mean(a - b)/se``, where ``se`` is the
+    standard error. Therefore, the statistic will be positive when the sample
+    mean of ``a - b`` is greater than zero and negative when the sample mean of
+    ``a - b`` is less than zero.
 
     References
     ----------
