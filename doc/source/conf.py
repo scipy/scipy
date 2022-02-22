@@ -76,7 +76,7 @@ master_doc = 'index'
 
 # General substitutions.
 project = 'SciPy'
-copyright = '2008-%s, The SciPy community' % date.today().year
+copyright = f'2008-{date.today().year}, The SciPy community'
 
 # The default replacements for |version| and |release|, also used in various
 # other places throughout the built documents.
@@ -84,7 +84,11 @@ import scipy
 version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
 release = scipy.__version__
 
-print("%s (VERSION %s)" % (project, version))
+if os.environ.get('CIRCLE_JOB', '') == 'build_docs':
+    version = os.environ['CIRCLE_BRANCH']
+    release = version
+
+print(f"{project} (VERSION {version})")
 
 # There are two options for replacing |today|: either, you set today to some
 # non-false value, then it is used:
