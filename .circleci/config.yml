@@ -47,6 +47,16 @@ jobs:
               - deps_ccache-{{ .Branch }}
               - deps_ccache
 
+      - restore_cache:
+          keys:
+              - build_install_folder-{{ .Branch }}
+              - build_install_folder
+
+      - restore_cache:
+          keys:
+              - build_src_folder-{{ .Branch }}
+              - build_src_folder
+
       - run:
           name: setup Python venv
           command: |
@@ -70,6 +80,16 @@ jobs:
             - ~/.ccache
             - ~/.cache/pip
 
+      - save_cache:
+          key: build_install_folder-{{ .Branch }}
+          paths:
+            - ~/repo/build-install
+
+      - save_cache:
+          key: build_src_folder-{{ .Branch }}
+          paths:
+            - ~/repo/build
+
       - run:
           name: ccache performance
           command: |
@@ -92,20 +112,21 @@ jobs:
 
       - restore_cache:
           keys:
-              - documentation-{{ .Branch }}
-              - documentation
+              - doc_sphinx-{{ .Branch }}
+              - doc_sphinx
 
       - run:
           name: build docs
           no_output_timeout: 25m
           command: |
+            export SPHINXOPTS="-D version={{ .Branch }} -D release={{ .Branch }}"
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
             python dev.py -n -j2 --doc html-scipyorg --doc latex
             make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
             cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
 
       - save_cache:
-          key: documentation-{{ .Branch }}
+          key: doc_sphinx-{{ .Branch }}
           paths:
             - ~/repo/doc/build
 
