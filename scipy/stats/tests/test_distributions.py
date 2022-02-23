@@ -1468,7 +1468,7 @@ class TestPareto:
 
     @pytest.mark.filterwarnings("ignore:invalid value encountered in "
                                 "double_scalars")
-    @pytest.mark.parametrize("rvs_shape", [1, 2])
+    @pytest.mark.parametrize("rvs_shape", [.1, 2])
     @pytest.mark.parametrize("rvs_loc", [0, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 5])
     @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
@@ -1513,10 +1513,12 @@ class TestPareto:
                       fscale=3)
 
     def test_negative_data(self, rng):
-        # The purpose of this test is to make sure that no warnings are raised
-        # for all negative data.
         data = stats.pareto.rvs(loc=-130, b=1, size=100, random_state=rng)
         assert np.all(data < 0)
+        # The purpose of this test is to make sure that no runtime warnings are
+        # raised for all negative data, not to output of the fit method. Other
+        # methods test the output but have to silence warnigns from the super
+        # method.
         _ = stats.pareto.fit(data)
 
 
