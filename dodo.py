@@ -16,9 +16,9 @@ Examples:
         $ doit test -f <module name>
         $ doit doc-build
         $ doit release-notes
-        $ doit release-authors
-        $ doit bench -p -s
-        $ doit bench -p -t
+        $ doit bench --flag -s
+        $ doit bench --flag -t
+        $ doit release-authors -p 1.7.0 -c 1.8.0
 """
 
 DOIT_CONFIG = {'verbosity': 2}
@@ -69,10 +69,10 @@ def task_bench():
     Runs benchmark tasks
     """
     return {'actions': ["python dev.py --bench %(param)s integrate.SolveBVP"],
-            'doc': 'Task: Initializing benchmarking task',
             'file_dep': ["dev.py"],
+            'doc': 'Task: Initializing benchmarking task',
             'params': [{'name': 'param',
-                        'short': 'p',
+                        'long': 'flag',
                         'default': '',
                         'type': str,
                         'help': 'Enter flag parameter options: -s or -t'}],
@@ -99,9 +99,17 @@ def gen_release_tasks():
     """
     Task generator for release tasks
     """
-    yield {'actions': ["python tools/authors.py"],
+    yield {'actions': ["python tools/authors.py v%(previous_version)s..v%(current_version)s"],
            'basename': 'release-authors',
            'file_dep': ["tools/authors.py"],
+           'params': [{'name': 'previous_version',
+                       'short': 'p',
+                       'default': '',
+                       'type': str},
+                      {'name': 'current_version',
+                       'short': 'c',
+                       'default': '',
+                       'type': str}],
            'doc': 'Task: Initializing create author list'}
     yield {'actions': ["paver write_release_and_log"],
            'basename': 'release-notes',
