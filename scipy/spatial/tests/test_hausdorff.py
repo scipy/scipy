@@ -1,8 +1,7 @@
 import numpy as np
-from numpy.testing import (assert_almost_equal,
+from numpy.testing import (assert_allclose,
                            assert_array_equal,
-                           assert_equal,
-                           assert_)
+                           assert_equal)
 import pytest
 from scipy.spatial.distance import directed_hausdorff
 from scipy.spatial import distance
@@ -36,7 +35,7 @@ class TestHausdorff:
 
         forward = directed_hausdorff(self.path_1, self.path_2)[0]
         reverse = directed_hausdorff(self.path_2, self.path_1)[0]
-        assert_(forward != reverse)
+        assert forward != reverse
 
     def test_brute_force_comparison_forward(self):
         # Ensure that the algorithm for directed_hausdorff gives the
@@ -46,7 +45,7 @@ class TestHausdorff:
         # brute force over rows:
         expected = max(np.amin(distance.cdist(self.path_1, self.path_2),
                                axis=1))
-        assert_almost_equal(actual, expected, decimal=9)
+        assert_allclose(actual, expected)
 
     def test_brute_force_comparison_reverse(self):
         # Ensure that the algorithm for directed_hausdorff gives the
@@ -56,13 +55,13 @@ class TestHausdorff:
         # brute force over columns:
         expected = max(np.amin(distance.cdist(self.path_1, self.path_2), 
                                axis=0))
-        assert_almost_equal(actual, expected, decimal=9)
+        assert_allclose(actual, expected)
 
     def test_degenerate_case(self):
         # The directed Hausdorff distance must be zero if both input
         # data arrays match.
         actual = directed_hausdorff(self.path_1, self.path_1)[0]
-        assert_almost_equal(actual, 0.0, decimal=9)
+        assert_allclose(actual, 0.0)
 
     def test_2d_data_forward(self):
         # Ensure that 2D data is handled properly for a simple case
@@ -72,7 +71,7 @@ class TestHausdorff:
         expected = max(np.amin(distance.cdist(self.path_1[..., :2],
                                               self.path_2[..., :2]),
                                axis=1))
-        assert_almost_equal(actual, expected, decimal=9)
+        assert_allclose(actual, expected)
 
     def test_4d_data_reverse(self):
         # Ensure that 4D data is handled properly for a simple case
@@ -81,7 +80,7 @@ class TestHausdorff:
         # brute force over columns:
         expected = max(np.amin(distance.cdist(self.path_1_4d, self.path_2_4d), 
                                axis=0))
-        assert_almost_equal(actual, expected, decimal=9)
+        assert_allclose(actual, expected)
 
     def test_indices(self):
         # Ensure that correct point indices are returned -- they should
@@ -145,6 +144,20 @@ class TestHausdorff:
         # verify fix for gh-11332
         actual = directed_hausdorff(u=A, v=B, seed=seed)
         # check distance
-        assert_almost_equal(actual[0], expected[0], decimal=9)
+        assert_allclose(actual[0], expected[0])
         # check indices
         assert actual[1:] == expected[1:]
+
+
+@pytest.mark.xslow
+def test_massive_arr_overflow():
+    # on 64-bit systems we should be able to
+    # handle arrays that exceed the indexing
+    # size of a 32-bit signed integer
+    size = int(3e9)
+    arr1 = np.zeros(shape=(size, 2))
+    arr2 = np.zeros(shape=(3, 2))
+    arr1[size - 1] = [5, 5]
+    actual = directed_hausdorff(u=arr1, v=arr2)
+    assert_allclose(actual[0], 7.0710678118654755)
+    assert_allclose(actual[1], size - 1)

@@ -24,8 +24,8 @@ from libc.math cimport fabs, sqrt
 
 import numpy as np
 
-import scipy.spatial.qhull as qhull
-cimport scipy.spatial.qhull as qhull
+import scipy.spatial._qhull as qhull
+cimport scipy.spatial._qhull as qhull
 
 import warnings
 
@@ -46,7 +46,7 @@ ctypedef fused double_or_complex:
 # Interpolator base class
 #------------------------------------------------------------------------------
 
-class NDInterpolatorBase(object):
+class NDInterpolatorBase:
     """
     Common routines for interpolators.
 

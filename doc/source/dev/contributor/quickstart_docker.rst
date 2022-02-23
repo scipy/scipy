@@ -116,6 +116,8 @@ container do not persist after you close it.
 
    this environment has all the dependencies you'll need to start using/building SciPy.
 
+#. Initialize git submodules: ``git submodule update --init``.
+
 #. Do an in-place build by entering::
 
       python setup.py build_ext --inplace

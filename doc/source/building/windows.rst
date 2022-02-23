@@ -335,6 +335,7 @@ Again using the same generic example folder from above
    cd C:\Users\<user name>\Documents\GitHub
    git clone https://github.com/scipy/scipy.git
    cd scipy
+   git submodule update --init
 
 Now we need to copy the :code:`openblas.a` file that we've built earlier to the
 correct location. If your Python is installed somewhere like the following:
@@ -378,7 +379,7 @@ Now install the dependencies that we need to build and test SciPy.
 
 .. code:: shell
 
-    python -m pip install wheel setuptools numpy>=1.16.5 Cython>=0.29.18 pybind11>=2.4.3 pythran pytest pytest-xdist
+    python -m pip install wheel setuptools numpy>=1.16.5 Cython>=0.29.18 pybind11>=2.4.3 pythran>=0.9.12 pytest pytest-xdist
 
 .. note::
 
@@ -462,7 +463,7 @@ As discussed in the overview, this document is not meant to provide extremely de
 NumPy and SciPy on Windows. This is largely because currently, there is no single superior way to do so
 and because the process for building these libraries on Windows is under development. It is likely that any
 information will go out of date relatively soon. If you wish to receive more assistance, please reach out to the NumPy
-and SciPy mailing lists, which can be found `here <https://www.scipy.org/scipylib/mailing-lists.html>`__.  There are many
+and SciPy mailing lists, which can be found `here <https://www.scipy.org/mailing-lists>`__.  There are many
 developers out there working on this issue right now, and they would certainly be happy to help you out!  Google is also
 a good resource, as there are many people out there who use NumPy and SciPy on Windows, so it would not be surprising if
 your question or problem has already been addressed.

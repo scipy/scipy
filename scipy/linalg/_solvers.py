@@ -12,14 +12,14 @@ import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
 
-from .basic import solve, solve_triangular, matrix_balance
+from ._basic import solve, solve_triangular, matrix_balance
 from .lapack import get_lapack_funcs
-from .decomp_schur import schur
-from .decomp_lu import lu
-from .decomp_qr import qr
+from ._decomp_schur import schur
+from ._decomp_lu import lu
+from ._decomp_qr import qr
 from ._decomp_qz import ordqz
-from .decomp import _asarray_validated
-from .special_matrices import kron, block_diag
+from ._decomp import _asarray_validated
+from ._special_matrices import kron, block_diag
 
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',

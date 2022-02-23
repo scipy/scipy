@@ -7,10 +7,9 @@ class _ScipyBackend:
 
     Notes
     -----
-    We use the domain ``numpy.scipy`` rather than ``scipy`` because in the
-    future, ``uarray`` will treat the domain as a hierarchy. This means the user
-    can install a single backend for ``numpy`` and have it implement
-    ``numpy.scipy.fft`` as well.
+    We use the domain ``numpy.scipy`` rather than ``scipy`` because ``uarray``
+    treats the domain as a hierarchy. This means the user can install a single
+    backend for ``numpy`` and have it implement ``numpy.scipy.fft`` as well.
     """
     __ua_domain__ = "numpy.scipy.fft"
 
@@ -43,11 +42,13 @@ def _backend_from_arg(backend):
     return backend
 
 
-def set_global_backend(backend):
+def set_global_backend(backend, coerce=False, only=False, try_last=False):
     """Sets the global fft backend
 
-    The global backend has higher priority than registered backends, but lower
-    priority than context-specific backends set with `set_backend`.
+    This utility method replaces the default backend for permanent use. It
+    will be tried in the list of backends automatically, unless the
+    ``only`` flag is set on a backend. This will be the first tried
+    backend outside the :obj:`set_backend` context manager.
 
     Parameters
     ----------
@@ -55,6 +56,13 @@ def set_global_backend(backend):
         The backend to use.
         Can either be a ``str`` containing the name of a known backend
         {'scipy'} or an object that implements the uarray protocol.
+    coerce : bool
+        Whether to coerce input types when trying this backend.
+    only : bool
+        If ``True``, no more backends will be tried if this fails.
+        Implied by ``coerce=True``.
+    try_last : bool
+        If ``True``, the global backend is tried after registered backends.
 
     Raises
     ------
@@ -75,7 +83,7 @@ def set_global_backend(backend):
     array([1.+0.j])
     """
     backend = _backend_from_arg(backend)
-    ua.set_global_backend(backend)
+    ua.set_global_backend(backend, coerce=coerce, only=only, try_last=try_last)
 
 
 def register_backend(backend):
@@ -177,4 +185,4 @@ def skip_backend(backend):
     return ua.skip_backend(backend)
 
 
-set_global_backend('scipy')
+set_global_backend('scipy', try_last=True)

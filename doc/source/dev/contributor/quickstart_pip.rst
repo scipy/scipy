@@ -9,8 +9,8 @@ Development environment quickstart guide using ``pip`` on Ubuntu Linux
 This is a high-level overview of what is needed to set up a development
 environment. This is only one possible way out of many. This guide assumes
 you have a fresh install of Ubuntu Linux 20.04, which only has a ``python3``
-executable. We also assume you have already installed ``git`` and cloned
-the SciPy repository.
+executable. We also assume you have already installed ``git``, cloned
+the SciPy repository and initialized/updated git submodules.
 
 
 Installing the system-level dependencies
@@ -20,11 +20,10 @@ First, you will also need the compilers for C, C++ and Fortran::
 
     sudo apt install -y gcc g++ gfortran
 
-SciPy also requires BLAS and LAPACK libraries. You can install several variants
-(ATLAS, OpenBLAS etc), but here we take the simplest option::
+SciPy also requires BLAS and LAPACK libraries. There are multiple variants,
+and here we install OpenBLAS, which is the SciPy default::
 
-    sudo apt install -y liblapack-dev
-
+    sudo apt install -y libopenblas-dev pkg-config
 
 Installing the python-level dependencies
 ----------------------------------------
@@ -106,18 +105,19 @@ Building SciPy
 
 Inside the ``scipy-dev`` environment, install the python-level dependencies::
 
-    python -m pip install numpy pytest cython pythran pybind11
+    python -m pip install numpy pytest cython pythran pybind11 meson ninja
 
 Note that when the virtual environment is active, the system-wide names ``pip3``
 and ``python3`` are aliased to ``pip`` and ``python``, respectively.
 
-Now that you have all needed dependencies, navigate to the directory where
-you cloned the source code into, and build SciPy (this takes a while)::
+Now that you have all external dependencies, navigate to the directory where
+you cloned the source code into. Download the submodules::
 
-    python setup.py build
+    git submodule update --init
 
-Optionally, test it::
+Finally, build SciPy and test it (this takes a while; subsequent rebuilds will be
+much faster)::
 
-    python runtests.py
+    python dev.py
 
 

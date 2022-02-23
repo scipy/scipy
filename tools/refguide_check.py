@@ -45,6 +45,10 @@ from pkg_resources import parse_version
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxext'))
 from numpydoc.docscrape_sphinx import get_doc_object
+from numpydoc.docscrape import NumpyDocString  # noqa
+from scipy.stats._distr_params import distcont, distdiscrete  # noqa
+from scipy import stats  # noqa
+
 
 if parse_version(sphinx.__version__) >= parse_version('1.5'):
     # Enable specific Sphinx directives
@@ -76,6 +80,7 @@ PUBLIC_SUBMODULES = [
     'interpolate',
     'io',
     'io.arff',
+    'io.matlab',
     'io.wavfile',
     'linalg',
     'linalg.blas',
@@ -98,6 +103,7 @@ PUBLIC_SUBMODULES = [
     'stats.mstats',
     'stats.contingency',
     'stats.qmc',
+    'stats.sampling'
 ]
 
 # Docs for these modules are included in the parent module
@@ -477,6 +483,7 @@ CHECK_NAMESPACE = {
       # recognize numpy repr's
       'array': np.array,
       'matrix': np.matrix,
+      'masked_array': np.ma.masked_array,
       'int64': np.int64,
       'uint64': np.uint64,
       'int8': np.int8,
@@ -488,6 +495,22 @@ CHECK_NAMESPACE = {
       'NaN': np.nan,
       'inf': np.inf,
       'Inf': np.inf,}
+
+
+def try_convert_namedtuple(got):
+    # suppose that "got" is smth like MoodResult(statistic=10, pvalue=0.1).
+    # Then convert it to the tuple (10, 0.1), so that can later compare tuples.
+    num = got.count('=')
+    if num == 0:
+        # not a nameduple, bail out
+        return got
+    regex = (r'[\w\d_]+\(' +
+             ', '.join([r'[\w\d_]+=(.+)']*num) +
+             r'\)')
+    grp = re.findall(regex, got.replace('\n', ' '))
+    # fold it back to a tuple
+    got_again = '(' + ', '.join(grp[0]) + ')'
+    return got_again
 
 
 class DTRunner(doctest.DocTestRunner):
@@ -595,6 +618,22 @@ class Checker(doctest.OutputChecker):
                 s_got = ", ".join(s_got[1:-1].split())
                 return self.check_output(s_want, s_got, optionflags)
 
+            # maybe we are dealing with masked arrays?
+            # their repr uses '--' for masked values and this is invalid syntax
+            # If so, replace '--' by nans (they are masked anyway) and retry
+            if 'masked_array' in want or 'masked_array' in got:
+                s_want = want.replace('--', 'nan')
+                s_got = got.replace('--', 'nan')
+                return self.check_output(s_want, s_got, optionflags)
+
+            if "=" not in want and "=" not in got:
+                # if we're here, want and got cannot be eval-ed (hence cannot
+                # be converted to numpy objects), they are not namedtuples
+                # (those must have at least one '=' sign).
+                # Thus they should have compared equal with vanilla doctest.
+                # Since they did not, it's an error.
+                return False
+
             if not self.parse_namedtuples:
                 return False
             # suppose that "want"  is a tuple, and "got" is smth like
@@ -602,18 +641,13 @@ class Checker(doctest.OutputChecker):
             # Then convert the latter to the tuple (10, 0.1),
             # and then compare the tuples.
             try:
-                num = len(a_want)
-                regex = (r'[\w\d_]+\(' +
-                         ', '.join([r'[\w\d_]+=(.+)']*num) +
-                         r'\)')
-                grp = re.findall(regex, got.replace('\n', ' '))
-                if len(grp) > 1:  # no more than one for now
-                    return False
-                # fold it back to a tuple
-                got_again = '(' + ', '.join(grp[0]) + ')'
-                return self.check_output(want, got_again, optionflags)
+                got_again = try_convert_namedtuple(got)
+                want_again = try_convert_namedtuple(want)
             except Exception:
                 return False
+            else:
+                return self.check_output(want_again, got_again, optionflags)
+
 
         # ... and defer to numpy
         try:
@@ -835,6 +869,58 @@ def init_matplotlib():
         HAVE_MATPLOTLIB = False
 
 
+def check_dist_keyword_names():
+    # Look for collisions between names of distribution shape parameters and
+    # keywords of distribution methods. See gh-5982.
+    distnames = set(distdata[0] for distdata in distcont + distdiscrete)
+    mod_results = []
+    for distname in distnames:
+        dist = getattr(stats, distname)
+
+        method_members = inspect.getmembers(dist, predicate=inspect.ismethod)
+        method_names = [method[0] for method in method_members
+                        if not method[0].startswith('_')]
+        for methodname in method_names:
+            method = getattr(dist, methodname)
+            try:
+                params = NumpyDocString(method.__doc__)['Parameters']
+            except TypeError:
+                result = (f'stats.{distname}.{methodname}', False,
+                          "Method parameters are not documented properly.")
+                mod_results.append(result)
+                continue
+
+            if not dist.shapes:  # can't have collision if there are no shapes
+                continue
+            shape_names = dist.shapes.split(', ')
+
+            param_names1 = set(param.name for param in params)
+            param_names2 = set(inspect.signature(method).parameters)
+            param_names = param_names1.union(param_names2)
+
+            # # Disabling this check in this PR;
+            # # these discrepancies are a separate issue.
+            # no_doc_params = {'args', 'kwds', 'kwargs'}  # no need to document
+            # undoc_params = param_names2 - param_names1 - no_doc_params
+            # if un_doc_params:
+            #     result = (f'stats.{distname}.{methodname}', False,
+            #               f'Parameter(s) {undoc_params} are not documented.')
+            #     mod_results.append(result)
+            #     continue
+
+            intersection = param_names.intersection(shape_names)
+
+            if intersection:
+                message = ("Distribution/method keyword collision: "
+                           f"{intersection} ")
+                result = (f'stats.{distname}.{methodname}', False, message)
+            else:
+                result = (f'stats.{distname}.{methodname}', True, '')
+            mod_results.append(result)
+
+    return mod_results
+
+
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
     parser.add_argument("module_names", metavar="SUBMODULES", default=[],
@@ -901,6 +987,8 @@ def main(argv):
         if args.doctests:
             mod_results += check_doctests(module, (args.verbose >= 2), dots=dots,
                                           doctest_warnings=args.doctest_warnings)
+        if module.__name__ == 'scipy.stats':
+            mod_results += check_dist_keyword_names()
 
         for v in mod_results:
             assert isinstance(v, tuple), v

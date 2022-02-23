@@ -57,3 +57,25 @@ class TestInverseErrorFunction:
     )
     def test_domain_bounds(self, f, x, y):
         assert_equal(f(x), y)
+
+    def test_erfinv_asympt(self):
+        # regression test for gh-12758: erfinv(x) loses precision at small x
+        # expected values precomputed with mpmath:
+        # >>> mpmath.dps=100
+        # >>> expected = [float(mpmath.erfinv(t)) for t in x]
+        x = np.array([1e-20, 1e-15, 1e-14, 1e-10, 1e-8, 0.9e-7, 1.1e-7, 1e-6])
+        expected = np.array([8.86226925452758e-21,
+                             8.862269254527581e-16,
+                             8.86226925452758e-15,
+                             8.862269254527581e-11,
+                             8.86226925452758e-09,
+                             7.97604232907484e-08,
+                             9.74849617998037e-08,
+                             8.8622692545299e-07])
+        assert_allclose(sc.erfinv(x), expected,
+                        rtol=1e-10)
+
+        # also test the roundtrip consistency
+        assert_allclose(sc.erf(sc.erfinv(x)),
+                        x,
+                        rtol=1e-10)

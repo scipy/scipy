@@ -26,11 +26,6 @@ class BinomTestResult:
     proportion_estimate : float
         The estimate of the proportion of successes.
 
-    Methods
-    -------
-    proportion_ci :
-        Compute the confidence interval for the estimate of the proportion.
-
     """
     def __init__(self, k, n, alternative, pvalue, proportion_estimate):
         self.k = k
@@ -95,7 +90,7 @@ class BinomTestResult:
         >>> result.proportion_estimate
         0.14
         >>> result.proportion_ci()
-        ConfidenceInterval(low=0.05819170033997341, high=0.2673960024970084)
+        ConfidenceInterval(low=0.05819170033997342, high=0.26739600249700846)
         """
         if method not in ('exact', 'wilson', 'wilsoncc'):
             raise ValueError("method must be one of 'exact', 'wilson' or "
@@ -282,7 +277,7 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
     confidence interval of the estimate:
 
     >>> result.proportion_ci(confidence_level=0.95)
-    ConfidenceInterval(low=0.056846867590246826, high=1.0)
+    ConfidenceInterval(low=0.05684686759024681, high=1.0)
 
     """
     k = _validate_int(k, 'k', minimum=0)
@@ -356,7 +351,7 @@ def _binary_search_for_binom_tst(a, d, lo, hi):
       The higher end of the range to search.
 
     Returns
-    ----------
+    -------
     int
       The index, i between lo and hi
       such that a(i)<=d<a(i+1)
