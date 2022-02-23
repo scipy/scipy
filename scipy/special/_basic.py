@@ -2219,7 +2219,7 @@ def comb(N, k, exact=False, repetition=False):
             warnings.warn(
                 "Non-integer arguments are deprecated when exact=True; "
                 "note that arguments will be cast to integers (as before)",
-                DeprecationWarning,
+                DeprecationWarning, stacklevel=2
             )
         return _comb_int(N, k)
     else:
