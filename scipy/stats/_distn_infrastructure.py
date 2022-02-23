@@ -1065,7 +1065,10 @@ class rv_generic:
         args, loc, scale, size = self._parse_args_rvs(*args, **kwds)
         cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not np.all(cond):
-            raise ValueError("Domain error in arguments.")
+            message = ("Domain error in arguments. The `scale` parameter must "
+                       "be positive for all distributions; see the "
+                       "distribution documentation for other restrictions.")
+            raise ValueError(message)
 
         if np.all(scale == 0):
             return loc*ones(size, 'd')

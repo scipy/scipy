@@ -20,6 +20,8 @@ needs_sphinx = '2.0'
 # ua._Function should not be treated as an attribute
 from sphinx.util import inspect
 import scipy._lib.uarray as ua
+from scipy.stats._distn_infrastructure import rv_generic  # noqa: E402
+from scipy.stats._multivariate import multi_rv_generic  # noqa: E402
 old_isdesc = inspect.isdescriptor
 inspect.isdescriptor = (lambda obj: old_isdesc(obj)
                         and not isinstance(obj, ua._Function))
@@ -360,6 +362,12 @@ def linkcode_resolve(domain, info):
         except Exception:
             return None
 
+    # Use the original function object if it is wrapped.
+    obj = getattr(obj, "__wrapped__", obj)
+    # SciPy's distributions are instances of *_gen. Point to this
+    # class since it contains the implementation of all the methods.
+    if isinstance(obj, (rv_generic, multi_rv_generic)):
+        obj = obj.__class__
     try:
         fn = inspect.getsourcefile(obj)
     except Exception:
