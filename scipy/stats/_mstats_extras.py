@@ -409,7 +409,7 @@ def compare_medians_ms(group_1, group_2, axis=None):
     >>> x = rng.random(size=(3, 7))
     >>> y = rng.random(size=(3, 8))
     >>> stats.mstats.compare_medians_ms(x, y, axis=1)
-    array([0.1718035 , 0.17301209, 0.40799719])
+    array([0.36908985, 0.36092538, 0.2765313 ])
 
     References
     ----------
