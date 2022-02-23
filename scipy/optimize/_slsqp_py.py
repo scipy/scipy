@@ -452,18 +452,18 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         majiter_prev = int(majiter)
 
+    # store the output because another call to slsqp could change it
     end_x = np.copy(x)
-    end_mode = mode
-    end_majiter = majiter
+    end_g = np.copy(g)
+    end_mode = np.copy(mode)
+    end_majiter = np.copy(majiter)
 
-    # one last call to obtain kkt multipliers
+    # one last call to force update kkt multipliers
     # this is the reason we just saved the exit mode.
     slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw,
           alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
           iexact, incons, ireset, itermx, line,
           n1, n2, n3)
-    # restore just in case the update slsqp call changed x
-    x = end_x
 
     # KKT multipliers
     w_ind = 0
@@ -482,11 +482,12 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     if iprint >= 1:
         print(exit_modes[int(mode)] + "    (Exit mode " + str(end_mode) + ')')
         print("            Current function value:", fx)
-        print("            Iterations:", majiter)
+        print("            Iterations:", end_majiter)
         print("            Function evaluations:", sf.nfev)
         print("            Gradient evaluations:", sf.ngev)
 
-    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(end_majiter),
+    return OptimizeResult(x=end_x, fun=fx, jac=end_g[:-1],
+                          nit=int(end_majiter),
                           nfev=sf.nfev, njev=sf.ngev, status=int(end_mode),
                           message=exit_modes[int(end_mode)],
                           success=(end_mode == 0),
