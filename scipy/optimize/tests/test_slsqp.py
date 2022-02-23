@@ -602,3 +602,28 @@ class TestSLSQP:
         with pytest.warns(RuntimeWarning, match='x were outside bounds'):
             res = minimize(f, x0, method='SLSQP', bounds=bounds)
             assert res.success
+
+    def test_kkt_multiplier(self):
+        # test kkt multiplier return with example from GH14394
+        ineq_cons = {'type': 'ineq',
+                     'fun': lambda x: np.array([x[0] - 1.0, 2.0 - x[0]]),
+                     'jac': lambda x: np.array([[1.0], [-1.0]])}
+
+        cs = np.linspace(0, 3, 51)
+
+        for c in cs:
+            fun = lambda x: np.array([(x[0] - c) * (x[0] - c)])
+            jac = lambda x: np.array([2 * (x[0] - c)])
+
+            res = minimize(fun, np.array([1.5]), method='SLSQP', jac=jac,
+                           constraints=ineq_cons)
+
+            w = res.kkt['ineq'][0]
+            if c < 1:
+                analytical = 2 - 2 * c
+                assert_allclose(w[0], analytical)
+            elif c > 2:
+                analytical = 2 * c - 4
+                assert_allclose(w[1], analytical)
+            else:
+                assert_allclose(w, np.array([0, 0]))
