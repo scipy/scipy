@@ -1,10 +1,10 @@
+cdef extern from "Python.h":
+    object PyCapsule_New(void *pointer, char *name, void *destructor)
+
 import ctypes
 from libc.math cimport sqrt, fabs
 from libc.stdlib cimport free
 from numpy import nan
-
-cdef extern from "Python.h":
-    object PyCapsule_New(void *pointer, char *name, void *destructor)
 
 from scipy._lib._ccallback import LowLevelCallable
 from ._ellip_harm cimport ellip_harmonic, ellip_harm_eval, lame_coefficients

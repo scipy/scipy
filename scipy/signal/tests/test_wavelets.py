@@ -2,7 +2,7 @@ import numpy as np
 from numpy.testing import assert_equal, \
     assert_array_equal, assert_array_almost_equal, assert_array_less, assert_
 
-from scipy.signal import wavelets
+import scipy.signal._wavelets as wavelets
 
 
 class TestWavelets:
@@ -149,4 +149,3 @@ class TestWavelets:
         flat_wavelet = lambda l, w: np.full(w, 1 / w)
         cwt_dat = wavelets.cwt(test_data, flat_wavelet, widths)
         assert_array_almost_equal(cwt_dat, np.mean(test_data))
-

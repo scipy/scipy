@@ -8,7 +8,7 @@ Building from sources
 .. note::
 
    If you are only trying to install SciPy, see
-   :doc:`../install_upgrade`.
+   `Installation <https://scipy.org/install>`__.
 
 Build instructions for different operating systems and an FAQ:
 

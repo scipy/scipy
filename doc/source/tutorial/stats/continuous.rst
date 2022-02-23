@@ -286,11 +286,13 @@ Continuous Distributions in `scipy.stats`
    continuous_rice
    continuous_recipinvgauss
    continuous_semicircular
+   continuous_studentized_range
    continuous_t
    continuous_trapezoid
    continuous_triang
    continuous_truncexpon
    continuous_truncnorm
+   continuous_truncweibull_min
    continuous_tukeylambda
    continuous_uniform
    continuous_vonmises

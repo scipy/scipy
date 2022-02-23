@@ -5,6 +5,7 @@ Laplacian of a compressed-sparse graph
 # Authors: Aric Hagberg <hagberg@lanl.gov>
 #          Gael Varoquaux <gael.varoquaux@normalesup.org>
 #          Jake Vanderplas <vanderplas@astro.washington.edu>
+#          Andrew Knyazev <Andrew.Knyazev@ucdenver.edu>
 # License: BSD
 
 import numpy as np
@@ -13,7 +14,8 @@ from scipy.sparse import isspmatrix
 
 ###############################################################################
 # Graph laplacian
-def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
+def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False,
+              *, copy=True):
     """
     Return the Laplacian matrix of a directed graph.
 
@@ -23,12 +25,18 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
         compressed-sparse graph, with shape (N, N).
     normed : bool, optional
         If True, then compute symmetric normalized Laplacian.
+        Default: False.
     return_diag : bool, optional
         If True, then also return an array related to vertex degrees.
+        Default: False.
     use_out_degree : bool, optional
         If True, then use out-degree instead of in-degree.
         This distinction matters only if the graph is asymmetric.
         Default: False.
+    copy: bool, optional
+        If False, then change `csgraph` in place if possible,
+        avoiding doubling the memory use.
+        Default: True, for backward compatibility.
 
     Returns
     -------
@@ -43,9 +51,27 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
     Notes
     -----
     The Laplacian matrix of a graph is sometimes referred to as the
-    "Kirchoff matrix" or the "admittance matrix", and is useful in many
+    "Kirchoff matrix" or just the "Laplacian", and is useful in many
     parts of spectral graph theory. In particular, the eigen-decomposition
-    of the laplacian matrix can give insight into many properties of the graph.
+    of the Laplacian can give insight into many properties of the graph, e.g.,
+    is commonly used for spectal data enmedding and clustering.
+
+    The constructed Laplacian doubles the memory use if ``copy=True``,
+    which is the default. Choosing ``copy=False`` has no effect unless
+    the matrix is sparse in the ``coo`` format, or dense array, except
+    for the integer input with ``normed=True`` that forces the float output.
+
+    Sparse input is reformatted into ``coo``.
+
+    If the input adjacency matrix is not symmetic, the Laplacian is also
+    non-symmetric and may need to be symmetrized; e.g., ``lap += lap.T``,
+    before the eigen-decomposition.
+
+    Diagonal entries of the input adjacency matrix are ignored and
+    replaced with zeros for the purpose of normalization where ``normed=True``.
+    The normalization uses the inverse square roots of row-sums of the input
+    adjacency matrix, and thus may fail if the row-sums contain
+    zeros, negative, or complex with a non-zero imaginary part values.
 
     Examples
     --------
@@ -73,7 +99,8 @@ def laplacian(csgraph, normed=False, return_diag=False, use_out_degree=False):
 
     create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
     degree_axis = 1 if use_out_degree else 0
-    lap, d = create_lap(csgraph, normed=normed, axis=degree_axis)
+    lap, d = create_lap(csgraph, normed=normed, axis=degree_axis,
+                        copy=copy)
     if return_diag:
         return lap, d
     return lap
@@ -83,13 +110,15 @@ def _setdiag_dense(A, d):
     A.flat[::len(d)+1] = d
 
 
-def _laplacian_sparse(graph, normed=False, axis=0):
+def _laplacian_sparse(graph, normed=False, axis=0,
+                      copy=True):
+    needs_copy = False
     if graph.format in ('lil', 'dok'):
         m = graph.tocoo()
-        needs_copy = False
     else:
         m = graph
-        needs_copy = True
+        if copy:
+            needs_copy = True
     w = m.sum(axis=axis).getA1() - m.diagonal()
     if normed:
         m = m.tocoo(copy=needs_copy)
@@ -109,8 +138,13 @@ def _laplacian_sparse(graph, normed=False, axis=0):
     return m, w
 
 
-def _laplacian_dense(graph, normed=False, axis=0):
-    m = np.array(graph)
+def _laplacian_dense(graph, normed=False, axis=0,
+                     copy=True):
+    if copy:
+        m = np.array(graph)
+    else:
+        m = np.asarray(graph)
+
     np.fill_diagonal(m, 0)
     w = m.sum(axis=axis)
     if normed:
