@@ -443,8 +443,10 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
             # Print the status of the current iterate if iprint > 2
             if iprint >= 2:
-                print("%5i %5i % 16.6E % 16.6E" % (majiter, sf.nfev,
-                                                   fx, linalg.norm(g)))
+                print(
+                    f"{majiter:5} {sf.nfev:5} {fx:16.6E} "
+                    f"{linalg.norm(g):16.6E}"
+                )
 
         # If exit mode is not -1 or 1, slsqp has completed
         if abs(mode) != 1:
@@ -480,7 +482,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Optimization loop complete. Print status if requested
     if iprint >= 1:
-        print(exit_modes[int(mode)] + "    (Exit mode " + str(end_mode) + ')')
+        print(f"{exit_modes[int(end_mode)]}    (Exit mode {end_mode})")
         print("            Current function value:", fx)
         print("            Iterations:", end_majiter)
         print("            Function evaluations:", sf.nfev)
