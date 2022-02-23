@@ -257,6 +257,19 @@ def main(argv):
         sys.exit(1)
 
     if args.doc:
+        try:
+            test, version, mod_path = runtests.import_module()
+        except ImportError:
+            # this may fail when running with --no-build, so try to detect
+            # an installed scipy in a subdir inside a repo
+            site_dir = get_site_packages()
+            print("Trying to build scipy docs from development installed "
+                  "path at:", site_dir)
+            sys.path.insert(0, site_dir)
+            os.environ['PYTHONPATH'] = \
+                os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+            test, version, mod_path = runtests.import_module()
+
         cmd = ["make", "-Cdoc", 'PYTHON="{}"'.format(sys.executable)]
         cmd += args.doc
         if args.parallel:
