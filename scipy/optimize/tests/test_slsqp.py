@@ -605,15 +605,24 @@ class TestSLSQP:
 
     def test_kkt_multiplier(self):
         # test kkt multiplier return with example from GH14394
+        def con_fun(x):
+            return np.array([x[0] - 1.0, 2.0 - x[0]])
+
+        def con_jac(x):
+            return np.array([[1.0], [-1.0]])
+
         ineq_cons = {'type': 'ineq',
-                     'fun': lambda x: np.array([x[0] - 1.0, 2.0 - x[0]]),
-                     'jac': lambda x: np.array([[1.0], [-1.0]])}
+                     'fun': con_fun,
+                     'jac': con_jac}
 
         cs = np.linspace(0, 3, 51)
 
         for c in cs:
-            fun = lambda x: np.array([(x[0] - c) * (x[0] - c)])
-            jac = lambda x: np.array([2 * (x[0] - c)])
+            def fun(x):
+                return np.array([(x[0] - c) * (x[0] - c)])
+
+            def jac(x):
+                return np.array([2 * (x[0] - c)])
 
             res = minimize(fun, np.array([1.5]), method='SLSQP', jac=jac,
                            constraints=ineq_cons)
