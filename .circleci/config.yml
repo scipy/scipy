@@ -113,7 +113,6 @@ jobs:
           name: build docs
           no_output_timeout: 25m
           command: |
-            export PYTHONPATH=$PWD/build-install/lib/python3.9/site-packages
             python dev.py -n -j2 --doc html-scipyorg
 
       - save_cache:
@@ -143,12 +142,10 @@ jobs:
       - run:
           name: run asv
           command: |
-            export PYTHONPATH=$PWD/build-install/lib/python3.9/site-packages
-            cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
-            time asv --config asv.conf.json dev -m CircleCI --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            time python dev.py --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
             asv --config asv.conf.json publish
 
       - store_artifacts:
