@@ -2186,7 +2186,8 @@ def comb(N, k, exact=False, repetition=False):
         .. deprecated:: 1.9.0
             If ``exact=True`` then ``N`` and ``k`` are cast to integers which
             may lose precision if they are non-integers. This behaviour is
-            deprecated.
+            deprecated and will be removed in the second release after
+            SciPy 1.9.0.
 
     See Also
     --------
@@ -2217,8 +2218,9 @@ def comb(N, k, exact=False, repetition=False):
     if exact:
         if int(N) != N or int(k) != k:
             warnings.warn(
-                "Non-integer arguments are deprecated when exact=True; "
-                "note that arguments will be cast to integers (as before)",
+                "Non-integer arguments are deprecated when exact=True "
+                "and will be removed in the second release after "
+                "SciPy 1.9.0",
                 DeprecationWarning, stacklevel=2
             )
         return _comb_int(N, k)

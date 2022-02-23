@@ -1321,12 +1321,12 @@ class TestCombinatorics:
 
         with pytest.warns(
             DeprecationWarning,
-            match="Non-integer arguments are deprecated when exact=True;.*",
+            match=r"Non-integer arguments are deprecated when exact=True",
         ):
             special.comb(4.5, 3, exact=True)
         with pytest.warns(
             DeprecationWarning,
-            match="Non-integer arguments are deprecated when exact=True;.*",
+            match=r"Non-integer arguments are deprecated when exact=True",
         ):
             special.comb(4, 3.5, exact=True)
 
