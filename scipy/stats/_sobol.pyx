@@ -1,3 +1,4 @@
+# cython: language_level=3
 from __future__ import division, absolute_import
 
 cimport cython
@@ -9,11 +10,10 @@ import numpy as np
 cnp.import_array()
 
 # Parameters are linked to the direction numbers list.
-# See `initialize_direction_numbers` for more details.
+# See `_initialize_direction_numbers` for more details.
 # Declared using DEF to be known at compilation time for ``poly`` et ``vinit``
 DEF MAXDIM = 21201  # max number of dimensions
 DEF MAXDEG = 18  # max polynomial degree
-DEF MAXBIT = 30  # max number of bits
 
 
 # Needed to be accessed with python
@@ -21,26 +21,20 @@ cdef extern from *:
     """
     int MAXDIM_DEFINE = 21201;
     int MAXDEG_DEFINE = 18;
-    int MAXBIT_DEFINE = 30;
     """
     int MAXDIM_DEFINE  # max number of dimensions
     int MAXDEG_DEFINE  # max polynomial degree
-    int MAXBIT_DEFINE  # max number of bits
 
 _MAXDIM = MAXDIM_DEFINE
 _MAXDEG = MAXDEG_DEFINE
-_MAXBIT = MAXBIT_DEFINE
 
-cdef int poly[MAXDIM]
-cdef int vinit[MAXDIM][MAXDEG]
-
-cdef int LARGEST_NUMBER = 2 ** MAXBIT  # largest possible integer
-cdef float RECIPD = 1.0 / LARGEST_NUMBER  # normalization constant
+cdef cnp.uint64_t poly[MAXDIM]
+cdef cnp.uint64_t vinit[MAXDIM][MAXDEG]
 
 cdef bint is_initialized = False
 
 
-def initialize_direction_numbers():
+def _initialize_direction_numbers():
     """Load direction numbers.
 
     Direction numbers obtained using the search criterion D(6)
@@ -93,14 +87,14 @@ def initialize_direction_numbers():
         np.savez_compressed("./_sobol_direction_numbers", vinit=vs, poly=poly)
 
     """
-    cdef int[:] dns_poly
-    cdef int[:, :] dns_vinit
+    cdef cnp.uint64_t[:] dns_poly
+    cdef cnp.uint64_t[:, :] dns_vinit
 
     global is_initialized
     if not is_initialized:
         dns = np.load(os.path.join(os.path.dirname(__file__), "_sobol_direction_numbers.npz"))
-        dns_poly = dns["poly"].astype(np.intc)
-        dns_vinit = dns["vinit"].astype(np.intc)
+        dns_poly = dns["poly"].astype(np.uint64)
+        dns_vinit = dns["vinit"].astype(np.uint64)
         for i in range(MAXDIM):
             poly[i] = dns_poly[i]
         for i in range(MAXDIM):
@@ -111,9 +105,9 @@ def initialize_direction_numbers():
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int bit_length(const int n):
+cdef int bit_length(const cnp.uint64_t n):
     cdef int bits = 0
-    cdef int nloc = n
+    cdef cnp.uint64_t nloc = n
     while nloc != 0:
         nloc >>= 1
         bits += 1
@@ -122,7 +116,7 @@ cdef int bit_length(const int n):
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int low_0_bit(const int x) nogil:
+cdef int low_0_bit(const cnp.uint64_t x) nogil:
     """Get the position of the right-most 0 bit for an integer.
 
     Examples:
@@ -156,7 +150,7 @@ cdef int low_0_bit(const int x) nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int ibits(const int x, const int pos, const int length) nogil:
+cdef int ibits(const cnp.uint64_t x, const int pos, const int length) nogil:
     """Extract a sequence of bits from the bit representation of an integer.
 
     Extract the sequence from position `pos` (inclusive) to ``pos + length``
@@ -195,14 +189,17 @@ cdef int ibits(const int x, const int pos, const int length) nogil:
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void initialize_v(cnp.int_t[:, :] v, const int dim):
-    cdef int d, i, j, k, m, p, newv, pow2
+cpdef void _initialize_v(
+    cnp.uint64_t[:, :] v, const int dim, const int maxbit
+):
+    cdef int d, i, j, k, m
+    cdef cnp.uint64_t p, newv, pow2
 
     if dim == 0:
         return
 
     # first row of v is all 1s
-    for i in range(MAXBIT):
+    for i in range(maxbit):
         v[0, i] = 1
 
     # Remaining rows of v (row 2 through dim, indexed by [1:dim])
@@ -220,7 +217,7 @@ cpdef void initialize_v(cnp.int_t[:, :] v, const int dim):
         # quasirandom sequence generator. ACM Trans.
         # Math. Softw., 14(1):88-100, Mar. 1988.
         #
-        for j in range(m, MAXBIT):
+        for j in range(m, maxbit):
             newv = v[d, j - m]
             pow2 = 1
             for k in range(m):
@@ -232,40 +229,49 @@ cpdef void initialize_v(cnp.int_t[:, :] v, const int dim):
     # Multiply each column of v by power of 2:
     # v * [2^(maxbit-1), 2^(maxbit-2),..., 2, 1]
     pow2 = 1
-    for d in range(MAXBIT):
+    for d in range(maxbit):
         for i in range(dim):
-            v[i, MAXBIT - 1 - d] *= pow2
+            v[i, maxbit - 1 - d] *= pow2
         pow2 = pow2 << 1
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _draw(const int n,
-                 const int num_gen,
+cpdef void _draw(const cnp.uint64_t n,
+                 const cnp.uint64_t num_gen,
                  const int dim,
-                 cnp.int_t[:, :] sv,
-                 cnp.int_t[:] quasi,
-                 cnp.float_t[:, :] result) nogil:
-    cdef int i, j, l, qtmp
-    cdef int num_gen_loc = num_gen
+                 const int maxbit,
+                 cnp.uint64_t[:, :] sv,
+                 cnp.uint64_t[:] quasi,
+                 cnp.float_t[:, :] sample) nogil:
+    cdef int j, l
+    cdef cnp.uint64_t num_gen_loc = num_gen
+    cdef cnp.uint64_t i, qtmp
+
+    # largest possible integer
+    cdef cnp.uint64_t largest_number = 2 ** maxbit
+    # normalization constant
+    cdef float scale = 1.0 / largest_number
+
     for i in range(n):
         l = low_0_bit(num_gen_loc)
         for j in range(dim):
             qtmp = quasi[j] ^ sv[j, l - 1]
             quasi[j] = qtmp
-            result[i, j] = qtmp * RECIPD
+            sample[i, j] = qtmp * scale
         num_gen_loc += 1
 
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _fast_forward(const int n,
-                         const int num_gen,
+cpdef void _fast_forward(const cnp.uint64_t n,
+                         const cnp.uint64_t num_gen,
                          const int dim,
-                         cnp.int_t[:, :] sv,
-                         cnp.int_t[:] quasi) nogil:
-    cdef int i, j, l
-    cdef int num_gen_loc = num_gen
+                         cnp.uint64_t[:, :] sv,
+                         cnp.uint64_t[:] quasi) nogil:
+    cdef int j, l
+    cdef cnp.uint64_t num_gen_loc = num_gen
+    cdef cnp.uint64_t i
     for i in range(n):
         l = low_0_bit(num_gen_loc)
         for j in range(dim):
@@ -275,11 +281,11 @@ cpdef void _fast_forward(const int n,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int cdot_pow2(cnp.int_t[:] a) nogil:
+cdef cnp.uint64_t cdot_pow2(cnp.uint64_t[:] a) nogil:
     cdef int i
     cdef int size = a.shape[0]
-    cdef int z = 0
-    cdef int pow2 = 1
+    cdef cnp.uint64_t z = 0
+    cdef cnp.uint64_t pow2 = 1
     for i in range(size):
         z += a[size - 1 - i] * pow2
         pow2 *= 2
@@ -289,24 +295,26 @@ cdef int cdot_pow2(cnp.int_t[:] a) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef void _cscramble(const int dim,
-                      cnp.int_t[:, :, :] ltm,
-                      cnp.int_t[:, :] sv) nogil:
-    cdef int d, i, j, k, l, lsm, lsmdp, p, t1, t2, vdj
+                      const int maxbit,
+                      cnp.uint64_t[:, :, :] ltm,
+                      cnp.uint64_t[:, :] sv) nogil:
+    cdef int d, i, j, k, l, p
+    cdef cnp.uint64_t lsmdp, t1, t2, vdj
 
     # Set diagonals of maxbit x maxbit arrays to 1
     for d in range(dim):
-        for i in range(MAXBIT):
+        for i in range(maxbit):
             ltm[d, i, i] = 1
 
     for d in range(dim):
-        for j in range(MAXBIT):
+        for j in range(maxbit):
             vdj = sv[d, j]
             l = 1
             t2 = 0
-            for p in range(MAXBIT - 1, -1, -1):
+            for p in range(maxbit - 1, -1, -1):
                 lsmdp = cdot_pow2(ltm[d, p, :])
                 t1 = 0
-                for k in range(MAXBIT):
+                for k in range(maxbit):
                     t1 += ibits(lsmdp, k, 1) * ibits(vdj, k, 1)
                 t1 = t1 % 2
                 t2 = t2 + t1 * l

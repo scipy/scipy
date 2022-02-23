@@ -28,11 +28,11 @@ if TYPE_CHECKING:
 
 import scipy.stats as stats
 from scipy._lib._util import rng_integers
-from scipy.stats._sobol import (
-    initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
-    _categorize, initialize_direction_numbers, _MAXDIM, _MAXBIT
+from ._sobol import (
+    _initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
+    _categorize, _initialize_direction_numbers, _MAXDIM
 )
-from scipy.stats._qmc_cy import (
+from ._qmc_cy import (
     _cy_wrapper_centered_discrepancy,
     _cy_wrapper_wrap_around_discrepancy,
     _cy_wrapper_mixture_discrepancy,
@@ -1319,11 +1319,10 @@ class Sobol(QMCEngine):
     """
 
     MAXDIM: ClassVar[int] = _MAXDIM
-    MAXBIT: ClassVar[int] = _MAXBIT
 
     def __init__(
             self, d: IntNumber, *, scramble: bool = True,
-            seed: SeedType = None
+            bits: IntNumber = 30, seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         if d > self.MAXDIM:
@@ -1332,34 +1331,36 @@ class Sobol(QMCEngine):
             )
 
         # initialize direction numbers
-        initialize_direction_numbers()
+        _initialize_direction_numbers()
+
+        self.MAXBIT = bits
 
         # v is d x MAXBIT matrix
-        self._sv = np.zeros((d, self.MAXBIT), dtype=int)
-        initialize_v(self._sv, d)
+        self._sv = np.zeros((d, self.MAXBIT), dtype=np.uint64)
+        _initialize_v(self._sv, dim=d, maxbit=self.MAXBIT)
 
         if not scramble:
-            self._shift = np.zeros(d, dtype=int)
+            self._shift = np.zeros(d, dtype=np.uint64)
         else:
+            # scramble self._shift and self._sv
             self._scramble()
 
         self._quasi = self._shift.copy()
         self._first_point = (self._quasi / 2 ** self.MAXBIT).reshape(1, -1)
 
     def _scramble(self) -> None:
-        """Scramble the sequence."""
+        """Scramble the sequence using LMS+shift."""
         # Generate shift vector
         self._shift = np.dot(
-            rng_integers(self.rng, 2, size=(self.d, self.MAXBIT), dtype=int),
-            2 ** np.arange(self.MAXBIT, dtype=int),
+            rng_integers(self.rng, 2, size=(self.d, self.MAXBIT),
+                         dtype=np.uint64),
+            2 ** np.arange(self.MAXBIT, dtype=np.uint64),
         )
-        self._quasi = self._shift.copy()
         # Generate lower triangular matrices (stacked across dimensions)
         ltm = np.tril(rng_integers(self.rng, 2,
                                    size=(self.d, self.MAXBIT, self.MAXBIT),
-                                   dtype=int))
-        _cscramble(self.d, ltm, self._sv)
-        self.num_generated = 0
+                                   dtype=np.uint64))
+        _cscramble(dim=self.d, maxbit=self.MAXBIT, ltm=ltm, sv=self._sv)
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw next point(s) in the Sobol' sequence.
@@ -1377,6 +1378,9 @@ class Sobol(QMCEngine):
         """
         sample = np.empty((n, self.d), dtype=float)
 
+        if n == 0:
+            return sample
+
         if self.num_generated == 0:
             # verify n is 2**n
             if not (n & (n - 1) == 0):
@@ -1386,12 +1390,14 @@ class Sobol(QMCEngine):
             if n == 1:
                 sample = self._first_point
             else:
-                _draw(n - 1, self.num_generated, self.d, self._sv,
-                      self._quasi, sample)
+                _draw(n=n - 1, num_gen=self.num_generated, dim=self.d,
+                      maxbit=self.MAXBIT,
+                      sv=self._sv, quasi=self._quasi, sample=sample)
                 sample = np.concatenate([self._first_point, sample])[:n]  # type: ignore[misc]
         else:
-            _draw(n, self.num_generated - 1, self.d, self._sv,
-                  self._quasi, sample)
+            _draw(n=n, num_gen=self.num_generated - 1, dim=self.d,
+                  maxbit=self.MAXBIT, sv=self._sv, quasi=self._quasi,
+                  sample=sample)
 
         self.num_generated += n
         return sample
@@ -1454,11 +1460,11 @@ class Sobol(QMCEngine):
 
         """
         if self.num_generated == 0:
-            _fast_forward(n - 1, self.num_generated, self.d,
-                          self._sv, self._quasi)
+            _fast_forward(n=n - 1, num_gen=self.num_generated, dim=self.d,
+                          sv=self._sv, quasi=self._quasi)
         else:
-            _fast_forward(n, self.num_generated - 1, self.d,
-                          self._sv, self._quasi)
+            _fast_forward(n=n, num_gen=self.num_generated - 1, dim=self.d,
+                          sv=self._sv, quasi=self._quasi)
         self.num_generated += n
         return self
 
