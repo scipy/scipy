@@ -223,6 +223,8 @@ def main(argv):
         sys.path.insert(0, site_dir)
         os.environ['PYTHONPATH'] = \
             os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+    else:
+        test, version, mod_path = get_project_info()
 
     extra_argv = args.args[:]
     if extra_argv and extra_argv[0] == '--':
@@ -257,7 +259,6 @@ def main(argv):
         sys.exit(1)
 
     if args.doc:
-        test, version, mod_path = get_project_info()
         cmd = ["make", "-Cdoc", 'PYTHON="{}"'.format(sys.executable)]
         cmd += args.doc
         if args.parallel:
@@ -338,8 +339,6 @@ def main(argv):
 
     if args.build_only:
         sys.exit(0)
-    else:
-        test, version, mod_path = get_project_info()
 
     if args.submodule:
         tests = [PROJECT_MODULE + "." + args.submodule]
