@@ -472,7 +472,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
     for _t, cv in [("eq", _meq_cv), ("ineq", _mieq_cv)]:
         kkt = []
 
-        for dim in enumerate(cv):
+        for dim in cv:
             kkt += [w[w_ind:(w_ind + dim)]]
             w_ind += dim
 
