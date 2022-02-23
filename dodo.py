@@ -1,21 +1,20 @@
 """
 Info: Run tests, builds and other tasks using doit
 --------------------------
-Command to list the tasks-
+Command to list the tasks titles-
 doit list
 
 Command to check all the info for a task-
-doit info <task_name>
+doit info <task-title>
 
 Help command-
-doit help <task name>
+doit help <task-title>
 
 Targeted run for individual task-
 Examples:
         $ doit build
         $ doit test -f <module name>
         $ doit doc-build
-        $ doit release-notes
         $ doit bench --flag -s
         $ doit bench --flag -t
         $ doit release-authors -p 1.7.0 -c 1.8.0
