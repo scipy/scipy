@@ -2184,10 +2184,10 @@ def comb(N, k, exact=False, repetition=False):
         The total number of combinations.
 
         .. deprecated:: 1.9.0
-            If ``exact=True`` then ``N`` and ``k`` are cast to integers which
-            may lose precision if they are non-integers. This behaviour is
-            deprecated and comb will return NaN for integral inputs in the
-            second release after SciPy 1.9.0.
+            Non-integer arguments are deprecated when exact=True and comb
+            will return NaN for integral inputs in the second release after
+            SciPy 1.9.0.
+
 
     See Also
     --------
