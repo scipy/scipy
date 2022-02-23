@@ -7157,7 +7157,8 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='less')
     KstestResult(statistic=0.21707976606981766, pvalue=6.435039066115298e-05)
 
-    and ``alternative='two-sided'``:
+    and with ``alternative='two-sided'``:
+
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='two-sided')
     KstestResult(statistic=0.21707976606981766, pvalue=0.00012870078132230596)
 
