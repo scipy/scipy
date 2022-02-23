@@ -1,6 +1,8 @@
 """
 Info: Run tests, builds and other tasks using doit
---------------------------
+--------------------------------------------------
+Installing doit: pip install doit
+------------------------------------
 Command to list the tasks titles-
 doit list
 
