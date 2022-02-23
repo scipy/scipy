@@ -448,17 +448,45 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         majiter_prev = int(majiter)
 
+    end_mode = mode
+    end_majiter = majiter
+
+    # one last call to obtain kkt multipliers
+    # this is the reason we just saved the exit mode.
+    slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw,
+          alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
+          iexact, incons, ireset, itermx, line,
+          n1, n2, n3)
+
+    # KKT multipliers
+    w_ind = 0
+    kkt_multiplier = dict()
+
+    for _t in ["eq", "ineq"]:
+        ind_mapper = []
+        kkt = []
+
+        for con in cons[_t]:
+            cv = atleast_1d(con['fun'](x, *con['args']))
+            dim = len(cv)
+            kkt += [w[w_ind:(w_ind + dim)]]
+            w_ind += dim
+
+        kkt_multiplier[_t] = kkt
+
     # Optimization loop complete. Print status if requested
     if iprint >= 1:
-        print(exit_modes[int(mode)] + "    (Exit mode " + str(mode) + ')')
+        print(exit_modes[int(mode)] + "    (Exit mode " + str(end_mode) + ')')
         print("            Current function value:", fx)
         print("            Iterations:", majiter)
         print("            Function evaluations:", sf.nfev)
         print("            Gradient evaluations:", sf.ngev)
 
-    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(majiter),
-                          nfev=sf.nfev, njev=sf.ngev, status=int(mode),
-                          message=exit_modes[int(mode)], success=(mode == 0))
+    return OptimizeResult(x=x, fun=fx, jac=g[:-1], nit=int(end_majiter),
+                          nfev=sf.nfev, njev=sf.ngev, status=int(end_mode),
+                          message=exit_modes[int(end_mode)],
+                          success=(end_mode == 0),
+                          kkt=kkt_multiplier)
 
 
 def _eval_constraint(x, cons):
