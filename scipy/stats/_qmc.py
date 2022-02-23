@@ -1220,6 +1220,9 @@ class Sobol(QMCEngine):
     scramble : bool, optional
         If True, use LMS+shift scrambling. Otherwise, no scrambling is done.
         Default is True.
+    bits : int, optional
+        Number of bits of the generator. Control the maximum number of points
+        that can be generated, which is ``2**bits``. Maximal value is 64.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1253,8 +1256,9 @@ class Sobol(QMCEngine):
        replicates does not have to be a power of 2.
 
        Sobol' sequences are generated to some number :math:`B` of bits.
-       After :math:`2^B` points have been generated, the sequence will repeat.
-       Currently :math:`B=30`.
+       After :math:`2^B` points have been generated, the sequence would
+       repeat. Hence, an error is raised.
+       The number of bits can be controlled with the parameter `bits`.
 
     References
     ----------
@@ -1330,10 +1334,13 @@ class Sobol(QMCEngine):
                 "Maximum supported dimensionality is {}.".format(self.MAXDIM)
             )
 
+        self.MAXBIT = bits
+        if self.MAXBIT > 64:
+            raise ValueError("Maximum supported 'bits' is 64")
+        self.MAXN = 2**self.MAXBIT
+
         # initialize direction numbers
         _initialize_direction_numbers()
-
-        self.MAXBIT = bits
 
         # v is d x MAXBIT matrix
         self._sv = np.zeros((d, self.MAXBIT), dtype=np.uint64)
@@ -1381,11 +1388,22 @@ class Sobol(QMCEngine):
         if n == 0:
             return sample
 
+        total_n = self.num_generated + n
+        if total_n > self.MAXN:
+            msg = (
+                f"At most 2**{self.MAXBIT}={self.MAXN} points can be "
+                f"generated. {self.num_generated} points have been previously "
+                f"generated, then: n={self.num_generated}+{n}={total_n}. "
+            )
+            if self.MAXBIT != 64:
+                msg += "Try to increase the 'bits' size."
+            raise ValueError(msg)
+
         if self.num_generated == 0:
             # verify n is 2**n
             if not (n & (n - 1) == 0):
                 warnings.warn("The balance properties of Sobol' points require"
-                              " n to be a power of 2.")
+                              " n to be a power of 2.", stacklevel=2)
 
             if n == 1:
                 sample = self._first_point
