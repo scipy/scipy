@@ -324,10 +324,14 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
     # Set the parameters that SLSQP will need
     # meq, mieq: number of equality and inequality constraints
-    meq = sum(map(len, [atleast_1d(c['fun'](x, *c['args']))
-              for c in cons['eq']]))
-    mieq = sum(map(len, [atleast_1d(c['fun'](x, *c['args']))
-               for c in cons['ineq']]))
+    # _meq_cv: a list containing the length of values each constraint function
+    # returns
+    _meq_cv = [len(atleast_1d(c['fun'](x, *c['args']))) for c in cons['eq']]
+    meq = sum(_meq_cv)
+
+    _mieq_cv = [len(atleast_1d(c['fun'](x, *c['args']))) for c in cons['ineq']]
+    mieq = sum(_mieq_cv)
+
     # m = The total number of constraints
     m = meq + mieq
     # la = The number of constraints, or 1 if there are no constraints
@@ -448,6 +452,7 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         majiter_prev = int(majiter)
 
+    end_x = np.copy(x)
     end_mode = mode
     end_majiter = majiter
 
@@ -457,18 +462,17 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
           alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
           iexact, incons, ireset, itermx, line,
           n1, n2, n3)
+    # restore just in case the update slsqp call changed x
+    x = end_x
 
     # KKT multipliers
     w_ind = 0
     kkt_multiplier = dict()
 
-    for _t in ["eq", "ineq"]:
-        ind_mapper = []
+    for _t, cv in [("eq", _meq_cv), ("ineq", _mieq_cv)]:
         kkt = []
 
-        for con in cons[_t]:
-            cv = atleast_1d(con['fun'](x, *con['args']))
-            dim = len(cv)
+        for dim in enumerate(cv):
             kkt += [w[w_ind:(w_ind + dim)]]
             w_ind += dim
 
