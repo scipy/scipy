@@ -7984,7 +7984,8 @@ add_newdoc("mathieu_modsem2",
 
     """)
 
-add_newdoc("mathieu_sem",
+add_newdoc(
+    "mathieu_sem",
     """
     mathieu_sem(m, q, x, out=None)
 
