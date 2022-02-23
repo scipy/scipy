@@ -7167,7 +7167,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     Examples
     --------
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+    >>> rng = np.random.default_rng()
 
     Suppose we wish to assess whether data are distributed according to the
     standard normal distribution.
