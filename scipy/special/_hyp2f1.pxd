@@ -352,6 +352,8 @@ cdef inline double gamma_ratio(
     return result
     
 
+@cython.boundscheck(False)
+@cython.cdivision(True)
 cdef inline double gamma_ratio_lanczos(
         double u, double v, double w, double x
 ) nogil:
