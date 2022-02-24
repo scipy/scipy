@@ -6437,6 +6437,19 @@ class powerlaw_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         data, fshape, floc, fscale = _check_fit_input_parameters(self, data,
                                                                  args, kwds)
+        # ensure that any fixed parameters don't violate constraints of the
+        # distribution before continuing. # The support of the distribution
+        # is `0 < (x - loc)/scale < 1`. 
+        if floc is not None:
+            if fscale is not None and np.any(data - floc <= fscale):
+                raise FitDataError('powerlaw', 0, 1)
+            if np.any(data - floc < 0):
+                raise FitDataError('powerlaw', 0, 1)
+        
+        # Negatvie or zero scale is outside the support of the distribution.
+        if fscale is not None and fscale <= 0:
+             raise Exception("Negative or zero `fscale` is outside the range "
+                             "allowed by the distribution.")
 
         def shape_universal(data, loc, scale):
             # The first-order necessary condition on `shape` can be solved in
@@ -6448,25 +6461,22 @@ class powerlaw_gen(rv_continuous):
         def universal_slte1(data):
             loc = floc if floc is not None else np.nextafter(data.min(), -np.inf)
             scale = fscale or np.ptp(data)
-
-            # The Powerlaw distribution requires that its parameters satisfy
-            # the condition `fscale + floc >= max(data)`. However, to
-            # avoid numerical issues, we require that `fscale + floc`
-            # is strictly less than `max(data)`. If this condition
-            # is not satisfied, even with previous use of `np.nextafter`, 
-            # increase the scale or location, whichever is free, with the amount
-            # to ensure that data does not fall outside of the support.
-            if scale + loc <= data.max():
-                diff = data.max() - (scale + loc)
-                if fscale is None:
-                    scale = scale + np.abs(diff)
-                elif floc is None:
-                    loc = loc + np.abs(diff)
-                else:
-                    # If both the scale and the location are fixed, and the above 
-                    # condition is not satisfied, then we cannot fit the data.
-                    raise FitDataError("powerlaw", lower=0, upper=1)
             shape = fshape or shape_universal(data, loc, scale)
+            loc = np.nextafter(loc, -np.inf)
+            scale = np.nextafter(scale, np.inf)
+            if np.any(data - loc <= scale):
+
+                loc = np.nextafter(loc, -np.inf) * (1 - np.finfo(float).eps)
+                scale = np.nextafter(scale, np.inf) * (1 + np.finfo(float).eps)
+                loc = np.nextafter(loc, -np.inf)
+                scale = np.nextafter(scale, np.inf)
+            print(np.max(data - loc))
+            print(scale)
+            # if np.any(data - loc <= scale):
+            #     raise FitDataError('powerlaw', 0, 1)
+
+
+
             return shape, loc, scale 
 
         shape, loc, scale = universal_slte1(data)
@@ -6530,8 +6540,11 @@ class powerlaw_gen(rv_continuous):
         # if a root is not between the brackets, iteratively the left bracket
         # until they include a sign change. The right bracket is already against
         # the maximum permisable value for this data so it is unmodified.
+        i = 0
         while not interval_contains_root(lbrack, rbrack) and lbrack != -np.inf:
             rbrack -= np.abs(lbrack)
+            if i > 100:
+                print("many iterations...", i)
 
         root = optimize.root_scalar(fun_to_solve, bracket=(lbrack, rbrack))
         

@@ -2267,9 +2267,9 @@ class TestPowerlaw(object):
 
         kwds = dict()
         if fix_shape:
-            kwds['f0'] = rvs_shape
+            kwds['f0'] = rvs_shape + .1
         if fix_loc:
-            kwds['floc'] = rvs_loc
+            kwds['floc'] = rvs_loc - .1
         if fix_scale:
             kwds['fscale'] = rvs_scale
 
@@ -2277,10 +2277,16 @@ class TestPowerlaw(object):
 
     def test_fit_warnings(self):
         assert_fit_warnings(stats.powerlaw)
-        # test for error that fscale + floc <= np.max(data)
-        with assert_raises(ValueError) as e:
+        # test for error when `fscale + floc <= np.max(data)` is not satisfied
+        with assert_raises(FitDataError) as e:
             stats.powerlaw.fit([1, 2, 4], floc=0, fscale=3)
         assert r" Maximum likelihood estimation with 'powerlaw' requires" in str(e.value)
+
+        # test for error when `data - floc >= 0`  is not satisfied
+        with assert_raises(ValueError) as e:
+            stats.powerlaw.fit([1, 2, 4], floc=2)
+        assert r" Maximum likelihood estimation with 'powerlaw' requires" in str(e.value)
+
 
 
 class TestInvGamma:
