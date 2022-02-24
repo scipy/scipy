@@ -7166,23 +7166,23 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
 
     Examples
     --------
-    >>> from scipy import stats
-    >>> rng = np.random.default_rng()
-
-    Suppose we wish to assess whether data are distributed according to the
-    standard normal distribution.
+    Suppose we wish to test the null hypothesis that a sample is distributed
+    according to the standard normal.
     We choose a confidence level of 95%; that is, we will reject the null
     hypothesis in favor of the alternative if the p-value is less than 0.05.
 
     When testing uniformly distributed data, we would expect the
     null hypothesis to be rejected.
 
+    >>> from scipy import stats
+    >>> rng = np.random.default_rng()
     >>> stats.ks_1samp(stats.uniform.rvs(size=100, random_state=rng),
     ...                stats.norm.cdf)
     KstestResult(statistic=0.5001899973268688, pvalue=1.1616392184763533e-23)
 
     Indeed, the p-value is lower than our threshold of 0.05, so we reject the
-    null hypothesis that the data are normally distributed.
+    null hypothesis in favor of the default "two-sided" alternative: the data
+    are *not* distributed according to the standard normal.
 
     When testing random variates from the standard normal distribution, we
     expect the data to be consistent with the null hypothesis most of the time.
@@ -7194,25 +7194,18 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     As expected, the p-value of 0.92 is not below our threshold of 0.05, so
     we cannot reject the null hypothesis.
 
-    Suppose, however, that the location of the normally distributed random
-    variates is shifted toward larger values. In this case, the CDF of the
-    random variates tends to be *less* than the CDF of the standard normal.
-    Therefore, we would expect the null hypothesis to be rejected with
-    ``alternative='less'``:
+    Suppose, however, that the random variates are distributed according to
+    a normal distribution that is shifted toward greater values. In this case,
+    the cumulative density function (CDF) of the underlying distribution tends
+    to be *less* than the CDF of the standard normal. Therefore, we would
+    expect the null hypothesis to be rejected with ``alternative='less'``:
 
-    >>> x = x + 0.5
+    >>> x = stats.norm.rvs(size=100, loc=0.5, random_state=rng)
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='less')
-    KstestResult(statistic=0.21707976606981766, pvalue=6.435039066115298e-05)
+    KstestResult(statistic=0.17482387821055168, pvalue=0.001913921057766743)
 
-    and with ``alternative='two-sided'``:
-
-    >>> stats.ks_1samp(x, stats.norm.cdf, alternative='two-sided')
-    KstestResult(statistic=0.21707976606981766, pvalue=0.00012870078132230596)
-
-    but not with ``alternative='greater'``:
-
-    >>> stats.ks_1samp(x, stats.norm.cdf, alternative='greater')
-    KstestResult(statistic=0.003970612076116944, pvalue=0.9941219063026167)
+    and indeed, with p-value smaller than our threshold, we reject the null
+    hypothesis in favor of the alternative.
 
     """
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
