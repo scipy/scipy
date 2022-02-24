@@ -7166,54 +7166,46 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
 
     Examples
     --------
+    Suppose we wish to test the null hypothesis that a sample is distributed
+    according to the standard normal.
+    We choose a confidence level of 95%; that is, we will reject the null
+    hypothesis in favor of the alternative if the p-value is less than 0.05.
+
+    When testing uniformly distributed data, we would expect the
+    null hypothesis to be rejected.
+
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
-
-    >>> x = np.linspace(-15, 15, 9)
-    >>> stats.ks_1samp(x, stats.norm.cdf)
-    (0.44435602715924361, 0.038850142705171065)
-
-    >>> stats.ks_1samp(stats.norm.rvs(size=100, random_state=rng),
+    >>> stats.ks_1samp(stats.uniform.rvs(size=100, random_state=rng),
     ...                stats.norm.cdf)
-    KstestResult(statistic=0.165471391799..., pvalue=0.007331283245...)
+    KstestResult(statistic=0.5001899973268688, pvalue=1.1616392184763533e-23)
 
-    *Test against one-sided alternative hypothesis*
+    Indeed, the p-value is lower than our threshold of 0.05, so we reject the
+    null hypothesis in favor of the default "two-sided" alternative: the data
+    are *not* distributed according to the standard normal.
 
-    Shift distribution to larger values, so that `` CDF(x) < norm.cdf(x)``:
+    When testing random variates from the standard normal distribution, we
+    expect the data to be consistent with the null hypothesis most of the time.
 
-    >>> x = stats.norm.rvs(loc=0.2, size=100, random_state=rng)
+    >>> x = stats.norm.rvs(size=100, random_state=rng)
+    >>> stats.ks_1samp(x, stats.norm.cdf)
+    KstestResult(statistic=0.05345882212970396, pvalue=0.9227159037744717)
+
+    As expected, the p-value of 0.92 is not below our threshold of 0.05, so
+    we cannot reject the null hypothesis.
+
+    Suppose, however, that the random variates are distributed according to
+    a normal distribution that is shifted toward greater values. In this case,
+    the cumulative density function (CDF) of the underlying distribution tends
+    to be *less* than the CDF of the standard normal. Therefore, we would
+    expect the null hypothesis to be rejected with ``alternative='less'``:
+
+    >>> x = stats.norm.rvs(size=100, loc=0.5, random_state=rng)
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='less')
-    KstestResult(statistic=0.100203351482..., pvalue=0.125544644447...)
+    KstestResult(statistic=0.17482387821055168, pvalue=0.001913921057766743)
 
-    Reject null hypothesis in favor of alternative hypothesis: less
-
-    >>> stats.ks_1samp(x, stats.norm.cdf, alternative='greater')
-    KstestResult(statistic=0.018749806388..., pvalue=0.920581859791...)
-
-    Reject null hypothesis in favor of alternative hypothesis: greater
-
-    >>> stats.ks_1samp(x, stats.norm.cdf)
-    KstestResult(statistic=0.100203351482..., pvalue=0.250616879765...)
-
-    Don't reject null hypothesis in favor of alternative hypothesis: two-sided
-
-    *Testing t distributed random variables against normal distribution*
-
-    With 100 degrees of freedom the t distribution looks close to the normal
-    distribution, and the K-S test does not reject the hypothesis that the
-    sample came from the normal distribution:
-
-    >>> stats.ks_1samp(stats.t.rvs(100,size=100, random_state=rng),
-    ...                stats.norm.cdf)
-    KstestResult(statistic=0.064273776544..., pvalue=0.778737758305...)
-
-    With 3 degrees of freedom the t distribution looks sufficiently different
-    from the normal distribution, that we can reject the hypothesis that the
-    sample came from the normal distribution at the 10% level:
-
-    >>> stats.ks_1samp(stats.t.rvs(3,size=100, random_state=rng),
-    ...                stats.norm.cdf)
-    KstestResult(statistic=0.128678487493..., pvalue=0.066569081515...)
+    and indeed, with p-value smaller than our threshold, we reject the null
+    hypothesis in favor of the alternative.
 
     """
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
