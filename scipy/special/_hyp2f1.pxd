@@ -344,11 +344,6 @@ cdef inline double gamma_ratio(
     # underflow or overflow.
     if zisnan(result) or zisinf(result) or result == 0.0:
         result = gamma_ratio_lanczos(u, v, w, x)
-    # If things don't work out, try again with an equivalent expression
-    # rather than working out analytically the best way to combine terms
-    # for each situation.
-    if zisnan(result) or zisinf(result) or result == 0.0:
-        result = gamma_ratio_lanczos(u, v, x, w)
     return result
     
 
@@ -450,7 +445,11 @@ cdef inline double gamma_ratio_lanczos(
     # Identify factor closest to the midpoint
     for i in range(4):
         current_distance_to_midpoint = fabs(factors[i] - factors_midpoint)
-        if current_distance_to_midpoint < min_distance_to_midpoint:
+        if (
+                current_distance_to_midpoint < min_distance_to_midpoint or
+                current_distance_to_midpoint == min_distance_to_midpoint and
+                factors[i] > factors[absorbed_index]
+        ):
             min_distance_to_midpoint = current_distance_to_midpoint
             absorbed_index = i
     # Absorb u factor into others.
