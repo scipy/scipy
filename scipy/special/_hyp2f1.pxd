@@ -382,10 +382,14 @@ cdef inline double gamma_ratio_lanczos(
         double g
         double lanczos_part,
         double factor_part
-        double factor_u
-        double factor_v
-        double factor_w
-        double factor_x
+        double factors[4]  # Lanczos factors for gamma u, v, w, x respectively
+        double min_factor
+        double max_factor
+        double factors_midpoint
+        double current_distance_to_midpoint
+        double min_distance_to_midpoint
+        int i
+        int absorbed_index
     # The below implementation may incorrectly return finite results
     # at poles of the gamma function. Handle these cases explicitly.
     if u == trunc(u) and u <= 0 or v == trunc(v) and v <= 0:
@@ -407,30 +411,66 @@ cdef inline double gamma_ratio_lanczos(
     # working backwards through how it was calculated.
     if u >= 0.5:
         lanczos_part *= lanczos_sum_expg_scaled(u)
-        factor_u = (u + g - 0.5)
+        factors[0] = (u + g - 0.5)
     else:
         lanczos_part /= lanczos_sum_expg_scaled(1 - u)*sin(M_PI*u)*M_1_PI
-        factor_u = (1 - u + g - 0.5)
+        factors[0] = (1 - u + g - 0.5)
     if v >= 0.5:
         lanczos_part *= lanczos_sum_expg_scaled(v)
-        factor_v = (v + g - 0.5)
+        factors[1] = (v + g - 0.5)
     else:
         lanczos_part /= lanczos_sum_expg_scaled(1 - v)*sin(M_PI*v)*M_1_PI
-        factor_v = (1 - v + g - 0.5)
+        factors[1] = (1 - v + g - 0.5)
     if w >= 0.5:
         lanczos_part /= lanczos_sum_expg_scaled(w)
-        factor_w = (w + g - 0.5)
+        factors[2] = (w + g - 0.5)
     else:
         lanczos_part *= lanczos_sum_expg_scaled(1 - w)*sin(M_PI*w)*M_1_PI
-        factor_w = (1 - w + g - 0.5)
+        factors[2] = (1 - w + g - 0.5)
     if x >= 0.5:
         lanczos_part /= lanczos_sum_expg_scaled(x)
-        factor_x = (x + g - 0.5)
+        factors[3] = (x + g - 0.5)
     else:
         lanczos_part *= lanczos_sum_expg_scaled(1 - x)
         lanczos_part *= sin(M_PI*x)*M_1_PI
-        factor_x = (1 - x + g - 0.5)
-    factor_part *= pow(factor_u/factor_x, u - 0.5)
-    factor_part *= pow(factor_v/factor_x, v - 0.5)
-    factor_part *= pow(factor_x/factor_w, w - 0.5)
+        factors[3] = (1 - x + g - 0.5)
+    # Decide on how to combine terms by finding factor closest to
+    # midpoint between the largest and smallest factors.
+    min_factor = NPY_INFINITY
+    max_factor = -NPY_INFINITY
+    for i in range(4):
+        if factors[i] < min_factor:
+            min_factor = factors[i]
+        if factors[i] > max_factor:
+            max_factor = factors[i]
+    # Midpoint calculation uses extra floating point op to guard against
+    # overflow
+    factors_midpoint = min_factor / 2 + max_factor / 2
+    min_distance_to_midpoint = NPY_INFINITY
+    # Identify factor closest to the midpoint
+    for i in range(4):
+        current_distance_to_midpoint = fabs(factors[i] - factors_midpoint)
+        if current_distance_to_midpoint < min_distance_to_midpoint:
+            min_distance_to_midpoint = current_distance_to_midpoint
+            absorbed_index = i
+    # Absorb u factor into others.
+    if absorbed_index == 0:
+        factor_part *= pow(factors[1] / factors[0], v - 0.5)
+        factor_part *= pow(factors[0] / factors[2], w - 0.5)
+        factor_part *= pow(factors[0] / factors[3], x - 0.5)
+    # Absorb v factor into others.
+    elif absorbed_index == 1:
+        factor_part *= pow(factors[0] / factors[1], u - 0.5)
+        factor_part *= pow(factors[1] / factors[2], w - 0.5)
+        factor_part *= pow(factors[1] / factors[3], x - 0.5)
+    # Absorb w factor into others.
+    elif absorbed_index == 2:
+        factor_part *= pow(factors[0] / factors[2], u - 0.5)
+        factor_part *= pow(factors[1] / factors[2], v - 0.5)
+        factor_part *= pow(factors[2] / factors[3], x - 0.5)
+    # Absorb x factor into others.
+    elif absorbed_index == 3:
+        factor_part *= pow(factors[0]/factors[3], u - 0.5)
+        factor_part *= pow(factors[1]/factors[3], v - 0.5)
+        factor_part *= pow(factors[3]/factors[2], w - 0.5)
     return factor_part * lanczos_part
