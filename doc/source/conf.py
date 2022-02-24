@@ -86,6 +86,11 @@ import scipy
 version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
 release = scipy.__version__
 
+if os.environ.get('CIRCLE_JOB', False) and \
+        os.environ.get('CIRCLE_BRANCH', '') != 'main':
+    version = os.environ['CIRCLE_BRANCH']
+    release = version
+
 print("%s (VERSION %s)" % (project, version))
 
 # There are two options for replacing |today|: either, you set today to some
@@ -293,7 +298,7 @@ import numpy as np
 np.random.seed(123)
 """
 plot_include_source = True
-plot_formats = [('png', 96), 'pdf']
+plot_formats = [('png', 96)]
 plot_html_show_formats = False
 plot_html_show_source_link = False
 
