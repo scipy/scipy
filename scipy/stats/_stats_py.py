@@ -7553,33 +7553,49 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
 
     Examples
     --------
+    Suppose we wish to test the null hypothesis that two samples were drawn
+    from the same distribution.
+    We choose a confidence level of 95%; that is, we will reject the null
+    hypothesis in favor of the alternative if the p-value is less than 0.05.
+
+    If the first sample were drawn from a uniform distribution and the second
+    were drawn from the standard normal, we would expect the null hypothesis
+    to be rejected.
+
     >>> from scipy import stats
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+    >>> sample1 = stats.uniform.rvs(size=100, random_state=rng)
+    >>> sample2 = stats.norm.rvs(size=110, random_state=rng)
+    >>> stats.ks_2samp(sample1, sample2)
+    KstestResult(statistic=0.5454545454545454, pvalue=7.37417839555191e-15)
 
-    >>> n1 = 200  # size of first sample
-    >>> n2 = 300  # size of second sample
+    Indeed, the p-value is lower than our threshold of 0.05, so we reject the
+    null hypothesis in favor of the default "two-sided" alternative: the data
+    were *not* drawn from the same distribution.
 
-    For a different distribution, we can reject the null hypothesis since the
-    pvalue is below 1%:
+    When both samples are drawn from the same distribution, we expect the data
+    to be consistent with the null hypothesis most of the time.
 
-    >>> rvs1 = stats.norm.rvs(size=n1, loc=0., scale=1, random_state=rng)
-    >>> rvs2 = stats.norm.rvs(size=n2, loc=0.5, scale=1.5, random_state=rng)
-    >>> stats.ks_2samp(rvs1, rvs2)
-     KstestResult(statistic=0.24833333333333332, pvalue=5.846586728086578e-07)
+    >>> sample1 = stats.norm.rvs(size=105, random_state=rng)
+    >>> sample2 = stats.norm.rvs(size=95, random_state=rng)
+    >>> stats.ks_2samp(sample1, sample2)
+    KstestResult(statistic=0.10927318295739348, pvalue=0.5438289009927495)
 
-    For a slightly different distribution, we cannot reject the null hypothesis
-    at a 10% or lower alpha since the p-value at 0.144 is higher than 10%
+    As expected, the p-value of 0.54 is not below our threshold of 0.05, so
+    we cannot reject the null hypothesis.
 
-    >>> rvs3 = stats.norm.rvs(size=n2, loc=0.01, scale=1.0, random_state=rng)
-    >>> stats.ks_2samp(rvs1, rvs3)
-    KstestResult(statistic=0.07833333333333334, pvalue=0.4379658456442945)
+    Suppose, however, that the first sample were drawn from
+    a normal distribution shifted toward greater values. In this case,
+    the cumulative density function (CDF) of the underlying distribution tends
+    to be *less* than the CDF underlying the second sample. Therefore, we would
+    expect the null hypothesis to be rejected with ``alternative='less'``:
 
-    For an identical distribution, we cannot reject the null hypothesis since
-    the p-value is high, 41%:
+    >>> sample1 = stats.norm.rvs(size=105, loc=0.5, random_state=rng)
+    >>> stats.ks_2samp(sample1, sample2, alternative='less')
+    KstestResult(statistic=0.4055137844611529, pvalue=3.5474563068855554e-08)
 
-    >>> rvs4 = stats.norm.rvs(size=n2, loc=0.0, scale=1.0, random_state=rng)
-    >>> stats.ks_2samp(rvs1, rvs4)
-    KstestResult(statistic=0.12166666666666667, pvalue=0.05401863039081145)
+    and indeed, with p-value smaller than our threshold, we reject the null
+    hypothesis in favor of the alternative.
 
     """
     if mode not in ['auto', 'exact', 'asymp']:
