@@ -275,8 +275,9 @@ def test_unknown_solvers_and_options():
                   c, A_ub=A_ub, b_ub=b_ub, method='ekki-ekki-ekki')
     assert_raises(ValueError, linprog,
                   c, A_ub=A_ub, b_ub=b_ub, method='highs-ekki')
-    assert_raises(ValueError, linprog, c, A_ub=A_ub, b_ub=b_ub,
-                  options={"rr_method": 'ekki-ekki-ekki'})
+    with pytest.warns(OptimizeWarning, match="Unknown solver options:"):
+        linprog(c, A_ub=A_ub, b_ub=b_ub,
+                options={"rr_method": 'ekki-ekki-ekki'})
 
 
 def test_choose_solver():
@@ -287,6 +288,15 @@ def test_choose_solver():
 
     res = linprog(c, A_ub, b_ub, method='highs')
     _assert_success(res, desired_fun=-18.0, desired_x=[2, 6])
+
+
+def test_deprecation():
+    with pytest.warns(DeprecationWarning):
+        linprog(1, method='interior-point')
+    with pytest.warns(DeprecationWarning):
+        linprog(1, method='revised simplex')
+    with pytest.warns(DeprecationWarning):
+        linprog(1, method='simplex')
 
 
 def test_highs_status_message():
@@ -1679,14 +1689,17 @@ class LinprogCommonTests:
 #########################
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class LinprogSimplexTests(LinprogCommonTests):
     method = "simplex"
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class LinprogIPTests(LinprogCommonTests):
     method = "interior-point"
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class LinprogRSTests(LinprogCommonTests):
     method = "revised simplex"
 
@@ -2003,6 +2016,7 @@ class TestLinprogIPSparsePresolve(LinprogIPTests):
         super().test_bug_6690()
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class TestLinprogIPSpecific:
     method = "interior-point"
     # the following tests don't need to be performed separately for
@@ -2021,7 +2035,7 @@ class TestLinprogIPSpecific:
         res2 = linprog(c, A_ub=A, b_ub=b, method=self.method)  # default solver
         assert_allclose(res1.fun, res2.fun,
                         err_msg="linprog default solver unexpected result",
-                        rtol=1e-15, atol=1e-15)
+                        rtol=2e-15, atol=1e-15)
 
     def test_unbounded_below_no_presolve_original(self):
         # formerly caused segfault in TravisCI w/ "cholesky":True
@@ -2299,6 +2313,7 @@ class TestLinprogHiGHSMIP():
 ###########################
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class AutoscaleTests:
     options = {"autoscale": True}
 
@@ -2342,6 +2357,7 @@ class TestAutoscaleRS(AutoscaleTests):
 ###########################
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class RRTests:
     method = "interior-point"
     LCT = LinprogCommonTests

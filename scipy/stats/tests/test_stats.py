@@ -33,7 +33,8 @@ from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
-from scipy.stats._stats_py import (_calc_t_stat, _data_partitions,
+from scipy.stats._hypotests import _batch_generator
+from scipy.stats._stats_py import (_permutation_distribution_t,
                             AlexanderGovernConstantInputWarning)
 
 
@@ -2131,6 +2132,9 @@ class TestItemfreq:
 
 
 class TestMode:
+
+    deprecation_msg = r"Support for non-numeric arrays has been deprecated"
+
     def test_empty(self):
         vals, counts = stats.mode([])
         assert_equal(vals, np.array([]))
@@ -2144,8 +2148,8 @@ class TestMode:
     def test_basic(self):
         data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
         vals = stats.mode(data1)
-        assert_equal(vals[0][0], 6)
-        assert_equal(vals[1][0], 3)
+        assert_equal(vals[0], 6)
+        assert_equal(vals[1], 3)
 
     def test_axes(self):
         data1 = [10, 10, 30, 40]
@@ -2156,16 +2160,16 @@ class TestMode:
         arr = np.array([data1, data2, data3, data4, data5])
 
         vals = stats.mode(arr, axis=None)
-        assert_equal(vals[0], np.array([30]))
-        assert_equal(vals[1], np.array([8]))
+        assert_equal(vals[0], np.array(30))
+        assert_equal(vals[1], np.array(8))
 
         vals = stats.mode(arr, axis=0)
-        assert_equal(vals[0], np.array([[10, 10, 30, 30]]))
-        assert_equal(vals[1], np.array([[2, 3, 3, 2]]))
+        assert_equal(vals[0], np.array([10, 10, 30, 30]))
+        assert_equal(vals[1], np.array([2, 3, 3, 2]))
 
         vals = stats.mode(arr, axis=1)
-        assert_equal(vals[0], np.array([[10], [10], [20], [30], [30]]))
-        assert_equal(vals[1], np.array([[2], [4], [3], [4], [3]]))
+        assert_equal(vals[0], np.array([10, 10, 20, 30, 30]))
+        assert_equal(vals[1], np.array([2, 4, 3, 4, 3]))
 
     @pytest.mark.parametrize('axis', np.arange(-4, 0))
     def test_negative_axes_gh_15375(self, axis):
@@ -2177,17 +2181,19 @@ class TestMode:
 
     def test_strings(self):
         data1 = ['rain', 'showers', 'showers']
-        vals = stats.mode(data1)
-        assert_equal(vals[0][0], 'showers')
-        assert_equal(vals[1][0], 2)
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
+            vals = stats.mode(data1)
+        assert_equal(vals[0], 'showers')
+        assert_equal(vals[1], 2)
 
     def test_mixed_objects(self):
         objects = [10, True, np.nan, 'hello', 10]
         arr = np.empty((5,), dtype=object)
         arr[:] = objects
-        vals = stats.mode(arr)
-        assert_equal(vals[0][0], 10)
-        assert_equal(vals[1][0], 2)
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
+            vals = stats.mode(arr)
+        assert_equal(vals[0], 10)
+        assert_equal(vals[1], 2)
 
     def test_objects(self):
         # Python objects must be sortable (le + eq) and have ne defined
@@ -2213,10 +2219,11 @@ class TestMode:
         arr[:] = points
         assert_(len(set(points)) == 4)
         assert_equal(np.unique(arr).shape, (4,))
-        vals = stats.mode(arr)
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
+            vals = stats.mode(arr)
 
-        assert_equal(vals[0][0], Point(2))
-        assert_equal(vals[1][0], 4)
+        assert_equal(vals[0], Point(2))
+        assert_equal(vals[1], 4)
 
     def test_mode_result_attributes(self):
         data1 = [3, 5, 1, 10, 23, 3, 2, 6, 8, 6, 10, 6]
@@ -2245,21 +2252,58 @@ class TestMode:
     ])
     def test_smallest_equal(self, data):
         result = stats.mode(data, nan_policy='omit')
-        assert_equal(result[0][0], 1)
+        assert_equal(result[0], 1)
 
     def test_obj_arrays_ndim(self):
         # regression test for gh-9645: `mode` fails for object arrays w/ndim > 1
         data = [['Oxidation'], ['Oxidation'], ['Polymerization'], ['Reduction']]
         ar = np.array(data, dtype=object)
-        m = stats.mode(ar, axis=0)
-        assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1, 1)
-        assert np.all(m.count == 2) and m.count.shape == (1, 1)
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
+            m = stats.mode(ar, axis=0)
+        assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1,)
+        assert np.all(m.count == 2) and m.count.shape == (1,)
 
         data1 = data + [[np.nan]]
         ar1 = np.array(data1, dtype=object)
-        m = stats.mode(ar1, axis=0)
-        assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1, 1)
-        assert np.all(m.count == 2) and m.count.shape == (1, 1)
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
+            m = stats.mode(ar1, axis=0)
+        assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1,)
+        assert np.all(m.count == 2) and m.count.shape == (1,)
+
+    @pytest.mark.parametrize('axis', np.arange(-3, 3))
+    @pytest.mark.parametrize('dtype', [np.float64, 'object'])
+    def test_mode_shape_gh_9955(self, axis, dtype):
+        rng = np.random.default_rng(984213899)
+        a = rng.uniform(size=(3, 4, 5)).astype(dtype)
+        if dtype == 'object':
+            with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
+                res = stats.mode(a, axis=axis)
+        else:
+            res = stats.mode(a, axis=axis)
+        reference_shape = list(a.shape)
+        reference_shape.pop(axis)
+        np.testing.assert_array_equal(res.mode.shape, reference_shape)
+        np.testing.assert_array_equal(res.count.shape, reference_shape)
+
+    def test_nan_policy_propagate_gh_9815(self):
+        # mode should treat np.nan as it would any other object when
+        # nan_policy='propagate'
+        a = [2, np.nan, 1, np.nan]
+        if NumpyVersion(np.__version__) >= '1.21.0':
+            res = stats.mode(a)
+            assert np.isnan(res.mode) and res.count == 2
+
+        # mode should work on object arrays. There were issues when
+        # objects do not support comparison operations.
+        a = np.array(a, dtype='object')
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
+            res = stats.mode(a)
+        assert np.isnan(res.mode) and res.count == 2
+
+        a = np.array([10, True, 'hello', 10], dtype='object')
+        with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
+            res = stats.mode(a)
+        assert_array_equal(res, (10, 2))
 
 
 class TestSEM:
@@ -4422,11 +4466,8 @@ class Test_ttest_ind_permutations():
         na, nb = len(a), len(b)
 
         permutations = 100000
-        mat_perm, _ = _data_partitions(data, permutations, na)
+        t_stat, _ = _permutation_distribution_t(data, permutations, na, True)
 
-        a = mat_perm[..., :na]
-        b = mat_perm[..., nb:]
-        t_stat = _calc_t_stat(a, b, True)
         n_unique = len(set(t_stat))
         assert n_unique == binom(na + nb, na)
         assert len(t_stat) == n_unique
@@ -4535,6 +4576,21 @@ class Test_ttest_ind_permutations():
         with assert_raises(ValueError, match="'hello' cannot be used"):
             stats.ttest_ind(self.a, self.b, permutations=1,
                             random_state='hello')
+
+    @pytest.mark.parametrize("batch", (-1, 0))
+    def test_batch_generator_iv(self, batch):
+        with assert_raises(ValueError, match="`batch` must be positive."):
+            list(_batch_generator([1, 2, 3], batch))
+
+    batch_generator_cases = [(range(0), 3, []),
+                             (range(6), 3, [[0, 1, 2], [3, 4, 5]]),
+                             (range(8), 3, [[0, 1, 2], [3, 4, 5], [6, 7]])]
+
+    @pytest.mark.parametrize("iterable, batch, expected",
+                             batch_generator_cases)
+    def test_batch_generator(self, iterable, batch, expected):
+        got = list(_batch_generator(iterable, batch))
+        assert got == expected
 
 
 class Test_ttest_ind_common:
@@ -5959,6 +6015,18 @@ class TestTrim:
         assert_equal(stats.trim1([], 3/11., tail='left'), [])
         assert_equal(stats.trim1([], 4/6.), [])
 
+        # test axis
+        a = np.arange(24).reshape(6, 4)
+        ref = np.arange(4, 24).reshape(5, 4)  # first row trimmed
+
+        axis = 0
+        trimmed = stats.trim1(a, 0.2, tail='left', axis=axis)
+        assert_equal(np.sort(trimmed, axis=axis), ref)
+
+        axis = 1
+        trimmed = stats.trim1(a.T, 0.2, tail='left', axis=axis)
+        assert_equal(np.sort(trimmed, axis=axis), ref.T)
+
     def test_trimboth(self):
         a = np.arange(11)
         assert_equal(np.sort(stats.trimboth(a, 3/11.)), np.arange(3, 8))
@@ -6598,23 +6666,49 @@ class TestCombinePvalues:
 
     def test_pearson(self):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='pearson')
-        assert_approx_equal(p, 0.97787, significant=4)
+        assert_approx_equal(p, 0.02213, significant=4)
 
     def test_tippett(self):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='tippett')
-        assert_approx_equal(p, 0.970299, significant=4)
+        assert_approx_equal(p, 0.0297, significant=4)
 
     def test_mudholkar_george(self):
         Z, p = stats.combine_pvalues([.1, .1, .1], method='mudholkar_george')
         assert_approx_equal(p, 0.019462, significant=4)
 
-    def test_mudholkar_george_equal_fisher_minus_pearson(self):
+    def test_mudholkar_george_equal_fisher_pearson_average(self):
         Z, p = stats.combine_pvalues([.01, .2, .3], method='mudholkar_george')
         Z_f, p_f = stats.combine_pvalues([.01, .2, .3], method='fisher')
         Z_p, p_p = stats.combine_pvalues([.01, .2, .3], method='pearson')
-        # 0.5 here is because logistic = log(u) - log(1-u), i.e. no 2 factors
-        assert_approx_equal(0.5 * (Z_f-Z_p), Z, significant=4)
+        assert_approx_equal(0.5 * (Z_f+Z_p), Z, significant=4)
 
+    @pytest.mark.parametrize("variant", ["single", "all", "random"])
+    @pytest.mark.parametrize(
+        "method",
+        ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"],
+    )
+    def test_monotonicity(self, variant, method):
+        # Test that result increases monotonically with respect to input.
+        m, n = 10, 7
+        rng = np.random.default_rng(278448169958891062669391462690811630763)
+
+        # `pvaluess` is an m × n array of p values. Each row corresponds to
+        # a set of p values to be combined with p values increasing
+        # monotonically down one column (single), simultaneously down each
+        # column (all), or independently down each column (random).
+        if variant == "single":
+            pvaluess = np.full((m, n), rng.random(n))
+            pvaluess[:, 0] = np.linspace(0.1, 0.9, m)
+        elif variant == "all":
+            pvaluess = np.full((n, m), np.linspace(0.1, 0.9, m)).T
+        elif variant == "random":
+            pvaluess = np.sort(rng.uniform(0, 1, size=(m, n)), axis=0)
+
+        combined_pvalues = [
+            stats.combine_pvalues(pvalues, method=method)[1]
+            for pvalues in pvaluess
+        ]
+        assert np.all(np.diff(combined_pvalues) >= 0)
 
 class TestCdfDistanceValidation:
     """

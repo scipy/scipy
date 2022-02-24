@@ -11,6 +11,7 @@ import types
 import warnings
 import inspect
 from itertools import zip_longest
+from collections import namedtuple
 
 from scipy._lib import doccer
 from scipy._lib._util import _lazywhere
@@ -92,8 +93,8 @@ isf(q, %(shapes)s, loc=0, scale=1)
     Inverse survival function (inverse of ``sf``).
 """
 _doc_moment = """\
-moment(n, %(shapes)s, loc=0, scale=1)
-    Non-central moment of order n
+moment(order, %(shapes)s, loc=0, scale=1)
+    Non-central moment of the specified order.
 """
 _doc_stats = """\
 stats(%(shapes)s, loc=0, scale=1, moments='mv')
@@ -134,9 +135,8 @@ std(%(shapes)s, loc=0, scale=1)
     Standard deviation of the distribution.
 """
 _doc_interval = """\
-interval(alpha, %(shapes)s, loc=0, scale=1)
-    Endpoints of the range that contains fraction alpha [0, 1] of the
-    distribution
+interval(confidence, %(shapes)s, loc=0, scale=1)
+    Confidence interval with equal areas around the median.
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
                            _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf,
@@ -495,8 +495,8 @@ class rv_frozen:
     def std(self):
         return self.dist.std(*self.args, **self.kwds)
 
-    def moment(self, n):
-        return self.dist.moment(n, *self.args, **self.kwds)
+    def moment(self, order=None, **kwds):
+        return self.dist.moment(order, *self.args, **self.kwds, **kwds)
 
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
@@ -507,8 +507,8 @@ class rv_frozen:
     def logpmf(self, k):
         return self.dist.logpmf(k, *self.args, **self.kwds)
 
-    def interval(self, alpha):
-        return self.dist.interval(alpha, *self.args, **self.kwds)
+    def interval(self, confidence=None, **kwds):
+        return self.dist.interval(confidence, *self.args, **self.kwds, **kwds)
 
     def expect(self, func=None, lb=None, ub=None, conditional=False, **kwds):
         # expect method only accepts shape parameters as positional args
@@ -1065,7 +1065,10 @@ class rv_generic:
         args, loc, scale, size = self._parse_args_rvs(*args, **kwds)
         cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not np.all(cond):
-            raise ValueError("Domain error in arguments.")
+            message = ("Domain error in arguments. The `scale` parameter must "
+                       "be positive for all distributions; see the "
+                       "distribution documentation for other restrictions.")
+            raise ValueError(message)
 
         if np.all(scale == 0):
             return loc*ones(size, 'd')
@@ -1252,12 +1255,17 @@ class rv_generic:
         place(output, cond0, self.vecentropy(*goodargs) + log(goodscale))
         return output
 
-    def moment(self, n, *args, **kwds):
-        """n-th order non-central moment of distribution.
+    def moment(self, order=None, *args, **kwds):
+        """non-central moment of distribution of specified order.
+
+        .. deprecated:: 1.9.0
+           Parameter `n` is replaced by parameter `order` to avoid name
+           collisions with the shape parameter `n` of several distributions.
+           Parameter `n` will be removed in the second release after 1.9.0.
 
         Parameters
         ----------
-        n : int, n >= 1
+        order : int, order >= 1
             Order of moment.
         arg1, arg2, arg3,... : float
             The shape parameter(s) for the distribution (see docstring of the
@@ -1268,6 +1276,93 @@ class rv_generic:
             scale parameter (default=1)
 
         """
+        # This function was originally written with parameter `n`, but `n`
+        # is also the name of many distribution shape parameters.
+        # This block allows the function to accept both `n` and its
+        # replacement `order` during a deprecation period; it can be removed
+        # in the second release after 1.9.0.
+        # The logic to provide a DeprecationWarning only when `n` is passed
+        # as a keyword, accept the new keyword `order`, and otherwise be
+        # backward-compatible deserves explanation. We need to look out for
+        # the following:
+        # * Does the distribution have a shape named `n`?
+        # * Is `order` provided? It doesn't matter whether it is provided as a
+        #   positional or keyword argument; it will be used as the order of the
+        #   moment rather than a distribution shape parameter because:
+        #   - The first positional argument of `moment` has always been the
+        #     order of the moment.
+        #   - The keyword `order` is new, so it's unambiguous that it refers to
+        #     the order of the moment.
+        # * Is `n` provided as a keyword argument? It _does_ matter whether it
+        #   is provided as a positional or keyword argument.
+        #   - The first positional argument of `moment` has always been the
+        #     order of moment, but
+        #   - if `n` is provided as a keyword argument, its meaning depends
+        #     on whether the distribution accepts `n` as a shape parameter.
+        has_shape_n = (self.shapes is not None
+                       and "n" in (self.shapes.split(", ")))
+        got_order = order is not None
+        got_keyword_n = kwds.get("n", None) is not None
+
+        # These lead to the following cases.
+        # Case A: If the distribution _does_ accept `n` as a shape
+        # 1. If both `order` and `n` are provided, this is now OK:
+        #    it is unambiguous that `order` is the order of the moment and `n`
+        #    is the shape parameter. Previously, this would have caused an
+        #    error because `n` was provided both as a keyword argument and
+        #    as the first positional argument. I don't think it is credible for
+        #    users to rely on this error in their code, though, so I don't see
+        #    this as a backward compatibility break.
+        # 2. If only `n` is provided (as a keyword argument), this would have
+        #    been an error in the past because `n` would have been treated as
+        #    the order of the moment while the shape parameter would be
+        #    missing. It is still the same type of error, but for a different
+        #    reason: now, `n` is treated as the shape parameter while the
+        #    order of the moment is missing.
+        # 3. If only `order` is provided, no special treament is needed.
+        #    Clearly this value is intended to be the order of the moment,
+        #    and the rest of the function will determine whether `n` is
+        #    available as a shape parameter in `args`.
+        # 4. If neither `n` nor `order` is provided, this would have been an
+        #    error (order of the moment is not provided) and it is still an
+        #    error for the same reason.
+
+        # Case B: the distribution does _not_ accept `n` as a shape
+        # 1. If both `order` and `n` are provided, this was an error, and it
+        #    still is an error: two values for same parameter.
+        # 2. If only `n` is provided (as a keyword argument), this was OK and
+        #    is still OK, but there shold now be a `DeprecationWarning`. The
+        #    value of `n` should be removed from `kwds` and stored in `order`.
+        # 3. If only `order` is provided, there was no problem before providing
+        #    only the first argument of `moment`, and there is no problem with
+        #    that now.
+        # 4. If neither `n` nor `order` is provided, this would have been an
+        #    error (order of the moment is not provided), and it is still an
+        #    error for the same reason.
+        if not got_order and ((not got_keyword_n)  # A4 and B4
+                              or (got_keyword_n and has_shape_n)):  # A2
+            message = ("moment() missing 1 required "
+                       "positional argument: `order`")
+            raise TypeError(message)
+
+        if got_keyword_n and not has_shape_n:
+            if got_order:  # B1
+                # this will change to "moment got unexpected argument n"
+                message = "moment() got multiple values for first argument"
+                raise TypeError(message)
+            else:  # B2
+                message = ("Use of keyword argument `n` for method "
+                           "`moment` is deprecated. Use first positional "
+                           "argument or keyword argument `order` instead.")
+                order = kwds.pop("n")
+                warnings.warn(message, DeprecationWarning, stacklevel=2)
+        n = order
+        # No special treatment of A1, A3, or B3 is needed because the order
+        # of the moment is now in variable `n` and the shape parameter, if
+        # needed, will be fished out of `args` or `kwds` by _parse_args
+        # A3 might still cause an error if the shape parameter called `n`
+        # is not found in `args`.
+
         shapes, loc, scale = self._parse_args(*args, **kwds)
         args = np.broadcast_arrays(*(*shapes, loc, scale))
         *shapes, loc, scale = args
@@ -1429,12 +1524,18 @@ class rv_generic:
         res = sqrt(self.stats(*args, **kwds))
         return res
 
-    def interval(self, alpha, *args, **kwds):
+    def interval(self, confidence=None, *args, **kwds):
         """Confidence interval with equal areas around the median.
+
+        .. deprecated:: 1.9.0
+           Parameter `alpha` is replaced by parameter `confidence` to avoid
+           name collisions with the shape parameter `alpha` of some
+           distributions. Parameter `alpha` will be removed in the second
+           release after 1.9.0.
 
         Parameters
         ----------
-        alpha : array_like of float
+        confidence : array_like of float
             Probability that an rv will be drawn from the returned range.
             Each value should be in the range [0, 1].
         arg1, arg2, ... : array_like
@@ -1452,6 +1553,37 @@ class rv_generic:
             possible values.
 
         """
+        # This function was originally written with parameter `alpha`, but
+        # `alpha` is also the name of a shape parameter of two distributions.
+        # This block allows the function to accept both `alpha` and its
+        # replacement `confidence` during a deprecation period; it can be
+        # removed in the second release after 1.9.0.
+        # See description of logic in `moment` method.
+        has_shape_alpha = (self.shapes is not None
+                           and "alpha" in (self.shapes.split(", ")))
+        got_confidence = confidence is not None
+        got_keyword_alpha = kwds.get("alpha", None) is not None
+
+        if not got_confidence and ((not got_keyword_alpha)
+                                   or (got_keyword_alpha and has_shape_alpha)):
+            message = ("interval() missing 1 required positional argument: "
+                       "`confidence`")
+            raise TypeError(message)
+
+        if got_keyword_alpha and not has_shape_alpha:
+            if got_confidence:
+                # this will change to "interval got unexpected argument alpha"
+                message = "interval() got multiple values for first argument"
+                raise TypeError(message)
+            else:
+                message = ("Use of keyword argument `alpha` for method "
+                           "`interval` is deprecated. Use first positional "
+                           "argument or keyword argument `confidence` "
+                           "instead.")
+                confidence = kwds.pop("alpha")
+                warnings.warn(message, DeprecationWarning, stacklevel=2)
+        alpha = confidence
+
         alpha = asarray(alpha)
         if np.any((alpha > 1) | (alpha < 0)):
             raise ValueError("alpha must be between 0 and 1 inclusive")
@@ -1539,6 +1671,20 @@ class rv_generic:
         x = asarray((x-loc) / scale)
         n_log_scale = len(x) * log(scale)
         return self._nnlf_and_penalty(x, args) + n_log_scale
+
+
+class _ShapeInfo:
+    def __init__(self, name, integrality=False, domain=(-np.inf, np.inf),
+                 inclusive=(True, True)):
+        self.name = name
+        self.integrality = integrality
+
+        domain = list(domain)
+        if np.isfinite(domain[0]) and not inclusive[0]:
+            domain[0] = np.nextafter(domain[0], np.inf)
+        if np.isfinite(domain[1]) and not inclusive[1]:
+            domain[1] = np.nextafter(domain[1], -np.inf)
+        self.domain = domain
 
 
 def _get_fixed_fit_value(kwds, names):
@@ -2775,6 +2921,12 @@ class rv_continuous(rv_generic):
             vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
         return vals
 
+    def _param_info(self):
+        shape_info = self._shape_info()
+        loc_info = _ShapeInfo("loc", False, (-np.inf, np.inf), (False, False))
+        scale_info = _ShapeInfo("scale", False, (0, np.inf), (False, False))
+        param_info = shape_info + [loc_info, scale_info]
+        return param_info
 
 # Helpers for the discrete distributions
 def _drv2_moment(self, n, *args):
@@ -3584,6 +3736,12 @@ class rv_discrete(rv_generic):
         x0 = self.ppf(0.5, *args)
         res = _expect(fun, lb, ub, x0, self.inc, maxcount, tolerance, chunksize)
         return res / invfac
+
+    def _param_info(self):
+        shape_info = self._shape_info()
+        loc_info = _ShapeInfo("loc", True, (-np.inf, np.inf), (False, False))
+        param_info = shape_info + [loc_info]
+        return param_info
 
 
 def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
