@@ -142,10 +142,13 @@ jobs:
       - run:
           name: run asv
           command: |
+            cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
+            cd -
             time python dev.py --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            cd benchmarks
             asv --config asv.conf.json publish
 
       - store_artifacts:
