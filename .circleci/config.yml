@@ -30,7 +30,7 @@ jobs:
               echo "Merging $(cat merge.txt)";
               git remote add upstream https://github.com/scipy/scipy.git;
               git pull --ff-only upstream "refs/pull/$(cat merge.txt)/merge";
-              git fetch upstream master;
+              git fetch upstream main;
             fi
 
       - run:
@@ -50,7 +50,8 @@ jobs:
             pip install --install-option="--no-cython-compile" cython
             pip install numpy==1.21.5
             pip install -r doc_requirements.txt
-            pip install nose mpmath argparse Pillow asv pythran
+            # `asv` pin because of slowdowns reported in gh-15568
+            pip install nose mpmath argparse Pillow "asv==0.4.2" pythran
             pip install pybind11
 
       - run:
@@ -128,7 +129,7 @@ jobs:
           destination: html-benchmarks
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
-# The keys are only available for builds on master branch.
+# The keys are only available for builds on main branch.
 # https://developer.github.com/guides/managing-deploy-keys/
 # https://circleci.com/docs/2.0/configuration-reference/#add_ssh_keys
 
@@ -179,4 +180,4 @@ workflows:
             - build_docs
           filters:
             branches:
-              only: master
+              only: main

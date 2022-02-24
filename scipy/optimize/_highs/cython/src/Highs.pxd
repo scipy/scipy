@@ -38,6 +38,8 @@ cdef extern from "Highs.h":
         HighsStatus getHighsInfoValue(const string& info, double& value) const
         const HighsOptions& getHighsOptions() const
 
+        const HighsLp& getLp() const
+
         HighsStatus writeSolution(const string filename, const bool pretty) const
 
         HighsStatus setBasis()

@@ -5,6 +5,7 @@
 import operator
 import numpy as np
 import math
+import warnings
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
@@ -1157,7 +1158,7 @@ def mathieu_even_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        print("Warning, too many predicted coefficients.")
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
     kd = 1
     m = int(floor(m))
     if m % 2:
@@ -1214,7 +1215,7 @@ def mathieu_odd_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        print("Warning, too many predicted coefficients.")
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
     kd = 4
     m = int(floor(m))
     if m % 2:
@@ -2402,7 +2403,8 @@ def factorial2(n, exact=False):
     ----------
     n : int or array_like
         Calculate ``n!!``.  Arrays are only supported with `exact` set
-        to False.  If ``n < 0``, the return value is 0.
+        to False. If ``n < -1``, the return value is 0.
+        Otherwise if ``n <= 0``, the return value is 1.
     exact : bool, optional
         The result can be approximated rapidly using the gamma-formula
         above (default).  If `exact` is set to True, calculate the
@@ -2462,7 +2464,8 @@ def factorialk(n, k, exact=True):
     Parameters
     ----------
     n : int
-        Calculate multifactorial. If `n` < 0, the return value is 0.
+        Calculate multifactorial. If ``n < 1 - k``, the return value is 0.
+        Otherwise if ``n <= 0``, the return value is 1.
     k : int
         Order of multifactorial.
     exact : bool, optional

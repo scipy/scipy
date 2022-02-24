@@ -1540,6 +1540,10 @@ class TestButtord:
             buttord([20, 50], [14, 60], 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
 
+    def test_runtime_warnings(self):
+        with pytest.warns(RuntimeWarning, match=r'Order is zero'):
+            buttord(0.0, 1.0, 3, 60)
+
 
 class TestCheb1ord:
 

@@ -29,7 +29,7 @@ References
 import warnings
 import math
 from math import gcd
-from collections import namedtuple
+from collections import namedtuple, Counter
 
 import numpy as np
 from numpy import array, asarray, ma
@@ -48,7 +48,7 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
-from ._hypotests import _all_partitions
+from ._hypotests import _all_partitions, _batch_generator
 from ._hypotests_pythran import _compute_outer_prob_inside_method
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
@@ -216,11 +216,26 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
+# note that `weights` are paired with `x`
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def gmean(a, axis=0, dtype=None, weights=None):
-    """Compute the geometric mean along the specified axis.
+    r"""Compute the weighted geometric mean along the specified axis.
 
-    Return the geometric average of the array elements.
-    That is:  n-th root of (x1 * x2 * ... * xn)
+    The weighted geometric mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \exp \left( \frac{ \sum_{i=1}^n w_i \ln a_i }{ \sum_{i=1}^n w_i }
+                   \right) \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \sqrt[n]{ \prod_{i=1}^n a_i } \, .
 
     Parameters
     ----------
@@ -236,8 +251,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
         that of the default platform integer. In that case, the default
         platform integer is used.
     weights : array_like, optional
-        The weights array can either be 1-D (in which case its length must be
-        the size of `a` along the given `axis`) or of the same shape as `a`.
+        The `weights` array must be broadcastable to the same shape as `a`.
         Default is None, which gives each value a weight of 1.0.
 
     Returns
@@ -257,13 +271,10 @@ def gmean(a, axis=0, dtype=None, weights=None):
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
 
-    Use masked arrays to ignore any non-finite values in the input or that
-    arise in the calculations such as Not a Number and infinity because masked
-    arrays automatically mask any non-finite values.
-
     References
     ----------
-    .. [1] "Weighted Geometric Mean", *Wikipedia*, https://en.wikipedia.org/wiki/Weighted_geometric_mean.
+    .. [1] "Weighted Geometric Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Weighted_geometric_mean.
 
     Examples
     --------
@@ -272,6 +283,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
     2.0
     >>> gmean([1, 2, 3, 4, 5, 6, 7])
     3.3800151591412964
+    >>> gmean([1, 4, 7], weights=[3, 1, 3])
+    2.80668351922014
 
     """
     if not isinstance(a, np.ndarray):
@@ -292,10 +305,24 @@ def gmean(a, axis=0, dtype=None, weights=None):
     return np.exp(np.average(log_a, axis=axis, weights=weights))
 
 
-def hmean(a, axis=0, dtype=None):
-    """Calculate the harmonic mean along the specified axis.
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
+def hmean(a, axis=0, dtype=None, *, weights=None):
+    r"""Calculate the weighted harmonic mean along the specified axis.
 
-    That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
+    The weighted harmonic mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \frac{ \sum_{i=1}^n w_i }{ \sum_{i=1}^n \frac{w_i}{a_i} } \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \frac{ n }{ \sum_{i=1}^n \frac{1}{a_i} } \, .
 
     Parameters
     ----------
@@ -310,6 +337,12 @@ def hmean(a, axis=0, dtype=None):
         dtype of `a`, unless `a` has an integer `dtype` with a precision less
         than that of the default platform integer. In that case, the default
         platform integer is used.
+    weights : array_like, optional
+        The weights array can either be 1-D (in which case its length must be
+        the size of `a` along the given `axis`) or of the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
+
+        .. versionadded:: 1.9
 
     Returns
     -------
@@ -328,8 +361,12 @@ def hmean(a, axis=0, dtype=None):
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
 
-    Use masked arrays to ignore any non-finite values in the input or that
-    arise in the calculations such as Not a Number and infinity.
+    References
+    ----------
+    .. [1] "Weighted Harmonic Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Harmonic_mean#Weighted_harmonic_mean
+    .. [2] Ferger, F., "The nature and use of the harmonic mean", Journal of
+           the American Statistical Association, vol. 26, pp. 36-40, 1931
 
     Examples
     --------
@@ -338,22 +375,26 @@ def hmean(a, axis=0, dtype=None):
     1.6000000000000001
     >>> hmean([1, 2, 3, 4, 5, 6, 7])
     2.6997245179063363
+    >>> hmean([1, 4, 7], weights=[3, 1, 3])
+    1.9029126213592233
 
     """
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
-    if np.all(a >= 0):
-        # Harmonic mean only defined if greater than or equal to to zero.
+    elif dtype:
+        # Must change the default dtype allowing array type
         if isinstance(a, np.ma.MaskedArray):
-            size = a.count(axis)
+            a = np.ma.asarray(a, dtype=dtype)
         else:
-            if axis is None:
-                a = a.ravel()
-                size = a.shape[0]
-            else:
-                size = a.shape[axis]
+            a = np.asarray(a, dtype=dtype)
+
+    if np.all(a >= 0):
+        # Harmonic mean only defined if greater than or equal to zero.
+        if weights is not None:
+            weights = np.asanyarray(weights, dtype=dtype)
+
         with np.errstate(divide='ignore'):
-            return size / np.sum(1.0 / a, axis=axis, dtype=dtype)
+            return 1.0 / np.average(1.0 / a, axis=axis, weights=weights)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater "
                          "than or equal to zero")
@@ -363,9 +404,9 @@ ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
 def mode(a, axis=0, nan_policy='propagate'):
-    """Return an array of the modal (most common) value in the passed array.
+    r"""Return an array of the modal (most common) value in the passed array.
 
-    If there is more than one such value, only the smallest is returned.
+    If there is more than one such value, only one is returned.
     The bin-count for the modal bins is also returned.
 
     Parameters
@@ -379,7 +420,7 @@ def mode(a, axis=0, nan_policy='propagate'):
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
 
-          * 'propagate': returns nan
+          * 'propagate': treats nan as it would treat any other value
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
 
@@ -390,6 +431,27 @@ def mode(a, axis=0, nan_policy='propagate'):
     count : ndarray
         Array of counts for each mode.
 
+    Notes
+    -----
+    Input `a` is converted to an `np.ndarray` before taking the mode.
+    To avoid the possibility of unexpected conversions, convert `a` to an
+    `np.ndarray` of the desired type before using `mode`.
+
+    The mode of object arrays is calculated using `collections.Counter`, which
+    treats NaNs with different binary representations as distinct.
+
+    .. deprecated:: 1.9.0
+        Support for non-numeric arrays has been deprecated and will be removed
+        in the second release after SciPy 1.9.0. `pandas.DataFrame.mode`_ can
+        be used instead.
+
+        .. _pandas.DataFrame.mode: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html
+
+    The mode of arrays with other dtypes is calculated using `np.unique`.
+    In NumPy versions 1.21 and after, all NaNs - even those with different
+    binary representations - are treated as equivalent and counted as separate
+    instances of the same value.
+
     Examples
     --------
     >>> a = np.array([[6, 8, 3, 0],
@@ -399,14 +461,14 @@ def mode(a, axis=0, nan_policy='propagate'):
     ...               [4, 7, 5, 9]])
     >>> from scipy import stats
     >>> stats.mode(a)
-    ModeResult(mode=array([[3, 1, 0, 0]]), count=array([[1, 1, 1, 1]]))
+    ModeResult(mode=array([3, 1, 0, 0]), count=array([1, 1, 1, 1]))
 
     To get mode of whole array, specify ``axis=None``:
 
     >>> stats.mode(a, axis=None)
-    ModeResult(mode=array([3]), count=array([3]))
+    ModeResult(mode=3, count=3)
 
-    """
+    """  # noqa: E501
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
         return ModeResult(np.array([]), np.array([]))
@@ -417,42 +479,36 @@ def mode(a, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.mode(a, axis)
 
-    if a.dtype == object and np.nan in set(a.ravel()):
-        # Fall back to a slower method since np.unique does not work with NaN
-        scores = set(np.ravel(a))  # get ALL unique values
-        testshape = list(a.shape)
-        testshape[axis] = 1
-        oldmostfreq = np.zeros(testshape, dtype=a.dtype)
-        oldcounts = np.zeros(testshape, dtype=int)
+    if not np.issubdtype(a.dtype, np.number):
+        warnings.warn("Support for non-numeric arrays has been deprecated "
+                      "and will be removed in the second release after "
+                      "1.9.0. `pandas.DataFrame.mode` can be used instead, "
+                      "see https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html.",  # noqa: E501
+                      DeprecationWarning, stacklevel=2)
 
-        for score in scores:
-            template = (a == score)
-            counts = np.sum(template, axis, keepdims=True)
-            mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
-            oldcounts = np.maximum(counts, oldcounts)
-            oldmostfreq = mostfrequent
-
-        return ModeResult(mostfrequent, oldcounts)
-
-    def _mode1D(a):
-        vals, cnts = np.unique(a, return_counts=True)
-        return vals[cnts.argmax()], cnts.max()
+    if a.dtype == object:
+        def _mode1D(a):
+            cntr = Counter(a)
+            mode = max(cntr, key=lambda x: cntr[x])
+            return mode, cntr[mode]
+    else:
+        def _mode1D(a):
+            vals, cnts = np.unique(a, return_counts=True)
+            return vals[cnts.argmax()], cnts.max()
 
     # np.apply_along_axis will convert the _mode1D tuples to a numpy array,
     # casting types in the process.
     # This recreates the results without that issue
     # View of a, rotated so the requested axis is last
-    in_dims = list(range(a.ndim))
-    a_view = np.transpose(a, in_dims[:axis] + in_dims[axis+1:] + [axis])
+    a_view = np.moveaxis(a, axis, -1)
 
     inds = np.ndindex(a_view.shape[:-1])
     modes = np.empty(a_view.shape[:-1], dtype=a.dtype)
     counts = np.empty(a_view.shape[:-1], dtype=np.int_)
     for ind in inds:
         modes[ind], counts[ind] = _mode1D(a_view[ind])
-    newshape = list(a.shape)
-    newshape[axis] = 1
-    return ModeResult(modes.reshape(newshape), counts.reshape(newshape))
+
+    return ModeResult(modes[()], counts[()])
 
 
 def _mask_to_limits(a, limits, inclusive):
@@ -525,7 +581,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
 
     Returns
     -------
-    tmean : float
+    tmean : ndarray
         Trimmed mean.
 
     See Also
@@ -544,10 +600,10 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     a = asarray(a)
     if limits is None:
-        return np.mean(a, None)
-
-    am = _mask_to_limits(a.ravel(), limits, inclusive)
-    return am.mean(axis=axis)
+        return np.mean(a, axis)
+    am = _mask_to_limits(a, limits, inclusive)
+    mean = np.ma.filled(am.mean(axis=axis), fill_value=np.nan)
+    return mean if mean.ndim > 0 else mean.item()
 
 
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
@@ -966,6 +1022,9 @@ def _moment(a, moment, axis, *, mean=None):
         return np.mean(s, axis)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+)
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
     r"""Compute the sample skewness of a data set.
 
@@ -1069,6 +1128,9 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     return vals
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+)
 def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     """Compute the kurtosis (Fisher or Pearson) of a dataset.
 
@@ -3288,11 +3350,35 @@ def trimboth(a, proportiontocut, axis=0):
 
     Examples
     --------
+    Create an array of 10 values and trim 10% of those values from each end:
+
     >>> from scipy import stats
-    >>> a = np.arange(20)
-    >>> b = stats.trimboth(a, 0.1)
-    >>> b.shape
-    (16,)
+    >>> a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> stats.trimboth(a, 0.1)
+    array([1, 3, 2, 4, 5, 6, 7, 8])
+
+    Note that the elements of the input array are trimmed by value, but the
+    output array is not necessarily sorted.
+
+    The proportion to trim is rounded down to the nearest integer. For
+    instance, trimming 25% of the values from each end of an array of 10
+    values will return an array of 6 values:
+
+    >>> b = np.arange(10)
+    >>> stats.trimboth(b, 1/4).shape
+    (6,)
+
+    Multidimensional arrays can be trimmed along any axis or across the entire
+    array:
+
+    >>> c = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
+    >>> d = np.array([a, b, c])
+    >>> stats.trimboth(d, 0.4, axis=0).shape
+    (1, 10)
+    >>> stats.trimboth(d, 0.4, axis=1).shape
+    (3, 2)
+    >>> stats.trimboth(d, 0.4, axis=None).shape
+    (6,)
 
     """
     a = np.asarray(a)
@@ -3346,11 +3432,35 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
     Examples
     --------
+    Create an array of 10 values and trim 20% of its lowest values:
+
     >>> from scipy import stats
-    >>> a = np.arange(20)
-    >>> b = stats.trim1(a, 0.5, 'left')
-    >>> b
-    array([10, 11, 12, 13, 14, 16, 15, 17, 18, 19])
+    >>> a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> stats.trim1(a, 0.2, 'left')
+    array([2, 4, 3, 5, 6, 7, 8, 9])
+
+    Note that the elements of the input array are trimmed by value, but the
+    output array is not necessarily sorted.
+
+    The proportion to trim is rounded down to the nearest integer. For
+    instance, trimming 25% of the values from an array of 10 values will
+    return an array of 8 values:
+
+    >>> b = np.arange(10)
+    >>> stats.trim1(b, 1/4).shape
+    (8,)
+
+    Multidimensional arrays can be trimmed along any axis or across the entire
+    array:
+
+    >>> c = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
+    >>> d = np.array([a, b, c])
+    >>> stats.trim1(d, 0.8, axis=0).shape
+    (1, 10)
+    >>> stats.trim1(d, 0.8, axis=1).shape
+    (3, 2)
+    >>> stats.trim1(d, 0.8, axis=None).shape
+    (6,)
 
     """
     a = np.asarray(a)
@@ -3374,7 +3484,9 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
     atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
-    return atmp[lowercut:uppercut]
+    sl = [slice(None)] * atmp.ndim
+    sl[axis] = slice(lowercut, uppercut)
+    return atmp[tuple(sl)]
 
 
 def trim_mean(a, proportiontocut, axis=0):
@@ -5670,6 +5782,13 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     pvalue : float or array
         Two-sided p-value.
 
+    Notes
+    -----
+    The statistic is calculated as ``(np.mean(a) - popmean)/se``, where
+    ``se`` is the standard error. Therefore, the statistic will be positive
+    when the sample mean is greater than the population mean and negative when
+    the sample mean is less than the population mean.
+
     Examples
     --------
     >>> from scipy import stats
@@ -5840,7 +5959,9 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Notes
     -----
-    .. versionadded:: 0.16.0
+    The statistic is calculated as ``(mean1 - mean2)/se``, where ``se`` is the
+    standard error. Therefore, the statistic will be positive when `mean1` is
+    greater than `mean2` and negative when `mean1` is less than `mean2`.
 
     References
     ----------
@@ -6079,9 +6200,14 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     or `b`, and the t-statistic is calculated. This process is performed
     repeatedly (`permutation` times), generating a distribution of the
     t-statistic under the null hypothesis, and the t-statistic of the observed
-    data is compared to this distribution to determine the p-value. When
-    ``permutations >= binom(n, k)``, an exact test is performed: the data are
-    partitioned between the groups in each distinct way exactly once.
+    data is compared to this distribution to determine the p-value.
+    Specifically, the p-value reported is the "achieved significance level"
+    (ASL) as defined in 4.4 of [3]_. Note that there are other ways of
+    estimating p-values using randomized permutation tests; for other
+    options, see the more general `permutation_test`.
+
+    When ``permutations >= binom(n, k)``, an exact test is performed: the data
+    are partitioned between the groups in each distinct way exactly once.
 
     The permutation test can be computationally expensive and not necessarily
     more accurate than the analytical test, but it does not make strong
@@ -6094,13 +6220,19 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     recommended if the underlying distribution is long-tailed or contaminated
     with outliers [4]_.
 
+    The statistic is calculated as ``(np.mean(a) - np.mean(b))/se``, where
+    ``se`` is the standard error. Therefore, the statistic will be positive
+    when the sample mean of `a` is greater than the sample mean of `b` and
+    negative when the sample mean of `a` is less than the sample mean of
+    `b`.
+
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/T-test#Independent_two-sample_t-test
 
     .. [2] https://en.wikipedia.org/wiki/Welch%27s_t-test
 
-    .. [3] http://en.wikipedia.org/wiki/Resampling_%28statistics%29
+    .. [3] B. Efron and T. Hastie. Computer Age Statistical Inference. (2016).
 
     .. [4] Yuen, Karen K. "The Two-Sample Trimmed t for Unequal Population
            Variances." Biometrika, vol. 61, no. 1, 1974, pp. 165-170. JSTOR,
@@ -6291,31 +6423,42 @@ def _calculate_winsorized_variance(a, g, axis):
     return var_win
 
 
-def _data_partitions(data, permutations, size_a, axis=-1, random_state=None):
-    """All partitions of data into sets of given lengths, ignoring order"""
+def _permutation_distribution_t(data, permutations, size_a, equal_var,
+                                random_state=None):
+    """Generation permutation distribution of t statistic"""
 
     random_state = check_random_state(random_state)
-    if axis < 0:  # we'll be adding a new dimension at the end
-        axis = data.ndim + axis
 
     # prepare permutation indices
-    size = data.shape[axis]
+    size = data.shape[-1]
     # number of distinct combinations
     n_max = special.comb(size, size_a)
 
     if permutations < n_max:
-        indices = np.array([random_state.permutation(size)
-                            for i in range(permutations)]).T
+        perm_generator = (random_state.permutation(size)
+                          for i in range(permutations))
     else:
         permutations = n_max
-        indices = np.array([np.concatenate(z)
-                            for z in _all_partitions(size_a, size-size_a)]).T
+        perm_generator = (np.concatenate(z)
+                          for z in _all_partitions(size_a, size-size_a))
 
-    data = data.swapaxes(axis, -1)   # so we can index along a new dimension
-    data = data[..., indices]        # generate permutations
-    data = data.swapaxes(-2, axis)   # restore original axis order
-    data = np.moveaxis(data, -1, 0)  # permutations indexed along axis 0
-    return data, permutations
+    t_stat = []
+    for indices in _batch_generator(perm_generator, batch=50):
+        # get one batch from perm_generator at a time as a list
+        indices = np.array(indices)
+        # generate permutations
+        data_perm = data[..., indices]
+        # move axis indexing permutations to position 0 to broadcast
+        # nicely with t_stat_observed, which doesn't have this dimension
+        data_perm = np.moveaxis(data_perm, -2, 0)
+
+        a = data_perm[..., :size_a]
+        b = data_perm[..., size_a:]
+        t_stat.append(_calc_t_stat(a, b, equal_var))
+
+    t_stat = np.concatenate(t_stat, axis=0)
+
+    return t_stat, permutations
 
 
 def _calc_t_stat(a, b, equal_var, axis=-1):
@@ -6384,12 +6527,9 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    mat_perm, permutations = _data_partitions(mat, permutations, size_a=na,
-                                              random_state=random_state)
-
-    a = mat_perm[..., :na]
-    b = mat_perm[..., na:]
-    t_stat = _calc_t_stat(a, b, equal_var)
+    t_stat, permutations = _permutation_distribution_t(
+        mat, permutations, size_a=na, equal_var=equal_var,
+        random_state=random_state)
 
     compare = {"less": np.less_equal,
                "greater": np.greater_equal,
@@ -6474,6 +6614,11 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     than the threshold, e.g. 1%, 5% or 10%, then we reject the null
     hypothesis of equal averages. Small p-values are associated with
     large t-statistics.
+
+    The statistic is calculated as ``np.mean(a - b)/se``, where ``se`` is the
+    standard error. Therefore, the statistic will be positive when the sample
+    mean of ``a - b`` is greater than zero and negative when the sample mean of
+    ``a - b`` is less than zero.
 
     References
     ----------
@@ -8097,26 +8242,33 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
 
 def combine_pvalues(pvalues, method='fisher', weights=None):
     """
-    Combine p-values from independent tests bearing upon the same hypothesis.
+    Combine p-values from independent tests that bear upon the same hypothesis.
+
+    These methods are intended only for combining p-values from hypothesis
+    tests based upon continuous distributions.
+
+    Each method assumes that under the null hypothesis, the p-values are
+    sampled independently and uniformly from the interval [0, 1]. A test
+    statistic (different for each method) is computed and a combined
+    p-value is calculated based upon the distribution of this test statistic
+    under the null hypothesis.
 
     Parameters
     ----------
     pvalues : array_like, 1-D
-        Array of p-values assumed to come from independent tests.
-    method : {'fisher', 'pearson', 'tippett', 'stouffer',
-              'mudholkar_george'}, optional
+        Array of p-values assumed to come from independent tests based on
+        continuous distributions.
+    method : {'fisher', 'pearson', 'tippett', 'stouffer', 'mudholkar_george'}
 
         Name of method to use to combine p-values.
-        The following methods are available (default is 'fisher'):
 
-          * 'fisher': Fisher's method (Fisher's combined probability test), the
-            sum of the logarithm of the p-values
-          * 'pearson': Pearson's method (similar to Fisher's but uses sum of the
-            complement of the p-values inside the logarithms)
-          * 'tippett': Tippett's method (minimum of p-values)
-          * 'stouffer': Stouffer's Z-score method
-          * 'mudholkar_george': the difference of Fisher's and Pearson's methods
-            divided by 2
+        The available methods are (see Notes for details):
+
+        * 'fisher': Fisher's method (Fisher's combined probability test)
+        * 'pearson': Pearson's method
+        * 'mudholkar_george': Mudholkar's and George's method
+        * 'tippett': Tippett's method
+        * 'stouffer': Stouffer's Z-score method
     weights : array_like, 1-D, optional
         Optional array of weights used only for Stouffer's Z-score method.
 
@@ -8129,44 +8281,62 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     Notes
     -----
-    Fisher's method (also known as Fisher's combined probability test) [1]_ uses
-    a chi-squared statistic to compute a combined p-value. The closely related
-    Stouffer's Z-score method [2]_ uses Z-scores rather than p-values. The
-    advantage of Stouffer's method is that it is straightforward to introduce
-    weights, which can make Stouffer's method more powerful than Fisher's
-    method when the p-values are from studies of different size [6]_ [7]_.
-    The Pearson's method uses :math:`log(1-p_i)` inside the sum whereas Fisher's
-    method uses :math:`log(p_i)` [4]_. For Fisher's and Pearson's method, the
-    sum of the logarithms is multiplied by -2 in the implementation. This
-    quantity has a chi-square distribution that determines the p-value. The
-    `mudholkar_george` method is the difference of the Fisher's and Pearson's
-    test statistics, each of which include the -2 factor [4]_. However, the
-    `mudholkar_george` method does not include these -2 factors. The test
-    statistic of `mudholkar_george` is the sum of logisitic random variables and
-    equation 3.6 in [3]_ is used to approximate the p-value based on Student's
-    t-distribution.
+    If this function is applied to tests with a discrete statistics such as
+    any rank test or contingency-table test, it will yield systematically
+    wrong results, e.g. Fisher's method will systematically overestimate the
+    p-value [1]_. This problem becomes less severe for large sample sizes
+    when the discrete distributions become approximately continuous.
+
+    The differences between the methods can be best illustrated by their
+    statistics and what aspects of a combination of p-values they emphasise
+    when considering significance [2]_. For example, methods emphasising large
+    p-values are more sensitive to strong false and true negatives; conversely
+    methods focussing on small p-values are sensitive to positives.
+
+    * The statistics of Fisher's method (also known as Fisher's combined
+      probability test) [3]_ is :math:`-2\\sum_i \\log(p_i)`, which is
+      equivalent (as a test statistics) to the product of individual p-values:
+      :math:`\\prod_i p_i`. Under the null hypothesis, this statistics follows
+      a :math:`\\chi^2` distribution. This method emphasises small p-values.
+    * Pearson's method uses :math:`-2\\sum_i\\log(1-p_i)`, which is equivalent
+      to :math:`\\prod_i \\frac{1}{1-p_i}` [2]_.
+      It thus emphasises large p-values.
+    * Mudholkar and George compromise between Fisher's and Pearson's method by
+      averaging their statistics [4]_. Their method emphasises extreme
+      p-values, both close to 1 and 0.
+    * Stouffer's method [5]_ uses Z-scores and the statistic:
+      :math:`\\sum_i \\Phi^{-1} (p_i)`, where :math:`\\Phi` is the CDF of the
+      standard normal distribution. The advantage of this method is that it is
+      straightforward to introduce weights, which can make Stouffer's method
+      more powerful than Fisher's method when the p-values are from studies
+      of different size [6]_ [7]_.
+    * Tippett's method uses the smallest p-value as a statistic.
+      (Mind that this minimum is not the combined p-value.)
 
     Fisher's method may be extended to combine p-values from dependent tests
-    [5]_. Extensions such as Brown's method and Kost's method are not currently
+    [8]_. Extensions such as Brown's method and Kost's method are not currently
     implemented.
 
     .. versionadded:: 0.15.0
 
     References
     ----------
-    .. [1] https://en.wikipedia.org/wiki/Fisher%27s_method
-    .. [2] https://en.wikipedia.org/wiki/Fisher%27s_method#Relation_to_Stouffer.27s_Z-score_method
-    .. [3] George, E. O., and G. S. Mudholkar. "On the convolution of logistic
-           random variables." Metrika 30.1 (1983): 1-13.
-    .. [4] Heard, N. and Rubin-Delanchey, P. "Choosing between methods of
+    .. [1] Kincaid, W. M., "The Combination of Tests Based on Discrete
+           Distributions." Journal of the American Statistical Association 57,
+           no. 297 (1962), 10-19.
+    .. [2] Heard, N. and Rubin-Delanchey, P. "Choosing between methods of
            combining p-values."  Biometrika 105.1 (2018): 239-246.
-    .. [5] Whitlock, M. C. "Combining probability from independent tests: the
+    .. [3] https://en.wikipedia.org/wiki/Fisher%27s_method
+    .. [4] George, E. O., and G. S. Mudholkar. "On the convolution of logistic
+           random variables." Metrika 30.1 (1983): 1-13.
+    .. [5] https://en.wikipedia.org/wiki/Fisher%27s_method#Relation_to_Stouffer.27s_Z-score_method
+    .. [6] Whitlock, M. C. "Combining probability from independent tests: the
            weighted Z-method is superior to Fisher's approach." Journal of
            Evolutionary Biology 18, no. 5 (2005): 1368-1373.
-    .. [6] Zaykin, Dmitri V. "Optimally weighted Z-test is a powerful method
+    .. [7] Zaykin, Dmitri V. "Optimally weighted Z-test is a powerful method
            for combining probabilities in meta-analysis." Journal of
            Evolutionary Biology 24, no. 8 (2011): 1836-1841.
-    .. [7] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
+    .. [8] https://en.wikipedia.org/wiki/Extensions_of_Fisher%27s_method
 
     """
     pvalues = np.asarray(pvalues)
@@ -8177,8 +8347,8 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
         statistic = -2 * np.sum(np.log(pvalues))
         pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
     elif method == 'pearson':
-        statistic = -2 * np.sum(np.log1p(-pvalues))
-        pval = distributions.chi2.sf(statistic, 2 * len(pvalues))
+        statistic = 2 * np.sum(np.log1p(-pvalues))
+        pval = distributions.chi2.cdf(-statistic, 2 * len(pvalues))
     elif method == 'mudholkar_george':
         normalizing_factor = np.sqrt(3/len(pvalues))/np.pi
         statistic = -np.sum(np.log(pvalues)) + np.sum(np.log1p(-pvalues))
@@ -8188,7 +8358,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
                                   * approx_factor, nu)
     elif method == 'tippett':
         statistic = np.min(pvalues)
-        pval = distributions.beta.sf(statistic, 1, len(pvalues))
+        pval = distributions.beta.cdf(statistic, 1, len(pvalues))
     elif method == 'stouffer':
         if weights is None:
             weights = np.ones_like(pvalues)
@@ -8205,8 +8375,9 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     else:
         raise ValueError(
-            "Invalid method '%s'. Options are 'fisher', 'pearson', \
-            'mudholkar_george', 'tippett', 'or 'stouffer'", method)
+            f"Invalid method {method!r}. Valid methods are 'fisher', "
+            "'pearson', 'mudholkar_george', 'tippett', and 'stouffer'"
+        )
 
     return (statistic, pval)
 

@@ -50,6 +50,8 @@ else:
 
 import sys
 import os
+from pathlib import Path
+import platform
 # the following multiprocessing import is necessary to prevent tests that use
 # multiprocessing from hanging on >= Python3.8 (macOS) using pytest. Just the
 # import is enough...
@@ -62,12 +64,13 @@ sys.path.pop(0)
 current_sys_path = sys.path.copy()
 
 from argparse import ArgumentParser, REMAINDER
-import contextlib
 import shutil
 import subprocess
 import time
 import datetime
 import importlib.util
+import json  # noqa: E402
+from sysconfig import get_path
 
 try:
     from types import ModuleType as new_module
@@ -75,17 +78,22 @@ except ImportError:  # old Python
     from imp import new_module
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-PATH_INSTALLED = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                   'installdir')
 
-# To import runtests.py
-fname = os.path.join(ROOT_DIR, 'runtests.py')
-spec = importlib.util.spec_from_file_location('runtests', str(fname))
-runtests = importlib.util.module_from_spec(spec)
-spec.loader.exec_module(runtests)
 
-# Reassign sys.path as it is changed by importlib above
+def import_module_from_path(mod_name, mod_path):
+    """Import module with name `mod_name` from file path `mod_path`"""
+    spec = importlib.util.spec_from_file_location(mod_name, mod_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+# Import runtests.py
+runtests = import_module_from_path('runtests', Path(ROOT_DIR) / 'runtests.py')
+
+# Reassign sys.path as it is changed by the `runtests` import above
 sys.path = current_sys_path
+
 
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
@@ -113,7 +121,8 @@ def main(argv):
                               "HTML output goes to build/lcov/"))
     parser.add_argument("--mode", "-m", default="fast",
                         help="'fast', 'full', or something that could be "
-                             "passed to nosetests -A [default: fast]")
+                             "passed to `pytest -m` as a marker expression "
+                             "[default: fast]")
     parser.add_argument("--submodule", "-s", default=None,
                         help="Submodule whose tests to run (cluster,"
                              " constants, ...)")
@@ -150,12 +159,37 @@ def main(argv):
                         help="Run mypy on the codebase")
     parser.add_argument("--doc", action="append", nargs="?",
                         const="html-scipyorg", help="Build documentation")
+    parser.add_argument("--win-cp-openblas", action="store_true",
+                        help="If set, and on Windows, copy OpenBLAS lib to "
+                        "install directory after meson install. "
+                        "Note: this argument may be removed in the future "
+                        "once a `site.cfg`-like mechanism to select BLAS/LAPACK "
+                        "libraries is implemented for Meson")
+    parser.add_argument("--build-dir", default="build",
+                        help="Relative path to the build directory. "
+                             "Default is 'build'")
+    parser.add_argument("--install-prefix", default=None,
+                        help="Relative path to the install directory. "
+                             "Default is <build-dir>-install.")
     args = parser.parse_args(argv)
+
+    global PATH_INSTALLED
+    build_dir = Path(args.build_dir)
+    install_dir = args.install_prefix
+    if not install_dir:
+        install_dir = build_dir.parent / (build_dir.stem + "-install")
+    PATH_INSTALLED = os.path.join(
+        os.path.abspath(os.path.dirname(__file__)),
+        install_dir
+    )
+
+    if args.win_cp_openblas and platform.system() != 'Windows':
+        raise RuntimeError('--win-cp-openblas only has effect on Windows')
 
     if args.pep8:
         # Lint the source using the configuration in tox.ini.
         os.system("flake8 scipy benchmarks/benchmarks")
-        # Lint just the diff since branching off of master using a
+        # Lint just the diff since branching off of main using a
         # stricter configuration.
         lint_diff = os.path.join(ROOT_DIR, 'tools', 'lint_diff.py')
         os.system(lint_diff)
@@ -189,6 +223,8 @@ def main(argv):
         sys.path.insert(0, site_dir)
         os.environ['PYTHONPATH'] = \
             os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+    else:
+        test, version, mod_path = get_project_info()
 
     extra_argv = args.args[:]
     if extra_argv and extra_argv[0] == '--':
@@ -231,7 +267,7 @@ def main(argv):
         sys.exit(0)
 
     if args.coverage:
-        dst_dir = os.path.join(ROOT_DIR, 'build', 'coverage')
+        dst_dir = os.path.join(ROOT_DIR, args.build_dir, 'coverage')
         fn = os.path.join(dst_dir, 'coverage_html.js')
         if os.path.isdir(dst_dir) and os.path.isfile(fn):
             shutil.rmtree(dst_dir)
@@ -303,30 +339,6 @@ def main(argv):
 
     if args.build_only:
         sys.exit(0)
-    else:
-        try:
-            __import__(PROJECT_MODULE)
-            test = sys.modules[PROJECT_MODULE].test
-            version = sys.modules[PROJECT_MODULE].__version__
-            mod_path = sys.modules[PROJECT_MODULE].__file__
-            mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
-        except ImportError:
-            current_python_path = os.environ.get('PYTHONPATH', None)
-            print("Unable to import {} from: {}".format(PROJECT_MODULE,
-                                                       current_python_path))
-            from distutils.sysconfig import get_python_lib
-            site_dir = get_python_lib(prefix=PATH_INSTALLED, plat_specific=True)
-            print("Trying to import scipy from development installed path at:",
-                  site_dir)
-            sys.path.insert(0, site_dir)
-            os.environ['PYTHONPATH'] = \
-                os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
-            __import__(PROJECT_MODULE)
-            test = sys.modules[PROJECT_MODULE].test
-            version = sys.modules[PROJECT_MODULE].__version__
-            mod_path = sys.modules[PROJECT_MODULE].__file__
-            mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
-
 
     if args.submodule:
         tests = [PROJECT_MODULE + "." + args.submodule]
@@ -340,7 +352,7 @@ def main(argv):
     if not args.no_build:
         test_dir = site_dir
     else:
-        test_dir = os.path.join(ROOT_DIR, 'build', 'test')
+        test_dir = os.path.join(ROOT_DIR, args.build_dir, 'test')
         if not os.path.isdir(test_dir):
             os.makedirs(test_dir)
 
@@ -370,15 +382,58 @@ def main(argv):
         sys.exit(1)
 
 
+def get_project_info():
+    """
+    Function to import the project module and return its tests, version,
+    and path where it is found.
+    If the project module is not found, then it tries to find it in the
+    development installed path.
+    """
+    try:
+        test, version, mod_path = runtests.import_module()
+    except ImportError:
+        # this may fail when running with --no-build, so try to detect
+        # an installed scipy in a subdir inside a repo
+        site_dir = get_site_packages()
+        print("Trying to find scipy from development installed "
+              "path at:", site_dir)
+        sys.path.insert(0, site_dir)
+        os.environ['PYTHONPATH'] = \
+            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+        test, version, mod_path = runtests.import_module()
+    return test, version, mod_path
+
+
 def setup_build(args, env):
     """
     Setting up meson-build
     """
-    cmd = ["meson", "setup", "build", "--prefix", PATH_INSTALLED]
+    cmd = ["meson", "setup", args.build_dir, "--prefix", PATH_INSTALLED]
+    build_dir = Path(args.build_dir)
+    run_dir = os.getcwd()
+    if build_dir.exists() and not (build_dir / 'meson-info').exists():
+        if list(build_dir.iterdir()):
+            raise RuntimeError("Can't build into non-empty directory "
+                               f"'{build_dir.absolute()}'")
+    if os.path.exists(build_dir):
+        build_options_file = (build_dir / "meson-info"
+                              / "intro-buildoptions.json")
+        with open(build_options_file) as f:
+            build_options = json.load(f)
+        installdir = None
+        for option in build_options:
+            if option["name"] == "prefix":
+                installdir = option["value"]
+                break
+        if installdir != PATH_INSTALLED:
+            run_dir = os.path.join(run_dir, build_dir)
+            cmd = ["meson", "--reconfigure", "--prefix", PATH_INSTALLED]
+        else:
+            return
     if args.werror:
         cmd += ["--werror"]
     # Setting up meson build
-    ret = subprocess.call(cmd, env=env, cwd=ROOT_DIR)
+    ret = subprocess.call(cmd, env=env, cwd=run_dir)
     if ret == 0:
         print("Meson build setup OK")
     else:
@@ -387,14 +442,20 @@ def setup_build(args, env):
     return
 
 
-def install_project(show_build_log):
+def install_project(args):
     """
     Installs the project after building.
     """
-    cmd = ["meson", "install", "-C", "build"]
+    if os.path.exists(PATH_INSTALLED):
+        installdir = get_site_packages()
+        non_empty = len(os.listdir(PATH_INSTALLED))
+        if non_empty and not os.path.exists(installdir):
+            raise RuntimeError("Can't install in non-empty directory: "
+                               f"'{PATH_INSTALLED}'")
+    cmd = ["meson", "install", "-C", args.build_dir]
     log_filename = os.path.join(ROOT_DIR, 'meson-install.log')
     start_time = datetime.datetime.now()
-    if show_build_log:
+    if args.show_build_log:
         ret = subprocess.call(cmd, cwd=ROOT_DIR)
     else:
         print("Installing, see meson-install.log...")
@@ -426,15 +487,64 @@ def install_project(show_build_log):
             raise
     elapsed = datetime.datetime.now() - start_time
 
-    if ret == 0:
-        print("Installation OK")
-    else:
-        if not show_build_log:
+    if ret != 0:
+        if not args.show_build_log:
             with open(log_filename, 'r') as f:
                 print(f.read())
         print("Installation failed! ({0} elapsed)".format(elapsed))
         sys.exit(1)
+
+    # ignore everything in the install directory.
+    with open(Path(PATH_INSTALLED) / ".gitignore", "w") as f:
+        f.write("*")
+
+    print("Installation OK")
     return
+
+
+def copy_openblas():
+    """
+    Copies OpenBLAS DLL to the SciPy install dir, and also overwrites the
+    default `_distributor_init.py` file with the one we use for wheels uploaded
+    to PyPI so that DLL gets loaded.
+
+    Assumes pkg-config is installed and aware of OpenBLAS.
+    """
+    # Get OpenBLAS lib path from pkg-config
+    cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
+    result = subprocess.run(cmd, capture_output=True, text=True)
+    if result.returncode != 0:
+        print(result.stderrr)
+        return result.returncode
+
+    openblas_lib_path = Path(result.stdout.strip())
+    if not openblas_lib_path.stem == 'lib':
+        raise RuntimeError(f'Expecting "lib" at end of "{openblas_lib_path}"')
+
+    # Look in bin subdirectory for OpenBLAS binaries.
+    bin_path = openblas_lib_path.parent / 'bin'
+    # Locate, make output .libs directory in Scipy install directory.
+    scipy_path = Path(get_site_packages()) / 'scipy'
+    libs_path = scipy_path / '.libs'
+    libs_path.mkdir(exist_ok=True)
+    # Copy DLL files from OpenBLAS install to scipy install .libs subdir.
+    for dll_fn in bin_path.glob('*.dll'):
+        out_fname = libs_path / dll_fn.parts[-1]
+        print(f'Copying {dll_fn} to {out_fname}')
+        out_fname.write_bytes(dll_fn.read_bytes())
+
+    # Write _distributor_init.py to scipy install dir; this ensures the .libs
+    # file is on the DLL search path at run-time, so OpenBLAS gets found
+    openblas_support = import_module_from_path(
+        'openblas_support',
+        Path(ROOT_DIR) / 'tools' / 'openblas_support.py')
+    openblas_support.make_init(scipy_path)
+    return 0
+
+
+def get_site_packages():
+    plat_path = Path(get_path('platlib'))
+    return str(Path(PATH_INSTALLED) / plat_path.relative_to(sys.exec_prefix))
 
 
 def build_project(args):
@@ -444,10 +554,10 @@ def build_project(args):
     Returns
     -------
     site_dir
-        site-packages directory where it was installed
-
+        Directory where the built SciPy version was installed. This is a custom
+        prefix, followed by a relative path matching the one the system would
+        use for the site-packages of the active Python interpreter.
     """
-
     root_ok = [os.path.exists(os.path.join(ROOT_DIR, fn))
                for fn in PROJECT_ROOT_FILES]
     if not all(root_ok):
@@ -462,8 +572,8 @@ def build_project(args):
         env['OPT'] = '-O0 -ggdb'
         env['FOPT'] = '-O0 -ggdb'
         if args.gcov:
-            import distutils.sysconfig
-            cvars = distutils.sysconfig.get_config_vars()
+            from sysconfig import get_config_vars
+            cvars = get_config_vars()
             env['OPT'] = '-O0 -ggdb'
             env['FOPT'] = '-O0 -ggdb'
             env['CC'] = env.get('CC', cvars['CC']) + ' --coverage'
@@ -474,16 +584,11 @@ def build_project(args):
             env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) +\
                 ' --coverage'
 
-    build_dir = os.path.join(ROOT_DIR, 'build')
+    setup_build(args, env)
 
-    # Check if meson is already setup
-    if not os.path.exists(os.path.join(build_dir, 'build.ninja')):
-        setup_build(args, env)
+    site_dir = get_site_packages()
 
-    from distutils.sysconfig import get_python_lib
-    site_dir = get_python_lib(prefix=PATH_INSTALLED, plat_specific=True)
-
-    cmd = ["ninja", "-C", "build"]
+    cmd = ["ninja", "-C", args.build_dir]
     if args.parallel > 1:
         cmd += ["-j", str(args.parallel)]
 
@@ -496,7 +601,14 @@ def build_project(args):
         print("Build failed!")
         sys.exit(1)
 
-    install_project(args.show_build_log)
+    install_project(args)
+
+    if args.win_cp_openblas and platform.system() == 'Windows':
+        if copy_openblas() == 0:
+            print('OpenBLAS copied')
+        else:
+            print("OpenBLAS copy failed!")
+            sys.exit(1)
 
     return site_dir
 

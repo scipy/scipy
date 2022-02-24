@@ -126,7 +126,7 @@ They can be enabled by setting the environment variable ``SCIPY_XSLOW=1``
 before running the test suite.
 
 .. |runtests-py| replace:: ``runtests.py``
-.. _runtests-py: https://github.com/scipy/scipy/blob/master/runtests.py
+.. _runtests-py: https://github.com/scipy/scipy/blob/main/runtests.py
 
 .. |pytest-cov| replace:: ``pytest-cov``
 .. _pytest-cov: https://pypi.org/project/pytest-cov/
@@ -142,4 +142,4 @@ before running the test suite.
 .. _pytest: https://docs.pytest.org/en/latest/
 
 .. |test-linprog| replace:: ``scipy/optimize/tests/test_linprog.py``
-.. _test-linprog: https://github.com/scipy/scipy/blob/master/scipy/optimize/tests/test_linprog.py
+.. _test-linprog: https://github.com/scipy/scipy/blob/main/scipy/optimize/tests/test_linprog.py

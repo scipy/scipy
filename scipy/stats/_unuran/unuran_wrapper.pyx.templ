@@ -467,7 +467,9 @@ cdef class Method:
             unur_gen *rng = self.rng
             size_t i
             size_t size = len(out)
-            PyObject *type, *value, *traceback
+            PyObject *type
+            PyObject *value
+            PyObject *traceback
 
         has_callback_wrapper = (self._callback_wrapper is not None)
         error = 0
@@ -512,7 +514,9 @@ cdef class Method:
             unur_gen *rng = self.rng
             size_t i
             size_t size = len(out)
-            PyObject *type, *value, *traceback
+            PyObject *type
+            PyObject *value
+            PyObject *traceback
 
         has_callback_wrapper = (self._callback_wrapper is not None)
         error = 0
@@ -1473,7 +1477,9 @@ cdef class NumericalInversePolynomial(Method):
         cdef:
             size_t i
             ccallback_t callback
-            PyObject *type, *value, *traceback
+            PyObject *type
+            PyObject *value
+            PyObject *traceback
 
         error = 0
 

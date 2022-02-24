@@ -11,7 +11,8 @@ import ctypes
 import numpy as np
 
 from scipy._lib.doccer import (extend_notes_in_docstring,
-                               replace_notes_in_docstring)
+                               replace_notes_in_docstring,
+                               inherit_docstring_from)
 from scipy._lib._ccallback import LowLevelCallable
 from scipy import optimize
 from scipy import integrate
@@ -24,7 +25,7 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (
     get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-    rv_continuous, _skew, _get_fixed_fit_value, _check_shape)
+    rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
@@ -301,6 +302,9 @@ class norm_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _rvs(self, size=None, random_state=None):
         return random_state.standard_normal(size)
 
@@ -618,10 +622,17 @@ class beta_gen(rv_continuous):
         return _boost._beta_sf(x, a, b)
 
     def _isf(self, x, a, b):
-        return _boost._beta_isf(x, a, b)
+        with warnings.catch_warnings():
+            # See gh-14901
+            message = "overflow encountered in _beta_isf"
+            warnings.filterwarnings('ignore', message=message)
+            return _boost._beta_isf(x, a, b)
 
     def _ppf(self, q, a, b):
-        return _boost._beta_ppf(q, a, b)
+        with warnings.catch_warnings():
+            message = "overflow encountered in _beta_ppf"
+            warnings.filterwarnings('ignore', message=message)
+            return _boost._beta_ppf(q, a, b)
 
     def _stats(self, a, b):
         return(
@@ -2138,6 +2149,106 @@ class weibull_min_gen(rv_continuous):
 weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 
 
+class truncweibull_min_gen(rv_continuous):
+    r"""A doubly truncated Weibull minimum continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    weibull_min, truncexpon
+
+    Notes
+    -----
+    The probability density function for `truncweibull_min` is:
+
+    .. math::
+
+        f(x, a, b, c) = \frac{c x^{c-1} \exp(-x^c)}{\exp(-a^c) - \exp(-b^c)}
+
+    for :math:`a < x <= b`, :math:`c > 0`.
+
+    `truncweibull_min` takes :math:`a`, :math:`b`, and :math:`c` as shape
+    parameters.
+
+    Notice that the truncation values, :math:`a` and :math:`b`, are defined in
+    standardized form:
+
+    .. math::
+
+        a = (u_l - loc)/scale
+        b = (u_r - loc)/scale
+
+    where :math:`u_l` and :math:`u_r` are the specific left and right
+    truncation values, respectively. In other words, the support of the
+    distribution becomes :math:`(a*scale + loc) < x <= (b*scale + loc)` when
+    :math:`loc` and/or :math:`scale` are provided.
+
+    %(after_notes)s
+
+    References
+    ----------
+
+    .. [1] Rinne, H. "The Weibull Distribution: A Handbook". CRC Press (2009).
+
+    %(example)s
+
+    """
+    def _argcheck(self, c, a, b):
+        return (a >= 0.) & (b > a) & (c > 0.)
+
+    def _get_support(self, c, a, b):
+        return a, b
+
+    def _pdf(self, x, c, a, b):
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return (c * pow(x, c-1) * np.exp(-pow(x, c))) / denum
+
+    def _logpdf(self, x, c, a, b):
+        logdenum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return np.log(c) + sc.xlogy(c - 1, x) - pow(x, c) - logdenum
+
+    def _cdf(self, x, c, a, b):
+        num = (np.exp(-pow(a, c)) - np.exp(-pow(x, c)))
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return num / denum
+
+    def _logcdf(self, x, c, a, b):
+        lognum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(x, c)))
+        logdenum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return lognum - logdenum
+
+    def _sf(self, x, c, a, b):
+        num = (np.exp(-pow(x, c)) - np.exp(-pow(b, c)))
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return num / denum
+
+    def _logsf(self, x, c, a, b):
+        lognum = np.log(np.exp(-pow(x, c)) - np.exp(-pow(b, c)))
+        logdenum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return lognum - logdenum
+
+    def _isf(self, q, c, a, b):
+        return pow(
+            -np.log((1 - q) * np.exp(-pow(b, c)) + q * np.exp(-pow(a, c))), 1/c
+            )
+
+    def _ppf(self, q, c, a, b):
+        return pow(
+            -np.log((1 - q) * np.exp(-pow(a, c)) + q * np.exp(-pow(b, c))), 1/c
+            )
+
+    def _munp(self, n, c, a, b):
+        gamma_fun = sc.gamma(n/c + 1.) * (
+            sc.gammainc(n/c + 1., pow(b, c)) - sc.gammainc(n/c + 1., pow(a, c))
+            )
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return gamma_fun / denum
+
+
+truncweibull_min = truncweibull_min_gen(name='truncweibull_min')
+
+
 class weibull_max_gen(rv_continuous):
     r"""Weibull maximum continuous random variable.
 
@@ -2824,21 +2935,15 @@ class erlang_gen(gamma_gen):
 
     # Trivial override of the fit method, so we can monkey-patch its
     # docstring.
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        The Erlang distribution is generally defined to have integer values
+        for the shape parameter.  This is not enforced by the `erlang` class.
+        When fitting the distribution, it will generally return a non-integer
+        value for the shape parameter.  By using the keyword argument
+        `f0=<integer>`, the fit method can be constrained to fit the data to
+        a specific integer shape parameter.""")
     def fit(self, data, *args, **kwds):
         return super().fit(data, *args, **kwds)
-
-    if fit.__doc__:
-        fit.__doc__ = (rv_continuous.fit.__doc__ +
-            """
-            Notes
-            -----
-            The Erlang distribution is generally defined to have integer values
-            for the shape parameter.  This is not enforced by the `erlang` class.
-            When fitting the distribution, it will generally return a non-integer
-            value for the shape parameter.  By using the keyword argument
-            `f0=<integer>`, the fit method can be constrained to fit the data to
-            a specific integer shape parameter.
-            """)
 
 
 erlang = erlang_gen(a=0.0, name='erlang')
@@ -3285,6 +3390,7 @@ class gumbel_r_gen(rv_continuous):
         return _EULER + 1.
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
@@ -3379,6 +3485,7 @@ class gumbel_l_gen(rv_continuous):
         return _EULER + 1.
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         # The fit method of `gumbel_r` can be used for this distribution with
         # small modifications. The process to do this is
@@ -3769,6 +3876,7 @@ class invgauss_gen(rv_continuous):
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         method = kwds.get('method', 'mle')
 
@@ -4733,6 +4841,7 @@ class logistic_gen(rv_continuous):
         return 2.0
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
@@ -5632,15 +5741,28 @@ class nakagami_gen(rv_continuous):
 
         f(x, \nu) = \frac{2 \nu^\nu}{\Gamma(\nu)} x^{2\nu-1} \exp(-\nu x^2)
 
-    for :math:`x >= 0`, :math:`\nu > 0`.
+    for :math:`x >= 0`, :math:`\nu > 0`. The distribution was introduced in
+    [2]_, see also [1]_ for further information.
 
     `nakagami` takes ``nu`` as a shape parameter for :math:`\nu`.
 
     %(after_notes)s
 
+    References
+    ----------
+    .. [1] "Nakagami distribution", Wikipedia
+           https://en.wikipedia.org/wiki/Nakagami_distribution
+    .. [2] M. Nakagami, "The m-distribution - A general formula of intensity
+           distribution of rapid fading", Statistical methods in radio wave
+           propagation, Pergamon Press, 1960, 3-36.
+           :doi:`10.1016/B978-0-08-009306-2.50005-4`
+
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("nu", False, (0, np.inf), (False, False))]
+
     def _pdf(self, x, nu):
         return np.exp(self._logpdf(x, nu))
 
@@ -5669,6 +5791,10 @@ class nakagami_gen(rv_continuous):
         g2 = -6*mu**4*nu + (8*nu-2)*mu**2-2*nu + 1
         g2 /= nu*mu2**2.0
         return mu, mu2, g1, g2
+
+    def _rvs(self, nu, size=None, random_state=None):
+        # this relationship can be found in [1] or by a direct calculation
+        return np.sqrt(random_state.standard_gamma(nu, size=size) / nu)
 
     def _fitstart(self, data, args=None):
         if args is None:
@@ -6111,6 +6237,7 @@ class pareto_gen(rv_continuous):
         return 1 + 1.0/c - np.log(c)
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
@@ -8372,6 +8499,14 @@ class gennorm_gen(rv_continuous):
     .. [1] "Generalized normal distribution, Version 1",
            https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1
 
+    .. [2] Nardon, Martina, and Paolo Pianca. "Simulation techniques for
+           generalized Gaussian densities." Journal of Statistical
+           Computation and Simulation 79.11 (2009): 1317-1329
+
+    .. [3] Wicklin, Rick. "Simulate data from a generalized Gaussian
+           distribution" in The DO Loop blog, September 21, 2016,
+           https://blogs.sas.com/content/iml/2016/09/21/simulate-generalized-gaussian-sas.html
+
     %(example)s
 
     """
@@ -8404,6 +8539,17 @@ class gennorm_gen(rv_continuous):
 
     def _entropy(self, beta):
         return 1. / beta - np.log(.5 * beta) + sc.gammaln(1. / beta)
+
+    def _rvs(self, beta, size=None, random_state=None):
+        # see [2]_ for the algorithm
+        # see [3]_ for reference implementation in SAS
+        z = random_state.gamma(1/beta, size=size)
+        y = z ** (1/beta)
+        # convert y to array to ensure masking support
+        y = np.asarray(y)
+        mask = random_state.random(size=y.shape) < 0.5
+        y[mask] = -y[mask]
+        return y
 
 
 gennorm = gennorm_gen(name='gennorm')
