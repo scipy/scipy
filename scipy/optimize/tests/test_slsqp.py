@@ -636,3 +636,15 @@ class TestSLSQP:
                 assert_allclose(w[1], analytical)
             else:
                 assert_allclose(w, np.array([0, 0]))
+
+        # an equality constraint
+        # mentioned in gh9839
+        def fun(x):
+            return np.sum(x ** 2)
+
+        def con_fun(x):
+            return x[0] - 1
+
+        con = {'fun': con_fun, 'type': 'eq'}
+        res = minimize(fun, 3.0, constraints=[con], method='SLSQP')
+        assert_allclose(res.kkt['eq'][0], np.array([2.0]))
