@@ -238,6 +238,20 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         possibly adjusted to fit into the bounds. For ``method='3-point'``
         the sign of `h` is ignored. If None (default) then step is selected
         automatically.
+
+    Notes
+    -----
+    The KKT multipliers are returned as a dict in the ``OptimizeResult.kkt``
+    attribute. ``kkt['eq']`` and ``kkt['ineq']`` are lists containing the
+    multipliers for the equality and inequality constraints respectively, in
+    the order that they are found in ``constraints``.
+    If new-style `NonlinearConstraint` or `LinearConstraint` were used, then
+    ``minimize`` converts them first to old-style constraint dicts. It's
+    possible for a single new-style constraint to simultaneously contain both
+    inequality and equality constraints. This means that if there is mixing
+    within a single constraint, then the returned list of multipliers is going
+    to appear to be of a different length to the original new-style
+    constraints.
     """
     _check_unknown_options(unknown_options)
     iter = maxiter - 1
