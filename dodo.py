@@ -26,7 +26,7 @@ DOIT_CONFIG = {'verbosity': 2}
 
 
 # def paver_write_release_task():
-#    # TODO: create a new script or add contents here
+# TODO: create a new script or add contents here
 
 
 def task_build():
@@ -80,15 +80,10 @@ def task_bench():
             }
 
 
-"""
-Task dependency group for document build
-- task_doc_build()
-"""
-
-
 def task_doc_build():
     """
     Task group with dependency for document build
+    Task calls: build, doc-compile
     """
     return {'actions': None,
             'basename': 'doc-build',
@@ -100,18 +95,19 @@ def gen_release_tasks():
     """
     Task generator for release tasks
     """
-    yield {'actions': ["python tools/authors.py v%(previous_version)s..v%(current_version)s"],
+    yield {'actions': ["python tools/authors.py v%(previous_revision)s..v%(current_revision)s"],
            'basename': 'release-authors',
            'file_dep': ["tools/authors.py"],
-           'params': [{'name': 'previous_version',
+           'params': [{'name': 'previous_revision',
                        'short': 'p',
                        'default': '',
                        'type': str},
-                      {'name': 'current_version',
+                      {'name': 'current_revision',
                        'short': 'c',
                        'default': '',
                        'type': str}],
            'doc': 'Task: Initializing create author list'}
+    # TODO: Needs fix
     yield {'actions': ["paver write_release_and_log"],
            'basename': 'release-notes',
            'file_dep': ["pavement.py"],
@@ -120,6 +116,6 @@ def gen_release_tasks():
 
 def task_release():
     """
-    Call to task generator
+    Call to task generator: gen_release_tasks()
     """
     yield gen_release_tasks()
