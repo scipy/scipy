@@ -3621,7 +3621,8 @@ def f_oneway(*samples, axis=0):
 
     """
     if len(samples) < 2:
-        raise TypeError(f'at least two inputs are required; got {len(samples)}.')
+        raise TypeError('at least two inputs are required;'
+                        f' got {len(samples)}.')
 
     samples = [np.asarray(sample, dtype=float) for sample in samples]
 
@@ -3659,9 +3660,10 @@ def f_oneway(*samples, axis=0):
     # In the typical case where each input array is 1-d, is_const is a
     # 1-d array with length num_groups.
     is_const = np.concatenate(
-        [(_first(sample, axis) == sample)
-         .all(axis=axis, keepdims=True)
-         for sample in samples], axis=axis
+        [(_first(sample, axis) == sample).all(axis=axis,
+                                              keepdims=True)
+         for sample in samples],
+        axis=axis
     )
 
     # all_const is a boolean array with shape (...) (see previous comment).
@@ -3688,7 +3690,8 @@ def f_oneway(*samples, axis=0):
 
     ssbn = 0
     for sample in samples:
-        ssbn += _square_of_sums(sample - offset, axis=axis) / sample.shape[axis]
+        ssbn += _square_of_sums(sample - offset,
+                                axis=axis) / sample.shape[axis]
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
@@ -3818,8 +3821,8 @@ def alexandergovern(*samples, nan_policy='propagate'):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = np.array([ma.count(sample) if nan_policy == 'omit' else len(sample)
-                        for sample in samples])
+    lengths = np.array([ma.count(sample) if nan_policy == 'omit'
+                        else len(sample) for sample in samples])
     means = np.array([np.mean(sample) for sample in samples])
 
     # (1) determine standard error of the mean for each sample
@@ -3871,7 +3874,8 @@ def _alexandergovern_input_validation(samples, nan_policy):
         if np.isinf(sample).any():
             raise ValueError("Input samples must be finite.")
 
-        contains_nan, nan_policy = _contains_nan(sample, nan_policy=nan_policy)
+        contains_nan, nan_policy = _contains_nan(sample,
+                                                 nan_policy=nan_policy)
         if contains_nan and nan_policy == 'omit':
             samples[i] = ma.masked_invalid(sample)
     return samples
