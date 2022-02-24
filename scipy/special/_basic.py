@@ -2185,8 +2185,8 @@ def comb(N, k, exact=False, repetition=False):
 
         .. deprecated:: 1.9.0
             Non-integer arguments are deprecated when exact=True and comb
-            will return NaN for integral inputs in the second release after
-            SciPy 1.9.0.
+            will return NaN for non-integral inputs in the second release
+            after SciPy 1.9.0.
 
 
     See Also
@@ -2219,7 +2219,7 @@ def comb(N, k, exact=False, repetition=False):
         if int(N) != N or int(k) != k:
             warnings.warn(
                 "Non-integer arguments are deprecated when exact=True "
-                "and comb will return NaN for integral inputs in the "
+                "and comb will return NaN for non-integral inputs in the "
                 "second release after SciPy 1.9.0",
                 DeprecationWarning, stacklevel=2
             )
