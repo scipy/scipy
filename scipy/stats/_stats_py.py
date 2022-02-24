@@ -907,7 +907,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
         dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
         # empty array, return nan(s) with shape matching `moment`
         out_shape = (moment_shape if np.isscalar(moment)
-                    else [len(moment)] + moment_shape)
+                     else [len(moment)] + moment_shape)
         if len(out_shape) == 0:
             return dtype(np.nan)
         else:
@@ -2149,17 +2149,17 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 #        VARIABILITY FUNCTIONS      #
 #####################################
 
-def obrientransform(*args):
+def obrientransform(*samples):
     """Compute the O'Brien transform on input data (any number of arrays).
 
     Used to test for homogeneity of variance prior to running one-way stats.
-    Each array in ``*args`` is one level of a factor.
+    Each array in ``*samples`` is one level of a factor.
     If `f_oneway` is run on the transformed data and found significant,
     the variances are unequal.  From Maxwell and Delaney [1]_, p.112.
 
     Parameters
     ----------
-    *args : tuple of array_like
+    sample1, sample2, ... : array_like
         Any number of arrays.
 
     Returns
@@ -2206,8 +2206,8 @@ def obrientransform(*args):
     arrays = []
     sLast = None
 
-    for arg in args:
-        a = np.asarray(arg)
+    for sample in samples:
+        a = np.asarray(sample)
         n = len(a)
         mu = np.mean(a)
         sq = (a - mu)**2
@@ -2852,7 +2852,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
             warnings.warn(
                 "use of scale='raw' is deprecated, use scale=1.0 instead",
                 np.VisibleDeprecationWarning
-                )
+            )
         scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
@@ -3171,7 +3171,7 @@ array([5.1891, 3.7065, 2.2239])
             warnings.warn(
                 "use of scale='raw' is deprecated, use scale=1.0 instead",
                 np.VisibleDeprecationWarning
-                )
+            )
             scale = 1.0
 
     if not isinstance(scale, str):
@@ -3660,8 +3660,8 @@ def f_oneway(*samples, axis=0):
     # 1-d array with length num_groups.
     is_const = np.concatenate(
         [(_first(sample, axis) == sample)
-        .all(axis=axis, keepdims=True)
-        for sample in samples], axis=axis
+         .all(axis=axis, keepdims=True)
+         for sample in samples], axis=axis
     )
 
     # all_const is a boolean array with shape (...) (see previous comment).
@@ -3730,7 +3730,7 @@ def alexandergovern(*samples, nan_policy='propagate'):
 
     Parameters
     ----------
-    *samples : tuple of array_like
+    sample1, sample2, ... : array_like
         The sample measurements for each group.  There must be at least
         two samples.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
@@ -5050,7 +5050,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         return WeightedTauResult((
             _weightedrankedtau(x, y, None, weigher, additive) +
             _weightedrankedtau(y, x, None, weigher, additive)
-            ) / 2, np.nan)
+        ) / 2, np.nan)
 
     if rank is False:
         rank = np.arange(x.size, dtype=np.intp)
@@ -7074,7 +7074,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
 
     """
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
-       alternative.lower()[0], alternative)
+        alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError("Unexpected alternative %s" % alternative)
     if np.ma.is_masked(x):
@@ -7394,7 +7394,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     if mode not in ['auto', 'exact', 'asymp']:
         raise ValueError(f'Invalid value for mode: {mode}')
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
-       alternative.lower()[0], alternative)
+        alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'less', 'greater']:
         raise ValueError(f'Invalid value for alternative: {alternative}')
     MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
@@ -7772,7 +7772,7 @@ def kruskal(*samples, nan_policy='propagate'):
 
     Parameters
     ----------
-    *samples : tuple of array_like
+    sample1, sample2, ... : array_like
        Two or more arrays with the sample measurements can be given as
        arguments. Samples must be one-dimensional.
     nan_policy : {'propagate', 'raise', 'omit'}, optional

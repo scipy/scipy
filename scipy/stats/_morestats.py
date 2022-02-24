@@ -2385,7 +2385,7 @@ def bartlett(*samples):
 
     Parameters
     ----------
-    *samples : tuple of array_like
+    sample1, sample2, ... : array_like
         arrays of sample data.  Only 1d arrays are accepted, they may have
         different lengths.
 
@@ -2487,7 +2487,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
 
     Parameters
     ----------
-    *samples : tuple of array_like
+    sample1, sample2, ... : array_like
         The sample data, possibly with different lengths. Only one-dimensional
         samples are accepted.
     center : {'mean', 'median', 'trimmed'}, optional
@@ -2724,7 +2724,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
 
     Parameters
     ----------
-    *samples : tuple of array_like
+    sample1, sample2, ... : array_like
         Arrays of sample data.  Need not be the same length.
     center : {'mean', 'median', 'trimmed'}, optional
         Keyword argument controlling which function of the data is used in
@@ -3243,7 +3243,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     Test that two or more samples come from populations with the same median.
 
-    Let ``n = len(args)`` be the number of samples.  The "grand median" of
+    Let ``n = len(samples)`` be the number of samples.  The "grand median" of
     all the data is computed, and a contingency table is formed by
     classifying the values in each sample as being above or below the grand
     median.  The contingency table, along with `correction` and `lambda_`,
@@ -3252,7 +3252,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     Parameters
     ----------
-    *samples : tuple of array_like
+    sample1, sample2, ... : array_like
         The set of samples.  There must be at least two samples.
         Each sample must be a one-dimensional sequence containing at least
         one value.  The samples are not required to have the same length.
