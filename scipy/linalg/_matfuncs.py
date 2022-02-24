@@ -15,6 +15,8 @@ import numpy as np
 from ._misc import norm
 from ._basic import solve, inv
 from ._special_matrices import triu
+from ._decomp_svd import svd
+from ._decomp_schur import schur, rsf2csf
 from ._expm_frechet import expm_frechet, expm_cond
 from ._matfuncs_sqrtm import sqrtm
 
@@ -545,7 +547,6 @@ def funm(A, func, disp=True):
     .. [1] Gene H. Golub, Charles F. van Loan, Matrix Computations 4th ed.
 
     """
-    from ._multimethods import schur, rsf2csf
     A = _asarray_square(A)
     # Perform Shur decomposition (lapack ?gees)
     T, Z = schur(A)
@@ -645,7 +646,6 @@ def signm(A, disp=True):
 
     # Shifting to avoid zero eigenvalues. How to ensure that shifting does
     # not change the spectrum too much?
-    from ._multimethods import svd
     vals = svd(A, compute_uv=False)
     max_sv = np.amax(vals)
     # min_nonzero_sv = vals[(vals>max_sv*errtol).tolist().count(1)-1]
