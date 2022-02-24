@@ -71,7 +71,9 @@ jobs:
           command: |
             pip install --upgrade pip
             # `asv` pin because of slowdowns reported in gh-15568
-            pip install numpy cython pyfftw cffi pytest pybind11 mpmath gmpy2 "asv==0.4.2" pythran ninja meson
+            pip install pyfftw cffi pytest pybind11 mpmath gmpy2 "asv==0.4.2" pythran ninja meson
+            pip install --install-option="--no-cython-compile" cython
+            pip install numpy==1.21.5
             pip install -r doc_requirements.txt
 
       - run:
@@ -141,13 +143,14 @@ jobs:
 
       - run:
           name: run asv
+          no_output_timeout: 20m
           command: |
             cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
             cd -
-            time python dev.py --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            time python dev.py -n --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
             cd benchmarks
             asv --config asv.conf.json publish
 
