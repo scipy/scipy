@@ -300,7 +300,7 @@ class TestRenameParameter:
         with pytest.raises(TypeError, match=message):
             self.old_keyword_still_accepted(new=10, old=10)
 
-    def test_old_keyword_deprecated_accepted(self):
+    def test_old_keyword_deprecated(self):
         # positional argument and both keyword work identically,
         # but use of old keyword results in DeprecationWarning
         dep_msg = "Use of keyword argument `old` is deprecated"
@@ -321,8 +321,8 @@ class TestRenameParameter:
         with pytest.raises(TypeError, match=message):
             self.old_keyword_deprecated(10, new=10)
         with pytest.raises(TypeError, match=message), \
-              pytest.warns(DeprecationWarning, match=dep_msg):
+                pytest.warns(DeprecationWarning, match=dep_msg):
             self.old_keyword_deprecated(10, old=10)
         with pytest.raises(TypeError, match=message), \
-              pytest.warns(DeprecationWarning, match=dep_msg):
+                pytest.warns(DeprecationWarning, match=dep_msg):
             self.old_keyword_deprecated(new=10, old=10)
