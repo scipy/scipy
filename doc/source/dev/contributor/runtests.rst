@@ -85,8 +85,7 @@ Other useful options include:
    installed.*
 -  ``--doc`` to build the docs in ``scipy/doc/build``. By default,
    docs are built only in the ``html-scipyorg`` format, but you can
-   change this by appending the name of the desired format
-   (e.g. ``--doc latex``).
+   change this by appending the name of the desired format.
 -  ``--refguide-check`` to check whether the objects in a Scipy submodule's
    ``__all__`` dict correspond to the objects included in the reference
    guide. It also checks the validity of code samples in docstrings.

@@ -95,11 +95,11 @@ options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
                         bindir=os.path.join("build-superpack","binaries")),
         installers=Bunch(releasedir="release",
                          installersdir=os.path.join("release", "installers")),
-        doc=Bunch(doc_root="doc",
+        doc=Bunch(
+            doc_root="doc",
             sdir=os.path.join("doc", "source"),
             bdir=os.path.join("doc", "build"),
-            bdir_latex=os.path.join("doc", "build", "latex"),
-            destdir_pdf=os.path.join("build_doc", "pdf")),
+        ),
         html=Bunch(builddir=os.path.join("build", "html")),
         dmg=Bunch(python_version=PYVER),
         bdist_wininst_simple=Bunch(python_version=PYVER),)
@@ -118,27 +118,6 @@ def html(options):
     options.html.builddir.rmtree()
     builtdocs.copytree(options.html.builddir)
 
-@task
-def latex():
-    """Build SciPy documentation in latex format."""
-    subprocess.check_call(["make", "latex"], cwd="doc")
-
-@task
-@needs('latex')
-def pdf():
-    bdir_latex = options.doc.bdir_latex
-    destdir_pdf = options.doc.destdir_pdf
-
-    def build_pdf():
-        subprocess.check_call(["make", "all-pdf"], cwd=str(bdir_latex))
-    dry("Build pdf doc", build_pdf)
-
-    if os.path.exists(destdir_pdf):
-        shutil.rmtree(destdir_pdf)
-    os.makedirs(destdir_pdf)
-
-    ref = os.path.join(bdir_latex, "scipy-ref.pdf")
-    shutil.copy(ref, os.path.join(destdir_pdf, "reference.pdf"))
 
 def tarball_name(type_name='gztar'):
     root = 'scipy-%s' % FULLVERSION
