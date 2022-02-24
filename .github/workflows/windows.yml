@@ -10,25 +10,25 @@ on:
       - main
       - maintenance/**
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Meson Windows tests
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
     if: "github.repository != '' || github.repository == 'scipy/scipy'"
-    runs-on: windows-latest
+    runs-on: windows-2019
     steps:
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'
+          architecture: 'x64'
       - name: Checkout
         uses: actions/checkout@v2
-      - name: Choco python
-        uses: crazy-max/ghaction-chocolatey@v1
-        with:
-          args: install python --version=3.9.9 --no-progress
-      - name: set-python-path
-        run: |
-          # Install path, culled from output of Choco install above.
-          $py_dir = 'C:\hostedtoolcache\windows\Python\3.9.9\x64'
-          echo "$py_dir;$py_dir\Scripts;" >> $env:GITHUB_PATH
       - name: show-python-version
         run: |
           python --version

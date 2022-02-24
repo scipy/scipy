@@ -231,15 +231,23 @@ class TestDifferentialEvolutionSolver:
     def test_differential_evolution(self):
         # test that the Jmin of DifferentialEvolutionSolver
         # is the same as the function evaluation
-        solver = DifferentialEvolutionSolver(self.quadratic, [(-2, 2)])
+        solver = DifferentialEvolutionSolver(
+            self.quadratic, [(-2, 2)], maxiter=1, polish=False
+        )
         result = solver.solve()
-        assert_almost_equal(result.fun, self.quadratic(result.x))
+        assert_equal(result.fun, self.quadratic(result.x))
+
+        solver = DifferentialEvolutionSolver(
+            self.quadratic, [(-2, 2)], maxiter=1, polish=True
+        )
+        result = solver.solve()
+        assert_equal(result.fun, self.quadratic(result.x))
 
     def test_best_solution_retrieval(self):
         # test that the getter property method for the best solution works.
         solver = DifferentialEvolutionSolver(self.quadratic, [(-2, 2)])
         result = solver.solve()
-        assert_almost_equal(result.x, solver.x)
+        assert_equal(result.x, solver.x)
 
     def test_callback_terminates(self):
         # test that if the callback returns true, then the minimization halts
