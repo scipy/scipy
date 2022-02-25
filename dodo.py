@@ -34,7 +34,6 @@ def task_build():
     Scipy build task
     """
     return {'actions': ["python dev.py --build-only"],
-            'file_dep': ["dev.py"],
             'doc': 'Task: Initializing build task'
             }
 
@@ -44,7 +43,6 @@ def task_test():
     Runs the tests for a given module
     """
     return {'actions': ["python dev.py --no-build -s %(module)s"],
-            'file_dep': ["dev.py"],
             'doc': 'Task: Initializing tests for the chosen module',
             'params': [{'name': 'module',
                         'short': 'f',
@@ -60,7 +58,6 @@ def task_doc_compile():
     """
     return {'actions': ["python dev.py --doc"],
             'basename': 'doc-compile',
-            'file_dep': ["dev.py"],
             'doc': 'Task: Initializing document build task'
             }
 
@@ -70,7 +67,6 @@ def task_bench():
     Runs benchmark tasks
     """
     return {'actions': ["python dev.py --bench %(param)s integrate.SolveBVP"],
-            'file_dep': ["dev.py"],
             'doc': 'Task: Initializing benchmarking task',
             'params': [{'name': 'param',
                         'long': 'flag',
@@ -97,7 +93,6 @@ def gen_release_tasks():
     """
     yield {'actions': ["python tools/authors.py v%(previous_revision)s..v%(current_revision)s"],
            'basename': 'release-authors',
-           'file_dep': ["tools/authors.py"],
            'params': [{'name': 'previous_revision',
                        'short': 'p',
                        'default': '',
@@ -110,7 +105,6 @@ def gen_release_tasks():
     # TODO: Needs fix
     yield {'actions': ["paver write_release_and_log"],
            'basename': 'release-notes',
-           'file_dep': ["pavement.py"],
            'doc': 'Task: Initializing create release notes'}
 
 
