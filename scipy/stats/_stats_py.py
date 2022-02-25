@@ -219,7 +219,7 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
 # note that `weights` are paired with `x`
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
-        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
+        result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
 def gmean(a, axis=0, dtype=None, weights=None):
     r"""Compute the weighted geometric mean along the specified axis.
 
@@ -307,7 +307,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
 
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
-        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
+        result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
 def hmean(a, axis=0, dtype=None, *, weights=None):
     r"""Calculate the weighted harmonic mean along the specified axis.
 
@@ -1023,7 +1023,7 @@ def _moment(a, moment, axis, *, mean=None):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
     r"""Compute the sample skewness of a data set.
@@ -1129,7 +1129,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
 def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     """Compute the kurtosis (Fisher or Pearson) of a dataset.
