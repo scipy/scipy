@@ -8031,21 +8031,21 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-def friedmanchisquare(*args):
-    """Compute the Friedman test for repeated measurements.
+def friedmanchisquare(*samples):
+    """Compute the Friedman test for repeated samples.
 
-    The Friedman test tests the null hypothesis that repeated measurements of
+    The Friedman test tests the null hypothesis that repeated samples of
     the same individuals have the same distribution.  It is often used
-    to test for consistency among measurements obtained in different ways.
-    For example, if two measurement techniques are used on the same set of
+    to test for consistency among samples obtained in different ways.
+    For example, if two sampling techniques are used on the same set of
     individuals, the Friedman test can be used to determine if the two
-    measurement techniques are consistent.
+    sampling techniques are consistent.
 
     Parameters
     ----------
-    measurements1, measurements2, measurements3... : array_like
-        Arrays of measurements.  All of the arrays must have the same number
-        of elements.  At least 3 sets of measurements must be given.
+    sample1, sample2, sample3... : array_like
+        Arrays of observations.  All of the arrays must have the same number
+        of elements.  At least three samples must be given.
 
     Returns
     -------
@@ -8059,25 +8059,25 @@ def friedmanchisquare(*args):
     -----
     Due to the assumption that the test statistic has a chi squared
     distribution, the p-value is only reliable for n > 10 and more than
-    6 repeated measurements.
+    6 repeated samples.
 
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Friedman_test
 
     """
-    k = len(args)
+    k = len(samples)
     if k < 3:
-        raise ValueError('At least 3 sets of measurements must be given '
+        raise ValueError('At least 3 sets of samples must be given '
                          'for Friedman test, got {}.'.format(k))
 
-    n = len(args[0])
+    n = len(samples[0])
     for i in range(1, k):
-        if len(args[i]) != n:
+        if len(samples[i]) != n:
             raise ValueError('Unequal N in friedmanchisquare.  Aborting.')
 
     # Rank data
-    data = np.vstack(args).T
+    data = np.vstack(samples).T
     data = data.astype(float)
     for i in range(len(data)):
         data[i] = rankdata(data[i])
