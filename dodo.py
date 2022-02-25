@@ -17,8 +17,8 @@ Examples:
         $ doit build
         $ doit test -m <flag> -f <module name>
         $ doit doc-build
-        $ doit bench --flag -s
-        $ doit bench --flag -t
+        $ doit bench --flag -s / doit bench -m -s
+        $ doit bench --flag -t / doit bench -m -s
         $ doit release-authors -p 1.7.0 -c 1.8.0
 """
 
@@ -75,6 +75,7 @@ def task_bench():
             'doc': 'Task: Initializing benchmarking task',
             'params': [{'name': 'param',
                         'long': 'flag',
+                        'short': 'm',
                         'default': '',
                         'type': str,
                         'help': 'Enter flag parameter options: -s or -t'}]
