@@ -3486,6 +3486,13 @@ class ortho_group_gen(multi_rv_generic):
 
         return dim
 
+    def __call__(seld, dim=None, seed=None):
+        """Create a frozen O(N) distribution.
+
+        See `ortho_group_frozen` for more information.
+        """
+        return ortho_group_frozen(dim, seed=seed)
+
     def rvs(self, dim, size=1, random_state=None):
         """Draw random samples from O(N).
 
@@ -3526,6 +3533,37 @@ class ortho_group_gen(multi_rv_generic):
 
 
 ortho_group = ortho_group_gen()
+
+class ortho_group_frozen(multi_rv_frozen):
+    def __init__(self, dim=None, seed=None):
+        """Create a frozen O(N) distribution.
+        
+        Parameters
+        ----------
+        dim : scalar
+            Dimension of matrices
+        seed : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
+                
+            If `seed` in None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` in an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+        
+        Examples
+        --------
+        >>> from scipy.stats import ortho_group
+        >>> g = ortho_group(5)
+        >>> x = g.rvs()
+        
+        """
+        self._dist = ortho_group_gen(seed)
+        self.dim = self._dist._process_parameters(dim)
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(self.dim, size, random_state)
 
 
 class random_correlation_gen(multi_rv_generic):
