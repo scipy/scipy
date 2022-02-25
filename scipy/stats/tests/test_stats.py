@@ -7499,7 +7499,7 @@ y = rng.random(10)
 
 @pytest.mark.parametrize("fun, args",
                          [(stats.wilcoxon, (x,)),
-                          (stats.ks_1samp, (x, stats.norm.cdf)),
+                          (stats.ks_1samp, (x, stats.norm.cdf)),  # type: ignore[attr-defined] # noqa
                           (stats.ks_2samp, (x, y)),
                           (stats.kstest, (x, y)),
                           ])
