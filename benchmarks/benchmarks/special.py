@@ -3,7 +3,15 @@ import numpy as np
 from .common import Benchmark, with_attributes, safe_import
 
 with safe_import():
-    from scipy.special import ai_zeros, bi_zeros, erf, expn
+    from scipy.special import (
+        ai_zeros,
+        bi_zeros,
+        erf,
+        expn,
+        factorial,
+        factorial2,
+        factorialk,
+    )
 with safe_import():
     # wasn't always in scipy.special, so import separately
     from scipy.special import comb
@@ -65,3 +73,15 @@ class Expn(Benchmark):
 
     def time_expn_large_n(self):
         expn(self.n, self.x)
+
+
+class Factorial(Benchmark):
+    ...
+
+
+class Factorial2(Benchmark):
+    ...
+
+
+class FactorialK(Benchmark):
+    ...
