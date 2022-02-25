@@ -1648,7 +1648,7 @@ def psi(p, q):
     Compute the Population stability (PSI) index (metric) between two
     two probability arrays.
 
-    PSI measures how much a given variable has changed (in distribution). 
+    PSI measures how much a given variable has changed (in distribution).
     Often used to detect shifts in time-series. A rule of thumb regarding
     the PSI value is that the distributions are significantly different if
     PSI index > 0.2.
@@ -1671,7 +1671,7 @@ def psi(p, q):
     Returns
     -------
     psi : double
-        The PSI index/metric between the vectors `p` and `q` 
+        The PSI index/metric between the vectors `p` and `q`
 
     Notes
     -----

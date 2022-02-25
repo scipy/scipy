@@ -2196,7 +2196,7 @@ def test_psi():
     # Vector shapes differ
     with pytest.raises(TypeError):
         psi([-1, 2, 4], [1, 2])
-    
+
     # The same vectors should have a distance of 0
     assert np.isclose(psi([0.8], [0.8]), 0)
     assert np.isclose(psi([1, 2], [1, 2]), 0)
