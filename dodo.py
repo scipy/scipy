@@ -15,7 +15,7 @@ doit help <task-title>
 Targeted run for individual task-
 Examples:
         $ doit build
-        $ doit test -f <module name>
+        $ doit test -m <flag> -f <module name>
         $ doit doc-build
         $ doit bench --flag -s
         $ doit bench --flag -t
@@ -42,13 +42,18 @@ def task_test():
     """
     Runs the tests for a given module
     """
-    return {'actions': ["python dev.py --no-build -s %(module)s"],
+    return {'actions': ["python dev.py --no-build %(flag)s %(module)s"],
             'doc': 'Task: Initializing tests for the chosen module',
-            'params': [{'name': 'module',
+            'params': [{'name': 'flag',
+                        'short': 'm',
+                        'default': '',
+                        'type': str,
+                        'help': 'Enter flag parameter options: -s or -t'},
+                       {'name': 'module',
                         'short': 'f',
                         'default': '',
                         'type': str,
-                        'help': 'Enter the module name to run tests'}],
+                        'help': 'Enter the module name to run tests'}]
             }
 
 
@@ -72,7 +77,7 @@ def task_bench():
                         'long': 'flag',
                         'default': '',
                         'type': str,
-                        'help': 'Enter flag parameter options: -s or -t'}],
+                        'help': 'Enter flag parameter options: -s or -t'}]
             }
 
 
