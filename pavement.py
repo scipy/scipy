@@ -38,12 +38,14 @@ import paver.path
 from paver.easy import options, Bunch, task, needs, dry, sh, cmdopts
 
 sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'tools'))
 try:
-    version_utils = __import__("tools").version_utils
+    version_utils = __import__("version_utils")
     FULLVERSION = version_utils.VERSION
     # This is duplicated from setup.py
     if os.path.exists('.git'):
-        GIT_REVISION = version_utils.git_version()
+        GIT_REVISION, _ = version_utils.git_version(
+                os.path.join(os.path.dirname(__file__), '..'))
     else:
         GIT_REVISION = "Unknown"
 
@@ -53,6 +55,7 @@ try:
         else:
             FULLVERSION += '.dev0+' + GIT_REVISION[:7]
 finally:
+    sys.path.pop(1)
     sys.path.pop(0)
 
 try:
