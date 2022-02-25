@@ -76,7 +76,39 @@ class Expn(Benchmark):
 
 
 class Factorial(Benchmark):
-    ...
+    def setup(self, *args):
+        self.positive_ints = np.arange(100, 1001, step=10, dtype=int)
+        self.negative_ints = -1 * self.positive_ints
+        self.positive_floats = np.linspace(100.2, 10000.8)
+        self.negative_floats = -1 * self.positive_floats
+
+    @with_attributes(params=[(100, 1000, 10000)],
+                     param_names=['n'])
+    def time_factorial_exact_false_scalar_positive_int(self, n):
+        factorial(n, exact=False)
+
+    def time_factorial_exact_false_scalar_negative_int(self):
+        factorial(-10000, exact=False)
+
+    @with_attributes(params=[(100.8, 1000.3, 10000.5)],
+                     param_names=['n'])
+    def time_factorial_exact_false_scalar_positive_float(self, n):
+        factorial(n, exact=False)
+
+    def time_factorial_exact_false_scalar_negative_float(self):
+        factorial(-10000.8, exact=False)
+
+    def time_factorial_exact_false_array_positive_int(self):
+        factorial(self.positive_ints, exact=False)
+
+    def time_factorial_exact_false_array_negative_int(self):
+        factorial(self.negative_ints, exact=False)
+
+    def time_factorial_exact_false_array_positive_float(self):
+        factorial(self.positive_floats, exact=False)
+
+    def time_factorial_exact_false_array_negative_float(self):
+        factorial(self.negative_floats, exact=False)
 
 
 class Factorial2(Benchmark):
