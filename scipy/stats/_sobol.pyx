@@ -1,4 +1,5 @@
 # cython: language_level=3
+# cython: cdivision=True
 from __future__ import division, absolute_import
 
 cimport cython
@@ -87,7 +88,7 @@ def _initialize_direction_numbers():
         np.savez_compressed("./_sobol_direction_numbers", vinit=vs, poly=poly)
 
     """
-    cdef cnp.uint64_t[:] dns_poly
+    cdef cnp.uint64_t[::1] dns_poly
     cdef cnp.uint64_t[:, :] dns_vinit
 
     global is_initialized
@@ -190,7 +191,7 @@ cdef int ibits(const cnp.uint64_t x, const int pos, const int length) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef void _initialize_v(
-    cnp.uint64_t[:, :] v, const int dim, const int maxbit
+    cnp.uint64_t[:, ::1] v, const int dim, const int maxbit
 ):
     cdef int d, i, j, k, m
     cdef cnp.uint64_t p, newv, pow2
@@ -241,9 +242,9 @@ cpdef void _draw(const cnp.uint64_t n,
                  const cnp.uint64_t num_gen,
                  const int dim,
                  const int maxbit,
-                 cnp.uint64_t[:, :] sv,
-                 cnp.uint64_t[:] quasi,
-                 cnp.float_t[:, :] sample) nogil:
+                 cnp.uint64_t[:, ::1] sv,
+                 cnp.uint64_t[::1] quasi,
+                 cnp.float_t[:, ::1] sample) nogil:
     cdef int j, l
     cdef cnp.uint64_t num_gen_loc = num_gen
     cdef cnp.uint64_t i, qtmp
@@ -267,8 +268,8 @@ cpdef void _draw(const cnp.uint64_t n,
 cpdef void _fast_forward(const cnp.uint64_t n,
                          const cnp.uint64_t num_gen,
                          const int dim,
-                         cnp.uint64_t[:, :] sv,
-                         cnp.uint64_t[:] quasi) nogil:
+                         cnp.uint64_t[:, ::1] sv,
+                         cnp.uint64_t[::1] quasi) nogil:
     cdef int j, l
     cdef cnp.uint64_t num_gen_loc = num_gen
     cdef cnp.uint64_t i
@@ -281,7 +282,7 @@ cpdef void _fast_forward(const cnp.uint64_t n,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef cnp.uint64_t cdot_pow2(cnp.uint64_t[:] a) nogil:
+cdef cnp.uint64_t cdot_pow2(cnp.uint64_t[::1] a) nogil:
     cdef int i
     cdef int size = a.shape[0]
     cdef cnp.uint64_t z = 0
@@ -296,8 +297,8 @@ cdef cnp.uint64_t cdot_pow2(cnp.uint64_t[:] a) nogil:
 @cython.wraparound(False)
 cpdef void _cscramble(const int dim,
                       const int maxbit,
-                      cnp.uint64_t[:, :, :] ltm,
-                      cnp.uint64_t[:, :] sv) nogil:
+                      cnp.uint64_t[:, :, ::1] ltm,
+                      cnp.uint64_t[:, ::1] sv) nogil:
     cdef int d, i, j, k, p
     cdef cnp.uint64_t l, lsmdp, t1, t2, vdj
 
@@ -324,8 +325,8 @@ cpdef void _cscramble(const int dim,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _fill_p_cumulative(cnp.float_t[:] p,
-                              cnp.float_t[:] p_cumulative) nogil:
+cpdef void _fill_p_cumulative(cnp.float_t[::1] p,
+                              cnp.float_t[::1] p_cumulative) nogil:
     cdef int i
     cdef int len_p = p.shape[0]
     cdef float tot = 0
@@ -338,9 +339,9 @@ cpdef void _fill_p_cumulative(cnp.float_t[:] p,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _categorize(cnp.float_t[:] draws,
-                       cnp.float_t[:] p_cumulative,
-                       cnp.int_t[:] result) nogil:
+cpdef void _categorize(cnp.float_t[::1] draws,
+                       cnp.float_t[::1] p_cumulative,
+                       cnp.int_t[::1] result) nogil:
     cdef int i
     cdef int n_p = p_cumulative.shape[0]
     for i in range(draws.shape[0]):
@@ -350,7 +351,7 @@ cpdef void _categorize(cnp.float_t[:] draws,
 
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cdef int _find_index(cnp.float_t[:] p_cumulative,
+cdef int _find_index(cnp.float_t[::1] p_cumulative,
                      const int size,
                      const float value) nogil:
     cdef int l = 0
