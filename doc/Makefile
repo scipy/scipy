@@ -97,8 +97,6 @@ upload:
 	scp build/dist.tar.gz $(USERNAME)@new.scipy.org:$(UPLOAD_DIR)
 	ssh $(USERNAME)@new.scipy.org tar xvC $(UPLOAD_DIR) \
 	    -zf $(UPLOAD_DIR)/dist.tar.gz
-	ssh $(USERNAME)@new.scipy.org mv $(UPLOAD_DIR)/scipy-ref.pdf \
-	    $(UPLOAD_DIR)/scipy-ref-$(RELEASE).pdf
 	ssh $(USERNAME)@new.scipy.org mv $(UPLOAD_DIR)/scipy-html.zip \
 	    $(UPLOAD_DIR)/scipy-html-$(RELEASE).zip
 	ssh $(USERNAME)@new.scipy.org rm $(UPLOAD_DIR)/dist.tar.gz
