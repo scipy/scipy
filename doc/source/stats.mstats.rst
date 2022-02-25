@@ -1,1 +1,0 @@
-.. automodule:: scipy.stats.mstats

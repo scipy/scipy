@@ -47,9 +47,9 @@ C     XHI <-- When ZROR returns with STATUS = 0, XHI bounds the
 C             inverval in X containing the solution above.
 C                         DOUBLE PRECISION XHI
 C
-C     QLEFT <-- .TRUE. if the stepping search terminated unsucessfully
+C     QLEFT <-- .TRUE. if the stepping search terminated unsuccessfully
 C                at XLO.  If it is .FALSE. the search terminated
-C                unsucessfully at XHI.
+C                unsuccessfully at XHI.
 C                    QLEFT is LOGICAL
 C
 C     QHI <-- .TRUE. if F(X) .GT. Y at the termination of the
@@ -58,6 +58,7 @@ C              termination of the search.
 C                    QHI is LOGICAL
 C
 C**********************************************************************
+      IMPLICIT NONE
 C     .. Scalar Arguments ..
       DOUBLE PRECISION fx,x,xhi,xlo,zabstl,zreltl,zxhi,zxlo
       INTEGER status
@@ -266,6 +267,35 @@ C     Mathematical Software, Volume 1, no. 4 page 330
 C     (Dec. '75) is employed to find the zero of F(X)-Y.
 C
 C**********************************************************************
+
+C     Reset all saved variables to known values
+      a = 0d0
+      abstol = 0d0
+      b = 0d0
+      c = 0d0
+      d = 0d0
+      fa = 0d0
+      fb = 0d0
+      fc = 0d0
+      fd = 0d0
+      fda = 0d0
+      fdb = 0d0
+      m = 0d0
+      mb = 0d0
+      p = 0d0
+      q = 0d0
+      reltol = 0d0
+      tol = 0d0
+      w = 0d0
+      xxhi = 0d0
+      xxlo = 0d0
+      zx = 0d0
+      ext = 0
+      i99999 = 0
+      first = .FALSE.
+      qrzero = .FALSE.
+
+C     Set initial values
       xxlo = zxlo
       xxhi = zxhi
       abstol = zabstl

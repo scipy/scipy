@@ -4,7 +4,9 @@
 Mielke's Beta-Kappa Distribution
 ================================
 
-A generalized F distribution. Two shape parameters :math:`\kappa` and :math:`\theta` , and :math:`x>0` . The :math:`\beta` in the DATAPLOT reference is a scale parameter.
+A generalized F distribution. Two shape parameters
+:math:`\kappa` and :math:`\theta`, with support :math:`x\geq0`.
+The :math:`\beta` in the DATAPLOT reference is a scale parameter.
 
 .. math::
    :nowrap:

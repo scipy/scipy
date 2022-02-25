@@ -1,4 +1,5 @@
-      subroutine lmstr1(fcn,m,n,x,fvec,fjac,ldfjac,tol,info,ipvt,wa,
+      recursive
+     *subroutine lmstr1(fcn,m,n,x,fvec,fjac,ldfjac,tol,info,ipvt,wa,
      *                  lwa)
       integer m,n,ldfjac,info,lwa
       integer ipvt(n)

@@ -4,7 +4,8 @@
 Lévy Distribution
 ==================
 
-A special case of Lévy-stable distributions with :math:`\alpha=\frac{1}{2}` and :math:`\beta=1` . In standard form it is defined for :math:`x>0` as
+A special case of Lévy-stable distributions with :math:`\alpha=\frac{1}{2}`
+and :math:`\beta=1` and support :math:`x\geq0`.  In standard form it is defined for :math:`x>0` as
 
 .. math::
    :nowrap:

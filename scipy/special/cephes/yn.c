@@ -79,11 +79,11 @@ double x;
 
     /* test for overflow */
     if (x == 0.0) {
-	mtherr("yn", SING);
+	sf_error("yn", SF_ERROR_SINGULAR, NULL);
 	return -NPY_INFINITY * sign;
     }
     else if (x < 0.0) {
-	mtherr("yn", DOMAIN);
+	sf_error("yn", SF_ERROR_DOMAIN, NULL);
 	return NPY_NAN;
     }
 

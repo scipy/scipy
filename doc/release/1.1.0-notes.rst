@@ -1,0 +1,666 @@
+=========================
+SciPy 1.1.0 Release Notes
+=========================
+
+.. contents::
+
+
+SciPy 1.1.0 is the culmination of 7 months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and better
+documentation. There have been a number of deprecations and API changes
+in this release, which are documented below. All users are encouraged to
+upgrade to this release, as there are a large number of bug-fixes and
+optimizations. Before upgrading, we recommend that users check that
+their own code does not use deprecated SciPy functionality (to do so,
+run your code with ``python -Wd`` and check for ``DeprecationWarning``
+s). Our development attention will now shift to bug-fix releases on the
+1.1.x branch, and on adding new features on the master branch.
+
+This release requires Python 2.7 or 3.4+ and NumPy 1.8.2 or greater.
+
+This release has improved but not necessarily 100% compatible with
+the `PyPy <https://pypy.org/>`__ Python implementation. For running on
+PyPy, PyPy 6.0+ and Numpy 1.15.0+ are required.
+
+New features
+============
+
+`scipy.integrate` improvements
+------------------------------
+
+The argument ``tfirst`` has been added to the function
+`scipy.integrate.odeint`. This allows ``odeint`` to use the same user
+functions as `scipy.integrate.solve_ivp` and `scipy.integrate.ode` without
+the need for wrapping them in a function that swaps the first two
+arguments.
+
+Error messages from ``quad()`` are now clearer.
+
+`scipy.linalg` improvements
+---------------------------
+
+The function `scipy.linalg.ldl` has been added for factorization of
+indefinite symmetric/hermitian matrices into triangular and block
+diagonal matrices.
+
+Python wrappers for LAPACK ``sygst``, ``hegst`` added in
+`scipy.linalg.lapack`.
+
+Added `scipy.linalg.null_space`, `scipy.linalg.cdf2rdf`,
+`scipy.linalg.rsf2csf`.
+
+`scipy.misc` improvements
+-------------------------
+
+An electrocardiogram has been added as an example dataset for a
+one-dimensional signal. It can be accessed through
+`scipy.misc.electrocardiogram`.
+
+`scipy.ndimage` improvements
+----------------------------
+
+The routines `scipy.ndimage.binary_opening`, and
+`scipy.ndimage.binary_closing` now support masks and different border
+values.
+
+`scipy.optimize` improvements
+-----------------------------
+
+The method ``trust-constr`` has been added to
+`scipy.optimize.minimize`. The method switches between two
+implementations depending on the problem definition. For equality-constrained
+problems it is an implementation of a trust-region
+sequential quadratic programming solver and, when inequality constraints
+are imposed, it switches to a trust-region interior point method. Both
+methods are appropriate for large scale problems. Quasi-Newton options
+BFGS and SR1 were implemented and can be used to approximate
+second-order derivatives for this new method. Also, finite-differences can be
+used to approximate either first-order or second-order derivatives.
+
+Random-to-Best/1/bin and Random-to-Best/1/exp mutation strategies were
+added to `scipy.optimize.differential_evolution` as ``randtobest1bin``
+and ``randtobest1exp``, respectively. Note: These names were already in
+use but implemented a different mutation strategy. See `Backwards-incompatible
+changes <#backwards-incompatible-changes>`__ below. The
+``init`` keyword for the `scipy.optimize.differential_evolution`
+function can now accept an array. This array allows the user to specify
+the entire population.
+
+Added an ``adaptive`` option to Nelder-Mead to use step parameters adapted
+to the dimensionality of the problem.
+
+Minor improvements in `scipy.optimize.basinhopping`.
+
+`scipy.signal` improvements
+---------------------------
+
+Three new functions for peak finding in one-dimensional arrays were
+added. `scipy.signal.find_peaks` searches for peaks (local maxima) based
+on simple value comparison of neighboring samples and returns those
+peaks whose properties match optionally specified conditions for their
+height, prominence, width, threshold and distance to each other.
+`scipy.signal.peak_prominences` and `scipy.signal.peak_widths` can directly
+calculate the prominences or widths of known peaks.
+
+Added ZPK versions of frequency transformations:
+`scipy.signal.bilinear_zpk`, `scipy.signal.lp2bp_zpk`,
+`scipy.signal.lp2bs_zpk`, `scipy.signal.lp2hp_zpk`,
+`scipy.signal.lp2lp_zpk`.
+
+Added `scipy.signal.windows.dpss`,
+`scipy.signal.windows.general_cosine` and
+`scipy.signal.windows.general_hamming`.
+
+`scipy.sparse` improvements
+---------------------------
+
+Previously, the ``reshape`` method only worked on
+`scipy.sparse.lil_matrix`, and in-place reshaping did not work on any
+matrices. Both operations are now implemented for all matrices. Handling
+of shapes has been made consistent with ``numpy.matrix`` throughout the
+`scipy.sparse` module (shape can be a tuple or splatted, negative
+number acts as placeholder, padding and unpadding dimensions of size 1
+to ensure length-2 shape).
+
+`scipy.special` improvements
+----------------------------
+
+Added Owen’s T function as `scipy.special.owens_t`.
+
+Accuracy improvements in ``chndtr``, ``digamma``, ``gammaincinv``,
+``lambertw``, ``zetac``.
+
+`scipy.stats` improvements
+--------------------------
+
+The Moyal distribution has been added as `scipy.stats.moyal`.
+
+Added the normal inverse Gaussian distribution as
+`scipy.stats.norminvgauss`.
+
+Deprecated features
+===================
+
+The iterative linear equation solvers in `scipy.sparse.linalg` had a
+sub-optimal way of how absolute tolerance is considered. The default
+behavior will be changed in a future Scipy release to a more standard
+and less surprising one. To silence deprecation warnings, set the
+``atol=`` parameter explicitly.
+
+`scipy.signal.windows.slepian` is deprecated, replaced by
+`scipy.signal.windows.dpss`.
+
+The window functions in `scipy.signal` are now available in
+`scipy.signal.windows`. They will remain also available in the old
+location in the `scipy.signal` namespace in future Scipy versions.
+However, importing them from `scipy.signal.windows` is preferred, and
+new window functions will be added only there.
+
+Indexing sparse matrices with floating-point numbers instead of integers
+is deprecated.
+
+The function `scipy.stats.itemfreq` is deprecated.
+
+Backwards incompatible changes
+==============================
+
+Previously, `scipy.linalg.orth` used a singular value cutoff value
+appropriate for double precision numbers also for single-precision
+input. The cutoff value is now tunable, and the default has been changed
+to depend on the input data precision.
+
+In previous versions of Scipy, the ``randtobest1bin`` and
+``randtobest1exp`` mutation strategies in
+`scipy.optimize.differential_evolution` were actually implemented using
+the Current-to-Best/1/bin and Current-to-Best/1/exp strategies,
+respectively. These strategies were renamed to ``currenttobest1bin`` and
+``currenttobest1exp`` and the implementations of ``randtobest1bin`` and
+``randtobest1exp`` strategies were corrected.
+
+Functions in the ndimage module now always return their output array.
+Before, most functions only returned the output array if it had been
+allocated by the function, and would return ``None`` if it had been
+provided by the user.
+
+Distance metrics in `scipy.spatial.distance` now require non-negative
+weights.
+
+`scipy.special.loggamma` now returns real-valued result when the input
+is real-valued.
+
+Other changes
+=============
+
+When building on Linux with GNU compilers, the ``.so`` Python extension
+files now hide all symbols except those required by Python, which can
+avoid problems when embedding the Python interpreter.
+
+
+
+Authors
+=======
+
+* Saurabh Agarwal +
+* Diogo Aguiam +
+* Joseph Albert +
+* Gerrit Ansmann +
+* Jean-François B +
+* Vahan Babayan +
+* Alessandro Pietro Bardelli
+* Christoph Baumgarten +
+* Felix Berkenkamp
+* Lilian Besson +
+* Aditya Bharti +
+* Matthew Brett
+* Evgeni Burovski
+* CJ Carey
+* Martin Ø. Christensen +
+* Robert Cimrman
+* Vicky Close +
+* Peter Cock +
+* Philip DeBoer
+* Jaime Fernandez del Rio
+* Dieter Werthmüller +
+* Tom Donoghue +
+* Matt Dzugan +
+* Lars G +
+* Jacques Gaudin +
+* Andriy Gelman +
+* Sean Gillies +
+* Dezmond Goff
+* Christoph Gohlke
+* Ralf Gommers
+* Uri Goren +
+* Deepak Kumar Gouda +
+* Douglas Lessa Graciosa +
+* Matt Haberland
+* David Hagen
+* Charles Harris
+* Jordan Heemskerk +
+* Danny Hermes +
+* Stephan Hoyer +
+* Theodore Hu +
+* Jean-François B. +
+* Mads Jensen +
+* Jon Haitz Legarreta Gorroño +
+* Ben Jude +
+* Noel Kippers +
+* Julius Bier Kirkegaard +
+* Maria Knorps +
+* Mikkel Kristensen +
+* Eric Larson
+* Kasper Primdal Lauritzen +
+* Denis Laxalde
+* KangWon Lee +
+* Jan Lehky +
+* Jackie Leng +
+* P.L. Lim +
+* Nikolay Mayorov
+* Mihai Capotă +
+* Max Mikhaylov +
+* Mark Mikofski +
+* Jarrod Millman
+* Raden Muhammad +
+* Paul Nation
+* Andrew Nelson
+* Nico Schlömer
+* Joel Nothman
+* Kyle Oman +
+* Egor Panfilov +
+* Nick Papior
+* Anubhav Patel +
+* Oleksandr Pavlyk
+* Ilhan Polat
+* Robert Pollak +
+* Anant Prakash +
+* Aman Pratik
+* Sean Quinn +
+* Giftlin Rajaiah +
+* Tyler Reddy
+* Joscha Reimer
+* Antonio H Ribeiro +
+* Antonio Horta Ribeiro
+* Benjamin Rose +
+* Fabian Rost
+* Divakar Roy +
+* Scott Sievert
+* Leo Singer
+* Sourav Singh
+* Martino Sorbaro +
+* Eric Stansifer +
+* Martin Thoma
+* Phil Tooley +
+* Piotr Uchwat +
+* Paul van Mulbregt
+* Pauli Virtanen
+* Stefan van der Walt
+* Warren Weckesser
+* Florian Weimer +
+* Eric Wieser
+* Josh Wilson
+* Ted Ying +
+* Evgeny Zhurko
+* Zé Vinícius
+* @Astrofysicus +
+* @awakenting +
+* @endolith
+* @FormerPhysicist +
+* @gaulinmp +
+* @hugovk
+* @ksemb +
+* @kshitij12345 +
+* @luzpaz +
+* @NKrvavica +
+* @rafalalgo +
+* @samyak0210 +
+* @soluwalana +
+* @sudheerachary +
+* @Tokixix +
+* @tttthomasssss +
+* @vkk800 +
+* @xoviat
+* @ziejcow +
+
+A total of 122 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
+
+
+Issues closed for 1.1.0
+-----------------------
+
+* `#979 <https://github.com/scipy/scipy/issues/979>`__: Allow Hermitian matrices in lobpcg (Trac #452)
+* `#2694 <https://github.com/scipy/scipy/issues/2694>`__: Solution of iterative solvers can be less accurate than tolerance...
+* `#3164 <https://github.com/scipy/scipy/issues/3164>`__: RectBivariateSpline usage inconsistent with other interpolation...
+* `#4161 <https://github.com/scipy/scipy/issues/4161>`__: Missing ITMAX optional argument in scipy.optimize.nnls
+* `#4354 <https://github.com/scipy/scipy/issues/4354>`__: signal.slepian should use definition of digital window
+* `#4866 <https://github.com/scipy/scipy/issues/4866>`__: Shouldn't scipy.linalg.sqrtm raise an error if matrix is singular?
+* `#4953 <https://github.com/scipy/scipy/issues/4953>`__: The dirichlet distribution unnecessarily requires strictly positive...
+* `#5336 <https://github.com/scipy/scipy/issues/5336>`__: sqrtm on a diagonal matrix can warn "Matrix is singular and may...
+* `#5922 <https://github.com/scipy/scipy/issues/5922>`__: Suboptimal convergence of Halley's method?
+* `#6036 <https://github.com/scipy/scipy/issues/6036>`__: Incorrect edge case in scipy.stats.triang.pdf
+* `#6202 <https://github.com/scipy/scipy/issues/6202>`__: Enhancement: Add LDLt factorization to scipy
+* `#6589 <https://github.com/scipy/scipy/issues/6589>`__: sparse.random with custom rvs callable does pass on arg to subclass
+* `#6654 <https://github.com/scipy/scipy/issues/6654>`__: Spearman's rank correlation coefficient slow with nan values...
+* `#6794 <https://github.com/scipy/scipy/issues/6794>`__: Remove NumarrayType struct with numarray type names from ndimage
+* `#7136 <https://github.com/scipy/scipy/issues/7136>`__: The dirichlet distribution unnecessarily rejects probabilities...
+* `#7169 <https://github.com/scipy/scipy/issues/7169>`__: Will it be possible to add LDL' factorization for Hermitian indefinite...
+* `#7291 <https://github.com/scipy/scipy/issues/7291>`__: fsolve docs should say it doesn't handle over- or under-determined...
+* `#7453 <https://github.com/scipy/scipy/issues/7453>`__: binary_opening/binary_closing missing arguments
+* `#7500 <https://github.com/scipy/scipy/issues/7500>`__: linalg.solve test failure on OS X with Accelerate
+* `#7555 <https://github.com/scipy/scipy/issues/7555>`__: Integratig a function with singularities using the quad routine
+* `#7624 <https://github.com/scipy/scipy/issues/7624>`__: allow setting both absolute and relative tolerance of sparse...
+* `#7724 <https://github.com/scipy/scipy/issues/7724>`__: odeint documentation refers to t0 instead of t
+* `#7746 <https://github.com/scipy/scipy/issues/7746>`__: False CDF values for skew normal distribution
+* `#7750 <https://github.com/scipy/scipy/issues/7750>`__: mstats.winsorize documentation needs clarification
+* `#7787 <https://github.com/scipy/scipy/issues/7787>`__: Documentation error in spherical Bessel, Neumann, modified spherical...
+* `#7836 <https://github.com/scipy/scipy/issues/7836>`__: Scipy mmwrite incorrectly writes the zeros for skew-symmetric,...
+* `#7839 <https://github.com/scipy/scipy/issues/7839>`__: sqrtm is unable to compute square root of zero matrix
+* `#7847 <https://github.com/scipy/scipy/issues/7847>`__: solve is very slow since #6775
+* `#7888 <https://github.com/scipy/scipy/issues/7888>`__: Scipy 1.0.0b1 prints spurious DVODE/ZVODE/lsoda messages
+* `#7909 <https://github.com/scipy/scipy/issues/7909>`__: bessel kv function in 0 is nan
+* `#7915 <https://github.com/scipy/scipy/issues/7915>`__: LinearOperator's __init__ runs two times when instantiating the...
+* `#7958 <https://github.com/scipy/scipy/issues/7958>`__: integrate.quad could use better error messages when given bad...
+* `#7968 <https://github.com/scipy/scipy/issues/7968>`__: integrate.quad handles decreasing limits (b<a) inconsistently
+* `#7970 <https://github.com/scipy/scipy/issues/7970>`__: ENH: matching return dtype for loggamma/gammaln
+* `#7991 <https://github.com/scipy/scipy/issues/7991>`__: `lfilter` segfaults for integer inputs
+* `#8076 <https://github.com/scipy/scipy/issues/8076>`__: "make dist" for the docs doesn't complete cleanly
+* `#8080 <https://github.com/scipy/scipy/issues/8080>`__: Use JSON in `special/_generate_pyx.py`?
+* `#8127 <https://github.com/scipy/scipy/issues/8127>`__: scipy.special.psi(x) very slow for some values of x
+* `#8145 <https://github.com/scipy/scipy/issues/8145>`__: BUG: ndimage geometric_transform and zoom using deprecated NumPy...
+* `#8158 <https://github.com/scipy/scipy/issues/8158>`__: BUG: romb print output requires correction
+* `#8181 <https://github.com/scipy/scipy/issues/8181>`__: loadmat() raises TypeError instead of FileNotFound when reading...
+* `#8228 <https://github.com/scipy/scipy/issues/8228>`__: bug for log1p on csr_matrix
+* `#8235 <https://github.com/scipy/scipy/issues/8235>`__: scipy.stats multinomial pmf return nan
+* `#8271 <https://github.com/scipy/scipy/issues/8271>`__: scipy.io.mmwrite raises type error for uint16
+* `#8288 <https://github.com/scipy/scipy/issues/8288>`__: Should tests be written for scipy.sparse.linalg.isolve.minres...
+* `#8298 <https://github.com/scipy/scipy/issues/8298>`__: Broken links on scipy API web page
+* `#8329 <https://github.com/scipy/scipy/issues/8329>`__: `_gels` fails for fat A matrix
+* `#8346 <https://github.com/scipy/scipy/issues/8346>`__: Avoidable overflow in scipy.special.binom(n, k)
+* `#8371 <https://github.com/scipy/scipy/issues/8371>`__: BUG: special: zetac(x) returns 0 for x < -30.8148
+* `#8382 <https://github.com/scipy/scipy/issues/8382>`__: collections.OrderedDict in test_mio.py
+* `#8492 <https://github.com/scipy/scipy/issues/8492>`__: Missing documentation for `brute_force` parameter in scipy.ndimage.morphology
+* `#8532 <https://github.com/scipy/scipy/issues/8532>`__: leastsq needlessly appends extra dimension for scalar problems
+* `#8544 <https://github.com/scipy/scipy/issues/8544>`__: [feature request] Convert complex diagonal form to real block...
+* `#8561 <https://github.com/scipy/scipy/issues/8561>`__: [Bug?] Example of Bland's Rule for optimize.linprog (simplex)...
+* `#8562 <https://github.com/scipy/scipy/issues/8562>`__: CI: Appveyor builds fail because it can't import ConvexHull from...
+* `#8576 <https://github.com/scipy/scipy/issues/8576>`__: BUG: optimize: `show_options(solver='minimize', method='Newton-CG')`...
+* `#8603 <https://github.com/scipy/scipy/issues/8603>`__: test_roots_gegenbauer/chebyt/chebyc failures on manylinux
+* `#8604 <https://github.com/scipy/scipy/issues/8604>`__: Test failures in scipy.sparse test_inplace_dense
+* `#8616 <https://github.com/scipy/scipy/issues/8616>`__: special: ellpj.c code can be cleaned up a bit
+* `#8625 <https://github.com/scipy/scipy/issues/8625>`__: scipy 1.0.1 no longer allows overwriting variables in netcdf...
+* `#8629 <https://github.com/scipy/scipy/issues/8629>`__: gcrotmk.test_atol failure with MKL
+* `#8632 <https://github.com/scipy/scipy/issues/8632>`__: Sigma clipping on data with the same value
+* `#8646 <https://github.com/scipy/scipy/issues/8646>`__: scipy.special.sinpi test failures in test_zero_sign on old MSVC
+* `#8663 <https://github.com/scipy/scipy/issues/8663>`__: linprog with method=interior-point produced incorrect answer...
+* `#8694 <https://github.com/scipy/scipy/issues/8694>`__: linalg:TestSolve.test_all_type_size_routine_combinations fails...
+* `#8703 <https://github.com/scipy/scipy/issues/8703>`__: Q: Does runtests.py --refguide-check need env (or other) variables...
+
+
+Pull requests for 1.1.0
+-----------------------
+
+* `#6590 <https://github.com/scipy/scipy/pull/6590>`__: BUG: sparse: fix custom rvs callable argument in sparse.random
+* `#7004 <https://github.com/scipy/scipy/pull/7004>`__: ENH: scipy.linalg.eigsh cannot get all eigenvalues
+* `#7120 <https://github.com/scipy/scipy/pull/7120>`__: ENH: implemented Owen's T function
+* `#7483 <https://github.com/scipy/scipy/pull/7483>`__: ENH: Addition/multiplication operators for StateSpace systems
+* `#7566 <https://github.com/scipy/scipy/pull/7566>`__: Informative exception when passing a sparse matrix
+* `#7592 <https://github.com/scipy/scipy/pull/7592>`__: Adaptive Nelder-Mead
+* `#7729 <https://github.com/scipy/scipy/pull/7729>`__: WIP: ENH: optimize: large-scale constrained optimization algorithms...
+* `#7802 <https://github.com/scipy/scipy/pull/7802>`__: MRG: Add dpss window function
+* `#7803 <https://github.com/scipy/scipy/pull/7803>`__: DOC: Add examples to spatial.distance
+* `#7821 <https://github.com/scipy/scipy/pull/7821>`__: Add Returns section to the docstring
+* `#7833 <https://github.com/scipy/scipy/pull/7833>`__: ENH: Performance improvements in scipy.linalg.special_matrices
+* `#7864 <https://github.com/scipy/scipy/pull/7864>`__: MAINT: sparse: Simplify sputils.isintlike
+* `#7865 <https://github.com/scipy/scipy/pull/7865>`__: ENH: Improved speed of copy into L, U matrices
+* `#7871 <https://github.com/scipy/scipy/pull/7871>`__: ENH: sparse: Add 64-bit integer to sparsetools
+* `#7879 <https://github.com/scipy/scipy/pull/7879>`__: ENH: re-enabled old sv lapack routine as defaults
+* `#7889 <https://github.com/scipy/scipy/pull/7889>`__: DOC: Show probability density functions as math
+* `#7900 <https://github.com/scipy/scipy/pull/7900>`__: API: Soft deprecate signal.* windows
+* `#7910 <https://github.com/scipy/scipy/pull/7910>`__: ENH: allow `sqrtm` to compute the root of some singular matrices
+* `#7911 <https://github.com/scipy/scipy/pull/7911>`__: MAINT: Avoid unnecessary array copies in xdist
+* `#7913 <https://github.com/scipy/scipy/pull/7913>`__: DOC: Clarifies the meaning of `initial` of scipy.integrate.cumtrapz()
+* `#7916 <https://github.com/scipy/scipy/pull/7916>`__: BUG: sparse.linalg: fix wrong use of __new__ in LinearOperator
+* `#7921 <https://github.com/scipy/scipy/pull/7921>`__: BENCH: split spatial benchmark imports
+* `#7927 <https://github.com/scipy/scipy/pull/7927>`__: ENH: added sygst/hegst routines to lapack
+* `#7934 <https://github.com/scipy/scipy/pull/7934>`__: MAINT: add `io/_test_fortranmodule` to `.gitignore`
+* `#7936 <https://github.com/scipy/scipy/pull/7936>`__: DOC: Fixed typo in scipy.special.roots_jacobi documentation
+* `#7937 <https://github.com/scipy/scipy/pull/7937>`__: MAINT: special: Mark a test that fails on i686 as a known failure.
+* `#7941 <https://github.com/scipy/scipy/pull/7941>`__: ENH: LDLt decomposition for indefinite symmetric/hermitian matrices
+* `#7945 <https://github.com/scipy/scipy/pull/7945>`__: ENH: Implement reshape method on sparse matrices
+* `#7947 <https://github.com/scipy/scipy/pull/7947>`__: DOC: update docs on releasing and installing/upgrading
+* `#7954 <https://github.com/scipy/scipy/pull/7954>`__: Basin-hopping changes
+* `#7964 <https://github.com/scipy/scipy/pull/7964>`__: BUG: test_falker not robust against numerical fuss in eigenvalues
+* `#7967 <https://github.com/scipy/scipy/pull/7967>`__: QUADPACK Errors - human friendly errors to replace 'Invalid Input'
+* `#7975 <https://github.com/scipy/scipy/pull/7975>`__: Make sure integrate.quad doesn't double-count singular points
+* `#7978 <https://github.com/scipy/scipy/pull/7978>`__: TST: ensure negative weights are not allowed in distance metrics
+* `#7980 <https://github.com/scipy/scipy/pull/7980>`__: MAINT: Truncate the warning msg about ill-conditioning
+* `#7981 <https://github.com/scipy/scipy/pull/7981>`__: BUG: special: fix hyp2f1 behavior in certain circumstances
+* `#7983 <https://github.com/scipy/scipy/pull/7983>`__: ENH: special: Add a real dispatch to `loggamma`
+* `#7989 <https://github.com/scipy/scipy/pull/7989>`__: BUG: special: make `kv` return `inf` at a zero real argument
+* `#7990 <https://github.com/scipy/scipy/pull/7990>`__: TST: special: test ufuncs in special at `nan` inputs
+* `#7994 <https://github.com/scipy/scipy/pull/7994>`__: DOC: special: fix typo in spherical Bessel function documentation
+* `#7995 <https://github.com/scipy/scipy/pull/7995>`__: ENH: linalg: add null_space for computing null spaces via svd
+* `#7999 <https://github.com/scipy/scipy/pull/7999>`__: BUG: optimize: Protect _minpack calls with a lock.
+* `#8003 <https://github.com/scipy/scipy/pull/8003>`__: MAINT: consolidate c99 compatibility
+* `#8004 <https://github.com/scipy/scipy/pull/8004>`__: TST: special: get all `cython_special` tests running again
+* `#8006 <https://github.com/scipy/scipy/pull/8006>`__: MAINT: Consolidate an additional _c99compat.h
+* `#8011 <https://github.com/scipy/scipy/pull/8011>`__: Add new example of integrate.quad
+* `#8015 <https://github.com/scipy/scipy/pull/8015>`__: DOC: special: remove `jn` from the refguide (again)
+* `#8018 <https://github.com/scipy/scipy/pull/8018>`__: BUG - Issue with uint datatypes for array in get_index_dtype
+* `#8021 <https://github.com/scipy/scipy/pull/8021>`__: DOC: spatial: Simplify Delaunay plotting
+* `#8024 <https://github.com/scipy/scipy/pull/8024>`__: Documentation fix
+* `#8027 <https://github.com/scipy/scipy/pull/8027>`__: BUG: io.matlab: fix saving unicode matrix names on py2
+* `#8028 <https://github.com/scipy/scipy/pull/8028>`__: BUG: special: some fixes for `lambertw`
+* `#8030 <https://github.com/scipy/scipy/pull/8030>`__: MAINT: Bump Cython version
+* `#8034 <https://github.com/scipy/scipy/pull/8034>`__: BUG: sparse.linalg: fix corner-case bug in expm
+* `#8035 <https://github.com/scipy/scipy/pull/8035>`__: MAINT: special: remove complex division hack
+* `#8038 <https://github.com/scipy/scipy/pull/8038>`__: ENH: Cythonize pyx files if pxd dependencies change
+* `#8042 <https://github.com/scipy/scipy/pull/8042>`__: TST: stats: reduce required precision in test_fligner
+* `#8043 <https://github.com/scipy/scipy/pull/8043>`__: TST: Use diff. values for decimal keyword for single and doubles
+* `#8044 <https://github.com/scipy/scipy/pull/8044>`__: TST: accuracy of tests made different for singles and doubles
+* `#8049 <https://github.com/scipy/scipy/pull/8049>`__: Unhelpful error message when calling scipy.sparse.save_npz on...
+* `#8052 <https://github.com/scipy/scipy/pull/8052>`__: TST: spatial: add a regression test for gh-8051
+* `#8059 <https://github.com/scipy/scipy/pull/8059>`__: BUG: special: fix ufunc results for `nan` arguments
+* `#8066 <https://github.com/scipy/scipy/pull/8066>`__: MAINT: special: reimplement inverses of incomplete gamma functions
+* `#8072 <https://github.com/scipy/scipy/pull/8072>`__: Example for scipy.fftpack.ifft, https://github.com/scipy/scipy/issues/7168
+* `#8073 <https://github.com/scipy/scipy/pull/8073>`__: Example for ifftn, https://github.com/scipy/scipy/issues/7168
+* `#8078 <https://github.com/scipy/scipy/pull/8078>`__: Link to CoC in contributing.rst doc
+* `#8085 <https://github.com/scipy/scipy/pull/8085>`__: BLD: Fix npy_isnan of integer variables in cephes
+* `#8088 <https://github.com/scipy/scipy/pull/8088>`__: DOC: note version for which new attributes have been added to...
+* `#8090 <https://github.com/scipy/scipy/pull/8090>`__: BUG: special: add nan check to `_legacy_cast_check` functions
+* `#8091 <https://github.com/scipy/scipy/pull/8091>`__: Doxy Typos + trivial comment typos (2nd attempt)
+* `#8096 <https://github.com/scipy/scipy/pull/8096>`__: TST: special: simplify `Arg`
+* `#8101 <https://github.com/scipy/scipy/pull/8101>`__: MAINT: special: run `_generate_pyx.py` when `add_newdocs.py`...
+* `#8104 <https://github.com/scipy/scipy/pull/8104>`__: Input checking for scipy.sparse.linalg.inverse()
+* `#8105 <https://github.com/scipy/scipy/pull/8105>`__: DOC: special: Update the 'euler' docstring.
+* `#8109 <https://github.com/scipy/scipy/pull/8109>`__: MAINT: fixing code comments and hyp2f1 docstring: see issues...
+* `#8112 <https://github.com/scipy/scipy/pull/8112>`__: More trivial typos
+* `#8113 <https://github.com/scipy/scipy/pull/8113>`__: MAINT: special: generate test data npz files in setup.py and...
+* `#8116 <https://github.com/scipy/scipy/pull/8116>`__: DOC: add build instructions
+* `#8120 <https://github.com/scipy/scipy/pull/8120>`__: DOC: Clean up README
+* `#8121 <https://github.com/scipy/scipy/pull/8121>`__: DOC: Add missing colons in docstrings
+* `#8123 <https://github.com/scipy/scipy/pull/8123>`__: BLD: update Bento build config files for recent C99 changes.
+* `#8124 <https://github.com/scipy/scipy/pull/8124>`__: Change to avoid use of `fmod` in scipy.signal.chebwin
+* `#8126 <https://github.com/scipy/scipy/pull/8126>`__: Added examples for mode arg in geometric_transform
+* `#8128 <https://github.com/scipy/scipy/pull/8128>`__: relax relative tolerance parameter in TestMinumumPhase.test_hilbert
+* `#8129 <https://github.com/scipy/scipy/pull/8129>`__: ENH: special: use rational approximation for \`digamma\` on \`[1,...
+* `#8137 <https://github.com/scipy/scipy/pull/8137>`__: DOC Correct matrix width
+* `#8141 <https://github.com/scipy/scipy/pull/8141>`__: MAINT: optimize: remove unused `__main__` code in L-BSGS-B
+* `#8147 <https://github.com/scipy/scipy/pull/8147>`__: BLD: update Bento build for removal of .npz scipy.special test...
+* `#8148 <https://github.com/scipy/scipy/pull/8148>`__: Alias hanning as an explanatory function of hann
+* `#8149 <https://github.com/scipy/scipy/pull/8149>`__: MAINT: special: small fixes for `digamma`
+* `#8159 <https://github.com/scipy/scipy/pull/8159>`__: Update version classifiers
+* `#8164 <https://github.com/scipy/scipy/pull/8164>`__: BUG: riccati solvers don't catch ill-conditioned problems sufficiently...
+* `#8168 <https://github.com/scipy/scipy/pull/8168>`__: DOC: release note for sparse resize methods
+* `#8170 <https://github.com/scipy/scipy/pull/8170>`__: BUG: correctly pad netCDF files with null bytes
+* `#8171 <https://github.com/scipy/scipy/pull/8171>`__: ENH added normal inverse gaussian distribution to scipy.stats
+* `#8175 <https://github.com/scipy/scipy/pull/8175>`__: DOC: Add example to scipy.ndimage.zoom
+* `#8177 <https://github.com/scipy/scipy/pull/8177>`__: MAINT: diffev small speedup in ensure constraint
+* `#8178 <https://github.com/scipy/scipy/pull/8178>`__: FIX: linalg._qz String formatter syntax error
+* `#8179 <https://github.com/scipy/scipy/pull/8179>`__: TST: Added pdist to asv spatial benchmark suite
+* `#8180 <https://github.com/scipy/scipy/pull/8180>`__: TST: ensure constraint test improved
+* `#8183 <https://github.com/scipy/scipy/pull/8183>`__: 0d conj correlate
+* `#8186 <https://github.com/scipy/scipy/pull/8186>`__: BUG: special: fix derivative of `spherical_jn(1, 0)`
+* `#8194 <https://github.com/scipy/scipy/pull/8194>`__: Fix warning message
+* `#8196 <https://github.com/scipy/scipy/pull/8196>`__: BUG: correctly handle inputs with nan's and ties in spearmanr
+* `#8198 <https://github.com/scipy/scipy/pull/8198>`__: MAINT: stats.triang edge case fixes #6036
+* `#8200 <https://github.com/scipy/scipy/pull/8200>`__: DOC: Completed "Examples" sections of all linalg funcs
+* `#8201 <https://github.com/scipy/scipy/pull/8201>`__: MAINT: stats.trapz edge cases
+* `#8204 <https://github.com/scipy/scipy/pull/8204>`__: ENH: sparse.linalg/lobpcg: change .T to .T.conj() to support...
+* `#8206 <https://github.com/scipy/scipy/pull/8206>`__: MAINT: missed triang edge case.
+* `#8214 <https://github.com/scipy/scipy/pull/8214>`__: BUG: Fix memory corruption in linalg._decomp_update C extension
+* `#8222 <https://github.com/scipy/scipy/pull/8222>`__: DOC: recommend scipy.integrate.solve_ivp
+* `#8223 <https://github.com/scipy/scipy/pull/8223>`__: ENH: added Moyal distribution to scipy.stats
+* `#8232 <https://github.com/scipy/scipy/pull/8232>`__: BUG: sparse: Use deduped data for numpy ufuncs
+* `#8236 <https://github.com/scipy/scipy/pull/8236>`__: Fix #8235
+* `#8253 <https://github.com/scipy/scipy/pull/8253>`__: BUG: optimize: fix bug related with function call calculation...
+* `#8264 <https://github.com/scipy/scipy/pull/8264>`__: ENH: Extend peak finding capabilities in scipy.signal
+* `#8273 <https://github.com/scipy/scipy/pull/8273>`__: BUG fixed printing of convergence message in minimize_scalar...
+* `#8276 <https://github.com/scipy/scipy/pull/8276>`__: DOC: Add notes to explain constrains on overwrite_<>
+* `#8279 <https://github.com/scipy/scipy/pull/8279>`__: CI: fixing doctests
+* `#8282 <https://github.com/scipy/scipy/pull/8282>`__: MAINT: weightedtau, change search for nan
+* `#8287 <https://github.com/scipy/scipy/pull/8287>`__: Improving documentation of solve_ivp and the underlying solvers
+* `#8291 <https://github.com/scipy/scipy/pull/8291>`__: DOC: fix non-ascii characters in docstrings which broke the doc...
+* `#8292 <https://github.com/scipy/scipy/pull/8292>`__: CI: use numpy 1.13 for refguide check build
+* `#8296 <https://github.com/scipy/scipy/pull/8296>`__: Fixed bug reported in issue #8181
+* `#8297 <https://github.com/scipy/scipy/pull/8297>`__: DOC: Examples for linalg/decomp eigvals function
+* `#8300 <https://github.com/scipy/scipy/pull/8300>`__: MAINT: Housekeeping for minimizing the linalg compiler warnings
+* `#8301 <https://github.com/scipy/scipy/pull/8301>`__: DOC: make public API documentation cross-link to refguide.
+* `#8302 <https://github.com/scipy/scipy/pull/8302>`__: make sure _onenorm_matrix_power_nnm actually returns a float
+* `#8313 <https://github.com/scipy/scipy/pull/8313>`__: Change copyright to outdated 2008-2016 to 2008-year
+* `#8315 <https://github.com/scipy/scipy/pull/8315>`__: TST: Add tests for \`scipy.sparse.linalg.isolve.minres\`
+* `#8318 <https://github.com/scipy/scipy/pull/8318>`__: ENH: odeint: Add the argument 'tfirst' to odeint.
+* `#8328 <https://github.com/scipy/scipy/pull/8328>`__: ENH: optimize: ``trust-constr`` optimization algorithms [GSoC...
+* `#8330 <https://github.com/scipy/scipy/pull/8330>`__: ENH: add a maxiter argument to NNLS
+* `#8331 <https://github.com/scipy/scipy/pull/8331>`__: DOC: tweak the Moyal distribution docstring
+* `#8333 <https://github.com/scipy/scipy/pull/8333>`__: FIX: Rewrapped ?gels and ?gels_lwork routines
+* `#8336 <https://github.com/scipy/scipy/pull/8336>`__: MAINT: integrate: handle b < a in quad
+* `#8337 <https://github.com/scipy/scipy/pull/8337>`__: BUG: special: Ensure zetac(1) returns inf.
+* `#8347 <https://github.com/scipy/scipy/pull/8347>`__: BUG: Fix overflow in special.binom. Issue #8346
+* `#8356 <https://github.com/scipy/scipy/pull/8356>`__: DOC: Corrected Documentation Issue #7750 winsorize function
+* `#8358 <https://github.com/scipy/scipy/pull/8358>`__: ENH: stats: Use explicit MLE formulas in lognorm.fit and expon.fit
+* `#8374 <https://github.com/scipy/scipy/pull/8374>`__: BUG: gh7854, maxiter for l-bfgs-b closes #7854
+* `#8379 <https://github.com/scipy/scipy/pull/8379>`__: CI: enable gcov coverage on travis
+* `#8383 <https://github.com/scipy/scipy/pull/8383>`__: Removed collections.OrderedDict import ignore.
+* `#8384 <https://github.com/scipy/scipy/pull/8384>`__: TravisCI: tool pep8 is now pycodestyle
+* `#8387 <https://github.com/scipy/scipy/pull/8387>`__: MAINT: special: remove unused specfun code for Struve functions
+* `#8393 <https://github.com/scipy/scipy/pull/8393>`__: DOC: Replace old type names in ndimage tutorial.
+* `#8400 <https://github.com/scipy/scipy/pull/8400>`__: Fix tolerance specification in sparse.linalg iterative solvers
+* `#8402 <https://github.com/scipy/scipy/pull/8402>`__: MAINT: Some small cleanups in ndimage.
+* `#8403 <https://github.com/scipy/scipy/pull/8403>`__: FIX: Make scipy.optimize.zeros run under PyPy
+* `#8407 <https://github.com/scipy/scipy/pull/8407>`__: BUG: sparse.linalg: fix termination bugs for cg, cgs
+* `#8409 <https://github.com/scipy/scipy/pull/8409>`__: MAINT: special: add a `.pxd` file for Cephes functions
+* `#8412 <https://github.com/scipy/scipy/pull/8412>`__: MAINT: special: remove `cephes/protos.h`
+* `#8421 <https://github.com/scipy/scipy/pull/8421>`__: Setting "unknown" message in OptimizeResult when calling MINPACK.
+* `#8423 <https://github.com/scipy/scipy/pull/8423>`__: FIX: Handle unsigned integers in mmio
+* `#8426 <https://github.com/scipy/scipy/pull/8426>`__: DOC: correct FAQ entry on Apache license compatibility. Closes...
+* `#8433 <https://github.com/scipy/scipy/pull/8433>`__: MAINT: add `.pytest_cache` to the `.gitignore`
+* `#8436 <https://github.com/scipy/scipy/pull/8436>`__: MAINT: scipy.sparse: less copies at transpose method
+* `#8437 <https://github.com/scipy/scipy/pull/8437>`__: BUG: correct behavior for skew-symmetric matrices in io.mmwrite
+* `#8440 <https://github.com/scipy/scipy/pull/8440>`__: DOC:Add examples to integrate.quadpack docstrings
+* `#8441 <https://github.com/scipy/scipy/pull/8441>`__: BUG: sparse.linalg/gmres: deal with exact breakdown in gmres
+* `#8442 <https://github.com/scipy/scipy/pull/8442>`__: MAINT: special: clean up Cephes header files
+* `#8448 <https://github.com/scipy/scipy/pull/8448>`__: TST: Generalize doctest stopwords .axis( .plot(
+* `#8457 <https://github.com/scipy/scipy/pull/8457>`__: MAINT: special: use JSON for function signatures in `_generate_pyx.py`
+* `#8461 <https://github.com/scipy/scipy/pull/8461>`__: MAINT: Simplify return value of ndimage functions.
+* `#8464 <https://github.com/scipy/scipy/pull/8464>`__: MAINT: Trivial typos
+* `#8474 <https://github.com/scipy/scipy/pull/8474>`__: BUG: spatial: make qhull.pyx more pypy-friendly
+* `#8476 <https://github.com/scipy/scipy/pull/8476>`__: TST: _lib: disable refcounting tests on PyPy
+* `#8479 <https://github.com/scipy/scipy/pull/8479>`__: BUG: io/matlab: fix issues in matlab i/o on pypy
+* `#8481 <https://github.com/scipy/scipy/pull/8481>`__: DOC: Example for signal.cmplx_sort
+* `#8482 <https://github.com/scipy/scipy/pull/8482>`__: TST: integrate: use integers instead of PyCapsules to store pointers
+* `#8483 <https://github.com/scipy/scipy/pull/8483>`__: ENH: io/netcdf: make mmap=False the default on PyPy
+* `#8484 <https://github.com/scipy/scipy/pull/8484>`__: BUG: io/matlab: work around issue in to_writeable on PyPy
+* `#8488 <https://github.com/scipy/scipy/pull/8488>`__: MAINT: special: add const/static specifiers where possible
+* `#8489 <https://github.com/scipy/scipy/pull/8489>`__: BUG: ENH: use common halley's method instead of parabolic variant
+* `#8491 <https://github.com/scipy/scipy/pull/8491>`__: DOC: fix typos
+* `#8496 <https://github.com/scipy/scipy/pull/8496>`__: ENH: special: make Chebyshev nodes symmetric
+* `#8501 <https://github.com/scipy/scipy/pull/8501>`__: BUG: stats: Split the integral used to compute skewnorm.cdf.
+* `#8502 <https://github.com/scipy/scipy/pull/8502>`__: WIP: Port CircleCI to v2
+* `#8507 <https://github.com/scipy/scipy/pull/8507>`__: DOC: Add missing description to `brute_force` parameter.
+* `#8509 <https://github.com/scipy/scipy/pull/8509>`__: BENCH: forgot to add nelder-mead to list of methods
+* `#8512 <https://github.com/scipy/scipy/pull/8512>`__: MAINT: Move spline interpolation code to spline.c
+* `#8513 <https://github.com/scipy/scipy/pull/8513>`__: TST: special: mark a slow test as xslow
+* `#8514 <https://github.com/scipy/scipy/pull/8514>`__: CircleCI: Share data between jobs
+* `#8515 <https://github.com/scipy/scipy/pull/8515>`__: ENH: special: improve accuracy of `zetac` for negative arguments
+* `#8520 <https://github.com/scipy/scipy/pull/8520>`__: TST: Decrease the array sizes for two linalg tests
+* `#8522 <https://github.com/scipy/scipy/pull/8522>`__: TST: special: restrict range of `test_besselk`/`test_besselk_int`
+* `#8527 <https://github.com/scipy/scipy/pull/8527>`__: Documentation - example added for voronoi_plot_2d
+* `#8528 <https://github.com/scipy/scipy/pull/8528>`__: DOC: Better, shared docstrings in ndimage
+* `#8533 <https://github.com/scipy/scipy/pull/8533>`__: BUG: Fix PEP8 errors introduced in #8528.
+* `#8534 <https://github.com/scipy/scipy/pull/8534>`__: ENH: Expose additional window functions
+* `#8538 <https://github.com/scipy/scipy/pull/8538>`__: MAINT: Fix a couple mistakes in .pyf files.
+* `#8540 <https://github.com/scipy/scipy/pull/8540>`__: ENH: interpolate: allow string aliases in make_interp_spline...
+* `#8541 <https://github.com/scipy/scipy/pull/8541>`__: ENH: Cythonize peak_prominences
+* `#8542 <https://github.com/scipy/scipy/pull/8542>`__: Remove numerical arguments from convolve2d / correlate2d
+* `#8546 <https://github.com/scipy/scipy/pull/8546>`__: ENH: New arguments, documentation, and tests for ndimage.binary_opening
+* `#8547 <https://github.com/scipy/scipy/pull/8547>`__: Giving both size and input now raises UserWarning (#7334)
+* `#8549 <https://github.com/scipy/scipy/pull/8549>`__: DOC: stats: invweibull is also known as Frechet or type II extreme...
+* `#8550 <https://github.com/scipy/scipy/pull/8550>`__: add cdf2rdf function
+* `#8551 <https://github.com/scipy/scipy/pull/8551>`__: ENH: Port of most of the dd_real part of the qd high-precision...
+* `#8553 <https://github.com/scipy/scipy/pull/8553>`__: Note in docs to address issue #3164.
+* `#8554 <https://github.com/scipy/scipy/pull/8554>`__: ENH: stats: Use explicit MLE formulas in uniform.fit()
+* `#8555 <https://github.com/scipy/scipy/pull/8555>`__: MAINT: adjust benchmark config
+* `#8557 <https://github.com/scipy/scipy/pull/8557>`__: [DOC]: fix Nakagami density docstring
+* `#8559 <https://github.com/scipy/scipy/pull/8559>`__: DOC: Fix docstring of diric(x, n)
+* `#8563 <https://github.com/scipy/scipy/pull/8563>`__: [DOC]: fix gamma density docstring
+* `#8564 <https://github.com/scipy/scipy/pull/8564>`__: BLD: change default Python version for doc build from 2.7 to...
+* `#8568 <https://github.com/scipy/scipy/pull/8568>`__: BUG: Fixes Bland's Rule for pivot row/leaving variable, closes...
+* `#8572 <https://github.com/scipy/scipy/pull/8572>`__: ENH: Add previous/next to interp1d
+* `#8578 <https://github.com/scipy/scipy/pull/8578>`__: Example for linalg.eig()
+* `#8580 <https://github.com/scipy/scipy/pull/8580>`__: DOC: update link to asv docs
+* `#8584 <https://github.com/scipy/scipy/pull/8584>`__: filter_design: switch to explicit arguments, keeping None as...
+* `#8586 <https://github.com/scipy/scipy/pull/8586>`__: DOC: stats: Add parentheses that were missing in the exponnorm...
+* `#8587 <https://github.com/scipy/scipy/pull/8587>`__: TST: add benchmark for newton, secant, halley
+* `#8588 <https://github.com/scipy/scipy/pull/8588>`__: DOC: special: Remove heaviside from "functions not in special"...
+* `#8591 <https://github.com/scipy/scipy/pull/8591>`__: DOC: cdf2rdf Added version info and "See also"
+* `#8594 <https://github.com/scipy/scipy/pull/8594>`__: ENH: Cythonize peak_widths
+* `#8595 <https://github.com/scipy/scipy/pull/8595>`__: MAINT/ENH/BUG/TST: cdf2rdf: Address review comments made after...
+* `#8597 <https://github.com/scipy/scipy/pull/8597>`__: DOC: add versionadded 1.1.0 for new keywords in ndimage.morphology
+* `#8605 <https://github.com/scipy/scipy/pull/8605>`__: MAINT: special: improve implementations of `sinpi` and `cospi`
+* `#8607 <https://github.com/scipy/scipy/pull/8607>`__: MAINT: add 2D benchmarks for convolve
+* `#8608 <https://github.com/scipy/scipy/pull/8608>`__: FIX: Fix int check
+* `#8613 <https://github.com/scipy/scipy/pull/8613>`__: fix typo in doc of signal.peak_widths
+* `#8615 <https://github.com/scipy/scipy/pull/8615>`__: TST: fix failing linalg.qz float32 test by decreasing precision.
+* `#8617 <https://github.com/scipy/scipy/pull/8617>`__: MAINT: clean up code in ellpj.c
+* `#8618 <https://github.com/scipy/scipy/pull/8618>`__: add fsolve docs it doesn't handle over- or under-determined problems
+* `#8620 <https://github.com/scipy/scipy/pull/8620>`__: DOC: add note on dtype attribute of aslinearoperator() argument
+* `#8627 <https://github.com/scipy/scipy/pull/8627>`__: ENH: Add example 1D signal (ECG) to scipy.misc
+* `#8630 <https://github.com/scipy/scipy/pull/8630>`__: ENH: Remove unnecessary copying in stats.percentileofscore
+* `#8631 <https://github.com/scipy/scipy/pull/8631>`__: BLD: fix pdf doc build. closes gh-8076
+* `#8633 <https://github.com/scipy/scipy/pull/8633>`__: BUG: fix regression in `io.netcdf_file` with append mode.
+* `#8635 <https://github.com/scipy/scipy/pull/8635>`__: MAINT: remove spurious warning from (z)vode and lsoda. Closes...
+* `#8636 <https://github.com/scipy/scipy/pull/8636>`__: BUG: sparse.linalg/gcrotmk: avoid rounding error in termination...
+* `#8637 <https://github.com/scipy/scipy/pull/8637>`__: For pdf build
+* `#8639 <https://github.com/scipy/scipy/pull/8639>`__: CI: build pdf documentation on circleci
+* `#8640 <https://github.com/scipy/scipy/pull/8640>`__: TST: fix special test that was importing `np.testing.utils` (deprecated)
+* `#8641 <https://github.com/scipy/scipy/pull/8641>`__: BUG: optimize: fixed sparse redundancy removal bug
+* `#8645 <https://github.com/scipy/scipy/pull/8645>`__: BUG: modified sigmaclip to avoid clipping of constant input in...
+* `#8647 <https://github.com/scipy/scipy/pull/8647>`__: TST: sparse: skip test_inplace_dense for numpy<1.13
+* `#8657 <https://github.com/scipy/scipy/pull/8657>`__: Latex reduce left margins
+* `#8659 <https://github.com/scipy/scipy/pull/8659>`__: TST: special: skip sign-of-zero test on 32-bit win32 with old...
+* `#8661 <https://github.com/scipy/scipy/pull/8661>`__: Fix dblquad and tplquad not accepting float boundaries
+* `#8666 <https://github.com/scipy/scipy/pull/8666>`__: DOC: fixes #8532
+* `#8667 <https://github.com/scipy/scipy/pull/8667>`__: BUG: optimize: fixed issue #8663
+* `#8668 <https://github.com/scipy/scipy/pull/8668>`__: Fix example in docstring of netcdf_file
+* `#8671 <https://github.com/scipy/scipy/pull/8671>`__: DOC: Replace deprecated matplotlib kwarg
+* `#8673 <https://github.com/scipy/scipy/pull/8673>`__: BUG: special: Use a stricter tolerance for the chndtr calculation.
+* `#8674 <https://github.com/scipy/scipy/pull/8674>`__: ENH: In the Dirichlet distribution allow x_i to be 0 if alpha_i...
+* `#8676 <https://github.com/scipy/scipy/pull/8676>`__: BUG: optimize: partial fix to linprog fails to detect infeasibility...
+* `#8685 <https://github.com/scipy/scipy/pull/8685>`__: DOC: Add interp1d-next/previous example to tutorial
+* `#8687 <https://github.com/scipy/scipy/pull/8687>`__: TST: netcdf: explicit mmap=True in test
+* `#8688 <https://github.com/scipy/scipy/pull/8688>`__: BUG: signal, stats: use Python sum() instead of np.sum for summing...
+* `#8689 <https://github.com/scipy/scipy/pull/8689>`__: TST: bump tolerances in tests
+* `#8690 <https://github.com/scipy/scipy/pull/8690>`__: DEP: deprecate stats.itemfreq
+* `#8691 <https://github.com/scipy/scipy/pull/8691>`__: BLD: special: fix build vs. dd_real.h package
+* `#8695 <https://github.com/scipy/scipy/pull/8695>`__: DOC: Improve examples in signal.find_peaks with ECG signal
+* `#8697 <https://github.com/scipy/scipy/pull/8697>`__: BUG: Fix `setup.py build install egg_info`, which did not previously...
+* `#8704 <https://github.com/scipy/scipy/pull/8704>`__: TST: linalg: drop large size from solve() test
+* `#8705 <https://github.com/scipy/scipy/pull/8705>`__: DOC: Describe signal.find_peaks and related functions behavior...
+* `#8706 <https://github.com/scipy/scipy/pull/8706>`__: DOC: Specify encoding of rst file, remove an ambiguity in an...
+* `#8710 <https://github.com/scipy/scipy/pull/8710>`__: MAINT: fix an import cycle sparse -> special -> integrate ->...
+* `#8711 <https://github.com/scipy/scipy/pull/8711>`__: ENH: remove an avoidable overflow in scipy.stats.norminvgauss.pdf()
+* `#8716 <https://github.com/scipy/scipy/pull/8716>`__: BUG: interpolate: allow list inputs for make_interp_spline(...,...
+* `#8720 <https://github.com/scipy/scipy/pull/8720>`__: np.testing import that is compatible with numpy 1.15
+* `#8724 <https://github.com/scipy/scipy/pull/8724>`__: CI: don't use pyproject.toml in the CI builds

@@ -81,7 +81,7 @@ double x;
     int flag;
 
     if (x < 0.0) {
-	mtherr("spence", DOMAIN);
+	sf_error("spence", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 

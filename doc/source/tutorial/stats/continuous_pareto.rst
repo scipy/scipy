@@ -4,7 +4,7 @@
 Pareto Distribution
 ===================
 
-For :math:`x\geq1` and :math:`b>0` . Standard form is
+One shape parameter :math:`b>0` and support :math:`x\geq1`. The standard form is
 
 .. math::
    :nowrap:

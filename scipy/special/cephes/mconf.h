@@ -12,14 +12,9 @@
  *
  * DESCRIPTION:
  *
- * This file contains definitions for error codes that are
- * passed to the common error handling routine mtherr()
- * (which see).
+ * The file includes a conditional assembly definition for the type of
+ * computer arithmetic (IEEE, Motorola IEEE, or UNKnown).
  *
- * The file also includes a conditional assembly definition
- * for the type of computer arithmetic (IEEE, Motorola
- * IEEE, or UNKnown).
- * 
  * For little-endian computers, such as IBM PC, that follow the
  * IEEE Standard for Binary Floating Point Arithmetic (ANSI/IEEE
  * Std 754-1985), the symbol IBMPC should be defined.  These
@@ -62,32 +57,13 @@
 #include <numpy/npy_math.h>
 
 #include "cephes_names.h"
-#include "protos.h"
+#include "cephes.h"
 #include "polevl.h"
+#include "sf_error.h"
 
-/* Constant definitions for math error conditions
- */
-
-#define DOMAIN		1	/* argument domain error */
-#define SING		2	/* argument singularity */
-#define OVERFLOW	3	/* overflow range error */
-#define UNDERFLOW	4	/* underflow range error */
-#define TLOSS		5	/* total loss of precision */
-#define PLOSS		6	/* partial loss of precision */
-#define TOOMANY         7	/* too many iterations */
 #define MAXITER        500
-
 #define EDOM		33
 #define ERANGE		34
-
-/* Long double complex numeral.  */
-/*
- * typedef struct
- * {
- * long double r;
- * long double i;
- * } cmplxl;
- */
 
 /* Type of computer arithmetic */
 

@@ -18,7 +18,7 @@
  *
  *                 inf.
  *                  -        -x
- *   zeta(x,q)  =   >   (k+q)  
+ *   zeta(x,q)  =   >   (k+q)
  *                  -
  *                 k=0
  *
@@ -26,11 +26,11 @@
  * The Euler-Maclaurin summation formula is used to obtain
  * the expansion
  *
- *                n         
+ *                n
  *                -       -x
- * zeta(x,q)  =   >  (k+q)  
- *                -         
- *               k=1        
+ * zeta(x,q)  =   >  (k+q)
+ *                -
+ *               k=1
  *
  *           1-x                 inf.  B   x(x+1)...(x+2j)
  *      (n+q)           1         -     2j
@@ -97,13 +97,13 @@ double x, q;
 
     if (x < 1.0) {
       domerr:
-	mtherr("zeta", DOMAIN);
+	sf_error("zeta", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
     if (q <= 0.0) {
 	if (q == floor(q)) {
-	    mtherr("zeta", SING);
+	    sf_error("zeta", SF_ERROR_SINGULAR, NULL);
 	  retinf:
 	    return (NPY_INFINITY);
 	}
@@ -112,14 +112,14 @@ double x, q;
     }
 
     /* Asymptotic expansion
-     * http://dlmf.nist.gov/25.11#E43
+     * https://dlmf.nist.gov/25.11#E43
      */
     if (q > 1e8) {
         return (1/(x - 1) + 1/(2*q)) * pow(q, 1 - x);
     }
 
     /* Euler-Maclaurin summation formula */
-    
+
     /* Permit negative q but continue sum until n+q > +9 .
      * This case should be handled by a reflection formula.
      * If q<0 and x is an integer, there is a relation to
@@ -137,7 +137,7 @@ double x, q;
         if (fabs(b / s) < MACHEP)
             goto done;
     }
-    
+
     w = a;
     s += b * w / (x - 1.0);
     s -= 0.5 * b;

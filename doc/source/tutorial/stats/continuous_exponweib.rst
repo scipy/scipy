@@ -4,7 +4,7 @@
 Exponentiated Weibull Distribution
 ==================================
 
-Two positive shape parameters :math:`a` and :math:`c` and :math:`x\in\left(0,\infty\right)`
+Two positive shape parameters :math:`a,c>0`, and the support is :math:`x\in\left[0,\infty\right)`.
 
 .. math::
    :nowrap:

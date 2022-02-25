@@ -84,7 +84,7 @@ C     Formula  26.5.24    of   Abramowitz  and    Stegun,  Handbook   of
 C     Mathematical   Functions (1966) is   used  to reduce the  binomial
 C     distribution  to  the  cumulative incomplete    beta distribution.
 C
-C     Computation of other parameters involve a seach for a value that
+C     Computation of other parameters involve a search for a value that
 C     produces  the desired  value  of P.   The search relies  on  the
 C     monotinicity of P with the other parameter.
 C
@@ -118,7 +118,7 @@ C     ..
 C     .. Intrinsic Functions ..
       INTRINSIC abs
 C     ..
-      IF (.NOT. ((which.LT.1).AND. (which.GT.4))) GO TO 30
+      IF (.NOT. ((which.LT.1).OR. (which.GT.4))) GO TO 30
       IF (.NOT. (which.LT.1)) GO TO 10
       bound = 1.0D0
       GO TO 20

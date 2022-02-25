@@ -2,7 +2,7 @@ c       this file contains the following user-callable routines:
 c
 c
 c       routine idz_house calculates the vector and scalar
-c       needed to apply the Householder tranformation reflecting
+c       needed to apply the Householder transformation reflecting
 c       a given vector into its first component.
 c
 c       routine idz_houseapp applies a Householder matrix to a vector.

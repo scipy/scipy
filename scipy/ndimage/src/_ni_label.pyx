@@ -55,7 +55,7 @@ ctypedef fused data_t:
 ######################################################################
 cdef void fused_nonzero_line(data_t *p, np.intp_t stride,
                              np.uintp_t *line, np.intp_t L) nogil:
-    cdef np.uintp_t i
+    cdef np.intp_t i
     for i in range(L):
         line[i] = FOREGROUND if \
             (<data_t *> ((<char *> p) + i * stride))[0] \
@@ -67,7 +67,7 @@ cdef void fused_nonzero_line(data_t *p, np.intp_t stride,
 ######################################################################
 cdef void fused_read_line(data_t *p, np.intp_t stride,
                           np.uintp_t *line, np.intp_t L) nogil:
-    cdef np.uintp_t i
+    cdef np.intp_t i
     for i in range(L):
         line[i] = <np.uintp_t> (<data_t *> ((<char *> p) + i * stride))[0]
 
@@ -78,7 +78,7 @@ cdef void fused_read_line(data_t *p, np.intp_t stride,
 ######################################################################
 cdef bint fused_write_line(data_t *p, np.intp_t stride,
                            np.uintp_t *line, np.intp_t L) nogil:
-    cdef np.uintp_t i
+    cdef np.intp_t i
     for i in range(L):
         # Check before overwrite, as this prevents us accidentally writing a 0
         # in the foreground, which allows us to retry even when operating
@@ -176,7 +176,7 @@ cdef np.uintp_t label_line_with_neighbor(np.uintp_t *line,
                                          np.uintp_t next_region,
                                          np.uintp_t *mergetable) nogil:
     cdef:
-        np.uintp_t i
+        np.intp_t i
 
     for i in range(L):
         if line[i] != BACKGROUND:
@@ -209,7 +209,7 @@ cpdef _label(np.ndarray input,
         ("Shapes must match for input and output,"
          "{} != {}".format((<object> input).shape, (<object> output).shape))
 
-    structure = np.asanyarray(structure, dtype=np.int).copy()
+    structure = np.asanyarray(structure, dtype=np.int_).copy()
     assert input.ndim == structure.ndim, \
         ("Structuring element must have same "
          "# of dimensions as input, "
@@ -228,9 +228,9 @@ cpdef _label(np.ndarray input,
     assert input.ndim > 0 and input.size > 0, "Cannot label scalars or empty arrays"
 
     # if we're handed booleans, we treat them as uint8s
-    if input.dtype == np.bool:
+    if input.dtype == np.bool_:
         input = input.view(dtype=np.uint8)
-    if output.dtype == np.bool:
+    if output.dtype == np.bool_:
         # XXX - trigger special check for bit depth?
         output = output.view(dtype=np.uint8)
 
@@ -249,13 +249,14 @@ cpdef _label(np.ndarray input,
         np.intp_t L, delta, i
         np.intp_t si, so, ss
         np.intp_t total_offset
+        np.intp_t output_ndim, structure_ndim, strides
         bint needs_self_labeling, valid, center, use_previous, overflowed
         np.ndarray _line_buffer, _neighbor_buffer
         np.uintp_t *line_buffer
         np.uintp_t *neighbor_buffer
         np.uintp_t *tmp
         np.uintp_t next_region, src_label, dest_label
-        int mergetable_size
+        np.uintp_t mergetable_size
         np.uintp_t *mergetable
 
     axis = -1  # choose best axis based on output
@@ -269,7 +270,7 @@ cpdef _label(np.ndarray input,
 
     # we only process this many neighbors from the itstruct iterator before
     # reaching the center, where we stop
-    num_neighbors = (structure.size / 3) // 2
+    num_neighbors = structure.size // (3 * 2)
 
     # Create two buffer arrays for reading/writing labels.
     # Add an entry at the end and beginning to simplify some bounds checks.
@@ -301,16 +302,19 @@ cpdef _label(np.ndarray input,
         # 2... = working labels, will be compacted on output
         next_region = 2
 
-        # Used for labeling single lines
-        temp = [1] * structure.ndim
+        structure_ndim = structure.ndim
+        temp = [1] * structure_ndim
         temp[axis] = 0
         use_previous = (structure[tuple(temp)] != 0)
+        output_ndim = output.ndim
+        output_shape = output.shape
+        output_strides = output.strides
 
         with nogil:
             while PyArray_ITER_NOTDONE(iti):
                 # Optimization - for 2D, line_buffer becomes next iteration's
                 # neighbor buffer
-                if output.ndim == 2:
+                if output_ndim == 2:
                     tmp = line_buffer
                     line_buffer = neighbor_buffer
                     neighbor_buffer = tmp
@@ -318,6 +322,7 @@ cpdef _label(np.ndarray input,
                 # copy nonzero values in input to line_buffer as FOREGROUND
                 nonzero_line(PyArray_ITER_DATA(iti), si, line_buffer, L)
 
+                # Used for labeling single lines
                 needs_self_labeling = True
 
                 # Take neighbor labels
@@ -335,20 +340,20 @@ cpdef _label(np.ndarray input,
                     # Check that the neighbor line is in bounds
                     valid = True
                     total_offset = 0
-                    for idim in range(structure.ndim):
+                    for idim in range(structure_ndim):
                         if idim == axis:
                             continue
                         delta = (itstruct.coordinates[idim] - 1)  # 1,1,1... is center
-                        if not (0 <= (ito.coordinates[idim] + delta) < output.shape[idim]):
+                        if not (0 <= (ito.coordinates[idim] + delta) < output_shape[idim]):
                             valid = False
                             break
-                        total_offset += delta * output.strides[idim]
+                        total_offset += delta * output_strides[idim]
 
                     if valid:
                         # Optimization (see above) - for 2D, line_buffer
                         # becomes next iteration's neighbor buffer, so no
                         # need to read it here.
-                        if output.ndim != 2:
+                        if output_ndim != 2:
                             read_line(<char *> PyArray_ITER_DATA(ito) + total_offset, so,
                                       neighbor_buffer, L)
 
@@ -429,7 +434,7 @@ cpdef _label(np.ndarray input,
                     line_buffer[i] = mergetable[line_buffer[i]]
                 write_line(PyArray_ITER_DATA(ito), so, line_buffer, L)
                 PyArray_ITER_NEXT(ito)
-    except:
+    except:  # noqa: E722
         # clean up and re-raise
         PyDataMem_FREE(<void *> mergetable)
         raise

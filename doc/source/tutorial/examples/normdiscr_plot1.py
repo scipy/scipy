@@ -2,13 +2,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy import stats
 
-npoints = 20 # number of integer support points of the distribution minus 1
-npointsh = npoints / 2
+npoints = 20  # number of integer support points of the distribution minus 1
+npointsh = npoints // 2
 npointsf = float(npoints)
-nbound = 4 #bounds for the truncated normal
-normbound = (1 + 1 / npointsf) * nbound #actual bounds of truncated normal
-grid = np.arange(-npointsh, npointsh+2, 1) #integer grid
-gridlimitsnorm = (grid-0.5) / npointsh * nbound #bin limits for the truncnorm
+nbound = 4  # bounds for the truncated normal
+normbound = (1 + 1/npointsf) * nbound  # actual bounds of truncated normal
+grid = np.arange(-npointsh, npointsh+2, 1)  # integer grid
+gridlimitsnorm = (grid-0.5) / npointsh * nbound  # bin limits for the truncnorm
 gridlimits = grid - 0.5
 grid = grid[:-1]
 probs = np.diff(stats.truncnorm.cdf(gridlimitsnorm, -normbound, normbound))
@@ -17,12 +17,10 @@ normdiscrete = stats.rv_discrete(
                         values=(gridint, np.round(probs, decimals=7)),
                         name='normdiscrete')
 
-
 n_sample = 500
-np.random.seed(87655678) #fix the seed for replicability
-rvs = normdiscrete.rvs(size=n_sample)
-rvsnd=rvs
-f,l = np.histogram(rvs, bins=gridlimits)
+rng = np.random.default_rng()
+rvs = normdiscrete.rvs(size=n_sample, random_state=rng)
+f, l = np.histogram(rvs, bins=gridlimits)
 sfreq = np.vstack([gridint, f, probs*n_sample]).T
 fs = sfreq[:,1] / float(n_sample)
 ft = sfreq[:,2] / float(n_sample)

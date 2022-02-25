@@ -76,7 +76,7 @@ C     Cody, W.D. (1993). "ALGORITHM 715: SPECFUN - A Portabel FORTRAN
 C     Package of Special Function Routines and Test Drivers"
 C     acm Transactions on Mathematical Software. 19, 22-32.
 C
-C     is used to calulate the  cumulative standard normal distribution.
+C     is used to calculate the cumulative standard normal distribution.
 C
 C     The rational functions from pages  90-95  of Kennedy and Gentle,
 C     Statistical  Computing,  Marcel  Dekker, NY,  1980 are  used  as

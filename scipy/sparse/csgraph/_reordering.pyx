@@ -1,16 +1,23 @@
-# Author: Paul Nation  -- <pnation@korea.ac.kr>
+# Author: Paul Nation  -- <nonhermitian@gmail.com>
 # Original Source: QuTiP: Quantum Toolbox in Python (qutip.org)
 # License: New BSD, (C) 2014
 
 import numpy as np
 cimport numpy as np
+from warnings import warn
+from scipy.sparse import (csc_matrix, csr_matrix, isspmatrix, isspmatrix_coo,
+                          isspmatrix_csc, isspmatrix_csr,
+                          SparseEfficiencyWarning)
+from . import maximum_bipartite_matching
 
-from scipy.sparse import isspmatrix_csr, isspmatrix_csc, isspmatrix_coo
+np.import_array()
 
 include 'parameters.pxi'
 
 def reverse_cuthill_mckee(graph, symmetric_mode=False):
     """
+    reverse_cuthill_mckee(graph, symmetric_mode=False)
+    
     Returns the permutation array that orders a sparse CSR or CSC matrix
     in Reverse-Cuthill McKee ordering.  
     
@@ -39,6 +46,28 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     ----------
     E. Cuthill and J. McKee, "Reducing the Bandwidth of Sparse Symmetric Matrices",
     ACM '69 Proceedings of the 1969 24th national conference, (1969).
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import reverse_cuthill_mckee
+
+    >>> graph = [
+    ... [0, 1, 2, 0],
+    ... [0, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 0, 0, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+
+    >>> reverse_cuthill_mckee(graph)
+    array([3, 2, 1, 0], dtype=int32)
     
     """
     if not (isspmatrix_csc(graph) or isspmatrix_csr(graph)):
@@ -47,58 +76,6 @@ def reverse_cuthill_mckee(graph, symmetric_mode=False):
     if not symmetric_mode:
         graph = graph+graph.transpose()
     return _reverse_cuthill_mckee(graph.indices, graph.indptr, nrows)
-
-
-def maximum_bipartite_matching(graph, perm_type='row'):
-    """
-    Returns an array of row or column permutations that makes
-    the diagonal of a nonsingular square CSC sparse matrix zero free.  
-    
-    Such a permutation is always possible provided that the matrix 
-    is nonsingular. This function looks at the structure of the matrix 
-    only. The input matrix will be converted to CSC matrix format if
-    necessary.
-
-    Parameters
-    ----------
-    graph : sparse matrix
-        Input sparse in CSC format
-    perm_type : str, {'row', 'column'}
-        Type of permutation to generate.
-
-    Returns
-    -------
-    perm : ndarray
-        Array of row or column permutations.
-
-    Notes
-    -----
-    This function relies on a maximum cardinality bipartite matching 
-    algorithm based on a breadth-first search (BFS) of the underlying 
-    graph.
-
-    .. versionadded:: 0.15.0
-
-    References
-    ----------
-    I. S. Duff, K. Kaya, and B. Ucar, "Design, Implementation, and 
-    Analysis of Maximum Transversal Algorithms", ACM Trans. Math. Softw.
-    38, no. 2, (2011).
-
-    """
-    cdef np.npy_intp nrows = graph.shape[0]
-    if nrows != graph.shape[1]:
-        raise ValueError('Maximum bipartite matching requires a square matrix.')
-    if isspmatrix_csr(graph) or isspmatrix_coo(graph):
-        graph = graph.tocsc()
-    elif not isspmatrix_csc(graph):
-        raise TypeError("graph must be in CSC, CSR, or COO format.")
-    if perm_type == 'column':
-        graph = graph.transpose().tocsc()
-    perm = _maximum_bipartite_matching(graph.indices, graph.indptr, nrows)
-    if np.any(perm==-1):
-        raise Exception('Possibly singular input matrix.')
-    return perm
 
 
 cdef _node_degrees(
@@ -192,58 +169,72 @@ def _reverse_cuthill_mckee(np.ndarray[int32_or_int64, ndim=1, mode="c"] ind,
     return order[::-1]
 
 
-def _maximum_bipartite_matching(
-        np.ndarray[int32_or_int64, ndim=1, mode="c"] inds,
-        np.ndarray[int32_or_int64, ndim=1, mode="c"] ptrs,
-        np.npy_intp n):
+def structural_rank(graph):
     """
-    Maximum bipartite matching of a graph in CSC format.
+    structural_rank(graph)
+    
+    Compute the structural rank of a graph (matrix) with a given 
+    sparsity pattern.
+
+    The structural rank of a matrix is the number of entries in the maximum 
+    transversal of the corresponding bipartite graph, and is an upper bound 
+    on the numerical rank of the matrix. A graph has full structural rank 
+    if it is possible to permute the elements to make the diagonal zero-free.
+
+    .. versionadded:: 0.19.0
+
+    Parameters
+    ----------
+    graph : sparse matrix
+        Input sparse matrix.
+
+    Returns
+    -------
+    rank : int
+        The structural rank of the sparse graph.
+    
+    References
+    ----------
+    .. [1] I. S. Duff, "Computing the Structural Index", SIAM J. Alg. Disc. 
+            Meth., Vol. 7, 594 (1986).
+    
+    .. [2] http://www.cise.ufl.edu/research/sparse/matrices/legend.html
+
+    Examples
+    --------
+    >>> from scipy.sparse import csr_matrix
+    >>> from scipy.sparse.csgraph import structural_rank
+
+    >>> graph = [
+    ... [0, 1, 2, 0],
+    ... [1, 0, 0, 1],
+    ... [2, 0, 0, 3],
+    ... [0, 1, 3, 0]
+    ... ]
+    >>> graph = csr_matrix(graph)
+    >>> print(graph)
+      (0, 1)	1
+      (0, 2)	2
+      (1, 0)	1
+      (1, 3)	1
+      (2, 0)	2
+      (2, 3)	3
+      (3, 1)	1
+      (3, 2)	3
+
+    >>> structural_rank(graph)
+    4
+
     """
-    cdef np.ndarray[int32_or_int64] visited = np.zeros(n, dtype=inds.dtype)
-    cdef np.ndarray[ITYPE_t] queue = np.zeros(n, dtype=ITYPE)
-    cdef np.ndarray[ITYPE_t] previous = np.zeros(n, dtype=ITYPE)
-    cdef np.ndarray[int32_or_int64] match = np.empty(n, dtype=inds.dtype)
-    cdef np.ndarray[ITYPE_t] row_match = np.empty(n, dtype=ITYPE)
-    cdef np.npy_intp queue_ptr, queue_col, ptr, i, j, queue_size
-    cdef np.npy_intp col, next_num = 1
-    cdef int32_or_int64 row, temp, eptr
-
-    for i in range(n):
-        match[i] = -1
-        row_match[i] = -1
-
-    for i in range(n):
-        if match[i] == -1 and (ptrs[i] != ptrs[i + 1]):
-            queue[0] = i
-            queue_ptr = 0
-            queue_size = 1
-            while (queue_size > queue_ptr):
-                queue_col = queue[queue_ptr]
-                queue_ptr += 1
-                eptr = ptrs[queue_col + 1]
-                for ptr in range(ptrs[queue_col], eptr):
-                    row = inds[ptr]
-                    temp = visited[row]
-                    if (temp != next_num and temp != -1):
-                        previous[row] = queue_col
-                        visited[row] = next_num
-                        col = row_match[row]
-                        if (col == -1):
-                            while (row != -1):
-                                col = previous[row]
-                                temp = match[col]
-                                match[col] = row
-                                row_match[row] = col
-                                row = temp
-                            next_num += 1
-                            queue_size = 0
-                            break
-                        else:
-                            queue[queue_size] = col
-                            queue_size += 1
-
-            if match[i] == -1:
-                for j in range(1, queue_size):
-                    visited[match[queue[j]]] = -1
-
-    return match
+    if not isspmatrix:
+        raise TypeError('Input must be a sparse matrix')
+    if not isspmatrix_csr(graph):
+        if not (isspmatrix_csc(graph) or isspmatrix_coo(graph)):
+            warn('Input matrix should be in CSC, CSR, or COO matrix format',
+                    SparseEfficiencyWarning)
+        graph = csr_matrix(graph)
+    # If A is a tall matrix, then transpose.
+    if graph.shape[0] > graph.shape[1]:
+        graph = graph.T.tocsr()
+    rank = np.sum(maximum_bipartite_matching(graph) >= 0)
+    return rank

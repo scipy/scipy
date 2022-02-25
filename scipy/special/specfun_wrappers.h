@@ -20,32 +20,29 @@
 #define ABSQ(z) (z).real*(z).real + (z).imag*(z).imag;
 #define ZCONVINF(func,z)                                                \
     do {                                                                \
-        if (REAL((z)) == 1.0e300) {                                     \
+        if ((double)REAL((z)) == (double)1.0e300) {                     \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
             REAL((z)) = NPY_INFINITY;                                   \
         }                                                               \
-        if (REAL((z)) == -1.0e300) {                                    \
+        if ((double)REAL((z)) == (double)-1.0e300) {                    \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
             REAL((z)) = -NPY_INFINITY;                                  \
         }                                                               \
     } while (0)
 #define CONVINF(func, x)                                                \
     do {                                                                \
-        if ((x) == 1.0e300) {                                           \
+        if ((double)(x) == (double)1.0e300) {                           \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
             (x)=NPY_INFINITY;                                           \
         }                                                               \
-        if ((x)==-1.0e300) {                                            \
+        if ((double)(x) == (double)-1.0e300) {                          \
             sf_error(func, SF_ERROR_OVERFLOW, NULL);                    \
             (x)=-NPY_INFINITY;                                          \
         }                                                               \
     } while (0)
 #define ABS(x) ((x)<0 ? -(x) : (x))
 
-npy_cdouble cgamma_wrap( npy_cdouble z);
 npy_cdouble clngamma_wrap( npy_cdouble z);
-npy_cdouble cpsi_wrap( npy_cdouble z);
-npy_cdouble crgamma_wrap( npy_cdouble z);
 npy_cdouble chyp2f1_wrap( double a, double b, double c, npy_cdouble z);
 npy_cdouble chyp1f1_wrap( double a, double b, npy_cdouble z);
 double hyp1f1_wrap( double a, double b, double x);
