@@ -3540,30 +3540,31 @@ class ortho_group_gen(multi_rv_generic):
 
 ortho_group = ortho_group_gen()
 
+
 class ortho_group_frozen(multi_rv_frozen):
     def __init__(self, dim=None, seed=None):
         """Create a frozen O(N) distribution.
-        
+
         Parameters
         ----------
         dim : scalar
             Dimension of matrices
         seed : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
-                
+
             If `seed` in None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` in an int, a new ``RandomState`` instance is used,
             seeded with `seed`.
             If `seed` is already a ``Generator`` or ``RandomState`` instance
             then that instance is used.
-        
+
         Examples
         --------
         >>> from scipy.stats import ortho_group
         >>> g = ortho_group(5)
         >>> x = g.rvs()
-        
+
         """
         self._dist = ortho_group_gen(seed)
         self.dim = self._dist._process_parameters(dim)
