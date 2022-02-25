@@ -18,7 +18,7 @@ Examples:
         $ doit test -m <flag> -f <module name>
         $ doit doc-build
         $ doit bench --flag -s / doit bench -m -s
-        $ doit bench --flag -t / doit bench -m -s
+        $ doit bench --flag -t / doit bench -m -t
         $ doit release-authors -p 1.7.0 -c 1.8.0
 """
 
