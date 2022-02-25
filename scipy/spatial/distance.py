@@ -1712,6 +1712,7 @@ def psi(p, q):
     psi_vec = (p - q) * log_ratio
     return np.nansum(psi_vec)
 
+
 _convert_to_double = partial(_convert_to_type, out_type=np.double)
 _convert_to_bool = partial(_convert_to_type, out_type=bool)
 
