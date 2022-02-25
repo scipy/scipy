@@ -93,7 +93,8 @@ def _initialize_direction_numbers():
 
     global is_initialized
     if not is_initialized:
-        dns = np.load(os.path.join(os.path.dirname(__file__), "_sobol_direction_numbers.npz"))
+        dns = np.load(os.path.join(os.path.dirname(__file__),
+                      "_sobol_direction_numbers.npz"))
         dns_poly = dns["poly"].astype(np.uint64)
         dns_vinit = dns["vinit"].astype(np.uint64)
         for i in range(MAXDIM):
@@ -193,6 +194,7 @@ cdef int ibits(const cnp.uint64_t x, const int pos, const int length) nogil:
 cpdef void _initialize_v(
     cnp.uint64_t[:, ::1] v, const int dim, const int maxbit
 ):
+    """Initialize matrix of size ``dim * maxbit`` with direction numbers."""
     cdef int d, i, j, k, m
     cdef cnp.uint64_t p, newv, pow2
 
@@ -295,6 +297,7 @@ cpdef void _cscramble(const int dim,
                       const int maxbit,
                       cnp.uint64_t[:, :, ::1] ltm,
                       cnp.uint64_t[:, ::1] sv) nogil:
+    """Scrambling using (left) linear matrix scramble (LMS)."""
     cdef int d, i, j, k, p
     cdef cnp.uint64_t l, lsmdp, t1, t2, vdj
 

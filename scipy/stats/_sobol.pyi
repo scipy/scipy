@@ -4,11 +4,13 @@ from typing_extensions import Literal
 
 def _initialize_v(
     v : np.ndarray, 
-    dim : IntNumber
+    dim : IntNumber,
+    maxbit: IntNumber
 ) -> None: ...
 
 def _cscramble (
     dim : IntNumber,
+    maxbit: IntNumber,
     ltm : np.ndarray,
     sv: np.ndarray
 ) -> None: ...
@@ -22,9 +24,11 @@ def _draw(
     n : IntNumber,
     num_gen: IntNumber,
     dim: IntNumber,
+    maxbit: IntNumber,
+    scale: float,
     sv: np.ndarray,
     quasi: np.ndarray,
-    result: np.ndarray
+    sample: np.ndarray
     ) -> None: ...
 
 def _fast_forward(

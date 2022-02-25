@@ -1325,13 +1325,13 @@ class Sobol(QMCEngine):
     MAXDIM: ClassVar[int] = _MAXDIM
 
     def __init__(
-            self, d: IntNumber, *, scramble: bool = True,
-            bits: IntNumber = 30, seed: SeedType = None
+        self, d: IntNumber, *, scramble: bool = True,
+        bits: IntNumber = 30, seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         if d > self.MAXDIM:
             raise ValueError(
-                "Maximum supported dimensionality is {}.".format(self.MAXDIM)
+                f"Maximum supported dimensionality is {self.MAXDIM}."
             )
 
         self.MAXBIT = bits
@@ -1487,11 +1487,15 @@ class Sobol(QMCEngine):
 
         """
         if self.num_generated == 0:
-            _fast_forward(n=n - 1, num_gen=self.num_generated, dim=self.d,
-                          sv=self._sv, quasi=self._quasi)
+            _fast_forward(
+                n=n - 1, num_gen=self.num_generated, dim=self.d,
+                sv=self._sv, quasi=self._quasi
+            )
         else:
-            _fast_forward(n=n, num_gen=self.num_generated - 1, dim=self.d,
-                          sv=self._sv, quasi=self._quasi)
+            _fast_forward(
+                n=n, num_gen=self.num_generated - 1, dim=self.d,
+                sv=self._sv, quasi=self._quasi
+            )
         self.num_generated += n
         return self
 

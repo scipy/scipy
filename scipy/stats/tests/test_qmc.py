@@ -661,13 +661,11 @@ class TestSobol(QMCEngineTests):
     def test_random_base2(self):
         engine = qmc.Sobol(2, scramble=False)
         sample = engine.random_base2(2)
-        assert_array_equal(self.unscramble_nd[:4],
-                           sample)
+        assert_array_equal(self.unscramble_nd[:4], sample)
 
         # resampling still having N=2**n
         sample = engine.random_base2(2)
-        assert_array_equal(self.unscramble_nd[4:8],
-                           sample)
+        assert_array_equal(self.unscramble_nd[4:8], sample)
 
         # resampling again but leading to N!=2**n
         with pytest.raises(ValueError, match=r"The balance properties of "
@@ -696,7 +694,7 @@ class TestSobol(QMCEngineTests):
         ns = 2**bits
         sample = engine.random(ns)
         assert_array_equal(self.unscramble_nd[:ns], sample)
-        
+
         with pytest.raises(ValueError, match="increase the 'bits' size"):
             engine.random()
 
