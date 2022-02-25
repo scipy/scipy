@@ -1433,11 +1433,14 @@ class TestOrthoGroup:
     def test_frozen_matrix(self):
         dim = 7
         frozen = ortho_group(dim)
+        frozen_seed = ortho_group(dim, seed=1234)
 
         rvs1 = frozen.rvs(random_state=1234)
         rvs2 = ortho_group.rvs(dim, random_state=1234)
+        rvs3 = frozen_seed.rvs(size=1)
 
         assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
 
     def test_det_and_ortho(self):
         xs = [[ortho_group.rvs(dim)
