@@ -14,6 +14,11 @@ commands:
       - run:
           name: Check-skip
           command: |
+            if [ ! -d "scipy" ]; then
+              echo "Build was not run due to skip, exiting job ${CIRCLE_JOB} for PR ${CIRCLE_PULL_REQUEST}."
+              circleci-agent step halt;
+            fi
+
             export git_log=$(git log --max-count=1 --pretty=format:"%B" | tr "\n" " ")
             echo "Got commit message:"
             echo "${git_log}"
@@ -92,6 +97,7 @@ jobs:
       - attach_workspace:
           at: ~/
 
+      - check-skip
       - apt-install
 
       - run:
@@ -119,6 +125,7 @@ jobs:
       - attach_workspace:
           at: ~/
 
+      - check-skip
       - apt-install
 
       - run:
