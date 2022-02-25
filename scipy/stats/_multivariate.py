@@ -3472,6 +3472,18 @@ class ortho_group_gen(multi_rv_generic):
     This generates one random matrix from O(3). It is orthogonal and
     has a determinant of +1 or -1.
 
+    Alternatively, the object may be called (as a function) to fix the `dim`
+    parameter, returning a "frozen" ortho_group random variable:
+
+    >>> rv = ortho_group(5)
+    >>> # Frozen object with the same methods but holding the
+    >>> # dimension parameter fixed.
+    >>> rv.rvs(random_state=1234)
+    array([[ 0.22707382,  0.12568963,  0.95451943, -0.04452602, -0.13982017],
+        [-0.57365132, -0.69712849,  0.25624774,  0.33489085,  0.08438747],
+        [ 0.69008482, -0.54784192, -0.02599573, -0.05657903,  0.46880188],
+        [-0.15059348,  0.44259309,  0.11106863,  0.37911176,  0.79080402],
+        [-0.34708238, -0.0468463 ,  0.10108277, -0.8596154 ,  0.35802636]])
     """
 
     def __init__(self, seed=None):
