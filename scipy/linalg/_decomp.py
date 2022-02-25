@@ -425,7 +425,7 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
     >>> eigh(A, eigvals_only=True, subset_by_value=[-np.inf, 10])
     array([6.69199443e-07, 9.11938152e+00])
 
-    Request the largest second eigenvalue and its eigenvector
+    Request the second smallest eigenvalue and its eigenvector
 
     >>> w, v = eigh(A, subset_by_index=[1, 1])
     >>> w
