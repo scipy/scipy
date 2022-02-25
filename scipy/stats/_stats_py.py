@@ -7563,7 +7563,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     to be rejected.
 
     >>> from scipy import stats
-    >>> rng = np.random.default_rng(1638083107694713882823079058616272161)
+    >>> rng = np.random.default_rng()
     >>> sample1 = stats.uniform.rvs(size=100, random_state=rng)
     >>> sample2 = stats.norm.rvs(size=110, random_state=rng)
     >>> stats.ks_2samp(sample1, sample2)
@@ -7775,54 +7775,66 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
 
     Examples
     --------
+    Suppose we wish to test the null hypothesis that a sample is distributed
+    according to the standard normal.
+    We choose a confidence level of 95%; that is, we will reject the null
+    hypothesis in favor of the alternative if the p-value is less than 0.05.
+
+    When testing uniformly distributed data, we would expect the
+    null hypothesis to be rejected.
+
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
+    >>> stats.kstest(stats.uniform.rvs(size=100, random_state=rng),
+    ...              stats.norm.cdf)
+    KstestResult(statistic=0.5001899973268688, pvalue=1.1616392184763533e-23)
 
-    >>> x = np.linspace(-15, 15, 9)
-    >>> stats.kstest(x, 'norm')
-    KstestResult(statistic=0.444356027159..., pvalue=0.038850140086...)
+    Indeed, the p-value is lower than our threshold of 0.05, so we reject the
+    null hypothesis in favor of the default "two-sided" alternative: the data
+    are *not* distributed according to the standard normal.
 
-    >>> stats.kstest(stats.norm.rvs(size=100, random_state=rng), stats.norm.cdf)
-    KstestResult(statistic=0.165471391799..., pvalue=0.007331283245...)
+    When testing random variates from the standard normal distribution, we
+    expect the data to be consistent with the null hypothesis most of the time.
 
-    The above lines are equivalent to:
+    >>> x = stats.norm.rvs(size=100, random_state=rng)
+    >>> stats.kstest(x, stats.norm.cdf)
+    KstestResult(statistic=0.05345882212970396, pvalue=0.9227159037744717)
 
-    >>> stats.kstest(stats.norm.rvs, 'norm', N=100)
-    KstestResult(statistic=0.113810164200..., pvalue=0.138690052319...)  # may vary
+    As expected, the p-value of 0.92 is not below our threshold of 0.05, so
+    we cannot reject the null hypothesis.
 
-    *Test against one-sided alternative hypothesis*
+    Suppose, however, that the random variates are distributed according to
+    a normal distribution that is shifted toward greater values. In this case,
+    the cumulative density function (CDF) of the underlying distribution tends
+    to be *less* than the CDF of the standard normal. Therefore, we would
+    expect the null hypothesis to be rejected with ``alternative='less'``:
 
-    Shift distribution to larger values, so that ``CDF(x) < norm.cdf(x)``:
+    >>> x = stats.norm.rvs(size=100, loc=0.5, random_state=rng)
+    >>> stats.kstest(x, stats.norm.cdf, alternative='less')
+    KstestResult(statistic=0.17482387821055168, pvalue=0.001913921057766743)
 
-    >>> x = stats.norm.rvs(loc=0.2, size=100, random_state=rng)
-    >>> stats.kstest(x, 'norm', alternative='less')
-    KstestResult(statistic=0.1002033514..., pvalue=0.1255446444...)
+    and indeed, with p-value smaller than our threshold, we reject the null
+    hypothesis in favor of the alternative.
 
-    Reject null hypothesis in favor of alternative hypothesis: less
+    For convenience, the previous test can be performed using the name of the
+    distribution as the second argument.
 
-    >>> stats.kstest(x, 'norm', alternative='greater')
-    KstestResult(statistic=0.018749806388..., pvalue=0.920581859791...)
+    >>> stats.kstest(x, "norm", alternative='less')
+    KstestResult(statistic=0.17482387821055168, pvalue=0.001913921057766743)
 
-    Don't reject null hypothesis in favor of alternative hypothesis: greater
+    The examples above have all been one-sample tests identical to those
+    performed by `ks_1samp`. Note that `kstest` can also perform two-sample
+    tests identical to those performed by `ks_2samp`. For example, when two
+    samples are drawn from the same distribution, we expect the data to be
+    consistent with the null hypothesis most of the time.
 
-    >>> stats.kstest(x, 'norm')
-    KstestResult(statistic=0.100203351482..., pvalue=0.250616879765...)
+    >>> sample1 = stats.laplace.rvs(size=105, random_state=rng)
+    >>> sample2 = stats.laplace.rvs(size=95, random_state=rng)
+    >>> stats.kstest(sample1, sample2)
+    KstestResult(statistic=0.11779448621553884, pvalue=0.4494256912629795)
 
-    *Testing t distributed random variables against normal distribution*
-
-    With 100 degrees of freedom the t distribution looks close to the normal
-    distribution, and the K-S test does not reject the hypothesis that the
-    sample came from the normal distribution:
-
-    >>> stats.kstest(stats.t.rvs(100, size=100, random_state=rng), 'norm')
-    KstestResult(statistic=0.064273776544..., pvalue=0.778737758305...)
-
-    With 3 degrees of freedom the t distribution looks sufficiently different
-    from the normal distribution, that we can reject the hypothesis that the
-    sample came from the normal distribution at the 10% level:
-
-    >>> stats.kstest(stats.t.rvs(3, size=100, random_state=rng), 'norm')
-    KstestResult(statistic=0.128678487493..., pvalue=0.066569081515...)
+    As expected, the p-value of 0.45 is not below our threshold of 0.05, so
+    we cannot reject the null hypothesis.
 
     """
     # to not break compatibility with existing code
