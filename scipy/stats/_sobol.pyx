@@ -298,8 +298,8 @@ cpdef void _cscramble(const int dim,
                       const int maxbit,
                       cnp.uint64_t[:, :, :] ltm,
                       cnp.uint64_t[:, :] sv) nogil:
-    cdef int d, i, j, k, l, p
-    cdef cnp.uint64_t lsmdp, t1, t2, vdj
+    cdef int d, i, j, k, p
+    cdef cnp.uint64_t l, lsmdp, t1, t2, vdj
 
     # Set diagonals of maxbit x maxbit arrays to 1
     for d in range(dim):
