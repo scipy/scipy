@@ -1353,7 +1353,12 @@ class Sobol(QMCEngine):
             self._scramble()
 
         self._quasi = self._shift.copy()
-        self._first_point = (self._quasi / 2 ** self.MAXBIT).reshape(1, -1)
+
+        # normalization constant with the largest possible number
+        # calculate in Python to not overflow int with 2**64
+        self._scale = 1.0 / 2 ** self.MAXBIT
+
+        self._first_point = (self._quasi * self._scale).reshape(1, -1)
 
     def _scramble(self) -> None:
         """Scramble the sequence using LMS+shift."""
@@ -1408,14 +1413,18 @@ class Sobol(QMCEngine):
             if n == 1:
                 sample = self._first_point
             else:
-                _draw(n=n - 1, num_gen=self.num_generated, dim=self.d,
-                      maxbit=self.MAXBIT,
-                      sv=self._sv, quasi=self._quasi, sample=sample)
+                _draw(
+                    n=n - 1, num_gen=self.num_generated, dim=self.d,
+                    maxbit=self.MAXBIT, scale=self._scale,
+                    sv=self._sv, quasi=self._quasi, sample=sample
+                )
                 sample = np.concatenate([self._first_point, sample])[:n]  # type: ignore[misc]
         else:
-            _draw(n=n, num_gen=self.num_generated - 1, dim=self.d,
-                  maxbit=self.MAXBIT, sv=self._sv, quasi=self._quasi,
-                  sample=sample)
+            _draw(
+                n=n, num_gen=self.num_generated - 1, dim=self.d,
+                maxbit=self.MAXBIT, scale=self._scale,
+                sv=self._sv, quasi=self._quasi, sample=sample
+            )
 
         self.num_generated += n
         return sample

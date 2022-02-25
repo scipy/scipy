@@ -242,17 +242,13 @@ cpdef void _draw(const cnp.uint64_t n,
                  const cnp.uint64_t num_gen,
                  const int dim,
                  const int maxbit,
+                 const float scale,
                  cnp.uint64_t[:, ::1] sv,
                  cnp.uint64_t[::1] quasi,
                  cnp.float_t[:, ::1] sample) nogil:
     cdef int j, l
     cdef cnp.uint64_t num_gen_loc = num_gen
     cdef cnp.uint64_t i, qtmp
-
-    # largest possible integer
-    cdef cnp.uint64_t largest_number = 2 ** maxbit
-    # normalization constant
-    cdef float scale = 1.0 / largest_number
 
     for i in range(n):
         l = low_0_bit(num_gen_loc)

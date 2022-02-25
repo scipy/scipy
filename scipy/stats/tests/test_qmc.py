@@ -700,6 +700,11 @@ class TestSobol(QMCEngineTests):
         with pytest.raises(ValueError, match="increase the 'bits' size"):
             engine.random()
 
+    def test_64bits(self):
+        engine = qmc.Sobol(2, scramble=False, bits=64)
+        sample = engine.random(8)
+        assert_array_equal(self.unscramble_nd, sample)
+
 class TestMultinomialQMC:
     def test_validations(self):
         # negative Ps
