@@ -1430,6 +1430,15 @@ class TestOrthoGroup:
         assert_raises(ValueError, ortho_group.rvs, 1)
         assert_raises(ValueError, ortho_group.rvs, 2.5)
 
+    def test_frozen_matrix(self):
+        dim = 7
+        frozen = ortho_group(dim)
+
+        rvs1 = frozen.rvs(random_state=1234)
+        rvs2 = ortho_group.rvs(dim, random_state=1234)
+
+        assert_equal(rvs1, rvs2)
+
     def test_det_and_ortho(self):
         xs = [[ortho_group.rvs(dim)
                for i in range(10)]
