@@ -1004,7 +1004,7 @@ class burr12_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `burr` is:
+    The probability density function for `burr12` is:
 
     .. math::
 
