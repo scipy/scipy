@@ -6,7 +6,8 @@ from pytest import raises as assert_raises
 import numpy as np
 from scipy.optimize._numdiff import group_columns
 from scipy.integrate import (
-    solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA)
+    solve_ivp, RK23, RK45, DOP853, Radau, BDF, LSODA,
+    Tsit5, Verner65, Verner76, Verner87, Verner98)
 from scipy.integrate import OdeSolution
 from scipy.integrate._ivp.common import num_jac
 from scipy.integrate._ivp.base import ConstantDenseOutput
@@ -143,14 +144,17 @@ def compute_error(y, y_true, rtol, atol):
 
 explicit_methods = [
     'RK23', 'RK45', 'DOP853',
+    'Tsit5', 'Verner65', 'Verner76', 'Verner87', 'Verner98'
 ]
 implicit_methods = ['Radau', 'BDF', 'LSODA']
 complex_methods = [
     'BDF', 'RK23', 'RK45', 'DOP853',
+    'Tsit5', 'Verner65', 'Verner76', 'Verner87', 'Verner98',
 ]
 methods = explicit_methods + implicit_methods
 method_classes = [
     RK23, RK45, DOP853,
+    Tsit5, Verner65, Verner76, Verner87, Verner98,
     Radau, BDF, LSODA,
 ]
 

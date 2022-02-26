@@ -2,7 +2,7 @@ import numpy as np
 from .base import OdeSolver, DenseOutput
 from .common import (validate_max_step, validate_tol, select_initial_step,
                      norm, warn_extraneous, validate_first_step)
-from . import dop853_coefficients
+from scipy.integrate._ivp import coefs
 
 # Multiply steps computed from asymptotic behaviour of errors by this.
 SAFETY = 0.9
@@ -63,9 +63,11 @@ def rk_step(fun, t, y, f, h, A, B, C, K):
         dy = np.dot(K[:s].T, a[:s]) * h
         K[s] = fun(t + c * h, y + dy)
 
-    y_new = y + h * np.dot(K[:-1].T, B)
+    y_new = y + h * np.dot(K[:B.size].T, B)
     f_new = fun(t + h, y_new)
 
+    # note that K[-1] is used in error estimates only for FSAL methods.
+    # for others, it represents the first extra stage required for dense output
     K[-1] = f_new
 
     return y_new, f_new
@@ -390,6 +392,91 @@ class RK45(RungeKutta):
         [0, 40617522/29380423, -110615467/29380423, 69997945/29380423]])
 
 
+class Tsit5(RungeKutta):
+    order = 5
+    error_estimator_order = 4
+    n_stages = 6
+
+    coefs = coefs.tsit5
+
+    C = coefs.C[:n_stages]
+    A = coefs.A[:n_stages, :n_stages]
+    B = coefs.B[:n_stages]
+    E = coefs.B - coefs.BH
+    P = coefs.P
+
+
+class VernerBase(RungeKutta):
+    n_stages_extended = NotImplemented
+    interp_order = NotImplemented
+
+    def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
+                 rtol=1e-3, atol=1e-6, vectorized=False,
+                 first_step=None, **extraneous):
+        self._set_coefficients()
+        super().__init__(fun, t0, y0, t_bound, max_step, rtol, atol,
+                         vectorized, first_step, **extraneous)
+        self.K_extended = np.empty((self.n_stages_extended,
+                                    self.n), dtype=self.y.dtype)
+        # last row is either FSAL or first extra stage for dense output SAL
+        self.K = self.K_extended[:self.n_stages+1]
+
+    def _dense_output_impl(self):
+        K = self.K_extended
+        h = self.h_previous
+        for s, (a, c) in enumerate(zip(self.A_EXTRA, self.C_EXTRA),
+                                   start=self.n_stages+1):
+            dy = np.dot(K[:s].T, a[:s]) * h
+            K[s] = self.fun(self.t_old + c * h, self.y_old + dy)
+
+        Q = K.T.dot(self.P)
+        return RkDenseOutput(self.t_old, self.t, self.y_old, Q)
+
+    def _set_coefficients(self):
+        coefs = self.coefs
+
+        self.n_stages = coefs.N_STAGES
+        self.n_stages_extended = coefs.N_STAGES_EXTENDED
+        self.interp_order = coefs.INTERPOLATOR_POWER
+
+        self.C = coefs.C[:self.n_stages]
+        self.A = coefs.A[:self.n_stages, :self.n_stages]
+        self.B = coefs.B[:self.n_stages]
+        self.E = coefs.B - coefs.BH
+
+        self.A_EXTRA = coefs.A[self.n_stages + 1:]
+        self.C_EXTRA = coefs.C[self.n_stages + 1:]
+        self.P = coefs.P
+
+
+# NOTE: only the 65 method is FSAL
+# for the others, the propagating stage (y(t + h)) is the same as the
+# first extra stage for dense output
+
+class Verner65(VernerBase):
+    order = 6
+    error_estimator_order = 5
+    coefs = coefs.verner65
+
+
+class Verner76(VernerBase):
+    order = 7
+    error_estimator_order = 6
+    coefs = coefs.verner76
+
+
+class Verner87(VernerBase):
+    order = 8
+    error_estimator_order = 7
+    coefs = coefs.verner87
+
+
+class Verner98(VernerBase):
+    order = 9
+    error_estimator_order = 8
+    coefs = coefs.verner98
+
+
 class DOP853(RungeKutta):
     """Explicit Runge-Kutta method of order 8.
 
@@ -472,25 +559,25 @@ class DOP853(RungeKutta):
     .. [2] `Page with original Fortran code of DOP853
             <http://www.unige.ch/~hairer/software.html>`_.
     """
-    n_stages = dop853_coefficients.N_STAGES
+    n_stages = coefs.dop853.N_STAGES
     order = 8
     error_estimator_order = 7
-    A = dop853_coefficients.A[:n_stages, :n_stages]
-    B = dop853_coefficients.B
-    C = dop853_coefficients.C[:n_stages]
-    E3 = dop853_coefficients.E3
-    E5 = dop853_coefficients.E5
-    D = dop853_coefficients.D
+    A = coefs.dop853.A[:n_stages, :n_stages]
+    B = coefs.dop853.B
+    C = coefs.dop853.C[:n_stages]
+    E3 = coefs.dop853.E3
+    E5 = coefs.dop853.E5
+    D = coefs.dop853.D
 
-    A_EXTRA = dop853_coefficients.A[n_stages + 1:]
-    C_EXTRA = dop853_coefficients.C[n_stages + 1:]
+    A_EXTRA = coefs.dop853.A[n_stages + 1:]
+    C_EXTRA = coefs.dop853.C[n_stages + 1:]
 
     def __init__(self, fun, t0, y0, t_bound, max_step=np.inf,
                  rtol=1e-3, atol=1e-6, vectorized=False,
                  first_step=None, **extraneous):
         super().__init__(fun, t0, y0, t_bound, max_step, rtol, atol,
                          vectorized, first_step, **extraneous)
-        self.K_extended = np.empty((dop853_coefficients.N_STAGES_EXTENDED,
+        self.K_extended = np.empty((coefs.dop853.N_STAGES_EXTENDED,
                                     self.n), dtype=self.y.dtype)
         self.K = self.K_extended[:self.n_stages + 1]
 
@@ -521,7 +608,7 @@ class DOP853(RungeKutta):
             dy = np.dot(K[:s].T, a[:s]) * h
             K[s] = self.fun(self.t_old + c * h, self.y_old + dy)
 
-        F = np.empty((dop853_coefficients.INTERPOLATOR_POWER, self.n),
+        F = np.empty((coefs.dop853.INTERPOLATOR_POWER, self.n),
                      dtype=self.y_old.dtype)
 
         f_old = K[0]

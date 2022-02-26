@@ -3,7 +3,6 @@ py3.install_sources([
     'base.py',
     'bdf.py',
     'common.py',
-    'dop853_coefficients.py',
     'ivp.py',
     'lsoda.py',
     'radau.py',
@@ -14,3 +13,4 @@ py3.install_sources([
 )
 
 subdir('tests')
+subdir('coefs')
