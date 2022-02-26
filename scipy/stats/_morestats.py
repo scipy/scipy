@@ -3236,6 +3236,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             prob = np.sum(pmf[r_plus:])
         else:
             prob = np.sum(pmf[:r_plus + 1])
+        prob = np.clip(prob, 0, 1)
 
     return WilcoxonResult(T, prob)
 
