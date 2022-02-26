@@ -150,6 +150,14 @@ class Factorial2(Benchmark):
     def time_factorial2_exact_false_array_negative_int(self):
         factorial2(self.negative_ints, exact=False)
 
+    @with_attributes(params=[(100, 1000, 2000)],
+                     param_names=['n'])
+    def time_factorial2_exact_true_scalar_positive_int(self, n):
+        factorial2(n, exact=True)
+
+    def time_factorial2_exact_true_scalar_negative_int(self):
+        factorial2(-10000, exact=True)
+
 
 class FactorialK(Benchmark):
     ...
