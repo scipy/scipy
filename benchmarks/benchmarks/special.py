@@ -110,6 +110,26 @@ class Factorial(Benchmark):
     def time_factorial_exact_false_array_negative_float(self):
         factorial(self.negative_floats, exact=False)
 
+    @with_attributes(params=[(100, 1000, 10000)],
+                     param_names=['n'])
+    def time_factorial_exact_true_scalar_positive_int(self, n):
+        factorial(n, exact=True)
+
+    def time_factorial_exact_true_scalar_negative_int(self):
+        factorial(-10000, exact=True)
+
+    def time_factorial_exact_true_scalar_negative_float(self):
+        factorial(-10000.8, exact=True)
+
+    def time_factorial_exact_true_array_positive_int(self):
+        factorial(self.positive_ints, exact=True)
+
+    def time_factorial_exact_true_array_negative_int(self):
+        factorial(self.negative_ints, exact=True)
+
+    def time_factorial_exact_true_array_negative_float(self):
+        factorial(self.negative_floats, exact=True)
+
 
 class Factorial2(Benchmark):
     ...
