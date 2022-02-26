@@ -3491,6 +3491,10 @@ class ortho_group_gen(multi_rv_generic):
     >>> rv = ortho_group(5)
     >>> # Frozen object with the same methods but holding the
     >>> # dimension parameter fixed.
+
+    See Also
+    --------
+    special_ortho_group_gen
     """
 
     def __init__(self, seed=None):
