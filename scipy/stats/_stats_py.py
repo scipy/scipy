@@ -963,7 +963,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
         dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
         # empty array, return nan(s) with shape matching `moment`
         out_shape = (moment_shape if np.isscalar(moment)
-                    else [len(moment)] + moment_shape)
+                     else [len(moment)] + moment_shape)
         if len(out_shape) == 0:
             return dtype(np.nan)
         else:
@@ -2211,17 +2211,17 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 #        VARIABILITY FUNCTIONS      #
 #####################################
 
-def obrientransform(*args):
+def obrientransform(*samples):
     """Compute the O'Brien transform on input data (any number of arrays).
 
     Used to test for homogeneity of variance prior to running one-way stats.
-    Each array in ``*args`` is one level of a factor.
+    Each array in ``*samples`` is one level of a factor.
     If `f_oneway` is run on the transformed data and found significant,
     the variances are unequal.  From Maxwell and Delaney [1]_, p.112.
 
     Parameters
     ----------
-    *args : tuple of array_like
+    sample1, sample2, ... : array_like
         Any number of arrays.
 
     Returns
@@ -2268,8 +2268,8 @@ def obrientransform(*args):
     arrays = []
     sLast = None
 
-    for arg in args:
-        a = np.asarray(arg)
+    for sample in samples:
+        a = np.asarray(sample)
         n = len(a)
         mu = np.mean(a)
         sq = (a - mu)**2
@@ -2914,7 +2914,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
             warnings.warn(
                 "use of scale='raw' is deprecated, use scale=1.0 instead",
                 np.VisibleDeprecationWarning
-                )
+            )
         scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
@@ -3233,7 +3233,7 @@ array([5.1891, 3.7065, 2.2239])
             warnings.warn(
                 "use of scale='raw' is deprecated, use scale=1.0 instead",
                 np.VisibleDeprecationWarning
-                )
+            )
             scale = 1.0
 
     if not isinstance(scale, str):
@@ -3604,7 +3604,7 @@ def _first(arr, axis):
     return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
-def f_oneway(*args, axis=0):
+def f_oneway(*samples, axis=0):
     """Perform one-way ANOVA.
 
     The one-way ANOVA tests the null hypothesis that two or more groups have
@@ -3732,30 +3732,31 @@ def f_oneway(*args, axis=0):
     array([0.20630784, 0.96375203, 0.04733157])
 
     """
-    if len(args) < 2:
-        raise TypeError(f'at least two inputs are required; got {len(args)}.')
+    if len(samples) < 2:
+        raise TypeError('at least two inputs are required;'
+                        f' got {len(samples)}.')
 
-    args = [np.asarray(arg, dtype=float) for arg in args]
+    samples = [np.asarray(sample, dtype=float) for sample in samples]
 
     # ANOVA on N groups, each in its own array
-    num_groups = len(args)
+    num_groups = len(samples)
 
     # We haven't explicitly validated axis, but if it is bad, this call of
     # np.concatenate will raise np.AxisError.  The call will raise ValueError
     # if the dimensions of all the arrays, except the axis dimension, are not
     # the same.
-    alldata = np.concatenate(args, axis=axis)
+    alldata = np.concatenate(samples, axis=axis)
     bign = alldata.shape[axis]
 
     # Check this after forming alldata, so shape errors are detected
     # and reported before checking for 0 length inputs.
-    if any(arg.shape[axis] == 0 for arg in args):
+    if any(sample.shape[axis] == 0 for sample in samples):
         warnings.warn(F_onewayBadInputSizesWarning('at least one input '
                                                    'has length 0'))
         return _create_f_oneway_nan_result(alldata.shape, axis)
 
     # Must have at least one group with length greater than 1.
-    if all(arg.shape[axis] == 1 for arg in args):
+    if all(sample.shape[axis] == 1 for sample in samples):
         msg = ('all input arrays have length 1.  f_oneway requires that at '
                'least one input has length greater than 1.')
         warnings.warn(F_onewayBadInputSizesWarning(msg))
@@ -3770,9 +3771,12 @@ def f_oneway(*args, axis=0):
     # It is True if the groups along the axis slice are each consant.
     # In the typical case where each input array is 1-d, is_const is a
     # 1-d array with length num_groups.
-    is_const = np.concatenate([(_first(a, axis) == a).all(axis=axis,
-                                                          keepdims=True)
-                               for a in args], axis=axis)
+    is_const = np.concatenate(
+        [(_first(sample, axis) == sample).all(axis=axis,
+                                              keepdims=True)
+         for sample in samples],
+        axis=axis
+    )
 
     # all_const is a boolean array with shape (...) (see previous comment).
     # It is True if the values within each group along the axis slice are
@@ -3797,8 +3801,9 @@ def f_oneway(*args, axis=0):
     sstot = _sum_of_squares(alldata, axis=axis) - normalized_ss
 
     ssbn = 0
-    for a in args:
-        ssbn += _square_of_sums(a - offset, axis=axis) / a.shape[axis]
+    for sample in samples:
+        ssbn += _square_of_sums(sample - offset,
+                                axis=axis) / sample.shape[axis]
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
@@ -3831,7 +3836,7 @@ def f_oneway(*args, axis=0):
     return F_onewayResult(f, prob)
 
 
-def alexandergovern(*args, nan_policy='propagate'):
+def alexandergovern(*samples, nan_policy='propagate'):
     """Performs the Alexander Govern test.
 
     The Alexander-Govern approximation tests the equality of k independent
@@ -3916,9 +3921,9 @@ def alexandergovern(*args, nan_policy='propagate'):
     the alternative.
 
     """
-    args = _alexandergovern_input_validation(args, nan_policy)
+    samples = _alexandergovern_input_validation(samples, nan_policy)
 
-    if np.any([(arg == arg[0]).all() for arg in args]):
+    if np.any([(sample == sample[0]).all() for sample in samples]):
         warnings.warn(AlexanderGovernConstantInputWarning())
         return AlexanderGovernResult(np.nan, np.nan)
 
@@ -3928,13 +3933,13 @@ def alexandergovern(*args, nan_policy='propagate'):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = np.array([ma.count(arg) if nan_policy == 'omit' else len(arg)
-                        for arg in args])
-    means = np.array([np.mean(arg) for arg in args])
+    lengths = np.array([ma.count(sample) if nan_policy == 'omit'
+                        else len(sample) for sample in samples])
+    means = np.array([np.mean(sample) for sample in samples])
 
     # (1) determine standard error of the mean for each sample
-    standard_errors = [np.std(arg, ddof=1) / np.sqrt(length)
-                       for arg, length in zip(args, lengths)]
+    standard_errors = [np.std(sample, ddof=1) / np.sqrt(length)
+                       for sample, length in zip(samples, lengths)]
 
     # (2) define a weight for each sample
     inv_sq_se = 1 / np.square(standard_errors)
@@ -3962,29 +3967,30 @@ def alexandergovern(*args, nan_policy='propagate'):
 
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
-    p = distributions.chi2.sf(A, len(args) - 1)
+    p = distributions.chi2.sf(A, len(samples) - 1)
     return AlexanderGovernResult(A, p)
 
 
-def _alexandergovern_input_validation(args, nan_policy):
-    if len(args) < 2:
-        raise TypeError(f"2 or more inputs required, got {len(args)}")
+def _alexandergovern_input_validation(samples, nan_policy):
+    if len(samples) < 2:
+        raise TypeError(f"2 or more inputs required, got {len(samples)}")
 
     # input arrays are flattened
-    args = [np.asarray(arg, dtype=float) for arg in args]
+    samples = [np.asarray(sample, dtype=float) for sample in samples]
 
-    for i, arg in enumerate(args):
-        if np.size(arg) <= 1:
+    for i, sample in enumerate(samples):
+        if np.size(sample) <= 1:
             raise ValueError("Input sample size must be greater than one.")
-        if arg.ndim != 1:
+        if sample.ndim != 1:
             raise ValueError("Input samples must be one-dimensional")
-        if np.isinf(arg).any():
+        if np.isinf(sample).any():
             raise ValueError("Input samples must be finite.")
 
-        contains_nan, nan_policy = _contains_nan(arg, nan_policy=nan_policy)
+        contains_nan, nan_policy = _contains_nan(sample,
+                                                 nan_policy=nan_policy)
         if contains_nan and nan_policy == 'omit':
-            args[i] = ma.masked_invalid(arg)
-    return args
+            samples[i] = ma.masked_invalid(sample)
+    return samples
 
 
 AlexanderGovernResult = make_dataclass("AlexanderGovernResult", ("statistic",
@@ -5160,7 +5166,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         return WeightedTauResult((
             _weightedrankedtau(x, y, None, weigher, additive) +
             _weightedrankedtau(y, x, None, weigher, additive)
-            ) / 2, np.nan)
+        ) / 2, np.nan)
 
     if rank is False:
         rank = np.arange(x.size, dtype=np.intp)
@@ -7209,7 +7215,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
 
     """
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
-       alternative.lower()[0], alternative)
+        alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError("Unexpected alternative %s" % alternative)
     if np.ma.is_masked(x):
@@ -7545,7 +7551,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     if mode not in ['auto', 'exact', 'asymp']:
         raise ValueError(f'Invalid value for mode: {mode}')
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
-       alternative.lower()[0], alternative)
+        alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'less', 'greater']:
         raise ValueError(f'Invalid value for alternative: {alternative}')
     MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
@@ -7923,7 +7929,7 @@ KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
-def kruskal(*args, nan_policy='propagate'):
+def kruskal(*samples, nan_policy='propagate'):
     """Compute the Kruskal-Wallis H-test for independent samples.
 
     The Kruskal-Wallis H-test tests the null hypothesis that the population
@@ -7989,39 +7995,39 @@ def kruskal(*args, nan_policy='propagate'):
     KruskalResult(statistic=7.0, pvalue=0.0301973834223185)
 
     """
-    args = list(map(np.asarray, args))
+    samples = list(map(np.asarray, samples))
 
-    num_groups = len(args)
+    num_groups = len(samples)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
 
-    for arg in args:
-        if arg.size == 0:
+    for sample in samples:
+        if sample.size == 0:
             return KruskalResult(np.nan, np.nan)
-        elif arg.ndim != 1:
+        elif sample.ndim != 1:
             raise ValueError("Samples must be one-dimensional.")
 
-    n = np.asarray(list(map(len, args)))
+    n = np.asarray(list(map(len, samples)))
 
     if nan_policy not in ('propagate', 'raise', 'omit'):
         raise ValueError("nan_policy must be 'propagate', 'raise' or 'omit'")
 
     contains_nan = False
-    for arg in args:
-        cn = _contains_nan(arg, nan_policy)
+    for sample in samples:
+        cn = _contains_nan(sample, nan_policy)
         if cn[0]:
             contains_nan = True
             break
 
     if contains_nan and nan_policy == 'omit':
-        for a in args:
-            a = ma.masked_invalid(a)
-        return mstats_basic.kruskal(*args)
+        for sample in samples:
+            sample = ma.masked_invalid(sample)
+        return mstats_basic.kruskal(*samples)
 
     if contains_nan and nan_policy == 'propagate':
         return KruskalResult(np.nan, np.nan)
 
-    alldata = np.concatenate(args)
+    alldata = np.concatenate(samples)
     ranked = rankdata(alldata)
     ties = tiecorrect(ranked)
     if ties == 0:
@@ -8045,21 +8051,21 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-def friedmanchisquare(*args):
-    """Compute the Friedman test for repeated measurements.
+def friedmanchisquare(*samples):
+    """Compute the Friedman test for repeated samples.
 
-    The Friedman test tests the null hypothesis that repeated measurements of
+    The Friedman test tests the null hypothesis that repeated samples of
     the same individuals have the same distribution.  It is often used
-    to test for consistency among measurements obtained in different ways.
-    For example, if two measurement techniques are used on the same set of
+    to test for consistency among samples obtained in different ways.
+    For example, if two sampling techniques are used on the same set of
     individuals, the Friedman test can be used to determine if the two
-    measurement techniques are consistent.
+    sampling techniques are consistent.
 
     Parameters
     ----------
-    measurements1, measurements2, measurements3... : array_like
-        Arrays of measurements.  All of the arrays must have the same number
-        of elements.  At least 3 sets of measurements must be given.
+    sample1, sample2, sample3... : array_like
+        Arrays of observations.  All of the arrays must have the same number
+        of elements.  At least three samples must be given.
 
     Returns
     -------
@@ -8073,25 +8079,25 @@ def friedmanchisquare(*args):
     -----
     Due to the assumption that the test statistic has a chi squared
     distribution, the p-value is only reliable for n > 10 and more than
-    6 repeated measurements.
+    6 repeated samples.
 
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Friedman_test
 
     """
-    k = len(args)
+    k = len(samples)
     if k < 3:
-        raise ValueError('At least 3 sets of measurements must be given '
+        raise ValueError('At least 3 sets of samples must be given '
                          'for Friedman test, got {}.'.format(k))
 
-    n = len(args[0])
+    n = len(samples[0])
     for i in range(1, k):
-        if len(args[i]) != n:
+        if len(samples[i]) != n:
             raise ValueError('Unequal N in friedmanchisquare.  Aborting.')
 
     # Rank data
-    data = np.vstack(args).T
+    data = np.vstack(samples).T
     data = data.astype(float)
     for i in range(len(data)):
         data[i] = rankdata(data[i])
