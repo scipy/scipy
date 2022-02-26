@@ -8,11 +8,12 @@ from .lsqr import lsqr
 from .lsmr import lsmr
 from ._gcrotmk import gcrotmk
 from .tfqmr import tfqmr
+from .cr import cr
 
 __all__ = [
     'bicg', 'bicgstab', 'cg', 'cgs', 'gcrotmk', 'gmres',
     'lgmres', 'lsmr', 'lsqr',
-    'minres', 'qmr', 'tfqmr'
+    'minres', 'qmr', 'tfqmr', 'cr',
 ]
 
 from scipy._lib._testutils import PytestTester
