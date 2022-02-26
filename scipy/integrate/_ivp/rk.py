@@ -519,8 +519,10 @@ class Verner87(RungeKutta):
     b9 = 25.08406496555856261343930031237186278518
     b10 = -31.73836778626027646833156112007297739997
     b11 = 22.93828327398878395231483560344797018313
+    b12 = -.2361324633071542145259900641263517600737
+    b13 = 0.
 
-    B = np.array([b1, b2, b3, b4, b5, b6, b7, b8, b9, b10])
+    B = np.array([b1, b2, b3, b4, b5, b6, b7, b8, b9, b10, b11, b12, b13])
 
     # Coefficients for matrix Bh
 
@@ -535,14 +537,16 @@ class Verner87(RungeKutta):
     bh9 = 19.84688636611873369930932399297687935291
     bh10 = -23.58162337746561841969517960870394965085
     bh11 = 0.
+    bh12 = 0.
+    bh13 = -.3601679437289775162124536737746202409110
 
-    Bh = np.array([bh1, bh2, bh3, bh4, bh5, bh6, bh7, bh8, bh9, bh10])
+    Bh = np.array([bh1, bh2, bh3, bh4, bh5, bh6, bh7, bh8, bh9, bh10, bh11, bh12, bh13])
 
     # Coefficients for matrix E
 
     E = np.zeros(n_stages + 1)
     E[:n_stages] = B - Bh
-    E[n_stages] = b11 - bh11
+    E[n_stages] = -E.sum()
 
 
 class DOP853(RungeKutta):
