@@ -1663,9 +1663,9 @@ def psi(p, q):
 
     Parameters
     ----------
-    p : (N,) array_like, bool
+    p : (N,) array_like
         Input array.
-    q : (N,) array_like, bool
+    q : (N,) array_like
         Input array.
 
     Returns
