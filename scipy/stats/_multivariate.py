@@ -3494,7 +3494,7 @@ class ortho_group_gen(multi_rv_generic):
 
     See Also
     --------
-    special_ortho_group_gen
+    special_ortho_group
     """
 
     def __init__(self, seed=None):
