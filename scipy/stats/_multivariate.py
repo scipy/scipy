@@ -3569,9 +3569,9 @@ class ortho_group_frozen(multi_rv_frozen):
         seed : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
 
-            If `seed` in None (or `np.random`), the `numpy.random.RandomState`
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
-            If `seed` in an int, a new ``RandomState`` instance is used,
+            If `seed` is an int, a new ``RandomState`` instance is used,
             seeded with `seed`.
             If `seed` is already a ``Generator`` or ``RandomState`` instance
             then that instance is used.
