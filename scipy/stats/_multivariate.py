@@ -3497,6 +3497,13 @@ class ortho_group_gen(multi_rv_generic):
         super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__)
 
+    def __call__(self, dim=None, seed=None):
+        """Create a frozen O(N) distribution.
+
+        See `ortho_group_frozen` for more information.
+        """
+        return ortho_group_frozen(dim, seed=seed)
+
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
         if dim is None or not np.isscalar(dim) or dim <= 1 or dim != int(dim):
@@ -3504,13 +3511,6 @@ class ortho_group_gen(multi_rv_generic):
                              "and must be a scalar greater than 1.")
 
         return dim
-
-    def __call__(seld, dim=None, seed=None):
-        """Create a frozen O(N) distribution.
-
-        See `ortho_group_frozen` for more information.
-        """
-        return ortho_group_frozen(dim, seed=seed)
 
     def rvs(self, dim, size=1, random_state=None):
         """Draw random samples from O(N).
