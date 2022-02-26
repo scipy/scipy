@@ -160,4 +160,10 @@ class Factorial2(Benchmark):
 
 
 class FactorialK(Benchmark):
-    ...
+    @with_attributes(params=[(100, 1000), range(1, 10)],
+                     param_names=['n', 'k'])
+    def time_factorialk_exact_true_scalar_positive_int(self, n, k):
+        factorialk(n, k, exact=True)
+
+    def time_factorialk_exact_false_scalar_negative_int(self):
+        factorialk(-10000, 3, exact=True)
