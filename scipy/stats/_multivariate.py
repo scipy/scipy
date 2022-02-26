@@ -3444,6 +3444,19 @@ class ortho_group_gen(multi_rv_generic):
     rvs(dim=None, size=1, random_state=None)
         Draw random samples from O(N).
 
+    Parameters
+    ----------
+    dim : scalar
+        Dimension of matrices
+    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+        Used for drawing random variates.
+        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is `None`.
+
     Notes
     -----
     This class is closely related to `special_ortho_group`.
