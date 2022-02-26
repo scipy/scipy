@@ -16,8 +16,19 @@ coef_sources = [
 
 @pytest.mark.parametrize("solver", coef_sources)
 def test_coefficient_properties(solver):
-    assert_allclose(np.sum(solver.B), 1, rtol=1e-15)
-    assert_allclose(np.sum(solver.A, axis=1), solver.C, rtol=1e-14)
+    # the coefficients can only be expect to satisfy these properties to the
+    # extent that they are of the same order of magnitude, which determines
+    # the roundoff error (i.e., catastrophic cancellation)
+
+    absB = np.abs(solver.B)
+    rtol_B = np.max(absB) / np.min(absB[absB > 0]) * 6e-16
+    assert_allclose(np.sum(solver.B), 1, rtol=max(1e-15, rtol_B))
+
+    for i, a in enumerate(solver.A[1:], start=1):
+        absA = np.abs(a[:i])
+        rtol_A = np.max(absA) / np.min(absA[absA > 0]) * 6e-16
+        print(i, solver.__name__)
+        assert_allclose(np.sum(a), solver.C[i], rtol=max(1e-14, rtol_A))
 
 
 @pytest.mark.parametrize("solver_class", rk_methods)
