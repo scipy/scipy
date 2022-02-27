@@ -3050,8 +3050,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
 
     To derive the p-value, the exact distribution (``mode == 'exact'``)
-    can be used for sample sizes of up to 25. The default ``mode == 'auto'``
-    uses the exact distribution if there are at most 25 observations and no
+    can be used for small sample sizes. The default ``mode == 'auto'``
+    uses the exact distribution if there are at most 50 observations and no
     ties, otherwise a normal approximation is used (``mode == 'approx'``).
 
     The treatment of ties can be controlled by the parameter `zero_method`.
@@ -3134,8 +3134,11 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             raise ValueError('The samples x and y must have the same length.')
         d = x - y
 
+    if len(d) == 0:
+        return WilcoxonResult(np.nan, np.nan)
+
     if mode == "auto":
-        if len(d) <= 25:
+        if len(d) <= 50:
             mode = "exact"
         else:
             mode = "approx"
@@ -3218,22 +3221,23 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         else:
             prob = distributions.norm.cdf(z)
     elif mode == "exact":
-        # get frequencies cnt of the possible positive ranksums r_plus
-        cnt = _get_wilcoxon_distr(count)
+        # get pmf of the possible positive ranksums r_plus
+        pmf = _get_wilcoxon_distr(count)
         # note: r_plus is int (ties not allowed), need int for slices below
         r_plus = int(r_plus)
         if alternative == "two-sided":
-            if r_plus == (len(cnt) - 1) // 2:
+            if r_plus == (len(pmf) - 1) // 2:
                 # r_plus is the center of the distribution.
                 prob = 1.0
             else:
-                p_less = np.sum(cnt[:r_plus + 1]) / 2**count
-                p_greater = np.sum(cnt[r_plus:]) / 2**count
+                p_less = np.sum(pmf[:r_plus + 1])
+                p_greater = np.sum(pmf[r_plus:])
                 prob = 2*min(p_greater, p_less)
         elif alternative == "greater":
-            prob = np.sum(cnt[r_plus:]) / 2**count
+            prob = np.sum(pmf[r_plus:])
         else:
-            prob = np.sum(cnt[:r_plus + 1]) / 2**count
+            prob = np.sum(pmf[:r_plus + 1])
+        prob = np.clip(prob, 0, 1)
 
     return WilcoxonResult(T, prob)
 
