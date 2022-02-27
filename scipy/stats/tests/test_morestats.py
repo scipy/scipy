@@ -16,7 +16,7 @@ from scipy import optimize
 from scipy import stats
 from scipy.stats._morestats import _abw_state
 from .common_tests import check_named_results
-from .._hypotests import _get_wilcoxon_distr
+from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
@@ -1426,10 +1426,12 @@ class TestWilcoxon:
         assert_almost_equal(p, 0.3176447, decimal=6)
 
     def test_exact_basic(self):
-        for n in range(1, 26):
-            cnt = _get_wilcoxon_distr(n)
-            assert_equal(n*(n+1)/2 + 1, len(cnt))
-            assert_equal(sum(cnt), 2**n)
+        for n in range(1, 51):
+            pmf1 = _get_wilcoxon_distr(n)
+            pmf2 = _get_wilcoxon_distr2(n)
+            assert_equal(n*(n+1)/2 + 1, len(pmf1))
+            assert_equal(sum(pmf1), 1)
+            assert_array_almost_equal(pmf1, pmf2)
 
     def test_exact_pval(self):
         # expected values computed with "R version 3.4.1 (2017-06-30)"
@@ -1453,14 +1455,12 @@ class TestWilcoxon:
         _, p = stats.wilcoxon(x, y, alternative="greater", mode="exact")
         assert_almost_equal(p, 0.5795889, decimal=6)
 
-        d = np.arange(26) + 1
-        assert_raises(ValueError, stats.wilcoxon, d, mode="exact")
-
     # These inputs were chosen to give a W statistic that is either the
     # center of the distribution (when the length of the support is odd), or
     # the value to the left of the center (when the length of the support is
     # even).  Also, the numbers are chosen so that the W statistic is the
     # sum of the positive values.
+
     @pytest.mark.parametrize('x', [[-1, -2, 3],
                                    [-1, 2, -3, -4, 5],
                                    [-1, -2, 3, -4, -5, -6, 7, 8]])
@@ -1486,7 +1486,7 @@ class TestWilcoxon:
         assert_equal(stats.wilcoxon(d, mode="approx"), (w, p))
 
         # use approximation for samples > 25
-        d = np.arange(1, 27)
+        d = np.arange(1, 52)
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="approx"))
 
 

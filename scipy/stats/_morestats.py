@@ -2375,7 +2375,7 @@ def ansari(x, y, alternative='two-sided'):
 BartlettResult = namedtuple('BartlettResult', ('statistic', 'pvalue'))
 
 
-def bartlett(*args):
+def bartlett(*samples):
     """Perform Bartlett's test for equal variances.
 
     Bartlett's test tests the null hypothesis that all input samples
@@ -2385,7 +2385,7 @@ def bartlett(*args):
 
     Parameters
     ----------
-    sample1, sample2,... : array_like
+    sample1, sample2, ... : array_like
         arrays of sample data.  Only 1d arrays are accepted, they may have
         different lengths.
 
@@ -2449,20 +2449,20 @@ def bartlett(*args):
 
     """
     # Handle empty input and input that is not 1d
-    for a in args:
-        if np.asanyarray(a).size == 0:
+    for sample in samples:
+        if np.asanyarray(sample).size == 0:
             return BartlettResult(np.nan, np.nan)
-        if np.asanyarray(a).ndim > 1:
+        if np.asanyarray(sample).ndim > 1:
             raise ValueError('Samples must be one-dimensional.')
 
-    k = len(args)
+    k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
     Ni = np.empty(k)
     ssq = np.empty(k, 'd')
     for j in range(k):
-        Ni[j] = len(args[j])
-        ssq[j] = np.var(args[j], ddof=1)
+        Ni[j] = len(samples[j])
+        ssq[j] = np.var(samples[j], ddof=1)
     Ntot = np.sum(Ni, axis=0)
     spsq = np.sum((Ni - 1)*ssq, axis=0) / (1.0*(Ntot - k))
     numer = (Ntot*1.0 - k) * log(spsq) - np.sum((Ni - 1.0)*log(ssq), axis=0)
@@ -2477,7 +2477,7 @@ def bartlett(*args):
 LeveneResult = namedtuple('LeveneResult', ('statistic', 'pvalue'))
 
 
-def levene(*args, center='median', proportiontocut=0.05):
+def levene(*samples, center='median', proportiontocut=0.05):
     """Perform Levene test for equal variances.
 
     The Levene test tests the null hypothesis that all input samples
@@ -2554,12 +2554,12 @@ def levene(*args, center='median', proportiontocut=0.05):
     if center not in ['mean', 'median', 'trimmed']:
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
-    k = len(args)
+    k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
     # check for 1d input
     for j in range(k):
-        if np.asanyarray(args[j]).ndim > 1:
+        if np.asanyarray(samples[j]).ndim > 1:
             raise ValueError('Samples must be one-dimensional.')
 
     Ni = np.empty(k)
@@ -2570,19 +2570,19 @@ def levene(*args, center='median', proportiontocut=0.05):
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
     else:  # center == 'trimmed'
-        args = tuple(_stats_py.trimboth(np.sort(arg), proportiontocut)
-                     for arg in args)
+        samples = tuple(_stats_py.trimboth(np.sort(sample), proportiontocut)
+                        for sample in samples)
         func = lambda x: np.mean(x, axis=0)
 
     for j in range(k):
-        Ni[j] = len(args[j])
-        Yci[j] = func(args[j])
+        Ni[j] = len(samples[j])
+        Yci[j] = func(samples[j])
     Ntot = np.sum(Ni, axis=0)
 
     # compute Zij's
     Zij = [None] * k
     for i in range(k):
-        Zij[i] = abs(asarray(args[i]) - Yci[i])
+        Zij[i] = abs(asarray(samples[i]) - Yci[i])
 
     # compute Zbari
     Zbari = np.empty(k, 'd')
@@ -2715,7 +2715,7 @@ def _apply_func(x, g, func):
 FlignerResult = namedtuple('FlignerResult', ('statistic', 'pvalue'))
 
 
-def fligner(*args, center='median', proportiontocut=0.05):
+def fligner(*samples, center='median', proportiontocut=0.05):
     """Perform Fligner-Killeen test for equality of variance.
 
     Fligner's test tests the null hypothesis that all input samples
@@ -2806,11 +2806,11 @@ def fligner(*args, center='median', proportiontocut=0.05):
         raise ValueError("center must be 'mean', 'median' or 'trimmed'.")
 
     # Handle empty input
-    for a in args:
-        if np.asanyarray(a).size == 0:
+    for sample in samples:
+        if np.asanyarray(sample).size == 0:
             return FlignerResult(np.nan, np.nan)
 
-    k = len(args)
+    k = len(samples)
     if k < 2:
         raise ValueError("Must enter at least two input sample vectors.")
 
@@ -2819,14 +2819,15 @@ def fligner(*args, center='median', proportiontocut=0.05):
     elif center == 'mean':
         func = lambda x: np.mean(x, axis=0)
     else:  # center == 'trimmed'
-        args = tuple(_stats_py.trimboth(arg, proportiontocut) for arg in args)
+        samples = tuple(_stats_py.trimboth(sample, proportiontocut)
+                        for sample in samples)
         func = lambda x: np.mean(x, axis=0)
 
-    Ni = asarray([len(args[j]) for j in range(k)])
-    Yci = asarray([func(args[j]) for j in range(k)])
+    Ni = asarray([len(samples[j]) for j in range(k)])
+    Yci = asarray([func(samples[j]) for j in range(k)])
     Ntot = np.sum(Ni, axis=0)
     # compute Zij's
-    Zij = [abs(asarray(args[i]) - Yci[i]) for i in range(k)]
+    Zij = [abs(asarray(samples[i]) - Yci[i]) for i in range(k)]
     allZij = []
     g = [0]
     for i in range(k):
@@ -2834,12 +2835,12 @@ def fligner(*args, center='median', proportiontocut=0.05):
         g.append(len(allZij))
 
     ranks = _stats_py.rankdata(allZij)
-    a = distributions.norm.ppf(ranks / (2*(Ntot + 1.0)) + 0.5)
+    sample = distributions.norm.ppf(ranks / (2*(Ntot + 1.0)) + 0.5)
 
     # compute Aibar
-    Aibar = _apply_func(a, g, np.sum) / Ni
-    anbar = np.mean(a, axis=0)
-    varsq = np.var(a, axis=0, ddof=1)
+    Aibar = _apply_func(sample, g, np.sum) / Ni
+    anbar = np.mean(sample, axis=0)
+    varsq = np.var(sample, axis=0, ddof=1)
     Xsq = np.sum(Ni * (asarray(Aibar) - anbar)**2.0, axis=0) / varsq
     pval = distributions.chi2.sf(Xsq, k - 1)  # 1 - cdf
     return FlignerResult(Xsq, pval)
@@ -3049,8 +3050,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
 
     To derive the p-value, the exact distribution (``mode == 'exact'``)
-    can be used for sample sizes of up to 25. The default ``mode == 'auto'``
-    uses the exact distribution if there are at most 25 observations and no
+    can be used for small sample sizes. The default ``mode == 'auto'``
+    uses the exact distribution if there are at most 50 observations and no
     ties, otherwise a normal approximation is used (``mode == 'approx'``).
 
     The treatment of ties can be controlled by the parameter `zero_method`.
@@ -3133,8 +3134,11 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             raise ValueError('The samples x and y must have the same length.')
         d = x - y
 
+    if len(d) == 0:
+        return WilcoxonResult(np.nan, np.nan)
+
     if mode == "auto":
-        if len(d) <= 25:
+        if len(d) <= 50:
             mode = "exact"
         else:
             mode = "approx"
@@ -3217,33 +3221,34 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         else:
             prob = distributions.norm.cdf(z)
     elif mode == "exact":
-        # get frequencies cnt of the possible positive ranksums r_plus
-        cnt = _get_wilcoxon_distr(count)
+        # get pmf of the possible positive ranksums r_plus
+        pmf = _get_wilcoxon_distr(count)
         # note: r_plus is int (ties not allowed), need int for slices below
         r_plus = int(r_plus)
         if alternative == "two-sided":
-            if r_plus == (len(cnt) - 1) // 2:
+            if r_plus == (len(pmf) - 1) // 2:
                 # r_plus is the center of the distribution.
                 prob = 1.0
             else:
-                p_less = np.sum(cnt[:r_plus + 1]) / 2**count
-                p_greater = np.sum(cnt[r_plus:]) / 2**count
+                p_less = np.sum(pmf[:r_plus + 1])
+                p_greater = np.sum(pmf[r_plus:])
                 prob = 2*min(p_greater, p_less)
         elif alternative == "greater":
-            prob = np.sum(cnt[r_plus:]) / 2**count
+            prob = np.sum(pmf[r_plus:])
         else:
-            prob = np.sum(cnt[:r_plus + 1]) / 2**count
+            prob = np.sum(pmf[:r_plus + 1])
+        prob = np.clip(prob, 0, 1)
 
     return WilcoxonResult(T, prob)
 
 
-def median_test(*args, ties='below', correction=True, lambda_=1,
+def median_test(*samples, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
     """Perform a Mood's median test.
 
     Test that two or more samples come from populations with the same median.
 
-    Let ``n = len(args)`` be the number of samples.  The "grand median" of
+    Let ``n = len(samples)`` be the number of samples.  The "grand median" of
     all the data is computed, and a contingency table is formed by
     classifying the values in each sample as being above or below the grand
     median.  The contingency table, along with `correction` and `lambda_`,
@@ -3376,7 +3381,7 @@ def median_test(*args, ties='below', correction=True, lambda_=1,
     choice of `ties`.
 
     """
-    if len(args) < 2:
+    if len(samples) < 2:
         raise ValueError('median_test requires two or more samples.')
 
     ties_options = ['below', 'above', 'ignore']
@@ -3384,7 +3389,7 @@ def median_test(*args, ties='below', correction=True, lambda_=1,
         raise ValueError("invalid 'ties' option '%s'; 'ties' must be one "
                          "of: %s" % (ties, str(ties_options)[1:-1]))
 
-    data = [np.asarray(arg) for arg in args]
+    data = [np.asarray(sample) for sample in samples]
 
     # Validate the sizes and shapes of the arguments.
     for k, d in enumerate(data):

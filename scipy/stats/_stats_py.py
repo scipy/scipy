@@ -219,7 +219,7 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
 # note that `weights` are paired with `x`
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
-        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
+        result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
 def gmean(a, axis=0, dtype=None, weights=None):
     r"""Compute the weighted geometric mean along the specified axis.
 
@@ -307,7 +307,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
 
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
-        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
+        result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
 def hmean(a, axis=0, dtype=None, *, weights=None):
     r"""Calculate the weighted harmonic mean along the specified axis.
 
@@ -440,6 +440,13 @@ def mode(a, axis=0, nan_policy='propagate'):
     The mode of object arrays is calculated using `collections.Counter`, which
     treats NaNs with different binary representations as distinct.
 
+    .. deprecated:: 1.9.0
+        Support for non-numeric arrays has been deprecated and will be removed
+        in the second release after SciPy 1.9.0. `pandas.DataFrame.mode`_ can
+        be used instead.
+
+        .. _pandas.DataFrame.mode: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html
+
     The mode of arrays with other dtypes is calculated using `np.unique`.
     In NumPy versions 1.21 and after, all NaNs - even those with different
     binary representations - are treated as equivalent and counted as separate
@@ -461,7 +468,7 @@ def mode(a, axis=0, nan_policy='propagate'):
     >>> stats.mode(a, axis=None)
     ModeResult(mode=3, count=3)
 
-    """
+    """  # noqa: E501
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
         return ModeResult(np.array([]), np.array([]))
@@ -471,6 +478,13 @@ def mode(a, axis=0, nan_policy='propagate'):
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
         return mstats_basic.mode(a, axis)
+
+    if not np.issubdtype(a.dtype, np.number):
+        warnings.warn("Support for non-numeric arrays has been deprecated "
+                      "and will be removed in the second release after "
+                      "1.9.0. `pandas.DataFrame.mode` can be used instead, "
+                      "see https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html.",  # noqa: E501
+                      DeprecationWarning, stacklevel=2)
 
     if a.dtype == object:
         def _mode1D(a):
@@ -949,7 +963,7 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
         dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
         # empty array, return nan(s) with shape matching `moment`
         out_shape = (moment_shape if np.isscalar(moment)
-                    else [len(moment)] + moment_shape)
+                     else [len(moment)] + moment_shape)
         if len(out_shape) == 0:
             return dtype(np.nan)
         else:
@@ -1009,7 +1023,7 @@ def _moment(a, moment, axis, *, mean=None):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
     r"""Compute the sample skewness of a data set.
@@ -1115,7 +1129,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
 def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     """Compute the kurtosis (Fisher or Pearson) of a dataset.
@@ -2197,17 +2211,17 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
 #        VARIABILITY FUNCTIONS      #
 #####################################
 
-def obrientransform(*args):
+def obrientransform(*samples):
     """Compute the O'Brien transform on input data (any number of arrays).
 
     Used to test for homogeneity of variance prior to running one-way stats.
-    Each array in ``*args`` is one level of a factor.
+    Each array in ``*samples`` is one level of a factor.
     If `f_oneway` is run on the transformed data and found significant,
     the variances are unequal.  From Maxwell and Delaney [1]_, p.112.
 
     Parameters
     ----------
-    *args : tuple of array_like
+    sample1, sample2, ... : array_like
         Any number of arrays.
 
     Returns
@@ -2254,8 +2268,8 @@ def obrientransform(*args):
     arrays = []
     sLast = None
 
-    for arg in args:
-        a = np.asarray(arg)
+    for sample in samples:
+        a = np.asarray(sample)
         n = len(a)
         mu = np.mean(a)
         sq = (a - mu)**2
@@ -2900,7 +2914,7 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
             warnings.warn(
                 "use of scale='raw' is deprecated, use scale=1.0 instead",
                 np.VisibleDeprecationWarning
-                )
+            )
         scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
@@ -3219,7 +3233,7 @@ array([5.1891, 3.7065, 2.2239])
             warnings.warn(
                 "use of scale='raw' is deprecated, use scale=1.0 instead",
                 np.VisibleDeprecationWarning
-                )
+            )
             scale = 1.0
 
     if not isinstance(scale, str):
@@ -3336,11 +3350,35 @@ def trimboth(a, proportiontocut, axis=0):
 
     Examples
     --------
+    Create an array of 10 values and trim 10% of those values from each end:
+
     >>> from scipy import stats
-    >>> a = np.arange(20)
-    >>> b = stats.trimboth(a, 0.1)
-    >>> b.shape
-    (16,)
+    >>> a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> stats.trimboth(a, 0.1)
+    array([1, 3, 2, 4, 5, 6, 7, 8])
+
+    Note that the elements of the input array are trimmed by value, but the
+    output array is not necessarily sorted.
+
+    The proportion to trim is rounded down to the nearest integer. For
+    instance, trimming 25% of the values from each end of an array of 10
+    values will return an array of 6 values:
+
+    >>> b = np.arange(10)
+    >>> stats.trimboth(b, 1/4).shape
+    (6,)
+
+    Multidimensional arrays can be trimmed along any axis or across the entire
+    array:
+
+    >>> c = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
+    >>> d = np.array([a, b, c])
+    >>> stats.trimboth(d, 0.4, axis=0).shape
+    (1, 10)
+    >>> stats.trimboth(d, 0.4, axis=1).shape
+    (3, 2)
+    >>> stats.trimboth(d, 0.4, axis=None).shape
+    (6,)
 
     """
     a = np.asarray(a)
@@ -3394,11 +3432,35 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
     Examples
     --------
+    Create an array of 10 values and trim 20% of its lowest values:
+
     >>> from scipy import stats
-    >>> a = np.arange(20)
-    >>> b = stats.trim1(a, 0.5, 'left')
-    >>> b
-    array([10, 11, 12, 13, 14, 16, 15, 17, 18, 19])
+    >>> a = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+    >>> stats.trim1(a, 0.2, 'left')
+    array([2, 4, 3, 5, 6, 7, 8, 9])
+
+    Note that the elements of the input array are trimmed by value, but the
+    output array is not necessarily sorted.
+
+    The proportion to trim is rounded down to the nearest integer. For
+    instance, trimming 25% of the values from an array of 10 values will
+    return an array of 8 values:
+
+    >>> b = np.arange(10)
+    >>> stats.trim1(b, 1/4).shape
+    (8,)
+
+    Multidimensional arrays can be trimmed along any axis or across the entire
+    array:
+
+    >>> c = [2, 4, 6, 8, 0, 1, 3, 5, 7, 9]
+    >>> d = np.array([a, b, c])
+    >>> stats.trim1(d, 0.8, axis=0).shape
+    (1, 10)
+    >>> stats.trim1(d, 0.8, axis=1).shape
+    (3, 2)
+    >>> stats.trim1(d, 0.8, axis=None).shape
+    (6,)
 
     """
     a = np.asarray(a)
@@ -3422,7 +3484,9 @@ def trim1(a, proportiontocut, tail='right', axis=0):
 
     atmp = np.partition(a, (lowercut, uppercut - 1), axis)
 
-    return atmp[lowercut:uppercut]
+    sl = [slice(None)] * atmp.ndim
+    sl[axis] = slice(lowercut, uppercut)
+    return atmp[tuple(sl)]
 
 
 def trim_mean(a, proportiontocut, axis=0):
@@ -3500,7 +3564,7 @@ F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 class F_onewayConstantInputWarning(RuntimeWarning):
     """
     Warning generated by `f_oneway` when an input is constant, e.g.
-    each of the samples provided is a constant array.
+    each of the samples provided is an array of identical values.
     """
 
     def __init__(self, msg=None):
@@ -3540,7 +3604,7 @@ def _first(arr, axis):
     return np.take_along_axis(arr, np.array(0, ndmin=arr.ndim), axis)
 
 
-def f_oneway(*args, axis=0):
+def f_oneway(*samples, axis=0):
     """Perform one-way ANOVA.
 
     The one-way ANOVA tests the null hypothesis that two or more groups have
@@ -3567,7 +3631,7 @@ def f_oneway(*args, axis=0):
     Warns
     -----
     F_onewayConstantInputWarning
-        Raised if each of the input arrays is constant array.
+        Raised if all values within each of the input arrays are identical.
         In this case the F statistic is either infinite or isn't defined,
         so ``np.inf`` or ``np.nan`` is returned.
 
@@ -3596,7 +3660,7 @@ def f_oneway(*args, axis=0):
     are not satisfied, a warning is generated and (``np.nan``, ``np.nan``)
     is returned.
 
-    If each group contains constant values, and there exist at least two
+    If all values in each group are identical, and there exist at least two
     groups with different values, the function generates a warning and
     returns (``np.inf``, 0).
 
@@ -3668,47 +3732,51 @@ def f_oneway(*args, axis=0):
     array([0.20630784, 0.96375203, 0.04733157])
 
     """
-    if len(args) < 2:
-        raise TypeError(f'at least two inputs are required; got {len(args)}.')
+    if len(samples) < 2:
+        raise TypeError('at least two inputs are required;'
+                        f' got {len(samples)}.')
 
-    args = [np.asarray(arg, dtype=float) for arg in args]
+    samples = [np.asarray(sample, dtype=float) for sample in samples]
 
     # ANOVA on N groups, each in its own array
-    num_groups = len(args)
+    num_groups = len(samples)
 
     # We haven't explicitly validated axis, but if it is bad, this call of
     # np.concatenate will raise np.AxisError.  The call will raise ValueError
     # if the dimensions of all the arrays, except the axis dimension, are not
     # the same.
-    alldata = np.concatenate(args, axis=axis)
+    alldata = np.concatenate(samples, axis=axis)
     bign = alldata.shape[axis]
 
     # Check this after forming alldata, so shape errors are detected
     # and reported before checking for 0 length inputs.
-    if any(arg.shape[axis] == 0 for arg in args):
+    if any(sample.shape[axis] == 0 for sample in samples):
         warnings.warn(F_onewayBadInputSizesWarning('at least one input '
                                                    'has length 0'))
         return _create_f_oneway_nan_result(alldata.shape, axis)
 
     # Must have at least one group with length greater than 1.
-    if all(arg.shape[axis] == 1 for arg in args):
+    if all(sample.shape[axis] == 1 for sample in samples):
         msg = ('all input arrays have length 1.  f_oneway requires that at '
                'least one input has length greater than 1.')
         warnings.warn(F_onewayBadInputSizesWarning(msg))
         return _create_f_oneway_nan_result(alldata.shape, axis)
 
-    # Check if the values within each group are constant, and if the common
+    # Check if all values within each group are identical, and if the common
     # value in at least one group is different from that in another group.
     # Based on https://github.com/scipy/scipy/issues/11669
 
     # If axis=0, say, and the groups have shape (n0, ...), (n1, ...), ...,
     # then is_const is a boolean array with shape (num_groups, ...).
-    # It is True if the groups along the axis slice are each consant.
-    # In the typical case where each input array is 1-d, is_const is a
-    # 1-d array with length num_groups.
-    is_const = np.concatenate([(_first(a, axis) == a).all(axis=axis,
-                                                          keepdims=True)
-                               for a in args], axis=axis)
+    # It is True if the values within the groups along the axis slice are
+    # identical. In the typical case where each input array is 1-d, is_const is
+    # a 1-d array with length num_groups.
+    is_const = np.concatenate(
+        [(_first(sample, axis) == sample).all(axis=axis,
+                                              keepdims=True)
+         for sample in samples],
+        axis=axis
+    )
 
     # all_const is a boolean array with shape (...) (see previous comment).
     # It is True if the values within each group along the axis slice are
@@ -3733,8 +3801,9 @@ def f_oneway(*args, axis=0):
     sstot = _sum_of_squares(alldata, axis=axis) - normalized_ss
 
     ssbn = 0
-    for a in args:
-        ssbn += _square_of_sums(a - offset, axis=axis) / a.shape[axis]
+    for sample in samples:
+        ssbn += _square_of_sums(sample - offset,
+                                axis=axis) / sample.shape[axis]
 
     # Naming: variables ending in bn/b are for "between treatments", wn/w are
     # for "within treatments"
@@ -3767,7 +3836,7 @@ def f_oneway(*args, axis=0):
     return F_onewayResult(f, prob)
 
 
-def alexandergovern(*args, nan_policy='propagate'):
+def alexandergovern(*samples, nan_policy='propagate'):
     """Performs the Alexander Govern test.
 
     The Alexander-Govern approximation tests the equality of k independent
@@ -3852,9 +3921,9 @@ def alexandergovern(*args, nan_policy='propagate'):
     the alternative.
 
     """
-    args = _alexandergovern_input_validation(args, nan_policy)
+    samples = _alexandergovern_input_validation(samples, nan_policy)
 
-    if np.any([(arg == arg[0]).all() for arg in args]):
+    if np.any([(sample == sample[0]).all() for sample in samples]):
         warnings.warn(AlexanderGovernConstantInputWarning())
         return AlexanderGovernResult(np.nan, np.nan)
 
@@ -3864,13 +3933,13 @@ def alexandergovern(*args, nan_policy='propagate'):
     # to perform the test.
 
     # precalculate mean and length of each sample
-    lengths = np.array([ma.count(arg) if nan_policy == 'omit' else len(arg)
-                        for arg in args])
-    means = np.array([np.mean(arg) for arg in args])
+    lengths = np.array([ma.count(sample) if nan_policy == 'omit'
+                        else len(sample) for sample in samples])
+    means = np.array([np.mean(sample) for sample in samples])
 
     # (1) determine standard error of the mean for each sample
-    standard_errors = [np.std(arg, ddof=1) / np.sqrt(length)
-                       for arg, length in zip(args, lengths)]
+    standard_errors = [np.std(sample, ddof=1) / np.sqrt(length)
+                       for sample, length in zip(samples, lengths)]
 
     # (2) define a weight for each sample
     inv_sq_se = 1 / np.square(standard_errors)
@@ -3898,29 +3967,30 @@ def alexandergovern(*args, nan_policy='propagate'):
 
     # "[the p value is determined from] central chi-square random deviates
     # with k - 1 degrees of freedom". Alexander, Govern (94)
-    p = distributions.chi2.sf(A, len(args) - 1)
+    p = distributions.chi2.sf(A, len(samples) - 1)
     return AlexanderGovernResult(A, p)
 
 
-def _alexandergovern_input_validation(args, nan_policy):
-    if len(args) < 2:
-        raise TypeError(f"2 or more inputs required, got {len(args)}")
+def _alexandergovern_input_validation(samples, nan_policy):
+    if len(samples) < 2:
+        raise TypeError(f"2 or more inputs required, got {len(samples)}")
 
     # input arrays are flattened
-    args = [np.asarray(arg, dtype=float) for arg in args]
+    samples = [np.asarray(sample, dtype=float) for sample in samples]
 
-    for i, arg in enumerate(args):
-        if np.size(arg) <= 1:
+    for i, sample in enumerate(samples):
+        if np.size(sample) <= 1:
             raise ValueError("Input sample size must be greater than one.")
-        if arg.ndim != 1:
+        if sample.ndim != 1:
             raise ValueError("Input samples must be one-dimensional")
-        if np.isinf(arg).any():
+        if np.isinf(sample).any():
             raise ValueError("Input samples must be finite.")
 
-        contains_nan, nan_policy = _contains_nan(arg, nan_policy=nan_policy)
+        contains_nan, nan_policy = _contains_nan(sample,
+                                                 nan_policy=nan_policy)
         if contains_nan and nan_policy == 'omit':
-            args[i] = ma.masked_invalid(arg)
-    return args
+            samples[i] = ma.masked_invalid(sample)
+    return samples
 
 
 AlexanderGovernResult = make_dataclass("AlexanderGovernResult", ("statistic",
@@ -5096,7 +5166,7 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
         return WeightedTauResult((
             _weightedrankedtau(x, y, None, weigher, additive) +
             _weightedrankedtau(y, x, None, weigher, additive)
-            ) / 2, np.nan)
+        ) / 2, np.nan)
 
     if rank is False:
         rank = np.arange(x.size, dtype=np.intp)
@@ -5712,6 +5782,13 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     pvalue : float or array
         Two-sided p-value.
 
+    Notes
+    -----
+    The statistic is calculated as ``(np.mean(a) - popmean)/se``, where
+    ``se`` is the standard error. Therefore, the statistic will be positive
+    when the sample mean is greater than the population mean and negative when
+    the sample mean is less than the population mean.
+
     Examples
     --------
     >>> from scipy import stats
@@ -5882,7 +5959,9 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Notes
     -----
-    .. versionadded:: 0.16.0
+    The statistic is calculated as ``(mean1 - mean2)/se``, where ``se`` is the
+    standard error. Therefore, the statistic will be positive when `mean1` is
+    greater than `mean2` and negative when `mean1` is less than `mean2`.
 
     References
     ----------
@@ -6140,6 +6219,12 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
     and the trimmed sample size in calculation of the statistic. Trimming is
     recommended if the underlying distribution is long-tailed or contaminated
     with outliers [4]_.
+
+    The statistic is calculated as ``(np.mean(a) - np.mean(b))/se``, where
+    ``se`` is the standard error. Therefore, the statistic will be positive
+    when the sample mean of `a` is greater than the sample mean of `b` and
+    negative when the sample mean of `a` is less than the sample mean of
+    `b`.
 
     References
     ----------
@@ -6529,6 +6614,11 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     than the threshold, e.g. 1%, 5% or 10%, then we reject the null
     hypothesis of equal averages. Small p-values are associated with
     large t-statistics.
+
+    The statistic is calculated as ``np.mean(a - b)/se``, where ``se`` is the
+    standard error. Therefore, the statistic will be positive when the sample
+    mean of ``a - b`` is greater than zero and negative when the sample mean of
+    ``a - b`` is less than zero.
 
     References
     ----------
@@ -7082,58 +7172,50 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
 
     Examples
     --------
+    Suppose we wish to test the null hypothesis that a sample is distributed
+    according to the standard normal.
+    We choose a confidence level of 95%; that is, we will reject the null
+    hypothesis in favor of the alternative if the p-value is less than 0.05.
+
+    When testing uniformly distributed data, we would expect the
+    null hypothesis to be rejected.
+
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
-
-    >>> x = np.linspace(-15, 15, 9)
-    >>> stats.ks_1samp(x, stats.norm.cdf)
-    (0.44435602715924361, 0.038850142705171065)
-
-    >>> stats.ks_1samp(stats.norm.rvs(size=100, random_state=rng),
+    >>> stats.ks_1samp(stats.uniform.rvs(size=100, random_state=rng),
     ...                stats.norm.cdf)
-    KstestResult(statistic=0.165471391799..., pvalue=0.007331283245...)
+    KstestResult(statistic=0.5001899973268688, pvalue=1.1616392184763533e-23)
 
-    *Test against one-sided alternative hypothesis*
+    Indeed, the p-value is lower than our threshold of 0.05, so we reject the
+    null hypothesis in favor of the default "two-sided" alternative: the data
+    are *not* distributed according to the standard normal.
 
-    Shift distribution to larger values, so that `` CDF(x) < norm.cdf(x)``:
+    When testing random variates from the standard normal distribution, we
+    expect the data to be consistent with the null hypothesis most of the time.
 
-    >>> x = stats.norm.rvs(loc=0.2, size=100, random_state=rng)
+    >>> x = stats.norm.rvs(size=100, random_state=rng)
+    >>> stats.ks_1samp(x, stats.norm.cdf)
+    KstestResult(statistic=0.05345882212970396, pvalue=0.9227159037744717)
+
+    As expected, the p-value of 0.92 is not below our threshold of 0.05, so
+    we cannot reject the null hypothesis.
+
+    Suppose, however, that the random variates are distributed according to
+    a normal distribution that is shifted toward greater values. In this case,
+    the cumulative density function (CDF) of the underlying distribution tends
+    to be *less* than the CDF of the standard normal. Therefore, we would
+    expect the null hypothesis to be rejected with ``alternative='less'``:
+
+    >>> x = stats.norm.rvs(size=100, loc=0.5, random_state=rng)
     >>> stats.ks_1samp(x, stats.norm.cdf, alternative='less')
-    KstestResult(statistic=0.100203351482..., pvalue=0.125544644447...)
+    KstestResult(statistic=0.17482387821055168, pvalue=0.001913921057766743)
 
-    Reject null hypothesis in favor of alternative hypothesis: less
-
-    >>> stats.ks_1samp(x, stats.norm.cdf, alternative='greater')
-    KstestResult(statistic=0.018749806388..., pvalue=0.920581859791...)
-
-    Reject null hypothesis in favor of alternative hypothesis: greater
-
-    >>> stats.ks_1samp(x, stats.norm.cdf)
-    KstestResult(statistic=0.100203351482..., pvalue=0.250616879765...)
-
-    Don't reject null hypothesis in favor of alternative hypothesis: two-sided
-
-    *Testing t distributed random variables against normal distribution*
-
-    With 100 degrees of freedom the t distribution looks close to the normal
-    distribution, and the K-S test does not reject the hypothesis that the
-    sample came from the normal distribution:
-
-    >>> stats.ks_1samp(stats.t.rvs(100,size=100, random_state=rng),
-    ...                stats.norm.cdf)
-    KstestResult(statistic=0.064273776544..., pvalue=0.778737758305...)
-
-    With 3 degrees of freedom the t distribution looks sufficiently different
-    from the normal distribution, that we can reject the hypothesis that the
-    sample came from the normal distribution at the 10% level:
-
-    >>> stats.ks_1samp(stats.t.rvs(3,size=100, random_state=rng),
-    ...                stats.norm.cdf)
-    KstestResult(statistic=0.128678487493..., pvalue=0.066569081515...)
+    and indeed, with p-value smaller than our threshold, we reject the null
+    hypothesis in favor of the alternative.
 
     """
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
-       alternative.lower()[0], alternative)
+        alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
         raise ValueError("Unexpected alternative %s" % alternative)
     if np.ma.is_masked(x):
@@ -7421,39 +7503,55 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
 
     Examples
     --------
+    Suppose we wish to test the null hypothesis that two samples were drawn
+    from the same distribution.
+    We choose a confidence level of 95%; that is, we will reject the null
+    hypothesis in favor of the alternative if the p-value is less than 0.05.
+
+    If the first sample were drawn from a uniform distribution and the second
+    were drawn from the standard normal, we would expect the null hypothesis
+    to be rejected.
+
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
+    >>> sample1 = stats.uniform.rvs(size=100, random_state=rng)
+    >>> sample2 = stats.norm.rvs(size=110, random_state=rng)
+    >>> stats.ks_2samp(sample1, sample2)
+    KstestResult(statistic=0.5454545454545454, pvalue=7.37417839555191e-15)
 
-    >>> n1 = 200  # size of first sample
-    >>> n2 = 300  # size of second sample
+    Indeed, the p-value is lower than our threshold of 0.05, so we reject the
+    null hypothesis in favor of the default "two-sided" alternative: the data
+    were *not* drawn from the same distribution.
 
-    For a different distribution, we can reject the null hypothesis since the
-    pvalue is below 1%:
+    When both samples are drawn from the same distribution, we expect the data
+    to be consistent with the null hypothesis most of the time.
 
-    >>> rvs1 = stats.norm.rvs(size=n1, loc=0., scale=1, random_state=rng)
-    >>> rvs2 = stats.norm.rvs(size=n2, loc=0.5, scale=1.5, random_state=rng)
-    >>> stats.ks_2samp(rvs1, rvs2)
-     KstestResult(statistic=0.24833333333333332, pvalue=5.846586728086578e-07)
+    >>> sample1 = stats.norm.rvs(size=105, random_state=rng)
+    >>> sample2 = stats.norm.rvs(size=95, random_state=rng)
+    >>> stats.ks_2samp(sample1, sample2)
+    KstestResult(statistic=0.10927318295739348, pvalue=0.5438289009927495)
 
-    For a slightly different distribution, we cannot reject the null hypothesis
-    at a 10% or lower alpha since the p-value at 0.144 is higher than 10%
+    As expected, the p-value of 0.54 is not below our threshold of 0.05, so
+    we cannot reject the null hypothesis.
 
-    >>> rvs3 = stats.norm.rvs(size=n2, loc=0.01, scale=1.0, random_state=rng)
-    >>> stats.ks_2samp(rvs1, rvs3)
-    KstestResult(statistic=0.07833333333333334, pvalue=0.4379658456442945)
+    Suppose, however, that the first sample were drawn from
+    a normal distribution shifted toward greater values. In this case,
+    the cumulative density function (CDF) of the underlying distribution tends
+    to be *less* than the CDF underlying the second sample. Therefore, we would
+    expect the null hypothesis to be rejected with ``alternative='less'``:
 
-    For an identical distribution, we cannot reject the null hypothesis since
-    the p-value is high, 41%:
+    >>> sample1 = stats.norm.rvs(size=105, loc=0.5, random_state=rng)
+    >>> stats.ks_2samp(sample1, sample2, alternative='less')
+    KstestResult(statistic=0.4055137844611529, pvalue=3.5474563068855554e-08)
 
-    >>> rvs4 = stats.norm.rvs(size=n2, loc=0.0, scale=1.0, random_state=rng)
-    >>> stats.ks_2samp(rvs1, rvs4)
-    KstestResult(statistic=0.12166666666666667, pvalue=0.05401863039081145)
+    and indeed, with p-value smaller than our threshold, we reject the null
+    hypothesis in favor of the alternative.
 
     """
     if mode not in ['auto', 'exact', 'asymp']:
         raise ValueError(f'Invalid value for mode: {mode}')
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
-       alternative.lower()[0], alternative)
+        alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'less', 'greater']:
         raise ValueError(f'Invalid value for alternative: {alternative}')
     MAX_AUTO_N = 10000  # 'auto' will attempt to be exact if n1,n2 <= MAX_AUTO_N
@@ -7627,54 +7725,66 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
 
     Examples
     --------
+    Suppose we wish to test the null hypothesis that a sample is distributed
+    according to the standard normal.
+    We choose a confidence level of 95%; that is, we will reject the null
+    hypothesis in favor of the alternative if the p-value is less than 0.05.
+
+    When testing uniformly distributed data, we would expect the
+    null hypothesis to be rejected.
+
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
+    >>> stats.kstest(stats.uniform.rvs(size=100, random_state=rng),
+    ...              stats.norm.cdf)
+    KstestResult(statistic=0.5001899973268688, pvalue=1.1616392184763533e-23)
 
-    >>> x = np.linspace(-15, 15, 9)
-    >>> stats.kstest(x, 'norm')
-    KstestResult(statistic=0.444356027159..., pvalue=0.038850140086...)
+    Indeed, the p-value is lower than our threshold of 0.05, so we reject the
+    null hypothesis in favor of the default "two-sided" alternative: the data
+    are *not* distributed according to the standard normal.
 
-    >>> stats.kstest(stats.norm.rvs(size=100, random_state=rng), stats.norm.cdf)
-    KstestResult(statistic=0.165471391799..., pvalue=0.007331283245...)
+    When testing random variates from the standard normal distribution, we
+    expect the data to be consistent with the null hypothesis most of the time.
 
-    The above lines are equivalent to:
+    >>> x = stats.norm.rvs(size=100, random_state=rng)
+    >>> stats.kstest(x, stats.norm.cdf)
+    KstestResult(statistic=0.05345882212970396, pvalue=0.9227159037744717)
 
-    >>> stats.kstest(stats.norm.rvs, 'norm', N=100)
-    KstestResult(statistic=0.113810164200..., pvalue=0.138690052319...)  # may vary
+    As expected, the p-value of 0.92 is not below our threshold of 0.05, so
+    we cannot reject the null hypothesis.
 
-    *Test against one-sided alternative hypothesis*
+    Suppose, however, that the random variates are distributed according to
+    a normal distribution that is shifted toward greater values. In this case,
+    the cumulative density function (CDF) of the underlying distribution tends
+    to be *less* than the CDF of the standard normal. Therefore, we would
+    expect the null hypothesis to be rejected with ``alternative='less'``:
 
-    Shift distribution to larger values, so that ``CDF(x) < norm.cdf(x)``:
+    >>> x = stats.norm.rvs(size=100, loc=0.5, random_state=rng)
+    >>> stats.kstest(x, stats.norm.cdf, alternative='less')
+    KstestResult(statistic=0.17482387821055168, pvalue=0.001913921057766743)
 
-    >>> x = stats.norm.rvs(loc=0.2, size=100, random_state=rng)
-    >>> stats.kstest(x, 'norm', alternative='less')
-    KstestResult(statistic=0.1002033514..., pvalue=0.1255446444...)
+    and indeed, with p-value smaller than our threshold, we reject the null
+    hypothesis in favor of the alternative.
 
-    Reject null hypothesis in favor of alternative hypothesis: less
+    For convenience, the previous test can be performed using the name of the
+    distribution as the second argument.
 
-    >>> stats.kstest(x, 'norm', alternative='greater')
-    KstestResult(statistic=0.018749806388..., pvalue=0.920581859791...)
+    >>> stats.kstest(x, "norm", alternative='less')
+    KstestResult(statistic=0.17482387821055168, pvalue=0.001913921057766743)
 
-    Don't reject null hypothesis in favor of alternative hypothesis: greater
+    The examples above have all been one-sample tests identical to those
+    performed by `ks_1samp`. Note that `kstest` can also perform two-sample
+    tests identical to those performed by `ks_2samp`. For example, when two
+    samples are drawn from the same distribution, we expect the data to be
+    consistent with the null hypothesis most of the time.
 
-    >>> stats.kstest(x, 'norm')
-    KstestResult(statistic=0.100203351482..., pvalue=0.250616879765...)
+    >>> sample1 = stats.laplace.rvs(size=105, random_state=rng)
+    >>> sample2 = stats.laplace.rvs(size=95, random_state=rng)
+    >>> stats.kstest(sample1, sample2)
+    KstestResult(statistic=0.11779448621553884, pvalue=0.4494256912629795)
 
-    *Testing t distributed random variables against normal distribution*
-
-    With 100 degrees of freedom the t distribution looks close to the normal
-    distribution, and the K-S test does not reject the hypothesis that the
-    sample came from the normal distribution:
-
-    >>> stats.kstest(stats.t.rvs(100, size=100, random_state=rng), 'norm')
-    KstestResult(statistic=0.064273776544..., pvalue=0.778737758305...)
-
-    With 3 degrees of freedom the t distribution looks sufficiently different
-    from the normal distribution, that we can reject the hypothesis that the
-    sample came from the normal distribution at the 10% level:
-
-    >>> stats.kstest(stats.t.rvs(3, size=100, random_state=rng), 'norm')
-    KstestResult(statistic=0.128678487493..., pvalue=0.066569081515...)
+    As expected, the p-value of 0.45 is not below our threshold of 0.05, so
+    we cannot reject the null hypothesis.
 
     """
     # to not break compatibility with existing code
@@ -7819,7 +7929,7 @@ KruskalResult = namedtuple('KruskalResult', ('statistic', 'pvalue'))
 
 
 @_axis_nan_policy_factory(KruskalResult, n_samples=None)
-def kruskal(*args, nan_policy='propagate'):
+def kruskal(*samples, nan_policy='propagate'):
     """Compute the Kruskal-Wallis H-test for independent samples.
 
     The Kruskal-Wallis H-test tests the null hypothesis that the population
@@ -7885,39 +7995,39 @@ def kruskal(*args, nan_policy='propagate'):
     KruskalResult(statistic=7.0, pvalue=0.0301973834223185)
 
     """
-    args = list(map(np.asarray, args))
+    samples = list(map(np.asarray, samples))
 
-    num_groups = len(args)
+    num_groups = len(samples)
     if num_groups < 2:
         raise ValueError("Need at least two groups in stats.kruskal()")
 
-    for arg in args:
-        if arg.size == 0:
+    for sample in samples:
+        if sample.size == 0:
             return KruskalResult(np.nan, np.nan)
-        elif arg.ndim != 1:
+        elif sample.ndim != 1:
             raise ValueError("Samples must be one-dimensional.")
 
-    n = np.asarray(list(map(len, args)))
+    n = np.asarray(list(map(len, samples)))
 
     if nan_policy not in ('propagate', 'raise', 'omit'):
         raise ValueError("nan_policy must be 'propagate', 'raise' or 'omit'")
 
     contains_nan = False
-    for arg in args:
-        cn = _contains_nan(arg, nan_policy)
+    for sample in samples:
+        cn = _contains_nan(sample, nan_policy)
         if cn[0]:
             contains_nan = True
             break
 
     if contains_nan and nan_policy == 'omit':
-        for a in args:
-            a = ma.masked_invalid(a)
-        return mstats_basic.kruskal(*args)
+        for sample in samples:
+            sample = ma.masked_invalid(sample)
+        return mstats_basic.kruskal(*samples)
 
     if contains_nan and nan_policy == 'propagate':
         return KruskalResult(np.nan, np.nan)
 
-    alldata = np.concatenate(args)
+    alldata = np.concatenate(samples)
     ranked = rankdata(alldata)
     ties = tiecorrect(ranked)
     if ties == 0:
@@ -7941,21 +8051,21 @@ FriedmanchisquareResult = namedtuple('FriedmanchisquareResult',
                                      ('statistic', 'pvalue'))
 
 
-def friedmanchisquare(*args):
-    """Compute the Friedman test for repeated measurements.
+def friedmanchisquare(*samples):
+    """Compute the Friedman test for repeated samples.
 
-    The Friedman test tests the null hypothesis that repeated measurements of
+    The Friedman test tests the null hypothesis that repeated samples of
     the same individuals have the same distribution.  It is often used
-    to test for consistency among measurements obtained in different ways.
-    For example, if two measurement techniques are used on the same set of
+    to test for consistency among samples obtained in different ways.
+    For example, if two sampling techniques are used on the same set of
     individuals, the Friedman test can be used to determine if the two
-    measurement techniques are consistent.
+    sampling techniques are consistent.
 
     Parameters
     ----------
-    measurements1, measurements2, measurements3... : array_like
-        Arrays of measurements.  All of the arrays must have the same number
-        of elements.  At least 3 sets of measurements must be given.
+    sample1, sample2, sample3... : array_like
+        Arrays of observations.  All of the arrays must have the same number
+        of elements.  At least three samples must be given.
 
     Returns
     -------
@@ -7969,25 +8079,25 @@ def friedmanchisquare(*args):
     -----
     Due to the assumption that the test statistic has a chi squared
     distribution, the p-value is only reliable for n > 10 and more than
-    6 repeated measurements.
+    6 repeated samples.
 
     References
     ----------
     .. [1] https://en.wikipedia.org/wiki/Friedman_test
 
     """
-    k = len(args)
+    k = len(samples)
     if k < 3:
-        raise ValueError('At least 3 sets of measurements must be given '
+        raise ValueError('At least 3 sets of samples must be given '
                          'for Friedman test, got {}.'.format(k))
 
-    n = len(args[0])
+    n = len(samples[0])
     for i in range(1, k):
-        if len(args[i]) != n:
+        if len(samples[i]) != n:
             raise ValueError('Unequal N in friedmanchisquare.  Aborting.')
 
     # Rank data
-    data = np.vstack(args).T
+    data = np.vstack(samples).T
     data = data.astype(float)
     for i in range(len(data)):
         data[i] = rankdata(data[i])
