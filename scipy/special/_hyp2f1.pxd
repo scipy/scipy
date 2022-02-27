@@ -373,16 +373,25 @@ cdef inline double gamma_ratio_lanczos(
 
     The lanczos approximation takes the form
 
-    gamma(x) = fac * lanczos_sum_expg_scaled(x)
+    gamma(x) = factor(x) * lanczos_sum_expg_scaled(x)
     
-    where fac = ((x + lanczos_g - 0.5)/e)**(x - 0.5).
+    where factor(x) = ((x + lanczos_g - 0.5)/e)**(x - 0.5).
 
     The terms can be combined analytically to avoid underflow and overflow.
     The formula above is only valid for x >= 0.5, but can be extended to
-    x < 0.5 with the reflection principle. This implementation priortizes
-    simplifying the logic of when to apply the reflection principle over
-    using the most efficient analytical combination of terms for each
-    case.
+    x < 0.5 with the reflection principle.
+
+    The condition x = u + v - w makes it possible to cancel factors in the
+    factor(u) * factor(v)/(factor(w) * factor(x)) in one of four ways by
+    choosing a factor and absorbing into the others. Below we refer to this
+    expression factor(u)*factor(v)/(factor(w)*factor(x)) as the factor part.
+    Rather than trying to decide upon the best way to combine the factors, the
+    following code tries all four methods and takes an average. Zero, infinite,
+    and NaN values are excluded from the average. For the cases where there
+    are no values to average because they are all either zero, infinite, or NaN:
+    If all methods agree the the factor part is zero, zero is returned. If all
+    methods agree that the factor part is infinite of the same sign,
+    infinity of the proper sign is returned, otherwise NaN is returned.
     """
     cdef:
         double g
@@ -395,7 +404,8 @@ cdef inline double gamma_ratio_lanczos(
         double factors[4]
         int i
         int exists_zero_factor
-        int exists_inf_factor
+        int exists_pos_inf_factor
+        int exists_neg_inf_factor
         int exists_nan_factor
         int count
 
@@ -448,6 +458,8 @@ cdef inline double gamma_ratio_lanczos(
         lanczos_part *= lanczos_sum_expg_scaled(1 - x)
         lanczos_part *= sin(M_PI*x)*M_1_PI
         factors[3] = (1 - x + g - 0.5)
+    # Computes running average of factor parts when factors are combined in
+    # different ways.
     mean_factor_part = 0
     count = 0
     # Absorb u factor into others.
@@ -456,8 +468,10 @@ cdef inline double gamma_ratio_lanczos(
     factor_part *= pow(factors[0] / factors[3], x - 0.5)
     if factor_part == 0:
         exists_zero_factor = True
-    elif isinf(factor_part):
-        exists_inf_factor = True
+    elif isinf(factor_part) and factor_part > 0:
+        exists_pos_inf_factor = True
+    elif isinf(factor_part) and factor_part < 0:
+        exists_neg_inf_factor = True
     elif isnan(factor_part):
         exists_nan_factor = True
     else:
@@ -469,8 +483,10 @@ cdef inline double gamma_ratio_lanczos(
     factor_part *= pow(factors[1] / factors[3], x - 0.5)
     if factor_part == 0:
         exists_zero_factor = True
-    elif isinf(factor_part):
-        exists_inf_factor = True
+    elif isinf(factor_part) and factor_part > 0:
+        exists_pos_inf_factor = True
+    elif isinf(factor_part) and factor_part < 0:
+        exists_neg_inf_factor = True
     elif isnan(factor_part):
         exists_nan_factor = True
     else:
@@ -482,8 +498,10 @@ cdef inline double gamma_ratio_lanczos(
     factor_part *= pow(factors[2] / factors[3], x - 0.5)
     if factor_part == 0:
         exists_zero_factor = True
-    elif isinf(factor_part):
-        exists_inf_factor = True
+    elif isinf(factor_part) and factor_part > 0:
+        exists_pos_inf_factor = True
+    elif isinf(factor_part) and factor_part < 0:
+        exists_neg_inf_factor = True
     elif isnan(factor_part):
         exists_nan_factor = True
     else:
@@ -495,8 +513,10 @@ cdef inline double gamma_ratio_lanczos(
     factor_part *= pow(factors[3]/factors[2], w - 0.5)
     if factor_part == 0:
         exists_zero_factor = True
-    elif isinf(factor_part):
-        exists_inf_factor = True
+    elif isinf(factor_part) and factor_part > 0:
+        exists_pos_inf_factor = True
+    elif isinf(factor_part) and factor_part < 0:
+        exists_neg_inf_factor = True
     elif isnan(factor_part):
         exists_nan_factor = True
     else:
@@ -504,9 +524,21 @@ cdef inline double gamma_ratio_lanczos(
         count += 1
     if mean_factor_part:
         return mean_factor_part * lanczos_part
-    if exists_nan_factor or exists_zero_factor and exists_inf_factor:
+    # If one of the factors is NaN, or if more than one of zero, positive
+    # infinity and negative infinity appear, return NaN.
+    if (
+            exists_nan_factor or
+            exists_zero_factor and (
+                exists_pos_inf_factor or exists_neg_inf_factor
+            ) or
+            exists_pos_inf_factor and exists_neg_inf_factor
+    ):
         return NPY_NAN
-    if exists_zero_factor:
-        return 0
-    if exists_inf_factor:
+    # All agree the result if positive infinity.
+    if exists_pos_inf_factor:
         return NPY_INFINITY
+    # All agree the result is negative infinity
+    if exists_neg_inf_factor:
+        return -NPY_INFINITY
+    # All agree the result is zero.
+    return 0
