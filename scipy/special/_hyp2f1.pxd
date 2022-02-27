@@ -472,10 +472,11 @@ cdef inline double gamma_ratio_lanczos(
     factor_part *= pow(factors[0] / factors[3], x - 0.5)
     if factor_part == 0:
         exists_zero_factor = True
-    elif isinf(factor_part) and factor_part > 0:
-        exists_pos_inf_factor = True
-    elif isinf(factor_part) and factor_part < 0:
-        exists_neg_inf_factor = True
+    elif isinf(factor_part):
+        if factor_part > 0:
+            exists_pos_inf_factor = True
+        else:
+            exists_neg_inf_factor = True
     elif isnan(factor_part):
         exists_nan_factor = True
     else:
@@ -487,10 +488,11 @@ cdef inline double gamma_ratio_lanczos(
     factor_part *= pow(factors[1] / factors[3], x - 0.5)
     if factor_part == 0:
         exists_zero_factor = True
-    elif isinf(factor_part) and factor_part > 0:
-        exists_pos_inf_factor = True
-    elif isinf(factor_part) and factor_part < 0:
-        exists_neg_inf_factor = True
+    elif isinf(factor_part):
+        if factor_part > 0:
+            exists_pos_inf_factor = True
+        else:
+            exists_neg_inf_factor = True
     elif isnan(factor_part):
         exists_nan_factor = True
     else:
@@ -502,10 +504,11 @@ cdef inline double gamma_ratio_lanczos(
     factor_part *= pow(factors[2] / factors[3], x - 0.5)
     if factor_part == 0:
         exists_zero_factor = True
-    elif isinf(factor_part) and factor_part > 0:
-        exists_pos_inf_factor = True
-    elif isinf(factor_part) and factor_part < 0:
-        exists_neg_inf_factor = True
+    elif isinf(factor_part):
+        if factor_part > 0:
+            exists_pos_inf_factor = True
+        else:
+            exists_neg_inf_factor = True
     elif isnan(factor_part):
         exists_nan_factor = True
     else:
@@ -517,10 +520,11 @@ cdef inline double gamma_ratio_lanczos(
     factor_part *= pow(factors[3]/factors[2], w - 0.5)
     if factor_part == 0:
         exists_zero_factor = True
-    elif isinf(factor_part) and factor_part > 0:
-        exists_pos_inf_factor = True
-    elif isinf(factor_part) and factor_part < 0:
-        exists_neg_inf_factor = True
+    elif isinf(factor_part):
+        if factor_part > 0:
+            exists_pos_inf_factor = True
+        else:
+            exists_neg_inf_factor = True
     elif isnan(factor_part):
         exists_nan_factor = True
     else:
