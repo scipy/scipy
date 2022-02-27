@@ -964,14 +964,15 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         If `lmbda` is None, array must be positive, 1-dimensional, and
         non-constant.
 
-    lmbda : {None, scalar}, optional
-        If `lmbda` is None, find the value of `lmbda` that maximizes the
-        log-likelihood function and return it as the second output argument.
+    lmbda : scalar, optional
+        If `lmbda` is None (default), find the value of `lmbda` that maximizes
+        the log-likelihood function and return it as the second output
+        argument.
 
         If `lmbda` is not None, do the transformation for that value.
 
-    alpha : {None, float}, optional
-        If `lmbda` is None and `alpha` is not None, return the
+    alpha : float, optional
+        If `lmbda` is None and `alpha` is not None (default), return the
         ``100 * (1-alpha)%`` confidence  interval for `lmbda` as the third
         output argument. Must be between 0.0 and 1.0.
 
