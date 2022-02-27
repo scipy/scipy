@@ -462,6 +462,10 @@ cdef inline double gamma_ratio_lanczos(
     # different ways.
     mean_factor_part = 0
     count = 0
+    exists_zero_factor = False
+    exists_pos_inf_factor = False
+    exists_neg_inf_factor = False
+    exists_nan_factor = False
     # Absorb u factor into others.
     factor_part = pow(factors[1] / factors[0], v - 0.5)
     factor_part *= pow(factors[0] / factors[2], w - 0.5)
