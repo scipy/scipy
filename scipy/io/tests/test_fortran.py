@@ -88,7 +88,7 @@ def test_fortranfile_read_mixed_record():
 
     filename = path.join(DATA_PATH, "fortran-3x3d-2i.dat")
     with FortranFile(filename, 'r', '<u4') as f:
-        record = f.read_record('(3,3)f8', '2i4')
+        record = f.read_record('(3,3)<f8', '2<i4')
 
     ax = np.arange(3*3).reshape(3, 3).astype(np.double)
     bx = np.array([-1, -2], dtype=np.int32)

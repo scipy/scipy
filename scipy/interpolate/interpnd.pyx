@@ -24,8 +24,8 @@ from libc.math cimport fabs, sqrt
 
 import numpy as np
 
-import scipy.spatial.qhull as qhull
-cimport scipy.spatial.qhull as qhull
+import scipy.spatial._qhull as qhull
+cimport scipy.spatial._qhull as qhull
 
 import warnings
 
@@ -46,7 +46,7 @@ ctypedef fused double_or_complex:
 # Interpolator base class
 #------------------------------------------------------------------------------
 
-class NDInterpolatorBase(object):
+class NDInterpolatorBase:
     """
     Common routines for interpolators.
 
@@ -207,7 +207,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     """
     LinearNDInterpolator(points, values, fill_value=np.nan, rescale=False)
 
-    Piecewise linear interpolant in N dimensions.
+    Piecewise linear interpolant in N > 1 dimensions.
 
     .. versionadded:: 0.9
 
@@ -242,9 +242,9 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     >>> from scipy.interpolate import LinearNDInterpolator
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(0)
-    >>> x = np.random.random(10) - 0.5
-    >>> y = np.random.random(10) - 0.5
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(10) - 0.5
+    >>> y = rng.random(10) - 0.5
     >>> z = np.hypot(x, y)
     >>> X = np.linspace(min(x), max(x))
     >>> Y = np.linspace(min(y), max(y))
@@ -804,8 +804,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     return w
 
 class CloughTocher2DInterpolator(NDInterpolatorBase):
-    """
-    CloughTocher2DInterpolator(points, values, tol=1e-6)
+    """CloughTocher2DInterpolator(points, values, tol=1e-6).
 
     Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
 
@@ -853,9 +852,9 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     >>> from scipy.interpolate import CloughTocher2DInterpolator
     >>> import matplotlib.pyplot as plt
-    >>> np.random.seed(0)
-    >>> x = np.random.random(10) - 0.5
-    >>> y = np.random.random(10) - 0.5
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(10) - 0.5
+    >>> y = rng.random(10) - 0.5
     >>> z = np.hypot(x, y)
     >>> X = np.linspace(min(x), max(x))
     >>> Y = np.linspace(min(y), max(y))
@@ -874,9 +873,9 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     griddata :
         Interpolate unstructured D-D data.
     LinearNDInterpolator :
-        Piecewise linear interpolant in N dimensions.
+        Piecewise linear interpolant in N > 1 dimensions.
     NearestNDInterpolator :
-        Nearest-neighbor interpolation in N dimensions.
+        Nearest-neighbor interpolation in N > 1 dimensions.
 
     References
     ----------
