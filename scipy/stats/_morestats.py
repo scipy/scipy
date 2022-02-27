@@ -955,15 +955,28 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     Parameters
     ----------
     x : ndarray
-        Input array.  Must be positive 1-dimensional.  Must not be constant.
-    lmbda : {None, scalar}, optional
+        Input array to be transformed.
+
+        If `lmbda` is not None, this is an alias of
+        `scipy.special.boxcox`.
+        Returns nan if ``x < 0``; returns -inf if ``x == 0 and lmbda < 0``.
+
+        If `lmbda` is None, array must be positive, 1-dimensional, and
+        non-constant.
+
+    lmbda : scalar, optional
+        If `lmbda` is None (default), find the value of `lmbda` that maximizes
+        the log-likelihood function and return it as the second output
+        argument.
+
         If `lmbda` is not None, do the transformation for that value.
-        If `lmbda` is None, find the lambda that maximizes the log-likelihood
-        function and return it as the second output argument.
-    alpha : {None, float}, optional
-        If ``alpha`` is not None, return the ``100 * (1-alpha)%`` confidence
-        interval for `lmbda` as the third output argument.
-        Must be between 0.0 and 1.0.
+
+    alpha : float, optional
+        If `lmbda` is None and `alpha` is not None (default), return the
+        ``100 * (1-alpha)%`` confidence  interval for `lmbda` as the third
+        output argument. Must be between 0.0 and 1.0.
+
+        If `lmbda` is not None, `alpha` is ignored.
     optimizer : callable, optional
         If `lmbda` is None, `optimizer` is the scalar optimizer used to find
         the value of `lmbda` that minimizes the negative log-likelihood
@@ -988,11 +1001,11 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
         Box-Cox power transformed array.
     maxlog : float, optional
         If the `lmbda` parameter is None, the second returned argument is
-        the lambda that maximizes the log-likelihood function.
+        the `lmbda` that maximizes the log-likelihood function.
     (min_ci, max_ci) : tuple of float, optional
-        If `lmbda` parameter is None and ``alpha`` is not None, this returned
+        If `lmbda` parameter is None and `alpha` is not None, this returned
         tuple of floats represents the minimum and maximum confidence limits
-        given ``alpha``.
+        given `alpha`.
 
     See Also
     --------
@@ -1010,7 +1023,7 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     not.  Such a shift parameter is equivalent to adding a positive constant to
     `x` before calling `boxcox`.
 
-    The confidence limits returned when ``alpha`` is provided give the interval
+    The confidence limits returned when `alpha` is provided give the interval
     where:
 
     .. math::
@@ -1050,6 +1063,9 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     >>> plt.show()
 
     """
+    if lmbda is not None:  # single transformation
+        return special.boxcox(x, lmbda)
+
     x = np.asarray(x)
     if x.ndim != 1:
         raise ValueError("Data must be 1-dimensional.")
@@ -1062,9 +1078,6 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
 
     if np.any(x <= 0):
         raise ValueError("Data must be positive.")
-
-    if lmbda is not None:  # single transformation
-        return special.boxcox(x, lmbda)
 
     # If lmbda=None, find the lmbda that maximizes the log-likelihood function.
     lmax = boxcox_normmax(x, method='mle', optimizer=optimizer)
@@ -1265,6 +1278,9 @@ def _normplot(method, x, la, lb, plot=None, N=80):
 
     if lb <= la:
         raise ValueError("`lb` has to be larger than `la`.")
+
+    if method == 'boxcox' and np.any(x <= 0):
+        raise ValueError("Data must be positive.")
 
     lmbdas = np.linspace(la, lb, num=N)
     ppcc = lmbdas * 0.0

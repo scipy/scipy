@@ -1731,6 +1731,10 @@ class TestBoxcox:
         xt = stats.boxcox(list(x), lmbda=0)
         assert_allclose(xt, np.log(x))
 
+        # test that constant input is accepted; see gh-12225
+        xt = stats.boxcox(np.ones(10), 2)
+        assert_equal(xt, np.zeros(10))
+
     def test_lmbda_None(self):
         # Start from normal rv's, do inverse transform to check that
         # optimization function gets close to the right answer.
