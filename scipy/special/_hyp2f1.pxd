@@ -42,7 +42,18 @@ References
 cimport cython
 from numpy cimport npy_cdouble
 from libc.stdint cimport uint64_t, UINT64_MAX
-from libc.math cimport fabs, exp, M_LN2, M_PI, M_1_PI, pow, sin, trunc
+from libc.math cimport (
+    exp,
+    fabs,
+    isinf,
+    isnan,
+    M_LN2,
+    M_PI,
+    M_1_PI,
+    pow,
+    sin,
+    trunc,
+)
 
 from . cimport sf_error
 from ._cephes cimport Gamma, gammasgn, lanczos_sum_expg_scaled, lgam
@@ -376,15 +387,18 @@ cdef inline double gamma_ratio_lanczos(
     cdef:
         double g
         double lanczos_part,
+        # Factor parts for different ways to combine individual factors.
         double factor_part
-        double factors[4]  # Lanczos factors for gamma u, v, w, x respectively
-        double min_factor
-        double max_factor
-        double factors_midpoint
-        double current_distance_to_midpoint
-        double min_distance_to_midpoint
+        # Mean of the factor parts that were computed different ways.
+        double mean_factor_part
+        # Lanczos factors for gamma u, v, w, x respectively.
+        double factors[4]
         int i
-        int absorbed_index
+        int exists_zero_factor
+        int exists_inf_factor
+        int exists_nan_factor
+        int count
+
     # The below implementation may incorrectly return finite results
     # at poles of the gamma function. Handle these cases explicitly.
     if u == trunc(u) and u <= 0 or v == trunc(v) and v <= 0:
@@ -394,6 +408,11 @@ cdef inline double gamma_ratio_lanczos(
     if w == trunc(w) and w <= 0 or x == trunc(x) and x <= 0:
         # Return 0 if denominator has pole but not numerator.
         return 0
+    # Without loss of generality, assume u <= v, w <= x.
+    if u > v:
+        u, v = v, u
+    if x > w:
+        x, w = w, x
     g = lanczos_g
     lanczos_part = 1
     factor_part = 1
@@ -429,47 +448,65 @@ cdef inline double gamma_ratio_lanczos(
         lanczos_part *= lanczos_sum_expg_scaled(1 - x)
         lanczos_part *= sin(M_PI*x)*M_1_PI
         factors[3] = (1 - x + g - 0.5)
-    # Decide on how to combine terms by finding factor closest to
-    # midpoint between the largest and smallest factors.
-    min_factor = NPY_INFINITY
-    max_factor = -NPY_INFINITY
-    for i in range(4):
-        if factors[i] < min_factor:
-            min_factor = factors[i]
-        if factors[i] > max_factor:
-            max_factor = factors[i]
-    # Midpoint calculation uses extra floating point op to guard against
-    # overflow
-    factors_midpoint = min_factor / 2 + max_factor / 2
-    min_distance_to_midpoint = NPY_INFINITY
-    # Identify factor closest to the midpoint
-    for i in range(4):
-        current_distance_to_midpoint = fabs(factors[i] - factors_midpoint)
-        if (
-                current_distance_to_midpoint < min_distance_to_midpoint or
-                current_distance_to_midpoint == min_distance_to_midpoint and
-                factors[i] > factors[absorbed_index]
-        ):
-            min_distance_to_midpoint = current_distance_to_midpoint
-            absorbed_index = i
+    mean_factor_part = 0
+    count = 0
     # Absorb u factor into others.
-    if absorbed_index == 0:
-        factor_part *= pow(factors[1] / factors[0], v - 0.5)
-        factor_part *= pow(factors[0] / factors[2], w - 0.5)
-        factor_part *= pow(factors[0] / factors[3], x - 0.5)
+    factor_part = pow(factors[1] / factors[0], v - 0.5)
+    factor_part *= pow(factors[0] / factors[2], w - 0.5)
+    factor_part *= pow(factors[0] / factors[3], x - 0.5)
+    if factor_part == 0:
+        exists_zero_factor = True
+    elif isinf(factor_part):
+        exists_inf_factor = True
+    elif isnan(factor_part):
+        exists_nan_factor = True
+    else:
+        mean_factor_part += (factor_part - mean_factor_part) / (count + 1)
+        count += 1
     # Absorb v factor into others.
-    elif absorbed_index == 1:
-        factor_part *= pow(factors[0] / factors[1], u - 0.5)
-        factor_part *= pow(factors[1] / factors[2], w - 0.5)
-        factor_part *= pow(factors[1] / factors[3], x - 0.5)
+    factor_part = pow(factors[0] / factors[1], u - 0.5)
+    factor_part *= pow(factors[1] / factors[2], w - 0.5)
+    factor_part *= pow(factors[1] / factors[3], x - 0.5)
+    if factor_part == 0:
+        exists_zero_factor = True
+    elif isinf(factor_part):
+        exists_inf_factor = True
+    elif isnan(factor_part):
+        exists_nan_factor = True
+    else:
+        mean_factor_part += (factor_part - mean_factor_part) / (count + 1)
+        count += 1
     # Absorb w factor into others.
-    elif absorbed_index == 2:
-        factor_part *= pow(factors[0] / factors[2], u - 0.5)
-        factor_part *= pow(factors[1] / factors[2], v - 0.5)
-        factor_part *= pow(factors[2] / factors[3], x - 0.5)
+    factor_part = pow(factors[0] / factors[2], u - 0.5)
+    factor_part *= pow(factors[1] / factors[2], v - 0.5)
+    factor_part *= pow(factors[2] / factors[3], x - 0.5)
+    if factor_part == 0:
+        exists_zero_factor = True
+    elif isinf(factor_part):
+        exists_inf_factor = True
+    elif isnan(factor_part):
+        exists_nan_factor = True
+    else:
+        mean_factor_part += (factor_part - mean_factor_part) / (count + 1)
+        count += 1
     # Absorb x factor into others.
-    elif absorbed_index == 3:
-        factor_part *= pow(factors[0]/factors[3], u - 0.5)
-        factor_part *= pow(factors[1]/factors[3], v - 0.5)
-        factor_part *= pow(factors[3]/factors[2], w - 0.5)
-    return factor_part * lanczos_part
+    factor_part = pow(factors[0]/factors[3], u - 0.5)
+    factor_part *= pow(factors[1]/factors[3], v - 0.5)
+    factor_part *= pow(factors[3]/factors[2], w - 0.5)
+    if factor_part == 0:
+        exists_zero_factor = True
+    elif isinf(factor_part):
+        exists_inf_factor = True
+    elif isnan(factor_part):
+        exists_nan_factor = True
+    else:
+        mean_factor_part += (factor_part - mean_factor_part) / (count + 1)
+        count += 1
+    if mean_factor_part:
+        return mean_factor_part * lanczos_part
+    if exists_nan_factor or exists_zero_factor and exists_inf_factor:
+        return NPY_NAN
+    if exists_zero_factor:
+        return 0
+    if exists_inf_factor:
+        return NPY_INFINITY
