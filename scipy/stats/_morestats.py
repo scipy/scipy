@@ -1279,6 +1279,9 @@ def _normplot(method, x, la, lb, plot=None, N=80):
     if lb <= la:
         raise ValueError("`lb` has to be larger than `la`.")
 
+    if method == 'boxcox' and np.any(x <= 0):
+        raise ValueError("Data must be positive.")
+
     lmbdas = np.linspace(la, lb, num=N)
     ppcc = lmbdas * 0.0
     for i, val in enumerate(lmbdas):
