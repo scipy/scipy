@@ -958,7 +958,8 @@ def boxcox(x, lmbda=None, alpha=None, optimizer=None):
     x : ndarray
         Input array to be transformed.
 
-        If `lmbda` is not None, this is an alias of `special.boxcox`.
+        If `lmbda` is not None, this is an alias of
+        `scipy.special.boxcox`.
         Returns nan if ``x < 0``; returns -inf if ``x == 0 and lmbda < 0``.
 
         If `lmbda` is None, array must be positive, 1-dimensional, and
