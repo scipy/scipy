@@ -13,13 +13,14 @@ gridlimits = grid - 0.5
 grid = grid[:-1]
 probs = np.diff(stats.truncnorm.cdf(gridlimitsnorm, -normbound, normbound))
 gridint = grid
+
+rng = np.random.default_rng()
 normdiscrete = stats.rv_discrete(
                         values=(gridint, np.round(probs, decimals=7)),
                         name='normdiscrete')
 
 n_sample = 500
-np.random.seed(87655678)  # fix the seed for replicability
-rvs = normdiscrete.rvs(size=n_sample)
+rvs = normdiscrete.rvs(size=n_sample, random_state=rng)
 f, l = np.histogram(rvs,bins=gridlimits)
 sfreq = np.vstack([gridint,f,probs*n_sample]).T
 fs = sfreq[:,1] / float(n_sample)

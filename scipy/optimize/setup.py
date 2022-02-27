@@ -1,3 +1,4 @@
+import sys
 import os.path
 from os.path import join
 
@@ -71,8 +72,8 @@ def configuration(parent_package='', top_path=None):
                                **lapack)
     ext._pre_build_hook = pre_build_hook
 
-    sources = ['moduleTNC.c', 'tnc.c']
-    config.add_extension('moduleTNC',
+    sources = ['_moduleTNC.c', 'tnc.c']
+    config.add_extension('_moduleTNC',
                          sources=[join('tnc', x) for x in sources],
                          depends=[join('tnc', 'tnc.h')],
                          **numpy_nodepr_api)
@@ -83,7 +84,7 @@ def configuration(parent_package='', top_path=None):
                          **numpy_nodepr_api)
 
     sources = ['minpack2.pyf', 'dcsrch.f', 'dcstep.f']
-    config.add_extension('minpack2',
+    config.add_extension('_minpack2',
                          sources=[join('minpack2', x) for x in sources],
                          **numpy_nodepr_api)
 
@@ -97,7 +98,7 @@ def configuration(parent_package='', top_path=None):
         join('__nnls', x) for x in ["nnls.f", "nnls.pyf"]], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
-    if int(os.environ.get('SCIPY_USE_PYTHRAN', 0)):
+    if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
         import pythran
         ext = pythran.dist.PythranExtension(
             'scipy.optimize._group_columns',
@@ -118,17 +119,15 @@ def configuration(parent_package='', top_path=None):
     # Cython optimize API for zeros functions
     config.add_subpackage('cython_optimize')
     config.add_data_files('cython_optimize.pxd')
-    config.add_data_files(os.path.join('cython_optimize', '*.pxd'))
-    config.add_extension(
-        'cython_optimize._zeros',
-        sources=[os.path.join('cython_optimize', '_zeros.c')])
 
     config.add_subpackage('_shgo_lib')
     config.add_data_dir('_shgo_lib')
 
     # HiGHS linear programming libraries and extensions
-    config.add_subpackage('_highs')
-    config.add_data_files(os.path.join('_highs', 'cython', 'src', '*.pxd'))
+    if 'sdist' not in sys.argv:
+        # Avoid running this during sdist creation - it makes numpy.distutils
+        # create an empty cython/src top-level directory.
+        config.add_subpackage('_highs')
 
     config.add_data_dir('tests')
 

@@ -168,23 +168,67 @@ def test_old_bounds_to_new():
     assert_array_equal(ub, [np.inf, 1])
 
 
-def test_bounds_repr():
-    from numpy import array, inf  # so that eval works
-    for args in (
-        (-1.0, 5.0),
-        (-1.0, np.inf, True),
-        (np.array([1.0, -np.inf]), np.array([2.0, np.inf])),
-        (np.array([1.0, -np.inf]), np.array([2.0, np.inf]), np.array([True, False])),
-    ):
-        bounds = Bounds(*args)
-        bounds2 = eval(repr(Bounds(*args)))
-        assert_array_equal(bounds.lb, bounds2.lb)
-        assert_array_equal(bounds.ub, bounds2.ub)
-        assert_array_equal(bounds.keep_feasible, bounds2.keep_feasible)
+class TestBounds:
+    def test_repr(self):
+        # so that eval works
+        from numpy import array, inf  # noqa
+        for args in (
+            (-1.0, 5.0),
+            (-1.0, np.inf, True),
+            (np.array([1.0, -np.inf]), np.array([2.0, np.inf])),
+            (np.array([1.0, -np.inf]), np.array([2.0, np.inf]),
+             np.array([True, False])),
+        ):
+            bounds = Bounds(*args)
+            bounds2 = eval(repr(Bounds(*args)))
+            assert_array_equal(bounds.lb, bounds2.lb)
+            assert_array_equal(bounds.ub, bounds2.ub)
+            assert_array_equal(bounds.keep_feasible, bounds2.keep_feasible)
+
+    def test_array(self):
+        # gh13501
+        b = Bounds(lb=[0.0, 0.0], ub=[1.0, 1.0])
+        assert isinstance(b.lb, np.ndarray)
+        assert isinstance(b.ub, np.ndarray)
+
+    def test_defaults(self):
+        b1 = Bounds()
+        b2 = Bounds(np.asarray(-np.inf), np.asarray(np.inf))
+        assert b1.lb == b2.lb
+        assert b1.ub == b2.ub
+
+    def test_input_validation(self):
+        message = "`lb`, `ub`, and `keep_feasible` must be broadcastable."
+        with pytest.raises(ValueError, match=message):
+            Bounds([1, 2], [1, 2, 3])
+
+    def test_residual(self):
+        bounds = Bounds(-2, 4)
+        x0 = [-1, 2]
+        np.testing.assert_allclose(bounds.residual(x0), ([1, 4], [5, 2]))
 
 
-def test_Bounds_array():
-    # gh13501
-    b = Bounds(lb=[0.0, 0.0], ub=[1.0, 1.0])
-    assert isinstance(b.lb, np.ndarray)
-    assert isinstance(b.ub, np.ndarray)
+class TestLinearConstraint:
+    def test_defaults(self):
+        A = np.eye(4)
+        lc = LinearConstraint(A)
+        lc2 = LinearConstraint(A, -np.inf, np.inf)
+        assert_array_equal(lc.lb, lc2.lb)
+        assert_array_equal(lc.ub, lc2.ub)
+
+    def test_input_validation(self):
+        A = np.eye(4)
+        message = "`lb`, `ub`, and `keep_feasible` must be broadcastable"
+        with pytest.raises(ValueError, match=message):
+            LinearConstraint(A, [1, 2], [1, 2, 3])
+
+        A = np.empty((4, 3, 5))
+        message = "`A` must have exactly two dimensions."
+        with pytest.raises(ValueError, match=message):
+            LinearConstraint(A)
+
+    def test_residual(self):
+        A = np.eye(2)
+        lc = LinearConstraint(A, -2, 4)
+        x0 = [-1, 2]
+        np.testing.assert_allclose(lc.residual(x0), ([1, 4], [5, 2]))

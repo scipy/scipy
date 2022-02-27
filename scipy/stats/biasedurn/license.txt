@@ -1,0 +1,31 @@
+---------- Forwarded message ---------
+From: Agner Fog <agner@agner.org>
+Date: Wed, Jul 22, 2020 at 8:54 PM
+Subject: Re: Add BiasedUrn to SciPy?
+To: Matt Haberland <mhaberla@calpoly.edu>
+Cc: Warren Weckesser <warren.weckesser@gmail.com>
+
+Dear Matt The C++ code for these distributions without binding to the R project
+are available here: 
+https://www.agner.org/random/stocc.zip
+You have my permission to use it in SciPy under the new BSD license. 
+Best regards, 
+Agner Fog
+ 
+On 22/07/2020 17.05, Matt Haberland wrote:
+Hi Agner, I'm a maintainer of the Python scientific computing library SciPy, 
+and I'm working on improving the capabilities of our statistics subpackage 
+scipy.stats. We'd like to add both Fisher's and Wallenius' noncentral 
+hypergeometric distributions, but these look quite challenging to implement.
+We found your BiasedUrn package, and we'd love to wrap it, but we can't 
+include GPL-3 licensed code under our BSD-new license. Would you consider
+re-licensing BiasedUrn under a more permissive license, such as BSD-new or
+MIT, so we can include it in SciPy? 
+Thank you for considering it!
+Matt 
+-- 
+Matt Haberland 
+Assistant Professor
+BioResource and Agricultural Engineering
+08A-3K, Cal Poly
+ 

@@ -23,7 +23,7 @@ result)::
 
 Compare change in benchmark results with another branch::
 
-    python runtests.py --bench-compare master sparse.Arithmetic
+    python runtests.py --bench-compare main sparse.Arithmetic
 
 Run benchmarks against the system-installed SciPy rather than rebuild::
 
@@ -53,10 +53,10 @@ Some things to consider:
 
 - When importing things from SciPy on the top of the test files, do it as::
 
-      try:
+      from .common import safe_import
+
+      with safe_import():
           from scipy.sparse.linalg import onenormest
-      except ImportError:
-          pass
 
   The benchmark files need to be importable also when benchmarking old versions
   of SciPy. The benchmarks themselves don't need any guarding against missing

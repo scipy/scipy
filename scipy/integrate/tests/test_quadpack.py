@@ -28,7 +28,7 @@ def get_clib_test_routine(name, restype, *argtypes):
     return ctypes.cast(ptr, ctypes.CFUNCTYPE(restype, *argtypes))
 
 
-class TestCtypesQuad(object):
+class TestCtypesQuad:
     def setup_method(self):
         if sys.platform == 'win32':
             files = ['api-ms-win-crt-math-l1-1-0.dll']
@@ -100,7 +100,7 @@ class TestCtypesQuad(object):
                 pytest.raises(ValueError, quad, func, 0, pi)
 
 
-class TestMultivariateCtypesQuad(object):
+class TestMultivariateCtypesQuad:
     def setup_method(self):
         restype = ctypes.c_double
         argtypes = (ctypes.c_int, ctypes.c_double)
@@ -126,7 +126,7 @@ class TestMultivariateCtypesQuad(object):
         assert_quad(quad(threadsafety, 0, 1), 0.9596976941318602)
 
 
-class TestQuad(object):
+class TestQuad:
     def test_typical(self):
         # 1) Typical function with two extra arguments:
         def myfunc(x, n, z):       # Bessel function integrand
@@ -273,7 +273,7 @@ class TestQuad(object):
                      2*8/3.0 * (b**4.0 - a**4.0))
 
 
-class TestNQuad(object):
+class TestNQuad:
     def test_fixed_limits(self):
         def func1(x0, x1, x2, x3):
             val = (x0**2 + x1*x2 - x3**3 + np.sin(x0) +

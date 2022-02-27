@@ -1,22 +1,60 @@
 """Quasi-Monte Carlo engines and helpers."""
+from __future__ import annotations
+
 import copy
-import numbers
-from abc import ABC, abstractmethod
 import math
+import numbers
+import os
 import warnings
+from abc import ABC, abstractmethod
+from typing import (
+    Callable,
+    ClassVar,
+    Dict,
+    List,
+    Optional,
+    overload,
+    TYPE_CHECKING,
+)
 
 import numpy as np
 
+if TYPE_CHECKING:
+    import numpy.typing as npt
+    from typing_extensions import Literal
+    from scipy._lib._util import (
+        DecimalNumber, GeneratorType, IntNumber, SeedType
+    )
+
 import scipy.stats as stats
+from scipy._lib._util import rng_integers
 from scipy.stats._sobol import (
     initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
     _categorize, initialize_direction_numbers, _MAXDIM, _MAXBIT
 )
+from scipy.stats._qmc_cy import (
+    _cy_wrapper_centered_discrepancy,
+    _cy_wrapper_wrap_around_discrepancy,
+    _cy_wrapper_mixture_discrepancy,
+    _cy_wrapper_l2_star_discrepancy,
+    _cy_wrapper_update_discrepancy,
+    _cy_van_der_corput_scrambled,
+    _cy_van_der_corput,
+)
+
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
-           'QMCEngine', 'Sobol', 'Halton',
-           'OrthogonalLatinHypercube', 'LatinHypercube',
+           'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube',
            'MultinomialQMC', 'MultivariateNormalQMC']
+
+
+@overload
+def check_random_state(seed: Optional[IntNumber] = ...) -> np.random.Generator:
+    ...
+
+@overload
+def check_random_state(seed: GeneratorType) -> GeneratorType:
+    ...
 
 
 # Based on scipy._lib._util.check_random_state
@@ -27,6 +65,7 @@ def check_random_state(seed=None):
     ----------
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
+
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
@@ -40,23 +79,21 @@ def check_random_state(seed=None):
 
     """
     if seed is None or isinstance(seed, (numbers.Integral, np.integer)):
-        if not hasattr(np.random, 'Generator'):
-            # This can be removed once numpy 1.16 is dropped
-            msg = ("NumPy 1.16 doesn't have Generator, use either "
-                   "NumPy >= 1.17 or `seed=np.random.RandomState(seed)`")
-            raise ValueError(msg)
         return np.random.default_rng(seed)
-    elif isinstance(seed, np.random.RandomState):
-        return seed
-    elif isinstance(seed, np.random.Generator):
-        # The two checks can be merged once numpy 1.16 is dropped
+    elif isinstance(seed, (np.random.RandomState, np.random.Generator)):
         return seed
     else:
-        raise ValueError('%r cannot be used to seed a numpy.random.Generator'
-                         ' instance' % seed)
+        raise ValueError(f'{seed!r} cannot be used to seed a'
+                         ' numpy.random.Generator instance')
 
 
-def scale(sample, l_bounds, u_bounds, reverse=False):
+def scale(
+    sample: npt.ArrayLike,
+    l_bounds: npt.ArrayLike,
+    u_bounds: npt.ArrayLike,
+    *,
+    reverse: bool = False
+) -> np.ndarray:
     r"""Sample scaling from unit hypercube to different bounds.
 
     To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`,
@@ -127,7 +164,7 @@ def scale(sample, l_bounds, u_bounds, reverse=False):
 
     if not reverse:
         # Checking that sample is within the hypercube
-        if not (np.all(sample >= 0) and np.all(sample <= 1)):
+        if (sample.max() > 1.) or (sample.min() < 0.):
             raise ValueError('Sample is not in unit hypercube')
 
         return sample * (upper - lower) + lower
@@ -139,7 +176,12 @@ def scale(sample, l_bounds, u_bounds, reverse=False):
         return (sample - lower) / (upper - lower)
 
 
-def discrepancy(sample, iterative=False, method='CD'):
+def discrepancy(
+        sample: npt.ArrayLike,
+        *,
+        iterative: bool = False,
+        method: Literal["CD", "WD", "MD", "L2-star"] = "CD",
+        workers: IntNumber = 1) -> float:
     """Discrepancy of a given sample.
 
     Parameters
@@ -152,6 +194,9 @@ def discrepancy(sample, iterative=False, method='CD'):
     method : str, optional
         Type of discrepancy, can be ``CD``, ``WD``, ``MD`` or ``L2-star``.
         Refer to the notes for more details. Default is ``CD``.
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is given all
+        CPU threads are used. Default is 1.
 
     Returns
     -------
@@ -208,10 +253,10 @@ def discrepancy(sample, iterative=False, method='CD'):
     ----------
     .. [1] Fang et al. "Design and modeling for computer experiments".
        Computer Science and Data Analysis Series, 2006.
-    .. [2] Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets.
+    .. [2] Zhou Y.-D. et al. "Mixture discrepancy for quasi-random point sets."
        Journal of Complexity, 29 (3-4) , pp. 283-301, 2013.
     .. [3] T. T. Warnock. "Computational investigations of low discrepancy
-       point sets". Applications of Number Theory to Numerical
+       point sets." Applications of Number Theory to Numerical
        Analysis, Academic Press, pp. 319-343, 1972.
 
     Examples
@@ -243,83 +288,35 @@ def discrepancy(sample, iterative=False, method='CD'):
     0.008142039609053513
 
     """
-    sample = np.asarray(sample)
+    sample = np.asarray(sample, dtype=np.float64, order="C")
 
     # Checking that sample is within the hypercube and 2D
     if not sample.ndim == 2:
-        raise ValueError('Sample is not a 2D array')
+        raise ValueError("Sample is not a 2D array")
 
-    if not (np.all(sample >= 0) and np.all(sample <= 1)):
-        raise ValueError('Sample is not in unit hypercube')
+    if (sample.max() > 1.) or (sample.min() < 0.):
+        raise ValueError("Sample is not in unit hypercube")
 
-    n, d = sample.shape
+    workers = _validate_workers(workers)
 
-    if iterative:
-        n += 1
+    methods = {
+        "CD": _cy_wrapper_centered_discrepancy,
+        "WD": _cy_wrapper_wrap_around_discrepancy,
+        "MD": _cy_wrapper_mixture_discrepancy,
+        "L2-star": _cy_wrapper_l2_star_discrepancy,
+    }
 
-    if method == 'CD':
-        # reference [1], page 71 Eq (3.7)
-        abs_ = abs(sample - 0.5)
-        disc1 = np.sum(np.prod(1 + 0.5 * abs_ - 0.5 * abs_ ** 2, axis=1))
-
-        prod_arr = 1
-        for i in range(d):
-            s0 = sample[:, i]
-            prod_arr *= (1
-                         + 0.5 * abs(s0[:, None] - 0.5) + 0.5 * abs(s0 - 0.5)
-                         - 0.5 * abs(s0[:, None] - s0))
-        disc2 = prod_arr.sum()
-
-        return ((13.0 / 12.0) ** d - 2.0 / n * disc1 +
-                1.0 / (n ** 2) * disc2)
-    elif method == 'WD':
-        # reference [1], page 73 Eq (3.8)
-        prod_arr = 1
-        for i in range(d):
-            s0 = sample[:, i]
-            x_kikj = abs(s0[:, None] - s0)
-            prod_arr *= 3.0 / 2.0 - x_kikj + x_kikj ** 2
-
-        # typo in the book sign missing: - (4.0 / 3.0) ** d
-        return - (4.0 / 3.0) ** d + 1.0 / (n ** 2) * prod_arr.sum()
-    elif method == 'MD':
-        # reference [2], page 290 Eq (18)
-        abs_ = abs(sample - 0.5)
-        disc1 = np.sum(np.prod(5.0 / 3.0 - 0.25 * abs_ - 0.25 * abs_ ** 2,
-                               axis=1))
-
-        prod_arr = 1
-        for i in range(d):
-            s0 = sample[:, i]
-            prod_arr *= (15.0 / 8.0
-                         - 0.25 * abs(s0[:, None] - 0.5) - 0.25 * abs(s0 - 0.5)
-                         - 3.0 / 4.0 * abs(s0[:, None] - s0)
-                         + 0.5 * abs(s0[:, None] - s0) ** 2)
-        disc2 = prod_arr.sum()
-
-        disc = (19.0 / 12.0) ** d
-        disc1 = 2.0 / n * disc1
-        disc2 = 1.0 / (n ** 2) * disc2
-
-        return disc - disc1 + disc2
-    elif method == 'L2-star':
-        # reference [1], page 69 Eq (3.5)
-        disc1 = np.sum(np.prod(1 - sample**2, axis=1))
-
-        xik = sample[None, :, :]
-        xjk = sample[:, None, :]
-        disc2 = np.sum(np.sum(np.prod(1 - np.maximum(xik, xjk), axis=2),
-                              axis=1))
-
-        return np.sqrt(
-            3 ** (-d) - 1 / n * 2 ** (1 - d) * disc1 + 1 / (n ** 2) * disc2
-        )
+    if method in methods:
+        return methods[method](sample, iterative, workers=workers)
     else:
-        raise ValueError('{} is not a valid method. Options are '
-                         'CD, WD, MD, L2-star.'.format(method))
+        raise ValueError(f"{method!r} is not a valid method. It must be one of"
+                         f" {set(methods)!r}")
 
 
-def update_discrepancy(x_new, sample, initial_disc):
+def update_discrepancy(
+        x_new: npt.ArrayLike,
+        sample: npt.ArrayLike,
+        initial_disc: DecimalNumber) -> float:
     """Update the centered discrepancy with a new sample.
 
     Parameters
@@ -353,14 +350,14 @@ def update_discrepancy(x_new, sample, initial_disc):
     0.008142039609053513
 
     """
-    sample = np.asarray(sample)
-    x_new = np.asarray(x_new)
+    sample = np.asarray(sample, dtype=np.float64, order="C")
+    x_new = np.asarray(x_new, dtype=np.float64, order="C")
 
     # Checking that sample is within the hypercube and 2D
     if not sample.ndim == 2:
         raise ValueError('Sample is not a 2D array')
 
-    if not (np.all(sample >= 0) and np.all(sample <= 1)):
+    if (sample.max() > 1.) or (sample.min() < 0.):
         raise ValueError('Sample is not in unit hypercube')
 
     # Checking that x_new is within the hypercube and 1D
@@ -370,25 +367,104 @@ def update_discrepancy(x_new, sample, initial_disc):
     if not (np.all(x_new >= 0) and np.all(x_new <= 1)):
         raise ValueError('x_new is not in unit hypercube')
 
-    n = len(sample) + 1
-    abs_ = abs(x_new - 0.5)
+    if x_new.shape[0] != sample.shape[1]:
+        raise ValueError("x_new and sample must be broadcastable")
 
-    # derivation from P.T. Roy (@tupui)
-    disc1 = - 2 / n * np.prod(1 + 1 / 2 * abs_ - 1 / 2 * abs_ ** 2)
-    disc2 = 2 / (n ** 2) * np.sum(np.prod(1 + 1 / 2 * abs_ +
-                                          1 / 2 * abs(sample - 0.5) -
-                                          1 / 2 * abs(x_new - sample),
-                                          axis=1))
-    disc3 = 1 / (n ** 2) * np.prod(1 + abs_)
-
-    return initial_disc + disc1 + disc2 + disc3
+    return _cy_wrapper_update_discrepancy(x_new, sample, initial_disc)
 
 
-def primes_from_2_to(n):
+def _perturb_discrepancy(sample: np.ndarray, i1: int, i2: int, k: int,
+                         disc: float):
+    """Centered discrepancy after an elementary perturbation of a LHS.
+
+    An elementary perturbation consists of an exchange of coordinates between
+    two points: ``sample[i1, k] <-> sample[i2, k]``. By construction,
+    this operation conserves the LHS properties.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample (before permutation) to compute the discrepancy from.
+    i1 : int
+        The first line of the elementary permutation.
+    i2 : int
+        The second line of the elementary permutation.
+    k : int
+        The column of the elementary permutation.
+    disc : float
+        Centered discrepancy of the design before permutation.
+
+    Returns
+    -------
+    discrepancy : float
+        Centered discrepancy of the design after permutation.
+
+    References
+    ----------
+    .. [1] Jin et al. "An efficient algorithm for constructing optimal design
+       of computer experiments", Journal of Statistical Planning and
+       Inference, 2005.
+
+    """
+    n = sample.shape[0]
+
+    z_ij = sample - 0.5
+
+    # Eq (19)
+    c_i1j = (1. / n ** 2.
+             * np.prod(0.5 * (2. + abs(z_ij[i1, :])
+                              + abs(z_ij) - abs(z_ij[i1, :] - z_ij)), axis=1))
+    c_i2j = (1. / n ** 2.
+             * np.prod(0.5 * (2. + abs(z_ij[i2, :])
+                              + abs(z_ij) - abs(z_ij[i2, :] - z_ij)), axis=1))
+
+    # Eq (20)
+    c_i1i1 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i1, :]))
+              - 2. / n * np.prod(1. + 0.5 * abs(z_ij[i1, :])
+                                 - 0.5 * z_ij[i1, :] ** 2))
+    c_i2i2 = (1. / n ** 2 * np.prod(1 + abs(z_ij[i2, :]))
+              - 2. / n * np.prod(1. + 0.5 * abs(z_ij[i2, :])
+                                 - 0.5 * z_ij[i2, :] ** 2))
+
+    # Eq (22), typo in the article in the denominator i2 -> i1
+    num = (2 + abs(z_ij[i2, k]) + abs(z_ij[:, k])
+           - abs(z_ij[i2, k] - z_ij[:, k]))
+    denum = (2 + abs(z_ij[i1, k]) + abs(z_ij[:, k])
+             - abs(z_ij[i1, k] - z_ij[:, k]))
+    gamma = num / denum
+
+    # Eq (23)
+    c_p_i1j = gamma * c_i1j
+    # Eq (24)
+    c_p_i2j = c_i2j / gamma
+
+    alpha = (1 + abs(z_ij[i2, k])) / (1 + abs(z_ij[i1, k]))
+    beta = (2 - abs(z_ij[i2, k])) / (2 - abs(z_ij[i1, k]))
+
+    g_i1 = np.prod(1. + abs(z_ij[i1, :]))
+    g_i2 = np.prod(1. + abs(z_ij[i2, :]))
+    h_i1 = np.prod(1. + 0.5 * abs(z_ij[i1, :]) - 0.5 * (z_ij[i1, :] ** 2))
+    h_i2 = np.prod(1. + 0.5 * abs(z_ij[i2, :]) - 0.5 * (z_ij[i2, :] ** 2))
+
+    # Eq (25), typo in the article g is missing
+    c_p_i1i1 = ((g_i1 * alpha) / (n ** 2) - 2. * alpha * beta * h_i1 / n)
+    # Eq (26), typo in the article n ** 2
+    c_p_i2i2 = ((g_i2 / ((n ** 2) * alpha)) - (2. * h_i2 / (n * alpha * beta)))
+
+    # Eq (26)
+    sum_ = c_p_i1j - c_i1j + c_p_i2j - c_i2j
+
+    mask = np.ones(n, dtype=bool)
+    mask[[i1, i2]] = False
+    sum_ = sum(sum_[mask])
+
+    disc_ep = (disc + c_p_i1i1 - c_i1i1 + c_p_i2i2 - c_i2i2 + 2 * sum_)
+
+    return disc_ep
+
+
+def primes_from_2_to(n: int) -> np.ndarray:
     """Prime numbers from 2 to *n*.
-
-    Taken from [1]_ by P.T. Roy, licensed under
-    `CC-BY-SA 4.0 <https://creativecommons.org/licenses/by-sa/4.0/>`_.
 
     Parameters
     ----------
@@ -399,6 +475,12 @@ def primes_from_2_to(n):
     -------
     primes : list(int)
         Primes in ``2 <= p < n``.
+
+    Notes
+    -----
+    Taken from [1]_ by P.T. Roy, written consent given on 23.04.2021
+    by the original author, Bruno Astrolino, for free use in SciPy under
+    the 3-clause BSD.
 
     References
     ----------
@@ -413,7 +495,7 @@ def primes_from_2_to(n):
     return np.r_[2, 3, ((3 * np.nonzero(sieve)[0][1:] + 1) | 1)]
 
 
-def n_primes(n):
+def n_primes(n: IntNumber) -> List[int]:
     """List of the n-first prime numbers.
 
     Parameters
@@ -439,12 +521,12 @@ def n_primes(n):
               677, 683, 691, 701, 709, 719, 727, 733, 739, 743, 751, 757, 761,
               769, 773, 787, 797, 809, 811, 821, 823, 827, 829, 839, 853, 857,
               859, 863, 877, 881, 883, 887, 907, 911, 919, 929, 937, 941, 947,
-              953, 967, 971, 977, 983, 991, 997][:n]
+              953, 967, 971, 977, 983, 991, 997][:n]  # type: ignore[misc]
 
     if len(primes) < n:
         big_number = 2000
         while 'Not enough primes':
-            primes = primes_from_2_to(big_number)[:n]
+            primes = primes_from_2_to(big_number)[:n]  # type: ignore
             if len(primes) == n:
                 break
             big_number += 1000
@@ -452,7 +534,14 @@ def n_primes(n):
     return primes
 
 
-def van_der_corput(n, base=2, start_index=0, scramble=False, seed=None):
+def van_der_corput(
+        n: IntNumber,
+        base: IntNumber = 2,
+        *,
+        start_index: IntNumber = 0,
+        scramble: bool = False,
+        seed: SeedType = None,
+        workers: IntNumber = 1) -> np.ndarray:
     """Van der Corput sequence.
 
     Pseudo-random number generator based on a b-adic expansion.
@@ -478,6 +567,9 @@ def van_der_corput(n, base=2, start_index=0, scramble=False, seed=None):
         seeded with `seed`.
         If `seed` is already a ``Generator`` instance then that instance is
         used.
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is
+        given all CPU threads are used. Default is 1.
 
     Returns
     -------
@@ -487,28 +579,30 @@ def van_der_corput(n, base=2, start_index=0, scramble=False, seed=None):
     References
     ----------
     .. [1] A. B. Owen. "A randomized Halton algorithm in R",
-       arXiv:1706.02808, 2017.
+       :arxiv:`1706.02808`, 2017.
 
     """
-    rng = check_random_state(seed)
-    sequence = np.zeros(n)
+    if base < 2:
+        raise ValueError("'base' must be at least 2")
 
-    quotient = np.arange(start_index, start_index + n)
-    b2r = 1 / base
+    if scramble:
+        rng = check_random_state(seed)
+        # In Algorithm 1 of Owen 2017, a permutation of `np.arange(base)` is
+        # created for each positive integer `k` such that `1 - base**-k < 1`
+        # using floating-point arithmetic. For double precision floats, the
+        # condition `1 - base**-k < 1` can also be written as `base**-k >
+        # 2**-54`, which makes it more apparent how many permutations we need
+        # to create.
+        count = math.ceil(54 / math.log2(base)) - 1
+        permutations = np.repeat(np.arange(base)[None], count, axis=0)
+        for perm in permutations:
+            rng.shuffle(perm)
 
-    while (1 - b2r) < 1:
-        remainder = quotient % base
+        return _cy_van_der_corput_scrambled(n, base, start_index,
+                                            permutations, workers)
 
-        if scramble:
-            # permutation must be the same for all points of the sequence
-            perm = rng.permutation(base)
-            remainder = perm[np.array(remainder).astype(int)]
-
-        sequence += remainder * b2r
-        b2r /= base
-        quotient = (quotient - remainder) / base
-
-    return sequence
+    else:
+        return _cy_van_der_corput(n, base, start_index, workers)
 
 
 class QMCEngine(ABC):
@@ -543,7 +637,8 @@ class QMCEngine(ABC):
     * ``__init__(d, seed=None)``: at least fix the dimension. If the sampler
       does not take advantage of a ``seed`` (deterministic methods like
       Halton), this parameter can be omitted.
-    * ``random(n)``: draw ``n`` from the engine.
+    * ``random(n)``: draw ``n`` from the engine and increase the counter
+      ``num_generated`` by ``n``.
 
     Optionally, two other methods can be overwritten by subclasses:
 
@@ -558,12 +653,12 @@ class QMCEngine(ABC):
 
     >>> from scipy.stats import qmc
     >>> class RandomEngine(qmc.QMCEngine):
-    ...     def __init__(self, d, seed):
+    ...     def __init__(self, d, seed=None):
     ...         super().__init__(d=d, seed=seed)
-    ...         self.rng_seed = seed
     ...
     ...
     ...     def random(self, n=1):
+    ...         self.num_generated += n
     ...         return self.rng.random((n, self.d))
     ...
     ...
@@ -573,15 +668,15 @@ class QMCEngine(ABC):
     ...
     ...
     ...     def fast_forward(self, n):
-    ...         self.rng.random((n, self.d))
+    ...         self.random(n)
     ...         return self
 
     After subclassing `QMCEngine` to define the sampling strategy we want to
     use, we can create an instance to sample from.
 
-    >>> engine = RandomEngine(2, seed=12345)
+    >>> engine = RandomEngine(2)
     >>> engine.random(5)
-    array([[0.22733602, 0.31675834],
+    array([[0.22733602, 0.31675834],  # random
            [0.79736546, 0.67625467],
            [0.39110955, 0.33281393],
            [0.59830875, 0.18673419],
@@ -591,7 +686,7 @@ class QMCEngine(ABC):
 
     >>> _ = engine.reset()
     >>> engine.random(5)
-    array([[0.22733602, 0.31675834],
+    array([[0.22733602, 0.31675834],  # random
            [0.79736546, 0.67625467],
            [0.39110955, 0.33281393],
            [0.59830875, 0.18673419],
@@ -600,14 +695,22 @@ class QMCEngine(ABC):
     """
 
     @abstractmethod
-    def __init__(self, d, seed=None):
+    def __init__(
+            self,
+            d: IntNumber,
+            *,
+            seed: SeedType = None
+    ) -> None:
+        if not np.issubdtype(type(d), np.integer):
+            raise ValueError('d must be an integer value')
+
         self.d = d
         self.rng = check_random_state(seed)
         self.rng_seed = copy.deepcopy(seed)
         self.num_generated = 0
 
     @abstractmethod
-    def random(self, n=1):
+    def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
@@ -624,7 +727,7 @@ class QMCEngine(ABC):
         """
         # self.num_generated += n
 
-    def reset(self):
+    def reset(self) -> QMCEngine:
         """Reset the engine to base state.
 
         Returns
@@ -633,11 +736,12 @@ class QMCEngine(ABC):
             Engine reset to its base state.
 
         """
-        self.rng = check_random_state(self.rng_seed)
+        seed = copy.deepcopy(self.rng_seed)
+        self.rng = check_random_state(seed)
         self.num_generated = 0
         return self
 
-    def fast_forward(self, n):
+    def fast_forward(self, n: IntNumber) -> QMCEngine:
         """Fast-forward the sequence by `n` positions.
 
         Parameters
@@ -651,7 +755,7 @@ class QMCEngine(ABC):
             Engine reset to its base state.
 
         """
-        self.num_generated += n
+        self.random(n=n)
         return self
 
 
@@ -690,7 +794,7 @@ class Halton(QMCEngine):
        points in evaluating multi-dimensional integrals", Numerische
        Mathematik, 1960.
     .. [2] A. B. Owen. "A randomized Halton algorithm in R",
-       arXiv:1706.02808, 2017.
+       :arxiv:`1706.02808`, 2017.
 
     Examples
     --------
@@ -736,19 +840,28 @@ class Halton(QMCEngine):
 
     """
 
-    def __init__(self, d, scramble=True, seed=None):
+    def __init__(
+            self, d: IntNumber, *, scramble: bool = True,
+            seed: SeedType = None
+    ) -> None:
         super().__init__(d=d, seed=seed)
         self.seed = seed
         self.base = n_primes(d)
         self.scramble = scramble
 
-    def random(self, n=1):
+    def random(
+        self, n: IntNumber = 1, *, workers: IntNumber = 1
+    ) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
         ----------
         n : int, optional
             Number of samples to generate in the parameter space. Default is 1.
+        workers : int, optional
+            Number of workers to use for parallel processing. If -1 is
+            given all CPU threads are used. Default is 1. It becomes faster
+            than one worker for `n` greater than :math:`10^3`.
 
         Returns
         -------
@@ -756,114 +869,26 @@ class Halton(QMCEngine):
             QMC sample.
 
         """
+        workers = _validate_workers(workers)
         # Generate a sample using a Van der Corput sequence per dimension.
         # important to have ``type(bdim) == int`` for performance reason
-        sample = [van_der_corput(n, int(bdim), self.num_generated,
+        sample = [van_der_corput(n, int(bdim), start_index=self.num_generated,
                                  scramble=self.scramble,
-                                 seed=copy.deepcopy(self.seed))
+                                 seed=copy.deepcopy(self.seed),
+                                 workers=workers)
                   for bdim in self.base]
 
         self.num_generated += n
         return np.array(sample).T.reshape(n, self.d)
 
 
-class OrthogonalLatinHypercube(QMCEngine):
-    """Orthogonal array-based Latin hypercube sampling (OA-LHS).
-
-    In addition to the constraints from the Latin Hypercube, an orthogonal
-    array of size `n` is defined and only one point is allowed per subspace.
-
-    Parameters
-    ----------
-    d : int
-        Dimension of the parameter space.
-    seed : {None, int, `numpy.random.Generator`}, optional
-        If `seed` is None the `numpy.random.Generator` singleton is used.
-        If `seed` is an int, a new ``Generator`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` instance then that instance is
-        used.
-
-    References
-    ----------
-    .. [1] Art B. Owen, "Orthogonal arrays for computer experiments,
-       integration and visualization", Statistica Sinica, 1992.
-
-    Examples
-    --------
-    Generate samples from an orthogonal latin hypercube generator.
-
-    >>> from scipy.stats import qmc
-    >>> sampler = qmc.OrthogonalLatinHypercube(d=2, seed=12345)
-    >>> sample = sampler.random(n=5)
-    >>> sample
-    array([[0.0454672 , 0.58836057],
-           [0.55947309, 0.03734684],
-           [0.26335167, 0.98977623],
-           [0.87822191, 0.33455121],
-           [0.73525093, 0.64964914]])
-
-    Compute the quality of the sample using the discrepancy criterion.
-
-    >>> qmc.discrepancy(sample)
-    0.02050567122966518
-
-    Finally, samples can be scaled to bounds.
-
-    >>> l_bounds = [0, 2]
-    >>> u_bounds = [10, 5]
-    >>> qmc.scale(sample, l_bounds, u_bounds)
-    array([[0.45467204, 3.76508172],
-           [5.59473091, 2.11204051],
-           [2.63351668, 4.96932869],
-           [8.7822191 , 3.00365363],
-           [7.35250934, 3.94894743]])
-
-    """
-
-    def __init__(self, d, seed=None):
-        super().__init__(d=d, seed=seed)
-
-    def random(self, n=1):
-        """Draw `n` in the half-open interval ``[0, 1)``.
-
-        Parameters
-        ----------
-        n : int, optional
-            Number of samples to generate in the parameter space. Default is 1.
-
-        Returns
-        -------
-        sample : array_like (n, d)
-            OLHS sample.
-
-        """
-        sample = []
-        step = 1.0 / n
-
-        for _ in range(self.d):
-            # Enforce a unique point per grid
-            j = np.arange(n) * step
-            temp = j + self.rng.uniform(low=0, high=step, size=n)
-            self.rng.shuffle(temp)
-
-            sample.append(temp)
-
-        self.num_generated += n
-        return np.array(sample).T.reshape(n, self.d)
-
-
 class LatinHypercube(QMCEngine):
-    """Latin hypercube sampling (LHS).
+    r"""Latin hypercube sampling (LHS).
 
     A Latin hypercube sample [1]_ generates :math:`n` points in
     :math:`[0,1)^{d}`. Each univariate marginal distribution is stratified,
     placing exactly one point in :math:`[j/n, (j+1)/n)` for
     :math:`j=0,1,...,n-1`. They are still applicable when :math:`n << d`.
-    LHS is extremely effective on integrands that are nearly additive [2]_.
-    LHS on :math:`n` points never has more variance than plain MC on
-    :math:`n-1` points [3]_. There is a central limit theorem for LHS [4]_,
-    but not necessarily for optimized LHS.
 
     Parameters
     ----------
@@ -871,6 +896,27 @@ class LatinHypercube(QMCEngine):
         Dimension of the parameter space.
     centered : bool, optional
         Center the point within the multi-dimensional grid. Default is False.
+    optimization : {None, "random-cd"}, optional
+        Whether to use an optimization scheme to construct a LHS.
+        Default is None.
+
+        * ``random-cd``: random permutations of coordinates to lower the
+          centered discrepancy [5]_. The best design based on the centered
+          discrepancy is constantly updated. Centered discrepancy-based
+          design shows better space filling robustness toward 2D and 3D
+          subprojections compared to using other discrepancy measures [6]_.
+
+        .. versionadded:: 1.8.0
+
+    strength : {1, 2}, optional
+        Strength of the LHS. ``strength=1`` produces a plain LHS while
+        ``strength=2`` produces an orthogonal array based LHS of strength 2
+        [7]_, [8]_. In that case, only ``n=p**2`` points can be sampled,
+        with ``p`` a prime number. It also constrains ``d <= p + 1``.
+        Default is 1.
+
+        .. versionadded:: 1.8.0
+
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -878,10 +924,40 @@ class LatinHypercube(QMCEngine):
         If `seed` is already a ``Generator`` instance then that instance is
         used.
 
+    Notes
+    -----
+
+    When LHS is used for integrating a function :math:`f` over :math:`n`,
+    LHS is extremely effective on integrands that are nearly additive [2]_.
+    With a LHS of :math:`n` points, the variance of the integral is always
+    lower than plain MC on :math:`n-1` points [3]_. There is a central limit
+    theorem for LHS on the mean and variance of the integral [4]_, but not
+    necessarily for optimized LHS due to the randomization.
+
+    :math:`A` is called an orthogonal array of strength :math:`t` if in each
+    n-row-by-t-column submatrix of :math:`A`: all :math:`p^t` possible
+    distinct rows occur the same number of times. The elements of :math:`A`
+    are in the set :math:`\{0, 1, ..., p-1\}`, also called symbols.
+    The constraint that :math:`p` must be a prime number is to allow modular
+    arithmetic.
+
+    Strength 1 (plain LHS) brings an advantage over strength 0 (MC) and
+    strength 2 is a useful increment over strength 1. Going to strength 3 is
+    a smaller increment and scrambled QMC like Sobol', Halton are more
+    performant [7]_.
+
+    To create a LHS of strength 2, the orthogonal array :math:`A` is
+    randomized by applying a random, bijective map of the set of symbols onto
+    itself. For example, in column 0, all 0s might become 2; in column 1,
+    all 0s might become 1, etc.
+    Then, for each column :math:`i` and symbol :math:`j`, we add a plain,
+    one-dimensional LHS of size :math:`p` to the subarray where
+    :math:`A^i = j`. The resulting matrix is finally divided by :math:`p`.
+
     References
     ----------
     .. [1] Mckay et al., "A Comparison of Three Methods for Selecting Values
-       of Input Variables in the Analysis of Output from a Computer Code",
+       of Input Variables in the Analysis of Output from a Computer Code."
        Technometrics, 1979.
     .. [2] M. Stein, "Large sample properties of simulations using Latin
        hypercube sampling." Technometrics 29, no. 2: 143-151, 1987.
@@ -889,52 +965,111 @@ class LatinHypercube(QMCEngine):
        SIAM Journal on Numerical Analysis 34, no. 5: 1884-1910, 1997
     .. [4]  Loh, W.-L. "On Latin hypercube sampling." The annals of statistics
        24, no. 5: 2058-2080, 1996.
+    .. [5] Fang et al. "Design and modeling for computer experiments".
+       Computer Science and Data Analysis Series, 2006.
+    .. [6] Damblin et al., "Numerical studies of space filling designs:
+       optimization of Latin Hypercube Samples and subprojection properties."
+       Journal of Simulation, 2013.
+    .. [7] A. B. Owen , "Orthogonal arrays for computer experiments,
+       integration and visualization." Statistica Sinica, 1992.
+    .. [8] B. Tang, "Orthogonal Array-Based Latin Hypercubes."
+       Journal of the American Statistical Association, 1993.
 
     Examples
     --------
     Generate samples from a Latin hypercube generator.
 
     >>> from scipy.stats import qmc
-    >>> sampler = qmc.LatinHypercube(d=2, seed=12345)
+    >>> sampler = qmc.LatinHypercube(d=2)
     >>> sample = sampler.random(n=5)
     >>> sample
-    array([[0.5545328 , 0.13664833],
-           [0.64052691, 0.66474907],
-           [0.52177809, 0.53343721],
-           [0.08033825, 0.16265316],
-           [0.26544879, 0.21163943]])
+    array([[0.1545328 , 0.53664833],  # random
+           [0.84052691, 0.06474907],
+           [0.52177809, 0.93343721],
+           [0.68033825, 0.36265316],
+           [0.26544879, 0.61163943]])
 
     Compute the quality of the sample using the discrepancy criterion.
 
     >>> qmc.discrepancy(sample)
-    0.07254149611314986
+    0.0196...  # random
 
-    Finally, samples can be scaled to bounds.
+    Samples can be scaled to bounds.
 
     >>> l_bounds = [0, 2]
     >>> u_bounds = [10, 5]
     >>> qmc.scale(sample, l_bounds, u_bounds)
-    array([[5.54532796, 2.409945  ],
-           [6.40526909, 3.9942472 ],
-           [5.2177809 , 3.60031164],
-           [0.80338249, 2.48795949],
-           [2.65448791, 2.63491828]])
+    array([[1.54532796, 3.609945  ],  # random
+           [8.40526909, 2.1942472 ],
+           [5.2177809 , 4.80031164],
+           [6.80338249, 3.08795949],
+           [2.65448791, 3.83491828]])
+
+    Use the `optimization` keyword argument to produce a LHS with
+    lower discrepancy at higher computational cost.
+
+    >>> sampler = qmc.LatinHypercube(d=2, optimization="random-cd")
+    >>> sample = sampler.random(n=5)
+    >>> qmc.discrepancy(sample)
+    0.0176...  # random
+
+    Use the `strength` keyword argument to produce an orthogonal array based
+    LHS of strength 2. In this case, the number of sample points must be the
+    square of a prime number.
+
+    >>> sampler = qmc.LatinHypercube(d=2, strength=2)
+    >>> sample = sampler.random(n=9)
+    >>> qmc.discrepancy(sample)
+    0.00526...  # random
+
+    Options could be combined to produce an optimized centered
+    orthogonal array based LHS. After optimization, the result would not
+    be guaranteed to be of strength 2.
 
     """
 
-    def __init__(self, d, centered=False, seed=None):
+    def __init__(
+        self, d: IntNumber, *, centered: bool = False,
+        strength: int = 1,
+        optimization: Optional[Literal["random-cd"]] = None,
+        seed: SeedType = None
+    ) -> None:
         super().__init__(d=d, seed=seed)
         self.centered = centered
 
-        # This can be removed once numpy 1.16 is dropped
-        try:
-            self.rg_integers = self.rng.randint
-            self.rg_sample = self.rng.random_sample
-        except AttributeError:
-            self.rg_integers = self.rng.integers
-            self.rg_sample = self.rng.random
+        lhs_method_strength = {
+            1: self._random,
+            2: self._random_oa_lhs
+        }
 
-    def random(self, n=1):
+        try:
+            self.lhs_method = lhs_method_strength[strength]
+        except KeyError as exc:
+            message = (f"{strength!r} is not a valid strength. It must be one"
+                       f" of {set(lhs_method_strength)!r}")
+            raise ValueError(message) from exc
+
+        optimization_method: Dict[Literal["random-cd"], Callable] = {
+            "random-cd": self._random_cd,
+        }
+
+        self.optimization_method: Optional[Callable]
+        if optimization is not None:
+            try:
+                optimization = optimization.lower()  # type: ignore[assignment]
+                self.optimization_method = optimization_method[optimization]
+            except KeyError as exc:
+                message = (f"{optimization!r} is not a valid optimization"
+                           f" method. It must be one of"
+                           f" {set(optimization_method)!r}")
+                raise ValueError(message) from exc
+
+            self._n_nochange = 100
+            self._n_iters = 10_000
+        else:
+            self.optimization_method = None
+
+    def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
@@ -948,28 +1083,123 @@ class LatinHypercube(QMCEngine):
             LHS sample.
 
         """
-        if self.centered:
-            r = 0.5
-        else:
-            r = self.rg_sample((n, self.d))
-
-        q = self.rg_integers(low=1, high=n, size=(n, self.d))
+        lhs = self.lhs_method(n)
+        if self.optimization_method is not None:
+            lhs = self.optimization_method(lhs)
 
         self.num_generated += n
-        return 1. / n * (q - r)
+        return lhs
 
-    def reset(self):
-        """Reset the engine to base state.
+    def _random(self, n: IntNumber = 1) -> np.ndarray:
+        """Base LHS algorithm."""
+        if self.centered:
+            samples: np.ndarray | float = 0.5
+        else:
+            samples = self.rng.uniform(size=(n, self.d))
 
-        Returns
-        -------
-        engine : LatinHypercube
-            Engine reset to its base state.
+        perms = np.tile(np.arange(1, n + 1),
+                        (self.d, 1))  # type: ignore[arg-type]
+        for i in range(self.d):
+            self.rng.shuffle(perms[i, :])
+        perms = perms.T
 
+        samples = (perms - samples) / n
+        return samples
+
+    def _random_oa_lhs(self, n: IntNumber = 4) -> np.ndarray:
+        """Orthogonal array based LHS of strength 2."""
+        p = np.sqrt(n).astype(int)
+        n_row = p**2
+        n_col = p + 1
+
+        primes = primes_from_2_to(p + 1)
+        if p not in primes or n != n_row:
+            raise ValueError(
+                "n is not the square of a prime number. Close"
+                f" values are {primes[-2:]**2}"
+            )
+        if self.d > p + 1:
+            raise ValueError("n is too small for d. Must be n > (d-1)**2")
+
+        oa_sample = np.zeros(shape=(n_row, n_col), dtype=int)
+
+        # OA of strength 2
+        arrays = np.tile(np.arange(p), (2, 1))
+        oa_sample[:, :2] = np.stack(np.meshgrid(*arrays),
+                                    axis=-1).reshape(-1, 2)
+        for p_ in range(1, p):
+            oa_sample[:, 2+p_-1] = np.mod(oa_sample[:, 0]
+                                          + p_*oa_sample[:, 1], p)
+
+        # scramble the OA
+        oa_sample_ = np.empty(shape=(n_row, n_col), dtype=int)
+        for j in range(n_col):
+            perms = self.rng.permutation(p)
+            oa_sample_[:, j] = perms[oa_sample[:, j]]
+
+        # following is making a scrambled OA into an OA-LHS
+        oa_lhs_sample = np.zeros(shape=(n_row, n_col))
+        lhs_engine = LatinHypercube(d=1, centered=self.centered, strength=1,
+                                    seed=self.rng)  # type: QMCEngine
+        for j in range(n_col):
+            for k in range(p):
+                idx = oa_sample[:, j] == k
+                lhs = lhs_engine.random(p).flatten()
+                oa_lhs_sample[:, j][idx] = lhs + oa_sample[:, j][idx]
+
+                lhs_engine = lhs_engine.reset()
+
+        oa_lhs_sample /= p
+
+        return oa_lhs_sample[:, :self.d]  # type: ignore
+
+    def _random_cd(self, best_sample: np.ndarray) -> np.ndarray:
+        """Optimal LHS on CD.
+
+        Create a base LHS and do random permutations of coordinates to
+        lower the centered discrepancy.
+        Because it starts with a normal LHS, it also works with the
+        `centered` keyword argument.
+
+        Two stopping criterion are used to stop the algorithm: at most,
+        `_n_iters` iterations are performed; or if there is no improvement
+        for `_n_nochange` consecutive iterations.
         """
-        self.__init__(d=self.d, centered=self.centered, seed=self.rng_seed)
-        self.num_generated = 0
-        return self
+        n = len(best_sample)
+
+        if self.d == 0 or n == 0:
+            return np.empty((n, self.d))
+
+        best_disc = discrepancy(best_sample)
+
+        if n == 1:
+            return best_sample
+
+        bounds = ([0, self.d - 1],
+                  [0, n - 1],
+                  [0, n - 1])
+
+        n_nochange = 0
+        n_iters = 0
+        while n_nochange < self._n_nochange and n_iters < self._n_iters:
+            n_iters += 1
+
+            col = rng_integers(self.rng, *bounds[0])
+            row_1 = rng_integers(self.rng, *bounds[1])
+            row_2 = rng_integers(self.rng, *bounds[2])
+            disc = _perturb_discrepancy(best_sample,
+                                        row_1, row_2, col,
+                                        best_disc)
+            if disc < best_disc:
+                best_sample[row_1, col], best_sample[row_2, col] = (
+                    best_sample[row_2, col], best_sample[row_1, col])
+
+                best_disc = disc
+                n_nochange = 0
+            else:
+                n_nochange += 1
+
+        return best_sample
 
 
 class Sobol(QMCEngine):
@@ -988,7 +1218,7 @@ class Sobol(QMCEngine):
     d : int
         Dimensionality of the sequence. Max dimensionality is 21201.
     scramble : bool, optional
-        If True, use Owen scrambling. Otherwise no scrambling is done.
+        If True, use LMS+shift scrambling. Otherwise, no scrambling is done.
         Default is True.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
@@ -1000,12 +1230,14 @@ class Sobol(QMCEngine):
     Notes
     -----
     Sobol' sequences [1]_ provide :math:`n=2^m` low discrepancy points in
-    :math:`[0,1)^{d}`. Scrambling them [2]_ makes them suitable for singular
+    :math:`[0,1)^{d}`. Scrambling them [3]_ makes them suitable for singular
     integrands, provides a means of error estimation, and can improve their
-    rate of convergence.
+    rate of convergence. The scrambling strategy which is implemented is a
+    (left) linear matrix scramble (LMS) followed by a digital random shift
+    (LMS+shift) [2]_.
 
     There are many versions of Sobol' sequences depending on their
-    'direction numbers'. This code uses direction numbers from [3]_. Hence,
+    'direction numbers'. This code uses direction numbers from [4]_. Hence,
     the maximum number of dimension is 21201. The direction numbers have been
     precomputed with search criterion 6 and can be retrieved at
     https://web.maths.unsw.edu.au/~fkuo/sobol/.
@@ -1014,7 +1246,7 @@ class Sobol(QMCEngine):
 
        Sobol' sequences are a quadrature rule and they lose their balance
        properties if one uses a sample size that is not a power of 2, or skips
-       the first point, or thins the sequence [4]_.
+       the first point, or thins the sequence [5]_.
 
        If :math:`n=2^m` points are not enough then one should take :math:`2^M`
        points for :math:`M>m`. When scrambling, the number R of independent
@@ -1026,19 +1258,18 @@ class Sobol(QMCEngine):
 
     References
     ----------
-    .. [1] I. M. Sobol. The distribution of points in a cube and the accurate
-       evaluation of integrals. Zh. Vychisl. Mat. i Mat. Phys., 7:784-802,
+    .. [1] I. M. Sobol', "The distribution of points in a cube and the accurate
+       evaluation of integrals." Zh. Vychisl. Mat. i Mat. Phys., 7:784-802,
        1967.
-
-    .. [2] Art B. Owen. Scrambling Sobol and Niederreiter-Xing points.
+    .. [2] J. Matousek, "On the L2-discrepancy for anchored boxes."
+       J. of Complexity 14, 527-556, 1998.
+    .. [3] Art B. Owen, "Scrambling Sobol and Niederreiter-Xing points."
        Journal of Complexity, 14(4):466-489, December 1998.
-
-    .. [3] S. Joe and F. Y. Kuo. Constructing sobol sequences with better
-       two-dimensional projections. SIAM Journal on Scientific Computing,
+    .. [4] S. Joe and F. Y. Kuo, "Constructing sobol sequences with better
+       two-dimensional projections." SIAM Journal on Scientific Computing,
        30(5):2635-2654, 2008.
-
-    .. [4] Art B. Owen. On dropping the first Sobol' point. arXiv 2008.08051,
-       2020.
+    .. [5] Art B. Owen, "On dropping the first Sobol' point."
+       :arxiv:`2008.08051`, 2020.
 
     Examples
     --------
@@ -1087,15 +1318,18 @@ class Sobol(QMCEngine):
 
     """
 
-    MAXDIM = _MAXDIM
-    MAXBIT = _MAXBIT
+    MAXDIM: ClassVar[int] = _MAXDIM
+    MAXBIT: ClassVar[int] = _MAXBIT
 
-    def __init__(self, d, scramble=True, seed=None):
+    def __init__(
+            self, d: IntNumber, *, scramble: bool = True,
+            seed: SeedType = None
+    ) -> None:
+        super().__init__(d=d, seed=seed)
         if d > self.MAXDIM:
             raise ValueError(
                 "Maximum supported dimensionality is {}.".format(self.MAXDIM)
             )
-        super().__init__(d=d, seed=seed)
 
         # initialize direction numbers
         initialize_direction_numbers()
@@ -1112,24 +1346,22 @@ class Sobol(QMCEngine):
         self._quasi = self._shift.copy()
         self._first_point = (self._quasi / 2 ** self.MAXBIT).reshape(1, -1)
 
-    def _scramble(self):
+    def _scramble(self) -> None:
         """Scramble the sequence."""
-        try:
-            rg_integers = self.rng.integers
-        except AttributeError:
-            rg_integers = self.rng.randint
         # Generate shift vector
         self._shift = np.dot(
-            rg_integers(2, size=(self.d, self.MAXBIT), dtype=int),
+            rng_integers(self.rng, 2, size=(self.d, self.MAXBIT), dtype=int),
             2 ** np.arange(self.MAXBIT, dtype=int),
         )
         self._quasi = self._shift.copy()
         # Generate lower triangular matrices (stacked across dimensions)
-        ltm = np.tril(rg_integers(2, size=(self.d, self.MAXBIT, self.MAXBIT), dtype=int))
+        ltm = np.tril(rng_integers(self.rng, 2,
+                                   size=(self.d, self.MAXBIT, self.MAXBIT),
+                                   dtype=int))
         _cscramble(self.d, ltm, self._sv)
         self.num_generated = 0
 
-    def random(self, n=1):
+    def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw next point(s) in the Sobol' sequence.
 
         Parameters
@@ -1156,7 +1388,7 @@ class Sobol(QMCEngine):
             else:
                 _draw(n - 1, self.num_generated, self.d, self._sv,
                       self._quasi, sample)
-                sample = np.concatenate([self._first_point, sample])[:n]
+                sample = np.concatenate([self._first_point, sample])[:n]  # type: ignore[misc]
         else:
             _draw(n, self.num_generated - 1, self.d, self._sv,
                   self._quasi, sample)
@@ -1164,7 +1396,7 @@ class Sobol(QMCEngine):
         self.num_generated += n
         return sample
 
-    def random_base2(self, m):
+    def random_base2(self, m: IntNumber) -> np.ndarray:
         """Draw point(s) from the Sobol' sequence.
 
         This function draws :math:`n=2^m` points in the parameter space
@@ -1194,7 +1426,7 @@ class Sobol(QMCEngine):
 
         return self.random(n)
 
-    def reset(self):
+    def reset(self) -> Sobol:
         """Reset the engine to base state.
 
         Returns
@@ -1203,11 +1435,11 @@ class Sobol(QMCEngine):
             Engine reset to its base state.
 
         """
+        super().reset()
         self._quasi = self._shift.copy()
-        self.num_generated = 0
         return self
 
-    def fast_forward(self, n):
+    def fast_forward(self, n: IntNumber) -> Sobol:
         """Fast-forward the sequence by `n` positions.
 
         Parameters
@@ -1217,7 +1449,7 @@ class Sobol(QMCEngine):
 
         Returns
         -------
-        engine: Sobol
+        engine : Sobol
             The fast-forwarded engine.
 
         """
@@ -1266,8 +1498,13 @@ class MultivariateNormalQMC(QMCEngine):
 
     """
 
-    def __init__(self, mean, cov=None, cov_root=None, inv_transform=True,
-                 engine=None, seed=None):
+    def __init__(
+            self, mean: npt.ArrayLike, cov: Optional[npt.ArrayLike] = None, *,
+            cov_root: Optional[npt.ArrayLike] = None,
+            inv_transform: bool = True,
+            engine: Optional[QMCEngine] = None,
+            seed: SeedType = None
+    ) -> None:
         mean = np.array(mean, copy=False, ndmin=1)
         d = mean.shape[0]
         if cov is not None:
@@ -1308,13 +1545,20 @@ class MultivariateNormalQMC(QMCEngine):
         else:
             engine_dim = d
         if engine is None:
-            self.engine = Sobol(d=engine_dim, scramble=True, seed=seed)
-        else:
+            self.engine = Sobol(d=engine_dim, scramble=True, seed=seed)  # type: QMCEngine
+        elif isinstance(engine, QMCEngine):
+            if engine.d != d:
+                raise ValueError("Dimension of `engine` must be consistent"
+                                 " with dimensions of mean and covariance.")
             self.engine = engine
+        else:
+            raise ValueError("`engine` must be an instance of "
+                             "`scipy.stats.qmc.QMCEngine` or `None`.")
+
         self._mean = mean
         self._corr_matrix = cov_root
 
-    def random(self, n=1):
+    def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` QMC samples from the multivariate Normal.
 
         Parameters
@@ -1329,9 +1573,10 @@ class MultivariateNormalQMC(QMCEngine):
 
         """
         base_samples = self._standard_normal_samples(n)
+        self.num_generated += n
         return self._correlate(base_samples)
 
-    def reset(self):
+    def reset(self) -> MultivariateNormalQMC:
         """Reset the engine to base state.
 
         Returns
@@ -1340,17 +1585,18 @@ class MultivariateNormalQMC(QMCEngine):
             Engine reset to its base state.
 
         """
+        super().reset()
         self.engine.reset()
         return self
 
-    def _correlate(self, base_samples):
+    def _correlate(self, base_samples: np.ndarray) -> np.ndarray:
         if self._corr_matrix is not None:
             return base_samples @ self._corr_matrix + self._mean
         else:
             # avoid multiplying with identity here
             return base_samples + self._mean
 
-    def _standard_normal_samples(self, n=1):
+    def _standard_normal_samples(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` QMC samples from the standard Normal :math:`N(0, I_d)`.
 
         Parameters
@@ -1369,7 +1615,7 @@ class MultivariateNormalQMC(QMCEngine):
         if self._inv_transform:
             # apply inverse transform
             # (values to close to 0/1 result in inf values)
-            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))
+            return stats.norm.ppf(0.5 + (1 - 1e-10) * (samples - 0.5))  # type: ignore[attr-defined]
         else:
             # apply Box-Muller transform (note: indexes starting from 1)
             even = np.arange(0, samples.shape[-1], 2)
@@ -1380,7 +1626,7 @@ class MultivariateNormalQMC(QMCEngine):
             transf_samples = np.stack([Rs * cos, Rs * sin],
                                       -1).reshape(n, -1)
             # make sure we only return the number of dimension requested
-            return transf_samples[:, : self.d]
+            return transf_samples[:, : self.d]  # type: ignore[misc]
 
 
 class MultinomialQMC(QMCEngine):
@@ -1408,17 +1654,28 @@ class MultinomialQMC(QMCEngine):
 
     """
 
-    def __init__(self, pvals, engine=None, seed=None):
+    def __init__(
+            self, pvals: npt.ArrayLike, *, engine: Optional[QMCEngine] = None,
+            seed: SeedType = None
+    ) -> None:
         self.pvals = np.array(pvals, copy=False, ndmin=1)
         if np.min(pvals) < 0:
             raise ValueError('Elements of pvals must be non-negative.')
         if not np.isclose(np.sum(pvals), 1):
             raise ValueError('Elements of pvals must sum to 1.')
         if engine is None:
-            engine = Sobol(d=1, scramble=True, seed=seed)
-        self.engine = engine
+            self.engine = Sobol(d=1, scramble=True, seed=seed)  # type: QMCEngine
+        elif isinstance(engine, QMCEngine):
+            if engine.d != 1:
+                raise ValueError("Dimension of `engine` must be 1.")
+            self.engine = engine
+        else:
+            raise ValueError("`engine` must be an instance of "
+                             "`scipy.stats.qmc.QMCEngine` or `None`.")
 
-    def random(self, n=1):
+        super().__init__(d=1, seed=seed)
+
+    def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` QMC samples from the multinomial distribution.
 
         Parameters
@@ -1437,9 +1694,10 @@ class MultinomialQMC(QMCEngine):
         _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
         sample = np.zeros_like(self.pvals, dtype=int)
         _categorize(base_draws, p_cumulative, sample)
+        self.num_generated += n
         return sample
 
-    def reset(self):
+    def reset(self) -> MultinomialQMC:
         """Reset the engine to base state.
 
         Returns
@@ -1448,5 +1706,36 @@ class MultinomialQMC(QMCEngine):
             Engine reset to its base state.
 
         """
+        super().reset()
         self.engine.reset()
         return self
+
+
+def _validate_workers(workers: IntNumber = 1) -> IntNumber:
+    """Validate `workers` based on platform and value.
+
+    Parameters
+    ----------
+    workers : int, optional
+        Number of workers to use for parallel processing. If -1 is
+        given all CPU threads are used. Default is 1.
+
+    Returns
+    -------
+    Workers : int
+        Number of CPU used by the algorithm
+
+    """
+    workers = int(workers)
+    if workers == -1:
+        workers = os.cpu_count()  # type: ignore[assignment]
+        if workers is None:
+            raise NotImplementedError(
+                "Cannot determine the number of cpus using os.cpu_count(), "
+                "cannot use -1 for the number of workers"
+            )
+    elif workers <= 0:
+        raise ValueError(f"Invalid number of workers: {workers}, must be -1 "
+                         "or > 0")
+
+    return workers

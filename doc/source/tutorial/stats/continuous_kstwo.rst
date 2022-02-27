@@ -48,8 +48,7 @@ a target N(0, 1) CDF.
 >>> from scipy.stats import norm
 >>> n = 5
 >>> gendist = norm(0.5, 1)       # Normal distribution, mean 0.5, stddev 1
->>> np.random.seed(seed=423)  # Set the seed for reproducibility
->>> x = np.sort(gendist.rvs(size=n))
+>>> x = np.sort(gendist.rvs(size=n, random_state=np.random.default_rng()))
 >>> x
 array([-1.59113056, -0.66335147,  0.54791569,  0.78009321,  1.27641365])
 >>> target = norm(0, 1)
