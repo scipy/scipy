@@ -530,6 +530,10 @@ cdef inline double gamma_ratio_lanczos(
     else:
         mean_factor_part += (factor_part - mean_factor_part) / (count + 1)
         count += 1
+    # If there is at least one combination of factors that gives a factor part
+    # that is not zero, infinite, or NaN, return result where the factor part
+    # is taken to be the average of the factor parts for all such combinations
+    # of factors.
     if mean_factor_part:
         return mean_factor_part * lanczos_part
     # If one of the factors is NaN, or if more than one of zero, positive
