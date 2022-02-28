@@ -63,6 +63,9 @@ def _get_docs(func):
     return func
 
 
+################################## replacers ##################################
+
+
 def _a_b_q_replacer(args, kwargs, dispatchables):
     def self_method(a, b, q, *args, **kwargs):
         return dispatchables + args, kwargs
@@ -70,18 +73,239 @@ def _a_b_q_replacer(args, kwargs, dispatchables):
     return self_method(*args, **kwargs)
 
 
-@_create_linalg(_a_b_q_replacer)
-@all_of_type(np.ndarray)
-@_get_docs
-def solve_sylvester(a, b, q):
-    return a, b, q
-
-
 def _a_q_replacer(args, kwargs, dispatchables):
     def self_method(a, q, *args, **kwargs):
         return dispatchables + args, kwargs
 
     return self_method(*args, **kwargs)
+
+
+def _a_b_q_r_e_s_replacer(args, kwargs, dispatchables):
+    def self_method(a, b, q, r, e=None, s=None, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _a_b_replacer(args, kwargs, dispatchables):
+    def self_method(a, b=None, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _aband_replacer(args, kwargs, dispatchables):
+    def self_method(a_band, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _d_e_replacer(args, kwargs, dispatchables):
+    def self_method(d, e, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _a_replacer(args, kwargs, dispatchables):
+    def self_method(a, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _w_v_replacer(args, kwargs, dispatchables):
+    def self_method(w, v, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _A_replacer(args, kwargs, dispatchables):
+    def self_method(A, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _A_E_replacer(args, kwargs, dispatchables):
+    def self_method(A, E, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _inputmatrix_replacer(args, kwargs, dispatchables):
+    def self_method(input_matrix, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _N_M_k_dtype_replacer(args, kwargs, dispatchables):
+    def self_method(N, M=None, k=0, dtype=None, *args, **kwargs):
+        return (N, M, k, dispatchables[0]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _m_replacer(args, kwargs, dispatchables):
+    def self_method(m, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+
+def _c_r_replacer(args, kwargs, dispatchables):
+    def self_method(c, r=None, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _n_dtype_replacer(args, kwargs, dispatchables):
+    def self_method(n, dtype=int, *args, **kwargs):
+        return (n, dispatchables[0]) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _clower_b_replacer(args, kwargs, dispatchables):
+    def self_method(c_and_lower, b, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _ab_replacer(args, kwargs, dispatchables):
+    def self_method(ab, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _lupiv_b_replacer(args, kwargs, dispatchables):
+    def self_method(lu_and_piv, b, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _a_c_replacer(args, kwargs, dispatchables):
+    def self_method(a, c, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _A_B_replacer(args, kwargs, dispatchables):
+    def self_method(A, B, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _T_Z_replacer(args, kwargs, dispatchables):
+    def self_method(T, Z, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _s_replacer(args, kwargs, dispatchables):
+    def self_method(s, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _Q_R_replacer(args, kwargs, dispatchables):
+    def self_method(Q, R, k, *args, **kwargs):
+        return dispatchables + (k, ) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _Q_R_u_replacer(args, kwargs, dispatchables):
+    def self_method(Q, R, u, k, *args, **kwargs):
+        return dispatchables + (k, ) + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _Q_R_u_v_replacer(args, kwargs, dispatchables):
+    def self_method(Q, R, u, v, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _lu_ab_b_replacer(args, kwargs, dispatchables):
+    def self_method(l_and_u, ab, b, *args, **kwargs):
+        return (l_and_u, ) + dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _ab_b_replacer(args, kwargs, dispatchables):
+    def self_method(ab, b, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _corcr_b_replacer(args, kwargs, dispatchables):
+    def self_method(c_or_cr, b, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _c_b_replacer(args, kwargs, dispatchables):
+    def self_method(c, b, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _corcr_x_replacer(args, kwargs, dispatchables):
+    def self_method(c_or_cr, x, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _cblower_b_replacer(args, kwargs, dispatchables):
+    def self_method(cb_and_lower, b, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _f_s_replacer(args, kwargs, dispatchables):
+    def self_method(f, s, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+def _c_replacer(args, kwargs, dispatchables):
+    def self_method(c, *args, **kwargs):
+        return dispatchables + args, kwargs
+
+    return self_method(*args, **kwargs)
+
+
+###############################################################################
+
+
+@_create_linalg(_a_b_q_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def solve_sylvester(a, b, q):
+    return a, b, q
 
 
 @_create_linalg(_a_q_replacer)
@@ -105,13 +329,6 @@ def solve_discrete_lyapunov(a, q, method=None):
     return a, q
 
 
-def _a_b_q_r_e_s_replacer(args, kwargs, dispatchables):
-    def self_method(a, b, q, r, e=None, s=None, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_a_b_q_r_e_s_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
@@ -127,13 +344,6 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
 
 
 ###################### decomp (eigenvalue problems) ############################
-
-
-def _a_b_replacer(args, kwargs, dispatchables):
-    def self_method(a, b=None, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_a_b_replacer)
@@ -152,13 +362,6 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
          check_finite=True, subset_by_index=None, subset_by_value=None,
          driver=None):
     return a, b
-
-
-def _aband_replacer(args, kwargs, dispatchables):
-    def self_method(a_band, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_aband_replacer)
@@ -195,13 +398,6 @@ def eigvals_banded(a_band, lower=False, overwrite_a_band=False,
     return (a_band, )
 
 
-def _d_e_replacer(args, kwargs, dispatchables):
-    def self_method(d, e, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_d_e_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
@@ -218,25 +414,11 @@ def eigh_tridiagonal(d, e, eigvals_only=False, select='a', select_range=None,
     return d, e
 
 
-def _a_replacer(args, kwargs, dispatchables):
-    def self_method(a, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_a_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def hessenberg(a, calc_q=False, overwrite_a=False, check_finite=True):
     return (a, )
-
-
-def _w_v_replacer(args, kwargs, dispatchables):
-    def self_method(w, v, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_w_v_replacer)
@@ -247,12 +429,6 @@ def cdf2rdf(w, v):
 
 
 ############################## Matrix functions ################################
-
-def _A_replacer(args, kwargs, dispatchables):
-    def self_method(A, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_A_replacer)
@@ -346,13 +522,6 @@ def expm_cond(A, check_finite=True):
     return (A, )
 
 
-def _A_E_replacer(args, kwargs, dispatchables):
-    def self_method(A, E, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_A_E_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
@@ -369,13 +538,6 @@ def khatri_rao(a, b):
 ############################### sketches #######################################
 
 
-def _inputmatrix_replacer(args, kwargs, dispatchables):
-    def self_method(input_matrix, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_inputmatrix_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
@@ -385,25 +547,12 @@ def clarkson_woodruff_transform(input_matrix, sketch_size, seed=None):
 
 ############################### special matrices ###############################
 
-def _N_M_k_dtype_replacer(args, kwargs, dispatchables):
-    def self_method(N, M=None, k=0, dtype=None, *args, **kwargs):
-        return (N, M, k, dispatchables[0]) + args, kwargs
-
-    return self_method(*args, **kwargs)
-
 
 @_create_linalg(_N_M_k_dtype_replacer)
 @all_of_type(np.dtype)
 @_get_docs
 def tri(N, M=None, k=0, dtype=None):
     return (dtype, )
-
-
-def _m_replacer(args, kwargs, dispatchables):
-    def self_method(m, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_m_replacer)
@@ -420,13 +569,6 @@ def triu(m, k=0):
     return (m, )
 
 
-def _c_r_replacer(args, kwargs, dispatchables):
-    def self_method(c, r=None, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_c_r_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
@@ -441,13 +583,6 @@ def hankel(c, r=None):
     return c, r
 
 
-def _c_replacer(args, kwargs, dispatchables):
-    def self_method(c, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_c_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
@@ -455,25 +590,11 @@ def circulant(c):
     return (c, )
 
 
-def _n_dtype_replacer(args, kwargs, dispatchables):
-    def self_method(n, dtype=int, *args, **kwargs):
-        return (n, dispatchables[0]) + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_n_dtype_replacer)
 @all_of_type(np.dtype)
 @_get_docs
 def hadamard(n, dtype=int):
     return (dtype, )
-
-
-def _f_s_replacer(args, kwargs, dispatchables):
-    def self_method(f, s, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_f_s_replacer)
@@ -535,13 +656,6 @@ def cho_factor(a, lower=False, overwrite_a=False, check_finite=True):
     return (a, )
 
 
-def _clower_b_replacer(args, kwargs, dispatchables):
-    def self_method(c_and_lower, b, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_clower_b_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
@@ -549,25 +663,11 @@ def cho_solve(c_and_lower, b, overwrite_b=False, check_finite=True):
     return _mark_scalar_tuple_callable_array(c_and_lower), b
 
 
-def _ab_replacer(args, kwargs, dispatchables):
-    def self_method(ab, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_ab_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
     return (ab, )
-
-
-def _cblower_b_replacer(args, kwargs, dispatchables):
-    def self_method(cb_and_lower, b, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_cblower_b_replacer)
@@ -589,13 +689,6 @@ def ldl(A, lower=True, hermitian=True, overwrite_a=False, check_finite=True):
 @_get_docs
 def lu_factor(a, overwrite_a=False, check_finite=True):
     return (a, )
-
-
-def _lupiv_b_replacer(args, kwargs, dispatchables):
-    def self_method(lu_and_piv, b, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_lupiv_b_replacer)
@@ -627,13 +720,6 @@ def qr(a, overwrite_a=False, lwork=None, mode='full', pivoting=False,
     return (a, )
 
 
-def _a_c_replacer(args, kwargs, dispatchables):
-    def self_method(a, c, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_a_c_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
@@ -647,13 +733,6 @@ def qr_multiply(a, c, mode='right', pivoting=False, conjugate=False,
 @_get_docs
 def rq(a, overwrite_a=False, lwork=None, mode='full', check_finite=True):
     return (a, )
-
-
-def _A_B_replacer(args, kwargs, dispatchables):
-    def self_method(A, B, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_A_B_replacer)
@@ -680,13 +759,6 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
     return (a, )
 
 
-def _T_Z_replacer(args, kwargs, dispatchables):
-    def self_method(T, Z, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_T_Z_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
@@ -707,13 +779,6 @@ def svd(a, full_matrices=True, compute_uv=True, overwrite_a=False,
 @_get_docs
 def svdvals(a, overwrite_a=False, check_finite=True):
     return (a, )
-
-
-def _s_replacer(args, kwargs, dispatchables):
-    def self_method(s, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_s_replacer)
@@ -744,13 +809,6 @@ def subspace_angles(A, B):
     return A, B
 
 
-def _Q_R_replacer(args, kwargs, dispatchables):
-    def self_method(Q, R, k, *args, **kwargs):
-        return dispatchables + (k, ) + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_Q_R_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
@@ -759,26 +817,12 @@ def qr_delete(Q, R, k, p=1, which='row', overwrite_qr=False,
     return Q, R
 
 
-def _Q_R_u_replacer(args, kwargs, dispatchables):
-    def self_method(Q, R, u, k, *args, **kwargs):
-        return dispatchables + (k, ) + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_Q_R_u_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False,
               check_finite=True):
     return Q, R, u
-
-
-def _Q_R_u_v_replacer(args, kwargs, dispatchables):
-    def self_method(Q, R, u, v, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_Q_R_u_v_replacer)
@@ -808,26 +852,12 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
     return a, b
 
 
-def _lu_ab_b_replacer(args, kwargs, dispatchables):
-    def self_method(l_and_u, ab, b, *args, **kwargs):
-        return (l_and_u, ) + dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_lu_ab_b_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
                  debug=None, check_finite=True):
     return ab, b
-
-
-def _ab_b_replacer(args, kwargs, dispatchables):
-    def self_method(ab, b, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_ab_b_replacer)
@@ -838,25 +868,11 @@ def solveh_banded(ab, b, overwrite_ab=False, overwrite_b=False, lower=False,
     return ab, b
 
 
-def _corcr_b_replacer(args, kwargs, dispatchables):
-    def self_method(c_or_cr, b, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
-
-
 @_create_linalg(_corcr_b_replacer)
 @all_of_type(np.ndarray)
 @_get_docs
 def solve_toeplitz(c_or_cr, b, check_finite=True):
     return _mark_scalar_tuple_callable_array(c_or_cr), b
-
-
-def _c_b_replacer(args, kwargs, dispatchables):
-    def self_method(c, b, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_c_b_replacer)
@@ -918,13 +934,6 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
 def matrix_balance(A, permute=True, scale=True, separate=False,
                    overwrite_a=False):
     return (A, )
-
-
-def _corcr_x_replacer(args, kwargs, dispatchables):
-    def self_method(c_or_cr, x, *args, **kwargs):
-        return dispatchables + args, kwargs
-
-    return self_method(*args, **kwargs)
 
 
 @_create_linalg(_corcr_x_replacer)
