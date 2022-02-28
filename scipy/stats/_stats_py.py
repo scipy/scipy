@@ -3970,7 +3970,12 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
         zr = -np.inf
     else:
         zr = np.arctanh(r)
-    se = np.sqrt(1 / (n - 3))
+    if n == 2:
+        se = np.nan
+    elif n == 3:
+        se = np.inf
+    else:
+        se = np.sqrt(1 / (n - 3))
 
     if alternative == "two-sided":
         h = special.ndtri(0.5 + confidence_level/2)
