@@ -234,10 +234,10 @@ mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/dev', None),
+    'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/devdocs', None),
     'neps': ('https://numpy.org/neps', None),
-    'matplotlib': ('https://matplotlib.org', None),
+    'matplotlib': ('https://matplotlib.org/stable', None),
     'asv': ('https://asv.readthedocs.io/en/stable/', None),
 }
 
