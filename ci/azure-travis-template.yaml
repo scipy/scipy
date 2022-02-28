@@ -70,6 +70,7 @@ steps:
     gmpy2
     threadpoolctl
     mpmath
+    pooch
     pythran
     pybind11
     pytest
@@ -82,7 +83,7 @@ steps:
   - script: pip install pytest-cov coverage codecov
     displayName: 'Install coverage dependencies'
 - ${{ if eq(parameters.refguide_check, true) }}:
-  - script: pip install matplotlib sphinx==3.1
+  - script: pip install matplotlib sphinx==3.1 pooch
     displayName: 'Install documentation dependencies'
   - script: sudo apt-get install -y wamerican-small
     displayName: 'Install word list (for csgraph tutorial)'

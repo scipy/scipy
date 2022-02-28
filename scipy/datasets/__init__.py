@@ -13,10 +13,20 @@ Datasets (:mod:`scipy.datasets`)
    electrocardiogram - Load an example of a one-dimensional signal.
 
 """
+try:
+    import pooch
+except ImportError:
+    pooch=None
+
+msg = (
+    "Missing optional dependency 'pooch' required for scipy.datasets module. "
+    "Please use pip or conda to install 'pooch'."
+)
+if pooch is None:
+    raise ImportError(msg)
+
 
 from ._fetchers import face, ascent, electrocardiogram
-
-
 __all__ = ['ascent', 'electrocardiogram', 'face']
 
 
