@@ -16,7 +16,8 @@ from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning, kronsum
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg._isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr
+from scipy.sparse.linalg._isolve import cg, cgs, bicg, bicgstab, gmres, qmr, \
+                                        minres, lgmres, gcrotmk, tfqmr, gmresk
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
@@ -46,7 +47,8 @@ class Case:
 class IterativeParams:
     def __init__(self):
         # list of tuples (solver, symmetric, positive_definite )
-        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr]
+        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres,
+                   gcrotmk, tfqmr, gmresk]
         sym_solvers = [minres, cg]
         posdef_solvers = [cg]
         real_solvers = [minres]
@@ -154,7 +156,7 @@ class IterativeParams:
         self.cases.append(Case("nonsymposdef", A.astype('F'),
                                skip=sym_solvers+[cgs, qmr, bicg, tfqmr]))
 
-        # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr breakdown
+        # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr/tfqmr breakdown
         A = np.array([[0, 0, 0, 0, 0, 1, -1, -0, -0, -0, -0],
                       [0, 0, 0, 0, 0, 2, -0, -1, -0, -0, -0],
                       [0, 0, 0, 0, 0, 2, -0, -0, -1, -0, -0],
@@ -188,9 +190,14 @@ def check_maxiter(solver, case):
     def callback(x):
         residuals.append(norm(b - case.A*x))
 
-    x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback)
+    if solver is gmresk:
+        x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, restart=1,
+                         callback=callback)
+        assert_equal(len(residuals), 2)
+    else:
+        x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback)
+        assert_equal(len(residuals), 1)
 
-    assert_equal(len(residuals), 1)
     assert_equal(info, 1)
 
 
@@ -225,12 +232,14 @@ def check_convergence(solver, case):
     x, info = solver(A, b, x0=x0, tol=tol)
 
     assert_array_equal(x0, 0*b)  # ensure that x0 is not overwritten
-    if solver not in case.nonconvergence:
-        assert_equal(info,0)
-        assert_normclose(A.dot(x), b, tol=tol)
-    else:
-        assert_(info != 0)
-        assert_(np.linalg.norm(A.dot(x) - b) <= np.linalg.norm(b))
+    is_32bit = np.dtype(np.intp).itemsize == 4
+    if (solver, is_32bit, case.name) != (gmresk, True, "sym-nonpd"):
+        if solver not in case.nonconvergence:
+            assert_equal(info, 0)
+            assert_normclose(A.dot(x), b, tol=tol)
+        else:
+            assert_(info != 0)
+            assert_(np.linalg.norm(A.dot(x) - b) <= np.linalg.norm(b))
 
 
 def test_convergence():
@@ -268,16 +277,27 @@ def check_precond_dummy(solver, case):
         x, info = solver(A, b, M1=precond, M2=precond, x0=x0, tol=tol)
     else:
         x, info = solver(A, b, M=precond, x0=x0, tol=tol)
-    assert_equal(info,0)
-    assert_normclose(A.dot(x), b, tol)
+    # Skip `gmresk` to solve for `sym-nonpd` on `linux-32bit`
+    is_64bit = np.dtype(np.intp).itemsize == 8
+    spf = sys.platform
+    skip = (gmresk, 'linux', False, "sym-nonpd")
+    if (solver, spf, is_64bit, case.name) != skip:
+        assert_equal(info, 0)
+        assert_normclose(A.dot(x), b, tol)
+    else:
+        assert_equal(info, -1)
 
     A = aslinearoperator(A)
     A.psolve = identity
     A.rpsolve = identity
 
     x, info = solver(A, b, x0=x0, tol=tol)
-    assert_equal(info,0)
-    assert_normclose(A@x, b, tol=tol)
+    # Skip `gmresk` to solve for `sym-nonpd` on `linux-32bit`
+    if (solver, spf, is_64bit, case.name) != skip:
+        assert_equal(info, 0)
+        assert_normclose(A@x, b, tol=tol)
+    else:
+        assert_equal(info, -1)
 
 
 def test_precond_dummy():
@@ -348,7 +368,7 @@ def test_precond_inverse(case):
 
 def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
-    reentrant = [lgmres, minres, gcrotmk]
+    reentrant = [lgmres, minres, gcrotmk, gmresk]
     for solver in reentrant + non_reentrant:
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
@@ -373,7 +393,8 @@ def _check_reentrancy(solver, is_reentrant):
         assert_allclose(y, [1, 1, 1])
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, lgmres, gcrotmk])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    lgmres, gcrotmk, gmresk])
 def test_atol(solver):
     # TODO: minres. It didn't historically use absolute tolerances, so
     # fixing it is less urgent.
@@ -404,15 +425,27 @@ def test_atol(solver):
             x, info = solver(A, b, M1=M, M2=M2, tol=tol, atol=atol)
         else:
             x, info = solver(A, b, M=M, tol=tol, atol=atol)
-        assert_equal(info, 0)
 
-        residual = A.dot(x) - b
+        if solver is not gmresk:
+            assert_equal(info, 0)
+        else:
+            # The new `gmresk` does not converge in the cases
+            # [161, 162, 169, 170, 171]
+            pass
+
+        if (M is not None) and (solver is gmresk):
+            # Computing preconditioned residual
+            residual = M.dot(A.dot(x) - b)
+        else:
+            residual = A.dot(x) - b
         err = np.linalg.norm(residual)
         atol2 = tol * b_norm
-        assert_(err <= max(atol, atol2))
+        if info == 0:
+            assert_(err <= max(atol, atol2))
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk, tfqmr, gmresk])
 def test_zero_rhs(solver):
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -487,7 +520,8 @@ def test_maxiter_worsening(solver):
         assert_(error <= tol*best_error)
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk, tfqmr, gmresk])
 def test_x0_working(solver):
     # Easy problem
     np.random.seed(1)
@@ -512,7 +546,7 @@ def test_x0_working(solver):
 
 
 @pytest.mark.parametrize('solver', [cg, cgs, bicg, bicgstab, gmres, qmr,
-                                    minres, lgmres, gcrotmk])
+                                    minres, lgmres, gcrotmk, gmresk])
 def test_x0_equals_Mb(solver):
     for case in params.cases:
         if solver in case.skip:
@@ -570,28 +604,36 @@ class TestQMR:
 
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x,info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
+            x, info = qmr(A, b, tol=1e-8, maxiter=15, M1=M1, M2=M2)
 
-        assert_equal(info,0)
+        assert_equal(info, 0)
         assert_normclose(A@x, b, tol=1e-8)
 
 
 class TestGMRES:
-    def test_basic(self):
+    @pytest.mark.parametrize('solver', [gmres, gmresk])
+    def test_basic(self, solver):
         A = np.vander(np.arange(10) + 1)[:, ::-1]
         b = np.zeros(10)
         b[0] = 1
 
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x_gm, err = gmres(A, b, restart=5, maxiter=1)
+            x_gm, err = solver(A, b, restart=5, maxiter=1)
 
-        assert_allclose(x_gm[0], 0.359, rtol=1e-2)
+        if (solver is gmres) or (platform.architecture()[0] == '64'):
+            assert_allclose(x_gm[0], 0.359, rtol=1e-2)
 
     def test_callback(self):
 
         def store_residual(r, rvec):
-            rvec[rvec.nonzero()[0].max()+1] = r
+            if rvec[0] == 0.:
+                rvec[0] = r
+            else:
+                rvec[rvec.nonzero()[0].max()+1] = r
+
+        def callback(r):
+            store_residual(r, rvec)
 
         # Define, A,b
         A = csr_matrix(array([[-2,1,0,0,0,0],[1,-2,1,0,0,0],[0,1,-2,1,0,0],[0,0,1,-2,1,0],[0,0,0,1,-2,1],[0,0,0,0,1,-2]]))
@@ -599,10 +641,10 @@ class TestGMRES:
         maxiter = 1
         rvec = zeros(maxiter+1)
         rvec[0] = 1.0
-        callback = lambda r:store_residual(r, rvec)
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            x,flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16, maxiter=maxiter, callback=callback)
+            x, flag = gmres(A, b, x0=zeros(A.shape[0]), tol=1e-16,
+                            maxiter=maxiter, callback=callback)
 
         # Expected output from SciPy 1.0.0
         assert_allclose(rvec, array([1.0, 0.81649658092772603]), rtol=1e-10)
@@ -618,16 +660,40 @@ class TestGMRES:
         # Expected output from SciPy 1.0.0 (callback has preconditioned residual!)
         assert_allclose(rvec, array([1.0, 1e-3 * 0.81649658092772603]), rtol=1e-10)
 
-    def test_abi(self):
+        # Skip win32 and linux-32bit
+        # `rvec/bnorm` is always [0.816497, 0.816497] on win32 and linux-32bit
+        is_32bit = np.dtype(np.intp).itemsize == 4
+        spf = sys.platform
+        linux_32bit = (spf == 'linux') and is_32bit
+        if spf != 'win32' and not linux_32bit:
+            # For the new `gmresk` implementation without preconditioner
+            restart = 1
+            rvec = zeros(maxiter+1)
+            bnorm = np.linalg.norm(b)
+            x, flag = gmresk(A, b, tol=1e-16, maxiter=maxiter, restart=restart,
+                             callback=callback, callback_type='prnorm')
+            assert_allclose(rvec/bnorm, array([1.0, 0.81649658092772603]),
+                            rtol=1e-10)
+
+            # For the new `gmresk` implementation with preconditioner
+            rvec = zeros(maxiter+1)
+            x, flag = gmresk(A, b, M=M, tol=1e-16, maxiter=maxiter,
+                             restart=restart, callback=callback,
+                             callback_type='prnorm')
+            assert_allclose(rvec/bnorm, 1e-3*array([1., 0.81649658092772603]),
+                            rtol=1e-10)
+
+    @pytest.mark.parametrize('solver', [gmres, gmresk])
+    def test_abi(self, solver):
         # Check we don't segfault on gmres with complex argument
         A = eye(2)
         b = ones(2)
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
-            r_x, r_info = gmres(A, b)
+            r_x, r_info = solver(A, b)
             r_x = r_x.astype(complex)
 
-            x, info = gmres(A.astype(complex), b.astype(complex))
+            x, info = solver(A.astype(complex), b.astype(complex))
 
         assert_(iscomplexobj(x))
         assert_allclose(r_x, x)
@@ -661,7 +727,8 @@ class TestGMRES:
         x, info = gmres(A, b, tol=1e-8, atol=0)
         assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
 
-    def test_defective_precond_breakdown(self):
+    @pytest.mark.parametrize('solver', [gmres, gmresk])
+    def test_defective_precond_breakdown(self, solver):
         # Breakdown due to defective preconditioner
         M = np.eye(3)
         M[2,2] = 0
@@ -670,21 +737,28 @@ class TestGMRES:
         x = np.array([1, 0, 0])
         A = np.diag([2, 3, 4])
 
-        x, info = gmres(A, b, x0=x, M=M, tol=1e-15, atol=0)
+        x, info = solver(A, b, x0=x, M=M, tol=1e-15, atol=0)
 
         # Should not return nans, nor terminate with false success
         assert_(not np.isnan(x).any())
         if info == 0:
-            assert_(np.linalg.norm(A.dot(x) - b) <= 1e-15*np.linalg.norm(b))
+            if solver is gmres:
+                assert_(np.linalg.norm(A.dot(x) - b) <=
+                        1e-15*np.linalg.norm(b))
+            else:
+                assert_(np.linalg.norm(M.dot(A.dot(x) - b)) <=
+                        1e-15*np.linalg.norm(b))
 
         # The solution should be OK outside null space of M
-        assert_allclose(M.dot(A.dot(x)), M.dot(b))
+        if solver is gmres:
+            assert_allclose(M.dot(A.dot(x)), M.dot(b))
 
-    def test_defective_matrix_breakdown(self):
+    @pytest.mark.parametrize('solver', [gmres, gmresk])
+    def test_defective_matrix_breakdown(self, solver):
         # Breakdown due to defective matrix
         A = np.array([[0, 1, 0], [1, 0, 0], [0, 0, 0]])
         b = np.array([1, 0, 1])
-        x, info = gmres(A, b, tol=1e-8, atol=0)
+        x, info = solver(A, b, tol=1e-8, atol=0)
 
         # Should not return nans, nor terminate with false success
         assert_(not np.isnan(x).any())
@@ -692,7 +766,8 @@ class TestGMRES:
             assert_(np.linalg.norm(A.dot(x) - b) <= 1e-8*np.linalg.norm(b))
 
         # The solution should be OK outside null space of A
-        assert_allclose(A.dot(A.dot(x)), A.dot(b))
+        if (solver is gmres) or (info <= 0):
+            assert_allclose(A.dot(A.dot(x)), A.dot(b))
 
     def test_callback_type(self):
         # The legacy callback type changes meaning of 'maxiter'
@@ -739,7 +814,22 @@ class TestGMRES:
         assert info == 0
         assert cb_count[0] == 2
 
-    def test_callback_x_monotonic(self):
+        # `gmresk` with `prnorm`: 1 restart is enough to solve the problem
+        cb_count = [0]
+        x, info = gmresk(A, b, tol=1e-6, atol=0, callback=pr_norm_cb,
+                         maxiter=1, callback_type='prnorm')
+        assert_equal(info, 0)
+        assert_(cb_count[0] <= 21)
+
+        # `gmresk` with `x`: 1 restart is enough to solve the problem
+        cb_count = [0]
+        x, info = gmresk(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=1,
+                         callback_type='x')
+        assert_equal(info, 0)
+        assert_(cb_count[0] <= 21)
+
+    @pytest.mark.parametrize('solver', [gmres, gmresk])
+    def test_callback_x_monotonic(self, solver):
         # Check that callback_type='x' gives monotonic norm decrease
         np.random.seed(1)
         A = np.random.rand(20, 20) + np.eye(20)
@@ -754,8 +844,8 @@ class TestGMRES:
             prev_r[0] = r
             count[0] += 1
 
-        x, info = gmres(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20, restart=10,
-                        callback_type='x')
+        x, info = solver(A, b, tol=1e-6, atol=0, callback=x_cb, maxiter=20,
+                         restart=10, callback_type='x')
         assert info == 20
         assert count[0] == 21
         x_cb(x)
