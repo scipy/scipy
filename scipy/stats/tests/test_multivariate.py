@@ -1626,6 +1626,18 @@ class TestUnitaryGroup:
         assert_raises(ValueError, unitary_group.rvs, 1)
         assert_raises(ValueError, unitary_group.rvs, 2.5)
 
+    def test_frozen_matrix(self):
+        dim = 7
+        frozen = unitary_group(dim)
+        frozen_seed = unitary_group(dim, seed=514)
+
+        rvs1 = frozen.rvs(random_state=514)
+        rvs2 = unitary_group.rvs(dim, random_state=514)
+        rvs3 = frozen_seed.rvs(size=1)
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
+
     def test_unitarity(self):
         xs = [unitary_group.rvs(dim)
               for dim in range(2,12)
