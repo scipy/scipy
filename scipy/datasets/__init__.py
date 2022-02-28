@@ -16,7 +16,7 @@ Datasets (:mod:`scipy.datasets`)
 try:
     import pooch
 except ImportError:
-    pooch=None
+    pooch = None
 
 msg = (
     "Missing optional dependency 'pooch' required for scipy.datasets module. "
@@ -26,7 +26,7 @@ if pooch is None:
     raise ImportError(msg)
 
 
-from ._fetchers import face, ascent, electrocardiogram
+from ._fetchers import face, ascent, electrocardiogram  # noqa: E402
 __all__ = ['ascent', 'electrocardiogram', 'face']
 
 

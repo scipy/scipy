@@ -26,7 +26,8 @@ def test_ascent():
     assert_equal(ascent().shape, (512, 512))
 
     # hash check
-    assert _has_hash(os.path.join(data.path, "ascent.dat"), registry["ascent.dat"])
+    assert _has_hash(os.path.join(data.path, "ascent.dat"),
+                     registry["ascent.dat"])
 
 
 def test_face():

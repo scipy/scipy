@@ -1,7 +1,6 @@
 import pooch
 from numpy import array, frombuffer, load
 from ._registry import registry, registry_urls
-import os
 
 
 data = pooch.create(
@@ -21,7 +20,8 @@ data = pooch.create(
 
 def ascent():
     """
-    Get an 8-bit grayscale bit-depth, 512 x 512 derived image for easy use in demos
+    Get an 8-bit grayscale bit-depth, 512 x 512 derived image for easy
+    use in demos.
 
     The image is derived from accent-to-the-top.jpg at
     http://www.public-domain-image.com/people-public-domain-images-pictures/
@@ -120,10 +120,10 @@ def electrocardiogram():
     >>> plt.ylim(-1, 1.5)
     >>> plt.show()
 
-    After second 16, however, the first premature ventricular contractions, also
-    called extrasystoles, appear. These have a different morphology compared to
-    typical heartbeats. The difference can easily be observed in the following
-    plot.
+    After second 16, however, the first premature ventricular contractions,
+    also called extrasystoles, appear. These have a different morphology
+    compared to typical heartbeats. The difference can easily be observed
+    in the following plot.
 
     >>> plt.plot(time, ecg)
     >>> plt.xlabel("time in s")
