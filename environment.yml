@@ -23,7 +23,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
-  - asv
+  - asv<0.5
   # For type annotations
   - mypy
   - typing_extensions
