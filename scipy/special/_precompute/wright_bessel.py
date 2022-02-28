@@ -10,10 +10,10 @@ from scipy.optimize import minimize_scalar, curve_fit
 from time import time
 
 try:
-    import sympy # type: ignore[import]
+    import sympy  # type: ignore[import]
     from sympy import EulerGamma, Rational, S, Sum, \
         factorial, gamma, gammasimp, pi, polygamma, symbols, zeta
-    from sympy.polys.polyfuncs import horner # type: ignore[import]
+    from sympy.polys.polyfuncs import horner  # type: ignore[import]
 except ImportError:
     pass
 

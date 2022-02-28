@@ -8,7 +8,9 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_kurt_expect, check_entropy,
                            check_private_entropy, check_edge_support,
                            check_named_args, check_random_state_property,
-                           check_pickling, check_rvs_broadcast, check_freezing)
+                           check_pickling, check_rvs_broadcast, check_freezing,
+                           check_deprecation_warning_gh5982_moment,
+                           check_deprecation_warning_gh5982_interval)
 from scipy.stats._distr_params import distdiscrete, invdistdiscrete
 
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
@@ -44,6 +46,8 @@ def test_discrete_basic(distname, arg, first_case):
     check_pmf_cdf(distfn, arg, distname)
     check_oth(distfn, arg, supp, distname + ' oth')
     check_edge_support(distfn, arg)
+    check_deprecation_warning_gh5982_moment(distfn, arg, distname)
+    check_deprecation_warning_gh5982_interval(distfn, arg, distname)
 
     alpha = 0.01
     check_discrete_chisquare(distfn, arg, rvs, alpha,
@@ -146,6 +150,31 @@ def test_ppf_with_loc(dist, args):
             [_a-1+loc, _b+loc],
             [distfn.ppf(0.0, *args, loc=loc), distfn.ppf(1.0, *args, loc=loc)]
             )
+
+
+@pytest.mark.parametrize('dist, args', distdiscrete)
+def test_isf_with_loc(dist, args):
+    try:
+        distfn = getattr(stats, dist)
+    except TypeError:
+        distfn = dist
+    # check with a negative, no and positive relocation.
+    np.random.seed(1942349)
+    re_locs = [np.random.randint(-10, -1), 0, np.random.randint(1, 10)]
+    _a, _b = distfn.support(*args)
+    for loc in re_locs:
+        expected = _b + loc, _a - 1 + loc
+        res = distfn.isf(0., *args, loc=loc), distfn.isf(1., *args, loc=loc)
+        npt.assert_array_equal(expected, res)
+    # test broadcasting behaviour
+    re_locs = [np.random.randint(-10, -1, size=(5, 3)),
+               np.zeros((5, 3)),
+               np.random.randint(1, 10, size=(5, 3))]
+    _a, _b = distfn.support(*args)
+    for loc in re_locs:
+        expected = _b + loc, _a - 1 + loc
+        res = distfn.isf(0., *args, loc=loc), distfn.isf(1., *args, loc=loc)
+        npt.assert_array_equal(expected, res)
 
 
 def check_cdf_ppf(distfn, arg, supp, msg):

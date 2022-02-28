@@ -1430,6 +1430,18 @@ class TestOrthoGroup:
         assert_raises(ValueError, ortho_group.rvs, 1)
         assert_raises(ValueError, ortho_group.rvs, 2.5)
 
+    def test_frozen_matrix(self):
+        dim = 7
+        frozen = ortho_group(dim)
+        frozen_seed = ortho_group(dim, seed=1234)
+
+        rvs1 = frozen.rvs(random_state=1234)
+        rvs2 = ortho_group.rvs(dim, random_state=1234)
+        rvs3 = frozen_seed.rvs(size=1)
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
+
     def test_det_and_ortho(self):
         xs = [[ortho_group.rvs(dim)
                for i in range(10)]
@@ -1869,6 +1881,14 @@ class TestMultivariateT:
         # Make shape singular and verify error was raised.
         args = dict(loc=[0,0], shape=[[0,0],[0,1]], df=1, allow_singular=False)
         assert_raises(np.linalg.LinAlgError, multivariate_t, **args)
+
+    @pytest.mark.parametrize("size", [(10, 3), (5, 6, 4, 3)])
+    @pytest.mark.parametrize("dim", [2, 3, 4, 5])
+    @pytest.mark.parametrize("df", [1., 2., np.inf])
+    def test_rvs(self, size, dim, df):
+        dist = multivariate_t(np.zeros(dim), np.eye(dim), df)
+        rvs = dist.rvs(size=size)
+        assert rvs.shape == size + (dim, )
 
 
 class TestMultivariateHypergeom:

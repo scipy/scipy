@@ -78,7 +78,7 @@ class MagicSquare(Benchmark):
                 raise NotImplementedError("skipped")
 
         dims, obj = prob
-        self.A_eq, self.b_eq, self.c, numbers = magic_square(dims)
+        self.A_eq, self.b_eq, self.c, numbers, _ = magic_square(dims)
         self.fun = None
 
     def time_magic_square(self, meth, prob):

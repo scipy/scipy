@@ -200,7 +200,7 @@ class _TestRBFInterpolator:
 
         y = _1d_test_function(x)
         ytrue = _1d_test_function(xitp)
-        yitp = self.build(x, y, epsilon=0.6, kernel=kernel)(xitp)
+        yitp = self.build(x, y, epsilon=5.0, kernel=kernel)(xitp)
 
         mse = np.mean((yitp - ytrue)**2)
         assert mse < 1.0e-4
@@ -362,7 +362,7 @@ class _TestRBFInterpolator:
     def test_pickleable(self):
         # Make sure we can pickle and unpickle the interpolant without any
         # changes in the behavior.
-        seq = Halton(1, scramble=False, seed=np.random.RandomState())
+        seq = Halton(1, scramble=False, seed=np.random.RandomState(2305982309))
 
         x = 3*seq.random(50)
         xitp = 3*seq.random(50)

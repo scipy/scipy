@@ -3,6 +3,7 @@
 # Further enhancements and tests added by numerous SciPy developers.
 #
 import warnings
+import sys
 
 import numpy as np
 from numpy.random import RandomState
@@ -13,9 +14,9 @@ import pytest
 from pytest import raises as assert_raises
 from scipy import optimize
 from scipy import stats
-from scipy.stats.morestats import _abw_state
+from scipy.stats._morestats import _abw_state
 from .common_tests import check_named_results
-from .._hypotests import _get_wilcoxon_distr
+from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
@@ -533,8 +534,8 @@ class TestAnsari:
             stats.ansari(x1, x2, alternative='foo')
 
     def test_alternative_exact(self):
-        x1 = [-5, 1, 5, 10, 15, 20, 25] # high scale, loc=10
-        x2 = [7.5, 8.5, 9.5, 10.5, 11.5, 12.5] # low scale, loc=10
+        x1 = [-5, 1, 5, 10, 15, 20, 25]  # high scale, loc=10
+        x2 = [7.5, 8.5, 9.5, 10.5, 11.5, 12.5]  # low scale, loc=10
         # ratio of scales is greater than 1. So, the
         # p-value must be high when `alternative='less'`
         # and low when `alternative='greater'`.
@@ -542,7 +543,7 @@ class TestAnsari:
         pval_l = stats.ansari(x1, x2, alternative='less').pvalue
         pval_g = stats.ansari(x1, x2, alternative='greater').pvalue
         assert pval_l > 0.95
-        assert pval_g < 0.05 # level of significance.
+        assert pval_g < 0.05  # level of significance.
         # also check if the p-values sum up to 1 plus the the probability
         # mass under the calculated statistic.
         prob = _abw_state.pmf(statistic, len(x1), len(x2))
@@ -748,6 +749,11 @@ class TestBinomP:
         res = self.binom_test_func(51, 235, p=1/6, alternative='two-sided')
         assert_almost_equal(res, 0.0437479701823997)
 
+    @pytest.mark.skipif(sys.maxsize <= 2**32, reason="32-bit does not overflow")
+    def test_boost_overflow_raises(self):
+        # Boost.Math error policy should raise exceptions in Python
+        assert_raises(OverflowError, self.binom_test_func, 5.0, 6, p=sys.float_info.min)
+
 
 class TestBinomTestP(TestBinomP):
     """
@@ -778,13 +784,12 @@ class TestBinomTest:
     # Expected results here are from R binom.test, e.g.
     # options(digits=16)
     # binom.test(484, 967, p=0.48)
-    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
-                                "sensitive to machine epsilon level")
+    #
     def test_two_sided_pvalues1(self):
-        # These tests work on all OS's but fail on
-        # Linux_Python_37_32bit_full due to numerical issues caused
-        # by large inputs.
-        rtol = 1e-13  # aarch64 observed rtol: 3.5e-13
+        # `tol` could be stricter on most architectures, but the value
+        # here is limited by accuracy of `binom.cdf` for large inputs on
+        # Linux_Python_37_32bit_full and aarch64
+        rtol = 1e-10  # aarch64 observed rtol: 1.5e-11
         res = stats.binomtest(10079999, 21000000, 0.48)
         assert_allclose(res.pvalue, 1.0, rtol=rtol)
         res = stats.binomtest(10079990, 21000000, 0.48)
@@ -794,10 +799,8 @@ class TestBinomTest:
         res = stats.binomtest(10080017, 21000000, 0.48)
         assert_allclose(res.pvalue, 0.9940754817328, rtol=1e-9)
 
-    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
-                                "sensitive to machine epsilon level")
     def test_two_sided_pvalues2(self):
-        rtol = 1e-13  # no aarch64 failure with 1e-15, preemptive bump
+        rtol = 1e-10  # no aarch64 failure with 1e-15, preemptive bump
         res = stats.binomtest(9, n=21, p=0.48)
         assert_allclose(res.pvalue, 0.6689672431939, rtol=rtol)
         res = stats.binomtest(4, 21, 0.48)
@@ -805,7 +808,7 @@ class TestBinomTest:
         res = stats.binomtest(11, 21, 0.48)
         assert_allclose(res.pvalue, 0.8278629664608, rtol=rtol)
         res = stats.binomtest(7, 21, 0.48)
-        assert_allclose(res.pvalue, 0.1966772901718, rtol=1e-12)
+        assert_allclose(res.pvalue, 0.1966772901718, rtol=rtol)
         res = stats.binomtest(3, 10, .5)
         assert_allclose(res.pvalue, 0.34375, rtol=rtol)
         res = stats.binomtest(2, 2, .4)
@@ -813,10 +816,8 @@ class TestBinomTest:
         res = stats.binomtest(2, 4, .3)
         assert_allclose(res.pvalue, 0.5884, rtol=rtol)
 
-    @pytest.mark.xfail_on_32bit("The large inputs make these tests "
-                                "sensitive to machine epsilon level")
     def test_edge_cases(self):
-        rtol = 1e-14  # aarch64 observed rtol: 1.33e-15
+        rtol = 1e-10  # aarch64 observed rtol: 1.33e-15
         res = stats.binomtest(484, 967, 0.5)
         assert_allclose(res.pvalue, 1, rtol=rtol)
         res = stats.binomtest(3, 47, 3/47)
@@ -863,7 +864,7 @@ class TestBinomTest:
 
     # Expected results here are from R 3.6.2 binom.test
     @pytest.mark.parametrize('alternative, pval, ci_low, ci_high',
-                           [('less', 0.148831050443,
+                             [('less', 0.148831050443,
                                0.0, 0.2772002496709138),
                               ('greater', 0.9004695898947,
                                0.1366613252458672, 1.0),
@@ -1425,10 +1426,12 @@ class TestWilcoxon:
         assert_almost_equal(p, 0.3176447, decimal=6)
 
     def test_exact_basic(self):
-        for n in range(1, 26):
-            cnt = _get_wilcoxon_distr(n)
-            assert_equal(n*(n+1)/2 + 1, len(cnt))
-            assert_equal(sum(cnt), 2**n)
+        for n in range(1, 51):
+            pmf1 = _get_wilcoxon_distr(n)
+            pmf2 = _get_wilcoxon_distr2(n)
+            assert_equal(n*(n+1)/2 + 1, len(pmf1))
+            assert_equal(sum(pmf1), 1)
+            assert_array_almost_equal(pmf1, pmf2)
 
     def test_exact_pval(self):
         # expected values computed with "R version 3.4.1 (2017-06-30)"
@@ -1452,14 +1455,12 @@ class TestWilcoxon:
         _, p = stats.wilcoxon(x, y, alternative="greater", mode="exact")
         assert_almost_equal(p, 0.5795889, decimal=6)
 
-        d = np.arange(26) + 1
-        assert_raises(ValueError, stats.wilcoxon, d, mode="exact")
-
     # These inputs were chosen to give a W statistic that is either the
     # center of the distribution (when the length of the support is odd), or
     # the value to the left of the center (when the length of the support is
     # even).  Also, the numbers are chosen so that the W statistic is the
     # sum of the positive values.
+
     @pytest.mark.parametrize('x', [[-1, -2, 3],
                                    [-1, 2, -3, -4, 5],
                                    [-1, -2, 3, -4, -5, -6, 7, 8]])
@@ -1485,7 +1486,7 @@ class TestWilcoxon:
         assert_equal(stats.wilcoxon(d, mode="approx"), (w, p))
 
         # use approximation for samples > 25
-        d = np.arange(1, 27)
+        d = np.arange(1, 52)
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="approx"))
 
 
@@ -1733,6 +1734,10 @@ class TestBoxcox:
         # Also test that array_like input works
         xt = stats.boxcox(list(x), lmbda=0)
         assert_allclose(xt, np.log(x))
+
+        # test that constant input is accepted; see gh-12225
+        xt = stats.boxcox(np.ones(10), 2)
+        assert_equal(xt, np.zeros(10))
 
     def test_lmbda_None(self):
         # Start from normal rv's, do inverse transform to check that
@@ -2120,7 +2125,7 @@ class TestCircFuncs:
         x = np.array([0.12675364631578953] * 10 + [0.12675365920187928] * 100)
         circstat = test_func(x)
         normal = numpy_func(x)
-        assert_allclose(circstat, normal, atol=1e-8)
+        assert_allclose(circstat, normal, atol=2e-8)
 
     def test_circmean_axis(self):
         x = np.array([[355, 5, 2, 359, 10, 350],

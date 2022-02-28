@@ -21,7 +21,7 @@ are:
   also covered by ``scipy.stats``.
 - `Pandas <https://pandas.pydata.org/>`__: tabular data, time series
   functionality, interfaces to other statistical languages.
-- `PyMC3 <https://docs.pymc.io/>`__: Bayesian statistical
+- `PyMC <https://docs.pymc.io/>`__: Bayesian statistical
   modeling, probabilistic machine learning.
 - `scikit-learn <https://scikit-learn.org/>`__: classification, regression,
   model selection.
@@ -142,6 +142,7 @@ Continuous distributions
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
+   truncweibull_min  -- Truncated minimum Weibull distribution
    tukeylambda       -- Tukey-Lambda
    uniform           -- Uniform
    vonmises          -- Von-Mises (Circular)
@@ -232,7 +233,6 @@ Summary statistics
    differential_entropy
    median_absolute_deviation
    median_abs_deviation
-   bootstrap
    confint_quantile
 
 Frequency statistics
