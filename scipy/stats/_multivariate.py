@@ -3787,6 +3787,19 @@ class unitary_group_gen(multi_rv_generic):
     rvs(dim=None, size=1, random_state=None)
         Draw random samples from U(N).
 
+    Parameters
+    ----------
+    dim : scalar
+        Dimension of matrices
+    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+        Used for drawing random variates.
+        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is `None`.
+
     Notes
     -----
     This class is similar to `ortho_group`.
@@ -3809,11 +3822,27 @@ class unitary_group_gen(multi_rv_generic):
     This generates one random matrix from U(3). The dot product confirms that
     it is unitary up to machine precision.
 
+    Alternatively, the object may be called (as a function) to fix the `dim`
+    parameter, return a "frozen" unitary_group random variable:
+
+    >>> rv = unitary_group(5)
+
+    See Also
+    --------
+    ortho_group
+
     """
 
     def __init__(self, seed=None):
         super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__)
+
+    def __call__(self, dim=None, seed=None):
+        """Create a frozen (U(N)) n-dimensional unitary matrix distribution.
+        
+        See `unitary_group_frozen` for more information.
+        """
+        return unitary_group_frozen(dim, seed=seed)
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
@@ -3857,6 +3886,37 @@ class unitary_group_gen(multi_rv_generic):
 
 
 unitary_group = unitary_group_gen()
+
+
+class unitary_group_frozen(multi_rv_frozen):
+    def __init__(self, dim=None, seed=None):
+        """Create a frozen (U(N)) n-dimensional unitary matrix distribution.
+
+        Parameters
+        ----------
+        dim : scalar
+            Dimension of matrices
+        seed : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+
+        Examples
+        --------
+        >>> from scipy.stats import unitary_group
+        >>> x = unitary_group(3)
+        >>> x.rvs()
+
+        """
+        self._dist = unitary_group_gen(seed)
+        self.dim = self._dist._process_parameters(dim)
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(self.dim, size, random_state)
 
 
 _mvt_doc_default_callparams = """\
