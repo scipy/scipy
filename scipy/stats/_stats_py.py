@@ -3970,30 +3970,28 @@ def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
         zr = -np.inf
     else:
         zr = np.arctanh(r)
-    if n == 2:
-        se = np.nan
-    elif n == 3:
-        se = np.inf
-    else:
-        se = np.sqrt(1 / (n - 3))
 
-    if alternative == "two-sided":
-        h = special.ndtri(0.5 + confidence_level/2)
-        zlo = zr - h*se
-        zhi = zr + h*se
-        rlo = np.tanh(zlo)
-        rhi = np.tanh(zhi)
-    elif alternative == "less":
-        h = special.ndtri(confidence_level)
-        zhi = zr + h*se
-        rhi = np.tanh(zhi)
-        rlo = -1.0
+    if n > 3:
+        se = np.sqrt(1 / (n - 3))
+        if alternative == "two-sided":
+            h = special.ndtri(0.5 + confidence_level/2)
+            zlo = zr - h*se
+            zhi = zr + h*se
+            rlo = np.tanh(zlo)
+            rhi = np.tanh(zhi)
+        elif alternative == "less":
+            h = special.ndtri(confidence_level)
+            zhi = zr + h*se
+            rhi = np.tanh(zhi)
+            rlo = -1.0
+        else:
+            # alternative == "greater":
+            h = special.ndtri(confidence_level)
+            zlo = zr - h*se
+            rlo = np.tanh(zlo)
+            rhi = 1.0
     else:
-        # alternative == "greater":
-        h = special.ndtri(confidence_level)
-        zlo = zr - h*se
-        rlo = np.tanh(zlo)
-        rhi = 1.0
+        rlo, rhi = -1.0, 1.0
 
     return ConfidenceInterval(low=rlo, high=rhi)
 
@@ -4037,7 +4035,10 @@ class PearsonRResult(PearsonRResultBase):
         The confidence interval is computed using the Fisher transformation
         F(r) = arctanh(r) [1]_.  When the sample pairs are drawn from a
         bivariate normal distribution, F(r) approximately follows a normal
-        distribution with standard error `1/sqrt(n - 3)`.
+        distribution with standard error ``1/sqrt(n - 3)``, where ``n`` is the
+        length of the original samples along the calculation axis. When
+        ``n <= 3``, this approximation does not yield a finite, real standard
+        error, so we define the confidence interval to be -1 to 1.
 
         Parameters
         ----------
