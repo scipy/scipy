@@ -3839,7 +3839,7 @@ class unitary_group_gen(multi_rv_generic):
 
     def __call__(self, dim=None, seed=None):
         """Create a frozen (U(N)) n-dimensional unitary matrix distribution.
-        
+
         See `unitary_group_frozen` for more information.
         """
         return unitary_group_frozen(dim, seed=seed)
