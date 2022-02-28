@@ -96,6 +96,7 @@ py3.install_sources([
     'lsqr.py',
     'minres.py',
     'tfqmr.py',
+    'gmresk.py',
     'utils.py',
   ],
   pure: false,
