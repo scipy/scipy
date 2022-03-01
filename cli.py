@@ -2,12 +2,7 @@
 Info:
 -------
     Basic example combining typer and system package
-    cmd to run: typer cli.py run --param -t
-
-Limitations encountered:
-------------------------
-    - Unable to pass parameters with '-' directly (Error: no such option: -t)
-    - Using typer.Options, seems similar to doit params and not solving our use-case
+    cmd to run:  python cli.py build -t
 """
 
 from typing import Optional
@@ -16,10 +11,10 @@ import os
 app = typer.Typer()
 
 
-@app.command()
-def build(param: Optional[str] = None):
-    os.system(f'python dev.py --bench {param} integrate.SolveBVP')
-
+@app.command(context_settings={"allow_extra_args": True, "ignore_unknown_options": True})
+def build(ctx: typer.Context):
+    for extra_arg in ctx.args:
+        os.system(f'python dev.py --bench {extra_arg} integrate.SolveBVP')
 
 if __name__ == '__main__':
-    typer.run(build)
+    app()
