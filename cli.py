@@ -3,8 +3,8 @@ Info: Run tests, builds and other tasks using, typer and system package
 -------
     cmd options:
         $ python cli.py --help
-        $ python cli.py bench <flag: -t/-s>
-        $ python cli.py test <flag: -t/-s> <module>
+        $ python cli.py bench <flag>
+        $ python cli.py test <flag> <module>
         $ python cli.py build
 """
 
