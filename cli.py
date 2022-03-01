@@ -1,7 +1,6 @@
 """
 Info: Run tests, builds and other tasks using, typer and system package
 -------
-    Basic example combining typer and system package
     cmd options:
         $ python cli.py --help
         $ python cli.py bench <flag: -t/-s>
