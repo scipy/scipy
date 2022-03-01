@@ -84,6 +84,14 @@ def gmresk(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
     M_x = lambda x: spla.spsolve(P, x)
     M = spla.LinearOperator((n, n), M_x)
 
+    References
+    ----------
+    .. [1] Y. Saad, Iterative Methods for Sparse Linear Systems, 2nd edition,
+           SIAM, Philadelphia, 2003.
+    .. [2] C. T. Kelley, Iterative Methods for Linear and Nonlinear Equations,
+           number 16 in Frontiers in Applied Mathematics, SIAM, Philadelphia,
+           1995.
+
     Examples
     --------
     >>> from scipy.sparse import csc_matrix
