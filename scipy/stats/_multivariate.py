@@ -3816,7 +3816,7 @@ random_correlation = random_correlation_gen()
 class random_correlation_frozen(multi_rv_frozen):
     def __init__(self, eigs, seed=None, tol=1e-13, diag_tol=1e-7):
         """Create a frozen random correlation matrix distribution.
-        
+
         Parameters
         ----------
         eigs : 1d ndarray
