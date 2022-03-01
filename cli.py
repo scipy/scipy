@@ -6,11 +6,14 @@ Info: Run tests, builds and other tasks using, typer and system package
         $ python cli.py bench <flag>
         $ python cli.py test <flag> <module>
         $ python cli.py build
+        $ python cli.py doc-build
 """
+# TODO: Add release tasks
 
 from typing import Optional
 import typer
 import os
+
 app = typer.Typer()
 
 
@@ -40,6 +43,15 @@ def test(ctx: typer.Context):
     for extra_arg in ctx.args:
         _arg += extra_arg + " "
     os.system(f"python dev.py --no-build {_arg}")
+
+
+@app.command()
+def doc_build():
+    """
+    Run document build tasks
+    """
+    build()
+    os.system("python dev.py --doc")
 
 
 if __name__ == '__main__':
