@@ -45,7 +45,7 @@ import warnings
 import numpy as np
 
 from scipy.sparse import isspmatrix
-from scipy.sparse._sputils import isshape, isintlike, asmatrix, is_pydata_spmatrix
+from scipy.sparse._sputils import isshape, isintlike, is_pydata_spmatrix
 
 __all__ = ['LinearOperator', 'aslinearoperator']
 
@@ -206,14 +206,14 @@ class LinearOperator:
 
         Parameters
         ----------
-        x : {matrix, ndarray}
+        x : {ndarray}
             An array with shape (N,) or (N,1).
 
         Returns
         -------
-        y : {matrix, ndarray}
-            A matrix or ndarray with shape (M,) or (M,1) depending
-            on the type and shape of the x argument.
+        y : {ndarray}
+            A ndarray with shape (M,) or (M, 1) depending on the type and shape
+            of the x argument.
 
         Notes
         -----
@@ -230,11 +230,6 @@ class LinearOperator:
             raise ValueError('dimension mismatch')
 
         y = self._matvec(x)
-
-        if isinstance(x, np.matrix):
-            y = asmatrix(y)
-        else:
-            y = np.asarray(y)
 
         if x.ndim == 1:
             y = y.reshape(M)
@@ -253,14 +248,14 @@ class LinearOperator:
 
         Parameters
         ----------
-        x : {matrix, ndarray}
+        x : {ndarray}
             An array with shape (M,) or (M,1).
 
         Returns
         -------
-        y : {matrix, ndarray}
-            A matrix or ndarray with shape (N,) or (N,1) depending
-            on the type and shape of the x argument.
+        y : {ndarray}
+            A ndarray with shape (N,) or (N, 1) depending on the type and shape
+            of the x argument.
 
         Notes
         -----
@@ -277,11 +272,6 @@ class LinearOperator:
             raise ValueError('dimension mismatch')
 
         y = self._rmatvec(x)
-
-        if isinstance(x, np.matrix):
-            y = asmatrix(y)
-        else:
-            y = np.asarray(y)
 
         if x.ndim == 1:
             y = y.reshape(N)
@@ -303,19 +293,19 @@ class LinearOperator:
     def matmat(self, X):
         """Matrix-matrix multiplication.
 
-        Performs the operation y=A*X where A is an MxN linear
-        operator and X dense N*K matrix or ndarray.
+        Performs the operation y=A*X where A is a MxN linear operator
+        and X is a N*K ndarray.
 
         Parameters
         ----------
-        X : {matrix, ndarray}
+        X : {ndarray}
             An array with shape (N,K).
 
         Returns
         -------
-        Y : {matrix, ndarray}
-            A matrix or ndarray with shape (M,K) depending on
-            the type of the X argument.
+        Y : {ndarray}
+            A ndarray with shape (M, K) depending on the type of
+            the X argument.
 
         Notes
         -----
@@ -327,17 +317,13 @@ class LinearOperator:
         X = np.asanyarray(X)
 
         if X.ndim != 2:
-            raise ValueError('expected 2-d ndarray or matrix, not %d-d'
-                             % X.ndim)
+            raise ValueError('expected 2-d ndarray, not %d-d' % X.ndim)
 
         if X.shape[0] != self.shape[1]:
             raise ValueError('dimension mismatch: %r, %r'
                              % (self.shape, X.shape))
 
         Y = self._matmat(X)
-
-        if isinstance(Y, np.matrix):
-            Y = asmatrix(Y)
 
         return Y
 
@@ -350,13 +336,13 @@ class LinearOperator:
 
         Parameters
         ----------
-        X : {matrix, ndarray}
-            A matrix or 2D array.
+        X : {ndarray}
+            A 2D array.
 
         Returns
         -------
-        Y : {matrix, ndarray}
-            A matrix or 2D array depending on the type of the input.
+        Y : {ndarray}
+            A 2D array depending on the type of the input.
 
         Notes
         -----
@@ -367,16 +353,14 @@ class LinearOperator:
         X = np.asanyarray(X)
 
         if X.ndim != 2:
-            raise ValueError('expected 2-d ndarray or matrix, not %d-d'
-                             % X.ndim)
+            raise ValueError('expected 2-d ndarray, not %d-d' % X.ndim)
 
         if X.shape[0] != self.shape[0]:
             raise ValueError('dimension mismatch: %r, %r'
                              % (self.shape, X.shape))
 
         Y = self._rmatmat(X)
-        if isinstance(Y, np.matrix):
-            Y = asmatrix(Y)
+
         return Y
 
     def _rmatmat(self, X):
@@ -419,8 +403,7 @@ class LinearOperator:
             elif x.ndim == 2:
                 return self.matmat(x)
             else:
-                raise ValueError('expected 1-d or 2-d array or matrix, got %r'
-                                 % x)
+                raise ValueError('expected 1-d or 2-d array, got %r' % x)
 
     def __matmul__(self, other):
         if np.isscalar(other):
@@ -775,7 +758,6 @@ def aslinearoperator(A):
 
     'A' may be any of the following types:
      - ndarray
-     - matrix
      - sparse matrix (e.g. csr_matrix, lil_matrix, etc.)
      - LinearOperator
      - An object with .shape and .matvec attributes
@@ -798,7 +780,7 @@ def aslinearoperator(A):
     if isinstance(A, LinearOperator):
         return A
 
-    elif isinstance(A, np.ndarray) or isinstance(A, np.matrix):
+    elif isinstance(A, np.ndarray):
         if A.ndim > 2:
             raise ValueError('array must have ndim <= 2')
         A = np.atleast_2d(np.asarray(A))
