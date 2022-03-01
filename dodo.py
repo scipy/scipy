@@ -21,13 +21,11 @@ Examples:
         $ doit bench --flag -t / doit bench -m -t
         $ doit release-authors -p 1.7.0 -c 1.8.0
 """
-
 DOIT_CONFIG = {'verbosity': 2}
 
 
 # def paver_write_release_task():
 # TODO: create a new script or add contents here
-
 
 def task_build():
     """
@@ -42,6 +40,7 @@ def task_test():
     """
     Runs the tests for a given module
     """
+
     return {'actions': ["python dev.py --no-build %(flag)s %(module)s"],
             'doc': 'Task: Initializing tests for the chosen module',
             'params': [{'name': 'flag',
@@ -54,16 +53,6 @@ def task_test():
                         'default': '',
                         'type': str,
                         'help': 'Enter the module name to run tests'}]
-            }
-
-
-def task_doc_compile():
-    """
-    Runs document build tasks
-    """
-    return {'actions': ["python dev.py --doc"],
-            'basename': 'doc-compile',
-            'doc': 'Task: Initializing document build task'
             }
 
 
@@ -85,12 +74,13 @@ def task_bench():
 def task_doc_build():
     """
     Task group with dependency for document build
-    Task calls: build, doc-compile
+    Task calls: build
     """
-    return {'actions': None,
+    return {'actions': ['python dev.py --doc'],
             'basename': 'doc-build',
             'doc': 'Task Group: Initializing document build tasks',
-            'task_dep': ['build', 'doc-compile']}
+            'task_dep': ['build']
+    }
 
 
 def gen_release_tasks():
