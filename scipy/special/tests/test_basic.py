@@ -1323,12 +1323,26 @@ class TestCombinatorics:
             DeprecationWarning,
             match=r"Non-integer arguments are deprecated when exact=True",
         ):
-            special.comb(4.5, 3, exact=True)
+            assert_equal(
+                special.comb(4.5, 3, exact=True, legacy=True),
+                special.comb(4, 3, exact=True),
+            )
         with pytest.warns(
             DeprecationWarning,
             match=r"Non-integer arguments are deprecated when exact=True",
         ):
-            special.comb(4, 3.5, exact=True)
+            assert_equal(
+                special.comb(4, 3.5, exact=True, legacy=True),
+                special.comb(4, 3, exact=True),
+            )
+        assert_equal(
+            special.comb(4.5, 3, exact=True, legacy=False),
+            special.comb(4.5, 3),
+        )
+        assert_equal(
+            special.comb(4, 3.5, exact=True, legacy=False),
+            special.comb(4, 3.5),
+        )
 
     def test_comb_with_np_int64(self):
         n = 70

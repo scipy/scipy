@@ -2160,7 +2160,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False):
+def comb(N, k, exact=False, repetition=False, legacy=True):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2177,17 +2177,20 @@ def comb(N, k, exact=False, repetition=False):
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
+    legacy : bool, optional
+        If `legacy` is True and `exact` is True, then non-integral arguements
+        are cast to ints, otherwise non-integral arguements result in the
+        calculation being performed as if `exact` is False.
+
+        .. deprecated:: 1.9.0
+            Non-integer arguments are deprecated when `exact=True` and
+            `legacy=True`. `legacy` will default to False in the second
+            release after SciPy 1.9.0.
 
     Returns
     -------
     val : int, float, ndarray
         The total number of combinations.
-
-        .. deprecated:: 1.9.0
-            Non-integer arguments are deprecated when exact=True and comb
-            will return NaN for non-integral inputs in the second release
-            after SciPy 1.9.0.
-
 
     See Also
     --------
@@ -2214,15 +2217,18 @@ def comb(N, k, exact=False, repetition=False):
 
     """
     if repetition:
-        return comb(N + k - 1, k, exact)
+        return comb(N + k - 1, k, exact, legacy=legacy)
     if exact:
         if int(N) != N or int(k) != k:
-            warnings.warn(
-                "Non-integer arguments are deprecated when exact=True "
-                "and comb will return NaN for non-integral inputs in the "
-                "second release after SciPy 1.9.0",
-                DeprecationWarning, stacklevel=2
-            )
+            if legacy:
+                warnings.warn(
+                    "Non-integer arguments are deprecated when exact=True "
+                    "and legacy=True. legacy will default to False in the "
+                    "second release after SciPy 1.9.0.",
+                    DeprecationWarning, stacklevel=2
+                )
+            else:
+                return comb(N, k)
         return _comb_int(N, k)
     else:
         k, N = asarray(k), asarray(N)
