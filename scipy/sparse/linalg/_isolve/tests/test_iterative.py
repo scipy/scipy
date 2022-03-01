@@ -348,7 +348,7 @@ def test_precond_inverse(case):
 
 def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
-    reentrant = [lgmres, minres, gcrotmk]
+    reentrant = [lgmres, minres, gcrotmk, tfqmr]
     for solver in reentrant + non_reentrant:
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
