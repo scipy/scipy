@@ -1788,11 +1788,17 @@ add_newdoc("chdtriv",
     """)
 
 add_newdoc("chndtr",
-    """
+    r"""
     chndtr(x, df, nc)
 
     Non-central chi square cumulative distribution function
 
+    The cumulative distribution function is given by
+    .. math::
+
+        P(\chi^{\prime 2} \vert \nu, \lambda) =\sum_{j=0}^{\infty}
+        e^{-\lambda /2}
+        \frac{(\lambda /2)^j}{j!} P(\chi^{\prime 2} \vert \nu + 2j)
     """)
 
 add_newdoc("chndtrix",
@@ -1800,6 +1806,9 @@ add_newdoc("chndtrix",
     chndtrix(p, df, nc)
 
     Inverse to `chndtr` vs `x`
+
+    Calculated using a search to find a value for `x` the produces the
+    desired value of `p`.
     """)
 
 add_newdoc("chndtridf",
@@ -1807,6 +1816,9 @@ add_newdoc("chndtridf",
     chndtridf(x, p, nc)
 
     Inverse to `chndtr` vs `df`
+
+    Calculated using a search to find a value for `df` the produces the
+    desired value of `p`.
     """)
 
 add_newdoc("chndtrinc",
@@ -1814,6 +1826,9 @@ add_newdoc("chndtrinc",
     chndtrinc(x, df, p)
 
     Inverse to `chndtr` vs `nc`
+
+    Calculated using a search to find a value for `df` the produces the
+    desired value of `p`.
     """)
 
 add_newdoc("cosdg",
