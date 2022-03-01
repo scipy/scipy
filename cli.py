@@ -3,8 +3,8 @@ Info:
 -------
     Basic example combining typer and system package
     cmd options:
-        $ python cli.py bench -t
-        $ python cli.py test -t cluster
+        $ python cli.py bench <flag: -t/-s>
+        $ python cli.py test <flag: -t/-s> <module>
         $ python cli.py build
 """
 
