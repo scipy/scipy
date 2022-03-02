@@ -86,7 +86,7 @@ jobs:
       - run:
           name: build SciPy
           command: |
-            python dev.py -j 2 --build-only
+            python dev.py -g --build-only -j2
 
       - save_cache:
           key: deps_ccache-{{ .Branch }}
