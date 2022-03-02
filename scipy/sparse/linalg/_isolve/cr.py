@@ -81,14 +81,6 @@ def cr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     True
     """
 
-    # Check data type
-    dtype = A.dtype
-    if np.issubdtype(dtype, np.int64):
-        dtype = float
-        A = A.astype(dtype)
-    if np.issubdtype(b.dtype, np.int64):
-        b = b.astype(dtype)
-
     A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = A.shape[0]
@@ -98,7 +90,7 @@ def cr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     # Check if the R.H.S is a zero vector
     bnorm = np.linalg.norm(b)
     if bnorm == 0.:
-        x = np.zeros(n, dtype=dtype)
+        x = np.zeros(n)
         if (show):
             print("CR: Linear solve converged due to zero right-hand side "
                   "iterations 0")
@@ -137,11 +129,11 @@ def cr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
         # Check breakdown
         MApTAp = np.inner(MAp.conjugate(), Ap)
-        if (MApTAp != 0.):
+        if MApTAp != 0.:
             # Compute step size on the search direction `p`
             alpha = np.inner(Mr.conjugate(), AMr) / MApTAp
         else:
-            if (show):
+            if show:
                 print("CR: Linear solve not converged due to BREAKDOWN "
                       f"iterations {iter+1}")
             return (postprocess(x), -1)
@@ -156,12 +148,12 @@ def cr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         r = r - alpha * Ap
         rnorm = np.linalg.norm(r)
         if rnorm < atol:
-            if (show):
+            if show:
                 print("CR: Linear solve converged due to reach TOL "
                       f"iterations {iter+1}")
             return (postprocess(x), 0)
         if rnorm > dtol * bnorm:
-            if (show):
+            if show:
                 print("CR: Linear solve not converged due to reach "
                       f"DIVERGENCE TOL iterations {iter+1}")
                 return (postprocess(x), iter+1)
@@ -177,7 +169,7 @@ def cr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         if (MrTAMr_old != 0.):
             beta = np.inner(Mr.conjugate(), AMr) / MrTAMr_old
         else:
-            if (show):
+            if show:
                 print("CR: Linear solve not converged due to BREAKDOWN "
                       f"iterations {iter+1}")
             return (postprocess(x), -1)
@@ -186,7 +178,7 @@ def cr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         p = Mr + beta * p
         Ap = AMr + beta * Ap
 
-    if (show):
+    if show:
         print("CR: Linear solve not converged due to reach MAXIT "
               f"iterations {maxiter}")
     return (postprocess(x), maxiter)
