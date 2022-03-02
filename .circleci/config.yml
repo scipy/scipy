@@ -80,6 +80,8 @@ jobs:
             # `asv` pin because of slowdowns reported in gh-15568
             pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson
             pip install pybind11
+            # extra benchmark deps
+            pip install pyfftw cffi pytest
 
       - run:
           name: build SciPy
@@ -141,14 +143,12 @@ jobs:
       - run:
           name: run asv
           command: |
-            pip install pyfftw cffi pytest
+            export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
             cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
-            cd -
-            time python dev.py -n --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
-            cd benchmarks
+            time asv --config asv.conf.json dev -m CircleCI --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
             asv --config asv.conf.json publish
 
       - store_artifacts:
