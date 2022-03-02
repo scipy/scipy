@@ -1321,7 +1321,7 @@ class TestCombinatorics:
 
         with pytest.warns(
             DeprecationWarning,
-            match=r"Non-integer arguments are deprecated when exact=True",
+            match=r"Non-integer arguments are currently being cast to",
         ):
             assert_equal(
                 special.comb(4.5, 3, exact=True, legacy=True),
@@ -1329,7 +1329,7 @@ class TestCombinatorics:
             )
         with pytest.warns(
             DeprecationWarning,
-            match=r"Non-integer arguments are deprecated when exact=True",
+            match=r"Non-integer arguments are currently being cast to",
         ):
             assert_equal(
                 special.comb(4, 3.5, exact=True, legacy=True),

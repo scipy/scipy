@@ -2183,9 +2183,12 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
         calculation being performed as if `exact` is False.
 
         .. deprecated:: 1.9.0
-            Non-integer arguments are deprecated when `exact=True` and
-            `legacy=True`. `legacy` will default to False in the second
-            release after SciPy 1.9.0.
+            Non-integer arguments are currently being cast to integers when
+            `exact=True`. This behaviour is deprecated and the default will
+            change to avoid the cast in SciPy 1.11.0. To opt into the future
+            behavior set `legacy=False`. If you want to keep the
+            argument-casting but silence this warning, cast your inputs
+            directly, e.g. ``comb(int(your_N), int(your_k), exact=True)``.
 
     Returns
     -------
@@ -2222,9 +2225,13 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
         if int(N) != N or int(k) != k:
             if legacy:
                 warnings.warn(
-                    "Non-integer arguments are deprecated when exact=True "
-                    "and legacy=True. legacy will default to False in the "
-                    "second release after SciPy 1.9.0.",
+                    "Non-integer arguments are currently being cast to "
+                    "integers when exact=True. This behaviour is "
+                    "deprecated and the default will change to avoid the cast "
+                    "in SciPy 1.11.0. To opt into the future behavior set "
+                    "legacy=False. If you want to keep the argument-casting "
+                    "but silence this warning, cast your inputs directly, "
+                    "e.g. comb(int(your_N), int(your_k), exact=True).",
                     DeprecationWarning, stacklevel=2
                 )
             else:
