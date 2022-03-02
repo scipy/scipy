@@ -33,7 +33,7 @@ commands:
           name: Install apt packages
           command: |
             sudo apt-get update
-            sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev 
+            sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
 
   merge:
     steps:
@@ -66,6 +66,11 @@ jobs:
             git submodule init
             git submodule update
 
+      - restore_cache:
+          keys:
+              - deps_ccache-{{ .Branch }}
+              - deps_ccache
+
       - run:
           name: setup Python venv
           command: |
@@ -75,7 +80,7 @@ jobs:
             pip install numpy==1.21.5
             pip install -r doc_requirements.txt
             # `asv` pin because of slowdowns reported in gh-15568
-            pip install nose mpmath argparse Pillow "asv==0.4.2" pythran
+            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson
             pip install pybind11
 
       - run:
@@ -83,7 +88,18 @@ jobs:
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)
-            python -u runtests.py -g --build-only -j2
+            python dev.py -j 2 --build-only
+
+      - save_cache:
+          key: deps_ccache-{{ .Branch }}
+          paths:
+            - ~/.ccache
+            - ~/.cache/pip
+
+      - run:
+          name: ccache performance
+          command: |
+            ccache -s
 
       - persist_to_workspace:
           root: ~/
@@ -106,7 +122,7 @@ jobs:
           command: |
             . venv/bin/activate
             export SHELL=$(which bash)
-            python -u runtests.py -g -j2 --doc html-scipyorg
+            python dev.py -n -j2 --doc html-scipyorg
 
       - store_artifacts:
           path: doc/build/html-scipyorg
@@ -132,14 +148,14 @@ jobs:
           name: run asv
           command: |
             . venv/bin/activate
-            pip install --upgrade pip
             pip install pyfftw cffi pytest
-            export PYTHONPATH=$PWD/build/testenv/lib/python3.8/site-packages
             cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
-            time asv --config asv.conf.json dev -m CircleCI --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            cd -
+            time python dev.py -n --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            cd benchmarks
             asv --config asv.conf.json publish
 
       - store_artifacts:
