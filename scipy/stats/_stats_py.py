@@ -52,6 +52,7 @@ from ._hypotests import _all_partitions, _batch_generator
 from ._hypotests_pythran import _compute_outer_prob_inside_method
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
+from scipy._lib._bunch import _make_tuple_bunch
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
@@ -4026,17 +4027,129 @@ class PearsonRNearConstantInputWarning(RuntimeWarning):
         self.args = (msg,)
 
 
-def pearsonr(x, y):
+def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
+    """
+    Compute the confidence interval for Pearson's R.
+
+    Fisher's transformation is used to compute the confidence interval
+    (https://en.wikipedia.org/wiki/Fisher_transformation).
+    """
+    if r == 1:
+        zr = np.inf
+    elif r == -1:
+        zr = -np.inf
+    else:
+        zr = np.arctanh(r)
+
+    if n > 3:
+        se = np.sqrt(1 / (n - 3))
+        if alternative == "two-sided":
+            h = special.ndtri(0.5 + confidence_level/2)
+            zlo = zr - h*se
+            zhi = zr + h*se
+            rlo = np.tanh(zlo)
+            rhi = np.tanh(zhi)
+        elif alternative == "less":
+            h = special.ndtri(confidence_level)
+            zhi = zr + h*se
+            rhi = np.tanh(zhi)
+            rlo = -1.0
+        else:
+            # alternative == "greater":
+            h = special.ndtri(confidence_level)
+            zlo = zr - h*se
+            rlo = np.tanh(zlo)
+            rhi = 1.0
+    else:
+        rlo, rhi = -1.0, 1.0
+
+    return ConfidenceInterval(low=rlo, high=rhi)
+
+
+ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
+
+PearsonRResultBase = _make_tuple_bunch('PearsonRResultBase',
+                                       ['statistic', 'pvalue'], [])
+
+
+class PearsonRResult(PearsonRResultBase):
+    """
+    Result of `scipy.stats.pearsonr`
+
+    Attributes
+    ----------
+    statistic : float
+        Pearson product-moment correlation coefficent.
+    pvalue : float
+        The p-value associated with the chosen alternative.
+
+    Methods
+    -------
+    confidence_interval
+        Computes the confidence interval of the correlation
+        coefficient `statistic` for the given confidence level.
+
+    """
+    def __init__(self, statistic, pvalue, alternative, n):
+        super().__init__(statistic, pvalue)
+        self._alternative = alternative
+        self._n = n
+
+    def confidence_interval(self, confidence_level=0.95):
+        """
+        The confidence interval for the correlation coefficient.
+
+        Compute the confidence interval for the correlation coefficient
+        ``statistic`` with the given confidence level.
+
+        The confidence interval is computed using the Fisher transformation
+        F(r) = arctanh(r) [1]_.  When the sample pairs are drawn from a
+        bivariate normal distribution, F(r) approximately follows a normal
+        distribution with standard error ``1/sqrt(n - 3)``, where ``n`` is the
+        length of the original samples along the calculation axis. When
+        ``n <= 3``, this approximation does not yield a finite, real standard
+        error, so we define the confidence interval to be -1 to 1.
+
+        Parameters
+        ----------
+        confidence_level : float
+            The confidence level for the calculation of the correlation
+            coefficient confidence interval. Default is 0.95.
+
+        Returns
+        -------
+        ci : namedtuple
+            The confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.
+
+        References
+        ----------
+        .. [1] "Pearson correlation coefficient", Wikipedia,
+               https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
+        """
+        return _pearsonr_fisher_ci(self.statistic, self._n, confidence_level,
+                                   self._alternative)
+
+
+def pearsonr(x, y, *, alternative='two-sided'):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
 
     The Pearson correlation coefficient [1]_ measures the linear relationship
-    between two datasets.  The calculation of the p-value relies on the
-    assumption that each dataset is normally distributed.  (See Kowalski [3]_
-    for a discussion of the effects of non-normality of the input on the
-    distribution of the correlation coefficient.)  Like other correlation
+    between two datasets. Like other correlation
     coefficients, this one varies between -1 and +1 with 0 implying no
     correlation. Correlations of -1 or +1 imply an exact linear relationship.
+    Positive correlations imply that as x increases, so does y. Negative
+    correlations imply that as x increases, y decreases.
+
+    This function also performs a test of the null hypothesis that the
+    distributions underlying the samples are uncorrelated and normally
+    distributed. (See Kowalski [3]_
+    for a discussion of the effects of non-normality of the input on the
+    distribution of the correlation coefficient.)
+    The p-value roughly indicates the probability of an uncorrelated system
+    producing datasets that have a Pearson correlation at least as extreme
+    as the one computed from these datasets.
 
     Parameters
     ----------
@@ -4044,13 +4157,33 @@ def pearsonr(x, y):
         Input array.
     y : (N,) array_like
         Input array.
+    alternative : {'two-sided', 'greater', 'less'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the correlation is nonzero
+        * 'less': the correlation is negative (less than zero)
+        * 'greater':  the correlation is positive (greater than zero)
+
+        .. versionadded:: 1.9.0
 
     Returns
     -------
-    r : float
-        Pearson's correlation coefficient.
-    p-value : float
-        Two-tailed p-value.
+    result : `~scipy.stats._result_classes.PearsonRResult`
+        An object with the following attributes:
+
+        statistic : float
+            Pearson product-moment correlation coefficent.
+        pvalue : float
+            The p-value associated with the chosen alternative.
+
+        The object has the following method:
+
+        confidence_interval(confidence_level=0.95)
+            This method computes the confidence interval of the correlation
+            coefficient `statistic` for the given confidence level.
+            The confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.  See the Notes for more details.
 
     Warns
     -----
@@ -4087,7 +4220,6 @@ def pearsonr(x, y):
     coefficient r is ([1]_, [2]_):
 
     .. math::
-
         f(r) = \frac{{(1-r^2)}^{n/2-2}}{\mathrm{B}(\frac{1}{2},\frac{n}{2}-1)}
 
     where n is the number of samples, and B is the beta function.  This
@@ -4099,10 +4231,7 @@ def pearsonr(x, y):
 
         dist = scipy.stats.beta(n/2 - 1, n/2 - 1, loc=-1, scale=2)
 
-    The p-value returned by `pearsonr` is a two-sided p-value. The p-value
-    roughly indicates the probability of an uncorrelated system
-    producing datasets that have a Pearson correlation at least as extreme
-    as the one computed from these datasets. More precisely, for a
+    The default p-value returned by `pearsonr` is a two-sided p-value. For a
     given sample with correlation coefficient r, the p-value is
     the probability that abs(r') of a random sample x' and y' drawn from
     the population with zero correlation would be greater than or equal
@@ -4120,6 +4249,9 @@ def pearsonr(x, y):
     and -1.  Because abs(r') for any sample x' and y' with length 2 will
     be 1, the two-sided p-value for a sample of length 2 is always 1.
 
+    For backwards compatibility, the object that is returned also behaves
+    like a tuple of length two that holds the statistic and the p-value.
+
     References
     ----------
     .. [1] "Pearson correlation coefficient", Wikipedia,
@@ -4134,20 +4266,24 @@ def pearsonr(x, y):
     Examples
     --------
     >>> from scipy import stats
-    >>> stats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
-    (-0.7426106572325057, 0.1505558088534455)
+    >>> res = stats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
+    >>> res
+    PearsonRResult(statistic=-0.7426106572325056, pvalue=0.15055580885344558)
+    >>> res.confidence_interval()
+    ConfidenceInterval(low=-0.9816918044786463, high=0.40501116769030976)
 
     There is a linear dependence between x and y if y = a + b*x + e, where
     a,b are constants and e is a random error term, assumed to be independent
     of x. For simplicity, assume that x is standard normal, a=0, b=1 and let
     e follow a normal distribution with mean zero and standard deviation s>0.
 
+    >>> rng = np.random.default_rng()
     >>> s = 0.5
-    >>> x = stats.norm.rvs(size=500)
-    >>> e = stats.norm.rvs(scale=s, size=500)
+    >>> x = stats.norm.rvs(size=500, random_state=rng)
+    >>> e = stats.norm.rvs(scale=s, size=500, random_state=rng)
     >>> y = x + e
-    >>> stats.pearsonr(x, y)
-    (0.9029601878969703, 8.428978827629898e-185) # may vary
+    >>> stats.pearsonr(x, y).statistic
+    0.9001942438244763
 
     This should be close to the exact value given by
 
@@ -4168,7 +4304,7 @@ def pearsonr(x, y):
 
     >>> y = np.abs(x)
     >>> stats.pearsonr(x, y)
-    (-0.016172891856853524, 0.7182823678751942) # may vary
+    PearsonRResult(statistic=-0.05444919272687482, pvalue=0.22422294836207743)
 
     A non-zero correlation coefficient can be misleading. For example, if X has
     a standard normal distribution, define y = x if x < 0 and y = 0 otherwise.
@@ -4177,10 +4313,11 @@ def pearsonr(x, y):
 
     >>> y = np.where(x < 0, x, 0)
     >>> stats.pearsonr(x, y)
-    (0.8537091583771509, 3.183461621422181e-143) # may vary
+    PearsonRResult(statistic=0.861985781588, pvalue=4.813432002751103e-149)
 
     This is unintuitive since there is no dependence of x and y if x is larger
     than zero which happens in about half of the cases if we sample x and y.
+
     """
     n = len(x)
     if n != len(y):
@@ -4195,7 +4332,9 @@ def pearsonr(x, y):
     # If an input is constant, the correlation coefficient is not defined.
     if (x == x[0]).all() or (y == y[0]).all():
         warnings.warn(PearsonRConstantInputWarning())
-        return np.nan, np.nan
+        result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
+                                alternative=alternative)
+        return result
 
     # dtype is the data type for the calculations.  This expression ensures
     # that the data type is at least 64 bit floating point.  It might have
@@ -4203,7 +4342,10 @@ def pearsonr(x, y):
     dtype = type(1.0 + x[0] + y[0])
 
     if n == 2:
-        return dtype(np.sign(x[1] - x[0])*np.sign(y[1] - y[0])), 1.0
+        r = dtype(np.sign(x[1] - x[0])*np.sign(y[1] - y[0]))
+        result = PearsonRResult(statistic=r, pvalue=1.0, n=n,
+                                alternative=alternative)
+        return result
 
     xmean = x.mean(dtype=dtype)
     ymean = y.mean(dtype=dtype)
@@ -4241,9 +4383,18 @@ def pearsonr(x, y):
     # becomes x = (-abs(r) + 1)/2 = 0.5*(1 - abs(r)).  (r is cast to float64
     # to avoid a TypeError raised by btdtr when r is higher precision.)
     ab = n/2 - 1
-    prob = 2*special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+    if alternative == 'two-sided':
+        prob = 2*special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+    elif alternative == 'less':
+        prob = 1 - special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+    elif alternative == 'greater':
+        prob = special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+    else:
+        raise ValueError('alternative must be one of '
+                         '["two-sided", "less", "greater"]')
 
-    return r, prob
+    return PearsonRResult(statistic=r, pvalue=prob, n=n,
+                          alternative=alternative)
 
 
 def fisher_exact(table, alternative='two-sided'):
