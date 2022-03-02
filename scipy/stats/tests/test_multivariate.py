@@ -1538,6 +1538,18 @@ class TestRandomCorrelation:
         assert_raises(ValueError, random_correlation.rvs, [2.5, -.5])
         assert_raises(ValueError, random_correlation.rvs, [1, 2, .1])
 
+    def test_frozen_matrix(self):
+        eigs = (.5, .8, 1.2, 1.5)
+        frozen = random_correlation(eigs)
+        frozen_seed = random_correlation(eigs, seed=514)
+
+        rvs1 = random_correlation.rvs(eigs, random_state=514)
+        rvs2 = frozen.rvs(random_state=514)
+        rvs3 = frozen_seed.rvs()
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
+
     def test_definition(self):
         # Test the definition of a correlation matrix in several dimensions:
         #
