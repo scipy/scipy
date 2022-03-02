@@ -4,11 +4,6 @@ from scipy._lib.uarray import Dispatchable, all_of_type, create_multimethod
 from scipy.linalg import _api
 from scipy.linalg._backend import scalar_tuple_callable_array
 
-# they don't need to be dispatchabled
-from ._api import (hilbert, helmert, invhilbert, pascal, invpascal, dft,
-                   block_diag, cossin)
-
-
 
 __all__ = [
     # solvers
@@ -64,6 +59,10 @@ def _get_docs(func):
 
 
 ################################## replacers ##################################
+
+
+def _identity_replacer(args, kwargs, arrays):
+    return args, kwargs
 
 
 def _a_b_q_replacer(args, kwargs, dispatchables):
@@ -639,6 +638,54 @@ def convolution_matrix(a, n, mode='full'):
     return (a, )
 
 
+@_create_linalg(_identity_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def hilbert(n):
+    return ()
+
+
+@_create_linalg(_identity_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def invhilbert(n, exact=False):
+    return ()
+
+
+@_create_linalg(_identity_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def pascal(n, kind='symmetric', exact=True):
+    return ()
+
+
+@_create_linalg(_identity_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def invpascal(n, kind='symmetric', exact=True):
+    return ()
+
+
+@_create_linalg(_identity_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def dft(n, scale=None):
+    return ()
+
+
+@_create_linalg(_identity_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def helmert(n, full=False):
+    return ()
+
+
+@_create_linalg(_identity_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def block_diag(*arrs):
+    return ()
+
 ################################# decompositions ###############################
 
 
@@ -675,6 +722,14 @@ def cholesky_banded(ab, overwrite_ab=False, lower=False, check_finite=True):
 @_get_docs
 def cho_solve_banded(cb_and_lower, b, overwrite_b=False, check_finite=True):
     return _mark_scalar_tuple_callable_array(cb_and_lower), b
+
+
+@_create_linalg(_identity_replacer)
+@all_of_type(np.ndarray)
+@_get_docs
+def cossin(X, p=None, q=None, separate=False,
+           swap_sign=False, compute_u=True, compute_vh=True):
+    return ()
 
 
 @_create_linalg(_A_replacer)
