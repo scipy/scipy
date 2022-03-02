@@ -74,8 +74,6 @@ jobs:
       - run:
           name: setup Python venv
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
             pip install --install-option="--no-cython-compile" cython
             pip install numpy==1.21.5
             pip install -r doc_requirements.txt
@@ -86,8 +84,6 @@ jobs:
       - run:
           name: build SciPy
           command: |
-            . venv/bin/activate
-            export SHELL=$(which bash)
             python dev.py -j 2 --build-only
 
       - save_cache:
@@ -120,8 +116,6 @@ jobs:
           name: build docs
           no_output_timeout: 25m
           command: |
-            . venv/bin/activate
-            export SHELL=$(which bash)
             python dev.py -n -j2 --doc html-scipyorg
 
       - store_artifacts:
@@ -147,7 +141,6 @@ jobs:
       - run:
           name: run asv
           command: |
-            . venv/bin/activate
             pip install pyfftw cffi pytest
             cd benchmarks
             asv machine --machine CircleCI
