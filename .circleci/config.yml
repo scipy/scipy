@@ -33,7 +33,7 @@ commands:
           name: Install apt packages
           command: |
             sudo apt-get update
-            sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
+            sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev ccache
 
   merge:
     steps:
