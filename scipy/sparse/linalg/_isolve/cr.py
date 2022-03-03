@@ -91,7 +91,7 @@ def cr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     bnorm = np.linalg.norm(b)
     if bnorm == 0.:
         x = np.zeros(n)
-        if (show):
+        if show:
             print("CR: Linear solve converged due to zero right-hand side "
                   "iterations 0")
         return (postprocess(x), 0)
@@ -106,8 +106,8 @@ def cr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
     # Check if the residual norm is zero
     if rnorm == 0.:
-        if (show):
-            print("CR: Linear solve converged due to zero residual "
+        if show:
+            print("CR: Linear solve converged due to zero residual norm "
                   "iterations 0")
         return (postprocess(x), 0)
 
@@ -156,7 +156,7 @@ def cr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
             if show:
                 print("CR: Linear solve not converged due to reach "
                       f"DIVERGENCE TOL iterations {iter+1}")
-                return (postprocess(x), iter+1)
+            return (postprocess(x), iter+1)
 
         # Compute Mr and AMr
         Mr_old = Mr.copy()
@@ -166,7 +166,7 @@ def cr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
         # Check breakdown
         MrTAMr_old = np.inner(Mr_old.conjugate(), AMr_old)
-        if (MrTAMr_old != 0.):
+        if MrTAMr_old != 0.:
             beta = np.inner(Mr.conjugate(), AMr) / MrTAMr_old
         else:
             if show:

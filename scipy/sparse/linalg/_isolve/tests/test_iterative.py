@@ -535,7 +535,42 @@ def test_x0_equals_Mb(solver):
             assert_normclose(A.dot(x), b, tol=tol)
 
 
-@pytest.mark.parametrize(('solver', 'solverstring'), [(tfqmr, 'TFQMR')])
+@pytest.mark.parametrize(('solver', 'solverstring'),
+                         [(cr, 'CR')])
+def test_zero_initial_rnorm(solver, solverstring, capsys):
+    A = array([[2, -1, 0, 0], [-1, 2, -1, 0], [0, -1, 2, -1], [0, 0, -1, 2]])
+    x0 = array([1, 1, 1, 1])
+    b = A @ x0
+
+    x, info = solver(A, b, x0=x0, show=True)
+    out, err = capsys.readouterr()
+    assert_array_equal(x, x0)
+    assert_equal(info, 0)
+    assert_equal(out, f"{solverstring}: Linear solve converged due to "
+                      "zero residual norm iterations 0\n")
+    assert_equal(err, '')
+
+
+@pytest.mark.parametrize(('solver', 'solverstring'),
+                         [(cr, 'CR')])
+def test_dtol(solver, solverstring, capsys):
+    # Taking the following example for the time being
+    # Need to find a more proper/meaningful example in future
+    np.random.seed(1234)
+    n = 10
+    A = np.random.rand(n, n)
+    A = A.dot(A.T)
+    b = np.random.rand(n)
+
+    x, info = solver(A, b, dtol=1e-1, show=True)
+    out, err = capsys.readouterr()
+    assert_equal(out, f"{solverstring}: Linear solve not converged due to "
+                      "reach DIVERGENCE TOL iterations 1\n")
+    assert_equal(err, '')
+
+
+@pytest.mark.parametrize(('solver', 'solverstring'),
+                         [(tfqmr, 'TFQMR'), (cr, 'CR')])
 def test_show(solver, solverstring, capsys):
     def cb(x):
         count[0] += 1
