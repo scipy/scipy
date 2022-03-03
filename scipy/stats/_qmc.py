@@ -1334,17 +1334,17 @@ class Sobol(QMCEngine):
                 f"Maximum supported dimensionality is {self.MAXDIM}."
             )
 
-        self.MAXBIT = bits
-        if self.MAXBIT > 64:
+        self.maxbit = bits
+        if self.maxbit > 64:
             raise ValueError("Maximum supported 'bits' is 64")
-        self.MAXN = 2**self.MAXBIT
+        self.maxn = 2**self.maxbit
 
         # initialize direction numbers
         _initialize_direction_numbers()
 
-        # v is d x MAXBIT matrix
-        self._sv = np.zeros((d, self.MAXBIT), dtype=np.uint64)
-        _initialize_v(self._sv, dim=d, maxbit=self.MAXBIT)
+        # v is d x maxbit matrix
+        self._sv = np.zeros((d, self.maxbit), dtype=np.uint64)
+        _initialize_v(self._sv, dim=d, maxbit=self.maxbit)
 
         if not scramble:
             self._shift = np.zeros(d, dtype=np.uint64)
@@ -1356,7 +1356,7 @@ class Sobol(QMCEngine):
 
         # normalization constant with the largest possible number
         # calculate in Python to not overflow int with 2**64
-        self._scale = 1.0 / 2 ** self.MAXBIT
+        self._scale = 1.0 / 2 ** self.maxbit
 
         self._first_point = (self._quasi * self._scale).reshape(1, -1)
 
@@ -1364,15 +1364,15 @@ class Sobol(QMCEngine):
         """Scramble the sequence using LMS+shift."""
         # Generate shift vector
         self._shift = np.dot(
-            rng_integers(self.rng, 2, size=(self.d, self.MAXBIT),
+            rng_integers(self.rng, 2, size=(self.d, self.maxbit),
                          dtype=np.uint64),
-            2 ** np.arange(self.MAXBIT, dtype=np.uint64),
+            2 ** np.arange(self.maxbit, dtype=np.uint64),
         )
         # Generate lower triangular matrices (stacked across dimensions)
         ltm = np.tril(rng_integers(self.rng, 2,
-                                   size=(self.d, self.MAXBIT, self.MAXBIT),
+                                   size=(self.d, self.maxbit, self.maxbit),
                                    dtype=np.uint64))
-        _cscramble(dim=self.d, maxbit=self.MAXBIT, ltm=ltm, sv=self._sv)
+        _cscramble(dim=self.d, maxbit=self.maxbit, ltm=ltm, sv=self._sv)
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw next point(s) in the Sobol' sequence.
@@ -1394,13 +1394,13 @@ class Sobol(QMCEngine):
             return sample
 
         total_n = self.num_generated + n
-        if total_n > self.MAXN:
+        if total_n > self.maxn:
             msg = (
-                f"At most 2**{self.MAXBIT}={self.MAXN} points can be "
+                f"At most 2**{self.maxbit}={self.maxn} points can be "
                 f"generated. {self.num_generated} points have been previously "
                 f"generated, then: n={self.num_generated}+{n}={total_n}. "
             )
-            if self.MAXBIT != 64:
+            if self.maxbit != 64:
                 msg += "Try to increase the 'bits' size."
             raise ValueError(msg)
 
@@ -1415,15 +1415,15 @@ class Sobol(QMCEngine):
             else:
                 _draw(
                     n=n - 1, num_gen=self.num_generated, dim=self.d,
-                    maxbit=self.MAXBIT, scale=self._scale,
-                    sv=self._sv, quasi=self._quasi, sample=sample
+                    scale=self._scale, sv=self._sv, quasi=self._quasi,
+                    sample=sample
                 )
                 sample = np.concatenate([self._first_point, sample])[:n]  # type: ignore[misc]
         else:
             _draw(
                 n=n, num_gen=self.num_generated - 1, dim=self.d,
-                maxbit=self.MAXBIT, scale=self._scale,
-                sv=self._sv, quasi=self._quasi, sample=sample
+                scale=self._scale, sv=self._sv, quasi=self._quasi,
+                sample=sample
             )
 
         self.num_generated += n

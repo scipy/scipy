@@ -24,7 +24,6 @@ def _draw(
     n : IntNumber,
     num_gen: IntNumber,
     dim: IntNumber,
-    maxbit: IntNumber,
     scale: float,
     sv: np.ndarray,
     quasi: np.ndarray,

@@ -243,7 +243,6 @@ cpdef void _initialize_v(
 cpdef void _draw(const cnp.uint64_t n,
                  const cnp.uint64_t num_gen,
                  const int dim,
-                 const int maxbit,
                  const float scale,
                  cnp.uint64_t[:, ::1] sv,
                  cnp.uint64_t[::1] quasi,
