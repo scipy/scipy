@@ -2172,15 +2172,17 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
     k : int, ndarray
         Number of elements taken.
     exact : bool, optional
-        If `exact` is False, then floating point precision is used, otherwise
-        exact long integer is computed.
+        For integers, if `exact` is False, then floating point precision is
+        used, otherwise the result is computed exactly. For non-integers, if
+        `exact` is True, the inputs are currently cast to integers, though
+        this behavior is deprecated (see below).
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
     legacy : bool, optional
-        If `legacy` is True and `exact` is True, then non-integral arguements
-        are cast to ints, otherwise non-integral arguements result in the
-        calculation being performed as if `exact` is False.
+        If `legacy` is True and `exact` is True, then non-integral arguments
+        are cast to ints; if `legacy` is False, the result for non-integral
+        arguments is unaffected by the value of `exact`.
 
         .. deprecated:: 1.9.0
             Non-integer arguments are currently being cast to integers when
@@ -2236,6 +2238,7 @@ def comb(N, k, exact=False, repetition=False, legacy=True):
                 )
             else:
                 return comb(N, k)
+        # _comb_int casts inputs to integers
         return _comb_int(N, k)
     else:
         k, N = asarray(k), asarray(N)
