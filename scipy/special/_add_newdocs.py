@@ -763,11 +763,11 @@ add_newdoc(
     >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
     (960566918219.9999, 960566918219.9999, 960566918220)
 
-    Note that if ``exact=True``, non-integer arguments to  `comb` will be
-    truncated to integers, leading to inaccurate results.
+    Note that if ``exact=True`` and ``legacy=True``, non-integer arguments to
+    `comb` will be truncated to integers, leading to inaccurate results.
 
     >>> x, y = 3.9, 2.8
-    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
+    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True, legacy=True))
     (4.2071983565457955, 4.2071983565457955, 3)
 
     `binom` returns ``nan`` when ``x`` is a negative integer, but is otherwise
