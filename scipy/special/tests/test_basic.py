@@ -1338,6 +1338,9 @@ class TestCombinatorics:
         if legacy:
             # for exact=True and legacy=True, cast input arguments, else don't
             if repetition:
+                # the casting in legacy mode happens AFTER transforming N & k,
+                # so rounding can change (e.g. both floats, but sum to int);
+                # hence we need to emulate the repetition-transformation here
                 N, k = int(N + k - 1), int(k)
                 repetition = False
             else:
