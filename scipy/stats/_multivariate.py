@@ -3603,6 +3603,37 @@ class random_correlation_gen(multi_rv_generic):
     rvs(eigs=None, random_state=None)
         Draw random correlation matrices, all with eigenvalues eigs.
 
+    Parameters
+    ----------
+    eigs : 1d ndarray
+        Eigenvalues of correlation matrix
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance
+        then that instance is used.
+    tol : float, optional
+        Tolerance for input parameter checks
+    diag_tol : float, optional
+        Tolerance for deviation of the diagonal of the resulting
+        matrix. Default: 1e-7
+
+    Raises
+    ------
+    RuntimeError
+        Floating point error prevented generating a valid correlation
+        matrix.
+
+    Returns
+    -------
+    rvs : ndarray or scalar
+        Random size N-dimensional matrices, dimension (size, dim, dim),
+        each having eigenvalues eigs.
+
     Notes
     -----
 
@@ -3639,6 +3670,14 @@ class random_correlation_gen(multi_rv_generic):
     def __init__(self, seed=None):
         super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__)
+
+    def __call__(self, eigs, seed=None, tol=1e-13, diag_tol=1e-7):
+        """Create a frozen random correlation matrix.
+
+        See `random_correlation_frozen` for more information.
+        """
+        return random_correlation_frozen(eigs, seed=seed, tol=tol,
+                                         diag_tol=diag_tol)
 
     def _process_parameters(self, eigs, tol):
         eigs = np.asarray(eigs, dtype=float)
@@ -3775,6 +3814,52 @@ class random_correlation_gen(multi_rv_generic):
 random_correlation = random_correlation_gen()
 
 
+class random_correlation_frozen(multi_rv_frozen):
+    def __init__(self, eigs, seed=None, tol=1e-13, diag_tol=1e-7):
+        """Create a frozen random correlation matrix distribution.
+
+        Parameters
+        ----------
+        eigs : 1d ndarray
+            Eigenvalues of correlation matrix
+        seed : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
+
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+        tol : float, optional
+            Tolerance for input parameter checks
+        diag_tol : float, optional
+            Tolerance for deviation of the diagonal of the resulting
+            matrix. Default: 1e-7
+
+        Raises
+        ------
+        RuntimeError
+            Floating point error prevented generating a valid correlation
+            matrix.
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random size N-dimensional matrices, dimension (size, dim, dim),
+            each having eigenvalues eigs.
+        """
+
+        self._dist = random_correlation_gen(seed)
+        self.tol = tol
+        self.diag_tol = diag_tol
+        _, self.eigs = self._dist._process_parameters(eigs, tol=self.tol)
+
+    def rvs(self, random_state=None):
+        return self._dist.rvs(self.eigs, random_state=random_state,
+                              tol=self.tol, diag_tol=self.diag_tol)
+
+
 class unitary_group_gen(multi_rv_generic):
     r"""A matrix-valued U(N) random variable.
 
@@ -3786,6 +3871,19 @@ class unitary_group_gen(multi_rv_generic):
     -------
     rvs(dim=None, size=1, random_state=None)
         Draw random samples from U(N).
+
+    Parameters
+    ----------
+    dim : scalar
+        Dimension of matrices
+    seed : {None, int, np.random.RandomState, np.random.Generator}, optional
+        Used for drawing random variates.
+        If `seed` is `None`, the `~np.random.RandomState` singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used, seeded
+        with seed.
+        If `seed` is already a ``RandomState`` or ``Generator`` instance,
+        then that object is used.
+        Default is `None`.
 
     Notes
     -----
@@ -3809,11 +3907,27 @@ class unitary_group_gen(multi_rv_generic):
     This generates one random matrix from U(3). The dot product confirms that
     it is unitary up to machine precision.
 
+    Alternatively, the object may be called (as a function) to fix the `dim`
+    parameter, return a "frozen" unitary_group random variable:
+
+    >>> rv = unitary_group(5)
+
+    See Also
+    --------
+    ortho_group
+
     """
 
     def __init__(self, seed=None):
         super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__)
+
+    def __call__(self, dim=None, seed=None):
+        """Create a frozen (U(N)) n-dimensional unitary matrix distribution.
+
+        See `unitary_group_frozen` for more information.
+        """
+        return unitary_group_frozen(dim, seed=seed)
 
     def _process_parameters(self, dim):
         """Dimension N must be specified; it cannot be inferred."""
@@ -3857,6 +3971,37 @@ class unitary_group_gen(multi_rv_generic):
 
 
 unitary_group = unitary_group_gen()
+
+
+class unitary_group_frozen(multi_rv_frozen):
+    def __init__(self, dim=None, seed=None):
+        """Create a frozen (U(N)) n-dimensional unitary matrix distribution.
+
+        Parameters
+        ----------
+        dim : scalar
+            Dimension of matrices
+        seed : {None, int, `numpy.random.Generator`,
+                `numpy.random.RandomState`}, optional
+            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+            singleton is used.
+            If `seed` is an int, a new ``RandomState`` instance is used,
+            seeded with `seed`.
+            If `seed` is already a ``Generator`` or ``RandomState`` instance
+            then that instance is used.
+
+        Examples
+        --------
+        >>> from scipy.stats import unitary_group
+        >>> x = unitary_group(3)
+        >>> x.rvs()
+
+        """
+        self._dist = unitary_group_gen(seed)
+        self.dim = self._dist._process_parameters(dim)
+
+    def rvs(self, size=1, random_state=None):
+        return self._dist.rvs(self.dim, size, random_state)
 
 
 _mvt_doc_default_callparams = """\

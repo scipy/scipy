@@ -412,9 +412,11 @@ class TestCorrPearsonr:
     def test_length_two_pos1(self):
         # Inputs with length 2.
         # See https://github.com/scipy/scipy/issues/7730
-        r, p = stats.pearsonr([1, 2], [3, 5])
+        res = stats.pearsonr([1, 2], [3, 5])
+        r, p = res
         assert_equal(r, 1)
         assert_equal(p, 1)
+        assert_equal(res.confidence_interval(), (-1, 1))
 
     def test_length_two_neg2(self):
         # Inputs with length 2.
@@ -423,23 +425,40 @@ class TestCorrPearsonr:
         assert_equal(r, -1)
         assert_equal(p, 1)
 
-    def test_more_basic_examples(self):
+    # Expected values computed with R 3.6.2 cor.test, e.g.
+    # options(digits=16)
+    # x <- c(1, 2, 3, 4)
+    # y <- c(0, 1, 0.5, 1)
+    # cor.test(x, y, method = "pearson", alternative = "g")
+    # correlation coefficient and p-value for alternative='two-sided'
+    # calculated with mpmath agree to 16 digits.
+    @pytest.mark.parametrize('alternative, pval, rlow, rhigh',
+                             [('two-sided',
+                               0.325800137536, -0.814938968841, 0.99230697523),
+                              ('less',
+                               0.8370999312316, -1, 0.985600937290653),
+                              ('greater',
+                               0.1629000687684, -0.6785654158217636, 1)])
+    def test_basic_example(self, alternative, pval, rlow, rhigh):
         x = [1, 2, 3, 4]
         y = [0, 1, 0.5, 1]
-        r, p = stats.pearsonr(x, y)
+        result = stats.pearsonr(x, y, alternative=alternative)
+        assert_allclose(result.statistic, 0.6741998624632421, rtol=1e-12)
+        assert_allclose(result.pvalue, pval, rtol=1e-6)
+        ci = result.confidence_interval()
+        assert_allclose(ci, (rlow, rhigh), rtol=1e-6)
 
-        # The expected values were computed using mpmath with 80 digits
-        # of precision.
-        assert_allclose(r, 0.674199862463242)
-        assert_allclose(p, 0.325800137536758)
-
+    def test_length3_r_exactly_negative_one(self):
         x = [1, 2, 3]
         y = [5, -4, -13]
-        r, p = stats.pearsonr(x, y)
+        res = stats.pearsonr(x, y)
 
         # The expected r and p are exact.
+        r, p = res
         assert_allclose(r, -1.0)
         assert_allclose(p, 0.0, atol=1e-7)
+
+        assert_equal(res.confidence_interval(), (-1, 1))
 
     def test_unequal_lengths(self):
         x = [1, 2, 3]
