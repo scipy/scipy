@@ -336,8 +336,9 @@ def bohman(M, sym=True):
     >>> plt.figure()
     >>> A = fft(window, 2048) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> _ = np.seterr(divide='ignore')
-    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> with np.errstate(divide='ignore'):
+    ...     response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    ...
     >>> plt.plot(freq, response)
     >>> plt.axis([-0.5, 0.5, -120, 0])
     >>> plt.title("Frequency response of the Bohman window")
@@ -1600,8 +1601,9 @@ def cosine(M, sym=True):
     >>> plt.figure()
     >>> A = fft(window, 2048) / (len(window)/2.0)
     >>> freq = np.linspace(-0.5, 0.5, len(A))
-    >>> _ = np.seterr(divide='ignore')
-    >>> response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    >>> with np.errstate(divide='ignore'):
+    ...     response = 20 * np.log10(np.abs(fftshift(A / abs(A).max())))
+    ...
     >>> plt.plot(freq, response)
     >>> plt.axis([-0.5, 0.5, -120, 0])
     >>> plt.title("Frequency response of the cosine window")
