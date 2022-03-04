@@ -2,8 +2,6 @@
 SciPy 1.8.0 Release Notes
 =========================
 
-.. note:: Scipy 1.8.0 is not released yet!
-
 .. contents::
 
 SciPy 1.8.0 is the culmination of 6 months of hard work. It contains
@@ -26,10 +24,14 @@ For running on PyPy, PyPy3 6.0+ is required.
 Highlights of this release
 **************************
 
-- A sparse array API has been added for early testing and feedback; users
-  may expect backwards compatibility changes in future releases
+- A sparse array API has been added for early testing and feedback; this
+  work is ongoing, and users should expect minor API refinements over
+  the next few releases.
 - The sparse SVD library PROPACK is now vendored with SciPy, and an interface
-  is exposed via `scipy.sparse.svds` with ``solver='PROPACK'``.
+  is exposed via `scipy.sparse.svds` with ``solver='PROPACK'``. It is currently
+  default-off due to potential issues on Windows that we aim to
+  resolve in the next release, but can be optionally enabled at runtime for
+  friendly testing with an environment variable setting of ``USE_PROPACK=1``.
 - A new `scipy.stats.sampling` submodule that leverages the ``UNU.RAN`` C
   library to sample from arbitrary univariate non-uniform continuous and
   discrete distributions
@@ -114,9 +116,9 @@ Added the Chirp Z-transform and Zoom FFT available as `scipy.signal.CZT` and
 `scipy.sparse` improvements
 ===========================
 
-An array API has been added for early testing and feedback. This work is
-ongoing, and users may expect backwards compatibility changes in
-future releases. Please refer to the `scipy.sparse`
+An array API has been added for early testing and feedback; this
+work is ongoing, and users should expect minor API refinements over
+the next few releases. Please refer to the `scipy.sparse`
 docstring for more information.
 
 ``maximum_flow`` introduces optional keyword only argument, ``method``
@@ -136,7 +138,10 @@ nonsingular non-Hermitian linear systems in `scipy.sparse.linalg.tfqmr`.
 
 The sparse SVD library PROPACK is now vendored with SciPy, and an interface is
 exposed via `scipy.sparse.svds` with ``solver='PROPACK'``. For some problems,
-this may be faster and/or more accurate than the default, ARPACK.
+this may be faster and/or more accurate than the default, ARPACK. PROPACK
+functionality is currently opt-in--you must specify ``USE_PROPACK=1`` at
+runtime to use it due to potential issues on Windows
+that we aim to resolve in the next release.
 
 ``sparse.linalg`` iterative solvers now have a nonzero initial guess option,
 which may be specified as ``x0 = 'Mb'``.
@@ -328,6 +333,7 @@ Authors
 * Matthias Bussonnier
 * CJ Carey
 * Justin Charlong +
+* Hood Chatham +
 * Dennis Collaris +
 * David Cottrell +
 * cruyffturn +
@@ -352,16 +358,20 @@ Authors
 * Matt Haberland
 * J. Hariharan +
 * Charles Harris
+* Jonathan Helgert +
 * Trever Hines
+* Nadav Horesh
 * Ian Hunt-Isaak +
 * ich +
 * Itrimel +
 * Jan-Hendrik Müller +
 * Jebby993 +
+* Yikun Jiang +
 * Evan W Jones +
 * Nathaniel Jones +
 * Jeffrey Kelling +
 * Malik Idrees Hasan Khan +
+* Paul Kienzle 
 * Sergey B Kirpichev
 * Kadatatlu Kishore +
 * Andrew Knyazev
@@ -415,6 +425,7 @@ Authors
 * serge-sans-paille
 * Reshama Shaikh +
 * Namami Shanker
+* siddhantwahal +
 * Walter Simson +
 * Gagandeep Singh +
 * Leo C. Stein +
@@ -422,6 +433,7 @@ Authors
 * Kai Striega
 * Diana Sukhoverkhova
 * Søren Fuglede Jørgensen
+* Masayuki Takagi +
 * Mike Taves
 * Ben Thompson +
 * Bas van Beek
@@ -442,7 +454,7 @@ Authors
 * Gang Zhao +
 * 赵丰 (Zhao Feng) +
 
-A total of 132 people contributed to this release.
+A total of 139 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -466,6 +478,7 @@ Issues closed for 1.8.0
 * `#11700 <https://github.com/scipy/scipy/issues/11700>`__: solve_ivp errors out instead of simply quitting after the solve...
 * `#12006 <https://github.com/scipy/scipy/issues/12006>`__: newton: Shouldn't it take a Jacobian for multivariate problems...
 * `#12100 <https://github.com/scipy/scipy/issues/12100>`__: solve_ivp: custom t_eval list and the terminating event
+* `#12106 <https://github.com/scipy/scipy/issues/12106>`__: \`axis\` option for \`stats.tmean\` do not appear to be working...
 * `#12192 <https://github.com/scipy/scipy/issues/12192>`__: \`scipy.stats.rv_continuous.moment\` does not accept array input
 * `#12502 <https://github.com/scipy/scipy/issues/12502>`__: Divide by zero in Jacobian numerical differentiation when equality...
 * `#12981 <https://github.com/scipy/scipy/issues/12981>`__: SLSQP constrained minimization error in 1.5.2
@@ -500,6 +513,7 @@ Issues closed for 1.8.0
 * `#14409 <https://github.com/scipy/scipy/issues/14409>`__: Lagrange polynomials and numpy Polynomials
 * `#14412 <https://github.com/scipy/scipy/issues/14412>`__: Extra function arguments to \`scipy.integrate.quad_vec\`
 * `#14416 <https://github.com/scipy/scipy/issues/14416>`__: Is the r-value outputted by scipy.stats.linregress always the...
+* `#14420 <https://github.com/scipy/scipy/issues/14420>`__: BUG: RBFInterpolator fails when calling it with a slice of a...
 * `#14425 <https://github.com/scipy/scipy/issues/14425>`__: Running tests in parallel is not any faster than without pytest-xdist...
 * `#14445 <https://github.com/scipy/scipy/issues/14445>`__: BUG: out of bounds indexing issue in \`prini.f\`
 * `#14482 <https://github.com/scipy/scipy/issues/14482>`__: Azure CI jobs do not set exit status for build stage correctly
@@ -529,6 +543,7 @@ Issues closed for 1.8.0
 * `#14910 <https://github.com/scipy/scipy/issues/14910>`__: \`stats.contingency\` not listed as public API
 * `#14911 <https://github.com/scipy/scipy/issues/14911>`__: MAINT, DOC: CI failure for doc building
 * `#14942 <https://github.com/scipy/scipy/issues/14942>`__: DOC: Ambiguous command instruction for running tests in Mac docs
+* `#14968 <https://github.com/scipy/scipy/issues/14968>`__: Debug build CI job crashes on \`stats._unuran\` threading test
 * `#14984 <https://github.com/scipy/scipy/issues/14984>`__: BUG: scipy.sparse.linalg.spsolve: runtime memory error caused...
 * `#14987 <https://github.com/scipy/scipy/issues/14987>`__: ENH: The knot interval lookup for BSpline.design_matrix is inefficient
 * `#15025 <https://github.com/scipy/scipy/issues/15025>`__: Might be j<=i+k?
@@ -536,6 +551,17 @@ Issues closed for 1.8.0
 * `#15051 <https://github.com/scipy/scipy/issues/15051>`__: BUG: test failures on aarch in wheel builder repo
 * `#15064 <https://github.com/scipy/scipy/issues/15064>`__: MAINT: \`interpolation\` keyword is renamed to \`method\` in...
 * `#15103 <https://github.com/scipy/scipy/issues/15103>`__: BUG: scipy.stats.chi.mean returns nan for large df due to use...
+* `#15186 <https://github.com/scipy/scipy/issues/15186>`__: Fix use of \`pytest.warns(None)\` for pytest 7.0.0
+* `#15206 <https://github.com/scipy/scipy/issues/15206>`__: BUG: Minor issue with suggestions in scipy.sparse DeprecationWarnings...
+* `#15224 <https://github.com/scipy/scipy/issues/15224>`__: BUG: 0th power of sparse array/matrix always returns the identity...
+* `#15228 <https://github.com/scipy/scipy/issues/15228>`__: BUG: bounded L-BFGS-B doesn't work with a scalar.
+* `#15254 <https://github.com/scipy/scipy/issues/15254>`__: BUG: \`DeprecationWarning: distutils Version classes are deprecated\`
+* `#15267 <https://github.com/scipy/scipy/issues/15267>`__: Windows CI jobs have a build issue with Pythran 0.11
+* `#15276 <https://github.com/scipy/scipy/issues/15276>`__: Boost and PROPACK git submodules are too easy to commit changes...
+* `#15316 <https://github.com/scipy/scipy/issues/15316>`__: BUG: Failed to install scipy 1.7.x with pypy 3.7 in aarch64
+* `#15339 <https://github.com/scipy/scipy/issues/15339>`__: BUG: \`highs-ds\` returns memoryviews instead of np.arrays for...
+* `#15375 <https://github.com/scipy/scipy/issues/15375>`__: BUG: axis argument to scipy.stats.mode does not accept negative...
+* `#15517 <https://github.com/scipy/scipy/issues/15517>`__: BUG: Link to mailing list seems broken
 
 ***********************
 Pull requests for 1.8.0
@@ -546,10 +572,11 @@ Pull requests for 1.8.0
 * `#11263 <https://github.com/scipy/scipy/pull/11263>`__: MAINT:optimize: Comply with user-specified rel_step
 * `#11754 <https://github.com/scipy/scipy/pull/11754>`__: ENH: stats: Updates to \`variation\`.
 * `#11954 <https://github.com/scipy/scipy/pull/11954>`__: ENH: improve ARGUS rv generation in scipy.stats
+* `#12143 <https://github.com/scipy/scipy/pull/12143>`__: BUG: Correctly use \`axis\` in \`scipy.stats.tmean\`
 * `#12146 <https://github.com/scipy/scipy/pull/12146>`__: DOC: add docs to explain behaviour of newton's mehod on arrays
 * `#12197 <https://github.com/scipy/scipy/pull/12197>`__: BUG: fix moments method to support arrays and list
 * `#12889 <https://github.com/scipy/scipy/pull/12889>`__: MAINT: deal with cases in \`minimize\` for \`(bounds.lb == bounds.ub).any()
-* `#13002 <https://github.com/scipy/scipy/pull/13002>`__: ENH: add tukey_hsd to scipy.stats
+* `#13002 <https://github.com/scipy/scipy/pull/13002>`__: ENH: stats: Tukey's honestly significant difference test
 * `#13096 <https://github.com/scipy/scipy/pull/13096>`__: BUG: optimize: alternative fix for minimize issues with lb==ub
 * `#13143 <https://github.com/scipy/scipy/pull/13143>`__: MAINT: deal with cases in \`minimize\` for \`(bounds.lb == bounds.ub).any()...
 * `#13229 <https://github.com/scipy/scipy/pull/13229>`__: ENH: modernise some Fortran code, needed for nagfor compiler
@@ -898,4 +925,43 @@ Pull requests for 1.8.0
 * `#15144 <https://github.com/scipy/scipy/pull/15144>`__: BUG: Add missing import of 'errno' to runtests.py
 * `#15157 <https://github.com/scipy/scipy/pull/15157>`__: ENH: rebased version of gh-14279
 * `#15159 <https://github.com/scipy/scipy/pull/15159>`__: DOC: stats: fix a header in \`stats.sampling\` tutorial
+* `#15161 <https://github.com/scipy/scipy/pull/15161>`__: DOC: 1.8.0 relnotes update
+* `#15175 <https://github.com/scipy/scipy/pull/15175>`__: MAINT: 1.8.0 backports for relnotes and .gitignore
+* `#15181 <https://github.com/scipy/scipy/pull/15181>`__: BUG: The pytest decorator for conditional skipping is 'skipif'
+* `#15191 <https://github.com/scipy/scipy/pull/15191>`__: MAINT: version bounds before 1.8.0rc1
+* `#15192 <https://github.com/scipy/scipy/pull/15192>`__: MAINT: Replace use of \`pytest.warns(None)\` with \`warnings.catch_warnings\`
+* `#15194 <https://github.com/scipy/scipy/pull/15194>`__: BUG: stats: Fix numerical issues of recipinvgauss
+* `#15214 <https://github.com/scipy/scipy/pull/15214>`__: TST: sparse.linalg: store only PROPACK test matrices; generate...
+* `#15220 <https://github.com/scipy/scipy/pull/15220>`__: BUG: sparse.linalg: Fix deprecation warnings.
+* `#15225 <https://github.com/scipy/scipy/pull/15225>`__: Make 0th power of a sparse array/matrix return the identity with...
+* `#15229 <https://github.com/scipy/scipy/pull/15229>`__: BUG: minimize should work with a scalar closes #15228
+* `#15232 <https://github.com/scipy/scipy/pull/15232>`__: BUG: Add rmul for sparse arrays
+* `#15236 <https://github.com/scipy/scipy/pull/15236>`__: BLD: update setup.py for Python 3.10
+* `#15248 <https://github.com/scipy/scipy/pull/15248>`__: MAINT: 1.8.0rc2 backports
+* `#15249 <https://github.com/scipy/scipy/pull/15249>`__: FIX: PROPACK MKL compatibility
+* `#15253 <https://github.com/scipy/scipy/pull/15253>`__: BUG: special: fix \`stdtr\` and \`stdtrit\` for infinite df
+* `#15256 <https://github.com/scipy/scipy/pull/15256>`__: MAINT: use PEP440 vs. distutils
+* `#15268 <https://github.com/scipy/scipy/pull/15268>`__: CI: pin setuptools to 59.6.0 and Pythran to 0.10.0 for Windows...
+* `#15270 <https://github.com/scipy/scipy/pull/15270>`__: MAINT: rename \`moduleTNC\` extension back to \`_moduleTNC\`
+* `#15271 <https://github.com/scipy/scipy/pull/15271>`__: TST: slightly bump test tolerance for a new lobpcg test
+* `#15275 <https://github.com/scipy/scipy/pull/15275>`__: MAINT: Fix imports in \`signal._signaltools\`
+* `#15278 <https://github.com/scipy/scipy/pull/15278>`__: MAINT: remove non-default settings (except \`shallow\`) in \`.gitmodules\`
+* `#15288 <https://github.com/scipy/scipy/pull/15288>`__: BLD Respect the --skip-build flag in setup.py
+* `#15293 <https://github.com/scipy/scipy/pull/15293>`__: BUG: fix Hausdorff int overflow
+* `#15301 <https://github.com/scipy/scipy/pull/15301>`__: TST: update \`sparse.linalg\` tests for failures due to tolerances
+* `#15318 <https://github.com/scipy/scipy/pull/15318>`__: BLD: update pyproject.toml to not pin numpy for aarch64 + PyPy
+* `#15322 <https://github.com/scipy/scipy/pull/15322>`__: BLD: update minimum Pythran version to 0.10.0 for SciPy 1.8.0
+* `#15323 <https://github.com/scipy/scipy/pull/15323>`__: MAINT: filter RuntimeWarnings in stats functions
+* `#15328 <https://github.com/scipy/scipy/pull/15328>`__: MAINT: interpolate: csr_matrix -> csr_array
+* `#15331 <https://github.com/scipy/scipy/pull/15331>`__: BUG: stats._unuran: fix invalid attribute lookups
+* `#15332 <https://github.com/scipy/scipy/pull/15332>`__: CI: pin numpy to 1.21.5 for the doc build on CircleCI
+* `#15334 <https://github.com/scipy/scipy/pull/15334>`__: BUG: stats._unuran: fix remaining attribute lookup errors
+* `#15335 <https://github.com/scipy/scipy/pull/15335>`__: CI: pin numpy to 1.21.5 in the Azure refguide check job
+* `#15341 <https://github.com/scipy/scipy/pull/15341>`__: BUG: \`highs-ds\` returns memoryviews instead of np.arrays for...
+* `#15397 <https://github.com/scipy/scipy/pull/15397>`__: BUG: ensured vendored pep440 is imported
+* `#15416 <https://github.com/scipy/scipy/pull/15416>`__: BUG: Fix PyUFunc for wasm targets
+* `#15418 <https://github.com/scipy/scipy/pull/15418>`__: MAINT: 1.8.0 rc3 backports round 1
+* `#15421 <https://github.com/scipy/scipy/pull/15421>`__: BUG: stats: mode: fix negative axis issue with np.moveaxis instead...
+* `#15432 <https://github.com/scipy/scipy/pull/15432>`__: MAINT: release branch PROPACK switch (default off)
+* `#15515 <https://github.com/scipy/scipy/pull/15515>`__: MAINT: fix broken link and remove CI badges
 

@@ -108,12 +108,25 @@ numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 
 
 # TODO: 64-bit BLAS and LAPACK
-blas = dependency('openblas')
-lapack = dependency('openblas')
+#
+# Note that this works as long as BLAS and LAPACK are detected properly via
+# pkg-config. By default we look for OpenBLAS, other libraries can be configured via
+# `meson configure -Dblas=blas -Dlapack=lapack` (example to build with Netlib
+# BLAS and LAPACK).
+# For MKL and for auto-detecting one of multiple libs, we'll need a custom
+# dependency in Meson (like is done for scalapack) - see
+# https://github.com/mesonbuild/meson/issues/2835
+blas = dependency(get_option('blas'))
+lapack = dependency(get_option('lapack'))
 
-# TODO: deal with case where we do need the g77 ABI wrappers (see
-#       _build_utils/_fortran.py)
-g77_abi_wrappers = files('_build_utils' / 'src' / 'wrap_dummy_g77_abi.f')
+if blas.name() == 'mkl' or lapack.name() == 'mkl'
+  g77_abi_wrappers = files([
+    '_build_utils/src/wrap_g77_abi_f.f',
+    '_build_utils/src/wrap_g77_abi_c.c'
+    ])
+else
+  g77_abi_wrappers = files('_build_utils/src/wrap_dummy_g77_abi.f')
+endif
 
 generate_config = custom_target(
   'generate-config',
