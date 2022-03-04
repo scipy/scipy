@@ -1504,10 +1504,8 @@ def parse_constants_2002to2014(d: str) -> dict[str, tuple[float, str, float]]:
     constants = {}
     for line in d.split('\n'):
         name = line[:55].rstrip()
-        val = line[55:77].replace(' ', '').replace('...', '')
-        val = float(val)
-        uncert = line[77:99].replace(' ', '').replace('(exact)', '0')
-        uncert = float(uncert)
+        val = float(line[55:77].replace(' ', '').replace('...', ''))
+        uncert = float(line[77:99].replace(' ', '').replace('(exact)', '0'))
         units = line[99:].rstrip()
         constants[name] = (val, units, uncert)
     return constants
@@ -1516,10 +1514,8 @@ def parse_constants_2018toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
     constants = {}
     for line in d.split('\n'):
         name = line[:60].rstrip()
-        val = line[60:85].replace(' ', '').replace('...', '')
-        val = float(val)
-        uncert = line[85:110].replace(' ', '').replace('(exact)', '0')
-        uncert = float(uncert)
+        val = float(line[60:85].replace(' ', '').replace('...', ''))
+        uncert = float(line[85:110].replace(' ', '').replace('(exact)', '0'))
         units = line[110:].rstrip()
         constants[name] = (val, units, uncert)
     return constants
