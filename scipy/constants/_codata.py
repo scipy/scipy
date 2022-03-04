@@ -1510,6 +1510,7 @@ def parse_constants_2002to2014(d: str) -> dict[str, tuple[float, str, float]]:
         constants[name] = (val, units, uncert)
     return constants
 
+
 def parse_constants_2018toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
     constants = {}
     for line in d.split('\n'):

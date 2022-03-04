@@ -319,7 +319,7 @@ References
 # Modules contributed by BasSw (wegwerp@gmail.com)
 from ._codata import *
 from ._constants import *
-from ._codata import _obsolete_constants
+from ._codata import _obsolete_constants, physical_constants
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import codata, constants
