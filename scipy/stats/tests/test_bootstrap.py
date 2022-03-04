@@ -367,6 +367,24 @@ def test_bootstrap_degenerate(method):
     assert_equal(res.standard_error, 0)
 
 
+@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+def test_bootstrap_gh15678(method):
+    # Check that gh-15678 is fixed: when statistic function returned a Python
+    # float, method="BCa" failed when trying to add a dimension to the float
+    rng = np.random.default_rng(354645618886684)
+    dist = stats.norm(loc=2, scale=4)
+    data = dist.rvs(size=100, random_state=rng)
+    data = (data,)
+    res = bootstrap(data, stats.skew, method=method, n_resamples=100,
+                    random_state=np.random.default_rng(9563))
+    # this always worked because np.apply_along_axis returns NumPy data type
+    ref = bootstrap(data, stats.skew, method=method, n_resamples=100,
+                    random_state=np.random.default_rng(9563), vectorized=False)
+    assert_allclose(res.confidence_interval, ref.confidence_interval)
+    assert_allclose(res.standard_error, ref.standard_error)
+    assert isinstance(res.standard_error, np.float64)
+
+
 def test_jackknife_resample():
     shape = 3, 4, 5, 6
     np.random.seed(0)
