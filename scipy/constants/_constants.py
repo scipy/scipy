@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 """
 Collection of physical constants and conversion factors.
 
@@ -16,8 +18,13 @@ The ones without any suffix should be the most common ones.
 """
 
 import math as _math
+from typing import TYPE_CHECKING, Any
+
 from ._codata import value as _cd
 import numpy as _np
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
 
 
 __all__ = [
@@ -213,7 +220,7 @@ kgf = kilogram_force = g  # * 1 kg
 # functions for conversions that are not linear
 
 
-def convert_temperature(val, old_scale, new_scale):
+def convert_temperature(val: npt.ArrayLike, old_scale: str, new_scale: str) -> Any:
     """
     Convert from a temperature scale to another one among Celsius, Kelvin,
     Fahrenheit, and Rankine scales.
@@ -285,7 +292,7 @@ def convert_temperature(val, old_scale, new_scale):
 # optics
 
 
-def lambda2nu(lambda_):
+def lambda2nu(lambda_: npt.ArrayLike) -> Any:
     """
     Convert wavelength to optical frequency
 
@@ -314,7 +321,7 @@ def lambda2nu(lambda_):
     return c / _np.asanyarray(lambda_)
 
 
-def nu2lambda(nu):
+def nu2lambda(nu: npt.ArrayLike) -> Any:
     """
     Convert optical frequency to wavelength.
 

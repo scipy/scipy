@@ -4,6 +4,8 @@
 # Updated to 2014 values by Joseph Booker, 2015
 # Updated to 2018 values by Jakob Jakobson, 2019
 
+from __future__ import annotations
+
 """
 Fundamental Physical Constants
 ------------------------------
@@ -49,8 +51,11 @@ back to the 1800s. To search the bibliography, visit
 https://physics.nist.gov/cuu/Constants/
 
 """
+
 import warnings
 from math import pi, sqrt
+
+from typing import Any
 
 __all__ = ['physical_constants', 'value', 'unit', 'precision', 'find',
            'ConstantWarning']
@@ -1492,10 +1497,10 @@ W to Z mass ratio                                           0.881 53            
 
 # -----------------------------------------------------------------------------
 
-physical_constants = {}
+physical_constants: dict[str, tuple[float, str, float]] = {}
 
 
-def parse_constants_2002to2014(d):
+def parse_constants_2002to2014(d: str) -> dict[str, tuple[float, str, float]]:
     constants = {}
     for line in d.split('\n'):
         name = line[:55].rstrip()
@@ -1507,7 +1512,7 @@ def parse_constants_2002to2014(d):
         constants[name] = (val, units, uncert)
     return constants
 
-def parse_constants_2018toXXXX(d):
+def parse_constants_2018toXXXX(d: str) -> dict[str, tuple[float, str, float]]:
     constants = {}
     for line in d.split('\n'):
         name = line[:60].rstrip()
@@ -1563,13 +1568,13 @@ class ConstantWarning(DeprecationWarning):
     pass
 
 
-def _check_obsolete(key):
+def _check_obsolete(key: str) -> None:
     if key in _obsolete_constants and key not in _aliases:
         warnings.warn("Constant '%s' is not in current %s data set" % (
             key, _current_codata), ConstantWarning)
 
 
-def value(key):
+def value(key: str) -> float:
     """
     Value in physical_constants indexed by key
 
@@ -1594,7 +1599,7 @@ def value(key):
     return physical_constants[key][0]
 
 
-def unit(key):
+def unit(key: str) -> str:
     """
     Unit in physical_constants indexed by key
 
@@ -1619,7 +1624,7 @@ def unit(key):
     return physical_constants[key][1]
 
 
-def precision(key):
+def precision(key: str) -> float:
     """
     Relative precision in physical_constants indexed by key
 
@@ -1644,7 +1649,7 @@ def precision(key):
     return physical_constants[key][2] / physical_constants[key][0]
 
 
-def find(sub=None, disp=False):
+def find(sub: str | None = None, disp: bool = False) -> Any:
     """
     Return list of physical_constant keys containing a given string.
 
@@ -1705,7 +1710,7 @@ def find(sub=None, disp=False):
     else:
         return result
 
-    
+
 c = value('speed of light in vacuum')
 mu0 = value('vacuum mag. permeability')
 epsilon0 = value('vacuum electric permittivity')
