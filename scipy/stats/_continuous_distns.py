@@ -903,11 +903,13 @@ class burr_gen(rv_continuous):
 
     .. math::
 
-        f(x, c, d) = c d x^{-c - 1} / (1 + x^{-c})^{d + 1}
+        f(x; c, d) = c d \frac{x^{-c - 1}}
+                              {{(1 + x^{-c})}^{d + 1}}
 
     for :math:`x >= 0` and :math:`c, d > 0`.
 
-    `burr` takes :math:`c` and :math:`d` as shape parameters.
+    `burr` takes ``c`` and ``d`` as shape parameters for :math:`c` and
+    :math:`d`.
 
     This is the PDF corresponding to the third CDF given in Burr's list;
     specifically, it is equation (11) in Burr's paper [1]_. The distribution
@@ -1017,11 +1019,12 @@ class burr12_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `burr` is:
+    The probability density function for `burr12` is:
 
     .. math::
 
-        f(x, c, d) = c d x^{c-1} / (1 + x^c)^{d + 1}
+        f(x; c, d) = c d \frac{x^{c-1}}
+                              {(1 + x^c)^{d + 1}}
 
     for :math:`x >= 0` and :math:`c, d > 0`.
 
@@ -1099,9 +1102,18 @@ class fisk_gen(burr_gen):
 
     .. math::
 
-        f(x, c) = c x^{-c-1} (1 + x^{-c})^{-2}
+        f(x, c) = \frac{c x^{c-1}}
+                       {(1 + x^c)^2}
 
     for :math:`x >= 0` and :math:`c > 0`.
+
+    Please note that the above expression can be transformed into the following
+    one, which is also commonly used:
+
+    .. math::
+
+        f(x, c) = \frac{c x^{-c-1}}
+                       {(1 + x^{-c})^2}
 
     `fisk` takes ``c`` as a shape parameter for :math:`c`.
 
