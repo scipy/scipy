@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 """
 Collection of physical constants and conversion factors.
 
@@ -8,14 +6,8 @@ print '10 mile per minute is', 10*mile/minute, 'm/s or', 10*mile/(minute*knot), 
 
 The list is not meant to be comprehensive, but just convenient for everyday use.
 """
-"""
-BasSw 2006
-physical constants: imported from CODATA
-unit conversion: see e.g., NIST special publication 811
-Use at own risk: double-check values before calculating your Mars orbit-insertion burn.
-Some constants exist in a few variants, which are marked with suffixes.
-The ones without any suffix should be the most common ones.
-"""
+
+from __future__ import annotations
 
 import math as _math
 from typing import TYPE_CHECKING, Any
@@ -26,6 +18,14 @@ import numpy as _np
 if TYPE_CHECKING:
     import numpy.typing as npt
 
+"""
+BasSw 2006
+physical constants: imported from CODATA
+unit conversion: see e.g., NIST special publication 811
+Use at own risk: double-check values before calculating your Mars orbit-insertion burn.
+Some constants exist in a few variants, which are marked with suffixes.
+The ones without any suffix should be the most common ones.
+"""
 
 __all__ = [
     'Avogadro', 'Boltzmann', 'Btu', 'Btu_IT', 'Btu_th', 'G',
@@ -220,7 +220,11 @@ kgf = kilogram_force = g  # * 1 kg
 # functions for conversions that are not linear
 
 
-def convert_temperature(val: npt.ArrayLike, old_scale: str, new_scale: str) -> Any:
+def convert_temperature(
+    val: npt.ArrayLike,
+    old_scale: str,
+    new_scale: str,
+) -> Any:
     """
     Convert from a temperature scale to another one among Celsius, Kelvin,
     Fahrenheit, and Rankine scales.
