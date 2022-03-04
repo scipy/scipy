@@ -46,10 +46,10 @@ mocks = (mock_backend.fft, mock_backend.fft2, mock_backend.fftn,
          mock_backend.irfft, mock_backend.irfft2, mock_backend.irfftn,
          mock_backend.hfft, mock_backend.hfft2, mock_backend.hfftn,
          mock_backend.ihfft, mock_backend.ihfft2, mock_backend.ihfftn,
-         mock_backend.dct, mock_backend.dctn,
-         mock_backend.idct, mock_backend.idctn,
-         mock_backend.dst, mock_backend.dstn,
-         mock_backend.idst, mock_backend.idstn,
+         mock_backend.dct, mock_backend.idct,
+         mock_backend.dctn, mock_backend.idctn,
+         mock_backend.dst, mock_backend.idst,
+         mock_backend.dstn, mock_backend.idstn,
          mock_backend.fht, mock_backend.ifht)
 
 
