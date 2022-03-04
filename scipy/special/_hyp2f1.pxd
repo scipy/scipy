@@ -292,7 +292,7 @@ cdef inline double complex hyp2f1_series(
             result = zpack(NPY_NAN, NPY_NAN)
     return result
 
-
+@cython.cdivision(True)
 cdef inline double complex hyp2f1_lopez_temme_series(
         double a,
         double b,
@@ -334,6 +334,7 @@ cdef inline double complex hyp2f1_lopez_temme_series(
     return result
 
 
+@cython.cdivision(True)
 cdef inline double gamma_ratio(
         double u, double v, double w, double x
 ) nogil:
