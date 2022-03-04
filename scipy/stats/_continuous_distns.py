@@ -102,6 +102,9 @@ class ksone_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
+
     def _pdf(self, x, n):
         return -scu._smirnovp(n, x)
 
@@ -158,6 +161,9 @@ class kstwo_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
+
     def _get_support(self, n):
         return (0.5/(n if not isinstance(n, Iterable) else np.asanyarray(n)),
                 1.0)
@@ -219,6 +225,9 @@ class kstwobign_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _pdf(self, x):
         return -scu._kolmogp(x)
 
@@ -427,6 +436,9 @@ class alpha_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
+    def _shape_info(self):
+        return [_ShapeInfo("a", False, (0, np.inf), (False, False))]
+
     def _pdf(self, x, a):
         # alpha.pdf(x, a) = 1/(x**2*Phi(a)*sqrt(2*pi)) * exp(-1/2 * (a-1/x)**2)
         return 1.0/(x**2)/_norm_cdf(a)*_norm_pdf(a-1.0/x)
@@ -467,6 +479,9 @@ class anglit_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _pdf(self, x):
         # anglit.pdf(x) = sin(2*x + \pi/2) = cos(2*x)
         return np.cos(2*x)
@@ -507,6 +522,9 @@ class arcsine_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _pdf(self, x):
         # arcsine.pdf(x) = 1/(pi*sqrt(x*(1-x)))
         with np.errstate(divide='ignore'):
@@ -601,6 +619,11 @@ class beta_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        ia = _ShapeInfo("a", False, (0, np.inf), (False, False))
+        ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
+        return [ia, ib]
+
     def _rvs(self, a, b, size=None, random_state=None):
         return random_state.beta(a, b, size)
 
@@ -791,6 +814,11 @@ class betaprime_gen(rv_continuous):
     """
     _support_mask = rv_continuous._open_support_mask
 
+    def _shape_info(self):
+        ia = _ShapeInfo("a", False, (0, np.inf), (False, False))
+        ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
+        return [ia, ib]
+
     def _rvs(self, a, b, size=None, random_state=None):
         u1 = gamma.rvs(a, size=size, random_state=random_state)
         u2 = gamma.rvs(b, size=size, random_state=random_state)
@@ -853,6 +881,9 @@ class bradford_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
+
     def _pdf(self, x, c):
         # bradford.pdf(x, c) = c / (k * (1+c*x))
         return c / (c*x + 1.0) / sc.log1p(c)
@@ -934,6 +965,11 @@ class burr_gen(rv_continuous):
     # Do not set _support_mask to rv_continuous._open_support_mask
     # Whether the left-hand endpoint is suitable for pdf evaluation is dependent
     # on the values of c and d: if c*d >= 1, the pdf is finite, otherwise infinite.
+
+    def _shape_info(self):
+        ic = _ShapeInfo("c", False, (0, np.inf), (False, False))
+        id = _ShapeInfo("d", False, (0, np.inf), (False, False))
+        return [ic, id]
 
     def _pdf(self, x, c, d):
         # burr.pdf(x, c, d) = c * d * x**(-c-1) * (1+x**(-c))**(-d-1)
@@ -1052,6 +1088,11 @@ class burr12_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        ic = _ShapeInfo("c", False, (0, np.inf), (False, False))
+        id = _ShapeInfo("d", False, (0, np.inf), (False, False))
+        return [ic, id]
+
     def _pdf(self, x, c, d):
         # burr12.pdf(x, c, d) = c * d * x**(c-1) * (1+x**(c))**(-d-1)
         return np.exp(self._logpdf(x, c, d))
@@ -1124,6 +1165,9 @@ class fisk_gen(burr_gen):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
+
     def _pdf(self, x, c):
         # fisk.pdf(x, c) = c * x**(-c-1) * (1 + x**(-c))**(-2)
         return burr._pdf(x, c, 1.0)
@@ -1180,6 +1224,9 @@ class cauchy_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _pdf(self, x):
         # cauchy.pdf(x) = 1 / (pi * (1 + x**2))
         return 1.0/np.pi/(1.0+x*x)
@@ -1242,6 +1289,8 @@ class chi_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("df", False, (0, np.inf), (False, False))]
 
     def _rvs(self, df, size=None, random_state=None):
         return np.sqrt(chi2.rvs(df, size=size, random_state=random_state))
@@ -1314,6 +1363,9 @@ class chi2_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("df", False, (0, np.inf), (False, False))]
+
     def _rvs(self, df, size=None, random_state=None):
         return random_state.chisquare(df, size)
 
@@ -1368,6 +1420,9 @@ class cosine_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _pdf(self, x):
         # cosine.pdf(x) = 1/(2*pi) * (1+cos(x))
         return 1.0/2/np.pi*(1+np.cos(x))
@@ -1423,6 +1478,9 @@ class dgamma_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("a", False, (0, np.inf), (False, False))]
+
     def _rvs(self, a, size=None, random_state=None):
         u = random_state.uniform(size=size)
         gm = gamma.rvs(a, size=size, random_state=random_state)
@@ -1479,6 +1537,9 @@ class dweibull_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
+
     def _rvs(self, c, size=None, random_state=None):
         u = random_state.uniform(size=size)
         w = weibull_min.rvs(c, size=size, random_state=random_state)
@@ -1543,6 +1604,9 @@ class expon_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _rvs(self, size=None, random_state=None):
         return random_state.standard_exponential(size)
 
@@ -1667,6 +1731,9 @@ class exponnorm_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("K", False, (0, np.inf), (False, False))]
+
     def _rvs(self, K, size=None, random_state=None):
         expval = random_state.standard_exponential(size) * K
         gval = random_state.standard_normal(size)
@@ -1744,6 +1811,11 @@ class exponweib_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        ia = _ShapeInfo("a", False, (0, np.inf), (False, False))
+        ic = _ShapeInfo("c", False, (0, np.inf), (False, False))
+        return [ia, ic]
+
     def _pdf(self, x, a, c):
         # exponweib.pdf(x, a, c) =
         #     a * c * (1-exp(-x**c))**(a-1) * exp(-x**c)*x**(c-1)
@@ -1795,6 +1867,9 @@ class exponpow_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("b", False, (0, np.inf), (False, False))]
+
     def _pdf(self, x, b):
         # exponpow.pdf(x, b) = b * x**(b-1) * exp(1 + x**b - exp(x**b))
         return np.exp(self._logpdf(x, b))
@@ -1848,6 +1923,9 @@ class fatiguelife_gen(rv_continuous):
 
     """
     _support_mask = rv_continuous._open_support_mask
+
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
 
     def _rvs(self, c, size=None, random_state=None):
         z = random_state.standard_normal(size)
@@ -1910,13 +1988,19 @@ class foldcauchy_gen(rv_continuous):
 
         f(x, c) = \frac{1}{\pi (1+(x-c)^2)} + \frac{1}{\pi (1+(x+c)^2)}
 
-    for :math:`x \ge 0`.
+    for :math:`x \ge 0` and :math:`c \ge 0`.
 
     `foldcauchy` takes ``c`` as a shape parameter for :math:`c`.
 
     %(example)s
 
     """
+    def _argcheck(self, c):
+        return c >= 0
+
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (True, False))]
+
     def _rvs(self, c, size=None, random_state=None):
         return abs(cauchy.rvs(loc=c, size=size,
                               random_state=random_state))
@@ -1965,6 +2049,11 @@ class f_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        idfn = _ShapeInfo("dfn", False, (0, np.inf), (False, False))
+        idfd = _ShapeInfo("dfd", False, (0, np.inf), (False, False))
+        return [idfn, idfd]
+
     def _rvs(self, dfn, dfd, size=None, random_state=None):
         return random_state.f(dfn, dfd, size)
 
@@ -2045,7 +2134,7 @@ class foldnorm_gen(rv_continuous):
 
         f(x, c) = \sqrt{2/\pi} cosh(c x) \exp(-\frac{x^2+c^2}{2})
 
-    for :math:`c \ge 0`.
+    for :math:`x \ge 0` and :math:`c \ge 0`.
 
     `foldnorm` takes ``c`` as a shape parameter for :math:`c`.
 
@@ -2056,6 +2145,9 @@ class foldnorm_gen(rv_continuous):
     """
     def _argcheck(self, c):
         return c >= 0
+
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (True, False))]
 
     def _rvs(self, c, size=None, random_state=None):
         return abs(random_state.standard_normal(size) + c)
@@ -2131,6 +2223,8 @@ class weibull_min_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
 
     def _pdf(self, x, c):
         # weibull_min.pdf(x, c) = c * x**(c-1) * exp(-x**c)
@@ -2208,6 +2302,12 @@ class truncweibull_min_gen(rv_continuous):
     """
     def _argcheck(self, c, a, b):
         return (a >= 0.) & (b > a) & (c > 0.)
+
+    def _shape_info(self):
+        ic = _ShapeInfo("c", False, (0, np.inf), (False, False))
+        ia = _ShapeInfo("a", False, (0, np.inf), (True, False))
+        ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
+        return [ic, ia, ib]
 
     def _get_support(self, c, a, b):
         return a, b
@@ -2298,6 +2398,8 @@ class weibull_max_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
     def _pdf(self, x, c):
         # weibull_max.pdf(x, c) = c * (-x)**(c-1) * exp(-(-x)**c)
         return c*pow(-x, c-1)*np.exp(-pow(-x, c))
@@ -2355,6 +2457,9 @@ class genlogistic_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
+
     def _pdf(self, x, c):
         # genlogistic.pdf(x, c) = c * exp(-x) / (1 + exp(-x))**(c+1)
         return np.exp(self._logpdf(x, c))
@@ -2426,6 +2531,9 @@ class genpareto_gen(rv_continuous):
     """
     def _argcheck(self, c):
         return np.isfinite(c)
+
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (-np.inf, np.inf), (False, False))]
 
     def _get_support(self, c):
         c = np.asarray(c)
@@ -2539,6 +2647,12 @@ class genexpon_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        ia = _ShapeInfo("a", False, (0, np.inf), (False, False))
+        ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
+        ic = _ShapeInfo("c", False, (0, np.inf), (False, False))
+        return [ia, ib, ic]
+
     def _pdf(self, x, a, b, c):
         # genexpon.pdf(x, a, b, c) = (a + b * (1 - exp(-c*x))) * \
         #                            exp(-a*x - b*x + b/c * (1-exp(-c*x)))
@@ -2592,7 +2706,10 @@ class genextreme_gen(rv_continuous):
 
     """
     def _argcheck(self, c):
-        return np.where(abs(c) == np.inf, 0, 1)
+        return np.isfinite(c)
+
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
 
     def _get_support(self, c):
         _b = np.where(c > 0, 1.0 / np.maximum(c, _XMIN), np.inf)
@@ -2784,6 +2901,9 @@ class gamma_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("a", False, (0, np.inf), (False, False))]
+
     def _rvs(self, a, size=None, random_state=None):
         return random_state.standard_gamma(a, size)
 
@@ -2938,6 +3058,9 @@ class erlang_gen(gamma_gen):
                 RuntimeWarning)
         return a > 0
 
+    def _shape_info(self):
+        return [_ShapeInfo("a", True, (1, np.inf), (True, False))]
+
     def _fitstart(self, data):
         # Override gamma_gen_fitstart so that an integer initial value is
         # used.  (Also regularize the division, to avoid issues when
@@ -2995,6 +3118,11 @@ class gengamma_gen(rv_continuous):
     """
     def _argcheck(self, a, c):
         return (a > 0) & (c != 0)
+
+    def _shape_info(self):
+        ia = _ShapeInfo("a", False, (0, np.inf), (False, False))
+        ic = _ShapeInfo("c", False, (-np.inf, np.inf), (False, False))
+        return [ia, ic]
 
     def _pdf(self, x, a, c):
         return np.exp(self._logpdf(x, a, c))
@@ -3065,8 +3193,8 @@ class genhalflogistic_gen(rv_continuous):
     %(example)s
 
     """
-    def _argcheck(self, c):
-        return c > 0
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
 
     def _get_support(self, c):
         return self.a, 1.0/c
@@ -3189,6 +3317,12 @@ class genhyperbolic_gen(rv_continuous):
     def _argcheck(self, p, a, b):
         return (np.logical_and(np.abs(b) < a, p >= 0)
                 | np.logical_and(np.abs(b) <= a, p < 0))
+
+    def _shape_info(self):
+        ip = _ShapeInfo("p", False, (-np.inf, np.inf), (False, False))
+        ia = _ShapeInfo("a", False, (0, np.inf), (True, False))
+        ib = _ShapeInfo("b", False, (-np.inf, np.inf), (False, False))
+        return [ip, ia, ib]
 
     def _logpdf(self, x, p, a, b):
         # kve instead of kv works better for large values of p
@@ -3318,6 +3452,9 @@ class gompertz_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
+
     def _pdf(self, x, c):
         # gompertz.pdf(x, c) = c * exp(x) * exp(-c*(exp(x)-1))
         return np.exp(self._logpdf(x, c))
@@ -3372,6 +3509,9 @@ class gumbel_r_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _pdf(self, x):
         # gumbel_r.pdf(x) = exp(-(x + exp(-x)))
         return np.exp(self._logpdf(x))
@@ -3467,6 +3607,9 @@ class gumbel_l_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _pdf(self, x):
         # gumbel_l.pdf(x) = exp(x - exp(x))
         return np.exp(self._logpdf(x))
@@ -3533,6 +3676,9 @@ class halfcauchy_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _pdf(self, x):
         # halfcauchy.pdf(x) = 2 / (pi * (1 + x**2))
         return 2.0/np.pi/(1.0+x*x)
@@ -3577,6 +3723,9 @@ class halflogistic_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _pdf(self, x):
         # halflogistic.pdf(x) = 2 * exp(-x) / (1+exp(-x))**2
         #                     = 1/2 * sech(x/2)**2
@@ -3631,6 +3780,9 @@ class halfnorm_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _rvs(self, size=None, random_state=None):
         return abs(random_state.standard_normal(size=size))
 
@@ -3680,6 +3832,9 @@ class hypsecant_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _pdf(self, x):
         # hypsecant.pdf(x) = 1/pi * sech(x)
         return 1.0/(np.pi*np.cosh(x))
@@ -3713,8 +3868,7 @@ class gausshyper_gen(rv_continuous):
 
         f(x, a, b, c, z) = C x^{a-1} (1-x)^{b-1} (1+zx)^{-c}
 
-    for :math:`0 \le x \le 1`, :math:`a > 0`, :math:`b > 0`, :math:`z > -1`,
-    and :math:`C = \frac{1}{B(a, b) F[2, 1](c, a; a+b; -z)}`.
+    for :math:`0 \le x \le 1`, :math:`a,b > 0`, :math:`c` a real number, :math:`z > -1`, and :math:`C = \frac{1}{B(a, b) F[2, 1](c, a; a+b; -z)}`.
     :math:`F[2, 1]` is the Gauss hypergeometric function
     `scipy.special.hyp2f1`.
 
@@ -3736,6 +3890,13 @@ class gausshyper_gen(rv_continuous):
     def _argcheck(self, a, b, c, z):
         # z > -1 per gh-10134
         return (a > 0) & (b > 0) & (c == c) & (z > -1)
+
+    def _shape_info(self):
+        ia = _ShapeInfo("a", False, (0, np.inf), (False, False))
+        ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
+        ic = _ShapeInfo("c", False, (-np.inf, np.inf), (False, False))
+        iz = _ShapeInfo("z", False, (-1, np.inf), (False, False))
+        return [ia, ib, ic, iz]
 
     def _pdf(self, x, a, b, c, z):
         # gausshyper.pdf(x, a, b, c, z) =
@@ -3784,6 +3945,9 @@ class invgamma_gen(rv_continuous):
 
     """
     _support_mask = rv_continuous._open_support_mask
+
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
 
     def _pdf(self, x, a):
         # invgamma.pdf(x, a) = x**(-a-1) / gamma(a) * exp(-1/x)
@@ -3851,6 +4015,9 @@ class invgauss_gen(rv_continuous):
 
     """
     _support_mask = rv_continuous._open_support_mask
+
+    def _shape_info(self):
+        return [_ShapeInfo("mu", False, (0, np.inf), (False, False))]
 
     def _rvs(self, mu, size=None, random_state=None):
         return random_state.wald(mu, 1.0, size=size)
@@ -3964,6 +4131,11 @@ class geninvgauss_gen(rv_continuous):
     """
     def _argcheck(self, p, b):
         return (p == p) & (b > 0)
+
+    def _shape_info(self):
+        ip = _ShapeInfo("p", False, (-np.inf, np.inf), (False, False))
+        ib = _ShapeInfo("p", False, (0, np.inf), (False, False))
+        return [ip, ib]
 
     def _logpdf(self, x, p, b):
         # kve instead of kv works better for large values of b
