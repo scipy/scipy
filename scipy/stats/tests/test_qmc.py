@@ -695,7 +695,7 @@ class TestSobol(QMCEngineTests):
         sample = engine.random(ns)
         assert_array_equal(self.unscramble_nd[:ns], sample)
 
-        with pytest.raises(ValueError, match="increase the 'bits' size"):
+        with pytest.raises(ValueError, match="increasing `bits`"):
             engine.random()
 
     def test_64bits(self):

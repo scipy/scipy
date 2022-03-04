@@ -5,12 +5,12 @@ from typing_extensions import Literal
 def _initialize_v(
     v : np.ndarray, 
     dim : IntNumber,
-    maxbit: IntNumber
+    bits: IntNumber
 ) -> None: ...
 
 def _cscramble (
     dim : IntNumber,
-    maxbit: IntNumber,
+    bits: IntNumber,
     ltm : np.ndarray,
     sv: np.ndarray
 ) -> None: ...

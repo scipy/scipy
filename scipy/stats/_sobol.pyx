@@ -192,9 +192,9 @@ cdef int ibits(const cnp.uint64_t x, const int pos, const int length) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef void _initialize_v(
-    cnp.uint64_t[:, ::1] v, const int dim, const int maxbit
+    cnp.uint64_t[:, ::1] v, const int dim, const int bits
 ):
-    """Initialize matrix of size ``dim * maxbit`` with direction numbers."""
+    """Initialize matrix of size ``dim * bits`` with direction numbers."""
     cdef int d, i, j, k, m
     cdef cnp.uint64_t p, newv, pow2
 
@@ -202,7 +202,7 @@ cpdef void _initialize_v(
         return
 
     # first row of v is all 1s
-    for i in range(maxbit):
+    for i in range(bits):
         v[0, i] = 1
 
     # Remaining rows of v (row 2 through dim, indexed by [1:dim])
@@ -220,7 +220,7 @@ cpdef void _initialize_v(
         # quasirandom sequence generator. ACM Trans.
         # Math. Softw., 14(1):88-100, Mar. 1988.
         #
-        for j in range(m, maxbit):
+        for j in range(m, bits):
             newv = v[d, j - m]
             pow2 = 1
             for k in range(m):
@@ -230,11 +230,11 @@ cpdef void _initialize_v(
             v[d, j] = newv
 
     # Multiply each column of v by power of 2:
-    # v * [2^(maxbit-1), 2^(maxbit-2),..., 2, 1]
+    # v * [2^(bits-1), 2^(bits-2),..., 2, 1]
     pow2 = 1
-    for d in range(maxbit):
+    for d in range(bits):
         for i in range(dim):
-            v[i, maxbit - 1 - d] *= pow2
+            v[i, bits - 1 - d] *= pow2
         pow2 = pow2 << 1
 
 
@@ -293,27 +293,27 @@ cdef cnp.uint64_t cdot_pow2(cnp.uint64_t[::1] a) nogil:
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef void _cscramble(const int dim,
-                      const int maxbit,
+                      const int bits,
                       cnp.uint64_t[:, :, ::1] ltm,
                       cnp.uint64_t[:, ::1] sv) nogil:
     """Scrambling using (left) linear matrix scramble (LMS)."""
     cdef int d, i, j, k, p
     cdef cnp.uint64_t l, lsmdp, t1, t2, vdj
 
-    # Set diagonals of maxbit x maxbit arrays to 1
+    # Set diagonals of bits x bits arrays to 1
     for d in range(dim):
-        for i in range(maxbit):
+        for i in range(bits):
             ltm[d, i, i] = 1
 
     for d in range(dim):
-        for j in range(maxbit):
+        for j in range(bits):
             vdj = sv[d, j]
             l = 1
             t2 = 0
-            for p in range(maxbit - 1, -1, -1):
+            for p in range(bits - 1, -1, -1):
                 lsmdp = cdot_pow2(ltm[d, p, :])
                 t1 = 0
-                for k in range(maxbit):
+                for k in range(bits):
                     t1 += ibits(lsmdp, k, 1) * ibits(vdj, k, 1)
                 t1 = t1 % 2
                 t2 = t2 + t1 * l
