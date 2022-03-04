@@ -7,17 +7,13 @@ PYTHON = python3
 # You can set these variables from the command line.
 SPHINXOPTS    =
 SPHINXBUILD   = LANG=C $(PYTHON) -msphinx
-PAPER         =
 
 FILES=
 
 # Internal variables.
-PAPEROPT_a4     = -D "latex_elements.papersize=a4paper"
-PAPEROPT_letter = -D "latex_elements.papersize=letterpaper"
-ALLSPHINXOPTS   = -d build/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) source
+ALLSPHINXOPTS   = -d build/doctrees $(SPHINXOPTS) source
 
-.PHONY: help clean html web pickle htmlhelp latex changes linkcheck \
-        dist dist-build version-check
+.PHONY: help clean html changes linkcheck dist version-check
 
 #------------------------------------------------------------------------------
 
@@ -27,7 +23,6 @@ help:
 	@echo "  html-scipyorg  to make standalone HTML files with scipy.org theming"
 	@echo "  pickle    to make pickle files (usable by e.g. sphinx-web)"
 	@echo "  htmlhelp  to make HTML files and a HTML help project"
-	@echo "  latex     to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
 	@echo "  clean     to clean all build files/directories"
@@ -84,15 +79,12 @@ dist:
 doc-dist: VERSIONWARNING=-t versionwarning
 
 doc-dist: html-scipyorg html
-	test -d build/latex || make latex
-	make -C build/latex all-pdf LATEXOPTS="-halt-on-error"
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
 	mkdir -p build/dist
 	cp -r build/html-scipyorg build/dist
 	touch build/dist/index.html
 	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
-	cp build/latex/scipy-ref.pdf build/dist
 	chmod ug=rwX,o=rX -R build/dist
 	find build/dist -type d -print0 | xargs -0r chmod g+s
 	cd build/dist && tar czf ../dist.tar.gz *
@@ -105,8 +97,6 @@ upload:
 	scp build/dist.tar.gz $(USERNAME)@new.scipy.org:$(UPLOAD_DIR)
 	ssh $(USERNAME)@new.scipy.org tar xvC $(UPLOAD_DIR) \
 	    -zf $(UPLOAD_DIR)/dist.tar.gz
-	ssh $(USERNAME)@new.scipy.org mv $(UPLOAD_DIR)/scipy-ref.pdf \
-	    $(UPLOAD_DIR)/scipy-ref-$(RELEASE).pdf
 	ssh $(USERNAME)@new.scipy.org mv $(UPLOAD_DIR)/scipy-html.zip \
 	    $(UPLOAD_DIR)/scipy-html-$(RELEASE).zip
 	ssh $(USERNAME)@new.scipy.org rm $(UPLOAD_DIR)/dist.tar.gz
@@ -128,16 +118,6 @@ html-scipyorg:
 	$(SPHINXBUILD) -WT --keep-going -t scipyorg $(VERSIONWARNING) -b html $(ALLSPHINXOPTS) build/html-scipyorg $(FILES)
 	@echo
 	@echo "Build finished. The HTML pages are in build/html-scipyorg."
-
-latex: version-check latex-build
-latex-build:
-	mkdir -p build/latex build/doctrees
-	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) build/latex $(FILES)
-	$(PYTHON) postprocess.py tex build/latex/*.tex
-	@echo
-	@echo "Build finished; the LaTeX files are in build/latex."
-	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
-	      "run these through (pdf)latex."
 
 coverage: build version-check
 	mkdir -p build/coverage build/doctrees
