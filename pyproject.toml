@@ -99,10 +99,6 @@ doc = [
 dev = [
     "mypy",
     "typing_extensions",
-    "sphinx",
-    "pybind11",
-    "pytest",
-    "types-psutil",
     "pycodestyle",
     "flake8",
 ]

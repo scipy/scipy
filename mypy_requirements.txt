@@ -2,9 +2,3 @@
 #       in sync with the dev dependencies in pyproject.toml
 mypy==0.931
 typing_extensions
-
-# Third-party packages with relevant type annotations
-sphinx
-pybind11
-pytest
-types-psutil
