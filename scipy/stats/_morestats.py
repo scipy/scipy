@@ -3663,7 +3663,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     References
     ----------
     .. [1] Mardia, K. V. (1972). 2. In *Statistics of Directional Data*
-       (pp. 18-24). Academic Press.
+       (pp. 18-24). Academic Press. :doi:`10.1016/C2013-0-07425-7`.
 
     Examples
     --------
