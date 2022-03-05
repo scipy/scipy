@@ -3,6 +3,7 @@ import threading
 import pickle
 import pytest
 from copy import deepcopy
+import platform
 import sys
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
@@ -342,7 +343,7 @@ class TestQRVS:
     @pytest.mark.parametrize('size_in, size_out', sizes)
     @pytest.mark.parametrize('d_in, d_out', ds)
     @pytest.mark.xfail(
-        sys.platform == "win32",
+        sys.platform == "win32" and platform.architecture()[0] == "32bit",
         reason="NumericalInversePolynomial.qrvs fails for 32-bit windows",
         strict=True)
     def test_QRVS_shape_consistency(self, qrng, size_in, size_out,
