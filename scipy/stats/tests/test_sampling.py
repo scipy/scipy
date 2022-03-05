@@ -342,12 +342,12 @@ class TestQRVS:
     @pytest.mark.parametrize('qrng', qrngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
     @pytest.mark.parametrize('d_in, d_out', ds)
-    @pytest.mark.xfail(
-        sys.platform == "win32" and platform.architecture()[0] == "32bit",
-        reason="NumericalInversePolynomial.qrvs fails for 32-bit windows",
-        strict=True)
     def test_QRVS_shape_consistency(self, qrng, size_in, size_out,
                                     d_in, d_out, method):
+        w32 = sys.platform == "win32" and platform.architecture()[0] == "32bit"
+        if w32 and method == "NumericalInversePolynomial":
+            pytest.xfail("NumericalInversePolynomial.qrvs fails for Win 32-bit")
+
         dist = StandardNormal()
         Method = getattr(stats.sampling, method)
         gen = Method(dist)
