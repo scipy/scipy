@@ -3,6 +3,7 @@ import threading
 import pickle
 import pytest
 from copy import deepcopy
+import sys
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from numpy.lib import NumpyVersion
@@ -322,19 +323,15 @@ class TestQRVS:
             gen = Method(StandardNormal())
             gen.qrvs(qmc_engine=0)
 
-        if NumpyVersion(np.__version__) >= '1.18.0':
-            # issues with QMCEngines and old NumPy
-            Method = getattr(stats.sampling, method)
-            gen = Method(StandardNormal())
+        # issues with QMCEngines and old NumPy
+        Method = getattr(stats.sampling, method)
+        gen = Method(StandardNormal())
 
-            match = "`d` must be consistent with dimension of `qmc_engine`."
-            with pytest.raises(ValueError, match=match):
-                gen.qrvs(d=3, qmc_engine=stats.qmc.Halton(2))
+        match = "`d` must be consistent with dimension of `qmc_engine`."
+        with pytest.raises(ValueError, match=match):
+            gen.qrvs(d=3, qmc_engine=stats.qmc.Halton(2))
 
-    if NumpyVersion(np.__version__) >= '1.18.0':
-        qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(3, seed=0)]
-    else:
-        qrngs = []
+    qrngs = [None, stats.qmc.Sobol(1, seed=0), stats.qmc.Halton(3, seed=0)]
     # `size=None` should not add anything to the shape, `size=1` should
     sizes = [(None, tuple()), (1, (1,)), (4, (4,)),
              ((4,), (4,)), ((2, 4), (2, 4))]  # type: ignore
@@ -344,6 +341,10 @@ class TestQRVS:
     @pytest.mark.parametrize('qrng', qrngs)
     @pytest.mark.parametrize('size_in, size_out', sizes)
     @pytest.mark.parametrize('d_in, d_out', ds)
+    @pytest.mark.xfail(
+        sys.platform == "win32",
+        reason="NumericalInversePolynomial.qrvs fails for 32-bit windows",
+        strict=True)
     def test_QRVS_shape_consistency(self, qrng, size_in, size_out,
                                     d_in, d_out, method):
         dist = StandardNormal()
@@ -383,8 +384,6 @@ class TestQRVS:
         # by reshaping: qrvs[..., i] should remain "independent"-ish of
         # qrvs[..., i+1], but the elements within qrvs[..., i] should be
         # transformed from the same low-discrepancy sequence.
-        if NumpyVersion(np.__version__) <= '1.18.0':
-            pytest.skip("QMC doesn't play well with old NumPy")
 
         dist = StandardNormal()
         Method = getattr(stats.sampling, method)
