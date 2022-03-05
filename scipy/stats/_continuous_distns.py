@@ -6296,8 +6296,9 @@ class pareto_gen(rv_continuous):
                         np.sign(fun_to_solve(rbrack)))
 
             # set brackets for `root_scalar` to use when optimizing over the
-            # scale such that a root is likely between them.
-            brack_start = 1
+            # scale such that a root is likely between them. Use user supplied
+            # guess or default 1. 
+            brack_start = kwds.get('scale', 1)
             lbrack, rbrack = brack_start / 2, brack_start * 2
             # if a root is not between the brackets, iteratively expand them
             # until they include a sign change, checking after each bracket is
