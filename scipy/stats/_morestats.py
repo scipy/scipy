@@ -3575,7 +3575,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     high : float or int, optional
         High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
-        Low boundary for the samplerange. Default is 0.
+        Low boundary for the sample range. Default is 0.
     axis : int, optional
         Axis along which variances are computed. The default is to compute
         the variance of the flattened array.
