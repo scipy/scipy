@@ -1516,8 +1516,8 @@ class TestPareto:
         data = stats.pareto.rvs(loc=-130, b=1, size=100, random_state=rng)
         assert_array_less(data, 0)
         # The purpose of this test is to make sure that no runtime warnings are
-        # raised for all negative data, not to output of the fit method. Other
-        # methods test the output but have to silence warnigns from the super
+        # raised for all negative data, not the output of the fit method. Other
+        # methods test the output but have to silence warnings from the super
         # method.
         _ = stats.pareto.fit(data)
 
