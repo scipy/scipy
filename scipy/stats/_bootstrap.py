@@ -104,7 +104,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     sample = data[0]  # only works with 1 sample statistics right now
 
     # calculate z0_hat
-    theta_hat = statistic(sample, axis=axis)[..., None]
+    theta_hat = np.asarray(statistic(sample, axis=axis))[..., None]
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1)
     z0_hat = ndtri(percentile)
 
