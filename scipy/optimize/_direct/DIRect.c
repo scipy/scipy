@@ -97,11 +97,18 @@
        is the discontiguous one.  This makes it easier to resize
        dynamically (by adding contiguous rows) using realloc, without
        having to move data around manually. */
+    #define MAXMEMORY 2147483648
+    unsigned long fixed_memory_dim = ((*n) * (sizeof(doublereal) + sizeof(integer)) +
+                                      (sizeof(doublereal) * 2 + sizeof(integer)));
+    MAXFUNC = MAXFUNC * fixed_memory_dim > MAXMEMORY ? MAXMEMORY/fixed_memory_dim : MAXFUNC;
     MY_ALLOC(c__, doublereal, MAXFUNC * (*n));
     MY_ALLOC(length, integer, MAXFUNC * (*n));
     MY_ALLOC(f, doublereal, MAXFUNC * 2);
     MY_ALLOC(point, integer, MAXFUNC);
-    if (*maxf <= 0) *maxf = MAXFUNC - 1000;
+    if (*maxf <= 0)
+        *maxf = MAXFUNC - 1000;
+    else
+       *maxf = 2*(MAXFUNC - 1000)/3;
 
     MY_ALLOC(s, integer, MAXDIV * 2);
 
