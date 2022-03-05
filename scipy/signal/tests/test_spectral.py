@@ -848,6 +848,23 @@ class TestCSD:
         assert_allclose(f, fodd)
         assert_allclose(f, feven)
 
+    def test_copied_data(self):
+        x = np.random.randn(64)
+        y = x.copy()
+
+        _, p_same = csd(x, x, nperseg=8, average='mean',
+                        return_onesided=False)
+        _, p_copied = csd(x, y, nperseg=8, average='mean',
+                          return_onesided=False)
+        assert_allclose(p_same, p_copied)
+
+        _, p_same = csd(x, x, nperseg=8, average='median',
+                        return_onesided=False)
+        _, p_copied = csd(x, y, nperseg=8, average='median',
+                          return_onesided=False)
+        assert_allclose(p_same, p_copied)
+
+
 class TestCoherence:
     def test_identical_input(self):
         x = np.random.randn(20)

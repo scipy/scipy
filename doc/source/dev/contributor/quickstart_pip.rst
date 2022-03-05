@@ -20,11 +20,10 @@ First, you will also need the compilers for C, C++ and Fortran::
 
     sudo apt install -y gcc g++ gfortran
 
-SciPy also requires BLAS and LAPACK libraries. You can install several variants
-(ATLAS, OpenBLAS etc), but here we take the simplest option::
+SciPy also requires BLAS and LAPACK libraries. There are multiple variants,
+and here we install OpenBLAS, which is the SciPy default::
 
-    sudo apt install -y liblapack-dev
-
+    sudo apt install -y libopenblas-dev pkg-config
 
 Installing the python-level dependencies
 ----------------------------------------
@@ -106,7 +105,7 @@ Building SciPy
 
 Inside the ``scipy-dev`` environment, install the python-level dependencies::
 
-    python -m pip install numpy pytest cython pythran pybind11
+    python -m pip install numpy pytest cython pythran pybind11 meson ninja
 
 Note that when the virtual environment is active, the system-wide names ``pip3``
 and ``python3`` are aliased to ``pip`` and ``python``, respectively.
@@ -116,12 +115,9 @@ you cloned the source code into. Download the submodules::
 
     git submodule update --init
 
-And build SciPy (this takes a while)::
+Finally, build SciPy and test it (this takes a while; subsequent rebuilds will be
+much faster)::
 
-    python setup.py build
-
-Optionally, test it::
-
-    python runtests.py
+    python dev.py
 
 

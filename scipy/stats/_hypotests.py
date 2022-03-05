@@ -9,10 +9,13 @@ from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln, comb, factorial
-from . import _wilcoxon_data
+from scipy.fft import ifft
 import scipy.stats._bootstrap as _bootstrap
 from scipy._lib._util import check_random_state
-from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
+from ._hypotests_pythran import _a_ij_Aij_Dij2
+from ._hypotests_pythran import (
+    _concordant_pairs as _P, _discordant_pairs as _Q
+)
 from ._axis_nan_policy import _broadcast_arrays
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
@@ -391,18 +394,46 @@ def cramervonmises(rvs, cdf, args=()):
 
 def _get_wilcoxon_distr(n):
     """
-    Distribution of counts of the Wilcoxon ranksum statistic r_plus (sum of
-    ranks of positive differences).
-    Returns an array with the counts/frequencies of all the possible ranks
+    Distribution of probability of the Wilcoxon ranksum statistic r_plus (sum
+    of ranks of positive differences).
+    Returns an array with the probabilities of all the possible ranks
     r = 0, ..., n*(n+1)/2
     """
-    cnt = _wilcoxon_data.COUNTS.get(n)
+    c = np.ones(1, dtype=np.double)
+    for k in range(1, n + 1):
+        prev_c = c
+        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.double)
+        m = len(prev_c)
+        c[:m] = prev_c * 0.5
+        c[-m:] += prev_c * 0.5
+    return c
 
-    if cnt is None:
-        raise ValueError("The exact distribution of the Wilcoxon test "
-                         "statistic is not implemented for n={}".format(n))
 
-    return np.array(cnt, dtype=int)
+def _get_wilcoxon_distr2(n):
+    """
+    Distribution of probability of the Wilcoxon ranksum statistic r_plus (sum
+    of ranks of positive differences).
+    Returns an array with the probabilities of all the possible ranks
+    r = 0, ..., n*(n+1)/2
+    This is a slower reference function
+    References
+    ----------
+    .. [1] 1. Harris T, Hardin JW. Exact Wilcoxon Signed-Rank and Wilcoxon
+        Mann-Whitney Ranksum Tests. The Stata Journal. 2013;13(2):337-343.
+    """
+    ai = np.arange(1, n+1)[:, None]
+    t = n*(n+1)/2
+    q = 2*t
+    j = np.arange(q)
+    theta = 2*np.pi/q*j
+    phi_sp = np.prod(np.cos(theta*ai), axis=0)
+    phi_s = np.exp(1j*theta*t) * phi_sp
+    p = np.real(ifft(phi_s))
+    res = np.zeros(int(t)+1)
+    res[:-1:] = p[::2]
+    res[0] /= 2
+    res[-1] = res[0]
+    return res
 
 
 def _tau_b(A):
@@ -1447,18 +1478,10 @@ def _batch_generator(iterable, batch):
     iterator = iter(iterable)
     if batch <= 0:
         raise ValueError("`batch` must be positive.")
-    while True:
-        z = []
-        try:
-            # get elements from iterator `batch` at a time
-            for i in range(batch):
-                z.append(next(iterator))
-            yield z
-        except StopIteration:
-            # when there are no more elements, yield the final batch and stop
-            if z:
-                yield z
-            break
+    z = [item for i, item in zip(range(batch), iterator)]
+    while z:  # we don't want StopIteration without yielding an empty list
+        yield z
+        z = [item for i, item in zip(range(batch), iterator)]
 
 
 def _calculate_null_both(data, statistic, n_permutations, batch,
