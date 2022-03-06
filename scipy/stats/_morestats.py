@@ -211,6 +211,9 @@ def mvsdist(data):
     return mdist, vdist, sdist
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
+)
 def kstat(data, n=2):
     r"""
     Return the nth k-statistic (1<=n<=4 so far).
@@ -307,6 +310,9 @@ def kstat(data, n=2):
         raise ValueError("Should not be here.")
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
+)
 def kstatvar(data, n=2):
     r"""Return an unbiased estimator of the variance of the k-statistic.
 

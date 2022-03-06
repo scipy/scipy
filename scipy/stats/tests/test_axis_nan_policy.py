@@ -28,6 +28,8 @@ axis_nan_policy_cases = [
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.skew, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.kstatvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -46,7 +48,8 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "At least one observation is required",
                       "zero-size array to reduction operation maximum",
                       "`x` and `y` must be of nonzero size.",
-                      "The exact distribution of the Wilcoxon test"}
+                      "The exact distribution of the Wilcoxon test",
+                      "Data input must not be empty"}
 
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
