@@ -42,9 +42,12 @@ def laplacian(
         avoiding doubling the memory use.
         Default: True, for backward compatibility.
     form: `array`, or `function`, or `lo`
-        Determins the format of the output.
-        E.g., `lo` results in the format of `LinearOperator`.
-        Choosing `function`, or `lo` always avoids doubling
+        Determines the format of the output Laplacian:
+        `array` is a numpy array;
+        `function` is a pointer to evaluating the Laplacian-vector
+        or Laplacian-matrix product;
+        `lo` results in the format of the `LinearOperator`.
+        Choosing `function` or `lo` always avoids doubling
         the memory use, ignoring `copy` value.
         Default: `array`, for backward compatibility.
     dtype: None or one of numeric numpy dtypes, optional
@@ -55,7 +58,7 @@ def laplacian(
         but dramatically increasing the memory use.
         Default: None, for backward compatibility.
     symmetrized: bool, optional
-        If True, then the output Laplacian is symmertic/Hermitian.
+        If True, then the output Laplacian is symmetric/Hermitian.
         The symmetrization is done by `csgraph + csgraph.T.conj`
         without dividing by 2 to preserve integer dtypes if possible
         prior to the construction of the Laplacian.
