@@ -212,7 +212,7 @@ def mvsdist(data):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
 )
 def kstat(data, n=2):
     r"""
@@ -311,7 +311,7 @@ def kstat(data, n=2):
 
 
 @_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
 )
 def kstatvar(data, n=2):
     r"""Return an unbiased estimator of the variance of the k-statistic.
