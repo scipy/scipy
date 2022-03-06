@@ -225,7 +225,7 @@ def _linearoperator(mv, shape, dtype):
     return LinearOperator(matvec=mv, matmat=mv, shape=shape, dtype=dtype)
 
 
-def _laplacian_sparse_flo(graph, normed, axis, unused, form, dtype, symmetrized):
+def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
 
     if dtype is None:
         dtype = graph.dtype
