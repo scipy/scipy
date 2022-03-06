@@ -261,7 +261,7 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
             return m, diag.astype(dtype, copy=False)
 
 
-def _laplacian_sparse(graph, normed, axis, copy, _, dtype, symmetrized):
+def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
 
     if dtype is None:
         dtype = graph.dtype
@@ -341,7 +341,7 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
             return m, diag.astype(dtype, copy=False)
 
 
-def _laplacian_dense(graph, normed, axis, copy, _, dtype, symmetrized):
+def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
 
     if dtype is None:
         dtype = graph.dtype
