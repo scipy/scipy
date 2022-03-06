@@ -185,19 +185,20 @@ def laplacian(
 
 
 def _setdiag_dense(m, d):
-    m.flat[:: len(d) + 1] = d
+    step = len(d) + 1
+    m.flat[::step] = d
 
 
-def _md(m, d):
+def _laplace(m, d):
     return lambda v: v * d[np.newaxis, :] - m @ v
 
 
-def _md_normed(m, d, nd):
-    md_sym = _md(m, d)
+def _laplace_normed(m, d, nd):
+    md_sym = _laplace(m, d)
     return lambda v: nd * md_sym(v) * nd[:, np.newaxis]
 
 
-def _md_sym(m, d):
+def _laplace_sym(m, d):
     return (
         lambda v: v * d[np.newaxis, :]
         - m @ v
@@ -205,14 +206,13 @@ def _md_sym(m, d):
     )
 
 
-def _md_normed_sym(m, d, nd):
-    md_sym = _md_sym(m, d)
+def _laplace_normed_sym(m, d, nd):
+    md_sym = _laplace_sym(m, d)
     return lambda v: nd * md_sym(v) * nd[:, np.newaxis]
 
 
 def _linearoperator(mv, shape, dtype):
-    mv_as_lo = LinearOperator(matvec=mv, matmat=mv, shape=shape, dtype=dtype)
-    return mv_as_lo
+    return LinearOperator(matvec=mv, matmat=mv, shape=shape, dtype=dtype)
 
 
 def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
@@ -231,9 +231,9 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
             isolated_node_mask = diag == 0
             w = np.where(isolated_node_mask, 1, np.sqrt(diag))
             if symmetrized:
-                md = _md_normed_sym(graph, graph_sum, 1.0 / w)
+                md = _laplace_normed_sym(graph, graph_sum, 1.0 / w)
             else:
-                md = _md_normed(graph, graph_sum, 1.0 / w)
+                md = _laplace_normed(graph, graph_sum, 1.0 / w)
             if form == "function":
                 return md, w.astype(dtype, copy=False)
             elif form == "lo":
@@ -241,9 +241,9 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
                 return m, w.astype(dtype, copy=False)
         else:
             if symmetrized:
-                md = _md_sym(graph, graph_sum)
+                md = _laplace_sym(graph, graph_sum)
             else:
-                md = _md(graph, graph_sum)
+                md = _laplace(graph, graph_sum)
             if form == "function":
                 return md, diag.astype(dtype, copy=False)
             elif form == "lo":
@@ -307,9 +307,9 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
             isolated_node_mask = diag == 0
             w = np.where(isolated_node_mask, 1, np.sqrt(diag))
             if symmetrized:
-                md = _md_normed_sym(m, graph_sum, 1.0 / w)
+                md = _laplace_normed_sym(m, graph_sum, 1.0 / w)
             else:
-                md = _md_normed(m, graph_sum, 1.0 / w)
+                md = _laplace_normed(m, graph_sum, 1.0 / w)
             if form == "function":
                 return md, w.astype(dtype, copy=False)
             elif form == "lo":
@@ -317,9 +317,9 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
                 return m, w.astype(dtype, copy=False)
         else:
             if symmetrized:
-                md = _md_sym(m, graph_sum)
+                md = _laplace_sym(m, graph_sum)
             else:
-                md = _md(m, graph_sum)
+                md = _laplace(m, graph_sum)
             if form == "function":
                 return md, diag.astype(dtype, copy=False)
             elif form == "lo":
