@@ -167,7 +167,17 @@ def laplacian(
     ):
         csgraph = csgraph.astype(np.float64)
 
-    create_lap = _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
+    if form == "array":
+        create_lap = (
+            _laplacian_sparse if isspmatrix(csgraph) else _laplacian_dense
+        )
+    else:
+        create_lap = (
+            _laplacian_sparse_flo
+            if isspmatrix(csgraph)
+            else _laplacian_dense_flo
+        )
+
     degree_axis = 1 if use_out_degree else 0
 
     lap, d = create_lap(
@@ -215,74 +225,79 @@ def _linearoperator(mv, shape, dtype):
     return LinearOperator(matvec=mv, matmat=mv, shape=shape, dtype=dtype)
 
 
-def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
+
     if dtype is None:
         dtype = graph.dtype
 
-    if form != "array":
-        graph_sum = graph.sum(axis=axis).getA1()
-        graph_diagonal = graph.diagonal()
-        diag = graph_sum - graph_diagonal
+    graph_sum = graph.sum(axis=axis).getA1()
+    graph_diagonal = graph.diagonal()
+    diag = graph_sum - graph_diagonal
+    if symmetrized:
+        graph_sum += graph.sum(axis=1 - axis).getA1()
+        diag = graph_sum - graph_diagonal - graph_diagonal
+
+    if normed:
+        isolated_node_mask = diag == 0
+        w = np.where(isolated_node_mask, 1, np.sqrt(diag))
         if symmetrized:
-            graph_sum += graph.sum(axis=1 - axis).getA1()
-            diag = graph_sum - graph_diagonal - graph_diagonal
-
-        if normed:
-            isolated_node_mask = diag == 0
-            w = np.where(isolated_node_mask, 1, np.sqrt(diag))
-            if symmetrized:
-                md = _laplace_normed_sym(graph, graph_sum, 1.0 / w)
-            else:
-                md = _laplace_normed(graph, graph_sum, 1.0 / w)
-            if form == "function":
-                return md, w.astype(dtype, copy=False)
-            elif form == "lo":
-                m = _linearoperator(md, shape=graph.shape, dtype=dtype)
-                return m, w.astype(dtype, copy=False)
+            md = _laplace_normed_sym(graph, graph_sum, 1.0 / w)
         else:
-            if symmetrized:
-                md = _laplace_sym(graph, graph_sum)
-            else:
-                md = _laplace(graph, graph_sum)
-            if form == "function":
-                return md, diag.astype(dtype, copy=False)
-            elif form == "lo":
-                m = _linearoperator(md, shape=graph.shape, dtype=dtype)
-                return m, diag.astype(dtype, copy=False)
-
+            md = _laplace_normed(graph, graph_sum, 1.0 / w)
+        if form == "function":
+            return md, w.astype(dtype, copy=False)
+        elif form == "lo":
+            m = _linearoperator(md, shape=graph.shape, dtype=dtype)
+            return m, w.astype(dtype, copy=False)
     else:
-        needs_copy = False
-        if graph.format in ("lil", "dok"):
-            m = graph.tocoo()
-        else:
-            m = graph
-            if copy:
-                needs_copy = True
-
         if symmetrized:
-            m += m.T.conj()
-
-        w = m.sum(axis=axis).getA1() - m.diagonal()
-        if normed:
-            m = m.tocoo(copy=needs_copy)
-            isolated_node_mask = w == 0
-            w = np.where(isolated_node_mask, 1, np.sqrt(w))
-            m.data /= w[m.row]
-            m.data /= w[m.col]
-            m.data *= -1
-            m.setdiag(1 - isolated_node_mask)
+            md = _laplace_sym(graph, graph_sum)
         else:
-            if m.format == "dia":
-                m = m.copy()
-            else:
-                m = m.tocoo(copy=needs_copy)
-            m.data *= -1
-            m.setdiag(w)
-
-        return m.astype(dtype, copy=False), w.astype(dtype)
+            md = _laplace(graph, graph_sum)
+        if form == "function":
+            return md, diag.astype(dtype, copy=False)
+        elif form == "lo":
+            m = _linearoperator(md, shape=graph.shape, dtype=dtype)
+            return m, diag.astype(dtype, copy=False)
 
 
-def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_sparse(graph, normed, axis, copy, _, dtype, symmetrized):
+
+    if dtype is None:
+        dtype = graph.dtype
+
+    needs_copy = False
+    if graph.format in ("lil", "dok"):
+        m = graph.tocoo()
+    else:
+        m = graph
+        if copy:
+            needs_copy = True
+
+    if symmetrized:
+        m += m.T.conj()
+
+    w = m.sum(axis=axis).getA1() - m.diagonal()
+    if normed:
+        m = m.tocoo(copy=needs_copy)
+        isolated_node_mask = w == 0
+        w = np.where(isolated_node_mask, 1, np.sqrt(w))
+        m.data /= w[m.row]
+        m.data /= w[m.col]
+        m.data *= -1
+        m.setdiag(1 - isolated_node_mask)
+    else:
+        if m.format == "dia":
+            m = m.copy()
+        else:
+            m = m.tocoo(copy=needs_copy)
+        m.data *= -1
+        m.setdiag(w)
+
+    return m.astype(dtype, copy=False), w.astype(dtype)
+
+
+def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
 
     if dtype is None:
         dtype = graph.dtype
@@ -295,51 +310,63 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
     if dtype is None:
         dtype = m.dtype
 
-    if form != "array":
-        graph_sum = m.sum(axis=axis)
-        graph_diagonal = m.diagonal()
-        diag = graph_sum - graph_diagonal
+    graph_sum = m.sum(axis=axis)
+    graph_diagonal = m.diagonal()
+    diag = graph_sum - graph_diagonal
+    if symmetrized:
+        graph_sum += m.sum(axis=1 - axis)
+        diag = graph_sum - graph_diagonal - graph_diagonal
+
+    if normed:
+        isolated_node_mask = diag == 0
+        w = np.where(isolated_node_mask, 1, np.sqrt(diag))
         if symmetrized:
-            graph_sum += m.sum(axis=1 - axis)
-            diag = graph_sum - graph_diagonal - graph_diagonal
-
-        if normed:
-            isolated_node_mask = diag == 0
-            w = np.where(isolated_node_mask, 1, np.sqrt(diag))
-            if symmetrized:
-                md = _laplace_normed_sym(m, graph_sum, 1.0 / w)
-            else:
-                md = _laplace_normed(m, graph_sum, 1.0 / w)
-            if form == "function":
-                return md, w.astype(dtype, copy=False)
-            elif form == "lo":
-                m = _linearoperator(md, shape=graph.shape, dtype=dtype)
-                return m, w.astype(dtype, copy=False)
+            md = _laplace_normed_sym(m, graph_sum, 1.0 / w)
         else:
-            if symmetrized:
-                md = _laplace_sym(m, graph_sum)
-            else:
-                md = _laplace(m, graph_sum)
-            if form == "function":
-                return md, diag.astype(dtype, copy=False)
-            elif form == "lo":
-                m = _linearoperator(md, shape=graph.shape, dtype=dtype)
-                return m, diag.astype(dtype, copy=False)
-
+            md = _laplace_normed(m, graph_sum, 1.0 / w)
+        if form == "function":
+            return md, w.astype(dtype, copy=False)
+        elif form == "lo":
+            m = _linearoperator(md, shape=graph.shape, dtype=dtype)
+            return m, w.astype(dtype, copy=False)
     else:
         if symmetrized:
-            m += m.T.conj()
-        np.fill_diagonal(m, 0)
-        w = m.sum(axis=axis)
-        if normed:
-            isolated_node_mask = w == 0
-            w = np.where(isolated_node_mask, 1, np.sqrt(w))
-            m /= w
-            m /= w[:, np.newaxis]
-            m *= -1
-            _setdiag_dense(m, 1 - isolated_node_mask)
+            md = _laplace_sym(m, graph_sum)
         else:
-            m *= -1
-            _setdiag_dense(m, w)
+            md = _laplace(m, graph_sum)
+        if form == "function":
+            return md, diag.astype(dtype, copy=False)
+        elif form == "lo":
+            m = _linearoperator(md, shape=graph.shape, dtype=dtype)
+            return m, diag.astype(dtype, copy=False)
 
-        return m.astype(dtype, copy=False), w.astype(dtype, copy=False)
+
+def _laplacian_dense(graph, normed, axis, copy, _, dtype, symmetrized):
+
+    if dtype is None:
+        dtype = graph.dtype
+
+    if copy:
+        m = np.array(graph)
+    else:
+        m = np.asarray(graph)
+
+    if dtype is None:
+        dtype = m.dtype
+
+    if symmetrized:
+        m += m.T.conj()
+    np.fill_diagonal(m, 0)
+    w = m.sum(axis=axis)
+    if normed:
+        isolated_node_mask = w == 0
+        w = np.where(isolated_node_mask, 1, np.sqrt(w))
+        m /= w
+        m /= w[:, np.newaxis]
+        m *= -1
+        _setdiag_dense(m, 1 - isolated_node_mask)
+    else:
+        m *= -1
+        _setdiag_dense(m, w)
+
+    return m.astype(dtype, copy=False), w.astype(dtype, copy=False)
