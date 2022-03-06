@@ -6,6 +6,11 @@ from scipy import sparse
 from scipy.sparse import csgraph
 
 
+def check_int_type(mat):
+    return (np.issubdtype(mat.dtype, np.signedinteger) or
+            np.issubdtype(mat.dtype, np.uint))
+
+
 def test_laplacian_value_error():
     for t in int, float, complex:
         for m in (
@@ -55,13 +60,7 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
         assert_allclose(mat, mat_copy)
         _assert_allclose_sparse(sp_mat, sp_mat_copy)
     else:
-        if not (
-            normed
-            and (
-                np.issubdtype(mat.dtype, np.signedinteger)
-                or np.issubdtype(mat.dtype, np.uint)
-            )
-        ):
+        if not (normed and check_int_type(mat)):
             assert_allclose(laplacian, mat)
             if sp_mat.format == "coo":
                 _assert_allclose_sparse(sp_laplacian, sp_mat)
@@ -112,10 +111,7 @@ def _check_laplacian_dtype_none(
         copy=copy,
         dtype=None,
     )
-    if normed and (
-        np.issubdtype(mat.dtype, np.signedinteger)
-        or np.issubdtype(mat.dtype, np.uint)
-    ):
+    if normed and check_int_type(mat):
         assert L.dtype == np.float64
         assert d.dtype == np.float64
         _assert_allclose_sparse(L, desired_L, atol=1e-12)
@@ -129,13 +125,7 @@ def _check_laplacian_dtype_none(
         _assert_allclose_sparse(d, desired_d, atol=1e-12)
 
     if not copy:
-        if not (
-            normed
-            and (
-                np.issubdtype(mat.dtype, np.signedinteger)
-                or np.issubdtype(mat.dtype, np.uint)
-            )
-        ):
+        if not (normed and check_int_type(mat)):
             if type(mat) is np.ndarray:
                 assert_allclose(L, mat)
             elif mat.format == "coo":
@@ -162,13 +152,7 @@ def _check_laplacian_dtype(
     _assert_allclose_sparse(d, desired_d, atol=1e-12)
 
     if not copy:
-        if not (
-            normed
-            and (
-                np.issubdtype(mat.dtype, np.signedinteger)
-                or np.issubdtype(mat.dtype, np.uint)
-            )
-        ):
+        if not (normed and check_int_type(mat)):
             if type(mat) is np.ndarray:
                 assert_allclose(L, mat)
             elif mat.format == "coo":

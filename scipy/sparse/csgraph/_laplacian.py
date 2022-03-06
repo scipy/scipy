@@ -225,7 +225,7 @@ def _linearoperator(mv, shape, dtype):
     return LinearOperator(matvec=mv, matmat=mv, shape=shape, dtype=dtype)
 
 
-def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
+def _laplacian_sparse_flo(graph, normed, axis, unused, form, dtype, symmetrized):
 
     if dtype is None:
         dtype = graph.dtype
@@ -262,6 +262,9 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
 
 
 def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
+
+    if form != "array":
+        raise ValueError('{form} must be "array"'.format(form=repr(form)))
 
     if dtype is None:
         dtype = graph.dtype
@@ -342,6 +345,9 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
 
 
 def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
+
+    if form != "array":
+        raise ValueError('{form} must be "array"'.format(form=repr(form)))
 
     if dtype is None:
         dtype = graph.dtype
