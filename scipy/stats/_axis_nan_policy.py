@@ -235,19 +235,24 @@ def _add_reduced_axes(res, reduced_axes, keepdims):
             if keepdims else res)
 
 
-# Standard docstring / signature entries for `axis` and `nan_policy`
+# Standard docstring / signature entries for `axis`, `nan_policy`, `keepdims`
 _name = 'axis'
-_type = "int or None, default: 0"
 _desc = (
     """If an int, the axis of the input along which to compute the statistic.
 The statistic of each axis-slice (e.g. row) of the input will appear in a
 corresponding element of the output.
 If ``None``, the input will be raveled before computing the statistic."""
     .split('\n'))
-_axis_parameter_doc = Parameter(_name, _type, _desc)
-_axis_parameter = inspect.Parameter(_name,
-                                    inspect.Parameter.KEYWORD_ONLY,
-                                    default=0)
+
+
+def _get_axis_params(default_axis=0, _name=_name, _desc=_desc):  # bind NOW
+    _type = f"int or None, default: {default_axis}"
+    _axis_parameter_doc = Parameter(_name, _type, _desc)
+    _axis_parameter = inspect.Parameter(_name,
+                                        inspect.Parameter.KEYWORD_ONLY,
+                                        default=default_axis)
+    return _axis_parameter_doc, _axis_parameter
+
 
 _name = 'nan_policy'
 _type = "{'propagate', 'omit', 'raise'}"
@@ -282,7 +287,7 @@ _keepdims_parameter = inspect.Parameter(_name,
 
 _standard_note_addition = (
     """\nBeginning in SciPy 1.9, ``np.matrix`` inputs (not recommended for new
-code) are converted to ``np.ndarray``s before the calculation is performed. In
+code) are converted to ``np.ndarray`` before the calculation is performed. In
 this case, the output will be a scalar or ``np.ndarray`` of appropriate shape
 rather than a 2D ``np.matrix``. Similarly, while masked elements of masked
 arrays are ignored, the output will be a scalar or ``np.ndarray`` rather than a
@@ -549,6 +554,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             res = _add_reduced_axes(res, reduced_axes, keepdims)
             return tuple_to_result(*res)
 
+        _axis_parameter_doc, _axis_parameter = _get_axis_params(default_axis)
         doc = FunctionDoc(axis_nan_policy_wrapper)
         parameter_names = [param.name for param in doc['Parameters']]
         if 'axis' in parameter_names:
