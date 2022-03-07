@@ -15,6 +15,7 @@ import shutil
 import warnings
 from hashlib import md5
 from hashlib import sha256
+from pathlib import Path
 
 
 sys.path.insert(0, os.path.dirname(__file__))
@@ -51,7 +52,7 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/1.9.0-notes.rst'
+RELEASE = 'doc/release/1.8.0-notes.rst'
 
 # Start/end of the log (from git)
 LOG_START = 'v1.8.0'
@@ -78,54 +79,44 @@ def tarball_name(type_name='gztar'):
         return root + '.zip'
     raise ValueError("Unknown type %s" % type_name)
 
-@task
+
 def sdist():
     # First, clean the repo and update submodules (for up-to-date doc html theme
     # and Sphinx extensions)
-    sh('git clean -xdf')
-    sh('git submodule init')
-    sh('git submodule update')
+    os.system('git clean -xdf')
+    os.system('git submodule init')
+    os.system('git submodule update')
 
     # Fix file permissions
-    sh('chmod -R a+rX *')
+    os.system('chmod -R a+rX *')
 
     # To be sure to bypass paver when building sdist... paver + scipy.distutils
     # do not play well together.
     # Cython is run over all Cython files in setup.py, so generated C files
     # will be included.
-    sh('python setup.py sdist --formats=gztar,zip')
-    sh('python setup.py sdist --formats=tar')
+    os.system('python setup.py sdist --formats=gztar,zip')
+    os.system('python setup.py sdist --formats=tar')
     if os.path.exists(os.path.join('dist', tarball_name("xztar"))):
         os.unlink(os.path.join('dist', tarball_name("xztar")))
-    sh('xz %s' % os.path.join('dist', tarball_name("tar")), ignore_error=True)
+    # var_path = os.path.join('dist', tarball_name("tar"))
+    os.system('xz %s' % os.path.join('dist', tarball_name("tar")))
 
     # Copy the sdists into installers dir
-    if not os.path.exists(options.installers.installersdir):
-        os.makedirs(options.installers.installersdir)
+    if not os.path.exists(os.path.join("release", "installers")):
+        os.makedirs(os.path.join("release", "installers"))
 
     if not os.path.exists(os.path.join('dist', tarball_name("xztar"))):
         warnings.warn("Could not create tar.xz! Do you have xz installed?")
     else:
         t = 'xztar'
         source = os.path.join('dist', tarball_name(t))
-        target = os.path.join(options.installers.installersdir, tarball_name(t))
+        target = os.path.join(os.path.join("release", "installers"), tarball_name(t))
         shutil.copy(source, target)
 
     for t in ['gztar', 'zip']:
         source = os.path.join('dist', tarball_name(t))
-        target = os.path.join(options.installers.installersdir, tarball_name(t))
+        target = os.path.join(os.path.join("release", "installers"), tarball_name(t))
         shutil.copy(source, target)
-
-@task
-def release(options):
-    """sdists, release notes and changelog. Docs and wheels are built in
-    separate steps (see doc/source/dev/releasing.rst).
-    """
-    # Source tarballs
-    sdist()
-
-    # README (gpg signed) and Changelog
-    write_release_and_log()
 
 
 #----------------------------
@@ -133,7 +124,8 @@ def release(options):
 #----------------------------
 
 def compute_md5(idirs):
-    released = paver.path.path(idirs).listdir()
+    released = os.listdir(idirs)
+    print(released)
     checksums = []
     for fn in sorted(released):
         with open(fn, 'rb') as f:
@@ -146,7 +138,7 @@ def compute_md5(idirs):
 def compute_sha256(idirs):
     # better checksum so gpg signed README.txt containing the sums can be used
     # to verify the binaries instead of signing all binaries
-    released = paver.path.path(idirs).listdir()
+    released = os.listdir(idirs)
     checksums = []
     for fn in sorted(released):
         with open(fn, 'rb') as f:
@@ -157,14 +149,15 @@ def compute_sha256(idirs):
 
 
 def write_release_task(filename='NOTES.txt'):
-    idirs = '.'
-    source = paver.path.path(RELEASE)
-    target = paver.path.path(filename)
+    idirs = os.path.join("release", "installers")
+    source = Path(RELEASE)
+    target = Path(filename)
     if target.exists():
         target.remove()
 
-    tmp_target = paver.path.path(filename + '.tmp')
-    source.copy(tmp_target)
+    # set the file as .rst/.tmp
+    tmp_target = Path(filename + '.tmp')
+    os.system(f'cp {source} {tmp_target}')
 
     with open(str(tmp_target), 'a') as ftarget:
         ftarget.writelines("""
@@ -194,14 +187,18 @@ def write_log_task(filename='Changelog'):
         a.writelines(out)
 
 
-@task
-@cmdopts([('gpg_key=', 'g', 'GPG key to use for signing')])
-def write_release_and_log():
+def release_intermediate():
+    write_release_task(os.path.join(os.path.join("release", "installers"), 'README'))
+    write_log_task(os.path.join(os.path.join("release", "installers"), 'Changelog'))
+
+
+def main():
     if not os.path.exists('release') or not os.path.exists(os.path.join('release', 'installers')):
-        print("WIP")
-        write_release_task('README')
-        print("cake")
-        write_log_task('Changelog')
-        print("walk")
+        sdist()
+        release_intermediate()
     else:
-        pass
+        release_intermediate()
+
+
+if __name__ == '__main__':
+    main()
