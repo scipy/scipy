@@ -49,7 +49,6 @@ class IterativeParams:
         solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr]
         sym_solvers = [minres, cg]
         posdef_solvers = [cg]
-        real_solvers = [minres]
 
         self.solvers = solvers
 
@@ -120,26 +119,25 @@ class IterativeParams:
         np.random.seed(1234)
         data = np.random.rand(4, 4) + 1j*np.random.rand(4, 4)
         self.cases.append(Case("rand-cmplx", data,
-                               skip=posdef_solvers+sym_solvers+real_solvers))
+                               skip=posdef_solvers+sym_solvers))
         self.cases.append(Case("rand-cmplx", data.astype('F'),
-                               skip=posdef_solvers+sym_solvers+real_solvers))
+                               skip=posdef_solvers+sym_solvers))
 
         # Random hermitian complex-valued
         np.random.seed(1234)
         data = np.random.rand(4, 4) + 1j*np.random.rand(4, 4)
         data = data + data.T.conj()
         self.cases.append(Case("rand-cmplx-herm", data,
-                               skip=posdef_solvers+real_solvers))
+                               skip=posdef_solvers))
         self.cases.append(Case("rand-cmplx-herm", data.astype('F'),
-                               skip=posdef_solvers+real_solvers))
+                               skip=posdef_solvers))
 
         # Random pos-def hermitian complex-valued
         np.random.seed(1234)
         data = np.random.rand(9, 9) + 1j*np.random.rand(9, 9)
         data = np.dot(data.conj(), data.T)
-        self.cases.append(Case("rand-cmplx-sym-pd", data, skip=real_solvers))
-        self.cases.append(Case("rand-cmplx-sym-pd", data.astype('F'),
-                               skip=real_solvers))
+        self.cases.append(Case("rand-cmplx-sym-pd", data))
+        self.cases.append(Case("rand-cmplx-sym-pd", data.astype('F')))
 
         # Non-symmetric and Positive Definite
         #
