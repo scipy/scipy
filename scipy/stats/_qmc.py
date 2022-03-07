@@ -1335,19 +1335,22 @@ class Sobol(QMCEngine):
             )
 
         self.bits = bits
-        if self.bits > 64:
+        if self.bits <= 32:
+            self.dtype_i = np.uint32
+            self.dtype_f = np.float32
+        elif 32 < self.bits <= 64:
+            self.dtype_i = np.uint64
+            self.dtype_f = np.float64
+        else:
             raise ValueError("Maximum supported 'bits' is 64")
         self.maxn = 2**self.bits
 
-        # initialize direction numbers
-        _initialize_direction_numbers()
-
         # v is d x maxbit matrix
-        self._sv = np.zeros((d, self.bits), dtype=np.uint64)
+        self._sv = np.zeros((d, self.bits), dtype=self.dtype_i)
         _initialize_v(self._sv, dim=d, bits=self.bits)
 
         if not scramble:
-            self._shift = np.zeros(d, dtype=np.uint64)
+            self._shift = np.zeros(d, dtype=self.dtype_i)
         else:
             # scramble self._shift and self._sv
             self._scramble()
@@ -1365,13 +1368,13 @@ class Sobol(QMCEngine):
         # Generate shift vector
         self._shift = np.dot(
             rng_integers(self.rng, 2, size=(self.d, self.bits),
-                         dtype=np.uint64),
-            2 ** np.arange(self.bits, dtype=np.uint64),
+                         dtype=self.dtype_i),
+            2 ** np.arange(self.bits, dtype=self.dtype_i),
         )
         # Generate lower triangular matrices (stacked across dimensions)
         ltm = np.tril(rng_integers(self.rng, 2,
                                    size=(self.d, self.bits, self.bits),
-                                   dtype=np.uint64))
+                                   dtype=self.dtype_i))
         _cscramble(dim=self.d, bits=self.bits, ltm=ltm, sv=self._sv)
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
@@ -1388,7 +1391,7 @@ class Sobol(QMCEngine):
             Sobol' sample.
 
         """
-        sample = np.empty((n, self.d), dtype=float)
+        sample = np.empty((n, self.d), dtype=self.dtype_f)
 
         if n == 0:
             return sample
