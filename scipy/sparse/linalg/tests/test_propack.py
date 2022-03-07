@@ -115,7 +115,7 @@ def test_examples(precision, irl):
     # with BLIS, Netlib, and MKL+AVX512 - see
     # https://github.com/conda-forge/scipy-feedstock/pull/198#issuecomment-999180432
     atol = {
-        'single': 1.2e-4,
+        'single': 1.3e-4,
         'double': 1e-9,
         'complex8': 1e-3,
         'complex16': 1e-9,
