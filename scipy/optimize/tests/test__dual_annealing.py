@@ -362,6 +362,6 @@ class TestDualAnnealing:
 
         # test that found minima, function evaluations and iterations match
         assert_allclose(ret_bounds_class.x, ret_bounds_list.x, atol=1e-8)
-        assert_allclose(ret_bounds_class.x, np.arange(-2, 3), atol=1e-8)
+        assert_allclose(ret_bounds_class.x, np.arange(-2, 3), atol=1e-7)
         assert_allclose(ret_bounds_list.fun, ret_bounds_class.fun, atol=1e-9)
         assert ret_bounds_list.nfev == ret_bounds_class.nfev
