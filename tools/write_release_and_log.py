@@ -46,9 +46,19 @@ except AttributeError:
     pass
 
 
+def get_latest_release_doc(path):
+    """
+    Method to Pick the latest file from 'doc/release'
+    """
+    files_path = os.path.join(path, '*')
+    files = sorted(
+        glob.iglob(files_path), key=os.path.getmtime, reverse=True)
+    return files[0]
+
 # ----------------------------
 # Release notes and Changelog
 # ----------------------------
+
 
 def compute_md5(idirs):
     released = os.listdir(idirs)
@@ -114,6 +124,10 @@ def write_log_task(filename='Changelog'):
 
 
 def main():
+    """
+    Checks weather release directory is present or not
+    and calls the method to generate logs and notes
+    """
     try:
         if not os.path.exists("release"):
             os.makedirs("release")
@@ -124,13 +138,6 @@ def main():
         print("Release Logs and Readme generated successfully")
     except:
         print("Something went wrong")
-
-
-def get_latest_release_doc(path):
-    files_path = os.path.join(path, '*')
-    files = sorted(
-        glob.iglob(files_path), key=os.path.getmtime, reverse=True)
-    return files[0]
 
 
 if __name__ == '__main__':
