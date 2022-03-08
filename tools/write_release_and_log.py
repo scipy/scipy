@@ -146,15 +146,15 @@ def write_log_task(filename='Changelog'):
 
 
 def main():
-    if True:
+    try:
         if not os.path.exists(os.path.join("release", "installers")):
             os.makedirs(os.path.join("release", "installers"))
         else:
             print('release/installer directory present')
         write_release_task(os.path.join(os.path.join("release", "installers"), 'README'))
         write_log_task(os.path.join(os.path.join("release", "installers"), 'Changelog'))
-    # except:
-    #     print("Something went wrong")
+    except:
+        print("Something went wrong")
 
 
 if __name__ == '__main__':
