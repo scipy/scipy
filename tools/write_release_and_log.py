@@ -49,19 +49,6 @@ except AttributeError:
     pass
 
 
-def tarball_name(type_name='gztar'):
-    root = 'scipy-%s' % FULLVERSION
-    if type_name == 'gztar':
-        return root + '.tar.gz'
-    elif type_name == 'xztar':
-        return root + '.tar.xz'
-    elif type_name == 'tar':
-        return root + '.tar'
-    elif type_name == 'zip':
-        return root + '.zip'
-    raise ValueError("Unknown type %s" % type_name)
-
-
 # ----------------------------
 # Release notes and Changelog
 # ----------------------------
@@ -99,7 +86,7 @@ def write_release_task(filename='NOTES.txt'):
         target.remove()
 
     # set the file as .rst/.tmp
-    tmp_target = Path(filename + '.tmp')
+    tmp_target = Path(filename + '.rst')
     os.system(f'cp {source} {tmp_target}')
 
     with open(str(tmp_target), 'a') as ftarget:
