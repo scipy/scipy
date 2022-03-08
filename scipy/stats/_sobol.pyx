@@ -121,11 +121,8 @@ def _initialize_direction_numbers(poly, vinit, dtype):
                   "_sobol_direction_numbers.npz"))
     dns_poly = dns["poly"].astype(dtype)
     dns_vinit = dns["vinit"].astype(dtype)
-    for i in range(MAXDIM):
-        poly[i] = dns_poly[i]
-    for i in range(MAXDIM):
-        for j in range(MAXDEG):
-            vinit[i][j] = dns_vinit[i, j]
+    poly[:MAXDIM] = dns_poly[:MAXDIM]
+    vinit[:MAXDIM, :MAXDEG] = dns_vinit[:MAXDIM, :MAXDEG]
 
 
 @cython.boundscheck(False)
@@ -243,7 +240,7 @@ cpdef void _initialize_v(
 
         # First m elements of row d comes from vinit
         for j in range(m):
-            v[d, j] = vinit[d][j]
+            v[d, j] = vinit[d, j]
 
         # Fill in remaining elements of v as in Section 2 (top of pg. 90) of:
         #
