@@ -474,6 +474,7 @@ def test_vectorize_statistic(axis):
     assert_allclose(res1, res2)
 
 
+@pytest.mark.xslow()
 @pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
 def test_vector_valued_statistic(method):
     # Generate 95% confidence interval around MLE of normal distribution
