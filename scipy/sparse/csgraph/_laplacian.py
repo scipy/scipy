@@ -18,7 +18,7 @@ def laplacian(
     copy=True,
     form="array",
     dtype=None,
-    symmetrized=False
+    symmetrized=False,
 ):
     """
     Return the Laplacian of a directed graph.
@@ -306,9 +306,6 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
 
 
 def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
-
-    if dtype is None:
-        dtype = graph.dtype
 
     if copy:
         m = np.array(graph)
