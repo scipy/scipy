@@ -346,7 +346,8 @@ class TestQRVS:
                                     d_in, d_out, method):
         w32 = sys.platform == "win32" and platform.architecture()[0] == "32bit"
         if w32 and method == "NumericalInversePolynomial":
-            pytest.xfail("NumericalInversePolynomial.qrvs fails for Win 32-bit")
+            pytest.xfail("NumericalInversePolynomial.qrvs fails for Win "
+                         "32-bit")
 
         dist = StandardNormal()
         Method = getattr(stats.sampling, method)
