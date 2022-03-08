@@ -3,10 +3,6 @@ Standalone script for writing release doc and logs
 -------------------------------------------------
 Cmd -> python write_release_and_log.py <LOG_START> <LOG_END> <VERSION_NOTES>
 Example -> python write_release_and_log.py v1.6.0 v1.8.0 1.9.0
-
-Note:
------
-Work in progress (migrating away from paver implementation)
 """
 
 import os
