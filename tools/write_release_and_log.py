@@ -133,5 +133,5 @@ if __name__ == '__main__':
         VERSION_NOTES = str(sys.argv[3])
         RELEASE = f'doc/release/{VERSION_NOTES}-notes.rst'
     else:
-        print("invalid number of arguments, pass LOG_START,LOG_END and VERSION_NOTES")
+        print("invalid number of arguments, please add LOG_START,LOG_END and VERSION_NOTES")
     main()
