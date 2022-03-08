@@ -138,6 +138,6 @@ if __name__ == '__main__':
         LOG_START = str(sys.argv[1])
         LOG_END = str(sys.argv[2])
     else:
-        print("invalid number of arguments, please add LOG_START,LOG_END and VERSION_NOTES")
+        print("invalid number of arguments, please add LOG_START and LOG_END")
     RELEASE = get_latest_release_doc('doc/release')
     main()
