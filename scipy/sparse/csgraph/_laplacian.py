@@ -250,6 +250,8 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
         elif form == "lo":
             m = _linearoperator(md, shape=graph.shape, dtype=dtype)
             return m, w.astype(dtype, copy=False)
+        else:
+            raise ValueError(f"Invalid form: {repr(form)}")
     else:
         if symmetrized:
             md = _laplace_sym(graph, graph_sum)
@@ -260,6 +262,8 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
         elif form == "lo":
             m = _linearoperator(md, shape=graph.shape, dtype=dtype)
             return m, diag.astype(dtype, copy=False)
+        else:
+            raise ValueError(f"Invalid form: {repr(form)}")
 
 
 def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
@@ -333,6 +337,8 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
         elif form == "lo":
             m = _linearoperator(md, shape=graph.shape, dtype=dtype)
             return m, w.astype(dtype, copy=False)
+        else:
+            raise ValueError(f"Invalid form: {repr(form)}")
     else:
         if symmetrized:
             md = _laplace_sym(m, graph_sum)
@@ -343,6 +349,8 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
         elif form == "lo":
             m = _linearoperator(md, shape=graph.shape, dtype=dtype)
             return m, diag.astype(dtype, copy=False)
+        else:
+            raise ValueError(f"Invalid form: {repr(form)}")
 
 
 def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
