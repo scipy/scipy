@@ -53,7 +53,7 @@ def compute_md5(idirs):
     released = os.listdir(idirs)
     checksums = []
     for fn in sorted(released):
-        fn_updated = os.path.join(os.path.join("release", "installers"), fn)
+        fn_updated = os.path.join("release", fn)
         with open(fn_updated, 'rb') as f:
             m = md5(f.read())
         checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(fn)))
@@ -66,7 +66,7 @@ def compute_sha256(idirs):
     released = os.listdir(idirs)
     checksums = []
     for fn in sorted(released):
-        fn_updated = os.path.join(os.path.join("release", "installers"), fn)
+        fn_updated = os.path.join("release", fn)
         with open(fn_updated, 'rb') as f:
             m = sha256(f.read())
         checksums.append('%s  %s' % (m.hexdigest(), os.path.basename(fn)))
@@ -75,14 +75,14 @@ def compute_sha256(idirs):
 
 
 def write_release_task(filename='NOTES.txt'):
-    idirs = os.path.join('release', 'installers')
+    idirs = Path('release')
     source = Path(RELEASE)
     target = Path(filename)
     if target.exists():
         target.remove()
 
     # set the file as .rst/.tmp
-    tmp_target = Path(filename + '.rst')
+    tmp_target = Path(filename + '.txt')
     os.system(f'cp {source} {tmp_target}')
 
     with open(str(tmp_target), 'a') as ftarget:
@@ -115,12 +115,12 @@ def write_log_task(filename='Changelog'):
 
 def main():
     try:
-        if not os.path.exists(os.path.join("release", "installers")):
-            os.makedirs(os.path.join("release", "installers"))
+        if not os.path.exists("release"):
+            os.makedirs("release")
         else:
-            print('Release/installer directory present, executing release tasks')
-        write_release_task(os.path.join(os.path.join("release", "installers"), 'README'))
-        write_log_task(os.path.join(os.path.join("release", "installers"), 'Changelog'))
+            print('Release directory present, executing release tasks')
+        write_release_task(os.path.join("release", 'README'))
+        write_log_task(os.path.join("release", 'Changelog'))
         print("Release Logs and Readme generated successfully")
     except:
         print("Something went wrong")
