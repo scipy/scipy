@@ -284,7 +284,24 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
                '``A`` must represent a hermitian, positive definite matrix.\n'
                'Alternatively, ``A`` can be a linear operator which can\n'
                'produce ``Ax`` using, e.g.,\n'
-               '``scipy.sparse.linalg.LinearOperator``.')
+               '``scipy.sparse.linalg.LinearOperator``.',
+               footer="""
+
+               Examples
+               --------
+               >>> from scipy.sparse import csc_matrix
+               >>> from scipy.sparse.linalg import cg
+               >>> R = np.random.randn(5, 5)
+               >>> positive_definite = R @ R.T
+               >>> A = csc_matrix(positive_definite)
+               >>> b = np.random.randn(5)
+               >>> x, exit_code = cg(A, b)
+               >>> print(exit_code)    # 0 indicates successful convergence
+               0
+               >>> np.allclose(A.dot(x), b)
+               True
+
+               """)
 @non_reentrant()
 def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)

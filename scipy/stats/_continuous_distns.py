@@ -25,7 +25,7 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (
     get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-    rv_continuous, _skew, _get_fixed_fit_value, _check_shape)
+    rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
@@ -302,6 +302,9 @@ class norm_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _rvs(self, size=None, random_state=None):
         return random_state.standard_normal(size)
 
@@ -900,11 +903,13 @@ class burr_gen(rv_continuous):
 
     .. math::
 
-        f(x, c, d) = c d x^{-c - 1} / (1 + x^{-c})^{d + 1}
+        f(x; c, d) = c d \frac{x^{-c - 1}}
+                              {{(1 + x^{-c})}^{d + 1}}
 
     for :math:`x >= 0` and :math:`c, d > 0`.
 
-    `burr` takes :math:`c` and :math:`d` as shape parameters.
+    `burr` takes ``c`` and ``d`` as shape parameters for :math:`c` and
+    :math:`d`.
 
     This is the PDF corresponding to the third CDF given in Burr's list;
     specifically, it is equation (11) in Burr's paper [1]_. The distribution
@@ -1014,11 +1019,12 @@ class burr12_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `burr` is:
+    The probability density function for `burr12` is:
 
     .. math::
 
-        f(x, c, d) = c d x^{c-1} / (1 + x^c)^{d + 1}
+        f(x; c, d) = c d \frac{x^{c-1}}
+                              {(1 + x^c)^{d + 1}}
 
     for :math:`x >= 0` and :math:`c, d > 0`.
 
@@ -1096,9 +1102,18 @@ class fisk_gen(burr_gen):
 
     .. math::
 
-        f(x, c) = c x^{-c-1} (1 + x^{-c})^{-2}
+        f(x, c) = \frac{c x^{c-1}}
+                       {(1 + x^c)^2}
 
     for :math:`x >= 0` and :math:`c > 0`.
+
+    Please note that the above expression can be transformed into the following
+    one, which is also commonly used:
+
+    .. math::
+
+        f(x, c) = \frac{c x^{-c-1}}
+                       {(1 + x^{-c})^2}
 
     `fisk` takes ``c`` as a shape parameter for :math:`c`.
 
@@ -2144,6 +2159,106 @@ class weibull_min_gen(rv_continuous):
 
 
 weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
+
+
+class truncweibull_min_gen(rv_continuous):
+    r"""A doubly truncated Weibull minimum continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    weibull_min, truncexpon
+
+    Notes
+    -----
+    The probability density function for `truncweibull_min` is:
+
+    .. math::
+
+        f(x, a, b, c) = \frac{c x^{c-1} \exp(-x^c)}{\exp(-a^c) - \exp(-b^c)}
+
+    for :math:`a < x <= b`, :math:`c > 0`.
+
+    `truncweibull_min` takes :math:`a`, :math:`b`, and :math:`c` as shape
+    parameters.
+
+    Notice that the truncation values, :math:`a` and :math:`b`, are defined in
+    standardized form:
+
+    .. math::
+
+        a = (u_l - loc)/scale
+        b = (u_r - loc)/scale
+
+    where :math:`u_l` and :math:`u_r` are the specific left and right
+    truncation values, respectively. In other words, the support of the
+    distribution becomes :math:`(a*scale + loc) < x <= (b*scale + loc)` when
+    :math:`loc` and/or :math:`scale` are provided.
+
+    %(after_notes)s
+
+    References
+    ----------
+
+    .. [1] Rinne, H. "The Weibull Distribution: A Handbook". CRC Press (2009).
+
+    %(example)s
+
+    """
+    def _argcheck(self, c, a, b):
+        return (a >= 0.) & (b > a) & (c > 0.)
+
+    def _get_support(self, c, a, b):
+        return a, b
+
+    def _pdf(self, x, c, a, b):
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return (c * pow(x, c-1) * np.exp(-pow(x, c))) / denum
+
+    def _logpdf(self, x, c, a, b):
+        logdenum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return np.log(c) + sc.xlogy(c - 1, x) - pow(x, c) - logdenum
+
+    def _cdf(self, x, c, a, b):
+        num = (np.exp(-pow(a, c)) - np.exp(-pow(x, c)))
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return num / denum
+
+    def _logcdf(self, x, c, a, b):
+        lognum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(x, c)))
+        logdenum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return lognum - logdenum
+
+    def _sf(self, x, c, a, b):
+        num = (np.exp(-pow(x, c)) - np.exp(-pow(b, c)))
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return num / denum
+
+    def _logsf(self, x, c, a, b):
+        lognum = np.log(np.exp(-pow(x, c)) - np.exp(-pow(b, c)))
+        logdenum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return lognum - logdenum
+
+    def _isf(self, q, c, a, b):
+        return pow(
+            -np.log((1 - q) * np.exp(-pow(b, c)) + q * np.exp(-pow(a, c))), 1/c
+            )
+
+    def _ppf(self, q, c, a, b):
+        return pow(
+            -np.log((1 - q) * np.exp(-pow(a, c)) + q * np.exp(-pow(b, c))), 1/c
+            )
+
+    def _munp(self, n, c, a, b):
+        gamma_fun = sc.gamma(n/c + 1.) * (
+            sc.gammainc(n/c + 1., pow(b, c)) - sc.gammainc(n/c + 1., pow(a, c))
+            )
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return gamma_fun / denum
+
+
+truncweibull_min = truncweibull_min_gen(name='truncweibull_min')
 
 
 class weibull_max_gen(rv_continuous):
@@ -5657,6 +5772,9 @@ class nakagami_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("nu", False, (0, np.inf), (False, False))]
+
     def _pdf(self, x, nu):
         return np.exp(self._logpdf(x, nu))
 

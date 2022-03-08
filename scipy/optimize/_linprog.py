@@ -1,6 +1,5 @@
 """
-A top-level linear programming interface. Currently this interface solves
-linear programming problems via the Simplex and Interior-Point methods.
+A top-level linear programming interface.
 
 .. versionadded:: 0.15.0
 
@@ -167,7 +166,7 @@ def linprog_terse_callback(res):
 
 
 def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
-            bounds=None, method='interior-point', callback=None,
+            bounds=None, method='highs', callback=None,
             options=None, x0=None, integrality=None):
     r"""
     Linear programming: minimize a linear objective function subject to linear
@@ -226,10 +225,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         ``max`` will serve as bounds for all decision variables.
     method : str, optional
         The algorithm used to solve the standard form problem.
+        :ref:`'highs' <optimize.linprog-highs>` (default),
         :ref:`'highs-ds' <optimize.linprog-highs-ds>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
-        :ref:`'highs' <optimize.linprog-highs>`,
-        :ref:`'interior-point' <optimize.linprog-interior-point>` (default),
+        :ref:`'interior-point' <optimize.linprog-interior-point>`,
         :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
         :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
         are supported.
@@ -403,17 +402,12 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     `'highs-ds'` and
     `'highs-ipm'` are interfaces to the
     HiGHS simplex and interior-point method solvers [13]_, respectively.
-    `'highs'` chooses between
+    `'highs'` (default) chooses between
     the two automatically. These are the fastest linear
     programming solvers in SciPy, especially for large, sparse problems;
     which of these two is faster is problem-dependent.
-    `'interior-point'` is the default
-    as it was the fastest and most robust method before the recent
-    addition of the HiGHS solvers.
-    `'revised simplex'` is more
-    accurate than interior-point for the problems it solves.
-    `'simplex'` is the legacy method and is
-    included for backwards compatibility and educational purposes.
+    The other solvers (`'interior-point'`, `'revised simplex'`, and
+    `'simplex'`) are legacy methods and will be removed in SciPy 1.11.0.
 
     Method *highs-ds* is a wrapper of the C++ high performance dual
     revised simplex implementation (HSOL) [13]_, [14]_. Method *highs-ipm*
@@ -557,60 +551,24 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     default is for variables to be non-negative. After collecting coeffecients
     into arrays and tuples, the input for this problem is:
 
+    >>> from scipy.optimize import linprog
     >>> c = [-1, 4]
     >>> A = [[-3, 1], [1, 2]]
     >>> b = [6, 4]
     >>> x0_bounds = (None, None)
     >>> x1_bounds = (-3, None)
-    >>> from scipy.optimize import linprog
     >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds])
-
-    Note that the default method for `linprog` is 'interior-point', which is
-    approximate by nature.
-
-    >>> print(res)
-         con: array([], dtype=float64)
-         fun: -21.99999984082494 # may vary
-     message: 'Optimization terminated successfully.'
-         nit: 6 # may vary
-       slack: array([3.89999997e+01, 8.46872439e-08] # may vary
-      status: 0
-     success: True
-           x: array([ 9.99999989, -2.99999999]) # may vary
-
-    If you need greater accuracy, try 'revised simplex'.
-
-    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds], method='revised simplex')
-    >>> print(res)
-         con: array([], dtype=float64)
-         fun: -22.0 # may vary
-     message: 'Optimization terminated successfully.'
-         nit: 1 # may vary
-       slack: array([39.,  0.]) # may vary
-      status: 0
-     success: True
-           x: array([10., -3.]) # may vary
-
-    You can use the ``options`` parameter, e.g.,
-    to restrict the maximum number of iterations.
-
-    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds],
-    ...               options={'maxiter': 4})
-    >>> print(res)
-        con: array([], dtype=float64)
-        fun: -21.35207150630407 # may vary
-    message: 'The iteration limit was reached before the algorithm converged.'
-        nit: 4
-      slack: array([37.19406046,  0.5727398 ])
-     status: 1
-    success: False
-          x: array([ 9.4021973 , -2.98746855])
-
+    >>> res.fun
+    -22.0
+    >>> res.x
+    array([10., -3.])
+    >>> res.message
+    'Optimization terminated successfully. (HiGHS Status 7: Optimal)'
     """
 
     meth = method.lower()
-    methods = {"simplex", "revised simplex", "interior-point",
-               "highs", "highs-ds", "highs-ipm"}
+    methods = {"highs", "highs-ds", "highs-ipm",
+               "simplex", "revised simplex", "interior-point"}
 
     if meth not in methods:
         raise ValueError(f"Unknown solver '{method}'")
@@ -644,6 +602,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
                           sol['con'], lp.bounds, tol, sol['message']))
         sol['success'] = sol['status'] == 0
         return OptimizeResult(sol)
+
+    warn(f"`method='{meth}'` is deprecated and will be removed in SciPy "
+         "1.11.0. Please use one of the HiGHS solvers (e.g. "
+         "`method='highs'`) in new code.", DeprecationWarning, stacklevel=2)
 
     iteration = 0
     complete = False  # will become True if solved in presolve
