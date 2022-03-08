@@ -1,12 +1,13 @@
 """
 Standalone script for writing release doc and logs
 -------------------------------------------------
-Cmd -> python write_release_and_log.py <LOG_START> <LOG_END> <VERSION_NOTES>
-Example -> python write_release_and_log.py v1.6.0 v1.8.0 1.9.0
+Cmd -> python write_release_and_log.py <LOG_START> <LOG_END>
+Example -> python write_release_and_log.py v1.6.0 v1.8.0
 """
 
 import os
 import sys
+import glob
 import subprocess
 import shutil
 import warnings
@@ -81,7 +82,6 @@ def write_release_task(filename='NOTES.txt'):
     if target.exists():
         target.remove()
 
-    # set the file as .rst/.tmp
     tmp_target = Path(filename + '.txt')
     os.system(f'cp {source} {tmp_target}')
 
@@ -126,12 +126,18 @@ def main():
         print("Something went wrong")
 
 
+def get_latest_release_doc(path):
+    files_path = os.path.join(path, '*')
+    files = sorted(
+        glob.iglob(files_path), key=os.path.getmtime, reverse=True)
+    return files[0]
+
+
 if __name__ == '__main__':
-    if len(sys.argv) == 4:
+    if len(sys.argv) == 3:
         LOG_START = str(sys.argv[1])
         LOG_END = str(sys.argv[2])
-        VERSION_NOTES = str(sys.argv[3])
-        RELEASE = f'doc/release/{VERSION_NOTES}-notes.rst'
     else:
         print("invalid number of arguments, please add LOG_START,LOG_END and VERSION_NOTES")
+    RELEASE = get_latest_release_doc('doc/release')
     main()
