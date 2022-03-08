@@ -297,7 +297,8 @@ masked array with ``mask=False``.""").split('\n')
 def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                              n_samples=1, paired=False,
                              result_to_tuple=None, too_small=0,
-                             n_outputs=2, kwd_samples=[]):
+                             n_outputs=2, kwd_samples=[],
+                             pass_empty_inputs=False):
     """Factory for a wrapper that adds axis/nan_policy params to a function.
 
     Parameters
@@ -342,6 +343,10 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         example, `gmean` accepts as its first argument a sample `a` but
         also `weights` as a fourth, optional keyword argument. In this case, we
         use `n_samples=1` and kwd_samples=['weights'].
+    pass_empty_inputs : bool, default: False
+        If True, the decorator lets the function handle the empty inputs case.
+        This is required, for example, when your function raises errors for
+        empty inputs or returns a special output for empty inputs.
     """
 
     if result_to_tuple is None:
@@ -490,11 +495,12 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             # ideally, move this to the top, but some existing functions raise
             # exceptions for empty input, so overriding it would break
             # backward compatibility.
-            empty_output = _check_empty_inputs(samples, axis)
-            if empty_output is not None:
-                res = [empty_output.copy() for i in range(n_outputs)]
-                res = _add_reduced_axes(res, reduced_axes, keepdims)
-                return tuple_to_result(*res)
+            if not pass_empty_inputs:
+                empty_output = _check_empty_inputs(samples, axis)
+                if empty_output is not None:
+                    res = [empty_output.copy() for i in range(n_outputs)]
+                    res = _add_reduced_axes(res, reduced_axes, keepdims)
+                    return tuple_to_result(*res)
 
             # otherwise, concatenate all samples along axis, remembering where
             # each separate sample begins

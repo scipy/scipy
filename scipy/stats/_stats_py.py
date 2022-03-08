@@ -891,6 +891,10 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 #####################################
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, n_samples=1, result_to_tuple=lambda x: (x,), n_outputs=1,
+    pass_empty_inputs=True
+)
 def moment(a, moment=1, axis=0, nan_policy='propagate'):
     r"""Calculate the nth moment about the mean for a sample.
 

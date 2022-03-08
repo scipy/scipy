@@ -30,6 +30,7 @@ axis_nan_policy_cases = [
     (stats.skew, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstatvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.moment, tuple(), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
