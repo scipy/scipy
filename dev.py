@@ -223,8 +223,6 @@ def main(argv):
         sys.path.insert(0, site_dir)
         os.environ['PYTHONPATH'] = \
             os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
-    else:
-        test, version, mod_path = get_project_info()
 
     extra_argv = args.args[:]
     if extra_argv and extra_argv[0] == '--':
@@ -339,6 +337,29 @@ def main(argv):
 
     if args.build_only:
         sys.exit(0)
+    else:
+        try:
+            __import__(PROJECT_MODULE)
+            test = sys.modules[PROJECT_MODULE].test
+            version = sys.modules[PROJECT_MODULE].__version__
+            mod_path = sys.modules[PROJECT_MODULE].__file__
+            mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
+        except ImportError:
+            current_python_path = os.environ.get('PYTHONPATH', None)
+            print("Unable to import {} from: {}".format(PROJECT_MODULE,
+                                                       current_python_path))
+            site_dir = get_site_packages()
+            print("Trying to import scipy from development installed path at:",
+                  site_dir)
+            sys.path.insert(0, site_dir)
+            os.environ['PYTHONPATH'] = \
+                os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+            __import__(PROJECT_MODULE)
+            test = sys.modules[PROJECT_MODULE].test
+            version = sys.modules[PROJECT_MODULE].__version__
+            mod_path = sys.modules[PROJECT_MODULE].__file__
+            mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
+
 
     if args.submodule:
         tests = [PROJECT_MODULE + "." + args.submodule]
@@ -380,28 +401,6 @@ def main(argv):
         sys.exit(0)
     else:
         sys.exit(1)
-
-
-def get_project_info():
-    """
-    Function to import the project module and return its tests, version,
-    and path where it is found.
-    If the project module is not found, then it tries to find it in the
-    development installed path.
-    """
-    try:
-        test, version, mod_path = runtests.import_module()
-    except ImportError:
-        # this may fail when running with --no-build, so try to detect
-        # an installed scipy in a subdir inside a repo
-        site_dir = get_site_packages()
-        print("Trying to find scipy from development installed "
-              "path at:", site_dir)
-        sys.path.insert(0, site_dir)
-        os.environ['PYTHONPATH'] = \
-            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
-        test, version, mod_path = runtests.import_module()
-    return test, version, mod_path
 
 
 def setup_build(args, env):
