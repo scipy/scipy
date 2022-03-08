@@ -1,7 +1,8 @@
 """
 Standalone script for writing release doc and logs
 -------------------------------------------------
-Cmd = python write_release_and_log.py
+Cmd -> python write_release_and_log.py <LOG_START> <LOG_END> <VERSION_NOTES>
+Example -> python write_release_and_log.py v1.6.0 v1.8.0 1.9.0
 
 Note:
 -----
@@ -19,6 +20,8 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'tools'))
+
+
 try:
     version_utils = __import__("version_utils")
     FULLVERSION = version_utils.VERSION
@@ -44,24 +47,6 @@ try:
 except AttributeError:
     # No umask on non-posix
     pass
-
-# -----------------------------------
-# Things to be changed for a release
-# -----------------------------------
-
-# Source of the release notes
-RELEASE = 'doc/release/1.9.0-notes.rst'
-
-# Start/end of the log (from git)
-LOG_START = 'v1.4.0'
-LOG_END = 'main'
-
-# -------------------------------------------------------
-# Hardcoded build/install dirs, virtualenv options, etc.
-# -------------------------------------------------------
-
-# Default Python version
-PYVER = "3.9"
 
 
 def tarball_name(type_name='gztar'):
@@ -150,12 +135,21 @@ def main():
         if not os.path.exists(os.path.join("release", "installers")):
             os.makedirs(os.path.join("release", "installers"))
         else:
-            print('release/installer directory present')
+            print('Release/installer directory present, executing release tasks')
         write_release_task(os.path.join(os.path.join("release", "installers"), 'README'))
         write_log_task(os.path.join(os.path.join("release", "installers"), 'Changelog'))
+        print("Release Logs and Readme generated successfully")
     except:
         print("Something went wrong")
 
 
 if __name__ == '__main__':
+    if len(sys.argv) == 4:
+        LOG_START = str(sys.argv[1])
+        LOG_END = str(sys.argv[2])
+        VERSION_NOTES = str(sys.argv[3])
+        RELEASE = f'doc/release/{VERSION_NOTES}-notes.rst'
+        print(len(sys.argv))
+    else:
+        print("invalid number of arguments, pass LOG_START,LOG_END and VERSION_NOTES")
     main()
