@@ -1223,9 +1223,10 @@ class Sobol(QMCEngine):
     bits : int, optional
         Number of bits of the generator. Control the maximum number of points
         that can be generated, which is ``2**bits``. Maximal value is 64.
-        It also conditions the return dtype to be either ``np.float32``
-        or ``np.float64``.
-        Default is None and use 30 bits for backward compatibility.
+        It also conditions the return dtype to be either ``np.float32`` (for
+        ``0 <= bits <= 32``) or ``np.float64``.
+        Default is None, which for backward compatibility, corresponds to 30
+        and the return dtype is ``np.float64``.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1343,6 +1344,7 @@ class Sobol(QMCEngine):
 
         if self.bits is None:
             self.bits = 30
+            self.dtype_f = np.float64
 
         if self.bits <= 32:
             self.dtype_i = np.uint32
@@ -1385,7 +1387,10 @@ class Sobol(QMCEngine):
         ltm = np.tril(rng_integers(self.rng, 2,
                                    size=(self.d, self.bits, self.bits),
                                    dtype=self.dtype_i))
-        _cscramble(dim=self.d, bits=self.bits, ltm=ltm, sv=self._sv)  # type: ignore[arg-type]
+        _cscramble(
+            dim=self.d, bits=self.bits,  # type: ignore[arg-type]
+            ltm=ltm, sv=self._sv
+        )
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw next point(s) in the Sobol' sequence.
@@ -1431,7 +1436,9 @@ class Sobol(QMCEngine):
                     scale=self._scale, sv=self._sv, quasi=self._quasi,
                     sample=sample
                 )
-                sample = np.concatenate([self._first_point, sample])[:n]  # type: ignore[misc]
+                sample = np.concatenate(
+                    [self._first_point, sample]
+                )[:n]  # type: ignore[misc]
         else:
             _draw(
                 n=n, num_gen=self.num_generated - 1, dim=self.d,

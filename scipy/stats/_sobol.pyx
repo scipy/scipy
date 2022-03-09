@@ -44,7 +44,28 @@ _vinit_dict = {}
 
 
 def get_poly_vinit(kind, dtype):
+    """Initialize and cache the direction numbers.
 
+    Uses a dictionary to store the arrays. `kind` allows to select which
+    dictionary to pull. The key of each dictionary corresponds to the `dtype`.
+    If the key is not present in any of the dictionary, both dictionaries are
+    initialized with `_initialize_direction_numbers`, for the given `dtype`.
+
+    This is only used during the initialization step in `_initialize_v`.
+
+    Parameters
+    ----------
+    kind : {'poly', 'vinit'}
+        Select which dictionary to pull.
+    dtype : {np.uint32, np.uint64}
+        Which dtype to use.
+
+    Returns
+    -------
+    poly_vinit : np.ndarray
+        Either ``poly`` or ``vinit`` matrix.
+
+    """
     if kind == 'poly':
         poly_vinit = _poly_dict.get(dtype)
     else:
@@ -65,8 +86,17 @@ def get_poly_vinit(kind, dtype):
 
 
 def _initialize_direction_numbers(poly, vinit, dtype):
-    """Load direction numbers.
+    """Load direction numbers into two arrays.
 
+    Parameters
+    ----------
+    poly, vinit : np.ndarray
+        Direction numbers arrays to fill.
+    dtype : {np.uint32, np.uint64}
+        Which dtype to use.
+
+    Notes
+    -----
     Direction numbers obtained using the search criterion D(6)
     up to the dimension 21201. This is the recommended choice by the authors.
 
@@ -155,12 +185,12 @@ cdef int low_0_bit(uint_32_64 x) nogil:
 
     Parameters
     ----------
-    x: int
+    x : int
         An integer.
 
     Returns
     -------
-    position: int
+    position : int
         Position of the right-most 0 bit.
 
     """
@@ -193,16 +223,16 @@ cdef int ibits(uint_32_64 x, const int pos, const int length) nogil:
 
     Parameters
     ----------
-    x: int
+    x : int
         Integer to convert to bit representation.
-    pos: int
+    pos : int
         Starting position of sequence in bit representation of integer.
-    length: int
+    length : int
         Length of sequence (number of bits).
 
     Returns
     -------
-    ibits: int
+    ibits : int
         Integer value corresponding to bit sequence.
 
     """
