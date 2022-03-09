@@ -137,8 +137,11 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         Might be somewhat arbitrary for the `trf` method as it generates a
         sequence of strictly feasible iterates and active_mask is determined
         within a tolerance threshold.
-    x_unbounded : ndarray, shape (n,)
-        Unbounded least squares solution (minimize 0.5 * ||A x - b||**2).
+    unbounded_sol : tuple
+        Unbounded least squares solution tuple returned by the least squares
+        solver (set with lsq_solver option). The solution array is the first
+        element in the returned tuple. Unbounded least squares problem is
+        minimize 0.5 * ||A x - b||**2.
     nit : int
         Number of iterations. Zero if the unconstrained solution is optimal.
     status : int
@@ -289,13 +292,14 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         raise ValueError("`lsmr_tol` must be None, 'auto', or positive float.")
 
     if lsq_solver == 'exact':
-        x_lsq = np.linalg.lstsq(A, b, rcond=-1)[0]
+        unbd_lsq = np.linalg.lstsq(A, b, rcond=-1)
     elif lsq_solver == 'lsmr':
         first_lsmr_tol = lsmr_tol  # tol of first call to lsmr
         if lsmr_tol is None or lsmr_tol == 'auto':
             first_lsmr_tol = 1e-2 * tol  # default if lsmr_tol not defined
-        x_lsq = lsmr(A, b, maxiter=lsmr_max_iter,
-                     atol=first_lsmr_tol, btol=first_lsmr_tol)[0]
+        unbd_lsq = lsmr(A, b, maxiter=lsmr_max_iter,
+                        atol=first_lsmr_tol, btol=first_lsmr_tol)
+    x_lsq = unbd_lsq[0]  # extract the solution from the least squares solver
 
     if in_bounds(x_lsq, lb, ub):
         r = A @ x_lsq - b
@@ -312,7 +316,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
         return OptimizeResult(
             x=x_lsq, fun=r, cost=cost, optimality=g_norm,
-            active_mask=np.zeros(n), x_unbounded=x_lsq,
+            active_mask=np.zeros(n), unbounded_sol=unbd_lsq,
             nit=0, status=termination_status,
             message=termination_message, success=True)
 
@@ -322,7 +326,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     elif method == 'bvls':
         res = bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose)
 
-    res.x_unbounded = x_lsq
+    res.unbounded_sol = unbd_lsq
     res.message = TERMINATION_MESSAGES[res.status]
     res.success = res.status > 0
 

@@ -23,7 +23,7 @@ class BaseMixin:
         for lsq_solver in self.lsq_solvers:
             res = lsq_linear(A, b, method=self.method, lsq_solver=lsq_solver)
             assert_allclose(res.x, lstsq(A, b, rcond=-1)[0])
-            assert_allclose(res.x, res.x_unbounded)
+            assert_allclose(res.x, res.unbounded_sol[0])
 
     def test_dense_bounds(self):
         # Solutions for comparison are taken from MATLAB.
@@ -34,7 +34,7 @@ class BaseMixin:
             res = lsq_linear(A, b, (lb, ub), method=self.method,
                              lsq_solver=lsq_solver)
             assert_allclose(res.x, lstsq(A, b, rcond=-1)[0])
-            assert_allclose(res.x_unbounded, unbounded_sol)
+            assert_allclose(res.unbounded_sol[0], unbounded_sol)
 
         lb = np.array([0.0, -np.inf])
         for lsq_solver in self.lsq_solvers:
@@ -42,7 +42,7 @@ class BaseMixin:
                              lsq_solver=lsq_solver)
             assert_allclose(res.x, np.array([0.0, -4.084174437334673]),
                             atol=1e-6)
-            assert_allclose(res.x_unbounded, unbounded_sol)
+            assert_allclose(res.unbounded_sol[0], unbounded_sol)
 
         lb = np.array([-1, 0])
         for lsq_solver in self.lsq_solvers:
@@ -50,21 +50,21 @@ class BaseMixin:
                              lsq_solver=lsq_solver)
             assert_allclose(res.x, np.array([0.448427311733504, 0]),
                             atol=1e-15)
-            assert_allclose(res.x_unbounded, unbounded_sol)
+            assert_allclose(res.unbounded_sol[0], unbounded_sol)
 
         ub = np.array([np.inf, -5])
         for lsq_solver in self.lsq_solvers:
             res = lsq_linear(A, b, (-np.inf, ub), method=self.method,
                              lsq_solver=lsq_solver)
             assert_allclose(res.x, np.array([-0.105560998682388, -5]))
-            assert_allclose(res.x_unbounded, unbounded_sol)
+            assert_allclose(res.unbounded_sol[0], unbounded_sol)
 
         ub = np.array([-1, np.inf])
         for lsq_solver in self.lsq_solvers:
             res = lsq_linear(A, b, (-np.inf, ub), method=self.method,
                              lsq_solver=lsq_solver)
             assert_allclose(res.x, np.array([-1, -4.181102129483254]))
-            assert_allclose(res.x_unbounded, unbounded_sol)
+            assert_allclose(res.unbounded_sol[0], unbounded_sol)
 
         lb = np.array([0, -4])
         ub = np.array([1, 0])
@@ -72,7 +72,7 @@ class BaseMixin:
             res = lsq_linear(A, b, (lb, ub), method=self.method,
                              lsq_solver=lsq_solver)
             assert_allclose(res.x, np.array([0.005236663400791, -4]))
-            assert_allclose(res.x_unbounded, unbounded_sol)
+            assert_allclose(res.unbounded_sol[0], unbounded_sol)
 
     def test_np_matrix(self):
         # gh-10711
@@ -91,7 +91,7 @@ class BaseMixin:
             res = lsq_linear(A, b, (lb, ub), method=self.method,
                              lsq_solver=lsq_solver)
             assert_allclose(res.x, [-0.1, -0.1])
-            assert_allclose(res.x_unbounded, lstsq(A, b, rcond=-1)[0])
+            assert_allclose(res.unbounded_sol[0], lstsq(A, b, rcond=-1)[0])
 
         A = np.array([
             [0.334, 0.668],
@@ -105,7 +105,7 @@ class BaseMixin:
             res = lsq_linear(A, b, (lb, ub), method=self.method,
                              lsq_solver=lsq_solver)
             assert_allclose(res.optimality, 0, atol=1e-11)
-            assert_allclose(res.x_unbounded, lstsq(A, b, rcond=-1)[0])
+            assert_allclose(res.unbounded_sol[0], lstsq(A, b, rcond=-1)[0])
 
     def test_full_result(self):
         lb = np.array([0, -4])
@@ -113,7 +113,7 @@ class BaseMixin:
         res = lsq_linear(A, b, (lb, ub), method=self.method)
 
         assert_allclose(res.x, [0.005236663400791, -4])
-        assert_allclose(res.x_unbounded, lstsq(A, b, rcond=-1)[0])
+        assert_allclose(res.unbounded_sol[0], lstsq(A, b, rcond=-1)[0])
 
         r = A.dot(res.x) - b
         assert_allclose(res.cost, 0.5 * np.dot(r, r))
