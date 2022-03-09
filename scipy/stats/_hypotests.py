@@ -1273,7 +1273,7 @@ def _pval_cvm_2samp_exact(s, m, n):
     """
 
     # [1, p. 3]
-    l = math.lcm(m, n)
+    l = np.lcm(m, n)
     # [1, p. 4], below eq. 3
     a = l // m
     b = l // n
@@ -1283,7 +1283,7 @@ def _pval_cvm_2samp_exact(s, m, n):
     # the frequency table of $g_{u, v}^+$ defined in [1, p. 6]
     gs = [np.array([[0], [1]])] + [np.empty((2, 0), int) for _ in range(m)]
     for u in range(n + 1):
-        next = []
+        next_gs = []
         tmp = np.empty((2, 0), int)
         for v, g in enumerate(gs):
             # calculate g recursively with eq. 11 in [1]
@@ -1294,10 +1294,10 @@ def _pval_cvm_2samp_exact(s, m, n):
                 np.delete(g, i1, 1)
             ], 1)
             tmp[0] += (a * v - b * u) ** 2
-            next.append(tmp)
-        gs = next
+            next_gs.append(tmp)
+        gs = next_gs
     value, freq = gs[m]
-    return np.sum(freq[value >= zeta]) / math.comb(m + n, m)
+    return np.sum(freq[value >= zeta]) / comb(m + n, m)
 
 def cramervonmises_2samp(x, y, method='auto'):
     """Perform the two-sample Cramér-von Mises test for goodness of fit.
