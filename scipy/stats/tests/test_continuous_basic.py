@@ -493,10 +493,9 @@ def check_sample_var(sv, n, popvar):
     # two-sided chisquare test for sample variance equal to
     # hypothesized variance
     df = n-1
-    chi2 = (n - 1)*sv/popvar
-    pval = stats.distributions.chi2.sf(chi2, df) * 2
-    npt.assert_(pval > 0.01, 'var fail, t, pval = %f, %f, v, sv=%f, %f' %
-                (chi2, pval, popvar, sv))
+    statistic = df * sv / popvar
+    pval = min(stats.chi2.cdf(statistic, df), stats.chi2.sf(statistic, df))
+    assert pval > 0.005
 
 
 def check_cdf_ppf(distfn, arg, msg):
