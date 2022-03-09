@@ -9,8 +9,6 @@ import os
 import sys
 import glob
 import subprocess
-import shutil
-import warnings
 from hashlib import md5
 from hashlib import sha256
 from pathlib import Path
@@ -128,16 +126,13 @@ def main():
     Checks weather release directory is present or not
     and calls the method to generate logs and notes
     """
-    try:
-        if not os.path.exists("release"):
-            os.makedirs("release")
-        else:
-            print('Release directory present, executing release tasks')
-        write_release_task(os.path.join("release", 'README'))
-        write_log_task(os.path.join("release", 'Changelog'))
-        print("Release Logs and Readme generated successfully")
-    except:
-        print("Something went wrong")
+    if not os.path.exists("release"):
+        os.makedirs("release")
+    else:
+        print('Release directory present, executing release tasks')
+    write_release_task(os.path.join("release", 'README'))
+    write_log_task(os.path.join("release", 'Changelog'))
+    print("Release Logs and Readme generated successfully")
 
 
 if __name__ == '__main__':
