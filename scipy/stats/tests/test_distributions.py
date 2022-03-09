@@ -5218,7 +5218,8 @@ class TestStudentizedRange:
     def test_cdf_against_r(self, r_case_result):
         # Test large `v` values using R
         q, k, v, r_res = r_case_result
-        res = stats.studentized_range.cdf(q, k, v)
+        with np.errstate(invalid='ignore'):
+            res = stats.studentized_range.cdf(q, k, v)
         assert_allclose(res, r_res)
 
     @pytest.mark.slow
