@@ -266,15 +266,33 @@ cpdef void _initialize_v(
         pow2 = pow2 << 1
 
 
+def _draw(
+    n,
+    num_gen,
+    const int dim,
+    scale,
+    uint_32_64[:, ::1] sv,
+    uint_32_64[::1] quasi,
+    float_32_64[:, ::1] sample
+):
+    # necessary wrapper to guide Cython for n, num_gen and scale
+    cdef uint_32_64 n_ = n
+    cdef uint_32_64 num_gen_ = num_gen
+    cdef float_32_64 scale_ = scale
+    draw(n_, num_gen_, dim, scale_, sv, quasi, sample)
+
+
 @cython.boundscheck(False)
 @cython.wraparound(False)
-cpdef void _draw(const uint_32_64 n,
-                 const uint_32_64 num_gen,
-                 const int dim,
-                 const float_32_64 scale,
-                 uint_32_64[:, ::1] sv,
-                 uint_32_64[::1] quasi,
-                 float_32_64[:, ::1] sample) nogil:
+cdef void draw(
+    const uint_32_64 n,
+    const uint_32_64 num_gen,
+    const int dim,
+    const float_32_64 scale,
+    uint_32_64[:, ::1] sv,
+    uint_32_64[::1] quasi,
+    float_32_64[:, ::1] sample
+) nogil:
     cdef int j, l
     cdef uint_32_64 num_gen_loc = num_gen
     cdef uint_32_64 i, qtmp

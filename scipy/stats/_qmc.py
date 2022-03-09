@@ -30,7 +30,7 @@ import scipy.stats as stats
 from scipy._lib._util import rng_integers
 from ._sobol import (
     _initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
-    _categorize, _initialize_direction_numbers, _MAXDIM
+    _categorize, _MAXDIM
 )
 from ._qmc_cy import (
     _cy_wrapper_centered_discrepancy,
@@ -1335,6 +1335,8 @@ class Sobol(QMCEngine):
             )
 
         self.bits = bits
+        self.dtype_i: type
+        self.dtype_f: type
         if self.bits <= 32:
             self.dtype_i = np.uint32
             self.dtype_f = np.float32
@@ -1391,7 +1393,7 @@ class Sobol(QMCEngine):
             Sobol' sample.
 
         """
-        sample = np.empty((n, self.d), dtype=self.dtype_f)
+        sample: np.ndarray = np.empty((n, self.d), dtype=self.dtype_f)
 
         if n == 0:
             return sample
