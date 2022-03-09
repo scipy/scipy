@@ -1223,7 +1223,8 @@ class Sobol(QMCEngine):
     bits : int, optional
         Number of bits of the generator. Control the maximum number of points
         that can be generated, which is ``2**bits``. Maximal value is 64.
-        It also conditions the return type to be either 32 or 64 bits arrays.
+        It also conditions the return dtype to be either ``np.float32``
+        or ``np.float64``.
         Default is None and use 30 bits for backward compatibility.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
