@@ -1277,13 +1277,13 @@ def _pval_cvm_2samp_exact(s, m, n):
     """
 
     # [1, p. 3]
-    l = np.lcm(m, n)
+    lcm = np.lcm(m, n)
     # [1, p. 4], below eq. 3
-    a = l // m
-    b = l // n
+    a = lcm // m
+    b = lcm // n
     # eq. 9 in [2] and eq. 2 in [1]
     mn = m * n
-    zeta = l ** 2 * (m + n) * (6 * s - mn * (4 * mn - 1)) // (6 * mn ** 2)
+    zeta = lcm ** 2 * (m + n) * (6 * s - mn * (4 * mn - 1)) // (6 * mn ** 2)
     # the frequency table of $g_{u, v}^+$ defined in [1, p. 6]
     gs = [np.array([[0], [1]])] + [np.empty((2, 0), int) for _ in range(m)]
     for u in range(n + 1):
