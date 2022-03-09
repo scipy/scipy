@@ -68,6 +68,9 @@ done:                                                                           
 void error_handler(const char *objid, const char *file, int line, const char *errortype, int unur_errno, const char *reason)
 {
     if ( unur_errno != UNUR_SUCCESS ) {
+        if (PyErr_Occurred()) {
+            return;
+        }
         FILE *LOG = unur_get_stream();
         char objid_[256], reason_[256];
         (objid == NULL || strcmp(objid, "") == 0) ? strcpy(objid_, "unknown") : strcpy(objid_, objid);
