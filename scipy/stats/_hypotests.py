@@ -1268,8 +1268,12 @@ def _pval_cvm_2samp_exact(s, m, n):
     for a given value s of the test statistic.
     m and n are the sizes of the samples.
 
-    [1] Y. Xiao, A. Gordon, and A. Yakovlev, “A C++ Program for the Cramér-Von Mises Two-Sample Test”, J. Stat. Soft., vol. 17, no. 8, pp. 1–15, Dec. 2006.
-    [2] T. W. Anderson "On the Distribution of the Two-Sample Cramer-von Mises Criterion," The Annals of Mathematical Statistics, Ann. Math. Statist. 33(3), 1148-1159, (September, 1962)
+    [1] Y. Xiao, A. Gordon, and A. Yakovlev, “A C++ Program for
+        the Cramér-Von Mises Two-Sample Test”, J. Stat. Soft.,
+        vol. 17, no. 8, pp. 1–15, Dec. 2006.
+    [2] T. W. Anderson "On the Distribution of the Two-Sample Cramer-von Mises
+        Criterion," The Annals of Mathematical Statistics, Ann. Math. Statist.
+        33(3), 1148-1159, (September, 1962)
     """
 
     # [1, p. 3]
@@ -1287,7 +1291,7 @@ def _pval_cvm_2samp_exact(s, m, n):
         tmp = np.empty((2, 0), int)
         for v, g in enumerate(gs):
             # calculate g recursively with eq. 11 in [1]
-            vi, i0, i1 = np.intersect1d(tmp[0], g[0], return_indices = True)
+            vi, i0, i1 = np.intersect1d(tmp[0], g[0], return_indices=True)
             tmp = np.concatenate([
                 np.stack([vi, tmp[1, i0] + g[1, i1]]),
                 np.delete(tmp, i0, 1),
@@ -1298,6 +1302,7 @@ def _pval_cvm_2samp_exact(s, m, n):
         gs = next_gs
     value, freq = gs[m]
     return np.sum(freq[value >= zeta]) / comb(m + n, m)
+
 
 def cramervonmises_2samp(x, y, method='auto'):
     """Perform the two-sample Cramér-von Mises test for goodness of fit.
