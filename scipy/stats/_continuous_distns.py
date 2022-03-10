@@ -6065,11 +6065,12 @@ class ncx2_gen(rv_continuous):
         f(x, k, \lambda) = \frac{1}{2} \exp(-(\lambda+x)/2)
             (x/\lambda)^{(k-2)/4}  I_{(k-2)/2}(\sqrt{\lambda x})
 
-    for :math:`x >= 0` and :math:`k, \lambda > 0`. :math:`k` specifies the
-    degrees of freedom (denoted ``df`` in the implementation) and
-    :math:`\lambda` is the non-centrality parameter (denoted ``nc`` in the
-    implementation). :math:`I_\nu` denotes the modified Bessel function of
-    first order of degree :math:`\nu` (`scipy.special.iv`).
+    for :math:`x >= 0`, :math:`k > 0` and :math:`\lambda \ge 0`.
+    :math:`k` specifies the degrees of freedom (denoted ``df`` in the
+    implementation) and :math:`\lambda` is the non-centrality parameter
+    (denoted ``nc`` in the implementation). :math:`I_\nu` denotes the
+    modified Bessel function of first order of degree :math:`\nu`
+    (`scipy.special.iv`).
 
     `ncx2` takes ``df`` and ``nc`` as shape parameters.
 
@@ -6657,7 +6658,7 @@ class pearson3_gen(rv_continuous):
         # arguments.  The skew argument for pearson3 can be zero (which I want
         # to handle inside pearson3._pdf) or negative.  So just return True
         # for all skew args.
-        return np.ones(np.shape(skew), dtype=bool)
+        return np.isfinite(skew)
 
     def _shape_info(self):
         return [_ShapeInfo("skew", False, (-np.inf, np.inf), (False, False))]
@@ -7640,7 +7641,7 @@ class triang_gen(rv_continuous):
     ``loc`` to ``(loc + c*scale)`` and then downsloping for ``(loc + c*scale)``
     to ``(loc + scale)``.
 
-    `triang` takes ``c`` as a shape parameter for :math:`c`.
+    `triang` takes ``c`` as a shape parameter for :math:`0 \le c \le 1`.
 
     %(after_notes)s
 
@@ -8911,7 +8912,7 @@ class halfgennorm_gen(rv_continuous):
     for :math:`x, \beta > 0`. :math:`\Gamma` is the gamma function
     (`scipy.special.gamma`).
 
-    `gennorm` takes ``beta`` as a shape parameter for :math:`\beta`.
+    `halfgennorm` takes ``beta`` as a shape parameter for :math:`\beta`.
     For :math:`\beta = 1`, it is identical to an exponential distribution.
     For :math:`\beta = 2`, it is identical to a half normal distribution
     (with ``scale=1/sqrt(2)``).
