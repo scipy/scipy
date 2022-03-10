@@ -7,7 +7,7 @@ from . import _stats_py
 
 
 __all__ = [  # noqa: F822
-    'find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
+    'find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
     'tmin', 'tmax', 'tstd', 'tsem', 'moment',
     'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
     'normaltest', 'jarque_bera', 'itemfreq',

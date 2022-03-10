@@ -57,7 +57,7 @@ from scipy._lib._bunch import _make_tuple_bunch
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
-__all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
+__all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
            'normaltest', 'jarque_bera',
@@ -399,6 +399,117 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
             return 1.0 / np.average(1.0 / a, axis=axis, weights=weights)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater "
+                         "than or equal to zero")
+
+
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
+def pmean(a, p, axis=0, dtype=None, weights=None):
+    r"""Calculate the weighted power mean along the specified axis.
+
+    The weighted power mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \left( \frac{ \sum_{i=1}^n w_i a_i^p }{ \sum_{i=1}^n w_i }
+              \right)^{ 1 / p } \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \left( \frac{ 1 }{ n } \sum_{i=1}^n a_i^p \right)^{ 1 / p }  \, .
+
+    This mean is also called generalized mean or Hölder mean, and must not be
+    confused with the Kolmogorov generalized mean, also called
+    quasi-arithmetic mean or generalized f-mean.
+
+    Parameters
+    ----------
+    a : array_like
+        Input array, masked array or object that can be converted to an array.
+    p : float
+        The non-null exponent.
+    axis : int or None, optional
+        Axis along which the power mean is computed. Default is 0.
+        If None, compute over the whole array `a`.
+    dtype : dtype, optional
+        Type of the returned array and of the accumulator in which the
+        elements are summed. If `dtype` is not specified, it defaults to the
+        dtype of `a`, unless `a` has an integer `dtype` with a precision less
+        than that of the default platform integer. In that case, the default
+        platform integer is used.
+    weights : array_like, optional
+        The weights array can either be 1-D (in which case its length must be
+        the size of `a` along the given `axis`) or of the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
+
+    Returns
+    -------
+    pmean : ndarray
+        See `dtype` parameter above.
+
+    See Also
+    --------
+    numpy.average : Weighted average
+    gmean : Geometric mean
+    hmean : Harmonic mean
+
+    Notes
+    -----
+    The power mean is computed over a single dimension of the input
+    array, axis=0 by default, or all values in the array if axis=None.
+    float64 intermediate and return values are used for integer inputs.
+
+    .. versionadded:: 1.9
+
+    References
+    ----------
+    .. [1] "Generalized Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Generalized_mean
+    .. [2] Norris, N., "Convexity properties of generalized mean value
+           functions", The Annals of Mathematical Statistics, vol. 8,
+           pp. 118-120, 1937
+    .. [3] Bullen, P.S., Handbook of Means and Their Inequalities, 2003
+
+    Examples
+    --------
+    >>> from scipy.stats import pmean
+    >>> pmean([1, 4], 1.3)
+    2.639372938300652
+    >>> pmean([1, 2, 3, 4, 5, 6, 7], 1.3)
+    4.157111214492084
+    >>> pmean([1, 4, 7], -2, weights=[3, 1, 3])
+    1.4969684896631954
+
+    """
+    if not isinstance(p, (int, float)):
+        raise ValueError("Power mean only defined for a scalar exponent")
+    if p == 0:
+        raise ValueError("Power mean only defined for non-zero exponent")
+
+    if not isinstance(a, np.ndarray):
+        a = np.array(a, dtype=dtype)
+    elif dtype:
+        # Must change the default dtype allowing array type
+        if isinstance(a, np.ma.MaskedArray):
+            a = np.ma.asarray(a, dtype=dtype)
+        else:
+            a = np.asarray(a, dtype=dtype)
+
+    if np.all(a >= 0):
+        # Power mean only defined if greater than or equal to zero
+        if weights is not None:
+            weights = np.asanyarray(weights, dtype=dtype)
+
+        with np.errstate(divide='ignore'):
+            return np.float_power(
+                np.average(np.float_power(a, p), axis=axis, weights=weights),
+                1/p)
+    else:
+        raise ValueError("Power mean only defined if all elements greater "
                          "than or equal to zero")
 
 
