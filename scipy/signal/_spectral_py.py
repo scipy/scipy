@@ -1713,6 +1713,9 @@ def cyclic_sd(x, y, *, fs=16., fc=4., sym=True, window='hann', nperseg=None,
         function. If it is a function, it takes a segment and returns a
         detrended segment. If `detrend` is `False`, no detrending is
         done. Defaults to 'constant'.
+    return_onesided : bool, optional
+        If `True`, return a one-sided spectrum for real data. If
+        `False` return a two-sided spectrum.
     scaling : { 'density', 'spectrum' }, optional
         Selects between computing the cross cyclic spectral density ('density')
         where `Pxy` has units of V**2/Hz and computing the cross cyclic
@@ -1782,7 +1785,7 @@ def cyclic_sd(x, y, *, fs=16., fc=4., sym=True, window='hann', nperseg=None,
 
     freqs, Pxy = csd(x, y, fs=fs, window=window, nperseg=nperseg,
                      noverlap=noverlap, nfft=nfft, detrend=detrend,
-                     return_onesided=False, scaling=scaling,
+                     return_onesided=return_onesided, scaling=scaling,
                      axis=axis, average=average)
 
     return freqs, Pxy
