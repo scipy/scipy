@@ -885,7 +885,7 @@ def test_other_axis_tuples(axis):
     np.testing.assert_array_equal(res, res2)
 
 
-@pytest.mark.parametrize(("weighted_fun_name"), ["gmean", "hmean"])
+@pytest.mark.parametrize(("weighted_fun_name"), ["gmean", "hmean", "pmean"])
 def test_gmean_mixed_mask_nan_weights(weighted_fun_name):
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # omitting samples with masks and nan_policy='omit' are equivalent
