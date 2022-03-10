@@ -5552,8 +5552,8 @@ class TestHarMean:
     def test_weights_1d_list(self):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
-        weights = [10, 5, 3]
         a = [2, 10, 6]
+        weights = [10, 5, 3]
         desired = 3
         check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
 
@@ -5666,8 +5666,8 @@ class TestGeoMean:
     def test_weights_1d_list(self):
         # Desired result from:
         # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
-        weights = [2, 5, 6, 4, 3]
         a = [1, 2, 3, 4, 5]
+        weights = [2, 5, 6, 4, 3]
         desired = 2.77748
         check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
 
@@ -5696,7 +5696,7 @@ class TestPowMean:
         check_equal_pmean(a, p, desired)
 
         a, p = [1, 2, 3, 4], 2
-        desired = np.sqrt( (1**2 + 2**2 + 3**2 + 4**2) / 4)
+        desired = np.sqrt((1**2 + 2**2 + 3**2 + 4**2) / 4)
         check_equal_pmean(a, p, desired)
 
     def test_1d_array(self):
@@ -5749,6 +5749,30 @@ class TestPowMean:
         a, p = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5
         desired = np.array([0.0, 63.52975969, 104.10065096])
         assert_allclose(stats.pmean(a, p, axis=1), desired)
+
+    def test_weights_1d_list(self):
+        a, p = [2, 10, 6], -1
+        weights = [10, 5, 3]
+        desired = stats.hmean(a, weights=weights)
+        check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5)
+
+    def test_weights_2d_array_axis0(self):
+        a, p = np.array([[2, 5], [10, 5], [6, 5]]), 1
+        weights = np.array([[10, 1], [5, 1], [3, 1]])
+        desired = np.average(a, axis=0, weights=weights)
+        check_equal_pmean(a, p, desired, axis=0, weights=weights, rtol=1e-5)
+
+    def test_weights_2d_array_axis1(self):
+        a, p = np.array([[2, 10, 6], [7, 7, 7]]), -1
+        weights = np.array([[10, 5, 3], [1, 1, 1]])
+        desired = stats.hmean(a, axis=1, weights=weights)
+        check_equal_pmean(a, p, desired, axis=1, weights=weights, rtol=1e-5)
+
+    def test_weights_masked_1d_array(self):
+        a, p = np.array([2, 10, 6, 42]), 1
+        weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
+        desired = np.average(a, weights=weights)
+        check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5)
 
 
 class TestGeometricStandardDeviation:
