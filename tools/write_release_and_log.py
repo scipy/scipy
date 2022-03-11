@@ -2,12 +2,11 @@
 Standalone script for writing release doc and logs
 -------------------------------------------------
 Cmd -> python write_release_and_log.py <LOG_START> <LOG_END>
-Example -> python write_release_and_log.py v1.6.0 v1.8.0
+Example -> python write_release_and_log.py v1.7.0 v1.8.0
 """
 
 import os
 import sys
-import glob
 import subprocess
 from hashlib import md5
 from hashlib import sha256
@@ -15,7 +14,6 @@ from pathlib import Path
 
 sys.path.insert(0, os.path.dirname(__file__))
 sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'tools'))
-
 
 try:
     version_utils = __import__("version_utils")
@@ -48,10 +46,10 @@ def get_latest_release_doc(path):
     """
     Method to Pick the latest file from 'doc/release'
     """
-    files_path = os.path.join(path, '*')
-    files = sorted(
-        glob.iglob(files_path), key=os.path.getmtime, reverse=True)
-    return files[0]
+    file_paths = os.listdir(path)
+    file_paths.sort(key=lambda x: list(map(int, (x.split('-')[0].split('.')))))
+    return os.path.join(path, file_paths[-1])
+
 
 # ----------------------------
 # Release notes and Changelog
@@ -109,16 +107,21 @@ SHA256
 
 """)
         ftarget.writelines(['%s\n' % c for c in compute_sha256(idirs)])
+        print("Release README generated successfully")
 
 
 def write_log_task(filename='Changelog'):
     st = subprocess.Popen(
         ['git', 'log', '%s..%s' % (LOG_START, LOG_END)],
-        stdout=subprocess.PIPE)
-
-    out = st.communicate()[0].decode()
-    with open(filename, 'w') as a:
-        a.writelines(out)
+        stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+    output, error = st.communicate()
+    if not st.returncode == 0:
+        print('Release log generation failed with an error: %d please verify the revisions' % st.returncode)
+    else:
+        out = st.communicate()[0].decode()
+        with open(filename, 'w') as a:
+            a.writelines(out)
+        print("Release logs generated successfully")
 
 
 def main():
@@ -129,10 +132,9 @@ def main():
     if not os.path.exists("release"):
         os.makedirs("release")
     else:
-        print('Release directory present, executing release tasks')
+        print('**Release directory present, executing release tasks**')
     write_release_task(os.path.join("release", 'README'))
     write_log_task(os.path.join("release", 'Changelog'))
-    print("Release Logs and README generated successfully")
 
 
 if __name__ == '__main__':
