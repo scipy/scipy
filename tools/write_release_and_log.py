@@ -132,7 +132,7 @@ def main():
         print('Release directory present, executing release tasks')
     write_release_task(os.path.join("release", 'README'))
     write_log_task(os.path.join("release", 'Changelog'))
-    print("Release Logs and Readme generated successfully")
+    print("Release Logs and README generated successfully")
 
 
 if __name__ == '__main__':
