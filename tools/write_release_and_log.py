@@ -1,8 +1,14 @@
 """
-Standalone script for writing release doc and logs
--------------------------------------------------
-Cmd -> python write_release_and_log.py <LOG_START> <LOG_END>
-Example -> python write_release_and_log.py v1.7.0 v1.8.0
+Standalone script for writing release doc and logs::
+
+    python tools/write_release_and_log.py <LOG_START> <LOG_END>
+
+Example::
+
+    python tools/write_release_and_log.py v1.7.0 v1.8.0
+
+Needs to be run from the root of the repository.
+
 """
 
 import os
@@ -44,7 +50,8 @@ except AttributeError:
 
 def get_latest_release_doc(path):
     """
-    Method to Pick the latest file from 'doc/release'
+    Method to pick the file from 'doc/release' with the highest
+    release number (e.g., `1.9.0-notes.rst`).
     """
     file_paths = os.listdir(path)
     file_paths.sort(key=lambda x: list(map(int, (x.split('-')[0].split('.')))))
@@ -83,7 +90,7 @@ def compute_sha256(idirs):
 
 def write_release_task(filename='NOTES.txt'):
     idirs = Path('release')
-    source = Path(RELEASE)
+    source = Path(get_latest_release_doc('doc/release'))
     target = Path(filename)
     if target.exists():
         target.remove()
@@ -117,11 +124,12 @@ def write_log_task(filename='Changelog'):
     output, error = st.communicate()
     if not st.returncode == 0:
         raise RuntimeError("%s failed" % str(error))
-    else:
-        out = st.communicate()[0].decode()
-        with open(filename, 'w') as a:
-            a.writelines(out)
-        print("Release logs generated successfully")
+
+    out = st.communicate()[0].decode()
+    with open(filename, 'w') as a:
+        a.writelines(out)
+
+    print("Release logs generated successfully")
 
 
 def main():
@@ -131,8 +139,7 @@ def main():
     """
     if not os.path.exists("release"):
         os.makedirs("release")
-    else:
-        print('**Release directory present, executing release tasks**')
+
     write_release_task(os.path.join("release", 'README'))
     write_log_task(os.path.join("release", 'Changelog'))
 
@@ -143,5 +150,5 @@ if __name__ == '__main__':
         LOG_END = str(sys.argv[2])
     else:
         print("invalid number of arguments, please add LOG_START and LOG_END")
-    RELEASE = get_latest_release_doc('doc/release')
+
     main()
