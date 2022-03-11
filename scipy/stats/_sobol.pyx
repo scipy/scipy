@@ -22,11 +22,6 @@ ctypedef fused uint_32_64:
     cnp.uint64_t
 
 
-ctypedef fused float_32_64:
-    cnp.float32_t
-    cnp.float64_t
-
-
 # Needed to be accessed with python
 cdef extern from *:
     """
@@ -300,16 +295,15 @@ def _draw(
     n,
     num_gen,
     const int dim,
-    scale,
+    const cnp.float64_t scale,
     uint_32_64[:, ::1] sv,
     uint_32_64[::1] quasi,
-    float_32_64[:, ::1] sample
+    cnp.float64_t[:, ::1] sample
 ):
     # necessary wrapper to guide Cython for n, num_gen and scale
     cdef uint_32_64 n_ = n
     cdef uint_32_64 num_gen_ = num_gen
-    cdef float_32_64 scale_ = scale
-    draw(n_, num_gen_, dim, scale_, sv, quasi, sample)
+    draw(n_, num_gen_, dim, scale, sv, quasi, sample)
 
 
 @cython.boundscheck(False)
@@ -318,10 +312,10 @@ cdef void draw(
     const uint_32_64 n,
     const uint_32_64 num_gen,
     const int dim,
-    const float_32_64 scale,
+    const cnp.float64_t scale,
     uint_32_64[:, ::1] sv,
     uint_32_64[::1] quasi,
-    float_32_64[:, ::1] sample
+    cnp.float64_t[:, ::1] sample
 ) nogil:
     cdef int j, l
     cdef uint_32_64 num_gen_loc = num_gen

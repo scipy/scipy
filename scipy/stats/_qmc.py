@@ -1223,10 +1223,9 @@ class Sobol(QMCEngine):
     bits : int, optional
         Number of bits of the generator. Control the maximum number of points
         that can be generated, which is ``2**bits``. Maximal value is 64.
-        It also conditions the return dtype to be either ``np.float32`` (for
-        ``0 <= bits <= 32``) or ``np.float64``.
-        Default is None, which for backward compatibility, corresponds to 30
-        and the return dtype is ``np.float64``.
+        It does not correspond to the return type, which is always
+        ``np.float64`` to prevent points to repeat themselves.
+        Default is None, which for backward compatibility, corresponds to 30.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1340,18 +1339,14 @@ class Sobol(QMCEngine):
 
         self.bits = bits
         self.dtype_i: type
-        self.dtype_f: type
 
         if self.bits is None:
             self.bits = 30
-            self.dtype_f = np.float64
 
         if self.bits <= 32:
             self.dtype_i = np.uint32
-            self.dtype_f = np.float32
         elif 32 < self.bits <= 64:
             self.dtype_i = np.uint64
-            self.dtype_f = np.float64
         else:
             raise ValueError("Maximum supported 'bits' is 64")
 
@@ -1374,6 +1369,8 @@ class Sobol(QMCEngine):
         self._scale = 1.0 / 2 ** self.bits
 
         self._first_point = (self._quasi * self._scale).reshape(1, -1)
+        # explicit casting to float64
+        self._first_point = self._first_point.astype(np.float64)
 
     def _scramble(self) -> None:
         """Scramble the sequence using LMS+shift."""
@@ -1406,7 +1403,7 @@ class Sobol(QMCEngine):
             Sobol' sample.
 
         """
-        sample: np.ndarray = np.empty((n, self.d), dtype=self.dtype_f)
+        sample: np.ndarray = np.empty((n, self.d), dtype=np.float64)
 
         if n == 0:
             return sample
