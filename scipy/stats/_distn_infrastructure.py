@@ -1261,7 +1261,7 @@ class rv_generic:
         .. deprecated:: 1.9.0
            Parameter `n` is replaced by parameter `order` to avoid name
            collisions with the shape parameter `n` of several distributions.
-           Parameter `n` will be removed in the second release after 1.9.0.
+           Parameter `n` will be removed in SciPy 1.11.0.
 
         Parameters
         ----------
@@ -1530,8 +1530,7 @@ class rv_generic:
         .. deprecated:: 1.9.0
            Parameter `alpha` is replaced by parameter `confidence` to avoid
            name collisions with the shape parameter `alpha` of some
-           distributions. Parameter `alpha` will be removed in the second
-           release after 1.9.0.
+           distributions. Parameter `alpha` will be removed in SciPy 1.11.0.
 
         Parameters
         ----------

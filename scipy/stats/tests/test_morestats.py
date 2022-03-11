@@ -22,9 +22,9 @@ from scipy.stats._binomtest import _binary_search_for_binom_tst
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
 try:
-    import matplotlib  # type: ignore[import]
+    import matplotlib
     matplotlib.rcParams['backend'] = 'Agg'
-    import matplotlib.pyplot as plt  # type: ignore[import]
+    import matplotlib.pyplot as plt
     have_matplotlib = True
 except Exception:
     have_matplotlib = False

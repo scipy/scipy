@@ -5942,40 +5942,57 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
     Examples
     --------
+    Suppose we wish to test the null hypothesis that the mean of a population
+    is equal to 0.5. We choose a confidence level of 99%; that is, we will
+    reject the null hypothesis in favor of the alternative if the p-value is
+    less than 0.01.
+
+    When testing random variates from the standard uniform distribution, which
+    has a mean of 0.5, we expect the data to be consistent with the null
+    hypothesis most of the time.
+
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
-    >>> rvs = stats.norm.rvs(loc=5, scale=10, size=(50, 2), random_state=rng)
+    >>> rvs = stats.uniform.rvs(size=50, random_state=rng)
+    >>> stats.ttest_1samp(rvs, popmean=0.5)
+    Ttest_1sampResult(statistic=2.456308468440, pvalue=0.017628209047638)
 
-    Test if mean of random sample is equal to true mean, and different mean.
-    We reject the null hypothesis in the second case and don't reject it in
-    the first case.
+    As expected, the p-value of 0.017 is not below our threshold of 0.01, so
+    we cannot reject the null hypothesis.
 
-    >>> stats.ttest_1samp(rvs, 5.0)
-    Ttest_1sampResult(statistic=array([-2.09794637, -1.75977004]), pvalue=array([0.04108952, 0.08468867]))
-    >>> stats.ttest_1samp(rvs, 0.0)
-    Ttest_1sampResult(statistic=array([1.64495065, 1.62095307]), pvalue=array([0.10638103, 0.11144602]))
+    When testing data from the standard *normal* distribution, which has a mean
+    of 0, we would expect the null hypothesis to be rejected.
 
-    Examples using axis and non-scalar dimension for population mean.
+    >>> rvs = stats.norm.rvs(size=50, random_state=rng)
+    >>> stats.ttest_1samp(rvs, popmean=0.5)
+    Ttest_1sampResult(statistic=-7.433605518875, pvalue=1.416760157221e-09)
 
-    >>> result = stats.ttest_1samp(rvs, [5.0, 0.0])
-    >>> result.statistic
-    array([-2.09794637,  1.62095307])
-    >>> result.pvalue
-    array([0.04108952, 0.11144602])
+    Indeed, the p-value is lower than our threshold of 0.01, so we reject the
+    null hypothesis in favor of the default "two-sided" alternative: the mean
+    of the population is *not* equal to 0.5.
 
-    >>> result = stats.ttest_1samp(rvs.T, [5.0, 0.0], axis=1)
-    >>> result.statistic
-    array([-2.09794637,  1.62095307])
-    >>> result.pvalue
-    array([0.04108952, 0.11144602])
+    However, suppose we were to test the null hypothesis against the
+    one-sided alternative that the mean of the population is *greater* than
+    0.5. Since the mean of the standard normal is less than 0.5, we would not
+    expect the null hypothesis to be rejected.
 
-    >>> result = stats.ttest_1samp(rvs, [[5.0], [0.0]])
-    >>> result.statistic
-    array([[-2.09794637, -1.75977004],
-           [ 1.64495065,  1.62095307]])
-    >>> result.pvalue
-    array([[0.04108952, 0.08468867],
-           [0.10638103, 0.11144602]])
+    >>> stats.ttest_1samp(rvs, popmean=0.5, alternative='greater')
+    Ttest_1sampResult(statistic=-7.433605518875, pvalue=0.99999999929)
+
+    Unsurprisingly, with a p-value greater than our threshold, we would not
+    reject the null hypothesis.
+
+    Note that when working with a confidence level of 99%, a true null
+    hypothesis will be rejected approximately 1% of the time.
+
+    >>> rvs = stats.uniform.rvs(size=(100, 50), random_state=rng)
+    >>> res = stats.ttest_1samp(rvs, popmean=0.5, axis=1)
+    >>> np.sum(res.pvalue < 0.01)
+    1
+
+    Indeed, even though all 100 samples above were drawn from the standard
+    uniform distribution, which *does* have a population mean of 0.5, we would
+    mistakenly reject the null hypothesis for one of them.
 
     """
     a, axis = _chk_asarray(a, axis)
