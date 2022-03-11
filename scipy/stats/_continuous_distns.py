@@ -5866,18 +5866,25 @@ class ncx2_gen(rv_continuous):
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_ncx2_cdf, f2=chi2.cdf)
+        return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf, f2=chi2.cdf)
 
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (q, df, nc), f=sc.chndtrix, f2=chi2.ppf)
+        return _lazywhere(cond, (q, df, nc), f=_boost._ncx2_ppf, f2=chi2.ppf)
+
+    def _sf(self, x, df, nc):
+        return _boost._ncx2_sf(x, df, nc)
+
+    def _isf(self, x, df, nc):
+        return _boost._ncx2_isf(x, df, nc)
 
     def _stats(self, df, nc):
-        val = df + 2.0*nc
-        return (df + nc,
-                2*val,
-                np.sqrt(8)*(val+nc)/val**1.5,
-                12.0*(val+2*nc)/val**2.0)
+        return (
+            _boost._ncx2_mean(df, nc),
+            _boost._ncx2_variance(df, nc),
+            _boost._ncx2_skewness(df, nc),
+            _boost._ncx2_kurtosis_excess(df, nc),
+        )
 
 
 ncx2 = ncx2_gen(a=0.0, name='ncx2')
