@@ -20,17 +20,69 @@ doit interface is better suited for authring the development tasks.
 import sys
 import inspect
 
-from doit.cmd_base import ModuleTaskLoader
+from doit.cmd_base import ModuleTaskLoader, get_loader
 from doit.doit_cmd import DoitMain
+from doit.cmdparse import DefaultUpdate, CmdParse, CmdParseError
+from doit.exceptions import InvalidDodoFile, InvalidCommand, InvalidTask
 import click
+from click.globals import push_context
 
-def run_doit_task(task_name):
-    def callback():
-        loader = ModuleTaskLoader(globals())
-        doit_main = DoitMain(loader, extra_config={'GLOBAL': {'verbosity': 2}})
-        sys.exit(doit_main.run([task_name]))
+class DoitMainAPI(DoitMain):
+    """add new method to run tasks with parsed command line"""
+
+    def run_tasks(self, task):
+        """
+        :params task: str - task name
+        """
+
+        # get list of available commands
+        sub_cmds = self.get_cmds()
+        task_loader = get_loader(self.config, self.task_loader, sub_cmds)
+
+        # execute command
+        cmd_name = 'run'
+        command = sub_cmds.get_plugin(cmd_name)(
+            task_loader=task_loader,
+            config=self.config,
+            bin_name=self.BIN_NAME,
+            cmds=sub_cmds,
+            opt_vals={},
+            )
+
+        try:
+            cmd_opt = CmdParse(command.get_options())
+            params, _ = cmd_opt.parse([])
+            args = [task]
+            command.execute(params, args)
+        except (CmdParseError, InvalidDodoFile,
+                InvalidCommand, InvalidTask) as err:
+            if isinstance(err, InvalidCommand):
+                err.cmd_used = cmd_name
+                err.bin_name = self.BIN_NAME
+            raise err
+
+
+def run_doit_task(task_name, **kwargs):
+    """:param kwargs: contain task_opts"""
+    loader = ModuleTaskLoader(globals())
+    loader.task_opts = {task_name: kwargs}
+    doit_main = DoitMainAPI(loader, extra_config={'GLOBAL': {'verbosity': 2}})
+    return doit_main.run_tasks(task_name)
+
+def doit_task_callback(task_name):
+    def callback(**kwargs):
+        sys.exit(run_doit_task(task_name, **kwargs))
     return callback
 
+
+def param_doit2click(task_param: dict):
+    """converts a doit TaskParam to Click.Parameter"""
+    param_decls = [task_param['name']]
+    if 'long' in task_param:
+        param_decls.append(f"--{task_param['long']}")
+    if 'short' in task_param:
+        param_decls.append(f"-{task_param['short']}")
+    return click.Option(param_decls, default=task_param['default'], help=task_param.get('help'))
 
 class ClickDoit(click.Group):
     """
@@ -43,7 +95,23 @@ class ClickDoit(click.Group):
             task_name = creator.__name__[5:] # 5 is len('task_')
             cmd_name = name if name else task_name
             cmd_help = inspect.getdoc(creator)
-            cmd = click.Command(name=cmd_name, callback=run_doit_task(task_name), help=cmd_help)
+            task_params = getattr(creator, '_task_creator_params', None)
+
+            # convert doit task-params to click params
+            params = []
+            # if param is already define in group, do not add again
+            group_options = set(par.name for par in self.params)
+            if task_params:
+                for tp in task_params:
+                    if tp['name'] in group_options:
+                        continue
+                    params.append(param_doit2click(tp))
+            cmd = click.Command(
+                name=cmd_name,
+                callback=doit_task_callback(task_name),
+                help=cmd_help,
+                params=params,
+            )
             self.add_command(cmd)
             return creator # return original task_creator to be used by doit itself
         return decorator
@@ -60,16 +128,43 @@ import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from doit import task_params
+
 # keep compatibility and re-use dev.py code
 import dev as dev_module
 
+opt_build_dir = {
+    'name': 'build_dir',
+    'long': 'build-dir',
+    'default': 'build',
+    'help': "Relative path to build directory. Default is 'build'",
+}
+
+opt_install_prefix = {
+    'name': 'install_prefix',
+    'long': 'install-prefix',
+    'default': None,
+    'help': "Relative path to the install directory. Default is <build-dir>-install.",
+}
+
+
 # execute tasks through click based CLI
-cli = ClickDoit()
+@click.group(cls=ClickDoit)
+@click.option('--build-dir', default='build', help=opt_build_dir['help'])
+@click.option('--install-prefix', default=None, help=opt_install_prefix['help'])
+@click.pass_context
+def cli(ctx, build_dir, install_prefix):
+    ctx.ensure_object(dict)
+    ctx.obj['build_dir'] = build_dir
+    ctx.obj['install_prefix'] = install_prefix
+
 
 @dataclass
 class PathArgs:
+    """PathArgs are shared by build & all other tasks that used built/installed project"""
     build_dir: str = 'build'
     install_prefix: str = None
+    werror: str = None # Treat warnings as errors
 
 def set_installed(args: PathArgs):
     """set dev_module.PATH_INSTALLED
@@ -98,22 +193,29 @@ class BuildArgs(PathArgs):
     win_cp_openblas: bool = False
 
 
+
 @cli.task_as_cmd()
-def task_build():
+@click.pass_obj
+@task_params([opt_build_dir, opt_install_prefix])
+def task_build(ctx_obj, build_dir, install_prefix):
     """build & install package on path"""
-    args = BuildArgs()
+    args = BuildArgs(build_dir=build_dir, install_prefix=install_prefix)
+    args.__dict__.update(**ctx_obj)
+
+    # base = Path('scipy')
+    # files = [str(f) for f in base.glob('**/*.py')]
     return {
         'actions': [
             (set_installed, (args,)),
             (dev_module.build_project, (args,)),
         ],
+        # 'file_dep': files,
     }
 
 
 ##### Test ####
 
 PROJECT_MODULE = "scipy"
-PROJECT_ROOT_FILES = ['scipy', 'LICENSE.txt', 'meson.build']
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 
@@ -174,6 +276,8 @@ def scipy_tests(args: TestArgs):
     else:
         tests = None
 
+    print('Testsssss', tests)
+    return
 
     # FIXME: changing CWD is not a good practice and might messed up with other tasks
     cwd = os.getcwd()
@@ -194,15 +298,78 @@ def scipy_tests(args: TestArgs):
 
 
 @cli.task_as_cmd()
-def task_test():
-    args = TestArgs()
+@click.pass_obj
+@task_params([
+    opt_build_dir, opt_install_prefix,
+    {'name': 'submodule', 'long': 'submodule', 'short': 's', 'default': None,
+     'help': 'Submodule whose tests to run (cluster, constants, ...)',
+    },
+])
+def task_test(ctx_obj, submodule=None, **kwargs):
+    """run unit-tests"""
+    args = TestArgs(submodule=submodule, **kwargs)
+    args.__dict__.update(**ctx_obj)
     return {
         'actions': [
             (set_installed, (args,)),
             (scipy_tests, (args,)),
         ],
         'verbosity': 2,
+        'task_dep': ['build'],
     }
+
+
+#####################
+# Example of click command that does not use doit at all
+@cli.command()
+def pep8():
+    """pep8 & lint (not a doit task)"""
+    import os
+    # Lint the source using the configuration in tox.ini.
+    os.system("flake8 scipy benchmarks/benchmarks")
+    # Lint just the diff since branching off of main using a
+    # stricter configuration.
+    lint_diff = os.path.join(ROOT_DIR, 'tools', 'lint_diff.py')
+    os.system(lint_diff)
+
+
+###################
+## Example of task / click command being defined separately
+
+@task_params([{'name': 'output_file', 'long': 'output-file', 'default': None,
+               'help': 'Redirect report to a file'}])
+def task_flake8(output_file):
+    """Perform pep8 check with flake8."""
+    opts = ''
+    if output_file:
+        opts += f'--output-file={output_file}'
+    return {
+        'actions': [f"flake8 {opts} scipy benchmarks/benchmarks"],
+    }
+
+@cli.command()
+@click.option('output-file', default=None, help= 'Redirect report to a file')
+def flake8(output_file):
+    """Perform pep8 check with flake8."""
+    opts = {'outfile': output_file}
+    sys.exit(run_doit_task('flake8', opts))
+
+
+##################
+# DRY exposing simple task as command
+
+@cli.task_as_cmd()
+@task_params([{'name': 'output_file', 'long': 'output-file', 'default': None,
+               'help': 'Redirect report to a file'}])
+def task_flake(output_file):
+    """Perform pep8 check with flake8."""
+    opts = ''
+    if output_file:
+        opts += f'--output-file={output_file}'
+    return {
+        'actions': [f"flake8 {opts} scipy benchmarks/benchmarks"],
+    }
+
 
 # def task_bench():
 #     pass
@@ -211,5 +378,16 @@ def task_test():
 #     pass
 
 
+
+# build using dev.py command line
+# def task_builddev():
+#     return {
+#         'actions': ['python dev.py --build-only'],
+#     }
+
+
 if __name__ == '__main__':
     cli()
+else:
+    # make sure click.pass_obj decorator still works when running with plain doit
+    push_context(click.core.Context(cli, obj={}))
