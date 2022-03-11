@@ -5513,8 +5513,8 @@ class mielke_gen(rv_continuous):
     """
     def _shape_info(self):
         ik = _ShapeInfo("k", False, (0, np.inf), (False, False))
-        is = _ShapeInfo("s", False, (0, np.inf), (False, False))
-        return [ik, is]
+        i_s = _ShapeInfo("s", False, (0, np.inf), (False, False))
+        return [ik, i_s]
 
     def _pdf(self, x, k, s):
         return k*x**(k-1.0) / (1.0+x**s)**(1.0+k*1.0/s)
