@@ -964,5 +964,6 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     np.testing.assert_array_equal(res2, res)
     np.testing.assert_array_equal(res3, res)
     np.testing.assert_array_equal(res4, res)
-    # _no_deco mean returns masked array, last element was masked
-    np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
+    if weighted_fun_name not in {'pmean'}:
+        # _no_deco mean returns masked array, last element was masked
+        np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
