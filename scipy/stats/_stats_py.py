@@ -476,13 +476,20 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
 
     Examples
     --------
-    >>> from scipy.stats import pmean
+    >>> from scipy.stats import pmean, hmean
     >>> pmean([1, 4], 1.3)
     2.639372938300652
     >>> pmean([1, 2, 3, 4, 5, 6, 7], 1.3)
     4.157111214492084
     >>> pmean([1, 4, 7], -2, weights=[3, 1, 3])
     1.4969684896631954
+
+    For p=-1, power mean is equal to harmonic mean:
+
+    >>> pmean([1, 4, 7], -1, weights=[3, 1, 3])
+    1.9029126213592233
+    >>> hmean([1, 4, 7], weights=[3, 1, 3])
+    1.9029126213592233
 
     """
     if not isinstance(p, (int, float)):
