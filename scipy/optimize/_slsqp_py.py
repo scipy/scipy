@@ -468,18 +468,14 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
 
         majiter_prev = int(majiter)
 
-    # store the output because another call to slsqp could change it
-    end_x = np.copy(x)
-    end_g = np.copy(g)
-    end_mode = np.copy(mode)
-    end_majiter = np.copy(majiter)
-
-    # one last call to force update kkt multipliers
-    # this is the reason we just saved the exit mode.
-    slsqp(m, meq, x, xl, xu, fx, c, g, a, acc, majiter, mode, w, jw,
-          alpha, f0, gs, h1, h2, h3, h4, t, t0, tol,
-          iexact, incons, ireset, itermx, line,
-          n1, n2, n3)
+    # obtain kkt multipliers from internals of SLSQP.
+    # Alternatively SLSQP needs to be called again to update the internals
+    # of the working array, w, whose first m entries are the multipliers.
+    im = 1
+    il = im + la
+    ix = il + (n1*n)//2 + 1
+    ir = ix + n - 1
+    _kkt_mult = np.abs(w[ir: ir + m])
 
     # KKT multipliers
     w_ind = 0
@@ -489,24 +485,24 @@ def _minimize_slsqp(func, x0, args=(), jac=None, bounds=None,
         kkt = []
 
         for dim in cv:
-            kkt += [w[w_ind:(w_ind + dim)]]
+            kkt += [_kkt_mult[w_ind:(w_ind + dim)]]
             w_ind += dim
 
         kkt_multiplier[_t] = kkt
 
     # Optimization loop complete. Print status if requested
     if iprint >= 1:
-        print(f"{exit_modes[int(end_mode)]}    (Exit mode {end_mode})")
+        print(f"{exit_modes[int(mode)]}    (Exit mode {mode})")
         print("            Current function value:", fx)
-        print("            Iterations:", end_majiter)
+        print("            Iterations:", majiter)
         print("            Function evaluations:", sf.nfev)
         print("            Gradient evaluations:", sf.ngev)
 
-    return OptimizeResult(x=end_x, fun=fx, jac=end_g[:-1],
-                          nit=int(end_majiter),
-                          nfev=sf.nfev, njev=sf.ngev, status=int(end_mode),
-                          message=exit_modes[int(end_mode)],
-                          success=(end_mode == 0),
+    return OptimizeResult(x=x, fun=fx, jac=g[:-1],
+                          nit=int(majiter),
+                          nfev=sf.nfev, njev=sf.ngev, status=int(mode),
+                          message=exit_modes[int(mode)],
+                          success=(mode == 0),
                           kkt=kkt_multiplier)
 
 
