@@ -5962,7 +5962,8 @@ class ncf_gen(rv_continuous):
         mu = _boost._ncf_mean(dfn, dfd, nc)
         mu2 = _boost._ncf_variance(dfn, dfd, nc)
         g1 = _boost._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
-        g2 = _boost._ncf_kurtosis_excess(dfn, dfd, nc) if 'k' in moments else None
+        g2 = _boost._ncf_kurtosis_excess(
+            dfn, dfd, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
 
