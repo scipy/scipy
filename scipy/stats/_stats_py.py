@@ -405,7 +405,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
         result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
-def pmean(a, p, axis=0, dtype=None, weights=None):
+def pmean(a, p, *, axis=0, dtype=None, weights=None):
     r"""Calculate the weighted power mean along the specified axis.
 
     The weighted power mean of the array :math:`a_i` associated to weights
