@@ -931,23 +931,34 @@ def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     with np.testing.suppress_warnings() as sup:
         message = 'invalid value encountered'
         sup.filter(RuntimeWarning, message)
-        res = weighted_fun(a_nans, weights=b_nans,
-                           nan_policy='omit', axis=axis)
-        res1 = weighted_fun(a_masked1, weights=b_masked1,
-                            nan_policy='omit', axis=axis)
-        res2 = weighted_fun(a_masked2, weights=b_masked2,
-                            nan_policy='omit', axis=axis)
-        res3 = weighted_fun(a_masked3, weights=b_masked3,
-                            nan_policy='raise', axis=axis)
-        res4 = weighted_fun(a_masked3, weights=b_masked3,
-                            nan_policy='propagate', axis=axis)
+        if weighted_fun_name not in {'pmean'}:
+            res = weighted_fun(a_nans, weights=b_nans,
+                               nan_policy='omit', axis=axis)
+            res1 = weighted_fun(a_masked1, weights=b_masked1,
+                                nan_policy='omit', axis=axis)
+            res2 = weighted_fun(a_masked2, weights=b_masked2,
+                                nan_policy='omit', axis=axis)
+            res3 = weighted_fun(a_masked3, weights=b_masked3,
+                                nan_policy='raise', axis=axis)
+            res4 = weighted_fun(a_masked3, weights=b_masked3,
+                                nan_policy='propagate', axis=axis)
         # Would test with a_masked3/b_masked3, but there is a bug in np.average
         # that causes a bug in _no_deco mean with masked weights. Would use
         # np.ma.average, but that causes other problems. See numpy/numpy#7330.
-        if weighted_fun_name not in {'pmean'}:
             weighted_fun_ma = getattr(stats.mstats, weighted_fun_name)
             res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
                                    axis=axis, _no_deco=True)
+        else:
+            res = weighted_fun(a_nans, 0.42, weights=b_nans,
+                               nan_policy='omit', axis=axis)
+            res1 = weighted_fun(a_masked1, 0.42, weights=b_masked1,
+                                nan_policy='omit', axis=axis)
+            res2 = weighted_fun(a_masked2, 0.42, weights=b_masked2,
+                                nan_policy='omit', axis=axis)
+            res3 = weighted_fun(a_masked3, 0.42, weights=b_masked3,
+                                nan_policy='raise', axis=axis)
+            res4 = weighted_fun(a_masked3, 0.42, weights=b_masked3,
+                                nan_policy='propagate', axis=axis)
 
     np.testing.assert_array_equal(res1, res)
     np.testing.assert_array_equal(res2, res)
