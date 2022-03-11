@@ -27,3 +27,9 @@ from scipy.stats._boost.ncf_ufunc import (
     _ncf_isf, _ncf_mean, _ncf_variance,
     _ncf_skewness, _ncf_kurtosis_excess,
 )
+
+from scipy.stats._boost.ncx2_ufunc import (
+    _ncx2_pdf, _ncx2_cdf, _ncx2_sf, _ncx2_ppf,
+    _ncx2_isf, _ncx2_mean, _ncx2_variance,
+    _ncx2_skewness, _ncx2_kurtosis_excess,
+)
