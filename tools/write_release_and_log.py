@@ -116,7 +116,7 @@ def write_log_task(filename='Changelog'):
         stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     output, error = st.communicate()
     if not st.returncode == 0:
-        print('Release log generation failed with an error: %d please verify the revisions' % st.returncode)
+        raise RuntimeError("%s failed" % str(error))
     else:
         out = st.communicate()[0].decode()
         with open(filename, 'w') as a:
