@@ -5862,7 +5862,10 @@ class ncx2_gen(rv_continuous):
         # ncx2.pdf(x, df, nc) = exp(-(nc+x)/2) * 1/2 * (x/nc)**((df-2)/4)
         #                       * I[(df-2)/2](sqrt(nc*x))
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_ncx2_pdf, f2=chi2.pdf)
+        with warnings.catch_warnings():
+            message = "overflow encountered in _ncx2_pdf"
+            warnings.filterwarnings("ignore", message=message)
+            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_pdf, f2=chi2.pdf)
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
