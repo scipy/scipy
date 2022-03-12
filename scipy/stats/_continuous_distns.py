@@ -5865,7 +5865,8 @@ class ncx2_gen(rv_continuous):
         with warnings.catch_warnings():
             message = "overflow encountered in _ncx2_pdf"
             warnings.filterwarnings("ignore", message=message)
-            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_pdf, f2=chi2.pdf)
+            return _lazywhere(cond, (x, df, nc),
+                              f=_boost._ncx2_pdf, f2=chi2.pdf)
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
