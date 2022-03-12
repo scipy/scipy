@@ -5874,6 +5874,9 @@ class ncx2_gen(rv_continuous):
 
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
+        with warnings.catch_warnings():
+            message = "overflow encountered in _ncx2_ppf"
+            warnings.filterwarnings("ignore", message=message)
         return _lazywhere(cond, (q, df, nc), f=_boost._ncx2_ppf, f2=chi2.ppf)
 
     def _sf(self, x, df, nc):
