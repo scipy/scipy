@@ -1,6 +1,6 @@
 import os
-
 import numpy as np
+import numpy.testing as npt
 from numpy.testing import assert_allclose
 import pytest
 from scipy import stats
@@ -79,7 +79,7 @@ def cases_test_cont_fit():
 
 @pytest.mark.slow
 @pytest.mark.parametrize('distname,arg', cases_test_cont_fit())
-@pytest.mark.parametrize('method', ["MLE", 'MM'])
+@pytest.mark.parametrize('method', ["MLE", "MM"])
 def test_cont_fit(distname, arg, method):
     if distname in failing_fits[method]:
         # Skip failing fits unless overridden
@@ -170,9 +170,11 @@ def cases_test_fit():
                       'randint', 'yulesimon', 'nchypergeom_fisher',
                       'nchypergeom_wallenius'}
     slow_basic_fit = {'binom'}
-    xslow_basic_fit = {'skellam', 'hypergeom', 'zipfian', 'betabinom'}
+    xslow_basic_fit = {'skellam', 'hypergeom', 'zipfian', 'betabinom',
+                       'gausshyper', 'genexpon', 'ksone', 'kstwo',
+                       'studentized_range'}
 
-    for dist in dict(distdiscrete):
+    for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
             reason = "tested separately"
             yield pytest.param(dist, marks=pytest.mark.skip(reason=reason))
@@ -182,6 +184,8 @@ def cases_test_fit():
         elif dist in xslow_basic_fit:
             reason = "too slow (>= 1.0s)"
             yield pytest.param(dist, marks=pytest.mark.xslow(reason=reason))
+        else:
+            yield dist
 
 
 class TestFit:
@@ -335,9 +339,12 @@ class TestFit:
             ref = ref[:-1]
             ref[-1] = np.floor(loc)
             data = dist.rvs(*ref, size=N, random_state=rng)
-            res = stats.fit(dist, data, bounds[:-1], optimizer=self.opt)
+            bounds = bounds[:-1]
         if getattr(dist, 'pdf', False):
             data = dist.rvs(*ref, size=N, random_state=rng)
+
+        with npt.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "overflow encountered")
             res = stats.fit(dist, data, bounds, optimizer=self.opt)
 
         assert_allclose(res.params, ref, **self.tols)
