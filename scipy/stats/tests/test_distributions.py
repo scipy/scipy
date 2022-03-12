@@ -641,6 +641,15 @@ class TestGeom:
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_rvs_9313(self):
+        # previously, RVS were converted to `np.int32` on some platforms,
+        # causing overflow for moderately large integer output (gh-9313).
+        # Check that this is resolved to the extent possible w/ `np.int64`.
+        rng = np.random.default_rng(649496242618848)
+        rvs = stats.geom.rvs(np.exp(-35), size=5, random_state=rng)
+        assert rvs.dtype == np.int64
+        assert np.all(rvs > np.iinfo(np.int32).max)
+
     def test_pmf(self):
         vals = stats.geom.pmf([1, 2, 3], 0.5)
         assert_array_almost_equal(vals, [0.5, 0.25, 0.125])
