@@ -5883,7 +5883,10 @@ class ncx2_gen(rv_continuous):
         return _boost._ncx2_sf(x, df, nc)
 
     def _isf(self, x, df, nc):
-        return _boost._ncx2_isf(x, df, nc)
+        with warnings.catch_warnings():
+            message = "overflow encountered in _ncx2_isf"
+            warnings.filterwarnings("ignore", message=message)
+            return _boost._ncx2_isf(x, df, nc)
 
     def _stats(self, df, nc):
         return (
