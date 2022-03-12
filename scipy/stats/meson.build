@@ -121,7 +121,7 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
     'templated_pyufunc.pxd',  # 6 (S_B)
     'unuran_wrapper.pyx',  # 7 (used in stats/_unuran)
     'ncf_ufunc.pyx',  # 8 (S_B)
-    'ncx2_ufunc.pyx'  # 9 (S_B)
+    'ncx2_ufunc.pyx',  # 9 (S_B)
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
