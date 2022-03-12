@@ -1106,7 +1106,7 @@ class rv_generic:
             if size == ():
                 vals = int(vals)
             else:
-                vals = vals.astype(int)
+                vals = vals.astype(np.int64)
 
         return vals
 
