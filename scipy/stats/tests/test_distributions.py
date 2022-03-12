@@ -647,6 +647,15 @@ class TestGeom:
         assert_(isinstance(val, numpy.ndarray))
         assert_(val.dtype.char in typecodes['AllInteger'])
 
+    def test_rvs_9313(self):
+        # previously, RVS were converted to `np.int32` on some platforms,
+        # causing overflow for moderately large integer output (gh-9313).
+        # Check that this is resolved to the extent possible w/ `np.int64`.
+        rng = np.random.default_rng(649496242618848)
+        rvs = stats.geom.rvs(np.exp(-35), size=5, random_state=rng)
+        assert rvs.dtype == np.int64
+        assert np.all(rvs > np.iinfo(np.int32).max)
+
     def test_pmf(self):
         vals = stats.geom.pmf([1, 2, 3], 0.5)
         assert_array_almost_equal(vals, [0.5, 0.25, 0.125])
@@ -6439,6 +6448,16 @@ def test_ncf_variance():
     # library Boost.
     v = stats.ncf.var(2, 6, 4)
     assert_allclose(v, 42.75, rtol=1e-14)
+
+
+def test_ncf_cdf_spotcheck():
+    # Regression test for gh-15582 testing against values from R/MATLAB
+    # Generate check_val from R or MATLAB as follows:
+    #          R: pf(20, df1 = 6, df2 = 33, ncp = 30.4) = 0.998921
+    #     MATLAB: ncfcdf(20, 6, 33, 30.4) = 0.998921
+    scipy_val = stats.ncf.cdf(20, 6, 33, 30.4)
+    check_val = 0.998921
+    assert_allclose(check_val, np.round(scipy_val, decimals=6))
 
 
 class TestHistogram:
