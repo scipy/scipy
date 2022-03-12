@@ -60,7 +60,7 @@ if use_pythran
       '-Wno-cpp', '-Wno-int-in-bool-context'
     ] + cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
-    dependencies: [py3_dep],
+    dependencies: [py3_dep, xsimd_dep],
     install: true,
     subdir: 'scipy/signal'
   )

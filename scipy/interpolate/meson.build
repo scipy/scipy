@@ -170,7 +170,7 @@ if use_pythran
       Wno_unused_but_set
     ] + cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
-    dependencies: [py3_dep],
+    dependencies: [py3_dep, xsimd_dep],
     install: true,
     subdir: 'scipy/interpolate'
   )

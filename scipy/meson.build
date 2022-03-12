@@ -86,6 +86,7 @@ if use_pythran
     check: true
   ).stdout().strip()
   inc_pythran = include_directories(incdir_pythran)
+  xsimd_dep = dependency('xsimd')
 else
   inc_pythran = []
 endif
