@@ -166,7 +166,7 @@ def test_nnlf_and_related_methods(dist, params):
 
 
 def cases_test_fit():
-    # These three fail
+    # These three fail default test; check separately
     skip_basic_fit = {'argus', 'foldnorm', 'truncweibull_min'}
     # status of 'studentized_range', 'ksone', 'kstwo' unknown; all others pass
     slow_basic_fit = {'burr12', 'johnsonsb', 'bradford', 'fisk', 'mielke',
@@ -184,7 +184,7 @@ def cases_test_fit():
                        'gausshyper', 'genexpon', 'gengamma', 'genhyperbolic',
                        'geninvgauss', 'tukeylambda', 'skellam', 'ncx2',
                        'hypergeom', 'nhypergeom', 'zipfian', 'ncf',
-                       'truncnorm', 'truncweibull_min', 'powerlognorm', 'beta',
+                       'truncnorm', 'powerlognorm', 'beta',
                        'loguniform', 'reciprocal', 'trapezoid', 'nct',
                        'kappa4', 'betabinom', 'exponweib', 'genhalflogistic',
                        'burr', 'triang'}
@@ -201,6 +201,13 @@ def cases_test_fit():
             yield pytest.param(dist, marks=pytest.mark.xslow(reason=reason))
         else:
             yield dist
+
+
+def assert_nllf_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0):
+    nllf1 = dist.nnlf(params1, data)
+    nllf0 = dist.nnlf(params0, data)
+    if not (nllf1 < nllf0):
+        np.testing.assert_allclose(nllf1, nllf0, rtol=rtol, atol=atol)
 
 
 class TestFit:
@@ -362,10 +369,49 @@ class TestFit:
             sup.filter(RuntimeWarning, "overflow encountered")
             res = stats.fit(dist, data, bounds, optimizer=self.opt)
 
-        nllf1 = dist.nnlf(res.params, data)
-        nllf2 = dist.nnlf(ref, data)
-        if not (nllf1 < nllf2):
-            np.testing.assert_allclose(nllf1, nllf2, **self.tols)
+        assert_nllf_less_or_close(dist, data, res.params, ref, **self.tols)
+
+    def test_argus(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
+        N = 1000
+        rng = np.random.default_rng(self.seed)
+        dist = stats.argus
+        shapes = (1., 2., 3.)
+        data = dist.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = {'chi': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
+        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
+
+        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+
+    def test_foldnorm(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
+        N = 1000
+        rng = np.random.default_rng(self.seed)
+        dist = stats.foldnorm
+        shapes = (1.952125337355587, 2., 3.)
+        data = dist.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = {'c': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
+        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
+
+        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+
+    def test_truncweibull_min(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
+        N = 1000
+        rng = np.random.default_rng(self.seed)
+        dist = stats.truncweibull_min
+        shapes = (2.5, 0.25, 1.75, 2., 3.)
+        data = dist.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = [(0.1, 10)]*5
+        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
+
+        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
 
     def test_missing_shape_bounds(self):
         # some distributions have a small domain w.r.t. a parameter, e.g.
