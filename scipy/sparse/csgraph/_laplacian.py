@@ -322,7 +322,7 @@ def _laplace(m, d):
 def _laplace_normed(m, d, nd):
     laplace = _laplace(m, d)
     return (
-        lambda v: nd * laplace(v * nd[:, np.newaxis])
+        lambda v: nd[:, np.newaxis] * laplace(v * nd)
            )
 
 
@@ -337,7 +337,7 @@ def _laplace_sym(m, d):
 def _laplace_normed_sym(m, d, nd):
     laplace_sym = _laplace_sym(m, d)
     return (
-        lambda v: nd * laplace_sym(v * nd[:, np.newaxis])
+        lambda v: nd[:, np.newaxis] * laplace_sym(v * nd)
            )
 
 
