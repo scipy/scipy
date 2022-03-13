@@ -22,9 +22,9 @@ from scipy.stats._binomtest import _binary_search_for_binom_tst
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
 try:
-    import matplotlib  # type: ignore[import]
+    import matplotlib
     matplotlib.rcParams['backend'] = 'Agg'
-    import matplotlib.pyplot as plt  # type: ignore[import]
+    import matplotlib.pyplot as plt
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
@@ -1734,6 +1734,10 @@ class TestBoxcox:
         # Also test that array_like input works
         xt = stats.boxcox(list(x), lmbda=0)
         assert_allclose(xt, np.log(x))
+
+        # test that constant input is accepted; see gh-12225
+        xt = stats.boxcox(np.ones(10), 2)
+        assert_equal(xt, np.zeros(10))
 
     def test_lmbda_None(self):
         # Start from normal rv's, do inverse transform to check that

@@ -5930,29 +5930,26 @@ class ncf_gen(rv_continuous):
     def _rvs(self, dfn, dfd, nc, size=None, random_state=None):
         return random_state.noncentral_f(dfn, dfd, nc, size)
 
-    def _pdf_skip(self, x, dfn, dfd, nc):
+    def _pdf(self, x, dfn, dfd, nc):
         # ncf.pdf(x, df1, df2, nc) = exp(nc/2 + nc*df1*x/(2*(df1*x+df2))) *
         #             df1**(df1/2) * df2**(df2/2) * x**(df1/2-1) *
         #             (df2+df1*x)**(-(df1+df2)/2) *
         #             gamma(df1/2)*gamma(1+df2/2) *
         #             L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2))) /
         #             (B(v1/2, v2/2) * gamma((v1+v2)/2))
-        n1, n2 = dfn, dfd
-        term = -nc/2+nc*n1*x/(2*(n2+n1*x)) + sc.gammaln(n1/2.)+sc.gammaln(1+n2/2.)
-        term -= sc.gammaln((n1+n2)/2.0)
-        Px = np.exp(term)
-        Px *= n1**(n1/2) * n2**(n2/2) * x**(n1/2-1)
-        Px *= (n2+n1*x)**(-(n1+n2)/2)
-        Px *= sc.assoc_laguerre(-nc*n1*x/(2.0*(n2+n1*x)), n2/2, n1/2-1)
-        Px /= sc.beta(n1/2, n2/2)
-        # This function does not have a return.  Drop it for now, the generic
-        # function seems to work OK.
+        return _boost._ncf_pdf(x, dfn, dfd, nc)
 
     def _cdf(self, x, dfn, dfd, nc):
-        return sc.ncfdtr(dfn, dfd, nc, x)
+        return _boost._ncf_cdf(x, dfn, dfd, nc)
 
     def _ppf(self, q, dfn, dfd, nc):
-        return sc.ncfdtri(dfn, dfd, nc, q)
+        return _boost._ncf_ppf(q, dfn, dfd, nc)
+
+    def _sf(self, x, dfn, dfd, nc):
+        return _boost._ncf_sf(x, dfn, dfd, nc)
+
+    def _isf(self, x, dfn, dfd, nc):
+        return _boost._ncf_isf(x, dfn, dfd, nc)
 
     def _munp(self, n, dfn, dfd, nc):
         val = (dfn * 1.0/dfd)**n
@@ -5961,21 +5958,13 @@ class ncf_gen(rv_continuous):
         val *= sc.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
         return val
 
-    def _stats(self, dfn, dfd, nc):
-        # Note: the rv_continuous class ensures that dfn > 0 when this function
-        # is called, so we don't have  to check for division by zero with dfn
-        # in the following.
-        mu_num = dfd * (dfn + nc)
-        mu_den = dfn * (dfd - 2)
-        mu = np.full_like(mu_num, dtype=np.float64, fill_value=np.inf)
-        np.true_divide(mu_num, mu_den, where=dfd > 2, out=mu)
-
-        mu2_num = 2*((dfn + nc)**2 + (dfn + 2*nc)*(dfd - 2))*(dfd/dfn)**2
-        mu2_den = (dfd - 2)**2 * (dfd - 4)
-        mu2 = np.full_like(mu2_num, dtype=np.float64, fill_value=np.inf)
-        np.true_divide(mu2_num, mu2_den, where=dfd > 4, out=mu2)
-
-        return mu, mu2, None, None
+    def _stats(self, dfn, dfd, nc, moments='mv'):
+        mu = _boost._ncf_mean(dfn, dfd, nc)
+        mu2 = _boost._ncf_variance(dfn, dfd, nc)
+        g1 = _boost._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
+        g2 = _boost._ncf_kurtosis_excess(
+            dfn, dfd, nc) if 'k' in moments else None
+        return mu, mu2, g1, g2
 
 
 ncf = ncf_gen(a=0.0, name='ncf')

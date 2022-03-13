@@ -91,6 +91,9 @@ jobs:
         pip install --user git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install -r mypy_requirements.txt
 
+        # Packages that are only needed for their annotations
+        python -m pip install --user types-psutil pybind11 sphinx
+
     - name: Mypy
       run: |
         python -u runtests.py --mypy

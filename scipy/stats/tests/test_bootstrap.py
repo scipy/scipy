@@ -369,6 +369,24 @@ def test_bootstrap_degenerate(method):
     assert_equal(res.standard_error, 0)
 
 
+@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+def test_bootstrap_gh15678(method):
+    # Check that gh-15678 is fixed: when statistic function returned a Python
+    # float, method="BCa" failed when trying to add a dimension to the float
+    rng = np.random.default_rng(354645618886684)
+    dist = stats.norm(loc=2, scale=4)
+    data = dist.rvs(size=100, random_state=rng)
+    data = (data,)
+    res = bootstrap(data, stats.skew, method=method, n_resamples=100,
+                    random_state=np.random.default_rng(9563))
+    # this always worked because np.apply_along_axis returns NumPy data type
+    ref = bootstrap(data, stats.skew, method=method, n_resamples=100,
+                    random_state=np.random.default_rng(9563), vectorized=False)
+    assert_allclose(res.confidence_interval, ref.confidence_interval)
+    assert_allclose(res.standard_error, ref.standard_error)
+    assert isinstance(res.standard_error, np.float64)
+
+
 def test_jackknife_resample():
     shape = 3, 4, 5, 6
     np.random.seed(0)
@@ -472,6 +490,37 @@ def test_vectorize_statistic(axis):
     res1 = statistic(x, y, z, axis=axis)
     res2 = statistic2(x, y, z, axis=axis)
     assert_allclose(res1, res2)
+
+
+@pytest.mark.xslow()
+@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+def test_vector_valued_statistic(method):
+    # Generate 95% confidence interval around MLE of normal distribution
+    # parameters. Repeat 100 times, each time on sample of size 100.
+    # Check that confidence interval contains true parameters ~95 times.
+    # Confidence intervals are estimated and stochastic; a test failure
+    # does not necessarily indicate that something is wrong. More important
+    # than values of `counts` below is that the shapes of the outputs are
+    # correct.
+
+    rng = np.random.default_rng(2196847219)
+    params = 1, 0.5
+    sample = stats.norm.rvs(*params, size=(100, 100), random_state=rng)
+
+    def statistic(data):
+        return stats.norm.fit(data)
+
+    res = bootstrap((sample,), statistic, method=method, axis=-1,
+                    vectorized=False)
+
+    counts = np.sum((res.confidence_interval.low.T < params)
+                    & (res.confidence_interval.high.T > params),
+                    axis=0)
+    assert np.all(counts >= 90)
+    assert np.all(counts <= 100)
+    assert res.confidence_interval.low.shape == (2, 100)
+    assert res.confidence_interval.high.shape == (2, 100)
+    assert res.standard_error.shape == (2, 100)
 
 
 # --- Test Monte Carlo Hypothesis Test --- #

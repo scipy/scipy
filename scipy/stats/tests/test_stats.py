@@ -412,9 +412,11 @@ class TestCorrPearsonr:
     def test_length_two_pos1(self):
         # Inputs with length 2.
         # See https://github.com/scipy/scipy/issues/7730
-        r, p = stats.pearsonr([1, 2], [3, 5])
+        res = stats.pearsonr([1, 2], [3, 5])
+        r, p = res
         assert_equal(r, 1)
         assert_equal(p, 1)
+        assert_equal(res.confidence_interval(), (-1, 1))
 
     def test_length_two_neg2(self):
         # Inputs with length 2.
@@ -423,23 +425,40 @@ class TestCorrPearsonr:
         assert_equal(r, -1)
         assert_equal(p, 1)
 
-    def test_more_basic_examples(self):
+    # Expected values computed with R 3.6.2 cor.test, e.g.
+    # options(digits=16)
+    # x <- c(1, 2, 3, 4)
+    # y <- c(0, 1, 0.5, 1)
+    # cor.test(x, y, method = "pearson", alternative = "g")
+    # correlation coefficient and p-value for alternative='two-sided'
+    # calculated with mpmath agree to 16 digits.
+    @pytest.mark.parametrize('alternative, pval, rlow, rhigh',
+                             [('two-sided',
+                               0.325800137536, -0.814938968841, 0.99230697523),
+                              ('less',
+                               0.8370999312316, -1, 0.985600937290653),
+                              ('greater',
+                               0.1629000687684, -0.6785654158217636, 1)])
+    def test_basic_example(self, alternative, pval, rlow, rhigh):
         x = [1, 2, 3, 4]
         y = [0, 1, 0.5, 1]
-        r, p = stats.pearsonr(x, y)
+        result = stats.pearsonr(x, y, alternative=alternative)
+        assert_allclose(result.statistic, 0.6741998624632421, rtol=1e-12)
+        assert_allclose(result.pvalue, pval, rtol=1e-6)
+        ci = result.confidence_interval()
+        assert_allclose(ci, (rlow, rhigh), rtol=1e-6)
 
-        # The expected values were computed using mpmath with 80 digits
-        # of precision.
-        assert_allclose(r, 0.674199862463242)
-        assert_allclose(p, 0.325800137536758)
-
+    def test_length3_r_exactly_negative_one(self):
         x = [1, 2, 3]
         y = [5, -4, -13]
-        r, p = stats.pearsonr(x, y)
+        res = stats.pearsonr(x, y)
 
         # The expected r and p are exact.
+        r, p = res
         assert_allclose(r, -1.0)
         assert_allclose(p, 0.0, atol=1e-7)
+
+        assert_equal(res.confidence_interval(), (-1, 1))
 
     def test_unequal_lengths(self):
         x = [1, 2, 3]
@@ -2620,78 +2639,6 @@ class TestMedianAbsDeviation:
     def test_center_not_callable(self):
         with pytest.raises(TypeError, match='callable'):
             stats.median_abs_deviation([1, 2, 3, 5], center=99)
-
-
-class TestMedianAbsoluteDeviation:
-    def setup_class(self):
-        self.dat_nan = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
-                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
-                3.7, 3.7, 3.77, 5.28, np.nan])
-        self.dat = np.array([2.20, 2.20, 2.4, 2.4, 2.5, 2.7, 2.8, 2.9, 3.03,
-                3.03, 3.10, 3.37, 3.4, 3.4, 3.4, 3.5, 3.6, 3.7, 3.7,
-                3.7, 3.7, 3.77, 5.28, 28.95])
-
-    def test_mad_empty(self):
-        dat = []
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            mad = stats.median_absolute_deviation(dat)
-        assert_equal(mad, np.nan)
-
-    def test_mad_nan_shape1(self):
-        z = np.ones((3, 0))
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            mad_axis0 = stats.median_absolute_deviation(z, axis=0)
-            mad_axis1 = stats.median_absolute_deviation(z, axis=1)
-        assert_equal(mad_axis0, np.nan)
-        assert_equal(mad_axis1, np.array([np.nan, np.nan, np.nan]))
-        assert_equal(mad_axis1.shape, (3,))
-
-    def test_mad_nan_shape2(self):
-        z = np.ones((3, 0, 2))
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            mad_axis0 = stats.median_absolute_deviation(z, axis=0)
-            mad_axis1 = stats.median_absolute_deviation(z, axis=1)
-            mad_axis2 = stats.median_absolute_deviation(z, axis=2)
-        assert_equal(mad_axis0, np.nan)
-        assert_equal(mad_axis1, np.array([[np.nan, np.nan],
-                                          [np.nan, np.nan],
-                                          [np.nan, np.nan]]))
-        assert_equal(mad_axis1.shape, (3, 2))
-        assert_equal(mad_axis2, np.nan)
-
-    def test_mad_nan_propagate(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            mad = stats.median_absolute_deviation(self.dat_nan,
-                                                  nan_policy='propagate')
-        assert_equal(mad, np.nan)
-
-    def test_mad_nan_raise(self):
-        with assert_raises(ValueError):
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning)
-                stats.median_absolute_deviation(self.dat_nan,
-                                                nan_policy='raise')
-
-    def test_mad_scale_default(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            mad = stats.median_absolute_deviation(self.dat, scale=1.0)
-            mad_float = stats.median_absolute_deviation(self.dat, scale=1.0)
-        assert_almost_equal(mad, 0.355)
-        assert_almost_equal(mad, mad_float)
-
-    def test_mad_scale_normal(self):
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            mad = stats.median_absolute_deviation(self.dat, scale="normal")
-            scale = 1.4826022185056018
-            mad_float = stats.median_absolute_deviation(self.dat, scale=scale)
-        assert_almost_equal(mad, 0.526323787)
-        assert_almost_equal(mad, mad_float)
 
 
 def _check_warnings(warn_list, expected_type, expected_len):
