@@ -234,7 +234,6 @@ class SpecialMatrices(Benchmark):
         sl.toeplitz(self.x)
 
 
-
 class GetFuncs(Benchmark):
     def setup(self):
         self.x = np.eye(1)
