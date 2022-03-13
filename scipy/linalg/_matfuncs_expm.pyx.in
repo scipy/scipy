@@ -16,6 +16,9 @@ from scipy.linalg.cython_blas cimport (sgemm, saxpy, sscal, scopy, sgemv,
 
 __all__ = ['pick_pade_structure', 'pade_UV_calc']
 
+# See GH-14813
+cnp.import_array()
+
 ctypedef fused lapack_t:
     float
     double
