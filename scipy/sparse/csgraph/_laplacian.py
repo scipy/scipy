@@ -89,12 +89,12 @@ def laplacian(
     is commonly used for spectral data embedding and clustering.
 
     The constructed Laplacian doubles the memory use if ``copy=True`` and
-    `form=`array`` which is the default.
-    Choosing ``copy=False`` has no effect unless `form=`array``
+    ``form="array"`` which is the default.
+    Choosing ``copy=False`` has no effect unless ``form="array"``
     or the matrix is sparse in the ``coo`` format, or dense array, except
     for the integer input with ``normed=True`` that forces the float output.
 
-    Sparse input is reformatted into ``coo`` if `form=`array``,
+    Sparse input is reformatted into ``coo`` if ``form="array"``,
     which is the default.
 
     If the input adjacency matrix is not symmetic, the Laplacian is
