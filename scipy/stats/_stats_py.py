@@ -63,7 +63,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
            'sem', 'zmap', 'zscore', 'gzscore', 'iqr', 'gstd',
-           'median_absolute_deviation', 'median_abs_deviation',
+           'median_abs_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
            'f_oneway', 'F_onewayConstantInputWarning',
            'F_onewayBadInputSizesWarning',
@@ -3121,127 +3121,6 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
 
     return mad / scale
 
-
-# Keep the top newline so that the message does not show up on the stats page
-_median_absolute_deviation_deprec_msg = """
-To preserve the existing default behavior, use
-`scipy.stats.median_abs_deviation(..., scale=1/1.4826)`.
-The value 1.4826 is not numerically precise for scaling
-with a normal distribution. For a numerically precise value, use
-`scipy.stats.median_abs_deviation(..., scale='normal')`.
-"""
-
-
-# Due to numpy/gh-16349 we need to unindent the entire docstring
-@np.deprecate(old_name='median_absolute_deviation',
-              new_name='median_abs_deviation',
-              message=_median_absolute_deviation_deprec_msg)
-def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
-                              nan_policy='propagate'):
-    r"""
-Compute the median absolute deviation of the data along the given axis.
-
-The median absolute deviation (MAD, [1]_) computes the median over the
-absolute deviations from the median. It is a measure of dispersion
-similar to the standard deviation but more robust to outliers [2]_.
-
-The MAD of an empty array is ``np.nan``.
-
-.. versionadded:: 1.3.0
-
-Parameters
-----------
-x : array_like
-    Input array or object that can be converted to an array.
-axis : int or None, optional
-    Axis along which the range is computed. Default is 0. If None, compute
-    the MAD over the entire array.
-center : callable, optional
-    A function that will return the central value. The default is to use
-    np.median. Any user defined function used will need to have the function
-    signature ``func(arr, axis)``.
-scale : int, optional
-    The scaling factor applied to the MAD. The default scale (1.4826)
-    ensures consistency with the standard deviation for normally distributed
-    data.
-nan_policy : {'propagate', 'raise', 'omit'}, optional
-    Defines how to handle when input contains nan.
-    The following options are available (default is 'propagate'):
-
-    * 'propagate': returns nan
-    * 'raise': throws an error
-    * 'omit': performs the calculations ignoring nan values
-
-Returns
--------
-mad : scalar or ndarray
-    If ``axis=None``, a scalar is returned. If the input contains
-    integers or floats of smaller precision than ``np.float64``, then the
-    output data-type is ``np.float64``. Otherwise, the output data-type is
-    the same as that of the input.
-
-See Also
---------
-numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
-scipy.stats.tstd, scipy.stats.tvar
-
-Notes
------
-The `center` argument only affects the calculation of the central value
-around which the MAD is calculated. That is, passing in ``center=np.mean``
-will calculate the MAD around the mean - it will not calculate the *mean*
-absolute deviation.
-
-References
-----------
-.. [1] "Median absolute deviation",
-       https://en.wikipedia.org/wiki/Median_absolute_deviation
-.. [2] "Robust measures of scale",
-       https://en.wikipedia.org/wiki/Robust_measures_of_scale
-
-Examples
---------
-When comparing the behavior of `median_absolute_deviation` with ``np.std``,
-the latter is affected when we change a single value of an array to have an
-outlier value while the MAD hardly changes:
-
->>> from scipy import stats
->>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
->>> x.std()
-0.9973906394005013
->>> stats.median_absolute_deviation(x)
-1.2280762773108278
->>> x[0] = 345.6
->>> x.std()
-34.42304872314415
->>> stats.median_absolute_deviation(x)
-1.2340335571164334
-
-Axis handling example:
-
->>> x = np.array([[10, 7, 4], [3, 2, 1]])
->>> x
-array([[10,  7,  4],
-       [ 3,  2,  1]])
->>> stats.median_absolute_deviation(x)
-array([5.1891, 3.7065, 2.2239])
->>> stats.median_absolute_deviation(x, axis=None)
-2.9652
-
-"""
-    if isinstance(scale, str):
-        if scale.lower() == 'raw':
-            warnings.warn(
-                "use of scale='raw' is deprecated, use scale=1.0 instead",
-                np.VisibleDeprecationWarning
-            )
-            scale = 1.0
-
-    if not isinstance(scale, str):
-        scale = 1 / scale
-
-    return median_abs_deviation(x, axis=axis, center=center, scale=scale,
-                                nan_policy=nan_policy)
 
 #####################################
 #         TRIMMING FUNCTIONS        #
