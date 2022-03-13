@@ -97,9 +97,8 @@ def laplacian(
     Sparse input is reformatted into ``coo`` if `form=`array``,
     which is the default.
 
-    If the input adjacency matrix is not symmetic, the Laplacian is also
-    non-symmetric and may need to be symmetrized; e.g., ``lap += lap.T``,
-    before the eigen-decomposition.
+    If the input adjacency matrix is not symmetic, the Laplacian is
+    also non-symmetric unless ``symmetrized=True`` is used.
 
     Diagonal entries of the input adjacency matrix are ignored and
     replaced with zeros for the purpose of normalization where ``normed=True``.
@@ -117,46 +116,140 @@ def laplacian(
     Examples
     --------
     >>> from scipy.sparse import csgraph
-    >>> G = np.arange(5) * np.arange(5)[:, np.newaxis]
+
+    Our first illustration is the symmetric graph
+    >>> G = np.arange(4) * np.arange(4)[:, np.newaxis]
     >>> G
-    array([[ 0,  0,  0,  0,  0],
-           [ 0,  1,  2,  3,  4],
-           [ 0,  2,  4,  6,  8],
-           [ 0,  3,  6,  9, 12],
-           [ 0,  4,  8, 12, 16]])
+    array([[0, 0, 0, 0],
+           [0, 1, 2, 3],
+           [0, 2, 4, 6],
+           [0, 3, 6, 9]])
+    and its symmetric Laplacian matrix
     >>> csgraph.laplacian(G)
-    array([[  0,   0,   0,   0,   0],
-           [  0,   9,  -2,  -3,  -4],
-           [  0,  -2,  16,  -6,  -8],
-           [  0,  -3,  -6,  21, -12],
-           [  0,  -4,  -8, -12,  24]])
+    array([[ 0,  0,  0,  0],
+           [ 0,  5, -2, -3],
+           [ 0, -2,  8, -6],
+           [ 0, -3, -6,  9]])
+
+    The non-symmetric graph
     >>> G = np.arange(9).reshape(3, 3)
     >>> G
     array([[0, 1, 2],
            [3, 4, 5],
            [6, 7, 8]])
+    has different row- and column sums, resulting in two varieties
+    of the Laplacian matrix, using an in-degree, which is the default
     >>> L_in_degree = csgraph.laplacian(G)
     >>> L_in_degree
     array([[ 9, -1, -2],
            [-3,  8, -5],
            [-6, -7,  7]])
+    or alternatively an out-degree
     >>> L_out_degree = csgraph.laplacian(G, use_out_degree=True)
     >>> L_out_degree
     array([[ 3, -1, -2],
            [-3,  8, -5],
            [-6, -7, 13]])
+
+    Constructing a symmetric Laplacian matrix, one can add the two as
     >>> L_in_degree + L_out_degree.T
     array([[ 12,  -4,  -8],
             [ -4,  16, -12],
             [ -8, -12,  20]])
+    or use the ``symmetrized=True`` option
     >>> csgraph.laplacian(G, symmetrized=True)
     array([[ 12,  -4,  -8],
            [ -4,  16, -12],
            [ -8, -12,  20]])
+    that is equivalent to symmetrizing the original graph
     >>> csgraph.laplacian(G + G.T)
     array([[ 12,  -4,  -8],
            [ -4,  16, -12],
            [ -8, -12,  20]])
+
+    The goal of normalization is to make the non-zero diagonal entries
+    of the Laplacian matrix to be all unit, also scaling off-diagonal
+    entries correspondingly. The normalization can be done manually, e.g.,
+    >>> G = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]])
+    >>> L, d = csgraph.laplacian(G, return_diag=True)
+    >>> L
+    array([[ 2, -1, -1],
+           [-1,  2, -1],
+           [-1, -1,  2]])
+    >>> d
+    array([2, 2, 2])
+    >>> scaling = np.sqrt(d)
+    >>> scaling
+    array([1.41421356, 1.41421356, 1.41421356])
+    >>> (1/scaling)*L*(1/scaling)
+    array([[ 1. , -0.5, -0.5],
+           [-0.5,  1. , -0.5],
+           [-0.5, -0.5,  1. ]])
+
+    Or using ``normed=True`` option
+    >>> L, d = csgraph.laplacian(G, return_diag=True, normed=True)
+    >>> L
+    array([[ 1. , -0.5, -0.5],
+           [-0.5,  1. , -0.5],
+           [-0.5, -0.5,  1. ]])
+    which now instead of the diagonal returns the scaling coefficients
+    >>> d
+    array([1.41421356, 1.41421356, 1.41421356])
+
+    Zero scaling coefficients are substituted with 1s, where scaling
+    has thus no effect, e.g.,
+    >>> G = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 0]])
+    >>> G
+    array([[0, 0, 0],
+           [0, 0, 1],
+           [0, 1, 0]])
+    >>> L, d = csgraph.laplacian(G, return_diag=True, normed=True)
+    >>> L
+    array([[ 0., -0., -0.],
+           [-0.,  1., -1.],
+           [-0., -1.,  1.]])
+    >>> d
+    array([1., 1., 1.])
+
+    Only the symmetric normalization is implemented, resulting
+    in a symmetric Laplacian matrix if and only if the graph is symmetric
+    and with non-negative degrees, like in the examples above.
+
+    The output Laplacian matrix is by default an array
+    inferring its dtype from the input graph matrix:
+    >>> G = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]]).astype(np.float32)
+    >>> G
+    array([[0., 1., 1.],
+           [1., 0., 1.],
+           [1., 1., 0.]], dtype=float32)
+    >>> csgraph.laplacian(G)
+    array([[ 2., -1., -1.],
+           [-1.,  2., -1.],
+           [-1., -1.,  2.]], dtype=float32)
+    but can alternatively generated matrix-free as a LinearOperator:
+    >>> L = csgraph.laplacian(G, form="lo")
+    >>> L
+    <3x3 _CustomLinearOperator with dtype=float32>
+    >>> L(np.eye(3))
+    array([[ 2., -1., -1.],
+           [-1.,  2., -1.],
+           [-1., -1.,  2.]])
+    or as a lambda-function:
+    >>> L = csgraph.laplacian(G, form="function")
+    >>> L
+    <function _laplace.<locals>.<lambda> at 0x0000012AE6F5A598>
+    >>> L(np.eye(3))
+    array([[ 2., -1., -1.],
+           [-1.,  2., -1.],
+           [-1., -1.,  2.]])
+
+    >>> from scipy.sparse import random
+    >>> G = random(99, 99)
+    >>> L = csgraph.laplacian(G, symmetrized=True, form="lo")
+    >>> rng = np.random.default_rng()
+    >>> X = rng.random((99, 3))
+    >>> from scipy.sparse.linalg import lobpcg
+    >>> eigenvalues, _ = lobpcg(L, X, largest=False)
     """
     if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
         raise ValueError("csgraph must be a square matrix or array")
@@ -200,7 +293,7 @@ def _setdiag_dense(m, d):
 
 
 def _laplace(m, d):
-    return lambda v: v * d[np.newaxis, :] - m @ v
+    return lambda v: v * d[:, np.newaxis] - m @ v
 
 
 def _laplace_normed(m, d, nd):
@@ -210,7 +303,7 @@ def _laplace_normed(m, d, nd):
 
 def _laplace_sym(m, d):
     return (
-        lambda v: v * d[np.newaxis, :]
+        lambda v: v * d[:, np.newaxis]
         - m @ v
         - np.transpose(np.conjugate(np.transpose(np.conjugate(v)) @ m))
     )
