@@ -63,7 +63,7 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
            'sem', 'zmap', 'zscore', 'gzscore', 'iqr', 'gstd',
-           'median_absolute_deviation', 'median_abs_deviation',
+           'median_abs_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
            'f_oneway', 'F_onewayConstantInputWarning',
            'F_onewayBadInputSizesWarning',
@@ -3122,127 +3122,6 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
     return mad / scale
 
 
-# Keep the top newline so that the message does not show up on the stats page
-_median_absolute_deviation_deprec_msg = """
-To preserve the existing default behavior, use
-`scipy.stats.median_abs_deviation(..., scale=1/1.4826)`.
-The value 1.4826 is not numerically precise for scaling
-with a normal distribution. For a numerically precise value, use
-`scipy.stats.median_abs_deviation(..., scale='normal')`.
-"""
-
-
-# Due to numpy/gh-16349 we need to unindent the entire docstring
-@np.deprecate(old_name='median_absolute_deviation',
-              new_name='median_abs_deviation',
-              message=_median_absolute_deviation_deprec_msg)
-def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
-                              nan_policy='propagate'):
-    r"""
-Compute the median absolute deviation of the data along the given axis.
-
-The median absolute deviation (MAD, [1]_) computes the median over the
-absolute deviations from the median. It is a measure of dispersion
-similar to the standard deviation but more robust to outliers [2]_.
-
-The MAD of an empty array is ``np.nan``.
-
-.. versionadded:: 1.3.0
-
-Parameters
-----------
-x : array_like
-    Input array or object that can be converted to an array.
-axis : int or None, optional
-    Axis along which the range is computed. Default is 0. If None, compute
-    the MAD over the entire array.
-center : callable, optional
-    A function that will return the central value. The default is to use
-    np.median. Any user defined function used will need to have the function
-    signature ``func(arr, axis)``.
-scale : int, optional
-    The scaling factor applied to the MAD. The default scale (1.4826)
-    ensures consistency with the standard deviation for normally distributed
-    data.
-nan_policy : {'propagate', 'raise', 'omit'}, optional
-    Defines how to handle when input contains nan.
-    The following options are available (default is 'propagate'):
-
-    * 'propagate': returns nan
-    * 'raise': throws an error
-    * 'omit': performs the calculations ignoring nan values
-
-Returns
--------
-mad : scalar or ndarray
-    If ``axis=None``, a scalar is returned. If the input contains
-    integers or floats of smaller precision than ``np.float64``, then the
-    output data-type is ``np.float64``. Otherwise, the output data-type is
-    the same as that of the input.
-
-See Also
---------
-numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
-scipy.stats.tstd, scipy.stats.tvar
-
-Notes
------
-The `center` argument only affects the calculation of the central value
-around which the MAD is calculated. That is, passing in ``center=np.mean``
-will calculate the MAD around the mean - it will not calculate the *mean*
-absolute deviation.
-
-References
-----------
-.. [1] "Median absolute deviation",
-       https://en.wikipedia.org/wiki/Median_absolute_deviation
-.. [2] "Robust measures of scale",
-       https://en.wikipedia.org/wiki/Robust_measures_of_scale
-
-Examples
---------
-When comparing the behavior of `median_absolute_deviation` with ``np.std``,
-the latter is affected when we change a single value of an array to have an
-outlier value while the MAD hardly changes:
-
->>> from scipy import stats
->>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
->>> x.std()
-0.9973906394005013
->>> stats.median_absolute_deviation(x)
-1.2280762773108278
->>> x[0] = 345.6
->>> x.std()
-34.42304872314415
->>> stats.median_absolute_deviation(x)
-1.2340335571164334
-
-Axis handling example:
-
->>> x = np.array([[10, 7, 4], [3, 2, 1]])
->>> x
-array([[10,  7,  4],
-       [ 3,  2,  1]])
->>> stats.median_absolute_deviation(x)
-array([5.1891, 3.7065, 2.2239])
->>> stats.median_absolute_deviation(x, axis=None)
-2.9652
-
-"""
-    if isinstance(scale, str):
-        if scale.lower() == 'raw':
-            warnings.warn(
-                "use of scale='raw' is deprecated, use scale=1.0 instead",
-                np.VisibleDeprecationWarning
-            )
-            scale = 1.0
-
-    if not isinstance(scale, str):
-        scale = 1 / scale
-
-    return median_abs_deviation(x, axis=axis, center=center, scale=scale,
-                                nan_policy=nan_policy)
-
 #####################################
 #         TRIMMING FUNCTIONS        #
 #####################################
@@ -5942,40 +5821,57 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
     Examples
     --------
+    Suppose we wish to test the null hypothesis that the mean of a population
+    is equal to 0.5. We choose a confidence level of 99%; that is, we will
+    reject the null hypothesis in favor of the alternative if the p-value is
+    less than 0.01.
+
+    When testing random variates from the standard uniform distribution, which
+    has a mean of 0.5, we expect the data to be consistent with the null
+    hypothesis most of the time.
+
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
-    >>> rvs = stats.norm.rvs(loc=5, scale=10, size=(50, 2), random_state=rng)
+    >>> rvs = stats.uniform.rvs(size=50, random_state=rng)
+    >>> stats.ttest_1samp(rvs, popmean=0.5)
+    Ttest_1sampResult(statistic=2.456308468440, pvalue=0.017628209047638)
 
-    Test if mean of random sample is equal to true mean, and different mean.
-    We reject the null hypothesis in the second case and don't reject it in
-    the first case.
+    As expected, the p-value of 0.017 is not below our threshold of 0.01, so
+    we cannot reject the null hypothesis.
 
-    >>> stats.ttest_1samp(rvs, 5.0)
-    Ttest_1sampResult(statistic=array([-2.09794637, -1.75977004]), pvalue=array([0.04108952, 0.08468867]))
-    >>> stats.ttest_1samp(rvs, 0.0)
-    Ttest_1sampResult(statistic=array([1.64495065, 1.62095307]), pvalue=array([0.10638103, 0.11144602]))
+    When testing data from the standard *normal* distribution, which has a mean
+    of 0, we would expect the null hypothesis to be rejected.
 
-    Examples using axis and non-scalar dimension for population mean.
+    >>> rvs = stats.norm.rvs(size=50, random_state=rng)
+    >>> stats.ttest_1samp(rvs, popmean=0.5)
+    Ttest_1sampResult(statistic=-7.433605518875, pvalue=1.416760157221e-09)
 
-    >>> result = stats.ttest_1samp(rvs, [5.0, 0.0])
-    >>> result.statistic
-    array([-2.09794637,  1.62095307])
-    >>> result.pvalue
-    array([0.04108952, 0.11144602])
+    Indeed, the p-value is lower than our threshold of 0.01, so we reject the
+    null hypothesis in favor of the default "two-sided" alternative: the mean
+    of the population is *not* equal to 0.5.
 
-    >>> result = stats.ttest_1samp(rvs.T, [5.0, 0.0], axis=1)
-    >>> result.statistic
-    array([-2.09794637,  1.62095307])
-    >>> result.pvalue
-    array([0.04108952, 0.11144602])
+    However, suppose we were to test the null hypothesis against the
+    one-sided alternative that the mean of the population is *greater* than
+    0.5. Since the mean of the standard normal is less than 0.5, we would not
+    expect the null hypothesis to be rejected.
 
-    >>> result = stats.ttest_1samp(rvs, [[5.0], [0.0]])
-    >>> result.statistic
-    array([[-2.09794637, -1.75977004],
-           [ 1.64495065,  1.62095307]])
-    >>> result.pvalue
-    array([[0.04108952, 0.08468867],
-           [0.10638103, 0.11144602]])
+    >>> stats.ttest_1samp(rvs, popmean=0.5, alternative='greater')
+    Ttest_1sampResult(statistic=-7.433605518875, pvalue=0.99999999929)
+
+    Unsurprisingly, with a p-value greater than our threshold, we would not
+    reject the null hypothesis.
+
+    Note that when working with a confidence level of 99%, a true null
+    hypothesis will be rejected approximately 1% of the time.
+
+    >>> rvs = stats.uniform.rvs(size=(100, 50), random_state=rng)
+    >>> res = stats.ttest_1samp(rvs, popmean=0.5, axis=1)
+    >>> np.sum(res.pvalue < 0.01)
+    1
+
+    Indeed, even though all 100 samples above were drawn from the standard
+    uniform distribution, which *does* have a population mean of 0.5, we would
+    mistakenly reject the null hypothesis for one of them.
 
     """
     a, axis = _chk_asarray(a, axis)

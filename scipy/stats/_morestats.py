@@ -211,6 +211,9 @@ def mvsdist(data):
     return mdist, vdist, sdist
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+)
 def kstat(data, n=2):
     r"""
     Return the nth k-statistic (1<=n<=4 so far).
@@ -307,6 +310,9 @@ def kstat(data, n=2):
         raise ValueError("Should not be here.")
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+)
 def kstatvar(data, n=2):
     r"""Return an unbiased estimator of the variance of the k-statistic.
 
@@ -3646,21 +3652,40 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Notes
     -----
-    This uses a definition of circular standard deviation that in the limit of
-    small angles returns a number close to the 'linear' standard deviation.
+    This uses a definition of circular standard deviation from [1]_.
+    Essentially, the calculation is as follows.
+
+    .. code-block:: python
+
+        C = np.cos(samples).mean()
+        S = np.sin(samples).mean()
+        R = np.sqrt(C**2 + S**2)
+        l = 2*np.pi / (high-low)
+        circstd = np.sqrt(-2*np.log(R)) / l
+
+    In the limit of small angles, it returns a number close to the 'linear'
+    standard deviation.
+
+    References
+    ----------
+    .. [1] Mardia, K. V. (1972). 2. In *Statistics of Directional Data*
+       (pp. 18-24). Academic Press. :doi:`10.1016/C2013-0-07425-7`.
 
     Examples
     --------
     >>> from scipy.stats import circstd
-    >>> circstd([0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2])
-    0.063564063306
+    >>> small_samples = [0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2]
+    >>> circstd(small_samples)
+    0.06356406330602443
+    >>> np.std(small_samples)
+    0.06355419420577858
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
                                                           nan_policy=nan_policy)
     if mask is None:
-        sin_mean = sin_samp.mean(axis=axis)
-        cos_mean = cos_samp.mean(axis=axis)
+        sin_mean = sin_samp.mean(axis=axis)  # [1] (2.2.3)
+        cos_mean = cos_samp.mean(axis=axis)  # [1] (2.2.3)
     else:
         nsum = np.asarray(np.sum(~mask, axis=axis).astype(float))
         nsum[nsum == 0] = np.nan
@@ -3668,6 +3693,6 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
         cos_mean = cos_samp.sum(axis=axis) / nsum
     # hypot can go slightly above 1 due to rounding errors
     with np.errstate(invalid='ignore'):
-        R = np.minimum(1, hypot(sin_mean, cos_mean))
+        R = np.minimum(1, hypot(sin_mean, cos_mean))  # [1] (2.2.4)
 
-    return ((high - low)/2.0/pi) * sqrt(-2*log(R))
+    return ((high - low)/2.0/pi) * sqrt(-2*log(R))  # [1] (2.3.14) w/ (2.3.7)
