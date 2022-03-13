@@ -336,5 +336,5 @@ def test_format(dtype, arr_type, normed, use_out_degree, form):
     assert d.dtype == dtype
     Lm = L(np.eye(n, dtype=mat.dtype)).astype(dtype)
     _assert_allclose_sparse(Lm, Lo)
-    x = np.arange(6).reshape(3,2)
+    x = np.arange(6).reshape(3, 2)
     assert_allclose(L(x), Lo @ x)

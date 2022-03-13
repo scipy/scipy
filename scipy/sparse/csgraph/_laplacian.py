@@ -320,8 +320,10 @@ def _laplace(m, d):
 
 
 def _laplace_normed(m, d, nd):
-    md_sym = _laplace(m, d)
-    return lambda v: nd * md_sym(v) * nd[:, np.newaxis]
+    laplace = _laplace(m, d)
+    return (
+        lambda v: nd[:, np.newaxis] * laplace(v * nd[:, np.newaxis])
+           )
 
 
 def _laplace_sym(m, d):
@@ -333,8 +335,10 @@ def _laplace_sym(m, d):
 
 
 def _laplace_normed_sym(m, d, nd):
-    md_sym = _laplace_sym(m, d)
-    return lambda v: nd * md_sym(v) * nd[:, np.newaxis]
+    laplace_sym = _laplace_sym(m, d)
+    return (
+        lambda v: nd[:, np.newaxis] * laplace_sym(v * nd[:, np.newaxis])
+           )
 
 
 def _linearoperator(mv, shape, dtype):
