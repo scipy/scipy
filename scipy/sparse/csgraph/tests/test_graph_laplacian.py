@@ -7,8 +7,9 @@ from scipy.sparse import csgraph
 
 
 def check_int_type(mat):
-    return (np.issubdtype(mat.dtype, np.signedinteger) or
-            np.issubdtype(mat.dtype, np.uint))
+    return np.issubdtype(mat.dtype, np.signedinteger) or np.issubdtype(
+        mat.dtype, np.uint
+    )
 
 
 def test_laplacian_value_error():
@@ -29,7 +30,7 @@ def _explicit_laplacian(x, normed=False):
     x = np.asarray(x)
     y = -1.0 * x
     for j in range(y.shape[0]):
-        y[j, j] = x[j, j + 1:].sum() + x[j, :j].sum()
+        y[j, j] = x[j, (j + 1):].sum() + x[j, :j].sum()
     if normed:
         d = np.diag(y).copy()
         d[d == 0] = 1.0
@@ -159,17 +160,11 @@ def _check_laplacian_dtype(
                 _assert_allclose_sparse(L, mat)
 
 
-REAL_DTYPES = {
-    np.intc,
-    np.int_,
-    np.longlong,
-    np.single,
-    np.double,
-    np.longdouble,
-}
+INT_DTYPES = {np.intc, np.int_, np.longlong}
+REAL_DTYPES = {np.single, np.double, np.longdouble}
 COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
 # use sorted tuple to ensure fixed order of tests
-DTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+DTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -337,4 +332,8 @@ def test_format(dtype, arr_type, normed, use_out_degree, form):
     Lm = L(np.eye(n, dtype=mat.dtype)).astype(dtype)
     _assert_allclose_sparse(Lm, Lo)
     x = np.arange(6).reshape(3, 2)
-    assert_allclose(L(x), Lo @ x)
+    if not (normed and dtype in INT_DTYPES):
+        assert_allclose(L(x), Lo @ x)
+    else:
+        # Normalized Lo is casted to integer, but  L() is not
+        pass
