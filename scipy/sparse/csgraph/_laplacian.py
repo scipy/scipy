@@ -118,13 +118,16 @@ def laplacian(
     >>> from scipy.sparse import csgraph
 
     Our first illustration is the symmetric graph
+
     >>> G = np.arange(4) * np.arange(4)[:, np.newaxis]
     >>> G
     array([[0, 0, 0, 0],
            [0, 1, 2, 3],
            [0, 2, 4, 6],
            [0, 3, 6, 9]])
+
     and its symmetric Laplacian matrix
+
     >>> csgraph.laplacian(G)
     array([[ 0,  0,  0,  0],
            [ 0,  5, -2, -3],
@@ -132,19 +135,24 @@ def laplacian(
            [ 0, -3, -6,  9]])
 
     The non-symmetric graph
+
     >>> G = np.arange(9).reshape(3, 3)
     >>> G
     array([[0, 1, 2],
            [3, 4, 5],
            [6, 7, 8]])
+
     has different row- and column sums, resulting in two varieties
     of the Laplacian matrix, using an in-degree, which is the default
+
     >>> L_in_degree = csgraph.laplacian(G)
     >>> L_in_degree
     array([[ 9, -1, -2],
            [-3,  8, -5],
            [-6, -7,  7]])
+
     or alternatively an out-degree
+
     >>> L_out_degree = csgraph.laplacian(G, use_out_degree=True)
     >>> L_out_degree
     array([[ 3, -1, -2],
@@ -152,16 +160,21 @@ def laplacian(
            [-6, -7, 13]])
 
     Constructing a symmetric Laplacian matrix, one can add the two as
+
     >>> L_in_degree + L_out_degree.T
     array([[ 12,  -4,  -8],
             [ -4,  16, -12],
             [ -8, -12,  20]])
+
     or use the ``symmetrized=True`` option
+
     >>> csgraph.laplacian(G, symmetrized=True)
     array([[ 12,  -4,  -8],
            [ -4,  16, -12],
            [ -8, -12,  20]])
+
     that is equivalent to symmetrizing the original graph
+
     >>> csgraph.laplacian(G + G.T)
     array([[ 12,  -4,  -8],
            [ -4,  16, -12],
@@ -170,6 +183,7 @@ def laplacian(
     The goal of normalization is to make the non-zero diagonal entries
     of the Laplacian matrix to be all unit, also scaling off-diagonal
     entries correspondingly. The normalization can be done manually, e.g.,
+
     >>> G = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]])
     >>> L, d = csgraph.laplacian(G, return_diag=True)
     >>> L
@@ -187,17 +201,21 @@ def laplacian(
            [-0.5, -0.5,  1. ]])
 
     Or using ``normed=True`` option
+
     >>> L, d = csgraph.laplacian(G, return_diag=True, normed=True)
     >>> L
     array([[ 1. , -0.5, -0.5],
            [-0.5,  1. , -0.5],
            [-0.5, -0.5,  1. ]])
+
     which now instead of the diagonal returns the scaling coefficients
+
     >>> d
     array([1.41421356, 1.41421356, 1.41421356])
 
     Zero scaling coefficients are substituted with 1s, where scaling
     has thus no effect, e.g.,
+
     >>> G = np.array([[0, 0, 0], [0, 0, 1], [0, 1, 0]])
     >>> G
     array([[0, 0, 0],
@@ -217,6 +235,7 @@ def laplacian(
 
     The output Laplacian matrix is by default an array
     inferring its dtype from the input graph matrix:
+
     >>> G = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]]).astype(np.float32)
     >>> G
     array([[0., 1., 1.],
@@ -226,7 +245,9 @@ def laplacian(
     array([[ 2., -1., -1.],
            [-1.,  2., -1.],
            [-1., -1.,  2.]], dtype=float32)
+
     but can alternatively generated matrix-free as a LinearOperator:
+
     >>> L = csgraph.laplacian(G, form="lo")
     >>> L
     <3x3 _CustomLinearOperator with dtype=float32>
@@ -234,7 +255,9 @@ def laplacian(
     array([[ 2., -1., -1.],
            [-1.,  2., -1.],
            [-1., -1.,  2.]])
+
     or as a lambda-function:
+
     >>> L = csgraph.laplacian(G, form="function")
     >>> L
     <function _laplace.<locals>.<lambda> at 0x0000012AE6F5A598>
