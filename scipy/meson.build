@@ -86,7 +86,8 @@ if use_pythran
     check: true
   ).stdout().strip()
   inc_pythran = include_directories(incdir_pythran)
-  xsimd_dep = dependency('xsimd')
+  # required explicit dependency on "some" installations with conda gh-15698
+  xsimd_dep = dependency('xsimd', required: false)
 else
   inc_pythran = []
 endif
