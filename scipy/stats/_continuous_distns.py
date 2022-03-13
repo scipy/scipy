@@ -2709,7 +2709,7 @@ class genextreme_gen(rv_continuous):
         return np.isfinite(c)
 
     def _shape_info(self):
-        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
+        return [_ShapeInfo("c", False, (-np.inf, np.inf), (False, False))]
 
     def _get_support(self, c):
         _b = np.where(c > 0, 1.0 / np.maximum(c, _XMIN), np.inf)
