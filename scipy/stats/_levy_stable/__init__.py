@@ -791,6 +791,11 @@ class levy_stable_gen(rv_continuous):
     def _argcheck(self, alpha, beta):
         return (alpha > 0) & (alpha <= 2) & (beta <= 1) & (beta >= -1)
 
+    def _shape_info(self):
+        ialpha = _ShapeInfo("alpha", False, (0, 2), (False, True))
+        ibeta = _ShapeInfo("beta", False, (-1, 1), (True, True))
+        return [ialpha, ibeta]
+
     def _parameterization(self):
         allowed = ("S0", "S1")
         pz = self.parameterization
