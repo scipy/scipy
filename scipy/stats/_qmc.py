@@ -30,7 +30,7 @@ import scipy.stats as stats
 from scipy._lib._util import rng_integers
 from ._sobol import (
     _initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
-    _categorize, _initialize_direction_numbers, _MAXDIM
+    _categorize, _MAXDIM
 )
 from ._qmc_cy import (
     _cy_wrapper_centered_discrepancy,
@@ -1223,6 +1223,9 @@ class Sobol(QMCEngine):
     bits : int, optional
         Number of bits of the generator. Control the maximum number of points
         that can be generated, which is ``2**bits``. Maximal value is 64.
+        It does not correspond to the return type, which is always
+        ``np.float64`` to prevent points from repeating themselves.
+        Default is None, which for backward compatibility, corresponds to 30.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1326,7 +1329,7 @@ class Sobol(QMCEngine):
 
     def __init__(
         self, d: IntNumber, *, scramble: bool = True,
-        bits: IntNumber = 30, seed: SeedType = None
+        bits: Optional[IntNumber] = None, seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         if d > self.MAXDIM:
@@ -1335,19 +1338,26 @@ class Sobol(QMCEngine):
             )
 
         self.bits = bits
-        if self.bits > 64:
+        self.dtype_i: type
+
+        if self.bits is None:
+            self.bits = 30
+
+        if self.bits <= 32:
+            self.dtype_i = np.uint32
+        elif 32 < self.bits <= 64:
+            self.dtype_i = np.uint64
+        else:
             raise ValueError("Maximum supported 'bits' is 64")
+
         self.maxn = 2**self.bits
 
-        # initialize direction numbers
-        _initialize_direction_numbers()
-
         # v is d x maxbit matrix
-        self._sv = np.zeros((d, self.bits), dtype=np.uint64)
+        self._sv: np.ndarray = np.zeros((d, self.bits), dtype=self.dtype_i)
         _initialize_v(self._sv, dim=d, bits=self.bits)
 
         if not scramble:
-            self._shift = np.zeros(d, dtype=np.uint64)
+            self._shift: np.ndarray = np.zeros(d, dtype=self.dtype_i)
         else:
             # scramble self._shift and self._sv
             self._scramble()
@@ -1359,20 +1369,25 @@ class Sobol(QMCEngine):
         self._scale = 1.0 / 2 ** self.bits
 
         self._first_point = (self._quasi * self._scale).reshape(1, -1)
+        # explicit casting to float64
+        self._first_point = self._first_point.astype(np.float64)
 
     def _scramble(self) -> None:
         """Scramble the sequence using LMS+shift."""
         # Generate shift vector
         self._shift = np.dot(
             rng_integers(self.rng, 2, size=(self.d, self.bits),
-                         dtype=np.uint64),
-            2 ** np.arange(self.bits, dtype=np.uint64),
+                         dtype=self.dtype_i),
+            2 ** np.arange(self.bits, dtype=self.dtype_i),
         )
         # Generate lower triangular matrices (stacked across dimensions)
         ltm = np.tril(rng_integers(self.rng, 2,
                                    size=(self.d, self.bits, self.bits),
-                                   dtype=np.uint64))
-        _cscramble(dim=self.d, bits=self.bits, ltm=ltm, sv=self._sv)
+                                   dtype=self.dtype_i))
+        _cscramble(
+            dim=self.d, bits=self.bits,  # type: ignore[arg-type]
+            ltm=ltm, sv=self._sv
+        )
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw next point(s) in the Sobol' sequence.
@@ -1388,7 +1403,7 @@ class Sobol(QMCEngine):
             Sobol' sample.
 
         """
-        sample = np.empty((n, self.d), dtype=float)
+        sample: np.ndarray = np.empty((n, self.d), dtype=np.float64)
 
         if n == 0:
             return sample
@@ -1418,7 +1433,9 @@ class Sobol(QMCEngine):
                     scale=self._scale, sv=self._sv, quasi=self._quasi,
                     sample=sample
                 )
-                sample = np.concatenate([self._first_point, sample])[:n]  # type: ignore[misc]
+                sample = np.concatenate(
+                    [self._first_point, sample]
+                )[:n]  # type: ignore[misc]
         else:
             _draw(
                 n=n, num_gen=self.num_generated - 1, dim=self.d,
@@ -1582,7 +1599,9 @@ class MultivariateNormalQMC(QMCEngine):
         else:
             engine_dim = d
         if engine is None:
-            self.engine = Sobol(d=engine_dim, scramble=True, seed=seed)  # type: QMCEngine
+            self.engine = Sobol(
+                d=engine_dim, scramble=True, bits=30, seed=seed
+            )  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
             if engine.d != d:
                 raise ValueError("Dimension of `engine` must be consistent"
@@ -1701,7 +1720,9 @@ class MultinomialQMC(QMCEngine):
         if not np.isclose(np.sum(pvals), 1):
             raise ValueError('Elements of pvals must sum to 1.')
         if engine is None:
-            self.engine = Sobol(d=1, scramble=True, seed=seed)  # type: QMCEngine
+            self.engine = Sobol(
+                d=1, scramble=True, bits=30, seed=seed
+            )  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
             if engine.d != 1:
                 raise ValueError("Dimension of `engine` must be 1.")
