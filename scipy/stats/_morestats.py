@@ -1764,6 +1764,8 @@ def shapiro(x):
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
+    x -= np.median(x)
+
     a = zeros(N, 'f')
     init = 0
 
