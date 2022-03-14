@@ -295,9 +295,10 @@ def test_laplacian_symmetrized(arr_type, form):
 )
 @pytest.mark.parametrize("dtype", DTYPES)
 @pytest.mark.parametrize("normed", [True, False])
+@pytest.mark.parametrize("symmetrized", [True, False])
 @pytest.mark.parametrize("use_out_degree", [True, False])
 @pytest.mark.parametrize("form", ["function", "lo"])
-def test_format(dtype, arr_type, normed, use_out_degree, form):
+def test_format(dtype, arr_type, normed, symmetrized, use_out_degree, form):
     n = 3
     mat = [[0, 1, 0], [4, 2, 0], [0, 0, 0]]
     mat = arr_type(np.array(mat), dtype=dtype)
@@ -305,6 +306,7 @@ def test_format(dtype, arr_type, normed, use_out_degree, form):
         mat,
         return_diag=True,
         normed=normed,
+        symmetrized=symmetrized,
         use_out_degree=use_out_degree,
         dtype=dtype,
     )
@@ -312,6 +314,7 @@ def test_format(dtype, arr_type, normed, use_out_degree, form):
         mat,
         return_diag=True,
         normed=normed,
+        symmetrized=symmetrized,
         use_out_degree=use_out_degree,
         dtype=dtype,
         form="array",
@@ -323,6 +326,7 @@ def test_format(dtype, arr_type, normed, use_out_degree, form):
         mat,
         return_diag=True,
         normed=normed,
+        symmetrized=symmetrized,
         use_out_degree=use_out_degree,
         dtype=dtype,
         form=form,
