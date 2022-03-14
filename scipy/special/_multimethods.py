@@ -1147,20 +1147,6 @@ def riccati_yn():
 @_create_special(_identity_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def roots_chebyc(n, mu=False):
-    return ()
-
-
-@_create_special(_identity_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def roots_chebys(n, mu=False):
-    return ()
-
-
-@_create_special(_identity_replacer)
-@all_of_type(ndarray)
-@_get_docs
 def roots_chebyt(n, mu=False):
     return ()
 
@@ -1175,55 +1161,6 @@ def roots_chebyu(n, mu=False):
 @_create_special(_identity_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def roots_gegenbauer(n, alpha, mu=False):
-    return ()
-
-
-@_create_special(_identity_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def roots_genlaguerre(n, alpha, mu=False):
-    return ()
-
-
-@_create_special(_identity_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def roots_hermite(n, mu=False):
-    return ()
-
-
-@_create_special(_identity_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def roots_hermitenorm(n, mu=False):
-    return ()
-
-
-@_create_special(_identity_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def roots_jacobi(n, alpha, beta, mu=False):
-    return ()
-
-
-@_create_special(_identity_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def roots_laguerre(n, mu=False):
-    return ()
-
-
-@_create_special(_identity_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def roots_legendre(n, mu=False):
-    return ()
-
-
-@_create_special(_identity_replacer)
-@all_of_type(ndarray)
-@_get_docs
 def roots_sh_chebyt(n, mu=False):
     return ()
 
@@ -1232,20 +1169,6 @@ def roots_sh_chebyt(n, mu=False):
 @all_of_type(ndarray)
 @_get_docs
 def roots_sh_chebyu(n, mu=False):
-    return ()
-
-
-@_create_special(_identity_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def roots_sh_jacobi(n, p1, q1, mu=False):
-    return ()
-
-
-@_create_special(_identity_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def roots_sh_legendre(n, mu=False):
     return ()
 
 
@@ -2249,13 +2172,6 @@ def jv(a, b, out=None):
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def jv(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
 def jve(a, b, out=None):
     return a, b, _mark_output(out)
 
@@ -2783,13 +2699,6 @@ def pro_rad2_cv(a, b, c, d, e, out=None):
 @_get_docs
 def pseudo_huber(a, b, out=None):
     return a, b, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def psi(a, out=None):
-    return a, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
