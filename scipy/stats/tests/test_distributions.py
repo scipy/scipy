@@ -1434,7 +1434,7 @@ class TestPareto:
         expected = (scale/x)**b   # 2.25e-18
         assert_allclose(p, expected)
 
-    @pytest.fixture(scope='class')
+    @pytest.fixture(scope='function')
     def rng(self):
         return np.random.default_rng(1234)
 
