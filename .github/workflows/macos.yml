@@ -17,7 +17,7 @@ concurrency:
 jobs:
   test_macos:
     name: macOS Test Matrix
-    if: "(github.repository == 'scipy/scipy' && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')) || (github.repository == '')"
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: macos-latest
     strategy:
       max-parallel: 3
