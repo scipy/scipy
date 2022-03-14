@@ -39,9 +39,7 @@ __all__ = [
     'btdtri',
     'btdtria',
     'btdtrib',
-    'c_roots',
     'cbrt',
-    'cg_roots',
     'chdtr',
     'chdtrc',
     'chdtri',
@@ -84,7 +82,6 @@ __all__ = [
     'erfcx',
     'erfi',
     'erfinv',
-    'errstate',
     'euler',
     'eval_chebyc',
     'eval_chebys',
@@ -134,15 +131,12 @@ __all__ = [
     'gdtrix',
     'gegenbauer',
     'genlaguerre',
-    'geterr',
     'h1vp',
     'h2vp',
-    'h_roots',
     'hankel1',
     'hankel1e',
     'hankel2',
     'hankel2e',
-    'he_roots',
     'hermite',
     'hermitenorm',
     'huber',
@@ -169,14 +163,12 @@ __all__ = [
     'ivp',
     'j0',
     'j1',
-    'j_roots',
     'jacobi',
     'jn',
     'jn_zeros',
     'jnjnp_zeros',
     'jnp_zeros',
     'jnyn_zeros',
-    'js_roots',
     'jv',
     'jve',
     'jvp',
@@ -201,8 +193,6 @@ __all__ = [
     'kv',
     'kve',
     'kvp',
-    'l_roots',
-    'la_roots',
     'laguerre',
     'lambertw',
     'legendre',
@@ -261,7 +251,6 @@ __all__ = [
     'obl_rad2',
     'obl_rad2_cv',
     'owens_t',
-    'p_roots',
     'pbdn_seq',
     'pbdv',
     'pbdv_seq',
@@ -283,7 +272,6 @@ __all__ = [
     'pro_rad1_cv',
     'pro_rad2',
     'pro_rad2_cv',
-    'ps_roots',
     'pseudo_huber',
     'psi',
     'radian',
@@ -307,8 +295,6 @@ __all__ = [
     'roots_sh_jacobi',
     'roots_sh_legendre',
     'round',
-    's_roots',
-    'seterr',
     'sh_chebyt',
     'sh_chebyu',
     'sh_jacobi',
@@ -330,12 +316,8 @@ __all__ = [
     'stdtridf',
     'stdtrit',
     'struve',
-    't_roots',
     'tandg',
     'tklmbda',
-    'ts_roots',
-    'u_roots',
-    'us_roots',
     'voigt_profile',
     'wofz',
     'wright_bessel',
@@ -1067,11 +1049,11 @@ def multigammaln(a, d):
     return (a, )
 
 
-@_create_special(_m_n_replacer)
+@_create_special(_identity_replacer)
 @all_of_type(ndarray)
 @_get_docs
 def obl_cv_seq(m, n, c):
-    return (n,)
+    return ()
 
 
 @_create_special(_identity_replacer)
@@ -1116,11 +1098,11 @@ def polygamma(n, x):
     return (n, x)
 
 
-@_create_special(_m_n_replacer)
+@_create_special(_identity_replacer)
 @all_of_type(ndarray)
 @_get_docs
 def pro_cv_seq(m, n, c):
-    return (n,)
+    return ()
 
 
 @_create_special(_identity_replacer)
@@ -1140,7 +1122,7 @@ def riccati_jn(n, x):
 @_create_special(_identity_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def riccati_yn():
+def riccati_yn(n, x):
     return ()
 
 
@@ -1304,1601 +1286,1615 @@ def zeta(x, q=None, out=None):
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def agm(a, b, out=None):
+def agm(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def airy(a, out=None):
+def airy(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def airye(a, out=None):
+def airye(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def bdtr(a, b, c, out=None):
+def bdtr(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def bdtrc(a, b, c, out=None):
+def bdtrc(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def bdtri(a, b, c, out=None):
+def bdtri(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def bdtrik(a, b, c, out=None):
+def bdtrik(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def bdtrin(a, b, c, out=None):
+def bdtrin(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def bei(a, out=None):
+def bei(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def beip(a, out=None):
+def beip(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ber(a, out=None):
+def ber(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def berp(a, out=None):
+def berp(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def besselpoly(a, b, c, out=None):
+def besselpoly(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def beta(a, b, out=None):
+def beta(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def betainc(a, b, c, out=None):
+def betainc(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def betaincinv(a, b, c, out=None):
+def betaincinv(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def betaln(a, b, out=None):
+def betaln(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def binom(a, b, out=None):
+def binom(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def boxcox(a, b, out=None):
+def boxcox(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def boxcox1p(a, b, out=None):
+def boxcox1p(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def btdtr(a, b, c, out=None):
+def btdtr(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def btdtri(a, b, c, out=None):
+def btdtri(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def btdtria(a, b, c, out=None):
+def btdtria(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def btdtrib(a, b, c, out=None):
-    return a, b, c, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def cbrt(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def chdtr(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def chdtrc(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def chdtri(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def chdtriv(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_threeargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def chndtr(a, b, c, out=None):
-    return a, b, c, _mark_output(out)
-
-
-@_create_special(_threeargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def chndtridf(a, b, c, out=None):
-    return a, b, c, _mark_output(out)
-
-
-@_create_special(_threeargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def chndtrinc(a, b, c, out=None):
-    return a, b, c, _mark_output(out)
-
-
-@_create_special(_threeargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def chndtrix(a, b, c, out=None):
+def btdtrib(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def cosdg(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def cosm1(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def cotdg(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def dawsn(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def psi(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def ellipe(a, out=None):
+def cbrt(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ellipeinc(a, b, out=None):
+def chdtr(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ellipj(a, b, out=None):
+def chdtrc(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def ellipk(a, out=None):
-    return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ellipkinc(a, b, out=None):
+def chdtri(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def ellipkm1(a, out=None):
-    return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def elliprc(a, b, out=None):
+def chdtriv(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def elliprd(a, b, c, out=None):
+def chndtr(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def elliprf(a, b, c, out=None):
+def chndtridf(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def elliprg(a, b, c, out=None):
+def chndtrinc(a, b, c, out=None, **kwargs):
+    return a, b, c, _mark_output(out)
+
+
+@_create_special(_threeargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def chndtrix(a, b, c, out=None, **kwargs):
+    return a, b, c, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def cosdg(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def cosm1(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def cotdg(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def dawsn(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def ellipe(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def ellipeinc(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def ellipj(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def ellipk(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def ellipkinc(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def ellipkm1(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def elliprc(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_threeargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def elliprd(a, b, c, out=None, **kwargs):
+    return a, b, c, _mark_output(out)
+
+
+@_create_special(_threeargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def elliprf(a, b, c, out=None, **kwargs):
+    return a, b, c, _mark_output(out)
+
+
+@_create_special(_threeargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def elliprg(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def elliprj(a, b, c, d, out=None):
+def elliprj(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def entr(a, out=None):
+def entr(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def erf(a, out=None):
+def erf(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def erfc(a, out=None):
+def erfc(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def erfcinv(a, out=None):
+def erfcinv(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def erfcx(a, out=None):
+def erfcx(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def erfi(a, out=None):
+def erfi(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def erfinv(a, out=None):
+def erfinv(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_chebyc(a, b, out=None):
+def eval_chebyc(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_chebys(a, b, out=None):
+def eval_chebys(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_chebyt(a, b, out=None):
+def eval_chebyt(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_chebyu(a, b, out=None):
+def eval_chebyu(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_gegenbauer(a, b, c, out=None):
+def eval_gegenbauer(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_genlaguerre(a, b, c, out=None):
+def eval_genlaguerre(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_hermite(a, b, out=None):
+def eval_hermite(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_hermitenorm(a, b, out=None):
+def eval_hermitenorm(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_jacobi(a, b, c, d, out=None):
+def eval_jacobi(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_laguerre(a, b, out=None):
+def eval_laguerre(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_legendre(a, b, out=None):
+def eval_legendre(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_sh_chebyt(a, b, out=None):
+def eval_sh_chebyt(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_sh_chebyu(a, b, out=None):
+def eval_sh_chebyu(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_sh_jacobi(a, b, c, d, out=None):
+def eval_sh_jacobi(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def eval_sh_legendre(a, b, out=None):
+def eval_sh_legendre(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def exp1(a, out=None):
+def exp1(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def exp10(a, out=None):
+def exp10(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def exp2(a, out=None):
+def exp2(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def expi(a, out=None):
+def expi(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def expit(a, out=None):
+def expit(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def expm1(a, out=None):
+def expm1(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def expn(a, b, out=None):
+def expn(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def exprel(a, out=None):
+def exprel(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def fdtr(a, b, c, out=None):
+def fdtr(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def fdtrc(a, b, c, out=None):
+def fdtrc(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def fdtri(a, b, c, out=None):
+def fdtri(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def fdtridfd(a, b, c, out=None):
+def fdtridfd(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def fresnel(a, out=None):
+def fresnel(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def gamma(a, out=None):
+def gamma(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def gammainc(a, b, out=None):
+def gammainc(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def gammaincc(a, b, out=None):
+def gammaincc(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def gammainccinv(a, b, out=None):
+def gammainccinv(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def gammaincinv(a, b, out=None):
+def gammaincinv(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def gammaln(a, out=None):
+def gammaln(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def gammasgn(a, out=None):
+def gammasgn(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def gdtr(a, b, c, out=None):
+def gdtr(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def gdtrc(a, b, c, out=None):
+def gdtrc(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def gdtria(a, b, c, out=None):
+def gdtria(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def gdtrib(a, b, c, out=None):
+def gdtrib(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def gdtrix(a, b, c, out=None):
+def gdtrix(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def hankel1(a, b, out=None):
+def hankel1(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def hankel1e(a, b, out=None):
+def hankel1e(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def hankel2(a, b, out=None):
+def hankel2(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def hankel2e(a, b, out=None):
+def hankel2e(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def huber(a, b, out=None):
+def huber(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def hyp0f1(a, b, out=None):
+def hyp0f1(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def hyp1f1(a, b, c, out=None):
+def hyp1f1(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def hyp2f1(a, b, c, d, out=None):
+def hyp2f1(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def hyperu(a, b, c, out=None):
+def hyperu(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def i0(a, out=None):
+def i0(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def i0e(a, out=None):
+def i0e(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def i1(a, out=None):
+def i1(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def i1e(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def inv_boxcox(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def inv_boxcox1p(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def it2i0k0(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def it2j0y0(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def it2struve0(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def itairy(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def iti0k0(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def itj0y0(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def itmodstruve0(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def itstruve0(a, out=None):
+def i1e(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def iv(a, b, out=None):
+def inv_boxcox(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ive(a, b, out=None):
+def inv_boxcox1p(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def j0(a, out=None):
+def it2i0k0(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def j1(a, out=None):
+def it2j0y0(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def it2struve0(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def itairy(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def iti0k0(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def itj0y0(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def itmodstruve0(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def itstruve0(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def jv(a, b, out=None):
+def iv(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def jve(a, b, out=None):
+def ive(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def k0(a, out=None):
+def j0(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def k0e(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def k1(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def k1e(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def kei(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def keip(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def kelvin(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def ker(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def kerp(a, out=None):
+def j1(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def kl_div(a, b, out=None):
+def jv(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def kn(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def kolmogi(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_onearg_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def kolmogorov(a, out=None):
-    return a, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def kv(a, b, out=None):
+def jn(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def kve(a, b, out=None):
+def jve(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def log1p(a, out=None):
+def k0(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def log_expit(a, out=None):
+def k0e(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def log_ndtr(a, out=None):
+def k1(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def loggamma(a, out=None):
+def k1e(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def logit(a, out=None):
+def kei(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def keip(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def kelvin(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def ker(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def kerp(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def kl_div(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def kn(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def kolmogi(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def kolmogorov(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def kv(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def kve(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def log1p(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def log_expit(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def log_ndtr(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def loggamma(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def logit(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def lpmv(a, b, c, out=None):
+def lpmv(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def mathieu_a(a, b, out=None):
+def mathieu_a(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def mathieu_b(a, b, out=None):
+def mathieu_b(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def mathieu_cem(a, b, c, out=None):
+def mathieu_cem(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def mathieu_modcem1(a, b, c, out=None):
+def mathieu_modcem1(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def mathieu_modcem2(a, b, c, out=None):
+def mathieu_modcem2(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def mathieu_modsem1(a, b, c, out=None):
+def mathieu_modsem1(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def mathieu_modsem2(a, b, c, out=None):
+def mathieu_modsem2(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def mathieu_sem(a, b, c, out=None):
+def mathieu_sem(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def modfresnelm(a, out=None):
+def modfresnelm(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def modfresnelp(a, out=None):
+def modfresnelp(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def modstruve(a, b, out=None):
+def modstruve(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def nbdtr(a, b, c, out=None):
+def nbdtr(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def nbdtrc(a, b, c, out=None):
+def nbdtrc(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def nbdtri(a, b, c, out=None):
+def nbdtri(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def nbdtrik(a, b, c, out=None):
+def nbdtrik(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def nbdtrin(a, b, c, out=None):
+def nbdtrin(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ncfdtr(a, b, c, d, out=None):
+def ncfdtr(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ncfdtri(a, b, c, d, out=None):
+def ncfdtri(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ncfdtridfd(a, b, c, d, out=None):
+def ncfdtridfd(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ncfdtridfn(a, b, c, d, out=None):
+def ncfdtridfn(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ncfdtrinc(a, b, c, d, out=None):
+def ncfdtrinc(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def nctdtr(a, b, c, out=None):
+def nctdtr(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def nctdtridf(a, b, c, out=None):
+def nctdtridf(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def nctdtrinc(a, b, c, out=None):
+def nctdtrinc(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def nctdtrit(a, b, c, out=None):
+def nctdtrit(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ndtr(a, out=None):
+def ndtr(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ndtri(a, out=None):
+def ndtri(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def ndtri_exp(a, out=None):
+def ndtri_exp(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def nrdtrimn(a, b, c, out=None):
+def nrdtrimn(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def nrdtrisd(a, b, c, out=None):
+def nrdtrisd(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def obl_ang1(a, b, c, d, out=None):
-    return a, b, c, d, _mark_output(out)
-
-
-@_create_special(_fiveargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def obl_ang1_cv(a, b, c, d, e, out=None):
-    return a, b, c, d, e, _mark_output(out)
-
-
-@_create_special(_threeargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def obl_cv(a, b, c, out=None):
-    return a, b, c, _mark_output(out)
-
-
-@_create_special(_fourargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def obl_rad1(a, b, c, d, out=None):
+def obl_ang1(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_fiveargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def obl_rad1_cv(a, b, c, d, e, out=None):
-    return a, b, c, d, e, _mark_output(out)
-
-
-@_create_special(_fourargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def obl_rad2(a, b, c, d, out=None):
-    return a, b, c, d, _mark_output(out)
-
-
-@_create_special(_fiveargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def obl_rad2_cv(a, b, c, d, e, out=None):
-    return a, b, c, d, e, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def owens_t(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def pbdv(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def pbvv(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def pbwa(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def pdtr(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def pdtrc(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def pdtri(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def pdtrik(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def poch(a, b, out=None):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_fourargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def pro_ang1(a, b, c, d, out=None):
-    return a, b, c, d, _mark_output(out)
-
-
-@_create_special(_fiveargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
-def pro_ang1_cv(a, b, c, d, e, out=None):
+def obl_ang1_cv(a, b, c, d, e, out=None, **kwargs):
     return a, b, c, d, e, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def pro_cv(a, b, c, out=None):
+def obl_cv(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def pro_rad1(a, b, c, d, out=None):
+def obl_rad1(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_fiveargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def pro_rad1_cv(a, b, c, d, e, out=None):
+def obl_rad1_cv(a, b, c, d, e, out=None, **kwargs):
     return a, b, c, d, e, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def pro_rad2(a, b, c, d, out=None):
+def obl_rad2(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_fiveargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def pro_rad2_cv(a, b, c, d, e, out=None):
+def obl_rad2_cv(a, b, c, d, e, out=None, **kwargs):
     return a, b, c, d, e, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def pseudo_huber(a, b, out=None):
+def owens_t(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pbdv(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pbvv(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pbwa(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pdtr(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pdtrc(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pdtri(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pdtrik(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def poch(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_fourargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pro_ang1(a, b, c, d, out=None, **kwargs):
+    return a, b, c, d, _mark_output(out)
+
+
+@_create_special(_fiveargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pro_ang1_cv(a, b, c, d, e, out=None, **kwargs):
+    return a, b, c, d, e, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def radian(a, b, c, out=None):
+def pro_cv(a, b, c, out=None, **kwargs):
+    return a, b, c, _mark_output(out)
+
+
+@_create_special(_fourargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pro_rad1(a, b, c, d, out=None, **kwargs):
+    return a, b, c, d, _mark_output(out)
+
+
+@_create_special(_fiveargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pro_rad1_cv(a, b, c, d, e, out=None, **kwargs):
+    return a, b, c, d, e, _mark_output(out)
+
+
+@_create_special(_fourargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pro_rad2(a, b, c, d, out=None, **kwargs):
+    return a, b, c, d, _mark_output(out)
+
+
+@_create_special(_fiveargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pro_rad2_cv(a, b, c, d, e, out=None, **kwargs):
+    return a, b, c, d, e, _mark_output(out)
+
+
+@_create_special(_twoargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def pseudo_huber(a, b, out=None, **kwargs):
+    return a, b, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def psi(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_threeargs_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def radian(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def rel_entr(a, b, out=None):
+def rel_entr(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def rgamma(a, out=None):
+def rgamma(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def round(a, out=None):
+def round(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def shichi(a, out=None):
+def shichi(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def sici(a, out=None):
+def sici(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def sindg(a, out=None):
+def sindg(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def smirnov(a, b, out=None):
+def smirnov(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def smirnovi(a, b, out=None):
+def smirnovi(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def spence(a, out=None):
+def spence(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_fourargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def sph_harm(a, b, c, d, out=None):
+def sph_harm(a, b, c, d, out=None, **kwargs):
     return a, b, c, d, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def stdtr(a, b, out=None):
+def stdtr(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def stdtridf(a, b, out=None):
+def stdtridf(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def stdtrit(a, b, out=None):
+def stdtrit(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def struve(a, b, out=None):
+def struve(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def tandg(a, out=None):
+def tandg(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def tklmbda(a, b, out=None):
+def tklmbda(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def voigt_profile(a, b, c, out=None):
+def voigt_profile(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def wofz(a, out=None):
+def wofz(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_threeargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def wright_bessel(a, b, c, out=None):
+def wright_bessel(a, b, c, out=None, **kwargs):
     return a, b, c, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def wrightomega(a, out=None):
+def wrightomega(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def xlog1py(a, b, out=None):
+def xlog1py(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def xlogy(a, b, out=None):
+def xlogy(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def y0(a, out=None):
+def y0(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def y1(a, out=None):
+def y1(a, out=None, **kwargs):
     return a, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def yn(a, b, out=None):
+def yn(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def yv(a, b, out=None):
+def yv(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def yve(a, b, out=None):
+def yve(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
 
 @_create_special(_onearg_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def zetac(a, out=None):
+def zetac(a, out=None, **kwargs):
+    return a, _mark_output(out)
+
+
+@_create_special(_onearg_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def digamma(a, out=None, **kwargs):
     return a, _mark_output(out)

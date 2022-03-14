@@ -79,7 +79,7 @@ import numpy as np
 from numpy import (exp, inf, pi, sqrt, floor, sin, cos, around,
                    hstack, arccos, arange)
 from scipy import linalg
-from scipy.special import airy
+from scipy.special._ufuncs import airy
 
 # Local imports.
 from . import _ufuncs

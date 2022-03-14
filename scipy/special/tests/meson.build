@@ -1,5 +1,7 @@
 python_sources = [
   '__init__.py',
+  'mock_backend.py',
+  'test_backend.py',
   'test_basic.py',
   'test_bdtr.py',
   'test_boxcox.py',
