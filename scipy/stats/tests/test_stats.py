@@ -5689,10 +5689,17 @@ class TestGeoMean:
 
 
 class TestPowMean:
+
+    def pmean_reference(a, p):
+        return (np.sum(a**p) / a.size)**(1/p)
+
+    def wpmean_reference(a, p, weights):
+        return (np.sum(weights * a**p) / np.sum(weights))**(1/p)
+
     def test_1d_list(self):
         #  Test a 1d list
         a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 3.5
-        desired = 69.16258790433133
+        desired = TestPowMean.pmean_reference(np.array(a), p)
         check_equal_pmean(a, p, desired)
 
         a, p = [1, 2, 3, 4], 2
@@ -5702,7 +5709,7 @@ class TestPowMean:
     def test_1d_array(self):
         #  Test a 1d array
         a, p = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]), -2.5
-        desired = 22.465589594911126
+        desired = TestPowMean.pmean_reference(a, p)
         check_equal_pmean(a, p, desired)
 
     def test_1d_array_with_zero(self):
@@ -5718,42 +5725,49 @@ class TestPowMean:
     def test_2d_list(self):
         #  Test a 2d list
         a, p = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5
-        desired = 45.735498086384375
+        desired = TestPowMean.pmean_reference(np.array(a), p)
         check_equal_pmean(a, p, desired)
 
     def test_2d_array(self):
         #  Test a 2d array
         a, p = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5
-        desired = 45.735498086384375
+        desired = TestPowMean.pmean_reference(np.array(a), p)
         check_equal_pmean(np.array(a), p, desired)
 
     def test_2d_axis0(self):
         #  Test a 2d list with axis=0
         a, p = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5
-        desired = np.array([28.38805645, 43.91466184, 56.97602366,
-                            68.98211504])
+        desired = [TestPowMean.pmean_reference(np.array(
+            [a[i][j] for i in range(len(a))]), p) for j in range(len(a[0]))]
         check_equal_pmean(a, p, desired, axis=0)
 
     def test_2d_axis0_with_zero(self):
         a, p = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5
-        desired = np.array([28.38805645, 0.0, 56.97602366, 68.98211504])
+        desired = [TestPowMean.pmean_reference(np.array(
+            [a[i][j] for i in range(len(a))]), p) for j in range(len(a[0]))]
         assert_allclose(stats.pmean(a, p, axis=0), desired)
 
     def test_2d_axis1(self):
         #  Test a 2d list with axis=1
         a, p = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5
-        desired = np.array([20.63663752, 63.52975969, 104.10065096])
+        desired = [TestPowMean.pmean_reference(np.array(a_), p) for a_ in a]
         check_equal_pmean(a, p, desired, axis=1)
 
     def test_2d_axis1_with_zero(self):
         a, p = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5
-        desired = np.array([0.0, 63.52975969, 104.10065096])
+        desired = [TestPowMean.pmean_reference(np.array(a_), p) for a_ in a]
         assert_allclose(stats.pmean(a, p, axis=1), desired)
 
     def test_weights_1d_list(self):
-        a, p = [2, 10, 6], -1
+        a, p = [2, 10, 6], -1.23456789
         weights = [10, 5, 3]
-        desired = stats.hmean(a, weights=weights)
+        desired = TestPowMean.wpmean_reference(np.array(a), p, weights)
+        check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5)
+
+    def test_weights_2d_array_axisnone(self):
+        a, p = np.array([[2, 5], [10, 5], [6, 5]]), 9.87654321
+        weights = np.array([[10, 1], [5, 1], [3, 1]])
+        desired = TestPowMean.wpmean_reference(np.array(a), p, weights)
         check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5)
 
     def test_weights_2d_array_axis0(self):
