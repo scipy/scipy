@@ -69,7 +69,7 @@ class ksone_gen(rv_continuous):
 
     This is the distribution of the one-sided Kolmogorov-Smirnov (KS)
     statistics :math:`D_n^+` and :math:`D_n^-`
-    for a finite sample size ``n`` (the shape parameter).
+    for a finite sample size ``n >= 1`` (the shape parameter).
 
     %(before_notes)s
 
@@ -102,6 +102,9 @@ class ksone_gen(rv_continuous):
     %(example)s
 
     """
+    def _argcheck(self, n):
+        return (n >= 1) & (n == np.round(n))
+
     def _shape_info(self):
         return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
 
@@ -128,7 +131,7 @@ class kstwo_gen(rv_continuous):
     r"""Kolmogorov-Smirnov two-sided test statistic distribution.
 
     This is the distribution of the two-sided Kolmogorov-Smirnov (KS)
-    statistic :math:`D_n` for a finite sample size ``n``
+    statistic :math:`D_n` for a finite sample size ``n >= 1``
     (the shape parameter).
 
     %(before_notes)s
@@ -161,6 +164,9 @@ class kstwo_gen(rv_continuous):
     %(example)s
 
     """
+    def _argcheck(self, n):
+        return (n >= 1) & (n == np.round(n))
+
     def _shape_info(self):
         return [_ShapeInfo("n", True, (1, np.inf), (True, False))]
 
@@ -2040,7 +2046,7 @@ class f_gen(rv_continuous):
                                 {(df_2+df_1 x)^{(df_1+df_2)/2}
                                  B(df_1/2, df_2/2)}
 
-    for :math:`x > 0`.
+    for :math:`x > 0` and parameters :math:`df_1, df_2 > 0` .
 
     `f` takes ``dfn`` and ``dfd`` as shape parameters.
 
@@ -2272,7 +2278,7 @@ class truncweibull_min_gen(rv_continuous):
 
         f(x, a, b, c) = \frac{c x^{c-1} \exp(-x^c)}{\exp(-a^c) - \exp(-b^c)}
 
-    for :math:`a < x <= b`, :math:`c > 0`.
+    for :math:`a < x <= b`, :math:`0 \le a < b` and :math:`c > 0`.
 
     `truncweibull_min` takes :math:`a`, :math:`b`, and :math:`c` as shape
     parameters.
@@ -3868,7 +3874,8 @@ class gausshyper_gen(rv_continuous):
 
         f(x, a, b, c, z) = C x^{a-1} (1-x)^{b-1} (1+zx)^{-c}
 
-    for :math:`0 \le x \le 1`, :math:`a,b > 0`, :math:`c` a real number, :math:`z > -1`, and :math:`C = \frac{1}{B(a, b) F[2, 1](c, a; a+b; -z)}`.
+    for :math:`0 \le x \le 1`, :math:`a,b > 0`, :math:`c` a real number,
+    :math:`z > -1`, and :math:`C = \frac{1}{B(a, b) F[2, 1](c, a; a+b; -z)}`.
     :math:`F[2, 1]` is the Gauss hypergeometric function
     `scipy.special.hyp2f1`.
 
@@ -4105,7 +4112,7 @@ class geninvgauss_gen(rv_continuous):
 
         f(x, p, b) = x^{p-1} \exp(-b (x + 1/x) / 2) / (2 K_p(b))
 
-    where `x > 0`, and the parameters `p, b` satisfy `b > 0` ([1]_).
+    where `x > 0`, `p` is a real number and `b > 0`([1]_).
     :math:`K_p` is the modified Bessel function of second kind of order `p`
     (`scipy.special.kv`).
 
@@ -4529,7 +4536,7 @@ class invweibull_gen(rv_continuous):
     _support_mask = rv_continuous._open_support_mask
 
     def _shape_info(self):
-        return [_ShapeInfo("c", False, (-np.inf, np.inf), (False, False))]
+        return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
 
     def _pdf(self, x, c):
         # invweibull.pdf(x, c) = c * x**(-c-1) * exp(-x**(-c))
