@@ -146,6 +146,14 @@ def test_expon_fit():
     assert_allclose(phat, [0, 1.0], atol=1e-3)
 
 
+def test_fit_error():
+    data = np.concatenate([np.zeros(29), np.ones(21)])
+    message = "Optimization converged to parameters that are..."
+    with pytest.raises(RuntimeError, match=message), \
+          pytest.warns(RuntimeWarning):
+        stats.beta.fit(data)
+
+
 @pytest.mark.parametrize("dist, params",
                          [(stats.norm, (0.5, 2.5)),  # type: ignore[attr-defined] # noqa
                           (stats.binom, (10, 0.3, 2))])  # type: ignore[attr-defined] # noqa

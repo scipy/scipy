@@ -2684,14 +2684,14 @@ class rv_continuous(rv_generic):
 
         loc, scale, shapes = self._unpack_loc_scale(vals)
         if not (np.all(self._argcheck(*shapes)) and scale > 0):
-            raise Exception("Optimization converged to parameters that are "
-                            "outside the range allowed by the distribution.")
+            raise RuntimeError("Optimization converged to parameters that are "
+                               "beyond the range allowed by the distribution.")
 
         if method == 'mm':
             if not np.isfinite(obj):
-                raise Exception("Optimization failed: either a data moment "
-                                "or fitted distribution moment is "
-                                "non-finite.")
+                raise RuntimeError("Optimization failed: either a data moment "
+                                   "or fitted distribution moment is "
+                                   "non-finite.")
 
         return vals
 
