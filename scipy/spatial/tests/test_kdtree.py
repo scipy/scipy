@@ -216,47 +216,6 @@ class Test_vectorization_KDTree:
         assert_(np.all(~np.isfinite(d[:, :, -s:])))
         assert_(np.all(i[:, :, -s:] == self.kdtree.n))
 
-    @pytest.mark.parametrize('r', [0.8, 1.1])
-    def test_single_query_all_neighbors(self, r):
-        np.random.seed(1234)
-        point = np.random.rand(self.kdtree.m)
-        with pytest.warns(DeprecationWarning, match="k=None"):
-            d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
-        assert isinstance(d, list)
-        assert isinstance(i, list)
-
-        assert_array_equal(np.array(d) <= r, True)  # All within bounds
-        # results are sorted by distance
-        assert all(a <= b for a, b in zip(d, d[1:]))
-        assert_allclose(  # Distances are correct
-            d, minkowski_distance(point, self.kdtree.data[i, :]))
-
-        # Compare to brute force
-        dist = minkowski_distance(point, self.kdtree.data)
-        assert_array_equal(sorted(i), (dist <= r).nonzero()[0])
-
-    def test_vectorized_query_all_neighbors(self):
-        query_shape = (2, 4)
-        r = 1.1
-        np.random.seed(1234)
-        points = np.random.rand(*query_shape, self.kdtree.m)
-        with pytest.warns(DeprecationWarning, match="k=None"):
-            d, i = self.kdtree.query(points, k=None, distance_upper_bound=r)
-        assert_equal(np.shape(d), query_shape)
-        assert_equal(np.shape(i), query_shape)
-
-        for idx in np.ndindex(query_shape):
-            dist, ind = d[idx], i[idx]
-            assert isinstance(dist, list)
-            assert isinstance(ind, list)
-
-            assert_array_equal(np.array(dist) <= r, True)  # All within bounds
-            # results are sorted by distance
-            assert all(a <= b for a, b in zip(dist, dist[1:]))
-            assert_allclose(  # Distances are correct
-                dist, minkowski_distance(
-                    points[idx], self.kdtree.data[ind]))
-
 
 class Test_vectorization_cKDTree:
     def setup_method(self):
