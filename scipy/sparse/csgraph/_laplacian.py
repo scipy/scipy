@@ -268,7 +268,7 @@ def laplacian(
 
     The Laplacian matrix is used for
     spectral data clustering and embedding
-    as well as for for spectral graph partitioning.
+    as well as for spectral graph partitioning.
     Our final example illustrates the latter
     for a noisy directed linear graph.
 
