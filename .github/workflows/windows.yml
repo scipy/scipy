@@ -19,7 +19,7 @@ jobs:
     name: Meson Windows tests
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
-    if: "github.repository == 'scipy/scipy' && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')"
+    if: "(github.repository == 'scipy/scipy' && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')) || (github.repository == '')"
     runs-on: windows-2019
     steps:
       - name: Set up Python
