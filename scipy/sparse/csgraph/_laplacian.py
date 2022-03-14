@@ -266,13 +266,64 @@ def laplacian(
            [-1.,  2., -1.],
            [-1., -1.,  2.]])
 
-    >>> from scipy.sparse import random
-    >>> G = random(99, 99)
-    >>> L = csgraph.laplacian(G, symmetrized=True, form="lo")
-    >>> rng = np.random.default_rng()
-    >>> X = rng.random((99, 3))
-    >>> from scipy.sparse.linalg import lobpcg
-    >>> eigenvalues, _ = lobpcg(L, X, largest=False)
+    The Laplacian matrix is used for
+    spectral data clustering and embedding
+    as well as for for spectral graph partitioning.
+    Our final example illustrates the latter
+    for a noisy directed linear graph.
+
+    >>> from scipy import sparse
+
+    Create a directed linear graph with N vertices:
+
+    >>> N = 35
+    >>> G = sparse.diags(np.ones(N-1), 1, format="csr")
+
+    Fix a random seed and add a random sparse noise to the graph.
+
+    >>> rng = np.random.default_rng(0)
+    >>> G += 1e-2 * sparse.random(N, N, density=0.1, random_state=rng)
+
+    Set initial approximations for eigenvectors:
+
+    >>> X = rng.random((N, 2))
+
+    The constant vector of ones is always a trivial eigenvector
+    of the non-normalized Laplacian to be filtered out:
+
+    >>> Y=np.ones((N, 1))
+
+    Alternating the sign of the graph weights allows determining
+    labels for spectral max- and min- cuts in a single loop:
+
+    >>> for cut in ["max", "min"]:
+    >>>     G = -G
+
+    Since the graph is undirected, the option ``symmetrized=True``
+    must be used in the construction of the Laplacian.
+    The option ``normed=True`` cannot be used for the negative weights here
+    as the symmetric normalization evaluates square roots.
+    The option ``form="lo"`` is matrix-free, i.e. guarantees
+    a fixed memory footprint and read-only access to the graph.
+
+    >>>     L = csgraph.laplacian(G, symmetrized=True, form="lo")
+
+    Calling an eigenvalue solver to compute the Fiedler vector
+    that determines the labels as the signs of its components.
+
+    >>>     _, eves = sparse.linalg.lobpcg(L, X, Y=Y, largest=False, tol=1e-3)
+    >>>     print(cut + "-cut labels:\n", 1 * (eves[:, 0]>0))
+    max-cut labels:
+    [0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0]
+    min-cut labels:
+    [0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1]
+
+    As anticipated for a (slightly noisy) linear graph,
+    the max-cut strips all the edges of the graph coloring all
+    odd vertices into one color and all even vertices into another one,
+    while the balanced min-cut partitions the graph
+    in the middle by.deleting a single edge.
+    Both determined partitions are optimal.
     """
     if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
         raise ValueError("csgraph must be a square matrix or array")
