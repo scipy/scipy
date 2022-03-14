@@ -6497,6 +6497,10 @@ class powerlaw_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    pareto
+
     Notes
     -----
     The probability density function for `powerlaw` is:
@@ -6510,6 +6514,11 @@ class powerlaw_gen(rv_continuous):
     `powerlaw` takes ``a`` as a shape parameter for :math:`a`.
 
     %(after_notes)s
+
+    For example, the support of `powerlaw` can be adjusted from the default
+    interval ``[0, 1]`` to the interval ``[c, c+d]`` by setting ``loc=c`` and
+    ``scale=d``. For a power-law distribution with infinite support, see
+    `pareto`.
 
     `powerlaw` is a special case of `beta` with ``b=1``.
 
