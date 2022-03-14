@@ -672,7 +672,9 @@ def _rename_parameter(old_name, new_name, dep_version=None):
     new_name : str
         New name of parameter
     dep_version : str, optional
-        Version of SciPy in which old parameter was deprecated
+        Version of SciPy in which old parameter was deprecated in the format
+        'X.Y.Z'. If supplied, the deprecation message will indicate that
+        support for the old parameter will be removed in version 'X.Y+2.Z'
 
     Notes
     -----
@@ -683,16 +685,19 @@ def _rename_parameter(old_name, new_name, dep_version=None):
         @functools.wraps(fun)
         def wrapper(*args, **kwargs):
             if old_name in kwargs:
+                if dep_version:
+                    end_version = dep_version.split('.')
+                    end_version[1] = str(int(end_version[1]) + 2)
+                    end_version = '.'.join(end_version)
+                    message = (f"Use of keyword argument `{old_name}` is "
+                               f"deprecated and replaced by `{new_name}`.  "
+                               f"Support for `{old_name}` will be removed "
+                               f"in SciPy {end_version}.")
+                    warnings.warn(message, DeprecationWarning, stacklevel=2)
                 if new_name in kwargs:
                     message = (f"{fun.__name__}() got multiple values for "
                                f"argument now known as `{new_name}`")
                     raise TypeError(message)
-                if dep_version:
-                    message = (f"Use of keyword argument `{old_name}` is "
-                               f"deprecated and replaced by `{new_name}`.  "
-                               f"Support for `{old_name}` will be removed two "
-                               f"feature releases after SciPy {dep_version}.")
-                    warnings.warn(message, DeprecationWarning, stacklevel=2)
                 kwargs[new_name] = kwargs.pop(old_name)
             return fun(*args, **kwargs)
         return wrapper
