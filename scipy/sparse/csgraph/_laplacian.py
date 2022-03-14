@@ -104,7 +104,7 @@ def laplacian(
     replaced with zeros for the purpose of normalization where ``normed=True``.
     The normalization uses the inverse square roots of row-sums of the input
     adjacency matrix, and thus may fail if the row-sums contain
-    zeros, negative, or complex with a non-zero imaginary part values.
+    negative or complex with a non-zero imaginary part values.
 
     The normalization is symmetric, making the normalized Laplacian also
     symmetric if the input csgraph was symmetric.
@@ -312,7 +312,7 @@ def laplacian(
     that determines the labels as the signs of its components.
 
     >>>     _, eves = sparse.linalg.lobpcg(L, X, Y=Y, largest=False, tol=1e-3)
-    >>>     print(cut + "-cut labels:\n", 1 * (eves[:, 0]>0))
+    >>>     print(cut + "-cut labels:\\n", 1 * (eves[:, 0]>0))
     max-cut labels:
     [0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0]
     min-cut labels:
