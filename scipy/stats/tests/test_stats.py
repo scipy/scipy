@@ -5742,7 +5742,7 @@ class TestPowMean:
         check_equal_pmean(a, p, desired, axis=0)
 
     def test_2d_axis0_with_zero(self):
-        a, p = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5
+        a, p = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], 0.5
         desired = [TestPowMean.pmean_reference(np.array(
             [a[i][j] for i in range(len(a))]), p) for j in range(len(a[0]))]
         assert_allclose(stats.pmean(a, p, axis=0), desired)
@@ -5754,7 +5754,7 @@ class TestPowMean:
         check_equal_pmean(a, p, desired, axis=1)
 
     def test_2d_axis1_with_zero(self):
-        a, p = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5
+        a, p = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], 0.5
         desired = [TestPowMean.pmean_reference(np.array(a_), p) for a_ in a]
         assert_allclose(stats.pmean(a, p, axis=1), desired)
 
