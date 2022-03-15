@@ -92,7 +92,6 @@ def lloyd_centroidal_voronoi_tessellation(
         *,
         tol: DecimalNumber = 1e-5,
         maxiter: IntNumber = 10,
-        decay: Optional[npt.ArrayLike] = None,
         qhull_options: Optional[str] = None,
 ) -> np.ndarray:
     """Approximate Centroidal Voronoi Tessellation.
@@ -112,11 +111,6 @@ def lloyd_centroidal_voronoi_tessellation(
         `tol` is above the threshold.
         Too many iterations tend to cluster the points as a hypersphere.
         Default is 10.
-    decay : {float, array_like (maxiter)}, optional
-        Relaxation decay. A positive value would move the points toward
-        their centroid, and negative value would move them away.
-        1 would move the points to their centroid. Default is a varying
-        exponential decay starting at 2 and ending at 1 after `maxiter`.
     qhull_options : str, optional
         Additional options to pass to Qhull. See Qhull manual
         for details. (Default: "Qbb Qc Qz Qj Qx" for ndim > 4 and
@@ -134,6 +128,10 @@ def lloyd_centroidal_voronoi_tessellation(
     Tessellation; (ii) find the centroid of each Voronoi cell; (iii) move the
     points toward the centroid of their respective cell. See [1]_, [2]_.
 
+    A relaxation factor is used to control how fast points can move at each
+    iteration. This factor is starting at 2 and ending at 1 after `maxiter`
+    following an exponential decay.
+
     The process converges to equally spaced points. It implies that measures
     like the discrepancy could suffer from too many iterations. On the other
     hand, L1 and L2 distances should improve. This is especially true with
@@ -144,7 +142,7 @@ def lloyd_centroidal_voronoi_tessellation(
         The current implementation does not intersect the Voronoi Tessellation
         with the boundaries. This implies that for a low number of points,
         empirically below 20, no Voronoi cell is touching the boundaries.
-        Hence points cannot be moved close to the boundaries.
+        Hence, points cannot be moved close to the boundaries.
 
         Further improvements could consider the points at infinity so that
         all boundaries are segments of some Voronoi cells. This would fix
@@ -156,7 +154,7 @@ def lloyd_centroidal_voronoi_tessellation(
        intractable with dimensions as low as 10 even for a sample of points
        of size as low as 1000.
 
-    .. versionadded:: 1.8.0
+    .. versionadded:: 1.9.0
 
     References
     ----------
@@ -212,19 +210,11 @@ def lloyd_centroidal_voronoi_tessellation(
         if points.shape[1] >= 5:
             qhull_options += ' Qx'
 
-    if decay is None:
-        # Fit an exponential to be 2 at 0 and 1 at `maxiter`.
-        # The decay is used for relaxation.
-        # analytical solution for y=exp(-maxiter/x) - 0.1
-        root = -maxiter / np.log(0.1)
-        decay = [np.exp(-x / root)+0.9 for x in range(maxiter)]
-    else:
-        try:
-            decay = np.broadcast_to(decay, maxiter)  # type: ignore[arg-type]
-        except ValueError as exc:
-            msg = ('decay is not a list of float'
-                   ' of length maxiter')
-            raise ValueError(msg) from exc
+    # Fit an exponential to be 2 at 0 and 1 at `maxiter`.
+    # The decay is used for relaxation.
+    # analytical solution for y=exp(-maxiter/x) - 0.1
+    root = -maxiter / np.log(0.1)
+    decay = [np.exp(-x / root)+0.9 for x in range(maxiter)]
 
     l1_old = _l1_norm(points=points)
     for i in range(maxiter):

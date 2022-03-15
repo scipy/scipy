@@ -50,20 +50,6 @@ def test_lloyd_non_mutating():
     assert not np.may_share_memory(orig_points, new_points)
 
 
-def test_lloyd_decay():
-    rng = np.random.default_rng(2349870879)
-    points = rng.random((20, 2))
-
-    maxiter = 5
-    decay_const = lloyd_centroidal_voronoi_tessellation(
-            points, decay=[1], maxiter=maxiter
-    )
-    decay_list = lloyd_centroidal_voronoi_tessellation(
-            points, decay=[1, 1, 1, 1, 1], maxiter=maxiter
-    )
-    assert_allclose(decay_const, decay_list)
-
-
 def test_lloyd_errors():
     with pytest.raises(ValueError, match=r"`points` is not a 2D array"):
         points = [0, 1, 0.5]
@@ -76,11 +62,3 @@ def test_lloyd_errors():
     with pytest.raises(ValueError, match=r"`points` is not in unit hypercube"):
         points = [[-1.1, 0], [0.1, 0.4], [1, 2]]
         lloyd_centroidal_voronoi_tessellation(points)
-
-    with pytest.raises(ValueError, match=r"decay is not a list"):
-        points = [[0, 0], [1, 1]]
-        decay = [1, 2, 3]
-        maxiter = 2
-        lloyd_centroidal_voronoi_tessellation(
-                points, decay=decay, maxiter=maxiter
-        )
