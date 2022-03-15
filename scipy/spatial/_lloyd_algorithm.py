@@ -97,13 +97,13 @@ def lloyd_centroidal_voronoi_tessellation(
 ) -> np.ndarray:
     """Approximate Centroidal Voronoi Tessellation.
 
-    Perturb points in :math:`[0, 1]^d` using Lloyd-Max algorithm.
+    Perturb points in N-dimensions using Lloyd-Max algorithm.
 
     Parameters
     ----------
     points : array_like (n, d)
         The points to iterate on. With ``n`` the number of points and ``d``
-        the dimension.
+        the dimension. Points must be in :math:`[0, 1]^d`, with ``d>=2``.
     tol : float, optional
         Tolerance for termination. If the min of the L1-norm over the points
         changes less than `tol`, it stops the algorithm. Default is 1e-5.
@@ -167,7 +167,7 @@ def lloyd_centroidal_voronoi_tessellation(
 
     Examples
     --------
-    >>> from scipy.spatial.distance import cdist
+    >>> from scipy.spatial.distance import pdist
     >>> from scipy.spatial import lloyd_centroidal_voronoi_tessellation
     >>> rng = np.random.default_rng()
     >>> points = rng.random((128, 2))
@@ -181,8 +181,7 @@ def lloyd_centroidal_voronoi_tessellation(
     Compute the quality of the points using the L1 criterion.
 
     >>> def l1_norm(points):
-    ...    l1 = cdist(points, points, 'cityblock')
-    ...    return np.min(l1[l1.nonzero()])
+    ...    return pdist(points, 'cityblock').min()
 
     >>> l1_norm(points)
     0.00161...  # random
@@ -198,11 +197,14 @@ def lloyd_centroidal_voronoi_tessellation(
     points = np.asarray(points).copy()
 
     if not points.ndim == 2:
-        raise ValueError('Sample is not a 2D array')
+        raise ValueError('`points` is not a 2D array')
 
-    # Checking that points are within the bounds
-    if not ((points.max() <= 1.) and (points.min() >= 0.)):
-        raise ValueError('Sample is out of bounds')
+    if not points.shape[1] >= 2:
+        raise ValueError('`points` dimension is not >= 2')
+
+    # Checking that sample is within the hypercube
+    if (points.max() > 1.) or (points.min() < 0.):
+        raise ValueError('`points` is not in unit hypercube')
 
     if qhull_options is None:
         qhull_options = 'Qbb Qc Qz QJ'

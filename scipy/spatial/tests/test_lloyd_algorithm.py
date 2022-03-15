@@ -51,7 +51,7 @@ def test_lloyd_non_mutating():
 
 
 def test_lloyd_decay():
-    rng = np.random.default_rng()
+    rng = np.random.default_rng(2349870879)
     points = rng.random((20, 2))
 
     maxiter = 5
@@ -65,11 +65,15 @@ def test_lloyd_decay():
 
 
 def test_lloyd_errors():
-    with pytest.raises(ValueError, match=r"Sample is not a 2D array"):
+    with pytest.raises(ValueError, match=r"`points` is not a 2D array"):
         points = [0, 1, 0.5]
         lloyd_centroidal_voronoi_tessellation(points)
 
-    with pytest.raises(ValueError, match=r"Sample is out of bounds"):
+    with pytest.raises(ValueError, match=r"`points` dimension is not >= 2"):
+        points = [[0], [0.4], [1]]
+        lloyd_centroidal_voronoi_tessellation(points)
+
+    with pytest.raises(ValueError, match=r"`points` is not in unit hypercube"):
         points = [[-1.1, 0], [0.1, 0.4], [1, 2]]
         lloyd_centroidal_voronoi_tessellation(points)
 
