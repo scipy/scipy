@@ -251,6 +251,7 @@ __all__ = [
     'obl_rad2',
     'obl_rad2_cv',
     'owens_t',
+    'p_roots',
     'pbdn_seq',
     'pbdv',
     'pbdv_seq',
@@ -695,7 +696,7 @@ def clpmn(m, n, z, type=3):
 @_create_special(_N_k_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def comb(N, k, exact=False, repetition=False):
+def comb(N, k, exact=False, repetition=False, legacy=True):
     return (N, k)
 
 
@@ -1060,6 +1061,13 @@ def obl_cv_seq(m, n, c):
 @all_of_type(ndarray)
 @_get_docs
 def roots_legendre(n, mu=False):
+    return ()
+
+
+@_create_special(_identity_replacer)
+@all_of_type(ndarray)
+@_get_docs
+def p_roots(n, mu=False):
     return ()
 
 
