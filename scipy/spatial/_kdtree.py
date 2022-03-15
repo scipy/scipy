@@ -448,7 +448,7 @@ class KDTree(cKDTree):
             raise TypeError("KDTree does not work with complex data")
 
         if k is None:
-            raise TypeError("k must be an integer or a sequence of integers")
+            raise ValueError("k must be an integer or a sequence of integers")
 
         d, i = super().query(x, k, eps, p, distance_upper_bound, workers)
         if isinstance(i, int):
