@@ -33,7 +33,6 @@ inspect.isdescriptor = (lambda obj: old_isdesc(obj)
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 
-sys.path.insert(0, os.path.abspath('../sphinxext'))
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 import numpydoc.docscrape as np_docscrape  # noqa:E402
