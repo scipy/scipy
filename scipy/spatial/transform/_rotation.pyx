@@ -2361,6 +2361,8 @@ cdef class Rotation:
                                  "equal to number of input vectors, got "
                                  "{} values and {} vectors.".format(
                                     weights.shape[0], b.shape[0]))
+            if (weights < 0).any():
+                raise ValueError("`weights` may not contain negative values")
 
         B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
         u, s, vh = np.linalg.svd(B)

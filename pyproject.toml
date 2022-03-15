@@ -85,7 +85,7 @@ test = [
     "pytest-xdist",
     "asv",
     "mpmath",
-    "gmpy2==2.1.0rc1",
+    "gmpy2",
     "threadpoolctl",
     "scikit-umfpack",
 ]

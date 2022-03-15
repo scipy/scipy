@@ -1,10 +1,12 @@
 import numpy as np
 import pytest
-from scipy.stats import bootstrap, BootstrapDegenerateDistributionWarning
-from numpy.testing import assert_allclose, assert_equal
+from scipy.stats import (bootstrap, BootstrapDegenerateDistributionWarning,
+                         monte_carlo_test)
+from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from .. import _bootstrap as _bootstrap
 from scipy._lib._util import rng_integers
+from scipy.optimize import root
 
 
 def test_bootstrap_iv():
@@ -168,7 +170,7 @@ def test_bootstrap_against_theory(method):
     data = stats.norm.rvs(loc=5, scale=2, size=5000, random_state=0)
     alpha = 0.95
     dist = stats.t(df=len(data)-1, loc=np.mean(data), scale=stats.sem(data))
-    expected_interval = dist.interval(alpha=alpha)
+    expected_interval = dist.interval(confidence=alpha)
     expected_se = dist.std()
 
     res = bootstrap((data,), np.mean, n_resamples=5000,
@@ -367,6 +369,24 @@ def test_bootstrap_degenerate(method):
     assert_equal(res.standard_error, 0)
 
 
+@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+def test_bootstrap_gh15678(method):
+    # Check that gh-15678 is fixed: when statistic function returned a Python
+    # float, method="BCa" failed when trying to add a dimension to the float
+    rng = np.random.default_rng(354645618886684)
+    dist = stats.norm(loc=2, scale=4)
+    data = dist.rvs(size=100, random_state=rng)
+    data = (data,)
+    res = bootstrap(data, stats.skew, method=method, n_resamples=100,
+                    random_state=np.random.default_rng(9563))
+    # this always worked because np.apply_along_axis returns NumPy data type
+    ref = bootstrap(data, stats.skew, method=method, n_resamples=100,
+                    random_state=np.random.default_rng(9563), vectorized=False)
+    assert_allclose(res.confidence_interval, ref.confidence_interval)
+    assert_allclose(res.standard_error, ref.standard_error)
+    assert isinstance(res.standard_error, np.float64)
+
+
 def test_jackknife_resample():
     shape = 3, 4, 5, 6
     np.random.seed(0)
@@ -470,3 +490,271 @@ def test_vectorize_statistic(axis):
     res1 = statistic(x, y, z, axis=axis)
     res2 = statistic2(x, y, z, axis=axis)
     assert_allclose(res1, res2)
+
+
+@pytest.mark.xslow()
+@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+def test_vector_valued_statistic(method):
+    # Generate 95% confidence interval around MLE of normal distribution
+    # parameters. Repeat 100 times, each time on sample of size 100.
+    # Check that confidence interval contains true parameters ~95 times.
+    # Confidence intervals are estimated and stochastic; a test failure
+    # does not necessarily indicate that something is wrong. More important
+    # than values of `counts` below is that the shapes of the outputs are
+    # correct.
+
+    rng = np.random.default_rng(2196847219)
+    params = 1, 0.5
+    sample = stats.norm.rvs(*params, size=(100, 100), random_state=rng)
+
+    def statistic(data):
+        return stats.norm.fit(data)
+
+    res = bootstrap((sample,), statistic, method=method, axis=-1,
+                    vectorized=False)
+
+    counts = np.sum((res.confidence_interval.low.T < params)
+                    & (res.confidence_interval.high.T > params),
+                    axis=0)
+    assert np.all(counts >= 90)
+    assert np.all(counts <= 100)
+    assert res.confidence_interval.low.shape == (2, 100)
+    assert res.confidence_interval.high.shape == (2, 100)
+    assert res.standard_error.shape == (2, 100)
+
+
+# --- Test Monte Carlo Hypothesis Test --- #
+
+class TestMonteCarloHypothesisTest:
+    atol = 2.5e-2  # for comparing p-value
+
+    def rvs(self, rvs_in, rs):
+        return lambda *args, **kwds: rvs_in(*args, random_state=rs, **kwds)
+
+    def test_input_validation(self):
+        # test that the appropriate error messages are raised for invalid input
+
+        def stat(x):
+            return stats.skewnorm(x).statistic
+
+        message = "`axis` must be an integer."
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, axis=1.5)
+
+        message = "`vectorized` must be `True` or `False`."
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, vectorized=1.5)
+
+        message = "`rvs` must be callable."
+        with pytest.raises(TypeError, match=message):
+            monte_carlo_test([1, 2, 3], None, stat)
+
+        message = "`statistic` must be callable."
+        with pytest.raises(TypeError, match=message):
+            monte_carlo_test([1, 2, 3], stats.norm.rvs, None)
+
+        message = "`n_resamples` must be a positive integer."
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
+                             n_resamples=-1000)
+
+        message = "`n_resamples` must be a positive integer."
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
+                             n_resamples=1000.5)
+
+        message = "`batch` must be a positive integer or None."
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, batch=-1000)
+
+        message = "`batch` must be a positive integer or None."
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, batch=1000.5)
+
+        message = "`alternative` must be in..."
+        with pytest.raises(ValueError, match=message):
+            monte_carlo_test([1, 2, 3], stats.norm.rvs, stat,
+                             alternative='ekki')
+
+    def test_batch(self):
+        # make sure that the `batch` parameter is respected by checking the
+        # maximum batch size provided in calls to `statistic`
+        rng = np.random.default_rng(23492340193)
+        x = rng.random(10)
+
+        def statistic(x, axis):
+            batch_size = 1 if x.ndim == 1 else len(x)
+            statistic.batch_size = max(batch_size, statistic.batch_size)
+            statistic.counter += 1
+            return stats.skewtest(x, axis=axis).statistic
+        statistic.counter = 0
+        statistic.batch_size = 0
+
+        kwds = {'sample': x, 'statistic': statistic,
+                'n_resamples': 1000, 'vectorized': True}
+
+        kwds['rvs'] = self.rvs(stats.norm.rvs, np.random.default_rng(32842398))
+        res1 = monte_carlo_test(batch=1, **kwds)
+        assert_equal(statistic.counter, 1001)
+        assert_equal(statistic.batch_size, 1)
+
+        kwds['rvs'] = self.rvs(stats.norm.rvs, np.random.default_rng(32842398))
+        statistic.counter = 0
+        res2 = monte_carlo_test(batch=50, **kwds)
+        assert_equal(statistic.counter, 21)
+        assert_equal(statistic.batch_size, 50)
+
+        kwds['rvs'] = self.rvs(stats.norm.rvs, np.random.default_rng(32842398))
+        statistic.counter = 0
+        res3 = monte_carlo_test(**kwds)
+        assert_equal(statistic.counter, 2)
+        assert_equal(statistic.batch_size, 1000)
+
+        assert_equal(res1.pvalue, res3.pvalue)
+        assert_equal(res2.pvalue, res3.pvalue)
+
+    @pytest.mark.parametrize('axis', range(-3, 3))
+    def test_axis(self, axis):
+        # test that Nd-array samples are handled correctly for valid values
+        # of the `axis` parameter
+        rng = np.random.default_rng(2389234)
+        norm_rvs = self.rvs(stats.norm.rvs, rng)
+
+        size = [2, 3, 4]
+        size[axis] = 100
+        x = norm_rvs(size=size)
+        expected = stats.skewtest(x, axis=axis)
+
+        def statistic(x, axis):
+            return stats.skewtest(x, axis=axis).statistic
+
+        res = monte_carlo_test(x, norm_rvs, statistic, vectorized=True,
+                               n_resamples=20000, axis=axis)
+
+        assert_allclose(res.statistic, expected.statistic)
+        assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
+
+    @pytest.mark.parametrize('alternative', ("less", "greater"))
+    @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
+    def test_against_ks_1samp(self, alternative, a):
+        # test that monte_carlo_test can reproduce pvalue of ks_1samp
+        rng = np.random.default_rng(65723433)
+
+        x = stats.skewnorm.rvs(a=a, size=30, random_state=rng)
+        expected = stats.ks_1samp(x, stats.norm.cdf, alternative=alternative)
+
+        def statistic1d(x):
+            return stats.ks_1samp(x, stats.norm.cdf, mode='asymp',
+                                  alternative=alternative).statistic
+
+        norm_rvs = self.rvs(stats.norm.rvs, rng)
+        res = monte_carlo_test(x, norm_rvs, statistic1d,
+                               n_resamples=1000, vectorized=False,
+                               alternative=alternative)
+
+        assert_allclose(res.statistic, expected.statistic)
+        if alternative == 'greater':
+            assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
+        elif alternative == 'less':
+            assert_allclose(1-res.pvalue, expected.pvalue, atol=self.atol)
+
+    @pytest.mark.parametrize('hypotest', (stats.skewtest, stats.kurtosistest))
+    @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
+    @pytest.mark.parametrize('a', np.linspace(-2, 2, 5))  # skewness
+    def test_against_normality_tests(self, hypotest, alternative, a):
+        # test that monte_carlo_test can reproduce pvalue of normality tests
+        rng = np.random.default_rng(85723405)
+
+        x = stats.skewnorm.rvs(a=a, size=150, random_state=rng)
+        expected = hypotest(x, alternative=alternative)
+
+        def statistic(x, axis):
+            return hypotest(x, axis=axis).statistic
+
+        norm_rvs = self.rvs(stats.norm.rvs, rng)
+        res = monte_carlo_test(x, norm_rvs, statistic, vectorized=True,
+                               alternative=alternative)
+
+        assert_allclose(res.statistic, expected.statistic)
+        assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
+
+    @pytest.mark.parametrize('a', np.arange(-2, 3))  # skewness parameter
+    def test_against_normaltest(self, a):
+        # test that monte_carlo_test can reproduce pvalue of normaltest
+        rng = np.random.default_rng(12340513)
+
+        x = stats.skewnorm.rvs(a=a, size=150, random_state=rng)
+        expected = stats.normaltest(x)
+
+        def statistic(x, axis):
+            return stats.normaltest(x, axis=axis).statistic
+
+        norm_rvs = self.rvs(stats.norm.rvs, rng)
+        res = monte_carlo_test(x, norm_rvs, statistic, vectorized=True,
+                               alternative='greater')
+
+        assert_allclose(res.statistic, expected.statistic)
+        assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
+
+    @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
+    def test_against_cramervonmises(self, a):
+        # test that monte_carlo_test can reproduce pvalue of cramervonmises
+        rng = np.random.default_rng(234874135)
+
+        x = stats.skewnorm.rvs(a=a, size=30, random_state=rng)
+        expected = stats.cramervonmises(x, stats.norm.cdf)
+
+        def statistic1d(x):
+            return stats.cramervonmises(x, stats.norm.cdf).statistic
+
+        norm_rvs = self.rvs(stats.norm.rvs, rng)
+        res = monte_carlo_test(x, norm_rvs, statistic1d,
+                               n_resamples=1000, vectorized=False,
+                               alternative='greater')
+
+        assert_allclose(res.statistic, expected.statistic)
+        assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
+
+    @pytest.mark.parametrize('dist_name', ('norm', 'logistic'))
+    @pytest.mark.parametrize('i', range(5))
+    def test_against_anderson(self, dist_name, i):
+        # test that monte_carlo_test can reproduce results of `anderson`. Note:
+        # `anderson` does not provide a p-value; it provides a list of
+        # significance levels and the associated critical value of the test
+        # statistic. `i` used to index this list.
+
+        # find the skewness for which the sample statistic matches one of the
+        # critical values provided by `stats.anderson`
+
+        def fun(a):
+            rng = np.random.default_rng(394295467)
+            x = stats.tukeylambda.rvs(a, size=100, random_state=rng)
+            expected = stats.anderson(x, dist_name)
+            return expected.statistic - expected.critical_values[i]
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            sol = root(fun, x0=0)
+        assert(sol.success)
+
+        # get the significance level (p-value) associated with that critical
+        # value
+        a = sol.x[0]
+        rng = np.random.default_rng(394295467)
+        x = stats.tukeylambda.rvs(a, size=100, random_state=rng)
+        expected = stats.anderson(x, dist_name)
+        expected_stat = expected.statistic
+        expected_p = expected.significance_level[i]/100
+
+        # perform equivalent Monte Carlo test and compare results
+        def statistic1d(x):
+            return stats.anderson(x, dist_name).statistic
+
+        dist_rvs = self.rvs(getattr(stats, dist_name).rvs, rng)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning)
+            res = monte_carlo_test(x, dist_rvs,
+                                   statistic1d, n_resamples=1000,
+                                   vectorized=False, alternative='greater')
+
+        assert_allclose(res.statistic, expected_stat)
+        assert_allclose(res.pvalue, expected_p, atol=2*self.atol)

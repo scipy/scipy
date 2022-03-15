@@ -872,10 +872,7 @@ def test_kdtree_build_modes(kdtree_type):
 
 def test_kdtree_pickle(kdtree_type):
     # test if it is possible to pickle a KDTree
-    try:
-        import cPickle as pickle  # type: ignore[import]
-    except ImportError:
-        import pickle
+    import pickle
     np.random.seed(0)
     n = 50
     k = 4
@@ -889,10 +886,7 @@ def test_kdtree_pickle(kdtree_type):
 
 def test_kdtree_pickle_boxsize(kdtree_type):
     # test if it is possible to pickle a periodic KDTree
-    try:
-        import cPickle as pickle
-    except ImportError:
-        import pickle
+    import pickle
     np.random.seed(0)
     n = 50
     k = 4

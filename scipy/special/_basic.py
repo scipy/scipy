@@ -5,6 +5,7 @@
 import operator
 import numpy as np
 import math
+import warnings
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
@@ -1157,7 +1158,7 @@ def mathieu_even_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        print("Warning, too many predicted coefficients.")
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
     kd = 1
     m = int(floor(m))
     if m % 2:
@@ -1214,7 +1215,7 @@ def mathieu_odd_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        print("Warning, too many predicted coefficients.")
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
     kd = 4
     m = int(floor(m))
     if m % 2:
@@ -2159,7 +2160,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False):
+def comb(N, k, exact=False, repetition=False, legacy=True):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2171,11 +2172,25 @@ def comb(N, k, exact=False, repetition=False):
     k : int, ndarray
         Number of elements taken.
     exact : bool, optional
-        If `exact` is False, then floating point precision is used, otherwise
-        exact long integer is computed.
+        For integers, if `exact` is False, then floating point precision is
+        used, otherwise the result is computed exactly. For non-integers, if
+        `exact` is True, the inputs are currently cast to integers, though
+        this behavior is deprecated (see below).
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
+    legacy : bool, optional
+        If `legacy` is True and `exact` is True, then non-integral arguments
+        are cast to ints; if `legacy` is False, the result for non-integral
+        arguments is unaffected by the value of `exact`.
+
+        .. deprecated:: 1.9.0
+            Non-integer arguments are currently being cast to integers when
+            `exact=True`. This behaviour is deprecated and the default will
+            change to avoid the cast in SciPy 1.11.0. To opt into the future
+            behavior set `legacy=False`. If you want to keep the
+            argument-casting but silence this warning, cast your inputs
+            directly, e.g. ``comb(int(your_N), int(your_k), exact=True)``.
 
     Returns
     -------
@@ -2207,8 +2222,23 @@ def comb(N, k, exact=False, repetition=False):
 
     """
     if repetition:
-        return comb(N + k - 1, k, exact)
+        return comb(N + k - 1, k, exact, legacy=legacy)
     if exact:
+        if int(N) != N or int(k) != k:
+            if legacy:
+                warnings.warn(
+                    "Non-integer arguments are currently being cast to "
+                    "integers when exact=True. This behaviour is "
+                    "deprecated and the default will change to avoid the cast "
+                    "in SciPy 1.11.0. To opt into the future behavior set "
+                    "legacy=False. If you want to keep the argument-casting "
+                    "but silence this warning, cast your inputs directly, "
+                    "e.g. comb(int(your_N), int(your_k), exact=True).",
+                    DeprecationWarning, stacklevel=2
+                )
+            else:
+                return comb(N, k)
+        # _comb_int casts inputs to integers
         return _comb_int(N, k)
     else:
         k, N = asarray(k), asarray(N)
@@ -2402,7 +2432,8 @@ def factorial2(n, exact=False):
     ----------
     n : int or array_like
         Calculate ``n!!``.  Arrays are only supported with `exact` set
-        to False.  If ``n < 0``, the return value is 0.
+        to False. If ``n < -1``, the return value is 0.
+        Otherwise if ``n <= 0``, the return value is 1.
     exact : bool, optional
         The result can be approximated rapidly using the gamma-formula
         above (default).  If `exact` is set to True, calculate the
@@ -2462,7 +2493,8 @@ def factorialk(n, k, exact=True):
     Parameters
     ----------
     n : int
-        Calculate multifactorial. If `n` < 0, the return value is 0.
+        Calculate multifactorial. If ``n < 1 - k``, the return value is 0.
+        Otherwise if ``n <= 0``, the return value is 1.
     k : int
         Order of multifactorial.
     exact : bool, optional

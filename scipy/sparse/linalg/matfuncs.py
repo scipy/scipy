@@ -7,7 +7,7 @@ from . import _matfuncs
 
 
 __all__ = [  # noqa: F822
-    'expm', 'inv', 'float_factorial', 'solve', 'solve_triangular',
+    'expm', 'inv', 'solve', 'solve_triangular',
     'isspmatrix', 'spsolve', 'is_pydata_spmatrix', 'LinearOperator',
     'UPPER_TRIANGULAR', 'MatrixPowerOperator', 'ProductOperator'
 ]
