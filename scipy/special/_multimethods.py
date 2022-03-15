@@ -526,7 +526,7 @@ def _x_kw_q_out_replacer(args, kwargs, dispatchables):
 def _onearg_replacer(args, kwargs, dispatchables):
     def self_method(a, out=None, *args, **kwargs):
         kw_out = kwargs.copy()
-        if out:
+        if out is not None:
             kw_out["out"] = dispatchables[1:]
         return (dispatchables[0],) + args, kw_out
 
@@ -535,7 +535,7 @@ def _onearg_replacer(args, kwargs, dispatchables):
 def _twoargs_replacer(args, kwargs, dispatchables):
     def self_method(a, b, out=None, *args, **kwargs):
         kw_out = kwargs.copy()
-        if out:
+        if out is not None:
             kw_out["out"] = dispatchables[2:]
         return (dispatchables[0], dispatchables[1]) + args, kw_out
 
@@ -545,7 +545,7 @@ def _twoargs_replacer(args, kwargs, dispatchables):
 def _threeargs_replacer(args, kwargs, dispatchables):
     def self_method(a, b, c, out=None, *args, **kwargs):
         kw_out = kwargs.copy()
-        if out:
+        if out is not None:
             kw_out["out"] = dispatchables[3:]
         return (
                 dispatchables[0],
@@ -559,7 +559,7 @@ def _threeargs_replacer(args, kwargs, dispatchables):
 def _fourargs_replacer(args, kwargs, dispatchables):
     def self_method(a, b, c, d, out=None, *args, **kwargs):
         kw_out = kwargs.copy()
-        if out:
+        if out is not None:
             kw_out["out"] = dispatchables[4:]
         return (
                 dispatchables[0],
@@ -574,7 +574,7 @@ def _fourargs_replacer(args, kwargs, dispatchables):
 def _fiveargs_replacer(args, kwargs, dispatchables):
     def self_method(a, b, c, d, e, out=None, *args, **kwargs):
         kw_out = kwargs.copy()
-        if out:
+        if out is not None:
             kw_out["out"] = dispatchables[5:]
         return (
                 dispatchables[0],
