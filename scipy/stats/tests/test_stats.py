@@ -1872,49 +1872,6 @@ class TestScoreatpercentile:
         assert_equal(stats.scoreatpercentile([], [50, 99]), [np.nan, np.nan])
 
 
-class TestItemfreq:
-    a = [5, 7, 1, 2, 1, 5, 7] * 10
-    b = [1, 2, 5, 7]
-
-    def test_numeric_types(self):
-        # Check itemfreq works for all dtypes (adapted from np.unique tests)
-        def _check_itemfreq(dt):
-            a = np.array(self.a, dt)
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning)
-                v = stats.itemfreq(a)
-            assert_array_equal(v[:, 0], [1, 2, 5, 7])
-            assert_array_equal(v[:, 1], np.array([20, 10, 20, 20], dtype=dt))
-
-        dtypes = [np.int32, np.int64, np.float32, np.float64,
-                  np.complex64, np.complex128]
-        for dt in dtypes:
-            _check_itemfreq(dt)
-
-    def test_object_arrays(self):
-        a, b = self.a, self.b
-        dt = 'O'
-        aa = np.empty(len(a), dt)
-        aa[:] = a
-        bb = np.empty(len(b), dt)
-        bb[:] = b
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            v = stats.itemfreq(aa)
-        assert_array_equal(v[:, 0], bb)
-
-    def test_structured_arrays(self):
-        a, b = self.a, self.b
-        dt = [('', 'i'), ('', 'i')]
-        aa = np.array(list(zip(a, a)), dt)
-        bb = np.array(list(zip(b, b)), dt)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            v = stats.itemfreq(aa)
-        # Arrays don't compare equal because v[:,0] is object array
-        assert_equal(tuple(v[2, 0]), tuple(bb[2]))
-
-
 class TestMode:
 
     deprecation_msg = r"Support for non-numeric arrays has been deprecated"
