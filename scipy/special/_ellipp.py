@@ -1,4 +1,4 @@
-import np
+import numpy as np
 from scipy.special import elliprf, elliprj
 
 __all__ = ["ellipp", "ellippinc"]
