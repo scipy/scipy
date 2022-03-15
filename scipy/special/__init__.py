@@ -64,6 +64,8 @@ Elliptic functions and integrals
    elliprf   -- Completely-symmetric elliptic integral of the first kind.
    elliprg   -- Completely-symmetric elliptic integral of the second kind.
    elliprj   -- Symmetric elliptic integral of the third kind.
+   ellipp    -- Legendre form of complete elliptic integral of the third kind.
+   ellippinc -- Legendre form of incomplete elliptic integral of the third kind.
 
 Bessel functions
 ----------------
@@ -671,6 +673,8 @@ from ._spherical_bessel import (
     spherical_kn
 )
 
+from ._ellipp import ellipp, ellippinc
+
 # Deprecated namespaces, to be removed in v2.0.0
 from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 
@@ -689,6 +693,8 @@ __all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
     'spherical_yn',
     'spherical_in',
     'spherical_kn',
+    'ellipp',
+    'ellippinc'
 ]
 
 from scipy._lib._testutils import PytestTester
