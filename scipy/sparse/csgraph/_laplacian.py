@@ -230,11 +230,11 @@ def laplacian(
     array([1., 1., 1.])
 
     Only the symmetric normalization is implemented, resulting
-    in a symmetric Laplacian matrix if and only if the graph is symmetric
-    and with non-negative degrees, like in the examples above.
+    in a symmetric Laplacian matrix if and only if its graph is symmetric
+    and has all non-negative degrees, like in the examples above.
 
-    The output Laplacian matrix is by default an array
-    inferring its dtype from the input graph matrix:
+    The output Laplacian matrix is by default a dense array or a sparse matrix
+    inferring its shape, format, and dtype from the input graph matrix:
 
     >>> G = np.array([[0, 1, 1], [1, 0, 1], [1, 1, 0]]).astype(np.float32)
     >>> G
@@ -246,7 +246,7 @@ def laplacian(
            [-1.,  2., -1.],
            [-1., -1.,  2.]], dtype=float32)
 
-    but can alternatively generated matrix-free as a LinearOperator:
+    but can alternatively be generated matrix-free as a LinearOperator:
 
     >>> L = csgraph.laplacian(G, form="lo")
     >>> L
@@ -274,12 +274,13 @@ def laplacian(
 
     >>> from scipy import sparse
 
-    Create a directed linear graph with N vertices:
+    Create a directed linear graph with ``N=35`` vertices
+    using a sparse adjacency matrix ``G``:
 
     >>> N = 35
     >>> G = sparse.diags(np.ones(N-1), 1, format="csr")
 
-    Fix a random seed and add a random sparse noise to the graph.
+    Fix a random seed ``rng`` and add a random sparse noise to the graph ``G``:
 
     >>> rng = np.random.default_rng(0)
     >>> G += 1e-2 * sparse.random(N, N, density=0.1, random_state=rng)
@@ -308,7 +309,7 @@ def laplacian(
 
     >>>     L = csgraph.laplacian(G, symmetrized=True, form="lo")
 
-    Calling an eigenvalue solver to compute the Fiedler vector
+    Calling an eigenvalue solver ``lobpcg`` to compute the Fiedler vector
     that determines the labels as the signs of its components.
 
     >>>     _, eves = sparse.linalg.lobpcg(L, X, Y=Y, largest=False, tol=1e-3)
