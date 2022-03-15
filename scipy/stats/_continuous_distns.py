@@ -2689,17 +2689,23 @@ class genextreme_gen(rv_continuous):
 
     Notes
     -----
-    For :math:`c=0`, `genextreme` is equal to `gumbel_r`.
-    The probability density function for `genextreme` is:
+    For :math:`c=0`, `genextreme` is equal to `gumbel_r` with
+    probability density function
 
     .. math::
 
-        f(x, c) = \begin{cases}
-                    \exp(-\exp(-x)) \exp(-x)              &\text{for } c = 0\\
-                    \exp(-(1-c x)^{1/c}) (1-c x)^{1/c-1}  &\text{for }
-                                                            x \le 1/c, c > 0
-                  \end{cases}
+        f(x) = \exp(-\exp(-x)) \exp(-x),
 
+    where :math:`-\infty < x < \infty`.
+
+    For :math:`c \ne 0`, the probability density function for `genextreme` is:
+
+    .. math::
+
+        f(x, c) = \exp(-(1-c x)^{1/c}) (1-c x)^{1/c-1},
+
+    where :math:`-\infty < x \le 1/c` if :math:`c > 0` and
+    :math:`1/c \le x < \infty` if :math:`c < 0`.
 
     Note that several sources and software packages use the opposite
     convention for the sign of the shape parameter :math:`c`.
