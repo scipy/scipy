@@ -711,7 +711,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     # gfun/hfun(x)
     # nquad will hand (y, x, t0, ...) to ranges0
     # nquad will hand (x, t0, ...) to ranges1
-    # Stupid different API...
+    # Only qfun / rfun is different API...
 
     def ranges0(*args):
         return [qfun(args[1], args[0]) if callable(qfun) else qfun,
