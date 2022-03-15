@@ -240,7 +240,6 @@ Frequency statistics
    :toctree: generated/
 
    cumfreq
-   itemfreq
    percentileofscore
    scoreatpercentile
    relfreq
