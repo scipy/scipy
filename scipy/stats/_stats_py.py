@@ -38,7 +38,8 @@ from numpy.lib import NumpyVersion
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
 from scipy._lib._util import (check_random_state, MapWrapper,
-                              rng_integers, float_factorial)
+                              rng_integers, _rename_parameter)
+
 import scipy.special as special
 from scipy import linalg
 from . import distributions
@@ -59,7 +60,7 @@ from scipy._lib._bunch import _make_tuple_bunch
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
-           'normaltest', 'jarque_bera', 'itemfreq',
+           'normaltest', 'jarque_bera',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
            'sem', 'zmap', 'zscore', 'gzscore', 'iqr', 'gstd',
@@ -1704,50 +1705,6 @@ def jarque_bera(x):
 #####################################
 #        FREQUENCY FUNCTIONS        #
 #####################################
-
-# deindent to work around numpy/gh-16202
-@np.deprecate(
-    message="`itemfreq` is deprecated and will be removed in a "
-            "future version. Use instead `np.unique(..., return_counts=True)`")
-def itemfreq(a):
-    """
-Return a 2-D array of item frequencies.
-
-Parameters
-----------
-a : (N,) array_like
-    Input array.
-
-Returns
--------
-itemfreq : (K, 2) ndarray
-    A 2-D frequency table.  Column 1 contains sorted, unique values from
-    `a`, column 2 contains their respective counts.
-
-Examples
---------
->>> from scipy import stats
->>> a = np.array([1, 1, 5, 0, 1, 2, 2, 0, 1, 4])
->>> stats.itemfreq(a)
-array([[ 0.,  2.],
-       [ 1.,  4.],
-       [ 2.,  2.],
-       [ 4.,  1.],
-       [ 5.,  1.]])
->>> np.bincount(a)
-array([2, 4, 2, 0, 1, 1])
-
->>> stats.itemfreq(a/10.)
-array([[ 0. ,  2. ],
-       [ 0.1,  4. ],
-       [ 0.2,  2. ],
-       [ 0.4,  1. ],
-       [ 0.5,  1. ]])
-
-"""
-    items, inv = np.unique(a, return_inverse=True)
-    freq = np.bincount(inv)
-    return np.array([items, freq]).T
 
 
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
@@ -7156,7 +7113,8 @@ def _compute_dminus(cdfvals):
     return (cdfvals - np.arange(0.0, n)/n).max()
 
 
-def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7175,7 +7133,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+    method : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7261,6 +7219,8 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     hypothesis in favor of the alternative.
 
     """
+    mode = method
+
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
         alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
@@ -7472,7 +7432,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7488,7 +7449,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'asymp'}, optional
+    method : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7531,7 +7492,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     If the KS statistic is small or the p-value is high, then we cannot
     reject the null hypothesis in favor of the alternative.
 
-    If the mode is 'auto', the computation is exact if the sample sizes are
+    If the method is 'auto', the computation is exact if the sample sizes are
     less than 10000.  For larger sizes, the computation uses the
     Kolmogorov-Smirnov distributions to compute an approximate value.
 
@@ -7595,6 +7556,8 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     hypothesis in favor of the alternative.
 
     """
+    mode = method
+
     if mode not in ['auto', 'exact', 'asymp']:
         raise ValueError(f'Invalid value for mode: {mode}')
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
@@ -7644,7 +7607,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
             mode = 'asymp'
             if original_mode == 'exact':
                 warnings.warn(f"ks_2samp: Exact calculation unsuccessful. "
-                              f"Switching to mode={mode}.", RuntimeWarning)
+                              f"Switching to method={mode}.", RuntimeWarning)
 
     if mode == 'asymp':
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
@@ -7694,7 +7657,8 @@ def _parse_kstest_args(data1, data2, args, N):
     return data1, data2, cdf
 
 
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     """
     Performs the (one-sample or two-sample) Kolmogorov-Smirnov test for
     goodness of fit.
@@ -7728,7 +7692,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+    method : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7842,8 +7806,8 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative,
-                        mode=mode)
-    return ks_2samp(xvals, yvals, alternative=alternative, mode=mode)
+                        method=method)
+    return ks_2samp(xvals, yvals, alternative=alternative, method=method)
 
 
 def tiecorrect(rankvals):

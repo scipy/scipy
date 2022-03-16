@@ -11,6 +11,8 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 
 from scipy import optimize
 from scipy import special
+from scipy._lib._util import _rename_parameter
+
 from . import _statlib
 from . import _stats_py
 from ._stats_py import find_repeats, _contains_nan, _normtest_finish
@@ -3007,11 +3009,12 @@ def mood(x, y, axis=0, alternative="two-sided"):
 WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
 
 
+@_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(WilcoxonResult, paired=True,
                           n_samples=lambda kwds: 2
                           if kwds.get('y', None) is not None else 1)
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
-             alternative="two-sided", mode='auto'):
+             alternative="two-sided", method='auto'):
     """Calculate the Wilcoxon signed-rank test.
 
     The Wilcoxon signed-rank test tests the null hypothesis that two
@@ -3045,7 +3048,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     alternative : {"two-sided", "greater", "less"}, optional
         The alternative hypothesis to be tested, see Notes. Default is
         "two-sided".
-    mode : {"auto", "exact", "approx"}
+    method : {"auto", "exact", "approx"}, optional
         Method to calculate the p-value, see Notes. Default is "auto".
 
     Returns
@@ -3055,7 +3058,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
     pvalue : float
-        The p-value for the test depending on ``alternative`` and ``mode``.
+        The p-value for the test depending on ``alternative`` and ``method``.
 
     See Also
     --------
@@ -3073,10 +3076,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     positive against the alternative that it is negative
     (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
 
-    To derive the p-value, the exact distribution (``mode == 'exact'``)
-    can be used for small sample sizes. The default ``mode == 'auto'``
+    To derive the p-value, the exact distribution (``method == 'exact'``)
+    can be used for small sample sizes. The default ``method == 'auto'``
     uses the exact distribution if there are at most 50 observations and no
-    ties, otherwise a normal approximation is used (``mode == 'approx'``).
+    ties, otherwise a normal approximation is used (``method == 'approx'``).
 
     The treatment of ties can be controlled by the parameter `zero_method`.
     If ``zero_method == 'pratt'``, the normal approximation is adjusted as in
@@ -3126,7 +3129,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     the median is greater than zero. The p-values above are exact. Using the
     normal approximation gives very similar values:
 
-    >>> w, p = wilcoxon(d, mode='approx')
+    >>> w, p = wilcoxon(d, method='approx')
     >>> w, p
     (24.0, 0.04088813291185591)
 
@@ -3135,6 +3138,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     case (the minimum of sum of ranks above and below zero).
 
     """
+    mode = method
+
     if mode not in ["auto", "approx", "exact"]:
         raise ValueError("mode must be either 'auto', 'approx' or 'exact'")
 
