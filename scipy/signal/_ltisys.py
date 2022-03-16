@@ -2098,10 +2098,6 @@ def lsim(system, U, T, X0=None, interp=True):
         return T, squeeze(yout), squeeze(xout)
 
     dt = T[1] - T[0]
-    if not np.allclose((T[1:] - T[:-1]) / dt, 1.0):
-        warnings.warn("Non-uniform timesteps are deprecated. Results may be "
-                      "slow and/or inaccurate.", DeprecationWarning)
-        return lsim2(system, U, T, X0)
 
     if no_input:
         # Zero input: just use matrix exponential
