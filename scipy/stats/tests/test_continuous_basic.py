@@ -855,3 +855,13 @@ def test_kappa4_array_gh13582():
     k = np.array([-1, -0.5, 0, 1])[:, None]
     res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
     assert res2.shape == (4, 4, 3)
+
+
+def test_frozen_attributes():
+    # gh-14827 reported that all frozen distributions had both pmf and pdf
+    # attributes; continuous should have pdf and discrete should have pmf.
+    message = "'rv_continuous_frozen' object has no attribute"
+    with pytest.raises(AttributeError, match=message):
+        stats.norm().pmf
+    with pytest.raises(AttributeError, match=message):
+        stats.norm().logpmf

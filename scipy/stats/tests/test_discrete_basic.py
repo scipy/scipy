@@ -319,3 +319,13 @@ def test_cdf_gh13280_regression(distname, args):
     vals = dist.cdf(x, *args)
     expected = np.nan
     npt.assert_equal(vals, expected)
+
+
+def test_frozen_attributes():
+    # gh-14827 reported that all frozen distributions had both pmf and pdf
+    # attributes; continuous should have pdf and discrete should have pmf.
+    message = "'rv_discrete_frozen' object has no attribute"
+    with pytest.raises(AttributeError, match=message):
+        stats.binom(10, 0.5).pdf
+    with pytest.raises(AttributeError, match=message):
+        stats.binom(10, 0.5).logpdf
