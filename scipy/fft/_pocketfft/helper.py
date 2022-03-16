@@ -186,7 +186,8 @@ def set_workers(workers):
     Examples
     --------
     >>> from scipy import fft, signal
-    >>> x = np.random.randn(128, 64)
+    >>> rng = np.random.default_rng()
+    >>> x = rng.standard_normal((128, 64))
     >>> with fft.set_workers(4):
     ...     y = signal.fftconvolve(x, x)
 

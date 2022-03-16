@@ -12,7 +12,7 @@ from numpy import arange, dot
 from numpy.linalg import norm
 
 
-class TestNNLS(object):
+class TestNNLS:
 
     def test_nnls(self):
         a = arange(25.0).reshape(-1,5)

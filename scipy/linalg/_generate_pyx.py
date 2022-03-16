@@ -8,6 +8,9 @@ all the BLAS/LAPACK routines that should be included in the wrappers.
 from collections import defaultdict
 from operator import itemgetter
 import os
+from stat import ST_MTIME
+import argparse
+
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 
@@ -670,13 +673,30 @@ def filter_lines(lines):
     return func_sigs, sub_sigs, all_sigs
 
 
+def newer(source, target):
+    """
+    Return true if 'source' exists and is more recently modified than
+    'target', or if 'source' exists and 'target' doesn't.  Return false if
+    both exist and 'target' is the same age or younger than 'source'.
+    """
+    if not os.path.exists(source):
+        raise ValueError("file '%s' does not exist" % os.path.abspath(source))
+    if not os.path.exists(target):
+        return 1
+
+    mtime1 = os.stat(source)[ST_MTIME]
+    mtime2 = os.stat(target)[ST_MTIME]
+
+    return mtime1 > mtime2
+
+
 def all_newer(src_files, dst_files):
-    from distutils.dep_util import newer
     return all(os.path.exists(dst) and newer(dst, src)
                for dst in dst_files for src in src_files)
 
 
-def make_all(blas_signature_file="cython_blas_signatures.txt",
+def make_all(outdir,
+             blas_signature_file="cython_blas_signatures.txt",
              lapack_signature_file="cython_lapack_signatures.txt",
              blas_name="cython_blas",
              lapack_name="cython_lapack",
@@ -696,6 +716,7 @@ def make_all(blas_signature_file="cython_blas_signatures.txt",
                  lapack_name + '.pxd',
                  lapack_fortran_name,
                  lapack_header_name)
+    dst_files = (os.path.join(outdir, f) for f in dst_files)
 
     os.chdir(BASE_DIR)
 
@@ -713,41 +734,53 @@ def make_all(blas_signature_file="cython_blas_signatures.txt",
         blas_sigs = f.readlines()
     blas_sigs = filter_lines(blas_sigs)
     blas_pyx = generate_blas_pyx(*(blas_sigs + (blas_header_name,)))
-    with open(blas_name + '.pyx', 'w') as f:
+    with open(os.path.join(outdir, blas_name + '.pyx'), 'w') as f:
         f.write(pyxcomment)
         f.write(blas_pyx)
     blas_pxd = generate_blas_pxd(blas_sigs[2])
-    with open(blas_name + '.pxd', 'w') as f:
+    with open(os.path.join(outdir, blas_name + '.pxd'), 'w') as f:
         f.write(pyxcomment)
         f.write(blas_pxd)
     blas_fortran = generate_fortran(blas_sigs[0])
-    with open(blas_fortran_name, 'w') as f:
+    with open(os.path.join(outdir, blas_fortran_name), 'w') as f:
         f.write(fcomment)
         f.write(blas_fortran)
     blas_c_header = generate_c_header(*(blas_sigs + ('BLAS',)))
-    with open(blas_header_name, 'w') as f:
+    with open(os.path.join(outdir, blas_header_name), 'w') as f:
         f.write(ccomment)
         f.write(blas_c_header)
     with open(lapack_signature_file, 'r') as f:
         lapack_sigs = f.readlines()
     lapack_sigs = filter_lines(lapack_sigs)
     lapack_pyx = generate_lapack_pyx(*(lapack_sigs + (lapack_header_name,)))
-    with open(lapack_name + '.pyx', 'w') as f:
+    with open(os.path.join(outdir, lapack_name + '.pyx'), 'w') as f:
         f.write(pyxcomment)
         f.write(lapack_pyx)
     lapack_pxd = generate_lapack_pxd(lapack_sigs[2])
-    with open(lapack_name + '.pxd', 'w') as f:
+    with open(os.path.join(outdir, lapack_name + '.pxd'), 'w') as f:
         f.write(pyxcomment)
         f.write(lapack_pxd)
     lapack_fortran = generate_fortran(lapack_sigs[0])
-    with open(lapack_fortran_name, 'w') as f:
+    with open(os.path.join(outdir, lapack_fortran_name), 'w') as f:
         f.write(fcomment)
         f.write(lapack_fortran)
     lapack_c_header = generate_c_header(*(lapack_sigs + ('LAPACK',)))
-    with open(lapack_header_name, 'w') as f:
+    with open(os.path.join(outdir, lapack_header_name), 'w') as f:
         f.write(ccomment)
         f.write(lapack_c_header)
 
 
 if __name__ == '__main__':
-    make_all()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--outdir", type=str,
+                        help="Path to the output directory")
+    args = parser.parse_args()
+
+    if not args.outdir:
+        #raise ValueError(f"Missing `--outdir` argument to _generate_pyx.py")
+        # We're dealing with a distutils build here, write in-place:
+        outdir_abs = os.path.abspath(os.path.dirname(__file__))
+    else:
+        outdir_abs = os.path.join(os.getcwd(), args.outdir)
+
+    make_all(outdir_abs)

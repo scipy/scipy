@@ -5,7 +5,7 @@ from scipy.stats import rankdata, tiecorrect
 import pytest
 
 
-class TestTieCorrect(object):
+class TestTieCorrect:
 
     def test_empty(self):
         """An empty array requires no correction, should return 1.0."""
@@ -71,7 +71,7 @@ class TestTieCorrect(object):
         assert_equal(out, 1.0 - k * (ntie**3 - ntie) / float(n**3 - n))
 
 
-class TestRankData(object):
+class TestRankData:
 
     def test_empty(self):
         """stats.rankdata([]) should return an empty array."""

@@ -3,11 +3,11 @@
 import numpy as np
 from numpy.testing import assert_equal, suppress_warnings
 from pytest import raises as assert_raises
-from scipy.sparse import sputils
-from scipy.sparse.sputils import matrix
+from scipy.sparse import _sputils as sputils
+from scipy.sparse._sputils import matrix
 
 
-class TestSparseUtils(object):
+class TestSparseUtils:
 
     def test_upcast(self):
         assert_equal(sputils.upcast('intc'), np.intc)

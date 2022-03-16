@@ -65,7 +65,7 @@ def test_lapack_documented():
     assert missing == [], 'Name(s) missing from lapack.__doc__ or ignore_list'
 
 
-class TestFlapackSimple(object):
+class TestFlapackSimple:
 
     def test_gebal(self):
         a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
@@ -161,7 +161,7 @@ class TestFlapackSimple(object):
                     assert_equal(value, ref)
 
 
-class TestLapack(object):
+class TestLapack:
 
     def test_flapack(self):
         if hasattr(flapack, 'empty_module'):
@@ -174,7 +174,7 @@ class TestLapack(object):
             pass
 
 
-class TestLeastSquaresSolvers(object):
+class TestLeastSquaresSolvers:
 
     def test_gels(self):
         seed(1234)
@@ -426,7 +426,7 @@ def test_geqrf_lwork(dtype, shape):
     assert_equal(info, 0)
 
 
-class TestRegression(object):
+class TestRegression:
 
     def test_ticket_1645(self):
         # Check that RQ routines have correct lwork
@@ -447,7 +447,7 @@ class TestRegression(object):
                 ungrq(rq[-2:], tau, lwork=2)
 
 
-class TestDpotr(object):
+class TestDpotr:
     def test_gh_2691(self):
         # 'lower' argument of dportf/dpotri
         for lower in [True, False]:
@@ -467,7 +467,7 @@ class TestDpotr(object):
                     assert_allclose(np.triu(dpt), np.triu(inv(a)))
 
 
-class TestDlasd4(object):
+class TestDlasd4:
     def test_sing_val_update(self):
 
         sigmas = np.array([4., 3., 2., 0])
@@ -499,7 +499,7 @@ class TestDlasd4(object):
                         rtol=100*np.finfo(np.float64).eps)
 
 
-class TestTbtrs(object):
+class TestTbtrs:
 
     @pytest.mark.parametrize('dtype', DTYPES)
     def test_nag_example_f07vef_f07vsf(self, dtype):
@@ -781,7 +781,7 @@ def test_sgesdd_lwork_bug_workaround():
                  "Code apparently failed: " + p.stdout.read().decode())
 
 
-class TestSytrd(object):
+class TestSytrd:
     @pytest.mark.parametrize('dtype', REAL_DTYPES)
     def test_sytrd_with_zero_dim_array(self, dtype):
         # Assert that a 0x0 matrix raises an error
@@ -849,7 +849,7 @@ class TestSytrd(object):
         assert_allclose(QTAQ, T, atol=5*np.finfo(dtype).eps, rtol=1.0)
 
 
-class TestHetrd(object):
+class TestHetrd:
     @pytest.mark.parametrize('complex_dtype', COMPLEX_DTYPES)
     def test_hetrd_with_zero_dim_array(self, complex_dtype):
         # Assert that a 0x0 matrix raises an error
@@ -1456,7 +1456,7 @@ def test_syconv():
         assert_allclose(triu(a, 1), triu(U[perm, :], 1), atol=tol, rtol=0.)
 
 
-class TestBlockedQR(object):
+class TestBlockedQR:
     """
     Tests for the blocked QR factorization, namely through geqrt, gemqrt, tpqrt
     and tpmqr.
@@ -2979,3 +2979,51 @@ def test_pptrs_pptri_pptrf_ppsv_ppcon(dtype, lower):
     rcond, info = ppcon(n, ap, anorm=anorm, lower=lower)
     assert_equal(info, 0)
     assert_(abs(1/rcond - np.linalg.cond(a, p=1))*rcond < 1)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gges_tgexc(dtype):
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+
+    n = 10
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+    b = generate_random_dtype_array([n, n], dtype=dtype)
+
+    gges, tgexc = get_lapack_funcs(('gges', 'tgexc'), dtype=dtype)
+
+    result = gges(lambda x: None, a, b, overwrite_a=False, overwrite_b=False)
+    assert_equal(result[-1], 0)
+
+    s = result[0]
+    t = result[1]
+    q = result[-4]
+    z = result[-3]
+
+    d1 = s[0, 0] / t[0, 0]
+    d2 = s[6, 6] / t[6, 6]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(s, np.triu(s), rtol=0, atol=atol)
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(q @ s @ z.conj().T, a, rtol=0, atol=atol)
+    assert_allclose(q @ t @ z.conj().T, b, rtol=0, atol=atol)
+
+    result = tgexc(s, t, q, z, 6, 0)
+    assert_equal(result[-1], 0)
+
+    s = result[0]
+    t = result[1]
+    q = result[2]
+    z = result[3]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(s, np.triu(s), rtol=0, atol=atol)
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(q @ s @ z.conj().T, a, rtol=0, atol=atol)
+    assert_allclose(q @ t @ z.conj().T, b, rtol=0, atol=atol)
+
+    assert_allclose(s[0, 0] / t[0, 0], d2, rtol=0, atol=atol)
+    assert_allclose(s[1, 1] / t[1, 1], d1, rtol=0, atol=atol)
