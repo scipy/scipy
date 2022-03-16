@@ -2173,8 +2173,8 @@ def get_window(window, Nx, fftbins=True):
     - `~scipy.signal.windows.barthann`
     - `~scipy.signal.windows.cosine`
     - `~scipy.signal.windows.exponential`
-    - `~scipy.signal.windows.tukey`
     - `~scipy.signal.windows.taylor`
+    - `~scipy.signal.windows.tukey` (needs alpha)
     - `~scipy.signal.windows.kaiser` (needs beta)
     - `~scipy.signal.windows.kaiser_bessel_derived` (needs beta)
     - `~scipy.signal.windows.gaussian` (needs standard deviation)
