@@ -2406,6 +2406,7 @@ class weibull_max_gen(rv_continuous):
     """
     def _shape_info(self):
         return [_ShapeInfo("c", False, (0, np.inf), (False, False))]
+
     def _pdf(self, x, c):
         # weibull_max.pdf(x, c) = c * (-x)**(c-1) * exp(-(-x)**c)
         return c*pow(-x, c-1)*np.exp(-pow(-x, c))
@@ -6847,7 +6848,6 @@ class powerlognorm_gen(rv_continuous):
         ic = _ShapeInfo("c", False, (0, np.inf), (False, False))
         i_s = _ShapeInfo("s", False, (0, np.inf), (False, False))
         return [ic, i_s]
-
 
     def _pdf(self, x, c, s):
         # powerlognorm.pdf(x, c, s) = c / (x*s) * phi(log(x)/s) *
