@@ -661,6 +661,17 @@ class TestNormInvGauss:
         i = stats.norminvgauss.isf(sf, a, b)
         assert_allclose(i, x, rtol=rtol)
 
+    def test_sf_isf_mpmath_vectorized(self):
+        x = [-1, 25]
+        a = [1, 1]
+        b = 0
+        sf = [ 0.8759652211005315, 1.1318690184042579e-13] # see previous test
+        s = stats.norminvgauss.sf(x, a, b)
+        assert_allclose(s, sf, rtol=1e-13, atol=1e-16)
+        i = stats.norminvgauss.isf(sf, a, b)
+        # Not perfect, but better than it was. See gh-13338.
+        assert_allclose(i, x, rtol=1e-6)
+
     def test_stats(self):
         a, b = 1, 0.5
         gamma = np.sqrt(a**2 - b**2)
