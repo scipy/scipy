@@ -672,6 +672,14 @@ class TestNormInvGauss:
         # Not perfect, but better than it was. See gh-13338.
         assert_allclose(i, x, rtol=1e-6)
 
+    def test_gh8718(self):
+        # Add test that gh-13338 resolved gh-8718
+        dst = stats.norminvgauss(1, 0)
+        x = np.arange(0, 20, 2)
+        sf = dst.sf(x)
+        isf = dst.isf(sf)
+        assert_allclose(isf, x)
+
     def test_stats(self):
         a, b = 1, 0.5
         gamma = np.sqrt(a**2 - b**2)
