@@ -508,6 +508,8 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
     returnshape = 0
     if x is not None:
         x = np.asarray(x)
+        if np.all((x==x[0])):
+            return 0
         if len(x.shape) == 1:
             shapex = [1] * nd
             shapex[axis] = x.shape[0]
