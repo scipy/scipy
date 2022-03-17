@@ -1090,40 +1090,80 @@ class TestLombscargle:
 
 class TestSTFT:
     def test_input_validation(self):
-        assert_raises(ValueError, check_COLA, 'hann', -10, 0)
-        assert_raises(ValueError, check_COLA, 'hann', 10, 20)
-        assert_raises(ValueError, check_COLA, np.ones((2,2)), 10, 0)
-        assert_raises(ValueError, check_COLA, np.ones(20), 10, 0)
 
-        assert_raises(ValueError, check_NOLA, 'hann', -10, 0)
-        assert_raises(ValueError, check_NOLA, 'hann', 10, 20)
-        assert_raises(ValueError, check_NOLA, np.ones((2,2)), 10, 0)
-        assert_raises(ValueError, check_NOLA, np.ones(20), 10, 0)
-        assert_raises(ValueError, check_NOLA, 'hann', 64, -32)
+        def chk_VE(match):
+            """Assert for a ValueError matching regexp `match`.
+
+            This little wrapper allows a more concise code layout.
+            """
+            return pytest.raises(ValueError, match=match)
+
+        # Checks for check_COLA():
+        with chk_VE('nperseg must be a positive integer'):
+            check_COLA('hann', -10, 0)
+        with chk_VE('noverlap must be less than nperseg.'):
+            check_COLA('hann', 10, 20)
+        with chk_VE('window must be 1-D'):
+            check_COLA(np.ones((2, 2)), 10, 0)
+        with chk_VE('window must have length of nperseg'):
+            check_COLA(np.ones(20), 10, 0)
+
+        # Checks for check_NOLA():
+        with chk_VE('nperseg must be a positive integer'):
+            check_NOLA('hann', -10, 0)
+        with chk_VE('noverlap must be less than nperseg'):
+            check_NOLA('hann', 10, 20)
+        with chk_VE('window must be 1-D'):
+            check_NOLA(np.ones((2, 2)), 10, 0)
+        with chk_VE('window must have length of nperseg'):
+            check_NOLA(np.ones(20), 10, 0)
+        with chk_VE('noverlap must be a nonnegative integer'):
+            check_NOLA('hann', 64, -32)
 
         x = np.zeros(1024)
-        z = np.array(stft(x), dtype=object)
+        z = stft(x)[2]
 
-        assert_raises(ValueError, stft, x, window=np.ones((2,2)))
-        assert_raises(ValueError, stft, x, window=np.ones(10), nperseg=256)
-        assert_raises(ValueError, stft, x, nperseg=-256)
-        assert_raises(ValueError, stft, x, nperseg=256, noverlap=1024)
-        assert_raises(ValueError, stft, x, nperseg=256, nfft=8)
+        # Checks for stft():
+        with chk_VE('window must be 1-D'):
+            stft(x, window=np.ones((2, 2)))
+        with chk_VE('value specified for nperseg is different ' +
+                    'from length of window'):
+            stft(x, window=np.ones(10), nperseg=256)
+        with chk_VE('nperseg must be a positive integer'):
+            stft(x, nperseg=-256)
+        with chk_VE('noverlap must be less than nperseg.'):
+            stft(x, nperseg=256, noverlap=1024)
+        with chk_VE('nfft must be greater than or equal to nperseg.'):
+            stft(x, nperseg=256, nfft=8)
 
-        assert_raises(ValueError, istft, x)  # Not 2d
-        assert_raises(ValueError, istft, z, window=np.ones((2,2)))
-        assert_raises(ValueError, istft, z, window=np.ones(10), nperseg=256)
-        assert_raises(ValueError, istft, z, nperseg=-256)
-        assert_raises(ValueError, istft, z, nperseg=256, noverlap=1024)
-        assert_raises(ValueError, istft, z, nperseg=256, nfft=8)
-        assert_raises(ValueError, istft, z, nperseg=256, noverlap=0,
-                      window='hann')  # Doesn't meet COLA
-        assert_raises(ValueError, istft, z, time_axis=0, freq_axis=0)
+        # Checks for istft():
+        with chk_VE('Input stft must be at least 2d!'):
+            istft(x)
+        with chk_VE('window must be 1-D'):
+            istft(z, window=np.ones((2, 2)))
+        with chk_VE('window must have length of 256'):
+            istft(z, window=np.ones(10), nperseg=256)
+        with chk_VE('nperseg must be a positive integer'):
+            istft(z, nperseg=-256)
+        with chk_VE('noverlap must be less than nperseg.'):
+            istft(z, nperseg=256, noverlap=1024)
+        with chk_VE('nfft must be greater than or equal to nperseg.'):
+            istft(z, nperseg=256, nfft=8)
+        with pytest.warns(UserWarning, match="NOLA condition failed, " +
+                          "STFT may not be invertible"):
+            istft(z, nperseg=256, noverlap=0, window='hann')
+        with chk_VE('Must specify differing time and frequency axes!'):
+            istft(z, time_axis=0, freq_axis=0)
 
-        assert_raises(ValueError, _spectral_helper, x, x, mode='foo')
-        assert_raises(ValueError, _spectral_helper, x[:512], x[512:],
-                      mode='stft')
-        assert_raises(ValueError, _spectral_helper, x, x, boundary='foo')
+        # Checks for _spectral_helper():
+        with chk_VE("Unknown value for mode foo, must be one of: " +
+                    r"\{'psd', 'stft'\}"):
+            _spectral_helper(x, x, mode='foo')
+        with chk_VE("x and y must be equal if mode is 'stft'"):
+            _spectral_helper(x[:512], x[512:], mode='stft')
+        with chk_VE("Unknown boundary option 'foo', must be one of: " +
+                    r"\['even', 'odd', 'constant', 'zeros', None\]"):
+            _spectral_helper(x, x, boundary='foo')
 
     def test_check_COLA(self):
         settings = [
