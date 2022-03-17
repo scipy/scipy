@@ -12,6 +12,7 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_deprecation_warning_gh5982_moment,
                            check_deprecation_warning_gh5982_interval)
 from scipy.stats._distr_params import distdiscrete, invdistdiscrete
+from scipy.stats._distn_infrastructure import rv_discrete_frozen
 
 vals = ([1, 2, 3, 4], [0.1, 0.2, 0.3, 0.4])
 distdiscrete += [[stats.rv_discrete(values=vals), ()]]
@@ -329,3 +330,7 @@ def test_frozen_attributes():
         stats.binom(10, 0.5).pdf
     with pytest.raises(AttributeError, match=message):
         stats.binom(10, 0.5).logpdf
+    stats.binom.pdf = "herring"
+    frozen_binom = stats.binom(10, 0.5)
+    assert isinstance(frozen_binom, rv_discrete_frozen)
+    delattr(stats.binom, 'pdf')

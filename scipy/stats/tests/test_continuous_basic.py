@@ -18,6 +18,7 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_deprecation_warning_gh5982_moment,
                            check_deprecation_warning_gh5982_interval)
 from scipy.stats._distr_params import distcont
+from scipy.stats._distn_infrastructure import rv_continuous_frozen
 
 """
 Test all continuous distributions.
@@ -865,3 +866,7 @@ def test_frozen_attributes():
         stats.norm().pmf
     with pytest.raises(AttributeError, match=message):
         stats.norm().logpmf
+    stats.norm.pmf = "herring"
+    frozen_norm = stats.norm()
+    assert isinstance(frozen_norm, rv_continuous_frozen)
+    delattr(stats.norm, 'pmf')

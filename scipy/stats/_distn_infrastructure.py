@@ -866,7 +866,7 @@ class rv_generic:
             The frozen distribution.
 
         """
-        if hasattr(self, 'pdf'):
+        if isinstance(self, rv_continuous):
             return rv_continuous_frozen(self, *args, **kwds)
         else:
             return rv_discrete_frozen(self, *args, **kwds)
