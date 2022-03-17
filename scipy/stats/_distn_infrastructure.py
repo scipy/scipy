@@ -449,12 +449,6 @@ class rv_frozen:
     def random_state(self, seed):
         self.dist._random_state = check_random_state(seed)
 
-    def pdf(self, x):   # raises AttributeError in frozen discrete distribution
-        return self.dist.pdf(x, *self.args, **self.kwds)
-
-    def logpdf(self, x):
-        return self.dist.logpdf(x, *self.args, **self.kwds)
-
     def cdf(self, x):
         return self.dist.cdf(x, *self.args, **self.kwds)
 
@@ -501,12 +495,6 @@ class rv_frozen:
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
 
-    def pmf(self, k):
-        return self.dist.pmf(k, *self.args, **self.kwds)
-
-    def logpmf(self, k):
-        return self.dist.logpmf(k, *self.args, **self.kwds)
-
     def interval(self, confidence=None, **kwds):
         return self.dist.interval(confidence, *self.args, **self.kwds, **kwds)
 
@@ -524,6 +512,24 @@ class rv_frozen:
 
     def support(self):
         return self.dist.support(*self.args, **self.kwds)
+
+
+class rv_discrete_frozen(rv_frozen):
+
+    def pmf(self, k):
+        return self.dist.pmf(k, *self.args, **self.kwds)
+
+    def logpmf(self, k):  # No error
+        return self.dist.logpmf(k, *self.args, **self.kwds)
+
+
+class rv_continuous_frozen(rv_frozen):
+
+    def pdf(self, x):
+        return self.dist.pdf(x, *self.args, **self.kwds)
+
+    def logpdf(self, x):
+        return self.dist.logpdf(x, *self.args, **self.kwds)
 
 
 def argsreduce(cond, *args):
@@ -860,7 +866,10 @@ class rv_generic:
             The frozen distribution.
 
         """
-        return rv_frozen(self, *args, **kwds)
+        if isinstance(self, rv_continuous):
+            return rv_continuous_frozen(self, *args, **kwds)
+        else:
+            return rv_discrete_frozen(self, *args, **kwds)
 
     def __call__(self, *args, **kwds):
         return self.freeze(*args, **kwds)
