@@ -412,7 +412,7 @@ def approx_derivative(fun, x0, method='3-point', rel_step=None, abs_step=None,
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.optimize import approx_derivative
+    >>> from scipy.optimize._numdiff import approx_derivative
     >>>
     >>> def f(x, c1, c2):
     ...     return np.array([x[0] * np.sin(c1 * x[1]),
@@ -726,7 +726,7 @@ def check_derivative(fun, jac, x0, bounds=(-np.inf, np.inf), args=(),
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.optimize import check_derivative
+    >>> from scipy.optimize._numdiff import check_derivative
     >>>
     >>>
     >>> def f(x, c1, c2):
