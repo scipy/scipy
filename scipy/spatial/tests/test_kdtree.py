@@ -220,7 +220,7 @@ class Test_vectorization_KDTree:
     def test_single_query_raises_for_k_none(self, r):
         np.random.seed(1234)
         point = np.random.rand(self.kdtree.m)
-        with pytest.raises(ValueError, match="k must be an integer or a sequence of integers"):
+        with pytest.raises(ValueError, match="k must be an integer or*"):
             d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
 
     def test_vectorized_query_raises_for_k_none(self):
