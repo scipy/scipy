@@ -522,8 +522,8 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         should be supplied.
 
         .. deprecated:: 1.8.0
-            dual_annealing argument 'local_search_options' is deprecated in
-            favor of 'minimizer_kwargs' and will be removed in SciPy 1.10.0.
+            dual_annealing argument `local_search_options` is deprecated in
+            favor of `minimizer_kwargs` and will be removed in SciPy 1.10.0.
 
     Returns
     -------
