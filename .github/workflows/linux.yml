@@ -87,7 +87,7 @@ jobs:
       run: |
         which python
         pip install --user git+https://github.com/numpy/numpy.git
-        python -m pip install --user "setuptools<60.0" wheel cython pytest pybind11 pytest-xdist
+        python -m pip install --user "setuptools<60.0" wheel cython pytest pybind11 pytest-xdist pooch
         pip install --user git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install -r mypy_requirements.txt
 
