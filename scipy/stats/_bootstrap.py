@@ -30,11 +30,16 @@ def _vectorize_statistic(statistic):
         split_indices = np.cumsum(lengths)[:-1]
         z = _broadcast_concatenate(data, axis)
 
+        # move working axis to position 0 so that new dimensions in the output
+        # of `statistic` are _prepended_. ("This axis is removed, and replaced
+        # with new dimensions...")
+        z = np.moveaxis(z, axis, 0)
+
         def stat_1d(z):
             data = np.split(z, split_indices)
             return statistic(*data)
 
-        return np.apply_along_axis(stat_1d, axis, z)[()]
+        return np.apply_along_axis(stat_1d, 0, z)[()]
     return stat_nd
 
 
@@ -104,7 +109,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     sample = data[0]  # only works with 1 sample statistics right now
 
     # calculate z0_hat
-    theta_hat = statistic(sample, axis=axis)[..., None]
+    theta_hat = np.asarray(statistic(sample, axis=axis))[..., None]
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1)
     z0_hat = ndtri(percentile)
 
