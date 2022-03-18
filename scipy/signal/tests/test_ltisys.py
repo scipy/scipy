@@ -496,7 +496,7 @@ class TestLsim:
 
     def test_non_uniform_time(self):
         system = self.lti_nowarn(-1.,1.,1.,0.)
-        t = np.linspace(10)
+        t = np.linspace(0,1)
         t[3] = 0
         u = np.zeros_like(t)
 
