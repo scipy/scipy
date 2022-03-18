@@ -355,14 +355,14 @@ cdef inline double gamma_ratio(
     # Try again with lanczos approximation if there has been
     # underflow or overflow.
     if zisnan(result) or zisinf(result) or result == 0.0:
-        result = gamma_ratio_lanczos(u, v, w, x)
+        result = gamma_ratio_lanczos(u, v, w, x, True)
     return result
     
 
 @cython.boundscheck(False)
 @cython.cdivision(True)
 cdef inline double gamma_ratio_lanczos(
-        double u, double v, double w, double x
+        double u, double v, double w, double x, int expg_scaled
 ) nogil:
     """Compute ratio of gamma functions using lanczos approximation.
 
@@ -401,6 +401,8 @@ cdef inline double gamma_ratio_lanczos(
         double factor_part
         # Mean of the factor parts that were computed different ways.
         double mean_factor_part
+        # Stores arguments u, v, w, x.
+        double args[4]
         # Lanczos factors for gamma u, v, w, x respectively.
         double factors[4]
         int i
@@ -424,7 +426,6 @@ cdef inline double gamma_ratio_lanczos(
         u, v = v, u
     if x > w:
         x, w = w, x
-    g = lanczos_g
     lanczos_part = 1
     factor_part = 1
     # Due to the argument of the second gamma function in the denominator
@@ -434,31 +435,14 @@ cdef inline double gamma_ratio_lanczos(
     # logic of the code is somewhat tricky. The best way to understand is
     # to study the code from back to front, starting with the result and
     # working backwards through how it was calculated.
-    if u >= 0.5:
-        lanczos_part *= lanczos_sum_expg_scaled(u)
-        factors[0] = (u + g - 0.5)
-    else:
-        lanczos_part /= lanczos_sum_expg_scaled(1 - u)*sin(M_PI*u)*M_1_PI
-        factors[0] = (1 - u + g - 0.5)
-    if v >= 0.5:
-        lanczos_part *= lanczos_sum_expg_scaled(v)
-        factors[1] = (v + g - 0.5)
-    else:
-        lanczos_part /= lanczos_sum_expg_scaled(1 - v)*sin(M_PI*v)*M_1_PI
-        factors[1] = (1 - v + g - 0.5)
-    if w >= 0.5:
-        lanczos_part /= lanczos_sum_expg_scaled(w)
-        factors[2] = (w + g - 0.5)
-    else:
-        lanczos_part *= lanczos_sum_expg_scaled(1 - w)*sin(M_PI*w)*M_1_PI
-        factors[2] = (1 - w + g - 0.5)
-    if x >= 0.5:
-        lanczos_part /= lanczos_sum_expg_scaled(x)
-        factors[3] = (x + g - 0.5)
-    else:
-        lanczos_part *= lanczos_sum_expg_scaled(1 - x)
-        lanczos_part *= sin(M_PI*x)*M_1_PI
-        factors[3] = (1 - x + g - 0.5)
+    lanczos_part *= lanczos_sum_general(u, expg_scaled)
+    factors[0] = lanczos_prefactor(u)
+    lanczos_part *= lanczos_sum_general(v, expg_scaled)
+    factors[1] = lanczos_prefactor(v)
+    lanczos_part /= lanczos_sum_general(w, expg_scaled)
+    factors[2] = lanczos_prefactor(w)
+    lanczos_part /= lanczos_sum_general(x, expg_scaled)
+    factors[3] = lanczos_prefactor(x)
     # Computes running average of factor parts when factors are combined in
     # different ways.
     mean_factor_part = 0
@@ -555,3 +539,13 @@ cdef inline double gamma_ratio_lanczos(
         return -NPY_INFINITY
     # All agree the result is zero.
     return 0
+
+
+cdef inline double lanczos_prefactor(double x) nogil:
+    return x + lanczos_g - 0.5 if x >= 0.5 else 1 - x + lanczos_g - 0.5
+
+
+cdef inline double lanczos_sum_general(double x, int expg_scaled) nogil:
+    if x >= 0.5:
+        return lanczos_sum_expg_scaled(x)
+    return 1 / (lanczos_sum_expg_scaled(1 - x)*sin(M_PI*x)*M_1_PI)
