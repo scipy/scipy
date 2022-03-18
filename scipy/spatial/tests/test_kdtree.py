@@ -216,20 +216,12 @@ class Test_vectorization_KDTree:
         assert_(np.all(~np.isfinite(d[:, :, -s:])))
         assert_(np.all(i[:, :, -s:] == self.kdtree.n))
 
-    @pytest.mark.parametrize('r', [0.8, 1.1])
-    def test_single_query_raises_for_k_none(self, r):
+    def test_query_raises_for_k_none(self):
         np.random.seed(1234)
+        r = 0.8
         point = np.random.rand(self.kdtree.m)
         with pytest.raises(ValueError, match="k must be an integer or*"):
-            d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
-
-    def test_vectorized_query_raises_for_k_none(self):
-        query_shape = (2, 4)
-        r = 1.1
-        np.random.seed(1234)
-        points = np.random.rand(*query_shape, self.kdtree.m)
-        with pytest.raises(ValueError, match="k must be an integer or a sequence of integers"):
-            d, i = self.kdtree.query(points, k=None, distance_upper_bound=r)
+            self.kdtree.query(point, k=None, distance_upper_bound=r)
 
 class Test_vectorization_cKDTree:
     def setup_method(self):
