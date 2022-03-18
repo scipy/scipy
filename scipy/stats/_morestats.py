@@ -2917,6 +2917,9 @@ def mood(x, y, axis=0, alternative="two-sided"):
     resulting z and p values will have shape ``(n0, n2, n3)``.  Note that
     ``n1`` and ``m1`` don't have to be equal, but the other dimensions do.
 
+    In this implementation, the test statistic and p-value are only valid when
+    all observations are unique.
+
     Examples
     --------
     >>> from scipy import stats
