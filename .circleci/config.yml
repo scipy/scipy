@@ -33,7 +33,7 @@ commands:
           name: Install apt packages
           command: |
             sudo apt-get update
-            sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev ccache
+            sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
 
   merge:
     steps:
@@ -86,7 +86,7 @@ jobs:
       - run:
           name: build SciPy
           command: |
-            python dev.py -g --build-only -j2
+            python dev.py --build-only -j2
 
       - save_cache:
           key: deps_ccache-{{ .Branch }}
@@ -142,6 +142,7 @@ jobs:
 
       - run:
           name: run asv
+          no_output_timeout: 30m
           command: |
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
             cd benchmarks
