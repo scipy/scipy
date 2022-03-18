@@ -54,10 +54,6 @@
     integer i__1, i__2;
     doublereal d__1;
 
-    /* changed by SGJ to be dynamically allocated ... would be
-       even better to use realloc, below, to grow these as needed */
-    integer MAXFUNC = *maxf <= 0 ? 101000 : (*maxf + 1000 + *maxf / 2);
-    integer MAXDEEP = *maxt <= 0 ? MAXFUNC/5: *maxt + 1000;
     const integer MAXDIV = 5000;
 
     /* Local variables */
@@ -97,7 +93,8 @@
        is the discontiguous one.  This makes it easier to resize
        dynamically (by adding contiguous rows) using realloc, without
        having to move data around manually. */
-    #define MAXMEMORY 2147483648
+    #define MAXMEMORY 1073741824
+    integer MAXFUNC = *maxf <= 0 ? 101000 : (*maxf + 1000 + *maxf / 2);
     unsigned long fixed_memory_dim = ((*n) * (sizeof(doublereal) + sizeof(integer)) +
                                       (sizeof(doublereal) * 2 + sizeof(integer)));
     MAXFUNC = MAXFUNC * fixed_memory_dim > MAXMEMORY ? MAXMEMORY/fixed_memory_dim : MAXFUNC;
@@ -108,14 +105,21 @@
     if (*maxf <= 0)
         *maxf = MAXFUNC - 1000;
     else
-       *maxf = 2*(MAXFUNC - 1000)/3;
+        *maxf = 2*(MAXFUNC - 1000)/3;
 
     MY_ALLOC(s, integer, MAXDIV * 2);
 
+    integer MAXDEEP = *maxt <= 0 ? MAXFUNC/5: *maxt + 1000;
+    fixed_memory_dim = (sizeof(doublereal) * 2 + sizeof(integer));
+    unsigned long const_memory = 2 * (sizeof(doublereal) + sizeof(integer));
+    MAXDEEP = MAXDEEP * fixed_memory_dim + const_memory > MAXMEMORY ? (MAXMEMORY - const_memory)/fixed_memory_dim : MAXDEEP;
     MY_ALLOC(anchor, integer, MAXDEEP + 2);
     MY_ALLOC(levels, doublereal, MAXDEEP + 1);
     MY_ALLOC(thirds, doublereal, MAXDEEP + 1);
-    if (*maxt <= 0) *maxt = MAXDEEP;
+    if (*maxt <= 0)
+        *maxt = MAXDEEP;
+    else
+        *maxt = MAXDEEP - 1000;
 
     MY_ALLOC(w, doublereal, (*n));
     MY_ALLOC(oldl, doublereal, (*n));
