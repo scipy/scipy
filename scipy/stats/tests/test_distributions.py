@@ -156,10 +156,10 @@ def assert_fit_warnings(dist):
                        match="All parameters fixed. There is nothing "
                        "to optimize."):
         dist.fit(data, **all_fixed)
-    with pytest.raises(RuntimeError,
+    with pytest.raises(ValueError,
                        match="The data contains non-finite values"):
         dist.fit([np.nan])
-    with pytest.raises(RuntimeError,
+    with pytest.raises(ValueError,
                        match="The data contains non-finite values"):
         dist.fit([np.inf])
     with pytest.raises(TypeError, match="Unknown keyword arguments:"):
@@ -2173,8 +2173,8 @@ class TestLaplace:
                       fscale=scale_mle)
 
         # error is raised with non-finite values
-        assert_raises(RuntimeError, stats.laplace.fit, [np.nan])
-        assert_raises(RuntimeError, stats.laplace.fit, [np.inf])
+        assert_raises(ValueError, stats.laplace.fit, [np.nan])
+        assert_raises(ValueError, stats.laplace.fit, [np.inf])
 
     @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10, -5),
                                                    (5, 10),
@@ -2672,24 +2672,24 @@ class TestExpon:
     def test_nan_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
-        assert_raises(RuntimeError, stats.expon.fit, x)
+        assert_raises(ValueError, stats.expon.fit, x)
 
     def test_inf_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
-        assert_raises(RuntimeError, stats.expon.fit, x)
+        assert_raises(ValueError, stats.expon.fit, x)
 
 
 class TestNorm:
     def test_nan_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
-        assert_raises(RuntimeError, stats.norm.fit, x)
+        assert_raises(ValueError, stats.norm.fit, x)
 
     def test_inf_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
-        assert_raises(RuntimeError, stats.norm.fit, x)
+        assert_raises(ValueError, stats.norm.fit, x)
 
     def test_bad_keyword_arg(self):
         x = [1, 2, 3]
@@ -2701,12 +2701,12 @@ class TestUniform:
     def test_nan_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
-        assert_raises(RuntimeError, stats.uniform.fit, x)
+        assert_raises(ValueError, stats.uniform.fit, x)
 
     def test_inf_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
-        assert_raises(RuntimeError, stats.uniform.fit, x)
+        assert_raises(ValueError, stats.uniform.fit, x)
 
 
 class TestExponNorm:
@@ -2740,12 +2740,12 @@ class TestExponNorm:
     def test_nan_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
-        assert_raises(RuntimeError, stats.exponnorm.fit, x, floc=0, fscale=1)
+        assert_raises(ValueError, stats.exponnorm.fit, x, floc=0, fscale=1)
 
     def test_inf_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
-        assert_raises(RuntimeError, stats.exponnorm.fit, x, floc=0, fscale=1)
+        assert_raises(ValueError, stats.exponnorm.fit, x, floc=0, fscale=1)
 
     def test_extremes_x(self):
         # Test for extreme values against overflows
@@ -3903,8 +3903,8 @@ class TestFitMethod:
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
         y = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
         distfunc = getattr(stats, dist)
-        assert_raises(RuntimeError, distfunc.fit, x, floc=0, fscale=1)
-        assert_raises(RuntimeError, distfunc.fit, y, floc=0, fscale=1)
+        assert_raises(ValueError, distfunc.fit, x, fscale=1)
+        assert_raises(ValueError, distfunc.fit, y, fscale=1)
 
     def test_fix_fit_2args_lognorm(self):
         # Regression test for #1551.
