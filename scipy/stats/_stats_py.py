@@ -38,7 +38,8 @@ from numpy.lib import NumpyVersion
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
 from scipy._lib._util import (check_random_state, MapWrapper,
-                              rng_integers, float_factorial)
+                              rng_integers, _rename_parameter)
+
 import scipy.special as special
 from scipy import linalg
 from . import distributions
@@ -59,11 +60,11 @@ from scipy._lib._bunch import _make_tuple_bunch
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
-           'normaltest', 'jarque_bera', 'itemfreq',
+           'normaltest', 'jarque_bera',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
            'sem', 'zmap', 'zscore', 'gzscore', 'iqr', 'gstd',
-           'median_absolute_deviation', 'median_abs_deviation',
+           'median_abs_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
            'f_oneway', 'F_onewayConstantInputWarning',
            'F_onewayBadInputSizesWarning',
@@ -1705,50 +1706,6 @@ def jarque_bera(x):
 #        FREQUENCY FUNCTIONS        #
 #####################################
 
-# deindent to work around numpy/gh-16202
-@np.deprecate(
-    message="`itemfreq` is deprecated and will be removed in a "
-            "future version. Use instead `np.unique(..., return_counts=True)`")
-def itemfreq(a):
-    """
-Return a 2-D array of item frequencies.
-
-Parameters
-----------
-a : (N,) array_like
-    Input array.
-
-Returns
--------
-itemfreq : (K, 2) ndarray
-    A 2-D frequency table.  Column 1 contains sorted, unique values from
-    `a`, column 2 contains their respective counts.
-
-Examples
---------
->>> from scipy import stats
->>> a = np.array([1, 1, 5, 0, 1, 2, 2, 0, 1, 4])
->>> stats.itemfreq(a)
-array([[ 0.,  2.],
-       [ 1.,  4.],
-       [ 2.,  2.],
-       [ 4.,  1.],
-       [ 5.,  1.]])
->>> np.bincount(a)
-array([2, 4, 2, 0, 1, 1])
-
->>> stats.itemfreq(a/10.)
-array([[ 0. ,  2. ],
-       [ 0.1,  4. ],
-       [ 0.2,  2. ],
-       [ 0.4,  1. ],
-       [ 0.5,  1. ]])
-
-"""
-    items, inv = np.unique(a, return_inverse=True)
-    freq = np.bincount(inv)
-    return np.array([items, freq]).T
-
 
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
                       axis=None):
@@ -3121,127 +3078,6 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
 
     return mad / scale
 
-
-# Keep the top newline so that the message does not show up on the stats page
-_median_absolute_deviation_deprec_msg = """
-To preserve the existing default behavior, use
-`scipy.stats.median_abs_deviation(..., scale=1/1.4826)`.
-The value 1.4826 is not numerically precise for scaling
-with a normal distribution. For a numerically precise value, use
-`scipy.stats.median_abs_deviation(..., scale='normal')`.
-"""
-
-
-# Due to numpy/gh-16349 we need to unindent the entire docstring
-@np.deprecate(old_name='median_absolute_deviation',
-              new_name='median_abs_deviation',
-              message=_median_absolute_deviation_deprec_msg)
-def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
-                              nan_policy='propagate'):
-    r"""
-Compute the median absolute deviation of the data along the given axis.
-
-The median absolute deviation (MAD, [1]_) computes the median over the
-absolute deviations from the median. It is a measure of dispersion
-similar to the standard deviation but more robust to outliers [2]_.
-
-The MAD of an empty array is ``np.nan``.
-
-.. versionadded:: 1.3.0
-
-Parameters
-----------
-x : array_like
-    Input array or object that can be converted to an array.
-axis : int or None, optional
-    Axis along which the range is computed. Default is 0. If None, compute
-    the MAD over the entire array.
-center : callable, optional
-    A function that will return the central value. The default is to use
-    np.median. Any user defined function used will need to have the function
-    signature ``func(arr, axis)``.
-scale : int, optional
-    The scaling factor applied to the MAD. The default scale (1.4826)
-    ensures consistency with the standard deviation for normally distributed
-    data.
-nan_policy : {'propagate', 'raise', 'omit'}, optional
-    Defines how to handle when input contains nan.
-    The following options are available (default is 'propagate'):
-
-    * 'propagate': returns nan
-    * 'raise': throws an error
-    * 'omit': performs the calculations ignoring nan values
-
-Returns
--------
-mad : scalar or ndarray
-    If ``axis=None``, a scalar is returned. If the input contains
-    integers or floats of smaller precision than ``np.float64``, then the
-    output data-type is ``np.float64``. Otherwise, the output data-type is
-    the same as that of the input.
-
-See Also
---------
-numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
-scipy.stats.tstd, scipy.stats.tvar
-
-Notes
------
-The `center` argument only affects the calculation of the central value
-around which the MAD is calculated. That is, passing in ``center=np.mean``
-will calculate the MAD around the mean - it will not calculate the *mean*
-absolute deviation.
-
-References
-----------
-.. [1] "Median absolute deviation",
-       https://en.wikipedia.org/wiki/Median_absolute_deviation
-.. [2] "Robust measures of scale",
-       https://en.wikipedia.org/wiki/Robust_measures_of_scale
-
-Examples
---------
-When comparing the behavior of `median_absolute_deviation` with ``np.std``,
-the latter is affected when we change a single value of an array to have an
-outlier value while the MAD hardly changes:
-
->>> from scipy import stats
->>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
->>> x.std()
-0.9973906394005013
->>> stats.median_absolute_deviation(x)
-1.2280762773108278
->>> x[0] = 345.6
->>> x.std()
-34.42304872314415
->>> stats.median_absolute_deviation(x)
-1.2340335571164334
-
-Axis handling example:
-
->>> x = np.array([[10, 7, 4], [3, 2, 1]])
->>> x
-array([[10,  7,  4],
-       [ 3,  2,  1]])
->>> stats.median_absolute_deviation(x)
-array([5.1891, 3.7065, 2.2239])
->>> stats.median_absolute_deviation(x, axis=None)
-2.9652
-
-"""
-    if isinstance(scale, str):
-        if scale.lower() == 'raw':
-            warnings.warn(
-                "use of scale='raw' is deprecated, use scale=1.0 instead",
-                np.VisibleDeprecationWarning
-            )
-            scale = 1.0
-
-    if not isinstance(scale, str):
-        scale = 1 / scale
-
-    return median_abs_deviation(x, axis=axis, center=center, scale=scale,
-                                nan_policy=nan_policy)
 
 #####################################
 #         TRIMMING FUNCTIONS        #
@@ -7277,7 +7113,8 @@ def _compute_dminus(cdfvals):
     return (cdfvals - np.arange(0.0, n)/n).max()
 
 
-def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7296,7 +7133,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+    method : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7382,6 +7219,8 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     hypothesis in favor of the alternative.
 
     """
+    mode = method
+
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
         alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
@@ -7593,7 +7432,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7609,7 +7449,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'asymp'}, optional
+    method : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7652,7 +7492,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     If the KS statistic is small or the p-value is high, then we cannot
     reject the null hypothesis in favor of the alternative.
 
-    If the mode is 'auto', the computation is exact if the sample sizes are
+    If the method is 'auto', the computation is exact if the sample sizes are
     less than 10000.  For larger sizes, the computation uses the
     Kolmogorov-Smirnov distributions to compute an approximate value.
 
@@ -7716,6 +7556,8 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     hypothesis in favor of the alternative.
 
     """
+    mode = method
+
     if mode not in ['auto', 'exact', 'asymp']:
         raise ValueError(f'Invalid value for mode: {mode}')
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
@@ -7765,7 +7607,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
             mode = 'asymp'
             if original_mode == 'exact':
                 warnings.warn(f"ks_2samp: Exact calculation unsuccessful. "
-                              f"Switching to mode={mode}.", RuntimeWarning)
+                              f"Switching to method={mode}.", RuntimeWarning)
 
     if mode == 'asymp':
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
@@ -7815,7 +7657,8 @@ def _parse_kstest_args(data1, data2, args, N):
     return data1, data2, cdf
 
 
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     """
     Performs the (one-sample or two-sample) Kolmogorov-Smirnov test for
     goodness of fit.
@@ -7849,7 +7692,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+    method : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7963,8 +7806,8 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative,
-                        mode=mode)
-    return ks_2samp(xvals, yvals, alternative=alternative, mode=mode)
+                        method=method)
+    return ks_2samp(xvals, yvals, alternative=alternative, method=method)
 
 
 def tiecorrect(rankvals):

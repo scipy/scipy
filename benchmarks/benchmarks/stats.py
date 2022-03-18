@@ -494,6 +494,23 @@ class BenchQMCHalton(Benchmark):
         seq.random(n, workers=workers)
 
 
+class BenchQMCSobol(Benchmark):
+    param_names = ['d', 'base2']
+    params = [
+        [1, 50, 100],
+        [3, 10, 11, 12],
+    ]
+
+    def setup(self, d, base2):
+        self.rng = np.random.default_rng(168525179735951991038384544)
+        stats.qmc.Sobol(1, bits=32)  # make it load direction numbers
+
+    def time_sobol(self, d, base2):
+        # scrambling is happening at init only, not worth checking
+        seq = stats.qmc.Sobol(d, scramble=False, bits=32, seed=self.rng)
+        seq.random_base2(base2)
+
+
 class DistanceFunctions(Benchmark):
     param_names = ['n_size']
     params = [

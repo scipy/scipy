@@ -492,6 +492,37 @@ def test_vectorize_statistic(axis):
     assert_allclose(res1, res2)
 
 
+@pytest.mark.xslow()
+@pytest.mark.parametrize("method", ["basic", "percentile", "BCa"])
+def test_vector_valued_statistic(method):
+    # Generate 95% confidence interval around MLE of normal distribution
+    # parameters. Repeat 100 times, each time on sample of size 100.
+    # Check that confidence interval contains true parameters ~95 times.
+    # Confidence intervals are estimated and stochastic; a test failure
+    # does not necessarily indicate that something is wrong. More important
+    # than values of `counts` below is that the shapes of the outputs are
+    # correct.
+
+    rng = np.random.default_rng(2196847219)
+    params = 1, 0.5
+    sample = stats.norm.rvs(*params, size=(100, 100), random_state=rng)
+
+    def statistic(data):
+        return stats.norm.fit(data)
+
+    res = bootstrap((sample,), statistic, method=method, axis=-1,
+                    vectorized=False)
+
+    counts = np.sum((res.confidence_interval.low.T < params)
+                    & (res.confidence_interval.high.T > params),
+                    axis=0)
+    assert np.all(counts >= 90)
+    assert np.all(counts <= 100)
+    assert res.confidence_interval.low.shape == (2, 100)
+    assert res.confidence_interval.high.shape == (2, 100)
+    assert res.standard_error.shape == (2, 100)
+
+
 # --- Test Monte Carlo Hypothesis Test --- #
 
 class TestMonteCarloHypothesisTest:
