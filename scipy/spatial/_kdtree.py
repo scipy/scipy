@@ -384,6 +384,11 @@ class KDTree(cKDTree):
             When k == 1, the last dimension of the output is squeezed.
             Missing neighbors are indicated with infinite distances.
             Hits are sorted by distance (nearest first).
+            
+            .. versionchanged:: 1.8.0
+               Previously if ``k=None``, then ``d`` was an object array of shape 
+               ``tuple``, containing lists of distances. This behavior is removed, 
+               use ``query_ball_point`` instead.
 
         i : integer or array of integers
             The index of each neighbor in ``self.data``.
