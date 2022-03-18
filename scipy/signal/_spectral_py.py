@@ -1088,6 +1088,8 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
         line to a power spectral density - it allows to calculate the signal's
         energy by numerically integrating over ``abs(Zxx)**2``.
 
+        .. versionadded:: 1.9.0
+
     Returns
     -------
     f : ndarray
