@@ -424,7 +424,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
 
     This mean is also called generalized mean or Hölder mean, and must not be
     confused with the Kolmogorov generalized mean, also called
-    quasi-arithmetic mean or generalized f-mean.
+    quasi-arithmetic mean or generalized f-mean [3]_.
 
     Parameters
     ----------
@@ -448,8 +448,8 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
 
     Returns
     -------
-    pmean : ndarray
-        See `dtype` parameter above.
+    pmean : ndarray, see `dtype` parameter above.
+        Output array containing the power mean values.
 
     See Also
     --------

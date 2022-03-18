@@ -5747,8 +5747,12 @@ class TestPowMean:
 
     def test_2d_axis0_with_zero(self):
         a, p = [[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], 0.5
-        desired = [TestPowMean.pmean_reference(np.array(
-            [a[i][j] for i in range(len(a))]), p) for j in range(len(a[0]))]
+        desired = [
+            TestPowMean.pmean_reference(
+                np.array([a[i][j] for i in range(len(a))]), p
+            )
+            for j in range(len(a[0]))
+        ]
         assert_allclose(stats.pmean(a, p, axis=0), desired)
 
     def test_2d_axis1(self):
