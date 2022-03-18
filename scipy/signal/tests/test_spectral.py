@@ -1166,11 +1166,9 @@ class TestSTFT:
             _spectral_helper(x, x, boundary='foo')
 
         scaling = "not_valid"
-        with pytest.raises(ValueError, match=f"Parameter {scaling=} not in " +
-                                             r"\['spectrum', 'psd'\]!"):
+        with chk_VE(fr"Parameter {scaling=} not in \['spectrum', 'psd'\]!"):
             stft(x, scaling=scaling)
-        with pytest.raises(ValueError, match=f"Parameter {scaling=} not in " +
-                                             r"\['spectrum', 'psd'\]!"):
+        with chk_VE(fr"Parameter {scaling=} not in \['spectrum', 'psd'\]!"):
             istft(z, scaling=scaling)
 
     def test_check_COLA(self):
@@ -1263,7 +1261,8 @@ class TestSTFT:
         assert_allclose(Z1, Z2[:, 0, 0, :])
         assert_allclose(x1, x2[:, 0, 0])
 
-    def test_roundtrip_real(self):
+    @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
+    def test_roundtrip_real(self, scaling):
         np.random.seed(1234)
 
         settings = [
@@ -1280,10 +1279,11 @@ class TestSTFT:
             x = 10*np.random.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
-                            window=window, detrend=None, padded=False)
+                            window=window, detrend=None, padded=False,
+                            scaling=scaling)
 
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                           window=window)
+                           window=window, scaling=scaling)
 
             msg = '{0}, {1}'.format(window, noverlap)
             assert_allclose(t, tr, err_msg=msg)
@@ -1346,8 +1346,7 @@ class TestSTFT:
             assert_allclose(t, tr[:len(t)], err_msg=msg)
             assert_allclose(x, xr[:len(x)], err_msg=msg)
 
-    @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
-    def test_roundtrip_float32(self, scaling):
+    def test_roundtrip_float32(self):
         np.random.seed(1234)
 
         settings = [('hann', 1024, 256, 128)]
@@ -1358,11 +1357,10 @@ class TestSTFT:
             x = x.astype(np.float32)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
-                            window=window, detrend=None, padded=False,
-                            scaling=scaling)
+                            window=window, detrend=None, padded=False)
 
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                           window=window, scaling=scaling)
+                           window=window)
 
             msg = '{0}, {1}'.format(window, noverlap)
             assert_allclose(t, t, err_msg=msg)
@@ -1572,4 +1570,24 @@ class TestSTFT:
 
         # Test round trip:
         x1 = istft(Zp, input_onesided=False, boundary=True, scaling='psd')[1]
+        assert_allclose(x1, x)
+
+        # The power of the one-sided psd-scaled STFT can be determined
+        # analogously (note that the two sides are not of equal shape):
+        Zp0 = stft(x, return_onesided=True, boundary='even', scaling='psd')[2]
+
+        # Since x is real, its Fourier transform is conjugate symmetric, i.e.,
+        # the missing 'second side' can be expressed through the 'first side':
+        Zp1 = np.conj(Zp0[-2:0:-1, :])  # 'second side' is conjugate reversed
+        assert_allclose(Zp[:129, :], Zp0)
+        assert_allclose(Zp[129:, :], Zp1)
+
+        # Calculate the spectral power:
+        s2 = (np.sum(Zp0.real ** 2 + Zp0.imag ** 2, axis=0) +
+              np.sum(Zp1.real ** 2 + Zp1.imag ** 2, axis=0))
+        psd_Zp01 = s2 / (Zp0.shape[0] + Zp1.shape[0])
+        assert_allclose(psd_Zp01, power_x)
+
+        # Test round trip:
+        x1 = istft(Zp0, input_onesided=True, boundary=True, scaling='psd')[1]
         assert_allclose(x1, x)
