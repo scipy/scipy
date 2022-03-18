@@ -522,7 +522,7 @@ class TestFisherExact:
         # options(digits=16)
         # table <- matrix(c(6, 108, 37, 200), nrow = 2)
         # fisher.test(table, alternative = "t")
-        x = [[6,37], [108, 200]]
+        x = [[6, 37], [108, 200]]
         res = stats.fisher_exact(x)
         assert_allclose(res[1], 0.005092697748126)
 
