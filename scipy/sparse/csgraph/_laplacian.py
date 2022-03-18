@@ -309,7 +309,7 @@ def laplacian(
 
     >>>     L = csgraph.laplacian(G, symmetrized=True, form="lo")
 
-    Calling an eigenvalue solver ``lobpcg`` to compute the Fiedler vector
+    Calling the eigenvalue solver ``lobpcg`` to compute the Fiedler vector
     that determines the labels as the signs of its components.
 
     >>>     _, eves = sparse.linalg.lobpcg(L, X, Y=Y, largest=False, tol=1e-3)
