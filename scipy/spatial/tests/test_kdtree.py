@@ -217,11 +217,9 @@ class Test_vectorization_KDTree:
         assert_(np.all(i[:, :, -s:] == self.kdtree.n))
 
     def test_query_raises_for_k_none(self):
-        np.random.seed(1234)
-        r = 0.8
-        point = np.random.rand(self.kdtree.m)
+        x = 1.0
         with pytest.raises(ValueError, match="k must be an integer or*"):
-            self.kdtree.query(point, k=None, distance_upper_bound=r)
+            self.kdtree.query(x, k=None)
 
 class Test_vectorization_cKDTree:
     def setup_method(self):
