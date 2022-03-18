@@ -4162,6 +4162,15 @@ def pearsonr(x, y):
 def fisher_exact(table, alternative='two-sided'):
     """Perform a Fisher exact test on a 2x2 contingency table.
 
+    The null hypothesis is that the true odds ratio of the populations
+    underlying the observations is one, and the observations were sampled at
+    random from these populations. The statistic returned is the unconditional
+    maximum likelihood estimate of the odds ratio, and the p-value is the
+    probability under the null hypothesis of obtaining a table at least as
+    extreme as the one that was actually observed. There are other possible
+    choices of statistic and two-sided p-value definition associated with
+    Fisher's exact test; please see the Notes for more information.
+
     Parameters
     ----------
     table : array_like of ints
@@ -4170,9 +4179,10 @@ def fisher_exact(table, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-        * 'two-sided'
-        * 'less': one-sided
-        * 'greater': one-sided
+        * 'two-sided': the odds ratio of the underlying population is not one
+        * 'less': the odds ratio of the underlying population is less than one
+        * 'greater': the odds ratio of the underlying population is greater
+          than one
 
         See the Notes for more details.
 
@@ -4181,9 +4191,8 @@ def fisher_exact(table, alternative='two-sided'):
     oddsratio : float
         This is prior odds ratio and not a posterior estimate.
     p_value : float
-        P-value, the probability of obtaining a distribution at least as
-        extreme as the one that was actually observed, assuming that the
-        null hypothesis is true.
+        P-value, the probability under the null hypothesis of obtaining a
+        table at least as extreme as the one that was actually observed.
 
     See Also
     --------
@@ -4197,7 +4206,10 @@ def fisher_exact(table, alternative='two-sided'):
     -----
     *Null hypothesis and p-values*
 
-    The null hypothesis is that the input table is from the hypergeometric
+    The null hypothesis is that the true odds ratio of the populations
+    underlying the observations is one, and the observations were sampled at
+    random from these populations. Equivalently,
+    the null hypothesis is that the input table is from the hypergeometric
     distribution with parameters (as used in `hypergeom`)
     ``M = a + b + c + d``, ``n = a + b`` and ``N = a + c``, where the
     input table is ``[[a, b], [c, d]]``.  This distribution has support
@@ -4385,7 +4397,7 @@ def fisher_exact(table, alternative='two-sided'):
         pexact = hypergeom.pmf(c[0, 0], n1 + n2, n1, n)
         pmode = hypergeom.pmf(mode, n1 + n2, n1, n)
 
-        epsilon = 1 - 1e-4
+        epsilon = 1 - 1e-14
         if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= 1 - epsilon:
             return oddsratio, 1.
 
