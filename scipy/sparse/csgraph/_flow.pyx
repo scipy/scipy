@@ -35,6 +35,20 @@ class MaximumFlowResult:
     def __repr__(self):
         return 'MaximumFlowResult with value of %d' % self.flow_value
 
+ctypedef struct edge_result:
+    # A structure to store edges found out
+    # by _find_entering_edges function.
+    ITYPE_t i
+    ITYPE_t p
+    ITYPE_t q
+
+ctypedef struct return_struct:
+    # A structure to store the return value
+    # and current state of _find_entering_edges
+    # function.
+    ITYPE_t B, M, m, f
+    edge_result i_p_q
+    bint prev_ret_value
 
 class MinimumCostFlowResult:
 
@@ -807,10 +821,10 @@ def minimum_cost_flow(csgraph, demand, cost):
     n_verts = csgraph.indptr.shape[0] - 1
 
     _network_simplex_checks(csgraph.data, demand, cost)
-    tails = _make_tails(csgraph)
-    row = np.empty(cost.shape, dtype=ITYPE)
-    col = np.empty(cost.shape, dtype=ITYPE)
-    flow_data = np.empty(cost.shape, dtype=ITYPE)
+    cdef ITYPE_t[:] tails = _make_tails(csgraph)
+    cdef ITYPE_t[:] row = np.empty(cost.shape, dtype=ITYPE)
+    cdef ITYPE_t[:] col = np.empty(cost.shape, dtype=ITYPE)
+    cdef ITYPE_t[:] flow_data = np.empty(cost.shape, dtype=ITYPE)
     ns_result = _network_simplex(csgraph.indices, tails, csgraph.data,
                                  demand, cost, n_verts,
                                  row, col, flow_data)
@@ -921,18 +935,6 @@ cdef inline ITYPE_t _reduced_cost(
     )
     return c if edge_flow[e] == 0 else -c
 
-ctypedef struct local_vars:
-    # A structure to store local
-    # variables used in _find_entering_edges
-    # function.
-    # This structure is needed to implement
-    # the above function without using yield
-    # feature of Python.
-    ITYPE_t B
-    ITYPE_t M
-    ITYPE_t m
-    ITYPE_t f
-
 cdef class network_simplex_result:
     """
     Cython class to store the network
@@ -941,24 +943,6 @@ cdef class network_simplex_result:
     cdef readonly ITYPE_t flow_cost
     cdef readonly ITYPE_t size
     cdef readonly bint is_correct
-
-ctypedef struct edge_result:
-    # A structure to store edges found out
-    # by _find_entering_edges function.
-    # This structure is needed to implement
-    # the above function without using yield
-    # feature of Python.
-    ITYPE_t i
-    ITYPE_t p
-    ITYPE_t q
-
-ctypedef struct return_struct:
-    # A structure to store the return value
-    # and current state of _find_entering_edges
-    # function.
-    local_vars B_M_m_f
-    edge_result i_p_q
-    bint prev_ret_value
 
 cdef return_struct _find_entering_edges(
     ITYPE_t n_edges,                     # IN
@@ -991,19 +975,19 @@ cdef return_struct _find_entering_edges(
             r_struct.prev_ret_value = False
             return r_struct
 
-        r_struct.B_M_m_f.B = < ITYPE_t > ceil(sqrt(n_edges))  # B
-        B = r_struct.B_M_m_f.B
-        r_struct.B_M_m_f.M = (n_edges + B - 1) // B  # M
-        r_struct.B_M_m_f.m = 0  # m
+        r_struct.B = < ITYPE_t > ceil(sqrt(n_edges))  # B
+        B = r_struct.B
+        r_struct.M = (n_edges + B - 1) // B  # M
+        r_struct.m = 0  # m
         # entering edges
-        r_struct.B_M_m_f.f = 0  # f
+        r_struct.f = 0  # f
 
-    while r_struct.B_M_m_f.m < r_struct.B_M_m_f.M:
+    while r_struct.m < r_struct.M:
         # Determine the next block of edges.
-        l = r_struct.B_M_m_f.f + r_struct.B_M_m_f.B
+        l = r_struct.f + r_struct.B
         min_r_cost = INT_MAX
         if l <= n_edges:
-            for e in range(r_struct.B_M_m_f.f, l):
+            for e in range(r_struct.f, l):
                 r_cost = _reduced_cost(e, edge_weights,
                                        vertex_potentials,
                                        edge_sources,
@@ -1013,7 +997,7 @@ cdef return_struct _find_entering_edges(
                     min_r_cost = r_cost
         else:
             l -= n_edges
-            for e in range(r_struct.B_M_m_f.f, n_edges):
+            for e in range(r_struct.f, n_edges):
                 r_cost = _reduced_cost(e, edge_weights,
                                        vertex_potentials,
                                        edge_sources,
@@ -1029,10 +1013,10 @@ cdef return_struct _find_entering_edges(
                 if r_cost < min_r_cost:
                     i = e
                     min_r_cost = r_cost
-        r_struct.B_M_m_f.f = l
+        r_struct.f = l
         if min_r_cost >= 0:
             # No entering edge found in the current block.
-            r_struct.B_M_m_f.m += 1
+            r_struct.m += 1
         else:
             # Entering edge found.
             if edge_flow[i] == 0:
@@ -1044,7 +1028,7 @@ cdef return_struct _find_entering_edges(
             r_struct.i_p_q.i = i
             r_struct.i_p_q.p = p
             r_struct.i_p_q.q = q
-            r_struct.B_M_m_f.m = 0
+            r_struct.m = 0
             r_struct.prev_ret_value = True
             return r_struct
 
