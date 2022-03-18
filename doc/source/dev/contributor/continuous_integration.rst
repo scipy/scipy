@@ -46,9 +46,12 @@ Azure
 * ``Lint``: PEP8 and code style
 * ``Windows Python``: test suite runs for Windows
 * ``Linux_Python_xx_32bit_full``: 32-bit Linux
-* ``wheel_optimized_gcc``
+* ``wheel_optimized_gcc``: install the wheel, then run the test suite with
+  `python -OO`
 * ``source_distribution``: install via ``sdist``, then run the test suite
 * ``refguide_asv_check``: doctests from examples and benchmarks
+* ``prerelease_deps_coverage_64bit_blas``: use pre-released version of the
+  dependencies and check coverage
 
 CircleCI
 --------
