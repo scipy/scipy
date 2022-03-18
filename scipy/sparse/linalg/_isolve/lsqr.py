@@ -281,8 +281,8 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     array([ 0.,  0.])
 
     The stopping code `istop=0` returned indicates that a vector of zeros was
-    found as a solution. The returned solution `x` indeed contains ``[0., 0.]``.
-    The next example has a non-trivial solution:
+    found as a solution. The returned solution `x` indeed contains
+    ``[0., 0.]``. The next example has a non-trivial solution:
 
     >>> b = np.array([1., 0., -1.], dtype=float)
     >>> x, istop, itn, r1norm = lsqr(A, b)[:4]
