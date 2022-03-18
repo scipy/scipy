@@ -694,7 +694,7 @@ def minimum_cost_flow(csgraph, demand, cost):
     Finds a flow which minimizes the total cost while satisfying all
     vertices' demands in the given directed graph.
 
-    .. versionadded:: 1.8.0
+    .. versionadded:: 1.9.0
 
     Parameters
     ----------
@@ -703,10 +703,10 @@ def minimum_cost_flow(csgraph, demand, cost):
         is an integer representing the capacity of the edge between
         vertices i and j.
     demand : array_like
-        The array whose v'th entry is an integer representing the demand
+        One dimensional array whose v'th entry is an integer representing the demand
         of vertex v.
     cost : array_like
-        The array whose e'th entry is an integer representing the cost
+        One dimensional array whose e'th entry is an integer representing the cost
         of per unit flow passing through edge e.
 
     Returns
@@ -731,7 +731,7 @@ def minimum_cost_flow(csgraph, demand, cost):
 
     Notes
     -----
-    This solves the minimum cost flow problem on a given directed weighted graph:
+    This solves the minimum cost flow problem [1]_ on a given directed weighted graph:
     a flow associates to every edge a value, also called a flow, less than the
     capacity of the edge, and for provided cost of the edge so that for every
     vertex (apart from the source and the sink vertices), the difference between
@@ -740,7 +740,7 @@ def minimum_cost_flow(csgraph, demand, cost):
     the minimum cost flow problem consists of finding a flow whose cost (which is
     defined as the scalar product of the edges' flows and costs) is minimal.
 
-    To solve the problem, we use Network Simplex [1]_.
+    To solve the problem, we use Network Simplex [2]_.
     The time complexity of the former :math:`O(|V|^2\,|E|\,log(|V|\,C))`.
 
     The minimum cost flow problem is usually defined with real valued capacities,
@@ -751,18 +751,19 @@ def minimum_cost_flow(csgraph, demand, cost):
     accordingly.
 
     Solving a minimum cost flow problem has many practical uses such as
-    in assignment problem, covers and matching in bipartite graphs [2]_.
+    in assignment problem, covers and matching in bipartite graphs [3]_.
 
-    We have ported the Python implementation of NetworkX [3]_ to Cython.
+    We have ported the Python implementation of NetworkX [4]_ to Cython.
 
     References
     ----------
 
-    .. [1] Orlin, J.B. A polynomial time primal network simplex algorithm
+    .. [1] https://en.wikipedia.org/wiki/Minimum-cost_flow_problem#Definition
+    .. [2] Orlin, J.B. A polynomial time primal network simplex algorithm
            for minimum cost flows. Mathematical Programming 78,
            109-129 (1997).
-    .. [2] https://en.wikipedia.org/wiki/Network_simplex_algorithm#Applications
-    .. [3] A Hagberg, D Schult, P Swart, Exploring Network Structure, Dynamics,
+    .. [3] https://en.wikipedia.org/wiki/Network_simplex_algorithm#Applications
+    .. [4] A Hagberg, D Schult, P Swart, Exploring Network Structure, Dynamics,
            and Function using NetworkX in Proceedings of the 7th Python in
            Science conference (SciPy 2008), G Varoquaux, T Vaught, J Millman
            (Eds.), pp. 11-15
@@ -874,6 +875,8 @@ cdef void _initialize_spanning_tree(
         edge_flow[v + n_non_zero_edges] = abs(demand[v])
 
     # vertex_potentials initialization
+    # 0-th index is not needed in the algorithm
+    # so it is left un-initialized
     for v in range(1, n_verts + 1):
         if demand[v - 1] <= 0:
             vertex_potentials[v] = faux_inf
@@ -953,9 +956,6 @@ ctypedef struct return_struct:
     # A structure to store the return value
     # and current state of _find_entering_edges
     # function.
-    # This structure is needed to implement
-    # the above function without using yield
-    # feature of Python.
     local_vars B_M_m_f
     edge_result i_p_q
     bint prev_ret_value
@@ -975,7 +975,7 @@ cdef return_struct _find_entering_edges(
     However, we don't use yield and instead manually maintain
     the state of this function using return_struct defined above.
 
-    Following is the explanation from `networkx.algorithms.flow.networksimplex`:
+    Following is the explanation from ``networkx.algorithms.flow.networksimplex``:
 
         "Entering edges are found by combining Dantzig's rule and Bland's
         rule. The edges are cyclically grouped into blocks of size B. Within
