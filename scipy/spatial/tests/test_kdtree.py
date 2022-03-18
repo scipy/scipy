@@ -475,23 +475,6 @@ def test_query_ball_point_multithreading(kdtree_type):
             assert_array_equal(l1[i], l3[i])
 
 
-def test_n_jobs():
-    # Test for the deprecated argument name "n_jobs" aliasing "workers"
-    points = np.random.randn(50, 2)
-    T = cKDTree(points)
-    with pytest.deprecated_call(match="n_jobs argument has been renamed"):
-        T.query_ball_point(points, 0.003, n_jobs=1)
-
-    with pytest.deprecated_call(match="n_jobs argument has been renamed"):
-        T.query(points, 1, n_jobs=1)
-
-    with pytest.raises(TypeError, match="Unexpected keyword argument"):
-        T.query_ball_point(points, 0.003, workers=1, n_jobs=1)
-
-    with pytest.raises(TypeError, match="Unexpected keyword argument"):
-        T.query(points, 1, workers=1, n_jobs=1)
-
-
 class two_trees_consistency:
 
     def distance(self, a, b, p):
@@ -872,10 +855,7 @@ def test_kdtree_build_modes(kdtree_type):
 
 def test_kdtree_pickle(kdtree_type):
     # test if it is possible to pickle a KDTree
-    try:
-        import cPickle as pickle  # type: ignore[import]
-    except ImportError:
-        import pickle
+    import pickle
     np.random.seed(0)
     n = 50
     k = 4
@@ -889,10 +869,7 @@ def test_kdtree_pickle(kdtree_type):
 
 def test_kdtree_pickle_boxsize(kdtree_type):
     # test if it is possible to pickle a periodic KDTree
-    try:
-        import cPickle as pickle
-    except ImportError:
-        import pickle
+    import pickle
     np.random.seed(0)
     n = 50
     k = 4

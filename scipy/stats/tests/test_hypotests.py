@@ -1740,8 +1740,8 @@ class TestPermutationTest:
         test = _bootstrap._vectorize_statistic(test_1d)
 
         expected = test(x, y, axis=1)
-        expected_stat = expected[:, 0, :]
-        expected_p = expected[:, 1, :]
+        expected_stat = expected[0]
+        expected_p = expected[1]
 
         res1 = permutation_test((x-y,), statistic_1samp_1d, vectorized=False,
                                 permutation_type='samples', n_resamples=np.inf,

@@ -21,3 +21,9 @@ from scipy.stats._boost.hypergeom_ufunc import (
     _hypergeom_isf, _hypergeom_mean, _hypergeom_variance,
     _hypergeom_skewness, _hypergeom_kurtosis_excess,
 )
+
+from scipy.stats._boost.ncf_ufunc import (
+    _ncf_pdf, _ncf_cdf, _ncf_sf, _ncf_ppf,
+    _ncf_isf, _ncf_mean, _ncf_variance,
+    _ncf_skewness, _ncf_kurtosis_excess,
+)

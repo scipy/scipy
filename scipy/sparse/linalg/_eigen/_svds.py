@@ -102,7 +102,7 @@ def _iv(A, k, ncv, tol, which, v0, maxiter,
 
         shape = (A.shape[0],) if solver == 'propack' else (min(A.shape),)
         if v0.shape != shape:
-            message = "`v0` must have shape {shape}."
+            message = f"`v0` must have shape {shape}."
             raise ValueError(message)
 
     # input validation/standardization for `maxiter`

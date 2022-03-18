@@ -19,11 +19,12 @@ dependencies:
   - libblas=*=*openblas  # helps avoid pulling in MKL
   - pybind11
   - pythran>=0.9.12
+  - conda-build
   # For testing and benchmarking
   - pytest
   - pytest-cov
   - pytest-xdist
-  - asv
+  - asv<0.5
   # For type annotations
   - mypy
   - typing_extensions

@@ -4,11 +4,9 @@ from itertools import combinations, product
 
 import pytest
 import numpy as np
-from numpy.testing import (assert_allclose, assert_almost_equal,
-                           assert_equal, assert_array_almost_equal,
-                           assert_array_equal)
-from scipy.stats import shapiro
+from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 
+from scipy.stats import shapiro
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
 from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
@@ -333,33 +331,33 @@ class TestVDC:
         sample = van_der_corput(10)
         out = [0.0, 0.5, 0.25, 0.75, 0.125, 0.625,
                0.375, 0.875, 0.0625, 0.5625]
-        assert_almost_equal(sample, out)
+        assert_allclose(sample, out)
 
         sample = van_der_corput(10, workers=4)
-        assert_almost_equal(sample, out)
+        assert_allclose(sample, out)
 
         sample = van_der_corput(10, workers=8)
-        assert_almost_equal(sample, out)
+        assert_allclose(sample, out)
 
         sample = van_der_corput(7, start_index=3)
-        assert_almost_equal(sample, out[3:])
+        assert_allclose(sample, out[3:])
 
     def test_van_der_corput_scramble(self):
         seed = 338213789010180879520345496831675783177
         out = van_der_corput(10, scramble=True, seed=seed)
 
         sample = van_der_corput(7, start_index=3, scramble=True, seed=seed)
-        assert_almost_equal(sample, out[3:])
+        assert_allclose(sample, out[3:])
 
         sample = van_der_corput(
             7, start_index=3, scramble=True, seed=seed, workers=4
         )
-        assert_almost_equal(sample, out[3:])
+        assert_allclose(sample, out[3:])
 
         sample = van_der_corput(
             7, start_index=3, scramble=True, seed=seed, workers=8
         )
-        assert_almost_equal(sample, out[3:])
+        assert_allclose(sample, out[3:])
 
     def test_invalid_base_error(self):
         with pytest.raises(ValueError, match=r"'base' must be at least 2"):
@@ -457,7 +455,7 @@ class QMCEngineTests:
         engine = self.engine(d=2, scramble=scramble)
         sample = engine.random(n=len(ref_sample))
 
-        assert_almost_equal(sample, ref_sample, decimal=1)
+        assert_allclose(sample, ref_sample, atol=1e-1)
         assert engine.num_generated == len(ref_sample)
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
@@ -471,7 +469,7 @@ class QMCEngineTests:
 
         _ = engine.random(n=n_half)
         sample = engine.random(n=n_half)
-        assert_almost_equal(sample, ref_sample[n_half:], decimal=1)
+        assert_allclose(sample, ref_sample[n_half:], atol=1e-1)
 
     @pytest.mark.parametrize("scramble", scramble, ids=ids)
     def test_reset(self, scramble):
@@ -494,7 +492,7 @@ class QMCEngineTests:
         engine.fast_forward(4)
         sample = engine.random(n=4)
 
-        assert_almost_equal(sample, ref_sample[4:], decimal=1)
+        assert_allclose(sample, ref_sample[4:], atol=1e-1)
 
         # alternate fast forwarding with sampling
         engine.reset()
@@ -504,10 +502,10 @@ class QMCEngineTests:
                 even_draws.append(engine.random())
             else:
                 engine.fast_forward(1)
-        assert_almost_equal(
+        assert_allclose(
             ref_sample[[i for i in range(8) if i % 2 == 0]],
             np.concatenate(even_draws),
-            decimal=5
+            atol=1e-5
         )
 
     @pytest.mark.parametrize("scramble", [True])
@@ -515,14 +513,14 @@ class QMCEngineTests:
         d = 50
         engine = self.engine(d=d, scramble=scramble)
         sample = engine.random(1024)
-        assert_array_almost_equal(
-            np.mean(sample, axis=0), np.repeat(0.5, d), decimal=2
+        assert_allclose(
+            np.mean(sample, axis=0), np.repeat(0.5, d), atol=1e-2
         )
-        assert_array_almost_equal(
-            np.percentile(sample, 25, axis=0), np.repeat(0.25, d), decimal=2
+        assert_allclose(
+            np.percentile(sample, 25, axis=0), np.repeat(0.25, d), atol=1e-2
         )
-        assert_array_almost_equal(
-            np.percentile(sample, 75, axis=0), np.repeat(0.75, d), decimal=2
+        assert_allclose(
+            np.percentile(sample, 75, axis=0), np.repeat(0.75, d), atol=1e-2
         )
 
 
@@ -663,13 +661,11 @@ class TestSobol(QMCEngineTests):
     def test_random_base2(self):
         engine = qmc.Sobol(2, scramble=False)
         sample = engine.random_base2(2)
-        assert_array_equal(self.unscramble_nd[:4],
-                           sample)
+        assert_array_equal(self.unscramble_nd[:4], sample)
 
         # resampling still having N=2**n
         sample = engine.random_base2(2)
-        assert_array_equal(self.unscramble_nd[4:8],
-                           sample)
+        assert_array_equal(self.unscramble_nd[4:8], sample)
 
         # resampling again but leading to N!=2**n
         with pytest.raises(ValueError, match=r"The balance properties of "
@@ -681,6 +677,10 @@ class TestSobol(QMCEngineTests):
                                              r"dimensionality"):
             qmc.Sobol(qmc.Sobol.MAXDIM + 1)
 
+        with pytest.raises(ValueError, match=r"Maximum supported "
+                                             r"'bits' is 64"):
+            qmc.Sobol(1, bits=65)
+
     def test_high_dim(self):
         engine = qmc.Sobol(1111, scramble=False)
         count1 = Counter(engine.random().flatten().tolist())
@@ -688,6 +688,20 @@ class TestSobol(QMCEngineTests):
         assert_equal(count1, Counter({0.0: 1111}))
         assert_equal(count2, Counter({0.5: 1111}))
 
+    @pytest.mark.parametrize("bits", [2, 3])
+    def test_bits(self, bits):
+        engine = qmc.Sobol(2, scramble=False, bits=bits)
+        ns = 2**bits
+        sample = engine.random(ns)
+        assert_array_equal(self.unscramble_nd[:ns], sample)
+
+        with pytest.raises(ValueError, match="increasing `bits`"):
+            engine.random()
+
+    def test_64bits(self):
+        engine = qmc.Sobol(2, scramble=False, bits=64)
+        sample = engine.random(8)
+        assert_array_equal(self.unscramble_nd, sample)
 
 class TestMultinomialQMC:
     def test_validations(self):
@@ -726,7 +740,7 @@ class TestMultinomialQMC:
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
         engine = qmc.MultinomialQMC(p, seed=seed)
         draws = engine.random(8192)
-        assert_array_almost_equal(draws / np.sum(draws), p, decimal=4)
+        assert_allclose(draws / np.sum(draws), p, atol=1e-4)
 
     def test_FindIndex(self):
         p_cumulative = np.array([0.1, 0.4, 0.45, 0.6, 0.75, 0.9, 0.99, 1.0])
@@ -829,7 +843,7 @@ class TestNormalQMC:
         samples = engine.random(n=2)
         samples_expected = np.array([[0.446961, -1.243236],
                                      [-0.230754, 0.21354]])
-        assert_array_almost_equal(samples, samples_expected)
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
         # test odd dimension
         seed = np.random.default_rng(274600237797326520096085022671371676017)
@@ -838,7 +852,7 @@ class TestNormalQMC:
         samples = engine.random(n=2)
         samples_expected = np.array([[0.446961, -1.243236, 0.324827],
                                      [-0.997875, 0.399134, 1.032234]])
-        assert_array_almost_equal(samples, samples_expected)
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
     def test_NormalQMCSeededInvTransform(self):
         # test even dimension
@@ -848,7 +862,7 @@ class TestNormalQMC:
         samples = engine.random(n=2)
         samples_expected = np.array([[-0.804472, 0.384649],
                                      [0.396424, -0.117676]])
-        assert_array_almost_equal(samples, samples_expected)
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
         # test odd dimension
         seed = np.random.default_rng(288527772707286126646493545351112463929)
@@ -857,7 +871,7 @@ class TestNormalQMC:
         samples = engine.random(n=2)
         samples_expected = np.array([[-0.804472, 0.384649, 1.583568],
                                      [0.165333, -2.266828, -1.655572]])
-        assert_array_almost_equal(samples, samples_expected)
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
     def test_NormalQMCShapiro(self):
         rng = np.random.default_rng(13242)
@@ -980,7 +994,7 @@ class TestMultivariateNormalQMC:
         samples = engine.random(n=2)
         samples_expected = np.array([[0.479575, 0.934723],
                                      [1.712571, 0.172699]])
-        assert_array_almost_equal(samples, samples_expected)
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
         # test odd dimension
         rng = np.random.default_rng(180182791534511062935571481899241825000)
@@ -991,7 +1005,7 @@ class TestMultivariateNormalQMC:
         samples = engine.random(n=2)
         samples_expected = np.array([[2.463393, 2.252826, -0.886809],
                                      [1.252468, 0.029449, -1.126328]])
-        assert_array_almost_equal(samples, samples_expected)
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
     def test_MultivariateNormalQMCSeededInvTransform(self):
         # test even dimension
@@ -1004,7 +1018,7 @@ class TestMultivariateNormalQMC:
         samples = engine.random(n=2)
         samples_expected = np.array([[-3.095968, -0.566545],
                                      [0.603154, 0.222434]])
-        assert_array_almost_equal(samples, samples_expected)
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
         # test odd dimension
         rng = np.random.default_rng(224125808928297329711992996940871155974)
@@ -1016,7 +1030,7 @@ class TestMultivariateNormalQMC:
         samples = engine.random(n=2)
         samples_expected = np.array([[1.427248, -0.338187, -1.560687],
                                      [-0.357026, 1.662937, -0.29769]])
-        assert_array_almost_equal(samples, samples_expected)
+        assert_allclose(samples, samples_expected, atol=1e-4)
 
     def test_MultivariateNormalQMCShapiro(self):
         # test the standard case

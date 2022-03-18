@@ -11,7 +11,8 @@ import ctypes
 import numpy as np
 
 from scipy._lib.doccer import (extend_notes_in_docstring,
-                               replace_notes_in_docstring)
+                               replace_notes_in_docstring,
+                               inherit_docstring_from)
 from scipy._lib._ccallback import LowLevelCallable
 from scipy import optimize
 from scipy import integrate
@@ -24,11 +25,12 @@ from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (
     get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
-    rv_continuous, _skew, _get_fixed_fit_value, _check_shape)
+    rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
+from scipy.optimize import root_scalar
 
 
 def _remove_optimizer_parameters(kwds):
@@ -301,6 +303,9 @@ class norm_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return []
+
     def _rvs(self, size=None, random_state=None):
         return random_state.standard_normal(size)
 
@@ -899,11 +904,13 @@ class burr_gen(rv_continuous):
 
     .. math::
 
-        f(x, c, d) = c d x^{-c - 1} / (1 + x^{-c})^{d + 1}
+        f(x; c, d) = c d \frac{x^{-c - 1}}
+                              {{(1 + x^{-c})}^{d + 1}}
 
     for :math:`x >= 0` and :math:`c, d > 0`.
 
-    `burr` takes :math:`c` and :math:`d` as shape parameters.
+    `burr` takes ``c`` and ``d`` as shape parameters for :math:`c` and
+    :math:`d`.
 
     This is the PDF corresponding to the third CDF given in Burr's list;
     specifically, it is equation (11) in Burr's paper [1]_. The distribution
@@ -1013,11 +1020,12 @@ class burr12_gen(rv_continuous):
 
     Notes
     -----
-    The probability density function for `burr` is:
+    The probability density function for `burr12` is:
 
     .. math::
 
-        f(x, c, d) = c d x^{c-1} / (1 + x^c)^{d + 1}
+        f(x; c, d) = c d \frac{x^{c-1}}
+                              {(1 + x^c)^{d + 1}}
 
     for :math:`x >= 0` and :math:`c, d > 0`.
 
@@ -1095,9 +1103,18 @@ class fisk_gen(burr_gen):
 
     .. math::
 
-        f(x, c) = c x^{-c-1} (1 + x^{-c})^{-2}
+        f(x, c) = \frac{c x^{c-1}}
+                       {(1 + x^c)^2}
 
     for :math:`x >= 0` and :math:`c > 0`.
+
+    Please note that the above expression can be transformed into the following
+    one, which is also commonly used:
+
+    .. math::
+
+        f(x, c) = \frac{c x^{-c-1}}
+                       {(1 + x^{-c})^2}
 
     `fisk` takes ``c`` as a shape parameter for :math:`c`.
 
@@ -2145,6 +2162,106 @@ class weibull_min_gen(rv_continuous):
 weibull_min = weibull_min_gen(a=0.0, name='weibull_min')
 
 
+class truncweibull_min_gen(rv_continuous):
+    r"""A doubly truncated Weibull minimum continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    weibull_min, truncexpon
+
+    Notes
+    -----
+    The probability density function for `truncweibull_min` is:
+
+    .. math::
+
+        f(x, a, b, c) = \frac{c x^{c-1} \exp(-x^c)}{\exp(-a^c) - \exp(-b^c)}
+
+    for :math:`a < x <= b`, :math:`c > 0`.
+
+    `truncweibull_min` takes :math:`a`, :math:`b`, and :math:`c` as shape
+    parameters.
+
+    Notice that the truncation values, :math:`a` and :math:`b`, are defined in
+    standardized form:
+
+    .. math::
+
+        a = (u_l - loc)/scale
+        b = (u_r - loc)/scale
+
+    where :math:`u_l` and :math:`u_r` are the specific left and right
+    truncation values, respectively. In other words, the support of the
+    distribution becomes :math:`(a*scale + loc) < x <= (b*scale + loc)` when
+    :math:`loc` and/or :math:`scale` are provided.
+
+    %(after_notes)s
+
+    References
+    ----------
+
+    .. [1] Rinne, H. "The Weibull Distribution: A Handbook". CRC Press (2009).
+
+    %(example)s
+
+    """
+    def _argcheck(self, c, a, b):
+        return (a >= 0.) & (b > a) & (c > 0.)
+
+    def _get_support(self, c, a, b):
+        return a, b
+
+    def _pdf(self, x, c, a, b):
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return (c * pow(x, c-1) * np.exp(-pow(x, c))) / denum
+
+    def _logpdf(self, x, c, a, b):
+        logdenum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return np.log(c) + sc.xlogy(c - 1, x) - pow(x, c) - logdenum
+
+    def _cdf(self, x, c, a, b):
+        num = (np.exp(-pow(a, c)) - np.exp(-pow(x, c)))
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return num / denum
+
+    def _logcdf(self, x, c, a, b):
+        lognum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(x, c)))
+        logdenum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return lognum - logdenum
+
+    def _sf(self, x, c, a, b):
+        num = (np.exp(-pow(x, c)) - np.exp(-pow(b, c)))
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return num / denum
+
+    def _logsf(self, x, c, a, b):
+        lognum = np.log(np.exp(-pow(x, c)) - np.exp(-pow(b, c)))
+        logdenum = np.log(np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return lognum - logdenum
+
+    def _isf(self, q, c, a, b):
+        return pow(
+            -np.log((1 - q) * np.exp(-pow(b, c)) + q * np.exp(-pow(a, c))), 1/c
+            )
+
+    def _ppf(self, q, c, a, b):
+        return pow(
+            -np.log((1 - q) * np.exp(-pow(a, c)) + q * np.exp(-pow(b, c))), 1/c
+            )
+
+    def _munp(self, n, c, a, b):
+        gamma_fun = sc.gamma(n/c + 1.) * (
+            sc.gammainc(n/c + 1., pow(b, c)) - sc.gammainc(n/c + 1., pow(a, c))
+            )
+        denum = (np.exp(-pow(a, c)) - np.exp(-pow(b, c)))
+        return gamma_fun / denum
+
+
+truncweibull_min = truncweibull_min_gen(name='truncweibull_min')
+
+
 class weibull_max_gen(rv_continuous):
     r"""Weibull maximum continuous random variable.
 
@@ -2831,21 +2948,15 @@ class erlang_gen(gamma_gen):
 
     # Trivial override of the fit method, so we can monkey-patch its
     # docstring.
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        The Erlang distribution is generally defined to have integer values
+        for the shape parameter.  This is not enforced by the `erlang` class.
+        When fitting the distribution, it will generally return a non-integer
+        value for the shape parameter.  By using the keyword argument
+        `f0=<integer>`, the fit method can be constrained to fit the data to
+        a specific integer shape parameter.""")
     def fit(self, data, *args, **kwds):
         return super().fit(data, *args, **kwds)
-
-    if fit.__doc__:
-        fit.__doc__ = (rv_continuous.fit.__doc__ +
-            """
-            Notes
-            -----
-            The Erlang distribution is generally defined to have integer values
-            for the shape parameter.  This is not enforced by the `erlang` class.
-            When fitting the distribution, it will generally return a non-integer
-            value for the shape parameter.  By using the keyword argument
-            `f0=<integer>`, the fit method can be constrained to fit the data to
-            a specific integer shape parameter.
-            """)
 
 
 erlang = erlang_gen(a=0.0, name='erlang')
@@ -3292,6 +3403,7 @@ class gumbel_r_gen(rv_continuous):
         return _EULER + 1.
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
@@ -3386,6 +3498,7 @@ class gumbel_l_gen(rv_continuous):
         return _EULER + 1.
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         # The fit method of `gumbel_r` can be used for this distribution with
         # small modifications. The process to do this is
@@ -3776,6 +3889,7 @@ class invgauss_gen(rv_continuous):
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         method = kwds.get('method', 'mle')
 
@@ -4740,6 +4854,7 @@ class logistic_gen(rv_continuous):
         return 2.0
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
@@ -4911,11 +5026,9 @@ class lognorm_gen(rv_continuous):
 
     %(after_notes)s
 
-    A common parametrization for a lognormal random variable ``Y`` is in
-    terms of the mean, ``mu``, and standard deviation, ``sigma``, of the
-    unique normally distributed random variable ``X`` such that exp(X) = Y.
-    This parametrization corresponds to setting ``s = sigma`` and ``scale =
-    exp(mu)``.
+    Suppose a normally distributed random variable ``X`` has  mean ``mu`` and
+    standard deviation ``sigma``. Then ``Y = exp(X)`` is lognormally
+    distributed with ``s = sigma`` and ``scale = exp(mu)``.
 
     %(example)s
 
@@ -5658,6 +5771,9 @@ class nakagami_gen(rv_continuous):
     %(example)s
 
     """
+    def _shape_info(self):
+        return [_ShapeInfo("nu", False, (0, np.inf), (False, False))]
+
     def _pdf(self, x, nu):
         return np.exp(self._logpdf(x, nu))
 
@@ -5813,29 +5929,26 @@ class ncf_gen(rv_continuous):
     def _rvs(self, dfn, dfd, nc, size=None, random_state=None):
         return random_state.noncentral_f(dfn, dfd, nc, size)
 
-    def _pdf_skip(self, x, dfn, dfd, nc):
+    def _pdf(self, x, dfn, dfd, nc):
         # ncf.pdf(x, df1, df2, nc) = exp(nc/2 + nc*df1*x/(2*(df1*x+df2))) *
         #             df1**(df1/2) * df2**(df2/2) * x**(df1/2-1) *
         #             (df2+df1*x)**(-(df1+df2)/2) *
         #             gamma(df1/2)*gamma(1+df2/2) *
         #             L^{v1/2-1}^{v2/2}(-nc*v1*x/(2*(v1*x+v2))) /
         #             (B(v1/2, v2/2) * gamma((v1+v2)/2))
-        n1, n2 = dfn, dfd
-        term = -nc/2+nc*n1*x/(2*(n2+n1*x)) + sc.gammaln(n1/2.)+sc.gammaln(1+n2/2.)
-        term -= sc.gammaln((n1+n2)/2.0)
-        Px = np.exp(term)
-        Px *= n1**(n1/2) * n2**(n2/2) * x**(n1/2-1)
-        Px *= (n2+n1*x)**(-(n1+n2)/2)
-        Px *= sc.assoc_laguerre(-nc*n1*x/(2.0*(n2+n1*x)), n2/2, n1/2-1)
-        Px /= sc.beta(n1/2, n2/2)
-        # This function does not have a return.  Drop it for now, the generic
-        # function seems to work OK.
+        return _boost._ncf_pdf(x, dfn, dfd, nc)
 
     def _cdf(self, x, dfn, dfd, nc):
-        return sc.ncfdtr(dfn, dfd, nc, x)
+        return _boost._ncf_cdf(x, dfn, dfd, nc)
 
     def _ppf(self, q, dfn, dfd, nc):
-        return sc.ncfdtri(dfn, dfd, nc, q)
+        return _boost._ncf_ppf(q, dfn, dfd, nc)
+
+    def _sf(self, x, dfn, dfd, nc):
+        return _boost._ncf_sf(x, dfn, dfd, nc)
+
+    def _isf(self, x, dfn, dfd, nc):
+        return _boost._ncf_isf(x, dfn, dfd, nc)
 
     def _munp(self, n, dfn, dfd, nc):
         val = (dfn * 1.0/dfd)**n
@@ -5844,21 +5957,13 @@ class ncf_gen(rv_continuous):
         val *= sc.hyp1f1(n+0.5*dfn, 0.5*dfn, 0.5*nc)
         return val
 
-    def _stats(self, dfn, dfd, nc):
-        # Note: the rv_continuous class ensures that dfn > 0 when this function
-        # is called, so we don't have  to check for division by zero with dfn
-        # in the following.
-        mu_num = dfd * (dfn + nc)
-        mu_den = dfn * (dfd - 2)
-        mu = np.full_like(mu_num, dtype=np.float64, fill_value=np.inf)
-        np.true_divide(mu_num, mu_den, where=dfd > 2, out=mu)
-
-        mu2_num = 2*((dfn + nc)**2 + (dfn + 2*nc)*(dfd - 2))*(dfd/dfn)**2
-        mu2_den = (dfd - 2)**2 * (dfd - 4)
-        mu2 = np.full_like(mu2_num, dtype=np.float64, fill_value=np.inf)
-        np.true_divide(mu2_num, mu2_den, where=dfd > 4, out=mu2)
-
-        return mu, mu2, None, None
+    def _stats(self, dfn, dfd, nc, moments='mv'):
+        mu = _boost._ncf_mean(dfn, dfd, nc)
+        mu2 = _boost._ncf_variance(dfn, dfd, nc)
+        g1 = _boost._ncf_skewness(dfn, dfd, nc) if 's' in moments else None
+        g2 = _boost._ncf_kurtosis_excess(
+            dfn, dfd, nc) if 'k' in moments else None
+        return mu, mu2, g1, g2
 
 
 ncf = ncf_gen(a=0.0, name='ncf')
@@ -6132,23 +6237,90 @@ class pareto_gen(rv_continuous):
         return 1 + 1.0/c - np.log(c)
 
     @_call_super_mom
+    @inherit_docstring_from(rv_continuous)
     def fit(self, data, *args, **kwds):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
-        if floc is None:
-            return super().fit(data, **kwds)
-        if np.any(data - floc < (fscale if fscale else 0)):
-            raise FitDataError("pareto", lower=1, upper=np.inf)
-        data = data - floc
 
+        # ensure that any fixed parameters don't violate constraints of the
+        # distribution before continuing.
+        if floc is not None and np.min(data) - floc < (fscale or 0):
+            raise FitDataError("pareto", lower=1, upper=np.inf)
+
+        ndata = data.shape[0]
+
+        def get_shape(scale, location):
+            # The first-order necessary condition on `shape` can be solved in
+            # closed form
+            return ndata / np.sum(np.log((data - location) / scale))
+
+        if floc is fscale is None:
+            # The support of the distribution is `(x - loc)/scale > 0`.
+            # The method of Lagrange multipliers turns this constraint
+            # into an equation that can be solved numerically.
+            # See gh-12545 for details.
+
+            def dL_dScale(shape, scale):
+                # The partial derivative of the log-likelihood function w.r.t.
+                # the scale.
+                return ndata * shape / scale
+
+            def dL_dLocation(shape, location):
+                # The partial derivative of the log-likelihood function w.r.t.
+                # the location.
+                return (shape + 1) * np.sum(1 / (data - location))
+
+            def fun_to_solve(scale):
+                # optimize the scale by setting the partial derivatives
+                # w.r.t. to location and scale equal and solving.
+                location = np.min(data) - scale
+                shape = fshape or get_shape(scale, location)
+                return dL_dLocation(shape, location) - dL_dScale(shape, scale)
+
+            def interval_contains_root(lbrack, rbrack):
+                # return true if the signs disagree.
+                return (np.sign(fun_to_solve(lbrack)) !=
+                        np.sign(fun_to_solve(rbrack)))
+
+            # set brackets for `root_scalar` to use when optimizing over the
+            # scale such that a root is likely between them. Use user supplied
+            # guess or default 1.
+            brack_start = kwds.get('scale', 1)
+            lbrack, rbrack = brack_start / 2, brack_start * 2
+            # if a root is not between the brackets, iteratively expand them
+            # until they include a sign change, checking after each bracket is
+            # modified.
+            while (not interval_contains_root(lbrack, rbrack)
+                   and (lbrack > 0 or rbrack < np.inf)):
+                lbrack /= 2
+                rbrack *= 2
+            res = root_scalar(fun_to_solve, bracket=[lbrack, rbrack])
+            if res.converged:
+                scale = res.root
+                loc = np.min(data) - scale
+                shape = fshape or get_shape(scale, loc)
+
+                # The Pareto distribution requires that its parameters satisfy
+                # the condition `fscale + floc <= min(data)`. However, to
+                # avoid numerical issues, we require that `fscale + floc`
+                # is strictly less than `min(data)`. If this condition
+                # is not satisfied, reduce the scale with `np.nextafter` to
+                # ensure that data does not fall outside of the support.
+                if not (scale + loc) < np.min(data):
+                    scale = np.min(data) - loc
+                    scale = np.nextafter(scale, 0)
+                return shape, loc, scale
+            else:
+                return super().fit(data, **kwds)
+        elif floc is None:
+            loc = np.min(data) - fscale
+        else:
+            loc = floc
         # Source: Evans, Hastings, and Peacock (2000), Statistical
         # Distributions, 3rd. Ed., John Wiley and Sons. Page 149.
-
-        if fscale is None:
-            fscale = np.min(data)
-        if fshape is None:
-            fshape = 1/((1/len(data)) * np.sum(np.log(data/fscale)))
-        return fshape, floc, fscale
+        scale = fscale or np.min(data) - loc
+        shape = fshape or get_shape(scale, loc)
+        return shape, loc, scale
 
 
 pareto = pareto_gen(a=1.0, name="pareto")
@@ -6390,6 +6562,10 @@ class powerlaw_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    pareto
+
     Notes
     -----
     The probability density function for `powerlaw` is:
@@ -6403,6 +6579,11 @@ class powerlaw_gen(rv_continuous):
     `powerlaw` takes ``a`` as a shape parameter for :math:`a`.
 
     %(after_notes)s
+
+    For example, the support of `powerlaw` can be adjusted from the default
+    interval ``[0, 1]`` to the interval ``[c, c+d]`` by setting ``loc=c`` and
+    ``scale=d``. For a power-law distribution with infinite support, see
+    `pareto`.
 
     `powerlaw` is a special case of `beta` with ``b=1``.
 
@@ -8393,6 +8574,14 @@ class gennorm_gen(rv_continuous):
     .. [1] "Generalized normal distribution, Version 1",
            https://en.wikipedia.org/wiki/Generalized_normal_distribution#Version_1
 
+    .. [2] Nardon, Martina, and Paolo Pianca. "Simulation techniques for
+           generalized Gaussian densities." Journal of Statistical
+           Computation and Simulation 79.11 (2009): 1317-1329
+
+    .. [3] Wicklin, Rick. "Simulate data from a generalized Gaussian
+           distribution" in The DO Loop blog, September 21, 2016,
+           https://blogs.sas.com/content/iml/2016/09/21/simulate-generalized-gaussian-sas.html
+
     %(example)s
 
     """
@@ -8425,6 +8614,17 @@ class gennorm_gen(rv_continuous):
 
     def _entropy(self, beta):
         return 1. / beta - np.log(.5 * beta) + sc.gammaln(1. / beta)
+
+    def _rvs(self, beta, size=None, random_state=None):
+        # see [2]_ for the algorithm
+        # see [3]_ for reference implementation in SAS
+        z = random_state.gamma(1/beta, size=size)
+        y = z ** (1/beta)
+        # convert y to array to ensure masking support
+        y = np.asarray(y)
+        mask = random_state.random(size=y.shape) < 0.5
+        y[mask] = -y[mask]
+        return y
 
 
 gennorm = gennorm_gen(name='gennorm')

@@ -298,7 +298,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     >>> integrate.quad(invexp, 0, np.inf)
     (1.0, 5.842605999138044e-11)
 
-    >>> f = lambda x,a : a*x
+    Calculate :math:`\\int^1_0 a x \\,dx` for :math:`a = 1, 3`
+
+    >>> f = lambda x, a: a*x
     >>> y, err = integrate.quad(f, 0, 1, args=(1,))
     >>> y
     0.5
@@ -551,7 +553,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         Extra arguments to pass to `func`.
     epsabs : float, optional
         Absolute tolerance passed directly to the inner 1-D quadrature
-        integration. Default is 1.49e-8. `dblquad`` tries to obtain
+        integration. Default is 1.49e-8. ``dblquad`` tries to obtain
         an accuracy of ``abs(i-result) <= max(epsabs, epsrel*abs(i))``
         where ``i`` = inner integral of ``func(y, x)`` from ``gfun(x)``
         to ``hfun(x)``, and ``result`` is the numerical approximation.
@@ -583,14 +585,30 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
 
     Examples
     --------
-
     Compute the double integral of ``x * y**2`` over the box
     ``x`` ranging from 0 to 2 and ``y`` ranging from 0 to 1.
+    That is, :math:`\\int^{x=2}_{x=0} \\int^{y=1}_{y=0} x y^2 \\,dy \\,dx`.
 
     >>> from scipy import integrate
     >>> f = lambda y, x: x*y**2
-    >>> integrate.dblquad(f, 0, 2, lambda x: 0, lambda x: 1)
+    >>> integrate.dblquad(f, 0, 2, 0, 1)
         (0.6666666666666667, 7.401486830834377e-15)
+
+    Calculate :math:`\\int^{x=\\pi/4}_{x=0} \\int^{y=\\cos(x)}_{y=\\sin(x)} 1
+    \\,dy \\,dx`.
+
+    >>> f = lambda y, x: 1
+    >>> integrate.dblquad(f, 0, np.pi/4, np.sin, np.cos)
+        (0.41421356237309503, 1.1083280054755938e-14)
+
+    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=x}_{y=2-x} a x y \\,dy \\,dx`
+    for :math:`a=1, 3`.
+
+    >>> f = lambda y, x, a: a*x*y
+    >>> integrate.dblquad(f, 0, 1, lambda x: x, lambda x: 2-x, args=(1,))
+        (0.33333333333333337, 5.551115123125783e-15)
+    >>> integrate.dblquad(f, 0, 1, lambda x: x, lambda x: 2-x, args=(3,))
+        (0.9999999999999999, 1.6653345369377348e-14)
 
     """
 
@@ -661,21 +679,39 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     --------
     Compute the triple integral of ``x * y * z``, over ``x`` ranging
     from 1 to 2, ``y`` ranging from 2 to 3, ``z`` ranging from 0 to 1.
+    That is, :math:`\\int^{x=2}_{x=1} \\int^{y=3}_{y=2} \\int^{z=1}_{z=0} x y z
+    \\,dz \\,dy \\,dx`.
 
     >>> from scipy import integrate
     >>> f = lambda z, y, x: x*y*z
-    >>> integrate.tplquad(f, 1, 2, lambda x: 2, lambda x: 3,
-    ...                   lambda x, y: 0, lambda x, y: 1)
-    (1.8750000000000002, 3.324644794257407e-14)
+    >>> integrate.tplquad(f, 1, 2, 2, 3, 0, 1)
+    (1.8749999999999998, 3.3246447942574074e-14)
 
+    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=1-2x}_{y=0}
+    \\int^{z=1-x-2y}_{z=0} x y z \\,dz \\,dy \\,dx`.
+    Note: `qfun`/`rfun` takes arguments in the order (x, y), even though ``f``
+    takes arguments in the order (z, y, x).
+
+    >>> f = lambda z, y, x: x*y*z
+    >>> integrate.tplquad(f, 0, 1, 0, lambda x: 1-2*x, 0, lambda x, y: 1-x-2*y)
+    (0.05416666666666668, 2.1774196738157757e-14)
+
+    Calculate :math:`\\int^{x=1}_{x=0} \\int^{y=1}_{y=0} \\int^{z=1}_{z=0}
+    a x y z \\,dz \\,dy \\,dx` for :math:`a=1, 3`.
+
+    >>> f = lambda z, y, x, a: a*x*y*z
+    >>> integrate.tplquad(f, 0, 1, 0, 1, 0, 1, args=(1,))
+        (0.125, 5.527033708952211e-15)
+    >>> integrate.tplquad(f, 0, 1, 0, 1, 0, 1, args=(3,))
+        (0.375, 1.6581101126856635e-14)
 
     """
     # f(z, y, x)
-    # qfun/rfun (x, y)
+    # qfun/rfun(x, y)
     # gfun/hfun(x)
     # nquad will hand (y, x, t0, ...) to ranges0
     # nquad will hand (x, t0, ...) to ranges1
-    # Stupid different API...
+    # Only qfun / rfun is different API...
 
     def ranges0(*args):
         return [qfun(args[1], args[0]) if callable(qfun) else qfun,

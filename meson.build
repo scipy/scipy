@@ -1,6 +1,6 @@
 project(
   'SciPy',
-  'c', 'cpp', 'cython',
+  'c', 'cpp',
   # Note that the git commit hash cannot be added dynamically here (it is added
   # in the dynamically generated and installed `scipy/version.py` though - see
   # tools/version_utils.py
@@ -16,6 +16,8 @@ project(
     'c_args=-Wno-unused-function -Wno-conversion -Wno-misleading-indentation -Wno-incompatible-pointer-types',
     'fortran_args=-Wno-conversion',
     'fortran_std=legacy',
+    'blas=openblas',
+    'lapack=openblas'
   ],
 )
 
@@ -25,6 +27,14 @@ cpp = meson.get_compiler('cpp')
 # doesn't recognize that.
 if cc.has_argument('-Wno-unused-but-set-variable')
   add_global_arguments('-Wno-unused-but-set-variable', language : 'c')
+endif
+
+# We need -lm for all C code (assuming it uses math functions, which is safe to
+# assume for SciPy). For C++ it isn't needed, because libstdc++/libc++ is
+# guaranteed to depend on it. For Fortran code, Meson already adds `-lm`.
+m_dep = cc.find_library('m', required : false)
+if m_dep.found()
+  add_project_link_arguments('-lm', language : 'c')
 endif
 
 # Adding at project level causes many spurious -lgfortran flags.
