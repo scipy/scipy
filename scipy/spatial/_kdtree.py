@@ -388,7 +388,7 @@ class KDTree(cKDTree):
             .. versionchanged:: 1.8.0
                Previously if ``k=None``, then `d` was an object array of
                shape ``tuple``, containing lists of distances. This behavior
-               is removed, use `query_ball_point` instead.
+               has been removed, use `query_ball_point` instead.
 
         i : integer or array of integers
             The index of each neighbor in ``self.data``.
