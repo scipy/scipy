@@ -4163,13 +4163,15 @@ def fisher_exact(table, alternative='two-sided'):
     """Perform a Fisher exact test on a 2x2 contingency table.
 
     The null hypothesis is that the true odds ratio of the populations
-    underlying the observations is one, and the observations were sampled at
-    random from these populations. The statistic returned is the unconditional
-    maximum likelihood estimate of the odds ratio, and the p-value is the
-    probability under the null hypothesis of obtaining a table at least as
-    extreme as the one that was actually observed. There are other possible
-    choices of statistic and two-sided p-value definition associated with
-    Fisher's exact test; please see the Notes for more information.
+    underlying the observations is one, and the observations were sampled
+    from these populations under under a condition: the marginals of the
+    resulting table must equal those of the observed table. The statistic
+    returned is the unconditional maximum likelihood estimate of the odds
+    ratio, and the p-value is the probability under the null hypothesis of
+    obtaining a table at least as extreme as the one that was actually
+    observed. There are other possible choices of statistic and two-sided
+    p-value definition associated with Fisher's exact test; please see the
+    Notes for more information.
 
     Parameters
     ----------
@@ -4208,7 +4210,8 @@ def fisher_exact(table, alternative='two-sided'):
 
     The null hypothesis is that the true odds ratio of the populations
     underlying the observations is one, and the observations were sampled at
-    random from these populations. Equivalently,
+    random from these populations under a condition: the marginals of the
+    resulting table must equal those of the observed table. Equivalently,
     the null hypothesis is that the input table is from the hypergeometric
     distribution with parameters (as used in `hypergeom`)
     ``M = a + b + c + d``, ``n = a + b`` and ``N = a + c``, where the
