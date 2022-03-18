@@ -5737,8 +5737,12 @@ class TestPowMean:
     def test_2d_axis0(self):
         #  Test a 2d list with axis=0
         a, p = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5
-        desired = [TestPowMean.pmean_reference(np.array(
-            [a[i][j] for i in range(len(a))]), p) for j in range(len(a[0]))]
+        desired = [
+            TestPowMean.pmean_reference(
+                np.array([a[i][j] for i in range(len(a))]), p
+            )
+            for j in range(len(a[0]))
+        ]
         check_equal_pmean(a, p, desired, axis=0)
 
     def test_2d_axis0_with_zero(self):
