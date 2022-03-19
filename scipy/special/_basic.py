@@ -2883,8 +2883,9 @@ def factorial2(n, exact=False):
     This is the factorial with every second value skipped.  E.g., ``7!! = 7 * 5
     * 3 * 1``.  It can be approximated numerically as::
 
-      n!! = special.gamma(n/2+1)*2**((m+1)/2)/sqrt(pi)  n odd
-          = 2**(n/2) * (n/2)!                           n even
+      n!! = 2 ** (n / 2) * gamma(n / 2 + 1) * sqrt(2 / pi)  n odd
+          = 2 ** (n / 2) * gamma(n / 2 + 1)                 n even
+          = 2 ** (n / 2) * (n / 2)!                         n even
 
     Parameters
     ----------
@@ -2912,16 +2913,14 @@ def factorial2(n, exact=False):
 
     """
     def _approx(n):
-        vals = zeros(n.shape, 'd')
-        cond1 = (n % 2) & (n >= 0)
-        cond2 = (1-(n % 2)) & (n >= 0)
-        oddn = extract(cond1, n)
-        evenn = extract(cond2, n)
-        nd2o = oddn / 2.0
-        nd2e = evenn / 2.0
-        place(vals, cond1, gamma(nd2o + 1) / sqrt(pi) * pow(2.0, nd2o + 0.5))
-        place(vals, cond2, gamma(nd2e + 1) * pow(2.0, nd2e))
-        return vals
+        # main factor that both even/odd approximations share
+        val = np.power(2, n / 2) * gamma(n / 2 + 1)
+        mask = np.ones_like(n, dtype=np.float64)
+        mask[n % 2 == 1] = sqrt(2 / pi)
+        # analytical continuation (based on odd integers)
+        # is scaled down by a factor of sqrt(2 / pi)
+        # compared to the value of even integers.
+        return val * mask
 
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
@@ -2938,15 +2937,17 @@ def factorial2(n, exact=False):
         # general integer case
         if exact:
             return _range_prod(1, n, k=2)
-        # _approx needs array; asarray(<int>) is 0-dim;
-        # needs 0-dim "index" to extract value from result
-        return _approx(asarray(n))[()]
+        return _approx(n)
     # arrays & array-likes
     n = asarray(n)
     if not np.issubdtype(n.dtype, np.integer):
         raise ValueError("factorial2 does not support non-integral arrays")
     # approximation
-    return _approx(n)
+    vals = zeros(n.shape)
+    cond = (n >= 0)
+    n_to_compute = extract(cond, n)
+    place(vals, cond, _approx(n_to_compute))
+    return vals
 
 
 def factorialk(n, k, exact=True):
