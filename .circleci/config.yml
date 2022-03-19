@@ -31,7 +31,10 @@ commands:
           name: Install apt packages
           command: |
             sudo apt-get update
-            sudo apt-get install python3.8 python3.8-dev libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
+            sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
+            pyenv install 3.8.10
+            pyenv global 3.8.10
+            export PATH=~/.local/bin/:$PATH
 
   merge:
     steps:
@@ -80,11 +83,12 @@ jobs:
             python3.8 -m pip install pybind11
             # extra benchmark deps
             python3.8 -m pip install pyfftw cffi pytest
+            # save pyenv
+            cp -r /opt/circleci/.pyenv/versions/3.8.10 ~/repo/.pyenv_3.8.10
 
       - run:
           name: build SciPy
           command: |
-            export PATH=~/.local/bin/:$PATH
             python3.8 dev.py --build-only -j2
 
       - save_cache:
@@ -117,7 +121,7 @@ jobs:
           name: build docs
           no_output_timeout: 25m
           command: |
-            export PATH=~/.local/bin/:$PATH
+            cp -r ~/repo/.pyenv_3.8.10 /opt/circleci/.pyenv/versions/3.8.10
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
             python3.8 dev.py -n -j2 --doc html-scipyorg
 
@@ -145,7 +149,7 @@ jobs:
           name: run asv
           no_output_timeout: 30m
           command: |
-            export PATH=~/.local/bin/:$PATH
+            cp -r ~/repo/.pyenv_3.8.10 /opt/circleci/.pyenv/versions/3.8.10
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
             cd benchmarks
             asv machine --machine CircleCI
