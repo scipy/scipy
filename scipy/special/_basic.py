@@ -2763,6 +2763,10 @@ def _exact_factorial_array(n):
     computed once, with each other result computed in the process.
     """
     un = np.unique(n)
+    # numpy changed nan-sorting behaviour with 1.21, see numpy/numpy#18070;
+    # to unify the behaviour, we remove the nan's here; the respective
+    # values will be set separately at the end
+    un = un[~np.isnan(un)]
 
     # Convert to object array of long ints if np.int_ can't handle size
     if np.isnan(n).any():
@@ -2777,11 +2781,9 @@ def _exact_factorial_array(n):
     out = np.empty_like(n, dtype=dt)
 
     # Handle invalid/trivial values
-    # Ignore runtime warning when less operator used w/np.nan
-    with np.errstate(all='ignore'):
-        un = un[un > 1]
-        out[n < 2] = 1
-        out[n < 0] = 0
+    un = un[un > 1]
+    out[n < 2] = 1
+    out[n < 0] = 0
 
     # Calculate products of each range of numbers
     if un.size:
@@ -2796,7 +2798,7 @@ def _exact_factorial_array(n):
 
     if np.isnan(n).any():
         out = out.astype(np.float64)
-        out[np.isnan(n)] = n[np.isnan(n)]
+        out[np.isnan(n)] = np.nan
     return out
 
 
@@ -2863,6 +2865,9 @@ def factorial(n, exact=False):
 
     # arrays & array-likes
     n = asarray(n)
+    if n.size == 0:
+        # return empty arrays unchanged
+        return n
     if not (np.issubdtype(n.dtype, np.integer)
             or np.issubdtype(n.dtype, np.floating)):
         raise ValueError(
@@ -2940,6 +2945,9 @@ def factorial2(n, exact=False):
         return _approx(n)
     # arrays & array-likes
     n = asarray(n)
+    if n.size == 0:
+        # return empty arrays unchanged
+        return n
     if not np.issubdtype(n.dtype, np.integer):
         raise ValueError("factorial2 does not support non-integral arrays")
     # approximation

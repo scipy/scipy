@@ -2088,6 +2088,40 @@ class TestFactorialFunctions:
         # close to maximum for float64
         _check(170.6243, 1.79698185749571048960082e+308)
 
+    @pytest.mark.parametrize("dtype", [np.int64, np.float64,
+                                       np.complex128, object])
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("dim", range(0, 5))
+    # test empty & non-empty arrays, with nans and mixed
+    @pytest.mark.parametrize("content",
+                             [[], [1], [np.nan], [np.nan, 1]],
+                             ids=["[]", "[1]", "[NaN]", "[NaN, 1]"])
+    def test_factorial_corner_cases(self, content, dim, exact, dtype):
+        if dtype == np.int64 and any(np.isnan(x) for x in content):
+            pytest.skip("impossible combination")
+        n = np.array(content, ndmin=dim, dtype=dtype)
+        result = None
+        if not content:
+            result = special.factorial(n, exact=exact)
+        elif not (np.issubdtype(n.dtype, np.integer)
+                  or np.issubdtype(n.dtype, np.floating)):
+            with pytest.raises(ValueError, match="Unsupported datatype*"):
+                special.factorial(n, exact=exact)
+        elif exact and not np.issubdtype(n.dtype, np.integer):
+            # expected dtype is integer
+            dtype = np.float_ if np.any(np.isnan(n)) else np.int_
+            result = special.factorial(n, exact=exact)
+        else:
+            # no error
+            result = special.factorial(n, exact=exact)
+
+        if result is not None:
+            # expected result is empty if and only if n is empty,
+            # and has the same dtype & dimension as n
+            r = special.factorial(n.ravel(), exact=exact) if n.size else []
+            expected = np.array(r, ndmin=dim, dtype=dtype)
+            assert_equal(result, expected)
+
     # use odd increment to make sure both odd & even numbers are tested!
     @pytest.mark.parametrize('n', range(30, 180, 11))
     def test_factorial2_accuracy(self, n):
@@ -2115,6 +2149,27 @@ class TestFactorialFunctions:
         assert_allclose(float(correct), special.factorial2(n, False))
         assert_allclose(float(correct), special.factorial2([n], False)[0])
 
+    @pytest.mark.parametrize("dtype", [np.int64, np.float64,
+                                       np.complex128, object])
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("dim", range(0, 5))
+    # test empty & non-empty arrays, with nans and mixed
+    @pytest.mark.parametrize("content", [[], [1], [np.nan], [np.nan, 1]],
+                             ids=["[]", "[1]", "[NaN]", "[NaN, 1]"])
+    def test_factorial2_corner_cases(self, content, dim, exact, dtype):
+        if dtype == np.int64 and any(np.isnan(x) for x in content):
+            pytest.skip("impossible combination")
+        n = np.array(content, ndmin=dim, dtype=dtype)
+        if np.issubdtype(n.dtype, np.integer) or (not content):
+            # no error
+            result = special.factorial2(n, exact=exact)
+            # assert_allclose chokes on object dtype
+            func = assert_equal if (not content) else assert_allclose
+            func(result, n)
+        else:
+            with pytest.raises(ValueError, match="factorial2 does not*"):
+                special.factorial2(n, 3)
+
     @pytest.mark.parametrize('k', list(range(1, 5)) + [10, 20])
     @pytest.mark.parametrize('n',
                              list(range(0, 22)) + list(range(22, 100, 11)))
@@ -2131,6 +2186,24 @@ class TestFactorialFunctions:
         # exact=False not yet supported
         # assert_allclose(float(correct), special.factorialk(n, k, False))
         # assert_allclose(float(correct), special.factorialk([n], k, False)[0])
+
+    @pytest.mark.skipif(True, reason="no array support for factorialk yet")
+    @pytest.mark.parametrize("dtype", [np.int64, np.float64,
+                                       np.complex128, object])
+    @pytest.mark.parametrize("dim", range(0, 5))
+    # test empty & non-empty arrays, with nans and mixed
+    @pytest.mark.parametrize("content", [[], [1], [np.nan], [np.nan, 1]],
+                             ids=["[]", "[1]", "[NaN]", "[NaN, 1]"])
+    def test_factorialk_corner_cases(self, content, dim, dtype):
+        if dtype == np.int64 and any(np.isnan(x) for x in content):
+            pytest.skip("impossible combination")
+        n = np.array(content, ndmin=dim, dtype=dtype)
+        if np.issubdtype(n.dtype, np.integer) or (not content):
+            # no error; expected result is identical to n
+            assert_equal(special.factorialk(n, 3), n)
+        else:
+            with pytest.raises(ValueError, match="factorialk does not*"):
+                special.factorialk(n, 3)
 
     # GH-13122: special.factorial() argument should be an array of integers.
     # On Python 3.10, math.factorial() reject float.
