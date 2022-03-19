@@ -1956,6 +1956,12 @@ class TestExp:
 
 
 class TestFactorialFunctions:
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorialx_scalar_return_type(self, exact):
+        assert np.isscalar(special.factorial(1, exact=exact))
+        assert np.isscalar(special.factorial2(1, exact=exact))
+        assert np.isscalar(special.factorialk(1, 3, exact=True))
+
     @pytest.mark.parametrize("n", [-1, -2, -3])
     @pytest.mark.parametrize("exact", [True, False])
     def test_factorialx_negative(self, exact, n):
@@ -1969,23 +1975,70 @@ class TestFactorialFunctions:
         # Consistent output for n < 0
         assert_func(special.factorial([-5, -4, 0, 1], exact=exact),
                     [0, 0, 1, 1])
-        # assert_func(special.factorial2([-5, -4, 0, 1], exact=exact),
-        #             [0, 0, 1, 1])
+        assert_func(special.factorial2([-5, -4, 0, 1], exact=exact),
+                    [0, 0, 1, 1])
         # assert_func(special.factorialk([-5, -4, 0, 1], 3, exact=True),
         #             [0, 0, 1, 1])
 
-    def test_factorial(self):
-        assert_array_almost_equal([6., 24., 120.],
-                                  special.factorial([3, 4, 5], exact=False))
-        assert_array_almost_equal(special.factorial([[5, 3], [4, 3]]),
-                                  [[120, 6], [24, 6]])
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("content", [np.nan], ids=["NaN"])
+    def test_factorialx_nan(self, content, exact):
+        # scalar
+        assert special.factorial(content, exact=exact) is np.nan
+        assert special.factorial2(content, exact=exact) is np.nan
+        assert special.factorialk(content, 3, exact=True) is np.nan
+        # array-like (initializes np.array with default dtype)
+        assert np.isnan(special.factorial([content], exact=exact)[0])
+        # factorial{2,k} don't support array case due to dtype constraints
+        with pytest.raises(ValueError, match="factorial2 does not support.*"):
+            special.factorial2([content], exact=exact)
+        # with pytest.raises(ValueError, match="factorialk does not support.*"):
+        #     special.factorialk([content], 3, exact=True)
+        # array-case also tested in test_factorial{,2,k}_corner_cases
 
-        # ndarray shape is maintained
-        assert_equal(special.factorial([7, 4, 15, 10], exact=True),
-                     [5040, 24, 1307674368000, 3628800])
+    @pytest.mark.parametrize("levels", range(1, 5))
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorialx_array_shape(self, levels, exact):
+        def _nest_me(x, k=1):
+            """
+            Double x and nest it k times
 
-        assert_equal(special.factorial([[5, 3], [4, 3]], True),
-                     [[120, 6], [24, 6]])
+            For example:
+            >>> _nest_me([3, 4], 2)
+            [[[3, 4], [3, 4]], [[3, 4], [3, 4]]]
+            """
+            if k == 0:
+                return x
+            else:
+                return _nest_me([x, x], k-1)
+
+        def _check(res, nucleus):
+            exp = np.array(_nest_me(nucleus, k=levels), dtype=object)
+            # test that ndarray shape is maintained
+            # need to cast to float due to numpy/numpy#21220
+            assert_allclose(res.astype(np.float64), exp.astype(np.float64))
+
+        n = np.array(_nest_me([5, 25], k=levels))
+        exp_nucleus = {1: [120, math.factorial(25)],
+                       # correctness of factorial2() is tested elsewhere
+                       2: [15, special.factorial2(25, exact=True)],
+                       3: [10, special.factorialk(25, 3)]}
+
+        _check(special.factorial(n, exact=exact), exp_nucleus[1])
+        _check(special.factorial2(n, exact=exact), exp_nucleus[2])
+        # _check(special.factorialk(n, 3, exact=True), exp_nucleus[3])
+
+    @pytest.mark.parametrize("exact", [True, False])
+    @pytest.mark.parametrize("dim", range(0, 5))
+    def test_factorialx_array_dimension(self, dim, exact):
+        n = np.array(5, ndmin=dim)
+        exp = {1: 120, 2: 15, 3: 10}
+        assert_allclose(special.factorial(n, exact=exact),
+                        np.array(exp[1], ndmin=dim))
+        assert_allclose(special.factorial2(n, exact=exact),
+                        np.array(exp[2], ndmin=dim))
+        # assert_allclose(special.factorialk(n, 3, exact=True),
+        #                 np.array(exp[3], ndmin=dim))
 
     # note that n=170 is the last integer such that factorial(n) fits float64
     @pytest.mark.parametrize('n', range(30, 180, 10))
@@ -2034,15 +2087,6 @@ class TestFactorialFunctions:
         # close to maximum for float64
         _check(170.6243, 1.79698185749571048960082e+308)
 
-    @pytest.mark.parametrize('x, exact', [
-        (1, True),
-        (1, False),
-        (np.array(1), True),
-        (np.array(1), False),
-    ])
-    def test_factorial_0d_return_type(self, x, exact):
-        assert np.isscalar(special.factorial(x, exact=exact))
-
     # use odd increment to make sure both odd & even numbers are tested!
     @pytest.mark.parametrize('n', range(30, 180, 11))
     def test_factorial2_accuracy(self, n):
@@ -2086,16 +2130,6 @@ class TestFactorialFunctions:
         # exact=False not yet supported
         # assert_allclose(float(correct), special.factorialk(n, k, False))
         # assert_allclose(float(correct), special.factorialk([n], k, False)[0])
-
-    @pytest.mark.parametrize('x, exact', [
-        (np.nan, True),
-        (np.nan, False),
-        (np.array([np.nan]), True),
-        (np.array([np.nan]), False),
-    ])
-    def test_nan_inputs(self, x, exact):
-        result = special.factorial(x, exact=exact)
-        assert_(np.isnan(result))
 
     # GH-13122: special.factorial() argument should be an array of integers.
     # On Python 3.10, math.factorial() reject float.

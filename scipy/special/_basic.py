@@ -2848,24 +2848,33 @@ def factorial(n, exact=False):
     120
 
     """
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
+        # scalar cases
+        if np.isnan(n):
+            return np.nan
+        elif n < 0:
+            return 0
+        elif exact and np.issubdtype(type(n), np.integer):
+            return math.factorial(n)
+        # we do not raise for non-integers with exact=True due to
+        # historical reasons, though deprecation would be possible
+        return _ufuncs._factorial(n)
+
+    # arrays & array-likes
+    n = asarray(n)
+    if not (np.issubdtype(n.dtype, np.integer)
+            or np.issubdtype(n.dtype, np.floating)):
+        raise ValueError(
+            f"Unsupported datatype for factorial: {n.dtype}\n"
+            "Permitted data types are integers and floating point numbers"
+        )
+
     if exact:
-        if np.ndim(n) == 0:
-            if np.isnan(n):
-                return n
-            elif n < 0:
-                return 0
-            elif np.issubdtype(type(n), np.integer):
-                return math.factorial(n)
-            # we do not raise for non-integers with exact=True due to
-            # historical reasons, though deprecation would be possible
-            return _ufuncs._factorial(n)
-        else:
-            n = asarray(n)
-            out = _exact_factorial_array(n)
-            return out
-    else:
-        out = _ufuncs._factorial(n)
-        return out
+        return _exact_factorial_array(n)
+    # we do not raise for non-integers with exact=True due to
+    # historical reasons, though deprecation would be possible
+    return _ufuncs._factorial(n)
 
 
 def factorial2(n, exact=False):
@@ -2902,14 +2911,7 @@ def factorial2(n, exact=False):
     105
 
     """
-    if exact:
-        if n < 0:
-            return 0
-        if n == 0:
-            return 1
-        return _range_prod(1, n, k=2)
-    else:
-        n = asarray(n)
+    def _approx(n):
         vals = zeros(n.shape, 'd')
         cond1 = (n % 2) & (n >= 0)
         cond2 = (1-(n % 2)) & (n >= 0)
@@ -2920,6 +2922,31 @@ def factorial2(n, exact=False):
         place(vals, cond1, gamma(nd2o + 1) / sqrt(pi) * pow(2.0, nd2o + 0.5))
         place(vals, cond2, gamma(nd2e + 1) * pow(2.0, nd2e))
         return vals
+
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
+        # scalar cases
+        if np.isnan(n):
+            return np.nan
+        elif not np.issubdtype(type(n), np.integer):
+            msg = "factorial2 does not support non-integral scalar arguments"
+            raise ValueError(msg)
+        elif n < 0:
+            return 0
+        elif n in {0, 1}:
+            return 1
+        # general integer case
+        if exact:
+            return _range_prod(1, n, k=2)
+        # _approx needs array; asarray(<int>) is 0-dim;
+        # needs 0-dim "index" to extract value from result
+        return _approx(asarray(n))[()]
+    # arrays & array-likes
+    n = asarray(n)
+    if not np.issubdtype(n.dtype, np.integer):
+        raise ValueError("factorial2 does not support non-integral arrays")
+    # approximation
+    return _approx(n)
 
 
 def factorialk(n, k, exact=True):
@@ -2964,10 +2991,20 @@ def factorialk(n, k, exact=True):
     10
 
     """
-    if exact:
-        if n < 0:
+    if not exact:
+        raise NotImplementedError
+
+    # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
+    if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
+        # scalar cases
+        if np.isnan(n):
+            return np.nan
+        elif not np.issubdtype(type(n), np.integer):
+            msg = "factorialk does not support non-integral scalar arguments!"
+            raise ValueError(msg)
+        elif n < 0:
             return 0
-        if n == 0:
+        elif n in {0, 1}:
             return 1
         return _range_prod(1, n, k=k)
     else:
