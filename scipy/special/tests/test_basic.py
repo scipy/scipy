@@ -2008,6 +2008,26 @@ class TestFactorialFunctions:
         assert_allclose(float(special.factorial([n], exact=True)),
                         special.factorial([n], exact=False), rtol=rtol)
 
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorial_float_reference(self, exact):
+        def _check(n, expected):
+            # support for exact=True with scalar floats grandfathered in
+            assert_allclose(special.factorial(n, exact=exact), expected)
+            # non-integer types in arrays only allowed with exact=False
+            assert_allclose(special.factorial([n])[0], expected)
+
+        # Reference values from mpmath for gamma(n+1)
+        _check(0.01, 0.994325851191506032181932988)
+        _check(1.11, 1.051609009483625091514147465)
+        _check(5.55, 314.9503192327208241614959052)
+        _check(11.1, 50983227.84411615655137170553)
+        _check(33.3, 2.493363339642036352229215273e+37)
+        _check(55.5, 9.479934358436729043289162027e+73)
+        _check(77.7, 3.060540559059579022358692625e+114)
+        _check(99.9, 5.885840419492871504575693337e+157)
+        # close to maximum for float64
+        _check(170.6243, 1.79698185749571048960082e+308)
+
     @pytest.mark.parametrize('x, exact', [
         (1, True),
         (1, False),

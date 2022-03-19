@@ -2803,7 +2803,13 @@ def factorial(n, exact=False):
         if np.ndim(n) == 0:
             if np.isnan(n):
                 return n
-            return 0 if n < 0 else math.factorial(n)
+            elif n < 0:
+                return 0
+            elif np.issubdtype(type(n), np.integer):
+                return math.factorial(n)
+            # we do not raise for non-integers with exact=True due to
+            # historical reasons, though deprecation would be possible
+            return _ufuncs._factorial(n)
         else:
             n = asarray(n)
             un = np.unique(n)
