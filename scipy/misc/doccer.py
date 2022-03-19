@@ -1,8 +1,7 @@
 # This file is not meant for public use and will be removed in SciPy v2.0.0.
 
 
-import warnings
-from . import _doccer
+from scipy._lib import doccer
 
 
 __all__ = [  # noqa: F822
@@ -17,13 +16,4 @@ def __dir__():
 
 
 def __getattr__(name):
-    if name not in __all__:
-        raise AttributeError(
-            "scipy.misc.doccer is deprecated and has no attribute "
-            f"{name}.")
-
-    warnings.warn("The `scipy.misc.doccer` namespace is deprecated and "
-                  "will be removed in SciPy v2.0.0.",
-                  category=DeprecationWarning, stacklevel=2)
-
-    return getattr(_doccer, name)
+    return getattr(doccer, name)
