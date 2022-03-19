@@ -2725,23 +2725,30 @@ def perm(N, k, exact=False):
 
 
 # https://stackoverflow.com/a/16327037
-def _range_prod(lo, hi):
+def _range_prod(lo, hi, k=1):
     """
-    Product of a range of numbers.
+    Product of a range of numbers spaced k apart (from hi).
 
-    Returns the product of
+    For k=1, this returns the product of
     lo * (lo+1) * (lo+2) * ... * (hi-2) * (hi-1) * hi
     = hi! / (lo-1)!
+
+    For k>1, it correspond to taking only every k'th number when
+    counting down from hi - e.g. 18!!!! = _range_prod(1, 18, 4).
 
     Breaks into smaller products first for speed:
     _range_prod(2, 9) = ((2*3)*(4*5))*((6*7)*(8*9))
     """
-    if lo + 1 < hi:
+    if lo + k < hi:
         mid = (hi + lo) // 2
-        return _range_prod(lo, mid) * _range_prod(mid + 1, hi)
-    if lo == hi:
-        return lo
-    return lo * hi
+        if k > 1:
+            # make sure mid is a multiple of k away from hi
+            mid = mid - ((mid - hi) % k)
+        return _range_prod(lo, mid, k) * _range_prod(mid + k, hi, k)
+    elif lo + k == hi:
+        return lo * hi
+    else:
+        return hi
 
 
 def factorial(n, exact=False):
@@ -2878,10 +2885,7 @@ def factorial2(n, exact=False):
             return 0
         if n == 0:
             return 1
-        val = 1
-        for k in range(n, 0, -2):
-            val *= k
-        return val
+        return _range_prod(1, n, k=2)
     else:
         n = asarray(n)
         vals = zeros(n.shape, 'd')
@@ -2943,10 +2947,7 @@ def factorialk(n, k, exact=True):
             return 0
         if n == 0:
             return 1
-        val = 1
-        for j in range(n, 0, -k):
-            val = val*j
-        return val
+        return _range_prod(1, n, k=k)
     else:
         raise NotImplementedError
 
