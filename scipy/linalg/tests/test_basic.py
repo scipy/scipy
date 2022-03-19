@@ -631,7 +631,11 @@ class TestSolve:
                 a[i, j] = a[j, i]
         for i in range(4):
             b = random([n])
-            x = solve(a, b, sym_pos=1)
+            with pytest.warns(
+                DeprecationWarning,
+                match="This key is deprecated and ``assume_a = 'pos'``",
+            ):
+                x = solve(a, b, sym_pos=1)
             assert_array_almost_equal(dot(a, x), b)
 
     def test_random_sym_complex(self):
@@ -644,7 +648,11 @@ class TestSolve:
                 a[i, j] = conjugate(a[j, i])
         b = random([n])+2j*random([n])
         for i in range(2):
-            x = solve(a, b, sym_pos=1)
+            with pytest.warns(
+                DeprecationWarning,
+                match="This key is deprecated and ``assume_a = 'pos'``",
+            ):
+                x = solve(a, b, sym_pos=1)
             assert_array_almost_equal(dot(a, x), b)
 
     def test_check_finite(self):
