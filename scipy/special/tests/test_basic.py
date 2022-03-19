@@ -1954,6 +1954,24 @@ class TestExp:
 
 
 class TestFactorialFunctions:
+    @pytest.mark.parametrize("n", [-1, -2, -3])
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorialx_negative(self, exact, n):
+        assert_equal(special.factorial(n, exact=exact), 0)
+        assert_equal(special.factorial2(n, exact=exact), 0)
+        assert_equal(special.factorialk(n, 3, exact=True), 0)
+
+    @pytest.mark.parametrize("exact", [True, False])
+    def test_factorialx_negative_array(self, exact):
+        assert_func = assert_array_equal if exact else assert_allclose
+        # Consistent output for n < 0
+        assert_func(special.factorial([-5, -4, 0, 1], exact=exact),
+                    [0, 0, 1, 1])
+        # assert_func(special.factorial2([-5, -4, 0, 1], exact=exact),
+        #             [0, 0, 1, 1])
+        # assert_func(special.factorialk([-5, -4, 0, 1], 3, exact=True),
+        #             [0, 0, 1, 1])
+
     def test_factorial(self):
         # Some known values, float math
         assert_array_almost_equal(special.factorial(0), 1)
@@ -1989,12 +2007,6 @@ class TestFactorialFunctions:
         # int32 array
         assert_equal(special.factorial(np.arange(-3, 5), True),
                      special.factorial(np.arange(-3, 5), False))
-
-        # Consistent output for n < 0
-        for exact in (True, False):
-            assert_array_equal(0, special.factorial(-3, exact))
-            assert_array_equal([1, 2, 0, 0],
-                               special.factorial([1, 2, -5, -4], exact))
 
         for n in range(0, 22):
             # Compare all with math.factorial

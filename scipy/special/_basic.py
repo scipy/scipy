@@ -2852,8 +2852,7 @@ def factorial2(n, exact=False):
     ----------
     n : int or array_like
         Calculate ``n!!``.  Arrays are only supported with `exact` set
-        to False. If ``n < -1``, the return value is 0.
-        Otherwise if ``n <= 0``, the return value is 1.
+        to False.  If ``n < 0``, the return value is 0.
     exact : bool, optional
         The result can be approximated rapidly using the gamma-formula
         above (default).  If `exact` is set to True, calculate the
@@ -2875,9 +2874,9 @@ def factorial2(n, exact=False):
 
     """
     if exact:
-        if n < -1:
+        if n < 0:
             return 0
-        if n <= 0:
+        if n == 0:
             return 1
         val = 1
         for k in range(n, 0, -2):
@@ -2886,8 +2885,8 @@ def factorial2(n, exact=False):
     else:
         n = asarray(n)
         vals = zeros(n.shape, 'd')
-        cond1 = (n % 2) & (n >= -1)
-        cond2 = (1-(n % 2)) & (n >= -1)
+        cond1 = (n % 2) & (n >= 0)
+        cond2 = (1-(n % 2)) & (n >= 0)
         oddn = extract(cond1, n)
         evenn = extract(cond2, n)
         nd2o = oddn / 2.0
@@ -2913,8 +2912,7 @@ def factorialk(n, k, exact=True):
     Parameters
     ----------
     n : int
-        Calculate multifactorial. If ``n < 1 - k``, the return value is 0.
-        Otherwise if ``n <= 0``, the return value is 1.
+        Calculate multifactorial. If `n` < 0, the return value is 0.
     k : int
         Order of multifactorial.
     exact : bool, optional
@@ -2941,9 +2939,9 @@ def factorialk(n, k, exact=True):
 
     """
     if exact:
-        if n < 1-k:
+        if n < 0:
             return 0
-        if n <= 0:
+        if n == 0:
             return 1
         val = 1
         for j in range(n, 0, -k):
