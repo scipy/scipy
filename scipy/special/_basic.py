@@ -2806,7 +2806,7 @@ def factorial(n, exact=False):
             return 0 if n < 0 else math.factorial(n)
         else:
             n = asarray(n)
-            un = np.unique(n).astype(object)
+            un = np.unique(n)
 
             # Convert to object array of long ints if np.int_ can't handle size
             if np.isnan(n).any():
@@ -2834,7 +2834,8 @@ def factorial(n, exact=False):
                 for i in range(len(un) - 1):
                     prev = un[i] + 1
                     current = un[i + 1]
-                    val *= _range_prod(prev, current)
+                    # cast to python ints to avoid overflow with np.int-types
+                    val *= _range_prod(int(prev), int(current))
                     out[n == current] = val
 
             if np.isnan(n).any():

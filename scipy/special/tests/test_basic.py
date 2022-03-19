@@ -17,7 +17,9 @@
 ###  test_pbvv_seq
 ###  test_sph_harm
 
+import functools
 import itertools
+import operator
 import platform
 import sys
 
@@ -1973,21 +1975,10 @@ class TestFactorialFunctions:
         #             [0, 0, 1, 1])
 
     def test_factorial(self):
-        # Some known values, float math
-        assert_array_almost_equal(special.factorial(0), 1)
-        assert_array_almost_equal(special.factorial(1), 1)
-        assert_array_almost_equal(special.factorial(2), 2)
         assert_array_almost_equal([6., 24., 120.],
                                   special.factorial([3, 4, 5], exact=False))
         assert_array_almost_equal(special.factorial([[5, 3], [4, 3]]),
                                   [[120, 6], [24, 6]])
-
-        # Some known values, integer math
-        assert_equal(special.factorial(0, exact=True), 1)
-        assert_equal(special.factorial(1, exact=True), 1)
-        assert_equal(special.factorial(2, exact=True), 2)
-        assert_equal(special.factorial(5, exact=True), 120)
-        assert_equal(special.factorial(15, exact=True), 1307674368000)
 
         # ndarray shape is maintained
         assert_equal(special.factorial([7, 4, 15, 10], exact=True),
@@ -1996,33 +1987,26 @@ class TestFactorialFunctions:
         assert_equal(special.factorial([[5, 3], [4, 3]], True),
                      [[120, 6], [24, 6]])
 
-        # object arrays
-        assert_equal(special.factorial(np.arange(-3, 22), True),
-                     special.factorial(np.arange(-3, 22), False))
+    @pytest.mark.parametrize('n',
+                             list(range(0, 22)) + list(range(30, 180, 10)))
+    def test_factorial_int_reference(self, n):
+        # Compare all with math.factorial
+        correct = math.factorial(n)
+        assert_array_equal(correct, special.factorial(n, True))
+        assert_array_equal(correct, special.factorial([n], True)[0])
 
-        # int64 array
-        assert_equal(special.factorial(np.arange(-3, 15), True),
-                     special.factorial(np.arange(-3, 15), False))
+        rtol = 6e-14 if sys.platform == 'win32' else 1e-15
+        assert_allclose(float(correct), special.factorial(n, False),
+                        rtol=rtol)
+        assert_allclose(float(correct), special.factorial([n], False)[0],
+                        rtol=rtol)
 
-        # int32 array
-        assert_equal(special.factorial(np.arange(-3, 5), True),
-                     special.factorial(np.arange(-3, 5), False))
-
-        for n in range(0, 22):
-            # Compare all with math.factorial
-            correct = math.factorial(n)
-            assert_array_equal(correct, special.factorial(n, True))
-            assert_array_equal(correct, special.factorial([n], True)[0])
-
-            assert_allclose(float(correct), special.factorial(n, False))
-            assert_allclose(float(correct), special.factorial([n], False)[0])
-
-            # Compare exact=True vs False, scalar vs array
-            assert_array_equal(special.factorial(n, True),
-                               special.factorial(n, False))
-
-            assert_array_equal(special.factorial([n], True),
-                               special.factorial([n], False))
+        # Compare exact=True vs False, scalar vs array;
+        # need to cast exact result to float due to numpy/numpy#21220
+        assert_allclose(float(special.factorial(n, exact=True)),
+                        special.factorial(n, exact=False), rtol=rtol)
+        assert_allclose(float(special.factorial([n], exact=True)),
+                        special.factorial([n], exact=False), rtol=rtol)
 
     @pytest.mark.parametrize('x, exact', [
         (1, True),
@@ -2033,14 +2017,36 @@ class TestFactorialFunctions:
     def test_factorial_0d_return_type(self, x, exact):
         assert np.isscalar(special.factorial(x, exact=exact))
 
-    def test_factorial2(self):
-        assert_array_almost_equal([105., 384., 945.],
-                                  special.factorial2([7, 8, 9], exact=False))
-        assert_equal(special.factorial2(7, exact=True), 105)
+    @pytest.mark.parametrize('n',
+                             list(range(0, 22)) + list(range(30, 180, 11)))
+    def test_factorial2_int_reference(self, n):
+        # Compare all with correct value
 
-    def test_factorialk(self):
-        assert_equal(special.factorialk(5, 1, exact=True), 120)
-        assert_equal(special.factorialk(5, 3, exact=True), 10)
+        # Cannot use np.product due to overflow
+        correct = functools.reduce(operator.mul, list(range(n, 0, -2)), 1)
+
+        assert_array_equal(correct, special.factorial2(n, True))
+        # assert_array_equal(correct, special.factorial2([n], True)[0])
+
+        assert_allclose(float(correct), special.factorial2(n, False))
+        assert_allclose(float(correct), special.factorial2([n], False)[0])
+
+    @pytest.mark.parametrize('k', list(range(1, 5)) + [10, 20])
+    @pytest.mark.parametrize('n',
+                             list(range(0, 22)) + list(range(22, 100, 11)))
+    def test_factorialk_int_reference(self, n, k):
+        # Compare all with correct value
+
+        # Would be nice to use np.product here, but that's
+        # broken on windows, see numpy/numpy#21219
+        correct = functools.reduce(operator.mul, list(range(n, 0, -k)), 1)
+
+        assert_array_equal(correct, special.factorialk(n, k, True))
+        # assert_array_equal(correct, special.factorialk([n], k, True)[0])
+
+        # exact=False not yet supported
+        # assert_allclose(float(correct), special.factorialk(n, k, False))
+        # assert_allclose(float(correct), special.factorialk([n], k, False)[0])
 
     @pytest.mark.parametrize('x, exact', [
         (np.nan, True),
