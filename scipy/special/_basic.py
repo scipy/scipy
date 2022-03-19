@@ -2751,6 +2751,55 @@ def _range_prod(lo, hi, k=1):
         return hi
 
 
+def _exact_factorial_array(n):
+    """
+    Exact computation of factorial for an array.
+
+    The factorials are computed in incremental fashion, by taking
+    the sorted unique values of n and multiplying the intervening
+    numbers between the different unique values.
+
+    In other words, the factorial for the largest input is only
+    computed once, with each other result computed in the process.
+    """
+    un = np.unique(n)
+
+    # Convert to object array of long ints if np.int_ can't handle size
+    if np.isnan(n).any():
+        dt = float
+    elif un[-1] > 20:
+        dt = object
+    elif un[-1] > 12:
+        dt = np.int64
+    else:
+        dt = np.int_
+
+    out = np.empty_like(n, dtype=dt)
+
+    # Handle invalid/trivial values
+    # Ignore runtime warning when less operator used w/np.nan
+    with np.errstate(all='ignore'):
+        un = un[un > 1]
+        out[n < 2] = 1
+        out[n < 0] = 0
+
+    # Calculate products of each range of numbers
+    if un.size:
+        val = math.factorial(un[0])
+        out[n == un[0]] = val
+        for i in range(len(un) - 1):
+            prev = un[i] + 1
+            current = un[i + 1]
+            # cast to python ints to avoid overflow with np.int-types
+            val *= _range_prod(int(prev), int(current))
+            out[n == current] = val
+
+    if np.isnan(n).any():
+        out = out.astype(np.float64)
+        out[np.isnan(n)] = n[np.isnan(n)]
+    return out
+
+
 def factorial(n, exact=False):
     """
     The factorial of a number or array of numbers.
@@ -2812,41 +2861,7 @@ def factorial(n, exact=False):
             return _ufuncs._factorial(n)
         else:
             n = asarray(n)
-            un = np.unique(n)
-
-            # Convert to object array of long ints if np.int_ can't handle size
-            if np.isnan(n).any():
-                dt = float
-            elif un[-1] > 20:
-                dt = object
-            elif un[-1] > 12:
-                dt = np.int64
-            else:
-                dt = np.int_
-
-            out = np.empty_like(n, dtype=dt)
-
-            # Handle invalid/trivial values
-            # Ignore runtime warning when less operator used w/np.nan
-            with np.errstate(all='ignore'):
-                un = un[un > 1]
-                out[n < 2] = 1
-                out[n < 0] = 0
-
-            # Calculate products of each range of numbers
-            if un.size:
-                val = math.factorial(un[0])
-                out[n == un[0]] = val
-                for i in range(len(un) - 1):
-                    prev = un[i] + 1
-                    current = un[i + 1]
-                    # cast to python ints to avoid overflow with np.int-types
-                    val *= _range_prod(int(prev), int(current))
-                    out[n == current] = val
-
-            if np.isnan(n).any():
-                out = out.astype(np.float64)
-                out[np.isnan(n)] = n[np.isnan(n)]
+            out = _exact_factorial_array(n)
             return out
     else:
         out = _ufuncs._factorial(n)
