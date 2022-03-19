@@ -1987,6 +1987,19 @@ class TestFactorialFunctions:
         assert_equal(special.factorial([[5, 3], [4, 3]], True),
                      [[120, 6], [24, 6]])
 
+    # note that n=170 is the last integer such that factorial(n) fits float64
+    @pytest.mark.parametrize('n', range(30, 180, 10))
+    def test_factorial_accuracy(self, n):
+        # Compare exact=True vs False, i.e. that the accuracy of the
+        # approximation is better than the specified tolerance.
+
+        rtol = 6e-14 if sys.platform == 'win32' else 1e-15
+        # need to cast exact result to float due to numpy/numpy#21220
+        assert_allclose(float(special.factorial(n, exact=True)),
+                        special.factorial(n, exact=False), rtol=rtol)
+        assert_allclose(special.factorial([n], exact=True).astype(float),
+                        special.factorial([n], exact=False), rtol=rtol)
+
     @pytest.mark.parametrize('n',
                              list(range(0, 22)) + list(range(30, 180, 10)))
     def test_factorial_int_reference(self, n):
@@ -2000,13 +2013,6 @@ class TestFactorialFunctions:
                         rtol=rtol)
         assert_allclose(float(correct), special.factorial([n], False)[0],
                         rtol=rtol)
-
-        # Compare exact=True vs False, scalar vs array;
-        # need to cast exact result to float due to numpy/numpy#21220
-        assert_allclose(float(special.factorial(n, exact=True)),
-                        special.factorial(n, exact=False), rtol=rtol)
-        assert_allclose(float(special.factorial([n], exact=True)),
-                        special.factorial([n], exact=False), rtol=rtol)
 
     @pytest.mark.parametrize("exact", [True, False])
     def test_factorial_float_reference(self, exact):
@@ -2036,6 +2042,19 @@ class TestFactorialFunctions:
     ])
     def test_factorial_0d_return_type(self, x, exact):
         assert np.isscalar(special.factorial(x, exact=exact))
+
+    # use odd increment to make sure both odd & even numbers are tested!
+    @pytest.mark.parametrize('n', range(30, 180, 11))
+    def test_factorial2_accuracy(self, n):
+        # Compare exact=True vs False, i.e. that the accuracy of the
+        # approximation is better than the specified tolerance.
+
+        rtol = 2e-14 if sys.platform == 'win32' else 1e-15
+        # need to cast exact result to float due to numpy/numpy#21220
+        assert_allclose(float(special.factorial2(n, exact=True)),
+                        special.factorial2(n, exact=False), rtol=rtol)
+        assert_allclose(special.factorial2([n], exact=True).astype(float),
+                        special.factorial2([n], exact=False), rtol=rtol)
 
     @pytest.mark.parametrize('n',
                              list(range(0, 22)) + list(range(30, 180, 11)))
