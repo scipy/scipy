@@ -2,10 +2,8 @@ version: 2.1
 
 # Aliases to reuse
 _defaults: &defaults
-  docker:
-    # CircleCI maintains a library of pre-built images
-    # documented at https://circleci.com/docs/2.0/circleci-images/
-    - image: cimg/python:3.8
+  machine:
+      image: ubuntu-2004:current
   working_directory: ~/repo
 
 commands:
@@ -33,7 +31,7 @@ commands:
           name: Install apt packages
           command: |
             sudo apt-get update
-            sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
+            sudo apt-get install python3.8 python3.8-dev libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
 
   merge:
     steps:
