@@ -216,24 +216,10 @@ class Test_vectorization_KDTree:
         assert_(np.all(~np.isfinite(d[:, :, -s:])))
         assert_(np.all(i[:, :, -s:] == self.kdtree.n))
 
-
     def test_query_raises_for_k_none(self):
-        np.random.seed(1234)
-
-        point = np.random.rand(self.kdtree.m)
-        r = 0.8
-        with pytest.raises(ValueError, match="k must be an integer or a sequence of integers"):
-            d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
-
-        r = 1.1
-        with pytest.raises(ValueError, match="k must be an integer or a sequence of integers"):
-            d, i = self.kdtree.query(point, k=None, distance_upper_bound=r)
-
-        query_shape = (2, 4)
-        points = np.random.rand(*query_shape, self.kdtree.m)
-        with pytest.raises(ValueError, match="k must be an integer or a sequence of integers"):
-            d, i = self.kdtree.query(points, k=None, distance_upper_bound=r)
-
+        x = 1.0
+        with pytest.raises(ValueError, match="k must be an integer or*"):
+            self.kdtree.query(x, k=None)
 
 class Test_vectorization_cKDTree:
     def setup_method(self):
@@ -450,23 +436,6 @@ def test_query_ball_point_multithreading(kdtree_type):
     for i in range(n):
         if l1[i] or l3[i]:
             assert_array_equal(l1[i], l3[i])
-
-
-def test_n_jobs():
-    # Test for the deprecated argument name "n_jobs" aliasing "workers"
-    points = np.random.randn(50, 2)
-    T = cKDTree(points)
-    with pytest.deprecated_call(match="n_jobs argument has been renamed"):
-        T.query_ball_point(points, 0.003, n_jobs=1)
-
-    with pytest.deprecated_call(match="n_jobs argument has been renamed"):
-        T.query(points, 1, n_jobs=1)
-
-    with pytest.raises(TypeError, match="Unexpected keyword argument"):
-        T.query_ball_point(points, 0.003, workers=1, n_jobs=1)
-
-    with pytest.raises(TypeError, match="Unexpected keyword argument"):
-        T.query(points, 1, workers=1, n_jobs=1)
 
 
 class two_trees_consistency:
