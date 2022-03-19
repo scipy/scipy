@@ -54,7 +54,7 @@ def direct(
     len_tol: float = 1e-8,
     callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
 ) -> OptimizeResult:
-    r"""
+    """
     Finds the global minimum of a function using the
     DIRECT algorithm.
 
