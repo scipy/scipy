@@ -67,7 +67,7 @@ def kaiser_beta(a):
     --------
     Suppose we want to design a lowpass filter, with 65 dB attenuation
     in the stop band.  The Kaiser window parameter to be used in the
-    window method is computed by `kaiser_beta(65)`:
+    window method is computed by ``kaiser_beta(65)``:
 
     >>> from scipy.signal import kaiser_beta
     >>> kaiser_beta(65)
