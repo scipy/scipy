@@ -84,6 +84,7 @@ jobs:
       - run:
           name: build SciPy
           command: |
+            export PATH=~/.local/bin/:$PATH
             python3.8 dev.py --build-only -j2
 
       - save_cache:
@@ -116,6 +117,7 @@ jobs:
           name: build docs
           no_output_timeout: 25m
           command: |
+            export PATH=~/.local/bin/:$PATH
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
             python3.8 dev.py -n -j2 --doc html-scipyorg
 
@@ -143,6 +145,7 @@ jobs:
           name: run asv
           no_output_timeout: 30m
           command: |
+            export PATH=~/.local/bin/:$PATH
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
             cd benchmarks
             asv machine --machine CircleCI
