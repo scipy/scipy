@@ -5861,9 +5861,9 @@ def _ttest_finish(df, t, alternative):
     # can be shared between the ``stats`` and ``mstats`` versions.
 
     if alternative == 'less':
-        pval = special.stdtr(df, t)
-    elif alternative == 'greater':
         pval = special.stdtr(df, -t)
+    elif alternative == 'greater':
+        pval = special.stdtr(df, t)
     elif alternative == 'two-sided':
         pval = special.stdtr(df, -np.abs(t))*2
     else:
