@@ -385,6 +385,11 @@ class KDTree(cKDTree):
             Missing neighbors are indicated with infinite distances.
             Hits are sorted by distance (nearest first).
 
+            .. versionchanged:: 1.9.0
+               Previously if ``k=None``, then `d` was an object array of
+               shape ``tuple``, containing lists of distances. This behavior
+               has been removed, use `query_ball_point` instead.
+
         i : integer or array of integers
             The index of each neighbor in ``self.data``.
             ``i`` is the same shape as d.
