@@ -182,6 +182,10 @@ class TestDIRECT:
         assert result.success
 
     def test_segmentation_fault(self):
-        bounds = [(-5., 20.) ] * 100
+        # test that an excessive number of function evaluations
+        # does not result in segmentation fault
+
+        bounds = [(-5., 20.)] * 100
         result = direct(self.sphere_2, bounds, maxfun=10000000,
                         maxiter=1000000)
+        assert result is not None
