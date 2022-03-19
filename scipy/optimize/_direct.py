@@ -33,7 +33,7 @@ SUCCESS_MESSAGES = (
      "of the (known) global optimum f_min"),
     ("The volume of the hyperrectangle containing the lowest function value "
      "found is below vol_tol={}"),
-    ("The side length measureof the hyperrectangle containing the lowest "
+    ("The side length measure of the hyperrectangle containing the lowest "
      "function value found is below len_tol={}"),
 )
 
@@ -163,10 +163,10 @@ def direct(
     References
     ----------
     .. [1] Jones, D.R., Perttunen, C.D. & Stuckman, B.E. Lipschitzian
-           optimization without the Lipschitz constant. J Optim Theory Appl
-           79, 157-181 (1993)
+        optimization without the Lipschitz constant. J Optim Theory Appl
+        79, 157-181 (1993).
     .. [2] Gablonsky, J., Kelley, C. A Locally-Biased form of the DIRECT
-           Algorithm. Journal of Global Optimization 21, 27-37 (2001).
+        Algorithm. Journal of Global Optimization 21, 27-37 (2001).
 
     Examples
     ----------
