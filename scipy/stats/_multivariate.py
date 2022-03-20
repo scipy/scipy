@@ -11,6 +11,7 @@ from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
 from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
+import warnings
 
 from ._discrete_distns import binom
 from . import _mvn
@@ -109,6 +110,54 @@ def _pinv_1d(v, eps=1e-5):
     return np.array([0 if abs(x) <= eps else 1/x for x in v], dtype=float)
 
 
+def _compute_sqrt_cov(cov, check_valid='warn', tol=1e-8):
+    """
+    Compute a matrix `A` such that `A @ A.T == cov` using the singular value
+    decomposition (SVD).
+    Parameters
+    ------
+    cov : array_like
+        Covariance matrix (2-D).
+    check_valid : {'warn', 'raise', 'ignore'}, optional
+        Behavior when `cov` is not positive semi-definite. (Default: True)
+    tol : float, optional
+        Tolerance when checking whether the matrix is positive semi-definite.
+        Note that `cov` is cast to double before checking the tolerance.
+    Returns
+    -------
+    numpy.ndarray
+        Matrix `A` such that `A @ A.T == cov`.
+    Note
+    ----
+    This function is mainly intended for use by the multivariate normal
+    distribution, or distributions which produce samples by generating a
+    multivariate normal sample as an intermediate step (e.g. multivariate t
+    distribution). Although other methods to compute the square root (such as
+    an eigenvalue or Cholesky decomposition) could potentially be faster, we
+    use the SVD to maintain backward compatibility. In effect, this method
+    performs part of the computation in
+    `numpy.random.RandomState.multivariate_normal` (which is in turn equivalent
+    to `numpy.random.Generator.multivariate_normal`).
+    """
+    # Cast to double to ensure `tol` remains meaningful.
+    cov = cov.astype(np.double)
+    u, s, v = np.linalg.svd(cov)
+    # Check if the matrix is positive semi-definite. If so, v.T should be close
+    # (up to round-off error) to u if the singular value of the corresponding
+    # row isn't zero. Note that this also checks whether `cov` is symmetric.
+    if check_valid not in ('warn', 'raise', 'ignore'):
+        raise ValueError("check_valid must equal 'warn', 'raise', or 'ignore'")
+    if check_valid != 'ignore':
+        is_psd = np.allclose((v.T * s) @ v, cov, rtol=tol, atol=tol)
+        if not is_psd:
+            if check_valid == 'warn':
+                warnings.warn("covariance is not positive semi-definite",
+                              RuntimeWarning)
+            else:
+                raise ValueError("covariance is not positive semi-definite")
+    return u * np.sqrt(s)
+
+
 class _PSD:
     """
     Compute coordinated functions of a symmetric positive semidefinite matrix.
@@ -168,6 +217,7 @@ class _PSD:
         # Initialize the eagerly precomputed attributes.
         self.rank = len(d)
         self.U = U
+        self.A = _compute_sqrt_cov(M)
         self.log_pdet = np.sum(np.log(d))
 
         # Initialize an attribute to be lazily computed.
@@ -624,6 +674,24 @@ class multivariate_normal_gen(multi_rv_generic):
         out = self._cdf(x, mean, cov, maxpts, abseps, releps)
         return out
 
+    def _rvs(self, mean, cov_A, size, random_state=None):
+        random_state = self._get_random_state(random_state)
+        is_size_int = isinstance(size, (int, np.integer))
+        if is_size_int:
+            shape = (size, mean.size)
+        else:
+            shape = (*size, mean.size)
+        std_norm = random_state.standard_normal(shape).reshape(
+            -1, mean.size)
+        out = mean + np.dot(std_norm, cov_A.T)
+        out.shape = shape
+        if is_size_int:
+            return _squeeze_output(out)
+        else:
+            # Don't squeeze if size is explicitly specified. Necessary for
+            # compatibility with numpy.
+            return out
+
     def rvs(self, mean=None, cov=1, size=1, random_state=None):
         """Draw random samples from a multivariate normal distribution.
 
@@ -646,10 +714,8 @@ class multivariate_normal_gen(multi_rv_generic):
 
         """
         dim, mean, cov = self._process_parameters(None, mean, cov)
-
-        random_state = self._get_random_state(random_state)
-        out = random_state.multivariate_normal(mean, cov, size)
-        return _squeeze_output(out)
+        _cov_A = _compute_sqrt_cov(cov, check_valid='warn')
+        return self._rvs(mean, _cov_A, size, random_state)
 
     def entropy(self, mean=None, cov=1):
         """Compute the differential entropy of the multivariate normal.
@@ -751,7 +817,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         return _squeeze_output(out)
 
     def rvs(self, size=1, random_state=None):
-        return self._dist.rvs(self.mean, self.cov, size, random_state)
+        return self._dist._rvs(self.mean, self.cov_info.A, size, random_state)
 
     def entropy(self):
         """Computes the differential entropy of the multivariate normal.

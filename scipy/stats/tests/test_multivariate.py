@@ -9,6 +9,7 @@ from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_less, assert_)
 import pytest
 from pytest import raises as assert_raises
+from pytest import warns as assert_warns
 
 from .test_continuous_basic import check_distribution_rvs
 
@@ -453,6 +454,33 @@ class TestMultivariateNormal:
         desired = .5  # e^lnB = 1/2 for [1, 1, 1]
 
         assert_almost_equal(np.exp(_lnB(alpha)), desired)
+
+    def test_compatibility(self):
+        # Test compatibility with numpy's multivariate_normal.
+
+        # Samples should remain identical.
+        cov = np.array([[4, 1], [1, 3]])
+        mean = np.array([1, 2])
+        n = (6, 4)
+        rng = np.random.RandomState(0)
+        rvs_new = multivariate_normal.rvs(mean=mean, cov=cov, size=n,
+                                          random_state=rng)
+        rng = np.random.RandomState(0)
+        rvs_old = rng.multivariate_normal(mean=mean, cov=cov, size=n)
+        assert_allclose(rvs_old, rvs_new)
+
+        # # Behaviour in edge cases should remain identical.
+        # cov = [[1, 0], [0, -1]]
+        # assert_warns(RuntimeWarning, multivariate_normal.rvs, mean, cov)
+
+        # cov = [[1, 0], [0, np.inf]]
+        # assert_warns(RuntimeWarning, multivariate_normal.rvs, mean, cov)
+
+        # cov = [[1, 0], [0, np.nan]]
+        # assert_warns(RuntimeWarning, multivariate_normal.rvs, mean, cov)
+
+        # cov = [[1, 0]]
+        # assert_raises(ValueError, multivariate_normal.rvs, mean, cov)
 
 class TestMatrixNormal:
 
