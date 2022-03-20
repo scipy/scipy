@@ -828,7 +828,6 @@ class TestFindPeaksCwt:
 
         np.testing.assert_equal(np.array([100]), a)
 
-
     def test_find_peaks_window_size(self):
         """
         Verify that window_size is passed correctly to private function and
