@@ -323,7 +323,7 @@ def laplacian(
     the max-cut strips all the edges of the graph coloring all
     odd vertices into one color and all even vertices into another one,
     while the balanced min-cut partitions the graph
-    in the middle by.deleting a single edge.
+    in the middle by deleting a single edge.
     Both determined partitions are optimal.
     """
     if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
