@@ -45,7 +45,7 @@ jobs:
       - name: Testing SciPy
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          python3.8-dbg -u runtests.py -g -j2 -m fast -- -rfEX --durations=10 2>&1 | tee runtests.log
+          python3.8-dbg -u runtests.py -n -g -j2 -m fast -- -rfEX --durations=10 2>&1 | tee runtests.log
           python3.8-dbg tools/validate_runtests_log.py fast < runtests.log
       - name: Dynamic symbol hiding check on Linux
         if: ${{ github.event_name == 'pull_request' }}
@@ -93,4 +93,4 @@ jobs:
 
     - name: Test SciPy
       run: |
-        python -u runtests.py -m fast
+        python -u runtests.py -n -m fast

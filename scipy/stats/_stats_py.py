@@ -216,11 +216,26 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
+# note that `weights` are paired with `x`
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def gmean(a, axis=0, dtype=None, weights=None):
-    """Compute the geometric mean along the specified axis.
+    r"""Compute the weighted geometric mean along the specified axis.
 
-    Return the geometric average of the array elements.
-    That is:  n-th root of (x1 * x2 * ... * xn)
+    The weighted geometric mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \exp \left( \frac{ \sum_{i=1}^n w_i \ln a_i }{ \sum_{i=1}^n w_i }
+                   \right) \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \sqrt[n]{ \prod_{i=1}^n a_i } \, .
 
     Parameters
     ----------
@@ -236,8 +251,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
         that of the default platform integer. In that case, the default
         platform integer is used.
     weights : array_like, optional
-        The weights array can either be 1-D (in which case its length must be
-        the size of `a` along the given `axis`) or of the same shape as `a`.
+        The `weights` array must be broadcastable to the same shape as `a`.
         Default is None, which gives each value a weight of 1.0.
 
     Returns
@@ -257,13 +271,10 @@ def gmean(a, axis=0, dtype=None, weights=None):
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
 
-    Use masked arrays to ignore any non-finite values in the input or that
-    arise in the calculations such as Not a Number and infinity because masked
-    arrays automatically mask any non-finite values.
-
     References
     ----------
-    .. [1] "Weighted Geometric Mean", *Wikipedia*, https://en.wikipedia.org/wiki/Weighted_geometric_mean.
+    .. [1] "Weighted Geometric Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Weighted_geometric_mean.
 
     Examples
     --------
@@ -272,6 +283,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
     2.0
     >>> gmean([1, 2, 3, 4, 5, 6, 7])
     3.3800151591412964
+    >>> gmean([1, 4, 7], weights=[3, 1, 3])
+    2.80668351922014
 
     """
     if not isinstance(a, np.ndarray):
@@ -292,10 +305,24 @@ def gmean(a, axis=0, dtype=None, weights=None):
     return np.exp(np.average(log_a, axis=axis, weights=weights))
 
 
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_unpacker=lambda x: (x,), kwd_samples=['weights'])
 def hmean(a, axis=0, dtype=None, *, weights=None):
-    """Calculate the harmonic mean along the specified axis.
+    r"""Calculate the weighted harmonic mean along the specified axis.
 
-    That is:  n / (1/x1 + 1/x2 + ... + 1/xn)
+    The weighted harmonic mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \frac{ \sum_{i=1}^n w_i }{ \sum_{i=1}^n \frac{w_i}{a_i} } \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \frac{ n }{ \sum_{i=1}^n \frac{1}{a_i} } \, .
 
     Parameters
     ----------
@@ -334,9 +361,6 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     array, axis=0 by default, or all values in the array if axis=None.
     float64 intermediate and return values are used for integer inputs.
 
-    Use masked arrays to ignore any non-finite values in the input or that
-    arise in the calculations such as Not a Number and infinity.
-
     References
     ----------
     .. [1] "Weighted Harmonic Mean", *Wikipedia*,
@@ -351,6 +375,8 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
     1.6000000000000001
     >>> hmean([1, 2, 3, 4, 5, 6, 7])
     2.6997245179063363
+    >>> hmean([1, 4, 7], weights=[3, 1, 3])
+    1.9029126213592233
 
     """
     if not isinstance(a, np.ndarray):
@@ -414,12 +440,12 @@ def mode(a, axis=0, nan_policy='propagate'):
     ...               [4, 7, 5, 9]])
     >>> from scipy import stats
     >>> stats.mode(a)
-    ModeResult(mode=array([[3, 1, 0, 0]]), count=array([[1, 1, 1, 1]]))
+    ModeResult(mode=array([3, 1, 0, 0]), count=array([1, 1, 1, 1]))
 
     To get mode of whole array, specify ``axis=None``:
 
     >>> stats.mode(a, axis=None)
-    ModeResult(mode=array([3]), count=array([3]))
+    ModeResult(mode=3, count=3)
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -436,18 +462,18 @@ def mode(a, axis=0, nan_policy='propagate'):
         # Fall back to a slower method since np.unique does not work with NaN
         scores = set(np.ravel(a))  # get ALL unique values
         testshape = list(a.shape)
-        testshape[axis] = 1
+        testshape.pop(axis)
         oldmostfreq = np.zeros(testshape, dtype=a.dtype)
         oldcounts = np.zeros(testshape, dtype=int)
 
         for score in scores:
             template = (a == score)
-            counts = np.sum(template, axis, keepdims=True)
+            counts = np.sum(template, axis)
             mostfrequent = np.where(counts > oldcounts, score, oldmostfreq)
             oldcounts = np.maximum(counts, oldcounts)
             oldmostfreq = mostfrequent
 
-        return ModeResult(mostfrequent, oldcounts)
+        return ModeResult(mostfrequent[()], oldcounts[()])
 
     def _mode1D(a):
         vals, cnts = np.unique(a, return_counts=True)
@@ -457,17 +483,15 @@ def mode(a, axis=0, nan_policy='propagate'):
     # casting types in the process.
     # This recreates the results without that issue
     # View of a, rotated so the requested axis is last
-    in_dims = list(range(a.ndim))
-    a_view = np.transpose(a, in_dims[:axis] + in_dims[axis+1:] + [axis])
+    a_view = np.moveaxis(a, axis, -1)
 
     inds = np.ndindex(a_view.shape[:-1])
     modes = np.empty(a_view.shape[:-1], dtype=a.dtype)
     counts = np.empty(a_view.shape[:-1], dtype=np.int_)
     for ind in inds:
         modes[ind], counts[ind] = _mode1D(a_view[ind])
-    newshape = list(a.shape)
-    newshape[axis] = 1
-    return ModeResult(modes.reshape(newshape), counts.reshape(newshape))
+
+    return ModeResult(modes[()], counts[()])
 
 
 def _mask_to_limits(a, limits, inclusive):
@@ -540,7 +564,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
 
     Returns
     -------
-    tmean : float
+    tmean : ndarray
         Trimmed mean.
 
     See Also
@@ -559,10 +583,10 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
     """
     a = asarray(a)
     if limits is None:
-        return np.mean(a, None)
-
-    am = _mask_to_limits(a.ravel(), limits, inclusive)
-    return am.mean(axis=axis)
+        return np.mean(a, axis)
+    am = _mask_to_limits(a, limits, inclusive)
+    mean = np.ma.filled(am.mean(axis=axis), fill_value=np.nan)
+    return mean if mean.ndim > 0 else mean.item()
 
 
 def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
@@ -981,6 +1005,9 @@ def _moment(a, moment, axis, *, mean=None):
         return np.mean(s, axis)
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+)
 def skew(a, axis=0, bias=True, nan_policy='propagate'):
     r"""Compute the sample skewness of a data set.
 
@@ -1084,6 +1111,9 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     return vals
 
 
+@_axis_nan_policy_factory(
+    lambda x: x, result_unpacker=lambda x: (x,), n_outputs=1
+)
 def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     """Compute the kurtosis (Fisher or Pearson) of a dataset.
 

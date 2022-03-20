@@ -172,7 +172,7 @@ if they are deemed to be actively harmful to the project’s well-being, and
 attempts at communication and conflict resolution have failed.
 
 A list of current Steering Council Members is maintained at the
-page :ref:`governance-people`.
+page `About us <https://scipy.org/about/>`_.
 
 Council Chair
 ~~~~~~~~~~~~~
@@ -324,7 +324,7 @@ Institutional Partner benefits are:
 -  invitation of the Council Members to SciPy Developer Meetings
 
 A list of current Institutional Partners is maintained at the page
-:ref:`governance-people`.
+`About us <https://scipy.org/about/>`_.
 
 
 Document history

@@ -1543,8 +1543,8 @@ class _nchypergeom_gen(rv_discrete):
             urn = self.dist(N, n, M, odds, 1e-12)
             return urn.moments()
 
-        m, v = _moments1(M, n, N, odds) if ("m" in moments
-                                            or "v" in moments) else (None, None)
+        m, v = (_moments1(M, n, N, odds) if ("m" in moments or "v" in moments)
+                else (None, None))
         s, k = None, None
         return m, v, s, k
 
