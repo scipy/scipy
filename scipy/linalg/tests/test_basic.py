@@ -633,7 +633,7 @@ class TestSolve:
             b = random([n])
             with pytest.warns(
                 DeprecationWarning,
-                match="This key is deprecated and ``assume_a = 'pos'``",
+                match="This key is deprecated and `assume_a = 'pos'`",
             ):
                 x = solve(a, b, sym_pos=1)
             assert_array_almost_equal(dot(a, x), b)
@@ -650,7 +650,7 @@ class TestSolve:
         for i in range(2):
             with pytest.warns(
                 DeprecationWarning,
-                match="This key is deprecated and ``assume_a = 'pos'``",
+                match="This key is deprecated and `assume_a = 'pos'`",
             ):
                 x = solve(a, b, sym_pos=1)
             assert_array_almost_equal(dot(a, x), b)

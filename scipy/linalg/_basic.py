@@ -167,7 +167,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
     # Backwards compatibility - old keyword.
     if sym_pos:
-        message = ("This key is deprecated and ``assume_a = 'pos'`` keyword is"
+        message = ("This key is deprecated and `assume_a = 'pos'` keyword is"
                    " recommended instead. The functionality is the same. "
                    "`sym_pos` will be removed in SciPy 1.11.0.")
         warn(message, DeprecationWarning, stacklevel=2)
