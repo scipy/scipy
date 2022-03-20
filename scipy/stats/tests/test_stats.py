@@ -34,7 +34,6 @@ from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
-from scipy.stats._hypotests import _batch_generator
 from scipy.stats._stats_py import (_permutation_distribution_t,
                             AlexanderGovernConstantInputWarning)
 
@@ -4484,21 +4483,6 @@ class Test_ttest_ind_permutations():
         with assert_raises(ValueError, match="'hello' cannot be used"):
             stats.ttest_ind(self.a, self.b, permutations=1,
                             random_state='hello')
-
-    @pytest.mark.parametrize("batch", (-1, 0))
-    def test_batch_generator_iv(self, batch):
-        with assert_raises(ValueError, match="`batch` must be positive."):
-            list(_batch_generator([1, 2, 3], batch))
-
-    batch_generator_cases = [(range(0), 3, []),
-                             (range(6), 3, [[0, 1, 2], [3, 4, 5]]),
-                             (range(8), 3, [[0, 1, 2], [3, 4, 5], [6, 7]])]
-
-    @pytest.mark.parametrize("iterable, batch, expected",
-                             batch_generator_cases)
-    def test_batch_generator(self, iterable, batch, expected):
-        got = list(_batch_generator(iterable, batch))
-        assert got == expected
 
 
 class Test_ttest_ind_common:

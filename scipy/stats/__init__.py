@@ -477,7 +477,7 @@ from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
 from ._resampling import (bootstrap, BootstrapDegenerateDistributionWarning,
-                          monte_carlo_test)
+                          monte_carlo_test, permutation_test)
 from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite  # noqa
