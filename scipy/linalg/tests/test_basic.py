@@ -621,20 +621,13 @@ class TestSolve:
             b = random([n, 3])
             x = solve(a, b)
             assert_array_almost_equal(dot(a, x), b)
-    
+
     def test_sym_pos_dep(self):
-        n = 20
-        a = random([n, n])
-        b = random([n])
-        for i in range(n):
-            a[i, i] = abs(20*(.1+a[i, i]))
-            for j in range(i):
-                a[i, j] = a[j, i]
         with pytest.warns(
                 DeprecationWarning,
-                match="The `sym_pos` keyword is deprecated",
-            ):
-                solve(a, b, sym_pos=1)
+                match="The 'sym_pos' keyword is deprecated",
+        ):
+            solve([[1.]], [1], sym_pos=True)
 
     def test_random_sym(self):
         n = 20
