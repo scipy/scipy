@@ -304,7 +304,7 @@ def laplacian(
     must be used in the construction of the Laplacian.
     The option ``normed=True`` cannot be used for the negative weights here
     as the symmetric normalization evaluates square roots.
-    The option ``form="lo"`` is matrix-free, i.e. guarantees
+    The option ``form="lo"`` is matrix-free, i.e., guarantees
     a fixed memory footprint and read-only access to the graph.
 
     >>>     L = csgraph.laplacian(G, symmetrized=True, form="lo")
