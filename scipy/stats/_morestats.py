@@ -3068,12 +3068,25 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     Returns
     -------
+    An object with the following attributes.
+
     statistic : float
-        If ``alternative`` is "two-sided", the sum of the ranks of the
+        If `alternative` is "two-sided", the sum of the ranks of the
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
     pvalue : float
-        The p-value for the test depending on ``alternative`` and ``method``.
+        The p-value for the test depending on `alternative` and `method`.
+    zstatistic : float
+        When the the approximate method is used, this is the normalized
+        z-statistic::
+
+            z = (T - mn - d) / se
+
+        where ``T`` is `statistic` as defined above, ``mn`` is the mean of the
+        distribution under the null hypothesis, ``d`` is a continuity
+        correction, and ``se`` is the standard error.
+
+        When the exact method is used, this is ``np.nan``.
 
     See Also
     --------
@@ -3126,8 +3139,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     two-sided test:
 
     >>> from scipy.stats import wilcoxon
-    >>> w, p = wilcoxon(d)
-    >>> w, p
+    >>> res = wilcoxon(d)
+    >>> res.statistic, res.pvalue
     (24.0, 0.041259765625)
 
     Hence, we would reject the null hypothesis at a confidence level of 5%,
@@ -3135,8 +3148,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     To confirm that the median of the differences can be assumed to be
     positive, we use:
 
-    >>> w, p = wilcoxon(d, alternative='greater')
-    >>> w, p
+    >>> res = wilcoxon(d, alternative='greater')
+    >>> res.statistic, res.pvalue
     (96.0, 0.0206298828125)
 
     This shows that the null hypothesis that the median is negative can be
@@ -3144,8 +3157,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     the median is greater than zero. The p-values above are exact. Using the
     normal approximation gives very similar values:
 
-    >>> w, p = wilcoxon(d, method='approx')
-    >>> w, p
+    >>> res = wilcoxon(d, method='approx')
+    >>> res.statistic, res.pvalue
     (24.0, 0.04088813291185591)
 
     Note that the statistic changed to 96 in the one-sided case (the sum
