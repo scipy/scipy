@@ -298,7 +298,7 @@ def laplacian(
     labels for spectral max- and min- cuts in a single loop:
 
     >>> for cut in ["max", "min"]:
-    >>>     G = -G
+    ...     G = -G
 
     Since the graph is undirected, the option ``symmetrized=True``
     must be used in the construction of the Laplacian.
@@ -307,13 +307,13 @@ def laplacian(
     The option ``form="lo"`` is matrix-free, i.e., guarantees
     a fixed memory footprint and read-only access to the graph.
 
-    >>>     L = csgraph.laplacian(G, symmetrized=True, form="lo")
+    ...     L = csgraph.laplacian(G, symmetrized=True, form="lo")
 
     Calling the eigenvalue solver ``lobpcg`` to compute the Fiedler vector
     that determines the labels as the signs of its components.
 
-    >>>     _, eves = sparse.linalg.lobpcg(L, X, Y=Y, largest=False, tol=1e-3)
-    >>>     print(cut + "-cut labels:\\n", 1 * (eves[:, 0]>0))
+    ...     _, eves = sparse.linalg.lobpcg(L, X, Y=Y, largest=False, tol=1e-3)
+    ...     print(cut + "-cut labels:\\n", 1 * (eves[:, 0]>0))
     max-cut labels:
     [0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0]
     min-cut labels:
