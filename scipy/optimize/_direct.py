@@ -141,7 +141,7 @@ def direct(
     (n is the number of variables) more points, 2 in each coordinate
     direction. Using these function values, DIRECT then divides the
     domain into hyperrectangles, each having exactly one of the sampling
-    points as its center. In each iteration, DIRECT chooses, using the eps
+    points as its center. In each iteration, DIRECT chooses, using the `eps`
     parameter which defaults to 1e-4, some of the existing hyperrectangles
     to be further divided. This division process continues until either the
     maximum number of iterations or maximum function evaluations allowed
