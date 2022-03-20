@@ -10,7 +10,7 @@ from ._common import ConfidenceInterval
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln, comb, factorial
 from scipy.fft import ifft
-import scipy.stats._bootstrap as _bootstrap
+import scipy.stats._resampling as _resampling
 from scipy._lib._util import check_random_state
 from ._hypotests_pythran import _a_ij_Aij_Dij2
 from ._hypotests_pythran import (
@@ -1648,7 +1648,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
         raise ValueError("`vectorized` must be `True` or `False`.")
 
     if not vectorized:
-        statistic = _bootstrap._vectorize_statistic(statistic)
+        statistic = _resampling._vectorize_statistic(statistic)
 
     message = "`data` must be a tuple containing at least two samples"
     try:

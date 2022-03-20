@@ -4,7 +4,7 @@ from scipy.stats import (bootstrap, BootstrapDegenerateDistributionWarning,
                          monte_carlo_test)
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
-from .. import _bootstrap as _bootstrap
+from .. import _resampling as _resampling
 from scipy._lib._util import rng_integers
 from scipy.optimize import root
 
@@ -391,7 +391,7 @@ def test_jackknife_resample():
     shape = 3, 4, 5, 6
     np.random.seed(0)
     x = np.random.rand(*shape)
-    y = next(_bootstrap._jackknife_resample(x))
+    y = next(_resampling._jackknife_resample(x))
 
     for i in range(shape[-1]):
         # each resample is indexed along second to last axis
@@ -401,7 +401,7 @@ def test_jackknife_resample():
 
         assert np.array_equal(slc, expected)
 
-    y2 = np.concatenate(list(_bootstrap._jackknife_resample(x, batch=2)),
+    y2 = np.concatenate(list(_resampling._jackknife_resample(x, batch=2)),
                         axis=-2)
     assert np.array_equal(y2, y)
 
@@ -419,7 +419,7 @@ def test_bootstrap_resample(rng_name):
 
     np.random.seed(0)
     x = np.random.rand(*shape)
-    y = _bootstrap._bootstrap_resample(x, n_resamples, random_state=rng1)
+    y = _resampling._bootstrap_resample(x, n_resamples, random_state=rng1)
 
     for i in range(n_resamples):
         # each resample is indexed along second to last axis
@@ -438,7 +438,7 @@ def test_percentile_of_score(score, axis):
     shape = 10, 20, 30
     np.random.seed(0)
     x = np.random.rand(*shape)
-    p = _bootstrap._percentile_of_score(x, score, axis=-1)
+    p = _resampling._percentile_of_score(x, score, axis=-1)
 
     def vectorized_pos(a, score, axis):
         return np.apply_along_axis(stats.percentileofscore, axis, a, score)
@@ -457,7 +457,7 @@ def test_percentile_along_axis():
     np.random.seed(0)
     x = np.random.rand(*shape)
     q = np.random.rand(*shape[:-1]) * 100
-    y = _bootstrap._percentile_along_axis(x, q)
+    y = _resampling._percentile_along_axis(x, q)
 
     for i in range(shape[0]):
         res = y[i]
@@ -480,7 +480,7 @@ def test_vectorize_statistic(axis):
         return statistic(*data, axis=0)
 
     # vectorize the non-vectorized statistic
-    statistic2 = _bootstrap._vectorize_statistic(statistic_1d)
+    statistic2 = _resampling._vectorize_statistic(statistic_1d)
 
     np.random.seed(0)
     x = np.random.rand(4, 5, 6)

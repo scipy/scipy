@@ -17,7 +17,7 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     boschloo_exact, permutation_test,
                                     _all_partitions_concatenated)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
-import scipy.stats._bootstrap as _bootstrap
+import scipy.stats._resampling as _resampling
 from .common_tests import check_named_results
 from scipy import special
 from scipy._lib._testutils import _TestPythranFunc
@@ -1549,7 +1549,7 @@ class TestPermutationTest:
         def statistic1d(x):
             return stats.pearsonr(x, y)[0]
 
-        statistic = _bootstrap._vectorize_statistic(statistic1d)
+        statistic = _resampling._vectorize_statistic(statistic1d)
 
         kwds = {'vectorized': True, 'permutation_type': 'samples',
                 'batch': 100, 'alternative': alternative, 'random_state': rng}
@@ -1695,8 +1695,8 @@ class TestPermutationTest:
         def pvalue1d(*data):
             return stats.kruskal(*data).pvalue
 
-        statistic = _bootstrap._vectorize_statistic(statistic1d)
-        pvalue = _bootstrap._vectorize_statistic(pvalue1d)
+        statistic = _resampling._vectorize_statistic(statistic1d)
+        pvalue = _resampling._vectorize_statistic(pvalue1d)
 
         # Calculate the expected results
         x2 = np.broadcast_to(x, (2, 3, 3))  # broadcast manually because
@@ -1737,7 +1737,7 @@ class TestPermutationTest:
         def test_1d(x, y):
             return stats.wilcoxon(x, y, alternative=alternative)
 
-        test = _bootstrap._vectorize_statistic(test_1d)
+        test = _resampling._vectorize_statistic(test_1d)
 
         expected = test(x, y, axis=1)
         expected_stat = expected[0]
@@ -1845,8 +1845,8 @@ class TestPermutationTest:
             return stats.page_trend_test(data, ranked=True,
                                          method='exact').pvalue
 
-        statistic = _bootstrap._vectorize_statistic(statistic1d)
-        pvalue = _bootstrap._vectorize_statistic(pvalue1d)
+        statistic = _resampling._vectorize_statistic(statistic1d)
+        pvalue = _resampling._vectorize_statistic(pvalue1d)
 
         expected_statistic = statistic(*np.broadcast_arrays(*data), axis=axis)
         expected_pvalue = pvalue(*np.broadcast_arrays(*data), axis=axis)
