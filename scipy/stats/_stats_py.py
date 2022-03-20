@@ -4239,7 +4239,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     The null hypothesis is that the true odds ratio of the populations
     underlying the observations is one, and the observations were sampled
-    from these populations under under a condition: the marginals of the
+    from these populations under a condition: the marginals of the
     resulting table must equal those of the observed table. The statistic
     returned is the unconditional maximum likelihood estimate of the odds
     ratio, and the p-value is the probability under the null hypothesis of

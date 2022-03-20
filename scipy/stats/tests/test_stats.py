@@ -548,6 +548,17 @@ class TestFisherExact:
         res = stats.fisher_exact(x)
         assert_allclose(res[1], 0.005092697748126)
 
+        # case from https://github.com/brentp/fishers_exact_test/issues/27
+        # That package has an (absolute?) fudge factor of 1e-6; too big
+        x = [[22, 0], [0, 102]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 7.175067e-25)
+
+        # case from https://github.com/brentp/fishers_exact_test/issues/1
+        x = [[94, 48], [3577, 16988]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 2.069356e-37)
+
     def test_gh9231(self):
         # Previously, fisher_exact was extremely slow for this table
         # As reported in gh-9231, the p-value should be very nearly zero
