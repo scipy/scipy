@@ -17,7 +17,7 @@ concurrency:
 jobs:
   Python-38-dbg:
     name: Python 3.8-dbg
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2
@@ -90,6 +90,9 @@ jobs:
         python -m pip install --user "setuptools<60.0" wheel cython pytest pybind11 pytest-xdist
         pip install --user git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install -r mypy_requirements.txt
+
+        # Packages that are only needed for their annotations
+        python -m pip install --user types-psutil pybind11 sphinx
 
     - name: Mypy
       run: |

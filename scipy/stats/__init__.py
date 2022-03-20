@@ -231,7 +231,6 @@ Summary statistics
    mvsdist
    entropy
    differential_entropy
-   median_absolute_deviation
    median_abs_deviation
 
 Frequency statistics
@@ -241,7 +240,6 @@ Frequency statistics
    :toctree: generated/
 
    cumfreq
-   itemfreq
    percentileofscore
    scoreatpercentile
    relfreq

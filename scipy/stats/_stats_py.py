@@ -38,7 +38,8 @@ from numpy.lib import NumpyVersion
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
 from scipy._lib._util import (check_random_state, MapWrapper,
-                              rng_integers, float_factorial)
+                              rng_integers, _rename_parameter)
+
 import scipy.special as special
 from scipy import linalg
 from . import distributions
@@ -52,17 +53,18 @@ from ._hypotests import _all_partitions, _batch_generator
 from ._hypotests_pythran import _compute_outer_prob_inside_method
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
+from scipy._lib._bunch import _make_tuple_bunch
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
-           'normaltest', 'jarque_bera', 'itemfreq',
+           'normaltest', 'jarque_bera',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
            'sem', 'zmap', 'zscore', 'gzscore', 'iqr', 'gstd',
-           'median_absolute_deviation', 'median_abs_deviation',
+           'median_abs_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
            'f_oneway', 'F_onewayConstantInputWarning',
            'F_onewayBadInputSizesWarning',
@@ -1704,50 +1706,6 @@ def jarque_bera(x):
 #        FREQUENCY FUNCTIONS        #
 #####################################
 
-# deindent to work around numpy/gh-16202
-@np.deprecate(
-    message="`itemfreq` is deprecated and will be removed in a "
-            "future version. Use instead `np.unique(..., return_counts=True)`")
-def itemfreq(a):
-    """
-Return a 2-D array of item frequencies.
-
-Parameters
-----------
-a : (N,) array_like
-    Input array.
-
-Returns
--------
-itemfreq : (K, 2) ndarray
-    A 2-D frequency table.  Column 1 contains sorted, unique values from
-    `a`, column 2 contains their respective counts.
-
-Examples
---------
->>> from scipy import stats
->>> a = np.array([1, 1, 5, 0, 1, 2, 2, 0, 1, 4])
->>> stats.itemfreq(a)
-array([[ 0.,  2.],
-       [ 1.,  4.],
-       [ 2.,  2.],
-       [ 4.,  1.],
-       [ 5.,  1.]])
->>> np.bincount(a)
-array([2, 4, 2, 0, 1, 1])
-
->>> stats.itemfreq(a/10.)
-array([[ 0. ,  2. ],
-       [ 0.1,  4. ],
-       [ 0.2,  2. ],
-       [ 0.4,  1. ],
-       [ 0.5,  1. ]])
-
-"""
-    items, inv = np.unique(a, return_inverse=True)
-    freq = np.bincount(inv)
-    return np.array([items, freq]).T
-
 
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
                       axis=None):
@@ -3121,127 +3079,6 @@ def median_abs_deviation(x, axis=0, center=np.median, scale=1.0,
     return mad / scale
 
 
-# Keep the top newline so that the message does not show up on the stats page
-_median_absolute_deviation_deprec_msg = """
-To preserve the existing default behavior, use
-`scipy.stats.median_abs_deviation(..., scale=1/1.4826)`.
-The value 1.4826 is not numerically precise for scaling
-with a normal distribution. For a numerically precise value, use
-`scipy.stats.median_abs_deviation(..., scale='normal')`.
-"""
-
-
-# Due to numpy/gh-16349 we need to unindent the entire docstring
-@np.deprecate(old_name='median_absolute_deviation',
-              new_name='median_abs_deviation',
-              message=_median_absolute_deviation_deprec_msg)
-def median_absolute_deviation(x, axis=0, center=np.median, scale=1.4826,
-                              nan_policy='propagate'):
-    r"""
-Compute the median absolute deviation of the data along the given axis.
-
-The median absolute deviation (MAD, [1]_) computes the median over the
-absolute deviations from the median. It is a measure of dispersion
-similar to the standard deviation but more robust to outliers [2]_.
-
-The MAD of an empty array is ``np.nan``.
-
-.. versionadded:: 1.3.0
-
-Parameters
-----------
-x : array_like
-    Input array or object that can be converted to an array.
-axis : int or None, optional
-    Axis along which the range is computed. Default is 0. If None, compute
-    the MAD over the entire array.
-center : callable, optional
-    A function that will return the central value. The default is to use
-    np.median. Any user defined function used will need to have the function
-    signature ``func(arr, axis)``.
-scale : int, optional
-    The scaling factor applied to the MAD. The default scale (1.4826)
-    ensures consistency with the standard deviation for normally distributed
-    data.
-nan_policy : {'propagate', 'raise', 'omit'}, optional
-    Defines how to handle when input contains nan.
-    The following options are available (default is 'propagate'):
-
-    * 'propagate': returns nan
-    * 'raise': throws an error
-    * 'omit': performs the calculations ignoring nan values
-
-Returns
--------
-mad : scalar or ndarray
-    If ``axis=None``, a scalar is returned. If the input contains
-    integers or floats of smaller precision than ``np.float64``, then the
-    output data-type is ``np.float64``. Otherwise, the output data-type is
-    the same as that of the input.
-
-See Also
---------
-numpy.std, numpy.var, numpy.median, scipy.stats.iqr, scipy.stats.tmean,
-scipy.stats.tstd, scipy.stats.tvar
-
-Notes
------
-The `center` argument only affects the calculation of the central value
-around which the MAD is calculated. That is, passing in ``center=np.mean``
-will calculate the MAD around the mean - it will not calculate the *mean*
-absolute deviation.
-
-References
-----------
-.. [1] "Median absolute deviation",
-       https://en.wikipedia.org/wiki/Median_absolute_deviation
-.. [2] "Robust measures of scale",
-       https://en.wikipedia.org/wiki/Robust_measures_of_scale
-
-Examples
---------
-When comparing the behavior of `median_absolute_deviation` with ``np.std``,
-the latter is affected when we change a single value of an array to have an
-outlier value while the MAD hardly changes:
-
->>> from scipy import stats
->>> x = stats.norm.rvs(size=100, scale=1, random_state=123456)
->>> x.std()
-0.9973906394005013
->>> stats.median_absolute_deviation(x)
-1.2280762773108278
->>> x[0] = 345.6
->>> x.std()
-34.42304872314415
->>> stats.median_absolute_deviation(x)
-1.2340335571164334
-
-Axis handling example:
-
->>> x = np.array([[10, 7, 4], [3, 2, 1]])
->>> x
-array([[10,  7,  4],
-       [ 3,  2,  1]])
->>> stats.median_absolute_deviation(x)
-array([5.1891, 3.7065, 2.2239])
->>> stats.median_absolute_deviation(x, axis=None)
-2.9652
-
-"""
-    if isinstance(scale, str):
-        if scale.lower() == 'raw':
-            warnings.warn(
-                "use of scale='raw' is deprecated, use scale=1.0 instead",
-                np.VisibleDeprecationWarning
-            )
-            scale = 1.0
-
-    if not isinstance(scale, str):
-        scale = 1 / scale
-
-    return median_abs_deviation(x, axis=axis, center=center, scale=scale,
-                                nan_policy=nan_policy)
-
 #####################################
 #         TRIMMING FUNCTIONS        #
 #####################################
@@ -4026,17 +3863,129 @@ class PearsonRNearConstantInputWarning(RuntimeWarning):
         self.args = (msg,)
 
 
-def pearsonr(x, y):
+def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
+    """
+    Compute the confidence interval for Pearson's R.
+
+    Fisher's transformation is used to compute the confidence interval
+    (https://en.wikipedia.org/wiki/Fisher_transformation).
+    """
+    if r == 1:
+        zr = np.inf
+    elif r == -1:
+        zr = -np.inf
+    else:
+        zr = np.arctanh(r)
+
+    if n > 3:
+        se = np.sqrt(1 / (n - 3))
+        if alternative == "two-sided":
+            h = special.ndtri(0.5 + confidence_level/2)
+            zlo = zr - h*se
+            zhi = zr + h*se
+            rlo = np.tanh(zlo)
+            rhi = np.tanh(zhi)
+        elif alternative == "less":
+            h = special.ndtri(confidence_level)
+            zhi = zr + h*se
+            rhi = np.tanh(zhi)
+            rlo = -1.0
+        else:
+            # alternative == "greater":
+            h = special.ndtri(confidence_level)
+            zlo = zr - h*se
+            rlo = np.tanh(zlo)
+            rhi = 1.0
+    else:
+        rlo, rhi = -1.0, 1.0
+
+    return ConfidenceInterval(low=rlo, high=rhi)
+
+
+ConfidenceInterval = namedtuple('ConfidenceInterval', ['low', 'high'])
+
+PearsonRResultBase = _make_tuple_bunch('PearsonRResultBase',
+                                       ['statistic', 'pvalue'], [])
+
+
+class PearsonRResult(PearsonRResultBase):
+    """
+    Result of `scipy.stats.pearsonr`
+
+    Attributes
+    ----------
+    statistic : float
+        Pearson product-moment correlation coefficent.
+    pvalue : float
+        The p-value associated with the chosen alternative.
+
+    Methods
+    -------
+    confidence_interval
+        Computes the confidence interval of the correlation
+        coefficient `statistic` for the given confidence level.
+
+    """
+    def __init__(self, statistic, pvalue, alternative, n):
+        super().__init__(statistic, pvalue)
+        self._alternative = alternative
+        self._n = n
+
+    def confidence_interval(self, confidence_level=0.95):
+        """
+        The confidence interval for the correlation coefficient.
+
+        Compute the confidence interval for the correlation coefficient
+        ``statistic`` with the given confidence level.
+
+        The confidence interval is computed using the Fisher transformation
+        F(r) = arctanh(r) [1]_.  When the sample pairs are drawn from a
+        bivariate normal distribution, F(r) approximately follows a normal
+        distribution with standard error ``1/sqrt(n - 3)``, where ``n`` is the
+        length of the original samples along the calculation axis. When
+        ``n <= 3``, this approximation does not yield a finite, real standard
+        error, so we define the confidence interval to be -1 to 1.
+
+        Parameters
+        ----------
+        confidence_level : float
+            The confidence level for the calculation of the correlation
+            coefficient confidence interval. Default is 0.95.
+
+        Returns
+        -------
+        ci : namedtuple
+            The confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.
+
+        References
+        ----------
+        .. [1] "Pearson correlation coefficient", Wikipedia,
+               https://en.wikipedia.org/wiki/Pearson_correlation_coefficient
+        """
+        return _pearsonr_fisher_ci(self.statistic, self._n, confidence_level,
+                                   self._alternative)
+
+
+def pearsonr(x, y, *, alternative='two-sided'):
     r"""
     Pearson correlation coefficient and p-value for testing non-correlation.
 
     The Pearson correlation coefficient [1]_ measures the linear relationship
-    between two datasets.  The calculation of the p-value relies on the
-    assumption that each dataset is normally distributed.  (See Kowalski [3]_
-    for a discussion of the effects of non-normality of the input on the
-    distribution of the correlation coefficient.)  Like other correlation
+    between two datasets. Like other correlation
     coefficients, this one varies between -1 and +1 with 0 implying no
     correlation. Correlations of -1 or +1 imply an exact linear relationship.
+    Positive correlations imply that as x increases, so does y. Negative
+    correlations imply that as x increases, y decreases.
+
+    This function also performs a test of the null hypothesis that the
+    distributions underlying the samples are uncorrelated and normally
+    distributed. (See Kowalski [3]_
+    for a discussion of the effects of non-normality of the input on the
+    distribution of the correlation coefficient.)
+    The p-value roughly indicates the probability of an uncorrelated system
+    producing datasets that have a Pearson correlation at least as extreme
+    as the one computed from these datasets.
 
     Parameters
     ----------
@@ -4044,13 +3993,33 @@ def pearsonr(x, y):
         Input array.
     y : (N,) array_like
         Input array.
+    alternative : {'two-sided', 'greater', 'less'}, optional
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        The following options are available:
+
+        * 'two-sided': the correlation is nonzero
+        * 'less': the correlation is negative (less than zero)
+        * 'greater':  the correlation is positive (greater than zero)
+
+        .. versionadded:: 1.9.0
 
     Returns
     -------
-    r : float
-        Pearson's correlation coefficient.
-    p-value : float
-        Two-tailed p-value.
+    result : `~scipy.stats._result_classes.PearsonRResult`
+        An object with the following attributes:
+
+        statistic : float
+            Pearson product-moment correlation coefficent.
+        pvalue : float
+            The p-value associated with the chosen alternative.
+
+        The object has the following method:
+
+        confidence_interval(confidence_level=0.95)
+            This method computes the confidence interval of the correlation
+            coefficient `statistic` for the given confidence level.
+            The confidence interval is returned in a ``namedtuple`` with
+            fields `low` and `high`.  See the Notes for more details.
 
     Warns
     -----
@@ -4087,7 +4056,6 @@ def pearsonr(x, y):
     coefficient r is ([1]_, [2]_):
 
     .. math::
-
         f(r) = \frac{{(1-r^2)}^{n/2-2}}{\mathrm{B}(\frac{1}{2},\frac{n}{2}-1)}
 
     where n is the number of samples, and B is the beta function.  This
@@ -4099,10 +4067,7 @@ def pearsonr(x, y):
 
         dist = scipy.stats.beta(n/2 - 1, n/2 - 1, loc=-1, scale=2)
 
-    The p-value returned by `pearsonr` is a two-sided p-value. The p-value
-    roughly indicates the probability of an uncorrelated system
-    producing datasets that have a Pearson correlation at least as extreme
-    as the one computed from these datasets. More precisely, for a
+    The default p-value returned by `pearsonr` is a two-sided p-value. For a
     given sample with correlation coefficient r, the p-value is
     the probability that abs(r') of a random sample x' and y' drawn from
     the population with zero correlation would be greater than or equal
@@ -4120,6 +4085,9 @@ def pearsonr(x, y):
     and -1.  Because abs(r') for any sample x' and y' with length 2 will
     be 1, the two-sided p-value for a sample of length 2 is always 1.
 
+    For backwards compatibility, the object that is returned also behaves
+    like a tuple of length two that holds the statistic and the p-value.
+
     References
     ----------
     .. [1] "Pearson correlation coefficient", Wikipedia,
@@ -4134,20 +4102,24 @@ def pearsonr(x, y):
     Examples
     --------
     >>> from scipy import stats
-    >>> stats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
-    (-0.7426106572325057, 0.1505558088534455)
+    >>> res = stats.pearsonr([1, 2, 3, 4, 5], [10, 9, 2.5, 6, 4])
+    >>> res
+    PearsonRResult(statistic=-0.7426106572325056, pvalue=0.15055580885344558)
+    >>> res.confidence_interval()
+    ConfidenceInterval(low=-0.9816918044786463, high=0.40501116769030976)
 
     There is a linear dependence between x and y if y = a + b*x + e, where
     a,b are constants and e is a random error term, assumed to be independent
     of x. For simplicity, assume that x is standard normal, a=0, b=1 and let
     e follow a normal distribution with mean zero and standard deviation s>0.
 
+    >>> rng = np.random.default_rng()
     >>> s = 0.5
-    >>> x = stats.norm.rvs(size=500)
-    >>> e = stats.norm.rvs(scale=s, size=500)
+    >>> x = stats.norm.rvs(size=500, random_state=rng)
+    >>> e = stats.norm.rvs(scale=s, size=500, random_state=rng)
     >>> y = x + e
-    >>> stats.pearsonr(x, y)
-    (0.9029601878969703, 8.428978827629898e-185) # may vary
+    >>> stats.pearsonr(x, y).statistic
+    0.9001942438244763
 
     This should be close to the exact value given by
 
@@ -4168,7 +4140,7 @@ def pearsonr(x, y):
 
     >>> y = np.abs(x)
     >>> stats.pearsonr(x, y)
-    (-0.016172891856853524, 0.7182823678751942) # may vary
+    PearsonRResult(statistic=-0.05444919272687482, pvalue=0.22422294836207743)
 
     A non-zero correlation coefficient can be misleading. For example, if X has
     a standard normal distribution, define y = x if x < 0 and y = 0 otherwise.
@@ -4177,10 +4149,11 @@ def pearsonr(x, y):
 
     >>> y = np.where(x < 0, x, 0)
     >>> stats.pearsonr(x, y)
-    (0.8537091583771509, 3.183461621422181e-143) # may vary
+    PearsonRResult(statistic=0.861985781588, pvalue=4.813432002751103e-149)
 
     This is unintuitive since there is no dependence of x and y if x is larger
     than zero which happens in about half of the cases if we sample x and y.
+
     """
     n = len(x)
     if n != len(y):
@@ -4195,7 +4168,9 @@ def pearsonr(x, y):
     # If an input is constant, the correlation coefficient is not defined.
     if (x == x[0]).all() or (y == y[0]).all():
         warnings.warn(PearsonRConstantInputWarning())
-        return np.nan, np.nan
+        result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
+                                alternative=alternative)
+        return result
 
     # dtype is the data type for the calculations.  This expression ensures
     # that the data type is at least 64 bit floating point.  It might have
@@ -4203,7 +4178,10 @@ def pearsonr(x, y):
     dtype = type(1.0 + x[0] + y[0])
 
     if n == 2:
-        return dtype(np.sign(x[1] - x[0])*np.sign(y[1] - y[0])), 1.0
+        r = dtype(np.sign(x[1] - x[0])*np.sign(y[1] - y[0]))
+        result = PearsonRResult(statistic=r, pvalue=1.0, n=n,
+                                alternative=alternative)
+        return result
 
     xmean = x.mean(dtype=dtype)
     ymean = y.mean(dtype=dtype)
@@ -4241,9 +4219,18 @@ def pearsonr(x, y):
     # becomes x = (-abs(r) + 1)/2 = 0.5*(1 - abs(r)).  (r is cast to float64
     # to avoid a TypeError raised by btdtr when r is higher precision.)
     ab = n/2 - 1
-    prob = 2*special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+    if alternative == 'two-sided':
+        prob = 2*special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+    elif alternative == 'less':
+        prob = 1 - special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+    elif alternative == 'greater':
+        prob = special.btdtr(ab, ab, 0.5*(1 - abs(np.float64(r))))
+    else:
+        raise ValueError('alternative must be one of '
+                         '["two-sided", "less", "greater"]')
 
-    return r, prob
+    return PearsonRResult(statistic=r, pvalue=prob, n=n,
+                          alternative=alternative)
 
 
 def fisher_exact(table, alternative='two-sided'):
@@ -5791,40 +5778,57 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
 
     Examples
     --------
+    Suppose we wish to test the null hypothesis that the mean of a population
+    is equal to 0.5. We choose a confidence level of 99%; that is, we will
+    reject the null hypothesis in favor of the alternative if the p-value is
+    less than 0.01.
+
+    When testing random variates from the standard uniform distribution, which
+    has a mean of 0.5, we expect the data to be consistent with the null
+    hypothesis most of the time.
+
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
-    >>> rvs = stats.norm.rvs(loc=5, scale=10, size=(50, 2), random_state=rng)
+    >>> rvs = stats.uniform.rvs(size=50, random_state=rng)
+    >>> stats.ttest_1samp(rvs, popmean=0.5)
+    Ttest_1sampResult(statistic=2.456308468440, pvalue=0.017628209047638)
 
-    Test if mean of random sample is equal to true mean, and different mean.
-    We reject the null hypothesis in the second case and don't reject it in
-    the first case.
+    As expected, the p-value of 0.017 is not below our threshold of 0.01, so
+    we cannot reject the null hypothesis.
 
-    >>> stats.ttest_1samp(rvs, 5.0)
-    Ttest_1sampResult(statistic=array([-2.09794637, -1.75977004]), pvalue=array([0.04108952, 0.08468867]))
-    >>> stats.ttest_1samp(rvs, 0.0)
-    Ttest_1sampResult(statistic=array([1.64495065, 1.62095307]), pvalue=array([0.10638103, 0.11144602]))
+    When testing data from the standard *normal* distribution, which has a mean
+    of 0, we would expect the null hypothesis to be rejected.
 
-    Examples using axis and non-scalar dimension for population mean.
+    >>> rvs = stats.norm.rvs(size=50, random_state=rng)
+    >>> stats.ttest_1samp(rvs, popmean=0.5)
+    Ttest_1sampResult(statistic=-7.433605518875, pvalue=1.416760157221e-09)
 
-    >>> result = stats.ttest_1samp(rvs, [5.0, 0.0])
-    >>> result.statistic
-    array([-2.09794637,  1.62095307])
-    >>> result.pvalue
-    array([0.04108952, 0.11144602])
+    Indeed, the p-value is lower than our threshold of 0.01, so we reject the
+    null hypothesis in favor of the default "two-sided" alternative: the mean
+    of the population is *not* equal to 0.5.
 
-    >>> result = stats.ttest_1samp(rvs.T, [5.0, 0.0], axis=1)
-    >>> result.statistic
-    array([-2.09794637,  1.62095307])
-    >>> result.pvalue
-    array([0.04108952, 0.11144602])
+    However, suppose we were to test the null hypothesis against the
+    one-sided alternative that the mean of the population is *greater* than
+    0.5. Since the mean of the standard normal is less than 0.5, we would not
+    expect the null hypothesis to be rejected.
 
-    >>> result = stats.ttest_1samp(rvs, [[5.0], [0.0]])
-    >>> result.statistic
-    array([[-2.09794637, -1.75977004],
-           [ 1.64495065,  1.62095307]])
-    >>> result.pvalue
-    array([[0.04108952, 0.08468867],
-           [0.10638103, 0.11144602]])
+    >>> stats.ttest_1samp(rvs, popmean=0.5, alternative='greater')
+    Ttest_1sampResult(statistic=-7.433605518875, pvalue=0.99999999929)
+
+    Unsurprisingly, with a p-value greater than our threshold, we would not
+    reject the null hypothesis.
+
+    Note that when working with a confidence level of 99%, a true null
+    hypothesis will be rejected approximately 1% of the time.
+
+    >>> rvs = stats.uniform.rvs(size=(100, 50), random_state=rng)
+    >>> res = stats.ttest_1samp(rvs, popmean=0.5, axis=1)
+    >>> np.sum(res.pvalue < 0.01)
+    1
+
+    Indeed, even though all 100 samples above were drawn from the standard
+    uniform distribution, which *does* have a population mean of 0.5, we would
+    mistakenly reject the null hypothesis for one of them.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -7109,7 +7113,8 @@ def _compute_dminus(cdfvals):
     return (cdfvals - np.arange(0.0, n)/n).max()
 
 
-def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7128,7 +7133,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+    method : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7214,6 +7219,8 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     hypothesis in favor of the alternative.
 
     """
+    mode = method
+
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
         alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
@@ -7425,7 +7432,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7441,7 +7449,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'asymp'}, optional
+    method : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7484,7 +7492,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     If the KS statistic is small or the p-value is high, then we cannot
     reject the null hypothesis in favor of the alternative.
 
-    If the mode is 'auto', the computation is exact if the sample sizes are
+    If the method is 'auto', the computation is exact if the sample sizes are
     less than 10000.  For larger sizes, the computation uses the
     Kolmogorov-Smirnov distributions to compute an approximate value.
 
@@ -7548,6 +7556,8 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     hypothesis in favor of the alternative.
 
     """
+    mode = method
+
     if mode not in ['auto', 'exact', 'asymp']:
         raise ValueError(f'Invalid value for mode: {mode}')
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
@@ -7597,7 +7607,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
             mode = 'asymp'
             if original_mode == 'exact':
                 warnings.warn(f"ks_2samp: Exact calculation unsuccessful. "
-                              f"Switching to mode={mode}.", RuntimeWarning)
+                              f"Switching to method={mode}.", RuntimeWarning)
 
     if mode == 'asymp':
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
@@ -7647,7 +7657,8 @@ def _parse_kstest_args(data1, data2, args, N):
     return data1, data2, cdf
 
 
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     """
     Performs the (one-sample or two-sample) Kolmogorov-Smirnov test for
     goodness of fit.
@@ -7681,7 +7692,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+    method : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7795,8 +7806,8 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative,
-                        mode=mode)
-    return ks_2samp(xvals, yvals, alternative=alternative, mode=mode)
+                        method=method)
+    return ks_2samp(xvals, yvals, alternative=alternative, method=method)
 
 
 def tiecorrect(rankvals):

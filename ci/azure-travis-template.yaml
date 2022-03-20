@@ -72,7 +72,7 @@ steps:
     mpmath
     pythran
     pybind11
-    pytest
+    pytest==7.0.1
     pytest-xdist
   displayName: 'Install common python dependencies'
 - ${{ if eq(parameters.test_mode, 'full') }}:

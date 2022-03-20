@@ -785,13 +785,6 @@ add_newdoc(
     >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
     (960566918219.9999, 960566918219.9999, 960566918220)
 
-    Note that if ``exact=True``, non-integer arguments to  `comb` will be
-    truncated to integers, leading to inaccurate results.
-
-    >>> x, y = 3.9, 2.8
-    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
-    (4.2071983565457955, 4.2071983565457955, 3)
-
     `binom` returns ``nan`` when ``x`` is a negative integer, but is otherwise
     defined for negative arguments. `comb` returns 0 whenever one of ``x`` or
     ``y`` is negative or ``x`` is less than ``y``.
@@ -1847,19 +1840,30 @@ add_newdoc("chdtriv",
     """)
 
 add_newdoc("chndtr",
-    """
+    r"""
     chndtr(x, df, nc, out=None)
 
     Non-central chi square cumulative distribution function
 
+    The cumulative distribution function is given by:
+
+    .. math::
+
+        P(\chi^{\prime 2} \vert \nu, \lambda) =\sum_{j=0}^{\infty}
+        e^{-\lambda /2}
+        \frac{(\lambda /2)^j}{j!} P(\chi^{\prime 2} \vert \nu + 2j),
+
+    where :math:`\nu > 0` is the degrees of freedom (``df``) and
+    :math:`\lambda \geq 0` is the non-centrality parameter (``nc``).
+
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral
+        Upper bound of the integral; must satisfy ``x >= 0``
     df : array_like
-        Degrees of freedom
+        Degrees of freedom; must satisfy ``df > 0``
     nc : array_like
-        Non-centrality parameter
+        Non-centrality parameter; must satisfy ``nc >= 0``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -1880,14 +1884,17 @@ add_newdoc("chndtrix",
 
     Inverse to `chndtr` vs `x`
 
+    Calculated using a search to find a value for `x` that produces the
+    desired value of `p`.
+
     Parameters
     ----------
     p : array_like
-        Probability
+        Probability; must satisfy ``0 <= p < 1``
     df : array_like
-        Degrees of freedom
+        Degrees of freedom; must satisfy ``df > 0``
     nc : array_like
-        Non-centrality parameter
+        Non-centrality parameter; must satisfy ``nc >= 0``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -1910,14 +1917,17 @@ add_newdoc("chndtridf",
 
     Inverse to `chndtr` vs `df`
 
+    Calculated using a search to find a value for `df` that produces the
+    desired value of `p`.
+
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral
+        Upper bound of the integral; must satisfy ``x >= 0``
     p : array_like
-        Probability
+        Probability; must satisfy ``0 <= p < 1``
     nc : array_like
-        Non-centrality parameter
+        Non-centrality parameter; must satisfy ``nc >= 0``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -1938,15 +1948,17 @@ add_newdoc("chndtrinc",
 
     Inverse to `chndtr` vs `nc`
 
+    Calculated using a search to find a value for `df` that produces the
+    desired value of `p`.
 
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral
+        Upper bound of the integral; must satisfy ``x >= 0``
     df : array_like
-        Degrees of freedom
+        Degrees of freedom; must satisfy ``df > 0``
     p : array_like
-        Probability
+        Probability; must satisfy ``0 <= p < 1``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -2560,6 +2572,63 @@ add_newdoc(
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
            https://arxiv.org/abs/math/9409227
            https://doi.org/10.1007/BF02198293
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> from scipy.special import elliprc
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> scale = 0.3 + 0.4j
+    >>> elliprc(scale*x, scale*y)
+    (0.5484493976710874-0.4169557678995833j)
+
+    >>> elliprc(x, y)/np.sqrt(scale)
+    (0.5484493976710874-0.41695576789958333j)
+
+    When the two arguments coincide, the integral is particularly
+    simple:
+
+    >>> x = 1.2 + 3.4j
+    >>> elliprc(x, x)
+    (0.4299173120614631-0.3041729818745595j)
+
+    >>> 1/np.sqrt(x)
+    (0.4299173120614631-0.30417298187455954j)
+
+    Another simple case: the first argument vanishes:
+
+    >>> y = 1.2 + 3.4j
+    >>> elliprc(0, y)
+    (0.6753125346116815-0.47779380263880866j)
+
+    >>> np.pi/2/np.sqrt(y)
+    (0.6753125346116815-0.4777938026388088j)
+
+    When `x` and `y` are both positive, we can express
+    :math:`R_C(x,y)` in terms of more elementary functions.  For the
+    case :math:`0 \le x < y`,
+
+    >>> x = 3.2
+    >>> y = 6.
+    >>> elliprc(x, y)
+    0.44942991498453444
+
+    >>> np.arctan(np.sqrt((y-x)/x))/np.sqrt(y-x)
+    0.44942991498453433
+
+    And for the case :math:`0 \le y < x`,
+
+    >>> x = 6.
+    >>> y = 3.2
+    >>> elliprc(x,y)
+    0.4989837501576147
+
+    >>> np.log((np.sqrt(x)+np.sqrt(x-y))/np.sqrt(y))/np.sqrt(x-y)
+    0.49898375015761476
+
     """)
 
 add_newdoc(
@@ -2618,6 +2687,41 @@ add_newdoc(
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
            https://arxiv.org/abs/math/9409227
            https://doi.org/10.1007/BF02198293
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> from scipy.special import elliprd
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> z = 6.
+    >>> scale = 0.3 + 0.4j
+    >>> elliprd(scale*x, scale*y, scale*z)
+    (-0.03703043835680379-0.24500934665683802j)
+
+    >>> elliprd(x, y, z)*np.power(scale, -1.5)
+    (-0.0370304383568038-0.24500934665683805j)
+
+    All three arguments coincide:
+
+    >>> x = 1.2 + 3.4j
+    >>> elliprd(x, x, x)
+    (-0.03986825876151896-0.14051741840449586j)
+
+    >>> np.power(x, -1.5)
+    (-0.03986825876151894-0.14051741840449583j)
+
+    The so-called "second lemniscate constant":
+
+    >>> elliprd(0, 2, 1)/3
+    0.5990701173677961
+
+    >>> from scipy.special import gamma
+    >>> gamma(0.75)**2/np.sqrt(2*np.pi)
+    0.5990701173677959
+
     """)
 
 add_newdoc(
@@ -2674,6 +2778,41 @@ add_newdoc(
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
            https://arxiv.org/abs/math/9409227
            https://doi.org/10.1007/BF02198293
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> from scipy.special import elliprf
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> z = 6.
+    >>> scale = 0.3 + 0.4j
+    >>> elliprf(scale*x, scale*y, scale*z)
+    (0.5328051227278146-0.4008623567957094j)
+
+    >>> elliprf(x, y, z)/np.sqrt(scale)
+    (0.5328051227278147-0.4008623567957095j)
+
+    All three arguments coincide:
+
+    >>> x = 1.2 + 3.4j
+    >>> elliprf(x, x, x)
+    (0.42991731206146316-0.30417298187455954j)
+
+    >>> 1/np.sqrt(x)
+    (0.4299173120614631-0.30417298187455954j)
+
+    The so-called "first lemniscate constant":
+
+    >>> elliprf(0, 1, 2)
+    1.3110287771460598
+
+    >>> from scipy.special import gamma
+    >>> gamma(0.25)**2/(4*np.sqrt(2*np.pi))
+    1.3110287771460598
+
     """)
 
 add_newdoc(
@@ -2744,6 +2883,34 @@ add_newdoc(
 
     Examples
     --------
+    Basic homogeneity property:
+
+    >>> from scipy.special import elliprg
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> z = 6.
+    >>> scale = 0.3 + 0.4j
+    >>> elliprg(scale*x, scale*y, scale*z)
+    (1.195936862005246+0.8470988320464167j)
+
+    >>> elliprg(x, y, z)*np.sqrt(scale)
+    (1.195936862005246+0.8470988320464165j)
+
+    Simplifications:
+
+    >>> elliprg(0, y, y)
+    1.756203682760182
+
+    >>> 0.25*np.pi*np.sqrt(y)
+    1.7562036827601817
+
+    >>> elliprg(0, 0, z)
+    1.224744871391589
+
+    >>> 0.5*np.sqrt(z)
+    1.224744871391589
+
     The surface area of a triaxial ellipsoid with semiaxes ``a``, ``b``, and
     ``c`` is given by
 
@@ -2853,6 +3020,41 @@ add_newdoc(
            pp. 288-303, 1994.
            https://arxiv.org/abs/math/9310223
            https://doi.org/10.1137/S0036141092228477
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> from scipy.special import elliprj
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> z = 6.
+    >>> p = 7.
+    >>> scale = 0.3 - 0.4j
+    >>> elliprj(scale*x, scale*y, scale*z, scale*p)
+    (0.10834905565679157+0.19694950747103812j)
+
+    >>> elliprj(x, y, z, p)*np.power(scale, -1.5)
+    (0.10834905565679556+0.19694950747103854j)
+
+    Reduction to simpler elliptic integral:
+
+    >>> elliprj(x, y, z, z)
+    (0.08288462362195129-0.028376809745123258j)
+
+    >>> from scipy.special import elliprd
+    >>> elliprd(x, y, z)
+    (0.08288462362195136-0.028376809745123296j)
+
+    All arguments coincide:
+
+    >>> elliprj(x, x, x, x)
+    (-0.03986825876151896-0.14051741840449586j)
+
+    >>> np.power(x, -1.5)
+    (-0.03986825876151894-0.14051741840449583j)
+
     """)
 
 add_newdoc("entr",

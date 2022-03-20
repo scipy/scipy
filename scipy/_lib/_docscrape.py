@@ -607,7 +607,7 @@ class ClassDoc(NumpyDocString):
         self._cls = cls
 
         if 'sphinx' in sys.modules:
-            from sphinx.ext.autodoc import ALL  # type: ignore[import]
+            from sphinx.ext.autodoc import ALL
         else:
             ALL = object()
 
