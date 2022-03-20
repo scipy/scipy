@@ -8,7 +8,7 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy import linalg, sparse
-    from scipy.sparse.linalg import cg, minres, gmres, spsolve
+    from scipy.sparse.linalg import cg, minres, gmres, tfqmr, spsolve
 with safe_import():
     from scipy.sparse.linalg import lgmres
 with safe_import():
@@ -33,8 +33,11 @@ def _create_sparse_poisson2d(n):
 class Bench(Benchmark):
     params = [
         [4, 6, 10, 16, 25, 40, 64, 100],
-        ['dense', 'spsolve', 'cg', 'minres', 'gmres', 'lgmres', 'gcrotmk']
+        ['dense', 'spsolve', 'cg', 'minres', 'gmres', 'lgmres', 'gcrotmk',
+         'tfqmr']
     ]
+    mapping = {'spsolve': spsolve, 'cg': cg, 'minres': minres, 'gmres': gmres,
+               'lgmres': lgmres, 'gcrotmk': gcrotmk, 'tfqmr': tfqmr}
     param_names = ['(n,n)', 'solver']
 
     def setup(self, n, solver):
@@ -50,20 +53,8 @@ class Bench(Benchmark):
     def time_solve(self, n, solver):
         if solver == 'dense':
             linalg.solve(self.P_dense, self.b)
-        elif solver == 'cg':
-            cg(self.P_sparse, self.b)
-        elif solver == 'minres':
-            minres(self.P_sparse, self.b)
-        elif solver == 'gmres':
-            gmres(self.P_sparse, self.b)
-        elif solver == 'lgmres':
-            lgmres(self.P_sparse, self.b)
-        elif solver == 'gcrotmk':
-            gcrotmk(self.P_sparse, self.b)
-        elif solver == 'spsolve':
-            spsolve(self.P_sparse, self.b)
         else:
-            raise ValueError('Unknown solver: %r' % solver)
+            self.mapping[solver](self.P_sparse, self.b)
 
 
 class Lgmres(Benchmark):

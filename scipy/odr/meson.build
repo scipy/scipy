@@ -8,16 +8,6 @@ odrpack = static_library('odrpack',
   fortran_args: '-Wno-conversion',  # silence "conversion from REAL(8) to INTEGER(4)"
 )
 
-# TODO: add support for multiple BLAS libraries!
-# Note that this works as is with conda (on Linx at least), because
-# openblas is detected properly via pkg-config. For multiple BLAS/LAPACK
-# libraries, we'll need a custom dependency in Meson (like is done for
-# scalapack).
-# conda: pkgconfig.variables('openblas')
-# https://github.com/mesonbuild/meson/issues/2835
-# TODO: 64-bit BLAS
-blas = dependency('openblas')
-
 py3.extension_module('__odrpack',
   '__odrpack.c',
   link_with: odrpack,

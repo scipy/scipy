@@ -14,11 +14,15 @@ env:
   INSTALLDIR: "build-install"
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   test_meson:
     name: Meson build
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
-    if: "github.repository != '' || github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: macos-latest
     strategy:
       matrix:

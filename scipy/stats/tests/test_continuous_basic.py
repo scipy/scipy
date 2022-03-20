@@ -18,6 +18,7 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_deprecation_warning_gh5982_moment,
                            check_deprecation_warning_gh5982_interval)
 from scipy.stats._distr_params import distcont
+from scipy.stats._distn_infrastructure import rv_continuous_frozen
 
 """
 Test all continuous distributions.
@@ -114,9 +115,9 @@ fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                    'ksone', 'kstwo', 'kstwobign', 'levy_l', 'loggamma',
                    'logistic', 'loguniform', 'maxwell', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'norminvgauss', 'pearson3', 'rdist',
-                   'reciprocal', 'rice', 'skewnorm', 't', 'tukeylambda',
-                   'vonmises', 'vonmises_line', 'rv_histogram_instance',
-                   'truncnorm', 'studentized_range'])
+                   'reciprocal', 'rice', 'skewnorm', 't', 'truncweibull_min',
+                   'tukeylambda', 'vonmises', 'vonmises_line',
+                   'rv_histogram_instance', 'truncnorm', 'studentized_range'])
 
 _h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
                    6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
@@ -855,3 +856,17 @@ def test_kappa4_array_gh13582():
     k = np.array([-1, -0.5, 0, 1])[:, None]
     res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
     assert res2.shape == (4, 4, 3)
+
+
+def test_frozen_attributes():
+    # gh-14827 reported that all frozen distributions had both pmf and pdf
+    # attributes; continuous should have pdf and discrete should have pmf.
+    message = "'rv_continuous_frozen' object has no attribute"
+    with pytest.raises(AttributeError, match=message):
+        stats.norm().pmf
+    with pytest.raises(AttributeError, match=message):
+        stats.norm().logpmf
+    stats.norm.pmf = "herring"
+    frozen_norm = stats.norm()
+    assert isinstance(frozen_norm, rv_continuous_frozen)
+    delattr(stats.norm, 'pmf')
