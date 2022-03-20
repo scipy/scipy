@@ -548,6 +548,13 @@ class TestFisherExact:
         res = stats.fisher_exact(x)
         assert_allclose(res[1], 0.005092697748126)
 
+    def test_gh9231(self):
+        # Previously, fisher_exact was extremely slow for this table
+        # As reported in gh-9231, the p-value should be very nearly zero
+        x = [[5829225, 5692693], [5760959, 5760959]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 0, atol=1e-170)
+
     @pytest.mark.slow
     def test_large_numbers(self):
         # Test with some large numbers. Regression test for #1401

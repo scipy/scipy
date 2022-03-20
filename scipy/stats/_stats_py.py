@@ -53,6 +53,7 @@ from ._hypotests import _all_partitions, _batch_generator
 from ._hypotests_pythran import _compute_outer_prob_inside_method
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
+from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 
 
@@ -4422,46 +4423,8 @@ def fisher_exact(table, alternative='two-sided'):
     n2 = c[1, 0] + c[1, 1]
     n = c[0, 0] + c[1, 0]
 
-    def binary_search(n, n1, n2, side):
-        """Binary search for where to begin halves in two-sided test."""
-        if side == "upper":
-            minval = mode
-            maxval = n
-        else:
-            minval = 0
-            maxval = mode
-        guess = -1
-        while maxval - minval > 1:
-            if maxval == minval + 1 and guess == minval:
-                guess = maxval
-            else:
-                guess = (maxval + minval) // 2
-            pguess = hypergeom.pmf(guess, n1 + n2, n1, n)
-            if side == "upper":
-                ng = guess - 1
-            else:
-                ng = guess + 1
-            if pguess <= pexact < hypergeom.pmf(ng, n1 + n2, n1, n):
-                break
-            elif pguess < pexact:
-                maxval = guess
-            else:
-                minval = guess
-        if guess == -1:
-            guess = minval
-        if side == "upper":
-            while guess > 0 and \
-                    hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
-                guess -= 1
-            while hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
-                guess += 1
-        else:
-            while hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
-                guess += 1
-            while guess > 0 and \
-                    hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
-                guess -= 1
-        return guess
+    def pmf(x):
+        return hypergeom.pmf(x, n1 + n2, n1, n)
 
     if alternative == 'less':
         pvalue = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
@@ -4473,23 +4436,25 @@ def fisher_exact(table, alternative='two-sided'):
         pexact = hypergeom.pmf(c[0, 0], n1 + n2, n1, n)
         pmode = hypergeom.pmf(mode, n1 + n2, n1, n)
 
-        epsilon = 1 - 1e-14
-        if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= 1 - epsilon:
+        epsilon = 1e-14
+        gamma = 1 + epsilon
+
+        if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= epsilon:
             return oddsratio, 1.
 
         elif c[0, 0] < mode:
             plower = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
-            if hypergeom.pmf(n, n1 + n2, n1, n) > pexact / epsilon:
+            if hypergeom.pmf(n, n1 + n2, n1, n) > pexact * gamma:
                 return oddsratio, plower
 
-            guess = binary_search(n, n1, n2, "upper")
-            pvalue = plower + hypergeom.sf(guess - 1, n1 + n2, n1, n)
+            guess = _binary_search(lambda x: -pmf(x), -pexact * gamma, mode, n)
+            pvalue = plower + hypergeom.sf(guess, n1 + n2, n1, n)
         else:
             pupper = hypergeom.sf(c[0, 0] - 1, n1 + n2, n1, n)
-            if hypergeom.pmf(0, n1 + n2, n1, n) > pexact / epsilon:
+            if hypergeom.pmf(0, n1 + n2, n1, n) > pexact * gamma:
                 return oddsratio, pupper
 
-            guess = binary_search(n, n1, n2, "lower")
+            guess = _binary_search(pmf, pexact * gamma, 0, mode)
             pvalue = pupper + hypergeom.cdf(guess, n1 + n2, n1, n)
     else:
         msg = "`alternative` should be one of {'two-sided', 'less', 'greater'}"
@@ -4497,7 +4462,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     pvalue = min(pvalue, 1.0)
 
-    return oddsratio, pvalue
+    return oddsratio, pvalue # exact, guess, n1 + n2, n1, n, mode
 
 
 class SpearmanRConstantInputWarning(RuntimeWarning):
