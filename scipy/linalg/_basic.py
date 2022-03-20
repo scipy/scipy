@@ -72,9 +72,8 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Assume `a` is symmetric and positive definite.
 
         .. deprecated:: 0.19.0
-           This key is deprecated and ``assume_a = 'pos'`` keyword is
-           recommended instead. The functionality is the same. `sym_pos`
-           will be removed in SciPy 1.11.0.
+            This keyword is deprecated and should be replaced by using
+           ``assume_a = 'pos'``. `sym_pos` will be removed in SciPy 1.11.0.
 
     lower : bool, optional
         If True, only the data contained in the lower triangle of `a`. Default
@@ -168,9 +167,9 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
     # Backwards compatibility - old keyword.
     if sym_pos:
-        message = ("This key is deprecated and `assume_a = 'pos'` keyword is"
-                   " recommended instead. The functionality is the same. "
-                   "`sym_pos` will be removed in SciPy 1.11.0.")
+        message = ("The `sym_pos` keyword is deprecated and should be "
+                   "replaced by using `assume_a = 'pos'`. `sym_pos` will be "
+                   "removed in SciPy 1.11.0.")
         warn(message, DeprecationWarning, stacklevel=2)
         assume_a = 'pos'
 
