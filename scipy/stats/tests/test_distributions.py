@@ -5387,6 +5387,7 @@ class TestStudentizedRange:
                         rtol=src_case["expected_rtol"])
 
     @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("intermittent RuntimeWarning: invalid value.")
     @pytest.mark.parametrize("case_result", pregenerated_data["moment_data"])
     def test_moment_against_mp(self, case_result):
         src_case = case_result["src_case"]
@@ -5428,6 +5429,7 @@ class TestStudentizedRange:
         assert_allclose(res, r_res)
 
     @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("intermittent RuntimeWarning: invalid value.")
     def test_moment_vectorization(self):
         # Test moment broadcasting. Calls `_munp` directly because
         # `rv_continuous.moment` is broken at time of writing. See gh-12192
