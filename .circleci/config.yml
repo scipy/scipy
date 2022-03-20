@@ -2,8 +2,10 @@ version: 2.1
 
 # Aliases to reuse
 _defaults: &defaults
-  machine:
-      image: ubuntu-2004:current
+  docker:
+    # CircleCI maintains a library of pre-built images
+    # documented at https://circleci.com/docs/2.0/circleci-images/
+    - image: cimg/python:3.8
   working_directory: ~/repo
 
 commands:
@@ -32,9 +34,6 @@ commands:
           command: |
             sudo apt-get update
             sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
-            pyenv install 3.8.10
-            pyenv global 3.8.10
-            export PATH=~/.local/bin/:$PATH
 
   merge:
     steps:
@@ -75,21 +74,19 @@ jobs:
       - run:
           name: setup Python venv
           command: |
-            python3.8 -m pip install --install-option="--no-cython-compile" cython
-            python3.8 -m pip install numpy==1.21.5
-            python3.8 -m pip install -r doc_requirements.txt
+            pip install --install-option="--no-cython-compile" cython
+            pip install numpy==1.21.5
+            pip install -r doc_requirements.txt
             # `asv` pin because of slowdowns reported in gh-15568
-            python3.8 -m pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson
-            python3.8 -m pip install pybind11
+            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson
+            pip install pybind11
             # extra benchmark deps
-            python3.8 -m pip install pyfftw cffi pytest
-            # save pyenv
-            cp -r /opt/circleci/.pyenv/versions/3.8.10 ~/repo/.pyenv_3.8.10
+            pip install pyfftw cffi pytest
 
       - run:
           name: build SciPy
           command: |
-            python3.8 dev.py --build-only -j2
+            python dev.py --build-only -j2
 
       - save_cache:
           key: deps_ccache-{{ .Branch }}
@@ -121,9 +118,8 @@ jobs:
           name: build docs
           no_output_timeout: 25m
           command: |
-            cp -r ~/repo/.pyenv_3.8.10 /opt/circleci/.pyenv/versions/3.8.10
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
-            python3.8 dev.py -n -j2 --doc html-scipyorg
+            python dev.py -n -j2 --doc html-scipyorg
 
       - store_artifacts:
           path: doc/build/html-scipyorg
@@ -149,7 +145,6 @@ jobs:
           name: run asv
           no_output_timeout: 30m
           command: |
-            cp -r ~/repo/.pyenv_3.8.10 /opt/circleci/.pyenv/versions/3.8.10
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
             cd benchmarks
             asv machine --machine CircleCI
