@@ -4465,7 +4465,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     pvalue = min(pvalue, 1.0)
 
-    return oddsratio, pvalue # exact, guess, n1 + n2, n1, n, mode
+    return oddsratio, pvalue
 
 
 class SpearmanRConstantInputWarning(RuntimeWarning):
