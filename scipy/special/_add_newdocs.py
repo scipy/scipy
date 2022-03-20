@@ -1840,19 +1840,30 @@ add_newdoc("chdtriv",
     """)
 
 add_newdoc("chndtr",
-    """
+    r"""
     chndtr(x, df, nc, out=None)
 
     Non-central chi square cumulative distribution function
 
+    The cumulative distribution function is given by:
+
+    .. math::
+
+        P(\chi^{\prime 2} \vert \nu, \lambda) =\sum_{j=0}^{\infty}
+        e^{-\lambda /2}
+        \frac{(\lambda /2)^j}{j!} P(\chi^{\prime 2} \vert \nu + 2j),
+
+    where :math:`\nu > 0` is the degrees of freedom (``df``) and
+    :math:`\lambda \geq 0` is the non-centrality parameter (``nc``).
+
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral
+        Upper bound of the integral; must satisfy ``x >= 0``
     df : array_like
-        Degrees of freedom
+        Degrees of freedom; must satisfy ``df > 0``
     nc : array_like
-        Non-centrality parameter
+        Non-centrality parameter; must satisfy ``nc >= 0``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -1873,14 +1884,17 @@ add_newdoc("chndtrix",
 
     Inverse to `chndtr` vs `x`
 
+    Calculated using a search to find a value for `x` that produces the
+    desired value of `p`.
+
     Parameters
     ----------
     p : array_like
-        Probability
+        Probability; must satisfy ``0 <= p < 1``
     df : array_like
-        Degrees of freedom
+        Degrees of freedom; must satisfy ``df > 0``
     nc : array_like
-        Non-centrality parameter
+        Non-centrality parameter; must satisfy ``nc >= 0``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -1903,14 +1917,17 @@ add_newdoc("chndtridf",
 
     Inverse to `chndtr` vs `df`
 
+    Calculated using a search to find a value for `df` that produces the
+    desired value of `p`.
+
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral
+        Upper bound of the integral; must satisfy ``x >= 0``
     p : array_like
-        Probability
+        Probability; must satisfy ``0 <= p < 1``
     nc : array_like
-        Non-centrality parameter
+        Non-centrality parameter; must satisfy ``nc >= 0``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -1931,15 +1948,17 @@ add_newdoc("chndtrinc",
 
     Inverse to `chndtr` vs `nc`
 
+    Calculated using a search to find a value for `df` that produces the
+    desired value of `p`.
 
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral
+        Upper bound of the integral; must satisfy ``x >= 0``
     df : array_like
-        Degrees of freedom
+        Degrees of freedom; must satisfy ``df > 0``
     p : array_like
-        Probability
+        Probability; must satisfy ``0 <= p < 1``
     out : ndarray, optional
         Optional output array for the function results
 
