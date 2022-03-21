@@ -163,7 +163,7 @@ We can also do this explicitly via:
 >>> n = 1000
 >>> A = np.empty((n, n), order='F')
 >>> for j in range(n):
->>>     for i in range(m):
+>>>     for i in range(n):
 >>>         A[i,j] = 1. / (i + j + 1)
 
 Note the use of the flag ``order='F'`` in :func:`numpy.empty`. This
