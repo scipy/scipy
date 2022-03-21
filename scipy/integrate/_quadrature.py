@@ -407,14 +407,14 @@ def _basic_simpson(y, start, stop, x, dx, axis):
         h = np.diff(x, axis=axis)
         sl0 = tupleset(slice_all, axis, slice(start, stop, step))
         sl1 = tupleset(slice_all, axis, slice(start+1, stop+1, step))
-        h0 = h[sl0]
-        h1 = h[sl1]
+        h0 = np.float(h[sl0])
+        h1 = np.float(h[sl1])
         hsum = h0 + h1
         hprod = h0 * h1
-        h0divh1 = np.true_divide(h0, h1, out=np.zeros_like(h0), where=h1!=0, casting="unsafe", dtype=np.float64)
-        tmp = hsum/6.0 * (y[slice0] * ( 2 - np.true_divide(1.0, h0divh1, out=np.zeros_like(h0divh1), where=h0divh1!=0, casting="unsafe", dtype=np.float64) ) +
+        h0divh1 = np.true_divide(h0, h1, out=np.zeros_like(h0), where=h1!=0, dtype=np.float64)
+        tmp = hsum/6.0 * (y[slice0] * ( 2.0 - np.true_divide(1.0, h0divh1, out=np.zeros_like(h0divh1), where=h0divh1!=0, casting="unsafe", dtype=np.float64) ) +
                           y[slice1] * ( hsum * np.true_divide(hsum, hprod, out=np.zeros_like(hsum), where=hprod!=0, casting="unsafe", dtype=np.float64) ) +
-                          y[slice2] * (2 - h0divh1))
+                          y[slice2] * (2.0 - h0divh1))
         print("-1: ",h0,h1)
         print("0: ",np.true_divide(h0, h1, out=np.zeros_like(h0), where=h1!=0, casting="unsafe", dtype=np.float64))
         print("1: ",2 - np.true_divide(1.0, h0divh1, out=np.zeros_like(h0divh1), where=h0divh1!=0, casting="unsafe", dtype=np.float64))
