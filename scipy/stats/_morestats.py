@@ -3580,8 +3580,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     return res*(high - low)/2.0/pi + low
 
 
-def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
-            normalize=False):
+def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     """Compute the circular variance for samples assumed to be in a range.
 
     Parameters
@@ -3599,10 +3598,6 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
-    normalize : boolean, optional
-        If True, the returned value is bound in the interval [0, 1] and
-        doesn't depend on the variable units. If False (default), the
-        returned value is scaled by ``((high-low)/(2*pi))**2``.
 
     Returns
     -------
@@ -3612,7 +3607,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     Notes
     -----
     This uses the following definition of circular variance: ``1-R``, where
-    ``R`` is the mean resultant vector. With default ``normalize=False``, the
+    ``R`` is the mean resultant vector. The
     returned value is in the range [0, 1], 0 standing for no variance, and 1
     for a large variance. In the limit of small angles, this value is similar
     to half the 'linear' variance.
@@ -3626,7 +3621,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     --------
     >>> from scipy.stats import circvar
     >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
-    2.19722457734
+    0.6666666666666665
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
@@ -3644,8 +3639,6 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
         R = np.minimum(1, hypot(sin_mean, cos_mean))
 
     res = 1. - R
-    if not normalize:
-        res *= ((high-low)/(2.*pi))**2
     return res
 
 
