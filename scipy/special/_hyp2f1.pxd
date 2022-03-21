@@ -351,7 +351,7 @@ cdef inline double gamma_ratio(
     approximation if needed.
     """
     cdef double result
-    result = gamma_ratio_lanczos(u, v, w, x, True)
+    result = gamma_ratio_lanczos(u, v, w, x, False)
     # Try again with expg_scaled lanczos approximation if there has been
     # underflow or overflow.
     if zisnan(result) or zisinf(result) or result == 0.0:
@@ -406,12 +406,14 @@ cdef inline double gamma_ratio_lanczos(
         double prefactors[4]
         # Lanczos sums for gamma u, v, w, x respectively.
         double lanczos_sums[4]
+        double result
         int i
         int exists_zero_factor
         int exists_pos_inf_factor
         int exists_neg_inf_factor
         int exists_nan_factor
         int count
+        int gpow
         int *uidx = [1, 0, 1, 0, 2, 2, 0, 3, 3]
         int *vidx = [0, 1, 0, 1, 2, 2, 1, 3, 3]
         int *widx = [0, 2, 0, 1, 2, 1, 2, 3, 3]
@@ -481,8 +483,20 @@ cdef inline double gamma_ratio_lanczos(
     # that is not zero, infinite, or NaN, return result where the factor part
     # is taken to be the average of the factor parts for all such combinations
     # of factors.
-    if mean_factor_part:
-        return mean_factor_part * lanczos_part
+    if count:
+        result = mean_factor_part * lanczos_part
+        if not expg_scaled:
+            gpow = 0
+            i = 0
+            for i in range(4):
+                if (args[i] >= 0.5) == (i < 2):
+                    gpow -= 1
+                else:
+                    gpow += 1
+            if gpow:
+                result *= exp(gpow * lanczos_g)
+        return result
+        
     # If one of the factors is NaN, or if more than one of zero, positive
     # infinity and negative infinity appear, return NaN.
     if (
