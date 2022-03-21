@@ -422,7 +422,7 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
             m = _linearoperator(md, shape=graph.shape, dtype=dtype)
             return m, w.astype(dtype, copy=False)
         else:
-            raise ValueError(f"Invalid form: {repr(form)}")
+            raise ValueError(f"Invalid form: {form!r}")
     else:
         if symmetrized:
             md = _laplace_sym(graph, graph_sum)
@@ -434,13 +434,13 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
             m = _linearoperator(md, shape=graph.shape, dtype=dtype)
             return m, diag.astype(dtype, copy=False)
         else:
-            raise ValueError(f"Invalid form: {repr(form)}")
+            raise ValueError(f"Invalid form: {form!r}")
 
 
 def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
 
     if form != "array":
-        raise ValueError(f'{repr(form)} must be "array"')
+        raise ValueError(f'{form!r} must be "array"')
 
     if dtype is None:
         dtype = graph.dtype
@@ -506,7 +506,7 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
             m = _linearoperator(md, shape=graph.shape, dtype=dtype)
             return m, w.astype(dtype, copy=False)
         else:
-            raise ValueError(f"Invalid form: {repr(form)}")
+            raise ValueError(f"Invalid form: {form!r}")
     else:
         if symmetrized:
             md = _laplace_sym(m, graph_sum)
@@ -518,13 +518,13 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
             m = _linearoperator(md, shape=graph.shape, dtype=dtype)
             return m, diag.astype(dtype, copy=False)
         else:
-            raise ValueError(f"Invalid form: {repr(form)}")
+            raise ValueError(f"Invalid form: {form!r}")
 
 
 def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
 
     if form != "array":
-        raise ValueError('{repr(form)} must be "array"')
+        raise ValueError('{form!r} must be "array"')
 
     if dtype is None:
         dtype = graph.dtype
