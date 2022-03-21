@@ -1134,7 +1134,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
         # Two-sided p-value is defined as twice the minimum of the one-sided
         # p-values
-        pvalue = 2 * res.pvalue
+        pvalue = np.clip(2 * res.pvalue, a_min=0, a_max=1)
         return BoschlooExactResult(res.statistic, pvalue)
     else:
         msg = (
