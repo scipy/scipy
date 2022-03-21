@@ -339,5 +339,5 @@ def test_format(dtype, arr_type, normed, symmetrized, use_out_degree, form):
     if not (normed and dtype in INT_DTYPES):
         assert_allclose(L(x), Lo @ x)
     else:
-        # Normalized Lo is casted to integer, but  L() is not
+        # Normalized Lo is casted to integer, but L() is not
         pass
