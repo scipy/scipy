@@ -33,7 +33,7 @@ commands:
           name: Install apt packages
           command: |
             sudo apt-get update
-            sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev 
+            sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
 
   merge:
     steps:
@@ -66,24 +66,38 @@ jobs:
             git submodule init
             git submodule update
 
+      - restore_cache:
+          keys:
+              - deps_ccache-{{ .Branch }}
+              - deps_ccache
+
       - run:
           name: setup Python venv
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
             pip install --install-option="--no-cython-compile" cython
             pip install numpy==1.21.5
             pip install -r doc_requirements.txt
             # `asv` pin because of slowdowns reported in gh-15568
-            pip install nose mpmath argparse Pillow "asv==0.4.2" pythran
+            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson
             pip install pybind11
+            # extra benchmark deps
+            pip install pyfftw cffi pytest
 
       - run:
           name: build SciPy
           command: |
-            . venv/bin/activate
-            export SHELL=$(which bash)
-            python -u runtests.py -g --build-only -j2
+            python dev.py --build-only -j2
+
+      - save_cache:
+          key: deps_ccache-{{ .Branch }}
+          paths:
+            - ~/.ccache
+            - ~/.cache/pip
+
+      - run:
+          name: ccache performance
+          command: |
+            ccache -s
 
       - persist_to_workspace:
           root: ~/
@@ -104,9 +118,8 @@ jobs:
           name: build docs
           no_output_timeout: 25m
           command: |
-            . venv/bin/activate
-            export SHELL=$(which bash)
-            python -u runtests.py -g -j2 --doc html-scipyorg
+            export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
+            python dev.py -n -j2 --doc html-scipyorg
 
       - store_artifacts:
           path: doc/build/html-scipyorg
@@ -130,15 +143,14 @@ jobs:
 
       - run:
           name: run asv
+          no_output_timeout: 30m
           command: |
-            . venv/bin/activate
-            pip install --upgrade pip
-            pip install pyfftw cffi pytest
-            export PYTHONPATH=$PWD/build/testenv/lib/python3.8/site-packages
+            export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
             cd benchmarks
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
+            export OPENBLAS_NUM_THREADS=1
             time asv --config asv.conf.json dev -m CircleCI --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
             asv --config asv.conf.json publish
 
