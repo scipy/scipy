@@ -132,7 +132,7 @@ class TestDIRECT:
         assert res.nfev < 1250
         assert res.status == 5
         assert res.success
-        assert_allclose(res.x, np.array([1., 1.]))
+        assert_allclose(res.x, np.array([1., 1.]), rtol=1e-5)
 
     def test_failure_maxfun(self):
         # test that if optimization runs for the maximal number of
