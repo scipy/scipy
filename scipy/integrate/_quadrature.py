@@ -415,6 +415,9 @@ def _basic_simpson(y, start, stop, x, dx, axis):
         tmp = hsum/6.0 * (y[slice0] * ( 2 - np.divide(1.0, h0divh1, out=np.zeros_like(h0divh1), where=h0divh1!=0, casting="unsafe") ) +
                           y[slice1] * ( hsum * np.divide(hsum, hprod, out=np.zeros_like(hsum), where=hprod!=0, casting="unsafe") ) +
                           y[slice2] * (2 - h0divh1))
+        print("1: ",2 - np.divide(1.0, h0divh1, out=np.zeros_like(h0divh1), where=h0divh1!=0, casting="unsafe"))
+        print("2: ",hsum * np.divide(hsum, hprod, out=np.zeros_like(hsum), where=hprod!=0, casting="unsafe"))
+        print("3: ",(2 - h0divh1))
         result = np.sum(tmp, axis=axis)
     return result
 
