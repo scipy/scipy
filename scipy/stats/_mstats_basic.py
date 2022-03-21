@@ -41,6 +41,7 @@ import warnings
 from collections import namedtuple
 
 from . import distributions
+from scipy._lib._util import _rename_parameter
 import scipy.special as special
 import scipy.stats._stats_py
 
@@ -94,7 +95,7 @@ def argstoarray(*args):
 
     Parameters
     ----------
-    args : sequences
+    *args : sequences
         Group of sequences.
 
     Returns
@@ -751,7 +752,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
     use_missing : {False, True}, optional
         Whether missing data should be allocated a rank of 0 (False) or the
         average rank (True)
-    method: {'auto', 'asymptotic', 'exact'}, optional
+    method : {'auto', 'asymptotic', 'exact'}, optional
         Defines which method is used to calculate the p-value [1]_.
         'asymptotic' uses a normal approximation valid for large samples.
         'exact' computes the exact p-value, but can only be used if no ties
@@ -1060,7 +1061,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     up_slope : float
         Upper bound of the confidence interval on `medslope`.
 
-    See also
+    See Also
     --------
     siegelslopes : a similar technique with repeated medians
 
@@ -1115,7 +1116,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     medintercept : float
         Estimate of the intercept of the regression line.
 
-    See also
+    See Also
     --------
     theilslopes : a similar technique without repeated medians
 
@@ -1474,7 +1475,8 @@ def kruskal(*args):
 kruskalwallis = kruskal
 
 
-def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
+@_rename_parameter("mode", "method")
+def ks_1samp(x, cdf, args=(), alternative="two-sided", method='auto'):
     """
     Computes the Kolmogorov-Smirnov test on one sample of masked values.
 
@@ -1491,7 +1493,7 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
         Distribution parameters, used if `cdf` is a string.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Indicates the alternative hypothesis.  Default is 'two-sided'.
-    mode : {'auto', 'exact', 'asymp'}, optional
+    method : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -1510,10 +1512,11 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
     return scipy.stats._stats_py.ks_1samp(
-        x, cdf, args=args, alternative=alternative, mode=mode)
+        x, cdf, args=args, alternative=alternative, method=method)
 
 
-def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
+@_rename_parameter("mode", "method")
+def ks_2samp(data1, data2, alternative="two-sided", method='auto'):
     """
     Computes the Kolmogorov-Smirnov test on two samples.
 
@@ -1527,7 +1530,7 @@ def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
         Second data set
     alternative : {'two-sided', 'less', 'greater'}, optional
         Indicates the alternative hypothesis.  Default is 'two-sided'.
-    mode : {'auto', 'exact', 'asymp'}, optional
+    method : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -1548,14 +1551,16 @@ def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
     # but the circular dependencies between _mstats_basic and stats prevent that.
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
-    return scipy.stats._stats_py.ks_2samp(data1, data2, alternative=alternative,
-                                      mode=mode)
+    return scipy.stats._stats_py.ks_2samp(data1, data2,
+                                          alternative=alternative,
+                                          method=method)
 
 
 ks_twosamp = ks_2samp
 
 
-def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def kstest(data1, data2, args=(), alternative='two-sided', method='auto'):
     """
 
     Parameters
@@ -1565,7 +1570,7 @@ def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
     args : tuple, sequence, optional
         Distribution parameters, used if `data1` or `data2` are strings.
     alternative : str, as documented in stats.kstest
-    mode : str, as documented in stats.kstest
+    method : str, as documented in stats.kstest
 
     Returns
     -------
@@ -1573,7 +1578,7 @@ def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
 
     """
     return scipy.stats._stats_py.kstest(data1, data2, args,
-                                    alternative=alternative, mode=mode)
+                                        alternative=alternative, method=method)
 
 
 def trima(a, limits=None, inclusive=(True,True)):
@@ -3274,11 +3279,11 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     ----------
     x, y : array_like
         Array of samples, should be one-dimensional.
-    alternative :  'less', 'two-sided', or 'greater', optional
+    alternative : 'less', 'two-sided', or 'greater', optional
         Whether to get the p-value for the one-sided hypothesis ('less'
         or 'greater') or for the two-sided hypothesis ('two-sided').
         Defaults value is 'two-sided' .
-    distribution: 't' or 'normal', optional
+    distribution : 't' or 'normal', optional
         Whether to get the p-value by t-distribution or by standard normal
         distribution.
         Defaults value is 't' .

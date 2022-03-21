@@ -9,7 +9,6 @@ from . import _lil
 __all__ = [  # noqa: F822
     'INT_TYPES',
     'IndexMixin',
-    'asmatrix',
     'bisect_left',
     'check_reshape_kwargs',
     'check_shape',

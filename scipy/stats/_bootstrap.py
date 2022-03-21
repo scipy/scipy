@@ -30,11 +30,16 @@ def _vectorize_statistic(statistic):
         split_indices = np.cumsum(lengths)[:-1]
         z = _broadcast_concatenate(data, axis)
 
+        # move working axis to position 0 so that new dimensions in the output
+        # of `statistic` are _prepended_. ("This axis is removed, and replaced
+        # with new dimensions...")
+        z = np.moveaxis(z, axis, 0)
+
         def stat_1d(z):
             data = np.split(z, split_indices)
             return statistic(*data)
 
-        return np.apply_along_axis(stat_1d, axis, z)[()]
+        return np.apply_along_axis(stat_1d, 0, z)[()]
     return stat_nd
 
 
@@ -104,7 +109,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     sample = data[0]  # only works with 1 sample statistics right now
 
     # calculate z0_hat
-    theta_hat = statistic(sample, axis=axis)[..., None]
+    theta_hat = np.asarray(statistic(sample, axis=axis))[..., None]
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1)
     z0_hat = ndtri(percentile)
 
@@ -212,8 +217,8 @@ fields = ['confidence_interval', 'standard_error']
 BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 
-def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
-              confidence_level=0.95, n_resamples=9999, batch=None,
+def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
+              vectorized=True, paired=False, axis=0, confidence_level=0.95,
               method='BCa', random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
@@ -255,6 +260,14 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
         If `vectorized` is set ``True``,
         `statistic` must also accept a keyword argument `axis` and be
         vectorized to compute the statistic along the provided `axis`.
+    n_resamples : int, default: ``9999``
+        The number of resamples performed to form the bootstrap distribution
+        of the statistic.
+    batch : int, optional
+        The number of resamples to process in each vectorized call to
+        `statistic`. Memory usage is O(`batch`*``n``), where ``n`` is the
+        sample size. Default is ``None``, in which case ``batch = n_resamples``
+        (or ``batch = max(n_resamples, n)`` for ``method='BCa'``).
     vectorized : bool, default: ``True``
         If `vectorized` is set ``False``, `statistic` will not be passed
         keyword argument `axis`, and is assumed to calculate the statistic
@@ -267,14 +280,6 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
         calculated.
     confidence_level : float, default: ``0.95``
         The confidence level of the confidence interval.
-    n_resamples : int, default: ``9999``
-        The number of resamples performed to form the bootstrap distribution
-        of the statistic.
-    batch : int, optional
-        The number of resamples to process in each vectorized call to
-        `statistic`. Memory usage is O(`batch`*``n``), where ``n`` is the
-        sample size. Default is ``None``, in which case ``batch = n_resamples``
-        (or ``batch = max(n_resamples, n)`` for ``method='BCa'``).
     method : {'percentile', 'basic', 'bca'}, default: ``'BCa'``
         Whether to return the 'percentile' bootstrap confidence interval
         (``'percentile'``), the 'reverse' or the bias-corrected and accelerated
@@ -286,12 +291,12 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
 
         Pseudorandom number generator state used to generate resamples.
 
-        If `seed` is ``None`` (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+        If `random_state` is ``None`` (or `np.random`), the
+        `numpy.random.RandomState` singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance then that instance is used.
 
     Returns
     -------
@@ -486,3 +491,230 @@ def bootstrap(data, statistic, *, vectorized=True, paired=False, axis=0,
 
     return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
                            standard_error=np.std(theta_hat_b, ddof=1, axis=-1))
+
+
+# we'll move permutation_test in here, too, and rename this `_resampling.py`
+def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
+                         batch, alternative, axis):
+    """Input validation for `monte_carlo_test`."""
+
+    axis_int = int(axis)
+    if axis != axis_int:
+        raise ValueError("`axis` must be an integer.")
+
+    if vectorized not in {True, False}:
+        raise ValueError("`vectorized` must be `True` or `False`.")
+
+    if not callable(rvs):
+        raise TypeError("`rvs` must be callable.")
+
+    if not callable(statistic):
+        raise TypeError("`statistic` must be callable.")
+
+    if not vectorized:
+        statistic_vectorized = _vectorize_statistic(statistic)
+    else:
+        statistic_vectorized = statistic
+
+    sample = np.atleast_1d(sample)
+    sample = np.moveaxis(sample, axis, -1)
+
+    n_resamples_int = int(n_resamples)
+    if n_resamples != n_resamples_int or n_resamples_int <= 0:
+        raise ValueError("`n_resamples` must be a positive integer.")
+
+    if batch is None:
+        batch_iv = batch
+    else:
+        batch_iv = int(batch)
+        if batch != batch_iv or batch_iv <= 0:
+            raise ValueError("`batch` must be a positive integer or None.")
+
+    alternatives = {'two-sided', 'greater', 'less'}
+    alternative = alternative.lower()
+    if alternative not in alternatives:
+        raise ValueError(f"`alternative` must be in {alternatives}")
+
+    return (sample, rvs, statistic_vectorized, vectorized, n_resamples_int,
+            batch_iv, alternative, axis_int)
+
+
+fields = ['statistic', 'pvalue', 'null_distribution']
+MonteCarloTestResult = make_dataclass("MonteCarloTestResult", fields)
+
+
+def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
+                     n_resamples=9999, batch=None, alternative="two-sided",
+                     axis=0):
+    r"""
+    Monte Carlo test that a sample is drawn from a given distribution.
+
+    The null hypothesis is that the provided `sample` was drawn at random from
+    the distribution for which `rvs` generates random variates. The value of
+    the `statistic` for the given sample is compared against a Monte Carlo null
+    distribution: the value of the statistic for each of `n_resamples`
+    samples generated by `rvs`. This gives the p-value, the probability of
+    observing such an extreme value of the test statistic under the null
+    hypothesis.
+
+    Parameters
+    ----------
+    sample : array-like
+        An array of observations.
+    rvs : callable
+        Generates random variates from the distribution against which `sample`
+        will be tested. `rvs` must be a callable that accepts keyword argument
+        ``size`` (e.g. ``rvs(size=(m, n))``) and returns an N-d array sample
+        of that shape.
+    statistic : callable
+        Statistic for which the p-value of the hypothesis test is to be
+        calculated. `statistic` must be a callable that accepts a sample
+        (e.g. ``statistic(sample)``) and returns the resulting statistic.
+        If `vectorized` is set ``True``, `statistic` must also accept a keyword
+        argument `axis` and be vectorized to compute the statistic along the
+        provided `axis` of the sample array.
+    vectorized : bool, default: ``False``
+        By default, `statistic` is assumed to calculate the statistic only for
+        a 1D arrays `sample`. If `vectorized` is set ``True``, `statistic` must
+        also accept a keyword argument `axis` and be vectorized to compute the
+        statistic along the provided `axis` of an ND sample array. Use of a
+        vectorized statistic can reduce computation time.
+    n_resamples : int, default: 9999
+        Number of random permutations used to approximate the Monte Carlo null
+        distribution.
+    batch : int, optional
+        The number of permutations to process in each call to `statistic`.
+        Memory usage is O(`batch`*``sample.size[axis]``). Default is
+        ``None``, in which case `batch` equals `n_resamples`.
+    alternative : {'two-sided', 'less', 'greater'}
+        The alternative hypothesis for which the p-value is calculated.
+        For each alternative, the p-value is defined as follows.
+
+        - ``'greater'`` : the percentage of the null distribution that is
+          greater than or equal to the observed value of the test statistic.
+        - ``'less'`` : the percentage of the null distribution that is
+          less than or equal to the observed value of the test statistic.
+        - ``'two-sided'`` : twice the smaller of the p-values above.
+
+    axis : int, default: 0
+        The axis of `sample` over which to calculate the statistic.
+
+    Returns
+    -------
+    statistic : float or ndarray
+        The observed test statistic of the sample.
+    pvalue : float or ndarray
+        The p-value for the given alternative.
+    null_distribution : ndarray
+        The values of the test statistic generated under the null hypothesis.
+
+    Examples
+    --------
+
+    Suppose we wish to test whether a small sample has been drawn from a normal
+    distribution. We decide that we will use the skew of the sample as a
+    test statistic, and we will consider a p-value of 0.05 to be statistically
+    significant.
+
+    >>> import numpy as np
+    >>> from scipy import stats
+    >>> def statistic(x, axis):
+    ...     return stats.skew(x, axis)
+
+    After collecting our data, we calculate the observed value of the test
+    statistic.
+
+    >>> rng = np.random.default_rng()
+    >>> x = stats.skewnorm.rvs(a=1, size=50, random_state=rng)
+    >>> statistic(x, axis=0)
+    0.12457412450240658
+
+    To determine the probability of observing such an extreme value of the
+    skewness by chance if the sample were drawn from the normal distribution,
+    we can perform a Monte Carlo hypothesis test. The test will draw many
+    samples at random from their normal distribution, calculate the skewness
+    of each sample, and compare our original skewness against this
+    distribution to determine an approximate p-value.
+
+    >>> from scipy.stats import monte_carlo_test
+    >>> # because our statistic is vectorized, we pass `vectorized=True`
+    >>> rvs = lambda size: stats.norm.rvs(size=size, random_state=rng)
+    >>> res = monte_carlo_test(x, rvs, statistic, vectorized=True)
+    >>> print(res.statistic)
+    0.12457412450240658
+    >>> print(res.pvalue)
+    0.701070107010701
+
+    The probability of obtaining a test statistic less than or equal to the
+    observed value under the null hypothesis is ~70%. This is greater than
+    our chosen threshold of 5%, so we cannot consider this to to be significant
+    evidence against the null hypothesis.
+
+    Note that this p-value essentially matches that of
+    `scipy.stats.skewtest`, which relies on an asymptotic distribution of a
+    test statistic based on the sample skewness.
+
+    >>> stats.skewtest(x).pvalue
+    0.6892046027110614
+
+    This asymptotic approximation is not valid for small sample sizes, but
+    `monte_carlo_test` can be used with samples of any size.
+
+    >>> x = stats.skewnorm.rvs(a=1, size=7, random_state=rng)
+    >>> # stats.skewtest(x) would produce an error due to small sample
+    >>> res = monte_carlo_test(x, rvs, statistic, vectorized=True)
+
+    The Monte Carlo distribution of the test statistic is provided for
+    further investigation.
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(res.null_distribution, bins=50)
+    >>> ax.set_title("Monte Carlo distribution of test statistic")
+    >>> ax.set_xlabel("Value of Statistic")
+    >>> ax.set_ylabel("Frequency")
+    >>> plt.show()
+
+    """
+    args = _monte_carlo_test_iv(sample, rvs, statistic, vectorized,
+                                n_resamples, batch, alternative, axis)
+    (sample, rvs, statistic, vectorized,
+     n_resamples, batch, alternative, axis) = args
+
+    # Some statistics return plain floats; ensure they're at least np.float64
+    observed = np.asarray(statistic(sample, axis=-1))[()]
+
+    n_observations = sample.shape[-1]
+    batch_nominal = batch or n_resamples
+    null_distribution = []
+    for k in range(0, n_resamples, batch_nominal):
+        batch_actual = min(batch_nominal, n_resamples-k)
+        resamples = rvs(size=(batch_actual, n_observations))
+        null_distribution.append(statistic(resamples, axis=-1))
+    null_distribution = np.concatenate(null_distribution)
+    null_distribution = null_distribution.reshape([-1] + [1]*observed.ndim)
+
+    def less(null_distribution, observed):
+        cmps = null_distribution <= observed
+        pvalues = cmps.sum(axis=0) / n_resamples
+        return pvalues
+
+    def greater(null_distribution, observed):
+        cmps = null_distribution >= observed
+        pvalues = cmps.sum(axis=0) / n_resamples
+        return pvalues
+
+    def two_sided(null_distribution, observed):
+        pvalues_less = less(null_distribution, observed)
+        pvalues_greater = greater(null_distribution, observed)
+        pvalues = np.minimum(pvalues_less, pvalues_greater) * 2
+        return pvalues
+
+    compare = {"less": less,
+               "greater": greater,
+               "two-sided": two_sided}
+
+    pvalues = compare[alternative](null_distribution, observed)
+    pvalues = np.clip(pvalues, 0, 1)
+
+    return MonteCarloTestResult(observed, pvalues, null_distribution)

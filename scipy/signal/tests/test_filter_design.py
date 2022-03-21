@@ -1,6 +1,6 @@
 import warnings
 
-from distutils.version import LooseVersion
+from scipy._lib import _pep440
 import numpy as np
 from numpy.testing import (assert_array_almost_equal,
                            assert_array_equal, assert_array_less,
@@ -30,7 +30,7 @@ except ImportError:
 
 def mpmath_check(min_ver):
     return pytest.mark.skipif(mpmath is None or
-                              LooseVersion(mpmath.__version__) < LooseVersion(min_ver),
+                              _pep440.parse(mpmath.__version__) < _pep440.Version(min_ver),
                               reason="mpmath version >= %s required" % min_ver)
 
 
@@ -1539,6 +1539,10 @@ class TestButtord:
         with pytest.raises(ValueError) as exc_info:
             buttord([20, 50], [14, 60], 1, -2)
         assert "gstop should be larger than 0.0" in str(exc_info.value)
+
+    def test_runtime_warnings(self):
+        with pytest.warns(RuntimeWarning, match=r'Order is zero'):
+            buttord(0.0, 1.0, 3, 60)
 
 
 class TestCheb1ord:
@@ -3970,8 +3974,7 @@ class TestGroupDelay:
 
     def test_singular(self):
         # Let's create a filter with zeros and poles on the unit circle and
-        # check if warning is raised and the group delay is set to zero at
-        # these frequencies.
+        # check if warnings are raised at those frequencies.
         z1 = np.exp(1j * 0.1 * pi)
         z2 = np.exp(1j * 0.25 * pi)
         p1 = np.exp(1j * 0.5 * pi)
@@ -3981,7 +3984,6 @@ class TestGroupDelay:
         w = np.array([0.1 * pi, 0.25 * pi, -0.5 * pi, -0.8 * pi])
 
         w, gd = assert_warns(UserWarning, group_delay, (b, a), w=w)
-        assert_allclose(gd, 0)
 
     def test_backward_compat(self):
         # For backward compatibility, test if None act as a wrapper for default

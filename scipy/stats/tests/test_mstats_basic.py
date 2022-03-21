@@ -452,7 +452,7 @@ class TestCorr:
             res = _mstats_basic._kendall_p_exact(nc[0], nc[1])
             assert_almost_equal(res, expected)
 
-    @pytest.mark.slow
+    @pytest.mark.xslow
     def test_kendall_p_exact_large(self):
         # Test for the exact method with large samples (n >= 171)
         # expected values generated using SymPy
@@ -1737,8 +1737,8 @@ class TestCompareWithStats:
                 r = stats.skewtest(x)
                 rm = stats.mstats.skewtest(xm)
 
-                assert_equal(r[0][0], rm[0][0])
-                assert_equal(r[0][1], rm[0][1])
+                assert_allclose(r[0][0], rm[0][0], rtol=2e-15)
+                assert_allclose(r[0][1], rm[0][1], rtol=1e-15)
 
     def test_normaltest(self):
         with np.errstate(over='raise'), suppress_warnings() as sup:
@@ -1816,8 +1816,8 @@ class TestCompareWithStats:
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings() as sup:
                 if mode in ['auto', 'exact']:
-                    sup.filter(RuntimeWarning,
-                               "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+                    message = "ks_2samp: Exact calculation unsuccessful."
+                    sup.filter(RuntimeWarning, message)
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
@@ -1832,8 +1832,8 @@ class TestCompareWithStats:
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings() as sup:
                 if mode in ['auto', 'exact']:
-                    sup.filter(RuntimeWarning,
-                               "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+                    message = "ks_2samp: Exact calculation unsuccessful."
+                    sup.filter(RuntimeWarning, message)
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)

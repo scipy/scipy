@@ -37,7 +37,7 @@ if trapezoid.__doc__:
 # Note: alias kept for backwards compatibility. Rename was done
 # because trapz is a slur in colloquial English (see gh-12924).
 def trapz(y, x=None, dx=1.0, axis=-1):
-    """`An alias of `trapezoid`.
+    """An alias of `trapezoid`.
 
     `trapz` is kept for backwards compatibility. For new code, prefer
     `trapezoid` instead.
@@ -108,7 +108,6 @@ def fixed_quad(func, a, b, args=(), n=5):
         Gaussian quadrature approximation to the integral
     none : None
         Statically returned value of None
-
 
     See Also
     --------
@@ -232,18 +231,18 @@ def quadrature(func, a, b, args=(), tol=1.49e-8, rtol=1.49e-8, maxiter=50,
     err : float
         Difference between last two estimates of the integral.
 
-    See also
+    See Also
     --------
-    romberg: adaptive Romberg quadrature
-    fixed_quad: fixed-order Gaussian quadrature
-    quad: adaptive quadrature using QUADPACK
-    dblquad: double integrals
-    tplquad: triple integrals
-    romb: integrator for sampled data
-    simpson: integrator for sampled data
-    cumulative_trapezoid: cumulative integration for sampled data
-    ode: ODE integrator
-    odeint: ODE integrator
+    romberg : adaptive Romberg quadrature
+    fixed_quad : fixed-order Gaussian quadrature
+    quad : adaptive quadrature using QUADPACK
+    dblquad : double integrals
+    tplquad : triple integrals
+    romb : integrator for sampled data
+    simpson : integrator for sampled data
+    cumulative_trapezoid : cumulative integration for sampled data
+    ode : ODE integrator
+    odeint : ODE integrator
 
     Examples
     --------
@@ -289,7 +288,7 @@ def tupleset(t, i, value):
 # Note: alias kept for backwards compatibility. Rename was done
 # because cumtrapz is a slur in colloquial English (see gh-12924).
 def cumtrapz(y, x=None, dx=1.0, axis=-1, initial=None):
-    """`An alias of `cumulative_trapezoid`.
+    """An alias of `cumulative_trapezoid`.
 
     `cumtrapz` is kept for backwards compatibility. For new code, prefer
     `cumulative_trapezoid` instead.
@@ -329,15 +328,15 @@ def cumulative_trapezoid(y, x=None, dx=1.0, axis=-1, initial=None):
     See Also
     --------
     numpy.cumsum, numpy.cumprod
-    quad: adaptive quadrature using QUADPACK
-    romberg: adaptive Romberg quadrature
-    quadrature: adaptive Gaussian quadrature
-    fixed_quad: fixed-order Gaussian quadrature
-    dblquad: double integrals
-    tplquad: triple integrals
-    romb: integrators for sampled data
-    ode: ODE integrators
-    odeint: ODE integrators
+    quad : adaptive quadrature using QUADPACK
+    romberg : adaptive Romberg quadrature
+    quadrature : adaptive Gaussian quadrature
+    fixed_quad : fixed-order Gaussian quadrature
+    dblquad : double integrals
+    tplquad : triple integrals
+    romb : integrators for sampled data
+    ode : ODE integrators
+    odeint : ODE integrators
 
     Examples
     --------
@@ -423,7 +422,7 @@ def _basic_simpson(y, start, stop, x, dx, axis):
 # Note: alias kept for backwards compatibility. simps was renamed to simpson
 # because the former is a slur in colloquial English (see gh-12924).
 def simps(y, x=None, dx=1.0, axis=-1, even='avg'):
-    """`An alias of `simpson`.
+    """An alias of `simpson`.
 
     `simps` is kept for backwards compatibility. For new code, prefer
     `simpson` instead.
@@ -464,16 +463,16 @@ def simpson(y, x=None, dx=1.0, axis=-1, even='avg'):
 
     See Also
     --------
-    quad: adaptive quadrature using QUADPACK
-    romberg: adaptive Romberg quadrature
-    quadrature: adaptive Gaussian quadrature
-    fixed_quad: fixed-order Gaussian quadrature
-    dblquad: double integrals
-    tplquad: triple integrals
-    romb: integrators for sampled data
-    cumulative_trapezoid: cumulative integration for sampled data
-    ode: ODE integrators
-    odeint: ODE integrators
+    quad : adaptive quadrature using QUADPACK
+    romberg : adaptive Romberg quadrature
+    quadrature : adaptive Gaussian quadrature
+    fixed_quad : fixed-order Gaussian quadrature
+    dblquad : double integrals
+    tplquad : triple integrals
+    romb : integrators for sampled data
+    cumulative_trapezoid : cumulative integration for sampled data
+    ode : ODE integrators
+    odeint : ODE integrators
 
     Notes
     -----
@@ -578,7 +577,7 @@ def romb(y, dx=1.0, axis=-1, show=False):
     romb : ndarray
         The integrated result for `axis`.
 
-    See also
+    See Also
     --------
     quad : adaptive quadrature using QUADPACK
     romberg : adaptive Romberg quadrature
@@ -759,7 +758,7 @@ def romberg(function, a, b, args=(), tol=1.48e-8, rtol=1.48e-8, show=False,
 
     Returns
     -------
-    results  : float
+    results : float
         Result of the integration.
 
     Other Parameters

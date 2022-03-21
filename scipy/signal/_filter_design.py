@@ -683,15 +683,25 @@ def group_delay(system, w=512, whole=False, fs=2*pi):
     z = np.exp(-1j * w)
     num = np.polyval(cr[::-1], z)
     den = np.polyval(c[::-1], z)
-    singular = np.absolute(den) < 10 * EPSILON
+    gd = np.real(num / den) - a.size + 1
+    singular = ~np.isfinite(gd)
+    near_singular = np.absolute(den) < 10 * EPSILON
+
     if np.any(singular):
+        gd[singular] = 0
         warnings.warn(
             "The group delay is singular at frequencies [{0}], setting to 0".
-            format(", ".join("{0:.3f}".format(ws) for ws in w[singular]))
+            format(", ".join("{0:.3f}".format(ws) for ws in w[singular])),
+            stacklevel=2
         )
 
-    gd = np.zeros_like(w)
-    gd[~singular] = np.real(num[~singular] / den[~singular]) - a.size + 1
+    elif np.any(near_singular):
+        warnings.warn(
+            "The filter's denominator is extremely small at frequencies [{0}], \
+            around which a singularity may be present".
+            format(", ".join("{0:.3f}".format(ws) for ws in w[near_singular])),
+            stacklevel=2
+        )
 
     w = w*fs/(2*pi)
 
@@ -2932,7 +2942,10 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
     Parameters
     ----------
     N : int
-        The order of the filter.
+        The order of the filter. For 'bandpass' and 'bandstop' filters,
+        the resulting order of the final second-order sections ('sos')
+        matrix is ``2*N``, with `N` the number of biquad sections
+        of the desired system.
     Wn : array_like
         The critical frequency or frequencies. For lowpass and highpass
         filters, Wn is a scalar; for bandpass and bandstop filters,
@@ -3751,7 +3764,8 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
         W0 = (GPASS - 1.0) ** (-1.0 / (2.0 * ord))
     except ZeroDivisionError:
         W0 = 1.0
-        print("Warning, order is zero...check input parameters.")
+        warnings.warn("Order is zero...check input parameters.",
+                      RuntimeWarning, 2)
 
     # now convert this frequency back from lowpass prototype
     # to the original analog filter
@@ -4389,10 +4403,10 @@ def _arc_jac_sn(w, m):
 
     Parameters
     ----------
-    w - complex scalar
+    w : complex scalar
         argument
 
-    m - scalar
+    m : scalar
         modulus; in interval [0, 1]
 
 

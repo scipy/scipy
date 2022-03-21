@@ -594,7 +594,7 @@ pdist_cosine(const double *X, double *dm, const npy_intp num_rows,
             cosine = dot_product(u, v, num_cols) / (norms_buff[i] * norms_buff[j]);
             if (fabs(cosine) > 1.) {
                 /* Clip to correct rounding error. */
-                cosine = npy_copysign(1, cosine);
+                cosine = copysign(1, cosine);
             }
             *dm = 1. - cosine;
         }
@@ -791,7 +791,7 @@ cdist_cosine(const double *XA, const double *XB, double *dm, const npy_intp num_
             cosine = dot_product(u, v, num_cols) / (norms_buffA[i] * norms_buffB[j]);
             if (fabs(cosine) > 1.) {
                 /* Clip to correct rounding error. */
-                cosine = npy_copysign(1, cosine);
+                cosine = copysign(1, cosine);
             }
             *dm = 1. - cosine;
         }

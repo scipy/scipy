@@ -5,15 +5,14 @@
 import operator
 import numpy as np
 import math
+import warnings
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
-from . import _ufuncs as ufuncs
+from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, hankel1, hankel2, yv, kv, ndtri,
-                      poch, binom, hyp0f1)
+                      psi, hankel1, hankel2, yv, kv, poch, binom)
 from . import _specfun
-from . import _orthogonal
 from ._comb import _comb_int
 
 
@@ -38,37 +37,27 @@ __all__ = [
     'fresnel_zeros',
     'fresnelc_zeros',
     'fresnels_zeros',
-    'gamma',
     'h1vp',
     'h2vp',
-    'hankel1',
-    'hankel2',
-    'hyp0f1',
-    'iv',
     'ivp',
     'jn_zeros',
     'jnjnp_zeros',
     'jnp_zeros',
     'jnyn_zeros',
-    'jv',
     'jvp',
     'kei_zeros',
     'keip_zeros',
     'kelvin_zeros',
     'ker_zeros',
     'kerp_zeros',
-    'kv',
     'kvp',
     'lmbda',
     'lpmn',
     'lpn',
     'lqmn',
     'lqn',
-    'mathieu_a',
-    'mathieu_b',
     'mathieu_even_coef',
     'mathieu_odd_coef',
-    'ndtri',
     'obl_cv_seq',
     'pbdn_seq',
     'pbdv_seq',
@@ -76,7 +65,6 @@ __all__ = [
     'perm',
     'polygamma',
     'pro_cv_seq',
-    'psi',
     'riccati_jn',
     'riccati_yn',
     'sinc',
@@ -85,7 +73,6 @@ __all__ = [
     'y1p_zeros',
     'yn_zeros',
     'ynp_zeros',
-    'yv',
     'yvp',
     'zeta'
 ]
@@ -1074,7 +1061,7 @@ def assoc_laguerre(x, n, k=0.0):
     reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
 
     """
-    return _orthogonal.eval_genlaguerre(n, k, x)
+    return _ufuncs.eval_genlaguerre(n, k, x)
 
 
 digamma = psi
@@ -1171,7 +1158,7 @@ def mathieu_even_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        print("Warning, too many predicted coefficients.")
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
     kd = 1
     m = int(floor(m))
     if m % 2:
@@ -1228,7 +1215,7 @@ def mathieu_odd_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        print("Warning, too many predicted coefficients.")
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
     kd = 4
     m = int(floor(m))
     if m % 2:
@@ -1298,7 +1285,7 @@ def lpmn(m, n, z):
     if (m < 0):
         mp = -m
         mf, nf = mgrid[0:mp+1, 0:n+1]
-        with ufuncs.errstate(all='ignore'):
+        with _ufuncs.errstate(all='ignore'):
             if abs(z) < 1:
                 # Ferrer function; DLMF 14.9.3
                 fixarr = where(mf > nf, 0.0,
@@ -1381,7 +1368,7 @@ def clpmn(m, n, z, type=3):
     if (m < 0):
         mp = -m
         mf, nf = mgrid[0:mp+1, 0:n+1]
-        with ufuncs.errstate(all='ignore'):
+        with _ufuncs.errstate(all='ignore'):
             if type == 2:
                 fixarr = where(mf > nf, 0.0,
                                (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
@@ -2173,7 +2160,7 @@ def obl_cv_seq(m, n, c):
     return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False):
+def comb(N, k, exact=False, repetition=False, legacy=True):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2185,11 +2172,25 @@ def comb(N, k, exact=False, repetition=False):
     k : int, ndarray
         Number of elements taken.
     exact : bool, optional
-        If `exact` is False, then floating point precision is used, otherwise
-        exact long integer is computed.
+        For integers, if `exact` is False, then floating point precision is
+        used, otherwise the result is computed exactly. For non-integers, if
+        `exact` is True, the inputs are currently cast to integers, though
+        this behavior is deprecated (see below).
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
+    legacy : bool, optional
+        If `legacy` is True and `exact` is True, then non-integral arguments
+        are cast to ints; if `legacy` is False, the result for non-integral
+        arguments is unaffected by the value of `exact`.
+
+        .. deprecated:: 1.9.0
+            Non-integer arguments are currently being cast to integers when
+            `exact=True`. This behaviour is deprecated and the default will
+            change to avoid the cast in SciPy 1.11.0. To opt into the future
+            behavior set `legacy=False`. If you want to keep the
+            argument-casting but silence this warning, cast your inputs
+            directly, e.g. ``comb(int(your_N), int(your_k), exact=True)``.
 
     Returns
     -------
@@ -2198,7 +2199,8 @@ def comb(N, k, exact=False, repetition=False):
 
     See Also
     --------
-    binom : Binomial coefficient ufunc
+    binom : Binomial coefficient considered as a function of two real
+            variables.
 
     Notes
     -----
@@ -2220,8 +2222,23 @@ def comb(N, k, exact=False, repetition=False):
 
     """
     if repetition:
-        return comb(N + k - 1, k, exact)
+        return comb(N + k - 1, k, exact, legacy=legacy)
     if exact:
+        if int(N) != N or int(k) != k:
+            if legacy:
+                warnings.warn(
+                    "Non-integer arguments are currently being cast to "
+                    "integers when exact=True. This behaviour is "
+                    "deprecated and the default will change to avoid the cast "
+                    "in SciPy 1.11.0. To opt into the future behavior set "
+                    "legacy=False. If you want to keep the argument-casting "
+                    "but silence this warning, cast your inputs directly, "
+                    "e.g. comb(int(your_N), int(your_k), exact=True).",
+                    DeprecationWarning, stacklevel=2
+                )
+            else:
+                return comb(N, k)
+        # _comb_int casts inputs to integers
         return _comb_int(N, k)
     else:
         k, N = asarray(k), asarray(N)
@@ -2398,7 +2415,7 @@ def factorial(n, exact=False):
                 out[np.isnan(n)] = n[np.isnan(n)]
             return out
     else:
-        out = ufuncs._factorial(n)
+        out = _ufuncs._factorial(n)
         return out
 
 
@@ -2415,7 +2432,8 @@ def factorial2(n, exact=False):
     ----------
     n : int or array_like
         Calculate ``n!!``.  Arrays are only supported with `exact` set
-        to False.  If ``n < 0``, the return value is 0.
+        to False. If ``n < -1``, the return value is 0.
+        Otherwise if ``n <= 0``, the return value is 1.
     exact : bool, optional
         The result can be approximated rapidly using the gamma-formula
         above (default).  If `exact` is set to True, calculate the
@@ -2475,7 +2493,8 @@ def factorialk(n, k, exact=True):
     Parameters
     ----------
     n : int
-        Calculate multifactorial. If `n` < 0, the return value is 0.
+        Calculate multifactorial. If ``n < 1 - k``, the return value is 0.
+        Otherwise if ``n <= 0``, the return value is 1.
     k : int
         Order of multifactorial.
     exact : bool, optional
@@ -2575,6 +2594,6 @@ def zeta(x, q=None, out=None):
 
     """
     if q is None:
-        return ufuncs._riemann_zeta(x, out)
+        return _ufuncs._riemann_zeta(x, out)
     else:
-        return ufuncs._zeta(x, q, out)
+        return _ufuncs._zeta(x, q, out)
