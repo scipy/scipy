@@ -411,13 +411,12 @@ def _basic_simpson(y, start, stop, x, dx, axis):
         h1 = np.float64(h[sl1])
         hsum = h0 + h1
         hprod = h0 * h1
-        h0divh1 = np.true_divide(h0, 
-                                h1, 
+        h0divh1 = np.true_divide(h0, h1, 
                                 out=np.zeros_like(h0), 
                                 where=h1 != 0)
         tmp = hsum/6.0 * (y[slice0] * (2.0 - np.true_divide(1.0, h0divh1,
                                                             out=np.zeros_like(h0divh1), 
-                                                            where=h0divh1 != 0))
+                                                            where=h0divh1 != 0)) +
                           y[slice1] * (hsum * np.true_divide(hsum, hprod,
                                                             out=np.zeros_like(hsum), 
                                                             where=hprod != 0)) +
