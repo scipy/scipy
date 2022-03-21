@@ -8567,7 +8567,7 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     independent random variables whose probability distribution is :math:`u`
     (resp. :math:`v`).
 
-    This is the square root of a quantity also referred to as the "energy
+    Sometimes the square of this quantity is referred to as the "energy
     distance" (e.g. in [2]_, [4]_), but as noted in [1]_ and [3]_, this square
     root version satisfies the axioms of a distance function (metric).
 
