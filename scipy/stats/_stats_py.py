@@ -8568,8 +8568,8 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     (resp. :math:`v`).
 
     Sometimes the square of this quantity is referred to as the "energy
-    distance" (e.g. in [2]_, [4]_), but as noted in [1]_ and [3]_, this square
-    root version satisfies the axioms of a distance function (metric).
+    distance" (e.g. in [2]_, [4]_), but as noted in [1]_ and [3]_, only the
+    definition above satisfies the axioms of a distance function (metric).
 
     As shown in [2]_, for one-dimensional real-valued variables, the energy
     distance is linked to the non-distribution-free version of the Cramér-von
