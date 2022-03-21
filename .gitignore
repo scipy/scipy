@@ -1,5 +1,4 @@
 # Editor temporary/working/backup files #
-#########################################
 .#*
 [#]*#
 *~
@@ -22,7 +21,6 @@ tags
 .vscode/
 
 # Compiled source #
-###################
 *.a
 *.com
 *.class
@@ -36,7 +34,6 @@ tags
 _configtest.c
 
 # Packages #
-############
 # it's better to unpack these files and commit the raw source
 # git has its own built in compression methods
 *.7z
@@ -53,7 +50,6 @@ _configtest.c
 *.zip
 
 # Python files #
-################
 # setup.py working directory
 build
 # sphinx build directory
@@ -82,31 +78,25 @@ pip-wheel-metadata
 installdir/
 
 # Paver generated files #
-#########################
 /release
 
 # Logs and databases #
-######################
 *.log
 *.sql
 *.sqlite
 
 # pytest cache #
-################
 .cache/*
 .pytest_cache/*
 
 # mypy cache #
-##############
 .mypy_cache/*
 
 # Patches #
-###########
 *.patch
 *.diff
 
 # OS generated files #
-######################
 .directory
 .fseventsd
 .DS_Store*
@@ -118,12 +108,10 @@ Thumbs.db
 *.dSYM
 
 # Documentation generated files #
-#################################
 doc/frontpage/build
 doc/source/reference/generated
 
 # Things specific to this project #
-###################################
 benchmarks/env
 benchmarks/results
 benchmarks/scipy
