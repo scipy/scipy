@@ -5387,6 +5387,7 @@ class TestStudentizedRange:
                         rtol=src_case["expected_rtol"])
 
     @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("intermittent RuntimeWarning: invalid value.")
     @pytest.mark.parametrize("case_result", pregenerated_data["moment_data"])
     def test_moment_against_mp(self, case_result):
         src_case = case_result["src_case"]
@@ -5428,6 +5429,7 @@ class TestStudentizedRange:
         assert_allclose(res, r_res)
 
     @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("intermittent RuntimeWarning: invalid value.")
     def test_moment_vectorization(self):
         # Test moment broadcasting. Calls `_munp` directly because
         # `rv_continuous.moment` is broken at time of writing. See gh-12192
@@ -6941,3 +6943,20 @@ def test_distr_params_lists():
     cont_distnames = {name for name, _ in distcont}
     invcont_distnames = {name for name, _ in invdistcont}
     assert cont_distnames == invcont_distnames
+
+
+def test_moment_order_4():
+    # gh-13655 reported that if a distribution has a `_stats` method that
+    # accepts the `moments` parameter, then if the distribution's `moment`
+    # method is called with `order=4`, the faster/more accurate`_stats` gets
+    # called, but the results aren't used, and the generic `_munp` method is
+    # called to calculate the moment anyway. This tests that the issue has
+    # been fixed.
+    # stats.skewnorm._stats accepts the `moments` keyword
+    stats.skewnorm._stats(a=0, moments='k')  # no failure = has `moments`
+    # When `moment` is called, `_stats` is used, so the moment is very accurate
+    # (exactly equal to Pearson's kurtosis of the normal distribution, 3)
+    assert stats.skewnorm.moment(order=4, a=0) == 3.0
+    # Had the moment been calculated using `_munp`, the result would have been
+    # less accurate:
+    assert stats.skewnorm._munp(4, 0) != 3.0
