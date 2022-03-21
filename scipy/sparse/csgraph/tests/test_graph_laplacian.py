@@ -345,4 +345,4 @@ def test_format(dtype, arr_type, normed, symmetrized, use_out_degree, form):
 
 def test_format_error_message():
     with pytest.raises(ValueError, match="Invalid form: 'toto'"):
-        _ = csgraph.laplacian(np.array([1]), form='toto')
+        _ = csgraph.laplacian(np.eye(1), form = 'toto')
