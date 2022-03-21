@@ -1390,7 +1390,7 @@ class rv_generic:
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
             if self._stats_has_moments:
-                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
+                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'mvsk'}[n]}
             else:
                 mdict = {}
             mu, mu2, g1, g2 = self._stats(*shapes, **mdict)
