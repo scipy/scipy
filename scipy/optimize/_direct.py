@@ -157,9 +157,9 @@ def direct(
     volume decreases exponentially with increasing dimensionality of the
     problem. Therefore `vol_tol` should be decreased to avoid premature
     termination of the algorithm for higher dimensions. This does not hold
-    for `len_tol`: it refers either to half of the diagonal (for
-    `locally_biased=True`) or half of the minimal side length of the
-    hyperrectangle (`locally_biased=False`).
+    for `len_tol`: it refers either to half of the maximal side length
+    (for `locally_biased=True`) or half of the diagonal of the
+    hyperrectangle (for `locally_biased=False`).
 
     This code is based on the DIRECT 2.0.4 Fortran code by Gablonsky et al. at
     https://ctk.math.ncsu.edu/SOFTWARE/DIRECTv204.tar.gz .
