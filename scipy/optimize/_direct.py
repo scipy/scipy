@@ -135,7 +135,7 @@ def direct(
     DIRECT is a deterministic global
     optimization algorithm capable of minimizing a black box function with
     its variables subject to lower and upper bound constraints by sampling
-    potential solutions in the search space. The algorithm starts by
+    potential solutions in the search space [1]_. The algorithm starts by
     normalising the search space to an n-dimensional unit hypercube.
     It samples the function at the center of this hypercube and at 2n
     (n is the number of variables) more points, 2 in each coordinate
@@ -152,8 +152,17 @@ def direct(
     used by default. It makes the search more locally biased and more
     efficient for cases with only a few local minima.
 
+    A note about termination criteria: `vol_tol` refers to the volume of the
+    hyperrectangle containing the lowest function value found so far. This
+    volume decreases exponentially with increasing dimensionality of the
+    problem. Therefore `vol_tol` should be decreased to avoid premature
+    termination of the algorithm for higher dimensions. This does not hold
+    for `len_tol`: it refers either to half of the diagonal (for
+    `locally_biased=True`) or half of the minimal side length of the
+    hyperrectangle (`locally_biased=False`).
+
     This code is based on the DIRECT 2.0.4 Fortran code by Gablonsky et al. at
-    https://ctk.math.ncsu.edu/SOFTWARE/DIRECTv204.tar.gz
+    https://ctk.math.ncsu.edu/SOFTWARE/DIRECTv204.tar.gz .
     This original version was initially converted via f2c and then cleaned up
     and reorganized by Steven G. Johnson, August 2007, for the nlopt project.
     This method wraps the C implementation.
