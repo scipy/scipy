@@ -536,6 +536,35 @@ class TestFisherExact:
             np.testing.assert_almost_equal(res[1], res_r[1], decimal=11,
                                            verbose=True)
 
+    def test_gh4130(self):
+        # Previously, a fudge factor used to distinguish between theoeretically
+        # and numerically different probability masses was 1e-4; it has been
+        # tightened to fix gh4130. Accuracy checked against R fisher.test.
+        # options(digits=16)
+        # table <- matrix(c(6, 108, 37, 200), nrow = 2)
+        # fisher.test(table, alternative = "t")
+        x = [[6, 37], [108, 200]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 0.005092697748126)
+
+        # case from https://github.com/brentp/fishers_exact_test/issues/27
+        # That package has an (absolute?) fudge factor of 1e-6; too big
+        x = [[22, 0], [0, 102]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 7.175066786244549e-25)
+
+        # case from https://github.com/brentp/fishers_exact_test/issues/1
+        x = [[94, 48], [3577, 16988]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 2.069356340993818e-37)
+
+    def test_gh9231(self):
+        # Previously, fisher_exact was extremely slow for this table
+        # As reported in gh-9231, the p-value should be very nearly zero
+        x = [[5829225, 5692693], [5760959, 5760959]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 0, atol=1e-170)
+
     @pytest.mark.slow
     def test_large_numbers(self):
         # Test with some large numbers. Regression test for #1401
