@@ -50,7 +50,7 @@ def direct(
     locally_biased: bool = True,
     f_min: float = -np.inf,
     f_min_rtol: float = 1e-4,
-    vol_tol: float = 1e-10,
+    vol_tol: float = 1e-12,
     len_tol: float = 1e-5,
     callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
 ) -> OptimizeResult:
@@ -107,7 +107,7 @@ def direct(
         Terminate the optimization once the volume of the hyperrectangle
         containing the lowest function value is smaller than `vol_tol`
         of the complete search space. Must lie between 0 and 1.
-        Default is 1e-10.
+        Default is 1e-12.
     len_tol : float, optional
         If `locally_biased=True`, terminate the optimization once half of
         the normalized maximal side length of the hyperrectangle containing
