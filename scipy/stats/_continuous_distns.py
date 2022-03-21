@@ -30,6 +30,7 @@ from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
+from scipy.optimize import root_scalar
 
 
 def _remove_optimizer_parameters(kwds):
@@ -5025,11 +5026,9 @@ class lognorm_gen(rv_continuous):
 
     %(after_notes)s
 
-    A common parametrization for a lognormal random variable ``Y`` is in
-    terms of the mean, ``mu``, and standard deviation, ``sigma``, of the
-    unique normally distributed random variable ``X`` such that exp(X) = Y.
-    This parametrization corresponds to setting ``s = sigma`` and ``scale =
-    exp(mu)``.
+    Suppose a normally distributed random variable ``X`` has  mean ``mu`` and
+    standard deviation ``sigma``. Then ``Y = exp(X)`` is lognormally
+    distributed with ``s = sigma`` and ``scale = exp(mu)``.
 
     %(example)s
 
@@ -6242,20 +6241,86 @@ class pareto_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         parameters = _check_fit_input_parameters(self, data, args, kwds)
         data, fshape, floc, fscale = parameters
-        if floc is None:
-            return super().fit(data, **kwds)
-        if np.any(data - floc < (fscale if fscale else 0)):
-            raise FitDataError("pareto", lower=1, upper=np.inf)
-        data = data - floc
 
+        # ensure that any fixed parameters don't violate constraints of the
+        # distribution before continuing.
+        if floc is not None and np.min(data) - floc < (fscale or 0):
+            raise FitDataError("pareto", lower=1, upper=np.inf)
+
+        ndata = data.shape[0]
+
+        def get_shape(scale, location):
+            # The first-order necessary condition on `shape` can be solved in
+            # closed form
+            return ndata / np.sum(np.log((data - location) / scale))
+
+        if floc is fscale is None:
+            # The support of the distribution is `(x - loc)/scale > 0`.
+            # The method of Lagrange multipliers turns this constraint
+            # into an equation that can be solved numerically.
+            # See gh-12545 for details.
+
+            def dL_dScale(shape, scale):
+                # The partial derivative of the log-likelihood function w.r.t.
+                # the scale.
+                return ndata * shape / scale
+
+            def dL_dLocation(shape, location):
+                # The partial derivative of the log-likelihood function w.r.t.
+                # the location.
+                return (shape + 1) * np.sum(1 / (data - location))
+
+            def fun_to_solve(scale):
+                # optimize the scale by setting the partial derivatives
+                # w.r.t. to location and scale equal and solving.
+                location = np.min(data) - scale
+                shape = fshape or get_shape(scale, location)
+                return dL_dLocation(shape, location) - dL_dScale(shape, scale)
+
+            def interval_contains_root(lbrack, rbrack):
+                # return true if the signs disagree.
+                return (np.sign(fun_to_solve(lbrack)) !=
+                        np.sign(fun_to_solve(rbrack)))
+
+            # set brackets for `root_scalar` to use when optimizing over the
+            # scale such that a root is likely between them. Use user supplied
+            # guess or default 1.
+            brack_start = kwds.get('scale', 1)
+            lbrack, rbrack = brack_start / 2, brack_start * 2
+            # if a root is not between the brackets, iteratively expand them
+            # until they include a sign change, checking after each bracket is
+            # modified.
+            while (not interval_contains_root(lbrack, rbrack)
+                   and (lbrack > 0 or rbrack < np.inf)):
+                lbrack /= 2
+                rbrack *= 2
+            res = root_scalar(fun_to_solve, bracket=[lbrack, rbrack])
+            if res.converged:
+                scale = res.root
+                loc = np.min(data) - scale
+                shape = fshape or get_shape(scale, loc)
+
+                # The Pareto distribution requires that its parameters satisfy
+                # the condition `fscale + floc <= min(data)`. However, to
+                # avoid numerical issues, we require that `fscale + floc`
+                # is strictly less than `min(data)`. If this condition
+                # is not satisfied, reduce the scale with `np.nextafter` to
+                # ensure that data does not fall outside of the support.
+                if not (scale + loc) < np.min(data):
+                    scale = np.min(data) - loc
+                    scale = np.nextafter(scale, 0)
+                return shape, loc, scale
+            else:
+                return super().fit(data, **kwds)
+        elif floc is None:
+            loc = np.min(data) - fscale
+        else:
+            loc = floc
         # Source: Evans, Hastings, and Peacock (2000), Statistical
         # Distributions, 3rd. Ed., John Wiley and Sons. Page 149.
-
-        if fscale is None:
-            fscale = np.min(data)
-        if fshape is None:
-            fshape = 1/((1/len(data)) * np.sum(np.log(data/fscale)))
-        return fshape, floc, fscale
+        scale = fscale or np.min(data) - loc
+        shape = fshape or get_shape(scale, loc)
+        return shape, loc, scale
 
 
 pareto = pareto_gen(a=1.0, name="pareto")
@@ -6497,6 +6562,10 @@ class powerlaw_gen(rv_continuous):
 
     %(before_notes)s
 
+    See Also
+    --------
+    pareto
+
     Notes
     -----
     The probability density function for `powerlaw` is:
@@ -6510,6 +6579,11 @@ class powerlaw_gen(rv_continuous):
     `powerlaw` takes ``a`` as a shape parameter for :math:`a`.
 
     %(after_notes)s
+
+    For example, the support of `powerlaw` can be adjusted from the default
+    interval ``[0, 1]`` to the interval ``[c, c+d]`` by setting ``loc=c`` and
+    ``scale=d``. For a power-law distribution with infinite support, see
+    `pareto`.
 
     `powerlaw` is a special case of `beta` with ``b=1``.
 
