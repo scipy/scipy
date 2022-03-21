@@ -49,8 +49,9 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
-from ._hypotests import _all_partitions, _batch_generator
+from ._hypotests import _all_partitions
 from ._hypotests_pythran import _compute_outer_prob_inside_method
+from ._resampling import _batch_generator
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
 from scipy._lib._bunch import _make_tuple_bunch
