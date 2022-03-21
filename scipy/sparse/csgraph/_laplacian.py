@@ -43,7 +43,7 @@ def laplacian(
         Default: True, for backward compatibility.
     form: 'array', or 'function', or 'lo'
         Determines the format of the output Laplacian:
-        
+
         * 'array' is a numpy array;
         * 'function' is a pointer to evaluating the Laplacian-vector
           or Laplacian-matrix product;
@@ -375,9 +375,7 @@ def _laplace(m, d):
 
 def _laplace_normed(m, d, nd):
     laplace = _laplace(m, d)
-    return (
-        lambda v: nd[:, np.newaxis] * laplace(v * nd[:, np.newaxis])
-    )
+    return lambda v: nd[:, np.newaxis] * laplace(v * nd[:, np.newaxis])
 
 
 def _laplace_sym(m, d):
@@ -390,9 +388,7 @@ def _laplace_sym(m, d):
 
 def _laplace_normed_sym(m, d, nd):
     laplace_sym = _laplace_sym(m, d)
-    return (
-        lambda v: nd[:, np.newaxis] * laplace_sym(v * nd[:, np.newaxis])
-    )
+    return lambda v: nd[:, np.newaxis] * laplace_sym(v * nd[:, np.newaxis])
 
 
 def _linearoperator(mv, shape, dtype):
