@@ -41,30 +41,32 @@ def laplacian(
         If False, then change `csgraph` in place if possible,
         avoiding doubling the memory use.
         Default: True, for backward compatibility.
-    form: `array`, or `function`, or `lo`
+    form: 'array', or 'function', or 'lo'
         Determines the format of the output Laplacian:
-        `array` is a numpy array;
-        `function` is a pointer to evaluating the Laplacian-vector
-        or Laplacian-matrix product;
-        `lo` results in the format of the `LinearOperator`.
-        Choosing `function` or `lo` always avoids doubling
+        
+        * 'array' is a numpy array;
+        * 'function' is a pointer to evaluating the Laplacian-vector
+          or Laplacian-matrix product;
+        * 'lo' results in the format of the `LinearOperator`.
+
+        Choosing 'function' or 'lo' always avoids doubling
         the memory use, ignoring `copy` value.
-        Default: `array`, for backward compatibility.
+        Default: 'array', for backward compatibility.
     dtype: None or one of numeric numpy dtypes, optional
-        The dtype of the output. If `dtype=None`, the dtype of the
+        The dtype of the output. If ``dtype=None``, the dtype of the
         output matches the dtype of the input csgraph, except for
-        the case `normed=True` and integer-like csgraph, where
+        the case ``normed=True`` and integer-like csgraph, where
         the output dtype is 'float' allowing accurate normalization,
         but dramatically increasing the memory use.
         Default: None, for backward compatibility.
     symmetrized: bool, optional
         If True, then the output Laplacian is symmetric/Hermitian.
-        The symmetrization is done by `csgraph + csgraph.T.conj`
+        The symmetrization is done by ``csgraph + csgraph.T.conj``
         without dividing by 2 to preserve integer dtypes if possible
         prior to the construction of the Laplacian.
         The symmetrization will increase the memory footprint of
         sparse matrices unless the sparsity pattern is symmetric or
-        `form` is `function` or `lo`.
+        `form` is 'function' or 'lo'.
         Default: False, for backward compatibility.
 
     Returns
@@ -73,7 +75,7 @@ def laplacian(
         The N x N Laplacian of csgraph. It will be a NumPy array (dense)
         if the input was dense, or a sparse matrix otherwise, or
         the format of a function or `LinearOperator` if
-        `form` equals `function` or `lo`, correspondingly.
+        `form` equals 'function' or 'lo', respectively.
     diag : ndarray, optional
         The length-N main diagonal of the Laplacian matrix.
         For the normalized Laplacian, this is the array of square roots
@@ -282,7 +284,7 @@ def laplacian(
 
     Fix a random seed ``rng`` and add a random sparse noise to the graph ``G``:
 
-    >>> rng = np.random.default_rng(0)
+    >>> rng = np.random.default_rng()
     >>> G += 1e-2 * sparse.random(N, N, density=0.1, random_state=rng)
 
     Set initial approximations for eigenvectors:
@@ -292,7 +294,7 @@ def laplacian(
     The constant vector of ones is always a trivial eigenvector
     of the non-normalized Laplacian to be filtered out:
 
-    >>> Y=np.ones((N, 1))
+    >>> Y = np.ones((N, 1))
 
     Alternating the sign of the graph weights allows determining
     labels for spectral max- and min- cuts in a single loop:
@@ -375,7 +377,7 @@ def _laplace_normed(m, d, nd):
     laplace = _laplace(m, d)
     return (
         lambda v: nd[:, np.newaxis] * laplace(v * nd[:, np.newaxis])
-           )
+    )
 
 
 def _laplace_sym(m, d):
@@ -390,7 +392,7 @@ def _laplace_normed_sym(m, d, nd):
     laplace_sym = _laplace_sym(m, d)
     return (
         lambda v: nd[:, np.newaxis] * laplace_sym(v * nd[:, np.newaxis])
-           )
+    )
 
 
 def _linearoperator(mv, shape, dtype):
@@ -442,7 +444,7 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
 def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
 
     if form != "array":
-        raise ValueError('{form} must be "array"'.format(form=repr(form)))
+        raise ValueError(f'{repr(form)} must be "array"')
 
     if dtype is None:
         dtype = graph.dtype
@@ -526,7 +528,7 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
 def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
 
     if form != "array":
-        raise ValueError('{form} must be "array"'.format(form=repr(form)))
+        raise ValueError('{repr(form)} must be "array"')
 
     if dtype is None:
         dtype = graph.dtype
