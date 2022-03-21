@@ -104,7 +104,8 @@ class TestDIRECT:
 
     def test_len_tol(self):
         bounds = 4*[(-10., 10.)]
-        res = direct(self.sphere_2, bounds=bounds, len_tol=1e-3)
+        res = direct(self.sphere_2, bounds=bounds, len_tol=1e-3,
+                     vol_tol=1e-30)
         assert res.status == 5
         assert res.success
         assert_allclose(res.x, np.zeros((4, )))
@@ -129,7 +130,7 @@ class TestDIRECT:
 
         res = direct(self.circle_with_args, bounds, args=(1, 1), maxfun=1250)
         assert res.nfev < 1250
-        assert res.status == 4
+        assert res.status == 5
         assert res.success
         assert_allclose(res.x, np.array([1., 1.]))
 
@@ -172,7 +173,7 @@ class TestDIRECT:
         assert res_new_bounds.success == res_old_bounds.success
         assert res_new_bounds.nit == res_old_bounds.nit
         assert_allclose(res_new_bounds.x, res_old_bounds.x)
-        assert_allclose(res_new_bounds.x, x_opt, rtol=1e-4)
+        assert_allclose(res_new_bounds.x, x_opt, rtol=1e-2)
 
     @pytest.mark.parametrize("eps", [1e-5, 1e-4, 1e-3])
     def test_epsilon(self, eps):
