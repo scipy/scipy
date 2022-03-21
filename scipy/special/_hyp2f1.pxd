@@ -56,7 +56,9 @@ from libc.math cimport (
 )
 
 from . cimport sf_error
-from ._cephes cimport Gamma, gammasgn, lanczos_sum_expg_scaled, lgam
+from ._cephes cimport (
+    Gamma, gammasgn, lanczos_sum, lanczos_sum_expg_scaled, lgam
+)
 from ._complexstuff cimport (
     double_complex_from_npy_cdouble,
     npy_cdouble_from_double_complex,
@@ -334,7 +336,6 @@ cdef inline double complex hyp2f1_lopez_temme_series(
     return result
 
 
-@cython.cdivision(True)
 cdef inline double gamma_ratio(
         double u, double v, double w, double x
 ) nogil:
@@ -350,9 +351,8 @@ cdef inline double gamma_ratio(
     approximation if needed.
     """
     cdef double result
-    result = Gamma(u) * Gamma(v)
-    result /= Gamma(w) * Gamma(x)
-    # Try again with lanczos approximation if there has been
+    result = gamma_ratio_lanczos(u, v, w, x, True)
+    # Try again with expg_scaled lanczos approximation if there has been
     # underflow or overflow.
     if zisnan(result) or zisinf(result) or result == 0.0:
         result = gamma_ratio_lanczos(u, v, w, x, True)
@@ -396,28 +396,40 @@ cdef inline double gamma_ratio_lanczos(
     """
 
     cdef:
-        double lanczos_part = 1
         # Factor parts for different ways to combine individual factors.
         double factor_part
         # Mean of the factor parts that were computed different ways.
         double mean_factor_part
         # Stores arguments u, v, w, x.
         double args[4]
-        # Lanczos factors for gamma u, v, w, x respectively.
-        double factors[4]
-        double lanczos_factor
+        # Lanczos prefactors for gamma u, v, w, x respectively.
+        double prefactors[4]
+        # Lanczos sums for gamma u, v, w, x respectively.
+        double lanczos_sums[4]
         int i
         int exists_zero_factor
         int exists_pos_inf_factor
         int exists_neg_inf_factor
         int exists_nan_factor
         int count
+        int *uidx = [1, 0, 1, 0, 2, 2, 0, 3, 3]
+        int *vidx = [0, 1, 0, 1, 2, 2, 1, 3, 3]
+        int *widx = [0, 2, 0, 1, 2, 1, 2, 3, 3]
+        int *xidx = [0, 3, 0, 1, 3, 1, 3, 2, 2]
+        int idx[4][9]
+
     # Without loss of generality, assume u <= v, w <= x.
     if u > v:
         u, v = v, u
     if x > w:
         x, w = w, x
     args[0], args[1], args[2], args[3] = u, v, w, x
+    i = 0
+    for i in range(9):
+        idx[0][i] = uidx[i]
+        idx[1][i] = vidx[i]
+        idx[2][i] = widx[i]
+        idx[3][i] = xidx[i]
     # The below implementation may incorrectly return finite results
     # at poles of the gamma function. Handle these cases explicitly.
     if u == trunc(u) and u <= 0 or v == trunc(v) and v <= 0:
@@ -427,15 +439,13 @@ cdef inline double gamma_ratio_lanczos(
     if w == trunc(w) and w <= 0 or x == trunc(x) and x <= 0:
         # Return 0 if denominator has pole but not numerator.
         return 0
-    # This is a little terse. Todo: add explanatory comments.
     i = 0
     for i in range(4):
-        lanczos_factor = lanczos_sum_general(args[i], expg_scaled)
-        if i < 2:
-            lanczos_part *= lanczos_factor
-        else:
-            lanczos_part /= lanczos_factor
-        factors[i] = lanczos_prefactor(args[i])
+        prefactors[i] = lanczos_prefactor(args[i])
+        lanczos_sums[i] = lanczos_sum_general(args[i], expg_scaled)
+    lanczos_part = (
+        lanczos_sums[0] * lanczos_sums[1] / (lanczos_sums[2] * lanczos_sums[3])
+    )
     # Computes running average of factor parts when factors are combined in
     # different ways.
     mean_factor_part = 0
@@ -445,69 +455,28 @@ cdef inline double gamma_ratio_lanczos(
     exists_neg_inf_factor = False
     exists_nan_factor = False
     # Absorb u factor into others.
-    factor_part = pow(factors[1] / factors[0], args[1] - 0.5)
-    factor_part *= pow(factors[0] / factors[2], args[2] - 0.5)
-    factor_part *= pow(factors[0] / factors[3], args[3] - 0.5)
-    if factor_part == 0:
-        exists_zero_factor = True
-    elif isinf(factor_part):
-        if factor_part > 0:
-            exists_pos_inf_factor = True
+    for i in range(4):
+        factor_part = pow(
+            prefactors[idx[i][0]] / prefactors[idx[i][1]], args[idx[i][2]] - 0.5
+        )
+        factor_part *= pow(
+            prefactors[idx[i][3]] / prefactors[idx[i][4]], args[idx[i][5]] - 0.5
+        )
+        factor_part *= pow(
+            prefactors[idx[i][6]] / prefactors[idx[i][7]], args[idx[i][8]] - 0.5
+        )
+        if factor_part == 0:
+            exists_zero_factor = True
+        elif isinf(factor_part):
+            if factor_part > 0:
+                exists_pos_inf_factor = True
+            else:
+                exists_neg_inf_factor = True
+        elif isnan(factor_part):
+            exists_nan_factor = True
         else:
-            exists_neg_inf_factor = True
-    elif isnan(factor_part):
-        exists_nan_factor = True
-    else:
-        mean_factor_part += (factor_part - mean_factor_part) / (count + 1)
-        count += 1
-    # Absorb v factor into others.
-    factor_part = pow(factors[0] / factors[1], args[0] - 0.5)
-    factor_part *= pow(factors[1] / factors[2], args[2] - 0.5)
-    factor_part *= pow(factors[1] / factors[3], args[3] - 0.5)
-    if factor_part == 0:
-        exists_zero_factor = True
-    elif isinf(factor_part):
-        if factor_part > 0:
-            exists_pos_inf_factor = True
-        else:
-            exists_neg_inf_factor = True
-    elif isnan(factor_part):
-        exists_nan_factor = True
-    else:
-        mean_factor_part += (factor_part - mean_factor_part) / (count + 1)
-        count += 1
-    # Absorb w factor into others.
-    factor_part = pow(factors[0] / factors[2], args[0] - 0.5)
-    factor_part *= pow(factors[1] / factors[2], args[1] - 0.5)
-    factor_part *= pow(factors[2] / factors[3], args[3] - 0.5)
-    if factor_part == 0:
-        exists_zero_factor = True
-    elif isinf(factor_part):
-        if factor_part > 0:
-            exists_pos_inf_factor = True
-        else:
-            exists_neg_inf_factor = True
-    elif isnan(factor_part):
-        exists_nan_factor = True
-    else:
-        mean_factor_part += (factor_part - mean_factor_part) / (count + 1)
-        count += 1
-    # Absorb x factor into others.
-    factor_part = pow(factors[0]/factors[3], args[0] - 0.5)
-    factor_part *= pow(factors[1]/factors[3], args[1] - 0.5)
-    factor_part *= pow(factors[3]/factors[2], args[2] - 0.5)
-    if factor_part == 0:
-        exists_zero_factor = True
-    elif isinf(factor_part):
-        if factor_part > 0:
-            exists_pos_inf_factor = True
-        else:
-            exists_neg_inf_factor = True
-    elif isnan(factor_part):
-        exists_nan_factor = True
-    else:
-        mean_factor_part += (factor_part - mean_factor_part) / (count + 1)
-        count += 1
+            mean_factor_part += (factor_part - mean_factor_part) / (count + 1)
+            count += 1
     # If there is at least one combination of factors that gives a factor part
     # that is not zero, infinite, or NaN, return result where the factor part
     # is taken to be the average of the factor parts for all such combinations
@@ -539,6 +508,8 @@ cdef inline double lanczos_prefactor(double x) nogil:
 
 
 cdef inline double lanczos_sum_general(double x, int expg_scaled) nogil:
+    cdef double t
     if x >= 0.5:
-        return lanczos_sum_expg_scaled(x)
-    return 1 / (lanczos_sum_expg_scaled(1 - x)*sin(M_PI*x)*M_1_PI)
+        return lanczos_sum_expg_scaled(x) if expg_scaled else lanczos_sum(x)
+    t = lanczos_sum_expg_scaled(1 - x) if expg_scaled else lanczos_sum(1 - x)
+    return 1 / (t*sin(M_PI*x)*M_1_PI)
