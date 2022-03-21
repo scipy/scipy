@@ -22,9 +22,9 @@ from scipy.stats._binomtest import _binary_search_for_binom_tst
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
 try:
-    import matplotlib  # type: ignore[import]
+    import matplotlib
     matplotlib.rcParams['backend'] = 'Agg'
-    import matplotlib.pyplot as plt  # type: ignore[import]
+    import matplotlib.pyplot as plt
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
@@ -196,6 +196,23 @@ class TestShapiro:
         assert_equal(shapiro_test.statistic, np.nan)
         assert_almost_equal(pw, 1.0)
         assert_almost_equal(shapiro_test.pvalue, 1.0)
+
+    def test_gh14462(self):
+        # shapiro is theoretically location-invariant, but when the magnitude
+        # of the values is much greater than the variance, there can be
+        # numerical issues. Fixed by subtracting median from the data.
+        # See gh-14462.
+
+        trans_val, maxlog = stats.boxcox([122500, 474400, 110400])
+        res = stats.shapiro(trans_val)
+
+        # Reference from R:
+        # options(digits=16)
+        # x = c(0.00000000e+00, 3.39996924e-08, -6.35166875e-09)
+        # shapiro.test(x)
+        ref = (0.86468431705371, 0.2805581751566)
+
+        assert_allclose(res, ref, rtol=1e-5)
 
 
 class TestAnderson:

@@ -760,8 +760,8 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     [4]_.
 
     .. deprecated:: 1.9.0
-        `method='interior-point'` will be removed in the second release after
-        1.9.0. It is replaced by `method='highs'` because the latter is
+        `method='interior-point'` will be removed in SciPy 1.11.0.
+        It is replaced by `method='highs'` because the latter is
         faster and more robust.
 
     Linear programming solves problems of the following form:
@@ -1088,8 +1088,8 @@ def _linprog_rs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     equality and inequality constraints using the revised simplex method.
 
     .. deprecated:: 1.9.0
-        `method='revised simplex'` will be removed in the second release after
-        1.9.0. It is replaced by `method='highs'` because the latter is
+        `method='revised simplex'` will be removed in SciPy 1.11.0.
+        It is replaced by `method='highs'` because the latter is
         faster and more robust.
 
     Linear programming solves problems of the following form:
@@ -1274,8 +1274,8 @@ def _linprog_simplex_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     equality and inequality constraints using the tableau-based simplex method.
 
     .. deprecated:: 1.9.0
-        `method='simplex'` will be removed in the second release after
-        1.9.0. It is replaced by `method='highs'` because the latter is
+        `method='simplex'` will be removed in SciPy 1.11.0.
+        It is replaced by `method='highs'` because the latter is
         faster and more robust.
 
     Linear programming solves problems of the following form:

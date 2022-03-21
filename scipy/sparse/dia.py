@@ -16,7 +16,6 @@ __all__ = [  # noqa: F822
     'isshape',
     'isspmatrix',
     'isspmatrix_dia',
-    'matrix',
     'spmatrix',
     'upcast_char',
     'validateaxis',
