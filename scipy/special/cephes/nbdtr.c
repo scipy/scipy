@@ -151,63 +151,62 @@
  */
 
 #include "mconf.h"
+#include <numpy/npy_math.h>
 
-double nbdtrc(k, n, p)
-int k, n;
-double p;
+
+double nbdtrc(double k, int n, double p)
 {
     double dk, dn;
+    double fk = floor(k);
 
-    if ((p < 0.0) || (p > 1.0))
-	goto domerr;
-    if (k < 0) {
-      domerr:
-	sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+    if (npy_isnan(p) || npy_isnan(k)) {
+        return NPY_NAN;
     }
 
-    dk = k + 1;
+    if (p < 0.0 || p > 1.0 || fk < 0.0) {
+	      sf_error("nbdtrc", SF_ERROR_DOMAIN, NULL);
+	      return NPY_NAN;
+    }
+
+    dk = fk + 1.0;
     dn = n;
-    return (incbet(dk, dn, 1.0 - p));
+    return incbet(dk, dn, 1.0 - p);
 }
 
 
-
-double nbdtr(k, n, p)
-int k, n;
-double p;
+double nbdtr(double k, int n, double p)
 {
     double dk, dn;
+    double fk = floor(k);
 
-    if ((p < 0.0) || (p > 1.0))
-	goto domerr;
-    if (k < 0) {
-      domerr:
-	sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+    if (npy_isnan(p) || npy_isnan(k)) {
+        return NPY_NAN;
     }
-    dk = k + 1;
+
+    if (p < 0.0 || p > 1.0 || fk < 0.0) {  // TODO: fk < 0.0 here?
+	      sf_error("nbdtr", SF_ERROR_DOMAIN, NULL);
+	      return NPY_NAN;
+    }
+    dk = fk + 1.0;
     dn = n;
-    return (incbet(dn, dk, p));
+    return incbet(dn, dk, p);
 }
 
 
-
-double nbdtri(k, n, p)
-int k, n;
-double p;
+double nbdtri(double k, int n, double p)
 {
-    double dk, dn, w;
+    double dk, dn;
+    double fk = floor(k);
 
-    if ((p < 0.0) || (p > 1.0))
-	goto domerr;
-    if (k < 0) {
-      domerr:
-	sf_error("nbdtri", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+    if (npy_isnan(p) || npy_isnan(k)) {
+        return NPY_NAN;
     }
-    dk = k + 1;
+
+    if (p < 0.0 || p > 1.0 || fk < 0.0) {
+	      sf_error("nbdtri", SF_ERROR_DOMAIN, NULL);
+	      return NPY_NAN;
+    }
+    dk = fk + 1.0;
     dn = n;
-    w = incbi(dn, dk, p);
-    return (w);
+    return incbi(dn, dk, p);
 }

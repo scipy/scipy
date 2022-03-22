@@ -84,9 +84,9 @@ extern double k1(double x);
 extern double k1e(double x);
 extern double kn(int nn, double x);
 
-extern double nbdtrc(int k, int n, double p);
-extern double nbdtr(int k, int n, double p);
-extern double nbdtri(int k, int n, double p);
+extern double nbdtrc(double k, int n, double p);
+extern double nbdtr(double k, int n, double p);
+extern double nbdtri(double k, int n, double p);
 
 extern double ndtr(double a);
 extern double log_ndtr(double a);

@@ -36,10 +36,11 @@ cdef inline void _legacy_cast_check(char *func_name, double x, double y) nogil:
                                "floating point number truncated to an integer",
                                1)
 
-cdef inline void _legacy_deprecation(char *func_name, double x, double y) nogil:
+cdef inline void _legacy_deprecation(char *func_name) nogil:
         with gil:
             PyErr_WarnEx_noerr(DeprecationWarning,
-                               "non-integer arg n is deprecated, removed in SciPy 1.7.x",
+                               "non-integer arg n is deprecated, removed in "
+                               "SciPy 1.11.x",
                                1)
 
 cdef inline double complex sph_harmonic_unsafe(double m, double n,
@@ -58,21 +59,21 @@ cdef inline double ellip_harmonic_unsafe(double h2, double k2, double n,
     return ellip_harmonic(h2, k2, <int>n, <int>p, l, signm, signn)
 
 cdef inline double bdtr_unsafe(double k, double n, double p) nogil:
-    _legacy_deprecation("bdtr", k, n)
+    _legacy_deprecation("bdtr")
     if npy_isnan(n) or npy_isinf(n):
         return nan
     else:
         return bdtr(k, <int>n, p)
 
 cdef inline double bdtrc_unsafe(double k, double n, double p) nogil:
-    _legacy_deprecation("bdtrc", k, n)
+    _legacy_deprecation("bdtrc")
     if npy_isnan(n) or npy_isinf(n):
         return nan
     else:
         return bdtrc(k, <int>n, p)
 
 cdef inline double bdtri_unsafe(double k, double n, double p) nogil:
-    _legacy_deprecation("bdtri", k, n)
+    _legacy_deprecation("bdtri")
     if npy_isnan(n) or npy_isinf(n):
         return nan
     else:
@@ -85,22 +86,22 @@ cdef inline double expn_unsafe(double n, double x) nogil:
     return expn(<int>n, x)
 
 cdef inline double nbdtrc_unsafe(double k, double n, double p) nogil:
-    if npy_isnan(k) or npy_isnan(n):
+    _legacy_deprecation("nbdtrc")
+    if npy_isnan(n) or npy_isinf(n):
         return nan
-    _legacy_cast_check("nbdtrc", k, n)
-    return nbdtrc(<int>k, <int>n, p)
+    return nbdtrc(k, <int>n, p)
 
 cdef inline double nbdtr_unsafe(double k, double n, double p)  nogil:
-    if npy_isnan(k) or npy_isnan(n):
+    _legacy_deprecation("nbdtr")
+    if npy_isnan(n) or npy_isinf(n):
         return nan
-    _legacy_cast_check("nbdtr", k, n)
-    return nbdtr(<int>k, <int>n, p)
+    return nbdtr(k, <int>n, p)
 
 cdef inline double nbdtri_unsafe(double k, double n, double p) nogil:
-    if npy_isnan(k) or npy_isnan(n):
+    _legacy_deprecation("nbdtri")
+    if npy_isnan(n) or npy_isinf(n):
         return nan
-    _legacy_cast_check("nbdtri", k, n)
-    return nbdtri(<int>k, <int>n, p)
+    return nbdtri(k, <int>n, p)
 
 cdef inline double pdtri_unsafe(double k, double y) nogil:
     if npy_isnan(k):

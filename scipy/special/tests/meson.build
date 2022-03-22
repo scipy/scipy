@@ -25,6 +25,7 @@ python_sources = [
   'test_logsumexp.py',
   'test_mpmath.py',
   'test_nan_inputs.py',
+  'test_nbdtr.py',
   'test_ndtr.py',
   'test_ndtri_exp.py',
   'test_orthogonal.py',

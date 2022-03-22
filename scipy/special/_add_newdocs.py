@@ -8329,21 +8329,21 @@ add_newdoc("nbdtr",
 
     Negative binomial cumulative distribution function.
 
-    Returns the sum of the terms 0 through `k` of the negative binomial
+    Returns the sum of the terms 0 through `floor(k)` of the negative binomial
     distribution probability mass function,
 
     .. math::
 
-        F = \sum_{j=0}^k {{n + j - 1}\choose{j}} p^n (1 - p)^j.
+        F = \sum_{j=0}^{\lfloor k \rfloor} {{n + j - 1}\choose{j}} p^n (1 - p)^j
 
     In a sequence of Bernoulli trials with individual success probabilities
-    `p`, this is the probability that `k` or fewer failures precede the nth
-    success.
+    `p`, this is the probability that `floor(k)` or fewer failures precede the
+    nth success.
 
     Parameters
     ----------
     k : array_like
-        The maximum number of allowed failures (nonnegative int).
+        The maximum number of allowed failures (nonnegative float).
     n : array_like
         The target number of successes (positive int).
     p : array_like
@@ -8354,8 +8354,8 @@ add_newdoc("nbdtr",
     Returns
     -------
     F : scalar or ndarray
-        The probability of `k` or fewer failures before `n` successes in a
-        sequence of events with individual success probability `p`.
+        The probability of `floor(k)` or fewer failures before `n` successes in
+        a sequence of events with individual success probability `p`.
 
     See also
     --------
@@ -8364,13 +8364,14 @@ add_newdoc("nbdtr",
     Notes
     -----
     If floating point values are passed for `k` or `n`, they will be truncated
-    to integers.
+    to integers. The use of non-integer `n` is deprecated and will be removed
+    in SciPy 1.11.
 
     The terms are not summed directly; instead the regularized incomplete beta
     function is employed, according to the formula,
 
     .. math::
-        \mathrm{nbdtr}(k, n, p) = I_{p}(n, k + 1).
+        \mathrm{nbdtr}(k, n, p) = I_{p}(n, \floor k \rfloor + 1).
 
     Wrapper for the Cephes [1]_ routine `nbdtr`.
 
@@ -8387,21 +8388,21 @@ add_newdoc("nbdtrc",
 
     Negative binomial survival function.
 
-    Returns the sum of the terms `k + 1` to infinity of the negative binomial
-    distribution probability mass function,
+    Returns the sum of the terms `floor(k) + 1` to infinity of the negative
+    binomial distribution probability mass function,
 
     .. math::
 
-        F = \sum_{j=k + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j.
+        F = \sum_{j=\lfloor k \rfloor + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j
 
     In a sequence of Bernoulli trials with individual success probabilities
-    `p`, this is the probability that more than `k` failures precede the nth
-    success.
+    `p`, this is the probability that more than `floor(k)` failures precede the
+    nth success.
 
     Parameters
     ----------
     k : array_like
-        The maximum number of allowed failures (nonnegative int).
+        The maximum number of allowed failures (nonnegative float).
     n : array_like
         The target number of successes (positive int).
     p : array_like
@@ -8418,13 +8419,14 @@ add_newdoc("nbdtrc",
     Notes
     -----
     If floating point values are passed for `k` or `n`, they will be truncated
-    to integers.
+    to integers. The use of non-integer `n` is deprecated and will be removed
+    in SciPy 1.11.
 
     The terms are not summed directly; instead the regularized incomplete beta
     function is employed, according to the formula,
 
     .. math::
-        \mathrm{nbdtrc}(k, n, p) = I_{1 - p}(k + 1, n).
+        \mathrm{nbdtrc}(k, n, p) = I_{1 - p}(\lfloor k \rfloor + 1, n)
 
     Wrapper for the Cephes [1]_ routine `nbdtrc`.
 
@@ -8447,7 +8449,7 @@ add_newdoc("nbdtri",
     Parameters
     ----------
     k : array_like
-        The maximum number of allowed failures (nonnegative int).
+        The maximum number of allowed failures (nonnegative float).
     n : array_like
         The target number of successes (positive int).
     y : array_like

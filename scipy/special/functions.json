@@ -1037,7 +1037,7 @@
             "nbdtr_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "nbdtr": "iid->d"
+            "nbdtr": "did->d"
         }
     },
     "nbdtrc": {
@@ -1045,7 +1045,7 @@
             "nbdtrc_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "nbdtrc": "iid->d"
+            "nbdtrc": "did->d"
         }
     },
     "nbdtri": {
@@ -1053,7 +1053,7 @@
             "nbdtri_unsafe": "ddd->d"
         },
         "cephes.h": {
-            "nbdtri": "iid->d"
+            "nbdtri": "did->d"
         }
     },
     "nbdtrik": {
