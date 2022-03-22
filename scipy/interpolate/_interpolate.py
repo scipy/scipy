@@ -132,16 +132,16 @@ class interp2d:
         Otherwise, `x` and `y` must specify the full coordinates for each
         point, for example::
 
-          >>> x = [0,1,2,0,1,2];  y = [0,0,0,3,3,3]; z = [1,2,3,4,5,6]
+          >>> x = [0,1,2,0,1,2];  y = [0,0,0,3,3,3]; z = [1,4,2,5,3,6]
 
         If `x` and `y` are multidimensional, they are flattened before use.
     z : array_like
         The values of the function to interpolate at the data points. If
-        `z` is a multidimensional array, it is flattened before use.  The
-        length of a flattened `z` array is either
-        len(`x`)*len(`y`) if `x` and `y` specify the column and row coordinates
-        or ``len(z) == len(x) == len(y)`` if `x` and `y` specify coordinates
-        for each point.
+        `z` is a multidimensional array, it is flattened before use assuming
+        Fortran-ordering (order='F').  The length of a flattened `z` array
+        is either len(`x`)*len(`y`) if `x` and `y` specify the column and
+        row coordinates or ``len(z) == len(x) == len(y)`` if `x` and `y`
+        specify coordinates for each point.
     kind : {'linear', 'cubic', 'quintic'}, optional
         The kind of spline interpolation to use. Default is 'linear'.
     copy : bool, optional
@@ -419,7 +419,7 @@ class interp1d(_Interpolator1D):
 
     Input values `x` and `y` must be convertible to `float` values like
     `int` or `float`.
-    
+
     If the values in `x` are not unique, the resulting behavior is
     undefined and specific to the choice of `kind`, i.e., changing
     `kind` will change the behavior for duplicates.
