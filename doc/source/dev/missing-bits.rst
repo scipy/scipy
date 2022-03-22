@@ -111,13 +111,9 @@ Use of the 'versionadded' markup
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 * For a new function, the 'versionadded' markup goes in the "Notes" section,
   *not* in the description at the beginning of the docstring.
-* For a new argument added to an existing function,  two locations have been
-  used for the the 'versionadded' markup, [TBD: which is preferred?]:
-
-  * At the end of the description of the argument in the "Parameters" section
-  * In the "Notes" section.  In this case, the `versionadded` markup
-    wouldn't be used.  Instead, the new addition is noted with a plain
-    text comment.
+* For a new argument added to an existing function,  the 'versionadded' markup
+  is placed at the end of the description of the argument in the "Parameters"
+  section.
 
 
 Citing wikipedia articles in the "References" section
