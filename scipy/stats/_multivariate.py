@@ -322,6 +322,8 @@ mean : array_like, optional
     Mean of the distribution (default zero)
 cov : array_like, optional
     Covariance matrix of the distribution (default one)
+inverse_cov : array_like, optional
+    Inverse of the covariance matrix of the distribution (default None)
 allow_singular : bool, optional
     Whether to allow a singular covariance matrix.  (Default: False)
 """
@@ -331,7 +333,8 @@ Setting the parameter `mean` to `None` is equivalent to having `mean`
 be the zero-vector. The parameter `cov` can be a scalar, in which case
 the covariance matrix is the identity times that value, a vector of
 diagonal entries for the covariance matrix, or a two-dimensional
-array_like.
+array_like. When both `cov` and `inverse_cov` are set, `inverse_cov` is
+ignored.
 """
 
 _mvn_doc_frozen_callparams = ""
@@ -360,15 +363,15 @@ class multivariate_normal_gen(multi_rv_generic):
 
     Methods
     -------
-    pdf(x, mean=None, cov=1, allow_singular=False)
+    pdf(x, mean=None, cov=1, allow_singular=False, inverse_cov=None)
         Probability density function.
-    logpdf(x, mean=None, cov=1, allow_singular=False)
+    logpdf(x, mean=None, cov=1, allow_singular=False, inverse_cov=None)
         Log of the probability density function.
-    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, inverse_cov=None)
         Cumulative distribution function.
-    logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5)
+    logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, inverse_cov=None)
         Log of the cumulative distribution function.
-    rvs(mean=None, cov=1, size=1, random_state=None)
+    rvs(mean=None, cov=1, size=1, random_state=None, inverse_cov=None)
         Draw random samples from a multivariate normal distribution.
     entropy()
         Compute the differential entropy of the multivariate normal.
@@ -382,10 +385,11 @@ class multivariate_normal_gen(multi_rv_generic):
     -----
     %(_mvn_doc_callparams_note)s
 
-    The covariance matrix `cov` must be a (symmetric) positive
-    semi-definite matrix. The determinant and inverse of `cov` are computed
+    The covariance matrix `cov`, or the inverse of the covariance matrix
+    `inverse_cov`, if specified, must be a (symmetric) positive
+    semi-definite matrix. Their determinant and inverse are computed
     as the pseudo-determinant and pseudo-inverse, respectively, so
-    that `cov` does not need to have full rank.
+    they do not need to have full rank. 
 
     The probability density function for `multivariate_normal` is
 
@@ -836,6 +840,8 @@ class multivariate_normal_frozen(multi_rv_frozen):
             Mean of the distribution (default zero)
         cov : array_like, optional
             Covariance matrix of the distribution (default one)
+        inverse_cov : array_like, optional
+            Inverse of the covariance matrix of the distribution (default None)
         allow_singular : bool, optional
             If this flag is True then tolerate a singular
             covariance matrix (default False).
