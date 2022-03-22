@@ -58,7 +58,7 @@ functions::
     comparisons.
 
 For more information about writing unit tests, see `Testing Guidelines
-<https://docs.scipy.org/doc/numpy/reference/testing.html>`_.
+<https://numpy.org/doc/stable/reference/testing.html>`_.
 
 Testing that expected exceptions are raised
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
