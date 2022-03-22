@@ -123,13 +123,6 @@ Function or class              Variable name
 Documentation Guidelines
 ------------------------
 
-Use of LaTeX
-~~~~~~~~~~~~
-[TBD.  In the past, we had an unwritten rule that LaTex markup should be
-restricted to the Notes section.  We don't follow that rule these days.
-Should we?]
-
-
 Use "must", not "should"
 ~~~~~~~~~~~~~~~~~~~~~~~~
 When specifying a required condition on the input parameters, the
