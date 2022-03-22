@@ -520,23 +520,21 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return tuple_to_result(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_outputs, np.nan)
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             # Addresses nan_policy == "propagate"
             elif contains_nan and nan_policy == 'propagate':
                 def hypotest_fun(x):
                     if np.isnan(x).any():
-                        res = np.full(n_outputs, np.nan)
-                        return tuple_to_result(*res)
+                        return np.full(n_outputs, np.nan)
+
                     samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return tuple_to_result(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_outputs, np.nan)
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             else:
                 def hypotest_fun(x):
@@ -544,13 +542,11 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return tuple_to_result(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_outputs, np.nan)
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             x = np.moveaxis(x, axis, 0)
             res = np.apply_along_axis(hypotest_fun, axis=0, arr=x)
-            res = result_to_tuple(res)
             res = _add_reduced_axes(res, reduced_axes, keepdims)
             return tuple_to_result(*res)
 

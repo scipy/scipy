@@ -1385,6 +1385,17 @@ class TestWilcoxon:
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
+    def test_wilcoxon_has_zstatistic(self):
+        rng = np.random.default_rng(89426135444)
+        x, y = rng.random(15), rng.random(15)
+
+        res = stats.wilcoxon(x, y, mode="approx")
+        ref = stats.norm.ppf(res.pvalue/2)
+        assert_allclose(res.zstatistic, ref)
+
+        res = stats.wilcoxon(x, y, mode="exact")
+        assert np.isnan(res.zstatistic)
+
     def test_wilcoxon_tie(self):
         # Regression test for gh-2391.
         # Corresponding R code is:
