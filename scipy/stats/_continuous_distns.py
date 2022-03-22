@@ -5865,7 +5865,7 @@ class ncx2_gen(rv_continuous):
 
     """
     def _argcheck(self, df, nc):
-        return (df > 0) & (nc >= 0)
+        return (df > 0) & np.isfinite(df) & (nc >= 0)
 
     def _rvs(self, df, nc, size=None, random_state=None):
         return random_state.noncentral_chisquare(df, nc, size)

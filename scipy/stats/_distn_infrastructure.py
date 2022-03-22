@@ -3404,9 +3404,12 @@ class rv_discrete(rv_generic):
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
         cond2 = (k >= _b)
-        cond = cond0 & cond1
+        cond3 = np.isneginf(k)
+        cond = cond0 & cond1 & np.isfinite(k)
+
         output = zeros(shape(cond), 'd')
         place(output, cond2*(cond0 == cond0), 1.0)
+        place(output, cond3*(cond0 == cond0), 0.0)
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
 
         if np.any(cond):
@@ -3482,8 +3485,8 @@ class rv_discrete(rv_generic):
         k = asarray(k-loc)
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
-        cond2 = (k < _a) & cond0
-        cond = cond0 & cond1
+        cond2 = ((k < _a) | np.isneginf(k)) & cond0
+        cond = cond0 & cond1 & np.isfinite(k)
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         place(output, cond2, 1.0)
