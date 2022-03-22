@@ -396,8 +396,8 @@ def _linearoperator(mv, shape, dtype):
 
 
 def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
-    # The keyword argument ``copy`` is unused and has no effect here.
-    del copy  # Unused argument
+    # The keyword argument `copy` is unused and has no effect here.
+    del copy
 
     if dtype is None:
         dtype = graph.dtype
@@ -438,9 +438,8 @@ def _laplacian_sparse_flo(graph, normed, axis, copy, form, dtype, symmetrized):
 
 
 def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
-
-    if form != "array":
-        raise ValueError(f'{form!r} must be "array"')
+    # The keyword argument `form` is unused and has no effect here.
+    del form
 
     if dtype is None:
         dtype = graph.dtype
