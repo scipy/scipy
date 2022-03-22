@@ -10,31 +10,176 @@ The CLI is ideal for project contributors while,
 doit interface is better suited for authring the development tasks.
 
 
+Note this requires the unreleased doit 0.35
+
+
+TODO: First milestone replace dev.py
+
+ - [ ] move out non-scipy code
+ - [ ] document API/reasoning for creating commands/tasks
+ - [ ] command sections (https://github.com/janluke/cloup or similar)
+ - [ ] copy used code from dev.py
+
+commands:
+ - [ ] test: support positional parameters
+ - [ ] lcov_html
+ - [ ] refguide_check
+ - [ ] doc
+ - [ ] bench
+
 """
 
-
-
-#####################################
-# to be extracted into a doit_click.py.
-
+import os
 import sys
-import inspect
+import re
+import shutil
+from sysconfig import get_path
+from pathlib import Path
+from collections import namedtuple
 
+import click
+from click import Option
+from click.globals import get_current_context
+from doit import task_params
+from doit.task import Task as DoitTask
 from doit.cmd_base import ModuleTaskLoader, get_loader
 from doit.doit_cmd import DoitMain
 from doit.cmdparse import DefaultUpdate, CmdParse, CmdParseError
 from doit.exceptions import InvalidDodoFile, InvalidCommand, InvalidTask
-import click
-from click.globals import push_context
+
+# keep compatibility and re-use dev.py code
+import dev as dev_module
+
+
+DOIT_CONFIG = {
+    'verbosity': 2,
+}
+
+
+##########################################
+### doit / click integration through custom class interface
+
+class Context():
+    """Higher level to allow some level of Click.context with doit"""
+    def __init__(self, options: dict):
+        self.options = options
+        self.vals = {}
+
+    def get(self, save=None):
+        # try to get from Click
+        ctx = get_current_context(silent=True)
+        if ctx:
+            return ctx.obj
+        else:
+            if save:
+                for name in self.options.keys():
+                    if name in save:
+                        self.vals[name] = save[name]
+            return self.vals
+
+
+
+param_type_map = {
+    'text': str,
+    'boolean': bool,
+    'integer': int,
+}
+def param_click2doit(name: str, val: Option):
+    """Convert click param to dict used by doit.cmdparse"""
+    pd = {
+        'name': name,
+        'type': param_type_map[val.type.name], # FIXME: add all types
+        'default': val.default,
+        'help': val.help or '',
+        'metavar': val.metavar,
+    }
+    for opt in val.opts:
+        if opt[:2] == '--':
+            pd['long'] = opt[2:]
+        elif opt[0] == '-':
+            pd['short'] = opt[1:]
+    return pd
+
+
+class MetaTask(type):
+    def __new__(meta_cls, name, bases, dct):
+        # params/opts from Context and Option attributes
+        cls = super().__new__(meta_cls, name, bases, dct)
+        params = []
+        if ctx := getattr(cls, 'ctx', None):
+            for ctx_opt in ctx.options.values():
+                params.append(param_click2doit(ctx_opt.name, ctx_opt))
+        for attr_name, val in cls.__dict__.items():
+            if isinstance(val, Option):
+                params.append(param_click2doit(attr_name, val))
+        cls._params = params
+        return cls
+
+class Task(metaclass=MetaTask):
+    """Base class to define doit task and/or click command"""
+    # convert click.types.ParamType.name to doit param type
+    camel_pattern = re.compile(r'(?!^)([A-Z]+)')
+
+    @classmethod
+    def create_doit_tasks(cls):
+        """used by doit loader to create task instances"""
+        if cls is Task:
+            return
+        task_kwargs = getattr(cls, 'Meta', {})
+        return DoitTask(
+            # convert name to kebab-case
+            name=cls.camel_pattern.sub(r'-\1', cls.__name__).lower(),
+            doc=cls.__doc__,
+            actions=[cls.run],
+            params=cls._params,
+            **task_kwargs,
+        )
+
+    @classmethod
+    def opt_defaults(cls):
+        return {p['name']:p['default'] for p in cls._params}
+
+
+
+class CliGroup(click.Group):
+    def cmd(self, name):
+        """class decorator, convert to click.Command"""
+        def register_click(cls):
+            # get options for class definition
+            opts = []
+            for attr_name, attr_val in cls.__dict__.items():
+                if isinstance(attr_val, Option):
+                    opts.append(attr_val)
+
+            if issubclass(cls, Task):
+                # run as doit task
+                def callback(**kwargs):
+                    run_doit_task({name: kwargs})
+            else:
+                # run as plain function
+                def callback(**kwargs):
+                    cls.run(**kwargs)
+
+            click_cmd = click.Command(
+                name=name,
+                callback=callback,
+                help=cls.__doc__,
+                params=opts,
+            )
+            self.add_command(click_cmd)
+            return cls
+        return register_click
+
+
+
 
 class DoitMainAPI(DoitMain):
     """add new method to run tasks with parsed command line"""
 
-    def run_tasks(self, task):
+    def run_tasks(self, tasks):
         """
         :params task: str - task name
         """
-
         # get list of available commands
         sub_cmds = self.get_cmds()
         task_loader = get_loader(self.config, self.task_loader, sub_cmds)
@@ -52,7 +197,7 @@ class DoitMainAPI(DoitMain):
         try:
             cmd_opt = CmdParse(command.get_options())
             params, _ = cmd_opt.parse([])
-            args = [task]
+            args = tasks
             command.execute(params, args)
         except (CmdParseError, InvalidDodoFile,
                 InvalidCommand, InvalidTask) as err:
@@ -62,111 +207,41 @@ class DoitMainAPI(DoitMain):
             raise err
 
 
-def run_doit_task(task_name, **kwargs):
-    """:param kwargs: contain task_opts"""
+def run_doit_task(tasks):
+    """
+      :param tasks: (dict) task_name -> {options}
+    """
     loader = ModuleTaskLoader(globals())
-    loader.task_opts = {task_name: kwargs}
+    loader.task_opts = tasks # task_opts will be used as @task_param
     doit_main = DoitMainAPI(loader, extra_config={'GLOBAL': {'verbosity': 2}})
-    return doit_main.run_tasks(task_name)
-
-def doit_task_callback(task_name):
-    def callback(**kwargs):
-        sys.exit(run_doit_task(task_name, **kwargs))
-    return callback
+    return doit_main.run_tasks(list(tasks.keys()))
 
 
-def param_doit2click(task_param: dict):
-    """converts a doit TaskParam to Click.Parameter"""
-    param_decls = [task_param['name']]
-    if 'long' in task_param:
-        param_decls.append(f"--{task_param['long']}")
-    if 'short' in task_param:
-        param_decls.append(f"-{task_param['short']}")
-    return click.Option(param_decls, default=task_param['default'], help=task_param.get('help'))
+###########################################
+### SciPY
 
-class ClickDoit(click.Group):
-    """
-    subclass with an extra decorator used to create commands from doit task_creators
-    (instead of plain function)
-    """
 
-    def task_as_cmd(self, name=None, **attrs):
-        def decorator(creator):
-            task_name = creator.__name__[5:] # 5 is len('task_')
-            cmd_name = name if name else task_name
-            cmd_help = inspect.getdoc(creator)
-            task_params = getattr(creator, '_task_creator_params', None)
-
-            # convert doit task-params to click params
-            params = []
-            # if param is already define in group, do not add again
-            group_options = set(par.name for par in self.params)
-            if task_params:
-                for tp in task_params:
-                    if tp['name'] in group_options:
-                        continue
-                    params.append(param_doit2click(tp))
-            cmd = click.Command(
-                name=cmd_name,
-                callback=doit_task_callback(task_name),
-                help=cmd_help,
-                params=params,
-            )
-            self.add_command(cmd)
-            return creator # return original task_creator to be used by doit itself
-        return decorator
+CONTEXT = Context({
+    'build_dir': Option(
+        ['--build-dir'], default='build', metavar='BUILD_DIR', show_default=True,
+        help='Relative path to the build directory.'),
+    'install_prefix': Option(
+        ['--install-prefix'], default=None, metavar='INSTALL_DIR',
+        help="Relative path to the install directory. Default is <build-dir>-install."),
+})
 
 
 
-#######################################
-# SciPy tasks / CLI
-
-import os
-import sys
-from sysconfig import get_path
-import shutil
-from dataclasses import dataclass, field
-from pathlib import Path
-
-from doit import task_params
-
-# keep compatibility and re-use dev.py code
-import dev as dev_module
-
-opt_build_dir = {
-    'name': 'build_dir',
-    'long': 'build-dir',
-    'default': 'build',
-    'help': "Relative path to build directory. Default is 'build'",
-}
-
-opt_install_prefix = {
-    'name': 'install_prefix',
-    'long': 'install-prefix',
-    'default': None,
-    'help': "Relative path to the install directory. Default is <build-dir>-install.",
-}
-
-
-# execute tasks through click based CLI
-@click.group(cls=ClickDoit)
-@click.option('--build-dir', default='build', help=opt_build_dir['help'])
-@click.option('--install-prefix', default=None, help=opt_install_prefix['help'])
+@click.group(cls=CliGroup)
 @click.pass_context
-def cli(ctx, build_dir, install_prefix):
+def cli(ctx, **kwargs):
     ctx.ensure_object(dict)
-    ctx.obj['build_dir'] = build_dir
-    ctx.obj['install_prefix'] = install_prefix
+    for opt_name in CONTEXT.options.keys():
+        ctx.obj[opt_name] = kwargs.get(opt_name)
+cli.params.extend(CONTEXT.options.values())
 
 
-@dataclass
-class PathArgs:
-    """PathArgs are shared by build & all other tasks that used built/installed project"""
-    build_dir: str = 'build'
-    install_prefix: str = None
-    werror: str = None # Treat warnings as errors
-
-def set_installed(args: PathArgs):
+def set_installed(args):
     """set dev_module.PATH_INSTALLED
 
     Given install-prefix or <build_dir>-install
@@ -183,211 +258,303 @@ def set_installed(args: PathArgs):
     return str(install_dir) # FIXME use returned value instead of module global
 
 
-@dataclass
-class BuildArgs(PathArgs):
-    """build configuration argument options"""
-    debug: bool = False
-    gcov: bool = False
-    parallel: int = 1
-    show_build_log: bool = False
-    win_cp_openblas: bool = False
+def get_site_dir():
+    path_installed = dev_module.PATH_INSTALLED
+    # relative path for site-package with py version. i.e. 'lib/python3.10/site-packages'
+    py_lib_path = Path(get_path('platlib')).relative_to(sys.exec_prefix)
+    return str(Path(path_installed) / py_lib_path)
 
 
+############
 
-@cli.task_as_cmd()
-@click.pass_obj
-@task_params([opt_build_dir, opt_install_prefix])
-def task_build(ctx_obj, build_dir, install_prefix):
+@cli.cmd('build')
+class Build(Task):
     """build & install package on path"""
-    args = BuildArgs(build_dir=build_dir, install_prefix=install_prefix)
-    args.__dict__.update(**ctx_obj)
+    ctx = CONTEXT
 
-    # base = Path('scipy')
-    # files = [str(f) for f in base.glob('**/*.py')]
-    return {
-        'actions': [
-            (set_installed, (args,)),
-            (dev_module.build_project, (args,)),
-        ],
-        # 'file_dep': files,
-    }
+    werror = Option(['--werror'], default=False, is_flag=True, help="Treat warnings as errors")
+    gcov = Option(
+        ['--gcov'], default=False, is_flag=True,
+        help="enable C code coverage via gcov (requires GCC)."
+             "gcov output goes to build/**/*.gc*")
+    debug = Option(['--debug', '-d'], default=False, is_flag=True, help="Debug build")
+    parallel = Option(
+        ['--parallel', '-j'], default=1, metavar='PARALLEL',
+        help="Number of parallel jobs for build and testing")
+    show_build_log = Option(
+        ['--show-build-log'], default=False, is_flag=True,
+        help="Show build output rather than using a log file")
+    win_cp_openblas = Option(
+        ['--win-cp-openblas'], default=False, is_flag=True,
+        help="If set, and on Windows, copy OpenBLAS lib to install directory after"
+             "meson install. Note: this argument may be removed in the future once a"
+             "`site.cfg`-like mechanism to select BLAS/LAPACK libraries is"
+             "implemented for Meson")
+
+    @classmethod
+    def run(cls, add_path=False, **kwargs):
+        """return site_dir"""
+        kwargs.update(cls.ctx.get(kwargs))
+        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        args = Args(**kwargs)
+        set_installed(args)
+        site_dir = dev_module.build_project(args)
+
+        # add site to sys.path
+        if add_path:
+            sys.path.insert(0, site_dir)
+            os.environ['PYTHONPATH'] = \
+                os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+        return site_dir
 
 
-##### Test ####
 
 PROJECT_MODULE = "scipy"
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
+@cli.cmd('test')
+class Test(Task):
+    ctx = CONTEXT
 
-@dataclass
-class TestArgs(PathArgs):
-    parallel: int = 1
-    verbose: int = 1 # count
-    doctests: bool = False
-    coverage: bool = False
-    # test selection
-    mode: str = 'fast'
-    submodule: str = None # -s
-    tests: [str] = field(default_factory=list) # -t
+    verbose = Option(['--verbose', '-v'], default=1, help="more verbosity") # FIXME, not supported by doit
+    doctests = Option(['--doctests'], default=False, is_flag=True, help="Run doctests in module")
+    coverage = Option(
+        ['--coverage'], default=False, is_flag=True,
+        help="report coverage of project code. HTML output goes under build/coverage")
+    submodule = Option(
+        ['--submodule', '-s'], default=None, metavar='SUBMODULE',
+        help="Submodule whose tests to run (cluster, constants, ...)")
+    tests = Option(['--tests', '-t'], default=None, metavar='TESTS', help='Specify tests to run')
+    mode = Option(
+        ['--mode', '-m'], default='fast', metavar='MODE', show_default=True,
+        help="'fast', 'full', or something that could be passed to `pytest -m` as a marker expression")
+    parallel = Option(
+        ['--parallel', '-j'], default=1, metavar='PARALLEL',
+        help="Number of parallel jobs for testing"
+    )
 
-
-def _get_test_runner(path_installed, project_module):
-    """
-    get Test Runner from locally installed/built project
-    """
-    # relative path for site-package with py version. i.e. 'lib/python3.10/site-packages'
-    py_lib_path = Path(get_path('platlib')).relative_to(sys.exec_prefix)
-    site_dir = str(Path(path_installed) / py_lib_path)
-
-    # add local installed dir to PYTHONPATH
-    # print(f"Trying to find scipy from development installed path at: {site_dir}")
-    sys.path.insert(0, site_dir)
-    os.environ['PYTHONPATH'] = \
-        os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
-
-    __import__(project_module)
-    test = sys.modules[project_module].test
-    version = sys.modules[project_module].__version__
-    mod_path = sys.modules[project_module].__file__
-    mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
-    return test, version, mod_path
-
-
-def scipy_tests(args: TestArgs):
-    test_dir = os.path.join(ROOT_DIR, args.build_dir, 'test')
-    if not os.path.isdir(test_dir):
-        os.makedirs(test_dir)
-
-    shutil.copyfile(os.path.join(ROOT_DIR, '.coveragerc'),
-                    os.path.join(test_dir, '.coveragerc'))
-
-    runner, version, mod_path = _get_test_runner(dev_module.PATH_INSTALLED, PROJECT_MODULE)
-
-    # TODO: extra arguments to pytest?
-    extra_argv = []
-    # extra_argv = args.args[:]
-    # if extra_argv and extra_argv[0] == '--':
-    #     extra_argv = extra_argv[1:]
-
-    if args.submodule:
-        tests = [PROJECT_MODULE + "." + args.submodule]
-    elif args.tests:
-        tests = args.tests
-    else:
-        tests = None
-
-    print('Testsssss', tests)
-    return
-
-    # FIXME: changing CWD is not a good practice and might messed up with other tasks
-    cwd = os.getcwd()
-    try:
-        os.chdir(test_dir)
-        print("Running tests for {} version:{}, installed at:{}".format(
-                    PROJECT_MODULE, version, mod_path))
-        result = runner(
-            args.mode,
-            verbose=args.verbose,
-            extra_argv=extra_argv,
-            doctests=args.doctests,
-            coverage=args.coverage,
-            tests=tests,
-            parallel=args.parallel)
-    finally:
-        os.chdir(cwd)
-
-
-@cli.task_as_cmd()
-@click.pass_obj
-@task_params([
-    opt_build_dir, opt_install_prefix,
-    {'name': 'submodule', 'long': 'submodule', 'short': 's', 'default': None,
-     'help': 'Submodule whose tests to run (cluster, constants, ...)',
-    },
-])
-def task_test(ctx_obj, submodule=None, **kwargs):
-    """run unit-tests"""
-    args = TestArgs(submodule=submodule, **kwargs)
-    args.__dict__.update(**ctx_obj)
-    return {
-        'actions': [
-            (set_installed, (args,)),
-            (scipy_tests, (args,)),
-        ],
-        'verbosity': 2,
+    Meta = {
         'task_dep': ['build'],
     }
 
+    @staticmethod
+    def _get_test_runner(path_installed, project_module):
+        """
+        get Test Runner from locally installed/built project
+        """
+        site_dir = get_site_dir()
 
-#####################
-# Example of click command that does not use doit at all
-@cli.command()
-def pep8():
-    """pep8 & lint (not a doit task)"""
-    import os
-    # Lint the source using the configuration in tox.ini.
-    os.system("flake8 scipy benchmarks/benchmarks")
-    # Lint just the diff since branching off of main using a
-    # stricter configuration.
-    lint_diff = os.path.join(ROOT_DIR, 'tools', 'lint_diff.py')
-    os.system(lint_diff)
+        # add local installed dir to PYTHONPATH
+        print(f"Trying to find scipy from development installed path at: {site_dir}")
+        sys.path.insert(0, site_dir)
+        os.environ['PYTHONPATH'] = \
+            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+
+        __import__(project_module)
+        test = sys.modules[project_module].test
+        version = sys.modules[project_module].__version__
+        mod_path = sys.modules[project_module].__file__
+        mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
+        return test, version, mod_path
+
+
+    @classmethod
+    def scipy_tests(cls, args):
+        test_dir = os.path.join(ROOT_DIR, args.build_dir, 'test')
+        if not os.path.isdir(test_dir):
+            os.makedirs(test_dir)
+
+        shutil.copyfile(os.path.join(ROOT_DIR, '.coveragerc'),
+                        os.path.join(test_dir, '.coveragerc'))
+
+        runner, version, mod_path = cls._get_test_runner(dev_module.PATH_INSTALLED, PROJECT_MODULE)
+
+        # TODO: extra arguments to pytest?
+        extra_argv = []
+        # extra_argv = args.args[:]
+        # if extra_argv and extra_argv[0] == '--':
+        #     extra_argv = extra_argv[1:]
+
+        if args.submodule:
+            tests = [PROJECT_MODULE + "." + args.submodule]
+        elif args.tests:
+            tests = args.tests
+        else:
+            tests = None
+
+        print('Testsssss', tests)
+        return
+
+        # FIXME: changing CWD is not a good practice and might messed up with other tasks
+        cwd = os.getcwd()
+        try:
+            os.chdir(test_dir)
+            print("Running tests for {} version:{}, installed at:{}".format(
+                        PROJECT_MODULE, version, mod_path))
+            result = runner(
+                args.mode,
+                verbose=args.verbose,
+                extra_argv=extra_argv,
+                doctests=args.doctests,
+                coverage=args.coverage,
+                tests=tests,
+                parallel=args.parallel)
+        finally:
+            os.chdir(cwd)
+
+
+    @classmethod
+    def run(cls, **kwargs):
+        """run unit-tests"""
+        kwargs.update(cls.ctx.get())
+        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        args = Args(**kwargs)
+        cls.scipy_tests(args)
+
 
 
 ###################
-## Example of task / click command being defined separately
+#### linters
 
 @task_params([{'name': 'output_file', 'long': 'output-file', 'default': None,
                'help': 'Redirect report to a file'}])
-def task_flake8(output_file):
+def task_pep8(output_file):
     """Perform pep8 check with flake8."""
     opts = ''
     if output_file:
         opts += f'--output-file={output_file}'
     return {
         'actions': [f"flake8 {opts} scipy benchmarks/benchmarks"],
+        'doc': 'Lint scipy and benchmarks directory',
     }
+
+def task_pep8diff():
+    # Lint just the diff since branching off of main using a
+    # stricter configuration.
+    return {
+        'basename': 'pep8-diff',
+        'actions': [os.path.join(ROOT_DIR, 'tools', 'lint_diff.py')],
+        'doc': 'Lint only files modified since last commit (with stricker rules)',
+        'task_dep': ['pep8'],
+    }
+
+@cli.cmd('pep8')
+class Pep8():
+    """Perform pep8 check with flake8."""
+    output_file = Option(['--output-file'], default=None, help= 'Redirect report to a file')
+    def run(output_file):
+        opts = {'output_file': output_file}
+        run_doit_task({'pep8-diff': {}, 'pep8': opts})
+
+
+@cli.cmd('mypy')
+class Mypy(Task):
+    ctx = CONTEXT
+
+    Meta = {
+        'task_dep': ['build'],
+        # 'stream': 'no-capture',
+    }
+
+    @classmethod
+    def run(cls, **kwargs):
+        kwargs.update(cls.ctx.get())
+        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        args = Args(**kwargs)
+
+        try:
+            import mypy.api
+        except ImportError as e:
+            raise RuntimeError(
+                "Mypy not found. Please install it by running "
+                "pip install -r mypy_requirements.txt from the repo root"
+            ) from e
+
+        site_dir = get_site_dir()
+        config = os.path.join(
+            os.path.dirname(os.path.abspath(__file__)),
+            "mypy.ini",
+        )
+
+        check_path = PROJECT_MODULE
+        # debug
+        check_path += '/optimize/minpack2.py'
+
+        runtests = dev_module.import_module_from_path('runtests', Path(ROOT_DIR) / 'runtests.py')
+        with runtests.working_dir(site_dir):
+            # By default mypy won't color the output since it isn't being
+            # invoked from a tty.
+            os.environ['MYPY_FORCE_COLOR'] = '1'
+            # Change to the site directory to make sure mypy doesn't pick
+            # up any type stubs in the source tree.
+            report, errors, status = mypy.api.run([
+                "--config-file",
+                config,
+                check_path,
+            ])
+        print(report, end='')
+        print(errors, end='', file=sys.stderr)
+        return status == 0
+
+
+##########################################
+### ENVS
+# TODO: it would be nice if click supported sections for commands
+# https://stackoverflow.com/questions/57066951/divide-click-commands-into-sections-in-cli-documentation
 
 @cli.command()
-@click.option('output-file', default=None, help= 'Redirect report to a file')
-def flake8(output_file):
-    """Perform pep8 check with flake8."""
-    opts = {'outfile': output_file}
-    sys.exit(run_doit_task('flake8', opts))
+@click.argument('extra_argv', nargs=-1)
+@click.pass_obj
+def python(ctx_obj, extra_argv):
+    """Start a Python shell with PYTHONPATH set"""
+    # not a doit task - manually build
+    vals = Build.opt_defaults()
+    vals.update(ctx_obj)
+    Build.run(add_path=True, **vals)
+
+    if extra_argv:
+        # Don't use subprocess, since we don't want to include the
+        # current path in PYTHONPATH.
+        sys.argv = extra_argv
+        with open(extra_argv[0], 'r') as f:
+            script = f.read()
+        sys.modules['__main__'] = new_module('__main__')
+        ns = dict(__name__='__main__', __file__=extra_argv[0])
+        exec(script, ns)
+    else:
+        import code
+        code.interact()
 
 
-##################
-# DRY exposing simple task as command
+@cli.command()
+@click.pass_obj
+def ipython(ctx_obj):
+    """Start IPython shell with PYTHONPATH set"""
+    # not a doit task - manually build
+    vals = Build.opt_defaults()
+    vals.update(ctx_obj)
+    Build.run(add_path=True, **vals)
 
-@cli.task_as_cmd()
-@task_params([{'name': 'output_file', 'long': 'output-file', 'default': None,
-               'help': 'Redirect report to a file'}])
-def task_flake(output_file):
-    """Perform pep8 check with flake8."""
-    opts = ''
-    if output_file:
-        opts += f'--output-file={output_file}'
-    return {
-        'actions': [f"flake8 {opts} scipy benchmarks/benchmarks"],
-    }
+    import IPython
+    IPython.embed(user_ns={})
 
 
-# def task_bench():
-#     pass
+@cli.command()
+@click.argument('extra_argv', nargs=-1)
+@click.pass_obj
+def shell(ctx_obj, extra_argv):
+    """Start Unix shell with PYTHONPATH set"""
+    # not a doit task - manually build
+    vals = Build.opt_defaults()
+    vals.update(ctx_obj)
+    Build.run(add_path=True, **vals)
 
-# def task_doc_build():
-#     pass
+    shell = os.environ.get('SHELL', 'sh')
+    print("Spawning a Unix shell...")
+    os.execv(shell, [shell] + extra_argv)
+    sys.exit(1)
 
-
-
-# build using dev.py command line
-# def task_builddev():
-#     return {
-#         'actions': ['python dev.py --build-only'],
-#     }
 
 
 if __name__ == '__main__':
     cli()
-else:
-    # make sure click.pass_obj decorator still works when running with plain doit
-    push_context(click.core.Context(cli, obj={}))
