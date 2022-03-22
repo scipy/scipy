@@ -82,44 +82,6 @@ The ``match`` argument ensures that the test doesn't pass by raising
 a ``ValueError`` that is not related to the input containing ``nan``.
 
 
-A parameter called lambda
-~~~~~~~~~~~~~~~~~~~~~~~~~
-There are functions where convention dictates that (ideally) a parameter
-should be called 'lambda'.  In Python, 'lambda' is a reserved word that
-cannot be used as a variable name.  If a new function or class has a
-parameter where a name that is similar to 'lambda' is really the best
-choice, the preferred name to use is [TBD: ``lam``, ``lmb``, ``lamb``,
-``lmbda``, ``lambda_``?].
-
-There has been a lack of consistency in the past:
-
-============================== =============
-Function or class              Variable name
-============================== =============
-`scipy.stats.boxcox`           ``lmbda``
-`scipy.stats.boxcox_llf`       ``lmb``
-`scipy.stats.yeojohnson`       ``lmbda``
-`scipy.stats.yeojohnson_llf`   ``lmb``
-`scipy.stats.chi2_contingency` ``lambda_``
-`scipy.stats.boltzmann`        ``lambda_``
-`scipy.stats.planck`           ``lambda_``
-`scipy.stats.tukeylambda`      ``lam``
-`scipy.signal.cspline1d`       ``lamb``
-`scipy.signal.qspline1d`       ``lamb``
-`scipy.signal.cspline2d`       ``lambda`` [*]
-`scipy.signal.qspline2d`       ``lambda`` [*]
-`scipy.signal.spline_filter`   ``lmbda``
-`scipy.special.tklmbda`        ``lmbda``
-`scipy.special.boxcox`         ``lmbda``
-`scipy.special.boxcox1p`       ``lmbda``
-`scipy.special.inv_boxcox`     ``lmbda``
-`scipy.special.inv_boxcox1p`   ``lmbda``
-============================== =============
-
-.. [*] This function accepts positional arguments only, but the docstring
-       documents the argument as `lambda`.
-
-
 Documentation Guidelines
 ------------------------
 
