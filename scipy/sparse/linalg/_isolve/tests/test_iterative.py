@@ -143,16 +143,16 @@ class IterativeParams:
 
         # Non-symmetric and Positive Definite
         #
-        # cgs, qmr, and bicg fail to converge on this one
+        # cgs, qmr, and tfqmr fail to converge on this one
         #   -- algorithmic limitation apparently
         data = ones((2,10))
         data[0,:] = 2
         data[1,:] = -1
         A = spdiags(data, [0,-1], 10, 10, format='csr')
         self.cases.append(Case("nonsymposdef", A,
-                               skip=sym_solvers+[cgs, qmr, bicg, tfqmr]))
+                               skip=sym_solvers+[cgs, qmr, tfqmr]))
         self.cases.append(Case("nonsymposdef", A.astype('F'),
-                               skip=sym_solvers+[cgs, qmr, bicg, tfqmr]))
+                               skip=sym_solvers+[cgs, qmr, tfqmr]))
 
         # Symmetric, non-pd, hitting cgs/bicg/bicgstab/qmr breakdown
         A = np.array([[0, 0, 0, 0, 0, 1, -1, -0, -0, -0, -0],
@@ -516,6 +516,10 @@ def test_x0_working(solver):
 def test_x0_equals_Mb(solver):
     for case in params.cases:
         if solver in case.skip:
+            continue
+        # Skip The solver `bicg` for the `nonsymposdef` problem
+        # because it did not converge for Knoll's initial guess
+        if case.name == 'nonsymposdef' and solver is bicg:
             continue
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
