@@ -60,6 +60,7 @@ functions::
 For more information about writing unit tests, see `Testing Guidelines
 <https://numpy.org/doc/stable/reference/testing.html>`_.
 
+
 Testing that expected exceptions are raised
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 When writing a new test that a function call raises a certain exception,
