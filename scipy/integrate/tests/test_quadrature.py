@@ -164,17 +164,17 @@ class TestQuadrature:
         assert_equal(simpson(y, x=x, axis=0), 0.0)
         assert_equal(simpson(y, x=x, axis=-1), 0.0)
 
-        x = np.array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+        x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 2, 4, 8]])
         y = np.power(x, 2)
         zero_axis = [0.0, 0.0, 0.0, 0.0]
-        default_axis = [21.16666667, 21.16666667, 21.16666667]
+        default_axis = [175.75, 175.75, 175.75]
         assert_equal(simpson(y, x=x, axis=0), zero_axis)
         assert_equal(simpson(y, x=x, axis=-1), default_axis)
 
-        x = np.array([[1, 2, 3, 4], [2, 2, 4, 4], [3, 2, 5, 4]])
+        x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 8, 16, 32]])
         y = np.power(x, 2)
-        zero_axis = [8.66666667, 0.0, 32.66666667, 0.0]
-        default_axis = [21.16666667, 13.33333333, 12.16666667]
+        zero_axis = [0.0, 136.0, 1088.0, 8704.0]
+        default_axis = [175.75, 175.75, 11292.25]
         assert_equal(simpson(y, x=x, axis=0), zero_axis)
         assert_equal(simpson(y, x=x, axis=-1), default_axis)
 
