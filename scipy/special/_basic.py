@@ -2751,7 +2751,7 @@ def _range_prod(lo, hi, k=1):
         return hi
 
 
-def _exact_factorial_array(n):
+def _exact_factorialx_array(n, k=1):
     """
     Exact computation of factorial for an array.
 
@@ -2761,6 +2761,8 @@ def _exact_factorial_array(n):
 
     In other words, the factorial for the largest input is only
     computed once, with each other result computed in the process.
+
+    k > 1 corresponds to the multifactorial.
     """
     un = np.unique(n)
     # numpy changed nan-sorting behaviour with 1.21, see numpy/numpy#18070;
@@ -2786,15 +2788,20 @@ def _exact_factorial_array(n):
     out[n < 0] = 0
 
     # Calculate products of each range of numbers
-    if un.size:
-        val = math.factorial(un[0])
-        out[n == un[0]] = val
-        for i in range(len(un) - 1):
-            prev = un[i] + 1
-            current = un[i + 1]
+    # we can only multiply incrementally if the values are k apart;
+    # therefore we partition `un` into "lanes", i.e. its residues modulo k
+    for lane in range(0, k):
+        ul = un[(un % k) == lane] if k > 1 else un
+        if ul.size:
             # cast to python ints to avoid overflow with np.int-types
-            val *= _range_prod(int(prev), int(current))
-            out[n == current] = val
+            val = _range_prod(1, int(ul[0]), k=k)
+            out[n == ul[0]] = val
+            for i in range(len(ul) - 1):
+                prev = ul[i] + 1
+                current = ul[i + 1]
+                # use int() for the same reason as above
+                val *= _range_prod(int(prev), int(current), k=k)
+                out[n == current] = val
 
     if np.isnan(n).any():
         out = out.astype(np.float64)
@@ -2876,7 +2883,7 @@ def factorial(n, exact=False):
         )
 
     if exact:
-        return _exact_factorial_array(n)
+        return _exact_factorialx_array(n)
     # we do not raise for non-integers with exact=True due to
     # historical reasons, though deprecation would be possible
     return _ufuncs._factorial(n)
@@ -2895,8 +2902,7 @@ def factorial2(n, exact=False):
     Parameters
     ----------
     n : int or array_like
-        Calculate ``n!!``.  Arrays are only supported with `exact` set
-        to False.  If ``n < 0``, the return value is 0.
+        Calculate ``n!!``.  If ``n < 0``, the return value is 0.
     exact : bool, optional
         The result can be approximated rapidly using the gamma-formula
         above (default).  If `exact` is set to True, calculate the
@@ -2950,6 +2956,8 @@ def factorial2(n, exact=False):
         return n
     if not np.issubdtype(n.dtype, np.integer):
         raise ValueError("factorial2 does not support non-integral arrays")
+    if exact:
+        return _exact_factorialx_array(n, k=2)
     # approximation
     vals = zeros(n.shape)
     cond = (n >= 0)
@@ -2973,7 +2981,7 @@ def factorialk(n, k, exact=True):
 
     Parameters
     ----------
-    n : int
+    n : int or array_like
         Calculate multifactorial. If `n` < 0, the return value is 0.
     k : int
         Order of multifactorial.
@@ -3016,8 +3024,15 @@ def factorialk(n, k, exact=True):
         elif n in {0, 1}:
             return 1
         return _range_prod(1, n, k=k)
-    else:
-        raise NotImplementedError
+    # arrays & array-likes
+    n = asarray(n)
+    if n.size == 0:
+        # return empty arrays unchanged
+        return n
+    if not np.issubdtype(n.dtype, np.integer):
+        msg = "factorialk does not support non-integral arrays!"
+        raise ValueError(msg)
+    return _exact_factorialx_array(n, k=k)
 
 
 def zeta(x, q=None, out=None):

@@ -1975,11 +1975,10 @@ class TestFactorialFunctions:
         # Consistent output for n < 0
         assert_func(special.factorial([-5, -4, 0, 1], exact=exact),
                     [0, 0, 1, 1])
-        # no exact array-path for factorial2 yet
-        assert_allclose(special.factorial2([-5, -4, 0, 1], exact=exact),
-                        [0, 0, 1, 1])
-        # assert_func(special.factorialk([-5, -4, 0, 1], 3, exact=True),
-        #             [0, 0, 1, 1])
+        assert_func(special.factorial2([-5, -4, 0, 1], exact=exact),
+                    [0, 0, 1, 1])
+        assert_func(special.factorialk([-5, -4, 0, 1], 3, exact=True),
+                    [0, 0, 1, 1])
 
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("content", [np.nan], ids=["NaN"])
@@ -1993,8 +1992,8 @@ class TestFactorialFunctions:
         # factorial{2,k} don't support array case due to dtype constraints
         with pytest.raises(ValueError, match="factorial2 does not support.*"):
             special.factorial2([content], exact=exact)
-        # with pytest.raises(ValueError, match="factorialk does not support.*"):
-        #     special.factorialk([content], 3, exact=True)
+        with pytest.raises(ValueError, match="factorialk does not support.*"):
+            special.factorialk([content], 3, exact=True)
         # array-case also tested in test_factorial{,2,k}_corner_cases
 
     @pytest.mark.parametrize("levels", range(1, 5))
@@ -2027,7 +2026,7 @@ class TestFactorialFunctions:
 
         _check(special.factorial(n, exact=exact), exp_nucleus[1])
         _check(special.factorial2(n, exact=exact), exp_nucleus[2])
-        # _check(special.factorialk(n, 3, exact=True), exp_nucleus[3])
+        _check(special.factorialk(n, 3, exact=True), exp_nucleus[3])
 
     @pytest.mark.parametrize("exact", [True, False])
     @pytest.mark.parametrize("dim", range(0, 5))
@@ -2038,8 +2037,8 @@ class TestFactorialFunctions:
                         np.array(exp[1], ndmin=dim))
         assert_allclose(special.factorial2(n, exact=exact),
                         np.array(exp[2], ndmin=dim))
-        # assert_allclose(special.factorialk(n, 3, exact=True),
-        #                 np.array(exp[3], ndmin=dim))
+        assert_allclose(special.factorialk(n, 3, exact=True),
+                        np.array(exp[3], ndmin=dim))
 
     # note that n=170 is the last integer such that factorial(n) fits float64
     @pytest.mark.parametrize('n', range(30, 180, 10))
@@ -2144,7 +2143,7 @@ class TestFactorialFunctions:
         correct = functools.reduce(operator.mul, list(range(n, 0, -2)), 1)
 
         assert_array_equal(correct, special.factorial2(n, True))
-        # assert_array_equal(correct, special.factorial2([n], True)[0])
+        assert_array_equal(correct, special.factorial2([n], True)[0])
 
         assert_allclose(float(correct), special.factorial2(n, False))
         assert_allclose(float(correct), special.factorial2([n], False)[0])
@@ -2163,8 +2162,9 @@ class TestFactorialFunctions:
         if np.issubdtype(n.dtype, np.integer) or (not content):
             # no error
             result = special.factorial2(n, exact=exact)
-            # assert_allclose chokes on object dtype
-            func = assert_equal if (not content) else assert_allclose
+            # expected result is identical to n for exact=True resp. empty
+            # arrays (assert_allclose chokes on object), otherwise up to tol
+            func = assert_equal if exact or (not content) else assert_allclose
             func(result, n)
         else:
             with pytest.raises(ValueError, match="factorial2 does not*"):
@@ -2181,13 +2181,12 @@ class TestFactorialFunctions:
         correct = functools.reduce(operator.mul, list(range(n, 0, -k)), 1)
 
         assert_array_equal(correct, special.factorialk(n, k, True))
-        # assert_array_equal(correct, special.factorialk([n], k, True)[0])
+        assert_array_equal(correct, special.factorialk([n], k, True)[0])
 
         # exact=False not yet supported
         # assert_allclose(float(correct), special.factorialk(n, k, False))
         # assert_allclose(float(correct), special.factorialk([n], k, False)[0])
 
-    @pytest.mark.skipif(True, reason="no array support for factorialk yet")
     @pytest.mark.parametrize("dtype", [np.int64, np.float64,
                                        np.complex128, object])
     @pytest.mark.parametrize("dim", range(0, 5))
