@@ -143,7 +143,7 @@ class TestMultivariateNormal:
             u, s, v = scipy.linalg.svd(M)
             return u
         
-        def _do_degenerate_check(dist_kk, dist_nn, dist_rr):
+        def _do_degenerate_check(distn_kk, distn_nn, distn_rr):
             assert_equal(distn_kk.cov_info.rank, k)
             assert_equal(distn_nn.cov_info.rank, k)
             assert_equal(distn_rr.cov_info.rank, k)
@@ -167,7 +167,7 @@ class TestMultivariateNormal:
 
                 # Embed the small PSD matrix into a larger low rank matrix.
                 psd_nn = np.zeros((n, n))
-                psd_nn[:k, :k] = kk
+                psd_nn[:k, :k] = psd_kk
 
                 # Define a rotation of the larger low rank matrix.
                 u = _sample_orthonormal_matrix(n)
@@ -181,7 +181,7 @@ class TestMultivariateNormal:
                                                allow_singular=True)
                 distn_rr = multivariate_normal(np.zeros(n), psd_rr,
                                                allow_singular=True)
-                _do_degenerate_check(dist_kk, dist_nn, dist_rr)
+                _do_degenerate_check(distn_kk, distn_nn, distn_rr)
 
                 # Re-use the matrices as the inverse covariances.
                 distn_kk = multivariate_normal(np.zeros(k), cov=None,
@@ -193,7 +193,7 @@ class TestMultivariateNormal:
                 distn_rr = multivariate_normal(np.zeros(n), cov=None,
                                                inverse_cov=psd_rr,
                                                allow_singular=True)
-                _do_degenerate_check(dist_kk, dist_nn, dist_rr)
+                _do_degenerate_check(distn_kk, distn_nn, distn_rr)
 
                                 
     def test_large_pseudo_determinant(self):
