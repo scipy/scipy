@@ -274,14 +274,14 @@ def laplacian(
     Our final example illustrates the latter
     for a noisy directed linear graph.
 
-    >>> from scipy.sparse import random
-    >>> from scipy.sparse.linalg inport lobpcg
+    >>> from scipy.sparse import diags, random
+    >>> from scipy.sparse.linalg import lobpcg
 
     Create a directed linear graph with ``N=35`` vertices
     using a sparse adjacency matrix ``G``:
 
     >>> N = 35
-    >>> G = sparse.diags(np.ones(N-1), 1, format="csr")
+    >>> G = diags(np.ones(N-1), 1, format="csr")
 
     Fix a random seed ``rng`` and add a random sparse noise to the graph ``G``:
 
