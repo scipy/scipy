@@ -296,26 +296,22 @@ def laplacian(
 
     >>> Y = np.ones((N, 1))
 
-    Alternating the sign of the graph weights allows determining
-    labels for spectral max- and min- cuts in a single loop:
-
-    >>> for cut in ["max", "min"]:
-    ...     G = -G
-
+    Alternating (1) the sign of the graph weights allows determining
+    labels for spectral max- and min- cuts in a single loop.
     Since the graph is undirected, the option ``symmetrized=True``
     must be used in the construction of the Laplacian.
-    The option ``normed=True`` cannot be used for the negative weights here
-    as the symmetric normalization evaluates square roots.
-    The option ``form="lo"`` is matrix-free, i.e., guarantees
+    The option ``normed=True`` cannot be used in (2) for the negative weights
+    here as the symmetric normalization evaluates square roots.
+    The option ``form="lo"`` in (2) is matrix-free, i.e., guarantees
     a fixed memory footprint and read-only access to the graph.
+    Calling the eigenvalue solver ``lobpcg`` (3) computes the Fiedler vector
+    that determines the labels as the signs of its components in (4).
 
-    ...     L = csgraph.laplacian(G, symmetrized=True, form="lo")
-
-    Calling the eigenvalue solver ``lobpcg`` to compute the Fiedler vector
-    that determines the labels as the signs of its components.
-
-    ...     _, eves = sparse.linalg.lobpcg(L, X, Y=Y, largest=False, tol=1e-3)
-    ...     print(cut + "-cut labels:\\n", 1 * (eves[:, 0]>0))
+    >>> for cut in ["max", "min"]:
+    ...     G = -G  # 1.
+    ...     L = csgraph.laplacian(G, symmetrized=True, form="lo")  # 2.
+    ...     _, eves = sparse.linalg.lobpcg(L, X, Y=Y, largest=False, tol=1e-3)  # 3.
+    ...     print(cut + "-cut labels:\\n", 1 * (eves[:, 0]>0))  # 4.
     max-cut labels:
     [0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0]
     min-cut labels:
