@@ -307,6 +307,8 @@ class TestMultivariateNormal:
                         multivariate_normal.logcdf(x, mean, cov))
 
     def test_frozen_inverse_cov(self):
+        # The frozen distribution should agree with the regular one when
+        # `inverse_cov` is set.
         np.random.seed(1234)
         x = np.random.randn(5)
         mean = np.random.randn(5)
