@@ -10,7 +10,7 @@ are not explicitly stated in the existing guidelines and standards, including
 * `NumPy docstring standard
   <https://numpydoc.readthedocs.io/en/latest/format.html>`_
 * NumPy `Testing Guidelines
-  <https://docs.scipy.org/doc/numpy/reference/testing.html>`_
+  <https://numpy.org/doc/stable/reference/testing.html>`_
 
 Some of these are trivial, and might not seem worth discussing, but in many
 cases, the issue has come up in a pull request review in either the SciPy
