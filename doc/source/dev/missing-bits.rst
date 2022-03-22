@@ -97,14 +97,14 @@ have oxygen to live" versus "I should exercise more".
             Parameters
             ----------
             x : float
-                x must be nonnegative.
+                `x` must be nonnegative.
 
     No::
 
             Parameters
             ----------
             x : float
-                x should be nonnegative.
+                `x` should be nonnegative.
 
 
 Use of the 'versionadded' markup
