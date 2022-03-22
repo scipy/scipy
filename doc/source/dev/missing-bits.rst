@@ -146,15 +146,6 @@ There is special Sphinx syntax for DOIs: `:doi:`. For example::
 (arXiv articles also have special markup available: `:arxiv:`.)
 
 
-Use of ``np`` in the "Examples" section
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Do not include ``import numpy as np`` in the code given in the "Examples"
-section.  The NumPy Docstring standard says "The examples may assume that
-``import numpy as np`` is executed before the example code in numpy."  That
-statement makes the import *optional*; this guideline says explicitly
-that the import statement must not be included.
-
-
 Bulleted lists
 ~~~~~~~~~~~~~~
 This is not so much a guideline as it is a reminder of the Sphinx markup
