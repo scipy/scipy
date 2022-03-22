@@ -8234,10 +8234,10 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         df = df_numer / df_denom
 
         if (df_numer == 0) and (df_denom == 0):
-            warnings.warn("p-value cannot be estimated  "
-                          "because denominator and numerator of "
-                          "t-distribution are 0. Try using "
-                          "distribution='normal' ", RuntimeWarning)
+            message = ("p-value cannot be estimated with `distribution='t' " 
+                       "because degrees of freedom parameter is undefined "
+                       "(0/0). Try using `distribution='normal'")
+            warnings.warn(message, RuntimeWarning)
 
         p = distributions.t.cdf(wbfn, df)
 
