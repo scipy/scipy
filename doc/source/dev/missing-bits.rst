@@ -137,6 +137,18 @@ URL.
         .. [1] https://en.wikipedia.org/wiki/Zeta_distribution    
 
 
+DOIs in references
+~~~~~~~~~~~~~~~~~~
+The use of DOIs in references is strongly recommended.
+There is special Sphinx syntax for DOIs: `:doi:`. For example:
+
+    .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
+           C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
+           203-215, :doi:`10.1016/j.patcog.2018.09.014`
+
+(arXiv articles also have special markup available: `:arxiv:`.)
+
+
 Use of ``np`` in the "Examples" section
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Do not include ``import numpy as np`` in the code given in the "Examples"
