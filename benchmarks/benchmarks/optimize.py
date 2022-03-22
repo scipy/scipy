@@ -16,7 +16,7 @@ with safe_import():
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
-                                dual_annealing, OptimizeResult)
+                                dual_annealing)
     from scipy.optimize._minimize import MINIMIZE_METHODS
 
 

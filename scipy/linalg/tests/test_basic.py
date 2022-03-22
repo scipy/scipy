@@ -578,7 +578,6 @@ class TestSolve:
                 x = solve(a, b, assume_a='her', lower=lower)
                 assert_array_almost_equal(dot(a, x), b)
 
-            
     def test_simple_her(self):
         a = [[5, 2+1j], [2-1j, -4]]
         for b in ([1j, 0],
@@ -587,8 +586,6 @@ class TestSolve:
                   ):
             x = solve(a, b, assume_a='her')
             assert_array_almost_equal(dot(a, x), b)
-
-            
 
     def test_nils_20Feb04(self):
         n = 2
@@ -622,6 +619,13 @@ class TestSolve:
             x = solve(a, b)
             assert_array_almost_equal(dot(a, x), b)
 
+    def test_sym_pos_dep(self):
+        with pytest.warns(
+                DeprecationWarning,
+                match="The 'sym_pos' keyword is deprecated",
+        ):
+            solve([[1.]], [1], sym_pos=True)
+
     def test_random_sym(self):
         n = 20
         a = random([n, n])
@@ -631,7 +635,7 @@ class TestSolve:
                 a[i, j] = a[j, i]
         for i in range(4):
             b = random([n])
-            x = solve(a, b, sym_pos=1)
+            x = solve(a, b, assume_a="pos")
             assert_array_almost_equal(dot(a, x), b)
 
     def test_random_sym_complex(self):
@@ -644,7 +648,7 @@ class TestSolve:
                 a[i, j] = conjugate(a[j, i])
         b = random([n])+2j*random([n])
         for i in range(2):
-            x = solve(a, b, sym_pos=1)
+            x = solve(a, b, assume_a="pos")
             assert_array_almost_equal(dot(a, x), b)
 
     def test_check_finite(self):
@@ -1628,7 +1632,7 @@ class TestSolveCirculant:
 
         x = solve_circulant(c, b, baxis=1, outaxis=-1)
         assert_equal(x.shape, (2, 3, 4))
-        assert_allclose(np.rollaxis(x, -1), expected)
+        assert_allclose(np.moveaxis(x, -1, 0), expected)
 
         # np.swapaxes(c, 1, 2) has shape (2, 4, 1); b.T has shape (4, 3).
         x = solve_circulant(np.swapaxes(c, 1, 2), b.T, caxis=1)
@@ -1660,7 +1664,7 @@ class TestMatrix_Balance:
         # Pre/post LAPACK 3.5.0 gives the same result up to an offset
         # since in each case col norm is x1000 greater and
         # 1000 / 32 ~= 1 * 32 hence balanced with 2 ** 5.
-        assert_allclose(int(np.diff(np.log2(np.diag(y)))), 5)
+        assert_allclose(np.diff(np.log2(np.diag(y))), [5])
 
     def test_scaling_order(self):
         A = np.array([[1, 0, 1e-4], [1, 1, 1e-2], [1e4, 1e2, 1]])
@@ -1670,7 +1674,7 @@ class TestMatrix_Balance:
     def test_separate(self):
         _, (y, z) = matrix_balance(np.array([[1000, 1], [1000, 0]]),
                                    separate=1)
-        assert_equal(int(np.diff(np.log2(y))), 5)
+        assert_equal(np.diff(np.log2(y)), [5])
         assert_allclose(z, np.arange(2))
 
     def test_permutation(self):

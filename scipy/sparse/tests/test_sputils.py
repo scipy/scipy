@@ -3,8 +3,8 @@
 import numpy as np
 from numpy.testing import assert_equal, suppress_warnings
 from pytest import raises as assert_raises
-from scipy.sparse import sputils
-from scipy.sparse.sputils import matrix
+from scipy.sparse import _sputils as sputils
+from scipy.sparse._sputils import matrix
 
 
 class TestSparseUtils:
@@ -20,6 +20,12 @@ class TestSparseUtils:
 
         assert_equal(sputils.getdtype(None, default=float), float)
         assert_equal(sputils.getdtype(None, a=A), np.int8)
+
+        with assert_raises(
+            ValueError,
+            match="object dtype is not supported by sparse matrices",
+        ):
+            sputils.getdtype("O")
 
     def test_isscalarlike(self):
         assert_equal(sputils.isscalarlike(3.0), True)
