@@ -8240,8 +8240,6 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
             warnings.warn(message, RuntimeWarning)
 
         p = distributions.t.cdf(wbfn, df)
-
-
     elif distribution == "normal":
         p = distributions.norm.cdf(wbfn)
     else:
