@@ -137,7 +137,7 @@ URL.
 DOIs in references
 ~~~~~~~~~~~~~~~~~~
 The use of DOIs in references is strongly recommended.
-There is special Sphinx syntax for DOIs: `:doi:`. For example:
+There is special Sphinx syntax for DOIs: `:doi:`. For example::
 
     .. [2] D. Fishkind, S. Adali, H. Patsolic, L. Meng, D. Singh, V. Lyzinski,
            C. Priebe, "Seeded graph matching", Pattern Recognit. 87 (2019):
