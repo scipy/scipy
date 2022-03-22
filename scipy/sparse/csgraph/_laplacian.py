@@ -274,7 +274,8 @@ def laplacian(
     Our final example illustrates the latter
     for a noisy directed linear graph.
 
-    >>> from scipy import sparse
+    >>> from scipy.sparse import random
+    >>> from scipy.sparse.linalg inport lobpcg
 
     Create a directed linear graph with ``N=35`` vertices
     using a sparse adjacency matrix ``G``:
@@ -285,7 +286,7 @@ def laplacian(
     Fix a random seed ``rng`` and add a random sparse noise to the graph ``G``:
 
     >>> rng = np.random.default_rng()
-    >>> G += 1e-2 * sparse.random(N, N, density=0.1, random_state=rng)
+    >>> G += 1e-2 * random(N, N, density=0.1, random_state=rng)
 
     Set initial approximations for eigenvectors:
 
@@ -305,15 +306,18 @@ def laplacian(
     The option ``form="lo"`` in (2) is matrix-free, i.e., guarantees
     a fixed memory footprint and read-only access to the graph.
     Calling the eigenvalue solver ``lobpcg`` (3) computes the Fiedler vector
-    that determines the labels as the signs of its components in (4).
+    that determines the labels as the signs of its components in (5).
+    Since the sign in an eigenvector is not deterministic and can flip,
+    we fix the sign of the first component to be always +1 in (4).
 
     >>> for cut in ["max", "min"]:
     ...     G = -G  # 1.
     ...     L = csgraph.laplacian(G, symmetrized=True, form="lo")  # 2.
-    ...     _, eves = sparse.linalg.lobpcg(L, X, Y=Y, largest=False, tol=1e-3)  # 3.
-    ...     print(cut + "-cut labels:\\n", 1 * (eves[:, 0]>0))  # 4.
+    ...     _, eves = lobpcg(L, X, Y=Y, largest=False, tol=1e-3)  # 3.
+    ...     eves *= np.sign(eves[0, 0])  # 4.
+    ...     print(cut + "-cut labels:\\n", 1 * (eves[:, 0]>0))  # 5.
     max-cut labels:
-    [0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0]
+    [1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1 0 1]
     min-cut labels:
     [1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0]
 
