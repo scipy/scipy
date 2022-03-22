@@ -329,7 +329,7 @@ def laplacian(
     Both determined partitions are optimal.
     """
     if csgraph.ndim != 2 or csgraph.shape[0] != csgraph.shape[1]:
-        raise ValueError("csgraph must be a square matrix or array")
+        raise ValueError('csgraph must be a square matrix or array')
 
     if normed and (
         np.issubdtype(csgraph.dtype, np.signedinteger)
@@ -446,7 +446,7 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
         dtype = graph.dtype
 
     needs_copy = False
-    if graph.format in ("lil", "dok"):
+    if graph.format in ('lil', 'dok'):
         m = graph.tocoo()
     else:
         m = graph
@@ -459,14 +459,14 @@ def _laplacian_sparse(graph, normed, axis, copy, form, dtype, symmetrized):
     w = m.sum(axis=axis).getA1() - m.diagonal()
     if normed:
         m = m.tocoo(copy=needs_copy)
-        isolated_node_mask = w == 0
+        isolated_node_mask = (w == 0)
         w = np.where(isolated_node_mask, 1, np.sqrt(w))
         m.data /= w[m.row]
         m.data /= w[m.col]
         m.data *= -1
         m.setdiag(1 - isolated_node_mask)
     else:
-        if m.format == "dia":
+        if m.format == 'dia':
             m = m.copy()
         else:
             m = m.tocoo(copy=needs_copy)
@@ -542,7 +542,7 @@ def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
     np.fill_diagonal(m, 0)
     w = m.sum(axis=axis)
     if normed:
-        isolated_node_mask = w == 0
+        isolated_node_mask = (w == 0)
         w = np.where(isolated_node_mask, 1, np.sqrt(w))
         m /= w
         m /= w[:, np.newaxis]
