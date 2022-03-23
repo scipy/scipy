@@ -649,7 +649,9 @@ from . import _ufuncs
 from ._ufuncs import errstate, seterr, geterr
 from . import _orthogonal
 from . import _multimethods
+from . import _multimethods_ufuncs
 from ._multimethods import *
+from ._multimethods_ufuncs import *
 from ._backend import *
 
 
@@ -658,7 +660,7 @@ from ._backend import *
 # Deprecated namespaces, to be removed in v2.0.0
 from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
 
-__all__ =  _multimethods.__all__ + [
+__all__ =  _multimethods.__all__ + _multimethods_ufuncs.__all__ + [
     'SpecialFunctionWarning',
     'SpecialFunctionError',
     'logsumexp',

@@ -33,7 +33,7 @@ from numpy.testing import (assert_equal, assert_almost_equal,
         suppress_warnings)
 
 from scipy import special
-import scipy.special._multimethods as cephes
+import scipy.special._multimethods_ufuncs as cephes
 from scipy.special import _ufuncs
 from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
