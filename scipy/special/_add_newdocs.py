@@ -6,6 +6,8 @@
 # _generate_pyx.py to generate the docstrings for the ufuncs in
 # scipy.special at the C level when the ufuncs are created at compile
 # time.
+
+# flake8: noqa: E501
 from typing import Dict
 
 docdict: Dict[str, str] = {}
@@ -8333,7 +8335,6 @@ add_newdoc("nbdtr",
     distribution probability mass function,
 
     .. math::
-
         F = \sum_{j=0}^{\lfloor k \rfloor} {{n + j - 1}\choose{j}} p^n (1 - p)^j
 
     In a sequence of Bernoulli trials with individual success probabilities
@@ -8392,7 +8393,6 @@ add_newdoc("nbdtrc",
     binomial distribution probability mass function,
 
     .. math::
-
         F = \sum_{j=\lfloor k \rfloor + 1}^\infty {{n + j - 1}\choose{j}} p^n (1 - p)^j
 
     In a sequence of Bernoulli trials with individual success probabilities
