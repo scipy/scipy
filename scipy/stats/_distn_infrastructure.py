@@ -2731,6 +2731,13 @@ class rv_continuous(rv_generic):
         finite. For example ``cauchy(0).mean()`` returns ``np.nan`` and
         ``cauchy(0).expect()`` returns ``0.0``.
 
+        Likewise, the accuracy of results are not verified by the function.
+        `scipy.integrate.quad` is typically reliable for integrals that are
+        numerically favorable, but it is not guaranteed to converge
+        to a correct value for all possible intervals and integrands. This
+        function is provided for convenience; for critical applications,
+        check results against other integration methods.
+
         The function is not vectorized.
 
         Examples
@@ -2774,9 +2781,15 @@ class rv_continuous(rv_generic):
         else:
             invfac = 1.0
         kwds['args'] = args
-        # Silence floating point warnings from integration.
-        with np.errstate(all='ignore'):
-            vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+        # split the interval to (hopefully) help integrator; see gh-8928
+        alpha = 0.01  # split body from tails at `alpha` probability mass
+        c = loc + self._ppf(alpha, *args)*scale
+        d = loc + self._isf(alpha, *args)*scale
+        # Do not silence warnings from integration.
+        lbc = integrate.quad(fun, lb, c, **kwds)[0]
+        cd = integrate.quad(fun, c, d, **kwds)[0]
+        dub = integrate.quad(fun, d, ub, **kwds)[0]
+        vals = (lbc + cd + dub) / invfac
         return vals
 
 
