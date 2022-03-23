@@ -1174,13 +1174,6 @@ def jv(a, b, out=None, **kwargs):
 @_create_special(_twoargs_replacer)
 @all_of_type(ndarray)
 @_get_docs
-def jv(a, b, out=None, **kwargs):
-    return a, b, _mark_output(out)
-
-
-@_create_special(_twoargs_replacer)
-@all_of_type(ndarray)
-@_get_docs
 def jve(a, b, out=None, **kwargs):
     return a, b, _mark_output(out)
 
