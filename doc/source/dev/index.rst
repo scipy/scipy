@@ -14,7 +14,7 @@ the organization section.
 
    conduct/code_of_conduct
    hacking
-   contributor/quickerstart_conda
+   dev_quickstart
    contributor/contributor_toc
    missing-bits
 
@@ -38,8 +38,6 @@ the organization section.
 .. toctree::
    :hidden:
 
-   contributor/quickstart_mac
-   contributor/quickstart_ubuntu
    contributor/development_workflow
    contributor/pep8
    contributor/rendering_documentation

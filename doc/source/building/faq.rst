@@ -4,11 +4,14 @@
 Build/Install FAQ
 =================
 
-*How do I set up a development version of SciPy in parallel to a released
-version that I use to do my job/research?*
+How do I set up multiple versions of SciPy on my machine?
+=========================================================
+
+You may want to set up a development version of SciPy in parallel to a released
+version that you use to do your job/research.
 
 If you use the ``conda`` package manager, this is covered in the
-:ref:`quickstart-mac`.
+:ref:`conda-guide`.
 
 Another simple way to achieve this is to install the released version in
 site-packages, by using a binary installer or pip, for example, and set
@@ -31,8 +34,8 @@ After that, you can install a development version of Scipy, for example, via::
 
 The installation goes to the virtual environment.
 
-
-*How do I set up an in-place build for development?*
+How do I set up an in-place build for development?
+==================================================
 
 For development, you can set up an in-place build so that changes made to
 ``.py`` files have effect without rebuild. First, run::
@@ -53,11 +56,64 @@ Now, editing a Python source file in SciPy allows you to immediately
 test and use your changes (in ``.py`` files), by simply restarting the
 interpreter.
 
-If you use the macOS, please find more information in the
-:ref:`quickstart-mac`.
-
 .. _virtualenv: https://virtualenv.pypa.io/
 
 .. _virtualenvwrapper: https://bitbucket.org/dhellmann/virtualenvwrapper/
 
 .. _Spyder: https://www.spyder-ide.org/
+
+How do I checkout a pull request from GitHub locally?
+=====================================================
+
+Second to code review pull requests it is helpful to have a local copy of the
+code changes in the pull request. The preferred method to bring a PR from the
+github repository to your local repo in a new branch::
+
+    $ git fetch upstream pull/PULL_REQUEST_ID/head:NEW_BRANCH_NAME
+
+The value of ``PULL_REQUEST_ID`` will be the PR number and the
+``NEW_BRANCH_NAME`` will be the name of the branch in your local repository
+where the diffs will reside.
+
+Now you have a branch in your local development area to code review in Python.
+
+How do I deal with Fortran ABI mismatch?
+========================================
+
+Some linear algebra libraries are built with G77 ABI and others with
+GFortran ABI, and these two ABIs are incompatible. Therefore, if you
+build scipy with `gfortran` and link to a linear algebra library, like
+MKL, which is built with G77 ABI, then there'll be an exception or a
+segfault. SciPy fixes this by using the CBLAS API for the few
+functions in the BLAS API that suffers from this issue.
+
+Note that SciPy needs to know at build time, what needs to be done and
+the build system will automatically check whether linear algebra
+library is MKL and if so, use the CBLAS API instead of the BLAS API.
+If autodetection fails or if the user wants to override this
+autodetection mechanism, setting the environment variable
+`SCIPY_USE_G77_ABI_WRAPPER` to 0 or 1 to disable or enable using CBLAS
+API.
+
+Version-specific notes
+======================
+
+If you have any problems installing SciPy on your Mac
+based on these instructions, please check the `scipy-users and
+scipy-dev mailing list archives
+<https://www.scipy.org/mailing-lists>`__
+for possible solutions. If you
+are still stuck, feel free to join scipy-users for further
+assistance. Please have the following information ready:
+
+* Your OS version
+
+* The versions of gcc and gfortran and where you obtained gfortran
+
+  * ``$ gcc --version``
+
+  * ``$ gfortran --version``
+
+* The versions of numpy and scipy that you are trying to install
+
+* The full output of ``$ python setup.py build``

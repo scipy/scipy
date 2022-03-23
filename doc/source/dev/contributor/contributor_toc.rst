@@ -4,7 +4,9 @@
 SciPy contributor guide
 =======================
 
-This guide is designed to help you quickly find the information you need about SciPy development after you've reviewed the introductory material in :ref:`hacking`. If you're new to this and want to start coding ASAP, you've found the right place.
+This guide is designed to help you quickly find the information you need about
+SciPy development after you've reviewed the introductory material in
+:ref:`hacking` or :ref:`dev-quickstart`.
 
 - :ref:`dev-env` - how to set up and maintain a development environment, including installing compilers and SciPy dependencies, creating a personal fork of the SciPy repository on GitHub, using git to manage a local repository with development branches, performing an in-place build of SciPy, and creating a virtual environment that adds this development version of SciPy to the Python path
 - :ref:`editing-scipy` - how to edit SciPy Python code, with tips on finding which module contains SciPy functionality to be edited, adding new modules to SciPy, and complying with PEP8 style standards
@@ -18,15 +20,15 @@ This guide is designed to help you quickly find the information you need about S
 
 Development environment
 -----------------------
-- :ref:`quickerstart-conda` contains just the commands you need to get started on Mac and Linux
-- :ref:`quickstart-pip` presents an overview of setting up the development environment using pip on Linux
-- :ref:`quickstart-mac` presents a step-by-step process for setting up a convenient SciPy development environment in macOS
-- :ref:`quickstart-ubuntu` presents a step-by-step process for setting up a convenient SciPy development environment in Ubuntu
+- :ref:`system-level` shows how to install system-level dependencies for Linux,
+  Mac or Windows.
+- :ref:`conda-guide` presents a step-by-step process for setting up a convenient
+  SciPy development environment with conda.
+- :ref:`ubuntu-guide` presents a step-by-step process for setting up a
+  convenient SciPy development environment in Ubuntu Linux.
 - :ref:`build-windows` presents a step-by-step process for building SciPy on Windows
 - :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker; if you have trouble with the instructions above, this may be your best option
 - :ref:`quickstart-gitpod` presents a step-by-step process for using Gitpod for SciPy development; this process requires minimal setup and is newcomer friendly
-- :ref:`building` may have some helpful hints if you need to deviate from the guides above
-- :ref:`recommended-development-setup` includes additional notes about the development setup; all of this information is contained elsewhere, but it is retained as a legacy document
 - :ref:`meson` for how to use the Meson build system (experimental, it will replace the ``distutils``-based build in the future)
 
 .. _editing-scipy:
@@ -34,6 +36,7 @@ Development environment
 Editing SciPy
 -------------
 - :ref:`development-workflow` lays out what to do after your development environment is set up
+- :ref:`building` has details on building from sources on Linux, Mac and Windows.
 - `SciPy Development Workflow`_ is a five-minute video example of fixing a bug and submitting a pull request
 - :ref:`pep8-scipy` gives some tips for ensuring that your code is PEP8 compliant
 - :ref:`git-development` is a guide to using ``git``, the distributed version-control system used to manage the changes made to SciPy code from around the world
