@@ -2101,7 +2101,8 @@ def lsim(system, U, T, X0=None, interp=True):
 
     if not np.allclose(np.diff(T), dt):
         raise ValueError("Time steps are not equally spaced. Use lsim2 for "
-            "non-uniform timesteps, although may be slow and/or inacurrate ")
+                         "non-uniform timesteps, although may be slow and/or "
+                         "inacurrate ")
 
     if no_input:
         # Zero input: just use matrix exponential

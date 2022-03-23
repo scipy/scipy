@@ -495,8 +495,8 @@ class TestLsim:
         assert_almost_equal(y, expected_y)
 
     def test_non_uniform_time(self):
-        system = self.lti_nowarn(-1.,1.,1.,0.)
-        t = np.linspace(0,1)
+        system = self.lti_nowarn(-1.0, 1.0, 1.0, 0.0)
+        t = np.linspace(0, 1)
         t[3] = 0
         u = np.zeros_like(t)
 
