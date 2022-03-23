@@ -503,6 +503,7 @@ python_sources = [
   '_logsumexp.py',
   '_mptestutils.py',
   '_multimethods.py',
+  '_multimethods_ufuncs.py',
   '_orthogonal.py',
   '_sf_error.py',
   '_spfun_stats.py',
