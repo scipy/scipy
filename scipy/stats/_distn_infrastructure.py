@@ -2935,15 +2935,16 @@ class rv_continuous(rv_generic):
         else:
             invfac = 1.0
         kwds['args'] = args
-        # split the interval to (hopefully) help integrator; see gh-8928
-        alpha = 0.01  # split body from tails at `alpha` probability mass
-        c = loc + self._ppf(alpha, *args)*scale
-        d = loc + self._isf(alpha, *args)*scale
+        # split the interval to help integrator; see gh-8928
+        alpha = 0.05  # split body from tails at `alpha` probability mass
+        # considered separate calls to _ppf/_isf, but accuracy is not needed
+        c, d = loc + self._ppf(np.array([alpha, 1-alpha]), *args)*scale
         # Do not silence warnings from integration.
         lbc = integrate.quad(fun, lb, c, **kwds)[0]
         cd = integrate.quad(fun, c, d, **kwds)[0]
         dub = integrate.quad(fun, d, ub, **kwds)[0]
         vals = (lbc + cd + dub) / invfac
+
         return vals
 
     def _param_info(self):

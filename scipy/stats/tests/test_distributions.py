@@ -4369,9 +4369,10 @@ class TestFrozen:
             return x
 
         gm = stats.gamma(a=2, loc=3, scale=4)
-        gm_val = gm.expect(func, lb=1, ub=2, conditional=True)
-        gamma_val = stats.gamma.expect(func, args=(2,), loc=3, scale=4,
-                                       lb=1, ub=2, conditional=True)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            gm_val = gm.expect(func, lb=1, ub=2, conditional=True)
+            gamma_val = stats.gamma.expect(func, args=(2,), loc=3, scale=4,
+                                           lb=1, ub=2, conditional=True)
         assert_allclose(gm_val, gamma_val)
 
         p = stats.poisson(3, loc=4)
@@ -4534,6 +4535,15 @@ class TestExpect:
         for mu in [5, 7]:
             m5 = stats.poisson.moment(5, mu)
             assert_allclose(m5, poiss_moment5(mu), rtol=1e-10)
+
+    def test_challenging_cases_gh8928(self):
+        # Several cases where `expect` failed to produce a correct result were
+        # reported in gh-8928. Check that these cases have been resolved.
+        assert_allclose(stats.norm.expect(loc=36, scale=1.0), 36)
+        assert_allclose(stats.norm.expect(loc=40, scale=1.0), 40)
+        assert_allclose(stats.norm.expect(loc=10, scale=0.1), 10)
+        assert_allclose(stats.gamma.expect(args=(148,)), 148)
+        assert_allclose(stats.logistic.expect(loc=85), 85)
 
 
 class TestNct:
