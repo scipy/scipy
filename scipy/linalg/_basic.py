@@ -38,7 +38,7 @@ def _solve_check(n, info, lamch=None, rcond=None):
 
 
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
-          overwrite_b=False, debug=None, check_finite=True, assume_a='gen',
+          overwrite_b=False, check_finite=True, assume_a='gen',
           transposed=False):
     """
     Solves the linear equation set ``a * x = b`` for the unknown ``x``
@@ -182,12 +182,6 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     if assume_a == 'her' and not np.iscomplexobj(a1):
         assume_a = 'sym'
 
-    # Deprecate keyword "debug"
-    if debug is not None:
-        warn('Use of the "debug" keyword is deprecated '
-             'and this keyword will be removed in future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=2)
-
     # Get the correct lamch function.
     # The LAMCH functions only exists for S and D
     # So for complex values we have to convert to real/double.
@@ -269,7 +263,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
-                     overwrite_b=False, debug=None, check_finite=True):
+                     overwrite_b=False, check_finite=True):
     """
     Solve the equation `a x = b` for `x`, assuming a is a triangular matrix.
 
@@ -336,12 +330,6 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
     """
 
-    # Deprecate keyword "debug"
-    if debug is not None:
-        warn('Use of the "debug" keyword is deprecated '
-             'and this keyword will be removed in the future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=2)
-
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -350,8 +338,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         raise ValueError('shapes of a {} and b {} are incompatible'
                          .format(a1.shape, b1.shape))
     overwrite_b = overwrite_b or _datacopied(b1, b)
-    if debug:
-        print('solve:overwrite_b=', overwrite_b)
+
     trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
     trtrs, = get_lapack_funcs(('trtrs',), (a1, b1))
     if a1.flags.f_contiguous or trans == 2:
@@ -372,7 +359,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
 
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
-                 debug=None, check_finite=True):
+                 check_finite=True):
     """
     Solve the equation a x = b for x, assuming a is banded matrix.
 
@@ -439,12 +426,6 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     array([-2.37288136,  3.93220339, -4.        ,  4.3559322 , -1.3559322 ])
 
     """
-
-    # Deprecate keyword "debug"
-    if debug is not None:
-        warn('Use of the "debug" keyword is deprecated '
-             'and this keyword will be removed in the future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=2)
 
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
