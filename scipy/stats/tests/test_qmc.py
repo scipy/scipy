@@ -398,9 +398,20 @@ class TestQmcEngine:
         assert_equal(sample_2, sample_2_test)
         assert engine.num_generated == 12
 
+    def test_raises(self):
         # input validation
         with pytest.raises(ValueError, match=r"d must be an integer value"):
             RandomEngine((2,))  # noqa
+
+        msg = r"'u_bounds' and 'l_bounds' must be integers"
+        with pytest.raises(ValueError, match=msg):
+            engine = RandomEngine(1)
+            engine.integers(l_bounds=1, u_bounds=1.1)
+
+        msg = r"Sample dimension is different than bounds dimension"
+        with pytest.raises(ValueError, match=msg):
+            engine = RandomEngine(1)
+            engine.integers(l_bounds=[1, 2], u_bounds=4)
 
     def test_integers(self):
         engine = RandomEngine(1, seed=231195739755290648063853336582377368684)
@@ -413,10 +424,10 @@ class TestQmcEngine:
         sample = engine.integers(1, n=10, endpoint=True)
         assert_equal(np.unique(sample), [0, 1])
 
-        sample = engine.integers(-5, high=7, n=100, endpoint=False)
+        sample = engine.integers(-5, u_bounds=7, n=100, endpoint=False)
         assert_equal((sample.min(), sample.max()), (-5, 6))
 
-        sample = engine.integers(-5, high=7, n=100, endpoint=True)
+        sample = engine.integers(-5, u_bounds=7, n=100, endpoint=True)
         assert_equal((sample.min(), sample.max()), (-5, 7))
 
     def test_integers_nd(self):
@@ -426,11 +437,11 @@ class TestQmcEngine:
         high = rng.integers(low=1, high=5, size=d, endpoint=True)
         engine = RandomEngine(d, seed=rng)
 
-        sample = engine.integers(low, high=high, n=100, endpoint=False)
+        sample = engine.integers(low, u_bounds=high, n=100, endpoint=False)
         assert_equal(sample.min(axis=0), low)
         assert_equal(sample.max(axis=0), high-1)
 
-        sample = engine.integers(low, high=high, n=100, endpoint=True)
+        sample = engine.integers(low, u_bounds=high, n=100, endpoint=True)
         assert_equal(sample.min(axis=0), low)
         assert_equal(sample.max(axis=0), high)
 

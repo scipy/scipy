@@ -87,6 +87,22 @@ def check_random_state(seed=None):
                          ' numpy.random.Generator instance')
 
 
+def _bounds_iv(l_bounds, u_bounds, d):
+    """Bounds input validation."""
+    lower = np.atleast_1d(l_bounds)
+    upper = np.atleast_1d(u_bounds)
+
+    lower, upper = np.broadcast_arrays(lower, upper)
+
+    if len(lower) != d:
+        raise ValueError('Sample dimension is different than bounds dimension')
+
+    if not np.all(lower < upper):
+        raise ValueError('Bounds are not consistent a < b')
+
+    return lower, upper
+
+
 def scale(
     sample: npt.ArrayLike,
     l_bounds: npt.ArrayLike,
@@ -147,20 +163,14 @@ def scale(
 
     """
     sample = np.asarray(sample)
-    lower = np.atleast_1d(l_bounds)
-    upper = np.atleast_1d(u_bounds)
 
     # Checking bounds and sample
     if not sample.ndim == 2:
         raise ValueError('Sample is not a 2D array')
 
-    lower, upper = np.broadcast_arrays(lower, upper)
-
-    if not np.all(lower < upper):
-        raise ValueError('Bounds are not consistent a < b')
-
-    if len(lower) != sample.shape[1]:
-        raise ValueError('Sample dimension is different than bounds dimension')
+    lower, upper = _bounds_iv(
+        l_bounds=l_bounds, u_bounds=u_bounds, d=sample.shape[1]
+    )
 
     if not reverse:
         # Checking that sample is within the hypercube
@@ -778,8 +788,9 @@ class QMCEngine(ABC):
             u_bounds = l_bounds
             l_bounds = 0
 
-        l_bounds = np.broadcast_to(l_bounds, self.d)
-        u_bounds = np.broadcast_to(u_bounds, self.d)
+        l_bounds, u_bounds = _bounds_iv(
+            l_bounds=l_bounds, u_bounds=u_bounds, d=self.d
+        )
 
         if endpoint:
             u_bounds = u_bounds + 1
