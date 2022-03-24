@@ -15,21 +15,22 @@ Note this requires the unreleased doit 0.35
 
 TODO: First milestone replace dev.py
 
+- [ ] command sections (https://github.com/janluke/cloup or similar)
 - [ ] move out non-scipy code
 - [ ] document API/reasoning for creating commands/tasks
 - [ ] copy used code from dev.py
 - [ ] doit reporter when running under click
-- [ ] command sections (https://github.com/janluke/cloup or similar)
+- [ ] doit: add io task attribute to control capture/caching of stdout/stderr
 
 commands:
 - [ ] lcov_html
-- [ ] refguide_check
 - [ ] bench
 
 BUG:
 - [ ] python dev.py -t scipy.optimize.tests.test_minimize_constrained.py::TestTrustRegionConstr::test_args
       unknown marker "slow". seems conftest is not being loaded
 - [ ] click does not support '--'. used by test command
+      https://github.com/pallets/click/issues/1340
 - [ ] doc: fail on python3.10 - distutils is deprecated
 """
 
@@ -40,6 +41,7 @@ import shutil
 from sysconfig import get_path
 from pathlib import Path
 from collections import namedtuple
+from types import ModuleType as new_module
 
 import click
 from click import Option
@@ -125,8 +127,8 @@ def run_as_py_action(cls):
         **task_kwargs,
     )
 
-class MetaTask(type):
 
+class MetaTask(type):
     def __new__(meta_cls, name, bases, dct):
         # params/opts from Context and Option attributes
         cls = super().__new__(meta_cls, name, bases, dct)
@@ -139,12 +141,12 @@ class MetaTask(type):
                 params.append(param_click2doit(attr_name, val))
         cls._params = params
 
+        task_basename = to_camel(cls.__name__)
         if hasattr(cls, 'meta'):
             def creator(**kwargs):
-                print('CREATOR got', kwargs)
                 task_meta = cls.meta(**kwargs)
                 if 'basename' not in task_meta:
-                    task_meta['basename'] = to_camel(cls.__name__)
+                    task_meta['basename'] = task_basename
                 if 'doc' not in task_meta:
                     task_meta['doc'] = cls.__doc__
                 return task_meta
@@ -152,6 +154,7 @@ class MetaTask(type):
         else:
             def creator():
                 return run_as_py_action(cls)
+        creator.basename = task_basename
         cls.create_doit_tasks = creator
         return cls
 
@@ -549,7 +552,7 @@ class Mypy(Task):
 ### DOC
 
 @cli.cmd('doc')
-class doc(Task):
+class Doc(Task):
     """Build documentation"""
     ctx = CONTEXT
 
@@ -574,6 +577,31 @@ class doc(Task):
                 # move to doc/ so local scipy is not get imported
                 f'cd doc; env PYTHONPATH="../{site_dir}" make PYTHON="{sys.executable}" html-scipyorg',
             ],
+            'task_dep': ['build'],
+        }
+
+@cli.cmd('refguide-check')
+class RefguideCheck(Task):
+    ctx = CONTEXT
+
+    submodule = Option(
+        ['--submodule', '-s'], default=None, metavar='SUBMODULE',
+        help="Submodule whose tests to run (cluster, constants, ...)")
+
+    @classmethod
+    def meta(cls, **kwargs):
+        kwargs.update(cls.ctx.get())
+        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        args = Args(**kwargs)
+        install_dir, site_dir = get_dirs(args)
+
+        cmd = [os.path.join(ROOT_DIR, 'tools', 'refguide_check.py'),
+               '--doctests']
+        if args.submodule:
+            cmd += [args.submodule]
+        cmd_str = ' '.join(cmd)
+        return {
+            'actions': [f'env PYTHONPATH={site_dir} {cmd_str}'],
             'task_dep': ['build'],
         }
 
