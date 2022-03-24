@@ -24,13 +24,13 @@ TODO: First milestone replace dev.py
 commands:
 - [ ] lcov_html
 - [ ] refguide_check
-- [ ] doc
 - [ ] bench
 
 BUG:
 - [ ] python dev.py -t scipy.optimize.tests.test_minimize_constrained.py::TestTrustRegionConstr::test_args
       unknown marker "slow". seems conftest is not being loaded
 - [ ] click does not support '--'. used by test command
+- [ ] doc: fail on python3.10 - distutils is deprecated
 """
 
 import os
@@ -105,7 +105,28 @@ def param_click2doit(name: str, val: Option):
     return pd
 
 
+
+# convert click.types.ParamType.name to doit param type
+CAMEL_PATTERN = re.compile(r'(?!^)([A-Z]+)')
+def to_camel(name):
+    return CAMEL_PATTERN.sub(r'-\1', name).lower()
+
+def run_as_py_action(cls):
+    """used by doit loader to create task instances"""
+    if cls is Task:
+        return
+    task_kwargs = getattr(cls, 'Meta', {})
+    return DoitTask(
+        # convert name to kebab-case
+        name=to_camel(cls.__name__),
+        doc=cls.__doc__,
+        actions=[cls.run],
+        params=cls._params,
+        **task_kwargs,
+    )
+
 class MetaTask(type):
+
     def __new__(meta_cls, name, bases, dct):
         # params/opts from Context and Option attributes
         cls = super().__new__(meta_cls, name, bases, dct)
@@ -117,30 +138,30 @@ class MetaTask(type):
             if isinstance(val, Option):
                 params.append(param_click2doit(attr_name, val))
         cls._params = params
+
+        if hasattr(cls, 'meta'):
+            def creator(**kwargs):
+                print('CREATOR got', kwargs)
+                task_meta = cls.meta(**kwargs)
+                if 'basename' not in task_meta:
+                    task_meta['basename'] = to_camel(cls.__name__)
+                if 'doc' not in task_meta:
+                    task_meta['doc'] = cls.__doc__
+                return task_meta
+            creator._task_creator_params = cls._params
+        else:
+            def creator():
+                return run_as_py_action(cls)
+        cls.create_doit_tasks = creator
         return cls
+
 
 class Task(metaclass=MetaTask):
     """Base class to define doit task and/or click command"""
-    # convert click.types.ParamType.name to doit param type
-    camel_pattern = re.compile(r'(?!^)([A-Z]+)')
-
-    @classmethod
-    def create_doit_tasks(cls):
-        """used by doit loader to create task instances"""
-        if cls is Task:
-            return
-        task_kwargs = getattr(cls, 'Meta', {})
-        return DoitTask(
-            # convert name to kebab-case
-            name=cls.camel_pattern.sub(r'-\1', cls.__name__).lower(),
-            doc=cls.__doc__,
-            actions=[cls.run],
-            params=cls._params,
-            **task_kwargs,
-        )
 
     @classmethod
     def opt_defaults(cls):
+        """helper used by another click commands to call this command"""
         return {p['name']:p['default'] for p in cls._params}
 
 
@@ -245,15 +266,26 @@ def cli(ctx, **kwargs):
 cli.params.extend(CONTEXT.options.values())
 
 
+def get_dirs(args):
+    """return (install_dir, site_dir)"""
+    build_dir = Path(args.build_dir)
+    install_dir = args.install_prefix
+    if not install_dir:
+        install_dir = build_dir.parent / (build_dir.stem + "-install")
+
+    py_lib_path = Path(get_path('platlib')).relative_to(sys.exec_prefix)
+    site_dir = str(Path(install_dir) / py_lib_path)
+    return install_dir, site_dir
+
+
+
+# FIXME: remove
 def set_installed(args):
     """set dev_module.PATH_INSTALLED
 
     Given install-prefix or <build_dir>-install
     """
-    build_dir = Path(args.build_dir)
-    install_dir = args.install_prefix
-    if not install_dir:
-        install_dir = build_dir.parent / (build_dir.stem + "-install")
+    install_dir = get_dirs(args)[0]
     # set dev_module Global
     dev_module.PATH_INSTALLED = os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
@@ -261,7 +293,7 @@ def set_installed(args):
     )
     return str(install_dir) # FIXME use returned value instead of module global
 
-
+# FIXME: remove
 def get_site_dir():
     path_installed = dev_module.PATH_INSTALLED
     # relative path for site-package with py version. i.e. 'lib/python3.10/site-packages'
@@ -510,6 +542,40 @@ class Mypy(Task):
         print(report, end='')
         print(errors, end='', file=sys.stderr)
         return status == 0
+
+
+
+##########################################
+### DOC
+
+@cli.cmd('doc')
+class doc(Task):
+    """Build documentation"""
+    ctx = CONTEXT
+
+    # FIXME
+    # parser.add_argument("--doc", action="append", nargs="?",
+    #                 const="html-scipyorg", help="Build documentation")
+
+
+    @classmethod
+    def meta(cls, **kwargs):
+        kwargs.update(cls.ctx.get())
+        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        args = Args(**kwargs)
+        install_dir, site_dir = get_dirs(args)
+
+        # FIXME: support parallel
+        # if args.parallel:
+        #     cmd.append('SPHINXOPTS="-j{}"'.format(args.parallel))
+
+        return {
+            'actions': [
+                # move to doc/ so local scipy is not get imported
+                f'cd doc; env PYTHONPATH="../{site_dir}" make PYTHON="{sys.executable}" html-scipyorg',
+            ],
+            'task_dep': ['build'],
+        }
 
 
 ##########################################
