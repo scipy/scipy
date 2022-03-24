@@ -11,6 +11,7 @@ import types
 import warnings
 import inspect
 from itertools import zip_longest
+from collections import namedtuple
 
 from scipy._lib import doccer
 from scipy._lib._util import _lazywhere
@@ -92,8 +93,8 @@ isf(q, %(shapes)s, loc=0, scale=1)
     Inverse survival function (inverse of ``sf``).
 """
 _doc_moment = """\
-moment(n, %(shapes)s, loc=0, scale=1)
-    Non-central moment of order n
+moment(order, %(shapes)s, loc=0, scale=1)
+    Non-central moment of the specified order.
 """
 _doc_stats = """\
 stats(%(shapes)s, loc=0, scale=1, moments='mv')
@@ -134,9 +135,8 @@ std(%(shapes)s, loc=0, scale=1)
     Standard deviation of the distribution.
 """
 _doc_interval = """\
-interval(alpha, %(shapes)s, loc=0, scale=1)
-    Endpoints of the range that contains fraction alpha [0, 1] of the
-    distribution
+interval(confidence, %(shapes)s, loc=0, scale=1)
+    Confidence interval with equal areas around the median.
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
                            _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf,
@@ -449,12 +449,6 @@ class rv_frozen:
     def random_state(self, seed):
         self.dist._random_state = check_random_state(seed)
 
-    def pdf(self, x):   # raises AttributeError in frozen discrete distribution
-        return self.dist.pdf(x, *self.args, **self.kwds)
-
-    def logpdf(self, x):
-        return self.dist.logpdf(x, *self.args, **self.kwds)
-
     def cdf(self, x):
         return self.dist.cdf(x, *self.args, **self.kwds)
 
@@ -501,12 +495,6 @@ class rv_frozen:
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
 
-    def pmf(self, k):
-        return self.dist.pmf(k, *self.args, **self.kwds)
-
-    def logpmf(self, k):
-        return self.dist.logpmf(k, *self.args, **self.kwds)
-
     def interval(self, confidence=None, **kwds):
         return self.dist.interval(confidence, *self.args, **self.kwds, **kwds)
 
@@ -524,6 +512,24 @@ class rv_frozen:
 
     def support(self):
         return self.dist.support(*self.args, **self.kwds)
+
+
+class rv_discrete_frozen(rv_frozen):
+
+    def pmf(self, k):
+        return self.dist.pmf(k, *self.args, **self.kwds)
+
+    def logpmf(self, k):  # No error
+        return self.dist.logpmf(k, *self.args, **self.kwds)
+
+
+class rv_continuous_frozen(rv_frozen):
+
+    def pdf(self, x):
+        return self.dist.pdf(x, *self.args, **self.kwds)
+
+    def logpdf(self, x):
+        return self.dist.logpdf(x, *self.args, **self.kwds)
 
 
 def argsreduce(cond, *args):
@@ -860,7 +866,10 @@ class rv_generic:
             The frozen distribution.
 
         """
-        return rv_frozen(self, *args, **kwds)
+        if isinstance(self, rv_continuous):
+            return rv_continuous_frozen(self, *args, **kwds)
+        else:
+            return rv_discrete_frozen(self, *args, **kwds)
 
     def __call__(self, *args, **kwds):
         return self.freeze(*args, **kwds)
@@ -1065,7 +1074,10 @@ class rv_generic:
         args, loc, scale, size = self._parse_args_rvs(*args, **kwds)
         cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not np.all(cond):
-            raise ValueError("Domain error in arguments.")
+            message = ("Domain error in arguments. The `scale` parameter must "
+                       "be positive for all distributions; see the "
+                       "distribution documentation for other restrictions.")
+            raise ValueError(message)
 
         if np.all(scale == 0):
             return loc*ones(size, 'd')
@@ -1103,7 +1115,7 @@ class rv_generic:
             if size == ():
                 vals = int(vals)
             else:
-                vals = vals.astype(int)
+                vals = vals.astype(np.int64)
 
         return vals
 
@@ -1258,7 +1270,7 @@ class rv_generic:
         .. deprecated:: 1.9.0
            Parameter `n` is replaced by parameter `order` to avoid name
            collisions with the shape parameter `n` of several distributions.
-           Parameter `n` will be removed in the second release after 1.9.0.
+           Parameter `n` will be removed in SciPy 1.11.0.
 
         Parameters
         ----------
@@ -1378,7 +1390,7 @@ class rv_generic:
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
             if self._stats_has_moments:
-                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
+                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'mvsk'}[n]}
             else:
                 mdict = {}
             mu, mu2, g1, g2 = self._stats(*shapes, **mdict)
@@ -1527,8 +1539,7 @@ class rv_generic:
         .. deprecated:: 1.9.0
            Parameter `alpha` is replaced by parameter `confidence` to avoid
            name collisions with the shape parameter `alpha` of some
-           distributions. Parameter `alpha` will be removed in the second
-           release after 1.9.0.
+           distributions. Parameter `alpha` will be removed in SciPy 1.11.0.
 
         Parameters
         ----------
@@ -1668,6 +1679,20 @@ class rv_generic:
         x = asarray((x-loc) / scale)
         n_log_scale = len(x) * log(scale)
         return self._nnlf_and_penalty(x, args) + n_log_scale
+
+
+class _ShapeInfo:
+    def __init__(self, name, integrality=False, domain=(-np.inf, np.inf),
+                 inclusive=(True, True)):
+        self.name = name
+        self.integrality = integrality
+
+        domain = list(domain)
+        if np.isfinite(domain[0]) and not inclusive[0]:
+            domain[0] = np.nextafter(domain[0], np.inf)
+        if np.isfinite(domain[1]) and not inclusive[1]:
+            domain[1] = np.nextafter(domain[1], -np.inf)
+        self.domain = domain
 
 
 def _get_fixed_fit_value(kwds, names):
@@ -1895,6 +1920,10 @@ class rv_continuous(rv_generic):
                  shapes=None, extradoc=None, seed=None):
 
         super().__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         # save the ctor parameters, cf generic freeze
         self._ctor_param = dict(
@@ -2904,6 +2933,12 @@ class rv_continuous(rv_generic):
             vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
         return vals
 
+    def _param_info(self):
+        shape_info = self._shape_info()
+        loc_info = _ShapeInfo("loc", False, (-np.inf, np.inf), (False, False))
+        scale_info = _ShapeInfo("scale", False, (0, np.inf), (False, False))
+        param_info = shape_info + [loc_info, scale_info]
+        return param_info
 
 # Helpers for the discrete distributions
 def _drv2_moment(self, n, *args):
@@ -3017,7 +3052,7 @@ class rv_discrete(rv_generic):
         If not provided, shape parameters will be inferred from
         the signatures of the private methods, ``_pmf`` and ``_cdf`` of
         the instance.
-    extradoc :  str, optional
+    extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
@@ -3127,6 +3162,10 @@ class rv_discrete(rv_generic):
                  shapes=None, extradoc=None, seed=None):
 
         super().__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         # cf generic freeze
         self._ctor_param = dict(
@@ -3714,6 +3753,12 @@ class rv_discrete(rv_generic):
         res = _expect(fun, lb, ub, x0, self.inc, maxcount, tolerance, chunksize)
         return res / invfac
 
+    def _param_info(self):
+        shape_info = self._shape_info()
+        loc_info = _ShapeInfo("loc", True, (-np.inf, np.inf), (False, False))
+        param_info = shape_info + [loc_info]
+        return param_info
+
 
 def _expect(fun, lb, ub, x0, inc, maxcount=1000, tolerance=1e-10,
             chunksize=32):
@@ -3801,6 +3846,10 @@ class rv_sample(rv_discrete):
                  shapes=None, extradoc=None, seed=None):
 
         super(rv_discrete, self).__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         if values is None:
             raise ValueError("rv_sample.__init__(..., values=None,...)")

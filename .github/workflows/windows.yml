@@ -10,12 +10,16 @@ on:
       - main
       - maintenance/**
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Meson Windows tests
     # Ensure (a) this doesn't run on forks by default, and
     #        (b) it does run with Act locally (`github` doesn't exist there)
-    if: "github.repository != '' || github.repository == 'scipy/scipy'"
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: windows-2019
     steps:
       - name: Set up Python

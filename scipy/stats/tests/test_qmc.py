@@ -661,13 +661,11 @@ class TestSobol(QMCEngineTests):
     def test_random_base2(self):
         engine = qmc.Sobol(2, scramble=False)
         sample = engine.random_base2(2)
-        assert_array_equal(self.unscramble_nd[:4],
-                           sample)
+        assert_array_equal(self.unscramble_nd[:4], sample)
 
         # resampling still having N=2**n
         sample = engine.random_base2(2)
-        assert_array_equal(self.unscramble_nd[4:8],
-                           sample)
+        assert_array_equal(self.unscramble_nd[4:8], sample)
 
         # resampling again but leading to N!=2**n
         with pytest.raises(ValueError, match=r"The balance properties of "
@@ -679,6 +677,10 @@ class TestSobol(QMCEngineTests):
                                              r"dimensionality"):
             qmc.Sobol(qmc.Sobol.MAXDIM + 1)
 
+        with pytest.raises(ValueError, match=r"Maximum supported "
+                                             r"'bits' is 64"):
+            qmc.Sobol(1, bits=65)
+
     def test_high_dim(self):
         engine = qmc.Sobol(1111, scramble=False)
         count1 = Counter(engine.random().flatten().tolist())
@@ -686,6 +688,20 @@ class TestSobol(QMCEngineTests):
         assert_equal(count1, Counter({0.0: 1111}))
         assert_equal(count2, Counter({0.5: 1111}))
 
+    @pytest.mark.parametrize("bits", [2, 3])
+    def test_bits(self, bits):
+        engine = qmc.Sobol(2, scramble=False, bits=bits)
+        ns = 2**bits
+        sample = engine.random(ns)
+        assert_array_equal(self.unscramble_nd[:ns], sample)
+
+        with pytest.raises(ValueError, match="increasing `bits`"):
+            engine.random()
+
+    def test_64bits(self):
+        engine = qmc.Sobol(2, scramble=False, bits=64)
+        sample = engine.random(8)
+        assert_array_equal(self.unscramble_nd, sample)
 
 class TestMultinomialQMC:
     def test_validations(self):

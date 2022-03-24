@@ -25,8 +25,9 @@ def __getattr__(name):
             "scipy.spatial.transform.rotation is deprecated and has no attribute "
             f"{name}. Try looking in scipy.spatial instead.")
 
-    warnings.warn(f"Please use `{name}` from the `scipy.spatial` namespace, "
-                  "the `scipy.spatial.transform.rotation` namespace is deprecated.",
+    warnings.warn(f"Please use `{name}` from the `scipy.spatial.transform` "
+                  "namespace, the `scipy.spatial.transform.rotation` namespace"
+                  " is deprecated.",
                   category=DeprecationWarning, stacklevel=2)
 
     return getattr(_rotation, name)

@@ -518,7 +518,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
     if x0.ndim != 1:
         message = ('Use of `minimize` with `x0.ndim != 1` is deprecated. '
                    'Currently, singleton dimensions will be removed from '
-                   '`x0`, but an error may be raised in the future.')
+                   '`x0`, but an error will be raised in SciPy 1.11.0.')
         warn(message, DeprecationWarning, stacklevel=2)
         x0 = np.squeeze(x0)
 
