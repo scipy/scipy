@@ -15,18 +15,22 @@ Note this requires the unreleased doit 0.35
 
 TODO: First milestone replace dev.py
 
- - [ ] move out non-scipy code
- - [ ] document API/reasoning for creating commands/tasks
- - [ ] command sections (https://github.com/janluke/cloup or similar)
- - [ ] copy used code from dev.py
+- [ ] move out non-scipy code
+- [ ] document API/reasoning for creating commands/tasks
+- [ ] copy used code from dev.py
+- [ ] doit reporter when running under click
+- [ ] command sections (https://github.com/janluke/cloup or similar)
 
 commands:
- - [ ] test: support positional parameters
- - [ ] lcov_html
- - [ ] refguide_check
- - [ ] doc
- - [ ] bench
+- [ ] lcov_html
+- [ ] refguide_check
+- [ ] doc
+- [ ] bench
 
+BUG:
+- [ ] python dev.py -t scipy.optimize.tests.test_minimize_constrained.py::TestTrustRegionConstr::test_args
+      unknown marker "slow". seems conftest is not being loaded
+- [ ] click does not support '--'. used by test command
 """
 
 import os
@@ -314,17 +318,19 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 @cli.cmd('test')
 class Test(Task):
+    """Run tests"""
     ctx = CONTEXT
 
-    verbose = Option(['--verbose', '-v'], default=1, help="more verbosity") # FIXME, not supported by doit
-    doctests = Option(['--doctests'], default=False, is_flag=True, help="Run doctests in module")
+    verbose = Option(['--verbose', '-v'], default=False, is_flag=True, help="more verbosity")
+    # removed doctests as currently not supported by _lib/_testutils.py
+    # doctests = Option(['--doctests'], default=False, is_flag=True, help="Run doctests in module")
     coverage = Option(
         ['--coverage'], default=False, is_flag=True,
         help="report coverage of project code. HTML output goes under build/coverage")
     submodule = Option(
         ['--submodule', '-s'], default=None, metavar='SUBMODULE',
         help="Submodule whose tests to run (cluster, constants, ...)")
-    tests = Option(['--tests', '-t'], default=None, metavar='TESTS', help='Specify tests to run')
+    tests = Option(['--tests', '-t'], default=None, multiple=True, metavar='TESTS', help='Specify tests to run')
     mode = Option(
         ['--mode', '-m'], default='fast', metavar='MODE', show_default=True,
         help="'fast', 'full', or something that could be passed to `pytest -m` as a marker expression")
@@ -342,14 +348,6 @@ class Test(Task):
         """
         get Test Runner from locally installed/built project
         """
-        site_dir = get_site_dir()
-
-        # add local installed dir to PYTHONPATH
-        print(f"Trying to find scipy from development installed path at: {site_dir}")
-        sys.path.insert(0, site_dir)
-        os.environ['PYTHONPATH'] = \
-            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
-
         __import__(project_module)
         test = sys.modules[project_module].test
         version = sys.modules[project_module].__version__
@@ -360,14 +358,19 @@ class Test(Task):
 
     @classmethod
     def scipy_tests(cls, args):
-        test_dir = os.path.join(ROOT_DIR, args.build_dir, 'test')
-        if not os.path.isdir(test_dir):
-            os.makedirs(test_dir)
 
-        shutil.copyfile(os.path.join(ROOT_DIR, '.coveragerc'),
-                        os.path.join(test_dir, '.coveragerc'))
+        # if NOT BUID:
+        #     test_dir = os.path.join(ROOT_DIR, args.build_dir, 'test')
+        #     if not os.path.isdir(test_dir):
+        #         os.makedirs(test_dir)
+        site_dir = get_site_dir()
+        # add local installed dir to PYTHONPATH
+        print(f"Trying to find scipy from development installed path at: {site_dir}")
+        sys.path.insert(0, site_dir)
+        os.environ['PYTHONPATH'] = \
+            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
 
-        runner, version, mod_path = cls._get_test_runner(dev_module.PATH_INSTALLED, PROJECT_MODULE)
+        test_dir = site_dir
 
         # TODO: extra arguments to pytest?
         extra_argv = []
@@ -375,6 +378,19 @@ class Test(Task):
         # if extra_argv and extra_argv[0] == '--':
         #     extra_argv = extra_argv[1:]
 
+        if args.coverage:
+            dst_dir = os.path.join(ROOT_DIR, args.build_dir, 'coverage')
+            fn = os.path.join(dst_dir, 'coverage_html.js')
+            if os.path.isdir(dst_dir) and os.path.isfile(fn):
+                shutil.rmtree(dst_dir)
+            extra_argv += ['--cov-report=html:' + dst_dir]
+
+            shutil.copyfile(os.path.join(ROOT_DIR, '.coveragerc'),
+                            os.path.join(test_dir, '.coveragerc'))
+
+        runner, version, mod_path = cls._get_test_runner(dev_module.PATH_INSTALLED, PROJECT_MODULE)
+
+        # convert options to test selection
         if args.submodule:
             tests = [PROJECT_MODULE + "." + args.submodule]
         elif args.tests:
@@ -382,20 +398,18 @@ class Test(Task):
         else:
             tests = None
 
-        print('Testsssss', tests)
-        return
-
         # FIXME: changing CWD is not a good practice and might messed up with other tasks
         cwd = os.getcwd()
         try:
             os.chdir(test_dir)
             print("Running tests for {} version:{}, installed at:{}".format(
                         PROJECT_MODULE, version, mod_path))
+            verbose = int(args.verbose) + 1 # runner verbosity - convert bool to int
             result = runner(
                 args.mode,
-                verbose=args.verbose,
+                verbose=verbose,
                 extra_argv=extra_argv,
-                doctests=args.doctests,
+                doctests=False, # args.doctests,
                 coverage=args.coverage,
                 tests=tests,
                 parallel=args.parallel)
@@ -449,6 +463,7 @@ class Pep8():
 
 @cli.cmd('mypy')
 class Mypy(Task):
+    """Run mypy on the codebase"""
     ctx = CONTEXT
 
     Meta = {
