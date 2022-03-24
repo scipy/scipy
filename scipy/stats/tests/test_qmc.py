@@ -374,31 +374,65 @@ class RandomEngine(qmc.QMCEngine):
         return sample
 
 
-def test_subclassing_QMCEngine():
-    engine = RandomEngine(2, seed=175180605424926556207367152557812293274)
+class TestQmcEngine:
 
-    sample_1 = engine.random(n=5)
-    sample_2 = engine.random(n=7)
-    assert engine.num_generated == 12
+    def test_subclassing_QMCEngine(self):
+        engine = RandomEngine(2, seed=175180605424926556207367152557812293274)
 
-    # reset and re-sample
-    engine.reset()
-    assert engine.num_generated == 0
+        sample_1 = engine.random(n=5)
+        sample_2 = engine.random(n=7)
+        assert engine.num_generated == 12
 
-    sample_1_test = engine.random(n=5)
-    assert_equal(sample_1, sample_1_test)
+        # reset and re-sample
+        engine.reset()
+        assert engine.num_generated == 0
 
-    # repeat reset and fast forward
-    engine.reset()
-    engine.fast_forward(n=5)
-    sample_2_test = engine.random(n=7)
+        sample_1_test = engine.random(n=5)
+        assert_equal(sample_1, sample_1_test)
 
-    assert_equal(sample_2, sample_2_test)
-    assert engine.num_generated == 12
+        # repeat reset and fast forward
+        engine.reset()
+        engine.fast_forward(n=5)
+        sample_2_test = engine.random(n=7)
 
-    # input validation
-    with pytest.raises(ValueError, match=r"d must be an integer value"):
-        RandomEngine((2,))  # noqa
+        assert_equal(sample_2, sample_2_test)
+        assert engine.num_generated == 12
+
+        # input validation
+        with pytest.raises(ValueError, match=r"d must be an integer value"):
+            RandomEngine((2,))  # noqa
+
+    def test_integers(self):
+        engine = RandomEngine(1, seed=231195739755290648063853336582377368684)
+
+        sample = engine.integers(1, n=10)
+        assert_equal(np.unique(sample), [0])
+
+        assert sample.dtype == np.dtype('int64')
+
+        sample = engine.integers(1, n=10, endpoint=True)
+        assert_equal(np.unique(sample), [0, 1])
+
+        sample = engine.integers(-5, high=7, n=100, endpoint=False)
+        assert_equal((sample.min(), sample.max()), (-5, 6))
+
+        sample = engine.integers(-5, high=7, n=100, endpoint=True)
+        assert_equal((sample.min(), sample.max()), (-5, 7))
+
+    def test_integers_nd(self):
+        d = 10
+        rng = np.random.default_rng(3716505122102428560615700415287450951)
+        low = rng.integers(low=-5, high=-1, size=d)
+        high = rng.integers(low=1, high=5, size=d, endpoint=True)
+        engine = RandomEngine(d, seed=rng)
+
+        sample = engine.integers(low, high=high, n=100, endpoint=False)
+        assert_equal(sample.min(axis=0), low)
+        assert_equal(sample.max(axis=0), high-1)
+
+        sample = engine.integers(low, high=high, n=100, endpoint=True)
+        assert_equal(sample.min(axis=0), low)
+        assert_equal(sample.max(axis=0), high)
 
 
 class QMCEngineTests:

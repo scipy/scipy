@@ -642,7 +642,7 @@ class QMCEngine(ABC):
 
     Optionally, two other methods can be overwritten by subclasses:
 
-    * ``reset``: Reset the engine to it's original state.
+    * ``reset``: Reset the engine to its original state.
     * ``fast_forward``: If the sequence is deterministic (like Halton
       sequence), then ``fast_forward(n)`` is skipping the ``n`` first draw.
 
@@ -726,6 +726,80 @@ class QMCEngine(ABC):
 
         """
         # self.num_generated += n
+
+    def integers(
+        self,
+        l_bounds: npt.ArrayLike,
+        *,
+        u_bounds: Optional[npt.ArrayLike] = None,
+        n: IntNumber = 1,
+        endpoint: bool = False,
+        workers: IntNumber = 1
+    ) -> np.ndarray:
+        """
+        Draw `n` integers from `l_bounds` (inclusive) to `u_bounds`
+        (exclusive), or if endpoint=True, `l_bounds` (inclusive) to
+        `u_bounds` (inclusive).
+
+        Parameters
+        ----------
+        l_bounds : int or array-like of ints
+            Lowest (signed) integers to be drawn (unless ``u_bounds=None``,
+            in which case this parameter is 0 and this value is used for
+            `u_bounds`).
+        u_bounds : int or array-like of ints, optional
+            If provided, one above the largest (signed) integer to be drawn
+            (see above for behavior if ``u_bounds=None``).
+            If array-like, must contain integer values.
+        n : int, optional
+            Number of samples to generate in the parameter space.
+            Default is 1.
+        endpoint : bool, optional
+            If true, sample from the interval ``[l_bounds, u_bounds]`` instead
+            of the default ``[l_bounds, u_bounds)``. Defaults is False.
+        workers : int, optional
+            Number of workers to use for parallel processing. If -1 is
+            given all CPU threads are used. Only supported when using `Halton`
+            Default is 1.
+
+        Returns
+        -------
+        sample : array_like (n, d)
+            QMC sample.
+
+        Notes
+        -----
+        It is safe to just use the same ``[0, 1)`` to integer mapping with
+        QMC that you would use with MC. You still get unbiasedness,
+        a strong law of large numbers, an asymptotically infinite variance
+        reduction and a finite sample variance bound.
+        """
+        if u_bounds is None:
+            u_bounds = l_bounds
+            l_bounds = 0
+
+        l_bounds = np.broadcast_to(l_bounds, self.d)
+        u_bounds = np.broadcast_to(u_bounds, self.d)
+
+        if endpoint:
+            u_bounds = u_bounds + 1
+
+        if (not np.issubdtype(l_bounds.dtype, np.integer) or
+                not np.issubdtype(u_bounds.dtype, np.integer)):
+            message = ("'u_bounds' and 'l_bounds' must be integers or"
+                       " array-like of integers")
+            raise ValueError(message)
+
+        if isinstance(self, Halton):
+            workers = _validate_workers(workers)
+            sample = self.random(n=n, workers=workers)
+        else:
+            sample = self.random(n=n)
+
+        sample = scale(sample, l_bounds=l_bounds, u_bounds=u_bounds)
+        sample = np.floor(sample).astype(np.int64)
+
+        return sample
 
     def reset(self) -> QMCEngine:
         """Reset the engine to base state.
