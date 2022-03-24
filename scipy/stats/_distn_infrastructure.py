@@ -2885,7 +2885,7 @@ class rv_continuous(rv_generic):
         finite. For example ``cauchy(0).mean()`` returns ``np.nan`` and
         ``cauchy(0).expect()`` returns ``0.0``.
 
-        Likewise, the accuracy of results are not verified by the function.
+        Likewise, the accuracy of results is not verified by the function.
         `scipy.integrate.quad` is typically reliable for integrals that are
         numerically favorable, but it is not guaranteed to converge
         to a correct value for all possible intervals and integrands. This
@@ -2929,22 +2929,26 @@ class rv_continuous(rv_generic):
             lb = loc + _a * scale
         if ub is None:
             ub = loc + _b * scale
-        if conditional:
-            invfac = (self.sf(lb, *args, **lockwds)
-                      - self.sf(ub, *args, **lockwds))
-        else:
-            invfac = 1.0
+
+        cdf_bounds = self.cdf([lb, ub], *args, **lockwds)
+        invfac = cdf_bounds[1] - cdf_bounds[0]
+
         kwds['args'] = args
-        # split the interval to help integrator; see gh-8928
-        alpha = 0.05  # split body from tails at `alpha` probability mass
-        # considered separate calls to _ppf/_isf, but accuracy is not needed
-        c, d = loc + self._ppf(np.array([alpha, 1-alpha]), *args)*scale
+
+        # split interval to help integrator w/ infinite support; see gh-8928
+        alpha = 0.05  # split body from tails at probability mass `alpha`
+        inner_bounds = np.array([alpha, 1-alpha])
+        cdf_inner_bounds = cdf_bounds[0] + invfac * inner_bounds
+        c, d = loc + self._ppf(cdf_inner_bounds, *args) * scale
+
         # Do not silence warnings from integration.
         lbc = integrate.quad(fun, lb, c, **kwds)[0]
         cd = integrate.quad(fun, c, d, **kwds)[0]
         dub = integrate.quad(fun, d, ub, **kwds)[0]
-        vals = (lbc + cd + dub) / invfac
+        vals = (lbc + cd + dub)
 
+        if conditional:
+            vals /= invfac
         return vals
 
     def _param_info(self):

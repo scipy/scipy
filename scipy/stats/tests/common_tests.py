@@ -64,7 +64,7 @@ def check_mean_expect(distfn, arg, m, msg):
 
 
 def check_var_expect(distfn, arg, m, v, msg):
-    kwargs = {'rtol': 5e-6} if msg=="rv_histogram_instance" else {}
+    kwargs = {'rtol': 5e-6} if msg == "rv_histogram_instance" else {}
     if np.isfinite(v):
         m2 = distfn.expect(lambda x: x*x, arg)
         npt.assert_allclose(m2, v + m*m, **kwargs)

@@ -4545,6 +4545,27 @@ class TestExpect:
         assert_allclose(stats.gamma.expect(args=(148,)), 148)
         assert_allclose(stats.logistic.expect(loc=85), 85)
 
+    def test_lb_ub_gh15855(self):
+        # Make sure changes to `expect` made in gh15855 treat lb/ub correctly
+        dist = stats.uniform
+        ref = dist.mean(loc=10, scale=5)  # 12.5
+        # moment over whole distribution
+        assert_allclose(dist.expect(loc=10, scale=5), ref)
+        # moment over whole distribution, lb and ub outside of support
+        assert_allclose(dist.expect(loc=10, scale=5, lb=9, ub=16), ref)
+        # moment over 60% of distribution, [lb, ub] centered within support
+        assert_allclose(dist.expect(loc=10, scale=5, lb=11, ub=14), ref*0.6)
+        # moment over truncated distribution, essentially
+        assert_allclose(dist.expect(loc=10, scale=5, lb=11, ub=14,
+                                    conditional=True), ref)
+        # moment over 40% of distribution, [lb, ub] not centered within support
+        assert_allclose(dist.expect(loc=10, scale=5, lb=11, ub=13), 12*0.4)
+        # moment with lb > ub
+        assert_allclose(dist.expect(loc=10, scale=5, lb=13, ub=11), -12*0.4)
+        # moment with lb > ub, conditional
+        assert_allclose(dist.expect(loc=10, scale=5, lb=13, ub=11,
+                                    conditional=True), 12)
+
 
 class TestNct:
     def test_nc_parameter(self):
