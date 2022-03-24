@@ -14,6 +14,7 @@ from typing import (
     List,
     Optional,
     overload,
+    Tuple,
     TYPE_CHECKING,
 )
 
@@ -87,7 +88,9 @@ def check_random_state(seed=None):
                          ' numpy.random.Generator instance')
 
 
-def _bounds_iv(l_bounds, u_bounds, d):
+def _bounds_iv(
+    l_bounds: npt.ArrayLike, u_bounds: npt.ArrayLike, d: int
+) -> Tuple[np.ndarray, ...]:
     """Bounds input validation."""
     try:
         lower = np.broadcast_to(l_bounds, d)
@@ -746,7 +749,7 @@ class QMCEngine(ABC):
         endpoint: bool = False,
         workers: IntNumber = 1
     ) -> np.ndarray:
-        """
+        r"""
         Draw `n` integers from `l_bounds` (inclusive) to `u_bounds`
         (exclusive), or if endpoint=True, `l_bounds` (inclusive) to
         `u_bounds` (inclusive).
@@ -779,17 +782,27 @@ class QMCEngine(ABC):
 
         Notes
         -----
-        It is safe to just use the same ``[0, 1)`` to integer mapping with
-        QMC that you would use with MC. You still get unbiasedness,
+        It is safe to just use the same ``[0, 1)`` to integer mapping
+        with QMC that you would use with MC. You still get unbiasedness,
         a strong law of large numbers, an asymptotically infinite variance
         reduction and a finite sample variance bound.
+
+        To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`,
+        with :math:`a` the lower bounds and :math:`b` the upper bounds.
+        The following transformation is used:
+
+        .. math::
+
+            \text{floor}((b - a) \cdot \text{sample} + a)
+
         """
         if u_bounds is None:
             u_bounds = l_bounds
             l_bounds = 0
 
         l_bounds, u_bounds = _bounds_iv(
-            l_bounds=l_bounds, u_bounds=u_bounds, d=self.d
+            l_bounds=l_bounds, u_bounds=u_bounds,
+            d=self.d  # type: ignore[arg-type]
         )
 
         if endpoint:
@@ -802,7 +815,6 @@ class QMCEngine(ABC):
             raise ValueError(message)
 
         if isinstance(self, Halton):
-            workers = _validate_workers(workers)
             sample = self.random(n=n, workers=workers)
         else:
             sample = self.random(n=n)
