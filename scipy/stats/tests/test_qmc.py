@@ -59,21 +59,19 @@ class TestUtils:
             space = [0, 1, 0.5]
             qmc.scale(space, l_bounds=-2, u_bounds=6)
 
-        with pytest.raises(ValueError, match=r"Bounds are not consistent"
-                                             r" a < b"):
+        with pytest.raises(ValueError, match=r"Bounds are not consistent"):
             space = [[0, 0], [1, 1], [0.5, 0.5]]
             bounds = np.array([[-2, 6], [6, 5]])
             qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
 
-        with pytest.raises(ValueError, match=r"shape mismatch: objects cannot "
-                                             r"be broadcast to a "
-                                             r"single shape"):
+        with pytest.raises(ValueError, match=r"'l_bounds' and 'u_bounds'"
+                                             r" must be broadcastable"):
             space = [[0, 0], [1, 1], [0.5, 0.5]]
             l_bounds, u_bounds = [-2, 0, 2], [6, 5]
             qmc.scale(space, l_bounds=l_bounds, u_bounds=u_bounds)
 
-        with pytest.raises(ValueError, match=r"Sample dimension is different "
-                                             r"than bounds dimension"):
+        with pytest.raises(ValueError, match=r"'l_bounds' and 'u_bounds'"
+                                             r" must be broadcastable"):
             space = [[0, 0], [1, 1], [0.5, 0.5]]
             bounds = np.array([[-2, 0, 2], [6, 5, 5]])
             qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
@@ -407,7 +405,7 @@ def test_raises():
         engine = RandomEngine(1)
         engine.integers(l_bounds=1, u_bounds=1.1)
 
-    msg = r"Sample dimension is different than bounds dimension"
+    msg = r"'l_bounds' and 'u_bounds' must be broadcastable"
     with pytest.raises(ValueError, match=msg):
         engine = RandomEngine(1)
         engine.integers(l_bounds=[1, 2], u_bounds=4)

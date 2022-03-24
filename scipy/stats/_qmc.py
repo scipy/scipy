@@ -89,16 +89,16 @@ def check_random_state(seed=None):
 
 def _bounds_iv(l_bounds, u_bounds, d):
     """Bounds input validation."""
-    lower = np.atleast_1d(l_bounds)
-    upper = np.atleast_1d(u_bounds)
-
-    lower, upper = np.broadcast_arrays(lower, upper)
-
-    if len(lower) != d:
-        raise ValueError('Sample dimension is different than bounds dimension')
+    try:
+        lower = np.broadcast_to(l_bounds, d)
+        upper = np.broadcast_to(u_bounds, d)
+    except ValueError as exc:
+        msg = ("'l_bounds' and 'u_bounds' must be broadcastable and respect"
+               " the sample dimension")
+        raise ValueError(msg) from exc
 
     if not np.all(lower < upper):
-        raise ValueError('Bounds are not consistent a < b')
+        raise ValueError("Bounds are not consistent 'l_bounds' < 'u_bounds'")
 
     return lower, upper
 
