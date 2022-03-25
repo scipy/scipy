@@ -53,9 +53,9 @@ def assert_mask_matches(arr, expected_mask):
 
     Parameters
     ----------
-    arr: ndarray or MaskedArray
+    arr : ndarray or MaskedArray
         Array to test.
-    expected_mask: array_like of booleans
+    expected_mask : array_like of booleans
         A list giving the expected mask.
     '''
 

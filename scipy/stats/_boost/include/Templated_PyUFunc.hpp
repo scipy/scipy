@@ -7,7 +7,7 @@
 // TODO: remove C++11 implementation when SciPy supports C++14 on all platforms
 #define USE_CPP14 (__cplusplus >= 201402L)
 
-#if USE_CPP14
+#if USE_CPP14 && !defined(__wasm32__) && !defined(__wasm64__)
 
 #include <type_traits>
 #include <utility>

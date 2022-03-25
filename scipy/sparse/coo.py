@@ -21,7 +21,6 @@ __all__ = [  # noqa: F822
     'isshape',
     'isspmatrix',
     'isspmatrix_coo',
-    'matrix',
     'operator',
     'spmatrix',
     'to_native',

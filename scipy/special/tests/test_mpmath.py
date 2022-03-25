@@ -8,7 +8,7 @@ from numpy import pi
 import pytest
 import itertools
 
-from distutils.version import LooseVersion
+from scipy._lib import _pep440
 
 import scipy.special as sc
 from scipy.special._testutils import (
@@ -1720,7 +1720,7 @@ class TestSystematic:
                                "systems and gh-8095 for another bad "
                                "point"))
     def test_rf(self):
-        if LooseVersion(mpmath.__version__) >= LooseVersion("1.0.0"):
+        if _pep440.parse(mpmath.__version__) >= _pep440.Version("1.0.0"):
             # no workarounds needed
             mppoch = mpmath.rf
         else:

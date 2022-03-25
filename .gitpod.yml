@@ -44,11 +44,11 @@ vscode:
 # --------------------------------------------------------
 # using prebuilds for the container - note: atm this only
 # works for the SciPy repo
-# With this configuration the prebuild will happen on push to master 
+# With this configuration the prebuild will happen on push to main 
 github:
   prebuilds:
-    # enable for master branch
-    master: true
+    # enable for main branch
+    main: true
     # enable for other branches (defaults to false) 
     branches: false 
     # enable for pull requests coming from this repo (defaults to true) 

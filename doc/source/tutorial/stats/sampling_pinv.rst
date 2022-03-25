@@ -81,7 +81,7 @@ There are some restrictions for the given distribution:
 * The algorithm has problems when the distribution has heavy tails (as then
   the inverse CDF becomes very steep at 0 or 1) and the requested u-resolution
   is very small. E.g., the Cauchy distribution is likely to show this problem
-  when the requested u-resolution is less then 1.e-12.
+  when the requested u-resolution is less than 1.e-12.
 
 .. warning::
     This method does not work for densities with constant parts (e.g.

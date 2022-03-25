@@ -12,8 +12,9 @@ from scipy.optimize._remove_redundancy import (
     )
 from collections import namedtuple
 
-_LPProblem = namedtuple('_LPProblem', 'c A_ub b_ub A_eq b_eq bounds x0')
-_LPProblem.__new__.__defaults__ = (None,) * 6  # make c the only required arg
+_LPProblem = namedtuple('_LPProblem',
+                        'c A_ub b_ub A_eq b_eq bounds x0 integrality')
+_LPProblem.__new__.__defaults__ = (None,) * 7  # make c the only required arg
 _LPProblem.__doc__ = \
     """ Represents a linear-programming problem.
 
@@ -258,7 +259,7 @@ def _clean_inputs(lp):
             basic feasible solution.
 
     """
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     if c is None:
         raise TypeError
@@ -448,7 +449,7 @@ def _clean_inputs(lp):
     i_none = np.isnan(bounds_clean[:, 1])
     bounds_clean[i_none, 1] = np.inf
 
-    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds_clean, x0)
+    return _LPProblem(c, A_ub, b_ub, A_eq, b_eq, bounds_clean, x0, integrality)
 
 
 def _presolve(lp, rr, rr_method, tol=1e-9):
@@ -572,7 +573,7 @@ def _presolve(lp, rr, rr_method, tol=1e-9):
     #  * loop presolve until no additional changes are made
     #  * implement additional efficiency improvements in redundancy removal [2]
 
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, _ = lp
 
     revstack = []               # record of variables eliminated from problem
     # constant term in cost function may be added if variables are eliminated
@@ -1089,7 +1090,7 @@ def _get_Abc(lp, c0):
            programming." Athena Scientific 1 (1997): 997.
 
     """
-    c, A_ub, b_ub, A_eq, b_eq, bounds, x0 = lp
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = lp
 
     if sps.issparse(A_eq):
         sparse = True
@@ -1355,7 +1356,8 @@ def _postsolve(x, postsolve_args, complete=False):
     # note that all the inputs are the ORIGINAL, unmodified versions
     # no rows, columns have been removed
 
-    (c, A_ub, b_ub, A_eq, b_eq, bounds, x0), revstack, C, b_scale = postsolve_args
+    c, A_ub, b_ub, A_eq, b_eq, bounds, x0, integrality = postsolve_args[0]
+    revstack, C, b_scale = postsolve_args[1:]
 
     x = _unscale(x, C, b_scale)
 

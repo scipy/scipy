@@ -841,8 +841,8 @@ del empty_module
 
 __all__ = ['get_lapack_funcs']
 
-_dep_message = """The `*gegv` family of routines has been deprecated in
-LAPACK 3.6.0 in favor of the `*ggev` family of routines.
+_dep_message = """The ``*gegv`` family of routines has been deprecated in
+LAPACK 3.6.0 in favor of the ``*ggev`` family of routines.
 The corresponding wrappers will be removed from SciPy in
 a future release."""
 

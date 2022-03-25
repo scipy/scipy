@@ -428,7 +428,7 @@ cdef class Rotation:
     array([0.        , 0.        , 1.57079633])
 
     It is also possible to initialize multiple rotations in a single instance
-    using any of the `from_...` functions. Here we initialize a stack of 3
+    using any of the ``from_...`` functions. Here we initialize a stack of 3
     rotations using the ``from_euler`` method:
 
     >>> r = R.from_euler('zyx', [
@@ -2361,6 +2361,8 @@ cdef class Rotation:
                                  "equal to number of input vectors, got "
                                  "{} values and {} vectors.".format(
                                     weights.shape[0], b.shape[0]))
+            if (weights < 0).any():
+                raise ValueError("`weights` may not contain negative values")
 
         B = np.einsum('ji,jk->ik', weights[:, None] * a, b)
         u, s, vh = np.linalg.svd(B)

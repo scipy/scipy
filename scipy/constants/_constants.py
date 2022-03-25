@@ -6,6 +6,18 @@ print '10 mile per minute is', 10*mile/minute, 'm/s or', 10*mile/(minute*knot), 
 
 The list is not meant to be comprehensive, but just convenient for everyday use.
 """
+
+from __future__ import annotations
+
+import math as _math
+from typing import TYPE_CHECKING, Any
+
+from ._codata import value as _cd
+import numpy as _np
+
+if TYPE_CHECKING:
+    import numpy.typing as npt
+
 """
 BasSw 2006
 physical constants: imported from CODATA
@@ -14,11 +26,6 @@ Use at own risk: double-check values before calculating your Mars orbit-insertio
 Some constants exist in a few variants, which are marked with suffixes.
 The ones without any suffix should be the most common ones.
 """
-
-import math as _math
-from ._codata import value as _cd
-import numpy as _np
-
 
 __all__ = [
     'Avogadro', 'Boltzmann', 'Btu', 'Btu_IT', 'Btu_th', 'G',
@@ -213,7 +220,11 @@ kgf = kilogram_force = g  # * 1 kg
 # functions for conversions that are not linear
 
 
-def convert_temperature(val, old_scale, new_scale):
+def convert_temperature(
+    val: npt.ArrayLike,
+    old_scale: str,
+    new_scale: str,
+) -> Any:
     """
     Convert from a temperature scale to another one among Celsius, Kelvin,
     Fahrenheit, and Rankine scales.
@@ -223,15 +234,13 @@ def convert_temperature(val, old_scale, new_scale):
     val : array_like
         Value(s) of the temperature(s) to be converted expressed in the
         original scale.
-
-    old_scale: str
+    old_scale : str
         Specifies as a string the original scale from which the temperature
         value(s) will be converted. Supported scales are Celsius ('Celsius',
         'celsius', 'C' or 'c'), Kelvin ('Kelvin', 'kelvin', 'K', 'k'),
         Fahrenheit ('Fahrenheit', 'fahrenheit', 'F' or 'f'), and Rankine
         ('Rankine', 'rankine', 'R', 'r').
-
-    new_scale: str
+    new_scale : str
         Specifies as a string the new scale to which the temperature
         value(s) will be converted. Supported scales are Celsius ('Celsius',
         'celsius', 'C' or 'c'), Kelvin ('Kelvin', 'kelvin', 'K', 'k'),
@@ -287,7 +296,7 @@ def convert_temperature(val, old_scale, new_scale):
 # optics
 
 
-def lambda2nu(lambda_):
+def lambda2nu(lambda_: npt.ArrayLike) -> Any:
     """
     Convert wavelength to optical frequency
 
@@ -316,7 +325,7 @@ def lambda2nu(lambda_):
     return c / _np.asanyarray(lambda_)
 
 
-def nu2lambda(nu):
+def nu2lambda(nu: npt.ArrayLike) -> Any:
     """
     Convert optical frequency to wavelength.
 

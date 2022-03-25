@@ -225,7 +225,9 @@ class errstate:
 import itertools
 import json
 import os
+from stat import ST_MTIME
 import optparse
+import argparse
 import re
 import textwrap
 from typing import List
@@ -456,7 +458,7 @@ def generate_fused_type(codes):
 
     Parameters
     ----------
-    typecodes : str
+    codes : str
         Valid inputs to CY_TYPES (i.e. f, d, g, ...).
 
     """
@@ -1227,9 +1229,9 @@ def get_declaration(ufunc, c_name, c_proto, cy_proto, header,
         # redeclare the function, so that the assumed
         # signature is checked at compile time
         new_name = "%s \"%s\"" % (ufunc.cython_func_name(c_name), c_name)
-        defs.append("cdef extern from \"%s\":" % proto_h_filename)
+        defs.append(f'cdef extern from r"{proto_h_filename}":')
         defs.append("    cdef %s" % (cy_proto.replace('(*)', new_name)))
-        defs_h.append("#include \"%s\"" % header)
+        defs_h.append(f'#include "{header}"')
         defs_h.append("%s;" % (c_proto.replace('(*)', c_name)))
 
     return defs, defs_h, var_name
@@ -1439,18 +1441,29 @@ def unique(lst):
     return new_lst
 
 
+def newer(source, target):
+    """
+    Return true if 'source' exists and is more recently modified than
+    'target', or if 'source' exists and 'target' doesn't.  Return false if
+    both exist and 'target' is the same age or younger than 'source'.
+    """
+    if not os.path.exists(source):
+        raise ValueError("file '%s' does not exist" % os.path.abspath(source))
+    if not os.path.exists(target):
+        return 1
+
+    mtime1 = os.stat(source)[ST_MTIME]
+    mtime2 = os.stat(target)[ST_MTIME]
+
+    return mtime1 > mtime2
+
+
 def all_newer(src_files, dst_files):
-    from distutils.dep_util import newer
     return all(os.path.exists(dst) and newer(dst, src)
                for dst in dst_files for src in src_files)
 
 
-def main():
-    p = optparse.OptionParser(usage=(__doc__ or '').strip())
-    options, args = p.parse_args()
-    if len(args) != 0:
-        p.error('invalid number of arguments')
-
+def main(outdir):
     pwd = os.path.dirname(__file__)
     src_files = (os.path.abspath(__file__),
                  os.path.abspath(os.path.join(pwd, 'functions.json')),
@@ -1463,6 +1476,7 @@ def main():
                  '_ufuncs.pyi',
                  'cython_special.pyx',
                  'cython_special.pxd')
+    dst_files = (os.path.join(outdir, f) for f in dst_files)
 
     os.chdir(BASE_DIR)
 
@@ -1476,10 +1490,27 @@ def main():
     for f, sig in functions.items():
         ufuncs.append(Ufunc(f, sig))
         fused_funcs.append(FusedFunc(f, sig))
-    generate_ufuncs("_ufuncs", "_ufuncs_cxx", ufuncs)
-    generate_ufuncs_type_stubs("_ufuncs", ufuncs)
-    generate_fused_funcs("cython_special", "_ufuncs", fused_funcs)
+    generate_ufuncs(os.path.join(outdir, "_ufuncs"),
+                    os.path.join(outdir, "_ufuncs_cxx"),
+                    ufuncs)
+    generate_ufuncs_type_stubs(os.path.join(outdir, "_ufuncs"),
+                               ufuncs)
+    generate_fused_funcs(os.path.join(outdir, "cython_special"),
+                         os.path.join(outdir, "_ufuncs"),
+                         fused_funcs)
 
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-o", "--outdir", type=str,
+                        help="Path to the output directory")
+    args = parser.parse_args()
+
+    if not args.outdir:
+        #raise ValueError(f"Missing `--outdir` argument to _generate_pyx.py")
+        # We're dealing with a distutils build here, write in-place:
+        outdir_abs = os.path.abspath(os.path.dirname(__file__))
+    else:
+        outdir_abs = os.path.join(os.getcwd(), args.outdir)
+
+    main(outdir_abs)

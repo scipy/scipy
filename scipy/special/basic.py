@@ -4,6 +4,9 @@
 
 import warnings
 from . import _basic
+from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
+                      psi, hankel1, hankel2, yv, kv)
+
 
 __all__ = [  # noqa: F822
     'ai_zeros',
@@ -31,7 +34,6 @@ __all__ = [  # noqa: F822
     'h2vp',
     'hankel1',
     'hankel2',
-    'hyp0f1',
     'iv',
     'ivp',
     'jn_zeros',
@@ -56,7 +58,6 @@ __all__ = [  # noqa: F822
     'mathieu_b',
     'mathieu_even_coef',
     'mathieu_odd_coef',
-    'ndtri',
     'obl_cv_seq',
     'pbdn_seq',
     'pbdv_seq',

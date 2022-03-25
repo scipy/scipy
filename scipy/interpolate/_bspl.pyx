@@ -191,15 +191,14 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     Consider a cubic spline
 
     >>> k = 3
-    >>> t = [0., 2., 2., 3., 4.]   # internal knots
+    >>> t = [0., 1., 2., 3., 4.]   # internal knots
     >>> a, b = t[0], t[-1]    # base interval is [a, b)
-    >>> t = [a]*k + t + [b]*k  # add boundary knots
+    >>> t = np.array([a]*k + t + [b]*k)  # add boundary knots
 
     >>> import matplotlib.pyplot as plt
     >>> xx = np.linspace(a, b, 100)
     >>> plt.plot(xx, BSpline.basis_element(t[k:-k])(xx),
-    ...          'r-', lw=5, alpha=0.5)
-    >>> c = ['b', 'g', 'c', 'k']
+    ...          lw=3, alpha=0.5, label='basis_element')
 
     Now we use slide an interval ``t[m]..t[m+1]`` along the base interval
     ``a..b`` and use `evaluate_all_bspl` to compute the restriction of
@@ -209,7 +208,7 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     ...    x1, x2 = t[2*k - i], t[2*k - i + 1]
     ...    xx = np.linspace(x1 - 0.5, x2 + 0.5)
     ...    yy = [evaluate_all_bspl(t, k, x, 2*k - i)[i] for x in xx]
-    ...    plt.plot(xx, yy, c[i] + '--', lw=3, label=str(i))
+    ...    plt.plot(xx, yy, '--', label=str(i))
     ...
     >>> plt.grid(True)
     >>> plt.legend()

@@ -54,11 +54,11 @@ from . import hierarchy_test_data
 # Matplotlib is not a scipy dependency but is optionally used in dendrogram, so
 # check if it's available
 try:
-    import matplotlib  # type: ignore[import]
+    import matplotlib
     # and set the backend to be Agg (no gui)
     matplotlib.use('Agg')
     # before importing pyplot
-    import matplotlib.pyplot as plt  # type: ignore[import]
+    import matplotlib.pyplot as plt
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
