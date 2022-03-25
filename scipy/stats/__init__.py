@@ -449,19 +449,6 @@ Univariate and multivariate kernel density estimation
 
    gaussian_kde
 
-Warnings / Errors used in :mod:`scipy.stats`
---------------------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   F_onewayConstantInputWarning
-   F_onewayBadInputSizesWarning
-   PearsonRConstantInputWarning
-   PearsonRNearConstantInputWarning
-   SpearmanRConstantInputWarning
-   BootstrapDegenerateDistributionWarning
-
 """
 
 from ._stats_py import *
@@ -476,14 +463,14 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
-from ._resampling import (bootstrap, BootstrapDegenerateDistributionWarning,
-                          monte_carlo_test, permutation_test)
+from ._resampling import (bootstrap, monte_carlo_test, permutation_test)
 from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite  # noqa
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._fit import fit
+from ._distn_infrastructure import FitError
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

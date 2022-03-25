@@ -8903,3 +8903,9 @@ def rankdata(a, method='average', *, axis=None):
 
     # average method
     return .5 * (count[dense] + count[dense - 1] + 1)
+
+class SciPyStatsError(RuntimeError):
+    """Represents a runtime error specific to `scipy.stats`"""
+
+class SciPyStatsWarning(RuntimeWarning):
+    """Represents a runtime warning specific to `scipy.stats`"""
