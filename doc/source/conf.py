@@ -155,6 +155,7 @@ for key in (
         r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
         r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
         r"'contextfunction' is renamed to 'pass_context'",  # Jinja
+        r"distutils Version",  # distutils
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)
