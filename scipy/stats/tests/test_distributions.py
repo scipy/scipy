@@ -5462,7 +5462,7 @@ def test_540_567():
 
 def test_regression_ticket_1316():
     # The following was raising an exception, because _construct_default_doc()
-    # did not handle the default keyword extradoc=None.  See ticket #1316.
+    # See ticket #1316.
     stats._continuous_distns.gamma_gen(name='gamma')
 
 
