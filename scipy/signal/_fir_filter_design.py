@@ -67,7 +67,7 @@ def kaiser_beta(a):
     --------
     Suppose we want to design a lowpass filter, with 65 dB attenuation
     in the stop band.  The Kaiser window parameter to be used in the
-    window method is computed by `kaiser_beta(65)`:
+    window method is computed by ``kaiser_beta(65)``:
 
     >>> from scipy.signal import kaiser_beta
     >>> kaiser_beta(65)
@@ -1050,7 +1050,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     try:  # try the fast way
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter('always')
-            a = solve(Q, b, sym_pos=True, check_finite=False)
+            a = solve(Q, b, assume_a="pos", check_finite=False)
         for ww in w:
             if (ww.category == LinAlgWarning and
                     str(ww.message).startswith('Ill-conditioned matrix')):

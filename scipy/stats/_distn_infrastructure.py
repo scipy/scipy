@@ -449,12 +449,6 @@ class rv_frozen:
     def random_state(self, seed):
         self.dist._random_state = check_random_state(seed)
 
-    def pdf(self, x):   # raises AttributeError in frozen discrete distribution
-        return self.dist.pdf(x, *self.args, **self.kwds)
-
-    def logpdf(self, x):
-        return self.dist.logpdf(x, *self.args, **self.kwds)
-
     def cdf(self, x):
         return self.dist.cdf(x, *self.args, **self.kwds)
 
@@ -501,12 +495,6 @@ class rv_frozen:
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
 
-    def pmf(self, k):
-        return self.dist.pmf(k, *self.args, **self.kwds)
-
-    def logpmf(self, k):
-        return self.dist.logpmf(k, *self.args, **self.kwds)
-
     def interval(self, confidence=None, **kwds):
         return self.dist.interval(confidence, *self.args, **self.kwds, **kwds)
 
@@ -524,6 +512,24 @@ class rv_frozen:
 
     def support(self):
         return self.dist.support(*self.args, **self.kwds)
+
+
+class rv_discrete_frozen(rv_frozen):
+
+    def pmf(self, k):
+        return self.dist.pmf(k, *self.args, **self.kwds)
+
+    def logpmf(self, k):  # No error
+        return self.dist.logpmf(k, *self.args, **self.kwds)
+
+
+class rv_continuous_frozen(rv_frozen):
+
+    def pdf(self, x):
+        return self.dist.pdf(x, *self.args, **self.kwds)
+
+    def logpdf(self, x):
+        return self.dist.logpdf(x, *self.args, **self.kwds)
 
 
 def argsreduce(cond, *args):
@@ -860,7 +866,10 @@ class rv_generic:
             The frozen distribution.
 
         """
-        return rv_frozen(self, *args, **kwds)
+        if isinstance(self, rv_continuous):
+            return rv_continuous_frozen(self, *args, **kwds)
+        else:
+            return rv_discrete_frozen(self, *args, **kwds)
 
     def __call__(self, *args, **kwds):
         return self.freeze(*args, **kwds)
@@ -1381,7 +1390,7 @@ class rv_generic:
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
             if self._stats_has_moments:
-                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
+                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'mvsk'}[n]}
             else:
                 mdict = {}
             mu, mu2, g1, g2 = self._stats(*shapes, **mdict)
@@ -1916,6 +1925,10 @@ class rv_continuous(rv_generic):
                  shapes=None, extradoc=None, seed=None):
 
         super().__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         # save the ctor parameters, cf generic freeze
         self._ctor_param = dict(
@@ -3050,7 +3063,7 @@ class rv_discrete(rv_generic):
         If not provided, shape parameters will be inferred from
         the signatures of the private methods, ``_pmf`` and ``_cdf`` of
         the instance.
-    extradoc :  str, optional
+    extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
@@ -3160,6 +3173,10 @@ class rv_discrete(rv_generic):
                  shapes=None, extradoc=None, seed=None):
 
         super().__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         # cf generic freeze
         self._ctor_param = dict(
@@ -3840,6 +3857,10 @@ class rv_sample(rv_discrete):
                  shapes=None, extradoc=None, seed=None):
 
         super(rv_discrete, self).__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         if values is None:
             raise ValueError("rv_sample.__init__(..., values=None,...)")

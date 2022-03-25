@@ -44,8 +44,6 @@ def _categorize(
     result: np.ndarray
     ) -> None: ...
 
-def _initialize_direction_numbers() -> None: ...
-
 _MAXDIM: Literal[21201]
 _MAXDEG: Literal[18]
 

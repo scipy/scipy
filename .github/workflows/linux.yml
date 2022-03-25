@@ -17,7 +17,7 @@ concurrency:
 jobs:
   Python-38-dbg:
     name: Python 3.8-dbg
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v2

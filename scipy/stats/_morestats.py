@@ -11,6 +11,9 @@ from numpy import (isscalar, r_, log, around, unique, asarray, zeros,
 
 from scipy import optimize
 from scipy import special
+from scipy._lib._bunch import _make_tuple_bunch
+from scipy._lib._util import _rename_parameter
+
 from . import _statlib
 from . import _stats_py
 from ._stats_py import find_repeats, _contains_nan, _normtest_finish
@@ -1771,6 +1774,8 @@ def shapiro(x):
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
+    x -= np.median(x)
+
     a = zeros(N, 'f')
     init = 0
 
@@ -2923,6 +2928,9 @@ def mood(x, y, axis=0, alternative="two-sided"):
     resulting z and p values will have shape ``(n0, n2, n3)``.  Note that
     ``n1`` and ``m1`` don't have to be equal, but the other dimensions do.
 
+    In this implementation, the test statistic and p-value are only valid when
+    all observations are unique.
+
     Examples
     --------
     >>> from scipy import stats
@@ -3002,14 +3010,26 @@ def mood(x, y, axis=0, alternative="two-sided"):
     return z, pval
 
 
-WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
+WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'],
+                                   ['zstatistic'])
 
 
-@_axis_nan_policy_factory(WilcoxonResult, paired=True,
+def wilcoxon_result_unpacker(res):
+    return res.statistic, res.pvalue, res.zstatistic
+
+
+def wilcoxon_result_object(statistic, pvalue, zstatistic):
+    return WilcoxonResult(statistic, pvalue, zstatistic=zstatistic)
+
+
+@_rename_parameter("mode", "method")
+@_axis_nan_policy_factory(wilcoxon_result_object, paired=True,
                           n_samples=lambda kwds: 2
-                          if kwds.get('y', None) is not None else 1)
+                          if kwds.get('y', None) is not None else 1,
+                          result_to_tuple=wilcoxon_result_unpacker,
+                          n_outputs=3,)
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
-             alternative="two-sided", mode='auto'):
+             alternative="two-sided", method='auto'):
     """Calculate the Wilcoxon signed-rank test.
 
     The Wilcoxon signed-rank test tests the null hypothesis that two
@@ -3043,17 +3063,30 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     alternative : {"two-sided", "greater", "less"}, optional
         The alternative hypothesis to be tested, see Notes. Default is
         "two-sided".
-    mode : {"auto", "exact", "approx"}
+    method : {"auto", "exact", "approx"}, optional
         Method to calculate the p-value, see Notes. Default is "auto".
 
     Returns
     -------
+    An object with the following attributes.
+
     statistic : float
-        If ``alternative`` is "two-sided", the sum of the ranks of the
+        If `alternative` is "two-sided", the sum of the ranks of the
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
     pvalue : float
-        The p-value for the test depending on ``alternative`` and ``mode``.
+        The p-value for the test depending on `alternative` and `method`.
+    zstatistic : float
+        When the the approximate method is used, this is the normalized
+        z-statistic::
+
+            z = (T - mn - d) / se
+
+        where ``T`` is `statistic` as defined above, ``mn`` is the mean of the
+        distribution under the null hypothesis, ``d`` is a continuity
+        correction, and ``se`` is the standard error.
+
+        When the exact method is used, this is ``np.nan``.
 
     See Also
     --------
@@ -3071,10 +3104,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     positive against the alternative that it is negative
     (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
 
-    To derive the p-value, the exact distribution (``mode == 'exact'``)
-    can be used for small sample sizes. The default ``mode == 'auto'``
+    To derive the p-value, the exact distribution (``method == 'exact'``)
+    can be used for small sample sizes. The default ``method == 'auto'``
     uses the exact distribution if there are at most 50 observations and no
-    ties, otherwise a normal approximation is used (``mode == 'approx'``).
+    ties, otherwise a normal approximation is used (``method == 'approx'``).
 
     The treatment of ties can be controlled by the parameter `zero_method`.
     If ``zero_method == 'pratt'``, the normal approximation is adjusted as in
@@ -3106,8 +3139,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     two-sided test:
 
     >>> from scipy.stats import wilcoxon
-    >>> w, p = wilcoxon(d)
-    >>> w, p
+    >>> res = wilcoxon(d)
+    >>> res.statistic, res.pvalue
     (24.0, 0.041259765625)
 
     Hence, we would reject the null hypothesis at a confidence level of 5%,
@@ -3115,8 +3148,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     To confirm that the median of the differences can be assumed to be
     positive, we use:
 
-    >>> w, p = wilcoxon(d, alternative='greater')
-    >>> w, p
+    >>> res = wilcoxon(d, alternative='greater')
+    >>> res.statistic, res.pvalue
     (96.0, 0.0206298828125)
 
     This shows that the null hypothesis that the median is negative can be
@@ -3124,8 +3157,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     the median is greater than zero. The p-values above are exact. Using the
     normal approximation gives very similar values:
 
-    >>> w, p = wilcoxon(d, mode='approx')
-    >>> w, p
+    >>> res = wilcoxon(d, method='approx')
+    >>> res.statistic, res.pvalue
     (24.0, 0.04088813291185591)
 
     Note that the statistic changed to 96 in the one-sided case (the sum
@@ -3133,6 +3166,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     case (the minimum of sum of ranks above and below zero).
 
     """
+    mode = method
+
     if mode not in ["auto", "approx", "exact"]:
         raise ValueError("mode must be either 'auto', 'approx' or 'exact'")
 
@@ -3157,7 +3192,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         d = x - y
 
     if len(d) == 0:
-        return WilcoxonResult(np.nan, np.nan)
+        return WilcoxonResult(np.nan, np.nan, zstatistic=np.nan)
 
     if mode == "auto":
         if len(d) <= 50:
@@ -3261,7 +3296,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             prob = np.sum(pmf[:r_plus + 1])
         prob = np.clip(prob, 0, 1)
 
-    return WilcoxonResult(T, prob)
+    return WilcoxonResult(T, prob, zstatistic=np.nan if mode == 'exact' else z)
 
 
 def median_test(*samples, ties='below', correction=True, lambda_=1,

@@ -244,6 +244,22 @@ py3.extension_module('_decomp_update',
   subdir: 'scipy/linalg'
 )
 
+# _matfuncs_expm:
+_matfuncs_expm_pyx = custom_target('_matfuncs_expm',
+  output: '_matfuncs_expm.pyx',
+  input: '_matfuncs_expm.pyx.in',
+  command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
+)
+
+py3.extension_module('_matfuncs_expm',
+  linalg_init_cython_gen.process(_matfuncs_expm_pyx),
+  c_args: cython_c_args,
+  include_directories: inc_np,
+  dependencies: py3_dep,
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   linalg_init_cython_gen.process('_cythonized_array_utils.pyx'),
   c_args: [cython_c_args, c_undefined_ok],

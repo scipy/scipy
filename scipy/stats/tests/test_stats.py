@@ -7,6 +7,7 @@
     Additional tests by a host of SciPy developers.
 """
 import os
+import re
 import warnings
 from collections import namedtuple
 from itertools import product
@@ -33,7 +34,6 @@ from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
-from scipy.stats._hypotests import _batch_generator
 from scipy.stats._stats_py import (_permutation_distribution_t,
                             AlexanderGovernConstantInputWarning)
 
@@ -535,6 +535,35 @@ class TestFisherExact:
             res = stats.fisher_exact(np.asarray(table))
             np.testing.assert_almost_equal(res[1], res_r[1], decimal=11,
                                            verbose=True)
+
+    def test_gh4130(self):
+        # Previously, a fudge factor used to distinguish between theoeretically
+        # and numerically different probability masses was 1e-4; it has been
+        # tightened to fix gh4130. Accuracy checked against R fisher.test.
+        # options(digits=16)
+        # table <- matrix(c(6, 108, 37, 200), nrow = 2)
+        # fisher.test(table, alternative = "t")
+        x = [[6, 37], [108, 200]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 0.005092697748126)
+
+        # case from https://github.com/brentp/fishers_exact_test/issues/27
+        # That package has an (absolute?) fudge factor of 1e-6; too big
+        x = [[22, 0], [0, 102]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 7.175066786244549e-25)
+
+        # case from https://github.com/brentp/fishers_exact_test/issues/1
+        x = [[94, 48], [3577, 16988]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 2.069356340993818e-37)
+
+    def test_gh9231(self):
+        # Previously, fisher_exact was extremely slow for this table
+        # As reported in gh-9231, the p-value should be very nearly zero
+        x = [[5829225, 5692693], [5760959, 5760959]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 0, atol=1e-170)
 
     @pytest.mark.slow
     def test_large_numbers(self):
@@ -2105,49 +2134,6 @@ class TestScoreatpercentile:
         assert_equal(stats.scoreatpercentile([], 50), np.nan)
         assert_equal(stats.scoreatpercentile(np.array([[], []]), 50), np.nan)
         assert_equal(stats.scoreatpercentile([], [50, 99]), [np.nan, np.nan])
-
-
-class TestItemfreq:
-    a = [5, 7, 1, 2, 1, 5, 7] * 10
-    b = [1, 2, 5, 7]
-
-    def test_numeric_types(self):
-        # Check itemfreq works for all dtypes (adapted from np.unique tests)
-        def _check_itemfreq(dt):
-            a = np.array(self.a, dt)
-            with suppress_warnings() as sup:
-                sup.filter(DeprecationWarning)
-                v = stats.itemfreq(a)
-            assert_array_equal(v[:, 0], [1, 2, 5, 7])
-            assert_array_equal(v[:, 1], np.array([20, 10, 20, 20], dtype=dt))
-
-        dtypes = [np.int32, np.int64, np.float32, np.float64,
-                  np.complex64, np.complex128]
-        for dt in dtypes:
-            _check_itemfreq(dt)
-
-    def test_object_arrays(self):
-        a, b = self.a, self.b
-        dt = 'O'
-        aa = np.empty(len(a), dt)
-        aa[:] = a
-        bb = np.empty(len(b), dt)
-        bb[:] = b
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            v = stats.itemfreq(aa)
-        assert_array_equal(v[:, 0], bb)
-
-    def test_structured_arrays(self):
-        a, b = self.a, self.b
-        dt = [('', 'i'), ('', 'i')]
-        aa = np.array(list(zip(a, a)), dt)
-        bb = np.array(list(zip(b, b)), dt)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning)
-            v = stats.itemfreq(aa)
-        # Arrays don't compare equal because v[:,0] is object array
-        assert_equal(tuple(v[2, 0]), tuple(bb[2]))
 
 
 class TestMode:
@@ -3857,7 +3843,8 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='asymp')
         self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='asymp')
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+            message = "ks_2samp: Exact calculation unsuccessful."
+            sup.filter(RuntimeWarning, message)
             self._testOne(x, y, 'greater', 2000.0 / n1 / n2, 0.9697596024683929, mode='exact')
             self._testOne(x, y, 'less', 500.0 / n1 / n2, 0.9968735843165021, mode='exact')
         with warnings.catch_warnings(record=True) as w:
@@ -3878,7 +3865,8 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='asymp')
 
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+            message = "ks_2samp: Exact calculation unsuccessful."
+            sup.filter(RuntimeWarning, message)
             self._testOne(x, y, 'greater', 6600.0 / n1 / n2, 0.9573185808092622, mode='exact')
             self._testOne(x, y, 'less', 1000.0 / n1 / n2, 0.9982410869433984, mode='exact')
         with warnings.catch_warnings(record=True) as w:
@@ -3942,7 +3930,8 @@ class TestKSTwoSamples:
         self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673)
         self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724)
         with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+            message = "ks_2samp: Exact calculation unsuccessful."
+            sup.filter(RuntimeWarning, message)
             self._testOne(x, y, 'greater', 563.0 / lcm, 0.7561851877420673, mode='exact')
             self._testOne(x, y, 'less', 10.0 / lcm, 0.9998239693191724, mode='exact')
 
@@ -4523,21 +4512,6 @@ class Test_ttest_ind_permutations():
         with assert_raises(ValueError, match="'hello' cannot be used"):
             stats.ttest_ind(self.a, self.b, permutations=1,
                             random_state='hello')
-
-    @pytest.mark.parametrize("batch", (-1, 0))
-    def test_batch_generator_iv(self, batch):
-        with assert_raises(ValueError, match="`batch` must be positive."):
-            list(_batch_generator([1, 2, 3], batch))
-
-    batch_generator_cases = [(range(0), 3, []),
-                             (range(6), 3, [[0, 1, 2], [3, 4, 5]]),
-                             (range(8), 3, [[0, 1, 2], [3, 4, 5], [6, 7]])]
-
-    @pytest.mark.parametrize("iterable, batch, expected",
-                             batch_generator_cases)
-    def test_batch_generator(self, iterable, batch, expected):
-        got = list(_batch_generator(iterable, batch))
-        assert got == expected
 
 
 class Test_ttest_ind_common:
@@ -7006,6 +6980,27 @@ class TestBrunnerMunzel:
         assert_approx_equal(p1, 0.0057862086661515377,
                             significant=self.significant)
 
+    def test_brunnermunzel_return_nan(self):
+        """ tests that a warning is emitted when p is nan
+        p-value with t-distributions can be nan (0/0) (see gh-15843)
+        """
+        x = [1, 2, 3]
+        y = [5, 6, 7, 8, 9]
+
+        with pytest.warns(RuntimeWarning, match='p-value cannot be estimated'):
+            stats.brunnermunzel(x, y, distribution="t")
+
+    def test_brunnermunzel_normal_dist(self):
+        """ tests that a p is 0 for datasets that cause p->nan
+        when t-distribution is used (see gh-15843)
+        """
+        x = [1, 2, 3]
+        y = [5, 6, 7, 8, 9]
+
+        with pytest.warns(RuntimeWarning, match='divide by zero'):
+            _, p = stats.brunnermunzel(x, y, distribution="normal")
+        assert_equal(p, 0)
+
 
 class TestRatioUniforms:
     """ Tests for rvs_ratio_uniforms.
@@ -7459,3 +7454,25 @@ class TestPageTrendTest:
         with assert_raises(TypeError, match="`ranked` must be boolean."):
             stats.page_trend_test(data=[[1, 2, 3], [1, 2, 3]],
                                   ranked="ekki")
+
+
+rng = np.random.default_rng(902340982)
+x = rng.random(10)
+y = rng.random(10)
+
+
+@pytest.mark.parametrize("fun, args",
+                         [(stats.wilcoxon, (x,)),
+                          (stats.ks_1samp, (x, stats.norm.cdf)),  # type: ignore[attr-defined] # noqa
+                          (stats.ks_2samp, (x, y)),
+                          (stats.kstest, (x, y)),
+                          ])
+def test_rename_mode_method(fun, args):
+
+    res = fun(*args, method='exact')
+    res2 = fun(*args, mode='exact')
+    assert_equal(res, res2)
+
+    err = rf"{fun.__name__}() got multiple values for argument"
+    with pytest.raises(TypeError, match=re.escape(err)):
+        fun(*args, method='exact', mode='exact')

@@ -18,6 +18,7 @@ from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_deprecation_warning_gh5982_moment,
                            check_deprecation_warning_gh5982_interval)
 from scipy.stats._distr_params import distcont
+from scipy.stats._distn_infrastructure import rv_continuous_frozen
 
 """
 Test all continuous distributions.
@@ -148,11 +149,9 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
 
     rng = np.random.RandomState(765456)
     rvs = distfn.rvs(size=sn, *arg, random_state=rng)
-    sm = rvs.mean()
-    sv = rvs.var()
     m, v = distfn.stats(*arg)
 
-    check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
+    check_sample_meanvar_(m, v, rvs)
     check_cdf_ppf(distfn, arg, distname)
     check_sf_isf(distfn, arg, distname)
     check_pdf(distfn, arg, distname)
@@ -465,28 +464,18 @@ def test_method_of_moments():
     npt.assert_almost_equal(loc+scale, b, decimal=4)
 
 
-def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
+def check_sample_meanvar_(popmean, popvar, sample):
     # this did not work, skipped silently by nose
-    if np.isfinite(m):
-        check_sample_mean(sm, sv, sn, m)
-    if np.isfinite(v):
-        check_sample_var(sv, sn, v)
+    if np.isfinite(popmean):
+        check_sample_mean(sample, popmean)
+    if np.isfinite(popvar):
+        check_sample_var(sample.var(), len(sample), popvar)
 
 
-def check_sample_mean(sm, v, n, popmean):
-    # from stats._stats_py.ttest_1samp(a, popmean):
-    # Calculates the t-obtained for the independent samples T-test on ONE group
-    # of scores a, given a population mean.
-    #
-    # Returns: t-value, two-tailed prob
-    df = n-1
-    svar = ((n-1)*v) / float(df)    # looks redundant
-    t = (sm-popmean) / np.sqrt(svar*(1.0/n))
-    prob = betainc(0.5*df, 0.5, df/(df + t*t))
-
-    # return t,prob
-    npt.assert_(prob > 0.01, 'mean fail, t,prob = %f, %f, m, sm=%f,%f' %
-                (t, prob, popmean, sm))
+def check_sample_mean(sample, popmean):
+    # Checks for unlikely difference between sample mean and population mean
+    prob = stats.ttest_1samp(sample, popmean).pvalue
+    assert prob > 0.01
 
 
 def check_sample_var(sv, n, popvar):
@@ -855,3 +844,17 @@ def test_kappa4_array_gh13582():
     k = np.array([-1, -0.5, 0, 1])[:, None]
     res2 = np.array(stats.kappa4.stats(h, k, moments=moments))
     assert res2.shape == (4, 4, 3)
+
+
+def test_frozen_attributes():
+    # gh-14827 reported that all frozen distributions had both pmf and pdf
+    # attributes; continuous should have pdf and discrete should have pmf.
+    message = "'rv_continuous_frozen' object has no attribute"
+    with pytest.raises(AttributeError, match=message):
+        stats.norm().pmf
+    with pytest.raises(AttributeError, match=message):
+        stats.norm().logpmf
+    stats.norm.pmf = "herring"
+    frozen_norm = stats.norm()
+    assert isinstance(frozen_norm, rv_continuous_frozen)
+    delattr(stats.norm, 'pmf')
