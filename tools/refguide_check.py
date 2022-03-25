@@ -43,7 +43,6 @@ import sphinx
 from docutils.parsers.rst import directives
 from pkg_resources import parse_version
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxext'))
 from numpydoc.docscrape_sphinx import get_doc_object
 from numpydoc.docscrape import NumpyDocString
 from scipy.stats._distr_params import distcont, distdiscrete
