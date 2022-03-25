@@ -100,7 +100,7 @@ doc = [
     "pydata-sphinx-theme>=0.6.1",
     "sphinx-panels>=0.5.2",
     "matplotlib>2",
-    "numpydoc==1.1.0",
+    "numpydoc",
 ]
 dev = [
     "mypy",
