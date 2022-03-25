@@ -581,6 +581,20 @@ class TestHalton(QMCEngineTests):
                             [0.87746036, 0.21048664],
                             [0.37746036, 0.54381998]])
 
+    def test_workers(self):
+        ref_sample = self.reference(scramble=True)
+        engine = self.engine(d=2, scramble=True)
+        sample = engine.random(n=len(ref_sample), workers=8)
+
+        assert_allclose(sample, ref_sample, atol=1e-1)
+
+        # worker + integers
+        engine.reset()
+        ref_sample = engine.integers(10)
+        engine.reset()
+        sample = engine.integers(10, workers=8)
+        assert_allclose(sample, ref_sample, atol=1e-1)
+
 
 class TestLHS(QMCEngineTests):
     qmce = qmc.LatinHypercube
