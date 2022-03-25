@@ -88,24 +88,6 @@ def check_random_state(seed=None):
                          ' numpy.random.Generator instance')
 
 
-def _bounds_iv(
-    l_bounds: npt.ArrayLike, u_bounds: npt.ArrayLike, d: int
-) -> Tuple[np.ndarray, ...]:
-    """Bounds input validation."""
-    try:
-        lower = np.broadcast_to(l_bounds, d)
-        upper = np.broadcast_to(u_bounds, d)
-    except ValueError as exc:
-        msg = ("'l_bounds' and 'u_bounds' must be broadcastable and respect"
-               " the sample dimension")
-        raise ValueError(msg) from exc
-
-    if not np.all(lower < upper):
-        raise ValueError("Bounds are not consistent 'l_bounds' < 'u_bounds'")
-
-    return lower, upper
-
-
 def scale(
     sample: npt.ArrayLike,
     l_bounds: npt.ArrayLike,
@@ -171,7 +153,7 @@ def scale(
     if not sample.ndim == 2:
         raise ValueError('Sample is not a 2D array')
 
-    lower, upper = _bounds_iv(
+    lower, upper = _validate_bounds(
         l_bounds=l_bounds, u_bounds=u_bounds, d=sample.shape[1]
     )
 
@@ -1892,3 +1874,35 @@ def _validate_workers(workers: IntNumber = 1) -> IntNumber:
                          "or > 0")
 
     return workers
+
+
+def _validate_bounds(
+    l_bounds: npt.ArrayLike, u_bounds: npt.ArrayLike, d: int
+) -> Tuple[np.ndarray, ...]:
+    """Bounds input validation.
+
+    Parameters
+    ----------
+    l_bounds, u_bounds : array_like (d,)
+        Lower and upper bounds.
+    d : int
+        Dimension to use for broadcasting.
+
+    Returns
+    -------
+    l_bounds, u_bounds : array_like (d,)
+        Lower and upper bounds.
+
+    """
+    try:
+        lower = np.broadcast_to(l_bounds, d)
+        upper = np.broadcast_to(u_bounds, d)
+    except ValueError as exc:
+        msg = ("'l_bounds' and 'u_bounds' must be broadcastable and respect"
+               " the sample dimension")
+        raise ValueError(msg) from exc
+
+    if not np.all(lower < upper):
+        raise ValueError("Bounds are not consistent 'l_bounds' < 'u_bounds'")
+
+    return lower, upper
