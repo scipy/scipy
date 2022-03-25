@@ -2766,7 +2766,7 @@ class TestExponNorm:
                               (10, 1, 7.48518298877006e-05),
                               (10, 10000, 9.990005048283775e-05)])
     def test_std_pdf(self, x, K, expected):
-        assert_allclose(stats.exponnorm.pdf(x, K), expected, rtol=1e-12)
+        assert_allclose(stats.exponnorm.pdf(x, K), expected, rtol=5e-12)
 
     # Expected values for the CDF were computed with mpmath using
     # the following function and with mpmath.mp.dps = 60:
