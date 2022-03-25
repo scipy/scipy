@@ -405,11 +405,6 @@ def test_raises():
         engine = RandomEngine(1)
         engine.integers(l_bounds=1, u_bounds=1.1)
 
-    msg = r"'l_bounds' and 'u_bounds' must be broadcastable"
-    with pytest.raises(ValueError, match=msg):
-        engine = RandomEngine(1)
-        engine.integers(l_bounds=[1, 2], u_bounds=4)
-
 
 def test_integers():
     engine = RandomEngine(1, seed=231195739755290648063853336582377368684)

@@ -788,8 +788,8 @@ class QMCEngine(ABC):
         reduction and a finite sample variance bound.
 
         To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`,
-        with :math:`a` the lower bounds and :math:`b` the upper bounds.
-        The following transformation is used:
+        with :math:`a` the lower bounds and :math:`b` the upper bounds,
+        the following transformation is used:
 
         .. math::
 
@@ -800,10 +800,8 @@ class QMCEngine(ABC):
             u_bounds = l_bounds
             l_bounds = 0
 
-        l_bounds, u_bounds = _bounds_iv(
-            l_bounds=l_bounds, u_bounds=u_bounds,
-            d=self.d  # type: ignore[arg-type]
-        )
+        u_bounds = np.atleast_1d(u_bounds)
+        l_bounds = np.atleast_1d(l_bounds)
 
         if endpoint:
             u_bounds = u_bounds + 1
