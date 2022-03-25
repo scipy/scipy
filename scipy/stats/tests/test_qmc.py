@@ -409,6 +409,7 @@ def test_raises():
 def test_integers():
     engine = RandomEngine(1, seed=231195739755290648063853336582377368684)
 
+    # basic tests
     sample = engine.integers(1, n=10)
     assert_equal(np.unique(sample), [0])
 
@@ -417,11 +418,26 @@ def test_integers():
     sample = engine.integers(1, n=10, endpoint=True)
     assert_equal(np.unique(sample), [0, 1])
 
-    sample = engine.integers(-5, u_bounds=7, n=100, endpoint=False)
-    assert_equal((sample.min(), sample.max()), (-5, 6))
+    low = -5
+    high = 7
 
-    sample = engine.integers(-5, u_bounds=7, n=100, endpoint=True)
-    assert_equal((sample.min(), sample.max()), (-5, 7))
+    # scaling logic
+    engine.reset()
+    ref_sample = engine.random(20)
+    ref_sample = ref_sample * (high - low) + low
+    ref_sample = np.floor(ref_sample).astype(np.int64)
+
+    engine.reset()
+    sample = engine.integers(low, u_bounds=high, n=20, endpoint=False)
+
+    assert_equal(sample, ref_sample)
+
+    # up to bounds, no less, no more
+    sample = engine.integers(low, u_bounds=high, n=100, endpoint=False)
+    assert_equal((sample.min(), sample.max()), (low, high-1))
+
+    sample = engine.integers(low, u_bounds=high, n=100, endpoint=True)
+    assert_equal((sample.min(), sample.max()), (low, high))
 
 
 def test_integers_nd():
