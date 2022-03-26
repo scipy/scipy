@@ -92,7 +92,6 @@ __all__ = [
     'kulsinski',
     'kulczynski1',
     'mahalanobis',
-    'matching',
     'minkowski',
     'num_obs_dm',
     'num_obs_y',
@@ -1354,17 +1353,6 @@ def yule(u, v, w=None):
         return float(2.0 * half_R / (ntt * nff + half_R))
 
 
-@np.deprecate(message="spatial.distance.matching is deprecated in scipy 1.0.0; "
-                      "use spatial.distance.hamming instead.")
-def matching(u, v, w=None):
-    """
-    Compute the Hamming distance between two boolean 1-D arrays.
-
-    This is a deprecated synonym for :func:`hamming`.
-    """
-    return hamming(u, v, w=w)
-
-
 def dice(u, v, w=None):
     """
     Compute the Dice dissimilarity between two boolean 1-D arrays.
@@ -1837,7 +1825,7 @@ _METRIC_INFOS = [
     ),
     MetricInfo(
         canonical_name='hamming',
-        aka={'matching', 'hamming', 'hamm', 'ha', 'h'},
+        aka={'hamming', 'hamm', 'ha', 'h'},
         types=['double', 'bool'],
         validator=_validate_hamming_kwargs,
         dist_func=hamming,
@@ -1974,7 +1962,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
         'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
         'jaccard', 'jensenshannon', 'kulsinski', 'kulczynski1',
-        'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
+        'mahalanobis', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
         'sqeuclidean', 'yule'.
     **kwargs : dict, optional
@@ -2155,10 +2143,6 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
 
         Computes the Yule distance between each pair of boolean
         vectors. (see yule function documentation)
-
-    16. ``Y = pdist(X, 'matching')``
-
-        Synonym for 'hamming'.
 
     17. ``Y = pdist(X, 'dice')``
 
@@ -2634,7 +2618,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         The distance metric to use. If a string, the distance function can be
         'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
         'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'jensenshannon',
-        'kulsinski', 'kulczynski1', 'mahalanobis', 'matching', 'minkowski',
+        'kulsinski', 'kulczynski1', 'mahalanobis', 'minkowski',
         'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
         'sokalsneath', 'sqeuclidean', 'yule'.
     **kwargs : dict, optional

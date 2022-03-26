@@ -26,6 +26,7 @@ class _MetricCallback2(Protocol):
         self, __XA: NDArray[Any], __XB: NDArray[Any], **kwargs: Any
     ) -> _FloatValue: ...
 
+
 # TODO: Use a single protocol with a parameter specification variable
 # once available (PEP 612)
 _MetricCallback = Union[_MetricCallback1, _MetricCallback2]
@@ -39,7 +40,7 @@ _MetricKind = Literal[
     'cosine', 'cos',
     'dice',
     'euclidean', 'euclid', 'eu', 'e',
-    'matching', 'hamming', 'hamm', 'ha', 'h',
+    'hamming', 'hamm', 'ha', 'h',
     'minkowski', 'mi', 'm', 'pnorm',
     'jaccard', 'jacc', 'ja', 'j',
     'jensenshannon', 'js',
@@ -160,9 +161,6 @@ def kulczynski1(
 def mahalanobis(
     u: ArrayLike, v: ArrayLike, VI: ArrayLike
 ) -> np.float64: ...
-
-# NOTE: deprecated
-# def matching(u, v, w=None): ...
 
 def minkowski(
     u: ArrayLike, v: ArrayLike, p: float = ..., w: Optional[ArrayLike] = ...
