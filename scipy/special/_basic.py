@@ -2881,6 +2881,22 @@ def factorial(n, exact=False):
             f"Unsupported datatype for factorial: {n.dtype}\n"
             "Permitted data types are integers and floating point numbers"
         )
+    if exact and not np.issubdtype(n.dtype, np.integer):
+        # legacy behaviour is to support mixed integers/NaNs;
+        # deprecate this for exact=True
+        n_flt = n[~np.isnan(n)]
+        if np.allclose(n_flt, n_flt.astype(np.int64)):
+            warnings.warn(
+                "Non-integer arrays (e.g. due to presence of NaNs) "
+                "together with exact=True are deprecated. Either ensure "
+                "that the the array has integer dtype or use exact=False.",
+                DeprecationWarning,
+                stacklevel=2
+            )
+        else:
+            msg = ("factorial with exact=True does not "
+                   "support non-integral arrays")
+            raise ValueError(msg)
 
     if exact:
         return _exact_factorialx_array(n)
