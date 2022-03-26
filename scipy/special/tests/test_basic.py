@@ -1981,14 +1981,20 @@ class TestFactorialFunctions:
                     [0, 0, 1, 1])
 
     @pytest.mark.parametrize("exact", [True, False])
-    @pytest.mark.parametrize("content", [np.nan], ids=["NaN"])
+    @pytest.mark.parametrize("content", [np.nan, None, np.datetime64('nat')],
+                             ids=["NaN", "None", "NaT"])
     def test_factorialx_nan(self, content, exact):
         # scalar
         assert special.factorial(content, exact=exact) is np.nan
         assert special.factorial2(content, exact=exact) is np.nan
         assert special.factorialk(content, 3, exact=True) is np.nan
         # array-like (initializes np.array with default dtype)
-        assert np.isnan(special.factorial([content], exact=exact)[0])
+        if content is not np.nan:
+            # None causes object dtype, which is not supported; as is datetime
+            with pytest.raises(ValueError, match="Unsupported datatype.*"):
+                special.factorial([content], exact=exact)
+        else:
+            assert np.isnan(special.factorial([content], exact=exact)[0])
         # factorial{2,k} don't support array case due to dtype constraints
         with pytest.raises(ValueError, match="factorial2 does not support.*"):
             special.factorial2([content], exact=exact)

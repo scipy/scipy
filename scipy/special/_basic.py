@@ -2860,7 +2860,7 @@ def factorial(n, exact=False):
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
         # scalar cases
-        if np.isnan(n):
+        if n is None or np.isnan(n):
             return np.nan
         elif n < 0:
             return 0
@@ -2936,7 +2936,7 @@ def factorial2(n, exact=False):
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
         # scalar cases
-        if np.isnan(n):
+        if n is None or np.isnan(n):
             return np.nan
         elif not np.issubdtype(type(n), np.integer):
             msg = "factorial2 does not support non-integral scalar arguments"
@@ -3014,7 +3014,7 @@ def factorialk(n, k, exact=True):
     # don't use isscalar due to numpy/numpy#23574; 0-dim arrays treated below
     if np.ndim(n) == 0 and not isinstance(n, np.ndarray):
         # scalar cases
-        if np.isnan(n):
+        if n is None or np.isnan(n):
             return np.nan
         elif not np.issubdtype(type(n), np.integer):
             msg = "factorialk does not support non-integral scalar arguments!"
