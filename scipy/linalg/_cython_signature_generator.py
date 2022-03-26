@@ -179,16 +179,16 @@ lapack_exclusions = [
               # Signatures changed between 3.4.0 and 3.4.1.
               'dlasq5', 'slasq5',
               # Routines deprecated in LAPACK 3.6.0
-              'cgegs', 'cgegv', 'cgelsx',
+              'cgegs', 'cgelsx',
               'cgeqpf', 'cggsvd', 'cggsvp',
               'clahrd', 'clatzm', 'ctzrqf',
-              'dgegs', 'dgegv', 'dgelsx',
+              'dgegs', 'dgelsx',
               'dgeqpf', 'dggsvd', 'dggsvp',
               'dlahrd', 'dlatzm', 'dtzrqf',
-              'sgegs', 'sgegv', 'sgelsx',
+              'sgegs', 'sgelsx',
               'sgeqpf', 'sggsvd', 'sggsvp',
               'slahrd', 'slatzm', 'stzrqf',
-              'zgegs', 'zgegv', 'zgelsx',
+              'zgegs', 'zgelsx',
               'zgeqpf', 'zggsvd', 'zggsvp',
               'zlahrd', 'zlatzm', 'ztzrqf']
 
