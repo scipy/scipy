@@ -1334,6 +1334,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     >>> plt.title("Permutation distribution of test statistic")
     >>> plt.xlabel("Value of Statistic")
     >>> plt.ylabel("Frequency")
+    >>> plt.show()
 
     Inspection of the null distribution is essential if the statistic suffers
     from inaccuracy due to limited machine precision. Consider the following
