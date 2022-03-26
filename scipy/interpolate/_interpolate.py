@@ -419,7 +419,7 @@ class interp1d(_Interpolator1D):
 
     Input values `x` and `y` must be convertible to `float` values like
     `int` or `float`.
-    
+
     If the values in `x` are not unique, the resulting behavior is
     undefined and specific to the choice of `kind`, i.e., changing
     `kind` will change the behavior for duplicates.
@@ -1010,6 +1010,7 @@ class PPoly(_PPolyBase):
     unstable. Precision problems can start to appear for orders
     larger than 20-30.
     """
+
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
                         self.x, x, nu, bool(extrapolate), out)
@@ -2730,51 +2731,3 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         result[np.logical_not(idx_valid)] = fill_value
 
         return result.reshape(xi_shape[:-1])
-
-
-# backward compatibility wrapper
-class _ppform(PPoly):
-    """
-    Deprecated piecewise polynomial class.
-
-    New code should use the `PPoly` class instead.
-
-    """
-
-    def __init__(self, coeffs, breaks, fill=0.0, sort=False):
-        warnings.warn("_ppform is deprecated -- use PPoly instead",
-                      category=DeprecationWarning)
-
-        if sort:
-            breaks = np.sort(breaks)
-        else:
-            breaks = np.asarray(breaks)
-
-        PPoly.__init__(self, coeffs, breaks)
-
-        self.coeffs = self.c
-        self.breaks = self.x
-        self.K = self.coeffs.shape[0]
-        self.fill = fill
-        self.a = self.breaks[0]
-        self.b = self.breaks[-1]
-
-    def __call__(self, x):
-        return PPoly.__call__(self, x, 0, False)
-
-    def _evaluate(self, x, nu, extrapolate, out):
-        PPoly._evaluate(self, x, nu, extrapolate, out)
-        out[~((x >= self.a) & (x <= self.b))] = self.fill
-        return out
-
-    @classmethod
-    def fromspline(cls, xk, cvals, order, fill=0.0):
-        # Note: this spline representation is incompatible with FITPACK
-        N = len(xk)-1
-        sivals = np.empty((order+1, N), dtype=float)
-        for m in range(order, -1, -1):
-            fact = spec.gamma(m+1)
-            res = _fitpack._bspleval(xk[:-1], xk, cvals, order, m)
-            res /= fact
-            sivals[order-m, :] = res
-        return cls(sivals, xk, fill=fill)
