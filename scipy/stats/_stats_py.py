@@ -8232,6 +8232,13 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
         df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
         df = df_numer / df_denom
+
+        if (df_numer == 0) and (df_denom == 0):
+            message = ("p-value cannot be estimated with `distribution='t' "
+                       "because degrees of freedom parameter is undefined "
+                       "(0/0). Try using `distribution='normal'")
+            warnings.warn(message, RuntimeWarning)
+
         p = distributions.t.cdf(wbfn, df)
     elif distribution == "normal":
         p = distributions.norm.cdf(wbfn)
@@ -8512,6 +8519,10 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     independent random variables whose probability distribution is :math:`u`
     (resp. :math:`v`).
 
+    Sometimes the square of this quantity is referred to as the "energy
+    distance" (e.g. in [2]_, [4]_), but as noted in [1]_ and [3]_, only the
+    definition above satisfies the axioms of a distance function (metric).
+
     As shown in [2]_, for one-dimensional real-valued variables, the energy
     distance is linked to the non-distribution-free version of the Cramér-von
     Mises distance:
@@ -8532,12 +8543,12 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     References
     ----------
-    .. [1] "Energy distance", https://en.wikipedia.org/wiki/Energy_distance
+    .. [1] Rizzo, Szekely "Energy distance." Wiley Interdisciplinary Reviews:
+           Computational Statistics, 8(1):27-38 (2015).
     .. [2] Szekely "E-statistics: The energy of statistical samples." Bowling
            Green State University, Department of Mathematics and Statistics,
            Technical Report 02-16 (2002).
-    .. [3] Rizzo, Szekely "Energy distance." Wiley Interdisciplinary Reviews:
-           Computational Statistics, 8(1):27-38 (2015).
+    .. [3] "Energy distance", https://en.wikipedia.org/wiki/Energy_distance
     .. [4] Bellemare, Danihelka, Dabney, Mohamed, Lakshminarayanan, Hoyer,
            Munos "The Cramer Distance as a Solution to Biased Wasserstein
            Gradients" (2017). :arXiv:`1705.10743`.
