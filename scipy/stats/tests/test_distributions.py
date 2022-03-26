@@ -665,7 +665,7 @@ class TestNormInvGauss:
         x = [-1, 25]
         a = [1, 1]
         b = 0
-        sf = [ 0.8759652211005315, 1.1318690184042579e-13] # see previous test
+        sf = [0.8759652211005315, 1.1318690184042579e-13]  # see previous test
         s = stats.norminvgauss.sf(x, a, b)
         assert_allclose(s, sf, rtol=1e-13, atol=1e-16)
         i = stats.norminvgauss.isf(sf, a, b)
