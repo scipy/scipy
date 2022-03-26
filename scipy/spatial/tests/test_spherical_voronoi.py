@@ -148,7 +148,7 @@ class TestSphericalVoronoi:
         assert_array_almost_equal(sv_unit.vertices * 2,
                                   sv_scaled.vertices)
 
-    def test_old_radius_api_warning(self):
+    def test_old_radius_api_error(self):
         with pytest.raises(ValueError, match='`radius` is `None`. *'):
             SphericalVoronoi(self.points, radius=None)
 
