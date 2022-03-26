@@ -2210,6 +2210,11 @@ class TestFactorialFunctions:
             with pytest.raises(ValueError, match="factorialk does not*"):
                 special.factorialk(n, 3)
 
+    @pytest.mark.parametrize("k", [0, 1.1, np.nan, "1"])
+    def test_factorialk_raises_k(self, k):
+        with pytest.raises(ValueError, match="k must be a positive integer*"):
+            special.factorialk(1, k)
+
     # GH-13122: special.factorial() argument should be an array of integers.
     # On Python 3.10, math.factorial() reject float.
     # On Python 3.9, a DeprecationWarning is emitted.

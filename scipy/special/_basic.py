@@ -3008,6 +3008,8 @@ def factorialk(n, k, exact=True):
     10
 
     """
+    if not np.issubdtype(type(k), np.integer) or k < 1:
+        raise ValueError(f"k must be a positive integer, received: {k}")
     if not exact:
         raise NotImplementedError
 
