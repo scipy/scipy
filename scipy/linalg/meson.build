@@ -70,7 +70,6 @@ py3.extension_module('_flapack',
     flapack_module,
     fortranobject_c,
     g77_abi_wrappers,
-    deprecated_lapack_routines
   ],
   c_args: [
     numpy_nodepr_api,
