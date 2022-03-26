@@ -2798,7 +2798,7 @@ class TestExponNorm:
                               (10, 1, 7.48518298877006e-05),
                               (10, 10000, 9.990005048283775e-05)])
     def test_std_pdf(self, x, K, expected):
-        assert_allclose(stats.exponnorm.pdf(x, K), expected, rtol=1e-12)
+        assert_allclose(stats.exponnorm.pdf(x, K), expected, rtol=5e-12)
 
     # Expected values for the CDF were computed with mpmath using
     # the following function and with mpmath.mp.dps = 60:
@@ -4369,9 +4369,10 @@ class TestFrozen:
             return x
 
         gm = stats.gamma(a=2, loc=3, scale=4)
-        gm_val = gm.expect(func, lb=1, ub=2, conditional=True)
-        gamma_val = stats.gamma.expect(func, args=(2,), loc=3, scale=4,
-                                       lb=1, ub=2, conditional=True)
+        with np.errstate(invalid="ignore", divide="ignore"):
+            gm_val = gm.expect(func, lb=1, ub=2, conditional=True)
+            gamma_val = stats.gamma.expect(func, args=(2,), loc=3, scale=4,
+                                           lb=1, ub=2, conditional=True)
         assert_allclose(gm_val, gamma_val)
 
         p = stats.poisson(3, loc=4)
@@ -4534,6 +4535,36 @@ class TestExpect:
         for mu in [5, 7]:
             m5 = stats.poisson.moment(5, mu)
             assert_allclose(m5, poiss_moment5(mu), rtol=1e-10)
+
+    def test_challenging_cases_gh8928(self):
+        # Several cases where `expect` failed to produce a correct result were
+        # reported in gh-8928. Check that these cases have been resolved.
+        assert_allclose(stats.norm.expect(loc=36, scale=1.0), 36)
+        assert_allclose(stats.norm.expect(loc=40, scale=1.0), 40)
+        assert_allclose(stats.norm.expect(loc=10, scale=0.1), 10)
+        assert_allclose(stats.gamma.expect(args=(148,)), 148)
+        assert_allclose(stats.logistic.expect(loc=85), 85)
+
+    def test_lb_ub_gh15855(self):
+        # Make sure changes to `expect` made in gh15855 treat lb/ub correctly
+        dist = stats.uniform
+        ref = dist.mean(loc=10, scale=5)  # 12.5
+        # moment over whole distribution
+        assert_allclose(dist.expect(loc=10, scale=5), ref)
+        # moment over whole distribution, lb and ub outside of support
+        assert_allclose(dist.expect(loc=10, scale=5, lb=9, ub=16), ref)
+        # moment over 60% of distribution, [lb, ub] centered within support
+        assert_allclose(dist.expect(loc=10, scale=5, lb=11, ub=14), ref*0.6)
+        # moment over truncated distribution, essentially
+        assert_allclose(dist.expect(loc=10, scale=5, lb=11, ub=14,
+                                    conditional=True), ref)
+        # moment over 40% of distribution, [lb, ub] not centered within support
+        assert_allclose(dist.expect(loc=10, scale=5, lb=11, ub=13), 12*0.4)
+        # moment with lb > ub
+        assert_allclose(dist.expect(loc=10, scale=5, lb=13, ub=11), -12*0.4)
+        # moment with lb > ub, conditional
+        assert_allclose(dist.expect(loc=10, scale=5, lb=13, ub=11,
+                                    conditional=True), 12)
 
 
 class TestNct:
