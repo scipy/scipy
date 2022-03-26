@@ -78,6 +78,14 @@ __all__ = [
 ]
 
 
+# mapping k to last n such that factorialk(n, k) < np.iinfo(np.int64).max
+_FACTORIALK_LIMITS_64BITS = {1: 20, 2: 33, 3: 44, 4: 54, 5: 65,
+                             6: 74, 7: 84, 8: 93, 9: 101}
+# mapping k to last n such that factorialk(n, k) < np.iinfo(np.int32).max
+_FACTORIALK_LIMITS_32BITS = {1: 12, 2: 19, 3: 25, 4: 31, 5: 37,
+                             6: 43, 7: 47, 8: 51, 9: 56}
+
+
 def _nonneg_int_or_fail(n, var_name, strict=True):
     try:
         if strict:
@@ -2770,15 +2778,21 @@ def _exact_factorialx_array(n, k=1):
     # values will be set separately at the end
     un = un[~np.isnan(un)]
 
-    # Convert to object array of long ints if np.int_ can't handle size
+    # Convert to object array if np.int64 can't handle size
     if np.isnan(n).any():
         dt = float
-    elif un[-1] > 20:
-        dt = object
-    elif un[-1] > 12:
-        dt = np.int64
+    elif k in _FACTORIALK_LIMITS_64BITS.keys():
+        if un[-1] > _FACTORIALK_LIMITS_64BITS[k]:
+            # e.g. k=1: 21! > np.iinfo(np.int64).max
+            dt = object
+        elif un[-1] > _FACTORIALK_LIMITS_32BITS[k]:
+            # e.g. k=3: 26!!! > np.iinfo(np.int32).max
+            dt = np.int64
+        else:
+            dt = np.int_
     else:
-        dt = np.int_
+        # for k >= 10, we always use object
+        dt = object
 
     out = np.empty_like(n, dtype=dt)
 

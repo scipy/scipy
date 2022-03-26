@@ -40,6 +40,8 @@ from scipy.special import ellipe, ellipk, ellipkm1
 from scipy.special import elliprc, elliprd, elliprf, elliprg, elliprj
 from scipy.special import mathieu_odd_coef, mathieu_even_coef
 
+from scipy.special._basic import _FACTORIALK_LIMITS_64BITS, \
+    _FACTORIALK_LIMITS_32BITS
 from scipy.special._testutils import with_special_errors, \
      assert_func_equal, FuncData
 
@@ -2226,6 +2228,23 @@ class TestFactorialFunctions:
     def test_factorialk_raises_k(self, k):
         with pytest.raises(ValueError, match="k must be a positive integer*"):
             special.factorialk(1, k)
+
+    @pytest.mark.parametrize("k", range(1, 12))
+    def test_factorialk_dtype(self, k):
+        if k in _FACTORIALK_LIMITS_64BITS.keys():
+            n = np.array([_FACTORIALK_LIMITS_32BITS[k]])
+            assert_equal(special.factorialk(n, k).dtype, np.int_)
+            assert_equal(special.factorialk(n + 1, k).dtype, np.int64)
+            # assert maximality of limits for given dtype
+            assert special.factorialk(n + 1, k) > np.iinfo(np.int32).max
+
+            n = np.array([_FACTORIALK_LIMITS_64BITS[k]])
+            assert_equal(special.factorialk(n, k).dtype, np.int64)
+            assert_equal(special.factorialk(n + 1, k).dtype, object)
+            assert special.factorialk(n + 1, k) > np.iinfo(np.int64).max
+        else:
+            # for k >= 10, we always return object
+            assert_equal(special.factorialk(np.array([1]), k).dtype, object)
 
     def test_factorial_mixed_nan_inputs(self):
         x = np.array([np.nan, 1, 2, 3, np.nan])
