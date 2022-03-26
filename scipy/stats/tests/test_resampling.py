@@ -1407,11 +1407,7 @@ class TestPermutationTest:
                                      permutation_type='pairings')
         r, pvalue, null = res.statistic, res.pvalue, res.null_distribution
 
-        assert r == 0.8
-
-        incorrect_p = 2 * np.sum(null >= r) / len(null)
         correct_p = 2 * np.sum(null >= r / (1+1e-14)) / len(null)
-        assert pvalue != incorrect_p
         assert pvalue == correct_p == 1/3
         # Compare against other exact correlation tests using R corr.test
         # options(digits=16)
