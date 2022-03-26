@@ -1,6 +1,6 @@
 #! /usr/bin/env python3
 
-"""
+'''
 Developer CLI: building (meson), tests, benchmark, etc.
 
 This file contains tasks definitions for doit (https://pydoit.org).
@@ -9,30 +9,113 @@ And also a CLI interface using click (https://click.palletsprojects.com).
 The CLI is ideal for project contributors while,
 doit interface is better suited for authring the development tasks.
 
-
 Note this requires the unreleased doit 0.35.
 And also PyPI packages: click, rich, rich-click
 
 
-TODO: First milestone replace dev.py
+# USAGE:
 
-- [ ] move out non-scipy code
-- [ ] document API/reasoning for creating commands/tasks
-- [ ] copy used code from dev.py
-- [ ] doit reporter when running under click
-- [ ] doit: add io task attribute to control capture/caching of stdout/stderr
+## 1 - click API
+
+Commands cab added using default Click API. i.e.
+
+```
+@cli.command()
+@click.argument('extra_argv', nargs=-1)
+@click.pass_obj
+def python(ctx_obj, extra_argv):
+    """Start a Python shell with PYTHONPATH set"""
+```
+
+## 2 - class based Click command definition
+
+`CliGroup` provides an alternative class based API to create Click commands.
+
+Just use the `cls_cmd` decorator. And define a `run()` method
+
+```
+@cli.cls_cmd('test')
+class Test():
+    """Run tests"""
+
+    @classmethod
+    def run(cls):
+        print('Running tests...')
+```
+
+- Command may make use a Click.Group context defining a `ctx` class attribute
+- Command options are also define as class attributes
+
+```
+@cli.cls_cmd('test')
+class Test():
+    """Run tests"""
+    ctx = CONTEXT
+
+    verbose = Option(['--verbose', '-v'], default=False, is_flag=True, help="more verbosity")
+
+    @classmethod
+    def run(cls, **kwargs): # kwargs contains options from class and CONTEXT
+        print('Running tests...')
+```
+
+## 3 - This class based interface can be run as a doit task simply by subclassing from Task
+
+- Extra doit task metadata can be defined as class attribute TASK_META.
+- `run()` method will be used as python-action by task
+
+```
+@cli.cls_cmd('test')
+class Test(Task):   # Task base class, doit will create a task
+    """Run tests"""
+    ctx = CONTEXT
+
+    TASK_META = {
+        'task_dep': ['build'],
+    }
+
+    @classmethod
+    def run(cls, **kwargs):
+        pass
+```
+
+## 4 - doit tasks with cmd-action "shell" or dynamic metadata
+
+Define method `task_meta()` instead of `run()`:
+
+```
+@cli.cls_cmd('refguide-check')
+class RefguideCheck(Task):
+    @classmethod
+    def task_meta(cls, **kwargs):
+        return {
+```
+
+
+
+# TODO:
+First milestone replace dev.py
+
+- [ ] support --no-build/-n
+- [ ] click does not support '--'. used by test command
+      https://github.com/pallets/click/issues/1340
 
 commands:
 - [ ] lcov_html
 - [ ] bench
 
+cleanup + doit:
+- [ ] move out non-scipy code
+- [ ] copy used code from dev.py
+- [ ] doit reporter when running under click
+- [ ] doit: add io task attribute to control capture/caching of stdout/stderr
+
+
 BUG:
 - [ ] python dev.py -t scipy.optimize.tests.test_minimize_constrained.py::TestTrustRegionConstr::test_args
       unknown marker "slow". seems conftest is not being loaded
-- [ ] click does not support '--'. used by test command
-      https://github.com/pallets/click/issues/1340
 - [ ] doc: fail on python3.10 - distutils is deprecated
-"""
+'''
 
 import os
 import sys
@@ -51,7 +134,7 @@ from doit import task_params
 from doit.task import Task as DoitTask
 from doit.cmd_base import ModuleTaskLoader, get_loader
 from doit.doit_cmd import DoitMain
-from doit.cmdparse import DefaultUpdate, CmdParse, CmdParseError
+from doit.cmdparse import CmdParse, CmdParseError
 from doit.exceptions import InvalidDodoFile, InvalidCommand, InvalidTask
 
 # keep compatibility and re-use dev.py code
@@ -118,7 +201,7 @@ def run_as_py_action(cls):
     """used by doit loader to create task instances"""
     if cls is Task:
         return
-    task_kwargs = getattr(cls, 'Meta', {})
+    task_kwargs = getattr(cls, 'TASK_META', {})
     return DoitTask(
         # convert name to kebab-case
         name=to_camel(cls.__name__),
@@ -129,7 +212,7 @@ def run_as_py_action(cls):
     )
 
 
-class MetaTask(type):
+class MetaclassDoitTask(type):
     def __new__(meta_cls, name, bases, dct):
         # params/opts from Context and Option attributes
         cls = super().__new__(meta_cls, name, bases, dct)
@@ -143,9 +226,9 @@ class MetaTask(type):
         cls._params = params
 
         task_basename = to_camel(cls.__name__)
-        if hasattr(cls, 'meta'):
+        if hasattr(cls, 'task_meta'):
             def creator(**kwargs):
-                task_meta = cls.meta(**kwargs)
+                task_meta = cls.task_meta(**kwargs)
                 if 'basename' not in task_meta:
                     task_meta['basename'] = task_basename
                 if 'doc' not in task_meta:
@@ -160,7 +243,7 @@ class MetaTask(type):
         return cls
 
 
-class Task(metaclass=MetaTask):
+class Task(metaclass=MetaclassDoitTask):
     """Base class to define doit task and/or click command"""
 
     @classmethod
@@ -173,7 +256,7 @@ class Task(metaclass=MetaTask):
 class CliGroup(RichGroup):
     COMMAND_CLASS = RichCommand
 
-    def cmd(self, name):
+    def cls_cmd(self, name):
         """class decorator, convert to click.Command"""
         def register_click(cls):
             # get options for class definition
@@ -316,8 +399,9 @@ CONTEXT = Context({
 def cli(ctx, **kwargs):
     """Developer Tool for SciPy
 
-    Most commands are executed on a given built/installed instance (marked with :wrench:).
-    The build/install dir must be specified before the sub-command name:
+    Commands that require a built/installed instance are marked with :wrench:.
+
+
 
     [bold]python do.py --build-dir my-build test -s stats[/bold]
     """
@@ -364,7 +448,7 @@ def get_site_dir():
 
 ############
 
-@cli.cmd('build')
+@cli.cls_cmd('build')
 class Build(Task):
     """:wrench: build & install package on path"""
     ctx = CONTEXT
@@ -409,7 +493,7 @@ class Build(Task):
 PROJECT_MODULE = "scipy"
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
-@cli.cmd('test')
+@cli.cls_cmd('test')
 class Test(Task):
     """:wrench: Run tests
 
@@ -439,7 +523,7 @@ class Test(Task):
         help="Number of parallel jobs for testing"
     )
 
-    Meta = {
+    TASK_META = {
         'task_dep': ['build'],
     }
 
@@ -515,6 +599,7 @@ class Test(Task):
                 parallel=args.parallel)
         finally:
             os.chdir(cwd)
+        return result
 
 
     @classmethod
@@ -552,7 +637,7 @@ def task_pep8diff():
         'task_dep': ['pep8'],
     }
 
-@cli.cmd('pep8')
+@cli.cls_cmd('pep8')
 class Pep8():
     """Perform pep8 check with flake8."""
     output_file = Option(['--output-file'], default=None, help= 'Redirect report to a file')
@@ -561,22 +646,18 @@ class Pep8():
         run_doit_task({'pep8-diff': {}, 'pep8': opts})
 
 
-@cli.cmd('mypy')
+@cli.cls_cmd('mypy')
 class Mypy(Task):
     """:wrench: Run mypy on the codebase"""
     ctx = CONTEXT
 
-    Meta = {
+    TASK_META = {
         'task_dep': ['build'],
         # 'stream': 'no-capture',
     }
 
     @classmethod
-    def run(cls, **kwargs):
-        kwargs.update(cls.ctx.get())
-        Args = namedtuple('Args', [k for k in kwargs.keys()])
-        args = Args(**kwargs)
-
+    def run(cls):
         try:
             import mypy.api
         except ImportError as e:
@@ -616,7 +697,7 @@ class Mypy(Task):
 ##########################################
 ### DOC
 
-@cli.cmd('doc')
+@cli.cls_cmd('doc')
 class Doc(Task):
     """:wrench: Build documentation"""
     ctx = CONTEXT
@@ -627,7 +708,7 @@ class Doc(Task):
 
 
     @classmethod
-    def meta(cls, **kwargs):
+    def task_meta(cls, **kwargs):
         kwargs.update(cls.ctx.get())
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
@@ -645,7 +726,7 @@ class Doc(Task):
             'task_dep': ['build'],
         }
 
-@cli.cmd('refguide-check')
+@cli.cls_cmd('refguide-check')
 class RefguideCheck(Task):
     """:wrench: Run refguide check (do not run regular tests.)"""
     ctx = CONTEXT
@@ -655,7 +736,7 @@ class RefguideCheck(Task):
         help="Submodule whose tests to run (cluster, constants, ...)")
 
     @classmethod
-    def meta(cls, **kwargs):
+    def task_meta(cls, **kwargs):
         kwargs.update(cls.ctx.get())
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
