@@ -153,9 +153,9 @@ def gmresk(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
         if callback_type == 'x':
             callback(x)
         elif callback_type == 'prnorm':
-            callback(g[0])
+            callback(np.abs(g[0]))
 
-    if g[0] == 0.:
+    if np.abs(g[0]) == 0.:
         if (show):
             print("GMRES: Linear solve converged due to zero preconditioned "
                   "residual norm iterations 0")
@@ -199,7 +199,7 @@ def gmresk(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
                         r = b - A.matvec(x)
                         z = M.matvec(r)
                         g[0] = np.linalg.norm(z)
-                        callback(g[0])
+                        callback(np.abs(g[0]))
                 if (show):
                     print("GMRES: Linear solve not converged due to BREAKDOWN "
                           f"iterations {niter}")
@@ -247,10 +247,10 @@ def gmresk(A, b, x0=None, restart=None, tol=1e-5, maxiter=None, M=None,
             if callback_type == 'x':
                 callback(x)
             elif callback_type == 'prnorm':
-                callback(g[0])
+                callback(np.abs(g[0]))
 
         # Convergence criterion in outer iterations
-        if g[0] < atol:
+        if np.abs(g[0]) < atol:
             if (show):
                 print("GMRES: Linear solve converged due to reach TOL "
                       f"iterations {niter}")
