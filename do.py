@@ -10,12 +10,12 @@ The CLI is ideal for project contributors while,
 doit interface is better suited for authring the development tasks.
 
 
-Note this requires the unreleased doit 0.35
+Note this requires the unreleased doit 0.35.
+And also PyPI packages: click, rich, rich-click
 
 
 TODO: First milestone replace dev.py
 
-- [ ] command sections (https://github.com/janluke/cloup or similar)
 - [ ] move out non-scipy code
 - [ ] document API/reasoning for creating commands/tasks
 - [ ] copy used code from dev.py
@@ -46,6 +46,7 @@ from types import ModuleType as new_module
 import click
 from click import Option
 from click.globals import get_current_context
+from rich_click import RichCommand, RichGroup
 from doit import task_params
 from doit.task import Task as DoitTask
 from doit.cmd_base import ModuleTaskLoader, get_loader
@@ -169,7 +170,9 @@ class Task(metaclass=MetaTask):
 
 
 
-class CliGroup(click.Group):
+class CliGroup(RichGroup):
+    COMMAND_CLASS = RichCommand
+
     def cmd(self, name):
         """class decorator, convert to click.Command"""
         def register_click(cls):
@@ -188,7 +191,7 @@ class CliGroup(click.Group):
                 def callback(**kwargs):
                     cls.run(**kwargs)
 
-            click_cmd = click.Command(
+            click_cmd = RichCommand(
                 name=name,
                 callback=callback,
                 help=cls.__doc__,
@@ -248,14 +251,62 @@ def run_doit_task(tasks):
 ###########################################
 ### SciPY
 
+from rich_click import rich_click
+
+rich_click.STYLE_ERRORS_SUGGESTION = "yellow italic"
+rich_click.SHOW_ARGUMENTS = True
+rich_click.GROUP_ARGUMENTS_OPTIONS = False
+rich_click.SHOW_METAVARS_COLUMN = True
+rich_click.USE_RICH_MARKUP = True
+# rich_click.USE_MARKDOWN = True
+rich_click.OPTION_GROUPS = {
+    "do.py": [
+        {
+            "name": "Options",
+            "options": ["--help", "--build-dir", "--install-prefix"],
+        },
+    ],
+
+    "do.py test": [
+        {
+            "name": "Options",
+            "options": ["--help", "--verbose", "--parallel", "--coverage"],
+        },
+        {
+            "name": "Options: test selection",
+            "options": ["--submodule", "--tests", "--mode"],
+        },
+    ],
+}
+rich_click.COMMAND_GROUPS = {
+    "do.py": [
+        {
+            "name": "build & testing",
+            "commands": ["build", "test"],
+        },
+        {
+            "name": "static checkers",
+            "commands": ["pep8", "mypy"],
+        },
+        {
+            "name": "environments",
+            "commands": ["shell", "python", "ipython"],
+        },
+        {
+            "name": "documentation",
+            "commands": ["doc", "refguide-check"],
+        },
+    ]
+}
+
 
 CONTEXT = Context({
     'build_dir': Option(
         ['--build-dir'], default='build', metavar='BUILD_DIR', show_default=True,
-        help='Relative path to the build directory.'),
+        help=':wrench: Relative path to the build directory.'),
     'install_prefix': Option(
         ['--install-prefix'], default=None, metavar='INSTALL_DIR',
-        help="Relative path to the install directory. Default is <build-dir>-install."),
+        help=":wrench: Relative path to the install directory. Default is <build-dir>-install."),
 })
 
 
@@ -263,6 +314,13 @@ CONTEXT = Context({
 @click.group(cls=CliGroup)
 @click.pass_context
 def cli(ctx, **kwargs):
+    """Developer Tool for SciPy
+
+    Most commands are executed on a given built/installed instance (marked with :wrench:).
+    The build/install dir must be specified before the sub-command name:
+
+    [bold]python do.py --build-dir my-build test -s stats[/bold]
+    """
     ctx.ensure_object(dict)
     for opt_name in CONTEXT.options.keys():
         ctx.obj[opt_name] = kwargs.get(opt_name)
@@ -308,7 +366,7 @@ def get_site_dir():
 
 @cli.cmd('build')
 class Build(Task):
-    """build & install package on path"""
+    """:wrench: build & install package on path"""
     ctx = CONTEXT
 
     werror = Option(['--werror'], default=False, is_flag=True, help="Treat warnings as errors")
@@ -353,7 +411,14 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 @cli.cmd('test')
 class Test(Task):
-    """Run tests"""
+    """:wrench: Run tests
+
+    Examples:
+
+    $ python do.py -s {SAMPLE_SUBMODULE}
+
+    $ python do.py -s stats
+    """
     ctx = CONTEXT
 
     verbose = Option(['--verbose', '-v'], default=False, is_flag=True, help="more verbosity")
@@ -498,7 +563,7 @@ class Pep8():
 
 @cli.cmd('mypy')
 class Mypy(Task):
-    """Run mypy on the codebase"""
+    """:wrench: Run mypy on the codebase"""
     ctx = CONTEXT
 
     Meta = {
@@ -553,7 +618,7 @@ class Mypy(Task):
 
 @cli.cmd('doc')
 class Doc(Task):
-    """Build documentation"""
+    """:wrench: Build documentation"""
     ctx = CONTEXT
 
     # FIXME
@@ -582,6 +647,7 @@ class Doc(Task):
 
 @cli.cmd('refguide-check')
 class RefguideCheck(Task):
+    """:wrench: Run refguide check (do not run regular tests.)"""
     ctx = CONTEXT
 
     submodule = Option(
@@ -615,7 +681,7 @@ class RefguideCheck(Task):
 @click.argument('extra_argv', nargs=-1)
 @click.pass_obj
 def python(ctx_obj, extra_argv):
-    """Start a Python shell with PYTHONPATH set"""
+    """:wrench: Start a Python shell with PYTHONPATH set"""
     # not a doit task - manually build
     vals = Build.opt_defaults()
     vals.update(ctx_obj)
@@ -638,7 +704,7 @@ def python(ctx_obj, extra_argv):
 @cli.command()
 @click.pass_obj
 def ipython(ctx_obj):
-    """Start IPython shell with PYTHONPATH set"""
+    """:wrench: Start IPython shell with PYTHONPATH set"""
     # not a doit task - manually build
     vals = Build.opt_defaults()
     vals.update(ctx_obj)
@@ -652,7 +718,7 @@ def ipython(ctx_obj):
 @click.argument('extra_argv', nargs=-1)
 @click.pass_obj
 def shell(ctx_obj, extra_argv):
-    """Start Unix shell with PYTHONPATH set"""
+    """:wrench: Start Unix shell with PYTHONPATH set"""
     # not a doit task - manually build
     vals = Build.opt_defaults()
     vals.update(ctx_obj)
