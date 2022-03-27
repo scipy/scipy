@@ -322,13 +322,15 @@ class TestMultivariateNormal:
         # Test method outputs for a range of inputs when `inverse_cov` is
         # specified.
         np.random.seed(1234)
-        # High-dimensional inputs.
+        # In a five-dimensional space:
         x1, mean1 = np.random.randn(5), np.random.randn(5)
         cov1 = np.abs(np.random.randn(5))
         inverse_cov1 = 1 / cov1
+        # Evaluate on a matrix to test broadcasting in high dimensions.
         z1 = np.random.randn(2, 3, len(mean1))
-        # Scalar inputs.
+        # In one-dimension:
         x2, mean2, cov2, inverse_cov2 = 3.4, 0.1, 5.5, 1 / 5.5
+        # Evaluate on a vector to test broadcasting in one dimension.
         z2 = np.random.randn(2)
         args = [(x1, mean1, cov1, inverse_cov1),
                 (z1, mean1, cov1, inverse_cov1),
