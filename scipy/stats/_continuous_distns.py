@@ -8269,9 +8269,10 @@ class truncnorm_gen(rv_continuous):
     the range ``[a, b]``, where ``a`` and ``b`` are user-provided shape
     parameters. The parameter ``loc`` shifts the mean of the underlying normal
     distribution, and ``scale`` controls the standard deviation of the
-    underlying normal, but ``a`` and ``b`` are still defined over the domain
-    of the *standard* normal. To convert clip values defined over the domain
-    of a shifted and scaled normal to the required form, use::
+    underlying normal, but ``a`` and ``b`` are still defined with respect to
+    the *standard* normal. If ``myclip_a`` and ``myclip_b`` are clip values
+    defined with respect to a shifted and scaled normal, they can be converted
+    the the required form according to::
 
         a, b = (myclip_a - loc) / scale, (myclip_b - loc) / scale
 
