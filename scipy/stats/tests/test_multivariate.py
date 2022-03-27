@@ -311,7 +311,6 @@ class TestMultivariateNormal:
         assert_allclose(norm_frozen.logcdf(x),
                         multivariate_normal.logcdf(x, mean, cov))
 
-
     def _assert_outputs_close(self, x, d1, d2, d2_args):
         assert_allclose(d1.entropy(), d2.entropy(**d2_args))
         assert_allclose(d1.pdf(x), d2.pdf(x, **d2_args))
@@ -332,15 +331,16 @@ class TestMultivariateNormal:
         # Scalar inputs.
         x2, mean2, cov2, inverse_cov2 = 3.4, 0.1, 5.5, 1 / 5.5
         z2 = np.random.randn(2)
-        args = [((x1, mean1, cov1, inverse_cov1)),
-                 (z1, mean1, cov1, inverse_cov1),
-                 (x2, mean2, cov2, inverse_cov2),
-                 (z2, mean2, cov2, inverse_cov2)]
+        args = [(x1, mean1, cov1, inverse_cov1),
+                (z1, mean1, cov1, inverse_cov1),
+                (x2, mean2, cov2, inverse_cov2),
+                (z2, mean2, cov2, inverse_cov2)]
         for x, m, cov, inv_cov in args:
             self._assert_outputs_close(
                 x,
                 multivariate_normal(mean=m, cov=cov),
-                multivariate_normal, dict(mean=m, cov=None, inverse_cov=inv_cov),
+                multivariate_normal,
+                dict(mean=m, cov=None, inverse_cov=inv_cov),
             )
 
     def test_frozen_with_inverse_cov(self):
@@ -351,7 +351,6 @@ class TestMultivariateNormal:
         x, mean = np.random.randn(dim), np.random.randn(dim)
         cov = np.abs(np.random.randn(dim))
         inv_cov = 1 / cov
-    
         self._assert_outputs_close(
             x,
             multivariate_normal(mean, cov),
@@ -360,7 +359,7 @@ class TestMultivariateNormal:
         )
 
     def test_prefers_cov_over_inverse_cov(self):
-        """ 
+        """
         Check `cov` is preferred when both `cov` and `inverse_cov` are passed.
         """
         np.random.seed(1234)
@@ -551,7 +550,7 @@ class TestMultivariateNormal:
         sample = u.rvs(N)
         assert_equal(sample.shape, (N, ))
 
-        u = multivariate_normal(mean=0, cov=None, inverse_cov=1) 
+        u = multivariate_normal(mean=0, cov=None, inverse_cov=1)
         assert_equal(u.rvs(N).shape, (N,))
 
     def test_large_sample(self):
@@ -614,7 +613,7 @@ class TestMultivariateNormal:
         ]
         for size, expected in size_expected:
             assert_allclose(
-                expected, 
+                expected,
                 multivariate_normal.rvs(
                     mean=mu, cov=cov, size=size,
                     random_state=RandomState(seed)),

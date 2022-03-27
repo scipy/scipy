@@ -228,7 +228,7 @@ class _PSD:
 class _CovInfo:
     """ Class which stores information for a covariance matrix. """
     def __init__(self, sqrt_cov, sqrt_inv_cov, log_det_cov, rank,
-                cov=None, inverse_cov=None):
+                 cov=None, inverse_cov=None):
         """
         Parameters
         ----------
@@ -243,7 +243,7 @@ class _CovInfo:
             The actual covariance matrix, if known.
         inverse_cov: numpy.ndarray, optional
             The inverse of the covariance matrix, if known.
-    
+
         """
         self.sqrt_cov = sqrt_cov
         self.sqrt_inv_cov = sqrt_inv_cov
@@ -367,9 +367,9 @@ class multivariate_normal_gen(multi_rv_generic):
         Probability density function.
     logpdf(x, mean=None, cov=1, allow_singular=False, inverse_cov=None)
         Log of the probability density function.
-    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, inverse_cov=None)
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, inverse_cov=None)  # noqa: 501
         Cumulative distribution function.
-    logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, inverse_cov=None)
+    logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, inverse_cov=None)  # noqa: 501
         Log of the cumulative distribution function.
     rvs(mean=None, cov=1, size=1, random_state=None, inverse_cov=None)
         Draw random samples from a multivariate normal distribution.
@@ -389,7 +389,7 @@ class multivariate_normal_gen(multi_rv_generic):
     `inverse_cov`, if specified, must be a (symmetric) positive
     semi-definite matrix. Their determinant and inverse are computed
     as the pseudo-determinant and pseudo-inverse, respectively, so
-    they do not need to have full rank. 
+    they do not need to have full rank.
 
     The probability density function for `multivariate_normal` is
 
@@ -540,15 +540,20 @@ class multivariate_normal_gen(multi_rv_generic):
     def _create_cov_info(self, cov, inverse_cov, allow_singular=True):
         if cov is not None:
             # We're forced to use the SVD to compute the square root of the
-            # covariance to ensure random variates remain backwards compatible.
+            # covariance to ensure random variates remain backwards compatible
+            # with numpy.
             sqrt_cov = _compute_sqrt_cov_using_svd(cov)
             _psd = _PSD(cov, allow_singular=allow_singular)
-            return _CovInfo(sqrt_cov, _psd.U, _psd.log_pdet, _psd.rank, cov=cov)
+            return _CovInfo(
+                sqrt_cov, _psd.U, _psd.log_pdet, _psd.rank,
+                cov=cov
+            )
         elif inverse_cov is not None:
             _psd = _PSD(inverse_cov, allow_singular=allow_singular)
             return _CovInfo(
                 _psd.U, _psd.A, -_psd.log_pdet, _psd.rank,
-                inverse_cov=inverse_cov)
+                inverse_cov=inverse_cov
+            )
         else:
             # Be defensive.
             raise ValueError(
@@ -813,7 +818,7 @@ class multivariate_normal_gen(multi_rv_generic):
         """
         _, mean, cov, inverse_cov = self._process_parameters(
             None, mean, cov, inverse_cov)
-        if cov is not None: 
+        if cov is not None:
             # Use numpy for backwards compatibility.
             _, logdet = np.linalg.slogdet(2 * np.pi * np.e * cov)
             return 0.5 * logdet
