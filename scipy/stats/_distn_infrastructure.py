@@ -1075,8 +1075,10 @@ class rv_generic:
         cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not np.all(cond):
             message = ("Domain error in arguments. The `scale` parameter must "
-                       "be positive for all distributions; see the "
-                       "distribution documentation for other restrictions.")
+                       "be positive for all distributions, and many "
+                       "distributions have restrictions on shape parameters. "
+                       f"Please see the `scipy.stats.{self.name}` "
+                       "documentation for details.")
             raise ValueError(message)
 
         if np.all(scale == 0):
