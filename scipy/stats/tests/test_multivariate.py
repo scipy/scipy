@@ -426,11 +426,11 @@ class TestMultivariateNormal:
         assert_raises(ValueError, _PSD, cov)
 
     def _assert_methods_raise_exception(self, exc, x, **args):
-            assert_raises(exc, multivariate_normal, **args)
-            assert_raises(exc, multivariate_normal.pdf, x, **args)
-            assert_raises(exc, multivariate_normal.logpdf, x, **args)
-            assert_raises(exc, multivariate_normal.cdf, x, **args)
-            assert_raises(exc, multivariate_normal.logcdf, x, **args)
+        assert_raises(exc, multivariate_normal, **args)
+        assert_raises(exc, multivariate_normal.pdf, x, **args)
+        assert_raises(exc, multivariate_normal.logpdf, x, **args)
+        assert_raises(exc, multivariate_normal.cdf, x, **args)
+        assert_raises(exc, multivariate_normal.logcdf, x, **args)
 
     def test_exception_singular_cov(self):
         np.random.seed(1234)
