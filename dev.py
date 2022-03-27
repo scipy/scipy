@@ -223,8 +223,6 @@ def main(argv):
         sys.path.insert(0, site_dir)
         os.environ['PYTHONPATH'] = \
             os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
-    else:
-        test, version, mod_path = get_project_info()
 
     extra_argv = args.args[:]
     if extra_argv and extra_argv[0] == '--':
@@ -281,6 +279,8 @@ def main(argv):
         os.execv(sys.executable, [sys.executable] + cmd)
         sys.exit(0)
 
+    test, version, mod_path = get_project_info()
+
     if args.bench:
         # Run ASV
         items = extra_argv
@@ -296,7 +296,7 @@ def main(argv):
         if not args.bench_compare:
             import scipy
             print("Running benchmarks for Scipy version %s at %s"
-                  % (scipy.__version__, scipy.__file__))
+                  % (version, mod_path))
             cmd = ['asv', 'run', '--dry-run', '--show-stderr',
                    '--python=same'] + bench_args
             retval = runtests.run_asv(cmd)

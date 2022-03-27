@@ -449,12 +449,6 @@ class rv_frozen:
     def random_state(self, seed):
         self.dist._random_state = check_random_state(seed)
 
-    def pdf(self, x):   # raises AttributeError in frozen discrete distribution
-        return self.dist.pdf(x, *self.args, **self.kwds)
-
-    def logpdf(self, x):
-        return self.dist.logpdf(x, *self.args, **self.kwds)
-
     def cdf(self, x):
         return self.dist.cdf(x, *self.args, **self.kwds)
 
@@ -501,12 +495,6 @@ class rv_frozen:
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
 
-    def pmf(self, k):
-        return self.dist.pmf(k, *self.args, **self.kwds)
-
-    def logpmf(self, k):
-        return self.dist.logpmf(k, *self.args, **self.kwds)
-
     def interval(self, confidence=None, **kwds):
         return self.dist.interval(confidence, *self.args, **self.kwds, **kwds)
 
@@ -524,6 +512,24 @@ class rv_frozen:
 
     def support(self):
         return self.dist.support(*self.args, **self.kwds)
+
+
+class rv_discrete_frozen(rv_frozen):
+
+    def pmf(self, k):
+        return self.dist.pmf(k, *self.args, **self.kwds)
+
+    def logpmf(self, k):  # No error
+        return self.dist.logpmf(k, *self.args, **self.kwds)
+
+
+class rv_continuous_frozen(rv_frozen):
+
+    def pdf(self, x):
+        return self.dist.pdf(x, *self.args, **self.kwds)
+
+    def logpdf(self, x):
+        return self.dist.logpdf(x, *self.args, **self.kwds)
 
 
 def argsreduce(cond, *args):
@@ -860,7 +866,10 @@ class rv_generic:
             The frozen distribution.
 
         """
-        return rv_frozen(self, *args, **kwds)
+        if isinstance(self, rv_continuous):
+            return rv_continuous_frozen(self, *args, **kwds)
+        else:
+            return rv_discrete_frozen(self, *args, **kwds)
 
     def __call__(self, *args, **kwds):
         return self.freeze(*args, **kwds)
@@ -1106,7 +1115,7 @@ class rv_generic:
             if size == ():
                 vals = int(vals)
             else:
-                vals = vals.astype(int)
+                vals = vals.astype(np.int64)
 
         return vals
 
@@ -1261,7 +1270,7 @@ class rv_generic:
         .. deprecated:: 1.9.0
            Parameter `n` is replaced by parameter `order` to avoid name
            collisions with the shape parameter `n` of several distributions.
-           Parameter `n` will be removed in the second release after 1.9.0.
+           Parameter `n` will be removed in SciPy 1.11.0.
 
         Parameters
         ----------
@@ -1381,7 +1390,7 @@ class rv_generic:
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
             if self._stats_has_moments:
-                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
+                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'mvsk'}[n]}
             else:
                 mdict = {}
             mu, mu2, g1, g2 = self._stats(*shapes, **mdict)
@@ -1530,8 +1539,7 @@ class rv_generic:
         .. deprecated:: 1.9.0
            Parameter `alpha` is replaced by parameter `confidence` to avoid
            name collisions with the shape parameter `alpha` of some
-           distributions. Parameter `alpha` will be removed in the second
-           release after 1.9.0.
+           distributions. Parameter `alpha` will be removed in SciPy 1.11.0.
 
         Parameters
         ----------
@@ -1912,6 +1920,10 @@ class rv_continuous(rv_generic):
                  shapes=None, extradoc=None, seed=None):
 
         super().__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         # save the ctor parameters, cf generic freeze
         self._ctor_param = dict(
@@ -2873,6 +2885,13 @@ class rv_continuous(rv_generic):
         finite. For example ``cauchy(0).mean()`` returns ``np.nan`` and
         ``cauchy(0).expect()`` returns ``0.0``.
 
+        Likewise, the accuracy of results is not verified by the function.
+        `scipy.integrate.quad` is typically reliable for integrals that are
+        numerically favorable, but it is not guaranteed to converge
+        to a correct value for all possible intervals and integrands. This
+        function is provided for convenience; for critical applications,
+        check results against other integration methods.
+
         The function is not vectorized.
 
         Examples
@@ -2910,15 +2929,26 @@ class rv_continuous(rv_generic):
             lb = loc + _a * scale
         if ub is None:
             ub = loc + _b * scale
-        if conditional:
-            invfac = (self.sf(lb, *args, **lockwds)
-                      - self.sf(ub, *args, **lockwds))
-        else:
-            invfac = 1.0
+
+        cdf_bounds = self.cdf([lb, ub], *args, **lockwds)
+        invfac = cdf_bounds[1] - cdf_bounds[0]
+
         kwds['args'] = args
-        # Silence floating point warnings from integration.
-        with np.errstate(all='ignore'):
-            vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+
+        # split interval to help integrator w/ infinite support; see gh-8928
+        alpha = 0.05  # split body from tails at probability mass `alpha`
+        inner_bounds = np.array([alpha, 1-alpha])
+        cdf_inner_bounds = cdf_bounds[0] + invfac * inner_bounds
+        c, d = loc + self._ppf(cdf_inner_bounds, *args) * scale
+
+        # Do not silence warnings from integration.
+        lbc = integrate.quad(fun, lb, c, **kwds)[0]
+        cd = integrate.quad(fun, c, d, **kwds)[0]
+        dub = integrate.quad(fun, d, ub, **kwds)[0]
+        vals = (lbc + cd + dub)
+
+        if conditional:
+            vals /= invfac
         return vals
 
     def _param_info(self):
@@ -3040,7 +3070,7 @@ class rv_discrete(rv_generic):
         If not provided, shape parameters will be inferred from
         the signatures of the private methods, ``_pmf`` and ``_cdf`` of
         the instance.
-    extradoc :  str, optional
+    extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
@@ -3150,6 +3180,10 @@ class rv_discrete(rv_generic):
                  shapes=None, extradoc=None, seed=None):
 
         super().__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         # cf generic freeze
         self._ctor_param = dict(
@@ -3830,6 +3864,10 @@ class rv_sample(rv_discrete):
                  shapes=None, extradoc=None, seed=None):
 
         super(rv_discrete, self).__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         if values is None:
             raise ValueError("rv_sample.__init__(..., values=None,...)")

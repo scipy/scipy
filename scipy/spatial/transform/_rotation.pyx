@@ -428,7 +428,7 @@ cdef class Rotation:
     array([0.        , 0.        , 1.57079633])
 
     It is also possible to initialize multiple rotations in a single instance
-    using any of the `from_...` functions. Here we initialize a stack of 3
+    using any of the ``from_...`` functions. Here we initialize a stack of 3
     rotations using the ``from_euler`` method:
 
     >>> r = R.from_euler('zyx', [
