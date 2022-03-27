@@ -717,6 +717,7 @@ class multivariate_normal_gen(multi_rv_generic):
             cov, inverse_cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
+        # Use `cov_info.cov` instead of `cov` because `cov` could be `None`.
         out = np.log(self._cdf(x, mean, cov_info.cov, maxpts, abseps, releps))
         return out
 
@@ -794,8 +795,9 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov, inverse_cov = self._process_parameters(
+        _, mean, cov, inverse_cov = self._process_parameters(
             None, mean, cov, inverse_cov)
+        random_state = self._get_random_state(random_state)
         cov_info = self._create_cov_info(cov, inverse_cov)
         return self._rvs(mean, cov_info.sqrt_cov, size, random_state)
 
