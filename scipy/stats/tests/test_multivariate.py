@@ -9,7 +9,6 @@ from numpy.testing import (assert_allclose, assert_almost_equal,
                            assert_array_less, assert_)
 import pytest
 from pytest import raises as assert_raises
-from pytest import warns as assert_warns
 
 from .test_continuous_basic import check_distribution_rvs
 
@@ -40,14 +39,16 @@ class TestMultivariateNormal:
     def test_input_shape(self):
         mu = np.arange(3)
         eye_2 = np.identity(2)
-        test_args = [(eye_2, None), (None, eye_2), (eye_2, eye_2)]
-        mvn = multivariate_normal
-        e = ValueError
-        for cov_, inv_cov_ in test_args:
-            assert_raises(e, mvn.pdf, (0, 1), mu, cov=cov_, inverse_cov=inv_cov_)
-            assert_raises(e, mvn.pdf, (0, 1, 2), mu, cov=cov_, inverse_cov=inv_cov_)
-            assert_raises(e, mvn.cdf, (0, 1), mu, cov=cov_, inverse_cov=inv_cov_)
-            assert_raises(e, mvn.cdf, (0, 1, 2), mu, cov=cov_, inverse_cov=inv_cov_)
+        for x in [(0, 1), (0, 1, 2)]:
+            self._assert_methods_raise_exception(
+                ValueError, x, mean=mu, cov=eye_2,
+            )
+            self._assert_methods_raise_exception(
+                ValueError, x, mean=mu, cov=None, inverse_cov=eye_2,
+            )
+            self._assert_methods_raise_exception(
+                ValueError, x, mean=mu, cov=eye_2, inverse_cov=eye_2,
+            )
 
     def test_scalar_values(self):
         np.random.seed(1234)
@@ -129,11 +130,8 @@ class TestMultivariateNormal:
         mean = np.random.randn(n)
         for expected_rank in range(1, n + 1):
             s = np.random.randn(n, expected_rank)
-            mat = np.dot(s, s.T)
-            distn = multivariate_normal(mean, mat, allow_singular=True)
-            assert_equal(distn.cov_info.rank, expected_rank)
-            distn = multivariate_normal(
-                mean, cov=None, inverse_cov=mat, allow_singular=True)
+            cov = np.dot(s, s.T)
+            distn = multivariate_normal(mean, cov, allow_singular=True)
             assert_equal(distn.cov_info.rank, expected_rank)
 
     def test_degenerate_distributions(self):
@@ -142,60 +140,68 @@ class TestMultivariateNormal:
             M = np.random.randn(n, n)
             u, s, v = scipy.linalg.svd(M)
             return u
-        
-        def _do_degenerate_check(distn_kk, distn_nn, distn_rr):
-            assert_equal(distn_kk.cov_info.rank, k)
-            assert_equal(distn_nn.cov_info.rank, k)
-            assert_equal(distn_rr.cov_info.rank, k)
-            pdf_kk = distn_kk.pdf(x[:k])
-            pdf_nn = distn_nn.pdf(x)
-            pdf_rr = distn_rr.pdf(y)
-            assert_allclose(pdf_kk, pdf_nn)
-            assert_allclose(pdf_kk, pdf_rr)
-            logpdf_kk = distn_kk.logpdf(x[:k])
-            logpdf_nn = distn_nn.logpdf(x)
-            logpdf_rr = distn_rr.logpdf(y)
-            assert_allclose(logpdf_kk, logpdf_nn)
-            assert_allclose(logpdf_kk, logpdf_rr)
 
         for n in range(1, 5):
             x = np.random.randn(n)
             for k in range(1, n + 1):
-                # Sample a small positive-definite matrix.
+                # Sample a small covariance matrix.
                 s = np.random.randn(k, k)
-                psd_kk = np.dot(s, s.T)
+                cov_kk = np.dot(s, s.T)
 
-                # Embed the small PSD matrix into a larger low rank matrix.
-                psd_nn = np.zeros((n, n))
-                psd_nn[:k, :k] = psd_kk
+                # Embed the small covariance matrix into a larger low rank matrix.
+                cov_nn = np.zeros((n, n))
+                cov_nn[:k, :k] = cov_kk
 
                 # Define a rotation of the larger low rank matrix.
                 u = _sample_orthonormal_matrix(n)
-                psd_rr = np.dot(u, np.dot(psd_nn, u.T))
+                cov_rr = np.dot(u, np.dot(cov_nn, u.T))
                 y = np.dot(u, x)
 
                 # Check some identities.
-                distn_kk = multivariate_normal(np.zeros(k), psd_kk,
+                distn_kk = multivariate_normal(np.zeros(k), cov_kk,
                                                allow_singular=True)
-                distn_nn = multivariate_normal(np.zeros(n), psd_nn,
+                distn_nn = multivariate_normal(np.zeros(n), cov_nn,
                                                allow_singular=True)
-                distn_rr = multivariate_normal(np.zeros(n), psd_rr,
+                distn_rr = multivariate_normal(np.zeros(n), cov_rr,
                                                allow_singular=True)
-                _do_degenerate_check(distn_kk, distn_nn, distn_rr)
+                assert_equal(distn_kk.cov_info.rank, k)
+                assert_equal(distn_nn.cov_info.rank, k)
+                assert_equal(distn_rr.cov_info.rank, k)
+                pdf_kk = distn_kk.pdf(x[:k])
+                pdf_nn = distn_nn.pdf(x)
+                pdf_rr = distn_rr.pdf(y)
+                assert_allclose(pdf_kk, pdf_nn)
+                assert_allclose(pdf_kk, pdf_rr)
+                logpdf_kk = distn_kk.logpdf(x[:k])
+                logpdf_nn = distn_nn.logpdf(x)
+                logpdf_rr = distn_rr.logpdf(y)
+                assert_allclose(logpdf_kk, logpdf_nn)
+                assert_allclose(logpdf_kk, logpdf_rr)
 
-                # Re-use the matrices as the inverse covariances.
-                distn_kk = multivariate_normal(np.zeros(k), cov=None,
-                                               inverse_cov=psd_kk,
-                                               allow_singular=True)
-                distn_nn = multivariate_normal(np.zeros(n), cov=None,
-                                               inverse_cov=psd_nn,
-                                               allow_singular=True)
-                distn_rr = multivariate_normal(np.zeros(n), cov=None,
-                                               inverse_cov=psd_rr,
-                                               allow_singular=True)
-                _do_degenerate_check(distn_kk, distn_nn, distn_rr)
+    def test_degenerate_distributions_with_inverse_cov(self):
+        np.random.seed(1234)
+        for n in range(1, 5):
+            x = np.random.randn(n)
+            for k in range(1, n + 1):
+                # Sample a small positive semi-definite matrix.
+                s = np.random.randn(k, k)
+                inv_cov_kk = np.dot(s, s.T)
+                # Embed the small PSD matrix into a larger matrix.
+                inv_cov_nn = np.zeros((n, n))
+                inv_cov_nn[:k, :k] = inv_cov_kk
+                sign, log_det_inv_cov = np.linalg.slogdet(inv_cov_kk)
+                log_det_cov = -1 * sign * log_det_inv_cov
+                # Check covariance info is computed correctly.
+                mvn_kk = multivariate_normal(
+                    np.zeros(k), cov=None, inverse_cov=inv_cov_kk)
+                mvn_nn = multivariate_normal(
+                    np.zeros(n), cov=None, inverse_cov=inv_cov_nn,
+                    allow_singular=True)
+                assert_almost_equal(mvn_nn.cov_info.rank, k)
+                assert_almost_equal(mvn_nn.cov_info.log_det_cov, log_det_cov)
+                # Check log pdf is correct.
+                assert_almost_equal(mvn_kk.logpdf(x[:k]), mvn_nn.logpdf(x))
 
-                                
     def test_large_pseudo_determinant(self):
         # Check that large pseudo-determinants are handled appropriately.
 
@@ -217,16 +223,15 @@ class TestMultivariateNormal:
                         (1, large_total_log))
 
         # Check the pseudo-determinant.
-        mvn = multivariate_normal(mean=None, cov=cov, allow_singular=True)
+        mvn = multivariate_normal(None, cov=cov, allow_singular=True)
         assert_allclose(mvn.cov_info.log_det_cov, large_total_log)
 
         # Similarly construct the inverse of this covariance.
         inverse_cov = np.zeros_like(cov)
-        small_entry = np.exp(-large_total_log / npos)
-        np.fill_diagonal(inverse_cov, small_entry)
+        np.fill_diagonal(inverse_cov, 1 / large_entry)
         inverse_cov[-nzero:, -nzero:] = 0
         mvn = multivariate_normal(
-            mean=None, cov=None, inverse_cov=inverse_cov, allow_singular=True)
+            None, cov=None, inverse_cov=inverse_cov, allow_singular=True)
         assert_allclose(mvn.cov_info.log_det_cov, large_total_log)
 
     def test_broadcasting(self):
@@ -306,73 +311,79 @@ class TestMultivariateNormal:
         assert_allclose(norm_frozen.logcdf(x),
                         multivariate_normal.logcdf(x, mean, cov))
 
-    def test_frozen_inverse_cov(self):
+
+    def _assert_outputs_close(self, x, d1, d2, d2_args):
+        assert_allclose(d1.entropy(), d2.entropy(**d2_args))
+        assert_allclose(d1.pdf(x), d2.pdf(x, **d2_args))
+        assert_allclose(d1.logpdf(x), d2.logpdf(x, **d2_args))
+        assert_allclose(d1.cdf(x), d2.cdf(x, **d2_args))
+        assert_allclose(d1.logcdf(x), d2.logcdf(x, **d2_args))
+
+    def test_outputs_with_inverse_cov(self):
+        """ Test method outputs for a range of inputs when `inverse_cov` is
+        specified.
+        """
+        np.random.seed(1234)
+        # High-dimensional inputs.
+        x1, mean1 = np.random.randn(5), np.random.randn(5)
+        cov1 = np.abs(np.random.randn(5))
+        inverse_cov1 = 1 / cov1
+        z1 = np.random.randn(2, 3, len(mean1))
+        # Scalar inputs.
+        x2, mean2, cov2, inverse_cov2 = 3.4, 0.1, 5.5, 1 / 5.5
+        z2 = np.random.randn(2)
+        args = [((x1, mean1, cov1, inverse_cov1)),
+                 (z1, mean1, cov1, inverse_cov1),
+                 (x2, mean2, cov2, inverse_cov2),
+                 (z2, mean2, cov2, inverse_cov2)]
+        for x, m, cov, inv_cov in args:
+            self._assert_outputs_close(
+                x,
+                multivariate_normal(mean=m, cov=cov),
+                multivariate_normal, dict(mean=m, cov=None, inverse_cov=inv_cov),
+            )
+
+    def test_frozen_with_inverse_cov(self):
         # The frozen distribution should agree with the regular one when
         # `inverse_cov` is set.
         np.random.seed(1234)
-        x = np.random.randn(5)
-        mean = np.random.randn(5)
-        cov = np.abs(np.random.randn(5))
-        reference = multivariate_normal(mean, cov)
-        norm_frozen = multivariate_normal(
-            mean=mean, cov=None, inverse_cov=1 / cov)
-        assert_allclose(reference.entropy(), norm_frozen.entropy())
-        assert_allclose(reference.pdf(x), norm_frozen.pdf(x))
-        assert_allclose(reference.logpdf(x), norm_frozen.logpdf(x))
-        assert_allclose(reference.cdf(x), norm_frozen.cdf(x))
-        assert_allclose(reference.logcdf(x), norm_frozen.logcdf(x))
-
-    def test_inverse_cov(self):
-        """ Test methods when `inverse_cov` is specified."""
-        np.random.seed(1234)
-        x1 = np.random.randn(5)
-        x2 = np.random.randn(2, 3, 5)
-        mean = np.random.randn(5)
-        cov = np.abs(np.random.randn(5))
-        inverse_cov = 1 / cov
-        args = [
-            ((x1,  mean, cov, inverse_cov)),
-            (x2, mean, cov, inverse_cov),
-            (2.5, 3, 5, 1 / 5),
-            ([2.5, 3.5], 3, 5, 1 / 5)
-        ]
-        d = multivariate_normal
-        for x_, mean_, cov_, inverse_cov_ in args:
-            ref_args = dict(mean=mean_, cov=cov_)
-            test_args = dict(mean=mean_, cov=None, inverse_cov=inverse_cov_)
-            assert_allclose(d.entropy(**ref_args), d.entropy(**test_args))
-            assert_allclose(d.pdf(x_, **ref_args), d.pdf(x_, **test_args))
-            assert_allclose(d.logpdf(x_, **ref_args), d.logpdf(x_, **test_args))
-            assert_allclose(d.cdf(x_, **ref_args), d.cdf(x_, **test_args))
-            assert_allclose(d.logcdf(x_, **ref_args), d.logcdf(x_, **test_args))
+        dim = 5
+        x, mean = np.random.randn(dim), np.random.randn(dim)
+        cov = np.abs(np.random.randn(dim))
+        inv_cov = 1 / cov
+    
+        self._assert_outputs_close(
+            x,
+            multivariate_normal(mean, cov),
+            multivariate_normal(mean, cov=None, inverse_cov=inv_cov),
+            {}
+        )
 
     def test_prefers_cov_over_inverse_cov(self):
-        # Check covariance is preferred when both `cov` and `inverse_cov` are
-        # passed.
+        """ 
+        Check `cov` is preferred when both `cov` and `inverse_cov` are passed.
+        """
         np.random.seed(1234)
-        x = np.random.randn(5)
-        mean = np.random.randn(5)
-        cov = np.abs(np.random.randn(5))
-        inverse_cov = 1 / cov
-        ref_args = dict(mean=mean, cov=cov)
-        test_args = dict(mean=mean, cov=cov, inverse_cov=1000 * inverse_cov)
-        # Check for non-frozen distributions.
-        d = multivariate_normal
-        assert_allclose(d.entropy(**ref_args), d.entropy(**test_args))
-        assert_allclose(d.pdf(x, **ref_args), d.pdf(x, **test_args))
-        assert_allclose(d.logpdf(x, **ref_args), d.logpdf(x, **test_args))
-        assert_allclose(d.cdf(x, **ref_args), d.cdf(x, **test_args))
-        assert_allclose(d.logcdf(x, **ref_args), d.logcdf(x, **test_args))
-        assert_allclose(d.rvs(**ref_args, size=10, random_state=1),
-                        d.rvs(**test_args, size=10, random_state=1))
-        # Check for non-frozen distributions.
-        reference = multivariate_normal(**ref_args)
-        frozen = multivariate_normal(**test_args)
-        assert_allclose(reference.entropy(), frozen.entropy())
-        assert_allclose(reference.pdf(x), frozen.pdf(x))
-        assert_allclose(reference.logpdf(x), frozen.logpdf(x))
-        assert_allclose(reference.cdf(x), frozen.cdf(x))
-        assert_allclose(reference.logcdf(x), frozen.logcdf(x))
+        dim = 5
+        x, mean = np.random.randn(dim), np.random.randn(dim)
+        cov = np.abs(np.random.randn(dim))
+        inv_cov = 1 / cov
+        # Not the inverse of `cov``:
+        bad_inv_cov = 100 * inv_cov
+        # Check `bad_inv_cov` is ignored for non-frozen distributions.
+        self._assert_outputs_close(
+            x,
+            multivariate_normal(mean=mean, cov=cov),
+            multivariate_normal,
+            dict(mean=mean, cov=cov, inverse_cov=bad_inv_cov),
+        )
+        # Same again for frozen distribution.
+        self._assert_outputs_close(
+            x,
+            multivariate_normal(mean, cov),
+            multivariate_normal(mean, cov=cov, inverse_cov=bad_inv_cov),
+            {},
+        )
 
     def test_pseudodet_pinv(self):
         # Make sure that pseudo-inverse and pseudo-det agree on cutoff
@@ -414,22 +425,34 @@ class TestMultivariateNormal:
         cov = [[1, 0], [0, -1]]
         assert_raises(ValueError, _PSD, cov)
 
+    def _assert_methods_raise_exception(self, exc, x, **args):
+            assert_raises(exc, multivariate_normal, **args)
+            assert_raises(exc, multivariate_normal.pdf, x, **args)
+            assert_raises(exc, multivariate_normal.logpdf, x, **args)
+            assert_raises(exc, multivariate_normal.cdf, x, **args)
+            assert_raises(exc, multivariate_normal.logcdf, x, **args)
+
     def test_exception_singular_cov(self):
         np.random.seed(1234)
         x = np.random.randn(5)
         mean = np.random.randn(5)
         cov = np.ones((5, 5))
-        inverse_cov = 1 / cov
-        e = np.linalg.LinAlgError
-        args = [dict(mean=mean, cov=cov),
-                dict(mean=mean, cov=None, inverse_cov=inverse_cov),
-                dict(mean=mean, cov=cov, inverse_cov=inverse_cov)]
-        for args_ in args:
-            assert_raises(e, multivariate_normal, **args_)
-            assert_raises(e, multivariate_normal.pdf, x, **args_)
-            assert_raises(e, multivariate_normal.logpdf, x, **args_)
-            assert_raises(e, multivariate_normal.cdf, x, **args_)
-            assert_raises(e, multivariate_normal.logcdf, x, **args_)
+        inv_cov = 1 / cov
+        # Check when only mean and covariance are specified.
+        self._assert_methods_raise_exception(
+            np.linalg.LinAlgError,
+            x, mean=mean, cov=cov
+        )
+        # Check when mean and inverse covariance are specified.
+        self._assert_methods_raise_exception(
+            np.linalg.LinAlgError,
+            x, mean=mean, cov=None, inverse_cov=inv_cov
+        )
+        # Check when mean, covariance, and inverse covariance are specified.
+        self._assert_methods_raise_exception(
+            np.linalg.LinAlgError,
+            x, mean=mean, cov=cov, inverse_cov=inv_cov
+        )
 
     def test_R_values(self):
         # Compare the multivariate pdf with some values precomputed
@@ -509,24 +532,27 @@ class TestMultivariateNormal:
         d = 4
         sample = multivariate_normal.rvs(mean=np.zeros(d), cov=1, size=N)
         assert_equal(sample.shape, (N, d))
-        sample = multivariate_normal.rvs(
-            mean=np.zeros(d), cov=None, inverse_cov=1, size=N)
-        assert_equal(sample.shape, (N, d))
 
-        cov = np.array([[2, .1], [.1, 1]])
-        sample = multivariate_normal.rvs(mean=None, cov=cov, size=N)
+        sample = multivariate_normal.rvs(mean=None,
+                                         cov=np.array([[2, .1], [.1, 1]]),
+                                         size=N)
         assert_equal(sample.shape, (N, 2))
-        inverse_cov = np.linalg.inv(cov)
+
+        inv_cov = np.array([[3.6, 0.2], [4.4, 10.2]])
         sample = multivariate_normal.rvs(
-            mean=None, cov=None, inverse_cov=inverse_cov, size=N)
+            None, cov=None, inverse_cov=inv_cov, size=N)
         assert_equal(sample.shape, (N, 2))
+
+        sample = multivariate_normal.rvs(
+            np.zeros(d), cov=None, inverse_cov=1, size=N)
+        assert_equal(sample.shape, (N, d))
 
         u = multivariate_normal(mean=0, cov=1)
         sample = u.rvs(N)
-        assert_equal(sample.shape, (N,))
-        u = multivariate_normal(mean=0, cov=None, inverse_cov=1)
-        sample = u.rvs(N)
-        assert_equal(sample.shape, (N,))
+        assert_equal(sample.shape, (N, ))
+
+        u = multivariate_normal(mean=0, cov=None, inverse_cov=1) 
+        assert_equal(u.rvs(N).shape, (N,))
 
     def test_large_sample(self):
         # Generate large sample and compare sample mean and sample covariance
@@ -577,23 +603,21 @@ class TestMultivariateNormal:
         assert_almost_equal(np.exp(_lnB(alpha)), desired)
 
     def test_random_variates_remain_identical(self):
-        # Ensure random variates do not change.
+        """ Ensure random variates are identical to numpy. """
+        from numpy.random import RandomState
+        seed = 0
         cov = np.array([[4, 1], [1, 3]])
-        mean = np.array([1, 2])
+        mu = np.array([1, 2])
         size_expected = [
-            (1, np.array([-2.549399997239919,  0.532367689692514])),
-            ((2, 3), np.array([[[-2.549399997239919, 0.532367689692514],
-                                [-2.6073941391799864, 3.8362292481589044],
-                                [-1.620968213572338, -1.392952747395709]],
-                               [[-0.6139661478476928, 0.7279020268104717],
-                                [ 0.8555287589116994, 2.6556733502536995],
-                                [-0.4433017784428099, 3.7465235863322244]]]))]
+            (1, np.squeeze(RandomState(seed).multivariate_normal(mu, cov, 1))),
+            ((2, 3), RandomState(seed).multivariate_normal(mu, cov, (2, 3)))
+        ]
         for size, expected in size_expected:
             assert_allclose(
                 expected, 
                 multivariate_normal.rvs(
-                    mean=mean, cov=cov, size=size,
-                    random_state=np.random.RandomState(0)),
+                    mean=mu, cov=cov, size=size,
+                    random_state=RandomState(seed)),
             )
 
 class TestMatrixNormal:
