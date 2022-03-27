@@ -279,6 +279,18 @@ class TrackDistributionsAll(Benchmark):
         self.kwds = kwds
         self.args = args
 
+    def track_distribution_ppf_roundtrip(self, dist_name):
+        # Tracks the worst error (either absolute or relative) of a couple
+        # of round-trip ppf -> cdf calculations.
+        vals = [0.001, 0.5, 0.999]
+
+        ppf = self.dist.ppf(vals, *self.args[1:], **self.kwds)
+        round_trip = self.dist.cdf(ppf, *self.args[1:], **self.kwds)
+
+        err_rel = np.abs(vals - round_trip) / vals
+        err_abs = np.abs(vals - round_trip)
+        return np.max(np.concatenate((err_abs, err_rel)))
+
 
 class Distribution(Benchmark):
     # though there is a new version of this benchmark that runs all the
