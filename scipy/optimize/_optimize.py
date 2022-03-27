@@ -686,27 +686,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
        51:1, pp. 259-277
 
     """
-    if 'ftol' in unknown_options:
-        warnings.warn("ftol is deprecated for Nelder-Mead,"
-                      " use fatol instead. If you specified both, only"
-                      " fatol is used.",
-                      DeprecationWarning)
-        if (np.isclose(fatol, 1e-4) and
-                not np.isclose(unknown_options['ftol'], 1e-4)):
-            # only ftol was probably specified, use it.
-            fatol = unknown_options['ftol']
-        unknown_options.pop('ftol')
-    if 'xtol' in unknown_options:
-        warnings.warn("xtol is deprecated for Nelder-Mead,"
-                      " use xatol instead. If you specified both, only"
-                      " xatol is used.",
-                      DeprecationWarning)
-        if (np.isclose(xatol, 1e-4) and
-                not np.isclose(unknown_options['xtol'], 1e-4)):
-            # only xtol was probably specified, use it.
-            xatol = unknown_options['xtol']
-        unknown_options.pop('xtol')
-
     _check_unknown_options(unknown_options)
     maxfun = maxfev
     retall = return_all
