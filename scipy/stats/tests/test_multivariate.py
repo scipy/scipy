@@ -446,7 +446,7 @@ class TestMultivariateNormal:
             np.linalg.LinAlgError,
             x, mean=mean, cov=cov, inverse_cov=inverse_cov
         )
- 
+
     def test_exception_singular_inverse_cov(self):
         np.random.seed(1234)
         x = np.random.randn(5)
@@ -458,7 +458,7 @@ class TestMultivariateNormal:
             np.linalg.LinAlgError,
             x, mean=mean, cov=None, inverse_cov=inv_cov
         )
-    
+ 
     def test_exception_nan_inverse_cov(self):
         x = np.random.randn(2)
         mean = np.zeros(2)
