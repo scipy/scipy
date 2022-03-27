@@ -319,9 +319,8 @@ class TestMultivariateNormal:
         assert_allclose(d1.logcdf(x), d2.logcdf(x, **d2_args))
 
     def test_outputs_with_inverse_cov(self):
-        """ Test method outputs for a range of inputs when `inverse_cov` is
-        specified.
-        """
+        # Test method outputs for a range of inputs when `inverse_cov` is
+        # specified.
         np.random.seed(1234)
         # High-dimensional inputs.
         x1, mean1 = np.random.randn(5), np.random.randn(5)
@@ -359,9 +358,8 @@ class TestMultivariateNormal:
         )
 
     def test_prefers_cov_over_inverse_cov(self):
-        """
-        Check `cov` is preferred when both `cov` and `inverse_cov` are passed.
-        """
+        # Check `cov` is preferred when both `cov` and `inverse_cov` are
+        # passed.
         np.random.seed(1234)
         dim = 5
         x, mean = np.random.randn(dim), np.random.randn(dim)
@@ -436,8 +434,7 @@ class TestMultivariateNormal:
         x = np.random.randn(5)
         mean = np.random.randn(5)
         cov = np.ones((5, 5))
-        inv_cov = 1 / cov
-        # Check when only mean and covariance are specified.
+        inverse_cov = 1 / cov
         self._assert_methods_raise_exception(
             np.linalg.LinAlgError,
             x, mean=mean, cov=cov
@@ -445,12 +442,35 @@ class TestMultivariateNormal:
         # Check when mean and inverse covariance are specified.
         self._assert_methods_raise_exception(
             np.linalg.LinAlgError,
-            x, mean=mean, cov=None, inverse_cov=inv_cov
+            x, mean=mean, cov=cov, inverse_cov=inverse_cov
         )
-        # Check when mean, covariance, and inverse covariance are specified.
+ 
+    def test_exception_singular_inverse_cov(self):
+        np.random.seed(1234)
+        x = np.random.randn(5)
+        mean = np.random.randn(5)
+        cov = np.ones((5, 5))
+        inv_cov = 1 / cov
+        # Check when mean and inverse covariance are specified.
         self._assert_methods_raise_exception(
             np.linalg.LinAlgError,
-            x, mean=mean, cov=cov, inverse_cov=inv_cov
+            x, mean=mean, cov=None, inverse_cov=inv_cov
+        )
+    
+    def test_exception_nan_inverse_cov(self):
+        x = np.random.randn(2)
+        mean = np.zeros(2)
+        inv_cov_nan = [[1, 0], [0, np.nan]]
+        self._assert_methods_raise_exception(
+            ValueError, x, mean=mean, cov=None, inverse_cov=inv_cov_nan
+        )
+
+    def test_exception_inf_inverse_cov(self):
+        x = np.random.randn(2)
+        mean = np.zeros(2)
+        inv_cov_inf = [[1, 0], [0, np.inf]]
+        self._assert_methods_raise_exception(
+            ValueError, x, mean=mean, cov=None, inverse_cov=inv_cov_inf
         )
 
     def test_R_values(self):
@@ -521,6 +541,14 @@ class TestMultivariateNormal:
         mean = np.zeros(2)
         covariance = np.zeros((2, 2))
         model = multivariate_normal(mean, covariance, allow_singular=True)
+        sample = model.rvs()
+        assert_equal(sample, [0, 0])
+
+    def test_multivariate_normal_rvs_zero_inverse_covariance(self):
+        mean = np.zeros(2)
+        inverse_cov = np.zeros((2, 2))
+        model = multivariate_normal(
+            mean, cov=None, inverse_cov=inverse_cov, allow_singular=True)
         sample = model.rvs()
         assert_equal(sample, [0, 0])
 
@@ -602,7 +630,7 @@ class TestMultivariateNormal:
         assert_almost_equal(np.exp(_lnB(alpha)), desired)
 
     def test_random_variates_remain_identical(self):
-        """ Ensure random variates are identical to numpy. """
+        # Ensure random variates are identical to numpy.
         from numpy.random import RandomState
         seed = 0
         cov = np.array([[4, 1], [1, 3]])
@@ -618,6 +646,26 @@ class TestMultivariateNormal:
                     mean=mu, cov=cov, size=size,
                     random_state=RandomState(seed)),
             )
+
+    def test_mean_none_equals_mean_zero_with_inverse_cov(self):
+        # Ensure when mean is set to a zero vector when the corresponding
+        # argument is None and inverse covariance is specifed.
+        dim = 5
+        mean = np.zeros(5)
+        cov = np.diag(np.abs(np.random.randn(dim)))
+        inv_cov = np.diag(1 / np.diag(cov))
+        x = np.random.randn(dim)
+        self._assert_outputs_close(
+            x,
+            multivariate_normal(mean=mean, cov=cov),
+            multivariate_normal(None, cov=None, inverse_cov=inv_cov),
+            {}
+        )
+        self._assert_outputs_close(
+            x,
+            multivariate_normal(mean=mean, cov=cov),
+            multivariate_normal, dict(mean=None, cov=None, inverse_cov=inv_cov)
+        )
 
 class TestMatrixNormal:
 
