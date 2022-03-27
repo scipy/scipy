@@ -249,6 +249,37 @@ class DistributionsAll(Benchmark):
         self.method(*self.args, **self.kwds)
 
 
+class TrackDistributionsAll(Benchmark):
+    # Benchmarks that track a value(s) for every distribution can go here
+
+    param_names = ['dist_name']
+
+    # Use DistributionsAll as a base
+    params = DistributionsAll.dists
+    dist_data = DistributionsAll.dist_data
+
+    def setup(self, dist_name):
+        # MOST SETUP CODE COPIED FROM ABOVE `DistributionsAll` BENCHMARK #
+        self.dist = getattr(stats, dist_name)
+        dist_shapes = self.dist_data[dist_name]
+
+        if isinstance(self.dist, stats.rv_discrete):
+            # discrete distributions only use location
+            self.isCont = False
+            kwds = {'loc': 4}
+        else:
+            # continuous distributions use location and scale
+            self.isCont = True
+            kwds = {'loc': 4, 'scale': 10}
+
+        x = np.linspace((0, 1), 100)
+        dist_shapes = self.dist_data[dist_name]
+        args = [x, *dist_shapes]
+
+        self.kwds = kwds
+        self.args = args
+
+
 class Distribution(Benchmark):
     # though there is a new version of this benchmark that runs all the
     # distributions, at the time of writing there was odd behavior on
