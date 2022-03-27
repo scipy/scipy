@@ -8206,7 +8206,7 @@ class truncnorm_gen(rv_continuous):
     underlying normal, but ``a`` and ``b`` are still defined with respect to
     the *standard* normal. If ``myclip_a`` and ``myclip_b`` are clip values
     defined with respect to a shifted and scaled normal, they can be converted
-    the the required form according to::
+    the required form according to::
 
         a, b = (myclip_a - loc) / scale, (myclip_b - loc) / scale
 
