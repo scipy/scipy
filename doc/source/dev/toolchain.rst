@@ -291,10 +291,6 @@ numpydoc              Whatever recent versions work. >= 0.8.0.
 matplotlib            Generally suggest >= 2.0.
 ====================  =================================================
 
-[The ``numpydoc`` package is also used, but that is currently
-packaged in ``doc/sphinxext``.]
-
-
 .. note::
 
     Developer Note: The versions of ``numpy`` and ``matplotlib`` required have

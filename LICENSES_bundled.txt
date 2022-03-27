@@ -1,11 +1,6 @@
 The SciPy repository and source distributions bundle a number of libraries that
 are compatibly licensed.  We list these here.
 
-Name: Numpydoc
-Files: doc/sphinxext/numpydoc/*
-License: 2-clause BSD
-  For details, see doc/sphinxext/LICENSE.txt
-
 Name: scipy-sphinx-theme
 Files: doc/scipy-sphinx-theme/*
 License: 3-clause BSD, PSF and Apache 2.0

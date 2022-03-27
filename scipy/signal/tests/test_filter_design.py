@@ -1001,7 +1001,9 @@ class TestSOSFreqz:
         dB = 20*np.log10(np.maximum(np.abs(h), 1e-10))
         w /= np.pi
         assert_allclose(dB[w >= 0.3], 0, atol=.55)
-        assert_array_less(dB[w <= 0.2], -150)
+        # Allow some numerical slop in the upper bound -150, so this is
+        # a check that dB[w <= 0.2] is less than or almost equal to -150.
+        assert dB[w <= 0.2].max() < -150*(1 - 1e-12)
 
     @mpmath_check("0.10")
     def test_sos_freqz_against_mp(self):
