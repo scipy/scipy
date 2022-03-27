@@ -1,9 +1,10 @@
 #
 # Author: Joris Vankerschaver 2013
 #
-from functools import cached_property
 import math
 import numpy as np
+import warnings
+from functools import cached_property
 from numpy import asarray_chkfinite, asarray
 import scipy.linalg
 from scipy._lib import doccer
@@ -12,7 +13,6 @@ from scipy._lib._util import check_random_state
 from scipy.linalg.blas import drot
 from scipy.linalg._misc import LinAlgError
 from scipy.linalg.lapack import get_lapack_funcs
-import warnings
 
 from ._discrete_distns import binom
 from . import _mvn
@@ -367,9 +367,9 @@ class multivariate_normal_gen(multi_rv_generic):
         Probability density function.
     logpdf(x, mean=None, cov=1, allow_singular=False, inverse_cov=None)
         Log of the probability density function.
-    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, inverse_cov=None)  # noqa: 501
+    cdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, inverse_cov=None)
         Cumulative distribution function.
-    logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, inverse_cov=None)  # noqa: 501
+    logcdf(x, mean=None, cov=1, allow_singular=False, maxpts=1000000*dim, abseps=1e-5, releps=1e-5, inverse_cov=None)
         Log of the cumulative distribution function.
     rvs(mean=None, cov=1, size=1, random_state=None, inverse_cov=None)
         Draw random samples from a multivariate normal distribution.
