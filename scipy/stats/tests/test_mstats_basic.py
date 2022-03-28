@@ -1816,8 +1816,8 @@ class TestCompareWithStats:
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings() as sup:
                 if mode in ['auto', 'exact']:
-                    sup.filter(RuntimeWarning,
-                               "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+                    message = "ks_2samp: Exact calculation unsuccessful."
+                    sup.filter(RuntimeWarning, message)
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
@@ -1832,8 +1832,8 @@ class TestCompareWithStats:
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings() as sup:
                 if mode in ['auto', 'exact']:
-                    sup.filter(RuntimeWarning,
-                               "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+                    message = "ks_2samp: Exact calculation unsuccessful."
+                    sup.filter(RuntimeWarning, message)
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)

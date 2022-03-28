@@ -33,7 +33,6 @@ inspect.isdescriptor = (lambda obj: old_isdesc(obj)
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 
-sys.path.insert(0, os.path.abspath('../sphinxext'))
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 import numpydoc.docscrape as np_docscrape  # noqa:E402
@@ -156,6 +155,7 @@ for key in (
         r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
         r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
         r"'contextfunction' is renamed to 'pass_context'",  # Jinja
+        r"distutils Version",  # distutils
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)

@@ -1320,6 +1320,36 @@ class TestCombinatorics:
         expected = 100891344545564193334812497256
         assert_equal(special.comb(100, 50, exact=True), expected)
 
+    @pytest.mark.parametrize("repetition", [True, False])
+    @pytest.mark.parametrize("legacy", [True, False])
+    @pytest.mark.parametrize("k", [3.5, 3])
+    @pytest.mark.parametrize("N", [4.5, 4])
+    def test_comb_legacy(self, N, k, legacy, repetition):
+        # test is only relevant for exact=True
+        if legacy and (N != int(N) or k != int(k)):
+            with pytest.warns(
+                DeprecationWarning,
+                match=r"Non-integer arguments are currently being cast to",
+            ):
+                result = special.comb(N, k, exact=True, legacy=legacy,
+                                      repetition=repetition)
+        else:
+            result = special.comb(N, k, exact=True, legacy=legacy,
+                                  repetition=repetition)
+        if legacy:
+            # for exact=True and legacy=True, cast input arguments, else don't
+            if repetition:
+                # the casting in legacy mode happens AFTER transforming N & k,
+                # so rounding can change (e.g. both floats, but sum to int);
+                # hence we need to emulate the repetition-transformation here
+                N, k = int(N + k - 1), int(k)
+                repetition = False
+            else:
+                N, k = int(N), int(k)
+        # expected result is the same as with exact=False
+        expected = special.comb(N, k, legacy=legacy, repetition=repetition)
+        assert_equal(result, expected)
+
     def test_comb_with_np_int64(self):
         n = 70
         k = 30

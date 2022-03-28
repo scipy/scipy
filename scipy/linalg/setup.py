@@ -152,6 +152,9 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_cythonized_array_utils',
                          sources=['_cythonized_array_utils.c'])
 
+    config.add_extension('_matfuncs_expm',
+                         sources=['_matfuncs_expm.c'])
+
     # Add any license files
     config.add_data_files('src/id_dist/doc/doc.tex')
     config.add_data_files('src/lapack_deprecations/LICENSE')

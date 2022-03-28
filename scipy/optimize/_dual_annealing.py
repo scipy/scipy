@@ -521,6 +521,10 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         Backwards compatible flag for `minimizer_kwargs`, only one of these
         should be supplied.
 
+        .. deprecated:: 1.8.0
+            dual_annealing argument `local_search_options` is deprecated in
+            favor of `minimizer_kwargs` and will be removed in SciPy 1.10.0.
+
     Returns
     -------
     res : OptimizeResult
@@ -650,7 +654,8 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
                          "'local_search_options' (deprecated); not both!")
     if local_search_options is not None:
         warnings.warn("dual_annealing argument 'local_search_options' is "
-                      "deprecated in favor of 'minimizer_kwargs'",
+                      "deprecated in favor of 'minimizer_kwargs' and will be "
+                      "removed in SciPy 1.10.0.",
                       category=DeprecationWarning, stacklevel=2)
         minimizer_kwargs = local_search_options
 
