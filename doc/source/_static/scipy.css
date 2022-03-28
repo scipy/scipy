@@ -41,13 +41,13 @@ Nat Methods 8, 441 (2011). https://doi.org/10.1038/nmeth.1618
 }
 
 /* green for `stable` */
-#version_switcher_button[data-version-name*="stable"] {
+#version_switcher_button[data-active-version-name*="stable"] {
   background-color: #009E73;
   border-color: #009E73;
 }
 
 /* red for `old` */
-#version_switcher_button:not([data-version-name="stable"]):not([data-version-name*="dev"]):not([data-version-name*="pull"]) {
+#version_switcher_button:not([data-active-version-name*="stable"]):not([data-active-version-name*="dev"]):not([data-active-version-name*="pull"]) {
   background-color: #980F0F;
   border-color: #980F0F;
 }
