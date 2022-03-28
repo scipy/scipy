@@ -186,9 +186,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     -----
     This is a naive implementation using ARPACK or LOBPCG as an eigensolver
     on ``A.conj().T @ A`` or ``A @ A.conj().T``, depending on which one is more
-    efficient.
+    efficient, followed by the Rayleigh–Ritz method as postprocessing; see
+    https://bit.ly/3LprcUa
 
-    Examples
+    Alternatively, the PROPACK solver can be called.
+
+Examples
     --------
     Construct a matrix ``A`` from singular values and vectors.
 
@@ -332,8 +335,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     if transpose:
         u_tmp = eigvec @ _herm(vh) if jobu else None
         vh = _herm(u) if jobv else None
-    else:
         u = u_tmp
+    else:
         u = u if jobu else None
         vh = vh @ _herm(eigvec) if jobv else None
     return u, s, vh
