@@ -152,7 +152,8 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     sv = rvs.var()
     m, v = distfn.stats(*arg)
 
-    check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
+    check_sample_meanvar_(distfn, arg, rvs, m, v, sm, sv, sn,
+                          distname + 'sample mean test')
     check_cdf_ppf(distfn, arg, distname)
     check_sf_isf(distfn, arg, distname)
     check_pdf(distfn, arg, distname)
@@ -465,12 +466,12 @@ def test_method_of_moments():
     npt.assert_almost_equal(loc+scale, b, decimal=4)
 
 
-def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
+def check_sample_meanvar_(distfn, arg, rvs, m, v, sm, sv, sn, msg):
     # this did not work, skipped silently by nose
     if np.isfinite(m):
         check_sample_mean(sm, sv, sn, m)
     if np.isfinite(v):
-        check_sample_var(sv, sn, v)
+        check_sample_var(rvs, v)
 
 
 def check_sample_mean(sm, v, n, popmean):
@@ -489,14 +490,13 @@ def check_sample_mean(sm, v, n, popmean):
                 (t, prob, popmean, sm))
 
 
-def check_sample_var(sv, n, popvar):
 def check_sample_var(sample, popvar):
     # check that population mean lies within
     # CI bootstrapped from the sample
     # This used to be a chi-squared test for variance,
     # but there were too many false positives
     res = stats.bootstrap(
-        (sample,)
+        (sample,),
         lambda x, axis: x.var(ddof=1, axis=axis),
         confidence_level=0.995,
     )
