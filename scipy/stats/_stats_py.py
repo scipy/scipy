@@ -49,10 +49,12 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
-from ._hypotests import _all_partitions, _batch_generator
+from ._hypotests import _all_partitions
 from ._hypotests_pythran import _compute_outer_prob_inside_method
+from ._resampling import _batch_generator
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
+from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 
 
@@ -4236,6 +4238,17 @@ def pearsonr(x, y, *, alternative='two-sided'):
 def fisher_exact(table, alternative='two-sided'):
     """Perform a Fisher exact test on a 2x2 contingency table.
 
+    The null hypothesis is that the true odds ratio of the populations
+    underlying the observations is one, and the observations were sampled
+    from these populations under a condition: the marginals of the
+    resulting table must equal those of the observed table. The statistic
+    returned is the unconditional maximum likelihood estimate of the odds
+    ratio, and the p-value is the probability under the null hypothesis of
+    obtaining a table at least as extreme as the one that was actually
+    observed. There are other possible choices of statistic and two-sided
+    p-value definition associated with Fisher's exact test; please see the
+    Notes for more information.
+
     Parameters
     ----------
     table : array_like of ints
@@ -4244,9 +4257,10 @@ def fisher_exact(table, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-        * 'two-sided'
-        * 'less': one-sided
-        * 'greater': one-sided
+        * 'two-sided': the odds ratio of the underlying population is not one
+        * 'less': the odds ratio of the underlying population is less than one
+        * 'greater': the odds ratio of the underlying population is greater
+          than one
 
         See the Notes for more details.
 
@@ -4255,9 +4269,8 @@ def fisher_exact(table, alternative='two-sided'):
     oddsratio : float
         This is prior odds ratio and not a posterior estimate.
     p_value : float
-        P-value, the probability of obtaining a distribution at least as
-        extreme as the one that was actually observed, assuming that the
-        null hypothesis is true.
+        P-value, the probability under the null hypothesis of obtaining a
+        table at least as extreme as the one that was actually observed.
 
     See Also
     --------
@@ -4273,7 +4286,11 @@ def fisher_exact(table, alternative='two-sided'):
     -----
     *Null hypothesis and p-values*
 
-    The null hypothesis is that the input table is from the hypergeometric
+    The null hypothesis is that the true odds ratio of the populations
+    underlying the observations is one, and the observations were sampled at
+    random from these populations under a condition: the marginals of the
+    resulting table must equal those of the observed table. Equivalently,
+    the null hypothesis is that the input table is from the hypergeometric
     distribution with parameters (as used in `hypergeom`)
     ``M = a + b + c + d``, ``n = a + b`` and ``N = a + c``, where the
     input table is ``[[a, b], [c, d]]``.  This distribution has support
@@ -4410,46 +4427,8 @@ def fisher_exact(table, alternative='two-sided'):
     n2 = c[1, 0] + c[1, 1]
     n = c[0, 0] + c[1, 0]
 
-    def binary_search(n, n1, n2, side):
-        """Binary search for where to begin halves in two-sided test."""
-        if side == "upper":
-            minval = mode
-            maxval = n
-        else:
-            minval = 0
-            maxval = mode
-        guess = -1
-        while maxval - minval > 1:
-            if maxval == minval + 1 and guess == minval:
-                guess = maxval
-            else:
-                guess = (maxval + minval) // 2
-            pguess = hypergeom.pmf(guess, n1 + n2, n1, n)
-            if side == "upper":
-                ng = guess - 1
-            else:
-                ng = guess + 1
-            if pguess <= pexact < hypergeom.pmf(ng, n1 + n2, n1, n):
-                break
-            elif pguess < pexact:
-                maxval = guess
-            else:
-                minval = guess
-        if guess == -1:
-            guess = minval
-        if side == "upper":
-            while guess > 0 and \
-                    hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
-                guess -= 1
-            while hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
-                guess += 1
-        else:
-            while hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
-                guess += 1
-            while guess > 0 and \
-                    hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
-                guess -= 1
-        return guess
+    def pmf(x):
+        return hypergeom.pmf(x, n1 + n2, n1, n)
 
     if alternative == 'less':
         pvalue = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
@@ -4461,23 +4440,25 @@ def fisher_exact(table, alternative='two-sided'):
         pexact = hypergeom.pmf(c[0, 0], n1 + n2, n1, n)
         pmode = hypergeom.pmf(mode, n1 + n2, n1, n)
 
-        epsilon = 1 - 1e-4
-        if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= 1 - epsilon:
+        epsilon = 1e-14
+        gamma = 1 + epsilon
+
+        if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= epsilon:
             return oddsratio, 1.
 
         elif c[0, 0] < mode:
             plower = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
-            if hypergeom.pmf(n, n1 + n2, n1, n) > pexact / epsilon:
+            if hypergeom.pmf(n, n1 + n2, n1, n) > pexact * gamma:
                 return oddsratio, plower
 
-            guess = binary_search(n, n1, n2, "upper")
-            pvalue = plower + hypergeom.sf(guess - 1, n1 + n2, n1, n)
+            guess = _binary_search(lambda x: -pmf(x), -pexact * gamma, mode, n)
+            pvalue = plower + hypergeom.sf(guess, n1 + n2, n1, n)
         else:
             pupper = hypergeom.sf(c[0, 0] - 1, n1 + n2, n1, n)
-            if hypergeom.pmf(0, n1 + n2, n1, n) > pexact / epsilon:
+            if hypergeom.pmf(0, n1 + n2, n1, n) > pexact * gamma:
                 return oddsratio, pupper
 
-            guess = binary_search(n, n1, n2, "lower")
+            guess = _binary_search(pmf, pexact * gamma, 0, mode)
             pvalue = pupper + hypergeom.cdf(guess, n1 + n2, n1, n)
     else:
         msg = "`alternative` should be one of {'two-sided', 'less', 'greater'}"
@@ -8251,6 +8232,13 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
         df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
         df = df_numer / df_denom
+
+        if (df_numer == 0) and (df_denom == 0):
+            message = ("p-value cannot be estimated with `distribution='t' "
+                       "because degrees of freedom parameter is undefined "
+                       "(0/0). Try using `distribution='normal'")
+            warnings.warn(message, RuntimeWarning)
+
         p = distributions.t.cdf(wbfn, df)
     elif distribution == "normal":
         p = distributions.norm.cdf(wbfn)
@@ -8531,6 +8519,10 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     independent random variables whose probability distribution is :math:`u`
     (resp. :math:`v`).
 
+    Sometimes the square of this quantity is referred to as the "energy
+    distance" (e.g. in [2]_, [4]_), but as noted in [1]_ and [3]_, only the
+    definition above satisfies the axioms of a distance function (metric).
+
     As shown in [2]_, for one-dimensional real-valued variables, the energy
     distance is linked to the non-distribution-free version of the Cramér-von
     Mises distance:
@@ -8551,12 +8543,12 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     References
     ----------
-    .. [1] "Energy distance", https://en.wikipedia.org/wiki/Energy_distance
+    .. [1] Rizzo, Szekely "Energy distance." Wiley Interdisciplinary Reviews:
+           Computational Statistics, 8(1):27-38 (2015).
     .. [2] Szekely "E-statistics: The energy of statistical samples." Bowling
            Green State University, Department of Mathematics and Statistics,
            Technical Report 02-16 (2002).
-    .. [3] Rizzo, Szekely "Energy distance." Wiley Interdisciplinary Reviews:
-           Computational Statistics, 8(1):27-38 (2015).
+    .. [3] "Energy distance", https://en.wikipedia.org/wiki/Energy_distance
     .. [4] Bellemare, Danihelka, Dabney, Mohamed, Lakshminarayanan, Hoyer,
            Munos "The Cramer Distance as a Solution to Biased Wasserstein
            Gradients" (2017). :arXiv:`1705.10743`.
