@@ -7262,6 +7262,109 @@ loguniform = reciprocal_gen(name="loguniform")
 reciprocal = reciprocal_gen(name="reciprocal")
 
 
+class log_uniform_gen(rv_continuous):
+    r"""A log-uniform (AKA reciprocal) continuous random variable.
+
+    %(before_notes)s
+
+    Notes
+    -----
+    The probability density function is:
+
+    .. math::
+
+        f(x, c) = \frac{1}{x \log(c)}
+
+    for :math:`1 \le x \le c`, :math:`c > 1`. Methods of this class accept `c`
+    as shape parameter :math:`c`.
+
+    %(after_notes)s
+
+    This distribution is more commonly parameterized in terms of two shape
+    parameters :math:`a` and :math:`b`, which define the support of the
+    distribution. Indeed, this is how `loguniform` and `reciprocal` (distinct
+    from `log_uniform`) were parameterizd. However, SciPy distributions also
+    accept location and scale parameters `loc` and `scale`, over-parameterizing
+    the distribution and thereby complicating fitting the distribution to data.
+
+    To convert from the "old" ``a, b, loc, scale`` parameterization to the
+    "new" ``c, loc, scale`` parameterization required by `log_unifom`::
+
+        c = b / a
+        scale_new = scale_old * a
+        loc_new = loc_old
+
+    To convert from the "new" ``c, loc, scale`` parameterization to the
+    more standard ``a, b, loc`` parameterization (choosing ``scale_old = 1``)::
+
+        a = scale_new
+        b = c * a
+        loc_old = loc_new
+
+    %(example)s
+
+    This doesn't show the equal probability of ``0.01``, ``0.1`` and
+    ``1``. This is best when the x-axis is log-scaled:
+
+    >>> import numpy as np
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.hist(np.log10(r))
+    >>> ax.set_ylabel("Frequency")
+    >>> ax.set_xlabel("Value of random variable")
+    >>> ax.xaxis.set_major_locator(plt.FixedLocator([-2, -1, 0]))
+    >>> ticks = ["$10^{{ {} }}$".format(i) for i in [-2, -1, 0]]
+    >>> ax.set_xticklabels(ticks)  # doctest: +SKIP
+    >>> plt.show()
+
+    This random variable will be log-uniform regardless of the base chosen for
+    ``c``. Let's specify with base ``2`` instead:
+
+    >>> rvs = %(name)s(2**2, scale=2**-2).rvs(size=1000)
+
+    Values of ``1/4``, ``1/2`` and ``1`` are equally likely with this random
+    variable.  Here's the histogram:
+
+    >>> fig, ax = plt.subplots(1, 1)
+    >>> ax.hist(np.log2(rvs))
+    >>> ax.set_ylabel("Frequency")
+    >>> ax.set_xlabel("Value of random variable")
+    >>> ax.xaxis.set_major_locator(plt.FixedLocator([-2, -1, 0]))
+    >>> ticks = ["$2^{{ {} }}$".format(i) for i in [-2, -1, 0]]
+    >>> ax.set_xticklabels(ticks)  # doctest: +SKIP
+    >>> plt.show()
+
+    """
+    def _argcheck(self, c):
+        return (c > 1) & np.isfinite(c)
+
+    def _shape_info(self):
+        return [_ShapeInfo("c", False, (1, np.inf), (False, False))]
+
+    def _get_support(self, c):
+        return 1, c
+
+    def _pdf(self, x, c):
+        return 1.0 / (x * np.log(c))
+
+    def _logpdf(self, x,c):
+        return -np.log(x) - np.log(np.log(c))
+
+    def _cdf(self, x, c):
+        return np.log(x) / np.log(c)
+
+    def _ppf(self, q, c):
+        return c**q
+
+    def _munp(self, n, c):
+        return 1.0/(n*np.log(c)) * (c**n - 1)
+
+    def _entropy(self, c):
+        return 0.5*np.log(c) + np.log(np.log(c))
+
+
+log_uniform = log_uniform_gen(name="log_uniform")
+
+
 class rice_gen(rv_continuous):
     r"""A Rice continuous random variable.
 

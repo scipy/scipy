@@ -6633,6 +6633,35 @@ def test_loguniform():
     assert np.abs(np.median(vals) - 1000) <= 10
 
 
+def test_log_uniform():
+    # This makes sure log_uniform behaves as intended compared to loguniform
+    lu_old = stats.loguniform
+    lu_new = stats.log_uniform
+
+    # arbitrary parameters
+    a = 2.9515
+    b = 165.648
+    loc = -4.6
+    scale = 2.1
+    params_old = (a, b, loc, scale)
+
+    c = b / a
+    scale_new = scale * a
+    params_new = (c, loc, scale_new)
+
+    x = np.logspace(np.log10(a), np.log10(b))
+
+    # test all methods that are overridden
+    assert_allclose(lu_old.support(*params_old), lu_new.support(*params_new))
+    assert_allclose(lu_old.pdf(x, *params_old), lu_new.pdf(x, *params_new))
+    assert_allclose(lu_old.logpdf(x, *params_old),
+                    lu_new.logpdf(x, *params_new))
+    assert_allclose(lu_old.cdf(x, *params_old), lu_new.cdf(x, *params_new))
+    assert_allclose(lu_old.ppf(x, *params_old), lu_new.ppf(x, *params_new))
+    assert_allclose(lu_old.stats(*params_old), lu_new.stats(*params_new))
+    assert_allclose(lu_old.entropy(*params_old), lu_new.entropy(*params_new))
+
+
 class TestArgus:
     def test_argus_rvs_large_chi(self):
         # test that the algorithm can handle large values of chi

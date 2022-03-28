@@ -177,7 +177,8 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     # make sure arguments are within support
     spec_x = {'weibull_max': -0.5, 'levy_l': -0.5,
               'pareto': 1.5, 'tukeylambda': 0.3,
-              'rv_histogram_instance': 5.0}
+              'rv_histogram_instance': 5.0,
+              'log_uniform': 1.5}
     x = spec_x.get(distname, 0.5)
     if distname == 'invweibull':
         arg = (1,)
