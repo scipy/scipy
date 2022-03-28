@@ -490,12 +490,19 @@ def check_sample_mean(sm, v, n, popmean):
 
 
 def check_sample_var(sv, n, popvar):
-    # two-sided chisquare test for sample variance equal to
-    # hypothesized variance
-    df = n-1
-    statistic = df * sv / popvar
-    pval = min(stats.chi2.cdf(statistic, df), stats.chi2.sf(statistic, df))
-    assert pval > 0.005
+def check_sample_var(sample, popvar):
+    # check that population mean lies within
+    # CI bootstrapped from the sample
+    # This used to be a chi-squared test for variance,
+    # but there were too many false positives
+    res = stats.bootstrap(
+        (sample,)
+        lambda x, axis: x.var(ddof=1, axis=axis),
+        confidence_level=0.995,
+    )
+    conf = res.confidence_interval
+    low, high = conf.low, conf.high
+    assert low <= popvar <= high
 
 
 def check_cdf_ppf(distfn, arg, msg):
