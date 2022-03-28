@@ -329,11 +329,11 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     vh = vh[::-1]
     jobu = return_singular_vectors in {True, 'u'}
     jobv = return_singular_vectors in {True, 'vh'}
-    if not transpose:
-        u = u if jobu else None
-        vh = vh @ _herm(eigvec) if jobv else None
-    else:
+    if transpose:
         u_tmp = eigvec @ _herm(vh) if jobu else None
         vh = _herm(u) if jobv else None
+    else:
         u = u_tmp
+        u = u if jobu else None
+        vh = vh @ _herm(eigvec) if jobv else None
     return u, s, vh
