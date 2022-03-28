@@ -168,8 +168,8 @@ class SphericalVoronoi:
 
         if radius is None:
             raise ValueError('`radius` is `None`. '
-                          'Please provide a floating point number '
-                          '(i.e. `radius=1`).')
+                             'Please provide a floating point number '
+                             '(i.e. `radius=1`).')
 
         self.radius = float(radius)
         self.points = np.array(points).astype(np.double)
