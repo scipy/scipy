@@ -602,14 +602,14 @@ class TestHalton(QMCEngineTests):
         engine = self.engine(d=2, scramble=True)
         sample = engine.random(n=len(ref_sample), workers=8)
 
-        assert_allclose(sample, ref_sample, atol=1e-1)
+        assert_allclose(sample, ref_sample, atol=1e-3)
 
         # worker + integers
         engine.reset()
         ref_sample = engine.integers(10)
         engine.reset()
         sample = engine.integers(10, workers=8)
-        assert_allclose(sample, ref_sample, atol=1e-1)
+        assert_equal(sample, ref_sample)
 
 
 class TestLHS(QMCEngineTests):
