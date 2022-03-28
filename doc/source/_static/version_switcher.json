@@ -6,16 +6,8 @@
     },
     {
         "name": "1.8.0 (stable)",
-        "url": "https://docs.scipy.org/doc/scipy-1.8.0/reference/"
-    },
-    {
-        "name": "1.7.3 (old)",
-        "url": "https://docs.scipy.org/doc/scipy-1.7.3/reference/"
-    },
-    {
-        "name": "1.7.2 (old)",
-        "version":"1.7.2",
-        "url": "https://docs.scipy.org/doc/scipy-1.7.2/reference/"
+        "version":"1.8.0",
+        "url": "https://docs.scipy.org/doc/scipy-1.8.0/html-scipyorg/"
     },
     {
         "name": "1.7.1 (old)",
