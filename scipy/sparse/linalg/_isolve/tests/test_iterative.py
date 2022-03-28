@@ -65,15 +65,14 @@ class IterativeParams:
         self.Poisson1D = Case("poisson1d", Poisson1D)
         self.cases.append(Case("poisson1d", Poisson1D))
         # note: minres fails for single precision
-        self.cases.append(Case("poisson1d", Poisson1D.astype('f'),
-                               skip=[minres]))
+        self.cases.append(Case("poisson1d", Poisson1D.astype('f')))
 
         # Symmetric and Negative Definite
         self.cases.append(Case("neg-poisson1d", -Poisson1D,
                                skip=posdef_solvers))
         # note: minres fails for single precision
         self.cases.append(Case("neg-poisson1d", (-Poisson1D).astype('f'),
-                               skip=posdef_solvers + [minres]))
+                               skip=posdef_solvers))
 
         # 2-dimensional Poisson equations
         Poisson2D = kronsum(Poisson1D, Poisson1D)
@@ -81,8 +80,7 @@ class IterativeParams:
         # note: minres fails for 2-d poisson problem, it will be fixed in the future PR
         self.cases.append(Case("poisson2d", Poisson2D, skip=[minres]))
         # note: minres fails for single precision
-        self.cases.append(Case("poisson2d", Poisson2D.astype('f'),
-                               skip=[minres]))
+        self.cases.append(Case("poisson2d", Poisson2D.astype('f')))
 
         # Symmetric and Indefinite
         data = array([[6, -5, 2, 7, -1, 10, 4, -3, -8, 9]],dtype='d')
@@ -112,8 +110,7 @@ class IterativeParams:
         data = np.dot(data.conj(), data.T)
         self.cases.append(Case("rand-sym-pd", data))
         # note: minres fails for single precision
-        self.cases.append(Case("rand-sym-pd", data.astype('f'),
-                               skip=[minres]))
+        self.cases.append(Case("rand-sym-pd", data.astype('f')))
 
         # Random complex-valued
         np.random.seed(1234)
