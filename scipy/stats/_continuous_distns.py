@@ -8200,15 +8200,15 @@ class truncnorm_gen(rv_continuous):
     Notes
     -----
     The standard form of this distribution is a standard normal truncated to
-    the range [a, b] --- notice that a and b are defined over the domain of the
-    standard normal.  To convert clip values for a specific mean and standard
-    deviation, use::
+    the range ``[a, b]``, where ``a`` and ``b`` are user-provided shape
+    parameters. The parameter ``loc`` shifts the mean of the underlying normal
+    distribution, and ``scale`` controls the standard deviation of the
+    underlying normal, but ``a`` and ``b`` are still defined with respect to
+    the *standard* normal. If ``myclip_a`` and ``myclip_b`` are clip values
+    defined with respect to a shifted and scaled normal, they can be converted
+    the required form according to::
 
-        a, b = (myclip_a - my_mean) / my_std, (myclip_b - my_mean) / my_std
-
-    `truncnorm` takes :math:`a` and :math:`b` as shape parameters.
-
-    %(after_notes)s
+        a, b = (myclip_a - loc) / scale, (myclip_b - loc) / scale
 
     %(example)s
 
@@ -9725,7 +9725,8 @@ class studentized_range_gen(rv_continuous):
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_cdf, 3, 1)
-        return np.float64(ufunc(x, k, df))
+        # clip p-values to ensure they are in [0, 1].
+        return np.clip(np.float64(ufunc(x, k, df)), 0, 1)
 
 
 studentized_range = studentized_range_gen(name='studentized_range', a=0,
