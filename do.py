@@ -118,6 +118,7 @@ BUG:
 '''
 
 import os
+import subprocess
 import sys
 import re
 import shutil
@@ -378,6 +379,10 @@ rich_click.COMMAND_GROUPS = {
         {
             "name": "documentation",
             "commands": ["doc", "refguide-check"],
+        },
+        {
+            "name": "release",
+            "commands": ["notes"],
         },
     ]
 }
@@ -810,6 +815,22 @@ def shell(ctx_obj, extra_argv):
     os.execv(shell, [shell] + extra_argv)
     sys.exit(1)
 
+
+@cli.command()
+@click.argument('version_args', nargs=2)
+@click.pass_obj
+def notes(ctx_obj, version_args):
+    """:ledger: Release notes and log generation"""
+    if version_args:
+        sys.argv = version_args
+        log_start = sys.argv[0]
+        log_end = sys.argv[1]
+    cmd = f"python tools/write_release_and_log.py v{log_start} v{log_end}"
+    click.echo(cmd)
+    try:
+        subprocess.run([cmd], check = True, shell=True)
+    except subprocess.CalledProcessError:
+        print('Error caught: Incorrect log start or log end version')
 
 
 if __name__ == '__main__':
