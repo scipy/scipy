@@ -281,7 +281,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             else:
                 X = random_state.uniform(size=(min(A.shape), k))
 
-        eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
+        _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                                  largest=largest, )
 
     elif solver == 'propack':
@@ -313,7 +313,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     elif solver == 'arpack' or solver is None:
         if v0 is None and not rs_was_None:
             v0 = random_state.uniform(size=(min(A.shape),))
-        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+        _, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                                 ncv=ncv, which=which, v0=v0)
 
     u = X_matmat(eigvec)
