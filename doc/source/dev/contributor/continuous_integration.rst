@@ -32,6 +32,7 @@ by CI resources providers.
 
 GitHub Actions
 --------------
+* ``Windows Tests``: test suite runs for Windows (``x86_64``)
 * ``Linux Tests``: test suite runs for Linux (``x86_64``)
 * ``macOS Tests``: test suite runs for macOS (``x86_64``)
 
@@ -44,10 +45,13 @@ Azure
 -----
 * ``Lint``: PEP8 and code style
 * ``Windows Python``: test suite runs for Windows
-* ``Linux_Python_37_32bit_full``
-* ``wheel_optimized_gcc48``
+* ``Linux_Python_xx_32bit_full``: 32-bit Linux
+* ``wheel_optimized_gcc``: install the wheel, then run the test suite with
+  `python -OO`
 * ``source_distribution``: install via ``sdist``, then run the test suite
 * ``refguide_asv_check``: doctests from examples and benchmarks
+* ``prerelease_deps_coverage_64bit_blas``: use pre-released version of the
+  dependencies and check coverage
 
 CircleCI
 --------
@@ -76,6 +80,7 @@ Skipping CI can be achieved by adding a special text in the commit message:
 
 * ``[skip azp]``: will skip Azure
 * ``[skip actions]``: will skip GitHub Actions
+* ``[skip circle]``: will skip CircleCI
 * ``[skip ci]``: will skip *all* CI
 
 Of course, you can combine these to skip multiple workflows.

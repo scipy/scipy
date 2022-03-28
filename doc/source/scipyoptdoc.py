@@ -135,10 +135,12 @@ def wrap_mangling_directive(base_directive):
             # Change "Options" to "Other Parameters", run numpydoc, reset
             new_lines = []
             for line in lines:
+                # Remap Options to the "Other Parameters" numpydoc section
+                # along with correct heading length
                 if line.strip() == 'Options':
                     line = "Other Parameters"
-                elif line.strip() == "-"*len('Options'):
-                    line = "-"*len("Other Parameters")
+                    new_lines.extend([line, "-"*len(line)])
+                    continue
                 new_lines.append(line)
             # use impl_name instead of name here to avoid duplicate refs
             mangle_docstrings(env.app, 'function', impl_name,
