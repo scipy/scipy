@@ -652,7 +652,7 @@ class SVDSCommonTests:
         if dtype == complex and self.solver == 'propack':
             return
         rng = np.random.default_rng(179847540)
-        A = rng.random(shape, dtype= dtype)
+        A = rng.random(shape).astype(dtype)
         u, s, vh = svd(A, full_matrices=False)
         if dtype == np.float32:
             e = 10.0
