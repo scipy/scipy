@@ -168,7 +168,9 @@ cdef class _URNG:
     cdef unur_urng *get_qurng(self, size, qmc_engine) except *:
         cdef unur_urng *unuran_urng
         self.i = 0
-        self.qrvs_array = np.ascontiguousarray(qmc_engine.random(size).ravel())
+        self.qrvs_array = np.ascontiguousarray(
+            qmc_engine.random(size).ravel().astype(np.float64)
+        )
         unuran_urng = unur_urng_new(<URNG_FUNCT>self._next_qdouble,
                                     <void *>self)
         return unuran_urng

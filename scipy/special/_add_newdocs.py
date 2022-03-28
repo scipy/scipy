@@ -255,6 +255,37 @@ add_newdoc("wrightomega",
            Function." ACM Transactions on Mathematical Software,
            2012. :doi:`10.1145/2168773.2168779`.
 
+    Examples
+    --------
+    >>> from scipy.special import wrightomega, lambertw
+
+    >>> wrightomega([-2, -1, 0, 1, 2])
+    array([0.12002824, 0.27846454, 0.56714329, 1.        , 1.5571456 ])
+
+    Complex input:
+
+    >>> wrightomega(3 + 5j)
+    (1.5804428632097158+3.8213626783287937j)
+
+    Verify that ``wrightomega(z)`` satisfies ``w + log(w) = z``:
+
+    >>> w = -5 + 4j
+    >>> wrightomega(w + np.log(w))
+    (-5+4j)
+
+    Verify the connection to ``lambertw``:
+
+    >>> z = 0.5 + 3j
+    >>> wrightomega(z)
+    (0.0966015889280649+1.4937828458191993j)
+    >>> lambertw(np.exp(z))
+    (0.09660158892806493+1.4937828458191993j)
+
+    >>> z = 0.5 + 4j
+    >>> wrightomega(z)
+    (-0.3362123489037213+2.282986001579032j)
+    >>> lambertw(np.exp(z), k=1)
+    (-0.33621234890372115+2.282986001579032j)
     """)
 
 
@@ -1840,19 +1871,30 @@ add_newdoc("chdtriv",
     """)
 
 add_newdoc("chndtr",
-    """
+    r"""
     chndtr(x, df, nc, out=None)
 
     Non-central chi square cumulative distribution function
 
+    The cumulative distribution function is given by:
+
+    .. math::
+
+        P(\chi^{\prime 2} \vert \nu, \lambda) =\sum_{j=0}^{\infty}
+        e^{-\lambda /2}
+        \frac{(\lambda /2)^j}{j!} P(\chi^{\prime 2} \vert \nu + 2j),
+
+    where :math:`\nu > 0` is the degrees of freedom (``df``) and
+    :math:`\lambda \geq 0` is the non-centrality parameter (``nc``).
+
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral
+        Upper bound of the integral; must satisfy ``x >= 0``
     df : array_like
-        Degrees of freedom
+        Degrees of freedom; must satisfy ``df > 0``
     nc : array_like
-        Non-centrality parameter
+        Non-centrality parameter; must satisfy ``nc >= 0``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -1873,14 +1915,17 @@ add_newdoc("chndtrix",
 
     Inverse to `chndtr` vs `x`
 
+    Calculated using a search to find a value for `x` that produces the
+    desired value of `p`.
+
     Parameters
     ----------
     p : array_like
-        Probability
+        Probability; must satisfy ``0 <= p < 1``
     df : array_like
-        Degrees of freedom
+        Degrees of freedom; must satisfy ``df > 0``
     nc : array_like
-        Non-centrality parameter
+        Non-centrality parameter; must satisfy ``nc >= 0``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -1903,14 +1948,17 @@ add_newdoc("chndtridf",
 
     Inverse to `chndtr` vs `df`
 
+    Calculated using a search to find a value for `df` that produces the
+    desired value of `p`.
+
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral
+        Upper bound of the integral; must satisfy ``x >= 0``
     p : array_like
-        Probability
+        Probability; must satisfy ``0 <= p < 1``
     nc : array_like
-        Non-centrality parameter
+        Non-centrality parameter; must satisfy ``nc >= 0``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -1931,15 +1979,17 @@ add_newdoc("chndtrinc",
 
     Inverse to `chndtr` vs `nc`
 
+    Calculated using a search to find a value for `df` that produces the
+    desired value of `p`.
 
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral
+        Upper bound of the integral; must satisfy ``x >= 0``
     df : array_like
-        Degrees of freedom
+        Degrees of freedom; must satisfy ``df > 0``
     p : array_like
-        Probability
+        Probability; must satisfy ``0 <= p < 1``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -9158,6 +9208,26 @@ add_newdoc("log_ndtr",
     scipy.stats.norm
     ndtr
 
+    Examples
+    --------
+    >>> from scipy.special import log_ndtr, ndtr
+
+    The benefit of ``log_ndtr(x)`` over the naive implementation
+    ``np.log(ndtr(x))`` is most evident with moderate to large positive
+    values of ``x``:
+
+    >>> x = np.array([6, 7, 9, 12, 15, 25])
+    >>> log_ndtr(x)
+    array([-9.86587646e-010, -1.27981254e-012, -1.12858841e-019,
+           -1.77648211e-033, -3.67096620e-051, -3.05669671e-138])
+
+    The results of the naive calculation for the moderate ``x`` values
+    have only 5 or 6 correct significant digits. For values of ``x``
+    greater than approximately 8.3, the naive expression returns 0:
+
+    >>> np.log(ndtr(x))
+    array([-9.86587701e-10, -1.27986510e-12,  0.00000000e+00,
+            0.00000000e+00,  0.00000000e+00,  0.00000000e+00])
     """)
 
 add_newdoc("ndtri",

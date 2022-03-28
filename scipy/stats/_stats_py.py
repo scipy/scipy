@@ -38,7 +38,8 @@ from numpy.lib import NumpyVersion
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
 from scipy._lib._util import (check_random_state, MapWrapper,
-                              rng_integers, float_factorial)
+                              rng_integers, _rename_parameter)
+
 import scipy.special as special
 from scipy import linalg
 from . import distributions
@@ -48,10 +49,12 @@ from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
                      _local_correlations)
 from dataclasses import make_dataclass
-from ._hypotests import _all_partitions, _batch_generator
+from ._hypotests import _all_partitions
 from ._hypotests_pythran import _compute_outer_prob_inside_method
+from ._resampling import _batch_generator
 from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
+from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
 
 
@@ -59,7 +62,7 @@ from scipy._lib._bunch import _make_tuple_bunch
 __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
-           'normaltest', 'jarque_bera', 'itemfreq',
+           'normaltest', 'jarque_bera',
            'scoreatpercentile', 'percentileofscore',
            'cumfreq', 'relfreq', 'obrientransform',
            'sem', 'zmap', 'zscore', 'gzscore', 'iqr', 'gstd',
@@ -1704,50 +1707,6 @@ def jarque_bera(x):
 #####################################
 #        FREQUENCY FUNCTIONS        #
 #####################################
-
-# deindent to work around numpy/gh-16202
-@np.deprecate(
-    message="`itemfreq` is deprecated and will be removed in a "
-            "future version. Use instead `np.unique(..., return_counts=True)`")
-def itemfreq(a):
-    """
-Return a 2-D array of item frequencies.
-
-Parameters
-----------
-a : (N,) array_like
-    Input array.
-
-Returns
--------
-itemfreq : (K, 2) ndarray
-    A 2-D frequency table.  Column 1 contains sorted, unique values from
-    `a`, column 2 contains their respective counts.
-
-Examples
---------
->>> from scipy import stats
->>> a = np.array([1, 1, 5, 0, 1, 2, 2, 0, 1, 4])
->>> stats.itemfreq(a)
-array([[ 0.,  2.],
-       [ 1.,  4.],
-       [ 2.,  2.],
-       [ 4.,  1.],
-       [ 5.,  1.]])
->>> np.bincount(a)
-array([2, 4, 2, 0, 1, 1])
-
->>> stats.itemfreq(a/10.)
-array([[ 0. ,  2. ],
-       [ 0.1,  4. ],
-       [ 0.2,  2. ],
-       [ 0.4,  1. ],
-       [ 0.5,  1. ]])
-
-"""
-    items, inv = np.unique(a, return_inverse=True)
-    freq = np.bincount(inv)
-    return np.array([items, freq]).T
 
 
 def scoreatpercentile(a, per, limit=(), interpolation_method='fraction',
@@ -4279,6 +4238,17 @@ def pearsonr(x, y, *, alternative='two-sided'):
 def fisher_exact(table, alternative='two-sided'):
     """Perform a Fisher exact test on a 2x2 contingency table.
 
+    The null hypothesis is that the true odds ratio of the populations
+    underlying the observations is one, and the observations were sampled
+    from these populations under a condition: the marginals of the
+    resulting table must equal those of the observed table. The statistic
+    returned is the unconditional maximum likelihood estimate of the odds
+    ratio, and the p-value is the probability under the null hypothesis of
+    obtaining a table at least as extreme as the one that was actually
+    observed. There are other possible choices of statistic and two-sided
+    p-value definition associated with Fisher's exact test; please see the
+    Notes for more information.
+
     Parameters
     ----------
     table : array_like of ints
@@ -4287,9 +4257,10 @@ def fisher_exact(table, alternative='two-sided'):
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-        * 'two-sided'
-        * 'less': one-sided
-        * 'greater': one-sided
+        * 'two-sided': the odds ratio of the underlying population is not one
+        * 'less': the odds ratio of the underlying population is less than one
+        * 'greater': the odds ratio of the underlying population is greater
+          than one
 
         See the Notes for more details.
 
@@ -4298,9 +4269,8 @@ def fisher_exact(table, alternative='two-sided'):
     oddsratio : float
         This is prior odds ratio and not a posterior estimate.
     p_value : float
-        P-value, the probability of obtaining a distribution at least as
-        extreme as the one that was actually observed, assuming that the
-        null hypothesis is true.
+        P-value, the probability under the null hypothesis of obtaining a
+        table at least as extreme as the one that was actually observed.
 
     See Also
     --------
@@ -4316,7 +4286,11 @@ def fisher_exact(table, alternative='two-sided'):
     -----
     *Null hypothesis and p-values*
 
-    The null hypothesis is that the input table is from the hypergeometric
+    The null hypothesis is that the true odds ratio of the populations
+    underlying the observations is one, and the observations were sampled at
+    random from these populations under a condition: the marginals of the
+    resulting table must equal those of the observed table. Equivalently,
+    the null hypothesis is that the input table is from the hypergeometric
     distribution with parameters (as used in `hypergeom`)
     ``M = a + b + c + d``, ``n = a + b`` and ``N = a + c``, where the
     input table is ``[[a, b], [c, d]]``.  This distribution has support
@@ -4453,46 +4427,8 @@ def fisher_exact(table, alternative='two-sided'):
     n2 = c[1, 0] + c[1, 1]
     n = c[0, 0] + c[1, 0]
 
-    def binary_search(n, n1, n2, side):
-        """Binary search for where to begin halves in two-sided test."""
-        if side == "upper":
-            minval = mode
-            maxval = n
-        else:
-            minval = 0
-            maxval = mode
-        guess = -1
-        while maxval - minval > 1:
-            if maxval == minval + 1 and guess == minval:
-                guess = maxval
-            else:
-                guess = (maxval + minval) // 2
-            pguess = hypergeom.pmf(guess, n1 + n2, n1, n)
-            if side == "upper":
-                ng = guess - 1
-            else:
-                ng = guess + 1
-            if pguess <= pexact < hypergeom.pmf(ng, n1 + n2, n1, n):
-                break
-            elif pguess < pexact:
-                maxval = guess
-            else:
-                minval = guess
-        if guess == -1:
-            guess = minval
-        if side == "upper":
-            while guess > 0 and \
-                    hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
-                guess -= 1
-            while hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
-                guess += 1
-        else:
-            while hypergeom.pmf(guess, n1 + n2, n1, n) < pexact * epsilon:
-                guess += 1
-            while guess > 0 and \
-                    hypergeom.pmf(guess, n1 + n2, n1, n) > pexact / epsilon:
-                guess -= 1
-        return guess
+    def pmf(x):
+        return hypergeom.pmf(x, n1 + n2, n1, n)
 
     if alternative == 'less':
         pvalue = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
@@ -4504,23 +4440,25 @@ def fisher_exact(table, alternative='two-sided'):
         pexact = hypergeom.pmf(c[0, 0], n1 + n2, n1, n)
         pmode = hypergeom.pmf(mode, n1 + n2, n1, n)
 
-        epsilon = 1 - 1e-4
-        if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= 1 - epsilon:
+        epsilon = 1e-14
+        gamma = 1 + epsilon
+
+        if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= epsilon:
             return oddsratio, 1.
 
         elif c[0, 0] < mode:
             plower = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
-            if hypergeom.pmf(n, n1 + n2, n1, n) > pexact / epsilon:
+            if hypergeom.pmf(n, n1 + n2, n1, n) > pexact * gamma:
                 return oddsratio, plower
 
-            guess = binary_search(n, n1, n2, "upper")
-            pvalue = plower + hypergeom.sf(guess - 1, n1 + n2, n1, n)
+            guess = _binary_search(lambda x: -pmf(x), -pexact * gamma, mode, n)
+            pvalue = plower + hypergeom.sf(guess, n1 + n2, n1, n)
         else:
             pupper = hypergeom.sf(c[0, 0] - 1, n1 + n2, n1, n)
-            if hypergeom.pmf(0, n1 + n2, n1, n) > pexact / epsilon:
+            if hypergeom.pmf(0, n1 + n2, n1, n) > pexact * gamma:
                 return oddsratio, pupper
 
-            guess = binary_search(n, n1, n2, "lower")
+            guess = _binary_search(pmf, pexact * gamma, 0, mode)
             pvalue = pupper + hypergeom.cdf(guess, n1 + n2, n1, n)
     else:
         msg = "`alternative` should be one of {'two-sided', 'less', 'greater'}"
@@ -7156,7 +7094,8 @@ def _compute_dminus(cdfvals):
     return (cdfvals - np.arange(0.0, n)/n).max()
 
 
-def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def ks_1samp(x, cdf, args=(), alternative='two-sided', method='auto'):
     """
     Performs the one-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7175,7 +7114,7 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+    method : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7261,6 +7200,8 @@ def ks_1samp(x, cdf, args=(), alternative='two-sided', mode='auto'):
     hypothesis in favor of the alternative.
 
     """
+    mode = method
+
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
         alternative.lower()[0], alternative)
     if alternative not in ['two-sided', 'greater', 'less']:
@@ -7472,7 +7413,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     return True, d, prob
 
 
-def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
     """
     Performs the two-sample Kolmogorov-Smirnov test for goodness of fit.
 
@@ -7488,7 +7430,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'asymp'}, optional
+    method : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7531,7 +7473,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     If the KS statistic is small or the p-value is high, then we cannot
     reject the null hypothesis in favor of the alternative.
 
-    If the mode is 'auto', the computation is exact if the sample sizes are
+    If the method is 'auto', the computation is exact if the sample sizes are
     less than 10000.  For larger sizes, the computation uses the
     Kolmogorov-Smirnov distributions to compute an approximate value.
 
@@ -7595,6 +7537,8 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
     hypothesis in favor of the alternative.
 
     """
+    mode = method
+
     if mode not in ['auto', 'exact', 'asymp']:
         raise ValueError(f'Invalid value for mode: {mode}')
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
@@ -7644,7 +7588,7 @@ def ks_2samp(data1, data2, alternative='two-sided', mode='auto'):
             mode = 'asymp'
             if original_mode == 'exact':
                 warnings.warn(f"ks_2samp: Exact calculation unsuccessful. "
-                              f"Switching to mode={mode}.", RuntimeWarning)
+                              f"Switching to method={mode}.", RuntimeWarning)
 
     if mode == 'asymp':
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
@@ -7694,7 +7638,8 @@ def _parse_kstest_args(data1, data2, args, N):
     return data1, data2, cdf
 
 
-def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', method='auto'):
     """
     Performs the (one-sample or two-sample) Kolmogorov-Smirnov test for
     goodness of fit.
@@ -7728,7 +7673,7 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the null and alternative hypotheses. Default is 'two-sided'.
         Please see explanations in the Notes below.
-    mode : {'auto', 'exact', 'approx', 'asymp'}, optional
+    method : {'auto', 'exact', 'approx', 'asymp'}, optional
         Defines the distribution used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -7842,8 +7787,8 @@ def kstest(rvs, cdf, args=(), N=20, alternative='two-sided', mode='auto'):
     xvals, yvals, cdf = _parse_kstest_args(rvs, cdf, args, N)
     if cdf:
         return ks_1samp(xvals, cdf, args=args, alternative=alternative,
-                        mode=mode)
-    return ks_2samp(xvals, yvals, alternative=alternative, mode=mode)
+                        method=method)
+    return ks_2samp(xvals, yvals, alternative=alternative, method=method)
 
 
 def tiecorrect(rankvals):
@@ -8287,6 +8232,13 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
         df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
         df = df_numer / df_denom
+
+        if (df_numer == 0) and (df_denom == 0):
+            message = ("p-value cannot be estimated with `distribution='t' "
+                       "because degrees of freedom parameter is undefined "
+                       "(0/0). Try using `distribution='normal'")
+            warnings.warn(message, RuntimeWarning)
+
         p = distributions.t.cdf(wbfn, df)
     elif distribution == "normal":
         p = distributions.norm.cdf(wbfn)
@@ -8567,6 +8519,10 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
     independent random variables whose probability distribution is :math:`u`
     (resp. :math:`v`).
 
+    Sometimes the square of this quantity is referred to as the "energy
+    distance" (e.g. in [2]_, [4]_), but as noted in [1]_ and [3]_, only the
+    definition above satisfies the axioms of a distance function (metric).
+
     As shown in [2]_, for one-dimensional real-valued variables, the energy
     distance is linked to the non-distribution-free version of the Cramér-von
     Mises distance:
@@ -8587,12 +8543,12 @@ def energy_distance(u_values, v_values, u_weights=None, v_weights=None):
 
     References
     ----------
-    .. [1] "Energy distance", https://en.wikipedia.org/wiki/Energy_distance
+    .. [1] Rizzo, Szekely "Energy distance." Wiley Interdisciplinary Reviews:
+           Computational Statistics, 8(1):27-38 (2015).
     .. [2] Szekely "E-statistics: The energy of statistical samples." Bowling
            Green State University, Department of Mathematics and Statistics,
            Technical Report 02-16 (2002).
-    .. [3] Rizzo, Szekely "Energy distance." Wiley Interdisciplinary Reviews:
-           Computational Statistics, 8(1):27-38 (2015).
+    .. [3] "Energy distance", https://en.wikipedia.org/wiki/Energy_distance
     .. [4] Bellemare, Danihelka, Dabney, Mohamed, Lakshminarayanan, Hoyer,
            Munos "The Cramer Distance as a Solution to Biased Wasserstein
            Gradients" (2017). :arXiv:`1705.10743`.
