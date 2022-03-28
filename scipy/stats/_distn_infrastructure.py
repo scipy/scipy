@@ -1075,8 +1075,10 @@ class rv_generic:
         cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not np.all(cond):
             message = ("Domain error in arguments. The `scale` parameter must "
-                       "be positive for all distributions; see the "
-                       "distribution documentation for other restrictions.")
+                       "be positive for all distributions, and many "
+                       "distributions have restrictions on shape parameters. "
+                       f"Please see the `scipy.stats.{self.name}` "
+                       "documentation for details.")
             raise ValueError(message)
 
         if np.all(scale == 0):
@@ -2885,6 +2887,13 @@ class rv_continuous(rv_generic):
         finite. For example ``cauchy(0).mean()`` returns ``np.nan`` and
         ``cauchy(0).expect()`` returns ``0.0``.
 
+        Likewise, the accuracy of results is not verified by the function.
+        `scipy.integrate.quad` is typically reliable for integrals that are
+        numerically favorable, but it is not guaranteed to converge
+        to a correct value for all possible intervals and integrands. This
+        function is provided for convenience; for critical applications,
+        check results against other integration methods.
+
         The function is not vectorized.
 
         Examples
@@ -2922,15 +2931,26 @@ class rv_continuous(rv_generic):
             lb = loc + _a * scale
         if ub is None:
             ub = loc + _b * scale
-        if conditional:
-            invfac = (self.sf(lb, *args, **lockwds)
-                      - self.sf(ub, *args, **lockwds))
-        else:
-            invfac = 1.0
+
+        cdf_bounds = self.cdf([lb, ub], *args, **lockwds)
+        invfac = cdf_bounds[1] - cdf_bounds[0]
+
         kwds['args'] = args
-        # Silence floating point warnings from integration.
-        with np.errstate(all='ignore'):
-            vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+
+        # split interval to help integrator w/ infinite support; see gh-8928
+        alpha = 0.05  # split body from tails at probability mass `alpha`
+        inner_bounds = np.array([alpha, 1-alpha])
+        cdf_inner_bounds = cdf_bounds[0] + invfac * inner_bounds
+        c, d = loc + self._ppf(cdf_inner_bounds, *args) * scale
+
+        # Do not silence warnings from integration.
+        lbc = integrate.quad(fun, lb, c, **kwds)[0]
+        cd = integrate.quad(fun, c, d, **kwds)[0]
+        dub = integrate.quad(fun, d, ub, **kwds)[0]
+        vals = (lbc + cd + dub)
+
+        if conditional:
+            vals /= invfac
         return vals
 
     def _param_info(self):

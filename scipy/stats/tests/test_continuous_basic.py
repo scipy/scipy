@@ -248,8 +248,8 @@ def test_levy_stable_random_state_property():
 
 
 def cases_test_moments():
-    fail_normalization = set(['vonmises'])
-    fail_higher = set(['vonmises', 'ncf'])
+    fail_normalization = set()
+    fail_higher = set(['ncf'])
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
@@ -286,19 +286,23 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
     with npt.suppress_warnings() as sup:
         sup.filter(IntegrationWarning,
                    "The integral is probably divergent, or slowly convergent.")
+        sup.filter(IntegrationWarning,
+                   "The maximum number of subdivisions.")
+
         if is_xfailing:
             sup.filter(IntegrationWarning)
 
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
-        if normalization_ok:
-            check_normalization(distfn, arg, distname)
+        with np.errstate(all="ignore"):
+            if normalization_ok:
+                check_normalization(distfn, arg, distname)
 
-        if higher_ok:
-            check_mean_expect(distfn, arg, m, distname)
-            check_skew_expect(distfn, arg, m, v, s, distname)
-            check_var_expect(distfn, arg, m, v, distname)
-            check_kurt_expect(distfn, arg, m, v, k, distname)
+            if higher_ok:
+                check_mean_expect(distfn, arg, m, distname)
+                check_skew_expect(distfn, arg, m, v, s, distname)
+                check_var_expect(distfn, arg, m, v, distname)
+                check_kurt_expect(distfn, arg, m, v, k, distname)
 
         check_moment(distfn, arg, m, v, distname)
 
