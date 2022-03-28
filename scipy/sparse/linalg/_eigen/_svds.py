@@ -186,7 +186,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     -----
     This is a naive implementation using ARPACK or LOBPCG as an eigensolver
     on ``A.conj().T @ A`` or ``A @ A.conj().T``, depending on which one is more
-    efficient, followed by the Rayleigh–Ritz method as postprocessing; see
+    efficient, followed by the Rayleigh-Ritz method as postprocessing; see
     https://bit.ly/3LprcUa
 
     Alternatively, the PROPACK solver can be called.
