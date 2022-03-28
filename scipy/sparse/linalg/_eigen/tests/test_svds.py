@@ -2,7 +2,6 @@ import re
 import copy
 import numpy as np
 
-from numpy.random import random_sample
 from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
@@ -652,7 +651,8 @@ class SVDSCommonTests:
     def test_small_sigma(self, shape, dtype):
         if dtype == complex and self.solver == 'propack':
             return
-        A = random_sample(shape).astype(dtype)
+        rng = np.random.default_rng(179847540)
+        A = rng.random(shape, dtype= dtype)
         u, s, vh = svd(A, full_matrices=False)
         if dtype == np.float32:
             e = 10.0
