@@ -10,7 +10,7 @@ The CLI is ideal for project contributors while,
 doit interface is better suited for authring the development tasks.
 
 Note this requires the unreleased doit 0.35.
-And also PyPI packages: click, rich, rich-click
+And also PyPI packages: click, rich, rich-click(1.3.0)
 
 
 # USAGE:
@@ -103,6 +103,7 @@ First milestone replace dev.py
 commands:
 - [ ] lcov_html
 - [ ] bench
+- [ ] --bench-compare
 
 cleanup + doit:
 - [ ] move out non-scipy code
