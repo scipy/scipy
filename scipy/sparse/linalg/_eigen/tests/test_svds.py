@@ -6,7 +6,7 @@ from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
 from scipy.linalg import hilbert, svd
-from scipy.sparse import csc_matrix, isspmatrix
+from scipy.sparse import csc_matrix, isspmatrix, spdiags
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg import svds
 from scipy.sparse.linalg._eigen.arpack import ArpackNoConvergence
@@ -591,6 +591,32 @@ class SVDSCommonTests:
                     assert_allclose(np.dot(U1, np.dot(np.diag(s1), VH1)),
                                     np.dot(U2, np.dot(np.diag(s2), VH2)),
                                     rtol=eps)
+
+    REAL_DTYPES = {np.single, np.double, np.longdouble}
+    COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
+    # use sorted tuple to ensure fixed order of tests
+    DTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+    SHAPES = ((100, 100), (100, 101), (101, 100))
+    SOLVERS = {'arpack', 'lobpcg', 'propack'}
+
+    @pytest.mark.parametrize("shape", SHAPES)
+    @pytest.mark.parametrize("dtype", DTYPES)
+    def test_small_sigma_sparse(self, shape, dtype):
+        solver=self.solver
+        if dtype in COMPLEX_DTYPES and solver == 'propack':
+            return
+        rng = np.random.default_rng(0)
+        k = 5
+        S = random(shape[0], shape[1], density=0.1, random_state=rng)
+        if dtype in COMPLEX_DTYPES:
+            S = + 1j * random(shape[0], shape[1], density=0.1, random_state=rng)
+        e = np.ones(shape[0])
+        e[0:5] *= 10.0**np.arange(-10, 0, 2)
+        S = spdiags(e, 0, shape[0], shape[0])@S
+        S = S.astype(dtype)
+        _, s, _ = sorted_svd(S, k, 'SM')
+        _, sS, _ = svds(S, k, which='SM', solver=solver, maxiter=1000)
+        assert_array_equal(s, sS)
 
     # --- Test Edge Cases ---
     # Checks a few edge cases.
