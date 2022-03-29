@@ -71,9 +71,18 @@ class TestConstructUtils:
                                                  [0, 0,13, 0, 0],
                                                  [1, 0, 0,14, 0],
                                                  [0, 2, 0, 0,15]]))
+        cases.append((diags3, [-1, 1, 2], len(diags3[0]), len(diags3[0]),
+                      [[0, 7, 13, 0, 0],
+                       [1, 0, 8, 14, 0],
+                       [0, 2, 0, 9, 15],
+                       [0, 0, 3, 0, 10],
+                       [0, 0, 0, 4, 0]]))
 
         for d, o, m, n, result in cases:
+            if len(d[0]) == m and m == n:
+                assert_equal(construct.spdiags(d, o).toarray(), result)
             assert_equal(construct.spdiags(d, o, m, n).toarray(), result)
+            assert_equal(construct.spdiags(d, o, (m, n)).toarray(), result)
 
     def test_diags(self):
         a = array([1, 2, 3, 4, 5])
