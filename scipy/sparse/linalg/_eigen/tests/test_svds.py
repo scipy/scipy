@@ -698,7 +698,7 @@ class SVDSCommonTests:
         u, s, vh = svds(A, k, solver=self.solver)
         t = np.sum(s > 0)
         assert_equal(t, k)
-        # _check_svds(A, k, u, s, vh, which="SM", atol=1e-10, rtol=1e-7)
+        _check_svds(A, k, u, s, vh, atol=1e-10, rtol=1e-7)
 
 # --- Perform tests with each solver ---
 
