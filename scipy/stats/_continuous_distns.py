@@ -7177,11 +7177,11 @@ rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
 
 
 def raise_deprecation_warning():
-    # message = ("Distribution `loguniform`/`reciprocal` is over-parameterized "
-    #             "and therefore deprecated in favor of `log_uniform`, which "
-    #             "has a new parameterization. In SciPy 1.11.0, `loguniform` and "
-    #             "`reciprocal` will become aliases for (and adopt the "
-    #             "parameterization of) `log_uniform`")
+    # message = ("Distribution `loguniform`/`reciprocal` is "
+    #            "over-parameterized and therefore deprecated in favor of  "
+    #            "`log_uniform`, which has a new parameterization. In SciPy "
+    #            "1.11.0, `loguniform` and `reciprocal` will become aliases "
+    #            "for (and adopt the parameterization of) `log_uniform`")
     # warnings.warn(message, DeprecationWarning, stacklevel=5)
     pass
 
@@ -7190,10 +7190,10 @@ class reciprocal_gen(rv_continuous):
     r"""A loguniform or reciprocal continuous random variable.
 
     .. deprecated:: 1.9.0
-            Distribution `loguniform`/`reciprocal` is over-parameterized
+            Distribution `loguniform` is over-parameterized
            and therefore deprecated in favor of `log_uniform`, which
-           has a new parameterization. In SciPy 1.11.0, `loguniform` and
-           `reciprocal` will become aliases for (and adopt the
+           has a new parameterization. In SciPy 1.11.0, `loguniform`
+           will become aliases for (and adopt the
            parameterization of) `log_uniform`
 
     %(before_notes)s
@@ -7300,7 +7300,7 @@ class log_uniform_gen(rv_continuous):
 
     This distribution is more commonly parameterized in terms of two shape
     parameters :math:`a` and :math:`b`, which define the support of the
-    distribution. Indeed, this is how `loguniform` and `reciprocal` (distinct
+    distribution. Indeed, this is how `loguniform` (distinct
     from `log_uniform`) were parameterizd. However, SciPy distributions also
     accept location and scale parameters `loc` and `scale`, over-parameterizing
     the distribution and thereby complicating fitting the distribution to data.
@@ -7364,7 +7364,7 @@ class log_uniform_gen(rv_continuous):
     def _pdf(self, x, c):
         return 1.0 / (x * np.log(c))
 
-    def _logpdf(self, x,c):
+    def _logpdf(self, x, c):
         return -np.log(x) - np.log(np.log(c))
 
     def _cdf(self, x, c):
