@@ -7265,6 +7265,17 @@ class TestMGCStat:
         assert_approx_equal(stat_dist, 0.163, significant=1)
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
 
+    @pytest.mark.slow
+    def test_pvalue_literature(self):
+        np.random.seed(12345678)
+
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type="linear")
+
+        # test stat and pvalue
+        _, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
+        assert_approx_equal(pvalue, 0.000999000999000999, significant=4)
+
 
 class TestPageTrendTest:
     # expected statistic and p-values generated using R at
