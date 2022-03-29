@@ -388,6 +388,22 @@ def test_bootstrap_gh15678(method):
     assert isinstance(res.standard_error, np.float64)
 
 
+def test_bootstrap_min():
+    # Check that gh-15883 is fixed: percentileofscore should
+    # behave according to the 'mean' behavior and not trigger nan for BCa
+    rng = np.random.default_rng(1891289180021102)
+    dist = stats.norm(loc=2, scale=4)
+    data = dist.rvs(size=100, random_state=rng)
+    true_min = np.min(data)
+    data = (data,)
+    res = bootstrap(data, np.min, method="BCa", n_resamples=100,
+                    random_state=np.random.default_rng(3942))
+    assert true_min == res.confidence_interval.low
+    assert isinstance(res.confidence_interval.low, np.float64)
+    assert isinstance(res.confidence_interval.high, np.float64)
+    assert isinstance(res.standard_error, np.float64)
+
+
 def test_jackknife_resample():
     shape = 3, 4, 5, 6
     np.random.seed(0)
