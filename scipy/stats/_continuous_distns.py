@@ -7176,8 +7176,25 @@ class rayleigh_gen(rv_continuous):
 rayleigh = rayleigh_gen(a=0.0, name="rayleigh")
 
 
+def raise_deprecation_warning():
+    # message = ("Distribution `loguniform`/`reciprocal` is over-parameterized "
+    #             "and therefore deprecated in favor of `log_uniform`, which "
+    #             "has a new parameterization. In SciPy 1.11.0, `loguniform` and "
+    #             "`reciprocal` will become aliases for (and adopt the "
+    #             "parameterization of) `log_uniform`")
+    # warnings.warn(message, DeprecationWarning, stacklevel=5)
+    pass
+
+
 class reciprocal_gen(rv_continuous):
     r"""A loguniform or reciprocal continuous random variable.
+
+    .. deprecated:: 1.9.0
+            Distribution `loguniform`/`reciprocal` is over-parameterized
+           and therefore deprecated in favor of `log_uniform`, which
+           has a new parameterization. In SciPy 1.11.0, `loguniform` and
+           `reciprocal` will become aliases for (and adopt the
+           parameterization of) `log_uniform`
 
     %(before_notes)s
 
@@ -7228,6 +7245,7 @@ class reciprocal_gen(rv_continuous):
 
     """
     def _argcheck(self, a, b):
+        raise_deprecation_warning()
         return (a > 0) & (b > a)
 
     def _shape_info(self):
