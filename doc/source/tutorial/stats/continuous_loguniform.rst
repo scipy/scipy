@@ -4,10 +4,15 @@
 Log-Uniform Distribution
 ========================
 
-This random variable is log-uniform. That is, if ``loguniform(10**-1, 10**1)``
-is specified, ``0.1``, ``1``, ``10`` are all equally likely.
+As the name implies, this random variable is log-uniform. That is, if
+``log_uniform(10**2)`` is specified, then ``1``, ``10``, ``100`` are all
+equally likely.
 
-There are two shape parameters :math:`a,b>0` and the support is :math:`x\in\left[a,b\right]`.
+In the SciPy implementation, there is one shape parameters :math:`c>1` and a
+scale parameter :math:`\sigma>0`. However, the more common parameterization is
+in terms of two shape parameters :math:`b > a > 0`. Let :math:`a = \sigma` and
+:math:`b = c\sigma`. Then the support is :math:`x\in\left[a,b\right]`, and the
+essential functions and moments are as follows.
 
 .. math::
    :nowrap:

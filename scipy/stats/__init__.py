@@ -114,6 +114,7 @@ Continuous distributions
    loglaplace        -- Log-Laplace (Log Double Exponential)
    lognorm           -- Log-Normal
    loguniform        -- Log-Uniform
+   log_uniform       -- Log-Uniform
    lomax             -- Lomax (Pareto of the second kind)
    maxwell           -- Maxwell
    mielke            -- Mielke's Beta-Kappa
