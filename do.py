@@ -390,10 +390,10 @@ rich_click.COMMAND_GROUPS = {
 CONTEXT = Context({
     'build_dir': Option(
         ['--build-dir'], default='build', metavar='BUILD_DIR', show_default=True,
-        help='🔧 Relative path to the build directory.'),
+        help=':wrench: Relative path to the build directory.'),
     'install_prefix': Option(
         ['--install-prefix'], default=None, metavar='INSTALL_DIR',
-        help="🔧 Relative path to the install directory. Default is <build-dir>-install."),
+        help=":wrench: Relative path to the install directory. Default is <build-dir>-install."),
 })
 
 
@@ -454,7 +454,7 @@ def get_site_dir():
 
 @cli.cls_cmd('build')
 class Build(Task):
-    """🔧 build & install package on path"""
+    """:wrench: build & install package on path"""
     ctx = CONTEXT
 
     werror = Option(['--werror'], default=False, is_flag=True, help="Treat warnings as errors")
@@ -499,7 +499,7 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 @cli.cls_cmd('test')
 class Test(Task):
-    """🔧 Run tests
+    """:wrench: Run tests
 
     Examples:
 
@@ -652,7 +652,7 @@ class Pep8():
 
 @cli.cls_cmd('mypy')
 class Mypy(Task):
-    """🔧 Run mypy on the codebase"""
+    """:wrench: Run mypy on the codebase"""
     ctx = CONTEXT
 
     TASK_META = {
@@ -703,7 +703,7 @@ class Mypy(Task):
 
 @cli.cls_cmd('doc')
 class Doc(Task):
-    """🔧 Build documentation"""
+    """:wrench: Build documentation"""
     ctx = CONTEXT
 
     # FIXME
@@ -732,7 +732,7 @@ class Doc(Task):
 
 @cli.cls_cmd('refguide-check')
 class RefguideCheck(Task):
-    """🔧 Run refguide check (do not run regular tests.)"""
+    """:wrench: Run refguide check (do not run regular tests.)"""
     ctx = CONTEXT
 
     submodule = Option(
@@ -766,7 +766,7 @@ class RefguideCheck(Task):
 @click.argument('extra_argv', nargs=-1)
 @click.pass_obj
 def python(ctx_obj, extra_argv):
-    """🔧 Start a Python shell with PYTHONPATH set"""
+    """:wrench: Start a Python shell with PYTHONPATH set"""
     # not a doit task - manually build
     vals = Build.opt_defaults()
     vals.update(ctx_obj)
@@ -789,7 +789,7 @@ def python(ctx_obj, extra_argv):
 @cli.command()
 @click.pass_obj
 def ipython(ctx_obj):
-    """🔧 Start IPython shell with PYTHONPATH set"""
+    """:wrench: Start IPython shell with PYTHONPATH set"""
     # not a doit task - manually build
     vals = Build.opt_defaults()
     vals.update(ctx_obj)
@@ -803,7 +803,7 @@ def ipython(ctx_obj):
 @click.argument('extra_argv', nargs=-1)
 @click.pass_obj
 def shell(ctx_obj, extra_argv):
-    """🔧 Start Unix shell with PYTHONPATH set"""
+    """:wrench: Start Unix shell with PYTHONPATH set"""
     # not a doit task - manually build
     vals = Build.opt_defaults()
     vals.update(ctx_obj)
@@ -819,7 +819,7 @@ def shell(ctx_obj, extra_argv):
 @click.argument('version_args', nargs=2)
 @click.pass_obj
 def notes(ctx_obj, version_args):
-    """📒 Release notes and log generation"""
+    """:ledger: Release notes and log generation"""
     if version_args:
         sys.argv = version_args
         log_start = sys.argv[0]
@@ -836,7 +836,7 @@ def notes(ctx_obj, version_args):
 @click.argument('revision_args', nargs=2)
 @click.pass_obj
 def authors(ctx_obj, revision_args):
-    """📒 Task to generate list the authors who contributed within a given revision interval"""
+    """:ledger: Task to generate list the authors who contributed within a given revision interval"""
     if revision_args:
         sys.argv = revision_args
         start_revision = sys.argv[0]
