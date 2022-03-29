@@ -598,6 +598,7 @@ class SVDSCommonTests:
     DTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
     SHAPES = ((100, 100), (100, 101), (101, 100))
 
+    @pytest.mark.filterwarnings("ignore:Exited at iteration")
     @pytest.mark.parametrize("shape", SHAPES)
     # @pytest.mark.parametrize("dtype", DTYPES)
     @pytest.mark.parametrize("dtype", REAL_DTYPES)
@@ -610,16 +611,16 @@ class SVDSCommonTests:
             pytest.skip("PROPACK failures unrelated to PR")
         rng = np.random.default_rng(0)
         k = 5
-        S = random(shape[0], shape[1], density=0.1, random_state=rng)
+        (m, n) = shape
+        S = random(m, n, density=0.1, random_state=rng)
         # if dtype in COMPLEX_DTYPES:
-        #     S = + 1j * random(shape[0], shape[1], density=0.1, random_state=rng)
+        #     S = + 1j * random(m, n, density=0.1, random_state=rng)
         e = np.ones(shape[0])
-        e[0:5] *= 10.0**np.arange(-10, 0, 2)
-        S = spdiags(e, 0, shape[0], shape[0])@S
+        e[0:5] *= 1e1 ** np.arange(-10, 0, 2)
+        S = spdiags(e, 0, m, n) @ S
         S = S.astype(dtype)
-        _, s, _ = sorted_svd(S, k, 'SM')
-        _, sS, _ = svds(S, k, which='SM', solver=solver, maxiter=1000)
-        assert_array_equal(s, sS, atol=1e-5, rtol=1e-5)
+        u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000)
+        _check_svds(A, k, u, s, vh, which="SM", atol=1e-8, rtol=1e-6)
 
     # --- Test Edge Cases ---
     # Checks a few edge cases.
@@ -683,17 +684,18 @@ class SVDSCommonTests:
             pytest.skip("PROPACK unsupported for complex dtype")
         rng = np.random.default_rng(179847540)
         A = rng.random(shape).astype(dtype)
-        u, s, vh = svd(A, full_matrices=False)
+        u, _, vh = svd(A, full_matrices=False)
         if dtype == np.float32:
             e = 10.0
         else:
             e = 100.0
-        t = e**(-np.arange(len(s))).astype(dtype)
+        t = e**(-np.arange(len(vh))).astype(dtype)
         A = (u*t).dot(vh)
         k = 4
-        u, s, vh = svds(A, k, solver=self.solver)
+        u, s, vh = svds(A, k, solver=self.solver, which="SM")
         t = np.sum(s > 0)
         assert_equal(t, k)
+        _check_svds(A, k, u, s, vh, which="SM", atol=1e-10, rtol=1e-7)
 
 # --- Perform tests with each solver ---
 
