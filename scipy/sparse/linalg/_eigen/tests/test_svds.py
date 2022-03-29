@@ -604,8 +604,8 @@ class SVDSCommonTests:
     def test_small_sigma_sparse(self, shape, dtype):
         # https://github.com/scipy/scipy/pull/11829
         solver = self.solver
-        if dtype == float128 and solver == 'arpack':
-            pytest.skip("ARPACK unsupported for float128")
+        if dtype == np.longdouble and solver == 'arpack':
+            pytest.skip("ARPACK unsupported float128 (longdouble)")
         if solver == 'propack':
             pytest.skip("PROPACK failures unrelated to PR")
         rng = np.random.default_rng(0)
