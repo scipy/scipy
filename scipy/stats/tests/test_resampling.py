@@ -399,9 +399,10 @@ def test_bootstrap_min():
     res = bootstrap(data, np.min, method="BCa", n_resamples=100,
                     random_state=np.random.default_rng(3942))
     assert true_min == res.confidence_interval.low
-    assert isinstance(res.confidence_interval.low, np.float64)
-    assert isinstance(res.confidence_interval.high, np.float64)
-    assert isinstance(res.standard_error, np.float64)
+    res2 = bootstrap(-np.array(data), np.max, method="BCa", n_resamples=100,
+                     random_state=np.random.default_rng(3942))
+    assert_allclose(-res.confidence_interval.low, res2.confidence_interval.high)
+    assert_allclose(-res.confidence_interval.high, res2.confidence_interval.low)
 
 
 def test_jackknife_resample():
