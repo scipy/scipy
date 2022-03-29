@@ -382,7 +382,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "release",
-            "commands": ["notes"],
+            "commands": ["notes", "authors"],
         },
     ]
 }
@@ -832,6 +832,22 @@ def notes(ctx_obj, version_args):
     except subprocess.CalledProcessError:
         print('Error caught: Incorrect log start or log end version')
 
+
+@cli.command()
+@click.argument('revision_args', nargs=2)
+@click.pass_obj
+def authors(ctx_obj, revision_args):
+    """:ledger: Task to generate list the authors who contributed within a given revision interval"""
+    if revision_args:
+        sys.argv = revision_args
+        start_revision = sys.argv[0]
+        end_revision = sys.argv[1]
+    cmd = f"python tools/authors.py v{start_revision}..v{end_revision}"
+    click.echo(cmd)
+    try:
+        subprocess.run([cmd], check = True, shell=True)
+    except subprocess.CalledProcessError:
+        print('Error caught: Incorrect revision start or revision end')
 
 if __name__ == '__main__':
     cli()
