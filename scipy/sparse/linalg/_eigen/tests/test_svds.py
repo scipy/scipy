@@ -694,7 +694,8 @@ class SVDSCommonTests:
         t = e**(-np.arange(len(vh))).astype(dtype)
         A = (u*t).dot(vh)
         k = 4
-        u, s, vh = svds(A, k, solver=self.solver, which="SM")
+        # u, s, vh = svds(A, k, solver=self.solver, which="SM")
+        u, s, vh = svds(A, k, solver=self.solver)
         t = np.sum(s > 0)
         assert_equal(t, k)
         # _check_svds(A, k, u, s, vh, which="SM", atol=1e-10, rtol=1e-7)
