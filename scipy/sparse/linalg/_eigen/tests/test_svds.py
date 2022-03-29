@@ -619,7 +619,7 @@ class SVDSCommonTests:
         S = S.astype(dtype)
         _, s, _ = sorted_svd(S, k, 'SM')
         _, sS, _ = svds(S, k, which='SM', solver=solver, maxiter=1000)
-        assert_array_equal(s, sS, atol=1e-5, atol=1e-5)
+        assert_array_equal(s, sS, atol=1e-5, rtol=1e-5)
 
     # --- Test Edge Cases ---
     # Checks a few edge cases.
