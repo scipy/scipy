@@ -615,7 +615,108 @@ class Test(Task):
         args = Args(**kwargs)
         cls.scipy_tests(args)
 
+"""
+**********************Bench taks*************************
+Needs more work (WIP)
+"""
+@cli.cls_cmd('bench')
+class Bench(Task):
+    """:wrench: Run benchmarks
+    """
+    @staticmethod
+    def run_asv(cmd):
+        cwd = os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                           'benchmarks')
+        # Always use ccache, if installed
+        env = dict(os.environ)
+        env['PATH'] = os.pathsep.join(EXTRA_PATH +
+                                      env.get('PATH', '').split(os.pathsep))
+        # Control BLAS/LAPACK threads
+        env['OPENBLAS_NUM_THREADS'] = '1'
+        env['MKL_NUM_THREADS'] = '1'
 
+        # Limit memory usage
+        sys.path.insert(0, cwd)
+        from benchmarks.common import set_mem_rlimit
+        try:
+            set_mem_rlimit()
+        except (ImportError, RuntimeError):
+            pass
+
+        # Run
+        try:
+            return subprocess.call(cmd, env=env, cwd=cwd)
+        except OSError as err:
+            if err.errno == errno.ENOENT:
+                print("Error when running '%s': %s\n" % (" ".join(cmd), str(err),))
+                print("You need to install Airspeed Velocity (https://airspeed-velocity.github.io/asv/)")
+                print("to run Scipy benchmarks")
+                return 1
+            raise
+    @classmethod
+    def scipy_bench(cls, args):
+        # Run ASV
+        items = extra_argv
+        if args.tests:
+            items += args.tests
+        if args.submodule:
+            items += [args.submodule]
+
+        bench_args = []
+        for a in items:
+            bench_args.extend(['--bench', a])
+
+        if not args.bench_compare:
+            import scipy
+
+            print("Running benchmarks for Scipy version %s at %s"
+                  % (version, mod_path))
+            cmd = ['asv', 'run', '--dry-run', '--show-stderr',
+                   '--python=same'] + bench_args
+            retval = runtests.run_asv(cmd)
+            sys.exit(retval)
+        else:
+            if len(args.bench_compare) == 1:
+                commit_a = args.bench_compare[0]
+                commit_b = 'HEAD'
+            elif len(args.bench_compare) == 2:
+                commit_a, commit_b = args.bench_compare
+            else:
+                p.error("Too many commits to compare benchmarks for")
+
+            # Check for uncommitted files
+            if commit_b == 'HEAD':
+                r1 = subprocess.call(['git', 'diff-index', '--quiet',
+                                      '--cached', 'HEAD'])
+                r2 = subprocess.call(['git', 'diff-files', '--quiet'])
+                if r1 != 0 or r2 != 0:
+                    print("*" * 80)
+                    print("WARNING: you have uncommitted changes --- "
+                          "these will NOT be benchmarked!")
+                    print("*" * 80)
+
+            # Fix commit ids (HEAD is local to current repo)
+            p = subprocess.Popen(['git', 'rev-parse', commit_b],
+                                 stdout=subprocess.PIPE)
+            out, err = p.communicate()
+            commit_b = out.strip()
+
+            p = subprocess.Popen(['git', 'rev-parse', commit_a],
+                                 stdout=subprocess.PIPE)
+            out, err = p.communicate()
+            commit_a = out.strip()
+
+            cmd = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
+                   commit_a, commit_b] + bench_args
+            runtests.run_asv(cmd)
+            sys.exit(1)
+    @classmethod
+    def run(cls, **kwargs):
+        """run benchamark"""
+        kwargs.update(cls.ctx.get())
+        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        args = Args(**kwargs)
+        cls.scipy_bench(args)
 
 ###################
 #### linters
