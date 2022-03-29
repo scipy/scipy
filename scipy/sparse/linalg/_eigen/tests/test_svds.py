@@ -6,7 +6,7 @@ from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
 from scipy.linalg import hilbert, svd
-from scipy.sparse import csc_matrix, isspmatrix, spdiags
+from scipy.sparse import csc_matrix, isspmatrix, spdiags, random
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg import svds
 from scipy.sparse.linalg._eigen.arpack import ArpackNoConvergence
@@ -600,16 +600,17 @@ class SVDSCommonTests:
     SOLVERS = {'arpack', 'lobpcg', 'propack'}
 
     @pytest.mark.parametrize("shape", SHAPES)
-    @pytest.mark.parametrize("dtype", DTYPES)
+    # @pytest.mark.parametrize("dtype", DTYPES)
+    @pytest.mark.parametrize("dtype", REAL_DTYPES)
     def test_small_sigma_sparse(self, shape, dtype):
         solver=self.solver
-        if dtype in COMPLEX_DTYPES and solver == 'propack':
-            return
+        # if dtype in COMPLEX_DTYPES and solver == 'propack':
+        #     return
         rng = np.random.default_rng(0)
         k = 5
         S = random(shape[0], shape[1], density=0.1, random_state=rng)
-        if dtype in COMPLEX_DTYPES:
-            S = + 1j * random(shape[0], shape[1], density=0.1, random_state=rng)
+        # if dtype in COMPLEX_DTYPES:
+        #     S = + 1j * random(shape[0], shape[1], density=0.1, random_state=rng)
         e = np.ones(shape[0])
         e[0:5] *= 10.0**np.arange(-10, 0, 2)
         S = spdiags(e, 0, shape[0], shape[0])@S
