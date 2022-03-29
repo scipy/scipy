@@ -341,8 +341,7 @@ rich_click.STYLE_ERRORS_SUGGESTION = "yellow italic"
 rich_click.SHOW_ARGUMENTS = True
 rich_click.GROUP_ARGUMENTS_OPTIONS = False
 rich_click.SHOW_METAVARS_COLUMN = True
-rich_click.USE_RICH_MARKUP = True
-# rich_click.USE_MARKDOWN = True
+rich_click.USE_MARKDOWN = True
 rich_click.OPTION_GROUPS = {
     "do.py": [
         {
@@ -391,10 +390,10 @@ rich_click.COMMAND_GROUPS = {
 CONTEXT = Context({
     'build_dir': Option(
         ['--build-dir'], default='build', metavar='BUILD_DIR', show_default=True,
-        help=':wrench: Relative path to the build directory.'),
+        help='🔧 Relative path to the build directory.'),
     'install_prefix': Option(
         ['--install-prefix'], default=None, metavar='INSTALL_DIR',
-        help=":wrench: Relative path to the install directory. Default is <build-dir>-install."),
+        help="🔧 Relative path to the install directory. Default is <build-dir>-install."),
 })
 
 
@@ -408,7 +407,7 @@ def cli(ctx, **kwargs):
 
 
 
-    [bold]python do.py --build-dir my-build test -s stats[/bold]
+    **python do.py --build-dir my-build test -s stats**
     """
     ctx.ensure_object(dict)
     for opt_name in CONTEXT.options.keys():
@@ -455,7 +454,7 @@ def get_site_dir():
 
 @cli.cls_cmd('build')
 class Build(Task):
-    """:wrench: build & install package on path"""
+    """🔧 build & install package on path"""
     ctx = CONTEXT
 
     werror = Option(['--werror'], default=False, is_flag=True, help="Treat warnings as errors")
@@ -500,7 +499,7 @@ ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 @cli.cls_cmd('test')
 class Test(Task):
-    """:wrench: Run tests
+    """🔧 Run tests
 
     Examples:
 
@@ -653,7 +652,7 @@ class Pep8():
 
 @cli.cls_cmd('mypy')
 class Mypy(Task):
-    """:wrench: Run mypy on the codebase"""
+    """🔧 Run mypy on the codebase"""
     ctx = CONTEXT
 
     TASK_META = {
@@ -704,7 +703,7 @@ class Mypy(Task):
 
 @cli.cls_cmd('doc')
 class Doc(Task):
-    """:wrench: Build documentation"""
+    """🔧 Build documentation"""
     ctx = CONTEXT
 
     # FIXME
@@ -733,7 +732,7 @@ class Doc(Task):
 
 @cli.cls_cmd('refguide-check')
 class RefguideCheck(Task):
-    """:wrench: Run refguide check (do not run regular tests.)"""
+    """🔧 Run refguide check (do not run regular tests.)"""
     ctx = CONTEXT
 
     submodule = Option(
@@ -767,7 +766,7 @@ class RefguideCheck(Task):
 @click.argument('extra_argv', nargs=-1)
 @click.pass_obj
 def python(ctx_obj, extra_argv):
-    """:wrench: Start a Python shell with PYTHONPATH set"""
+    """🔧 Start a Python shell with PYTHONPATH set"""
     # not a doit task - manually build
     vals = Build.opt_defaults()
     vals.update(ctx_obj)
@@ -790,7 +789,7 @@ def python(ctx_obj, extra_argv):
 @cli.command()
 @click.pass_obj
 def ipython(ctx_obj):
-    """:wrench: Start IPython shell with PYTHONPATH set"""
+    """🔧 Start IPython shell with PYTHONPATH set"""
     # not a doit task - manually build
     vals = Build.opt_defaults()
     vals.update(ctx_obj)
@@ -804,7 +803,7 @@ def ipython(ctx_obj):
 @click.argument('extra_argv', nargs=-1)
 @click.pass_obj
 def shell(ctx_obj, extra_argv):
-    """:wrench: Start Unix shell with PYTHONPATH set"""
+    """🔧 Start Unix shell with PYTHONPATH set"""
     # not a doit task - manually build
     vals = Build.opt_defaults()
     vals.update(ctx_obj)
@@ -820,7 +819,7 @@ def shell(ctx_obj, extra_argv):
 @click.argument('version_args', nargs=2)
 @click.pass_obj
 def notes(ctx_obj, version_args):
-    """:ledger: Release notes and log generation"""
+    """📒 Release notes and log generation"""
     if version_args:
         sys.argv = version_args
         log_start = sys.argv[0]
@@ -837,7 +836,7 @@ def notes(ctx_obj, version_args):
 @click.argument('revision_args', nargs=2)
 @click.pass_obj
 def authors(ctx_obj, revision_args):
-    """:ledger: Task to generate list the authors who contributed within a given revision interval"""
+    """📒 Task to generate list the authors who contributed within a given revision interval"""
     if revision_args:
         sys.argv = revision_args
         start_revision = sys.argv[0]
