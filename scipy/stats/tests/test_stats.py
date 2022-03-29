@@ -7274,7 +7274,7 @@ class TestMGCStat:
 
         # test stat and pvalue
         _, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
-        assert_approx_equal(pvalue, 0.000999000999000999, significant=4)
+        assert_allclose(pvalue, 1/1001)
 
 
 class TestPageTrendTest:
