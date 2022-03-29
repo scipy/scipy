@@ -620,7 +620,7 @@ class SVDSCommonTests:
         S = spdiags(e, 0, m, n) @ S
         S = S.astype(dtype)
         u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000)
-        _check_svds(A, k, u, s, vh, which="SM", atol=1e-8, rtol=1e-6)
+        _check_svds(S.A, k, u, s, vh, which="SM", atol=1e-8, rtol=1e-6)
 
     # --- Test Edge Cases ---
     # Checks a few edge cases.
