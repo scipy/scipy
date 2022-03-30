@@ -19,6 +19,7 @@ time invariant systems.
 #   Split lti class into subclasses
 #   Merged discrete systems and added dlti
 
+from inspect import stack
 import warnings
 
 # np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
@@ -1766,6 +1767,10 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     Simulate output of a continuous-time linear system, by using
     the ODE solver `scipy.integrate.odeint`.
 
+    .. deprecated:: 1.9.0
+        Function `lsim2` is deprecated in favor of the faster `lsim` function.
+        `lsim2` will be removed in SciPy 1.x.0.
+
     Parameters
     ----------
     system : an instance of the `lti` class or a tuple describing the system.
@@ -1881,6 +1886,9 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     >>> plt.show()
 
     """
+    warnings.warn("lsim2 is deprecated and will be removed from scipy. "
+                  "Use the feature equivalent lsim function.", DeprecationWarning)
+
     if isinstance(system, lti):
         sys = system._as_ss()
     elif isinstance(system, dlti):
@@ -2274,6 +2282,10 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     """
     Impulse response of a single-input, continuous-time linear system.
 
+    .. deprecated:: 1.9.0
+        Function `impulse2` is deprecated in favor of the faster `impulse` function.
+        `impulse2` will be removed in SciPy 1.x.0.
+
     Parameters
     ----------
     system : an instance of the LTI class or a tuple of array_like
@@ -2335,6 +2347,9 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     >>> plt.plot(t, y)
 
     """
+    warnings.warn("impulse2 is deprecated and will be removed from scipy. "
+                  "Use the feature equivalent impulse function.", DeprecationWarning)
+
     if isinstance(system, lti):
         sys = system._as_ss()
     elif isinstance(system, dlti):
@@ -2356,7 +2371,9 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     # Move the impulse in the input to the initial conditions, and then
     # solve using lsim2().
     ic = B + X0
-    Tr, Yr, Xr = lsim2(sys, T=T, X0=ic, **kwargs)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        Tr, Yr, Xr = lsim2(sys, T=T, X0=ic, **kwargs)
     return Tr, Yr
 
 
@@ -2437,6 +2454,10 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     it uses the function `scipy.signal.lsim2` to compute the step
     response.
 
+    .. deprecated:: 1.9.0
+        Function `step2` is deprecated in favor of the faster `step` function.
+        `step2` will be removed in SciPy 1.x.0.
+
     Parameters
     ----------
     system : an instance of the LTI class or a tuple of array_like
@@ -2493,6 +2514,9 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     >>> plt.grid()
 
     """
+    warnings.warn("step2 is deprecated and will be removed from scipy. "
+                  "Use the feature equivalent step function.", DeprecationWarning)
+
     if isinstance(system, lti):
         sys = system._as_ss()
     elif isinstance(system, dlti):
@@ -2507,7 +2531,9 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     else:
         T = asarray(T)
     U = ones(T.shape, sys.A.dtype)
-    vals = lsim2(sys, U, T, X0=X0, **kwargs)
+    with warnings.catch_warnings():
+        warnings.simplefilter('ignore', DeprecationWarning)
+        vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]
 
 

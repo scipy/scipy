@@ -660,13 +660,16 @@ class _TestImpulseFuncs:
 
 
 class TestImpulse2(_TestImpulseFuncs):
-    def setup_method(self):
-        self.func = impulse2
+
+    def func(self, *args, **kwargs):
+        with warns(DeprecationWarning):
+            return impulse2(*args, **kwargs)
 
 
 class TestImpulse(_TestImpulseFuncs):
-    def setup_method(self):
-        self.func = impulse
+    
+    def func(self, *args, **kwargs):
+        return impulse(*args, **kwargs)
 
 
 class _TestStepFuncs:
@@ -737,8 +740,9 @@ class _TestStepFuncs:
 
 
 class TestStep2(_TestStepFuncs):
-    def setup_method(self):
-        self.func = step2
+    def func(self, *args, **kwargs):
+        with warns(DeprecationWarning):
+            return step2(*args, **kwargs)
 
     def test_05(self):
         # This test is almost the same as the one it overwrites in the base
@@ -754,8 +758,8 @@ class TestStep2(_TestStepFuncs):
 
 
 class TestStep(_TestStepFuncs):
-    def setup_method(self):
-        self.func = step
+    def func(self, *args, **kwargs):
+        return step(*args, **kwargs)
 
     def test_complex_input(self):
         # Test that complex input doesn't raise an error.
