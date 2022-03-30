@@ -380,7 +380,7 @@ class norm_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         if floc is None:
             loc = data.mean()
@@ -723,7 +723,7 @@ class beta_gen(rv_continuous):
         # the Wikipedia article on the Beta distribution for the formulas.)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         # Normalize the data to the interval [0, 1].
         data = (np.ravel(data) - floc) / fscale
@@ -1669,7 +1669,7 @@ class expon_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         data_min = data.min()
 
@@ -2991,7 +2991,7 @@ class gamma_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         if np.any(data <= floc):
             raise FitDataError("gamma", lower=floc, upper=np.inf)
@@ -4944,7 +4944,7 @@ def _check_fit_input_parameters(dist, data, args, kwds):
                            "optimize.")
 
     if not np.isfinite(data).all():
-        raise RuntimeError("The data contains non-finite values.")
+        raise ValueError("The data contains non-finite values.")
 
     return (data, *fshapes, floc, fscale)
 
@@ -5389,7 +5389,7 @@ class lognorm_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         floc = float(floc)
         if floc != 0:
@@ -8689,7 +8689,7 @@ class uniform_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         # MLE for the uniform distribution
         # --------------------------------
