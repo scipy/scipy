@@ -382,6 +382,10 @@ rich_click.COMMAND_GROUPS = {
             "name": "release",
             "commands": ["notes", "authors"],
         },
+{
+            "name": "benchmarking",
+            "commands": ["bench"],
+        },
     ]
 }
 
@@ -616,8 +620,8 @@ class Test(Task):
 """
 **********************Bench taks*************************
 Needs more work (WIP)
-TODO: Remove redundancy
-      Fix bench compare
+TODO: Fix bench compare
+      add a standalone method for _get_test_runner 
 """
 @cli.cls_cmd('bench')
 class Bench(Task):
@@ -637,23 +641,11 @@ class Bench(Task):
                    multiple=True,
                    metavar='TESTS',
                    help='Specify tests to run')
-    bench_compare = Option(['--bench-compare', '-compare'],
+    bench_compare = Option(['--benchcompare', '-c'],
                            default=None,
                            metavar='BENCH-COMPARE',
                            multiple=True,
                            help='Compare benchmark results of current HEAD to BEFORE')
-
-    @staticmethod
-    def _get_test_runner(path_installed, project_module):
-        """
-        get Test Runner from locally installed/built project
-        """
-        __import__(project_module)
-        test = sys.modules[project_module].test
-        version = sys.modules[project_module].__version__
-        mod_path = sys.modules[project_module].__file__
-        mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
-        return test, version, mod_path
 
     @staticmethod
     def run_asv(cmd):
@@ -690,6 +682,7 @@ class Bench(Task):
 
     @classmethod
     def scipy_bench(cls, args):
+        test_obj = Test()
         site_dir = get_site_dir()
         # add local installed dir to PYTHONPATH
         print(f"Trying to find scipy from development installed path at: {site_dir}")
@@ -698,7 +691,7 @@ class Bench(Task):
             os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
         cwd = os.getcwd()
         os.chdir(site_dir)
-        runner, version, mod_path = cls._get_test_runner(dev_module.PATH_INSTALLED, PROJECT_MODULE)
+        runner, version, mod_path = test_obj._get_test_runner(dev_module.PATH_INSTALLED, PROJECT_MODULE)
         extra_argv = []
         if args.tests:
             extra_argv.append(args.tests)
