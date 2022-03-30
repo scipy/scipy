@@ -699,9 +699,6 @@ class Bench(Task):
         cwd = os.getcwd()
         os.chdir(site_dir)
         runner, version, mod_path = cls._get_test_runner(dev_module.PATH_INSTALLED, PROJECT_MODULE)
-        print("Running tests for {} version:{}, installed at:{}".format(
-            PROJECT_MODULE, version, mod_path))
-
         extra_argv = []
         if args.tests:
             extra_argv.append(args.tests)
