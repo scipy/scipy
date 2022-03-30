@@ -55,7 +55,7 @@ def _check_svds(A, k, u, s, vh, which="LM", check_usvh_A=False,
     assert_equal(uh_u.shape, (k, k))
     assert_allclose(uh_u, np.identity(k), atol=atol, rtol=rtol)
 
-    # Check that V is a semi-orthogonal matrix.
+    # Check that vh is a semi-orthogonal matrix.
     vh_v = np.dot(vh, vh.T.conj())
     assert_equal(vh_v.shape, (k, k))
     assert_allclose(vh_v, np.identity(k), atol=atol, rtol=rtol)
@@ -621,7 +621,7 @@ class SVDSCommonTests:
         S = spdiags(e, 0, m, m) @ S
         S = S.astype(dtype)
         u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000)
-        _check_svds(S.A, k, u, s, vh, which="SM", atol=1e-8, rtol=1e-6)
+        _check_svds(S, k, u, s, vh, which="SM", atol=1e-8, rtol=1e-6)
         '''
 
     # --- Test Edge Cases ---
@@ -694,7 +694,7 @@ class SVDSCommonTests:
         t = e**(-np.arange(len(vh))).astype(dtype)
         A = (u*t).dot(vh)
         k = 4
-        u, s, vh = svds(A, k, solver=self.solver)
+        u, s, vh = svds(A, k, solver=self.solver, maxiter=100)
         t = np.sum(s > 0)
         assert_equal(t, k)
         _check_svds(A, k, u, s, vh, atol=1e-6, rtol=1e-6)
