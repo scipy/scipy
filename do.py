@@ -141,7 +141,6 @@ from doit.exceptions import InvalidDodoFile, InvalidCommand, InvalidTask
 # keep compatibility and re-use dev.py code
 import dev as dev_module
 
-
 DOIT_CONFIG = {
     'verbosity': 2,
 }
@@ -617,14 +616,17 @@ class Test(Task):
 """
 **********************Bench taks*************************
 Needs more work (WIP)
-TODO: Fix paths and modules
+TODO: Remove redundancy
+      Fix bench compare
 """
 @cli.cls_cmd('bench')
 class Bench(Task):
     """:wrench: Run benchmarks
     """
     ctx = CONTEXT
-
+    TASK_META = {
+        'task_dep': ['build'],
+    }
     submodule = Option(
         ['--submodule', '-s'],
         default=None,
@@ -638,7 +640,20 @@ class Bench(Task):
     bench_compare = Option(['--bench-compare', '-compare'],
                            default=None,
                            metavar='BENCH-COMPARE',
+                           multiple=True,
                            help='Compare benchmark results of current HEAD to BEFORE')
+
+    @staticmethod
+    def _get_test_runner(path_installed, project_module):
+        """
+        get Test Runner from locally installed/built project
+        """
+        __import__(project_module)
+        test = sys.modules[project_module].test
+        version = sys.modules[project_module].__version__
+        mod_path = sys.modules[project_module].__file__
+        mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
+        return test, version, mod_path
 
     @staticmethod
     def run_asv(cmd):
@@ -672,25 +687,35 @@ class Bench(Task):
                 print("to run Scipy benchmarks")
                 return 1
             raise
+
     @classmethod
     def scipy_bench(cls, args):
-        # test_obj = Test()
-        # test, version, mod_path = test_obj._get_test_runner(dev_module.PATH_INSTALLED, PROJECT_MODULE)
+        site_dir = get_site_dir()
+        # add local installed dir to PYTHONPATH
+        print(f"Trying to find scipy from development installed path at: {site_dir}")
+        sys.path.insert(0, site_dir)
+        os.environ['PYTHONPATH'] = \
+            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+        cwd = os.getcwd()
+        os.chdir(site_dir)
+        runner, version, mod_path = cls._get_test_runner(dev_module.PATH_INSTALLED, PROJECT_MODULE)
+        print("Running tests for {} version:{}, installed at:{}".format(
+            PROJECT_MODULE, version, mod_path))
+
         extra_argv = []
         if args.tests:
-            extra_argv += args.tests
+            extra_argv.append(args.tests)
         if args.submodule:
-            extra_argv += [args.submodule]
+            extra_argv.append([args.submodule])
 
         bench_args = []
         for a in extra_argv:
             bench_args.extend(['--bench', a])
-
         if not args.bench_compare:
-            # import scipy
+            import scipy
 
-            # print("Running benchmarks for Scipy version %s at %s"
-            #       % (version, mod_path))
+            print("Running benchmarks for Scipy version %s at %s"
+                  % (version, mod_path))
             cmd = ['asv', 'run', '--dry-run', '--show-stderr',
                    '--python=same'] + bench_args
             retval = cls.run_asv(cmd)
@@ -728,8 +753,8 @@ class Bench(Task):
 
             cmd = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
                    commit_a, commit_b] + bench_args
-            sys.exit(1)
             run_asv(cmd)
+            sys.exit(1)
 
     @classmethod
     def run(cls, **kwargs):
