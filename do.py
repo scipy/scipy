@@ -617,13 +617,33 @@ class Test(Task):
 """
 **********************Bench taks*************************
 Needs more work (WIP)
+TODO: Fix paths and modules
 """
 @cli.cls_cmd('bench')
 class Bench(Task):
     """:wrench: Run benchmarks
     """
+    ctx = CONTEXT
+
+    submodule = Option(
+        ['--submodule', '-s'],
+        default=None,
+        metavar='SUBMODULE',
+        help="Submodule whose tests to run (cluster, constants, ...)")
+    tests = Option(['--tests', '-t'],
+                   default=None,
+                   multiple=True,
+                   metavar='TESTS',
+                   help='Specify tests to run')
+    bench_compare = Option(['--bench-compare', '-compare'],
+                           default=None,
+                           metavar='BENCH-COMPARE',
+                           help='Compare benchmark results of current HEAD to BEFORE')
+
     @staticmethod
     def run_asv(cmd):
+        EXTRA_PATH = ['/usr/lib/ccache', '/usr/lib/f90cache',
+                      '/usr/local/lib/ccache', '/usr/local/lib/f90cache']
         cwd = os.path.join(os.path.abspath(os.path.dirname(__file__)),
                            'benchmarks')
         # Always use ccache, if installed
@@ -654,25 +674,26 @@ class Bench(Task):
             raise
     @classmethod
     def scipy_bench(cls, args):
-        # Run ASV
-        items = extra_argv
+        # test_obj = Test()
+        # test, version, mod_path = test_obj._get_test_runner(dev_module.PATH_INSTALLED, PROJECT_MODULE)
+        extra_argv = []
         if args.tests:
-            items += args.tests
+            extra_argv += args.tests
         if args.submodule:
-            items += [args.submodule]
+            extra_argv += [args.submodule]
 
         bench_args = []
-        for a in items:
+        for a in extra_argv:
             bench_args.extend(['--bench', a])
 
         if not args.bench_compare:
-            import scipy
+            # import scipy
 
-            print("Running benchmarks for Scipy version %s at %s"
-                  % (version, mod_path))
+            # print("Running benchmarks for Scipy version %s at %s"
+            #       % (version, mod_path))
             cmd = ['asv', 'run', '--dry-run', '--show-stderr',
                    '--python=same'] + bench_args
-            retval = runtests.run_asv(cmd)
+            retval = cls.run_asv(cmd)
             sys.exit(retval)
         else:
             if len(args.bench_compare) == 1:
@@ -707,8 +728,9 @@ class Bench(Task):
 
             cmd = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
                    commit_a, commit_b] + bench_args
-            runtests.run_asv(cmd)
             sys.exit(1)
+            run_asv(cmd)
+
     @classmethod
     def run(cls, **kwargs):
         """run benchamark"""
