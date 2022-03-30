@@ -22,7 +22,7 @@ Various utilities that don't have another home.
 
 """
 
-import warnings
+
 from ._common import *
 from . import _common
 
@@ -30,11 +30,6 @@ from . import _common
 from . import common, doccer
 
 __all__ = _common.__all__
-
-warnings.warn("scipy.misc has been deprecated in SciPy v1.9.0; "
-              "and will be removed in SciPy v2.0.0. Please use the "
-              "scipy.datasets namespace for the dataset methods.",
-              category=DeprecationWarning, stacklevel=2)
 
 del _common
 
