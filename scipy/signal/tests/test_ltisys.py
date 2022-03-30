@@ -1,9 +1,11 @@
+from abc import abstractmethod
 import warnings
 
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal, assert_allclose,
                            assert_, suppress_warnings)
 from pytest import raises as assert_raises
+from pytest import warns
 
 from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
@@ -410,7 +412,17 @@ class TestSS2TF:
         assert_allclose(b_all, np.vstack((b0, b1, b2)), rtol=1e-13, atol=1e-14)
 
 
-class TestLsim:
+class _TestLsimFunctions:
+
+    @abstractmethod
+    def func(self, *args, **kwargs):
+        pass
+
+class TestLsim(_TestLsimFunctions):
+
+    def func(self, *args, **kwargs):
+        return lsim(*args, **kwargs)
+
     def lti_nowarn(self, *args):
         with suppress_warnings() as sup:
             sup.filter(BadCoefficients)
@@ -423,7 +435,7 @@ class TestLsim:
         system = self.lti_nowarn(-1.,1.,1.,0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)
-        tout, y, x = lsim(system, u, t, X0=[1.0])
+        tout, y, x = self.func(system, u, t, X0=[1.0])
         expected_x = np.exp(-tout)
         assert_almost_equal(x, expected_x)
         assert_almost_equal(y, expected_x)
@@ -433,7 +445,7 @@ class TestLsim:
         system = self.lti_nowarn(0., 1., 1., 0.)
         t = np.linspace(0,5)
         u = t
-        tout, y, x = lsim(system, u, t)
+        tout, y, x = self.func(system, u, t)
         expected_x = 0.5 * tout**2
         assert_almost_equal(x, expected_x)
         assert_almost_equal(y, expected_x)
@@ -446,7 +458,7 @@ class TestLsim:
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.ones_like(t)
-        tout, y, x = lsim(system, u, t)
+        tout, y, x = self.func(system, u, t)
         expected_x = np.transpose(np.array([0.5 * tout**2, tout]))
         expected_y = tout**2
         assert_almost_equal(x, expected_x)
@@ -464,7 +476,7 @@ class TestLsim:
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)
-        tout, y, x = lsim(system, u, t, X0=[0.0, 1.0])
+        tout, y, x = self.func(system, u, t, X0=[0.0, 1.0])
         expected_y = tout * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
@@ -478,7 +490,7 @@ class TestLsim:
 
         t = np.linspace(0, 5.0, 101)
         u = np.zeros_like(t)
-        tout, y, x = lsim(system, u, t, X0=[1.0, 1.0])
+        tout, y, x = self.func(system, u, t, X0=[1.0, 1.0])
         expected_y = np.exp(-tout)
         expected_x0 = np.exp(-tout)
         expected_x1 = np.exp(-2.0*tout)
@@ -490,12 +502,15 @@ class TestLsim:
         system = self.lti_nowarn(-1.,1.,1.,0.)
         t = np.linspace(1,2)
         u = np.zeros_like(t)
-        tout, y, x = lsim(system, u, t, X0=[1.0])
+        tout, y, x = self.func(system, u, t, X0=[1.0])
         expected_y = np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
 
-class Test_lsim2:
+class Test_lsim2(_TestLsimFunctions):
+
+    def func(self, *args, **kwargs):
+        return lsim2(*args, **kwargs)
 
     def test_01(self):
         t = np.linspace(0,10,1001)
@@ -503,7 +518,7 @@ class Test_lsim2:
         # First order system: x'(t) + x(t) = u(t), x(0) = 1.
         # Exact solution is x(t) = exp(-t).
         system = ([1.0],[1.0,1.0])
-        tout, y, x = lsim2(system, u, t, X0=[1.0])
+        tout, y, x = self.func(system, u, t, X0=[1.0])
         expected_x = np.exp(-tout)
         assert_almost_equal(x[:,0], expected_x)
 
@@ -512,7 +527,7 @@ class Test_lsim2:
         u = np.array([0.0, 0.0, 1.0, 1.0])
         # Simple integrator: x'(t) = u(t)
         system = ([1.0],[1.0,0.0])
-        tout, y, x = lsim2(system, u, t, X0=[1.0])
+        tout, y, x = self.func(system, u, t, X0=[1.0])
         expected_x = np.maximum(1.0, tout)
         assert_almost_equal(x[:,0], expected_x)
 
@@ -521,7 +536,7 @@ class Test_lsim2:
         u = np.array([0.0, 0.0, 1.0, 1.0, 0.0, 0.0])
         # Simple integrator:  x'(t) = u(t)
         system = ([1.0],[1.0, 0.0])
-        tout, y, x = lsim2(system, u, t, hmax=0.01)
+        tout, y, x = self.func(system, u, t, hmax=0.01)
         expected_x = np.array([0.0, 0.0, 0.0, 0.1, 0.1, 0.1])
         assert_almost_equal(x[:,0], expected_x)
 
@@ -532,7 +547,7 @@ class Test_lsim2:
         # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
         # is (1-t)*exp(-t).
         system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y, x = lsim2(system, u, t, X0=[1.0, 0.0])
+        tout, y, x = self.func(system, u, t, X0=[1.0, 0.0])
         expected_x = (1.0 - tout) * np.exp(-tout)
         assert_almost_equal(x[:,0], expected_x)
 
@@ -551,7 +566,7 @@ class Test_lsim2:
         t = np.linspace(0, 10.0, 101)
         with suppress_warnings() as sup:
             sup.filter(BadCoefficients)
-            tout, y, x = lsim2((A,B,C,D), T=t, X0=[1.0, 1.0])
+            tout, y, x = self.func((A,B,C,D), T=t, X0=[1.0, 1.0])
         expected_y = np.exp(-tout)
         expected_x0 = np.exp(-tout)
         expected_x1 = np.exp(-2.0 * tout)
@@ -565,7 +580,7 @@ class Test_lsim2:
         # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
         # is (1-t)*exp(-t).
         system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y, x = lsim2(system, X0=[1.0, 0.0])
+        tout, y, x = self.func(system, X0=[1.0, 0.0])
         expected_x = (1.0 - tout) * np.exp(-tout)
         assert_almost_equal(x[:,0], expected_x)
 
