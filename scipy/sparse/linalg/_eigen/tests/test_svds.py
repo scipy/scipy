@@ -592,37 +592,28 @@ class SVDSCommonTests:
                                     np.dot(U2, np.dot(np.diag(s2), VH2)),
                                     rtol=eps)
 
-    REAL_DTYPES = {np.single, np.double, np.longdouble}
-    COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
-    # use sorted tuple to ensure fixed order of tests
-    DTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
     SHAPES = ((100, 100), (100, 101), (101, 100))
-
-    '''
     @pytest.mark.filterwarnings("ignore:Exited at iteration")
     @pytest.mark.parametrize("shape", SHAPES)
-    # @pytest.mark.parametrize("dtype", DTYPES)
-    @pytest.mark.parametrize("dtype", REAL_DTYPES)
+    # ARPACK supports only dtype float, complex, or np.float32
+    @pytest.mark.parametrize("dtype", (float, complex, np.float32))
     def test_small_sigma_sparse(self, shape, dtype):
         # https://github.com/scipy/scipy/pull/11829
         solver = self.solver
-        if dtype == np.longdouble and solver == 'arpack':
-            pytest.skip("ARPACK unsupported float128 (longdouble)")
         if solver == 'propack':
             pytest.skip("PROPACK failures unrelated to PR")
         rng = np.random.default_rng(0)
         k = 5
         (m, n) = shape
         S = random(m, n, density=0.1, random_state=rng)
-        # if dtype in COMPLEX_DTYPES:
-        #     S = + 1j * random(m, n, density=0.1, random_state=rng)
-        e = np.ones(shape[0])
+        if dtype==complex:
+            S = + 1j * random(m, n, density=0.1, random_state=rng)
+        e = np.ones(m)
         e[0:5] *= 1e1 ** np.arange(-10, 0, 2)
         S = spdiags(e, 0, m, m) @ S
         S = S.astype(dtype)
         u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000)
-        _check_svds(S, k, u, s, vh, which="SM", atol=1e-8, rtol=1e-6)
-        '''
+        _check_svds(S, k, u, s, vh, which="SM", atol=1e-4, rtol=1e-1)
 
     # --- Test Edge Cases ---
     # Checks a few edge cases.
