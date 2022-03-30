@@ -22,7 +22,7 @@ def sorted_svd(m, k, which='LM'):
         m = m.toarray()
     u, s, vh = svd(m)
     if which == 'LM':
-        ii = np.argsort(s)[-k:]
+        ii = np.argsort(np.abs(s))[-k:]
     elif which == 'SM':
         ii = np.argsort(s)[:k]
     else:
