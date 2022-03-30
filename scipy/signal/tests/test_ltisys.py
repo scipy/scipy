@@ -510,7 +510,8 @@ class TestLsim(_TestLsimFunctions):
 class Test_lsim2(_TestLsimFunctions):
 
     def func(self, *args, **kwargs):
-        return lsim2(*args, **kwargs)
+        with warns(DeprecationWarning):
+            return lsim2(*args, **kwargs)
 
     def test_01(self):
         t = np.linspace(0,10,1001)
