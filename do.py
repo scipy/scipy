@@ -626,6 +626,11 @@ TODO: Fix bench compare
 @cli.cls_cmd('bench')
 class Bench(Task):
     """:wrench: Run benchmarks
+
+     Examples:
+
+    $ python do.py bench -t integrate.SolveBVP
+
     """
     ctx = CONTEXT
     TASK_META = {
