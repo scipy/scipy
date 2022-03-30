@@ -101,7 +101,6 @@ First milestone replace dev.py
       https://github.com/pallets/click/issues/1340
 
 commands:
-- [ ] lcov_html
 - [ ] bench
 - [ ] --bench-compare
 
