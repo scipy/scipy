@@ -110,8 +110,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Parameters
     ----------
-    A : sparse matrix or LinearOperator
-        Matrix to decompose.
+    A : ndarray, sparse matrix, or LinearOperator
+        Matrix to decompose of a floating point numeric dtype.
     k : int, default: 6
         Number of singular values and singular vectors to compute.
         Must satisfy ``1 <= k <= kmax``, where ``kmax=min(M, N)`` for
@@ -189,7 +189,14 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     efficient, followed by the Rayleigh-Ritz method as postprocessing; see
     https://w.wiki/4zms
 
-    Alternatively, the PROPACK solver can be called.
+    Alternatively, the PROPACK solver can be called. ``form="array"``
+
+    Choices of the input matrix ``A`` numeric dtype may be limited. 
+    Only ``solver="lobpcg"`` supports all floating point dtypes
+    real: 'np.single', 'np.double', 'np.longdouble' and 
+    complex: 'np.csingle', 'np.cdouble', 'np.clongdouble'.
+    The ``solver="arpack"`` supports only
+    'np.single', 'np.double', and 'np.cdouble'.
 
     Examples
     --------
