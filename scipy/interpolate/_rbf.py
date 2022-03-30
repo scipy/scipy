@@ -79,6 +79,7 @@ class Rbf:
             'cubic': r**3
             'quintic': r**5
             'thin_plate': r**2 * log(r)
+            'cauchy': 1/(1+r)
 
         If callable, then it must take 2 arguments (self, r). The epsilon
         parameter will be available as self.epsilon. Other keyword
@@ -166,6 +167,9 @@ class Rbf:
 
     def _h_thin_plate(self, r):
         return xlogy(r**2, r)
+
+    def _h_cauchy(self, r):
+        return 1/(1+r)
 
     # Setup self._function and do smoke test on initial r
     def _init_function(self, r):

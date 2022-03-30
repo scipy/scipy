@@ -23,12 +23,13 @@ _AVAILABLE = {
     "multiquadric",
     "inverse_multiquadric",
     "inverse_quadratic",
-    "gaussian"
+    "gaussian",
+    "cauchy"
     }
 
 
 # The shape parameter does not need to be specified when using these RBFs.
-_SCALE_INVARIANT = {"linear", "thin_plate_spline", "cubic", "quintic"}
+_SCALE_INVARIANT = {"linear", "thin_plate_spline", "cubic", "quintic", "cauchy"}
 
 
 # For RBFs that are conditionally positive definite of order m, the interpolant
@@ -41,7 +42,8 @@ _NAME_TO_MIN_DEGREE = {
     "linear": 0,
     "thin_plate_spline": 1,
     "cubic": 1,
-    "quintic": 2
+    "quintic": 2,
+    "cauchy": 1
     }
 
 
@@ -157,6 +159,7 @@ class RBFInterpolator:
             - 'inverse_multiquadric' : ``1/sqrt(1 + r**2)``
             - 'inverse_quadratic'    : ``1/(1 + r**2)``
             - 'gaussian'             : ``exp(-r**2)``
+            - 'cauchy'               : ``1/(1+r)``
 
         Default is 'thin_plate_spline'.
     epsilon : float, optional
@@ -174,6 +177,7 @@ class RBFInterpolator:
             - 'thin_plate_spline' : 1
             - 'cubic'             : 1
             - 'quintic'           : 2
+            - 'cauchy'            : 1
 
         The default value is the minimum degree for `kernel` or 0 if there is
         no minimum degree. Set this to -1 for no added polynomial.
@@ -253,6 +257,8 @@ class RBFInterpolator:
     .. [3] Wahba, G., 1990. Spline Models for Observational Data. SIAM.
 
     .. [4] http://pages.stat.wisc.edu/~wahba/stat860public/lect/lect8/lect8.pdf
+
+    .. [5] https://faculty.cc.gatech.edu/~isbell/tutorials/rbf-intro.pdf
 
     Examples
     --------
