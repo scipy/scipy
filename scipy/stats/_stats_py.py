@@ -5170,12 +5170,7 @@ def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
         null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
 
     # calculate p-value and significant permutation map through list
-    pvalue = (null_dist >= stat).sum() / reps
-
-    # correct for a p-value of 0. This is because, with bootstrapping
-    # permutations, a p-value of 0 is incorrect
-    if pvalue == 0:
-        pvalue = 1 / reps
+    pvalue = (1 + (null_dist >= stat).sum()) / (1 + reps)
 
     return pvalue, null_dist
 
