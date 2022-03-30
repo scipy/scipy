@@ -413,21 +413,39 @@ class TestSS2TF:
 
 
 class _TestLsimFunctions:
+    decimal = 7
 
     @abstractmethod
     def func(self, *args, **kwargs):
         pass
-
-class TestLsim(_TestLsimFunctions):
-
-    def func(self, *args, **kwargs):
-        return lsim(*args, **kwargs)
 
     def lti_nowarn(self, *args):
         with suppress_warnings() as sup:
             sup.filter(BadCoefficients)
             system = lti(*args)
         return system
+    
+    def test_first_order(self):
+        # y' = -y
+        # exact solution is y(t) = exp(-t)
+        system = self.lti_nowarn(-1.,1.,1.,0.)
+        t = np.linspace(0,5)
+        u = np.zeros_like(t)
+        tout, y, x = self.func(system, u, t, X0=[1.0])
+        expected_x = np.exp(-tout)
+        assert_almost_equal(x, expected_x)
+        assert_almost_equal(y, expected_x)
+
+    def test_second_order(self):
+        t = np.linspace(0, 10, 1001)
+        u = np.zeros_like(t)
+        # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
+        # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
+        # is (1-t)*exp(-t).
+        system = self.lti_nowarn([1.0], [1.0, 2.0, 1.0])
+        tout, y, x = self.func(system, u, t, X0=[1.0, 0.0])
+        expected_x = (1.0 - tout) * np.exp(-tout)
+        assert_almost_equal(x[:,0], expected_x)
 
     def test_first_order(self):
         # y' = -y
@@ -447,9 +465,14 @@ class TestLsim(_TestLsimFunctions):
         u = t
         tout, y, x = self.func(system, u, t)
         expected_x = 0.5 * tout**2
-        assert_almost_equal(x, expected_x)
-        assert_almost_equal(y, expected_x)
+        assert_almost_equal(x, expected_x, decimal=self.decimal)
+        assert_almost_equal(y, expected_x, decimal=self.decimal)
 
+
+class TestLsim(_TestLsimFunctions):
+    def func(self, *args, **kwargs):
+        return lsim(*args, **kwargs)
+        
     def test_double_integrator(self):
         # double integrator: y'' = 2u
         A = matrix([[0., 1.], [0., 0.]])
@@ -508,66 +531,42 @@ class TestLsim(_TestLsimFunctions):
 
 
 class Test_lsim2(_TestLsimFunctions):
+    decimal = 6
 
     def func(self, *args, **kwargs):
         with warns(DeprecationWarning):
-            return lsim2(*args, **kwargs)
+            t, y, x = lsim2(*args, **kwargs)
+        return t, np.squeeze(y), np.squeeze(x)
 
     def test_01(self):
-        t = np.linspace(0,10,1001)
-        u = np.zeros_like(t)
-        # First order system: x'(t) + x(t) = u(t), x(0) = 1.
-        # Exact solution is x(t) = exp(-t).
-        system = ([1.0],[1.0,1.0])
-        tout, y, x = self.func(system, u, t, X0=[1.0])
-        expected_x = np.exp(-tout)
-        assert_almost_equal(x[:,0], expected_x)
-
-    def test_02(self):
         t = np.array([0.0, 1.0, 1.0, 3.0])
         u = np.array([0.0, 0.0, 1.0, 1.0])
         # Simple integrator: x'(t) = u(t)
         system = ([1.0],[1.0,0.0])
         tout, y, x = self.func(system, u, t, X0=[1.0])
         expected_x = np.maximum(1.0, tout)
-        assert_almost_equal(x[:,0], expected_x)
+        assert_almost_equal(x, expected_x)
 
-    def test_03(self):
+    def test_02(self):
         t = np.array([0.0, 1.0, 1.0, 1.1, 1.1, 2.0])
         u = np.array([0.0, 0.0, 1.0, 1.0, 0.0, 0.0])
         # Simple integrator:  x'(t) = u(t)
         system = ([1.0],[1.0, 0.0])
         tout, y, x = self.func(system, u, t, hmax=0.01)
         expected_x = np.array([0.0, 0.0, 0.0, 0.1, 0.1, 0.1])
-        assert_almost_equal(x[:,0], expected_x)
+        assert_almost_equal(x, expected_x)
 
-    def test_04(self):
-        t = np.linspace(0, 10, 1001)
-        u = np.zeros_like(t)
-        # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
-        # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
-        # is (1-t)*exp(-t).
-        system = ([1.0], [1.0, 2.0, 1.0])
-        tout, y, x = self.func(system, u, t, X0=[1.0, 0.0])
-        expected_x = (1.0 - tout) * np.exp(-tout)
-        assert_almost_equal(x[:,0], expected_x)
-
-    def test_05(self):
-        # The call to lsim2 triggers a "BadCoefficients" warning from
-        # scipy.signal._filter_design, but the test passes.  I think the warning
-        # is related to the incomplete handling of multi-input systems in
-        # scipy.signal.
-
+    def test_03(self):
         # A system with two state variables, two inputs, and one output.
         A = np.array([[-1.0, 0.0], [0.0, -2.0]])
         B = np.array([[1.0, 0.0], [0.0, 1.0]])
         C = np.array([1.0, 0.0])
         D = np.zeros((1, 2))
 
+        system = self.lti_nowarn(A, B, C, D)
+
         t = np.linspace(0, 10.0, 101)
-        with suppress_warnings() as sup:
-            sup.filter(BadCoefficients)
-            tout, y, x = self.func((A,B,C,D), T=t, X0=[1.0, 1.0])
+        tout, y, x = self.func(system, T=t, X0=[1.0, 1.0])
         expected_y = np.exp(-tout)
         expected_x0 = np.exp(-tout)
         expected_x1 = np.exp(-2.0 * tout)
@@ -575,7 +574,7 @@ class Test_lsim2(_TestLsimFunctions):
         assert_almost_equal(x[:,0], expected_x0)
         assert_almost_equal(x[:,1], expected_x1)
 
-    def test_06(self):
+    def test_04(self):
         # Test use of the default values of the arguments `T` and `U`.
         # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
         # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
