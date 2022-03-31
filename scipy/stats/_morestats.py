@@ -3500,11 +3500,11 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     samples : array_like
         Input array.
     high : float or int, optional
-        High boundary for circular mean range.  Default is ``2*pi``.
+        High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
-        Low boundary for circular mean range.  Default is 0.
+        Low boundary for the sample range. Default is 0.
     axis : int, optional
-        Axis along which means are computed.  The default is to compute
+        Axis along which means are computed. The default is to compute
         the mean of the flattened array.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
@@ -3568,11 +3568,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     samples : array_like
         Input array.
     high : float or int, optional
-        High boundary for circular variance range.  Default is ``2*pi``.
+        High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
-        Low boundary for circular variance range.  Default is 0.
+        Low boundary for the sample range. Default is 0.
     axis : int, optional
-        Axis along which variances are computed.  The default is to compute
+        Axis along which variances are computed. The default is to compute
         the variance of the flattened array.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
@@ -3586,14 +3586,22 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Notes
     -----
-    This uses a definition of circular variance that in the limit of small
-    angles returns a number close to the 'linear' variance.
+    This uses the following definition of circular variance: ``1-R``, where
+    ``R`` is the mean resultant vector. The
+    returned value is in the range [0, 1], 0 standing for no variance, and 1
+    for a large variance. In the limit of small angles, this value is similar
+    to half the 'linear' variance.
+
+    References
+    ----------
+    ..[1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
+          University Press, 1993.
 
     Examples
     --------
     >>> from scipy.stats import circvar
     >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
-    2.19722457734
+    0.6666666666666665
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
@@ -3610,10 +3618,12 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     with np.errstate(invalid='ignore'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))
 
-    return ((high - low)/2.0/pi)**2 * -2 * log(R)
+    res = 1. - R
+    return res
 
 
-def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
+def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
+            normalize=False):
     """
     Compute the circular standard deviation for samples assumed to be in the
     range [low to high].
@@ -3623,17 +3633,20 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     samples : array_like
         Input array.
     high : float or int, optional
-        High boundary for circular standard deviation range.
-        Default is ``2*pi``.
+        High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
-        Low boundary for circular standard deviation range.  Default is 0.
+        Low boundary for the sample range. Default is 0.
     axis : int, optional
-        Axis along which standard deviations are computed.  The default is
+        Axis along which standard deviations are computed. The default is
         to compute the standard deviation of the flattened array.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    normalize : boolean, optional
+        If True, the returned value is equal to ``sqrt(-2*log(R))`` and does
+        not depend on the variable units. If False (default), the returned
+        value is scaled by ``((high-low)/(2*pi))``.
 
     Returns
     -------
@@ -3685,4 +3698,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     with np.errstate(invalid='ignore'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))  # [1] (2.2.4)
 
-    return ((high - low)/2.0/pi) * sqrt(-2*log(R))  # [1] (2.3.14) w/ (2.3.7)
+    res = sqrt(-2*log(R))
+    if not normalize:
+        res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
+    return res

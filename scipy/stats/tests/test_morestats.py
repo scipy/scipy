@@ -2107,9 +2107,15 @@ class TestYeojohnsonNormmax:
 
 
 class TestCircFuncs:
+    # In gh-5747, the R package `circular` was used to calculate reference
+    # values for the circular variance, e.g.:
+    # library(circular)
+    # options(digits=16)
+    # x = c(0, 2*pi/3, 5*pi/3)
+    # var.circular(x)
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
-                              (stats.circvar, 42.51955609),
+                              (stats.circvar, 0.006455174270186603),
                               (stats.circstd, 6.520702116)])
     def test_circfuncs(self, test_func, expected):
         x = np.array([355, 5, 2, 359, 10, 350])
@@ -2121,7 +2127,10 @@ class TestCircFuncs:
         M2 = stats.circmean(x, high=360)
         assert_allclose(M2, M1, rtol=1e-5)
 
-        V1 = x.var()
+        V1 = (x*np.pi/180).var()
+        # for small variations, circvar is approximately half the
+        # linear variance
+        V1 = V1 / 2.
         V2 = stats.circvar(x, high=360)
         assert_allclose(V2, V1, rtol=1e-4)
 
@@ -2192,7 +2201,7 @@ class TestCircFuncs:
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
-                              (stats.circvar, 42.51955609),
+                              (stats.circvar, 0.006455174270186603),
                               (stats.circstd, 6.520702116)])
     def test_circfuncs_array_like(self, test_func, expected):
         x = [355, 5, 2, 359, 10, 350]
@@ -2213,7 +2222,9 @@ class TestCircFuncs:
                              [(stats.circmean,
                                {None: np.nan, 0: 355.66582264, 1: 0.28725053}),
                               (stats.circvar,
-                               {None: np.nan, 0: 16.89976130, 1: 36.51366669}),
+                               {None: np.nan,
+                                0: 0.002570671054089924,
+                                1: 0.005545914017677123}),
                               (stats.circstd,
                                {None: np.nan, 0: 4.11093193, 1: 6.04265394})])
     def test_nan_propagate_array(self, test_func, expected):
@@ -2235,11 +2246,12 @@ class TestCircFuncs:
                                              349.5]),
                                 1: np.array([0.16769015, 358.66510252])}),
                               (stats.circvar,
-                               {None: 55.362093503276725,
-                                0: np.array([4.00081258, 1.00005077, 1.00005077,
-                                             12.25762620, 0.25000317,
-                                             0.25000317]),
-                                1: np.array([42.51955609, 67.09872148])}),
+                               {None: 0.008396678483192477,
+                                0: np.array([1.9997969, 0.4999873, 0.4999873,
+                                             6.1230956, 0.1249992, 0.1249992]
+                                            )*(np.pi/180)**2,
+                                1: np.array([0.006455174270186603,
+                                             0.01016767581393285])}),
                               (stats.circstd,
                                {None: 7.440570778057074,
                                 0: np.array([2.00020313, 1.00002539, 1.00002539,
@@ -2260,7 +2272,7 @@ class TestCircFuncs:
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
-                              (stats.circvar, 42.51955609),
+                              (stats.circvar, 0.006455174270186603),
                               (stats.circstd, 6.520702116)])
     def test_nan_omit(self, test_func, expected):
         x = [355, 5, 2, 359, 10, 350, np.nan]
@@ -2313,12 +2325,12 @@ class TestCircFuncs:
         assert_(m < np.pi)
         assert_(m > -np.pi)
 
-    def test_circfuncs_unit8(self):
+    def test_circfuncs_uint8(self):
         # regression test for gh-7255: overflow when working with
         # numpy uint8 data type
         x = np.array([150, 10], dtype='uint8')
         assert_equal(stats.circmean(x, high=180), 170.0)
-        assert_allclose(stats.circvar(x, high=180), 437.45871686, rtol=1e-7)
+        assert_allclose(stats.circvar(x, high=180), 0.2339555554617, rtol=1e-7)
         assert_allclose(stats.circstd(x, high=180), 20.91551378, rtol=1e-7)
 
 
