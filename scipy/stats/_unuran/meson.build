@@ -205,7 +205,8 @@ unuran_defines = [
   '-DUNUR_ENABLE_INFO=1',
   '-DVERSION=' + unuran_version,
   '-DHAVE_CONFIG_H=1',
-  '-D_ISOC99_SOURCE=1'
+  '-D_ISOC99_SOURCE=1',
+  '-DHAVE_DECL_HYPOT=1'
 ]
 
 statlib = py3.extension_module('unuran_wrapper',
