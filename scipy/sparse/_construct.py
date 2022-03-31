@@ -64,10 +64,9 @@ def spdiags(data, diags, m=None, n=None, format=None):
     """
     if m is None and n is None:
         m = n = len(data[0])
-    elif m is not None and n is None:
-        m, n = m[0], m[1]
-    shape = (m, n)
-    return dia_matrix((data, diags), shape=shape).asformat(format)
+    elif n is None:
+        m, n = m
+    return dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
 
 def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
