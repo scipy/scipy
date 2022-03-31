@@ -326,7 +326,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         _, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                                 ncv=ncv, which=which, v0=v0)
 
-    u = X_matmat(np.linalg.qr(eigvec))
+    q, _ = np.linalg.qr(eigvec)
+    u = X_matmat(q)
     if not return_singular_vectors:
         s = svd(u, compute_uv=False)
         return s[::-1]
