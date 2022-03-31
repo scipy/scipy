@@ -29,7 +29,8 @@ _AVAILABLE = {
 
 
 # The shape parameter does not need to be specified when using these RBFs.
-_SCALE_INVARIANT = {"linear", "thin_plate_spline", "cubic", "quintic", "cauchy"}
+_SCALE_INVARIANT = {"linear", "thin_plate_spline",
+                    "cubic", "quintic", "cauchy"}
 
 
 # For RBFs that are conditionally positive definite of order m, the interpolant
