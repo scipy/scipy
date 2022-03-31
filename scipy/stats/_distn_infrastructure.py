@@ -1075,8 +1075,10 @@ class rv_generic:
         cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not np.all(cond):
             message = ("Domain error in arguments. The `scale` parameter must "
-                       "be positive for all distributions; see the "
-                       "distribution documentation for other restrictions.")
+                       "be positive for all distributions, and many "
+                       "distributions have restrictions on shape parameters. "
+                       f"Please see the `scipy.stats.{self.name}` "
+                       "documentation for details.")
             raise ValueError(message)
 
         if np.all(scale == 0):
@@ -1390,7 +1392,7 @@ class rv_generic:
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
             if self._stats_has_moments:
-                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
+                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'mvsk'}[n]}
             else:
                 mdict = {}
             mu, mu2, g1, g2 = self._stats(*shapes, **mdict)
@@ -1711,6 +1713,11 @@ def _get_fixed_fit_value(kwds, names):
                          ', '.join(repeated))
     return vals[0][1] if vals else None
 
+
+class FitError(RuntimeError):
+    """Represents an error condition when fitting a distribution to data"""
+    pass
+
 #  continuous random variables: implement maybe later
 #
 #  hf  --- Hazard Function (PDF / SF)
@@ -1920,6 +1927,10 @@ class rv_continuous(rv_generic):
                  shapes=None, extradoc=None, seed=None):
 
         super().__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         # save the ctor parameters, cf generic freeze
         self._ctor_param = dict(
@@ -2575,6 +2586,12 @@ class rv_continuous(rv_generic):
               Likelihood Estimate); "MM" (Method of Moments)
               is also available.
 
+        Raises
+        ------
+        TypeError, ValueError
+            If an input is invalid
+        FitError
+            If fitting fails or the fit produced would be invalid
 
         Returns
         -------
@@ -2661,7 +2678,7 @@ class rv_continuous(rv_generic):
             raise TypeError("Too many input arguments.")
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         start = [None]*2
         if (Narg < self.numargs) or not ('loc' in kwds and
@@ -2693,14 +2710,14 @@ class rv_continuous(rv_generic):
 
         loc, scale, shapes = self._unpack_loc_scale(vals)
         if not (np.all(self._argcheck(*shapes)) and scale > 0):
-            raise Exception("Optimization converged to parameters that are "
-                            "outside the range allowed by the distribution.")
+            raise FitError("Optimization converged to parameters that are "
+                           "outside the range allowed by the distribution.")
 
         if method == 'mm':
             if not np.isfinite(obj):
-                raise Exception("Optimization failed: either a data moment "
-                                "or fitted distribution moment is "
-                                "non-finite.")
+                raise FitError("Optimization failed: either a data moment "
+                               "or fitted distribution moment is "
+                               "non-finite.")
 
         return vals
 
@@ -2881,6 +2898,13 @@ class rv_continuous(rv_generic):
         finite. For example ``cauchy(0).mean()`` returns ``np.nan`` and
         ``cauchy(0).expect()`` returns ``0.0``.
 
+        Likewise, the accuracy of results is not verified by the function.
+        `scipy.integrate.quad` is typically reliable for integrals that are
+        numerically favorable, but it is not guaranteed to converge
+        to a correct value for all possible intervals and integrands. This
+        function is provided for convenience; for critical applications,
+        check results against other integration methods.
+
         The function is not vectorized.
 
         Examples
@@ -2918,15 +2942,26 @@ class rv_continuous(rv_generic):
             lb = loc + _a * scale
         if ub is None:
             ub = loc + _b * scale
-        if conditional:
-            invfac = (self.sf(lb, *args, **lockwds)
-                      - self.sf(ub, *args, **lockwds))
-        else:
-            invfac = 1.0
+
+        cdf_bounds = self.cdf([lb, ub], *args, **lockwds)
+        invfac = cdf_bounds[1] - cdf_bounds[0]
+
         kwds['args'] = args
-        # Silence floating point warnings from integration.
-        with np.errstate(all='ignore'):
-            vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+
+        # split interval to help integrator w/ infinite support; see gh-8928
+        alpha = 0.05  # split body from tails at probability mass `alpha`
+        inner_bounds = np.array([alpha, 1-alpha])
+        cdf_inner_bounds = cdf_bounds[0] + invfac * inner_bounds
+        c, d = loc + self._ppf(cdf_inner_bounds, *args) * scale
+
+        # Do not silence warnings from integration.
+        lbc = integrate.quad(fun, lb, c, **kwds)[0]
+        cd = integrate.quad(fun, c, d, **kwds)[0]
+        dub = integrate.quad(fun, d, ub, **kwds)[0]
+        vals = (lbc + cd + dub)
+
+        if conditional:
+            vals /= invfac
         return vals
 
     def _param_info(self):
@@ -3048,7 +3083,7 @@ class rv_discrete(rv_generic):
         If not provided, shape parameters will be inferred from
         the signatures of the private methods, ``_pmf`` and ``_cdf`` of
         the instance.
-    extradoc :  str, optional
+    extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
@@ -3158,6 +3193,10 @@ class rv_discrete(rv_generic):
                  shapes=None, extradoc=None, seed=None):
 
         super().__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         # cf generic freeze
         self._ctor_param = dict(
@@ -3838,6 +3877,10 @@ class rv_sample(rv_discrete):
                  shapes=None, extradoc=None, seed=None):
 
         super(rv_discrete, self).__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         if values is None:
             raise ValueError("rv_sample.__init__(..., values=None,...)")
