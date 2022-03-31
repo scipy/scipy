@@ -14,7 +14,7 @@ Various utilities that don't have another home.
    central_diff_weights - Weights for an n-point central mth derivative
    derivative - Find the nth derivative of a function at a point
    face - Get example image for processing
-   electrocardiogram - Load an example of a 1-D signal.
+   electrocardiogram - Load an example of a 1-D signal
 
 """
 
