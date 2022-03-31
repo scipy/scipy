@@ -36,6 +36,10 @@ def gaussian(r):
     return np.exp(-r**2)
 
 
+def cauchy(r):
+    return 1.0/(1.0+r)
+
+
 NAME_TO_FUNC = {
    "linear": linear,
    "thin_plate_spline": thin_plate_spline,
@@ -44,7 +48,8 @@ NAME_TO_FUNC = {
    "multiquadric": multiquadric,
    "inverse_multiquadric": inverse_multiquadric,
    "inverse_quadratic": inverse_quadratic,
-   "gaussian": gaussian
+   "gaussian": gaussian,
+   "cauchy": cauchy
    }
 
 
