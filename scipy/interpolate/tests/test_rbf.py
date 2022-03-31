@@ -8,7 +8,7 @@ from numpy import linspace, sin, cos, random, exp, allclose
 from scipy.interpolate._rbf import Rbf
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
-             'cubic', 'quintic', 'thin-plate', 'linear')
+             'cubic', 'quintic', 'thin-plate', 'linear', 'cauchy')
 
 
 def check_rbf1d_interpolation(function):
