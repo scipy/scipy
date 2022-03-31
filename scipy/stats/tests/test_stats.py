@@ -3001,15 +3001,16 @@ class TestMoments:
     def test_skew_constant_value(self):
         # Skewness of a constant input should be zero even when the mean is not
         # exact (gh-13245)
-        a = np.repeat(-0.27829495, 10)
-        assert stats.skew(a) == 0.0
-        assert stats.skew(a * float(2**50)) == 0.0
-        assert stats.skew(a / float(2**50)) == 0.0
-        assert stats.skew(a, bias=False) == 0.0
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+            a = np.repeat(-0.27829495, 10)
+            assert stats.skew(a) == 0.0
+            assert stats.skew(a * float(2**50)) == 0.0
+            assert stats.skew(a / float(2**50)) == 0.0
+            assert stats.skew(a, bias=False) == 0.0
 
-        # similarly, from gh-11086:
-        assert stats.skew([14.3]*7) == 0.0
-        assert stats.skew(1 + np.arange(-3, 4)*1e-16) == 0
+            # similarly, from gh-11086:
+            assert stats.skew([14.3]*7) == 0.0
+            assert stats.skew(1 + np.arange(-3, 4)*1e-16) == 0
 
     def test_kurtosis(self):
         # Scalar test case
@@ -3065,6 +3066,16 @@ class TestMoments:
                      np.mean(self.testcase_moment_accuracy)
         assert_allclose(np.power(tc_no_mean, 42).mean(),
                             stats.moment(self.testcase_moment_accuracy, 42))
+
+    def test_precision_loss_gh15554(self):
+        # gh-15554 was one of several issues that have reported problems with
+        # constant or near-constant input. We can't always fix these, but
+        # make sure there's a warning.
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+            rng = np.random.default_rng(34095309370)
+            a = rng.random(size=(100, 10))
+            a[:, 0] = 1.01
+            stats.skew(a)[0]
 
 
 class TestStudentTest:

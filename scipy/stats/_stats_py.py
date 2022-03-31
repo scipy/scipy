@@ -1013,6 +1013,14 @@ def _moment(a, moment, axis, *, mean=None):
         # Starting point for exponentiation by squares
         mean = a.mean(axis, keepdims=True) if mean is None else mean
         a_zero_mean = a - mean
+
+        eps = np.finfo(a_zero_mean.dtype).resolution * 10
+        rel_diff = np.max(np.abs(a_zero_mean), axis=axis, keepdims=True)/mean
+        if np.any((0 < rel_diff) & (rel_diff < eps)):
+            message = ("Precision loss occurred in moment calculation due to "
+                       "catastrophc cancellation. Results may be unreliable.")
+            warnings.warn(message, RuntimeWarning, stacklevel=4)
+
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
