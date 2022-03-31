@@ -63,9 +63,50 @@ def _check_svds(A, k, u, s, vh, which="LM", check_usvh_A=False,
     # Check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
     if check_svd:
         u2, s2, vh2 = sorted_svd(A, k, which)
-        # assert_allclose(np.abs(u), np.abs(u2), atol=atol, rtol=rtol)
+        assert_allclose(np.abs(u), np.abs(u2), atol=atol, rtol=rtol)
         assert_allclose(s, s2, atol=atol, rtol=rtol)
-        # assert_allclose(np.abs(vh), np.abs(vh2), atol=atol, rtol=rtol)
+        assert_allclose(np.abs(vh), np.abs(vh2), atol=atol, rtol=rtol)
+
+
+def _check_svds_n(A, k, u, s, vh, which="LM", check_res=True,
+                  check_svd=True, atol=1e-10, rtol=1e-7):
+    n, m = A.shape
+
+    # Check shapes.
+    assert_equal(u.shape, (n, k))
+    assert_equal(s.shape, (k,))
+    assert_equal(vh.shape, (k, m))
+
+    # Check that u is a semi-orthogonal matrix.
+    uh_u = np.dot(u.T.conj(), u)
+    assert_equal(uh_u.shape, (k, k))
+    error = np.sum(np.abs(uh_u - np.identity(k))) / (k * k)
+    assert_allclose(error, 0.0, atol=atol, rtol=rtol)
+
+    # Check that vh is a semi-orthogonal matrix.
+    vh_v = np.dot(vh, vh.T.conj())
+    assert_equal(vh_v.shape, (k, k))
+    error = np.sum(np.abs(vh_v - np.identity(k))) / (k * k)
+    assert_allclose(error, atol=atol, rtol=rtol)
+
+    # Check residuals
+    if check_res:
+        sd = s.getA1()
+        ru = A @ u - vh * sd[:, np.newaxis]
+        rus = np.sum(np.abs(resu)) / (n * k)
+        rvh = A.T.conj() @ vh - u * sd[:, np.newaxis]
+        rvhs = np.sum(np.abs(rv)) / (m * k)
+        assert_allclose(rus + rvhs, 0.0, atol=atol, rtol=rtol)
+
+    # Check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
+    if check_svd:
+        u2, s2, vh2 = sorted_svd(A, k, which)
+        assert_allclose(s, s2, atol=atol, rtol=rtol)
+        A_rebuilt_svd = (u2*s2).dot(vh2)
+        A_rebuilt = (u*s).dot(vh)
+        assert_equal(A_rebuilt.shape, A.shape)
+        error = np.sum(np.abs(A_rebuilt_svd - A_rebuilt)) / (k * k)
+        assert_allclose(error, 0.0, atol=atol, rtol=rtol)
 
 
 class CheckingLinearOperator(LinearOperator):
@@ -614,7 +655,7 @@ class SVDSCommonTests:
         S = spdiags(e, 0, m, m) @ S
         S = S.astype(dtype)
         u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000)
-        _check_svds(S, k, u, s, vh, which="SM", atol=1e-4, rtol=1e-1)
+        _check_svds_n(S, k, u, s, vh, which="SM", atol=1e-4, rtol=1e-1)
 
     # --- Test Edge Cases ---
     # Checks a few edge cases.
@@ -691,7 +732,7 @@ class SVDSCommonTests:
         t = np.sum(s > 0)
         assert_equal(t, k)
         # LOBPCG needs larger atol and rtol to pass
-        _check_svds(A, k, u, s, vh, atol=1e-3, rtol=1e0)
+        _check_svds_n(A, k, u, s, vh, atol=1e-3, rtol=1e0)
 
 # --- Perform tests with each solver ---
 
