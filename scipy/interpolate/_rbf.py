@@ -169,7 +169,7 @@ class Rbf:
         return xlogy(r**2, r)
 
     def _h_cauchy(self, r):
-        return 1/(1+r)
+        return 1.0/(1.0+r)
 
     # Setup self._function and do smoke test on initial r
     def _init_function(self, r):

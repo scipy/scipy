@@ -117,7 +117,8 @@ def test_rbf_regularity():
         'cubic': 0.15,
         'quintic': 0.1,
         'thin-plate': 0.1,
-        'linear': 0.2
+        'linear': 0.2,
+        'cauchy': 0.4
     }
     for function in FUNCTIONS:
         check_rbf1d_regularity(function, tolerances.get(function, 1e-2))
@@ -145,7 +146,8 @@ def test_2drbf_regularity():
         'cubic': 0.15,
         'quintic': 0.1,
         'thin-plate': 0.15,
-        'linear': 0.2
+        'linear': 0.2,
+        'cauchy': 0.4
     }
     for function in FUNCTIONS:
         check_2drbf1d_regularity(function, tolerances.get(function, 1e-2))
