@@ -93,9 +93,9 @@ def _check_svds_n(A, k, u, s, vh, which="LM", check_res=True,
     if check_res:
         sd = s.getA1()
         ru = A @ u - vh * sd[:, np.newaxis]
-        rus = np.sum(np.abs(resu)) / (n * k)
+        rus = np.sum(np.abs(ru)) / (n * k)
         rvh = A.T.conj() @ vh - u * sd[:, np.newaxis]
-        rvhs = np.sum(np.abs(rv)) / (m * k)
+        rvhs = np.sum(np.abs(rvh)) / (m * k)
         assert_allclose(rus + rvhs, 0.0, atol=atol, rtol=rtol)
 
     # Check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
