@@ -984,8 +984,8 @@ cdef class Rotation:
             raise ValueError("Expected axis specification to be a non-empty "
                              "string of upto 3 characters, got {}".format(seq))
 
-        intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
-        extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
+        intrinsic = re.match(r'^[XYZ]{1,3}$', seq)
+        extrinsic = re.match(r'^[xyz]{1,3}$', seq)
         if not (intrinsic or extrinsic):
             raise ValueError("Expected axes from `seq` to be from ['x', 'y', "
                              "'z'] or ['X', 'Y', 'Z'], got {}".format(seq))
@@ -1475,8 +1475,8 @@ cdef class Rotation:
         if len(seq) != 3:
             raise ValueError("Expected 3 axes, got {}.".format(seq))
 
-        intrinsic = (re.match(r'^[XYZ]{1,3}$', seq) is not None)
-        extrinsic = (re.match(r'^[xyz]{1,3}$', seq) is not None)
+        intrinsic = re.match(r'^[XYZ]{1,3}$', seq)
+        extrinsic = re.match(r'^[xyz]{1,3}$', seq)
         if not (intrinsic or extrinsic):
             raise ValueError("Expected axes from `seq` to be from "
                              "['x', 'y', 'z'] or ['X', 'Y', 'Z'], "
