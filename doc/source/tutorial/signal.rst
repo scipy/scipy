@@ -108,7 +108,7 @@ standard-deviation equal to :math:`\sigma_{o}=\left(o+1\right)/12` :
 A function to compute this Gaussian for arbitrary :math:`x` and :math:`o` is
 also available ( :func:`gauss_spline` ). The following code and figure use
 spline-filtering to compute an edge-image (the second derivative of a smoothed
-spline) of a raccoon's face, which is an array returned by the command :func:`scipy.misc.face`.
+spline) of a raccoon's face, which is an array returned by the command :func:`scipy.datasets.face`.
 The command :func:`sepfir2d` was used to apply a separable 2-D FIR
 filter with mirror-symmetric boundary conditions to the spline coefficients.
 This function is ideally-suited for reconstructing samples from spline
@@ -120,10 +120,10 @@ conditions.
    :alt: "This code displays two plots. The first plot is a normal grayscale photo of a raccoon climbing on a palm plant. The second plot has the 2-D spline filter applied to the photo and is completely grey except the edges of the photo have been emphasized, especially on the raccoon fur and palm fronds."
 
    >>> import numpy as np
-   >>> from scipy import signal, misc
+   >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
 
-   >>> image = misc.face(gray=True).astype(np.float32)
+   >>> image = datasets.face(gray=True).astype(np.float32)
    >>> derfilt = np.array([1.0, -2, 1.0], dtype=np.float32)
    >>> ck = signal.cspline2d(image, 8.0)
    >>> deriv = (signal.sepfir2d(ck, derfilt, [1]) +
@@ -312,10 +312,10 @@ enhancing, and edge-detection for an image.
    :alt: "This code displays two plots. The first plot is the familiar photo of a raccoon climbing on a palm. The second plot has the FIR filter applied and has the two copies of the photo superimposed due to the twin peaks manually set in the filter kernel definition."
 
    >>> import numpy as np
-   >>> from scipy import signal, misc
+   >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
 
-   >>> image = misc.face(gray=True)
+   >>> image = datasets.face(gray=True)
    >>> w = np.zeros((50, 50))
    >>> w[0][0] = 1.0
    >>> w[49][25] = 1.0
@@ -359,10 +359,10 @@ which is often used for blurring.
    :alt: "This code displays two plots. The first plot is a grayscale photo of two people climbing a wooden staircase taken from below. The second plot has the 2-D gaussian FIR window applied and appears very blurry. You can still tell it's a photo but the subject is ambiguous."
 
    >>> import numpy as np
-   >>> from scipy import signal, misc
+   >>> from scipy import signal, datasets
    >>> import matplotlib.pyplot as plt
 
-   >>> image = misc.ascent()
+   >>> image = datasets.ascent()
    >>> w = signal.windows.gaussian(51, 10.0)
    >>> image_new = signal.sepfir2d(image, w, w)
 
