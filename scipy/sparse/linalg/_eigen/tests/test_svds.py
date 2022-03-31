@@ -593,6 +593,7 @@ class SVDSCommonTests:
                                     rtol=eps)
 
     SHAPES = ((100, 100), (100, 101), (101, 100))
+
     @pytest.mark.filterwarnings("ignore:Exited at iteration")
     @pytest.mark.parametrize("shape", SHAPES)
     # ARPACK supports only dtype float, complex, or np.float32
@@ -606,7 +607,7 @@ class SVDSCommonTests:
         k = 5
         (m, n) = shape
         S = random(m, n, density=0.1, random_state=rng)
-        if dtype==complex:
+        if dtype == complex:
             S = + 1j * random(m, n, density=0.1, random_state=rng)
         e = np.ones(m)
         e[0:5] *= 1e1 ** np.arange(-10, 0, 2)
