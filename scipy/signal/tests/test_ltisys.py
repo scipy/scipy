@@ -1,4 +1,5 @@
 from abc import abstractmethod
+from multiprocessing.sharedctypes import Value
 import warnings
 
 import numpy as np
@@ -546,6 +547,14 @@ class TestLsim(_TestLsimFunctions):
         tout, y, x = self.func(system, u, t, X0=[1.0])
         expected_y = np.exp(-tout)
         assert_almost_equal(y, expected_y)
+
+    def test_nonequal_timesteps(self):
+        t = np.array([0.0, 1.0, 1.0, 3.0])
+        u = np.array([0.0, 0.0, 1.0, 1.0])
+        # Simple integrator: x'(t) = u(t)
+        system = ([1.0],[1.0,0.0])
+        with assert_raises(ValueError):
+            tout, y, x = self.func(system, u, t, X0=[1.0])
 
 
 class Test_lsim2(_TestLsimFunctions):
