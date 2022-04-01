@@ -91,10 +91,9 @@ def _check_svds_n(A, k, u, s, vh, which="LM", check_res=True,
 
     # Check residuals
     if check_res:
-        sd = s.getA1()
-        ru = A @ u - vh * sd[:, np.newaxis]
+        ru = A @ u - vh * s[:, np.newaxis]
         rus = np.sum(np.abs(ru)) / (n * k)
-        rvh = A.T.conj() @ vh - u * sd[:, np.newaxis]
+        rvh = A.T.conj() @ vh - u * s[:, np.newaxis]
         rvhs = np.sum(np.abs(rvh)) / (m * k)
         assert_allclose(rus + rvhs, 0.0, atol=atol, rtol=rtol)
 
