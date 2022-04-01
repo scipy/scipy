@@ -171,7 +171,7 @@ def assert_fit_warnings(dist):
 @pytest.mark.parametrize('dist',
                          ['alpha', 'betaprime',
                           'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
-                          'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
+                          'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gibrat',
                           'powerlognorm', 'rayleigh', 'wald'])
 def test_support(dist):
     """gh-6235"""
