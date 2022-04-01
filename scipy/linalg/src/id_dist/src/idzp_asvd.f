@@ -159,9 +159,9 @@ c       for the present routine (please see routine idzp_asvd
 c       for further documentation).
 c
         implicit none
-        integer m,n,krank,list(n),ier
+        integer m,n,krank,ier
         real*8 s(krank)
-        complex*16 a(m,n),u(m,krank),v(n,krank),
+        complex*16 a(m,n),u(m,krank),v(n,krank),list(n),
      1             proj(krank,n-krank),col(m,krank),
      2             work((krank+1)*(m+3*n+10)+9*krank**2)
 c
