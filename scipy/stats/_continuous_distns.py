@@ -5425,20 +5425,20 @@ class lognorm_gen(rv_continuous):
 lognorm = lognorm_gen(a=0.0, name='lognorm')
 
 
-class gilbrat_gen(rv_continuous):
-    r"""A Gilbrat continuous random variable.
+class gibrat_gen(rv_continuous):
+    r"""A Gibrat continuous random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability density function for `gilbrat` is:
+    The probability density function for `gibrat` is:
 
     .. math::
 
         f(x) = \frac{1}{x \sqrt{2\pi}} \exp(-\frac{1}{2} (\log(x))^2)
 
-    `gilbrat` is a special case of `lognorm` with ``s=1``.
+    `gibrat` is a special case of `lognorm` with ``s=1``.
 
     %(after_notes)s
 
@@ -5478,7 +5478,8 @@ class gilbrat_gen(rv_continuous):
         return 0.5 * np.log(2 * np.pi) + 0.5
 
 
-gilbrat = gilbrat_gen(a=0.0, name='gilbrat')
+gilbrat = gibrat_gen(a=0.0, name='gilbrat')
+gibrat = gibrat_gen(a=0.0, name='gibrat')
 
 
 class maxwell_gen(rv_continuous):
