@@ -654,7 +654,7 @@ class SVDSCommonTests:
         S = spdiags(e, 0, m, m) @ S
         S = S.astype(dtype)
         u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000)
-        _check_svds_n(S, k, u, s, vh, which="SM", atol=1e-4, rtol=1e-1)
+        _check_svds_n(S, k, u, s, vh, which="SM", atol=1e-1)
 
     # --- Test Edge Cases ---
     # Checks a few edge cases.
@@ -681,7 +681,7 @@ class SVDSCommonTests:
         assert_allclose(np.max(s), np.sqrt(n*m))
         s = np.array(sorted(s)[:-1]) + 1
         z = np.ones_like(s)
-        assert_array_equal(s, z)
+        assert_allclose(s, z)
 
     @pytest.mark.parametrize("shape", ((3, 4), (4, 4), (4, 3), (4, 2)))
     @pytest.mark.parametrize("dtype", (float, complex))
