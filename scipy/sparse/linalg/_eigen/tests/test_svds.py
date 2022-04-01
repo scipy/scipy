@@ -641,10 +641,10 @@ class SVDSCommonTests:
     def test_small_sigma_sparse(self, shape, dtype):
         # https://github.com/scipy/scipy/pull/11829
         solver = self.solver
-        # if dtype == complex and self.solver == 'propack':
-        #     pytest.skip("PROPACK unsupported for complex dtype")
-        if solver == 'propack':
-            pytest.skip("PROPACK failures unrelated to PR")
+        if dtype == complex and self.solver == 'propack':
+            pytest.skip("PROPACK unsupported for complex dtype")
+        # if solver == 'propack':
+        #     pytest.skip("PROPACK failures unrelated to PR")
         rng = np.random.default_rng(0)
         k = 5
         (m, n) = shape
@@ -657,9 +657,9 @@ class SVDSCommonTests:
         S = S.astype(dtype)
         u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000)
         if solver == 'arpack':
-            check_svd=False # ARPACK misses nearly multiple singular values
+            check_svd = False  # ARPACK misses nearly multiple singular values
         else:
-            check_svd=True
+            check_svd = True
         _check_svds_n(S, k, u, s, vh, which="SM", check_svd=check_svd, atol=1e-1)
 
     # --- Test Edge Cases ---
