@@ -468,24 +468,38 @@ class _TestLsimFunctions:
         assert_almost_equal(x, expected_x, decimal=self.decimal)
         assert_almost_equal(y, expected_x, decimal=self.decimal)
 
+    def test_two_states(self):
+        # A system with two state variables, two inputs, and one output.
+        A = np.array([[-1.0, 0.0], [0.0, -2.0]])
+        B = np.array([[1.0, 0.0], [0.0, 1.0]])
+        C = np.array([1.0, 0.0])
+        D = np.zeros((1, 2))
 
-class TestLsim(_TestLsimFunctions):
-    def func(self, *args, **kwargs):
-        return lsim(*args, **kwargs)
-        
+        system = self.lti_nowarn(A, B, C, D)
+
+        t = np.linspace(0, 10.0, 21)
+        u = np.zeros((len(t), 2))
+        tout, y, x = self.func(system, U=u, T=t, X0=[1.0, 1.0])
+        expected_y = np.exp(-tout)
+        expected_x0 = np.exp(-tout)
+        expected_x1 = np.exp(-2.0 * tout)
+        assert_almost_equal(y, expected_y)
+        assert_almost_equal(x[:,0], expected_x0)
+        assert_almost_equal(x[:,1], expected_x1)
+
     def test_double_integrator(self):
         # double integrator: y'' = 2u
-        A = matrix([[0., 1.], [0., 0.]])
-        B = matrix([[0.], [1.]])
-        C = matrix([[2., 0.]])
+        A = np.array([[0., 1.], [0., 0.]])
+        B = np.array([[0.], [1.]])
+        C = np.array([[2., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.ones_like(t)
         tout, y, x = self.func(system, u, t)
         expected_x = np.transpose(np.array([0.5 * tout**2, tout]))
         expected_y = tout**2
-        assert_almost_equal(x, expected_x)
-        assert_almost_equal(y, expected_y)
+        assert_almost_equal(x, expected_x, decimal=self.decimal)
+        assert_almost_equal(y, expected_y, decimal=self.decimal)
 
     def test_jordan_block(self):
         # Non-diagonalizable A matrix
@@ -493,9 +507,9 @@ class TestLsim(_TestLsimFunctions):
         #   x2' + x2 = u
         #   y = x1
         # Exact solution with u = 0 is y(t) = t exp(-t)
-        A = matrix([[-1., 1.], [0., -1.]])
-        B = matrix([[0.], [1.]])
-        C = matrix([[1., 0.]])
+        A = np.array([[-1., 1.], [0., -1.]])
+        B = np.array([[0.], [1.]])
+        C = np.array([[1., 0.]])
         system = self.lti_nowarn(A, B, C, 0.)
         t = np.linspace(0,5)
         u = np.zeros_like(t)
@@ -512,7 +526,7 @@ class TestLsim(_TestLsimFunctions):
         system = self.lti_nowarn(A, B, C, D)
 
         t = np.linspace(0, 5.0, 101)
-        u = np.zeros_like(t)
+        u = np.zeros((len(t), 2))
         tout, y, x = self.func(system, u, t, X0=[1.0, 1.0])
         expected_y = np.exp(-tout)
         expected_x0 = np.exp(-tout)
@@ -520,6 +534,10 @@ class TestLsim(_TestLsimFunctions):
         assert_almost_equal(y, expected_y)
         assert_almost_equal(x[:,0], expected_x0)
         assert_almost_equal(x[:,1], expected_x1)
+
+class TestLsim(_TestLsimFunctions):
+    def func(self, *args, **kwargs):
+        return lsim(*args, **kwargs)
 
     def test_nonzero_initial_time(self):
         system = self.lti_nowarn(-1.,1.,1.,0.)
@@ -557,24 +575,6 @@ class Test_lsim2(_TestLsimFunctions):
         assert_almost_equal(x, expected_x)
 
     def test_03(self):
-        # A system with two state variables, two inputs, and one output.
-        A = np.array([[-1.0, 0.0], [0.0, -2.0]])
-        B = np.array([[1.0, 0.0], [0.0, 1.0]])
-        C = np.array([1.0, 0.0])
-        D = np.zeros((1, 2))
-
-        system = self.lti_nowarn(A, B, C, D)
-
-        t = np.linspace(0, 10.0, 101)
-        tout, y, x = self.func(system, T=t, X0=[1.0, 1.0])
-        expected_y = np.exp(-tout)
-        expected_x0 = np.exp(-tout)
-        expected_x1 = np.exp(-2.0 * tout)
-        assert_almost_equal(y, expected_y)
-        assert_almost_equal(x[:,0], expected_x0)
-        assert_almost_equal(x[:,1], expected_x1)
-
-    def test_04(self):
         # Test use of the default values of the arguments `T` and `U`.
         # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
         # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
