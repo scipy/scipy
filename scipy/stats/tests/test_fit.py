@@ -7,6 +7,7 @@ from scipy import stats
 from scipy.optimize import differential_evolution
 
 from .test_continuous_basic import distcont
+from scipy.stats._distn_infrastructure import FitError
 from scipy.stats._distr_params import distdiscrete
 
 
@@ -144,6 +145,14 @@ def test_expon_fit():
     data = [0, 0, 0, 0, 2, 2, 2, 2]
     phat = stats.expon.fit(data, floc=0)
     assert_allclose(phat, [0, 1.0], atol=1e-3)
+
+
+def test_fit_error():
+    data = np.concatenate([np.zeros(29), np.ones(21)])
+    message = "Optimization converged to parameters that are..."
+    with pytest.raises(FitError, match=message), \
+            pytest.warns(RuntimeWarning):
+        stats.beta.fit(data)
 
 
 @pytest.mark.parametrize("dist, params",

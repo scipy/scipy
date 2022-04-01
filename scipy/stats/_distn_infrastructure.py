@@ -1713,6 +1713,11 @@ def _get_fixed_fit_value(kwds, names):
                          ', '.join(repeated))
     return vals[0][1] if vals else None
 
+
+class FitError(RuntimeError):
+    """Represents an error condition when fitting a distribution to data"""
+    pass
+
 #  continuous random variables: implement maybe later
 #
 #  hf  --- Hazard Function (PDF / SF)
@@ -2581,6 +2586,12 @@ class rv_continuous(rv_generic):
               Likelihood Estimate); "MM" (Method of Moments)
               is also available.
 
+        Raises
+        ------
+        TypeError, ValueError
+            If an input is invalid
+        FitError
+            If fitting fails or the fit produced would be invalid
 
         Returns
         -------
@@ -2667,7 +2678,7 @@ class rv_continuous(rv_generic):
             raise TypeError("Too many input arguments.")
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         start = [None]*2
         if (Narg < self.numargs) or not ('loc' in kwds and
@@ -2699,14 +2710,14 @@ class rv_continuous(rv_generic):
 
         loc, scale, shapes = self._unpack_loc_scale(vals)
         if not (np.all(self._argcheck(*shapes)) and scale > 0):
-            raise Exception("Optimization converged to parameters that are "
-                            "outside the range allowed by the distribution.")
+            raise FitError("Optimization converged to parameters that are "
+                           "outside the range allowed by the distribution.")
 
         if method == 'mm':
             if not np.isfinite(obj):
-                raise Exception("Optimization failed: either a data moment "
-                                "or fitted distribution moment is "
-                                "non-finite.")
+                raise FitError("Optimization failed: either a data moment "
+                               "or fitted distribution moment is "
+                               "non-finite.")
 
         return vals
 

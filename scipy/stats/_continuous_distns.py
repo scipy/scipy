@@ -380,7 +380,7 @@ class norm_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         if floc is None:
             loc = data.mean()
@@ -723,7 +723,7 @@ class beta_gen(rv_continuous):
         # the Wikipedia article on the Beta distribution for the formulas.)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         # Normalize the data to the interval [0, 1].
         data = (np.ravel(data) - floc) / fscale
@@ -1669,7 +1669,7 @@ class expon_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         data_min = data.min()
 
@@ -2991,7 +2991,7 @@ class gamma_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         if np.any(data <= floc):
             raise FitDataError("gamma", lower=floc, upper=np.inf)
@@ -4944,7 +4944,7 @@ def _check_fit_input_parameters(dist, data, args, kwds):
                            "optimize.")
 
     if not np.isfinite(data).all():
-        raise RuntimeError("The data contains non-finite values.")
+        raise ValueError("The data contains non-finite values.")
 
     return (data, *fshapes, floc, fscale)
 
@@ -5389,7 +5389,7 @@ class lognorm_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         floc = float(floc)
         if floc != 0:
@@ -5425,20 +5425,20 @@ class lognorm_gen(rv_continuous):
 lognorm = lognorm_gen(a=0.0, name='lognorm')
 
 
-class gilbrat_gen(rv_continuous):
-    r"""A Gilbrat continuous random variable.
+class gibrat_gen(rv_continuous):
+    r"""A Gibrat continuous random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability density function for `gilbrat` is:
+    The probability density function for `gibrat` is:
 
     .. math::
 
         f(x) = \frac{1}{x \sqrt{2\pi}} \exp(-\frac{1}{2} (\log(x))^2)
 
-    `gilbrat` is a special case of `lognorm` with ``s=1``.
+    `gibrat` is a special case of `lognorm` with ``s=1``.
 
     %(after_notes)s
 
@@ -5478,7 +5478,8 @@ class gilbrat_gen(rv_continuous):
         return 0.5 * np.log(2 * np.pi) + 0.5
 
 
-gilbrat = gilbrat_gen(a=0.0, name='gilbrat')
+gilbrat = gibrat_gen(a=0.0, name='gilbrat')
+gibrat = gibrat_gen(a=0.0, name='gibrat')
 
 
 class maxwell_gen(rv_continuous):
@@ -8689,7 +8690,7 @@ class uniform_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         # MLE for the uniform distribution
         # --------------------------------
