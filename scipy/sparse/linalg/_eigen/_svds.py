@@ -191,9 +191,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Alternatively, the PROPACK solver can be called. ``form="array"``
 
-    Choices of the input matrix ``A`` numeric dtype may be limited. 
+    Choices of the input matrix ``A`` numeric dtype may be limited.
     Only ``solver="lobpcg"`` supports all floating point dtypes
-    real: 'np.single', 'np.double', 'np.longdouble' and 
+    real: 'np.single', 'np.double', 'np.longdouble' and
     complex: 'np.csingle', 'np.cdouble', 'np.clongdouble'.
     The ``solver="arpack"`` supports only
     'np.single', 'np.double', and 'np.cdouble'.
