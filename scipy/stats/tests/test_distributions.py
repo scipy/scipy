@@ -1000,7 +1000,7 @@ class TestTruncnorm:
         assert_allclose(m, m0)
         assert_allclose(v, v0)
         assert_allclose(s, s0, rtol=rtol)
-        assert_allclose(k, k0, rtol=1e-5)
+        assert_allclose(k, k0, rtol=rtol)
 
     @pytest.mark.xfail_on_32bit("reduced accuracy with 32bit platforms.")
     def test_moments(self):
@@ -1043,7 +1043,8 @@ class TestTruncnorm:
         self._test_moments_one_range(-20, -19, [-19.0523439459766628,
                                                 0.0027250730180314,
                                                 -1.9838694022629291,
-                                                5.8717850028287586])
+                                                5.8717850028287586],
+                                     rtol=1e-5)
         self._test_moments_one_range(-30, -29, [-29.0344012377394698,
                                                 0.0011806603928891,
                                                 -1.9930304534611458,
