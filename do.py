@@ -101,7 +101,6 @@ First milestone replace dev.py
       https://github.com/pallets/click/issues/1340
 
 commands:
-- [ ] bench
 - [ ] --bench-compare
 
 cleanup + doit:
@@ -506,9 +505,9 @@ class Test(Task):
 
     Examples:
 
-    $ python do.py -s {SAMPLE_SUBMODULE}
+    $ python do.py test -s {SAMPLE_SUBMODULE}
 
-    $ python do.py -s stats
+    $ python do.py test -s stats
     """
     ctx = CONTEXT
 
@@ -621,7 +620,6 @@ class Test(Task):
 **********************Bench taks*************************
 Needs more work (WIP)
 TODO: Fix bench compare
-      add a standalone method for _get_test_runner 
 """
 @cli.cls_cmd('bench')
 class Bench(Task):
@@ -630,6 +628,7 @@ class Bench(Task):
      Examples:
 
     $ python do.py bench -t integrate.SolveBVP
+    $ python do.py bench -t linalg.Norm
 
     """
     ctx = CONTEXT
@@ -650,7 +649,11 @@ class Bench(Task):
                            default=None,
                            metavar='BENCH-COMPARE',
                            multiple=True,
-                           help='Compare benchmark results of current HEAD to BEFORE')
+                           help="Compare benchmark results of current HEAD to"
+                              " BEFORE. Use an additional "
+                              "--bench-compare=COMMIT to override HEAD with"
+                              " COMMIT. Note that you need to commit your "
+                              "changes first!")
 
     @staticmethod
     def run_asv(cmd):
@@ -705,7 +708,7 @@ class Bench(Task):
 
         bench_args = []
         for a in extra_argv:
-            bench_args.extend(['--bench', a])
+            bench_args.extend(['--bench', ' '.join(str(x) for x in a)])
         if not args.bench_compare:
             import scipy
 
@@ -722,7 +725,7 @@ class Bench(Task):
             elif len(args.bench_compare) == 2:
                 commit_a, commit_b = args.bench_compare
             else:
-                p.error("Too many commits to compare benchmarks for")
+                print("Too many commits to compare benchmarks for")
 
             # Check for uncommitted files
             if commit_b == 'HEAD':
