@@ -19,7 +19,6 @@ time invariant systems.
 #   Split lti class into subclasses
 #   Merged discrete systems and added dlti
 
-from inspect import stack
 import warnings
 
 # np.linalg.qr fails on some tests with LinAlgError: zgeqrf returns -7
