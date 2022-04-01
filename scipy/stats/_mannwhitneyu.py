@@ -24,14 +24,24 @@ class _MWU:
         '''Minimal initializer'''
         self._fmnks = -np.ones((1, 1, 1))
 
+    # def pmf(self, k, m, n):
+    #     '''Probability mass function'''
+    #     self._fmnks = -np.ones((1, 1, 1))
+    #     self._resize_fmnks(m, n, np.max(k))
+    #     # could loop over just the unique elements, but probably not worth
+    #     # the time to find them
+    #     for i in np.ravel(k):
+    #         self._f(m, n, i)
+    #     return self._fmnks[(m, n, k)] / special.binom(m + n, m)
+
     def pmf(self, k, m, n):
         '''Probability mass function'''
-        self._resize_fmnks(m, n, np.max(k))
+        self._fmnks = {}
         # could loop over just the unique elements, but probably not worth
         # the time to find them
         for i in np.ravel(k):
-            self._f(m, n, i)
-        return self._fmnks[m, n, k] / special.binom(m + n, m)
+            self._f2(m, n, i)
+        return np.array([self._fmnks[(m, n, ki)] for ki in k]) / special.binom(m + n, m)
 
     def cdf(self, k, m, n):
         '''Cumulative distribution function'''
@@ -81,6 +91,55 @@ class _MWU:
             fmnk = self._f(m-1, n, k-n) + self._f(m, n-1, k)
 
         self._fmnks[m, n, k] = fmnk  # remember result
+
+        return fmnk
+
+
+    def _f1(self, m, n, k):
+        '''Recursive implementation of function of [3] Theorem 2.5'''
+
+        # if already calculated, return the value
+        if self._fmnks.get((m, n, k), -1) >= 0:
+            return self._fmnks[(m, n, k)]
+
+        # [3] Theorem 2.5 Line 1
+        elif k < 0 or m < 0 or n < 0 or k > m*n:
+            return 0
+
+        # [3] Theorem 2.5 Line 2
+        elif k == 0 and m >= 0 and n >= 0:
+            return 1
+
+        return None
+
+    def _f2(self, m, n, k):
+        '''Non-Recursive implementation of function of [3] Theorem 2.5'''
+
+        stack = [(m, n, k)]
+        fmnk = None
+
+        while stack:
+            # Popping only if necessary would save a tiny bit of time, but NWI.
+            m, n, k = stack.pop()
+
+            fmnk = self._f1(m, n, k)
+            if fmnk is not None:
+                self._fmnks[(m, n, k)] = fmnk
+                continue
+
+            f1 = self._f1(m-1, n, k-n)
+            f2 = self._f1(m, n-1, k)
+            if f1 is not None and f2 is not None:
+                # [3] Theorem 2.5 Line 3 / Equation 3
+                fmnk = f1 + f2
+                self._fmnks[(m, n, k)] = fmnk
+                continue
+
+            stack.append((m, n, k))
+            if f1 is None:
+                stack.append((m-1, n, k-n))
+            if f2 is None:
+                stack.append((m, n-1, k))
 
         return fmnk
 
