@@ -2343,7 +2343,7 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
 
-        When Wn is a length-2 sequence, Wn[0] must be less than Wn[1].
+        When Wn is a length-2 sequence, ``Wn[0]`` must be less than ``Wn[1]``.
     rp : float, optional
         For Chebyshev and elliptic filters, provides the maximum ripple
         in the passband. (dB)
