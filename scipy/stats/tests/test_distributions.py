@@ -994,13 +994,13 @@ class TestTruncnorm:
             assert_almost_equal(stats.truncnorm.pdf(xvals, low, high),
                                 stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
 
-    def _test_moments_one_range(self, a, b, expected, decimal_s=7):
+    def _test_moments_one_range(self, a, b, expected, rtol=1e-7):
         m0, v0, s0, k0 = expected[:4]
         m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
-        assert_almost_equal(m, m0)
-        assert_almost_equal(v, v0)
-        assert_almost_equal(s, s0, decimal=decimal_s)
-        assert_almost_equal(k, k0)
+        assert_allclose(m, m0)
+        assert_allclose(v, v0)
+        assert_allclose(s, s0, rtol=rtol)
+        assert_allclose(k, k0, rtol=1e-5)
 
     @pytest.mark.xfail_on_32bit("reduced accuracy with 32bit platforms.")
     def test_moments(self):
@@ -1048,7 +1048,7 @@ class TestTruncnorm:
                                                 0.0011806603928891,
                                                 -1.9930304534611458,
                                                 5.8854062968996566],
-                                     decimal_s=6)
+                                     rtol=1e-6)
         self._test_moments_one_range(-40, -39, [-39.0256074199326264,
                                                 0.0006548826719649,
                                                 -1.9963146354109957,
