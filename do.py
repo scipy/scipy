@@ -645,7 +645,7 @@ class Bench(Task):
                    multiple=True,
                    metavar='TESTS',
                    help='Specify tests to run')
-    bench_compare = Option(['--benchcompare', '-c'],
+    bench_compare = Option(['--bench-compare', '-c'],
                            default=None,
                            metavar='BENCH-COMPARE',
                            multiple=True,
@@ -751,7 +751,7 @@ class Bench(Task):
 
             cmd = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
                    commit_a, commit_b] + bench_args
-            run_asv(cmd)
+            cls.run_asv(cmd)
             sys.exit(1)
 
     @classmethod
