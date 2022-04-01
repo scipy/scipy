@@ -17,7 +17,7 @@ And also PyPI packages: click, rich, rich-click(1.3.0)
 
 ## 1 - click API
 
-Commands cab added using default Click API. i.e.
+Commands can added using default Click API. i.e.
 
 ```
 @cli.command()
@@ -96,9 +96,7 @@ class RefguideCheck(Task):
 # TODO:
 First milestone replace dev.py
 
-- [ ] support --no-build/-n
-- [ ] click does not support '--'. used by test command
-      https://github.com/pallets/click/issues/1340
+- [ ] doc: it would make sense to expose MAKE targets as sub-commands or options
 
 commands:
 - [ ] --bench-compare
@@ -107,13 +105,11 @@ cleanup + doit:
 - [ ] move out non-scipy code
 - [ ] copy used code from dev.py
 - [ ] doit reporter when running under click
-- [ ] doit: add io task attribute to control capture/caching of stdout/stderr
 
 
 BUG:
 - [ ] python dev.py -t scipy.optimize.tests.test_minimize_constrained.py::TestTrustRegionConstr::test_args
       unknown marker "slow". seems conftest is not being loaded
-- [ ] doc: fail on python3.10 - distutils is deprecated
 '''
 
 import os
@@ -127,7 +123,7 @@ from collections import namedtuple
 from types import ModuleType as new_module
 
 import click
-from click import Option
+from click import Parameter, Option, Argument
 from click.globals import get_current_context
 from rich_click import RichCommand, RichGroup
 from doit import task_params
@@ -173,13 +169,13 @@ param_type_map = {
     'boolean': bool,
     'integer': int,
 }
-def param_click2doit(name: str, val: Option):
+def param_click2doit(name: str, val: Parameter):
     """Convert click param to dict used by doit.cmdparse"""
     pd = {
         'name': name,
         'type': param_type_map[val.type.name], # FIXME: add all types
         'default': val.default,
-        'help': val.help or '',
+        'help': getattr(val, 'help', ''),
         'metavar': val.metavar,
     }
     for opt in val.opts:
@@ -220,7 +216,7 @@ class MetaclassDoitTask(type):
             for ctx_opt in ctx.options.values():
                 params.append(param_click2doit(ctx_opt.name, ctx_opt))
         for attr_name, val in cls.__dict__.items():
-            if isinstance(val, Option):
+            if isinstance(val, Parameter):
                 params.append(param_click2doit(attr_name, val))
         cls._params = params
 
@@ -258,11 +254,11 @@ class CliGroup(RichGroup):
     def cls_cmd(self, name):
         """class decorator, convert to click.Command"""
         def register_click(cls):
-            # get options for class definition
-            opts = []
+            # get options/arguments for class definition
+            params = []
             for attr_name, attr_val in cls.__dict__.items():
-                if isinstance(attr_val, Option):
-                    opts.append(attr_val)
+                if isinstance(attr_val, Parameter):
+                    params.append(attr_val)
 
             if issubclass(cls, Task):
                 # run as doit task
@@ -277,7 +273,7 @@ class CliGroup(RichGroup):
                 name=name,
                 callback=callback,
                 help=cls.__doc__,
-                params=opts,
+                params=params,
             )
             self.add_command(click_cmd)
             return cls
@@ -344,7 +340,7 @@ rich_click.OPTION_GROUPS = {
     "do.py": [
         {
             "name": "Options",
-            "options": ["--help", "--build-dir", "--install-prefix"],
+            "options": ["--help", "--build-dir", "--no-build", "--install-prefix"],
         },
     ],
 
@@ -393,6 +389,9 @@ CONTEXT = Context({
     'build_dir': Option(
         ['--build-dir'], default='build', metavar='BUILD_DIR', show_default=True,
         help=':wrench: Relative path to the build directory.'),
+    'no_build': Option(
+        ["--no-build", "-n"], default=False, is_flag=True,
+        help=":wrench: do not build the project (note event python only modification require build)"),
     'install_prefix': Option(
         ['--install-prefix'], default=None, metavar='INSTALL_DIR',
         help=":wrench: Relative path to the install directory. Default is <build-dir>-install."),
@@ -485,7 +484,12 @@ class Build(Task):
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
         set_installed(args)
-        site_dir = dev_module.build_project(args)
+
+        if args.no_build:
+            site_dir = get_site_dir()
+        else:
+            site_dir = dev_module.build_project(args)
+
 
         # add site to sys.path
         if add_path:
@@ -507,7 +511,7 @@ class Test(Task):
 
     $ python do.py test -s {SAMPLE_SUBMODULE}
 
-    $ python do.py test -s stats
+    $ python do.py test -s stats -- --tb=line
     """
     ctx = CONTEXT
 
@@ -528,6 +532,7 @@ class Test(Task):
         ['--parallel', '-j'], default=1, metavar='PARALLEL',
         help="Number of parallel jobs for testing"
     )
+    pytest_args = Argument(['pytest_args'], nargs=-1, metavar='PYTEST-ARGS', required=False)
 
     TASK_META = {
         'task_dep': ['build'],
@@ -539,7 +544,7 @@ class Test(Task):
         get Test Runner from locally installed/built project
         """
         __import__(project_module)
-        test = sys.modules[project_module].test
+        test = sys.modules[project_module].test # scipy._lib._testutils:PytestTester
         version = sys.modules[project_module].__version__
         mod_path = sys.modules[project_module].__file__
         mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
@@ -547,12 +552,8 @@ class Test(Task):
 
 
     @classmethod
-    def scipy_tests(cls, args):
+    def scipy_tests(cls, args, pytest_args):
 
-        # if NOT BUID:
-        #     test_dir = os.path.join(ROOT_DIR, args.build_dir, 'test')
-        #     if not os.path.isdir(test_dir):
-        #         os.makedirs(test_dir)
         site_dir = get_site_dir()
         # add local installed dir to PYTHONPATH
         print(f"Trying to find scipy from development installed path at: {site_dir}")
@@ -561,12 +562,14 @@ class Test(Task):
             os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
 
         test_dir = site_dir
+        # if NOT BUILD:
+        #     test_dir = os.path.join(ROOT_DIR, args.build_dir, 'test')
+        #     if not os.path.isdir(test_dir):
+        #         os.makedirs(test_dir)
 
-        # TODO: extra arguments to pytest?
-        extra_argv = []
-        # extra_argv = args.args[:]
-        # if extra_argv and extra_argv[0] == '--':
-        #     extra_argv = extra_argv[1:]
+        extra_argv = pytest_args[:]
+        if extra_argv and extra_argv[0] == '--':
+            extra_argv = extra_argv[1:]
 
         if args.coverage:
             dst_dir = os.path.join(ROOT_DIR, args.build_dir, 'coverage')
@@ -595,7 +598,7 @@ class Test(Task):
             print("Running tests for {} version:{}, installed at:{}".format(
                         PROJECT_MODULE, version, mod_path))
             verbose = int(args.verbose) + 1 # runner verbosity - convert bool to int
-            result = runner(
+            result = runner(  # scipy._lib._testutils:PytestTester
                 args.mode,
                 verbose=verbose,
                 extra_argv=extra_argv,
@@ -609,12 +612,12 @@ class Test(Task):
 
 
     @classmethod
-    def run(cls, **kwargs):
+    def run(cls, pytest_args, **kwargs):
         """run unit-tests"""
         kwargs.update(cls.ctx.get())
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
-        cls.scipy_tests(args)
+        cls.scipy_tests(args, pytest_args)
 
 """
 **********************Bench taks*************************
@@ -793,7 +796,6 @@ class Mypy(Task):
 
     TASK_META = {
         'task_dep': ['build'],
-        # 'stream': 'no-capture',
     }
 
     @classmethod
@@ -813,8 +815,6 @@ class Mypy(Task):
         )
 
         check_path = PROJECT_MODULE
-        # debug
-        check_path += '/optimize/minpack2.py'
 
         runtests = dev_module.import_module_from_path('runtests', Path(ROOT_DIR) / 'runtests.py')
         with runtests.working_dir(site_dir):
@@ -839,31 +839,47 @@ class Mypy(Task):
 
 @cli.cls_cmd('doc')
 class Doc(Task):
-    """:wrench: Build documentation"""
+    """:wrench: Build documentation
+
+TARGETS: Sphinx build targets [default: 'html-scipyorg']
+"""
     ctx = CONTEXT
 
-    # FIXME
-    # parser.add_argument("--doc", action="append", nargs="?",
-    #                 const="html-scipyorg", help="Build documentation")
-
+    args = Argument(['args'], nargs=-1, metavar='TARGETS', required=False)
+    list_targets = Option(
+        ['--list-targets', '-t'], default=False, is_flag=True,
+        help='List doc targets',
+    )
+    parallel = Option(
+        ['--parallel', '-j'], default=1, metavar='PARALLEL',
+        help="Number of parallel jobs"
+    )
 
     @classmethod
-    def task_meta(cls, **kwargs):
+    def task_meta(cls, list_targets, parallel, args, **kwargs):
+        if list_targets: # list MAKE targets, remove default target
+            task_dep = []
+            targets = ''
+        else:
+            task_dep = ['build']
+            targets = ' '.join(args) if args else 'html-scipyorg'
+
         kwargs.update(cls.ctx.get())
         Args = namedtuple('Args', [k for k in kwargs.keys()])
-        args = Args(**kwargs)
-        install_dir, site_dir = get_dirs(args)
+        build_args = Args(**kwargs)
+        install_dir, site_dir = get_dirs(build_args)
 
-        # FIXME: support parallel
-        # if args.parallel:
-        #     cmd.append('SPHINXOPTS="-j{}"'.format(args.parallel))
+        make_params = [f'PYTHON="{sys.executable}"']
+        if parallel:
+            make_params.append(f'SPHINXOPTS="-j{parallel}"')
 
         return {
             'actions': [
-                # move to doc/ so local scipy is not get imported
-                f'cd doc; env PYTHONPATH="../{site_dir}" make PYTHON="{sys.executable}" html-scipyorg',
+                # move to doc/ so local scipy does not get imported
+                f'cd doc; env PYTHONPATH="../{site_dir}" make {" ".join(make_params)} {targets}',
             ],
-            'task_dep': ['build'],
+            'task_dep': task_dep,
+            'io': {'capture': False},
         }
 
 @cli.cls_cmd('refguide-check')
@@ -895,18 +911,22 @@ class RefguideCheck(Task):
 
 ##########################################
 ### ENVS
-# TODO: it would be nice if click supported sections for commands
-# https://stackoverflow.com/questions/57066951/divide-click-commands-into-sections-in-cli-documentation
 
 @cli.command()
 @click.argument('extra_argv', nargs=-1)
+@click.option(
+    '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
+    help='Paths to prepend to PYTHONPATH')
 @click.pass_obj
-def python(ctx_obj, extra_argv):
+def python(ctx_obj, pythonpath, extra_argv):
     """:wrench: Start a Python shell with PYTHONPATH set"""
     # not a doit task - manually build
     vals = Build.opt_defaults()
     vals.update(ctx_obj)
     Build.run(add_path=True, **vals)
+    if pythonpath:
+        for p in reversed(pythonpath.split(os.pathsep)):
+            sys.path.insert(0, p)
 
     if extra_argv:
         # Don't use subprocess, since we don't want to include the
@@ -923,27 +943,39 @@ def python(ctx_obj, extra_argv):
 
 
 @cli.command()
+@click.option(
+    '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
+    help='Paths to prepend to PYTHONPATH')
 @click.pass_obj
-def ipython(ctx_obj):
+def ipython(ctx_obj, pythonpath):
     """:wrench: Start IPython shell with PYTHONPATH set"""
     # not a doit task - manually build
     vals = Build.opt_defaults()
     vals.update(ctx_obj)
     Build.run(add_path=True, **vals)
+    if pythonpath:
+        for p in reversed(pythonpath.split(os.pathsep)):
+            sys.path.insert(0, p)
 
     import IPython
     IPython.embed(user_ns={})
 
 
 @cli.command()
+@click.option(
+    '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
+    help='Paths to prepend to PYTHONPATH')
 @click.argument('extra_argv', nargs=-1)
 @click.pass_obj
-def shell(ctx_obj, extra_argv):
+def shell(ctx_obj, pythonpath, extra_argv):
     """:wrench: Start Unix shell with PYTHONPATH set"""
     # not a doit task - manually build
     vals = Build.opt_defaults()
     vals.update(ctx_obj)
     Build.run(add_path=True, **vals)
+    if pythonpath:
+        for p in reversed(pythonpath.split(os.pathsep)):
+            sys.path.insert(0, p)
 
     shell = os.environ.get('SHELL', 'sh')
     print("Spawning a Unix shell...")
@@ -983,6 +1015,7 @@ def authors(ctx_obj, revision_args):
         subprocess.run([cmd], check = True, shell=True)
     except subprocess.CalledProcessError:
         print('Error caught: Incorrect revision start or revision end')
+
 
 if __name__ == '__main__':
     cli()
