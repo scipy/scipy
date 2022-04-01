@@ -87,7 +87,7 @@ def _check_svds_n(A, k, u, s, vh, which="LM", check_res=True,
     vh_v = np.dot(vh, vh.T.conj())
     assert_equal(vh_v.shape, (k, k))
     error = np.sum(np.abs(vh_v - np.identity(k))) / (k * k)
-    assert_allclose(error, atol=atol, rtol=rtol)
+    assert_allclose(error, 0.0, atol=atol, rtol=rtol)
 
     # Check residuals
     if check_res:
