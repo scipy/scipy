@@ -1933,7 +1933,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
         def fprime(x, t, sys, ufunc):
             """The vector field of the linear system."""
-            return dot(sys.A, x) + squeeze(dot(sys.B, nan_to_num(ufunc([t]))))
+            return dot(sys.A, x) + squeeze(dot(sys.B, nan_to_num(ufunc(t))))
         xout = integrate.odeint(fprime, X0, T, args=(sys, ufunc), **kwargs)
         yout = dot(sys.C, transpose(xout)) + dot(sys.D, transpose(U))
     else:
