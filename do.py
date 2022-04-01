@@ -636,19 +636,11 @@ class Bench(Task):
         'task_dep': ['build'],
     }
     submodule = Option(
-        ['--submodule', '-s'],
-        default=None,
-        metavar='SUBMODULE',
+        ['--submodule', '-s'],default=None,metavar='SUBMODULE',
         help="Submodule whose tests to run (cluster, constants, ...)")
-    tests = Option(['--tests', '-t'],
-                   default=None,
-                   multiple=True,
-                   metavar='TESTS',
-                   help='Specify tests to run')
-    bench_compare = Option(['--bench-compare', '-c'],
-                           default=None,
-                           metavar='BENCH-COMPARE',
-                           multiple=True,
+    tests = Option(['--tests', '-t'],default=None, multiple=True,
+                   metavar='TESTS',help='Specify tests to run')
+    bench_compare = Option(['--bench-compare', '-c'],default=None,metavar='BENCH-COMPARE',multiple=True,
                            help="Compare benchmark results of current HEAD to"
                               " BEFORE. Use an additional "
                               "--bench-compare=COMMIT to override HEAD with"
@@ -676,8 +668,6 @@ class Bench(Task):
             set_mem_rlimit()
         except (ImportError, RuntimeError):
             pass
-
-        # Run
         try:
             return subprocess.call(cmd, env=env, cwd=cwd)
         except OSError as err:
