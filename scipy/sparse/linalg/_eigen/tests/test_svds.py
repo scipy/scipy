@@ -658,10 +658,10 @@ class SVDSCommonTests:
         S = S.astype(dtype)
         u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000)
         if solver == 'arpack':
-            check_svd = False  # ARPACK misses nearly multiple singular values
+            c_svd = False  # ARPACK misses nearly multiple singular values
         else:
-            check_svd = True
-        _check_svds_n(S, k, u, s, vh, which="SM", check_svd=check_svd, atol=1e-1)
+            c_svd = True
+        _check_svds_n(S, k, u, s, vh, which="SM", check_svd=c_svd, atol=1e-1)
 
     # --- Test Edge Cases ---
     # Checks a few edge cases.
