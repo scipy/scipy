@@ -30,6 +30,7 @@ from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
+from scipy.stats._result_classes import FitDataError, FitSolverError
 
 
 def _remove_optimizer_parameters(kwds):
@@ -554,28 +555,6 @@ class arcsine_gen(rv_continuous):
 
 
 arcsine = arcsine_gen(a=0.0, b=1.0, name='arcsine')
-
-
-class FitDataError(ValueError):
-    # This exception is raised by, for example, beta_gen.fit when both floc
-    # and fscale are fixed and there are values in the data not in the open
-    # interval (floc, floc+fscale).
-    def __init__(self, distr, lower, upper):
-        self.args = (
-            "Invalid values in `data`.  Maximum likelihood "
-            "estimation with {distr!r} requires that {lower!r} < "
-            "(x - loc)/scale  < {upper!r} for each x in `data`.".format(
-                distr=distr, lower=lower, upper=upper),
-        )
-
-
-class FitSolverError(RuntimeError):
-    # This exception is raised by, for example, beta_gen.fit when
-    # optimize.fsolve returns with ier != 1.
-    def __init__(self, mesg):
-        emsg = "Solver for the MLE equations failed to converge: "
-        emsg += mesg.replace('\n', '')
-        self.args = (emsg,)
 
 
 def _beta_mle_a(a, b, n, s1):

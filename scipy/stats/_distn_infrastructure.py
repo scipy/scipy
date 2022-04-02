@@ -40,6 +40,7 @@ from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
 
 import numpy as np
 from ._constants import _XMAX
+from scipy.stats._result_classes import FitError
 
 # These are the docstring parts used for substitution in specific
 # distribution docstrings
@@ -1713,10 +1714,6 @@ def _get_fixed_fit_value(kwds, names):
                          ', '.join(repeated))
     return vals[0][1] if vals else None
 
-
-class FitError(RuntimeError):
-    """Represents an error condition when fitting a distribution to data"""
-    pass
 
 #  continuous random variables: implement maybe later
 #
