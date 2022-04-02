@@ -12,7 +12,6 @@ doit interface is better suited for authring the development tasks.
 Note this requires the unreleased doit 0.35.
 And also PyPI packages: click, rich, rich-click(1.3.0)
 
-
 # USAGE:
 
 ## 1 - click API
@@ -103,7 +102,6 @@ commands:
 
 cleanup + doit:
 - [ ] move out non-scipy code
-- [ ] copy used code from dev.py
 - [ ] doit reporter when running under click
 
 
@@ -117,10 +115,17 @@ import subprocess
 import sys
 import re
 import shutil
+import json
+import datetime, time
+import platform
+import importlib.util
+import errno
+import contextlib
 from sysconfig import get_path
 from pathlib import Path
 from collections import namedtuple
 from types import ModuleType as new_module
+from dataclasses import dataclass
 
 import click
 from click import Parameter, Option, Argument
@@ -132,9 +137,6 @@ from doit.cmd_base import ModuleTaskLoader, get_loader
 from doit.doit_cmd import DoitMain
 from doit.cmdparse import CmdParse, CmdParseError
 from doit.exceptions import InvalidDodoFile, InvalidCommand, InvalidTask
-
-# keep compatibility and re-use dev.py code
-import dev as dev_module
 
 DOIT_CONFIG = {
     'verbosity': 2,
@@ -416,39 +418,70 @@ def cli(ctx, **kwargs):
 cli.params.extend(CONTEXT.options.values())
 
 
-def get_dirs(args):
-    """return (install_dir, site_dir)"""
-    build_dir = Path(args.build_dir)
-    install_dir = args.install_prefix
-    if not install_dir:
-        install_dir = build_dir.parent / (build_dir.stem + "-install")
+PROJECT_MODULE = "scipy"
+PROJECT_ROOT_FILES = ['scipy', 'LICENSE.txt', 'meson.build']
+ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
-    py_lib_path = Path(get_path('platlib')).relative_to(sys.exec_prefix)
-    site_dir = str(Path(install_dir) / py_lib_path)
-    return install_dir, site_dir
-
-
-
-# FIXME: remove
-def set_installed(args):
-    """set dev_module.PATH_INSTALLED
-
-    Given install-prefix or <build_dir>-install
+@dataclass
+class Dirs:
     """
-    install_dir = get_dirs(args)[0]
-    # set dev_module Global
-    dev_module.PATH_INSTALLED = os.path.join(
-        os.path.abspath(os.path.dirname(__file__)),
-        install_dir
-    )
-    return str(install_dir) # FIXME use returned value instead of module global
+        site:
+            Directory where the built SciPy version was installed. This is a custom
+            prefix, followed by a relative path matching the one the system would
+            use for the site-packages of the active Python interpreter.
+    """
+    # all paths are absolute
+    build: Path
+    installed: Path
+    site: Path # <install>/lib/python<version>/site-packages
 
-# FIXME: remove
-def get_site_dir():
-    path_installed = dev_module.PATH_INSTALLED
-    # relative path for site-package with py version. i.e. 'lib/python3.10/site-packages'
-    py_lib_path = Path(get_path('platlib')).relative_to(sys.exec_prefix)
-    return str(Path(path_installed) / py_lib_path)
+    def __init__(self, args):
+        """:params args: object like Context(build_dir, install_prefix)"""
+        self.build = Path(args.build_dir).resolve()
+        if args.install_prefix:
+           self.installed = Path(args.install_prefix).resolve()
+        else:
+            self.installed = self.build.parent / (self.build.stem + "-install")
+        # relative path for site-package with py version. i.e. 'lib/python3.10/site-packages'
+        py_lib_path = Path(get_path('platlib')).relative_to(sys.exec_prefix)
+        self.site = self.installed / py_lib_path
+
+
+    def add_sys_path(self):
+        """Add site dir to sys.path / PYTHONPATH"""
+        site_dir = str(self.site)
+        sys.path.insert(0, site_dir)
+        os.environ['PYTHONPATH'] = \
+            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+
+
+@contextlib.contextmanager
+def working_dir(new_dir):
+    current_dir = os.getcwd()
+    try:
+        os.chdir(new_dir)
+        yield
+    finally:
+        os.chdir(current_dir)
+
+def import_module_from_path(mod_name, mod_path):
+    """Import module with name `mod_name` from file path `mod_path`"""
+    spec = importlib.util.spec_from_file_location(mod_name, mod_path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def get_test_runner(project_module):
+    """
+    get Test Runner from locally installed/built project
+    """
+    __import__(project_module)
+    test = sys.modules[project_module].test # scipy._lib._testutils:PytestTester
+    version = sys.modules[project_module].__version__
+    mod_path = sys.modules[project_module].__file__
+    mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
+    return test, version, mod_path
 
 
 ############
@@ -478,30 +511,214 @@ class Build(Task):
              "implemented for Meson")
 
     @classmethod
+    def setup_build(cls, dirs, args, env):
+        """
+        Setting up meson-build
+        """
+        cmd = ["meson", "setup", dirs.build, "--prefix", dirs.installed]
+        build_dir = dirs.build
+        run_dir = os.getcwd()
+        if build_dir.exists() and not (build_dir / 'meson-info').exists():
+            if list(build_dir.iterdir()):
+                raise RuntimeError("Can't build into non-empty directory "
+                                   f"'{build_dir.absolute()}'")
+        if os.path.exists(build_dir):
+            build_options_file = (build_dir / "meson-info"
+                                  / "intro-buildoptions.json")
+            with open(build_options_file) as f:
+                build_options = json.load(f)
+            installdir = None
+            for option in build_options:
+                if option["name"] == "prefix":
+                    installdir = option["value"]
+                    break
+            if installdir != str(dirs.installed):
+                run_dir = os.path.join(run_dir, build_dir)
+                cmd = ["meson", "--reconfigure", "--prefix", str(dirs.installed)]
+            else:
+                return
+        if args.werror:
+            cmd += ["--werror"]
+        # Setting up meson build
+        ret = subprocess.call(cmd, env=env, cwd=run_dir)
+        if ret == 0:
+            print("Meson build setup OK")
+        else:
+            print("Meson build setup failed! ({0} elapsed)")
+            sys.exit(1)
+        return
+
+    @classmethod
+    def build_project(cls, dirs, args):
+        """
+        Build a dev version of the project.
+        """
+        root_ok = [os.path.exists(os.path.join(ROOT_DIR, fn))
+                   for fn in PROJECT_ROOT_FILES]
+        if not all(root_ok):
+            print("To build the project, run dev.py in "
+                  "git checkout or unpacked source")
+            sys.exit(1)
+
+        env = dict(os.environ)
+        if args.debug or args.gcov:
+            # assume everyone uses gcc/gfortran
+            env['OPT'] = '-O0 -ggdb'
+            env['FOPT'] = '-O0 -ggdb'
+            if args.gcov:
+                from sysconfig import get_config_vars
+                cvars = get_config_vars()
+                env['OPT'] = '-O0 -ggdb'
+                env['FOPT'] = '-O0 -ggdb'
+                env['CC'] = env.get('CC', cvars['CC']) + ' --coverage'
+                env['CXX'] = env.get('CXX', cvars['CXX']) + ' --coverage'
+                env['F77'] = 'gfortran --coverage '
+                env['F90'] = 'gfortran --coverage '
+                env['LDSHARED'] = cvars['LDSHARED'] + ' --coverage'
+                env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) +\
+                    ' --coverage'
+
+        cls.setup_build(dirs, args, env)
+        cmd = ["ninja", "-C", str(dirs.build)]
+        if args.parallel > 1:
+            cmd += ["-j", str(args.parallel)]
+
+        # Building with ninja-backend
+        ret = subprocess.call(cmd, env=env, cwd=ROOT_DIR)
+
+        if ret == 0:
+            print("Build OK")
+        else:
+            print("Build failed!")
+            sys.exit(1)
+
+
+    @classmethod
+    def install_project(cls, dirs, args):
+        """
+        Installs the project after building.
+        """
+        if os.path.exists(dirs.installed):
+            non_empty = len(os.listdir(dirs.installed))
+            if non_empty and not os.path.exists(dirs.site):
+                raise RuntimeError("Can't install in non-empty directory: "
+                                   f"'{dirs.installed}'")
+        cmd = ["meson", "install", "-C", args.build_dir]
+        log_filename = os.path.join(ROOT_DIR, 'meson-install.log')
+        start_time = datetime.datetime.now()
+        if args.show_build_log:
+            ret = subprocess.call(cmd, cwd=ROOT_DIR)
+        else:
+            print("Installing, see meson-install.log...")
+            with open(log_filename, 'w') as log:
+                p = subprocess.Popen(cmd, stdout=log, stderr=log,
+                                     cwd=ROOT_DIR)
+
+            try:
+                # Wait for it to finish, and print something to indicate the
+                # process is alive, but only if the log file has grown (to
+                # allow continuous integration environments kill a hanging
+                # process accurately if it produces no output)
+                last_blip = time.time()
+                last_log_size = os.stat(log_filename).st_size
+                while p.poll() is None:
+                    time.sleep(0.5)
+                    if time.time() - last_blip > 60:
+                        log_size = os.stat(log_filename).st_size
+                        if log_size > last_log_size:
+                            elapsed = datetime.datetime.now() - start_time
+                            print("    ... installation in progress ({0} "
+                                  "elapsed)".format(elapsed))
+                            last_blip = time.time()
+                            last_log_size = log_size
+
+                ret = p.wait()
+            except:  # noqa: E722
+                p.terminate()
+                raise
+        elapsed = datetime.datetime.now() - start_time
+
+        if ret != 0:
+            if not args.show_build_log:
+                with open(log_filename, 'r') as f:
+                    print(f.read())
+            print("Installation failed! ({0} elapsed)".format(elapsed))
+            sys.exit(1)
+
+        # ignore everything in the install directory.
+        with open(dirs.installed / ".gitignore", "w") as f:
+            f.write("*")
+
+        print("Installation OK")
+        return
+
+
+    @classmethod
+    def copy_openblas(cls, dirs):
+        """
+        Copies OpenBLAS DLL to the SciPy install dir, and also overwrites the
+        default `_distributor_init.py` file with the one we use for wheels uploaded
+        to PyPI so that DLL gets loaded.
+
+        Assumes pkg-config is installed and aware of OpenBLAS.
+        """
+        # Get OpenBLAS lib path from pkg-config
+        cmd = ['pkg-config', '--variable', 'libdir', 'openblas']
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        if result.returncode != 0:
+            print(result.stderrr)
+            return result.returncode
+
+        openblas_lib_path = Path(result.stdout.strip())
+        if not openblas_lib_path.stem == 'lib':
+            raise RuntimeError(f'Expecting "lib" at end of "{openblas_lib_path}"')
+
+        # Look in bin subdirectory for OpenBLAS binaries.
+        bin_path = openblas_lib_path.parent / 'bin'
+        # Locate, make output .libs directory in Scipy install directory.
+        scipy_path = dirs.site / 'scipy'
+        libs_path = scipy_path / '.libs'
+        libs_path.mkdir(exist_ok=True)
+        # Copy DLL files from OpenBLAS install to scipy install .libs subdir.
+        for dll_fn in bin_path.glob('*.dll'):
+            out_fname = libs_path / dll_fn.parts[-1]
+            print(f'Copying {dll_fn} to {out_fname}')
+            out_fname.write_bytes(dll_fn.read_bytes())
+
+        # Write _distributor_init.py to scipy install dir; this ensures the .libs
+        # file is on the DLL search path at run-time, so OpenBLAS gets found
+        openblas_support = import_module_from_path(
+            'openblas_support',
+            Path(ROOT_DIR) / 'tools' / 'openblas_support.py')
+        openblas_support.make_init(scipy_path)
+        return 0
+
+
+    @classmethod
     def run(cls, add_path=False, **kwargs):
         """return site_dir"""
         kwargs.update(cls.ctx.get(kwargs))
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
-        set_installed(args)
 
+        dirs = Dirs(args)
         if args.no_build:
-            site_dir = get_site_dir()
+            print('Skipping build')
         else:
-            site_dir = dev_module.build_project(args)
-
+            cls.build_project(dirs, args)
+            cls.install_project(dirs, args)
+            if args.win_cp_openblas and platform.system() == 'Windows':
+                if cls.copy_openblas(dirs) == 0:
+                    print('OpenBLAS copied')
+                else:
+                    print("OpenBLAS copy failed!")
+                    sys.exit(1)
 
         # add site to sys.path
         if add_path:
-            sys.path.insert(0, site_dir)
-            os.environ['PYTHONPATH'] = \
-                os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
-        return site_dir
+            dirs.add_sys_path()
 
 
-
-PROJECT_MODULE = "scipy"
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
 @cli.cls_cmd('test')
 class Test(Task):
@@ -538,36 +755,20 @@ class Test(Task):
         'task_dep': ['build'],
     }
 
-    @staticmethod
-    def _get_test_runner(path_installed, project_module):
-        """
-        get Test Runner from locally installed/built project
-        """
-        __import__(project_module)
-        test = sys.modules[project_module].test # scipy._lib._testutils:PytestTester
-        version = sys.modules[project_module].__version__
-        mod_path = sys.modules[project_module].__file__
-        mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
-        return test, version, mod_path
-
 
     @classmethod
     def scipy_tests(cls, args, pytest_args):
+        dirs = Dirs(args)
+        dirs.add_sys_path()
+        print(f"Trying to find scipy from development installed path at: {dirs.site}")
 
-        site_dir = get_site_dir()
-        # add local installed dir to PYTHONPATH
-        print(f"Trying to find scipy from development installed path at: {site_dir}")
-        sys.path.insert(0, site_dir)
-        os.environ['PYTHONPATH'] = \
-            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
-
-        test_dir = site_dir
+        test_dir = str(dirs.site)
         # if NOT BUILD:
         #     test_dir = os.path.join(ROOT_DIR, args.build_dir, 'test')
         #     if not os.path.isdir(test_dir):
         #         os.makedirs(test_dir)
 
-        extra_argv = pytest_args[:]
+        extra_argv = pytest_args[:] if pytest_args else [] # FIXME: support with doit
         if extra_argv and extra_argv[0] == '--':
             extra_argv = extra_argv[1:]
 
@@ -581,7 +782,7 @@ class Test(Task):
             shutil.copyfile(os.path.join(ROOT_DIR, '.coveragerc'),
                             os.path.join(test_dir, '.coveragerc'))
 
-        runner, version, mod_path = cls._get_test_runner(dev_module.PATH_INSTALLED, PROJECT_MODULE)
+        runner, version, mod_path = get_test_runner(PROJECT_MODULE)
 
         # convert options to test selection
         if args.submodule:
@@ -592,9 +793,7 @@ class Test(Task):
             tests = None
 
         # FIXME: changing CWD is not a good practice and might messed up with other tasks
-        cwd = os.getcwd()
-        try:
-            os.chdir(test_dir)
+        with working_dir(test_dir):
             print("Running tests for {} version:{}, installed at:{}".format(
                         PROJECT_MODULE, version, mod_path))
             verbose = int(args.verbose) + 1 # runner verbosity - convert bool to int
@@ -606,8 +805,6 @@ class Test(Task):
                 coverage=args.coverage,
                 tests=tests,
                 parallel=args.parallel)
-        finally:
-            os.chdir(cwd)
         return result
 
 
@@ -654,8 +851,8 @@ class Bench(Task):
     def run_asv(cmd):
         EXTRA_PATH = ['/usr/lib/ccache', '/usr/lib/f90cache',
                       '/usr/local/lib/ccache', '/usr/local/lib/f90cache']
-        cwd = os.path.join(os.path.abspath(os.path.dirname(__file__)),
-                           'benchmarks')
+        bench_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'benchmarks')
+        sys.path.insert(0, bench_dir)
         # Always use ccache, if installed
         env = dict(os.environ)
         env['PATH'] = os.pathsep.join(EXTRA_PATH +
@@ -665,14 +862,13 @@ class Bench(Task):
         env['MKL_NUM_THREADS'] = '1'
 
         # Limit memory usage
-        sys.path.insert(0, cwd)
         from benchmarks.common import set_mem_rlimit
         try:
             set_mem_rlimit()
         except (ImportError, RuntimeError):
             pass
         try:
-            return subprocess.call(cmd, env=env, cwd=cwd)
+            return subprocess.call(cmd, env=env, cwd=bench_dir)
         except OSError as err:
             if err.errno == errno.ENOENT:
                 print("Error when running '%s': %s\n" % (" ".join(cmd), str(err),))
@@ -683,69 +879,62 @@ class Bench(Task):
 
     @classmethod
     def scipy_bench(cls, args):
-        test_obj = Test()
-        site_dir = get_site_dir()
-        # add local installed dir to PYTHONPATH
-        print(f"Trying to find scipy from development installed path at: {site_dir}")
-        sys.path.insert(0, site_dir)
-        os.environ['PYTHONPATH'] = \
-            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
-        cwd = os.getcwd()
-        os.chdir(site_dir)
-        runner, version, mod_path = test_obj._get_test_runner(dev_module.PATH_INSTALLED, PROJECT_MODULE)
-        extra_argv = []
-        if args.tests:
-            extra_argv.append(args.tests)
-        if args.submodule:
-            extra_argv.append([args.submodule])
+        dirs = Dirs(args)
+        dirs.add_sys_path()
+        print(f"Trying to find scipy from development installed path at: {dirs.site}")
+        with working_dir(dirs.site):
+            runner, version, mod_path = get_test_runner(PROJECT_MODULE)
+            extra_argv = []
+            if args.tests:
+                extra_argv.append(args.tests)
+            if args.submodule:
+                extra_argv.append([args.submodule])
 
-        bench_args = []
-        for a in extra_argv:
-            bench_args.extend(['--bench', ' '.join(str(x) for x in a)])
-        if not args.bench_compare:
-            import scipy
-
-            print("Running benchmarks for Scipy version %s at %s"
-                  % (version, mod_path))
-            cmd = ['asv', 'run', '--dry-run', '--show-stderr',
-                   '--python=same'] + bench_args
-            retval = cls.run_asv(cmd)
-            sys.exit(retval)
-        else:
-            if len(args.bench_compare) == 1:
-                commit_a = args.bench_compare[0]
-                commit_b = 'HEAD'
-            elif len(args.bench_compare) == 2:
-                commit_a, commit_b = args.bench_compare
+            bench_args = []
+            for a in extra_argv:
+                bench_args.extend(['--bench', ' '.join(str(x) for x in a)])
+            if not args.bench_compare:
+                print("Running benchmarks for Scipy version %s at %s"
+                      % (version, mod_path))
+                cmd = ['asv', 'run', '--dry-run', '--show-stderr',
+                       '--python=same'] + bench_args
+                retval = cls.run_asv(cmd)
+                sys.exit(retval)
             else:
-                print("Too many commits to compare benchmarks for")
+                if len(args.bench_compare) == 1:
+                    commit_a = args.bench_compare[0]
+                    commit_b = 'HEAD'
+                elif len(args.bench_compare) == 2:
+                    commit_a, commit_b = args.bench_compare
+                else:
+                    print("Too many commits to compare benchmarks for")
 
-            # Check for uncommitted files
-            if commit_b == 'HEAD':
-                r1 = subprocess.call(['git', 'diff-index', '--quiet',
-                                      '--cached', 'HEAD'])
-                r2 = subprocess.call(['git', 'diff-files', '--quiet'])
-                if r1 != 0 or r2 != 0:
-                    print("*" * 80)
-                    print("WARNING: you have uncommitted changes --- "
-                          "these will NOT be benchmarked!")
-                    print("*" * 80)
+                # Check for uncommitted files
+                if commit_b == 'HEAD':
+                    r1 = subprocess.call(['git', 'diff-index', '--quiet',
+                                          '--cached', 'HEAD'])
+                    r2 = subprocess.call(['git', 'diff-files', '--quiet'])
+                    if r1 != 0 or r2 != 0:
+                        print("*" * 80)
+                        print("WARNING: you have uncommitted changes --- "
+                              "these will NOT be benchmarked!")
+                        print("*" * 80)
 
-            # Fix commit ids (HEAD is local to current repo)
-            p = subprocess.Popen(['git', 'rev-parse', commit_b],
-                                 stdout=subprocess.PIPE)
-            out, err = p.communicate()
-            commit_b = out.strip()
+                # Fix commit ids (HEAD is local to current repo)
+                p = subprocess.Popen(['git', 'rev-parse', commit_b],
+                                     stdout=subprocess.PIPE)
+                out, err = p.communicate()
+                commit_b = out.strip()
 
-            p = subprocess.Popen(['git', 'rev-parse', commit_a],
-                                 stdout=subprocess.PIPE)
-            out, err = p.communicate()
-            commit_a = out.strip()
+                p = subprocess.Popen(['git', 'rev-parse', commit_a],
+                                     stdout=subprocess.PIPE)
+                out, err = p.communicate()
+                commit_a = out.strip()
 
-            cmd = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
-                   commit_a, commit_b] + bench_args
-            cls.run_asv(cmd)
-            sys.exit(1)
+                cmd = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
+                       commit_a, commit_b] + bench_args
+                cls.run_asv(cmd)
+                sys.exit(1)
 
     @classmethod
     def run(cls, **kwargs):
@@ -754,6 +943,7 @@ class Bench(Task):
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
         cls.scipy_bench(args)
+
 
 ###################
 #### linters
@@ -799,7 +989,12 @@ class Mypy(Task):
     }
 
     @classmethod
-    def run(cls):
+    def run(cls, **kwargs):
+        kwargs.update(cls.ctx.get())
+        Args = namedtuple('Args', [k for k in kwargs.keys()])
+        args = Args(**kwargs)
+        dirs = Dirs(args)
+
         try:
             import mypy.api
         except ImportError as e:
@@ -808,7 +1003,6 @@ class Mypy(Task):
                 "pip install -r mypy_requirements.txt from the repo root"
             ) from e
 
-        site_dir = get_site_dir()
         config = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
             "mypy.ini",
@@ -816,8 +1010,7 @@ class Mypy(Task):
 
         check_path = PROJECT_MODULE
 
-        runtests = dev_module.import_module_from_path('runtests', Path(ROOT_DIR) / 'runtests.py')
-        with runtests.working_dir(site_dir):
+        with working_dir(dirs.site):
             # By default mypy won't color the output since it isn't being
             # invoked from a tty.
             os.environ['MYPY_FORCE_COLOR'] = '1'
@@ -867,7 +1060,7 @@ TARGETS: Sphinx build targets [default: 'html-scipyorg']
         kwargs.update(cls.ctx.get())
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         build_args = Args(**kwargs)
-        install_dir, site_dir = get_dirs(build_args)
+        dirs = Dirs(build_args)
 
         make_params = [f'PYTHON="{sys.executable}"']
         if parallel:
@@ -876,7 +1069,7 @@ TARGETS: Sphinx build targets [default: 'html-scipyorg']
         return {
             'actions': [
                 # move to doc/ so local scipy does not get imported
-                f'cd doc; env PYTHONPATH="../{site_dir}" make {" ".join(make_params)} {targets}',
+                f'cd doc; env PYTHONPATH="../{dirs.site}" make {" ".join(make_params)} {targets}',
             ],
             'task_dep': task_dep,
             'io': {'capture': False},
@@ -896,7 +1089,7 @@ class RefguideCheck(Task):
         kwargs.update(cls.ctx.get())
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
-        install_dir, site_dir = get_dirs(args)
+        dirs = Dirs(args)
 
         cmd = [os.path.join(ROOT_DIR, 'tools', 'refguide_check.py'),
                '--doctests']
@@ -904,7 +1097,7 @@ class RefguideCheck(Task):
             cmd += [args.submodule]
         cmd_str = ' '.join(cmd)
         return {
-            'actions': [f'env PYTHONPATH={site_dir} {cmd_str}'],
+            'actions': [f'env PYTHONPATH={dirs.site} {cmd_str}'],
             'task_dep': ['build'],
         }
 
@@ -982,6 +1175,10 @@ def shell(ctx_obj, pythonpath, extra_argv):
     os.execv(shell, [shell] + extra_argv)
     sys.exit(1)
 
+
+
+##########################################
+### Release
 
 @cli.command()
 @click.argument('version_args', nargs=2)
