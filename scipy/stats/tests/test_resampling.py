@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 from scipy.stats import bootstrap, monte_carlo_test, permutation_test
-from scipy.stats._resampling import BootstrapDegenerateDistributionWarning
+from scipy.stats._warnings_errors import BootstrapDegenerateDistributionWarning
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy import special

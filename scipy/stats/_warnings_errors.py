@@ -3,10 +3,10 @@
 # _without_ adding them to the main stats documentation page.
 
 """
-Errors used in :mod:`scipy.stats`
----------------------------------
+Errors
+------
 
-.. currentmodule:: scipy.stats._result_classes
+.. currentmodule:: scipy.stats._warnings_errors
 
 .. autosummary::
    :toctree: generated/
@@ -15,10 +15,10 @@ Errors used in :mod:`scipy.stats`
    FitDataError
    FitSolverError
 
-Warnings used in :mod:`scipy.stats`
------------------------------------
+Warnings
+--------
 
-.. currentmodule:: scipy.stats._result_classes
+.. currentmodule:: scipy.stats._warnings_errors
 
 .. autosummary::
    :toctree: generated/
@@ -32,7 +32,8 @@ Warnings used in :mod:`scipy.stats`
 
 """
 
-### Warnings
+# Warnings
+
 
 class SciPyStatsWarning(RuntimeWarning):
     """Represents a runtime warning specific to `scipy.stats`"""
@@ -50,7 +51,8 @@ class BootstrapDegenerateDistributionWarning(SciPyStatsWarning):
                    "confidence interval is not defined.")
         self.args = (msg,)
 
-### Errors
+# Errors
+
 
 class SciPyStatsError(RuntimeError):
     """Represents a runtime error specific to `scipy.stats`"""

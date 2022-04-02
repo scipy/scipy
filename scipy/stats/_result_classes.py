@@ -3,8 +3,8 @@
 # _without_ adding them to the main stats documentation page.
 
 """
-Result classes used in :mod:`scipy.stats`
------------------------------------------
+Result classes
+--------------
 
 .. currentmodule:: scipy.stats._result_classes
 
@@ -23,7 +23,6 @@ __all__ = ['BinomTestResult', 'RelativeRiskResult', 'TukeyHSDResult',
            'PearsonRResult', 'FitResult']
 
 
-# Results
 from ._binomtest import BinomTestResult
 from ._relative_risk import RelativeRiskResult
 from ._hypotests import TukeyHSDResult
