@@ -741,7 +741,6 @@ class SVDSCommonTests:
         # LOBPCG needs larger atol and rtol to pass
         _check_svds_n(A, k, u, s, vh, atol=1e-3, rtol=1e0)
 
-
     # ARPACK supports only dtype float, complex, or np.float32
     @pytest.mark.parametrize("dtype", (float, complex, np.float32))
     def test_small_sigma2(self, dtype):
@@ -763,17 +762,17 @@ class SVDSCommonTests:
         # use non-sparse svd
         u, s, vh = svd(mat)
         # singular values are 0:
-        assert_allclose(s[-dim:], 0)
+        assert_allclose(s[-dim:], 0, atol=1e-7, rtol=1e0)
         # Smallest right singular vectors in null space:
-        assert_allclose(mat @ vh[-dim:, :].T, 0)
+        assert_allclose(mat @ vh[-dim:, :].T, 0, atol=1e-7, rtol=1e0)
 
         # Smallest singular values should be 0
-        sp_mat = sparse.coo_matrix(mat)
+        sp_mat = csc_matrix(mat)
         su, ss, svh = svds(sp_mat, k=dim, which='SM', solver=self.solver)
         # Smallest dim singular values are 0:
-        assert_allclose(ss, 0)
+        assert_allclose(ss, 0, atol=1e-7, rtol=1e0)
         # Smallest singular vectors via svds in null space: 
-        assert_allclose(sp_mat @ svh.T, 0)
+        assert_allclose(sp_mat @ svh.T, 0, atol=1e-7, rtol=1e0)
 
 
 # --- Perform tests with each solver ---
