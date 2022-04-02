@@ -644,7 +644,6 @@ class rv_generic:
                                    ('moments' in sig.kwonlyargs))
         self._random_state = check_random_state(seed)
 
-
     @property
     def random_state(self):
         """Get or set the generator object for generating random variates.
