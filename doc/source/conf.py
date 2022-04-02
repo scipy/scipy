@@ -190,7 +190,7 @@ html_theme_options = {
   "github_url": "https://github.com/scipy/scipy",
   "navbar_end": ["version-switcher", "navbar-icon-links"],
   "switcher": {
-      "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json"
+      "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
       "version_match": version,
   }
 }
