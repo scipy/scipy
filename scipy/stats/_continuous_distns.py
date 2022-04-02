@@ -9,7 +9,6 @@ from functools import wraps
 import ctypes
 
 import numpy as np
-
 from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring,
                                inherit_docstring_from)

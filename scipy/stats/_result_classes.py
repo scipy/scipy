@@ -17,8 +17,8 @@ Result classes used in :mod:`scipy.stats`
    PearsonRResult
    FitResult
 
-Warnings / Errors used in :mod:`scipy.stats`
---------------------------------------------
+Errors used in :mod:`scipy.stats`
+---------------------------------
 
 .. currentmodule:: scipy.stats._result_classes
 
@@ -26,9 +26,11 @@ Warnings / Errors used in :mod:`scipy.stats`
    :toctree: generated/
 
    FitError
+   FitDataError
+   FitSolverError
 
-Warnings / Errors used in :mod:`scipy.stats`
---------------------------------------------
+Warnings used in :mod:`scipy.stats`
+-----------------------------------
 
 .. currentmodule:: scipy.stats._result_classes
 
@@ -55,6 +57,10 @@ Warnings / Errors used in :mod:`scipy.stats`
 # Results
 __all__ = ['BinomTestResult', 'RelativeRiskResult', 'TukeyHSDResult',
            'PearsonRResult', 'FitResult']
+# Errors
+__all__ += ['SciPyStatsError', 'SciPyStatsWarning', 'FitError', 'FitDataError',
+            'FitSolverError']
+
 # Warnings
 __all__ += ['BootstrapDegenerateDistributionWarning',]
 
@@ -65,5 +71,17 @@ from ._hypotests import TukeyHSDResult
 from ._stats_py import PearsonRResult
 from ._fit import FitResult
 
+# Errors
+from ._distn_infrastructure import FitError
+from ._continuous_distns import FitDataError, FitSolverError
+
 # Warnings
 from ._resampling import BootstrapDegenerateDistributionWarning
+
+
+class SciPyStatsError(RuntimeError):
+    """Represents a runtime error specific to `scipy.stats`"""
+
+
+class SciPyStatsWarning(RuntimeWarning):
+    """Represents a runtime warning specific to `scipy.stats`"""
