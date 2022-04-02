@@ -30,7 +30,7 @@ from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
-from scipy.stats._result_classes import FitDataError, FitSolverError
+from scipy.stats._warnings_errors import FitDataError, FitSolverError
 
 
 def _remove_optimizer_parameters(kwds):

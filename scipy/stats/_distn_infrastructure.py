@@ -40,7 +40,7 @@ from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
 
 import numpy as np
 from ._constants import _XMAX
-from scipy.stats._result_classes import FitError
+from scipy.stats._warnings_errors import FitError
 
 # These are the docstring parts used for substitution in specific
 # distribution docstrings

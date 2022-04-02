@@ -8,7 +8,7 @@ from scipy._lib._util import rng_integers
 from dataclasses import make_dataclass
 from ._common import ConfidenceInterval
 from ._axis_nan_policy import _broadcast_concatenate, _broadcast_arrays
-from ._result_classes import BootstrapDegenerateDistributionWarning
+from ._warnings_errors import BootstrapDegenerateDistributionWarning
 
 __all__ = ['bootstrap', 'monte_carlo_test', 'permutation_test']
 
