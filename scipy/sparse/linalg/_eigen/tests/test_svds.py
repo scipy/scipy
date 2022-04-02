@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 import pytest
 
-from scipy.linalg import hilbert, svd
+from scipy.linalg import hilbert, svd, null_space
 from scipy.sparse import csc_matrix, isspmatrix, spdiags, random
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 from scipy.sparse.linalg import svds
@@ -95,7 +95,8 @@ def _check_svds_n(A, k, u, s, vh, which="LM", check_res=True,
         rus = np.sum(np.abs(ru)) / (n * k)
         rvh = A @ vh.T.conj() - u * s
         rvhs = np.sum(np.abs(rvh)) / (m * k)
-        assert_allclose(rus + rvhs, 0.0, atol=atol, rtol=rtol)
+        assert_allclose(rus, 0.0, atol=atol, rtol=rtol)
+        assert_allclose(rvhs, 0.0, atol=atol, rtol=rtol)
 
     # Check that scipy.sparse.linalg.svds ~ scipy.linalg.svd
     if check_svd:
@@ -739,6 +740,41 @@ class SVDSCommonTests:
         assert_equal(t, k)
         # LOBPCG needs larger atol and rtol to pass
         _check_svds_n(A, k, u, s, vh, atol=1e-3, rtol=1e0)
+
+
+    # ARPACK supports only dtype float, complex, or np.float32
+    @pytest.mark.parametrize("dtype", (float, complex, np.float32))
+    def test_small_sigma2(self, dtype):
+        # https://github.com/scipy/scipy/issues/11406
+        if dtype == complex and self.solver == 'propack':
+            pytest.skip("PROPACK unsupported for complex dtype")
+        rng = np.random.default_rng(179847540)
+        # create a 10x10 singular matrix with a 4-dim null space
+        dim = 4
+        size = 10
+        x = rng.random((size, size-dim))
+        y = x[:, :dim] * rng.random(dim)
+        mat = np.hstack((x, y))
+        mat = mat.astype(dtype)
+
+        nz = null_space(mat)
+        assert_equal(nz.shape[1], dim)
+
+        # use non-sparse svd
+        u, s, vh = svd(mat)
+        # singular values are 0:
+        assert_allclose(s[-dim:], 0)
+        # Smallest right singular vectors in null space:
+        assert_allclose(mat @ vh[-dim:, :].T, 0)
+
+        # Smallest singular values should be 0
+        sp_mat = sparse.coo_matrix(mat)
+        su, ss, svh = svds(sp_mat, k=dim, which='SM', solver=self.solver)
+        # Smallest dim singular values are 0:
+        assert_allclose(ss, 0)
+        # Smallest singular vectors via svds in null space: 
+        assert_allclose(sp_mat @ svh.T, 0)
+
 
 # --- Perform tests with each solver ---
 
