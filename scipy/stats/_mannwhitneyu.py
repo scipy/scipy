@@ -34,13 +34,12 @@ class _MWU:
 
     def pmf_recursive(self, k, m, n):
         '''Probability mass function, recursive version'''
-        self._fmnks = -np.ones((1, 1, 1))
         self._resize_fmnks(m, n, np.max(k))
         # could loop over just the unique elements, but probably not worth
         # the time to find them
         for i in np.ravel(k):
             self._f(m, n, i)
-        return self._fmnks[(m, n, k)] / special.binom(m + n, m)
+        return self._fmnks[m, n, k] / special.binom(m + n, m)
 
     def pmf_iterative(self, k, m, n):
         '''Probability mass function, iterative version'''
@@ -110,7 +109,7 @@ def _mwu_f_iterative(m, n, k, fmnks):
     '''Iterative implementation of function of [3] Theorem 2.5'''
 
     def _base_case(m, n, k):
-        '''Base cases from recursive versions'''
+        '''Base cases from recursive version'''
 
         # if already calculated, return the value
         if fmnks.get((m, n, k), -1) >= 0:
