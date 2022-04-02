@@ -6276,14 +6276,15 @@ class TestWrapCauchy:
         assert_allclose(p[1], 1 - np.arctan(cr*np.tan(np.pi - x2/2))/np.pi)
 
 
-def test_rvs_no_size_warning():
+def test_rvs_no_size_error():
+    # _rvs methods must have parameter `size`; see gh-11394
     class rvs_no_size_gen(stats.rv_continuous):
         def _rvs(self):
             return 1
 
     rvs_no_size = rvs_no_size_gen(name='rvs_no_size')
 
-    with assert_warns(np.VisibleDeprecationWarning):
+    with assert_raises(TypeError, match=re.escape("_rvs() got an unexpected")):
         rvs_no_size.rvs()
 
 

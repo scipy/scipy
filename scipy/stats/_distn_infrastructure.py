@@ -9,7 +9,6 @@ import keyword
 import re
 import types
 import warnings
-import inspect
 from itertools import zip_longest
 
 from scipy._lib import doccer
@@ -638,22 +637,6 @@ class rv_generic:
                                    ('moments' in sig.kwonlyargs))
         self._random_state = check_random_state(seed)
 
-        # For historical reasons, `size` was made an attribute that was read
-        # inside _rvs().  The code is being changed so that 'size'
-        # is an argument
-        # to self._rvs(). However some external (non-SciPy) distributions
-        # have not
-        # been updated.  Maintain backwards compatibility by checking if
-        # the self._rvs() signature has the 'size' keyword, or a **kwarg,
-        # and if not set self._size inside self.rvs()
-        # before calling self._rvs().
-        argspec = inspect.getfullargspec(self._rvs)
-        self._rvs_uses_size_attribute = (argspec.varkw is None and
-                                         'size' not in argspec.args and
-                                         'size' not in argspec.kwonlyargs)
-        # Warn on first use only
-        self._rvs_size_warned = False
-
     @property
     def random_state(self):
         """Get or set the generator object for generating random variates.
@@ -1079,20 +1062,7 @@ class rv_generic:
         else:
             random_state = self._random_state
 
-        # Maintain backwards compatibility by setting self._size
-        # for distributions that still need it.
-        if self._rvs_uses_size_attribute:
-            if not self._rvs_size_warned:
-                warnings.warn(
-                    f'The signature of {self._rvs} does not contain '
-                    f'a "size" keyword.  Such signatures are deprecated.',
-                    np.VisibleDeprecationWarning)
-                self._rvs_size_warned = True
-            self._size = size
-            self._random_state = random_state
-            vals = self._rvs(*args)
-        else:
-            vals = self._rvs(*args, size=size, random_state=random_state)
+        vals = self._rvs(*args, size=size, random_state=random_state)
 
         vals = vals * scale + loc
 
