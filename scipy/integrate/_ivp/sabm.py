@@ -1,8 +1,8 @@
 from collections import deque
 import numpy as np
 from scipy.optimize import fsolve
-from .base import OdeSolver, DenseOutput
-from .common import (validate_max_step, validate_tol, select_initial_step,
+from scipy.integrate._ivp.base import OdeSolver, DenseOutput
+from scipy.integrate._ivp.common import (validate_max_step, validate_tol, select_initial_step,
                      validate_first_step, warn_extraneous)
 
 
@@ -38,6 +38,10 @@ class SABM(OdeSolver):
     the predictor and the corrector.
 
     Can not be applied in the complex domain.
+
+    Note that the nfev is over evaluated. Most of the evaluations are
+    done by the constraints (function gun). This may be not efficient if the
+    constraints are difficult to solve.
 
     Parameters
     ----------
@@ -280,6 +284,7 @@ class SABM(OdeSolver):
             P = np.concatenate((y_new[0:i], y_p[i:]), axis=None)
             y_new[i] += h*direction*coeff[0] * \
                 self.f(self.t+h*direction, P, x_p)[i]
+            self.nfev += 1
             for j in range(1, p):
                 y_new[i] += h*direction*coeff[j]*self.prev_f_y[p-j][i]
 

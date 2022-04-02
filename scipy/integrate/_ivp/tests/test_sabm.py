@@ -85,8 +85,6 @@ def test_integration_ODE():
         assert_equal(res.status, 0)
         
         assert_equal(res.nlu, 0)
-        if mode == "Explicit":
-            assert_(res.nfev < 200)
         
         y_true = sol_rational(res.t)
         e = compute_error(res.y, y_true, rtol, atol)
