@@ -32,11 +32,22 @@ Warnings
 
 """
 
+from scipy.stats import (F_onewayConstantInputWarning,
+                         F_onewayBadInputSizesWarning,
+                         PearsonRConstantInputWarning,
+                         PearsonRNearConstantInputWarning,
+                         SpearmanRConstantInputWarning)
+
+
 # Warnings
 
 
 class SciPyStatsWarning(RuntimeWarning):
-    """Represents a runtime warning specific to `scipy.stats`"""
+    """Represents a runtime warning specific to `scipy.stats`."""
+    def __init__(self, msg=None):
+        if msg is None:
+            msg = ("A runtime warning occured in `scipy.stats`.")
+        self.args = (msg,)
 
 
 class BootstrapDegenerateDistributionWarning(SciPyStatsWarning):
@@ -55,14 +66,24 @@ class BootstrapDegenerateDistributionWarning(SciPyStatsWarning):
 
 
 class SciPyStatsError(RuntimeError):
-    """Represents a runtime error specific to `scipy.stats`"""
+    """Represents a runtime error specific to `scipy.stats`."""
+    def __init__(self, msg=None):
+        if msg is None:
+            msg = ("A runtime error occured in `scipy.stats`.")
+        self.args = (msg,)
 
 
 class FitError(SciPyStatsError):
-    """Represents an error condition when fitting a distribution to data"""
+    """Represents an error condition when fitting a distribution to data."""
+    def __init__(self, msg=None):
+        if msg is None:
+            msg = ("A runtime error occured when fitting a distribution to "
+                   "data.")
+        self.args = (msg,)
 
 
 class FitDataError(ValueError):
+    """Raised when data is inconsistent with fixed parameters."""
     # This exception is raised by, for example, beta_gen.fit when both floc
     # and fscale are fixed and there are values in the data not in the open
     # interval (floc, floc+fscale).
@@ -76,6 +97,9 @@ class FitDataError(ValueError):
 
 
 class FitSolverError(RuntimeError):
+    """
+    Raised when a solver fails to converge while fitting a distribution.
+    """
     # This exception is raised by, for example, beta_gen.fit when
     # optimize.fsolve returns with ier != 1.
     def __init__(self, mesg):
