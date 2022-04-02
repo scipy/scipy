@@ -329,12 +329,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     eigvec, _ = np.linalg.qr(eigvec)
     u = X_matmat(eigvec)
     if not return_singular_vectors:
-        s = svd(u, compute_uv=False)
+        s = svd(u, compute_uv=False, overwrite_a=True)
         return s[::-1]
 
     # compute the left singular vectors of X and update the right ones
     # accordingly
-    u, s, vh = svd(u, full_matrices=False)
+    u, s, vh = svd(u, full_matrices=False, overwrite_a=True)
     u = u[:, ::-1]
     s = s[::-1]
     vh = vh[::-1]
