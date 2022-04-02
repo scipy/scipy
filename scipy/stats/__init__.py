@@ -85,7 +85,7 @@ Continuous distributions
    genhalflogistic   -- Generalized Half Logistic
    genhyperbolic     -- Generalized Hyperbolic
    geninvgauss       -- Generalized Inverse Gaussian
-   gilbrat           -- Gilbrat
+   gibrat            -- Gibrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
    gumbel_l          -- Left Sided Gumbel, etc.
