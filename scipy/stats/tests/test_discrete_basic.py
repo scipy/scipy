@@ -497,3 +497,10 @@ def test_rv_sample():
     # entropy is the negative of the expected value of log(p)
     with np.errstate(divide='ignore'):
         assert_allclose(-dist.expect(lambda x: dist.logpmf(x)), dist.entropy())
+
+    # RVS is just ppf of uniform random variates
+    rng = np.random.default_rng(98430143469)
+    rvs = dist.rvs(size=100, random_state=rng)
+    rng = np.random.default_rng(98430143469)
+    rvs0 = dist.ppf(rng.random(size=100))
+    assert_allclose(rvs, rvs0)
