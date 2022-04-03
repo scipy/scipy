@@ -9,6 +9,7 @@ from scipy.optimize import direct, Bounds
 
 class TestDIRECT:
 
+
     def setup_method(self):
         self.fun_calls = 0
         self.bounds_sphere = 4*[(-2, 3)]
@@ -38,7 +39,7 @@ class TestDIRECT:
     @pytest.mark.parametrize("locally_biased", [True, False])
     def test_direct(self, locally_biased):
         res = direct(self.sphere, self.bounds_sphere,
-                     locally_biased = locally_biased)
+                     locally_biased=locally_biased)
 
         # test accuracy
         assert_allclose(res.x, self.optimum_sphere_pos,
@@ -63,7 +64,7 @@ class TestDIRECT:
     def test_direct_callback(self, locally_biased):
         # test that callback does not change the result
         res = direct(self.sphere, self.bounds_sphere,
-                    locally_biased = locally_biased)
+                     locally_biased=locally_biased)
 
         def callback(x):
             x = 2*x
@@ -72,7 +73,7 @@ class TestDIRECT:
             return dummy
 
         res_callback = direct(self.sphere, self.bounds_sphere,
-                              locally_biased = locally_biased,
+                              locally_biased=locally_biased,
                               callback=callback)
 
         assert_allclose(res.x, res_callback.x)
@@ -82,7 +83,7 @@ class TestDIRECT:
         assert res.status == res_callback.status
         assert res.success == res_callback.success
         assert res.fun == res_callback.fun
-        assert_allclose(res.x, res_callback.x) 
+        assert_allclose(res.x, res_callback.x)
         assert res.message == res_callback.message
 
         # test accuracy
@@ -95,14 +96,14 @@ class TestDIRECT:
     def test_exception(self, locally_biased):
         bounds = 4*[(-10, 10)]
         with pytest.raises(ZeroDivisionError):
-            result = direct(self.inv, bounds=bounds,
-                            locally_biased=locally_biased)
+            direct(self.inv, bounds=bounds,
+                   locally_biased=locally_biased)
 
     @pytest.mark.parametrize("locally_biased", [True, False])
     def test_nan(self, locally_biased):
         bounds = 4*[(-10, 10)]
-        result = direct(self.nan_fun, bounds=bounds,
-                        locally_biased=locally_biased)
+        direct(self.nan_fun, bounds=bounds,
+               locally_biased=locally_biased)
 
     @pytest.mark.parametrize("len_tol", [1e-3, 1e-4])
     @pytest.mark.parametrize("locally_biased", [True, False])
