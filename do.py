@@ -785,8 +785,6 @@ class Test(Task):
             extra_argv += ['--cov-report=html:' + str(dst_dir)]
             shutil.copyfile(dirs.root / '.coveragerc', dirs.site / '.coveragerc')
 
-        runner, version, mod_path = get_test_runner(PROJECT_MODULE)
-
         # convert options to test selection
         if args.submodule:
             tests = [PROJECT_MODULE + "." + args.submodule]
@@ -795,6 +793,7 @@ class Test(Task):
         else:
             tests = None
 
+        runner, version, mod_path = get_test_runner(PROJECT_MODULE)
         # FIXME: changing CWD is not a good practice and might messed up with other tasks
         with working_dir(dirs.site):
             print("Running tests for {} version:{}, installed at:{}".format(
@@ -855,7 +854,7 @@ class Bench(Task):
         EXTRA_PATH = ['/usr/lib/ccache', '/usr/lib/f90cache',
                       '/usr/local/lib/ccache', '/usr/local/lib/f90cache']
         bench_dir = dirs.root / 'benchmarks'
-        sys.path.insert(0, bench_dir)
+        sys.path.insert(0, str(bench_dir))
         # Always use ccache, if installed
         env = dict(os.environ)
         env['PATH'] = os.pathsep.join(EXTRA_PATH +
@@ -1103,75 +1102,68 @@ class RefguideCheck(Task):
 ##########################################
 ### ENVS
 
-@cli.command()
-@click.argument('extra_argv', nargs=-1)
-@click.option(
-    '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
-    help='Paths to prepend to PYTHONPATH')
-@click.pass_obj
-def python(ctx_obj, pythonpath, extra_argv):
+@cli.cls_cmd('python')
+class Python():
     """:wrench: Start a Python shell with PYTHONPATH set"""
-    # not a doit task - manually build
-    vals = Build.opt_defaults()
-    vals.update(ctx_obj)
-    Build.run(add_path=True, **vals)
-    if pythonpath:
-        for p in reversed(pythonpath.split(os.pathsep)):
-            sys.path.insert(0, p)
+    ctx = CONTEXT
+    pythonpath = Option(
+        ['--pythonpath', '-p'], metavar='PYTHONPATH', default=None,
+        help='Paths to prepend to PYTHONPATH')
+    extra_argv = Argument(['extra_argv'], nargs=-1, metavar='ARGS', required=False)
 
-    if extra_argv:
-        # Don't use subprocess, since we don't want to include the
-        # current path in PYTHONPATH.
-        sys.argv = extra_argv
-        with open(extra_argv[0], 'r') as f:
-            script = f.read()
-        sys.modules['__main__'] = new_module('__main__')
-        ns = dict(__name__='__main__', __file__=extra_argv[0])
-        exec(script, ns)
-    else:
-        import code
-        code.interact()
+    @classmethod
+    def _setup(cls, pythonpath, **kwargs):
+        vals = Build.opt_defaults()
+        vals.update(kwargs)
+        Build.run(add_path=True, **vals)
+        if pythonpath:
+            for p in reversed(pythonpath.split(os.pathsep)):
+                sys.path.insert(0, p)
+
+    @classmethod
+    def run(cls, pythonpath, extra_argv=None, **kwargs):
+        cls._setup(pythonpath, **kwargs)
+        if extra_argv:
+            # Don't use subprocess, since we don't want to include the
+            # current path in PYTHONPATH.
+            sys.argv = extra_argv
+            with open(extra_argv[0], 'r') as f:
+                script = f.read()
+            sys.modules['__main__'] = new_module('__main__')
+            ns = dict(__name__='__main__', __file__=extra_argv[0])
+            exec(script, ns)
+        else:
+            import code
+            code.interact()
 
 
-@cli.command()
-@click.option(
-    '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
-    help='Paths to prepend to PYTHONPATH')
-@click.pass_obj
-def ipython(ctx_obj, pythonpath):
+@cli.cls_cmd('ipython')
+class Ipython(Python):
     """:wrench: Start IPython shell with PYTHONPATH set"""
-    # not a doit task - manually build
-    vals = Build.opt_defaults()
-    vals.update(ctx_obj)
-    Build.run(add_path=True, **vals)
-    if pythonpath:
-        for p in reversed(pythonpath.split(os.pathsep)):
-            sys.path.insert(0, p)
+    ctx = CONTEXT
+    pythonpath = Python.pythonpath
 
-    import IPython
-    IPython.embed(user_ns={})
+    @classmethod
+    def run(cls, pythonpath, **kwargs):
+        cls._setup(pythonpath, **kwargs)
+        import IPython
+        IPython.embed(user_ns={})
 
 
-@cli.command()
-@click.option(
-    '--pythonpath', '-p', metavar='PYTHONPATH', default=None,
-    help='Paths to prepend to PYTHONPATH')
-@click.argument('extra_argv', nargs=-1)
-@click.pass_obj
-def shell(ctx_obj, pythonpath, extra_argv):
+@cli.cls_cmd('shell')
+class Shell(Python):
     """:wrench: Start Unix shell with PYTHONPATH set"""
-    # not a doit task - manually build
-    vals = Build.opt_defaults()
-    vals.update(ctx_obj)
-    Build.run(add_path=True, **vals)
-    if pythonpath:
-        for p in reversed(pythonpath.split(os.pathsep)):
-            sys.path.insert(0, p)
+    ctx = CONTEXT
+    pythonpath = Python.pythonpath
+    extra_argv = Python.extra_argv
 
-    shell = os.environ.get('SHELL', 'sh')
-    print("Spawning a Unix shell...")
-    os.execv(shell, [shell] + extra_argv)
-    sys.exit(1)
+    @classmethod
+    def run(cls, pythonpath, extra_argv, **kwargs):
+        cls._setup(pythonpath, **kwargs)
+        shell = os.environ.get('SHELL', 'sh')
+        print("Spawning a Unix shell...")
+        os.execv(shell, [shell] + list(extra_argv))
+        sys.exit(1)
 
 
 
