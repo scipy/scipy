@@ -742,6 +742,7 @@ class SVDSCommonTests:
         _check_svds_n(A, k, u, s, vh, atol=1e-3, rtol=1e0)
 
     # ARPACK supports only dtype float, complex, or np.float32
+    @pytest.mark.filterwarnings("ignore:The problem size")
     @pytest.mark.parametrize("dtype", (float, complex, np.float32))
     def test_small_sigma2(self, dtype):
         # https://github.com/scipy/scipy/issues/11406
@@ -772,7 +773,7 @@ class SVDSCommonTests:
         # Smallest dim singular values are 0:
         assert_allclose(ss, 0, atol=1e-7, rtol=1e0)
         # Smallest singular vectors via svds in null space: 
-        assert_allclose(sp_mat @ svh.T, 0, atol=1e-7, rtol=1e0)
+        assert_allclose(sp_mat @ svh.T, 0, atol=1e-6, rtol=1e0)
 
 
 # --- Perform tests with each solver ---
