@@ -765,7 +765,7 @@ class SVDSCommonTests:
         # singular values are 0:
         assert_allclose(s[-dim:], 0, atol=1e-7, rtol=1e0)
         # Smallest right singular vectors in null space:
-        assert_allclose(mat @ vh[-dim:, :].T, 0, atol=1e-7, rtol=1e0)
+        assert_allclose(mat @ vh[-dim:, :].T, 0, atol=1e-6, rtol=1e0)
 
         # Smallest singular values should be 0
         sp_mat = csc_matrix(mat)
