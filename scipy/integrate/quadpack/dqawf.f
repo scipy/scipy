@@ -85,7 +85,7 @@ c                             will probably gain from splitting up the
 c                             interval at this point and calling
 c                             appropriate integrators on the subranges.
 c                         = 4 the extrapolation table constructed for
-c                             convergence accelaration of the series
+c                             convergence acceleration of the series
 c                             formed by the integral contributions over
 c                             the cycles, does not converge to within
 c                             the requested accuracy.
