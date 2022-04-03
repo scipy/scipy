@@ -1,30 +1,3 @@
-# This module exists only to allow Sphinx to generate docs
-# for the result objects returned by some functions in stats
-# _without_ adding them to the main stats documentation page.
-
-"""
-Errors
-------
-
-.. currentmodule:: scipy.stats._warnings_errors
-
-.. autosummary::
-   :toctree: generated/
-
-   FitError
-
-Warnings
---------
-
-.. currentmodule:: scipy.stats._warnings_errors
-
-.. autosummary::
-   :toctree: generated/
-
-   DegenerateDataWarning
-
-"""
-
 # Warnings
 
 
