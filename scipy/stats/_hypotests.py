@@ -3,10 +3,11 @@ from dataclasses import make_dataclass
 import numpy as np
 import warnings
 from itertools import combinations
-from scipy import stats
-from scipy.stats import _stats_py
+import scipy.stats
 from scipy.optimize import shgo
+from . import distributions
 from ._common import ConfidenceInterval
+from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
 from ._hypotests_pythran import _a_ij_Aij_Dij2
@@ -138,7 +139,7 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
         corr = 1.0/(1.0 + n**(-0.45) + 10.1*(nx**(-1.7) + ny**(-1.7)))
         w = corr * w
 
-    p = stats.chi2.sf(w, r)
+    p = chi2.sf(w, r)
 
     return Epps_Singleton_2sampResult(w, p)
 
@@ -367,7 +368,7 @@ def cramervonmises(rvs, cdf, args=()):
 
     """
     if isinstance(cdf, str):
-        cdf = getattr(stats, cdf).cdf
+        cdf = getattr(distributions, cdf).cdf
 
     vals = np.sort(np.asarray(rvs))
 
@@ -454,7 +455,7 @@ def _tau_b(A):
     if s02_tau_b == 0:  # Avoid divide by zero
         return tau, 0
     Z = tau/s02_tau_b**0.5
-    p = 2*stats.norm.sf(abs(Z))  # 2-sided p-value
+    p = 2*norm.sf(abs(Z))  # 2-sided p-value
 
     return tau, p
 
@@ -480,7 +481,7 @@ def _somers_d(A, alternative='two-sided'):
     with np.errstate(divide='ignore'):
         Z = (PA - QA)/(4*(S))**0.5
 
-    _, p = _stats_py._normtest_finish(Z, alternative)
+    _, p = scipy.stats._stats_py._normtest_finish(Z, alternative)
 
     return d, p
 
@@ -648,7 +649,7 @@ def somersd(x, y=None, alternative='two-sided'):
     if x.ndim == 1:
         if x.size != y.size:
             raise ValueError("Rankings must be of equal length.")
-        table = stats.contingency.crosstab(x, y)[1]
+        table = scipy.stats.contingency.crosstab(x, y)[1]
     elif x.ndim == 2:
         if np.any(x < 0):
             raise ValueError("All elements of the contingency table must be "
@@ -1095,7 +1096,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     evidence to reject :math:`H_0` in favor of the alternative hypothesis.
 
     """
-    hypergeom = stats.hypergeom
+    hypergeom = distributions.hypergeom
 
     if n <= 0:
         raise ValueError(
@@ -1410,7 +1411,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     # get ranks of x and y in the pooled sample
     z = np.concatenate([xa, ya])
     # in case of ties, use midrank (see [1])
-    r = stats.rankdata(z, method='average')
+    r = scipy.stats.rankdata(z, method='average')
     rx = r[:nx]
     ry = r[nx:]
 
@@ -1555,7 +1556,7 @@ class TukeyHSDResult:
         # in the cases of unequal sample sizes there will be a criterion for
         # each group comparison.
         params = (confidence_level, self._nobs, self._ntreatments - self._nobs)
-        srd = stats.studentized_range.ppf(*params)
+        srd = distributions.studentized_range.ppf(*params)
         # also called maximum critical value, the Tukey criterion is the
         # studentized range critical value * the square root of mean square
         # error over the sample size.
@@ -1761,7 +1762,7 @@ def tukey_hsd(*args):
     t_stat = np.abs(mean_differences) / stand_err
 
     params = t_stat, ntreatments, nobs - ntreatments
-    pvalues = stats.studentized_range.sf(*params)
+    pvalues = distributions.studentized_range.sf(*params)
 
     return TukeyHSDResult(mean_differences, pvalues, ntreatments,
                           nobs, stand_err)

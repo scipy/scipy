@@ -3,7 +3,7 @@ import numpy as np
 from scipy._lib._util import _validate_int
 from scipy.optimize import brentq
 from scipy.special import ndtri
-from scipy import stats
+from ._discrete_distns import binom
 from ._common import ConfidenceInterval
 
 
@@ -134,24 +134,24 @@ def _binom_exact_conf_int(k, n, confidence_level, alternative):
         if k == 0:
             plow = 0.0
         else:
-            plow = _findp(lambda p: stats.binom.sf(k-1, n, p) - alpha)
+            plow = _findp(lambda p: binom.sf(k-1, n, p) - alpha)
         if k == n:
             phigh = 1.0
         else:
-            phigh = _findp(lambda p: stats.binom.cdf(k, n, p) - alpha)
+            phigh = _findp(lambda p: binom.cdf(k, n, p) - alpha)
     elif alternative == 'less':
         alpha = 1 - confidence_level
         plow = 0.0
         if k == n:
             phigh = 1.0
         else:
-            phigh = _findp(lambda p: stats.binom.cdf(k, n, p) - alpha)
+            phigh = _findp(lambda p: binom.cdf(k, n, p) - alpha)
     elif alternative == 'greater':
         alpha = 1 - confidence_level
         if k == 0:
             plow = 0.0
         else:
-            plow = _findp(lambda p: stats.binom.sf(k-1, n, p) - alpha)
+            plow = _findp(lambda p: binom.sf(k-1, n, p) - alpha)
         phigh = 1.0
     return plow, phigh
 
@@ -292,35 +292,35 @@ def binomtest(k, n, p=0.5, alternative='two-sided'):
         raise ValueError("alternative not recognized; \n"
                          "must be 'two-sided', 'less' or 'greater'")
     if alternative == 'less':
-        pval = stats.binom.cdf(k, n, p)
+        pval = binom.cdf(k, n, p)
     elif alternative == 'greater':
-        pval = stats.binom.sf(k-1, n, p)
+        pval = binom.sf(k-1, n, p)
     else:
         # alternative is 'two-sided'
-        d = stats.binom.pmf(k, n, p)
+        d = binom.pmf(k, n, p)
         rerr = 1 + 1e-7
         if k == p * n:
             # special case as shortcut, would also be handled by `else` below
             pval = 1.
         elif k < p * n:
-            ix = _binary_search_for_binom_tst(lambda x1: -stats.binom.pmf(x1, n, p),  # noqa
+            ix = _binary_search_for_binom_tst(lambda x1: -binom.pmf(x1, n, p),
                                               -d*rerr, np.ceil(p * n), n)
             # y is the number of terms between mode and n that are <= d*rerr.
             # ix gave us the first term where a(ix) <= d*rerr < a(ix-1)
             # if the first equality doesn't hold, y=n-ix. Otherwise, we
             # need to include ix as well as the equality holds. Note that
             # the equality will hold in very very rare situations due to rerr.
-            y = n - ix + int(d*rerr == stats.binom.pmf(ix, n, p))
-            pval = stats.binom.cdf(k, n, p) + stats.binom.sf(n - y, n, p)
+            y = n - ix + int(d*rerr == binom.pmf(ix, n, p))
+            pval = binom.cdf(k, n, p) + binom.sf(n - y, n, p)
         else:
-            ix = _binary_search_for_binom_tst(lambda x1: stats.binom.pmf(x1, n, p),  # noqa
+            ix = _binary_search_for_binom_tst(lambda x1: binom.pmf(x1, n, p),
                                               d*rerr, 0, np.floor(p * n))
             # y is the number of terms between 0 and mode that are <= d*rerr.
             # we need to add a 1 to account for the 0 index.
             # For comparing this with old behavior, see
             # tst_binary_srch_for_binom_tst method in test_morestats.
             y = ix + 1
-            pval = stats.binom.cdf(y-1, n, p) + stats.binom.sf(k-1, n, p)
+            pval = binom.cdf(y-1, n, p) + binom.sf(k-1, n, p)
 
         pval = min(1.0, pval)
 
