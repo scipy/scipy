@@ -771,7 +771,7 @@ class SVDSCommonTests:
         sp_mat = csc_matrix(mat)
         su, ss, svh = svds(sp_mat, k=dim, which='SM', solver=self.solver)
         # Smallest dim singular values are 0:
-        assert_allclose(ss, 0, atol=1e-7, rtol=1e0)
+        assert_allclose(ss, 0, atol=1e-6, rtol=1e0)
         # Smallest singular vectors via svds in null space: 
         assert_allclose(sp_mat @ svh.T, 0, atol=1e-6, rtol=1e0)
 
