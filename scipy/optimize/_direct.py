@@ -130,7 +130,6 @@ def direct(
 
     Notes
     -----
-
     DIviding RECTangles (DIRECT) is a deterministic global
     optimization algorithm capable of minimizing a black box function with
     its variables subject to lower and upper bound constraints by sampling
@@ -177,7 +176,7 @@ def direct(
         Algorithm. Journal of Global Optimization 21, 27-37 (2001).
 
     Examples
-    ----------
+    --------
     The following example is a 2-D problem with four local minima: minimizing
     the Styblinski-Tang function
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization).
