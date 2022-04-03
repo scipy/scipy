@@ -760,10 +760,11 @@ class SVDSCommonTests:
         nz = null_space(mat)
         assert_equal(nz.shape[1], dim)
 
-        # use non-sparse svd
+        # Tolerances atol and rtol adjusted to pass np.float32
+        # Use non-sparse svd
         u, s, vh = svd(mat)
-        # singular values are 0:
-        assert_allclose(s[-dim:], 0, atol=1e-7, rtol=1e0)
+        # Singular values are 0:
+        assert_allclose(s[-dim:], 0, atol=1e-6, rtol=1e0)
         # Smallest right singular vectors in null space:
         assert_allclose(mat @ vh[-dim:, :].T, 0, atol=1e-6, rtol=1e0)
 
