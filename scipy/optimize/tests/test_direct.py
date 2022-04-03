@@ -9,15 +9,13 @@ from scipy.optimize import direct, Bounds
 
 class TestDIRECT:
 
-
     def setup_method(self):
         self.fun_calls = 0
         self.bounds_sphere = 4*[(-2, 3)]
         self.optimum_sphere_pos = np.zeros((4, ))
         self.optimum_sphere = 0.0
         self.bounds_stylinski_tang = Bounds([-4., -4.], [4., 4.])
-
-    MAXITER = 1000
+        self.maxiter = 1000
 
     # test functions
     def sphere(self, x):
@@ -58,7 +56,7 @@ class TestDIRECT:
         assert res.nfev == self.fun_calls
 
         # test that number of iterations is below supplied maximum
-        assert res.nit <= self.MAXITER
+        assert res.nit <= self.maxiter
 
     @pytest.mark.parametrize("locally_biased", [True, False])
     def test_direct_callback(self, locally_biased):
