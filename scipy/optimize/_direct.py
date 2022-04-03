@@ -197,7 +197,7 @@ def direct(
 
     >>> result = direct(styblinski_tang, bounds, len_tol=1e-3)
     >>> result.x, result.fun, result.nfev
-    array([-2.9044353, -2.9044353], -78.33230330754142, 207
+    array([-2.9044353, -2.9044353]), -78.33230330754142, 207
 
     """
     # convert bounds to new Bounds class if necessary
