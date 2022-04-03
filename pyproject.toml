@@ -135,6 +135,12 @@ source = "https://github.com/scipy/scipy"
 download = "https://github.com/scipy/scipy/releases"
 tracker = "https://github.com/scipy/scipy/issues"
 
-
 [tool.doit]
 dodoFile = "dev.py"
+
+[tool.cibuildwheel]
+skip = "cp36-* cp37-* pp* *-manylinux_i686 *_ppc64le *_s390x *-musllinux*"
+before-build = "bash {project}/tools/wheels/cibw_before_build.sh {project}"
+
+[tool.cibuildwheel.linux]
+manylinux-x86_64-image = "manylinux2014"
