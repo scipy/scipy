@@ -7,6 +7,7 @@ import pytest
 import numpy as np
 from scipy.optimize import direct, Bounds
 
+
 class TestDIRECT:
 
     def setup_method(self):
