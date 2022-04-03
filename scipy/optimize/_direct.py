@@ -45,20 +45,18 @@ def direct(
     args: tuple = (),
     disp: bool = False,
     eps: float = 1e-4,
-    maxfun: int = 20000,
-    maxiter: int = 6000,
+    maxfun: Union[None, int] = None,
+    maxiter: int = 1000,
     locally_biased: bool = True,
     f_min: float = -np.inf,
     f_min_rtol: float = 1e-4,
-    vol_tol: float = 1e-12,
-    len_tol: float = 1e-5,
+    vol_tol: float = 1e-16,
+    len_tol: float = 1e-6,
     callback: Optional[Callable[[npt.ArrayLike], NoneType]] = None
 ) -> OptimizeResult:
     """
     Finds the global minimum of a function using the
     DIRECT algorithm.
-
-    The algorithm is due to Jones et al. [1]_.
 
     Parameters
     ----------
@@ -84,15 +82,16 @@ def direct(
         optimal hyperrectangle to be divided. In consequence, `eps` serves as a
         tradeoff between local and global search: the smaller, the more local
         the search becomes. Default is 1e-4.
-    maxfun : int, optional
+    maxfun : int or None, optional
         Approximate upper bound on objective function evaluations.
-        Default is 20000.
+        If `None`, will be automatically set to ``1000 * N`` where ``N``
+        represents the number of dimensions. Default is `None`.
     maxiter : int, optional
-        Maximum number of iterations. Default is 6000.
+        Maximum number of iterations. Default is 1000.
     locally_biased : bool, optional
-        If `True` (default), use the locally biased variant [2]_ of the
+        If `True` (default), use the locally biased variant of the
         algorithm known as DIRECT_L. If `False`, use the original unbiased
-        DIRECT algorithm [1]_. For hard problems with many local minima,
+        DIRECT algorithm. For hard problems with many local minima,
         `False` is recommended.
     f_min : float, optional
         Function value of the global optimum. Set this value only if the
@@ -107,7 +106,7 @@ def direct(
         Terminate the optimization once the volume of the hyperrectangle
         containing the lowest function value is smaller than `vol_tol`
         of the complete search space. Must lie between 0 and 1.
-        Default is 1e-12.
+        Default is 1e-16.
     len_tol : float, optional
         If `locally_biased=True`, terminate the optimization once half of
         the normalized maximal side length of the hyperrectangle containing
@@ -115,7 +114,7 @@ def direct(
         If `locally_biased=False`, terminate the optimization once half of
         the normalized diagonal of the hyperrectangle containing the lowest
         function value is smaller than `len_tol`. Must lie between 0 and 1.
-        Default is 1e-5.
+        Default is 1e-6.
     callback : callable, optional
         A callback function with signature ``callback(xk)`` where ``xk``
         represents the best function value found so far.
@@ -132,7 +131,7 @@ def direct(
     Notes
     -----
 
-    DIRECT is a deterministic global
+    DIviding RECTangles (DIRECT) is a deterministic global
     optimization algorithm capable of minimizing a black box function with
     its variables subject to lower and upper bound constraints by sampling
     potential solutions in the search space [1]_. The algorithm starts by
@@ -235,6 +234,8 @@ def direct(
         raise ValueError("f_min_rtol must be between 0 and 1.")
 
     # validate maxfun and maxiter
+    if maxfun is None:
+        maxfun = 1000 * lb.shape[0]
     if not isinstance(maxfun, int):
         raise ValueError("maxfun must be of type int.")
     if maxfun < 0:
