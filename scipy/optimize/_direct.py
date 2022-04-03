@@ -45,7 +45,7 @@ def direct(
     args: tuple = (),
     disp: bool = False,
     eps: float = 1e-4,
-    maxfun: Union[None, int] = None,
+    maxfun: Union[int, None] = None,
     maxiter: int = 1000,
     locally_biased: bool = True,
     f_min: float = -np.inf,
