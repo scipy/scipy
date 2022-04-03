@@ -458,7 +458,7 @@ class TestMultivariateNormal:
             np.linalg.LinAlgError,
             x, mean=mean, cov=None, inverse_cov=inv_cov
         )
- 
+
     def test_exception_nan_inverse_cov(self):
         x = np.random.randn(2)
         mean = np.zeros(2)
@@ -562,6 +562,10 @@ class TestMultivariateNormal:
         sample = multivariate_normal.rvs(mean=np.zeros(d), cov=1, size=N)
         assert_equal(sample.shape, (N, d))
 
+        sample = multivariate_normal.rvs(
+            np.zeros(d), cov=None, inverse_cov=1, size=N)
+        assert_equal(sample.shape, (N, d))
+
         sample = multivariate_normal.rvs(mean=None,
                                          cov=np.array([[2, .1], [.1, 1]]),
                                          size=N)
@@ -572,16 +576,23 @@ class TestMultivariateNormal:
             None, cov=None, inverse_cov=inv_cov, size=N)
         assert_equal(sample.shape, (N, 2))
 
-        sample = multivariate_normal.rvs(
-            np.zeros(d), cov=None, inverse_cov=1, size=N)
-        assert_equal(sample.shape, (N, d))
-
         u = multivariate_normal(mean=0, cov=1)
         sample = u.rvs(N)
         assert_equal(sample.shape, (N, ))
 
         u = multivariate_normal(mean=0, cov=None, inverse_cov=1)
         assert_equal(u.rvs(N).shape, (N,))
+
+        # We currently always squeeze the output.
+        sample = multivariate_normal.rvs(
+            mean=None, cov=np.identity(3), size=(1, 2)
+        )
+        assert_equal(sample.shape, (2, 3))
+
+        sample = multivariate_normal.rvs(
+            mean=None, cov=None, inverse_cov=np.identity(3), size=(1, 2)
+        )
+        assert_equal(sample.shape, (2, 3))
 
     def test_large_sample(self):
         # Generate large sample and compare sample mean and sample covariance

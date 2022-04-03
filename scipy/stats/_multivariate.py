@@ -767,10 +767,6 @@ class multivariate_normal_gen(multi_rv_generic):
         std_norm = random_state.standard_normal(shape).reshape(-1, mean.size)
         out = mean + np.dot(std_norm, sqrt_cov.T)
         out.shape = shape
-        if not is_size_int:
-            # Don't squeeze if size is explicitly specified. Necessary for
-            # compatibility with numpy.
-            return out
         return _squeeze_output(out)
 
     def rvs(self, mean=None, cov=1, size=1, random_state=None,
