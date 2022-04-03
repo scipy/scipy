@@ -315,6 +315,12 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
             The bootstrap standard error, that is, the sample standard
             deviation of the bootstrap distribution
 
+    Warns
+    -----
+    `~scipy.stats.DegenerateDataWarning`
+        Generated when ``method='BCa'`` and the bootstrap distribution is
+        degenerate (e.g. all elements are identical).
+
     Notes
     -----
     Elements of the confidence interval may be NaN for ``method='BCa'`` if
