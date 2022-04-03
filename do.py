@@ -419,24 +419,33 @@ cli.params.extend(CONTEXT.options.values())
 
 
 PROJECT_MODULE = "scipy"
-PROJECT_ROOT_FILES = ['scipy', 'LICENSE.txt', 'meson.build']
-ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+PROJECT_ROOT_FILES = ['scipy', 'LICENSE.txt', 'meson.build', 'nono']
 
 @dataclass
 class Dirs:
     """
+        root:
+            Directory where scr, build config and tools are located (and this file)
+        build:
+            Directory where build output files (i.e. *.o) are saved
+        install:
+            Directory where .so from build and .py from src are put together.
         site:
             Directory where the built SciPy version was installed. This is a custom
             prefix, followed by a relative path matching the one the system would
             use for the site-packages of the active Python interpreter.
     """
     # all paths are absolute
+    root: Path
     build: Path
     installed: Path
     site: Path # <install>/lib/python<version>/site-packages
 
-    def __init__(self, args):
+    def __init__(self, args=None):
         """:params args: object like Context(build_dir, install_prefix)"""
+        self.root = Path(__file__).parent.absolute()
+        if not args:
+            return
         self.build = Path(args.build_dir).resolve()
         if args.install_prefix:
            self.installed = Path(args.install_prefix).resolve()
@@ -511,54 +520,15 @@ class Build(Task):
              "implemented for Meson")
 
     @classmethod
-    def setup_build(cls, dirs, args, env):
+    def setup_build(cls, dirs, args):
         """
         Setting up meson-build
         """
-        cmd = ["meson", "setup", dirs.build, "--prefix", dirs.installed]
-        build_dir = dirs.build
-        run_dir = os.getcwd()
-        if build_dir.exists() and not (build_dir / 'meson-info').exists():
-            if list(build_dir.iterdir()):
-                raise RuntimeError("Can't build into non-empty directory "
-                                   f"'{build_dir.absolute()}'")
-        if os.path.exists(build_dir):
-            build_options_file = (build_dir / "meson-info"
-                                  / "intro-buildoptions.json")
-            with open(build_options_file) as f:
-                build_options = json.load(f)
-            installdir = None
-            for option in build_options:
-                if option["name"] == "prefix":
-                    installdir = option["value"]
-                    break
-            if installdir != str(dirs.installed):
-                run_dir = os.path.join(run_dir, build_dir)
-                cmd = ["meson", "--reconfigure", "--prefix", str(dirs.installed)]
-            else:
-                return
-        if args.werror:
-            cmd += ["--werror"]
-        # Setting up meson build
-        ret = subprocess.call(cmd, env=env, cwd=run_dir)
-        if ret == 0:
-            print("Meson build setup OK")
-        else:
-            print("Meson build setup failed! ({0} elapsed)")
-            sys.exit(1)
-        return
-
-    @classmethod
-    def build_project(cls, dirs, args):
-        """
-        Build a dev version of the project.
-        """
-        root_ok = [os.path.exists(os.path.join(ROOT_DIR, fn))
-                   for fn in PROJECT_ROOT_FILES]
-        if not all(root_ok):
-            print("To build the project, run dev.py in "
-                  "git checkout or unpacked source")
-            sys.exit(1)
+        for fn in PROJECT_ROOT_FILES:
+            if not (dirs.root / fn).exists:
+                print("To build the project, run dev.py in "
+                      "git checkout or unpacked source")
+                sys.exit(1)
 
         env = dict(os.environ)
         if args.debug or args.gcov:
@@ -578,13 +548,49 @@ class Build(Task):
                 env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) +\
                     ' --coverage'
 
-        cls.setup_build(dirs, args, env)
+        cmd = ["meson", "setup", dirs.build, "--prefix", dirs.installed]
+        build_dir = dirs.build
+        run_dir = Path()
+        if build_dir.exists() and not (build_dir / 'meson-info').exists():
+            if list(build_dir.iterdir()):
+                raise RuntimeError("Can't build into non-empty directory "
+                                   f"'{build_dir.absolute()}'")
+        if build_dir.exists():
+            build_options_file = (build_dir / "meson-info" / "intro-buildoptions.json")
+            with open(build_options_file) as f:
+                build_options = json.load(f)
+            installdir = None
+            for option in build_options:
+                if option["name"] == "prefix":
+                    installdir = option["value"]
+                    break
+            if installdir != str(dirs.installed):
+                run_dir = build_dir
+                cmd = ["meson", "--reconfigure", "--prefix", str(dirs.installed)]
+            else:
+                return
+        if args.werror:
+            cmd += ["--werror"]
+        # Setting up meson build
+        ret = subprocess.call(cmd, env=env, cwd=run_dir)
+        if ret == 0:
+            print("Meson build setup OK")
+        else:
+            print("Meson build setup failed! ({0} elapsed)")
+            sys.exit(1)
+        return env
+
+    @classmethod
+    def build_project(cls, dirs, args, env):
+        """
+        Build a dev version of the project.
+        """
         cmd = ["ninja", "-C", str(dirs.build)]
         if args.parallel > 1:
             cmd += ["-j", str(args.parallel)]
 
         # Building with ninja-backend
-        ret = subprocess.call(cmd, env=env, cwd=ROOT_DIR)
+        ret = subprocess.call(cmd, env=env, cwd=dirs.root)
 
         if ret == 0:
             print("Build OK")
@@ -598,21 +604,20 @@ class Build(Task):
         """
         Installs the project after building.
         """
-        if os.path.exists(dirs.installed):
+        if dirs.installed.exists():
             non_empty = len(os.listdir(dirs.installed))
-            if non_empty and not os.path.exists(dirs.site):
+            if non_empty and not dirs.site.exists():
                 raise RuntimeError("Can't install in non-empty directory: "
                                    f"'{dirs.installed}'")
         cmd = ["meson", "install", "-C", args.build_dir]
-        log_filename = os.path.join(ROOT_DIR, 'meson-install.log')
+        log_filename = dirs.root / 'meson-install.log'
         start_time = datetime.datetime.now()
         if args.show_build_log:
-            ret = subprocess.call(cmd, cwd=ROOT_DIR)
+            ret = subprocess.call(cmd, cwd=dirs.root)
         else:
             print("Installing, see meson-install.log...")
             with open(log_filename, 'w') as log:
-                p = subprocess.Popen(cmd, stdout=log, stderr=log,
-                                     cwd=ROOT_DIR)
+                p = subprocess.Popen(cmd, stdout=log, stderr=log, cwd=dirs.root)
 
             try:
                 # Wait for it to finish, and print something to indicate the
@@ -689,14 +694,13 @@ class Build(Task):
         # file is on the DLL search path at run-time, so OpenBLAS gets found
         openblas_support = import_module_from_path(
             'openblas_support',
-            Path(ROOT_DIR) / 'tools' / 'openblas_support.py')
+            dirs.root / 'tools' / 'openblas_support.py')
         openblas_support.make_init(scipy_path)
         return 0
 
 
     @classmethod
     def run(cls, add_path=False, **kwargs):
-        """return site_dir"""
         kwargs.update(cls.ctx.get(kwargs))
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
@@ -705,7 +709,8 @@ class Build(Task):
         if args.no_build:
             print('Skipping build')
         else:
-            cls.build_project(dirs, args)
+            env = cls.setup_build(dirs, args)
+            cls.build_project(dirs, args, env)
             cls.install_project(dirs, args)
             if args.win_cp_openblas and platform.system() == 'Windows':
                 if cls.copy_openblas(dirs) == 0:
@@ -762,8 +767,8 @@ class Test(Task):
         dirs.add_sys_path()
         print(f"Trying to find scipy from development installed path at: {dirs.site}")
 
-        test_dir = str(dirs.site)
         # if NOT BUILD:
+        #     test_dir = str(dirs.site)
         #     test_dir = os.path.join(ROOT_DIR, args.build_dir, 'test')
         #     if not os.path.isdir(test_dir):
         #         os.makedirs(test_dir)
@@ -773,14 +778,12 @@ class Test(Task):
             extra_argv = extra_argv[1:]
 
         if args.coverage:
-            dst_dir = os.path.join(ROOT_DIR, args.build_dir, 'coverage')
-            fn = os.path.join(dst_dir, 'coverage_html.js')
-            if os.path.isdir(dst_dir) and os.path.isfile(fn):
+            dst_dir = dirs.root / args.build_dir / 'coverage'
+            fn = dst_dir / 'coverage_html.js'
+            if dst_dir.is_dir() and fn.is_file():
                 shutil.rmtree(dst_dir)
-            extra_argv += ['--cov-report=html:' + dst_dir]
-
-            shutil.copyfile(os.path.join(ROOT_DIR, '.coveragerc'),
-                            os.path.join(test_dir, '.coveragerc'))
+            extra_argv += ['--cov-report=html:' + str(dst_dir)]
+            shutil.copyfile(dirs.root / '.coveragerc', dirs.site / '.coveragerc')
 
         runner, version, mod_path = get_test_runner(PROJECT_MODULE)
 
@@ -793,7 +796,7 @@ class Test(Task):
             tests = None
 
         # FIXME: changing CWD is not a good practice and might messed up with other tasks
-        with working_dir(test_dir):
+        with working_dir(dirs.site):
             print("Running tests for {} version:{}, installed at:{}".format(
                         PROJECT_MODULE, version, mod_path))
             verbose = int(args.verbose) + 1 # runner verbosity - convert bool to int
@@ -848,10 +851,10 @@ class Bench(Task):
                               "changes first!")
 
     @staticmethod
-    def run_asv(cmd):
+    def run_asv(dirs, cmd):
         EXTRA_PATH = ['/usr/lib/ccache', '/usr/lib/f90cache',
                       '/usr/local/lib/ccache', '/usr/local/lib/f90cache']
-        bench_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), 'benchmarks')
+        bench_dir = dirs.root / 'benchmarks'
         sys.path.insert(0, bench_dir)
         # Always use ccache, if installed
         env = dict(os.environ)
@@ -898,7 +901,7 @@ class Bench(Task):
                       % (version, mod_path))
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
                        '--python=same'] + bench_args
-                retval = cls.run_asv(cmd)
+                retval = cls.run_asv(dirs, cmd)
                 sys.exit(retval)
             else:
                 if len(args.bench_compare) == 1:
@@ -933,7 +936,7 @@ class Bench(Task):
 
                 cmd = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
                        commit_a, commit_b] + bench_args
-                cls.run_asv(cmd)
+                cls.run_asvdirs, (cmd)
                 sys.exit(1)
 
     @classmethod
@@ -965,7 +968,7 @@ def task_pep8diff():
     # stricter configuration.
     return {
         'basename': 'pep8-diff',
-        'actions': [os.path.join(ROOT_DIR, 'tools', 'lint_diff.py')],
+        'actions': [str(Dirs().root / 'tools' / 'lint_diff.py')],
         'doc': 'Lint only files modified since last commit (with stricker rules)',
         'task_dep': ['pep8'],
     }
@@ -1003,11 +1006,7 @@ class Mypy(Task):
                 "pip install -r mypy_requirements.txt from the repo root"
             ) from e
 
-        config = os.path.join(
-            os.path.dirname(os.path.abspath(__file__)),
-            "mypy.ini",
-        )
-
+        config = dirs.root / "mypy.ini"
         check_path = PROJECT_MODULE
 
         with working_dir(dirs.site):
@@ -1018,7 +1017,7 @@ class Mypy(Task):
             # up any type stubs in the source tree.
             report, errors, status = mypy.api.run([
                 "--config-file",
-                config,
+                str(config),
                 check_path,
             ])
         print(report, end='')
@@ -1091,8 +1090,7 @@ class RefguideCheck(Task):
         args = Args(**kwargs)
         dirs = Dirs(args)
 
-        cmd = [os.path.join(ROOT_DIR, 'tools', 'refguide_check.py'),
-               '--doctests']
+        cmd = [str(dirs.root / 'tools' / 'refguide_check.py'), '--doctests']
         if args.submodule:
             cmd += [args.submodule]
         cmd_str = ' '.join(cmd)
