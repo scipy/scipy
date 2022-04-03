@@ -20,7 +20,7 @@ class TestDIRECT:
 
     # test functions
     def sphere(self, x):
-        self.fun_calls +=1
+        self.fun_calls += 1
         return np.square(x).sum()
 
     def inv(self, x):
@@ -66,7 +66,7 @@ class TestDIRECT:
                     locally_biased = locally_biased)
 
         def callback(x):
-            x=2*x
+            x = 2*x
             dummy = np.square(x)
             print("DIRECT minimization algorithm callback test")
             return dummy
