@@ -189,15 +189,15 @@ def direct(
     >>> bounds = Bounds([-4., -4.], [4., 4.])
     >>> result = direct(styblinski_tang, bounds)
     >>> result.x, result.fun, result.nfev
-    array([-2.90362242, -2.90362242]), -78.33233113735979, 20003
+    array([-2.90321597, -2.90321597]), -78.3323279095383, 2011
 
     The correct global minimum was found but with a huge number of function
-    evaluations (20003). Loosening the termination tolerances `vol_tol` and
+    evaluations (2011). Loosening the termination tolerances `vol_tol` and
     `len_tol` can be used to stop DIRECT earlier.
 
-    >>> result = direct(styblinski_tang, bounds, vol_tol=1e-7)
+    >>> result = direct(styblinski_tang, bounds, len_tol=1e-3)
     >>> result.x, result.fun, result.nfev
-    array([-2.90321597, -2.9044353 ]), -78.33231560853986, 1113
+    array([-2.9044353, -2.9044353], -78.33230330754142, 207
 
     """
     # convert bounds to new Bounds class if necessary
