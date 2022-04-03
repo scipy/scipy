@@ -1886,7 +1886,8 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     """
     warnings.warn("lsim2 is deprecated and will be removed from scipy. "
-                  "Use the feature equivalent lsim function.", DeprecationWarning)
+                  "Use the feature equivalent lsim function.",
+                  DeprecationWarning)
 
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -2280,8 +2281,8 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     Impulse response of a single-input, continuous-time linear system.
 
     .. deprecated:: 1.9.0
-        Function `impulse2` is deprecated in favor of the faster `impulse` function.
-        `impulse2` will be removed in SciPy 1.x.0.
+        Function `impulse2` is deprecated in favor of the faster `impulse`
+        function. `impulse2` will be removed in SciPy 1.x.0.
 
     Parameters
     ----------
@@ -2345,7 +2346,8 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     """
     warnings.warn("impulse2 is deprecated and will be removed from scipy. "
-                  "Use the feature equivalent impulse function.", DeprecationWarning)
+                  "Use the feature equivalent impulse function.",
+                  DeprecationWarning)
 
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -2512,7 +2514,8 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
 
     """
     warnings.warn("step2 is deprecated and will be removed from scipy. "
-                  "Use the feature equivalent step function.", DeprecationWarning)
+                  "Use the feature equivalent step function.",
+                  DeprecationWarning)
 
     if isinstance(system, lti):
         sys = system._as_ss()

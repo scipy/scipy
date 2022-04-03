@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from multiprocessing.sharedctypes import Value
 import warnings
 
 import numpy as np
@@ -425,7 +424,7 @@ class _TestLsimFunctions:
             sup.filter(BadCoefficients)
             system = lti(*args)
         return system
-    
+
     def test_first_order(self):
         # y' = -y
         # exact solution is y(t) = exp(-t)
@@ -446,18 +445,7 @@ class _TestLsimFunctions:
         system = self.lti_nowarn([1.0], [1.0, 2.0, 1.0])
         tout, y, x = self.func(system, u, t, X0=[1.0, 0.0])
         expected_x = (1.0 - tout) * np.exp(-tout)
-        assert_almost_equal(x[:,0], expected_x)
-
-    def test_first_order(self):
-        # y' = -y
-        # exact solution is y(t) = exp(-t)
-        system = self.lti_nowarn(-1.,1.,1.,0.)
-        t = np.linspace(0,5)
-        u = np.zeros_like(t)
-        tout, y, x = self.func(system, u, t, X0=[1.0])
-        expected_x = np.exp(-tout)
-        assert_almost_equal(x, expected_x)
-        assert_almost_equal(y, expected_x)
+        assert_almost_equal(x[:, 0], expected_x)
 
     def test_integrator(self):
         # integrator: y' = u
@@ -485,8 +473,8 @@ class _TestLsimFunctions:
         expected_x0 = np.exp(-tout)
         expected_x1 = np.exp(-2.0 * tout)
         assert_almost_equal(y, expected_y)
-        assert_almost_equal(x[:,0], expected_x0)
-        assert_almost_equal(x[:,1], expected_x1)
+        assert_almost_equal(x[:, 0], expected_x0)
+        assert_almost_equal(x[:, 1], expected_x1)
 
     def test_double_integrator(self):
         # double integrator: y'' = 2u
@@ -536,7 +524,9 @@ class _TestLsimFunctions:
         assert_almost_equal(x[:,0], expected_x0)
         assert_almost_equal(x[:,1], expected_x1)
 
+
 class TestLsim(_TestLsimFunctions):
+
     def func(self, *args, **kwargs):
         return lsim(*args, **kwargs)
 
@@ -552,7 +542,7 @@ class TestLsim(_TestLsimFunctions):
         t = np.array([0.0, 1.0, 1.0, 3.0])
         u = np.array([0.0, 0.0, 1.0, 1.0])
         # Simple integrator: x'(t) = u(t)
-        system = ([1.0],[1.0,0.0])
+        system = ([1.0], [1.0, 0.0])
         with assert_raises(ValueError):
             tout, y, x = self.func(system, u, t, X0=[1.0])
 
@@ -675,7 +665,7 @@ class TestImpulse2(_TestImpulseFuncs):
 
 
 class TestImpulse(_TestImpulseFuncs):
-    
+
     def func(self, *args, **kwargs):
         return impulse(*args, **kwargs)
 
