@@ -429,9 +429,12 @@ def test_rv_sample():
     assert_allclose(dist.cdf(xk_left), [0]+cdf2[:-1].tolist())
 
     with np.errstate(divide='ignore'):
-        assert_allclose(dist.logcdf(xk), np.log(dist.cdf(xk)), atol=1e-15)
-        assert_allclose(dist.logcdf(xk_right), np.log(dist.cdf(xk_right)), atol=1e-15)
-        assert_allclose(dist.logcdf(xk_left), np.log(dist.cdf(xk_left)), atol=1e-15)
+        assert_allclose(dist.logcdf(xk), np.log(dist.cdf(xk)),
+                        atol=1e-15)
+        assert_allclose(dist.logcdf(xk_right), np.log(dist.cdf(xk_right)),
+                        atol=1e-15)
+        assert_allclose(dist.logcdf(xk_left), np.log(dist.cdf(xk_left)),
+                        atol=1e-15)
 
     # sf is 1-cdf
     assert_allclose(dist.sf(xk), 1-dist.cdf(xk))
@@ -439,9 +442,12 @@ def test_rv_sample():
     assert_allclose(dist.sf(xk_left), 1-dist.cdf(xk_left))
 
     with np.errstate(divide='ignore'):
-        assert_allclose(dist.logsf(xk), np.log(dist.sf(xk)), atol=1e-15)
-        assert_allclose(dist.logsf(xk_right), np.log(dist.sf(xk_right)), atol=1e-15)
-        assert_allclose(dist.logsf(xk_left), np.log(dist.sf(xk_left)), atol=1e-15)
+        assert_allclose(dist.logsf(xk), np.log(dist.sf(xk)),
+                        atol=1e-15)
+        assert_allclose(dist.logsf(xk_right), np.log(dist.sf(xk_right)),
+                        atol=1e-15)
+        assert_allclose(dist.logsf(xk_left), np.log(dist.sf(xk_left)),
+                        atol=1e-15)
 
     # ppf
     assert_allclose(dist.ppf(cdf2), xk)
