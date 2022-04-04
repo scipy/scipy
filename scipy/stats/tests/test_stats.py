@@ -536,6 +536,35 @@ class TestFisherExact:
             np.testing.assert_almost_equal(res[1], res_r[1], decimal=11,
                                            verbose=True)
 
+    def test_gh4130(self):
+        # Previously, a fudge factor used to distinguish between theoeretically
+        # and numerically different probability masses was 1e-4; it has been
+        # tightened to fix gh4130. Accuracy checked against R fisher.test.
+        # options(digits=16)
+        # table <- matrix(c(6, 108, 37, 200), nrow = 2)
+        # fisher.test(table, alternative = "t")
+        x = [[6, 37], [108, 200]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 0.005092697748126)
+
+        # case from https://github.com/brentp/fishers_exact_test/issues/27
+        # That package has an (absolute?) fudge factor of 1e-6; too big
+        x = [[22, 0], [0, 102]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 7.175066786244549e-25)
+
+        # case from https://github.com/brentp/fishers_exact_test/issues/1
+        x = [[94, 48], [3577, 16988]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 2.069356340993818e-37)
+
+    def test_gh9231(self):
+        # Previously, fisher_exact was extremely slow for this table
+        # As reported in gh-9231, the p-value should be very nearly zero
+        x = [[5829225, 5692693], [5760959, 5760959]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 0, atol=1e-170)
+
     @pytest.mark.slow
     def test_large_numbers(self):
         # Test with some large numbers. Regression test for #1401
@@ -6951,6 +6980,27 @@ class TestBrunnerMunzel:
         assert_approx_equal(p1, 0.0057862086661515377,
                             significant=self.significant)
 
+    def test_brunnermunzel_return_nan(self):
+        """ tests that a warning is emitted when p is nan
+        p-value with t-distributions can be nan (0/0) (see gh-15843)
+        """
+        x = [1, 2, 3]
+        y = [5, 6, 7, 8, 9]
+
+        with pytest.warns(RuntimeWarning, match='p-value cannot be estimated'):
+            stats.brunnermunzel(x, y, distribution="t")
+
+    def test_brunnermunzel_normal_dist(self):
+        """ tests that a p is 0 for datasets that cause p->nan
+        when t-distribution is used (see gh-15843)
+        """
+        x = [1, 2, 3]
+        y = [5, 6, 7, 8, 9]
+
+        with pytest.warns(RuntimeWarning, match='divide by zero'):
+            _, p = stats.brunnermunzel(x, y, distribution="normal")
+        assert_equal(p, 0)
+
 
 class TestRatioUniforms:
     """ Tests for rvs_ratio_uniforms.
@@ -7214,6 +7264,17 @@ class TestMGCStat:
                                                                random_state=1)
         assert_approx_equal(stat_dist, 0.163, significant=1)
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
+
+    @pytest.mark.slow
+    def test_pvalue_literature(self):
+        np.random.seed(12345678)
+
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type="linear")
+
+        # test stat and pvalue
+        _, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
+        assert_allclose(pvalue, 1/1001)
 
 
 class TestPageTrendTest:

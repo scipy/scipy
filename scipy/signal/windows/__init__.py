@@ -28,7 +28,6 @@ The suite of window functions for filtering and spectral estimation.
    general_hamming         -- Generalized Hamming window
    hamming                 -- Hamming window
    hann                    -- Hann window
-   hanning                 -- Hann window
    kaiser                  -- Kaiser window
    kaiser_bessel_derived   -- Kaiser-Bessel derived window
    nuttall                 -- Nuttall's minimum 4-term Blackman-Harris window
@@ -45,7 +44,7 @@ from ._windows import *
 from . import windows
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
-           'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
+           'blackmanharris', 'flattop', 'bartlett', 'barthann',
            'hamming', 'kaiser', 'kaiser_bessel_derived', 'gaussian',
            'general_gaussian', 'general_cosine', 'general_hamming',
            'chebwin', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',

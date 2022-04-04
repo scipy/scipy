@@ -26,7 +26,7 @@ c       are all nonnegative. This routine uses a randomized algorithm.
 c
 c       input:
 c       m -- number of rows in a
-c       n -- number of columns in a 
+c       n -- number of columns in a
 c       matveca -- routine which applies the adjoint
 c                  of the matrix to be SVD'd
 c                  to an arbitrary vector; this routine must have
