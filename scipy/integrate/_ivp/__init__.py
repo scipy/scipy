@@ -7,4 +7,3 @@ from .lsoda import LSODA
 from .sabm import SABM
 from .common import OdeSolution
 from .base import DenseOutput, OdeSolver
-

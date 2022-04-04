@@ -60,6 +60,7 @@ The solvers are implemented as individual classes, which can be used directly
    OdeSolver     -- Base class for ODE solvers.
    DenseOutput   -- Local interpolant for computing a dense output.
    OdeSolution   -- Class which represents a continuous ODE solution.
+   SABM          -- Semi-explicit/implicit Adams-Bashfort-Moulton for DAE.
 
 
 Old API

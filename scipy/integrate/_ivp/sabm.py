@@ -1,9 +1,9 @@
 from collections import deque
 import numpy as np
 from scipy.optimize import fsolve
-from scipy.integrate._ivp.base import OdeSolver, DenseOutput
-from scipy.integrate._ivp.common import (validate_max_step, validate_tol, select_initial_step,
-                     validate_first_step, warn_extraneous)
+from .base import OdeSolver, DenseOutput
+from .common import (validate_max_step, validate_tol,
+                     select_initial_step, validate_first_step, warn_extraneous)
 
 
 MAX_ORDER = 5
@@ -390,4 +390,3 @@ class SABMDenseOutput(DenseOutput):
                 sol[num_diff:, i] = fsolve(equations, x0=self.x)
 
         return sol
-
