@@ -494,30 +494,21 @@ class BenchQMCHalton(Benchmark):
         seq.random(n, workers=workers)
 
 
-class NumericalInverseHermite(Benchmark):
+class BenchQMCSobol(Benchmark):
+    param_names = ['d', 'base2']
+    params = [
+        [1, 50, 100],
+        [3, 10, 11, 12],
+    ]
 
-    param_names = ['distribution']
-    params = [distcont]
+    def setup(self, d, base2):
+        self.rng = np.random.default_rng(168525179735951991038384544)
+        stats.qmc.Sobol(1, bits=32)  # make it load direction numbers
 
-    def setup(self, *args):
-        self.rand = [np.random.normal(loc=i, size=1000) for i in range(3)]
-
-    def time_fni(self, distcase):
-        distname, shapes = distcase
-        slow_dists = {'ksone', 'kstwo', 'levy_stable', 'skewnorm'}
-        fail_dists = {'beta', 'gausshyper', 'geninvgauss', 'ncf', 'nct',
-                      'norminvgauss', 'genhyperbolic', 'studentized_range'}
-
-        if distname in slow_dists or distname in fail_dists:
-            raise NotImplementedError("skipped")
-
-        dist = getattr(stats, distname)(*shapes)
-
-        with np.testing.suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "overflow encountered")
-            sup.filter(RuntimeWarning, "divide by zero")
-            sup.filter(RuntimeWarning, "invalid value encountered")
-            stats.NumericalInverseHermite(dist)
+    def time_sobol(self, d, base2):
+        # scrambling is happening at init only, not worth checking
+        seq = stats.qmc.Sobol(d, scramble=False, bits=32, seed=self.rng)
+        seq.random_base2(base2)
 
 
 class DistanceFunctions(Benchmark):

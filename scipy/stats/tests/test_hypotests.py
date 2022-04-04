@@ -3,6 +3,7 @@ from __future__ import division, print_function, absolute_import
 from itertools import product
 
 import numpy as np
+import functools
 import pytest
 from numpy.testing import (assert_, assert_equal, assert_allclose,
                            assert_almost_equal)  # avoid new uses
@@ -16,6 +17,8 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
 from .common_tests import check_named_results
+from scipy import special
+from scipy._lib._testutils import _TestPythranFunc
 
 
 class TestEppsSingleton:
@@ -614,7 +617,37 @@ class TestMannWhitneyU:
         assert_allclose(res, expected, rtol=1e-12)
 
 
-class TestSomersD:
+class TestSomersD(_TestPythranFunc):
+    def setup_method(self):
+        self.dtypes = self.ALL_INTEGER + self.ALL_FLOAT
+        self.arguments = {0: (np.arange(10),
+                              self.ALL_INTEGER + self.ALL_FLOAT),
+                          1: (np.arange(10),
+                              self.ALL_INTEGER + self.ALL_FLOAT)}
+        input_array = [self.arguments[idx][0] for idx in self.arguments]
+        # In this case, self.partialfunc can simply be stats.somersd,
+        # since `alternative` is an optional argument. If it is required,
+        # we can use functools.partial to freeze the value, because
+        # we only mainly test various array inputs, not str, etc.
+        self.partialfunc = functools.partial(stats.somersd,
+                                             alternative='two-sided')
+        self.expected = self.partialfunc(*input_array)
+
+    def pythranfunc(self, *args):
+        res = self.partialfunc(*args)
+        assert_allclose(res.statistic, self.expected.statistic, atol=1e-15)
+        assert_allclose(res.pvalue, self.expected.pvalue, atol=1e-15)
+
+    def test_pythranfunc_keywords(self):
+        # Not specifying the optional keyword args
+        table = [[27, 25, 14, 7, 0], [7, 14, 18, 35, 12], [1, 3, 2, 7, 17]]
+        res1 = stats.somersd(table)
+        # Specifying the optional keyword args with default value
+        optional_args = self.get_optional_args(stats.somersd)
+        res2 = stats.somersd(table, **optional_args)
+        # Check if the results are the same in two cases
+        assert_allclose(res1.statistic, res2.statistic, atol=1e-15)
+        assert_allclose(res1.pvalue, res2.pvalue, atol=1e-15)
 
     def test_like_kendalltau(self):
         # All tests correspond with one in test_stats.py `test_kendalltau`
@@ -1204,6 +1237,25 @@ class TestBoschlooExact:
         statistic, pvalue = res.statistic, res.pvalue
         assert_equal(pvalue, expected[0])
         assert_equal(statistic, expected[1])
+
+    def test_two_sided_gt_1(self):
+        # Check that returned p-value does not exceed 1 even when twice
+        # the minimum of the one-sided p-values does. See gh-15345.
+        tbl = [[1, 1], [13, 12]]
+        pl = boschloo_exact(tbl, alternative='less').pvalue
+        pg = boschloo_exact(tbl, alternative='greater').pvalue
+        assert 2*min(pl, pg) > 1
+        pt = boschloo_exact(tbl, alternative='two-sided').pvalue
+        assert pt == 1.0
+
+    @pytest.mark.parametrize("alternative", ("less", "greater"))
+    def test_against_fisher_exact(self, alternative):
+        # Check that the statistic of `boschloo_exact` is the same as the
+        # p-value of `fisher_exact` (for one-sided tests). See gh-15345.
+        tbl = [[2, 7], [8, 2]]
+        boschloo_stat = boschloo_exact(tbl, alternative=alternative).statistic
+        fisher_p = stats.fisher_exact(tbl, alternative=alternative)[1]
+        assert_allclose(boschloo_stat, fisher_p)
 
 
 class TestCvm_2samp:

@@ -31,7 +31,6 @@ import numpy as np
 from scipy.linalg import hilbert, svdvals, norm
 from scipy.sparse.linalg import aslinearoperator
 from scipy.linalg.interpolative import interp_decomp
-import itertools
 
 from numpy.testing import (assert_, assert_allclose, assert_equal,
                            assert_array_equal)

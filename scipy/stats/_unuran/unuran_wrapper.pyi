@@ -3,6 +3,7 @@ from typing import Union, Any, Tuple, List, overload, Callable, NamedTuple
 from typing_extensions import Protocol
 import numpy.typing as npt
 from scipy._lib._util import SeedType
+import scipy.stats as stats
 
 
 ArrayLike0D = Union[bool, int, float, complex, str, bytes, np.generic]
@@ -35,17 +36,14 @@ class TDRDist(Protocol):
 class TransformedDensityRejection(Method):
     def __init__(self,
                  dist: TDRDist,
+                 *,
                  mode: None | float = ...,
                  center: None | float = ...,
-                 *,
                  domain: None | Tuple[float, float] = ...,
                  c: float = ...,
                  construction_points: int | npt.ArrayLike = ...,
-                 variant: str = ...,
                  use_dars: bool = ...,
                  max_squeeze_hat_ratio: float = ...,
-                 max_intervals: int = ...,
-                 guide_factor: float = ...,
                  random_state: SeedType = ...) -> None: ...
     @property
     def squeeze_hat_ratio(self) -> float: ...
@@ -55,6 +53,24 @@ class TransformedDensityRejection(Method):
     def ppf_hat(self, u: ArrayLike0D) -> float: ...  # type: ignore[misc]
     @overload
     def ppf_hat(self, u: npt.ArrayLike) -> np.ndarray: ...
+
+
+class SROUDist(Protocol):
+    @property
+    def pdf(self) -> Callable[..., float]: ...
+    @property
+    def support(self) -> Tuple[float, float]: ...
+
+
+class SimpleRatioUniforms(Method):
+    def __init__(self,
+                 dist: SROUDist,
+                 *,
+                 mode: None | float = ...,
+                 pdf_area: float = ...,
+                 domain: None | Tuple[float, float] = ...,
+                 cdf_at_mode: float = ...,
+                 random_state: SeedType = ...) -> None: ...
 
 
 UError = NamedTuple('UError', [('max_error', float),
@@ -70,14 +86,12 @@ class PINVDist(Protocol):
 class NumericalInversePolynomial(Method):
     def __init__(self,
                  dist: PINVDist,
+                 *,
                  mode: None | float = ...,
                  center: None | float = ...,
-                 *,
                  domain: None | Tuple[float, float] = ...,
                  order: int = ...,
                  u_resolution: float = ...,
-                 max_intervals: int = ...,
-                 keep_cdf: bool = ...,
                  random_state: SeedType = ...) -> None: ...
     @property
     def intervals(self) -> int: ...
@@ -89,6 +103,42 @@ class NumericalInversePolynomial(Method):
     def cdf(self, x: ArrayLike0D) -> float: ...  # type: ignore[misc]
     @overload
     def cdf(self, x: npt.ArrayLike) -> np.ndarray: ...
+    def u_error(self, sample_size: int = ...) -> UError: ...
+    def qrvs(self,
+             size: None | int | Tuple[int, ...] = ...,
+             d: None | int = ...,
+             qmc_engine: None | stats.qmc.QMCEngine = ...) -> npt.ArrayLike: ...
+
+
+class HINVDist(Protocol):
+    @property
+    def pdf(self) -> Callable[..., float]: ...
+    @property
+    def cdf(self) -> Callable[..., float]: ...
+    @property
+    def support(self) -> Tuple[float, float]: ...
+
+
+class NumericalInverseHermite(Method):
+    def __init__(self,
+                 dist: HINVDist,
+                 *,
+                 domain: None | Tuple[float, float] = ...,
+                 order: int= ...,
+                 u_resolution: float = ...,
+                 construction_points: None | npt.ArrayLike = ...,
+                 max_intervals: int = ...,
+                 random_state: SeedType = ...) -> None: ...
+    @property
+    def intervals(self) -> int: ...
+    @overload
+    def ppf(self, u: ArrayLike0D) -> float: ...  # type: ignore[misc]
+    @overload
+    def ppf(self, u: npt.ArrayLike) -> np.ndarray: ...
+    def qrvs(self,
+             size: None | int | Tuple[int, ...] = ...,
+             d: None | int = ...,
+             qmc_engine: None | stats.qmc.QMCEngine = ...) -> npt.ArrayLike: ...
     def u_error(self, sample_size: int = ...) -> UError: ...
 
 
@@ -105,3 +155,22 @@ class DiscreteAliasUrn(Method):
                  domain: None | Tuple[float, float] = ...,
                  urn_factor: float = ...,
                  random_state: SeedType = ...) -> None: ...
+
+
+class DGTDist(Protocol):
+    @property
+    def pmf(self) -> Callable[..., float]: ...
+    @property
+    def support(self) -> Tuple[float, float]: ...
+
+class DiscreteGuideTable(Method):
+    def __init__(self,
+                 dist: npt.ArrayLike | DGTDist,
+                 *,
+                 domain: None | Tuple[float, float] = ...,
+                 guide_factor: float = ...,
+                 random_state: SeedType = ...) -> None: ...
+    @overload
+    def ppf(self, u: ArrayLike0D) -> float: ...  # type: ignore[misc]
+    @overload
+    def ppf(self, u: npt.ArrayLike) -> np.ndarray: ...

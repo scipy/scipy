@@ -5,15 +5,14 @@
 import operator
 import numpy as np
 import math
+import warnings
 from numpy import (pi, asarray, floor, isscalar, iscomplex, real,
                    imag, sqrt, where, mgrid, sin, place, issubdtype,
                    extract, inexact, nan, zeros, sinc)
-from . import _ufuncs as ufuncs
+from . import _ufuncs
 from ._ufuncs import (mathieu_a, mathieu_b, iv, jv, gamma,
-                      psi, hankel1, hankel2, yv, kv, ndtri,
-                      poch, binom, hyp0f1)
-from . import specfun
-from . import orthogonal
+                      psi, hankel1, hankel2, yv, kv, poch, binom)
+from . import _specfun
 from ._comb import _comb_int
 
 
@@ -38,37 +37,27 @@ __all__ = [
     'fresnel_zeros',
     'fresnelc_zeros',
     'fresnels_zeros',
-    'gamma',
     'h1vp',
     'h2vp',
-    'hankel1',
-    'hankel2',
-    'hyp0f1',
-    'iv',
     'ivp',
     'jn_zeros',
     'jnjnp_zeros',
     'jnp_zeros',
     'jnyn_zeros',
-    'jv',
     'jvp',
     'kei_zeros',
     'keip_zeros',
     'kelvin_zeros',
     'ker_zeros',
     'kerp_zeros',
-    'kv',
     'kvp',
     'lmbda',
     'lpmn',
     'lpn',
     'lqmn',
     'lqn',
-    'mathieu_a',
-    'mathieu_b',
     'mathieu_even_coef',
     'mathieu_odd_coef',
-    'ndtri',
     'obl_cv_seq',
     'pbdn_seq',
     'pbdv_seq',
@@ -76,7 +65,6 @@ __all__ = [
     'perm',
     'polygamma',
     'pro_cv_seq',
-    'psi',
     'riccati_jn',
     'riccati_yn',
     'sinc',
@@ -85,7 +73,6 @@ __all__ = [
     'y1p_zeros',
     'yn_zeros',
     'ynp_zeros',
-    'yv',
     'yvp',
     'zeta'
 ]
@@ -245,7 +232,7 @@ def jnjnp_zeros(nt):
     if not isscalar(nt) or (floor(nt) != nt) or (nt > 1200):
         raise ValueError("Number must be integer <= 1200.")
     nt = int(nt)
-    n, m, t, zo = specfun.jdzo(nt)
+    n, m, t, zo = _specfun.jdzo(nt)
     return zo[1:nt+1], n[:nt], m[:nt], t[:nt]
 
 
@@ -291,7 +278,7 @@ def jnyn_zeros(n, nt):
         raise ValueError("Arguments must be integers.")
     if (nt <= 0):
         raise ValueError("nt > 0")
-    return specfun.jyzo(abs(n), nt)
+    return _specfun.jyzo(abs(n), nt)
 
 
 def jn_zeros(n, nt):
@@ -527,7 +514,7 @@ def y0_zeros(nt, complex=False):
         raise ValueError("Arguments must be scalar positive integer.")
     kf = 0
     kc = not complex
-    return specfun.cyzo(nt, kf, kc)
+    return _specfun.cyzo(nt, kf, kc)
 
 
 def y1_zeros(nt, complex=False):
@@ -563,7 +550,7 @@ def y1_zeros(nt, complex=False):
         raise ValueError("Arguments must be scalar positive integer.")
     kf = 1
     kc = not complex
-    return specfun.cyzo(nt, kf, kc)
+    return _specfun.cyzo(nt, kf, kc)
 
 
 def y1p_zeros(nt, complex=False):
@@ -599,7 +586,7 @@ def y1p_zeros(nt, complex=False):
         raise ValueError("Arguments must be scalar positive integer.")
     kf = 2
     kc = not complex
-    return specfun.cyzo(nt, kf, kc)
+    return _specfun.cyzo(nt, kf, kc)
 
 
 def _bessel_diff_formula(v, z, n, L, phase):
@@ -921,7 +908,7 @@ def riccati_jn(n, x):
         n1 = 1
     else:
         n1 = n
-    nm, jn, jnp = specfun.rctj(n1, x)
+    nm, jn, jnp = _specfun.rctj(n1, x)
     return jn[:(n+1)], jnp[:(n+1)]
 
 
@@ -973,7 +960,7 @@ def riccati_yn(n, x):
         n1 = 1
     else:
         n1 = n
-    nm, jn, jnp = specfun.rcty(n1, x)
+    nm, jn, jnp = _specfun.rcty(n1, x)
     return jn[:(n+1)], jnp[:(n+1)]
 
 
@@ -1014,7 +1001,7 @@ def erf_zeros(nt):
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
-    return specfun.cerzo(nt)
+    return _specfun.cerzo(nt)
 
 
 def fresnelc_zeros(nt):
@@ -1029,7 +1016,7 @@ def fresnelc_zeros(nt):
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
-    return specfun.fcszo(1, nt)
+    return _specfun.fcszo(1, nt)
 
 
 def fresnels_zeros(nt):
@@ -1044,7 +1031,7 @@ def fresnels_zeros(nt):
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
-    return specfun.fcszo(2, nt)
+    return _specfun.fcszo(2, nt)
 
 
 def fresnel_zeros(nt):
@@ -1059,7 +1046,7 @@ def fresnel_zeros(nt):
     """
     if (floor(nt) != nt) or (nt <= 0) or not isscalar(nt):
         raise ValueError("Argument must be positive scalar integer.")
-    return specfun.fcszo(2, nt), specfun.fcszo(1, nt)
+    return _specfun.fcszo(2, nt), _specfun.fcszo(1, nt)
 
 
 def assoc_laguerre(x, n, k=0.0):
@@ -1074,7 +1061,7 @@ def assoc_laguerre(x, n, k=0.0):
     reversed argument order ``(x, n, k=0.0) --> (n, k, x)``.
 
     """
-    return orthogonal.eval_genlaguerre(n, k, x)
+    return _ufuncs.eval_genlaguerre(n, k, x)
 
 
 digamma = psi
@@ -1171,14 +1158,14 @@ def mathieu_even_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        print("Warning, too many predicted coefficients.")
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
     kd = 1
     m = int(floor(m))
     if m % 2:
         kd = 2
 
     a = mathieu_a(m, q)
-    fc = specfun.fcoef(kd, m, q, a)
+    fc = _specfun.fcoef(kd, m, q, a)
     return fc[:km]
 
 
@@ -1228,14 +1215,14 @@ def mathieu_odd_coef(m, q):
         qm = 17.0 + 3.1*sqrt(q) - .126*q + .0037*sqrt(q)*q
     km = int(qm + 0.5*m)
     if km > 251:
-        print("Warning, too many predicted coefficients.")
+        warnings.warn("Too many predicted coefficients.", RuntimeWarning, 2)
     kd = 4
     m = int(floor(m))
     if m % 2:
         kd = 3
 
     b = mathieu_b(m, q)
-    fc = specfun.fcoef(kd, m, q, b)
+    fc = _specfun.fcoef(kd, m, q, b)
     return fc[:km]
 
 
@@ -1298,7 +1285,7 @@ def lpmn(m, n, z):
     if (m < 0):
         mp = -m
         mf, nf = mgrid[0:mp+1, 0:n+1]
-        with ufuncs.errstate(all='ignore'):
+        with _ufuncs.errstate(all='ignore'):
             if abs(z) < 1:
                 # Ferrer function; DLMF 14.9.3
                 fixarr = where(mf > nf, 0.0,
@@ -1308,7 +1295,7 @@ def lpmn(m, n, z):
                 fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
     else:
         mp = m
-    p, pd = specfun.lpmn(mp, n, z)
+    p, pd = _specfun.lpmn(mp, n, z)
     if (m < 0):
         p = p * fixarr
         pd = pd * fixarr
@@ -1381,7 +1368,7 @@ def clpmn(m, n, z, type=3):
     if (m < 0):
         mp = -m
         mf, nf = mgrid[0:mp+1, 0:n+1]
-        with ufuncs.errstate(all='ignore'):
+        with _ufuncs.errstate(all='ignore'):
             if type == 2:
                 fixarr = where(mf > nf, 0.0,
                                (-1)**mf * gamma(nf-mf+1) / gamma(nf+mf+1))
@@ -1389,7 +1376,7 @@ def clpmn(m, n, z, type=3):
                 fixarr = where(mf > nf, 0.0, gamma(nf-mf+1) / gamma(nf+mf+1))
     else:
         mp = m
-    p, pd = specfun.clpmn(mp, n, real(z), imag(z), type)
+    p, pd = _specfun.clpmn(mp, n, real(z), imag(z), type)
     if (m < 0):
         p = p * fixarr
         pd = pd * fixarr
@@ -1443,9 +1430,9 @@ def lqmn(m, n, z):
     nn = max(1, n)
 
     if iscomplex(z):
-        q, qd = specfun.clqmn(mm, nn, z)
+        q, qd = _specfun.clqmn(mm, nn, z)
     else:
-        q, qd = specfun.lqmn(mm, nn, z)
+        q, qd = _specfun.lqmn(mm, nn, z)
     return q[:(m+1), :(n+1)], qd[:(m+1), :(n+1)]
 
 
@@ -1496,7 +1483,7 @@ def bernoulli(n):
         n1 = 2
     else:
         n1 = n
-    return specfun.bernob(int(n1))[:(n+1)]
+    return _specfun.bernob(int(n1))[:(n+1)]
 
 
 def euler(n):
@@ -1547,7 +1534,7 @@ def euler(n):
         n1 = 2
     else:
         n1 = n
-    return specfun.eulerb(n1)[:(n+1)]
+    return _specfun.eulerb(n1)[:(n+1)]
 
 
 def lpn(n, z):
@@ -1573,9 +1560,9 @@ def lpn(n, z):
     else:
         n1 = n
     if iscomplex(z):
-        pn, pd = specfun.clpn(n1, z)
+        pn, pd = _specfun.clpn(n1, z)
     else:
-        pn, pd = specfun.lpn(n1, z)
+        pn, pd = _specfun.lpn(n1, z)
     return pn[:(n+1)], pd[:(n+1)]
 
 
@@ -1600,9 +1587,9 @@ def lqn(n, z):
     else:
         n1 = n
     if iscomplex(z):
-        qn, qd = specfun.clqn(n1, z)
+        qn, qd = _specfun.clqn(n1, z)
     else:
-        qn, qd = specfun.lqnb(n1, z)
+        qn, qd = _specfun.lqnb(n1, z)
     return qn[:(n+1)], qd[:(n+1)]
 
 
@@ -1654,7 +1641,7 @@ def ai_zeros(nt):
     kf = 1
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be a positive integer scalar.")
-    return specfun.airyzo(nt, kf)
+    return _specfun.airyzo(nt, kf)
 
 
 def bi_zeros(nt):
@@ -1705,7 +1692,7 @@ def bi_zeros(nt):
     kf = 2
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be a positive integer scalar.")
-    return specfun.airyzo(nt, kf)
+    return _specfun.airyzo(nt, kf)
 
 
 def lmbda(v, x):
@@ -1752,9 +1739,9 @@ def lmbda(v, x):
         n1 = n
     v1 = n1 + v0
     if (v != floor(v)):
-        vm, vl, dl = specfun.lamv(v1, x)
+        vm, vl, dl = _specfun.lamv(v1, x)
     else:
-        vm, vl, dl = specfun.lamn(v1, x)
+        vm, vl, dl = _specfun.lamn(v1, x)
     return vl[:(n+1)], dl[:(n+1)]
 
 
@@ -1791,7 +1778,7 @@ def pbdv_seq(v, x):
     else:
         n1 = n
     v1 = n1 + v0
-    dv, dp, pdf, pdd = specfun.pbdv(v1, x)
+    dv, dp, pdf, pdd = _specfun.pbdv(v1, x)
     return dv[:n1+1], dp[:n1+1]
 
 
@@ -1828,7 +1815,7 @@ def pbvv_seq(v, x):
     else:
         n1 = n
     v1 = n1 + v0
-    dv, dp, pdf, pdd = specfun.pbvv(v1, x)
+    dv, dp, pdf, pdd = _specfun.pbvv(v1, x)
     return dv[:n1+1], dp[:n1+1]
 
 
@@ -1864,7 +1851,7 @@ def pbdn_seq(n, z):
         n1 = 1
     else:
         n1 = n
-    cpb, cpd = specfun.cpbdn(n1, z)
+    cpb, cpd = _specfun.cpbdn(n1, z)
     return cpb[:n1+1], cpd[:n1+1]
 
 
@@ -1894,7 +1881,7 @@ def ber_zeros(nt):
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
-    return specfun.klvnzo(nt, 1)
+    return _specfun.klvnzo(nt, 1)
 
 
 def bei_zeros(nt):
@@ -1923,7 +1910,7 @@ def bei_zeros(nt):
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
-    return specfun.klvnzo(nt, 2)
+    return _specfun.klvnzo(nt, 2)
 
 
 def ker_zeros(nt):
@@ -1952,7 +1939,7 @@ def ker_zeros(nt):
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
-    return specfun.klvnzo(nt, 3)
+    return _specfun.klvnzo(nt, 3)
 
 
 def kei_zeros(nt):
@@ -1981,7 +1968,7 @@ def kei_zeros(nt):
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
-    return specfun.klvnzo(nt, 4)
+    return _specfun.klvnzo(nt, 4)
 
 
 def berp_zeros(nt):
@@ -2010,7 +1997,7 @@ def berp_zeros(nt):
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
-    return specfun.klvnzo(nt, 5)
+    return _specfun.klvnzo(nt, 5)
 
 
 def beip_zeros(nt):
@@ -2039,7 +2026,7 @@ def beip_zeros(nt):
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
-    return specfun.klvnzo(nt, 6)
+    return _specfun.klvnzo(nt, 6)
 
 
 def kerp_zeros(nt):
@@ -2068,7 +2055,7 @@ def kerp_zeros(nt):
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
-    return specfun.klvnzo(nt, 7)
+    return _specfun.klvnzo(nt, 7)
 
 
 def keip_zeros(nt):
@@ -2097,7 +2084,7 @@ def keip_zeros(nt):
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
-    return specfun.klvnzo(nt, 8)
+    return _specfun.klvnzo(nt, 8)
 
 
 def kelvin_zeros(nt):
@@ -2115,14 +2102,14 @@ def kelvin_zeros(nt):
     """
     if not isscalar(nt) or (floor(nt) != nt) or (nt <= 0):
         raise ValueError("nt must be positive integer scalar.")
-    return (specfun.klvnzo(nt, 1),
-            specfun.klvnzo(nt, 2),
-            specfun.klvnzo(nt, 3),
-            specfun.klvnzo(nt, 4),
-            specfun.klvnzo(nt, 5),
-            specfun.klvnzo(nt, 6),
-            specfun.klvnzo(nt, 7),
-            specfun.klvnzo(nt, 8))
+    return (_specfun.klvnzo(nt, 1),
+            _specfun.klvnzo(nt, 2),
+            _specfun.klvnzo(nt, 3),
+            _specfun.klvnzo(nt, 4),
+            _specfun.klvnzo(nt, 5),
+            _specfun.klvnzo(nt, 6),
+            _specfun.klvnzo(nt, 7),
+            _specfun.klvnzo(nt, 8))
 
 
 def pro_cv_seq(m, n, c):
@@ -2146,7 +2133,7 @@ def pro_cv_seq(m, n, c):
     if (n-m > 199):
         raise ValueError("Difference between n and m is too large.")
     maxL = n-m+1
-    return specfun.segv(m, n, c, 1)[1][:maxL]
+    return _specfun.segv(m, n, c, 1)[1][:maxL]
 
 
 def obl_cv_seq(m, n, c):
@@ -2170,10 +2157,10 @@ def obl_cv_seq(m, n, c):
     if (n-m > 199):
         raise ValueError("Difference between n and m is too large.")
     maxL = n-m+1
-    return specfun.segv(m, n, c, -1)[1][:maxL]
+    return _specfun.segv(m, n, c, -1)[1][:maxL]
 
 
-def comb(N, k, exact=False, repetition=False):
+def comb(N, k, exact=False, repetition=False, legacy=True):
     """The number of combinations of N things taken k at a time.
 
     This is often expressed as "N choose k".
@@ -2185,11 +2172,25 @@ def comb(N, k, exact=False, repetition=False):
     k : int, ndarray
         Number of elements taken.
     exact : bool, optional
-        If `exact` is False, then floating point precision is used, otherwise
-        exact long integer is computed.
+        For integers, if `exact` is False, then floating point precision is
+        used, otherwise the result is computed exactly. For non-integers, if
+        `exact` is True, the inputs are currently cast to integers, though
+        this behavior is deprecated (see below).
     repetition : bool, optional
         If `repetition` is True, then the number of combinations with
         repetition is computed.
+    legacy : bool, optional
+        If `legacy` is True and `exact` is True, then non-integral arguments
+        are cast to ints; if `legacy` is False, the result for non-integral
+        arguments is unaffected by the value of `exact`.
+
+        .. deprecated:: 1.9.0
+            Non-integer arguments are currently being cast to integers when
+            `exact=True`. This behaviour is deprecated and the default will
+            change to avoid the cast in SciPy 1.11.0. To opt into the future
+            behavior set `legacy=False`. If you want to keep the
+            argument-casting but silence this warning, cast your inputs
+            directly, e.g. ``comb(int(your_N), int(your_k), exact=True)``.
 
     Returns
     -------
@@ -2198,7 +2199,8 @@ def comb(N, k, exact=False, repetition=False):
 
     See Also
     --------
-    binom : Binomial coefficient ufunc
+    binom : Binomial coefficient considered as a function of two real
+            variables.
 
     Notes
     -----
@@ -2220,8 +2222,23 @@ def comb(N, k, exact=False, repetition=False):
 
     """
     if repetition:
-        return comb(N + k - 1, k, exact)
+        return comb(N + k - 1, k, exact, legacy=legacy)
     if exact:
+        if int(N) != N or int(k) != k:
+            if legacy:
+                warnings.warn(
+                    "Non-integer arguments are currently being cast to "
+                    "integers when exact=True. This behaviour is "
+                    "deprecated and the default will change to avoid the cast "
+                    "in SciPy 1.11.0. To opt into the future behavior set "
+                    "legacy=False. If you want to keep the argument-casting "
+                    "but silence this warning, cast your inputs directly, "
+                    "e.g. comb(int(your_N), int(your_k), exact=True).",
+                    DeprecationWarning, stacklevel=2
+                )
+            else:
+                return comb(N, k)
+        # _comb_int casts inputs to integers
         return _comb_int(N, k)
     else:
         k, N = asarray(k), asarray(N)
@@ -2398,7 +2415,7 @@ def factorial(n, exact=False):
                 out[np.isnan(n)] = n[np.isnan(n)]
             return out
     else:
-        out = ufuncs._factorial(n)
+        out = _ufuncs._factorial(n)
         return out
 
 
@@ -2415,7 +2432,8 @@ def factorial2(n, exact=False):
     ----------
     n : int or array_like
         Calculate ``n!!``.  Arrays are only supported with `exact` set
-        to False.  If ``n < 0``, the return value is 0.
+        to False. If ``n < -1``, the return value is 0.
+        Otherwise if ``n <= 0``, the return value is 1.
     exact : bool, optional
         The result can be approximated rapidly using the gamma-formula
         above (default).  If `exact` is set to True, calculate the
@@ -2475,7 +2493,8 @@ def factorialk(n, k, exact=True):
     Parameters
     ----------
     n : int
-        Calculate multifactorial. If `n` < 0, the return value is 0.
+        Calculate multifactorial. If ``n < 1 - k``, the return value is 0.
+        Otherwise if ``n <= 0``, the return value is 1.
     k : int
         Order of multifactorial.
     exact : bool, optional
@@ -2575,6 +2594,6 @@ def zeta(x, q=None, out=None):
 
     """
     if q is None:
-        return ufuncs._riemann_zeta(x, out)
+        return _ufuncs._riemann_zeta(x, out)
     else:
-        return ufuncs._zeta(x, q, out)
+        return _ufuncs._zeta(x, q, out)

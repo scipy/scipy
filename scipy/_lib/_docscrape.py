@@ -31,7 +31,7 @@ class Reader(object):
         Parameters
         ----------
         data : str
-           String with lines separated by '\n'.
+           String with lines separated by '\\n'.
 
         """
         if isinstance(data, list):
@@ -607,7 +607,7 @@ class ClassDoc(NumpyDocString):
         self._cls = cls
 
         if 'sphinx' in sys.modules:
-            from sphinx.ext.autodoc import ALL  # type: ignore[import]
+            from sphinx.ext.autodoc import ALL
         else:
             ALL = object()
 
