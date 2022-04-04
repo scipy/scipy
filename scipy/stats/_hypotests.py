@@ -177,15 +177,15 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
 
     Parameters
     ----------
-    k1 : int
+    k1 : float
         Sample value of interest from sample 1.
-    n1: int
+    n1: float
         Sample size from sample 1.
-    k2 : int
+    k2 : float
         Sample value of interest from sample 2.
-    n2: int
+    n2 : float
         Sample size from sample 2.
-    diff : int or float, optional
+    diff : float, optional
         The difference of mean between two samples under the null hypothesis
         (default is 0).
     alternative : {'two-sided', 'less', 'greater'}, optional
@@ -243,6 +243,7 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     The gardener selects a significance level of 5% to reject the null
     hypothesis in favor of the alternative [2]_.
 
+    >>> import scipy.stats as stats
     >>> res = stats.poisson_means_test(0, 100, 3, 100)
     >>> res.statistic, res.pvalue
     (-1.7320508075688772, 0.08837900929018157)
@@ -334,7 +335,6 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     # multiply all combinations of the products together, exclude terms
     # based on the `indicator` and then sum. (3.5)
     pvalue = np.sum((prob_x1 * prob_x2)[indicator])
-
     return PoissonMeansTestResult(t_k1k2, pvalue)
 
 
