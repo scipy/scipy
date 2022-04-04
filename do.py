@@ -9,8 +9,10 @@ And also a CLI interface using click (https://click.palletsprojects.com).
 The CLI is ideal for project contributors while,
 doit interface is better suited for authring the development tasks.
 
-Note this requires the unreleased doit 0.35.
-And also PyPI packages: click, rich, rich-click(1.3.0)
+REQUIREMENTS:
+--------------
+- Note this requires the unreleased doit 0.35.
+- And also PyPI packages: click, rich, rich-click(1.3.0)
 
 # USAGE:
 
@@ -840,14 +842,16 @@ class Bench(Task):
     submodule = Option(
         ['--submodule', '-s'],default=None,metavar='SUBMODULE',
         help="Submodule whose tests to run (cluster, constants, ...)")
-    tests = Option(['--tests', '-t'],default=None, multiple=True,
-                   metavar='TESTS',help='Specify tests to run')
-    bench_compare = Option(['--bench-compare', '-c'],default=None,metavar='BENCH-COMPARE',multiple=True,
-                           help="Compare benchmark results of current HEAD to"
-                              " BEFORE. Use an additional "
-                              "--bench-compare=COMMIT to override HEAD with"
-                              " COMMIT. Note that you need to commit your "
-                              "changes first!")
+    tests = Option(
+        ['--tests', '-t'],default=None, multiple=True,
+        metavar='TESTS',help='Specify tests to run')
+    bench_compare = Option(
+        ['--bench-compare', '-c'],default=None,metavar='BENCH-COMPARE',multiple=True,
+        help="Compare benchmark results of current HEAD to"
+              " BEFORE. Use an additional "
+              "--bench-compare=COMMIT to override HEAD with"
+              " COMMIT. Note that you need to commit your "
+              "changes first!")
 
     @staticmethod
     def run_asv(dirs, cmd):
