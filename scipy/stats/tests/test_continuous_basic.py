@@ -128,6 +128,9 @@ def cases_test_cont_basic():
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
             continue
+        elif distname == "gilbrat":
+            # functionality tested through gibrat; warning tested separately
+            continue
         elif distname in distslow:
             yield pytest.param(distname, arg, marks=pytest.mark.slow)
         elif distname in distxslow:
@@ -283,6 +286,10 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
         distfn = distname
         distname = 'rv_histogram_instance'
 
+    if distname == "gilbrat":
+        # functionality tested through gibrat; warning tested separately
+        pytest.skip("skip deprecated dist; tested separately")
+
     with npt.suppress_warnings() as sup:
         sup.filter(IntegrationWarning,
                    "The integral is probably divergent, or slowly convergent.")
@@ -311,6 +318,9 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
 def test_rvs_broadcast(dist, shape_args):
     if dist in ['gausshyper', 'genexpon', 'studentized_range']:
         pytest.skip("too slow")
+    elif dist == "gilbrat":
+        # functionality tested through gibrat; warning tested separately
+        pytest.skip("skip deprecated dist; tested separately")
 
     # If shape_only is True, it means the _rvs method of the
     # distribution uses more than one random number to generate a random
@@ -680,6 +690,9 @@ def check_fit_args_fix(distfn, arg, rvs, method):
                                     'sf', 'logsf', 'ppf', 'isf'])
 @pytest.mark.parametrize('distname, args', distcont)
 def test_methods_with_lists(method, distname, args):
+    if distname == "gilbrat":
+        # functionality tested through gibrat; warning tested separately
+        pytest.skip("skip deprecated dist; tested separately")
     # Test that the continuous distributions can accept Python lists
     # as arguments.
     dist = getattr(stats, distname)
@@ -696,6 +709,18 @@ def test_methods_with_lists(method, distname, args):
     npt.assert_allclose(result,
                         [f(*v) for v in zip(x, *shape2, loc, scale)],
                         rtol=1e-14, atol=5e-14)
+
+
+@pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
+                                    'sf', 'logsf', 'ppf', 'isf'])
+def test_gilbrat_deprecation(method):
+    expected = getattr(stats.gibrat, method)(1)
+    with pytest.warns(
+        DeprecationWarning,
+        match=rf"\s*`gilbrat\.{method}` is deprecated,.*",
+    ):
+        result = getattr(stats.gilbrat, method)(1)
+    assert result == expected
 
 
 def test_burr_fisk_moment_gh13234_regression():
