@@ -1016,7 +1016,9 @@ def _moment(a, moment, axis, *, mean=None):
 
         eps = np.finfo(a_zero_mean.dtype).resolution * 1e6
         rel_diff = np.max(np.abs(a_zero_mean), axis=axis, keepdims=True)/mean
-        if np.any((0 < rel_diff) & (rel_diff < eps)):
+        with np.errstate(invalid='ignore'):
+            precision_loss = np.any((0 < rel_diff) & (rel_diff < eps))
+        if precision_loss:
             message = ("Precision loss occurred in moment calculation due to "
                        "catastrophc cancellation. Results may be unreliable.")
             warnings.warn(message, RuntimeWarning, stacklevel=4)
