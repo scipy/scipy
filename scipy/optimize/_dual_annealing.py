@@ -146,7 +146,7 @@ class EnergyState:
         ``x`` and ``f`` are the coordinates and function value of the
         latest minimum found, and `context` has value in [0, 1, 2]
     """
-    # Maximimum number of trials for generating a valid starting point
+    # Maximum number of trials for generating a valid starting point
     MAX_REINIT_COUNT = 1000
 
     def __init__(self, lower, upper, callback=None):
