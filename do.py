@@ -846,7 +846,7 @@ class Bench(Task):
         ['--bench-compare', '-c'],default=None,metavar='BENCH-COMPARE',multiple=True,
         help="Compare benchmark results of current HEAD to"
               " BEFORE. Use an additional "
-              "--bench-compare=COMMIT to override HEAD with"
+              "--bench-compare COMMIT to override HEAD with"
               " COMMIT. Note that you need to commit your "
               "changes first!")
 
@@ -900,7 +900,7 @@ class Bench(Task):
                 print("Running benchmarks for Scipy version %s at %s"
                       % (version, mod_path))
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
-                       '--python=same'] + bench_args
+                       '--python=same', '--quick'] + bench_args
                 retval = cls.run_asv(dirs, cmd)
                 sys.exit(retval)
             else:
