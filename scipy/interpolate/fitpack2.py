@@ -23,7 +23,6 @@ __all__ = [  # noqa: F822
     'dfitpack',
     'dfitpack_int',
     'diff',
-    'fitpack',
     'ones',
     'ravel',
     'zeros',

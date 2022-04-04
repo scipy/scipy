@@ -7,7 +7,7 @@ from . import _moduleTNC
 
 
 __all__ = [  # noqa: F822
-    'minimize',
+
 ]
 
 

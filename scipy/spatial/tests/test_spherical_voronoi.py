@@ -148,16 +148,9 @@ class TestSphericalVoronoi:
         assert_array_almost_equal(sv_unit.vertices * 2,
                                   sv_scaled.vertices)
 
-    def test_old_radius_api(self):
-        sv_unit = SphericalVoronoi(self.points, radius=1)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "`radius` is `None`")
-            sv = SphericalVoronoi(self.points, None)
-            assert_array_almost_equal(sv_unit.vertices, sv.vertices)
-
-    def test_old_radius_api_warning(self):
-        with assert_warns(DeprecationWarning):
-            SphericalVoronoi(self.points, None)
+    def test_old_radius_api_error(self):
+        with pytest.raises(ValueError, match='`radius` is `None`. *'):
+            SphericalVoronoi(self.points, radius=None)
 
     def test_sort_vertices_of_regions(self):
         sv = SphericalVoronoi(self.points)

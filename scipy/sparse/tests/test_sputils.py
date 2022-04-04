@@ -21,6 +21,12 @@ class TestSparseUtils:
         assert_equal(sputils.getdtype(None, default=float), float)
         assert_equal(sputils.getdtype(None, a=A), np.int8)
 
+        with assert_raises(
+            ValueError,
+            match="object dtype is not supported by sparse matrices",
+        ):
+            sputils.getdtype("O")
+
     def test_isscalarlike(self):
         assert_equal(sputils.isscalarlike(3.0), True)
         assert_equal(sputils.isscalarlike(-4), True)

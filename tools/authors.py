@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- encoding:utf-8 -*-
 """
-git-authors [OPTIONS] REV1..REV2
+List the authors who contributed within a given revision interval::
 
-List the authors who contributed within a given revision interval.
+    python tools/authors.py REV1..REV2
+
+`REVx` being a commit hash.
 
 To change the name mapping, edit .mailmap on the top-level of the
 repository.
@@ -17,6 +19,7 @@ import sys
 import os
 import io
 import subprocess
+import collections
 
 stdout_b = sys.stdout.buffer
 MAILMAP_FILE = os.path.join(os.path.dirname(__file__), "..", ".mailmap")
@@ -42,7 +45,7 @@ def main():
 
     # Analyze log data
     all_authors = set()
-    authors = set()
+    authors = collections.Counter()
 
     def analyze_line(line, names, disp=False):
         line = line.strip().decode('utf-8')
@@ -56,17 +59,17 @@ def main():
             if disp:
                 if name not in names:
                     stdout_b.write(("    - Author: %s\n" % name).encode('utf-8'))
-            names.add(name)
+            names.update((name,))
 
         # Look for "thanks to" messages in the commit log
-        m = re.search(r'([Tt]hanks to|[Cc]ourtesy of) ([A-Z][A-Za-z]*? [A-Z][A-Za-z]*? [A-Z][A-Za-z]*|[A-Z][A-Za-z]*? [A-Z]\. [A-Z][A-Za-z]*|[A-Z][A-Za-z ]*? [A-Z][A-Za-z]*|[a-z0-9]+)($|\.| )', line)
+        m = re.search(r'([Tt]hanks to|[Cc]ourtesy of|Co-authored-by:) ([A-Z][A-Za-z]*? [A-Z][A-Za-z]*? [A-Z][A-Za-z]*|[A-Z][A-Za-z]*? [A-Z]\. [A-Z][A-Za-z]*|[A-Z][A-Za-z ]*? [A-Z][A-Za-z]*|[a-z0-9]+)($|\.| )', line)
         if m:
             name = m.group(2)
             if name not in (u'this',):
                 if disp:
                     stdout_b.write("    - Log   : %s\n" % line.strip().encode('utf-8'))
                 name = NAME_MAP.get(name, name)
-                names.add(name)
+                names.update((name,))
 
             line = line[m.end():].strip()
             line = re.sub(r'^(and|, and|, ) ', u'Thanks to ', line)
@@ -74,12 +77,12 @@ def main():
 
     # Find all authors before the named range
     for line in git.pipe('log', '--pretty=@@@%an@@@%n@@@%cn@@@%n%b',
-                         '%s' % (rev1,)):
+                         f'{rev1}'):
         analyze_line(line, all_authors)
 
     # Find authors in the named range
     for line in git.pipe('log', '--pretty=@@@%an@@@%n@@@%cn@@@%n%b',
-                         '%s..%s' % (rev1, rev2)):
+                         f'{rev1}..{rev2}'):
         analyze_line(line, authors, disp=options.debug)
 
     # Sort
@@ -101,7 +104,7 @@ def main():
 
     # generate set of all new authors
     if vars(options)['new']:
-        new_authors = authors.difference(all_authors)
+        new_authors = set(authors.keys()).difference(all_authors)
         n_authors = list(new_authors)
         n_authors.sort(key=name_key)
         # Print some empty lines to separate
@@ -111,8 +114,12 @@ def main():
         # return for early exit so we only print new authors
         return
 
-    authors = list(authors)
-    authors.sort(key=name_key)
+    try:
+        authors.pop('GitHub')
+    except KeyError:
+        pass
+    # Order by name. Could order by count with authors.most_common()
+    authors = sorted(authors.items(), key=lambda i: name_key(i[0]))
 
     # Print
     stdout_b.write(b"""
@@ -121,11 +128,14 @@ Authors
 
 """)
 
-    for author in authors:
+    for author, count in authors:
+        # remove @ if only GH handle is available
+        author_clean = author.strip('@')
+
         if author in all_authors:
-            stdout_b.write(("* %s\n" % author).encode('utf-8'))
+            stdout_b.write((f"* {author_clean} ({count})\n").encode('utf-8'))
         else:
-            stdout_b.write(("* %s +\n" % author).encode('utf-8'))
+            stdout_b.write((f"* {author_clean} ({count}) +\n").encode('utf-8'))
 
     stdout_b.write(("""
 A total of %(count)d people contributed to this release.

@@ -9,7 +9,6 @@ from . import _compressed
 __all__ = [  # noqa: F822
     'IndexMixin',
     'SparseEfficiencyWarning',
-    'asmatrix',
     'check_shape',
     'csr_column_index1',
     'csr_column_index2',
@@ -18,7 +17,6 @@ __all__ = [  # noqa: F822
     'csr_sample_offsets',
     'csr_sample_values',
     'csr_todense',
-    'dia_matrix',
     'downcast_intp_index',
     'get_csr_submatrix',
     'get_index_dtype',
@@ -30,7 +28,6 @@ __all__ = [  # noqa: F822
     'isscalarlike',
     'isshape',
     'isspmatrix',
-    'matrix',
     'operator',
     'spmatrix',
     'to_native',

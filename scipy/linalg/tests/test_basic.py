@@ -619,6 +619,13 @@ class TestSolve:
             x = solve(a, b)
             assert_array_almost_equal(dot(a, x), b)
 
+    def test_sym_pos_dep(self):
+        with pytest.warns(
+                DeprecationWarning,
+                match="The 'sym_pos' keyword is deprecated",
+        ):
+            solve([[1.]], [1], sym_pos=True)
+
     def test_random_sym(self):
         n = 20
         a = random([n, n])
@@ -628,7 +635,7 @@ class TestSolve:
                 a[i, j] = a[j, i]
         for i in range(4):
             b = random([n])
-            x = solve(a, b, sym_pos=1)
+            x = solve(a, b, assume_a="pos")
             assert_array_almost_equal(dot(a, x), b)
 
     def test_random_sym_complex(self):
@@ -641,7 +648,7 @@ class TestSolve:
                 a[i, j] = conjugate(a[j, i])
         b = random([n])+2j*random([n])
         for i in range(2):
-            x = solve(a, b, sym_pos=1)
+            x = solve(a, b, assume_a="pos")
             assert_array_almost_equal(dot(a, x), b)
 
     def test_check_finite(self):

@@ -36,28 +36,6 @@ with `python -c "import scipy; print(scipy.__file__)"`.
 If the build is successful, you can open it in your browser with `make show`
 (which will open `build/html-scipyorg/index.html`).
 
-
-## Building pdf docs
-
-To build the pdf docs, which requires a LaTeX install and can be more fiddly
-to get to work, replace the doc build commands in the section above with:
-```
-python3 runtests.py --doc latex
-```
-or:
-```
-make latex
-```
-
-That will use Sphinx to generate the LaTeX sources. To then produce a pdf,
-navigate to `doc/build/latex/` and run:
-```
-make all-pdf
-```
-
-That will produce a file `scipy-ref.pdf` in `build/latex/`.
-
-
 ## Building documentation for a release
 
 For building all the documentation artifacts for a release, run:
