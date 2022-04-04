@@ -1887,7 +1887,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     """
     warnings.warn("lsim2 is deprecated and will be removed from scipy. "
                   "Use the feature equivalent lsim function.",
-                  DeprecationWarning)
+                  DeprecationWarning, stacklevel=2)
 
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -2347,7 +2347,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     """
     warnings.warn("impulse2 is deprecated and will be removed from scipy. "
                   "Use the feature equivalent impulse function.",
-                  DeprecationWarning)
+                  DeprecationWarning, stacklevel=2)
 
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -2371,7 +2371,10 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     # solve using lsim2().
     ic = B + X0
     with warnings.catch_warnings():
-        warnings.simplefilter('ignore', DeprecationWarning)
+        warnings.filterwarnings(action='ignore', message="lsim2 is deprecated " 
+            "and will be removed from scipy. "
+            "Use the feature equivalent lsim function.", 
+            category=DeprecationWarning)
         Tr, Yr, Xr = lsim2(sys, T=T, X0=ic, **kwargs)
     return Tr, Yr
 
@@ -2515,7 +2518,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     """
     warnings.warn("step2 is deprecated and will be removed from scipy. "
                   "Use the feature equivalent step function.",
-                  DeprecationWarning)
+                  DeprecationWarning, stacklevel=2)
 
     if isinstance(system, lti):
         sys = system._as_ss()
@@ -2532,6 +2535,10 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
         T = asarray(T)
     U = ones(T.shape, sys.A.dtype)
     with warnings.catch_warnings():
+        warnings.filterwarnings(action='ignore', message="lsim2 is deprecated " 
+            "and will be removed from scipy. "
+            "Use the feature equivalent lsim function.", 
+            category=DeprecationWarning)
         warnings.simplefilter('ignore', DeprecationWarning)
         vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]
