@@ -907,6 +907,7 @@ class Bench(Task):
                 retval = cls.run_asv(dirs, cmd)
                 sys.exit(retval)
             else:
+                print("BENCH COMPARE")
                 if len(args.bench_compare) == 1:
                     commit_a = args.bench_compare[0]
                     commit_b = 'HEAD'
@@ -937,9 +938,9 @@ class Bench(Task):
                 out, err = p.communicate()
                 commit_a = out.strip()
 
-                cmd = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
+                cmd_compare = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
                        commit_a, commit_b] + bench_args
-                cls.run_asvdirs, (cmd)
+                cls.run_asv(dirs, cmd_compare)
                 sys.exit(1)
 
     @classmethod
