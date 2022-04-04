@@ -820,11 +820,7 @@ class Test(Task):
         args = Args(**kwargs)
         cls.scipy_tests(args, pytest_args)
 
-"""
-**********************Bench taks*************************
-Needs more work (WIP)
-TODO: Fix bench compare
-"""
+
 @cli.cls_cmd('bench')
 class Bench(Task):
     """:wrench: Run benchmarks
@@ -833,6 +829,7 @@ class Bench(Task):
 
     $ python do.py bench -t integrate.SolveBVP
     $ python do.py bench -t linalg.Norm
+    $ python do.py bench --bench-compare head
 
     """
     ctx = CONTEXT
@@ -915,7 +912,6 @@ class Bench(Task):
                     commit_a, commit_b = args.bench_compare
                 else:
                     print("Too many commits to compare benchmarks for")
-
                 # Check for uncommitted files
                 if commit_b == 'HEAD':
                     r1 = subprocess.call(['git', 'diff-index', '--quiet',
@@ -937,7 +933,6 @@ class Bench(Task):
                                      stdout=subprocess.PIPE)
                 out, err = p.communicate()
                 commit_a = out.strip()
-
                 cmd_compare = ['asv', 'continuous', '--show-stderr', '--factor', '1.05',
                        commit_a, commit_b] + bench_args
                 cls.run_asv(dirs, cmd_compare)
