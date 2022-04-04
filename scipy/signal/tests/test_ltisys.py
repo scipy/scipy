@@ -543,7 +543,7 @@ class TestLsim(_TestLsimFunctions):
         u = np.array([0.0, 0.0, 1.0, 1.0])
         # Simple integrator: x'(t) = u(t)
         system = ([1.0], [1.0, 0.0])
-        with assert_raises(ValueError):
+        with assert_raises(ValueError, match="Time steps are not equally spaced."):
             tout, y, x = self.func(system, u, t, X0=[1.0])
 
 
@@ -551,7 +551,7 @@ class Test_lsim2(_TestLsimFunctions):
     decimal = 6
 
     def func(self, *args, **kwargs):
-        with warns(DeprecationWarning):
+        with warns(DeprecationWarning, match="lsim2 is deprecated"):
             t, y, x = lsim2(*args, **kwargs)
         return t, np.squeeze(y), np.squeeze(x)
 
@@ -660,7 +660,7 @@ class _TestImpulseFuncs:
 class TestImpulse2(_TestImpulseFuncs):
 
     def func(self, *args, **kwargs):
-        with warns(DeprecationWarning):
+        with warns(DeprecationWarning, match="impulse2 is deprecated"):
             return impulse2(*args, **kwargs)
 
 
@@ -739,7 +739,7 @@ class _TestStepFuncs:
 
 class TestStep2(_TestStepFuncs):
     def func(self, *args, **kwargs):
-        with warns(DeprecationWarning):
+        with warns(DeprecationWarning, match="step2 is deprecated"):
             return step2(*args, **kwargs)
 
     def test_05(self):
