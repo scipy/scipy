@@ -2470,7 +2470,7 @@ class TestRvDiscrete:
             assert_(abs(sum(x == s)/float(samples) - p) < 0.05)
 
         x = r.rvs()
-        assert_(isinstance(x, int))
+        assert np.issubdtype(type(x), np.integer)
 
     def test_entropy(self):
         # Basic tests of entropy.
