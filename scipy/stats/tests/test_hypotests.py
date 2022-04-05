@@ -653,7 +653,7 @@ def test_mann_whitney_u_switch():
     y = rng.random(500)
     stats.mannwhitneyu(x, y, method='exact')
 
-    # iterative algorithm has modified _mwu_state._fmnks
+    # recursive algorithm has modified _mwu_state._fmnks
     assert not np.all(_mwu_state._fmnks == -1)
 
 
