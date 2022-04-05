@@ -99,13 +99,9 @@ First milestone replace dev.py
 
 - [ ] doc: it would make sense to expose MAKE targets as sub-commands or options
 
-commands:
-- [ ] --bench-compare
-
 cleanup + doit:
 - [ ] move out non-scipy code
 - [ ] doit reporter when running under click
-
 
 BUG:
 - [ ] python dev.py -t scipy.optimize.tests.test_minimize_constrained.py::TestTrustRegionConstr::test_args
@@ -1166,15 +1162,16 @@ class Shell(Python):
         sys.exit(1)
 
 
-
-##########################################
-### Release
-
 @cli.command()
 @click.argument('version_args', nargs=2)
 @click.pass_obj
 def notes(ctx_obj, version_args):
-    """:ledger: Release notes and log generation"""
+    """:ledger: Release notes and log generation
+
+     Example:
+
+    $ python do.py notes 1.7.0 1.8.0
+    """
     if version_args:
         sys.argv = version_args
         log_start = sys.argv[0]
@@ -1191,7 +1188,12 @@ def notes(ctx_obj, version_args):
 @click.argument('revision_args', nargs=2)
 @click.pass_obj
 def authors(ctx_obj, revision_args):
-    """:ledger: Task to generate list the authors who contributed within a given revision interval"""
+    """:ledger: Task to generate list the authors who contributed within a given revision interval
+
+    Example:
+
+    $ python do.py authors 1.7.0 1.8.0
+    """
     if revision_args:
         sys.argv = revision_args
         start_revision = sys.argv[0]
