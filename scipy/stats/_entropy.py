@@ -40,7 +40,7 @@ def entropy(pk: np.typing.ArrayLike,
         the same format as `pk`.
     base : float, optional
         The logarithmic base to use, defaults to ``e`` (natural logarithm).
-    axis: int, optional
+    axis : int, optional
         The axis along which the entropy is calculated. Default is 0.
 
     Returns

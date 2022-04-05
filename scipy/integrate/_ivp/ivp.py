@@ -275,7 +275,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         So if, for example, `fun` has the signature ``fun(t, y, a, b, c)``,
         then `jac` (if given) and any event functions must have the same
         signature, and `args` must be a tuple of length 3.
-    options
+    **options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
     first_step : float or None, optional

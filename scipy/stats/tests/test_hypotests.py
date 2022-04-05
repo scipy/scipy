@@ -17,7 +17,9 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
 from .common_tests import check_named_results
+from scipy import special
 from scipy._lib._testutils import _TestPythranFunc
+
 
 class TestEppsSingleton:
     def test_statistic_1(self):
@@ -1235,6 +1237,25 @@ class TestBoschlooExact:
         statistic, pvalue = res.statistic, res.pvalue
         assert_equal(pvalue, expected[0])
         assert_equal(statistic, expected[1])
+
+    def test_two_sided_gt_1(self):
+        # Check that returned p-value does not exceed 1 even when twice
+        # the minimum of the one-sided p-values does. See gh-15345.
+        tbl = [[1, 1], [13, 12]]
+        pl = boschloo_exact(tbl, alternative='less').pvalue
+        pg = boschloo_exact(tbl, alternative='greater').pvalue
+        assert 2*min(pl, pg) > 1
+        pt = boschloo_exact(tbl, alternative='two-sided').pvalue
+        assert pt == 1.0
+
+    @pytest.mark.parametrize("alternative", ("less", "greater"))
+    def test_against_fisher_exact(self, alternative):
+        # Check that the statistic of `boschloo_exact` is the same as the
+        # p-value of `fisher_exact` (for one-sided tests). See gh-15345.
+        tbl = [[2, 7], [8, 2]]
+        boschloo_stat = boschloo_exact(tbl, alternative=alternative).statistic
+        fisher_p = stats.fisher_exact(tbl, alternative=alternative)[1]
+        assert_allclose(boschloo_stat, fisher_p)
 
 
 class TestCvm_2samp:

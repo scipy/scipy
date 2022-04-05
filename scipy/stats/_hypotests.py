@@ -9,8 +9,11 @@ from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import chi2, norm
 from scipy.special import gamma, kv, gammaln
-from . import _wilcoxon_data
-from ._hypotests_pythran import _Q, _P, _a_ij_Aij_Dij2
+from scipy.fft import ifft
+from ._hypotests_pythran import _a_ij_Aij_Dij2
+from ._hypotests_pythran import (
+    _concordant_pairs as _P, _discordant_pairs as _Q
+)
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
@@ -153,7 +156,7 @@ class CramerVonMisesResult:
 
 def _psi1_mod(x):
     """
-    psi1 is defined in equation 1.10 in Csorgo, S. and Faraway, J. (1996).
+    psi1 is defined in equation 1.10 in Csörgő, S. and Faraway, J. (1996).
     This implements a modified version by excluding the term V(x) / 12
     (here: _cdf_cvm_inf(x) / 12) to avoid evaluating _cdf_cvm_inf(x)
     twice in _cdf_cvm.
@@ -205,7 +208,7 @@ def _cdf_cvm_inf(x):
     """
     Calculate the cdf of the Cramér-von Mises statistic (infinite sample size).
 
-    See equation 1.2 in Csorgo, S. and Faraway, J. (1996).
+    See equation 1.2 in Csörgő, S. and Faraway, J. (1996).
 
     Implementation based on MAPLE code of Julian Faraway and R code of the
     function pCvM in the package goftest (v1.1.1), permission granted
@@ -242,12 +245,16 @@ def _cdf_cvm(x, n=None):
     Calculate the cdf of the Cramér-von Mises statistic for a finite sample
     size n. If N is None, use the asymptotic cdf (n=inf).
 
-    See equation 1.8 in Csorgo, S. and Faraway, J. (1996) for finite samples,
+    See equation 1.8 in Csörgő, S. and Faraway, J. (1996) for finite samples,
     1.2 for the asymptotic cdf.
 
     The function is not expected to be accurate for large values of x, say
     x > 2, when the cdf is very close to 1 and it might return values > 1
-    in that case, e.g. _cdf_cvm(2.0, 12) = 1.0000027556716846.
+    in that case, e.g. _cdf_cvm(2.0, 12) = 1.0000027556716846. Moreover, it
+    is not accurate for small values of n, especially close to the bounds of
+    the distribution's domain, [1/(12*n), n/3], where the value jumps to 0
+    and 1, respectively. These are limitations of the approximation by Csörgő
+    and Faraway (1996) implemented in this function.
     """
     x = np.asarray(x)
     if n is None:
@@ -314,7 +321,7 @@ def cramervonmises(rvs, cdf, args=()):
     ----------
     .. [1] Cramér-von Mises criterion, Wikipedia,
            https://en.wikipedia.org/wiki/Cram%C3%A9r%E2%80%93von_Mises_criterion
-    .. [2] Csorgo, S. and Faraway, J. (1996). The Exact and Asymptotic
+    .. [2] Csörgő, S. and Faraway, J. (1996). The Exact and Asymptotic
            Distribution of Cramér-von Mises Statistics. Journal of the
            Royal Statistical Society, pp. 221-234.
 
@@ -384,18 +391,46 @@ def cramervonmises(rvs, cdf, args=()):
 
 def _get_wilcoxon_distr(n):
     """
-    Distribution of counts of the Wilcoxon ranksum statistic r_plus (sum of
-    ranks of positive differences).
-    Returns an array with the counts/frequencies of all the possible ranks
+    Distribution of probability of the Wilcoxon ranksum statistic r_plus (sum
+    of ranks of positive differences).
+    Returns an array with the probabilities of all the possible ranks
     r = 0, ..., n*(n+1)/2
     """
-    cnt = _wilcoxon_data.COUNTS.get(n)
+    c = np.ones(1, dtype=np.double)
+    for k in range(1, n + 1):
+        prev_c = c
+        c = np.zeros(k * (k + 1) // 2 + 1, dtype=np.double)
+        m = len(prev_c)
+        c[:m] = prev_c * 0.5
+        c[-m:] += prev_c * 0.5
+    return c
 
-    if cnt is None:
-        raise ValueError("The exact distribution of the Wilcoxon test "
-                         "statistic is not implemented for n={}".format(n))
 
-    return np.array(cnt, dtype=int)
+def _get_wilcoxon_distr2(n):
+    """
+    Distribution of probability of the Wilcoxon ranksum statistic r_plus (sum
+    of ranks of positive differences).
+    Returns an array with the probabilities of all the possible ranks
+    r = 0, ..., n*(n+1)/2
+    This is a slower reference function
+    References
+    ----------
+    .. [1] 1. Harris T, Hardin JW. Exact Wilcoxon Signed-Rank and Wilcoxon
+        Mann-Whitney Ranksum Tests. The Stata Journal. 2013;13(2):337-343.
+    """
+    ai = np.arange(1, n+1)[:, None]
+    t = n*(n+1)/2
+    q = 2*t
+    j = np.arange(q)
+    theta = 2*np.pi/q*j
+    phi_sp = np.prod(np.cos(theta*ai), axis=0)
+    phi_s = np.exp(1j*theta*t) * phi_sp
+    p = np.real(ifft(phi_s))
+    res = np.zeros(int(t)+1)
+    res[:-1:] = p[::2]
+    res[0] /= 2
+    res[-1] = res[0]
+    return res
 
 
 def _tau_b(A):
@@ -486,10 +521,10 @@ def somersd(x, y=None, alternative='two-sided'):
 
     Parameters
     ----------
-    x: array_like
+    x : array_like
         1D array of rankings, treated as the (row) independent variable.
         Alternatively, a 2D contingency table.
-    y: array_like, optional
+    y : array_like, optional
         If `x` is a 1D array of rankings, `y` is a 1D array of rankings of the
         same length, treated as the (column) dependent variable.
         If `x` is 2D, `y` is ignored.
@@ -632,6 +667,7 @@ def somersd(x, y=None, alternative='two-sided'):
     return SomersDResult(d, p, table)
 
 
+# This could be combined with `_all_partitions` in `_resampling.py`
 def _all_partitions(nx, ny):
     """
     Partition a set of indices into two fixed-length sets in all possible ways
@@ -978,11 +1014,15 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     is a uniformly more powerful alternative to Fisher's exact test
     for 2x2 contingency tables.
 
+    Boschloo's exact test uses the p-value of Fisher's exact test as a
+    statistic, and Boschloo's p-value is the probability under the null
+    hypothesis of observing such an extreme value of this statistic.
+
     Let's define :math:`X_0` a 2x2 matrix representing the observed sample,
     where each column stores the binomial experiment, as in the example
     below. Let's also define :math:`p_1, p_2` the theoretical binomial
     probabilities for  :math:`x_{11}` and :math:`x_{12}`. When using
-    Boschloo exact test, we can assert three different null hypotheses :
+    Boschloo exact test, we can assert three different alternative hypotheses:
 
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 < p_2`,
       with `alternative` = "less"
@@ -991,14 +1031,15 @@ def boschloo_exact(table, alternative="two-sided", n=32):
       with `alternative` = "greater"
 
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
-      with `alternative` = "two-sided" (default one)
+      with `alternative` = "two-sided" (default)
 
-    Boschloo's exact test uses the p-value of Fisher's exact test as a
-    statistic, and Boschloo's p-value is the probability under the null
-    hypothesis of observing such an extreme value of this statistic.
-
-    Boschloo's and Barnard's are both more powerful than Fisher's exact
-    test.
+    There are multiple conventions for computing a two-sided p-value when the
+    null distribution is asymmetric. Here, we apply the convention that the
+    p-value of a two-sided test is twice the minimum of the p-values of the
+    one-sided tests (clipped to 1.0). Note that `fisher_exact` follows a
+    different convention, so for a given `table`, the statistic reported by
+    `boschloo_exact` may differ from the p-value reported by `fisher_exact`
+    when ``alternative='two-sided'``.
 
     .. versionadded:: 1.7.0
 
@@ -1098,7 +1139,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
         # Two-sided p-value is defined as twice the minimum of the one-sided
         # p-values
-        pvalue = 2 * res.pvalue
+        pvalue = np.clip(2 * res.pvalue, a_min=0, a_max=1)
         return BoschlooExactResult(res.statistic, pvalue)
     else:
         msg = (

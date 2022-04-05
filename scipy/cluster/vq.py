@@ -262,10 +262,6 @@ def py_vq(obs, code_book, check_finite=True):
     return code, min_dist
 
 
-# py_vq2 was equivalent to py_vq
-py_vq2 = np.deprecate(py_vq, old_name='py_vq2', new_name='py_vq')
-
-
 def _kmeans(obs, guess, thresh=1e-5):
     """ "raw" version of k-means.
 

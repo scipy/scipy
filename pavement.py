@@ -38,21 +38,24 @@ import paver.path
 from paver.easy import options, Bunch, task, needs, dry, sh, cmdopts
 
 sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(1, os.path.join(os.path.dirname(__file__), 'tools'))
 try:
-    setup_py = __import__("setup")
-    FULLVERSION = setup_py.VERSION
+    version_utils = __import__("version_utils")
+    FULLVERSION = version_utils.VERSION
     # This is duplicated from setup.py
     if os.path.exists('.git'):
-        GIT_REVISION = setup_py.git_version()
+        GIT_REVISION, _ = version_utils.git_version(
+                os.path.join(os.path.dirname(__file__), '..'))
     else:
         GIT_REVISION = "Unknown"
 
-    if not setup_py.ISRELEASED:
+    if not version_utils.ISRELEASED:
         if GIT_REVISION == "Unknown":
             FULLVERSION += '.dev0+Unknown'
         else:
             FULLVERSION += '.dev0+' + GIT_REVISION[:7]
 finally:
+    sys.path.pop(1)
     sys.path.pop(0)
 
 try:
@@ -68,11 +71,11 @@ except AttributeError:
 #-----------------------------------
 
 # Source of the release notes
-RELEASE = 'doc/release/1.8.0-notes.rst'
+RELEASE = 'doc/release/1.9.0-notes.rst'
 
 # Start/end of the log (from git)
-LOG_START = 'v1.7.0'
-LOG_END = 'master'
+LOG_START = 'v1.8.0'
+LOG_END = 'main'
 
 
 #-------------------------------------------------------
@@ -91,11 +94,11 @@ options(bootstrap=Bunch(bootstrap_dir="bootstrap"),
                         bindir=os.path.join("build-superpack","binaries")),
         installers=Bunch(releasedir="release",
                          installersdir=os.path.join("release", "installers")),
-        doc=Bunch(doc_root="doc",
+        doc=Bunch(
+            doc_root="doc",
             sdir=os.path.join("doc", "source"),
             bdir=os.path.join("doc", "build"),
-            bdir_latex=os.path.join("doc", "build", "latex"),
-            destdir_pdf=os.path.join("build_doc", "pdf")),
+        ),
         html=Bunch(builddir=os.path.join("build", "html")),
         dmg=Bunch(python_version=PYVER),
         bdist_wininst_simple=Bunch(python_version=PYVER),)
@@ -114,27 +117,6 @@ def html(options):
     options.html.builddir.rmtree()
     builtdocs.copytree(options.html.builddir)
 
-@task
-def latex():
-    """Build SciPy documentation in latex format."""
-    subprocess.check_call(["make", "latex"], cwd="doc")
-
-@task
-@needs('latex')
-def pdf():
-    bdir_latex = options.doc.bdir_latex
-    destdir_pdf = options.doc.destdir_pdf
-
-    def build_pdf():
-        subprocess.check_call(["make", "all-pdf"], cwd=str(bdir_latex))
-    dry("Build pdf doc", build_pdf)
-
-    if os.path.exists(destdir_pdf):
-        shutil.rmtree(destdir_pdf)
-    os.makedirs(destdir_pdf)
-
-    ref = os.path.join(bdir_latex, "scipy-ref.pdf")
-    shutil.copy(ref, os.path.join(destdir_pdf, "reference.pdf"))
 
 def tarball_name(type_name='gztar'):
     root = 'scipy-%s' % FULLVERSION

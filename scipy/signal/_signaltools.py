@@ -5,7 +5,8 @@ import operator
 import math
 import timeit
 from scipy.spatial import cKDTree
-from . import _sigtools, dlti
+from . import _sigtools
+from ._ltisys import dlti
 from ._upfirdn import upfirdn, _output_len, _upfirdn_modes
 from scipy import linalg, fft as sp_fft
 from scipy.fft._helper import _init_nd_shape_and_axes
@@ -291,9 +292,9 @@ def correlation_lags(in1_len, in2_len, mode='full'):
 
     Parameters
     ----------
-    in1_size : int
+    in1_len : int
         First input size.
-    in2_size : int
+    in2_len : int
         Second input size.
     mode : str {'full', 'valid', 'same'}, optional
         A string indicating the size of the output.
@@ -992,9 +993,9 @@ def _numeric_arrays(arrays, kinds='buifc'):
 
     Parameters
     ----------
-    ndarrays : array or list of arrays
+    arrays : array or list of arrays
         arrays to check if numeric.
-    numeric_kinds : string-like
+    kinds : string-like
         The dtypes of the arrays to be checked. If the dtype.kind of
         the ndarrays are not in this string the function returns False and
         otherwise returns True.
@@ -2142,9 +2143,9 @@ def deconvolve(signal, divisor):
 
     Parameters
     ----------
-    signal : array_like
+    signal : (N,) array_like
         Signal data, typically a recorded signal
-    divisor : array_like
+    divisor : (N,) array_like
         Divisor data, typically an impulse response or filter that was
         applied to the original signal
 
@@ -2177,6 +2178,10 @@ def deconvolve(signal, divisor):
     """
     num = np.atleast_1d(signal)
     den = np.atleast_1d(divisor)
+    if num.ndim > 1:
+        raise ValueError("signal must be 1-D.")
+    if den.ndim > 1:
+        raise ValueError("divisor must be 1-D.")
     N = len(num)
     D = len(den)
     if D > N:
@@ -2284,7 +2289,7 @@ def hilbert(x, N=None, axis=-1):
         raise ValueError("N must be positive.")
 
     Xf = sp_fft.fft(x, N, axis=axis)
-    h = np.zeros(N)
+    h = np.zeros(N, dtype=Xf.dtype)
     if N % 2 == 0:
         h[0] = h[N // 2] = 1
         h[1:N // 2] = 2
@@ -2338,8 +2343,8 @@ def hilbert2(x, N=None):
                          "two positive integers")
 
     Xf = sp_fft.fft2(x, N, axes=(0, 1))
-    h1 = np.zeros(N[0], 'd')
-    h2 = np.zeros(N[1], 'd')
+    h1 = np.zeros(N[0], dtype=Xf.dtype)
+    h2 = np.zeros(N[1], dtype=Xf.dtype)
     for p in range(2):
         h = eval("h%d" % (p + 1))
         N1 = N[p]
@@ -3604,9 +3609,9 @@ def lfilter_zi(b, a):
 
     # Pad a or b with zeros so they are the same length.
     if len(a) < n:
-        a = np.r_[a, np.zeros(n - len(a))]
+        a = np.r_[a, np.zeros(n - len(a), dtype=a.dtype)]
     elif len(b) < n:
-        b = np.r_[b, np.zeros(n - len(b))]
+        b = np.r_[b, np.zeros(n - len(b), dtype=b.dtype)]
 
     IminusA = np.eye(n - 1, dtype=np.result_type(a, b)) - linalg.companion(a).T
     B = b[1:] - a[1:] * b[0]

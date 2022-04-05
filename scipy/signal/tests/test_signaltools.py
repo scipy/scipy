@@ -2209,6 +2209,12 @@ class TestLFilterZI:
         zi2 = lfilter_zi(2*b, 2*a)
         assert_allclose(zi2, zi1, rtol=1e-12)
 
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_types(self, dtype):
+        b = np.zeros((8), dtype=dtype)
+        a = np.array([1], dtype=dtype)
+        assert_equal(np.real(signal.lfilter_zi(b, a)).dtype, dtype)
+
 
 class TestFiltFilt:
     filtfilt_kind = 'tf'
@@ -2646,6 +2652,11 @@ class TestHilbert:
                            9.444121133484362e-17 - 0.79252210110103j])
         assert_almost_equal(aan[0], a0hilb, 14, 'N regression')
 
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_hilbert_types(self, dtype):
+        in_typed = np.zeros(8, dtype=dtype)
+        assert_equal(np.real(signal.hilbert(in_typed)).dtype, dtype)
+
 
 class TestHilbert2:
 
@@ -2663,6 +2674,11 @@ class TestHilbert2:
         assert_raises(ValueError, hilbert2, x, N=0)
         assert_raises(ValueError, hilbert2, x, N=(2, 0))
         assert_raises(ValueError, hilbert2, x, N=(2,))
+
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_hilbert2_types(self, dtype):
+        in_typed = np.zeros((2, 32), dtype=dtype)
+        assert_equal(np.real(signal.hilbert2(in_typed)).dtype, dtype)
 
 
 class TestPartialFractionExpansion:
@@ -3409,6 +3425,18 @@ class TestDeconvolve:
         recorded = [0, 2, 1, 0, 2, 3, 1, 0, 0]
         recovered, remainder = signal.deconvolve(recorded, impulse_response)
         assert_allclose(recovered, original)
+
+    def test_n_dimensional_signal(self):
+        recorded = [[0, 0], [0, 0]]
+        impulse_response = [0, 0]
+        with pytest.raises(ValueError, match="signal must be 1-D."):
+            quotient, remainder = signal.deconvolve(recorded, impulse_response)
+
+    def test_n_dimensional_divisor(self):
+        recorded = [0, 0]
+        impulse_response = [[0, 0], [0, 0]]
+        with pytest.raises(ValueError, match="divisor must be 1-D."):
+            quotient, remainder = signal.deconvolve(recorded, impulse_response)
 
 
 class TestDetrend:

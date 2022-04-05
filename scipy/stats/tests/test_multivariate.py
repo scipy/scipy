@@ -1430,6 +1430,18 @@ class TestOrthoGroup:
         assert_raises(ValueError, ortho_group.rvs, 1)
         assert_raises(ValueError, ortho_group.rvs, 2.5)
 
+    def test_frozen_matrix(self):
+        dim = 7
+        frozen = ortho_group(dim)
+        frozen_seed = ortho_group(dim, seed=1234)
+
+        rvs1 = frozen.rvs(random_state=1234)
+        rvs2 = ortho_group.rvs(dim, random_state=1234)
+        rvs3 = frozen_seed.rvs(size=1)
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
+
     def test_det_and_ortho(self):
         xs = [[ortho_group.rvs(dim)
                for i in range(10)]
@@ -1526,6 +1538,18 @@ class TestRandomCorrelation:
         assert_raises(ValueError, random_correlation.rvs, [2.5, -.5])
         assert_raises(ValueError, random_correlation.rvs, [1, 2, .1])
 
+    def test_frozen_matrix(self):
+        eigs = (.5, .8, 1.2, 1.5)
+        frozen = random_correlation(eigs)
+        frozen_seed = random_correlation(eigs, seed=514)
+
+        rvs1 = random_correlation.rvs(eigs, random_state=514)
+        rvs2 = frozen.rvs(random_state=514)
+        rvs3 = frozen_seed.rvs()
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
+
     def test_definition(self):
         # Test the definition of a correlation matrix in several dimensions:
         #
@@ -1613,6 +1637,18 @@ class TestUnitaryGroup:
         assert_raises(ValueError, unitary_group.rvs, (2, 2))
         assert_raises(ValueError, unitary_group.rvs, 1)
         assert_raises(ValueError, unitary_group.rvs, 2.5)
+
+    def test_frozen_matrix(self):
+        dim = 7
+        frozen = unitary_group(dim)
+        frozen_seed = unitary_group(dim, seed=514)
+
+        rvs1 = frozen.rvs(random_state=514)
+        rvs2 = unitary_group.rvs(dim, random_state=514)
+        rvs3 = frozen_seed.rvs(size=1)
+
+        assert_equal(rvs1, rvs2)
+        assert_equal(rvs1, rvs3)
 
     def test_unitarity(self):
         xs = [unitary_group.rvs(dim)
