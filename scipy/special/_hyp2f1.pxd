@@ -396,42 +396,18 @@ cdef inline double gamma_ratio_lanczos(
     """
 
     cdef:
-        # Factor parts for different ways to combine individual factors.
-        double factor_part
-        # Mean of the factor parts that were computed different ways.
-        double mean_factor_part
-        # Stores arguments u, v, w, x.
-        double args[4]
-        # Lanczos prefactors for gamma u, v, w, x respectively.
-        double prefactors[4]
-        # Lanczos sums for gamma u, v, w, x respectively.
-        double lanczos_sums[4]
-        double result
-        int i
-        int exists_zero_factor
-        int exists_pos_inf_factor
-        int exists_neg_inf_factor
-        int exists_nan_factor
-        int count
         int gpow
-        int *uidx = [1, 0, 1, 0, 2, 2, 0, 3, 3]
-        int *vidx = [0, 1, 0, 1, 2, 2, 1, 3, 3]
-        int *widx = [0, 2, 0, 1, 2, 1, 2, 3, 3]
-        int *xidx = [0, 3, 0, 1, 3, 1, 3, 2, 2]
-        int idx[4][9]
+        double result
+        double factor_part
+        double lanczos_part
+        double factor_u, factor_v, factor_w, factor_x
 
-    # Without loss of generality, assume u <= v, w <= x.
-    if u > v:
+    # Without loss of generality, assume |u| >= |v|, |w| >= |x|.
+    if fabs(v) > fabs(u):
         u, v = v, u
-    if x > w:
-        x, w = w, x
-    args[0], args[1], args[2], args[3] = u, v, w, x
-    i = 0
-    for i in range(9):
-        idx[0][i] = uidx[i]
-        idx[1][i] = vidx[i]
-        idx[2][i] = widx[i]
-        idx[3][i] = xidx[i]
+    if fabs(x) > fabs(w):
+        w, x = x, w
+
     # The below implementation may incorrectly return finite results
     # at poles of the gamma function. Handle these cases explicitly.
     if u == trunc(u) and u <= 0 or v == trunc(v) and v <= 0:
@@ -441,80 +417,76 @@ cdef inline double gamma_ratio_lanczos(
     if w == trunc(w) and w <= 0 or x == trunc(x) and x <= 0:
         # Return 0 if denominator has pole but not numerator.
         return 0
-    i = 0
-    for i in range(4):
-        prefactors[i] = lanczos_prefactor(args[i])
-        lanczos_sums[i] = lanczos_sum_general(args[i], expg_scaled)
-    lanczos_part = (
-        lanczos_sums[0] * lanczos_sums[1] / (lanczos_sums[2] * lanczos_sums[3])
-    )
-    # Computes running average of factor parts when factors are combined in
-    # different ways.
-    mean_factor_part = 0
-    count = 0
-    exists_zero_factor = False
-    exists_pos_inf_factor = False
-    exists_neg_inf_factor = False
-    exists_nan_factor = False
-    # Absorb u factor into others.
-    for i in range(4):
-        factor_part = pow(
-            prefactors[idx[i][0]] / prefactors[idx[i][1]], args[idx[i][2]] - 0.5
+
+    factor_u = lanczos_prefactor(u)
+    factor_v = lanczos_prefactor(v)
+    factor_w = lanczos_prefactor(w)
+    factor_x = lanczos_prefactor(x)
+
+    lanczos_part = 1
+
+    if u >= 0.5:
+        lanczos_part *= lanczos_sum_general(u, expg_scaled)
+    else:
+        lanczos_part /= (
+            lanczos_sum_general(1 - u, expg_scaled) * sin(M_PI * u) * M_1_PI
         )
-        factor_part *= pow(
-            prefactors[idx[i][3]] / prefactors[idx[i][4]], args[idx[i][5]] - 0.5
-        )
-        factor_part *= pow(
-            prefactors[idx[i][6]] / prefactors[idx[i][7]], args[idx[i][8]] - 0.5
-        )
-        if factor_part == 0:
-            exists_zero_factor = True
-        elif isinf(factor_part):
-            if factor_part > 0:
-                exists_pos_inf_factor = True
-            else:
-                exists_neg_inf_factor = True
-        elif isnan(factor_part):
-            exists_nan_factor = True
-        else:
-            mean_factor_part += (factor_part - mean_factor_part) / (count + 1)
-            count += 1
-    # If there is at least one combination of factors that gives a factor part
-    # that is not zero, infinite, or NaN, return result where the factor part
-    # is taken to be the average of the factor parts for all such combinations
-    # of factors.
-    if count:
-        result = mean_factor_part * lanczos_part
-        if not expg_scaled:
-            gpow = 0
-            i = 0
-            for i in range(4):
-                if (args[i] >= 0.5) == (i < 2):
-                    gpow -= 1
-                else:
-                    gpow += 1
-            if gpow:
-                result *= exp(gpow * lanczos_g)
-        return result
         
-    # If one of the factors is NaN, or if more than one of zero, positive
-    # infinity and negative infinity appear, return NaN.
-    if (
-            exists_nan_factor or
-            exists_zero_factor and (
-                exists_pos_inf_factor or exists_neg_inf_factor
-            ) or
-            exists_pos_inf_factor and exists_neg_inf_factor
-    ):
-        return NPY_NAN
-    # All agree the result if positive infinity.
-    if exists_pos_inf_factor:
-        return NPY_INFINITY
-    # All agree the result is negative infinity
-    if exists_neg_inf_factor:
-        return -NPY_INFINITY
-    # All agree the result is zero.
-    return 0
+    if v >= 0.5:
+        lanczos_part *= lanczos_sum_general(v, expg_scaled)
+    else:
+        lanczos_part /= (
+            lanczos_sum_general(1 - v, expg_scaled) * sin(M_PI * v) * M_1_PI
+        )
+
+    if w >= 0.5:
+        lanczos_part /= lanczos_sum_general(w, expg_scaled)
+    else:
+        lanczos_part *= (
+            lanczos_sum_general(1 - w, expg_scaled) * sin(M_PI * w) * M_1_PI
+        )
+        
+    if x >= 0.5:
+        lanczos_part /= lanczos_sum_general(x, expg_scaled)
+    else:
+        lanczos_part *= (
+            lanczos_sum_general(1 - x, expg_scaled) * sin(M_PI * x) * M_1_PI
+        )
+
+    factor_part = 1
+    if fabs(u) >= fabs(w):
+        factor_part *= pow(factor_v / factor_u, v - 0.5)
+        factor_part *= pow(factor_u / factor_w, w - 0.5)
+        factor_part *= pow(factor_u / factor_x, x - 0.5)
+    else:
+        factor_part *= pow(factor_u / factor_w, u - 0.5)
+        factor_part *= pow(factor_v / factor_w, v - 0.5)
+        factor_part *= pow(factor_w / factor_x, x - 0.5)
+
+    result = factor_part * lanczos_part
+    
+    if not expg_scaled:
+        gpow = 0
+        if u >= 0.5:
+            gpow -= 1
+        else:
+            gpow += 1
+        if v >= 0.5:
+            gpow -= 1
+        else:
+            gpow += 1
+        if w >= 0.5:
+            gpow += 1
+        else:
+            gpow -= 1
+        if x >= 0.5:
+            gpow += 1
+        else:
+            gpow -= 1
+        if gpow:
+            result *= exp(gpow * lanczos_g)
+
+    return result
 
 
 cdef inline double lanczos_prefactor(double x) nogil:
@@ -522,8 +494,5 @@ cdef inline double lanczos_prefactor(double x) nogil:
 
 
 cdef inline double lanczos_sum_general(double x, int expg_scaled) nogil:
-    cdef double t
-    if x >= 0.5:
-        return lanczos_sum_expg_scaled(x) if expg_scaled else lanczos_sum(x)
-    t = lanczos_sum_expg_scaled(1 - x) if expg_scaled else lanczos_sum(1 - x)
-    return 1 / (t*sin(M_PI*x)*M_1_PI)
+    cdef double result
+    return lanczos_sum_expg_scaled(x) if expg_scaled else lanczos_sum(x)
