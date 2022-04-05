@@ -56,9 +56,8 @@ from libc.math cimport (
 )
 
 from . cimport sf_error
-from ._cephes cimport (
-    Gamma, gammasgn, lanczos_sum, lanczos_sum_expg_scaled, lgam
-)
+from ._cephes cimport Gamma, gammasgn, lanczos_sum_expg_scaled, lgam
+
 from ._complexstuff cimport (
     double_complex_from_npy_cdouble,
     npy_cdouble_from_double_complex,
@@ -147,12 +146,11 @@ cdef inline double complex hyp2f1_complex(
         return NPY_INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
     if z == 1.0 and c - a - b > 0 and not c_non_pos_int:
-        return gamma_ratio(c, c - a - b, c - a, c - b)
+        return four_gammas(c, c - a - b, c - a, c - b)
     # Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26).
     if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS and not c_non_pos_int:
-        return gamma_ratio(
-            a - b + 1, 0.5*a + 1, a + 1, 0.5*a - b + 1
-        )
+        return four_gammas(a - b + 1, 0.5*a + 1, a + 1, 0.5*a - b + 1)
+
     # Reduces to a polynomial when a or b is a negative integer.
     # If a and b are both negative integers, we take care to terminate
     # the series at a or b of smaller magnitude. This is to ensure proper
@@ -334,36 +332,10 @@ cdef inline double complex hyp2f1_lopez_temme_series(
         sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
         result = zpack(NPY_NAN, NPY_NAN)
     return result
-
-
-cdef inline double gamma_ratio(
-        double u, double v, double w, double x
-) nogil:
-    """Computes a ratio of gamma functions.
-
-    Computes gamma(u)*gamma(v)/(gamma(w)*gamma(x)).
-
-    It is assumed that x = u + v - w, but it is left to the user to
-    ensure this. Calculating u + v - w within the function itself can
-    lead to unnecessary floating point error.
-
-    Checks for overflow or underflow and trys again using the lanczos
-    approximation if needed.
-    """
-    cdef double result
-    result = gamma_ratio_lanczos(u, v, w, x, False)
-    # Try again with expg_scaled lanczos approximation if there has been
-    # underflow or overflow.
-    if zisnan(result) or zisinf(result) or result == 0.0:
-        result = gamma_ratio_lanczos(u, v, w, x, True)
-    return result
     
 
-@cython.boundscheck(False)
 @cython.cdivision(True)
-cdef inline double gamma_ratio_lanczos(
-        double u, double v, double w, double x, int expg_scaled
-) nogil:
+cdef inline double four_gammas(double u, double v, double w, double x) nogil:
     """Compute ratio of gamma functions using lanczos approximation.
 
     Computes gamma(u)*gamma(v)/(gamma(w)*gamma(x))
@@ -396,8 +368,6 @@ cdef inline double gamma_ratio_lanczos(
     """
 
     cdef:
-        int gpow
-        double result
         double factor_part
         double lanczos_part
         double factor_u, factor_v, factor_w, factor_x
@@ -426,32 +396,24 @@ cdef inline double gamma_ratio_lanczos(
     lanczos_part = 1
 
     if u >= 0.5:
-        lanczos_part *= lanczos_sum_general(u, expg_scaled)
+        lanczos_part *= lanczos_sum_expg_scaled(u)
     else:
-        lanczos_part /= (
-            lanczos_sum_general(1 - u, expg_scaled) * sin(M_PI * u) * M_1_PI
-        )
+        lanczos_part /= lanczos_sum_expg_scaled(1 - u) * sin(M_PI * u) * M_1_PI
         
     if v >= 0.5:
-        lanczos_part *= lanczos_sum_general(v, expg_scaled)
+        lanczos_part *= lanczos_sum_expg_scaled(v)
     else:
-        lanczos_part /= (
-            lanczos_sum_general(1 - v, expg_scaled) * sin(M_PI * v) * M_1_PI
-        )
+        lanczos_part /= lanczos_sum_expg_scaled(1 - v) * sin(M_PI * v) * M_1_PI
 
     if w >= 0.5:
-        lanczos_part /= lanczos_sum_general(w, expg_scaled)
+        lanczos_part /= lanczos_sum_expg_scaled(w)
     else:
-        lanczos_part *= (
-            lanczos_sum_general(1 - w, expg_scaled) * sin(M_PI * w) * M_1_PI
-        )
+        lanczos_part *= lanczos_sum_expg_scaled(1 - w) * sin(M_PI * w) * M_1_PI
         
     if x >= 0.5:
-        lanczos_part /= lanczos_sum_general(x, expg_scaled)
+        lanczos_part /= lanczos_sum_expg_scaled(x)
     else:
-        lanczos_part *= (
-            lanczos_sum_general(1 - x, expg_scaled) * sin(M_PI * x) * M_1_PI
-        )
+        lanczos_part *= lanczos_sum_expg_scaled(1 - x) * sin(M_PI * x) * M_1_PI
 
     factor_part = 1
     if fabs(u) >= fabs(w):
@@ -463,36 +425,8 @@ cdef inline double gamma_ratio_lanczos(
         factor_part *= pow(factor_v / factor_w, v - 0.5)
         factor_part *= pow(factor_w / factor_x, x - 0.5)
 
-    result = factor_part * lanczos_part
-    
-    if not expg_scaled:
-        gpow = 0
-        if u >= 0.5:
-            gpow -= 1
-        else:
-            gpow += 1
-        if v >= 0.5:
-            gpow -= 1
-        else:
-            gpow += 1
-        if w >= 0.5:
-            gpow += 1
-        else:
-            gpow -= 1
-        if x >= 0.5:
-            gpow += 1
-        else:
-            gpow -= 1
-        if gpow:
-            result *= exp(gpow * lanczos_g)
-
-    return result
+    return factor_part * lanczos_part
 
 
 cdef inline double lanczos_prefactor(double x) nogil:
     return x + lanczos_g - 0.5 if x >= 0.5 else 1 - x + lanczos_g - 0.5
-
-
-cdef inline double lanczos_sum_general(double x, int expg_scaled) nogil:
-    cdef double result
-    return lanczos_sum_expg_scaled(x) if expg_scaled else lanczos_sum(x)
