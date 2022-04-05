@@ -1092,6 +1092,7 @@ class RefguideCheck(Task):
         return {
             'actions': [f'env PYTHONPATH={dirs.site} {cmd_str}'],
             'task_dep': ['build'],
+            'io': {'capture': False},
         }
 
 
