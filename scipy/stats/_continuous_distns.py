@@ -6947,17 +6947,17 @@ class powerlaw_gen(rv_continuous):
                                                                  args, kwds)
         # ensure that any fixed parameters don't violate constraints of the
         # distribution before continuing. # The support of the distribution
-        # is `0 < (x - loc)/scale < 1`. 
+        # is `0 < (x - loc)/scale < 1`.
         if floc is not None:
             if fscale is not None and np.any(data - floc <= fscale):
                 raise FitDataError('powerlaw', 0, 1)
             if np.any(data - floc < 0):
                 raise FitDataError('powerlaw', 0, 1)
-        
-        # Negatvie or zero scale is outside the support of the distribution.
+
+        # Negative or zero scale is outside the support of the distribution.
         if fscale is not None and fscale <= 0:
-             raise Exception("Negative or zero `fscale` is outside the range "
-                             "allowed by the distribution.")
+            raise Exception("Negative or zero `fscale` is outside the range "
+                            "allowed by the distribution.")
 
         def shape_universal(data, loc, scale):
             # The first-order necessary condition on `shape` can be solved in
@@ -6967,44 +6967,35 @@ class powerlaw_gen(rv_continuous):
         
         # First, attempt to fit under assumption that `shape <= 1`. 
         def universal_slte1(data):
-            loc = floc if floc is not None else np.nextafter(data.min(), -np.inf)
-            scale = fscale or np.ptp(data)
+            loc = floc if floc is not None else np.nextafter(data.min(),
+                                                             -np.inf)
+            scale = fscale or np.nextafter(data.max() - loc, np.inf)
             shape = fshape or shape_universal(data, loc, scale)
-            loc = np.nextafter(loc, -np.inf)
-            scale = np.nextafter(scale, np.inf)
-            if np.any(data - loc <= scale):
-
-                loc = np.nextafter(loc, -np.inf) * (1 - np.finfo(float).eps)
-                scale = np.nextafter(scale, np.inf) * (1 + np.finfo(float).eps)
-                loc = np.nextafter(loc, -np.inf)
-                scale = np.nextafter(scale, np.inf)
-            print(np.max(data - loc))
-            print(scale)
-            # if np.any(data - loc <= scale):
-            #     raise FitDataError('powerlaw', 0, 1)
-
-
-
-            return shape, loc, scale 
+            return shape, loc, scale
 
         shape, loc, scale = universal_slte1(data)
 
-        # If the `shape <= 1`, then fitting has succeeded with the assumption `shape <= 1`.
+        # If the `shape <= 1`, then fitting has succeeded with the assumption
+        # `shape <= 1`.
         if shape <= 1:
             return shape, loc, scale
 
-        # if `shape > 1`, then we need to fit under the assumption that `shape > 1` and redefine
-        # analytical functions for this new assumption.
+        # if `shape > 1`, then we need to fit under the assumption that
+        # `shape > 1` and redefine analytical functions for this new
+        # assumption.
 
         def location_sgt1(data, scale):
-            # analytical solution for `loc` when `shape > 1` based on the scale.
+            # analytical solution for `loc` when `shape > 1` based on the
+            # scale.
             return data.max() - scale
 
         def scale_sgt1(data, loc):
-            # analytical solution for `scale` when `shape > 1` based on the location.
+            # analytical solution for `scale` when `shape > 1` based on the
+            # location.
             return data.max() - loc
 
-        # if the location or scale is fixed, an analytical solution is available.
+        # if the location or scale is fixed, an analytical solution is
+        # available.
         if {floc, fscale} != {None}:
             if floc is not None:
                 scale = fscale or scale_sgt1(data, floc)
