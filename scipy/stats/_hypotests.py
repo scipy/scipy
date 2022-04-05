@@ -177,11 +177,11 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
 
     Parameters
     ----------
-    k1 : float
+    k1 : int
         Sample value of interest from sample 1.
     n1: float
         Sample size from sample 1.
-    k2 : float
+    k2 : int
         Sample value of interest from sample 2.
     n2 : float
         Sample size from sample 2.
