@@ -341,8 +341,7 @@ cdef inline double four_gammas(double u, double v, double w, double x) nogil:
     Computes gamma(u)*gamma(v)/(gamma(w)*gamma(x))
 
     It is assumed that x = u + v - w, but it is left to the user to
-    ensure this. Calculating u + v - w within the function itself can
-    lead to unnecessary floating point error.
+    ensure this.
 
     The lanczos approximation takes the form
 
@@ -350,21 +349,19 @@ cdef inline double four_gammas(double u, double v, double w, double x) nogil:
     
     where factor(x) = ((x + lanczos_g - 0.5)/e)**(x - 0.5).
 
-    The terms can be combined analytically to avoid underflow and overflow.
     The formula above is only valid for x >= 0.5, but can be extended to
     x < 0.5 with the reflection principle.
 
-    The condition x = u + v - w makes it possible to cancel factors in the
-    factor(u) * factor(v)/(factor(w) * factor(x)) in one of four ways by
-    choosing a factor and absorbing into the others. Below we refer to this
-    expression factor(u)*factor(v)/(factor(w)*factor(x)) as the factor part.
-    Rather than trying to decide upon the best way to combine the factors, the
-    following code tries all four methods and takes an average. Zero, infinite,
-    and NaN values are excluded from the average. For the cases where there
-    are no values to average because they are all either zero, infinite, or NaN:
-    If all methods agree the the factor part is zero, zero is returned. If all
-    methods agree that the factor part is infinite of the same sign,
-    infinity of the proper sign is returned, otherwise NaN is returned.
+    Using the lanczos approximation when computing this ratio of gamma functions
+    allows factors to be combined analytically to avoid underflow and overflow
+    and produce a more accurate result. The condition x = u + v - w makes it
+    possible to cancel the factors in the expression
+
+    factor(u) * factor(v) / (factor(w) * factor(x))
+
+    by taking one factor and absorbing it into the others. Currently, this
+    implementation takes the factor corresponding to the argument with largest
+    absolute value and absorbs it into the others.
     """
 
     cdef:
@@ -417,10 +414,12 @@ cdef inline double four_gammas(double u, double v, double w, double x) nogil:
 
     factor_part = 1
     if fabs(u) >= fabs(w):
+        # u has greatest absolute value. Absorb factor_u into the others.
         factor_part *= pow(factor_v / factor_u, v - 0.5)
         factor_part *= pow(factor_u / factor_w, w - 0.5)
         factor_part *= pow(factor_u / factor_x, x - 0.5)
     else:
+        # w has greatest absolute value. Absorb factor_w into the others.
         factor_part *= pow(factor_u / factor_w, u - 0.5)
         factor_part *= pow(factor_v / factor_w, v - 0.5)
         factor_part *= pow(factor_w / factor_x, x - 0.5)
