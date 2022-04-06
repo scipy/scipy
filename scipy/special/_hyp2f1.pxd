@@ -42,28 +42,15 @@ References
 cimport cython
 from numpy cimport npy_cdouble
 from libc.stdint cimport uint64_t, UINT64_MAX
-from libc.math cimport (
-    exp,
-    fabs,
-    isinf,
-    isnan,
-    M_LN2,
-    M_PI,
-    M_1_PI,
-    pow,
-    sin,
-    trunc,
-)
+from libc.math cimport fabs, M_PI, M_1_PI, pow, sin, trunc
 
 from . cimport sf_error
-from ._cephes cimport Gamma, gammasgn, lanczos_sum_expg_scaled, lgam
+from ._cephes cimport lanczos_sum_expg_scaled
 
 from ._complexstuff cimport (
     double_complex_from_npy_cdouble,
     npy_cdouble_from_double_complex,
     zabs,
-    zisinf,
-    zisnan,
     zpack,
     zpow,
 )
@@ -134,7 +121,7 @@ cdef inline double complex hyp2f1_complex(
     # Todo: Actually check for overflow instead of using a fixed tolerance for
     # all parameter combinations like in the Fortran original. This will have to
     # wait until all points in the neighborhood of z = 1 are handled in Cython.
-    # Note that in the following three conditions, we avoid the case where
+    # Note that in the following three conditionals, we avoid the case where
     # c is a non-positive integer. This is because if c is a non-positive
     # integer and we have not returned already, then one of a or b must
     # be a negative integer and the desired result can be computed as a
