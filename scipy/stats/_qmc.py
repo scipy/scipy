@@ -1832,6 +1832,21 @@ class MultinomialQMC(QMCEngine):
         self.num_generated += n
         return sample
 
+    def integers(
+        self,
+        l_bounds: npt.ArrayLike,
+        *,
+        u_bounds: Optional[npt.ArrayLike] = None,
+        n: IntNumber = 1,
+        endpoint: bool = False,
+        workers: IntNumber = 1
+    ) -> None:
+        msg = (
+            "The multinomial distribution is already defined on integers."
+            " Use `random` instead."
+        )
+        raise NotImplementedError(msg)
+
     def reset(self) -> MultinomialQMC:
         """Reset the engine to base state.
 

@@ -796,6 +796,11 @@ class TestMultinomialQMC:
         with pytest.raises(ValueError, match=message):
             qmc.MultinomialQMC(p, engine=np.random.default_rng())
 
+        message = r"multinomial distribution is already defined on integers"
+        with pytest.raises(NotImplementedError, match=message):
+            engine = qmc.MultinomialQMC(1)
+            engine.integers(1)
+
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_MultinomialBasicDraw(self):
         seed = np.random.default_rng(6955663962957011631562466584467607969)
