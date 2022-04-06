@@ -1810,7 +1810,9 @@ class MultinomialQMC(QMCEngine):
 
         super().__init__(d=1, seed=seed)
 
-    def random(self, k: IntNumber, n: IntNumber = 1) -> np.ndarray:
+    def random(  # type: ignore[override]
+        self, k: IntNumber, n: IntNumber = 1
+    ) -> np.ndarray:
         """Draw `n` QMC samples from the multinomial distribution.
 
         Parameters
