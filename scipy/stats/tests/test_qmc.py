@@ -800,7 +800,7 @@ class TestMultinomialQMC:
     def test_MultinomialBasicDraw(self):
         seed = np.random.default_rng(6955663962957011631562466584467607969)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([13, 24, 6, 35, 22])
+        expected = np.array([[13, 24, 6, 35, 22]])
         engine = qmc.MultinomialQMC(p, seed=seed)
         assert_array_equal(engine.random(100), expected)
 
@@ -809,7 +809,7 @@ class TestMultinomialQMC:
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
         engine = qmc.MultinomialQMC(p, seed=seed)
         draws = engine.random(8192)
-        assert_allclose(draws / np.sum(draws), p, atol=1e-4)
+        assert_allclose(draws / np.sum(draws), np.atleast_2d(p), atol=1e-4)
 
     def test_FindIndex(self):
         p_cumulative = np.array([0.1, 0.4, 0.45, 0.6, 0.75, 0.9, 0.99, 1.0])
@@ -825,7 +825,7 @@ class TestMultinomialQMC:
         # same as test_MultinomialBasicDraw with different engine
         seed = np.random.default_rng(283753519042773243071753037669078065412)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([12, 25, 5, 36, 22])
+        expected = np.array([[12, 25, 5, 36, 22]])
         base_engine = qmc.Sobol(1, scramble=True, seed=seed)
         engine = qmc.MultinomialQMC(p, engine=base_engine, seed=seed)
         assert_array_equal(engine.random(100), expected)

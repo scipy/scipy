@@ -1810,25 +1810,31 @@ class MultinomialQMC(QMCEngine):
 
         super().__init__(d=1, seed=seed)
 
-    def random(self, n: IntNumber = 1) -> np.ndarray:
+    def random(self, k: IntNumber, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` QMC samples from the multinomial distribution.
 
         Parameters
         ----------
+        k : int
+            Number of trials.
         n : int, optional
             Number of samples to generate in the parameter space. Default is 1.
 
         Returns
         -------
-        samples : array_like (pvals,)
-            Vector of size ``p`` summing to `n`.
+        samples : array_like (n, pvals)
+            Sample.
 
         """
-        base_draws = self.engine.random(n).ravel()
-        p_cumulative = np.empty_like(self.pvals, dtype=float)
-        _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
-        sample = np.zeros_like(self.pvals, dtype=int)
-        _categorize(base_draws, p_cumulative, sample)
+        sample = np.empty((n, len(self.pvals)))
+        for i in range(n):
+            base_draws = self.engine.random(k).ravel()
+            p_cumulative = np.empty_like(self.pvals, dtype=float)
+            _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
+            sample_ = np.zeros_like(self.pvals, dtype=int)
+            _categorize(base_draws, p_cumulative, sample_)
+            sample[i] = sample_
+
         self.num_generated += n
         return sample
 
