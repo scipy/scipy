@@ -1845,7 +1845,7 @@ class MultinomialQMC(QMCEngine):
         n: IntNumber = 1,
         endpoint: bool = False,
         workers: IntNumber = 1
-    ) -> None:
+    ) -> np.ndarray:
         msg = (
             "The multinomial distribution is already defined on integers."
             " Use `random` instead."
