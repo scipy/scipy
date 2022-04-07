@@ -266,7 +266,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     ----------
     A : sparse matrix
         Sparse matrix to factorize. Should be in CSR or CSC format. The CSC
-        format is generally more efficient than CSR.
+        format is generally more efficient than CSR. If a CSR matrix is provided,
+        splu() will convert the matrix to CSC before factorization.
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
         (default: 'COLAMD')
@@ -332,6 +333,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
+        warn('splu() converted its input to CSC format', SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -366,6 +368,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     ----------
     A : (N, N) array_like
         Sparse matrix to factorize. Matrix A in CSC format is most efficient.
+        CSR format input will be converted to CSC before factorization.
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
         (default: 1e-4)
@@ -420,6 +423,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
+        warn('spilu() converted its input to CSC format', SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -452,7 +456,8 @@ def factorized(A):
     Parameters
     ----------
     A : (N, N) array_like
-        Input. A in CSC format is most efficient.
+        Input. A in CSC format is most efficient. A CSR format matrix will
+        be converted to CSC before factorization.
 
     Returns
     -------
@@ -481,6 +486,7 @@ def factorized(A):
 
         if not isspmatrix_csc(A):
             A = csc_matrix(A)
+            warn('factorized() converted its input to CSC format', SparseEfficiencyWarning)
 
         A = A.asfptype()  # upcast to a floating point format
 
