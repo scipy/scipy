@@ -111,7 +111,9 @@ def getdtype(dtype, a=None, default=None):
     else:
         newdtype = np.dtype(dtype)
         if newdtype == np.object_:
-            warnings.warn("object dtype is not supported by sparse matrices")
+            raise ValueError(
+                "object dtype is not supported by sparse matrices"
+            )
 
     return newdtype
 
