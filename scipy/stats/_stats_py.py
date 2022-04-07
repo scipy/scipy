@@ -5221,12 +5221,7 @@ def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
         null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
 
     # calculate p-value and significant permutation map through list
-    pvalue = (null_dist >= stat).sum() / reps
-
-    # correct for a p-value of 0. This is because, with bootstrapping
-    # permutations, a p-value of 0 is incorrect
-    if pvalue == 0:
-        pvalue = 1 / reps
+    pvalue = (1 + (null_dist >= stat).sum()) / (1 + reps)
 
     return pvalue, null_dist
 
@@ -8232,6 +8227,13 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
         df_denom = np.power(nx * Sx, 2.0) / (nx - 1)
         df_denom += np.power(ny * Sy, 2.0) / (ny - 1)
         df = df_numer / df_denom
+
+        if (df_numer == 0) and (df_denom == 0):
+            message = ("p-value cannot be estimated with `distribution='t' "
+                       "because degrees of freedom parameter is undefined "
+                       "(0/0). Try using `distribution='normal'")
+            warnings.warn(message, RuntimeWarning)
+
         p = distributions.t.cdf(wbfn, df)
     elif distribution == "normal":
         p = distributions.norm.cdf(wbfn)

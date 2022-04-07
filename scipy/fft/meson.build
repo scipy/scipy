@@ -4,6 +4,7 @@ python_sources = [
   '_basic.py',
   '_debug_backends.py',
   '_fftlog.py',
+  '_fftlog_multimethods.py',
   '_helper.py',
   '_realtransforms.py'
 ]

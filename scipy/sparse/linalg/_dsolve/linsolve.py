@@ -105,7 +105,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         - ``NATURAL``: natural ordering.
         - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
         - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
-        - ``COLAMD``: approximate minimum degree column ordering
+        - ``COLAMD``: approximate minimum degree column ordering [1]_, [2]_.
+
     use_umfpack : bool, optional
         if True (default) then use umfpack for the solution.  This is
         only referenced if b is a vector and ``scikit-umfpack`` is installed.
@@ -124,6 +125,17 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     resulting X is dense, the construction of this sparse result will be
     relatively expensive.  In that case, consider converting A to a dense
     matrix and using scipy.linalg.solve or its variants.
+
+    References
+    ----------
+    .. [1] T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, Algorithm 836:
+           COLAMD, an approximate column minimum degree ordering algorithm,
+           ACM Trans. on Mathematical Software, 30(3), 2004, pp. 377--380.
+           :doi:`10.1145/1024074.1024080`
+
+    .. [2] T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, A column approximate
+           minimum degree ordering algorithm, ACM Trans. on Mathematical
+           Software, 30(3), 2004, pp. 353--376. :doi:`10.1145/1024074.1024079`
 
     Examples
     --------
