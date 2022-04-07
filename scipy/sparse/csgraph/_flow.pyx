@@ -52,8 +52,8 @@ ctypedef struct return_struct:
 
 class MinimumCostFlowResult:
 
-    def __init__(self, residual, flow_cost):
-        self.residual = residual
+    def __init__(self, flow_, flow_cost):
+        self.flow = flow_
         self.flow_cost = flow_cost
 
     def __repr__(self):
@@ -728,7 +728,7 @@ def minimum_cost_flow(csgraph, demand, cost):
     res : MinimumCostFlowResult
         A minimum cost flow represented by a ``MinimumCostFlowResult``
         which includes the cost of the flow in ``flow_cost`` and
-        the residual graph in ``residual``.
+        the flow graph in ``flow``.
 
     Raises
     ------
@@ -795,7 +795,7 @@ def minimum_cost_flow(csgraph, demand, cost):
     >>> result = minimum_cost_flow(A, demand, cost)
     >>> result.flow_cost
     24
-    >>> result.residual.toarray()
+    >>> result.flow.toarray()
     array([[0, 4, 1, 0],
         [0, 0, 0, 4],
         [0, 0, 0, 1],
