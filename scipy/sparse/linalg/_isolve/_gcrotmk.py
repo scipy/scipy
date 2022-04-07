@@ -249,8 +249,8 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         * 0  : successful exit
         * >0 : convergence to tolerance not achieved, number of iterations
 
-    Example
-    -------
+    Examples
+    --------
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import gcrotmk
     >>> R = np.random.randn(5, 5)

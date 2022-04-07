@@ -221,7 +221,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
                footer="""
 
                Examples
-               -------
+               --------
                >>> from scipy.sparse import csc_matrix
                >>> from scipy.sparse.linalg import bicgstab
                >>> R = np.random.randn(5, 5)
@@ -390,8 +390,8 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
                '``scipy.sparse.linalg.LinearOperator``.',
                footer="""
 
-               Example
-               -------
+               Examples
+               --------
                >>> from scipy.sparse import csc_matrix
                >>> from scipy.sparse.linalg import cgs
                >>> R = np.random.randn(5, 5)
