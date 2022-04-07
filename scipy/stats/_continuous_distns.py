@@ -7023,8 +7023,8 @@ class powerlaw_gen(rv_continuous):
         def fun_to_solve(loc):
             # optimize the location by setting the partial derivatives
             # w.r.t. to location and scale equal and solving.
-            scale = scale_sgt1(data, loc)
-            shape = shape_universal(data, loc, scale)
+            scale = np.nextafter(scale_sgt1(data, loc), -np.inf)
+            shape = fshape or shape_universal(data, loc, scale)
             return dL_dLocation(data, shape, scale) - dL_dScale(data, shape, loc)
 
         # set brackets for `root_scalar` to use when optimizing over the
@@ -7038,7 +7038,7 @@ class powerlaw_gen(rv_continuous):
 
         # if a root is not between the brackets, iteratively the left bracket
         # until they include a sign change. The right bracket is already against
-        # the maximum permisable value for this data so it is unmodified.
+        # the maximum permissible value for this data so it is unmodified.
         i = 0
         while not interval_contains_root(lbrack, rbrack) and lbrack != -np.inf:
             rbrack -= np.abs(lbrack)
@@ -7047,8 +7047,8 @@ class powerlaw_gen(rv_continuous):
 
         root = optimize.root_scalar(fun_to_solve, bracket=(lbrack, rbrack))
         
-        loc = root.root
-        scale = scale_sgt1(data, loc)
+        loc = np.nextafter(root.root, -np.inf)
+        scale = np.nextafter(scale_sgt1(data, loc), np.inf)
         shape = fshape or shape_universal(data, loc, scale)
 
         return shape, loc, scale

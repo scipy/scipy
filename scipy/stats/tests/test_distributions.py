@@ -2344,17 +2344,20 @@ class TestPowerlaw(object):
 
     @pytest.fixture(scope='function')
     def rng(self):
-        return np.random.default_rng(12345)
+        return np.random.default_rng(1234)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in ")
-    @pytest.mark.parametrize("rvs_shape", [.1, .5, 1, 2])
-    @pytest.mark.parametrize("rvs_loc", [0])
+    # @pytest.mark.filterwarnings("ignore:invalid value encountered in ")
+    @pytest.mark.parametrize("rvs_shape", [.1, .5, .75, 1, 2])
+    @pytest.mark.parametrize("rvs_loc", [0, 1])
     @pytest.mark.parametrize("rvs_scale", [.1, 1, 5])
     @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
+                             # [[False, False, False]])
                              [p for p in product([True, False], repeat=3)
                               if False in p])
     def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
                                    fix_shape, fix_loc, fix_scale, rng):
+        print(rvs_shape, rvs_loc, rvs_scale,
+                                   fix_shape, fix_loc, fix_scale)
 
         data = stats.powerlaw.rvs(size=250, a=rvs_shape, loc=rvs_loc, scale=rvs_scale,
                                   random_state=rng)
@@ -2363,8 +2366,8 @@ class TestPowerlaw(object):
         func = stats.powerlaw._reduce_func(args, {})[1]
 
         kwds = dict()
-        if fix_shape:
-            kwds['f0'] = rvs_shape + .1
+        # if fix_shape:
+        #     kwds['f0'] = rvs_shape + .1
         if fix_loc:
             kwds['floc'] = rvs_loc - .1
         if fix_scale:
