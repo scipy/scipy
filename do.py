@@ -11,8 +11,7 @@ doit interface is better suited for authring the development tasks.
 
 REQUIREMENTS:
 --------------
-- Note this requires the unreleased doit 0.35.
-- And also PyPI packages: click, rich, rich-click(1.3.0)
+- PyPI packages: doit==0.35.0, click, rich, rich-click(1.3.0)
 
 # USAGE:
 
@@ -114,7 +113,8 @@ import sys
 import re
 import shutil
 import json
-import datetime, time
+import datetime
+import time
 import platform
 import importlib.util
 import errno
@@ -131,13 +131,12 @@ from click.globals import get_current_context
 from rich_click import RichCommand, RichGroup
 from doit import task_params
 from doit.task import Task as DoitTask
-from doit.cmd_base import ModuleTaskLoader, get_loader
-from doit.doit_cmd import DoitMain
-from doit.cmdparse import CmdParse, CmdParseError
-from doit.exceptions import InvalidDodoFile, InvalidCommand, InvalidTask
+from doit.cmd_base import ModuleTaskLoader
+from doit.api import run_tasks
 
 DOIT_CONFIG = {
     'verbosity': 2,
+    'minversion': '0.35.0',
 }
 
 
@@ -282,48 +281,13 @@ class CliGroup(RichGroup):
 
 
 
-class DoitMainAPI(DoitMain):
-    """add new method to run tasks with parsed command line"""
-
-    def run_tasks(self, tasks):
-        """
-        :params task: str - task name
-        """
-        # get list of available commands
-        sub_cmds = self.get_cmds()
-        task_loader = get_loader(self.config, self.task_loader, sub_cmds)
-
-        # execute command
-        cmd_name = 'run'
-        command = sub_cmds.get_plugin(cmd_name)(
-            task_loader=task_loader,
-            config=self.config,
-            bin_name=self.BIN_NAME,
-            cmds=sub_cmds,
-            opt_vals={},
-            )
-
-        try:
-            cmd_opt = CmdParse(command.get_options())
-            params, _ = cmd_opt.parse([])
-            args = tasks
-            command.execute(params, args)
-        except (CmdParseError, InvalidDodoFile,
-                InvalidCommand, InvalidTask) as err:
-            if isinstance(err, InvalidCommand):
-                err.cmd_used = cmd_name
-                err.bin_name = self.BIN_NAME
-            raise err
-
 
 def run_doit_task(tasks):
     """
       :param tasks: (dict) task_name -> {options}
     """
     loader = ModuleTaskLoader(globals())
-    loader.task_opts = tasks # task_opts will be used as @task_param
-    doit_main = DoitMainAPI(loader, extra_config={'GLOBAL': {'verbosity': 2}})
-    return doit_main.run_tasks(list(tasks.keys()))
+    return run_tasks(loader, tasks , extra_config={'GLOBAL': {'verbosity': 2}})
 
 
 ###########################################
@@ -446,7 +410,7 @@ class Dirs:
             return
         self.build = Path(args.build_dir).resolve()
         if args.install_prefix:
-           self.installed = Path(args.install_prefix).resolve()
+            self.installed = Path(args.install_prefix).resolve()
         else:
             self.installed = self.build.parent / (self.build.stem + "-install")
         # relative path for site-package with py version. i.e. 'lib/python3.10/site-packages'
@@ -1063,7 +1027,7 @@ TARGETS: Sphinx build targets [default: 'html-scipyorg']
         return {
             'actions': [
                 # move to doc/ so local scipy does not get imported
-                f'cd doc; env PYTHONPATH="../{dirs.site}" make {" ".join(make_params)} {targets}',
+                f'cd doc; env PYTHONPATH="{dirs.site}" make {" ".join(make_params)} {targets}',
             ],
             'task_dep': task_dep,
             'io': {'capture': False},
