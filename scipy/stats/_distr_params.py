@@ -45,6 +45,7 @@ distcont = [
     ['halfgennorm', (0.6748054997000371,)],
     ['genpareto', (0.1,)],   # use case with finite moments
     ['gilbrat', ()],
+    ['gibrat', ()],
     ['gompertz', (0.94743713075105251,)],
     ['gumbel_l', ()],
     ['gumbel_r', ()],
@@ -207,6 +208,7 @@ invdistcont = [
     ['genhalflogistic', (-1, )],
     ['geninvgauss', (1, 0)],
     ['gilbrat', ()],
+    ['gibrat', ()],
     ['gompertz', (-1, )],
     ['gumbel_r', ()],
     ['gumbel_l', ()],

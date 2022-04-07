@@ -1165,6 +1165,12 @@ class TestSTFT:
                     r"\['even', 'odd', 'constant', 'zeros', None\]"):
             _spectral_helper(x, x, boundary='foo')
 
+        scaling = "not_valid"
+        with chk_VE(fr"Parameter {scaling=} not in \['spectrum', 'psd'\]!"):
+            stft(x, scaling=scaling)
+        with chk_VE(fr"Parameter {scaling=} not in \['spectrum', 'psd'\]!"):
+            istft(z, scaling=scaling)
+
     def test_check_COLA(self):
         settings = [
                     ('boxcar', 10, 0),
@@ -1255,7 +1261,8 @@ class TestSTFT:
         assert_allclose(Z1, Z2[:, 0, 0, :])
         assert_allclose(x1, x2[:, 0, 0])
 
-    def test_roundtrip_real(self):
+    @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
+    def test_roundtrip_real(self, scaling):
         np.random.seed(1234)
 
         settings = [
@@ -1272,10 +1279,11 @@ class TestSTFT:
             x = 10*np.random.randn(t.size)
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
-                            window=window, detrend=None, padded=False)
+                            window=window, detrend=None, padded=False,
+                            scaling=scaling)
 
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                           window=window)
+                           window=window, scaling=scaling)
 
             msg = '{0}, {1}'.format(window, noverlap)
             assert_allclose(t, tr, err_msg=msg)
@@ -1359,7 +1367,8 @@ class TestSTFT:
             assert_allclose(x, xr, err_msg=msg, rtol=1e-4, atol=1e-5)
             assert_(x.dtype == xr.dtype)
 
-    def test_roundtrip_complex(self):
+    @pytest.mark.parametrize('scaling', ['spectrum', 'psd'])
+    def test_roundtrip_complex(self, scaling):
         np.random.seed(1234)
 
         settings = [
@@ -1377,10 +1386,11 @@ class TestSTFT:
 
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
-                            return_onesided=False)
+                            return_onesided=False, scaling=scaling)
 
             tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                           window=window, input_onesided=False)
+                           window=window, input_onesided=False,
+                           scaling=scaling)
 
             msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
             assert_allclose(t, tr, err_msg=msg)
@@ -1392,10 +1402,10 @@ class TestSTFT:
                        "Input data is complex, switching to return_onesided=False")
             _, _, zz = stft(x, nperseg=nperseg, noverlap=noverlap,
                             window=window, detrend=None, padded=False,
-                            return_onesided=True)
+                            return_onesided=True, scaling=scaling)
 
         tr, xr = istft(zz, nperseg=nperseg, noverlap=noverlap,
-                       window=window, input_onesided=False)
+                       window=window, input_onesided=False, scaling=scaling)
 
         msg = '{0}, {1}, {2}'.format(window, nperseg, noverlap)
         assert_allclose(t, tr, err_msg=msg)
@@ -1516,3 +1526,68 @@ class TestSTFT:
 
         assert_allclose(x_flat, x_transpose_m, err_msg='istft transpose minus')
         assert_allclose(x_flat, x_transpose_p, err_msg='istft transpose plus')
+
+    def test_roundtrip_scaling(self):
+        """Verify behavior of scaling parameter. """
+        # Create 1024 sample cosine signal with amplitude 2:
+        X = np.zeros(513, dtype=complex)
+        X[256] = 1024
+        x = np.fft.irfft(X)
+        power_x = sum(x**2) / len(x)  # power of signal x is 2
+
+        # Calculate magnitude-scaled STFT:
+        Zs = stft(x, boundary='even', scaling='spectrum')[2]
+
+        # Test round trip:
+        x1 = istft(Zs, boundary=True, scaling='spectrum')[1]
+        assert_allclose(x1, x)
+
+        # For a Hann-windowed 256 sample length FFT, we expect a peak at
+        # frequency 64 (since it is 1/4 the length of X) with a height of 1
+        # (half the amplitude). A Hann window of a perfectly centered sine has
+        # the magnitude [..., 0, 0, 0.5, 1, 0.5, 0, 0, ...].
+        # Note that in this case the 'even' padding works for the beginning
+        # but not for the end of the STFT.
+        assert_allclose(abs(Zs[63, :-1]), 0.5)
+        assert_allclose(abs(Zs[64, :-1]), 1)
+        assert_allclose(abs(Zs[65, :-1]), 0.5)
+        # All other values should be zero:
+        Zs[63:66, :-1] = 0
+        # Note since 'rtol' does not have influence here, atol needs to be set:
+        assert_allclose(Zs[:, :-1], 0, atol=np.finfo(Zs.dtype).resolution)
+
+        # Calculate two-sided psd-scaled STFT:
+        #  - using 'even' padding since signal is axis symmetric - this ensures
+        #    stationary behavior on the boundaries
+        #  - using the two-sided transform allows determining the spectral
+        #    power by `sum(abs(Zp[:, k])**2) / len(f)` for the k-th time slot.
+        Zp = stft(x, return_onesided=False, boundary='even', scaling='psd')[2]
+
+        # Calculate spectral power of Zd by summing over the frequency axis:
+        psd_Zp = np.sum(Zp.real**2 + Zp.imag**2, axis=0) / Zp.shape[0]
+        # Spectral power of Zp should be equal to the signal's power:
+        assert_allclose(psd_Zp, power_x)
+
+        # Test round trip:
+        x1 = istft(Zp, input_onesided=False, boundary=True, scaling='psd')[1]
+        assert_allclose(x1, x)
+
+        # The power of the one-sided psd-scaled STFT can be determined
+        # analogously (note that the two sides are not of equal shape):
+        Zp0 = stft(x, return_onesided=True, boundary='even', scaling='psd')[2]
+
+        # Since x is real, its Fourier transform is conjugate symmetric, i.e.,
+        # the missing 'second side' can be expressed through the 'first side':
+        Zp1 = np.conj(Zp0[-2:0:-1, :])  # 'second side' is conjugate reversed
+        assert_allclose(Zp[:129, :], Zp0)
+        assert_allclose(Zp[129:, :], Zp1)
+
+        # Calculate the spectral power:
+        s2 = (np.sum(Zp0.real ** 2 + Zp0.imag ** 2, axis=0) +
+              np.sum(Zp1.real ** 2 + Zp1.imag ** 2, axis=0))
+        psd_Zp01 = s2 / (Zp0.shape[0] + Zp1.shape[0])
+        assert_allclose(psd_Zp01, power_x)
+
+        # Test round trip:
+        x1 = istft(Zp0, input_onesided=True, boundary=True, scaling='psd')[1]
+        assert_allclose(x1, x)
