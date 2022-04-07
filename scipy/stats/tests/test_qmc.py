@@ -1001,6 +1001,11 @@ class TestMultivariateNormalQMC:
         with pytest.raises(ValueError, match=message):
             qmc.MultivariateNormalQMC([0], [[1, 0], [0, 1]])
 
+        message = r"Integers can be drawn from the multivariate normal"
+        with pytest.raises(NotImplementedError, match=message):
+            engine = qmc.MultivariateNormalQMC(0)
+            engine.integers(1)
+
     def test_MultivariateNormalQMCNonPD(self):
         # try with non-pd but psd cov; should work
         engine = qmc.MultivariateNormalQMC(

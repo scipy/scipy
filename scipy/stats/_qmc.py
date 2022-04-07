@@ -1714,6 +1714,22 @@ class MultivariateNormalQMC(QMCEngine):
         self.num_generated += n
         return self._correlate(base_samples)
 
+    def integers(
+        self,
+        l_bounds: npt.ArrayLike,
+        *,
+        u_bounds: Optional[npt.ArrayLike] = None,
+        n: IntNumber = 1,
+        endpoint: bool = False,
+        workers: IntNumber = 1
+    ) -> np.ndarray:
+        msg = (
+            "Integers can be drawn from the multivariate normal distribution"
+            " by adjusting `mean`, `scale` to set bounds and `np.floor`"
+            " to convert to integers."
+        )
+        raise NotImplementedError(msg)
+
     def reset(self) -> MultivariateNormalQMC:
         """Reset the engine to base state.
 
