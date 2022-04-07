@@ -15,8 +15,8 @@ extern int S_separable_2Dconvolve_mirror(float*,float*,int,int,float*,float*,int
 
 extern int D_cubic_spline2D(double*,double*,int,int,double,npy_intp*,npy_intp*,double);
 extern int D_quadratic_spline2D(double*,double*,int,int,double,npy_intp*,npy_intp*,double);
-extern int D_IIR_forback1(double,double,double*,double*,int,int,int,double);
-extern int D_IIR_forback2(double,double,double*,double*,int,int,int,double);
+extern int D_IIR_forback1(double,double,double*,double*,int,int,int,float);
+extern int D_IIR_forback2(double,double,double*,double*,int,int,int,float);
 extern int D_separable_2Dconvolve_mirror(double*,double*,int,int,double*,double*,int,int,npy_intp*,npy_intp*);
 
 #ifdef __GNUC__
