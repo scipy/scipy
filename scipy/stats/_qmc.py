@@ -14,6 +14,7 @@ from typing import (
     List,
     Optional,
     overload,
+    Tuple,
     TYPE_CHECKING,
 )
 
@@ -147,20 +148,14 @@ def scale(
 
     """
     sample = np.asarray(sample)
-    lower = np.atleast_1d(l_bounds)
-    upper = np.atleast_1d(u_bounds)
 
     # Checking bounds and sample
     if not sample.ndim == 2:
         raise ValueError('Sample is not a 2D array')
 
-    lower, upper = np.broadcast_arrays(lower, upper)
-
-    if not np.all(lower < upper):
-        raise ValueError('Bounds are not consistent a < b')
-
-    if len(lower) != sample.shape[1]:
-        raise ValueError('Sample dimension is different than bounds dimension')
+    lower, upper = _validate_bounds(
+        l_bounds=l_bounds, u_bounds=u_bounds, d=sample.shape[1]
+    )
 
     if not reverse:
         # Checking that sample is within the hypercube
@@ -642,7 +637,7 @@ class QMCEngine(ABC):
 
     Optionally, two other methods can be overwritten by subclasses:
 
-    * ``reset``: Reset the engine to it's original state.
+    * ``reset``: Reset the engine to its original state.
     * ``fast_forward``: If the sequence is deterministic (like Halton
       sequence), then ``fast_forward(n)`` is skipping the ``n`` first draw.
 
@@ -726,6 +721,88 @@ class QMCEngine(ABC):
 
         """
         # self.num_generated += n
+
+    def integers(
+        self,
+        l_bounds: npt.ArrayLike,
+        *,
+        u_bounds: Optional[npt.ArrayLike] = None,
+        n: IntNumber = 1,
+        endpoint: bool = False,
+        workers: IntNumber = 1
+    ) -> np.ndarray:
+        r"""
+        Draw `n` integers from `l_bounds` (inclusive) to `u_bounds`
+        (exclusive), or if endpoint=True, `l_bounds` (inclusive) to
+        `u_bounds` (inclusive).
+
+        Parameters
+        ----------
+        l_bounds : int or array-like of ints
+            Lowest (signed) integers to be drawn (unless ``u_bounds=None``,
+            in which case this parameter is 0 and this value is used for
+            `u_bounds`).
+        u_bounds : int or array-like of ints, optional
+            If provided, one above the largest (signed) integer to be drawn
+            (see above for behavior if ``u_bounds=None``).
+            If array-like, must contain integer values.
+        n : int, optional
+            Number of samples to generate in the parameter space.
+            Default is 1.
+        endpoint : bool, optional
+            If true, sample from the interval ``[l_bounds, u_bounds]`` instead
+            of the default ``[l_bounds, u_bounds)``. Defaults is False.
+        workers : int, optional
+            Number of workers to use for parallel processing. If -1 is
+            given all CPU threads are used. Only supported when using `Halton`
+            Default is 1.
+
+        Returns
+        -------
+        sample : array_like (n, d)
+            QMC sample.
+
+        Notes
+        -----
+        It is safe to just use the same ``[0, 1)`` to integer mapping
+        with QMC that you would use with MC. You still get unbiasedness,
+        a strong law of large numbers, an asymptotically infinite variance
+        reduction and a finite sample variance bound.
+
+        To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`,
+        with :math:`a` the lower bounds and :math:`b` the upper bounds,
+        the following transformation is used:
+
+        .. math::
+
+            \text{floor}((b - a) \cdot \text{sample} + a)
+
+        """
+        if u_bounds is None:
+            u_bounds = l_bounds
+            l_bounds = 0
+
+        u_bounds = np.atleast_1d(u_bounds)
+        l_bounds = np.atleast_1d(l_bounds)
+
+        if endpoint:
+            u_bounds = u_bounds + 1
+
+        if (not np.issubdtype(l_bounds.dtype, np.integer) or
+                not np.issubdtype(u_bounds.dtype, np.integer)):
+            message = ("'u_bounds' and 'l_bounds' must be integers or"
+                       " array-like of integers")
+            raise ValueError(message)
+
+        if isinstance(self, Halton):
+            sample = self.random(n=n, workers=workers)
+        else:
+            sample = self.random(n=n)
+
+        sample = scale(sample, l_bounds=l_bounds, u_bounds=u_bounds)
+        sample = np.floor(sample).astype(np.int64)
+
+        return sample
 
     def reset(self) -> QMCEngine:
         """Reset the engine to base state.
@@ -1797,3 +1874,35 @@ def _validate_workers(workers: IntNumber = 1) -> IntNumber:
                          "or > 0")
 
     return workers
+
+
+def _validate_bounds(
+    l_bounds: npt.ArrayLike, u_bounds: npt.ArrayLike, d: int
+) -> Tuple[np.ndarray, ...]:
+    """Bounds input validation.
+
+    Parameters
+    ----------
+    l_bounds, u_bounds : array_like (d,)
+        Lower and upper bounds.
+    d : int
+        Dimension to use for broadcasting.
+
+    Returns
+    -------
+    l_bounds, u_bounds : array_like (d,)
+        Lower and upper bounds.
+
+    """
+    try:
+        lower = np.broadcast_to(l_bounds, d)
+        upper = np.broadcast_to(u_bounds, d)
+    except ValueError as exc:
+        msg = ("'l_bounds' and 'u_bounds' must be broadcastable and respect"
+               " the sample dimension")
+        raise ValueError(msg) from exc
+
+    if not np.all(lower < upper):
+        raise ValueError("Bounds are not consistent 'l_bounds' < 'u_bounds'")
+
+    return lower, upper

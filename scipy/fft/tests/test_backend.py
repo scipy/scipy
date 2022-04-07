@@ -1,7 +1,8 @@
+from functools import partial
+
 import numpy as np
 import scipy.fft
-from scipy.fft import set_backend
-from scipy.fft import _pocketfft
+from scipy.fft import _fftlog, _pocketfft, set_backend
 from scipy.fft.tests import mock_backend
 
 from numpy.testing import assert_allclose, assert_equal
@@ -12,7 +13,8 @@ fnames = ('fft', 'fft2', 'fftn',
           'rfft', 'rfft2', 'rfftn',
           'irfft', 'irfft2', 'irfftn',
           'dct', 'idct', 'dctn', 'idctn',
-          'dst', 'idst', 'dstn', 'idstn')
+          'dst', 'idst', 'dstn', 'idstn',
+          'fht', 'ifht')
 
 np_funcs = (np.fft.fft, np.fft.fft2, np.fft.fftn,
             np.fft.ifft, np.fft.ifft2, np.fft.ifftn,
@@ -21,7 +23,10 @@ np_funcs = (np.fft.fft, np.fft.fft2, np.fft.fftn,
             np.fft.hfft, _pocketfft.hfft2, _pocketfft.hfftn,  # np has no hfftn
             np.fft.ihfft, _pocketfft.ihfft2, _pocketfft.ihfftn,
             _pocketfft.dct, _pocketfft.idct, _pocketfft.dctn, _pocketfft.idctn,
-            _pocketfft.dst, _pocketfft.idst, _pocketfft.dstn, _pocketfft.idstn)
+            _pocketfft.dst, _pocketfft.idst, _pocketfft.dstn, _pocketfft.idstn,
+            # must provide required kwargs for fht, ifht
+            partial(_fftlog.fht, dln=2, mu=0.5),
+            partial(_fftlog.ifht, dln=2, mu=0.5))
 
 funcs = (scipy.fft.fft, scipy.fft.fft2, scipy.fft.fftn,
          scipy.fft.ifft, scipy.fft.ifft2, scipy.fft.ifftn,
@@ -30,7 +35,10 @@ funcs = (scipy.fft.fft, scipy.fft.fft2, scipy.fft.fftn,
          scipy.fft.hfft, scipy.fft.hfft2, scipy.fft.hfftn,
          scipy.fft.ihfft, scipy.fft.ihfft2, scipy.fft.ihfftn,
          scipy.fft.dct, scipy.fft.idct, scipy.fft.dctn, scipy.fft.idctn,
-         scipy.fft.dst, scipy.fft.idst, scipy.fft.dstn, scipy.fft.idstn)
+         scipy.fft.dst, scipy.fft.idst, scipy.fft.dstn, scipy.fft.idstn,
+         # must provide required kwargs for fht, ifht
+         partial(scipy.fft.fht, dln=2, mu=0.5),
+         partial(scipy.fft.ifht, dln=2, mu=0.5))
 
 mocks = (mock_backend.fft, mock_backend.fft2, mock_backend.fftn,
          mock_backend.ifft, mock_backend.ifft2, mock_backend.ifftn,
@@ -38,8 +46,11 @@ mocks = (mock_backend.fft, mock_backend.fft2, mock_backend.fftn,
          mock_backend.irfft, mock_backend.irfft2, mock_backend.irfftn,
          mock_backend.hfft, mock_backend.hfft2, mock_backend.hfftn,
          mock_backend.ihfft, mock_backend.ihfft2, mock_backend.ihfftn,
-         mock_backend.dct, mock_backend.idct, mock_backend.dctn, mock_backend.idctn,
-         mock_backend.dst, mock_backend.idst, mock_backend.dstn, mock_backend.idstn)
+         mock_backend.dct, mock_backend.idct,
+         mock_backend.dctn, mock_backend.idctn,
+         mock_backend.dst, mock_backend.idst,
+         mock_backend.dstn, mock_backend.idstn,
+         mock_backend.fht, mock_backend.ifht)
 
 
 @pytest.mark.parametrize("func, np_func, mock", zip(funcs, np_funcs, mocks))
