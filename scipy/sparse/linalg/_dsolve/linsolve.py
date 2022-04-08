@@ -62,7 +62,7 @@ def use_solver(**kwargs):
     >>> x = spsolve(A, b)
     >>> np.allclose(A.dot(x), b)
     True
-    >>> use_solve(useUmfpack=True) # reset umfPack usage to default
+    >>> use_solver(useUmfpack=True) # reset umfPack usage to default
     """
     if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
