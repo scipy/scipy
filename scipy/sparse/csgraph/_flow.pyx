@@ -797,9 +797,9 @@ def minimum_cost_flow(csgraph, demand, cost):
     24
     >>> result.flow.toarray()
     array([[0, 4, 1, 0],
-        [0, 0, 0, 4],
-        [0, 0, 0, 1],
-        [0, 0, 0, 0]], dtype=int32)
+        [-4, 0, 0, 4],
+        [-1, 0, 0, 1],
+        [0, -4, -1, 0]], dtype=int32)
     """
     demand = np.asarray(demand)
     cost = np.asarray(cost)
@@ -819,12 +819,13 @@ def minimum_cost_flow(csgraph, demand, cost):
         cost = cost.astype(ITYPE)
 
     n_verts = csgraph.indptr.shape[0] - 1
+    n_edges = cost.shape[0]
 
     _network_simplex_checks(csgraph.data, demand, cost)
     cdef ITYPE_t[:] tails = _make_tails(csgraph)
-    cdef ITYPE_t[:] row = np.empty(cost.shape, dtype=ITYPE)
-    cdef ITYPE_t[:] col = np.empty(cost.shape, dtype=ITYPE)
-    cdef ITYPE_t[:] flow_data = np.empty(cost.shape, dtype=ITYPE)
+    cdef ITYPE_t[:] row = np.empty((2 * n_edges,), dtype=ITYPE)
+    cdef ITYPE_t[:] col = np.empty((2 * n_edges,), dtype=ITYPE)
+    cdef ITYPE_t[:] flow_data = np.empty((2 * n_edges,), dtype=ITYPE)
     ns_result = _network_simplex(csgraph.indices, tails, csgraph.data,
                                  demand, cost, n_verts,
                                  row, col, flow_data)
@@ -1391,14 +1392,18 @@ cdef inline void _add_entry(
     ITYPE_t edge_target,               # IN
     ITYPE_t flow,                      # IN
     ITYPE_t idx,                       # IN
+    ITYPE_t n_edges,
     ITYPE_t[:] row,                    # IN/OUT
     ITYPE_t[:] col,                    # IN/OUT
     ITYPE_t[:] flow_data               # IN/OUT
 ) nogil:
     """Add the result values as in entry in row, col and flow_data arrays."""
     row[idx] = edge_source - 1
+    row[idx + 1] = edge_target - 1
     col[idx] = edge_target - 1
+    col[idx + 1] = edge_source - 1
     flow_data[idx] = flow
+    flow_data[idx + 1] = -flow
 
 cdef network_simplex_result _network_simplex(
     ITYPE_t[:] heads,                  # IN
@@ -1564,8 +1569,9 @@ cdef network_simplex_result _network_simplex(
             for i in range(n_edges):
                 if edge_flow[i] != 0 and edge_capacities[i] != 0:
                     _add_entry(edge_sources[i], edge_targets[i],
-                               edge_flow[i], idx, row, col, flow_data)
-                    idx += 1
+                               edge_flow[i], idx, 0,
+                               row, col, flow_data)
+                    idx += 2
             ns_result.flow_cost = flow_cost
             ns_result.size = idx
 
