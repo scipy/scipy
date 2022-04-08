@@ -1374,10 +1374,10 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     0.1111111111111111  # may vary
 
     Instead, `permutation_test` treats elements of the null distribution that
-    are within a factor of ``1+1e-14`` of the observed value of the statistic
-    to be equal to the test statistic.
+    are within ``max(1e-14, abs(r)*1e-14)`` of the observed value of the
+    statistic ``r`` to be equal to ``r``.
 
-    >>> correct_pvalue = np.count_nonzero(null >= r / (1+1e-14)) / len(null)
+    >>> correct_pvalue = np.count_nonzero(null >= r - 1e-14) / len(null)
     >>> correct_pvalue
     0.16666666666666666
     >>> res.pvalue == correct_pvalue
@@ -1413,15 +1413,15 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     # relative tolerance for detecting numerically distinct but
     # theoretically equal values in the null distribution
     eps = 1e-14
-    gamma = (1 + eps)**np.sign(observed)
+    gamma = np.maximum(eps, np.abs(eps * observed))
 
     def less(null_distribution, observed):
-        cmps = null_distribution <= observed * gamma
+        cmps = null_distribution <= observed + gamma
         pvalues = (cmps.sum(axis=0) + adjustment) / (n_resamples + adjustment)
         return pvalues
 
     def greater(null_distribution, observed):
-        cmps = null_distribution >= observed / gamma
+        cmps = null_distribution >= observed - gamma
         pvalues = (cmps.sum(axis=0) + adjustment) / (n_resamples + adjustment)
         return pvalues
 
