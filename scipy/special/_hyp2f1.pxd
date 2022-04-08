@@ -45,12 +45,14 @@ from libc.stdint cimport uint64_t, UINT64_MAX
 from libc.math cimport fabs, M_PI, M_1_PI, pow, sin, trunc
 
 from . cimport sf_error
-from ._cephes cimport lanczos_sum_expg_scaled
+from ._cephes cimport Gamma, lanczos_sum_expg_scaled
 
 from ._complexstuff cimport (
     double_complex_from_npy_cdouble,
     npy_cdouble_from_double_complex,
     zabs,
+    zisinf,
+    zisnan,
     zpack,
     zpow,
 )
@@ -319,10 +321,19 @@ cdef inline double complex hyp2f1_lopez_temme_series(
         sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
         result = zpack(NPY_NAN, NPY_NAN)
     return result
-    
+
 
 @cython.cdivision(True)
 cdef inline double four_gammas(double u, double v, double w, double x) nogil:
+    cdef double result
+    result = Gamma(u) * Gamma(v) / (Gamma(w) * Gamma(x))
+    if zisinf(result) or zisnan(result) or result == 0:
+        result = four_gammas_lanczos(u, v, w, x)
+    return result
+
+
+@cython.cdivision(True)
+cdef inline double four_gammas_lanczos(double u, double v, double w, double x) nogil:
     """Compute ratio of gamma functions using lanczos approximation.
 
     Computes gamma(u)*gamma(v)/(gamma(w)*gamma(x))
