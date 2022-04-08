@@ -3,7 +3,7 @@
 #   $ conda activate scipy-dev
 #
 # Also used to build the `scipy-dev` Docker image via GitHub Actions
-name: scipy-dev3
+name: scipy-dev:
 channels:
   - conda-forge
 dependencies:
