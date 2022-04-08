@@ -28,6 +28,7 @@ Development environment
 - :ref:`building` may have some helpful hints if you need to deviate from the guides above
 - :ref:`recommended-development-setup` includes additional notes about the development setup; all of this information is contained elsewhere, but it is retained as a legacy document
 - :ref:`meson` for how to use the Meson build system (experimental, it will replace the ``distutils``-based build in the future)
+- :ref:`meson-advanced` presents advanced build options with meson
 
 .. _editing-scipy:
 
