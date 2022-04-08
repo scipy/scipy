@@ -1135,13 +1135,13 @@ def notes(ctx_obj, version_args):
 
      Example:
 
-    $ python do.py notes 1.7.0 1.8.0
+    $ python do.py notes v1.7.0 v1.8.0
     """
     if version_args:
         sys.argv = version_args
         log_start = sys.argv[0]
         log_end = sys.argv[1]
-    cmd = f"python tools/write_release_and_log.py v{log_start} v{log_end}"
+    cmd = f"python tools/write_release_and_log.py {log_start} {log_end}"
     click.echo(cmd)
     try:
         subprocess.run([cmd], check = True, shell=True)
@@ -1157,13 +1157,13 @@ def authors(ctx_obj, revision_args):
 
     Example:
 
-    $ python do.py authors 1.7.0 1.8.0
+    $ python do.py authors v1.7.0 v1.8.0
     """
     if revision_args:
         sys.argv = revision_args
         start_revision = sys.argv[0]
         end_revision = sys.argv[1]
-    cmd = f"python tools/authors.py v{start_revision}..v{end_revision}"
+    cmd = f"python tools/authors.py {start_revision}..{end_revision}"
     click.echo(cmd)
     try:
         subprocess.run([cmd], check = True, shell=True)
