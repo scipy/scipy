@@ -789,7 +789,7 @@ class Bench(Task):
 
     $ python do.py bench -t integrate.SolveBVP
     $ python do.py bench -t linalg.Norm
-    $ python do.py bench --bench-compare head
+    $ python do.py bench --compare main
 
     """
     ctx = CONTEXT
@@ -802,11 +802,11 @@ class Bench(Task):
     tests = Option(
         ['--tests', '-t'],default=None, multiple=True,
         metavar='TESTS',help='Specify tests to run')
-    bench_compare = Option(
-        ['--bench-compare', '-c'],default=None,metavar='BENCH-COMPARE',multiple=True,
+    compare = Option(
+        ['--compare', '-c'],default=None,metavar='COMPARE',multiple=True,
         help="Compare benchmark results of current HEAD to"
               " BEFORE. Use an additional "
-              "--bench-compare COMMIT to override HEAD with"
+              "--bench COMMIT to override HEAD with"
               " COMMIT. Note that you need to commit your "
               "changes first!")
 
@@ -856,7 +856,7 @@ class Bench(Task):
             bench_args = []
             for a in extra_argv:
                 bench_args.extend(['--bench', ' '.join(str(x) for x in a)])
-            if not args.bench_compare:
+            if not args.compare:
                 print("Running benchmarks for Scipy version %s at %s"
                       % (version, mod_path))
                 cmd = ['asv', 'run', '--dry-run', '--show-stderr',
@@ -864,12 +864,11 @@ class Bench(Task):
                 retval = cls.run_asv(dirs, cmd)
                 sys.exit(retval)
             else:
-                print("BENCH COMPARE")
-                if len(args.bench_compare) == 1:
-                    commit_a = args.bench_compare[0]
+                if len(args.compare) == 1:
+                    commit_a = args.compare[0]
                     commit_b = 'HEAD'
-                elif len(args.bench_compare) == 2:
-                    commit_a, commit_b = args.bench_compare
+                elif len(args.compare) == 2:
+                    commit_a, commit_b = args.compare
                 else:
                     print("Too many commits to compare benchmarks for")
                 # Check for uncommitted files
