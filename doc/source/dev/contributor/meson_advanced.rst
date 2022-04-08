@@ -28,17 +28,17 @@ For example, let us build using GCC and Clang.
 
 1. Build with GCC::
 
-    python dev.py --only-build
+    python dev.py --build-only
 
 Using the above command, meson will build with gcc compiler in ``build`` directory.
-It will then install SciPy into ``$PWD/build-install/lib/python3.x/site-packages/scipy``.
+It will then install SciPy into ``$PWD/build-install/lib/python3.x/site-packages/``.
 
 2. Build with Clang::
 
     CC=clang CXX=clang++ python dev.py --build-only --build-dir=build-clang
 
 Using the above commands, meson will build with clang compiler in ``build-clang`` directory.
-It will then install SciPy into ``$PWD/build-clang-install/lib/python3.x/site-packages/scipy``.
+It will then install SciPy into ``$PWD/build-clang-install/lib/python3.x/site-packages/``.
 Meson will remember the compiler selection for the ``build-clang`` directory and
 it cannot be changed, so each future invocation of
 ``python dev.py --build-dir=build-clang`` will automatically use Clang.
