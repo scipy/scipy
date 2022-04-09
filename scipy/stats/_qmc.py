@@ -1599,7 +1599,7 @@ class Sobol(QMCEngine):
         return self
 
 
-class MultivariateNormalQMC(QMCEngine):
+class MultivariateNormalQMC:
     r"""QMC sampling from a multivariate Normal :math:`N(\mu, \Sigma)`.
 
     Parameters
@@ -1672,7 +1672,6 @@ class MultivariateNormalQMC(QMCEngine):
             # corresponds to identity covariance matrix
             cov_root = None
 
-        super().__init__(d=d, seed=seed)
         self._inv_transform = inv_transform
 
         if not inv_transform:
@@ -1695,6 +1694,8 @@ class MultivariateNormalQMC(QMCEngine):
 
         self._mean = mean
         self._corr_matrix = cov_root
+        self.num_generated = 0
+        self.d = d
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` QMC samples from the multivariate Normal.
@@ -1714,22 +1715,6 @@ class MultivariateNormalQMC(QMCEngine):
         self.num_generated += n
         return self._correlate(base_samples)
 
-    def integers(
-        self,
-        l_bounds: npt.ArrayLike,
-        *,
-        u_bounds: Optional[npt.ArrayLike] = None,
-        n: IntNumber = 1,
-        endpoint: bool = False,
-        workers: IntNumber = 1
-    ) -> np.ndarray:
-        msg = (
-            "Integers can be drawn from the multivariate normal distribution"
-            " by adjusting `mean`, `scale` to set bounds and `np.floor`"
-            " to convert to integers."
-        )
-        raise NotImplementedError(msg)
-
     def reset(self) -> MultivariateNormalQMC:
         """Reset the engine to base state.
 
@@ -1739,8 +1724,25 @@ class MultivariateNormalQMC(QMCEngine):
             Engine reset to its base state.
 
         """
-        super().reset()
         self.engine.reset()
+        self.num_generated = 0
+        return self
+
+    def fast_forward(self, n: IntNumber) -> QMCEngine:
+        """Fast-forward the sequence by `n` positions.
+
+        Parameters
+        ----------
+        n : int
+            Number of points to skip in the sequence.
+
+        Returns
+        -------
+        engine : MultivariateNormalQMC
+            The MultivariateNormalQMC engine itself.
+
+        """
+        self.random(n=n)
         return self
 
     def _correlate(self, base_samples: np.ndarray) -> np.ndarray:
@@ -1783,7 +1785,7 @@ class MultivariateNormalQMC(QMCEngine):
             return transf_samples[:, : self.d]  # type: ignore[misc]
 
 
-class MultinomialQMC(QMCEngine):
+class MultinomialQMC:
     r"""QMC sampling from a multinomial distribution.
 
     Parameters
@@ -1829,8 +1831,6 @@ class MultinomialQMC(QMCEngine):
             raise ValueError("`engine` must be an instance of "
                              "`scipy.stats.qmc.QMCEngine` or `None`.")
 
-        super().__init__(d=1, seed=seed)
-
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` QMC samples from the multinomial distribution.
 
@@ -1850,23 +1850,7 @@ class MultinomialQMC(QMCEngine):
         _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
         sample = np.zeros_like(self.pvals, dtype=int)
         _categorize(base_draws, p_cumulative, sample)
-        self.num_generated += n
         return sample
-
-    def integers(
-        self,
-        l_bounds: npt.ArrayLike,
-        *,
-        u_bounds: Optional[npt.ArrayLike] = None,
-        n: IntNumber = 1,
-        endpoint: bool = False,
-        workers: IntNumber = 1
-    ) -> np.ndarray:
-        msg = (
-            "The multinomial distribution is already defined on integers."
-            " Use `random` instead."
-        )
-        raise NotImplementedError(msg)
 
     def reset(self) -> MultinomialQMC:
         """Reset the engine to base state.
@@ -1877,7 +1861,6 @@ class MultinomialQMC(QMCEngine):
             Engine reset to its base state.
 
         """
-        super().reset()
         self.engine.reset()
         return self
 
