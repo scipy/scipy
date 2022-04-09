@@ -3109,8 +3109,8 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     -----
     In the following, let ``d`` represent the difference between the paired
     samples: ``d = x - y`` if both ``x`` and ``y`` are provided, or ``d = x``
-    otherwise. Initially, assume that all elements of ``d`` are distinct and
-    nonzero.
+    otherwise. Assume that all elements of ``d`` are independent and
+    identically distributed observations, and all are distinct and nonzero.
 
     - When ``len(d)`` is sufficiently large, the null distribution of the
       normalized test statistic (`zstatistic` above) is approximately normal,
