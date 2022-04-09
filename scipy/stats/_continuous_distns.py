@@ -3346,7 +3346,6 @@ class genhyperbolic_gen(rv_continuous):
         # Arbitrary, but the default a=b=1 is not valid
         return super()._fitstart(data, args=(1, 1, 0.5))
 
-
     def _logpdf(self, x, p, a, b):
         # kve instead of kv works better for large values of p
         # and smaller values of sqrt(a^2  - b^2)
