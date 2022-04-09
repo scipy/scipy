@@ -1621,7 +1621,7 @@ class TestPoissonETest:
     ))
     def test_fortran_authors(self, c1, n1, c2, n2, p_expect, alt, d):
         res = stats.poisson_means_test(c1, n1, c2, n2, alternative=alt, diff=d)
-        assert_allclose(res.pvalue, p_expect, atol=1e-6)
+        assert_allclose(res.pvalue, p_expect, atol=1e-6, rtol=1e-16)
 
     def test_different_results(self):
         # The implementation in Fortran is known to break down at higher
@@ -1643,32 +1643,28 @@ class TestPoissonETest:
     def test_non_int_args_error(self):
         count1, count2 = 0, 0
         nobs1, nobs2 = 1, 1
-        with assert_raises(TypeError, match="...nobs2 must be of type int"):
+        with assert_raises(TypeError, match="...`k2` must be of type int"):
             stats.poisson_means_test(.7, nobs1, count2, nobs2)
-        with assert_raises(TypeError, match="...nobs2 must be of type int"):
-            stats.poisson_means_test(count1, .7, count2, nobs2)
-        with assert_raises(TypeError, match="...nobs2 must be of type int"):
+        with assert_raises(TypeError, match="...`k2` must be of type int"):
             stats.poisson_means_test(count1, nobs1, .7, nobs2)
-        with assert_raises(TypeError, match="...nobs2 must be of type int"):
-            stats.poisson_means_test(count1, nobs1, count2, .7)
 
     def test_negative_count_error(self):
         count1, count2 = 0, 0
         nobs1, nobs2 = 1, 1
-        message = "...count2 should be greater than or equal to 0"
+        message = "...`k2` should be greater than or equal to 0"
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(-1, nobs1, count2, nobs2)
-        message = "...count2 should be greater than or equal to 0"
+        message = "...`k2` should be greater than or equal to 0"
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(count1, nobs1, -1, nobs2)
 
     def test_zero_nobs_error(self):
         count1, count2 = 0, 0
         nobs1, nobs2 = 1, 1
-        message = "...nobs2 should be greater than 0"
+        message = "...`n2` should be greater than 0"
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(count1, -1, count2, nobs2)
-        message = "...nobs2 should be greater than 0"
+        message = "...`n2` should be greater than 0"
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(count1, nobs1, count2, -1)
 

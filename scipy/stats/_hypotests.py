@@ -340,15 +340,15 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
 
 def _iv_poisson_mean_test(k1, n1, k2, n2, diff, alternative):
     # """check for valid types and values of input to `poisson_mean_test`."""
-    if not all(isinstance(item, int) for item in [k1, n1, k2, n2]):
-        raise TypeError('count1, count2, nobs1, and nobs2 must be of type int')
+    if not all(isinstance(item, int) for item in [k1, k2]):
+        raise TypeError('`k1`, `k2` must be of type int')
 
-    count_err = 'count1 and count2 should be greater than or equal to 0'
+    count_err = '`k1` and `k2` should be greater than or equal to 0'
     if k1 < 0 or k2 < 0:
         raise ValueError(count_err)
 
     if n1 <= 0 or n2 <= 0:
-        raise ValueError('nobs1 and nobs2 should be greater than 0')
+        raise ValueError('`n1` and `n2` should be greater than 0')
 
     if diff < 0:
         raise ValueError('diff can not have negative values')
