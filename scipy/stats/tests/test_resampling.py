@@ -1393,6 +1393,29 @@ class TestPermutationTest:
         got = list(_resampling._batch_generator(iterable, batch))
         assert got == expected
 
+    def test_finite_precision_statistic(self):
+        # Some statistics return numerically distinct values when the values
+        # should be equal in theory. Test that `permutation_test` accounts
+        # for this in some way.
+        x = [1, 2, 4, 3]
+        y = [2, 4, 6, 8]
+
+        def statistic(x, y):
+            return stats.pearsonr(x, y)[0]
+
+        res = stats.permutation_test((x, y), statistic, vectorized=False,
+                                     permutation_type='pairings')
+        r, pvalue, null = res.statistic, res.pvalue, res.null_distribution
+
+        correct_p = 2 * np.sum(null >= r - 1e-14) / len(null)
+        assert pvalue == correct_p == 1/3
+        # Compare against other exact correlation tests using R corr.test
+        # options(digits=16)
+        # x = c(1, 2, 4, 3)
+        # y = c(2, 4, 6, 8)
+        # cor.test(x, y, alternative = "t", method = "spearman")  # 0.333333333
+        # cor.test(x, y, alternative = "t", method = "kendall")  # 0.333333333
+
 
 def test_all_partitions_concatenated():
     # make sure that _all_paritions_concatenated produces the correct number
