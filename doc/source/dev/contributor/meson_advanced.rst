@@ -1,16 +1,16 @@
 .. _meson-advanced:
 
-Build with Meson Optimizations
-==============================
+Use different build types with Meson
+====================================
 
-Meson provides different optimizations levels while configuring the project. You can see
-the available options for optimizations at
+Meson provides different build types while configuring the project. You can see
+the available options for build types at
 `meson documentation <https://mesonbuild.com/Builtin-options.html#core-options>`.
 
 Assuming that you are building from scratch(do ``git clean -xdf`` if needed), you can
-configure the build as following::
+configure the build as following to use the ``debug`` build type::
 
-    meson setup build --optimization g --prefix=$PWD/build-install
+    meson setup build --buildtype debug  --prefix=$PWD/build-install
 
 Now, you can use the ``dev.py`` interface for further building, installing and testing SciPy::
 
@@ -35,7 +35,7 @@ It will then install SciPy into ``$PWD/build-install/lib/python3.x/site-packages
 
 2. Build with Clang::
 
-    CC=clang CXX=clang++ python dev.py --build-only --build-dir=build-clang
+    CC=clang CXX=clang++ FC=gfortran python dev.py --build-only --build-dir=build-clang
 
 Using the above commands, meson will build with clang compiler in ``build-clang`` directory.
 It will then install SciPy into ``$PWD/build-clang-install/lib/python3.x/site-packages/``.
