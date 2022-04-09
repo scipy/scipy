@@ -249,6 +249,19 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         * 0  : successful exit
         * >0 : convergence to tolerance not achieved, number of iterations
 
+    Examples
+    --------
+    >>> from scipy.sparse import csc_matrix
+    >>> from scipy.sparse.linalg import gcrotmk
+    >>> R = np.random.randn(5, 5)
+    >>> A = csc_matrix(R)
+    >>> b = np.random.randn(5)
+    >>> x, exit_code = gcrotmk(A, b)
+    >>> print(exit_code)
+    0
+    >>> np.allclose(A.dot(x), b)
+    True
+
     References
     ----------
     .. [1] E. de Sturler, ''Truncation strategies for optimal Krylov subspace
