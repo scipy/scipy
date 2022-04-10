@@ -774,7 +774,11 @@ class SVDSCommonTests:
         # Smallest dim singular values are 0:
         assert_allclose(ss, 0, atol=1e-5, rtol=1e0)
         # Smallest singular vectors via svds in null space:
-        # assert_allclose(sp_mat @ svh.T, 0, atol=1e-5, rtol=1e0)
+        n, m = mat.shape
+        if n > m:
+            assert_allclose(sp_mat @ svh.T, 0, atol=1e-5, rtol=1e0)
+        else:
+            assert_allclose(sp_mat.transpose() @ su, 0, atol=1e-5, rtol=1e0)
 
 
 # --- Perform tests with each solver ---
