@@ -51,6 +51,18 @@ def use_solver(**kwargs):
     sure that the matrix fulfills this, pass ``assumeSortedIndices=True``
     to gain some speed.
 
+    Examples
+    --------
+    >>> from scipy.sparse.linalg import use_solver, spsolve
+    >>> from scipy.sparse import csc_matrix
+    >>> R = np.random.randn(5, 5)
+    >>> A = csc_matrix(R)
+    >>> b = np.random.randn(5)
+    >>> use_solver(useUmfpack=False) # enforce superLU over UMFPACK
+    >>> x = spsolve(A, b)
+    >>> np.allclose(A.dot(x), b)
+    True
+    >>> use_solver(useUmfpack=True) # reset umfPack usage to default
     """
     if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
