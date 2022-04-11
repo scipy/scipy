@@ -796,11 +796,6 @@ class TestMultinomialQMC:
         with pytest.raises(ValueError, match=message):
             qmc.MultinomialQMC(p, engine=np.random.default_rng())
 
-        message = r"multinomial distribution is already defined on integers"
-        with pytest.raises(NotImplementedError, match=message):
-            engine = qmc.MultinomialQMC(1)
-            engine.integers(1)
-
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_MultinomialBasicDraw(self):
         seed = np.random.default_rng(6955663962957011631562466584467607969)
@@ -1000,11 +995,6 @@ class TestMultivariateNormalQMC:
         message = r"Dimension mismatch between mean and covariance."
         with pytest.raises(ValueError, match=message):
             qmc.MultivariateNormalQMC([0], [[1, 0], [0, 1]])
-
-        message = r"Integers can be drawn from the multivariate normal"
-        with pytest.raises(NotImplementedError, match=message):
-            engine = qmc.MultivariateNormalQMC(0)
-            engine.integers(1)
 
     def test_MultivariateNormalQMCNonPD(self):
         # try with non-pd but psd cov; should work
