@@ -567,7 +567,7 @@ def build_project(args):
 
     env = dict(os.environ)
 
-    if args.debug or args.gcov:
+    if args.gcov:
         # assume everyone uses gcc/gfortran
         env['OPT'] = '-O0 -ggdb'
         env['FOPT'] = '-O0 -ggdb'
