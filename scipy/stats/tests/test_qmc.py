@@ -59,21 +59,19 @@ class TestUtils:
             space = [0, 1, 0.5]
             qmc.scale(space, l_bounds=-2, u_bounds=6)
 
-        with pytest.raises(ValueError, match=r"Bounds are not consistent"
-                                             r" a < b"):
+        with pytest.raises(ValueError, match=r"Bounds are not consistent"):
             space = [[0, 0], [1, 1], [0.5, 0.5]]
             bounds = np.array([[-2, 6], [6, 5]])
             qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
 
-        with pytest.raises(ValueError, match=r"shape mismatch: objects cannot "
-                                             r"be broadcast to a "
-                                             r"single shape"):
+        with pytest.raises(ValueError, match=r"'l_bounds' and 'u_bounds'"
+                                             r" must be broadcastable"):
             space = [[0, 0], [1, 1], [0.5, 0.5]]
             l_bounds, u_bounds = [-2, 0, 2], [6, 5]
             qmc.scale(space, l_bounds=l_bounds, u_bounds=u_bounds)
 
-        with pytest.raises(ValueError, match=r"Sample dimension is different "
-                                             r"than bounds dimension"):
+        with pytest.raises(ValueError, match=r"'l_bounds' and 'u_bounds'"
+                                             r" must be broadcastable"):
             space = [[0, 0], [1, 1], [0.5, 0.5]]
             bounds = np.array([[-2, 0, 2], [6, 5, 5]])
             qmc.scale(space, l_bounds=bounds[0], u_bounds=bounds[1])
@@ -396,9 +394,66 @@ def test_subclassing_QMCEngine():
     assert_equal(sample_2, sample_2_test)
     assert engine.num_generated == 12
 
+
+def test_raises():
     # input validation
     with pytest.raises(ValueError, match=r"d must be an integer value"):
         RandomEngine((2,))  # noqa
+
+    msg = r"'u_bounds' and 'l_bounds' must be integers"
+    with pytest.raises(ValueError, match=msg):
+        engine = RandomEngine(1)
+        engine.integers(l_bounds=1, u_bounds=1.1)
+
+
+def test_integers():
+    engine = RandomEngine(1, seed=231195739755290648063853336582377368684)
+
+    # basic tests
+    sample = engine.integers(1, n=10)
+    assert_equal(np.unique(sample), [0])
+
+    assert sample.dtype == np.dtype('int64')
+
+    sample = engine.integers(1, n=10, endpoint=True)
+    assert_equal(np.unique(sample), [0, 1])
+
+    low = -5
+    high = 7
+
+    # scaling logic
+    engine.reset()
+    ref_sample = engine.random(20)
+    ref_sample = ref_sample * (high - low) + low
+    ref_sample = np.floor(ref_sample).astype(np.int64)
+
+    engine.reset()
+    sample = engine.integers(low, u_bounds=high, n=20, endpoint=False)
+
+    assert_equal(sample, ref_sample)
+
+    # up to bounds, no less, no more
+    sample = engine.integers(low, u_bounds=high, n=100, endpoint=False)
+    assert_equal((sample.min(), sample.max()), (low, high-1))
+
+    sample = engine.integers(low, u_bounds=high, n=100, endpoint=True)
+    assert_equal((sample.min(), sample.max()), (low, high))
+
+
+def test_integers_nd():
+    d = 10
+    rng = np.random.default_rng(3716505122102428560615700415287450951)
+    low = rng.integers(low=-5, high=-1, size=d)
+    high = rng.integers(low=1, high=5, size=d, endpoint=True)
+    engine = RandomEngine(d, seed=rng)
+
+    sample = engine.integers(low, u_bounds=high, n=100, endpoint=False)
+    assert_equal(sample.min(axis=0), low)
+    assert_equal(sample.max(axis=0), high-1)
+
+    sample = engine.integers(low, u_bounds=high, n=100, endpoint=True)
+    assert_equal(sample.min(axis=0), low)
+    assert_equal(sample.max(axis=0), high)
 
 
 class QMCEngineTests:
@@ -542,6 +597,20 @@ class TestHalton(QMCEngineTests):
                             [0.87746036, 0.21048664],
                             [0.37746036, 0.54381998]])
 
+    def test_workers(self):
+        ref_sample = self.reference(scramble=True)
+        engine = self.engine(d=2, scramble=True)
+        sample = engine.random(n=len(ref_sample), workers=8)
+
+        assert_allclose(sample, ref_sample, atol=1e-3)
+
+        # worker + integers
+        engine.reset()
+        ref_sample = engine.integers(10)
+        engine.reset()
+        sample = engine.integers(10, workers=8)
+        assert_equal(sample, ref_sample)
+
 
 class TestLHS(QMCEngineTests):
     qmce = qmc.LatinHypercube
@@ -661,13 +730,11 @@ class TestSobol(QMCEngineTests):
     def test_random_base2(self):
         engine = qmc.Sobol(2, scramble=False)
         sample = engine.random_base2(2)
-        assert_array_equal(self.unscramble_nd[:4],
-                           sample)
+        assert_array_equal(self.unscramble_nd[:4], sample)
 
         # resampling still having N=2**n
         sample = engine.random_base2(2)
-        assert_array_equal(self.unscramble_nd[4:8],
-                           sample)
+        assert_array_equal(self.unscramble_nd[4:8], sample)
 
         # resampling again but leading to N!=2**n
         with pytest.raises(ValueError, match=r"The balance properties of "
@@ -679,6 +746,10 @@ class TestSobol(QMCEngineTests):
                                              r"dimensionality"):
             qmc.Sobol(qmc.Sobol.MAXDIM + 1)
 
+        with pytest.raises(ValueError, match=r"Maximum supported "
+                                             r"'bits' is 64"):
+            qmc.Sobol(1, bits=65)
+
     def test_high_dim(self):
         engine = qmc.Sobol(1111, scramble=False)
         count1 = Counter(engine.random().flatten().tolist())
@@ -686,6 +757,20 @@ class TestSobol(QMCEngineTests):
         assert_equal(count1, Counter({0.0: 1111}))
         assert_equal(count2, Counter({0.5: 1111}))
 
+    @pytest.mark.parametrize("bits", [2, 3])
+    def test_bits(self, bits):
+        engine = qmc.Sobol(2, scramble=False, bits=bits)
+        ns = 2**bits
+        sample = engine.random(ns)
+        assert_array_equal(self.unscramble_nd[:ns], sample)
+
+        with pytest.raises(ValueError, match="increasing `bits`"):
+            engine.random()
+
+    def test_64bits(self):
+        engine = qmc.Sobol(2, scramble=False, bits=64)
+        sample = engine.random(8)
+        assert_array_equal(self.unscramble_nd, sample)
 
 class TestMultinomialQMC:
     def test_validations(self):

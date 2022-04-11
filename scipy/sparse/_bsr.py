@@ -335,18 +335,6 @@ class bsr_matrix(_cs_matrix, _minmax_mixin):
     # Arithmetic methods #
     ######################
 
-    @np.deprecate(message="BSR matvec is deprecated in SciPy 0.19.0. "
-                          "Use * operator instead.")
-    def matvec(self, other):
-        """Multiply matrix by vector."""
-        return self * other
-
-    @np.deprecate(message="BSR matmat is deprecated in SciPy 0.19.0. "
-                          "Use * operator instead.")
-    def matmat(self, other):
-        """Multiply this sparse matrix by other matrix."""
-        return self * other
-
     def _add_dense(self, other):
         return self.tocoo(copy=False)._add_dense(other)
 
