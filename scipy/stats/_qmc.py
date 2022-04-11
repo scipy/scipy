@@ -1848,12 +1848,12 @@ class MultinomialQMC(QMCEngine):
         return self
 
 
-def _l1_norm(points: np.ndarray) -> float:
-    return distance.pdist(points, 'cityblock').min()
+def _l1_norm(sample: np.ndarray) -> float:
+    return distance.pdist(sample, 'cityblock').min()
 
 
 def _lloyd_centroidal_voronoi_tessellation(
-        points: np.ndarray,
+        sample: np.ndarray,
         decay: float,
         qhull_options: str,
 ) -> np.ndarray:
@@ -1871,12 +1871,12 @@ def _lloyd_centroidal_voronoi_tessellation(
 
     Parameters
     ----------
-    points : array_like (n, d)
-        The points to iterate on.
+    sample : array_like (n, d)
+        The sample to iterate on.
     decay : float
-        Relaxation decay. A positive value would move the points toward
+        Relaxation decay. A positive value would move the samples toward
         their centroid, and negative value would move them away.
-        1 would move the points to their centroid.
+        1 would move the samples to their centroid.
     qhull_options : str
         Additional options to pass to Qhull. See Qhull manual
         for details. (Default: "Qbb Qc Qz Qj Qx" for ndim > 4 and
@@ -1884,17 +1884,17 @@ def _lloyd_centroidal_voronoi_tessellation(
 
     Returns
     -------
-    points : array_like (n, d)
-        The points after an iteration of Lloyd's algorithm.
+    sample : array_like (n, d)
+        The sample after an iteration of Lloyd's algorithm.
 
     """
-    new_points = np.empty_like(points)
+    new_sample = np.empty_like(sample)
 
-    voronoi = Voronoi(points, qhull_options=qhull_options)
+    voronoi = Voronoi(sample, qhull_options=qhull_options)
 
     for ii, idx in enumerate(voronoi.point_region):
         # the region is a series of indices into self.voronoi.vertices
-        # remove point at infinity, designated by index -1
+        # remove samples at infinity, designated by index -1
         region = [i for i in voronoi.regions[idx] if i != -1]
 
         # get the vertices for this region
@@ -1903,21 +1903,21 @@ def _lloyd_centroidal_voronoi_tessellation(
         # clipping would be wrong, we need to intersect
         # verts = np.clip(verts, 0, 1)
 
-        # move points towards centroids:
+        # move samples towards centroids:
         # Centroid in n-D is the mean for uniformly distributed nodes
         # of a geometry.
         centroid = np.mean(verts, axis=0)
-        new_points[ii] = points[ii] + (centroid - points[ii]) * decay
+        new_sample[ii] = sample[ii] + (centroid - sample[ii]) * decay
 
-    # only update points to centroid within the region
-    is_valid = np.all(np.logical_and(new_points >= 0, new_points <= 1), axis=1)
-    points[is_valid] = new_points[is_valid]
+    # only update sample to centroid within the region
+    is_valid = np.all(np.logical_and(new_sample >= 0, new_sample <= 1), axis=1)
+    sample[is_valid] = new_sample[is_valid]
 
-    return points
+    return sample
 
 
 def lloyd_centroidal_voronoi_tessellation(
-        points: npt.ArrayLike,
+        sample: npt.ArrayLike,
         *,
         tol: DecimalNumber = 1e-5,
         maxiter: IntNumber = 10,
@@ -1925,20 +1925,20 @@ def lloyd_centroidal_voronoi_tessellation(
 ) -> np.ndarray:
     """Approximate Centroidal Voronoi Tessellation.
 
-    Perturb points in N-dimensions using Lloyd-Max algorithm.
+    Perturb samples in N-dimensions using Lloyd-Max algorithm.
 
     Parameters
     ----------
-    points : array_like (n, d)
-        The points to iterate on. With ``n`` the number of points and ``d``
-        the dimension. Points must be in :math:`[0, 1]^d`, with ``d>=2``.
+    sample : array_like (n, d)
+        The sample to iterate on. With ``n`` the number of samples and ``d``
+        the dimension. Samples must be in :math:`[0, 1]^d`, with ``d>=2``.
     tol : float, optional
-        Tolerance for termination. If the min of the L1-norm over the points
+        Tolerance for termination. If the min of the L1-norm over the samples
         changes less than `tol`, it stops the algorithm. Default is 1e-5.
     maxiter : int, optional
         Maximum number of iterations. It will stop the algorithm even if
         `tol` is above the threshold.
-        Too many iterations tend to cluster the points as a hypersphere.
+        Too many iterations tend to cluster the samples as a hypersphere.
         Default is 10.
     qhull_options : str, optional
         Additional options to pass to Qhull. See Qhull manual
@@ -1947,21 +1947,21 @@ def lloyd_centroidal_voronoi_tessellation(
 
     Returns
     -------
-    points : array_like (n, d)
-        The points after being processed by Lloyd-Max algorithm.
+    sample : array_like (n, d)
+        The sample after being processed by Lloyd-Max algorithm.
 
     Notes
     -----
     Lloyd-Max algorithm is an iterative process with the purpose of improving
-    the dispersion of points. For given points: (i) compute a Voronoi
+    the dispersion of samples. For given sample: (i) compute a Voronoi
     Tessellation; (ii) find the centroid of each Voronoi cell; (iii) move the
-    points toward the centroid of their respective cell. See [1]_, [2]_.
+    samples toward the centroid of their respective cell. See [1]_, [2]_.
 
-    A relaxation factor is used to control how fast points can move at each
+    A relaxation factor is used to control how fast samples can move at each
     iteration. This factor is starting at 2 and ending at 1 after `maxiter`
     following an exponential decay.
 
-    The process converges to equally spaced points. It implies that measures
+    The process converges to equally spaced samples. It implies that measures
     like the discrepancy could suffer from too many iterations. On the other
     hand, L1 and L2 distances should improve. This is especially true with
     QMC methods which tend to favor the discrepancy over other criteria.
@@ -1969,18 +1969,18 @@ def lloyd_centroidal_voronoi_tessellation(
     .. note::
 
         The current implementation does not intersect the Voronoi Tessellation
-        with the boundaries. This implies that for a low number of points,
+        with the boundaries. This implies that for a low number of samples,
         empirically below 20, no Voronoi cell is touching the boundaries.
-        Hence, points cannot be moved close to the boundaries.
+        Hence, samples cannot be moved close to the boundaries.
 
-        Further improvements could consider the points at infinity so that
+        Further improvements could consider the samples at infinity so that
         all boundaries are segments of some Voronoi cells. This would fix
         the computation of the centroid position.
 
     .. warning::
 
        The Voronoi Tessellation step is expensive and quickly becomes
-       intractable with dimensions as low as 10 even for a sample of points
+       intractable with dimensions as low as 10 even for a sample
        of size as low as 1000.
 
     .. versionadded:: 1.9.0
@@ -1997,46 +1997,46 @@ def lloyd_centroidal_voronoi_tessellation(
     >>> from scipy.spatial import distance
     >>> from scipy.stats import qmc
     >>> rng = np.random.default_rng()
-    >>> points = rng.random((128, 2))
+    >>> sample = rng.random((128, 2))
 
     .. note::
 
-        The points need to be in :math:`[0, 1]^d`. `scipy.stats.qmc.scale`
-        can be used to scale the points from their
+        The samples need to be in :math:`[0, 1]^d`. `scipy.stats.qmc.scale`
+        can be used to scale the samples from their
         original bounds to :math:`[0, 1]^d`. And back to their original bounds.
 
-    Compute the quality of the points using the L1 criterion.
+    Compute the quality of the sample using the L1 criterion.
 
-    >>> def l1_norm(points):
-    ...    return distance.pdist(points, 'cityblock').min()
+    >>> def l1_norm(sample):
+    ...    return distance.pdist(sample, 'cityblock').min()
 
-    >>> l1_norm(points)
+    >>> l1_norm(sample)
     0.00161...  # random
 
-    Now process the points using Lloyd's algorithm and check the improvement
+    Now process the sample using Lloyd's algorithm and check the improvement
     on the L1. The value should increase.
 
-    >>> points = qmc.lloyd_centroidal_voronoi_tessellation(points)
-    >>> l1_norm(points)
+    >>> sample = qmc.lloyd_centroidal_voronoi_tessellation(sample)
+    >>> l1_norm(sample)
     0.0278...  # random
 
     """
-    points = np.asarray(points).copy()
+    sample = np.asarray(sample).copy()
 
-    if not points.ndim == 2:
-        raise ValueError('`points` is not a 2D array')
+    if not sample.ndim == 2:
+        raise ValueError('`sample` is not a 2D array')
 
-    if not points.shape[1] >= 2:
-        raise ValueError('`points` dimension is not >= 2')
+    if not sample.shape[1] >= 2:
+        raise ValueError('`sample` dimension is not >= 2')
 
     # Checking that sample is within the hypercube
-    if (points.max() > 1.) or (points.min() < 0.):
-        raise ValueError('`points` is not in unit hypercube')
+    if (sample.max() > 1.) or (sample.min() < 0.):
+        raise ValueError('`sample` is not in unit hypercube')
 
     if qhull_options is None:
         qhull_options = 'Qbb Qc Qz QJ'
 
-        if points.shape[1] >= 5:
+        if sample.shape[1] >= 5:
             qhull_options += ' Qx'
 
     # Fit an exponential to be 2 at 0 and 1 at `maxiter`.
@@ -2045,21 +2045,21 @@ def lloyd_centroidal_voronoi_tessellation(
     root = -maxiter / np.log(0.1)
     decay = [np.exp(-x / root)+0.9 for x in range(maxiter)]
 
-    l1_old = _l1_norm(points=points)
+    l1_old = _l1_norm(sample=sample)
     for i in range(maxiter):
-        points = _lloyd_centroidal_voronoi_tessellation(
-                points=points, decay=decay[i],
+        sample = _lloyd_centroidal_voronoi_tessellation(
+                sample=sample, decay=decay[i],
                 qhull_options=qhull_options,
         )
 
-        l1_new = _l1_norm(points=points)
+        l1_new = _l1_norm(sample=sample)
 
         if abs(l1_new - l1_old) < tol:
             break
         else:
             l1_old = l1_new
 
-    return points
+    return sample
 
 
 def _validate_workers(workers: IntNumber = 1) -> IntNumber:

@@ -1196,21 +1196,21 @@ class TestMultivariateNormalQMC:
 class TestLloyd:
     def test_lloyd(self):
         # mindist
-        def l2_norm(points):
-            return distance.pdist(points).min()
+        def l2_norm(sample):
+            return distance.pdist(sample).min()
 
         # quite sensible seed as it can go up before going further down
         rng = np.random.RandomState(1809831)
-        points = rng.uniform(0, 1, size=(128, 2))
-        base_l1 = _l1_norm(points)
-        base_l2 = l2_norm(points)
+        sample = rng.uniform(0, 1, size=(128, 2))
+        base_l1 = _l1_norm(sample)
+        base_l2 = l2_norm(sample)
 
         for _ in range(4):
-            points_lloyd = qmc.lloyd_centroidal_voronoi_tessellation(
-                    points, maxiter=1,
+            sample_lloyd = qmc.lloyd_centroidal_voronoi_tessellation(
+                    sample, maxiter=1,
             )
-            curr_l1 = _l1_norm(points_lloyd)
-            curr_l2 = l2_norm(points_lloyd)
+            curr_l1 = _l1_norm(sample_lloyd)
+            curr_l2 = l2_norm(sample_lloyd)
 
             # higher is better for the distance measures
             assert base_l1 < curr_l1
@@ -1219,31 +1219,35 @@ class TestLloyd:
             base_l1 = curr_l1
             base_l2 = curr_l2
 
-            points = points_lloyd
+            sample = sample_lloyd
 
     def test_lloyd_non_mutating(self):
         """
-        Verify that the input points are not mutated in place and that they do not
-        share memory with the output.
+        Verify that the input samples are not mutated in place and that they do
+        not share memory with the output.
         """
-        orig_points = np.array([[0.1, 0.1],
+        sample_orig = np.array([[0.1, 0.1],
                                 [0.1, 0.2],
                                 [0.2, 0.1],
                                 [0.2, 0.2]])
-        points_copy = orig_points.copy()
-        new_points = qmc.lloyd_centroidal_voronoi_tessellation(points=orig_points)
-        assert_allclose(orig_points, points_copy)
-        assert not np.may_share_memory(orig_points, new_points)
+        sample_copy = sample_orig.copy()
+        new_sample = qmc.lloyd_centroidal_voronoi_tessellation(
+            sample=sample_orig
+        )
+        assert_allclose(sample_orig, sample_copy)
+        assert not np.may_share_memory(sample_orig, new_sample)
 
     def test_lloyd_errors(self):
-        with pytest.raises(ValueError, match=r"`points` is not a 2D array"):
-            points = [0, 1, 0.5]
-            qmc.lloyd_centroidal_voronoi_tessellation(points)
+        with pytest.raises(ValueError, match=r"`sample` is not a 2D array"):
+            sample = [0, 1, 0.5]
+            qmc.lloyd_centroidal_voronoi_tessellation(sample)
 
-        with pytest.raises(ValueError, match=r"`points` dimension is not >= 2"):
-            points = [[0], [0.4], [1]]
-            qmc.lloyd_centroidal_voronoi_tessellation(points)
+        msg = r"`sample` dimension is not >= 2"
+        with pytest.raises(ValueError, match=msg):
+            sample = [[0], [0.4], [1]]
+            qmc.lloyd_centroidal_voronoi_tessellation(sample)
 
-        with pytest.raises(ValueError, match=r"`points` is not in unit hypercube"):
-            points = [[-1.1, 0], [0.1, 0.4], [1, 2]]
-            qmc.lloyd_centroidal_voronoi_tessellation(points)
+        msg = r"`sample` is not in unit hypercube"
+        with pytest.raises(ValueError, match=msg):
+            sample = [[-1.1, 0], [0.1, 0.4], [1, 2]]
+            qmc.lloyd_centroidal_voronoi_tessellation(sample)
