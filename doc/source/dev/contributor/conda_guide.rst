@@ -19,7 +19,7 @@ the latest release of conda from either
 
 #. (Optional) In a terminal window, enter ``conda list``. This shows a list of
    all the Python packages that came with the distribution of Python currently
-   installed. Note the latest released version of SciPy mayu be among them; this
+   installed. Note the latest released version of SciPy may be among them; this
    is not the development version you are going to build and will be able to
    modify.
 

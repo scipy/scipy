@@ -16,7 +16,6 @@ the organization section.
    hacking
    dev_quickstart
    contributor/contributor_toc
-   missing-bits
 
 .. toctree::
    :maxdepth: 1
@@ -47,8 +46,6 @@ the organization section.
    contributor/public_cython_api
    contributor/adding_new
    contributor/continuous_integration
-   contributor/meson
-   contributor/meson_advanced
    contributor/using_act
 
 .. These files are not intended to be in any toctree. because they have not
@@ -56,5 +53,4 @@ the organization section.
    they are specifically sought, not via next/previous links.
 ..   building/index
 ..   dev/gitwash/gitwash
-..   dev/contributor/recommended_development_setup
 ..   dev/contributor/compiled_code

@@ -96,6 +96,7 @@ Detailed instructions
    osx
    windows
    meson
+   meson_advanced
    faq
 
 

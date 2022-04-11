@@ -85,14 +85,14 @@ Next, set up your development environment.
         ``(scipy-dev)$``.
 
 Finally, build SciPy for development and run the test suite to make sure your
-installation is successful::
+installation is successful. On Linux and OSX, you should use::
 
     python dev.py
 
 This builds SciPy first, so the first time it may take some time.
 
-If you run into a build issue, or need more detailed build documentation, see
-:ref:`building`.
+If you run into a build issue, or need more detailed build documentation
+including building on Windows, see :ref:`building`.
 
 Some of the tests in SciPy are very slow and need to be separately
 enabled. See :ref:`runtests` for details.
