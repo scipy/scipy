@@ -872,7 +872,8 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
     bands : array_like
         A monotonic nondecreasing sequence containing the band edges in
         Hz. All elements must be non-negative and less than or equal to
-        the Nyquist frequency given by `nyq`.
+        the Nyquist frequency given by `nyq`. Length of `bands` must be
+        even and strictly greater than zero.
     desired : array_like
         A sequence the same size as `bands` containing the desired gain
         at the start and end point of each band.
