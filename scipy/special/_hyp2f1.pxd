@@ -426,4 +426,4 @@ cdef inline double four_gammas_lanczos(
 
 
 cdef inline double lanczos_prefactor(double x) nogil:
-    return x + lanczos_g - 0.5 if x >= 0.5 else 1 - x + lanczos_g - 0.5
+    return x + lanczos_g - 0.5 if x >= 0.5 else 0.5 - x + lanczos_g
