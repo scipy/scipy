@@ -1742,7 +1742,7 @@ class MultivariateNormalQMC:
             The MultivariateNormalQMC engine itself.
 
         """
-        self.random(n=n)
+        self.engine.fast_forward(n=n)
         return self
 
     def _correlate(self, base_samples: np.ndarray) -> np.ndarray:
