@@ -654,7 +654,7 @@ class SVDSCommonTests:
         if dtype == complex:
             S = + 1j * random(m, n, density=0.1, random_state=rng)
         e = np.ones(m)
-        e[0:5] *= 1e1 ** np.arange(-10, 0, 2)
+        e[0:5] *= 1e1 ** np.arange(-5, 0, 1)
         S = spdiags(e, 0, m, m) @ S
         S = S.astype(dtype)
         u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000)
