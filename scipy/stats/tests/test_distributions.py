@@ -2348,7 +2348,7 @@ class TestPowerlaw(object):
 
     # @pytest.mark.filterwarnings("ignore:invalid value encountered in ")
     @pytest.mark.parametrize("rvs_shape", [.1, .5, .75, 1, 2])
-    @pytest.mark.parametrize("rvs_loc", [0, 1])
+    @pytest.mark.parametrize("rvs_loc", [-1, 0, 1])
     @pytest.mark.parametrize("rvs_scale", [.1, 1, 5])
     @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
                              # [[False, False, False]])
@@ -2366,10 +2366,10 @@ class TestPowerlaw(object):
         func = stats.powerlaw._reduce_func(args, {})[1]
 
         kwds = dict()
-        # if fix_shape:
-        #     kwds['f0'] = rvs_shape + .1
+        if fix_shape:
+            kwds['f0'] = rvs_shape
         if fix_loc:
-            kwds['floc'] = rvs_loc - .1
+            kwds['floc'] = np.nextafter(data.min(), -np.inf)
         if fix_scale:
             kwds['fscale'] = rvs_scale
 
