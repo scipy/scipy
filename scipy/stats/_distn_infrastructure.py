@@ -9,7 +9,6 @@ import keyword
 import re
 import types
 import warnings
-import inspect
 from itertools import zip_longest
 from collections import namedtuple
 
@@ -449,12 +448,6 @@ class rv_frozen:
     def random_state(self, seed):
         self.dist._random_state = check_random_state(seed)
 
-    def pdf(self, x):   # raises AttributeError in frozen discrete distribution
-        return self.dist.pdf(x, *self.args, **self.kwds)
-
-    def logpdf(self, x):
-        return self.dist.logpdf(x, *self.args, **self.kwds)
-
     def cdf(self, x):
         return self.dist.cdf(x, *self.args, **self.kwds)
 
@@ -501,12 +494,6 @@ class rv_frozen:
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
 
-    def pmf(self, k):
-        return self.dist.pmf(k, *self.args, **self.kwds)
-
-    def logpmf(self, k):
-        return self.dist.logpmf(k, *self.args, **self.kwds)
-
     def interval(self, confidence=None, **kwds):
         return self.dist.interval(confidence, *self.args, **self.kwds, **kwds)
 
@@ -524,6 +511,24 @@ class rv_frozen:
 
     def support(self):
         return self.dist.support(*self.args, **self.kwds)
+
+
+class rv_discrete_frozen(rv_frozen):
+
+    def pmf(self, k):
+        return self.dist.pmf(k, *self.args, **self.kwds)
+
+    def logpmf(self, k):  # No error
+        return self.dist.logpmf(k, *self.args, **self.kwds)
+
+
+class rv_continuous_frozen(rv_frozen):
+
+    def pdf(self, x):
+        return self.dist.pdf(x, *self.args, **self.kwds)
+
+    def logpdf(self, x):
+        return self.dist.logpdf(x, *self.args, **self.kwds)
 
 
 def argsreduce(cond, *args):
@@ -638,22 +643,6 @@ class rv_generic:
                                    ('moments' in sig.args) or
                                    ('moments' in sig.kwonlyargs))
         self._random_state = check_random_state(seed)
-
-        # For historical reasons, `size` was made an attribute that was read
-        # inside _rvs().  The code is being changed so that 'size'
-        # is an argument
-        # to self._rvs(). However some external (non-SciPy) distributions
-        # have not
-        # been updated.  Maintain backwards compatibility by checking if
-        # the self._rvs() signature has the 'size' keyword, or a **kwarg,
-        # and if not set self._size inside self.rvs()
-        # before calling self._rvs().
-        argspec = inspect.getfullargspec(self._rvs)
-        self._rvs_uses_size_attribute = (argspec.varkw is None and
-                                         'size' not in argspec.args and
-                                         'size' not in argspec.kwonlyargs)
-        # Warn on first use only
-        self._rvs_size_warned = False
 
     @property
     def random_state(self):
@@ -860,7 +849,10 @@ class rv_generic:
             The frozen distribution.
 
         """
-        return rv_frozen(self, *args, **kwds)
+        if isinstance(self, rv_continuous):
+            return rv_continuous_frozen(self, *args, **kwds)
+        else:
+            return rv_discrete_frozen(self, *args, **kwds)
 
     def __call__(self, *args, **kwds):
         return self.freeze(*args, **kwds)
@@ -1066,8 +1058,10 @@ class rv_generic:
         cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not np.all(cond):
             message = ("Domain error in arguments. The `scale` parameter must "
-                       "be positive for all distributions; see the "
-                       "distribution documentation for other restrictions.")
+                       "be positive for all distributions, and many "
+                       "distributions have restrictions on shape parameters. "
+                       f"Please see the `scipy.stats.{self.name}` "
+                       "documentation for details.")
             raise ValueError(message)
 
         if np.all(scale == 0):
@@ -1080,20 +1074,7 @@ class rv_generic:
         else:
             random_state = self._random_state
 
-        # Maintain backwards compatibility by setting self._size
-        # for distributions that still need it.
-        if self._rvs_uses_size_attribute:
-            if not self._rvs_size_warned:
-                warnings.warn(
-                    f'The signature of {self._rvs} does not contain '
-                    f'a "size" keyword.  Such signatures are deprecated.',
-                    np.VisibleDeprecationWarning)
-                self._rvs_size_warned = True
-            self._size = size
-            self._random_state = random_state
-            vals = self._rvs(*args)
-        else:
-            vals = self._rvs(*args, size=size, random_state=random_state)
+        vals = self._rvs(*args, size=size, random_state=random_state)
 
         vals = vals * scale + loc
 
@@ -1102,7 +1083,7 @@ class rv_generic:
             self._random_state = random_state_saved
 
         # Cast to int if discrete
-        if discrete:
+        if discrete and not isinstance(self, rv_sample):
             if size == ():
                 vals = int(vals)
             else:
@@ -1381,7 +1362,7 @@ class rv_generic:
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
             if self._stats_has_moments:
-                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
+                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'mvsk'}[n]}
             else:
                 mdict = {}
             mu, mu2, g1, g2 = self._stats(*shapes, **mdict)
@@ -1702,6 +1683,11 @@ def _get_fixed_fit_value(kwds, names):
                          ', '.join(repeated))
     return vals[0][1] if vals else None
 
+
+class FitError(RuntimeError):
+    """Represents an error condition when fitting a distribution to data"""
+    pass
+
 #  continuous random variables: implement maybe later
 #
 #  hf  --- Hazard Function (PDF / SF)
@@ -1911,6 +1897,10 @@ class rv_continuous(rv_generic):
                  shapes=None, extradoc=None, seed=None):
 
         super().__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         # save the ctor parameters, cf generic freeze
         self._ctor_param = dict(
@@ -2566,6 +2556,12 @@ class rv_continuous(rv_generic):
               Likelihood Estimate); "MM" (Method of Moments)
               is also available.
 
+        Raises
+        ------
+        TypeError, ValueError
+            If an input is invalid
+        FitError
+            If fitting fails or the fit produced would be invalid
 
         Returns
         -------
@@ -2652,7 +2648,7 @@ class rv_continuous(rv_generic):
             raise TypeError("Too many input arguments.")
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         start = [None]*2
         if (Narg < self.numargs) or not ('loc' in kwds and
@@ -2684,14 +2680,14 @@ class rv_continuous(rv_generic):
 
         loc, scale, shapes = self._unpack_loc_scale(vals)
         if not (np.all(self._argcheck(*shapes)) and scale > 0):
-            raise Exception("Optimization converged to parameters that are "
-                            "outside the range allowed by the distribution.")
+            raise FitError("Optimization converged to parameters that are "
+                           "outside the range allowed by the distribution.")
 
         if method == 'mm':
             if not np.isfinite(obj):
-                raise Exception("Optimization failed: either a data moment "
-                                "or fitted distribution moment is "
-                                "non-finite.")
+                raise FitError("Optimization failed: either a data moment "
+                               "or fitted distribution moment is "
+                               "non-finite.")
 
         return vals
 
@@ -2872,6 +2868,13 @@ class rv_continuous(rv_generic):
         finite. For example ``cauchy(0).mean()`` returns ``np.nan`` and
         ``cauchy(0).expect()`` returns ``0.0``.
 
+        Likewise, the accuracy of results is not verified by the function.
+        `scipy.integrate.quad` is typically reliable for integrals that are
+        numerically favorable, but it is not guaranteed to converge
+        to a correct value for all possible intervals and integrands. This
+        function is provided for convenience; for critical applications,
+        check results against other integration methods.
+
         The function is not vectorized.
 
         Examples
@@ -2909,15 +2912,26 @@ class rv_continuous(rv_generic):
             lb = loc + _a * scale
         if ub is None:
             ub = loc + _b * scale
-        if conditional:
-            invfac = (self.sf(lb, *args, **lockwds)
-                      - self.sf(ub, *args, **lockwds))
-        else:
-            invfac = 1.0
+
+        cdf_bounds = self.cdf([lb, ub], *args, **lockwds)
+        invfac = cdf_bounds[1] - cdf_bounds[0]
+
         kwds['args'] = args
-        # Silence floating point warnings from integration.
-        with np.errstate(all='ignore'):
-            vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+
+        # split interval to help integrator w/ infinite support; see gh-8928
+        alpha = 0.05  # split body from tails at probability mass `alpha`
+        inner_bounds = np.array([alpha, 1-alpha])
+        cdf_inner_bounds = cdf_bounds[0] + invfac * inner_bounds
+        c, d = loc + self._ppf(cdf_inner_bounds, *args) * scale
+
+        # Do not silence warnings from integration.
+        lbc = integrate.quad(fun, lb, c, **kwds)[0]
+        cd = integrate.quad(fun, c, d, **kwds)[0]
+        dub = integrate.quad(fun, d, ub, **kwds)[0]
+        vals = (lbc + cd + dub)
+
+        if conditional:
+            vals /= invfac
         return vals
 
     def _param_info(self):
@@ -3039,7 +3053,7 @@ class rv_discrete(rv_generic):
         If not provided, shape parameters will be inferred from
         the signatures of the private methods, ``_pmf`` and ``_cdf`` of
         the instance.
-    extradoc :  str, optional
+    extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
@@ -3149,6 +3163,10 @@ class rv_discrete(rv_generic):
                  shapes=None, extradoc=None, seed=None):
 
         super().__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         # cf generic freeze
         self._ctor_param = dict(
@@ -3344,8 +3362,10 @@ class rv_discrete(rv_generic):
         _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
+        cond1 = (k >= _a) & (k <= _b)
         cond = cond0 & cond1
+        if not isinstance(self, rv_sample):
+            cond1 = cond1 & self._nonzero(k, *args)
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         if np.any(cond):
@@ -3380,7 +3400,9 @@ class rv_discrete(rv_generic):
         _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
+        cond1 = (k >= _a) & (k <= _b)
+        if not isinstance(self, rv_sample):
+            cond1 = cond1 & self._nonzero(k, *args)
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
         output.fill(NINF)
@@ -3829,6 +3851,10 @@ class rv_sample(rv_discrete):
                  shapes=None, extradoc=None, seed=None):
 
         super(rv_discrete, self).__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         if values is None:
             raise ValueError("rv_sample.__init__(..., values=None,...)")

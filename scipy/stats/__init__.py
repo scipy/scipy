@@ -85,7 +85,7 @@ Continuous distributions
    genhalflogistic   -- Generalized Half Logistic
    genhyperbolic     -- Generalized Hyperbolic
    geninvgauss       -- Generalized Inverse Gaussian
-   gilbrat           -- Gilbrat
+   gibrat            -- Gibrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
    gumbel_l          -- Left Sided Gumbel, etc.
@@ -240,7 +240,6 @@ Frequency statistics
    :toctree: generated/
 
    cumfreq
-   itemfreq
    percentileofscore
    scoreatpercentile
    relfreq
@@ -477,8 +476,8 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
-from ._bootstrap import (bootstrap, BootstrapDegenerateDistributionWarning,
-                         monte_carlo_test)
+from ._resampling import (bootstrap, BootstrapDegenerateDistributionWarning,
+                          monte_carlo_test, permutation_test)
 from ._entropy import *
 from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite  # noqa
