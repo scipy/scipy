@@ -365,9 +365,8 @@ cdef inline double four_gammas_lanczos(
     """
 
     cdef:
-        double factor_part
-        double lanczos_part
-        double factor_u, factor_v, factor_w, factor_x
+        double result
+        double ugh, vgh, wgh, xgh
 
     # Without loss of generality, assume |u| >= |v|, |w| >= |x|.
     if fabs(v) > fabs(u):
@@ -385,46 +384,45 @@ cdef inline double four_gammas_lanczos(
         # Return 0 if denominator has pole but not numerator.
         return 0
 
-    factor_u = lanczos_prefactor(u)
-    factor_v = lanczos_prefactor(v)
-    factor_w = lanczos_prefactor(w)
-    factor_x = lanczos_prefactor(x)
+    ugh = lanczos_prefactor(u)
+    vgh = lanczos_prefactor(v)
+    wgh = lanczos_prefactor(w)
+    xgh = lanczos_prefactor(x)
 
-    lanczos_part = 1
+    result = 1
 
     if u >= 0.5:
-        lanczos_part *= lanczos_sum_expg_scaled(u)
+        result *= lanczos_sum_expg_scaled(u)
     else:
-        lanczos_part /= lanczos_sum_expg_scaled(1 - u) * sin(M_PI * u) * M_1_PI
+        result /= lanczos_sum_expg_scaled(1 - u) * sin(M_PI * u) * M_1_PI
         
     if v >= 0.5:
-        lanczos_part *= lanczos_sum_expg_scaled(v)
+        result *= lanczos_sum_expg_scaled(v)
     else:
-        lanczos_part /= lanczos_sum_expg_scaled(1 - v) * sin(M_PI * v) * M_1_PI
+        result /= lanczos_sum_expg_scaled(1 - v) * sin(M_PI * v) * M_1_PI
 
     if w >= 0.5:
-        lanczos_part /= lanczos_sum_expg_scaled(w)
+        result /= lanczos_sum_expg_scaled(w)
     else:
-        lanczos_part *= lanczos_sum_expg_scaled(1 - w) * sin(M_PI * w) * M_1_PI
+        result *= lanczos_sum_expg_scaled(1 - w) * sin(M_PI * w) * M_1_PI
         
     if x >= 0.5:
-        lanczos_part /= lanczos_sum_expg_scaled(x)
+        result /= lanczos_sum_expg_scaled(x)
     else:
-        lanczos_part *= lanczos_sum_expg_scaled(1 - x) * sin(M_PI * x) * M_1_PI
+        result *= lanczos_sum_expg_scaled(1 - x) * sin(M_PI * x) * M_1_PI
 
-    factor_part = 1
     if fabs(u) >= fabs(w):
-        # u has greatest absolute value. Absorb factor_u into the others.
-        factor_part *= pow(factor_v / factor_u, v - 0.5)
-        factor_part *= pow(factor_u / factor_w, w - 0.5)
-        factor_part *= pow(factor_u / factor_x, x - 0.5)
+        # u has greatest absolute value. Absorb ugh into the others.
+        result *= pow(vgh / ugh, v - 0.5)
+        result *= pow(ugh / wgh, w - 0.5)
+        result *= pow(ugh / xgh, x - 0.5)
     else:
-        # w has greatest absolute value. Absorb factor_w into the others.
-        factor_part *= pow(factor_u / factor_w, u - 0.5)
-        factor_part *= pow(factor_v / factor_w, v - 0.5)
-        factor_part *= pow(factor_w / factor_x, x - 0.5)
+        # w has greatest absolute value. Absorb wgh into the others.
+        result *= pow(ugh / wgh, u - 0.5)
+        result *= pow(vgh / wgh, v - 0.5)
+        result *= pow(wgh / xgh, x - 0.5)
 
-    return factor_part * lanczos_part
+    return result
 
 
 cdef inline double lanczos_prefactor(double x) nogil:
