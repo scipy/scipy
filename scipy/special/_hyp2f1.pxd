@@ -333,7 +333,9 @@ cdef inline double four_gammas(double u, double v, double w, double x) nogil:
 
 
 @cython.cdivision(True)
-cdef inline double four_gammas_lanczos(double u, double v, double w, double x) nogil:
+cdef inline double four_gammas_lanczos(
+        double u, double v, double w, double x
+) nogil:
     """Compute ratio of gamma functions using lanczos approximation.
 
     Computes gamma(u)*gamma(v)/(gamma(w)*gamma(x))
