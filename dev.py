@@ -433,7 +433,7 @@ def setup_build(args, env):
     if args.werror:
         cmd += ["--werror"]
     if args.gcov:
-        cmd += ['Db_coverage=true']
+        cmd += ['-Db_coverage=true']
     # Setting up meson build
     ret = subprocess.call(cmd, env=env, cwd=run_dir)
     if ret == 0:
