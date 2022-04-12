@@ -286,7 +286,7 @@ class TrackContinuousRoundtrip(Benchmark):
         return err_abs
 
     def track_distribution_isf_roundtrip(self, dist_name):
-        # Tracks the worst relative error of a couple of
+        # Tracks the worst relative error of a
         # round-trip isf -> sf calculations.
         vals = [0.001, 0.5, 0.999]
 
@@ -297,7 +297,7 @@ class TrackContinuousRoundtrip(Benchmark):
         return np.max(err_rel)
 
     def track_distribution_isf_roundtrip_extrema(self, dist_name):
-        # Tracks the worst absolute error of a couple of
+        # Tracks the worst absolute error of a
         # round-trip isf -> sf calculations.
         v = 1e-6
         ppf = self.dist.isf(v, *self.shape_args)
