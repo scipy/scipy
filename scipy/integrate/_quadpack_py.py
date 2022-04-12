@@ -727,7 +727,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
 
 def nquad(func, ranges, args=None, opts=None, full_output=False):
-    """
+    r"""
     Integration over multiple variables.
 
     Wraps `quad` to enable integration over multiple variables.
@@ -740,7 +740,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     func : {callable, scipy.LowLevelCallable}
         The function to be integrated. Has arguments of ``x0, ... xn``,
         ``t0, ... tm``, where integration is carried out over ``x0, ... xn``,
-        which must be floats.  Where ```t0, ... tm``` are extra arguments
+        which must be floats.  Where ``t0, ... tm`` are extra arguments
         passed in args.
         Function signature should be ``func(x0, x1, ..., xn, t0, t1, ..., tm)``.
         Integration is carried out in order.  That is, integration over ``x0``
@@ -764,16 +764,16 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         ``func = f(x0, x1, x2, t0, t1)``, then ``ranges[0]`` may be defined as
         either ``(a, b)`` or else as ``(a, b) = range0(x1, x2, t0, t1)``.
     args : iterable object, optional
-        Additional arguments ``t0, ..., tn``, required by `func`, `ranges`, and
-        ``opts``.
+        Additional arguments ``t0, ... tn``, required by ``func``, ``ranges``,
+        and ``opts``.
     opts : iterable object or dict, optional
         Options to be passed to `quad`. May be empty, a dict, or
         a sequence of dicts or functions that return a dict. If empty, the
         default options from scipy.integrate.quad are used. If a dict, the same
         options are used for all levels of integraion. If a sequence, then each
         element of the sequence corresponds to a particular integration. e.g.,
-        opts[0] corresponds to integration over x0, and so on. If a callable,
-        the signature must be the same as for ``ranges``. The available
+        ``opts[0]`` corresponds to integration over ``x0``, and so on. If a
+        callable, the signature must be the same as for ``ranges``. The available
         options together with their default values are:
 
           - epsabs = 1.49e-08
@@ -821,10 +821,10 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
 
     .. math::
 
-        f(x_0, x_1, x_2, x_3) = \\begin{cases}
-          x_0^2+x_1 x_2-x_3^3+ \sin{x_0}+1 & (x_0-0.2 x_3-0.5-0.25 x_1 > 0) \\\\
+        f(x_0, x_1, x_2, x_3) = \begin{cases}
+          x_0^2+x_1 x_2-x_3^3+ \sin{x_0}+1 & (x_0-0.2 x_3-0.5-0.25 x_1 > 0) \\
           x_0^2+x_1 x_2-x_3^3+ \sin{x_0}+0 & (x_0-0.2 x_3-0.5-0.25 x_1 \leq 0)
-        \\end{cases} .
+        \end{cases} .
 
     >>> from scipy import integrate
     >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
@@ -849,10 +849,10 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
 
     .. math::
 
-        f(x_0, x_1, x_2, t_0, t_1) = \\begin{cases}
-          x_0 x_2^2 + \sin{x_1}+2 & (x_0+t_1 x_1-t_0 > 0) \\\\
+        f(x_0, x_1, x_2, t_0, t_1) = \begin{cases}
+          x_0 x_2^2 + \sin{x_1}+2 & (x_0+t_1 x_1-t_0 > 0) \\
           x_0 x_2^2 +\sin{x_1}+1 & (x_0+t_1 x_1-t_0 \leq 0)
-        \\end{cases}
+        \end{cases}
 
     and :math:`(t_0, t_1) = (0, 1)` .
 
