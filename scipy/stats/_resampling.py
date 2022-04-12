@@ -1224,6 +1224,21 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     only one sample, then the null distribution is formed by independently
     changing the *sign* of each observation.
 
+    .. warning::
+        The p-value is calculated by counting the elements of the null
+        distribution that are as extreme or more extreme than the observed
+        value of the statistic. Due to the use of finite precision arithmetic,
+        some statistic functions return numerically distinct values when the
+        theoretical values would be exactly equal. In some cases, this could
+        lead to a large error in the calculated p-value. `permutation_test`
+        guards against this by considering elements in the null distribution
+        that are "close" (within a factor of ``1+1e-14``) to the observed
+        value of the test statistic as equal to the observed value of the
+        test statistic. However, the user is advised to inspect the null
+        distribution to assess whether this method of comparison is
+        appropriate, and if not, calculate the p-value manually. See example
+        below.
+
     References
     ----------
 
@@ -1319,6 +1334,60 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     >>> plt.title("Permutation distribution of test statistic")
     >>> plt.xlabel("Value of Statistic")
     >>> plt.ylabel("Frequency")
+    >>> plt.show()
+
+    Inspection of the null distribution is essential if the statistic suffers
+    from inaccuracy due to limited machine precision. Consider the following
+    case:
+
+    >>> from scipy.stats import pearsonr
+    >>> x = [1, 2, 4, 3]
+    >>> y = [2, 4, 6, 8]
+    >>> def statistic(x, y):
+    ...     return pearsonr(x, y).statistic
+    >>> res = permutation_test((x, y), statistic, vectorized=False,
+    ...                        permutation_type='pairings',
+    ...                        alternative='greater')
+    >>> r, pvalue, null = res.statistic, res.pvalue, res.null_distribution
+
+    In this case, some elements of the null distribution differ from the
+    observed value of the correlation coefficient ``r`` due to numerical noise.
+    We manually inspect the elements of the null distribution that are nearly
+    the same as the observed value of the test statistic.
+
+    >>> r
+    0.8
+    >>> unique = np.unique(null)
+    >>> unique
+    array([-1. , -0.8, -0.8, -0.6, -0.4, -0.2, -0.2,  0. ,  0.2,  0.2,  0.4,
+            0.6,  0.8,  0.8,  1. ]) # may vary
+    >>> unique[np.isclose(r, unique)].tolist()
+    [0.7999999999999999, 0.8]
+
+    If `permutation_test` were to perform the comparison naively, the
+    elements of the null distribution with value ``0.7999999999999999`` would
+    not be considered as extreme or more extreme as the observed value of the
+    statistic, so the calculated p-value would be too small.
+
+    >>> incorrect_pvalue = np.count_nonzero(null >= r) / len(null)
+    >>> incorrect_pvalue
+    0.1111111111111111  # may vary
+
+    Instead, `permutation_test` treats elements of the null distribution that
+    are within ``max(1e-14, abs(r)*1e-14)`` of the observed value of the
+    statistic ``r`` to be equal to ``r``.
+
+    >>> correct_pvalue = np.count_nonzero(null >= r - 1e-14) / len(null)
+    >>> correct_pvalue
+    0.16666666666666666
+    >>> res.pvalue == correct_pvalue
+    True
+
+    This method of comparison is expected to be accurate in most practical
+    situations, but the user is advised to assess this by inspecting the
+    elements of the null distribution that are close to the observed value
+    of the statistic. Also, consider the use of statistics that can be
+    calculated using exact arithmetic (e.g. integer statistics).
 
     """
     args = _permutation_test_iv(data, statistic, permutation_type, vectorized,
@@ -1341,13 +1410,18 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     # See References [2] and [3]
     adjustment = 0 if exact_test else 1
 
+    # relative tolerance for detecting numerically distinct but
+    # theoretically equal values in the null distribution
+    eps = 1e-14
+    gamma = np.maximum(eps, np.abs(eps * observed))
+
     def less(null_distribution, observed):
-        cmps = null_distribution <= observed
+        cmps = null_distribution <= observed + gamma
         pvalues = (cmps.sum(axis=0) + adjustment) / (n_resamples + adjustment)
         return pvalues
 
     def greater(null_distribution, observed):
-        cmps = null_distribution >= observed
+        cmps = null_distribution >= observed - gamma
         pvalues = (cmps.sum(axis=0) + adjustment) / (n_resamples + adjustment)
         return pvalues
 

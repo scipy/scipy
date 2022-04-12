@@ -217,7 +217,22 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
                'The real or complex N-by-N matrix of the linear system.\n'
                'Alternatively, ``A`` can be a linear operator which can\n'
                'produce ``Ax`` using, e.g.,\n'
-               '``scipy.sparse.linalg.LinearOperator``.')
+               '``scipy.sparse.linalg.LinearOperator``.',
+               footer="""
+
+               Examples
+               --------
+               >>> from scipy.sparse import csc_matrix
+               >>> from scipy.sparse.linalg import bicgstab
+               >>> R = np.random.randn(5, 5)
+               >>> A = csc_matrix(R)
+               >>> b = np.random.randn(5)
+               >>> x, exit_code = bicgstab(A, b)
+               >>> print(exit_code)  # 0 indicates successful convergence
+               0
+               >>> np.allclose(A.dot(x), b)
+               True
+               """)
 @non_reentrant()
 def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
@@ -372,7 +387,23 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
                'The real-valued N-by-N matrix of the linear system.\n'
                'Alternatively, ``A`` can be a linear operator which can\n'
                'produce ``Ax`` using, e.g.,\n'
-               '``scipy.sparse.linalg.LinearOperator``.')
+               '``scipy.sparse.linalg.LinearOperator``.',
+               footer="""
+
+               Examples
+               --------
+               >>> from scipy.sparse import csc_matrix
+               >>> from scipy.sparse.linalg import cgs
+               >>> R = np.random.randn(5, 5)
+               >>> A = csc_matrix(R)
+               >>> b = np.random.randn(5)
+               >>> x, exit_code = cgs(A, b)
+               >>> print(exit_code)  # 0 indicates successful convergence
+               0
+               >>> np.allclose(A.dot(x), b)
+               True
+               """
+               )
 @non_reentrant()
 def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)

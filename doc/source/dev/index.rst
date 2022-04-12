@@ -50,6 +50,7 @@ the organization section.
    contributor/adding_new
    contributor/continuous_integration
    contributor/meson
+   contributor/meson_advanced
    contributor/using_act
 
 .. These files are not intended to be in any toctree. because they have not
