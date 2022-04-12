@@ -814,7 +814,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     \\int^{1}_{0} f(x_0, x_1, x_2, x_3) \\,dx_0 \\,dx_1 \\,dx_2 \\,dx_3`, where
     :math:`f(x_0, x_1, x_2, x_3) = \\begin{cases} x_0^2 + x_1 x_2 - x_3^3 +
     \\sin{x_0} + 1 & (x_0 - 0.2 x_3 - 0.5 - 0.25 x_1 > 0) \\\ x_0^2 + x_1 x_2 -
-    x_3^3 + \\sin{x_0} + 0 & (x_0 - 0.2 x_3 - 0.5 - 0.25 x_1 \le 0) \\end{cases}`.
+    x_3^3 + \\sin{x_0} + 0 & (x_0 - 0.2 x_3 - 0.5 - 0.25 x_1 \leq 0) \\end{cases}`.
 
     >>> from scipy import integrate
     >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
@@ -829,7 +829,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     x_2+t_0^2 t_1^3-1} \\int^{t_0 x_1+t_1 x_2+1}_{t_0 x_1+t_1 x_2-1} f(x_0,x_1,
     x_2,t_0,t_1) \\,dx_0 \\,dx_1 \\,dx_2`, where :math:`f(x_0, x_1, x_2, t_0,
     t_1) = \\begin{cases} x_0 x_2^2 + \\sin{x_1}+2 & (x_0+t_1 x_1-t_0 > 0) \\\\
-    x_0 x_2^2 +\\sin{x_1}+1 & (x_0+t_1 x_1-t_0 \le 0) \\end{cases}` and
+    x_0 x_2^2 +\\sin{x_1}+1 & (x_0+t_1 x_1-t_0 \leq 0) \\end{cases}` and
     :math:`(t_0, t_1) = (0, 1)`.
 
     >>> def func2(x0, x1, x2, t0, t1):
