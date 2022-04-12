@@ -95,6 +95,35 @@ autodetection mechanism, setting the environment variable
 `SCIPY_USE_G77_ABI_WRAPPER` to 0 or 1 to disable or enable using CBLAS
 API.
 
+How do I use a custom BLAS distribution on Linux?
+=================================================
+
+To customize which BLAS is used, you can set up a ``site.cfg`` file. See the
+``site.cfg.example`` file in the numpy source for the options you can set.
+
+Note that Debian and Ubuntu package optimized BLAS libraries in an exchangeable
+way. You can install libraries, such as ATLAS or OpenBLAS and change the default
+one used via the alternatives mechanism::
+
+    $ sudo apt-get install libopenblas-base libatlas3-base
+    $ update-alternatives --list libblas.so.3
+    /usr/lib/atlas-base/atlas/libblas.so.3
+    /usr/lib/libblas/libblas.so.3
+    /usr/lib/openblas-base/libopenblas.so.0
+
+    $ sudo update-alternatives --set libblas.so.3 /usr/lib/openblas-base/libopenblas.so.0
+
+See ``/usr/share/doc/libatlas3-base/README.Debian`` for instructions on how to
+build optimized ATLAS packages for your specific CPU. The packaged OpenBLAS
+chooses the optimal code at runtime so it does not need recompiling unless the
+packaged version does not yet support the used CPU.
+
+You can also use a library you built yourself by preloading it. This does not
+require administrator rights::
+
+    LD_PRELOAD=/path/to/libatlas.so.3 ./my-application
+
+
 Version-specific notes
 ======================
 

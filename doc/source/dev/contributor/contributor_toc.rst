@@ -50,14 +50,14 @@ Editing SciPy
 
 Unit tests
 ----------
-- :doc:`numpy:reference/testing` is the definitive guide to writing unit tests of SciPy code
+- :doc:`numpy:reference/testing` is the definitive guide to writing unit tests of NumPy or SciPy code (part of the NumPy documentation)
 - :ref:`runtests` documents ``runtests.py``, a convenient script for building SciPy and running tests locally
 
 .. _docs:
 
 Documentation
 -------------
-- :ref:`numpy:howto-document` contains everything you need to know about writing docstrings, which are rendered to produce HTML documentation using `Sphinx`_
+- :ref:`numpy:howto-document` contains everything you need to know about writing docstrings, which are rendered to produce HTML documentation using `Sphinx`_ (part of the NumPy documentation)
 - :ref:`rendering-documentation` it's important to check how changes to the documentation render before merging a PR; this document explains how you can do that
 
 .. _toc-benchmarking:

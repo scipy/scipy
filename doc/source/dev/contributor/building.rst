@@ -36,6 +36,70 @@ dependencies to build it on your system.
       `ATLAS <http://math-atlas.sourceforge.net/>`__ and
       `MKL <https://software.intel.com/en-us/intel-mkl>`__. 
 
+    .. tabs::
+
+      .. tab:: Debian/Ubuntu Linux
+
+        .. note::
+
+            These instructions have been tested on Ubuntu Linux 16.04, 18.04, and
+            20.04.
+
+        Python should be available in your system via the ``python3`` command. To
+        install the remaining system-level dependencies, run::
+
+          sudo apt install -y gcc g++ gfortran libopenblas-dev liblapack-dev pkg-config
+          sudo apt install -y python3-pip
+
+        Alternatively, you can do::
+
+          sudo apt build-dep scipy
+
+        This command installs whatever is needed to build SciPy, with the
+        advantage that new dependencies or updates to required versions are
+        handled by the package managers.
+
+        See also :ref:`ubuntu-guide`.
+
+
+      .. tab:: Fedora
+
+        To install scipy build requirements, you can do::
+
+          sudo dnf install gcc-gfortran python3-devel openblas-devel lapack-devel
+
+        Alternatively, you can do::
+
+          sudo dnf builddep scipy
+
+        This command installs whatever is needed to build SciPy, with the
+        advantage that new dependencies or updates to required versions are
+        handled by the package managers.
+
+      .. tab:: CentOS/RHEL
+
+        To install scipy build requirements, you can do::
+
+          sudo yum install gcc-gfortran python3-devel openblas-devel lapack-devel
+
+        Alternatively, you can do::
+
+          sudo yum-builddep scipy
+
+        This command installs whatever is needed to build SciPy, with the
+        advantage that new dependencies or updates to required versions are
+        handled by the package managers.
+
+      .. tab:: Arch
+
+        To install scipy build requirements, you can do::
+
+          sudo pacman -S gcc-gfortran python-devel openblas-devel lapack-devel
+
+    All further work should proceed in a virtual environment. Popular options
+    include the standard library ``venv`` module or a separate ``virtualenv``
+    package. 
+
     Typically, you will want to install all of the above from packages supplied by
     your Linux distribution, as building them yourself is complicated. If you need
     to use specific BLAS/LAPACK libraries, you can do
@@ -45,7 +109,6 @@ dependencies to build it on your system.
         export BLAS=/path/to/libblas.so
         export LAPACK=/path/to/liblapack.so
         export ATLAS=/path/to/libatlas.so
-        python setup.py ............
 
     * The `Cython <https://cython.org/>`__ and
       `Pythran <https://pythran.readthedocs.io>`__ ahead-of-time compilers are also
@@ -56,9 +119,6 @@ dependencies to build it on your system.
 
     If you are using conda, these dependencies can be installed in the conda
     environment itself. See :ref:`conda-guide` for more details.
-
-    See :ref:`build-linux` for specific details on installing these dependencies
-    for popular Linux distros.
 
   .. tab:: OSX
 
@@ -92,12 +152,11 @@ Detailed instructions
 .. toctree::
    :maxdepth: 1
 
-   linux
    osx
    windows
    meson
    meson_advanced
-   faq
+   building_faq
 
 
 Reference for build options

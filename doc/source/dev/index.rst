@@ -51,6 +51,5 @@ the organization section.
 .. These files are not intended to be in any toctree. because they have not
    been maintained.They should only be reached via the contributor guide if
    they are specifically sought, not via next/previous links.
-..   building/index
 ..   dev/gitwash/gitwash
 ..   dev/contributor/compiled_code
