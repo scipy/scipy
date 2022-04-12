@@ -1540,6 +1540,9 @@ class rv_generic:
         discrete distribution; then ``ppf([0, 1]) == (c-1, d)``. Therefore,
         when ``confidence==1`` and the distribution is discrete, the left end
         of the interval will be beyond the support of the distribution.
+        For discrete distributions, the interval will limit the probability
+        in each tail to be less than or equal to ``p_tail`` (usually
+        strictly less).
 
         """
         # This function was originally written with parameter `alpha`, but
