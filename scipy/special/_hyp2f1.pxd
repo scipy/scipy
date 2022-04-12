@@ -384,32 +384,35 @@ cdef inline double four_gammas_lanczos(
         # Return 0 if denominator has pole but not numerator.
         return 0
 
-    ugh = lanczos_prefactor(u)
-    vgh = lanczos_prefactor(v)
-    wgh = lanczos_prefactor(w)
-    xgh = lanczos_prefactor(x)
-
     result = 1
 
     if u >= 0.5:
         result *= lanczos_sum_expg_scaled(u)
+        ugh = u + lanczos_g - 0.5
     else:
         result /= lanczos_sum_expg_scaled(1 - u) * sin(M_PI * u) * M_1_PI
+        ugh = 0.5 - u + lanczos_g
         
     if v >= 0.5:
         result *= lanczos_sum_expg_scaled(v)
+        vgh = v + lanczos_g - 0.5
     else:
         result /= lanczos_sum_expg_scaled(1 - v) * sin(M_PI * v) * M_1_PI
+        vgh = 0.5 - v + lanczos_g
 
     if w >= 0.5:
         result /= lanczos_sum_expg_scaled(w)
+        wgh = w + lanczos_g - 0.5
     else:
         result *= lanczos_sum_expg_scaled(1 - w) * sin(M_PI * w) * M_1_PI
+        vgh = 0.5 - w + lanczos_g
         
     if x >= 0.5:
         result /= lanczos_sum_expg_scaled(x)
+        xgh = x + lanczos_g - 0.5
     else:
         result *= lanczos_sum_expg_scaled(1 - x) * sin(M_PI * x) * M_1_PI
+        xgh = 0.5 - x + lanczos_g
 
     if fabs(u) >= fabs(w):
         # u has greatest absolute value. Absorb ugh into the others.
@@ -423,7 +426,3 @@ cdef inline double four_gammas_lanczos(
         result *= pow(wgh / xgh, x - 0.5)
 
     return result
-
-
-cdef inline double lanczos_prefactor(double x) nogil:
-    return x + lanczos_g - 0.5 if x >= 0.5 else 0.5 - x + lanczos_g
