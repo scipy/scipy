@@ -407,7 +407,7 @@ def _calc_uniform_order_statistic_medians(n):
     and greatest order statistics, and the remaining medians are approximated
     by points spread evenly across a sub-interval of the unit interval:
 
-    >>> from scipy.stats import _calc_uniform_order_statistic_medians
+    >>> from scipy.stats._morestats import _calc_uniform_order_statistic_medians
     >>> _calc_uniform_order_statistic_medians(n)
     array([0.15910358, 0.38545246, 0.61454754, 0.84089642])
 
@@ -3034,7 +3034,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     The Wilcoxon signed-rank test tests the null hypothesis that two
     related paired samples come from the same distribution. In particular,
-    it tests whether the distribution of the differences x - y is symmetric
+    it tests whether the distribution of the differences ``x - y`` is symmetric
     about zero. It is a non-parametric version of the paired T-test.
 
     Parameters
@@ -3048,21 +3048,34 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         Either the second set of measurements (if ``x`` is the first set of
         measurements), or not specified (if ``x`` is the differences between
         two sets of measurements.)  Must be one-dimensional.
-    zero_method : {"pratt", "wilcox", "zsplit"}, optional
-        The following options are available (default is "wilcox"):
+    zero_method : {"wilcox", "pratt", "zsplit"}, optional
+        There are different conventions for handling pairs of observations
+        with equal values ("zero-differences", or "zeros").
 
-          * "pratt": Includes zero-differences in the ranking process,
-            but drops the ranks of the zeros, see [4]_, (more conservative).
-          * "wilcox": Discards all zero-differences, the default.
-          * "zsplit": Includes zero-differences in the ranking process and
-            split the zero rank between positive and negative ones.
+        * "wilcox": Discards all zero-differences (default); see [4]_.
+        * "pratt": Includes zero-differences in the ranking process,
+          but drops the ranks of the zeros (more conservative); see [3]_.
+          In this case, the normal approximation is adjusted as in [5]_.
+        * "zsplit": Includes zero-differences in the ranking process and
+          splits the zero rank between positive and negative ones.
+
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
         statistic by 0.5 towards the mean value when computing the
         z-statistic if a normal approximation is used.  Default is False.
     alternative : {"two-sided", "greater", "less"}, optional
-        The alternative hypothesis to be tested, see Notes. Default is
-        "two-sided".
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        In the following, let ``d`` represent the difference between the paired
+        samples: ``d = x - y`` if both ``x`` and ``y`` are provided, or
+        ``d = x`` otherwise.
+
+        * 'two-sided': the distribution underlying ``d`` is not symmetric
+          about zero.
+        * 'less': the distribution underlying ``d`` is stochastically less
+          than a distribution symmetric about zero.
+        * 'greater': the distribution underlying ``d`` is stochastically
+          greater than a distribution symmetric about zero.
+
     method : {"auto", "exact", "approx"}, optional
         Method to calculate the p-value, see Notes. Default is "auto".
 
@@ -3094,24 +3107,35 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     Notes
     -----
-    The test has been introduced in [4]_. Given n independent samples
-    (xi, yi) from a bivariate distribution (i.e. paired samples),
-    it computes the differences di = xi - yi. One assumption of the test
-    is that the differences are symmetric, see [2]_.
-    The two-sided test has the null hypothesis that the median of the
-    differences is zero against the alternative that it is different from
-    zero. The one-sided test has the null hypothesis that the median is
-    positive against the alternative that it is negative
-    (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
+    In the following, let ``d`` represent the difference between the paired
+    samples: ``d = x - y`` if both ``x`` and ``y`` are provided, or ``d = x``
+    otherwise. Assume that all elements of ``d`` are independent and
+    identically distributed observations, and all are distinct and nonzero.
 
-    To derive the p-value, the exact distribution (``method == 'exact'``)
-    can be used for small sample sizes. The default ``method == 'auto'``
-    uses the exact distribution if there are at most 50 observations and no
-    ties, otherwise a normal approximation is used (``method == 'approx'``).
+    - When ``len(d)`` is sufficiently large, the null distribution of the
+      normalized test statistic (`zstatistic` above) is approximately normal,
+      and ``method = 'approx'`` can be used to compute the p-value.
 
-    The treatment of ties can be controlled by the parameter `zero_method`.
-    If ``zero_method == 'pratt'``, the normal approximation is adjusted as in
-    [5]_. A typical rule is to require that n > 20 ([2]_, p. 383).
+    - When ``len(d)`` is small, the normal approximation may not be accurate,
+      and ``method='exact'`` is preferred (at the cost of additional
+      execution time).
+
+    - The default, ``method='auto'``, selects between the two: when
+      ``len(d) <= 50``, the exact method is used; otherwise, the approximate
+      method is used.
+
+    The presence of "ties" (i.e. not all elements of ``d`` are unique) and
+    "zeros" (i.e. elements of ``d`` are zero) changes the null distribution
+    of the test statistic, and ``method='exact'`` no longer calculates
+    the exact p-value. If ``method='approx'``, the z-statistic is adjusted
+    for more accurate comparison against the standard normal, but still,
+    for finite sample sizes, the standard normal is only an approximation of
+    the true null distribution of the z-statistic. There is no clear
+    consensus among references on which method most accurately approximates
+    the p-value for small samples in the presence of zeros and/or ties. In any
+    case, this is the behavior of `wilcoxon` when ``method='auto':
+    ``method='exact'`` is used when ``len(d) <= 50`` *and there are no zeros*;
+    otherwise, ``method='approx'`` is used.
 
     References
     ----------
@@ -3204,7 +3228,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     if n_zero > 0 and mode == "exact":
         mode = "approx"
         warnings.warn("Exact p-value calculation does not work if there are "
-                      "ties. Switching to normal approximation.")
+                      "zeros. Switching to normal approximation.")
 
     if mode == "approx":
         if zero_method in ["wilcox", "pratt"]:
@@ -3545,11 +3569,11 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     samples : array_like
         Input array.
     high : float or int, optional
-        High boundary for circular mean range.  Default is ``2*pi``.
+        High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
-        Low boundary for circular mean range.  Default is 0.
+        Low boundary for the sample range. Default is 0.
     axis : int, optional
-        Axis along which means are computed.  The default is to compute
+        Axis along which means are computed. The default is to compute
         the mean of the flattened array.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
@@ -3613,11 +3637,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     samples : array_like
         Input array.
     high : float or int, optional
-        High boundary for circular variance range.  Default is ``2*pi``.
+        High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
-        Low boundary for circular variance range.  Default is 0.
+        Low boundary for the sample range. Default is 0.
     axis : int, optional
-        Axis along which variances are computed.  The default is to compute
+        Axis along which variances are computed. The default is to compute
         the variance of the flattened array.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
@@ -3631,14 +3655,22 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Notes
     -----
-    This uses a definition of circular variance that in the limit of small
-    angles returns a number close to the 'linear' variance.
+    This uses the following definition of circular variance: ``1-R``, where
+    ``R`` is the mean resultant vector. The
+    returned value is in the range [0, 1], 0 standing for no variance, and 1
+    for a large variance. In the limit of small angles, this value is similar
+    to half the 'linear' variance.
+
+    References
+    ----------
+    ..[1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
+          University Press, 1993.
 
     Examples
     --------
     >>> from scipy.stats import circvar
     >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
-    2.19722457734
+    0.6666666666666665
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
@@ -3655,10 +3687,12 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     with np.errstate(invalid='ignore'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))
 
-    return ((high - low)/2.0/pi)**2 * -2 * log(R)
+    res = 1. - R
+    return res
 
 
-def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
+def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
+            normalize=False):
     """
     Compute the circular standard deviation for samples assumed to be in the
     range [low to high].
@@ -3668,17 +3702,20 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     samples : array_like
         Input array.
     high : float or int, optional
-        High boundary for circular standard deviation range.
-        Default is ``2*pi``.
+        High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
-        Low boundary for circular standard deviation range.  Default is 0.
+        Low boundary for the sample range. Default is 0.
     axis : int, optional
-        Axis along which standard deviations are computed.  The default is
+        Axis along which standard deviations are computed. The default is
         to compute the standard deviation of the flattened array.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    normalize : boolean, optional
+        If True, the returned value is equal to ``sqrt(-2*log(R))`` and does
+        not depend on the variable units. If False (default), the returned
+        value is scaled by ``((high-low)/(2*pi))``.
 
     Returns
     -------
@@ -3730,4 +3767,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     with np.errstate(invalid='ignore'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))  # [1] (2.2.4)
 
-    return ((high - low)/2.0/pi) * sqrt(-2*log(R))  # [1] (2.3.14) w/ (2.3.7)
+    res = sqrt(-2*log(R))
+    if not normalize:
+        res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
+    return res
