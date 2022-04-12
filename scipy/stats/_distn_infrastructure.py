@@ -1534,7 +1534,7 @@ class rv_generic:
 
         Notes
         -----
-        This is typically implemented as ``ppf([p_tail, 1-p_tail])``, where
+        This is implemented as ``ppf([p_tail, 1-p_tail])``, where
         ``ppf`` is the inverse cumulative distribution function and
         ``p_tail = (1-confidence)/2``. Suppose ``[c, d]`` is the support of a
         discrete distribution; then ``ppf([0, 1]) == (c-1, d)``. Therefore,
