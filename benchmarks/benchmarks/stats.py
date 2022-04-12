@@ -312,24 +312,20 @@ class PDFPeakMemory(Benchmark):
     # See gh-14095
 
     param_names = ['dist_name']
-    params = sorted(list(set([d[0] for d in distcont + distdiscrete])))
+    params = sorted(list(set([d[0] for d in distcont])))
     dist_data = dict(distcont)
 
     def setup(self, dist_name):
         if is_xslow():  # These benches expected to be sloowwwww.
             raise NotImplementedError("skipped")
 
-        dist, args, kwds = _gen_distribution_args(dist_name)
+        self.dist = getattr(stats, dist_name)
+        self.shape_args = self.dist_data[dist_name]
+        self.x = np.arange(1e6)
 
-        if not hasattr(dist, 'pdf'):
-            raise NotImplementedError("No PDF method")
-
-        self.dist = dist
-        self.kwds = kwds
-        self.args = [np.arange(1e6), *args[1:]]
 
     def peakmem_bigarr_pdf(self, dist_name):
-        self.dist.pdf(*self.args, **self.kwds)
+        self.dist.pdf(self.x, *self.shape_args)
 
 
 class Distribution(Benchmark):
