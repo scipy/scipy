@@ -249,47 +249,87 @@ class DistributionsAll(Benchmark):
         self.method(*self.args, **self.kwds)
 
 
-class TrackDistributionsAll(Benchmark):
+class TrackContinuousRoundtrip(Benchmark):
     # Benchmarks that track a value(s) for every distribution can go here
-
     param_names = ['dist_name']
-
-    # Use DistributionsAll as a base
-    params = DistributionsAll.dists
-    dist_data = DistributionsAll.dist_data
+    params = sorted(list(set([d[0] for d in distcont])))
+    dist_data = dict(distcont)
 
     def setup(self, dist_name):
         # MOST SETUP CODE COPIED FROM ABOVE `DistributionsAll` BENCHMARK #
         self.dist = getattr(stats, dist_name)
-        dist_shapes = self.dist_data[dist_name]
 
         if isinstance(self.dist, stats.rv_discrete):
-            # discrete distributions only use location
-            self.isCont = False
-            kwds = {'loc': 4}
-        else:
-            # continuous distributions use location and scale
-            self.isCont = True
-            kwds = {'loc': 4, 'scale': 10}
+            raise NotImplementedError("Skipped b/c discrete")
 
-        x = np.linspace((0, 1), 100)
-        dist_shapes = self.dist_data[dist_name]
-        args = [x, *dist_shapes]
-
-        self.kwds = kwds
-        self.args = args
+        self.shape_args = self.dist_data[dist_name]
 
     def track_distribution_ppf_roundtrip(self, dist_name):
-        # Tracks the worst error (either absolute or relative) of a couple
-        # of round-trip ppf -> cdf calculations.
+        # Tracks the worst relative error of a couple of
+        # round-trip ppf -> cdf calculations.
         vals = [0.001, 0.5, 0.999]
 
-        ppf = self.dist.ppf(vals, *self.args[1:], **self.kwds)
-        round_trip = self.dist.cdf(ppf, *self.args[1:], **self.kwds)
+        ppf = self.dist.ppf(vals, *self.shape_args)
+        round_trip = self.dist.cdf(ppf, *self.shape_args)
 
         err_rel = np.abs(vals - round_trip) / vals
-        err_abs = np.abs(vals - round_trip)
-        return np.max(np.concatenate((err_abs, err_rel)))
+        return np.max(err_rel)
+
+    def track_distribution_ppf_roundtrip_extrema(self, dist_name):
+        # Tracks the worst error (either absolute or relative) of a couple
+        # of round-trip ppf -> cdf calculations.
+        v = 1e-6
+        ppf = self.dist.ppf(v, *self.shape_args)
+        round_trip = self.dist.cdf(ppf, *self.shape_args)
+
+        err_abs = np.abs(v - round_trip)
+        return err_abs
+
+    def track_distribution_isf_roundtrip(self, dist_name):
+        # Tracks the worst relative error of a couple of
+        # round-trip isf -> sf calculations.
+        vals = [0.001, 0.5, 0.999]
+
+        isf = self.dist.isf(vals, *self.shape_args)
+        round_trip = self.dist.sf(isf, *self.shape_args)
+
+        err_rel = np.abs(vals - round_trip) / vals
+        return np.max(err_rel)
+
+    def track_distribution_isf_roundtrip_extrema(self, dist_name):
+        # Tracks the worst absolute error of a couple of
+        # round-trip isf -> sf calculations.
+        v = 1e-6
+        ppf = self.dist.isf(v, *self.shape_args)
+        round_trip = self.dist.sf(ppf, *self.shape_args)
+
+        err_abs = np.abs(v - round_trip)
+        return err_abs
+
+
+class PDFPeakMemory(Benchmark):
+    # Tracks peak memory when a distribution is given a large array to process
+    # See gh-14095
+
+    param_names = ['dist_name']
+    params = sorted(list(set([d[0] for d in distcont + distdiscrete])))
+    dist_data = dict(distcont)
+
+    def setup(self, dist_name):
+        if is_xslow():  # These benches expected to be sloowwwww.
+            raise NotImplementedError("skipped")
+
+        dist, args, kwds = _gen_distribution_args(dist_name)
+
+        if not hasattr(dist, 'pdf'):
+            raise NotImplementedError("No PDF method")
+
+        self.dist = dist
+        self.kwds = kwds
+        self.args = [np.arange(1e6), *args[1:]]
+
+    def peakmem_bigarr_pdf(self, dist_name):
+        self.dist.pdf(*self.args, **self.kwds)
 
 
 class Distribution(Benchmark):
