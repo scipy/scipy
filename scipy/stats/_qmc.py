@@ -1694,7 +1694,7 @@ class MultivariateNormalQMC:
 
         self._mean = mean
         self._corr_matrix = cov_root
-        self.num_generated = 0
+
         self.d = d
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
@@ -1712,38 +1712,7 @@ class MultivariateNormalQMC:
 
         """
         base_samples = self._standard_normal_samples(n)
-        self.num_generated += n
         return self._correlate(base_samples)
-
-    def reset(self) -> MultivariateNormalQMC:
-        """Reset the engine to base state.
-
-        Returns
-        -------
-        engine : MultivariateNormalQMC
-            Engine reset to its base state.
-
-        """
-        self.engine.reset()
-        self.num_generated = 0
-        return self
-
-    def fast_forward(self, n: IntNumber) -> QMCEngine:
-        """Fast-forward the sequence by `n` positions.
-
-        Parameters
-        ----------
-        n : int
-            Number of points to skip in the sequence.
-
-        Returns
-        -------
-        engine : MultivariateNormalQMC
-            The MultivariateNormalQMC engine itself.
-
-        """
-        self.engine.fast_forward(n=n)
-        return self
 
     def _correlate(self, base_samples: np.ndarray) -> np.ndarray:
         if self._corr_matrix is not None:
@@ -1851,18 +1820,6 @@ class MultinomialQMC:
         sample = np.zeros_like(self.pvals, dtype=int)
         _categorize(base_draws, p_cumulative, sample)
         return sample
-
-    def reset(self) -> MultinomialQMC:
-        """Reset the engine to base state.
-
-        Returns
-        -------
-        engine : MultinomialQMC
-            Engine reset to its base state.
-
-        """
-        self.engine.reset()
-        return self
 
 
 def _validate_workers(workers: IntNumber = 1) -> IntNumber:
