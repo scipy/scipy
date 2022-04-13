@@ -323,7 +323,6 @@ class PDFPeakMemory(Benchmark):
         self.shape_args = self.dist_data[dist_name]
         self.x = np.arange(1e6)
 
-
     def peakmem_bigarr_pdf(self, dist_name):
         self.dist.pdf(self.x, *self.shape_args)
 
