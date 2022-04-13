@@ -493,23 +493,6 @@ class Build(Task):
                 sys.exit(1)
 
         env = dict(os.environ)
-        if args.debug or args.gcov:
-            # assume everyone uses gcc/gfortran
-            env['OPT'] = '-O0 -ggdb'
-            env['FOPT'] = '-O0 -ggdb'
-            if args.gcov:
-                from sysconfig import get_config_vars
-                cvars = get_config_vars()
-                env['OPT'] = '-O0 -ggdb'
-                env['FOPT'] = '-O0 -ggdb'
-                env['CC'] = env.get('CC', cvars['CC']) + ' --coverage'
-                env['CXX'] = env.get('CXX', cvars['CXX']) + ' --coverage'
-                env['F77'] = 'gfortran --coverage '
-                env['F90'] = 'gfortran --coverage '
-                env['LDSHARED'] = cvars['LDSHARED'] + ' --coverage'
-                env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) +\
-                    ' --coverage'
-
         cmd = ["meson", "setup", dirs.build, "--prefix", dirs.installed]
         build_dir = dirs.build
         run_dir = Path()
@@ -533,6 +516,8 @@ class Build(Task):
                 return
         if args.werror:
             cmd += ["--werror"]
+        if args.gcov:
+            cmd += ['-Db_coverage=true']
         # Setting up meson build
         ret = subprocess.call(cmd, env=env, cwd=run_dir)
         if ret == 0:
