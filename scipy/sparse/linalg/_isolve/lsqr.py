@@ -271,7 +271,7 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     >>> from scipy.sparse.linalg import lsqr
     >>> A = csc_matrix([[1., 0.], [1., 1.], [0., 1.]], dtype=float)
 
-    The first example has the trivial solution `[0, 0]`
+    The first example has the trivial solution ``[0, 0]``
 
     >>> b = np.array([0., 0., 0.], dtype=float)
     >>> x, istop, itn, normr = lsqr(A, b)[:4]
@@ -281,8 +281,8 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     array([ 0.,  0.])
 
     The stopping code `istop=0` returned indicates that a vector of zeros was
-    found as a solution. The returned solution `x` indeed contains `[0., 0.]`.
-    The next example has a non-trivial solution:
+    found as a solution. The returned solution `x` indeed contains
+    ``[0., 0.]``. The next example has a non-trivial solution:
 
     >>> b = np.array([1., 0., -1.], dtype=float)
     >>> x, istop, itn, r1norm = lsqr(A, b)[:4]
@@ -296,7 +296,7 @@ def lsqr(A, b, damp=0.0, atol=1e-6, btol=1e-6, conlim=1e8,
     4.440892098500627e-16
 
     As indicated by `istop=1`, `lsqr` found a solution obeying the tolerance
-    limits. The given solution `[1., -1.]` obviously solves the equation. The
+    limits. The given solution ``[1., -1.]`` obviously solves the equation. The
     remaining return values include information about the number of iterations
     (`itn=1`) and the remaining difference of left and right side of the solved
     equation.

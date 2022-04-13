@@ -147,8 +147,11 @@ def __init__(self, {arg_list}, **extra_fields):
         self.__dict__[key] = val
 
 def __setattr__(self, key, val):
-    raise AttributeError("can't set attribute %r of class %r"
-                         % (key, self.__class__.__name__))
+    if key in {repr(field_names)}:
+        raise AttributeError("can't set attribute %r of class %r"
+                             % (key, self.__class__.__name__))
+    else:
+        self.__dict__[key] = val
 """
     del arg_list
     namespace = {'_tuple_new': tuple_new,
@@ -194,17 +197,15 @@ def __setattr__(self, key, val):
         '__getnewargs_ex__': __getnewargs_ex__,
     }
     for index, name in enumerate(field_names):
-        doc = _sys.intern(f'Alias for field number {index}')
 
         def _get(self, index=index):
             return self[index]
-        class_namespace[name] = property(_get, doc=doc)
+        class_namespace[name] = property(_get)
     for name in extra_field_names:
-        doc = _sys.intern(f'Alias for name {name}')
 
         def _get(self, name=name):
             return self.__dict__[name]
-        class_namespace[name] = property(_get, doc=doc)
+        class_namespace[name] = property(_get)
 
     result = type(typename, (tuple,), class_namespace)
 
