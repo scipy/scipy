@@ -41,4 +41,5 @@ dependencies:
   # For CLI
   - rich-click
   - click
-  - doit
+  - pip:
+      - doit==0.35.0
