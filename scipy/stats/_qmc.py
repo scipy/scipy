@@ -1684,9 +1684,11 @@ class MultivariateNormalQMC:
                 d=engine_dim, scramble=True, bits=30, seed=seed
             )  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
-            if engine.d != d:
+            if engine.d != engine_dim:
                 raise ValueError("Dimension of `engine` must be consistent"
-                                 " with dimensions of mean and covariance.")
+                                 " with dimensions of mean and covariance."
+                                 " If `inv_transform` is False, it must be"
+                                 " equal to `2 * ceil(d / 2)`")
             self.engine = engine
         else:
             raise ValueError("`engine` must be an instance of "
@@ -1695,7 +1697,7 @@ class MultivariateNormalQMC:
         self._mean = mean
         self._corr_matrix = cov_root
 
-        self.d = d
+        self._d = d
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` QMC samples from the multivariate Normal.
@@ -1751,7 +1753,7 @@ class MultivariateNormalQMC:
             transf_samples = np.stack([Rs * cos, Rs * sin],
                                       -1).reshape(n, -1)
             # make sure we only return the number of dimension requested
-            return transf_samples[:, : self.d]  # type: ignore[misc]
+            return transf_samples[:, : self._d]  # type: ignore[misc]
 
 
 class MultinomialQMC:
