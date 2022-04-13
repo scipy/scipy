@@ -64,7 +64,7 @@ dependencies to build it on your system.
 
       .. tab:: Fedora
 
-        To install scipy build requirements, you can do::
+        To install SciPy build requirements, you can do::
 
           sudo dnf install gcc-gfortran python3-devel openblas-devel lapack-devel
 
@@ -78,7 +78,7 @@ dependencies to build it on your system.
 
       .. tab:: CentOS/RHEL
 
-        To install scipy build requirements, you can do::
+        To install SciPy build requirements, you can do::
 
           sudo yum install gcc-gfortran python3-devel openblas-devel lapack-devel
 
@@ -92,7 +92,7 @@ dependencies to build it on your system.
 
       .. tab:: Arch
 
-        To install scipy build requirements, you can do::
+        To install SciPy build requirements, you can do::
 
           sudo pacman -S gcc-gfortran python-devel openblas-devel lapack-devel
 
@@ -174,9 +174,9 @@ SciPy has several tunable build-time options, which can be set.
 - Environment variable ``NPY_USE_BLAS_ILP64=1``: build using 64-bit
   integer size (ILP64) BLAS+LAPACK libraries.
 
-  Note that even when this is set, Scipy requires *also* 32-bit
+  Note that even when this is set, SciPy requires *also* 32-bit
   integer size (LP64) BLAS+LAPACK libraries to be available and
-  configured. This is because only some components in Scipy make use
+  configured. This is because only some components in SciPy make use
   of the 64-bit capabilities.
 
 .. _numpy-blasdoc: https://numpy.org/devdocs/user/building.html#accelerated-blas-lapack-libraries

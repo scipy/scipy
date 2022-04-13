@@ -128,11 +128,10 @@ Version-specific notes
 ======================
 
 If you have any problems installing SciPy on your Mac
-based on these instructions, please check the `scipy-users and
-scipy-dev mailing list archives
+based on these instructions, please check the `scipy-dev mailing list archives
 <https://www.scipy.org/mailing-lists>`__
 for possible solutions. If you
-are still stuck, feel free to join scipy-users for further
+are still stuck, feel free to join scipy-dev for further
 assistance. Please have the following information ready:
 
 * Your OS version
