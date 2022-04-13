@@ -1753,7 +1753,7 @@ class MultivariateNormalQMC:
             transf_samples = np.stack([Rs * cos, Rs * sin],
                                       -1).reshape(n, -1)
             # make sure we only return the number of dimension requested
-            return transf_samples[:, : self._d]  # type: ignore[misc]
+            return transf_samples[:, : self._d]
 
 
 class MultinomialQMC:
