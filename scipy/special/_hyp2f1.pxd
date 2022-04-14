@@ -135,10 +135,10 @@ cdef inline double complex hyp2f1_complex(
         return NPY_INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
     if z == 1.0 and c - a - b > 0 and not c_non_pos_int:
-        return four_gammas(c, c - a - b, c - a, c - b)
+        return four_gammas_lanczos(c, c - a - b, c - a, c - b)
     # Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26).
     if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS and not c_non_pos_int:
-        return four_gammas(a - b + 1, 0.5*a + 1, a + 1, 0.5*a - b + 1)
+        return four_gammas_lanczos(a - b + 1, 0.5*a + 1, a + 1, 0.5*a - b + 1)
 
     # Reduces to a polynomial when a or b is a negative integer.
     # If a and b are both negative integers, we take care to terminate
@@ -324,15 +324,6 @@ cdef inline double complex hyp2f1_lopez_temme_series(
 
 
 @cython.cdivision(True)
-cdef inline double four_gammas(double u, double v, double w, double x) nogil:
-    cdef double result
-    result = Gamma(u) * Gamma(v) / (Gamma(w) * Gamma(x))
-    if zisinf(result) or zisnan(result) or result == 0:
-        result = four_gammas_lanczos(u, v, w, x)
-    return result
-
-
-@cython.cdivision(True)
 cdef inline double four_gammas_lanczos(
         double u, double v, double w, double x
 ) nogil:
@@ -425,7 +416,8 @@ cdef inline double four_gammas_lanczos(
     if fabs(u) >= fabs(w):
         # u has greatest absolute value. Absorb ugh into the others.
         if fabs((v_prime - u_prime)*(v - 0.5)) < 100*ugh and v > 100:
-            # Special case where base is close to 1.
+            # Special case where base is close to 1. Condition taken from
+            # Boost's beta function implementation.
             result *= exp((v - 0.5)*log1p((v_prime - u_prime)/ugh))
         else:
             result *= pow(vgh / ugh, v - 0.5)
