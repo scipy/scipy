@@ -42,7 +42,7 @@ References
 cimport cython
 from numpy cimport npy_cdouble
 from libc.stdint cimport uint64_t, UINT64_MAX
-from libc.math cimport fabs, M_PI, M_1_PI, pow, sin, trunc
+from libc.math cimport exp, fabs, M_PI, M_1_PI, log1p, pow, sin, trunc
 
 from . cimport sf_error
 from ._cephes cimport Gamma, lanczos_sum_expg_scaled
@@ -389,40 +389,69 @@ cdef inline double four_gammas_lanczos(
     if u >= 0.5:
         result *= lanczos_sum_expg_scaled(u)
         ugh = u + lanczos_g - 0.5
+        u_prime = u
     else:
         result /= lanczos_sum_expg_scaled(1 - u) * sin(M_PI * u) * M_1_PI
         ugh = 0.5 - u + lanczos_g
+        u_prime = 1 - u
         
     if v >= 0.5:
         result *= lanczos_sum_expg_scaled(v)
         vgh = v + lanczos_g - 0.5
+        v_prime = v
     else:
         result /= lanczos_sum_expg_scaled(1 - v) * sin(M_PI * v) * M_1_PI
         vgh = 0.5 - v + lanczos_g
+        v_prime = 1 - v
 
     if w >= 0.5:
         result /= lanczos_sum_expg_scaled(w)
         wgh = w + lanczos_g - 0.5
+        w_prime = w
     else:
         result *= lanczos_sum_expg_scaled(1 - w) * sin(M_PI * w) * M_1_PI
-        vgh = 0.5 - w + lanczos_g
+        wgh = 0.5 - w + lanczos_g
+        w_prime = 1 - w
         
     if x >= 0.5:
         result /= lanczos_sum_expg_scaled(x)
         xgh = x + lanczos_g - 0.5
+        x_prime = x
     else:
         result *= lanczos_sum_expg_scaled(1 - x) * sin(M_PI * x) * M_1_PI
         xgh = 0.5 - x + lanczos_g
+        x_prime = 1 - x
 
     if fabs(u) >= fabs(w):
         # u has greatest absolute value. Absorb ugh into the others.
-        result *= pow(vgh / ugh, v - 0.5)
-        result *= pow(ugh / wgh, w - 0.5)
-        result *= pow(ugh / xgh, x - 0.5)
+        if fabs((v_prime - u_prime)*(v - 0.5)) < 100*ugh and v > 100:
+            # Special case where base is close to 1.
+            result *= exp((v - 0.5)*log1p((v_prime - u_prime)/ugh))
+        else:
+            result *= pow(vgh / ugh, v - 0.5)
+
+        if fabs((u_prime - w_prime)*(w - 0.5)) < 100*wgh and u > 100:
+            result *= exp((w - 0.5)*log1p((u_prime - w_prime)/wgh))
+        else:
+            result *= pow(ugh / wgh, w - 0.5)
+
+        if fabs((u_prime - x_prime)*(x - 0.5)) < 100*xgh and u > 100:
+            result *= exp((x - 0.5)*log1p((u_prime - x_prime)/xgh))
+        else:
+            result *= pow(ugh / xgh, x - 0.5)
     else:
         # w has greatest absolute value. Absorb wgh into the others.
-        result *= pow(ugh / wgh, u - 0.5)
-        result *= pow(vgh / wgh, v - 0.5)
-        result *= pow(wgh / xgh, x - 0.5)
+        if fabs((u_prime - w_prime)*(u - 0.5)) < 100*wgh and u > 100:
+            result *= exp((u - 0.5)*log1p((u_prime - w_prime)/wgh))
+        else:
+            result *= pow(ugh / wgh, u - 0.5)
+        if fabs((v_prime - w_prime)*(v - 0.5)) < 100*wgh and v > 100:
+            result *= exp((v - 0.5)*log1p((v_prime - w_prime)/wgh))
+        else:
+            result *= pow(vgh / wgh, v - 0.5)
+        if fabs((w_prime - x_prime)*(x - 0.5)) < 100*xgh and x > 100:
+            result *= exp((x - 0.5)*log1p((w_prime - x_prime)/xgh))
+        else:
+            result *= pow(wgh / xgh, x - 0.5)
 
     return result
