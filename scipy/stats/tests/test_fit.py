@@ -65,7 +65,6 @@ failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
 skip_fit = [
     'erlang',  # Subclass of gamma, generates a warning.
     'genhyperbolic',  # too slow
-    'gilbrat',  # deprecated misspelling; tested through gibrat
 ]
 
 
@@ -178,8 +177,6 @@ def test_nnlf_and_related_methods(dist, params):
 def cases_test_fit():
     # These three fail default test; check separately
     skip_basic_fit = {'argus', 'foldnorm', 'truncweibull_min'}
-    # deprecated; checked separately
-    skip_basic_fit |= {'gilbrat'}
     # status of 'studentized_range', 'ksone', 'kstwo' unknown; all others pass
     slow_basic_fit = {'burr12', 'johnsonsb', 'bradford', 'fisk', 'mielke',
                       'exponpow', 'rdist', 'norminvgauss', 'betaprime',

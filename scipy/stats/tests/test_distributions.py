@@ -82,6 +82,9 @@ def test_distributions_submodule():
     # <scipy.stats._continuous_distns.trapezoid_gen at 0x1df83bbc688>
     expected = set(filter(lambda s: not str(s).startswith('<'), expected))
 
+    # gilbrat is deprecated and no longer in distcont
+    actual.remove('gilbrat')
+
     assert actual == expected
 
 
@@ -3981,7 +3984,7 @@ class TestFitMethod:
         np.random.seed(1234)
 
     # skip these b/c deprecated, or only loc and scale arguments
-    fitSkipNonFinite = ['expon', 'norm', 'uniform', 'gilbrat']
+    fitSkipNonFinite = ['expon', 'norm', 'uniform']
 
     @pytest.mark.parametrize('dist,args', distcont)
     def test_fit_w_non_finite_data_values(self, dist, args):
