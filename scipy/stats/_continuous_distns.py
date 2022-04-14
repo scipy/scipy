@@ -5494,8 +5494,8 @@ _gibrat_method_names = [
 for m in _gibrat_method_names:
     wrapper = np.deprecate(getattr(gilbrat, m), f"gilbrat.{m}", f"gibrat.{m}",
                            "Please replace all uses of the distribution class "
-                           "`gilbrat` with the corrected spelling `gibrat`! "
-                           "The class `gilbrat` will be removed in SciPy 1.11")
+                           "`gilbrat` with the corrected spelling `gibrat`. "
+                           "`gilbrat` will be removed in SciPy 1.11.")
     setattr(gilbrat, m, wrapper)
 
 
