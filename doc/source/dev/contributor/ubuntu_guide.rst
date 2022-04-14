@@ -159,7 +159,7 @@ With conda
 	  or Linux PATH?" in the `Anaconda FAQ`_.
 
 #. Enter ``conda config --env --add channels conda-forge`` to tell Anaconda the
-   source we want for our packages. Then enter ``conda create --name scipydev python=3.9 numpy pybind11 cython pythran pytest gfortran gxx sphinx pydata-sphinx-theme sphinx-panels matplotlib mypy git``. |br| This tells ``conda`` to create a virtual environment named ``scipydev`` (or another name that you prefer) with several packages.
+   source we want for our packages. Then enter ``conda create --name scipy-dev python=3.9 numpy pybind11 cython pythran pytest gfortran gxx sphinx pydata-sphinx-theme sphinx-panels matplotlib mypy git``. |br| This tells ``conda`` to create a virtual environment named ``scipy-dev`` (or another name that you prefer) with several packages.
 
    * ``numpy pybind11 cython pythran`` are four packages that SciPy depends on.
 
@@ -184,8 +184,8 @@ With conda
       the package dependencies optimally.
 
 #. You're still in the base environment. Activate your new virtual environment
-   by entering ``conda activate scipydev``. |br| If you're working with an old
-   version of ``conda``, you might need to type ``source activate scipydev``
+   by entering ``conda activate scipy-dev``. |br| If you're working with an old
+   version of ``conda``, you might need to type ``source activate scipy-dev``
    instead (see `here <https://stackoverflow.com/questions/49600611/python-anaconda-should-i-use-conda-activate-or-source-activate-in-linux)>`__).
    Note that you'll need to have this virtual environment active whenever you
    want to work with the development version of SciPy.
@@ -210,7 +210,7 @@ With conda
 
 #. Enter ``conda develop .``, where ``.`` refers to the present directory. |br| This will allow us to ``import`` the development version of SciPy in Python regardless of Python's working directory.
 
-#. In a new terminal window, test your setup. If you activate your virtual environment (e.g. ``conda activate scipydev``) and run Python code that imports from SciPy, any changes you make to the SciPy code should be reflected when the code runs. After deactivating the virtual environment (``conda deactivate``), Python imports from the version of SciPy installed by Anaconda. You can also check which version of SciPy you're using by executing in Python::
+#. In a new terminal window, test your setup. If you activate your virtual environment (e.g. ``conda activate scipy-dev``) and run Python code that imports from SciPy, any changes you make to the SciPy code should be reflected when the code runs. After deactivating the virtual environment (``conda deactivate``), Python imports from the version of SciPy installed by Anaconda. You can also check which version of SciPy you're using by executing in Python::
 
       import scipy
       print(scipy.__version__)
