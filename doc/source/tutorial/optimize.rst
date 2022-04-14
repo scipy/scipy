@@ -83,7 +83,7 @@ and an offset `b`:
     f\left(\mathbf{x}, a, b\right)=\sum_{i=1}^{N-1}a\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2} + b.
 
 Again using the :func:`minimize` routine this can be solved by the following 
-code block for the exemplary parameters `a=0.5` and `b=1`. 
+code block for the example parameters `a=0.5` and `b=1`. 
 
     >>> def rosen_with_args(x, a, b):
     ...     """The Rosenbrock function with additional arguments"""
