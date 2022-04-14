@@ -9,9 +9,9 @@ from scipy.sparse._sparsetools import (csr_scale_rows, csr_scale_columns,
 
 class TestSparseFunctions:
     def test_scale_rows_and_cols(self):
-        D = array([[1,0,0,2,3],
-                   [0,4,0,5,0],
-                   [0,0,6,7,0]])
+        D = array([[1, 0, 0, 2, 3],
+                   [0, 4, 0, 5, 0],
+                   [0, 0, 6, 7, 0]])
 
         #TODO expose through function
         S = csr_matrix(D)
