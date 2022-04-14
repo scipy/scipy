@@ -27,7 +27,7 @@ c       lw -- maximum usable length (in complex*16 elements)
 c             of the array w
 c       eps -- precision of the desired approximation
 c       m -- number of rows in a
-c       n -- number of columns in a 
+c       n -- number of columns in a
 c       a -- matrix to be approximated; the present routine does not
 c            alter a
 c       winit -- initialization array that has been constructed

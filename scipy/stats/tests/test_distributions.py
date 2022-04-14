@@ -82,6 +82,9 @@ def test_distributions_submodule():
     # <scipy.stats._continuous_distns.trapezoid_gen at 0x1df83bbc688>
     expected = set(filter(lambda s: not str(s).startswith('<'), expected))
 
+    # gilbrat is deprecated and no longer in distcont
+    actual.remove('gilbrat')
+
     assert actual == expected
 
 
@@ -156,10 +159,10 @@ def assert_fit_warnings(dist):
                        match="All parameters fixed. There is nothing "
                        "to optimize."):
         dist.fit(data, **all_fixed)
-    with pytest.raises(RuntimeError,
+    with pytest.raises(ValueError,
                        match="The data contains non-finite values"):
         dist.fit([np.nan])
-    with pytest.raises(RuntimeError,
+    with pytest.raises(ValueError,
                        match="The data contains non-finite values"):
         dist.fit([np.inf])
     with pytest.raises(TypeError, match="Unknown keyword arguments:"):
@@ -171,7 +174,7 @@ def assert_fit_warnings(dist):
 @pytest.mark.parametrize('dist',
                          ['alpha', 'betaprime',
                           'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
-                          'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
+                          'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gibrat',
                           'powerlognorm', 'rayleigh', 'wald'])
 def test_support(dist):
     """gh-6235"""
@@ -1000,13 +1003,13 @@ class TestTruncnorm:
             assert_almost_equal(stats.truncnorm.pdf(xvals, low, high),
                                 stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
 
-    def _test_moments_one_range(self, a, b, expected, decimal_s=7):
+    def _test_moments_one_range(self, a, b, expected, rtol=1e-7):
         m0, v0, s0, k0 = expected[:4]
         m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
-        assert_almost_equal(m, m0)
-        assert_almost_equal(v, v0)
-        assert_almost_equal(s, s0, decimal=decimal_s)
-        assert_almost_equal(k, k0)
+        assert_allclose(m, m0)
+        assert_allclose(v, v0)
+        assert_allclose(s, s0, rtol=rtol)
+        assert_allclose(k, k0, rtol=rtol)
 
     @pytest.mark.xfail_on_32bit("reduced accuracy with 32bit platforms.")
     def test_moments(self):
@@ -1049,12 +1052,13 @@ class TestTruncnorm:
         self._test_moments_one_range(-20, -19, [-19.0523439459766628,
                                                 0.0027250730180314,
                                                 -1.9838694022629291,
-                                                5.8717850028287586])
+                                                5.8717850028287586],
+                                     rtol=1e-5)
         self._test_moments_one_range(-30, -29, [-29.0344012377394698,
                                                 0.0011806603928891,
                                                 -1.9930304534611458,
                                                 5.8854062968996566],
-                                     decimal_s=6)
+                                     rtol=1e-6)
         self._test_moments_one_range(-40, -39, [-39.0256074199326264,
                                                 0.0006548826719649,
                                                 -1.9963146354109957,
@@ -2260,8 +2264,8 @@ class TestLaplace:
                       fscale=scale_mle)
 
         # error is raised with non-finite values
-        assert_raises(RuntimeError, stats.laplace.fit, [np.nan])
-        assert_raises(RuntimeError, stats.laplace.fit, [np.inf])
+        assert_raises(ValueError, stats.laplace.fit, [np.nan])
+        assert_raises(ValueError, stats.laplace.fit, [np.inf])
 
     @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10, -5),
                                                    (5, 10),
@@ -2501,7 +2505,7 @@ class TestRvDiscrete:
             assert_(abs(sum(x == s)/float(samples) - p) < 0.05)
 
         x = r.rvs()
-        assert_(isinstance(x, int))
+        assert np.issubdtype(type(x), np.integer)
 
     def test_entropy(self):
         # Basic tests of entropy.
@@ -2759,24 +2763,24 @@ class TestExpon:
     def test_nan_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
-        assert_raises(RuntimeError, stats.expon.fit, x)
+        assert_raises(ValueError, stats.expon.fit, x)
 
     def test_inf_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
-        assert_raises(RuntimeError, stats.expon.fit, x)
+        assert_raises(ValueError, stats.expon.fit, x)
 
 
 class TestNorm:
     def test_nan_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
-        assert_raises(RuntimeError, stats.norm.fit, x)
+        assert_raises(ValueError, stats.norm.fit, x)
 
     def test_inf_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
-        assert_raises(RuntimeError, stats.norm.fit, x)
+        assert_raises(ValueError, stats.norm.fit, x)
 
     def test_bad_keyword_arg(self):
         x = [1, 2, 3]
@@ -2788,12 +2792,12 @@ class TestUniform:
     def test_nan_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
-        assert_raises(RuntimeError, stats.uniform.fit, x)
+        assert_raises(ValueError, stats.uniform.fit, x)
 
     def test_inf_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
-        assert_raises(RuntimeError, stats.uniform.fit, x)
+        assert_raises(ValueError, stats.uniform.fit, x)
 
 
 class TestExponNorm:
@@ -2827,12 +2831,12 @@ class TestExponNorm:
     def test_nan_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
-        assert_raises(RuntimeError, stats.exponnorm.fit, x, floc=0, fscale=1)
+        assert_raises(ValueError, stats.exponnorm.fit, x, floc=0, fscale=1)
 
     def test_inf_raises_error(self):
         # see gh-issue 10300
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
-        assert_raises(RuntimeError, stats.exponnorm.fit, x, floc=0, fscale=1)
+        assert_raises(ValueError, stats.exponnorm.fit, x, floc=0, fscale=1)
 
     def test_extremes_x(self):
         # Test for extreme values against overflows
@@ -3990,8 +3994,8 @@ class TestFitMethod:
         x = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.nan])
         y = np.array([1.6483, 2.7169, 2.4667, 1.1791, 3.5433, np.inf])
         distfunc = getattr(stats, dist)
-        assert_raises(RuntimeError, distfunc.fit, x, floc=0, fscale=1)
-        assert_raises(RuntimeError, distfunc.fit, y, floc=0, fscale=1)
+        assert_raises(ValueError, distfunc.fit, x, fscale=1)
+        assert_raises(ValueError, distfunc.fit, y, fscale=1)
 
     def test_fix_fit_2args_lognorm(self):
         # Regression test for #1551.
@@ -6934,14 +6938,15 @@ class TestWrapCauchy:
         assert_allclose(p[1], 1 - np.arctan(cr*np.tan(np.pi - x2/2))/np.pi)
 
 
-def test_rvs_no_size_warning():
+def test_rvs_no_size_error():
+    # _rvs methods must have parameter `size`; see gh-11394
     class rvs_no_size_gen(stats.rv_continuous):
         def _rvs(self):
             return 1
 
     rvs_no_size = rvs_no_size_gen(name='rvs_no_size')
 
-    with assert_warns(np.VisibleDeprecationWarning):
+    with assert_raises(TypeError, match=re.escape("_rvs() got an unexpected")):
         rvs_no_size.rvs()
 
 
