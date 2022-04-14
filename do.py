@@ -98,7 +98,6 @@ class RefguideCheck(Task):
 
 cleanup + doit:
 - [ ] move out non-scipy code
-- [ ] doit reporter when running under click
 
 BUG:
 - [ ] python dev.py -t scipy.optimize.tests.test_minimize_constrained.py
@@ -285,7 +284,11 @@ def run_doit_task(tasks):
       :param tasks: (dict) task_name -> {options}
     """
     loader = ModuleTaskLoader(globals())
-    return run_tasks(loader, tasks, extra_config={'GLOBAL': {'verbosity': 2}})
+    doit_config = {
+        'verbosity': 2,
+        'reporter': 'zero',
+    }
+    return run_tasks(loader, tasks, extra_config={'GLOBAL': doit_config})
 
 
 ###########################################
