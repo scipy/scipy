@@ -43,7 +43,6 @@ def direct(
     bounds: Union[Iterable, Bounds],
     *,
     args: tuple = (),
-    disp: bool = False,
     eps: float = 1e-4,
     maxfun: Union[int, None] = None,
     maxiter: int = 1000,
@@ -74,8 +73,6 @@ def direct(
     args : tuple, optional
         Any additional fixed parameters needed to
         completely specify the objective function.
-    disp : bool, optional
-        If ``True``, print logging information about the optimization process.
     eps : float, optional
         Minimal required difference of the objective function values
         between the current best hyperrectangle and the next potentially
@@ -247,8 +244,6 @@ def direct(
     # validate boolean parameters
     if not isinstance(locally_biased, bool):
         raise ValueError("locally_biased must be True or False.")
-    if not isinstance(disp, bool):
-        raise ValueError("disp must be True or False.")
 
     def _func_wrap(x, args=None):
         x = np.asarray(x)
@@ -258,11 +253,12 @@ def direct(
             f = func(x, *args)
         return f
 
+    # TODO: fix disp argument
     x, fun, ret_code, nfev, nit = _direct(
         _func_wrap,
         np.asarray(lb), np.asarray(ub),
         args,
-        disp, eps, maxfun, maxiter,
+        False, eps, maxfun, maxiter,
         locally_biased,
         f_min, f_min_rtol,
         vol_tol, len_tol, callback
