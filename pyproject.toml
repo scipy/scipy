@@ -115,3 +115,8 @@ documentation = "https://docs.scipy.org/doc/scipy/"
 source = "https://github.com/scipy/scipy"
 download = "https://github.com/scipy/scipy/releases"
 tracker = "https://github.com/scipy/scipy/issues"
+
+
+[tool.doit]
+dodoFile = "do.py"
+

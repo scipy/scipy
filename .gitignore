@@ -81,6 +81,11 @@ pip-wheel-metadata
 # install directory for Meson
 installdir/
 
+# doit
+######
+.doit.db.dat
+.doit.db.dir
+
 # Paver generated files #
 #########################
 /release
