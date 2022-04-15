@@ -327,7 +327,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "static checkers",
-            "commands": ["pep8", "mypy"],
+            "commands": ["lint", "mypy"],
         },
         {
             "name": "environments",
@@ -915,8 +915,8 @@ class Bench(Task):
 
 @task_params([{'name': 'output_file', 'long': 'output-file', 'default': None,
                'help': 'Redirect report to a file'}])
-def task_pep8(output_file):
-    """Perform pep8 check with flake8."""
+def task_flake8(output_file):
+    """Run flake8 over the code base and benchmarks."""
     opts = ''
     if output_file:
         opts += f'--output-file={output_file}'
@@ -936,15 +936,15 @@ def task_pep8diff():
     }
 
 
-@cli.cls_cmd('pep8')
-class Pep8():
-    """Perform pep8 check with flake8."""
+@cli.cls_cmd('lint')
+class Lint():
+    """:dash: run flake8, and check PEP 8 compliance on branch diff."""
     output_file = Option(
         ['--output-file'], default=None, help='Redirect report to a file')
 
     def run(output_file):
         opts = {'output_file': output_file}
-        run_doit_task({'pep8': opts, 'pep8-diff': {}})
+        run_doit_task({'flake8': opts, 'pep8-diff': {}})
 
 
 @cli.cls_cmd('mypy')
