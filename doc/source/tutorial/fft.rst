@@ -571,7 +571,7 @@ array([ 1. ,  2. ,  1. , -1. ,  1.5])
 Fast Hankel Transform
 ---------------------
 
-SciPy provides the functions :func:`fht` and :func:`ifht` to perform the Fast
+SciPy provides the functions ``fht`` and ``ifht`` to perform the Fast
 Hankel Transform (FHT) and its inverse (IFHT) on logarithmically-spaced input
 arrays.
 
@@ -597,7 +597,7 @@ to perform this convolution on discrete input data.
 Care must be taken to minimise numerical ringing due to the circular nature
 of FFT convolution. To ensure that the low-ringing condition [Ham00]_ holds,
 the output array can be slightly shifted by an offset computed using the
-:func:`fhtoffset` function.
+``fhtoffset`` function.
 
 
 References

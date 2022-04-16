@@ -4,11 +4,38 @@ from scipy.stats import (betabinom, hypergeom, nhypergeom, bernoulli,
                          nchypergeom_fisher, nchypergeom_wallenius, randint)
 
 import numpy as np
-from numpy.testing import assert_almost_equal, assert_equal, assert_allclose
+from numpy.testing import (
+    assert_almost_equal, assert_equal, assert_allclose, suppress_warnings
+)
 from scipy.special import binom as special_binom
-import pytest
 from scipy.optimize import root_scalar
 from scipy.integrate import quad
+
+
+# The expected values were computed with Wolfram Alpha, using
+# the expression CDF[HypergeometricDistribution[N, n, M], k].
+@pytest.mark.parametrize('k, M, n, N, expected, rtol',
+                         [(3, 10, 4, 5,
+                           0.9761904761904762, 1e-15),
+                          (107, 10000, 3000, 215,
+                           0.9999999997226765, 1e-15),
+                          (10, 10000, 3000, 215,
+                           2.681682217692179e-21, 5e-11)])
+def test_hypergeom_cdf(k, M, n, N, expected, rtol):
+    p = hypergeom.cdf(k, M, n, N)
+    assert_allclose(p, expected, rtol=rtol)
+
+
+# The expected values were computed with Wolfram Alpha, using
+# the expression SurvivalFunction[HypergeometricDistribution[N, n, M], k].
+@pytest.mark.parametrize('k, M, n, N, expected, rtol',
+                         [(25, 10000, 3000, 215,
+                           0.9999999999052958, 1e-15),
+                          (125, 10000, 3000, 215,
+                           1.4416781705752128e-18, 5e-11)])
+def test_hypergeom_sf(k, M, n, N, expected, rtol):
+    p = hypergeom.sf(k, M, n, N)
+    assert_allclose(p, expected, rtol=rtol)
 
 
 def test_hypergeom_logpmf():
@@ -127,12 +154,12 @@ def test_betabinom_bernoulli():
 
 def test_issue_10317():
     alpha, n, p = 0.9, 10, 1
-    assert_equal(nbinom.interval(alpha=alpha, n=n, p=p), (0, 0))
+    assert_equal(nbinom.interval(confidence=alpha, n=n, p=p), (0, 0))
 
 
 def test_issue_11134():
     alpha, n, p = 0.95, 10, 0
-    assert_equal(binom.interval(alpha=alpha, n=n, p=p), (0, 0))
+    assert_equal(binom.interval(confidence=alpha, n=n, p=p), (0, 0))
 
 
 def test_issue_7406():
@@ -231,11 +258,14 @@ class TestZipfian:
         alt1, agt1 = 0.99999999, 1.00000001
         N = 30
         k = np.arange(1, N + 1)
-        assert_allclose(zipfian.pmf(k, alt1, N), zipfian.pmf(k, agt1, N))
-        assert_allclose(zipfian.cdf(k, alt1, N), zipfian.cdf(k, agt1, N))
-        assert_allclose(zipfian.sf(k, alt1, N), zipfian.sf(k, agt1, N))
+        assert_allclose(zipfian.pmf(k, alt1, N), zipfian.pmf(k, agt1, N),
+                        rtol=5e-7)
+        assert_allclose(zipfian.cdf(k, alt1, N), zipfian.cdf(k, agt1, N),
+                        rtol=5e-7)
+        assert_allclose(zipfian.sf(k, alt1, N), zipfian.sf(k, agt1, N),
+                        rtol=5e-7)
         assert_allclose(zipfian.stats(alt1, N, moments='msvk'),
-                        zipfian.stats(agt1, N, moments='msvk'), rtol=2e-7)
+                        zipfian.stats(agt1, N, moments='msvk'), rtol=5e-7)
 
     def test_zipfian_R(self):
         # test against R VGAM package
@@ -387,8 +417,11 @@ class TestNCH():
 
             return root_scalar(fun, bracket=(xl, xu)).root
 
-        assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
-                        mean(N, m1, n, w), rtol=2e-2)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning,
+                       message="invalid value encountered in mean")
+            assert_allclose(nchypergeom_wallenius.mean(N, m1, n, w),
+                            mean(N, m1, n, w), rtol=2e-2)
 
         @np.vectorize
         def variance(N, m1, n, w):
@@ -398,8 +431,14 @@ class TestNCH():
             b = (n-u)*(u + m2 - n)
             return N*a*b / ((N-1) * (m1*b + m2*a))
 
-        assert_allclose(nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),
-                        variance(N, m1, n, w), rtol=5e-2)
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning,
+                       message="invalid value encountered in mean")
+            assert_allclose(
+                nchypergeom_wallenius.stats(N, m1, n, w, moments='v'),
+                variance(N, m1, n, w),
+                rtol=5e-2
+            )
 
         @np.vectorize
         def pmf(x, N, m1, n, w):

@@ -16,7 +16,7 @@ class Dijkstra(Benchmark):
     param_names = ['n', 'min_only']
 
     def setup(self, n, min_only):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         # make a random connectivity matrix
         data = scipy.sparse.rand(n, n, density=0.2, format='csc',
                                  random_state=42, dtype=np.bool_)
@@ -24,7 +24,7 @@ class Dijkstra(Benchmark):
         self.data = data
         # choose some random vertices
         v = np.arange(n)
-        np.random.shuffle(v)
+        rng.shuffle(v)
         self.indices = v[:int(n*.1)]
 
     def time_dijkstra_multi(self, n, min_only):

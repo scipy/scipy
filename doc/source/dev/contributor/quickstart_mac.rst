@@ -46,7 +46,7 @@ Building SciPy
 
 #. Enter ``conda create --name scipydev`` to create an empty virtual environment named ``scipydev`` (or another name that you prefer). This tells ``conda`` to create a new, empty environment for our packages. Activate the environment with ``conda activate scipydev``. Note that you'll need to have this virtual environment active whenever you want to work with the development version of SciPy.
 
-#. Enter ``conda config --env --add channels conda-forge`` to tell Anaconda the source we want for our packages. Then enter ``conda install python=3.8 numpy pybind11 cython pythran pytest compilers sphinx pydata-sphinx-theme sphinx-panels matplotlib mypy`` to install the following packages:
+#. Enter ``conda config --env --add channels conda-forge`` to tell Anaconda the source we want for our packages. Then enter ``conda install python=3.9 numpy pybind11 cython pythran pytest compilers sphinx pydata-sphinx-theme sphinx-panels matplotlib mypy`` to install the following packages:
 
    * ``numpy pybind11 cython pythran`` are four packages that SciPy depends on.
 
@@ -76,7 +76,9 @@ Building SciPy
 
 #. Do an in-place build: enter ``python3 setup.py build_ext --inplace``. |br| This will compile the C, C++, and Fortran code that comes with SciPy. We installed ``python3`` with Anaconda. ``setup.py`` is a script in the root directory of SciPy, which is why you have to be in the SciPy root directory to call it. ``build_ext`` is a command defined in ``setup.py``, and ``--inplace`` is an option we'll use to ensure that the compiling happens in the SciPy directory you already have rather than the default location for Python packages. By building in-place, you avoid having to re-build SciPy before you can test changes to the Python code.
 
-#. Test the build: enter ``python3 runtests.py -v``. ``runtests.py`` is another script in the SciPy root directory. It runs a suite of tests that make sure SciPy is working as it should, and ``-v`` activates the ``--verbose`` option to show all the test output. If the tests are successful, you now have a working development build of SciPy! You could stop here, but you would only be able to use this development build when the Python working directory is the SciPy root directory.
+#. Test the build: enter ``python3 runtests.py -v``. 
+
+   * ``runtests.py`` is another script in the SciPy root directory. It runs a suite of tests that make sure SciPy is working as it should, and ``-v`` activates the ``--verbose`` option to show all the test output. If the tests are successful, you now have a working development build of SciPy! You could stop here, but you would only be able to use this development build when the Python working directory is the SciPy root directory.
 
 #. Enter ``conda develop .``, where ``.`` refers to the present directory. |br| This will allow us to ``import`` the development version of SciPy in Python regardless of Python's working directory.
 

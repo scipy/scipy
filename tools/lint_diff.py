@@ -41,9 +41,9 @@ def find_branch_point(branch):
 
     """
     branch_commits = rev_list('HEAD', 1000)
-    master_commits = set(rev_list(branch, 1000))
+    main_commits = set(rev_list(branch, 1000))
     for branch_commit in branch_commits:
-        if branch_commit in master_commits:
+        if branch_commit in main_commits:
             return branch_commit
 
     # If a branch split off over 1000 commits ago we will fail to find
@@ -52,21 +52,27 @@ def find_branch_point(branch):
         'Failed to find a common ancestor in the last 1000 commits')
 
 
-def find_diff(sha):
+def find_diff(sha, files=None):
     """Find the diff since the given sha."""
+    if files:
+        for file_or_dir in files:
+            msg = f"{file_or_dir} doesn't exist. Please provide a valid path."
+            assert os.path.exists(file_or_dir), msg
+    else:
+        files = ['*.py']
     res = subprocess.run(
-        ['git', 'diff', '--unified=0', sha, '--', '*.py'],
+        ['git', 'diff', '--unified=0', sha, '--'] + files,
         stdout=subprocess.PIPE,
-        encoding='utf-8',
+        encoding='utf-8'
     )
     res.check_returncode()
     return res.stdout
 
 
-def run_pycodestyle(diff):
-    """Run pycodestyle on the given diff."""
+def run_flake8(diff):
+    """Run flake8 on the given diff."""
     res = subprocess.run(
-        ['pycodestyle', '--diff', '--config', CONFIG],
+        ['flake8', '--diff', '--config', CONFIG],
         input=diff,
         stdout=subprocess.PIPE,
         encoding='utf-8',
@@ -76,15 +82,19 @@ def run_pycodestyle(diff):
 
 def main():
     parser = ArgumentParser()
-    parser.add_argument("--branch", type=str, default='master',
+    parser.add_argument("--branch", type=str, default='main',
                         help="The branch to diff against")
+    parser.add_argument("--files", type=str, nargs='+', default=None,
+                        help="The files or directories to diff against")
     args = parser.parse_args()
 
     branch_point = find_branch_point(args.branch)
-    diff = find_diff(branch_point)
-    rc, errors = run_pycodestyle(diff)
+    diff = find_diff(branch_point, args.files)
+    rc, errors = run_flake8(diff)
     if errors:
         print(errors)
+    else:
+        print("No lint errors found.")
     sys.exit(rc)
 
 

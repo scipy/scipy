@@ -2,28 +2,19 @@
 
     <p>
       <h1>
-        <a href="https://docs.scipy.org/doc/scipy/reference/"><img valign="middle" src="doc/source/_static/scipyshiny_small.png" height="50" height="50" alt="SciPy logo"/></a>
+        <a href="https://docs.scipy.org/doc/scipy/reference/"><img valign="middle" src="doc/source/_static/logo.svg" height="50" height="50" alt="SciPy logo"/></a>
         SciPy
       </h1>
     </p>
 
-.. image:: https://img.shields.io/circleci/project/github/scipy/scipy/master.svg?label=CircleCI
-  :target: https://circleci.com/gh/scipy/scipy
-
-.. image:: https://dev.azure.com/scipy-org/SciPy/_apis/build/status/scipy.scipy?branchName=master
-  :target: https://dev.azure.com/scipy-org/SciPy/_build/latest?definitionId=1?branchName=master
-
-.. image:: https://github.com/scipy/scipy/workflows/macOS%20tests/badge.svg?branch=master
-  :target: https://github.com/scipy/scipy/actions?query=workflow%3A%22macOS+tests%22
+.. image:: https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
+  :target: https://numfocus.org
 
 .. image:: https://img.shields.io/pypi/dm/scipy.svg?label=Pypi%20downloads
   :target: https://pypi.org/project/scipy/
 
 .. image:: https://img.shields.io/conda/dn/conda-forge/scipy.svg?label=Conda%20downloads
   :target: https://anaconda.org/conda-forge/scipy
-
-.. image:: https://codecov.io/gh/scipy/scipy/branch/master/graph/badge.svg
-  :target: https://codecov.io/gh/scipy/scipy
 
 .. image:: https://img.shields.io/badge/stackoverflow-Ask%20questions-blue.svg
   :target: https://stackoverflow.com/questions/tagged/scipy
@@ -36,15 +27,15 @@ science, and engineering. It includes modules for statistics, optimization,
 integration, linear algebra, Fourier transforms, signal and image processing,
 ODE solvers, and more.
 
-- **Website:** https://docs.scipy.org/doc/scipy/reference/
+- **Website:** https://scipy.org
 - **Documentation:** https://docs.scipy.org/
-- **Mailing list:** https://scipy.org/scipylib/mailing-lists.html
+- **Mailing list:** https://mail.python.org/mailman3/lists/scipy-dev.python.org/
 - **Source code:** https://github.com/scipy/scipy
 - **Contributing:** https://scipy.github.io/devdocs/dev/index.html
 - **Bug reports:** https://github.com/scipy/scipy/issues
 - **Code of Conduct:** https://scipy.github.io/devdocs/dev/conduct/code_of_conduct.html
 - **Report a security vulnerability:** https://tidelift.com/docs/security
-- **Citing in your work:** https://www.scipy.org/citing.html
+- **Citing in your work:** https://www.scipy.org/citing-scipy/
 
 SciPy is built to work with
 NumPy arrays, and provides many user-friendly and efficient numerical routines,
@@ -83,6 +74,3 @@ comment on a relevant issue that is already open.
 If you are new to contributing to open source, `this
 guide <https://opensource.guide/how-to-contribute/>`__ helps explain why, what,
 and how to get involved.
-
-.. image:: https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
-  :target: https://numfocus.org

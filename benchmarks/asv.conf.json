@@ -7,7 +7,7 @@
     "project": "scipy",
 
     // The project's homepage
-    "project_url": "https://scipy.org/scipylib/",
+    "project_url": "https://scipy.org/",
 
     // The URL of the source code repository for the project being
     // benchmarked
@@ -38,7 +38,7 @@
     // version.
     "matrix": {
         "numpy": [],
-        "Cython": ["0.29.21"],
+        "Cython": [],
         "pytest": [],
         "pythran": [],
         "pybind11": [],

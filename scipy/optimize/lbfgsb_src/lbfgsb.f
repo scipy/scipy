@@ -1415,6 +1415,8 @@ c       the derivative f1 and the vector p = W'd (for theta = 1).
       nfree = n + 1
       nbreak = 0
       ibkmin = 0
+      tl = 0
+      tu = 0
       bkmin = zero
       col2 = 2*col
       f1 = zero
