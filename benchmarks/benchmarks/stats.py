@@ -194,6 +194,9 @@ class DistributionsAll(Benchmark):
                                or method in self.slow_methods):
             raise NotImplementedError("Skipped")
 
+        if dist_name is not 'powerlaw':
+            raise NotImplementedError("Skipped")
+
         self.dist = getattr(stats, dist_name)
 
         dist_shapes = self.dist_data[dist_name]
