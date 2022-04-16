@@ -148,7 +148,7 @@ __all__ = ['ClusterNode', 'DisjointSet', 'average', 'centroid', 'complete',
            'leaders', 'leaves_list', 'linkage', 'maxRstat', 'maxdists',
            'maxinconsts', 'median', 'num_obs_linkage', 'optimal_leaf_ordering',
            'set_link_color_palette', 'single', 'to_mlab_linkage', 'to_tree',
-           'ward', 'weighted', 'distance']
+           'ward', 'weighted']
 
 
 class ClusterWarning(UserWarning):
@@ -1482,7 +1482,7 @@ def to_tree(Z, rd=False):
             raise ValueError(('Corrupt matrix Z. Index to derivative cluster '
                               'is used before it is formed. See row %d, '
                               'column 1') % fj)
-        
+
         nd = ClusterNode(i + n, d[fi], d[fj], row[2])
         #                ^ id   ^ left ^ right ^ dist
         if row[3] != nd.count:
@@ -1610,8 +1610,10 @@ def cophenet(Z, Y=None):
 
     See Also
     --------
-    linkage : for a description of what a linkage matrix is.
-    scipy.spatial.distance.squareform : transforming condensed matrices into square ones.
+    linkage :
+        for a description of what a linkage matrix is.
+    scipy.spatial.distance.squareform :
+        transforming condensed matrices into square ones.
 
     Examples
     --------
@@ -3306,11 +3308,11 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     else:
         raise TypeError('The second argument must be a number')
 
-    if truncate_mode not in ('lastp', 'mlab', 'mtica', 'level', 'none', None):
-        # 'mlab' and 'mtica' are kept working for backwards compat.
+    if truncate_mode not in ('lastp', 'mtica', 'level', 'none', None):
+        # 'mtica' is kept working for backwards compat.
         raise ValueError('Invalid truncation mode.')
 
-    if truncate_mode == 'lastp' or truncate_mode == 'mlab':
+    if truncate_mode == 'lastp':
         if p > n or p == 0:
             p = n
 
@@ -3539,9 +3541,6 @@ def _dendrogram_calculate_info(Z, p, truncate_mode,
             _append_singleton_leaf_node(Z, p, n, level, lvs, ivl,
                                         leaf_label_func, i, labels)
             return (iv + 5.0, 10.0, 0.0, 0.0)
-    elif truncate_mode in ('mlab',):
-        msg = "Mode 'mlab' is deprecated in scipy 0.19.0 (it never worked)."
-        warnings.warn(msg, DeprecationWarning)
 
     # Otherwise, only truncate if we have a leaf node.
     #

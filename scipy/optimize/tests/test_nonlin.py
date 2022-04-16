@@ -5,7 +5,7 @@ May 2007
 from numpy.testing import assert_
 import pytest
 
-from scipy.optimize import nonlin, root
+from scipy.optimize import _nonlin as nonlin, root
 from numpy import diag, dot
 from numpy.linalg import inv
 import numpy as np

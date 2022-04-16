@@ -90,8 +90,8 @@ class MedFilt2D(Benchmark):
     params = [[1, 2, 4]]
 
     def setup(self, threads):
-        np.random.seed(8176)
-        self.chunks = np.array_split(np.random.randn(250, 349), threads)
+        rng = np.random.default_rng(8176)
+        self.chunks = np.array_split(rng.standard_normal((250, 349)), threads)
 
     def _medfilt2d(self, threads):
         with ThreadPoolExecutor(max_workers=threads) as pool:

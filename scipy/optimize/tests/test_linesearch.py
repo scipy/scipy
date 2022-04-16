@@ -1,11 +1,11 @@
 """
 Tests for line search routines
 """
-from numpy.testing import (assert_, assert_equal, assert_array_almost_equal,
+from numpy.testing import (assert_equal, assert_array_almost_equal,
                            assert_array_almost_equal_nulp, assert_warns,
                            suppress_warnings)
-import scipy.optimize.linesearch as ls
-from scipy.optimize.linesearch import LineSearchWarning
+import scipy.optimize._linesearch as ls
+from scipy.optimize._linesearch import LineSearchWarning
 import numpy as np
 
 
@@ -20,8 +20,8 @@ def assert_wolfe(s, phi, derphi, c1=1e-4, c2=0.9, err_msg=""):
     msg = "s = %s; phi(0) = %s; phi(s) = %s; phi'(0) = %s; phi'(s) = %s; %s" % (
         s, phi0, phi1, derphi0, derphi1, err_msg)
 
-    assert_(phi1 <= phi0 + c1*s*derphi0, "Wolfe 1 failed: " + msg)
-    assert_(abs(derphi1) <= abs(c2*derphi0), "Wolfe 2 failed: " + msg)
+    assert phi1 <= phi0 + c1*s*derphi0, "Wolfe 1 failed: " + msg
+    assert abs(derphi1) <= abs(c2*derphi0), "Wolfe 2 failed: " + msg
 
 
 def assert_armijo(s, phi, c1=1e-4, err_msg=""):
@@ -31,7 +31,7 @@ def assert_armijo(s, phi, c1=1e-4, err_msg=""):
     phi1 = phi(s)
     phi0 = phi(0)
     msg = "s = %s; phi(0) = %s; phi(s) = %s; %s" % (s, phi0, phi1, err_msg)
-    assert_(phi1 <= (1 - c1*s)*phi0, msg)
+    assert phi1 <= (1 - c1*s)*phi0, msg
 
 
 def assert_line_wolfe(x, p, s, f, fprime, **kw):
@@ -140,7 +140,7 @@ class TestLineSearch:
             assert_fp_equal(phi1, phi(s), name)
             assert_wolfe(s, phi, derphi, err_msg=name)
 
-        assert_(c > 3)  # check that the iterator really works...
+        assert c > 3  # check that the iterator really works...
 
     def test_scalar_search_wolfe2(self):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
@@ -161,7 +161,7 @@ class TestLineSearch:
 
         s, _, _, _ = assert_warns(LineSearchWarning,
                                   ls.scalar_search_wolfe2, phi, derphi, amax=0.001)
-        assert_(s is None)
+        assert s is None
 
     def test_scalar_search_wolfe2_regression(self):
         # Regression test for gh-12157
@@ -181,7 +181,7 @@ class TestLineSearch:
         s, _, _, _ = ls.scalar_search_wolfe2(phi, derphi)
         # Without the fix in gh-13073, the scalar_search_wolfe2
         # returned s=2.0 instead.
-        assert_(s < 1.5)
+        assert s < 1.5
 
     def test_scalar_search_armijo(self):
         for name, phi, derphi, old_phi0 in self.scalar_iter():
@@ -211,7 +211,7 @@ class TestLineSearch:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
 
-        assert_(c > 3)  # check that the iterator really works...
+        assert c > 3  # check that the iterator really works...
 
     def test_line_search_wolfe2(self):
         c = 0
@@ -236,7 +236,7 @@ class TestLineSearch:
             if s < smax:
                 c += 1
                 assert_line_wolfe(x, p, s, f, fprime, err_msg=name)
-        assert_(c > 3)  # check that the iterator really works...
+        assert c > 3  # check that the iterator really works...
 
     def test_line_search_wolfe2_bounds(self):
         # See gh-7475
@@ -258,7 +258,7 @@ class TestLineSearch:
         s, _, _, _, _, _ = assert_warns(LineSearchWarning,
                                         ls.line_search_wolfe2, f, fp, x, p,
                                         amax=29, c2=c2)
-        assert_(s is None)
+        assert s is None
 
         # s=30 will only be tried on the 6th iteration, so this won't converge
         assert_warns(LineSearchWarning, ls.line_search_wolfe2, f, fp, x, p,
@@ -275,7 +275,7 @@ class TestLineSearch:
             assert_equal(self.fcount, fc)
             assert_fp_equal(fv, f(x + s*p))
             assert_line_armijo(x, p, s, f, err_msg=name)
-        assert_(c >= 9)
+        assert c >= 9
 
     # -- More specific tests
 
@@ -307,6 +307,6 @@ class TestLineSearch:
         for func in [ls.scalar_search_wolfe1, ls.scalar_search_wolfe2]:
             count = [0]
             r = func(phi, derphi, phi(0), None, derphi(0))
-            assert_(r[0] is not None, (r, func))
-            assert_(count[0] <= 2 + 2, (count, func))
+            assert r[0] is not None, (r, func)
+            assert count[0] <= 2 + 2, (count, func)
             assert_wolfe(r[0], phi, derphi, err_msg=str(func))

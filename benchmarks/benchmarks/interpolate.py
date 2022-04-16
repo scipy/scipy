@@ -54,10 +54,10 @@ class Leaks(Benchmark):
 class BenchPPoly(Benchmark):
 
     def setup(self):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         m, k = 55, 3
-        x = np.sort(np.random.random(m+1))
-        c = np.random.random((3, m))
+        x = np.sort(rng.random(m+1))
+        c = rng.random((k, m))
         self.pp = interpolate.PPoly(c, x)
 
         npts = 100
@@ -144,6 +144,32 @@ class Rbf(Benchmark):
 
     def time_rbf_2d(self, n_samples, function):
         interpolate.Rbf(self.X, self.Y, self.z, function=function)
+
+
+class RBFInterpolator(Benchmark):
+    param_names = ['neighbors', 'n_samples', 'kernel']
+    params = [
+        [None, 50],
+        [10, 100, 1000],
+        ['linear', 'thin_plate_spline', 'cubic', 'quintic', 'multiquadric',
+         'inverse_multiquadric', 'inverse_quadratic', 'gaussian']
+    ]
+
+    def setup(self, neighbors, n_samples, kernel):
+        rng = np.random.RandomState(0)
+        self.y = rng.uniform(-1, 1, (n_samples, 2))
+        self.x = rng.uniform(-1, 1, (n_samples, 2))
+        self.d = np.sum(self.y, axis=1)*np.exp(-6*np.sum(self.y**2, axis=1))
+
+    def time_rbf_interpolator(self, neighbors, n_samples, kernel):
+        interp = interpolate.RBFInterpolator(
+            self.y,
+            self.d,
+            neighbors=neighbors,
+            epsilon=5.0,
+            kernel=kernel
+            )
+        interp(self.x)
 
 
 class UnivariateSpline(Benchmark):
