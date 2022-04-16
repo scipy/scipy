@@ -6943,41 +6943,69 @@ class powerlaw_gen(rv_continuous):
         return 1 - 1.0/a - np.log(a)
 
     def fit(self, data, *args, **kwds):
+        '''
+        The strategy for this fit method is complex, so its steps will be
+        described here first.
+
+        1.
+        First, we attempt to find a fit to the data under the assumption that
+        the shape is less than one. This can be done analytically with closed
+        form equations. If the resulting shape is less than or equal to one,
+        then this fitting has been successful.
+
+        2.
+        If fitting under the assumption that the shape was less than or equal
+        to one was not successful, we attempt to solve under the assumption
+        that the shape is equal to or greater than one. If either location or
+        scale is fixed, then the other can be determined analytically. If only
+        the shape is fixed, or no parameters are fixed, then use `root_scalar`
+        to solve a system of equations formed by setting the partial
+        derivatives of the log-likelihood function with respect to the location
+        the the scale equal to each other. Location is used as the dependent
+        variable and then the shape and scale are analytically determined.
+
+        In many cases, the use of `np.nextafter` is utilized to prevent
+        roundoff error that causes the log likelihood equation to be very
+        large.
+        '''
         data, fshape, floc, fscale = _check_fit_input_parameters(self, data,
                                                                  args, kwds)
         # ensure that any fixed parameters don't violate constraints of the
         # distribution before continuing. The support of the distribution
         # is `0 < (x - loc)/scale < 1`.
         if floc is not None:
-            if not data.min() >= floc:
+            if not data.min() > floc:
                 raise FitDataError('powerlaw', 0, 1)
             if fscale is not None and not data.max() <= floc + fscale:
                 raise FitDataError('powerlaw', 0, 1)
 
-        if fscale is not None and fscale <= 0:
-            raise Exception("Negative or zero `fscale` is outside the range "
-                            "allowed by the distribution.")
+        if fscale is not None:
+            if fscale <= 0:
+                raise ValueError("Negative or zero `fscale` is outside the "
+                                 "range allowed by the distribution.")
+            if fscale <= data.ptp():
+                msg = "`fscale` must be greater than the range of data."
+                raise ValueError(msg)
 
-        def shape_universal(data, loc, scale):
+
+        def get_shape(data, loc, scale):
             # The first-order necessary condition on `shape` can be solved in
-            # closed form
-            mask = data != loc
-            return -len(data) / np.sum(np.log((data[mask] - loc)/scale))
+            # closed form. It can be used whether no matter the assumption
+            # of the value of the shape.
+            return -len(data) / np.sum(np.log((data - loc)/scale))
 
-        def scale_universal(data, loc):
+        def get_scale(data, loc):
             # analytical solution for `scale` based on the location.
+            # It can be used whether no matter the assumption of the value of
+            # the shape.
             return data.max() - loc
 
         # First, attempt to fit under the assumption that `shape <= 1`.
-        def universal_slte1(data):
-            loc = floc if floc is not None else np.nextafter(data.min(),
-                                                             -np.inf)
-            scale = fscale or np.nextafter(scale_universal(data, loc),
-                                           np.inf)
-            shape = fshape or shape_universal(data, loc, scale)
-            return shape, loc, scale
-
-        shape, loc, scale = universal_slte1(data)
+        # When the scale is free, the optimal location is the minimum of
+        # the data.
+        loc = floc if floc is not None else np.nextafter(data.min(), -np.inf)
+        scale = fscale or np.nextafter(get_scale(data, loc), np.inf)
+        shape = fshape or get_shape(data, loc, scale)
 
         # If the `shape <= 1`, then fitting has succeeded with the assumption
         # `shape <= 1`.
@@ -6988,22 +7016,17 @@ class powerlaw_gen(rv_continuous):
         # `shape > 1` and redefine analytical functions for this new
         # assumption.
 
-        def location_sgt1(data, scale):
-            # analytical solution for `loc` when `shape > 1` based on the
-            # scale.
-            return data.max() - scale
-
         # if the location or scale is fixed, an analytical solution is
         # available.
         if {floc, fscale} != {None}:
             if floc is not None:
-                scale = fscale or scale_universal(data, floc)
-                return ((fshape or shape_universal(data, floc, scale)), floc,
-                        scale)
+                scale = fscale or get_scale(data, floc)
+                shape = fshape or get_shape(data, loc, scale)
+                return shape, loc, scale
             if fscale is not None:
-                loc = np.nextafter(location_sgt1(data, fscale), np.inf)
-                return ((fshape or shape_universal(data, loc, scale)), loc,
-                        fscale)
+                loc = np.nextafter(data.max() - fscale, np.inf)
+                shape = fshape or get_shape(data, loc, fscale)
+                return shape, loc, scale
 
         # The support of the distribution is `(x - loc)/scale > 0`.
         # If all parameters are free, or only the shape is fixed, the
@@ -7024,8 +7047,8 @@ class powerlaw_gen(rv_continuous):
         def fun_to_solve(loc):
             # optimize the location by setting the partial derivatives
             # w.r.t. to location and scale equal and solving.
-            scale = np.nextafter(scale_universal(data, loc), -np.inf)
-            shape = fshape or shape_universal(data, loc, scale)
+            scale = np.nextafter(get_scale(data, loc), -np.inf)
+            shape = fshape or get_shape(data, loc, scale)
             return dL_dLocation(data, shape, scale) - dL_dScale(data, shape,
                                                                 loc)
 
@@ -7038,18 +7061,20 @@ class powerlaw_gen(rv_continuous):
             return (np.sign(fun_to_solve(lbrack)) !=
                     np.sign(fun_to_solve(rbrack)))
 
-        # if a root is not between the brackets, iteratively expand the left
+        # if a root is not between the brackets, exponentially expand the left
         # bracket until they include a sign change. The right bracket is
-        # already against the maximum permissible value for this data so
-        # only the left bracket is expanded.
+        # already against the maximum permissible value for this data so it
+        # remains unchanged.
+        i = 1
         while not interval_contains_root(lbrack, rbrack) and lbrack != -np.inf:
-            lbrack -= np.abs(lbrack)
+            lbrack = (data.min() - i)
+            i *= 2
 
         root = optimize.root_scalar(fun_to_solve, bracket=(lbrack, rbrack))
         
         loc = np.nextafter(root.root, -np.inf)
-        scale = np.nextafter(scale_universal(data, loc), np.inf)
-        shape = fshape or shape_universal(data, loc, scale)
+        scale = np.nextafter(get_scale(data, loc), np.inf)
+        shape = fshape or get_shape(data, loc, scale)
         return shape, loc, scale
 
 

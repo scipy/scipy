@@ -1546,7 +1546,7 @@ class TestPareto:
     @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
                              [p for p in product([True, False], repeat=3)
                               if False in p])
-    def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
+    def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc, random_state=rng)
@@ -2120,7 +2120,7 @@ class TestInvgauss:
 
     @pytest.mark.parametrize("rvs_mu,rvs_loc,rvs_scale",
                              [(2, 0, 1), (np.random.rand(3)*10)])
-    def test_fit_MLE_comp_optimzer(self, rvs_mu, rvs_loc, rvs_scale):
+    def test_fit_MLE_comp_optimizer(self, rvs_mu, rvs_loc, rvs_scale):
         data = stats.invgauss.rvs(size=100, mu=rvs_mu,
                                   loc=rvs_loc, scale=rvs_scale)
 
@@ -2267,7 +2267,7 @@ class TestLaplace:
     @pytest.mark.parametrize("rvs_scale,rvs_loc", [(10, -5),
                                                    (5, 10),
                                                    (.2, .5)])
-    def test_fit_MLE_comp_optimzer(self, rvs_loc, rvs_scale):
+    def test_fit_MLE_comp_optimizer(self, rvs_loc, rvs_scale):
         data = stats.laplace.rvs(size=1000, loc=rvs_loc, scale=rvs_scale)
 
         # the log-likelihood function for laplace is given by
@@ -2326,41 +2326,20 @@ class TestLaplace:
         assert_allclose(x, -np.log(2*p), rtol=1e-13)
 
 class TestPowerlaw(object):
-    @pytest.mark.parametrize('a', [.5, 1.5, 5])
-    def test_fit_shape(self, a):
-        data = stats.powerlaw.rvs(size=1000, a=a)
-        # obtain the unpenalized log-likelihood function
-
-        def ll(args, data):
-            # to get the same behavior as `powerlaw.reduce_func`, negate the
-            # log-likelihood function
-            return -np.sum(np.log(stats.powerlaw.pdf(data, *args)), axis=0)
-
-        # compare the results of the LL
-        # a warning is raised when data is generated in some situations, so
-        # it will be supressed.
-        with np.errstate(divide='ignore'):
-            _assert_less_or_close_loglike(stats.powerlaw, data, ll)
-
     @pytest.fixture(scope='function')
     def rng(self):
         return np.random.default_rng(1234)
 
-    # @pytest.mark.filterwarnings("ignore:invalid value encountered in ")
     @pytest.mark.parametrize("rvs_shape", [.1, .5, .75, 1, 2])
     @pytest.mark.parametrize("rvs_loc", [-1, 0, 1])
     @pytest.mark.parametrize("rvs_scale", [.1, 1, 5])
     @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
-                             # [[False, False, False]])
                              [p for p in product([True, False], repeat=3)
                               if False in p])
-    def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
+    def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
                                    fix_shape, fix_loc, fix_scale, rng):
-        print(rvs_shape, rvs_loc, rvs_scale,
-                                   fix_shape, fix_loc, fix_scale)
-
-        data = stats.powerlaw.rvs(size=250, a=rvs_shape, loc=rvs_loc, scale=rvs_scale,
-                                  random_state=rng)
+        data = stats.powerlaw.rvs(size=250, a=rvs_shape, loc=rvs_loc,
+                                  scale=rvs_scale, random_state=rng)
 
         args = [data, (stats.powerlaw._fitstart(data), )]
         func = stats.powerlaw._reduce_func(args, {})[1]
@@ -2372,7 +2351,6 @@ class TestPowerlaw(object):
             kwds['floc'] = np.nextafter(data.min(), -np.inf)
         if fix_scale:
             kwds['fscale'] = rvs_scale
-
         _assert_less_or_close_loglike(stats.powerlaw, data, func, **kwds)
 
     def test_fit_warnings(self):
@@ -2380,13 +2358,32 @@ class TestPowerlaw(object):
         # test for error when `fscale + floc <= np.max(data)` is not satisfied
         with assert_raises(FitDataError) as e:
             stats.powerlaw.fit([1, 2, 4], floc=0, fscale=3)
-        assert r" Maximum likelihood estimation with 'powerlaw' requires" in str(e.value)
+        msg = r" Maximum likelihood estimation with 'powerlaw' requires"
+        assert msg in str(e.value)
 
         # test for error when `data - floc >= 0`  is not satisfied
         with assert_raises(ValueError) as e:
             stats.powerlaw.fit([1, 2, 4], floc=2)
-        assert r" Maximum likelihood estimation with 'powerlaw' requires" in str(e.value)
+        msg = r" Maximum likelihood estimation with 'powerlaw' requires"
+        assert msg in str(e.value)
 
+        # test for when fixed scale is less than or equal to range of data
+        with assert_raises(ValueError) as e:
+            stats.powerlaw.fit([1, 2, 4], fscale=3)
+        msg = r"`fscale` must be greater than the range of data."
+        assert msg in str(e.value)
+
+        # test for when fixed scale is less than or equal to range of data
+        with assert_raises(ValueError) as e:
+            stats.powerlaw.fit([1, 2, 4], fscale=-3)
+        msg = r"Negative or zero `fscale` is outside"
+        assert msg in str(e.value)
+
+        # test for fixed location not less than `min(data)`.
+        with assert_raises(ValueError) as e:
+            stats.powerlaw.fit([1, 2, 4], floc=1)
+        msg = r" Maximum likelihood estimation with 'powerlaw' requires"
+        assert msg in str(e.value)
 
 
 class TestInvGamma:
