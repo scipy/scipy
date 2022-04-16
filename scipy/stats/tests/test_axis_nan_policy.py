@@ -28,6 +28,8 @@ axis_nan_policy_cases = [
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.skew, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.kstatvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
 ]
 
 # If the message is one of those expected, put nans in
@@ -46,7 +48,8 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "At least one observation is required",
                       "zero-size array to reduction operation maximum",
                       "`x` and `y` must be of nonzero size.",
-                      "The exact distribution of the Wilcoxon test"}
+                      "The exact distribution of the Wilcoxon test",
+                      "Data input must not be empty"}
 
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
@@ -347,6 +350,82 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
                 assert_equal(res1dc, res1da)
 
 
+# Test keepdims for:
+#     - single-output and multi-output functions (gmean and mannwhitneyu)
+#     - Axis negative, positive, None, and tuple
+#     - 1D with no NaNs
+#     - 1D with NaN propagation
+#     - Zero-sized output
+@pytest.mark.parametrize("nan_policy", ("omit", "propagate"))
+@pytest.mark.parametrize(
+    ("hypotest", "args", "kwds", "n_samples", "unpacker"),
+    ((stats.gmean, tuple(), dict(), 1, lambda x: (x,)),
+     (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, None))
+)
+@pytest.mark.parametrize(
+    ("sample_shape", "axis_cases"),
+    (((2, 3, 3, 4), (None, 0, -1, (0, 2), (1, -1), (3, 1, 2, 0))),
+     ((10, ), (0, -1)),
+     ((20, 0), (0, 1)))
+)
+def test_keepdims(hypotest, args, kwds, n_samples, unpacker,
+                  sample_shape, axis_cases, nan_policy):
+    # test if keepdims parameter works correctly
+    if not unpacker:
+        def unpacker(res):
+            return res
+    rng = np.random.default_rng(0)
+    data = [rng.random(sample_shape) for _ in range(n_samples)]
+    nan_data = [sample.copy() for sample in data]
+    nan_mask = [rng.random(sample_shape) < 0.2 for _ in range(n_samples)]
+    for sample, mask in zip(nan_data, nan_mask):
+        sample[mask] = np.nan
+    for axis in axis_cases:
+        expected_shape = list(sample_shape)
+        if axis is None:
+            expected_shape = np.ones(len(sample_shape))
+        else:
+            if isinstance(axis, int):
+                expected_shape[axis] = 1
+            else:
+                for ax in axis:
+                    expected_shape[ax] = 1
+        expected_shape = tuple(expected_shape)
+        res = unpacker(hypotest(*data, *args, axis=axis, keepdims=True,
+                                **kwds))
+        res_base = unpacker(hypotest(*data, *args, axis=axis, keepdims=False,
+                                     **kwds))
+        nan_res = unpacker(hypotest(*nan_data, *args, axis=axis,
+                                    keepdims=True, nan_policy=nan_policy,
+                                    **kwds))
+        nan_res_base = unpacker(hypotest(*nan_data, *args, axis=axis,
+                                         keepdims=False,
+                                         nan_policy=nan_policy, **kwds))
+        for r, r_base, rn, rn_base in zip(res, res_base, nan_res,
+                                          nan_res_base):
+            assert r.shape == expected_shape
+            r = np.squeeze(r, axis=axis)
+            assert_equal(r, r_base)
+            assert rn.shape == expected_shape
+            rn = np.squeeze(rn, axis=axis)
+            assert_equal(rn, rn_base)
+
+
+@pytest.mark.parametrize(("fun", "nsamp"),
+                         [(stats.kstat, 1),
+                          (stats.kstatvar, 1)])
+def test_hypotest_back_compat_no_axis(fun, nsamp):
+    m, n = 8, 9
+
+    rng = np.random.default_rng(0)
+    x = rng.random((nsamp, m, n))
+    res = fun(*x)
+    res2 = fun(*x, _no_deco=True)
+    res3 = fun([xi.ravel() for xi in x])
+    assert_equal(res, res2)
+    assert_equal(res, res3)
+
+
 @pytest.mark.parametrize(("axis"), (0, 1, 2))
 def test_axis_nan_policy_decorated_positional_axis(axis):
     # Test for correct behavior of function decorated with
@@ -380,12 +459,12 @@ def test_axis_nan_policy_decorated_positional_args():
     x[0, 0, 0, 0] = np.nan
     stats.kruskal(*x)
 
-    message = "kruskal() got an unexpected keyword argument 'args'"
+    message = "kruskal() got an unexpected keyword argument 'samples'"
     with pytest.raises(TypeError, match=re.escape(message)):
-        stats.kruskal(args=x)
+        stats.kruskal(samples=x)
 
     with pytest.raises(TypeError, match=re.escape(message)):
-        stats.kruskal(*x, args=x)
+        stats.kruskal(*x, samples=x)
 
 
 def test_axis_nan_policy_decorated_keyword_samples():
@@ -775,13 +854,13 @@ def test_other_axis_tuples(axis):
 
     if len(set(axis)) != len(axis):
         message = "`axis` must contain only distinct elements"
-        with pytest.raises(ValueError, match=re.escape(message)):
+        with pytest.raises(np.AxisError, match=re.escape(message)):
             stats.mannwhitneyu(x, y, axis=axis_original)
         return
 
     if axis[0] < 0 or axis[-1] > 2:
         message = "`axis` is out of bounds for array of dimension 3"
-        with pytest.raises(ValueError, match=re.escape(message)):
+        with pytest.raises(np.AxisError, match=re.escape(message)):
             stats.mannwhitneyu(x, y, axis=axis_original)
         return
 

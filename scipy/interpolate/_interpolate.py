@@ -132,16 +132,16 @@ class interp2d:
         Otherwise, `x` and `y` must specify the full coordinates for each
         point, for example::
 
-          >>> x = [0,1,2,0,1,2];  y = [0,0,0,3,3,3]; z = [1,2,3,4,5,6]
+          >>> x = [0,1,2,0,1,2];  y = [0,0,0,3,3,3]; z = [1,4,2,5,3,6]
 
         If `x` and `y` are multidimensional, they are flattened before use.
     z : array_like
         The values of the function to interpolate at the data points. If
-        `z` is a multidimensional array, it is flattened before use.  The
-        length of a flattened `z` array is either
-        len(`x`)*len(`y`) if `x` and `y` specify the column and row coordinates
-        or ``len(z) == len(x) == len(y)`` if `x` and `y` specify coordinates
-        for each point.
+        `z` is a multidimensional array, it is flattened before use assuming
+        Fortran-ordering (order='F').  The length of a flattened `z` array
+        is either len(`x`)*len(`y`) if `x` and `y` specify the column and
+        row coordinates or ``len(z) == len(x) == len(y)`` if `x` and `y`
+        specify coordinates for each point.
     kind : {'linear', 'cubic', 'quintic'}, optional
         The kind of spline interpolation to use. Default is 'linear'.
     copy : bool, optional
@@ -419,7 +419,7 @@ class interp1d(_Interpolator1D):
 
     Input values `x` and `y` must be convertible to `float` values like
     `int` or `float`.
-    
+
     If the values in `x` are not unique, the resulting behavior is
     undefined and specific to the choice of `kind`, i.e., changing
     `kind` will change the behavior for duplicates.
@@ -818,7 +818,7 @@ class _PPolyBase:
         if not self.c.flags.c_contiguous:
             self.c = self.c.copy()
 
-    def extend(self, c, x, right=None):
+    def extend(self, c, x):
         """
         Add additional breakpoints and coefficients to the polynomial.
 
@@ -832,13 +832,7 @@ class _PPolyBase:
             Additional breakpoints. Must be sorted in the same order as
             ``self.x`` and either to the right or to the left of the current
             breakpoints.
-        right
-            Deprecated argument. Has no effect.
-
-            .. deprecated:: 0.19
         """
-        if right is not None:
-            warnings.warn("`right` is deprecated and will be removed.")
 
         c = np.asarray(c)
         x = np.asarray(x)
@@ -1016,6 +1010,7 @@ class PPoly(_PPolyBase):
     unstable. Precision problems can start to appear for orders
     larger than 20-30.
     """
+
     def _evaluate(self, x, nu, extrapolate, out):
         _ppoly.evaluate(self.c.reshape(self.c.shape[0], self.c.shape[1], -1),
                         self.x, x, nu, bool(extrapolate), out)
@@ -1630,11 +1625,11 @@ class BPoly(_PPolyBase):
         else:
             return ib(b) - ib(a)
 
-    def extend(self, c, x, right=None):
+    def extend(self, c, x):
         k = max(self.c.shape[0], c.shape[0])
         self.c = self._raise_degree(self.c, k - self.c.shape[0])
         c = self._raise_degree(c, k - c.shape[0])
-        return _PPolyBase.extend(self, c, x, right)
+        return _PPolyBase.extend(self, c, x)
     extend.__doc__ = _PPolyBase.extend.__doc__
 
     @classmethod
@@ -2736,51 +2731,3 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         result[np.logical_not(idx_valid)] = fill_value
 
         return result.reshape(xi_shape[:-1])
-
-
-# backward compatibility wrapper
-class _ppform(PPoly):
-    """
-    Deprecated piecewise polynomial class.
-
-    New code should use the `PPoly` class instead.
-
-    """
-
-    def __init__(self, coeffs, breaks, fill=0.0, sort=False):
-        warnings.warn("_ppform is deprecated -- use PPoly instead",
-                      category=DeprecationWarning)
-
-        if sort:
-            breaks = np.sort(breaks)
-        else:
-            breaks = np.asarray(breaks)
-
-        PPoly.__init__(self, coeffs, breaks)
-
-        self.coeffs = self.c
-        self.breaks = self.x
-        self.K = self.coeffs.shape[0]
-        self.fill = fill
-        self.a = self.breaks[0]
-        self.b = self.breaks[-1]
-
-    def __call__(self, x):
-        return PPoly.__call__(self, x, 0, False)
-
-    def _evaluate(self, x, nu, extrapolate, out):
-        PPoly._evaluate(self, x, nu, extrapolate, out)
-        out[~((x >= self.a) & (x <= self.b))] = self.fill
-        return out
-
-    @classmethod
-    def fromspline(cls, xk, cvals, order, fill=0.0):
-        # Note: this spline representation is incompatible with FITPACK
-        N = len(xk)-1
-        sivals = np.empty((order+1, N), dtype=float)
-        for m in range(order, -1, -1):
-            fact = spec.gamma(m+1)
-            res = _fitpack._bspleval(xk[:-1], xk, cvals, order, m)
-            res /= fact
-            sivals[order-m, :] = res
-        return cls(sivals, xk, fill=fill)

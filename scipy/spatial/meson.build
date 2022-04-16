@@ -34,7 +34,7 @@ qhull_src = [
 qhull = py3.extension_module('_qhull',
   [spt_cython_gen.process('_qhull.pyx'),
     'qhull_misc.h', 'qhull_misc.c'] + qhull_src,
-  c_args: '-Wno-cpp',
+  c_args: cython_c_args,
   include_directories: [
     incdir_numpy,
     '../_lib',
@@ -69,7 +69,7 @@ ckdtree = py3.extension_module('_ckdtree',
   ckdtree_src + [cython_gen_cpp.process('_ckdtree.pyx')],
   # Cannot use -fnovisibility=hidden for Cython cpp, because it
   # conceals PyInit_ckdtree symbol, and prevents module load.
-  cpp_args: ['-Wno-cpp'], # TODO: replace with numpy_nodepr_api
+  cpp_args: cython_cpp_args,
   include_directories: [
     incdir_numpy,
     '../_lib',
@@ -101,7 +101,7 @@ _distance_pybind = py3.extension_module('_distance_pybind',
 
 _voronoi = py3.extension_module('_voronoi',
   [cython_gen.process('_voronoi.pyx')],
-  c_args: [numpy_nodepr_api, c_undefined_ok],
+  c_args: [cython_c_args, c_undefined_ok],
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
   install: true,
@@ -110,7 +110,7 @@ _voronoi = py3.extension_module('_voronoi',
 
 _hausdorff = py3.extension_module('_hausdorff',
   [cython_gen.process('_hausdorff.pyx')],
-  c_args: numpy_nodepr_api,
+  c_args: cython_c_args,
   include_directories: [incdir_numpy],
   dependencies: [py3_dep],
   install: true,

@@ -10,13 +10,17 @@ on:
       - main
       - maintenance/**
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   Python-38-dbg:
     name: Python 3.8-dbg
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: ubuntu-18.04
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: Configuring Test Environment
@@ -52,7 +56,7 @@ jobs:
         run: ./tools/check_pyext_symbol_hiding.sh build
 
   test_numpy_main:
-    name: NumPy main
+    name: NumPy main ${{ matrix.python-version }}
     if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')"
     runs-on: ubuntu-latest
     strategy:
@@ -60,11 +64,18 @@ jobs:
         python-version: ["3.10"]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
 
-# Keeping this for later 3.11
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: ${{ matrix.python-version }}
+        architecture: x64
+
+# Keeping this for later 3.11. Might not be needed as GH seems to provide
+# pre-released versions of 3.11
 #    - name: Install Python 3.11
 #      if: matrix.python-version == '3.11'
 #      run: |
@@ -81,11 +92,13 @@ jobs:
 
     - name: Install packages
       run: |
-        which python
         pip install --user git+https://github.com/numpy/numpy.git
         python -m pip install --user "setuptools<60.0" wheel cython pytest pybind11 pytest-xdist
         pip install --user git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install -r mypy_requirements.txt
+
+        # Packages that are only needed for their annotations
+        python -m pip install --user types-psutil pybind11 sphinx
 
     - name: Mypy
       run: |

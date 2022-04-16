@@ -759,6 +759,11 @@ def _linprog_ip_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     equality and inequality constraints using the interior-point method of
     [4]_.
 
+    .. deprecated:: 1.9.0
+        `method='interior-point'` will be removed in SciPy 1.11.0.
+        It is replaced by `method='highs'` because the latter is
+        faster and more robust.
+
     Linear programming solves problems of the following form:
 
     .. math::
@@ -1082,6 +1087,11 @@ def _linprog_rs_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Linear programming: minimize a linear objective function subject to linear
     equality and inequality constraints using the revised simplex method.
 
+    .. deprecated:: 1.9.0
+        `method='revised simplex'` will be removed in SciPy 1.11.0.
+        It is replaced by `method='highs'` because the latter is
+        faster and more robust.
+
     Linear programming solves problems of the following form:
 
     .. math::
@@ -1262,6 +1272,11 @@ def _linprog_simplex_doc(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     r"""
     Linear programming: minimize a linear objective function subject to linear
     equality and inequality constraints using the tableau-based simplex method.
+
+    .. deprecated:: 1.9.0
+        `method='simplex'` will be removed in SciPy 1.11.0.
+        It is replaced by `method='highs'` because the latter is
+        faster and more robust.
 
     Linear programming solves problems of the following form:
 

@@ -16,15 +16,15 @@ from scipy import optimize
 from scipy import stats
 from scipy.stats._morestats import _abw_state
 from .common_tests import check_named_results
-from .._hypotests import _get_wilcoxon_distr
+from .._hypotests import _get_wilcoxon_distr, _get_wilcoxon_distr2
 from scipy.stats._binomtest import _binary_search_for_binom_tst
 
 # Matplotlib is not a scipy dependency but is optionally used in probplot, so
 # check if it's available
 try:
-    import matplotlib  # type: ignore[import]
+    import matplotlib
     matplotlib.rcParams['backend'] = 'Agg'
-    import matplotlib.pyplot as plt  # type: ignore[import]
+    import matplotlib.pyplot as plt
     have_matplotlib = True
 except Exception:
     have_matplotlib = False
@@ -196,6 +196,23 @@ class TestShapiro:
         assert_equal(shapiro_test.statistic, np.nan)
         assert_almost_equal(pw, 1.0)
         assert_almost_equal(shapiro_test.pvalue, 1.0)
+
+    def test_gh14462(self):
+        # shapiro is theoretically location-invariant, but when the magnitude
+        # of the values is much greater than the variance, there can be
+        # numerical issues. Fixed by subtracting median from the data.
+        # See gh-14462.
+
+        trans_val, maxlog = stats.boxcox([122500, 474400, 110400])
+        res = stats.shapiro(trans_val)
+
+        # Reference from R:
+        # options(digits=16)
+        # x = c(0.00000000e+00, 3.39996924e-08, -6.35166875e-09)
+        # shapiro.test(x)
+        ref = (0.86468431705371, 0.2805581751566)
+
+        assert_allclose(res, ref, rtol=1e-5)
 
 
 class TestAnderson:
@@ -1368,6 +1385,17 @@ class TestWilcoxon:
         attributes = ('statistic', 'pvalue')
         check_named_results(res, attributes)
 
+    def test_wilcoxon_has_zstatistic(self):
+        rng = np.random.default_rng(89426135444)
+        x, y = rng.random(15), rng.random(15)
+
+        res = stats.wilcoxon(x, y, mode="approx")
+        ref = stats.norm.ppf(res.pvalue/2)
+        assert_allclose(res.zstatistic, ref)
+
+        res = stats.wilcoxon(x, y, mode="exact")
+        assert np.isnan(res.zstatistic)
+
     def test_wilcoxon_tie(self):
         # Regression test for gh-2391.
         # Corresponding R code is:
@@ -1426,10 +1454,12 @@ class TestWilcoxon:
         assert_almost_equal(p, 0.3176447, decimal=6)
 
     def test_exact_basic(self):
-        for n in range(1, 26):
-            cnt = _get_wilcoxon_distr(n)
-            assert_equal(n*(n+1)/2 + 1, len(cnt))
-            assert_equal(sum(cnt), 2**n)
+        for n in range(1, 51):
+            pmf1 = _get_wilcoxon_distr(n)
+            pmf2 = _get_wilcoxon_distr2(n)
+            assert_equal(n*(n+1)/2 + 1, len(pmf1))
+            assert_equal(sum(pmf1), 1)
+            assert_array_almost_equal(pmf1, pmf2)
 
     def test_exact_pval(self):
         # expected values computed with "R version 3.4.1 (2017-06-30)"
@@ -1453,14 +1483,12 @@ class TestWilcoxon:
         _, p = stats.wilcoxon(x, y, alternative="greater", mode="exact")
         assert_almost_equal(p, 0.5795889, decimal=6)
 
-        d = np.arange(26) + 1
-        assert_raises(ValueError, stats.wilcoxon, d, mode="exact")
-
     # These inputs were chosen to give a W statistic that is either the
     # center of the distribution (when the length of the support is odd), or
     # the value to the left of the center (when the length of the support is
     # even).  Also, the numbers are chosen so that the W statistic is the
     # sum of the positive values.
+
     @pytest.mark.parametrize('x', [[-1, -2, 3],
                                    [-1, 2, -3, -4, 5],
                                    [-1, -2, 3, -4, -5, -6, 7, 8]])
@@ -1486,7 +1514,7 @@ class TestWilcoxon:
         assert_equal(stats.wilcoxon(d, mode="approx"), (w, p))
 
         # use approximation for samples > 25
-        d = np.arange(1, 27)
+        d = np.arange(1, 52)
         assert_equal(stats.wilcoxon(d), stats.wilcoxon(d, mode="approx"))
 
 
@@ -1734,6 +1762,10 @@ class TestBoxcox:
         # Also test that array_like input works
         xt = stats.boxcox(list(x), lmbda=0)
         assert_allclose(xt, np.log(x))
+
+        # test that constant input is accepted; see gh-12225
+        xt = stats.boxcox(np.ones(10), 2)
+        assert_equal(xt, np.zeros(10))
 
     def test_lmbda_None(self):
         # Start from normal rv's, do inverse transform to check that
@@ -2090,9 +2122,15 @@ class TestYeojohnsonNormmax:
 
 
 class TestCircFuncs:
+    # In gh-5747, the R package `circular` was used to calculate reference
+    # values for the circular variance, e.g.:
+    # library(circular)
+    # options(digits=16)
+    # x = c(0, 2*pi/3, 5*pi/3)
+    # var.circular(x)
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
-                              (stats.circvar, 42.51955609),
+                              (stats.circvar, 0.006455174270186603),
                               (stats.circstd, 6.520702116)])
     def test_circfuncs(self, test_func, expected):
         x = np.array([355, 5, 2, 359, 10, 350])
@@ -2104,7 +2142,10 @@ class TestCircFuncs:
         M2 = stats.circmean(x, high=360)
         assert_allclose(M2, M1, rtol=1e-5)
 
-        V1 = x.var()
+        V1 = (x*np.pi/180).var()
+        # for small variations, circvar is approximately half the
+        # linear variance
+        V1 = V1 / 2.
         V2 = stats.circvar(x, high=360)
         assert_allclose(V2, V1, rtol=1e-4)
 
@@ -2175,7 +2216,7 @@ class TestCircFuncs:
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
-                              (stats.circvar, 42.51955609),
+                              (stats.circvar, 0.006455174270186603),
                               (stats.circstd, 6.520702116)])
     def test_circfuncs_array_like(self, test_func, expected):
         x = [355, 5, 2, 359, 10, 350]
@@ -2196,7 +2237,9 @@ class TestCircFuncs:
                              [(stats.circmean,
                                {None: np.nan, 0: 355.66582264, 1: 0.28725053}),
                               (stats.circvar,
-                               {None: np.nan, 0: 16.89976130, 1: 36.51366669}),
+                               {None: np.nan,
+                                0: 0.002570671054089924,
+                                1: 0.005545914017677123}),
                               (stats.circstd,
                                {None: np.nan, 0: 4.11093193, 1: 6.04265394})])
     def test_nan_propagate_array(self, test_func, expected):
@@ -2218,11 +2261,12 @@ class TestCircFuncs:
                                              349.5]),
                                 1: np.array([0.16769015, 358.66510252])}),
                               (stats.circvar,
-                               {None: 55.362093503276725,
-                                0: np.array([4.00081258, 1.00005077, 1.00005077,
-                                             12.25762620, 0.25000317,
-                                             0.25000317]),
-                                1: np.array([42.51955609, 67.09872148])}),
+                               {None: 0.008396678483192477,
+                                0: np.array([1.9997969, 0.4999873, 0.4999873,
+                                             6.1230956, 0.1249992, 0.1249992]
+                                            )*(np.pi/180)**2,
+                                1: np.array([0.006455174270186603,
+                                             0.01016767581393285])}),
                               (stats.circstd,
                                {None: 7.440570778057074,
                                 0: np.array([2.00020313, 1.00002539, 1.00002539,
@@ -2243,7 +2287,7 @@ class TestCircFuncs:
 
     @pytest.mark.parametrize("test_func,expected",
                              [(stats.circmean, 0.167690146),
-                              (stats.circvar, 42.51955609),
+                              (stats.circvar, 0.006455174270186603),
                               (stats.circstd, 6.520702116)])
     def test_nan_omit(self, test_func, expected):
         x = [355, 5, 2, 359, 10, 350, np.nan]
@@ -2296,12 +2340,12 @@ class TestCircFuncs:
         assert_(m < np.pi)
         assert_(m > -np.pi)
 
-    def test_circfuncs_unit8(self):
+    def test_circfuncs_uint8(self):
         # regression test for gh-7255: overflow when working with
         # numpy uint8 data type
         x = np.array([150, 10], dtype='uint8')
         assert_equal(stats.circmean(x, high=180), 170.0)
-        assert_allclose(stats.circvar(x, high=180), 437.45871686, rtol=1e-7)
+        assert_allclose(stats.circvar(x, high=180), 0.2339555554617, rtol=1e-7)
         assert_allclose(stats.circstd(x, high=180), 20.91551378, rtol=1e-7)
 
 

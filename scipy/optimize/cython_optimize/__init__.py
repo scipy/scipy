@@ -107,7 +107,7 @@ error, and 0 means the solver converged. Continuing from the previous example::
 
 
     # cython brentq solver with full output
-    cdef brent_full_output brentq_full_output_wrapper_example(
+    cdef zeros_full_output brentq_full_output_wrapper_example(
             dict args, double xa, double xb, double xtol, double rtol,
             int mitr):
         cdef test_params myargs = args

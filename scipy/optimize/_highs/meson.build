@@ -269,7 +269,7 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
     '-Wp,-w',
     Wno_unused_but_set,
     highs_define_macros,
-    numpy_nodepr_api,
+    cython_c_args,
   ],
   install: true,
   subdir: 'scipy/optimize/_highs'
@@ -277,6 +277,7 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
 
 _highs_constants = py3.extension_module('_highs_constants',
   cython_gen_cpp.process('cython/src/_highs_constants.pyx'),
+  c_args: cython_c_args,
   include_directories: [
     'cython/src/',
     'src',

@@ -59,7 +59,7 @@ statlib = py3.extension_module('_statlib',
 
 _stats = py3.extension_module('_stats',
   stats_special_cython_gen.process('_stats.pyx'),
-  c_args: '-Wno-cpp',  # Replace with numpy_nodepr_api after Cython 3.0 is out
+  c_args: cython_c_args,
   dependencies: [py3_dep],
   include_directories: [inc_np],
   install: true,
@@ -85,7 +85,7 @@ mvn = py3.extension_module('_mvn',
 
 _sobol = py3.extension_module('_sobol',
   cython_gen.process('_sobol.pyx'),
-  c_args: numpy_nodepr_api,
+  c_args: cython_c_args,
   dependencies: [py3_dep],
   include_directories: [inc_np],
   install: true,
@@ -103,7 +103,7 @@ pthread = dependency('threads')
 
 _qmc_cy = py3.extension_module('_qmc_cy',
   cython_gen_cpp.process('_qmc_cy.pyx'),
-  cpp_args: '-Wno-cpp',  # TODO: replace with numpy_nodepr_api
+  cpp_args: cython_cpp_args,
   dependencies: [py3_dep, pthread],
   include_directories: [inc_np],
   install: true,
@@ -119,7 +119,8 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
     'hypergeom_ufunc.pyx',  # 4 (S_B)
     'nbinom_ufunc.pyx',  # 5 (S_B)
     'templated_pyufunc.pxd',  # 6 (S_B)
-    'unuran_wrapper.pyx'  # 7 (used in stats/_unuran)
+    'unuran_wrapper.pyx',  # 7 (used in stats/_unuran)
+    'ncf_ufunc.pyx'  # 8 (S_B)
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
@@ -137,6 +138,7 @@ beta_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[1])
 binom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[2])
 hypergeom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[4])
 nbinom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[5])
+ncf_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
 # Extra dependency from _lib
 unuran_wrap_pyx = lib_cython_gen.process(_stats_gen_pyx[7])
 
@@ -150,8 +152,9 @@ biasedurn = py3.extension_module('_biasedurn',
     'biasedurn/stocR.h',
     'biasedurn/wnchyppr.cpp',
   ],
-  cpp_args: ['-DR_BUILD', numpy_nodepr_api],
+  cpp_args: ['-DR_BUILD', cython_cpp_args],
   include_directories: [inc_np],
+  # Note that we're not using npymath directly, it is needed to use npyrandom
   dependencies: [py3_dep, npyrandom_lib, npymath_lib],
   install: true,
   subdir: 'scipy/stats'
@@ -183,7 +186,6 @@ py3.install_sources([
     '_axis_nan_policy.py',
     '_binned_statistic.py',
     '_binomtest.py',
-    '_bootstrap.py',
     '_common.py',
     '_constants.py',
     '_continuous_distns.py',
@@ -192,6 +194,7 @@ py3.install_sources([
     '_distn_infrastructure.py',
     '_distr_params.py',
     '_entropy.py',
+    '_fit.py',
     '_generate_pyx.py',
     '_hypotests.py',
     '_kde.py',
@@ -204,13 +207,13 @@ py3.install_sources([
     '_page_trend_test.py',
     '_qmc.py',
     '_relative_risk.py',
+    '_resampling.py',
     '_result_classes.py',
     '_rvs_sampling.py',
     '_stats_mstats_common.py',
     '_stats_py.py',
     '_tukeylambda_stats.py',
     '_variation.py',
-    '_wilcoxon_data.py',
     'biasedurn.py',
     'contingency.py',
     'distributions.py',

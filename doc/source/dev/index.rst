@@ -3,7 +3,7 @@
 Developer Documentation
 -----------------------
 
-Bellow you will find general information about contributing.
+Below you will find general information about contributing.
 For an overview of where help or new features are desired or planned, see
 the roadmap. And for a more detailed look at how the SciPy project works, see
 the organization section.
@@ -16,6 +16,7 @@ the organization section.
    hacking
    contributor/quickerstart_conda
    contributor/contributor_toc
+   missing-bits
 
 .. toctree::
    :maxdepth: 1
@@ -49,6 +50,7 @@ the organization section.
    contributor/adding_new
    contributor/continuous_integration
    contributor/meson
+   contributor/meson_advanced
    contributor/using_act
 
 .. These files are not intended to be in any toctree. because they have not

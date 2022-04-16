@@ -4,7 +4,7 @@ except ImportError:
     pass
 
 try:
-    from sympy.abc import x  # type: ignore[import]
+    from sympy.abc import x
 except ImportError:
     pass
 
