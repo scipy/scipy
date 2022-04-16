@@ -8,7 +8,7 @@ from numpy import pi
 import pytest
 import itertools
 
-from distutils.version import LooseVersion
+from scipy._lib import _pep440
 
 import scipy.special as sc
 from scipy.special._testutils import (
@@ -23,7 +23,7 @@ from scipy.special._ufuncs import (
     _igam_fac)
 
 try:
-    import mpmath  # type: ignore[import]
+    import mpmath
 except ImportError:
     mpmath = MissingModule('mpmath')
 
@@ -167,11 +167,8 @@ def test_hyp2f1_real_some_points():
     dataset = [p + (float(mpmath.hyp2f1(*p)),) for p in pts]
     dataset = np.array(dataset, dtype=np.float_)
 
-    olderr = np.seterr(invalid='ignore')
-    try:
+    with np.errstate(invalid='ignore'):
         FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-10).check()
-    finally:
-        np.seterr(**olderr)
 
 
 @check_version(mpmath, '0.14')
@@ -210,12 +207,9 @@ def test_hyp2f1_real_some():
                     dataset.append((a, b, c, z, v))
     dataset = np.array(dataset, dtype=np.float_)
 
-    olderr = np.seterr(invalid='ignore')
-    try:
+    with np.errstate(invalid='ignore'):
         FuncData(sc.hyp2f1, dataset, (0,1,2,3), 4, rtol=1e-9,
                  ignore_inf_sign=True).check()
-    finally:
-        np.seterr(**olderr)
 
 
 @check_version(mpmath, '0.12')
@@ -317,11 +311,8 @@ def test_lpmv():
     def evf(mu, nu, x):
         return sc.lpmv(mu.astype(int), nu, x)
 
-    olderr = np.seterr(invalid='ignore')
-    try:
+    with np.errstate(invalid='ignore'):
         FuncData(evf, dataset, (0,1,2), 3, rtol=1e-10, atol=1e-14).check()
-    finally:
-        np.seterr(**olderr)
 
 
 # ------------------------------------------------------------------------------
@@ -683,7 +674,7 @@ HYPERKW = dict(maxprec=200, maxterms=200)
 
 @pytest.mark.slow
 @check_version(mpmath, '0.17')
-class TestSystematic(object):
+class TestSystematic:
 
     def test_airyai(self):
         # oscillating function, limit range
@@ -827,11 +818,8 @@ class TestSystematic(object):
             r = complex(mpmath.bessely(v, x, **HYPERKW))
             if abs(r) > 1e305:
                 # overflowing to inf a bit earlier is OK
-                olderr = np.seterr(invalid='ignore')
-                try:
+                with np.errstate(invalid='ignore'):
                     r = np.inf * np.sign(r)
-                finally:
-                    np.seterr(**olderr)
             return r
         assert_mpmath_equal(lambda v, z: sc.yv(v.real, z),
                             exception_to_nan(mpbessely),
@@ -1182,7 +1170,7 @@ class TestSystematic(object):
     def test_log_ndtr(self):
         assert_mpmath_equal(sc.log_ndtr,
                             exception_to_nan(lambda z: mpmath.log(mpmath.ncdf(z))),
-                            [Arg()], n=600, dps=300)
+                            [Arg()], n=600, dps=300, rtol=1e-13)
 
     def test_log_ndtr_complex(self):
         assert_mpmath_equal(sc.log_ndtr,
@@ -1732,7 +1720,7 @@ class TestSystematic(object):
                                "systems and gh-8095 for another bad "
                                "point"))
     def test_rf(self):
-        if LooseVersion(mpmath.__version__) >= LooseVersion("1.0.0"):
+        if _pep440.parse(mpmath.__version__) >= _pep440.Version("1.0.0"):
             # no workarounds needed
             mppoch = mpmath.rf
         else:

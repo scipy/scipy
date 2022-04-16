@@ -184,7 +184,8 @@ def softmax(x, axis=None):
     >>> m.sum()
     1.0000000000000002
 
-    Compute the softmax transformation along the first axis (i.e., the columns).
+    Compute the softmax transformation along the first axis (i.e., the
+    columns).
 
     >>> m = softmax(x, axis=0)
 
@@ -230,14 +231,15 @@ def log_softmax(x, axis=None):
     Returns
     -------
     s : ndarray or scalar
-        An array with the same shape as `x`. Exponential of the result will sum to 1 along the
-        specified axis. If `x` is a scalar, a scalar is returned.
+        An array with the same shape as `x`. Exponential of the result will
+        sum to 1 along the specified axis. If `x` is a scalar, a scalar is
+        returned.
 
     Notes
     -----
-    `log_softmax` is more accurate than ``np.log(softmax(x))`` with inputs that make 
-    `softmax` saturate (see examples below).
-    
+    `log_softmax` is more accurate than ``np.log(softmax(x))`` with inputs that
+    make `softmax` saturate (see examples below).
+
     .. versionadded:: 1.5.0
 
     Examples
@@ -271,7 +273,7 @@ def log_softmax(x, axis=None):
 
     tmp = x - x_max
     exp_tmp = np.exp(tmp)
-    
+
     # suppress warnings about log of zero
     with np.errstate(divide='ignore'):
         s = np.sum(exp_tmp, axis=axis, keepdims=True)

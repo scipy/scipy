@@ -225,7 +225,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
         params[kk] = NULL;
     }
     for (kk = 0; kk < PyArray_NDIM(input); kk++) {
-        if (PyArray_DIM(input, kk) > 1) {
+        if (PyArray_DIM(input, kk) > 1 || filter_type == _NI_ELLIPSOID) {
             params[kk] = malloc(PyArray_DIM(input, kk) * sizeof(double));
             if (!params[kk]) {
                 PyErr_NoMemory();
@@ -352,7 +352,7 @@ int NI_FourierFilter(PyArrayObject *input, PyArrayObject* parameter_array,
             switch (PyArray_NDIM(input)) {
             case 1:
                 tmp = params[0][ii.coordinates[0]];
-                tmp = tmp > 0.0 ? sin(tmp) / (tmp) : 1.0;
+                tmp = tmp != 0 ? sin(tmp) / (tmp) : 1.0;
                 break;
             case 2:
                 tmp = 0.0;

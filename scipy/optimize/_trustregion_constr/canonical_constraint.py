@@ -2,7 +2,7 @@ import numpy as np
 import scipy.sparse as sps
 
 
-class CanonicalConstraint(object):
+class CanonicalConstraint:
     """Canonical constraint to use with trust-constr algorithm.
 
     It represents the set of constraints of the form::
@@ -88,7 +88,7 @@ class CanonicalConstraint(object):
         def hess(x, v_eq, v_ineq):
             return empty_hess
 
-        return cls(0, 0, fun, jac, hess, np.empty(0, dtype=np.bool))
+        return cls(0, 0, fun, jac, hess, np.empty(0, dtype=np.bool_))
 
     @classmethod
     def concatenate(cls, canonical_constraints, sparse_jacobian):

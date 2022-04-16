@@ -67,7 +67,7 @@ static const routine_t routines[] = {
 static int create_pointers(PyObject *module)
 {
     PyObject *d, *obj = NULL;
-    int i;
+    size_t i;
 
     d = PyModule_GetDict(module);
     if (d == NULL) {
@@ -109,8 +109,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyMODINIT_FUNC
-PyInit__test_multivariate(void)
+PyObject *PyInit__test_multivariate(void)
 {
     PyObject *m;
     m = PyModule_Create(&moduledef);

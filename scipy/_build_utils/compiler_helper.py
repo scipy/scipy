@@ -3,12 +3,20 @@ Helpers for detection of compiler features
 """
 import tempfile
 import os
+import sys
+from numpy.distutils.system_info import dict_append
 
 def try_compile(compiler, code=None, flags=[], ext=None):
     """Returns True if the compiler is able to compile the given code"""
     from distutils.errors import CompileError
+    from numpy.distutils.fcompiler import FCompiler
 
-    code = code or 'int main (int argc, char **argv) { return 0; }'
+    if code is None:
+        if isinstance(compiler, FCompiler):
+            code = "      program main\n      return\n      end"
+        else:
+            code = 'int main (int argc, char **argv) { return 0; }'
+
     ext = ext or compiler.src_extensions[0]
 
     with tempfile.TemporaryDirectory() as temp_dir:
@@ -46,7 +54,7 @@ def get_cxx_std_flag(compiler):
         if flag is None:
             return None
 
-        if has_flag(compiler, flag):
+        if has_flag(compiler, flag, ext='.cpp'):
             return flag
 
     from numpy.distutils import log
@@ -54,7 +62,73 @@ def get_cxx_std_flag(compiler):
     return None
 
 
+def get_c_std_flag(compiler):
+    """Detects compiler flag to enable C99"""
+    gnu_flag = '-std=c99'
+    flag_by_cc = {
+        'msvc': None,
+        'intelw': '/Qstd=c99',
+        'intelem': '-std=c99'
+    }
+    flag = flag_by_cc.get(compiler.compiler_type, gnu_flag)
+
+    if flag is None:
+        return None
+
+    if has_flag(compiler, flag, ext='.c'):
+        return flag
+
+    from numpy.distutils import log
+    log.warn('Could not detect c99 standard flag')
+    return None
+
+
 def try_add_flag(args, compiler, flag, ext=None):
     """Appends flag to the list of arguments if supported by the compiler"""
     if try_compile(compiler, flags=args+[flag], ext=ext):
         args.append(flag)
+
+
+def set_c_flags_hook(build_ext, ext):
+    """Sets basic compiler flags for compiling C99 code"""
+    std_flag = get_c_std_flag(build_ext.compiler)
+    if std_flag is not None:
+        ext.extra_compile_args.append(std_flag)
+
+
+def set_cxx_flags_hook(build_ext, ext):
+    """Sets basic compiler flags for compiling C++11 code"""
+    cc = build_ext._cxx_compiler
+    args = ext.extra_compile_args
+
+    std_flag = get_cxx_std_flag(cc)
+    if std_flag is not None:
+        args.append(std_flag)
+
+    if sys.platform == 'darwin':
+        # Set min macOS version
+        min_macos_flag = '-mmacosx-version-min=10.9'
+        if has_flag(cc, min_macos_flag):
+            args.append(min_macos_flag)
+            ext.extra_link_args.append(min_macos_flag)
+
+
+def set_cxx_flags_clib_hook(build_clib, build_info):
+    cc = build_clib.compiler
+    new_args = []
+    new_link_args = []
+
+    std_flag = get_cxx_std_flag(cc)
+    if std_flag is not None:
+        new_args.append(std_flag)
+
+    if sys.platform == 'darwin':
+        # Set min macOS version
+        min_macos_flag = '-mmacosx-version-min=10.9'
+        if has_flag(cc, min_macos_flag):
+            new_args.append(min_macos_flag)
+            new_link_args.append(min_macos_flag)
+
+    dict_append(build_info, extra_compiler_args=new_args,
+                extra_link_args=new_link_args)
+

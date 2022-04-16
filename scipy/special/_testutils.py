@@ -1,7 +1,7 @@
 import os
 import functools
 import operator
-from distutils.version import LooseVersion
+from scipy._lib import _pep440
 
 import numpy as np
 from numpy.testing import assert_
@@ -16,7 +16,7 @@ __all__ = ['with_special_errors', 'assert_func_equal', 'FuncData']
 # Check if a module is present to be used in tests
 #------------------------------------------------------------------------------
 
-class MissingModule(object):
+class MissingModule:
     def __init__(self, name):
         self.name = name
 
@@ -24,7 +24,7 @@ class MissingModule(object):
 def check_version(module, min_ver):
     if type(module) == MissingModule:
         return pytest.mark.skip(reason="{} is not installed".format(module.name))
-    return pytest.mark.skipif(LooseVersion(module.__version__) < LooseVersion(min_ver),
+    return pytest.mark.skipif(_pep440.parse(module.__version__) < _pep440.Version(min_ver),
                               reason="{} version >= {} required".format(module.__name__, min_ver))
 
 
@@ -83,7 +83,7 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
     fdata.check()
 
 
-class FuncData(object):
+class FuncData:
     """
     Data set for checking a special function.
 
@@ -255,8 +255,7 @@ class FuncData(object):
             nan_x = np.isnan(x)
             nan_y = np.isnan(y)
 
-            olderr = np.seterr(all='ignore')
-            try:
+            with np.errstate(all='ignore'):
                 abs_y = np.absolute(y)
                 abs_y[~np.isfinite(abs_y)] = 0
                 diff = np.absolute(x - y)
@@ -264,8 +263,6 @@ class FuncData(object):
 
                 rdiff = diff / np.absolute(y)
                 rdiff[~np.isfinite(rdiff)] = 0
-            finally:
-                np.seterr(**olderr)
 
             tol_mask = (diff <= atol + rtol*abs_y)
             pinf_mask = (pinf_x == pinf_y)

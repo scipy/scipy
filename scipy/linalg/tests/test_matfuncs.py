@@ -9,10 +9,8 @@ import functools
 
 import numpy as np
 from numpy import array, identity, dot, sqrt
-from numpy.testing import (
-        assert_array_equal, assert_array_less, assert_equal,
-        assert_array_almost_equal,
-        assert_allclose, assert_, assert_warns)
+from numpy.testing import (assert_array_almost_equal, assert_allclose, assert_,
+                           assert_array_less, assert_array_equal, assert_warns)
 import pytest
 
 import scipy.linalg
@@ -45,7 +43,7 @@ def _get_al_mohy_higham_2012_experiment_1():
     return A
 
 
-class TestSignM(object):
+class TestSignM:
 
     def test_nils(self):
         a = array([[29.2, -24.2, 69.5, 49.8, 7.],
@@ -88,7 +86,7 @@ class TestSignM(object):
         #XXX: what would be the correct result?
 
 
-class TestLogM(object):
+class TestLogM:
 
     def test_nils(self):
         a = array([[-2., 25., 0., 0., 0., 0., 0.],
@@ -108,7 +106,7 @@ class TestLogM(object):
         A = _get_al_mohy_higham_2012_experiment_1()
         A_logm, info = logm(A, disp=False)
         A_round_trip = expm(A_logm)
-        assert_allclose(A_round_trip, A, rtol=1e-5, atol=1e-14)
+        assert_allclose(A_round_trip, A, rtol=5e-5, atol=1e-14)
 
     def test_al_mohy_higham_2012_experiment_1_funm_log(self):
         # The raw funm with np.log does not complete the round trip.
@@ -234,7 +232,7 @@ class TestLogM(object):
         assert_allclose(logm(E), L, atol=1e-14)
 
 
-class TestSqrtM(object):
+class TestSqrtM:
     def test_round_trip_random_float(self):
         np.random.seed(1234)
         for n in range(1, 6):
@@ -413,7 +411,7 @@ class TestSqrtM(object):
         assert_allclose(sqrtm(M), R, atol=1e-14)
 
 
-class TestFractionalMatrixPower(object):
+class TestFractionalMatrixPower:
     def test_round_trip_random_complex(self):
         np.random.seed(1234)
         for p in range(1, 5):
@@ -598,31 +596,14 @@ class TestFractionalMatrixPower(object):
         assert_allclose(fractional_matrix_power(M, 0.5), R, atol=1e-14)
 
 
-class TestExpM(object):
+class TestExpM:
     def test_zero(self):
         a = array([[0.,0],[0,0]])
         assert_array_almost_equal(expm(a),[[1,0],[0,1]])
 
     def test_single_elt(self):
-        # See gh-5853
-        from scipy.sparse import csc_matrix
-
-        vOne = -2.02683397006j
-        vTwo = -2.12817566856j
-
-        mOne = csc_matrix([[vOne]], dtype='complex')
-        mTwo = csc_matrix([[vTwo]], dtype='complex')
-
-        outOne = expm(mOne)
-        outTwo = expm(mTwo)
-
-        assert_equal(type(outOne), type(mOne))
-        assert_equal(type(outTwo), type(mTwo))
-
-        assert_allclose(outOne[0, 0], complex(-0.44039415155949196,
-                                              -0.8978045395698304))
-        assert_allclose(outTwo[0, 0], complex(-0.52896401032626006,
-                                              -0.84864425749518878))
+        elt = expm(1)
+        assert_allclose(elt, np.array([[np.e]]))
 
     def test_empty_matrix_input(self):
         # handle gh-11082
@@ -630,8 +611,40 @@ class TestExpM(object):
         result = expm(A)
         assert result.size == 0
 
+    def test_2x2_input(self):
+        E = np.e
+        a = array([[1, 4], [1, 1]])
+        aa = (E**4 + 1)/(2*E)
+        bb = (E**4 - 1)/E
+        assert_allclose(expm(a), array([[aa, bb], [bb/4, aa]]))
+        assert expm(a.astype(np.complex64)).dtype.char == 'F'
+        assert expm(a.astype(np.float32)).dtype.char == 'f'
 
-class TestExpmFrechet(object):
+    def test_nx2x2_input(self):
+        E = np.e
+        # These are integer matrices with integer eigenvalues
+        a = np.array([[[1, 4], [1, 1]],
+                      [[1, 3], [1, -1]],
+                      [[1, 3], [4, 5]],
+                      [[1, 3], [5, 3]],
+                      [[4, 5], [-3, -4]]], order='F')
+        # Exact results are computed symbolically
+        a_res = np.array([
+                          [[(E**4+1)/(2*E), (E**4-1)/E],
+                           [(E**4-1)/4/E, (E**4+1)/(2*E)]],
+                          [[1/(4*E**2)+(3*E**2)/4, (3*E**2)/4-3/(4*E**2)],
+                           [E**2/4-1/(4*E**2), 3/(4*E**2)+E**2/4]],
+                          [[3/(4*E)+E**7/4, -3/(8*E)+(3*E**7)/8],
+                           [-1/(2*E)+E**7/2, 1/(4*E)+(3*E**7)/4]],
+                          [[5/(8*E**2)+(3*E**6)/8, -3/(8*E**2)+(3*E**6)/8],
+                           [-5/(8*E**2)+(5*E**6)/8, 3/(8*E**2)+(5*E**6)/8]],
+                          [[-3/(2*E)+(5*E)/2, -5/(2*E)+(5*E)/2],
+                           [3/(2*E)-(3*E)/2, 5/(2*E)-(3*E)/2]]
+                         ])
+        assert_allclose(expm(a), a_res)
+
+
+class TestExpmFrechet:
 
     def test_expm_frechet(self):
         # a test of the basic functionality
@@ -713,8 +726,8 @@ class TestExpmFrechet(object):
             expected_expm = scipy.linalg.expm(A)
             expected_frechet = scipy.linalg.expm(M)[:n, n:]
             observed_expm, observed_frechet = expm_frechet(A, E)
-            assert_allclose(expected_expm, observed_expm)
-            assert_allclose(expected_frechet, observed_frechet)
+            assert_allclose(expected_expm, observed_expm, atol=5e-8)
+            assert_allclose(expected_frechet, observed_frechet, atol=1e-7)
 
     def test_problematic_matrix(self):
         # this test case uncovered a bug which has since been fixed
@@ -768,7 +781,7 @@ def _relative_error(f, A, perturbation):
     return norm(X_prime - X) / norm(X)
 
 
-class TestExpmConditionNumber(object):
+class TestExpmConditionNumber:
     def test_expm_cond_smoke(self):
         np.random.seed(1234)
         for n in range(1, 4):
@@ -837,7 +850,7 @@ class TestExpmConditionNumber(object):
             assert_array_less(p_best_relerr, (1 + 2*eps) * eps * kappa)
 
 
-class TestKhatriRao(object):
+class TestKhatriRao:
 
     def test_basic(self):
         a = khatri_rao(array([[1, 2], [3, 4]]),

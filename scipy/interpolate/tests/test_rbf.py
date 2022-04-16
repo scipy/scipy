@@ -5,7 +5,7 @@ import numpy as np
 from numpy.testing import (assert_, assert_array_almost_equal,
                            assert_almost_equal)
 from numpy import linspace, sin, cos, random, exp, allclose
-from scipy.interpolate.rbf import Rbf
+from scipy.interpolate._rbf import Rbf
 
 FUNCTIONS = ('multiquadric', 'inverse multiquadric', 'gaussian',
              'cubic', 'quintic', 'thin-plate', 'linear')
@@ -105,12 +105,6 @@ def check_rbf1d_regularity(function, atol):
     rbf = Rbf(x, y, function=function)
     xi = linspace(0, 10, 100)
     yi = rbf(xi)
-    # import matplotlib.pyplot as plt
-    # plt.figure()
-    # plt.plot(x, y, 'o', xi, sin(xi), ':', xi, yi, '-')
-    # plt.plot(x, y, 'o', xi, yi-sin(xi), ':')
-    # plt.title(function)
-    # plt.show()
     msg = "abs-diff: %f" % abs(yi - sin(xi)).max()
     assert_(allclose(yi, sin(xi), atol=atol), msg)
 

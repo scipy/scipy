@@ -1,5 +1,7 @@
+# -*- coding: utf-8 -*-
 import numpy as np
-import warnings
+from ._unuran import unuran_wrapper
+from scipy._lib.deprecation import _deprecated
 from scipy._lib._util import check_random_state
 
 
@@ -11,8 +13,8 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     Parameters
     ----------
     pdf : callable
-        A function with signature `pdf(x)` that is the probability
-        density function of the distribution.
+        A function with signature `pdf(x)` that is proportional to the
+        probability density function of the distribution.
     umax : float
         The upper bound of the bounding rectangle in the u-direction.
     vmin : float
@@ -23,14 +25,15 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
         Defining number of random variates (default is 1).
     c : float, optional.
         Shift parameter of ratio-of-uniforms method, see Notes. Default is 0.
-    random_state : {None, int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        If `random_state` is `None` the `~np.random.RandomState` singleton is
-        used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with random_state.
-        If `random_state` is already a ``RandomState`` or ``Generator``
-        instance, then that object is used.
-        Default is None.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
 
     Returns
     -------
@@ -60,17 +63,24 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     `V/U + c` if `(U, V)` are also in `A` which can be directly
     verified.
 
+    The algorithm is not changed if one replaces `pdf` by k * `pdf` for any
+    constant k > 0. Thus, it is often convenient to work with a function
+    that is proportional to the probability density function by dropping
+    unneccessary normalization factors.
+
     Intuitively, the method works well if `A` fills up most of the
     enclosing rectangle such that the probability is high that `(U, V)`
     lies in `A` whenever it lies in `R` as the number of required
     iterations becomes too large otherwise. To be more precise, note that
     the expected number of iterations to draw `(U, V)` uniformly
     distributed on `R` such that `(U, V)` is also in `A` is given by
-    the ratio ``area(R) / area(A) = 2 * umax * (vmax - vmin)``, using the fact
-    that the area of `A` is equal to 1/2 (Theorem 7.1 in [1]_). A warning
-    is displayed if this ratio is larger than 20. Moreover, if the sampling
-    fails to generate a single random variate after 50000 iterations (i.e.
-    not a single draw is in `A`), an exception is raised.
+    the ratio ``area(R) / area(A) = 2 * umax * (vmax - vmin) / area(pdf)``,
+    where `area(pdf)` is the integral of `pdf` (which is equal to one if the
+    probability density function is used but can take on other values if a
+    function proportional to the density is used). The equality holds since
+    the area of `A` is equal to 0.5 * area(pdf) (Theorem 7.1 in [1]_).
+    If the sampling fails to generate a single random variate after 50000
+    iterations (i.e. not a single draw is in `A`), an exception is raised.
 
     If the bounding rectangle is not correctly specified (i.e. if it does not
     contain `A`), the algorithm samples from a distribution different from
@@ -92,48 +102,39 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     Examples
     --------
     >>> from scipy import stats
+    >>> rng = np.random.default_rng()
 
     Simulate normally distributed random variables. It is easy to compute the
-    bounding rectangle explicitly in that case.
+    bounding rectangle explicitly in that case. For simplicity, we drop the
+    normalization factor of the density.
 
-    >>> f = stats.norm.pdf
+    >>> f = lambda x: np.exp(-x**2 / 2)
     >>> v_bound = np.sqrt(f(np.sqrt(2))) * np.sqrt(2)
     >>> umax, vmin, vmax = np.sqrt(f(0)), -v_bound, v_bound
-    >>> np.random.seed(12345)
-    >>> rvs = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=2500)
+    >>> rvs = stats.rvs_ratio_uniforms(f, umax, vmin, vmax, size=2500,
+    ...                                random_state=rng)
 
     The K-S test confirms that the random variates are indeed normally
     distributed (normality is not rejected at 5% significance level):
 
     >>> stats.kstest(rvs, 'norm')[1]
-    0.3420173467307603
+    0.250634764150542
 
     The exponential distribution provides another example where the bounding
     rectangle can be determined explicitly.
 
-    >>> np.random.seed(12345)
     >>> rvs = stats.rvs_ratio_uniforms(lambda x: np.exp(-x), umax=1,
-    ...                                vmin=0, vmax=2*np.exp(-1), size=1000)
+    ...                                vmin=0, vmax=2*np.exp(-1), size=1000,
+    ...                                random_state=rng)
     >>> stats.kstest(rvs, 'expon')[1]
-    0.928454552559516
-
-    Sometimes it can be helpful to use a non-zero shift parameter `c`, see e.g.
-    [2]_ above in the case of the generalized inverse Gaussian distribution.
+    0.21121052054580314
 
     """
-
     if vmin >= vmax:
         raise ValueError("vmin must be smaller than vmax.")
 
     if umax <= 0:
         raise ValueError("umax must be positive.")
-
-    exp_iter = 2 * (vmax - vmin) * umax  # rejection constant (see [1])
-    if exp_iter > 20:
-        msg = ("The expected number of iterations to generate a single random "
-               "number from the desired distribution is larger than {}, "
-               "potentially causing bad performance.".format(int(exp_iter)))
-        warnings.warn(msg, RuntimeWarning)
 
     size1d = tuple(np.atleast_1d(size))
     N = np.prod(size1d)  # number of rvs needed, reshape upon return
@@ -143,10 +144,11 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
     x = np.zeros(N)
     simulated, i = 0, 1
 
-    # loop until N rvs have been generated: expected runtime is finite
+    # loop until N rvs have been generated: expected runtime is finite.
     # to avoid infinite loop, raise exception if not a single rv has been
-    # generated after 50000 tries. even if exp_iter = 1000, probability of
-    # this event is (1-1/1000)**50000 which is of order 10e-22
+    # generated after 50000 tries. even if the expected numer of iterations
+    # is 1000, the probability of this event is (1-1/1000)**50000
+    # which is of order 10e-22
     while simulated < N:
         k = N - simulated
         # simulate uniform rvs on [0, umax] and [vmin, vmax]
@@ -169,3 +171,25 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
         i += 1
 
     return np.reshape(x, size1d)
+
+
+class NumericalInverseHermite:
+    @_deprecated(
+        "NumericalInverseHermite has been deprecated from `scipy.stats`. "
+        " To use `NumericalInverseHermite`, import/use it from "
+        "`scipy.stats.sampling` module instead. "
+        "i.e. `from scipy.stats.sampling import NumericalInverseHermite`"
+    )
+    def __init__(self, *args, **kwargs):
+        self.hinv = unuran_wrapper.NumericalInverseHermite(*args, **kwargs)
+        self.intervals = self.hinv.intervals
+        self.midpoint_error = self.hinv.midpoint_error
+
+    def rvs(self, *args, **kwargs):
+        return self.hinv.rvs(*args, **kwargs)
+
+    def ppf(self, *args, **kwargs):
+        return self.hinv.ppf(*args, **kwargs)
+
+    def qrvs(self, *args, **kwargs):
+        return self.hinv.qrvs(*args, **kwargs)

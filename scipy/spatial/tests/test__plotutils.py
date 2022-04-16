@@ -4,8 +4,6 @@ try:
     import matplotlib
     matplotlib.rcParams['backend'] = 'Agg'
     import matplotlib.pyplot as plt
-    from matplotlib.collections import LineCollection
-    from matplotlib import MatplotlibDeprecationWarning
     has_matplotlib = True
 except Exception:
     has_matplotlib = False

@@ -10,10 +10,10 @@ from contextlib import contextmanager
 
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
-                           suppress_warnings)
+                           break_cycles, suppress_warnings, IS_PYPY)
 from pytest import raises as assert_raises
 
-from scipy.io.netcdf import netcdf_file, IS_PYPY
+from scipy.io import netcdf_file
 from scipy._lib._tmpdirs import in_tempdir
 
 TEST_DATA_PATH = pjoin(dirname(__file__), 'data')
@@ -53,9 +53,9 @@ def assert_mask_matches(arr, expected_mask):
 
     Parameters
     ----------
-    arr: ndarray or MaskedArray
+    arr : ndarray or MaskedArray
         Array to test.
-    expected_mask: array_like of booleans
+    expected_mask : array_like of booleans
         A list giving the expected mask.
     '''
 
@@ -100,7 +100,7 @@ def test_read_write_files():
         # mmap.  When n * n_bytes(var_type) is not divisible by 4, this
         # raised an error in pupynere 1.0.12 and scipy rev 5893, because
         # calculated vsize was rounding up in units of 4 - see
-        # https://www.unidata.ucar.edu/software/netcdf/docs/user_guide.html
+        # https://www.unidata.ucar.edu/software/netcdf/guide_toc.html
         with open('simple.nc', 'rb') as fobj:
             with netcdf_file(fobj) as f:
                 # by default, don't use mmap for file-like
@@ -131,12 +131,14 @@ def test_read_write_files():
             check_simple(f)
             assert_equal(f.variables['app_var'][:], 42)
 
-    except:  # noqa: E722
+    finally:
+        if IS_PYPY:
+            # windows cannot remove a dead file held by a mmap
+            # that has not been collected in PyPy
+            break_cycles()
+            break_cycles()
         os.chdir(cwd)
         shutil.rmtree(tmpdir)
-        raise
-    os.chdir(cwd)
-    shutil.rmtree(tmpdir)
 
 
 def test_read_write_sio():

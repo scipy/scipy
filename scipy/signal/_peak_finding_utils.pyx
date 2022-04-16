@@ -11,6 +11,7 @@ import numpy as np
 cimport numpy as np
 from libc.math cimport ceil
 
+np.import_array()
 
 __all__ = ['_local_maxima_1d', '_select_by_peak_distance', '_peak_prominences',
            '_peak_widths']
@@ -154,7 +155,7 @@ def _select_by_peak_distance(np.intp_t[::1] peaks not None,
                 keep[k] = 0
                 k += 1
 
-    return keep.base.view(dtype=np.bool)  # Return as boolean array
+    return keep.base.view(dtype=np.bool_)  # Return as boolean array
 
 
 class PeakPropertyWarning(RuntimeWarning):

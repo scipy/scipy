@@ -93,12 +93,14 @@ def test_setulb_floatround():
     f = np.array(0.0, np.float64)
     g = np.zeros(n, np.float64)
 
+    fortran_int = _lbfgsb.types.intvar.dtype
+
     wa = np.zeros(2*m*n + 5*n + 11*m*m + 8*m, np.float64)
-    iwa = np.zeros(3*n, np.int32)
+    iwa = np.zeros(3*n, fortran_int)
     task = np.zeros(1, 'S60')
     csave = np.zeros(1, 'S60')
-    lsave = np.zeros(4, np.int32)
-    isave = np.zeros(44, np.int32)
+    lsave = np.zeros(4, fortran_int)
+    isave = np.zeros(44, fortran_int)
     dsave = np.zeros(29, np.float64)
 
     task[:] = b'START'

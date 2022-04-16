@@ -28,7 +28,7 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
 from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
                                  dsbevd, dsbevx, zhbevd, zhbevx)
 
-from scipy.linalg.misc import norm
+from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
 from scipy.stats import ortho_group
 
@@ -39,7 +39,10 @@ from numpy import (array, diag, ones, full, linalg, argsort, zeros, arange,
 from numpy.random import seed, random
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy.sparse.sputils import bmat, matrix
+from scipy.sparse._sputils import matrix
+
+from scipy._lib._testutils import check_free_memory
+from scipy.linalg.blas import HAS_ILP64
 
 
 def _random_hermitian_matrix(n, posdef=False, dtype=float):
@@ -129,7 +132,7 @@ def _complex_symrand(dim, dtype):
     return a.astype(dtype)
 
 
-class TestEigVals(object):
+class TestEigVals:
 
     def test_simple(self):
         a = [[1, 2, 3], [1, 2, 3], [2, 5, 6]]
@@ -160,7 +163,7 @@ class TestEigVals(object):
         assert_array_almost_equal(w, exact_w)
 
 
-class TestEig(object):
+class TestEig:
 
     def test_simple(self):
         a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
@@ -294,11 +297,8 @@ class TestEig(object):
                    [16, 25, 27, 14, 23],
                    [24, 35, 18, 21, 22]])
 
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             self._check_gen_eig(A, B)
-        finally:
-            np.seterr(**olderr)
 
     def test_falker(self):
         # Test matrices giving some Nan generalized eigenvalues.
@@ -307,14 +307,11 @@ class TestEig(object):
         D = array(([1, -1, 0], [-1, 1, 0], [0, 0, 0]))
         Z = zeros((3, 3))
         I3 = eye(3)
-        A = bmat([[I3, Z], [Z, -K]])
-        B = bmat([[Z, I3], [M, D]])
+        A = np.block([[I3, Z], [Z, -K]])
+        B = np.block([[Z, I3], [M, D]])
 
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             self._check_gen_eig(A, B)
-        finally:
-            np.seterr(**olderr)
 
     def test_bad_geneig(self):
         # Ticket #709 (strange return values from DGGEV)
@@ -334,13 +331,10 @@ class TestEig(object):
 
         # With a buggy LAPACK, this can fail for different omega on different
         # machines -- so we need to test several values
-        olderr = np.seterr(all='ignore')
-        try:
+        with np.errstate(all='ignore'):
             for k in range(100):
                 A, B = matrices(omega=k*5./100)
                 self._check_gen_eig(A, B)
-        finally:
-            np.seterr(**olderr)
 
     def test_make_eigvals(self):
         # Step through all paths in _make_eigvals
@@ -387,7 +381,7 @@ class TestEig(object):
         assert_raises(ValueError, eig, B, A)
 
 
-class TestEigBanded(object):
+class TestEigBanded:
     def setup_method(self):
         self.create_bandmat()
 
@@ -667,7 +661,7 @@ class TestEigBanded(object):
         assert_array_almost_equal(y, y_lin)
 
 
-class TestEigTridiagonal(object):
+class TestEigTridiagonal:
     def setup_method(self):
         self.create_trimat()
 
@@ -789,6 +783,9 @@ class TestEigh:
         assert_raises(ValueError, eigh, np.ones([2, 2]), np.ones([2, 1]))
         # Incompatible a, b sizes
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([2, 2]))
+        # Wrong type parameter for generalized problem
+        assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                      type=4)
         # Both value and index subsets requested
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[1, 2], eigvals=[2, 4])
@@ -846,19 +843,28 @@ class TestEigh:
         assert_raises(ValueError, eigh, a)
         assert_raises(ValueError, eigh, b)
 
+    @pytest.mark.parametrize('dtype_', DTYPES)
     @pytest.mark.parametrize('driver', ("ev", "evd", "evr", "evx"))
-    def test_various_drivers_standard(self, driver):
-        a = _random_hermitian_matrix(20)
+    def test_various_drivers_standard(self, driver, dtype_):
+        a = _random_hermitian_matrix(n=20, dtype=dtype_)
         w, v = eigh(a, driver=driver)
-        assert_allclose(a @ v - (v * w), 0., atol=1000*np.spacing(1.), rtol=0.)
+        assert_allclose(a @ v - (v * w), 0.,
+                        atol=1000*np.finfo(dtype_).eps,
+                        rtol=0.)
 
+    @pytest.mark.parametrize('type', (1, 2, 3))
     @pytest.mark.parametrize('driver', ("gv", "gvd", "gvx"))
-    def test_various_drivers_generalized(self, driver):
+    def test_various_drivers_generalized(self, driver, type):
+        atol = np.spacing(5000.)
         a = _random_hermitian_matrix(20)
         b = _random_hermitian_matrix(20, posdef=True)
-        w, v = eigh(a=a, b=b, driver=driver)
-        assert_allclose(a @ v - w*(b @ v), 0.,
-                        atol=1000*np.spacing(1.), rtol=0.)
+        w, v = eigh(a=a, b=b, driver=driver, type=type)
+        if type == 1:
+            assert_allclose(a @ v - w*(b @ v), 0., atol=atol, rtol=0.)
+        elif type == 2:
+            assert_allclose(a @ b @ v - v * w, 0., atol=atol, rtol=0.)
+        else:
+            assert_allclose(b @ a @ v - v * w, 0., atol=atol, rtol=0.)
 
     # Old eigh tests kept for backwards compatibility
     @pytest.mark.parametrize('eigvals', (None, (2, 4)))
@@ -887,8 +893,22 @@ class TestEigh:
         diag2_ = diag(z.T.conj() @ b @ z).real
         assert_allclose(diag2_, ones(diag2_.shape[0]), rtol=0., atol=atol)
 
+    def test_eigvalsh_new_args(self):
+        a = _random_hermitian_matrix(5)
+        w = eigvalsh(a, eigvals=[1, 2])
+        assert_equal(len(w), 2)
 
-class TestLU(object):
+        w2 = eigvalsh(a, subset_by_index=[1, 2])
+        assert_equal(len(w2), 2)
+        assert_allclose(w, w2)
+
+        b = np.diag([1, 1.2, 1.3, 1.5, 2])
+        w3 = eigvalsh(b, subset_by_value=[1, 1.4])
+        assert_equal(len(w3), 2)
+        assert_allclose(w3, np.array([1.2, 1.3]))
+
+
+class TestLU:
     def setup_method(self):
         self.a = array([[1, 2, 3], [1, 2, 3], [2, 5, 6]])
         self.ca = array([[1, 2, 3], [1, 2, 3], [2, 5j, 6]])
@@ -988,7 +1008,7 @@ class TestLUSingle(TestLU):
         self.cmed = self.vrect.astype(complex64)
 
 
-class TestLUSolve(object):
+class TestLUSolve:
     def setup_method(self):
         seed(1234)
 
@@ -1012,7 +1032,7 @@ class TestLUSolve(object):
         assert_array_almost_equal(x1, x2)
 
 
-class TestSVD_GESDD(object):
+class TestSVD_GESDD:
     def setup_method(self):
         self.lapack_driver = 'gesdd'
         seed(1234)
@@ -1150,6 +1170,16 @@ class TestSVD_GESDD(object):
              [0., 0., 0., 0.16666667, 0.66666667, 0.16666667]])
         svd(b, lapack_driver=self.lapack_driver)
 
+    @pytest.mark.skipif(not HAS_ILP64, reason="64-bit LAPACK required")
+    @pytest.mark.slow
+    def test_large_matrix(self):
+        check_free_memory(free_mb=17000)
+        A = np.zeros([1, 2**31], dtype=np.float32)
+        A[0, -1] = 1
+        u, s, vh = svd(A, full_matrices=False)
+        assert_allclose(s[0], 1.0)
+        assert_allclose(u[0, 0] * vh[0, -1], 1.0)
+
 
 class TestSVD_GESVD(TestSVD_GESDD):
     def setup_method(self):
@@ -1157,7 +1187,7 @@ class TestSVD_GESVD(TestSVD_GESDD):
         seed(1234)
 
 
-class TestSVDVals(object):
+class TestSVDVals:
 
     def test_empty(self):
         for a in [[]], np.empty((2, 0)), np.ones((0, 3)):
@@ -1214,14 +1244,14 @@ class TestSVDVals(object):
         svdvals(a)
 
 
-class TestDiagSVD(object):
+class TestDiagSVD:
 
     def test_simple(self):
         assert_array_almost_equal(diagsvd([1, 0, 0], 3, 3),
                                   [[1, 0, 0], [0, 0, 0], [0, 0, 0]])
 
 
-class TestQR(object):
+class TestQR:
 
     def setup_method(self):
         seed(1234)
@@ -1763,7 +1793,7 @@ class TestQR(object):
         assert_raises(Exception, qr, (a,), {'lwork': 2})
 
 
-class TestRQ(object):
+class TestRQ:
 
     def setup_method(self):
         seed(1234)
@@ -1867,7 +1897,7 @@ class TestRQ(object):
         assert_array_almost_equal(r @ q, a)
 
 
-class TestSchur(object):
+class TestSchur:
 
     def test_simple(self):
         a = [[8, 12, 3], [2, 9, 3], [10, 3, 6]]
@@ -1963,7 +1993,7 @@ class TestSchur(object):
         assert_array_almost_equal(z @ t @ z.conj().T, a)
 
 
-class TestHessenberg(object):
+class TestHessenberg:
 
     def test_simple(self):
         a = [[-149, -50, -154],
@@ -2038,7 +2068,7 @@ class TestHessenberg(object):
         assert_array_almost_equal(h2, b)
 
 
-class TestQZ(object):
+class TestQZ:
     def setup_method(self):
         seed(12345)
 
@@ -2219,7 +2249,7 @@ def _make_pos(X):
     return np.sign(X)*X
 
 
-class TestOrdQZ(object):
+class TestOrdQZ:
     @classmethod
     def setup_class(cls):
         # https://www.nag.com/lapack-ex/node119.html
@@ -2276,12 +2306,8 @@ class TestOrdQZ(object):
         cls.B = [B1, B2, B3, B4, A5]
 
     def qz_decomp(self, sort):
-        try:
-            olderr = np.seterr('raise')
+        with np.errstate(all='raise'):
             ret = [ordqz(Ai, Bi, sort=sort) for Ai, Bi in zip(self.A, self.B)]
-        finally:
-            np.seterr(**olderr)
-
         return tuple(ret)
 
     def check(self, A, B, sort, AA, BB, alpha, beta, Q, Z):
@@ -2425,7 +2451,7 @@ class TestOrdQZ(object):
                 assert_allclose(expected_eigvals, x)
 
 
-class TestOrdQZWorkspaceSize(object):
+class TestOrdQZWorkspaceSize:
 
     def setup_method(self):
         seed(12345)
@@ -2442,7 +2468,7 @@ class TestOrdQZWorkspaceSize(object):
             _ = ordqz(A, B, sort=lambda alpha, beta: alpha < beta,
                       output='real')
 
-        for ddtype in [np.complex, np.complex64]:
+        for ddtype in [np.complex128, np.complex64]:
             A = random((N, N)).astype(ddtype)
             B = random((N, N)).astype(ddtype)
             _ = ordqz(A, B, sort=lambda alpha, beta: alpha < beta,
@@ -2454,16 +2480,16 @@ class TestOrdQZWorkspaceSize(object):
         N = 202
 
         # segfaults if lwork parameter to dtrsen is too small
-        for ddtype in [np.float32, np.float64, np.complex, np.complex64]:
+        for ddtype in [np.float32, np.float64, np.complex128, np.complex64]:
             A = random((N, N)).astype(ddtype)
             B = random((N, N)).astype(ddtype)
             S, T, alpha, beta, U, V = ordqz(A, B, sort='ouc')
 
 
-class TestDatacopied(object):
+class TestDatacopied:
 
     def test_datacopied(self):
-        from scipy.linalg.decomp import _datacopied
+        from scipy.linalg._decomp import _datacopied
 
         M = matrix([[0, 1], [2, 3]])
         A = asarray(M)
@@ -2500,8 +2526,8 @@ def test_aligned_mem_float():
     eig(z.T, overwrite_a=True)
 
 
-@pytest.mark.skip(platform.machine() == 'ppc64le',
-                  reason="crashes on ppc64le")
+@pytest.mark.skipif(platform.machine() == 'ppc64le',
+                    reason="crashes on ppc64le")
 def test_aligned_mem():
     """Check linalg works with non-aligned memory (float64)"""
     # Allocate 804 bytes of memory (allocated on boundary)
@@ -2581,7 +2607,7 @@ def test_lapack_misaligned():
 # cholesky, rsf2csf, lu_solve, solve, eig_banded, eigvals_banded, eigh, diagsvd
 
 
-class TestOverwrite(object):
+class TestOverwrite:
     def test_eig(self):
         assert_no_overwrite(eig, [(3, 3)])
         assert_no_overwrite(eig, [(3, 3), (3, 3)])
@@ -2675,8 +2701,10 @@ def test_orth_memory_efficiency():
     n = 10*1000*1000
     try:
         _check_orth(n, np.float64, skip_big=True)
-    except MemoryError:
-        raise AssertionError('memory error perhaps caused by orth regression')
+    except MemoryError as e:
+        raise AssertionError(
+            'memory error perhaps caused by orth regression'
+        ) from e
 
 
 def test_orth():
@@ -2782,7 +2810,7 @@ def test_subspace_angles():
     assert_allclose(subspace_angles(b, a), 0., atol=1e-14)
 
 
-class TestCDF2RDF(object):
+class TestCDF2RDF:
 
     def matmul(self, a, b):
         return np.einsum('...ij,...jk->...ik', a, b)

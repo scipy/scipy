@@ -3,8 +3,8 @@ import matplotlib.pyplot as plt
 from scipy import stats
 
 
-np.random.seed(12456)
-x1 = np.random.normal(size=200)  # random data, normal distribution
+rng = np.random.default_rng()
+x1 = rng.normal(size=200)  # random data, normal distribution
 xs = np.linspace(x1.min()-1, x1.max()+1, 200)
 
 kde1 = stats.gaussian_kde(x1)
@@ -23,7 +23,7 @@ ax1.set_ylabel('Density')
 ax1.set_title("Normal (top) and Student's T$_{df=5}$ (bottom) distributions")
 ax1.legend(loc=1)
 
-x2 = stats.t.rvs(5, size=200)  # random data, T distribution
+x2 = stats.t.rvs(5, size=200, random_state=rng)  # random data, T distribution
 xs = np.linspace(x2.min() - 1, x2.max() + 1, 200)
 
 kde3 = stats.gaussian_kde(x2)

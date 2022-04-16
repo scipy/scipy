@@ -24,8 +24,8 @@ from libc.math cimport fabs, sqrt
 
 import numpy as np
 
-import scipy.spatial.qhull as qhull
-cimport scipy.spatial.qhull as qhull
+import scipy.spatial._qhull as qhull
+cimport scipy.spatial._qhull as qhull
 
 import warnings
 
@@ -46,7 +46,7 @@ ctypedef fused double_or_complex:
 # Interpolator base class
 #------------------------------------------------------------------------------
 
-class NDInterpolatorBase(object):
+class NDInterpolatorBase:
     """
     Common routines for interpolators.
 
@@ -94,7 +94,8 @@ class NDInterpolatorBase(object):
             self.is_complex = np.issubdtype(self.values.dtype, np.complexfloating)
             if self.is_complex:
                 if need_contiguous:
-                    self.values = np.ascontiguousarray(self.values, dtype=np.complex)
+                    self.values = np.ascontiguousarray(self.values,
+                                                       dtype=np.complex128)
                 self.fill_value = complex(fill_value)
             else:
                 if need_contiguous:
@@ -132,8 +133,10 @@ class NDInterpolatorBase(object):
 
         Parameters
         ----------
-        xi : ndarray of float, shape (..., ndim)
+        x1, x2, ... xn: array-like of float
             Points where to interpolate data at.
+            x1, x2, ... xn can be array-like of float with broadcastable shape.
+            or x1 can be array-like of float with shape ``(..., ndim)``
 
         """
         xi = _ndim_coords_from_arrays(args, ndim=self.points.shape[1])
@@ -204,7 +207,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
     """
     LinearNDInterpolator(points, values, fill_value=np.nan, rescale=False)
 
-    Piecewise linear interpolant in N dimensions.
+    Piecewise linear interpolant in N > 1 dimensions.
 
     .. versionadded:: 0.9
 
@@ -233,6 +236,37 @@ class LinearNDInterpolator(NDInterpolatorBase):
     with Qhull [1]_, and on each triangle performing linear
     barycentric interpolation.
 
+    Examples
+    --------
+    We can interpolate values on a 2D plane:
+
+    >>> from scipy.interpolate import LinearNDInterpolator
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(10) - 0.5
+    >>> y = rng.random(10) - 0.5
+    >>> z = np.hypot(x, y)
+    >>> X = np.linspace(min(x), max(x))
+    >>> Y = np.linspace(min(y), max(y))
+    >>> X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
+    >>> interp = LinearNDInterpolator(list(zip(x, y)), z)
+    >>> Z = interp(X, Y)
+    >>> plt.pcolormesh(X, Y, Z, shading='auto')
+    >>> plt.plot(x, y, "ok", label="input point")
+    >>> plt.legend()
+    >>> plt.colorbar()
+    >>> plt.axis("equal")
+    >>> plt.show()
+
+    See also
+    --------
+    griddata :
+        Interpolate unstructured D-D data.
+    NearestNDInterpolator :
+        Nearest-neighbor interpolation in N dimensions.
+    CloughTocher2DInterpolator :
+        Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
+
     References
     ----------
     .. [1] http://www.qhull.org/
@@ -253,11 +287,11 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, double[:,::1] xi, double_or_complex dummy):
-        cdef double_or_complex[:,::1] values = self.values
+    def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
+        cdef const double_or_complex[:,::1] values = self.values
         cdef double_or_complex[:,::1] out
-        cdef double[:,::1] points = self.points
-        cdef int[:,::1] simplices = self.tri.simplices
+        cdef const double[:,::1] points = self.points
+        cdef const int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex fill_value
         cdef int i, j, k, m, ndim, isimplex, inside, start, nvalues
@@ -270,7 +304,7 @@ class LinearNDInterpolator(NDInterpolatorBase):
 
         qhull._get_delaunay_info(&info, self.tri, 1, 0, 0)
 
-        out = np.zeros((xi.shape[0], self.values.shape[1]),
+        out = np.empty((xi.shape[0], self.values.shape[1]),
                        dtype=self.values.dtype)
         nvalues = out.shape[1]
 
@@ -488,7 +522,7 @@ cdef int _estimate_gradients_2d_global(qhull.DelaunayInfo_t *d, double *data,
 @cython.boundscheck(False)
 @cython.wraparound(False)
 cpdef estimate_gradients_2d_global(tri, y, int maxiter=400, double tol=1e-6):
-    cdef double[:,::1] data
+    cdef const double[:,::1] data
     cdef double[:,:,::1] grad
     cdef qhull.DelaunayInfo_t info
     cdef int k, ret, nvalues
@@ -770,8 +804,7 @@ cdef double_or_complex _clough_tocher_2d_single(qhull.DelaunayInfo_t *d,
     return w
 
 class CloughTocher2DInterpolator(NDInterpolatorBase):
-    """
-    CloughTocher2DInterpolator(points, values, tol=1e-6)
+    """CloughTocher2DInterpolator(points, values, tol=1e-6).
 
     Piecewise cubic, C1 smooth, curvature-minimizing interpolant in 2D.
 
@@ -811,7 +844,38 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
     The gradients of the interpolant are chosen so that the curvature
     of the interpolating surface is approximatively minimized. The
     gradients necessary for this are estimated using the global
-    algorithm described in [Nielson83,Renka84]_.
+    algorithm described in [Nielson83]_ and [Renka84]_.
+
+    Examples
+    --------
+    We can interpolate values on a 2D plane:
+
+    >>> from scipy.interpolate import CloughTocher2DInterpolator
+    >>> import matplotlib.pyplot as plt
+    >>> rng = np.random.default_rng()
+    >>> x = rng.random(10) - 0.5
+    >>> y = rng.random(10) - 0.5
+    >>> z = np.hypot(x, y)
+    >>> X = np.linspace(min(x), max(x))
+    >>> Y = np.linspace(min(y), max(y))
+    >>> X, Y = np.meshgrid(X, Y)  # 2D grid for interpolation
+    >>> interp = CloughTocher2DInterpolator(list(zip(x, y)), z)
+    >>> Z = interp(X, Y)
+    >>> plt.pcolormesh(X, Y, Z, shading='auto')
+    >>> plt.plot(x, y, "ok", label="input point")
+    >>> plt.legend()
+    >>> plt.colorbar()
+    >>> plt.axis("equal")
+    >>> plt.show()
+
+    See also
+    --------
+    griddata :
+        Interpolate unstructured D-D data.
+    LinearNDInterpolator :
+        Piecewise linear interpolant in N > 1 dimensions.
+    NearestNDInterpolator :
+        Nearest-neighbor interpolation in N > 1 dimensions.
 
     References
     ----------
@@ -853,12 +917,12 @@ class CloughTocher2DInterpolator(NDInterpolatorBase):
 
     @cython.boundscheck(False)
     @cython.wraparound(False)
-    def _do_evaluate(self, double[:,::1] xi, double_or_complex dummy):
-        cdef double_or_complex[:,::1] values = self.values
-        cdef double_or_complex[:,:,:] grad = self.grad
+    def _do_evaluate(self, const double[:,::1] xi, double_or_complex dummy):
+        cdef const double_or_complex[:,::1] values = self.values
+        cdef const double_or_complex[:,:,:] grad = self.grad
         cdef double_or_complex[:,::1] out
-        cdef double[:,::1] points = self.points
-        cdef int[:,::1] simplices = self.tri.simplices
+        cdef const double[:,::1] points = self.points
+        cdef const int[:,::1] simplices = self.tri.simplices
         cdef double c[NPY_MAXDIMS]
         cdef double_or_complex f[NPY_MAXDIMS+1]
         cdef double_or_complex df[2*NPY_MAXDIMS+2]
