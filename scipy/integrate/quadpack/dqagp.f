@@ -1,5 +1,5 @@
-      subroutine dqagp(f,a,b,npts2,points,epsabs,epsrel,result,abserr,
-     *   neval,ier,leniw,lenw,last,iwork,work)
+      recursive subroutine dqagp(f,a,b,npts2,points,epsabs,epsrel,
+     *   result,abserr,neval,ier,leniw,lenw,last,iwork,work)
 c***begin prologue  dqagp
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)

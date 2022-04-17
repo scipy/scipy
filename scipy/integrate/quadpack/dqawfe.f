@@ -1,6 +1,6 @@
-      subroutine dqawfe(f,a,omega,integr,epsabs,limlst,limit,maxp1,
-     *   result,abserr,neval,ier,rslst,erlst,ierlst,lst,alist,blist,
-     *   rlist,elist,iord,nnlog,chebmo)
+      recursive subroutine dqawfe(f,a,omega,integr,epsabs,limlst,
+     *   limit,maxp1,result,abserr,neval,ier,rslst,erlst,ierlst,lst,
+     *   alist,blist,rlist,elist,iord,nnlog,chebmo)
 c***begin prologue  dqawfe
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)
