@@ -1583,7 +1583,7 @@ def yeojohnson_llf(lmb, data):
     loglike = np.empty_like(trans_var)
 
     # Avoid RuntimeWarning raised by np.log when the variance is too low
-    tiny_variance = trans_var < np.finfo(trans_var).tiny
+    tiny_variance = trans_var < np.finfo(trans_var.dtype).tiny
     loglike[tiny_variance] = np.inf
 
     loglike[~tiny_variance] = (
