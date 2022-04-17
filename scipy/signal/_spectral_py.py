@@ -646,21 +646,33 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
         `False` return a two-sided spectrum. Defaults to `True`, but for
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
-        Selects between computing the power spectral density ('density')
-        where `Sxx` has units of V**2/Hz and computing the power
-        spectrum ('spectrum') where `Sxx` has units of V**2, if `x`
-        is measured in V and `fs` is measured in Hz. Defaults to
-        'density'.
+        Selects between normalizing the window to unit power (``'density'``) or
+        unit area (``'spectrum'``). See the `mode` parameter for more
+        information. Defaults to ``'density'``.
     axis : int, optional
         Axis along which the spectrogram is computed; the default is over
         the last axis (i.e. ``axis=-1``).
     mode : str, optional
-        Defines what kind of return values are expected. Options are
-        ['psd', 'complex', 'magnitude', 'angle', 'phase']. 'complex' is
-        equivalent to the output of `stft` with no padding or boundary
-        extension. 'magnitude' returns the absolute magnitude of the
-        STFT. 'angle' and 'phase' return the complex angle of the STFT,
-        with and without unwrapping, respectively.
+        This parameter defines how the output from the short-time Fourier
+        transform, i.e., calling `stft` with no padding or boundary extension,
+        is transformed. Assuming that `x` is measured in V and `fs` in Hertz
+        then return:
+
+        ``'psd'``:
+            The absolute square of the `stft`. The unit is V² if
+            ``scaling = 'spectrum'``. For ``scaling = 'density'`` each line
+            along the frequency can be interpreted as a power spectral
+            density and the unit is V²/Hz.
+        ``'complex'``:
+            The output of the `stft` is not transformed - the unit is V.
+        ``'magnitude'``:
+            The absolute value of the `stft` - the unit is V. When
+            ``scaling = 'magnitude'`` each frequency line can be interpreted
+            as a magnitude spectrum.
+        ``'angle'``:
+            Complex angle (without unwrapping) of the `stft` - the unit is rad.
+        ``'phase'``:
+            Complex angle (with unwrapping) of the `stft` - the unit is rad.
 
     Returns
     -------
@@ -674,6 +686,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
 
     See Also
     --------
+    stft: Compute the Short-time Fourier Transform (STFT)
     periodogram: Simple, optionally modified periodogram
     lombscargle: Lomb-Scargle periodogram for unevenly sampled data
     welch: Power spectral density by Welch's method.
