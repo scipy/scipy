@@ -11,7 +11,7 @@ These instructions describe how to build NumPy and SciPy libraries from
 source.
 
 If you just want to use NumPy or SciPy, install pre-built binaries as described
-in :ref:`installing-upgrading`.
+in the `Installation page <https://scipy.org/install/>`__.
 
 Python
 ------

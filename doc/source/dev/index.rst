@@ -16,6 +16,7 @@ the organization section.
    hacking
    contributor/quickerstart_conda
    contributor/contributor_toc
+   missing-bits
 
 .. toctree::
    :maxdepth: 1
@@ -49,6 +50,7 @@ the organization section.
    contributor/adding_new
    contributor/continuous_integration
    contributor/meson
+   contributor/meson_advanced
    contributor/using_act
 
 .. These files are not intended to be in any toctree. because they have not

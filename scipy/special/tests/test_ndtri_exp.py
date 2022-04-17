@@ -1,6 +1,6 @@
 import pytest
 import numpy as np
-from numpy.testing import assert_equal
+from numpy.testing import assert_equal, assert_allclose
 from scipy.special import log_ndtr, ndtri_exp
 from scipy.special._testutils import assert_func_equal
 
@@ -60,13 +60,32 @@ class TestNdtriExp:
         )
 
     def test_extreme(self):
-        assert_func_equal(
-            log_ndtr_ndtri_exp,
-            lambda y: y,
-            [-np.finfo(float).max, -np.finfo(float).min],
-            rtol=1e-12,
-            nan_ok=True
-        )
+        # bigneg is not quite the largest negative double precision value.
+        # Here's why:
+        # The round-trip calculation
+        #    y = ndtri_exp(bigneg)
+        #    bigneg2 = log_ndtr(y)
+        # where bigneg is a very large negative value, would--with infinite
+        # precision--result in bigneg2 == bigneg.  When bigneg is large enough,
+        # y is effectively equal to -sqrt(2)*sqrt(-bigneg), and log_ndtr(y) is
+        # effectively -(y/sqrt(2))**2.  If we use bigneg = np.finfo(float).min,
+        # then by construction, the theoretical value is the most negative
+        # finite value that can be represented with 64 bit float point.  This
+        # means tiny changes in how the computation proceeds can result in the
+        # return value being -inf.  (E.g. changing the constant representation
+        # of 1/sqrt(2) from 0.7071067811865475--which is the value returned by
+        # 1/np.sqrt(2)--to 0.7071067811865476--which is the most accurate 64
+        # bit floating point representation of 1/sqrt(2)--results in the
+        # round-trip that starts with np.finfo(float).min returning -inf.  So
+        # we'll move the bigneg value a few ULPs towards 0 to avoid this
+        # sensitivity.
+        # Use the reduce method to apply nextafter four times.
+        bigneg = np.nextafter.reduce([np.finfo(float).min, 0, 0, 0, 0])
+        # tinyneg is approx. -2.225e-308.
+        tinyneg = -np.finfo(float).tiny
+        x = np.array([tinyneg, bigneg])
+        result = log_ndtr_ndtri_exp(x)
+        assert_allclose(result, x, rtol=1e-12)
 
     def test_asymptotes(self):
         assert_equal(ndtri_exp([-np.inf, 0.0]), [-np.inf, np.inf])

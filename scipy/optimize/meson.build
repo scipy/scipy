@@ -277,6 +277,7 @@ py3.install_sources([
   '_linprog_simplex.py',
   '_linprog_util.py',
   '_lsap.py',
+  '_milp.py',
   '_minimize.py',
   '_minpack_py.py',
   '_nnls.py',

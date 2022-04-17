@@ -1,7 +1,7 @@
 
-.. _continuous-gilbrat:
+.. _continuous-gibrat:
 
-Gilbrat Distribution
+Gibrat Distribution
 ====================
 
 Special case of the log-normal with :math:`\sigma=1` and :math:`S=1.0`, typically also :math:`L=0.0`.)
@@ -27,4 +27,4 @@ Special case of the log-normal with :math:`\sigma=1` and :math:`S=1.0`, typicall
     \begin{eqnarray*} h\left[X\right] & = & \log\left(\sqrt{2\pi e}\right)\\
      & \approx & 1.4189385332046727418\end{eqnarray*}
 
-Implementation: `scipy.stats.gilbrat`
+Implementation: `scipy.stats.gibrat`

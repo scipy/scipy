@@ -14,9 +14,10 @@ def _Dij(A, i, j):
     # See `somersd` References [2] bottom of page 309
     return A[i+1:, :j].sum() + A[:i, j+1:].sum()
 
-#pythran export _P(float[:,:])
-#pythran export _P(int[:,:])
-def _P(A):
+
+# pythran export _concordant_pairs(float[:,:])
+# pythran export _concordant_pairs(int[:,:])
+def _concordant_pairs(A):
     """Twice the number of concordant pairs, excluding ties."""
     # See `somersd` References [2] bottom of page 309
     m, n = A.shape
@@ -26,9 +27,10 @@ def _P(A):
             count += A[i, j]*_Aij(A, i, j)
     return count
 
-#pythran export _Q(float[:,:])
-#pythran export _Q(int[:,:])
-def _Q(A):
+
+# pythran export _discordant_pairs(float[:,:])
+# pythran export _discordant_pairs(int[:,:])
+def _discordant_pairs(A):
     """Twice the number of discordant pairs, excluding ties."""
     # See `somersd` References [2] bottom of page 309
     m, n = A.shape
@@ -37,6 +39,7 @@ def _Q(A):
         for j in range(n):
             count += A[i, j]*_Dij(A, i, j)
     return count
+
 
 #pythran export _a_ij_Aij_Dij2(float[:,:])
 #pythran export _a_ij_Aij_Dij2(int[:,:])

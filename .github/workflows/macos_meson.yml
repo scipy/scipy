@@ -14,23 +14,27 @@ env:
   INSTALLDIR: "build-install"
   CCACHE_DIR: "${{ github.workspace }}/.ccache"
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   test_meson:
     name: Meson build
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
-    if: "github.repository != '' || github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: macos-latest
     strategy:
       matrix:
         python-version: ["3.10"]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -48,7 +52,7 @@ jobs:
         echo "::set-output name=timestamp::${NOW}"
 
     - name: Setup compiler cache
-      uses:  actions/cache@v2
+      uses:  actions/cache@v3
       id:    cache-ccache
       # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
       # NOTE: The caching strategy is modeled in a way that it will always have
@@ -76,7 +80,7 @@ jobs:
         use-only-tar-bz2: true
 
     - name: Cache conda
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
         # Increase this value to reset cache if environment_meson.yml has not changed
         CACHE_NUMBER: 0
@@ -101,7 +105,7 @@ jobs:
         # https://conda-forge.org/docs/maintainer/knowledge_base.html#requiring-newer-macos-sdks
         export MACOSX_DEPLOYMENT_TARGET=10.9
         export MACOSX_SDK_VERSION=10.9
-        CC="ccache $CC" python dev.py -j 2 --build-only
+        CC="ccache $CC" python do.py build -j 2
 
     - name: Test SciPy
       shell: bash -l {0}

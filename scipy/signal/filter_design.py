@@ -20,7 +20,7 @@ __all__ = [  # noqa: F822
     'logspace', 'tan', 'log10', 'arctan', 'arcsinh', 'exp', 'arccosh',
     'ceil', 'conjugate', 'append', 'prod', 'full', 'array', 'mintypecode',
     'npp_polyval', 'polyvalfromroots', 'optimize', 'sp_fft', 'comb',
-    'float_factorial', 'root_scalar', 'abs', 'maxflat', 'yulewalk',
+    'float_factorial', 'abs', 'maxflat', 'yulewalk',
     'EPSILON', 'filter_dict', 'band_dict', 'bessel_norms'
 ]
 

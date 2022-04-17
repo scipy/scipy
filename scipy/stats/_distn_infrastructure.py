@@ -9,7 +9,6 @@ import keyword
 import re
 import types
 import warnings
-import inspect
 from itertools import zip_longest
 from collections import namedtuple
 
@@ -93,8 +92,8 @@ isf(q, %(shapes)s, loc=0, scale=1)
     Inverse survival function (inverse of ``sf``).
 """
 _doc_moment = """\
-moment(n, %(shapes)s, loc=0, scale=1)
-    Non-central moment of order n
+moment(order, %(shapes)s, loc=0, scale=1)
+    Non-central moment of the specified order.
 """
 _doc_stats = """\
 stats(%(shapes)s, loc=0, scale=1, moments='mv')
@@ -135,9 +134,8 @@ std(%(shapes)s, loc=0, scale=1)
     Standard deviation of the distribution.
 """
 _doc_interval = """\
-interval(alpha, %(shapes)s, loc=0, scale=1)
-    Endpoints of the range that contains fraction alpha [0, 1] of the
-    distribution
+interval(confidence, %(shapes)s, loc=0, scale=1)
+    Confidence interval with equal areas around the median.
 """
 _doc_allmethods = ''.join([docheaders['methods'], _doc_rvs, _doc_pdf,
                            _doc_logpdf, _doc_cdf, _doc_logcdf, _doc_sf,
@@ -450,12 +448,6 @@ class rv_frozen:
     def random_state(self, seed):
         self.dist._random_state = check_random_state(seed)
 
-    def pdf(self, x):   # raises AttributeError in frozen discrete distribution
-        return self.dist.pdf(x, *self.args, **self.kwds)
-
-    def logpdf(self, x):
-        return self.dist.logpdf(x, *self.args, **self.kwds)
-
     def cdf(self, x):
         return self.dist.cdf(x, *self.args, **self.kwds)
 
@@ -502,12 +494,6 @@ class rv_frozen:
     def entropy(self):
         return self.dist.entropy(*self.args, **self.kwds)
 
-    def pmf(self, k):
-        return self.dist.pmf(k, *self.args, **self.kwds)
-
-    def logpmf(self, k):
-        return self.dist.logpmf(k, *self.args, **self.kwds)
-
     def interval(self, confidence=None, **kwds):
         return self.dist.interval(confidence, *self.args, **self.kwds, **kwds)
 
@@ -525,6 +511,24 @@ class rv_frozen:
 
     def support(self):
         return self.dist.support(*self.args, **self.kwds)
+
+
+class rv_discrete_frozen(rv_frozen):
+
+    def pmf(self, k):
+        return self.dist.pmf(k, *self.args, **self.kwds)
+
+    def logpmf(self, k):  # No error
+        return self.dist.logpmf(k, *self.args, **self.kwds)
+
+
+class rv_continuous_frozen(rv_frozen):
+
+    def pdf(self, x):
+        return self.dist.pdf(x, *self.args, **self.kwds)
+
+    def logpdf(self, x):
+        return self.dist.logpdf(x, *self.args, **self.kwds)
 
 
 def argsreduce(cond, *args):
@@ -639,22 +643,6 @@ class rv_generic:
                                    ('moments' in sig.args) or
                                    ('moments' in sig.kwonlyargs))
         self._random_state = check_random_state(seed)
-
-        # For historical reasons, `size` was made an attribute that was read
-        # inside _rvs().  The code is being changed so that 'size'
-        # is an argument
-        # to self._rvs(). However some external (non-SciPy) distributions
-        # have not
-        # been updated.  Maintain backwards compatibility by checking if
-        # the self._rvs() signature has the 'size' keyword, or a **kwarg,
-        # and if not set self._size inside self.rvs()
-        # before calling self._rvs().
-        argspec = inspect.getfullargspec(self._rvs)
-        self._rvs_uses_size_attribute = (argspec.varkw is None and
-                                         'size' not in argspec.args and
-                                         'size' not in argspec.kwonlyargs)
-        # Warn on first use only
-        self._rvs_size_warned = False
 
     @property
     def random_state(self):
@@ -861,7 +849,10 @@ class rv_generic:
             The frozen distribution.
 
         """
-        return rv_frozen(self, *args, **kwds)
+        if isinstance(self, rv_continuous):
+            return rv_continuous_frozen(self, *args, **kwds)
+        else:
+            return rv_discrete_frozen(self, *args, **kwds)
 
     def __call__(self, *args, **kwds):
         return self.freeze(*args, **kwds)
@@ -1066,7 +1057,12 @@ class rv_generic:
         args, loc, scale, size = self._parse_args_rvs(*args, **kwds)
         cond = logical_and(self._argcheck(*args), (scale >= 0))
         if not np.all(cond):
-            raise ValueError("Domain error in arguments.")
+            message = ("Domain error in arguments. The `scale` parameter must "
+                       "be positive for all distributions, and many "
+                       "distributions have restrictions on shape parameters. "
+                       f"Please see the `scipy.stats.{self.name}` "
+                       "documentation for details.")
+            raise ValueError(message)
 
         if np.all(scale == 0):
             return loc*ones(size, 'd')
@@ -1078,20 +1074,7 @@ class rv_generic:
         else:
             random_state = self._random_state
 
-        # Maintain backwards compatibility by setting self._size
-        # for distributions that still need it.
-        if self._rvs_uses_size_attribute:
-            if not self._rvs_size_warned:
-                warnings.warn(
-                    f'The signature of {self._rvs} does not contain '
-                    f'a "size" keyword.  Such signatures are deprecated.',
-                    np.VisibleDeprecationWarning)
-                self._rvs_size_warned = True
-            self._size = size
-            self._random_state = random_state
-            vals = self._rvs(*args)
-        else:
-            vals = self._rvs(*args, size=size, random_state=random_state)
+        vals = self._rvs(*args, size=size, random_state=random_state)
 
         vals = vals * scale + loc
 
@@ -1100,11 +1083,11 @@ class rv_generic:
             self._random_state = random_state_saved
 
         # Cast to int if discrete
-        if discrete:
+        if discrete and not isinstance(self, rv_sample):
             if size == ():
                 vals = int(vals)
             else:
-                vals = vals.astype(int)
+                vals = vals.astype(np.int64)
 
         return vals
 
@@ -1259,7 +1242,7 @@ class rv_generic:
         .. deprecated:: 1.9.0
            Parameter `n` is replaced by parameter `order` to avoid name
            collisions with the shape parameter `n` of several distributions.
-           Parameter `n` will be removed in the second release after 1.9.0.
+           Parameter `n` will be removed in SciPy 1.11.0.
 
         Parameters
         ----------
@@ -1379,7 +1362,7 @@ class rv_generic:
         mu, mu2, g1, g2 = None, None, None, None
         if (n > 0) and (n < 5):
             if self._stats_has_moments:
-                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'vk'}[n]}
+                mdict = {'moments': {1: 'm', 2: 'v', 3: 'vs', 4: 'mvsk'}[n]}
             else:
                 mdict = {}
             mu, mu2, g1, g2 = self._stats(*shapes, **mdict)
@@ -1528,8 +1511,7 @@ class rv_generic:
         .. deprecated:: 1.9.0
            Parameter `alpha` is replaced by parameter `confidence` to avoid
            name collisions with the shape parameter `alpha` of some
-           distributions. Parameter `alpha` will be removed in the second
-           release after 1.9.0.
+           distributions. Parameter `alpha` will be removed in SciPy 1.11.0.
 
         Parameters
         ----------
@@ -1700,6 +1682,11 @@ def _get_fixed_fit_value(kwds, names):
                          "specify the same fixed parameter: " +
                          ', '.join(repeated))
     return vals[0][1] if vals else None
+
+
+class FitError(RuntimeError):
+    """Represents an error condition when fitting a distribution to data"""
+    pass
 
 #  continuous random variables: implement maybe later
 #
@@ -1910,6 +1897,10 @@ class rv_continuous(rv_generic):
                  shapes=None, extradoc=None, seed=None):
 
         super().__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         # save the ctor parameters, cf generic freeze
         self._ctor_param = dict(
@@ -2565,6 +2556,12 @@ class rv_continuous(rv_generic):
               Likelihood Estimate); "MM" (Method of Moments)
               is also available.
 
+        Raises
+        ------
+        TypeError, ValueError
+            If an input is invalid
+        FitError
+            If fitting fails or the fit produced would be invalid
 
         Returns
         -------
@@ -2651,7 +2648,7 @@ class rv_continuous(rv_generic):
             raise TypeError("Too many input arguments.")
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         start = [None]*2
         if (Narg < self.numargs) or not ('loc' in kwds and
@@ -2683,14 +2680,14 @@ class rv_continuous(rv_generic):
 
         loc, scale, shapes = self._unpack_loc_scale(vals)
         if not (np.all(self._argcheck(*shapes)) and scale > 0):
-            raise Exception("Optimization converged to parameters that are "
-                            "outside the range allowed by the distribution.")
+            raise FitError("Optimization converged to parameters that are "
+                           "outside the range allowed by the distribution.")
 
         if method == 'mm':
             if not np.isfinite(obj):
-                raise Exception("Optimization failed: either a data moment "
-                                "or fitted distribution moment is "
-                                "non-finite.")
+                raise FitError("Optimization failed: either a data moment "
+                               "or fitted distribution moment is "
+                               "non-finite.")
 
         return vals
 
@@ -2871,6 +2868,13 @@ class rv_continuous(rv_generic):
         finite. For example ``cauchy(0).mean()`` returns ``np.nan`` and
         ``cauchy(0).expect()`` returns ``0.0``.
 
+        Likewise, the accuracy of results is not verified by the function.
+        `scipy.integrate.quad` is typically reliable for integrals that are
+        numerically favorable, but it is not guaranteed to converge
+        to a correct value for all possible intervals and integrands. This
+        function is provided for convenience; for critical applications,
+        check results against other integration methods.
+
         The function is not vectorized.
 
         Examples
@@ -2908,15 +2912,26 @@ class rv_continuous(rv_generic):
             lb = loc + _a * scale
         if ub is None:
             ub = loc + _b * scale
-        if conditional:
-            invfac = (self.sf(lb, *args, **lockwds)
-                      - self.sf(ub, *args, **lockwds))
-        else:
-            invfac = 1.0
+
+        cdf_bounds = self.cdf([lb, ub], *args, **lockwds)
+        invfac = cdf_bounds[1] - cdf_bounds[0]
+
         kwds['args'] = args
-        # Silence floating point warnings from integration.
-        with np.errstate(all='ignore'):
-            vals = integrate.quad(fun, lb, ub, **kwds)[0] / invfac
+
+        # split interval to help integrator w/ infinite support; see gh-8928
+        alpha = 0.05  # split body from tails at probability mass `alpha`
+        inner_bounds = np.array([alpha, 1-alpha])
+        cdf_inner_bounds = cdf_bounds[0] + invfac * inner_bounds
+        c, d = loc + self._ppf(cdf_inner_bounds, *args) * scale
+
+        # Do not silence warnings from integration.
+        lbc = integrate.quad(fun, lb, c, **kwds)[0]
+        cd = integrate.quad(fun, c, d, **kwds)[0]
+        dub = integrate.quad(fun, d, ub, **kwds)[0]
+        vals = (lbc + cd + dub)
+
+        if conditional:
+            vals /= invfac
         return vals
 
     def _param_info(self):
@@ -3038,7 +3053,7 @@ class rv_discrete(rv_generic):
         If not provided, shape parameters will be inferred from
         the signatures of the private methods, ``_pmf`` and ``_cdf`` of
         the instance.
-    extradoc :  str, optional
+    extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
         backwards compatibility, do not use for new subclasses.
@@ -3148,6 +3163,10 @@ class rv_discrete(rv_generic):
                  shapes=None, extradoc=None, seed=None):
 
         super().__init__(seed)
+
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
 
         # cf generic freeze
         self._ctor_param = dict(
@@ -3343,8 +3362,10 @@ class rv_discrete(rv_generic):
         _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
+        cond1 = (k >= _a) & (k <= _b)
         cond = cond0 & cond1
+        if not isinstance(self, rv_sample):
+            cond1 = cond1 & self._nonzero(k, *args)
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         if np.any(cond):
@@ -3379,7 +3400,9 @@ class rv_discrete(rv_generic):
         _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
+        cond1 = (k >= _a) & (k <= _b)
+        if not isinstance(self, rv_sample):
+            cond1 = cond1 & self._nonzero(k, *args)
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
         output.fill(NINF)
@@ -3829,6 +3852,10 @@ class rv_sample(rv_discrete):
 
         super(rv_discrete, self).__init__(seed)
 
+        if extradoc is not None:
+            warnings.warn("extradoc is deprecated and will be removed in "
+                          "SciPy 1.11.0", DeprecationWarning)
+
         if values is None:
             raise ValueError("rv_sample.__init__(..., values=None,...)")
 
@@ -4011,578 +4038,3 @@ def get_distribution_names(namespace_pairs, rv_base_class):
         if isinstance(value, rv_base_class):
             distn_names.append(name)
     return distn_names, distn_gen_names
-
-
-def _combine_bounds(name, user_bounds, shape_domain, integral):
-    """Intersection of user-defined bounds and distribution PDF/PMF domain"""
-
-    user_bounds = np.atleast_1d(user_bounds)
-
-    if user_bounds[0] > user_bounds[1]:
-        message = (f"There are no values for `{name}` on the interval "
-                   f"{list(user_bounds)}.")
-        raise ValueError(message)
-
-    bounds = (max(user_bounds[0], shape_domain[0]),
-              min(user_bounds[1], shape_domain[1]))
-
-    if integral and (np.ceil(bounds[0]) > np.floor(bounds[1])):
-        message = (f"There are no integer values for `{name}` on the interval "
-                   f"defined by the user-provided bounds and the domain "
-                   "of the distribution.")
-        raise ValueError(message)
-    elif not integral and (bounds[0] > bounds[1]):
-        message = (f"There are no values for `{name}` on the interval "
-                   f"defined by the user-provided bounds and the domain "
-                   "of the distribution.")
-        raise ValueError(message)
-
-    if not np.all(np.isfinite(bounds)):
-        message = (f"The intersection of user-provided bounds for `{name}` "
-                   f"and the domain of the distribution is not finite. Please "
-                   f"provide finite bounds for shape `{name}` in `bounds`.")
-        raise ValueError(message)
-
-    return bounds
-
-
-class FitResult:
-    r"""Result of fitting a discrete or continuous distribution to data
-
-    Attributes
-    ----------
-    dist : scipy.stats.rv_continuous or scipy.stats.rv_discrete
-        The distribution of which parameters were fit.
-    data : 1D array_like
-        The data to which the distribution was fit.
-    params : namedtuple
-        A namedtuple containing the maximum likelihood estimates of the
-        shape parameters, location, and (if applicable) scale of the
-        distribution.
-    success : bool or None
-        Whether the optimizer considered the optimization to terminate
-        successfully or not.
-    message : str or None
-        Any status message provided by the optimizer.
-
-    """
-
-    def __init__(self, dist, data, discrete, res):
-        self.dist = dist
-        self.data = data
-        self.discrete = discrete
-        self.pxf = getattr(dist, "pmf", None) or getattr(dist, "pdf", None)
-
-        shape_names = [] if dist.shapes is None else dist.shapes.split(", ")
-        if not discrete:
-            FitParams = namedtuple('FitParams', shape_names + ['loc', 'scale'])
-        else:
-            FitParams = namedtuple('FitParams', shape_names + ['loc'])
-
-        self.params = FitParams(*res.x)
-
-        # Optimizer can report success even when nllf is infinite
-        if res.success and not np.isfinite(self.nllf()):
-            res.success = False
-            res.message = ("Optimization converged to parameter values that "
-                           "are inconsistent with the data.")
-        self.success = getattr(res, "success", None)
-        self.message = getattr(res, "message", None)
-
-    def __repr__(self):
-        keys = ["dist", "data", "params", "success", "message"]
-        m = max(map(len, keys)) + 1
-        return '\n'.join([key.rjust(m) + ': ' + repr(getattr(self, key))
-                          for key in keys if getattr(self, key) is not None])
-
-    def nllf(self, params=None, data=None):
-        """Negative log-likelihood function
-
-        Evaluates the negative of the log-likelihood function of the provided
-        data at the provided parameters.
-
-        Parameters
-        ----------
-        params : tuple, optional
-            The shape parameters, location, and (if applicable) scale of the
-            distribution as a single tuple. Default is the maximum likelihood
-            estimates (``self.params``).
-        data : array_like, optional
-            The data for which the log-likelihood function is to be evaluated.
-            Default is the data to which the distribution was fit
-            (``self.data``).
-
-        Returns
-        -------
-        nllf : float
-            The negative of the log-likelihood function.
-
-        """
-        params = params if params is not None else self.params
-        data = data if data is not None else self.data
-        return self.dist.nnlf(theta=params, x=data)
-
-    def plot(self, ax=None):
-        """Visualize the fit result.
-
-        Superposes the PDF/PMF of the fitted distribution over a normalized
-        histogram of the data.
-
-        Available only if ``matplotlib`` is installed.
-
-        Parameters
-        ----------
-        ax : matplotlib.axes.Axes
-            Axes object to draw the plot onto, otherwise uses the current Axes.
-
-        Returns
-        -------
-        ax : matplotlib.axes.Axes
-            The matplotlib Axes object on which the plot was drawn.
-        """
-        try:
-            from matplotlib.ticker import MaxNLocator  # type: ignore[import]
-        except ModuleNotFoundError as exc:
-            message = "matplotlib must be installed to use method `plot`."
-            raise ValueError(message) from exc
-
-        if ax is None:
-            import matplotlib.pyplot as plt  # type: ignore[import]
-            ax = plt.gca()
-
-        fit_params = np.atleast_1d(self.params)
-        support = self.dist.support(*fit_params)
-        lb = support[0] if np.isfinite(support[0]) else min(self.data)
-        ub = support[1] if np.isfinite(support[1]) else max(self.data)
-
-        if self.discrete:
-            x = np.arange(lb, ub + 2)
-            y = self.pxf(x, *fit_params)
-            ax.vlines(x[:-1], 0, y[:-1], label='Fit Distribution PMF',
-                      color='C0')
-            options = dict(density=True, bins=x, align='left', color='C1')
-            ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-            ax.set_xlabel('k')
-            ax.set_ylabel('PMF')
-        else:
-            x = np.linspace(lb, ub, 200)
-            y = self.pxf(x, *fit_params)
-            ax.plot(x, y, '--', label='Fit Distribution PDF', color='C0')
-            options = dict(density=True, bins=50, align='mid', color='C1')
-            ax.set_xlabel('x')
-            ax.set_ylabel('PDF')
-
-        if len(self.data) > 50 or self.discrete:
-            ax.hist(self.data, label="Histogram of Data", **options)
-        else:
-            ax.plot(self.data, np.zeros_like(self.data), "*",
-                    label='Data', color='C1')
-
-        ax.set_title(f"{self.dist.name} Fit")
-        ax.legend(*ax.get_legend_handles_labels())
-        return ax
-
-
-def fit(dist, data, bounds=None, *, guess=None,
-        optimizer=optimize.differential_evolution):
-    r"""Fit a discrete or continuous distribution to data
-
-    Given a distribution, data, and bounds on the parameters of the
-    distribution, return maximum likelihood estimates of the parameters.
-
-    Parameters
-    ----------
-    dist : scipy.stats.rv_continuous or scipy.stats.rv_discrete
-        The object representing the distribution to be fit to the data.
-    data : 1D array_like
-        The data to which the distribution is to be fit. If the data contain
-        any of ``np.nan``, ``np.inf``, or -``np.inf``, the fit method will
-        raise a ``ValueError``.
-    bounds : dict or sequence of tuples, optional
-        If a dictionary, each key is the name of a parameter of the
-        distribution, and the corresponding value is a tuple containing the
-        lower and upper bound on that parameter.  If the distribution is
-        defined only for a finite range of values of that parameter, no entry
-        for that parameter is required; e.g., some distributions have
-        parameters which must be on the interval [0, 1]. Bounds for parameters
-        location (``loc``) and scale (``scale``) are optional; by default,
-        they are fixed to 0 and 1, respectively.
-
-        If a sequence, element *i* is a tuple containing the lower and upper
-        bound on the *i*\ th parameter of the distribution. In this case,
-        bounds for *all* distribution shape parameters must be provided.
-        Optionally, bounds for location and scale may follow the
-        distribution shape parameters.
-
-        If a shape is to be held fixed (e.g. if it is known), the
-        lower and upper bounds may be equal. If a user-provided lower or upper
-        bound is beyond a bound of the domain for which the distribution is
-        defined, the bound of the distribution's domain will replace the
-        user-provided value. Similarly, parameters which must be integral
-        will be constrained to integral values within the user-provided bounds.
-    guess : dict or array_like, optional
-        If a dictionary, each key is the name of a parameter of the
-        distribution, and the corresponding value is a guess for the value
-        of the parameter.
-
-        If a sequence, element *i* is a guess for the *i*\ th parameter of the
-        distribution. In this case, guesses for *all* distribution shape
-        parameters must be provided.
-
-        If `guess` is not provided, guesses for the decision variables will
-        not be passed to the optimizer. If `guess` is provided, guesses for
-        any missing parameters will be set at the mean of the lower and
-        upper bounds. Guesses for parameters which must be integral will be
-        rounded to integral values, and guesses that lie outside the
-        intersection of the user-provided bounds and the domain of the
-        distribution will be clipped.
-    optimizer : callable, optional
-        `optimizer` is a callable that accepts the following positional
-        argument.
-
-        fun : callable
-            The objective function to be optimized. `fun` accepts one argument
-            ``x``, candidate shape parameters of the distribution, and returns
-            the negative log-likelihood function given ``x``, `dist`, and the
-            provided `data`.
-            The job of `optimizer` is to find values of the decision variables
-            that minimizes `fun`.
-
-        `optimizer` must also accepts the following keyword argument.
-
-        bounds : sequence of tuples
-            The bounds on values of the decision variables; each element will
-            be a tuple containing the lower and upper bound on a decision
-            variable.
-
-        If `guess` is provided, `optimizer` must also accept the following
-        keyword argument.
-
-        x0 : array_like
-            The guesses for each decision variable.
-
-        If the distribution has any shape parameters that must be integral or
-        if the distribution is discrete and the location parameter is not
-        fixed, `optimizer` must also accept the following keyword argument.
-
-        integrality : array_like of bools
-            For each decision variable, True if the decision variable is
-            must be constrained to integer values and False if the decision
-            variable is continuous.
-
-        `optimizer` must return an object, such as an instance of
-        `scipy.optimize.OptimizeResult`, which holds the optimal values of
-        the decision variables in an attribute ``x``. If attributes
-        ``fun``, ``status``, or ``message`` are provided, they will be
-        included in the result object returned by `fit`.
-
-    Returns
-    -------
-    result : FitResult
-        An object with the following fields.
-
-        dist : scipy.stats.rv_continuous or scipy.stats.rv_discrete
-            The distribution object passed to `fit` as `dist`
-        data : 1D array_like
-            The data passed to `fit` as `data`
-        nllf : callable
-            The negative log-likehood function for the given `data`. Accepts a
-            single tuple containing the shapes, location, and scale of the
-            distribution.
-        params : namedtuple
-            A namedtuple containing the maximum likelihood estimates of the
-            shape parameters, location, and (if applicable) scale of the
-            distribution.
-        success : bool or None
-            Whether the optimizer considered the optimization to terminate
-            successfully or not.
-        message : str or None
-            Any status message provided by the optimizer.
-
-    See Also
-    --------
-    rv_continuous,  rv_discrete
-
-    Notes
-    -----
-    Optimization is more likely to converge to the maximum likelihood estimate
-    when the user provides tight bounds containing the maximum likelihood
-    estimate. For example, when fitting a binomial distribution to data, the
-    number of experiments underlying each sample may be known, in which case
-    the corresponding shape parameter ``n`` can be fixed.
-
-    Examples
-    --------
-    Suppose we wish to fit a distribution to the following data.
-
-    >>> import numpy as np
-    >>> from scipy import stats
-    >>> rng = np.random.default_rng()
-    >>> dist = stats.nbinom
-    >>> shapes = (5, 0.5)
-    >>> data = dist.rvs(*shapes, size=1000, random_state=rng)
-
-    Suppose we do not know how the data were generated, but we suspect that
-    it follows a negative binomial distribution with parameters *n* and *p*\.
-    (See `scipy.stats.nbinom`.) We believe that the parameter *n* was fewer
-    than 30, and we know that the parameter *p* must lie on the interval
-    [0, 1]. We record this information in a variable `bounds` and pass
-    this information to `fit`.
-
-    >>> bounds = [(0, 30), (0, 1)]
-    >>> res = stats.fit(dist, data, bounds)
-
-    `fit` searches within the user-specified `bounds` for the
-    values that best match the data (in the sense of maximum likelihood
-    estimation). In this case, it found shape values similar to those
-    from which the data were actually generated.
-
-    >>> res.params
-    FitParams(n=5.0, p=0.5028157644634368, loc=0.0)  # may vary
-
-    We can visualize the results by superposing the probability mass function
-    of the distribution (with the shapes fit to the data) over a normalized
-    histogram of the data.
-
-    >>> import matplotlib.pyplot as plt  # matplotlib must be installed to plot
-    >>> res.plot()
-    >>> plt.show()
-
-    Note that the estimate for *n* was exactly integral; this is because
-    the domain of the `nbinom` PMF includes only integral *n*, and the `nbinom`
-    object "knows" that. `nbinom` also knows that the shape *p* must be a
-    value between 0 and 1. In such a case - when the domain of the distribution
-    with respect to a parameter is finite - we are not required to specify
-    bounds for the parameter.
-
-    >>> bounds = {'n': (0, 30)}  # omit parameter p using a `dict`
-    >>> res2 = stats.fit(dist, data, bounds)
-    >>> res.params
-    FitParams(n=5.0, p=0.5016492009232932, loc=0.0)  # may vary
-
-    If we wish to force the distribution to be fit with *n* fixed at 6, we can
-    set both the lower and upper bounds on *n* to 6. Note, however, that the
-    value of the objective function being optimized is worse (higher) in this
-    case.
-
-    >>> bounds = {'n': (6, 6)}  # fix parameter `n`
-    >>> res3 = stats.fit(dist, data, bounds)
-    >>> res3.params
-    FitParams(n=6.0, p=0.5486556076755706, loc=0.0)  # may vary
-    >>> res3.nllf() > res.nllf()
-    True
-
-    The `optimizer` parameter allows us to control the optimizer
-    used to perform the fitting. The default optimizer is
-    `scipy.optimize.differential_evolution` with its own default settings,
-    but we can easily change these settings by creating our own optimizer
-    with different defaults.
-
-    >>> from scipy.optimize import differential_evolution
-    >>> def optimizer(fun, bounds, *, integrality):
-    ...     return differential_evolution(fun, bounds, strategy='best2bin',
-    ...                                   seed=rng, integrality=integrality)
-    >>> bounds = [(0, 30), (0, 1)]
-    >>> res4 = stats.fit(dist, data, bounds, optimizer=optimizer)
-    >>> res4.params
-    FitParams(n=5.0, p=0.5032774713044523, loc=0.0)  # may vary
-
-    """
-    # --- Input Validation / Standardization --- #
-    user_bounds = bounds
-    user_guess = guess
-
-    # distribution input validation and information collection
-    if hasattr(dist, "pdf"):  # can't use isinstance for types
-        default_bounds = {'loc': (0, 0), 'scale': (1, 1)}
-        discrete = False
-    elif hasattr(dist, "pmf"):
-        default_bounds = {'loc': (0, 0)}
-        discrete = True
-    else:
-        message = ("`dist` must be an instance of `rv_continuous` "
-                   "or `rv_discrete.`")
-        raise ValueError(message)
-
-    try:
-        param_info = dist._param_info()
-    except AttributeError as e:
-        message = (f"Distribution `{dist.name}` is not yet supported by "
-                   "`scipy.stats.fit` because shape information has "
-                   "not been defined.")
-        raise ValueError(message) from e
-
-    # data input validation
-    data = np.asarray(data)
-    if data.ndim != 1:
-        message = "`data` must be exactly one-dimensional."
-        raise ValueError(message)
-    if not (np.issubdtype(data.dtype, np.number)
-            and np.all(np.isfinite(data))):
-        message = "All elements of `data` must be finite numbers."
-        raise ValueError(message)
-
-    # bounds input validation and information collection
-    n_params = len(param_info)
-    n_shapes = n_params - (1 if discrete else 2)
-    param_list = [param.name for param in param_info]
-    param_names = ", ".join(param_list)
-    shape_names = ", ".join(param_list[:n_shapes])
-
-    if user_bounds is None:
-        user_bounds = {}
-
-    if isinstance(user_bounds, dict):
-        default_bounds.update(user_bounds)
-        user_bounds = default_bounds
-        user_bounds_array = np.empty((n_params, 2))
-        for i in range(n_params):
-            param_name = param_info[i].name
-            user_bound = user_bounds.pop(param_name, None)
-            if user_bound is None:
-                user_bound = param_info[i].domain
-            user_bounds_array[i] = user_bound
-        if user_bounds:
-            message = ("Bounds provided for the following unrecognized "
-                       f"parameters will be ignored: {set(user_bounds)}")
-            warnings.warn(message, RuntimeWarning, stacklevel=2)
-
-    else:
-        try:
-            user_bounds = np.asarray(user_bounds, dtype=float)
-            if user_bounds.size == 0:
-                user_bounds = np.empty((0, 2))
-        except ValueError as e:
-            message = ("Each element of a `bounds` sequence must be a tuple "
-                       "containing two elements: the lower and upper bound of "
-                       "a distribution parameter.")
-            raise ValueError(message) from e
-        if (user_bounds.ndim != 2 or user_bounds.shape[1] != 2):
-            message = ("Each element of `bounds` must be a tuple specifying "
-                       "the lower and upper bounds of a shape parameter")
-            raise ValueError(message)
-        if user_bounds.shape[0] < n_shapes:
-            message = (f"A `bounds` sequence must contain at least {n_shapes} "
-                       "elements: tuples specifying the lower and upper "
-                       f"bounds of all shape parameters {shape_names}.")
-            raise ValueError(message)
-        if user_bounds.shape[0] > n_params:
-            message = ("A `bounds` sequence may not contain more than "
-                       f"{n_params} elements: tuples specifying the lower and "
-                       "upper bounds of distribution parameters "
-                       f"{param_names}.")
-            raise ValueError(message)
-
-        user_bounds_array = np.empty((n_params, 2))
-        user_bounds_array[n_shapes:] = list(default_bounds.values())
-        user_bounds_array[:len(user_bounds)] = user_bounds
-
-    user_bounds = user_bounds_array
-    validated_bounds = []
-    for i in range(n_params):
-        name = param_info[i].name
-        user_bound = user_bounds_array[i]
-        param_domain = param_info[i].domain
-        integral = param_info[i].integrality
-        combined = _combine_bounds(name, user_bound, param_domain, integral)
-        validated_bounds.append(combined)
-
-    bounds = np.asarray(validated_bounds)
-    integrality = [param.integrality for param in param_info]
-
-    # return early if `dist.fit` has override and results are in bounds
-    analytical_fit = {"norm", "laplace"}
-    message = ("Analytical MLEs were available, but they were not within the "
-               "provided bounds.")
-    if dist.name in analytical_fit:
-        params = dist.fit(data)
-        if (params >= bounds[:, 0]).all() and (params <= bounds[:, 1]).all():
-            res_data = {"x": params, "success": True,
-                        "message": "Analytical MLEs calculated."}
-            res = optimize.OptimizeResult(res_data)
-            return FitResult(dist, data, discrete, res)
-        else:
-            warnings.warn(message, RuntimeWarning, stacklevel=2)
-
-    # guess input validation
-    if user_guess is None:
-        guess_array = None
-    elif isinstance(user_guess, dict):
-        default_guess = {param.name: np.mean(bound)
-                         for param, bound in zip(param_info, bounds)}
-        unrecognized = set(user_guess) - set(default_guess)
-        if unrecognized:
-            message = ("Guesses provided for the following unrecognized "
-                       f"parameters will be ignored: {unrecognized}")
-            warnings.warn(message, RuntimeWarning, stacklevel=2)
-        default_guess.update(user_guess)
-
-        message = ("Each element of `guess` must be a scalar "
-                   "guess for a distribution parameter.")
-        try:
-            guess_array = np.asarray([default_guess[param.name]
-                                      for param in param_info], dtype=float)
-        except ValueError as e:
-            raise ValueError(message) from e
-
-    else:
-        message = ("Each element of `guess` must be a scalar "
-                   "guess for a distribution parameter.")
-        try:
-            user_guess = np.asarray(user_guess, dtype=float)
-        except ValueError as e:
-            raise ValueError(message) from e
-        if user_guess.ndim != 1:
-            raise ValueError(message)
-        if user_guess.shape[0] < n_shapes:
-            message = (f"A `guess` sequence must contain at least {n_shapes} "
-                       "elements: scalar guesses for the distribution shape "
-                       f"parameters {shape_names}.")
-            raise ValueError(message)
-        if user_guess.shape[0] > n_params:
-            message = ("A `guess` sequence may not contain more than "
-                       f"{n_params} elements: scalar guesses for the "
-                       f"distribution parameters {param_names}.")
-            raise ValueError(message)
-
-        guess_array = np.mean(bounds, axis=1)
-        guess_array[:len(user_guess)] = user_guess
-
-    if guess_array is not None:
-        guess_rounded = guess_array.copy()
-
-        guess_rounded[integrality] = np.round(guess_rounded[integrality])
-        rounded = np.where(guess_rounded != guess_array)[0]
-        for i in rounded:
-            message = (f"Guess for parameter `{param_info[i].name}` "
-                       f"rounded from {guess_array[i]} to {guess_rounded[i]}.")
-            warnings.warn(message, RuntimeWarning, stacklevel=2)
-
-        guess_clipped = np.clip(guess_rounded, bounds[:, 0], bounds[:, 1])
-        clipped = np.where(guess_clipped != guess_rounded)[0]
-        for i in clipped:
-            message = (f"Guess for parameter `{param_info[i].name}` "
-                       f"clipped from {guess_rounded[i]} to "
-                       f"{guess_clipped[i]}.")
-            warnings.warn(message, RuntimeWarning, stacklevel=2)
-
-        guess = guess_clipped
-    else:
-        guess = None
-
-    # --- MLE Fitting --- #
-    def nllf(free_params, data=data):  # bind data NOW
-        with np.errstate(invalid='ignore', divide='ignore'):
-            return dist._penalized_nnlf(free_params, data)
-
-    with np.errstate(invalid='ignore', divide='ignore'):
-        kwds = {}
-        if bounds is not None:
-            kwds['bounds'] = bounds
-        if np.any(integrality):
-            kwds['integrality'] = integrality
-        if guess is not None:
-            kwds['x0'] = guess
-        res = optimizer(nllf, **kwds)
-
-    return FitResult(dist, data, discrete, res)

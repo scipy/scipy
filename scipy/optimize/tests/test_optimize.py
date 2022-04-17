@@ -596,9 +596,6 @@ def test_neldermead_xatol_fatol():
 
     optimize._minimize._minimize_neldermead(func, [1, 1], maxiter=2,
                                             xatol=1e-3, fatol=1e-3)
-    assert_warns(DeprecationWarning,
-                 optimize._minimize._minimize_neldermead,
-                 func, [1, 1], xtol=1e-3, ftol=1e-3, maxiter=2)
 
 
 def test_neldermead_adaptive():
@@ -2562,6 +2559,7 @@ def test_all_bounds_equal(method):
     assert res.success
     assert_allclose(res.fun, f([1.0, 2.0]))
     assert res.nfev == 1
+    assert res.message == 'All independent variables were fixed by bounds.'
 
     args = (2,)
     res = optimize.minimize(f, x0, bounds=bounds, method=method, args=args)
@@ -2578,6 +2576,18 @@ def test_all_bounds_equal(method):
         assert res.success is False
         assert_allclose(res.fun, f([1.0, 2.0]))
         assert res.nfev == 1
+        message = "All independent variables were fixed by bounds, but"
+        assert res.message.startswith(message)
+
+        nlc = NonlinearConstraint(con, -np.inf, 4)
+        res = optimize.minimize(
+            f, x0, bounds=bounds, method=method, constraints=[nlc]
+        )
+        assert res.success is True
+        assert_allclose(res.fun, f([1.0, 2.0]))
+        assert res.nfev == 1
+        message = "All independent variables were fixed by bounds at values"
+        assert res.message.startswith(message)
 
 
 def test_eb_constraints():
