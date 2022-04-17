@@ -2113,8 +2113,9 @@ class TestYeojohnson:
                       90114500.00, 17209575.46, 12852969.00, 2414609.99,
                       2170368.23])
         xt_yeo, lam_yeo = stats.yeojohnson(x)
-        xt_box = stats.boxcox(x + 1, lmbda=lam_yeo)
-        assert_allclose(xt_yeo, xt_box)
+        xt_box, lam_box = stats.boxcox(x + 1)
+        assert_allclose(xt_yeo, xt_box, rtol=1e-6)
+        assert_allclose(lam_yeo, lam_box, rtol=1e-6)
 
 
 class TestYeojohnsonNormmax:
