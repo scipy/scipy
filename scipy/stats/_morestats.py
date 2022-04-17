@@ -18,7 +18,7 @@ from . import _statlib
 from . import _stats_py
 from ._stats_py import find_repeats, _contains_nan, _normtest_finish
 from .contingency import chi2_contingency
-from ._constants import _XMIN, _XMAX
+from ._constants import _XMIN
 from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
@@ -1526,9 +1526,6 @@ def yeojohnson_llf(lmb, data):
     where :math:`\hat{\sigma}^2` is estimated variance of the the Yeo-Johnson
     transformed input data ``x``.
 
-    If the Yeo-Johnson transformed input data has zero variance, then the
-    log-likelihood is set to the largest representable float.
-
     .. versionadded:: 1.2.0
 
     Examples
@@ -1588,7 +1585,7 @@ def yeojohnson_llf(lmb, data):
 
     # Avoid RuntimeWarning raised by np.log when the variance is too low
     tiny_variance = trans_var < _XMIN
-    loglike[tiny_variance] = _XMAX
+    loglike[tiny_variance] = np.inf
 
     loglike[~tiny_variance] = (
         -n_samples / 2 * np.log(trans_var[~tiny_variance]))
@@ -1646,12 +1643,12 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
     """
     def _neg_llf(lmbda, data):
         llf = yeojohnson_llf(lmbda, data)
-        # reject likelihoods that are _XMAX which are likely due to small
+        # reject likelihoods that are inf which are likely due to small
         # variance in the transformed space
-        llf[llf == _XMAX] = -_XMAX
+        llf[np.isinf(llf)] = -np.inf
         return -llf
 
-    with np.errstate(over='ignore'):
+    with np.errstate(invalid='ignore'):
         return optimize.brent(_neg_llf, brack=brack, args=(x,))
 
 
