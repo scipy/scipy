@@ -349,7 +349,7 @@ def main(
     # -----------------
     # Wide range of magnitudes, c - a - b > 0.
     phi = (1 + np.sqrt(5))/2
-    P = phi**np.arange(13)
+    P = phi**np.arange(16)
     P = np.hstack([-P, P])
     group_9_params = sorted(
         (
