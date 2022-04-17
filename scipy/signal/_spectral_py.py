@@ -659,10 +659,10 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
         then return:
 
         ``'psd'``:
-            The absolute square of the `stft`. The unit is V² if
+            The absolute square of the `stft`. The unit is V**2 if
             ``scaling = 'spectrum'``. For ``scaling = 'density'`` each line
             along the frequency can be interpreted as a power spectral
-            density and the unit is V²/Hz.
+            density and the unit is V**2/Hz.
         ``'complex'``:
             The output of the `stft` is not transformed - the unit is V.
         ``'magnitude'``:
