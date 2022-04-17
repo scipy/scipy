@@ -18,7 +18,6 @@ from . import _statlib
 from . import _stats_py
 from ._stats_py import find_repeats, _contains_nan, _normtest_finish
 from .contingency import chi2_contingency
-from ._constants import _XMIN
 from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
@@ -1584,7 +1583,7 @@ def yeojohnson_llf(lmb, data):
     loglike = np.empty_like(trans_var)
 
     # Avoid RuntimeWarning raised by np.log when the variance is too low
-    tiny_variance = trans_var < _XMIN
+    tiny_variance = trans_var < np.finfo(trans_var).tiny
     loglike[tiny_variance] = np.inf
 
     loglike[~tiny_variance] = (
