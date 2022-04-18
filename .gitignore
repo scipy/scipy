@@ -86,6 +86,7 @@ installdir/
 .doit.db.dat
 .doit.db.dir
 .doit.db.db
+.doit.db
 
 # Paver generated files #
 #########################
