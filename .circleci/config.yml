@@ -50,7 +50,7 @@ jobs:
             pip install --install-option="--no-cython-compile" cython
             pip install numpy==1.21.5
             pip install -r doc_requirements.txt
-            pip install nose mpmath argparse Pillow asv pythran
+            pip install nose mpmath argparse "Pillow==9.0.1" asv pythran
             pip install pybind11
 
       - run:
