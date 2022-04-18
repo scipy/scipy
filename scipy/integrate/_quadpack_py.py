@@ -773,8 +773,8 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         options are used for all levels of integraion. If a sequence, then each
         element of the sequence corresponds to a particular integration. e.g.,
         ``opts[0]`` corresponds to integration over ``x0``, and so on. If a
-        callable, the signature must be the same as for ``ranges``. The available
-        options together with their default values are:
+        callable, the signature must be the same as for ``ranges``. The
+        available options together with their default values are:
 
           - epsabs = 1.49e-08
           - epsrel = 1.49e-08
