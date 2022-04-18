@@ -1770,6 +1770,8 @@ class MultinomialQMC(QMCEngine):
     pvals : array_like (k,)
         Vector of probabilities of size ``k``, where ``k`` is the number
         of categories. Elements must be non-negative and sum to 1.
+    n_trials : int
+        Number of trials.
     engine : QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, `Sobol` is used.
     seed : {None, int, `numpy.random.Generator`}, optional
@@ -1782,20 +1784,22 @@ class MultinomialQMC(QMCEngine):
     Examples
     --------
     >>> from scipy.stats import qmc
-    >>> engine = qmc.MultinomialQMC(pvals=[0.2, 0.4, 0.4])
+    >>> engine = qmc.MultinomialQMC(pvals=[0.2, 0.4, 0.4], n_trials=10)
     >>> sample = engine.random(10)
 
     """
 
     def __init__(
-            self, pvals: npt.ArrayLike, *, engine: Optional[QMCEngine] = None,
-            seed: SeedType = None
+        self, pvals: npt.ArrayLike, n_trials: IntNumber,
+        *, engine: Optional[QMCEngine] = None,
+        seed: SeedType = None
     ) -> None:
         self.pvals = np.array(pvals, copy=False, ndmin=1)
         if np.min(pvals) < 0:
             raise ValueError('Elements of pvals must be non-negative.')
         if not np.isclose(np.sum(pvals), 1):
             raise ValueError('Elements of pvals must sum to 1.')
+        self.n_trials = n_trials
         if engine is None:
             self.engine = Sobol(
                 d=1, scramble=True, bits=30, seed=seed
@@ -1810,15 +1814,11 @@ class MultinomialQMC(QMCEngine):
 
         super().__init__(d=1, seed=seed)
 
-    def random(  # type: ignore[override]
-        self, k: IntNumber, n: IntNumber = 1
-    ) -> np.ndarray:
+    def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` QMC samples from the multinomial distribution.
 
         Parameters
         ----------
-        k : int
-            Number of trials.
         n : int, optional
             Number of samples to generate in the parameter space. Default is 1.
 
@@ -1830,7 +1830,7 @@ class MultinomialQMC(QMCEngine):
         """
         sample = np.empty((n, len(self.pvals)))
         for i in range(n):
-            base_draws = self.engine.random(k).ravel()
+            base_draws = self.engine.random(self.n_trials).ravel()
             p_cumulative = np.empty_like(self.pvals, dtype=float)
             _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
             sample_ = np.zeros_like(self.pvals, dtype=int)
