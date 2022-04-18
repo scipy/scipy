@@ -16,7 +16,6 @@ from ._hypotests_pythran import _a_ij_Aij_Dij2
 from ._hypotests_pythran import (
     _concordant_pairs as _P, _discordant_pairs as _Q
 )
-from ._axis_nan_policy import _broadcast_arrays
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
