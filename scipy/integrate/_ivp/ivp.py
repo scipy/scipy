@@ -515,6 +515,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         # Wrap the user's fun (and jac, if given) in lambdas to hide the
         # additional parameters.  Pass in the original fun as a keyword
         # argument to keep it in the scope of the lambda.
+        try:
+            _ = [*(args)]
+        except TypeError as exp:
+            suggestion_tuple = (
+                "Supplied 'args' cannot be unpacked. Please supply `args`"
+                f" as a tuple (e.g. `args=({args},)`)"
+            )
+            raise TypeError(suggestion_tuple) from exp
+
         fun = lambda t, x, fun=fun: fun(t, x, *args)
         jac = options.get('jac')
         if callable(jac):
