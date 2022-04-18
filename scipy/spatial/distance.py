@@ -47,6 +47,7 @@ functions. Use ``pdist`` for this purpose.
    jensenshannon    -- the Jensen-Shannon distance.
    mahalanobis      -- the Mahalanobis distance.
    minkowski        -- the Minkowski distance.
+   psi              -- the Population Stability Index (PSI) distance.
    seuclidean       -- the normalized Euclidean distance.
    sqeuclidean      -- the squared Euclidean distance.
 
@@ -1640,6 +1641,76 @@ def sokalsneath(u, v, w=None):
         raise ValueError('Sokal-Sneath dissimilarity is not defined for '
                          'vectors that are entirely false.')
     return float(2.0 * (ntf + nft)) / denom
+
+
+def psi(p, q):
+    """
+    Compute the Population stability (PSI) index (metric) between two
+    two probability arrays.
+
+    PSI measures how much a given variable has changed (in distribution).
+    Often used to detect shifts in time-series. A rule of thumb regarding
+    the PSI value is that the distributions are significantly different if
+    PSI index > 0.2.
+
+    The PSI metric for vectors (with non-negative elements) `p` and `q`
+    is defined as (assuming both are valid probability distributions, i.e.
+    all the components sum up to 1):
+
+    .. math::
+
+        psi(p, q) = \\sum_i (p_i - q_i) ln \\Bigl( \\frac{p_i}{q_i} \\Bigl)
+
+    Parameters
+    ----------
+    p : (N,) array_like
+        Input array.
+    q : (N,) array_like
+        Input array.
+
+    Returns
+    -------
+    psi : double
+        The PSI index/metric between the vectors `p` and `q`
+
+    Notes
+    -----
+    When `p` or `q` are not valid probability distributions, the function
+    will normalize the vectors (so that the elements sum up to 1).
+
+    .. versionadded:: 1.9.0
+
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> distance.psi([0.8], [0.8])
+    0.0
+    >>> distance.psi([1, 3], [1, 4])
+    0.014384103622589049
+
+    """
+    p = _validate_vector(p)
+    q = _validate_vector(q)
+    if (p < 0).any():
+        raise TypeError(
+            "Vector p cannot have a negative component"
+        )
+    if (q < 0).any():
+        raise TypeError(
+            "Vector q cannot have a negative componentt"
+        )
+    if len(p) != len(q):
+        raise TypeError("Vectors should have the same length")
+    p = np.asarray(p)
+    q = np.asarray(q)
+    p = p / np.sum(p, axis=0, keepdims=True)
+    q = q / np.sum(q, axis=0, keepdims=True)
+    # Since p, q have non-negative elements, division by 0 returns (+) np.inf
+    # unless 0/0 which gives np.nan
+    with np.errstate(divide="ignore", invalid="ignore"):
+        log_ratio = np.log(p / q)
+    psi_vec = (p - q) * log_ratio
+    return np.nansum(psi_vec)
 
 
 _convert_to_double = partial(_convert_to_type, out_type=np.double)

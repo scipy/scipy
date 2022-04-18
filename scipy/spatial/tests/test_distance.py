@@ -59,7 +59,7 @@ from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon,
                                     kulsinski, kulczynski1, mahalanobis,
-                                    matching, minkowski, rogerstanimoto,
+                                    matching, minkowski, psi, rogerstanimoto,
                                     russellrao, seuclidean, sokalmichener,
                                     sokalsneath, sqeuclidean, yule)
 
@@ -2185,3 +2185,36 @@ def test_jensenshannon():
                         [0.1954288, 0.1447697, 0.1138377, 0.0927636])
     assert_almost_equal(jensenshannon(a, b, axis=1),
                         [0.1402339, 0.0399106, 0.0201815])
+
+
+def test_psi():
+    # The same vectors should have a distance of 0
+    assert_almost_equal(psi([0.8], [0.8]), 0)
+    assert_almost_equal(psi([1, 2], [1, 2]), 0)
+    # ...even if one of the components is 0
+    assert_equal(psi([0, 3], [0, 3]), 0)
+
+    # Distance should be symmetric
+    a = [1, 2, 5, 6]
+    b = [1.5, 2.5, 4.5, 6.5]
+    assert_allclose(psi(a, b), psi(b, a))
+
+    # If one component is 0 and one is non-zero
+    # the distance is infinite
+    assert_equal(psi([1, 3], [0, 3]), np.inf)
+
+    # psi([1, 3], [1, 4]) = psi([0.25, 0.75], [0.20, 0.80])
+    # = (0.25 - 0.20) * ln(0.25/0.20) + (0.75 - 0.8) * ln(0.75/0.80)
+    # = 0.05 * 0.22314 + (-0.05) * (-0.064538) = 0.0143839
+    assert_almost_equal(psi([1, 3], [1, 4]), 0.0143839, decimal=5)
+
+
+def test_psi_error_handling():
+    # Vectors containing a negative element are invalid
+    with pytest.raises(TypeError):
+        psi([-1, 2, 4], [1, 2, 3])
+    with pytest.raises(TypeError):
+        psi([-1, 2, 4], [1, 2, -0.02])
+    # Vector shapes differ
+    with pytest.raises(TypeError):
+        psi([-1, 2, 4], [1, 2])
