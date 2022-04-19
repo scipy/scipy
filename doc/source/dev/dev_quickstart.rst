@@ -68,10 +68,7 @@ Next, set up your development environment.
 
     .. tab:: pip+venv
 
-        .. _system-level: system-level
-        .. |system-level| replace:: **system-level dependencies** 
-
-        **With** |system-level|_ **installed**, execute
+        **With** :ref:`system-level dependencies <system-level>` **installed**, execute
         the following commands at the terminal from the base directory of your
         `SciPy <https://github.com/scipy/scipy>`_ clone:
 

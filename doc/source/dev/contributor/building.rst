@@ -54,7 +54,7 @@ dependencies to build it on your system.
         install the remaining system-level dependencies, run::
 
           sudo apt install -y gcc g++ gfortran libopenblas-dev liblapack-dev pkg-config
-          sudo apt install -y python3-pip
+          sudo apt install -y python3-pip python3-dev
 
         Alternatively, you can do::
 
