@@ -6987,7 +6987,6 @@ class powerlaw_gen(rv_continuous):
                 msg = "`fscale` must be greater than the range of data."
                 raise ValueError(msg)
 
-
         def get_shape(data, loc, scale):
             # The first-order necessary condition on `shape` can be solved in
             # closed form. It can be used whether no matter the assumption
@@ -7000,11 +6999,31 @@ class powerlaw_gen(rv_continuous):
             # the shape.
             return data.max() - loc
 
+        if fscale is not None:
+            # in the case where the scale is set to a non-optimal value, there
+            # may be two possible analytical solutions, but one gives a better
+            # log-likelihood result.
+            args = [data, (self._fitstart(data),)]
+            func = self._reduce_func(args, {})[1]
+
+            # using `data.min()` as the optimal location
+            loc_lt1 = np.nextafter(data.min(), -np.inf)
+            shape_lt1 = fshape or get_shape(data, loc_lt1, fscale)
+            ll_lt1 = func((shape_lt1, loc_lt1, fscale), data)
+
+            # using `data.max() - scale` as the optimal location
+            loc_gt1 = np.nextafter(data.max() - fscale, np.inf)
+            shape_gt1 = fshape or get_shape(data, loc_gt1, fscale)
+            ll_gt1 = func((shape_gt1, loc_gt1, fscale), data)
+
+            if ll_lt1 < ll_gt1:
+                return shape_lt1, loc_lt1, fscale
+            else:
+                return shape_gt1, loc_gt1, fscale
+
         # First, attempt to fit under the assumption that `shape <= 1`.
-        # When the scale is free, the optimal location is the minimum of
-        # the data.
         loc = floc if floc is not None else np.nextafter(data.min(), -np.inf)
-        scale = fscale or np.nextafter(get_scale(data, loc), np.inf)
+        scale = np.nextafter(get_scale(data, loc), np.inf)
         shape = fshape or get_shape(data, loc, scale)
 
         # If the `shape <= 1`, then fitting has succeeded with the assumption
@@ -7024,7 +7043,8 @@ class powerlaw_gen(rv_continuous):
                 shape = fshape or get_shape(data, loc, scale)
                 return shape, loc, scale
             if fscale is not None:
-                loc = np.nextafter(data.max() - fscale, np.inf)
+                loc = (floc if floc is not None
+                       else np.nextafter(data.max() - fscale, np.inf))
                 shape = fshape or get_shape(data, loc, fscale)
                 return shape, loc, scale
 

@@ -2353,6 +2353,22 @@ class TestPowerlaw(object):
             kwds['fscale'] = rvs_scale
         _assert_less_or_close_loglike(stats.powerlaw, data, func, **kwds)
 
+    def test_problem_case(self):
+        # An observed problem with the test method indicated that some fixed
+        # scale values could cause bad results, this is now corrected.
+        a = 2.50002862645130604506
+        location = 0.0
+        scale = 35.249023299873095
+
+        data = stats.powerlaw.rvs(a=a, loc=location, scale=scale, size=100,
+                                  random_state=np.random.default_rng(5))
+
+        kwds = {'fscale': data.ptp() * 2}
+        args = [data, (stats.powerlaw._fitstart(data), )]
+        func = stats.powerlaw._reduce_func(args, {})[1]
+
+        _assert_less_or_close_loglike(stats.powerlaw, data, func, **kwds)
+
     def test_fit_warnings(self):
         assert_fit_warnings(stats.powerlaw)
         # test for error when `fscale + floc <= np.max(data)` is not satisfied
