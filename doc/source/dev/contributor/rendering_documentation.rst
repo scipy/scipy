@@ -25,9 +25,12 @@ To render the documentation on your own machine:
    You need to be able to ``import scipy`` regardless of Python's working
    directory; the ``python setup.py develop`` and ``conda develop`` commands
    from the :ref:`quickstart <dev-env>` guides make this possible.
-#. Install `Sphinx`_, `PyData Sphinx theme`_, `Sphinx-Panels`_ and `matplotlib`_. For
-   example, if you're using the Anaconda distribution of Python, enter in a
-   terminal window ``conda install sphinx pydata-sphinx-theme sphinx-panels matplotlib --channel conda-forge``.
+#. Install `Sphinx`_, `PyData Sphinx theme`_, `Sphinx-Panels`_, `Sphinx-Tabs`_
+   and `matplotlib`_. For example, if you're using the Anaconda distribution of
+   Python, enter in a terminal window::
+      
+      conda install sphinx pydata-sphinx-theme sphinx-panels sphinx-tabs matplotlib --channel conda-forge
+      
    The list of requirements is in ``scipy/doc_requirements.txt``.
 #. In a terminal window, browse to the ``scipy/doc`` directory. Note the
    presence of the file ``Makefile``.
@@ -71,6 +74,7 @@ on the cloud.
 .. _Sphinx: https://www.sphinx-doc.org/en/master/
 .. _PyData Sphinx theme: https://pydata-sphinx-theme.readthedocs.io/en/latest/
 .. _Sphinx-Panels: https://sphinx-panels.readthedocs.io/en/latest/
+.. _Sphinx-Tabs: https://sphinx-tabs.readthedocs.io/en/latest/
 .. _matplotlib: https://www.matplotlib.org/
 .. _Rendering SciPy Documentation with Sphinx: https://youtu.be/kGSYU39EhJQ
 .. _git submodules: https://git-scm.com/book/en/v2/Git-Tools-Submodules

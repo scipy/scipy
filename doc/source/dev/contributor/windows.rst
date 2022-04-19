@@ -384,7 +384,7 @@ Now install the dependencies that we need to build and test SciPy.
 .. note::
 
     These instructions use ``pip`` as the package manager. You can also use ``conda``
-    according to the instructions in the :ref:`quickstart-ubuntu` with minimal modifications
+    according to the instructions in the :ref:`conda-guide` with minimal modifications
     (e.g. you don't need to install ``gfortran`` and ``git`` because you already have them).
 
 The last two are for using SciPy's test suite, which is handy if you want to test

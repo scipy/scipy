@@ -103,6 +103,7 @@ doc = [
     "sphinx-panels>=0.5.2",
     "matplotlib>2",
     "numpydoc",
+    "sphinx-tabs",
 ]
 dev = [
     "mypy",
