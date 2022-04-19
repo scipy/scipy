@@ -6,12 +6,15 @@ import pytest
 import numpy as np
 from numpy.testing import assert_allclose, assert_equal, assert_array_equal
 
+from scipy.spatial import distance
 from scipy.stats import shapiro
 from scipy.stats._sobol import _test_find_index
 from scipy.stats import qmc
-from scipy.stats._qmc import (van_der_corput, n_primes, primes_from_2_to,
-                              update_discrepancy, QMCEngine,
-                              _perturb_discrepancy)  # noqa
+from scipy.stats._qmc import (
+    van_der_corput, n_primes, primes_from_2_to,
+    update_discrepancy, QMCEngine, _l1_norm,
+    _perturb_discrepancy, lloyd_centroidal_voronoi_tessellation
+)  # noqa
 
 
 class TestUtils:
@@ -1190,3 +1193,63 @@ class TestMultivariateNormalQMC:
         # check to see if X + Y = Z almost exactly
         assert all(np.abs(samples[:, 0] + samples[:, 1] - samples[:, 2])
                    < 1e-5)
+
+
+class TestLloyd:
+    def test_lloyd(self):
+        # mindist
+        def l2_norm(sample):
+            return distance.pdist(sample).min()
+
+        # quite sensible seed as it can go up before going further down
+        rng = np.random.RandomState(1809831)
+        sample = rng.uniform(0, 1, size=(128, 2))
+        base_l1 = _l1_norm(sample)
+        base_l2 = l2_norm(sample)
+
+        for _ in range(4):
+            sample_lloyd = lloyd_centroidal_voronoi_tessellation(
+                    sample, maxiter=1,
+            )
+            curr_l1 = _l1_norm(sample_lloyd)
+            curr_l2 = l2_norm(sample_lloyd)
+
+            # higher is better for the distance measures
+            assert base_l1 < curr_l1
+            assert base_l2 < curr_l2
+
+            base_l1 = curr_l1
+            base_l2 = curr_l2
+
+            sample = sample_lloyd
+
+    def test_lloyd_non_mutating(self):
+        """
+        Verify that the input samples are not mutated in place and that they do
+        not share memory with the output.
+        """
+        sample_orig = np.array([[0.1, 0.1],
+                                [0.1, 0.2],
+                                [0.2, 0.1],
+                                [0.2, 0.2]])
+        sample_copy = sample_orig.copy()
+        new_sample = lloyd_centroidal_voronoi_tessellation(
+            sample=sample_orig
+        )
+        assert_allclose(sample_orig, sample_copy)
+        assert not np.may_share_memory(sample_orig, new_sample)
+
+    def test_lloyd_errors(self):
+        with pytest.raises(ValueError, match=r"`sample` is not a 2D array"):
+            sample = [0, 1, 0.5]
+            lloyd_centroidal_voronoi_tessellation(sample)
+
+        msg = r"`sample` dimension is not >= 2"
+        with pytest.raises(ValueError, match=msg):
+            sample = [[0], [0.4], [1]]
+            lloyd_centroidal_voronoi_tessellation(sample)
+
+        msg = r"`sample` is not in unit hypercube"
+        with pytest.raises(ValueError, match=msg):
+            sample = [[-1.1, 0], [0.1, 0.4], [1, 2]]
+            lloyd_centroidal_voronoi_tessellation(sample)
