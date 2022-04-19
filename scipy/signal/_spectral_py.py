@@ -647,8 +647,9 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
         complex data, a two-sided spectrum is always returned.
     scaling : { 'density', 'spectrum' }, optional
         Selects between normalizing the window to unit power (``'density'``) or
-        unit area (``'spectrum'``). See the `mode` parameter for more
-        information. Defaults to ``'density'``.
+        unit area (``'spectrum'``). Note that the parameter `mode` has to be
+        set to ``'psd', 'complex'`` or ``'magnitude'`` to have an effect.
+        Defaults to ``'density'``.
     axis : int, optional
         Axis along which the spectrogram is computed; the default is over
         the last axis (i.e. ``axis=-1``).
