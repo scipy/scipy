@@ -47,8 +47,7 @@ from ._qmc_cy import (
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
            'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube',
-           'MultinomialQMC', 'MultivariateNormalQMC',
-           'lloyd_centroidal_voronoi_tessellation']
+           'MultinomialQMC', 'MultivariateNormalQMC']
 
 
 @overload
@@ -1995,7 +1994,6 @@ def lloyd_centroidal_voronoi_tessellation(
     Examples
     --------
     >>> from scipy.spatial import distance
-    >>> from scipy.stats import qmc
     >>> rng = np.random.default_rng()
     >>> sample = rng.random((128, 2))
 
@@ -2016,7 +2014,7 @@ def lloyd_centroidal_voronoi_tessellation(
     Now process the sample using Lloyd's algorithm and check the improvement
     on the L1. The value should increase.
 
-    >>> sample = qmc.lloyd_centroidal_voronoi_tessellation(sample)
+    >>> sample = lloyd_centroidal_voronoi_tessellation(sample)
     >>> l1_norm(sample)
     0.0278...  # random
 
