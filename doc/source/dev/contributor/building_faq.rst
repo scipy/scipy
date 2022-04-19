@@ -142,6 +142,6 @@ assistance. Please have the following information ready:
 
   * ``$ gfortran --version``
 
-* The versions of numpy and scipy that you are trying to install
+* The versions of NumPy and SciPy that you are trying to install
 
 * The full output of ``$ python setup.py build``

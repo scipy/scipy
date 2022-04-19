@@ -24,7 +24,7 @@ fixing a bug and submitting a pull request.
 Development environment
 -----------------------
 
-- :ref:`system-level` shows how to install system-level dependencies for Linux, Mac or Windows.
+- :ref:`system-level` shows how to install system-level dependencies for Linux, Mac or Windows (needed if you're not using conda).
 - :ref:`conda-guide` presents a step-by-step process for setting up a convenient SciPy development environment with conda *(recommended)*.
 - :ref:`ubuntu-guide` presents a step-by-step process for setting up a convenient SciPy development environment in Ubuntu Linux.
 - :ref:`quickstart-docker` presents a step-by-step process for building SciPy using Docker; if you have trouble with the instructions above, this may be your best option
@@ -35,8 +35,8 @@ Development environment
 Editing SciPy
 -------------
 - :ref:`development-workflow` lays out what to do after your development environment is set up
-- :ref:`building` has details on building from sources on Linux, Mac and Windows.
-- :ref:`meson` for how to use the Meson build system (experimental, it will replace the ``distutils``-based build in the future)
+- :ref:`building` has details on building from sources on Linux, Mac and Windows
+- :ref:`meson` for how to use the Meson build system
 - :ref:`pep8-scipy` gives some tips for ensuring that your code is PEP8 compliant
 - :ref:`git-development` is a guide to using ``git``, the distributed version-control system used to manage the changes made to SciPy code from around the world
 - :ref:`scipy-api` contains some important notes about how SciPy code is organized and documents the structure of the SciPy API; if you are going to import other SciPy code, read this first

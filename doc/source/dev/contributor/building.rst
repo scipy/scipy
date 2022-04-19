@@ -20,6 +20,11 @@ System-level dependencies
 SciPy uses compiled code for speed, which means you might need extra
 dependencies to build it on your system.
 
+.. note::
+
+    You can skip these steps if you are using ``conda``, as these dependencies
+    will be installed automatically.
+
 .. tabs::
 
   .. tab:: Linux
@@ -100,22 +105,12 @@ dependencies to build it on your system.
     include the standard library ``venv`` module or a separate ``virtualenv``
     package. 
 
-    Typically, you will want to install all of the above from packages supplied by
-    your Linux distribution, as building them yourself is complicated. If you need
-    to use specific BLAS/LAPACK libraries, you can do
-
-    ::
-
-        export BLAS=/path/to/libblas.so
-        export LAPACK=/path/to/liblapack.so
-        export ATLAS=/path/to/libatlas.so
-
     * The `Cython <https://cython.org/>`__ and
       `Pythran <https://pythran.readthedocs.io>`__ ahead-of-time compilers are also
       necessary, as is ``pybind11``. It is recommended to install these packages
-      with ``pip`` or ``conda``, because it is possible (even likely) that you need
-      newer versions of these packages than the ones that are available in your
-      Linux distribution.
+      with ``pip``, because it is possible (even likely) that you need newer
+      versions of these packages than the ones that are available in your Linux
+      distribution.
 
     If you are using conda, these dependencies can be installed in the conda
     environment itself. See :ref:`conda-guide` for more details.
@@ -132,19 +127,11 @@ dependencies to build it on your system.
 
     and follow the prompts. Apple Developer Tools includes
     `git <https://git-scm.com/>`_, the software we need to download and manage the
-    SciPy source code.
-
-    We recommend :ref:`using conda <conda-guide>` to set up your environment on a
-    Mac, as this will also allow you to install all necessary dependencies in a
-    conda environment, instead of manually. If you prefer not using conda, see
-    :ref:`build-osx`.
+    SciPy source code. See also :ref:`build-osx`.
 
   .. tab:: Windows
 
-    We recommend :ref:`using conda <conda-guide>` to set up your environment on
-    Windows, as this will also allow you to install all necessary dependencies
-    in a conda environment, instead of manually. If you prefer not using conda
-    or need more details, see :ref:`build-windows`.
+    See :ref:`build-windows`.
 
 Detailed instructions
 ---------------------
@@ -163,6 +150,11 @@ Reference for build options
 ===========================
 
 SciPy has several tunable build-time options, which can be set.
+
+.. warning::
+
+    This content is for the old `numpy.distutils`-based build and doesn't apply
+    to the Meson build (i.e., when building with ``python dev.py``).
 
 - ``site.cfg``: build-time library configuration file, see
   ``site.cfg.example`` for details.

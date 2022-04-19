@@ -49,24 +49,6 @@ Next, set up your development environment.
 
 .. tabs::
 
-    .. tab:: pip+venv
-
-        With :ref:`system-level dependencies <system-level>` installed, execute
-        the following commands at the terminal from the base directory of your
-        `SciPy <https://github.com/scipy/scipy>`_ clone:
-
-        .. code:: bash
-
-            # Create the virtual environment
-            python -m venv scipy-dev
-            # Activate the environment
-            source $HOME/.venvs/scipy-dev/bin/activate
-            # Install python-level dependencies
-            python -m pip install numpy pytest cython pythran pybind11 meson ninja
-
-        Your command prompt now lists the name of your new environment, like so
-        ``(scipy-dev)$``.
-
     .. tab:: conda
 
         With ``conda`` installed (through
@@ -80,6 +62,27 @@ Next, set up your development environment.
             conda env create -f environment_meson.yml  # works with `mamba` too
             # Activate the environment
             conda activate scipy-dev
+
+        Your command prompt now lists the name of your new environment, like so
+        ``(scipy-dev)$``.
+
+    .. tab:: pip+venv
+
+        .. _system-level: system-level
+        .. |system-level| replace:: **system-level dependencies** 
+
+        **With** |system-level|_ **installed**, execute
+        the following commands at the terminal from the base directory of your
+        `SciPy <https://github.com/scipy/scipy>`_ clone:
+
+        .. code:: bash
+
+            # Create the virtual environment
+            python -m venv scipy-dev
+            # Activate the environment
+            source $HOME/.venvs/scipy-dev/bin/activate
+            # Install python-level dependencies
+            python -m pip install numpy pytest cython pythran pybind11 meson ninja
 
         Your command prompt now lists the name of your new environment, like so
         ``(scipy-dev)$``.
