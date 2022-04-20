@@ -1199,8 +1199,8 @@ class Act(Task):
     $ python do.py act list
     $ python do.py act verbose
     $ python do.py act dry-run
-    $ python do.py act run-job <job_name>
-    $ python do.py act reuse <job_name>
+    $ python do.py act run-job test_meson
+    $ python do.py act reuse test_meson
     """
     ctx = CONTEXT
     args = Argument(['args'], nargs=-1, required=True, metavar='TEXT')
@@ -1221,7 +1221,7 @@ class Act(Task):
             if args[0] == 'reuse':
                 cmd += ['-j', args[1], '--bind', '--reuse']
         else:
-            click.echo("Too many positional arguments detected, kindly use to --help option to know more")
+            click.echo("Too many positional arguments detected, kindly use to --help to know more")
 
         cmd_str = ' '.join(cmd)
         click.echo(cmd_str)
