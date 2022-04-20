@@ -1178,6 +1178,58 @@ def authors(ctx_obj, revision_args):
     except subprocess.CalledProcessError:
         print('Error caught: Incorrect revision start or revision end')
 
+"""
+act integration
+http://scipy.github.io/devdocs/dev/contributor/using_act.html?highlight=act
+TODO:
+- add specific example commands
+"""
+@cli.cls_cmd('act')
+class Act(Task):
+    """:flashlight: act is a tool which provides a handy way to run GitHub Actions locally using Docker
+
+    Installation guide :arrow_down:
+    - Using homebrew: brew install act
+    - Using bashscript: curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+
+    Options available: list, verbose, dry-run, run-job, reuse
+
+    Examples:
+
+    $ python do.py act list
+    $ python do.py act verbose
+    $ python do.py act dry-run
+    $ python do.py act run-job <job_name>
+    $ python do.py act reuse <job_name>
+    """
+    ctx = CONTEXT
+    args = Argument(['args'], nargs=-1, required=True, metavar='TEXT')
+
+    @classmethod
+    def task_meta(cls, args):
+        cmd = ['act']
+        if len(args)==1:
+            if args[0] == 'list':
+                cmd += ['-l']
+            if args[0] == 'verbose':
+                cmd += ['-v']
+            if args[0] == 'dry-run':
+                cmd += ['-n']
+        elif len(args)==2:
+            if args[0] == 'run-job':
+                cmd += ['-j', args[1]]
+            if args[0] == 'reuse':
+                cmd += ['-j', args[1], '--bind', '--reuse']
+        else:
+            click.echo("Too many positional arguments detected, kindly use to --help option to know more")
+
+        cmd_str = ' '.join(cmd)
+        click.echo(cmd_str)
+
+        return {
+            'actions': [f'{cmd_str}']
+        }
+
 
 if __name__ == '__main__':
     cli()
