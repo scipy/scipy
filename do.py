@@ -345,6 +345,10 @@ rich_click.COMMAND_GROUPS = {
             "name": "benchmarking",
             "commands": ["bench"],
         },
+        {
+            "name": "act integration",
+            "commands": ["act"],
+        },
     ]
 }
 
@@ -1183,13 +1187,16 @@ def authors(ctx_obj, revision_args):
 """
 @cli.cls_cmd('act')
 class Act(Task):
-    """:flashlight: act is a tool which provides a handy way to run GitHub Actions locally using Docker
+    """:flashlight: A tool which provides a handy way to run GitHub Actions locally using Docker
 
     Installation guide :arrow_down:
     - Using homebrew: brew install act
     - Using bashscript: curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
 
-    Options available: list, run-job, reuse
+    Options available:
+        * list (lists all the workflows present)
+        * run-job (runs a particular job)
+        * reuse (reuse the containers in act to maintain state)
 
     Examples (verbose logging enabled):
 
