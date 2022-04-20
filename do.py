@@ -1190,8 +1190,10 @@ class Act(Task):
     """:flashlight: A tool which provides a handy way to run GitHub Actions locally using Docker
 
     Installation guide :arrow_down:
-    - Using homebrew: brew install act
-    - Using bashscript: curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
+    - Install docker desktop/toolkit
+    - Install act
+        * Using homebrew: brew install act
+        * Using bashscript: curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
 
     Options available:
         * list (lists all the workflows present)
