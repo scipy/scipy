@@ -1200,7 +1200,7 @@ class Act(Task):
         * run-job (runs a particular job)
         * reuse (reuse the containers in act to maintain state)
 
-    Examples (verbose logging enabled):
+    Examples (verbose logging enabled by default):
 
     $ python do.py act list
     $ python do.py act run-job test_meson
