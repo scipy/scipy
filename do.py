@@ -1183,7 +1183,7 @@ def authors(ctx_obj, revision_args):
         print('Error caught: Incorrect revision start or revision end')
 
 """
-- Currently the run-job/reuse fails (reported issue https://github.com/scipy/scipy/issues/16009)
+- Currently the run-job/reuse fails (issue https://github.com/scipy/scipy/issues/16009)
 """
 @cli.cls_cmd('act')
 class Act(Task):
