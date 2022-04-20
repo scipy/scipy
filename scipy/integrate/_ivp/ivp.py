@@ -2,7 +2,8 @@ import inspect
 import numpy as np
 from .bdf import BDF
 from .radau import Radau
-from .rk import RK23, RK45, DOP853
+from .rk import (RK23, RK45, DOP853, Tsit5,
+                 Verner65, Verner76, Verner87, Verner98)
 from .lsoda import LSODA
 from scipy.optimize import OptimizeResult
 from .common import EPS, OdeSolution
@@ -14,6 +15,11 @@ METHODS = {'RK23': RK23,
            'DOP853': DOP853,
            'Radau': Radau,
            'BDF': BDF,
+           'Tsit5': Tsit5,
+           'Verner65': Verner65,
+           'Verner76': Verner76,
+           'Verner87': Verner87,
+           'Verner98': Verner98,
            'LSODA': LSODA}
 
 
