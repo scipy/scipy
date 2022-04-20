@@ -1179,10 +1179,7 @@ def authors(ctx_obj, revision_args):
         print('Error caught: Incorrect revision start or revision end')
 
 """
-act integration
-http://scipy.github.io/devdocs/dev/contributor/using_act.html?highlight=act
-TODO:
-- add specific example commands
+- Currently the run-job/reuse fails (reported issue https://github.com/scipy/scipy/issues/16009)
 """
 @cli.cls_cmd('act')
 class Act(Task):
@@ -1192,13 +1189,11 @@ class Act(Task):
     - Using homebrew: brew install act
     - Using bashscript: curl https://raw.githubusercontent.com/nektos/act/master/install.sh | sudo bash
 
-    Options available: list, verbose, dry-run, run-job, reuse
+    Options available: list, run-job, reuse
 
-    Examples:
+    Examples (verbose logging enabled):
 
     $ python do.py act list
-    $ python do.py act verbose
-    $ python do.py act dry-run
     $ python do.py act run-job test_meson
     $ python do.py act reuse test_meson
     """
@@ -1211,15 +1206,11 @@ class Act(Task):
         if len(args)==1:
             if args[0] == 'list':
                 cmd += ['-l']
-            if args[0] == 'verbose':
-                cmd += ['-v']
-            if args[0] == 'dry-run':
-                cmd += ['-n']
         elif len(args)==2:
             if args[0] == 'run-job':
-                cmd += ['-j', args[1]]
+                cmd += ['-v', '-j', args[1]]
             if args[0] == 'reuse':
-                cmd += ['-j', args[1], '--bind', '--reuse']
+                cmd += ['-v', '-j', args[1], '--bind', '--reuse']
         else:
             click.echo("Too many positional arguments detected, kindly use to --help to know more")
 
