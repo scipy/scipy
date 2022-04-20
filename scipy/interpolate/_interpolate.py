@@ -2350,7 +2350,7 @@ class NdPPoly:
 
 class RegularGridInterpolator:
     """
-    Interpolation on a regular grid in arbitrary dimensions
+    Interpolation on a regular grid in arbitrary dimensions.
 
     The data must be defined on a regular grid; the grid spacing however may be
     uneven. Linear and nearest-neighbor interpolation are supported. After
@@ -2374,11 +2374,12 @@ class RegularGridInterpolator:
         If True, when interpolated values are requested outside of the
         domain of the input data, a ValueError is raised.
         If False, then `fill_value` is used.
+        Default is True.
 
-    fill_value : number, optional
-        If provided, the value to use for points outside of the
-        interpolation domain. If None, values outside
-        the domain are extrapolated.
+    fill_value : float or None, optional
+        The value to use for points outside of the interpolation domain.
+        If None, values outside the domain are extrapolated.
+        Default is ``np.nan``.
 
     Methods
     -------
@@ -2386,9 +2387,12 @@ class RegularGridInterpolator:
 
     Notes
     -----
-    Contrary to LinearNDInterpolator and NearestNDInterpolator, this class
+    Contrary to `LinearNDInterpolator` and `NearestNDInterpolator`, this class
     avoids expensive triangulation of the input data by taking advantage of the
     regular grid structure.
+
+    In other words, this class assumes that the data is defined on a
+    *rectilinear* grid.
 
     If any of `points` have a dimension of size 1, linear interpolation will
     return an array of `nan` values. Nearest-neighbor interpolation will work
@@ -2409,27 +2413,31 @@ class RegularGridInterpolator:
     >>> xg, yg ,zg = np.meshgrid(x, y, z, indexing='ij', sparse=True)
     >>> data = f(xg, yg, zg)
 
-    ``data`` is now a 3-D array with ``data[i,j,k] = f(x[i], y[j], z[k])``.
+    ``data`` is now a 3-D array with ``data[i, j, k] = f(x[i], y[j], z[k])``.
     Next, define an interpolating function from this data:
 
-    >>> my_interpolating_function = RegularGridInterpolator((x, y, z), data)
+    >>> interp = RegularGridInterpolator((x, y, z), data)
 
     Evaluate the interpolating function at the two points
     ``(x,y,z) = (2.1, 6.2, 8.3)`` and ``(3.3, 5.2, 7.1)``:
 
-    >>> pts = np.array([[2.1, 6.2, 8.3], [3.3, 5.2, 7.1]])
-    >>> my_interpolating_function(pts)
+    >>> pts = np.array([[2.1, 6.2, 8.3],
+    ...                 [3.3, 5.2, 7.1]])
+    >>> interp(pts)
     array([ 125.80469388,  146.30069388])
 
-    which is indeed a close approximation to
-    ``[f(2.1, 6.2, 8.3), f(3.3, 5.2, 7.1)]``.
+    which is indeed a close approximation to 
+
+    >>> f(2.1, 6.2, 8.3), f(3.3, 5.2, 7.1)
+    (125.54200000000002, 145.894)
+
 
     See also
     --------
-    NearestNDInterpolator : Nearest neighbor interpolation on unstructured
+    NearestNDInterpolator : Nearest neighbor interpolation on *unstructured*
                             data in N dimensions
 
-    LinearNDInterpolator : Piecewise linear interpolant on unstructured data
+    LinearNDInterpolator : Piecewise linear interpolant on *unstructured* data
                            in N dimensions
 
     References
@@ -2442,6 +2450,7 @@ class RegularGridInterpolator:
            and multilinear table interpolation in many dimensions." MATH.
            COMPUT. 50.181 (1988): 189-196.
            https://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf
+           :doi:`10.1090/S0025-5718-1988-0917826-0`
 
     """
     # this class is based on code originally programmed by Johannes Buchner,
