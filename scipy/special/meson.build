@@ -340,7 +340,9 @@ cython_special = custom_target('cython_special',
     'cython_special.pxd'
   ],
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
-  command: [py3, '@INPUT0@', '-o', '@OUTDIR@']
+  command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
+  install: true,
+  install_dir: py3.get_install_dir() + '/scipy/special'
 )
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
@@ -501,12 +503,15 @@ python_sources = [
   '_logsumexp.py',
   '_mptestutils.py',
   '_orthogonal.py',
+  '_orthogonal.pyi',
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
+  '_test_round.pyi',
   '_testutils.py',
   'add_newdocs.py',
   'basic.py',
+  'cython_special.pyi',
   'orthogonal.py',
   'sf_error.py',
   'specfun.py',
@@ -518,13 +523,6 @@ py3.install_sources(
   pure: false,
   subdir: 'scipy/special'
 )
-
-# FIXME: fails with "Argument must be string or file."
-#py3.install_sources(
-#    cython_special[7],  # cython_special.pxd
-#    pure: false,
-#    subdir: 'scipy/special'
-#)
 
 subdir('tests')
 subdir('_precompute')

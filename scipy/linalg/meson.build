@@ -286,6 +286,7 @@ python_sources = [
   '_flinalg_py.py',
   '_interpolative_backend.py',
   '_matfuncs.py',
+  '_matfuncs_expm.pyi',
   '_matfuncs_inv_ssq.py',
   '_matfuncs_sqrtm.py',
   '_misc.py',
