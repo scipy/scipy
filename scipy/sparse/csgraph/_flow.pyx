@@ -33,7 +33,7 @@ class MaximumFlowResult:
     def residual(self):
         warnings.warn(
             "The attribute `residual` has been renamed to `flow`"
-            " and will be removed in SciPy 1.10.",
+            " and will be removed in SciPy 1.11.",
             DeprecationWarning, stacklevel=2
         )
         return self.flow
