@@ -4,6 +4,7 @@ import pytest
 
 import scipy.special as sc
 
+
 class TestInverseErrorFunction:
     def test_compliment(self):
         # Test erfcinv(1 - x) == erfinv(x)
@@ -11,20 +12,27 @@ class TestInverseErrorFunction:
         assert_allclose(sc.erfcinv(1 - x), sc.erfinv(x), rtol=0, atol=1e-15)
 
     def test_literal_values(self):
-        # calculated via https://keisan.casio.com/exec/system/1180573448
-        # for y = 0, 0.1, ... , 0.9
-        actual = sc.erfinv(np.linspace(0, 0.9, 10))
+        # The expected values were calculated with mpmath:
+        #
+        #   import mpmath
+        #   mpmath.mp.dps = 200
+        #   for y in [0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9]:
+        #       x = mpmath.erfinv(y)
+        #       print(x)
+        #
+        y = np.array([0, 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9])
+        actual = sc.erfinv(y)
         expected = [
-            0,
-            0.08885599049425768701574,
-            0.1791434546212916764928,
-            0.27246271472675435562,
-            0.3708071585935579290583,
-            0.4769362762044698733814,
-            0.5951160814499948500193,
-            0.7328690779592168522188,
-            0.9061938024368232200712,
-            1.163087153676674086726,
+            0.0,
+            0.08885599049425769,
+            0.1791434546212917,
+            0.2724627147267543,
+            0.37080715859355795,
+            0.4769362762044699,
+            0.5951160814499948,
+            0.7328690779592167,
+            0.9061938024368233,
+            1.1630871536766743,
         ]
         assert_allclose(actual, expected, rtol=0, atol=1e-15)
 
@@ -61,7 +69,7 @@ class TestInverseErrorFunction:
     def test_erfinv_asympt(self):
         # regression test for gh-12758: erfinv(x) loses precision at small x
         # expected values precomputed with mpmath:
-        # >>> mpmath.dps=100
+        # >>> mpmath.mp.dps = 100
         # >>> expected = [float(mpmath.erfinv(t)) for t in x]
         x = np.array([1e-20, 1e-15, 1e-14, 1e-10, 1e-8, 0.9e-7, 1.1e-7, 1e-6])
         expected = np.array([8.86226925452758e-21,
@@ -73,9 +81,9 @@ class TestInverseErrorFunction:
                              9.74849617998037e-08,
                              8.8622692545299e-07])
         assert_allclose(sc.erfinv(x), expected,
-                        rtol=1e-10)
+                        rtol=1e-15)
 
         # also test the roundtrip consistency
         assert_allclose(sc.erf(sc.erfinv(x)),
                         x,
-                        rtol=1e-10)
+                        rtol=5e-15)
