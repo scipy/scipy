@@ -61,7 +61,7 @@ Next, set up your development environment.
             # Create an environment with all development dependencies
             conda env create -f environment_meson.yml  # works with `mamba` too
             # Activate the environment
-            conda activate scipy-dev
+            conda activate scipy-meson
 
         Your command prompt now lists the name of your new environment, like so
         ``(scipy-dev)$``.
