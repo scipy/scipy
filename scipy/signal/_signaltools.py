@@ -1908,7 +1908,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     lfiltic : Construct initial conditions for `lfilter`.
     lfilter_zi : Compute initial state (steady state of step response) for
                  `lfilter`.
-    filtfilt : A forward-backward filter, to obtain a filter with linear phase.
+    filtfilt : A forward-backward filter, to obtain a filter with zero phase.
     savgol_filter : A Savitzky-Golay filter.
     sosfilt: Filter data using cascaded second-order sections.
     sosfiltfilt: A forward-backward filter using second-order sections.

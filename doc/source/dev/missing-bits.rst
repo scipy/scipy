@@ -1,3 +1,6 @@
+:orphan:
+
+.. _missing-bits:
 
 Code and Documentation Style Guide - The Missing Bits
 =====================================================
@@ -9,8 +12,7 @@ are not explicitly stated in the existing guidelines and standards, including
 * `PEP-257 <https://www.python.org/dev/peps/pep-0257>`_ Docstring Conventions
 * `NumPy docstring standard
   <https://numpydoc.readthedocs.io/en/latest/format.html>`_
-* NumPy `Testing Guidelines
-  <https://numpy.org/doc/stable/reference/testing.html>`_
+* :doc:`NumPy Testing Guidelines <numpy:reference/testing>`
 
 Some of these are trivial, and might not seem worth discussing, but in many
 cases, the issue has come up in a pull request review in either the SciPy
@@ -57,8 +59,8 @@ functions::
     instead of this function for more consistent floating point
     comparisons.
 
-For more information about writing unit tests, see `Testing Guidelines
-<https://numpy.org/doc/stable/reference/testing.html>`_.
+For more information about writing unit tests, see the
+:doc:`NumPy Testing Guidelines <numpy:reference/testing>`.
 
 
 Testing that expected exceptions are raised
@@ -131,7 +133,7 @@ URL.
 
     No::
 
-        .. [1] https://en.wikipedia.org/wiki/Zeta_distribution    
+        .. [1] https://en.wikipedia.org/wiki/Zeta_distribution
 
 
 DOIs in references
@@ -187,4 +189,3 @@ Some examples:
         * The second item in the list.
         * You get the idea.
         Some text that follows the list.
-
