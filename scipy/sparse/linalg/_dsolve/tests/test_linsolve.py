@@ -722,6 +722,17 @@ class TestSpsolveTriangular:
     def setup_method(self):
         use_solver(useUmfpack=False)
 
+    def test_zero_diagonal(self):
+        n = 5
+        A = np.random.randn(n, n)
+        b = np.arange(n)
+        A = scipy.sparse.tril(A, k=0, format='csr')
+
+        x = spsolve_triangular(A, b, unit_diagonal=True, lower=True)
+
+        A.setdiag(1)
+        assert_array_almost_equal(A.dot(x), b)
+
     def test_singular(self):
         n = 5
         A = csr_matrix((n, n))
