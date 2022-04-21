@@ -2531,17 +2531,39 @@ class RegularGridInterpolator:
 
     def __call__(self, xi, method=None):
         """
-        Interpolation at coordinates
+        Interpolation at coordinates.
 
         Parameters
         ----------
         xi : ndarray of shape (..., ndim)
-            The coordinates to sample the gridded data at
+            The coordinates to evaluate the interpolator at.
 
         method : str
             The method of interpolation to perform. Supported are "linear" and
             "nearest".
 
+        Examples
+        --------
+        Here we define a nearest-neighbor interpolator of a simple function
+
+        >>> x, y = np.array([0, 1, 2]), np.array([1, 3, 7])
+        >>> def f(x, y):
+        ...     return x**2 + y**2
+        >>> data = f(*np.meshgrid(x, y, indexing='ij', sparse=True))
+        >>> from scipy.interpolate import RegularGridInterpolator
+        >>> interp = RegularGridInterpolator((x, y), data, method='nearest')
+
+        By construction, the interpolator uses the nearest-neighbor
+        interpolation
+
+        >>> interp([[1.5, 1.3], [0.3, 4.5]])
+        array([2., 9.])
+
+        We can however evaluate the linear interpolant by overriding the
+        `method` parameter
+
+        >>> interp([[1.5, 1.3], [0.3, 4.5]], method='linear')
+        array([ 4.7, 24.3])
         """
         method = self.method if method is None else method
         if method not in ["linear", "nearest"]:
