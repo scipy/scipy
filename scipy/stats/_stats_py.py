@@ -5340,10 +5340,6 @@ def _check_inputs(x, y, compute_distance=_euclidean_dist, reps=1000,
     x = x.astype(np.float64)
     y = y.astype(np.float64)
 
-    # check if compute_distance_matrix if a callable()
-    if not callable(compute_distance) and compute_distance is not None:
-        raise ValueError("compute_distance must be a function.")
-
     # check if number of reps exists, integer, or > 0 (if under 1000 raises
     # warning)
     if not isinstance(reps, int) or reps < 0:
@@ -5364,13 +5360,13 @@ def _check_inputs(x, y, compute_distance=_euclidean_dist, reps=1000,
 
     if compute_distance is not None:
         # compute distance matrices for x and y
-        x = compute_distance(x)
-        y = compute_distance(y)
+        x = cdist(x, x, metric=compute_distance)
+        y = cdist(y, y, metric=compute_distance)
 
     return x, y
 
 
-def distance_correlation(x, y, compute_distance=_euclidean_dist, reps=1000,
+def distance_correlation(x, y, compute_distance="euclidean", reps=1000,
                          workers=1, is_twosamp=False, random_state=None,
                          bias=False):
     r"""Computes the Distance Correlation (Dcorr) test statistic and p-value.
@@ -5390,14 +5386,13 @@ def distance_correlation(x, y, compute_distance=_euclidean_dist, reps=1000,
         matrices, and ``compute_distance`` must be sent to ``None``. If ``x``
         and ``y`` have shapes ``(n, p)`` and ``(m, p)``, an unpaired
         two-sample Dcorr test will be run.
-    compute_distance : callable, optional
+    compute_distance : str or callable, optional
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to ``None`` if ``x`` and ``y`` are
-        already distance matrices. The default uses the euclidean norm metric.
-        If you are calling a custom function, either create the distance
-        matrix before-hand or create a function of the form
-        ``compute_distance(x)`` where `x` is the data matrix for which
-        pairwise distances are calculated.
+        already distance matrices.
+        The default uses is ``"euclidean"`` norm metric.
+        See ``scipy.spatial.distance.cdist`` for metrics and user supplied
+        functions.
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is ``1000``.
@@ -5564,7 +5559,7 @@ def _dcorr_stat(distx, disty, bias=False):
     return stat
 
 
-def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
+def multiscale_graphcorr(x, y, compute_distance="euclidean", reps=1000,
                          workers=1, is_twosamp=False, random_state=None):
     r"""Computes the Multiscale Graph Correlation (MGC) test statistic.
 
@@ -5595,14 +5590,13 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
         matrices, and ``compute_distance`` must be sent to ``None``. If ``x``
         and ``y`` have shapes ``(n, p)`` and ``(m, p)``, an unpaired
         two-sample MGC test will be run.
-    compute_distance : callable, optional
+    compute_distance : str or callable, optional
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to ``None`` if ``x`` and ``y`` are
-        already distance matrices. The default uses the euclidean norm metric.
-        If you are calling a custom function, either create the distance
-        matrix before-hand or create a function of the form
-        ``compute_distance(x)`` where `x` is the data matrix for which
-        pairwise distances are calculated.
+        already distance matrices.
+        The default uses is ``"euclidean"`` norm metric.
+        See ``scipy.spatial.distance.cdist`` for metrics and user supplied
+        functions.
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is ``1000``.
@@ -5765,7 +5759,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     '-0.008, 1.0'
     """
     x, y = _check_inputs(x, y, compute_distance=compute_distance, reps=reps,
-                         is_twosamp=is_twosamp,)
+                         is_twosamp=is_twosamp)
 
     # calculate MGC stat
     stat, stat_dict = _mgc_stat(x, y)

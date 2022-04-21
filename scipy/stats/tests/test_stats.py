@@ -7110,13 +7110,6 @@ class TestDcorrErrorWarnings:
         y = np.arange(20)
         assert_raises(ValueError, stats.distance_correlation, x, y)
 
-    def test_error_wrongdisttype(self):
-        # raises error if metric is not a function
-        x = np.arange(20)
-        compute_distance = 0
-        assert_raises(ValueError, stats.distance_correlation, x, x,
-                      compute_distance=compute_distance)
-
     @pytest.mark.parametrize("reps", [
         -1,    # reps is negative
         '1',   # reps is not integer
@@ -7177,6 +7170,7 @@ class TestDcorrStat:
 
         return x, y
 
+    @pytest.mark.slow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.97, 1/1000),           # test linear simulation
         ("nonlinear", 0.0095, 0.203),       # test spiral simulation
@@ -7193,6 +7187,7 @@ class TestDcorrStat:
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize("sim_type, obs_stat, obs_pvalue", [
         ("linear", 0.171, 1/1000),           # test linear simulation
         ("nonlinear", 0.0185, 0.091),        # test spiral simulation
@@ -7208,6 +7203,7 @@ class TestDcorrStat:
         assert_approx_equal(stat, obs_stat, significant=1)
         assert_approx_equal(pvalue, obs_pvalue, significant=1)
 
+    @pytest.mark.slow
     def test_twosamp(self):
         np.random.seed(12345678)
 
@@ -7294,13 +7290,6 @@ class TestMGCErrorWarnings:
 
         y = np.arange(20)
         assert_raises(ValueError, stats.multiscale_graphcorr, x, y)
-
-    def test_error_wrongdisttype(self):
-        # raises error if metric is not a function
-        x = np.arange(20)
-        compute_distance = 0
-        assert_raises(ValueError, stats.multiscale_graphcorr, x, x,
-                      compute_distance=compute_distance)
 
     @pytest.mark.parametrize("reps", [
         -1,    # reps is negative
