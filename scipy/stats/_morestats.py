@@ -1579,10 +1579,17 @@ def yeojohnson_llf(lmb, data):
         return np.nan
 
     trans = _yeojohnson_transform(data, lmb)
+    trans_var = trans.var(axis=0)
+    loglike = np.empty_like(trans_var)
 
-    loglike = -n_samples / 2 * np.log(trans.var(axis=0))
-    loglike += (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum(axis=0)
+    # Avoid RuntimeWarning raised by np.log when the variance is too low
+    tiny_variance = trans_var < np.finfo(trans_var.dtype).tiny
+    loglike[tiny_variance] = np.inf
 
+    loglike[~tiny_variance] = (
+        -n_samples / 2 * np.log(trans_var[~tiny_variance]))
+    loglike[~tiny_variance] += (
+        (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum(axis=0))
     return loglike
 
 
@@ -1634,9 +1641,14 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
 
     """
     def _neg_llf(lmbda, data):
-        return -yeojohnson_llf(lmbda, data)
+        llf = yeojohnson_llf(lmbda, data)
+        # reject likelihoods that are inf which are likely due to small
+        # variance in the transformed space
+        llf[np.isinf(llf)] = -np.inf
+        return -llf
 
-    return optimize.brent(_neg_llf, brack=brack, args=(x,))
+    with np.errstate(invalid='ignore'):
+        return optimize.brent(_neg_llf, brack=brack, args=(x,))
 
 
 def yeojohnson_normplot(x, la, lb, plot=None, N=80):
