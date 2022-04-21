@@ -4172,49 +4172,58 @@ class invgauss_gen(rv_continuous):
         mu = np.broadcast_to(mu, x0.shape)
 
         # Select the start values for Newton's Method using a quantile of
-        # the gamma (if right tail is required) or normal distribution
-        # when `q` is very small.
-        mask = q < 1e-05
-        if upper:
-            mu3 = mu[mask] ** 3
-            x0[mask] = sc.gammainccinv(1 / mu3, q[mask]) / mu3
-        else:
-            x0[mask] = mu[mask] / (_norm_ppf(q[mask]) ** 2)
+        # the gamma (if right tail is tiny) or normal distribution
+        # if the left tail is tiny.
+        tiny_left = q < 1e-05
+        tiny_right = q > 0.99999  # 1 - 1e-05
+        if tiny_left.size:
+            x0[tiny_left] = mu[tiny_left] / (_norm_ppf(q[tiny_left]) ** 2)
+        if tiny_right.size:
+            # when the right tail probability is less than 10^-5, we use the
+            # corresponding quantile of the gamma distribution with the same
+            # mean and variance as the inverse-gaussian (IG) that produced
+            # the probability ``q``. The mean of this IG is mu and its
+            # variance is mu**3. This then implies the Gamma's shape=1/mu and
+            # its scale=mu**2. To get the corresponding quantile, we invert
+            # the inverse of the regularized lower incomplete gamma function.
+            m = mu[tiny_right]
+            x0[tiny_right] = sc.gammaincinv(1 / m, q[tiny_right]) * (m ** 2)
 
         # when `q` is not very small the initial value for Newton's method is
         # the mode of the distribution. If `k` is large, then we use equation 3
         # of Giner & Smyth (2016) to prevent subtractive cancellation.
         # Note that the threshold of 100 picked here is arbitrary, a much
         # bigger value could be chosen if necessary.
-        k = 1.5 * mu[~mask]
-        x0[~mask] = _lazywhere(
-            mu[~mask] > 100,
-            (mu[~mask], k),
-            lambda mu, k: mu * (0.5 / k - 0.125 / (k ** 3) + 0.0625 / (k**6)),
-            f2=lambda mu, k: mu * (np.sqrt(1 + k * k) - k)
-        )
+        ok = ~tiny_left & ~tiny_right
+        mu_ok = mu[ok]
 
-        logF = self._logsf if upper else self._logcdf
-        sign = -1 if upper else 1
+        def f(mu, k):
+            return mu * (0.5 / k - 0.125 / (k ** 3) + 0.0625 / (k ** 6))
+
+        def f2(mu, k):
+            return mu * (np.sqrt(1 + k ** 2) - k)
+
+        x0[ok] = _lazywhere(mu_ok > 100, (mu_ok, 1.5 * mu_ok), f=f, f2=f2)
+
+        (logF, sign) = (self._logsf, -1) if upper else (self._logcdf, 1)
         delta = np.empty_like(x0)
-        lq = np.log(q)
+        logprob = np.log(q)
 
-        for _ in range(100):
+        # 1000 seems like a reasonable max number of iterations given that
+        # convergence is guaranteed in this setup.
+        for _ in range(1000):
             lx = logF(x0, mu)
-            lp = self._logpdf(x0, mu)
             # to avoid subtractive cancellation when `d` is very small we use a
             # taylor series expansion to approximate (p - p(xn)) as shown in
             # page 8 of Giner & Smyth (2016)
-            d = lq - lx
-            mask = np.abs(d) < 1e-05
+            eps = logprob - lx
+            mask = np.abs(eps) < 1e-05
             delta[mask] = (
-                d[mask] * np.exp(lq[mask] + np.log1p(-0.5*d[mask]) - lp[mask])
+                eps[mask] * np.exp(logprob[mask] + np.log1p(-eps[mask] / 2))
             )
-            delta[~mask] = (
-                q[~mask] * np.exp(-lp[~mask]) - np.exp(lx[~mask] - lp[~mask])
-            )
+            delta[~mask] = q - np.exp(lx[~mask])
 
-            x = x0 + sign * delta
+            x = x0 + sign * delta / self._pdf(x0, mu)
             if np.allclose(x, x0, atol=1e-08):
                 break
             x0 = x
