@@ -7051,7 +7051,7 @@ class powerlaw_gen(rv_continuous):
         # The support of the distribution is `(x - loc)/scale > 0`.
         # If all parameters are free, or only the shape is fixed, the
         # method of Lagrange multipliers turns this constraint into an
-        # equation that can be solved numerically. 
+        # equation that can be solved numerically.
 
         def dL_dLocation(data, shape, scale):
             # The partial derivative of the log-likelihood function w.r.t.
@@ -7091,7 +7091,7 @@ class powerlaw_gen(rv_continuous):
             i *= 2
 
         root = optimize.root_scalar(fun_to_solve, bracket=(lbrack, rbrack))
-        
+
         loc = np.nextafter(root.root, -np.inf)
         scale = np.nextafter(get_scale(data, loc), np.inf)
         shape = fshape or get_shape(data, loc, scale)
