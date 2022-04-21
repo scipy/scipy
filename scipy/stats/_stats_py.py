@@ -896,6 +896,9 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
 def _moment_outputs(kwds):
     moment = np.atleast_1d(kwds.get('moment', 1))
+    if moment.size == 0:
+        raise ValueError("'moment' must be a scalar or a non-empty 1D "
+                         "list/array.")
     return len(moment)
 
 
