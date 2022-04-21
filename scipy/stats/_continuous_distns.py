@@ -4089,14 +4089,19 @@ class invgauss_gen(rv_continuous):
         return np.exp(self._logpdf(x, mu))
 
     def _logpdf(self, x, mu):
-        a = -0.5 * np.log(2 * np.pi)
-        out = _lazywhere(
-            np.isposinf(mu),
-            (x, mu),
-            lambda x, mu: invgamma.logpdf(x, 0.5, scale=0.5),
-            f2=lambda x, mu: a - 1.5*np.log(x) - 0.5 * (x-mu)**2 / (x * mu**2)
-        )
-        return out
+
+        def f(x, mu):
+            """
+            When mu = infinity, invgauss(mu, 1) reduces to invgamma(0.5, 0.5)
+            """
+            return invgamma.logpdf(x, 0.5, scale=0.5)
+
+        def f2(x, mu):
+            const = -0.5 * np.log(2 * np.pi)
+            x_mu = x / mu - 1
+            return const - 1.5 * np.log(x) - 0.5 * (1 / x) * x_mu * x_mu
+
+        return _lazywhere(np.isposinf(mu), (x, mu), f=f, f2=f2)
 
     # approach adapted from equations in
     # https://journal.r-project.org/archive/2016-1/giner-smyth.pdf,
