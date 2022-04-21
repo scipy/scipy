@@ -1197,7 +1197,7 @@ class Act(Task):
 
     Options available:
         * list (lists all the workflows present)
-        * run-job (runs a particular job)
+        * run-job (runs a particular workflow)
         * reuse (reuse the containers in act to maintain state)
 
     Examples (verbose logging enabled by default):
