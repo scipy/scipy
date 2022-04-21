@@ -5156,104 +5156,14 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 # NOW HYPPO: https://github.com/neurodata/hyppo
 
 
-class _ParallelP:
-    """Helper function to calculate parallel p-value."""
-
-    def __init__(self, x, y, random_states, calc_stat, bias=False):
-        self.x = x
-        self.y = y
-        self.random_states = random_states
-        self.calc_stat = calc_stat
-        self.kwargs = {}
-        if self.calc_stat == _dcorr_stat:
-            self.kwargs["bias"] = bias
-
-    def __call__(self, index):
-        order = self.random_states[index].permutation(self.y.shape[0])
-        permy = self.y[order][:, order]
-
-        # calculate permuted stats, store in null distribution
-        perm_stat = self.calc_stat(self.x, permy, **self.kwargs)
-        if self.calc_stat == _mgc_stat:
-            perm_stat = perm_stat[0]
-
-        return perm_stat
-
-
-def _perm_test(x, y, stat, calc_stat, reps=1000, workers=-1, random_state=None,
-               bias=False):
-    r"""Helper function that calculates the p-value. See below for uses.
-
-    Parameters
-    ----------
-    x, y : ndarray
-        `x` and `y` have shapes `(n, p)` and `(n, q)`.
-    stat : float
-        The sample test statistic.
-    calc_stat : {'_mgc_stat', '_dcorr_stat'}
-        The desired method to calculate the test statistic.
-    reps : int, optional
-        The number of replications used to estimate the null when using the
-        permutation test. The default is 1000 replications.
-    workers : int or map-like callable, optional
-        If `workers` is an int the population is subdivided into `workers`
-        sections and evaluated in parallel (uses
-        `multiprocessing.Pool <multiprocessing>`). Supply `-1` to use all cores
-        available to the Process. Alternatively supply a map-like callable,
-        such as `multiprocessing.Pool.map` for evaluating the population in
-        parallel. This evaluation is carried out as `workers(func, iterable)`.
-        Requires that `func` be pickleable.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
-    bias: bool, optional
-        Whether or not to compute the biased test statistic.
-        The default is ``False``. Only applies to Dcorr.
-
-    Returns
-    -------
-    pvalue : float
-        The sample test p-value.
-    null_dist : list
-        The approximated null distribution.
-
-    """
-    # generate seeds for each rep (change to new parallel random number
-    # capabilities in numpy >= 1.17+)
-    random_state = check_random_state(random_state)
-    random_states = [np.random.RandomState(rng_integers(random_state, 1 << 32,
-                     size=4, dtype=np.uint32)) for _ in range(reps)]
-
-    # parallelizes with specified workers over number of reps and set seeds
-    parallelp = _ParallelP(x=x, y=y, random_states=random_states,
-                           calc_stat=calc_stat, bias=bias)
-    with MapWrapper(workers) as mapwrapper:
-        null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
-
-    # calculate p-value and significant permutation map through list
-    pvalue = (1 + (null_dist >= stat).sum()) / (1 + reps)
-
-    return pvalue, null_dist
-
-
-def _euclidean_dist(x):
-    return cdist(x, x)
-
-
 DcorrResult = namedtuple('DcorrResult', ('stat', 'pvalue', 'dcorr_dict'))
 
 MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
 
 
-def _check_inputs(x, y, compute_distance=_euclidean_dist, reps=1000,
+def _check_inputs(x, y, compute_distance="euclidean", reps=1000,
                   is_twosamp=False, bias=False):
-    r"""Error checking for Dcorr and MGC.
+    """Error checking for Dcorr and MGC.
 
     Parameters
     ----------
@@ -5265,14 +5175,13 @@ def _check_inputs(x, y, compute_distance=_euclidean_dist, reps=1000,
         distance or similarity matrices, and ``compute_distance`` must be sent
         to ``None``. If ``x`` and ``y`` have shapes ``(n, p)`` and ``(m, p)``,
         an unpaired two-sample MGC or Dcorr test will be run.
-    compute_distance : callable, optional
+    compute_distance : str or callable, optional
         A function that computes the distance or similarity among the samples
         within each data matrix. Set to ``None`` if ``x`` and ``y`` are
-        already distance matrices. The default uses the euclidean norm metric.
-        If you are calling a custom function, either create the distance
-        matrix before-hand or create a function of the form
-        ``compute_distance(x)`` where `x` is the data matrix for which
-        pairwise distances are calculated.
+        already distance matrices.
+        The default uses is ``"euclidean"`` norm metric.
+        See ``scipy.spatial.distance.cdist`` for metrics and user supplied
+        functions.
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is ``1000``.
@@ -5509,7 +5418,7 @@ def distance_correlation(x, y, compute_distance="euclidean", reps=1000,
     stat = _dcorr_stat(x, y, bias=bias)
 
     # calculate permutation p-value
-    pvalue, null_dist = _perm_test(x, y, stat, calc_stat=_dcorr_stat,
+    pvalue, null_dist = _perm_test(x, y, stat, calc_stat="dcorr",
                                    reps=reps, workers=workers,
                                    random_state=random_state, bias=bias)
 
@@ -5520,14 +5429,14 @@ def distance_correlation(x, y, compute_distance="euclidean", reps=1000,
 
 
 def _dcorr_stat(distx, disty, bias=False):
-    r"""
+    """
     Helper function that calculates the Dcorr stat. See above for use.
 
     Parameters
     ----------
     x, y : ndarray
-        `x` and `y` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
-        if distance matrices.
+        ``x`` and ``y`` have shapes ``(n, p)`` and ``(n, q)`` or
+        ``(n, n)`` and ``(n, n)`` if distance matrices.
     bias : bool
         If True returns a biased centered distance matrix.
         If False returns an unbiased centered distance matrix.
@@ -5767,7 +5676,7 @@ def multiscale_graphcorr(x, y, compute_distance="euclidean", reps=1000,
     opt_scale = stat_dict["opt_scale"]
 
     # calculate permutation MGC p-value
-    pvalue, null_dist = _perm_test(x, y, stat, calc_stat=_mgc_stat, reps=reps,
+    pvalue, null_dist = _perm_test(x, y, stat, calc_stat="mgc", reps=reps,
                                    workers=workers, random_state=random_state)
 
     # save all stats (other than stat/p-value) in dictionary
@@ -5779,14 +5688,13 @@ def multiscale_graphcorr(x, y, compute_distance="euclidean", reps=1000,
 
 
 def _mgc_stat(distx, disty):
-    r"""Helper function that calculates the MGC stat. See above for use.
+    """Helper function that calculates the MGC stat. See above for use.
 
     Parameters
     ----------
     distx, disty : ndarray
-        `distx` and `disty` have shapes `(n, p)` and `(n, q)` or
-        `(n, n)` and `(n, n)`
-        if distance matrices.
+        ``distx`` and ``disty`` have shapes ``(n, p)`` and ``(n, q)`` or
+        ``(n, n)`` and ``(n, n)`` if distance matrices.
 
     Returns
     -------
@@ -5800,7 +5708,6 @@ def _mgc_stat(distx, disty):
                 MGC-map of the statistics.
             - opt_scale : (float, float)
                 The estimated optimal scale as a `(x, y)` pair.
-
     """
     # calculate MGC map and optimal scale
     stat_mgc_map = _local_correlations(distx, disty, global_corr='mgc')
@@ -5828,13 +5735,13 @@ def _mgc_stat(distx, disty):
 
 
 def _threshold_mgc_map(stat_mgc_map, samp_size):
-    r"""
+    """
     Finds a connected region of significance in the MGC-map by thresholding.
 
     Parameters
     ----------
     stat_mgc_map : ndarray
-        All local correlations within `[-1,1]`.
+        All local correlations within `[-1, 1]`.
     samp_size : int
         The sample size of original data.
 
@@ -5842,7 +5749,6 @@ def _threshold_mgc_map(stat_mgc_map, samp_size):
     -------
     sig_connect : ndarray
         A binary matrix with 1's indicating the significant region.
-
     """
     m, n = stat_mgc_map.shape
 
@@ -5931,16 +5837,17 @@ def _two_sample_transform(u, v):
     Parameters
     ----------
     u, v : ndarray
-        `u` and `v` have shapes `(n, p)` and `(m, p)`.
+        ``u`` and ``v`` have shapes ``(n, p)`` and ``(m, p)``.
 
     Returns
     -------
     x : ndarray
-        Concatenate `u` and `v` along the `axis = 0`. `x` thus has shape
-        `(2n, p)`.
+        Concatenate ``u`` and ``v`` along the ``axis = 0``. ``x`` thus has
+        shape ``(2n, p)``.
     y : ndarray
-        Label matrix for `x` where 0 refers to samples that comes from `u` and
-        1 refers to samples that come from `v`. `y` thus has shape `(2n, 1)`.
+        Label matrix for ``x`` where `0` refers to samples that comes from
+        ``u`` and `1` refers to samples that come from ``v``. ``y`` thus has
+        shape ``(2n, 1)``.
 
     """
     nx = u.shape[0]
@@ -5948,6 +5855,100 @@ def _two_sample_transform(u, v):
     x = np.concatenate([u, v], axis=0)
     y = np.concatenate([np.zeros(nx), np.ones(ny)], axis=0).reshape(-1, 1)
     return x, y
+
+
+# Moved because ``test_workers`` for distance correlation was not working
+# when passing functions
+STATISTICS = {
+    "dcorr": _dcorr_stat,
+    "mgc": _mgc_stat,
+}
+
+
+class _ParallelP:
+    """Helper function to calculate parallel p-value."""
+
+    def __init__(self, x, y, random_states, calc_stat, bias=False):
+        self.x = x
+        self.y = y
+        self.random_states = random_states
+        self.calc_stat = calc_stat
+        self.kwargs = {}
+        if calc_stat == "dcorr":
+            self.kwargs["bias"] = bias
+
+    def __call__(self, index):
+        order = self.random_states[index].permutation(self.y.shape[0])
+        permy = self.y[order][:, order]
+
+        # calculate permuted stats, store in null distribution
+        perm_stat = STATISTICS[self.calc_stat](self.x, permy, self.kwargs)
+        if self.calc_stat == "mgc":
+            perm_stat = perm_stat[0]
+
+        return perm_stat
+
+
+def _perm_test(x, y, stat, calc_stat, reps=1000, workers=-1, random_state=None,
+               bias=False):
+    r"""Helper function that calculates the p-value. See below for uses.
+
+    Parameters
+    ----------
+    x, y : ndarray
+        `x` and `y` have shapes `(n, p)` and `(n, q)`.
+    stat : float
+        The sample test statistic.
+    calc_stat : {'_mgc_stat', '_dcorr_stat'}
+        The desired method to calculate the test statistic.
+    reps : int, optional
+        The number of replications used to estimate the null when using the
+        permutation test. The default is 1000 replications.
+    workers : int or map-like callable, optional
+        If `workers` is an int the population is subdivided into `workers`
+        sections and evaluated in parallel (uses
+        `multiprocessing.Pool <multiprocessing>`). Supply `-1` to use all cores
+        available to the Process. Alternatively supply a map-like callable,
+        such as `multiprocessing.Pool.map` for evaluating the population in
+        parallel. This evaluation is carried out as `workers(func, iterable)`.
+        Requires that `func` be pickleable.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+    bias: bool, optional
+        Whether or not to compute the biased test statistic.
+        The default is ``False``. Only applies to Dcorr.
+
+    Returns
+    -------
+    pvalue : float
+        The sample test p-value.
+    null_dist : list
+        The approximated null distribution.
+
+    """
+    # generate seeds for each rep (change to new parallel random number
+    # capabilities in numpy >= 1.17+)
+    random_state = check_random_state(random_state)
+    random_states = [np.random.RandomState(rng_integers(random_state, 1 << 32,
+                     size=4, dtype=np.uint32)) for _ in range(reps)]
+
+    # parallelizes with specified workers over number of reps and set seeds
+    parallelp = _ParallelP(x=x, y=y, random_states=random_states,
+                           calc_stat=calc_stat, bias=bias)
+    with MapWrapper(workers) as mapwrapper:
+        null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
+
+    # calculate p-value and significant permutation map through list
+    pvalue = (1 + (null_dist >= stat).sum()) / (1 + reps)
+
+    return pvalue, null_dist
 
 
 #####################################
