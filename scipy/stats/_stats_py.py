@@ -47,7 +47,7 @@ from . import _mstats_basic as mstats_basic
 from ._stats_mstats_common import (_find_repeats, linregress, theilslopes,
                                    siegelslopes)
 from ._stats import (_kendall_dis, _toint64, _weightedrankedtau,
-                     _local_correlations)
+                     _local_correlations, _center_distance_matrix)
 from dataclasses import make_dataclass
 from ._hypotests import _all_partitions
 from ._hypotests_pythran import _compute_outer_prob_inside_method
@@ -73,7 +73,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
            'pearsonr', 'fisher_exact',
            'SpearmanRConstantInputWarning', 'spearmanr', 'pointbiserialr',
-           'kendalltau', 'weightedtau', 'multiscale_graphcorr',
+           'kendalltau', 'weightedtau',
+           'multiscale_graphcorr', 'distance_correlation',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
            'kstest', 'ks_1samp', 'ks_2samp',
@@ -3928,6 +3929,7 @@ class PearsonRResult(PearsonRResultBase):
         coefficient `statistic` for the given confidence level.
 
     """
+
     def __init__(self, statistic, pvalue, alternative, n):
         super().__init__(statistic, pvalue)
         self._alternative = alternative
@@ -5151,27 +5153,35 @@ def weightedtau(x, y, rank=True, weigher=None, additive=True):
 
 
 # FROM MGCPY: https://github.com/neurodata/mgcpy
+# NOW HYPPO: https://github.com/neurodata/hyppo
 
 
 class _ParallelP:
     """Helper function to calculate parallel p-value."""
 
-    def __init__(self, x, y, random_states):
+    def __init__(self, x, y, random_states, calc_stat, bias=False):
         self.x = x
         self.y = y
         self.random_states = random_states
+        self.calc_stat = calc_stat
+        self.kwargs = {}
+        if self.calc_stat == _dcorr_stat:
+            self.kwargs["bias"] = bias
 
     def __call__(self, index):
         order = self.random_states[index].permutation(self.y.shape[0])
         permy = self.y[order][:, order]
 
         # calculate permuted stats, store in null distribution
-        perm_stat = _mgc_stat(self.x, permy)[0]
+        perm_stat = self.calc_stat(self.x, permy, **self.kwargs)
+        if self.calc_stat == _mgc_stat:
+            perm_stat = perm_stat[0]
 
         return perm_stat
 
 
-def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
+def _perm_test(x, y, stat, calc_stat, reps=1000, workers=-1, random_state=None,
+               bias=False):
     r"""Helper function that calculates the p-value. See below for uses.
 
     Parameters
@@ -5180,6 +5190,8 @@ def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
         `x` and `y` have shapes `(n, p)` and `(n, q)`.
     stat : float
         The sample test statistic.
+    calc_stat : {'_mgc_stat', '_dcorr_stat'}
+        The desired method to calculate the test statistic.
     reps : int, optional
         The number of replications used to estimate the null when using the
         permutation test. The default is 1000 replications.
@@ -5200,6 +5212,9 @@ def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+    bias: bool, optional
+        Whether or not to compute the biased test statistic.
+        The default is ``False``. Only applies to Dcorr.
 
     Returns
     -------
@@ -5216,7 +5231,8 @@ def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
                      size=4, dtype=np.uint32)) for _ in range(reps)]
 
     # parallelizes with specified workers over number of reps and set seeds
-    parallelp = _ParallelP(x=x, y=y, random_states=random_states)
+    parallelp = _ParallelP(x=x, y=y, random_states=random_states,
+                           calc_stat=calc_stat, bias=bias)
     with MapWrapper(workers) as mapwrapper:
         null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
 
@@ -5230,7 +5246,322 @@ def _euclidean_dist(x):
     return cdist(x, x)
 
 
+DcorrResult = namedtuple('DcorrResult', ('stat', 'pvalue', 'dcorr_dict'))
+
 MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
+
+
+def _check_inputs(x, y, compute_distance=_euclidean_dist, reps=1000,
+                  is_twosamp=False, bias=False):
+    r"""Error checking for Dcorr and MGC.
+
+    Parameters
+    ----------
+    x, y : ndarray
+        If ``x`` and ``y`` have shapes ``(n, p)`` and ``(n, q)`` where `n` is
+        the number of samples and `p` and `q` are the number of dimensions,
+        then the MGC or Dcorr independence test will be run.
+        Alternatively, ``x`` and ``y`` can have shapes ``(n, n)`` if they are
+        distance or similarity matrices, and ``compute_distance`` must be sent
+        to ``None``. If ``x`` and ``y`` have shapes ``(n, p)`` and ``(m, p)``,
+        an unpaired two-sample MGC or Dcorr test will be run.
+    compute_distance : callable, optional
+        A function that computes the distance or similarity among the samples
+        within each data matrix. Set to ``None`` if ``x`` and ``y`` are
+        already distance matrices. The default uses the euclidean norm metric.
+        If you are calling a custom function, either create the distance
+        matrix before-hand or create a function of the form
+        ``compute_distance(x)`` where `x` is the data matrix for which
+        pairwise distances are calculated.
+    reps : int, optional
+        The number of replications used to estimate the null when using the
+        permutation test. The default is ``1000``.
+    is_twosamp : bool, optional
+        If `True`, a two sample test will be run. If ``x`` and ``y`` have
+        shapes ``(n, p)`` and ``(m, p)``, this optional will be overridden and
+        set to ``True``. Set to ``True`` if ``x`` and ``y`` both have shapes
+        ``(n, p)`` and a two sample test is desired. The default is ``False``.
+        Note that this will not run if inputs are distance matrices.
+    bias: bool, optional
+        Whether or not to use the biased test statistic.
+        The default is ``False``. Only applies to Dcorr.
+
+    Returns
+    -------
+    x, y : ndarray
+        If ``x`` and ``y`` have shapes ``(n, p)`` and ``(n, q)`` where `n` is
+        the number of samples and `p` and `q` are the number of dimensions,
+        then the MGC or Dcorr independence test will be run.
+        Alternatively, ``x`` and ``y`` can have shapes ``(n, n)`` if they are
+        distance or similarity matrices, and ``compute_distance`` must be sent
+        to ``None``. If ``x`` and ``y`` have shapes ``(n, p)`` and ``(m, p)``,
+        an unpaired two-sample MGC or Dcorr test will be run.
+    """
+
+    if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
+        raise ValueError("x and y must be ndarrays")
+
+    # convert arrays of type (n,) to (n, 1)
+    if x.ndim == 1:
+        x = x[:, np.newaxis]
+    elif x.ndim != 2:
+        raise ValueError("Expected a 2-D array `x`, found shape "
+                         "{}".format(x.shape))
+    if y.ndim == 1:
+        y = y[:, np.newaxis]
+    elif y.ndim != 2:
+        raise ValueError("Expected a 2-D array `y`, found shape "
+                         "{}".format(y.shape))
+
+    nx, px = x.shape
+    ny, py = y.shape
+
+    # check for NaNs
+    _contains_nan(x, nan_policy='raise')
+    _contains_nan(y, nan_policy='raise')
+
+    # check for positive or negative infinity and raise error
+    if np.sum(np.isinf(x)) > 0 or np.sum(np.isinf(y)) > 0:
+        raise ValueError("Inputs contain infinities")
+
+    if nx != ny:
+        if px == py:
+            # reshape x and y for two sample testing
+            is_twosamp = True
+        else:
+            raise ValueError("Shape mismatch, x and y must have shape [n, p] "
+                             "and [n, q] or have shape [n, p] and [m, p].")
+
+    if nx < 5 or ny < 5:
+        raise ValueError("Test requires at least 5 samples to give reasonable "
+                         "results.")
+
+    # convert x and y to float
+    x = x.astype(np.float64)
+    y = y.astype(np.float64)
+
+    # check if compute_distance_matrix if a callable()
+    if not callable(compute_distance) and compute_distance is not None:
+        raise ValueError("compute_distance must be a function.")
+
+    # check if number of reps exists, integer, or > 0 (if under 1000 raises
+    # warning)
+    if not isinstance(reps, int) or reps < 0:
+        raise ValueError("Number of reps must be an integer greater than 0.")
+    elif reps < 1000:
+        msg = ("The number of replications is low (under 1000), and p-value "
+               "calculations may be unreliable. Use the p-value result, with "
+               "caution!")
+        warnings.warn(msg, RuntimeWarning)
+
+    if type(bias) is not bool:
+        raise ValueError("bias must be of type bool")
+
+    if is_twosamp:
+        if compute_distance is None:
+            raise ValueError("Cannot run if inputs are distance matrices")
+        x, y = _two_sample_transform(x, y)
+
+    if compute_distance is not None:
+        # compute distance matrices for x and y
+        x = compute_distance(x)
+        y = compute_distance(y)
+
+    return x, y
+
+
+def distance_correlation(x, y, compute_distance=_euclidean_dist, reps=1000,
+                         workers=1, is_twosamp=False, random_state=None,
+                         bias=False):
+    r"""Computes the Distance Correlation (Dcorr) test statistic and p-value.
+
+    Distance Correlation (Dcorr) is a measure of dependence between two
+    paired random matrices of not necessarily equal dimensions. The coefficient
+    is 0 if and only if the matrices are independent. It is an example of an
+    energy distance.
+
+    Parameters
+    ----------
+    x, y : ndarray
+        If ``x`` and ``y`` have shapes ``(n, p)`` and ``(n, q)`` where `n` is
+        the number of samples and `p` and `q` are the number of dimensions,
+        then the Dcorr independence test will be run.  Alternatively, ``x`` and
+        ``y`` can have shapes ``(n, n)`` if they are distance or similarity
+        matrices, and ``compute_distance`` must be sent to ``None``. If ``x``
+        and ``y`` have shapes ``(n, p)`` and ``(m, p)``, an unpaired
+        two-sample Dcorr test will be run.
+    compute_distance : callable, optional
+        A function that computes the distance or similarity among the samples
+        within each data matrix. Set to ``None`` if ``x`` and ``y`` are
+        already distance matrices. The default uses the euclidean norm metric.
+        If you are calling a custom function, either create the distance
+        matrix before-hand or create a function of the form
+        ``compute_distance(x)`` where `x` is the data matrix for which
+        pairwise distances are calculated.
+    reps : int, optional
+        The number of replications used to estimate the null when using the
+        permutation test. The default is ``1000``.
+    workers : int or map-like callable, optional
+        If ``workers`` is an int the population is subdivided into ``workers``
+        sections and evaluated in parallel (uses ``multiprocessing.Pool
+        <multiprocessing>``). Supply ``-1`` to use all cores available to the
+        Process. Alternatively supply a map-like callable, such as
+        ``multiprocessing.Pool.map`` for evaluating the p-value in parallel.
+        This evaluation is carried out as ``workers(func, iterable)``.
+        Requires that `func` be pickleable. The default is ``1``.
+    is_twosamp : bool, optional
+        If `True`, a two sample test will be run. If ``x`` and ``y`` have
+        shapes ``(n, p)`` and ``(m, p)``, this optional will be overriden and
+        set to ``True``. Set to ``True`` if ``x`` and ``y`` both have shapes
+        ``(n, p)`` and a two sample test is desired. The default is ``False``.
+        Note that this will not run if inputs are distance matrices.
+    random_state : {None, int, `numpy.random.Generator`,
+                    `numpy.random.RandomState`}, optional
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+    bias: bool, optional
+        Whether or not to compute the biased test statistic.
+        The default is ``False``.
+
+    Returns
+    -------
+    stat : float
+        The sample Dcorr test statistic within `[-1, 1]`.
+    pvalue : float
+        The p-value obtained via permutation.
+
+    See Also
+    --------
+    multiscale_graphcorr : Calculate Multiscale Graph Correlation.
+
+    Notes
+    -----
+    A description of the process of Dcorr and applications on data
+    can be found in [2]_. It is performed using the following steps:
+    Let :math:`x` and :math:`y` be :math:`(n,p)` samples of random variables :math:`X` and :math:`Y`.
+    Let :math:`D^x` be the :math:`n \times n` distance matrix of :math:`x` and :math:`D^y` be the :math:`n \times n` be the
+    distance matrix of :math:`y`. The distance covariance is
+
+    .. math::
+        Dcov_n^b(x,y) = (1/(n^2)) \ times \mathrm{tr(D^{y} H D^{y} H)}
+    where math`\mathrm{tr} (\cdot)` is the trace operator and :math:`H` is defined as \mathbb{1} =I-(1/n)J where :math:`I`
+    is the identity matrix and :math:`J` is a matrix of ones. The normalized version
+    of this covariance is distance correlation 1 and is
+
+    .. math::
+        Dcorr_n^b(x,y) = {Dcov_n^b(x,y)}/{\sqrt{Dcov_n^b(x,x) Dcov_n^b(y,y)}}
+    This is a biased test statistic. An unbiased alternative also exists,
+    and is defined using the following:
+    Consider the centering process where \mathbb{1} is the indicator function:
+
+    .. math::
+        C_{ij}^x = [\(D_{ij}^x - (1/(n-2)) \sum_{t=1}^{n} D_{it}^x - (1/(n-2))
+                \sum_{s=1}^{n} D_{sj}^x + (\frac{1}{(n-2)(n+2)}) \sum_{s,t=1}^{n} D_{st}^x] 1_{i \neq j}
+
+    and similarly for :math:`C^y`.
+    Then, the unbiased Dcorr test statistic is:
+
+    .. math::
+
+        Dcov_n(x,y)=(1/n(n-3))\mathrm{tr(C^x C^y)}
+    The p-value returned is calculated using a permutation test using a helper function
+    that calculates the parallel p-value.
+    Dcorr's stat and p-value is equivalent to the values in similar testing methods
+    such as Energy and hSIC [1]_ [2]_.
+
+    References
+    ----------
+    .. [1] Panda, S., Cencheng, S., Perry, R., Zorn, J., Lutz, A.
+           Priebe, C., Vogelstein, J. T. (2019). Nonpar MANOVA via Independence
+           Testing. Package. : arXiv: `1910.08883`
+    .. [2] Cencheng, S., Vogelstein, J. T. (2019). The Exact Equivalence of
+           Distance and Kernel Methods for Hypothesis Testing.
+           Package. : arXiv: `1806.05514`
+
+    Examples
+    --------
+    >>> from scipy.stats import distance_correlation
+    >>> x = np.arange(100)
+    >>> y = x
+    >>> stat, pvalue = distance_correlation(x, y, workers=-1)
+    >>> '%.1f, %.3f' % (stat, pvalue)
+    '1.0, 0.001'
+
+    To run an unpaired two-sample test,
+
+    >>> x = np.arange(100)
+    >>> y = np.arange(79)
+    >>> stat, pvalue = distance_correlation(x, y, random_state=1)
+    >>> '%.3f, %.2f' % (stat, pvalue)
+    '0.033, 0.02'
+
+    or, if shape of the inputs are the same,
+
+    >>> x = np.arange(100)
+    >>> y = x
+    >>> stat, pvalue = distance_correlation(x, y, is_twosamp=True)
+    >>> '%.3f, %.1f' % (stat, pvalue)
+    '-0.008, 1.0'
+    """
+    x, y = _check_inputs(x, y, compute_distance=compute_distance, reps=reps,
+                         is_twosamp=is_twosamp, bias=bias)
+
+    # calculate Distance Correlation stat
+    stat = _dcorr_stat(x, y, bias=bias)
+
+    # calculate permutation p-value
+    pvalue, null_dist = _perm_test(x, y, stat, calc_stat=_dcorr_stat,
+                                   reps=reps, workers=workers,
+                                   random_state=random_state, bias=bias)
+
+    # save all stats (other than stat/p-value) in dictionary
+    dcorr_dict = {"null_dist": null_dist}
+
+    return DcorrResult(stat, pvalue, dcorr_dict)
+
+
+def _dcorr_stat(distx, disty, bias=False):
+    r"""
+    Helper function that calculates the Dcorr stat. See above for use.
+
+    Parameters
+    ----------
+    x, y : ndarray
+        `x` and `y` have shapes `(n, p)` and `(n, q)` or `(n, n)` and `(n, n)`
+        if distance matrices.
+    bias : bool
+        If True returns a biased centered distance matrix.
+        If False returns an unbiased centered distance matrix.
+
+    Returns
+    -------
+    stat : float
+        The sample Dcorr test statistic within `[-1, 1]`.
+    """
+    val = "biased" if bias else "unbiased"
+
+    # center distance matrices
+    distx, __ = _center_distance_matrix(distx, global_corr=val)
+    disty, __ = _center_distance_matrix(disty, global_corr=val)
+
+    # calculate covariances and variances
+    covar = np.sum(distx * disty)
+    varx = np.sum(distx * distx)
+    vary = np.sum(disty * disty)
+
+    # stat is 0 with negative variances (would make denominator undefined)
+    if varx <= 0 or vary <= 0:
+        stat = 0
+
+    # calculate generalized test statistic
+    else:
+        stat = covar / np.real(np.sqrt(varx * vary))
+
+    return stat
 
 
 def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
@@ -5319,10 +5650,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
 
     See Also
     --------
-    pearsonr : Pearson correlation coefficient and p-value for testing
-               non-correlation.
-    kendalltau : Calculates Kendall's tau.
-    spearmanr : Calculates a Spearman rank-order correlation coefficient.
+    distance_correlation : Calculates Distance Correlation.
 
     Notes
     -----
@@ -5435,73 +5763,9 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     >>> mgc = multiscale_graphcorr(x, y, is_twosamp=True)
     >>> '%.3f, %.1f' % (mgc.stat, mgc.pvalue)  # doctest: +SKIP
     '-0.008, 1.0'
-
     """
-    if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
-        raise ValueError("x and y must be ndarrays")
-
-    # convert arrays of type (n,) to (n, 1)
-    if x.ndim == 1:
-        x = x[:, np.newaxis]
-    elif x.ndim != 2:
-        raise ValueError("Expected a 2-D array `x`, found shape "
-                         "{}".format(x.shape))
-    if y.ndim == 1:
-        y = y[:, np.newaxis]
-    elif y.ndim != 2:
-        raise ValueError("Expected a 2-D array `y`, found shape "
-                         "{}".format(y.shape))
-
-    nx, px = x.shape
-    ny, py = y.shape
-
-    # check for NaNs
-    _contains_nan(x, nan_policy='raise')
-    _contains_nan(y, nan_policy='raise')
-
-    # check for positive or negative infinity and raise error
-    if np.sum(np.isinf(x)) > 0 or np.sum(np.isinf(y)) > 0:
-        raise ValueError("Inputs contain infinities")
-
-    if nx != ny:
-        if px == py:
-            # reshape x and y for two sample testing
-            is_twosamp = True
-        else:
-            raise ValueError("Shape mismatch, x and y must have shape [n, p] "
-                             "and [n, q] or have shape [n, p] and [m, p].")
-
-    if nx < 5 or ny < 5:
-        raise ValueError("MGC requires at least 5 samples to give reasonable "
-                         "results.")
-
-    # convert x and y to float
-    x = x.astype(np.float64)
-    y = y.astype(np.float64)
-
-    # check if compute_distance_matrix if a callable()
-    if not callable(compute_distance) and compute_distance is not None:
-        raise ValueError("Compute_distance must be a function.")
-
-    # check if number of reps exists, integer, or > 0 (if under 1000 raises
-    # warning)
-    if not isinstance(reps, int) or reps < 0:
-        raise ValueError("Number of reps must be an integer greater than 0.")
-    elif reps < 1000:
-        msg = ("The number of replications is low (under 1000), and p-value "
-               "calculations may be unreliable. Use the p-value result, with "
-               "caution!")
-        warnings.warn(msg, RuntimeWarning)
-
-    if is_twosamp:
-        if compute_distance is None:
-            raise ValueError("Cannot run if inputs are distance matrices")
-        x, y = _two_sample_transform(x, y)
-
-    if compute_distance is not None:
-        # compute distance matrices for x and y
-        x = compute_distance(x)
-        y = compute_distance(y)
+    x, y = _check_inputs(x, y, compute_distance=compute_distance, reps=reps,
+                         is_twosamp=is_twosamp,)
 
     # calculate MGC stat
     stat, stat_dict = _mgc_stat(x, y)
@@ -5509,8 +5773,8 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     opt_scale = stat_dict["opt_scale"]
 
     # calculate permutation MGC p-value
-    pvalue, null_dist = _perm_test(x, y, stat, reps=reps, workers=workers,
-                                   random_state=random_state)
+    pvalue, null_dist = _perm_test(x, y, stat, calc_stat=_mgc_stat, reps=reps,
+                                   workers=workers, random_state=random_state)
 
     # save all stats (other than stat/p-value) in dictionary
     mgc_dict = {"mgc_map": stat_mgc_map,

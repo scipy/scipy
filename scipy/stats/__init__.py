@@ -268,6 +268,7 @@ Correlation functions
    linregress
    siegelslopes
    theilslopes
+   distance_correlation
    multiscale_graphcorr
 
 Statistical tests
