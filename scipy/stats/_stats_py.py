@@ -893,9 +893,11 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 #              MOMENTS              #
 #####################################
 
+
 def _moment_outputs(kwds):
     moment = np.atleast_1d(kwds.get('moment', 1))
     return len(moment)
+
 
 @_axis_nan_policy_factory(
     lambda x: x, n_samples=1, result_to_tuple=lambda x: (x,),
