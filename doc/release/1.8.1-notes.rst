@@ -5,15 +5,52 @@ SciPy 1.8.1 Release Notes
 .. contents::
 
 SciPy 1.8.1 is a bug-fix release with no new features
-compared to 1.8.0.
+compared to 1.8.0. Notably, usage of Pythran has been
+restored for Windows builds/binaries.
 
 Authors
 =======
 
+* Maximilian Nöthe
+* DWesl (4)
+* Isuru Fernando (1)
+* Ralf Gommers (2)
+* Matt Haberland (1)
+* Andrew Nelson (1)
+* Dimitri Papadopoulos Orfanos (1) +
+* Tirth Patel (2)
+* Tyler Reddy (18)
+* Pamphile Roy (5)
+* H. Vetinari (2)
+
+A total of 11 people contributed to this release.
+People with a "+" by their names contributed a patch for the first time.
+This list of names is automatically generated, and may not be fully complete.
 
 Issues closed for 1.8.1
 -----------------------
 
+* `#15433 <https://github.com/scipy/scipy/issues/15433>`__: BUG: optimize: minimize: \`ValueError\` when \`np.all(lb==ub)\`
+* `#15539 <https://github.com/scipy/scipy/issues/15539>`__: BUG: Questionable macOS wheel contents
+* `#15543 <https://github.com/scipy/scipy/issues/15543>`__: REL: list contributors using GitHub handles
+* `#15552 <https://github.com/scipy/scipy/issues/15552>`__: BUG: MacOS universal2 wheels have two gfortran shared libraries,...
+* `#15636 <https://github.com/scipy/scipy/issues/15636>`__: BUG: DOCS incorrect \`source\` link on docs
+* `#15678 <https://github.com/scipy/scipy/issues/15678>`__: BUG: scipy.stats.skew does not work with scipy.stats.bootstrap
 
 Pull requests for 1.8.1
 -----------------------
+
+* `#15167 <https://github.com/scipy/scipy/pull/15167>`__: CI: make sure CI stays on VS2019 unless changed explicitly
+* `#15306 <https://github.com/scipy/scipy/pull/15306>`__: Revert "BLD Respect the --skip-build flag in setup.py"
+* `#15504 <https://github.com/scipy/scipy/pull/15504>`__: MAINT: np.all(lb == ub) for optimize.minimize
+* `#15530 <https://github.com/scipy/scipy/pull/15530>`__: REL: prep for SciPy 1.8.1
+* `#15531 <https://github.com/scipy/scipy/pull/15531>`__: [BUG] Fix importing scipy.lib._pep440
+* `#15558 <https://github.com/scipy/scipy/pull/15558>`__: CI: re-enable Pythran in Azure Windows CI jobs
+* `#15566 <https://github.com/scipy/scipy/pull/15566>`__: BUG: fix error message
+* `#15580 <https://github.com/scipy/scipy/pull/15580>`__: BUG: Avoid C Preprocessor symbol in _hypotests_pythran.py.
+* `#15614 <https://github.com/scipy/scipy/pull/15614>`__: REL: filter out @ in authors name and add count
+* `#15637 <https://github.com/scipy/scipy/pull/15637>`__: DOC, MAINT: fix links to wrapped functions and SciPy's distributions
+* `#15669 <https://github.com/scipy/scipy/pull/15669>`__: BUG: stats: fix a bug in UNU.RAN error handler
+* `#15691 <https://github.com/scipy/scipy/pull/15691>`__: MAINT: stats: bootstrap: fix bug with \`method="BCa"\` when \`statistic\`...
+* `#15910 <https://github.com/scipy/scipy/pull/15910>`__: make sure CI stays on VS2019 unless changed explicitly
+

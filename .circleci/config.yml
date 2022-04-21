@@ -50,7 +50,7 @@ jobs:
             pip install --install-option="--no-cython-compile" cython
             pip install numpy==1.21.5
             pip install -r doc_requirements.txt
-            pip install nose mpmath argparse Pillow asv pythran
+            pip install nose mpmath argparse "Pillow==9.0.1" asv pythran
             pip install pybind11
 
       - run:
@@ -120,6 +120,7 @@ jobs:
             asv machine --machine CircleCI
             export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
             export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
+            export OPENBLAS_NUM_THREADS=1
             time asv --config asv.conf.json dev -m CircleCI --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
             asv --config asv.conf.json publish
 
