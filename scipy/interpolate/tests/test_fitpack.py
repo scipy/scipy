@@ -8,8 +8,8 @@ from pytest import raises as assert_raises
 import pytest
 from scipy._lib._testutils import check_free_memory
 
-from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
-from scipy import interpolate
+from scipy.interpolate import RectBivariateSpline
+
 from scipy.interpolate._fitpack_py import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
 from scipy.interpolate.dfitpack import regrid_smth
@@ -22,41 +22,41 @@ def data_file(basename):
 
 
 def norm2(x):
-    return sqrt(dot(x.T,x))
+    return np.sqrt(np.dot(x.T,x))
 
 
-def f1(x,d=0):
+def f1(x, d=0):
     if d is None:
         return "sin"
     if x is None:
         return "sin(x)"
     if d % 4 == 0:
-        return sin(x)
+        return np.sin(x)
     if d % 4 == 1:
-        return cos(x)
+        return np.cos(x)
     if d % 4 == 2:
-        return -sin(x)
+        return -np.sin(x)
     if d % 4 == 3:
-        return -cos(x)
+        return -np.cos(x)
 
 
-def f2(x,y=0,dx=0,dy=0):
+def f2(x, y=0, dx=0, dy=0):
     if x is None:
         return "sin(x+y)"
     d = dx+dy
     if d % 4 == 0:
-        return sin(x+y)
+        return np.sin(x+y)
     if d % 4 == 1:
-        return cos(x+y)
+        return np.cos(x+y)
     if d % 4 == 2:
-        return -sin(x+y)
+        return -np.sin(x+y)
     if d % 4 == 3:
-        return -cos(x+y)
+        return -np.cos(x+y)
 
 
 def makepairs(x, y):
     """Helper function to create an array of pairs of x and y."""
-    xy = array(list(itertools.product(asarray(x), asarray(y))))
+    xy = np.array(list(itertools.product(np.asarray(x), np.asarray(y))))
     return xy.T
 
 
@@ -73,13 +73,13 @@ class TestSmokeTests:
     check that they are runnable
     """
 
-    def check_1(self,f=f1,per=0,s=0,a=0,b=2*pi,N=20,at=0,xb=None,xe=None):
+    def check_1(self,f=f1,per=0,s=0,a=0,b=2*np.pi,N=20,at=0,xb=None,xe=None):
         if xb is None:
             xb = a
         if xe is None:
             xe = b
-        x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
-        x1 = a+(b-a)*arange(1,N,dtype=float)/float(N-1)  # middle points of the nodes
+        x = a + (b - a)*np.arange(N+1, dtype=float)/float(N)    # nodes
+        x1 = a + (b - a)*np.arange(1, N, dtype=float)/float(N-1)  # middle points of the nodes
         v = f(x)
         nk = []
 
@@ -105,8 +105,8 @@ class TestSmokeTests:
                 nd.append((err, tol))
             nk.append(nd)
         put("\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]" % (f(None),
-                                                        repr(round(xb,3)),repr(round(xe,3)),
-                                                          repr(round(a,3)),repr(round(b,3))))
+                                                        repr(np.round(xb,3)),repr(np.round(xe,3)),
+                                                          repr(np.round(a,3)),repr(np.round(b,3))))
         if at:
             str = "at knots"
         else:
@@ -121,13 +121,13 @@ class TestSmokeTests:
             put('\n')
             k = k+1
 
-    def check_2(self,f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
-              ia=0,ib=2*pi,dx=0.2*pi):
+    def check_2(self,f=f1,per=0,s=0,a=0,b=2*np.pi,N=20,xb=None,xe=None,
+              ia=0,ib=2*np.pi,dx=0.2*np.pi):
         if xb is None:
             xb = a
         if xe is None:
             xe = b
-        x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
+        x = a+(b-a)*np.arange(N+1, dtype=float)/float(N)    # nodes
         v = f(x)
 
         def err_est(k, d):
@@ -143,9 +143,9 @@ class TestSmokeTests:
             tck = splrep(x,v,s=s,per=per,k=k,xe=xe)
             nk.append([splint(ia,ib,tck),spalde(dx,tck)])
         put("\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]" % (f(None),
-                                                   repr(round(xb,3)),repr(round(xe,3)),
-                                                    repr(round(a,3)),repr(round(b,3))))
-        put(" per=%d s=%s N=%d [a, b] = [%s, %s]  dx=%s" % (per,repr(s),N,repr(round(ia,3)),repr(round(ib,3)),repr(round(dx,3))))
+                                                   repr(np.round(xb,3)),repr(np.round(xe,3)),
+                                                    repr(np.round(a,3)),repr(np.round(b,3))))
+        put(" per=%d s=%s N=%d [a, b] = [%s, %s]  dx=%s" % (per,repr(s),N,repr(np.round(ia,3)),repr(np.round(ib,3)),repr(np.round(dx,3))))
         put(" k :  int(s,[a,b]) Int.Error   Rel. error of s^(d)(dx) d = 0, .., k")
         k = 1
         for r in nk:
@@ -165,36 +165,36 @@ class TestSmokeTests:
             put("\n")
             k = k+1
 
-    def check_3(self,f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
-              ia=0,ib=2*pi,dx=0.2*pi):
+    def check_3(self,f=f1,per=0,s=0,a=0,b=2*np.pi,N=20,xb=None,xe=None,
+              ia=0, ib=2*np.pi, dx=0.2*np.pi):
         if xb is None:
             xb = a
         if xe is None:
             xe = b
-        x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
+        x = a+(b-a)*np.arange(N+1,dtype=float)/float(N)    # nodes
         v = f(x)
         put("  k  :     Roots of s(x) approx %s  x in [%s,%s]:" %
-              (f(None),repr(round(a,3)),repr(round(b,3))))
+              (f(None),repr(np.round(a,3)),repr(np.round(b,3))))
         for k in range(1,6):
             tck = splrep(x, v, s=s, per=per, k=k, xe=xe)
             if k == 3:
                 roots = sproot(tck)
                 assert_allclose(splev(roots, tck), 0, atol=1e-10, rtol=1e-10)
-                assert_allclose(roots, pi*array([1, 2, 3, 4]), rtol=1e-3)
+                assert_allclose(roots, np.pi * np.array([1, 2, 3, 4]), rtol=1e-3)
                 put('  %d  : %s' % (k, repr(roots.tolist())))
             else:
                 assert_raises(ValueError, sproot, tck)
 
-    def check_4(self,f=f1,per=0,s=0,a=0,b=2*pi,N=20,xb=None,xe=None,
-              ia=0,ib=2*pi,dx=0.2*pi):
+    def check_4(self,f=f1,per=0,s=0,a=0,b=2*np.pi,N=20,xb=None,xe=None,
+              ia=0,ib=2*np.pi,dx=0.2*np.pi):
         if xb is None:
             xb = a
         if xe is None:
             xe = b
-        x = a+(b-a)*arange(N+1,dtype=float)/float(N)    # nodes
-        x1 = a + (b-a)*arange(1,N,dtype=float)/float(N-1)  # middle points of the nodes
+        x = a+(b-a)*np.arange(N+1,dtype=float)/float(N)    # nodes
+        x1 = a + (b-a)*np.arange(1,N,dtype=float)/float(N-1)  # middle points of the nodes
         v, _ = f(x),f(x1)
-        put(" u = %s   N = %d" % (repr(round(dx,3)),N))
+        put(" u = %s   N = %d" % (repr(np.round(dx,3)),N))
         put("  k  :  [x(u), %s(x(u))]  Error of splprep  Error of splrep " % (f(0,None)))
         for k in range(1,6):
             tckp,u = splprep([x,v],s=s,per=per,k=k,nest=-1)
@@ -205,7 +205,7 @@ class TestSmokeTests:
             assert_(err1 < 1e-2)
             assert_(err2 < 1e-2)
             put("  %d  :  %s    %.1e           %.1e" %
-                  (k,repr([round(z,3) for z in uv]),
+                  (k,repr([np.round(z,3) for z in uv]),
                    err1,
                    err2))
         put("Derivatives of parametric cubic spline at u (first function):")
@@ -215,9 +215,9 @@ class TestSmokeTests:
             uv = splev(dx,tckp,d)
             put(" %s " % (repr(uv[0])))
 
-    def check_5(self,f=f2,kx=3,ky=3,xb=0,xe=2*pi,yb=0,ye=2*pi,Nx=20,Ny=20,s=0):
-        x = xb+(xe-xb)*arange(Nx+1,dtype=float)/float(Nx)
-        y = yb+(ye-yb)*arange(Ny+1,dtype=float)/float(Ny)
+    def check_5(self,f=f2,kx=3,ky=3,xb=0,xe=2*np.pi,yb=0,ye=2*np.pi,Nx=20,Ny=20,s=0):
+        x = xb+(xe-xb)*np.arange(Nx+1,dtype=float)/float(Nx)
+        y = yb+(ye-yb)*np.arange(Ny+1,dtype=float)/float(Ny)
         xy = makepairs(x,y)
         tck = bisplrep(xy[0],xy[1],f(xy[0],xy[1]),s=s,kx=kx,ky=ky)
         tt = [tck[0][kx:-kx],tck[1][ky:-ky]]
@@ -225,7 +225,7 @@ class TestSmokeTests:
         v1 = bisplev(tt[0],tt[1],tck)
         v2 = f2(t2[0],t2[1])
         v2.shape = len(tt[0]),len(tt[1])
-        err = norm2(ravel(v1-v2))
+        err = norm2(np.ravel(v1 - v2))
         assert_(err < 1e-2, err)
         put(err)
 
@@ -236,15 +236,15 @@ class TestSmokeTests:
         self.check_1(at=1)
         self.check_1(per=1)
         self.check_1(per=1,at=1)
-        self.check_1(b=1.5*pi)
-        self.check_1(b=1.5*pi,xe=2*pi,per=1,s=1e-1)
+        self.check_1(b=1.5*np.pi)
+        self.check_1(b=1.5*np.pi,xe=2*np.pi,per=1,s=1e-1)
 
     def test_smoke_splint_spalde(self):
         put("***************** splint/spalde")
         self.check_2()
         self.check_2(per=1)
-        self.check_2(ia=0.2*pi,ib=pi)
-        self.check_2(ia=0.2*pi,ib=pi,N=50)
+        self.check_2(ia=0.2*np.pi,ib=np.pi)
+        self.check_2(ia=0.2*np.pi,ib=np.pi,N=50)
 
     def test_smoke_sproot(self):
         put("***************** sproot")
@@ -423,7 +423,7 @@ def test_dblint():
     x = np.linspace(0, 1)
     y = np.linspace(0, 1)
     xx, yy = np.meshgrid(x, y)
-    rect = interpolate.RectBivariateSpline(x, y, 4 * xx * yy)
+    rect = RectBivariateSpline(x, y, 4 * xx * yy)
     tck = list(rect.tck)
     tck.extend(rect.degrees)
 
@@ -465,11 +465,11 @@ def test_splprep_segfault():
     t = np.arange(0, 1.1, 0.1)
     x = np.sin(2*np.pi*t)
     y = np.cos(2*np.pi*t)
-    tck, u = interpolate.splprep([x, y], s=0)
+    tck, u = splprep([x, y], s=0)
     unew = np.arange(0, 1.01, 0.01)
 
     uknots = tck[0]  # using the knots from the previous fitting
-    tck, u = interpolate.splprep([x, y], task=-1, t=uknots)  # here is the crash
+    tck, u = splprep([x, y], task=-1, t=uknots)  # here is the crash
 
 
 def test_bisplev_integer_overflow():
