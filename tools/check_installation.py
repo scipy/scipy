@@ -55,7 +55,7 @@ def main(install_dir):
 
     # Check *.pyi files detected in repo are installed
     for pyi_file in scipy_pyi_files.keys():
-        if not pyi_file in installed_pyi_files.keys():
+        if pyi_file not in installed_pyi_files.keys():
             raise Exception("%s is not installed" % scipy_pyi_files[pyi_file])
 
     print("----------- All the .pyi files were installed --------------")
@@ -89,5 +89,9 @@ def get_pyi_files(dir):
 
 
 if __name__ == '__main__':
+    if not len(sys.argv) == 2:
+        raise ValueError("Incorrect number of input arguments, need "
+                         "check_installation.py relpath/to/installed/scipy")
+
     install_dir = sys.argv[1]
     main(install_dir)
