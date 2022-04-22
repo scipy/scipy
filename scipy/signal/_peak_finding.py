@@ -1226,7 +1226,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         Default is ``cwt.shape[0] / 4``, ie 1/4-th the number of widths.
     min_snr : float, optional
         Minimum SNR ratio. Default 1. The signal is the maximum CWT coefficient
-        on the largest ridge line. The noise is `noise_perc`th percentile of
+        on the largest ridge line. The noise is `noise_perc` th percentile of
         datapoints contained within the same ridge line.
     noise_perc : float, optional
         When calculating the noise floor, percentile of data points
