@@ -40,19 +40,6 @@ def f1(x, d=0):
         return -np.cos(x)
 
 
-def f2(x, y=0, dx=0, dy=0):
-    if x is None:
-        return "sin(x+y)"
-    d = dx+dy
-    if d % 4 == 0:
-        return np.sin(x+y)
-    if d % 4 == 1:
-        return np.cos(x+y)
-    if d % 4 == 2:
-        return -np.sin(x+y)
-    if d % 4 == 3:
-        return -np.cos(x+y)
-
 
 def makepairs(x, y):
     """Helper function to create an array of pairs of x and y."""
@@ -215,20 +202,6 @@ class TestSmokeTests:
             uv = splev(dx,tckp,d)
             put(" %s " % (repr(uv[0])))
 
-    def check_5(self,f=f2,kx=3,ky=3,xb=0,xe=2*np.pi,yb=0,ye=2*np.pi,Nx=20,Ny=20,s=0):
-        x = xb+(xe-xb)*np.arange(Nx+1,dtype=float)/float(Nx)
-        y = yb+(ye-yb)*np.arange(Ny+1,dtype=float)/float(Ny)
-        xy = makepairs(x,y)
-        tck = bisplrep(xy[0],xy[1],f(xy[0],xy[1]),s=s,kx=kx,ky=ky)
-        tt = [tck[0][kx:-kx],tck[1][ky:-ky]]
-        t2 = makepairs(tt[0],tt[1])
-        v1 = bisplev(tt[0],tt[1],tck)
-        v2 = f2(t2[0],t2[1])
-        v2.shape = len(tt[0]),len(tt[1])
-        err = norm2(np.ravel(v1 - v2))
-        assert_(err < 1e-2, err)
-        put(err)
-
     def test_smoke_splrep_splev(self):
         put("***************** splrep/splev")
         self.check_1(s=1e-6)
@@ -256,8 +229,27 @@ class TestSmokeTests:
         self.check_4(N=50)
 
     def test_smoke_bisplrep_bisplev(self):
-        put("***************** bisplev")
-        self.check_5()
+        xb, xe = 0, 2.*np.pi
+        yb, ye = 0, 2.*np.pi
+        kx, ky = 3, 3
+        Nx, Ny = 20, 20
+
+        def f2(x, y):
+            return np.sin(x+y)
+
+        x = np.linspace(xb, xe, Nx + 1)
+        y = np.linspace(yb, ye, Ny + 1)
+        xy = makepairs(x,y)
+        tck = bisplrep(xy[0], xy[1], f2(xy[0], xy[1]), s=0, kx=kx, ky=ky)
+
+        tt = [tck[0][kx:-kx], tck[1][ky:-ky]]
+        t2 = makepairs(tt[0], tt[1])
+        v1 = bisplev(tt[0], tt[1], tck)
+        v2 = f2(t2[0], t2[1])
+        v2.shape = len(tt[0]), len(tt[1])
+
+        assert norm2(np.ravel(v1 - v2)) < 1e-2
+
 
 
 class TestSplev:
