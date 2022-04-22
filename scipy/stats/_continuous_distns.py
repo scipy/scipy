@@ -4216,21 +4216,28 @@ class invgauss_gen(rv_continuous):
         while not all(has_converged):
             not_done = np.nonzero(~has_converged)[0]
             lx = logF(x0[not_done], mu[not_done])
+            eps = logprob[not_done] - lx
+            mask = np.abs(eps) < 1e-05
+            logd = self._logpdf(x0[not_done], mu[not_done])
+
             # to avoid subtractive cancellation when `d` is very small we use a
             # taylor series expansion to approximate (p - p(xn)) as shown in
             # page 8 of Giner & Smyth (2016)
-            eps = logprob[not_done] - lx
-            mask = np.abs(eps) < 1e-05
             delta[not_done][mask] = (
                 eps[mask] *
-                np.exp(logprob[not_done][mask] + np.log1p(-eps[mask] / 2))
+                np.exp(
+                    logprob[not_done][mask] +
+                    np.log1p(-eps[mask] / 2) -
+                    logd[mask]
+                )
             )
-            delta[not_done][~mask] = q[not_done] - np.exp(lx[~mask])
+            delta[not_done][~mask] = (
+                q[not_done][~mask] *
+                np.exp(-logd[~mask]) -
+                np.exp(lx[~mask] - logd[~mask])
+            )
 
-            x[not_done] = (
-                x0[not_done] + sign * delta[not_done] /
-                self._pdf(x0[not_done], mu[not_done])
-            )
+            x[not_done] = x0[not_done] + sign * delta[not_done]
             has_converged = np.isclose(x, x0, atol=1e-08, equal_nan=True)
             x0[...] = x[...]
 
