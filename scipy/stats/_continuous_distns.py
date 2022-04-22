@@ -4222,14 +4222,14 @@ class invgauss_gen(rv_continuous):
             eps = logprob[not_done] - lx
             mask = np.abs(eps) < 1e-05
             delta[not_done][mask] = (
-                eps[mask] * np.exp(logprob[not_done][mask]
-                + np.log1p(-eps[mask] / 2))
+                eps[mask] *
+                np.exp(logprob[not_done][mask] + np.log1p(-eps[mask] / 2))
             )
             delta[not_done][~mask] = q[not_done] - np.exp(lx[~mask])
 
             x[not_done] = (
-                x0[not_done] + sign * delta[not_done]
-                / self._pdf(x0[not_done], m[not_done])
+                x0[not_done] + sign * delta[not_done] /
+                self._pdf(x0[not_done], m[not_done])
             )
             has_converged = np.isclose(x, x0, atol=1e-08, equal_nan=True)
             x0[...] = x[...]
