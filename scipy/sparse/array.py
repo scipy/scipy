@@ -1,5 +1,5 @@
 """
-Scipy sparse arrays
+Sparse array creation functions e.g. `eye`, `diags`, etc.
 """
 
 from . import _construct
