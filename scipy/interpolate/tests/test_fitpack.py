@@ -152,26 +152,6 @@ class TestSmokeTests:
             put("\n")
             k = k+1
 
-    def check_3(self,f=f1,per=0,s=0,a=0,b=2*np.pi,N=20,xb=None,xe=None,
-              ia=0, ib=2*np.pi, dx=0.2*np.pi):
-        if xb is None:
-            xb = a
-        if xe is None:
-            xe = b
-        x = a+(b-a)*np.arange(N+1,dtype=float)/float(N)    # nodes
-        v = f(x)
-        put("  k  :     Roots of s(x) approx %s  x in [%s,%s]:" %
-              (f(None),repr(np.round(a,3)),repr(np.round(b,3))))
-        for k in range(1,6):
-            tck = splrep(x, v, s=s, per=per, k=k, xe=xe)
-            if k == 3:
-                roots = sproot(tck)
-                assert_allclose(splev(roots, tck), 0, atol=1e-10, rtol=1e-10)
-                assert_allclose(roots, np.pi * np.array([1, 2, 3, 4]), rtol=1e-3)
-                put('  %d  : %s' % (k, repr(roots.tolist())))
-            else:
-                assert_raises(ValueError, sproot, tck)
-
     def check_4(self,f=f1,per=0,s=0,a=0,b=2*np.pi,N=20,xb=None,xe=None,
               ia=0,ib=2*np.pi,dx=0.2*np.pi):
         if xb is None:
@@ -220,8 +200,21 @@ class TestSmokeTests:
         self.check_2(ia=0.2*np.pi,ib=np.pi,N=50)
 
     def test_smoke_sproot(self):
-        put("***************** sproot")
-        self.check_3(a=0.1,b=15)
+        # sproot is only implemented for k=3
+        a, b = 0.1, 15
+        x = np.linspace(a, b, 20)
+        v = np.sin(x)
+
+        for k in [1, 2, 4, 5]:
+            tck = splrep(x, v, s=0, per=0, k=k, xe=b)
+            with assert_raises(ValueError):
+                sproot(tck)
+
+        k = 3
+        tck = splrep(x, v, s=0, k=3)
+        roots = sproot(tck)
+        assert_allclose(splev(roots, tck), 0, atol=1e-10, rtol=1e-10)
+        assert_allclose(roots, np.pi * np.array([1, 2, 3, 4]), rtol=1e-3)
 
     def test_smoke_splprep_splrep_splev(self):
         put("***************** splprep/splrep/splev")
