@@ -26,10 +26,7 @@ def norm2(x):
 
 
 def f1(x, d=0):
-    if d is None:
-        return "sin"
-    if x is None:
-        return "sin(x)"
+    """Derivatives of sin->cos->-sin->-cos."""
     if d % 4 == 0:
         return np.sin(x)
     if d % 4 == 1:
@@ -59,54 +56,34 @@ class TestSmokeTests:
     Smoke tests (with a few asserts) for fitpack routines -- mostly
     check that they are runnable
     """
-
-    def check_1(self,f=f1,per=0,s=0,a=0,b=2*np.pi,N=20,at=0,xb=None,xe=None):
+    def check_1(self, per=0, s=0, a=0, b=2*np.pi, at_nodes=False, xb=None, xe=None):
         if xb is None:
             xb = a
         if xe is None:
             xe = b
-        x = a + (b - a)*np.arange(N+1, dtype=float)/float(N)    # nodes
+
+        N = 20
+        x = np.linspace(a, b, N+1)    # nodes
         x1 = a + (b - a)*np.arange(1, N, dtype=float)/float(N-1)  # middle points of the nodes
-        v = f(x)
-        nk = []
+        v = f1(x)
 
         def err_est(k, d):
             # Assume f has all derivatives < 1
-            h = 1.0/float(N)
+            h = 1.0 / N
             tol = 5 * h**(.75*(k-d))
             if s > 0:
                 tol += 1e5*s
             return tol
 
-        for k in range(1,6):
-            tck = splrep(x,v,s=s,per=per,k=k,xe=xe)
-            if at:
-                t = tck[0][k:-k]
-            else:
-                t = x1
+        for k in range(1, 6):
+            tck = splrep(x, v, s=s, per=per, k=k, xe=xe)
+            tt = tck[0][k:-k] if at_nodes else x1
+
             nd = []
             for d in range(k+1):
                 tol = err_est(k, d)
-                err = norm2(f(t,d)-splev(t,tck,d)) / norm2(f(t,d))
-                assert_(err < tol, (k, d, err, tol))
-                nd.append((err, tol))
-            nk.append(nd)
-        put("\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]" % (f(None),
-                                                        repr(np.round(xb,3)),repr(np.round(xe,3)),
-                                                          repr(np.round(a,3)),repr(np.round(b,3))))
-        if at:
-            str = "at knots"
-        else:
-            str = "at the middle of nodes"
-        put(" per=%d s=%s Evaluation %s" % (per,repr(s),str))
-        put(" k :  |f-s|^2  |f'-s'| |f''-.. |f'''-. |f''''- |f'''''")
-        k = 1
-        for l in nk:
-            put(' %d : ' % k)
-            for r in l:
-                put(' %.1e  %.1e' % r)
-            put('\n')
-            k = k+1
+                err = norm2(f1(tt, d) - splev(tt, tck, d)) / norm2(f1(tt, d))
+                assert err < tol
 
     def check_2(self, per=0, N=20, ia=0, ib=2*np.pi):
         a, b, dx = 0, 2*np.pi, 0.2*np.pi
@@ -134,14 +111,14 @@ class TestSmokeTests:
             k = k+1
 
     def test_smoke_splrep_splev(self):
-        put("***************** splrep/splev")
         self.check_1(s=1e-6)
-        self.check_1()
-        self.check_1(at=1)
-        self.check_1(per=1)
-        self.check_1(per=1,at=1)
         self.check_1(b=1.5*np.pi)
-        self.check_1(b=1.5*np.pi,xe=2*np.pi,per=1,s=1e-1)
+        self.check_1(b=1.5*np.pi, xe=2*np.pi, per=1, s=1e-1)
+
+    @pytest.mark.parametrize('per', [0, 1])
+    @pytest.mark.parametrize('at_nodes', [True, False])
+    def test_smoke_splrep_splev_2(self, per, at_nodes):
+        self.check_1(per=per, at_nodes=at_nodes)
 
     @pytest.mark.parametrize('N', [20, 50])
     @pytest.mark.parametrize('per', [0, 1])
@@ -192,7 +169,6 @@ class TestSmokeTests:
             for d in range(1, k+1):
                 uv = splev(dx, tckp, d)
 
-
     def test_smoke_bisplrep_bisplev(self):
         xb, xe = 0, 2.*np.pi
         yb, ye = 0, 2.*np.pi
@@ -214,7 +190,6 @@ class TestSmokeTests:
         v2.shape = len(tt[0]), len(tt[1])
 
         assert norm2(np.ravel(v1 - v2)) < 1e-2
-
 
 
 class TestSplev:
