@@ -1595,7 +1595,7 @@ class Sobol(QMCEngine):
         return self
 
 
-class MultivariateNormalQMC(QMCEngine):
+class MultivariateNormalQMC:
     r"""QMC sampling from a multivariate Normal :math:`N(\mu, \Sigma)`.
 
     Parameters
@@ -1623,8 +1623,8 @@ class MultivariateNormalQMC(QMCEngine):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import qmc
-    >>> engine = qmc.MultivariateNormalQMC(mean=[0, 5], cov=[[1, 0], [0, 1]])
-    >>> sample = engine.random(512)
+    >>> dist = qmc.MultivariateNormalQMC(mean=[0, 5], cov=[[1, 0], [0, 1]])
+    >>> sample = dist.random(512)
     >>> _ = plt.scatter(sample[:, 0], sample[:, 1])
     >>> plt.show()
 
@@ -1668,7 +1668,6 @@ class MultivariateNormalQMC(QMCEngine):
             # corresponds to identity covariance matrix
             cov_root = None
 
-        super().__init__(d=d, seed=seed)
         self._inv_transform = inv_transform
 
         if not inv_transform:
@@ -1681,9 +1680,11 @@ class MultivariateNormalQMC(QMCEngine):
                 d=engine_dim, scramble=True, bits=30, seed=seed
             )  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
-            if engine.d != d:
+            if engine.d != engine_dim:
                 raise ValueError("Dimension of `engine` must be consistent"
-                                 " with dimensions of mean and covariance.")
+                                 " with dimensions of mean and covariance."
+                                 " If `inv_transform` is False, it must be"
+                                 " an even number.")
             self.engine = engine
         else:
             raise ValueError("`engine` must be an instance of "
@@ -1691,6 +1692,8 @@ class MultivariateNormalQMC(QMCEngine):
 
         self._mean = mean
         self._corr_matrix = cov_root
+
+        self._d = d
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` QMC samples from the multivariate Normal.
@@ -1707,21 +1710,7 @@ class MultivariateNormalQMC(QMCEngine):
 
         """
         base_samples = self._standard_normal_samples(n)
-        self.num_generated += n
         return self._correlate(base_samples)
-
-    def reset(self) -> MultivariateNormalQMC:
-        """Reset the engine to base state.
-
-        Returns
-        -------
-        engine : MultivariateNormalQMC
-            Engine reset to its base state.
-
-        """
-        super().reset()
-        self.engine.reset()
-        return self
 
     def _correlate(self, base_samples: np.ndarray) -> np.ndarray:
         if self._corr_matrix is not None:
@@ -1760,10 +1749,10 @@ class MultivariateNormalQMC(QMCEngine):
             transf_samples = np.stack([Rs * cos, Rs * sin],
                                       -1).reshape(n, -1)
             # make sure we only return the number of dimension requested
-            return transf_samples[:, : self.d]  # type: ignore[misc]
+            return transf_samples[:, : self._d]
 
 
-class MultinomialQMC(QMCEngine):
+class MultinomialQMC:
     r"""QMC sampling from a multinomial distribution.
 
     Parameters
@@ -1783,8 +1772,8 @@ class MultinomialQMC(QMCEngine):
     Examples
     --------
     >>> from scipy.stats import qmc
-    >>> engine = qmc.MultinomialQMC(pvals=[0.2, 0.4, 0.4])
-    >>> sample = engine.random(10)
+    >>> dist = qmc.MultinomialQMC(pvals=[0.2, 0.4, 0.4])
+    >>> sample = dist.random(10)
 
     """
 
@@ -1809,8 +1798,6 @@ class MultinomialQMC(QMCEngine):
             raise ValueError("`engine` must be an instance of "
                              "`scipy.stats.qmc.QMCEngine` or `None`.")
 
-        super().__init__(d=1, seed=seed)
-
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` QMC samples from the multinomial distribution.
 
@@ -1830,21 +1817,7 @@ class MultinomialQMC(QMCEngine):
         _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
         sample = np.zeros_like(self.pvals, dtype=int)
         _categorize(base_draws, p_cumulative, sample)
-        self.num_generated += n
         return sample
-
-    def reset(self) -> MultinomialQMC:
-        """Reset the engine to base state.
-
-        Returns
-        -------
-        engine : MultinomialQMC
-            Engine reset to its base state.
-
-        """
-        super().reset()
-        self.engine.reset()
-        return self
 
 
 def _l1_norm(sample: np.ndarray) -> float:

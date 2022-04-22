@@ -833,40 +833,6 @@ class TestMultinomialQMC:
         engine = qmc.MultinomialQMC(p, engine=base_engine, seed=seed)
         assert_array_equal(engine.random(100), expected)
 
-    def test_reset(self):
-        p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        seed = np.random.default_rng(15286971436105697578659603487027011470)
-        engine = qmc.MultinomialQMC(p, seed=seed)
-        samples = engine.random(2)
-        engine.reset()
-        samples_reset = engine.random(2)
-        assert_array_equal(samples, samples_reset)
-
-
-def _wrapper_mv_qmc(*args, **kwargs):
-    d = kwargs.pop("d")
-    return qmc.MultivariateNormalQMC(mean=np.zeros(d), **kwargs)
-
-
-class TestMultivariateNormalQMCEngine(QMCEngineTests):
-    qmce = _wrapper_mv_qmc
-    can_scramble = False
-
-    def test_sample(self, *args):
-        pytest.skip("Not applicable: the value of reference sample is"
-                    " implementation dependent.")
-
-    def test_bounds(self, *args):
-        pytest.skip("Not applicable: normal is not bounded.")
-
-    def test_other_engine(self):
-        for d in (0, 1, 2):
-            base_engine = qmc.Sobol(d=d, scramble=False)
-            engine = qmc.MultivariateNormalQMC(mean=np.zeros(d),
-                                               engine=base_engine,
-                                               inv_transform=True)
-            samples = engine.random()
-            assert_equal(samples.shape, (1, d))
 
 class TestNormalQMC:
     def test_NormalQMC(self):
@@ -899,14 +865,6 @@ class TestNormalQMC:
         samples = engine.random(n=5)
         assert_equal(samples.shape, (5, 2))
 
-    def test_other_engine(self):
-        base_engine = qmc.Sobol(d=2, scramble=False)
-        engine = qmc.MultivariateNormalQMC(mean=np.zeros(2),
-                                           engine=base_engine,
-                                           inv_transform=True)
-        samples = engine.random()
-        assert_equal(samples.shape, (1, 2))
-
     def test_NormalQMCSeeded(self):
         # test even dimension
         seed = np.random.default_rng(274600237797326520096085022671371676017)
@@ -921,6 +879,18 @@ class TestNormalQMC:
         seed = np.random.default_rng(274600237797326520096085022671371676017)
         engine = qmc.MultivariateNormalQMC(
             mean=np.zeros(3), inv_transform=False, seed=seed)
+        samples = engine.random(n=2)
+        samples_expected = np.array([[0.446961, -1.243236, 0.324827],
+                                     [-0.997875, 0.399134, 1.032234]])
+        assert_allclose(samples, samples_expected, atol=1e-4)
+
+        # same test with another engine
+        seed = np.random.default_rng(274600237797326520096085022671371676017)
+        base_engine = qmc.Sobol(4, scramble=True, seed=seed)
+        engine = qmc.MultivariateNormalQMC(
+            mean=np.zeros(3), inv_transform=False,
+            engine=base_engine, seed=seed
+        )
         samples = engine.random(n=2)
         samples_expected = np.array([[0.446961, -1.243236, 0.324827],
                                      [-0.997875, 0.399134, 1.032234]])
@@ -944,6 +914,15 @@ class TestNormalQMC:
         samples_expected = np.array([[-0.804472, 0.384649, 1.583568],
                                      [0.165333, -2.266828, -1.655572]])
         assert_allclose(samples, samples_expected, atol=1e-4)
+
+    def test_other_engine(self):
+        for d in (0, 1, 2):
+            base_engine = qmc.Sobol(d=d, scramble=False)
+            engine = qmc.MultivariateNormalQMC(mean=np.zeros(d),
+                                               engine=base_engine,
+                                               inv_transform=True)
+            samples = engine.random()
+            assert_equal(samples.shape, (1, d))
 
     def test_NormalQMCShapiro(self):
         rng = np.random.default_rng(13242)
@@ -982,6 +961,10 @@ class TestMultivariateNormalQMC:
         message = r"Dimension of `engine` must be consistent"
         with pytest.raises(ValueError, match=message):
             qmc.MultivariateNormalQMC([0], engine=qmc.Sobol(d=2))
+
+        message = r"Dimension of `engine` must be consistent"
+        with pytest.raises(ValueError, match=message):
+            qmc.MultivariateNormalQMC([0, 0, 0], engine=qmc.Sobol(d=4))
 
         message = r"`engine` must be an instance of..."
         with pytest.raises(ValueError, match=message):
