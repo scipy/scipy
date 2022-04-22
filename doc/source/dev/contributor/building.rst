@@ -99,7 +99,7 @@ dependencies to build it on your system.
 
         To install SciPy build requirements, you can do::
 
-          sudo pacman -S gcc-gfortran python-devel openblas-devel lapack-devel
+          sudo pacman -S gcc-fortran openblas
 
     All further work should proceed in a virtual environment. Popular options
     include the standard library ``venv`` module or a separate ``virtualenv``
