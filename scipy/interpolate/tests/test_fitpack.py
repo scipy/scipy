@@ -152,36 +152,6 @@ class TestSmokeTests:
             put("\n")
             k = k+1
 
-    def check_4(self,f=f1,per=0,s=0,a=0,b=2*np.pi,N=20,xb=None,xe=None,
-              ia=0,ib=2*np.pi,dx=0.2*np.pi):
-        if xb is None:
-            xb = a
-        if xe is None:
-            xe = b
-        x = a+(b-a)*np.arange(N+1,dtype=float)/float(N)    # nodes
-        x1 = a + (b-a)*np.arange(1,N,dtype=float)/float(N-1)  # middle points of the nodes
-        v, _ = f(x),f(x1)
-        put(" u = %s   N = %d" % (repr(np.round(dx,3)),N))
-        put("  k  :  [x(u), %s(x(u))]  Error of splprep  Error of splrep " % (f(0,None)))
-        for k in range(1,6):
-            tckp,u = splprep([x,v],s=s,per=per,k=k,nest=-1)
-            tck = splrep(x,v,s=s,per=per,k=k)
-            uv = splev(dx,tckp)
-            err1 = abs(uv[1]-f(uv[0]))
-            err2 = abs(splev(uv[0],tck)-f(uv[0]))
-            assert_(err1 < 1e-2)
-            assert_(err2 < 1e-2)
-            put("  %d  :  %s    %.1e           %.1e" %
-                  (k,repr([np.round(z,3) for z in uv]),
-                   err1,
-                   err2))
-        put("Derivatives of parametric cubic spline at u (first function):")
-        k = 3
-        tckp,u = splprep([x,v],s=s,per=per,k=k,nest=-1)
-        for d in range(1,k+1):
-            uv = splev(dx,tckp,d)
-            put(" %s " % (repr(uv[0])))
-
     def test_smoke_splrep_splev(self):
         put("***************** splrep/splev")
         self.check_1(s=1e-6)
@@ -216,10 +186,28 @@ class TestSmokeTests:
         assert_allclose(splev(roots, tck), 0, atol=1e-10, rtol=1e-10)
         assert_allclose(roots, np.pi * np.array([1, 2, 3, 4]), rtol=1e-3)
 
-    def test_smoke_splprep_splrep_splev(self):
-        put("***************** splprep/splrep/splev")
-        self.check_4()
-        self.check_4(N=50)
+    @pytest.mark.parametrize('N', [20, 50])
+    @pytest.mark.parametrize('k', [1, 2, 3, 4, 5])
+    def test_smoke_splprep_splrep_splev(self, N, k):
+        a, b, dx = 0, 2.*np.pi, 0.2*np.pi
+        x = np.linspace(a, b, N+1)    # nodes
+        v = np.sin(x)
+
+        tckp, u = splprep([x, v], s=0, per=0, k=k, nest=-1)
+        uv = splev(dx, tckp)
+        err1 = abs(uv[1] - np.sin(uv[0]))
+        assert err1 < 1e-2
+
+        tck = splrep(x, v, s=0, per=0, k=k)
+        err2 = abs(splev(uv[0],tck) - np.sin(uv[0]))
+        assert err2 < 1e-2
+
+        # Derivatives of parametric cubic spline at u (first function)
+        if k == 3:
+            tckp,u = splprep([x, v], s=0, per=0, k=k, nest=-1)
+            for d in range(1, k+1):
+                uv = splev(dx, tckp, d)
+
 
     def test_smoke_bisplrep_bisplev(self):
         xb, xe = 0, 2.*np.pi
