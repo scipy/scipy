@@ -108,48 +108,29 @@ class TestSmokeTests:
             put('\n')
             k = k+1
 
-    def check_2(self,f=f1,per=0,s=0,a=0,b=2*np.pi,N=20,xb=None,xe=None,
-              ia=0,ib=2*np.pi,dx=0.2*np.pi):
-        if xb is None:
-            xb = a
-        if xe is None:
-            xe = b
-        x = a+(b-a)*np.arange(N+1, dtype=float)/float(N)    # nodes
-        v = f(x)
+    def check_2(self, per=0, N=20, ia=0, ib=2*np.pi):
+        a, b, dx = 0, 2*np.pi, 0.2*np.pi
+        x = np.linspace(a, b, N+1)    # nodes
+        v = np.sin(x)
 
         def err_est(k, d):
             # Assume f has all derivatives < 1
-            h = 1.0/float(N)
+            h = 1.0 / N
             tol = 5 * h**(.75*(k-d))
-            if s > 0:
-                tol += 1e5*s
             return tol
 
         nk = []
-        for k in range(1,6):
-            tck = splrep(x,v,s=s,per=per,k=k,xe=xe)
-            nk.append([splint(ia,ib,tck),spalde(dx,tck)])
-        put("\nf = %s  s=S_k(x;t,c)  x in [%s, %s] > [%s, %s]" % (f(None),
-                                                   repr(np.round(xb,3)),repr(np.round(xe,3)),
-                                                    repr(np.round(a,3)),repr(np.round(b,3))))
-        put(" per=%d s=%s N=%d [a, b] = [%s, %s]  dx=%s" % (per,repr(s),N,repr(np.round(ia,3)),repr(np.round(ib,3)),repr(np.round(dx,3))))
-        put(" k :  int(s,[a,b]) Int.Error   Rel. error of s^(d)(dx) d = 0, .., k")
+        for k in range(1, 6):
+            tck = splrep(x, v, s=0, per=per, k=k, xe=b)
+            nk.append([splint(ia, ib, tck), spalde(dx, tck)])
+
         k = 1
         for r in nk:
-            if r[0] < 0:
-                sr = '-'
-            else:
-                sr = ' '
-            put(" %d   %s%.8f   %.1e " % (k,sr,abs(r[0]),
-                                         abs(r[0]-(f(ib,-1)-f(ia,-1)))))
             d = 0
             for dr in r[1]:
-                err = abs(1-dr/f(dx,d))
                 tol = err_est(k, d)
-                assert_(err < tol, (k, d))
-                put(" %.1e %.1e" % (err, tol))
+                assert_allclose(dr, f1(dx, d), atol=0, rtol=tol)
                 d = d+1
-            put("\n")
             k = k+1
 
     def test_smoke_splrep_splev(self):
@@ -162,12 +143,15 @@ class TestSmokeTests:
         self.check_1(b=1.5*np.pi)
         self.check_1(b=1.5*np.pi,xe=2*np.pi,per=1,s=1e-1)
 
-    def test_smoke_splint_spalde(self):
-        put("***************** splint/spalde")
-        self.check_2()
-        self.check_2(per=1)
-        self.check_2(ia=0.2*np.pi,ib=np.pi)
-        self.check_2(ia=0.2*np.pi,ib=np.pi,N=50)
+    @pytest.mark.parametrize('N', [20, 50])
+    @pytest.mark.parametrize('per', [0, 1])
+    def test_smoke_splint_spalde(self, N, per):
+        self.check_2(per=per, N=N)
+
+    @pytest.mark.parametrize('N', [20, 50])
+    @pytest.mark.parametrize('per', [0, 1])
+    def test_smoke_splint_spalde_iaib(self, N, per):
+        self.check_2(ia=0.2*np.pi, ib=np.pi, N=N, per=per)
 
     def test_smoke_sproot(self):
         # sproot is only implemented for k=3
