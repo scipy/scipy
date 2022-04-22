@@ -4210,36 +4210,40 @@ class invgauss_gen(rv_continuous):
         logprob = np.log(q)
 
         x = np.full_like(x0, np.inf)
+        # Should ``has_converged`` just be initialized to False values?
+        # But then what if x0 has Inf values? Those should not be updated.
         has_converged = np.isclose(x, x0, atol=1e-08, equal_nan=True)
         # 1000 seems like a reasonable max number of iterations given that
         # convergence is guaranteed in this setup.
         while not all(has_converged):
             not_done = np.nonzero(~has_converged)[0]
-            lx = logF(x0[not_done], mu[not_done])
-            eps = logprob[not_done] - lx
+            _x = x[not_done]
+            _x0 = x0[not_done]
+            _mu = mu[not_done]
+            _logprob = logprob[not_done]
+            _delta = delta[not_done]
+            _q = q[not_done]
+
+            logc = logF(_x0, _mu)
+            logd = self._logpdf(_x0, _mu)
+            eps = _logprob - logc
             mask = np.abs(eps) < 1e-05
-            logd = self._logpdf(x0[not_done], mu[not_done])
 
             # to avoid subtractive cancellation when `d` is very small we use a
             # taylor series expansion to approximate (p - p(xn)) as shown in
             # page 8 of Giner & Smyth (2016)
-            delta[not_done][mask] = (
+            _delta[mask] = (
                 eps[mask] *
-                np.exp(
-                    logprob[not_done][mask] +
-                    np.log1p(-eps[mask] / 2) -
-                    logd[mask]
-                )
+                np.exp(_logprob[mask] + np.log1p(-0.5*eps[mask]) - logd[mask])
             )
-            delta[not_done][~mask] = (
-                q[not_done][~mask] *
-                np.exp(-logd[~mask]) -
-                np.exp(lx[~mask] - logd[~mask])
+            _delta[~mask] = (
+                _q[~mask] *
+                np.exp(-logd[~mask]) - np.exp(logc[~mask] - logd[~mask])
             )
 
-            x[not_done] = x0[not_done] + sign * delta[not_done]
+            _x = _x0 + sign * _delta
             has_converged = np.isclose(x, x0, atol=1e-08, equal_nan=True)
-            x0[...] = x[...]
+            _x0[...] = _x[...]
 
         return x
 
