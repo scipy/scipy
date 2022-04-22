@@ -4167,7 +4167,7 @@ class invgauss_gen(rv_continuous):
         based on Gyner & Smyth (2016) and uses newton's method with carefully
         selected starting points that guarantee convergence regardless of the
         probability."""
-        x0 = np.empty(np.broadcast(q, mu).shape)
+        x0 = np.empty(np.broadcast(np.atleast_1d(q), np.atleast_1d(mu)).shape)
         q = np.broadcast_to(q, x0.shape)
         mu = np.broadcast_to(mu, x0.shape)
 
@@ -4176,9 +4176,9 @@ class invgauss_gen(rv_continuous):
         # if the left tail is tiny.
         tiny_left = q < 1e-05
         tiny_right = q > 0.99999  # 1 - 1e-05
-        if tiny_left.size:
+        if any(tiny_left):
             x0[tiny_left] = mu[tiny_left] / (_norm_ppf(q[tiny_left]) ** 2)
-        if tiny_right.size:
+        if any(tiny_right):
             # when the right tail probability is less than 10^-5, we use the
             # corresponding quantile of the gamma distribution with the same
             # mean and variance as the inverse-gaussian (IG) that produced
@@ -4229,7 +4229,7 @@ class invgauss_gen(rv_continuous):
 
             x[not_done] = (
                 x0[not_done] + sign * delta[not_done] /
-                self._pdf(x0[not_done], m[not_done])
+                self._pdf(x0[not_done], mu[not_done])
             )
             has_converged = np.isclose(x, x0, atol=1e-08, equal_nan=True)
             x0[...] = x[...]
