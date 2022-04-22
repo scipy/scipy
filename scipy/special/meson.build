@@ -328,6 +328,11 @@ py3.extension_module('_specfun',
   subdir: 'scipy/special'
 )
 
+# TODO: this installs all generated files, while we want to install only:
+#       _ufuncs.pyi, cython_special.pxd
+#       There's no good way around this currently, because py3.install_sources
+#       doesn't accept generated targets. See TODO near the end of
+#       scipy/linalg/meson.build for more details.
 cython_special = custom_target('cython_special',
   output: [
     '_ufuncs.pyx',
