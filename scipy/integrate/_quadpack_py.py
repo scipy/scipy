@@ -727,7 +727,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
 
 def nquad(func, ranges, args=None, opts=None, full_output=False):
-    """
+    r"""
     Integration over multiple variables.
 
     Wraps `quad` to enable integration over multiple variables.
@@ -740,7 +740,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     func : {callable, scipy.LowLevelCallable}
         The function to be integrated. Has arguments of ``x0, ... xn``,
         ``t0, ... tm``, where integration is carried out over ``x0, ... xn``,
-        which must be floats.  Where ```t0, ... tm``` are extra arguments
+        which must be floats.  Where ``t0, ... tm`` are extra arguments
         passed in args.
         Function signature should be ``func(x0, x1, ..., xn, t0, t1, ..., tm)``.
         Integration is carried out in order.  That is, integration over ``x0``
@@ -764,17 +764,17 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         ``func = f(x0, x1, x2, t0, t1)``, then ``ranges[0]`` may be defined as
         either ``(a, b)`` or else as ``(a, b) = range0(x1, x2, t0, t1)``.
     args : iterable object, optional
-        Additional arguments ``t0, ..., tn``, required by `func`, `ranges`, and
-        ``opts``.
+        Additional arguments ``t0, ... tn``, required by ``func``, ``ranges``,
+        and ``opts``.
     opts : iterable object or dict, optional
         Options to be passed to `quad`. May be empty, a dict, or
         a sequence of dicts or functions that return a dict. If empty, the
         default options from scipy.integrate.quad are used. If a dict, the same
         options are used for all levels of integraion. If a sequence, then each
         element of the sequence corresponds to a particular integration. e.g.,
-        opts[0] corresponds to integration over x0, and so on. If a callable,
-        the signature must be the same as for ``ranges``. The available
-        options together with their default values are:
+        ``opts[0]`` corresponds to integration over ``x0``, and so on. If a
+        callable, the signature must be the same as for ``ranges``. The
+        available options together with their default values are:
 
           - epsabs = 1.49e-08
           - epsrel = 1.49e-08
@@ -810,6 +810,22 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
 
     Examples
     --------
+    Calculate
+
+    .. math::
+
+        \int^{1}_{-0.15} \int^{0.8}_{0.13} \int^{1}_{-1} \int^{1}_{0}
+        f(x_0, x_1, x_2, x_3) \,dx_0 \,dx_1 \,dx_2 \,dx_3 ,
+
+    where
+
+    .. math::
+
+        f(x_0, x_1, x_2, x_3) = \begin{cases}
+          x_0^2+x_1 x_2-x_3^3+ \sin{x_0}+1 & (x_0-0.2 x_3-0.5-0.25 x_1 > 0) \\
+          x_0^2+x_1 x_2-x_3^3+ \sin{x_0}+0 & (x_0-0.2 x_3-0.5-0.25 x_1 \leq 0)
+        \end{cases} .
+
     >>> from scipy import integrate
     >>> func = lambda x0,x1,x2,x3 : x0**2 + x1*x2 - x3**3 + np.sin(x0) + (
     ...                                 1 if (x0-.2*x3-.5-.25*x1>0) else 0)
@@ -819,31 +835,44 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     ...                 opts=[opts0,{},{},{}], full_output=True)
     (1.5267454070738633, 2.9437360001402324e-14, {'neval': 388962})
 
-    >>> scale = .1
-    >>> def func2(x0, x1, x2, x3, t0, t1):
-    ...     return x0*x1*x3**2 + np.sin(x2) + 1 + (1 if x0+t1*x1-t0>0 else 0)
-    >>> def lim0(x1, x2, x3, t0, t1):
-    ...     return [scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) - 1,
-    ...             scale * (x1**2 + x2 + np.cos(x3)*t0*t1 + 1) + 1]
-    >>> def lim1(x2, x3, t0, t1):
-    ...     return [scale * (t0*x2 + t1*x3) - 1,
-    ...             scale * (t0*x2 + t1*x3) + 1]
-    >>> def lim2(x3, t0, t1):
-    ...     return [scale * (x3 + t0**2*t1**3) - 1,
-    ...             scale * (x3 + t0**2*t1**3) + 1]
-    >>> def lim3(t0, t1):
-    ...     return [scale * (t0+t1) - 1, scale * (t0+t1) + 1]
-    >>> def opts0(x1, x2, x3, t0, t1):
+    Calculate
+
+    .. math::
+
+        \int^{t_0+t_1+1}_{t_0+t_1-1}
+        \int^{x_2+t_0^2 t_1^3+1}_{x_2+t_0^2 t_1^3-1}
+        \int^{t_0 x_1+t_1 x_2+1}_{t_0 x_1+t_1 x_2-1}
+        f(x_0,x_1, x_2,t_0,t_1)
+        \,dx_0 \,dx_1 \,dx_2,
+
+    where
+
+    .. math::
+
+        f(x_0, x_1, x_2, t_0, t_1) = \begin{cases}
+          x_0 x_2^2 + \sin{x_1}+2 & (x_0+t_1 x_1-t_0 > 0) \\
+          x_0 x_2^2 +\sin{x_1}+1 & (x_0+t_1 x_1-t_0 \leq 0)
+        \end{cases}
+
+    and :math:`(t_0, t_1) = (0, 1)` .
+
+    >>> def func2(x0, x1, x2, t0, t1):
+    ...     return x0*x2**2 + np.sin(x1) + 1 + (1 if x0+t1*x1-t0>0 else 0)
+    >>> def lim0(x1, x2, t0, t1):
+    ...     return [t0*x1 + t1*x2 - 1, t0*x1 + t1*x2 + 1]
+    >>> def lim1(x2, t0, t1):
+    ...     return [x2 + t0**2*t1**3 - 1, x2 + t0**2*t1**3 + 1]
+    >>> def lim2(t0, t1):
+    ...     return [t0 + t1 - 1, t0 + t1 + 1]
+    >>> def opts0(x1, x2, t0, t1):
     ...     return {'points' : [t0 - t1*x1]}
-    >>> def opts1(x2, x3, t0, t1):
+    >>> def opts1(x2, t0, t1):
     ...     return {}
-    >>> def opts2(x3, t0, t1):
+    >>> def opts2(t0, t1):
     ...     return {}
-    >>> def opts3(t0, t1):
-    ...     return {}
-    >>> integrate.nquad(func2, [lim0, lim1, lim2, lim3], args=(0,0),
-    ...                 opts=[opts0, opts1, opts2, opts3])
-    (25.066666666666666, 2.7829590483937256e-13)
+    >>> integrate.nquad(func2, [lim0, lim1, lim2], args=(0,1),
+    ...                 opts=[opts0, opts1, opts2])
+    (36.099919226771625, 1.8546948553373528e-07)
 
     """
     depth = len(ranges)
