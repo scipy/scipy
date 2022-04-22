@@ -724,7 +724,8 @@ class TestSpsolveTriangular:
 
     def test_zero_diagonal(self):
         n = 5
-        A = np.random.randn(n, n)
+        rng = np.random.default_rng(43876432987)
+        A = rng.standard_normal((n, n))
         b = np.arange(n)
         A = scipy.sparse.tril(A, k=0, format='csr')
 
