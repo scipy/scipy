@@ -692,7 +692,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         mean : array_like, default: ``[0]``
             Mean of the distribution.
         cov : array_like, default: ``[1]``
-            Symmetric positive semidefinite covariance matrix of the
+            Symmetric positive (semi)definite covariance matrix of the
             distribution.
         allow_singular : bool, default: ``False``
             Whether to allow a singular covariance matrix.
