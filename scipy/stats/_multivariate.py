@@ -296,8 +296,11 @@ class multivariate_normal_gen(multi_rv_generic):
     -----
     %(_mvn_doc_callparams_note)s
 
-    The covariance matrix `cov` must be a (symmetric) positive
-    semi-definite matrix. The determinant and inverse of `cov` are computed
+    The covariance matrix `cov` must be a symmetric positive semidefinite
+    matrix when `allow_singular` is True; it must be (strictly) positive
+    definite when `allow_singular` is False.
+    Symmetry is not checked; only the lower triangular portion is used.
+    The determinant and inverse of `cov` are computed
     as the pseudo-determinant and pseudo-inverse, respectively, so
     that `cov` does not need to have full rank.
 
