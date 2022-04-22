@@ -158,10 +158,13 @@ class _PSD:
 
         eps = _eigvalsh_to_eps(s, cond, rcond)
         if np.min(s) < -eps:
-            raise ValueError('the input matrix must be positive semidefinite')
+            msg = "The input matrix must be symmetric positive semidefinite."
+            raise ValueError(msg)
         d = s[s > eps]
         if len(d) < len(s) and not allow_singular:
-            raise np.linalg.LinAlgError('singular matrix')
+            msg = ("When `allow_singular is False`, the input matrix must be "
+                  "symmetric positive definite.")
+            raise np.linalg.LinAlgError(msg)
         s_pinv = _pinv_1d(s, eps)
         U = np.multiply(u, np.sqrt(s_pinv))
 
