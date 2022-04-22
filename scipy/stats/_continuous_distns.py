@@ -4209,24 +4209,26 @@ class invgauss_gen(rv_continuous):
         delta = np.empty_like(x0)
         logprob = np.log(q)
 
+        x = np.full_like(x0, np.inf)
+        has_converged = np.isclose(x, x0, atol=1e-08, equal_nan=True)
         # 1000 seems like a reasonable max number of iterations given that
         # convergence is guaranteed in this setup.
-        for _ in range(1000):
-            lx = logF(x0, mu)
+        while not all(has_converged):
+            not_done = x0[~has_converged]
+            lx = logF(x0[not_done], mu[not_done])
             # to avoid subtractive cancellation when `d` is very small we use a
             # taylor series expansion to approximate (p - p(xn)) as shown in
             # page 8 of Giner & Smyth (2016)
-            eps = logprob - lx
+            eps = logprob[not_done] - lx
             mask = np.abs(eps) < 1e-05
-            delta[mask] = (
-                eps[mask] * np.exp(logprob[mask] + np.log1p(-eps[mask] / 2))
+            delta[not_done][mask] = (
+                eps[mask] * np.exp(logprob[not_done][mask] + np.log1p(-eps[mask] / 2))
             )
-            delta[~mask] = q - np.exp(lx[~mask])
+            delta[not_done][~mask] = q[not_done] - np.exp(lx[~mask])
 
-            x = x0 + sign * delta / self._pdf(x0, mu)
-            if np.allclose(x, x0, atol=1e-08):
-                break
-            x0 = x
+            x[not_done] = x0[not_done] + sign * delta[not_done] / self._pdf(x0[not_done], m[not_done])
+            has_converged = np.isclose(x, x0, atol=1e-08, equal_nan=True)
+            x0[...] = x[...]
 
         return x
 
