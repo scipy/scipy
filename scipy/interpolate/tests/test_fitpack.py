@@ -22,7 +22,7 @@ def data_file(basename):
 
 
 def norm2(x):
-    return np.sqrt(np.dot(x.T,x))
+    return np.sqrt(np.dot(x.T, x))
 
 
 def f1(x, d=0):
@@ -37,18 +37,10 @@ def f1(x, d=0):
         return -np.cos(x)
 
 
-
 def makepairs(x, y):
     """Helper function to create an array of pairs of x and y."""
     xy = np.array(list(itertools.product(np.asarray(x), np.asarray(y))))
     return xy.T
-
-
-def put(*a):
-    """Produce some output if file run directly"""
-    import sys
-    if hasattr(sys.modules['__main__'], '__put_prints'):
-        sys.stderr.write("".join(map(str, a)) + "\n")
 
 
 class TestSmokeTests:
@@ -56,15 +48,17 @@ class TestSmokeTests:
     Smoke tests (with a few asserts) for fitpack routines -- mostly
     check that they are runnable
     """
-    def check_1(self, per=0, s=0, a=0, b=2*np.pi, at_nodes=False, xb=None, xe=None):
+    def check_1(self, per=0, s=0, a=0, b=2*np.pi, at_nodes=False,
+                xb=None, xe=None):
         if xb is None:
             xb = a
         if xe is None:
             xe = b
 
         N = 20
-        x = np.linspace(a, b, N+1)    # nodes
-        x1 = a + (b - a)*np.arange(1, N, dtype=float)/float(N-1)  # middle points of the nodes
+        # nodes and middle points of the nodes
+        x = np.linspace(a, b, N + 1)
+        x1 = a + (b - a) * np.arange(1, N, dtype=float) / float(N - 1)
         v = f1(x)
 
         def err_est(k, d):
@@ -160,12 +154,12 @@ class TestSmokeTests:
         assert err1 < 1e-2
 
         tck = splrep(x, v, s=0, per=0, k=k)
-        err2 = abs(splev(uv[0],tck) - np.sin(uv[0]))
+        err2 = abs(splev(uv[0], tck) - np.sin(uv[0]))
         assert err2 < 1e-2
 
         # Derivatives of parametric cubic spline at u (first function)
         if k == 3:
-            tckp,u = splprep([x, v], s=0, per=0, k=k, nest=-1)
+            tckp, u = splprep([x, v], s=0, per=0, k=k, nest=-1)
             for d in range(1, k+1):
                 uv = splev(dx, tckp, d)
 
@@ -180,7 +174,7 @@ class TestSmokeTests:
 
         x = np.linspace(xb, xe, Nx + 1)
         y = np.linspace(yb, ye, Ny + 1)
-        xy = makepairs(x,y)
+        xy = makepairs(x, y)
         tck = bisplrep(xy[0], xy[1], f2(xy[0], xy[1]), s=0, kx=kx, ky=ky)
 
         tt = [tck[0][kx:-kx], tck[1][ky:-ky]]
