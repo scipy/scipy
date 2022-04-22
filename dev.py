@@ -414,7 +414,7 @@ def setup_build(args, env):
     if build_dir.exists() and not (build_dir / 'meson-info').exists():
         if list(build_dir.iterdir()):
             raise RuntimeError(
-                "You're using Meson to build in the `build` directory, "
+                f"You're using Meson to build in the `{build_dir.absolute()}` directory, "
                 "but it looks like that directory is not empty and "
                 "was not originally created by Meson. "
                 f"Please remove '{build_dir.absolute()}' and try again."
