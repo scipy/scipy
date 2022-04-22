@@ -163,7 +163,7 @@ class _PSD:
         d = s[s > eps]
         if len(d) < len(s) and not allow_singular:
             msg = ("When `allow_singular is False`, the input matrix must be "
-                  "symmetric positive definite.")
+                   "symmetric positive definite.")
             raise np.linalg.LinAlgError(msg)
         s_pinv = _pinv_1d(s, eps)
         U = np.multiply(u, np.sqrt(s_pinv))
@@ -232,12 +232,12 @@ class multi_rv_frozen:
 
 
 _mvn_doc_default_callparams = """\
-mean : array_like, optional
-    Mean of the distribution (default zero)
-cov : array_like, optional
-    Covariance matrix of the distribution (default one)
-allow_singular : bool, optional
-    Whether to allow a singular covariance matrix.  (Default: False)
+mean : array_like, default: ``[0]``
+    Mean of the distribution.
+cov : array_like, default: ``[1]``
+    Symmetric positive semidefinite covariance matrix of the distribution.
+allow_singular : bool, default: ``False``
+    Whether to allow a singular covariance matrix.
 """
 
 _mvn_doc_callparams_note = """\
@@ -689,13 +689,13 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
         Parameters
         ----------
-        mean : array_like, optional
-            Mean of the distribution (default zero)
-        cov : array_like, optional
-            Covariance matrix of the distribution (default one)
-        allow_singular : bool, optional
-            If this flag is True then tolerate a singular
-            covariance matrix (default False).
+        mean : array_like, default: ``[0]``
+            Mean of the distribution.
+        cov : array_like, default: ``[1]``
+            Symmetric positive semidefinite covariance matrix of the
+            distribution.
+        allow_singular : bool, default: ``False``
+            Whether to allow a singular covariance matrix.
         seed : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
 
