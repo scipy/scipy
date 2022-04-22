@@ -325,6 +325,13 @@ class TestMultivariateNormal:
         assert_raises(e, multivariate_normal.cdf, x, mean, cov)
         assert_raises(e, multivariate_normal.logcdf, x, mean, cov)
 
+        # Message used to be "singular matrix", but this is more accurate.
+        # See gh-15508
+        cov = [[1., 0.], [1., 1.]]
+        msg = "When `allow_singular is False`, the input matrix"
+        with pytest.raises(np.linalg.LinAlgError, match=msg):
+            multivariate_normal(cov=cov)
+
     def test_R_values(self):
         # Compare the multivariate pdf with some values precomputed
         # in R version 3.0.1 (2013-05-16) on Mac OS X 10.6.
