@@ -58,12 +58,6 @@ py3.extension_module('_fblas',
 )
 
 # flapack
-deprecated_lapack_routines = [
-  'src/lapack_deprecations/cgegv.f',
-  'src/lapack_deprecations/dgegv.f',
-  'src/lapack_deprecations/sgegv.f',
-  'src/lapack_deprecations/zgegv.f'
-]
 
 flapack_module = custom_target('flapack_module',
   output: ['_flapackmodule.c', '_flapack-f2pywrappers.f'],
@@ -76,7 +70,6 @@ py3.extension_module('_flapack',
     flapack_module,
     fortranobject_c,
     g77_abi_wrappers,
-    deprecated_lapack_routines
   ],
   c_args: [
     numpy_nodepr_api,
