@@ -6941,6 +6941,12 @@ class powerlaw_gen(rv_continuous):
 
     def _entropy(self, a):
         return 1 - 1.0/a - np.log(a)
+    
+    def _support_mask(self, x, a):
+        if np.any(a < 1):
+            return (x != 0) & super(powerlaw_gen, self)._support_mask(x, a)
+        else:
+            return super(powerlaw_gen, self)._support_mask(x, a)
 
     def fit(self, data, *args, **kwds):
         '''
@@ -6999,6 +7005,9 @@ class powerlaw_gen(rv_continuous):
             # the shape.
             return data.max() - loc
 
+        if fscale is not None and floc is not None:
+            return get_shape(data, floc, fscale), floc, fscale
+
         if fscale is not None:
             # in the case where the scale is set to a non-optimal value, there
             # may be two possible analytical solutions, but one gives a better
@@ -7021,8 +7030,14 @@ class powerlaw_gen(rv_continuous):
             else:
                 return shape_gt1, loc_gt1, fscale
 
+        # The only remaining scenario is that the location might be fixed.
+        if floc is not None:
+            scale = fscale or get_scale(data, floc)
+            shape = fshape or get_shape(data, floc, scale)
+            return shape, floc, scale
+
         # First, attempt to fit under the assumption that `shape <= 1`.
-        loc = floc if floc is not None else np.nextafter(data.min(), -np.inf)
+        loc = np.nextafter(data.min(), -np.inf)
         scale = np.nextafter(get_scale(data, loc), np.inf)
         shape = fshape or get_shape(data, loc, scale)
 
@@ -7032,22 +7047,7 @@ class powerlaw_gen(rv_continuous):
             return shape, loc, scale
 
         # if `shape > 1`, then we need to fit under the assumption that
-        # `shape > 1` and redefine analytical functions for this new
-        # assumption.
-
-        # if the location or scale is fixed, an analytical solution is
-        # available.
-        if {floc, fscale} != {None}:
-            if floc is not None:
-                scale = fscale or get_scale(data, floc)
-                shape = fshape or get_shape(data, loc, scale)
-                return shape, loc, scale
-            if fscale is not None:
-                loc = (floc if floc is not None
-                       else np.nextafter(data.max() - fscale, np.inf))
-                shape = fshape or get_shape(data, loc, fscale)
-                return shape, loc, scale
-
+        # `shape > 1`.
         # The support of the distribution is `(x - loc)/scale > 0`.
         # If all parameters are free, or only the shape is fixed, the
         # method of Lagrange multipliers turns this constraint into an
