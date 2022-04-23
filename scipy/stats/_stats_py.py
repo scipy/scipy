@@ -5952,7 +5952,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     Examples
     --------
     Suppose we have the summary data for two samples, as follows (with the
-    Sample Variance being the corrected variance calculated from each sample)::
+    Sample Variance being the corrected sample variance)::
 
                          Sample   Sample
                    Size   Mean   Variance
