@@ -8,8 +8,7 @@ from . import _quadpack
 import numpy
 from numpy import Inf
 
-__all__ = ['quad', 'dblquad', 'tplquad', 'nquad', 'quad_explain',
-           'IntegrationWarning']
+__all__ = ["quad", "dblquad", "tplquad", "nquad", "IntegrationWarning"]
 
 
 error = _quadpack.error
@@ -19,31 +18,6 @@ class IntegrationWarning(UserWarning):
     Warning on issues during integration.
     """
     pass
-
-
-def quad_explain(output=sys.stdout):
-    """
-    Print extra information about integrate.quad() parameters and returns.
-
-    Parameters
-    ----------
-    output : instance with "write" method, optional
-        Information about `quad` is passed to ``output.write()``.
-        Default is ``sys.stdout``.
-
-    Returns
-    -------
-    None
-
-    Examples
-    --------
-    We can show detailed information of the `integrate.quad` function in stdout:
-
-    >>> from scipy.integrate import quad_explain
-    >>> quad_explain()
-
-    """
-    output.write(quad.__doc__)
 
 
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
@@ -96,7 +70,6 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         An estimate of the absolute error in the result.
     infodict : dict
         A dictionary containing additional information.
-        Run scipy.integrate.quad_explain() for more information.
     message
         A convergence message.
     explain
@@ -784,7 +757,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
           - wvar   = None
           - wopts  = None
 
-        For more information on these options, see `quad` and `quad_explain`.
+        For more information on these options, see `quad`.
 
     full_output : bool, optional
         Partial implementation of ``full_output`` from scipy.integrate.quad.
