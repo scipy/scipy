@@ -170,7 +170,7 @@ class _PSD:
 
         # Save the eigenvector basis, and tolerance for testing support
         self.eps = 100*eps
-        self.V = u[:,s > eps]
+        self.V = u[:, s <= eps]
 
         # Initialize the eagerly precomputed attributes.
         self.rank = len(d)
@@ -179,14 +179,13 @@ class _PSD:
 
         # Initialize attributes to be lazily computed.
         self._pinv = None
-        self._proj = None
 
     def in_support(self, x):
         """
         Check whether x lies in the support of the distribution.
         """
-        residual = np.dot(x, self.proj.T)
-        out_of_bounds = np.any(np.abs(residual) > self.eps, axis=1)
+        residual = np.linalg.norm(x @ self.V, axis=-1)
+        out_of_bounds = residual > self.eps
         return out_of_bounds
 
     @property
@@ -194,13 +193,6 @@ class _PSD:
         if self._pinv is None:
             self._pinv = np.dot(self.U, self.U.T)
         return self._pinv
-
-    @property
-    def proj(self):
-        if self._proj is None:
-            I = np.identity(self.U.shape[0])
-            self._proj = I - np.dot(self.V, self.V.T)
-        return self._proj
 
 
 class multi_rv_generic:
