@@ -410,7 +410,10 @@ class spmatrix:
         array([ 1, -3, -1], dtype=int64)
 
         """
-        return self @ other
+        if np.isscalar(other):
+            return self * other
+        else:
+            return self @ other
 
     def power(self, n, dtype=None):
         """Element-wise power."""
