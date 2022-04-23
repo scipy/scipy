@@ -5247,7 +5247,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
         raise ValueError('ftype must be either notch or peak.')
 
     # Compute the order of the filter
-    N = int(fs // w0)
+    N = round(fs / w0)
 
     # Compute frequency in radians and filter bandwidth
     # Eq. 11.3.1 (p. 574) from reference [1]
