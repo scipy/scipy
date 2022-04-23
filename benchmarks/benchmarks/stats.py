@@ -393,7 +393,7 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
 
     param_names = ["distribution", "shape_in_use", "loc_fixed", "scale_fixed",
                    "shape1_fixed", "shape2_fixed", "shape3_fixed"]
-    # `n_shape_iter` needs to be the an enumeration of the maximum number of
+    # `n_shape_iter` needs to be an enumeration of the maximum number of
     # shapes present in `_distr_params.py` for the benchmarked distributions.
     # This may need to be updated should a benchmarked distribution have more
     # than 2 shapes in `distcont`.
