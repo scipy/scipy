@@ -1,6 +1,7 @@
 import pytest
 
-from .. import _construct, array, coo_matrix
+from .. import _construct, array, coo_matrix, _arrays
+
 
 np = pytest.importorskip("numpy")
 
@@ -24,7 +25,9 @@ def test_default_container_format(fn, args):
     """Default container format for array creation functions should be the same
     as their matrix counterparts."""
     ary_fn, mat_fn = (getattr(mod, fn) for mod in (array, _construct))
-    assert ary_fn(*args).format == mat_fn(*args).format
+    a = ary_fn(*args)
+    assert isinstance(a, _arrays._sparray)
+    assert a.format == mat_fn(*args).format
 
 
 @pytest.mark.parametrize("fn", ("hstack", "vstack"))
@@ -35,7 +38,9 @@ def test_stacks_default_container_format(fn):
     B = coo_matrix([[0, 1], [1, 0]])
 
     ary_fn, mat_fn = (getattr(mod, fn) for mod in (array, _construct))
-    assert ary_fn([A, B]).format == mat_fn([A, B]).format
+    a = ary_fn([A, B])
+    assert isinstance(a, _arrays._sparray)
+    assert a.format == mat_fn([A, B]).format
 
 
 def test_blocks_default_container_format():
@@ -48,9 +53,11 @@ def test_blocks_default_container_format():
     # block diag
     a = array.block_diag((A, B, C))
     m = _construct.block_diag((A, B, C))
+    assert isinstance(a, _arrays._sparray)
     assert a.format == m.format
 
     # bmat
     a = array.bmat([[A, None], [None, C]])
     m = _construct.bmat([[A, None], [None, C]])
+    assert isinstance(a, _arrays._sparray)
     assert a.format == m.format
