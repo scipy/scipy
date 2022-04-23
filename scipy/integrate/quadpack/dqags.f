@@ -121,7 +121,7 @@ c                    with ier = 6.
 c
 c            last  - integer
 c                    on return, last equals the number of subintervals
-c                    produced in the subdivision process, detemines the
+c                    produced in the subdivision process, determines the
 c                    number of significant elements actually in the work
 c                    arrays.
 c

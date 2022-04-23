@@ -1,4 +1,5 @@
-      subroutine lmder(fcn,m,n,x,fvec,fjac,ldfjac,ftol,xtol,gtol,
+      recursive
+     *subroutine lmder(fcn,m,n,x,fvec,fjac,ldfjac,ftol,xtol,gtol,
      *                 maxfev,diag,mode,factor,nprint,info,nfev,njev,
      *                 ipvt,qtf,wa1,wa2,wa3,wa4)
       integer m,n,ldfjac,maxfev,mode,nprint,info,nfev,njev

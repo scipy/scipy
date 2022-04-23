@@ -63,7 +63,7 @@ c  fetch a new row of matrix (b).
         do 140 j=1,5
           h(j) = b(n1,j)*pinv
  140    continue
-c  find the appropiate row of q.
+c  find the appropriate row of q.
         do 160 j=1,mid
           right(j) = 0.
  160    continue
@@ -73,7 +73,7 @@ c  fetch a new row of matrix (sp)
         do 200 j=1,4
           h(j) = sp(it,j)
  200    continue
-c  find the appropiate row of q.
+c  find the appropriate row of q.
         j = 0
         do 220 ii=1,idim
           l = (ii-1)*m2+(it-1)*mm

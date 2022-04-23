@@ -1,4 +1,5 @@
-      subroutine hybrj(fcn,n,x,fvec,fjac,ldfjac,xtol,maxfev,diag,mode,
+      recursive
+     *subroutine hybrj(fcn,n,x,fvec,fjac,ldfjac,xtol,maxfev,diag,mode,
      *                 factor,nprint,info,nfev,njev,r,lr,qtf,wa1,wa2,
      *                 wa3,wa4)
       integer n,ldfjac,maxfev,mode,nprint,info,nfev,njev,lr

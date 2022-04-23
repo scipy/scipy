@@ -54,13 +54,13 @@ c          maxbin >=1. in most practical situation maxbin = 10 will be
 c          sufficient. always large enough is maxbin=n-6.
 c          unchanged on exit.
 c    c   : real array of dimension at least (n).
-c          on succesful exit, this array will contain the coefficients
+c          on successful exit, this array will contain the coefficients
 c          c(1),c(2),..,c(n-4) in the b-spline representation of s(x)
-c    sq  : real. on succesful exit, sq contains the weighted sum of
+c    sq  : real. on successful exit, sq contains the weighted sum of
 c          squared residuals of the spline approximation returned.
-c    sx  : real array of dimension at least m. on succesful exit
+c    sx  : real array of dimension at least m. on successful exit
 c          this array will contain the spline values s(x(i)),i=1,...,m
-c   bind : logical array of dimension at least (n). on succesful exit
+c   bind : logical array of dimension at least (n). on successful exit
 c          this array will indicate the knots where s''(x)=0, i.e.
 c                s''(t(j+3)) .eq. 0 if  bind(j) = .true.
 c                s''(t(j+3)) .ne. 0 if  bind(j) = .false., j=1,2,...,n-6
@@ -75,14 +75,14 @@ c   kwrk : integer. on entry,kwrk must specify the actual dimension of
 c          the array iwrk as declared in the calling (sub)program. kwrk
 c          must not be too small (see iwrk). unchanged on exit.
 c   ier   : integer. error flag
-c      ier=0 : succesful exit.
+c      ier=0 : successful exit.
 c      ier>0 : abnormal termination: no approximation is returned
 c        ier=1  : the number of knots where s''(x)=0 exceeds maxbin.
 c                 probably causes : maxbin too small.
 c        ier=2  : the number of records in the tree structure exceeds
 c                 maxtr.
 c                 probably causes : maxtr too small.
-c        ier=3  : the algoritm finds no solution to the posed quadratic
+c        ier=3  : the algorithm finds no solution to the posed quadratic
 c                 programming problem.
 c                 probably causes : rounding errors.
 c        ier=10 : on entry, the input data are controlled on validity.

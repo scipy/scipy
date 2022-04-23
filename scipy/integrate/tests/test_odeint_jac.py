@@ -58,7 +58,7 @@ def check_odeint(jactype):
     odeint_nje = info['nje'][-1]
 
     y1 = y0.copy()
-    # Pure Fortran solution.  y1 is modified in-place.
+    # Pure Fortran solution. y1 is modified in-place.
     nst, nfe, nje = banded5x5.banded5x5_solve(y1, nsteps, dt, jactype)
 
     # It is likely that yfinal and y1 are *exactly* the same, but

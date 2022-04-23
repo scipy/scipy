@@ -1,10 +1,8 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import assert_equal
-from scipy.sparse.csgraph import reverse_cuthill_mckee,\
-        maximum_bipartite_matching
-from scipy.sparse import diags, csr_matrix, coo_matrix
+from scipy.sparse.csgraph import reverse_cuthill_mckee, structural_rank
+from scipy.sparse import csc_matrix, csr_matrix, coo_matrix
+
 
 def test_graph_reverse_cuthill_mckee():
     A = np.array([[1, 0, 0, 0, 1, 0, 0, 0],
@@ -49,51 +47,24 @@ def test_graph_reverse_cuthill_mckee_ordering():
     assert_equal(perm, correct_perm)
 
 
-def test_graph_maximum_bipartite_matching():
-    A = diags(np.ones(25), offsets=0, format='csc')
-    rand_perm = np.random.permutation(25)
-    rand_perm2 = np.random.permutation(25)
-
-    Rrow = np.arange(25)
-    Rcol = rand_perm
-    Rdata = np.ones(25,dtype=int)
-    Rmat = coo_matrix((Rdata,(Rrow,Rcol))).tocsc()
-
-    Crow = rand_perm2
-    Ccol = np.arange(25)
-    Cdata = np.ones(25,dtype=int)
-    Cmat = coo_matrix((Cdata,(Crow,Ccol))).tocsc()
-    # Randomly permute identity matrix
-    B = Rmat*A*Cmat
+def test_graph_structural_rank():
+    # Test square matrix #1
+    A = csc_matrix([[1, 1, 0], 
+                    [1, 0, 1],
+                    [0, 1, 0]])
+    assert_equal(structural_rank(A), 3)
     
-    # Row permute
-    perm = maximum_bipartite_matching(B,perm_type='row')
-    Rrow = np.arange(25)
-    Rcol = perm
-    Rdata = np.ones(25,dtype=int)
-    Rmat = coo_matrix((Rdata,(Rrow,Rcol))).tocsc()
-    C1 = Rmat*B
+    # Test square matrix #2
+    rows = np.array([0,0,0,0,0,1,1,2,2,3,3,3,3,3,3,4,4,5,5,6,6,7,7])
+    cols = np.array([0,1,2,3,4,2,5,2,6,0,1,3,5,6,7,4,5,5,6,2,6,2,4])
+    data = np.ones_like(rows)
+    B = coo_matrix((data,(rows,cols)), shape=(8,8))
+    assert_equal(structural_rank(B), 6)
     
-    # Column permute
-    perm2 = maximum_bipartite_matching(B,perm_type='column')
-    Crow = perm2
-    Ccol = np.arange(25)
-    Cdata = np.ones(25,dtype=int)
-    Cmat = coo_matrix((Cdata,(Crow,Ccol))).tocsc()
-    C2 = B*Cmat
+    #Test non-square matrix
+    C = csc_matrix([[1, 0, 2, 0], 
+                    [2, 0, 4, 0]])
+    assert_equal(structural_rank(C), 2)
     
-    # Should get identity matrix back
-    assert_equal(any(C1.diagonal() == 0), False)
-    assert_equal(any(C2.diagonal() == 0), False)
-    
-    # Test int64 indices input
-    B.indices = B.indices.astype('int64')
-    B.indptr = B.indptr.astype('int64')
-    perm = maximum_bipartite_matching(B,perm_type='row')
-    Rrow = np.arange(25)
-    Rcol = perm
-    Rdata = np.ones(25,dtype=int)
-    Rmat = coo_matrix((Rdata,(Rrow,Rcol))).tocsc()
-    C3 = Rmat*B
-    assert_equal(any(C3.diagonal() == 0), False)
-
+    #Test tall matrix
+    assert_equal(structural_rank(C.T), 2)

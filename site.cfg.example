@@ -9,7 +9,7 @@
 
 # The format of the file is that of the standard library's ConfigParser module.
 #
-#   http://docs.python.org/3/library/configparser.html
+#   https://docs.python.org/library/configparser.html
 #
 # Each section defines settings that apply to one particular dependency. Some of
 # the settings are general and apply to nearly any section and are defined here.
@@ -35,10 +35,10 @@
 #           library_dirs = /usr/lib,/usr/local/lib
 #
 #   include_dirs
-#       List of directories to add to the header file earch path.
+#       List of directories to add to the header file search path.
 #           include_dirs = /usr/include:/usr/local/include
 #
-#   src_dirs 
+#   src_dirs
 #       List of directories that contain extracted source code for the
 #       dependency. For some dependencies, numpy.distutils will be able to build
 #       them from source if binaries cannot be found. The FORTRAN BLAS and
@@ -83,7 +83,7 @@
 # This is a good place to add general library and include directories like
 # /usr/local/{lib,include}
 #
-#[ALL]
+#[DEFAULT]
 #library_dirs = /usr/local/lib
 #include_dirs = /usr/local/include
 #
@@ -123,7 +123,7 @@
 # multiprocessing.
 # (This problem does not exist with multithreaded ATLAS.)
 #
-# http://docs.python.org/3.4/library/multiprocessing.html#contexts-and-start-methods
+# https://docs.python.org/3.4/library/multiprocessing.html#contexts-and-start-methods
 # https://github.com/xianyi/OpenBLAS/issues/294
 #
 # [openblas]

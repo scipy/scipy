@@ -90,7 +90,7 @@ c          the value of nu should be left unchanged between subsequent
 c          calls. in case iopt=-1, the value of nu should be specified
 c          on entry.
 c  tu    : real array of dimension at least (nuest).
-c          on succesful exit, this array will contain the knots of the
+c          on successful exit, this array will contain the knots of the
 c          splines with respect to the u-variable, i.e. the position of
 c          the interior knots tu(5),...,tu(nu-4) as well as the position
 c          of the additional knots tu(1),...,tu(4) and tu(nu-3),...,
@@ -108,7 +108,7 @@ c          the value of nv should be left unchanged between subsequent
 c          calls. in case iopt=-1, the value of nv should be specified
 c          on entry.
 c  tv    : real array of dimension at least (nvest).
-c          on succesful exit, this array will contain the knots of the
+c          on successful exit, this array will contain the knots of the
 c          splines with respect to the v-variable, i.e. the position of
 c          the interior knots tv(5),...,tv(nv-4) as well as the position
 c          of the additional knots tv(1),...,tv(4) and tv(nv-3),...,
@@ -119,7 +119,7 @@ c          if the computation mode iopt=-1 is used, the values tv(5),
 c          ...tv(nv-4) must be supplied by the user, before entry.
 c          see also the restrictions (ier=10).
 c  c     : real array of dimension at least (nuest-4)*(nvest-4)*idim.
-c          on succesful exit, c contains the coefficients of the spline
+c          on successful exit, c contains the coefficients of the spline
 c          approximation s(u,v)
 c  fp    : real. unless ier=10, fp contains the sum of squared
 c          residuals of the spline surface returned.
@@ -159,7 +159,7 @@ c            the approximation returned is the least-squares surface
 c            according to the current set of knots. the parameter fp
 c            gives the corresponding sum of squared residuals (fp>s).
 c   ier=2  : error. a theoretically impossible result was found during
-c            the iteration proces for finding a smoothing surface with
+c            the iteration process for finding a smoothing surface with
 c            fp = s. probably causes : s too small.
 c            there is an approximation returned but the corresponding
 c            sum of squared residuals does not satisfy the condition

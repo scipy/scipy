@@ -2,17 +2,14 @@
 """
 Tests for numerical integration.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import (arange, zeros, array, dot, sqrt, cos, sin, eye, pi, exp,
                    allclose)
 
-from scipy._lib.six import xrange
-
 from numpy.testing import (
-    assert_, TestCase, run_module_suite, assert_array_almost_equal,
-    assert_raises, assert_allclose, assert_array_equal, assert_equal)
+    assert_, assert_array_almost_equal,
+    assert_allclose, assert_array_equal, assert_equal, assert_warns)
+from pytest import raises as assert_raises
 from scipy.integrate import odeint, ode, complex_ode
 
 #------------------------------------------------------------------------------
@@ -20,12 +17,32 @@ from scipy.integrate import odeint, ode, complex_ode
 #------------------------------------------------------------------------------
 
 
-class TestOdeint(TestCase):
+class TestOdeint:
     # Check integrate.odeint
+
     def _do_problem(self, problem):
         t = arange(0.0, problem.stop_t, 0.05)
+
+        # Basic case
         z, infodict = odeint(problem.f, problem.z0, t, full_output=True)
         assert_(problem.verify(z, t))
+
+        # Use tfirst=True
+        z, infodict = odeint(lambda t, y: problem.f(y, t), problem.z0, t,
+                             full_output=True, tfirst=True)
+        assert_(problem.verify(z, t))
+
+        if hasattr(problem, 'jac'):
+            # Use Dfun
+            z, infodict = odeint(problem.f, problem.z0, t, Dfun=problem.jac,
+                                 full_output=True)
+            assert_(problem.verify(z, t))
+
+            # Use Dfun and tfirst=True
+            z, infodict = odeint(lambda t, y: problem.f(y, t), problem.z0, t,
+                                 Dfun=lambda t, y: problem.jac(y, t),
+                                 full_output=True, tfirst=True)
+            assert_(problem.verify(z, t))
 
     def test_odeint(self):
         for problem_cls in PROBLEMS:
@@ -35,7 +52,7 @@ class TestOdeint(TestCase):
             self._do_problem(problem)
 
 
-class TestODEClass(TestCase):
+class TestODEClass:
 
     ode_class = None   # Set in subclass.
 
@@ -64,6 +81,7 @@ class TestODEClass(TestCase):
 
         assert_array_equal(z, ig.y)
         assert_(ig.successful(), (problem, method))
+        assert_(ig.get_return_code() > 0, (problem, method))
         assert_(problem.verify(array([z]), problem.stop_t), (problem, method))
 
 
@@ -139,7 +157,7 @@ class TestOde(TestODEClass):
     def test_concurrent_ok(self):
         f = lambda t, y: 1.0
 
-        for k in xrange(3):
+        for k in range(3):
             for sol in ('vode', 'zvode', 'lsoda', 'dopri5', 'dop853'):
                 r = ode(f).set_integrator(sol)
                 r.set_initial_value(0, 0)
@@ -211,7 +229,7 @@ class TestComplexOde(TestODEClass):
             self._do_problem(problem, 'dop853')
 
 
-class TestSolout(TestCase):
+class TestSolout:
     # Check integrate.ode correctly handles solout for dopri5 and dop853
     def _run_solout_test(self, integrator):
         # Check correct usage of solout
@@ -240,6 +258,34 @@ class TestSolout(TestCase):
     def test_solout(self):
         for integrator in ('dopri5', 'dop853'):
             self._run_solout_test(integrator)
+
+    def _run_solout_after_initial_test(self, integrator):
+        # Check if solout works even if it is set after the initial value.
+        ts = []
+        ys = []
+        t0 = 0.0
+        tend = 10.0
+        y0 = [1.0, 2.0]
+
+        def solout(t, y):
+            ts.append(t)
+            ys.append(y.copy())
+
+        def rhs(t, y):
+            return [y[0] + y[1], -y[1]**2]
+
+        ig = ode(rhs).set_integrator(integrator)
+        ig.set_initial_value(y0, t0)
+        ig.set_solout(solout)
+        ret = ig.integrate(tend)
+        assert_array_equal(ys[0], y0)
+        assert_array_equal(ys[-1], ret)
+        assert_equal(ts[0], t0)
+        assert_equal(ts[-1], tend)
+
+    def test_solout_after_initial(self):
+        for integrator in ('dopri5', 'dop853'):
+            self._run_solout_after_initial_test(integrator)
 
     def _run_solout_break_test(self, integrator):
         # Check correct usage of stopping via solout
@@ -273,7 +319,7 @@ class TestSolout(TestCase):
             self._run_solout_break_test(integrator)
 
 
-class TestComplexSolout(TestCase):
+class TestComplexSolout:
     # Check integrate.ode correctly handles solout for dopri5 and dop853
     def _run_solout_test(self, integrator):
         # Check correct usage of solout
@@ -424,7 +470,7 @@ class CoupledDecay(ODE):
     lband = 1
     uband = 0
 
-    lmbd = [0.17, 0.23, 0.29]  # fictious decay constants
+    lmbd = [0.17, 0.23, 0.29]  # fictitious decay constants
 
     def f(self, z, t):
         lmbd = self.lmbd
@@ -524,10 +570,9 @@ def jacv(t, x, omega):
     return j
 
 
-class ODECheckParameterUse(object):
+class ODECheckParameterUse:
     """Call an ode-class solver with several cases of parameter use."""
 
-    # This class is intentionally not a TestCase subclass.
     # solver_name must be set before tests can be run with this class.
 
     # Set these in subclasses.
@@ -581,28 +626,36 @@ class ODECheckParameterUse(object):
             solver.set_jac_params(omega)
         self._check_solver(solver)
 
+    def test_warns_on_failure(self):
+        # Set nsteps small to ensure failure
+        solver = self._get_solver(f, jac)
+        solver.set_integrator(self.solver_name, nsteps=1)
+        ic = [1.0, 0.0]
+        solver.set_initial_value(ic, 0.0)
+        assert_warns(UserWarning, solver.integrate, pi)
 
-class DOPRI5CheckParameterUse(ODECheckParameterUse, TestCase):
+
+class TestDOPRI5CheckParameterUse(ODECheckParameterUse):
     solver_name = 'dopri5'
     solver_uses_jac = False
 
 
-class DOP853CheckParameterUse(ODECheckParameterUse, TestCase):
+class TestDOP853CheckParameterUse(ODECheckParameterUse):
     solver_name = 'dop853'
     solver_uses_jac = False
 
 
-class VODECheckParameterUse(ODECheckParameterUse, TestCase):
+class TestVODECheckParameterUse(ODECheckParameterUse):
     solver_name = 'vode'
     solver_uses_jac = True
 
 
-class ZVODECheckParameterUse(ODECheckParameterUse, TestCase):
+class TestZVODECheckParameterUse(ODECheckParameterUse):
     solver_name = 'zvode'
     solver_uses_jac = True
 
 
-class LSODACheckParameterUse(ODECheckParameterUse, TestCase):
+class TestLSODACheckParameterUse(ODECheckParameterUse):
     solver_name = 'lsoda'
     solver_uses_jac = True
 
@@ -678,6 +731,16 @@ def test_odeint_banded_jacobian():
     assert_array_equal(info1['nje'], info2['nje'])
     assert_array_equal(info3['nje'], info4['nje'])
 
+    # Test the use of tfirst
+    sol1ty, info1ty = odeint(lambda t, y, c: func(y, t, c), y0, t, args=(c,),
+                             full_output=True, atol=1e-13, rtol=1e-11,
+                             mxstep=10000,
+                             Dfun=lambda t, y, c: jac(y, t, c), tfirst=True)
+    # The code should execute the exact same sequence of floating point
+    # calculations, so these should be exactly equal. We'll be safe and use
+    # a small tolerance.
+    assert_allclose(sol1, sol1ty, rtol=1e-12, err_msg="sol1 != sol1ty")
+
 
 def test_odeint_errors():
     def sys1d(x, t):
@@ -738,5 +801,30 @@ def test_odeint_bad_shapes():
     assert_raises(RuntimeError, odeint, sys1, [10, 10], [0, 1], Dfun=badjac)
 
 
-if __name__ == "__main__":
-    run_module_suite()
+def test_repeated_t_values():
+    """Regression test for gh-8217."""
+
+    def func(x, t):
+        return -0.25*x
+
+    t = np.zeros(10)
+    sol = odeint(func, [1.], t)
+    assert_array_equal(sol, np.ones((len(t), 1)))
+
+    tau = 4*np.log(2)
+    t = [0]*9 + [tau, 2*tau, 2*tau, 3*tau]
+    sol = odeint(func, [1, 2], t, rtol=1e-12, atol=1e-12)
+    expected_sol = np.array([[1.0, 2.0]]*9 +
+                            [[0.5, 1.0],
+                             [0.25, 0.5],
+                             [0.25, 0.5],
+                             [0.125, 0.25]])
+    assert_allclose(sol, expected_sol)
+
+    # Edge case: empty t sequence.
+    sol = odeint(func, [1.], [])
+    assert_array_equal(sol, np.array([], dtype=np.float64).reshape((0, 1)))
+
+    # t values are not monotonic.
+    assert_raises(ValueError, odeint, func, [1.], [0, 1, 0.5, 0])
+    assert_raises(ValueError, odeint, func, [1, 2, 3], [0, -1, -2, 3])

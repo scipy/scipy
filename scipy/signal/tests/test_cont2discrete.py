@@ -1,26 +1,26 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, \
+from numpy.testing import \
                           assert_array_almost_equal, assert_almost_equal, \
-                          assert_allclose
+                          assert_allclose, assert_equal
 
+import pytest
 from scipy.signal import cont2discrete as c2d
-from scipy.signal import dlsim, ss2tf, ss2zpk, lsim2
+from scipy.signal import dlsim, ss2tf, ss2zpk, lsim2, lti
+from scipy.signal import tf2ss, impulse2, dimpulse, step2, dstep
 
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # March 29, 2011
 
 
-class TestC2D(TestCase):
+class TestC2D:
     def test_zoh(self):
         ac = np.eye(2)
-        bc = 0.5 * np.ones((2, 1))
+        bc = np.full((2, 1), 0.5)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
         ad_truth = 1.648721270700128 * np.eye(2)
-        bd_truth = 0.324360635350064 * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 0.324360635350064)
         # c and d in discrete should be equal to their continuous counterparts
         dt_requested = 0.5
 
@@ -32,9 +32,54 @@ class TestC2D(TestCase):
         assert_array_almost_equal(dc, dd)
         assert_almost_equal(dt_requested, dt)
 
+    def test_foh(self):
+        ac = np.eye(2)
+        bc = np.full((2, 1), 0.5)
+        cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
+        dc = np.array([[0.0], [0.0], [-0.33]])
+
+        # True values are verified with Matlab
+        ad_truth = 1.648721270700128 * np.eye(2)
+        bd_truth = np.full((2, 1), 0.420839287058789)
+        cd_truth = cc
+        dd_truth = np.array([[0.260262223725224],
+                             [0.297442541400256],
+                             [-0.144098411624840]])
+        dt_requested = 0.5
+
+        ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested, method='foh')
+
+        assert_array_almost_equal(ad_truth, ad)
+        assert_array_almost_equal(bd_truth, bd)
+        assert_array_almost_equal(cd_truth, cd)
+        assert_array_almost_equal(dd_truth, dd)
+        assert_almost_equal(dt_requested, dt)
+
+    def test_impulse(self):
+        ac = np.eye(2)
+        bc = np.full((2, 1), 0.5)
+        cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
+        dc = np.array([[0.0], [0.0], [0.0]])
+
+        # True values are verified with Matlab
+        ad_truth = 1.648721270700128 * np.eye(2)
+        bd_truth = np.full((2, 1), 0.412180317675032)
+        cd_truth = cc
+        dd_truth = np.array([[0.4375], [0.5], [0.3125]])
+        dt_requested = 0.5
+
+        ad, bd, cd, dd, dt = c2d((ac, bc, cc, dc), dt_requested,
+                                 method='impulse')
+
+        assert_array_almost_equal(ad_truth, ad)
+        assert_array_almost_equal(bd_truth, bd)
+        assert_array_almost_equal(cd_truth, cd)
+        assert_array_almost_equal(dd_truth, dd)
+        assert_almost_equal(dt_requested, dt)
+
     def test_gbt(self):
         ac = np.eye(2)
-        bc = 0.5 * np.ones((2, 1))
+        bc = np.full((2, 1), 0.5)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
@@ -42,7 +87,7 @@ class TestC2D(TestCase):
         alpha = 1.0 / 3.0
 
         ad_truth = 1.6 * np.eye(2)
-        bd_truth = 0.3 * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 0.3)
         cd_truth = np.array([[0.9, 1.2],
                              [1.2, 1.2],
                              [1.2, 0.3]])
@@ -60,14 +105,14 @@ class TestC2D(TestCase):
 
     def test_euler(self):
         ac = np.eye(2)
-        bc = 0.5 * np.ones((2, 1))
+        bc = np.full((2, 1), 0.5)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
         dt_requested = 0.5
 
         ad_truth = 1.5 * np.eye(2)
-        bd_truth = 0.25 * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 0.25)
         cd_truth = np.array([[0.75, 1.0],
                              [1.0, 1.0],
                              [1.0, 0.25]])
@@ -84,14 +129,14 @@ class TestC2D(TestCase):
 
     def test_backward_diff(self):
         ac = np.eye(2)
-        bc = 0.5 * np.ones((2, 1))
+        bc = np.full((2, 1), 0.5)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
         dt_requested = 0.5
 
         ad_truth = 2.0 * np.eye(2)
-        bd_truth = 0.5 * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 0.5)
         cd_truth = np.array([[1.5, 2.0],
                              [2.0, 2.0],
                              [2.0, 0.5]])
@@ -109,14 +154,14 @@ class TestC2D(TestCase):
 
     def test_bilinear(self):
         ac = np.eye(2)
-        bc = 0.5 * np.ones((2, 1))
+        bc = np.full((2, 1), 0.5)
         cc = np.array([[0.75, 1.0], [1.0, 1.0], [1.0, 0.25]])
         dc = np.array([[0.0], [0.0], [-0.33]])
 
         dt_requested = 0.5
 
         ad_truth = (5.0 / 3.0) * np.eye(2)
-        bd_truth = (1.0 / 3.0) * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 1.0 / 3.0)
         cd_truth = np.array([[1.0, 4.0 / 3.0],
                              [4.0 / 3.0, 4.0 / 3.0],
                              [4.0 / 3.0, 1.0 / 3.0]])
@@ -136,7 +181,7 @@ class TestC2D(TestCase):
         # Same continuous system again, but change sampling rate
 
         ad_truth = 1.4 * np.eye(2)
-        bd_truth = 0.2 * np.ones((2, 1))
+        bd_truth = np.full((2, 1), 0.2)
         cd_truth = np.array([[0.9, 1.2], [1.2, 1.2], [1.2, 0.3]])
         dd_truth = np.array([[0.175], [0.2], [-0.205]])
 
@@ -269,6 +314,107 @@ class TestC2D(TestCase):
 
         assert_allclose(yd2.ravel(), ymid, rtol=1e-4)
 
+    def test_simo_tf(self):
+        # See gh-5753
+        tf = ([[1, 0], [1, 1]], [1, 1])
+        num, den, dt = c2d(tf, 0.01)
 
-if __name__ == "__main__":
-    run_module_suite()
+        assert_equal(dt, 0.01)  # sanity check
+        assert_allclose(den, [1, -0.990404983], rtol=1e-3)
+        assert_allclose(num, [[1, -1], [1, -0.99004983]], rtol=1e-3)
+
+    def test_multioutput(self):
+        ts = 0.01  # time step
+
+        tf = ([[1, -3], [1, 5]], [1, 1])
+        num, den, dt = c2d(tf, ts)
+
+        tf1 = (tf[0][0], tf[1])
+        num1, den1, dt1 = c2d(tf1, ts)
+
+        tf2 = (tf[0][1], tf[1])
+        num2, den2, dt2 = c2d(tf2, ts)
+
+        # Sanity checks
+        assert_equal(dt, dt1)
+        assert_equal(dt, dt2)
+
+        # Check that we get the same results
+        assert_allclose(num, np.vstack((num1, num2)), rtol=1e-13)
+
+        # Single input, so the denominator should
+        # not be multidimensional like the numerator
+        assert_allclose(den, den1, rtol=1e-13)
+        assert_allclose(den, den2, rtol=1e-13)
+
+class TestC2dLti:
+    def test_c2d_ss(self):
+        # StateSpace
+        A = np.array([[-0.3, 0.1], [0.2, -0.7]])
+        B = np.array([[0], [1]])
+        C = np.array([[1, 0]])
+        D = 0
+
+        A_res = np.array([[0.985136404135682, 0.004876671474795],
+                          [0.009753342949590, 0.965629718236502]])
+        B_res = np.array([[0.000122937599964], [0.049135527547844]])
+
+        sys_ssc = lti(A, B, C, D)
+        sys_ssd = sys_ssc.to_discrete(0.05)
+
+        assert_allclose(sys_ssd.A, A_res)
+        assert_allclose(sys_ssd.B, B_res)
+        assert_allclose(sys_ssd.C, C)
+        assert_allclose(sys_ssd.D, D)
+
+    def test_c2d_tf(self):
+
+        sys = lti([0.5, 0.3], [1.0, 0.4])
+        sys = sys.to_discrete(0.005)
+
+        # Matlab results
+        num_res = np.array([0.5, -0.485149004980066])
+        den_res = np.array([1.0, -0.980198673306755])
+
+        # Somehow a lot of numerical errors
+        assert_allclose(sys.den, den_res, atol=0.02)
+        assert_allclose(sys.num, num_res, atol=0.02)
+
+
+class TestC2dInvariants:
+    # Some test cases for checking the invariances.
+    # Array of triplets: (system, sample time, number of samples)
+    cases = [
+        (tf2ss([1, 1], [1, 1.5, 1]), 0.25, 10),
+        (tf2ss([1, 2], [1, 1.5, 3, 1]), 0.5, 10),
+        (tf2ss(0.1, [1, 1, 2, 1]), 0.5, 10),
+    ]
+
+    # Some options for lsim2 and derived routines
+    tolerances = {'rtol': 1e-9, 'atol': 1e-11}
+
+    # Check that systems discretized with the impulse-invariant
+    # method really hold the invariant
+    @pytest.mark.parametrize("sys,sample_time,samples_number", cases)
+    def test_impulse_invariant(self, sys, sample_time, samples_number):
+        time = np.arange(samples_number) * sample_time
+        _, yout_cont = impulse2(sys, T=time, **self.tolerances)
+        _, yout_disc = dimpulse(c2d(sys, sample_time, method='impulse'),
+                                n=len(time))
+        assert_allclose(sample_time * yout_cont.ravel(), yout_disc[0].ravel())
+
+    # Step invariant should hold for ZOH discretized systems
+    @pytest.mark.parametrize("sys,sample_time,samples_number", cases)
+    def test_step_invariant(self, sys, sample_time, samples_number):
+        time = np.arange(samples_number) * sample_time
+        _, yout_cont = step2(sys, T=time, **self.tolerances)
+        _, yout_disc = dstep(c2d(sys, sample_time, method='zoh'), n=len(time))
+        assert_allclose(yout_cont.ravel(), yout_disc[0].ravel())
+
+    # Linear invariant should hold for FOH discretized systems
+    @pytest.mark.parametrize("sys,sample_time,samples_number", cases)
+    def test_linear_invariant(self, sys, sample_time, samples_number):
+        time = np.arange(samples_number) * sample_time
+        _, yout_cont, _ = lsim2(sys, T=time, U=time, **self.tolerances)
+        _, yout_disc, _ = dlsim(c2d(sys, sample_time, method='foh'), u=time)
+        assert_allclose(yout_cont.ravel(), yout_disc.ravel())

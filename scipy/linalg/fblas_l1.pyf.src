@@ -7,17 +7,45 @@
 !
 ! Implemented:
 !
-!   rotg, rotmg, rot, rotm
-!   swap, scal, copy, axpy
-!   dot, dotu, dotc
+!   rotg, rotmg, rot, rotm, swap, scal, copy, axpy, dot, dotu, dotc
 !   nrm2, asum, amax, iamax
-!
-! Not Implemented: NONE
-!
+
 ! NOTE: Avoiding wrappers hack does not work under 64-bit Gentoo system
 ! with single precision routines, so they are removed.
 !
+! Shorthand notations
+!
+! <tchar=s,d,cs,zd>
+! <tchar2c=cs,zd>
+!
+! <prefix2=s,d>
+! <prefix2c=c,z>
+! <prefix3=s,sc>
+! <prefix4=d,dz>
+! <prefix6=s,d,c,z,c,z>
+!
+! <ftype2=real,double precision>
+! <ftype2c=complex,double complex>
+! <ftype3=real,complex>
+! <ftype4=double precision,double complex>
+! <ftypereal3=real,real>
+! <ftypereal4=double precision,double precision>
+! <ftype6=real,double precision,complex,double complex,\2,\3>
+! <ftype6creal=real,double precision,complex,double complex,\0,\1>
+!
+! <ctype2=float,double>
+! <ctype2c=complex_float,complex_double>
+! <ctype3=float,complex_float>
+! <ctype4=double,complex_double>
+! <ctypereal3=float,float>
+! <ctypereal4=double,double>
+! <ctype6=float,double,complex_float,complex_double,\2,\3>
+! <ctype6creal=float,double,complex_float,complex_double,\0,\1>
+!
+!
 ! Level 1 BLAS
+!
+
 
 subroutine <prefix>rotg(a,b,c,s)
   ! Computes the parameters for a Givens rotation.
@@ -61,7 +89,6 @@ subroutine <prefix>rotg(a,b,c,s)
 
 end subroutine <prefix>rotg
 
-! <prefix2=s,d> <ctype2=float,double> <ftype2=real,double precision>
 subroutine <prefix2>rotmg(d1,d2,x1,y1,param)
   ! Computes the parameters for a modified Givens rotation.
   !
@@ -84,7 +111,7 @@ subroutine <prefix2>rotmg(d1,d2,x1,y1,param)
 end subroutine <prefix2>rotmg
 
 
-subroutine <tchar=s,d,cs,zd>rot(n,x,offx,incx,y,offy,incy,c,s)
+subroutine <tchar>rot(n,x,offx,incx,y,offy,incy,c,s)
   ! Applies a plane rotation with real cosine and complex sine to a
   ! pair of complex vectors and returns the modified vectors.
   !
@@ -98,7 +125,7 @@ subroutine <tchar=s,d,cs,zd>rot(n,x,offx,incx,y,offy,incy,c,s)
   !
 
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,&c,&s)
-  callprotoargument int*,<ctype>*,int*,<ctype>*,int*,<ctypereal>*,<ctypereal>*
+  callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*,<ctypereal>*,<ctypereal>*
 
   <ftype> dimension(*),intent(in,out,copy) :: x,y
   <ftypereal> intent(in) :: c, s
@@ -113,7 +140,7 @@ subroutine <tchar=s,d,cs,zd>rot(n,x,offx,incx,y,offy,incy,c,s)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
   check(len(y)-offy>(n-1)*abs(incy)) :: n
 
-end subroutine <tchar=s,d,cs,zd>rot
+end subroutine <tchar>rot
 
 
 subroutine <prefix2>rotm(n,x,offx,incx,y,offy,incy,param)
@@ -129,7 +156,7 @@ subroutine <prefix2>rotm(n,x,offx,incx,y,offy,incy,param)
   ! in the param(2) through param(5) array.
 
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy,param)
-  callprotoargument int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*
+  callprotoargument F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*
 
   <ftype2> dimension(*), intent(in,out,copy) :: x, y
   <ftype2> dimension(5), intent(in) :: param
@@ -148,10 +175,10 @@ end subroutine <prefix2>rotm
 
 
 subroutine <prefix>swap(n,x,offx,incx,y,offy,incy)
-  ! Swap two arrays: x <-> y
+  ! Swap two arrays, `x` and `y`
 
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument int*,<ctype>*,int*,<ctype>*,int*
+  callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
   <ftype> dimension(*), intent(in,out) :: x, y
   integer optional, intent(in),check(incx>0||incx<0) :: incx = 1
@@ -172,7 +199,7 @@ subroutine <prefix>scal(n,a,x,offx,incx)
   ! Computes the product of a vector by a scalar: y = a*x
 
   callstatement (*f2py_func)(&n,&a,x+offx,&incx)
-  callprotoargument int*,<ctype>*,<ctype>*,int*
+  callprotoargument F_INT*,<ctype>*,<ctype>*,F_INT*
 
   <ftype> intent(in):: a
   <ftype> dimension(*), intent(in,out) :: x
@@ -185,13 +212,13 @@ subroutine <prefix>scal(n,a,x,offx,incx)
 end subroutine <prefix>scal
 
 
-subroutine <tchar=cs,zd>scal(n,a,x,offx,incx)
+subroutine <tchar2c>scal(n,a,x,offx,incx)
   ! Computes the product of a vector by a scalar, scales a complex
   ! vector by a real constant
   ! y = a*x
 
   callstatement (*f2py_func)(&n,&a,x+offx,&incx)
-  callprotoargument int*,<float,double>*,<complex_float, complex_double>*,int*
+  callprotoargument F_INT*,<float,double>*,<complex_float, complex_double>*,F_INT*
 
   <real,double precision> intent(in) :: a
   <complex, double complex> dimension(*), intent(in,out,copy) :: x
@@ -201,14 +228,14 @@ subroutine <tchar=cs,zd>scal(n,a,x,offx,incx)
   integer optional, intent(in),depend(x,incx,offx) :: n = (len(x)-offx)/abs(incx)
   check(len(x)-offx>(n-1)*abs(incx)) :: n
 
-end subroutine <tchar=cs,zd>scal
+end subroutine <tchar2c>scal
 
 
 subroutine <prefix>copy(n,x,offx,incx,y,offy,incy)
   ! Copy y <- x
 
   callstatement (*f2py_func)(&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument int*,<ctype>*,int*,<ctype>*,int*
+  callprotoargument F_INT*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
   <ftype> dimension(*), intent(in) :: x
   <ftype> dimension(*), intent(in,out) :: y
@@ -230,7 +257,7 @@ subroutine <prefix>axpy(n,a,x,offx,incx,y,offy,incy)
   ! Calculate z = a*x+y, where a is scalar.
 
   callstatement (*f2py_func)(&n,&a,x+offx,&incx,y+offy,&incy)
-  callprotoargument int*,<ctype>*,<ctype>*,int*,<ctype>*,int*
+  callprotoargument F_INT*,<ctype>*,<ctype>*,F_INT*,<ctype>*,F_INT*
 
   <ftype> dimension(*), intent(in) :: x
   <ftype> dimension(*), intent(in,out,out=z) :: y
@@ -252,10 +279,10 @@ end subroutine <prefix>axpy
 function sdot(n,x,offx,incx,y,offy,incy) result (xy)
   ! Computes a vector-vector dot product.
 
-  fortranname wsdot
+  fortranname sdot
 
   callstatement (*f2py_func)(&sdot,&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument float*,int*,float*,int*,float*,int*
+  callprotoargument float*,F_INT*,float*,F_INT*,float*,F_INT*
 
   real dimension(*), intent(in) :: x
   real dimension(*), intent(in) :: y
@@ -278,7 +305,7 @@ function ddot(n,x,offx,incx,y,offy,incy) result (xy)
   ! Computes a vector-vector dot product.
 
   callstatement (*f2py_func)(&ddot,&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument double*,int*,double*,int*,double*,int*
+  callprotoargument double*,F_INT*,double*,F_INT*,double*,F_INT*
 
   double precision dimension(*), intent(in) :: x
   double precision dimension(*), intent(in) :: y
@@ -297,14 +324,13 @@ function ddot(n,x,offx,incx,y,offy,incy) result (xy)
 end function ddot
 
 
-! <prefix2c=c,z> <ftype2c=complex,double complex> <ctype2c=complex_float,complex_double>
 function <prefix2c>dotu(n,x,offx,incx,y,offy,incy) result(xy)
 
   <ftype2c> :: <prefix2c>dotu, xy
   fortranname w<prefix2c>dotu
 
   callstatement (*f2py_func)(&<prefix2c>dotu,&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument <ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*
+  callprotoargument <ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*
 
   <ftype2c> dimension(*),intent(in) :: x
   <ftype2c> dimension(*),intent(in) :: y
@@ -331,7 +357,7 @@ function <prefix2c>dotc(n,x,offx,incx,y,offy,incy) result(xy)
   fortranname w<prefix2c>dotc
 
   callstatement (*f2py_func)(&<prefix2c>dotc,&n,x+offx,&incx,y+offy,&incy)
-  callprotoargument <ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*
+  callprotoargument <ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*
 
   <ftype2c> dimension(*),intent(in) :: x
   <ftype2c> dimension(*),intent(in) :: y
@@ -350,15 +376,13 @@ function <prefix2c>dotc(n,x,offx,incx,y,offy,incy) result(xy)
 
 end function <prefix2c>dotc
 
-! <prefix3=s,sc> <ctype3=float,complex_float> <ctypereal3=float,float>
-! <ftype3=real,complex> <ftypereal3=real,real>
+
 function <prefix3>nrm2(n,x,offx,incx) result(n2)
 
-  fortranname w<prefix3>nrm2
   <ftypereal3> <prefix3>nrm2, n2
 
   callstatement (*f2py_func)(&<prefix3>nrm2, &n,x+offx,&incx)
-  callprotoargument <ctypereal3>*,int*,<ctype3>*,int*
+  callprotoargument <ctypereal3>*,F_INT*,<ctype3>*,F_INT*
 
   <ftype3> dimension(*),intent(in) :: x
 
@@ -373,15 +397,12 @@ function <prefix3>nrm2(n,x,offx,incx) result(n2)
 end function <prefix3>nrm2
 
 
-! <prefix4=d,dz> <ctype4=double,complex_double> <ctypereal4=double,double>
-! <ftype4=double precision,double complex>
-! <ftypereal4=double precision,double precision>
 function <prefix4>nrm2(n,x,offx,incx) result(n2)
 
   <ftypereal4> <prefix4>nrm2, n2
 
   callstatement (*f2py_func)(&<prefix4>nrm2, &n,x+offx,&incx)
-  callprotoargument <ctypereal4>*,int*,<ctype4>*,int*
+  callprotoargument <ctypereal4>*,F_INT*,<ctype4>*,F_INT*
 
   <ftype4> dimension(*),intent(in) :: x
 
@@ -399,10 +420,8 @@ end function <prefix4>nrm2
 function <prefix3>asum(n,x,offx,incx) result (s)
   ! Computes the sum of magnitudes of the vector elements
 
-  fortranname w<prefix3>asum
-
   callstatement (*f2py_func)(&<prefix3>asum,&n,x+offx,&incx)
-  callprotoargument <ctypereal3>*,int*,<ctype3>*,int*
+  callprotoargument <ctypereal3>*,F_INT*,<ctype3>*,F_INT*
 
   <ftype3> dimension(*), intent(in) :: x
   <ftypereal3> <prefix3>asum,s
@@ -419,7 +438,7 @@ function <prefix4>asum(n,x,offx,incx) result (s)
   ! Computes the sum of magnitudes of the vector elements
 
   callstatement (*f2py_func)(&<prefix4>asum,&n,x+offx,&incx)
-  callprotoargument <ctypereal4>*,int*,<ctype4>*,int*
+  callprotoargument <ctypereal4>*,F_INT*,<ctype4>*,F_INT*
 
   <ftype4> dimension(*), intent(in) :: x
   <ftypereal4> <prefix4>asum,s
@@ -436,7 +455,7 @@ function i<prefix>amax(n,x,offx,incx) result(k)
   ! Finds the index of the element with maximum absolute value.
 
   callstatement i<prefix>amax_return_value = (*f2py_func)(&n,x+offx,&incx) - 1
-  callprotoargument int*,<ctype>*,int*
+  callprotoargument F_INT*,<ctype>*,F_INT*
 
   ! This is to avoid Fortran wrappers.
   integer i<prefix>amax,k

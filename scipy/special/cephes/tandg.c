@@ -105,7 +105,7 @@ static double tancot(double xx, int cotflg)
     }
 
     if (x > lossth) {
-	mtherr("tandg", TLOSS);
+	sf_error("tandg", SF_ERROR_NO_RESULT, NULL);
 	return 0.0;
     }
 
@@ -133,7 +133,7 @@ static double tancot(double xx, int cotflg)
 	return sign * 1.0;
     }
     else if (x == 90.0) {
-	mtherr((cotflg ? "cotdg" : "tandg"), SING);
+	sf_error((cotflg ? "cotdg" : "tandg"), SF_ERROR_SINGULAR, NULL);
 	return NPY_INFINITY;
     }
     /* x is now transformed into [0, 90) */

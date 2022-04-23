@@ -4,7 +4,7 @@
 Truncated Exponential Distribution
 ==================================
 
-This is an exponential distribution defined only over a certain region :math:`0<x<B` . In standard form this is
+This is an exponential distribution defined only over a certain region :math:`0\leq x\leq B` . In standard form this is
 
 .. math::
    :nowrap:

@@ -37,6 +37,18 @@ import numpy as np
 _RETCODE_ERROR = RuntimeError("nonzero return code")
 
 
+def _asfortranarray_copy(A):
+    """
+    Same as np.asfortranarray, but ensure a copy
+    """
+    A = np.asarray(A)
+    if A.flags.f_contiguous:
+        A = A.copy(order="F")
+    else:
+        A = np.asfortranarray(A)
+    return A
+
+
 #------------------------------------------------------------------------------
 # id_rand.f
 #------------------------------------------------------------------------------
@@ -203,7 +215,7 @@ def iddp_id(eps, A):
         Interpolation coefficients.
     :rtype: :class:`numpy.ndarray`
     """
-    A = np.asfortranarray(A)
+    A = _asfortranarray_copy(A)
     k, idx, rnorms = _id.iddp_id(eps, A)
     n = A.shape[1]
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')
@@ -228,7 +240,7 @@ def iddr_id(A, k):
         Interpolation coefficients.
     :rtype: :class:`numpy.ndarray`
     """
-    A = np.asfortranarray(A)
+    A = _asfortranarray_copy(A)
     idx, rnorms = _id.iddr_id(A, k)
     n = A.shape[1]
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')
@@ -727,7 +739,7 @@ def iddr_aid(A, k):
     w = iddr_aidi(m, n, k)
     idx, proj = _id.iddr_aid(A, k, w)
     if k == n:
-        proj = np.array([], dtype='float64', order='F')
+        proj = np.empty((k, n-k), dtype='float64', order='F')
     else:
         proj = proj.reshape((k, n-k), order='F')
     return idx, proj
@@ -997,7 +1009,7 @@ def idzp_id(eps, A):
         Interpolation coefficients.
     :rtype: :class:`numpy.ndarray`
     """
-    A = np.asfortranarray(A)
+    A = _asfortranarray_copy(A)
     k, idx, rnorms = _id.idzp_id(eps, A)
     n = A.shape[1]
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')
@@ -1022,7 +1034,7 @@ def idzr_id(A, k):
         Interpolation coefficients.
     :rtype: :class:`numpy.ndarray`
     """
-    A = np.asfortranarray(A)
+    A = _asfortranarray_copy(A)
     idx, rnorms = _id.idzr_id(A, k)
     n = A.shape[1]
     proj = A.T.ravel()[:k*(n-k)].reshape((k, n-k), order='F')
@@ -1523,7 +1535,7 @@ def idzr_aid(A, k):
     w = idzr_aidi(m, n, k)
     idx, proj = _id.idzr_aid(A, k, w)
     if k == n:
-        proj = np.array([], dtype='complex128', order='F')
+        proj = np.empty((k, n-k), dtype='complex128', order='F')
     else:
         proj = proj.reshape((k, n-k), order='F')
     return idx, proj

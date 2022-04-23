@@ -3,7 +3,7 @@
 
 #include <fftw3.h>
 
-#ifdef DCT_TEST_USE_SINGLE
+#if DCT_TEST_PRECISION == 1
 typedef float float_prec;
 #define PF "%.7f"
 #define FFTW_PLAN fftwf_plan
@@ -13,7 +13,7 @@ typedef float float_prec;
 #define FFTW_EXECUTE fftwf_execute
 #define FFTW_DESTROY_PLAN fftwf_destroy_plan
 #define FFTW_CLEANUP fftwf_cleanup
-#else
+#elif DCT_TEST_PRECISION == 2
 typedef double float_prec;
 #define PF "%.18f"
 #define FFTW_PLAN fftw_plan
@@ -23,6 +23,18 @@ typedef double float_prec;
 #define FFTW_EXECUTE fftw_execute
 #define FFTW_DESTROY_PLAN fftw_destroy_plan
 #define FFTW_CLEANUP fftw_cleanup
+#elif DCT_TEST_PRECISION == 3
+typedef long double float_prec;
+#define PF "%.18Lf"
+#define FFTW_PLAN fftwl_plan
+#define FFTW_MALLOC fftwl_malloc
+#define FFTW_FREE fftwl_free
+#define FFTW_PLAN_CREATE fftwl_plan_r2r_1d
+#define FFTW_EXECUTE fftwl_execute
+#define FFTW_DESTROY_PLAN fftwl_destroy_plan
+#define FFTW_CLEANUP fftwl_cleanup
+#else
+#error DCT_TEST_PRECISION must be a number 1-3
 #endif
 
 

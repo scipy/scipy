@@ -1,18 +1,13 @@
 """ Benchmark functions for fftpack.pseudo_diffs module
 """
-from __future__ import division, absolute_import, print_function
-
 from numpy import arange, sin, cos, pi, exp, tanh, sign
+from .common import Benchmark, safe_import
 
-try:
+with safe_import():
     from scipy.fftpack import diff, fft, ifft, tilbert, hilbert, shift, fftfreq
-except ImportError:
-    pass
-
-from .common import Benchmark
 
 
-def direct_diff(x,k=1,period=None):
+def direct_diff(x, k=1, period=None):
     fx = fft(x)
     n = len(fx)
     if period is None:
@@ -28,7 +23,7 @@ def direct_diff(x,k=1,period=None):
     return ifft(w*fx).real
 
 
-def direct_tilbert(x,h=1,period=None):
+def direct_tilbert(x, h=1, period=None):
     fx = fft(x)
     n = len(fx)
     if period is None:
@@ -48,7 +43,7 @@ def direct_hilbert(x):
     return ifft(w*fx)
 
 
-def direct_shift(x,a,period=None):
+def direct_shift(x, a, period=None):
     n = len(x)
     if period is None:
         k = fftfreq(n)*1j*n
@@ -81,7 +76,7 @@ class Bench(Benchmark):
         if soltype == 'fft':
             diff(self.f, 3)
         else:
-            direct_diff(self.f,3)
+            direct_diff(self.f, 3)
 
     def time_tilbert(self, size, soltype):
         if soltype == 'fft':

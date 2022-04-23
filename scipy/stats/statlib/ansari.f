@@ -1,37 +1,3 @@
-c Routine AS 93 returns frequencies.   The following short routine calculates
-c the distribution function from these frequencies (overwriting them).
-c The calling arguments are as for AS 93.   The distribution function is
-c returned in array A1.   The first element in A1 is F(ASTART).   N.B. ASTART
-c is a real variable.
-c
-      subroutine wprob(test, other, astart, a1, l1, a2, a3, ifault)
-      integer test, other, l1, ifault
-      real astart, a1(l1), a2(l1), a3(l1)
-c
-c     Local variables
-c
-      real zero, sum
-      data zero /0.0/
-c
-      call gscale(test, other, astart, a1, l1, a2, a3, ifault)
-      if (ifault .ne. 0) return
-c
-c     Scale column of F
-c
-      nrows = 1 + (test * other)/2
-      sum = zero
-      do 10 i = 1, nrows
-      sum = sum + a1(i)
-      a1(i) = sum
-   10 continue
-      do 20 i = 1, nrows
-   20 a1(i) = a1(i) / sum
-c
-      return
-      end
-
-c----------------------------------------------------------------------
-
       SUBROUTINE GSCALE(TEST, OTHER, ASTART, A1, L1, A2, A3, IFAULT)
 C
 C       ALGORITHM AS 93 APPL. STATIST. (1976) VOL.25, NO.1

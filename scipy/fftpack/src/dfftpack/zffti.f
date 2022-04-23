@@ -1,9 +1,0 @@
-      SUBROUTINE ZFFTI (N,WSAVE)
-      IMPLICIT DOUBLE PRECISION (A-H,O-Z)
-      DIMENSION       WSAVE(1)
-      IF (N .EQ. 1) RETURN
-      IW1 = N+N+1
-      IW2 = IW1+N+N
-      CALL ZFFTI1 (N,WSAVE(IW1),WSAVE(IW2))
-      RETURN
-      END

@@ -1,0 +1,109 @@
+!    -*- f90 -*-
+!
+! Iterative Package for SciPy
+! Hongze Liu, Travis E. Oliphant,
+! Brigham Young University
+! 2004
+!
+
+python module _iterative ! in 
+    interface  ! in :_iterative
+        subroutine <_c>bicgrevcom(n,b,x,work,ldw,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob) ! in :iterative:BiCG.f
+            integer, intent(hide), depend(b) :: n=len(b)
+            <_t> dimension(n) :: b
+            <_t> dimension(n), intent(in,out) :: x
+            <_t> intent(inout), dimension(ldw*6) :: work
+            integer, intent(hide), depend(n) :: ldw=MAX(1,n)
+            integer, intent(in,out) :: iter
+            <rt=real, double precision, real, double precision>, intent(in,out) :: resid
+            integer, intent(in, out) :: info
+            integer, intent(in, out) :: ndx1
+            integer, intent(in, out) :: ndx2
+            <_t>, intent(out) :: sclr1
+            <_t>, intent(out) :: sclr2
+            integer, intent(in, out) :: ijob
+        end subroutine <_c>bicgrevcom
+        subroutine <_c>bicgstabrevcom(n,b,x,work,ldw,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob) ! in :iterative:BiCGSTAB.f
+            integer, intent(hide), depend(b) :: n=len(b)
+            <_t> dimension(n) :: b
+            <_t> dimension(n), intent(in,out) :: x
+            <_t> intent(inout), dimension(ldw*7) :: work
+            integer, intent(hide), depend(n) :: ldw=MAX(1,n)
+            integer, intent(in,out) :: iter
+            <rt=real, double precision, real, double precision>, intent(in,out) :: resid
+            integer, intent(in, out) :: info
+            integer, intent(in, out) :: ndx1
+            integer, intent(in, out) :: ndx2
+            <_t>, intent(out) :: sclr1
+            <_t>, intent(out) :: sclr2
+            integer, intent(in, out) :: ijob
+        end subroutine <_c>bicgstabrevcom
+        subroutine <_c>cgrevcom(n,b,x,work,ldw,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob) ! in :iterative:CG.f
+            integer, intent(hide), depend(b) :: n=len(b)
+            <_t> dimension(n) :: b
+            <_t> dimension(n), intent(in,out) :: x
+            <_t> intent(inout), dimension(ldw*4) :: work
+            integer, intent(hide), depend(n) :: ldw=MAX(1,n)
+            integer, intent(in,out) :: iter
+            <rt=real, double precision, real, double precision>, intent(in,out) :: resid
+            integer, intent(in, out) :: info
+            integer, intent(in, out) :: ndx1
+            integer, intent(in, out) :: ndx2
+            <_t>, intent(out) :: sclr1
+            <_t>, intent(out) :: sclr2
+            integer, intent(in, out) :: ijob
+        end subroutine <_c>cgrevcom
+        subroutine <_c>cgsrevcom(n,b,x,work,ldw,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob) ! in :iterative:CGS.f
+            integer, intent(hide), depend(b) :: n=len(b)
+            <_t> dimension(n) :: b
+            <_t> dimension(n), intent(in,out) :: x
+            <_t> intent(inout), dimension(ldw*7) :: work
+            integer, intent(hide), depend(n) :: ldw=MAX(1,n)
+            integer, intent(in,out) :: iter
+            <rt=real, double precision, real, double precision>, intent(in,out) :: resid
+            integer, intent(in, out) :: info
+            integer, intent(in, out) :: ndx1
+            integer, intent(in, out) :: ndx2
+            <_t>, intent(out) :: sclr1
+            <_t>, intent(out) :: sclr2
+            integer, intent(in, out) :: ijob
+        end subroutine <_c>cgsrevcom
+        subroutine <_c>qmrrevcom(n,b,x,work,ldw,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob) ! in :iterative:QMR.f
+            integer, intent(hide), depend(b) :: n=len(b)
+            <_t> dimension(n) :: b
+            <_t> dimension(n), intent(in,out) :: x
+            <_t> intent(inout), dimension(ldw*11) :: work
+            integer, intent(hide), depend(n) :: ldw=MAX(1,n)
+            integer, intent(in,out) :: iter
+            <rt=real, double precision, real, double precision>, intent(in,out) :: resid
+            integer, intent(in, out) :: info
+            integer, intent(in, out) :: ndx1
+            integer, intent(in, out) :: ndx2
+            <_t>, intent(out) :: sclr1
+            <_t>, intent(out) :: sclr2
+            integer, intent(in, out) :: ijob
+        end subroutine <_c>qmrrevcom
+        subroutine <_c>gmresrevcom(n,b,x,restrt,work,ldw,work2,ldw2,iter,resid,info,ndx1,ndx2,sclr1,sclr2,ijob,tol) ! in :iterative:GMRESREVCOM.f
+            integer, intent(hide), depend(b) :: n=len(b)
+            <_t> dimension(n) :: b
+            <_t> dimension(n), intent(in,out) :: x
+            integer, intent(in), depend(n), check((0<restrt) && (restrt<=n)) :: restrt
+            <_t> intent(inout), dimension(ldw*(6+restrt)) :: work
+            integer intent(hide) :: ldw=MAX(1,n)
+            <_t> intent(inout), depend(restrt,ldw2), dimension(ldw2*(2*restrt+2)) :: work2
+            integer intent(hide), depend(restrt) :: ldw2=MAX(2,restrt+1)
+            integer intent(in, out) :: iter
+            <rt=real, double precision, real, double precision>, intent(in,out) :: resid
+            integer intent(in, out) :: info
+            integer intent(in, out) :: ndx1
+            integer intent(in, out) :: ndx2
+            <_t> intent(out) :: sclr1
+            <_t> intent(out) :: sclr2
+            integer intent(in, out) :: ijob
+            <rt>, intent(in) :: tol
+        end subroutine <_c>gmresrevcom
+    end interface 
+end python module _iterative
+
+! This file was auto-generated with f2py (version:2.39.235_1703).
+! See http://cens.ioc.ee/projects/f2py2e/

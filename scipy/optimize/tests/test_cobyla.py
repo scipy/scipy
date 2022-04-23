@@ -1,16 +1,14 @@
-from __future__ import division, print_function, absolute_import
-
 import math
 import numpy as np
+import pytest
 
-from numpy.testing import assert_allclose, TestCase, run_module_suite, \
-     assert_
+from numpy.testing import assert_allclose, assert_, assert_array_equal
 
 from scipy.optimize import fmin_cobyla, minimize
 
 
-class TestCobyla(TestCase):
-    def setUp(self):
+class TestCobyla:
+    def setup_method(self):
         self.x0 = [4.95, 0.66]
         self.solution = [math.sqrt(25 - (2.0/3)**2), 2.0/3]
         self.opts = {'disp': False, 'rhobeg': 1, 'tol': 1e-5,
@@ -26,21 +24,37 @@ class TestCobyla(TestCase):
         return -self.con1(x)
 
     def test_simple(self):
+        # use disp=True as smoke test for gh-8118
         x = fmin_cobyla(self.fun, self.x0, [self.con1, self.con2], rhobeg=1,
-                        rhoend=1e-5, iprint=0, maxfun=100)
+                        rhoend=1e-5, maxfun=100, disp=True)
         assert_allclose(x, self.solution, atol=1e-4)
 
     def test_minimize_simple(self):
+        class Callback:
+            def __init__(self):
+                self.n_calls = 0
+                self.last_x = None
+
+            def __call__(self, x):
+                self.n_calls += 1
+                self.last_x = x
+
+        callback = Callback()
+
         # Minimize with method='COBYLA'
         cons = ({'type': 'ineq', 'fun': self.con1},
                 {'type': 'ineq', 'fun': self.con2})
         sol = minimize(self.fun, self.x0, method='cobyla', constraints=cons,
-                       options=self.opts)
+                       callback=callback, options=self.opts)
         assert_allclose(sol.x, self.solution, atol=1e-4)
         assert_(sol.success, sol.message)
         assert_(sol.maxcv < 1e-5, sol)
         assert_(sol.nfev < 70, sol)
         assert_(sol.fun < self.fun(self.solution) + 1e-3, sol)
+        assert_(sol.nfev == callback.n_calls,
+                "Callback is not called exactly once for every function eval.")
+        assert_array_equal(sol.x, callback.last_x,
+                           "Last design vector sent to the callback is not equal to returned value.")
 
     def test_minimize_constraint_violation(self):
         np.random.seed(1234)
@@ -66,10 +80,12 @@ class TestCobyla(TestCase):
                 {'type': 'ineq', 'fun': c2},
                 {'type': 'ineq', 'fun': c3})
         w0 = np.zeros((10, 1))
-        sol = minimize(f, w0, method='cobyla', constraints=cons,
-                       options={'catol': 1e-6})
-        assert_(sol.maxcv > 1e-6)
-        assert_(not sol.success)
+        message = 'Use of `minimize` with `x0.ndim != 1` is deprecated.'
+        with pytest.warns(DeprecationWarning, match=message):
+            sol = minimize(f, w0, method='cobyla', constraints=cons,
+                           options={'catol': 1e-6})
+            assert_(sol.maxcv > 1e-6)
+            assert_(not sol.success)
 
 
 def test_vector_constraints():
@@ -96,10 +112,10 @@ def test_vector_constraints():
     fsol = 0.8
 
     # testing fmin_cobyla
-    sol = fmin_cobyla(fun, x0, cons_list, rhoend=1e-5, iprint=0)
+    sol = fmin_cobyla(fun, x0, cons_list, rhoend=1e-5)
     assert_allclose(sol, xsol, atol=1e-4)
 
-    sol = fmin_cobyla(fun, x0, fmin, rhoend=1e-5, iprint=0)
+    sol = fmin_cobyla(fun, x0, fmin, rhoend=1e-5)
     assert_allclose(fun(sol), 1, atol=1e-4)
 
     # testing minimize
@@ -113,6 +129,3 @@ def test_vector_constraints():
     sol = minimize(fun, x0, constraints=constraints, tol=1e-5)
     assert_allclose(sol.fun, 1, atol=1e-4)
 
-
-if __name__ == "__main__":
-    run_module_suite()

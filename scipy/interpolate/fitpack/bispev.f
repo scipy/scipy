@@ -38,7 +38,7 @@ c   kwrk  : integer, specifying the dimension of iwrk. kwrk >= mx+my.
 c
 c  output parameters:
 c   z     : real array of dimension (mx*my).
-c           on succesful exit z(my*(i-1)+j) contains the value of s(x,y)
+c           on successful exit z(my*(i-1)+j) contains the value of s(x,y)
 c           at the point (x(i),y(j)),i=1,...,mx;j=1,...,my.
 c   ier   : integer error flag
 c    ier=0 : normal return

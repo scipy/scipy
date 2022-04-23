@@ -1,0 +1,21 @@
+* -*- fortran -*-
+*     GetBreak
+      <rt=real,double precision,real,double precision> 
+     $     FUNCTION <_c>GETBREAK()
+*
+*     Get breakdown parameter tolerance; for the test routine,
+*     set to machine precision.
+*
+      IMPLICIT NONE
+      <rt> EPS, <sdsd=s,d,s,d>LAMCH
+*
+      EPS = <sdsd>LAMCH('EPS')
+      <_c>GETBREAK = EPS**2
+*
+      RETURN
+*
+      END
+*     END FUNCTION <_c>GETBREAK
+
+
+

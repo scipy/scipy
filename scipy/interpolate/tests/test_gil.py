@@ -1,20 +1,17 @@
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import threading
 import time
 
 import numpy as np
-from numpy.testing import TestCase, assert_equal, run_module_suite
-from numpy.testing.decorators import slow
+from numpy.testing import assert_equal
+import pytest
 import scipy.interpolate
-from scipy._lib._testutils import knownfailure_overridable
 
 
-class TestGIL(TestCase):
+class TestGIL:
     """Check if the GIL is properly released by scipy.interpolate functions."""
 
-    def setUp(self):
+    def setup_method(self):
         self.messages = []
 
     def log(self, message):
@@ -31,8 +28,8 @@ class TestGIL(TestCase):
 
         return WorkerThread()
 
-    @slow
-    @knownfailure_overridable('race conditions, may depend on system load')
+    @pytest.mark.slow
+    @pytest.mark.xfail(reason='race conditions, may depend on system load')
     def test_rectbivariatespline(self):
         def generate_params(n_points):
             x = y = np.linspace(0, 1000, n_points)
@@ -66,6 +63,3 @@ class TestGIL(TestCase):
             'interpolation complete',
         ])
 
-
-if __name__ == "__main__":
-    run_module_suite()

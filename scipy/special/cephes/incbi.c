@@ -1,6 +1,6 @@
 /*                                                     incbi()
  *
- *      Inverse of imcomplete beta integral
+ *      Inverse of incomplete beta integral
  *
  *
  *
@@ -193,14 +193,14 @@ double aa, bb, yy0;
 	    dir -= 1;
 	}
     }
-    mtherr("incbi", PLOSS);
+    sf_error("incbi", SF_ERROR_LOSS, NULL);
     if (x0 >= 1.0) {
 	x = 1.0 - MACHEP;
 	goto done;
     }
     if (x <= 0.0) {
       under:
-	mtherr("incbi", UNDERFLOW);
+	sf_error("incbi", SF_ERROR_UNDERFLOW, NULL);
 	x = 0.0;
 	goto done;
     }

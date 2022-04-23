@@ -1,14 +1,12 @@
 """
 Spectral Algorithm for Nonlinear Equations
 """
-from __future__ import division, absolute_import, print_function
-
 import collections
 
 import numpy as np
 from scipy.optimize import OptimizeResult
-from scipy.optimize.optimize import _check_unknown_options
-from .linesearch import _nonmonotone_line_search_cruz, _nonmonotone_line_search_cheng
+from scipy.optimize._optimize import _check_unknown_options
+from ._linesearch import _nonmonotone_line_search_cruz, _nonmonotone_line_search_cheng
 
 class _NoConvergence(Exception):
     pass
@@ -192,7 +190,7 @@ def _wrap_func(func, x0, fmerit, nfev_list, maxfev, args=()):
         Wrapped function, to be called as
         ``F, fp = wrap_func(x0)``
     x0_wrap : ndarray of float
-        Wrapped initial value; raveled to 1D and complex
+        Wrapped initial value; raveled to 1-D and complex
         values mapped to reals.
     x0_shape : tuple
         Shape of the initial value array

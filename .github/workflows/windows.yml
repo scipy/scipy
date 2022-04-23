@@ -1,0 +1,86 @@
+name: Windows Meson tests
+
+on:
+  push:
+    branches:
+      - main
+      - maintenance/**
+  pull_request:
+    branches:
+      - main
+      - maintenance/**
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Meson Windows tests
+    # Ensure (a) this doesn't run on forks by default, and
+    #        (b) it does run with Act locally (`github` doesn't exist there)
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    runs-on: windows-2019
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v3
+        with:
+          python-version: '3.9'
+          architecture: 'x64'
+      - name: Checkout
+        uses: actions/checkout@v3
+      - name: show-python-version
+        run: |
+          python --version
+      - name: install-rtools
+        run: |
+          choco install rtools --no-progress
+          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
+      - name: show-gfortran
+        run: |
+          gcc --version
+          gfortran --version
+      - name: pip-packages
+        run: |
+          pip install numpy==1.22.2 cython pybind11 pythran meson ninja pytest pytest-xdist
+      - name: openblas-libs
+        run: |
+          # Download and install pre-built OpenBLAS library
+          # Built with mingw-w64, -ucrt -static.
+          # https://github.com/matthew-brett/openblas-libs/blob/ucrt-build/build_openblas.ps1
+          choco install unzip
+          pip install gdown
+          gdown --id 1G3jwxMY4ZVRqvz6owl0kmw_Innmr4ZnV
+          unzip -d c:\ openblas_32_if.zip
+          echo "PKG_CONFIG_PATH=c:\opt\openblas\if_32\64\lib\pkgconfig;" >> $env:GITHUB_ENV
+      - name: meson-configure
+        run: |
+          git submodule update --init --recursive
+          meson build --prefix=$PWD\build
+      - name: meson-build
+        run: |
+          ninja -j 2 -C build
+      - name: meson-install
+        run: |
+          cd build
+          meson install
+      - name: build-path
+        run: |
+          echo "installed_path=$PWD\build\Lib\site-packages" >> $env:GITHUB_ENV
+      - name: post-install
+        run: |
+          $scipy_path = "${env:installed_path}\scipy"
+          $libs_path = "${scipy_path}\.libs"
+          mkdir ${libs_path}
+          $ob_path = (pkg-config --variable libdir openblas) -replace "lib", "bin"
+          cp $ob_path/*.dll $libs_path
+          # Write _distributor_init.py to scipy dir to load .libs DLLs.
+          & python tools\openblas_support.py --write-init $scipy_path
+      - name: prep-test
+        run: |
+          echo "PYTHONPATH=${env:installed_path}" >> $env:GITHUB_ENV
+      - name: test
+        run: |
+          mkdir tmp
+          cd tmp
+          python -c 'import scipy; scipy.test()'

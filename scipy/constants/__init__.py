@@ -1,4 +1,4 @@
-"""
+r"""
 ==================================
 Constants (:mod:`scipy.constants`)
 ==================================
@@ -59,7 +59,7 @@ Constants database
 ------------------
 
 In addition to the above variables, :mod:`scipy.constants` also contains the
-2010 CODATA recommended values [CODATA2010]_ database containing more physical
+2018 CODATA recommended values [CODATA2018]_ database containing more physical
 constants.
 
 .. autosummary::
@@ -109,6 +109,7 @@ SI prefixes
 ``femto``     :math:`10^{-15}`
 ``atto``      :math:`10^{-18}`
 ``zepto``     :math:`10^{-21}`
+``yocto``     :math:`10^{-24}`
 ============  =================================================================
 
 Binary prefixes
@@ -125,8 +126,8 @@ Binary prefixes
 ``yobi``      :math:`2^{80}`
 ============  =================================================================
 
-Weight
-------
+Mass
+----
 
 =================  ============================================================
 ``gram``           :math:`10^{-3}` kg
@@ -134,6 +135,9 @@ Weight
 ``grain``          one grain in kg
 ``lb``             one pound (avoirdupous) in kg
 ``pound``          one pound (avoirdupous) in kg
+``blob``           one inch version of a slug in kg (added in 1.0.0)
+``slinch``         one inch version of a slug in kg (added in 1.0.0)
+``slug``           one slug in kg (added in 1.0.0)
 ``oz``             one ounce in kg
 ``ounce``          one ounce in kg
 ``stone``          one stone in kg
@@ -256,12 +260,7 @@ Temperature
 .. autosummary::
    :toctree: generated/
 
-   C2K
-   K2C
-   F2C
-   C2F
-   F2K
-   K2F
+   convert_temperature
 
 Energy
 ------
@@ -311,30 +310,34 @@ Optics
 References
 ==========
 
-.. [CODATA2010] CODATA Recommended Values of the Fundamental
-   Physical Constants 2010.
+.. [CODATA2018] CODATA Recommended Values of the Fundamental
+   Physical Constants 2018.
 
-   http://physics.nist.gov/cuu/Constants/index.html
+   https://physics.nist.gov/cuu/Constants/
 
 """
-from __future__ import division, print_function, absolute_import
-
 # Modules contributed by BasSw (wegwerp@gmail.com)
-from .codata import *
-from .constants import *
-from .codata import _obsolete_constants
+from ._codata import *
+from ._constants import *
+from ._codata import _obsolete_constants, physical_constants
 
-_constant_names = [(_k.lower(), _k, _v)
-                   for _k, _v in physical_constants.items()
-                   if _k not in _obsolete_constants]
+# Deprecated namespaces, to be removed in v2.0.0
+from . import codata, constants
+
+_constant_names_list = [(_k.lower(), _k, _v)
+                        for _k, _v in physical_constants.items()
+                        if _k not in _obsolete_constants]
 _constant_names = "\n".join(["``%s``%s  %s %s" % (_x[1], " "*(66-len(_x[1])),
                                                   _x[2][0], _x[2][1])
-                             for _x in sorted(_constant_names)])
-if __doc__ is not None:
+                             for _x in sorted(_constant_names_list)])
+if __doc__:
     __doc__ = __doc__ % dict(constant_names=_constant_names)
 
 del _constant_names
+del _constant_names_list
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

@@ -331,7 +331,7 @@ c  fetch a new row of matrix (bv).
         do 460 j=1,5
           h(j) = bv(n1,j)*pinv
  460    continue
-c  find the appropiate row of g.
+c  find the appropriate row of g.
         do 465 j=1,nuu
           right(j) = 0.
  465    continue
@@ -347,7 +347,7 @@ c  fetch a new row of matrix (spv)
         do 490 j=1,4
           h(j) = spv(it,j)
  490    continue
-c  find the appropiate row of g.
+c  find the appropriate row of g.
         l = it
         do 500 j=1,nuu
           right(j) = q(l)
@@ -567,7 +567,7 @@ c  main loop for the different grid points.
           iz = iz+1
 c  evaluate s(u,v) at the current grid point by making the sum of the
 c  cross products of the non-zero b-splines at (u,v), multiplied with
-c  the appropiate b-spline coefficients.
+c  the appropriate b-spline coefficients.
           term = 0.
           k1 = numu*nv4+numv
           do 920 l1=1,4

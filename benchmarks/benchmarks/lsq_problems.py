@@ -1,8 +1,5 @@
 """Benchmark problems for nonlinear least squares."""
 
-from __future__ import division
-
-from collections import OrderedDict
 import inspect
 import sys
 import numpy as np
@@ -10,7 +7,7 @@ from numpy.polynomial.chebyshev import Chebyshev
 from scipy.integrate import odeint
 
 
-class LSQBenchmarkProblem(object):
+class LSQBenchmarkProblem:
     """Template class for nonlinear least squares benchmark problems.
 
     The optimized variable is n-dimensional vector x and the objective function 
@@ -127,7 +124,7 @@ class AlphaPineneDirect(LSQBenchmarkProblem):
     ]
 
     def __init__(self, x0):
-        super(AlphaPineneDirect, self).__init__(5, 40, 2.064572e1, x0)
+        super().__init__(5, 40, 2.064572e1, x0)
         self.t = np.array([0, 1230, 3060, 4920, 7800, 10680, 15030, 22620,
                            36420], dtype=float)
         self.y0 = np.array([100, 0, 0, 0, 0], dtype=float)
@@ -187,7 +184,7 @@ class CoatingThickness(LSQBenchmarkProblem):
     ]
 
     def __init__(self, x0):
-        super(CoatingThickness, self).__init__(134, 252, 0.5054986, x0)
+        super().__init__(134, 252, 0.5054986, x0)
         self.n0 = self.m // 4
         self.xi = np.array([
             [0.7140, 0.7169, 0.7232, 0.7151, 0.6848, 0.7070, 0.7177, 0.7073,
@@ -285,7 +282,7 @@ class ExponentialFitting(LSQBenchmarkProblem):
     ]
 
     def __init__(self, x0):
-        super(ExponentialFitting, self).__init__(5, 33, 5.464895e-5, x0)
+        super().__init__(5, 33, 5.464895e-5, x0)
         self.t = np.arange(self.m, dtype=float) * 10
         self.y = 1e-1 * np.array(
             [8.44, 9.08, 9.32, 9.36, 9.25, 9.08, 8.81, 8.5, 8.18,
@@ -323,7 +320,7 @@ class GaussianFitting(LSQBenchmarkProblem):
     ]
 
     def __init__(self, x0):
-        super(GaussianFitting, self).__init__(11, 65, 4.013772e-02, x0)
+        super().__init__(11, 65, 4.013772e-02, x0)
         self.t = np.arange(self.m, dtype=float) * 1e-1
         self.y = np.array(
             [1.366, 1.191, 1.112, 1.013, 9.91e-1, 8.85e-1, 8.31e-1, 8.47e-1,
@@ -377,7 +374,7 @@ class ThermistorResistance(LSQBenchmarkProblem):
     ]
 
     def __init__(self, x0_ind):
-        super(ThermistorResistance, self).__init__(3, 16, 87.94585, x0_ind)
+        super().__init__(3, 16, 87.94585, x0_ind)
         self.t = 5 + 45 * (1 + np.arange(self.m, dtype=float))
         self.y = np.array(
             [3.478e4, 2.861e4, 2.365e4, 1.963e4, 1.637e4, 1.372e4, 1.154e4,
@@ -410,7 +407,7 @@ class EnzymeReaction(LSQBenchmarkProblem):
     ]
 
     def __init__(self, x0_ind):
-        super(EnzymeReaction, self).__init__(4, 11, 3.075057e-04, x0_ind)
+        super().__init__(4, 11, 3.075057e-04, x0_ind)
         self.u = np.array([4.0, 2.0, 1.0, 5.0e-1, 2.5e-1, 1.67e-1,
                            1.25e-1, 1.0e-1, 8.33e-2, 7.14e-2, 6.25e-2])
         self.y = np.array([1.957e-1, 1.947e-1, 1.735e-1, 1.6e-1, 8.44e-2,
@@ -446,7 +443,7 @@ class ChebyshevQuadrature(LSQBenchmarkProblem):
     ]
 
     def __init__(self, x0):
-        super(ChebyshevQuadrature, self).__init__(11, 11, 2.799761e-03, x0)
+        super().__init__(11, 11, 2.799761e-03, x0)
         cp = Chebyshev(1)
         self.T_all = [cp.basis(i, domain=[0.0, 1.0]) for i in range(11)]
 
@@ -471,11 +468,11 @@ def extract_lsq_problems():
 
     Returns
     -------
-    OrderedDict, str -> LSQBenchmarkProblem
+    dict, str -> LSQBenchmarkProblem
         The key is a problem name.
         The value is an instance of LSQBenchmarkProblem.
     """
-    problems = OrderedDict()
+    problems = {}
     for name, problem_class in inspect.getmembers(sys.modules[__name__],
                                                   inspect.isclass):
         if (name != "LSQBenchmarkProblem" and
@@ -483,7 +480,7 @@ def extract_lsq_problems():
                 hasattr(problem_class, 'INITIAL_GUESSES')):
             for i, x0 in enumerate(problem_class.INITIAL_GUESSES):
                 if len(problem_class.INITIAL_GUESSES) > 1:
-                    key_name = "{}_{}".format(name, i)
+                    key_name = "{0}_{1}".format(name, i)
                 else:
                     key_name = name
                 problems[key_name] = problem_class(x0)

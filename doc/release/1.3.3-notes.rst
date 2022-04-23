@@ -1,0 +1,31 @@
+==========================
+SciPy 1.3.3 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.3.3 is a bug-fix release with no new features
+compared to 1.3.2. In particular, a test suite issue
+involving multiprocessing was fixed for Windows and
+Python 3.8 on macOS. 
+
+Wheels were also updated to place msvcp140.dll at the 
+appropriate location, which was previously causing issues.
+
+Authors
+=======
+
+Ilhan Polat
+Tyler Reddy
+Ralf Gommers
+
+Issues closed for 1.3.3
+-----------------------
+
+* `#11033 <https://github.com/scipy/scipy/issues/11033>`__: deadlock on osx for python 3.8
+
+
+Pull requests for 1.3.3
+-----------------------
+
+* `#11034 <https://github.com/scipy/scipy/pull/11034>`__: MAINT: TST: Skip tests with multiprocessing that use "spawn" start method
