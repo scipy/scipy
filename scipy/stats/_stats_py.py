@@ -5901,14 +5901,14 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
         The mean(s) of sample 1.
     std1 : array_like
         The unbiased estimate of the standard deviation(s) of sample 1 (i.e.
-        `ddof=1`).
+        ``ddof=1``).
     nobs1 : array_like
         The number(s) of observations of sample 1.
     mean2 : array_like
         The mean(s) of sample 2.
     std2 : array_like
         The unbiased estimate of the standard deviations(s) of sample 2 (i.e.
-        `ddof=1`).
+        ``ddof=1``).
     nobs2 : array_like
         The number(s) of observations of sample 2.
     equal_var : bool, optional
@@ -5954,7 +5954,7 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     Examples
     --------
     Suppose we have the summary data for two samples, as follows (with the
-    Samples Variance being the unbiased estimate)::
+    Sample Variance being the unbiased estimate)::
 
                          Sample   Sample
                    Size   Mean   Variance
