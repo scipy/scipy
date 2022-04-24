@@ -638,6 +638,7 @@ class TestMatrixNormal:
                                                         N*num_cols,num_rows).T)
         assert_allclose(sample_rowcov, U, atol=0.1)
 
+
 class DirichletTest:
 
     def test_frozen_dirichlet(self):
@@ -851,7 +852,7 @@ class TestMultivariateBeta(DirichletTest):
     def test_accepts_random_variates(self):
         # dirichlet.pdf does not accept output of dirichlet.rvs
         # multivariate_beta does; see gh-6006
-        alpha = [1,3,4]
+        alpha = [1, 3, 4]
         d = self.dist(alpha)
 
         rvs = d.rvs()

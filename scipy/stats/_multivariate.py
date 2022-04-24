@@ -1322,6 +1322,10 @@ class dirichlet_gen(multi_rv_generic):
     %(_dirichlet_doc_default_callparams)s
     %(_doc_random_state)s
 
+    See Also
+    --------
+    multivariate_beta
+
     Notes
     -----
     Each :math:`\alpha` entry must be positive. The distribution has only
@@ -1351,9 +1355,11 @@ class dirichlet_gen(multi_rv_generic):
     concentration parameters and :math:`K` is the dimension of the space
     where :math:`x` takes values.
 
-    Note that the dirichlet interface is somewhat inconsistent.
+    Note that the `dirichlet` interface is somewhat inconsistent.
     The array returned by the rvs function is transposed
     with respect to the format expected by the pdf and logpdf.
+    For a consistent interface to the same distribution, use
+    `multivariate_beta`.
 
     Examples
     --------
@@ -1411,7 +1417,7 @@ class dirichlet_gen(multi_rv_generic):
         return _dirichlet_check_input(alpha, x)
 
     def _logpdf(self, x, alpha):
-        """Log of the Dirichlet probability density function.
+        """Log of the multivariate beta (Dirichlet) PDF.
 
         Parameters
         ----------
@@ -1430,7 +1436,7 @@ class dirichlet_gen(multi_rv_generic):
         return - lnB + np.sum((xlogy(alpha - 1, x.T)).T, 0)
 
     def logpdf(self, x, alpha):
-        """Log of the Dirichlet probability density function.
+        """Log of the multivariate beta (Dirichlet) PDF.
 
         Parameters
         ----------
@@ -1451,7 +1457,7 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def pdf(self, x, alpha):
-        """The Dirichlet probability density function.
+        """The multivariate beta (Dirichlet) probability density function.
 
         Parameters
         ----------
@@ -1472,7 +1478,7 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def mean(self, alpha):
-        """Compute the mean of the dirichlet distribution.
+        """Mean of the multivariate beta (Dirichlet) distribution.
 
         Parameters
         ----------
@@ -1481,7 +1487,7 @@ class dirichlet_gen(multi_rv_generic):
         Returns
         -------
         mu : ndarray or scalar
-            Mean of the Dirichlet distribution.
+            Mean of the multivariate beta (Dirichlet) distribution.
 
         """
         alpha = _dirichlet_check_parameters(alpha)
@@ -1490,7 +1496,7 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def var(self, alpha):
-        """Compute the variance of the dirichlet distribution.
+        """Variance of the multivariate beta (Dirichlet) distribution.
 
         Parameters
         ----------
@@ -1510,7 +1516,8 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def entropy(self, alpha):
-        """Compute the differential entropy of the dirichlet distribution.
+        """
+        Differential entropy of the multivariate beta (Dirichlet) distribution.
 
         Parameters
         ----------
@@ -1519,7 +1526,7 @@ class dirichlet_gen(multi_rv_generic):
         Returns
         -------
         h : scalar
-            Entropy of the Dirichlet distribution
+            Entropy of the multivariate beta (Dirichlet) distribution
 
         """
 
@@ -1534,7 +1541,8 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def rvs(self, alpha, size=1, random_state=None):
-        """Draw random samples from a Dirichlet distribution.
+        """
+        Draw random samples from a multivariate beta (Dirichlet) distribution.
 
         Parameters
         ----------
@@ -1583,6 +1591,110 @@ class dirichlet_frozen(multi_rv_frozen):
 
 
 class multivariate_beta_gen(dirichlet_gen):
+    r"""A multivariate beta (Dirichlet) random variable.
+
+    The ``alpha`` keyword specifies the concentration parameters of the
+    distribution.
+
+    .. versionadded:: 1.9.0
+
+    Methods
+    -------
+    pdf(x, alpha)
+        Probability density function.
+    logpdf(x, alpha)
+        Log of the probability density function.
+    rvs(alpha, size=1, random_state=None)
+        Draw random samples from a multivariate beta distribution.
+    mean(alpha)
+        The mean of the multivariate beta distribution
+    var(alpha)
+        The variance of the multivariate beta distribution
+    entropy(alpha)
+        Compute the differential entropy of the multivariate beta distribution.
+
+    Parameters
+    ----------
+    %(_dirichlet_doc_default_callparams)s
+    %(_doc_random_state)s
+
+    See Also
+    --------
+    dirichlet
+
+    Notes
+    -----
+    Each :math:`\alpha` entry must be positive. The distribution has only
+    support on the simplex defined by
+
+    .. math::
+        \sum_{i=1}^{K} x_i = 1
+
+    where :math:`0 < x_i < 1`.
+
+    If the quantiles don't lie within the simplex, a ValueError is raised.
+
+    The probability density function for `multivariate_beta` is
+
+    .. math::
+
+        f(x) = \frac{1}{\mathrm{B}(\boldsymbol\alpha)}
+               \prod_{i=1}^K x_i^{\alpha_i - 1}
+
+    where
+
+    .. math::
+
+        \mathrm{B}(\boldsymbol\alpha) = \frac{\prod_{i=1}^K \Gamma(\alpha_i)}
+                                     {\Gamma\bigl(\sum_{i=1}^K \alpha_i\bigr)}
+
+    and :math:`\boldsymbol\alpha=(\alpha_1,\ldots,\alpha_K)`, the
+    concentration parameters and :math:`K` is the dimension of the space
+    where :math:`x` takes values.
+
+    Examples
+    --------
+    >>> from scipy.stats import multivariate_beta
+
+    Generate a multivariate_beta random variable
+
+    >>> quantiles = np.array([0.2, 0.2, 0.6])  # specify quantiles
+    >>> alpha = np.array([0.4, 5, 15])  # specify concentration parameters
+    >>> multivariate_beta.pdf(quantiles, alpha)
+    0.2843831684937255
+
+    The same PDF but following a log scale
+
+    >>> multivariate_beta.logpdf(quantiles, alpha)
+    -1.2574327653159187
+
+    Once we specify the multivariate beta distribution
+    we can then calculate quantities of interest
+
+    >>> multivariate_beta.mean(alpha)  # get the mean of the distribution
+    array([0.01960784, 0.24509804, 0.73529412])
+    >>> multivariate_beta.var(alpha) # get variance
+    array([0.00089829, 0.00864603, 0.00909517])
+    >>> multivariate_beta.entropy(alpha)  # calculate the differential entropy
+    -4.3280162474082715
+
+    We can also return random samples from the distribution
+
+    >>> multivariate_beta.rvs(alpha, size=1, random_state=1)
+    array([[0.00766178, 0.24670518, 0.74563305]])
+    >>> multivariate_beta.rvs(alpha, size=2, random_state=2)
+    array([[0.01639427, 0.1292273 , 0.85437844],
+           [0.00156917, 0.19033695, 0.80809388]])
+
+    Alternatively, the object may be called (as a function) to fix
+    concentration parameters, returning a "frozen" multivariate beta
+    random variable:
+
+    >>> rv = multivariate_beta(alpha)
+    >>> # Frozen object with the same methods but holding the given
+    >>> # concentration parameters fixed.
+
+    """
     def __call__(self, alpha, seed=None):
         return multivariate_beta_frozen(alpha, seed=seed)
 
