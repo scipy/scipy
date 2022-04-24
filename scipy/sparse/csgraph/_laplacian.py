@@ -523,7 +523,7 @@ def _laplacian_dense_flo(graph, normed, axis, copy, form, dtype, symmetrized):
 def _laplacian_dense(graph, normed, axis, copy, form, dtype, symmetrized):
 
     if form != "array":
-        raise ValueError('{form!r} must be "array"')
+        raise ValueError(f'{form!r} must be "array"')
 
     if dtype is None:
         dtype = graph.dtype
