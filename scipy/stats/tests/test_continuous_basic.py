@@ -119,12 +119,15 @@ fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
 # rv_histogram instances, with uniform and non-uniform bins;
 # stored as (dist, arg) tuples for cases_test_cont_basic
 # and cases_test_moments.
-_h1 = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
-                   6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
-_h2 = np.histogram([1, 1], bins=[0, 1, 10])
-histogram_test_instances = [
-    (stats.rv_histogram(_h), tuple())
-    for _h in (_h1, _h2)]
+histogram_test_instances = []
+for data, bins in [
+        ([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5,
+          6, 6, 6, 6, 7, 7, 7, 8, 8, 9], 8)
+        ([1, 1], [0, 1, 10])]:
+    for density in True, False:
+        _h = np.histogram(data, bins=bins, density=density)
+        histogram_test_instances.append(
+            (stats.rv_histogram(_h, density=density), tuple()))
 
 
 def cases_test_cont_basic():

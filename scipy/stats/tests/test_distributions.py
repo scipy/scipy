@@ -6339,11 +6339,18 @@ class TestHistogram:
 def test_histogram_non_uniform():
     # Tests rv_histogram works even for non-uniform bin widths
     counts, bins = ([1, 1], [0, 1, 1001])
-    dist = stats.rv_histogram((counts, bins))
+    dist = stats.rv_histogram((counts, bins), density=False)
     np.testing.assert_allclose(
         dist.pdf([0.5, 200]),
         np.array([0.5, 0.0005]))
     assert dist.median() == 1
+    # Omitting density produces a warning for non-uniform bins...
+    with assert_warns(RuntimeWarning):
+        dist = stats.rv_histogram((counts, bins))
+    # ... but not for uniform bins
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+        dist = stats.rv_histogram((counts, [0, 1, 2]))
 
 
 def test_loguniform():
