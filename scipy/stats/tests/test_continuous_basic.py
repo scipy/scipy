@@ -122,7 +122,7 @@ fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
 histogram_test_instances = []
 for data, bins in [
         ([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5,
-          6, 6, 6, 6, 7, 7, 7, 8, 8, 9], 8)
+          6, 6, 6, 6, 7, 7, 7, 8, 8, 9], 8),
         ([1, 1], [0, 1, 10])]:
     for density in True, False:
         _h = np.histogram(data, bins=bins, density=density)
