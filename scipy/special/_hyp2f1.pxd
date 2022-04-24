@@ -45,7 +45,7 @@ from libc.stdint cimport uint64_t, UINT64_MAX
 from libc.math cimport exp, fabs, M_PI, M_1_PI, log1p, pow, sin, trunc
 
 from . cimport sf_error
-from ._cephes cimport Gamma, lanczos_sum_expg_scaled
+from ._cephes cimport Gamma, gammasgn, lanczos_sum_expg_scaled, lgam
 
 from ._complexstuff cimport (
     double_complex_from_npy_cdouble,
@@ -326,11 +326,24 @@ cdef inline double complex hyp2f1_lopez_temme_series(
 @cython.cdivision(True)
 cdef inline double four_gammas(double u, double v, double w, double x) nogil:
     cdef double result
-    result = NPY_NAN
+    # Without loss of generality, assume |u| >= |v|, |w| >= |x|.
+    if fabs(v) > fabs(u):
+        u, v = v, u
+    if fabs(x) > fabs(w):
+        w, x = x, w
+
     if fabs(u) <= 100 and fabs(v) <= 100 and fabs(w) <= 100 and fabs(x) <= 100:
         result = Gamma(u) * Gamma(v) / (Gamma(w) * Gamma(x))
-    if zisinf(result) or zisnan(result) or result == 0:
-        result = four_gammas_lanczos(u, v, w, x)
+        if not (zisinf(result) or zisnan(result) or result == 0):
+            return result
+    result = four_gammas_lanczos(u, v, w, x)
+    if not (zisinf(result) or zisnan(result) or result == 0):
+        return result
+    result = exp(
+        lgam(v) - lgam(x) +
+        lgam(u) - lgam(w)
+    )
+    result *= gammasgn(u) * gammasgn(w) * gammasgn(v) * gammasgn(x)
     return result
 
 
