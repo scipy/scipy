@@ -607,7 +607,7 @@ def csd(x, y, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
 def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
                 nfft=None, detrend='constant', return_onesided=True,
                 scaling='density', axis=-1, mode='psd'):
-    """Compute a spectrogram with consecutive Fourier transforms.
+    r"""Compute a spectrogram with consecutive Fourier transforms.
 
     Spectrograms can be used as a way of visualizing the change of a
     nonstationary signal's frequency content over time.
@@ -695,13 +695,51 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
 
     Notes
     -----
+    The spectrogram can be interpreted as a wrapper of the short-time
+    Fourier Transform (`stft`). The `stft` is more flexible in specifying the
+    boundary behavior and always retuns complex values (``mode=complex``).
+    Common uses of spectrograms are investigations of the evolution of a
+    magnitude spectrum  (``mode='magnitude', scaling='magnitude'``) or of a
+    power spectral density (``mode='psd', scaling='density'``) over time.
+
     An appropriate amount of overlap will depend on the choice of window
-    and on your requirements. In contrast to welch's method, where the
+    and on your requirements. In contrast to Welch's method, where the
     entire data stream is averaged over, one may wish to use a smaller
     overlap (or perhaps none at all) when computing a spectrogram, to
     maintain some statistical independence between individual segments.
     It is for this reason that the default window is a Tukey window with
     1/8th of a window's length overlap at each end.
+
+    Not all combinations of the parameters `mode`, `scaling` and
+    `return_onesided` allow a straight-forward interpretation. As an example
+    a 10-second single cosine test signal with amplitude 10 V is investigated:
+    Its power is 50 V\ :sup:`2` (``sum(x**2)/len(x)``). The following table
+    shows how the maximum and the power of the spectrogram depend on the input
+    parameters:
+
+    .. code-block:: text
+
+        mode       scaling    return_onesided  max(S)    Power
+        =========  =========  ===============  ========  =====
+        psd        density         True        113.4      50
+        psd        density         False       56.7       50
+        psd        spectrum        True        50.0       22
+        psd        spectrum        False       25.0       22
+        complex    density         True        7.5+0.0j   94.7
+        complex    density         False       7.5+0.0j  378.8
+        complex    spectrum        True        5.0+0.0j   41.7
+        complex    spectrum        False       5.0+0.0j  167
+        magnitude  density         True        7.5        94.7
+        magnitude  density         False       7.5       378.8
+
+    The power was calculated from the middle frequency slice by
+    ``sum(S[:, k_m]) * df`` for ``scaling='psd'`` and by
+    ``sum(S[:, k_m])**2 * df`` for ``scaling='magnitude'``.
+    Here, `df` is the spacing between the frequency bins.
+    The entries where ``max(S)`` equals 5 allow to infer that the amplitude of
+    the cosine is 10. The ``mode='psd', scaling='density'`` show the true power
+    spectral density, since numerically integrating over a slice gives
+    50 V\ :sup:`2`.
 
     .. versionadded:: 0.16.0
 
