@@ -17,6 +17,7 @@ from . import _mvn
 
 __all__ = ['multivariate_normal',
            'matrix_normal',
+           'multivariate_beta',
            'dirichlet',
            'wishart',
            'invwishart',
@@ -1576,6 +1577,13 @@ class dirichlet_frozen(multi_rv_frozen):
 
     def rvs(self, size=1, random_state=None):
         return self._dist.rvs(self.alpha, size, random_state)
+
+
+class multivariate_beta_gen(dirichlet_gen):
+    pass
+
+
+multivariate_beta = multivariate_beta_gen()
 
 
 # Set frozen generator docstrings from corresponding docstrings in
