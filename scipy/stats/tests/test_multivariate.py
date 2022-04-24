@@ -663,6 +663,8 @@ class DirichletTest:
         alpha = np.array([1.0, 2.0, 3.0])
         x = np.random.dirichlet(alpha, size=7)
         assert_equal(x.shape, (7, 3))
+        if self.dist == multivariate_beta:
+            x = x.T
         assert_raises(ValueError, self.dist.pdf, x, alpha)
         assert_raises(ValueError, self.dist.logpdf, x, alpha)
         self.dist.pdf(x.T, alpha)
@@ -728,6 +730,8 @@ class DirichletTest:
     def test_alpha_correct_depth(self):
         alpha = np.array([1.0, 2.0, 3.0])
         x = np.full((3, 7), 1 / 3)
+        if self.dist == multivariate_beta:
+            x = x.T
         self.dist.pdf(x, alpha)
         self.dist.logpdf(x, alpha)
 
@@ -804,7 +808,10 @@ class DirichletTest:
                     xm = np.vstack((xm, x))
                 else:
                     xm = x
-            rm = d.pdf(xm.T)
+            if self.dist == multivariate_beta:
+                rm = d.pdf(xm)
+            else:
+                rm = d.pdf(xm.T)
             rs = None
             for xs in xm:
                 r = d.pdf(xs)
@@ -825,7 +832,10 @@ class DirichletTest:
         for i in range(num_tests):
             x = np.random.uniform(10e-10, 100, 2)
             x /= np.sum(x)
-            assert_almost_equal(b.pdf(x), d.pdf([x]))
+            if self.dist == multivariate_beta:
+                assert_almost_equal(b.pdf(x), d.pdf(x[:, np.newaxis]))
+            else:
+                assert_almost_equal(b.pdf(x), d.pdf([x]))
 
         assert_almost_equal(b.mean(), d.mean()[0])
         assert_almost_equal(b.var(), d.var()[0])
@@ -837,6 +847,21 @@ class TestDirichlet(DirichletTest):
 
 class TestMultivariateBeta(DirichletTest):
     dist = multivariate_beta
+
+    def test_accepts_random_variates(self):
+        # dirichlet.pdf does not accept output of dirichlet.rvs
+        # multivariate_beta does; see gh-6006
+        alpha = [1,3,4]
+        d = self.dist(alpha)
+
+        rvs = d.rvs()
+        pdf = d.pdf(rvs)  # no error
+        assert pdf == self.dist.pdf(rvs, alpha)
+
+        rvs2 = d.rvs(size=10)
+        pdf2 = d.pdf(rvs2)
+        for rvs_i, pdf_i in zip(rvs2, pdf2):
+            assert pdf_i == self.dist.pdf(rvs_i, alpha)
 
 
 def test_multivariate_normal_dimensions_mismatch():

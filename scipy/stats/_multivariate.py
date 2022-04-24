@@ -1231,7 +1231,6 @@ def _dirichlet_check_parameters(alpha):
 
 
 def _dirichlet_check_input(alpha, x):
-    x = np.asarray(x)
 
     if x.shape[0] + 1 != alpha.shape[0] and x.shape[0] != alpha.shape[0]:
         raise ValueError("Vector 'x' must have either the same number "
@@ -1407,6 +1406,10 @@ class dirichlet_gen(multi_rv_generic):
     def __call__(self, alpha, seed=None):
         return dirichlet_frozen(alpha, seed=seed)
 
+    def _check_input(self, alpha, x):
+        x = np.asarray(x)
+        return _dirichlet_check_input(alpha, x)
+
     def _logpdf(self, x, alpha):
         """Log of the Dirichlet probability density function.
 
@@ -1442,7 +1445,7 @@ class dirichlet_gen(multi_rv_generic):
 
         """
         alpha = _dirichlet_check_parameters(alpha)
-        x = _dirichlet_check_input(alpha, x)
+        x = self._check_input(alpha, x)
 
         out = self._logpdf(x, alpha)
         return _squeeze_output(out)
@@ -1463,7 +1466,7 @@ class dirichlet_gen(multi_rv_generic):
 
         """
         alpha = _dirichlet_check_parameters(alpha)
-        x = _dirichlet_check_input(alpha, x)
+        x = self._check_input(alpha, x)
 
         out = np.exp(self._logpdf(x, alpha))
         return _squeeze_output(out)
@@ -1580,7 +1583,18 @@ class dirichlet_frozen(multi_rv_frozen):
 
 
 class multivariate_beta_gen(dirichlet_gen):
-    pass
+    def __call__(self, alpha, seed=None):
+        return multivariate_beta_frozen(alpha, seed=seed)
+
+    def _check_input(self, alpha, x):
+        x = np.moveaxis(x, -1, 0)
+        return _dirichlet_check_input(alpha, x)
+
+
+class multivariate_beta_frozen(dirichlet_frozen):
+    def __init__(self, alpha, seed=None):
+        self.alpha = _dirichlet_check_parameters(alpha)
+        self._dist = multivariate_beta_gen(seed)
 
 
 multivariate_beta = multivariate_beta_gen()
