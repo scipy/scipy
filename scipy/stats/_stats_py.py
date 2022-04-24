@@ -5930,8 +5930,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
                           Number of    Sample     Sample
                     Size    ones        Mean     Variance
-        Sample 1    150      30         0.2        0.16
-        Sample 2    200      45         0.225      0.174375
+        Sample 1    150      30         0.2        0.161073
+        Sample 2    200      45         0.225      0.175251
 
     The sample mean :math:`\hat{p}` is the proportion of ones in the sample
     and the variance for a binary observation is estimated by
