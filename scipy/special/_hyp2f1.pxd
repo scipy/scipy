@@ -135,10 +135,10 @@ cdef inline double complex hyp2f1_complex(
         return NPY_INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
     if z == 1.0 and c - a - b > 0 and not c_non_pos_int:
-        return four_gammas_lanczos(c, c - a - b, c - a, c - b)
+        return four_gammas(c, c - a - b, c - a, c - b)
     # Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26).
     if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS and not c_non_pos_int:
-        return four_gammas_lanczos(a - b + 1, 0.5*a + 1, a + 1, 0.5*a - b + 1)
+        return four_gammas(a - b + 1, 0.5*a + 1, a + 1, 0.5*a - b + 1)
 
     # Reduces to a polynomial when a or b is a negative integer.
     # If a and b are both negative integers, we take care to terminate
@@ -320,6 +320,17 @@ cdef inline double complex hyp2f1_lopez_temme_series(
     else:
         sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
         result = zpack(NPY_NAN, NPY_NAN)
+    return result
+
+
+@cython.cdivision(True)
+cdef inline double four_gammas(double u, double v, double w, double x) nogil:
+    cdef double result
+    result = NPY_NAN
+    if fabs(u) <= 100 and fabs(v) <= 100 and fabs(w) <= 100 and fabs(x) <= 100:
+        result = Gamma(u) * Gamma(v) / (Gamma(w) * Gamma(x))
+    if zisinf(result) or zisnan(result) or result == 0:
+        result = four_gammas_lanczos(u, v, w, x)
     return result
 
 
