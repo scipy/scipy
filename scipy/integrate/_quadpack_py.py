@@ -284,19 +284,19 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
     **Details of QUADPACK level routines**
 
-    *quad* calls routines from the FORTRAN library QUADPACK. This section
+    `quad` calls routines from the FORTRAN library QUADPACK. This section
     provides details on the conditions for each routine to be called and a
     short description of each routine. The routine called depends on
-    ``weight``, ``points`` and the integration limits ``a`` and ``b``.
+    `weight`, `points` and the integration limits `a` and `b`.
 
     ================  ==============  ==========  =====================
-    QUADPACK routine  ``weight``      ``points``  infinite bounds
+    QUADPACK routine  `weight`        `points`    infinite bounds
     ================  ==============  ==========  =====================
     qagse             None            No          No
     qagie             None            No          Yes
     qagpe             None            Yes         No
     qawoe             'sin', 'cos'    No          No
-    qawfe             'sin', 'cos'    No          either ``a`` or ``b``
+    qawfe             'sin', 'cos'    No          either `a` or `b`
     qawse             'alg*'          No          No
     qawce             'cauchy'        No          No
     ================  ==============  ==========  =====================
@@ -336,9 +336,9 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         :math:`\\int^\\infty_a \\cos(\\omega x)f(x)dx` or
         :math:`\\int^\\infty_a \\sin(\\omega x)f(x)dx`
         for user-provided :math:`\\omega` and :math:`f`. The procedure of QAWO
-        is applied on successive finite intervals, and convergence acceleration
-        by means of the :math:`\\varepsilon`-algorithm is applied to the series
-        of integral approximations.
+        is applied on successive finite intervals, and convergence
+        acceleration by means of the :math:`\\varepsilon`-algorithm is applied
+        to the series of integral approximations.
     qawse
         approximate :math:`\\int^b_a w(x)f(x)dx`, with :math:`a < b` where
         :math:`w(x) = (x-a)^{\\alpha}(b-x)^{\\beta}v(x)` with
@@ -349,7 +349,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         The user specifies :math:`\\alpha`, :math:`\\beta` and the type of the
         function :math:`v`. A globally adaptive subdivision strategy is
         applied, with modified Clenshaw-Curtis integration on those
-        subintervals which contain a or b.
+        subintervals which contain `a` or `b`.
     qawce
         compute :math:`\\int^b_a f(x) / (x-c)dx` where the integral must be
         interpreted as a Cauchy principal value integral, for user specified
@@ -360,9 +360,11 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     References
     ----------
 
-    .. [1] Piessens, Robert; de Doncker-Kapenga, Elise; Überhuber, Christoph W.;
-        Kahaner, David (1983). QUADPACK: A subroutine package for automatic
-        integration. Springer-Verlag. ISBN 978-3-540-12553-2.
+    .. [1] Piessens, Robert; de Doncker-Kapenga, Elise;
+           Überhuber, Christoph W.; Kahaner, David (1983).
+           QUADPACK: A subroutine package for automatic integration.
+           Springer-Verlag.
+           ISBN 978-3-540-12553-2.
 
     Examples
     --------
