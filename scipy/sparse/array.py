@@ -29,6 +29,10 @@ __all__ = [
 ]
 
 
+def __dir__():
+    return __all__
+
+
 # Map sparse format strings to the corresponding sparse array container
 _fmt_to_sparray = {
     "bsr": bsr_array, "coo": coo_array, "csc": csc_array, "csr": csr_array,
