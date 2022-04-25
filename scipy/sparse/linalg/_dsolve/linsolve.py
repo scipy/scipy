@@ -434,7 +434,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
-        warn('spilu converted its input to CSC format', SparseEfficiencyWarning)
+        warn('spilu converted its input to CSC format',
+             SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -497,7 +498,8 @@ def factorized(A):
 
         if not isspmatrix_csc(A):
             A = csc_matrix(A)
-            warn('splu converted its input to CSC format', SparseEfficiencyWarning)
+            warn('splu converted its input to CSC format',
+                 SparseEfficiencyWarning)
 
         A = A.asfptype()  # upcast to a floating point format
 
