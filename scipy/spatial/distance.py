@@ -2797,41 +2797,37 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         Computes the Yule distance between the boolean
         vectors. (see `yule` function documentation)
 
-    16. ``Y = cdist(XA, XB, 'matching')``
-
-        Synonym for 'hamming'.
-
-    17. ``Y = cdist(XA, XB, 'dice')``
+    16. ``Y = cdist(XA, XB, 'dice')``
 
         Computes the Dice distance between the boolean vectors. (see
         `dice` function documentation)
 
-    18. ``Y = cdist(XA, XB, 'kulsinski')``
+    17. ``Y = cdist(XA, XB, 'kulsinski')``
 
         Computes the Kulsinski distance between the boolean
         vectors. (see `kulsinski` function documentation)
 
-    19. ``Y = cdist(XA, XB, 'rogerstanimoto')``
+    18. ``Y = cdist(XA, XB, 'rogerstanimoto')``
 
         Computes the Rogers-Tanimoto distance between the boolean
         vectors. (see `rogerstanimoto` function documentation)
 
-    20. ``Y = cdist(XA, XB, 'russellrao')``
+    19. ``Y = cdist(XA, XB, 'russellrao')``
 
         Computes the Russell-Rao distance between the boolean
         vectors. (see `russellrao` function documentation)
 
-    21. ``Y = cdist(XA, XB, 'sokalmichener')``
+    20. ``Y = cdist(XA, XB, 'sokalmichener')``
 
         Computes the Sokal-Michener distance between the boolean
         vectors. (see `sokalmichener` function documentation)
 
-    22. ``Y = cdist(XA, XB, 'sokalsneath')``
+    21. ``Y = cdist(XA, XB, 'sokalsneath')``
 
         Computes the Sokal-Sneath distance between the vectors. (see
         `sokalsneath` function documentation)
 
-    23. ``Y = cdist(XA, XB, f)``
+    22. ``Y = cdist(XA, XB, f)``
 
         Computes the distance between all pairs of vectors in X
         using the user supplied 2-arity function f. For example,
