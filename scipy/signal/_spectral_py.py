@@ -717,8 +717,10 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
     shows how the maximum and the power of the spectrogram depend on the input
     parameters:
 
-    .. code-block:: text
+    .. table::
+        :class: table-sm
 
+        =========  =========  ===============  ========  =====
         mode       scaling    return_onesided  max(S)    Power
         =========  =========  ===============  ========  =====
         psd        density         True        113.4      50
@@ -731,6 +733,7 @@ def spectrogram(x, fs=1.0, window=('tukey', .25), nperseg=None, noverlap=None,
         complex    spectrum        False       5.0+0.0j  167
         magnitude  density         True        7.5        94.7
         magnitude  density         False       7.5       378.8
+        =========  =========  ===============  ========  =====
 
     The power was calculated from the middle frequency slice by
     ``sum(S[:, k_m]) * df`` for ``scaling='psd'`` and by
