@@ -256,7 +256,9 @@ class TrackContinuousRoundtrip(Benchmark):
     dist_data = dict(distcont)
 
     def setup(self, dist_name):
-        # MOST SETUP CODE COPIED FROM ABOVE `DistributionsAll` BENCHMARK #
+        # Distribution setup follows `DistributionsAll` benchmark.
+        # This focuses on ppf, so the code for handling other functions is
+        # removed for simplicity.
         self.dist = getattr(stats, dist_name)
 
         if isinstance(self.dist, stats.rv_discrete):
@@ -265,8 +267,8 @@ class TrackContinuousRoundtrip(Benchmark):
         self.shape_args = self.dist_data[dist_name]
 
     def track_distribution_ppf_roundtrip(self, dist_name):
-        # Tracks the worst relative error of a couple of
-        # round-trip ppf -> cdf calculations.
+        # Tracks the worst relative error of a
+        # couple of round-trip ppf -> cdf calculations.
         vals = [0.001, 0.5, 0.999]
 
         ppf = self.dist.ppf(vals, *self.shape_args)
@@ -276,8 +278,8 @@ class TrackContinuousRoundtrip(Benchmark):
         return np.max(err_rel)
 
     def track_distribution_ppf_roundtrip_extrema(self, dist_name):
-        # Tracks the worst error (either absolute or relative) of a couple
-        # of round-trip ppf -> cdf calculations.
+        # Tracks the absolute error of an "extreme" round-trip
+        # ppf -> cdf calculation.
         v = 1e-6
         ppf = self.dist.ppf(v, *self.shape_args)
         round_trip = self.dist.cdf(ppf, *self.shape_args)
@@ -287,7 +289,7 @@ class TrackContinuousRoundtrip(Benchmark):
 
     def track_distribution_isf_roundtrip(self, dist_name):
         # Tracks the worst relative error of a
-        # round-trip isf -> sf calculations.
+        # couple of round-trip isf -> sf calculations.
         vals = [0.001, 0.5, 0.999]
 
         isf = self.dist.isf(vals, *self.shape_args)
@@ -297,8 +299,8 @@ class TrackContinuousRoundtrip(Benchmark):
         return np.max(err_rel)
 
     def track_distribution_isf_roundtrip_extrema(self, dist_name):
-        # Tracks the worst absolute error of a
-        # round-trip isf -> sf calculations.
+        # Tracks the absolute error of an "extreme" round-trip
+        # isf -> sf calculation.
         v = 1e-6
         ppf = self.dist.isf(v, *self.shape_args)
         round_trip = self.dist.sf(ppf, *self.shape_args)
@@ -311,17 +313,30 @@ class PDFPeakMemory(Benchmark):
     # Tracks peak memory when a distribution is given a large array to process
     # See gh-14095
 
+    # Run for up to 30 min - some dists are quite slow.
+    timeout = 1800.0
+
+    x = np.arange(1e6)
+
     param_names = ['dist_name']
     params = sorted(list(set([d[0] for d in distcont])))
     dist_data = dict(distcont)
 
+    # So slow that 30min isn't enough time to finish.
+    slow_dists = ["levy_stable"]
+
     def setup(self, dist_name):
-        if is_xslow():  # These benches expected to be sloowwwww.
-            raise NotImplementedError("skipped")
+        # This benchmark is demanding. Skip it if the env isn't xslow.
+        if not is_xslow():
+            raise NotImplementedError("skipped - enviroment is not xslow. "
+                                      "To enable this benchamark, set the "
+                                      "enviroment variable SCIPY_XSLOW=1")
+
+        if dist_name in self.slow_dists:
+            raise NotImplementedError("skipped - dist is too slow.")
 
         self.dist = getattr(stats, dist_name)
         self.shape_args = self.dist_data[dist_name]
-        self.x = np.arange(1e6)
 
     def peakmem_bigarr_pdf(self, dist_name):
         self.dist.pdf(self.x, *self.shape_args)
