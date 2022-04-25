@@ -80,6 +80,9 @@ F4_powell.xin = [-1, -2]
 F4_powell.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
                        'excitingmixing': nonlin.excitingmixing,
                        'diagbroyden': nonlin.diagbroyden}
+# In the extreme case, it does not converge for nolinear problem solved by
+# MINRES and root problem solved by GMRES/BiCGStab/CGS/MINRES/TFQMR when using
+# Krylov method to approximate Jacobian
 F4_powell.JAC_KSP_BAD = {'minres'}
 F4_powell.ROOT_JAC_KSP_BAD = {'gmres', 'bicgstab', 'cgs', 'minres', 'tfqmr'}
 
@@ -92,6 +95,9 @@ F5.xin = [2., 0, 2, 0]
 F5.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
                 'linearmixing': nonlin.linearmixing,
                 'diagbroyden': nonlin.diagbroyden}
+# In the extreme case, the Jacobian inversion yielded zero vector for nonlinear
+# problem solved by CGS/MINRES and it does not converge for root problem solved
+# by MINRES and when using Krylov method to approximate Jacobian
 F5.JAC_KSP_BAD = {'cgs', 'minres'}
 F5.ROOT_JAC_KSP_BAD = {'minres'}
 
