@@ -48,6 +48,7 @@ extensions = [
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
+    'sphinx_tabs.tabs',
 ]
 
 # Determine if the matplotlib has a recent enough version of the

@@ -51,6 +51,18 @@ def use_solver(**kwargs):
     sure that the matrix fulfills this, pass ``assumeSortedIndices=True``
     to gain some speed.
 
+    Examples
+    --------
+    >>> from scipy.sparse.linalg import use_solver, spsolve
+    >>> from scipy.sparse import csc_matrix
+    >>> R = np.random.randn(5, 5)
+    >>> A = csc_matrix(R)
+    >>> b = np.random.randn(5)
+    >>> use_solver(useUmfpack=False) # enforce superLU over UMFPACK
+    >>> x = spsolve(A, b)
+    >>> np.allclose(A.dot(x), b)
+    True
+    >>> use_solver(useUmfpack=True) # reset umfPack usage to default
     """
     if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
@@ -265,7 +277,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     Parameters
     ----------
     A : sparse matrix
-        Sparse matrix to factorize. Should be in CSR or CSC format.
+        Sparse matrix to factorize. Should be in CSC format.
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
         (default: 'COLAMD')
@@ -365,7 +377,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Parameters
     ----------
     A : (N, N) array_like
-        Sparse matrix to factorize
+        Sparse matrix to factorize. Should be in CSC format.
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
         (default: 1e-4)
@@ -420,7 +432,7 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
-        warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+        warn('spilu requires CSC matrix format', SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()

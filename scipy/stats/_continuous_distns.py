@@ -5478,8 +5478,25 @@ class gibrat_gen(rv_continuous):
         return 0.5 * np.log(2 * np.pi) + 0.5
 
 
+# gilbrat was a spelling error; correct is gibrat, see #15911
 gilbrat = gibrat_gen(a=0.0, name='gilbrat')
 gibrat = gibrat_gen(a=0.0, name='gibrat')
+
+
+# since the deprecated class gets intantiated upon import (and we only want to
+# warn upon use), add the deprecation to each (documented) class method, c.f.
+# https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gilbrat.html
+_gibrat_method_names = [
+    "cdf", "entropy", "expect", "fit", "interval", "isf", "logcdf", "logpdf",
+    "logsf", "mean", "median", "moment", "pdf", "ppf", "rvs", "sf", "stats",
+    "std", "var"
+]
+for m in _gibrat_method_names:
+    wrapper = np.deprecate(getattr(gilbrat, m), f"gilbrat.{m}", f"gibrat.{m}",
+                           "Please replace all uses of the distribution class "
+                           "`gilbrat` with the corrected spelling `gibrat`. "
+                           "`gilbrat` will be removed in SciPy 1.11.")
+    setattr(gilbrat, m, wrapper)
 
 
 class maxwell_gen(rv_continuous):
