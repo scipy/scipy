@@ -1,9 +1,7 @@
 import pytest
+import numpy as np
 
 from .. import _construct, array, coo_matrix, _arrays
-
-
-np = pytest.importorskip("numpy")
 
 
 @pytest.mark.parametrize(
