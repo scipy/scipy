@@ -11,7 +11,7 @@ doit interface is better suited for authring the development tasks.
 
 REQUIREMENTS:
 --------------
-- PyPI packages: doit==0.35.0, click, rich-click==1.3.0
+- see environment.yml: doit, pydevtool, click, rich-click
 
 # USAGE:
 
