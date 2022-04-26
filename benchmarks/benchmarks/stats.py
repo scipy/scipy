@@ -250,7 +250,7 @@ class DistributionsAll(Benchmark):
 
 
 class TrackContinuousRoundtrip(Benchmark):
-    # Benchmarks that track a value(s) for every distribution can go here
+    # Benchmarks that track a value for every distribution can go here
     param_names = ['dist_name']
     params = sorted(list(set([d[0] for d in distcont])))
     dist_data = dict(distcont)
@@ -260,10 +260,6 @@ class TrackContinuousRoundtrip(Benchmark):
         # This focuses on ppf, so the code for handling other functions is
         # removed for simplicity.
         self.dist = getattr(stats, dist_name)
-
-        if isinstance(self.dist, stats.rv_discrete):
-            raise NotImplementedError("Skipped b/c discrete")
-
         self.shape_args = self.dist_data[dist_name]
 
     def track_distribution_ppf_roundtrip(self, dist_name):
