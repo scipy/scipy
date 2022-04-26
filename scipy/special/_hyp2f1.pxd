@@ -331,7 +331,9 @@ cdef inline double four_gammas(double u, double v, double w, double x) nogil:
         u, v = v, u
     if fabs(x) > fabs(w):
         w, x = x, w
-
+    # Direct ratio tends more accurate for arguments in this range. Range
+    # chosen empirically based on the relevant benchmarks in
+    # scipy/special/_precompute/hyp2f1_data.py
     if fabs(u) <= 100 and fabs(v) <= 100 and fabs(w) <= 100 and fabs(x) <= 100:
         result = Gamma(u) * Gamma(v) / (Gamma(w) * Gamma(x))
         if not (zisinf(result) or zisnan(result) or result == 0):
@@ -339,6 +341,7 @@ cdef inline double four_gammas(double u, double v, double w, double x) nogil:
     result = four_gammas_lanczos(u, v, w, x)
     if not (zisinf(result) or zisnan(result) or result == 0):
         return result
+    # If overflow or underflow, try again with logs.
     result = exp(
         lgam(v) - lgam(x) +
         lgam(u) - lgam(w)
