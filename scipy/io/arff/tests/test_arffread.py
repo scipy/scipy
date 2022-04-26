@@ -106,7 +106,7 @@ class TestNoData:
         data, meta = loadarff(nodata_filename)
         if sys.byteorder == 'big':
             end = '>'
-        elif sys.byteorder == 'little':
+        else:
             end = '<'
         expected_dtype = np.dtype([('sepallength', f'{end}f8'),
                                    ('sepalwidth', f'{end}f8'),
