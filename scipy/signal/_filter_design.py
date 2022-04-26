@@ -5161,7 +5161,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     References
     ----------
     .. [1] Sophocles J. Orfanidis, "Introduction To Signal Processing",
-           Prentice-Hall, 1996
+           Prentice-Hall, 1996, ch. 11, "Digital Filter Design"
 
     Examples
     --------
