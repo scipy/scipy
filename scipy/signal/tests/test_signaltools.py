@@ -777,6 +777,17 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'full', axes=[0])
         assert_allclose(out, expected, atol=1e-10)
 
+    def test_fft_nan(self):
+        n = 1000
+        rng = np.random.default_rng(43876432987)
+        sig_nan = rng.standard_normal(n)
+
+        for val in [np.nan, np.inf]:
+            sig_nan[100] = val
+            coeffs = signal.firwin(200, 0.2)
+
+            with pytest.warns(RuntimeWarning, match="Use of fft convolution"):
+                signal.convolve(sig_nan, coeffs, mode='same', method='fft')
 
 def fftconvolve_err(*args, **kwargs):
     raise RuntimeError('Fell back to fftconvolve')
