@@ -47,7 +47,7 @@ def prepare_events(events):
             terminal = event.terminal
             warnings.warn(
                 "The 'terminal' event function attribute is deprecated and "
-                "will be removed in SciPy release 1.8.0. Please use the new "
+                "will be removed in SciPy release 1.11.0. Please use the new "
                 "'max_events' attribute, which can be set to 1 to replicate "
                 "the behaviour of the 'terminal' attribute.",
                 DeprecationWarning, stacklevel=3)
