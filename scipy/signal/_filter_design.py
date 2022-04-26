@@ -5278,18 +5278,20 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     # b - cz^-N or b + cz^-N
     b = np.zeros(N + 1)
     b[0] = bx
-    b[-1] = cx
     if ftype == 'notch':
         b[-1] = -cx
+    else:
+        b[-1] = +cx
 
     # Compute denominator coefficients
     # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
     # 1 - az^-N or 1 + az^-N
     a = np.zeros(N + 1)
     a[0] = 1
-    a[-1] = ax
     if ftype == 'notch':
         a[-1] = -ax
+    else:
+        a[-1] = +ax
 
     return b, a
 
