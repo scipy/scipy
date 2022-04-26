@@ -2316,6 +2316,10 @@ class truncweibull_min_gen(rv_continuous):
         ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
         return [ic, ia, ib]
 
+    def _fitstart(self, data):
+        # Arbitrary, but default a=b=c=1 is not valid
+        return super()._fitstart(data, args=(1, 0, 1))
+
     def _get_support(self, c, a, b):
         return a, b
 
@@ -3337,6 +3341,10 @@ class genhyperbolic_gen(rv_continuous):
         ia = _ShapeInfo("a", False, (0, np.inf), (True, False))
         ib = _ShapeInfo("b", False, (-np.inf, np.inf), (False, False))
         return [ip, ia, ib]
+
+    def _fitstart(self, data):
+        # Arbitrary, but the default a=b=1 is not valid
+        return super()._fitstart(data, args=(1, 1, 0.5))
 
     def _logpdf(self, x, p, a, b):
         # kve instead of kv works better for large values of p
@@ -4484,6 +4492,10 @@ class norminvgauss_gen(rv_continuous):
         ia = _ShapeInfo("a", False, (0, np.inf), (False, False))
         ib = _ShapeInfo("b", False, (-np.inf, np.inf), (False, False))
         return [ia, ib]
+
+    def _fitstart(self, data):
+        # Arbitrary, but the default a=b=1 is not valid
+        return super()._fitstart(data, args=(1, 0.5))
 
     def _pdf(self, x, a, b):
         gamma = np.sqrt(a**2 - b**2)
@@ -7306,6 +7318,10 @@ class reciprocal_gen(rv_continuous):
         ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
         return [ia, ib]
 
+    def _fitstart(self, data):
+        # Reasonable, since support is [a, b]
+        return super()._fitstart(data, args=(np.min(data), np.max(data)))
+
     def _get_support(self, a, b):
         return a, b
 
@@ -8292,6 +8308,10 @@ class truncnorm_gen(rv_continuous):
         ib = _ShapeInfo("b", False, (-np.inf, np.inf), (False, True))
         return [ia, ib]
 
+    def _fitstart(self, data):
+        # Reasonable, since support is [a, b]
+        return super()._fitstart(data, args=(np.min(data), np.max(data)))
+
     def _get_support(self, a, b):
         return a, b
 
@@ -9150,6 +9170,10 @@ class crystalball_gen(rv_continuous):
         ibeta = _ShapeInfo("beta", False, (0, np.inf), (False, False))
         im = _ShapeInfo("m", False, (1, np.inf), (False, False))
         return [ibeta, im]
+
+    def _fitstart(self, data):
+        # Arbitrary, but the default m=1 is not valid
+        return super()._fitstart(data, args=(1, 1.5))
 
     def _pdf(self, x, beta, m):
         """
