@@ -5238,13 +5238,12 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
 
     # Check for invalid cutoff frequency or filter type
     ftype = ftype.lower()
-    filter_types = ['notch', 'peak']
     if not 0 < w0 < fs / 2:
         raise ValueError("w0 must be between 0 and {}"
                          " (nyquist), but given {}.".format(fs / 2, w0))
     if np.round(fs % w0) != 0:
         raise ValueError('fs must be divisible by w0.')
-    if ftype not in filter_types:
+    if ftype not in ('notch', 'peak'):
         raise ValueError('ftype must be either notch or peak.')
 
     # Compute the order of the filter
@@ -5259,9 +5258,9 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     # Compute -3dB attenuation
     # Eqs. 11.4.1 and 11.4.2 (p. 582) from reference [1]
     if ftype == 'notch':
-        G0, G = [1, 0]
+        G0, G = 1, 0
     elif ftype == 'peak':
-        G0, G = [0, 1]
+        G0, G = 0, 1
     GB = 1 / np.sqrt(2)
 
     # Compute beta
