@@ -252,7 +252,7 @@ class DistributionsAll(Benchmark):
 class TrackContinuousRoundtrip(Benchmark):
     # Benchmarks that track a value for every distribution can go here
     param_names = ['dist_name']
-    params = sorted(list(set([d[0] for d in distcont])))
+    params = list(dict(distcont).keys())
     dist_data = dict(distcont)
 
     def setup(self, dist_name):
@@ -315,7 +315,7 @@ class PDFPeakMemory(Benchmark):
     x = np.arange(1e6)
 
     param_names = ['dist_name']
-    params = sorted(list(set([d[0] for d in distcont])))
+    params = list(dict(distcont).keys())
     dist_data = dict(distcont)
 
     # So slow that 30min isn't enough time to finish.
