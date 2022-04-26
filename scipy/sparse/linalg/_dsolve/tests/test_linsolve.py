@@ -735,11 +735,11 @@ class TestSpsolveTriangular:
         assert_allclose(A.dot(x), b)
 
         # Regression test from gh-15199
-        l = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0]], dtype=np.float64)
+        A = np.array([[0, 0, 0], [1, 0, 0], [1, 1, 0]], dtype=np.float64)
         b = np.array([1., 2., 3.])
         with suppress_warnings() as sup:
             sup.filter(SparseEfficiencyWarning, "CSR matrix format is")
-            spsolve_triangular(l, b, unit_diagonal=True)
+            spsolve_triangular(A, b, unit_diagonal=True)
 
     def test_singular(self):
         n = 5
