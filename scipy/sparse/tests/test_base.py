@@ -1103,7 +1103,8 @@ class _TestCommon:
         Nexp = scipy.linalg.expm(N)
 
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "splu requires CSC matrix format")
+            sup.filter(SparseEfficiencyWarning,
+                       "splu converted its input to CSC format")
             sup.filter(SparseEfficiencyWarning,
                        "spsolve is more efficient when sparse b is in the CSC matrix format")
             sup.filter(SparseEfficiencyWarning,
@@ -1123,7 +1124,7 @@ class _TestCommon:
                 sup.filter(SparseEfficiencyWarning,
                            "spsolve is more efficient when sparse b is in the CSC matrix format")
                 sup.filter(SparseEfficiencyWarning,
-                           "splu requires CSC matrix format")
+                           "splu converted its input to CSC format")
                 sM = self.spmatrix(M, shape=(3,3), dtype=dtype)
                 sMinv = inv(sM)
             assert_array_almost_equal(sMinv.dot(sM).todense(), np.eye(3))
@@ -2313,7 +2314,8 @@ class _TestSolve:
             A[i+1,i] = conjugate(y[i])
         A = self.spmatrix(A)
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "splu requires CSC matrix format")
+            sup.filter(SparseEfficiencyWarning,
+                       "splu converted its input to CSC format")
             x = splu(A).solve(r)
         assert_almost_equal(A*x,r)
 

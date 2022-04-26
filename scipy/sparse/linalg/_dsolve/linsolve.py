@@ -273,7 +273,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     Parameters
     ----------
     A : sparse matrix
-        Sparse matrix to factorize. Should be in CSC format.
+        Sparse matrix to factorize. Most efficient when provided in CSC
+        format. Other formats will be converted to CSC before factorization.
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
         (default: 'COLAMD')
@@ -339,7 +340,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
-        warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+        warn('splu converted its input to CSC format', SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -373,7 +374,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Parameters
     ----------
     A : (N, N) array_like
-        Sparse matrix to factorize. Should be in CSC format.
+        Sparse matrix to factorize. Most efficient when provided in CSC format.
+        Other formats will be converted to CSC before factorization.
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
         (default: 1e-4)
@@ -428,7 +430,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
-        warn('spilu requires CSC matrix format', SparseEfficiencyWarning)
+        warn('spilu converted its input to CSC format',
+             SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -461,7 +464,8 @@ def factorized(A):
     Parameters
     ----------
     A : (N, N) array_like
-        Input.
+        Input. A in CSC format is most efficient. A CSR format matrix will
+        be converted to CSC before factorization.
 
     Returns
     -------
@@ -490,7 +494,8 @@ def factorized(A):
 
         if not isspmatrix_csc(A):
             A = csc_matrix(A)
-            warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+            warn('splu converted its input to CSC format',
+                 SparseEfficiencyWarning)
 
         A = A.asfptype()  # upcast to a floating point format
 
