@@ -627,6 +627,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         # Get indices for i-th row.
         indptr_start = A.indptr[i]
         indptr_stop = A.indptr[i + 1]
+
         if lower:
             A_diagonal_index_row_i = indptr_stop - 1
             A_off_diagonal_indices_row_i = slice(indptr_start, indptr_stop - 1)
@@ -639,7 +640,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
                                   or A.indices[A_diagonal_index_row_i] < i):
             raise LinAlgError(
                 'A is singular: diagonal {} is zero.'.format(i))
-        if A.indices[A_diagonal_index_row_i] > i:
+        if not unit_diagonal and A.indices[A_diagonal_index_row_i] > i:
             raise LinAlgError(
                 'A is not triangular: A[{}, {}] is nonzero.'
                 ''.format(i, A.indices[A_diagonal_index_row_i]))
