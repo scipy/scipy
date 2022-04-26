@@ -114,7 +114,7 @@ class TestExpmActionSimple:
             observed = expm_multiply(A, B)
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
-                           "splu requires CSC matrix format")
+                           "splu converted its input to CSC format")
                 sup.filter(SparseEfficiencyWarning,
                            "spsolve is more efficient when sparse b is in the"
                            " CSC matrix format")
@@ -153,7 +153,7 @@ class TestExpmActionInterval:
                         num=num, endpoint=endpoint)
                 with suppress_warnings() as sup:
                     sup.filter(SparseEfficiencyWarning,
-                               "splu requires CSC matrix format")
+                               "splu converted its input to CSC format")
                     sup.filter(SparseEfficiencyWarning,
                                "spsolve is more efficient when sparse b is in the CSC matrix format")
                     for solution, t in zip(X, samples):
@@ -249,4 +249,3 @@ class TestExpmActionInterval:
         if not nsuccesses:
             msg = 'failed to find a status-' + str(target_status) + ' interval'
             raise Exception(msg)
-
