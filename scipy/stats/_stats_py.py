@@ -5221,12 +5221,7 @@ def _perm_test(x, y, stat, reps=1000, workers=-1, random_state=None):
         null_dist = np.array(list(mapwrapper(parallelp, range(reps))))
 
     # calculate p-value and significant permutation map through list
-    pvalue = (null_dist >= stat).sum() / reps
-
-    # correct for a p-value of 0. This is because, with bootstrapping
-    # permutations, a p-value of 0 is incorrect
-    if pvalue == 0:
-        pvalue = 1 / reps
+    pvalue = (1 + (null_dist >= stat).sum()) / (1 + reps)
 
     return pvalue, null_dist
 
@@ -5905,13 +5900,13 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     mean1 : array_like
         The mean(s) of sample 1.
     std1 : array_like
-        The standard deviation(s) of sample 1.
+        The corrected sample standard deviation of sample 1 (i.e. ``ddof=1``).
     nobs1 : array_like
         The number(s) of observations of sample 1.
     mean2 : array_like
         The mean(s) of sample 2.
     std2 : array_like
-        The standard deviations(s) of sample 2.
+        The corrected sample standard deviation of sample 2 (i.e. ``ddof=1``).
     nobs2 : array_like
         The number(s) of observations of sample 2.
     equal_var : bool, optional
@@ -5956,7 +5951,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Examples
     --------
-    Suppose we have the summary data for two samples, as follows::
+    Suppose we have the summary data for two samples, as follows (with the
+    Sample Variance being the corrected sample variance)::
 
                          Sample   Sample
                    Size   Mean   Variance
@@ -5986,16 +5982,16 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
                           Number of    Sample     Sample
                     Size    ones        Mean     Variance
-        Sample 1    150      30         0.2        0.16
-        Sample 2    200      45         0.225      0.174375
+        Sample 1    150      30         0.2        0.161073
+        Sample 2    200      45         0.225      0.175251
 
     The sample mean :math:`\hat{p}` is the proportion of ones in the sample
     and the variance for a binary observation is estimated by
     :math:`\hat{p}(1-\hat{p})`.
 
-    >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.16), nobs1=150,
-    ...                      mean2=0.225, std2=np.sqrt(0.17437), nobs2=200)
-    Ttest_indResult(statistic=-0.564327545549774, pvalue=0.5728947691244874)
+    >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.161073), nobs1=150,
+    ...                      mean2=0.225, std2=np.sqrt(0.175251), nobs2=200)
+    Ttest_indResult(statistic=-0.5627187905196761, pvalue=0.5739887114209541)
 
     For comparison, we could compute the t statistic and p-value using
     arrays of 0s and 1s and `scipy.stat.ttest_ind`, as above.

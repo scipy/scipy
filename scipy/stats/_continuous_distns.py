@@ -380,7 +380,7 @@ class norm_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         if floc is None:
             loc = data.mean()
@@ -723,7 +723,7 @@ class beta_gen(rv_continuous):
         # the Wikipedia article on the Beta distribution for the formulas.)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         # Normalize the data to the interval [0, 1].
         data = (np.ravel(data) - floc) / fscale
@@ -1669,7 +1669,7 @@ class expon_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         data_min = data.min()
 
@@ -2315,6 +2315,10 @@ class truncweibull_min_gen(rv_continuous):
         ia = _ShapeInfo("a", False, (0, np.inf), (True, False))
         ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
         return [ic, ia, ib]
+
+    def _fitstart(self, data):
+        # Arbitrary, but default a=b=c=1 is not valid
+        return super()._fitstart(data, args=(1, 0, 1))
 
     def _get_support(self, c, a, b):
         return a, b
@@ -2991,7 +2995,7 @@ class gamma_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         if np.any(data <= floc):
             raise FitDataError("gamma", lower=floc, upper=np.inf)
@@ -3337,6 +3341,10 @@ class genhyperbolic_gen(rv_continuous):
         ia = _ShapeInfo("a", False, (0, np.inf), (True, False))
         ib = _ShapeInfo("b", False, (-np.inf, np.inf), (False, False))
         return [ip, ia, ib]
+
+    def _fitstart(self, data):
+        # Arbitrary, but the default a=b=1 is not valid
+        return super()._fitstart(data, args=(1, 1, 0.5))
 
     def _logpdf(self, x, p, a, b):
         # kve instead of kv works better for large values of p
@@ -4485,11 +4493,68 @@ class norminvgauss_gen(rv_continuous):
         ib = _ShapeInfo("b", False, (-np.inf, np.inf), (False, False))
         return [ia, ib]
 
+    def _fitstart(self, data):
+        # Arbitrary, but the default a=b=1 is not valid
+        return super()._fitstart(data, args=(1, 0.5))
+
     def _pdf(self, x, a, b):
         gamma = np.sqrt(a**2 - b**2)
         fac1 = a / np.pi * np.exp(gamma)
         sq = np.hypot(1, x)  # reduce overflows
         return fac1 * sc.k1e(a * sq) * np.exp(b*x - a*sq) / sq
+
+    def _sf(self, x, a, b):
+        if np.isscalar(x):
+            # If x is a scalar, then so are a and b.
+            return integrate.quad(self._pdf, x, np.inf, args=(a, b))[0]
+        else:
+            result = []
+            for (x0, a0, b0) in zip(x, a, b):
+                result.append(integrate.quad(self._pdf, x0, np.inf,
+                                             args=(a0, b0))[0])
+            return np.array(result)
+
+    def _isf(self, q, a, b):
+        def _isf_scalar(q, a, b):
+
+            def eq(x, a, b, q):
+                # Solve eq(x, a, b, q) = 0 to obtain isf(x, a, b) = q.
+                return self._sf(x, a, b) - q
+
+            # Find a bracketing interval for the root.
+            # Start at the mean, and grow the length of the interval
+            # by 2 each iteration until there is a sign change in eq.
+            xm = self.mean(a, b)
+            em = eq(xm, a, b, q)
+            if em == 0:
+                # Unlikely, but might as well check.
+                return xm
+            if em > 0:
+                delta = 1
+                left = xm
+                right = xm + delta
+                while eq(right, a, b, q) > 0:
+                    delta = 2*delta
+                    right = xm + delta
+            else:
+                # em < 0
+                delta = 1
+                right = xm
+                left = xm - delta
+                while eq(left, a, b, q) < 0:
+                    delta = 2*delta
+                    left = xm - delta
+            result = optimize.brentq(eq, left, right, args=(a, b, q),
+                                     xtol=self.xtol)
+            return result
+
+        if np.isscalar(q):
+            return _isf_scalar(q, a, b)
+        else:
+            result = []
+            for (q0, a0, b0) in zip(q, a, b):
+                result.append(_isf_scalar(q0, a0, b0))
+            return np.array(result)
 
     def _rvs(self, a, b, size=None, random_state=None):
         # note: X = b * V + sqrt(V) * X is norminvgaus(a,b) if X is standard
@@ -4891,7 +4956,7 @@ def _check_fit_input_parameters(dist, data, args, kwds):
                            "optimize.")
 
     if not np.isfinite(data).all():
-        raise RuntimeError("The data contains non-finite values.")
+        raise ValueError("The data contains non-finite values.")
 
     return (data, *fshapes, floc, fscale)
 
@@ -5336,7 +5401,7 @@ class lognorm_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         floc = float(floc)
         if floc != 0:
@@ -5372,20 +5437,20 @@ class lognorm_gen(rv_continuous):
 lognorm = lognorm_gen(a=0.0, name='lognorm')
 
 
-class gilbrat_gen(rv_continuous):
-    r"""A Gilbrat continuous random variable.
+class gibrat_gen(rv_continuous):
+    r"""A Gibrat continuous random variable.
 
     %(before_notes)s
 
     Notes
     -----
-    The probability density function for `gilbrat` is:
+    The probability density function for `gibrat` is:
 
     .. math::
 
         f(x) = \frac{1}{x \sqrt{2\pi}} \exp(-\frac{1}{2} (\log(x))^2)
 
-    `gilbrat` is a special case of `lognorm` with ``s=1``.
+    `gibrat` is a special case of `lognorm` with ``s=1``.
 
     %(after_notes)s
 
@@ -5425,7 +5490,25 @@ class gilbrat_gen(rv_continuous):
         return 0.5 * np.log(2 * np.pi) + 0.5
 
 
-gilbrat = gilbrat_gen(a=0.0, name='gilbrat')
+# gilbrat was a spelling error; correct is gibrat, see #15911
+gilbrat = gibrat_gen(a=0.0, name='gilbrat')
+gibrat = gibrat_gen(a=0.0, name='gibrat')
+
+
+# since the deprecated class gets intantiated upon import (and we only want to
+# warn upon use), add the deprecation to each (documented) class method, c.f.
+# https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gilbrat.html
+_gibrat_method_names = [
+    "cdf", "entropy", "expect", "fit", "interval", "isf", "logcdf", "logpdf",
+    "logsf", "mean", "median", "moment", "pdf", "ppf", "rvs", "sf", "stats",
+    "std", "var"
+]
+for m in _gibrat_method_names:
+    wrapper = np.deprecate(getattr(gilbrat, m), f"gilbrat.{m}", f"gibrat.{m}",
+                           "Please replace all uses of the distribution class "
+                           "`gilbrat` with the corrected spelling `gibrat`. "
+                           "`gilbrat` will be removed in SciPy 1.11.")
+    setattr(gilbrat, m, wrapper)
 
 
 class maxwell_gen(rv_continuous):
@@ -7235,6 +7318,10 @@ class reciprocal_gen(rv_continuous):
         ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
         return [ia, ib]
 
+    def _fitstart(self, data):
+        # Reasonable, since support is [a, b]
+        return super()._fitstart(data, args=(np.min(data), np.max(data)))
+
     def _get_support(self, a, b):
         return a, b
 
@@ -8200,15 +8287,15 @@ class truncnorm_gen(rv_continuous):
     Notes
     -----
     The standard form of this distribution is a standard normal truncated to
-    the range [a, b] --- notice that a and b are defined over the domain of the
-    standard normal.  To convert clip values for a specific mean and standard
-    deviation, use::
+    the range ``[a, b]``, where ``a`` and ``b`` are user-provided shape
+    parameters. The parameter ``loc`` shifts the mean of the underlying normal
+    distribution, and ``scale`` controls the standard deviation of the
+    underlying normal, but ``a`` and ``b`` are still defined with respect to
+    the *standard* normal. If ``myclip_a`` and ``myclip_b`` are clip values
+    defined with respect to a shifted and scaled normal, they can be converted
+    the required form according to::
 
-        a, b = (myclip_a - my_mean) / my_std, (myclip_b - my_mean) / my_std
-
-    `truncnorm` takes :math:`a` and :math:`b` as shape parameters.
-
-    %(after_notes)s
+        a, b = (myclip_a - loc) / scale, (myclip_b - loc) / scale
 
     %(example)s
 
@@ -8220,6 +8307,10 @@ class truncnorm_gen(rv_continuous):
         ia = _ShapeInfo("a", False, (-np.inf, np.inf), (True, False))
         ib = _ShapeInfo("b", False, (-np.inf, np.inf), (False, True))
         return [ia, ib]
+
+    def _fitstart(self, data):
+        # Reasonable, since support is [a, b]
+        return super()._fitstart(data, args=(np.min(data), np.max(data)))
 
     def _get_support(self, a, b):
         return a, b
@@ -8636,7 +8727,7 @@ class uniform_gen(rv_continuous):
         data = np.asarray(data)
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         # MLE for the uniform distribution
         # --------------------------------
@@ -9079,6 +9170,10 @@ class crystalball_gen(rv_continuous):
         ibeta = _ShapeInfo("beta", False, (0, np.inf), (False, False))
         im = _ShapeInfo("m", False, (1, np.inf), (False, False))
         return [ibeta, im]
+
+    def _fitstart(self, data):
+        # Arbitrary, but the default m=1 is not valid
+        return super()._fitstart(data, args=(1, 1.5))
 
     def _pdf(self, x, beta, m):
         """
@@ -9734,7 +9829,7 @@ class studentized_range_gen(rv_continuous):
 
         ufunc = np.frompyfunc(_single_cdf, 3, 1)
 
-        # Clip return to ensure integration error doesn't make CDF go above 1.
+        # clip p-values to ensure they are in [0, 1].
         return np.clip(np.float64(ufunc(x, k, df)), 0, 1)
 
 

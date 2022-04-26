@@ -30,7 +30,7 @@ c       input:
 c       n -- size of vn, u, and v, though the indexing on vn goes
 c            from 2 to n
 c       vn -- components 2 to n of the Householder vector vn;
-c             vn(1) is assumed to be 1 
+c             vn(1) is assumed to be 1
 c       u -- vector to be transformed
 c       ifrescal -- set to 1 to recompute scal from vn(2), ..., vn(n);
 c                   set to 0 to use scal as input
@@ -95,7 +95,7 @@ c
 c
 c
 c       Subtract fact*vn from u, yielding v.
-c      
+c
         v(1) = u(1) - fact
 c
         do k = 2,n
