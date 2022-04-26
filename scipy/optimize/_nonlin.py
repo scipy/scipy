@@ -1320,8 +1320,8 @@ class KrylovJacobian(Jacobian):
     %(params_basic)s
     rdiff : float, optional
         Relative step size to use in numerical differentiation.
-    method : {'lgmres', 'gmres', 'bicgstab', 'cgs', 'minres', 'tfqmr'} or
-        callable Krylov method to use to approximate the Jacobian.
+    method : {'lgmres', 'gmres', 'bicgstab', 'cgs', 'minres', 'tfqmr'} or callable
+        Krylov method to use to approximate the Jacobian.
         Can be a string, or a function implementing the same interface as
         the iterative solvers in `scipy.sparse.linalg`.
 
@@ -1413,6 +1413,8 @@ class KrylovJacobian(Jacobian):
                  inner_M=None, outer_k=10, **kw):
         self.preconditioner = inner_M
         self.rdiff = rdiff
+        # Note that this retrieves one of the named functions, or otherwise
+        # uses `method` as is (i.e., for a user-provided callable).
         self.method = dict(
             bicgstab=scipy.sparse.linalg.bicgstab,
             gmres=scipy.sparse.linalg.gmres,
@@ -1429,7 +1431,9 @@ class KrylovJacobian(Jacobian):
             self.method_kw['restrt'] = inner_maxiter
             self.method_kw['maxiter'] = 1
             self.method_kw.setdefault('atol', 0)
-        elif self.method is scipy.sparse.linalg.gcrotmk:
+        elif self.method in (scipy.sparse.linalg.gcrotmk,
+                             scipy.sparse.linalg.bicgstab,
+                             scipy.sparse.linalg.cgs):
             self.method_kw.setdefault('atol', 0)
         elif self.method is scipy.sparse.linalg.lgmres:
             self.method_kw['outer_k'] = outer_k

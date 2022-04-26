@@ -139,11 +139,9 @@ class TestNonlin:
             for method in ['gmres', 'bicgstab', 'cgs', 'minres', 'tfqmr']:
                 if method in f.JAC_KSP_BAD:
                     continue
-                with suppress_warnings() as sup:
-                    sup.filter(DeprecationWarning,
-                               ".*called without specifying")
-                    x = func(f, f.xin, method=method, line_search=None,
-                             f_tol=f_tol, maxiter=200, verbose=0)
+
+                x = func(f, f.xin, method=method, line_search=None,
+                         f_tol=f_tol, maxiter=200, verbose=0)
                 assert_(np.absolute(f(x)).max() < f_tol)
 
         x = func(f, f.xin, f_tol=f_tol, maxiter=200, verbose=0)
@@ -155,13 +153,11 @@ class TestNonlin:
             for jac_method in ['gmres', 'bicgstab', 'cgs', 'minres', 'tfqmr']:
                 if jac_method in f.ROOT_JAC_KSP_BAD:
                     continue
-                with suppress_warnings() as sup:
-                    sup.filter(DeprecationWarning,
-                               ".*called without specifying")
-                    res = root(f, f.xin, method=method,
-                               options={'ftol': f_tol, 'maxiter': 200,
-                                        'disp': 0,
-                                        'jac_options': {'method': jac_method}})
+
+                res = root(f, f.xin, method=method,
+                           options={'ftol': f_tol, 'maxiter': 200,
+                                    'disp': 0,
+                                    'jac_options': {'method': jac_method}})
                 assert_(np.absolute(res.fun).max() < f_tol)
 
         res = root(f, f.xin, method=method,
@@ -191,11 +187,9 @@ class TestNonlin:
             self._tol_norm_used = True
             return np.absolute(x).max()
 
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, ".*called without specifying")
-            nonlin.newton_krylov(F, F.xin, method=method, f_tol=1e-2,
-                                 maxiter=200, verbose=0,
-                                 tol_norm=local_norm_func)
+        nonlin.newton_krylov(F, F.xin, method=method, f_tol=1e-2,
+                             maxiter=200, verbose=0,
+                             tol_norm=local_norm_func)
         assert_(self._tol_norm_used)
 
     def test_problem_root(self):
