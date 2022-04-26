@@ -5249,7 +5249,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     # Compute the order of the filter
     N = int(fs // w0)
 
-    # Compute frequency in radians and filter bandwith
+    # Compute frequency in radians and filter bandwidth
     # Eq. 11.3.1 (p. 574) from reference [1]
     w0 = (2 * np.pi * w0) / fs
     w_delta = w0 / Q
@@ -5299,7 +5299,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
 def _hz_to_erb(hz):
     """
     Utility for converting from frequency (Hz) to the
-    Equivalent Rectangular Bandwith (ERB) scale
+    Equivalent Rectangular Bandwidth (ERB) scale
     ERB = frequency / EarQ + minBW
     """
     EarQ = 9.26449
