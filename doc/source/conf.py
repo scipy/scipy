@@ -20,6 +20,8 @@ needs_sphinx = '2.0'
 # ua._Function should not be treated as an attribute
 from sphinx.util import inspect
 import scipy._lib.uarray as ua
+from scipy.stats._distn_infrastructure import rv_generic  # noqa: E402
+from scipy.stats._multivariate import multi_rv_generic  # noqa: E402
 old_isdesc = inspect.isdescriptor
 inspect.isdescriptor = (lambda obj: old_isdesc(obj)
                         and not isinstance(obj, ua._Function))
@@ -31,7 +33,6 @@ inspect.isdescriptor = (lambda obj: old_isdesc(obj)
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 
-sys.path.insert(0, os.path.abspath('../sphinxext'))
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 import numpydoc.docscrape as np_docscrape  # noqa:E402
@@ -47,6 +48,7 @@ extensions = [
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
+    'sphinx_tabs.tabs',
 ]
 
 # Determine if the matplotlib has a recent enough version of the
@@ -83,6 +85,11 @@ copyright = '2008-%s, The SciPy community' % date.today().year
 import scipy
 version = re.sub(r'\.dev-.*$', r'.dev', scipy.__version__)
 release = scipy.__version__
+
+if os.environ.get('CIRCLE_JOB', False) and \
+        os.environ.get('CIRCLE_BRANCH', '') != 'main':
+    version = os.environ['CIRCLE_BRANCH']
+    release = version
 
 print("%s (VERSION %s)" % (project, version))
 
@@ -148,7 +155,7 @@ for key in (
         r"'U' mode is deprecated",  # sphinx io
         r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
         r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
-        r"'contextfunction' is renamed to 'pass_context'",  # Jinja
+        r"distutils Version",  # distutils
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)
@@ -182,8 +189,15 @@ html_favicon = '_static/favicon.ico'
 html_theme_options = {
   "logo_link": "index",
   "github_url": "https://github.com/scipy/scipy",
-  "navbar_start": ["navbar-logo", "version"],
+  "navbar_end": ["version-switcher", "navbar-icon-links"],
+  "switcher": {
+      "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
+      "version_match": version,
+  }
 }
+
+if 'dev' in version:
+    html_theme_options["switcher"]["version_match"] = "dev"
 
 if 'versionwarning' in tags:
     # Specific to docs.scipy.org deployment.
@@ -193,14 +207,9 @@ if 'versionwarning' in tags:
            'script.src = "/doc/_static/versionwarning.js";\n'
            'document.head.appendChild(script);');
     html_context = {
-        'VERSIONCHECK_JS': src,
-        'versionwarning': True
+        'VERSIONCHECK_JS': src
     }
     html_js_files = ['versioncheck.js']
-else:
-    html_context = {
-        'versionwarning': False
-    }
 
 html_title = "%s v%s Manual" % (project, version)
 html_static_path = ['_static']
@@ -223,129 +232,14 @@ htmlhelp_basename = 'scipy'
 
 mathjax_path = "scipy-mathjax/MathJax.js?config=scipy-mathjax"
 
-
-# -----------------------------------------------------------------------------
-# LaTeX output
-# -----------------------------------------------------------------------------
-
-# Grouping the document tree into LaTeX files. List of tuples
-# (source start file, target name, title, author, document class [howto/manual]).
-_stdauthor = 'Written by the SciPy community'
-latex_documents = [
-  ('index', 'scipy-ref.tex', 'SciPy Reference Guide', _stdauthor, 'manual'),
-#  ('user/index', 'scipy-user.tex', 'SciPy User Guide',
-#   _stdauthor, 'manual'),
-]
-
-# Not available on many systems:
-latex_use_xindy = False
-
-# The name of an image file (relative to this directory) to place at the top of
-# the title page.
-#latex_logo = None
-
-# Documents to append as an appendix to all manuals.
-#latex_appendices = []
-
-# If false, no module index is generated.
-latex_domain_indices = False
-
-# fix issues with Unicode characters
-latex_engine = 'xelatex'
-
-latex_elements = {
-    # The paper size ('letterpaper' or 'a4paper').
-    #
-    # 'papersize': 'letterpaper',
-
-    # The font size ('10pt', '11pt' or '12pt').
-    #
-    # 'pointsize': '10pt',
-
-    # Additional stuff for the LaTeX preamble.
-    #
-    'preamble': r'''
-% In the parameters etc. sections, align uniformly, and adjust label emphasis
-\usepackage{expdlist}
-\let\latexdescription=\description
-\let\endlatexdescription=\enddescription
-\renewenvironment{description}
-{\renewenvironment{description}
-   {\begin{latexdescription}%
-    [\setleftmargin{50pt}\breaklabel\setlabelstyle{\bfseries}]%
-   }%
-   {\end{latexdescription}}%
- \begin{latexdescription}%
-    [\setleftmargin{15pt}\breaklabel\setlabelstyle{\bfseries\itshape}]%
-}%
-{\end{latexdescription}}
-% Fix bug in expdlist's modified \@item
-\usepackage{etoolbox}
-\makeatletter
-\patchcmd\@item{{\@breaklabel} }{{\@breaklabel}}{}{}
-% Fix bug in expdlist's way of breaking the line after long item label
-\def\breaklabel{%
-    \def\@breaklabel{%
-        \leavevmode\par
-        % now a hack because Sphinx inserts \leavevmode after term node
-        \def\leavevmode{\def\leavevmode{\unhbox\voidb@x}}%
-    }%
-}
-\makeatother
-
-% Make Examples/etc section headers smaller and more compact
-\titlespacing*{\paragraph}{0pt}{1ex}{0pt}
-
-% Save vertical space in parameter lists and elsewhere
-\makeatletter
-\renewenvironment{quote}%
-               {\list{}{\topsep=0pt\relax
-                        \parsep \z@ \@plus\p@}%
-                \item\relax}%
-               {\endlist}
-\makeatother
-% Avoid small font size in code-blocks
-\fvset{fontsize=auto}
-% Use left-alignment per default in tabulary rendered tables
-\newcolumntype{T}{L}
-% Get some useful deeper bookmarks and table of contents in PDF
-\setcounter{tocdepth}{1}
-% Fix: ≠ is unknown to XeLaTeX's default font Latin Modern
-\usepackage{newunicodechar}
-\newunicodechar{≠}{\ensuremath{\neq}}
-% Get PDF to use maximal depth bookmarks
-\hypersetup{bookmarksdepth=subparagraph}
-% reduce hyperref warnings
-\pdfstringdefDisableCommands{%
-  \let\sphinxupquote\empty
-  \let\sphinxstyleliteralintitle\empty
-  \let\sphinxstyleemphasis\empty
-}
-''',
-    # Latex figure (float) alignment
-    #
-    # 'figure_align': 'htbp',
-
-    # benefit from  Sphinx built-in workaround of LaTeX's list limitations
-    'maxlistdepth': '12',
-
-    # reduce TeX warnings about underfull boxes in the index
-    'printindex': r'\raggedright\printindex',
-
-    # avoid potential problems arising from erroneous mark-up of the
-    # \mathbf{\Gamma} type
-    'passoptionstopackages': r'\PassOptionsToPackage{no-math}{fontspec}',
-}
-
-
 # -----------------------------------------------------------------------------
 # Intersphinx configuration
 # -----------------------------------------------------------------------------
 intersphinx_mapping = {
-    'python': ('https://docs.python.org/dev', None),
+    'python': ('https://docs.python.org/3', None),
     'numpy': ('https://numpy.org/devdocs', None),
     'neps': ('https://numpy.org/neps', None),
-    'matplotlib': ('https://matplotlib.org', None),
+    'matplotlib': ('https://matplotlib.org/stable', None),
     'asv': ('https://asv.readthedocs.io/en/stable/', None),
 }
 
@@ -406,7 +300,7 @@ import numpy as np
 np.random.seed(123)
 """
 plot_include_source = True
-plot_formats = [('png', 96), 'pdf']
+plot_formats = [('png', 96)]
 plot_html_show_formats = False
 plot_html_show_source_link = False
 
@@ -470,6 +364,12 @@ def linkcode_resolve(domain, info):
         except Exception:
             return None
 
+    # Use the original function object if it is wrapped.
+    obj = getattr(obj, "__wrapped__", obj)
+    # SciPy's distributions are instances of *_gen. Point to this
+    # class since it contains the implementation of all the methods.
+    if isinstance(obj, (rv_generic, multi_rv_generic)):
+        obj = obj.__class__
     try:
         fn = inspect.getsourcefile(obj)
     except Exception:

@@ -127,13 +127,13 @@ class FitResult:
             The matplotlib Axes object on which the plot was drawn.
         """
         try:
-            from matplotlib.ticker import MaxNLocator  # type: ignore[import]
+            from matplotlib.ticker import MaxNLocator
         except ModuleNotFoundError as exc:
             message = "matplotlib must be installed to use method `plot`."
             raise ValueError(message) from exc
 
         if ax is None:
-            import matplotlib.pyplot as plt  # type: ignore[import]
+            import matplotlib.pyplot as plt
             ax = plt.gca()
 
         fit_params = np.atleast_1d(self.params)
@@ -347,35 +347,37 @@ def fit(dist, data, bounds=None, *, guess=None,
 
     >>> bounds = {'n': (0, 30)}  # omit parameter p using a `dict`
     >>> res2 = stats.fit(dist, data, bounds)
-    >>> res.params
+    >>> res2.params
     FitParams(n=5.0, p=0.5016492009232932, loc=0.0)  # may vary
 
     If we wish to force the distribution to be fit with *n* fixed at 6, we can
     set both the lower and upper bounds on *n* to 6. Note, however, that the
-    value of the objective function being optimized is worse (higher) in this
-    case.
+    value of the objective function being optimized is typically worse (higher)
+    in this case.
 
     >>> bounds = {'n': (6, 6)}  # fix parameter `n`
     >>> res3 = stats.fit(dist, data, bounds)
     >>> res3.params
     FitParams(n=6.0, p=0.5486556076755706, loc=0.0)  # may vary
     >>> res3.nllf() > res.nllf()
-    True
+    True  # may vary
 
-    The `optimizer` parameter allows us to control the optimizer
-    used to perform the fitting. The default optimizer is
-    `scipy.optimize.differential_evolution` with its own default settings,
-    but we can easily change these settings by creating our own optimizer
-    with different defaults.
+    Note that the numerical results of the previous examples are typical, but
+    they may vary because the default optimizer used by `fit`,
+    `scipy.optimize.differential_evolution`, is stochastic. However, we can
+    customize the settings used by the optimizer to ensure reproducibility -
+    or even use a different optimizer entirely - using the `optimizer`
+    parameter.
 
     >>> from scipy.optimize import differential_evolution
+    >>> rng = np.random.default_rng(767585560716548)
     >>> def optimizer(fun, bounds, *, integrality):
     ...     return differential_evolution(fun, bounds, strategy='best2bin',
     ...                                   seed=rng, integrality=integrality)
     >>> bounds = [(0, 30), (0, 1)]
     >>> res4 = stats.fit(dist, data, bounds, optimizer=optimizer)
     >>> res4.params
-    FitParams(n=5.0, p=0.5032774713044523, loc=0.0)  # may vary
+    FitParams(n=5.0, p=0.5015183149259951, loc=0.0)
 
     """
     # --- Input Validation / Standardization --- #

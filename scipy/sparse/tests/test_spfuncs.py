@@ -5,20 +5,19 @@ from scipy.sparse import _spfuncs as spfuncs
 from scipy.sparse import csr_matrix, csc_matrix, bsr_matrix
 from scipy.sparse._sparsetools import (csr_scale_rows, csr_scale_columns,
                                        bsr_scale_rows, bsr_scale_columns)
-from scipy.sparse._sputils import matrix
 
 
 class TestSparseFunctions:
     def test_scale_rows_and_cols(self):
-        D = matrix([[1,0,0,2,3],
-                    [0,4,0,5,0],
-                    [0,0,6,7,0]])
+        D = array([[1, 0, 0, 2, 3],
+                   [0, 4, 0, 5, 0],
+                   [0, 0, 6, 7, 0]])
 
         #TODO expose through function
         S = csr_matrix(D)
         v = array([1,2,3])
         csr_scale_rows(3,5,S.indptr,S.indices,S.data,v)
-        assert_equal(S.toarray(), diag(v)*D)
+        assert_equal(S.toarray(), diag(v)@D)
 
         S = csr_matrix(D)
         v = array([1,2,3,4,5])

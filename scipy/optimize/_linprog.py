@@ -407,8 +407,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     programming solvers in SciPy, especially for large, sparse problems;
     which of these two is faster is problem-dependent.
     The other solvers (`'interior-point'`, `'revised simplex'`, and
-    `'simplex'`) are legacy methods and will be removed in the second release
-    after SciPy 1.9.0.
+    `'simplex'`) are legacy methods and will be removed in SciPy 1.11.0.
 
     Method *highs-ds* is a wrapper of the C++ high performance dual
     revised simplex implementation (HSOL) [13]_, [14]_. Method *highs-ipm*
@@ -604,9 +603,9 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         sol['success'] = sol['status'] == 0
         return OptimizeResult(sol)
 
-    warn(f"`method='{meth}'` is deprecated and will be removed in the second "
-         "release after SciPy 1.9.0. Please use one of the HiGHS solvers (e.g."
-         " `method='highs'`) in new code.", DeprecationWarning, stacklevel=2)
+    warn(f"`method='{meth}'` is deprecated and will be removed in SciPy "
+         "1.11.0. Please use one of the HiGHS solvers (e.g. "
+         "`method='highs'`) in new code.", DeprecationWarning, stacklevel=2)
 
     iteration = 0
     complete = False  # will become True if solved in presolve

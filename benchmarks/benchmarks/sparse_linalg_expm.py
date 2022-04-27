@@ -6,6 +6,7 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     import scipy.linalg
+    from scipy.sparse.linalg import expm as sp_expm
     from scipy.sparse.linalg import expm_multiply
 
 
@@ -67,6 +68,6 @@ class Expm(Benchmark):
 
     def time_expm(self, n, format):
         if format == 'sparse':
-            scipy.linalg.expm(self.A_sparse)
+            sp_expm(self.A_sparse)
         elif format == 'dense':
             scipy.linalg.expm(self.A_dense)

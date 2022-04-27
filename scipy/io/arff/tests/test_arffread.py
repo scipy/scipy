@@ -104,10 +104,14 @@ class TestNoData:
         # Reading it should result in an array with length 0.
         nodata_filename = os.path.join(data_path, 'nodata.arff')
         data, meta = loadarff(nodata_filename)
-        expected_dtype = np.dtype([('sepallength', '<f8'),
-                                   ('sepalwidth', '<f8'),
-                                   ('petallength', '<f8'),
-                                   ('petalwidth', '<f8'),
+        if sys.byteorder == 'big':
+            end = '>'
+        else:
+            end = '<'
+        expected_dtype = np.dtype([('sepallength', f'{end}f8'),
+                                   ('sepalwidth', f'{end}f8'),
+                                   ('petallength', f'{end}f8'),
+                                   ('petalwidth', f'{end}f8'),
                                    ('class', 'S15')])
         assert_equal(data.dtype, expected_dtype)
         assert_equal(data.size, 0)

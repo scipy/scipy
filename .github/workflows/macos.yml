@@ -17,7 +17,7 @@ concurrency:
 jobs:
   test_macos:
     name: macOS Test Matrix
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
+    if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: macos-latest
     strategy:
       max-parallel: 3
@@ -26,11 +26,11 @@ jobs:
         numpy-version: ['--upgrade numpy']
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
     - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
 

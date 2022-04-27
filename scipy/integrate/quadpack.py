@@ -6,8 +6,12 @@ import warnings
 from . import _quadpack_py
 
 __all__ = [  # noqa: F822
-    'quad', 'dblquad', 'tplquad', 'nquad', 'quad_explain',
-    'IntegrationWarning', 'error'
+    "quad",
+    "dblquad",
+    "tplquad",
+    "nquad",
+    "IntegrationWarning",
+    "error",
 ]
 
 

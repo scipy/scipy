@@ -218,11 +218,11 @@ class RK23(RungeKutta):
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits), while `atol` controls
         absolute accuracy (number of correct decimal places). To achieve the
-        desired `rtol`, set `atol` to be lower than the lowest value that can
-        be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
         allowable error. If `atol` is larger than ``rtol * abs(y)`` the
         number of correct digits is not guaranteed. Conversely, to achieve the
-        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always lower
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
         than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
@@ -315,11 +315,11 @@ class RK45(RungeKutta):
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits), while `atol` controls
         absolute accuracy (number of correct decimal places). To achieve the
-        desired `rtol`, set `atol` to be lower than the lowest value that can
-        be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
         allowable error. If `atol` is larger than ``rtol * abs(y)`` the
         number of correct digits is not guaranteed. Conversely, to achieve the
-        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always lower
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
         than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
@@ -427,11 +427,11 @@ class DOP853(RungeKutta):
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits), while `atol` controls
         absolute accuracy (number of correct decimal places). To achieve the
-        desired `rtol`, set `atol` to be lower than the lowest value that can
-        be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
         allowable error. If `atol` is larger than ``rtol * abs(y)`` the
         number of correct digits is not guaranteed. Conversely, to achieve the
-        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always lower
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
         than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are

@@ -43,8 +43,8 @@ def _broadcast_shapes(shapes, axis=None):
         axis = np.atleast_1d(axis)
         axis_int = axis.astype(int)
         if not np.array_equal(axis_int, axis):
-            raise ValueError('`axis` must be an integer, a '
-                             'tuple of integers, or `None`.')
+            raise np.AxisError('`axis` must be an integer, a '
+                               'tuple of integers, or `None`.')
         axis = axis_int
 
     # First, ensure all shapes have same number of dimensions by prepending 1s.
@@ -60,10 +60,10 @@ def _broadcast_shapes(shapes, axis=None):
         if axis[-1] >= n_dims or axis[0] < 0:
             message = (f"`axis` is out of bounds "
                        f"for array of dimension {n_dims}")
-            raise ValueError(message)
+            raise np.AxisError(message)
 
         if len(np.unique(axis)) != len(axis):
-            raise ValueError("`axis` must contain only distinct elements")
+            raise np.AxisError("`axis` must contain only distinct elements")
 
         removed_shapes = new_shapes[:, axis]
         new_shapes = np.delete(new_shapes, axis, axis=1)
@@ -226,19 +226,33 @@ def _check_empty_inputs(samples, axis):
     return output
 
 
-# Standard docstring / signature entries for `axis` and `nan_policy`
+def _add_reduced_axes(res, reduced_axes, keepdims):
+    """
+    Add reduced axes back to all the arrays in the result object
+    if keepdims = True.
+    """
+    return ([np.expand_dims(output, reduced_axes) for output in res]
+            if keepdims else res)
+
+
+# Standard docstring / signature entries for `axis`, `nan_policy`, `keepdims`
 _name = 'axis'
-_type = "int or None, default: 0"
 _desc = (
     """If an int, the axis of the input along which to compute the statistic.
 The statistic of each axis-slice (e.g. row) of the input will appear in a
 corresponding element of the output.
 If ``None``, the input will be raveled before computing the statistic."""
     .split('\n'))
-_axis_parameter_doc = Parameter(_name, _type, _desc)
-_axis_parameter = inspect.Parameter(_name,
-                                    inspect.Parameter.KEYWORD_ONLY,
-                                    default=0)
+
+
+def _get_axis_params(default_axis=0, _name=_name, _desc=_desc):  # bind NOW
+    _type = f"int or None, default: {default_axis}"
+    _axis_parameter_doc = Parameter(_name, _type, _desc)
+    _axis_parameter = inspect.Parameter(_name,
+                                        inspect.Parameter.KEYWORD_ONLY,
+                                        default=default_axis)
+    return _axis_parameter_doc, _axis_parameter
+
 
 _name = 'nan_policy'
 _type = "{'propagate', 'omit', 'raise'}"
@@ -259,24 +273,36 @@ _nan_policy_parameter = inspect.Parameter(_name,
                                           inspect.Parameter.KEYWORD_ONLY,
                                           default='propagate')
 
+_name = 'keepdims'
+_type = "bool, default: False"
+_desc = (
+    """If this is set to True, the axes which are reduced are left
+in the result as dimensions with size one. With this option,
+the result will broadcast correctly against the input array."""
+    .split('\n'))
+_keepdims_parameter_doc = Parameter(_name, _type, _desc)
+_keepdims_parameter = inspect.Parameter(_name,
+                                        inspect.Parameter.KEYWORD_ONLY,
+                                        default=False)
+
 _standard_note_addition = (
     """\nBeginning in SciPy 1.9, ``np.matrix`` inputs (not recommended for new
-code) are converted to ``np.ndarray``s before the calculation is performed. In
+code) are converted to ``np.ndarray`` before the calculation is performed. In
 this case, the output will be a scalar or ``np.ndarray`` of appropriate shape
 rather than a 2D ``np.matrix``. Similarly, while masked elements of masked
 arrays are ignored, the output will be a scalar or ``np.ndarray`` rather than a
 masked array with ``mask=False``.""").split('\n')
 
 
-def _axis_nan_policy_factory(result_object, default_axis=0,
+def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                              n_samples=1, paired=False,
-                             result_unpacker=None, too_small=0,
+                             result_to_tuple=None, too_small=0,
                              n_outputs=2, kwd_samples=[]):
     """Factory for a wrapper that adds axis/nan_policy params to a function.
 
     Parameters
     ----------
-    result_object : callable
+    tuple_to_result : callable
         Callable that returns an object of the type returned by the function
         being wrapped (e.g. the namedtuple or dataclass returned by a
         statistical test) provided the separate components (e.g. statistic,
@@ -294,9 +320,9 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
         Whether the function being wrapped treats the samples as paired (i.e.
         corresponding elements of each sample should be considered as different
         components of the same sample.)
-    result_unpacker : callable, optional
+    result_to_tuple : callable, optional
         Function that unpacks the results of the function being wrapped into
-        a tuple. This is essentially the inverse of `result_object`. Default
+        a tuple. This is essentially the inverse of `tuple_to_result`. Default
         is `None`, which is appropriate for statistical tests that return a
         statistic, pvalue tuple (rather than, e.g., a non-iterable datalass).
     too_small : int, default: 0
@@ -318,9 +344,9 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
         use `n_samples=1` and kwd_samples=['weights'].
     """
 
-    if result_unpacker is None:
-        def result_unpacker(res):
-            return res[..., 0], res[..., 1]
+    if result_to_tuple is None:
+        def result_to_tuple(res):
+            return res
 
     def is_too_small(samples):
         for sample in samples:
@@ -391,13 +417,20 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             vectorized = True if 'axis' in params else False
             axis = kwds.pop('axis', default_axis)
             nan_policy = kwds.pop('nan_policy', 'propagate')
+            keepdims = kwds.pop("keepdims", False)
             del args  # avoid the possibility of passing both `args` and `kwds`
 
             # convert masked arrays to regular arrays with sentinel values
             samples, sentinel = _masked_arrays_2_sentinel_arrays(samples)
 
             # standardize to always work along last axis
+            reduced_axes = axis
             if axis is None:
+                if samples:
+                    # when axis=None, take the maximum of all dimensions since
+                    # all the dimensions are reduced.
+                    n_dims = np.max([sample.ndim for sample in samples])
+                    reduced_axes = tuple(range(n_dims))
                 samples = [sample.ravel() for sample in samples]
             else:
                 samples = _broadcast_arrays(samples, axis=axis)
@@ -432,7 +465,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 # propagate nans in a sensible way
                 if any(contains_nans) and nan_policy == 'propagate':
                     res = np.full(n_outputs, np.nan)
-                    return result_object(*res)
+                    res = _add_reduced_axes(res, reduced_axes, keepdims)
+                    return tuple_to_result(*res)
 
                 # Addresses nan_policy == "omit"
                 if any(contains_nans) and nan_policy == 'omit':
@@ -441,13 +475,16 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
 
                 # ideally, this is what the behavior would be:
                 # if is_too_small(samples):
-                #     return result_object(np.nan, np.nan)
+                #     return tuple_to_result(np.nan, np.nan)
                 # but some existing functions raise exceptions, and changing
                 # behavior of those would break backward compatibility.
 
                 if sentinel:
                     samples = _remove_sentinel(samples, paired, sentinel)
-                return hypotest_fun_out(*samples, **kwds)
+                res = hypotest_fun_out(*samples, **kwds)
+                res = result_to_tuple(res)
+                res = _add_reduced_axes(res, reduced_axes, keepdims)
+                return tuple_to_result(*res)
 
             # check for empty input
             # ideally, move this to the top, but some existing functions raise
@@ -455,8 +492,9 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             # backward compatibility.
             empty_output = _check_empty_inputs(samples, axis)
             if empty_output is not None:
-                return result_object(*([empty_output.copy()
-                                        for i in range(n_outputs)]))
+                res = [empty_output.copy() for i in range(n_outputs)]
+                res = _add_reduced_axes(res, reduced_axes, keepdims)
+                return tuple_to_result(*res)
 
             # otherwise, concatenate all samples along axis, remembering where
             # each separate sample begins
@@ -469,7 +507,10 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 scipy.stats._stats_py._contains_nan(x, nan_policy))
 
             if vectorized and not contains_nan and not sentinel:
-                return hypotest_fun_out(*samples, axis=axis, **kwds)
+                res = hypotest_fun_out(*samples, axis=axis, **kwds)
+                res = result_to_tuple(res)
+                res = _add_reduced_axes(res, reduced_axes, keepdims)
+                return tuple_to_result(*res)
 
             # Addresses nan_policy == "omit"
             if contains_nan and nan_policy == 'omit':
@@ -479,23 +520,21 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return result_object(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_outputs, np.nan)
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             # Addresses nan_policy == "propagate"
             elif contains_nan and nan_policy == 'propagate':
                 def hypotest_fun(x):
                     if np.isnan(x).any():
-                        res = np.full(n_outputs, np.nan)
-                        return result_object(*res)
+                        return np.full(n_outputs, np.nan)
+
                     samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return result_object(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_outputs, np.nan)
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             else:
                 def hypotest_fun(x):
@@ -503,14 +542,15 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return result_object(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_outputs, np.nan)
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
-            x = np.moveaxis(x, axis, -1)
-            res = np.apply_along_axis(hypotest_fun, axis=-1, arr=x)
-            return result_object(*result_unpacker(res))
+            x = np.moveaxis(x, axis, 0)
+            res = np.apply_along_axis(hypotest_fun, axis=0, arr=x)
+            res = _add_reduced_axes(res, reduced_axes, keepdims)
+            return tuple_to_result(*res)
 
+        _axis_parameter_doc, _axis_parameter = _get_axis_params(default_axis)
         doc = FunctionDoc(axis_nan_policy_wrapper)
         parameter_names = [param.name for param in doc['Parameters']]
         if 'axis' in parameter_names:
@@ -523,6 +563,11 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
                 _nan_policy_parameter_doc)
         else:
             doc['Parameters'].append(_nan_policy_parameter_doc)
+        if 'keepdims' in parameter_names:
+            doc['Parameters'][parameter_names.index('keepdims')] = (
+                _keepdims_parameter_doc)
+        else:
+            doc['Parameters'].append(_keepdims_parameter_doc)
         doc['Notes'] += _standard_note_addition
         doc = str(doc).split("\n", 1)[1]  # remove signature
         axis_nan_policy_wrapper.__doc__ = str(doc)
@@ -534,6 +579,8 @@ def _axis_nan_policy_factory(result_object, default_axis=0,
             parameter_list.append(_axis_parameter)
         if 'nan_policy' not in parameters:
             parameter_list.append(_nan_policy_parameter)
+        if 'keepdims' not in parameters:
+            parameter_list.append(_keepdims_parameter)
         sig = sig.replace(parameters=parameter_list)
         axis_nan_policy_wrapper.__signature__ = sig
 

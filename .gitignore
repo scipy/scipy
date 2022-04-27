@@ -81,6 +81,13 @@ pip-wheel-metadata
 # install directory for Meson
 installdir/
 
+# doit
+######
+.doit.db.dat
+.doit.db.dir
+.doit.db.db
+.doit.db
+
 # Paver generated files #
 #########################
 /release
@@ -198,6 +205,8 @@ scipy/linalg/cython_lapack.pyx
 scipy/linalg/src/id_dist/src/*_subr_*.f
 scipy/linalg/_matfuncs_sqrtm_triu.c
 scipy/linalg/_matfuncs_sqrtm_triu.cpp
+scipy/linalg/_matfuncs_expm.c
+scipy/linalg/_matfuncs_expm.pyx
 scipy/ndimage/src/_ni_label.c
 scipy/ndimage/src/_cytest.c
 scipy/optimize/_bglu_dense.c

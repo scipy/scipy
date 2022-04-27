@@ -45,9 +45,6 @@ def configuration(parent_package='', top_path=None):
     # flapack:
     sources = ['flapack.pyf.src']
     sources += get_g77_abi_wrappers(lapack_opt)
-    dep_pfx = join('src', 'lapack_deprecations')
-    deprecated_lapack_routines = [join(dep_pfx, c + 'gegv.f') for c in 'cdsz']
-    sources += deprecated_lapack_routines
     depends = ['flapack_gen.pyf.src',
                'flapack_gen_banded.pyf.src',
                'flapack_gen_tri.pyf.src',
@@ -151,6 +148,9 @@ def configuration(parent_package='', top_path=None):
 
     config.add_extension('_cythonized_array_utils',
                          sources=['_cythonized_array_utils.c'])
+
+    config.add_extension('_matfuncs_expm',
+                         sources=['_matfuncs_expm.c'])
 
     # Add any license files
     config.add_data_files('src/id_dist/doc/doc.tex')
