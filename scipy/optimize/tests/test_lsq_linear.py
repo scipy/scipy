@@ -2,7 +2,7 @@ import pytest
 
 import numpy as np
 from numpy.linalg import lstsq
-from numpy.testing import assert_allclose, assert_equal, assert_, assert_raises
+from numpy.testing import assert_allclose, assert_equal, assert_
 
 from scipy.sparse import rand, coo_matrix
 from scipy.sparse.linalg import aslinearoperator
