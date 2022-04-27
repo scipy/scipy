@@ -332,7 +332,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     if method == 'trf':
         res = trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol,
-                         max_iter, verbose, lsmr_max_iter)
+                         max_iter, verbose, lsmr_max_iter=lsmr_max_iter)
     elif method == 'bvls':
         res = bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose)
 
