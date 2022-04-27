@@ -1015,9 +1015,10 @@ def _moment(a, moment, axis, *, mean=None):
         a_zero_mean = a - mean
 
         eps = np.finfo(a_zero_mean.dtype).resolution * 10
-        rel_diff = np.max(np.abs(a_zero_mean), axis=axis, keepdims=True)/mean
+        rel_diff = np.max(np.abs(a_zero_mean), axis=axis,
+                          keepdims=True) / np.abs(mean)
         with np.errstate(invalid='ignore'):
-            precision_loss = np.any((0 < rel_diff) & (rel_diff < eps))
+            precision_loss = np.any(rel_diff < eps)
         if precision_loss:
             message = ("Precision loss occurred in moment calculation due to "
                        "catastrophic cancellation. This occurs when the data "
