@@ -2,7 +2,7 @@
 Author: Ondrej Certik
 May 2007
 """
-from numpy.testing import assert_, suppress_warnings
+from numpy.testing import assert_
 import pytest
 
 from scipy.optimize import _nonlin as nonlin, root
