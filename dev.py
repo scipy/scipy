@@ -390,7 +390,7 @@ def get_project_info():
     except ImportError:
         # this may fail when running with --no-build, so try to detect
         # an installed scipy in a subdir inside a repo
-        site_dir = get_site_packages()
+        site_dir = get_installed_path()
         print("Trying to find scipy from development installed "
               "path at:", site_dir)
         sys.path.insert(0, site_dir)
@@ -454,9 +454,11 @@ def install_project(args):
     Installs the project after building.
     """
     if os.path.exists(PATH_INSTALLED):
-        installdir = get_site_packages()
+        site_dir = get_site_packages()
+        dist_dir = get_dist_packages(site_dir)
         non_empty = len(os.listdir(PATH_INSTALLED))
-        if non_empty and not os.path.exists(installdir):
+        if non_empty and not(
+            os.path.exists(site_dir) or os.path.exists(dist_dir)):
             raise RuntimeError("Can't install in non-empty directory: "
                                f"'{PATH_INSTALLED}'")
     cmd = ["meson", "install", "-C", args.build_dir]
@@ -554,6 +556,26 @@ def get_site_packages():
     return str(Path(PATH_INSTALLED) / plat_path.relative_to(sys.exec_prefix))
 
 
+def get_dist_packages(site_dir):
+    # Hack: fallback to debian based python dist-packages
+    # See https://github.com/scipy/scipy/issues/16054
+    py_version = f"python3.{sys.version_info[1]}"
+    return site_dir.replace(py_version + "/site-packages",
+                            "python3/dist-packages")
+
+
+def get_installed_path():
+    site_dir = get_site_packages()
+    if os.path.exists(site_dir):
+        return site_dir
+    else:
+        dist_dir = get_dist_packages(site_dir)
+        if not os.path.exists(dist_dir):
+            raise RuntimeError(f'Expected installation path "{site_dir}" or '
+                               f'"{dist_dir}" does not exist.')
+        return dist_dir
+
+
 def build_project(args):
     """
     Build a dev version of the project.
@@ -576,8 +598,6 @@ def build_project(args):
 
     setup_build(args, env)
 
-    site_dir = get_site_packages()
-
     cmd = ["ninja", "-C", args.build_dir]
     if args.parallel > 1:
         cmd += ["-j", str(args.parallel)]
@@ -593,6 +613,8 @@ def build_project(args):
 
     install_project(args)
 
+    install_dir = get_installed_path()
+
     if args.win_cp_openblas and platform.system() == 'Windows':
         if copy_openblas() == 0:
             print('OpenBLAS copied')
@@ -600,7 +622,7 @@ def build_project(args):
             print("OpenBLAS copy failed!")
             sys.exit(1)
 
-    return site_dir
+    return install_dir
 
 
 def run_mypy(args):
