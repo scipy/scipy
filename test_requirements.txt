@@ -1,0 +1,9 @@
+numpy
+pytest
+pytest-cov
+pytest-xdist
+asv
+mpmath
+gmpy2
+threadpoolctl
+#scikit-umfpack
