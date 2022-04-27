@@ -781,38 +781,38 @@ class TestMultinomialQMC:
         p = np.array([0.12, 0.26, -0.05, 0.35, 0.22])
         with pytest.raises(ValueError, match=r"Elements of pvals must "
                                              r"be non-negative."):
-            qmc.MultinomialQMC(p)
+            qmc.MultinomialQMC(p, n_trials=10)
 
         # sum of P too large
         p = np.array([0.12, 0.26, 0.1, 0.35, 0.22])
         message = r"Elements of pvals must sum to 1."
         with pytest.raises(ValueError, match=message):
-            qmc.MultinomialQMC(p)
+            qmc.MultinomialQMC(p, n_trials=10)
 
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
 
         message = r"Dimension of `engine` must be 1."
         with pytest.raises(ValueError, match=message):
-            qmc.MultinomialQMC(p, engine=qmc.Sobol(d=2))
+            qmc.MultinomialQMC(p, n_trials=10, engine=qmc.Sobol(d=2))
 
         message = r"`engine` must be an instance of..."
         with pytest.raises(ValueError, match=message):
-            qmc.MultinomialQMC(p, engine=np.random.default_rng())
+            qmc.MultinomialQMC(p, n_trials=10, engine=np.random.default_rng())
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_MultinomialBasicDraw(self):
         seed = np.random.default_rng(6955663962957011631562466584467607969)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([13, 24, 6, 35, 22])
-        engine = qmc.MultinomialQMC(p, seed=seed)
-        assert_array_equal(engine.random(100), expected)
+        expected = np.array([[13, 24, 6, 35, 22]])
+        engine = qmc.MultinomialQMC(p, n_trials=100, seed=seed)
+        assert_array_equal(engine.random(1), expected)
 
     def test_MultinomialDistribution(self):
         seed = np.random.default_rng(77797854505813727292048130876699859000)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        engine = qmc.MultinomialQMC(p, seed=seed)
-        draws = engine.random(8192)
-        assert_allclose(draws / np.sum(draws), p, atol=1e-4)
+        engine = qmc.MultinomialQMC(p, n_trials=8192, seed=seed)
+        draws = engine.random(1)
+        assert_allclose(draws / np.sum(draws), np.atleast_2d(p), atol=1e-4)
 
     def test_FindIndex(self):
         p_cumulative = np.array([0.1, 0.4, 0.45, 0.6, 0.75, 0.9, 0.99, 1.0])
@@ -828,10 +828,11 @@ class TestMultinomialQMC:
         # same as test_MultinomialBasicDraw with different engine
         seed = np.random.default_rng(283753519042773243071753037669078065412)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([12, 25, 5, 36, 22])
+        expected = np.array([[12, 25, 5, 36, 22]])
         base_engine = qmc.Sobol(1, scramble=True, seed=seed)
-        engine = qmc.MultinomialQMC(p, engine=base_engine, seed=seed)
-        assert_array_equal(engine.random(100), expected)
+        engine = qmc.MultinomialQMC(p, n_trials=100, engine=base_engine,
+                                    seed=seed)
+        assert_array_equal(engine.random(1), expected)
 
 
 class TestNormalQMC:
