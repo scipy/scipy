@@ -1,3 +1,4 @@
+import warnings
 import numpy as np
 import scipy.stats._stats_py
 from . import distributions
@@ -317,6 +318,9 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     deltax = x[:, np.newaxis] - x
     deltay = y[:, np.newaxis] - y
     slopes = deltay[deltax > 0] / deltax[deltax > 0]
+    if not slopes.size:
+        msg = "All `x` coordinates are identical."
+        warnings.warn(msg, RuntimeWarning, stacklevel=2)
     slopes.sort()
     medslope = np.median(slopes)
     if method == 'joint':
@@ -338,10 +342,14 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
                      sum(k * (k-1) * (2*k + 5) for k in nxreps) -
                      sum(k * (k-1) * (2*k + 5) for k in nyreps))
     # Find the confidence interval indices in `slopes`
-    sigma = np.sqrt(sigsq)
-    Ru = min(int(np.round((nt - z*sigma)/2.)), len(slopes)-1)
-    Rl = max(int(np.round((nt + z*sigma)/2.)) - 1, 0)
-    delta = slopes[[Rl, Ru]]
+    try:
+        sigma = np.sqrt(sigsq)
+        Ru = min(int(np.round((nt - z*sigma)/2.)), len(slopes)-1)
+        Rl = max(int(np.round((nt + z*sigma)/2.)) - 1, 0)
+        delta = slopes[[Rl, Ru]]
+    except (ValueError, IndexError):
+        delta = (np.nan, np.nan)
+
     return medslope, medinter, delta[0], delta[1]
 
 
