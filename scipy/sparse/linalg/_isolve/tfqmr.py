@@ -92,18 +92,11 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     True
     """
 
-    # Check data type
-    dtype = A.dtype
-    if np.issubdtype(dtype, np.int64):
-        dtype = float
-        A = A.astype(dtype)
-    if np.issubdtype(b.dtype, np.int64):
-        b = b.astype(dtype)
-
     A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     # Check if the R.H.S is a zero vector
-    if np.linalg.norm(b) == 0.:
+    bnorm = np.linalg.norm(b)
+    if bnorm == 0.:
         x = b.copy()
         return (postprocess(x), 0)
 
@@ -126,15 +119,17 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     d = theta = eta = 0.
     rho = np.inner(rstar.conjugate(), r)
     rhoLast = rho
-    r0norm = np.sqrt(rho)
-    tau = r0norm
-    if r0norm == 0:
+    tau = np.sqrt(rho)
+    if tau == 0:
+        if show:
+            print("TFQMR: Linear solve converged due to zero residual norm "
+                  "iterations 0")
         return (postprocess(x), 0)
 
     if atol is None:
-        atol = tol * r0norm
+        atol = tol * bnorm
     else:
-        atol = max(atol, tol * r0norm)
+        atol = max(atol, tol * bnorm)
 
     for iter in range(loops):
         even = iter % 2 == 0
@@ -142,6 +137,9 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
             vtrstar = np.inner(rstar.conjugate(), v)
             # Check breakdown
             if vtrstar == 0.:
+                if show:
+                    print("TFQMR: Linear solve not converged due to BREAKDOWN "
+                          f"iterations {(iter+1+even)//2}")
                 return (postprocess(x), -1)
             alpha = rho / vtrstar
             uNext = u - alpha * v  # [1]-(5.6)
@@ -163,7 +161,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         if tau * np.sqrt(iter+2.) < atol:
             if (callback is not None) and (even):
                 callback(x)
-            if (show):
+            if show:
                 print("TFQMR: Linear solve converged due to reach TOL "
                       f"iterations {(iter+1+even)//2}")
             return (postprocess(x), 0)
@@ -181,7 +179,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
             u = uNext
             rhoLast = rho
 
-    if (show):
+    if show:
         print("TFQMR: Linear solve not converged due to reach MAXIT "
               f"iterations {maxiter}")
     return (postprocess(x), maxiter)
