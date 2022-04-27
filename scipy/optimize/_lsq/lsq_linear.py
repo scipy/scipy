@@ -33,7 +33,7 @@ TERMINATION_MESSAGES = {
 
 def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
                lsq_solver=None, lsmr_tol=None, max_iter=None,
-               verbose=0, lsmr_max_iter=None,):
+               verbose=0, *, lsmr_max_iter=None,):
     r"""Solve a linear least-squares problem with bounds on the variables.
 
     Given a m-by-n design matrix A and a target vector b with m elements,
@@ -110,7 +110,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
     lsmr_max_iter : None or int, optional
         Maximum number of iterations for the lsmr least squares solver,
         if it is used (by setting ``lsq_solver='lsmr'``). If None (default), it
-        uses lsmr's default of ``min(m, n)`` where `m` and `n` are the
+        uses lsmr's default of ``min(m, n)`` where ``m`` and ``n`` are the
         number of rows and columns of `A`, respectively. Has no effect if
         ``lsq_solver='exact'``.
 
@@ -139,9 +139,19 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         within a tolerance threshold.
     unbounded_sol : tuple
         Unbounded least squares solution tuple returned by the least squares
-        solver (set with lsq_solver option). The solution array is the first
-        element in the returned tuple. Unbounded least squares problem is
-        minimize 0.5 * ||A x - b||**2.
+        solver (set with `lsq_solver` option). If `lsq_solver` is not set or is
+        set to ``'exact'``, the tuple contains an ndarray of shape (n,) with
+        the unbounded solution, an ndarray with the sum of squared residuals,
+        an int with the rank of `A`, and an ndarray with the singular values
+        of `A` (see NumPy's ``linalg.lstsq`` for more information). If
+        `lsq_solver` is set to ``'lsmr'``, the tuple contains an ndarray of
+        shape (n,) with the unbounded solution, an int with the exit code,
+        an int with the number of iterations, and five floats with
+        various norms and the condition number of `A` (see SciPy's
+        ``sparse.linalg.lsmr`` for more information). This output can be
+        useful for determining the convergence of the least squares solver,
+        particularly the iterative ``'lsmr'`` solver. The unbounded least
+        squares problem is to minimize 0.5 * ||A x - b||**2.
     nit : int
         Number of iterations. Zero if the unconstrained solution is optimal.
     status : int

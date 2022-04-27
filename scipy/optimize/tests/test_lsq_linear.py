@@ -1,3 +1,5 @@
+import pytest
+
 import numpy as np
 from numpy.linalg import lstsq
 from numpy.testing import assert_allclose, assert_equal, assert_, assert_raises
@@ -219,7 +221,7 @@ class SparseMixin:
 
         # Default lsmr arguments should not fully converge the solution
         default_lsmr_sol = lsq_linear(A, b, lsq_solver='lsmr')
-        with assert_raises(AssertionError):
+        with pytest.raises(AssertionError, match=""):
             assert_allclose(exact_sol.x, default_lsmr_sol.x)
 
         # By increasing the maximum lsmr iters, it will converge
@@ -246,11 +248,12 @@ class TestErrorChecking:
 
         # Should raise error with negative float, strings
         # other than 'auto', and integers
-        with assert_raises(ValueError):
+        err_message = "`lsmr_tol` must be None, 'auto', or positive float."
+        with pytest.raises(ValueError, match=err_message):
             _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_tol=-0.1)
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError, match=err_message):
             _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_tol='foo')
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError, match=err_message):
             _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_tol=1)
 
     def test_option_lsmr_max_iter(self):
@@ -259,7 +262,8 @@ class TestErrorChecking:
         _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=None)
 
         # Should raise error with 0 or negative max iter
-        with assert_raises(ValueError):
+        err_message = "`lsmr_max_iter` must be None or positive integer."
+        with pytest.raises(ValueError, match=err_message):
             _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=0)
-        with assert_raises(ValueError):
+        with pytest.raises(ValueError, match=err_message):
             _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=-1)
