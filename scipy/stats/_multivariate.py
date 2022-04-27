@@ -1294,6 +1294,16 @@ def _lnB(alpha):
     return np.sum(gammaln(alpha)) - gammaln(np.sum(alpha))
 
 
+_dirichlet_depr_message = (
+"""
+`dirichlet` is deprecated due to an interface inconsistency: compared to
+other distributions, methods `pdf` and  `logpdf` expect the transpose of the
+input`x`. Please use `multivariate_beta`, which corrects this inconsistency.
+In SciPy 1.11.0, this deprecation warning will be removed and `dirichlet` will
+become an alias for `multivariate_beta`.
+""")
+
+
 class dirichlet_gen(multi_rv_generic):
     r"""A Dirichlet random variable.
 
@@ -1409,6 +1419,8 @@ class dirichlet_gen(multi_rv_generic):
         super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, dirichlet_docdict_params)
 
+    @np.deprecate(old_name="dirichlet", new_name="multivariate_beta",
+                  message=_dirichlet_depr_message)
     def __call__(self, alpha, seed=None):
         return dirichlet_frozen(alpha, seed=seed)
 
@@ -1564,6 +1576,15 @@ class dirichlet_gen(multi_rv_generic):
 
 
 dirichlet = dirichlet_gen()
+
+
+# deprecate each public method of `dirichlet` but not `multivariate_beta`
+_dirichlet_method_names = ["entropy", "logpdf", "mean", "pdf",
+                           "rvs", "var"]
+for m in _dirichlet_method_names:
+    wrapper = np.deprecate(getattr(dirichlet, m), f"dirichlet.{m}",
+                           f"multivariate_beta.{m}", _dirichlet_depr_message)
+    setattr(dirichlet, m, wrapper)
 
 
 class dirichlet_frozen(multi_rv_frozen):

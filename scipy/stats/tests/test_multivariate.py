@@ -842,8 +842,17 @@ class DirichletTest:
         assert_almost_equal(b.var(), d.var()[0])
 
 
+@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestDirichlet(DirichletTest):
     dist = dirichlet
+
+
+def test_dirichlet_deprecation():
+    with pytest.deprecated_call():
+        dirichlet.rvs([1, 2, 3])
+
+    with pytest.deprecated_call():
+        dirichlet([1, 2, 3])
 
 
 class TestMultivariateBeta(DirichletTest):
@@ -2200,7 +2209,6 @@ def test_random_state_property():
     scale[1, 0] = 0.5
     dists = [
         [multivariate_normal, ()],
-        [dirichlet, (np.array([1.]), )],
         [multivariate_beta, (np.array([1.]), )],
         [wishart, (10, scale)],
         [invwishart, (10, scale)],
