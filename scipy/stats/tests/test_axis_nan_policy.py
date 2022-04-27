@@ -273,8 +273,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
 
     else:
-        with (suppress_warnings() as sup,
-              np.errstate(divide='ignore', invalid='ignore')):
+        with suppress_warnings() as sup, \
+             np.errstate(divide='ignore', invalid='ignore'):
             sup.filter(RuntimeWarning, "Precision loss occurred in moment")
             res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
                                     *args, **kwds))

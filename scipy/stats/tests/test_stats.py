@@ -5022,8 +5022,8 @@ def test_ttest_1samp_new():
 
 class TestDescribe:
     def test_describe_scalar(self):
-        with (suppress_warnings() as sup, np.errstate(invalid="ignore"),
-              pytest.warns(RuntimeWarning, match="Precision loss occurred")):
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
+             pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
             n, mm, m, v, sk, kurt = stats.describe(4.)
         assert_equal(n, 1)
