@@ -43,7 +43,7 @@ if info != 0:
     print("Didn't converge")
 
 count[0] = 0
-x1, info = la.lgmres(A, b, inner_m=M-6*2, outer_k=6, tol=1e-14)
+x1, info = la.lgmres(A, b, inner_m=M-6*2, outer_k=6, tol=1e-14, atol=1e-14)
 count_1 = count[0]
 err1 = np.linalg.norm(Am@x1 - b) / bnorm
 print(f"LGMRES({M - 2*6}, 6) [same memory req.]: {count_1} "
@@ -52,7 +52,7 @@ if info != 0:
     print("Didn't converge")
 
 count[0] = 0
-x2, info = la.lgmres(A, b, inner_m=M-6, outer_k=6, tol=1e-14)
+x2, info = la.lgmres(A, b, inner_m=M-6, outer_k=6, tol=1e-14, atol=1e-14)
 count_2 = count[0]
 err2 = np.linalg.norm(Am@x2 - b) / bnorm
 print(f"LGMRES({M - 6}, 6) [same subspace size]: {count_2} "

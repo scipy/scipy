@@ -92,28 +92,11 @@ def _get_atol(tol, atol, bnrm2, get_residual, routine_name):
         Name of the routine.
     """
 
-    if atol is None:
-        warnings.warn("scipy.sparse.linalg.{name} called without specifying `atol`. "
-                      "The default value will be changed in a future release. "
-                      "For compatibility, specify a value for `atol` explicitly, e.g., "
-                      "``{name}(..., atol=0)``, or to retain the old behavior "
-                      "``{name}(..., atol='legacy')``".format(name=routine_name),
-                      category=DeprecationWarning, stacklevel=4)
-        atol = 'legacy'
+    if not np.issubdtype(type(atol), np.floating):
+        raise ValueError("Parameter `atol` must be a floating-point number!")
 
     tol = float(tol)
-
-    if atol == 'legacy':
-        # emulate old legacy behavior
-        resid = get_residual()
-        if resid <= tol:
-            return 'exit'
-        if bnrm2 == 0:
-            return tol
-        else:
-            return tol * float(bnrm2)
-    else:
-        return max(float(atol), tol * float(bnrm2))
+    return max(float(atol), tol * float(bnrm2))
 
 
 def set_docstring(header, Ainfo, footer='', atol_default='0'):
