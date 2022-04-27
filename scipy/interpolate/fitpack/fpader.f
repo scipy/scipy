@@ -1,4 +1,4 @@
-      subroutine fpader(t,n,c,k1,x,l,d)
+      recursive subroutine fpader(t,n,c,k1,x,l,d)
 c  subroutine fpader calculates the derivatives
 c             (j-1)
 c     d(j) = s     (x) , j=1,2,...,k1

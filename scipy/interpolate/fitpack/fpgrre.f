@@ -1,6 +1,7 @@
-      subroutine fpgrre(ifsx,ifsy,ifbx,ifby,x,mx,y,my,z,mz,kx,ky,tx,nx,
-     * ty,ny,p,c,nc,fp,fpx,fpy,mm,mynx,kx1,kx2,ky1,ky2,spx,spy,right,q,
-     * ax,ay,bx,by,nrx,nry)
+      recursive subroutine fpgrre(ifsx,ifsy,ifbx,ifby,x,mx,y,my,z,mz,
+     * kx,ky,tx,nx,ty,ny,p,c,nc,fp,fpx,fpy,mm,mynx,kx1,kx2,ky1,ky2,
+     * spx,spy,right,q,ax,ay,bx,by,nrx,nry)
+      implicit none
 c  ..
 c  ..scalar arguments..
       real*8 p,fp
