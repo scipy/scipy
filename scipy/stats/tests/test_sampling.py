@@ -781,7 +781,7 @@ class TestNumericalInversePolynomial:
     # numerical differences. They can be avoided either by changing
     # the seed or by increasing the u_resolution.
     fail_dists = ['ncf', 'pareto', 'chi2', 'fatiguelife', 'halfgennorm',
-                  'gilbrat', 'lognorm', 'ncx2', 't']
+                  'gibrat', 'lognorm', 'ncx2', 't']
 
     @pytest.mark.xslow
     @pytest.mark.parametrize("distname, params", distcont)

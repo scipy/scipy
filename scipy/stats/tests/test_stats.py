@@ -34,7 +34,6 @@ from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
-from scipy.stats._hypotests import _batch_generator
 from scipy.stats._stats_py import (_permutation_distribution_t,
                             AlexanderGovernConstantInputWarning)
 
@@ -536,6 +535,35 @@ class TestFisherExact:
             res = stats.fisher_exact(np.asarray(table))
             np.testing.assert_almost_equal(res[1], res_r[1], decimal=11,
                                            verbose=True)
+
+    def test_gh4130(self):
+        # Previously, a fudge factor used to distinguish between theoeretically
+        # and numerically different probability masses was 1e-4; it has been
+        # tightened to fix gh4130. Accuracy checked against R fisher.test.
+        # options(digits=16)
+        # table <- matrix(c(6, 108, 37, 200), nrow = 2)
+        # fisher.test(table, alternative = "t")
+        x = [[6, 37], [108, 200]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 0.005092697748126)
+
+        # case from https://github.com/brentp/fishers_exact_test/issues/27
+        # That package has an (absolute?) fudge factor of 1e-6; too big
+        x = [[22, 0], [0, 102]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 7.175066786244549e-25)
+
+        # case from https://github.com/brentp/fishers_exact_test/issues/1
+        x = [[94, 48], [3577, 16988]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 2.069356340993818e-37)
+
+    def test_gh9231(self):
+        # Previously, fisher_exact was extremely slow for this table
+        # As reported in gh-9231, the p-value should be very nearly zero
+        x = [[5829225, 5692693], [5760959, 5760959]]
+        res = stats.fisher_exact(x)
+        assert_allclose(res[1], 0, atol=1e-170)
 
     @pytest.mark.slow
     def test_large_numbers(self):
@@ -2938,8 +2966,9 @@ class TestMoments:
 
     def test_skewness(self):
         # Scalar test case
-        y = stats.skew(self.scalar_testcase)
-        assert_approx_equal(y, 0.0)
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+            y = stats.skew(self.scalar_testcase)
+            assert np.isnan(y)
         # sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0) /
         #     ((sqrt(var(testmathworks)*4/5))**3)/5
         y = stats.skew(self.testmathworks)
@@ -2973,20 +3002,22 @@ class TestMoments:
     def test_skew_constant_value(self):
         # Skewness of a constant input should be zero even when the mean is not
         # exact (gh-13245)
-        a = np.repeat(-0.27829495, 10)
-        assert stats.skew(a) == 0.0
-        assert stats.skew(a * float(2**50)) == 0.0
-        assert stats.skew(a / float(2**50)) == 0.0
-        assert stats.skew(a, bias=False) == 0.0
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+            a = np.repeat(-0.27829495, 10)
+            assert np.isnan(stats.skew(a))
+            assert np.isnan(stats.skew(a * float(2**50)))
+            assert np.isnan(stats.skew(a / float(2**50)))
+            assert np.isnan(stats.skew(a, bias=False))
 
-        # similarly, from gh-11086:
-        assert stats.skew([14.3]*7) == 0.0
-        assert stats.skew(1 + np.arange(-3, 4)*1e-16) == 0
+            # similarly, from gh-11086:
+            assert np.isnan(stats.skew([14.3]*7))
+            assert np.isnan(stats.skew(1 + np.arange(-3, 4)*1e-16))
 
     def test_kurtosis(self):
         # Scalar test case
-        y = stats.kurtosis(self.scalar_testcase)
-        assert_approx_equal(y, -3.0)
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+            y = stats.kurtosis(self.scalar_testcase)
+            assert np.isnan(y)
         #   sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
         #   sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
         #   Set flags for axis = 0 and
@@ -3025,10 +3056,11 @@ class TestMoments:
         # Kurtosis of a constant input should be zero, even when the mean is not
         # exact (gh-13245)
         a = np.repeat(-0.27829495, 10)
-        assert stats.kurtosis(a, fisher=False) == 0.0
-        assert stats.kurtosis(a * float(2**50), fisher=False) == 0.0
-        assert stats.kurtosis(a / float(2**50), fisher=False) == 0.0
-        assert stats.kurtosis(a, fisher=False, bias=False) == 0.0
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+            assert np.isnan(stats.kurtosis(a, fisher=False))
+            assert np.isnan(stats.kurtosis(a * float(2**50), fisher=False))
+            assert np.isnan(stats.kurtosis(a / float(2**50), fisher=False))
+            assert np.isnan(stats.kurtosis(a, fisher=False, bias=False))
 
     def test_moment_accuracy(self):
         # 'moment' must have a small enough error compared to the slower
@@ -3037,6 +3069,16 @@ class TestMoments:
                      np.mean(self.testcase_moment_accuracy)
         assert_allclose(np.power(tc_no_mean, 42).mean(),
                             stats.moment(self.testcase_moment_accuracy, 42))
+
+    def test_precision_loss_gh15554(self):
+        # gh-15554 was one of several issues that have reported problems with
+        # constant or near-constant input. We can't always fix these, but
+        # make sure there's a warning.
+        with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+            rng = np.random.default_rng(34095309370)
+            a = rng.random(size=(100, 10))
+            a[:, 0] = 1.01
+            stats.skew(a)[0]
 
 
 class TestStudentTest:
@@ -4485,21 +4527,6 @@ class Test_ttest_ind_permutations():
             stats.ttest_ind(self.a, self.b, permutations=1,
                             random_state='hello')
 
-    @pytest.mark.parametrize("batch", (-1, 0))
-    def test_batch_generator_iv(self, batch):
-        with assert_raises(ValueError, match="`batch` must be positive."):
-            list(_batch_generator([1, 2, 3], batch))
-
-    batch_generator_cases = [(range(0), 3, []),
-                             (range(6), 3, [[0, 1, 2], [3, 4, 5]]),
-                             (range(8), 3, [[0, 1, 2], [3, 4, 5], [6, 7]])]
-
-    @pytest.mark.parametrize("iterable, batch, expected",
-                             batch_generator_cases)
-    def test_batch_generator(self, iterable, batch, expected):
-        got = list(_batch_generator(iterable, batch))
-        assert got == expected
-
 
 class Test_ttest_ind_common:
     # for tests that are performed on variations of the t-test such as
@@ -4995,15 +5022,16 @@ def test_ttest_1samp_new():
 
 class TestDescribe:
     def test_describe_scalar(self):
-        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
+             pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
             n, mm, m, v, sk, kurt = stats.describe(4.)
         assert_equal(n, 1)
         assert_equal(mm, (4.0, 4.0))
         assert_equal(m, 4.0)
-        assert_(np.isnan(v))
-        assert_array_almost_equal(sk, 0.0, decimal=13)
-        assert_array_almost_equal(kurt, -3.0, decimal=13)
+        assert np.isnan(v)
+        assert np.isnan(sk)
+        assert np.isnan(kurt)
 
     def test_describe_numbers(self):
         x = np.vstack((np.ones((3,4)), np.full((2, 4), 2)))
@@ -5092,9 +5120,10 @@ class TestDescribe:
 
 
 def test_normalitytests():
-    assert_raises(ValueError, stats.skewtest, 4.)
-    assert_raises(ValueError, stats.kurtosistest, 4.)
-    assert_raises(ValueError, stats.normaltest, 4.)
+    with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+        assert_raises(ValueError, stats.skewtest, 4.)
+        assert_raises(ValueError, stats.kurtosistest, 4.)
+        assert_raises(ValueError, stats.normaltest, 4.)
 
     # numbers verified with R: dagoTest in package fBasics
     st_normal, st_skew, st_kurt = (3.92371918, 1.98078826, -0.01403734)
@@ -6967,6 +6996,27 @@ class TestBrunnerMunzel:
         assert_approx_equal(p1, 0.0057862086661515377,
                             significant=self.significant)
 
+    def test_brunnermunzel_return_nan(self):
+        """ tests that a warning is emitted when p is nan
+        p-value with t-distributions can be nan (0/0) (see gh-15843)
+        """
+        x = [1, 2, 3]
+        y = [5, 6, 7, 8, 9]
+
+        with pytest.warns(RuntimeWarning, match='p-value cannot be estimated'):
+            stats.brunnermunzel(x, y, distribution="t")
+
+    def test_brunnermunzel_normal_dist(self):
+        """ tests that a p is 0 for datasets that cause p->nan
+        when t-distribution is used (see gh-15843)
+        """
+        x = [1, 2, 3]
+        y = [5, 6, 7, 8, 9]
+
+        with pytest.warns(RuntimeWarning, match='divide by zero'):
+            _, p = stats.brunnermunzel(x, y, distribution="normal")
+        assert_equal(p, 0)
+
 
 class TestRatioUniforms:
     """ Tests for rvs_ratio_uniforms.
@@ -7230,6 +7280,17 @@ class TestMGCStat:
                                                                random_state=1)
         assert_approx_equal(stat_dist, 0.163, significant=1)
         assert_approx_equal(pvalue_dist, 0.001, significant=1)
+
+    @pytest.mark.slow
+    def test_pvalue_literature(self):
+        np.random.seed(12345678)
+
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=1, sim_type="linear")
+
+        # test stat and pvalue
+        _, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
+        assert_allclose(pvalue, 1/1001)
 
 
 class TestPageTrendTest:

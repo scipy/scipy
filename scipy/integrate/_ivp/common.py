@@ -42,9 +42,11 @@ def warn_extraneous(extraneous):
 
 def validate_tol(rtol, atol, n):
     """Validate tolerance values."""
-    if rtol < 100 * EPS:
-        warn("`rtol` is too low, setting to {}".format(100 * EPS))
-        rtol = 100 * EPS
+
+    if np.any(rtol < 100 * EPS):
+        warn("At least one element of `rtol` is too small. "
+             f"Setting `rtol = np.maximum(rtol, {100 * EPS})`.")
+        rtol = np.maximum(rtol, 100 * EPS)
 
     atol = np.asarray(atol)
     if atol.ndim > 0 and atol.shape != (n,):

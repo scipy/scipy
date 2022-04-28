@@ -1,12 +1,13 @@
 import os
-
 import numpy as np
+import numpy.testing as npt
 from numpy.testing import assert_allclose
 import pytest
 from scipy import stats
 from scipy.optimize import differential_evolution
 
 from .test_continuous_basic import distcont
+from scipy.stats._distn_infrastructure import FitError
 from scipy.stats._distr_params import distdiscrete
 
 
@@ -79,7 +80,7 @@ def cases_test_cont_fit():
 
 @pytest.mark.slow
 @pytest.mark.parametrize('distname,arg', cases_test_cont_fit())
-@pytest.mark.parametrize('method', ["MLE", 'MM'])
+@pytest.mark.parametrize('method', ["MLE", "MM"])
 def test_cont_fit(distname, arg, method):
     if distname in failing_fits[method]:
         # Skip failing fits unless overridden
@@ -146,6 +147,14 @@ def test_expon_fit():
     assert_allclose(phat, [0, 1.0], atol=1e-3)
 
 
+def test_fit_error():
+    data = np.concatenate([np.zeros(29), np.ones(21)])
+    message = "Optimization converged to parameters that are..."
+    with pytest.raises(FitError, match=message), \
+            pytest.warns(RuntimeWarning):
+        stats.beta.fit(data)
+
+
 @pytest.mark.parametrize("dist, params",
                          [(stats.norm, (0.5, 2.5)),  # type: ignore[attr-defined] # noqa
                           (stats.binom, (10, 0.3, 2))])  # type: ignore[attr-defined] # noqa
@@ -166,13 +175,30 @@ def test_nnlf_and_related_methods(dist, params):
 
 
 def cases_test_fit():
-    skip_basic_fit = {'nhypergeom', 'boltzmann', 'nbinom',
-                      'randint', 'yulesimon', 'nchypergeom_fisher',
-                      'nchypergeom_wallenius'}
-    slow_basic_fit = {'binom'}
-    xslow_basic_fit = {'skellam', 'hypergeom', 'zipfian', 'betabinom'}
+    # These three fail default test; check separately
+    skip_basic_fit = {'argus', 'foldnorm', 'truncweibull_min'}
+    # status of 'studentized_range', 'ksone', 'kstwo' unknown; all others pass
+    slow_basic_fit = {'burr12', 'johnsonsb', 'bradford', 'fisk', 'mielke',
+                      'exponpow', 'rdist', 'norminvgauss', 'betaprime',
+                      'powerlaw', 'pareto', 'johnsonsu', 'loglaplace',
+                      'wrapcauchy', 'weibull_max', 'arcsine', 'binom', 'rice',
+                      'uniform', 'f', 'invweibull', 'genpareto', 'weibull_min',
+                      'nbinom', 'kappa3', 'lognorm', 'halfgennorm', 'pearson3',
+                      'alpha', 't', 'crystalball', 'fatiguelife', 'nakagami',
+                      'kstwobign', 'gompertz', 'dweibull', 'lomax', 'invgauss',
+                      'recipinvgauss', 'chi', 'foldcauchy', 'powernorm',
+                      'gennorm', 'skewnorm', 'randint', 'genextreme'}
+    xslow_basic_fit = {'studentized_range', 'ksone', 'kstwo', 'levy_stable',
+                       'nchypergeom_fisher', 'nchypergeom_wallenius',
+                       'gausshyper', 'genexpon', 'gengamma', 'genhyperbolic',
+                       'geninvgauss', 'tukeylambda', 'skellam', 'ncx2',
+                       'hypergeom', 'nhypergeom', 'zipfian', 'ncf',
+                       'truncnorm', 'powerlognorm', 'beta',
+                       'loguniform', 'reciprocal', 'trapezoid', 'nct',
+                       'kappa4', 'betabinom', 'exponweib', 'genhalflogistic',
+                       'burr', 'triang'}
 
-    for dist in dict(distdiscrete):
+    for dist in dict(distdiscrete + distcont):
         if dist in skip_basic_fit or not isinstance(dist, str):
             reason = "tested separately"
             yield pytest.param(dist, marks=pytest.mark.skip(reason=reason))
@@ -182,6 +208,34 @@ def cases_test_fit():
         elif dist in xslow_basic_fit:
             reason = "too slow (>= 1.0s)"
             yield pytest.param(dist, marks=pytest.mark.xslow(reason=reason))
+        else:
+            yield dist
+
+
+def cases_test_fitstart():
+    for distname, shapes in dict(distcont).items():
+        if not isinstance(distname, str) or distname in {'studentized_range'}:
+            continue
+        yield distname, shapes
+
+
+@pytest.mark.parametrize('distname, shapes', cases_test_fitstart())
+def test_fitstart(distname, shapes):
+    dist = getattr(stats, distname)
+    rng = np.random.default_rng(216342614)
+    data = rng.random(10)
+
+    with np.errstate(invalid='ignore', divide='ignore'):  # irrelevant to test
+        guess = dist._fitstart(data)
+
+    assert dist._argcheck(*guess[:-2])
+
+
+def assert_nllf_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0):
+    nllf1 = dist.nnlf(params1, data)
+    nllf0 = dist.nnlf(params0, data)
+    if not (nllf1 < nllf0):
+        np.testing.assert_allclose(nllf1, nllf0, rtol=rtol, atol=atol)
 
 
 class TestFit:
@@ -202,10 +256,6 @@ class TestFit:
         message = "`dist` must be an instance of..."
         with pytest.raises(ValueError, match=message):
             stats.fit(10, self.data, self.shape_bounds_a)
-
-        message = "Distribution `laplace` is not yet supported by..."
-        with pytest.raises(ValueError, match=message):
-            stats.fit(stats.laplace, self.data)
 
     def test_data_iv(self):
         message = "`data` must be exactly one-dimensional."
@@ -327,8 +377,8 @@ class TestFit:
         dist = getattr(stats, dist_name)
         shapes = np.array(dist_data[dist_name])
         bounds = np.empty((len(shapes) + 2, 2), dtype=np.float64)
-        bounds[:-2, 0] = shapes/10  # essentially all shapes are > 0
-        bounds[:-2, 1] = shapes*10
+        bounds[:-2, 0] = shapes/10**np.sign(shapes)
+        bounds[:-2, 1] = shapes*10**np.sign(shapes)
         bounds[-2] = (0, 10)
         bounds[-1] = (0, 10)
         loc = rng.uniform(*bounds[-2])
@@ -339,105 +389,57 @@ class TestFit:
             ref = ref[:-1]
             ref[-1] = np.floor(loc)
             data = dist.rvs(*ref, size=N, random_state=rng)
-            res = stats.fit(dist, data, bounds[:-1], optimizer=self.opt)
+            bounds = bounds[:-1]
         if getattr(dist, 'pdf', False):
             data = dist.rvs(*ref, size=N, random_state=rng)
+
+        with npt.suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, "overflow encountered")
             res = stats.fit(dist, data, bounds, optimizer=self.opt)
 
-        assert_allclose(res.params, ref, **self.tols)
+        assert_nllf_less_or_close(dist, data, res.params, ref, **self.tols)
 
-    @pytest.mark.skip("Tested in test_basic_fit")
-    def test_hypergeom(self):
-        # hypergeometric distribution (M, n, N) \equiv (M, N, n)
+    def test_argus(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
         N = 1000
         rng = np.random.default_rng(self.seed)
-        dist = stats.hypergeom
-        shapes = (20, 7, 12)
+        dist = stats.argus
+        shapes = (1., 2., 3.)
         data = dist.rvs(*shapes, size=N, random_state=rng)
-        shape_bounds = [(0, 30)]*3
+        shape_bounds = {'chi': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
-        assert_allclose(res.params[:-1], shapes, **self.tols)
 
-    @pytest.mark.xslow
-    def test_nhypergeom(self):
-        # DE doesn't find optimum for the bounds in `test_basic_fit`. NBD.
-        N = 2000
-        rng = np.random.default_rng(self.seed)
-        dist = stats.nhypergeom
-        shapes = (20, 7, 12)
-        data = dist.rvs(*shapes, size=N, random_state=rng)
-        shape_bounds = [(0, 30)]*3
-        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
-        assert_allclose(res.params[:-1], (20, 7, 12), **self.tols)
+        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
 
-    def test_boltzmann(self):
-        # Boltzmann distribution shape is very insensitive to parameter N
+    def test_foldnorm(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
         N = 1000
         rng = np.random.default_rng(self.seed)
-        dist = stats.boltzmann
-        shapes = (1.4, 19, 4)
+        dist = stats.foldnorm
+        shapes = (1.952125337355587, 2., 3.)
         data = dist.rvs(*shapes, size=N, random_state=rng)
-        bounds = [(0, 30)]*2 + [(0, 10)]
-        res = stats.fit(dist, data, bounds, optimizer=self.opt)
-        assert_allclose(res.params[0], 1.4, **self.tols)
-        assert_allclose(res.params[2], 4, **self.tols)
-
-    def test_nbinom(self):
-        # Fitting nbinom doesn't always get original shapes if loc is free
-        N = 7000
-        rng = np.random.default_rng(self.seed)
-        dist = stats.nbinom
-        shapes = (5, 0.5)
-        data = dist.rvs(*shapes, size=N, random_state=rng)
-        shape_bounds = [(0.5, 50), (0.05, 5)]
+        shape_bounds = {'c': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
-        assert_allclose(res.params[:-1], shapes, **self.tols)
 
-    def test_randint(self):
-        # randint is overparameterized; test_basic_fit finds equally good fit
-        N = 5000
+        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+
+    def test_truncweibull_min(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
+        N = 1000
         rng = np.random.default_rng(self.seed)
-        dist = stats.randint
-        shapes = (7, 31)
+        dist = stats.truncweibull_min
+        shapes = (2.5, 0.25, 1.75, 2., 3.)
         data = dist.rvs(*shapes, size=N, random_state=rng)
-        shape_bounds = [(0, 70), (0, 310)]
+        shape_bounds = [(0.1, 10)]*5
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
-        assert_allclose(res.params[:2], shapes, **self.tols)
 
-    def test_yulesimon(self):
-        # yulesimon fit is not very sensitive to alpha except for small alpha
-        N = 5000
-        rng = np.random.default_rng(self.seed)
-        dist = stats.yulesimon
-        params = (1.5, 4)
-        data = dist.rvs(*params, size=N, random_state=rng)
-        bounds = [(0.15, 15), (0, 10)]
-        res = stats.fit(dist, data, bounds, optimizer=self.opt)
-        assert_allclose(res.params, params, **self.tols)
-
-    @pytest.mark.xslow
-    def test_nchypergeom_fisher(self):
-        # The NC hypergeometric distributions are more challenging
-        N = 5000
-        rng = np.random.default_rng(self.seed)
-        dist = stats.nchypergeom_fisher
-        shapes = (14, 8, 6, 0.5)
-        data = dist.rvs(*shapes, size=N, random_state=rng)
-        shape_bounds = [(0, 20), (8, 8), (0, 10), (0, 1)]
-        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
-        assert_allclose(res.params[:-1], shapes, **self.tols)
-
-    @pytest.mark.xslow
-    def test_nchypergeom_wallenius(self):
-        # The NC hypergeometric distributions are more challenging
-        N = 5000
-        rng = np.random.default_rng(self.seed)
-        dist = stats.nchypergeom_wallenius
-        shapes = (14, 8, 6, 0.5)
-        data = dist.rvs(*shapes, size=N, random_state=rng)
-        shape_bounds = [(0, 20), (0, 10), (0, 10), (0, 0.5)]
-        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
-        assert_allclose(res.params[:-1], shapes, **self.tols)
+        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
 
     def test_missing_shape_bounds(self):
         # some distributions have a small domain w.r.t. a parameter, e.g.
