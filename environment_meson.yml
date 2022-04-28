@@ -1,8 +1,8 @@
 # To use:
-#   $ conda env create -f environment.yml  # `mamba` works too for this command
-#   $ conda activate scipy-dev
+#   $ conda env create -f environment_meson.yml  # `mamba` works too for this command
+#   $ conda activate scipy-meson
 #
-# Also used to build the `scipy-dev` Docker image via GitHub Actions
+# Also used to build the `scipy-meson` Docker image via GitHub Actions
 name: scipy-meson
 channels:
   - conda-forge
@@ -24,7 +24,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
-  - asv
+  - asv<0.5
   # For type annotations
   - mypy
   - typing_extensions
@@ -33,11 +33,17 @@ dependencies:
   - numpydoc=1.1.0
   - ipython
   - matplotlib
-  - pydata-sphinx-theme
+  - pydata-sphinx-theme>=0.8.1
   - sphinx-panels
+  - sphinx-tabs
   # For linting
   - flake8
   # Some optional test dependencies
   - mpmath
   - gmpy2
   - threadpoolctl
+  # For CLI
+  - rich-click
+  - click
+  - pip:
+      - doit==0.35.0

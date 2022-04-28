@@ -21,7 +21,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
-  - asv
+  - asv<0.5
   # For type annotations
   - mypy
   - typing_extensions
@@ -30,11 +30,17 @@ dependencies:
   - numpydoc=1.1.0
   - ipython
   - matplotlib
-  - pydata-sphinx-theme
+  - pydata-sphinx-theme>=0.8.1
   - sphinx-panels
+  - sphinx-tabs
   # For linting
   - flake8
   # Some optional test dependencies
   - mpmath
   - gmpy2
   - threadpoolctl
+  # For CLI
+  - rich-click
+  - click
+  - pip:
+      - doit==0.35.0

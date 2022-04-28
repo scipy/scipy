@@ -44,23 +44,20 @@ fblas_module = custom_target('fblas_module',
   command: [py3, generate_f2pymod, '@INPUT@', '-o', '@OUTDIR@']
 )
 
+# Note: we're linking LAPACK on purpose here. For some routines (e.g., spmv)
+# the float/double routines are in BLAS while the complex routines are in
+# LAPACK - we have historically put these in `_fblas`.
 py3.extension_module('_fblas',
   [fblas_module, fortranobject_c, g77_abi_wrappers],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, blas],
+  dependencies: [py3_dep, blas, lapack],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
 )
 
 # flapack
-deprecated_lapack_routines = [
-  'src/lapack_deprecations/cgegv.f',
-  'src/lapack_deprecations/dgegv.f',
-  'src/lapack_deprecations/sgegv.f',
-  'src/lapack_deprecations/zgegv.f'
-]
 
 flapack_module = custom_target('flapack_module',
   output: ['_flapackmodule.c', '_flapack-f2pywrappers.f'],
@@ -73,7 +70,6 @@ py3.extension_module('_flapack',
     flapack_module,
     fortranobject_c,
     g77_abi_wrappers,
-    deprecated_lapack_routines
   ],
   c_args: [
     numpy_nodepr_api,
@@ -205,7 +201,7 @@ cython_blas = py3.extension_module('cython_blas',
   c_args: cython_c_args,
   link_with: fwrappers,
   include_directories: inc_np,
-  dependencies: [py3_dep, blas],
+  dependencies: [py3_dep, blas, lapack],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -220,7 +216,7 @@ cython_lapack = py3.extension_module('cython_lapack',
   c_args: cython_c_args,
   link_with: fwrappers,
   include_directories: inc_np,
-  dependencies: [py3_dep, blas],
+  dependencies: [py3_dep, blas, lapack],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -234,6 +230,22 @@ _decomp_update_pyx = custom_target('_decomp_update',
 
 py3.extension_module('_decomp_update',
   linalg_cython_gen.process(_decomp_update_pyx),
+  c_args: cython_c_args,
+  include_directories: inc_np,
+  dependencies: py3_dep,
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
+# _matfuncs_expm:
+_matfuncs_expm_pyx = custom_target('_matfuncs_expm',
+  output: '_matfuncs_expm.pyx',
+  input: '_matfuncs_expm.pyx.in',
+  command: [py3, tempita, '@INPUT@', '-o', '@OUTDIR@']
+)
+
+py3.extension_module('_matfuncs_expm',
+  linalg_cython_gen.process(_matfuncs_expm_pyx),
   c_args: cython_c_args,
   include_directories: inc_np,
   dependencies: py3_dep,
@@ -267,6 +279,7 @@ python_sources = [
   '_flinalg_py.py',
   '_interpolative_backend.py',
   '_matfuncs.py',
+  '_matfuncs_expm.pyi',
   '_matfuncs_inv_ssq.py',
   '_matfuncs_sqrtm.py',
   '_misc.py',
@@ -310,6 +323,13 @@ py3.install_sources(
 #         `custom_target(..., install: true, install_dir: ...)
 #         # should use `py3.get_install_dir() + 'scipy/linalg'` ?
 #       see https://github.com/mesonbuild/meson/issues/3206
+#
+#       For the below code to work, the script generating the files should use
+#       a different filename, and then cp (or better: `copier`) should move it
+#       to the final location. Either that, or split the codegen scripts and
+#       call it twice: once for the installable files, and once for the
+#       non-installable files.
+#
 #pxd_files = [
 #  cython_linalg[2],  # cython_blas.pxd
 #  cython_linalg[3],  # cython_lapack.pxd

@@ -198,7 +198,7 @@ stages:
   - job: Windows
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
-      vmImage: 'windows-latest'
+      vmImage: 'windows-2019'
     variables:
       # OPENBLAS64_ variable has same value
       # but only needed for ILP64 build below
@@ -289,7 +289,7 @@ stages:
         pytest-cov
         pytest-env
         pytest-timeout
-        pytest-xdist==1.34.0
+        pytest-xdist
         threadpoolctl
       displayName: 'Install dependencies'
     # DLL resolution mechanics were changed in
@@ -326,7 +326,6 @@ stages:
             refreshenv
         }
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
-        $env:SCIPY_USE_PYTHRAN=0
 
         mkdir dist
         pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .

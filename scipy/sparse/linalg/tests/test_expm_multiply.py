@@ -6,6 +6,7 @@ from numpy.testing import (assert_allclose, assert_, assert_equal,
                            suppress_warnings)
 from scipy.sparse import SparseEfficiencyWarning
 import scipy.linalg
+from scipy.sparse.linalg import expm as sp_expm
 from scipy.sparse.linalg._expm_multiply import (_theta, _compute_p_max,
         _onenormest_matrix_power, expm_multiply, _expm_multiply_simple,
         _expm_multiply_interval)
@@ -63,7 +64,7 @@ class TestExpmActionSimple:
             A = scipy.linalg.inv(np.random.randn(n, n))
             B = np.random.randn(n, k)
             observed = expm_multiply(A, B)
-            expected = np.dot(scipy.linalg.expm(A), B)
+            expected = np.dot(sp_expm(A), B)
             assert_allclose(observed, expected)
 
     def test_matrix_vector_multiply(self):
@@ -74,7 +75,7 @@ class TestExpmActionSimple:
             A = scipy.linalg.inv(np.random.randn(n, n))
             v = np.random.randn(n)
             observed = expm_multiply(A, v)
-            expected = np.dot(scipy.linalg.expm(A), v)
+            expected = np.dot(sp_expm(A), v)
             assert_allclose(observed, expected)
 
     def test_scaled_expm_multiply(self):
@@ -88,7 +89,7 @@ class TestExpmActionSimple:
                     A = scipy.linalg.inv(np.random.randn(n, n))
                     B = np.random.randn(n, k)
                     observed = _expm_multiply_simple(A, B, t=t)
-                    expected = np.dot(scipy.linalg.expm(t*A), B)
+                    expected = np.dot(sp_expm(t*A), B)
                     assert_allclose(observed, expected)
 
     def test_scaled_expm_multiply_single_timepoint(self):
@@ -99,7 +100,7 @@ class TestExpmActionSimple:
         A = np.random.randn(n, n)
         B = np.random.randn(n, k)
         observed = _expm_multiply_simple(A, B, t=t)
-        expected = scipy.linalg.expm(t*A).dot(B)
+        expected = sp_expm(t*A).dot(B)
         assert_allclose(observed, expected)
 
     def test_sparse_expm_multiply(self):
@@ -113,10 +114,11 @@ class TestExpmActionSimple:
             observed = expm_multiply(A, B)
             with suppress_warnings() as sup:
                 sup.filter(SparseEfficiencyWarning,
-                           "splu requires CSC matrix format")
+                           "splu converted its input to CSC format")
                 sup.filter(SparseEfficiencyWarning,
-                           "spsolve is more efficient when sparse b is in the CSC matrix format")
-                expected = scipy.linalg.expm(A).dot(B)
+                           "spsolve is more efficient when sparse b is in the"
+                           " CSC matrix format")
+                expected = sp_expm(A).dot(B)
             assert_allclose(observed, expected)
 
     def test_complex(self):
@@ -151,12 +153,11 @@ class TestExpmActionInterval:
                         num=num, endpoint=endpoint)
                 with suppress_warnings() as sup:
                     sup.filter(SparseEfficiencyWarning,
-                               "splu requires CSC matrix format")
+                               "splu converted its input to CSC format")
                     sup.filter(SparseEfficiencyWarning,
                                "spsolve is more efficient when sparse b is in the CSC matrix format")
                     for solution, t in zip(X, samples):
-                        assert_allclose(solution,
-                                scipy.linalg.expm(t*A).dot(target))
+                        assert_allclose(solution, sp_expm(t*A).dot(target))
 
     def test_expm_multiply_interval_vector(self):
         np.random.seed(1234)
@@ -172,7 +173,7 @@ class TestExpmActionInterval:
                 samples = np.linspace(start=start, stop=stop,
                         num=num, endpoint=endpoint)
                 for solution, t in zip(X, samples):
-                    assert_allclose(solution, scipy.linalg.expm(t*A).dot(v))
+                    assert_allclose(solution, sp_expm(t*A).dot(v))
 
     def test_expm_multiply_interval_matrix(self):
         np.random.seed(1234)
@@ -189,7 +190,7 @@ class TestExpmActionInterval:
                     samples = np.linspace(start=start, stop=stop,
                             num=num, endpoint=endpoint)
                     for solution, t in zip(X, samples):
-                        assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
+                        assert_allclose(solution, sp_expm(t*A).dot(B))
 
     def test_sparse_expm_multiply_interval_dtypes(self):
         # Test A & B int
@@ -197,13 +198,13 @@ class TestExpmActionInterval:
         B = np.ones(5, dtype=int)
         Aexpm = scipy.sparse.diags(np.exp(np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
-    
+
         # Test A complex, B int
         A = scipy.sparse.diags(-1j*np.arange(5),format='csr', dtype=complex)
         B = np.ones(5, dtype=int)
         Aexpm = scipy.sparse.diags(np.exp(-1j*np.arange(5)),format='csr')
         assert_allclose(expm_multiply(A,B,0,1)[-1], Aexpm.dot(B))
-    
+
         # Test A int, B complex
         A = scipy.sparse.diags(np.arange(5),format='csr', dtype=int)
         B = np.full(5, 1j, dtype=complex)
@@ -243,9 +244,8 @@ class TestExpmActionInterval:
                 samples = np.linspace(start=start, stop=stop,
                         num=num, endpoint=endpoint)
                 for solution, t in zip(X, samples):
-                    assert_allclose(solution, scipy.linalg.expm(t*A).dot(B))
+                    assert_allclose(solution, sp_expm(t*A).dot(B))
                 nsuccesses += 1
         if not nsuccesses:
             msg = 'failed to find a status-' + str(target_status) + ' interval'
             raise Exception(msg)
-

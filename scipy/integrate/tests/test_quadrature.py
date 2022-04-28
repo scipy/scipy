@@ -153,6 +153,31 @@ class TestQuadrature:
         assert_equal(simpson(y, x=x, even='first'), 13.75)
         assert_equal(simpson(y, x=x, even='last'), 14)
 
+        # Tests for checking base case
+        x = np.array([3])
+        y = np.power(x, 2)
+        assert_equal(simpson(y, x=x, axis=0), 0.0)
+        assert_equal(simpson(y, x=x, axis=-1), 0.0)
+
+        x = np.array([3, 3, 3, 3])
+        y = np.power(x, 2)
+        assert_equal(simpson(y, x=x, axis=0), 0.0)
+        assert_equal(simpson(y, x=x, axis=-1), 0.0)
+
+        x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 2, 4, 8]])
+        y = np.power(x, 2)
+        zero_axis = [0.0, 0.0, 0.0, 0.0]
+        default_axis = [175.75, 175.75, 175.75]
+        assert_equal(simpson(y, x=x, axis=0), zero_axis)
+        assert_equal(simpson(y, x=x, axis=-1), default_axis)
+
+        x = np.array([[1, 2, 4, 8], [1, 2, 4, 8], [1, 8, 16, 32]])
+        y = np.power(x, 2)
+        zero_axis = [0.0, 136.0, 1088.0, 8704.0]
+        default_axis = [175.75, 175.75, 11292.25]
+        assert_equal(simpson(y, x=x, axis=0), zero_axis)
+        assert_equal(simpson(y, x=x, axis=-1), default_axis)
+
     def test_simps(self):
         # Basic coverage test for the alias
         y = np.arange(4)

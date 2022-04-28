@@ -4,10 +4,6 @@ Low-level LAPACK functions (:mod:`scipy.linalg.lapack`)
 
 This module contains low-level functions from the LAPACK library.
 
-The `*gegv` family of routines have been removed from LAPACK 3.6.0
-and have been deprecated in SciPy 0.17.0. They will be removed in
-a future release.
-
 .. versionadded:: 0.12.0
 
 .. note::
@@ -97,11 +93,6 @@ All functions
    dgeev_lwork
    cgeev_lwork
    zgeev_lwork
-
-   sgegv
-   dgegv
-   cgegv
-   zgegv
 
    sgehrd
    dgehrd
@@ -840,23 +831,6 @@ from scipy.linalg._flapack import *
 del empty_module
 
 __all__ = ['get_lapack_funcs']
-
-_dep_message = """The `*gegv` family of routines has been deprecated in
-LAPACK 3.6.0 in favor of the `*ggev` family of routines.
-The corresponding wrappers will be removed from SciPy in
-a future release."""
-
-cgegv = _np.deprecate(cgegv, old_name='cgegv', message=_dep_message)
-dgegv = _np.deprecate(dgegv, old_name='dgegv', message=_dep_message)
-sgegv = _np.deprecate(sgegv, old_name='sgegv', message=_dep_message)
-zgegv = _np.deprecate(zgegv, old_name='zgegv', message=_dep_message)
-
-# Modify _flapack in this scope so the deprecation warnings apply to
-# functions returned by get_lapack_funcs.
-_flapack.cgegv = cgegv
-_flapack.dgegv = dgegv
-_flapack.sgegv = sgegv
-_flapack.zgegv = zgegv
 
 # some convenience alias for complex functions
 _lapack_alias = {

@@ -7,7 +7,7 @@ import numpy as np
 from scipy import linalg, special, fft as sp_fft
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
-           'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
+           'blackmanharris', 'flattop', 'bartlett', 'barthann',
            'hamming', 'kaiser', 'kaiser_bessel_derived', 'gaussian',
            'general_cosine', 'general_gaussian', 'general_hamming',
            'chebwin', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',
@@ -786,11 +786,6 @@ def hann(M, sym=True):
     """
     # Docstring adapted from NumPy's hanning function
     return general_hamming(M, 0.5, sym)
-
-
-@np.deprecate(new_name='scipy.signal.windows.hann')
-def hanning(*args, **kwargs):
-    return hann(*args, **kwargs)
 
 
 def tukey(M, alpha=0.5, sym=True):
@@ -1748,7 +1743,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
 
     See Also
     --------
-    chebwin, kaiser, bartlett, blackman, hamming, hanning
+    chebwin, kaiser, bartlett, blackman, hamming, hann
 
     References
     ----------
@@ -2111,7 +2106,7 @@ _win_equiv_raw = {
         'general gauss', 'general_gauss', 'ggs'): (general_gaussian, True),
     ('general hamming', 'general_hamming'): (general_hamming, True),
     ('hamming', 'hamm', 'ham'): (hamming, False),
-    ('hanning', 'hann', 'han'): (hann, False),
+    ('hann', 'han'): (hann, False),
     ('kaiser', 'ksr'): (kaiser, True),
     ('kaiser bessel derived', 'kbd'): (kaiser_bessel_derived, True),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),

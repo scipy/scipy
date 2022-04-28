@@ -684,11 +684,12 @@ def _root_krylov_doc():
 
         rdiff : float, optional
             Relative step size to use in numerical differentiation.
-        method : {'lgmres', 'gmres', 'bicgstab', 'cgs', 'minres'} or function
-            Krylov method to use to approximate the Jacobian.
-            Can be a string, or a function implementing the same
-            interface as the iterative solvers in
-            `scipy.sparse.linalg`.
+        method : str or callable, optional
+            Krylov method to use to approximate the Jacobian.  Can be a string,
+            or a function implementing the same interface as the iterative
+            solvers in `scipy.sparse.linalg`. If a string, needs to be one of:
+            ``'lgmres'``, ``'gmres'``, ``'bicgstab'``, ``'cgs'``, ``'minres'``,
+            ``'tfqmr'``.
 
             The default is `scipy.sparse.linalg.lgmres`.
         inner_M : LinearOperator or InverseJacobian
