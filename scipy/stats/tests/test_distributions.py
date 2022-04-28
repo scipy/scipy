@@ -6446,6 +6446,11 @@ class TestSubclassingNoShapes:
     def test_only__cdf(self):
         # _pdf is determined from _cdf by taking numerical derivative
         with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning,
+                      "scipy.misc.derivative is deprecated in "
+                      "SciPy v1.9.0; and will be completely removed in "
+                      "SciPy v2.0.0. You may consider using "
+                      "findiff: https://github.com/maroba/findiff or "
             dummy_distr = _distr2_gen(name='dummy')
             assert_almost_equal(dummy_distr.pdf(1, a=1), 1)
 
