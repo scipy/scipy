@@ -6451,6 +6451,7 @@ class TestSubclassingNoShapes:
                       "SciPy v1.9.0; and will be completely removed in "
                       "SciPy v2.0.0. You may consider using "
                       "findiff: https://github.com/maroba/findiff or "
+                      "numdifftools: https://github.com/pbrod/numdifftools")
             dummy_distr = _distr2_gen(name='dummy')
             assert_almost_equal(dummy_distr.pdf(1, a=1), 1)
 
