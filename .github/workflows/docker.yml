@@ -1,19 +1,19 @@
 name: Build Base Docker Image
 
-# Triggered only if environment.yml in main changes
+# Triggered only if environment_meson.yml in main changes
 # Pushes a Docker image with all dev dependencies to Docker Hub
 on:
   push:
     branches:
       - main
     paths:
-      - 'environment.yml'
+      - 'environment_meson.yml'
 
 jobs:
   build:
     name: Build base Docker image
     runs-on: ubuntu-latest
-    environment: scipy-dev
+    environment: scipy-meson
     if: "github.repository_owner == 'scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
     steps:
       - name: Clone repository
