@@ -98,10 +98,11 @@ test = [
 ]
 doc = [
     "sphinx!=3.1.0, !=4.1.0",
-    "pydata-sphinx-theme>=0.6.1",
+    "pydata-sphinx-theme>=0.8.1",
     "sphinx-panels>=0.5.2",
     "matplotlib>2",
     "numpydoc",
+    "sphinx-tabs",
 ]
 dev = [
     "mypy",
@@ -116,3 +117,8 @@ documentation = "https://docs.scipy.org/doc/scipy/"
 source = "https://github.com/scipy/scipy"
 download = "https://github.com/scipy/scipy/releases"
 tracker = "https://github.com/scipy/scipy/issues"
+
+
+[tool.doit]
+dodoFile = "do.py"
+

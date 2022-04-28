@@ -1,6 +1,7 @@
 # cython: wraparound=False, boundscheck=False
 
 import numpy as np
+import warnings
 
 from scipy.sparse import csr_matrix, isspmatrix_csr
 
@@ -19,16 +20,25 @@ class MaximumFlowResult:
     ----------
     flow_value : int
         The value of the maximum flow.
-    residual : csr_matrix
-        The residual graph with respect to the maximum flow.
+    flow : csr_matrix
+        The maximum flow.
     """
 
-    def __init__(self, flow_value, residual):
+    def __init__(self, flow_value, flow):
         self.flow_value = flow_value
-        self.residual = residual
+        self.flow = flow
 
     def __repr__(self):
         return 'MaximumFlowResult with value of %d' % self.flow_value
+
+    @property
+    def residual(self):
+        warnings.warn(
+            "The attribute `residual` has been renamed to `flow`"
+            " and will be removed in SciPy 1.11.",
+            DeprecationWarning, stacklevel=2
+        )
+        return self.flow
 
 
 def maximum_flow(csgraph, source, sink, *, method='dinic'):
@@ -65,7 +75,7 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     res : MaximumFlowResult
         A maximum flow represented by a ``MaximumFlowResult``
         which includes the value of the flow in ``flow_value``,
-        and the residual graph in ``residual``.
+        and the flow graph in ``flow``.
 
     Raises
     ------
@@ -202,10 +212,10 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
 
     At this point, we can find the maximum flow between the added sink and the
     added source and the desired matching can be obtained by restricting the
-    residual graph to the block corresponding to the original graph:
+    flow function to the block corresponding to the original graph:
 
-    >>> flow = maximum_flow(graph_flow, 0, i+j+1, method='dinic')
-    >>> matching = flow.residual[1:i+1, i+1:i+j+1]
+    >>> result = maximum_flow(graph_flow, 0, i+j+1, method='dinic')
+    >>> matching = result.flow[1:i+1, i+1:i+j+1]
     >>> print(matching.toarray())
     [[0 1 0 0]
      [1 0 0 0]
@@ -253,18 +263,18 @@ def maximum_flow(csgraph, source, sink, *, method='dinic'):
     rev_edge_ptr = _make_edge_pointers(m)
     if method == 'edmonds_karp':
         tails = _make_tails(m)
-        residual = _edmonds_karp(m.indptr, tails, m.indices,
-                                 m.data, rev_edge_ptr, source, sink)
+        flow = _edmonds_karp(m.indptr, tails, m.indices,
+                             m.data, rev_edge_ptr, source, sink)
     elif method == 'dinic':
-        residual = _dinic(m.indptr, m.indices, m.data, rev_edge_ptr,
-                          source, sink)
+        flow = _dinic(m.indptr, m.indices, m.data, rev_edge_ptr,
+                      source, sink)
     else:
         raise ValueError('{} method is not supported yet.'.format(method))
-    residual_array = np.asarray(residual)
-    residual_matrix = csr_matrix((residual_array, m.indices, m.indptr),
-                                 shape=m.shape)
-    source_flow = residual_array[m.indptr[source]:m.indptr[source + 1]]
-    return MaximumFlowResult(source_flow.sum(), residual_matrix)
+    flow_array = np.asarray(flow)
+    flow_matrix = csr_matrix((flow_array, m.indices, m.indptr),
+                             shape=m.shape)
+    source_flow = flow_array[m.indptr[source]:m.indptr[source + 1]]
+    return MaximumFlowResult(source_flow.sum(), flow_matrix)
 
 
 def _add_reverse_edges(a):
@@ -404,7 +414,7 @@ cdef ITYPE_t[:] _edmonds_karp(
     Returns
     -------
     flow : memoryview of length :math:`|E|`
-        The residual graph with respect to a maximum flow.
+        The flow graph with respect to a maximum flow.
 
     """
     cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1
@@ -571,7 +581,7 @@ cdef bint _augment_paths(
         For a given vertex ``v``, ``progress[v]`` is the index of the next
         edge to be visited from ``v``.
     flows : memoryview of length :math:`|E|`
-        The residual graph with respect to a maximum flow.
+        The flow graph with respect to a maximum flow.
     stack : memoryview of length (:math:`|E|`, 2)
         Stack used during depth-first search.
 
@@ -645,7 +655,7 @@ cdef ITYPE_t[:] _dinic(
     Returns
     -------
     flows : memoryview of length :math:`|E|`
-        The residual graph with respect to a maximum flow.
+        The flow graph with respect to a maximum flow.
 
     """
     cdef ITYPE_t n_verts = edge_ptr.shape[0] - 1

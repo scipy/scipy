@@ -82,6 +82,9 @@ def test_distributions_submodule():
     # <scipy.stats._continuous_distns.trapezoid_gen at 0x1df83bbc688>
     expected = set(filter(lambda s: not str(s).startswith('<'), expected))
 
+    # gilbrat is deprecated and no longer in distcont
+    actual.remove('gilbrat')
+
     assert actual == expected
 
 
@@ -171,7 +174,7 @@ def assert_fit_warnings(dist):
 @pytest.mark.parametrize('dist',
                          ['alpha', 'betaprime',
                           'fatiguelife', 'invgamma', 'invgauss', 'invweibull',
-                          'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gilbrat',
+                          'johnsonsb', 'levy', 'levy_l', 'lognorm', 'gibrat',
                           'powerlognorm', 'rayleigh', 'wald'])
 def test_support(dist):
     """gh-6235"""
@@ -1000,13 +1003,13 @@ class TestTruncnorm:
             assert_almost_equal(stats.truncnorm.pdf(xvals, low, high),
                                 stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
 
-    def _test_moments_one_range(self, a, b, expected, decimal_s=7):
+    def _test_moments_one_range(self, a, b, expected, rtol=1e-7):
         m0, v0, s0, k0 = expected[:4]
         m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
-        assert_almost_equal(m, m0)
-        assert_almost_equal(v, v0)
-        assert_almost_equal(s, s0, decimal=decimal_s)
-        assert_almost_equal(k, k0)
+        assert_allclose(m, m0)
+        assert_allclose(v, v0)
+        assert_allclose(s, s0, rtol=rtol)
+        assert_allclose(k, k0, rtol=rtol)
 
     @pytest.mark.xfail_on_32bit("reduced accuracy with 32bit platforms.")
     def test_moments(self):
@@ -1049,12 +1052,13 @@ class TestTruncnorm:
         self._test_moments_one_range(-20, -19, [-19.0523439459766628,
                                                 0.0027250730180314,
                                                 -1.9838694022629291,
-                                                5.8717850028287586])
+                                                5.8717850028287586],
+                                     rtol=1e-5)
         self._test_moments_one_range(-30, -29, [-29.0344012377394698,
                                                 0.0011806603928891,
                                                 -1.9930304534611458,
                                                 5.8854062968996566],
-                                     decimal_s=6)
+                                     rtol=1e-6)
         self._test_moments_one_range(-40, -39, [-39.0256074199326264,
                                                 0.0006548826719649,
                                                 -1.9963146354109957,
@@ -2501,7 +2505,7 @@ class TestRvDiscrete:
             assert_(abs(sum(x == s)/float(samples) - p) < 0.05)
 
         x = r.rvs()
-        assert_(isinstance(x, int))
+        assert np.issubdtype(type(x), np.integer)
 
     def test_entropy(self):
         # Basic tests of entropy.
@@ -6934,14 +6938,15 @@ class TestWrapCauchy:
         assert_allclose(p[1], 1 - np.arctan(cr*np.tan(np.pi - x2/2))/np.pi)
 
 
-def test_rvs_no_size_warning():
+def test_rvs_no_size_error():
+    # _rvs methods must have parameter `size`; see gh-11394
     class rvs_no_size_gen(stats.rv_continuous):
         def _rvs(self):
             return 1
 
     rvs_no_size = rvs_no_size_gen(name='rvs_no_size')
 
-    with assert_warns(np.VisibleDeprecationWarning):
+    with assert_raises(TypeError, match=re.escape("_rvs() got an unexpected")):
         rvs_no_size.rvs()
 
 

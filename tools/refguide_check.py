@@ -120,7 +120,6 @@ DOCTEST_SKIPLIST = set([
     'scipy.special.sinc',  # comes from numpy
     'scipy.misc.who',  # comes from numpy
     'scipy.optimize.show_options',
-    'scipy.integrate.quad_explain',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 
@@ -147,7 +146,8 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.stats\.contingency\.chi2_contingency',
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',
-    r'scipy\.stats\.reciprocal',
+    r'scipy\.stats\.reciprocal',  # alias for lognormal
+    r'scipy\.stats\.gilbrat',  # alias for gibrat
     r'scipy\.stats\.trapz',   # alias for trapezoid
 ]
 # deprecated windows in scipy.signal namespace

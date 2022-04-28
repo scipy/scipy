@@ -1338,6 +1338,13 @@ def convolve(in1, in2, mode='full', method='auto'):
         An N-dimensional array containing a subset of the discrete linear
         convolution of `in1` with `in2`.
 
+    Warns
+    -----
+    RuntimeWarning
+        Use of the FFT convolution on input containing NAN or INF will lead
+        to the entire output being NAN or INF. Use method='direct' when your
+        input contains NAN or INF values.
+
     See Also
     --------
     numpy.polymul : performs polynomial multiplication (same operation, but
@@ -1402,6 +1409,13 @@ def convolve(in1, in2, mode='full', method='auto'):
         result_type = np.result_type(volume, kernel)
         if result_type.kind in {'u', 'i'}:
             out = np.around(out)
+
+        if np.isnan(out.flat[0]) or np.isinf(out.flat[0]):
+            warnings.warn("Use of fft convolution on input with NAN or inf"
+                          " results in NAN or inf output. Consider using"
+                          " method='direct' instead.",
+                          category=RuntimeWarning, stacklevel=2)
+
         return out.astype(result_type)
     elif method == 'direct':
         # fastpath to faster numpy.convolve for 1d inputs when possible
@@ -1908,7 +1922,7 @@ def lfilter(b, a, x, axis=-1, zi=None):
     lfiltic : Construct initial conditions for `lfilter`.
     lfilter_zi : Compute initial state (steady state of step response) for
                  `lfilter`.
-    filtfilt : A forward-backward filter, to obtain a filter with linear phase.
+    filtfilt : A forward-backward filter, to obtain a filter with zero phase.
     savgol_filter : A Savitzky-Golay filter.
     sosfilt: Filter data using cascaded second-order sections.
     sosfiltfilt: A forward-backward filter using second-order sections.

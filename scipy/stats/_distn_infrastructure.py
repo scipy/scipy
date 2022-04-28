@@ -9,7 +9,6 @@ import keyword
 import re
 import types
 import warnings
-import inspect
 from itertools import zip_longest
 from collections import namedtuple
 
@@ -645,22 +644,6 @@ class rv_generic:
                                    ('moments' in sig.kwonlyargs))
         self._random_state = check_random_state(seed)
 
-        # For historical reasons, `size` was made an attribute that was read
-        # inside _rvs().  The code is being changed so that 'size'
-        # is an argument
-        # to self._rvs(). However some external (non-SciPy) distributions
-        # have not
-        # been updated.  Maintain backwards compatibility by checking if
-        # the self._rvs() signature has the 'size' keyword, or a **kwarg,
-        # and if not set self._size inside self.rvs()
-        # before calling self._rvs().
-        argspec = inspect.getfullargspec(self._rvs)
-        self._rvs_uses_size_attribute = (argspec.varkw is None and
-                                         'size' not in argspec.args and
-                                         'size' not in argspec.kwonlyargs)
-        # Warn on first use only
-        self._rvs_size_warned = False
-
     @property
     def random_state(self):
         """Get or set the generator object for generating random variates.
@@ -1091,20 +1074,7 @@ class rv_generic:
         else:
             random_state = self._random_state
 
-        # Maintain backwards compatibility by setting self._size
-        # for distributions that still need it.
-        if self._rvs_uses_size_attribute:
-            if not self._rvs_size_warned:
-                warnings.warn(
-                    f'The signature of {self._rvs} does not contain '
-                    f'a "size" keyword.  Such signatures are deprecated.',
-                    np.VisibleDeprecationWarning)
-                self._rvs_size_warned = True
-            self._size = size
-            self._random_state = random_state
-            vals = self._rvs(*args)
-        else:
-            vals = self._rvs(*args, size=size, random_state=random_state)
+        vals = self._rvs(*args, size=size, random_state=random_state)
 
         vals = vals * scale + loc
 
@@ -1113,7 +1083,7 @@ class rv_generic:
             self._random_state = random_state_saved
 
         # Cast to int if discrete
-        if discrete:
+        if discrete and not isinstance(self, rv_sample):
             if size == ():
                 vals = int(vals)
             else:
@@ -3392,8 +3362,10 @@ class rv_discrete(rv_generic):
         _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
+        cond1 = (k >= _a) & (k <= _b)
         cond = cond0 & cond1
+        if not isinstance(self, rv_sample):
+            cond1 = cond1 & self._nonzero(k, *args)
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         if np.any(cond):
@@ -3428,7 +3400,9 @@ class rv_discrete(rv_generic):
         _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
+        cond1 = (k >= _a) & (k <= _b)
+        if not isinstance(self, rv_sample):
+            cond1 = cond1 & self._nonzero(k, *args)
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
         output.fill(NINF)
