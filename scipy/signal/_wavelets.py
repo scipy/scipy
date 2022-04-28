@@ -456,8 +456,6 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
     ...            vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
     >>> plt.show()
     """
-    if wavelet == ricker:
-        window_size = kwargs.pop('window_size', None)
     # Determine output type
     if dtype is None:
         if np.asarray(wavelet(1, widths[0], **kwargs)).dtype.char in 'FDG':
@@ -468,14 +466,6 @@ def cwt(data, wavelet, widths, dtype=None, **kwargs):
     output = np.empty((len(widths), len(data)), dtype=dtype)
     for ind, width in enumerate(widths):
         N = np.min([10 * width, len(data)])
-        # the conditional block below and the window_size
-        # kwarg pop above may be removed eventually; these
-        # are shims for 32-bit arch + NumPy <= 1.14.5 to
-        # address gh-11095
-        if wavelet == ricker and window_size is None:
-            ceil = np.ceil(N)
-            if ceil != N:
-                N = int(N)
         wavelet_data = np.conj(wavelet(N, width, **kwargs)[::-1])
         output[ind] = convolve(data, wavelet_data, mode='same')
     return output

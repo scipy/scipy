@@ -82,6 +82,9 @@ def test_distributions_submodule():
     # <scipy.stats._continuous_distns.trapezoid_gen at 0x1df83bbc688>
     expected = set(filter(lambda s: not str(s).startswith('<'), expected))
 
+    # gilbrat is deprecated and no longer in distcont
+    actual.remove('gilbrat')
+
     assert actual == expected
 
 
@@ -2502,7 +2505,7 @@ class TestRvDiscrete:
             assert_(abs(sum(x == s)/float(samples) - p) < 0.05)
 
         x = r.rvs()
-        assert_(isinstance(x, int))
+        assert np.issubdtype(type(x), np.integer)
 
     def test_entropy(self):
         # Basic tests of entropy.

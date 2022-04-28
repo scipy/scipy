@@ -67,8 +67,8 @@ def test_simple_graph(method):
     graph = csr_matrix([[0, 5], [0, 0]])
     res = maximum_flow(graph, 0, 1, method=method)
     assert res.flow_value == 5
-    expected_residual = np.array([[0, 5], [-5, 0]])
-    assert_array_equal(res.residual.toarray(), expected_residual)
+    expected_flow = np.array([[0, 5], [-5, 0]])
+    assert_array_equal(res.flow.toarray(), expected_flow)
 
 
 @pytest.mark.parametrize('method', methods)
@@ -78,8 +78,8 @@ def test_bottle_neck_graph(method):
     graph = csr_matrix([[0, 5, 0], [0, 0, 3], [0, 0, 0]])
     res = maximum_flow(graph, 0, 2, method=method)
     assert res.flow_value == 3
-    expected_residual = np.array([[0, 3, 0], [-3, 0, 3], [0, -3, 0]])
-    assert_array_equal(res.residual.toarray(), expected_residual)
+    expected_flow = np.array([[0, 3, 0], [-3, 0, 3], [0, -3, 0]])
+    assert_array_equal(res.flow.toarray(), expected_flow)
 
 
 @pytest.mark.parametrize('method', methods)
@@ -98,15 +98,15 @@ def test_backwards_flow(method):
                         [0, 0, 0, 0, 0, 0, 0, 0]])
     res = maximum_flow(graph, 0, 7, method=method)
     assert res.flow_value == 20
-    expected_residual = np.array([[0, 10, 0, 0, 10, 0, 0, 0],
-                                  [-10, 0, 10, 0, 0, 0, 0, 0],
-                                  [0, -10, 0, 10, 0, 0, 0, 0],
-                                  [0, 0, -10, 0, 0, 0, 0, 10],
-                                  [-10, 0, 0, 0, 0, 10, 0, 0],
-                                  [0, 0, 0, 0, -10, 0, 10, 0],
-                                  [0, 0, 0, 0, 0, -10, 0, 10],
-                                  [0, 0, 0, -10, 0, 0, -10, 0]])
-    assert_array_equal(res.residual.toarray(), expected_residual)
+    expected_flow = np.array([[0, 10, 0, 0, 10, 0, 0, 0],
+                              [-10, 0, 10, 0, 0, 0, 0, 0],
+                              [0, -10, 0, 10, 0, 0, 0, 0],
+                              [0, 0, -10, 0, 0, 0, 0, 10],
+                              [-10, 0, 0, 0, 0, 10, 0, 0],
+                              [0, 0, 0, 0, -10, 0, 10, 0],
+                              [0, 0, 0, 0, 0, -10, 0, 10],
+                              [0, 0, 0, -10, 0, 0, -10, 0]])
+    assert_array_equal(res.flow.toarray(), expected_flow)
 
 
 @pytest.mark.parametrize('method', methods)
@@ -122,13 +122,13 @@ def test_example_from_clrs_chapter_26_1(method):
                         [0, 0, 0, 0, 0, 0]])
     res = maximum_flow(graph, 0, 5, method=method)
     assert res.flow_value == 23
-    expected_residual = np.array([[0, 12, 11, 0, 0, 0],
-                                  [-12, 0, 0, 12, 0, 0],
-                                  [-11, 0, 0, 0, 11, 0],
-                                  [0, -12, 0, 0, -7, 19],
-                                  [0, 0, -11, 7, 0, 4],
-                                  [0, 0, 0, -19, -4, 0]])
-    assert_array_equal(res.residual.toarray(), expected_residual)
+    expected_flow = np.array([[0, 12, 11, 0, 0, 0],
+                              [-12, 0, 0, 12, 0, 0],
+                              [-11, 0, 0, 0, 11, 0],
+                              [0, -12, 0, 0, -7, 19],
+                              [0, 0, -11, 7, 0, 4],
+                              [0, 0, 0, -19, -4, 0]])
+    assert_array_equal(res.flow.toarray(), expected_flow)
 
 
 @pytest.mark.parametrize('method', methods)
@@ -141,8 +141,8 @@ def test_disconnected_graph(method):
                         [0, 0, 0, 0]])
     res = maximum_flow(graph, 0, 3, method=method)
     assert res.flow_value == 0
-    expected_residual = np.zeros((4, 4), dtype=np.int32)
-    assert_array_equal(res.residual.toarray(), expected_residual)
+    expected_flow = np.zeros((4, 4), dtype=np.int32)
+    assert_array_equal(res.flow.toarray(), expected_flow)
 
 
 @pytest.mark.parametrize('method', methods)
@@ -155,10 +155,17 @@ def test_add_reverse_edges_large_graph(method):
     graph = csr_matrix((data, indices, indptr), shape=(n, n))
     res = maximum_flow(graph, 0, n - 1, method=method)
     assert res.flow_value == 1
-    expected_residual = graph - graph.transpose()
-    assert_array_equal(res.residual.data, expected_residual.data)
-    assert_array_equal(res.residual.indices, expected_residual.indices)
-    assert_array_equal(res.residual.indptr, expected_residual.indptr)
+    expected_flow = graph - graph.transpose()
+    assert_array_equal(res.flow.data, expected_flow.data)
+    assert_array_equal(res.flow.indices, expected_flow.indices)
+    assert_array_equal(res.flow.indptr, expected_flow.indptr)
+
+
+def test_residual_raises_deprecation_warning():
+    graph = csr_matrix([[0, 5, 0], [0, 0, 3], [0, 0, 0]])
+    res = maximum_flow(graph, 0, 2)
+    with pytest.deprecated_call():
+        res.residual
 
 
 @pytest.mark.parametrize("a,b_data_expected", [

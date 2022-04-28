@@ -9,11 +9,11 @@ Development workflow
 *Note: consider watching* `SciPy Development Workflow`_ *before or after
 reading to see an example of fixing a bug and submitting a pull request.*
 
-In :ref:`quickstart-mac` or :ref:`quickstart-ubuntu`, you created your own
-fork (copy) of the SciPy repository, cloned the repository on your own machine,
-and built SciPy from this source code. Before getting started here,
-there are two other things you need to do just once before you start modifying
-SciPy.
+This guide assumes that you have created your own fork (copy) of the SciPy
+repository, cloned the repository on your own machine, and built SciPy from this
+source code. If you haven't, check the :ref:`dev-env` pages appropriate to your
+system. Before getting started here, there are two other things you need to do
+just once before you start modifying SciPy.
 
 #. In a terminal, introduce yourself to Git::
 
@@ -109,9 +109,9 @@ changes from the upstream main to help avoid
 when it's time to submit a pull request.
 
 It's also a good idea to build this branch and run tests before continuing.
-Assuming you've followed :ref:`quickstart-mac` or :ref:`quickstart-ubuntu`
-to set up your development environment, you'll need to activate your
-development virtual environment, perform an in-place build, and run tests::
+Assuming you've followed one of the :ref:`dev-env` pages to set up your
+development environment, you'll need to activate your development virtual
+environment, perform an in-place build, and run tests::
 
    conda activate name-of-your-virtual-environment
    python setup.py build_ext --inplace
