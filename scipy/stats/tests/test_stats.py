@@ -3017,7 +3017,7 @@ class TestMoments:
         # Scalar test case
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             y = stats.kurtosis(self.scalar_testcase)
-            assert_approx_equal(y, np.nan)
+            assert np.isnan(y)
         #   sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
         #   sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
         #   Set flags for axis = 0 and
