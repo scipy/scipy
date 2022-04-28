@@ -1439,6 +1439,26 @@ class TestGumbel_r_l:
         assert_allclose(loc, sgn*3.0000000001667906)
         assert_allclose(scale, 1.2495222465145514e-09, rtol=1e-6)
 
+    @pytest.mark.parametrize("dist", [stats.gumbel_r, stats.gumbel_l])
+    @pytest.mark.parametrize("floc, fscale",
+                             [(True, False), (False, True)])
+    def test_fixed_loc_scale(self, dist, floc, fscale):
+        data = dist.rvs(size=100, loc=1, scale=2)
+
+        # obtain objective function to compare results of the fit methods
+        args = [data, (dist._fitstart(data),)]
+        func = dist._reduce_func(args, {})[1]
+
+        kwds = {}
+        if floc:
+            kwds['floc'] = 2.5
+        if fscale:
+            kwds['fscale'] = 2.5
+
+        # test that the gumbel_* fit method is better than super method with
+        # fitted parameters
+        _assert_less_or_close_loglike(dist, data, func, **kwds)
+
 
 class TestPareto:
     def test_stats(self):

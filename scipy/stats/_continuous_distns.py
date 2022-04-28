@@ -3569,34 +3569,61 @@ class gumbel_r_gen(rv_continuous):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
-        # if user has provided `floc` or `fscale`, fall back on super fit
-        # method. This scenario is not suitable for solving a system of
-        # equations
-        if floc is not None or fscale is not None:
-            return super().fit(data, *args, **kwds)
-
-        # rv_continuous provided guesses
-        loc, scale = self._fitstart(data)
-        # account for user provided guesses
-        loc = kwds.pop('loc', loc)
-        scale = kwds.pop('scale', scale)
-
         # By the method of maximum likelihood, the estimators of the
         # location and scale are the roots of the equation defined in
         # `func` and the value of the expression for `loc` that follows.
         # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
         # and Peacock (2000), Page 101
 
-        def func(scale, data):
-            sdata = -data / scale
-            wavg = _average_with_log_weights(data, logweights=sdata)
-            return data.mean() - wavg - scale
+        def get_loc_from_scale(scale):
+            return -scale * (sc.logsumexp(-data / scale) - np.log(len(data)))
 
-        soln = optimize.root(func, scale, args=(data,),
-                             options={'xtol': 1e-14})
-        scale = soln.x[0]
-        loc = -scale * (sc.logsumexp(-data/scale) - np.log(len(data)))
+        if fscale is not None:
+            # if the scale is fixed, the location can be analytically
+            # determined.
+            scale = fscale
+            loc = get_loc_from_scale(scale)
 
+        else:
+            # A different function is solved depending on whether the location
+            # is fixed.
+            if floc is not None:
+                # equation to use if the location is fixed.
+
+                def func(scale):
+                    return (((floc - data) * np.exp(
+                        (floc - data) / scale) + data).sum() -
+                            len(data) * (floc + scale))
+            else:
+
+                # equation to use if both location and scale are free
+                def func(scale):
+                    sdata = -data / scale
+                    wavg = _average_with_log_weights(data, logweights=sdata)
+                    return data.mean() - wavg - scale
+
+            def interval_contains_root(lbrack, rbrack):
+                # return true if the signs disagree.
+                return (np.sign(func(lbrack)) !=
+                        np.sign(func(rbrack)))
+
+            # set brackets for `root_scalar` to use when optimizing over the
+            # scale such that a root is likely between them. Use user supplied
+            # guess or default 1.
+            brack_start = kwds.get('scale', 1)
+            lbrack, rbrack = brack_start / 2, brack_start * 2
+            # if a root is not between the brackets, iteratively expand them
+            # until they include a sign change, checking after each bracket is
+            # modified.
+            while (not interval_contains_root(lbrack, rbrack)
+                   and (lbrack > 0 or rbrack < np.inf)):
+                lbrack /= 2
+                rbrack *= 2
+
+            res = optimize.root_scalar(func, bracket=(lbrack, rbrack),
+                                       rtol=1e-14, xtol=1e-14)
+            scale = res.root
+            loc = floc if floc is not None else get_loc_from_scale(scale)
         return loc, scale
 
 
@@ -3629,6 +3656,7 @@ class gumbel_l_gen(rv_continuous):
     %(example)s
 
     """
+
     def _shape_info(self):
         return []
 
@@ -3655,8 +3683,8 @@ class gumbel_l_gen(rv_continuous):
         return np.log(-np.log(x))
 
     def _stats(self):
-        return -_EULER, np.pi*np.pi/6.0, \
-               -12*np.sqrt(6)/np.pi**3 * _ZETA3, 12.0/5
+        return -_EULER, np.pi * np.pi / 6.0, \
+               -12 * np.sqrt(6) / np.pi ** 3 * _ZETA3, 12.0 / 5
 
     def _entropy(self):
         return _EULER + 1.
@@ -3671,8 +3699,46 @@ class gumbel_l_gen(rv_continuous):
         #    unmodified.
         # `gumbel_r.fit` holds necessary input checks.
 
-        loc_r, scale_r, = gumbel_r.fit(-np.asarray(data), *args, **kwds)
-        return (-loc_r, scale_r)
+        data, floc, fscale = _check_fit_input_parameters(self, data,
+                                                         args, kwds)
+        # if floc is not None:
+        N = len(data)
+        def func(scale):
+            return (-N +
+                    (N * floc +
+                     np.sum(-floc * np.exp((-floc + data)/scale) +
+                            np.exp((-floc + data)/scale) * data -
+                            data)) / scale
+                    )
+
+        def interval_contains_root(lbrack, rbrack):
+            # return true if the signs disagree.
+            return (np.sign(func(lbrack)) !=
+                    np.sign(func(rbrack)))
+
+        # set brackets for `root_scalar` to use when optimizing over the
+        # scale such that a root is likely between them. Use user supplied
+        # guess or default 1.
+        brack_start = kwds.get('scale', 1)
+        lbrack, rbrack = brack_start / 2, brack_start * 2
+        # if a root is not between the brackets, iteratively expand them
+        # until they include a sign change, checking after each bracket is
+        # modified.
+        while (not interval_contains_root(lbrack, rbrack)
+               and (lbrack > 0 or rbrack < np.inf)):
+            lbrack /= 2
+            rbrack *= 2
+
+        res = optimize.root_scalar(func, bracket=(lbrack, rbrack),
+                                   rtol=1e-14, xtol=1e-14)
+        scale = res.root
+        return floc, scale
+        # loc = floc if floc is not None else get_loc_from_scale(scale)
+        # if kwds.get('floc', kwds.get('fscale')) is not None:
+        #
+        #     return super().fit(data, *args, **kwds)
+        # loc_r, scale_r, = gumbel_r.fit(-np.asarray(data), *args, **kwds)
+        # return (-loc_r, scale_r)
 
 
 gumbel_l = gumbel_l_gen(name='gumbel_l')
