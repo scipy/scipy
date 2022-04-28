@@ -10,7 +10,7 @@ Datasets (:mod:`scipy.datasets`)
 
    ascent - Get example image for processing
    face - Get example image for processing
-   electrocardiogram - Load an example of a one-dimensional signal.
+   electrocardiogram - Load an example of a one-dimensional signal
 
 """
 try:
