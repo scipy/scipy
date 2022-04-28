@@ -390,12 +390,12 @@ def get_project_info():
     except ImportError:
         # this may fail when running with --no-build, so try to detect
         # an installed scipy in a subdir inside a repo
-        site_dir = get_installed_path()
+        install_dir = get_installed_path()
         print("Trying to find scipy from development installed "
-              "path at:", site_dir)
-        sys.path.insert(0, site_dir)
+              "path at:", install_dir)
+        sys.path.insert(0, install_dir)
         os.environ['PYTHONPATH'] = \
-            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+            os.pathsep.join((install_dir, os.environ.get('PYTHONPATH', '')))
         test, version, mod_path = runtests.import_module()
     return test, version, mod_path
 
@@ -458,7 +458,7 @@ def install_project(args):
         dist_dir = get_dist_packages(site_dir)
         non_empty = len(os.listdir(PATH_INSTALLED))
         if non_empty and not(
-            os.path.exists(site_dir) or os.path.exists(dist_dir)):
+                os.path.exists(site_dir) or os.path.exists(dist_dir)):
             raise RuntimeError("Can't install in non-empty directory: "
                                f"'{PATH_INSTALLED}'")
     cmd = ["meson", "install", "-C", args.build_dir]
