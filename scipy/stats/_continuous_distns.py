@@ -3695,50 +3695,15 @@ class gumbel_l_gen(rv_continuous):
         # The fit method of `gumbel_r` can be used for this distribution with
         # small modifications. The process to do this is
         # 1. pass the sign negated data into `gumbel_r.fit`
+        #    - if the location is fixed, it should also be negated.
         # 2. negate the sign of the resulting location, leaving the scale
         #    unmodified.
         # `gumbel_r.fit` holds necessary input checks.
 
-        data, floc, fscale = _check_fit_input_parameters(self, data,
-                                                         args, kwds)
-        # if floc is not None:
-        N = len(data)
-        def func(scale):
-            return (-N +
-                    (N * floc +
-                     np.sum(-floc * np.exp((-floc + data)/scale) +
-                            np.exp((-floc + data)/scale) * data -
-                            data)) / scale
-                    )
-
-        def interval_contains_root(lbrack, rbrack):
-            # return true if the signs disagree.
-            return (np.sign(func(lbrack)) !=
-                    np.sign(func(rbrack)))
-
-        # set brackets for `root_scalar` to use when optimizing over the
-        # scale such that a root is likely between them. Use user supplied
-        # guess or default 1.
-        brack_start = kwds.get('scale', 1)
-        lbrack, rbrack = brack_start / 2, brack_start * 2
-        # if a root is not between the brackets, iteratively expand them
-        # until they include a sign change, checking after each bracket is
-        # modified.
-        while (not interval_contains_root(lbrack, rbrack)
-               and (lbrack > 0 or rbrack < np.inf)):
-            lbrack /= 2
-            rbrack *= 2
-
-        res = optimize.root_scalar(func, bracket=(lbrack, rbrack),
-                                   rtol=1e-14, xtol=1e-14)
-        scale = res.root
-        return floc, scale
-        # loc = floc if floc is not None else get_loc_from_scale(scale)
-        # if kwds.get('floc', kwds.get('fscale')) is not None:
-        #
-        #     return super().fit(data, *args, **kwds)
-        # loc_r, scale_r, = gumbel_r.fit(-np.asarray(data), *args, **kwds)
-        # return (-loc_r, scale_r)
+        if kwds.get('floc') is not None:
+            kwds['floc'] = -kwds['floc']
+        loc_r, scale_r, = gumbel_r.fit(-np.asarray(data), *args, **kwds)
+        return -loc_r, scale_r
 
 
 gumbel_l = gumbel_l_gen(name='gumbel_l')
