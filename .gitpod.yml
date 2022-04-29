@@ -13,6 +13,7 @@ tasks:
       mkdir -p .vscode
       cp tools/docker_dev/settings.json .vscode/settings.json
       conda activate scipy-meson
+      python -m pip install docutils
       git submodule update --init
       python dev.py --build-only -j2
       echo "🛠 Completed rebuilding SciPy!! 🛠 "
@@ -31,13 +32,13 @@ ports:
 vscode:
   extensions:
     - eamodio.gitlens
-    - njpwerner.autodocstring
-    - lextudio.restructuredtext
-    - ritwickdey.liveserver
-    - ms-python.python
-    - yzhang.markdown-all-in-one
     - bungcip.better-toml
-    - mhutchie.git-graph
+    - lextudio.restructuredtext
+    - ms-python.python
+    - njpwerner.autodocstring
+    - ritwickdey.liveserver
+    - trond-snekvik.simple-rst
+    - yzhang.markdown-all-in-one
 
 # --------------------------------------------------------
 # using prebuilds for the container - note: atm this only

@@ -8,7 +8,7 @@ jobs:
   build:
     name: Build Gitpod Docker image 
     runs-on: ubuntu-latest
-    environment: scipy-meson
+    environment: scipy-dev
     if: "github.repository_owner == 'scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
     steps:
       - name: Clone repository
@@ -27,12 +27,6 @@ jobs:
         id: getrefs
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
-      - name: Cache Docker layers
-        uses: actions/cache@v3
-        with:
-          path: /tmp/.buildx-cache
-          key: ${{ runner.os }}-buildx-${{ github.sha }}
-          restore-keys: ${{ runner.os }}-buildx-
       - name: Login to Docker Hub
         uses: docker/login-action@v1
         with:
@@ -47,8 +41,13 @@ jobs:
           push: ${{ github.event_name != 'pull_request' }}
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
+          build-args: |
+            BASE_CONTAINER="scipy/scipy-meson:latest"
+            BUILD_ARG="python dev.py --build-only -j2
+            CONDA_ENV="scipy-meson"
           tags: |
-            scipy/scipy-gitpod:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}, scipy/scipy-gitpod:latest
+            scipy/scipy-gitpod:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}
+            scipy/scipy-gitpod:latest
       - name: Image digest 
         # Return details of the image build: sha and shell
         run: echo ${{ steps.docker_build.outputs.digest }}
