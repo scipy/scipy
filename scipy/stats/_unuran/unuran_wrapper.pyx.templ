@@ -1301,13 +1301,6 @@ cdef class NumericalInversePolynomial(Method):
         If `random_state` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
 
-    Notes
-    -----
-    This method does not work for densities with constant parts (e.g. `uniform`
-    distribution) and segmentation faults if such a density is passed to the
-    constructor. It is recommended to use the composition method to sample from
-    such distributions.
-
     References
     ----------
     .. [1] Derflinger, Gerhard, Wolfgang Hörmann, and Josef Leydold. "Random variate

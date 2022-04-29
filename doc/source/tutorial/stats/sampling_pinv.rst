@@ -83,13 +83,6 @@ There are some restrictions for the given distribution:
   is very small. E.g., the Cauchy distribution is likely to show this problem
   when the requested u-resolution is less than 1.e-12.
 
-.. warning::
-    This method does not work for densities with constant parts (e.g.
-    `uniform` distribution) and segmentation faults if such a density is
-    passed to the constructor. It is recommended to use the
-    `composition method <https://statmath.wu.ac.at/software/unuran/doc/unuran.html#Composition>`__
-    to sample from such distributions.
-
 Following four steps are carried out by the algorithm during setup:
 
 * Computing the end points of the distribution: If a finite support is given,
