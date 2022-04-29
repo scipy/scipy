@@ -13,7 +13,6 @@ tasks:
       mkdir -p .vscode
       cp tools/docker_dev/settings.json .vscode/settings.json
       conda activate scipy-meson
-      python -m pip install docutils
       git submodule update --init
       python dev.py --build-only -j2
       echo "🛠 Completed rebuilding SciPy!! 🛠 "
