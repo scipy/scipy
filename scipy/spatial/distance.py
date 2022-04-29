@@ -1825,7 +1825,7 @@ _METRIC_INFOS = [
     ),
     MetricInfo(
         canonical_name='hamming',
-        aka={'matching', 'hamming', 'hamm', 'ha', 'h'},
+        aka={'hamming', 'hamm', 'ha', 'h'},
         types=['double', 'bool'],
         validator=_validate_hamming_kwargs,
         dist_func=hamming,
@@ -1962,7 +1962,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
         'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
         'jaccard', 'jensenshannon', 'kulsinski', 'kulczynski1',
-        'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
+        'mahalanobis', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
         'sqeuclidean', 'yule'.
     **kwargs : dict, optional
@@ -2144,46 +2144,42 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         Computes the Yule distance between each pair of boolean
         vectors. (see yule function documentation)
 
-    16. ``Y = pdist(X, 'matching')``
-
-        Synonym for 'hamming'.
-
-    17. ``Y = pdist(X, 'dice')``
+    16. ``Y = pdist(X, 'dice')``
 
         Computes the Dice distance between each pair of boolean
         vectors. (see dice function documentation)
 
-    18. ``Y = pdist(X, 'kulsinski')``
+    17. ``Y = pdist(X, 'kulsinski')``
 
         Computes the Kulsinski distance between each pair of
         boolean vectors. (see kulsinski function documentation)
 
-    19. ``Y = pdist(X, 'rogerstanimoto')``
+    18. ``Y = pdist(X, 'rogerstanimoto')``
 
         Computes the Rogers-Tanimoto distance between each pair of
         boolean vectors. (see rogerstanimoto function documentation)
 
-    20. ``Y = pdist(X, 'russellrao')``
+    19. ``Y = pdist(X, 'russellrao')``
 
         Computes the Russell-Rao distance between each pair of
         boolean vectors. (see russellrao function documentation)
 
-    21. ``Y = pdist(X, 'sokalmichener')``
+    20. ``Y = pdist(X, 'sokalmichener')``
 
         Computes the Sokal-Michener distance between each pair of
         boolean vectors. (see sokalmichener function documentation)
 
-    22. ``Y = pdist(X, 'sokalsneath')``
+    21. ``Y = pdist(X, 'sokalsneath')``
 
         Computes the Sokal-Sneath distance between each pair of
         boolean vectors. (see sokalsneath function documentation)
 
-    23. ``Y = pdist(X, 'kulczynski1')``
+    22. ``Y = pdist(X, 'kulczynski1')``
 
         Computes the Kulczynski 1 distance between each pair of
         boolean vectors. (see kulczynski1 function documentation)
 
-    24. ``Y = pdist(X, f)``
+    23. ``Y = pdist(X, f)``
 
         Computes the distance between all pairs of vectors in X
         using the user supplied 2-arity function f. For example,
@@ -2622,7 +2618,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         The distance metric to use. If a string, the distance function can be
         'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
         'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'jensenshannon',
-        'kulsinski', 'kulczynski1', 'mahalanobis', 'matching', 'minkowski',
+        'kulsinski', 'kulczynski1', 'mahalanobis', 'minkowski',
         'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
         'sokalsneath', 'sqeuclidean', 'yule'.
     **kwargs : dict, optional
@@ -2801,41 +2797,37 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         Computes the Yule distance between the boolean
         vectors. (see `yule` function documentation)
 
-    16. ``Y = cdist(XA, XB, 'matching')``
-
-        Synonym for 'hamming'.
-
-    17. ``Y = cdist(XA, XB, 'dice')``
+    16. ``Y = cdist(XA, XB, 'dice')``
 
         Computes the Dice distance between the boolean vectors. (see
         `dice` function documentation)
 
-    18. ``Y = cdist(XA, XB, 'kulsinski')``
+    17. ``Y = cdist(XA, XB, 'kulsinski')``
 
         Computes the Kulsinski distance between the boolean
         vectors. (see `kulsinski` function documentation)
 
-    19. ``Y = cdist(XA, XB, 'rogerstanimoto')``
+    18. ``Y = cdist(XA, XB, 'rogerstanimoto')``
 
         Computes the Rogers-Tanimoto distance between the boolean
         vectors. (see `rogerstanimoto` function documentation)
 
-    20. ``Y = cdist(XA, XB, 'russellrao')``
+    19. ``Y = cdist(XA, XB, 'russellrao')``
 
         Computes the Russell-Rao distance between the boolean
         vectors. (see `russellrao` function documentation)
 
-    21. ``Y = cdist(XA, XB, 'sokalmichener')``
+    20. ``Y = cdist(XA, XB, 'sokalmichener')``
 
         Computes the Sokal-Michener distance between the boolean
         vectors. (see `sokalmichener` function documentation)
 
-    22. ``Y = cdist(XA, XB, 'sokalsneath')``
+    21. ``Y = cdist(XA, XB, 'sokalsneath')``
 
         Computes the Sokal-Sneath distance between the vectors. (see
         `sokalsneath` function documentation)
 
-    23. ``Y = cdist(XA, XB, f)``
+    22. ``Y = cdist(XA, XB, f)``
 
         Computes the distance between all pairs of vectors in X
         using the user supplied 2-arity function f. For example,
