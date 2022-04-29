@@ -641,7 +641,9 @@ void mahalanobis_cdist_impl(ArrayDescriptor out, T* out_data,
     const auto num_rowsY = y.shape[0];
     const auto num_cols = x.shape[1];
     const intptr_t ilp_factor = 2;
-    T u_v_diff[num_cols], vi_uv[num_cols], dot_prods[ilp_factor];
+    T *u_v_diff = new T[2 * num_cols];
+    T *vi_uv = u_v_diff + num_cols;
+    T dot_prods[ilp_factor];
     intptr_t i, j, k, iv, jv;
 
     for (i = 0; i < num_rowsX; i++) {
@@ -684,6 +686,8 @@ void mahalanobis_cdist_impl(ArrayDescriptor out, T* out_data,
             out_data++;
         }
     }
+
+    delete [] u_v_diff;
 }
 
 template <typename T>
@@ -694,7 +698,9 @@ void mahalanobis_pdist_impl(ArrayDescriptor out, T* out_data,
     const auto num_rows = x.shape[0];
     const auto num_cols = x.shape[1];
     const intptr_t ilp_factor = 2;
-    T u_v_diff[num_cols], vi_uv[num_cols], dot_prods[ilp_factor];
+    T *u_v_diff = new T[2 * num_cols];
+    T *vi_uv = u_v_diff + num_cols;
+    T dot_prods[ilp_factor];
     intptr_t i, j, k, iv, jv;
 
     for (i = 0; i < num_rows; i++) {
@@ -737,6 +743,8 @@ void mahalanobis_pdist_impl(ArrayDescriptor out, T* out_data,
             out_data++;
         }
     }
+
+    delete [] u_v_diff;
 }
 
 template <typename T>
