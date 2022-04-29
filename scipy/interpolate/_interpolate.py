@@ -2426,11 +2426,10 @@ class RegularGridInterpolator:
     >>> interp(pts)
     array([ 125.80469388,  146.30069388])
 
-    which is indeed a close approximation to 
+    which is indeed a close approximation to
 
     >>> f(2.1, 6.2, 8.3), f(3.3, 5.2, 7.1)
     (125.54200000000002, 145.894)
-
 
     As a second example, we interpolate and extrapolate a 2D data:
 
@@ -2446,7 +2445,8 @@ class RegularGridInterpolator:
     >>> import matplotlib.pyplot as plt
     >>> fig = plt.figure()
     >>> ax = fig.add_subplot(projection='3d')
-    >>> ax.scatter(xg.ravel(), yg.ravel(), data.ravel(), s=60, c='k', label='data')
+    >>> ax.scatter(xg.ravel(), yg.ravel(), data.ravel(),
+    ...            s=60, c='k', label='data')
 
     Evaluate and plot the interpolator on a finer grid
 
@@ -2462,7 +2462,6 @@ class RegularGridInterpolator:
     >>> ax.plot_wireframe(X, Y, ff(X, Y), rstride=3, cstride=3,
     ...                   alpha=0.4, label='ground truth')
     >>> plt.legend()
-
 
     See also
     --------
