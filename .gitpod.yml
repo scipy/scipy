@@ -14,7 +14,7 @@ tasks:
       cp tools/docker_dev/settings.json .vscode/settings.json
       conda activate scipy-meson
       git submodule update --init
-      python dev.py
+      python dev.py --build-only -j2
       echo "🛠 Completed rebuilding SciPy!! 🛠 "
       echo "📖 Building docs 📖 "
       python dev.py --doc
