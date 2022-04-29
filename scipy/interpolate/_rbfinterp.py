@@ -399,7 +399,7 @@ class RBFInterpolator:
             memory_budget=None
     ):
         """
-        Evaluate the interpolation why controlling memory consumption.
+        Evaluate the interpolation while controlling memory consumption.
         We chunk the input if we need more memory than specified.
 
         Parameters
@@ -408,7 +408,7 @@ class RBFInterpolator:
             array of points on which to evaluate
         y: (P, N) float ndarray
             array of points on which we know function values
-        shift: (N, ) array
+        shift: (N, ) ndarray
             Domain shift used to create the polynomial matrix.
         scale : (N,) float ndarray
             Domain scaling used to create the polynomial matrix.
