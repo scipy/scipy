@@ -29,7 +29,17 @@ if [[ ! -f "/etc/profile.d/conda.sh" ]]; then
     ln -s ${CONDA_DIR}/etc/profile.d/conda.sh /etc/profile.d/conda.sh
 fi
 echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >>~/.bashrc
-echo "conda activate scipy-dev" >>~/.bashrc
+
+# Find env - TODO need to make this neater as it is a quick and dirty fix
+find_in_conda_env() {
+    conda env list | grep "${@}" >/dev/null 2>/dev/null
+}
+
+if find_in_conda_env ".*scipy-dev.*"; then
+    conda activate scipy-dev
+else
+    conda activate scipy-meson
+fi
 
 # Enable prompt color in the skeleton .bashrc
 # hadolint ignore=SC2016
