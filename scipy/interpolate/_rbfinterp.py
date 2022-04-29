@@ -396,7 +396,7 @@ class RBFInterpolator:
             shift,
             scale,
             coeffs,
-            memory_budget=None
+            memory_budget=1000000
     ):
         """
         Evaluate the interpolation while controlling memory consumption.
