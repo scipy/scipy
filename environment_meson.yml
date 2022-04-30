@@ -45,5 +45,7 @@ dependencies:
   # For CLI
   - rich-click
   - click
+  # else Docker raises a warning
+  - pip
   - pip:
       - doit==0.35.0
