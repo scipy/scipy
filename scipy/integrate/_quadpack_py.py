@@ -335,7 +335,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     ----------
 
     .. [1] Piessens, Robert; de Doncker-Kapenga, Elise;
-           Uberhuber, Christoph W.; Kahaner, David (1983).
+           Überhuber, Christoph W.; Kahaner, David (1983).
            QUADPACK: A subroutine package for automatic integration.
            Springer-Verlag.
            ISBN 978-3-540-12553-2.
@@ -669,7 +669,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     ----------
 
     .. [1] Piessens, Robert; de Doncker-Kapenga, Elise;
-           Uberhuber, Christoph W.; Kahaner, David (1983).
+           Überhuber, Christoph W.; Kahaner, David (1983).
            QUADPACK: A subroutine package for automatic integration.
            Springer-Verlag.
            ISBN 978-3-540-12553-2.
@@ -792,7 +792,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     ----------
 
     .. [1] Piessens, Robert; de Doncker-Kapenga, Elise;
-           Uberhuber, Christoph W.; Kahaner, David (1983).
+           Überhuber, Christoph W.; Kahaner, David (1983).
            QUADPACK: A subroutine package for automatic integration.
            Springer-Verlag.
            ISBN 978-3-540-12553-2.
@@ -1009,7 +1009,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     ----------
 
     .. [1] Piessens, Robert; de Doncker-Kapenga, Elise;
-           Uberhuber, Christoph W.; Kahaner, David (1983).
+           Überhuber, Christoph W.; Kahaner, David (1983).
            QUADPACK: A subroutine package for automatic integration.
            Springer-Verlag.
            ISBN 978-3-540-12553-2.
