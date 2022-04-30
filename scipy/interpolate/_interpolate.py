@@ -2385,6 +2385,21 @@ class RegularGridInterpolator:
     -------
     __call__
 
+    Attributes
+    ----------
+    grid : tuple of ndarrays
+        The points defining the regular grid in n dimensions.
+        This tuple defines the full grid via
+        ``np.meshgrid(*grid, indexing='ij')``
+    values : ndarray
+        Data values at the grid.
+    method : str
+        Interpolation method.
+    fill_value : float or ``None``
+        Use this value for out-of-bounds arguments to `__call__`.
+    bounds_error : bool
+        If ``True``, out-of-bounds argument raise a ``ValueError``.
+
     Notes
     -----
     Contrary to `LinearNDInterpolator` and `NearestNDInterpolator`, this class
