@@ -969,9 +969,9 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         the integrand function.
     qawoe
         is an integrator for the evaluation of
-        :math:`\\int^b_a \\cos(\\omega x)f(x)dx` or
-        :math:`\\int^b_a \\sin(\\omega x)f(x)dx`
-        over a finite interval [a,b], where :math:`\\omega` and :math:`f`
+        :math:`\int^b_a \cos(\omega x)f(x)dx` or
+        :math:`\int^b_a \sin(\omega x)f(x)dx`
+        over a finite interval [a,b], where :math:`\omega` and :math:`f`
         are specified by the user. The rule evaluation component is based
         on the modified Clenshaw-Curtis technique
 
@@ -981,25 +981,25 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         singularities in :math:`f(x)`.
     qawfe
         calculates the Fourier transform
-        :math:`\\int^\\infty_a \\cos(\\omega x)f(x)dx` or
-        :math:`\\int^\\infty_a \\sin(\\omega x)f(x)dx`
-        for user-provided :math:`\\omega` and :math:`f`. The procedure of QAWO
+        :math:`\int^\infty_a \cos(\omega x)f(x)dx` or
+        :math:`\int^\infty_a \sin(\omega x)f(x)dx`
+        for user-provided :math:`\omega` and :math:`f`. The procedure of QAWO
         is applied on successive finite intervals, and convergence
-        acceleration by means of the :math:`\\varepsilon`-algorithm is applied
+        acceleration by means of the :math:`\varepsilon`-algorithm is applied
         to the series of integral approximations.
     qawse
-        approximate :math:`\\int^b_a w(x)f(x)dx`, with :math:`a < b` where
-        :math:`w(x) = (x-a)^{\\alpha}(b-x)^{\\beta}v(x)` with
-        :math:`\\alpha,\\beta > -1`, where :math:`v(x)` may be one of the
-        following functions: :math:`1`, :math:`\\log(x-a)`, :math:`\\log(b-x)`,
-        :math:`\\log(x-a)\\log(b-x)`.
+        approximate :math:`\int^b_a w(x)f(x)dx`, with :math:`a < b` where
+        :math:`w(x) = (x-a)^{\alpha}(b-x)^{\beta}v(x)` with
+        :math:`\alpha,\beta > -1`, where :math:`v(x)` may be one of the
+        following functions: :math:`1`, :math:`\log(x-a)`, :math:`\log(b-x)`,
+        :math:`\log(x-a)\log(b-x)`.
 
-        The user specifies :math:`\\alpha`, :math:`\\beta` and the type of the
+        The user specifies :math:`\alpha`, :math:`\beta` and the type of the
         function :math:`v`. A globally adaptive subdivision strategy is
         applied, with modified Clenshaw-Curtis integration on those
         subintervals which contain `a` or `b`.
     qawce
-        compute :math:`\\int^b_a f(x) / (x-c)dx` where the integral must be
+        compute :math:`\int^b_a f(x) / (x-c)dx` where the integral must be
         interpreted as a Cauchy principal value integral, for user specified
         :math:`c` and :math:`f`. The strategy is globally adaptive. Modified
         Clenshaw-Curtis integration is used on those intervals containing the
