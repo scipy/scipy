@@ -4,8 +4,8 @@
 # Usage: 
 # -------
 # 
-# To make a local build of the container, from the root directory:
-# docker build  --rm -f "./tools/docker_dev/Dockerfile" -t <build-tag> "."   
+# To make a local build of the container, from the 'Docker-dev' directory:
+# docker build  --rm -f "Dockerfile" -t <build-tag> "."    
 # 
 # To use the container use the following command. It assumes that you are in
 # the root folder of the scipy git repository, making it available as
