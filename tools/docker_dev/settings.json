@@ -1,10 +1,9 @@
 {
-    "python.defaultInterpreterPath": "/opt/conda/envs/scipy-dev/bin/python",
-    // rst related - for the docs
-    "esbonio.sphinx.buildDir": "${workspaceRoot}/doc/build/html-scipyorg",
-    "esbonio.sphinx.confDir"  : "",
-    // will use docutils only
-    "esbonio.server.enabled": false,
+    "restructuredtext.languageServer.disabled": true,
+    "restructuredtext.builtDocumentationPath": "${workspaceRoot}/doc/build/html-scipyorg",
+    "restructuredtext.confPath": "",
     "restructuredtext.updateOnTextChanged": "true",
-    "restructuredtext.updateDelay": 300
+    "restructuredtext.updateDelay": 300,
+    "restructuredtext.linter.disabled": true,
+    "python.pythonPath": "/opt/conda/envs/scipy-dev/bin/python"
 }
