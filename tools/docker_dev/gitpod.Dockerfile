@@ -4,12 +4,9 @@
 # 
 # To make a local build of the container, from the root directory:
 # docker build --rm -f "./tools/docker_dev/gitpod.Dockerfile" -t <build-tag> "."    
-# docker build --rm -f "./tools/docker_dev/gitpod.Dockerfile" -t scipy/scipy-gitpod:latest "."  --build-arg BASE_CONTAINER="scipy/scipy-meson:latest" --build-arg CONDA_ENV="scipy-meson" --build-arg BUILD_ARG="python dev.py --build-only -j2"
 # 
 # Doing a local shallow clone - keeps the container secure
 # and much slimmer than using COPY directly or cloning a remote
-# To use the Meson container you'll need to use
-# --build-arg BASE_CONTAINER="scipy/scipy-meson:latest"
 ARG BASE_CONTAINER=scipy/scipy-dev:latest
 FROM ${BASE_CONTAINER} as clone
 
@@ -22,15 +19,12 @@ RUN git clone --depth 1 file:////tmp/scipy_repo /tmp/scipy
 # Using the Scipy-dev Docker image as a base
 # This way, we ensure we have all the needed compilers and dependencies
 # while reducing the build time - making this a  build ARG so we can reuse for other images
-# to use the meson image instead --build-arg BASE_CONTAINER="scipy/scipy-meson:latest"
 ARG BASE_CONTAINER=scipy/scipy-dev:latest
 FROM ${BASE_CONTAINER} as build
 
 # Build argument - can pass Meson arguments during the build:
-# --build-arg BUILD_ARG="python dev.py --build-only -j2"
-# --build-arg CONDA_ENV="scipy-meson"
-ARG BUILD_ARG="python setup.py build_ext --inplace" \
-    CONDA_ENV=scipy-dev
+ARG BUILD_ARG="python dev.py --build-only -j2" \
+    CONDA_ENV=scipy-meson
 
 # -----------------------------------------------------------------------------
 USER root
@@ -63,7 +57,7 @@ RUN conda activate ${CONDA_ENV} && \
     ${BUILD_ARG} && \
     ccache -s && \ 
     # needed for rst preview in gitpod
-    python3 -m pip install docutils
+    python3 -m pip install docutils esbonio
 
 # Gitpod will load the repository into /workspace/scipy. We remove the
 # directoy from the image to prevent conflicts
