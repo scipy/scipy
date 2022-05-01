@@ -2646,8 +2646,14 @@ class RegularGridInterpolator:
             i[i < 0] = 0
             i[i > grid.size - 2] = grid.size - 2
             indices.append(i)
-            norm_distances.append((x - grid[i]) /
-                                  (grid[i + 1] - grid[i]))
+
+            # compute norm_distances, incl length-1 grids,
+            # where `grid[i+1] == grid[i]`
+            denom = grid[i + 1] - grid[i]
+            with np.errstate(divide='ignore', invalid='ignore'):
+                norm_dist = np.where(denom != 0, (x - grid[i]) / denom, 0)
+            norm_distances.append(norm_dist)
+
             if not self.bounds_error:
                 out_of_bounds += x < grid[0]
                 out_of_bounds += x > grid[-1]
