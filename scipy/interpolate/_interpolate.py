@@ -2363,7 +2363,8 @@ class RegularGridInterpolator:
         The points defining the regular grid in n dimensions.
 
     values : array_like, shape (m1, ..., mn, ...)
-        The data on the regular grid in n dimensions.
+        The data on the regular grid in n dimensions. Complex data can be
+        acceptable.
 
     method : str, optional
         The method of interpolation to perform. Supported are "linear",
@@ -2400,7 +2401,6 @@ class RegularGridInterpolator:
     The 'slinear'(k=1), 'cubic'(k=3), and 'quintic'(k=5) methods are
     spline-based interpolators, the `k` is spline degree,
     If any dimension has fewer points than `k` + 1, an error will be raised.
-    These spline-based interpolators do not support complex values.
 
     .. versionadded:: 1.9
 
@@ -2467,8 +2467,6 @@ class RegularGridInterpolator:
         if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
         elif method in self._SPLINE_METHODS:
-            self._validate_not_complex(points, method)
-            self._validate_not_complex(values, method)
             self._validate_grid_dimensions(points, method)
         self.method = method
         self.bounds_error = bounds_error
@@ -2553,7 +2551,6 @@ class RegularGridInterpolator:
                                             norm_distances,
                                             out_of_bounds)
         elif method in self._SPLINE_METHODS:
-            self._validate_not_complex(xi, method)
             if is_method_changed:
                 self._validate_grid_dimensions(self.grid, method)
             result = self._evaluate_spline(self.values.T, xi,
@@ -2584,12 +2581,6 @@ class RegularGridInterpolator:
                    for i, yi in zip(indices, norm_distances)]
         return self.values[tuple(idx_res)]
 
-    @staticmethod
-    def _validate_not_complex(input_value, method):
-        if np.iscomplexobj(input_value):
-            raise ValueError(f"method {method} does not support complex "
-                             f"values. Use 'linear' or 'nearest'.")
-
     def _validate_grid_dimensions(self, points, method):
         k = self._SPLINE_DEGREE_MAP[method]
         for i, point in enumerate(points):
@@ -2618,7 +2609,7 @@ class RegularGridInterpolator:
                                            spline_degree)
 
         # the rest of the dimensions have to be on a per point-in-xi basis
-        result = np.empty(m)
+        result = np.empty(m, dtype=self.values.dtype)
         for j in range(m):
             # Main process: Apply 1D interpolate in each dimension
             # sequentially, starting with the last dimension.
@@ -2636,7 +2627,8 @@ class RegularGridInterpolator:
 
         return result
 
-    def _do_spline_fit(self, x, y, pt, k):
+    @staticmethod
+    def _do_spline_fit(x, y, pt, k):
         local_interp = make_interp_spline(x, y, k=k, axis=0)
         values = local_interp(pt)
         return values
@@ -2673,7 +2665,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         The points defining the regular grid in n dimensions.
 
     values : array_like, shape (m1, ..., mn, ...)
-        The data on the regular grid in n dimensions.
+        The data on the regular grid in n dimensions. Complex data can be
+        acceptable.
 
     xi : ndarray of shape (..., ndim)
         The coordinates to sample the gridded data at
