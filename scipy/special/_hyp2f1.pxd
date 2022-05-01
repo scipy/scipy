@@ -42,10 +42,11 @@ References
 cimport cython
 from numpy cimport npy_cdouble
 from libc.stdint cimport uint64_t, UINT64_MAX
-from libc.math cimport fabs, exp, M_LN2, M_PI, pow, trunc
+from libc.math cimport exp, fabs, M_PI, M_1_PI, log1p, pow, sin, trunc
 
 from . cimport sf_error
-from ._cephes cimport Gamma, gammasgn, lgam
+from ._cephes cimport Gamma, gammasgn, lanczos_sum_expg_scaled, lgam
+
 from ._complexstuff cimport (
     double_complex_from_npy_cdouble,
     npy_cdouble_from_double_complex,
@@ -56,6 +57,8 @@ from ._complexstuff cimport (
     zpow,
 )
 
+cdef extern from "cephes/lanczos.h":
+    double lanczos_g
 
 cdef extern from "numpy/npy_math.h":
     double NPY_NAN
@@ -71,7 +74,7 @@ cdef extern from 'specfun_wrappers.h':
     ) nogil
 
 
-# Small value from the Fortran original.
+# Small value from Zhang and Jin's Fortran implementation.
 DEF EPS = 1e-15
 
 DEF SQRT_PI = 1.7724538509055159  # sqrt(M_PI)
@@ -120,36 +123,23 @@ cdef inline double complex hyp2f1_complex(
     # Todo: Actually check for overflow instead of using a fixed tolerance for
     # all parameter combinations like in the Fortran original. This will have to
     # wait until all points in the neighborhood of z = 1 are handled in Cython.
-    if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
+    # Note that in the following three conditionals, we avoid the case where
+    # c is a non-positive integer. This is because if c is a non-positive
+    # integer and we have not returned already, then one of a or b must
+    # be a negative integer and the desired result can be computed as a
+    # polynomial with finite sum.
+    if (
+            fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0 and
+            not c_non_pos_int
+    ):
         return NPY_INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
-    if z == 1.0 and c - a - b > 0:
-        result = Gamma(c) * Gamma(c - a - b)
-        result /= Gamma(c - a) * Gamma(c - b)
-        # Try again with logs if there has been an overflow.
-        if zisnan(result) or zisinf(result) or result == 0.0:
-            result = exp(
-                lgam(c) - lgam(c - a) +
-                lgam(c - a - b) - lgam(c - b)
-            )
-            result *= gammasgn(c) * gammasgn(c - a - b)
-            result *= gammasgn(c - a) * gammasgn(c - b)
-        return result
+    if z == 1.0 and c - a - b > 0 and not c_non_pos_int:
+        return four_gammas(c, c - a - b, c - a, c - b)
     # Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26).
-    if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS:
-        # The computation below has been simplified through
-        # Legendre duplication for the Gamma function (DLMF 5.5.5).
-        result = SQRT_PI * pow(2, -a) * Gamma(c)
-        result /= Gamma(1 + 0.5*a - b) * Gamma(0.5 + 0.5*a)
-        # Try again with logs if there has been an overflow.
-        if zisnan(result) or zisinf(result) or result == 0.0:
-            result = exp(
-                LOG_PI_2 + lgam(c) - a * M_LN2 +
-                -lgam(1 + 0.5*a - b) - lgam(0.5 + 0.5*a)
-            )
-            result *= gammasgn(c) * gammasgn(1 + 0.5*a - b)
-            result *= gammasgn(0.5 + 0.5*a)
-        return result
+    if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS and not c_non_pos_int:
+        return four_gammas(a - b + 1, 0.5*a + 1, a + 1, 0.5*a - b + 1)
+
     # Reduces to a polynomial when a or b is a negative integer.
     # If a and b are both negative integers, we take care to terminate
     # the series at a or b of smaller magnitude. This is to ensure proper
@@ -291,7 +281,7 @@ cdef inline double complex hyp2f1_series(
             result = zpack(NPY_NAN, NPY_NAN)
     return result
 
-
+@cython.cdivision(True)
 cdef inline double complex hyp2f1_lopez_temme_series(
         double a,
         double b,
@@ -330,4 +320,157 @@ cdef inline double complex hyp2f1_lopez_temme_series(
     else:
         sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
         result = zpack(NPY_NAN, NPY_NAN)
+    return result
+
+
+@cython.cdivision(True)
+cdef inline double four_gammas(double u, double v, double w, double x) nogil:
+    cdef double result
+    # Without loss of generality, assume |u| >= |v|, |w| >= |x|.
+    if fabs(v) > fabs(u):
+        u, v = v, u
+    if fabs(x) > fabs(w):
+        w, x = x, w
+    # Direct ratio tends more accurate for arguments in this range. Range
+    # chosen empirically based on the relevant benchmarks in
+    # scipy/special/_precompute/hyp2f1_data.py
+    if fabs(u) <= 100 and fabs(v) <= 100 and fabs(w) <= 100 and fabs(x) <= 100:
+        result = Gamma(u) * Gamma(v) / (Gamma(w) * Gamma(x))
+        if not (zisinf(result) or zisnan(result) or result == 0):
+            return result
+    result = four_gammas_lanczos(u, v, w, x)
+    if not (zisinf(result) or zisnan(result) or result == 0):
+        return result
+    # If overflow or underflow, try again with logs.
+    result = exp(
+        lgam(v) - lgam(x) +
+        lgam(u) - lgam(w)
+    )
+    result *= gammasgn(u) * gammasgn(w) * gammasgn(v) * gammasgn(x)
+    return result
+
+
+@cython.cdivision(True)
+cdef inline double four_gammas_lanczos(
+        double u, double v, double w, double x
+) nogil:
+    """Compute ratio of gamma functions using lanczos approximation.
+
+    Computes gamma(u)*gamma(v)/(gamma(w)*gamma(x))
+
+    It is assumed that x = u + v - w, but it is left to the user to
+    ensure this.
+
+    The lanczos approximation takes the form
+
+    gamma(x) = factor(x) * lanczos_sum_expg_scaled(x)
+    
+    where factor(x) = ((x + lanczos_g - 0.5)/e)**(x - 0.5).
+
+    The formula above is only valid for x >= 0.5, but can be extended to
+    x < 0.5 with the reflection principle.
+
+    Using the lanczos approximation when computing this ratio of gamma functions
+    allows factors to be combined analytically to avoid underflow and overflow
+    and produce a more accurate result. The condition x = u + v - w makes it
+    possible to cancel the factors in the expression
+
+    factor(u) * factor(v) / (factor(w) * factor(x))
+
+    by taking one factor and absorbing it into the others. Currently, this
+    implementation takes the factor corresponding to the argument with largest
+    absolute value and absorbs it into the others.
+    """
+
+    cdef:
+        double result
+        double ugh, vgh, wgh, xgh
+
+    # Without loss of generality, assume |u| >= |v|, |w| >= |x|.
+    if fabs(v) > fabs(u):
+        u, v = v, u
+    if fabs(x) > fabs(w):
+        w, x = x, w
+
+    # The below implementation may incorrectly return finite results
+    # at poles of the gamma function. Handle these cases explicitly.
+    if u == trunc(u) and u <= 0 or v == trunc(v) and v <= 0:
+        # Return nan if numerator has pole. Diverges to +- infinity
+        # depending on direction so value is undefined.
+        return NPY_NAN
+    if w == trunc(w) and w <= 0 or x == trunc(x) and x <= 0:
+        # Return 0 if denominator has pole but not numerator.
+        return 0
+
+    result = 1
+
+    if u >= 0.5:
+        result *= lanczos_sum_expg_scaled(u)
+        ugh = u + lanczos_g - 0.5
+        u_prime = u
+    else:
+        result /= lanczos_sum_expg_scaled(1 - u) * sin(M_PI * u) * M_1_PI
+        ugh = 0.5 - u + lanczos_g
+        u_prime = 1 - u
+        
+    if v >= 0.5:
+        result *= lanczos_sum_expg_scaled(v)
+        vgh = v + lanczos_g - 0.5
+        v_prime = v
+    else:
+        result /= lanczos_sum_expg_scaled(1 - v) * sin(M_PI * v) * M_1_PI
+        vgh = 0.5 - v + lanczos_g
+        v_prime = 1 - v
+
+    if w >= 0.5:
+        result /= lanczos_sum_expg_scaled(w)
+        wgh = w + lanczos_g - 0.5
+        w_prime = w
+    else:
+        result *= lanczos_sum_expg_scaled(1 - w) * sin(M_PI * w) * M_1_PI
+        wgh = 0.5 - w + lanczos_g
+        w_prime = 1 - w
+        
+    if x >= 0.5:
+        result /= lanczos_sum_expg_scaled(x)
+        xgh = x + lanczos_g - 0.5
+        x_prime = x
+    else:
+        result *= lanczos_sum_expg_scaled(1 - x) * sin(M_PI * x) * M_1_PI
+        xgh = 0.5 - x + lanczos_g
+        x_prime = 1 - x
+
+    if fabs(u) >= fabs(w):
+        # u has greatest absolute value. Absorb ugh into the others.
+        if fabs((v_prime - u_prime)*(v - 0.5)) < 100*ugh and v > 100:
+            # Special case where base is close to 1. Condition taken from
+            # Boost's beta function implementation.
+            result *= exp((v - 0.5)*log1p((v_prime - u_prime)/ugh))
+        else:
+            result *= pow(vgh / ugh, v - 0.5)
+
+        if fabs((u_prime - w_prime)*(w - 0.5)) < 100*wgh and u > 100:
+            result *= exp((w - 0.5)*log1p((u_prime - w_prime)/wgh))
+        else:
+            result *= pow(ugh / wgh, w - 0.5)
+
+        if fabs((u_prime - x_prime)*(x - 0.5)) < 100*xgh and u > 100:
+            result *= exp((x - 0.5)*log1p((u_prime - x_prime)/xgh))
+        else:
+            result *= pow(ugh / xgh, x - 0.5)
+    else:
+        # w has greatest absolute value. Absorb wgh into the others.
+        if fabs((u_prime - w_prime)*(u - 0.5)) < 100*wgh and u > 100:
+            result *= exp((u - 0.5)*log1p((u_prime - w_prime)/wgh))
+        else:
+            result *= pow(ugh / wgh, u - 0.5)
+        if fabs((v_prime - w_prime)*(v - 0.5)) < 100*wgh and v > 100:
+            result *= exp((v - 0.5)*log1p((v_prime - w_prime)/wgh))
+        else:
+            result *= pow(vgh / wgh, v - 0.5)
+        if fabs((w_prime - x_prime)*(x - 0.5)) < 100*xgh and x > 100:
+            result *= exp((x - 0.5)*log1p((w_prime - x_prime)/xgh))
+        else:
+            result *= pow(wgh / xgh, x - 0.5)
+
     return result
