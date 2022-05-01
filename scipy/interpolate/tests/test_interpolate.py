@@ -2490,12 +2490,12 @@ class TestRegularGridInterpolator:
         assert_allclose(v1, v2)
 
     def test_complex(self):
-        points, values = self._get_sample_4d()
+        points, values = self._get_sample_4d_3()
         values = values - 2j*values
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
 
-        for method in ['linear', 'nearest']:
+        for method in ['linear', 'nearest', "slinear", "cubic", "quintic"]:
             interp = RegularGridInterpolator(points, values,
                                              method=method)
             rinterp = RegularGridInterpolator(points, values.real,
@@ -2506,26 +2506,6 @@ class TestRegularGridInterpolator:
             v1 = interp(sample)
             v2 = rinterp(sample) + 1j*iinterp(sample)
             assert_allclose(v1, v2)
-
-    def test_complex_exception(self):
-        points, values = self._get_sample_4d_3()
-        points = np.asarray(points)
-        sample = np.asarray(
-            [[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8], [0.5, 0.5, .5, .5]])
-        points_comp = points - 2j * points
-        values_comp = values - 2j * values
-        sample_comp = sample - 2j * sample
-
-        match = "does not support complex value."
-        for method in ['slinear', 'cubic', 'quintic']:
-            with pytest.raises(ValueError, match=match):
-                RegularGridInterpolator(points_comp, values, method=method)
-            with pytest.raises(ValueError, match=match):
-                RegularGridInterpolator(points, values_comp, method=method)
-
-            interp = RegularGridInterpolator(points, values, method=method)
-            with pytest.raises(ValueError, match=match):
-                interp(sample_comp)
 
     def test_linear_xi1d(self):
         points, values = self._get_sample_4d_2()
