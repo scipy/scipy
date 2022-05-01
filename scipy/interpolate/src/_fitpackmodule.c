@@ -160,7 +160,7 @@ static PyObject *
 fitpack_bispev(PyObject *dummy, PyObject *args)
 {
     F_INT nx, ny, kx, ky, mx, my, lwrk, *iwrk, kwrk, ier, lwa, nux, nuy;
-    size_t mxy;
+    npy_intp mxy;
     double *tx, *ty, *c, *x, *y, *z, *wrk, *wa = NULL;
     PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_z = NULL, *ap_tx = NULL;
     PyArrayObject *ap_ty = NULL, *ap_c = NULL;
@@ -191,14 +191,17 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     ny = PyArray_DIMS(ap_ty)[0];
     mx = PyArray_DIMS(ap_x)[0];
     my = PyArray_DIMS(ap_y)[0];
-    mxy = (size_t)mx * (size_t)my;
-    if (my != 0 && INTPTR_MAX/my < mx) {
+   /* v = INT_MAX/my is largest integer multiple of `my` such that
+       v * my <= INT_MAX
+    */
+    if (my != 0 && INT_MAX/my < mx) {
         /* Integer overflow */
         PyErr_Format(PyExc_RuntimeError,
                      "Cannot produce output of size %dx%d (size too large)",
                      mx, my);
         goto fail;
     }
+    mxy = (npy_intp)mx * (npy_intp)my;
     ap_z = (PyArrayObject *)PyArray_SimpleNew(1,&mxy,NPY_DOUBLE);
     if (ap_z == NULL) {
         goto fail;
