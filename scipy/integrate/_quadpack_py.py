@@ -23,8 +23,7 @@ class IntegrationWarning(UserWarning):
 def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
          limit=50, points=None, weight=None, wvar=None, wopts=None, maxp1=50,
          limlst=50):
-    """ over infinite intervals. The infinite range is
-        mapped onto a fi
+    """
     Compute a definite integral.
 
     Integrate func from `a` to `b` (possibly infinite interval) using a
@@ -286,7 +285,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in QAGS is applied.
+        in ``QAGS`` is applied.
     qagpe
         serves the same purposes as QAGS, but also allows the
         user to provide explicit information about the location
@@ -303,14 +302,14 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
         An adaptive subdivision scheme is used in connection
         with an extrapolation procedure, which is a modification
-        of that in QAGS and allows the algorithm to deal with
+        of that in ``QAGS`` and allows the algorithm to deal with
         singularities in :math:`f(x)`.
     qawfe
         calculates the Fourier transform
         :math:`\\int^\\infty_a \\cos(\\omega x)f(x)dx` or
         :math:`\\int^\\infty_a \\sin(\\omega x)f(x)dx`
-        for user-provided :math:`\\omega` and :math:`f`. The procedure of QAWO
-        is applied on successive finite intervals, and convergence
+        for user-provided :math:`\\omega` and :math:`f`. The procedure of
+        ``QAWO`` is applied on successive finite intervals, and convergence
         acceleration by means of the :math:`\\varepsilon`-algorithm is applied
         to the series of integral approximations.
     qawse
@@ -650,9 +649,9 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
 
     `quad` calls routines from the FORTRAN library QUADPACK. This section
     provides details on the conditions for each routine to be called and a
-    short description of each routine. For each level of integration qagse
-    is used for finite limits or qagie is used, if either limit (or both!) are
-    infinite. The following provides a short desciption from [1]_ for each
+    short description of each routine. For each level of integration, ``qagse``
+    is used for finite limits or ``qagie`` is used if either limit (or both!)
+    are infinite. The following provides a short description from [1]_ for each
     routine.
 
     qagse
@@ -663,7 +662,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in QAGS is applied.
+        in ``QAGS`` is applied.
 
     References
     ----------
@@ -773,9 +772,9 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     `quad` calls routines from the FORTRAN library QUADPACK. This section
     provides details on the conditions for each routine to be called and a
-    short description of each routine. For each level of integration qagse
-    is used for finite limits or qagie is used, if either limit (or both!) are
-    infinite. The following provides a short desciption from [1]_ for each
+    short description of each routine. For each level of integration, ``qagse``
+    is used for finite limits or ``qagie`` is used, if either limit (or both!)
+    are infinite. The following provides a short description from [1]_ for each
     routine.
 
     qagse
@@ -786,7 +785,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in QAGS is applied.
+        in ``QAGS`` is applied.
 
     References
     ----------
@@ -930,6 +929,9 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     fixed_quad : fixed-order Gaussian quadrature
     quadrature : adaptive Gaussian quadrature
 
+    Notes
+    -----
+
     **Details of QUADPACK level routines**
 
     `nquad` calls routines from the FORTRAN library QUADPACK. This section
@@ -960,7 +962,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in QAGS is applied.
+        in ``QAGS`` is applied.
     qagpe
         serves the same purposes as QAGS, but also allows the
         user to provide explicit information about the location
@@ -977,14 +979,14 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
 
         An adaptive subdivision scheme is used in connection
         with an extrapolation procedure, which is a modification
-        of that in QAGS and allows the algorithm to deal with
+        of that in ``QAGS`` and allows the algorithm to deal with
         singularities in :math:`f(x)`.
     qawfe
         calculates the Fourier transform
         :math:`\int^\infty_a \cos(\omega x)f(x)dx` or
         :math:`\int^\infty_a \sin(\omega x)f(x)dx`
-        for user-provided :math:`\omega` and :math:`f`. The procedure of QAWO
-        is applied on successive finite intervals, and convergence
+        for user-provided :math:`\omega` and :math:`f`. The procedure of
+        ``QAWO`` is applied on successive finite intervals, and convergence
         acceleration by means of the :math:`\varepsilon`-algorithm is applied
         to the series of integral approximations.
     qawse
