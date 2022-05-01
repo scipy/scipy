@@ -226,6 +226,16 @@ class TestCompanion:
             [1.0, 0.0]])
         assert_array_equal(c, expected)
 
+        c = companion([(1.0, 2.0, 3.0),
+                       (4.0, 5.0, 6.0)])
+        expected = array([
+            ([-2.00, -3.00],
+             [+1.00, +0.00]),
+            ([-1.25, -1.50],
+             [+1.00, +0.00])
+        ])
+        assert_array_equal(c, expected)
+
 
 class TestBlockDiag:
     def test_basic(self):
