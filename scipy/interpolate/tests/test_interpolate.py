@@ -2659,6 +2659,34 @@ class TestRegularGridInterpolator:
                         [3, 6],
                         atol=1e-15)
 
+    @pytest.mark.parametrize("fill_value", [None, np.nan, np.pi])
+    @pytest.mark.parametrize("method", ['linear', 'nearest'])
+    def test_length_one_axis2(self, fill_value, method):
+        options = {"fill_value": fill_value, "bounds_error": False,
+                   "method": method}
+
+        x = np.linspace(0, 2*np.pi, 20)
+        z = np.sin(x)
+
+        fa = RegularGridInterpolator((x,), z[:], **options)
+        fb = RegularGridInterpolator((x, [0]), z[:, None], **options)
+
+        x1a = np.linspace(-1, 2*np.pi+1, 100)
+        za = fa(x1a)
+
+        # evaluated at provided y-value, fb should behave exactly as fa
+        y1b = np.zeros(100)
+        zb = fb(np.vstack([x1a, y1b]).T)
+        assert_allclose(zb, za)
+
+        # evaluated at a different y-value, fb should return fill value
+        y1b = np.ones(100)
+        zb = fb(np.vstack([x1a, y1b]).T)
+        if fill_value is None:
+            assert_allclose(zb, za)
+        else:
+            assert_allclose(zb, fill_value)
+
     def test_broadcastable_input(self):
         # input data
         np.random.seed(0)
@@ -2696,7 +2724,7 @@ class TestRegularGridInterpolator:
         xy = np.random.random((10, 2))
         x, y = xy[:, 0], xy[:, 1]
         z = np.hypot(x, y)
-        
+
         # interpolation points
         XY = np.random.random((50, 2))
 
