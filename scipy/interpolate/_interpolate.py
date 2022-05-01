@@ -2458,15 +2458,15 @@ class RegularGridInterpolator:
     # this class is based on code originally programmed by Johannes Buchner,
     # see https://github.com/JohannesBuchner/regulargrid
 
-    SPLINE_DEGREE_MAP = {"slinear": 1, "cubic": 3, "quintic": 5, }
-    SPLINE_METHODS = list(SPLINE_DEGREE_MAP.keys())
-    ALL_METHODS = ["linear", "nearest"] + SPLINE_METHODS
+    _SPLINE_DEGREE_MAP = {"slinear": 1, "cubic": 3, "quintic": 5, }
+    _SPLINE_METHODS = list(_SPLINE_DEGREE_MAP.keys())
+    _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
 
     def __init__(self, points, values, method="linear", bounds_error=True,
                  fill_value=np.nan):
-        if method not in self.ALL_METHODS:
+        if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
-        elif method in self.SPLINE_METHODS:
+        elif method in self._SPLINE_METHODS:
             self._validate_not_complex(points, method)
             self._validate_not_complex(values, method)
             self._validate_grid_dimensions(points, method)
@@ -2523,7 +2523,7 @@ class RegularGridInterpolator:
         """
         is_method_changed = self.method != method
         method = self.method if method is None else method
-        if method not in self.ALL_METHODS:
+        if method not in self._ALL_METHODS:
             raise ValueError("Method '%s' is not defined" % method)
 
         ndim = len(self.grid)
@@ -2552,12 +2552,12 @@ class RegularGridInterpolator:
             result = self._evaluate_nearest(indices,
                                             norm_distances,
                                             out_of_bounds)
-        elif method in self.SPLINE_METHODS:
+        elif method in self._SPLINE_METHODS:
             self._validate_not_complex(xi, method)
             if is_method_changed:
                 self._validate_grid_dimensions(self.grid, method)
             result = self._evaluate_spline(self.values.T, xi,
-                                           self.SPLINE_DEGREE_MAP[method])
+                                           self._SPLINE_DEGREE_MAP[method])
 
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
@@ -2591,7 +2591,7 @@ class RegularGridInterpolator:
                              f"values. Use 'linear' or 'nearest'.")
 
     def _validate_grid_dimensions(self, points, method):
-        k = self.SPLINE_DEGREE_MAP[method]
+        k = self._SPLINE_DEGREE_MAP[method]
         for i, point in enumerate(points):
             ndim = len(np.atleast_1d(point))
             if ndim <= k:
