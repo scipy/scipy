@@ -192,7 +192,7 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     mx = PyArray_DIMS(ap_x)[0];
     my = PyArray_DIMS(ap_y)[0];
     mxy = (size_t)mx * (size_t)my;
-    if (my != 0 && mxy/my != mx) {
+    if (my != 0 && INTPTR_MAX/my < mx) {
         /* Integer overflow */
         PyErr_Format(PyExc_RuntimeError,
                      "Cannot produce output of size %dx%d (size too large)",
