@@ -154,7 +154,6 @@ warnings.filterwarnings('default', module='sphinx')  # internal warnings
 for key in (
         r"'U' mode is deprecated",  # sphinx io
         r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
-        r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
         r"distutils Version",  # distutils
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
