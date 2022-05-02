@@ -2415,13 +2415,35 @@ class TestRegularGridInterpolator:
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
         return points, values
 
+    def _get_sample_4d_3(self):
+        # create another 4-D grid of 7 points in each dimension
+        points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0)] * 4
+        values = np.asarray([0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0])
+        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
+        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
+        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
+        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
+        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        return points, values
+
+    def _get_sample_4d_4(self):
+        # create another 4-D grid of 2 points in each dimension
+        points = [(0.0, 1.0)] * 4
+        values = np.asarray([0.0, 1.0])
+        values0 = values[:, np.newaxis, np.newaxis, np.newaxis]
+        values1 = values[np.newaxis, :, np.newaxis, np.newaxis]
+        values2 = values[np.newaxis, np.newaxis, :, np.newaxis]
+        values3 = values[np.newaxis, np.newaxis, np.newaxis, :]
+        values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
+        return points, values
+
     def test_list_input(self):
-        points, values = self._get_sample_4d()
+        points, values = self._get_sample_4d_3()
 
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
 
-        for method in ['linear', 'nearest']:
+        for method in ['linear', 'nearest', 'slinear', 'cubic', 'quintic']:
             interp = RegularGridInterpolator(points,
                                              values.tolist(),
                                              method=method)
@@ -2432,13 +2454,48 @@ class TestRegularGridInterpolator:
             v2 = interp(sample)
             assert_allclose(v1, v2)
 
-    def test_complex(self):
+    def test_spline_dim_error(self):
+        points, values = self._get_sample_4d_4()
+        match = "points in dimension"
+
+        # Check error raise when creating interpolator
+        for method in ['cubic', 'quintic']:
+            with pytest.raises(ValueError, match=match):
+                RegularGridInterpolator(points, values, method=method)
+
+        # Check error raise when creating interpolator
+        interp = RegularGridInterpolator(points, values)
+        sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
+                             [0.5, 0.5, .5, .5]])
+        for method in ['cubic', 'quintic']:
+            with pytest.raises(ValueError, match=match):
+                interp(sample, method=method)
+
+    def test_linear_and_slinear_close_1(self):
         points, values = self._get_sample_4d()
+        sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
+                             [0.5, 0.5, .5, .5]])
+        self._assert_linear_and_slinear_close(points, sample, values)
+
+    def test_linear_and_slinear_close_2(self):
+        points, values = self._get_sample_4d_2()
+        sample = np.asarray([0.1, 0.1, 10., 9.])
+        self._assert_linear_and_slinear_close(points, sample, values)
+
+    def _assert_linear_and_slinear_close(self, points, sample, values):
+        interp = RegularGridInterpolator(points, values, method="linear")
+        v1 = interp(sample)
+        interp = RegularGridInterpolator(points, values, method="slinear")
+        v2 = interp(sample)
+        assert_allclose(v1, v2)
+
+    def test_complex(self):
+        points, values = self._get_sample_4d_3()
         values = values - 2j*values
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
 
-        for method in ['linear', 'nearest']:
+        for method in ['linear', 'nearest', "slinear", "cubic", "quintic"]:
             interp = RegularGridInterpolator(points, values,
                                              method=method)
             rinterp = RegularGridInterpolator(points, values.real,
@@ -2616,6 +2673,77 @@ class TestRegularGridInterpolator:
         RegularGridInterpolator(points, values)
         RegularGridInterpolator(points, values, fill_value=0.)
 
+    def test_length_one_axis(self):
+        # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.
+        # Along the axis it's linear interpolation; away from the length-1
+        # axis, it's an extrapolation, so fill_value should be used.
+        def f(x, y):
+            return x + y
+        x = np.linspace(1, 1, 1)
+        y = np.linspace(1, 10, 10)
+        data = f(*np.meshgrid(x, y, indexing="ij", sparse=True))
+
+        interp = RegularGridInterpolator((x, y), data, method="linear",
+                                         bounds_error=False, fill_value=101)
+
+        # check values at the grid
+        assert_allclose(interp(np.array([[1, 1], [1, 5], [1, 10]])),
+                        [2, 6, 11],
+                        atol=1e-14)
+
+        # check off-grid interpolation is indeed linear
+        assert_allclose(interp(np.array([[1, 1.4], [1, 5.3], [1, 10]])),
+                        [2.4, 6.3, 11],
+                        atol=1e-14)
+
+        # check exrapolation w/ fill_value
+        assert_allclose(interp(np.array([1.1, 2.4])),
+                        interp.fill_value,
+                        atol=1e-14)
+
+        # check extrapolation: linear along the `y` axis, const along `x`
+        interp.fill_value = None
+        assert_allclose(interp([[1, 0.3], [1, 11.5]]),
+                        [1.3, 12.5], atol=1e-15)
+
+        assert_allclose(interp([[1.5, 0.3], [1.9, 11.5]]),
+                        [1.3, 12.5], atol=1e-15)
+
+        # extrapolation with method='nearest'
+        interp = RegularGridInterpolator((x, y), data, method="nearest",
+                                         bounds_error=False, fill_value=None)
+        assert_allclose(interp([[1.5, 1.8], [-4, 5.1]]),
+                        [3, 6],
+                        atol=1e-15)
+
+    @pytest.mark.parametrize("fill_value", [None, np.nan, np.pi])
+    @pytest.mark.parametrize("method", ['linear', 'nearest'])
+    def test_length_one_axis2(self, fill_value, method):
+        options = {"fill_value": fill_value, "bounds_error": False,
+                   "method": method}
+
+        x = np.linspace(0, 2*np.pi, 20)
+        z = np.sin(x)
+
+        fa = RegularGridInterpolator((x,), z[:], **options)
+        fb = RegularGridInterpolator((x, [0]), z[:, None], **options)
+
+        x1a = np.linspace(-1, 2*np.pi+1, 100)
+        za = fa(x1a)
+
+        # evaluated at provided y-value, fb should behave exactly as fa
+        y1b = np.zeros(100)
+        zb = fb(np.vstack([x1a, y1b]).T)
+        assert_allclose(zb, za)
+
+        # evaluated at a different y-value, fb should return fill value
+        y1b = np.ones(100)
+        zb = fb(np.vstack([x1a, y1b]).T)
+        if fill_value is None:
+            assert_allclose(zb, za)
+        else:
+            assert_allclose(zb, fill_value)
+
     def test_broadcastable_input(self):
         # input data
         np.random.seed(0)
@@ -2653,7 +2781,7 @@ class TestRegularGridInterpolator:
         xy = np.random.random((10, 2))
         x, y = xy[:, 0], xy[:, 1]
         z = np.hypot(x, y)
-        
+
         # interpolation points
         XY = np.random.random((50, 2))
 
@@ -2890,3 +3018,25 @@ class TestInterpN:
             v1 = interpn((x, y), values, sample, method=method)
             v2 = interpn((x, y), np.asarray(values), sample, method=method)
             assert_allclose(v1, v2)
+
+    def test_length_one_axis(self):
+        # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.
+        # Along the axis it's linear interpolation; away from the length-1
+        # axis, it's an extrapolation, so fill_value should be used.
+
+        values = np.array([[0.1, 1, 10]])
+        xi = np.array([[1, 2.2], [1, 3.2], [1, 3.8]])
+
+        res = interpn(([1], [2, 3, 4]), values, xi)
+        wanted = [0.9*0.2 + 0.1,   # on [2, 3) it's 0.9*(x-2) + 0.1
+                  9*0.2 + 1,       # on [3, 4] it's 9*(x-3) + 1
+                  9*0.8 + 1]
+
+        assert_allclose(res, wanted, atol=1e-15)
+
+        # check extrapolation
+        xi = np.array([[1.1, 2.2], [1.5, 3.2], [-2.3, 3.8]])
+        res = interpn(([1], [2, 3, 4]), values, xi,
+                      bounds_error=False, fill_value=None)
+
+        assert_allclose(res, wanted, atol=1e-15)

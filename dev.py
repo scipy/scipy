@@ -413,23 +413,32 @@ def setup_build(args, env):
     run_dir = os.getcwd()
     if build_dir.exists() and not (build_dir / 'meson-info').exists():
         if list(build_dir.iterdir()):
-            raise RuntimeError("Can't build into non-empty directory "
-                               f"'{build_dir.absolute()}'")
+            raise RuntimeError(
+                f"You're using Meson to build in the `{build_dir.absolute()}` directory, "
+                "but it looks like that directory is not empty and "
+                "was not originally created by Meson. "
+                f"Please remove '{build_dir.absolute()}' and try again."
+            )
     if os.path.exists(build_dir):
         build_options_file = (build_dir / "meson-info"
                               / "intro-buildoptions.json")
-        with open(build_options_file) as f:
-            build_options = json.load(f)
-        installdir = None
-        for option in build_options:
-            if option["name"] == "prefix":
-                installdir = option["value"]
-                break
-        if installdir != PATH_INSTALLED:
+        if build_options_file.exists():
+            with open(build_options_file) as f:
+                build_options = json.load(f)
+            installdir = None
+            for option in build_options:
+                if option["name"] == "prefix":
+                    installdir = option["value"]
+                    break
+            if installdir != PATH_INSTALLED:
+                run_dir = os.path.join(run_dir, build_dir)
+                cmd = ["meson", "--reconfigure", "--prefix", PATH_INSTALLED]
+            else:
+                return
+        else:
             run_dir = os.path.join(run_dir, build_dir)
             cmd = ["meson", "--reconfigure", "--prefix", PATH_INSTALLED]
-        else:
-            return
+
     if args.werror:
         cmd += ["--werror"]
     if args.gcov:

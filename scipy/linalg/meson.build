@@ -58,12 +58,6 @@ py3.extension_module('_fblas',
 )
 
 # flapack
-deprecated_lapack_routines = [
-  'src/lapack_deprecations/cgegv.f',
-  'src/lapack_deprecations/dgegv.f',
-  'src/lapack_deprecations/sgegv.f',
-  'src/lapack_deprecations/zgegv.f'
-]
 
 flapack_module = custom_target('flapack_module',
   output: ['_flapackmodule.c', '_flapack-f2pywrappers.f'],
@@ -76,7 +70,6 @@ py3.extension_module('_flapack',
     flapack_module,
     fortranobject_c,
     g77_abi_wrappers,
-    deprecated_lapack_routines
   ],
   c_args: [
     numpy_nodepr_api,
@@ -286,6 +279,7 @@ python_sources = [
   '_flinalg_py.py',
   '_interpolative_backend.py',
   '_matfuncs.py',
+  '_matfuncs_expm.pyi',
   '_matfuncs_inv_ssq.py',
   '_matfuncs_sqrtm.py',
   '_misc.py',
@@ -329,6 +323,13 @@ py3.install_sources(
 #         `custom_target(..., install: true, install_dir: ...)
 #         # should use `py3.get_install_dir() + 'scipy/linalg'` ?
 #       see https://github.com/mesonbuild/meson/issues/3206
+#
+#       For the below code to work, the script generating the files should use
+#       a different filename, and then cp (or better: `copier`) should move it
+#       to the final location. Either that, or split the codegen scripts and
+#       call it twice: once for the installable files, and once for the
+#       non-installable files.
+#
 #pxd_files = [
 #  cython_linalg[2],  # cython_blas.pxd
 #  cython_linalg[3],  # cython_lapack.pxd
