@@ -3,7 +3,6 @@
 
 import sys
 import operator
-import warnings
 import numpy as np
 from scipy._lib._util import prod
 
@@ -213,8 +212,8 @@ def isintlike(x):
         except (TypeError, ValueError):
             return False
         if loose_int:
-            warnings.warn("Inexact indices into sparse matrices are deprecated",
-                          DeprecationWarning)
+            msg = "Inexact indices into sparse matrices are not allowed"
+            raise ValueError(msg)
         return loose_int
     return True
 
