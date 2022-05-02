@@ -152,7 +152,6 @@ warnings.filterwarnings('error')
 warnings.filterwarnings('default', module='sphinx')  # internal warnings
 # global weird ones that can be safely ignored
 for key in (
-        r"'U' mode is deprecated",  # sphinx io
         r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
         r"distutils Version",  # distutils
         ):
