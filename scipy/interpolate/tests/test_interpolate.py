@@ -2746,7 +2746,7 @@ class TestRegularGridInterpolator:
 
     def test_nan_x_1d(self):
         # gh-6624 : if x is nan, result should be nan
-        f = RegularGridInterpolator(([1, 2, 3],), [10, 20, 30],
+        f = RegularGridInterpolator(([1, 2, 3],), [10, 20, 30], fill_value=1,
                                     bounds_error=False, method='nearest')
         assert np.isnan(f([np.nan]))
 
