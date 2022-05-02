@@ -305,6 +305,7 @@ def _weightedrankedtau(ordered[:] x, ordered[:] y, intp_t[:] rank, weigher, bool
 
 
 # FROM MGCPY: https://github.com/neurodata/mgcpy
+# NOW HYPPO: https://github.com/neurodata/hyppo
 
 # Distance transforms used for MGC and Dcorr
 
@@ -377,6 +378,106 @@ def _transform_distance_matrix(distx, disty, global_corr='mgc', is_ranked=True):
                       "rank_distx": rank_distx, "rank_disty": rank_disty}
 
     return transform_dist
+
+
+# Fast 1D Dcorr
+cpdef fast_1d_dcov(x, y, bias=False):  # pragma: no cover
+    """
+    Calculate the Dcorr test statistic.
+
+    See: https://www.sciencedirect.com/science/article/abs/pii/S0167947319300313
+    """
+    n = x.shape[0]
+
+    # sort inputs
+    x_orig = x.ravel()
+    x = np.sort(x_orig)
+    y = y[np.argsort(x_orig)]
+    x = x.reshape(-1, 1)  # for numba
+
+    # cumulative sum
+    si = np.cumsum(x, axis=0)
+    ax = (np.arange(-(n - 2), n + 1, 2) * x.ravel()).reshape(-1, 1) + (si[-1] - 2 * si)
+
+    v = np.hstack((x, y, x * y))
+    nw = v.shape[1]
+
+    idx = np.vstack((np.arange(n), np.zeros(n))).astype(np.int64).T
+    iv1 = np.zeros((n, 1))
+    iv2 = np.zeros((n, 1))
+    iv3 = np.zeros((n, 1))
+    iv4 = np.zeros((n, 1))
+
+    i = 1
+    r = 0
+    s = 1
+    while i < n:
+        gap = 2 * i
+        k = 0
+        idx_r = idx[:, r]
+        csumv = np.vstack((np.zeros((1, nw)), np.cumsum(v[idx_r, :], axis=0)))
+
+        for j in range(1, n + 1, gap):
+            st1 = j - 1
+            e1 = min(st1 + i - 1, n - 1)
+            st2 = j + i - 1
+            e2 = min(st2 + i - 1, n - 1)
+
+            while (st1 <= e1) and (st2 <= e2):
+                idx1 = idx_r[st1]
+                idx2 = idx_r[st2]
+
+                if y[idx1] >= y[idx2]:
+                    idx[k, s] = idx1
+                    st1 += 1
+                else:
+                    idx[k, s] = idx2
+                    st2 += 1
+                    iv1[idx2] += e1 - st1 + 1
+                    iv2[idx2] += csumv[e1 + 1, 0] - csumv[st1, 0]
+                    iv3[idx2] += csumv[e1 + 1, 1] - csumv[st1, 1]
+                    iv4[idx2] += csumv[e1 + 1, 2] - csumv[st1, 2]
+                k += 1
+
+            if st1 <= e1:
+                kf = k + e1 - st1 + 1
+                idx[k:kf, s] = idx_r[st1 : e1 + 1]
+                k = kf
+            elif st2 <= e2:
+                kf = k + e2 - st2 + 1
+                idx[k:kf, s] = idx_r[st2 : e2 + 1]
+                k = kf
+
+        i = gap
+        r = 1 - r
+        s = 1 - s
+
+    covterm = np.sum(n * (x - np.mean(x)).T @ (y - np.mean(y)))
+    c1 = np.sum(iv1.T @ v[:, 2].copy())
+    c2 = np.sum(iv4)
+    c3 = np.sum(iv2.T @ y)
+    c4 = np.sum(iv3.T @ x)
+    d = 4 * ((c1 + c2) - (c3 + c4)) - 2 * covterm
+
+    y_sorted = y[idx[n::-1, r], :]
+    si = np.cumsum(y_sorted, axis=0)
+    by = np.zeros((n, 1))
+    by[idx[::-1, r]] = (np.arange(-(n - 2), n + 1, 2) * y_sorted.ravel()).reshape(
+        -1, 1
+    ) + (si[-1] - 2 * si)
+
+    if bias:
+        denom = [n**2, n**3, n**4]
+    else:
+        denom = [n * (n - 3), n * (n - 3) * (n - 2), n * (n - 3) * (n - 2) * (n - 1)]
+
+    stat = np.sum(
+        (d / denom[0])
+        + (np.sum(ax) * np.sum(by) / denom[2])
+        - (2 * (ax.T @ by) / denom[1])
+    )
+
+    return stat
 
 
 # MGC specific functions

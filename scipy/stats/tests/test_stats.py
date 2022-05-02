@@ -7224,6 +7224,7 @@ class TestDcorrStat:
         assert_approx_equal(stat, 0.998, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
+    @pytest.mark.slow
     def test_workers(self):
         np.random.seed(12345678)
 
@@ -7235,6 +7236,19 @@ class TestDcorrStat:
         assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
+    @pytest.mark.slow
+    def test_perm(self):
+        np.random.seed(12345678)
+
+        # generate x and y
+        x, y = self._simulations(samps=100, dims=2, sim_type="linear")
+
+        # test stat and pvalue
+        stat, pvalue, _ = stats.distance_correlation(x, y)
+        assert_approx_equal(stat, 0.395, significant=1)
+        assert_approx_equal(pvalue, 0.001, significant=1)
+
+    @pytest.mark.slow
     def test_random_state(self):
         # generate x and y
         x, y = self._simulations(samps=100, dims=1, sim_type="linear")
@@ -7244,6 +7258,7 @@ class TestDcorrStat:
         assert_approx_equal(stat, 0.97, significant=1)
         assert_approx_equal(pvalue, 0.001, significant=1)
 
+    @pytest.mark.slow
     def test_dist_perm(self):
         np.random.seed(12345678)
         # generate x and y
