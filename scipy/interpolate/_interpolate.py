@@ -2535,7 +2535,7 @@ class RegularGridInterpolator:
         xi = xi.reshape(-1, xi_shape[-1])
 
         # find nans in input
-        nans = [np.isnan(v).any() for v in xi]
+        nans = np.any(np.isnan(xi), axis=-1)
 
         if self.bounds_error:
             for i, p in enumerate(xi.T):
