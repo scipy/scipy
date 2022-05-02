@@ -2744,24 +2744,49 @@ class TestRegularGridInterpolator:
         else:
             assert_allclose(zb, fill_value)
 
-    def test_nan_x_1d(self):
+    @pytest.mark.parametrize("method", ['nearest', 'linear'])
+    def test_nan_x_1d(self, method):
         # gh-6624 : if x is nan, result should be nan
         f = RegularGridInterpolator(([1, 2, 3],), [10, 20, 30], fill_value=1,
-                                    bounds_error=False, method='nearest')
+                                    bounds_error=False, method=method)
         assert np.isnan(f([np.nan]))
 
-    def test_nan_x_2d(self):
+        # test arbitrary nan pattern
+        rng = np.random.default_rng(8143215468)
+        x = rng.random(size=100)*4
+        i = rng.random(size=100) > 0.5
+        x[i] = np.nan
+        res = f(x)
+        assert_equal(res[i], np.nan)
+        assert_equal(res[~i], f(x[~i]))
+
+    @pytest.mark.parametrize("method", ['nearest', 'linear'])
+    def test_nan_x_2d(self, method):
         x, y = np.array([0, 1, 2]), np.array([1, 3, 7])
         def f(x, y):
             return x**2 + y**2
         xg, yg = np.meshgrid(x, y, indexing='ij', sparse=True)
         data = f(xg, yg)
         interp = RegularGridInterpolator((x, y), data,
-                                         method='nearest', bounds_error=False)
+                                         method=method, bounds_error=False)
 
         res = interp([[1.5, np.nan], [1, 1]])
         assert_allclose(res[1], 2, atol=1e-14 )
         assert np.isnan(res[0])
+
+        # test arbitrary nan pattern
+        rng = np.random.default_rng(8143215468)
+        x = rng.random(size=100)*4-1
+        y = rng.random(size=100)*8
+        i1 = rng.random(size=100) > 0.5
+        i2 = rng.random(size=100) > 0.5
+        i = i1 | i2
+        x[i1] = np.nan
+        y[i2] = np.nan
+        z = np.array([x, y]).T
+        res = interp(z)
+        assert_equal(res[i], np.nan)
+        assert_equal(res[~i], interp(z[~i]))
 
     def test_broadcastable_input(self):
         # input data
