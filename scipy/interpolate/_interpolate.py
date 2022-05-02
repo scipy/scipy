@@ -2660,6 +2660,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     """
     Multidimensional interpolation on regular grids.
 
+    Strictly speaking, not all regular grids are supported, and this function
+    works on *rectilinear* grids.
+
     Parameters
     ----------
     points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
