@@ -4518,7 +4518,7 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
         n = operator.index(n)
 
     result_type = x.dtype
-    if result_type.kind in 'bui':
+    if not issubclass(result_type.type, np.inexact):
         result_type = np.float64
 
     if ftype == 'fir':
