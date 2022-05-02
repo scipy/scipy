@@ -15,7 +15,7 @@ import numpy as np
 from scipy.special import lambertw
 from .windows import get_window
 from ._arraytools import axis_slice, axis_reverse, odd_ext, even_ext, const_ext
-from ._filter_design import cheby1, _validate_sos
+from ._filter_design import cheby1, _validate_sos, zpk2sos
 from ._fir_filter_design import firwin
 from ._sosfilt import _sosfilt
 import warnings
@@ -4517,32 +4517,32 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
     if n is not None:
         n = operator.index(n)
 
+    result_type = x.dtype
+    if result_type.kind in 'bui':
+        result_type = np.float64
+
     if ftype == 'fir':
         if n is None:
             half_len = 10 * q  # reasonable cutoff for our sinc-like function
             n = 2 * half_len
         b, a = firwin(n+1, 1. / q, window='hamming'), 1.
+        b = np.asarray(b, dtype=result_type)
+        a = np.asarray(a, dtype=result_type)
     elif ftype == 'iir':
         if n is None:
             n = 8
-        system = dlti(*cheby1(n, 0.05, 0.8 / q))
-        b, a = system.num, system.den
+        sos = cheby1(n, 0.05, 0.8 / q, output='sos')
+        sos = np.asarray(sos, dtype=result_type)
     elif isinstance(ftype, dlti):
-        system = ftype._as_tf()  # Avoids copying if already in TF form
-        b, a = system.num, system.den
+        system = ftype._as_zpk()
+        sos = zpk2sos(system.zeros, system.poles, system.gain)
+        sos = np.asarray(sos, dtype=result_type)
     else:
         raise ValueError('invalid ftype')
 
-    result_type = x.dtype
-    if result_type.kind in 'bui':
-        result_type = np.float64
-    b = np.asarray(b, dtype=result_type)
-    a = np.asarray(a, dtype=result_type)
-
     sl = [slice(None)] * x.ndim
-    a = np.asarray(a)
 
-    if a.size == 1:  # FIR case
+    if ftype == 'fir':
         b = b / a
         if zero_phase:
             y = resample_poly(x, 1, q, axis=axis, window=b)
@@ -4555,9 +4555,9 @@ def decimate(x, q, n=None, ftype='iir', axis=-1, zero_phase=True):
 
     else:  # IIR case
         if zero_phase:
-            y = filtfilt(b, a, x, axis=axis)
+            y = sosfiltfilt(sos, x, axis=axis)
         else:
-            y = lfilter(b, a, x, axis=axis)
+            y = sosfilt(sos, x, axis=axis)
         sl[axis] = slice(None, None, q)
 
     return y[tuple(sl)]
