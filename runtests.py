@@ -67,10 +67,7 @@ import shutil
 import subprocess
 import time
 import datetime
-try:
-    from types import ModuleType as new_module
-except ImportError:  # old Python
-    from imp import new_module
+from types import ModuleType as new_module  # noqa: E402
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
