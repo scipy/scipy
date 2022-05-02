@@ -67,7 +67,7 @@ import shutil
 import subprocess
 import time
 import datetime
-from types import ModuleType as new_module
+from types import ModuleType as new_module  # noqa: E402
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 

@@ -71,7 +71,7 @@ import datetime
 import importlib.util
 import json  # noqa: E402
 from sysconfig import get_path
-from types import ModuleType as new_module
+from types import ModuleType as new_module  # noqa: E402
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
