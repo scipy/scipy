@@ -695,6 +695,7 @@ class QMCEngine(ABC):
             self,
             d: IntNumber,
             *,
+            optimization: Optional[Literal["random-cd"]] = None,
             seed: SeedType = None
     ) -> None:
         if not np.issubdtype(type(d), np.integer):
@@ -705,8 +706,36 @@ class QMCEngine(ABC):
         self.rng_seed = copy.deepcopy(seed)
         self.num_generated = 0
 
+        optimization_method: Dict[Literal["random-cd"], Callable] = {
+            "random-cd": self._random_cd,
+        }
+
+        self.optimization_method: Optional[Callable]
+        if optimization is not None:
+            try:
+                optimization = optimization.lower()  # type: ignore[assignment]
+                self.optimization_method = optimization_method[optimization]
+            except KeyError as exc:
+                message = (f"{optimization!r} is not a valid optimization"
+                           f" method. It must be one of"
+                           f" {set(optimization_method)!r}")
+                raise ValueError(message) from exc
+
+            # specific to random-cd
+            self._n_nochange = 100
+            self._n_iters = 10_000
+        else:
+            self.optimization_method = None
+
     @abstractmethod
-    def random(self, n: IntNumber = 1) -> np.ndarray:
+    def _random(
+        self, n: IntNumber = 1, *, workers: IntNumber = 1
+    ) -> np.ndarray:
+        ...
+
+    def random(
+        self, n: IntNumber = 1, *, workers: IntNumber = 1
+    ) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
 
         Parameters
@@ -714,6 +743,11 @@ class QMCEngine(ABC):
         n : int, optional
             Number of samples to generate in the parameter space.
             Default is 1.
+        workers : int, optional
+            Only supported with `Halton`.
+            Number of workers to use for parallel processing. If -1 is
+            given all CPU threads are used. Default is 1. It becomes faster
+            than one worker for `n` greater than :math:`10^3`.
 
         Returns
         -------
@@ -721,7 +755,12 @@ class QMCEngine(ABC):
             QMC sample.
 
         """
-        # self.num_generated += n
+        sample = self._random(n, workers=workers)
+        if self.optimization_method is not None:
+            sample = self.optimization_method(sample)
+
+        self.num_generated += n
+        return sample
 
     def integers(
         self,
@@ -836,6 +875,54 @@ class QMCEngine(ABC):
         self.random(n=n)
         return self
 
+    def _random_cd(self, best_sample: np.ndarray) -> np.ndarray:
+        """Optimal LHS on CD.
+
+        Create a base LHS and do random permutations of coordinates to
+        lower the centered discrepancy.
+        Because it starts with a normal LHS, it also works with the
+        `centered` keyword argument.
+
+        Two stopping criterion are used to stop the algorithm: at most,
+        `_n_iters` iterations are performed; or if there is no improvement
+        for `_n_nochange` consecutive iterations.
+        """
+        n = len(best_sample)
+
+        if self.d == 0 or n == 0:
+            return np.empty((n, self.d))
+
+        best_disc = discrepancy(best_sample)
+
+        if n == 1:
+            return best_sample
+
+        bounds = ([0, self.d - 1],
+                  [0, n - 1],
+                  [0, n - 1])
+
+        n_nochange = 0
+        n_iters = 0
+        while n_nochange < self._n_nochange and n_iters < self._n_iters:
+            n_iters += 1
+
+            col = rng_integers(self.rng, *bounds[0])
+            row_1 = rng_integers(self.rng, *bounds[1])
+            row_2 = rng_integers(self.rng, *bounds[2])
+            disc = _perturb_discrepancy(best_sample,
+                                        row_1, row_2, col,
+                                        best_disc)
+            if disc < best_disc:
+                best_sample[row_1, col], best_sample[row_2, col] = (
+                    best_sample[row_2, col], best_sample[row_1, col])
+
+                best_disc = disc
+                n_nochange = 0
+            else:
+                n_nochange += 1
+
+        return best_sample
+
 
 class Halton(QMCEngine):
     """Halton sequence.
@@ -927,7 +1014,7 @@ class Halton(QMCEngine):
         self.base = n_primes(d)
         self.scramble = scramble
 
-    def random(
+    def _random(
         self, n: IntNumber = 1, *, workers: IntNumber = 1
     ) -> np.ndarray:
         """Draw `n` in the half-open interval ``[0, 1)``.
@@ -956,7 +1043,6 @@ class Halton(QMCEngine):
                                  workers=workers)
                   for bdim in self.base]
 
-        self.num_generated += n
         return np.array(sample).T.reshape(n, self.d)
 
 
@@ -1112,11 +1198,11 @@ class LatinHypercube(QMCEngine):
         optimization: Optional[Literal["random-cd"]] = None,
         seed: SeedType = None
     ) -> None:
-        super().__init__(d=d, seed=seed)
+        super().__init__(d=d, seed=seed, optimization=optimization)
         self.centered = centered
 
         lhs_method_strength = {
-            1: self._random,
+            1: self._random_lhs,
             2: self._random_oa_lhs
         }
 
@@ -1127,48 +1213,13 @@ class LatinHypercube(QMCEngine):
                        f" of {set(lhs_method_strength)!r}")
             raise ValueError(message) from exc
 
-        optimization_method: Dict[Literal["random-cd"], Callable] = {
-            "random-cd": self._random_cd,
-        }
-
-        self.optimization_method: Optional[Callable]
-        if optimization is not None:
-            try:
-                optimization = optimization.lower()  # type: ignore[assignment]
-                self.optimization_method = optimization_method[optimization]
-            except KeyError as exc:
-                message = (f"{optimization!r} is not a valid optimization"
-                           f" method. It must be one of"
-                           f" {set(optimization_method)!r}")
-                raise ValueError(message) from exc
-
-            self._n_nochange = 100
-            self._n_iters = 10_000
-        else:
-            self.optimization_method = None
-
-    def random(self, n: IntNumber = 1) -> np.ndarray:
-        """Draw `n` in the half-open interval ``[0, 1)``.
-
-        Parameters
-        ----------
-        n : int, optional
-            Number of samples to generate in the parameter space. Default is 1.
-
-        Returns
-        -------
-        sample : array_like (n, d)
-            LHS sample.
-
-        """
+    def _random(
+        self, n: IntNumber = 1, *, workers: IntNumber = 1
+    ) -> np.ndarray:
         lhs = self.lhs_method(n)
-        if self.optimization_method is not None:
-            lhs = self.optimization_method(lhs)
-
-        self.num_generated += n
         return lhs
 
-    def _random(self, n: IntNumber = 1) -> np.ndarray:
+    def _random_lhs(self, n: IntNumber = 1) -> np.ndarray:
         """Base LHS algorithm."""
         if self.centered:
             samples: np.ndarray | float = 0.5
@@ -1230,54 +1281,6 @@ class LatinHypercube(QMCEngine):
         oa_lhs_sample /= p
 
         return oa_lhs_sample[:, :self.d]  # type: ignore
-
-    def _random_cd(self, best_sample: np.ndarray) -> np.ndarray:
-        """Optimal LHS on CD.
-
-        Create a base LHS and do random permutations of coordinates to
-        lower the centered discrepancy.
-        Because it starts with a normal LHS, it also works with the
-        `centered` keyword argument.
-
-        Two stopping criterion are used to stop the algorithm: at most,
-        `_n_iters` iterations are performed; or if there is no improvement
-        for `_n_nochange` consecutive iterations.
-        """
-        n = len(best_sample)
-
-        if self.d == 0 or n == 0:
-            return np.empty((n, self.d))
-
-        best_disc = discrepancy(best_sample)
-
-        if n == 1:
-            return best_sample
-
-        bounds = ([0, self.d - 1],
-                  [0, n - 1],
-                  [0, n - 1])
-
-        n_nochange = 0
-        n_iters = 0
-        while n_nochange < self._n_nochange and n_iters < self._n_iters:
-            n_iters += 1
-
-            col = rng_integers(self.rng, *bounds[0])
-            row_1 = rng_integers(self.rng, *bounds[1])
-            row_2 = rng_integers(self.rng, *bounds[2])
-            disc = _perturb_discrepancy(best_sample,
-                                        row_1, row_2, col,
-                                        best_disc)
-            if disc < best_disc:
-                best_sample[row_1, col], best_sample[row_2, col] = (
-                    best_sample[row_2, col], best_sample[row_1, col])
-
-                best_disc = disc
-                n_nochange = 0
-            else:
-                n_nochange += 1
-
-        return best_sample
 
 
 class Sobol(QMCEngine):
@@ -1467,7 +1470,9 @@ class Sobol(QMCEngine):
             ltm=ltm, sv=self._sv
         )
 
-    def random(self, n: IntNumber = 1) -> np.ndarray:
+    def _random(
+        self, n: IntNumber = 1, *, workers: IntNumber = 1
+    ) -> np.ndarray:
         """Draw next point(s) in the Sobol' sequence.
 
         Parameters
@@ -1521,7 +1526,6 @@ class Sobol(QMCEngine):
                 sample=sample
             )
 
-        self.num_generated += n
         return sample
 
     def random_base2(self, m: IntNumber) -> np.ndarray:
