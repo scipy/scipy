@@ -2763,15 +2763,17 @@ class TestRegularGridInterpolator:
     @pytest.mark.parametrize("method", ['nearest', 'linear'])
     def test_nan_x_2d(self, method):
         x, y = np.array([0, 1, 2]), np.array([1, 3, 7])
+
         def f(x, y):
             return x**2 + y**2
+
         xg, yg = np.meshgrid(x, y, indexing='ij', sparse=True)
         data = f(xg, yg)
         interp = RegularGridInterpolator((x, y), data,
                                          method=method, bounds_error=False)
 
         res = interp([[1.5, np.nan], [1, 1]])
-        assert_allclose(res[1], 2, atol=1e-14 )
+        assert_allclose(res[1], 2, atol=1e-14)
         assert np.isnan(res[0])
 
         # test arbitrary nan pattern
