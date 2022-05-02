@@ -182,7 +182,7 @@ class SimpleRatioUniforms(Benchmark):
                 random_state=self.urng
             )
         except sampling.UNURANError:
-            raise NotImplementedError("{dist} not T-concave")
+            raise NotImplementedError(f"{dist} not T-concave")
 
     def time_srou_setup(self, dist, cdf_at_mode):
         if cdf_at_mode:

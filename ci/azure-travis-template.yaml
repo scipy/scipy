@@ -72,7 +72,7 @@ steps:
     mpmath
     pythran
     pybind11
-    pytest==7.0.1
+    pytest
     pytest-xdist
   displayName: 'Install common python dependencies'
 - ${{ if eq(parameters.test_mode, 'full') }}:
@@ -82,7 +82,7 @@ steps:
   - script: pip install pytest-cov coverage codecov
     displayName: 'Install coverage dependencies'
 - ${{ if eq(parameters.refguide_check, true) }}:
-  - script: pip install matplotlib sphinx==3.1 numpydoc
+  - script: pip install matplotlib sphinx numpydoc
     displayName: 'Install documentation dependencies'
   - script: sudo apt-get install -y wamerican-small
     displayName: 'Install word list (for csgraph tutorial)'

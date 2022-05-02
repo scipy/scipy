@@ -277,7 +277,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     Parameters
     ----------
     A : sparse matrix
-        Sparse matrix to factorize. Should be in CSR or CSC format.
+        Sparse matrix to factorize. Most efficient when provided in CSC
+        format. Other formats will be converted to CSC before factorization.
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
         (default: 'COLAMD')
@@ -343,7 +344,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
-        warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+        warn('splu converted its input to CSC format', SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -377,7 +378,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Parameters
     ----------
     A : (N, N) array_like
-        Sparse matrix to factorize
+        Sparse matrix to factorize. Most efficient when provided in CSC format.
+        Other formats will be converted to CSC before factorization.
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
         (default: 1e-4)
@@ -432,7 +434,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
-        warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+        warn('spilu converted its input to CSC format',
+             SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -465,7 +468,8 @@ def factorized(A):
     Parameters
     ----------
     A : (N, N) array_like
-        Input.
+        Input. A in CSC format is most efficient. A CSR format matrix will
+        be converted to CSC before factorization.
 
     Returns
     -------
@@ -494,7 +498,8 @@ def factorized(A):
 
         if not isspmatrix_csc(A):
             A = csc_matrix(A)
-            warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+            warn('splu converted its input to CSC format',
+                 SparseEfficiencyWarning)
 
         A = A.asfptype()  # upcast to a floating point format
 
@@ -626,6 +631,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         # Get indices for i-th row.
         indptr_start = A.indptr[i]
         indptr_stop = A.indptr[i + 1]
+
         if lower:
             A_diagonal_index_row_i = indptr_stop - 1
             A_off_diagonal_indices_row_i = slice(indptr_start, indptr_stop - 1)
@@ -638,7 +644,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
                                   or A.indices[A_diagonal_index_row_i] < i):
             raise LinAlgError(
                 'A is singular: diagonal {} is zero.'.format(i))
-        if A.indices[A_diagonal_index_row_i] > i:
+        if not unit_diagonal and A.indices[A_diagonal_index_row_i] > i:
             raise LinAlgError(
                 'A is not triangular: A[{}, {}] is nonzero.'
                 ''.format(i, A.indices[A_diagonal_index_row_i]))
