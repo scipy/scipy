@@ -54,12 +54,12 @@ from scipy.spatial.distance import (
     _validate_vector, _METRICS_NAMES, _METRICS)
 
 # these were missing: chebyshev cityblock kulsinski
-# jensenshannon, matching and seuclidean are referenced by string name.
+# jensenshannon  and seuclidean are referenced by string name.
 from scipy.spatial.distance import (braycurtis, canberra, chebyshev, cityblock,
                                     correlation, cosine, dice, euclidean,
                                     hamming, jaccard, jensenshannon,
                                     kulsinski, kulczynski1, mahalanobis,
-                                    matching, minkowski, rogerstanimoto,
+                                    minkowski, rogerstanimoto,
                                     russellrao, seuclidean, sokalmichener,
                                     sokalsneath, sqeuclidean, yule)
 
@@ -522,7 +522,7 @@ class TestCdist:
                 if verbose > 2:
                     print("testing: ", metric, " with: ", eo_name)
                 if metric in {'dice', 'yule', 'kulsinski',
-                              'matching', 'rogerstanimoto',
+                              'rogerstanimoto',
                               'russellrao', 'sokalmichener',
                               'sokalsneath',
                               'kulczynski1'} and 'bool' not in eo_name:

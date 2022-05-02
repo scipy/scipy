@@ -42,16 +42,6 @@ def _get_sources(dirs):
     return sources
 
 
-def _get_version(unuran_dir, configure_dot_ac, target_name):
-    configure_dot_ac = unuran_dir / configure_dot_ac
-    with open(configure_dot_ac, "r") as f:
-        s = f.read()
-        start_idx = s.find(target_name)
-        end_idx = s[start_idx:].find(")") + len(s[:start_idx])
-        version = s[start_idx:end_idx].split(",")[1][1:-1]
-    return version
-
-
 def configuration(parent_package="", top_path=None):
     from numpy.distutils.misc_util import Configuration
     from scipy._lib._unuran_utils import _unuran_dir
@@ -64,8 +54,7 @@ def configuration(parent_package="", top_path=None):
 
     # UNU.RAN info
     UNURAN_DIR = _unuran_dir(ret_path=True).resolve()
-    UNURAN_VERSION = _get_version(UNURAN_DIR, "unuran/configure.ac",
-                                  "AM_INIT_AUTOMAKE")
+    UNURAN_VERSION = "16:0:0"
 
     DEFINE_MACROS = [
         ("HAVE_ALARM", "1"),

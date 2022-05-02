@@ -120,7 +120,6 @@ DOCTEST_SKIPLIST = set([
     'scipy.special.sinc',  # comes from numpy
     'scipy.misc.who',  # comes from numpy
     'scipy.optimize.show_options',
-    'scipy.integrate.quad_explain',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 
@@ -507,7 +506,7 @@ def try_convert_namedtuple(got):
     regex = (r'[\w\d_]+\(' +
              ', '.join([r'[\w\d_]+=(.+)']*num) +
              r'\)')
-    grp = re.findall(regex, got.replace('\n', ' '))
+    grp = re.findall(regex, " ".join(got.split()))
     # fold it back to a tuple
     got_again = '(' + ', '.join(grp[0]) + ')'
     return got_again

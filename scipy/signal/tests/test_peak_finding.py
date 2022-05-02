@@ -20,6 +20,7 @@ from scipy.signal._peak_finding import (
     find_peaks_cwt,
     _identify_ridge_lines
 )
+from scipy.signal.windows import gaussian
 from scipy.signal._peak_finding_utils import _local_maxima_1d, PeakPropertyWarning
 
 
@@ -819,6 +820,13 @@ class TestFindPeaksCwt:
         widths = np.arange(10, 50)
         found_locs = find_peaks_cwt(test_data, widths, min_snr=5, noise_perc=30)
         np.testing.assert_equal(len(found_locs), 0)
+
+    def test_find_peaks_with_non_default_wavelets(self):
+        x = gaussian(200, 2)
+        widths = np.array([1, 2, 3, 4])
+        a = find_peaks_cwt(x, widths, wavelet=gaussian)
+
+        np.testing.assert_equal(np.array([100]), a)
 
     def test_find_peaks_window_size(self):
         """

@@ -1,3 +1,5 @@
+.. _git-start:
+
 ====================================
 Getting started with Git development
 ====================================
