@@ -177,6 +177,11 @@ def norm(x, ord=None, axis=None):
             except TypeError as e:
                 raise ValueError('Invalid norm order for vectors.') from e
             M = np.power(abs(x).power(ord).sum(axis=a), 1 / ord)
-        return M.A.ravel()
+        if hasattr(M, 'toarray'):
+            return M.toarray().ravel()
+        elif hasattr(M, 'A'):
+            return M.A.ravel()
+        else:
+            return M.ravel()
     else:
         raise ValueError("Improper number of dimensions to norm.")
