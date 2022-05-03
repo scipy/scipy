@@ -7,6 +7,7 @@ import numbers
 import os
 import warnings
 from abc import ABC, abstractmethod
+from functools import partial
 from typing import (
     Callable,
     ClassVar,
@@ -633,8 +634,8 @@ class QMCEngine(ABC):
     * ``__init__(d, seed=None)``: at least fix the dimension. If the sampler
       does not take advantage of a ``seed`` (deterministic methods like
       Halton), this parameter can be omitted.
-    * ``random(n)``: draw ``n`` from the engine and increase the counter
-      ``num_generated`` by ``n``.
+    * ``_random(n, *, workers=1)``: draw ``n`` from the engine. ``workers``
+      is used for parralelism. See `Halton` for example.
 
     Optionally, two other methods can be overwritten by subclasses:
 
@@ -653,8 +654,7 @@ class QMCEngine(ABC):
     ...         super().__init__(d=d, seed=seed)
     ...
     ...
-    ...     def random(self, n=1):
-    ...         self.num_generated += n
+    ...     def _random(self, n=1, *, workers=1):
     ...         return self.rng.random((n, self.d))
     ...
     ...
@@ -706,26 +706,13 @@ class QMCEngine(ABC):
         self.rng_seed = copy.deepcopy(seed)
         self.num_generated = 0
 
-        optimization_method: Dict[Literal["random-cd"], Callable] = {
-            "random-cd": self._random_cd,
-        }
-
-        self.optimization_method: Optional[Callable]
-        if optimization is not None:
-            try:
-                optimization = optimization.lower()  # type: ignore[assignment]
-                self.optimization_method = optimization_method[optimization]
-            except KeyError as exc:
-                message = (f"{optimization!r} is not a valid optimization"
-                           f" method. It must be one of"
-                           f" {set(optimization_method)!r}")
-                raise ValueError(message) from exc
-
+        config = {
             # specific to random-cd
-            self._n_nochange = 100
-            self._n_iters = 10_000
-        else:
-            self.optimization_method = None
+            "n_nochange": 100,
+            "n_iters": 10_000,
+            "rng": self.rng
+        }
+        self.optimization_method = _select_optimizer(optimization, config)
 
     @abstractmethod
     def _random(
@@ -875,53 +862,83 @@ class QMCEngine(ABC):
         self.random(n=n)
         return self
 
-    def _random_cd(self, best_sample: np.ndarray) -> np.ndarray:
-        """Optimal LHS on CD.
 
-        Create a base LHS and do random permutations of coordinates to
-        lower the centered discrepancy.
-        Because it starts with a normal LHS, it also works with the
-        `centered` keyword argument.
+def _select_optimizer(
+    optimization: Optional[Literal["random-cd"]], config: Dict
+) -> Callable:
+    """A factory for optimization methods."""
+    optimization_method: Dict[Literal["random-cd"], Callable] = {
+        "random-cd": _random_cd,
+    }
 
-        Two stopping criterion are used to stop the algorithm: at most,
-        `_n_iters` iterations are performed; or if there is no improvement
-        for `_n_nochange` consecutive iterations.
-        """
-        n = len(best_sample)
+    optimizer: Optional[Callable]
+    if optimization is not None:
+        try:
+            optimization = optimization.lower()  # type: ignore[assignment]
+            optimizer = optimization_method[optimization]
+        except KeyError as exc:
+            message = (f"{optimization!r} is not a valid optimization"
+                       f" method. It must be one of"
+                       f" {set(optimization_method)!r}")
+            raise ValueError(message) from exc
 
-        if self.d == 0 or n == 0:
-            return np.empty((n, self.d))
+        # config
+        optimizer = partial(optimizer, **config)
+    else:
+        optimizer = None
 
-        best_disc = discrepancy(best_sample)
+    return optimizer
 
-        if n == 1:
-            return best_sample
 
-        bounds = ([0, self.d - 1],
-                  [0, n - 1],
-                  [0, n - 1])
+def _random_cd(
+    best_sample: np.ndarray, n_iters: int, n_nochange: int, rng: GeneratorType
+) -> np.ndarray:
+    """Optimal LHS on CD.
 
-        n_nochange = 0
-        n_iters = 0
-        while n_nochange < self._n_nochange and n_iters < self._n_iters:
-            n_iters += 1
+    Create a base LHS and do random permutations of coordinates to
+    lower the centered discrepancy.
+    Because it starts with a normal LHS, it also works with the
+    `centered` keyword argument.
 
-            col = rng_integers(self.rng, *bounds[0])
-            row_1 = rng_integers(self.rng, *bounds[1])
-            row_2 = rng_integers(self.rng, *bounds[2])
-            disc = _perturb_discrepancy(best_sample,
-                                        row_1, row_2, col,
-                                        best_disc)
-            if disc < best_disc:
-                best_sample[row_1, col], best_sample[row_2, col] = (
-                    best_sample[row_2, col], best_sample[row_1, col])
+    Two stopping criterion are used to stop the algorithm: at most,
+    `n_iters` iterations are performed; or if there is no improvement
+    for `n_nochange` consecutive iterations.
+    """
+    n, d = best_sample.shape
 
-                best_disc = disc
-                n_nochange = 0
-            else:
-                n_nochange += 1
+    if d == 0 or n == 0:
+        return np.empty((n, d))
 
+    best_disc = discrepancy(best_sample)
+
+    if n == 1:
         return best_sample
+
+    bounds = ([0, d - 1],
+              [0, n - 1],
+              [0, n - 1])
+
+    n_nochange_ = 0
+    n_iters_ = 0
+    while n_nochange_ < n_nochange and n_iters_ < n_iters:
+        n_iters_ += 1
+
+        col = rng_integers(rng, *bounds[0])
+        row_1 = rng_integers(rng, *bounds[1])
+        row_2 = rng_integers(rng, *bounds[2])
+        disc = _perturb_discrepancy(best_sample,
+                                    row_1, row_2, col,
+                                    best_disc)
+        if disc < best_disc:
+            best_sample[row_1, col], best_sample[row_2, col] = (
+                best_sample[row_2, col], best_sample[row_1, col])
+
+            best_disc = disc
+            n_nochange_ = 0
+        else:
+            n_nochange_ += 1
+
+    return best_sample
 
 
 class Halton(QMCEngine):

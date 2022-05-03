@@ -369,7 +369,7 @@ class RandomEngine(qmc.QMCEngine):
     def __init__(self, d, seed=None):
         super().__init__(d=d, seed=seed)
 
-    def _random(self, n=1, workers=1):
+    def _random(self, n=1, *, workers=1):
         sample = self.rng.random((n, self.d))
         return sample
 
