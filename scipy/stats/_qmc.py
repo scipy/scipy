@@ -14,7 +14,7 @@ from typing import (
     Dict,
     List,
     Optional,
-    Union, overload,
+    overload,
     Tuple,
     TYPE_CHECKING,
 )
@@ -612,6 +612,20 @@ class QMCEngine(ABC):
     ----------
     d : int
         Dimension of the parameter space.
+    optimization : {None, "random-cd", "lloyd"}, optional
+        Whether to use an optimization scheme to improve the quality after
+        sampling.
+        Default is None.
+
+        * ``random-cd``: random permutations of coordinates to lower the
+          centered discrepancy. The best design based on the centered
+          discrepancy is constantly updated. Centered discrepancy-based
+          design shows better space filling robustness toward 2D and 3D
+          subprojections compared to using other discrepancy measures.
+        * ``lloyd``: Perturb samples using Lloyd-Max algorithm. The process
+          converges to equally spaced samples.
+
+        .. versionadded:: 1.9.0
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -692,11 +706,11 @@ class QMCEngine(ABC):
 
     @abstractmethod
     def __init__(
-            self,
-            d: IntNumber,
-            *,
-            optimization: Optional[Literal["random-cd", "lloyd"]] = None,
-            seed: SeedType = None
+        self,
+        d: IntNumber,
+        *,
+        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
+        seed: SeedType = None
     ) -> None:
         if not np.issubdtype(type(d), np.integer):
             raise ValueError('d must be an integer value')
@@ -883,6 +897,20 @@ class Halton(QMCEngine):
     scramble : bool, optional
         If True, use Owen scrambling. Otherwise no scrambling is done.
         Default is True.
+    optimization : {None, "random-cd", "lloyd"}, optional
+        Whether to use an optimization scheme to improve the quality after
+        sampling.
+        Default is None.
+
+        * ``random-cd``: random permutations of coordinates to lower the
+          centered discrepancy. The best design based on the centered
+          discrepancy is constantly updated. Centered discrepancy-based
+          design shows better space filling robustness toward 2D and 3D
+          subprojections compared to using other discrepancy measures.
+        * ``lloyd``: Perturb samples using Lloyd-Max algorithm. The process
+          converges to equally spaced samples.
+
+        .. versionadded:: 1.9.0
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -950,10 +978,11 @@ class Halton(QMCEngine):
     """
 
     def __init__(
-            self, d: IntNumber, *, scramble: bool = True,
-            seed: SeedType = None
+        self, d: IntNumber, *, scramble: bool = True,
+        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
+        seed: SeedType = None
     ) -> None:
-        super().__init__(d=d, seed=seed)
+        super().__init__(d=d, optimization=optimization, seed=seed)
         self.seed = seed
         self.base = n_primes(d)
         self.scramble = scramble
@@ -1013,8 +1042,12 @@ class LatinHypercube(QMCEngine):
           discrepancy is constantly updated. Centered discrepancy-based
           design shows better space filling robustness toward 2D and 3D
           subprojections compared to using other discrepancy measures [6]_.
+        * ``lloyd``: Perturb samples using Lloyd-Max algorithm. The process
+          converges to equally spaced samples.
 
         .. versionadded:: 1.8.0
+        .. versionchanged:: 1.9.0
+            Add ``lloyd``.
 
     strength : {1, 2}, optional
         Strength of the LHS. ``strength=1`` produces a plain LHS while
@@ -1139,7 +1172,7 @@ class LatinHypercube(QMCEngine):
     def __init__(
         self, d: IntNumber, *, centered: bool = False,
         strength: int = 1,
-        optimization: Optional[Literal["random-cd"]] = None,
+        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed, optimization=optimization)
@@ -1251,6 +1284,22 @@ class Sobol(QMCEngine):
         It does not correspond to the return type, which is always
         ``np.float64`` to prevent points from repeating themselves.
         Default is None, which for backward compatibility, corresponds to 30.
+
+        .. versionadded:: 1.9.0
+    optimization : {None, "random-cd", "lloyd"}, optional
+        Whether to use an optimization scheme to improve the quality after
+        sampling.
+        Default is None.
+
+        * ``random-cd``: random permutations of coordinates to lower the
+          centered discrepancy. The best design based on the centered
+          discrepancy is constantly updated. Centered discrepancy-based
+          design shows better space filling robustness toward 2D and 3D
+          subprojections compared to using other discrepancy measures.
+        * ``lloyd``: Perturb samples using Lloyd-Max algorithm. The process
+          converges to equally spaced samples.
+
+        .. versionadded:: 1.9.0
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1354,9 +1403,10 @@ class Sobol(QMCEngine):
 
     def __init__(
         self, d: IntNumber, *, scramble: bool = True,
-        bits: Optional[IntNumber] = None, seed: SeedType = None
+        bits: Optional[IntNumber] = None, seed: SeedType = None,
+        optimization: Optional[Literal["random-cd", "lloyd"]] = None
     ) -> None:
-        super().__init__(d=d, seed=seed)
+        super().__init__(d=d, optimization=optimization, seed=seed)
         if d > self.MAXDIM:
             raise ValueError(
                 f"Maximum supported dimensionality is {self.MAXDIM}."

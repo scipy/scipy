@@ -458,13 +458,6 @@ def test_integers_nd():
     assert_equal(sample.max(axis=0), high)
 
 
-@pytest.mark.parametrize("optimization", [None, "random-CD", "lloyd"])
-def test_select_optimizer(optimization):
-    seed = 36743571419809627335198321299267526741
-    engine = RandomEngine(2, optimization=optimization, seed=seed)
-    engine.random(20)
-
-
 class QMCEngineTests:
     """Generic tests for QMC engines."""
     qmce = NotImplemented
@@ -586,6 +579,11 @@ class QMCEngineTests:
         assert_allclose(
             np.percentile(sample, 75, axis=0), np.repeat(0.75, d), atol=1e-2
         )
+
+    @pytest.mark.parametrize("optimization", [None, "random-CD", "lloyd"])
+    def test_select_optimizer(self, optimization):
+        engine = self.engine(d=2, optimization=optimization, scramble=False)
+        engine.random(32)
 
 
 class TestHalton(QMCEngineTests):
