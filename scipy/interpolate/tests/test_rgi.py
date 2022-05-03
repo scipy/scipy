@@ -434,7 +434,8 @@ class TestRegularGridInterpolator:
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], interp(z[~i]))
 
-    def test_descending_points(self):
+    @parametrize_rgi_interp_methods
+    def test_descending_points(self, method):
         def val_func_3d(x, y, z):
             return 2 * x ** 3 + 3 * y ** 2 - z
 
@@ -445,7 +446,8 @@ class TestRegularGridInterpolator:
         values = val_func_3d(
             *np.meshgrid(*points, indexing='ij', sparse=True))
         my_interpolating_function = RegularGridInterpolator(points,
-                                                            values)
+                                                            values,
+                                                            method=method)
         pts = np.array([[2.1, 6.2, 8.3], [3.3, 5.2, 7.1]])
         correct_result = my_interpolating_function(pts)
 
@@ -457,7 +459,7 @@ class TestRegularGridInterpolator:
         values_shuffled = val_func_3d(
             *np.meshgrid(*points_shuffled, indexing='ij', sparse=True))
         my_interpolating_function = RegularGridInterpolator(
-            points_shuffled, values_shuffled)
+            points_shuffled, values_shuffled, method=method)
         test_result = my_interpolating_function(pts)
 
         assert_array_equal(correct_result, test_result)
