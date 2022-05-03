@@ -1643,6 +1643,11 @@ class wishart_gen(multi_rv_generic):
     %(_doc_default_callparams)s
     %(_doc_random_state)s
 
+    Raises
+    ------
+    scipy.linalg.LinAlgError
+        If the scale matrix `scale` is not positive definite.
+
     See Also
     --------
     invwishart, chi2
