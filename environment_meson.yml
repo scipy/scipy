@@ -30,7 +30,7 @@ dependencies:
   - typing_extensions
   # For building docs
   - sphinx
-  - numpydoc=1.1.0
+  - numpydoc
   - ipython
   - matplotlib
   - pydata-sphinx-theme>=0.8.1
@@ -45,5 +45,7 @@ dependencies:
   # For CLI
   - rich-click
   - click
+  # else Docker raises a warning
+  - pip
   - pip:
       - doit==0.35.0

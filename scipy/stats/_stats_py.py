@@ -1026,6 +1026,19 @@ def _moment(a, moment, axis, *, mean=None):
         # Starting point for exponentiation by squares
         mean = a.mean(axis, keepdims=True) if mean is None else mean
         a_zero_mean = a - mean
+
+        eps = np.finfo(a_zero_mean.dtype).resolution * 10
+        with np.errstate(divide='ignore', invalid='ignore'):
+            rel_diff = np.max(np.abs(a_zero_mean), axis=axis,
+                              keepdims=True) / np.abs(mean)
+        with np.errstate(invalid='ignore'):
+            precision_loss = np.any(rel_diff < eps)
+        if precision_loss:
+            message = ("Precision loss occurred in moment calculation due to "
+                       "catastrophic cancellation. This occurs when the data "
+                       "are nearly identical. Results may be unreliable.")
+            warnings.warn(message, RuntimeWarning, stacklevel=4)
+
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
@@ -1037,6 +1050,15 @@ def _moment(a, moment, axis, *, mean=None):
             if n % 2:
                 s *= a_zero_mean
         return np.mean(s, axis)
+
+
+def _var(x, axis=0, ddof=0, mean=None):
+    # Calculate variance of sample, warning if precision is lost
+    var = _moment(x, 2, axis, mean=mean)
+    if ddof != 0:
+        n = x.shape[axis] if axis is not None else x.size
+        var *= np.divide(n, n-ddof)  # to avoid error on division by zero
+    return var
 
 
 @_axis_nan_policy_factory(
@@ -1130,7 +1152,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     m3 = _moment(a, 3, axis, mean=mean)
     with np.errstate(all='ignore'):
         zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
-        vals = np.where(zero, 0, m3 / m2**1.5)
+        vals = np.where(zero, np.nan, m3 / m2**1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
         if can_correct.any():
@@ -1242,7 +1264,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     m4 = _moment(a, 4, axis, mean=mean)
     with np.errstate(all='ignore'):
         zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
-        vals = np.where(zero, 0, m4 / m2**2.0)
+        vals = np.where(zero, np.nan, m4 / m2**2.0)
 
     if not bias:
         can_correct = ~zero & (n > 3)
@@ -1340,7 +1362,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     n = a.shape[axis]
     mm = (np.min(a, axis=axis), np.max(a, axis=axis))
     m = np.mean(a, axis=axis)
-    v = np.var(a, axis=axis, ddof=ddof)
+    v = _var(a, axis=axis, ddof=ddof)
     sk = skew(a, axis, bias=bias)
     kurt = kurtosis(a, axis, bias=bias)
 
@@ -5832,7 +5854,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     df = n - 1
 
     d = np.mean(a, axis) - popmean
-    v = np.var(a, axis, ddof=1)
+    v = _var(a, axis, ddof=1)
     denom = np.sqrt(v / n)
 
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -5913,13 +5935,13 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     mean1 : array_like
         The mean(s) of sample 1.
     std1 : array_like
-        The standard deviation(s) of sample 1.
+        The corrected sample standard deviation of sample 1 (i.e. ``ddof=1``).
     nobs1 : array_like
         The number(s) of observations of sample 1.
     mean2 : array_like
         The mean(s) of sample 2.
     std2 : array_like
-        The standard deviations(s) of sample 2.
+        The corrected sample standard deviation of sample 2 (i.e. ``ddof=1``).
     nobs2 : array_like
         The number(s) of observations of sample 2.
     equal_var : bool, optional
@@ -5964,7 +5986,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Examples
     --------
-    Suppose we have the summary data for two samples, as follows::
+    Suppose we have the summary data for two samples, as follows (with the
+    Sample Variance being the corrected sample variance)::
 
                          Sample   Sample
                    Size   Mean   Variance
@@ -5994,16 +6017,16 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
                           Number of    Sample     Sample
                     Size    ones        Mean     Variance
-        Sample 1    150      30         0.2        0.16
-        Sample 2    200      45         0.225      0.174375
+        Sample 1    150      30         0.2        0.161073
+        Sample 2    200      45         0.225      0.175251
 
     The sample mean :math:`\hat{p}` is the proportion of ones in the sample
     and the variance for a binary observation is estimated by
     :math:`\hat{p}(1-\hat{p})`.
 
-    >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.16), nobs1=150,
-    ...                      mean2=0.225, std2=np.sqrt(0.17437), nobs2=200)
-    Ttest_indResult(statistic=-0.564327545549774, pvalue=0.5728947691244874)
+    >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.161073), nobs1=150,
+    ...                      mean2=0.225, std2=np.sqrt(0.175251), nobs2=200)
+    Ttest_indResult(statistic=-0.5627187905196761, pvalue=0.5739887114209541)
 
     For comparison, we could compute the t statistic and p-value using
     arrays of 0s and 1s and `scipy.stat.ttest_ind`, as above.
@@ -6341,8 +6364,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         n2 = b.shape[axis]
 
         if trim == 0:
-            v1 = np.var(a, axis, ddof=1)
-            v2 = np.var(b, axis, ddof=1)
+            v1 = _var(a, axis, ddof=1)
+            v2 = _var(b, axis, ddof=1)
             m1 = np.mean(a, axis)
             m2 = np.mean(b, axis)
         else:
@@ -6385,7 +6408,7 @@ def _calculate_winsorized_variance(a, g, axis):
     """Calculates g-times winsorized variance along specified axis"""
     # it is expected that the input `a` is sorted along the correct axis
     if g == 0:
-        return np.var(a, ddof=1, axis=axis)
+        return _var(a, ddof=1, axis=axis)
     # move the intended axis to the end that way it is easier to manipulate
     a_win = np.moveaxis(a, axis, -1)
 
@@ -6407,7 +6430,7 @@ def _calculate_winsorized_variance(a, g, axis):
     # page 369, beginning of page 370). This is converted to NumPy's format,
     # `n - ddof` for use with with `np.var`. The result is converted to an
     # array to accommodate indexing later.
-    var_win = np.asarray(np.var(a_win, ddof=(2 * g + 1), axis=-1))
+    var_win = np.asarray(_var(a_win, ddof=(2 * g + 1), axis=-1))
 
     # with `nan_policy='propagate'`, NaNs may be completely trimmed out
     # because they were sorted into the tail of the array. In these cases,
@@ -6460,8 +6483,8 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
     nb = b.shape[axis]
     avg_a = np.mean(a, axis=axis)
     avg_b = np.mean(b, axis=axis)
-    var_a = np.var(a, axis=axis, ddof=1)
-    var_b = np.var(b, axis=axis, ddof=1)
+    var_a = _var(a, axis=axis, ddof=1)
+    var_b = _var(b, axis=axis, ddof=1)
 
     if not equal_var:
         denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)[1]
@@ -6661,7 +6684,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     df = n - 1
 
     d = (a - b).astype(np.float64)
-    v = np.var(d, axis, ddof=1)
+    v = _var(d, axis, ddof=1)
     dm = np.mean(d, axis)
     denom = np.sqrt(v / n)
 
