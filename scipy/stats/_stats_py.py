@@ -902,10 +902,15 @@ def _moment_outputs(kwds):
     return len(moment)
 
 
+def _moment_result_object(*args):
+    if len(args) == 1:
+        return args[0]
+    return np.asarray(args)
+
+
 @_axis_nan_policy_factory(
-    lambda x: x, n_samples=1, result_to_tuple=lambda x: (x,),
-    n_outputs=_moment_outputs,
-    pass_empty_inputs=True
+    _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
+    n_outputs=_moment_outputs
 )
 def moment(a, moment=1, axis=0, nan_policy='propagate'):
     r"""Calculate the nth moment about the mean for a sample.
@@ -952,6 +957,10 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     Where n is the number of samples and x-bar is the mean. This function uses
     exponentiation by squares [1]_ for efficiency.
+
+    Note that, if `a` is an empty array (``a.size == 0``), array `moment` with
+    one element (`moment.size == 1`) is treated the same as scalar `moment`
+    (``np.isscalar(moment)``). This might produce arrays of unexpected shape.
 
     References
     ----------
