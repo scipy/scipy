@@ -48,7 +48,7 @@ class TestSparseUtils:
             ValueError,
             match="Inexact indices into sparse matrices are not allowed"
         ):
-            assert_equal(sputils.isintlike(3.0), True)
+            sputils.isintlike(3.0)
 
         assert_equal(sputils.isintlike(2.5), False)
         assert_equal(sputils.isintlike(1 + 3j), False)
