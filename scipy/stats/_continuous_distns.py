@@ -3570,10 +3570,11 @@ class gumbel_r_gen(rv_continuous):
                                                          args, kwds)
 
         # By the method of maximum likelihood, the estimators of the
-        # location and scale are the roots of the equation defined in
+        # location and scale are the roots of the equations defined in
         # `func` and the value of the expression for `loc` that follows.
-        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
-        # and Peacock (2000), Page 101
+        # The first `func` is a first order derivative of the log-likelihood
+        # equation and the second is from Source: Statistical Distributions,
+        # 3rd Edition. Evans, Hastings, and Peacock (2000), Page 101.
 
         def get_loc_from_scale(scale):
             return -scale * (sc.logsumexp(-data / scale) - np.log(len(data)))
@@ -3588,12 +3589,13 @@ class gumbel_r_gen(rv_continuous):
             # A different function is solved depending on whether the location
             # is fixed.
             if floc is not None:
-                # equation to use if the location is fixed.
+                loc = floc
 
+                # equation to use if the location is fixed.
                 def func(scale):
-                    return (((floc - data) * np.exp(
-                        (floc - data) / scale) + data).sum() -
-                            len(data) * (floc + scale))
+                    term1 = (loc - data) * np.exp((loc - data) / scale) + data
+                    term2 = len(data) * (floc + scale)
+                    return term1.sum() - term2
             else:
 
                 # equation to use if both location and scale are free
@@ -3602,19 +3604,19 @@ class gumbel_r_gen(rv_continuous):
                     wavg = _average_with_log_weights(data, logweights=sdata)
                     return data.mean() - wavg - scale
 
-            def interval_contains_root(lbrack, rbrack):
-                # return true if the signs disagree.
-                return (np.sign(func(lbrack)) !=
-                        np.sign(func(rbrack)))
-
             # set brackets for `root_scalar` to use when optimizing over the
             # scale such that a root is likely between them. Use user supplied
             # guess or default 1.
             brack_start = kwds.get('scale', 1)
             lbrack, rbrack = brack_start / 2, brack_start * 2
+
             # if a root is not between the brackets, iteratively expand them
             # until they include a sign change, checking after each bracket is
             # modified.
+            def interval_contains_root(lbrack, rbrack):
+                # return true if the signs disagree.
+                return (np.sign(func(lbrack)) !=
+                        np.sign(func(rbrack)))
             while (not interval_contains_root(lbrack, rbrack)
                    and (lbrack > 0 or rbrack < np.inf)):
                 lbrack /= 2
@@ -3683,8 +3685,8 @@ class gumbel_l_gen(rv_continuous):
         return np.log(-np.log(x))
 
     def _stats(self):
-        return -_EULER, np.pi * np.pi / 6.0, \
-               -12 * np.sqrt(6) / np.pi ** 3 * _ZETA3, 12.0 / 5
+        return -_EULER, np.pi*np.pi/6.0, \
+               -12*np.sqrt(6)/np.pi**3 * _ZETA3, 12.0/5
 
     def _entropy(self):
         return _EULER + 1.
@@ -3695,13 +3697,10 @@ class gumbel_l_gen(rv_continuous):
         # The fit method of `gumbel_r` can be used for this distribution with
         # small modifications. The process to do this is
         # 1. pass the sign negated data into `gumbel_r.fit`
-        #    - if the location is fixed, it should also be negated.
         # 2. negate the sign of the resulting location, leaving the scale
         #    unmodified.
         # `gumbel_r.fit` holds necessary input checks.
 
-        if kwds.get('floc') is not None:
-            kwds['floc'] = -kwds['floc']
         loc_r, scale_r, = gumbel_r.fit(-np.asarray(data), *args, **kwds)
         return -loc_r, scale_r
 

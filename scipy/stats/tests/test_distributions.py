@@ -1433,6 +1433,8 @@ class TestGumbel_r_l:
         func = dist._reduce_func(args, {})[1]
 
         kwds = dict()
+        # the fixed location and scales are arbitrarily modified to not be
+        # close to the true value.
         if fix_loc:
             kwds['floc'] = loc_rvs * 2
         if fix_scale:
