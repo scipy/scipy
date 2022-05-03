@@ -3096,7 +3096,8 @@ class TestStudentTest:
     P1_1_g = 1 - (P1_1 / 2)
 
     def test_onesample(self):
-        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
+                pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
             t, p = stats.ttest_1samp(4., 3.)
         assert_(np.isnan(t))
@@ -4007,7 +4008,8 @@ def test_ttest_rel():
     assert_array_almost_equal([t,p],tpr)
 
     # test scalars
-    with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+    with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
+            pytest.warns(RuntimeWarning, match="Precision loss occurred"):
         sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
         t, p = stats.ttest_rel(4., 3.)
     assert_(np.isnan(t))
@@ -4061,7 +4063,8 @@ def test_ttest_rel():
     assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='foobar')
 
     # test zero division problem
-    t, p = stats.ttest_rel([0, 0, 0], [1, 1, 1])
+    with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+        t, p = stats.ttest_rel([0, 0, 0], [1, 1, 1])
     assert_equal((np.abs(t), p), (np.inf, 0))
     with np.errstate(invalid="ignore"):
         assert_equal(stats.ttest_rel([0, 0, 0], [0, 0, 0]), (np.nan, np.nan))
@@ -4195,7 +4198,8 @@ def test_ttest_ind():
                               [t, p])
 
     # test scalars
-    with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+    with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
+            pytest.warns(RuntimeWarning, match="Precision loss occurred"):
         sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
         t, p = stats.ttest_ind(4., 3.)
     assert_(np.isnan(t))
@@ -4256,7 +4260,8 @@ def test_ttest_ind():
     assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='foobar')
 
     # test zero division problem
-    t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1])
+    with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+        t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1])
     assert_equal((np.abs(t), p), (np.inf, 0))
 
     with np.errstate(invalid="ignore"):
@@ -4593,6 +4598,7 @@ class Test_ttest_ind_common:
         with suppress_warnings() as sup, np.errstate(invalid="ignore"):
             sup.filter(RuntimeWarning,
                        "invalid value encountered in less_equal")
+            sup.filter(RuntimeWarning, "Precision loss occurred")
             res = stats.ttest_ind(a, b, axis=axis, **kwds)
         p_nans = np.isnan(res.pvalue)
         assert_array_equal(p_nans, expected)
@@ -4848,7 +4854,8 @@ def test_ttest_ind_with_uneq_var():
     assert_equal(t.shape, (3, 2))
 
     # test zero division problem
-    t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1], equal_var=False)
+    with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+        t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1], equal_var=False)
     assert_equal((np.abs(t), p), (np.inf, 0))
     with np.errstate(all='ignore'):
         assert_equal(stats.ttest_ind([0, 0, 0], [0, 0, 0], equal_var=False),

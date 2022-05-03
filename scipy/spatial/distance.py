@@ -92,7 +92,6 @@ __all__ = [
     'kulsinski',
     'kulczynski1',
     'mahalanobis',
-    'matching',
     'minkowski',
     'num_obs_dm',
     'num_obs_y',
@@ -1352,17 +1351,6 @@ def yule(u, v, w=None):
         return 0.0
     else:
         return float(2.0 * half_R / (ntt * nff + half_R))
-
-
-@np.deprecate(message="spatial.distance.matching is deprecated in scipy 1.0.0; "
-                      "use spatial.distance.hamming instead.")
-def matching(u, v, w=None):
-    """
-    Compute the Hamming distance between two boolean 1-D arrays.
-
-    This is a deprecated synonym for :func:`hamming`.
-    """
-    return hamming(u, v, w=w)
 
 
 def dice(u, v, w=None):
