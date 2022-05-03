@@ -304,7 +304,7 @@ def mode(a, axis=0):
 
     Notes
     -----
-    For more details, see `stats.mode`.
+    For more details, see `scipy.stats.mode`.
 
     Examples
     --------
@@ -945,7 +945,7 @@ def pointbiserialr(x, y):
     Missing values are considered pair-wise: if a value is missing in x,
     the corresponding value in y is masked.
 
-    For more details on `pointbiserialr`, see `stats.pointbiserialr`.
+    For more details on `pointbiserialr`, see `scipy.stats.pointbiserialr`.
 
     """
     x = ma.fix_invalid(x, copy=True).astype(bool)
@@ -1068,7 +1068,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
 
     Notes
     -----
-    For more details on `theilslopes`, see `stats.theilslopes`.
+    For more details on `theilslopes`, see `scipy.stats.theilslopes`.
 
     """
     y = ma.asarray(y).flatten()
@@ -1084,7 +1084,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     # Disregard any masked elements of x or y
     y = y.compressed()
     x = x.compressed().astype(float)
-    # We now have unmasked arrays so can use `stats.theilslopes`
+    # We now have unmasked arrays so can use `scipy.stats.theilslopes`
     return stats_theilslopes(y, x, alpha=alpha, method=method)
 
 
@@ -1138,7 +1138,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     # Disregard any masked elements of x or y
     y = y.compressed()
     x = x.compressed().astype(float)
-    # We now have unmasked arrays so can use `stats.siegelslopes`
+    # We now have unmasked arrays so can use `scipy.stats.siegelslopes`
     return stats_siegelslopes(y, x)
 
 
@@ -1192,7 +1192,7 @@ def ttest_1samp(a, popmean, axis=0, alternative='two-sided'):
 
     Notes
     -----
-    For more details on `ttest_1samp`, see `stats.ttest_1samp`.
+    For more details on `ttest_1samp`, see `scipy.stats.ttest_1samp`.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1261,7 +1261,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, alternative='two-sided'):
 
     Notes
     -----
-    For more details on `ttest_ind`, see `stats.ttest_ind`.
+    For more details on `ttest_ind`, see `scipy.stats.ttest_ind`.
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -1334,7 +1334,7 @@ def ttest_rel(a, b, axis=0, alternative='two-sided'):
 
     Notes
     -----
-    For more details on `ttest_rel`, see `stats.ttest_rel`.
+    For more details on `ttest_rel`, see `scipy.stats.ttest_rel`.
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -1431,7 +1431,7 @@ def kruskal(*args):
 
     Notes
     -----
-    For more details on `kruskal`, see `stats.kruskal`.
+    For more details on `kruskal`, see `scipy.stats.kruskal`.
 
     Examples
     --------
@@ -2060,7 +2060,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
 
     Notes
     -----
-    For more details on `tmean`, see `stats.tmean`.
+    For more details on `tmean`, see `scipy.stats.tmean`.
 
     Examples
     --------
@@ -2116,7 +2116,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
     Notes
     -----
-    For more details on `tvar`, see `stats.tvar`.
+    For more details on `tvar`, see `scipy.stats.tvar`.
 
     """
     a = a.astype(float).ravel()
@@ -2153,7 +2153,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
 
     Notes
     -----
-    For more details on `tmin`, see `stats.tmin`.
+    For more details on `tmin`, see `scipy.stats.tmin`.
 
     Examples
     --------
@@ -2203,7 +2203,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
 
     Notes
     -----
-    For more details on `tmax`, see `stats.tmax`.
+    For more details on `tmax`, see `scipy.stats.tmax`.
 
     Examples
     --------
@@ -2258,7 +2258,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
     Notes
     -----
-    For more details on `tsem`, see `stats.tsem`.
+    For more details on `tsem`, see `scipy.stats.tsem`.
 
     """
     a = ma.asarray(a).ravel()
@@ -2409,7 +2409,7 @@ def moment(a, moment=1, axis=0):
 
     Notes
     -----
-    For more details about `moment`, see `stats.moment`.
+    For more details about `moment`, see `scipy.stats.moment`.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2507,7 +2507,7 @@ def variation(a, axis=0, ddof=0):
 
     Notes
     -----
-    For more details about `variation`, see `stats.variation`.
+    For more details about `variation`, see `scipy.stats.variation`.
 
     Examples
     --------
@@ -2521,7 +2521,7 @@ def variation(a, axis=0, ddof=0):
     0.5345224838248487
 
     In the example above, it can be seen that this works the same as
-    `stats.variation` except 'stats.mstats.variation' ignores masked
+    `scipy.stats.variation` except 'stats.mstats.variation' ignores masked
     array elements.
 
     """
@@ -2551,7 +2551,7 @@ def skew(a, axis=0, bias=True):
 
     Notes
     -----
-    For more details about `skew`, see `stats.skew`.
+    For more details about `skew`, see `scipy.stats.skew`.
 
     """
     a, axis = _chk_asarray(a,axis)
@@ -2608,7 +2608,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     Notes
     -----
-    For more details about `kurtosis`, see `stats.kurtosis`.
+    For more details about `kurtosis`, see `scipy.stats.kurtosis`.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2768,7 +2768,7 @@ def skewtest(a, axis=0, alternative='two-sided'):
 
     Notes
     -----
-    For more details about `skewtest`, see `stats.skewtest`.
+    For more details about `skewtest`, see `scipy.stats.skewtest`.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2829,7 +2829,7 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
 
     Notes
     -----
-    For more details about `kurtosistest`, see `stats.kurtosistest`.
+    For more details about `kurtosistest`, see `scipy.stats.kurtosistest`.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2892,7 +2892,7 @@ def normaltest(a, axis=0):
 
     Notes
     -----
-    For more details about `normaltest`, see `stats.normaltest`.
+    For more details about `normaltest`, see `scipy.stats.normaltest`.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -3153,8 +3153,8 @@ def sem(a, axis=0, ddof=1):
     Notes
     -----
     The default value for `ddof` changed in scipy 0.15.0 to be consistent with
-    `stats.sem` as well as with the most common definition used (like in the R
-    documentation).
+    `scipy.stats.sem` as well as with the most common definition used (like in
+    the R documentation).
 
     Examples
     --------
@@ -3302,7 +3302,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
 
     Notes
     -----
-    For more details on `brunnermunzel`, see `stats.brunnermunzel`.
+    For more details on `brunnermunzel`, see `scipy.stats.brunnermunzel`.
 
     """
     x = ma.asarray(x).compressed().view(ndarray)
