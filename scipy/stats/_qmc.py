@@ -1207,7 +1207,7 @@ class LatinHypercube(QMCEngine):
         }
 
         try:
-            self.lhs_method = lhs_method_strength[strength]
+            self.lhs_method: Callable = lhs_method_strength[strength]
         except KeyError as exc:
             message = (f"{strength!r} is not a valid strength. It must be one"
                        f" of {set(lhs_method_strength)!r}")
