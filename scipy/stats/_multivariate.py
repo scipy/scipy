@@ -1643,6 +1643,11 @@ class wishart_gen(multi_rv_generic):
     %(_doc_default_callparams)s
     %(_doc_random_state)s
 
+    Raises
+    ------
+    scipy.linalg.LinAlgError
+        If the scale matrix `scale` is not positive definite.
+
     See Also
     --------
     invwishart, chi2
@@ -1653,7 +1658,8 @@ class wishart_gen(multi_rv_generic):
 
     The scale matrix `scale` must be a symmetric positive definite
     matrix. Singular matrices, including the symmetric positive semi-definite
-    case, are not supported.
+    case, are not supported. Symmetry is not checked; only the lower triangular
+    portion is used.
 
     The Wishart distribution is often denoted
 
@@ -2393,7 +2399,8 @@ class invwishart_gen(wishart_gen):
 
     The scale matrix `scale` must be a symmetric positive definite
     matrix. Singular matrices, including the symmetric positive semi-definite
-    case, are not supported.
+    case, are not supported. Symmetry is not checked; only the lower triangular
+    portion is used.
 
     The inverse Wishart distribution is often denoted
 
