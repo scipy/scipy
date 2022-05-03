@@ -14,7 +14,7 @@ from typing import (
     Dict,
     List,
     Optional,
-    overload,
+    Union, overload,
     Tuple,
     TYPE_CHECKING,
 )
@@ -695,7 +695,7 @@ class QMCEngine(ABC):
             self,
             d: IntNumber,
             *,
-            optimization: Optional[Literal["random-cd"]] = None,
+            optimization: Optional[Literal["random-cd", "lloyd"]] = None,
             seed: SeedType = None
     ) -> None:
         if not np.issubdtype(type(d), np.integer):
@@ -707,10 +707,15 @@ class QMCEngine(ABC):
         self.num_generated = 0
 
         config = {
-            # specific to random-cd
+            # random-cd
             "n_nochange": 100,
             "n_iters": 10_000,
-            "rng": self.rng
+            "rng": self.rng,
+
+            # lloyd
+            "tol":  1e-5,
+            "maxiter":  10,
+            "qhull_options": None,
         }
         self.optimization_method = _select_optimizer(optimization, config)
 
@@ -861,84 +866,6 @@ class QMCEngine(ABC):
         """
         self.random(n=n)
         return self
-
-
-def _select_optimizer(
-    optimization: Optional[Literal["random-cd"]], config: Dict
-) -> Callable:
-    """A factory for optimization methods."""
-    optimization_method: Dict[Literal["random-cd"], Callable] = {
-        "random-cd": _random_cd,
-    }
-
-    optimizer: Optional[Callable]
-    if optimization is not None:
-        try:
-            optimization = optimization.lower()  # type: ignore[assignment]
-            optimizer = optimization_method[optimization]
-        except KeyError as exc:
-            message = (f"{optimization!r} is not a valid optimization"
-                       f" method. It must be one of"
-                       f" {set(optimization_method)!r}")
-            raise ValueError(message) from exc
-
-        # config
-        optimizer = partial(optimizer, **config)
-    else:
-        optimizer = None
-
-    return optimizer
-
-
-def _random_cd(
-    best_sample: np.ndarray, n_iters: int, n_nochange: int, rng: GeneratorType
-) -> np.ndarray:
-    """Optimal LHS on CD.
-
-    Create a base LHS and do random permutations of coordinates to
-    lower the centered discrepancy.
-    Because it starts with a normal LHS, it also works with the
-    `centered` keyword argument.
-
-    Two stopping criterion are used to stop the algorithm: at most,
-    `n_iters` iterations are performed; or if there is no improvement
-    for `n_nochange` consecutive iterations.
-    """
-    n, d = best_sample.shape
-
-    if d == 0 or n == 0:
-        return np.empty((n, d))
-
-    best_disc = discrepancy(best_sample)
-
-    if n == 1:
-        return best_sample
-
-    bounds = ([0, d - 1],
-              [0, n - 1],
-              [0, n - 1])
-
-    n_nochange_ = 0
-    n_iters_ = 0
-    while n_nochange_ < n_nochange and n_iters_ < n_iters:
-        n_iters_ += 1
-
-        col = rng_integers(rng, *bounds[0])
-        row_1 = rng_integers(rng, *bounds[1])
-        row_2 = rng_integers(rng, *bounds[2])
-        disc = _perturb_discrepancy(best_sample,
-                                    row_1, row_2, col,
-                                    best_disc)
-        if disc < best_disc:
-            best_sample[row_1, col], best_sample[row_2, col] = (
-                best_sample[row_2, col], best_sample[row_1, col])
-
-            best_disc = disc
-            n_nochange_ = 0
-        else:
-            n_nochange_ += 1
-
-    return best_sample
 
 
 class Halton(QMCEngine):
@@ -1848,14 +1775,96 @@ class MultinomialQMC:
         return sample
 
 
+def _select_optimizer(
+    optimization: Optional[Literal["random-cd", "lloyd"]], config: Dict
+) -> Optional[Callable]:
+    """A factory for optimization methods."""
+    optimization_method: Dict[str, Callable] = {
+        "random-cd": _random_cd,
+        "lloyd": _lloyd_centroidal_voronoi_tessellation
+    }
+
+    optimizer: Optional[partial]
+    if optimization is not None:
+        try:
+            optimization = optimization.lower()  # type: ignore[assignment]
+            optimizer_ = optimization_method[optimization]
+        except KeyError as exc:
+            message = (f"{optimization!r} is not a valid optimization"
+                       f" method. It must be one of"
+                       f" {set(optimization_method)!r}")
+            raise ValueError(message) from exc
+
+        # config
+        optimizer = partial(optimizer_, **config)
+    else:
+        optimizer = None
+
+    return optimizer
+
+
+def _random_cd(
+    best_sample: np.ndarray, n_iters: int, n_nochange: int, rng: GeneratorType,
+    **kwargs: Dict
+) -> np.ndarray:
+    """Optimal LHS on CD.
+
+    Create a base LHS and do random permutations of coordinates to
+    lower the centered discrepancy.
+    Because it starts with a normal LHS, it also works with the
+    `centered` keyword argument.
+
+    Two stopping criterion are used to stop the algorithm: at most,
+    `n_iters` iterations are performed; or if there is no improvement
+    for `n_nochange` consecutive iterations.
+    """
+    del kwargs  # only use keywords which are defined, needed by factory
+
+    n, d = best_sample.shape
+
+    if d == 0 or n == 0:
+        return np.empty((n, d))
+
+    best_disc = discrepancy(best_sample)
+
+    if n == 1:
+        return best_sample
+
+    bounds = ([0, d - 1],
+              [0, n - 1],
+              [0, n - 1])
+
+    n_nochange_ = 0
+    n_iters_ = 0
+    while n_nochange_ < n_nochange and n_iters_ < n_iters:
+        n_iters_ += 1
+
+        col = rng_integers(rng, *bounds[0])
+        row_1 = rng_integers(rng, *bounds[1])
+        row_2 = rng_integers(rng, *bounds[2])
+        disc = _perturb_discrepancy(best_sample,
+                                    row_1, row_2, col,
+                                    best_disc)
+        if disc < best_disc:
+            best_sample[row_1, col], best_sample[row_2, col] = (
+                best_sample[row_2, col], best_sample[row_1, col])
+
+            best_disc = disc
+            n_nochange_ = 0
+        else:
+            n_nochange_ += 1
+
+    return best_sample
+
+
 def _l1_norm(sample: np.ndarray) -> float:
     return distance.pdist(sample, 'cityblock').min()
 
 
-def _lloyd_centroidal_voronoi_tessellation(
-        sample: np.ndarray,
-        decay: float,
-        qhull_options: str,
+def _centroidal_voronoi_tessellation(
+    sample: np.ndarray,
+    decay: float,
+    qhull_options: str
 ) -> np.ndarray:
     """Lloyd-Max algorithm iteration.
 
@@ -1916,12 +1925,13 @@ def _lloyd_centroidal_voronoi_tessellation(
     return sample
 
 
-def lloyd_centroidal_voronoi_tessellation(
-        sample: npt.ArrayLike,
-        *,
-        tol: DecimalNumber = 1e-5,
-        maxiter: IntNumber = 10,
-        qhull_options: Optional[str] = None,
+def _lloyd_centroidal_voronoi_tessellation(
+    sample: npt.ArrayLike,
+    *,
+    tol: DecimalNumber = 1e-5,
+    maxiter: IntNumber = 10,
+    qhull_options: Optional[str] = None,
+    **kwargs: Dict
 ) -> np.ndarray:
     """Approximate Centroidal Voronoi Tessellation.
 
@@ -2015,11 +2025,13 @@ def lloyd_centroidal_voronoi_tessellation(
     Now process the sample using Lloyd's algorithm and check the improvement
     on the L1. The value should increase.
 
-    >>> sample = lloyd_centroidal_voronoi_tessellation(sample)
+    >>> sample = _lloyd_centroidal_voronoi_tessellation(sample)
     >>> l1_norm(sample)
     0.0278...  # random
 
     """
+    del kwargs  # only use keywords which are defined, needed by factory
+
     sample = np.asarray(sample).copy()
 
     if not sample.ndim == 2:
@@ -2046,7 +2058,7 @@ def lloyd_centroidal_voronoi_tessellation(
 
     l1_old = _l1_norm(sample=sample)
     for i in range(maxiter):
-        sample = _lloyd_centroidal_voronoi_tessellation(
+        sample = _centroidal_voronoi_tessellation(
                 sample=sample, decay=decay[i],
                 qhull_options=qhull_options,
         )

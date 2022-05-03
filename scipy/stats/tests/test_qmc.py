@@ -13,7 +13,7 @@ from scipy.stats import qmc
 from scipy.stats._qmc import (
     van_der_corput, n_primes, primes_from_2_to,
     update_discrepancy, QMCEngine, _l1_norm,
-    _perturb_discrepancy, lloyd_centroidal_voronoi_tessellation
+    _perturb_discrepancy, _lloyd_centroidal_voronoi_tessellation
 )  # noqa
 
 
@@ -366,8 +366,8 @@ class TestVDC:
 
 
 class RandomEngine(qmc.QMCEngine):
-    def __init__(self, d, seed=None):
-        super().__init__(d=d, seed=seed)
+    def __init__(self, d, optimization=None, seed=None):
+        super().__init__(d=d, optimization=optimization, seed=seed)
 
     def _random(self, n=1, *, workers=1):
         sample = self.rng.random((n, self.d))
@@ -456,6 +456,13 @@ def test_integers_nd():
     sample = engine.integers(low, u_bounds=high, n=100, endpoint=True)
     assert_equal(sample.min(axis=0), low)
     assert_equal(sample.max(axis=0), high)
+
+
+@pytest.mark.parametrize("optimization", [None, "random-CD", "lloyd"])
+def test_select_optimizer(optimization):
+    seed = 36743571419809627335198321299267526741
+    engine = RandomEngine(2, optimization=optimization, seed=seed)
+    engine.random(20)
 
 
 class QMCEngineTests:
@@ -1191,7 +1198,7 @@ class TestLloyd:
         base_l2 = l2_norm(sample)
 
         for _ in range(4):
-            sample_lloyd = lloyd_centroidal_voronoi_tessellation(
+            sample_lloyd = _lloyd_centroidal_voronoi_tessellation(
                     sample, maxiter=1,
             )
             curr_l1 = _l1_norm(sample_lloyd)
@@ -1216,7 +1223,7 @@ class TestLloyd:
                                 [0.2, 0.1],
                                 [0.2, 0.2]])
         sample_copy = sample_orig.copy()
-        new_sample = lloyd_centroidal_voronoi_tessellation(
+        new_sample = _lloyd_centroidal_voronoi_tessellation(
             sample=sample_orig
         )
         assert_allclose(sample_orig, sample_copy)
@@ -1225,14 +1232,14 @@ class TestLloyd:
     def test_lloyd_errors(self):
         with pytest.raises(ValueError, match=r"`sample` is not a 2D array"):
             sample = [0, 1, 0.5]
-            lloyd_centroidal_voronoi_tessellation(sample)
+            _lloyd_centroidal_voronoi_tessellation(sample)
 
         msg = r"`sample` dimension is not >= 2"
         with pytest.raises(ValueError, match=msg):
             sample = [[0], [0.4], [1]]
-            lloyd_centroidal_voronoi_tessellation(sample)
+            _lloyd_centroidal_voronoi_tessellation(sample)
 
         msg = r"`sample` is not in unit hypercube"
         with pytest.raises(ValueError, match=msg):
             sample = [[-1.1, 0], [0.1, 0.4], [1, 2]]
-            lloyd_centroidal_voronoi_tessellation(sample)
+            _lloyd_centroidal_voronoi_tessellation(sample)
