@@ -7635,7 +7635,10 @@ class skew_norm_gen(rv_continuous):
         return [_ShapeInfo("a", False, (-np.inf, np.inf), (False, False))]
 
     def _pdf(self, x, a):
-        return 2.*_norm_pdf(x)*_norm_cdf(a*x)
+        return _lazywhere(
+            a == 0, (x, a), lambda x, a: _norm_pdf(x),
+            f2=lambda x, a: 2.*_norm_pdf(x)*_norm_cdf(a*x)
+        )
 
     def _cdf_single(self, x, *args):
         _a, _b = self._get_support(*args)
