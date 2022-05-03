@@ -148,32 +148,13 @@ PoissonMeansTestResult = make_dataclass('PoissonMeansTestResult',
                                         ('statistic', 'pvalue'))
 
 
-def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
+def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     r"""
-    Calculates the poisson means test, the "E-test", for the mean difference of
+    Calculates the Poisson means test, the "E-test", for the mean difference of
     two samples that follow a Poisson distribution from descriptive statistics.
 
     This is a two-sided test. The null hypothesis is that two independent
     samples have identical average (expected) values.
-
-    Let :math:`X_{11},...,X_{1n_1}` and :math:`X_{21},...,X_{2n_2}` be
-    independent samples from distributions :math:`Poisson(\lambda_1)` and
-    :math:`Poisson(\lambda_2)`. It is well known that :math:`X_1`
-    and :math:`X_2` are independent:
-
-    .. math:: X_1 = \sum_{i=1}^{n_1} X_{1i} \sim Poisson(n_1\lambda_1)
-
-    .. math:: X_2 = \sum_{i=1}^{n_2} X_{2i} \sim Poisson(n_2\lambda_2)
-
-    Let `count1` and `count2` be the observed values of :math:`X_1` and
-    :math:`X_2`, respectively. The null hypothesis and alternative
-    hypothesis under comparison are
-
-    .. math::
-       H_0: \lambda_1 = \lambda_2 + \mathtt{diff} \quad vs. \quad
-       H_a: \lambda_1 \ne \lambda_2 + \mathtt{diff}
-
-    for ``alternative=two-sided``, where :math:`\mathtt{diff} \ge 0`.
 
     Parameters
     ----------
@@ -185,16 +166,18 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
         Sample value of interest from sample 2.
     n2 : float
         Sample size from sample 2.
-    diff : float, optional
-        The difference of mean between two samples under the null hypothesis
-        (default is 0).
+    diff : float, default=0
+        The difference of mean between two samples under the null hypothesis.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided': :math:`\lambda_1 \ne \lambda_2 + \mathtt{diff}`
-          * 'less': :math:`\lambda_1 \le \lambda_2 + \mathtt{diff}`
-          * 'greater': :math:`\lambda_1 \ge \lambda_2 + \mathtt{diff}`
+          * 'two-sided': asserts that sample one's mean is not equal to sample
+              two's mean plus `diff`.
+          * 'less': asserts that sample one's mean is less than or equal to
+              sample two's mean plus `diff`.
+          * 'greater': asserts that sample one's mean is greater than or equal
+              to sample two's mean plus `diff`.
 
     Returns
     -------
@@ -211,6 +194,25 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     been evaluated and determined to be more powerful than the comparable
     C-test, sometimes referred to as the poisson exact test.
 
+    Let :math:`X_{11},...,X_{1n_1}` and :math:`X_{21},...,X_{2n_2}` be
+    independent samples from distributions :math:`Poisson(\lambda_1)` and
+    :math:`Poisson(\lambda_2)`. It is well known that :math:`X_1`
+    and :math:`X_2` are independent:
+
+    .. math:: X_1 = \sum_{i=1}^{n_1} X_{1i} \sim Poisson(n_1\lambda_1)
+
+    .. math:: X_2 = \sum_{i=1}^{n_2} X_{2i} \sim Poisson(n_2\lambda_2)
+
+    Let `k1` and `k2` be the observed values of :math:`X_1` and
+    :math:`X_2`, respectively. The null hypothesis and alternative
+    hypothesis under comparison are
+
+    .. math::
+       H_0: \lambda_1 = \lambda_2 + \mathtt{diff} \quad vs. \quad
+       H_a: \lambda_1 \ne \lambda_2 + \mathtt{diff}
+
+    for ``alternative=two-sided``, where :math:`\mathtt{diff} \ge 0`.
+
     References
     ----------
     .. [1]  Krishnamoorthy, K., & Thomson, J. (2004). A more powerful test for
@@ -224,11 +226,10 @@ def poisson_means_test(k1, n1, k2, n2, diff=0, alternative='two-sided'):
     Examples
     --------
 
-    Suppose that a gardener wishes to test the number of dodder seeds, a weed,
+    Suppose that a gardener wishes to test the number of dodder (weed) seeds
     in a sack of clover seeds that they buy from a seed company. It has
     previously been established that the number of dodder seeds in clover
     follows the Poisson distribution.
-
 
     A 100 gram sample is drawn from the sack before being shipped to the
     gardener. The sample is analyzed, and it is found to contain no dodder
