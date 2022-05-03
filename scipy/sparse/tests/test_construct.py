@@ -9,7 +9,7 @@ from pytest import raises as assert_raises
 from scipy._lib._testutils import check_free_memory
 from scipy._lib._util import check_random_state
 
-from scipy.sparse import (csr_matrix, coo_matrix,
+from scipy.sparse import (csr_matrix, coo_matrix, _arrays,
                           _construct as construct)
 from scipy.sparse._construct import rand as sprand
 from scipy.sparse._sputils import matrix
@@ -580,3 +580,62 @@ class TestConstructUtils:
         sparse_matrix = construct.random(10, 10, density=0.1265)
         assert_equal(sparse_matrix.count_nonzero(),13)
 
+
+@pytest.mark.parametrize(
+    ("fn", "args"),
+    [
+        (construct.diags, ([0, 1, 2],)),
+        (construct.eye, (3,)),
+        (construct.spdiags, ([1, 2, 3], 0, 3, 3)),
+        (construct.identity, (3,)),
+        # kron with dense B
+        (construct.kron,
+            (np.array([[1, 2], [3, 4]]), np.array([[4, 3], [2, 1]]))),
+        # kron with sparse B
+        (construct.kron,
+            (np.array([[1, 2], [3, 4]]), np.array([[1, 0], [0, 0]]))),
+        (construct.kronsum,
+            (np.array([[1, 0], [0, 1]]), np.array([[0, 1], [1, 0]]))),
+        (construct.random, (3, 3)),
+    ],
+)
+def test_default_container_format(fn, args):
+    """Default container format for array creation functions should be the same
+    as their matrix counterparts."""
+    a = fn(*args, sparray=True)
+    m = fn(*args)
+    assert isinstance(a, _arrays._sparray)
+    assert a.format == m.format
+
+
+@pytest.mark.parametrize("fn", (construct.hstack, construct.vstack))
+def test_stacks_default_container_format(fn):
+    """Same idea as `test_default_container_format`, but for the stacking
+    creation functions."""
+    A = coo_matrix(np.eye(2))
+    B = coo_matrix([[0, 1], [1, 0]])
+
+    a = fn([A, B], sparray=True)
+    m = fn([A, B])
+    assert isinstance(a, _arrays._sparray)
+    assert a.format == m.format
+
+
+def test_blocks_default_container_format():
+    """Same idea as `test_default_container_format`, but for the block
+    block creation funtions."""
+    A = coo_matrix(np.eye(2))
+    B = coo_matrix([[2], [0]])
+    C = coo_matrix([[3]])
+
+    # block diag
+    a = construct.block_diag((A, B, C), sparray=True)
+    m = construct.block_diag((A, B, C))
+    assert isinstance(a, _arrays._sparray)
+    assert a.format == m.format
+
+    # bmat
+    a = construct.bmat([[A, None], [None, C]], sparray=True)
+    m = construct.bmat([[A, None], [None, C]])
+    assert isinstance(a, _arrays._sparray)
+    assert a.format == m.format

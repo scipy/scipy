@@ -19,11 +19,19 @@ from ._csc import csc_matrix
 from ._bsr import bsr_matrix
 from ._coo import coo_matrix
 from ._dia import dia_matrix
+from ._arrays import csr_array, csc_array, bsr_array, coo_array, dia_array
+from ._arrays import dok_array, lil_array
 
 from ._base import issparse
 
+# Map sparse format strings to the corresponding sparse array container
+_fmt_to_sparray = {
+    "bsr": bsr_array, "coo": coo_array, "csc": csc_array, "csr": csr_array,
+    "dia": dia_array, "dok": dok_array, "lil": lil_array,
+}
 
-def spdiags(data, diags, m=None, n=None, format=None):
+
+def spdiags(data, diags, m=None, n=None, format=None, sparray=None):
     """
     Return a sparse matrix from diagonals.
 
@@ -44,6 +52,11 @@ def spdiags(data, diags, m=None, n=None, format=None):
     format : str, optional
         Format of the result. By default (format=None) an appropriate sparse
         matrix format is returned. This choice is subject to change.
+    sparray : bool, optional
+        Whether to return a sparse 2d array (rather than a sparse matrix).
+        By default, a sparse matrix is returned. The default will change
+        to return a sparse 2d array in the future.
+        To make code future-compatible, set `sparray=True`.
 
     See Also
     --------
@@ -67,10 +80,17 @@ def spdiags(data, diags, m=None, n=None, format=None):
         m = n = len(data[0])
     elif n is None:
         m, n = m
-    return dia_matrix((data, diags), shape=(m, n)).asformat(format)
+    D = dia_matrix((data, diags), shape=(m, n)).asformat(format)
+    if sparray is None:
+        sparray = False
+    if sparray:
+        return _fmt_to_sparray[D.format](D)
+    return D
 
 
-def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
+def diags(
+    diagonals, offsets=0, shape=None, format=None, dtype=None, sparray=None
+):
     """
     Construct a sparse matrix from diagonals.
 
@@ -93,6 +113,11 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
         subject to change.
     dtype : dtype, optional
         Data type of the matrix.
+    sparray : bool, optional
+        Whether to return a sparse 2d array (rather than a sparse matrix).
+        By default, a sparse matrix is returned. The default will change
+        to return a sparse 2d array in the future.
+        To make code future-compatible, set `sparray=True`.
 
     See Also
     --------
@@ -193,10 +218,15 @@ def diags(diagonals, offsets=0, shape=None, format=None, dtype=None):
                     j, len(diagonal), offset, m, n)) from e
             raise
 
-    return dia_matrix((data_arr, offsets), shape=(m, n)).asformat(format)
+    D = dia_matrix((data_arr, offsets), shape=(m, n)).asformat(format)
+    if sparray is None:
+        sparray = False
+    if sparray:
+        return _fmt_to_sparray[D.format](D)
+    return D
 
 
-def identity(n, dtype='d', format=None):
+def identity(n, dtype='d', format=None, sparray=None):
     """Identity matrix in sparse format
 
     Returns an identity matrix with shape (n,n) using a given
@@ -210,6 +240,11 @@ def identity(n, dtype='d', format=None):
         Data type of the matrix
     format : str, optional
         Sparse format of the result, e.g., format="csr", etc.
+    sparray : bool, optional
+        Whether to return a sparse 2d array (rather than a sparse matrix).
+        By default, a sparse matrix is returned. The default will change
+        to return a sparse 2d array in the future.
+        To make code future-compatible, set `sparray=True`.
 
     Examples
     --------
@@ -223,10 +258,10 @@ def identity(n, dtype='d', format=None):
             with 3 stored elements (1 diagonals) in DIAgonal format>
 
     """
-    return eye(n, n, dtype=dtype, format=format)
+    return eye(n, n, dtype=dtype, format=format, sparray=sparray)
 
 
-def eye(m, n=None, k=0, dtype=float, format=None):
+def eye(m, n=None, k=0, dtype=float, format=None, sparray=None):
     """Sparse matrix with ones on diagonal
 
     Returns a sparse (m x n) matrix where the kth diagonal
@@ -244,6 +279,11 @@ def eye(m, n=None, k=0, dtype=float, format=None):
         Data type of the matrix.
     format : str, optional
         Sparse format of the result, e.g., format="csr", etc.
+    sparray : bool, optional
+        Whether to return a sparse 2d array (rather than a sparse matrix).
+        By default, a sparse matrix is returned. The default will change
+        to return a sparse 2d array in the future.
+        To make code future-compatible, set `sparray=True`.
 
     Examples
     --------
@@ -279,10 +319,10 @@ def eye(m, n=None, k=0, dtype=float, format=None):
             return coo_matrix((data, (row, col)), (n, n))
 
     diags = np.ones((1, max(0, min(m + k, n))), dtype=dtype)
-    return spdiags(diags, k, m, n).asformat(format)
+    return spdiags(diags, k, m, n, format, sparray=sparray)
 
 
-def kron(A, B, format=None):
+def kron(A, B, format=None, sparray=None):
     """kronecker product of sparse matrices A and B
 
     Parameters
@@ -293,6 +333,11 @@ def kron(A, B, format=None):
         second matrix of the product
     format : str, optional
         format of the result (e.g. "csr")
+    sparray : bool, optional
+        Whether to return a sparse 2d array (rather than a sparse matrix).
+        By default, a sparse matrix is returned. The default will change
+        to return a sparse 2d array in the future.
+        To make code future-compatible, set `sparray=True`.
 
     Returns
     -------
@@ -333,7 +378,7 @@ def kron(A, B, format=None):
         data = A.data.repeat(B.size).reshape(-1,B.shape[0],B.shape[1])
         data = data * B
 
-        return bsr_matrix((data,A.indices,A.indptr), shape=output_shape)
+        K = bsr_matrix((data, A.indices, A.indptr), shape=output_shape)
     else:
         # use COO
         A = coo_matrix(A)
@@ -365,10 +410,16 @@ def kron(A, B, format=None):
         data = data.reshape(-1,B.nnz) * B.data
         data = data.reshape(-1)
 
-        return coo_matrix((data,(row,col)), shape=output_shape).asformat(format)
+        K = coo_matrix((data, (row, col)), shape=output_shape).asformat(format)
+
+    if sparray is None:
+        sparray = False
+    if sparray:
+        return _fmt_to_sparray[K.format](K)
+    return K
 
 
-def kronsum(A, B, format=None):
+def kronsum(A, B, format=None, sparray=None):
     """kronecker sum of sparse matrices A and B
 
     Kronecker sum of two sparse matrices is a sum of two Kronecker
@@ -384,6 +435,11 @@ def kronsum(A, B, format=None):
         square matrix
     format : str
         format of the result (e.g. "csr")
+    sparray : bool, optional
+        Whether to return a sparse 2d array (rather than a sparse matrix).
+        By default, a sparse matrix is returned. The default will change
+        to return a sparse 2d array in the future.
+        To make code future-compatible, set `sparray=True`.
 
     Returns
     -------
@@ -408,7 +464,12 @@ def kronsum(A, B, format=None):
     L = kron(eye(B.shape[0],dtype=dtype), A, format=format)
     R = kron(B, eye(A.shape[0],dtype=dtype), format=format)
 
-    return (L+R).asformat(format)  # since L + R is not always same format
+    KS = (L+R).asformat(format)  # since L + R is not always same format
+    if sparray is None:
+        sparray = False
+    if sparray:
+        return _fmt_to_sparray[KS.format](KS)
+    return KS
 
 
 def _compressed_sparse_stack(blocks, axis):
@@ -502,7 +563,7 @@ def _stack_along_minor_axis(blocks, axis):
                           shape=(constant_dim, sum_dim))
 
 
-def hstack(blocks, format=None, dtype=None):
+def hstack(blocks, format=None, dtype=None, sparray=None):
     """
     Stack sparse matrices horizontally (column wise)
 
@@ -517,6 +578,11 @@ def hstack(blocks, format=None, dtype=None):
     dtype : dtype, optional
         The data-type of the output matrix. If not given, the dtype is
         determined from that of `blocks`.
+    sparray : bool, optional
+        Whether to return a sparse 2d array (rather than a sparse matrix).
+        By default, a sparse matrix is returned. The default will change
+        to return a sparse 2d array in the future.
+        To make code future-compatible, set `sparray=True`.
 
     See Also
     --------
@@ -532,10 +598,15 @@ def hstack(blocks, format=None, dtype=None):
            [3, 4, 6]])
 
     """
-    return bmat([blocks], format=format, dtype=dtype)
+    HS = bmat([blocks], format=format, dtype=dtype)
+    if sparray is None:
+        sparray = False
+    if sparray:
+        return _fmt_to_sparray[HS.format](HS)
+    return HS
 
 
-def vstack(blocks, format=None, dtype=None):
+def vstack(blocks, format=None, dtype=None, sparray=None):
     """
     Stack sparse matrices vertically (row wise)
 
@@ -550,6 +621,11 @@ def vstack(blocks, format=None, dtype=None):
     dtype : dtype, optional
         The data-type of the output matrix. If not given, the dtype is
         determined from that of `blocks`.
+    sparray : bool, optional
+        Whether to return a sparse 2d array (rather than a sparse matrix).
+        By default, a sparse matrix is returned. The default will change
+        to return a sparse 2d array in the future.
+        To make code future-compatible, set `sparray=True`.
 
     See Also
     --------
@@ -566,10 +642,15 @@ def vstack(blocks, format=None, dtype=None):
            [5, 6]])
 
     """
-    return bmat([[b] for b in blocks], format=format, dtype=dtype)
+    VS = bmat([[b] for b in blocks], format=format, dtype=dtype)
+    if sparray is None:
+        sparray = False
+    if sparray:
+        return _fmt_to_sparray[VS.format](VS)
+    return VS
 
 
-def bmat(blocks, format=None, dtype=None):
+def bmat(blocks, format=None, dtype=None, sparray=None):
     """
     Build a sparse matrix from sparse sub-blocks
 
@@ -585,6 +666,11 @@ def bmat(blocks, format=None, dtype=None):
     dtype : dtype, optional
         The data-type of the output matrix. If not given, the dtype is
         determined from that of `blocks`.
+    sparray : bool, optional
+        Whether to return a sparse 2d array (rather than a sparse matrix).
+        By default, a sparse matrix is returned. The default will change
+        to return a sparse 2d array in the future.
+        To make code future-compatible, set `sparray=True`.
 
     Returns
     -------
@@ -619,6 +705,9 @@ def bmat(blocks, format=None, dtype=None):
 
     M,N = blocks.shape
 
+    if sparray is None:
+        sparray = False
+
     # check for fast path cases
     if (format in (None, 'csr') and all(isinstance(b, csr_matrix)
                                         for b in blocks.flat)):
@@ -632,6 +721,8 @@ def bmat(blocks, format=None, dtype=None):
         A = _compressed_sparse_stack(blocks[:, 0], 0)
         if dtype is not None:
             A = A.astype(dtype)
+        if sparray:
+            return _fmt_to_sparray[A.format](A)
         return A
     elif (format in (None, 'csc') and all(isinstance(b, csc_matrix)
                                           for b in blocks.flat)):
@@ -645,6 +736,8 @@ def bmat(blocks, format=None, dtype=None):
         A = _compressed_sparse_stack(blocks[0, :], 1)
         if dtype is not None:
             A = A.astype(dtype)
+        if sparray:
+            return _fmt_to_sparray[A.format](A)
         return A
 
     block_mask = np.zeros(blocks.shape, dtype=bool)
@@ -701,10 +794,13 @@ def bmat(blocks, format=None, dtype=None):
         np.add(B.col, col_offsets[j], out=col[idx], dtype=idx_dtype)
         nnz += B.nnz
 
-    return coo_matrix((data, (row, col)), shape=shape).asformat(format)
+    A = coo_matrix((data, (row, col)), shape=shape).asformat(format)
+    if sparray:
+        return _fmt_to_sparray[A.format](A)
+    return A
 
 
-def block_diag(mats, format=None, dtype=None):
+def block_diag(mats, format=None, dtype=None, sparray=None):
     """
     Build a block diagonal sparse matrix from provided matrices.
 
@@ -718,6 +814,11 @@ def block_diag(mats, format=None, dtype=None):
     dtype : dtype specifier, optional
         The data-type of the output matrix. If not given, the dtype is
         determined from that of `blocks`.
+    sparray : bool, optional
+        Whether to return a sparse 2d array (rather than a sparse matrix).
+        By default, a sparse matrix is returned. The default will change
+        to return a sparse 2d array in the future.
+        To make code future-compatible, set `sparray=True`.
 
     Returns
     -------
@@ -770,13 +871,18 @@ def block_diag(mats, format=None, dtype=None):
     row = np.concatenate(row)
     col = np.concatenate(col)
     data = np.concatenate(data)
-    return coo_matrix((data, (row, col)),
-                      shape=(r_idx, c_idx),
-                      dtype=dtype).asformat(format)
+    BD = coo_matrix((data, (row, col)),
+                    shape=(r_idx, c_idx),
+                    dtype=dtype).asformat(format)
+    if sparray is None:
+        sparray = False
+    if sparray:
+        return _fmt_to_sparray[BD.format](BD)
+    return BD
 
 
 def random(m, n, density=0.01, format='coo', dtype=None,
-           random_state=None, data_rvs=None):
+           random_state=None, data_rvs=None, sparray=None):
     """Generate a sparse matrix of the given shape and density with randomly
     distributed values.
 
@@ -811,6 +917,11 @@ def random(m, n, density=0.01, format='coo', dtype=None,
         by this function. By default, uniform [0, 1) random values will be
         sampled using the same random state as is used for sampling
         the sparsity structure.
+    sparray : bool, optional
+        Whether to return a sparse 2d array (rather than a sparse matrix).
+        By default, a sparse matrix is returned. The default will change
+        to return a sparse 2d array in the future.
+        To make code future-compatible, set `sparray=True`.
 
     Returns
     -------
@@ -889,11 +1000,18 @@ greater than %d - this is not supported on this machine
     j = np.floor(ind * 1. / m).astype(tp, copy=False)
     i = (ind - j * m).astype(tp, copy=False)
     vals = data_rvs(k).astype(dtype, copy=False)
-    return coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format,
-                                                             copy=False)
+    R = coo_matrix((vals, (i, j)), shape=(m, n)).asformat(format, copy=False)
+    if sparray is None:
+        sparray = False
+    if sparray:
+        return _fmt_to_sparray[R.format](R)
+    return R
 
 
-def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
+def rand(
+    m, n, density=0.01, format="coo", dtype=None, random_state=None,
+    sparray=None
+):
     """Generate a sparse matrix of the given shape and density with uniformly
     distributed values.
 
@@ -917,6 +1035,11 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
         seeded with `seed`.
         If `seed` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
+    sparray : bool, optional
+        Whether to return a sparse 2d array (rather than a sparse matrix).
+        By default, a sparse matrix is returned. The default will change
+        to return a sparse 2d array in the future.
+        To make code future-compatible, set `sparray=True`.
 
     Returns
     -------
@@ -944,4 +1067,4 @@ def rand(m, n, density=0.01, format="coo", dtype=None, random_state=None):
            [0.        , 0.        , 0.        , 0.        ]])
 
     """
-    return random(m, n, density, format, dtype, random_state)
+    return random(m, n, density, format, dtype, random_state, sparray)
