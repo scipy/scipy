@@ -2382,7 +2382,8 @@ class RegularGridInterpolator:
     ----------
     points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
         The points defining the regular grid in n dimensions. The points in
-        all dimensions must be strictly ascending or descending.
+        each dimension (i.e. every elements of the points tuple) must be
+        strictly ascending or descending.
 
     values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions. Complex data can be
@@ -2698,7 +2699,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     ----------
     points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
         The points defining the regular grid in n dimensions. The points in
-        all dimensions must be strictly ascending or descending.
+        each dimension (i.e. every elements of the points tuple) must be
+        strictly ascending or descending.
 
     values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions. Complex data can be
