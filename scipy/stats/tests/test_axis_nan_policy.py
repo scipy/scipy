@@ -589,7 +589,7 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
 
     if unpacker is None:
-        unpacker = lambda res: (res[0], res[1])
+        unpacker = lambda res: (res[0], res[1])  # noqa: E731
 
     def small_data_generator(n_samples, n_dims):
 
