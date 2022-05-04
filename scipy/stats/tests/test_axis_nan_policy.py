@@ -22,8 +22,10 @@ axis_nan_policy_cases = [
     (stats.kruskal, tuple(), dict(), 3, 2, False, None),  # 4 samples is slow
     (stats.ranksums, ('less',), dict(), 2, 2, False, None),
     (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, 2, False, None),
-    (stats.wilcoxon, ('pratt',), {'mode': 'auto'}, 2, 2, True, None),
-    (stats.wilcoxon, tuple(), dict(), 1, 2, True, None),
+    (stats.wilcoxon, ('pratt',), {'mode': 'auto'}, 2, 2, True,
+     lambda res: (res.statistic, res.pvalue)),
+    (stats.wilcoxon, tuple(), dict(), 1, 2, True,
+     lambda res: (res.statistic, res.pvalue)),
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
