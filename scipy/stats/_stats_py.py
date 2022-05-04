@@ -908,29 +908,29 @@ def _moment_result_object(*args):
     return np.asarray(args)
 
 # `moment` fits into the `_axis_nan_policy` pattern, but it is a bit unusual
-# because the number of outputs is variable. Specifically, 
+# because the number of outputs is variable. Specifically,
 # `result_to_tuple=lambda x: (x,)` may be surprising for a function that
 # can produce more than one output, but it is intended here.
 # When `moment is called to produce the output:
-# - `result_to_tuple` packs the returned array into a single-element tuple, 
+# - `result_to_tuple` packs the returned array into a single-element tuple,
 # - `_moment_result_object` extracts and returns that single element.
 # However, when the input array is empty, `moment` is never called. Instead,
 # - `_check_empty_inputs` is used to produce an empty array with the
-#   appropriate dimensions. 
-# - A list comprehension creates the appropriate number of copies of this 
-#   array, depending on `n_outputs`. 
-# - This list - which may have multiple elements - is passed into 
-#   `_moment_result_object`. 
-# - If there is a single output, `_moment_result_object` extracts and returns 
-#   the single output from the list. 
+#   appropriate dimensions.
+# - A list comprehension creates the appropriate number of copies of this
+#   array, depending on `n_outputs`.
+# - This list - which may have multiple elements - is passed into
+#   `_moment_result_object`.
+# - If there is a single output, `_moment_result_object` extracts and returns
+#   the single output from the list.
 # - If there are multiple outputs, and therefore multiple elements in the list,
-#   `_moment_result_object` converts the list of arrays to a single array and 
+#   `_moment_result_object` converts the list of arrays to a single array and
 #   returns it.
 # Currently this leads to a slight inconsistency: when the input array is
-# empty, there is no distinction between the `moment` function being called 
+# empty, there is no distinction between the `moment` function being called
 # with parameter `moments=1` and `moments=[1]`; the latter *should* produce
 # the same as the former but with a singleton zeroth dimension.
-@_axis_nan_policy_factory(
+@_axis_nan_policy_factory(  # noqa: E302
     _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
     n_outputs=_moment_outputs
 )
