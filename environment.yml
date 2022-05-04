@@ -19,7 +19,6 @@ dependencies:
   - libblas=*=*openblas  # helps avoid pulling in MKL
   - pybind11
   - pythran>=0.9.12
-  - conda-build
   # For testing and benchmarking
   - pytest
   - pytest-cov
@@ -45,6 +44,4 @@ dependencies:
   # For CLI
   - rich-click
   - click
-  - pip  # else Docker raises a warning in CI builds
-  - pip:
-      - doit>=0.35.0
+  - doit>=0.35.0
