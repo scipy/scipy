@@ -2778,7 +2778,8 @@ class TestRegularGridInterpolator:
         interp = RegularGridInterpolator((x, y), data,
                                          method=method, bounds_error=False)
 
-        res = interp([[1.5, np.nan], [1, 1]])
+        with np.errstate(invalid='ignore'):
+            res = interp([[1.5, np.nan], [1, 1]])
         assert_allclose(res[1], 2, atol=1e-14)
         assert np.isnan(res[0])
 
