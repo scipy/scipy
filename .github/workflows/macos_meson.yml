@@ -76,27 +76,27 @@ jobs:
         mamba-version: "*"
         channels: conda-forge
         channel-priority: true
-        activate-environment: scipy-meson
+        activate-environment: scipy-dev
         use-only-tar-bz2: true
 
     - name: Cache conda
       uses: actions/cache@v3
       env:
-        # Increase this value to reset cache if environment_meson.yml has not changed
+        # Increase this value to reset cache if environment.yml has not changed
         CACHE_NUMBER: 0
       with:
-        path: /usr/local/miniconda/envs/scipy-meson
+        path: /usr/local/miniconda/envs/scipy-dev
         key:
-          ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment_meson.yml') }}
+          ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
       id: envcache
 
     - name: Update Conda Environment
-      run: mamba env update -n scipy-meson -f environment_meson.yml
+      run: mamba env update -n scipy-dev -f environment.yml
 
     - name: Build and Install SciPy
       shell: bash -l {0}
       run: |
-        conda activate scipy-meson
+        conda activate scipy-dev
         python -m pip install meson==0.61.1
         # Python.org installers still use 10.9, so let's use that too. Note
         # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
@@ -110,7 +110,7 @@ jobs:
     - name: Test SciPy
       shell: bash -l {0}
       run: |
-        conda activate scipy-meson
+        conda activate scipy-dev
         export OMP_NUM_THREADS=2
         python dev.py -n -j 2
 

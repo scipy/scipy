@@ -8,18 +8,18 @@ After :ref:`getting the source code from GitHub <git-start>`, there are three
 steps to start contributing:
 
 1. **Set up a development environment**
-   
+
    Using ``conda``, or some flavor of the many virtual environment management
    tools, you can make sure the development version of SciPy does not interfere
    with any other local installations of SciPy on your machine.
 
 2. **Build SciPy**
-   
+
    SciPy uses compiled code for speed, which means you might need extra
    dependencies to complete this step depending on your system.
 
 3. **Perform development tasks**
-   
+
    These can include any changes you want to make to the source code, running
    tests, building the documentation, running benchmarks, etc.
 
@@ -59,9 +59,9 @@ Next, set up your development environment.
         `SciPy <https://github.com/scipy/scipy>`_ clone::
 
             # Create an environment with all development dependencies
-            conda env create -f environment_meson.yml  # works with `mamba` too
+            conda env create -f environment.yml  # works with `mamba` too
             # Activate the environment
-            conda activate scipy-meson
+            conda activate scipy-dev
 
         Your command prompt now lists the name of your new environment, like so
         ``(scipy-dev)$``.
