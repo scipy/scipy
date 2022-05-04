@@ -11,7 +11,7 @@ doit interface is better suited for authring the development tasks.
 
 REQUIREMENTS:
 --------------
-- PyPI packages: doit==0.35.0, click, rich-click==1.3.0
+- see environment.yml: doit, pydevtool, click, rich-click
 
 # USAGE:
 
@@ -92,22 +92,11 @@ class RefguideCheck(Task):
         return {
 ```
 
-
-
-# TODO:
-
-cleanup + doit:
-- [ ] move out non-scipy code
-
-BUG:
-- [ ] python dev.py -t scipy.optimize.tests.test_minimize_constrained.py
-      unknown marker "slow". seems conftest is not being loaded
 '''
 
 import os
 import subprocess
 import sys
-import re
 import shutil
 import json
 import datetime
@@ -123,176 +112,32 @@ from types import ModuleType as new_module
 from dataclasses import dataclass
 
 import click
-from click import Parameter, Option, Argument
-from click.globals import get_current_context
-from rich_click import RichCommand, RichGroup
+from click import Option, Argument
 from doit import task_params
-from doit.task import Task as DoitTask
 from doit.cmd_base import ModuleTaskLoader
+from doit.reporter import ZeroReporter
+from doit.exceptions import TaskError
 from doit.api import run_tasks
+from pydevtool.cli import UnifiedContext, CliGroup, Task
+from rich.console import Console
+from rich.panel import Panel
+from rich.theme import Theme
 from rich_click import rich_click
 
 DOIT_CONFIG = {
     'verbosity': 2,
-    'minversion': '0.35.0',
+    'minversion': '0.36.0',
 }
 
 
-##########################################
-# doit / click integration through custom class interface
-
-class Context():
-    """Higher level to allow some level of Click.context with doit"""
-    def __init__(self, options: dict):
-        self.options = options
-        self.vals = {}
-
-    def get(self, save=None):
-        # try to get from Click
-        ctx = get_current_context(silent=True)
-        if ctx:
-            return ctx.obj
-        else:
-            if save:
-                for name in self.options.keys():
-                    if name in save:
-                        self.vals[name] = save[name]
-            return self.vals
+console_theme = Theme({
+    "cmd": "italic gray50",
+})
 
 
-param_type_map = {
-    'text': str,
-    'boolean': bool,
-    'integer': int,
-}
+class EMOJI:
+    cmd = ":computer:"
 
-
-def param_click2doit(name: str, val: Parameter):
-    """Convert click param to dict used by doit.cmdparse"""
-    pd = {
-        'name': name,
-        'type': param_type_map[val.type.name],  # FIXME: add all types
-        'default': val.default,
-        'help': getattr(val, 'help', ''),
-        'metavar': val.metavar,
-    }
-    for opt in val.opts:
-        if opt[:2] == '--':
-            pd['long'] = opt[2:]
-        elif opt[0] == '-':
-            pd['short'] = opt[1:]
-    return pd
-
-
-# convert click.types.ParamType.name to doit param type
-CAMEL_PATTERN = re.compile(r'(?!^)([A-Z]+)')
-
-
-def to_camel(name):
-    return CAMEL_PATTERN.sub(r'-\1', name).lower()
-
-
-def run_as_py_action(cls):
-    """used by doit loader to create task instances"""
-    if cls is Task:
-        return
-    task_kwargs = getattr(cls, 'TASK_META', {})
-    return DoitTask(
-        # convert name to kebab-case
-        name=to_camel(cls.__name__),
-        doc=cls.__doc__,
-        actions=[cls.run],
-        params=cls._params,
-        **task_kwargs,
-    )
-
-
-class MetaclassDoitTask(type):
-    def __new__(meta_cls, name, bases, dct):
-        # params/opts from Context and Option attributes
-        cls = super().__new__(meta_cls, name, bases, dct)
-        params = []
-        if ctx := getattr(cls, 'ctx', None):
-            for ctx_opt in ctx.options.values():
-                params.append(param_click2doit(ctx_opt.name, ctx_opt))
-        for attr_name, val in cls.__dict__.items():
-            if isinstance(val, Parameter):
-                params.append(param_click2doit(attr_name, val))
-        cls._params = params
-
-        task_basename = to_camel(cls.__name__)
-        if hasattr(cls, 'task_meta'):
-            def creator(**kwargs):
-                task_meta = cls.task_meta(**kwargs)
-                if 'basename' not in task_meta:
-                    task_meta['basename'] = task_basename
-                if 'doc' not in task_meta:
-                    task_meta['doc'] = cls.__doc__
-                return task_meta
-            creator._task_creator_params = cls._params
-        else:
-            def creator():
-                return run_as_py_action(cls)
-        creator.basename = task_basename
-        cls.create_doit_tasks = creator
-        return cls
-
-
-class Task(metaclass=MetaclassDoitTask):
-    """Base class to define doit task and/or click command"""
-
-    @classmethod
-    def opt_defaults(cls):
-        """helper used by another click commands to call this command"""
-        return {p['name']: p['default'] for p in cls._params}
-
-
-class CliGroup(RichGroup):
-    COMMAND_CLASS = RichCommand
-
-    def cls_cmd(self, name):
-        """class decorator, convert to click.Command"""
-        def register_click(cls):
-            # get options/arguments for class definition
-            params = []
-            for attr_name, attr_val in cls.__dict__.items():
-                if isinstance(attr_val, Parameter):
-                    params.append(attr_val)
-
-            if issubclass(cls, Task):
-                # run as doit task
-                def callback(**kwargs):
-                    run_doit_task({name: kwargs})
-            else:
-                # run as plain function
-                def callback(**kwargs):
-                    cls.run(**kwargs)
-
-            click_cmd = RichCommand(
-                name=name,
-                callback=callback,
-                help=cls.__doc__,
-                params=params,
-            )
-            self.add_command(click_cmd)
-            return cls
-        return register_click
-
-
-def run_doit_task(tasks):
-    """
-      :param tasks: (dict) task_name -> {options}
-    """
-    loader = ModuleTaskLoader(globals())
-    doit_config = {
-        'verbosity': 2,
-        'reporter': 'zero',
-    }
-    return run_tasks(loader, tasks, extra_config={'GLOBAL': doit_config})
-
-
-###########################################
-# SciPY
 
 rich_click.STYLE_ERRORS_SUGGESTION = "yellow italic"
 rich_click.SHOW_ARGUMENTS = True
@@ -349,7 +194,28 @@ rich_click.COMMAND_GROUPS = {
 }
 
 
-CONTEXT = Context({
+class ErrorOnlyReporter(ZeroReporter):
+    desc = """Report errors only"""
+
+    def runtime_error(self, msg):
+        console = Console()
+        console.print("[red bold] msg")
+
+    def add_failure(self, task, fail_info):
+        console = Console()
+        if isinstance(fail_info, TaskError):
+            console.print(f'[red]Task Error - {task.name}'
+                          f' => {fail_info.message}')
+        if fail_info.traceback:
+            console.print(Panel(
+                "".join(fail_info.traceback),
+                title=f"{task.name}",
+                subtitle=fail_info.message,
+                border_style="red",
+            ))
+
+
+CONTEXT = UnifiedContext({
     'build_dir': Option(
         ['--build-dir'], metavar='BUILD_DIR',
         default='build', show_default=True,
@@ -365,7 +231,24 @@ CONTEXT = Context({
 })
 
 
-@click.group(cls=CliGroup)
+def run_doit_task(tasks):
+    """
+      :param tasks: (dict) task_name -> {options}
+    """
+    loader = ModuleTaskLoader(globals())
+    doit_config = {
+        'verbosity': 2,
+        'reporter': ErrorOnlyReporter,
+    }
+    return run_tasks(loader, tasks, extra_config={'GLOBAL': doit_config})
+
+
+class CLI(CliGroup):
+    context = CONTEXT
+    run_doit_task = run_doit_task
+
+
+@click.group(cls=CLI)
 @click.pass_context
 def cli(ctx, **kwargs):
     """Developer Tool for SciPy
@@ -376,12 +259,7 @@ def cli(ctx, **kwargs):
 
     **python do.py --build-dir my-build test -s stats**
     """
-    ctx.ensure_object(dict)
-    for opt_name in CONTEXT.options.keys():
-        ctx.obj[opt_name] = kwargs.get(opt_name)
-
-
-cli.params.extend(CONTEXT.options.values())
+    CLI.update_context(ctx, kwargs)
 
 
 PROJECT_MODULE = "scipy"
@@ -534,11 +412,13 @@ class Build(Task):
         if args.gcov:
             cmd += ['-Db_coverage=true']
         # Setting up meson build
+        cmd_str = ' '.join([str(p) for p in cmd])
+        cls.console.print(f"{EMOJI.cmd} [cmd] {cmd_str}")
         ret = subprocess.call(cmd, env=env, cwd=run_dir)
         if ret == 0:
             print("Meson build setup OK")
         else:
-            print("Meson build setup failed! ({0} elapsed)")
+            print("Meson build setup failed!")
             sys.exit(1)
         return env
 
@@ -552,6 +432,8 @@ class Build(Task):
             cmd += ["-j", str(args.parallel)]
 
         # Building with ninja-backend
+        cmd_str = ' '.join([str(p) for p in cmd])
+        cls.console.print(f"{EMOJI.cmd} [cmd] {cmd_str}")
         ret = subprocess.call(cmd, env=env, cwd=dirs.root)
 
         if ret == 0:
@@ -573,6 +455,8 @@ class Build(Task):
         cmd = ["meson", "install", "-C", args.build_dir]
         log_filename = dirs.root / 'meson-install.log'
         start_time = datetime.datetime.now()
+        cmd_str = ' '.join([str(p) for p in cmd])
+        cls.console.print(f"{EMOJI.cmd} [cmd] {cmd_str}")
         if args.show_build_log:
             ret = subprocess.call(cmd, cwd=dirs.root)
         else:
@@ -609,7 +493,7 @@ class Build(Task):
             if not args.show_build_log:
                 with open(log_filename, 'r') as f:
                     print(f.read())
-            print("Installation failed! ({0} elapsed)".format(elapsed))
+            print(f"Installation failed! ({elapsed} elapsed)")
             sys.exit(1)
 
         # ignore everything in the install directory.
@@ -667,9 +551,10 @@ class Build(Task):
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
 
+        cls.console = Console(theme=console_theme)
         dirs = Dirs(args)
         if args.no_build:
-            print('Skipping build')
+            print("Skipping build")
         else:
             env = cls.setup_build(dirs, args)
             cls.build_project(dirs, args, env)
@@ -693,7 +578,7 @@ class Test(Task):
     Examples:
 
     $ python do.py test -s {SAMPLE_SUBMODULE}
-
+    $ python do.py test -t scipy.optimize.tests.test_minimize_constrained
     $ python do.py test -s stats -- --tb=line
     """
     ctx = CONTEXT
@@ -779,7 +664,7 @@ class Test(Task):
         kwargs.update(cls.ctx.get())
         Args = namedtuple('Args', [k for k in kwargs.keys()])
         args = Args(**kwargs)
-        cls.scipy_tests(args, pytest_args)
+        return cls.scipy_tests(args, pytest_args)
 
 
 @cli.cls_cmd('bench')
