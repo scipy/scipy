@@ -158,10 +158,13 @@ class _PSD:
 
         eps = _eigvalsh_to_eps(s, cond, rcond)
         if np.min(s) < -eps:
-            raise ValueError('the input matrix must be positive semidefinite')
+            msg = "The input matrix must be symmetric positive semidefinite."
+            raise ValueError(msg)
         d = s[s > eps]
         if len(d) < len(s) and not allow_singular:
-            raise np.linalg.LinAlgError('singular matrix')
+            msg = ("When `allow_singular is False`, the input matrix must be "
+                   "symmetric positive definite.")
+            raise np.linalg.LinAlgError(msg)
         s_pinv = _pinv_1d(s, eps)
         U = np.multiply(u, np.sqrt(s_pinv))
 
@@ -229,12 +232,12 @@ class multi_rv_frozen:
 
 
 _mvn_doc_default_callparams = """\
-mean : array_like, optional
-    Mean of the distribution (default zero)
-cov : array_like, optional
-    Covariance matrix of the distribution (default one)
-allow_singular : bool, optional
-    Whether to allow a singular covariance matrix.  (Default: False)
+mean : array_like, default: ``[0]``
+    Mean of the distribution.
+cov : array_like, default: ``[1]``
+    Symmetric positive (semi)definite covariance matrix of the distribution.
+allow_singular : bool, default: ``False``
+    Whether to allow a singular covariance matrix.
 """
 
 _mvn_doc_callparams_note = """\
@@ -293,8 +296,11 @@ class multivariate_normal_gen(multi_rv_generic):
     -----
     %(_mvn_doc_callparams_note)s
 
-    The covariance matrix `cov` must be a (symmetric) positive
-    semi-definite matrix. The determinant and inverse of `cov` are computed
+    The covariance matrix `cov` must be a symmetric positive semidefinite
+    matrix when `allow_singular` is True; it must be (strictly) positive
+    definite when `allow_singular` is False.
+    Symmetry is not checked; only the lower triangular portion is used.
+    The determinant and inverse of `cov` are computed
     as the pseudo-determinant and pseudo-inverse, respectively, so
     that `cov` does not need to have full rank.
 
@@ -683,13 +689,13 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
         Parameters
         ----------
-        mean : array_like, optional
-            Mean of the distribution (default zero)
-        cov : array_like, optional
-            Covariance matrix of the distribution (default one)
-        allow_singular : bool, optional
-            If this flag is True then tolerate a singular
-            covariance matrix (default False).
+        mean : array_like, default: ``[0]``
+            Mean of the distribution.
+        cov : array_like, default: ``[1]``
+            Symmetric positive (semi)definite covariance matrix of the
+            distribution.
+        allow_singular : bool, default: ``False``
+            Whether to allow a singular covariance matrix.
         seed : {None, int, `numpy.random.Generator`,
                 `numpy.random.RandomState`}, optional
 
@@ -1637,6 +1643,11 @@ class wishart_gen(multi_rv_generic):
     %(_doc_default_callparams)s
     %(_doc_random_state)s
 
+    Raises
+    ------
+    scipy.linalg.LinAlgError
+        If the scale matrix `scale` is not positive definite.
+
     See Also
     --------
     invwishart, chi2
@@ -1647,7 +1658,8 @@ class wishart_gen(multi_rv_generic):
 
     The scale matrix `scale` must be a symmetric positive definite
     matrix. Singular matrices, including the symmetric positive semi-definite
-    case, are not supported.
+    case, are not supported. Symmetry is not checked; only the lower triangular
+    portion is used.
 
     The Wishart distribution is often denoted
 
@@ -2372,6 +2384,11 @@ class invwishart_gen(wishart_gen):
     %(_doc_default_callparams)s
     %(_doc_random_state)s
 
+    Raises
+    ------
+    scipy.linalg.LinAlgError
+        If the scale matrix `scale` is not positive definite.
+
     See Also
     --------
     wishart
@@ -2382,7 +2399,8 @@ class invwishart_gen(wishart_gen):
 
     The scale matrix `scale` must be a symmetric positive definite
     matrix. Singular matrices, including the symmetric positive semi-definite
-    case, are not supported.
+    case, are not supported. Symmetry is not checked; only the lower triangular
+    portion is used.
 
     The inverse Wishart distribution is often denoted
 

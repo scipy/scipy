@@ -1,4 +1,3 @@
-import math
 import threading
 import pickle
 import pytest
@@ -778,15 +777,11 @@ class TestNumericalInversePolynomial:
     very_slow_dists = ['studentized_range', 'trapezoid', 'triang', 'vonmises',
                        'levy_stable', 'kappa4', 'ksone', 'kstwo', 'levy_l',
                        'gausshyper', 'anglit']
-    # for some reason, UNU.RAN segmentation faults for the uniform.
-    fatal_fail_dists = ['uniform']
-    # fails for unbounded PDFs
-    unbounded_pdf_fail_dists = ['beta']
     # for these distributions, some assertions fail due to minor
     # numerical differences. They can be avoided either by changing
     # the seed or by increasing the u_resolution.
     fail_dists = ['ncf', 'pareto', 'chi2', 'fatiguelife', 'halfgennorm',
-                  'gilbrat', 'lognorm', 'ncx2', 't']
+                  'gibrat', 'lognorm', 'ncx2', 't']
 
     @pytest.mark.xslow
     @pytest.mark.parametrize("distname, params", distcont)
@@ -795,10 +790,6 @@ class TestNumericalInversePolynomial:
             pytest.skip(f"PINV too slow for {distname}")
         if distname in self.fail_dists:
             pytest.skip(f"PINV fails for {distname}")
-        if distname in self.unbounded_pdf_fail_dists:
-            pytest.skip("PINV fails for unbounded PDFs.")
-        if distname in self.fatal_fail_dists:
-            pytest.xfail(f"PINV segmentation faults for {distname}")
         dist = (getattr(stats, distname)
                 if isinstance(distname, str)
                 else distname)

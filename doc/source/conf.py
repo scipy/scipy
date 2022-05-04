@@ -33,7 +33,6 @@ inspect.isdescriptor = (lambda obj: old_isdesc(obj)
 # Add any Sphinx extension module names here, as strings. They can be extensions
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 
-sys.path.insert(0, os.path.abspath('../sphinxext'))
 sys.path.insert(0, os.path.abspath(os.path.dirname(__file__)))
 
 import numpydoc.docscrape as np_docscrape  # noqa:E402
@@ -49,6 +48,7 @@ extensions = [
     'scipyoptdoc',
     'doi_role',
     'matplotlib.sphinxext.plot_directive',
+    'sphinx_tabs.tabs',
 ]
 
 # Determine if the matplotlib has a recent enough version of the
@@ -152,10 +152,8 @@ warnings.filterwarnings('error')
 warnings.filterwarnings('default', module='sphinx')  # internal warnings
 # global weird ones that can be safely ignored
 for key in (
-        r"'U' mode is deprecated",  # sphinx io
         r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
-        r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
-        r"'contextfunction' is renamed to 'pass_context'",  # Jinja
+        r"distutils Version",  # distutils
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
         'ignore', message=".*" + key, category=DeprecationWarning)
@@ -189,8 +187,15 @@ html_favicon = '_static/favicon.ico'
 html_theme_options = {
   "logo_link": "index",
   "github_url": "https://github.com/scipy/scipy",
-  "navbar_start": ["navbar-logo", "version"],
+  "navbar_end": ["version-switcher", "navbar-icon-links"],
+  "switcher": {
+      "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
+      "version_match": version,
+  }
 }
+
+if 'dev' in version:
+    html_theme_options["switcher"]["version_match"] = "dev"
 
 if 'versionwarning' in tags:
     # Specific to docs.scipy.org deployment.
@@ -200,14 +205,9 @@ if 'versionwarning' in tags:
            'script.src = "/doc/_static/versionwarning.js";\n'
            'document.head.appendChild(script);');
     html_context = {
-        'VERSIONCHECK_JS': src,
-        'versionwarning': True
+        'VERSIONCHECK_JS': src
     }
     html_js_files = ['versioncheck.js']
-else:
-    html_context = {
-        'versionwarning': False
-    }
 
 html_title = "%s v%s Manual" % (project, version)
 html_static_path = ['_static']

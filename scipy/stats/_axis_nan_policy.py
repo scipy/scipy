@@ -331,12 +331,14 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         raise an error. This argument prevents the error from being raised when
         input is not 1D and instead places a NaN in the corresponding element
         of the result.
-    n_outputs : int, default: 2
+    n_outputs : int or callable, default: 2
         The number of outputs produced by the function given 1d sample(s). For
         example, hypothesis tests that return a namedtuple or result object
         with attributes ``statistic`` and ``pvalue`` use the default
         ``n_outputs=2``; summary statistics with scalar output use
-        ``n_outputs=1``.
+        ``n_outputs=1``. Alternatively, may be a callable that accepts a
+        dictionary of arguments passed into the wrapped function and returns
+        the number of outputs corresponding with those arguments.
     kwd_samples : sequence, default: []
         The names of keyword parameters that should be treated as samples. For
         example, `gmean` accepts as its first argument a sample `a` but
@@ -397,6 +399,11 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 n_samp = n_samples(kwds)
             else:
                 n_samp = n_samples or len(args)
+
+            # get the number of outputs
+            n_out = n_outputs  # rename to avoid UnboundLocalError
+            if callable(n_out):
+                n_out = n_out(kwds)
 
             # If necessary, rearrange function signature: accept other samples
             # as positional args right after the first n_samp args
@@ -464,7 +471,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # currently the hypothesis tests this is applied to do not
                 # propagate nans in a sensible way
                 if any(contains_nans) and nan_policy == 'propagate':
-                    res = np.full(n_outputs, np.nan)
+                    res = np.full(n_out, np.nan)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
@@ -492,7 +499,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             # backward compatibility.
             empty_output = _check_empty_inputs(samples, axis)
             if empty_output is not None:
-                res = [empty_output.copy() for i in range(n_outputs)]
+                res = [empty_output.copy() for i in range(n_out)]
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
 
@@ -520,23 +527,21 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return tuple_to_result(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_out, np.nan)
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             # Addresses nan_policy == "propagate"
             elif contains_nan and nan_policy == 'propagate':
                 def hypotest_fun(x):
                     if np.isnan(x).any():
-                        res = np.full(n_outputs, np.nan)
-                        return tuple_to_result(*res)
+                        return np.full(n_out, np.nan)
+
                     samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return tuple_to_result(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_out, np.nan)
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             else:
                 def hypotest_fun(x):
@@ -544,13 +549,11 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return tuple_to_result(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_out, np.nan)
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             x = np.moveaxis(x, axis, 0)
             res = np.apply_along_axis(hypotest_fun, axis=0, arr=x)
-            res = result_to_tuple(res)
             res = _add_reduced_axes(res, reduced_axes, keepdims)
             return tuple_to_result(*res)
 

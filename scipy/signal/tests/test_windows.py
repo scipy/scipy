@@ -22,7 +22,6 @@ window_funcs = [
     ('blackmanharris', ()),
     ('flattop', ()),
     ('bartlett', ()),
-    ('hanning', ()),
     ('barthann', ()),
     ('hamming', ()),
     ('kaiser', (1,)),
@@ -703,8 +702,6 @@ def test_windowfunc_basics():
         window = getattr(windows, window_name)
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
-            if window_name in ('hanning',):
-                sup.filter(DeprecationWarning)
             # Check symmetry for odd and even lengths
             w1 = window(8, *params, sym=True)
             w2 = window(7, *params, sym=False)
@@ -772,7 +769,6 @@ def test_not_needs_params():
                    'cosine',
                    'flattop',
                    'hamming',
-                   'hanning',
                    'nuttall',
                    'parzen',
                    'taylor',

@@ -172,7 +172,7 @@ def freqs(b, a, worN=200, plot=None):
     >>> plt.semilogx(w, 20 * np.log10(abs(h)))
     >>> plt.xlabel('Frequency')
     >>> plt.ylabel('Amplitude response [dB]')
-    >>> plt.grid()
+    >>> plt.grid(True)
     >>> plt.show()
 
     """
@@ -247,7 +247,7 @@ def freqs_zpk(z, p, k, worN=200):
     >>> plt.semilogx(w, 20 * np.log10(abs(h)))
     >>> plt.xlabel('Frequency')
     >>> plt.ylabel('Amplitude response [dB]')
-    >>> plt.grid()
+    >>> plt.grid(True)
     >>> plt.show()
 
     """
@@ -378,7 +378,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=Fal
     >>> angles = np.unwrap(np.angle(h))
     >>> ax2.plot(w, angles, 'g')
     >>> ax2.set_ylabel('Angle (radians)', color='g')
-    >>> ax2.grid()
+    >>> ax2.grid(True)
     >>> ax2.axis('tight')
     >>> plt.show()
 
@@ -553,7 +553,7 @@ def freqz_zpk(z, p, k, worN=512, whole=False, fs=2*pi):
     >>> ax1.plot(w, 20 * np.log10(abs(h)), 'b')
     >>> ax1.set_ylabel('Amplitude [dB]', color='b')
     >>> ax1.set_xlabel('Frequency [Hz]')
-    >>> ax1.grid()
+    >>> ax1.grid(True)
 
     >>> ax2 = ax1.twinx()
     >>> angles = np.unwrap(np.angle(h))
@@ -1770,7 +1770,7 @@ def lp2lp(b, a, wo=1.0):
     >>> plt.plot(w, mag_lp, label='Lowpass')
     >>> plt.plot(w, mag_lp2, label='Transformed Lowpass')
     >>> plt.semilogx()
-    >>> plt.grid()
+    >>> plt.grid(True)
     >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Magnitude [dB]')
     >>> plt.legend()
@@ -1844,7 +1844,7 @@ def lp2hp(b, a, wo=1.0):
     >>> plt.plot(w, mag_lp, label='Lowpass')
     >>> plt.plot(w, mag_hp, label='Highpass')
     >>> plt.semilogx()
-    >>> plt.grid()
+    >>> plt.grid(True)
     >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Magnitude [dB]')
     >>> plt.legend()
@@ -1930,7 +1930,7 @@ def lp2bp(b, a, wo=1.0, bw=1.0):
     >>> plt.plot(w, mag_lp, label='Lowpass')
     >>> plt.plot(w, mag_bp, label='Bandpass')
     >>> plt.semilogx()
-    >>> plt.grid()
+    >>> plt.grid(True)
     >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Magnitude [dB]')
     >>> plt.legend()
@@ -2018,7 +2018,7 @@ def lp2bs(b, a, wo=1.0, bw=1.0):
     >>> plt.plot(w, mag_lp, label='Lowpass')
     >>> plt.plot(w, mag_bs, label='Bandstop')
     >>> plt.semilogx()
-    >>> plt.grid()
+    >>> plt.grid(True)
     >>> plt.xlabel('Frequency [rad/s]')
     >>> plt.ylabel('Magnitude [dB]')
     >>> plt.legend()
@@ -2103,7 +2103,7 @@ def bilinear(b, a, fs=1.0):
     >>> plt.legend()
     >>> plt.xlabel('Frequency [Hz]')
     >>> plt.ylabel('Magnitude [dB]')
-    >>> plt.grid()
+    >>> plt.grid(True)
     """
     fs = float(fs)
     a, b = map(atleast_1d, (a, b))
@@ -2259,13 +2259,13 @@ def iirdesign(wp, ws, gpass, gstop, analog=False, ftype='ellip', output='ba',
     >>> ax1.plot(w, 20 * np.log10(abs(h)), 'b')
     >>> ax1.set_ylabel('Amplitude [dB]', color='b')
     >>> ax1.set_xlabel('Frequency [rad/sample]')
-    >>> ax1.grid()
+    >>> ax1.grid(True)
     >>> ax1.set_ylim([-120, 20])
     >>> ax2 = ax1.twinx()
     >>> angles = np.unwrap(np.angle(h))
     >>> ax2.plot(w, angles, 'g')
     >>> ax2.set_ylabel('Angle (radians)', color='g')
-    >>> ax2.grid()
+    >>> ax2.grid(True)
     >>> ax2.axis('tight')
     >>> ax2.set_ylim([-6, 1])
     >>> nticks = 8
@@ -2625,7 +2625,7 @@ def bilinear_zpk(z, p, k, fs):
     >>> plt.legend()
     >>> plt.xlabel('Frequency [Hz]')
     >>> plt.ylabel('Magnitude [dB]')
-    >>> plt.grid()
+    >>> plt.grid(True)
     """
     z = atleast_1d(z)
     p = atleast_1d(p)
@@ -4933,14 +4933,14 @@ def iirnotch(w0, Q, fs=2.0):
     >>> ax[0].set_ylabel("Amplitude (dB)", color='blue')
     >>> ax[0].set_xlim([0, 100])
     >>> ax[0].set_ylim([-25, 10])
-    >>> ax[0].grid()
+    >>> ax[0].grid(True)
     >>> ax[1].plot(freq, np.unwrap(np.angle(h))*180/np.pi, color='green')
     >>> ax[1].set_ylabel("Angle (degrees)", color='green')
     >>> ax[1].set_xlabel("Frequency (Hz)")
     >>> ax[1].set_xlim([0, 100])
     >>> ax[1].set_yticks([-90, -60, -30, 0, 30, 60, 90])
     >>> ax[1].set_ylim([-90, 90])
-    >>> ax[1].grid()
+    >>> ax[1].grid(True)
     >>> plt.show()
     """
 
@@ -5013,14 +5013,14 @@ def iirpeak(w0, Q, fs=2.0):
     >>> ax[0].set_ylabel("Amplitude (dB)", color='blue')
     >>> ax[0].set_xlim([0, 500])
     >>> ax[0].set_ylim([-50, 10])
-    >>> ax[0].grid()
+    >>> ax[0].grid(True)
     >>> ax[1].plot(freq, np.unwrap(np.angle(h))*180/np.pi, color='green')
     >>> ax[1].set_ylabel("Angle (degrees)", color='green')
     >>> ax[1].set_xlabel("Frequency (Hz)")
     >>> ax[1].set_xlim([0, 500])
     >>> ax[1].set_yticks([-90, -60, -30, 0, 30, 60, 90])
     >>> ax[1].set_ylim([-90, 90])
-    >>> ax[1].grid()
+    >>> ax[1].grid(True)
     >>> plt.show()
     """
 
@@ -5161,7 +5161,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     References
     ----------
     .. [1] Sophocles J. Orfanidis, "Introduction To Signal Processing",
-           Prentice-Hall, 1996
+           Prentice-Hall, 1996, ch. 11, "Digital Filter Design"
 
     Examples
     --------
@@ -5183,20 +5183,20 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     >>> # To avoid divide by zero when graphing
     >>> response[response == 0] = 1e-20
     >>> # Plot
-    >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6))
+    >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
     >>> ax[0].plot(freq, 20*np.log10(abs(response)), color='blue')
     >>> ax[0].set_title("Frequency Response")
     >>> ax[0].set_ylabel("Amplitude (dB)", color='blue')
     >>> ax[0].set_xlim([0, 100])
     >>> ax[0].set_ylim([-30, 10])
-    >>> ax[0].grid()
-    >>> ax[1].plot(freq, np.unwrap(np.angle(h))*180/np.pi, color='green')
+    >>> ax[0].grid(True)
+    >>> ax[1].plot(freq, (np.angle(h)*180/np.pi+180)%360 - 180, color='green')
     >>> ax[1].set_ylabel("Angle (degrees)", color='green')
     >>> ax[1].set_xlabel("Frequency (Hz)")
     >>> ax[1].set_xlim([0, 100])
     >>> ax[1].set_yticks([-90, -60, -30, 0, 30, 60, 90])
     >>> ax[1].set_ylim([-90, 90])
-    >>> ax[1].grid()
+    >>> ax[1].grid(True)
     >>> plt.show()
 
     Design and plot peaking comb filter at 250 Hz for a
@@ -5214,20 +5214,20 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     >>> # To avoid divide by zero when graphing
     >>> response[response == 0] = 1e-20
     >>> # Plot
-    >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6))
+    >>> fig, ax = plt.subplots(2, 1, figsize=(8, 6), sharex=True)
     >>> ax[0].plot(freq, 20*np.log10(np.maximum(abs(h), 1e-5)), color='blue')
     >>> ax[0].set_title("Frequency Response")
     >>> ax[0].set_ylabel("Amplitude (dB)", color='blue')
     >>> ax[0].set_xlim([0, 500])
     >>> ax[0].set_ylim([-80, 10])
-    >>> ax[0].grid()
-    >>> ax[1].plot(freq, np.unwrap(np.angle(h))*180/np.pi, color='green')
+    >>> ax[0].grid(True)
+    >>> ax[1].plot(freq, (np.angle(h)*180/np.pi+180)%360 - 180, color='green')
     >>> ax[1].set_ylabel("Angle (degrees)", color='green')
     >>> ax[1].set_xlabel("Frequency (Hz)")
     >>> ax[1].set_xlim([0, 500])
     >>> ax[1].set_yticks([-90, -60, -30, 0, 30, 60, 90])
     >>> ax[1].set_ylim([-90, 90])
-    >>> ax[1].grid()
+    >>> ax[1].grid(True)
     >>> plt.show()
     """
 
@@ -5238,19 +5238,18 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
 
     # Check for invalid cutoff frequency or filter type
     ftype = ftype.lower()
-    filter_types = ['notch', 'peak']
     if not 0 < w0 < fs / 2:
         raise ValueError("w0 must be between 0 and {}"
                          " (nyquist), but given {}.".format(fs / 2, w0))
     if np.round(fs % w0) != 0:
         raise ValueError('fs must be divisible by w0.')
-    if ftype not in filter_types:
+    if ftype not in ('notch', 'peak'):
         raise ValueError('ftype must be either notch or peak.')
 
     # Compute the order of the filter
     N = int(fs // w0)
 
-    # Compute frequency in radians and filter bandwith
+    # Compute frequency in radians and filter bandwidth
     # Eq. 11.3.1 (p. 574) from reference [1]
     w0 = (2 * np.pi * w0) / fs
     w_delta = w0 / Q
@@ -5259,9 +5258,9 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     # Compute -3dB attenuation
     # Eqs. 11.4.1 and 11.4.2 (p. 582) from reference [1]
     if ftype == 'notch':
-        G0, G = [1, 0]
+        G0, G = 1, 0
     elif ftype == 'peak':
-        G0, G = [0, 1]
+        G0, G = 0, 1
     GB = 1 / np.sqrt(2)
 
     # Compute beta
@@ -5279,18 +5278,20 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     # b - cz^-N or b + cz^-N
     b = np.zeros(N + 1)
     b[0] = bx
-    b[-1] = cx
     if ftype == 'notch':
         b[-1] = -cx
+    else:
+        b[-1] = +cx
 
     # Compute denominator coefficients
     # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
     # 1 - az^-N or 1 + az^-N
     a = np.zeros(N + 1)
     a[0] = 1
-    a[-1] = ax
     if ftype == 'notch':
         a[-1] = -ax
+    else:
+        a[-1] = +ax
 
     return b, a
 
@@ -5298,7 +5299,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
 def _hz_to_erb(hz):
     """
     Utility for converting from frequency (Hz) to the
-    Equivalent Rectangular Bandwith (ERB) scale
+    Equivalent Rectangular Bandwidth (ERB) scale
     ERB = frequency / EarQ + minBW
     """
     EarQ = 9.26449

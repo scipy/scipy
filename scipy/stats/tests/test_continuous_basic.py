@@ -149,11 +149,10 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
 
     rng = np.random.RandomState(765456)
     rvs = distfn.rvs(size=sn, *arg, random_state=rng)
-    sm = rvs.mean()
-    sv = rvs.var()
     m, v = distfn.stats(*arg)
 
-    check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, distname + 'sample mean test')
+    if distname not in {'laplace_asymmetric'}:
+        check_sample_meanvar_(m, v, rvs)
     check_cdf_ppf(distfn, arg, distname)
     check_sf_isf(distfn, arg, distname)
     check_pdf(distfn, arg, distname)
@@ -250,8 +249,8 @@ def test_levy_stable_random_state_property():
 
 
 def cases_test_moments():
-    fail_normalization = set(['vonmises'])
-    fail_higher = set(['vonmises', 'ncf'])
+    fail_normalization = set()
+    fail_higher = set(['ncf'])
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
@@ -288,19 +287,23 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
     with npt.suppress_warnings() as sup:
         sup.filter(IntegrationWarning,
                    "The integral is probably divergent, or slowly convergent.")
+        sup.filter(IntegrationWarning,
+                   "The maximum number of subdivisions.")
+
         if is_xfailing:
             sup.filter(IntegrationWarning)
 
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
-        if normalization_ok:
-            check_normalization(distfn, arg, distname)
+        with np.errstate(all="ignore"):
+            if normalization_ok:
+                check_normalization(distfn, arg, distname)
 
-        if higher_ok:
-            check_mean_expect(distfn, arg, m, distname)
-            check_skew_expect(distfn, arg, m, v, s, distname)
-            check_var_expect(distfn, arg, m, v, distname)
-            check_kurt_expect(distfn, arg, m, v, k, distname)
+            if higher_ok:
+                check_mean_expect(distfn, arg, m, distname)
+                check_skew_expect(distfn, arg, m, v, s, distname)
+                check_var_expect(distfn, arg, m, v, distname)
+                check_kurt_expect(distfn, arg, m, v, k, distname)
 
         check_moment(distfn, arg, m, v, distname)
 
@@ -466,38 +469,31 @@ def test_method_of_moments():
     npt.assert_almost_equal(loc+scale, b, decimal=4)
 
 
-def check_sample_meanvar_(distfn, arg, m, v, sm, sv, sn, msg):
-    # this did not work, skipped silently by nose
-    if np.isfinite(m):
-        check_sample_mean(sm, sv, sn, m)
-    if np.isfinite(v):
-        check_sample_var(sv, sn, v)
+def check_sample_meanvar_(popmean, popvar, sample):
+    if np.isfinite(popmean):
+        check_sample_mean(sample, popmean)
+    if np.isfinite(popvar):
+        check_sample_var(sample, popvar)
 
 
-def check_sample_mean(sm, v, n, popmean):
-    # from stats._stats_py.ttest_1samp(a, popmean):
-    # Calculates the t-obtained for the independent samples T-test on ONE group
-    # of scores a, given a population mean.
-    #
-    # Returns: t-value, two-tailed prob
-    df = n-1
-    svar = ((n-1)*v) / float(df)    # looks redundant
-    t = (sm-popmean) / np.sqrt(svar*(1.0/n))
-    prob = betainc(0.5*df, 0.5, df/(df + t*t))
-
-    # return t,prob
-    npt.assert_(prob > 0.01, 'mean fail, t,prob = %f, %f, m, sm=%f,%f' %
-                (t, prob, popmean, sm))
+def check_sample_mean(sample, popmean):
+    # Checks for unlikely difference between sample mean and population mean
+    prob = stats.ttest_1samp(sample, popmean).pvalue
+    assert prob > 0.01
 
 
-def check_sample_var(sv, n, popvar):
-    # two-sided chisquare test for sample variance equal to
-    # hypothesized variance
-    df = n-1
-    chi2 = (n - 1)*sv/popvar
-    pval = stats.distributions.chi2.sf(chi2, df) * 2
-    npt.assert_(pval > 0.01, 'var fail, t, pval = %f, %f, v, sv=%f, %f' %
-                (chi2, pval, popvar, sv))
+def check_sample_var(sample, popvar):
+    # check that population mean lies within the CI bootstrapped from the
+    # sample. This used to be a chi-squared test for variance, but there were
+    # too many false positives
+    res = stats.bootstrap(
+        (sample,),
+        lambda x, axis: x.var(ddof=1, axis=axis),
+        confidence_level=0.995,
+    )
+    conf = res.confidence_interval
+    low, high = conf.low, conf.high
+    assert low <= popvar <= high
 
 
 def check_cdf_ppf(distfn, arg, msg):
@@ -706,6 +702,18 @@ def test_methods_with_lists(method, distname, args):
                         rtol=1e-14, atol=5e-14)
 
 
+@pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
+                                    'sf', 'logsf', 'ppf', 'isf'])
+def test_gilbrat_deprecation(method):
+    expected = getattr(stats.gibrat, method)(1)
+    with pytest.warns(
+        DeprecationWarning,
+        match=rf"\s*`gilbrat\.{method}` is deprecated,.*",
+    ):
+        result = getattr(stats.gilbrat, method)(1)
+    assert result == expected
+
+
 def test_burr_fisk_moment_gh13234_regression():
     vals0 = stats.burr.moment(1, 5, 4)
     assert isinstance(vals0, float)
@@ -870,3 +878,16 @@ def test_frozen_attributes():
     frozen_norm = stats.norm()
     assert isinstance(frozen_norm, rv_continuous_frozen)
     delattr(stats.norm, 'pmf')
+
+
+def test_skewnorm_pdf_gh16038():
+    rng = np.random.default_rng(0)
+    x, a = -np.inf, 0
+    npt.assert_equal(stats.skewnorm.pdf(x, a), stats.norm.pdf(x))
+    x, a = rng.random(size=(3, 3)), rng.random(size=(3, 3))
+    mask = rng.random(size=(3, 3)) < 0.5
+    a[mask] = 0
+    x_norm = x[mask]
+    res = stats.skewnorm.pdf(x, a)
+    npt.assert_equal(res[mask], stats.norm.pdf(x_norm))
+    npt.assert_equal(res[~mask], stats.skewnorm.pdf(x[~mask], a[~mask]))
