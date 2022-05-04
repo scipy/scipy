@@ -61,7 +61,7 @@ Once you have authenticated to Gitpod through GitHub, you can install the `Gitpo
 
         python dev.py
 
-This command make use of Meson, for more details on how this affects your workflow migrating from ``distutils`` check the :ref:`meson` section in the Developer documentation. 
+This command make use of Meson, for more details on how this affects your workflow migrating from ``distutils`` check the :ref:`meson` section in the Developer documentation.
 
    .. note::
 
@@ -76,12 +76,12 @@ Your workspace will look similar to the image below:
 .. image:: ../../_static/gitpod/gitpod-workspace.png
     :alt: Gitpod workspace showing the VSCode editor - some parts are highlighted: 1- Python interpreter, 2- Git branch, 3- GitHub Pull Requests extension on the side bar 4- VsCode Marketplace 5- Current directory
 
-.. note::  
+.. note::
     By default VSCode initialises with a light theme, you can change to a dark theme by with the keyboard shortcut :kbd:`Cmd-K Cmd-T` in Mac or :kbd:`Ctrl-K Ctrl-T` in Linux and Windows.
 
 We have marked some important sections in the editor:
 
-#. Your current Python interpreter - by default, the ``scipy-meson`` is marked as ``base`` on the status bar, but it should be displayed as ``scipy-meson`` on your terminal. You do not need to activate the conda environment as this will always be activated for you.
+#. Your current Python interpreter - by default, the ``scipy-dev`` is marked as ``base`` on the status bar, but it should be displayed as ``scipy-dev`` on your terminal. You do not need to activate the conda environment as this will always be activated for you.
 #. Your current branch is always displayed in the status bar. You can also use this button to change or create branches.
 #. GitHub Pull Requests extension - you can use this to work with Pull Requests from your workspace.
 #. Marketplace extensions - we have added some essential extensions to the SciPy Gitpod. Still, you can also install other extensions or syntax highlighting themes for your user, and these will be preserved for you.
@@ -131,7 +131,7 @@ Option 2: Using the rst extension
 
 A quick and easy way to see live changes in a ``.rst`` file as you work on it uses the rst extension with docutils.
 
-.. note:: 
+.. note::
     This will generate a simple live preview of the document without the ``html`` theme, and some backlinks might not be added correctly. But it is an easy and lightweight way to get instant feedback on your work.
 
 #. Open any of the source documentation files located in ``doc/source`` in the editor.
