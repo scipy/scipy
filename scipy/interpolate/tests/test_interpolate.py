@@ -2756,7 +2756,13 @@ class TestRegularGridInterpolator:
         x = rng.random(size=100)*4
         i = rng.random(size=100) > 0.5
         x[i] = np.nan
-        res = f(x)
+        with np.errstate(invalid='ignore'):
+            # out-of-bounds comparisons, `out_of_bounds += x < grid[0]`,
+            # generate numpy warnings if `x` contains nans.
+            # These warnings should propagate to user (since `x` is user
+            # input) and we simply filter them out.
+            res = f(x)
+
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], f(x[~i]))
 
@@ -2786,7 +2792,13 @@ class TestRegularGridInterpolator:
         x[i1] = np.nan
         y[i2] = np.nan
         z = np.array([x, y]).T
-        res = interp(z)
+        with np.errstate(invalid='ignore'):
+            # out-of-bounds comparisons, `out_of_bounds += x < grid[0]`,
+            # generate numpy warnings if `x` contains nans.
+            # These warnings should propagate to user (since `x` is user
+            # input) and we simply filter them out.
+            res = interp(z)
+
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], interp(z[~i]))
 
