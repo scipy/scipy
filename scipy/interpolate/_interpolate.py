@@ -2611,6 +2611,9 @@ class RegularGridInterpolator:
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi_shape[-1])
 
+        # find nans in input
+        nans = np.any(np.isnan(xi), axis=-1)
+
         if self.bounds_error:
             for i, p in enumerate(xi.T):
                 if not np.logical_and(np.all(self.grid[i][0] <= p),
@@ -2636,6 +2639,9 @@ class RegularGridInterpolator:
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
 
+        # f(nan) = nan, if any
+        if np.any(nans):
+            result[nans] = np.nan
         return result.reshape(xi_shape[:-1] + self.values.shape[ndim:])
 
     def _evaluate_linear(self, indices, norm_distances, out_of_bounds):
