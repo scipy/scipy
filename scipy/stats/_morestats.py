@@ -3027,28 +3027,20 @@ WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'],
 
 
 def wilcoxon_result_unpacker(res):
-    if res.zstatistic is None:
-        return res.statistic, res.pvalue
     return res.statistic, res.pvalue, res.zstatistic
 
 
 def wilcoxon_result_object(statistic, pvalue, zstatistic=None):
+    if np.all(np.isnan(zstatistic)):
+        return WilcoxonResult(statistic, pvalue, zstatistic=None)
     return WilcoxonResult(statistic, pvalue, zstatistic=zstatistic)
-
-
-def wilcoxon_outputs(kwds):
-    method = kwds.get('method', 'auto')
-    x = kwds.get('x')
-    if method == 'exact' or (method == 'auto' and len(x) <= 50):
-        return 2
-    return 3
 
 
 @_rename_parameter("mode", "method")
 @_axis_nan_policy_factory(
     wilcoxon_result_object, paired=True,
     n_samples=lambda kwds: 2 if kwds.get('y', None) is not None else 1,
-    result_to_tuple=wilcoxon_result_unpacker, n_outputs=wilcoxon_outputs,
+    result_to_tuple=wilcoxon_result_unpacker, n_outputs=3,
 )
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
              alternative="two-sided", method='auto'):
@@ -3342,7 +3334,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             prob = np.sum(pmf[:r_plus + 1])
         prob = np.clip(prob, 0, 1)
 
-    return WilcoxonResult(T, prob, zstatistic=None if mode == 'exact' else z)
+    return WilcoxonResult(T, prob, zstatistic=np.nan if mode == 'exact' else z)
 
 
 def median_test(*samples, ties='below', correction=True, lambda_=1,
