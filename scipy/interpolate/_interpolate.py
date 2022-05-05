@@ -2352,10 +2352,10 @@ class RegularGridInterpolator:
     """
     Interpolation on a regular or rectilinear grid in arbitrary dimensions.
 
-    The data must be defined on a rectilinear grid; that is, a rectangular grid 
-    with even or uneven spacing. Linear, nearest-neighbor, spline interpolations 
-    are supported. After setting up the interpolator object, the interpolation 
-    method may be chosen at each evaluation.
+    The data must be defined on a rectilinear grid; that is, a rectangular
+    grid with even or uneven spacing. Linear, nearest-neighbor, spline
+    interpolations are supported. After setting up the interpolator object,
+    the interpolation method may be chosen at each evaluation.
 
     Parameters
     ----------
@@ -2748,9 +2748,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     """
     Multidimensional interpolation on regular or rectilinear grids.
 
-    Strictly speaking, not all regular grids are supported - this function works 
-    on *rectilinear* grids, that is, a rectangular grid with even or uneven 
-    spacing.
+    Strictly speaking, not all regular grids are supported - this function
+    works on *rectilinear* grids, that is, a rectangular grid with even or
+    uneven spacing.
 
     Parameters
     ----------
@@ -2818,7 +2818,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                            in N dimensions
 
     RegularGridInterpolator : Linear and nearest-neighbor Interpolation on a
-                              regular or rectilinear grid in arbitrary 
+                              regular or rectilinear grid in arbitrary
                               dimensions
 
     RectBivariateSpline : Bivariate spline approximation over a rectangular mesh
