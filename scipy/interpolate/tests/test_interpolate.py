@@ -2853,6 +2853,47 @@ class TestRegularGridInterpolator:
             interp = interpolator(xy, z)
             interp(XY)
 
+    def test_descending_points(self):
+        def val_func_3d(x, y, z):
+            return 2 * x ** 3 + 3 * y ** 2 - z
+
+        x = np.linspace(1, 4, 11)
+        y = np.linspace(4, 7, 22)
+        z = np.linspace(7, 9, 33)
+        points = (x, y, z)
+        values = val_func_3d(
+            *np.meshgrid(*points, indexing='ij', sparse=True))
+        my_interpolating_function = RegularGridInterpolator(points,
+                                                            values)
+        pts = np.array([[2.1, 6.2, 8.3], [3.3, 5.2, 7.1]])
+        correct_result = my_interpolating_function(pts)
+
+        # descending data
+        x_descending = x[::-1]
+        y_descending = y[::-1]
+        z_descending = z[::-1]
+        points_shuffled = (x_descending, y_descending, z_descending)
+        values_shuffled = val_func_3d(
+            *np.meshgrid(*points_shuffled, indexing='ij', sparse=True))
+        my_interpolating_function = RegularGridInterpolator(
+            points_shuffled, values_shuffled)
+        test_result = my_interpolating_function(pts)
+
+        assert_array_equal(correct_result, test_result)
+
+    def test_invalid_points_order(self):
+        def val_func_2d(x, y):
+            return 2 * x ** 3 + 3 * y ** 2
+
+        x = np.array([.5, 2., 0., 4., 5.5])  # not ascending or descending
+        y = np.array([.5, 2., 3., 4., 5.5])
+        points = (x, y)
+        values = val_func_2d(*np.meshgrid(*points, indexing='ij',
+                                          sparse=True))
+        match = "must be strictly ascending or descending"
+        with pytest.raises(ValueError, match=match):
+            RegularGridInterpolator(points, values)
+
 
 class MyValue:
     """
@@ -3099,3 +3140,41 @@ class TestInterpN:
                       bounds_error=False, fill_value=None)
 
         assert_allclose(res, wanted, atol=1e-15)
+
+    def test_descending_points(self):
+        def value_func_4d(x, y, z, a):
+            return 2 * x ** 3 + 3 * y ** 2 - z - a
+
+        x1 = np.array([0, 1, 2, 3])
+        x2 = np.array([0, 10, 20, 30])
+        x3 = np.array([0, 10, 20, 30])
+        x4 = np.array([0, .1, .2, .30])
+        points = (x1, x2, x3, x4)
+        values = value_func_4d(
+            *np.meshgrid(*points, indexing='ij', sparse=True))
+        pts = (0.1, 0.3, np.transpose(np.linspace(0, 30, 4)),
+               np.linspace(0, 0.3, 4))
+        correct_result = interpn(points, values, pts)
+
+        x1_descend = x1[::-1]
+        x2_descend = x2[::-1]
+        x3_descend = x3[::-1]
+        x4_descend = x4[::-1]
+        points_shuffled = (x1_descend, x2_descend, x3_descend, x4_descend)
+        values_shuffled = value_func_4d(
+            *np.meshgrid(*points_shuffled, indexing='ij', sparse=True))
+        test_result = interpn(points_shuffled, values_shuffled, pts)
+
+        assert_array_equal(correct_result, test_result)
+
+    def test_invalid_points_order(self):
+        x = np.array([.5, 2., 0., 4., 5.5])  # not ascending or descending
+        y = np.array([.5, 2., 3., 4., 5.5])
+        z = np.array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
+                      [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
+        xi = np.array([[1, 2.3, 6.3, 0.5, 3.3, 1.2, 3],
+                       [1, 3.3, 1.2, -4.0, 5.0, 1.0, 3]]).T
+
+        match = "must be strictly ascending or descending"
+        with pytest.raises(ValueError, match=match):
+            interpn((x, y), z, xi)

@@ -2348,6 +2348,27 @@ class NdPPoly:
         return c
 
 
+def _make_points_and_values_ascending(points, values):
+    # create ascending points
+    sorted_indexes = tuple(np.argsort(point) for point in points)
+    points_asc = tuple(
+        np.asarray(point)[sort_index] for (point, sort_index) in
+        zip(points, sorted_indexes))
+
+    # create ascending values
+    ordered_indexes = tuple([*range(len(x))] for x in sorted_indexes)
+    ordered_indexes_array = np.array(
+        [i.flatten() for i in np.meshgrid(*ordered_indexes)]).transpose()
+    sorted_indexes_array = np.array(
+        [i.flatten() for i in np.meshgrid(*sorted_indexes)]).transpose()
+
+    values_asc = np.zeros_like(np.asarray(values))
+    for o, s in zip(ordered_indexes_array, sorted_indexes_array):
+        values_asc[tuple(o)] = values[tuple(s)]
+
+    return points_asc, values_asc
+
+
 class RegularGridInterpolator:
     """
     Interpolation on a regular grid in arbitrary dimensions.
@@ -2360,7 +2381,9 @@ class RegularGridInterpolator:
     Parameters
     ----------
     points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
-        The points defining the regular grid in n dimensions.
+        The points defining the regular grid in n dimensions. The points in
+        each dimension (i.e. every elements of the points tuple) must be
+        strictly ascending or descending.
 
     values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions. Complex data can be
@@ -2548,9 +2571,16 @@ class RegularGridInterpolator:
                                  "of a type compatible with values")
 
         for i, p in enumerate(points):
-            if not np.all(np.diff(p) > 0.):
-                raise ValueError("The points in dimension %d must be strictly "
-                                 "ascending" % i)
+            diff_p = np.diff(p)
+            if not np.all(diff_p > 0.):
+                if np.all(diff_p < 0.):
+                    # input is descending, so make it ascending
+                    points, values = _make_points_and_values_ascending(
+                        points, values)
+                else:
+                    raise ValueError(
+                        "The points in dimension %d must be strictly "
+                        "ascending or descending" % i)
             if not np.asarray(p).ndim == 1:
                 raise ValueError("The points in dimension %d must be "
                                  "1-dimensional" % i)
@@ -2754,7 +2784,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     Parameters
     ----------
     points : tuple of ndarray of float, with shapes (m1, ), ..., (mn, )
-        The points defining the regular grid in n dimensions.
+        The points defining the regular grid in n dimensions. The points in
+        each dimension (i.e. every elements of the points tuple) must be
+        strictly ascending or descending.
 
     values : array_like, shape (m1, ..., mn, ...)
         The data on the regular grid in n dimensions. Complex data can be
@@ -2848,9 +2880,15 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     # sanity check input grid
     for i, p in enumerate(points):
-        if not np.all(np.diff(p) > 0.):
-            raise ValueError("The points in dimension %d must be strictly "
-                             "ascending" % i)
+        diff_p = np.diff(p)
+        if not np.all(diff_p > 0.):
+            if np.all(diff_p < 0.):
+                # input is descending, so make it ascending
+                points, values = _make_points_and_values_ascending(points,
+                                                                   values)
+            else:
+                raise ValueError("The points in dimension %d must be strictly "
+                                 "ascending or descending" % i)
         if not np.asarray(p).ndim == 1:
             raise ValueError("The points in dimension %d must be "
                              "1-dimensional" % i)
