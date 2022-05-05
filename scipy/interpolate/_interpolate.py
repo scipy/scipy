@@ -1197,7 +1197,7 @@ class PPoly(_PPolyBase):
 
     def solve(self, y=0., discontinuity=True, extrapolate=None):
         """
-        Find real solutions of the the equation ``pp(x) == y``.
+        Find real solutions of the equation ``pp(x) == y``.
 
         Parameters
         ----------
@@ -1269,7 +1269,7 @@ class PPoly(_PPolyBase):
 
     def roots(self, discontinuity=True, extrapolate=None):
         """
-        Find real roots of the the piecewise polynomial.
+        Find real roots of the piecewise polynomial.
 
         Parameters
         ----------
