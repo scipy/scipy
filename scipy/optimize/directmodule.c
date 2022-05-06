@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
-#include "direct.h"
+#include "directmodule.h"
 #define MY_ALLOC(p, t, n, ret_code) p = (t *) malloc(sizeof(t) * (n)); \
                           if (!(p)) { *ret_code = DIRECT_OUT_OF_MEMORY; }
 #define MY_FREE(p) if (p) free(p)
@@ -81,6 +81,7 @@ PyObject *PyInit__directmodule(void)
     PyObject *m;
 
     m = PyModule_Create(&moduledef);
+    import_array();
 
     return m;
 }

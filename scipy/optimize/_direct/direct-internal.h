@@ -1,7 +1,7 @@
 #ifndef DIRECT_INTERNAL_H
 #define DIRECT_INTERNAL_H
 
-#include "../direct.h"
+#include "../directmodule.h"
 
 #include <stdio.h>
 #include <stdlib.h>

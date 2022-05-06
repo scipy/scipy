@@ -96,7 +96,7 @@ def configuration(parent_package='', top_path=None):
 
     sources = ['direct_wrap.c', 'DIRect.c',
                'DIRsubrout.c', 'DIRserial.c']
-    headers = ['direct.h', 'direct-internal.h']
+    headers = ['directmodule.h', 'direct-internal.h']
     config.add_library('_direct_lib',
                        sources=[join('_direct', x) for x in sources],
                        headers=[join('_direct', x) for x in headers],
@@ -104,7 +104,7 @@ def configuration(parent_package='', top_path=None):
                        **numpy_nodepr_api)
 
     config.add_extension('_directmodule',
-                         sources=['direct.c'],
+                         sources=['directmodule.c'],
                          libraries=['_direct_lib'],
                          depends=(sources + headers),
                          **numpy_nodepr_api)
