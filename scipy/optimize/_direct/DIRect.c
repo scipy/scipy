@@ -50,6 +50,7 @@
     FILE *logfile, doublereal *fglobal, doublereal *fglper, doublereal *volper,
     doublereal *sigmaper, PyObject* args, integer *numfunc, integer *numiter, PyObject* callback)
 {
+    PyObject *ret = NULL;
     /* System generated locals */
     integer i__1, i__2;
     doublereal d__1;
@@ -60,7 +61,7 @@
     integer increase;
     doublereal *c__ = 0	/* was [90000][64] */, *f = 0	/*
         was [90000][2] */;
-    integer i__, j, *s = 0	/* was [3000][2] */, t;
+    integer i__, j, *s = 0	/* was [3000][2] */, t = 0;
     doublereal *w = 0;
     doublereal divfactor;
     integer ifeasiblef, iepschange, actmaxdeep;
@@ -95,7 +96,7 @@
        having to move data around manually. */
     #define MAXMEMORY 1073741824
     integer MAXFUNC = *maxf <= 0 ? 101000 : (*maxf + 1000 + *maxf / 2);
-    unsigned long fixed_memory_dim = ((*n) * (sizeof(doublereal) + sizeof(integer)) +
+    integer fixed_memory_dim = ((*n) * (sizeof(doublereal) + sizeof(integer)) +
                                       (sizeof(doublereal) * 2 + sizeof(integer)));
     MAXFUNC = MAXFUNC * fixed_memory_dim > MAXMEMORY ? MAXMEMORY/fixed_memory_dim : MAXFUNC;
     MY_ALLOC(c__, doublereal, MAXFUNC * (*n));
@@ -111,7 +112,7 @@
 
     integer MAXDEEP = *maxt <= 0 ? MAXFUNC/5: *maxt + 1000;
     fixed_memory_dim = (sizeof(doublereal) * 2 + sizeof(integer));
-    unsigned long const_memory = 2 * (sizeof(doublereal) + sizeof(integer));
+    integer const_memory = 2 * (sizeof(doublereal) + sizeof(integer));
     MAXDEEP = MAXDEEP * fixed_memory_dim + const_memory > MAXMEMORY ? (MAXMEMORY - const_memory)/fixed_memory_dim : MAXDEEP;
     MY_ALLOC(anchor, integer, MAXDEEP + 2);
     MY_ALLOC(levels, doublereal, MAXDEEP + 1);
@@ -330,7 +331,6 @@
 /* |                            Start of code.                             | */
 /* +-----------------------------------------------------------------------+ */
 /* +-----------------------------------------------------------------------+ */
-    PyObject *ret = NULL;
     /* Parameter adjustments */
     --u;
     --l;
