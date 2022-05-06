@@ -366,7 +366,13 @@ class TestInterp1D:
         extrapolator = interp1d(self.x10, self.y10, kind='previous',
                                 fill_value='extrapolate')
         assert_allclose(extrapolator([-1., 0, 9, 11]),
-                        [0, 0, 9, 9], rtol=1e-14)
+                        [np.nan, 0, 9, 9], rtol=1e-14)
+
+        # Tests for gh-9591
+        interpolator = interp1d(self.x10, self.y10, kind="previous",
+                                fill_value='extrapolate')
+        assert_allclose(interpolator([-1, -2, 5, 8, 12, 25]),
+                        [np.nan, np.nan, 5, 8, 9, 9])
 
         opts = dict(kind='previous',
                     fill_value='extrapolate',
@@ -386,7 +392,13 @@ class TestInterp1D:
         extrapolator = interp1d(self.x10, self.y10, kind='next',
                                 fill_value='extrapolate')
         assert_allclose(extrapolator([-1., 0, 9, 11]),
-                        [0, 0, 9, 9], rtol=1e-14)
+                        [0, 0, 9, np.nan], rtol=1e-14)
+
+        # Tests for gh-9591
+        interpolator = interp1d(self.x10, self.y10, kind="next",
+                                fill_value='extrapolate')
+        assert_allclose(interpolator([-1, -2, 5, 8, 12, 25]),
+                        [0, 0, 5, 8, np.nan, np.nan])
 
         opts = dict(kind='next',
                     fill_value='extrapolate',
