@@ -300,15 +300,36 @@ class Dirs:
             self.installed = self.build.parent / (self.build.stem + "-install")
         # relative path for site-package with py version
         # i.e. 'lib/python3.10/site-packages'
-        py_lib_path = Path(get_path('platlib')).relative_to(sys.exec_prefix)
-        self.site = self.installed / py_lib_path
+        self.site = self.get_site_packages()
+        self.dist = self.get_dist_packages()
 
-    def add_sys_path(self):
+    def add_sys_path(self, installed_path):
         """Add site dir to sys.path / PYTHONPATH"""
-        site_dir = str(self.site)
+        site_dir = str(installed_path)
         sys.path.insert(0, site_dir)
         os.environ['PYTHONPATH'] = \
             os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+
+    def get_site_packages(self):
+        py_lib_path = Path(get_path('platlib')).relative_to(sys.exec_prefix)
+        return self.installed / py_lib_path
+
+    def get_dist_packages(self):
+        # Hack: fallback to debian based python dist-packages
+        # See https://github.com/scipy/scipy/issues/16054
+        py_version = f"python3.{sys.version_info[1]}"
+        return Path(str(self.site).replace(py_version + "/site-packages",
+                    "python3/dist-packages"))
+
+    def get_installed_path(self):
+        if self.site.exists():
+            return self.site
+        else:
+            dist_dir = self.get_dist_packages()
+            if not dist_dir.exists():
+                raise RuntimeError(f'Expected installation path "{self.site}" or '
+                                   f'"{dist_dir}" does not exist.')
+            return dist_dir
 
 
 @contextlib.contextmanager
@@ -449,7 +470,9 @@ class Build(Task):
         """
         if dirs.installed.exists():
             non_empty = len(os.listdir(dirs.installed))
-            if non_empty and not dirs.site.exists():
+            site_dir = dirs.get_site_packages()
+            dist_dir = dirs.get_dist_packages()
+            if non_empty and not(site_dir.exists() or dist_dir.exists()):
                 raise RuntimeError("Can't install in non-empty directory: "
                                    f"'{dirs.installed}'")
         cmd = ["meson", "install", "-C", args.build_dir]
@@ -568,7 +591,7 @@ class Build(Task):
 
         # add site to sys.path
         if add_path:
-            dirs.add_sys_path()
+            dirs.add_sys_path(dirs.get_installed_path())
 
 
 @cli.cls_cmd('test')
@@ -616,8 +639,9 @@ class Test(Task):
     @classmethod
     def scipy_tests(cls, args, pytest_args):
         dirs = Dirs(args)
-        dirs.add_sys_path()
-        print(f"SciPy from development installed path at: {dirs.site}")
+        installed_path = dirs.get_installed_path()
+        dirs.add_sys_path(installed_path)
+        print(f"SciPy from development installed path at: {installed_path}")
 
         # FIXME: support pos-args with doit
         extra_argv = pytest_args[:] if pytest_args else []
@@ -631,7 +655,7 @@ class Test(Task):
                 shutil.rmtree(dst_dir)
             extra_argv += ['--cov-report=html:' + str(dst_dir)]
             shutil.copyfile(dirs.root / '.coveragerc',
-                            dirs.site / '.coveragerc')
+                            installed_path / '.coveragerc')
 
         # convert options to test selection
         if args.submodule:
@@ -643,7 +667,7 @@ class Test(Task):
 
         runner, version, mod_path = get_test_runner(PROJECT_MODULE)
         # FIXME: changing CWD is not a good practice
-        with working_dir(dirs.site):
+        with working_dir(installed_path):
             print("Running tests for {} version:{}, installed at:{}".format(
                         PROJECT_MODULE, version, mod_path))
             # runner verbosity - convert bool to int
@@ -730,9 +754,10 @@ class Bench(Task):
     @classmethod
     def scipy_bench(cls, args):
         dirs = Dirs(args)
-        dirs.add_sys_path()
-        print(f"SciPy from development installed path at: {dirs.site}")
-        with working_dir(dirs.site):
+        installed_path = dirs.get_installed_path()
+        dirs.add_sys_path(installed_path)
+        print(f"SciPy from development installed path at: {installed_path}")
+        with working_dir(installed_path):
             runner, version, mod_path = get_test_runner(PROJECT_MODULE)
             extra_argv = []
             if args.tests:
@@ -859,7 +884,7 @@ class Mypy(Task):
         config = dirs.root / "mypy.ini"
         check_path = PROJECT_MODULE
 
-        with working_dir(dirs.site):
+        with working_dir(dirs.get_installed_path()):
             # By default mypy won't color the output since it isn't being
             # invoked from a tty.
             os.environ['MYPY_FORCE_COLOR'] = '1'
