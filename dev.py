@@ -171,12 +171,12 @@ def main(argv):
 
     global PATH_INSTALLED
     build_dir = Path(args.build_dir)
-    install_dir = args.install_prefix
-    if not install_dir:
-        install_dir = build_dir.parent / (build_dir.stem + "-install")
+    install_prefix = args.install_prefix
+    if not install_prefix:
+        install_prefix = build_dir.parent / (build_dir.stem + "-install")
     PATH_INSTALLED = os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
-        install_dir
+        install_prefix
     )
 
     if args.win_cp_openblas and platform.system() != 'Windows':
