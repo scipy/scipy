@@ -196,7 +196,8 @@ py3.install_sources([
     'interpolate.py',
     'ndgriddata.py',
     'polyint.py',
-    'rbf.py'
+    'rbf.py',
+    '_rgi.py',
   ],
   pure: false,
   subdir: 'scipy/interpolate'
