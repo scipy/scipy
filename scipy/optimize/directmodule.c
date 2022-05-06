@@ -27,6 +27,14 @@ direct(PyObject *self, PyObject *args)
         return NULL;
     }
 
+    /*
+    Logging functionality is disable by default
+    in the Python API. However we still keep it
+    here in C code, so that we don't have
+    to re-implement the whole functionality
+    from scratch once we decide to expose it again
+    by default in Python API.
+    */
     if (disp) {
         logfile = stdout;
     }
@@ -81,6 +89,9 @@ PyObject *PyInit__directmodule(void)
     PyObject *m;
 
     m = PyModule_Create(&moduledef);
+    if (PyErr_Occurred()) {
+        Py_FatalError("can't initialize module _direct_lib");
+    }
     import_array();
 
     return m;
