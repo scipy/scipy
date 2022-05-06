@@ -188,9 +188,9 @@ class RegularGridInterpolator:
            https://pypi.python.org/pypi/regulargrid/
     .. [2] Wikipedia, "Trilinear interpolation",
            https://en.wikipedia.org/wiki/Trilinear_interpolation
-    .. [3] Weiser, Alan, and Sergio E. Zarantonello. "A note on piecewise linear
-           and multilinear table interpolation in many dimensions." MATH.
-           COMPUT. 50.181 (1988): 189-196.
+    .. [3] Weiser, Alan, and Sergio E. Zarantonello. "A note on piecewise
+           linear and multilinear table interpolation in many dimensions."
+           MATH. COMPUT. 50.181 (1988): 189-196.
            https://www.ams.org/journals/mcom/1988-50-181/S0025-5718-1988-0917826-0/S0025-5718-1988-0917826-0.pdf
            :doi:`10.1090/S0025-5718-1988-0917826-0`
 
@@ -310,8 +310,8 @@ class RegularGridInterpolator:
             for i, p in enumerate(xi.T):
                 if not np.logical_and(np.all(self.grid[i][0] <= p),
                                       np.all(p <= self.grid[i][-1])):
-                    raise ValueError("One of the requested xi is out of bounds "
-                                     "in dimension %d" % i)
+                    raise ValueError("One of the requested xi is out of bounds"
+                                     " in dimension %d" % i)
 
         indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
         if method == "linear":
@@ -525,7 +525,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                               regular or rectilinear grid in arbitrary
                               dimensions
 
-    RectBivariateSpline : Bivariate spline approximation over a rectangular mesh
+    RectBivariateSpline : Bivariate spline approximation over a rectangular
+                          mesh in 2D
 
     """
     # sanity check 'method' kwarg
@@ -542,7 +543,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         raise ValueError("The method splinef2d can only be used for "
                          "2-dimensional input data")
     if not bounds_error and fill_value is None and method == "splinef2d":
-        raise ValueError("The method splinef2d does not support extrapolation.")
+        raise ValueError("'splinef2d' method does not support extrapolation.")
 
     # sanity check consistency of input dimensions
     if len(points) > ndim:
@@ -581,9 +582,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     if bounds_error:
         for i, p in enumerate(xi.T):
             if not np.logical_and(np.all(grid[i][0] <= p),
-                                                np.all(p <= grid[i][-1])):
+                                  np.all(p <= grid[i][-1])):
                 raise ValueError("One of the requested xi is out of bounds "
-                                "in dimension %d" % i)
+                                 "in dimension %d" % i)
 
     # perform interpolation
     if method == "linear":
@@ -612,4 +613,3 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         result[np.logical_not(idx_valid)] = fill_value
 
         return result.reshape(xi_shape[:-1])
-
