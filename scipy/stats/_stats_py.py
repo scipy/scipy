@@ -4662,7 +4662,18 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
                          "supplied axis argument {}, please use only "
                          "values 0, 1 or None for axis".format(axis))
 
+    dep_msg = ("The behavior of `spearmanr` with 2D input is deprecated "
+               "as of SciPy 1.9.0. In SciPy 1.11.0, the behavior will "
+               "change to be consistent with that of other reduction "
+               "functions, such as `f_oneway`. For example, the existing "
+               "behavior of `spearmanr(a)` with 2D `a` will be possible "
+               "with `spearmanr(a[:, np.newaxis, :], a[:, :, np.newaxis])`"
+               )
+
     a, axisout = _chk_asarray(a, axis)
+    if a.ndim > 1:
+        warnings.warn(dep_msg, DeprecationWarning)
+
     if a.ndim > 2:
         raise ValueError("spearmanr only handles 1-D or 2-D arrays")
 
@@ -4674,10 +4685,14 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         # Concatenate a and b, so that we now only have to handle the case
         # of a 2-D `a`.
         b, _ = _chk_asarray(b, axis)
+        if b.ndim > 1:
+            warnings.warn(dep_msg, DeprecationWarning)
         if axisout == 0:
             a = np.column_stack((a, b))
         else:
             a = np.row_stack((a, b))
+
+
 
     n_vars = a.shape[1 - axisout]
     n_obs = a.shape[axisout]

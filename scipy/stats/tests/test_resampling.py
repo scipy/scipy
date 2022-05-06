@@ -1373,7 +1373,8 @@ class TestPermutationTest:
             return stats.spearmanr(x, y).correlation
 
         res = permutation_test((x,), statistic1d, permutation_type='pairings',
-                               n_resamples=np.inf, alternative=alternative)
+                               n_resamples=np.inf, alternative=alternative,
+                               vectorized=False)
 
         assert_allclose(res.statistic, expected_statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected_pvalue, atol=1e-13)

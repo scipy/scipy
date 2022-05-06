@@ -11,6 +11,7 @@ import re
 import warnings
 from collections import namedtuple
 from itertools import product
+from packaging.version import Version
 
 from numpy.testing import (assert_, assert_equal,
                            assert_almost_equal, assert_array_almost_equal,
@@ -639,6 +640,7 @@ class TestCorrSpearmanr:
         other variables.  The same should go for SPEARMAN corelations, if
         your program has them.
     """
+    dep_msg = "The behavior of `spearmanr` with 2D input is deprecated"
 
     def test_scalar(self):
         y = stats.spearmanr(4., 2.)
@@ -653,21 +655,24 @@ class TestCorrSpearmanr:
         np.random.seed(232324)
         x = np.random.randn(4, 3)
         y = np.random.randn(4, 2)
-        assert stats.spearmanr(x, y).correlation.shape == (5, 5)
-        assert stats.spearmanr(x.T, y.T, axis=1).pvalue.shape == (5, 5)
+        with pytest.warns(DeprecationWarning, match=self.dep_msg):
+            assert stats.spearmanr(x, y).correlation.shape == (5, 5)
+            assert stats.spearmanr(x.T, y.T, axis=1).pvalue.shape == (5, 5)
 
-        assert_raises(ValueError, stats.spearmanr, x, y, axis=1)
-        assert_raises(ValueError, stats.spearmanr, x.T, y.T)
+            assert_raises(ValueError, stats.spearmanr, x, y, axis=1)
+            assert_raises(ValueError, stats.spearmanr, x.T, y.T)
 
     def test_ndim_too_high(self):
         np.random.seed(232324)
         x = np.random.randn(4, 3, 2)
-        assert_raises(ValueError, stats.spearmanr, x)
-        assert_raises(ValueError, stats.spearmanr, x, x)
-        assert_raises(ValueError, stats.spearmanr, x, None, None)
-        # But should work with axis=None (raveling axes) for two input arrays
-        assert_allclose(stats.spearmanr(x, x, axis=None),
-                        stats.spearmanr(x.flatten(), x.flatten(), axis=0))
+
+        with pytest.warns(DeprecationWarning, match=self.dep_msg):
+            assert_raises(ValueError, stats.spearmanr, x)
+            assert_raises(ValueError, stats.spearmanr, x, x)
+            assert_raises(ValueError, stats.spearmanr, x, None, None)
+            # But should work with axis=None (raveling axes) for two inputs
+            assert_allclose(stats.spearmanr(x, x, axis=None),
+                            stats.spearmanr(x.flatten(), x.flatten(), axis=0))
 
     def test_nan_policy(self):
         x = np.arange(10.)
@@ -684,10 +689,11 @@ class TestCorrSpearmanr:
         k = 6
         x[:, k] = np.nan
         y = np.delete(x, k, axis=1)
-        corx, px = stats.spearmanr(x, nan_policy='omit')
-        cory, py = stats.spearmanr(y)
-        corx = np.delete(np.delete(corx, k, axis=1), k, axis=0)
-        px = np.delete(np.delete(px, k, axis=1), k, axis=0)
+        with pytest.warns(DeprecationWarning, match=self.dep_msg):
+            corx, px = stats.spearmanr(x, nan_policy='omit')
+            cory, py = stats.spearmanr(y)
+            corx = np.delete(np.delete(corx, k, axis=1), k, axis=0)
+            px = np.delete(np.delete(px, k, axis=1), k, axis=0)
         assert_allclose(corx, cory, atol=1e-14)
         assert_allclose(px, py, atol=1e-14)
 
@@ -698,9 +704,11 @@ class TestCorrSpearmanr:
         x = np.random.randn(m, n)
         x[1, 0] = np.nan
         x[3, -1] = np.nan
-        corr, pvalue = stats.spearmanr(x, axis=1, nan_policy="propagate")
-        res = [[stats.spearmanr(x[i, :], x[j, :]).correlation for i in range(m)]
-               for j in range(m)]
+        with pytest.warns(DeprecationWarning, match=self.dep_msg):
+            corr, pvalue = stats.spearmanr(x, axis=1, nan_policy="propagate")
+
+        res = [[stats.spearmanr(x[i, :], x[j, :]).correlation
+                for i in range(m)] for j in range(m)]
         assert_allclose(corr, res)
 
     def test_sXX(self):
@@ -817,7 +825,8 @@ class TestCorrSpearmanr:
         x1 = [1, 2, 3, 4, 5, 6]
         x2 = [1, 2, 3, 4, 6, 5]
         res1 = stats.spearmanr(x1, x2)
-        res2 = stats.spearmanr(np.asarray([x1, x2]).T)
+        with pytest.warns(DeprecationWarning, match=self.dep_msg):
+            res2 = stats.spearmanr(np.asarray([x1, x2]).T)
         assert_allclose(res1, res2)
 
     def test_1d_vs_2d_nans(self):
@@ -826,7 +835,9 @@ class TestCorrSpearmanr:
             x1 = [1, np.nan, 3, 4, 5, 6]
             x2 = [1, 2, 3, 4, 6, np.nan]
             res1 = stats.spearmanr(x1, x2, nan_policy=nan_policy)
-            res2 = stats.spearmanr(np.asarray([x1, x2]).T, nan_policy=nan_policy)
+            with pytest.warns(DeprecationWarning, match=self.dep_msg):
+                res2 = stats.spearmanr(np.asarray([x1, x2]).T,
+                                       nan_policy=nan_policy)
             assert_allclose(res1, res2)
 
     def test_3cols(self):
@@ -834,7 +845,8 @@ class TestCorrSpearmanr:
         x2 = -x1
         x3 = np.array([0, 1, 2, 3, 5, 4])
         x = np.asarray([x1, x2, x3]).T
-        actual = stats.spearmanr(x)
+        with pytest.warns(DeprecationWarning, match=self.dep_msg):
+            actual = stats.spearmanr(x)
         expected_corr = np.array([[1, -1, 0.94285714],
                                   [-1, 1, -0.94285714],
                                   [0.94285714, -0.94285714, 1]])
@@ -850,13 +862,15 @@ class TestCorrSpearmanr:
         x = np.array([[np.nan, 3.0, 4.0, 5.0, 5.1, 6.0, 9.2],
                       [5.0, np.nan, 4.1, 4.8, 4.9, 5.0, 4.1],
                       [0.5, 4.0, 7.1, 3.8, 8.0, 5.1, 7.6]]).T
-        corr = np.array([[np.nan, np.nan, np.nan],
-                         [np.nan, np.nan, np.nan],
-                         [np.nan, np.nan, 1.]])
-        assert_allclose(stats.spearmanr(x, nan_policy='propagate').correlation,
-                        corr)
+        corr0 = np.array([[np.nan, np.nan, np.nan],
+                          [np.nan, np.nan, np.nan],
+                          [np.nan, np.nan, 1.]])
+        with pytest.warns(DeprecationWarning, match=self.dep_msg):
+            corr1 = stats.spearmanr(x, nan_policy='propagate').correlation
+        assert_allclose(corr1, corr0)
 
-        res = stats.spearmanr(x, nan_policy='omit').correlation
+        with pytest.warns(DeprecationWarning, match=self.dep_msg):
+            res = stats.spearmanr(x, nan_policy='omit').correlation
         assert_allclose((res[0][1], res[0][2], res[1][2]),
                         (0.2051957, 0.4857143, -0.4707919), rtol=1e-6)
 
@@ -882,6 +896,17 @@ class TestCorrSpearmanr:
 
         expected = [0.865895477, 0.866100381, 0.866100381]
         assert_allclose([res1, res2, res3], expected)
+
+    def test_spearmanr_2d_deprecation(self):
+        rng = np.random.default_rng(8965142154)
+        x = rng.random(size=(10, 10))
+        warned = False
+        with pytest.warns(DeprecationWarning, match=self.dep_msg):
+            stats.spearmanr(x)
+            warned = True
+
+        import scipy
+        assert not (Version(scipy.__version__).minor >= 11 and warned)
 
 
 class TestCorrSpearmanr2:
@@ -993,7 +1018,11 @@ class TestCorrSpearmanr2:
         z1 = np.array([[1, 1, 1, 1], [1, 2, 3, 4]])
         z2 = np.array([[1, 2, 3, 4], [1, 1, 1, 1]])
         z3 = np.array([[1, 1, 1, 1], [1, 1, 1, 1]])
-        with assert_warns(stats.SpearmanRConstantInputWarning):
+
+        # When deprecation warning is removed, this will need to be added back
+        # with assert_warns(stats.SpearmanRConstantInputWarning):
+        dep_msg = "The behavior of `spearmanr` with 2D input is deprecated"
+        with pytest.warns(DeprecationWarning, match=dep_msg):
             r, p = stats.spearmanr(z1, axis=1)
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
