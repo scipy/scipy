@@ -20,6 +20,7 @@ from . import _ppoly
 from ._fitpack2 import RectBivariateSpline
 from .interpnd import _ndim_coords_from_arrays
 from ._bsplines import make_interp_spline, BSpline
+from ._cubic import PchipInterpolator
 
 
 def lagrange(x, w):
@@ -2536,7 +2537,7 @@ class RegularGridInterpolator:
     # this class is based on code originally programmed by Johannes Buchner,
     # see https://github.com/JohannesBuchner/regulargrid
 
-    _SPLINE_DEGREE_MAP = {"slinear": 1, "cubic": 3, "quintic": 5, }
+    _SPLINE_DEGREE_MAP = {"slinear": 1, "cubic": 3, "quintic": 5, 'pchip': 3}
     _SPLINE_METHODS = list(_SPLINE_DEGREE_MAP.keys())
     _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
 
@@ -2709,6 +2710,11 @@ class RegularGridInterpolator:
             xi = xi.reshape((1, xi.size))
         m, n = xi.shape
 
+        if spline_degree == 'pchip':
+            _eval_func = self._do_pchip
+        else:
+            _eval_func = self._do_spline_fit
+
         # Non-stationary procedure: difficult to vectorize this part entirely
         # into numpy-level operations. Unfortunately this requires explicit
         # looping over each point in xi.
@@ -2716,10 +2722,10 @@ class RegularGridInterpolator:
         # can at least vectorize the first pass across all points in the
         # last variable of xi.
         last_dim = n - 1
-        first_values = self._do_spline_fit(self.grid[last_dim],
-                                           values,
-                                           xi[:, last_dim],
-                                           spline_degree)
+        first_values = _eval_func(self.grid[last_dim],
+                                  values,
+                                  xi[:, last_dim],
+                                  spline_degree)
 
         # the rest of the dimensions have to be on a per point-in-xi basis
         result = np.empty(m, dtype=self.values.dtype)
@@ -2731,11 +2737,10 @@ class RegularGridInterpolator:
             for i in range(last_dim-1, -1, -1):
                 # Interpolate for each 1D from the last dimensions.
                 # This collapses each 1D sequence into a scalar.
-                folded_values = self._do_spline_fit(self.grid[i],
-                                                    folded_values,
-                                                    xi[j, i],
-                                                    spline_degree)
-
+                folded_values = _eval_func(self.grid[i],
+                                           folded_values,
+                                           xi[j, i],
+                                           spline_degree)
             result[j] = folded_values
 
         return result
@@ -2743,6 +2748,12 @@ class RegularGridInterpolator:
     @staticmethod
     def _do_spline_fit(x, y, pt, k):
         local_interp = make_interp_spline(x, y, k=k, axis=0)
+        values = local_interp(pt)
+        return values
+
+    @staticmethod
+    def _do_pchip(x, y, pt, k):
+        local_interp = PchipInterpolator(x, y, axis=0)
         values = local_interp(pt)
         return values
 

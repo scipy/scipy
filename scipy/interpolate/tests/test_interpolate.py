@@ -2443,7 +2443,8 @@ class TestRegularGridInterpolator:
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
 
-        for method in ['linear', 'nearest', 'slinear', 'cubic', 'quintic']:
+        for method in ['linear', 'nearest',
+                       'slinear', 'cubic', 'quintic', 'pchip']:
             interp = RegularGridInterpolator(points,
                                              values.tolist(),
                                              method=method)
@@ -2495,7 +2496,8 @@ class TestRegularGridInterpolator:
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
 
-        for method in ['linear', 'nearest', "slinear", "cubic", "quintic"]:
+        for method in ['linear', 'nearest',
+                       "slinear", "cubic", "quintic", 'pchip']:
             interp = RegularGridInterpolator(points, values,
                                              method=method)
             rinterp = RegularGridInterpolator(points, values.real,
