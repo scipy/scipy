@@ -5106,13 +5106,13 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, pass_zero=False):
     """
     Design IIR notching or peaking digital comb filter.
 
-    A notching comb filter is a band-stop filter with a narrow bandwidth
-    (high quality factor). It rejects a narrow frequency band and
-    leaves the rest of the spectrum little changed.
+    A notching comb filter consists of regularly-spaced band-stop filters with
+    a narrow bandwidth (high quality factor). Each rejects a narrow frequency
+    band and leaves the rest of the spectrum little changed.
 
-    A peaking comb filter is a band-pass filter with a narrow bandwidth
-    (high quality factor). It rejects components outside a narrow
-    frequency band.
+    A peaking comb filter consists of regularly-spaced band-pass filters with
+    a narrow bandwidth (high quality factor). Each rejects components outside
+    a narrow frequency band.
 
     Parameters
     ----------
