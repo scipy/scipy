@@ -154,6 +154,7 @@ class _TestRBFInterpolator:
 
         assert_allclose(yitp1, yitp2, atol=1e-8)
 
+    @pytest.mark.slow
     def test_chunking(self):
         # If the observed data comes from a polynomial, then the interpolant
         # should be able to reproduce the polynomial exactly, provided that
