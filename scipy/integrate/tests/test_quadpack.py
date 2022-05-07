@@ -6,6 +6,7 @@ from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
 import pytest
 
+from scipy import __version__ as scipy_version
 from scipy.integrate import quad, dblquad, tplquad, nquad
 from scipy._lib._ccallback import LowLevelCallable
 
@@ -261,6 +262,10 @@ class TestQuad:
         assert_quad(dblquad(func, 1, 2, 1, 2),6.)
 
     def test_double_integral_warns_with_deprecated_input_epsabs(self):
+
+        if scipy_version.startswith("1.11"):
+            raise Exception("Reminder to remove deprecated behaviour")
+
         def func(x0, x1):
             return x0 + x1 + 1 + 2
 
@@ -268,6 +273,10 @@ class TestQuad:
             dblquad(func, 1, 2, 1, 2, epsabs=0.1)
 
     def test_double_integral_warns_with_deprecated_input_epsrel(self):
+
+        if scipy_version.startswith("1.11"):
+            raise Exception("Reminder to remove deprecated behaviour")
+
         def func(x0, x1):
             return x0 + x1 + 1 + 2
 
@@ -287,6 +296,10 @@ class TestQuad:
                      2*8/3.0 * (b**4.0 - a**4.0))
 
     def test_triple_integral_warns_with_deprecated_input_epsabs(self):
+
+        if scipy_version.startswith("1.11"):
+            raise Exception("Reminder to remove deprecated behaviour")
+
         def simpfunc(z, y, x, t):
             return (x+y+z)*t
 
@@ -299,6 +312,10 @@ class TestQuad:
                     epsabs=0.1)
 
     def test_triple_integral_warns_with_deprecated_input_epsrel(self):
+
+        if scipy_version.startswith("1.11"):
+            raise Exception("Reminder to remove deprecated behaviour")
+
         def simpfunc(z, y, x, t):
             return (x + y + z) * t
 
