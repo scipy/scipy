@@ -747,44 +747,49 @@ def test_roots_extrapolate_gh_11185():
     assert_equal(r.size, 3)
 
 
-
-class CheckInvertPchip(TestCase):
-    
-    def setUp(self):
+class TestInvertPchip:
+    def _get_pch_vGn(self):
         x = np.linspace(0, 10, 11)
-        self.pch_lin = pchip(x, x)
-        self.pch_kwa = pchip(x, np.power(x,2))
-        self.pch_cub = pchip(x, np.power(x,3))
-        self.pch_limit = pchip([0,2], [0,4])
-        h = -np.power(10, x[::-1])/5
-        u    = 1/np.power(1+ np.power(-0.015 * h, 1.3), 1. - 1./1.3)
-        self.pch_vGn = pchip(h, u)
+        h = -np.power(10, x[::-1]) / 5
+        u = 1/np.power(1+ np.power(-0.015 * h, 1.3), 1. - 1./1.3)
+        return pchip(h, u)
 
     def test_inv_lin(self):
+        x = np.linspace(0, 10, 11)
+        pch_lin = pchip(x, x)
         test = np.array([1., 3.5, 8.3])
-        assert_almost_equal(self.pch_lin.root(test), test)
+        assert_almost_equal(pch_lin.solve(test), test)
 
     def test_inv_kwa(self):
+        x = np.linspace(0, 10, 11)
+        pch_kwa = pchip(x, x**2)
         test = np.array([1., 2.1, 8.3])
-        assert_almost_equal(self.pch_kwa.root(np.power(test, 2)), test, 2)
+        assert_almost_equal(pch_kwa.solve(test**2), test, decimal=2)
         
     def test_inv_cub(self):
+        x = np.linspace(0, 10, 11)
+        pch_cub = pchip(x, x**3)
         test = np.array([1., 2.1, 8.3])
-        assert_almost_equal(self.pch_cub.root(np.power(test, 3)), test, 2)
+        assert_almost_equal(pch_cub.solve(test**3), test, decimal=2)
    
     def test_inv_vGn(self):
+        pch_vGn = self._get_pch_vGn()
+
         testx = np.array([-19., -54., -200., -500.])
-        testy = self.pch_vGn(testx)
-        invx = self.pch_vGn.root(testy)
-        assert_almost_equal(invx, testx, 7)
+        testy = pch_vGn(testx)
+        invx = pch_vGn.solve(testy)
+        assert_almost_equal(invx, testx, decimal=7)
 
     def test_scalar(self):
+        pch_vGn = self._get_pch_vGn()
+
         testx = -54
-        testy = self.pch_vGn(testx)
-        invx = self.pch_vGn.root(testy)
-        assert_almost_equal(invx, testx, 7)
+        testy = pch_vGn(testx)
+        invx = pch_vGn.solve(testy)
+        assert_almost_equal(invx, testx, decimal=7)
 
     def test_inv_limit(self):
+        pch_limit = pchip([0, 2], [0, 4])
         test = 2
-        assert_almost_equal(self.pch_limit.root(test), 1)
+        assert_almost_equal(pch_limit.solve(test), 1)
 
