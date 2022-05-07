@@ -1,9 +1,6 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
 #include "directmodule.h"
-#define MY_ALLOC(p, t, n, ret_code) p = (t *) malloc(sizeof(t) * (n)); \
-                          if (!(p)) { *ret_code = DIRECT_OUT_OF_MEMORY; }
-#define MY_FREE(p) if (p) free(p)
 
 static PyObject *
 direct(PyObject *self, PyObject *args)
@@ -40,7 +37,10 @@ direct(PyObject *self, PyObject *args)
     }
 
     dimension = PyArray_DIMS((PyArrayObject*)lb)[0];
-    MY_ALLOC(x, double, dimension + 1, &ret_code);
+    x = (double *) malloc(sizeof(double) * (dimension + 1));
+    if (!(x)) {
+        ret_code = DIRECT_OUT_OF_MEMORY;
+    }
     PyObject *x_seq = PyList_New(dimension);
     lower_bounds = (double*)PyArray_DATA((PyArrayObject*)lb);
     upper_bounds = (double*)PyArray_DATA((PyArrayObject*)ub);
@@ -53,12 +53,14 @@ direct(PyObject *self, PyObject *args)
                          magic_eps, magic_eps_abs, volume_reltol,
                          sigma_reltol, &force_stop, fglobal, fglobal_reltol,
                          logfile, algorithm, &info, &ret_code, callback)) {
-        MY_FREE(x);
+        if (x)
+            free(x);
         return NULL;
     }
     PyObject* ret_py = Py_BuildValue("Odiii", x_seq, minf, (int) ret_code,
                                      info.numfunc, info.numiter);
-    MY_FREE(x);
+    if (x)
+        free(x);
     return ret_py;
 }
 

@@ -81,10 +81,6 @@
     integer version;
     integer jones;
 
-    /* FIXME: change sizes dynamically? */
-#define MY_ALLOC(p, t, n) p = (t *) malloc(sizeof(t) * (n)); \
-                          if (!(p)) { *ierror = -100; goto cleanup; }
-
     /* Note that I've transposed c__, length, and f relative to the
        original Fortran code.  e.g. length was length(maxfunc,n)
        in Fortran [ or actually length(maxfunc, maxdims), but by
@@ -99,34 +95,74 @@
     integer fixed_memory_dim = ((*n) * (sizeof(doublereal) + sizeof(integer)) +
                                       (sizeof(doublereal) * 2 + sizeof(integer)));
     MAXFUNC = MAXFUNC * fixed_memory_dim > MAXMEMORY ? MAXMEMORY/fixed_memory_dim : MAXFUNC;
-    MY_ALLOC(c__, doublereal, MAXFUNC * (*n));
-    MY_ALLOC(length, integer, MAXFUNC * (*n));
-    MY_ALLOC(f, doublereal, MAXFUNC * 2);
-    MY_ALLOC(point, integer, MAXFUNC);
+    c__ = (doublereal *) malloc(sizeof(doublereal) * (MAXFUNC * (*n)));
+    if (!(c__)) {
+        *ierror = -100;
+        goto cleanup;
+    }
+    length = (integer*) malloc(sizeof(integer) * (MAXFUNC * (*n)));
+    if (!(length)) {
+        *ierror = -100; goto cleanup;
+    }
+    f = (doublereal*) malloc(sizeof(doublereal) * (MAXFUNC * 2));
+    if (!(f)) {
+        *ierror = -100; goto cleanup;
+    }
+    point = (integer*) malloc(sizeof(integer) * (MAXFUNC));
+    if (!(point)) {
+        *ierror = -100; goto cleanup;
+    }
     if (*maxf <= 0)
         *maxf = MAXFUNC - 1000;
     else
         *maxf = 2*(MAXFUNC - 1000)/3;
 
-    MY_ALLOC(s, integer, MAXDIV * 2);
+    s = (integer*) malloc(sizeof(integer) * (MAXDIV * 2));
+    if (!(s)) {
+        *ierror = -100; goto cleanup;
+    }
 
     integer MAXDEEP = *maxt <= 0 ? MAXFUNC/5: *maxt + 1000;
     fixed_memory_dim = (sizeof(doublereal) * 2 + sizeof(integer));
     integer const_memory = 2 * (sizeof(doublereal) + sizeof(integer));
     MAXDEEP = MAXDEEP * fixed_memory_dim + const_memory > MAXMEMORY ? (MAXMEMORY - const_memory)/fixed_memory_dim : MAXDEEP;
-    MY_ALLOC(anchor, integer, MAXDEEP + 2);
-    MY_ALLOC(levels, doublereal, MAXDEEP + 1);
-    MY_ALLOC(thirds, doublereal, MAXDEEP + 1);
+    anchor = (integer*) malloc(sizeof(integer) * (MAXDEEP + 2));
+    if (!(anchor)) {
+        *ierror = -100; goto cleanup;
+    }
+    levels = (doublereal*) malloc(sizeof(doublereal) * (MAXDEEP + 1));
+    if (!(levels)) {
+        *ierror = -100; goto cleanup;
+    }
+    thirds = (doublereal*) malloc(sizeof(doublereal) * (MAXDEEP + 1));
+    if (!(thirds)) {
+        *ierror = -100; goto cleanup;
+    }
     if (*maxt <= 0)
         *maxt = MAXDEEP;
     else
         *maxt = MAXDEEP - 1000;
 
-    MY_ALLOC(w, doublereal, (*n));
-    MY_ALLOC(oldl, doublereal, (*n));
-    MY_ALLOC(oldu, doublereal, (*n));
-    MY_ALLOC(list2, integer, (*n) * 2);
-    MY_ALLOC(arrayi, integer, (*n));
+    w = (doublereal*) malloc(sizeof(doublereal) * (*n));
+    if (!(w)) {
+        *ierror = -100; goto cleanup;
+    }
+    oldl = (doublereal*) malloc(sizeof(doublereal) * (*n));
+    if (!(oldl)) {
+        *ierror = -100; goto cleanup;
+    }
+    oldu = (doublereal*) malloc(sizeof(doublereal) * (*n));
+    if (!(oldu)) {
+        *ierror = -100; goto cleanup;
+    }
+    list2 = (integer*) malloc(sizeof(integer) * (*n * 2));
+    if (!(list2)) {
+        *ierror = -100; goto cleanup;
+    }
+    arrayi = (integer*) malloc(sizeof(integer) * (*n));
+    if (!(arrayi)) {
+        *ierror = -100; goto cleanup;
+    }
 
 /* +-----------------------------------------------------------------------+ */
 /* |    SUBROUTINE Direct                                                  | */
@@ -781,20 +817,32 @@ L100:
 /* +-----------------------------------------------------------------------+ */
 
  cleanup:
-#define MY_FREE(p) if (p) free(p)
-    MY_FREE(c__);
-    MY_FREE(f);
-    MY_FREE(s);
-    MY_FREE(w);
-    MY_FREE(oldl);
-    MY_FREE(oldu);
-    MY_FREE(list2);
-    MY_FREE(point);
-    MY_FREE(anchor);
-    MY_FREE(length);
-    MY_FREE(arrayi);
-    MY_FREE(levels);
-    MY_FREE(thirds);
+    if (c__)
+        free(c__);
+    if (f)
+        free(f);
+    if (s)
+        free(s);
+    if (w)
+        free(w);
+    if (oldl)
+        free(oldl);
+    if (oldu)
+        free(oldu);
+    if (list2)
+        free(list2);
+    if (point)
+        free(point);
+    if (anchor)
+        free(anchor);
+    if (length)
+        free(length);
+    if (arrayi)
+        free(arrayi);
+    if (levels)
+        free(levels);
+    if (thirds)
+        free(thirds);
 
     return ret;
 } /* direct_ */
