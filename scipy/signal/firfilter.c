@@ -99,6 +99,19 @@ static OneMultAddFunction *OneMultAdd[]={NULL,
 					 CLONGDOUBLE_onemultadd,
                                          NULL, NULL, NULL, NULL};
 
+static int64_t
+reflect_symm_index(int64_t j, int64_t m)
+{
+    int64_t k = (j >= 0) ? (j % (2*m)) : (abs(j + 1) % (2*m));
+    return (k >= m) ? (2*m - k - 1) : k;
+}
+
+static int64_t
+circular_wrap_index(int64_t j, int64_t m)
+{
+    return (j >= 0) ? (j % m) : ((j % m + m) % m);
+}
+
 
 /* This could definitely be more optimized... */
 
@@ -164,13 +177,13 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 	bool bounds_pad_flag = false;
 
 	if (ind0 < 0) {
-	  if (boundary == REFLECT) ind0 = -1-ind0;
-	  else if (boundary == CIRCULAR) ind0 = Ns[0] + ind0;
+	  if (boundary == REFLECT) ind0 = reflect_symm_index(ind0, Ns[0]);
+	  else if (boundary == CIRCULAR) ind0 = circular_wrap_index(ind0, Ns[0]);
 	  else bounds_pad_flag = true;
 	}
 	else if (ind0 >= Ns[0]) {
-	  if (boundary == REFLECT) ind0 = Ns[0]+Ns[0]-1-ind0;
-	  else if (boundary == CIRCULAR) ind0 = ind0 - Ns[0];
+	  if (boundary == REFLECT) ind0 = reflect_symm_index(ind0, Ns[0]);
+	  else if (boundary == CIRCULAR) ind0 = circular_wrap_index(ind0, Ns[0]);
 	  else bounds_pad_flag = true;
 	}
 
@@ -185,13 +198,13 @@ int pylab_convolve_2d (char  *in,        /* Input data Ns[0] x Ns[1] */
 	  for (int64_t k=0; k < Nwin[1]; k++) {
 	    int64_t ind1 = convolve ? (new_n-k) : (new_n+k);
 	    if (ind1 < 0) {
-	      if (boundary == REFLECT) ind1 = -1-ind1;
-	      else if (boundary == CIRCULAR) ind1 = Ns[1] + ind1;
+	      if (boundary == REFLECT) ind1 = reflect_symm_index(ind1, Ns[1]);
+	      else if (boundary == CIRCULAR) ind1 = circular_wrap_index(ind1, Ns[1]);
 	      else bounds_pad_flag = true;
 	    }
 	    else if (ind1 >= Ns[1]) {
-	      if (boundary == REFLECT) ind1 = Ns[1]+Ns[1]-1-ind1;
-	      else if (boundary == CIRCULAR) ind1 = ind1 - Ns[1];
+	      if (boundary == REFLECT) ind1 = reflect_symm_index(ind1, Ns[1]);
+	      else if (boundary == CIRCULAR) ind1 = circular_wrap_index(ind1, Ns[1]);
 	      else bounds_pad_flag = true;
 	    }
 
