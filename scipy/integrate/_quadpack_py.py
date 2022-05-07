@@ -635,13 +635,13 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
         callable, the signature must be the same as for ``ranges``. The
         available options together with their default values are:
 
-          - epsabs = 1.49e-08
-          - epsrel = 1.49e-08
-          - limit  = 50
-          - points = None
-          - weight = None
-          - wvar   = None
-          - wopts  = None
+        - epsabs = 1.49e-08
+        - epsrel = 1.49e-08
+        - limit  = 50
+        - points = None
+        - weight = None
+        - wvar   = None
+        - wopts  = None
 
         For more information on these options, see `quad`.
 
@@ -849,13 +849,13 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         callable, the signature must be the same as for ``ranges``. The
         available options together with their default values are:
 
-          - epsabs = 1.49e-08
-          - epsrel = 1.49e-08
-          - limit  = 50
-          - points = None
-          - weight = None
-          - wvar   = None
-          - wopts  = None
+        - epsabs = 1.49e-08
+        - epsrel = 1.49e-08
+        - limit  = 50
+        - points = None
+        - weight = None
+        - wvar   = None
+        - wopts  = None
 
         For more information on these options, see `quad`.
 
