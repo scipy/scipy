@@ -178,27 +178,35 @@ class TestMultivariateNormal:
                 assert_allclose(logpdf_kk, logpdf_rr)
 
                 # Add an orthogonal component and find the density
-                y_orth = y + u[:,-1]
+                y_orth = y + u[:, -1]
                 pdf_rr_orth = distn_rr.pdf(y_orth)
+                logpdf_rr_orth = distn_rr.logpdf(y_orth)
 
                 # Ensure that this has zero probability
                 assert_equal(pdf_rr_orth, 0.0)
+                assert_equal(logpdf_rr_orth, -np.inf)
 
     def test_degenerate_array(self):
         # Test that we can generate arrays of random variate from a degenerate
         # multivariate normal, and that the pdf for these samples is non-zero
         # (i.e. samples from the distribution lie on the subspace)
         k = 10
-        for n in range(2,6):
-            for r in range(1,n):
+        for n in range(2, 6):
+            for r in range(1, n):
                 mn = np.zeros(n)
-                u = _sample_orthonormal_matrix(n)[:,:r]
+                u = _sample_orthonormal_matrix(n)[:, :r]
                 vr = np.dot(u, u.T)
                 X = multivariate_normal.rvs(mean=mn, cov=vr, size=k)
+
                 pdf = multivariate_normal.pdf(X, mean=mn, cov=vr,
                                               allow_singular=True)
                 assert_equal(pdf.size, k)
                 assert_equal(pdf > 0.0, True)
+
+                logpdf = multivariate_normal.logpdf(X, mean=mn, cov=vr,
+                                                    allow_singular=True)
+                assert_equal(logpdf.size, k)
+                assert_equal(logpdf > -np.inf, True)
 
     def test_large_pseudo_determinant(self):
         # Check that large pseudo-determinants are handled appropriately.

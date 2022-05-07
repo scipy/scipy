@@ -180,13 +180,13 @@ class _PSD:
         # Initialize attributes to be lazily computed.
         self._pinv = None
 
-    def in_support(self, x):
+    def _support_mask(self, x):
         """
         Check whether x lies in the support of the distribution.
         """
         residual = np.linalg.norm(x @ self.V, axis=-1)
-        out_of_bounds = residual > self.eps
-        return out_of_bounds
+        in_support = residual < self.eps
+        return in_support
 
     @property
     def pinv(self):
@@ -507,7 +507,7 @@ class multivariate_normal_gen(multi_rv_generic):
         psd = _PSD(cov, allow_singular=allow_singular)
         out = self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank)
         if allow_singular and (psd.rank < dim):
-            out_of_bounds = psd.in_support(x-mean)
+            out_of_bounds = ~psd._support_mask(x-mean)
             out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
@@ -535,7 +535,7 @@ class multivariate_normal_gen(multi_rv_generic):
         psd = _PSD(cov, allow_singular=allow_singular)
         out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
         if allow_singular and (psd.rank < dim):
-            out_of_bounds = psd.in_support(x-mean)
+            out_of_bounds = ~psd._support_mask(x-mean)
             out[out_of_bounds] = 0.0
         return _squeeze_output(out)
 
@@ -762,7 +762,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         out = self._dist._logpdf(x, self.mean, self.cov_info.U,
                                  self.cov_info.log_pdet, self.cov_info.rank)
         if self.allow_singular and (self.cov_info.rank < self.dim):
-            out_of_bounds = self.cov_info.in_support(x-self.mean)
+            out_of_bounds = ~self.cov_info._support_mask(x-self.mean)
             out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
