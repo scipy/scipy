@@ -2606,6 +2606,11 @@ class TestDecimate:
         x = signal.decimate(np.ones(10_000, dtype=np.float32), 10)
         assert not any(np.isnan(x))
 
+    def test_float16_upcast(self):
+        # float16 must be upcast to float64
+        x = signal.decimate(np.ones(100, dtype=np.float16), 10)
+        assert x.dtype.type == np.float64
+
 
 class TestHilbert:
 
