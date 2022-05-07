@@ -8,8 +8,8 @@ from numpy import mgrid, pi, sin, ogrid, poly1d, linspace
 import numpy as np
 
 from scipy.interpolate import (interp1d, interp2d, lagrange, PPoly, BPoly,
-         splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
-         NdPPoly, BSpline)
+        splrep, splev, splantider, splint, sproot, Akima1DInterpolator,
+        NdPPoly, BSpline)
 
 from scipy.special import poch, gamma
 

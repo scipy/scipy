@@ -3,9 +3,8 @@ import itertools
 import pytest
 import numpy as np
 
-from numpy.testing import (assert_allclose, assert_equal, assert_almost_equal,
-                           assert_array_almost_equal, assert_warns,
-                           assert_array_equal)
+from numpy.testing import (assert_allclose, assert_equal, assert_warns,
+                           assert_array_almost_equal, assert_array_equal)
 from pytest import raises as assert_raises
 
 from scipy.interpolate import (RegularGridInterpolator, interpn,
@@ -639,7 +638,7 @@ class TestInterpN:
         points, values = self._sample_4d_data()
         sample = np.asarray([0.1, 0.1, 10., 9.])
         v1 = interpn(points, values, sample, bounds_error=False)
-        v2 = interpn(points, values, sample[None,:], bounds_error=False)
+        v2 = interpn(points, values, sample[None, :], bounds_error=False)
         assert_allclose(v1, v2)
 
     def test_xi_nd(self):
@@ -666,7 +665,7 @@ class TestInterpN:
         yi = np.linspace(0, 3, 3)
 
         for method in ['nearest', 'linear', 'splinef2d']:
-            sample = (xi[:,None], yi[None,:])
+            sample = (xi[:, None], yi[None, :])
             v1 = interpn(points, values, sample, method=method,
                          bounds_error=False)
             assert_equal(v1.shape, (2, 3))
@@ -691,7 +690,7 @@ class TestInterpN:
                         bounds_error=False)
             assert_equal(v.shape, (7, 11, 6), err_msg=method)
 
-            vs = [interpn(points, values[...,j], sample, method=method,
+            vs = [interpn(points, values[..., j], sample, method=method,
                           bounds_error=False)
                   for j in range(6)]
             v2 = np.array(vs).transpose(1, 2, 0)
