@@ -745,3 +745,46 @@ def test_roots_extrapolate_gh_11185():
     r = p.roots(extrapolate=True)
     assert_equal(p.c.shape[1], 1)
     assert_equal(r.size, 3)
+
+
+
+class CheckInvertPchip(TestCase):
+    
+    def setUp(self):
+        x = np.linspace(0, 10, 11)
+        self.pch_lin = pchip(x, x)
+        self.pch_kwa = pchip(x, np.power(x,2))
+        self.pch_cub = pchip(x, np.power(x,3))
+        self.pch_limit = pchip([0,2], [0,4])
+        h = -np.power(10, x[::-1])/5
+        u    = 1/np.power(1+ np.power(-0.015 * h, 1.3), 1. - 1./1.3)
+        self.pch_vGn = pchip(h, u)
+
+    def test_inv_lin(self):
+        test = np.array([1., 3.5, 8.3])
+        assert_almost_equal(self.pch_lin.root(test), test)
+
+    def test_inv_kwa(self):
+        test = np.array([1., 2.1, 8.3])
+        assert_almost_equal(self.pch_kwa.root(np.power(test, 2)), test, 2)
+        
+    def test_inv_cub(self):
+        test = np.array([1., 2.1, 8.3])
+        assert_almost_equal(self.pch_cub.root(np.power(test, 3)), test, 2)
+   
+    def test_inv_vGn(self):
+        testx = np.array([-19., -54., -200., -500.])
+        testy = self.pch_vGn(testx)
+        invx = self.pch_vGn.root(testy)
+        assert_almost_equal(invx, testx, 7)
+
+    def test_scalar(self):
+        testx = -54
+        testy = self.pch_vGn(testx)
+        invx = self.pch_vGn.root(testy)
+        assert_almost_equal(invx, testx, 7)
+
+    def test_inv_limit(self):
+        test = 2
+        assert_almost_equal(self.pch_limit.root(test), 1)
+
