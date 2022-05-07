@@ -5241,13 +5241,15 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     if not 0 < w0 < fs / 2:
         raise ValueError("w0 must be between 0 and {}"
                          " (nyquist), but given {}.".format(fs / 2, w0))
-    if np.round(fs % w0) != 0:
-        raise ValueError('fs must be divisible by w0.')
     if ftype not in ('notch', 'peak'):
         raise ValueError('ftype must be either notch or peak.')
 
     # Compute the order of the filter
     N = round(fs / w0)
+
+    # Check for cutoff frequency divisibility
+    if abs(w0 - fs/N)/fs > 1e-14:
+        raise ValueError('fs must be divisible by w0.')
 
     # Compute frequency in radians and filter bandwidth
     # Eq. 11.3.1 (p. 574) from reference [1]
