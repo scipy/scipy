@@ -485,7 +485,6 @@ class interp1d(_Interpolator1D):
         self.x = x
         del y, x  # clean up namespace to prevent misuse; use attributes
         self._kind = kind
-        self.fill_value = fill_value  # calls the setter, can modify bounds_err
 
         # Adjust to interpolation kind; store reference to *unbound*
         # interpolation methods, in order to avoid circular references to self
@@ -518,12 +517,18 @@ class interp1d(_Interpolator1D):
                 # Move x by one floating point value to the left
                 self._x_shift = np.nextafter(self.x, -np.inf)
                 self._call = self.__class__._call_previousnext
+                if _do_extrapolate(fill_value):
+                    self._check_and_update_bounds_error_for_extrapolation()
+                    fill_value = (np.nan, self.y.max(axis=axis))
             elif kind == 'next':
                 self._side = 'right'
                 self._ind = 1
                 # Move x by one floating point value to the right
                 self._x_shift = np.nextafter(self.x, np.inf)
                 self._call = self.__class__._call_previousnext
+                if _do_extrapolate(fill_value):
+                    self._check_and_update_bounds_error_for_extrapolation()
+                    fill_value = (self.y.min(axis=axis), np.nan)
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
                 np_types = (np.float_, np.int_)
@@ -572,6 +577,8 @@ class interp1d(_Interpolator1D):
             raise ValueError("x and y arrays must have at "
                              "least %d entries" % minval)
 
+        self.fill_value = fill_value  # calls the setter, can modify bounds_err
+
     @property
     def fill_value(self):
         """The fill value."""
@@ -582,10 +589,7 @@ class interp1d(_Interpolator1D):
     def fill_value(self, fill_value):
         # extrapolation only works for nearest neighbor and linear methods
         if _do_extrapolate(fill_value):
-            if self.bounds_error:
-                raise ValueError("Cannot extrapolate and raise "
-                                 "at the same time.")
-            self.bounds_error = False
+            self._check_and_update_bounds_error_for_extrapolation()
             self._extrapolate = True
         else:
             broadcast_shape = (self.y.shape[:self.axis] +
@@ -611,6 +615,12 @@ class interp1d(_Interpolator1D):
                 self.bounds_error = True
         # backwards compat: fill_value was a public attr; make it writeable
         self._fill_value_orig = fill_value
+
+    def _check_and_update_bounds_error_for_extrapolation(self):
+        if self.bounds_error:
+            raise ValueError("Cannot extrapolate and raise "
+                             "at the same time.")
+        self.bounds_error = False
 
     def _call_linear_np(self, x_new):
         # Note that out-of-bounds values are taken care of in self._evaluate
