@@ -3761,6 +3761,18 @@ class TestIIRComb:
         assert_allclose(b_peak, b_peak2)
         assert_allclose(a_peak, a_peak2)
 
+    # Verify that https://github.com/scipy/scipy/issues/14043 is fixed
+    def test_nearest_divisor(self):
+        # Create a notching comb filter
+        b, a = iircomb(50/int(44100/2), 50.0, ftype='notch')
+
+        # Compute the frequency response at an upper harmonic of 50
+        freqs, response = freqz(b, a, [22000], fs=44100)
+
+        # Before bug fix, this would produce N = 881, so that 22 kHz was ~0 dB.
+        # Now N = 882 correctly and 22 kHz should be a notch <-220 dB
+        assert abs(response[0]) < 1e-10
+
 
 class TestIIRDesign:
 
