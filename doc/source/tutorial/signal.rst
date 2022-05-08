@@ -893,8 +893,8 @@ in the amplitude response.
    >>> plt.legend(['Zeros', 'Poles'], loc=2)
 
    >>> plt.title('Pole / Zero Plot')
-   >>> plt.ylabel('Real')
-   >>> plt.xlabel('Imaginary')
+   >>> plt.xlabel('Real')
+   >>> plt.ylabel('Imaginary')
    >>> plt.grid()
    >>> plt.show()
 
