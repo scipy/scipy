@@ -888,8 +888,8 @@ in the amplitude response.
 
    >>> z, p, k = signal.tf2zpk(b, a)
 
-   >>> plt.plot(np.real(z), np.imag(z), 'xb')
-   >>> plt.plot(np.real(p), np.imag(p), 'or')
+   >>> plt.plot(np.real(z), np.imag(z), 'ob', markerfacecolor='none')
+   >>> plt.plot(np.real(p), np.imag(p), 'xr')
    >>> plt.legend(['Zeros', 'Poles'], loc=2)
 
    >>> plt.title('Pole / Zero Plot')
