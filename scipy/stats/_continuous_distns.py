@@ -3667,10 +3667,13 @@ class gumbel_l_gen(rv_continuous):
         # The fit method of `gumbel_r` can be used for this distribution with
         # small modifications. The process to do this is
         # 1. pass the sign negated data into `gumbel_r.fit`
+        #    - if the location is fixed, it should also be negated.
         # 2. negate the sign of the resulting location, leaving the scale
         #    unmodified.
         # `gumbel_r.fit` holds necessary input checks.
 
+        if kwds.get('floc') is not None:
+            kwds['floc'] = -kwds['floc']
         loc_r, scale_r, = gumbel_r.fit(-np.asarray(data), *args, **kwds)
         return (-loc_r, scale_r)
 
@@ -7635,7 +7638,10 @@ class skew_norm_gen(rv_continuous):
         return [_ShapeInfo("a", False, (-np.inf, np.inf), (False, False))]
 
     def _pdf(self, x, a):
-        return 2.*_norm_pdf(x)*_norm_cdf(a*x)
+        return _lazywhere(
+            a == 0, (x, a), lambda x, a: _norm_pdf(x),
+            f2=lambda x, a: 2.*_norm_pdf(x)*_norm_cdf(a*x)
+        )
 
     def _cdf_single(self, x, *args):
         _a, _b = self._get_support(*args)

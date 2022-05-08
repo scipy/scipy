@@ -891,7 +891,8 @@ class BroydenFirst(GenericBroyden):
         if not np.isfinite(r).all():
             # singular; reset the Jacobian approximation
             self.setup(self.last_x, self.last_f, self.func)
-        return self.Gm.matvec(f)
+            return self.Gm.matvec(f)
+        return r
 
     def matvec(self, f):
         return self.Gm.solve(f)

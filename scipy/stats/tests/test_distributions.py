@@ -3211,6 +3211,14 @@ class TestGumbelL:
         xx = stats.gumbel_l.isf(y)
         assert_allclose(x, xx)
 
+    @pytest.mark.parametrize('loc', [-1, 1])
+    def test_fit_fixed_param(self, loc):
+        # ensure fixed location is correctly reflected from `gumbel_r.fit`
+        # See comments at end of gh-12737.
+        data = stats.gumbel_l.rvs(size=100, loc=loc)
+        fitted_loc, _ = stats.gumbel_l.fit(data, floc=loc)
+        assert_equal(fitted_loc, loc)
+
 
 class TestGumbelR:
 
