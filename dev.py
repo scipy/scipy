@@ -608,14 +608,6 @@ def build_project(args):
         print("Build failed!")
         sys.exit(1)
 
-    site_dir = "/home/scipy/build-install/lib/python3/dist-packages"
-    from pathlib import Path
-    for path in Path("/home/scipy/build-install").glob("**/*"):
-        if path.is_file():
-            path.unlink()
-        elif path.is_dir():
-            shutil.rmtree(path)
-
     install_project(args)
 
     site_dir = get_site_packages()
