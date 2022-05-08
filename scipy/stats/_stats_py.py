@@ -4672,7 +4672,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     a, axisout = _chk_asarray(a, axis)
     if a.ndim > 1:
-        warnings.warn(dep_msg, DeprecationWarning)
+        warnings.warn(dep_msg, DeprecationWarning, stacklevel=2)
 
     if a.ndim > 2:
         raise ValueError("spearmanr only handles 1-D or 2-D arrays")
@@ -4686,7 +4686,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         # of a 2-D `a`.
         b, _ = _chk_asarray(b, axis)
         if b.ndim > 1:
-            warnings.warn(dep_msg, DeprecationWarning)
+            warnings.warn(dep_msg, DeprecationWarning, stacklevel=2)
         if axisout == 0:
             a = np.column_stack((a, b))
         else:
