@@ -239,6 +239,7 @@ class TestRankData:
                             [2., 1, np.nan],
                             [np.nan, 1.5, 1.5]])
 
+
 _cases = (
     # values, method, expected
     ([], 'average', []),
