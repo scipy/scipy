@@ -3694,7 +3694,7 @@ class TestIIRPeak:
 
 
 class TestIIRComb:
-    # Test erroneus input cases
+    # Test erroneous input cases
     def test_invalid_input(self):
         # w0 is <= 0 or >= fs / 2
         fs = 1000
@@ -3706,6 +3706,12 @@ class TestIIRComb:
         for args in [(120, 30), (157, 35)]:
             with pytest.raises(ValueError, match='fs must be divisible '):
                 iircomb(*args, fs=fs)
+
+        # https://github.com/scipy/scipy/issues/14043#issuecomment-1107349140
+        # Previously, fs=44100, w0=49.999 was rejected, but fs=2,
+        # w0=49.999/int(44100/2) was accepted. Now it is rejected, too.
+        with pytest.raises(ValueError, match='fs must be divisible '):
+            iircomb(w0=49.999/int(44100/2), Q=30)
 
         # Filter type is not notch or peak
         for args in [(0.2, 30, 'natch'), (0.5, 35, 'comb')]:
