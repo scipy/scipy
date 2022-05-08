@@ -8858,7 +8858,7 @@ def _square_of_sums(a, axis=0):
         return float(s) * s
 
 
-def rankdata(a, method='average', *, axis=None):
+def rankdata(a, method='average', *, axis=None,  nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 
     By default (``axis=None``), the data array is first flattened, and a flat
@@ -8891,6 +8891,12 @@ def rankdata(a, method='average', *, axis=None):
     axis : {None, int}, optional
         Axis along which to perform the ranking. If ``None``, the data array
         is first flattened.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan in `a`. 'propagate' just
+        execute the function without checking for nan, 'raise' throws an error,
+        'omit' performs the calculations ignoring nan values. Default is
+        'propagate'. Note that when the value is 'omit', nans in `a` also
+        propagate to the output, but they do not affect the ranks.
 
     Returns
     -------
@@ -8921,13 +8927,20 @@ def rankdata(a, method='average', *, axis=None):
     >>> rankdata([[0, 2, 2], [3, 2, 5]], axis=1)
     array([[1. , 2.5, 2.5],
            [2. , 1. , 3. ]])
+    >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="omit")
+    array([ 2.,  3.,  4., nan,  1., nan])
 
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
         raise ValueError('unknown method "{0}"'.format(method))
 
+    a = np.asarray(a)
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    nan_indexes = None
+    if contains_nan and nan_policy == 'omit':
+        nan_indexes = np.isnan(a)
+
     if axis is not None:
-        a = np.asarray(a)
         if a.size == 0:
             # The return values of `normalize_axis_index` are ignored.  The
             # call validates `axis`, even though we won't use it.
@@ -8935,9 +8948,10 @@ def rankdata(a, method='average', *, axis=None):
             np.core.multiarray.normalize_axis_index(axis, a.ndim)
             dt = np.float64 if method == 'average' else np.int_
             return np.empty(a.shape, dtype=dt)
-        return np.apply_along_axis(rankdata, axis, a, method)
+        return np.apply_along_axis(rankdata, axis, a, method,
+                                   nan_policy=nan_policy)
 
-    arr = np.ravel(np.asarray(a))
+    arr = np.ravel(a)
     algo = 'mergesort' if method == 'ordinal' else 'quicksort'
     sorter = np.argsort(arr, kind=algo)
 
@@ -8964,4 +8978,7 @@ def rankdata(a, method='average', *, axis=None):
         return count[dense - 1] + 1
 
     # average method
-    return .5 * (count[dense] + count[dense - 1] + 1)
+    result = .5 * (count[dense] + count[dense - 1] + 1)
+    if nan_indexes is not None:
+        result[nan_indexes] = np.nan
+    return result

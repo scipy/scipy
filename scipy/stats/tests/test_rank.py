@@ -192,6 +192,52 @@ class TestRankData:
         assert_equal(r.shape, shape)
         assert_equal(r.dtype, dtype)
 
+    def test_nan_policy(self):
+        # 1 1d-array test
+        # 1-1 propagate test
+        assert_array_equal([2., 3., 4., 1., 5., 6.],
+                           rankdata([0, 2, 3, -2, np.nan, np.nan],
+                                    nan_policy="propagate"))
+        # # 1-2 raise test
+        with pytest.raises(ValueError, match="The input contains nan"):
+            rankdata([0, 2, 3, 2, np.nan], nan_policy='raise')
+
+        # 1-3 omit test
+        assert_array_equal([2., 3., 4., 1., np.nan, np.nan],
+                           rankdata([0, 2, 3, -2, np.nan, np.nan],
+                                    nan_policy="omit"))
+
+        # 2 2d-array test
+        data = [[0, np.nan, 3],
+                [4, 2, np.nan],
+                [np.nan, 2, 2]]
+
+        # 2-1 propagate test
+        assert_array_equal(rankdata(data, axis=0, nan_policy="propagate"),
+                           [[1., 3, 2.],
+                            [2., 1.5, 3.],
+                            [3., 1.5, 1.]])
+        assert_array_equal(rankdata(data, axis=1, nan_policy="propagate"),
+                           [[1., 3, 2.],
+                            [2., 1, 3.],
+                            [3., 1.5, 1.5]])
+
+        # 2-2 raise test
+        with pytest.raises(ValueError, match="The input contains nan"):
+            rankdata(data, axis=0, nan_policy="raise")
+
+        with pytest.raises(ValueError, match="The input contains nan"):
+            rankdata(data, axis=1, nan_policy="raise")
+
+        # 2-3 omit test
+        assert_array_equal(rankdata(data, axis=0, nan_policy="omit"),
+                           [[1., np.nan, 2.],
+                            [2., 1.5, np.nan],
+                            [np.nan, 1.5, 1.]])
+        assert_array_equal(rankdata(data, axis=1, nan_policy="omit"),
+                           [[1., np.nan, 2.],
+                            [2., 1, np.nan],
+                            [np.nan, 1.5, 1.5]])
 
 _cases = (
     # values, method, expected
