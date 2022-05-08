@@ -8858,7 +8858,7 @@ def _square_of_sums(a, axis=0):
         return float(s) * s
 
 
-def rankdata(a, method='average', *, axis=None,  nan_policy='propagate'):
+def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     """Assign ranks to data, dealing with ties appropriately.
 
     By default (``axis=None``), the data array is first flattened, and a flat
