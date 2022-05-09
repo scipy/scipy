@@ -19,6 +19,9 @@ Nearest-neighbor queries
    cKDTree     -- class for efficient nearest-neighbor queries (faster implementation)
    Rectangle
 
+Distance metrics
+================
+
 Distance metrics are contained in the :mod:`scipy.spatial.distance` submodule.
 
 Delaunay triangulation, convex hulls, and Voronoi diagrams
@@ -111,9 +114,10 @@ from ._geometric_slerp import geometric_slerp
 from . import ckdtree, kdtree, qhull
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-__all__ += ['distance', 'transform']
 
 from . import distance, transform
+
+__all__ += ['distance', 'transform']
 
 from scipy._lib._testutils import PytestTester
 test = PytestTester(__name__)

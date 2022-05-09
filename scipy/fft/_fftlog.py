@@ -71,7 +71,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
         r_j = r_c \exp[(j-j_c) \, \mathtt{dln}]
 
     centred about the point :math:`r_c`.  Note that the central index
-    :math:`j_c = (n+1)/2` is half-integral if :math:`n` is even, so that
+    :math:`j_c = (n-1)/2` is half-integral if :math:`n` is even, so that
     :math:`r_c` falls between two input elements.  Similarly, the output
     array `A` is a periodic sequence of length :math:`n`, also uniformly
     logarithmically spaced with spacing `dln`

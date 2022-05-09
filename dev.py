@@ -71,11 +71,7 @@ import datetime
 import importlib.util
 import json  # noqa: E402
 from sysconfig import get_path
-
-try:
-    from types import ModuleType as new_module
-except ImportError:  # old Python
-    from imp import new_module
+from types import ModuleType as new_module  # noqa: E402
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
@@ -279,6 +275,8 @@ def main(argv):
         os.execv(sys.executable, [sys.executable] + cmd)
         sys.exit(0)
 
+    test, version, mod_path = get_project_info()
+
     if args.bench:
         # Run ASV
         items = extra_argv
@@ -294,7 +292,7 @@ def main(argv):
         if not args.bench_compare:
             import scipy
             print("Running benchmarks for Scipy version %s at %s"
-                  % (scipy.__version__, scipy.__file__))
+                  % (version, mod_path))
             cmd = ['asv', 'run', '--dry-run', '--show-stderr',
                    '--python=same'] + bench_args
             retval = runtests.run_asv(cmd)
@@ -337,29 +335,6 @@ def main(argv):
 
     if args.build_only:
         sys.exit(0)
-    else:
-        try:
-            __import__(PROJECT_MODULE)
-            test = sys.modules[PROJECT_MODULE].test
-            version = sys.modules[PROJECT_MODULE].__version__
-            mod_path = sys.modules[PROJECT_MODULE].__file__
-            mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
-        except ImportError:
-            current_python_path = os.environ.get('PYTHONPATH', None)
-            print("Unable to import {} from: {}".format(PROJECT_MODULE,
-                                                       current_python_path))
-            site_dir = get_site_packages()
-            print("Trying to import scipy from development installed path at:",
-                  site_dir)
-            sys.path.insert(0, site_dir)
-            os.environ['PYTHONPATH'] = \
-                os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
-            __import__(PROJECT_MODULE)
-            test = sys.modules[PROJECT_MODULE].test
-            version = sys.modules[PROJECT_MODULE].__version__
-            mod_path = sys.modules[PROJECT_MODULE].__file__
-            mod_path = os.path.abspath(os.path.join(os.path.dirname(mod_path)))
-
 
     if args.submodule:
         tests = [PROJECT_MODULE + "." + args.submodule]
@@ -403,6 +378,28 @@ def main(argv):
         sys.exit(1)
 
 
+def get_project_info():
+    """
+    Function to import the project module and return its tests, version,
+    and path where it is found.
+    If the project module is not found, then it tries to find it in the
+    development installed path.
+    """
+    try:
+        test, version, mod_path = runtests.import_module()
+    except ImportError:
+        # this may fail when running with --no-build, so try to detect
+        # an installed scipy in a subdir inside a repo
+        site_dir = get_site_packages()
+        print("Trying to find scipy from development installed "
+              "path at:", site_dir)
+        sys.path.insert(0, site_dir)
+        os.environ['PYTHONPATH'] = \
+            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+        test, version, mod_path = runtests.import_module()
+    return test, version, mod_path
+
+
 def setup_build(args, env):
     """
     Setting up meson-build
@@ -412,25 +409,36 @@ def setup_build(args, env):
     run_dir = os.getcwd()
     if build_dir.exists() and not (build_dir / 'meson-info').exists():
         if list(build_dir.iterdir()):
-            raise RuntimeError("Can't build into non-empty directory "
-                               f"'{build_dir.absolute()}'")
+            raise RuntimeError(
+                f"You're using Meson to build in the `{build_dir.absolute()}` directory, "
+                "but it looks like that directory is not empty and "
+                "was not originally created by Meson. "
+                f"Please remove '{build_dir.absolute()}' and try again."
+            )
     if os.path.exists(build_dir):
         build_options_file = (build_dir / "meson-info"
                               / "intro-buildoptions.json")
-        with open(build_options_file) as f:
-            build_options = json.load(f)
-        installdir = None
-        for option in build_options:
-            if option["name"] == "prefix":
-                installdir = option["value"]
-                break
-        if installdir != PATH_INSTALLED:
+        if build_options_file.exists():
+            with open(build_options_file) as f:
+                build_options = json.load(f)
+            installdir = None
+            for option in build_options:
+                if option["name"] == "prefix":
+                    installdir = option["value"]
+                    break
+            if installdir != PATH_INSTALLED:
+                run_dir = os.path.join(run_dir, build_dir)
+                cmd = ["meson", "--reconfigure", "--prefix", PATH_INSTALLED]
+            else:
+                return
+        else:
             run_dir = os.path.join(run_dir, build_dir)
             cmd = ["meson", "--reconfigure", "--prefix", PATH_INSTALLED]
-        else:
-            return
+
     if args.werror:
         cmd += ["--werror"]
+    if args.gcov:
+        cmd += ['-Db_coverage=true']
     # Setting up meson build
     ret = subprocess.call(cmd, env=env, cwd=run_dir)
     if ret == 0:
@@ -565,23 +573,6 @@ def build_project(args):
         sys.exit(1)
 
     env = dict(os.environ)
-
-    if args.debug or args.gcov:
-        # assume everyone uses gcc/gfortran
-        env['OPT'] = '-O0 -ggdb'
-        env['FOPT'] = '-O0 -ggdb'
-        if args.gcov:
-            from sysconfig import get_config_vars
-            cvars = get_config_vars()
-            env['OPT'] = '-O0 -ggdb'
-            env['FOPT'] = '-O0 -ggdb'
-            env['CC'] = env.get('CC', cvars['CC']) + ' --coverage'
-            env['CXX'] = env.get('CXX', cvars['CXX']) + ' --coverage'
-            env['F77'] = 'gfortran --coverage '
-            env['F90'] = 'gfortran --coverage '
-            env['LDSHARED'] = cvars['LDSHARED'] + ' --coverage'
-            env['LDFLAGS'] = " ".join(cvars['LDSHARED'].split()[1:]) +\
-                ' --coverage'
 
     setup_build(args, env)
 

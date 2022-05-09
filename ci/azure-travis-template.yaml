@@ -64,7 +64,7 @@ steps:
   displayName: 'Add ccache to path'
 - script: >-
     pip install --upgrade ${{parameters.numpy_spec}} &&
-    pip install --upgrade pip==20.2.4 setuptools wheel &&
+    pip install --upgrade pip setuptools==59.6.0 wheel &&
     pip install ${{parameters.other_spec}}
     cython
     gmpy2
@@ -82,7 +82,7 @@ steps:
   - script: pip install pytest-cov coverage codecov
     displayName: 'Install coverage dependencies'
 - ${{ if eq(parameters.refguide_check, true) }}:
-  - script: pip install matplotlib sphinx==3.1
+  - script: pip install matplotlib sphinx numpydoc
     displayName: 'Install documentation dependencies'
   - script: sudo apt-get install -y wamerican-small
     displayName: 'Install word list (for csgraph tutorial)'

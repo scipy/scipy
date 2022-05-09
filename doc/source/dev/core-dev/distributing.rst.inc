@@ -47,8 +47,6 @@ are:
 - `PyData Sphinx theme`_ (docs)
 - `Sphinx-Panels`_  (docs)
 - matplotlib_ (docs)
-- LaTeX (pdf docs)
-- Pillow_ (docs)
 
 Furthermore of course one needs C, C++ and Fortran compilers to build SciPy,
 but those we don't consider to be dependencies and are therefore not discussed

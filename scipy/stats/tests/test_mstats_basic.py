@@ -942,6 +942,16 @@ def test_theilslopes():
     assert_almost_equal(lower, 3.71, decimal=2)
 
 
+def test_theilslopes_warnings():
+    # Test `theilslopes` with degenerate input; see gh-15943
+    with pytest.warns(RuntimeWarning, match="All `x` coordinates are..."):
+        res = mstats.theilslopes([0, 1], [0, 0])
+        assert np.all(np.isnan(res))
+    with pytest.warns(RuntimeWarning, match="invalid value encountered..."):
+        res = mstats.theilslopes([0, 0, 0], [0, 1, 0])
+        assert_allclose(res, (0, 0, np.nan, np.nan))
+
+
 def test_siegelslopes():
     # method should be exact for straight line
     y = 2 * np.arange(10) + 0.5
@@ -1816,8 +1826,8 @@ class TestCompareWithStats:
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings() as sup:
                 if mode in ['auto', 'exact']:
-                    sup.filter(RuntimeWarning,
-                               "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+                    message = "ks_2samp: Exact calculation unsuccessful."
+                    sup.filter(RuntimeWarning, message)
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
@@ -1832,8 +1842,8 @@ class TestCompareWithStats:
         for mode in ['auto', 'exact', 'asymp']:
             with suppress_warnings() as sup:
                 if mode in ['auto', 'exact']:
-                    sup.filter(RuntimeWarning,
-                               "ks_2samp: Exact calculation unsuccessful. Switching to mode=asymp.")
+                    message = "ks_2samp: Exact calculation unsuccessful."
+                    sup.filter(RuntimeWarning, message)
                 for alternative in ['less', 'greater', 'two-sided']:
                     for n in self.get_n():
                         x, y, xm, ym = self.generate_xy_sample(n)
