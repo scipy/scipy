@@ -1547,7 +1547,7 @@ class TestPareto:
                              [p for p in product([True, False], repeat=3)
                               if False in p])
     def test_fit_MLE_comp_optimizer(self, rvs_shape, rvs_loc, rvs_scale,
-                                   fix_shape, fix_loc, fix_scale, rng):
+                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
                                 loc=rvs_loc, random_state=rng)
         args = [data, (stats.pareto._fitstart(data), )]
@@ -2325,6 +2325,7 @@ class TestLaplace:
         x = stats.laplace.isf(p)
         assert_allclose(x, -np.log(2*p), rtol=1e-13)
 
+
 class TestPowerlaw(object):
     @pytest.fixture(scope='function')
     def rng(self):
@@ -2372,34 +2373,29 @@ class TestPowerlaw(object):
     def test_fit_warnings(self):
         assert_fit_warnings(stats.powerlaw)
         # test for error when `fscale + floc <= np.max(data)` is not satisfied
-        with assert_raises(FitDataError) as e:
-            stats.powerlaw.fit([1, 2, 4], floc=0, fscale=3)
         msg = r" Maximum likelihood estimation with 'powerlaw' requires"
-        assert msg in str(e.value)
+        with assert_raises(FitDataError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], floc=0, fscale=3)
 
         # test for error when `data - floc >= 0`  is not satisfied
-        with assert_raises(ValueError) as e:
-            stats.powerlaw.fit([1, 2, 4], floc=2)
         msg = r" Maximum likelihood estimation with 'powerlaw' requires"
-        assert msg in str(e.value)
-
-        # test for when fixed scale is less than or equal to range of data
-        with assert_raises(ValueError) as e:
-            stats.powerlaw.fit([1, 2, 4], fscale=3)
-        msg = r"`fscale` must be greater than the range of data."
-        assert msg in str(e.value)
-
-        # test for when fixed scale is less than or equal to range of data
-        with assert_raises(ValueError) as e:
-            stats.powerlaw.fit([1, 2, 4], fscale=-3)
-        msg = r"Negative or zero `fscale` is outside"
-        assert msg in str(e.value)
+        with assert_raises(FitDataError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], floc=2)
 
         # test for fixed location not less than `min(data)`.
-        with assert_raises(ValueError) as e:
-            stats.powerlaw.fit([1, 2, 4], floc=1)
         msg = r" Maximum likelihood estimation with 'powerlaw' requires"
-        assert msg in str(e.value)
+        with assert_raises(FitDataError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], floc=1)
+
+        # test for when fixed scale is less than or equal to range of data
+        msg = r"Negative or zero `fscale` is outside"
+        with assert_raises(ValueError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], fscale=-3)
+
+        # test for when fixed scale is less than or equal to range of data
+        msg = r"`fscale` must be greater than the range of data."
+        with assert_raises(ValueError, match=msg):
+            stats.powerlaw.fit([1, 2, 4], fscale=3)
 
 
 class TestInvGamma:
