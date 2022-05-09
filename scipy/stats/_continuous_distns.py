@@ -6962,8 +6962,9 @@ class powerlaw_gen(rv_continuous):
            and then return whichever is better (according to the log-likelihood
            function).
 
-        3) If the location fixed, return the analytically determined scale and
-           shape.
+        3) If the location is fixed, return the analytically determined scale
+           and shape (or if the shape is fixed, the fixed shape. At this point
+           the scale is known to be free.
 
         4) If the location, scale, and shape are all free, we find the
            solutions for the location, scale, and shape using analytical
@@ -6973,8 +6974,9 @@ class powerlaw_gen(rv_continuous):
         5) With the assumption that the shape is greater than one, use
           `root_scalar` to solve a system of equations formed by setting the
            partial derivatives of the log-likelihood function with respect to
-           the location the the scale equal to each other. Location is used as
-           the dependent variable and then the scale is analytically determined.
+           the location and the scale equal to each other. Location is used as
+           the dependent variable and then the scale is analytically
+           determined.
 
         In many cases, the use of `np.nextafter` is utilized to prevent
         roundoff error that causes the log likelihood equation to be very
@@ -7011,15 +7013,15 @@ class powerlaw_gen(rv_continuous):
             # the shape.
             return data.max() - loc
 
-        # 1) the location and scale are both fixed.
+        # 1) The location and scale are both fixed. Analytically determine the
+        # shape.
         if fscale is not None and floc is not None:
             return get_shape(data, floc, fscale), floc, fscale
 
-        # 2) the scale is fixed
+        # 2) The scale is fixed, and in the case where the scale is set to a
+        # non-optimal value, there may be two possible analytical solutions,
+        # but one gives a better log-likelihood result.
         if fscale is not None:
-            # in the case where the scale is set to a non-optimal value, there
-            # may be two possible analytical solutions, but one gives a better
-            # log-likelihood result.
             args = [data, (self._fitstart(data),)]
             func = self._reduce_func(args, {})[1]
 
@@ -7038,14 +7040,15 @@ class powerlaw_gen(rv_continuous):
             else:
                 return shape_gt1, loc_gt1, fscale
 
-        # 3) the location is fixed
+        # 3) The location is fixed. Return the analytical scale and the
+        # analytical (or fixed) shape.
         if floc is not None:
-            scale = fscale or get_scale(data, floc)
+            scale = get_scale(data, floc)
             shape = fshape or get_shape(data, floc, scale)
             return shape, floc, scale
 
         # 4) location, scale, and shape are all free, attempt to fit under the
-        # assumption that `shape <= 1`.
+        # assumption that `shape <= 1` analytically.
         loc = np.nextafter(data.min(), -np.inf)
         scale = np.nextafter(get_scale(data, loc), np.inf)
         shape = fshape or get_shape(data, loc, scale)
