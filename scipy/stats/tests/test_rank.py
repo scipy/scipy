@@ -195,9 +195,9 @@ class TestRankData:
     def test_nan_policy(self):
         # 1 1d-array test
         # 1-1 propagate test
-        assert_array_equal([2., 3., 4., 1., 5., 6.],
-                           rankdata([0, 2, 3, -2, np.nan, np.nan],
-                                    nan_policy="propagate"))
+        data = [0, 2, 3, -2, np.nan, np.nan]
+        res = rankdata(data, nan_policy="propagate")
+        assert_array_equal(res, [2., 3., 4., 1., 5., 6.])
         # # 1-2 raise test
         with pytest.raises(ValueError, match="The input contains nan"):
             rankdata([0, 2, 3, 2, np.nan], nan_policy='raise')
