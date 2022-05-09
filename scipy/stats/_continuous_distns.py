@@ -6951,24 +6951,30 @@ class powerlaw_gen(rv_continuous):
     def fit(self, data, *args, **kwds):
         '''
         The strategy for this fit method is complex, so its steps will be
-        described here first.
+        described here first. The following steps occur after validation
+        of fixed parameters and data.
 
-        1.
-        First, we attempt to find a fit to the data under the assumption that
-        the shape is less than one. This can be done analytically with closed
-        form equations. If the resulting shape is less than or equal to one,
-        then this fitting has been successful.
+        1) If the scale and location are fixed, return the analytically
+           determined shape.
 
-        2.
-        If fitting under the assumption that the shape was less than or equal
-        to one was not successful, we attempt to solve under the assumption
-        that the shape is equal to or greater than one. If either location or
-        scale is fixed, then the other can be determined analytically. If only
-        the shape is fixed, or no parameters are fixed, then use `root_scalar`
-        to solve a system of equations formed by setting the partial
-        derivatives of the log-likelihood function with respect to the location
-        the the scale equal to each other. Location is used as the dependent
-        variable and then the shape and scale are analytically determined.
+        2) If the scale is fixed, we find a fit with the analytical equations
+           that correspond to the shape being less than and greater than one,
+           and then return whichever is better (according to the log-likelihood
+           function).
+
+        3) If the location fixed, return the analytically determined scale and
+           shape.
+
+        4) If the location, scale, and shape are all free, we find the
+           solutions for the location, scale, and shape using analytical
+           equations under the assumption that the shape is less than one. If
+           the resulting shape is below one, then this is a successful fit.
+
+        5) With the assumption that the shape is greater than one, use
+          `root_scalar` to solve a system of equations formed by setting the
+           partial derivatives of the log-likelihood function with respect to
+           the location the the scale equal to each other. Location is used as
+           the dependent variable and then the scale is analytically determined.
 
         In many cases, the use of `np.nextafter` is utilized to prevent
         roundoff error that causes the log likelihood equation to be very
@@ -7005,9 +7011,11 @@ class powerlaw_gen(rv_continuous):
             # the shape.
             return data.max() - loc
 
+        # 1) the location and scale are both fixed.
         if fscale is not None and floc is not None:
             return get_shape(data, floc, fscale), floc, fscale
 
+        # 2) the scale is fixed
         if fscale is not None:
             # in the case where the scale is set to a non-optimal value, there
             # may be two possible analytical solutions, but one gives a better
@@ -7030,13 +7038,14 @@ class powerlaw_gen(rv_continuous):
             else:
                 return shape_gt1, loc_gt1, fscale
 
-        # The only remaining scenario is that the location might be fixed.
+        # 3) the location is fixed
         if floc is not None:
             scale = fscale or get_scale(data, floc)
             shape = fshape or get_shape(data, floc, scale)
             return shape, floc, scale
 
-        # First, attempt to fit under the assumption that `shape <= 1`.
+        # 4) location, scale, and shape are all free, attempt to fit under the
+        # assumption that `shape <= 1`.
         loc = np.nextafter(data.min(), -np.inf)
         scale = np.nextafter(get_scale(data, loc), np.inf)
         shape = fshape or get_shape(data, loc, scale)
@@ -7046,12 +7055,11 @@ class powerlaw_gen(rv_continuous):
         if 0 < shape <= 1:
             return shape, loc, scale
 
-        # if `shape > 1`, then we need to fit under the assumption that
-        # `shape > 1`.
-        # The support of the distribution is `(x - loc)/scale > 0`.
-        # If all parameters are free, or only the shape is fixed, the
-        # method of Lagrange multipliers turns this constraint into an
-        # equation that can be solved numerically.
+        # 5) Attempt to fit under the assumption that `shape > 1`. The support
+        # of the distribution is `(x - loc)/scale > 0`. If all parameters are
+        # free, or only the shape is fixed, the method of Lagrange multipliers
+        # turns this constraint into an equation that can be solved
+        # numerically.
 
         def dL_dLocation(data, shape, scale):
             # The partial derivative of the log-likelihood function w.r.t.

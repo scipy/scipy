@@ -389,7 +389,6 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
     custom_input = {}
     fnames = ['floc', 'fscale', 'f0', 'f1', 'f2']
     fixed = {}
-    distcont = distcont
 
     param_names = ["distribution", "case", "loc_fixed", "scale_fixed",
                    "shape1_fixed", "shape2_fixed", "shape3_fixed"]
@@ -407,7 +406,7 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
         # default `loc` and `scale` are .834 and 4.342, and shapes are from
         # `_distr_params.py`. If there are multiple cases of valid shapes in
         # `distcont`, they are benchmarked separately.
-        default_shapes_n = [s[1] for s in self.distcont if s[0] == dist_name]
+        default_shapes_n = [s[1] for s in distcont if s[0] == dist_name]
         if n_shape_use >= len(default_shapes_n):
             raise NotImplementedError("no alternate case for this dist")
         default_shapes = default_shapes_n[case]
