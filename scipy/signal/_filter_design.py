@@ -5102,7 +5102,7 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     return b, a
 
 
-def iircomb(w0, Q, ftype='notch', fs=2.0, pass_zero=False):
+def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     """
     Design IIR notching or peaking digital comb filter.
 
