@@ -198,14 +198,13 @@ class TestRankData:
         data = [0, 2, 3, -2, np.nan, np.nan]
         res = rankdata(data, nan_policy="propagate")
         assert_array_equal(res, [2., 3., 4., 1., 5., 6.])
-        # # 1-2 raise test
+        # 1-2 raise test
         with pytest.raises(ValueError, match="The input contains nan"):
-            rankdata([0, 2, 3, 2, np.nan], nan_policy='raise')
+            rankdata(data, nan_policy='raise')
 
         # 1-3 omit test
-        assert_array_equal([2., 3., 4., 1., np.nan, np.nan],
-                           rankdata([0, 2, 3, -2, np.nan, np.nan],
-                                    nan_policy="omit"))
+        res = rankdata(data, nan_policy='omit')
+        assert_array_equal(res, [2., 3., 4., 1., np.nan, np.nan])
 
         # 2 2d-array test
         data = [[0, np.nan, 3],
