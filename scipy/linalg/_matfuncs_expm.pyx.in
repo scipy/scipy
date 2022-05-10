@@ -14,7 +14,8 @@ from scipy.linalg.cython_blas cimport (sgemm, saxpy, sscal, scopy, sgemv,
                                        zgemm, zaxpy, zscal, zcopy, dgemv,
                                        csscal, zdscal, idamax)
 
-from ._cython_linalg._util cimport lapack_t, lapack_cz_t, lapack_sd_t, swap_c_and_f_layout
+from ._cythonized_array_utils cimport (lapack_t, lapack_cz_t,
+        lapack_sd_t, swap_c_and_f_layout)
 
 __all__ = ['pick_pade_structure', 'pade_UV_calc']
 

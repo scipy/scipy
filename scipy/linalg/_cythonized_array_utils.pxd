@@ -1,4 +1,3 @@
-
 ctypedef fused lapack_t:
     float
     double
