@@ -241,3 +241,8 @@ Name: Boost
 Files: scipy/_lib/boost/*
 License: Boost Software License - Version 1.0
   For details, see scipy/_lib/boost/LICENSE_1_0.txt
+
+Name: Biasedurn
+Files: scipy/stats/biasedurn/*
+License 3-Clause BSD
+  For details, see scipy/stats/biasedurn/license.txt
