@@ -222,6 +222,32 @@ cython_lapack = py3.extension_module('cython_lapack',
   subdir: 'scipy/linalg'
 )
 
+py3.install_sources(
+  ['_cythonized_array_utils.pyi', '_cythonized_array_utils.pxd'],
+  pure: false,
+  subdir: 'scipy/linalg',
+)
+
+# XXX: somehow this is needed, otherwise the pxd file is not found
+custom_target('cythonize_array_utils_pxd',
+  input : ['_cythonized_array_utils.pxd'],
+  output : ['_cythonized_array_utils.pxd'],
+  command : ['cp', '@INPUT0@', '@OUTPUT0@'],
+  install : true,
+  install_dir: py3.get_install_dir() + 'scipy/linalg'
+)
+
+
+_cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
+  linalg_init_cython_gen.process('_cythonized_array_utils.pyx'),
+  c_args: [cython_c_args, c_undefined_ok],
+  dependencies: [py3_dep],
+  include_directories: [inc_np],
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
+
 _decomp_update_pyx = custom_target('_decomp_update',
   output: '_decomp_update.pyx',
   input: '_decomp_update.pyx.in',
@@ -253,14 +279,7 @@ py3.extension_module('_matfuncs_expm',
   subdir: 'scipy/linalg'
 )
 
-_cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
-  linalg_init_cython_gen.process('_cythonized_array_utils.pyx'),
-  c_args: [cython_c_args, c_undefined_ok],
-  dependencies: [py3_dep],
-  include_directories: [inc_np],
-  install: true,
-  subdir: 'scipy/linalg'
-)
+
 
 python_sources = [
   '__init__.py',
@@ -310,11 +329,7 @@ py3.install_sources(
   subdir: 'scipy/linalg'
 )
 
-py3.install_sources(
-  ['_cythonized_array_utils.pyi'],
-  pure: false,
-  subdir: 'scipy/linalg'
-)
+
 
 # TODO: install (only) these pxd files. Neither py3.install_sources nor
 #       install_data accept generated data files. What
