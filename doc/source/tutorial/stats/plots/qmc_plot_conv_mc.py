@@ -42,10 +42,11 @@ def conv_method(sampler, func, n_samples, n_conv, ref):
 
 # Analysis
 sample_mc_rmse = []
+rng = np.random.default_rng()
 
 for ns in ns_gen:
     # Monte Carlo
-    sampler_mc = lambda x: np.random.random((x, case.dim))
+    sampler_mc = lambda x: rng.random((x, case.dim))
     conv_res = conv_method(sampler_mc, case.func, ns, n_conv, case.ref)
     sample_mc_rmse.append(conv_res)
 

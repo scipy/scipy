@@ -16,7 +16,7 @@ except ImportError:
 else:
     from scipy._lib._pep440 import Version as _Version
 
-    _has_uarray = _Version(_uarray.__version__) >= _Version("0.5")
+    _has_uarray = _Version(_uarray.__version__) >= _Version("0.8")
     del _uarray
     del _Version
 

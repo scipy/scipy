@@ -630,7 +630,7 @@ class TestQRdelete_D(BaseQRdelete):
 
 class BaseQRinsert(BaseQRdeltas):
     def generate(self, type, mode='full', which='row', p=1):
-        a, q, r = super(BaseQRinsert, self).generate(type, mode)
+        a, q, r = super().generate(type, mode)
 
         assert_(p > 0)
 
@@ -1172,7 +1172,7 @@ class TestQRinsert_D(BaseQRinsert):
 
 class BaseQRupdate(BaseQRdeltas):
     def generate(self, type, mode='full', p=1):
-        a, q, r = super(BaseQRupdate, self).generate(type, mode)
+        a, q, r = super().generate(type, mode)
 
         # super call set the seed...
         if p == 1:

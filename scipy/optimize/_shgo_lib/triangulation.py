@@ -369,7 +369,7 @@ class Complex:
 
              To plot a single simplex S in a set C, use e.g., [C[0]]
         """
-        from matplotlib import pyplot  # type: ignore[import]
+        from matplotlib import pyplot
         if self.dim == 2:
             pyplot.figure()
             for C in self.H:
@@ -510,7 +510,7 @@ class Cell(VertexGroup):
     """
 
     def __init__(self, p_gen, p_hgr, origin, supremum):
-        super(Cell, self).__init__(p_gen, p_hgr)
+        super().__init__(p_gen, p_hgr)
 
         self.origin = origin
         self.supremum = supremum
@@ -525,7 +525,7 @@ class Simplex(VertexGroup):
     """
 
     def __init__(self, p_gen, p_hgr, generation_cycle, dim):
-        super(Simplex, self).__init__(p_gen, p_hgr)
+        super().__init__(p_gen, p_hgr)
 
         self.generation_cycle = (generation_cycle + 1) % (dim - 1)
 

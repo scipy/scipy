@@ -9,7 +9,7 @@ from scipy.special._precompute.gammainc_asy import (
 from scipy.special._precompute.gammainc_data import gammainc, gammaincc
 
 try:
-    import sympy  # type: ignore[import]
+    import sympy
 except ImportError:
     sympy = MissingModule('sympy')
 

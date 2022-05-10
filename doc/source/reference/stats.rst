@@ -6,6 +6,5 @@
 .. toctree::
    :hidden:
 
-   stats.mstats
-   stats.qmc
    stats._result_classes
+   stats.contingency

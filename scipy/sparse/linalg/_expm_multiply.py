@@ -3,10 +3,9 @@
 
 import numpy as np
 
-import scipy.linalg
-import scipy.sparse.linalg
+import scipy.sparse
 from scipy.sparse.linalg import aslinearoperator
-from scipy.sparse.sputils import is_pydata_spmatrix
+from scipy.sparse._sputils import is_pydata_spmatrix
 
 __all__ = ['expm_multiply']
 
@@ -33,18 +32,16 @@ def _exact_1_norm(A):
 
 def _trace(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
-        return A.diagonal().sum()
-    elif is_pydata_spmatrix(A):
-        return A.to_scipy_sparse().diagonal().sum()
+    if is_pydata_spmatrix(A):
+        return A.to_scipy_sparse().trace()
     else:
-        return np.trace(A)
+        return A.trace()
 
 
 def _ident_like(A):
     # A compatibility function which should eventually disappear.
     if scipy.sparse.isspmatrix(A):
-        return scipy.sparse.construct.eye(A.shape[0], A.shape[1],
+        return scipy.sparse._construct.eye(A.shape[0], A.shape[1],
                 dtype=A.dtype, format=A.format)
     elif is_pydata_spmatrix(A):
         import sparse
@@ -118,9 +115,9 @@ def expm_multiply(A, B, start=None, stop=None, num=None, endpoint=None):
     >>> from scipy.sparse import csc_matrix
     >>> from scipy.sparse.linalg import expm, expm_multiply
     >>> A = csc_matrix([[1, 0], [0, 1]])
-    >>> A.todense()
-    matrix([[1, 0],
-            [0, 1]], dtype=int64)
+    >>> A.toarray()
+    array([[1, 0],
+           [0, 1]], dtype=int64)
     >>> B = np.array([np.exp(-1.), np.exp(-2.)])
     >>> B
     array([ 0.36787944,  0.13533528])
@@ -309,7 +306,8 @@ def _onenormest_matrix_power(A, p,
     #XXX Eventually turn this into an API function in the  _onenormest module,
     #XXX and remove its underscore,
     #XXX but wait until expm_multiply goes into scipy.
-    return scipy.sparse.linalg.onenormest(aslinearoperator(A) ** p)
+    from scipy.sparse.linalg._onenormest import onenormest
+    return onenormest(aslinearoperator(A) ** p)
 
 class LazyOperatorNormInfo:
     """

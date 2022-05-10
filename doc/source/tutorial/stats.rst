@@ -24,6 +24,7 @@ Note: This documentation is work in progress.
 
    stats/discrete
    stats/continuous
+   stats/sampling
 
 
 Random variables
@@ -99,7 +100,7 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
     >>> print('number of continuous distributions: %d' % len(dist_continu))
-    number of continuous distributions: 102
+    number of continuous distributions: 106
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
     number of discrete distributions:   19
 
@@ -199,6 +200,11 @@ seed an internal ``Generator`` object:
 
 For further info, see `NumPy's documentation
 <https://numpy.org/doc/stable/reference/random/index.html>`__.
+
+To learn more about the random number samplers implemented in SciPy, see
+:ref:`non-uniform random number sampling tutorial
+<non-uniform-random-number-sampling>` and :ref:`quasi monte carlo tutorial
+<quasi-monte-carlo>`
 
 Shifting and scaling
 ^^^^^^^^^^^^^^^^^^^^
@@ -1141,8 +1147,9 @@ Let's use a custom plotting function to plot the data relationship:
 
 Let's look at some linear data first:
 
+    >>> rng = np.random.default_rng()
     >>> x = np.linspace(-1, 1, num=100)
-    >>> y = x + 0.3 * np.random.random(x.size)
+    >>> y = x + 0.3 * rng.random(x.size)
 
 The simulation relationship can be plotted below:
 
@@ -1176,9 +1183,9 @@ case is **equivalent to the global scale**, marked by a red spot on the map.
 The same can be done for nonlinear data sets. The following :math:`x` and
 :math:`y` arrays are derived from a nonlinear simulation:
 
-    >>> unif = np.array(np.random.uniform(0, 5, size=100))
+    >>> unif = np.array(rng.uniform(0, 5, size=100))
     >>> x = unif * np.cos(np.pi * unif)
-    >>> y = unif * np.sin(np.pi * unif) + 0.4 * np.random.random(x.size)
+    >>> y = unif * np.sin(np.pi * unif) + 0.4 * rng.random(x.size)
 
 The simulation relationship can be plotted below:
 
@@ -1207,6 +1214,8 @@ because the p-value is very low and the MGC test statistic is relatively high.
 The MGC-map indicates a **strongly nonlinear relationship**. The optimal scale
 in this case is **equivalent to the local scale**, marked by a red spot on the
 map.
+
+.. _quasi-monte-carlo:
 
 Quasi-Monte Carlo
 -----------------

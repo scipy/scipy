@@ -6,7 +6,7 @@ from pytest import raises as assert_raises
 
 from scipy.linalg import inv, eigh, norm
 from scipy.linalg import orthogonal_procrustes
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 def test_orthogonal_procrustes_ndim_too_large():

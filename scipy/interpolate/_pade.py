@@ -15,7 +15,7 @@ def pade(an, m, n=None):
         The order of the returned approximating polynomial `q`.
     n : int, optional
         The order of the returned approximating polynomial `p`. By default,
-        the order is ``len(an)-m``.
+        the order is ``len(an)-1-m``.
 
     Returns
     -------

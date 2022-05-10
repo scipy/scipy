@@ -550,7 +550,7 @@ void CWalleniusNCHypergeometric::findpars() {
    // find r to center peak of integrand at 0.5
    double dd, d1, z, zd, rr, lastr, rrc, rt, r2, r21, a, b, dummy;
    double oo[2];
-   double xx[2] = {x, n-x};
+   double xx[2] = {static_cast<double>(x), static_cast<double>(n-x)};
    int i, j = 0;
    if (omega > 1.) { // make both omegas <= 1 to avoid overflow
       oo[0] = 1.;  oo[1] = 1./omega;
@@ -630,13 +630,14 @@ int CWalleniusNCHypergeometric::BernouilliH(int32_t x_, double h, double rh, Sto
    // This function is intended for use in rejection methods for sampling from
    // the Wallenius distribution. It is called from 
    // StochasticLib3::WalleniusNCHypRatioOfUnifoms in the file stoc3.cpp
-   double f0;                      // Lambda*Phi(½)
-   double phideri0;                // phi(½)/rd
+   double f0;                      // Lambda*Phi(.5)
+   double phideri0;                // phi(.5)/rd
    double qi;                      // 2^(-r*omega[i])
    double qi1;                     // 1-qi
    double omegai[2] = {omega,1.};  // weights for each color
    double romegi;                  // r*omega[i]
-   double xi[2] = {x_, n-x_};      // number of each color sampled
+   double xi[2] =                  // number of each color sampled
+       {static_cast<double>(x_), static_cast<double>(n-x_)};
    double k;                       // adjusted width for majorizing function Ypsilon(t)
    double erfk;                    // erf correction
    double rdm1;                    // rd - 1
@@ -662,7 +663,7 @@ int CWalleniusNCHypergeometric::BernouilliH(int32_t x_, double h, double rh, Sto
    k *= w;                         // w * k   
    rdm1 = rd - 1.;
 
-   // calculate phi(½)/rd
+   // calculate phi(.5)/rd
    phideri0 = -LN2 * rdm1;
    for (i=0; i<2; i++) {
       romegi = r * omegai[i];
@@ -801,7 +802,8 @@ double CWalleniusNCHypergeometric::laplace() {
    int degree;                   // max expansion degree
    double accur;                 // stop expansion when terms below this threshold
    double omegai[COLORS] = {omega, 1.}; // weights for each color
-   double xi[COLORS] = {x, n-x}; // number of each color sampled
+   double xi[COLORS] =           // number of each color sampled
+       {static_cast<double>(x), static_cast<double>(n-x)};
    double f0;                    // factor outside integral
    double rho[COLORS];           // r*omegai
    double qi;                    // 2^(-rho)

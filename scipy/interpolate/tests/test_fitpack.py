@@ -10,10 +10,10 @@ from scipy._lib._testutils import check_free_memory
 
 from numpy import array, asarray, pi, sin, cos, arange, dot, ravel, sqrt, round
 from scipy import interpolate
-from scipy.interpolate.fitpack import (splrep, splev, bisplrep, bisplev,
+from scipy.interpolate._fitpack_py import (splrep, splev, bisplrep, bisplev,
      sproot, splprep, splint, spalde, splder, splantider, insert, dblint)
 from scipy.interpolate.dfitpack import regrid_smth
-from scipy.interpolate.fitpack2 import dfitpack_int
+from scipy.interpolate._fitpack2 import dfitpack_int
 
 
 def data_file(basename):

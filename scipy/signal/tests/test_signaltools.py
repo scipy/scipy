@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import sys
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
 from itertools import product
 from math import gcd
@@ -17,7 +18,7 @@ from numpy import array, arange
 import numpy as np
 
 from scipy.fft import fft
-from scipy.ndimage.filters import correlate1d
+from scipy.ndimage import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (
@@ -28,7 +29,7 @@ from scipy.signal import (
     sosfilt_zi, tf2zpk, BadCoefficients, detrend, unique_roots, residue,
     residuez)
 from scipy.signal.windows import hann
-from scipy.signal.signaltools import (_filtfilt_gust, _compute_factors,
+from scipy.signal._signaltools import (_filtfilt_gust, _compute_factors,
                                       _group_poles)
 from scipy.signal._upfirdn import _upfirdn_modes
 from scipy._lib import _testutils
@@ -747,9 +748,9 @@ class TestFFTConvolve:
         b = b[:, :, None, None, None]
         expected = expected[:, :, None, None, None]
 
-        a = np.rollaxis(a.swapaxes(0, 2), 1, 5)
-        b = np.rollaxis(b.swapaxes(0, 2), 1, 5)
-        expected = np.rollaxis(expected.swapaxes(0, 2), 1, 5)
+        a = np.moveaxis(a.swapaxes(0, 2), 1, 4)
+        b = np.moveaxis(b.swapaxes(0, 2), 1, 4)
+        expected = np.moveaxis(expected.swapaxes(0, 2), 1, 4)
 
         # use 1 for dimension 2 in a and 3 in b to test broadcasting
         a = np.tile(a, [2, 1, 3, 1, 1])
@@ -776,6 +777,17 @@ class TestFFTConvolve:
         out = fftconvolve(a, b, 'full', axes=[0])
         assert_allclose(out, expected, atol=1e-10)
 
+    def test_fft_nan(self):
+        n = 1000
+        rng = np.random.default_rng(43876432987)
+        sig_nan = rng.standard_normal(n)
+
+        for val in [np.nan, np.inf]:
+            sig_nan[100] = val
+            coeffs = signal.firwin(200, 0.2)
+
+            with pytest.warns(RuntimeWarning, match="Use of fft convolution"):
+                signal.convolve(sig_nan, coeffs, mode='same', method='fft')
 
 def fftconvolve_err(*args, **kwargs):
     raise RuntimeError('Fell back to fftconvolve')
@@ -833,7 +845,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode)
 
@@ -862,7 +874,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode, axes=axes)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode, axes=axes)
 
@@ -883,7 +895,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode)
 
@@ -915,7 +927,7 @@ class TestOAConvolve:
 
         expected = fftconvolve(a, b, mode=mode, axes=axes)
 
-        monkeypatch.setattr(signal.signaltools, 'fftconvolve',
+        monkeypatch.setattr(signal._signaltools, 'fftconvolve',
                             fftconvolve_err)
         out = oaconvolve(a, b, mode=mode, axes=axes)
 
@@ -1061,6 +1073,16 @@ class TestMedFilt:
         assert_equal(signal.medfilt(in_typed).dtype, dtype)
         assert_equal(signal.medfilt2d(in_typed).dtype, dtype)
 
+    @pytest.mark.parametrize('dtype', [np.bool_, np.cfloat, np.cdouble,
+                                       np.clongdouble, np.float16,])
+    def test_invalid_dtypes(self, dtype):
+        in_typed = np.array(self.IN, dtype=dtype)
+        with pytest.raises(ValueError, match="order_filterND"):
+            signal.medfilt(in_typed)
+
+        with pytest.raises(ValueError, match="order_filterND"):
+            signal.medfilt2d(in_typed)
+
     def test_none(self):
         # gh-1651, trac #1124. Ensure this does not segfault.
         with pytest.warns(UserWarning):
@@ -1094,6 +1116,63 @@ class TestMedFilt:
         out_object = np.array(self.OUT, dtype=object)
         assert_array_equal(signal.medfilt(in_object, self.KERNEL_SIZE),
                            out_object)
+
+    @pytest.mark.parametrize("dtype", [np.ubyte, np.float32, np.float64])
+    def test_medfilt2d_parallel(self, dtype):
+        in_typed = np.array(self.IN, dtype=dtype)
+        expected = np.array(self.OUT, dtype=dtype)
+
+        # This is used to simplify the indexing calculations.
+        assert in_typed.shape == expected.shape
+
+        # We'll do the calculation in four chunks. M1 and N1 are the dimensions
+        # of the first output chunk. We have to extend the input by half the
+        # kernel size to be able to calculate the full output chunk.
+        M1 = expected.shape[0] // 2
+        N1 = expected.shape[1] // 2
+        offM = self.KERNEL_SIZE[0] // 2 + 1
+        offN = self.KERNEL_SIZE[1] // 2 + 1
+
+        def apply(chunk):
+            # in = slice of in_typed to use.
+            # sel = slice of output to crop it to the correct region.
+            # out = slice of output array to store in.
+            M, N = chunk
+            if M == 0:
+                Min = slice(0, M1 + offM)
+                Msel = slice(0, -offM)
+                Mout = slice(0, M1)
+            else:
+                Min = slice(M1 - offM, None)
+                Msel = slice(offM, None)
+                Mout = slice(M1, None)
+            if N == 0:
+                Nin = slice(0, N1 + offN)
+                Nsel = slice(0, -offN)
+                Nout = slice(0, N1)
+            else:
+                Nin = slice(N1 - offN, None)
+                Nsel = slice(offN, None)
+                Nout = slice(N1, None)
+
+            # Do the calculation, but do not write to the output in the threads.
+            chunk_data = in_typed[Min, Nin]
+            med = signal.medfilt2d(chunk_data, self.KERNEL_SIZE)
+            return med[Msel, Nsel], Mout, Nout
+
+        # Give each chunk to a different thread.
+        output = np.zeros_like(expected)
+        with ThreadPoolExecutor(max_workers=4) as pool:
+            chunks = {(0, 0), (0, 1), (1, 0), (1, 1)}
+            futures = {pool.submit(apply, chunk) for chunk in chunks}
+
+            # Store each result in the output as it arrives.
+            for future in as_completed(futures):
+                data, Mslice, Nslice = future.result()
+                output[Mslice, Nslice] = data
+
+        assert_array_equal(output, expected)
+
 
 class TestWiener:
 
@@ -1189,6 +1268,14 @@ class TestResample:
         h = np.array([1, 1, 1], dtype=np.float32)
         y = signal.resample_poly(x, 1, 2, window=h, padtype=padtype)
         assert(y.dtype == np.float32)
+
+    @pytest.mark.parametrize('padtype', padtype_options)
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_output_match_dtype(self, padtype, dtype):
+        # Test that the dtype of x is preserved per issue #14733
+        x = np.arange(10, dtype=dtype)
+        y = signal.resample_poly(x, 1, 2, padtype=padtype)
+        assert(y.dtype == x.dtype)
 
     @pytest.mark.parametrize(
         "method, ext, padtype",
@@ -2133,6 +2220,12 @@ class TestLFilterZI:
         zi2 = lfilter_zi(2*b, 2*a)
         assert_allclose(zi2, zi1, rtol=1e-12)
 
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_types(self, dtype):
+        b = np.zeros((8), dtype=dtype)
+        a = np.array([1], dtype=dtype)
+        assert_equal(np.real(signal.lfilter_zi(b, a)).dtype, dtype)
+
 
 class TestFiltFilt:
     filtfilt_kind = 'tf'
@@ -2250,7 +2343,7 @@ def filtfilt_gust_opt(b, a, x):
     An alternative implementation of filtfilt with Gustafsson edges.
 
     This function computes the same result as
-    `scipy.signal.signaltools._filtfilt_gust`, but only 1-d arrays
+    `scipy.signal._signaltools._filtfilt_gust`, but only 1-d arrays
     are accepted.  The problem is solved using `fmin` from `scipy.optimize`.
     `_filtfilt_gust` is significanly faster than this implementation.
     """
@@ -2315,10 +2408,10 @@ def check_filtfilt_gust(b, a, shape, axis, irlen=None):
     zo1 = np.swapaxes(zo1, -1, axis)
     zo2 = np.swapaxes(zo2, -1, axis)
 
-    assert_allclose(y, yo, rtol=1e-9, atol=1e-10)
-    assert_allclose(yg, yo, rtol=1e-9, atol=1e-10)
-    assert_allclose(zg1, zo1, rtol=1e-9, atol=1e-10)
-    assert_allclose(zg2, zo2, rtol=1e-9, atol=1e-10)
+    assert_allclose(y, yo, rtol=1e-8, atol=1e-9)
+    assert_allclose(yg, yo, rtol=1e-8, atol=1e-9)
+    assert_allclose(zg1, zo1, rtol=1e-8, atol=1e-9)
+    assert_allclose(zg2, zo2, rtol=1e-8, atol=1e-9)
 
 
 def test_choose_conv_method():
@@ -2570,6 +2663,11 @@ class TestHilbert:
                            9.444121133484362e-17 - 0.79252210110103j])
         assert_almost_equal(aan[0], a0hilb, 14, 'N regression')
 
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_hilbert_types(self, dtype):
+        in_typed = np.zeros(8, dtype=dtype)
+        assert_equal(np.real(signal.hilbert(in_typed)).dtype, dtype)
+
 
 class TestHilbert2:
 
@@ -2587,6 +2685,11 @@ class TestHilbert2:
         assert_raises(ValueError, hilbert2, x, N=0)
         assert_raises(ValueError, hilbert2, x, N=(2, 0))
         assert_raises(ValueError, hilbert2, x, N=(2,))
+
+    @pytest.mark.parametrize('dtype', [np.float32, np.float64])
+    def test_hilbert2_types(self, dtype):
+        in_typed = np.zeros((2, 32), dtype=dtype)
+        assert_equal(np.real(signal.hilbert2(in_typed)).dtype, dtype)
 
 
 class TestPartialFractionExpansion:
@@ -3333,6 +3436,18 @@ class TestDeconvolve:
         recorded = [0, 2, 1, 0, 2, 3, 1, 0, 0]
         recovered, remainder = signal.deconvolve(recorded, impulse_response)
         assert_allclose(recovered, original)
+
+    def test_n_dimensional_signal(self):
+        recorded = [[0, 0], [0, 0]]
+        impulse_response = [0, 0]
+        with pytest.raises(ValueError, match="signal must be 1-D."):
+            quotient, remainder = signal.deconvolve(recorded, impulse_response)
+
+    def test_n_dimensional_divisor(self):
+        recorded = [0, 0]
+        impulse_response = [[0, 0], [0, 0]]
+        with pytest.raises(ValueError, match="divisor must be 1-D."):
+            quotient, remainder = signal.deconvolve(recorded, impulse_response)
 
 
 class TestDetrend:

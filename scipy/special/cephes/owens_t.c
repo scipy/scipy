@@ -333,7 +333,7 @@ double owens_t(double h, double a) {
 
     if (fabs_a == NPY_INFINITY) {
 	/* See page 13 in the paper */
-	result = owens_t_norm2(h);
+	result = 0.5 * owens_t_norm2(h);
     }
     else if (h == NPY_INFINITY) {
 	result = 0;

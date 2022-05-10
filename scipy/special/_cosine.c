@@ -14,11 +14,17 @@
  *  The ufuncs are used by the class scipy.stats.cosine_gen.
  */
 
-#include <stdio.h>
+#include "cephes/polevl.h"
 #include <math.h>
 
-#include "cephes/polevl.h"
-
+// M_PI64 is the 64 bit floating point representation of π, e.g.
+//   >>> math.pi.hex()
+//   '0x1.921fb54442d18p+1'
+// It is used in the function cosine_cdf_pade_approx_at_neg_pi,
+// which depends on this value being the 64 bit representation.
+// Do not replace this with M_PI from math.h or NPY_PI from the
+// numpy header files.
+#define M_PI64 0x1.921fb54442d18p+1
 
 //
 // p and q (below) are the coefficients in the numerator and denominator
@@ -89,10 +95,10 @@ double cosine_cdf_pade_approx_at_neg_pi(double x)
                              0.020281047093125535,
                              1.0};
 
-    // M_PI is not exactly π.  In fact, float64(π - M_PI) is
+    // M_PI64 is not exactly π.  In fact, float64(π - M_PI64) is
     // 1.2246467991473532e-16.  h is supposed to be x + π, so to compute
     // h accurately, we write the calculation as:
-    h = (x + M_PI) + 1.2246467991473532e-16;
+    h = (x + M_PI64) + 1.2246467991473532e-16;
     h2 = h*h;
     h3 = h2*h;
     numer = h3*polevl(h2, numer_coeffs,
@@ -204,7 +210,6 @@ double _poly_approx(double s)
 {
     double s2;
     double p;
-    double px;
     double coeffs[] = {1.1911667949082915e-08,
                        1.683039183039183e-07,
                        43.0/17248000,

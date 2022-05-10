@@ -20,7 +20,7 @@ c       are all nonnegative. This routine uses a randomized algorithm.
 c
 c       input:
 c       m -- number of rows in a
-c       n -- number of columns in a 
+c       n -- number of columns in a
 c       a -- matrix to be decomposed; the present routine does not
 c            alter a
 c       krank -- rank of the SVD being constructed
