@@ -1074,13 +1074,6 @@ class TestFligner:
 
 
 class TestMood:
-    def test_mood(self):
-        # numbers from R: mood.test in package stats
-        x1 = np.arange(5)
-        assert_array_almost_equal(stats.mood(x1, x1**2),
-                                  (-1.3830857299399906, 0.16663858066771478),
-                                  11)
-
     @pytest.mark.parametrize("x,y,alternative,p_expect,stat_expect",
                              # standard case containing ties
                              [([111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
