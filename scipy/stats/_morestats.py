@@ -2885,7 +2885,8 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     return FlignerResult(Xsq, pval)
 
 
-def mood(x, y, axis=0, alternative="two-sided"):
+@_axis_nan_policy_factory(lambda x1, x2: (x1, x2), n_samples=2)
+def mood(x, y, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
 
     Mood's two-sample test for scale parameters is a non-parametric
@@ -2896,11 +2897,6 @@ def mood(x, y, axis=0, alternative="two-sided"):
     ----------
     x, y : array_like
         Arrays of sample data.
-    axis : int, optional
-        The axis along which the samples are tested.  `x` and `y` can be of
-        different length along `axis`.
-        If `axis` is None, `x` and `y` are flattened and the test is done on
-        all values in the flattened arrays.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis. Default is 'two-sided'.
         The following options are available:
@@ -2969,29 +2965,14 @@ def mood(x, y, axis=0, alternative="two-sided"):
     x = np.asarray(x, dtype=float)
     y = np.asarray(y, dtype=float)
 
-    if axis is None:
-        x = x.flatten()
-        y = y.flatten()
-        axis = 0
-
-    if axis < 0:
-        axis = x.ndim + axis
-
-    # Determine shape of the result arrays
-    res_shape = tuple([x.shape[ax] for ax in range(len(x.shape)) if ax != axis])
-    if not (res_shape == tuple([y.shape[ax] for ax in range(len(y.shape)) if
-                                ax != axis])):
-        raise ValueError("Dimensions of x and y on all axes except `axis` "
-                         "should match")
-
-    n = x.shape[axis]
-    m = y.shape[axis]
+    n = x.shape[0]
+    m = y.shape[0]
     N = m + n
     if N < 3:
         raise ValueError("Not enough observations.")
 
-    xy = np.concatenate((x, y), axis=axis)
-    xy = np.moveaxis(xy, axis, -1)
+    xy = np.concatenate((x, y), axis=0)
+    xy = np.moveaxis(xy, 0, -1)
 
     # obtain the unique values and the counts of each.
     # "a_i, + b_i, = t_i, for j = 1, ... k", where `k` is the number of unique
@@ -3054,21 +3035,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
                 t * (t**2 - 1) * (t**2 - 4 + (15 * (N - S - S_i_m1) ** 2))
             ))
     z = (T - E_0_T) / np.sqrt(varM)
-    
-    # sf for right tail, cdf for left tail.  Factor 2 for two-sidedness
-    # z_pos = z > 0
-    # pval = np.zeros_like(z)
-    # pval[z_pos] = 2 * distributions.norm.sf(z[z_pos])
-    # pval[~z_pos] = 2 * distributions.norm.cdf(z[~z_pos])
-    z, pval = _normtest_finish(z, alternative)
 
-    if res_shape == ():
-        # Return scalars, not 0-D arrays
-        z = z.item()
-        pval = pval.item()
-    else:
-        z.shape = res_shape
-        pval.shape = res_shape
+    z, pval = _normtest_finish(z, alternative)
 
     return z, pval
 
