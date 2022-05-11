@@ -246,3 +246,8 @@ Name: Biasedurn
 Files: scipy/stats/biasedurn/*
 License 3-Clause BSD
   For details, see scipy/stats/biasedurn/license.txt
+
+Name: UNU.RAN
+Files: scipy/_lib/unuran/*
+License 3-Clause BSD
+  For details, see scipy/_lib/unuran/license.txt
