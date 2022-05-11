@@ -5281,12 +5281,17 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     bx = (G0 + G * beta) / (1 + beta)
     cx = (G0 - G * beta) / (1 + beta)
 
+    # Last coefficients are negative to get peaking comb that passes zero or
+    # notching comb that doesn't.
+    negative_coef = ((ftype == 'peak' and pass_zero) or
+                     (ftype == 'notch' and not pass_zero))
+
     # Compute numerator coefficients
     # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
     # b - cz^-N or b + cz^-N
     b = np.zeros(N + 1)
     b[0] = bx
-    if (ftype == 'notch' and not pass_zero) or (ftype == 'peak' and pass_zero):
+    if negative_coef:
         b[-1] = -cx
     else:
         b[-1] = +cx
@@ -5296,7 +5301,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     # 1 - az^-N or 1 + az^-N
     a = np.zeros(N + 1)
     a[0] = 1
-    if (ftype == 'notch' and not pass_zero) or (ftype == 'peak' and pass_zero):
+    if negative_coef:
         a[-1] = -ax
     else:
         a[-1] = +ax
