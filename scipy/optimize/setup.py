@@ -94,17 +94,18 @@ def configuration(parent_package='', top_path=None):
         join('slsqp', x) for x in sources], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
 
-    sources = ['direct_wrap.c', 'DIRect.c',
-               'DIRsubrout.c', 'DIRserial.c']
-    headers = ['directmodule.h', 'direct-internal.h']
+    sources = [join('_direct', x) for x in
+               ('direct_wrap.c', 'DIRect.c', 'DIRsubrout.c', 'DIRserial.c')]
+    headers = ['_directmodule.h',
+               join('_direct', 'direct-internal.h')]
     config.add_library('_direct_lib',
-                       sources=[join('_direct', x) for x in sources],
-                       headers=[join('_direct', x) for x in headers],
+                       sources=sources,
+                       headers=headers,
                        include_dirs=[get_python_inc()],
                        **numpy_nodepr_api)
 
     config.add_extension('_directmodule',
-                         sources=['directmodule.c'],
+                         sources=['_directmodule.c'],
                          libraries=['_direct_lib'],
                          depends=(sources + headers),
                          **numpy_nodepr_api)

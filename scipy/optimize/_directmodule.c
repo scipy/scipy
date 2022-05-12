@@ -1,6 +1,6 @@
 #include "Python.h"
 #include "numpy/arrayobject.h"
-#include "directmodule.h"
+#include "_directmodule.h"
 
 static PyObject *
 direct(PyObject *self, PyObject *args)

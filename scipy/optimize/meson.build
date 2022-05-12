@@ -7,11 +7,15 @@ fortran_ignore_warnings = [
 ]
 
 _directmodule = py3.extension_module('_directmodule',
-  ['_direct/direct_wrap.c', '_direct/DIRect.c',
-   '_direct/DIRsubrout.c', '_direct/DIRserial.c',
-   'directmodule.h', '_direct/direct-internal.h',
-   'directmodule.c'],
-  c_args: [numpy_nodepr_api, '-Wno-maybe-uninitialized'],
+  ['_direct/direct_wrap.c',
+   '_direct/direct-internal.h',
+   '_direct/DIRect.c',
+   '_direct/DIRserial.c',
+   '_direct/DIRsubrout.c',
+   '_directmodule.h',
+   '_directmodule.c'
+  ],
+  c_args: [numpy_nodepr_api],
   include_directories: include_dirs,
   dependencies: [py3_dep],
   install: true,
