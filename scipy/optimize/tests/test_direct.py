@@ -31,6 +31,9 @@ class TestDIRECT:
     def nan_fun(self, x):
         return np.nan
 
+    def inf_fun(self, x):
+        return np.inf
+
     def styblinski_tang(self, pos):
         x, y = pos
         return 0.5 * (x**4 - 16 * x**2 + 5 * x + y**4 - 16 * y**2 + 5 * y)
@@ -201,4 +204,11 @@ class TestDIRECT:
         bounds = [(-5., 20.)] * 100
         result = direct(self.sphere, bounds, maxfun=10000000,
                         maxiter=1000000, locally_biased=locally_biased)
+        assert result is not None
+
+    @pytest.mark.parametrize("locally_biased", [True, False])
+    def test_inf_fun(self, locally_biased):
+        # test that an objective value of infinity does not crash DIRECT
+        bounds = [(-5., 5.)] * 2
+        result = direct(self.inf_fun, locally_biased=locally_biased)
         assert result is not None
