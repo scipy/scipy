@@ -617,22 +617,22 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
         an accuracy of ``abs(i-result) <= max(epsabs, epsrel*abs(i))``
         where ``i`` = inner integral of ``func(y, x)`` from ``gfun(x)``
         to ``hfun(x)``, and ``result`` is the numerical approximation.
-        See `epsrel` below. This arugment is deprecated and will be
+        See `epsrel` below. This argument is deprecated and will be
         removed in SciPy 1.11.0. Please use the `opts` argument instead.
     epsrel : float, optional
         Relative tolerance of the inner 1-D integrals. Default is 1.49e-8.
         If ``epsabs <= 0``, `epsrel` must be greater than both 5e-29
-        and ``50 * (machine epsilon)``. See `epsabs` above. This arugment is
-        deprecated instead and will be removed in SciPy 1.11.0. Please use the
+        and ``50 * (machine epsilon)``. See `epsabs` above. This argument is
+        deprecated and will be removed in SciPy 1.11.0. Please use the
         `opts` argument instead.
     opts : iterable object or dict, optional
         Options to be passed to `quad`. May be empty, a dict, or
         a sequence of dicts or functions that return a dict. If empty, the
         default options from scipy.integrate.quad are used. If a dict, the same
-        options are used for all levels of integraion. If a sequence, then each
-        element of the sequence corresponds to a particular integration. e.g.,
-        ``opts[0]`` corresponds to integration over ``x0``, and so on. If a
-        callable, the signature must be the same as for ``ranges``. The
+        options are used for all levels of integration. If a sequence, then
+        each element of the sequence corresponds to a particular integration.
+        e.g., ``opts[0]`` corresponds to integration over ``x0``, and so on. If
+        a callable, the signature must be the same as for ``ranges``. The
         available options together with their default values are:
 
         - epsabs = 1.49e-08
@@ -783,15 +783,15 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
     """
 
     if epsabs != inspect.signature(dblquad).parameters.get('epsabs').default:
-        msg = "Passing `epsabs` explicitly is deprecated and will be removed" \
-              "in SciPy 1.11.0. Please pass it via the `opts` argument. " \
-              "instead. `epsabs` will be ignored."
+        msg = ("Passing `epsabs` explicitly is deprecated and will be removed "
+               "in SciPy 1.11.0. Please pass it via the `opts` argument. "
+               "instead. `epsabs` will be ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     if epsrel != inspect.signature(dblquad).parameters.get('epsrel').default:
-        msg = "Passing `epsrel` explicitly is deprecated and will be removed" \
-              "in SciPy 1.11.0. Please pass it via the `opts` argument. " \
-              "instead. `epsrel` will be ignored."
+        msg = ("Passing `epsrel` explicitly is deprecated and will be removed "
+               "in SciPy 1.11.0. Please pass it via the `opts` argument. "
+               "instead. `epsrel` will be ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     def temp_ranges(*args):
@@ -832,21 +832,21 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         Extra arguments to pass to `func`.
     epsabs : float, optional
         Absolute tolerance passed directly to the innermost 1-D quadrature
-        integration. Default is 1.49e-8. This arugment is deprecated instead
+        integration. Default is 1.49e-8. This argument is deprecated
         and will be removed in SciPy 1.11.0. Please use the `opts` argument
         instead.
     epsrel : float, optional
         Relative tolerance of the innermost 1-D integrals. Default is 1.49e-8.
-        This arugment is deprecated instead and will be removed in
-        SciPy 1.11.0. Please use the `opts` argument instead.
+        This argument is deprecated and will be removed in SciPy 1.11.0.
+        Please use the `opts` argument instead.
     opts : iterable object or dict, optional
         Options to be passed to `quad`. May be empty, a dict, or
         a sequence of dicts or functions that return a dict. If empty, the
         default options from scipy.integrate.quad are used. If a dict, the same
-        options are used for all levels of integraion. If a sequence, then each
-        element of the sequence corresponds to a particular integration. e.g.,
-        ``opts[0]`` corresponds to integration over ``x0``, and so on. If a
-        callable, the signature must be the same as for ``ranges``. The
+        options are used for all levels of integration. If a sequence, then
+        each element of the sequence corresponds to a particular integration.
+        e.g., ``opts[0]`` corresponds to integration over ``x0``, and so on. If
+        a callable, the signature must be the same as for ``ranges``. The
         available options together with their default values are:
 
         - epsabs = 1.49e-08
@@ -1005,15 +1005,15 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     # Only qfun / rfun is different API...
 
     if epsabs != inspect.signature(tplquad).parameters.get('epsabs').default:
-        msg = "Passing `epsabs` explicitly is deprecated and will be removed" \
-              "in SciPy 1.11.0. Please pass it via the `opts` argument. " \
-              "instead. `epsabs` will be ignored."
+        msg = ("Passing `epsabs` explicitly is deprecated and will be removed "
+               "in SciPy 1.11.0. Please pass it via the `opts` argument. "
+               "instead. `epsabs` will be ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     if epsrel != inspect.signature(tplquad).parameters.get('epsrel').default:
-        msg = "Passing `epsrel` explicitly is deprecated and will be removed" \
-              "in SciPy 1.11.0. Please pass it via the `opts` argument. " \
-              "instead. `epsrel` will be ignored."
+        msg = ("Passing `epsrel` explicitly is deprecated and will be removed "
+               "in SciPy 1.11.0. Please pass it via the `opts` argument. "
+               "instead. `epsrel` will be ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     def ranges0(*args):
@@ -1072,10 +1072,10 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         Options to be passed to `quad`. May be empty, a dict, or
         a sequence of dicts or functions that return a dict. If empty, the
         default options from scipy.integrate.quad are used. If a dict, the same
-        options are used for all levels of integraion. If a sequence, then each
-        element of the sequence corresponds to a particular integration. e.g.,
-        ``opts[0]`` corresponds to integration over ``x0``, and so on. If a
-        callable, the signature must be the same as for ``ranges``. The
+        options are used for all levels of integration. If a sequence, then
+        each element of the sequence corresponds to a particular integration.
+        e.g., ``opts[0]`` corresponds to integration over ``x0``, and so on. If
+        a callable, the signature must be the same as for ``ranges``. The
         available options together with their default values are:
 
           - epsabs = 1.49e-08
