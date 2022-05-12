@@ -2,28 +2,11 @@
 cimport cython
 cimport numpy as cnp
 import numpy as np
-
-ctypedef fused np_numeric_t:
-    cnp.int8_t
-    cnp.int16_t
-    cnp.int32_t
-    cnp.int64_t
-    cnp.uint8_t
-    cnp.uint16_t
-    cnp.uint32_t
-    cnp.uint64_t
-    cnp.float32_t
-    cnp.float64_t
-    cnp.longdouble_t
-    cnp.complex64_t
-    cnp.complex128_t
-
-ctypedef fused np_complex_numeric_t:
-    cnp.complex64_t
-    cnp.complex128_t
-
-from scipy.linalg._cythonized_array_utils cimport lapack_t
-
+from scipy.linalg._cythonized_array_utils cimport (
+    lapack_t,
+	np_complex_numeric_t,
+	np_numeric_t
+    )
 
 __all__ = ['bandwidth', 'issymmetric', 'ishermitian']
 

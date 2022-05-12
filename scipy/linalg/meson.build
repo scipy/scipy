@@ -222,20 +222,18 @@ cython_lapack = py3.extension_module('cython_lapack',
   subdir: 'scipy/linalg'
 )
 
+
 py3.install_sources(
   ['_cythonized_array_utils.pyi', '_cythonized_array_utils.pxd'],
   pure: false,
   subdir: 'scipy/linalg',
 )
 
-# XXX: somehow this is needed, otherwise the pxd file is not found
-custom_target('cythonize_array_utils_pxd',
-  input : ['_cythonized_array_utils.pxd'],
-  output : ['_cythonized_array_utils.pxd'],
-  command : ['cp', '@INPUT0@', '@OUTPUT0@'],
-  install : true,
-  install_dir: py3.get_install_dir() + 'scipy/linalg'
-)
+# This is needed to add pxd files into build dir ala "cp"
+# See 
+configure_file(input : '_cythonized_array_utils.pxd',
+               output : '_cythonized_array_utils.pxd',
+               copy : true)
 
 
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
