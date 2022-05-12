@@ -159,8 +159,8 @@ def direct(
     This code is based on the DIRECT 2.0.4 Fortran code by Gablonsky et al. at
     https://ctk.math.ncsu.edu/SOFTWARE/DIRECTv204.tar.gz .
     This original version was initially converted via f2c and then cleaned up
-    and reorganized by Steven G. Johnson, August 2007, for the nlopt project.
-    This method wraps the C implementation.
+    and reorganized by Steven G. Johnson, August 2007, for the NLopt project.
+    The `direct` function wraps the C implementation.
 
     .. versionadded:: 1.9.0
 
@@ -181,7 +181,7 @@ def direct(
     >>> from scipy.optimize import direct, Bounds
     >>> def styblinski_tang(pos):
     ...     x, y = pos
-    ...     return 0.5 * (x**4 - 16 * x**2 + 5 * x + y**4 - 16 * y**2 + 5 * y)
+    ...     return 0.5 * (x**4 - 16*x**2 + 5*x + y**4 - 16*y**2 + 5*y)
     >>> bounds = Bounds([-4., -4.], [4., 4.])
     >>> result = direct(styblinski_tang, bounds)
     >>> result.x, result.fun, result.nfev
