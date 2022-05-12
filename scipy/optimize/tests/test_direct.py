@@ -210,5 +210,6 @@ class TestDIRECT:
     def test_inf_fun(self, locally_biased):
         # test that an objective value of infinity does not crash DIRECT
         bounds = [(-5., 5.)] * 2
-        result = direct(self.inf_fun, locally_biased=locally_biased)
+        result = direct(self.inf_fun, bounds,
+                        locally_biased=locally_biased)
         assert result is not None
