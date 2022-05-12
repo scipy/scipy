@@ -261,7 +261,8 @@ class TestQuad:
             return x0 + x1 + 1 + 2
         assert_quad(dblquad(func, 1, 2, 1, 2),6.)
 
-    def test_double_integral_warns_with_deprecated_input_epsabs(self):
+    @pytest.mark.parametrize('kwargs', [{'epsabs': 0.1}, {'epsrel': 0.1}])
+    def test_double_integral_warns_with_deprecated_input(self, kwargs):
 
         if scipy_version.startswith("1.11"):
             raise Exception("Reminder to remove deprecated behaviour")
@@ -270,18 +271,7 @@ class TestQuad:
             return x0 + x1 + 1 + 2
 
         with pytest.warns(DeprecationWarning):
-            dblquad(func, 1, 2, 1, 2, epsabs=0.1)
-
-    def test_double_integral_warns_with_deprecated_input_epsrel(self):
-
-        if scipy_version.startswith("1.11"):
-            raise Exception("Reminder to remove deprecated behaviour")
-
-        def func(x0, x1):
-            return x0 + x1 + 1 + 2
-
-        with pytest.warns(DeprecationWarning):
-            dblquad(func, 1, 2, 1, 2, epsrel=0.1)
+            dblquad(func, 1, 2, 1, 2, **kwargs)
 
     def test_triple_integral(self):
         # 9) Triple Integral test
@@ -295,7 +285,8 @@ class TestQuad:
                             (2.,)),
                      2*8/3.0 * (b**4.0 - a**4.0))
 
-    def test_triple_integral_warns_with_deprecated_input_epsabs(self):
+    @pytest.mark.parametrize('kwargs', [{'epsabs': 0.1}, {'epsrel': 0.1}])
+    def test_triple_integral_warns_with_deprecated_input(self, kwargs):
 
         if scipy_version.startswith("1.11"):
             raise Exception("Reminder to remove deprecated behaviour")
@@ -309,23 +300,7 @@ class TestQuad:
                     lambda x: x, lambda x: 2 * x,
                     lambda x, y: x - y, lambda x, y: x + y,
                     (2.,),
-                    epsabs=0.1)
-
-    def test_triple_integral_warns_with_deprecated_input_epsrel(self):
-
-        if scipy_version.startswith("1.11"):
-            raise Exception("Reminder to remove deprecated behaviour")
-
-        def simpfunc(z, y, x, t):
-            return (x + y + z) * t
-
-        a, b = 1.0, 2.0
-        with pytest.warns(DeprecationWarning):
-            tplquad(simpfunc, a, b,
-                    lambda x: x, lambda x: 2 * x,
-                    lambda x, y: x - y, lambda x, y: x + y,
-                    (2.,),
-                    epsrel=0.1)
+                    **kwargs)
 
 
 class TestNQuad:
