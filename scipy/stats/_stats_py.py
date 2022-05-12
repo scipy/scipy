@@ -8959,26 +8959,29 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
     inv[sorter] = np.arange(sorter.size, dtype=np.intp)
 
     if method == 'ordinal':
-        return inv + 1
+        result = inv + 1
 
     arr = arr[sorter]
     obs = np.r_[True, arr[1:] != arr[:-1]]
     dense = obs.cumsum()[inv]
 
     if method == 'dense':
-        return dense
+        result = dense
 
     # cumulative counts of each unique value
     count = np.r_[np.nonzero(obs)[0], len(obs)]
 
     if method == 'max':
-        return count[dense]
+        result = count[dense]
 
     if method == 'min':
-        return count[dense - 1] + 1
+        result = count[dense - 1] + 1
 
-    # average method
-    result = .5 * (count[dense] + count[dense - 1] + 1)
+    if method == 'average':
+        result = .5 * (count[dense] + count[dense - 1] + 1)
+
     if nan_indexes is not None:
+        result = result.astype('float64')
         result[nan_indexes] = np.nan
+
     return result

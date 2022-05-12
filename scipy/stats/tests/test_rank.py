@@ -192,51 +192,54 @@ class TestRankData:
         assert_equal(r.shape, shape)
         assert_equal(r.dtype, dtype)
 
-    def test_nan_policy(self):
+    @pytest.mark.parametrize('axis', range(3))
+    @pytest.mark.parametrize('method', methods)
+    def test_nan_policy_omit_3d(self, axis, method):
+        shape = (20, 21, 22)
+        rng = np.random.default_rng(abs(hash('falafel')))
+
+        a = rng.random(size=shape)
+        i = rng.random(size=shape) < 0.4
+        j = rng.random(size=shape) < 0.1
+        k = rng.random(size=shape) < 0.1
+        a[i] = np.nan
+        a[j] = -np.inf
+        a[k] - np.inf
+
+        def rank_1d_omit(a, method):
+            out = np.zeros_like(a)
+            i = np.isnan(a)
+            a_compressed = a[~i]
+            res = rankdata(a_compressed, method)
+            out[~i] = res
+            out[i] = np.nan
+            return out
+
+        def rank_omit(a, method, axis):
+            return np.apply_along_axis(lambda a: rank_1d_omit(a, method),
+                                       axis, a)
+
+        res = rankdata(a, method, axis=axis, nan_policy='omit')
+        res0 = rank_omit(a, method, axis=axis)
+
+        assert_array_equal(res, res0)
+
+    def test_nan_policy_raise(self):
         # 1 1d-array test
-        # 1-1 propagate test
         data = [0, 2, 3, -2, np.nan, np.nan]
-        res = rankdata(data, nan_policy="propagate")
-        assert_array_equal(res, [2., 3., 4., 1., 5., 6.])
-        # 1-2 raise test
         with pytest.raises(ValueError, match="The input contains nan"):
             rankdata(data, nan_policy='raise')
-
-        # 1-3 omit test
-        res = rankdata(data, nan_policy='omit')
-        assert_array_equal(res, [2., 3., 4., 1., np.nan, np.nan])
 
         # 2 2d-array test
         data = [[0, np.nan, 3],
                 [4, 2, np.nan],
                 [np.nan, 2, 2]]
 
-        # 2-1 propagate test
-        assert_array_equal(rankdata(data, axis=0, nan_policy="propagate"),
-                           [[1., 3, 2.],
-                            [2., 1.5, 3.],
-                            [3., 1.5, 1.]])
-        assert_array_equal(rankdata(data, axis=1, nan_policy="propagate"),
-                           [[1., 3, 2.],
-                            [2., 1, 3.],
-                            [3., 1.5, 1.5]])
-
-        # 2-2 raise test
         with pytest.raises(ValueError, match="The input contains nan"):
             rankdata(data, axis=0, nan_policy="raise")
 
         with pytest.raises(ValueError, match="The input contains nan"):
             rankdata(data, axis=1, nan_policy="raise")
-
-        # 2-3 omit test
-        assert_array_equal(rankdata(data, axis=0, nan_policy="omit"),
-                           [[1., np.nan, 2.],
-                            [2., 1.5, np.nan],
-                            [np.nan, 1.5, 1.]])
-        assert_array_equal(rankdata(data, axis=1, nan_policy="omit"),
-                           [[1., np.nan, 2.],
-                            [2., 1, np.nan],
-                            [np.nan, 1.5, 1.5]])
 
 
 _cases = (
