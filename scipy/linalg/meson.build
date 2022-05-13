@@ -6,6 +6,12 @@ __init__py = custom_target('__init__py',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
+_cy_array_utils_pxd = custom_target('_cy_array_utils_pxd',
+  output: '_cythonized_array_utils.pxd',
+  input: '_cythonized_array_utils.pxd',
+  command: [copier, '@INPUT@', '@OUTDIR@']
+)
+
 cython_linalg = custom_target('cython_linalg',
   output: [
     'cython_blas.pyx',
@@ -30,6 +36,12 @@ linalg_init_cython_gen = generator(cython_cli,
   arguments : ['@INPUT@', '@OUTPUT@'],
   output : '@BASENAME@.c',
   depends : [_cython_tree, __init__py])
+
+# pyx -> c, pyx -> cpp generators, depending on _cythonized_array_utils.pxd
+linalg_init_utils_cython_gen = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : [_cython_tree, __init__py, _cy_array_utils_pxd])
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxd files and init
 linalg_cython_gen = generator(cython_cli,
@@ -222,30 +234,6 @@ cython_lapack = py3.extension_module('cython_lapack',
   subdir: 'scipy/linalg'
 )
 
-
-py3.install_sources(
-  ['_cythonized_array_utils.pyi', '_cythonized_array_utils.pxd'],
-  pure: false,
-  subdir: 'scipy/linalg',
-)
-
-# This is needed to add pxd files into build dir ala "cp"
-# See 
-configure_file(input : '_cythonized_array_utils.pxd',
-               output : '_cythonized_array_utils.pxd',
-               copy : true)
-
-
-_cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
-  linalg_init_cython_gen.process('_cythonized_array_utils.pyx'),
-  c_args: [cython_c_args, c_undefined_ok],
-  dependencies: [py3_dep],
-  include_directories: [inc_np],
-  install: true,
-  subdir: 'scipy/linalg'
-)
-
-
 _decomp_update_pyx = custom_target('_decomp_update',
   output: '_decomp_update.pyx',
   input: '_decomp_update.pyx.in',
@@ -277,11 +265,21 @@ py3.extension_module('_matfuncs_expm',
   subdir: 'scipy/linalg'
 )
 
+_cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
+  linalg_init_utils_cython_gen.process('_cythonized_array_utils.pyx'),
+  c_args: [cython_c_args, c_undefined_ok],
+  dependencies: [py3_dep],
+  include_directories: [inc_np],
+  install: true,
+  subdir: 'scipy/linalg'
+)
 
 
 python_sources = [
   '__init__.py',
   '_basic.py',
+  '_cythonized_array_utils.pxd',
+  '_cythonized_array_utils.pyi',
   '_decomp.py',
   '_decomp_cholesky.py',
   '_decomp_cossin.py',
