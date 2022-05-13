@@ -12,6 +12,11 @@ LinregressResult = _make_tuple_bunch('LinregressResult',
                                      ['slope', 'intercept', 'rvalue',
                                       'pvalue', 'stderr'],
                                      extra_field_names=['intercept_stderr'])
+TheilslopesResult = _make_tuple_bunch('TheilslopesResult',
+                                      ['medslope', 'medintercept',
+                                       'lo_slope', 'up_slope'])
+SiegelslopesResult = _make_tuple_bunch('SiegelslopesResult',
+                                       ['medslope', 'medintercept'])
 
 
 def linregress(x, y=None, alternative='two-sided'):
@@ -235,14 +240,17 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
 
     Returns
     -------
-    medslope : float
-        Theil slope.
-    medintercept : float
-        Intercept of the Theil line.
-    lo_slope : float
-        Lower bound of the confidence interval on `medslope`.
-    up_slope : float
-        Upper bound of the confidence interval on `medslope`.
+    result : ``TheilslopesResult`` instance
+        The return value is an object with the following attributes:
+
+        medslope : float
+            Theil slope.
+        medintercept : float
+            Intercept of the Theil line.
+        lo_slope : float
+            Lower bound of the confidence interval on `medslope`.
+        up_slope : float
+            Upper bound of the confidence interval on `medslope`.
 
     See Also
     --------
@@ -257,6 +265,13 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     in [4]_. The approach to compute the intercept can be determined by the
     parameter ``method``. A confidence interval for the intercept is not
     given as this question is not addressed in [1]_.
+
+    For compatibility with older versions of SciPy, the return value acts
+    like a ``namedtuple`` of length 4, with fields ``medslope``,
+    ``medintercept``, ``lo_slope``, and ``up_slope``, so one can continue to
+    write::
+
+        medslope, medintercept, lo_slope, up_slope = theilslopes(y, x)
 
     References
     ----------
@@ -350,7 +365,8 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     except (ValueError, IndexError):
         delta = (np.nan, np.nan)
 
-    return medslope, medinter, delta[0], delta[1]
+    return TheilslopesResult(medslope=medslope, medintercept=medinter,
+                             lo_slope=delta[0], up_slope=delta[1])
 
 
 def _find_repeats(arr):
@@ -395,10 +411,13 @@ def siegelslopes(y, x=None, method="hierarchical"):
 
     Returns
     -------
-    medslope : float
-        Estimate of the slope of the regression line.
-    medintercept : float
-        Estimate of the intercept of the regression line.
+    result : ``SiegelslopesResult`` instance
+        The return value is an object with the following attributes:
+
+        medslope : float
+            Estimate of the slope of the regression line.
+        medintercept : float
+            Estimate of the intercept of the regression line.
 
     See Also
     --------
@@ -421,6 +440,12 @@ def siegelslopes(y, x=None, method="hierarchical"):
     The implementation computes `n` times the median of a vector of size `n`
     which can be slow for large vectors. There are more efficient algorithms
     (see [2]_) which are not implemented here.
+
+    For compatibility with older versions of SciPy, the return value acts
+    like a ``namedtuple`` of length 2, with fields ``medslope`` and
+    ``medintercept``, so one can continue to write::
+
+        medslope, medintercept = siegelslopes(y, x)
 
     References
     ----------
@@ -489,4 +514,4 @@ def siegelslopes(y, x=None, method="hierarchical"):
     else:
         medinter = np.median(y - medslope*x)
 
-    return medslope, medinter
+    return SiegelslopesResult(medslope=medslope, medintercept=medinter)

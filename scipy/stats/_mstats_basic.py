@@ -1052,14 +1052,17 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
 
     Returns
     -------
-    medslope : float
-        Theil slope.
-    medintercept : float
-        Intercept of the Theil line, as ``median(y) - medslope*median(x)``.
-    lo_slope : float
-        Lower bound of the confidence interval on `medslope`.
-    up_slope : float
-        Upper bound of the confidence interval on `medslope`.
+    result : ``TheilslopesResult`` instance
+        The return value is an object with the following attributes:
+
+        medslope : float
+            Theil slope.
+        medintercept : float
+            Intercept of the Theil line.
+        lo_slope : float
+            Lower bound of the confidence interval on `medslope`.
+        up_slope : float
+            Upper bound of the confidence interval on `medslope`.
 
     See Also
     --------
@@ -1111,10 +1114,13 @@ def siegelslopes(y, x=None, method="hierarchical"):
 
     Returns
     -------
-    medslope : float
-        Estimate of the slope of the regression line.
-    medintercept : float
-        Estimate of the intercept of the regression line.
+    result : ``SiegelslopesResult`` instance
+        The return value is an object with the following attributes:
+
+        medslope : float
+            Estimate of the slope of the regression line.
+        medintercept : float
+            Estimate of the intercept of the regression line.
 
     See Also
     --------
