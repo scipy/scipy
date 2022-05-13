@@ -170,7 +170,8 @@ static struct PyModuleDef _ctest = {
 };
 
 
-PyObject *PyInit__ctest(void)
+PyMODINIT_FUNC
+PyInit__ctest(void)
 {
     return PyModule_Create(&_ctest);
 }

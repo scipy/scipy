@@ -1418,12 +1418,14 @@ static struct PyModuleDef moduledef = {
     NULL,
     NULL
 };
-PyObject *PyInit__sigtools(void)
+
+PyMODINIT_FUNC
+PyInit__sigtools(void)
 {
     PyObject *m;
 
     m = PyModule_Create(&moduledef);
-	import_array();
+    import_array();
 
     scipy_signal__sigtools_linear_filter_module_init();
 
