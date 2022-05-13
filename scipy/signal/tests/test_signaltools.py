@@ -2180,7 +2180,8 @@ class TestCorrelateComplex:
 
         y_r = (correlate(a.real, b.real)
                + correlate(a.imag, b.imag)).astype(dt)
-        y_r += 1j * (-correlate(a.real, b.imag) + correlate(a.imag, b.real))
+        y_r += 1j * np.array(-correlate(a.real, b.imag) +
+                             correlate(a.imag, b.real))
 
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r, decimal=self.decimal(dt) - 1)
