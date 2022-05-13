@@ -1550,20 +1550,24 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit__fitpack(void)
 {
-    PyObject *m, *d, *s;
+    PyObject *module, *mdict;
 
-    m = PyModule_Create(&moduledef);
-    import_array();
-
-    d = PyModule_GetDict(m);
-
-    s = PyUnicode_FromString(" 1.7 ");
-    PyDict_SetItemString(d, "__version__", s);
-    fitpack_error = PyErr_NewException ("fitpack.error", NULL, NULL);
-    Py_DECREF(s);
-    if (PyErr_Occurred()) {
-        Py_FatalError("can't initialize module fitpack");
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return NULL;
     }
 
-    return m;
+    import_array();
+
+    mdict = PyModule_GetDict(module);
+
+    fitpack_error = PyErr_NewException ("_fitpack.error", NULL, NULL);
+    if (fitpack_error == NULL) {
+        return NULL;
+    }
+    if (PyDict_SetItemString(mdict, "error", fitpack_error)) {
+        return NULL;
+    }
+
+    return module;
 }
