@@ -953,7 +953,10 @@ def test_theilslopes_warnings():
 
 
 def test_theilslopes_namedtuple_consistency():
-    """Simple test to ensure tuple backwards-compatibility of returned object"""
+    """
+    Simple test to ensure tuple backwards-compatibility of the returned
+    TheilslopesResult object
+    """
     y = [1, 2, 4]
     x = [4, 6, 8]
     medslope, medintercept, lo_slope, up_slope = mstats.theilslopes(y, x)
@@ -996,7 +999,10 @@ def test_siegelslopes():
 
 
 def test_siegelslopes_namedtuple_consistency():
-    """Simple test to ensure tuple backwards-compatibility of returned object"""
+    """
+    Simple test to ensure tuple backwards-compatibility of the returned
+    SiegelslopesResult object.
+    """
     y = [1, 2, 4]
     x = [4, 6, 8]
     medslope, medintercept = mstats.siegelslopes(y, x)
