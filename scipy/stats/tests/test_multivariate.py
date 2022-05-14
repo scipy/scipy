@@ -1977,7 +1977,7 @@ class TestMultivariateHypergeom:
         assert_allclose(rvs.mean(0), rv.mean(), rtol=1e-2)
 
     @pytest.mark.parametrize('m, n', (
-        ([0, 0, 20, 0, 0], 5), ([0, 0, 0, 0, 0], 0), ([0, 0], 0),
+        ([0, 0, 20, 0, 0], 5), ([0, 0, 0, 0, 0], 0),
         ([0, 0], 0), ([0], 0)
     ))
     def test_rvs_gh16171(self, m, n):
