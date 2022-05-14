@@ -147,13 +147,13 @@ def configuration(parent_package='', top_path=None):
                          sources=['_decomp_update.c'])
 
     config.add_data_files('_cythonized_array_utils.pxd')
-    
+
     config.add_extension('_cythonized_array_utils',
                          sources=['_cythonized_array_utils.c'],
                          depends=['_cythonized_array_utils.pyx',
                                   '_cythonized_array_utils.pxd'],
-                                  include_dirs=['.']
-                                  )
+                         include_dirs=['.']
+                         )
 
     config.add_extension('_matfuncs_expm',
                          sources=['_matfuncs_expm.c'])
