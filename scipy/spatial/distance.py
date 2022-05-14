@@ -911,7 +911,7 @@ def kulczynski1(u, v, *, w=None):
     0.0
     >>> distance.kulczynski1([True, False, False], [True, True, False])
     1.0
-    >>> distance.kulczynski1([True, False, False], True)
+    >>> distance.kulczynski1([True, False, False], [True])
     0.5
     >>> distance.kulczynski1([1, 0, 0], [3, 1, 0])
     -3.0
