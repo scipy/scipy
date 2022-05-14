@@ -1,5 +1,5 @@
-      subroutine dqawo(f,a,b,omega,integr,epsabs,epsrel,result,abserr,
-     *   neval,ier,leniw,maxp1,lenw,last,iwork,work)
+      recursive subroutine dqawo(f,a,b,omega,integr,epsabs,epsrel,
+     *   result,abserr,neval,ier,leniw,maxp1,lenw,last,iwork,work)
 c***begin prologue  dqawo
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)

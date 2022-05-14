@@ -22,7 +22,7 @@ from scipy.ndimage import correlate1d
 from scipy.optimize import fmin, linear_sum_assignment
 from scipy import signal
 from scipy.signal import (
-    correlate, correlation_lags, convolve, convolve2d,
+    correlate, correlate2d, correlation_lags, convolve, convolve2d,
     fftconvolve, oaconvolve, choose_conv_method,
     hilbert, hilbert2, lfilter, lfilter_zi, filtfilt, butter, zpk2tf, zpk2sos,
     invres, invresz, vectorstrength, lfiltic, tf2sos, sosfilt, sosfiltfilt,
@@ -347,6 +347,44 @@ class _TestConvolve2d:
                    [52, 48, 62, 80, 84],
                    [82, 78, 92, 110, 114]])
         assert_array_equal(c, d)
+
+    @pytest.mark.parametrize('func', [convolve2d, correlate2d])
+    @pytest.mark.parametrize('boundary, expected',
+                             [('symm', [[37.0, 42.0, 44.0, 45.0]]),
+                              ('wrap', [[43.0, 44.0, 42.0, 39.0]])])
+    def test_same_with_boundary(self, func, boundary, expected):
+        # Test boundary='symm' and boundary='wrap' with a "long" kernel.
+        # The size of the kernel requires that the values in the "image"
+        # be extended more than once to handle the requested boundary method.
+        # This is a regression test for gh-8684 and gh-8814.
+        image = np.array([[2.0, -1.0, 3.0, 4.0]])
+        kernel = np.ones((1, 21))
+        result = func(image, kernel, mode='same', boundary=boundary)
+        # The expected results were calculated "by hand".  Because the
+        # kernel is all ones, the same result is expected for convolve2d
+        # and correlate2d.
+        assert_array_equal(result, expected)
+
+    def test_boundary_extension_same(self):
+        # Regression test for gh-12686.
+        # Use ndimage.convolve with appropriate arguments to create the
+        # expected result.
+        import scipy.ndimage as ndi
+        a = np.arange(1, 10*3+1, dtype=float).reshape(10, 3)
+        b = np.arange(1, 10*10+1, dtype=float).reshape(10, 10)
+        c = convolve2d(a, b, mode='same', boundary='wrap')
+        assert_array_equal(c, ndi.convolve(a, b, mode='wrap', origin=(-1, -1)))
+
+    def test_boundary_extension_full(self):
+        # Regression test for gh-12686.
+        # Use ndimage.convolve with appropriate arguments to create the
+        # expected result.
+        import scipy.ndimage as ndi
+        a = np.arange(1, 3*3+1, dtype=float).reshape(3, 3)
+        b = np.arange(1, 6*6+1, dtype=float).reshape(6, 6)
+        c = convolve2d(a, b, mode='full', boundary='wrap')
+        apad = np.pad(a, ((3, 3), (3, 3)), 'wrap')
+        assert_array_equal(c, ndi.convolve(apad, b, mode='wrap')[:-1, :-1])
 
     def test_invalid_shapes(self):
         # By "invalid," we mean that no one
@@ -2152,7 +2190,8 @@ class TestCorrelateComplex:
 
         y_r = (correlate(a.real, b.real)
                + correlate(a.imag, b.imag)).astype(dt)
-        y_r += 1j * (-correlate(a.real, b.imag) + correlate(a.imag, b.real))
+        y_r += 1j * np.array(-correlate(a.real, b.imag) +
+                             correlate(a.imag, b.real))
 
         y = correlate(a, b, 'full')
         assert_array_almost_equal(y, y_r, decimal=self.decimal(dt) - 1)

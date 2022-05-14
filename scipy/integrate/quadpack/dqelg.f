@@ -1,4 +1,4 @@
-      subroutine dqelg(n,epstab,result,abserr,res3la,nres)
+      recursive subroutine dqelg(n,epstab,result,abserr,res3la,nres)
 c***begin prologue  dqelg
 c***refer to  dqagie,dqagoe,dqagpe,dqagse
 c***routines called  d1mach

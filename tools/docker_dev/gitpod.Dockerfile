@@ -23,7 +23,7 @@ FROM ${BASE_CONTAINER} as build
 
 # Build argument - can pass Meson arguments during the build:
 ARG BUILD_ARG="python dev.py --build-only -j2" \
-    CONDA_ENV=scipy-meson
+    CONDA_ENV=scipy-dev
 
 # -----------------------------------------------------------------------------
 USER root

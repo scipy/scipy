@@ -17,7 +17,7 @@
 #
 # docker run --rm -it -v $(pwd):/home/scipy scipy:<image-tag>
 # 
-# By default the container will activate the conda environment scipy-meson
+# By default the container will activate the conda environment scipy-dev
 # which contains all the dependencies needed for SciPy development
 # 
 # To build Scipy run: python dev.py --build-only -j2 
@@ -70,7 +70,7 @@ ENV CONDA_DIR=/opt/conda \
 
 ENV CONDA_VERSION="${conda_version}" \
     MINIFORGE_VERSION="${miniforge_version}" \
-    CONDA_ENV=scipy-meson \
+    CONDA_ENV=scipy-dev \
     PATH=${CONDA_DIR}/bin:$PATH 
 
 # -----------------------------------------------------------------------------
@@ -151,9 +151,9 @@ RUN wget --quiet "https://github.com/conda-forge/miniforge/releases/download/${m
 # ---- Create conda environment ----
 # Install SciPy dependencies - since using miniforge no need to add 
 # conda-forge channel
-COPY environment_meson.yml /tmp/environment_meson.yml
+COPY environment.yml /tmp/environment.yml
 
-RUN conda env create -f /tmp/environment_meson.yml && \
+RUN conda env create -f /tmp/environment.yml && \
     conda activate ${CONDA_ENV} && \
     # needed for docs rendering later on
     python -m pip install --no-cache-dir sphinx-autobuild && \

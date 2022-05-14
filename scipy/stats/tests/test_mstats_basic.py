@@ -942,6 +942,33 @@ def test_theilslopes():
     assert_almost_equal(lower, 3.71, decimal=2)
 
 
+def test_theilslopes_warnings():
+    # Test `theilslopes` with degenerate input; see gh-15943
+    with pytest.warns(RuntimeWarning, match="All `x` coordinates are..."):
+        res = mstats.theilslopes([0, 1], [0, 0])
+        assert np.all(np.isnan(res))
+    with pytest.warns(RuntimeWarning, match="invalid value encountered..."):
+        res = mstats.theilslopes([0, 0, 0], [0, 1, 0])
+        assert_allclose(res, (0, 0, np.nan, np.nan))
+
+
+def test_theilslopes_namedtuple_consistency():
+    """
+    Simple test to ensure tuple backwards-compatibility of the returned
+    TheilslopesResult object
+    """
+    y = [1, 2, 4]
+    x = [4, 6, 8]
+    medslope, medintercept, lo_slope, up_slope = mstats.theilslopes(y, x)
+    result = mstats.theilslopes(y, x)
+
+    # note all four returned values are distinct here
+    assert_equal(medslope, result.medslope)
+    assert_equal(medintercept, result.medintercept)
+    assert_equal(lo_slope, result.lo_slope)
+    assert_equal(up_slope, result.up_slope)
+
+
 def test_siegelslopes():
     # method should be exact for straight line
     y = 2 * np.arange(10) + 0.5
@@ -969,6 +996,21 @@ def test_siegelslopes():
     slope, intercept = mstats.siegelslopes(y, x, method='separate')
     assert_allclose(slope, slope_ols, rtol=0.1)
     assert_allclose(intercept, intercept_ols, rtol=0.1)
+
+
+def test_siegelslopes_namedtuple_consistency():
+    """
+    Simple test to ensure tuple backwards-compatibility of the returned
+    SiegelslopesResult object.
+    """
+    y = [1, 2, 4]
+    x = [4, 6, 8]
+    medslope, medintercept = mstats.siegelslopes(y, x)
+    result = mstats.siegelslopes(y, x)
+
+    # note both returned values are distinct here
+    assert_equal(medslope, result.medslope)
+    assert_equal(medintercept, result.medintercept)
 
 
 def test_plotting_positions():
