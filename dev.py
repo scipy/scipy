@@ -57,6 +57,11 @@ import platform
 # import is enough...
 import multiprocessing
 
+# distutils is required to infer meson install path
+# if this needs to be replaced for Python 3.12 support and there's no
+# stdlib alternative, use the hack discussed in gh-16058
+from distutils import dist  # noqa: E402
+from distutils.command.install import INSTALL_SCHEMES  # noqa: E402
 
 # In case we are run from the source directory, we don't want to import the
 # project from there:
@@ -171,12 +176,12 @@ def main(argv):
 
     global PATH_INSTALLED
     build_dir = Path(args.build_dir)
-    install_prefix = args.install_prefix
-    if not install_prefix:
-        install_prefix = build_dir.parent / (build_dir.stem + "-install")
+    install_dir = args.install_prefix
+    if not install_dir:
+        install_dir = build_dir.parent / (build_dir.stem + "-install")
     PATH_INSTALLED = os.path.join(
         os.path.abspath(os.path.dirname(__file__)),
-        install_prefix
+        install_dir
     )
 
     if args.win_cp_openblas and platform.system() != 'Windows':
@@ -390,12 +395,12 @@ def get_project_info():
     except ImportError:
         # this may fail when running with --no-build, so try to detect
         # an installed scipy in a subdir inside a repo
-        install_dir = get_installed_path()
+        site_dir = get_site_packages()
         print("Trying to find scipy from development installed "
-              "path at:", install_dir)
-        sys.path.insert(0, install_dir)
+              "path at:", site_dir)
+        sys.path.insert(0, site_dir)
         os.environ['PYTHONPATH'] = \
-            os.pathsep.join((install_dir, os.environ.get('PYTHONPATH', '')))
+            os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
         test, version, mod_path = runtests.import_module()
     return test, version, mod_path
 
@@ -454,11 +459,9 @@ def install_project(args):
     Installs the project after building.
     """
     if os.path.exists(PATH_INSTALLED):
-        site_dir = get_site_packages()
-        dist_dir = get_dist_packages(site_dir)
+        installdir = get_site_packages()
         non_empty = len(os.listdir(PATH_INSTALLED))
-        if non_empty and not(
-                os.path.exists(site_dir) or os.path.exists(dist_dir)):
+        if non_empty and not os.path.exists(installdir):
             raise RuntimeError("Can't install in non-empty directory: "
                                f"'{PATH_INSTALLED}'")
     cmd = ["meson", "install", "-C", args.build_dir]
@@ -552,28 +555,19 @@ def copy_openblas():
 
 
 def get_site_packages():
-    plat_path = Path(get_path('platlib'))
-    return str(Path(PATH_INSTALLED) / plat_path.relative_to(sys.exec_prefix))
-
-
-def get_dist_packages(site_dir):
-    # Hack: fallback to debian based python dist-packages
-    # See https://github.com/scipy/scipy/issues/16054
-    py_version = f"python3.{sys.version_info[1]}"
-    return site_dir.replace(py_version + "/site-packages",
-                            "python3/dist-packages")
-
-
-def get_installed_path():
-    site_dir = get_site_packages()
-    if os.path.exists(site_dir):
-        return site_dir
+    """
+    Depending on whether we have debian python or not,
+    return dist_packages path or site_packages path.
+    """
+    if 'deb_system' in INSTALL_SCHEMES:
+        # Debian patched python in use
+        install_cmd = dist.Distribution().get_command_obj('install')
+        install_cmd.select_scheme('deb_system')
+        install_cmd.finalize_options()
+        plat_path = Path(install_cmd.install_platlib)
     else:
-        dist_dir = get_dist_packages(site_dir)
-        if not os.path.exists(dist_dir):
-            raise RuntimeError(f'Expected installation path "{site_dir}" or '
-                               f'"{dist_dir}" does not exist.')
-        return dist_dir
+        plat_path = Path(get_path('platlib'))
+    return str(Path(PATH_INSTALLED) / plat_path.relative_to(sys.exec_prefix))
 
 
 def build_project(args):
@@ -613,7 +607,7 @@ def build_project(args):
 
     install_project(args)
 
-    install_dir = get_installed_path()
+    site_dir = get_site_packages()
 
     if args.win_cp_openblas and platform.system() == 'Windows':
         if copy_openblas() == 0:
@@ -622,7 +616,7 @@ def build_project(args):
             print("OpenBLAS copy failed!")
             sys.exit(1)
 
-    return install_dir
+    return site_dir
 
 
 def run_mypy(args):
