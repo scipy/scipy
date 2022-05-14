@@ -125,8 +125,8 @@ class CheckingLinearOperator(LinearOperator):
 
 
 # --- Test Input Validation ---
-# Tests input validation on parameters `k` and `which`
-# Needs better input validation checks for all other parameters
+# Tests input validation on parameters `k` and `which`.
+# Needs better input validation checks for all other parameters.
 
 class SVDSCommonTests:
 
