@@ -1145,7 +1145,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     y = y.compressed()
     x = x.compressed().astype(float)
     # We now have unmasked arrays so can use `scipy.stats.siegelslopes`
-    return stats_siegelslopes(y, x)
+    return stats_siegelslopes(y, x, method=method)
 
 
 def sen_seasonal_slopes(x):
