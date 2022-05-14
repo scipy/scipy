@@ -56,9 +56,6 @@ ckdtree_src = [
   'ckdtree/src/sparse_distances.cxx'
 ]
 
-cpp_args = []
-compiler = meson.get_compiler('cpp')
-
 ckdtree = py3.extension_module('_ckdtree',
   ckdtree_src + [cython_gen_cpp.process('_ckdtree.pyx')],
   cpp_args: cython_cpp_args,
@@ -84,7 +81,7 @@ _distance_wrap = py3.extension_module('_distance_wrap',
 
 _distance_pybind = py3.extension_module('_distance_pybind',
   ['src/distance_pybind.cpp'],
-  cpp_args: cpp_args + [numpy_nodepr_api],
+  cpp_args: [numpy_nodepr_api],
   include_directories: [incdir_pybind11, incdir_numpy, 'src/'],
   dependencies: [py3_dep],
   install: true,
