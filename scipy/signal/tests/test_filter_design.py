@@ -3713,6 +3713,9 @@ class TestIIRComb:
         with pytest.raises(ValueError, match='fs must be divisible '):
             iircomb(w0=49.999/int(44100/2), Q=30)
 
+        with pytest.raises(ValueError, match='fs must be divisible '):
+            iircomb(w0=49.999, Q=30, fs=44100)
+
         # Filter type is not notch or peak
         for args in [(0.2, 30, 'natch'), (0.5, 35, 'comb')]:
             with pytest.raises(ValueError, match='ftype must be '):
