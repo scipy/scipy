@@ -265,9 +265,19 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     def matmat_XH_X(x):
         return XH_mat(X_matmat(x))
 
+    def matvec_X_XH(x):
+        return X_dot(XH_dot(x))
+
+    def matmat_X_XH(x):
+        return X_matmat(XH_mat(x))
+
     XH_X = LinearOperator(matvec=matvec_XH_X, dtype=A.dtype,
                           matmat=matmat_XH_X,
                           shape=(min(A.shape), min(A.shape)))
+
+    X_XH = LinearOperator(matvec=matvec_X_XH, dtype=A.dtype,
+                          matmat=matmat_X_XH,
+                          shape=(max(A.shape), max(A.shape)))
 
     # Get a low rank approximation of the implicitly defined gramian matrix.
     # This is not a stable way to approach the problem.
@@ -282,7 +292,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                 X = random_state.uniform(size=(min(A.shape), k))
 
         eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
-                                 largest=largest, )
+                                 largest=largest)
 
     elif solver == 'propack':
         jobu = return_singular_vectors in {True, 'u'}
@@ -327,13 +337,45 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     u = u[:, ::-1]
     s = s[::-1]
     vh = vh[::-1]
+
     jobu = return_singular_vectors in {True, 'u'}
     jobv = return_singular_vectors in {True, 'vh'}
-    if not transpose:
-        u = u if jobu else None
-        vh = vh @ _herm(eigvec) if jobv else None
+
+    if tol is None or tol <= 0.0:
+        res_tol = np.sqrt(1e-15) * max(A.shape)
     else:
+        res_tol = tol
+
+    if transpose:
         u_tmp = eigvec @ _herm(vh) if jobu else None
-        vh = _herm(u) if jobv else None
+        if jobv:
+            # if singular values are very small, the right singular vectors
+            # computed above may be inaccurate, so we have to re-compute
+            # them as the eigenvectors of X_XH
+            eigvals, eigvec = lobpcg(X_XH, u, tol=res_tol**2, maxiter=maxiter,
+                largest=largest)
+            vh = _herm(eigvec)
+        else:
+            vh = None
         u = u_tmp
+    else:
+        if jobu:
+            # same situation as above but for the left singular vectors
+            eigvals, u = lobpcg(X_XH, u, tol=res_tol**2, maxiter=maxiter,
+                largest=largest)
+        else:
+            u = None
+        vh = vh @ _herm(eigvec) if jobv else None
+
+    if jobu and jobv:
+        # apply Rayleigh-Ritz-like procedure to adjust singular vectors
+        Av = A.matmat(_herm(vh))
+        uhAv = _herm(u) @ Av
+        uu, s, vvh = svd(uhAv, full_matrices=False)
+        uu = uu[:, ::-1]
+        s = s[::-1]
+        vvh = vvh[::-1]
+        u = u @ _herm(uu)
+        vh = vvh @ vh
+
     return u, s, vh
