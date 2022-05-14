@@ -391,9 +391,10 @@ class Build(Task):
             if list(build_dir.iterdir()):
                 raise RuntimeError("Can't build into non-empty directory "
                                    f"'{build_dir.absolute()}'")
-        if build_dir.exists():
-            build_options_file = (
-                build_dir / "meson-info" / "intro-buildoptions.json")
+
+        build_options_file = (
+            build_dir / "meson-info" / "intro-buildoptions.json")
+        if build_options_file.exists():
             with open(build_options_file) as f:
                 build_options = json.load(f)
             installdir = None
