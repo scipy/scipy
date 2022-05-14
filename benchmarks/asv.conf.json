@@ -38,7 +38,7 @@
     // version.
     "matrix": {
         "numpy": [],
-        "Cython": ["0.29.21"],
+        "Cython": [],
         "pytest": [],
         "pythran": [],
         "pybind11": [],

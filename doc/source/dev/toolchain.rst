@@ -107,7 +107,7 @@ Currently, SciPy wheels are being built as follows:
 Linux (nightly)    ``ubuntu-18.04``          GCC 6.5                      See ``azure-pipelines.yml``
 Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [6]_
 OSX                ``macOS-10.15``           LLVM 12.0.0                  Built in separate repo [6]_
-Windows            ``windows-latest``        Visual Studio 2019 (16.11)   See ``azure-pipelines.yml``
+Windows            ``windows-2019``          Visual Studio 2019 (16.11)   See ``azure-pipelines.yml``
 ================  ========================  ===========================  ==============================
 
 Note that the OSX wheels additionally vendor gfortran 4.9,
@@ -239,7 +239,7 @@ OpenBLAS, ATLAS, MKL, BLIS, and reference Netlib libraries are known to work.
 =============== =====================================================
  Library           Minimum version
 =============== =====================================================
-LAPACK           3.4.1
+LAPACK           3.7.1
 BLAS             A recent version of OpenBLAS, MKL or ATLAS.
                  The Accelerate BLAS library is no longer supported.
 =============== =====================================================
@@ -285,15 +285,12 @@ Building the Documentation
  Tool                 Version
 ====================  =================================================
 Sphinx                Whatever recent versions work. >= 2.0.
-PyData Sphinx theme   Whatever recent versions work. >= 0.6.1.
+PyData Sphinx theme   Whatever recent versions work. >= 0.8.1.
 Sphinx-Panels         Whatever recent versions work. >= 0.5.2.
+Sphinx-Tabs           Whatever recent versions work. >= 3.2.0.
 numpydoc              Whatever recent versions work. >= 0.8.0.
 matplotlib            Generally suggest >= 2.0.
 ====================  =================================================
-
-[The ``numpydoc`` package is also used, but that is currently
-packaged in ``doc/sphinxext``.]
-
 
 .. note::
 

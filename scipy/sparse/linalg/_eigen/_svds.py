@@ -110,8 +110,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Parameters
     ----------
-    A : sparse matrix or LinearOperator
-        Matrix to decompose.
+    A : ndarray, sparse matrix, or LinearOperator
+        Matrix to decompose of a floating point numeric dtype.
     k : int, default: 6
         Number of singular values and singular vectors to compute.
         Must satisfy ``1 <= k <= kmax``, where ``kmax=min(M, N)`` for
@@ -186,7 +186,17 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     -----
     This is a naive implementation using ARPACK or LOBPCG as an eigensolver
     on ``A.conj().T @ A`` or ``A @ A.conj().T``, depending on which one is more
-    efficient.
+    efficient, followed by the Rayleigh-Ritz method as postprocessing; see
+    https://w.wiki/4zms
+
+    Alternatively, the PROPACK solver can be called. ``form="array"``
+
+    Choices of the input matrix ``A`` numeric dtype may be limited.
+    Only ``solver="lobpcg"`` supports all floating point dtypes
+    real: 'np.single', 'np.double', 'np.longdouble' and
+    complex: 'np.csingle', 'np.cdouble', 'np.clongdouble'.
+    The ``solver="arpack"`` supports only
+    'np.single', 'np.double', and 'np.cdouble'.
 
     Examples
     --------
@@ -291,7 +301,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             else:
                 X = random_state.uniform(size=(min(A.shape), k))
 
-        eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
+        _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                                  largest=largest)
 
     elif solver == 'propack':
@@ -323,17 +333,18 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     elif solver == 'arpack' or solver is None:
         if v0 is None and not rs_was_None:
             v0 = random_state.uniform(size=(min(A.shape),))
-        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+        _, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                                 ncv=ncv, which=which, v0=v0)
 
+    eigvec, _ = np.linalg.qr(eigvec)
     u = X_matmat(eigvec)
     if not return_singular_vectors:
-        s = svd(u, compute_uv=False)
+        s = svd(u, compute_uv=False, overwrite_a=True)
         return s[::-1]
 
     # compute the left singular vectors of X and update the right ones
     # accordingly
-    u, s, vh = svd(u, full_matrices=False)
+    u, s, vh = svd(u, full_matrices=False, overwrite_a=True)
     u = u[:, ::-1]
     s = s[::-1]
     vh = vh[::-1]

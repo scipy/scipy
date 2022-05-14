@@ -11,7 +11,7 @@ import pytest
 
 import numpy as np
 from numpy.lib import NumpyVersion
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
 
@@ -50,6 +50,10 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "`x` and `y` must be of nonzero size.",
                       "The exact distribution of the Wilcoxon test",
                       "Data input must not be empty"}
+
+# If the message is one of these, results of the function may be inaccurate,
+# but NaNs are not to be placed
+inaccuracy_messages = {"Precision loss occurred in moment calculation"}
 
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
@@ -245,6 +249,15 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                 if any([str(e).startswith(message)
                         for message in too_small_messages]):
                     res1d = np.full(n_outputs, np.nan)
+                elif any([str(e).startswith(message)
+                          for message in inaccuracy_messages]):
+                    with suppress_warnings() as sup:
+                        sup.filter(RuntimeWarning)
+                        res1d = nan_policy_1d(hypotest, data1d, unpacker,
+                                              *args, n_outputs=n_outputs,
+                                              nan_policy=nan_policy,
+                                              paired=paired, _no_deco=True,
+                                              **kwds)
                 else:
                     raise e
         statistics[i] = res1d[0]
@@ -260,7 +273,9 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
 
     else:
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with suppress_warnings() as sup, \
+             np.errstate(divide='ignore', invalid='ignore'):
+            sup.filter(RuntimeWarning, "Precision loss occurred in moment")
             res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
                                     *args, **kwds))
 
