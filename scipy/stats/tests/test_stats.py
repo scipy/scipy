@@ -210,6 +210,86 @@ class TestTrimmedStats:
                             significant=self.dprec)
 
 
+class TestRMS:
+    def test_1d_list(self):
+        #  Test a 1d list
+        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        desired = 5*np.sqrt(154)
+        assert_allclose(stats.rms(a), desired)
+
+        a = [1, 2, 3, 4]
+        desired = np.sqrt(30)/2
+        assert_allclose(stats.rms(a), desired)
+
+        # http://www-fourier.univ-grenoble-alpes.fr/~parisse/giac/doc/en/cascmd_en/cascmd_en954.html
+        a = [1, 2, 5, 8, 3, 6, 7, 9, -1]
+        desired = np.sqrt(30)
+        assert_allclose(stats.rms(a), desired)
+
+    def test_1d_array(self):
+        #  Test a 1d array
+        a = np.array([10, -20, 30, -40, 50, -60, 70, -80, 90, -100])
+        desired = 5*np.sqrt(154)
+        assert_allclose(stats.rms(a), desired)
+
+        a = array([-1, 2, -3, 4], float32)
+        desired = np.sqrt(30)/2
+        assert_allclose(stats.rms(a), desired)
+
+    # Note the next tests use axis=None as default, not axis=0
+    def test_2d_list(self):
+        #  Test a 2d list
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        desired = (25/3) * np.sqrt(78)
+        assert_allclose(stats.rms(a, None), desired)
+
+    def test_2d_array(self):
+        #  Test a 2d array
+        a = [[-10, 20, -30, 40], [-50, 60, -70, 80], [-90, 100, -110, 120]]
+        desired = (25/3) * np.sqrt(78)
+        assert_allclose(stats.rms(a, None), desired)
+
+    def test_2d_axis0(self):
+        #  Test a 2d list with axis=0
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        desired = [59.72157622, 68.31300511, 77.24420151, 86.40987598]
+        assert_allclose(stats.rms(a), desired)
+
+        a = array([[1, 2, 3, 4], [1, 2, 3, 4], [1, 2, 3, 4]])
+        desired = array([1, 2, 3, 4])
+        assert_allclose(stats.rms(a), desired)
+
+    def test_2d_axis1(self):
+        #  Test a 2d list with axis=1
+        a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
+        desired = np.array([27.38612788, 65.95452979, 105.5935604])
+        assert_allclose(stats.rms(a, 1), desired)
+
+        a = array([[1, 2, 3, 4], [-1, -2, -3, -4], [1, 2, 3, 4]])
+        v = 2.738612788
+        desired = array([v, v, v])
+        assert_allclose(stats.rms(a, 1), desired)
+
+    def test_large_values(self):
+        a = array([1e50, 1e100, 1e150])
+        desired = 5.773502692e149
+        assert_allclose(stats.rms(a), desired)
+
+    def test_std(self):
+        # Without DC offset, RMS is equivalent to standard deviation
+        np.random.seed(3)
+        a = np.random.randn(5, 4, 3, 4)  # Also test 4D array
+        a -= a.mean()
+        desired = a.std()
+        assert_allclose(stats.rms(a, None), desired)
+
+    def test_complex(self):
+        # http://www-fourier.univ-grenoble-alpes.fr/~parisse/giac/doc/en/cascmd_en/cascmd_en954.html
+        a = [1, 1-1j, 2+3j, 5-2j]
+        desired = 3/2 * np.sqrt(5)
+        assert_allclose(stats.rms(a), desired)
+
+
 class TestCorrPearsonr:
     """ W.II.D. Compute a correlation matrix on all the variables.
 
