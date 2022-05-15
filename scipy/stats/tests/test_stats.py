@@ -241,13 +241,13 @@ class TestRMS:
         #  Test a 2d list
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = (25/3) * np.sqrt(78)
-        assert_allclose(stats.rms(a, None), desired)
+        assert_allclose(stats.rms(a, axis=None), desired)
 
     def test_2d_array(self):
         #  Test a 2d array
         a = [[-10, 20, -30, 40], [-50, 60, -70, 80], [-90, 100, -110, 120]]
         desired = (25/3) * np.sqrt(78)
-        assert_allclose(stats.rms(a, None), desired)
+        assert_allclose(stats.rms(a, axis=None), desired)
 
     def test_2d_axis0(self):
         #  Test a 2d list with axis=0
@@ -263,12 +263,12 @@ class TestRMS:
         #  Test a 2d list with axis=1
         a = [[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]]
         desired = np.array([27.38612788, 65.95452979, 105.5935604])
-        assert_allclose(stats.rms(a, 1), desired)
+        assert_allclose(stats.rms(a, axis=1), desired)
 
         a = array([[1, 2, 3, 4], [-1, -2, -3, -4], [1, 2, 3, 4]])
         v = 2.738612788
         desired = array([v, v, v])
-        assert_allclose(stats.rms(a, 1), desired)
+        assert_allclose(stats.rms(a, axis=1), desired)
 
     def test_large_values(self):
         a = array([1e50, 1e100, 1e150])
@@ -281,7 +281,7 @@ class TestRMS:
         a = np.random.randn(5, 4, 3, 4)  # Also test 4D array
         a -= a.mean()
         desired = a.std()
-        assert_allclose(stats.rms(a, None), desired)
+        assert_allclose(stats.rms(a, axis=None), desired)
 
     def test_complex(self):
         # http://www-fourier.univ-grenoble-alpes.fr/~parisse/giac/doc/en/cascmd_en/cascmd_en954.html

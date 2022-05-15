@@ -910,7 +910,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
     return sd / np.sqrt(am.count())
 
 
-def rms(a, axis=0):
+def rms(a, *, axis=0):
     r"""Return an array of the root-mean-square value of the passed array.
 
     The root-mean-square is also called the "quadratic mean".
