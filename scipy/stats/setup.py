@@ -55,6 +55,12 @@ def configuration(parent_package='', top_path=None):
             config=['compiler.blas=none'])
         config.ext_modules.append(ext)
 
+        ext = pythran.dist.PythranExtension(
+            'scipy.stats._mood_inner_lc',
+            sources=["scipy/stats/_mood_inner_lc.py"],
+            config=['compiler.blas=none'])
+        config.ext_modules.append(ext)
+
     # add BiasedUrn module
     config.add_data_files('_biasedurn.pxd')
     from _generate_pyx import isNPY_OLD  # type: ignore[import]

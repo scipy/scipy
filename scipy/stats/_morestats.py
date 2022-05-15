@@ -2884,6 +2884,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     pval = distributions.chi2.sf(Xsq, k - 1)  # 1 - cdf
     return FlignerResult(Xsq, pval)
 
+from ._mood_inner_lc import _mood_inner_lc
 
 @_axis_nan_policy_factory(lambda x1, x2: (x1, x2), n_samples=2)
 def mood(x, y, alternative="two-sided"):
@@ -3020,7 +3021,10 @@ def mood(x, y, alternative="two-sided"):
     # for every range in the above array, determine the sum of psi(I) for
     # every element in the range. Divide all the sums by `t`. Following the
     # last unnumbered equation on page 312.
+    # print(js)
     phis = [np.sum(psi(I_i)) for I_i in phi_I] / t[js]
+    print(js, k, s_lower, s_upper, t, N)
+    # phis = _mood_inner_lc(js, k, s_lower, s_upper, t, N)
 
     # `T` is equal to a[j] * phi[j], per the first unnumbered equation on
     # page 312. `phis` is already in the order based on `js`, so we index
