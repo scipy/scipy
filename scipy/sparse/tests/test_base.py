@@ -1630,7 +1630,10 @@ class _TestCommon:
         assert_equal(eval('B @ A'), "matrix on the right")
 
     def test_dot_scalar(self):
-        M = self.spmatrix(array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
+        M = self.spmatrix(array([[3, 0, 0],
+                                 [0, 1, 0],
+                                 [2, 0, 3.0],
+                                 [2, 3, 0]]))
         scalar = 10
         actual = M.dot(scalar)
         expected = M * scalar
