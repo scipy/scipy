@@ -302,8 +302,8 @@ class _TestConvolve2d:
 
     def test_fillvalue_errors(self):
         msg = "could not cast `fillvalue` directly to the output "
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore", category=np.ComplexWarning)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(np.ComplexWarning, "Casting complex values")
             with assert_raises(ValueError, match=msg):
                 convolve2d([[1]], [[1, 2]], fillvalue=1j)
 
