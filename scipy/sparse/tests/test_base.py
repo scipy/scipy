@@ -1629,6 +1629,17 @@ class _TestCommon:
         assert_equal(eval('A @ B'), "matrix on the left")
         assert_equal(eval('B @ A'), "matrix on the right")
 
+    def test_dot_scalar(self):
+        M = self.spmatrix(array([[3, 0, 0],
+                                 [0, 1, 0],
+                                 [2, 0, 3.0],
+                                 [2, 3, 0]]))
+        scalar = 10
+        actual = M.dot(scalar)
+        expected = M * scalar
+
+        assert_allclose(actual.toarray(), expected.toarray())
+
     def test_matmul(self):
         M = self.spmatrix(array([[3,0,0],[0,1,0],[2,0,3.0],[2,3,0]]))
         B = self.spmatrix(array([[0,1],[1,0],[0,2]],'d'))
@@ -3620,7 +3631,7 @@ class TestCSR(sparse_test_class()):
         ij = vstack((row,col))
         csr = csr_matrix((data,ij),(4,3))
         assert_array_equal(arange(12).reshape(4, 3), csr.toarray())
-        
+
         # using Python lists and a specified dtype
         csr = csr_matrix(([2**63 + 1, 1], ([0, 1], [0, 1])), dtype=np.uint64)
         dense = array([[2**63 + 1, 0], [0, 1]], dtype=np.uint64)

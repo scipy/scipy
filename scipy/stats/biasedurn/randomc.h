@@ -90,7 +90,7 @@
 * instructions for these random number generators.
 *
 * Copyright 1997-2008 by Agner Fog. 
-* GNU General Public License http://www.gnu.org/licenses/gpl.html
+* Released under SciPy's license with permission of Agner Fog; see license.txt
 *******************************************************************************/
 
 #ifndef RANDOMC_H
