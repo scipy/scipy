@@ -5779,9 +5779,9 @@ class TestPowMean:
         check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5)
 
     def test_weights_2d_array_axis0(self):
-        a, p = np.array([[2, 5], [10, 5], [6, 5]]), 1
+        a, p = np.array([[2, 5], [10, 5], [6, 5]]), 0
         weights = np.array([[10, 1], [5, 1], [3, 1]])
-        desired = np.average(a, axis=0, weights=weights)
+        desired = stats.gmean(a, axis=0, weights=weights)
         check_equal_pmean(a, p, desired, axis=0, weights=weights, rtol=1e-5)
 
     def test_weights_2d_array_axis1(self):

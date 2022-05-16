@@ -431,7 +431,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     a : array_like
         Input array, masked array or object that can be converted to an array.
     p : float
-        The non-null exponent.
+        Exponent.
     axis : int or None, optional
         Axis along which the power mean is computed. Default is 0.
         If None, compute over the whole array `a`.
@@ -476,7 +476,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
 
     Examples
     --------
-    >>> from scipy.stats import pmean, hmean
+    >>> from scipy.stats import pmean, hmean, gmean
     >>> pmean([1, 4], 1.3)
     2.639372938300652
     >>> pmean([1, 2, 3, 4, 5, 6, 7], 1.3)
@@ -491,11 +491,18 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     >>> hmean([1, 4, 7], weights=[3, 1, 3])
     1.9029126213592233
 
+    For p=0, power mean is defined as the geometric mean:
+
+    >>> pmean([1, 4, 7], 0, weights=[3, 1, 3])
+    2.80668351922014
+    >>> gmean([1, 4, 7], weights=[3, 1, 3])
+    2.80668351922014
+
     """
     if not isinstance(p, (int, float)):
         raise ValueError("Power mean only defined for a scalar exponent")
     if p == 0:
-        raise ValueError("Power mean only defined for non-zero exponent")
+        return gmean(a, axis=axis, dtype=dtype, weights=weights)
 
     if not isinstance(a, np.ndarray):
         a = np.array(a, dtype=dtype)
