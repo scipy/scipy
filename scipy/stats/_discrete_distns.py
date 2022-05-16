@@ -321,11 +321,12 @@ class nbinom_gen(rv_discrete):
         def f1(k, n, p):
             return np.log1p(-special.betainc(k + 1, n, 1 - p))
 
-        def f2(k, n, p):
-            return np.log(cdf)
-
+        # do calc in place
+        logcdf = cdf
         with np.errstate(divide='ignore'):
-            return _lazywhere(cond, (x, n, p), f=f1, f2=f2)
+            logcdf[cond] = f1(k[cond], n[cond], p[cond])
+            logcdf[~cond] = np.log(cdf[~cond])
+        return logcdf
 
     def _sf_skip(self, x, n, p):
         # skip because special.nbdtrc doesn't work for 0<n<1
