@@ -5,9 +5,9 @@ from numpy.testing import assert_allclose
 from scipy.stats import _boost
 
 
-rtols = {np.float32: 32*np.finfo(np.float32).eps,
-         np.float64: 32*np.finfo(np.float64).eps,
-         np.longdouble: 32*np.finfo(np.longdouble).eps}
+type_char_to_type_tol = {'f': (np.float32, 32*np.finfo(np.float32).eps),
+                         'd': (np.float64, 32*np.finfo(np.float64).eps),
+                         'g': (np.longdouble, 32*np.finfo(np.longdouble).eps)}
 
 
 # Each item in this list is
@@ -32,8 +32,12 @@ test_data = [
 
 
 @pytest.mark.parametrize('func, args, expected', test_data)
-@pytest.mark.parametrize('typ, rtol', rtols.items())
-def test_stats_boost_ufunc(func, args, expected, typ, rtol):
-    args = (typ(arg) for arg in args)
-    value = func(*args)
-    assert_allclose(value, expected, rtol=rtol)
+def test_stats_boost_ufunc(func, args, expected):
+    type_sigs = func.types
+    type_chars = [sig.split('->')[-1] for sig in type_sigs]
+    for type_char in type_chars:
+        typ, rtol = type_char_to_type_tol[type_char]
+        args = [typ(arg) for arg in args]
+        value = func(*args)
+        assert isinstance(value, typ)
+        assert_allclose(value, expected, rtol=rtol)
