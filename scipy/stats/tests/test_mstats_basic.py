@@ -959,14 +959,14 @@ def test_theilslopes_namedtuple_consistency():
     """
     y = [1, 2, 4]
     x = [4, 6, 8]
-    medslope, medintercept, lo_slope, up_slope = mstats.theilslopes(y, x)
+    slope, intercept, low_slope, high_slope = mstats.theilslopes(y, x)
     result = mstats.theilslopes(y, x)
 
     # note all four returned values are distinct here
-    assert_equal(medslope, result.medslope)
-    assert_equal(medintercept, result.medintercept)
-    assert_equal(lo_slope, result.lo_slope)
-    assert_equal(up_slope, result.up_slope)
+    assert_equal(slope, result.slope)
+    assert_equal(intercept, result.intercept)
+    assert_equal(low_slope, result.low_slope)
+    assert_equal(high_slope, result.high_slope)
 
 
 def test_siegelslopes():
@@ -1005,12 +1005,12 @@ def test_siegelslopes_namedtuple_consistency():
     """
     y = [1, 2, 4]
     x = [4, 6, 8]
-    medslope, medintercept = mstats.siegelslopes(y, x)
+    slope, intercept = mstats.siegelslopes(y, x)
     result = mstats.siegelslopes(y, x)
 
     # note both returned values are distinct here
-    assert_equal(medslope, result.medslope)
-    assert_equal(medintercept, result.medintercept)
+    assert_equal(slope, result.slope)
+    assert_equal(intercept, result.intercept)
 
 
 def test_plotting_positions():

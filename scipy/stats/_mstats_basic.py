@@ -1042,8 +1042,8 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
         Method to be used for computing estimate for intercept.
         Following methods are supported,
 
-            * 'joint': Uses np.median(y - medslope * x) as intercept.
-            * 'separate': Uses np.median(y) - medslope * np.median(x)
+            * 'joint': Uses np.median(y - slope * x) as intercept.
+            * 'separate': Uses np.median(y) - slope * np.median(x)
                           as intercept.
 
         The default is 'separate'.
@@ -1055,18 +1055,18 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     result : ``TheilslopesResult`` instance
         The return value is an object with the following attributes:
 
-        medslope : float
+        slope : float
             Theil slope.
-        medintercept : float
+        intercept : float
             Intercept of the Theil line.
-        lo_slope : float
-            Lower bound of the confidence interval on `medslope`.
-        up_slope : float
-            Upper bound of the confidence interval on `medslope`.
+        low_slope : float
+            Lower bound of the confidence interval on `slope`.
+        high_slope : float
+            Upper bound of the confidence interval on `slope`.
 
     See Also
     --------
-    siegelslopes : a similar technique with repeated medians
+    siegelslopes : a similar technique using repeated medians
 
 
     Notes
@@ -1108,7 +1108,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
         Independent variable. If None, use ``arange(len(y))`` instead.
     method : {'hierarchical', 'separate'}
         If 'hierarchical', estimate the intercept using the estimated
-        slope ``medslope`` (default option).
+        slope ``slope`` (default option).
         If 'separate', estimate the intercept independent of the estimated
         slope. See Notes for details.
 
@@ -1117,9 +1117,9 @@ def siegelslopes(y, x=None, method="hierarchical"):
     result : ``SiegelslopesResult`` instance
         The return value is an object with the following attributes:
 
-        medslope : float
+        slope : float
             Estimate of the slope of the regression line.
-        medintercept : float
+        intercept : float
             Estimate of the intercept of the regression line.
 
     See Also
@@ -1145,7 +1145,7 @@ def siegelslopes(y, x=None, method="hierarchical"):
     y = y.compressed()
     x = x.compressed().astype(float)
     # We now have unmasked arrays so can use `scipy.stats.siegelslopes`
-    return stats_siegelslopes(y, x)
+    return stats_siegelslopes(y, x, method=method)
 
 
 def sen_seasonal_slopes(x):
