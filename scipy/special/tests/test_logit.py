@@ -31,6 +31,25 @@ class TestLogit:
                             2.07944154, np.inf])
         self.check_logit_out('f8', expected)
 
+    def test_longdouble(self):
+        x = np.array([0.125, 0.25, 0.375, 0.625, 0.75, 0.875],
+                     dtype=np.longdouble)
+        y = logit(x)
+        expected = np.array([
+            np.longdouble('-1.945910149055313305105352773'),
+            np.longdouble('-1.098612288668109691395245246'),
+            np.longdouble('-0.5108256237659906832055140971'),
+            np.longdouble('0.5108256237659906832055140971'),
+            np.longdouble('1.098612288668109691395245246'),
+            np.longdouble('1.945910149055313305105352773'),
+        ])
+        rtol = 16*np.finfo(np.longdouble).eps
+        assert_allclose(y, expected, rtol=rtol)
+
+        assert logit(np.longdouble(0.5)) == 0.0
+        assert logit(np.longdouble(1.0)) == np.inf
+        assert logit(np.longdouble(0.0)) == -np.inf
+
     def test_nan(self):
         expected = np.array([np.nan]*4)
         with np.errstate(invalid='ignore'):
@@ -143,3 +162,27 @@ class TestLogExpit:
                             dtype=np.float32)
 
         assert_allclose(y, expected, rtol=5e-7)
+
+    def test_basic_longdouble(self):
+        x = np.array(['-32', '-20', '-10', '-3', '-1', '-0.1', '-1e-9',
+                      '0', '1e-9', '0.1', '1', '10', '100'],
+                     dtype=np.longdouble)
+        y = log_expit(x)
+        # Expected values were computed with mpmath.
+        expected = np.array([
+            '-32.00000000000001266416554895',
+            '-20.0000000020611536203143808',
+            '-10.00004539889921686464676955',
+            '-3.048587351573742058758925935',
+            '-1.313261687518222834048995512',
+            '-0.7443966600735708948308105838',
+            '-0.6931471810599453095422321209',
+            '-0.6931471805599453094172321228',
+            '-0.6931471800599453095422321232',
+            '-0.6443966600735708948294553311',
+            '-0.313261687518222834048995499',
+            '-0.00004539889921686464676948782954',
+            '-3.720075976020835962959695808e-44',
+        ], dtype=np.longdouble)
+        rtol = 16*np.finfo(np.longdouble).eps
+        assert_allclose(y, expected, rtol=rtol)
