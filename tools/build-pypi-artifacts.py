@@ -53,9 +53,6 @@ def concat_license_files():
     file2 = repo_root_dir / 'LICENSES_bundled.txt'
 
     # Concatenate files
-    with open(file1, 'r') as f1:
-        bsd_text = f1.read()
-
     with open(file1, 'a') as f1:
         with open(file2, 'r') as f2:
             bundled_text = f2.read()
@@ -117,7 +114,9 @@ def modify_pyproject_toml():
 
 
 def get_current_commit_id():
-    proc = subprocess.Popen(['git', 'rev-parse', '--verify', 'HEAD'],
+    git_dir = os.path.join(repo_root_dir, ".git")
+    proc = subprocess.Popen(['git', '--git-dir', git_dir,
+                             'rev-parse', '--verify', 'HEAD'],
                             stdout=subprocess.PIPE)
     status, _ = proc.communicate()
     status = status.decode("ascii", "replace")
@@ -244,7 +243,7 @@ if __name__ == '__main__':
     if args.wheel:
         # TODO: wheel build
         raise NotImplementedError('TODO')
-        create_wheel_for_pypy(skip_check=args.skip_dependency_check)
+        create_wheel_for_pypi(skip_check=args.skip_dependency_check)
     elif args.sdist:
         create_sdist_for_pypi()
     else:

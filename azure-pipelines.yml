@@ -335,7 +335,7 @@ stages:
 
         # Still testing distutils here (`pip wheel --no-use-pep517` cannot be
         # used, so back to `setup.py` it is ...)
-        python tools/suppress_output.py python setup.py bdist_wheel
+        python setup.py bdist_wheel
         ls dist -r | Foreach-Object {
             pip install $_.FullName
         }

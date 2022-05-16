@@ -119,7 +119,7 @@ steps:
   - script: |
       set -euo pipefail
       echo "Build sdist via `build` (uses pyproject.toml)"
-      python tools/build-pypi-artifacts.py --sdist
+      python -m build --sdist
       # Move out of source directory to avoid finding local scipy
       cd dist
       echo "pip install"
@@ -127,7 +127,7 @@ steps:
       # Note: don't use a fixed build dir (which would help for ccache), because
       #       --build is partially broken and the workaround in commit b4617dd764
       #       messes with build isolation.
-      pip install dist/scipy* -v
+      pip install dist/scipy* -v --no-build-isolation  # TODO: remove --no-build-isolation once meson-python is fixed
     displayName: 'Install SciPy from SDist'
 - script: 'python -u runtests.py -g -j2 --build-only ${COVERAGE:-} ${USE_WHEEL_BUILD:-}'
   env:
