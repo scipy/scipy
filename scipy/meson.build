@@ -119,7 +119,7 @@ numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 blas = dependency(get_option('blas'))
 lapack = dependency(get_option('lapack'))
 
-if blas.name() == 'mkl' or lapack.name() == 'mkl'
+if blas.name() == 'mkl' or lapack.name() == 'mkl' or get_option('use-g77-abi')
   g77_abi_wrappers = files([
     '_build_utils/src/wrap_g77_abi_f.f',
     '_build_utils/src/wrap_g77_abi_c.c'
