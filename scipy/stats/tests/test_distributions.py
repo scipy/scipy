@@ -361,6 +361,12 @@ class TestNBinom:
         val = scipy.stats.nbinom.logpmf(0, 1, 1)
         assert_equal(val, 0)
 
+    def test_logcdf_gh16159(self):
+        # check that gh16159 is resolved.
+        vals = stats.nbinom.logcdf([0, 5, 0, 5], n=4.8, p=0.45)
+        ref = np.log(stats.nbinom.cdf([0, 5, 0, 5], n=4.8, p=0.45))
+        assert_allclose(vals, ref)
+
 
 class TestGenInvGauss:
     def setup_method(self):
