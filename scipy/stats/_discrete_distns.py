@@ -344,7 +344,8 @@ class nbinom_gen(rv_discrete):
         def f1(k, n, p):
             return np.log1p(-special.betainc(k + 1, n, 1 - p))
 
-        logcdf = np.empty_like(cdf)
+        # do calc in place
+        logcdf = cdf
         with np.errstate(divide='ignore'):
             logcdf[cond] = f1(k[cond], n[cond], p[cond])
             logcdf[~cond] = np.log(cdf[~cond])
