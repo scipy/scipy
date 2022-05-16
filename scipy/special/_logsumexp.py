@@ -160,7 +160,16 @@ def softmax(x, axis=None):
 
     The `softmax` function is the gradient of `logsumexp`.
 
+    The implementation uses shifting to avoid overflow. See [1]_ for more
+    details.
+
     .. versionadded:: 1.2.0
+
+    References
+    ----------
+    .. [1] P. Blanchard, D.J. Higham, N.J. Higham, "Accurately computing the
+       log-sum-exp and softmax functions", IMA Journal of Numerical Analysis,
+       Vol.41(4), :doi:`10.1093/imanum/draa038`.
 
     Examples
     --------
