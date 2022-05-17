@@ -1681,8 +1681,11 @@ class PoissonDisk(QMCEngine):
         # sample to generate per iteration in the hypersphere around center
         self.k = 30
 
-        self.cell_size = self.radius / np.sqrt(self.d)
-        self.grid_size = (np.ceil(np.ones(self.d)/self.cell_size)).astype(int)
+        with np.errstate(divide='ignore'):
+            self.cell_size = self.radius / np.sqrt(self.d)
+            self.grid_size = (
+                np.ceil(np.ones(self.d) / self.cell_size)
+            ).astype(int)
 
         self._initialize_grid_pool()
 
