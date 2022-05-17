@@ -790,6 +790,25 @@ class TestPoisson(QMCEngineTests):
         pytest.skip("Not applicable: the value of reference sample is"
                     " implementation dependent.")
 
+    def test_continuing(self, *args):
+        # can continue a sampling, but will not preserve the same order
+        # because candidates are lost, so we will not select the same center
+        radius = 0.05
+        ns = 6
+        engine = self.engine(d=2, radius=radius, scramble=False)
+
+        sample_init = engine.random(n=ns)
+        assert len(sample_init) <= ns
+        assert l2_norm(sample_init) >= radius
+
+        sample_continued = engine.random(n=ns)
+        assert len(sample_continued) <= ns
+        assert l2_norm(sample_continued) >= radius
+
+        sample = np.concatenate([sample_init, sample_continued], axis=0)
+        assert len(sample) <= ns * 2
+        assert l2_norm(sample) >= radius
+
     def test_mindist(self):
         rng = np.random.default_rng(132074951149370773672162394161442690287)
         ns = 100
@@ -803,7 +822,7 @@ class TestPoisson(QMCEngineTests):
             engine = self.qmce(d=2, radius=radius, seed=rng)
             sample = engine.random(ns)
 
-            assert len(sample) <= ns, (engine.num_generated, len(sample))
+            assert len(sample) <= ns
             assert l2_norm(sample) >= radius
 
 

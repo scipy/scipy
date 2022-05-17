@@ -1670,6 +1670,20 @@ class PoissonDisk(QMCEngine):
         self.cell_size = self.radius / np.sqrt(self.d)
         self.grid_size = (np.ceil(np.ones(self.d)/self.cell_size)).astype(int)
 
+        self._initialize_grid_pool()
+
+    def _initialize_grid_pool(self):
+        """Sampling pool and sample grid."""
+        self.sample_pool = []
+        # Positions of cells
+        # n-dim value for each grid cell
+        self.sample_grid = np.empty(
+            np.append(self.grid_size, self.d),
+            dtype=np.float32
+        )
+        # Initialise empty cells with NaNs
+        self.sample_grid.fill(np.nan)
+
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` in the interval ``[0, 1]``.
 
@@ -1700,7 +1714,7 @@ class PoissonDisk(QMCEngine):
             ind_max = np.minimum(indices + n + 1, self.grid_size)
 
             # Check if the center cell is empty
-            if not np.isnan(sample[tuple(indices)][0]):
+            if not np.isnan(self.sample_grid[tuple(indices)][0]):
                 return True
 
             a = [slice(ind_min[i], ind_max[i]) for i in range(self.d)]
@@ -1708,7 +1722,8 @@ class PoissonDisk(QMCEngine):
             with np.errstate(invalid='ignore'):
                 if np.any(
                     np.sum(
-                        np.square(candidate - sample[tuple(a)]), axis=self.d
+                        np.square(candidate - self.sample_grid[tuple(a)]),
+                        axis=self.d
                     ) < self.squared_radius
                 ):
                     return True
@@ -1716,27 +1731,26 @@ class PoissonDisk(QMCEngine):
             return False
 
         def add_sample(candidate: np.ndarray) -> None:
-            sample_pool.append(candidate)
+            self.sample_pool.append(candidate)
             indices = (candidate / self.cell_size).astype(int)
-            sample[tuple(indices)] = candidate
+            self.sample_grid[tuple(indices)] = candidate
+            curr_sample.append(candidate)
 
-        # Positions of cells
-        # n-dim value for each grid cell
-        sample = np.empty(np.append(self.grid_size, self.d), dtype=np.float32)
-        # Initialise empty cells with NaNs
-        sample.fill(np.nan)
+        curr_sample = []
 
-        # the pool is being initialized with a single random sample
-        sample_pool = []
-        add_sample(self.rng.random(self.d))
-        num_drawn = 1
+        if len(self.sample_pool) == 0:
+            # the pool is being initialized with a single random sample
+            add_sample(self.rng.random(self.d))
+            num_drawn = 1
+        else:
+            num_drawn = 0
 
         # exhaust sample pool to have up to n sample
-        while len(sample_pool) and num_drawn < n:
+        while len(self.sample_pool) and num_drawn < n:
             # select a sample from the available pool
-            idx_center = self.rng.integers(len(sample_pool))
-            center = sample_pool[idx_center]
-            del sample_pool[idx_center]
+            idx_center = self.rng.integers(len(self.sample_pool))
+            center = self.sample_pool[idx_center]
+            del self.sample_pool[idx_center]
 
             # generate candidates around the center sample
             candidates = self.hypersphere_method(
@@ -1752,10 +1766,21 @@ class PoissonDisk(QMCEngine):
                     if num_drawn >= n:
                         break
 
-        # filter out NaN from grid
-        sample = sample[~np.isnan(sample).any(axis=self.d)]
-        self.num_generated = num_drawn
-        return sample
+        self.num_generated += num_drawn
+        return np.array(curr_sample)
+
+    def reset(self) -> PoissonDisk:
+        """Reset the engine to base state.
+
+        Returns
+        -------
+        engine : PoissonDisk
+            Engine reset to its base state.
+
+        """
+        super().reset()
+        self._initialize_grid_pool()
+        return self
 
     def _hypersphere_volume_sample(
         self, center: np.ndarray, radius: float, k: int = 1
