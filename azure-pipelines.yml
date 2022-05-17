@@ -186,8 +186,8 @@ stages:
             cp -r \$target/lib/* /usr/lib && \
             cp \$target/include/* /usr/include && \
             cd ../scipy && \
-            CC=gcc-5 CXX=g++-5 FC=gfortran pip3 install numpy && \
-            CC=gcc-5 CXX=g++-5 FC=gfortran pip3 install . --no-build-isolation && \
+            CC=gcc-5 CXX=g++-5 FC=gfortran-8 pip3 install numpy && \
+            CC=gcc-5 CXX=g++-5 FC=gfortran-8 pip3 install . --no-build-isolation && \
             python3.8 tools/openblas_support.py --check_version $(openblas_version) && \
             python3.8 runtests.py -n --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
       displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
