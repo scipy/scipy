@@ -23,6 +23,7 @@ Engines
    Sobol
    Halton
    LatinHypercube
+   PoissonDisk
    MultinomialQMC
    MultivariateNormalQMC
 

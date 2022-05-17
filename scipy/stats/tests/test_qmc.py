@@ -817,13 +817,23 @@ class TestPoisson(QMCEngineTests):
         radii = (high - low) * rng.random(10) + low
 
         dimensions = [1, 2, 3, 4]
+        hypersphere_methods = ["volume", "surface"]
 
-        for d, radius in product(dimensions, radii):
-            engine = self.qmce(d=2, radius=radius, seed=rng)
+        gen = product(dimensions, radii, hypersphere_methods)
+
+        for d, radius, hypersphere in gen:
+            engine = self.qmce(
+                d=2, radius=radius, hypersphere=hypersphere, seed=rng
+            )
             sample = engine.random(ns)
 
             assert len(sample) <= ns
             assert l2_norm(sample) >= radius
+
+    def test_raises(self):
+        message = r"'toto' is not a valid hypersphere sampling"
+        with pytest.raises(ValueError, match=message):
+            qmc.PoissonDisk(1, hypersphere="toto")
 
 
 class TestMultinomialQMC:

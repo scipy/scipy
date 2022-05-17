@@ -1603,6 +1603,8 @@ class PoissonDisk(QMCEngine):
     ----------
     d : int
         Dimension of the parameter space.
+    radius : float
+        Minimal distance to keep between points when sampling new candidates.
     hypersphere : {"volume", "surface"}, optional
         Sampling strategy to generate potential candidates to be added in the
         final sample. Default is "volume".
@@ -1621,7 +1623,19 @@ class PoissonDisk(QMCEngine):
     Notes
     -----
 
-    Taken from [2]_ by P. Zun, written consent given on 31.03.2021
+    Poisson disk sampling is an iterative sampling strategy. Starting from
+    a seed sample, candidates are sampled in the hypersphere surrounding the
+    seed. Candidates bellow a certain `radius` or outside of the domain are
+    rejected. New samples are added in a pool of sample seed. The process
+    stops when the pool is empty or when the number of required samples is
+    reached.
+
+    .. warning::
+
+       The algorithm is more suitable for low dimensions and sampling size
+       due to its iterative nature and memory requirements.
+
+    Some code taken from [2]_ by P. Zun, written consent given on 31.03.2021
     by the original author, Shamis, for free use in SciPy under
     the 3-clause BSD.
 
@@ -1686,6 +1700,9 @@ class PoissonDisk(QMCEngine):
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` in the interval ``[0, 1]``.
+
+        Note that it can return fewer samples if the space is full.
+        See the note section of the class.
 
         Parameters
         ----------
