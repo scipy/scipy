@@ -30,7 +30,7 @@ if TYPE_CHECKING:
 import scipy.stats as stats
 from scipy._lib._util import rng_integers
 from scipy.spatial import distance, Voronoi
-from scipy.special.cython_special import gammainc
+from scipy.special import gammainc
 from ._sobol import (
     _initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
     _categorize, _MAXDIM
@@ -47,7 +47,7 @@ from ._qmc_cy import (
 
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
-           'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube',
+           'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube', 'PoissonDisc',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
@@ -1636,6 +1636,8 @@ class PoissonDisc(QMCEngine):
     def __init__(
         self,
         d: IntNumber,
+        *,
+        radius: DecimalNumber = 0.05,
         hypersphere: Literal["volume", "surface"] = "volume",
         seed: SeedType = None
     ) -> None:
@@ -1657,10 +1659,9 @@ class PoissonDisc(QMCEngine):
         # size of the sphere from which the samples are drawn relative to the
         # size of a disc (radius)
         # for the surface sampler, all new points are almost exactly 1 radius
-        # away from at least one existing sample
-        # eps to avoid rejection
+        # away from at least one existing sample +eps to avoid rejection
         self.radius_factor = 2 if hypersphere == "volume" else 1.001
-        self.radius = 0.05
+        self.radius = radius
         self.squared_radius = self.radius**2
 
         # sample to generate per iteration in the hypersphere around center
@@ -1687,12 +1688,12 @@ class PoissonDisc(QMCEngine):
         def in_limits(sample: np.ndarray) -> bool:
             return (sample.max() <= 1.) and (sample.min() >= 0.)
 
-        def in_neighborhood(sample: np.ndarray, n: int = 2) -> bool:
+        def in_neighborhood(candidate: np.ndarray, n: int = 2) -> bool:
             """
             Check if there are samples closer than ``squared_radius`` to the
-            candidate `sample`.
+            `candidate` sample.
             """
-            indices = (sample / self.cell_size).astype(int)
+            indices = (candidate / self.cell_size).astype(int)
             ind_min = np.maximum(indices - n, np.zeros(self.d, dtype=int))
             ind_max = np.minimum(indices + n + 1, self.grid_size)
 
@@ -1700,22 +1701,22 @@ class PoissonDisc(QMCEngine):
             if not np.isnan(sample[tuple(indices)][0]):
                 return True
 
-            a = [[slice(ind_min[i], ind_max[i])] for i in range(self.d)]
+            a = [slice(ind_min[i], ind_max[i]) for i in range(self.d)]
 
             with np.errstate(invalid='ignore'):
                 if np.any(
                     np.sum(
-                        np.square(sample - sample[tuple(a)]), axis=self.d
+                        np.square(candidate - sample[tuple(a)]), axis=self.d
                     ) < self.squared_radius
                 ):
                     return True
 
             return False
 
-        def add_sample(sample: np.ndarray) -> None:
-            sample_pool.append(sample)
-            indices = (sample / self.cell_size).astype(int)
-            sample[tuple(indices)] = sample
+        def add_sample(candidate: np.ndarray) -> None:
+            sample_pool.append(candidate)
+            indices = (candidate / self.cell_size).astype(int)
+            sample[tuple(indices)] = candidate
 
         # Positions of cells
         # n-dim value for each grid cell
@@ -1725,7 +1726,7 @@ class PoissonDisc(QMCEngine):
 
         # the pool is being initialized with a single random sample
         sample_pool = []
-        add_sample(self.rng.random((1, self.d)))
+        add_sample(self.rng.random(self.d))
         num_drawn = 1
 
         # exhaust sample pool to have up to n sample
@@ -1744,7 +1745,10 @@ class PoissonDisc(QMCEngine):
             for candidate in candidates:
                 if in_limits(candidate) and not in_neighborhood(candidate):
                     add_sample(candidate)
-                    num_drawn = num_drawn + 1
+
+                    num_drawn += 1
+                    if num_drawn >= n:
+                        break
 
         # filter out NaN from grid
         sample = sample[~np.isnan(sample).any(axis=self.d)]
