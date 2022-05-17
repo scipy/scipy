@@ -16,7 +16,8 @@ from scipy.linalg import norm
 from scipy.sparse import spdiags, csr_matrix, SparseEfficiencyWarning, kronsum
 
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
-from scipy.sparse.linalg._isolve import cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr
+from scipy.sparse.linalg._isolve import cg, cgs, bicg, bicgstab, gmres, qmr, \
+                                        minres, lgmres, gcrotmk, tfqmr, symmlq
 
 # TODO check that method preserve shape and type
 # TODO test both preconditioner methods
@@ -46,8 +47,9 @@ class Case:
 class IterativeParams:
     def __init__(self):
         # list of tuples (solver, symmetric, positive_definite )
-        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr]
-        sym_solvers = [minres, cg]
+        solvers = [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres,
+                   gcrotmk, tfqmr, symmlq]
+        sym_solvers = [minres, cg, symmlq]
         posdef_solvers = [cg]
         real_solvers = [minres]
 
@@ -186,7 +188,10 @@ def check_maxiter(solver, case):
     residuals = []
 
     def callback(x):
-        residuals.append(norm(b - case.A*x))
+        if solver is symmlq:
+            residuals.append(x)
+        else:
+            residuals.append(norm(b - case.A*x))
 
     x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback)
 
@@ -412,7 +417,8 @@ def test_atol(solver):
         assert_(err <= max(atol, atol2))
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk, tfqmr, symmlq])
 def test_zero_rhs(solver):
     np.random.seed(1234)
     A = np.random.rand(10, 10)
@@ -487,7 +493,8 @@ def test_maxiter_worsening(solver):
         assert_(error <= tol*best_error)
 
 
-@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr, minres, lgmres, gcrotmk, tfqmr])
+@pytest.mark.parametrize("solver", [cg, cgs, bicg, bicgstab, gmres, qmr,
+                                    minres, lgmres, gcrotmk, tfqmr, symmlq])
 def test_x0_working(solver):
     # Easy problem
     np.random.seed(1)
@@ -512,7 +519,7 @@ def test_x0_working(solver):
 
 
 @pytest.mark.parametrize('solver', [cg, cgs, bicg, bicgstab, gmres, qmr,
-                                    minres, lgmres, gcrotmk])
+                                    minres, lgmres, gcrotmk, symmlq])
 def test_x0_equals_Mb(solver):
     for case in params.cases:
         if solver in case.skip:
@@ -530,7 +537,8 @@ def test_x0_equals_Mb(solver):
             assert_normclose(A.dot(x), b, tol=tol)
 
 
-@pytest.mark.parametrize(('solver', 'solverstring'), [(tfqmr, 'TFQMR')])
+@pytest.mark.parametrize(('solver', 'solverstring'), [(tfqmr, 'TFQMR'),
+                         (symmlq, 'SYMMLQ')])
 def test_show(solver, solverstring, capsys):
     def cb(x):
         count[0] += 1

@@ -61,6 +61,7 @@ Iterative methods for linear equation systems:
    qmr -- Use Quasi-Minimal Residual iteration to solve A x = b
    gcrotmk -- Solve a matrix equation using the GCROT(m,k) algorithm
    tfqmr -- Use Transpose-Free Quasi-Minimal Residual iteration to solve A x = b
+   symmlq -- Use Symmetric LQ iteration to solve A x = b
 
 Iterative methods for least-squares problems:
 
