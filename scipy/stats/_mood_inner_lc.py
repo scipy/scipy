@@ -21,7 +21,7 @@ def _mood_inner_lc(y, x) -> float:
     # calculation of `t`, so we do not need to calculate it separately. Here
     # we calculate `a`. In plain language, `a[i]` is the number of values in
     # `x` that equal `uniques[i]`.
-    _, xyx_counts = np.unique(np.sort(np.concatenate((xy, x))),
+    _, xyx_counts = np.unique(sorted(np.concatenate((xy, x))),
                               return_counts=1)
     a = xyx_counts - t
     # "Define .. a_0 = b_0 = t_0 = S_0 = 0" (Mielke 312) so we shift  `a`
@@ -35,7 +35,7 @@ def _mood_inner_lc(y, x) -> float:
     # define a copy of `S` with a prepending zero for later use to avoid
     # indexing
     S_i_m1 = np.concatenate(([0], S[:-1]))
-    #
+
     # Psi, as defined by the 6th unnumbered equation on page 312 (Mielke).
     # Note that in the paper there is an error where the denominator `2` is
     # squared when it should be the entire equation.
@@ -43,8 +43,8 @@ def _mood_inner_lc(y, x) -> float:
 
     # define summation range for use in calculation of phi, as seen in sum
     # in the unnumbered equation on the bottom of page 312 (Mielke).
-    s_lower = [S[jsi - 1] + 1 for jsi in js] #S[js - 1] + 1
-    s_upper = [S[jsi] + 1 for jsi in js] #S[js] + 1
+    s_lower = [S[jsi - 1] + 1 for jsi in js]
+    s_upper = [S[jsi] + 1 for jsi in js]
     phi_I = [range(s_lower[idx], s_upper[idx]) for idx in range(k)]
 
     # for every range in the above array, determine the sum of psi(I) for
