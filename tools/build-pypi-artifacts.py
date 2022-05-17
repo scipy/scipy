@@ -18,9 +18,9 @@ def check_submodules():
     if not os.path.exists(repo_root_dir / '.git'):
         return
     with open(repo_root_dir / '.gitmodules') as f:
-        for l in f:
-            if 'path' in l:
-                p = l.split('=')[-1].strip()
+        for line in f:
+            if 'path' in line:
+                p = line.split('=')[-1].strip()
                 if not os.path.exists(p):
                     raise ValueError('Submodule %s missing' % p)
 
@@ -37,7 +37,7 @@ def check_not_dirty():
     proc = subprocess.Popen(['git', 'status'], stdout=subprocess.PIPE)
     status, _ = proc.communicate()
     status = status.decode("ascii", "replace")
-    if not "nothing to commit, working tree clean" in status:
+    if "nothing to commit, working tree clean" not in status:
         print(f"{status}\n")
         raise RuntimeError("Git repo dirty, so cannot generate sdist for PyPI")
 
@@ -90,6 +90,7 @@ numpy_reqs_toml = """
     "numpy; python_version>='3.11'",
     "numpy; python_version>='3.8' and platform_python_implementation=='PyPy'",
 """
+
 
 def modify_pyproject_toml():
     pyproject_toml = repo_root_dir / "pyproject.toml"
@@ -144,14 +145,14 @@ def reset_to_previous_commit(commit_id):
                             stdout=subprocess.PIPE)
     status, _ = proc.communicate()
     status = status.decode("ascii", "replace")
-    if not "HEAD is now at" in status:
+    if "HEAD is now at" not in status:
         print(f"{status}\n")
         raise RuntimeError("Resetting to original commit may have gone wrong")
 
 
 def generate_sdist():
-    proc = subprocess.run([sys.executable, '-m', 'build', '--sdist',
-                           '--no-isolation', '--skip-dependency-check'])
+    subprocess.run([sys.executable, '-m', 'build', '--sdist',
+                    '--no-isolation', '--skip-dependency-check'])
     distdir = repo_root_dir / 'dist'
     if not len(list(distdir.glob('scipy-*.tar.gz'))) == 1:
         raise RuntimeError("sdist creating not succesful!")
