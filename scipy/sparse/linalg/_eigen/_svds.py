@@ -198,6 +198,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     The ``solver="arpack"`` supports only
     'np.single', 'np.double', and 'np.cdouble'.
 
+
     Examples
     --------
     Construct a matrix ``A`` from singular values and vectors.
@@ -337,14 +338,14 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                                 ncv=ncv, which=which, v0=v0)
 
     eigvec, _ = np.linalg.qr(eigvec)
-    u = X_matmat(eigvec)
+    Av = X_matmat(eigvec)
     if not return_singular_vectors:
-        s = svd(u, compute_uv=False, overwrite_a=True)
+        s = svd(Av, compute_uv=False, overwrite_a=True)
         return s[::-1]
 
     # compute the left singular vectors of X and update the right ones
     # accordingly
-    u, s, vh = svd(u, full_matrices=False, overwrite_a=True)
+    u, s, vh = svd(Av, full_matrices=False, overwrite_a=True)
     u = u[:, ::-1]
     s = s[::-1]
     vh = vh[::-1]
@@ -365,6 +366,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             # them as the eigenvectors of X_XH
             eigvals, eigvec = lobpcg(X_XH, u, tol=res_tol**2, maxiter=maxiter,
                 largest=largest)
+            if largest:
+                eigvals = eigvals[::-1]
+                eigvec = eigvec[:, ::-1]
+            print(eigvals)
             vh = _herm(eigvec)
         else:
             vh = None
@@ -374,6 +379,10 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             # same situation as above but for the left singular vectors
             eigvals, u = lobpcg(X_XH, u, tol=res_tol**2, maxiter=maxiter,
                 largest=largest)
+            if largest:
+                eigvals = eigvals[::-1]
+                u = u[:, ::-1]
+            print(eigvals)
         else:
             u = None
         vh = vh @ _herm(eigvec) if jobv else None
