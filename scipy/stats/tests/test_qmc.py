@@ -777,7 +777,7 @@ class TestSobol(QMCEngineTests):
 
 
 class TestPoisson(QMCEngineTests):
-    qmce = qmc.PoissonDisc
+    qmce = qmc.PoissonDisk
     can_scramble = False
 
     def test_continuing(self, *args):

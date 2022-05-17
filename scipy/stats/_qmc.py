@@ -47,7 +47,7 @@ from ._qmc_cy import (
 
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
-           'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube', 'PoissonDisc',
+           'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube', 'PoissonDisk',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
@@ -1596,7 +1596,7 @@ class Sobol(QMCEngine):
         return self
 
 
-class PoissonDisc(QMCEngine):
+class PoissonDisk(QMCEngine):
     """Poisson disk sampling.
 
     Parameters
@@ -1657,7 +1657,7 @@ class PoissonDisc(QMCEngine):
             raise ValueError(message) from exc
 
         # size of the sphere from which the samples are drawn relative to the
-        # size of a disc (radius)
+        # size of a disk (radius)
         # for the surface sampler, all new points are almost exactly 1 radius
         # away from at least one existing sample +eps to avoid rejection
         self.radius_factor = 2 if hypersphere == "volume" else 1.001
