@@ -791,14 +791,20 @@ class TestPoisson(QMCEngineTests):
                     " implementation dependent.")
 
     def test_mindist(self):
-        radius = 0.05
+        rng = np.random.default_rng(132074951149370773672162394161442690287)
         ns = 100
 
-        engine = self.qmce(d=2, radius=radius)
-        sample = engine.random(ns)
+        low, high = 0.01, 0.1
+        radii = (high - low) * rng.random(10) + low
 
-        assert len(sample) <= ns, (engine.num_generated, len(sample))
-        assert l2_norm(sample) >= radius
+        dimensions = [1, 2, 3, 4]
+
+        for d, radius in product(dimensions, radii):
+            engine = self.qmce(d=2, radius=radius)
+            sample = engine.random(ns)
+
+            assert len(sample) <= ns, (engine.num_generated, len(sample))
+            assert l2_norm(sample) >= radius
 
 
 class TestMultinomialQMC:
