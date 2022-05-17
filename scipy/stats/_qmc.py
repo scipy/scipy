@@ -1684,6 +1684,8 @@ class PoissonDisk(QMCEngine):
             QMC sample.
 
         """
+        if n == 0 or self.d == 0:
+            return np.empty((n, self.d))
 
         def in_limits(sample: np.ndarray) -> bool:
             return (sample.max() <= 1.) and (sample.min() >= 0.)

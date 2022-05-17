@@ -780,11 +780,11 @@ class TestPoisson(QMCEngineTests):
     qmce = qmc.PoissonDisk
     can_scramble = False
 
-    def test_continuing(self, *args):
-        pytest.skip("Not implemented.")
+    def test_bounds(self, *args):
+        pytest.skip("Too costly in memory.")
 
     def test_fast_forward(self, *args):
-        pytest.skip("Not implemented.")
+        pytest.skip("Not applicable: recursive process.")
 
     def test_sample(self, *args):
         pytest.skip("Not applicable: the value of reference sample is"
@@ -800,7 +800,7 @@ class TestPoisson(QMCEngineTests):
         dimensions = [1, 2, 3, 4]
 
         for d, radius in product(dimensions, radii):
-            engine = self.qmce(d=2, radius=radius)
+            engine = self.qmce(d=2, radius=radius, seed=rng)
             sample = engine.random(ns)
 
             assert len(sample) <= ns, (engine.num_generated, len(sample))
