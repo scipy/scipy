@@ -2963,85 +2963,15 @@ def mood(x, y, alternative="two-sided"):
     (array([-5.76174136, -6.12650783]), array([8.32505043e-09, 8.98287869e-10]))
 
     """
-    x = np.asarray(x, dtype=float)
-    y = np.asarray(y, dtype=float)
+    # Specify an order for passing arrays into Pythran
+    x = np.asarray(x, dtype=float, order="C")
+    y = np.asarray(y, dtype=float, order="C")
 
-    n = x.shape[0]
-    m = y.shape[0]
-    N = m + n
-    if N < 3:
+    if x.shape[0] + y.shape[0] < 3:
         raise ValueError("Not enough observations.")
 
-    xy = np.concatenate((x, y), axis=0)
-    xy = np.moveaxis(xy, 0, -1)
-
-    # obtain the unique values and the counts of each.
-    # "a_i, + b_i, = t_i, for j = 1, ... k", where `k` is the number of unique
-    # classes, and "[t]he number of values associated with the x's and y's in
-    # the jth class will be denoted by a_i, and b_i respectively."
-    # (Mielke, 312)
-    uniques, t = np.unique(np.sort(xy), return_counts=1)
-    k = len(uniques)
-    js = np.arange(1, k + 1)
-
-    # the `b` array mentioned in the paper is not used, outside of the
-    # calculation of `t`, so we do not need to calculate it separately. Here
-    # we calculate `a`. In plain language, `a[i]` is the number of values in
-    # `x` that equal `uniques[i]`.
-    _, xyx_counts = np.unique(np.sort(np.concatenate((xy, x))),
-                              return_counts=1, axis=-1)
-    a = xyx_counts - t
-
-    # "Define .. a_0 = b_0 = t_0 = S_0 = 0" (Mielke 312) so we shift  `a`
-    # and `t` arrays over 1 to allow a first element of 0 to accommodate this
-    # indexing.
-    t = np.concatenate(([0], t), axis=-1)
-    a = np.concatenate(([0], a), axis=-1)
-
-    # S is built from `t`, so it does not need a preceding zero added on.
-    S = np.cumsum(t)
-    # define a copy of `S` with a prepending zero for later use to avoid
-    # indexing
-    S_i_m1 = np.concatenate(([0], S[:-1]))
-
-    # Psi, as defined by the 6th unnumbered equation on page 312 (Mielke).
-    # Note that in the paper there is an error where the denominator `2` is
-    # squared when it should be the entire equation.
-    psi = lambda I: (I - (N + 1)/2)**2
-
-    # define summation range for use in calculation of phi, as seen in sum
-    # in the unnumbered equation on the bottom of page 312 (Mielke).
-    s_lower = S[js - 1] + 1
-    s_upper = S[js] + 1
-
-    # for each of the summation ranges above, define an ndarray containing
-    # the numbers in that range
-    phi_I = [np.arange(s_lower[idx], s_upper[idx]) for idx in range(k)]
-
-    # for every range in the above array, determine the sum of psi(I) for
-    # every element in the range. Divide all the sums by `t`. Following the
-    # last unnumbered equation on page 312.
-    # print(js)
-    phis = [np.sum(psi(I_i)) for I_i in phi_I] / t[js]
-    print(js, k, s_lower, s_upper, t, N)
-    # phis = _mood_inner_lc(js, k, s_lower, s_upper, t, N)
-
-    # `T` is equal to a[j] * phi[j], per the first unnumbered equation on
-    # page 312. `phis` is already in the order based on `js`, so we index
-    # into `a` with `js` as well.
-    T = np.sum(phis * a[js])
-
-    # The approximate statistic
-    E_0_T = n * (N * N - 1) / 12
-
-    varM = (m * n * (N + 1.0) * (N ** 2 - 4) / 180 -
-            m * n / (180 * N * (N - 1)) * np.sum(
-                t * (t**2 - 1) * (t**2 - 4 + (15 * (N - S - S_i_m1) ** 2))
-            ))
-    z = (T - E_0_T) / np.sqrt(varM)
-
+    z = np.asarray(_mood_inner_lc(y, x))
     z, pval = _normtest_finish(z, alternative)
-
     return z, pval
 
 

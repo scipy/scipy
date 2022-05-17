@@ -178,14 +178,14 @@ if use_pythran
     install: true,
     subdir: 'scipy/stats'
   )
-    _mood_inner_lc_pythran = custom_target('_mood_inner_lc',
+  _mood_inner_lc = custom_target('_mood_inner_lc',
     output: ['_mood_inner_lc.cpp'],
     input: '_mood_inner_lc.py',
     command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_mood_inner_lc.cpp']
   )
 
-  _group_columns = py3.extension_module('_mood_inner_lc_pythran',
-    _mood_inner_lc_pythran,
+  _mood_inner_lc_ext = py3.extension_module('_mood_inner_lc',
+    _mood_inner_lc,
     cpp_args: [
       '-Wno-unused-function', '-Wno-unused-variable',
       '-Wno-deprecated-declarations', '-Wno-int-in-bool-context'
