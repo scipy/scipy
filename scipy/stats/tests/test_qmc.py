@@ -775,6 +775,32 @@ class TestSobol(QMCEngineTests):
         sample = engine.random(8)
         assert_array_equal(self.unscramble_nd, sample)
 
+
+class TestPoisson(QMCEngineTests):
+    qmce = qmc.PoissonDisc
+    can_scramble = False
+
+    def test_continuing(self, *args):
+        pytest.skip("Not implemented.")
+
+    def test_fast_forward(self, *args):
+        pytest.skip("Not implemented.")
+
+    def test_sample(self, *args):
+        pytest.skip("Not applicable: the value of reference sample is"
+                    " implementation dependent.")
+
+    def test_mindist(self):
+        radius = 0.05
+        ns = 100
+
+        engine = self.qmce(d=2, radius=radius)
+        sample = engine.random(ns)
+
+        assert len(sample) <= ns, (engine.num_generated, len(sample))
+        assert l2_norm(sample) >= radius
+
+
 class TestMultinomialQMC:
     def test_validations(self):
         # negative Ps
@@ -1181,10 +1207,6 @@ class TestMultivariateNormalQMC:
 
 class TestLloyd:
     def test_lloyd(self):
-        # mindist
-        def l2_norm(sample):
-            return distance.pdist(sample).min()
-
         # quite sensible seed as it can go up before going further down
         rng = np.random.RandomState(1809831)
         sample = rng.uniform(0, 1, size=(128, 2))
@@ -1237,3 +1259,8 @@ class TestLloyd:
         with pytest.raises(ValueError, match=msg):
             sample = [[-1.1, 0], [0.1, 0.4], [1, 2]]
             lloyd_centroidal_voronoi_tessellation(sample)
+
+
+# mindist
+def l2_norm(sample):
+    return distance.pdist(sample).min()
