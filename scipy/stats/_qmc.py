@@ -1645,6 +1645,33 @@ class PoissonDisk(QMCEngine):
        Dimensions." SIGGRAPH, 2007.
     .. [2] `StackOverflow <https://stackoverflow.com/questions/66047540>`_.
 
+    Examples
+    --------
+    Generate a 2D sample using a `radius` of 0.2.
+    >>> import matplotlib.pyplot as plt
+    >>> from matplotlib.collections import PatchCollection
+    >>> from scipy.stats import qmc
+    >>>
+    >>> rng = np.random.default_rng()
+    >>> radius = 0.2
+    >>> engine = qmc.PoissonDisk(d=2, radius=0.2, seed=rng)
+    >>> sample = engine.random(20)
+
+    Visualizing the 2D sample and showing that no points are closer than
+    `radius`. ``radius/2`` is used to visualy have non-intersecting circle.
+    If two samples are exactly at `radius` from each other, then their circle
+    of radius ``radius/2`` will touch.
+    >>> fig, ax = plt.subplots()
+    >>> _ = ax.scatter(sample[:, 0], sample[:, 1])
+    >>> circles = [plt.Circle((xi, yi), radius=radius/2, fill=False)
+    ...            for xi, yi in sample]
+    >>> collection = PatchCollection(circles, match_original=True)
+    >>> ax.add_collection(collection)
+    >>>
+    >>> ax.set(aspect='equal', xlabel=r'$x_1$', ylabel=r'$x_2$',
+    ...        xlim=[0, 1], ylim=[0, 1])
+    >>> plt.show()
+
     """
 
     def __init__(
