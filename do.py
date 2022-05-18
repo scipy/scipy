@@ -97,6 +97,7 @@ class RefguideCheck(Task):
 import os
 import subprocess
 import sys
+import warnings
 import shutil
 import json
 import datetime
@@ -106,6 +107,15 @@ import importlib.util
 import errno
 import contextlib
 from sysconfig import get_path
+
+# distutils is required to infer meson install path
+# if this needs to be replaced for Python 3.12 support and there's no
+# stdlib alternative, use CmdAction and the hack discussed in gh-16058
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    from distutils import dist
+    from distutils.command.install import INSTALL_SCHEMES
+
 from pathlib import Path
 from collections import namedtuple
 from types import ModuleType as new_module
@@ -300,8 +310,7 @@ class Dirs:
             self.installed = self.build.parent / (self.build.stem + "-install")
         # relative path for site-package with py version
         # i.e. 'lib/python3.10/site-packages'
-        py_lib_path = Path(get_path('platlib')).relative_to(sys.exec_prefix)
-        self.site = self.installed / py_lib_path
+        self.site = self.get_site_packages()
 
     def add_sys_path(self):
         """Add site dir to sys.path / PYTHONPATH"""
@@ -309,6 +318,21 @@ class Dirs:
         sys.path.insert(0, site_dir)
         os.environ['PYTHONPATH'] = \
             os.pathsep.join((site_dir, os.environ.get('PYTHONPATH', '')))
+
+    def get_site_packages(self):
+        """
+        Depending on whether we have debian python or not,
+        return dist_packages path or site_packages path.
+        """
+        if 'deb_system' in INSTALL_SCHEMES:
+            # debian patched python in use
+            install_cmd = dist.Distribution().get_command_obj('install')
+            install_cmd.select_scheme('deb_system')
+            install_cmd.finalize_options()
+            plat_path = Path(install_cmd.install_platlib)
+        else:
+            plat_path = Path(get_path('platlib'))
+        return self.installed / plat_path.relative_to(sys.exec_prefix)
 
 
 @contextlib.contextmanager
