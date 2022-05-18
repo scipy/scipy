@@ -1332,8 +1332,8 @@ def cut_tree(Z, n_clusters=None, height=None):
     -------
     cutree : array
         An array indicating group membership at each agglomeration step. I.e.,
-        for a full cut tree, in the first column every data point is in the same
-        cluster. At the next step, two nodes are merged. Finally, all
+        for a full cut tree, in the first column every data point is in the
+        same cluster. At the next step, two nodes are merged. Finally, all
         singleton and non-singleton clusters are in one group. If `n_clusters`
         or `height` are given, the columns correspond to the columns of
         `n_clusters` or `height`.
