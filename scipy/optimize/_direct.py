@@ -82,7 +82,9 @@ def direct(
     maxfun : int or None, optional
         Approximate upper bound on objective function evaluations.
         If `None`, will be automatically set to ``1000 * N`` where ``N``
-        represents the number of dimensions. Default is `None`.
+        represents the number of dimensions. Will be capped if necessary to
+        limit DIRECT's RAM usage to app. 1GiB. This will only occur for very
+        high dimensional problems and excessive `max_fun`. Default is `None`.
     maxiter : int, optional
         Maximum number of iterations. Default is 1000.
     locally_biased : bool, optional
