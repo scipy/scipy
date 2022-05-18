@@ -1756,7 +1756,7 @@ class PoissonDisk(QMCEngine):
             self.sample_grid[tuple(indices)] = candidate
             curr_sample.append(candidate)
 
-        curr_sample = []
+        curr_sample: List[np.ndarray] = []
 
         if len(self.sample_pool) == 0:
             # the pool is being initialized with a single random sample
@@ -1768,7 +1768,7 @@ class PoissonDisk(QMCEngine):
         # exhaust sample pool to have up to n sample
         while len(self.sample_pool) and num_drawn < n:
             # select a sample from the available pool
-            idx_center = self.rng.integers(len(self.sample_pool))
+            idx_center = rng_integers(self.rng, len(self.sample_pool))
             center = self.sample_pool[idx_center]
             del self.sample_pool[idx_center]
 
@@ -1803,19 +1803,21 @@ class PoissonDisk(QMCEngine):
         return self
 
     def _hypersphere_volume_sample(
-        self, center: np.ndarray, radius: float, k: int = 1
+        self, center: np.ndarray, radius: DecimalNumber, k: int = 1
     ) -> np.ndarray:
         """Uniform sampling within hypersphere."""
         # should remove samples within r/2
         x = self.rng.standard_normal(size=(k, self.d))
         ssq = np.sum(x**2, axis=1)
         fr = radius * gammainc(self.d/2, ssq/2)**(1/self.d) / np.sqrt(ssq)
-        fr_tiled = np.tile(fr.reshape(k, 1), (1, self.d))
+        fr_tiled = np.tile(
+            fr.reshape(-1, 1), (1, self.d)  # type: ignore[arg-type]
+        )
         p = center + np.multiply(x, fr_tiled)
         return p
 
     def _hypersphere_surface_sample(
-        self, center: np.ndarray, radius: float, k: int = 1
+        self, center: np.ndarray, radius: DecimalNumber, k: int = 1
     ) -> np.ndarray:
         """Uniform sampling on the hypersphere's surface."""
         vec = self.rng.standard_normal(size=(k, self.d))
