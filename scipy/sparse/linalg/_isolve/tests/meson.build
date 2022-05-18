@@ -7,6 +7,7 @@ py3.install_sources([
     'test_lsmr.py',
     'test_lsqr.py',
     'test_minres.py',
+    'test_symmlq.py',
     'test_utils.py'
   ],
   pure: false,
