@@ -3009,8 +3009,11 @@ def mood(x, y, axis=0, alternative="two-sided"):
     resulting z and p values will have shape ``(n0, n2, n3)``.  Note that
     ``n1`` and ``m1`` don't have to be equal, but the other dimensions do.
 
-    In this implementation, the test statistic and p-value are only valid when
-    all observations are unique.
+    References
+    ----------
+    [1] Mielke, Paul W. "Note on Some Squared Rank Tests with Existing Ties."
+        Technometrics, vol. 9, no. 2, 1967, pp. 312-14. JSTOR,
+        https://doi.org/10.2307/1266427. Accessed 18 May 2022.
 
     Examples
     --------
@@ -3058,7 +3061,6 @@ def mood(x, y, axis=0, alternative="two-sided"):
     N = m + n
     if N < 3:
         raise ValueError("Not enough observations.")
-
 
     xy = np.concatenate((x, y), axis=axis)
     # determine if any of the samples contain ties

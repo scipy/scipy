@@ -1072,28 +1072,35 @@ class TestFligner:
         x = np.arange(5)
         assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
 
+def mood_cases_with_ties():
+    # Generate random `x` and `y` arrays with ties both between and within the
+    # samples. Expected results are (statistic, pvalue) from SAS.
+    expected_results = [(-1.76658511464992, .0386488678399305),
+                        (-.694031428192304, .2438312498647250),
+                        (-1.15093525352151, .1248794365836150)]
+    seeds = [23453254, 1298352315, 987234597]
+    for si, seed in enumerate(seeds):
+        rng = np.random.default_rng(seed)
+        xy = rng.random(100)
+        # Generate random indices to make ties
+        tie_ind = rng.integers(low=0, high=99, size=5)
+        # Generate a random number of ties for each index.
+        num_ties_per_ind = rng.integers(low=1, high=5, size=5)
+        # At each `tie_ind`, mark the next `n` indices equal to that value.
+        for i, n in zip(tie_ind, num_ties_per_ind):
+            for j in range(i + 1, i + n):
+                xy[j] = xy[i]
+        # scramble order of xy before splitting into `x, y`
+        rng.shuffle(xy)
+        x, y = np.split(xy, 2)
+        yield x, y, 'less', *expected_results[si]
 
 class TestMood:
-    @pytest.mark.parametrize("x,y,alternative,p_expect,stat_expect",
-                             # standard case containing ties
-                             [([111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
-                                101, 96, 97, 102, 107, 113, 116, 113, 110, 98],
-                               [107, 108, 106, 98, 105, 103, 110, 105, 104,
-                                100, 96, 108, 103, 104, 114, 114, 113, 108,
-                                106, 99], 'two-sided', .3077576129778760,
-                               1.019938533549930),
-                              (np.arange(5), np.arange(5)**2, 'two-sided',
-                               .1658566603429090, -1.38564064605510),
-                              (np.arange(5), np.arange(5) ** 2, 'less',
-                               .0829283301714540, -1.38564064605510),
-                              (np.random.default_rng(54636345).random(50),
-                              np.random.default_rng(576588567).random(50),
-                               'two-sided',
-                              .5504248618043190, .5971236010368320)])
-    def test_against_SAS(self, x, y, alternative, p_expect,
-                              stat_expect):
+    @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
+                             mood_cases_with_ties())
+    def test_against_SAS(self, x, y, alternative, stat_expect, p_expect, ):
         """
-        Code used to generate SAS output:
+        Example code used to generate SAS output:
         DATA myData;
         INPUT X Y;
         CARDS;
@@ -1122,7 +1129,6 @@ class TestMood:
         statistic, pvalue = stats.mood(x, y, alternative=alternative)
         assert_allclose(stat_expect, statistic, atol=1e-16)
         assert_allclose(p_expect, pvalue, atol=1e-16)
-
 
     def test_mood_order_of_args(self):
         # z should change sign when the order of arguments changes, pvalue
