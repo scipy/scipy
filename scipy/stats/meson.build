@@ -178,23 +178,6 @@ if use_pythran
     install: true,
     subdir: 'scipy/stats'
   )
-  _mood_inner_lc = custom_target('_mood_inner_lc',
-    output: ['_mood_inner_lc.cpp'],
-    input: '_mood_inner_lc.py',
-    command: [pythran, '-E', '@INPUT@', '-o', '@OUTDIR@/_mood_inner_lc.cpp']
-  )
-
-  _mood_inner_lc_ext = py3.extension_module('_mood_inner_lc',
-    _mood_inner_lc,
-    cpp_args: [
-      '-Wno-unused-function', '-Wno-unused-variable',
-      '-Wno-deprecated-declarations', '-Wno-int-in-bool-context'
-    ] + cpp_args_pythran,
-    include_directories: [incdir_pythran, incdir_numpy],
-    dependencies: [py3_dep],
-    install: true,
-    subdir: 'scipy/stats'
-  )
 endif
 
 
@@ -218,7 +201,6 @@ py3.install_sources([
     '_ksstats.py',
     '_mannwhitneyu.py',
     '_morestats.py',
-    '_mood_inner_lc.py',
     '_mstats_basic.py',
     '_mstats_extras.py',
     '_multivariate.py',
