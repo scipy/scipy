@@ -11,12 +11,14 @@ dependencies:
   - setuptools<60.0
   - cython
   - compilers
+  - meson
+  - ninja
   - numpy
   - openblas
+  - pkg-config  # note: not available on Windows
   - libblas=*=*openblas  # helps avoid pulling in MKL
   - pybind11
   - pythran>=0.9.12
-  - conda-build  # to allow `conda develop .`
   # For testing and benchmarking
   - pytest
   - pytest-cov
@@ -42,5 +44,5 @@ dependencies:
   # For CLI
   - rich-click
   - click
-  - pip:
-      - doit==0.35.0
+  - doit>=0.36.0
+  - pydevtool==0.2.0

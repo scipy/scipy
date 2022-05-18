@@ -1131,7 +1131,7 @@ class TestNumericalInverseHermite:
 
     def test_deprecations(self):
         msg = ("`tol` has been deprecated and replaced with `u_resolution`. "
-               "It will be completely removed in a future release.")
+               "It will be completely removed in SciPy 1.10.0.")
         with pytest.warns(DeprecationWarning, match=msg):
             NumericalInverseHermite(StandardNormal(), tol=1e-12)
 

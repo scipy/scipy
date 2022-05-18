@@ -699,6 +699,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Notes
     -----
+    Users should ensure that inputs `xdata`, `ydata`, and the output of `f`
+    are ``float64``, or else the optimization may return incorrect results.
+    
     With ``method='lm'``, the algorithm uses the Levenberg-Marquardt algorithm
     through `leastsq`. Note that this algorithm can only deal with
     unconstrained problems.

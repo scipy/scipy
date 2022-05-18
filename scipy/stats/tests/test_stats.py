@@ -2964,6 +2964,12 @@ class TestMoments:
         mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
 
+    def test_moment_empty_moment(self):
+        # tests moment with empty `moment` list
+        with pytest.raises(ValueError, match=r"'moment' must be a scalar or a"
+                                             r" non-empty 1D list/array."):
+            stats.moment([1, 2, 3, 4], moment=[])
+
     def test_skewness(self):
         # Scalar test case
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):

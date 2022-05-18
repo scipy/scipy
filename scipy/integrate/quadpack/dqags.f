@@ -1,5 +1,5 @@
-      subroutine dqags(f,a,b,epsabs,epsrel,result,abserr,neval,ier,
-     *   limit,lenw,last,iwork,work)
+      recursive subroutine dqags(f,a,b,epsabs,epsrel,result,abserr,
+     *   neval,ier,limit,lenw,last,iwork,work)
 c***begin prologue  dqags
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)

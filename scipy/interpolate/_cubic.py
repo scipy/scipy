@@ -434,7 +434,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         f1 = dm[2:]
         f2 = dm[:-2]
         f12 = f1 + f2
-        # These are the mask of where the the slope at breakpoint is defined:
+        # These are the mask of where the slope at breakpoint is defined:
         ind = np.nonzero(f12 > 1e-9 * np.max(f12))
         x_ind, y_ind = ind[0], ind[1:]
         # Set the slope at breakpoint

@@ -4872,9 +4872,11 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         # https://github.com/numpy/numpy/pull/13794
         for c in range(m.shape[-1] - 1):
             rem = rem - m[..., c]
-            rvs[..., c] = ((n != 0) *
-                           random_state.hypergeometric(m[..., c], rem,
-                                                       n + (n == 0),
+            n0mask = n == 0
+            rvs[..., c] = (~n0mask *
+                           random_state.hypergeometric(m[..., c],
+                                                       rem + n0mask,
+                                                       n + n0mask,
                                                        size=size))
             n = n - rvs[..., c]
         rvs[..., m.shape[-1] - 1] = n

@@ -48,9 +48,9 @@ jobs:
           # Download and install pre-built OpenBLAS library
           # Built with mingw-w64, -ucrt -static.
           # https://github.com/matthew-brett/openblas-libs/blob/ucrt-build/build_openblas.ps1
-          choco install unzip
-          pip install gdown
-          gdown --id 1G3jwxMY4ZVRqvz6owl0kmw_Innmr4ZnV
+          choco install unzip -y
+          choco install wget -y
+          wget https://github.com/scipy/scipy-ci-artifacts/raw/main/openblas_32_if.zip
           unzip -d c:\ openblas_32_if.zip
           echo "PKG_CONFIG_PATH=c:\opt\openblas\if_32\64\lib\pkgconfig;" >> $env:GITHUB_ENV
       - name: meson-configure
