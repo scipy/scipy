@@ -354,7 +354,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     jobv = return_singular_vectors in {True, 'vh'}
 
     if tol is None or tol <= 0.0:
-        res_tol = np.sqrt(1e-15) * max(A.shape)
+        res_tol = np.sqrt(np.finfo(A.dtype).eps) * max(A.shape)
     else:
         res_tol = tol
 
@@ -369,7 +369,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             if largest:
                 eigvals = eigvals[::-1]
                 eigvec = eigvec[:, ::-1]
-            print(eigvals)
             vh = _herm(eigvec)
         else:
             vh = None
@@ -382,7 +381,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             if largest:
                 eigvals = eigvals[::-1]
                 u = u[:, ::-1]
-            print(eigvals)
         else:
             u = None
         vh = vh @ _herm(eigvec) if jobv else None
@@ -395,7 +393,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         uu = uu[:, ::-1]
         s = s[::-1]
         vvh = vvh[::-1]
-        u = u @ _herm(uu)
+        u = u @ uu
         vh = vvh @ vh
 
     return u, s, vh
