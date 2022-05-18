@@ -97,6 +97,7 @@ class RefguideCheck(Task):
 import os
 import subprocess
 import sys
+import warnings
 import shutil
 import json
 import datetime
@@ -110,8 +111,10 @@ from sysconfig import get_path
 # distutils is required to infer meson install path
 # if this needs to be replaced for Python 3.12 support and there's no
 # stdlib alternative, use CmdAction and the hack discussed in gh-16058
-from distutils import dist
-from distutils.command.install import INSTALL_SCHEMES
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    from distutils import dist
+    from distutils.command.install import INSTALL_SCHEMES
 
 from pathlib import Path
 from collections import namedtuple

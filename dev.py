@@ -50,6 +50,7 @@ else:
 
 import sys
 import os
+import warnings  # noqa: E402
 from pathlib import Path
 import platform
 # the following multiprocessing import is necessary to prevent tests that use
@@ -60,8 +61,10 @@ import multiprocessing
 # distutils is required to infer meson install path
 # if this needs to be replaced for Python 3.12 support and there's no
 # stdlib alternative, use the hack discussed in gh-16058
-from distutils import dist  # noqa: E402
-from distutils.command.install import INSTALL_SCHEMES  # noqa: E402
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    from distutils import dist
+    from distutils.command.install import INSTALL_SCHEMES
 
 # In case we are run from the source directory, we don't want to import the
 # project from there:
