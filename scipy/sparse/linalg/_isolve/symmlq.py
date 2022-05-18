@@ -75,7 +75,7 @@ def symmlq(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
     ----------
     .. [1] C. C. Paige, M. A. Saunders, Solution of Sparse Indefinite Systems
            of Linear Equations, SIAM J. Numer. Anal., Vol. 12, No. 4, 1975.
-    
+
     This file is a python translation of PETSc implementation:
         https://gitlab.com/petsc/petsc/-/blob/main/src/ksp/ksp/impls/symmlq/symmlq.c
 
@@ -131,7 +131,7 @@ def symmlq(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
             callback(rnorm)
         if show:
             print("SYMMLQ: Linear solve converged due to reach TOL "
-                  f"iterations 0")
+                  "iterations 0")
         return (postprocess(x), 0)
 
     # Check breakdown

@@ -1,9 +1,8 @@
 import numpy as np
-from numpy.testing import assert_equal, assert_allclose, assert_
+from numpy.testing import assert_equal, assert_
 from scipy.sparse import csr_matrix
 from scipy.sparse.linalg import LinearOperator
 from scipy.sparse.linalg._isolve import symmlq
-from .test_iterative import assert_normclose
 
 
 def get_sample_problem():
@@ -12,18 +11,21 @@ def get_sample_problem():
     return matrix, rhs
 
 
+count = [0]
+residuals = []
+
+
+def cb(x):
+    count[0] += 1
+    residuals.append(x)
+
+
 class TestSYMMLQ():
     def test_happy_breakdown(self, capsys):
         # Test initial happy breakdown
         A, b = get_sample_problem()
         eps = 1e-10
         x0 = np.array([1.5, 2., 1.5+eps])
-
-        count = [0]
-        residuals = []
-        def cb(x):
-            count[0] += 1
-            residuals.append(x)
 
         x, info = symmlq(A, b, x0=x0, tol=eps, callback=cb, show=True)
         out, err = capsys.readouterr()
@@ -35,8 +37,8 @@ class TestSYMMLQ():
         # Test happy breakdown in iterations
         eps = 1e-4
         x0[2] = 1.5 + eps
-        count = [0]
-        residuals = []
+        count[0] = 0
+        residuals.clear()
         x, info = symmlq(A, b, x0=x0, callback=cb, show=True)
         out, err = capsys.readouterr()
         assert_(count[0] > 0)
@@ -56,12 +58,8 @@ class TestSYMMLQ():
             return ret
         M = LinearOperator(A.shape, matvec=matvec, dtype=A.dtype)
 
-        count = [0]
-        residuals = []
-        def cb(x):
-            count[0] += 1
-            residuals.append(x)
-
+        count[0] = 0
+        residuals.clear()
         x, info = symmlq(A, b, x0=x0, M=M, callback=cb, show=True)
         out, err = capsys.readouterr()
         assert_equal(residuals[0], np.linalg.norm(M@(b - A@x0)))
@@ -75,8 +73,8 @@ class TestSYMMLQ():
             return ret
         M = LinearOperator(A.shape, matvec=matvec, dtype=A.dtype)
 
-        count = [0]
-        residuals = []
+        count[0] = 0
+        residuals.clear()
         x, info = symmlq(A, b, x0=x0, M=M, callback=cb, show=True)
         out, err = capsys.readouterr()
         assert_(count[0] > 0)
