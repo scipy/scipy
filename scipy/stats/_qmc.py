@@ -1613,6 +1613,9 @@ class PoissonDisk(QMCEngine):
           new candidates are sampled within the hypersphere.
         * ``surface``: only sample the surface of the hypersphere.
 
+    candidates : int
+        Number of candidates to sample per iteration. More candidates result
+        in a denser sampling as more candidates can be accepted per iteration.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1624,11 +1627,15 @@ class PoissonDisk(QMCEngine):
     -----
 
     Poisson disk sampling is an iterative sampling strategy. Starting from
-    a seed sample, candidates are sampled in the hypersphere surrounding the
-    seed. Candidates bellow a certain `radius` or outside of the domain are
-    rejected. New samples are added in a pool of sample seed. The process
-    stops when the pool is empty or when the number of required samples is
-    reached.
+    a seed sample, ``n`` `candidates` are sampled in the hypersphere
+    surrounding the seed. Candidates bellow a certain `radius` or outside the
+    domain are rejected. New samples are added in a pool of sample seed. The
+    process stops when the pool is empty or when the number of required
+    samples is reached.
+
+    The maximum number of point that a sample can contain is directly linked
+    to the `radius`. As the dimension of the space increases, a higher radius
+    spread the points further and help overcome the curse-of-dimensionality.
 
     .. warning::
 
@@ -1667,9 +1674,8 @@ class PoissonDisk(QMCEngine):
     ...            for xi, yi in sample]
     >>> collection = PatchCollection(circles, match_original=True)
     >>> ax.add_collection(collection)
-    >>>
-    >>> ax.set(aspect='equal', xlabel=r'$x_1$', ylabel=r'$x_2$',
-    ...        xlim=[0, 1], ylim=[0, 1])
+    >>> _ = ax.set(aspect='equal', xlabel=r'$x_1$', ylabel=r'$x_2$',
+    ...            xlim=[0, 1], ylim=[0, 1])
     >>> plt.show()
 
     """
@@ -1680,6 +1686,7 @@ class PoissonDisk(QMCEngine):
         *,
         radius: DecimalNumber = 0.05,
         hypersphere: Literal["volume", "surface"] = "volume",
+        candidates: IntNumber = 30,
         seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
@@ -1706,7 +1713,7 @@ class PoissonDisk(QMCEngine):
         self.squared_radius = self.radius**2
 
         # sample to generate per iteration in the hypersphere around center
-        self.k = 30
+        self.candidates = candidates
 
         with np.errstate(divide='ignore'):
             self.cell_size = self.radius / np.sqrt(self.d)
@@ -1801,7 +1808,7 @@ class PoissonDisk(QMCEngine):
 
             # generate candidates around the center sample
             candidates = self.hypersphere_method(
-                center, self.radius * self.radius_factor, self.k
+                center, self.radius * self.radius_factor, self.candidates
             )
 
             # keep candidates that satisfy some conditions
