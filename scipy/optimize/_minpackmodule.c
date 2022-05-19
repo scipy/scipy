@@ -25,7 +25,9 @@ static struct PyModuleDef moduledef = {
     NULL,
     NULL
 };
-PyObject *PyInit__minpack(void)
+
+PyMODINIT_FUNC
+PyInit__minpack(void)
 {
     PyObject *m, *d, *s;
 

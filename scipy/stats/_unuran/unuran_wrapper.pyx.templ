@@ -1831,7 +1831,7 @@ cdef class NumericalInverseHermite(Method):
 
     This method accepted a `tol` parameter to specify the maximum tolerable u-error
     but it has now been deprecated in the favor of `u_resolution`. `tol` will be
-    removed completely in a future release.
+    removed completely in SciPy 1.10.0.
 
     References
     ----------
@@ -2040,11 +2040,11 @@ cdef class NumericalInverseHermite(Method):
             raise ValueError("`max_intervals' must be an integer greater than 1.")
         if max_intervals != 100000:
             warnings.warn("`max_intervals` has been deprecated. "
-                          "It will be completely removed in a future release.",
+                          "It will be completely removed in SciPy 1.10.0.",
                           DeprecationWarning)
         if tol is not None:
             warnings.warn("`tol` has been deprecated and replaced with `u_resolution`. "
-                          "It will be completely removed in a future release.",
+                          "It will be completely removed in SciPy 1.10.0.",
                           DeprecationWarning)
             u_resolution = tol
         u_resolution = float(u_resolution)

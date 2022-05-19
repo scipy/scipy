@@ -197,7 +197,8 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__zeros(void)
+PyMODINIT_FUNC
+PyInit__zeros(void)
 {
     PyObject *m;
 

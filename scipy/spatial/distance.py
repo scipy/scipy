@@ -298,16 +298,7 @@ def _validate_vector(u, dtype=None):
     u = np.asarray(u, dtype=dtype, order='c')
     if u.ndim == 1:
         return u
-
-    # Ensure values such as u=1 and u=[1] still return 1-D arrays.
-    u = np.atleast_1d(u.squeeze())
-    if u.ndim > 1:
-        raise ValueError("Input vector should be 1-D.")
-    warnings.warn(
-        "scipy.spatial.distance metrics ignoring length-1 dimensions is "
-        "deprecated in SciPy 1.7 and will raise an error in SciPy 1.9.",
-        DeprecationWarning)
-    return u
+    raise ValueError("Input vector should be 1-D.")
 
 
 def _validate_weights(w, dtype=np.double):
@@ -919,7 +910,7 @@ def kulczynski1(u, v, *, w=None):
     0.0
     >>> distance.kulczynski1([True, False, False], [True, True, False])
     1.0
-    >>> distance.kulczynski1([True, False, False], True)
+    >>> distance.kulczynski1([True, False, False], [True])
     0.5
     >>> distance.kulczynski1([1, 0, 0], [3, 1, 0])
     -3.0
