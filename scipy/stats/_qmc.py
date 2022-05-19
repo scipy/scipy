@@ -1655,6 +1655,7 @@ class PoissonDisk(QMCEngine):
     Examples
     --------
     Generate a 2D sample using a `radius` of 0.2.
+
     >>> import matplotlib.pyplot as plt
     >>> from matplotlib.collections import PatchCollection
     >>> from scipy.stats import qmc
@@ -1668,6 +1669,7 @@ class PoissonDisk(QMCEngine):
     `radius`. ``radius/2`` is used to visualy have non-intersecting circle.
     If two samples are exactly at `radius` from each other, then their circle
     of radius ``radius/2`` will touch.
+
     >>> fig, ax = plt.subplots()
     >>> _ = ax.scatter(sample[:, 0], sample[:, 1])
     >>> circles = [plt.Circle((xi, yi), radius=radius/2, fill=False)
