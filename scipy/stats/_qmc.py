@@ -1678,6 +1678,14 @@ class PoissonDisk(QMCEngine):
     ...            xlim=[0, 1], ylim=[0, 1])
     >>> plt.show()
 
+    Such visualization can be seen as circle packing: how many circle can
+    we put in the space. It is a np-hard problem. The method `fill_space`
+    can be used to add samples until no more samples can be added. This is
+    a hard problem parameters might need to be adjusted manually. Beware of
+    the dimension: as the dimensionality increases, the number of samples
+    required to fill the space increases exponentially
+    (curse-of-dimensionality).
+
     """
 
     def __init__(
@@ -1823,6 +1831,26 @@ class PoissonDisk(QMCEngine):
         self.num_generated += num_drawn
         return np.array(curr_sample)
 
+    def fill_space(self) -> np.ndarray:
+        """Draw ``n`` samples in the interval ``[0, 1]``.
+
+        Unlike `random`, this method will try to add points until
+        the space is full. Depending on ``candidates`` (and to a lesser extent
+        other parameters), some empty areas can still be present in the sample.
+
+        .. warning::
+
+           This can be extremely slow in high dimensions or if the
+           ``radius`` is very small-with respect to the dimensionality.
+
+        Returns
+        -------
+        sample : array_like (n, d)
+            QMC sample.
+
+        """
+        return self.random(np.inf)  # type: ignore[arg-type]
+
     def reset(self) -> PoissonDisk:
         """Reset the engine to base state.
 
@@ -1837,11 +1865,12 @@ class PoissonDisk(QMCEngine):
         return self
 
     def _hypersphere_volume_sample(
-        self, center: np.ndarray, radius: DecimalNumber, k: int = 1
+        self, center: np.ndarray, radius: DecimalNumber,
+        candidates: IntNumber = 1
     ) -> np.ndarray:
         """Uniform sampling within hypersphere."""
         # should remove samples within r/2
-        x = self.rng.standard_normal(size=(k, self.d))
+        x = self.rng.standard_normal(size=(candidates, self.d))
         ssq = np.sum(x**2, axis=1)
         fr = radius * gammainc(self.d/2, ssq/2)**(1/self.d) / np.sqrt(ssq)
         fr_tiled = np.tile(
@@ -1851,10 +1880,11 @@ class PoissonDisk(QMCEngine):
         return p
 
     def _hypersphere_surface_sample(
-        self, center: np.ndarray, radius: DecimalNumber, k: int = 1
+        self, center: np.ndarray, radius: DecimalNumber,
+        candidates: IntNumber = 1
     ) -> np.ndarray:
         """Uniform sampling on the hypersphere's surface."""
-        vec = self.rng.standard_normal(size=(k, self.d))
+        vec = self.rng.standard_normal(size=(candidates, self.d))
         vec /= np.linalg.norm(vec, axis=1)[:, None]
         p = center + np.multiply(vec, radius)
         return p

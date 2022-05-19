@@ -830,6 +830,14 @@ class TestPoisson(QMCEngineTests):
             assert len(sample) <= ns
             assert l2_norm(sample) >= radius
 
+    def test_fill_space(self):
+        radius = 0.2
+        engine = self.qmce(d=2, radius=radius)
+
+        sample = engine.fill_space()
+        # circle packing problem is np complex
+        assert l2_norm(sample) >= radius
+
     def test_raises(self):
         message = r"'toto' is not a valid hypersphere sampling"
         with pytest.raises(ValueError, match=message):
