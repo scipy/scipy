@@ -364,11 +364,20 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             # if singular values are very small, the right singular vectors
             # computed above may be inaccurate, so we have to re-compute
             # them as the eigenvectors of X_XH
+
+            # note that even if X is full rank, X_XH has a nullspace of
+            # dimension m - n, so for which=='SM' we need to compute k + m - n
+            # eigenpairs corresponding to smallest eigenvalues
+            if not largest and m > n:
+                u = np.concatenate((u, randn(m, m - n)), axis=1)
+
             eigvals, eigvec = lobpcg(X_XH, u, tol=res_tol**2, maxiter=maxiter,
                 largest=largest)
             if largest:
                 eigvals = eigvals[::-1]
                 eigvec = eigvec[:, ::-1]
+            elif m > n:
+                u = u[:, m - n :]
             vh = _herm(eigvec)
         else:
             vh = None
@@ -376,11 +385,15 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     else:
         if jobu:
             # same situation as above but for the left singular vectors
+            if not largest:
+                u = np.concatenate((u, randn(n, n - m)), axis=1)
             eigvals, u = lobpcg(X_XH, u, tol=res_tol**2, maxiter=maxiter,
                 largest=largest)
             if largest:
                 eigvals = eigvals[::-1]
                 u = u[:, ::-1]
+            else:
+                u = u[:, n - m :]
         else:
             u = None
         vh = vh @ _herm(eigvec) if jobv else None
