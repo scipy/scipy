@@ -55,7 +55,8 @@ skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
                      'kappa4', 'ksone', 'kstwo', 'kstwobign', 'mielke', 'ncf',
                      'nct', 'powerlognorm', 'powernorm', 'recipinvgauss',
                      'trapezoid', 'vonmises', 'vonmises_line', 'levy_stable',
-                     'rv_histogram_instance', 'studentized_range']
+                     'rv_histogram_instance', 'studentized_range',
+                     'loguniform', 'reciprocal']
 
 # these were really slow in `test_fit`.py.
 # note that this list is used to skip both fit_test and fit_fix tests
@@ -68,6 +69,8 @@ slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
 # the first list fails due to non-finite distribution moments encountered
 # most of the rest fail due to integration warnings
 # pearson3 is overriden as not implemented due to gh-11746
+# loguniform and reciprocal are over-parametrized so the fit method raises
+# a user warning.
 fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'cauchy', 'crystalball', 'f', 'fisk', 'foldcauchy',
                      'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
@@ -76,7 +79,8 @@ fail_fit_test_mm = (['alpha', 'betaprime', 'bradford', 'burr', 'burr12',
                      'tukeylambda', 'invweibull']
                      + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
                         'nct', 'pareto', 'powernorm', 'powerlognorm']
-                     + ['pearson3'])
+                     + ['pearson3']
+                     + ['loguniform', 'reciprocal'])
 skip_fit_test = {"MLE": skip_fit_test_mle,
                  "MM": slow_fit_test_mm + fail_fit_test_mm}
 
@@ -87,10 +91,12 @@ skip_fit_fix_test_mle = ['burr', 'exponpow', 'exponweib', 'gausshyper',
                          'levy_stable', 'mielke', 'ncf', 'ncx2',
                          'powerlognorm', 'powernorm', 'rdist', 'recipinvgauss',
                          'trapezoid', 'vonmises', 'vonmises_line',
-                         'studentized_range']
+                         'studentized_range', 'loguniform', 'reciprocal']
 # the first list fails due to non-finite distribution moments encountered
 # most of the rest fail due to integration warnings
 # pearson3 is overriden as not implemented due to gh-11746
+# loguniform and reciprocal are over-parametrized so the fit method raises
+# a user warning.
 fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'crystalball', 'f', 'fisk', 'foldcauchy',
                          'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
@@ -99,7 +105,8 @@ fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'invweibull']
                          + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
                             'pareto', 'powernorm', 'powerlognorm']
-                         + ['pearson3'])
+                         + ['pearson3']
+                         + ['loguniform', 'reciprocal'])
 skip_fit_fix_test = {"MLE": skip_fit_fix_test_mle,
                      "MM": slow_fit_test_mm + fail_fit_fix_test_mm}
 
