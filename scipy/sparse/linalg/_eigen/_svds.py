@@ -9,6 +9,8 @@ from scipy.sparse.linalg._eigen.lobpcg import lobpcg  # type: ignore[no-redef]
 from scipy.sparse.linalg._svdp import _svdp
 from scipy.linalg import svd
 
+from numpy.random import randn
+
 arpack_int = _arpack.timing.nbx.dtype
 __all__ = ['svds']
 
