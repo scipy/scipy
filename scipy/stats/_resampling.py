@@ -317,7 +317,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
 
     Warns
     -----
-    `~scipy.stats.DegenerateDataWarning`
+    DegenerateDataWarning
         Generated when ``method='BCa'`` and the bootstrap distribution is
         degenerate (e.g. all elements are identical).
 
