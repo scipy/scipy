@@ -8858,7 +8858,7 @@ def _square_of_sums(a, axis=0):
         return float(s) * s
 
 
-def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
+def rankdata(a, method='average', *, axis=None, nan_policy='omit'):
     """Assign ranks to data, dealing with ties appropriately.
 
     By default (``axis=None``), the data array is first flattened, and a flat
@@ -8895,8 +8895,15 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
         Defines how to handle when input contains nan in `a`. 'propagate' just
         execute the function without checking for nan, 'raise' throws an error,
         'omit' performs the calculations ignoring nan values. Default is
-        'propagate'. Note that when the value is 'omit', nans in `a` also
-        propagate to the output, but they do not affect the ranks.
+        'omit'.
+
+        .. note::
+
+            When the `nan_policy` is 'omit', nans in `a` is ignored and those
+            ranks are nans, and they do not affect the ranks. This behabior is
+            default because it is intuitive for users.
+            When the `nan_policy` is 'propagate', other element's ranks are
+            also nans because ranks relative to the NaN are undefined.
 
     Returns
     -------
@@ -8929,16 +8936,14 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
            [2. , 1. , 3. ]])
     >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="omit")
     array([ 2.,  3.,  4., nan,  1., nan])
+    >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="propagate")
+    array([nan, nan, nan, nan, nan, nan])
 
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
         raise ValueError('unknown method "{0}"'.format(method))
 
     a = np.asarray(a)
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-    nan_indexes = None
-    if contains_nan and nan_policy == 'omit':
-        nan_indexes = np.isnan(a)
 
     if axis is not None:
         if a.size == 0:
@@ -8950,6 +8955,14 @@ def rankdata(a, method='average', *, axis=None, nan_policy='propagate'):
             return np.empty(a.shape, dtype=dt)
         return np.apply_along_axis(rankdata, axis, a, method,
                                    nan_policy=nan_policy)
+
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    nan_indexes = None
+    if contains_nan:
+        if nan_policy == 'omit':
+            nan_indexes = np.isnan(a)
+        if nan_policy == 'propagate':
+            return np.full_like(a, np.nan)
 
     arr = np.ravel(a)
     algo = 'mergesort' if method == 'ordinal' else 'quicksort'

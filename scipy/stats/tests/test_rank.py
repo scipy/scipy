@@ -241,6 +241,25 @@ class TestRankData:
         with pytest.raises(ValueError, match="The input contains nan"):
             rankdata(data, axis=1, nan_policy="raise")
 
+    def test_nan_policy_propagate(self):
+        # 1 1d-array test
+        data = [0, 2, 3, -2, np.nan, np.nan]
+        assert_array_equal(rankdata(data, nan_policy='propagate'),
+                           [np.nan, np.nan, np.nan, np.nan, np.nan, np.nan])
+
+        # 2 2d-array test
+        data = [[0, np.nan, 3],
+                [4, 2, np.nan],
+                [1, 2, 2]]
+        assert_array_equal(rankdata(data, axis=0, nan_policy='propagate'),
+                           [[1, np.nan, np.nan],
+                            [3, np.nan, np.nan],
+                            [2, np.nan, np.nan]])
+        assert_array_equal(rankdata(data, axis=1, nan_policy='propagate'),
+                           [[np.nan, np.nan, np.nan],
+                            [np.nan, np.nan, np.nan],
+                            [1, 2.5, 2.5]])
+
 
 _cases = (
     # values, method, expected
