@@ -1295,7 +1295,7 @@ def _lnB(alpha):
 
 
 _dirichlet_depr_message = (
-"""
+"""  # noqa
 `dirichlet` is deprecated due to an interface inconsistency: compared to
 other distributions, methods `pdf` and `logpdf` expect the transpose of the
 input `x`. Please use `multivariate_beta`, which corrects this inconsistency.
@@ -1653,7 +1653,7 @@ class multivariate_beta_gen(dirichlet_gen):
 
     where :math:`0 < x_i < 1`.
 
-    If the quantiles don't lie within the simplex, a `ValueError` is raised.
+    If the quantiles don't lie within the simplex, a ``ValueError`` is raised.
 
     The probability density function for `multivariate_beta` is
 
