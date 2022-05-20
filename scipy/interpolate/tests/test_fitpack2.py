@@ -915,8 +915,8 @@ class TestRectBivariateSpline:
                    [1, 2, 1, 2, 1]])
         dx = array([0, 0, 2./3, 0, 0])
         dy = array([4, -1, 0, -.25, -4])
-        dxdy = array([160, 65, 0,55, 32]) / 24.
-        lut = RectBivariateSpline(x,y,z)
+        dxdy = array([160, 65, 0, 55, 32]) / 24.
+        lut = RectBivariateSpline(x, y, z)
         assert_array_almost_equal(lut.partial_derivative(1, 0)(x, y,
                                                                grid=False),
                                   dx)
@@ -933,7 +933,7 @@ class TestRectBivariateSpline:
         z = ones((x.size, y.size))
         lut = RectBivariateSpline(x, y, z)
         with assert_raises(ValueError):
-            dlut = lut.partial_derivative(4, 1)
+            lut.partial_derivative(4, 1)
 
     def test_broadcast(self):
         x = array([1,2,3,4,5])
@@ -1064,13 +1064,13 @@ class TestRectSphereBivariateSpline:
             lats = np.linspace(-1, 170, 9) * np.pi / 180.
             lons = np.linspace(0, 350, 18) * np.pi / 180.
             RectSphereBivariateSpline(lats, lons, data)
-        assert "u should be between [0, pi]" in str(exc_info.value)
+        assert "u should be between (0, pi)" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             lats = np.linspace(10, 181, 9) * np.pi / 180.
             lons = np.linspace(0, 350, 18) * np.pi / 180.
             RectSphereBivariateSpline(lats, lons, data)
-        assert "u should be between [0, pi]" in str(exc_info.value)
+        assert "u should be between (0, pi)" in str(exc_info.value)
 
         with assert_raises(ValueError) as exc_info:
             lats = np.linspace(10, 170, 9) * np.pi / 180.
@@ -1146,7 +1146,7 @@ class TestRectSphereBivariateSpline:
                         _numdiff_2d(lambda x,y: lut(x,y,grid=False), x, y, dx=1, dy=1, eps=1e-6),
                         rtol=1e-3, atol=1e-3)
 
-    def test_invalid_input(self):
+    def test_invalid_input_2(self):
         data = np.dot(np.atleast_2d(90. - np.linspace(-80., 80., 18)).T,
                       np.atleast_2d(180. - np.abs(np.linspace(0., 350., 9)))).T
 
@@ -1233,7 +1233,7 @@ class Test_DerivedBivariateSpline(object):
         y = np.concatenate(list(zip(range(10), range(1, 11))))
         z = np.concatenate((np.linspace(3, 1, 10), np.linspace(1, 3, 10)))
         with suppress_warnings() as sup:
-            r = sup.record(UserWarning, "\nThe coefficients of the spline")
+            sup.record(UserWarning, "\nThe coefficients of the spline")
             self.lut_lsq = LSQBivariateSpline(x, y, z,
                                               linspace(0.5, 19.5, 4),
                                               linspace(1.5, 20.5, 4),
@@ -1269,9 +1269,9 @@ class Test_DerivedBivariateSpline(object):
     def test_invalid_attribute_fp(self):
         der = self.lut_rect.partial_derivative(1, 1)
         with assert_raises(AttributeError):
-            a = der.fp
+            der.fp
 
     def test_invalid_attribute_get_residual(self):
         der = self.lut_smooth.partial_derivative(1, 1)
         with assert_raises(AttributeError):
-            a = der.get_residual()
+            der.get_residual()

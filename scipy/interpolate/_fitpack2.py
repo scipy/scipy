@@ -1155,10 +1155,10 @@ class _DerivedBivariateSpline(_BivariateSplineBase):
     The other inherited attributes can be used as usual.
     """
     _invalid_why = ("is unavailable, because _DerivedBivariateSpline"
-                     " instance is not constructed from data that are to be"
-                     " interpolated or smoothed, but derived from the"
-                     " underlying knots and coefficients of another spline"
-                     " object")
+                    " instance is not constructed from data that are to be"
+                    " interpolated or smoothed, but derived from the"
+                    " underlying knots and coefficients of another spline"
+                    " object")
 
     @property
     def fp(self):
