@@ -84,7 +84,8 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__directmodule(void)
+PyMODINIT_FUNC
+PyInit__directmodule(void)
 {
     PyObject *module;
 
