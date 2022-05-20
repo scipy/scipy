@@ -951,51 +951,51 @@ class _BivariateSplineBase:
             z = z.reshape(shape)
         return z
 
-    def partial_derivative(self, nux, nuy):
+    def partial_derivative(self, dx, dy):
         """Construct a new spline representing a partial derivative of this
         spline.
 
         Parameters
         ----------
-        nux, nuy : int
+        dx, dy : int
             Orders of the derivative in x and y respectively. They must be
             non-negative integers and less than the respective degree of the
-            original spline (self) in that direction (kx, ky).
+            original spline (self) in that direction (``kx``, ``ky``).
 
         Returns
         -------
         spline :
-            A new spline of degrees (kx - nux, ky - nuy) representing the
+            A new spline of degrees (``kx - dx``, ``ky - dy``) representing the
             derivative of this spline.
 
         Notes
         -----
-        The returned spline is an instance of the class
-        ``_DerivedBivariateSpline`` that supports spline evaluation operations,
-        but is not directly constructed from original data.
+
+        .. versionadded:: 1.9.0
+
         """
-        if nux == 0 and nuy == 0:
+        if dx == 0 and dy == 0:
             return self
         else:
             kx, ky = self.degrees
-            if not (nux >= 0 and nuy >= 0):
+            if not (dx >= 0 and dy >= 0):
                 raise ValueError("order of derivative must be positive or"
                                  " zero")
-            if not (nux < kx and nuy < ky):
+            if not (dx < kx and dy < ky):
                 raise ValueError("order of derivative must be less than"
                                  " degree of spline")
             tx, ty, c = self.tck[:3]
-            newc, ier = dfitpack.pardtc(tx, ty, c, kx, ky, nux, nuy)
+            newc, ier = dfitpack.pardtc(tx, ty, c, kx, ky, dx, dy)
             if ier != 0:
                 # This should not happen under normal conditions.
                 raise ValueError("Unexpected error code returned by"
                                  " pardtc: %d" % ier)
             nx = len(tx)
             ny = len(ty)
-            newtx = tx[nux:nx - nux]
-            newty = ty[nuy:ny - nuy]
-            newkx, newky = kx - nux, ky - nuy
-            newclen = (nx - nux - kx - 1) * (ny - nuy - ky - 1)
+            newtx = tx[dx:nx - dx]
+            newty = ty[dy:ny - dy]
+            newkx, newky = kx - dx, ky - dy
+            newclen = (nx - dx - kx - 1) * (ny - dy - ky - 1)
             return _DerivedBivariateSpline._from_tck((newtx, newty,
                                                       newc[:newclen],
                                                       newkx, newky))
