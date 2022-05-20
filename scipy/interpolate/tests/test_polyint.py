@@ -793,3 +793,63 @@ class TestInvertPchip:
         test = 2
         assert_almost_equal(pch_limit.solve(test), 1)
 
+    def test_solve_scalar(self):
+        # test .solve([1, 2, 3, 4]) : `PPoly.solve` docstring example
+
+        # fix the behavior w.r.t. c.ndim = 2 and c.ndim > 2 
+
+        from scipy.interpolate import PPoly
+        c = np.array([[1, -4, 3], [1, 0, 0]]).T
+        x = [-2, 1, 2]
+        r0 = np.array([-1.41421356,  2.])   # expected 
+
+        p = PPoly(c, x)
+        r = p.solve(1)
+
+        assert r.shape == (2,)
+        assert r.dtype == float
+        assert_allclose(r, r0, atol=1e-14)
+
+        # c.ndim = 3 : .solve() returns a 1D object array
+        cc = np.empty((3, 2, 2))
+        cc[..., 0] = c
+        cc[..., 1] = c
+        pp = PPoly(cc, x)
+        rr = pp.solve(1)
+
+        assert rr.shape == (2, )
+        assert rr.dtype == object
+        for j in (0, 1):
+            assert_allclose(rr[j], r0, atol=1e-14)
+
+        # c.ndim = 4 : .solve returns a 2D object array
+        ccc = np.empty((3, 2, 2, 2))
+        ccc[..., 0] = cc
+        ccc[..., 1] = cc
+        ppp = PPoly(ccc, x)
+
+        rrr = ppp.solve(1)
+
+        assert rrr.shape == (2, 2)
+        assert rrr.dtype == object
+        for i in (0, 1):
+            for j in (0, 1):
+                assert_allclose(rrr[i, j], r0, atol=1e-14)
+
+    def test_array_solve(self):
+        # what to do here?
+        xi = [1., 2., 3., 4.]
+        yi = [-1., 2, -1, 1]
+        p = pchip(xi, yi)
+
+        r0 = p.solve(0)
+        assert_allclose(r0,
+                        array([1.18350342, 2.61303686, 3.73205081]),
+                        atol=1e-10)
+
+        r1 = p.solve(2)
+        assert_allclose(r1, array([2., 4.19582335], atol=1e-10)
+
+        # XXX: what to do here:
+###        r01 = p.solve([0, 2])
+
