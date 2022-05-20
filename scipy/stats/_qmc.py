@@ -1610,9 +1610,8 @@ class PoissonDisk(QMCEngine):
         final sample. Default is "volume".
 
         * ``volume``: original Bridson algorithm as described in [1]_.
-          new candidates are sampled within the hypersphere.
+          New candidates are sampled *within* the hypersphere.
         * ``surface``: only sample the surface of the hypersphere.
-
     candidates : int
         Number of candidates to sample per iteration. More candidates result
         in a denser sampling as more candidates can be accepted per iteration.
@@ -1625,7 +1624,6 @@ class PoissonDisk(QMCEngine):
 
     Notes
     -----
-
     Poisson disk sampling is an iterative sampling strategy. Starting from
     a seed sample, ``n`` `candidates` are sampled in the hypersphere
     surrounding the seed. Candidates bellow a certain `radius` or outside the
@@ -1666,7 +1664,7 @@ class PoissonDisk(QMCEngine):
     >>> sample = engine.random(20)
 
     Visualizing the 2D sample and showing that no points are closer than
-    `radius`. ``radius/2`` is used to visualy have non-intersecting circle.
+    `radius`. ``radius/2`` is used to visualize non-intersecting circles.
     If two samples are exactly at `radius` from each other, then their circle
     of radius ``radius/2`` will touch.
 
@@ -1683,7 +1681,7 @@ class PoissonDisk(QMCEngine):
     Such visualization can be seen as circle packing: how many circle can
     we put in the space. It is a np-hard problem. The method `fill_space`
     can be used to add samples until no more samples can be added. This is
-    a hard problem parameters might need to be adjusted manually. Beware of
+    a hard problem and parameters may need to be adjusted manually. Beware of
     the dimension: as the dimensionality increases, the number of samples
     required to fill the space increases exponentially
     (curse-of-dimensionality).
