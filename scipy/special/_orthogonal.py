@@ -182,9 +182,13 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     dy = df(n, x)
     x -= y/dy
 
+    # fm and dy may contain very large/small values, so we
+    # log-normalize them to maintain precision in the product fm*dy
     fm = f(n-1, x)
-    fm /= np.abs(fm).max()
-    dy /= np.abs(dy).max()
+    log_fm = np.log(np.abs(fm))
+    log_dy = np.log(np.abs(dy))
+    fm /= np.exp((log_fm.max() + log_fm.min()) / 2.)
+    dy /= np.exp((log_dy.max() + log_dy.min()) / 2.)
     w = 1.0 / (fm * dy)
 
     if symmetrize:
@@ -255,7 +259,12 @@ def roots_jacobi(n, alpha, beta, mu=False):
     if alpha == beta:
         return roots_gegenbauer(m, alpha+0.5, mu)
 
-    mu0 = 2.0**(alpha+beta+1)*_ufuncs.beta(alpha+1, beta+1)
+    if (alpha + beta) <= 1000:
+        mu0 = 2.0**(alpha+beta+1) * _ufuncs.beta(alpha+1, beta+1)
+    else:
+        # Avoid overflows in pow and beta for very large parameters
+        mu0 = np.exp((alpha + beta + 1) * np.log(2.0)
+                     + _ufuncs.betaln(alpha+1, beta+1))
     a = alpha
     b = beta
     if a + b == 0.0:
@@ -1484,8 +1493,20 @@ def roots_gegenbauer(n, alpha, mu=False):
         # keep doing so.
         return roots_chebyt(n, mu)
 
-    mu0 = (np.sqrt(np.pi) * _ufuncs.gamma(alpha + 0.5)
-           / _ufuncs.gamma(alpha + 1))
+    if alpha <= 170:
+        mu0 = (np.sqrt(np.pi) * _ufuncs.gamma(alpha + 0.5)) \
+              / _ufuncs.gamma(alpha + 1)
+    else:
+        # For large alpha we use a Taylor series expansion around inf,
+        # expressed as a 6th order polynomial of a^-1 and using Horner's
+        # method to minimize computation and maximize precision
+        inv_alpha = 1. / alpha
+        coeffs = np.array([0.000207186, -0.00152206, -0.000640869,
+                           0.00488281, 0.0078125, -0.125, 1.])
+        mu0 = coeffs[0]
+        for term in range(1, len(coeffs)):
+            mu0 = mu0 * inv_alpha + coeffs[term]
+        mu0 = mu0 * np.sqrt(np.pi / alpha)
     an_func = lambda k: 0.0 * k
     bn_func = lambda k: np.sqrt(k * (k + 2 * alpha - 1)
                         / (4 * (k + alpha) * (k + alpha - 1)))
