@@ -1648,7 +1648,7 @@ class PoissonDisk(QMCEngine):
     ----------
     .. [1] Robert Bridson, "Fast Poisson Disk Sampling in Arbitrary
        Dimensions." SIGGRAPH, 2007.
-    .. [2] `StackOverflow <https://stackoverflow.com/questions/66047540>`_.
+    .. [2] `StackOverflow <https://stackoverflow.com/questions/66047540>`__.
 
     Examples
     --------
