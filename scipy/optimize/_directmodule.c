@@ -74,7 +74,7 @@ DIRECTMethods[] = {
 
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    "_direct_lib",
+    "_directmodule",
     NULL,
     -1,
     DIRECTMethods,
@@ -86,16 +86,14 @@ static struct PyModuleDef moduledef = {
 
 PyObject *PyInit__directmodule(void)
 {
-    PyObject *m;
+    PyObject *module;
 
-    m = PyModule_Create(&moduledef);
-    if (!m) {
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
         return NULL;
     }
 
     import_array();
-    if (PyErr_Occurred())
-        return NULL;
 
-    return m;
+    return module;
 }
