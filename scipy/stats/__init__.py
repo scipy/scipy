@@ -476,14 +476,13 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
-from ._resampling import (bootstrap, monte_carlo_test, permutation_test)
+from ._resampling import bootstrap, monte_carlo_test, permutation_test
 from ._entropy import *
 from ._hypotests import *
-from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite  # noqa
+from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._fit import fit
-
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (
