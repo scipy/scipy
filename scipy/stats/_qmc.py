@@ -1633,7 +1633,7 @@ class PoissonDisk(QMCEngine):
 
     The maximum number of point that a sample can contain is directly linked
     to the `radius`. As the dimension of the space increases, a higher radius
-    spread the points further and help overcome the curse-of-dimensionality.
+    spreads the points further and help overcome the curse of dimensionality.
 
     .. warning::
 
