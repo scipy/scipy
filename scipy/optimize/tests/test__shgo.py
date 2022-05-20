@@ -595,11 +595,18 @@ class TestShgoArguments:
         SHGOc = SHGO(test3_1.f, test3_1.bounds, constraints=test3_1.cons[0],
                      minimizer_kwargs=minimizer_kwargs, options=options)
 
+    def test_7_2_2_minkwargs_rosen(self):
+from scipy.optimize import rosen, rosen_der, rosen_hess
+bounds = [(0, 1.6), (0, 1.6), (0, 1.4), (0, 1.4), (0, 1.4)]
+minimizer_kwargs['options'] = {'jac': rosen_der, 'hess': rosen_hess}
+result = scipy.optimize.shgo(rosen, bounds,
+                             minimizer_kwargs={'jac': rosen_der, 'hess': rosen_hess})
+
     def test_7_3_minkwargs(self):
         """Test minimizer_kwargs arguments for solvers without constraints"""
         for solver in ['Nelder-Mead', 'Powell', 'CG', 'BFGS', 'Newton-CG',
                        'L-BFGS-B', 'TNC', 'dogleg', 'trust-ncg', 'trust-exact',
-                       'trust-krylov']:
+                       'trust-krylov', 'SLSQP']:
             def jac(x):
                 return numpy.array([2 * x[0], 2 * x[1]]).T
 
