@@ -1,6 +1,4 @@
 # Created by Pearu Peterson, June 2003
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import numpy as np
 from numpy.testing import (assert_equal, assert_almost_equal, assert_array_equal,
@@ -1101,6 +1099,13 @@ class TestRectSphereBivariateSpline:
         assert_array_equal(lut(x, y, dtheta=1, dphi=1),
                            lut.partial_derivative(1, 1)(x, y))
 
+        assert_array_equal(lut(x, y, dtheta=1, grid=False),
+                           lut.partial_derivative(1, 0)(x, y, grid=False))
+        assert_array_equal(lut(x, y, dphi=1, grid=False),
+                           lut.partial_derivative(0, 1)(x, y, grid=False))
+        assert_array_equal(lut(x, y, dtheta=1, dphi=1, grid=False),
+                           lut.partial_derivative(1, 1)(x, y, grid=False))
+
     def test_derivatives(self):
         y = linspace(0.01, 2*pi-0.01, 7)
         x = linspace(0.01, pi-0.01, 7)
@@ -1157,13 +1162,6 @@ class TestRectSphereBivariateSpline:
             lons = np.linspace(10, 350, 18) * np.pi / 180.
             RectSphereBivariateSpline(lats, lons, data, s=-1)
         assert "s should be positive" in str(exc_info.value)
-
-        assert_array_equal(lut(x, y, dtheta=1, grid=False),
-                           lut.partial_derivative(1, 0)(x, y, grid=False))
-        assert_array_equal(lut(x, y, dphi=1, grid=False),
-                           lut.partial_derivative(0, 1)(x, y, grid=False))
-        assert_array_equal(lut(x, y, dtheta=1, dphi=1, grid=False),
-                           lut.partial_derivative(1, 1)(x, y, grid=False))
 
     def test_array_like_input(self):
         y = linspace(0.01, 2 * pi - 0.01, 7)
