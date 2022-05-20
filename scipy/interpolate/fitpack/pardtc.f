@@ -1,4 +1,5 @@
       subroutine pardtc(tx,nx,ty,ny,c,kx,ky,nux,nuy,newc,ier)
+      implicit none
 c  subroutine pardtc takes the knots and coefficients of a bivariate
 c  spline, and returns the coefficients for a new bivariate spline that
 c  evaluates the partial derivative (order nux, nuy) of the original
@@ -52,13 +53,13 @@ c
 c  latest update : may 2019
 c
 c  ..scalar arguments..
-      integer nx,ny,kx,ky,nux,nuy,ier
+      integer nx,ny,kx,ky,nux,nuy,ier, nc
 c  ..array arguments..
       real*8 tx(nx),ty(ny),c((nx-kx-1)*(ny-ky-1)),
      * newc((nx-kx-1)*(ny-ky-1))
 c  ..local scalars..
       integer i,j,kx1,ky1,lx,ly,l1,l2,m,m0,m1,
-     * nnewc,nkx1,nky1,nxx,nyy,newkx,newky
+     * nkx1,nky1,nxx,nyy,newkx,newky
       real*8 ak,fac
 c  ..
 c  before starting computations a data check is made. if the input data
