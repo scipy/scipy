@@ -1154,7 +1154,7 @@ class _DerivedBivariateSpline(_BivariateSplineBase):
 
     The other inherited attributes can be used as usual.
     """
-    __invalid_why = ("is unavailable, because _DerivedBivariateSpline"
+    _invalid_why = ("is unavailable, because _DerivedBivariateSpline"
                      " instance is not constructed from data that are to be"
                      " interpolated or smoothed, but derived from the"
                      " underlying knots and coefficients of another spline"
@@ -1162,10 +1162,10 @@ class _DerivedBivariateSpline(_BivariateSplineBase):
 
     @property
     def fp(self):
-        raise AttributeError("attribute \"fp\" %s" % self.__invalid_why)
+        raise AttributeError("attribute \"fp\" %s" % self._invalid_why)
 
     def get_residual(self):
-        raise AttributeError("method \"get_residual\" %s" % self.__invalid_why)
+        raise AttributeError("method \"get_residual\" %s" % self._invalid_why)
 
 
 class SmoothBivariateSpline(BivariateSpline):
