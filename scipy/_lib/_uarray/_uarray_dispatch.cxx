@@ -1775,13 +1775,19 @@ PyModuleDef uarray_module = {
 
 } // namespace
 
-#if defined(WIN32) || defined(_WIN32)
-#  define MODULE_EXPORT __declspec(dllexport)
+// Can be removed when Python 3.9 is the lowest supported version,
+// see gh-16165 for details.
+#if (PY_VERSION_HEX < 0x03090000)
+#  if defined(WIN32) || defined(_WIN32)
+#    define MODULE_EXPORT __declspec(dllexport)
+#  else
+#    define MODULE_EXPORT __attribute__((visibility("default")))
+#  endif
+extern "C" MODULE_EXPORT PyObject *
 #else
-#  define MODULE_EXPORT __attribute__((visibility("default")))
+PyMODINIT_FUNC
 #endif
-
-extern "C" MODULE_EXPORT PyObject * PyInit__uarray(void) {
+PyInit__uarray(void) {
 
   auto m = py_ref::steal(PyModule_Create(&uarray_module));
   if (!m)

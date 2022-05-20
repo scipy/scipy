@@ -366,7 +366,26 @@ class TestInterp1D:
         extrapolator = interp1d(self.x10, self.y10, kind='previous',
                                 fill_value='extrapolate')
         assert_allclose(extrapolator([-1., 0, 9, 11]),
-                        [0, 0, 9, 9], rtol=1e-14)
+                        [np.nan, 0, 9, 9], rtol=1e-14)
+
+        # Tests for gh-9591
+        interpolator1D = interp1d(self.x10, self.y10, kind="previous",
+                                  fill_value='extrapolate')
+        assert_allclose(interpolator1D([-1, -2, 5, 8, 12, 25]),
+                        [np.nan, np.nan, 5, 8, 9, 9])
+
+        interpolator2D = interp1d(self.x10, self.y210, kind="previous",
+                                  fill_value='extrapolate')
+        assert_allclose(interpolator2D([-1, -2, 5, 8, 12, 25]),
+                        [[np.nan, np.nan, 5, 8, 9, 9],
+                         [np.nan, np.nan, 15, 18, 19, 19]])
+
+        interpolator2DAxis0 = interp1d(self.x10, self.y102, kind="previous",
+                                       axis=0, fill_value='extrapolate')
+        assert_allclose(interpolator2DAxis0([-2, 5, 12]),
+                        [[np.nan, np.nan],
+                         [10, 11],
+                         [18, 19]])
 
         opts = dict(kind='previous',
                     fill_value='extrapolate',
@@ -386,7 +405,26 @@ class TestInterp1D:
         extrapolator = interp1d(self.x10, self.y10, kind='next',
                                 fill_value='extrapolate')
         assert_allclose(extrapolator([-1., 0, 9, 11]),
-                        [0, 0, 9, 9], rtol=1e-14)
+                        [0, 0, 9, np.nan], rtol=1e-14)
+
+        # Tests for gh-9591
+        interpolator1D = interp1d(self.x10, self.y10, kind="next",
+                                  fill_value='extrapolate')
+        assert_allclose(interpolator1D([-1, -2, 5, 8, 12, 25]),
+                        [0, 0, 5, 8, np.nan, np.nan])
+
+        interpolator2D = interp1d(self.x10, self.y210, kind="next",
+                                  fill_value='extrapolate')
+        assert_allclose(interpolator2D([-1, -2, 5, 8, 12, 25]),
+                        [[0, 0, 5, 8, np.nan, np.nan],
+                         [10, 10, 15, 18, np.nan, np.nan]])
+
+        interpolator2DAxis0 = interp1d(self.x10, self.y102, kind="next",
+                                       axis=0, fill_value='extrapolate')
+        assert_allclose(interpolator2DAxis0([-2, 5, 12]),
+                        [[0, 1],
+                         [10, 11],
+                         [np.nan, np.nan]])
 
         opts = dict(kind='next',
                     fill_value='extrapolate',

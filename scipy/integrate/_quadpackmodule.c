@@ -26,7 +26,8 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__quadpack(void)
+PyMODINIT_FUNC
+PyInit__quadpack(void)
 {
     PyObject *m, *d, *s;
 

@@ -98,7 +98,7 @@ def _contains_nan(a, nan_policy='propagate'):
         # This can happen when attempting to sum things which are not
         # numbers (e.g. as in the function `mode`). Try an alternative method:
         try:
-            contains_nan = np.nan in set(a.ravel())
+            contains_nan = np.any(np.isnan(a))
         except TypeError:
             # Don't know what to do. Fall back to omitting nan values and
             # issue a warning.

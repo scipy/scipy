@@ -50,6 +50,7 @@ else:
 
 import sys
 import os
+import warnings  # noqa: E402
 from pathlib import Path
 import platform
 # the following multiprocessing import is necessary to prevent tests that use
@@ -57,6 +58,13 @@ import platform
 # import is enough...
 import multiprocessing
 
+# distutils is required to infer meson install path
+# if this needs to be replaced for Python 3.12 support and there's no
+# stdlib alternative, use the hack discussed in gh-16058
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=DeprecationWarning)
+    from distutils import dist
+    from distutils.command.install import INSTALL_SCHEMES
 
 # In case we are run from the source directory, we don't want to import the
 # project from there:
@@ -550,7 +558,18 @@ def copy_openblas():
 
 
 def get_site_packages():
-    plat_path = Path(get_path('platlib'))
+    """
+    Depending on whether we have debian python or not,
+    return dist_packages path or site_packages path.
+    """
+    if 'deb_system' in INSTALL_SCHEMES:
+        # Debian patched python in use
+        install_cmd = dist.Distribution().get_command_obj('install')
+        install_cmd.select_scheme('deb_system')
+        install_cmd.finalize_options()
+        plat_path = Path(install_cmd.install_platlib)
+    else:
+        plat_path = Path(get_path('platlib'))
     return str(Path(PATH_INSTALLED) / plat_path.relative_to(sys.exec_prefix))
 
 
@@ -576,8 +595,6 @@ def build_project(args):
 
     setup_build(args, env)
 
-    site_dir = get_site_packages()
-
     cmd = ["ninja", "-C", args.build_dir]
     if args.parallel > 1:
         cmd += ["-j", str(args.parallel)]
@@ -592,6 +609,8 @@ def build_project(args):
         sys.exit(1)
 
     install_project(args)
+
+    site_dir = get_site_packages()
 
     if args.win_cp_openblas and platform.system() == 'Windows':
         if copy_openblas() == 0:

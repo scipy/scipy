@@ -3694,7 +3694,7 @@ class TestIIRPeak:
 
 
 class TestIIRComb:
-    # Test erroneus input cases
+    # Test erroneous input cases
     def test_invalid_input(self):
         # w0 is <= 0 or >= fs / 2
         fs = 1000
@@ -3706,6 +3706,15 @@ class TestIIRComb:
         for args in [(120, 30), (157, 35)]:
             with pytest.raises(ValueError, match='fs must be divisible '):
                 iircomb(*args, fs=fs)
+
+        # https://github.com/scipy/scipy/issues/14043#issuecomment-1107349140
+        # Previously, fs=44100, w0=49.999 was rejected, but fs=2,
+        # w0=49.999/int(44100/2) was accepted. Now it is rejected, too.
+        with pytest.raises(ValueError, match='fs must be divisible '):
+            iircomb(w0=49.999/int(44100/2), Q=30)
+
+        with pytest.raises(ValueError, match='fs must be divisible '):
+            iircomb(w0=49.999, Q=30, fs=44100)
 
         # Filter type is not notch or peak
         for args in [(0.2, 30, 'natch'), (0.5, 35, 'comb')]:
@@ -3728,6 +3737,25 @@ class TestIIRComb:
         # Verify that the first notch sits at 1000 Hz
         comb1 = comb_points[0]
         assert_allclose(freqs[comb1], 1000)
+
+    # Verify pass_zero parameter
+    @pytest.mark.parametrize('ftype,pass_zero,peak,notch',
+                             [('peak', True, 123.45, 61.725),
+                              ('peak', False, 61.725, 123.45),
+                              ('peak', None, 61.725, 123.45),
+                              ('notch', None, 61.725, 123.45),
+                              ('notch', True, 123.45, 61.725),
+                              ('notch', False, 61.725, 123.45)])
+    def test_pass_zero(self, ftype, pass_zero, peak, notch):
+        # Create a notching or peaking comb filter
+        b, a = iircomb(123.45, 30, ftype=ftype, fs=1234.5, pass_zero=pass_zero)
+
+        # Compute the frequency response
+        freqs, response = freqz(b, a, [peak, notch], fs=1234.5)
+
+        # Verify that expected notches are notches and peaks are peaks
+        assert abs(response[0]) > 0.99
+        assert abs(response[1]) < 1e-10
 
     # All built-in IIR filters are real, so should have perfectly
     # symmetrical poles and zeros. Then ba representation (using
@@ -3760,6 +3788,18 @@ class TestIIRComb:
                    0.0, 0.0, 0.0, 0.0, 0.914040348817395]
         assert_allclose(b_peak, b_peak2)
         assert_allclose(a_peak, a_peak2)
+
+    # Verify that https://github.com/scipy/scipy/issues/14043 is fixed
+    def test_nearest_divisor(self):
+        # Create a notching comb filter
+        b, a = iircomb(50/int(44100/2), 50.0, ftype='notch')
+
+        # Compute the frequency response at an upper harmonic of 50
+        freqs, response = freqz(b, a, [22000], fs=44100)
+
+        # Before bug fix, this would produce N = 881, so that 22 kHz was ~0 dB.
+        # Now N = 882 correctly and 22 kHz should be a notch <-220 dB
+        assert abs(response[0]) < 1e-10
 
 
 class TestIIRDesign:
