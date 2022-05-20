@@ -2342,6 +2342,8 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         half-cycles / sample.)
 
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
+
+        When Wn is a length-2 sequence, ``Wn[0]`` must be less than ``Wn[1]``.
     rp : float, optional
         For Chebyshev and elliptic filters, provides the maximum ripple
         in the passband. (dB)
@@ -2461,6 +2463,9 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     if numpy.any(Wn <= 0):
         raise ValueError("filter critical frequencies must be greater than 0")
+
+    if Wn.size > 1 and not Wn[0] < Wn[1]:
+        raise ValueError("Wn[0] must be less than Wn[1]")
 
     try:
         btype = band_dict[btype]

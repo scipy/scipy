@@ -3983,6 +3983,15 @@ class TestIIRFilter:
         sos2 = iirfilter(N=1, Wn=1, btype='low', analog=True, output='sos')
         assert_array_almost_equal(sos, sos2)
 
+    def test_wn1_ge_wn0(self):
+        # gh-15773: should raise error if Wn[0] >= Wn[1]
+        with pytest.raises(ValueError,
+                           match=r"Wn\[0\] must be less than Wn\[1\]"):
+            iirfilter(2, [0.5, 0.5])
+        with pytest.raises(ValueError,
+                           match=r"Wn\[0\] must be less than Wn\[1\]"):
+            iirfilter(2, [0.6, 0.5])
+
 
 class TestGroupDelay:
     def test_identity_filter(self):
