@@ -34,8 +34,7 @@ from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
-from scipy.stats._stats_py import (_permutation_distribution_t,
-                            AlexanderGovernConstantInputWarning)
+from scipy.stats._stats_py import _permutation_distribution_t
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -6311,7 +6310,8 @@ class TestAlexanderGovern:
 
     def test_constant_input(self):
         # Zero variance input, consistent with `stats.pearsonr`
-        with assert_warns(AlexanderGovernConstantInputWarning):
+        msg = "An input array is constant; the statistic is not defined."
+        with assert_warns(stats.ConstantInputWarning, match=msg):
             res = stats.alexandergovern([0.667, 0.667, 0.667],
                                         [0.123, 0.456, 0.789])
             assert_equal(res.statistic, np.nan)
