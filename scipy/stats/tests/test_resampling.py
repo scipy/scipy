@@ -360,7 +360,8 @@ def test_bootstrap_degenerate(method):
     data = 35 * [10000.]
     if method == "BCa":
         with np.errstate(invalid='ignore'):
-            with pytest.warns(_resampling.BootstrapDegenerateDistributionWarning):  # noqa
+            msg = "The bootstrap distribution is degenerate"
+            with pytest.warns(stats.DegenerateDataWarning, match=msg):
                 res = bootstrap([data, ], np.mean, method=method)
                 assert_equal(res.confidence_interval, (np.nan, np.nan))
     else:
