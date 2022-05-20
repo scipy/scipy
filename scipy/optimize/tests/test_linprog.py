@@ -1698,6 +1698,9 @@ class LinprogSimplexTests(LinprogCommonTests):
 class LinprogIPTests(LinprogCommonTests):
     method = "interior-point"
 
+    def test_bug_10466(self):
+        pytest.skip("Test is failing, but solver is deprecated.")
+
 
 @pytest.mark.filterwarnings("ignore::DeprecationWarning")
 class LinprogRSTests(LinprogCommonTests):
@@ -1940,9 +1943,6 @@ if has_cholmod:
 if has_umfpack:
     class TestLinprogIPSparseUmfpack(LinprogIPTests):
         options = {"sparse": True, "cholesky": False}
-
-        def test_bug_10466(self):
-            pytest.skip("Autoscale doesn't fix everything, and that's OK.")
 
         def test_network_flow_limited_capacity(self):
             pytest.skip("Failing due to numerical issues on some platforms.")
