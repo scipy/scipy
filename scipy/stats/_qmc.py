@@ -1612,7 +1612,7 @@ class PoissonDisk(QMCEngine):
         * ``volume``: original Bridson algorithm as described in [1]_.
           New candidates are sampled *within* the hypersphere.
         * ``surface``: only sample the surface of the hypersphere.
-    candidates : int
+    ncandidates : int
         Number of candidates to sample per iteration. More candidates result
         in a denser sampling as more candidates can be accepted per iteration.
     seed : {None, int, `numpy.random.Generator`}, optional
@@ -1625,7 +1625,7 @@ class PoissonDisk(QMCEngine):
     Notes
     -----
     Poisson disk sampling is an iterative sampling strategy. Starting from
-    a seed sample, ``n`` `candidates` are sampled in the hypersphere
+    a seed sample, `ncandidates` are sampled in the hypersphere
     surrounding the seed. Candidates bellow a certain `radius` or outside the
     domain are rejected. New samples are added in a pool of sample seed. The
     process stops when the pool is empty or when the number of required
@@ -1634,13 +1634,18 @@ class PoissonDisk(QMCEngine):
     The maximum number of point that a sample can contain is directly linked
     to the `radius`. As the dimension of the space increases, a higher radius
     spreads the points further and help overcome the curse of dimensionality.
+    See the :ref:`quasi monte carlo tutorial <quasi-monte-carlo>` for more
+    details.
 
     .. warning::
 
        The algorithm is more suitable for low dimensions and sampling size
        due to its iterative nature and memory requirements.
+       Selecting a small radius with a high dimension would
+       mean that the space could contain more samples than using lower
+       dimension or a bigger radius.
 
-    Some code taken from [2]_ by P. Zun, written consent given on 31.03.2021
+    Some code taken from [2]_, written consent given on 31.03.2021
     by the original author, Shamis, for free use in SciPy under
     the 3-clause BSD.
 
@@ -1694,7 +1699,7 @@ class PoissonDisk(QMCEngine):
         *,
         radius: DecimalNumber = 0.05,
         hypersphere: Literal["volume", "surface"] = "volume",
-        candidates: IntNumber = 30,
+        ncandidates: IntNumber = 30,
         seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
@@ -1718,10 +1723,10 @@ class PoissonDisk(QMCEngine):
         # away from at least one existing sample +eps to avoid rejection
         self.radius_factor = 2 if hypersphere == "volume" else 1.001
         self.radius = radius
-        self.squared_radius = self.radius**2
+        self.radius_squared = self.radius**2
 
         # sample to generate per iteration in the hypersphere around center
-        self.candidates = candidates
+        self.ncandidates = ncandidates
 
         with np.errstate(divide='ignore'):
             self.cell_size = self.radius / np.sqrt(self.d)
@@ -1768,7 +1773,7 @@ class PoissonDisk(QMCEngine):
 
         def in_neighborhood(candidate: np.ndarray, n: int = 2) -> bool:
             """
-            Check if there are samples closer than ``squared_radius`` to the
+            Check if there are samples closer than ``radius_squared`` to the
             `candidate` sample.
             """
             indices = (candidate / self.cell_size).astype(int)
@@ -1781,14 +1786,13 @@ class PoissonDisk(QMCEngine):
 
             a = [slice(ind_min[i], ind_max[i]) for i in range(self.d)]
 
-            with np.errstate(invalid='ignore'):
-                if np.any(
-                    np.sum(
-                        np.square(candidate - self.sample_grid[tuple(a)]),
-                        axis=self.d
-                    ) < self.squared_radius
-                ):
-                    return True
+            if np.any(
+                np.sum(
+                    np.square(candidate - self.sample_grid[tuple(a)]),
+                    axis=self.d
+                ) < self.radius_squared
+            ):
+                return True
 
             return False
 
@@ -1816,7 +1820,7 @@ class PoissonDisk(QMCEngine):
 
             # generate candidates around the center sample
             candidates = self.hypersphere_method(
-                center, self.radius * self.radius_factor, self.candidates
+                center, self.radius * self.radius_factor, self.ncandidates
             )
 
             # keep candidates that satisfy some conditions
