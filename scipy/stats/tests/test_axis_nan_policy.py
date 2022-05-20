@@ -11,7 +11,7 @@ import pytest
 
 import numpy as np
 from numpy.lib import NumpyVersion
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
 
@@ -30,6 +30,8 @@ axis_nan_policy_cases = [
     (stats.skew, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstatvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.moment, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.moment, tuple(), dict(moment=[1, 2]), 1, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in
@@ -50,6 +52,10 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "`x` and `y` must be of nonzero size.",
                       "The exact distribution of the Wilcoxon test",
                       "Data input must not be empty"}
+
+# If the message is one of these, results of the function may be inaccurate,
+# but NaNs are not to be placed
+inaccuracy_messages = {"Precision loss occurred in moment calculation"}
 
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
@@ -245,6 +251,15 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                 if any([str(e).startswith(message)
                         for message in too_small_messages]):
                     res1d = np.full(n_outputs, np.nan)
+                elif any([str(e).startswith(message)
+                          for message in inaccuracy_messages]):
+                    with suppress_warnings() as sup:
+                        sup.filter(RuntimeWarning)
+                        res1d = nan_policy_1d(hypotest, data1d, unpacker,
+                                              *args, n_outputs=n_outputs,
+                                              nan_policy=nan_policy,
+                                              paired=paired, _no_deco=True,
+                                              **kwds)
                 else:
                     raise e
         statistics[i] = res1d[0]
@@ -260,7 +275,9 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
 
     else:
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with suppress_warnings() as sup, \
+             np.errstate(divide='ignore', invalid='ignore'):
+            sup.filter(RuntimeWarning, "Precision loss occurred in moment")
             res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
                                     *args, **kwds))
 
@@ -571,6 +588,9 @@ def _check_arrays_broadcastable(arrays, axis):
 def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
 
+    if unpacker is None:
+        unpacker = lambda res: (res[0], res[1])  # noqa: E731
+
     def small_data_generator(n_samples, n_dims):
 
         def small_sample_generator(n_dims):
@@ -608,12 +628,10 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     expected = np.mean(concat, axis=axis) * np.nan
 
                 res = hypotest(*samples, *args, axis=axis, **kwds)
+                res = unpacker(res)
 
-                if hasattr(res, 'statistic'):
-                    assert_equal(res.statistic, expected)
-                    assert_equal(res.pvalue, expected)
-                else:
-                    assert_equal(res, expected)
+                for i in range(n_outputs):
+                    assert_equal(res[i], expected)
 
             except ValueError:
                 # confirm that the arrays truly are not broadcastable

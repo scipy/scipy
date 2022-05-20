@@ -473,7 +473,9 @@ rj(const T& x, const T& y, const T& z, const T& p, const double& rerr, T& res,
     if ( classify.maybe_asymp && !noasymp )
     {
 	/* might be dealt with by asymptotic expansion of real-arg RJ */
-	RT tmpres;
+	/* Initialize tmpres to avoid the compiler warning */
+	/* "‘tmpres’ may be used uninitialized"            */
+	RT tmpres = 0;
 	rjimpl::AsymConfig<RT> config;
 	RT xr(std::real(xm));
 	RT yr(std::real(ym));

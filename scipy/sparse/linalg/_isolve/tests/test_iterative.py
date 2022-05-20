@@ -530,6 +530,27 @@ def test_x0_equals_Mb(solver):
             assert_normclose(A.dot(x), b, tol=tol)
 
 
+@pytest.mark.parametrize(('solver', 'solverstring'), [(tfqmr, 'TFQMR')])
+def test_show(solver, solverstring, capsys):
+    def cb(x):
+        count[0] += 1
+
+    for i in [0, 20]:
+        case = params.cases[i]
+        A = case.A
+        b = case.b
+        count = [0]
+        x, info = solver(A, b, callback=cb, show=True)
+        out, err = capsys.readouterr()
+        if i == 20:  # Asymmetric and Positive Definite
+            assert_equal(out, f"{solverstring}: Linear solve not converged "
+                              f"due to reach MAXIT iterations {count[0]}\n")
+        else:  # 1-D Poisson equations
+            assert_equal(out, f"{solverstring}: Linear solve converged due to "
+                              f"reach TOL iterations {count[0]}\n")
+        assert_equal(err, '')
+
+
 #------------------------------------------------------------------------------
 
 class TestQMR:
@@ -549,7 +570,8 @@ class TestQMR:
         U = spdiags([4*dat, -dat], [0,1], n, n)
 
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "splu requires CSC matrix format")
+            sup.filter(SparseEfficiencyWarning,
+                       "splu converted its input to CSC format")
             L_solver = splu(L)
             U_solver = splu(U)
 

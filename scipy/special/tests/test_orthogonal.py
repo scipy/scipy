@@ -332,10 +332,37 @@ def test_roots_jacobi():
     vgq(rf(47.1, -0.2), ef(47.1, -0.2), wf(47.1, -0.2), -1., 1.,
         100, atol=1e-11)
 
+    vgq(rf(1., 658.), ef(1., 658.), wf(1., 658.), -1., 1., 5, atol=2e-13)
+    vgq(rf(1., 658.), ef(1., 658.), wf(1., 658.), -1., 1., 25, atol=1e-12)
+    vgq(rf(1., 658.), ef(1., 658.), wf(1., 658.), -1., 1., 100, atol=1e-11)
+    vgq(rf(1., 658.), ef(1., 658.), wf(1., 658.), -1., 1., 250, atol=1e-11)
+
+    vgq(rf(511., 511.), ef(511., 511.), wf(511., 511.), -1., 1., 5,
+        atol=1e-12)
+    vgq(rf(511., 511.), ef(511., 511.), wf(511., 511.), -1., 1., 25,
+        atol=1e-11)
+    vgq(rf(511., 511.), ef(511., 511.), wf(511., 511.), -1., 1., 100,
+        atol=1e-10)
+
+    vgq(rf(511., 512.), ef(511., 512.), wf(511., 512.), -1., 1., 5,
+        atol=1e-12)
+    vgq(rf(511., 512.), ef(511., 512.), wf(511., 512.), -1., 1., 25,
+        atol=1e-11)
+    vgq(rf(511., 512.), ef(511., 512.), wf(511., 512.), -1., 1., 100,
+        atol=1e-10)
+
+    vgq(rf(1000., 500.), ef(1000., 500.), wf(1000., 500.), -1., 1., 5,
+        atol=1e-12)
+    vgq(rf(1000., 500.), ef(1000., 500.), wf(1000., 500.), -1., 1., 25,
+        atol=1e-11)
+    vgq(rf(1000., 500.), ef(1000., 500.), wf(1000., 500.), -1., 1., 100,
+        atol=1e-10)
+
     vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1., 5)
-    vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1., 25, atol=1e-13)
-    vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1.,
-        100, atol=1e-13)
+    vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1., 25,
+        atol=1e-13)
+    vgq(rf(2.25, 68.9), ef(2.25, 68.9), wf(2.25, 68.9), -1., 1., 100,
+        atol=1e-13)
 
     # when alpha == beta == 0, P_n^{a,b}(x) == P_n(x)
     xj, wj = sc.roots_jacobi(6, 0.0, 0.0)
@@ -517,6 +544,22 @@ def test_roots_gegenbauer():
     vgq(rootf(50), evalf(50), weightf(50), -1., 1., 5, atol=1e-13)
     vgq(rootf(50), evalf(50), weightf(50), -1., 1., 25, atol=1e-12)
     vgq(rootf(50), evalf(50), weightf(50), -1., 1., 100, atol=1e-11)
+
+    # Alpha=170 is where the approximation used in roots_gegenbauer changes
+    vgq(rootf(170), evalf(170), weightf(170), -1., 1., 5, atol=1e-13)
+    vgq(rootf(170), evalf(170), weightf(170), -1., 1., 25, atol=1e-12)
+    vgq(rootf(170), evalf(170), weightf(170), -1., 1., 100, atol=1e-11)
+    vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 5, atol=1e-13)
+    vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 25, atol=1e-12)
+    vgq(rootf(170.5), evalf(170.5), weightf(170.5), -1., 1., 100, atol=1e-11)
+
+    # Test for failures, e.g. overflows, resulting from large alphas
+    vgq(rootf(238), evalf(238), weightf(238), -1., 1., 5, atol=1e-13)
+    vgq(rootf(238), evalf(238), weightf(238), -1., 1., 25, atol=1e-12)
+    vgq(rootf(238), evalf(238), weightf(238), -1., 1., 100, atol=1e-11)
+    vgq(rootf(512.5), evalf(512.5), weightf(512.5), -1., 1., 5, atol=1e-12)
+    vgq(rootf(512.5), evalf(512.5), weightf(512.5), -1., 1., 25, atol=1e-11)
+    vgq(rootf(512.5), evalf(512.5), weightf(512.5), -1., 1., 100, atol=1e-10)
 
     # this is a special case that the old code supported.
     # when alpha = 0, the gegenbauer polynomial is uniformly 0. but it goes

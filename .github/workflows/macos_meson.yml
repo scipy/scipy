@@ -29,12 +29,12 @@ jobs:
         python-version: ["3.10"]
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v3
       with:
         python-version: ${{ matrix.python-version }}
 
@@ -52,7 +52,7 @@ jobs:
         echo "::set-output name=timestamp::${NOW}"
 
     - name: Setup compiler cache
-      uses:  actions/cache@v2
+      uses:  actions/cache@v3
       id:    cache-ccache
       # Reference: https://docs.github.com/en/actions/guides/caching-dependencies-to-speed-up-workflows#matching-a-cache-key
       # NOTE: The caching strategy is modeled in a way that it will always have
@@ -76,27 +76,27 @@ jobs:
         mamba-version: "*"
         channels: conda-forge
         channel-priority: true
-        activate-environment: scipy-meson
+        activate-environment: scipy-dev
         use-only-tar-bz2: true
 
     - name: Cache conda
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       env:
-        # Increase this value to reset cache if environment_meson.yml has not changed
+        # Increase this value to reset cache if environment.yml has not changed
         CACHE_NUMBER: 0
       with:
-        path: /usr/local/miniconda/envs/scipy-meson
+        path: /usr/local/miniconda/envs/scipy-dev
         key:
-          ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment_meson.yml') }}
+          ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
       id: envcache
 
     - name: Update Conda Environment
-      run: mamba env update -n scipy-meson -f environment_meson.yml
+      run: mamba env update -n scipy-dev -f environment.yml
 
     - name: Build and Install SciPy
       shell: bash -l {0}
       run: |
-        conda activate scipy-meson
+        conda activate scipy-dev
         python -m pip install meson==0.61.1
         # Python.org installers still use 10.9, so let's use that too. Note
         # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
@@ -105,12 +105,12 @@ jobs:
         # https://conda-forge.org/docs/maintainer/knowledge_base.html#requiring-newer-macos-sdks
         export MACOSX_DEPLOYMENT_TARGET=10.9
         export MACOSX_SDK_VERSION=10.9
-        CC="ccache $CC" python dev.py -j 2 --build-only
+        CC="ccache $CC" python do.py build -j 2
 
     - name: Test SciPy
       shell: bash -l {0}
       run: |
-        conda activate scipy-meson
+        conda activate scipy-dev
         export OMP_NUM_THREADS=2
         python dev.py -n -j 2
 

@@ -6,6 +6,12 @@ __init__py = custom_target('__init__py',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
+_cy_array_utils_pxd = custom_target('_cy_array_utils_pxd',
+  output: '_cythonized_array_utils.pxd',
+  input: '_cythonized_array_utils.pxd',
+  command: [copier, '@INPUT@', '@OUTDIR@']
+)
+
 cython_linalg = custom_target('cython_linalg',
   output: [
     'cython_blas.pyx',
@@ -30,6 +36,12 @@ linalg_init_cython_gen = generator(cython_cli,
   arguments : ['@INPUT@', '@OUTPUT@'],
   output : '@BASENAME@.c',
   depends : [_cython_tree, __init__py])
+
+# pyx -> c, pyx -> cpp generators, depending on _cythonized_array_utils.pxd
+linalg_init_utils_cython_gen = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : [_cython_tree, __init__py, _cy_array_utils_pxd])
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxd files and init
 linalg_cython_gen = generator(cython_cli,
@@ -58,12 +70,6 @@ py3.extension_module('_fblas',
 )
 
 # flapack
-deprecated_lapack_routines = [
-  'src/lapack_deprecations/cgegv.f',
-  'src/lapack_deprecations/dgegv.f',
-  'src/lapack_deprecations/sgegv.f',
-  'src/lapack_deprecations/zgegv.f'
-]
 
 flapack_module = custom_target('flapack_module',
   output: ['_flapackmodule.c', '_flapack-f2pywrappers.f'],
@@ -76,7 +82,6 @@ py3.extension_module('_flapack',
     flapack_module,
     fortranobject_c,
     g77_abi_wrappers,
-    deprecated_lapack_routines
   ],
   c_args: [
     numpy_nodepr_api,
@@ -252,7 +257,7 @@ _matfuncs_expm_pyx = custom_target('_matfuncs_expm',
 )
 
 py3.extension_module('_matfuncs_expm',
-  linalg_init_cython_gen.process(_matfuncs_expm_pyx),
+  linalg_cython_gen.process(_matfuncs_expm_pyx),
   c_args: cython_c_args,
   include_directories: inc_np,
   dependencies: py3_dep,
@@ -261,7 +266,7 @@ py3.extension_module('_matfuncs_expm',
 )
 
 _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
-  linalg_init_cython_gen.process('_cythonized_array_utils.pyx'),
+  linalg_init_utils_cython_gen.process('_cythonized_array_utils.pyx'),
   c_args: [cython_c_args, c_undefined_ok],
   dependencies: [py3_dep],
   include_directories: [inc_np],
@@ -269,9 +274,12 @@ _cythonized_array_utils = py3.extension_module('_cythonized_array_utils',
   subdir: 'scipy/linalg'
 )
 
+
 python_sources = [
   '__init__.py',
   '_basic.py',
+  '_cythonized_array_utils.pxd',
+  '_cythonized_array_utils.pyi',
   '_decomp.py',
   '_decomp_cholesky.py',
   '_decomp_cossin.py',
@@ -286,6 +294,7 @@ python_sources = [
   '_flinalg_py.py',
   '_interpolative_backend.py',
   '_matfuncs.py',
+  '_matfuncs_expm.pyi',
   '_matfuncs_inv_ssq.py',
   '_matfuncs_sqrtm.py',
   '_misc.py',
@@ -316,11 +325,7 @@ py3.install_sources(
   subdir: 'scipy/linalg'
 )
 
-py3.install_sources(
-  ['_cythonized_array_utils.pyi'],
-  pure: false,
-  subdir: 'scipy/linalg'
-)
+
 
 # TODO: install (only) these pxd files. Neither py3.install_sources nor
 #       install_data accept generated data files. What
@@ -329,6 +334,13 @@ py3.install_sources(
 #         `custom_target(..., install: true, install_dir: ...)
 #         # should use `py3.get_install_dir() + 'scipy/linalg'` ?
 #       see https://github.com/mesonbuild/meson/issues/3206
+#
+#       For the below code to work, the script generating the files should use
+#       a different filename, and then cp (or better: `copier`) should move it
+#       to the final location. Either that, or split the codegen scripts and
+#       call it twice: once for the installable files, and once for the
+#       non-installable files.
+#
 #pxd_files = [
 #  cython_linalg[2],  # cython_blas.pxd
 #  cython_linalg[3],  # cython_lapack.pxd
