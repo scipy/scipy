@@ -26,3 +26,4 @@ def __getattr__(name):
                   category=DeprecationWarning, stacklevel=2)
 
     return getattr(doccer, name)
+
