@@ -3535,12 +3535,12 @@ def f_oneway(*samples, axis=0):
 
     Warns
     -----
-    ConstantInputWarning
+    `~scipy.stats.ConstantInputWarning`
         Raised if all values within each of the input arrays are identical.
         In this case the F statistic is either infinite or isn't defined,
         so ``np.inf`` or ``np.nan`` is returned.
 
-    DegenerateDataWarning
+    `~scipy.stats.DegenerateDataWarning`
         Raised if the length of any input array is 0, or if all the input
         arrays have length 1.  ``np.nan`` is returned for the F statistic
         and the p-value in these cases.
@@ -3770,7 +3770,7 @@ def alexandergovern(*samples, nan_policy='propagate'):
 
     Warns
     -----
-    ConstantInputWarning
+    `~scipy.stats.ConstantInputWarning`
         Raised if an input is a constant array.  The statistic is not defined
         in this case, so ``np.nan`` is returned.
 
@@ -4083,11 +4083,11 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
     Warns
     -----
-    ConstantInputWarning
+    `~scipy.stats.ConstantInputWarning`
         Raised if an input is a constant array.  The correlation coefficient
         is not defined in this case, so ``np.nan`` is returned.
 
-    NearConstantInputWarning
+    `~scipy.stats.NearConstantInputWarning`
         Raised if an input is "nearly" constant.  The array ``x`` is considered
         nearly constant if ``norm(x - mean(x)) < 1e-13 * abs(mean(x))``.
         Numerical errors in the calculation ``x - mean(x)`` in this case might
@@ -4604,7 +4604,7 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     Warns
     -----
-    ConstantInputWarning
+    `~scipy.stats.ConstantInputWarning`
         Raised if an input is a constant array.  The correlation coefficient
         is not defined in this case, so ``np.nan`` is returned.
 

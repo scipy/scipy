@@ -2557,7 +2557,7 @@ class rv_continuous(rv_generic):
         ------
         TypeError, ValueError
             If an input is invalid
-        FitError
+        `~scipy.stats.FitError`
             If fitting fails or the fit produced would be invalid
 
         Returns
