@@ -6,6 +6,22 @@ fortran_ignore_warnings = [
   '-Wno-unused-variable'
 ]
 
+_directmodule = py3.extension_module('_directmodule',
+  ['_direct/direct_wrap.c',
+   '_direct/direct-internal.h',
+   '_direct/DIRect.c',
+   '_direct/DIRserial.c',
+   '_direct/DIRsubrout.c',
+   '_directmodule.h',
+   '_directmodule.c'
+  ],
+  c_args: [numpy_nodepr_api],
+  include_directories: include_dirs,
+  dependencies: [py3_dep],
+  install: true,
+  subdir: 'scipy/optimize'
+)
+
 minpack_lib = static_library('minpack',
   [
     'minpack/chkder.f',
@@ -265,6 +281,7 @@ py3.install_sources([
   '_constraints.py',
   '_differentiable_functions.py',
   '_differentialevolution.py',
+  '_direct.py',
   '_dual_annealing.py',
   '_hessian_update_strategy.py',
   '_lbfgsb_py.py',
