@@ -1786,13 +1786,16 @@ class PoissonDisk(QMCEngine):
 
             a = [slice(ind_min[i], ind_max[i]) for i in range(self.d)]
 
-            if np.any(
-                np.sum(
-                    np.square(candidate - self.sample_grid[tuple(a)]),
-                    axis=self.d
-                ) < self.radius_squared
-            ):
-                return True
+            # guards against: invalid value encountered in less as we are
+            # comparing with nan and returns False. Which is wanted.
+            with np.errstate(invalid='ignore'):
+                if np.any(
+                    np.sum(
+                        np.square(candidate - self.sample_grid[tuple(a)]),
+                        axis=self.d
+                    ) < self.radius_squared
+                ):
+                    return True
 
             return False
 
