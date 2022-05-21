@@ -7,37 +7,12 @@ from scipy._lib._util import check_random_state
 from scipy.sparse.linalg._interface import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg  # type: ignore[no-redef]
 from scipy.sparse.linalg._svdp import _svdp
+from scipy.linalg import svd
+
+from numpy.random import randn
 
 arpack_int = _arpack.timing.nbx.dtype
 __all__ = ['svds']
-
-
-def _augmented_orthonormal_cols(x, k, random_state):
-    # extract the shape of the x array
-    n, m = x.shape
-    # create the expanded array and copy x into it
-    y = np.empty((n, m+k), dtype=x.dtype)
-    y[:, :m] = x
-    # do some modified gram schmidt to add k random orthonormal vectors
-    for i in range(k):
-        # sample a random initial vector
-        v = random_state.standard_normal(size=n)
-        if np.iscomplexobj(x):
-            v = v + 1j*random_state.standard_normal(size=n)
-        # subtract projections onto the existing unit length vectors
-        for j in range(m+i):
-            u = y[:, j]
-            v -= (np.dot(v, u.conj()) / np.dot(u, u.conj())) * u
-        # normalize v
-        v /= np.sqrt(np.dot(v, v.conj()))
-        # add v into the output array
-        y[:, m+i] = v
-    # return the expanded array
-    return y
-
-
-def _augmented_orthonormal_rows(x, k, random_state):
-    return _augmented_orthonormal_cols(x.T, k, random_state).T
 
 
 def _herm(x):
@@ -137,8 +112,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Parameters
     ----------
-    A : sparse matrix or LinearOperator
-        Matrix to decompose.
+    A : ndarray, sparse matrix, or LinearOperator
+        Matrix to decompose of a floating point numeric dtype.
     k : int, default: 6
         Number of singular values and singular vectors to compute.
         Must satisfy ``1 <= k <= kmax``, where ``kmax=min(M, N)`` for
@@ -213,7 +188,18 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     -----
     This is a naive implementation using ARPACK or LOBPCG as an eigensolver
     on ``A.conj().T @ A`` or ``A @ A.conj().T``, depending on which one is more
-    efficient.
+    efficient, followed by the Rayleigh-Ritz method as postprocessing; see
+    https://w.wiki/4zms
+
+    Alternatively, the PROPACK solver can be called. ``form="array"``
+
+    Choices of the input matrix ``A`` numeric dtype may be limited.
+    Only ``solver="lobpcg"`` supports all floating point dtypes
+    real: 'np.single', 'np.double', 'np.longdouble' and
+    complex: 'np.csingle', 'np.cdouble', 'np.clongdouble'.
+    The ``solver="arpack"`` supports only
+    'np.single', 'np.double', and 'np.cdouble'.
+
 
     Examples
     --------
@@ -274,11 +260,13 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         X_matmat = A.matmat
         XH_dot = A.rmatvec
         XH_mat = A.rmatmat
+        transpose = False
     else:
         X_dot = A.rmatvec
         X_matmat = A.rmatmat
         XH_dot = A.matvec
         XH_mat = A.matmat
+        transpose = True
 
         dtype = getattr(A, 'dtype', None)
         if dtype is None:
@@ -290,9 +278,19 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     def matmat_XH_X(x):
         return XH_mat(X_matmat(x))
 
+    def matvec_X_XH(x):
+        return X_dot(XH_dot(x))
+
+    def matmat_X_XH(x):
+        return X_matmat(XH_mat(x))
+
     XH_X = LinearOperator(matvec=matvec_XH_X, dtype=A.dtype,
                           matmat=matmat_XH_X,
                           shape=(min(A.shape), min(A.shape)))
+
+    X_XH = LinearOperator(matvec=matvec_X_XH, dtype=A.dtype,
+                          matmat=matmat_X_XH,
+                          shape=(max(A.shape), max(A.shape)))
 
     # Get a low rank approximation of the implicitly defined gramian matrix.
     # This is not a stable way to approach the problem.
@@ -306,8 +304,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             else:
                 X = random_state.uniform(size=(min(A.shape), k))
 
-        eigvals, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
-                                 largest=largest, )
+        _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
+                                 largest=largest)
 
     elif solver == 'propack':
         jobu = return_singular_vectors in {True, 'u'}
@@ -338,49 +336,79 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     elif solver == 'arpack' or solver is None:
         if v0 is None and not rs_was_None:
             v0 = random_state.uniform(size=(min(A.shape),))
-        eigvals, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
+        _, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                                 ncv=ncv, which=which, v0=v0)
 
-    # Gramian matrices have real non-negative eigenvalues.
-    eigvals = np.maximum(eigvals.real, 0)
-
-    # Use the sophisticated detection of small eigenvalues from pinvh.
-    t = eigvec.dtype.char.lower()
-    factor = {'f': 1E3, 'd': 1E6}
-    cond = factor[t] * np.finfo(t).eps
-    cutoff = cond * np.max(eigvals)
-
-    # Get a mask indicating which eigenpairs are not degenerately tiny,
-    # and create the re-ordered array of thresholded singular values.
-    above_cutoff = (eigvals > cutoff)
-    nlarge = above_cutoff.sum()
-    nsmall = k - nlarge
-    slarge = np.sqrt(eigvals[above_cutoff])
-    s = np.zeros_like(eigvals)
-    s[:nlarge] = slarge
+    eigvec, _ = np.linalg.qr(eigvec)
+    Av = X_matmat(eigvec)
     if not return_singular_vectors:
-        return np.sort(s)
+        s = svd(Av, compute_uv=False, overwrite_a=True)
+        return s[::-1]
 
-    if n > m:
-        vlarge = eigvec[:, above_cutoff]
-        ularge = (X_matmat(vlarge) / slarge
-                  if return_singular_vectors != 'vh' else None)
-        vhlarge = _herm(vlarge)
+    # compute the left singular vectors of X and update the right ones
+    # accordingly
+    u, s, vh = svd(Av, full_matrices=False, overwrite_a=True)
+    u = u[:, ::-1]
+    s = s[::-1]
+    vh = vh[::-1]
+
+    jobu = return_singular_vectors in {True, 'u'}
+    jobv = return_singular_vectors in {True, 'vh'}
+
+    if tol is None or tol <= 0.0:
+        res_tol = np.sqrt(np.finfo(A.dtype).eps) * max(A.shape)
     else:
-        ularge = eigvec[:, above_cutoff]
-        vhlarge = (_herm(X_matmat(ularge) / slarge)
-                   if return_singular_vectors != 'u' else None)
+        res_tol = tol
 
-    u = (_augmented_orthonormal_cols(ularge, nsmall, random_state)
-         if ularge is not None else None)
-    vh = (_augmented_orthonormal_rows(vhlarge, nsmall, random_state)
-          if vhlarge is not None else None)
+    if transpose:
+        u_tmp = eigvec @ _herm(vh) if jobu else None
+        if jobv:
+            # if singular values are very small, the right singular vectors
+            # computed above may be inaccurate, so we have to re-compute
+            # them as the eigenvectors of X_XH
 
-    indexes_sorted = np.argsort(s)
-    s = s[indexes_sorted]
-    if u is not None:
-        u = u[:, indexes_sorted]
-    if vh is not None:
-        vh = vh[indexes_sorted]
+            # note that even if X is full rank, X_XH has a nullspace of
+            # dimension m - n, so for which=='SM' we need to compute k + m - n
+            # eigenpairs corresponding to smallest eigenvalues
+            if not largest and m > n:
+                u = np.concatenate((u, randn(m, m - n)), axis=1)
+
+            eigvals, eigvec = lobpcg(X_XH, u, tol=res_tol**2, maxiter=maxiter,
+                largest=largest)
+            if largest:
+                eigvals = eigvals[::-1]
+                eigvec = eigvec[:, ::-1]
+            elif m > n:
+                u = u[:, m - n :]
+            vh = _herm(eigvec)
+        else:
+            vh = None
+        u = u_tmp
+    else:
+        if jobu:
+            # same situation as above but for the left singular vectors
+            if not largest:
+                u = np.concatenate((u, randn(n, n - m)), axis=1)
+            eigvals, u = lobpcg(X_XH, u, tol=res_tol**2, maxiter=maxiter,
+                largest=largest)
+            if largest:
+                eigvals = eigvals[::-1]
+                u = u[:, ::-1]
+            else:
+                u = u[:, n - m :]
+        else:
+            u = None
+        vh = vh @ _herm(eigvec) if jobv else None
+
+    if jobu and jobv:
+        # apply Rayleigh-Ritz-like procedure to adjust singular vectors
+        Av = A.matmat(_herm(vh))
+        uhAv = _herm(u) @ Av
+        uu, s, vvh = svd(uhAv, full_matrices=False)
+        uu = uu[:, ::-1]
+        s = s[::-1]
+        vvh = vvh[::-1]
+        u = u @ uu
+        vh = vvh @ vh
 
     return u, s, vh
