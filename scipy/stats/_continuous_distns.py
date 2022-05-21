@@ -3,7 +3,6 @@
 # Author:  Travis Oliphant  2002-2011 with contributions from
 #          SciPy Developers 2004-2011
 #
-from textwrap import dedent
 import warnings
 from collections.abc import Iterable
 from functools import wraps
@@ -7276,31 +7275,29 @@ class reciprocal_gen(rv_continuous):
     def _entropy(self, a, b):
         return 0.5*np.log(a*b)+np.log(np.log(b*1.0/a))
 
-    @extend_notes_in_docstring(rv_continuous, notes="""\
-        `loguniform`/`reciprocal` is over-parameterized and the `fit` method
-        might fail to find a unique solution. It is recommended to use the
-        `log_uniform.fit` method instead which is parametrized using
-        `c = b / a`. To get back the `a`, `b` parametrization from `c`,
-        use `a = fscale`, `b = c * a`, `loc = floc`, and `scale = 1`:
+    fit_note = """\
+        `loguniform`/`reciprocal` is over-parameterized, so `fit` does not
+        provide a unique solution. Consider using `log_uniform` instead,
+        which is parametrized using `c = b / a`. After fitting, the `a`, `b`
+        parametrization can be obtained from the `c` parameterization using
+        `a = scale`, `b = c * a`, `loc = loc`, and `scale = 1`."""
 
+    fit_example = """\n
         >>> from scipy import stats
         >>> rvs = stats.loguniform.rvs(0.1, 1, size=1000)
-        >>> c, floc, fscale = stats.log_uniform.fit(rvs)
-        >>> a = fscale
+        >>> c, loc, scale = stats.log_uniform.fit(rvs)
+        >>> a = scale
         >>> b = c * a
-        >>> loc, scale = floc, 1
+        >>> loc, scale = loc, 1
         >>> a, b, loc, scale
-        (0.13212701233902052, 1.031758782148188, -0.03195303401387435, 1)  # may vary  # noqa: E501
+        (0.13212701233902052, 1.031758782148188, -0.03195303401387435, 1)
         >>> dist = stats.loguniform(a, b, loc=loc, scale=scale)
-        \n\n""")
+        \n"""
+
+    compact_note = " ".join(fit_note.split())
+    @extend_notes_in_docstring(rv_continuous, notes=fit_note+fit_example)
     def fit(self, data, *args, **kwds):
-        warnings.warn(" ".join(dedent("""\
-        `loguniform`/`reciprocal` is over-parameterized and the `fit` method
-        might fail to find a unique solution. It is recommended to use the
-        `log_uniform.fit` method instead which is parametrized using
-        `c = b / a`. To get back the `a`, `b` parametrization from `c`,
-        use `a = fscale`, `b = c * a`, `loc = floc`, and `scale = 1`.
-        """).split("\n")), UserWarning, stacklevel=2)
+        warnings.warn(self.compact_note, UserWarning, stacklevel=2)
         return super().fit(data, *args, **kwds)
 
 
