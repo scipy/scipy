@@ -9,8 +9,6 @@ from scipy.sparse.linalg._eigen.lobpcg import lobpcg  # type: ignore[no-redef]
 from scipy.sparse.linalg._svdp import _svdp
 from scipy.linalg import svd
 
-from numpy.random import randn
-
 arpack_int = _arpack.timing.nbx.dtype
 __all__ = ['svds']
 
@@ -200,7 +198,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     The ``solver="arpack"`` supports only
     'np.single', 'np.double', and 'np.cdouble'.
 
-
     Examples
     --------
     Construct a matrix ``A`` from singular values and vectors.
@@ -278,19 +275,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     def matmat_XH_X(x):
         return XH_mat(X_matmat(x))
 
-    def matvec_X_XH(x):
-        return X_dot(XH_dot(x))
-
-    def matmat_X_XH(x):
-        return X_matmat(XH_mat(x))
-
     XH_X = LinearOperator(matvec=matvec_XH_X, dtype=A.dtype,
                           matmat=matmat_XH_X,
                           shape=(min(A.shape), min(A.shape)))
-
-    X_XH = LinearOperator(matvec=matvec_X_XH, dtype=A.dtype,
-                          matmat=matmat_X_XH,
-                          shape=(max(A.shape), max(A.shape)))
 
     # Get a low rank approximation of the implicitly defined gramian matrix.
     # This is not a stable way to approach the problem.
@@ -305,7 +292,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                 X = random_state.uniform(size=(min(A.shape), k))
 
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
-                                 largest=largest)
+                                 largest=largest, )
 
     elif solver == 'propack':
         jobu = return_singular_vectors in {True, 'u'}
@@ -340,75 +327,24 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                                 ncv=ncv, which=which, v0=v0)
 
     eigvec, _ = np.linalg.qr(eigvec)
-    Av = X_matmat(eigvec)
+    u = X_matmat(eigvec)
     if not return_singular_vectors:
-        s = svd(Av, compute_uv=False, overwrite_a=True)
+        s = svd(u, compute_uv=False, overwrite_a=True)
         return s[::-1]
 
     # compute the left singular vectors of X and update the right ones
     # accordingly
-    u, s, vh = svd(Av, full_matrices=False, overwrite_a=True)
+    u, s, vh = svd(u, full_matrices=False, overwrite_a=True)
     u = u[:, ::-1]
     s = s[::-1]
     vh = vh[::-1]
-
     jobu = return_singular_vectors in {True, 'u'}
     jobv = return_singular_vectors in {True, 'vh'}
-
-    if tol is None or tol <= 0.0:
-        res_tol = np.sqrt(np.finfo(A.dtype).eps) * max(A.shape)
-    else:
-        res_tol = tol
-
     if transpose:
         u_tmp = eigvec @ _herm(vh) if jobu else None
-        if jobv:
-            # if singular values are very small, the right singular vectors
-            # computed above may be inaccurate, so we have to re-compute
-            # them as the eigenvectors of X_XH
-
-            # note that even if X is full rank, X_XH has a nullspace of
-            # dimension m - n, so for which=='SM' we need to compute k + m - n
-            # eigenpairs corresponding to smallest eigenvalues
-            if not largest and m > n:
-                u = np.concatenate((u, randn(m, m - n)), axis=1)
-
-            eigvals, eigvec = lobpcg(X_XH, u, tol=res_tol**2, maxiter=maxiter,
-                largest=largest)
-            if largest:
-                eigvals = eigvals[::-1]
-                eigvec = eigvec[:, ::-1]
-            elif m > n:
-                u = u[:, m - n :]
-            vh = _herm(eigvec)
-        else:
-            vh = None
+        vh = _herm(u) if jobv else None
         u = u_tmp
     else:
-        if jobu:
-            # same situation as above but for the left singular vectors
-            if not largest:
-                u = np.concatenate((u, randn(n, n - m)), axis=1)
-            eigvals, u = lobpcg(X_XH, u, tol=res_tol**2, maxiter=maxiter,
-                largest=largest)
-            if largest:
-                eigvals = eigvals[::-1]
-                u = u[:, ::-1]
-            else:
-                u = u[:, n - m :]
-        else:
-            u = None
+        u = u if jobu else None
         vh = vh @ _herm(eigvec) if jobv else None
-
-    if jobu and jobv:
-        # apply Rayleigh-Ritz-like procedure to adjust singular vectors
-        Av = A.matmat(_herm(vh))
-        uhAv = _herm(u) @ Av
-        uu, s, vvh = svd(uhAv, full_matrices=False)
-        uu = uu[:, ::-1]
-        s = s[::-1]
-        vvh = vvh[::-1]
-        u = u @ uu
-        vh = vvh @ vh
-
     return u, s, vh
