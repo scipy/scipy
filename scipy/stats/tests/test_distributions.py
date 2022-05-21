@@ -3918,7 +3918,8 @@ class TestFitMethod:
         np.random.seed(1234)
 
     # skip these b/c deprecated, or only loc and scale arguments
-    fitSkipNonFinite = ['expon', 'norm', 'uniform']
+    fitSkipNonFinite = ['expon', 'norm', 'uniform', 'loguniform',
+                        'reciprocal']
 
     @pytest.mark.parametrize('dist,args', distcont)
     def test_fit_w_non_finite_data_values(self, dist, args):

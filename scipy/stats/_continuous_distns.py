@@ -7275,6 +7275,31 @@ class reciprocal_gen(rv_continuous):
     def _entropy(self, a, b):
         return 0.5*np.log(a*b)+np.log(np.log(b*1.0/a))
 
+    fit_note = """\
+        `loguniform`/`reciprocal` is over-parameterized, so `fit` does not
+        provide a unique solution. Consider using `log_uniform` instead,
+        which is parametrized using `c = b / a`. After fitting, the `a`, `b`
+        parametrization can be obtained from the `c` parameterization using
+        `a = scale`, `b = c * a`, `loc = loc`, and `scale = 1`."""
+
+    fit_example = """\n
+        >>> from scipy import stats
+        >>> rvs = stats.loguniform.rvs(0.1, 1, size=1000)
+        >>> c, loc, scale = stats.log_uniform.fit(rvs)
+        >>> a = scale
+        >>> b = c * a
+        >>> loc, scale = loc, 1
+        >>> a, b, loc, scale
+        (0.13212701233902052, 1.031758782148188, -0.03195303401387435, 1)
+        >>> dist = stats.loguniform(a, b, loc=loc, scale=scale)
+        \n"""
+
+    compact_note = " ".join(fit_note.split())
+    @extend_notes_in_docstring(rv_continuous, notes=fit_note+fit_example)
+    def fit(self, data, *args, **kwds):
+        warnings.warn(self.compact_note, UserWarning, stacklevel=2)
+        return super().fit(data, *args, **kwds)
+
 
 loguniform = reciprocal_gen(name="loguniform")
 reciprocal = reciprocal_gen(name="reciprocal")
