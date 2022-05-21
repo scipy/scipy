@@ -11,7 +11,6 @@ py3.install_sources([
     'test_polyint.py',
     'test_rbf.py',
     'test_rbfinterp.py',
-    'test_regression.py'
   ],
   pure: false,
   subdir: 'scipy/interpolate/tests'
