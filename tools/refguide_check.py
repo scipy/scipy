@@ -271,6 +271,7 @@ def compare(all_dict, others, names, module_name):
 
     return only_all, only_ref, missing
 
+
 def is_deprecated(f):
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("error")
@@ -281,6 +282,7 @@ def is_deprecated(f):
         except Exception:
             pass
         return False
+
 
 def check_items(all_dict, names, deprecated, others, module_name, dots=True):
     num_all = len(all_dict)
@@ -447,10 +449,11 @@ def check_rest(module, names, dots=True):
                                 traceback.format_exc()))
                 continue
 
-        m = re.search("([\x00-\x09\x0b-\x1f])", text)
+        m = re.search(".*?([\x00-\x09\x0b-\x1f]).*", text)
         if m:
-            msg = ("Docstring contains a non-printable character %r! "
-                   "Maybe forgot r\"\"\"?" % (m.group(1),))
+            msg = ("Docstring contains a non-printable character "
+                   f"{m.group(1)!r} in the line\n\n{m.group(0)!r}\n\n"
+                   "Maybe forgot r\"\"\"?")
             results.append((full_name, False, msg))
             continue
 
@@ -552,6 +555,7 @@ class DTRunner(doctest.DocTestRunner):
         return doctest.DocTestRunner.report_failure(self, out, test,
                                                     example, got)
 
+
 class Checker(doctest.OutputChecker):
     obj_pattern = re.compile(r'at 0x[0-9a-fA-F]+>')
     vanilla = doctest.OutputChecker()
@@ -646,7 +650,6 @@ class Checker(doctest.OutputChecker):
                 return False
             else:
                 return self.check_output(want_again, got_again, optionflags)
-
 
         # ... and defer to numpy
         try:
