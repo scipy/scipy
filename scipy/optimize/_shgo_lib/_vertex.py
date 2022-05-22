@@ -242,6 +242,7 @@ class VertexCacheField(VertexCacheBase):
         self.fpool = set()  # A set of tuples to process for scalar function
         self.sfc_lock = False  # True if self.fpool is non-Empty
 
+        print(f'WORKERS = {workers}')
         if workers == 1:
             self.process_gpool = self.proc_gpool
             if g_cons == None:
