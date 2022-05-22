@@ -223,8 +223,15 @@ case_table5.append(
      'expected': {'testbools':
                   array([[True], [False]])},
      })
+case_table5.append(  # Note that this will be skipped for roundtripping tests.
+    {'name': 'class',
+     'classes': {'testclass': 'classname'},
+     'expected': {'testclass': MatlabOpaque([])},
+     })
 
 case_table5_rt = case_table5[:]
+# Matlab objects can't be created from Python, so remove that test case.
+case_table5_rt.pop()
 # Inline functions can't be concatenated in matlab, so RT only
 case_table5_rt.append(
     {'name': 'objectarray',
@@ -302,7 +309,8 @@ def _load_check_case(name, files, case):
         for k, expected in case.items():
             k_label = "%s, variable %s" % (label, k)
             assert_(k in matdict, "Missing key at %s" % k_label)
-            _check_level(k_label, expected, matdict[k])
+            if expected is None:  # Escape MatlabOpaque.
+                _check_level(k_label, expected, matdict[k])
 
 
 def _whos_check_case(name, files, case, classes):
@@ -310,9 +318,16 @@ def _whos_check_case(name, files, case, classes):
         label = "test %s; file %s" % (name, file_name)
 
         whos = whosmat(file_name)
+        # Remove __function_workspace__.
+        whos = [(k, shape, cls) for k, shape, cls in whos
+                if k != "__function_workspace__"]
 
-        expected_whos = [
-            (k, expected.shape, classes[k]) for k, expected in case.items()]
+        expected_whos = []
+        for i, ((k, expected), (name, shape, tp)) in enumerate(
+                zip(case.items(), whos)):
+            expected_whos.append((k, expected.shape, classes[k]))
+            if shape is None:  # Escape MatlabOpaque here.
+                whos[i] = expected_whos[-1]
 
         whos.sort()
         expected_whos.sort()
