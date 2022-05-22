@@ -733,7 +733,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
         following functions: :math:`1`, :math:`\\log(x-a)`, :math:`\\log(b-x)`,
         :math:`\\log(x-a)\\log(b-x)`.
 
-        The user specifies :math:`\alpha`, :math:`\beta` and the type of the
+        The user specifies :math:`\\alpha`, :math:`\\beta` and the type of the
         function :math:`v`. A globally adaptive subdivision strategy is
         applied, with modified Clenshaw-Curtis integration on those
         subintervals which contain `a` or `b`.
@@ -946,7 +946,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         following functions: :math:`1`, :math:`\\log(x-a)`, :math:`\\log(b-x)`,
         :math:`\\log(x-a)\\log(b-x)`.
 
-        The user specifies :math:`\alpha`, :math:`\beta` and the type of the
+        The user specifies :math:`\\alpha`, :math:`\\beta` and the type of the
         function :math:`v`. A globally adaptive subdivision strategy is
         applied, with modified Clenshaw-Curtis integration on those
         subintervals which contain `a` or `b`.
