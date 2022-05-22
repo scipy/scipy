@@ -10,7 +10,8 @@ py3.install_sources([
     'test_pade.py',
     'test_polyint.py',
     'test_rbf.py',
-    'test_rbfinterp.py',
+    'test_rbfinterp.py', 
+    'test_rgi.py'
   ],
   pure: false,
   subdir: 'scipy/interpolate/tests'
