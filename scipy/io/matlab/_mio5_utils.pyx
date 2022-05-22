@@ -750,6 +750,8 @@ cdef class VarReader5:
             shape = tuple(header.dims)
             if self.chars_as_strings:
                 shape = shape[:-1]
+        elif mc == mxOPAQUE_CLASS and header.dims is None:
+            return None
         else:
             shape = tuple(header.dims)
         if self.squeeze_me:

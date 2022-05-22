@@ -94,11 +94,12 @@ from ._miobase import (MatFileReader, docfiller, matdims, read_dtype,
 from ._mio5_utils import VarReader5
 
 # Constants and helper objects
-from ._mio5_params import (MatlabObject, MatlabFunction, MDTYPES, NP_TO_MTYPES,
-                          NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8,
-                          miUTF8, miUINT32, mxCELL_CLASS, mxSTRUCT_CLASS,
-                          mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
-                          mxDOUBLE_CLASS, mclass_info, mat_struct)
+from ._mio5_params import (
+    MatlabObject, MatlabOpaque, MatlabFunction, MDTYPES, NP_TO_MTYPES,
+    NP_TO_MXTYPES, miCOMPRESSED, miMATRIX, miINT8, miUTF8, miUINT32,
+    mxCELL_CLASS, mxSTRUCT_CLASS, mxOBJECT_CLASS, mxCHAR_CLASS, mxSPARSE_CLASS,
+    mxDOUBLE_CLASS, mclass_info, mat_struct,
+)
 
 from ._streams import ZlibInputStream
 
@@ -311,12 +312,6 @@ class MatFile5Reader(MatFileReader):
         while not self.end_of_stream():
             hdr, next_position = self.read_var_header()
             name = 'None' if hdr.name is None else hdr.name.decode('latin1')
-            if name in mdict:
-                warnings.warn('Duplicate variable name "%s" in stream'
-                              ' - replacing previous with new\n'
-                              'Consider mio5.varmats_from_mat to split '
-                              'file into single variable files' % name,
-                              MatReadWarning, stacklevel=2)
             if name == '':
                 # can only be a matlab 7 function workspace
                 name = '__function_workspace__'
@@ -336,6 +331,14 @@ class MatFile5Reader(MatFileReader):
                     (name, err),
                     Warning, stacklevel=2)
                 res = "Read error: %s" % err
+            if isinstance(res, MatlabOpaque):  # Load name of opaque objects.
+                name = res[0][0].decode("ascii")
+            if name in mdict:
+                warnings.warn('Duplicate variable name "%s" in stream'
+                              ' - replacing previous with new\n'
+                              'Consider mio5.varmats_from_mat to split '
+                              'file into single variable files' % name,
+                              MatReadWarning, stacklevel=2)
             self.mat_stream.seek(next_position)
             mdict[name] = res
             if hdr.is_global:
