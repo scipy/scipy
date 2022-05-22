@@ -13,7 +13,7 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
+from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
                           matrix_balance, qr, LinAlgWarning)
@@ -1277,8 +1277,6 @@ class TestPinv:
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
         a_pinv = pinv(a)
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
-        a_pinv = pinv2(a)
-        assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
 
     def test_simple_complex(self):
         a = (array([[1, 2, 3], [4, 5, 6], [7, 8, 10]],
@@ -1286,39 +1284,42 @@ class TestPinv:
                                        dtype=float))
         a_pinv = pinv(a)
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
-        a_pinv = pinv2(a)
-        assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
 
     def test_simple_singular(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=float)
         a_pinv = pinv(a)
-        a_pinv2 = pinv2(a)
-        assert_array_almost_equal(a_pinv, a_pinv2)
+        expected = array([[-6.38888889e-01, -1.66666667e-01, 3.05555556e-01],
+                          [-5.55555556e-02, 1.30136518e-16, 5.55555556e-02],
+                          [5.27777778e-01, 1.66666667e-01, -1.94444444e-01]])
+        assert_array_almost_equal(a_pinv, expected)
 
     def test_simple_cols(self):
         a = array([[1, 2, 3], [4, 5, 6]], dtype=float)
         a_pinv = pinv(a)
-        a_pinv2 = pinv2(a)
-        assert_array_almost_equal(a_pinv, a_pinv2)
+        expected = array([[-0.94444444, 0.44444444],
+                          [-0.11111111, 0.11111111],
+                          [0.72222222, -0.22222222]])
+        assert_array_almost_equal(a_pinv, expected)
 
     def test_simple_rows(self):
         a = array([[1, 2], [3, 4], [5, 6]], dtype=float)
         a_pinv = pinv(a)
-        a_pinv2 = pinv2(a)
-        assert_array_almost_equal(a_pinv, a_pinv2)
+        expected = array([[-1.33333333, -0.33333333, 0.66666667],
+                          [1.08333333, 0.33333333, -0.41666667]])
+        assert_array_almost_equal(a_pinv, expected)
 
     def test_check_finite(self):
         a = array([[1, 2, 3], [4, 5, 6.], [7, 8, 10]])
         a_pinv = pinv(a, check_finite=False)
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
-        a_pinv = pinv2(a, check_finite=False)
-        assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
 
     def test_native_list_argument(self):
         a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
         a_pinv = pinv(a)
-        a_pinv2 = pinv2(a)
-        assert_array_almost_equal(a_pinv, a_pinv2)
+        expected = array([[-6.38888889e-01, -1.66666667e-01, 3.05555556e-01],
+                          [-5.55555556e-02, 1.30136518e-16, 5.55555556e-02],
+                          [5.27777778e-01, 1.66666667e-01, -1.94444444e-01]])
+        assert_array_almost_equal(a_pinv, expected)
 
     def test_atol_rtol(self):
         n = 12
@@ -1348,7 +1349,6 @@ class TestPinv:
         assert_allclose(np.linalg.norm(adiff2), 4.233, rtol=0.01)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestPinvSymmetric:
 
     def setup_method(self):
@@ -1366,7 +1366,7 @@ class TestPinvSymmetric:
         u, s, vt = np.linalg.svd(a)
         s[0] *= -1
         a = np.dot(u * s, vt)  # a is now symmetric non-positive and singular
-        a_pinv = pinv2(a)
+        a_pinv = pinv(a)
         a_pinvh = pinvh(a)
         assert_array_almost_equal(a_pinv, a_pinvh)
 
@@ -1412,9 +1412,8 @@ class TestPinvSymmetric:
         assert_allclose(norm(adiff2), 1e-4, rtol=0.1)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize('scale', (1e-20, 1., 1e20))
-@pytest.mark.parametrize('pinv_', (pinv, pinvh, pinv2))
+@pytest.mark.parametrize('pinv_', (pinv, pinvh))
 def test_auto_rcond(scale, pinv_):
     x = np.array([[1, 0], [0, 1e-10]]) * scale
     expected = np.diag(1. / np.diag(x))
@@ -1554,10 +1553,6 @@ class TestOverwrite:
 
     def test_pinv(self):
         assert_no_overwrite(pinv, [(3, 3)])
-
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_pinv2(self):
-        assert_no_overwrite(pinv2, [(3, 3)])
 
     def test_pinvh(self):
         assert_no_overwrite(pinvh, [(3, 3)])
