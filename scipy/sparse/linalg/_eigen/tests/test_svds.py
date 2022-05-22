@@ -274,7 +274,7 @@ class SVDSCommonTests:
 
     # loop instead of parametrize for simplicity
     def test_svds_parameter_tol(self):
-        return # TODO: needs work, disabling for now
+        return  # TODO: needs work, disabling for now
         # check the effect of the `tol` parameter on solver accuracy by solving
         # the same problem with varying `tol` and comparing the eigenvalues
         # against ground truth computed
@@ -659,7 +659,7 @@ class SVDSCommonTests:
         S = spdiags(e, 0, m, m) @ S
         S = S.astype(dtype)
         u, s, vh = svds(S, k, which='SM', solver=solver, maxiter=1000)
-        c_svd = False # partial SVD can be different from full SVD
+        c_svd = False  # partial SVD can be different from full SVD
         _check_svds_n(S, k, u, s, vh, which="SM", check_svd=c_svd, atol=1e-1)
 
     # --- Test Edge Cases ---
