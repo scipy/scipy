@@ -89,9 +89,8 @@ doc-dist: html-scipyorg html
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
 	mkdir -p build/dist
-	cp -r build/html-scipyorg build/dist
-	touch build/dist/index.html
-	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
+	cp -r build/html-scipyorg/* build/dist
+	(cd build/html-scipyorg && zip -9qr ../dist/scipy-html.zip .)
 	cp build/latex/scipy-ref.pdf build/dist
 	chmod ug=rwX,o=rX -R build/dist
 	find build/dist -type d -print0 | xargs -0r chmod g+s
