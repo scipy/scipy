@@ -16,7 +16,7 @@ from ._solve_toeplitz import levinson
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
-           'pinv', 'pinv2', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
+           'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
 
 
 # Linear equations
@@ -1332,61 +1332,6 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
         return B, rank
     else:
         return B
-
-
-def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
-    """
-    Compute the (Moore-Penrose) pseudo-inverse of a matrix.
-
-    `scipy.linalg.pinv2` is deprecated since SciPy 1.7.0, use
-    `scipy.linalg.pinv` instead for better tolerance control.
-
-    Calculate a generalized inverse of a matrix using its
-    singular-value decomposition and including all 'large' singular
-    values.
-
-    Parameters
-    ----------
-    a : (M, N) array_like
-        Matrix to be pseudo-inverted.
-    cond, rcond : float or None
-        Cutoff for 'small' singular values; singular values smaller than this
-        value are considered as zero. If both are omitted, the default value
-        ``max(M,N)*largest_singular_value*eps`` is used where ``eps`` is the
-        machine precision value of the datatype of ``a``.
-
-        .. versionchanged:: 1.3.0
-            Previously the default cutoff value was just ``eps*f`` where ``f``
-            was ``1e3`` for single precision and ``1e6`` for double precision.
-
-    return_rank : bool, optional
-        If True, return the effective rank of the matrix.
-    check_finite : bool, optional
-        Whether to check that the input matrix contains only finite numbers.
-        Disabling may give a performance gain, but may result in problems
-        (crashes, non-termination) if the inputs do contain infinities or NaNs.
-
-    Returns
-    -------
-    B : (N, M) ndarray
-        The pseudo-inverse of matrix `a`.
-    rank : int
-        The effective rank of the matrix. Returned if `return_rank` is True.
-
-    Raises
-    ------
-    LinAlgError
-        If SVD computation does not converge.
-
-    """
-    # SciPy 1.7.0 2021-04-10
-    warn('scipy.linalg.pinv2 is deprecated since SciPy 1.7.0, use '
-         'scipy.linalg.pinv instead', DeprecationWarning, stacklevel=2)
-    if rcond is not None:
-        cond = rcond
-
-    return pinv(a=a, atol=cond, rtol=None, return_rank=return_rank,
-                check_finite=check_finite)
 
 
 def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
