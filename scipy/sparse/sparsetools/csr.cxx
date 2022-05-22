@@ -13,7 +13,7 @@ extern "C" {
   template void csr_scale_rows(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
   template void csr_scale_columns(const I n_row, const I n_col, const I Ap[], const I Aj[], T Ax[], const T Xx[]); \
   template void csr_tobsr(const I n_row, const I n_col, const I R, const I C, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bj[], T Bx[]); \
-  template void csr_todense(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], T Bx[]); \
+  template void _csr_todense(const I n_row, const I n_col, const I Ap_size, const I Aj_size, const I Ax_size, const I Bx_size, const I Ap[], const I Aj[], const T Ax[], T Bx[]); \
   template void csr_sort_indices(const I n_row, const I Ap[], I Aj[], T Ax[]); \
   template void csr_tocsc(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], I Bp[], I Bi[], T Bx[]); \
   template void csr_toell(const I n_row, const I n_col, const I Ap[], const I Aj[], const T Ax[], const I row_length, I Bj[], T Bx[]); \
