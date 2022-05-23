@@ -2539,7 +2539,6 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
             "and will be removed from scipy. "
             "Use the feature equivalent lsim function.", 
             category=DeprecationWarning)
-        warnings.simplefilter('ignore', DeprecationWarning)
         vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]
 
