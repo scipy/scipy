@@ -1072,6 +1072,7 @@ class TestFligner:
         x = np.arange(5)
         assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
 
+
 def mood_cases_with_ties():
     # Generate random `x` and `y` arrays with ties both between and within the
     # samples. Expected results are (statistic, pvalue) from SAS.

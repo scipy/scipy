@@ -2884,6 +2884,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     pval = distributions.chi2.sf(Xsq, k - 1)  # 1 - cdf
     return FlignerResult(Xsq, pval)
 
+
 @_axis_nan_policy_factory(lambda x1: (x1,), n_samples=2, n_outputs=1)
 def _mood_inner_lc(y, x) -> float:
     n = x.shape[0]
@@ -2922,7 +2923,8 @@ def _mood_inner_lc(y, x) -> float:
     # Psi, as defined by the 6th unnumbered equation on page 312 (Mielke).
     # Note that in the paper there is an error where the denominator `2` is
     # squared when it should be the entire equation.
-    psi = lambda I: (I - (N + 1)/2)**2
+    def psi(I):
+        return (I - (N + 1)/2)**2
 
     # define summation range for use in calculation of phi, as seen in sum
     # in the unnumbered equation on the bottom of page 312 (Mielke).
