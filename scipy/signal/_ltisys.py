@@ -1885,7 +1885,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     >>> plt.show()
 
     """
-    warnings.warn("lsim2 is deprecated and will be removed from scipy. "
+    warnings.warn("lsim2 is deprecated and will be removed from scipy 1.11. "
                   "Use the feature equivalent lsim function.",
                   DeprecationWarning, stacklevel=2)
 
@@ -2345,7 +2345,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     >>> plt.plot(t, y)
 
     """
-    warnings.warn("impulse2 is deprecated and will be removed from scipy. "
+    warnings.warn("impulse2 is deprecated and will be removed from scipy 1.11. "
                   "Use the feature equivalent impulse function.",
                   DeprecationWarning, stacklevel=2)
 
@@ -2372,7 +2372,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     ic = B + X0
     with warnings.catch_warnings():
         warnings.filterwarnings(action='ignore', message="lsim2 is deprecated " 
-            "and will be removed from scipy. "
+            "and will be removed from scipy 1.11. "
             "Use the feature equivalent lsim function.", 
             category=DeprecationWarning)
         Tr, Yr, Xr = lsim2(sys, T=T, X0=ic, **kwargs)
@@ -2516,7 +2516,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     >>> plt.grid()
 
     """
-    warnings.warn("step2 is deprecated and will be removed from scipy. "
+    warnings.warn("step2 is deprecated and will be removed from scipy 1.11. "
                   "Use the feature equivalent step function.",
                   DeprecationWarning, stacklevel=2)
 
@@ -2536,7 +2536,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     U = ones(T.shape, sys.A.dtype)
     with warnings.catch_warnings():
         warnings.filterwarnings(action='ignore', message="lsim2 is deprecated " 
-            "and will be removed from scipy. "
+            "and will be removed from scipy 1.11. "
             "Use the feature equivalent lsim function.", 
             category=DeprecationWarning)
         vals = lsim2(sys, U, T, X0=X0, **kwargs)
