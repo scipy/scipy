@@ -1098,7 +1098,7 @@ def mood_cases_with_ties():
 class TestMood:
     @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
                              mood_cases_with_ties())
-    def test_against_SAS(self, x, y, alternative, stat_expect, p_expect, ):
+    def test_against_SAS(self, x, y, alternative, stat_expect, p_expect):
         """
         Example code used to generate SAS output:
         DATA myData;
@@ -1129,6 +1129,22 @@ class TestMood:
         statistic, pvalue = stats.mood(x, y, alternative=alternative)
         assert_allclose(stat_expect, statistic, atol=1e-16)
         assert_allclose(p_expect, pvalue, atol=1e-16)
+
+    @pytest.mark.parametrize("alternative, expected",
+                             [('two-sided', (1.019938533549930,
+                                             .3077576129778760)),
+                              ('less', (1.019938533549930,
+                                        1 - .1538788064889380)),
+                              ('greater', (1.019938533549930,
+                                           .1538788064889380))])
+    def test_against_SAS_2(self, alternative, expected):
+        # Code to run in SAS in above function
+        x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
+             101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
+        y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100,
+             96, 108, 103, 104, 114, 114, 113, 108, 106, 99]
+        res = stats.mood(x, y, alternative=alternative)
+        assert_allclose(res, expected)
 
     def test_mood_order_of_args(self):
         # z should change sign when the order of arguments changes, pvalue
