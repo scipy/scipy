@@ -1768,7 +1768,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     .. deprecated:: 1.9.0
         Function `lsim2` is deprecated in favor of the faster `lsim` function.
-        `lsim2` will be removed in SciPy 1.x.0.
+        `lsim2` will be removed in SciPy 1.11.
 
     Parameters
     ----------
@@ -2282,7 +2282,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     .. deprecated:: 1.9.0
         Function `impulse2` is deprecated in favor of the faster `impulse`
-        function. `impulse2` will be removed in SciPy 1.x.0.
+        function. `impulse2` will be removed in SciPy 1.11.
 
     Parameters
     ----------
@@ -2458,7 +2458,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
 
     .. deprecated:: 1.9.0
         Function `step2` is deprecated in favor of the faster `step` function.
-        `step2` will be removed in SciPy 1.x.0.
+        `step2` will be removed in SciPy 1.11.
 
     Parameters
     ----------
