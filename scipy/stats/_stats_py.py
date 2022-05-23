@@ -98,7 +98,7 @@ def _contains_nan(a, nan_policy='propagate'):
         # This can happen when attempting to sum things which are not
         # numbers (e.g. as in the function `mode`). Try an alternative method:
         try:
-            contains_nan = np.nan in set(a.ravel())
+            contains_nan = np.any(np.isnan(a))
         except TypeError:
             # Don't know what to do. Fall back to omitting nan values and
             # issue a warning.
@@ -894,6 +894,46 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 #####################################
 
 
+def _moment_outputs(kwds):
+    moment = np.atleast_1d(kwds.get('moment', 1))
+    if moment.size == 0:
+        raise ValueError("'moment' must be a scalar or a non-empty 1D "
+                         "list/array.")
+    return len(moment)
+
+
+def _moment_result_object(*args):
+    if len(args) == 1:
+        return args[0]
+    return np.asarray(args)
+
+# `moment` fits into the `_axis_nan_policy` pattern, but it is a bit unusual
+# because the number of outputs is variable. Specifically,
+# `result_to_tuple=lambda x: (x,)` may be surprising for a function that
+# can produce more than one output, but it is intended here.
+# When `moment is called to produce the output:
+# - `result_to_tuple` packs the returned array into a single-element tuple,
+# - `_moment_result_object` extracts and returns that single element.
+# However, when the input array is empty, `moment` is never called. Instead,
+# - `_check_empty_inputs` is used to produce an empty array with the
+#   appropriate dimensions.
+# - A list comprehension creates the appropriate number of copies of this
+#   array, depending on `n_outputs`.
+# - This list - which may have multiple elements - is passed into
+#   `_moment_result_object`.
+# - If there is a single output, `_moment_result_object` extracts and returns
+#   the single output from the list.
+# - If there are multiple outputs, and therefore multiple elements in the list,
+#   `_moment_result_object` converts the list of arrays to a single array and
+#   returns it.
+# Currently this leads to a slight inconsistency: when the input array is
+# empty, there is no distinction between the `moment` function being called
+# with parameter `moments=1` and `moments=[1]`; the latter *should* produce
+# the same as the former but with a singleton zeroth dimension.
+@_axis_nan_policy_factory(  # noqa: E302
+    _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
+    n_outputs=_moment_outputs
+)
 def moment(a, moment=1, axis=0, nan_policy='propagate'):
     r"""Calculate the nth moment about the mean for a sample.
 
@@ -939,6 +979,10 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     Where n is the number of samples and x-bar is the mean. This function uses
     exponentiation by squares [1]_ for efficiency.
+
+    Note that, if `a` is an empty array (``a.size == 0``), array `moment` with
+    one element (`moment.size == 1`) is treated the same as scalar `moment`
+    (``np.isscalar(moment)``). This might produce arrays of unexpected shape.
 
     References
     ----------
@@ -1013,6 +1057,19 @@ def _moment(a, moment, axis, *, mean=None):
         # Starting point for exponentiation by squares
         mean = a.mean(axis, keepdims=True) if mean is None else mean
         a_zero_mean = a - mean
+
+        eps = np.finfo(a_zero_mean.dtype).resolution * 10
+        with np.errstate(divide='ignore', invalid='ignore'):
+            rel_diff = np.max(np.abs(a_zero_mean), axis=axis,
+                              keepdims=True) / np.abs(mean)
+        with np.errstate(invalid='ignore'):
+            precision_loss = np.any(rel_diff < eps)
+        if precision_loss:
+            message = ("Precision loss occurred in moment calculation due to "
+                       "catastrophic cancellation. This occurs when the data "
+                       "are nearly identical. Results may be unreliable.")
+            warnings.warn(message, RuntimeWarning, stacklevel=4)
+
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
@@ -1024,6 +1081,15 @@ def _moment(a, moment, axis, *, mean=None):
             if n % 2:
                 s *= a_zero_mean
         return np.mean(s, axis)
+
+
+def _var(x, axis=0, ddof=0, mean=None):
+    # Calculate variance of sample, warning if precision is lost
+    var = _moment(x, 2, axis, mean=mean)
+    if ddof != 0:
+        n = x.shape[axis] if axis is not None else x.size
+        var *= np.divide(n, n-ddof)  # to avoid error on division by zero
+    return var
 
 
 @_axis_nan_policy_factory(
@@ -1117,7 +1183,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     m3 = _moment(a, 3, axis, mean=mean)
     with np.errstate(all='ignore'):
         zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
-        vals = np.where(zero, 0, m3 / m2**1.5)
+        vals = np.where(zero, np.nan, m3 / m2**1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
         if can_correct.any():
@@ -1229,7 +1295,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     m4 = _moment(a, 4, axis, mean=mean)
     with np.errstate(all='ignore'):
         zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
-        vals = np.where(zero, 0, m4 / m2**2.0)
+        vals = np.where(zero, np.nan, m4 / m2**2.0)
 
     if not bias:
         can_correct = ~zero & (n > 3)
@@ -1327,7 +1393,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     n = a.shape[axis]
     mm = (np.min(a, axis=axis), np.max(a, axis=axis))
     m = np.mean(a, axis=axis)
-    v = np.var(a, axis=axis, ddof=ddof)
+    v = _var(a, axis=axis, ddof=ddof)
     sk = skew(a, axis, bias=bias)
     kurt = kurtosis(a, axis, bias=bias)
 
@@ -5819,7 +5885,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     df = n - 1
 
     d = np.mean(a, axis) - popmean
-    v = np.var(a, axis, ddof=1)
+    v = _var(a, axis, ddof=1)
     denom = np.sqrt(v / n)
 
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -5900,13 +5966,13 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     mean1 : array_like
         The mean(s) of sample 1.
     std1 : array_like
-        The standard deviation(s) of sample 1.
+        The corrected sample standard deviation of sample 1 (i.e. ``ddof=1``).
     nobs1 : array_like
         The number(s) of observations of sample 1.
     mean2 : array_like
         The mean(s) of sample 2.
     std2 : array_like
-        The standard deviations(s) of sample 2.
+        The corrected sample standard deviation of sample 2 (i.e. ``ddof=1``).
     nobs2 : array_like
         The number(s) of observations of sample 2.
     equal_var : bool, optional
@@ -5951,7 +6017,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Examples
     --------
-    Suppose we have the summary data for two samples, as follows::
+    Suppose we have the summary data for two samples, as follows (with the
+    Sample Variance being the corrected sample variance)::
 
                          Sample   Sample
                    Size   Mean   Variance
@@ -5981,16 +6048,16 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
                           Number of    Sample     Sample
                     Size    ones        Mean     Variance
-        Sample 1    150      30         0.2        0.16
-        Sample 2    200      45         0.225      0.174375
+        Sample 1    150      30         0.2        0.161073
+        Sample 2    200      45         0.225      0.175251
 
     The sample mean :math:`\hat{p}` is the proportion of ones in the sample
     and the variance for a binary observation is estimated by
     :math:`\hat{p}(1-\hat{p})`.
 
-    >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.16), nobs1=150,
-    ...                      mean2=0.225, std2=np.sqrt(0.17437), nobs2=200)
-    Ttest_indResult(statistic=-0.564327545549774, pvalue=0.5728947691244874)
+    >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.161073), nobs1=150,
+    ...                      mean2=0.225, std2=np.sqrt(0.175251), nobs2=200)
+    Ttest_indResult(statistic=-0.5627187905196761, pvalue=0.5739887114209541)
 
     For comparison, we could compute the t statistic and p-value using
     arrays of 0s and 1s and `scipy.stat.ttest_ind`, as above.
@@ -6328,8 +6395,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         n2 = b.shape[axis]
 
         if trim == 0:
-            v1 = np.var(a, axis, ddof=1)
-            v2 = np.var(b, axis, ddof=1)
+            v1 = _var(a, axis, ddof=1)
+            v2 = _var(b, axis, ddof=1)
             m1 = np.mean(a, axis)
             m2 = np.mean(b, axis)
         else:
@@ -6372,7 +6439,7 @@ def _calculate_winsorized_variance(a, g, axis):
     """Calculates g-times winsorized variance along specified axis"""
     # it is expected that the input `a` is sorted along the correct axis
     if g == 0:
-        return np.var(a, ddof=1, axis=axis)
+        return _var(a, ddof=1, axis=axis)
     # move the intended axis to the end that way it is easier to manipulate
     a_win = np.moveaxis(a, axis, -1)
 
@@ -6394,7 +6461,7 @@ def _calculate_winsorized_variance(a, g, axis):
     # page 369, beginning of page 370). This is converted to NumPy's format,
     # `n - ddof` for use with with `np.var`. The result is converted to an
     # array to accommodate indexing later.
-    var_win = np.asarray(np.var(a_win, ddof=(2 * g + 1), axis=-1))
+    var_win = np.asarray(_var(a_win, ddof=(2 * g + 1), axis=-1))
 
     # with `nan_policy='propagate'`, NaNs may be completely trimmed out
     # because they were sorted into the tail of the array. In these cases,
@@ -6447,8 +6514,8 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
     nb = b.shape[axis]
     avg_a = np.mean(a, axis=axis)
     avg_b = np.mean(b, axis=axis)
-    var_a = np.var(a, axis=axis, ddof=1)
-    var_b = np.var(b, axis=axis, ddof=1)
+    var_a = _var(a, axis=axis, ddof=1)
+    var_b = _var(b, axis=axis, ddof=1)
 
     if not equal_var:
         denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)[1]
@@ -6648,7 +6715,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     df = n - 1
 
     d = (a - b).astype(np.float64)
-    v = np.var(d, axis, ddof=1)
+    v = _var(d, axis, ddof=1)
     dm = np.mean(d, axis)
     denom = np.sqrt(v / n)
 

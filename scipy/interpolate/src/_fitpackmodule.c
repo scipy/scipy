@@ -1547,7 +1547,8 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__fitpack(void)
+PyMODINIT_FUNC
+PyInit__fitpack(void)
 {
     PyObject *m, *d, *s;
 

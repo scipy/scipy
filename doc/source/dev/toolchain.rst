@@ -239,7 +239,7 @@ OpenBLAS, ATLAS, MKL, BLIS, and reference Netlib libraries are known to work.
 =============== =====================================================
  Library           Minimum version
 =============== =====================================================
-LAPACK           3.4.1
+LAPACK           3.7.1
 BLAS             A recent version of OpenBLAS, MKL or ATLAS.
                  The Accelerate BLAS library is no longer supported.
 =============== =====================================================
@@ -287,6 +287,7 @@ Building the Documentation
 Sphinx                Whatever recent versions work. >= 2.0.
 PyData Sphinx theme   Whatever recent versions work. >= 0.8.1.
 Sphinx-Panels         Whatever recent versions work. >= 0.5.2.
+Sphinx-Tabs           Whatever recent versions work. >= 3.2.0.
 numpydoc              Whatever recent versions work. >= 0.8.0.
 matplotlib            Generally suggest >= 2.0.
 ====================  =================================================

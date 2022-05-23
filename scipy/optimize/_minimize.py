@@ -54,7 +54,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
 
             ``fun(x, *args) -> float``
 
-        where ``x`` is an 1-D array with shape (n,) and ``args``
+        where ``x`` is a 1-D array with shape (n,) and ``args``
         is a tuple of the fixed parameters needed to completely
         specify the function.
     x0 : ndarray, shape (n,)

@@ -2103,6 +2103,20 @@ class TestYeojohnson:
         assert_allclose(xt_int, xt_float, rtol=1e-7)
         assert_allclose(lmbda_int, lmbda_float, rtol=1e-7)
 
+    def test_input_high_variance(self):
+        # non-regression test for gh-10821
+        x = np.array([3251637.22, 620695.44, 11642969.00, 2223468.22,
+                      85307500.00, 16494389.89, 917215.88, 11642969.00,
+                      2145773.87, 4962000.00, 620695.44, 651234.50,
+                      1907876.71, 4053297.88, 3251637.22, 3259103.08,
+                      9547969.00, 20631286.23, 12807072.08, 2383819.84,
+                      90114500.00, 17209575.46, 12852969.00, 2414609.99,
+                      2170368.23])
+        xt_yeo, lam_yeo = stats.yeojohnson(x)
+        xt_box, lam_box = stats.boxcox(x + 1)
+        assert_allclose(xt_yeo, xt_box, rtol=1e-6)
+        assert_allclose(lam_yeo, lam_box, rtol=1e-6)
+
 
 class TestYeojohnsonNormmax:
     def setup_method(self):

@@ -172,6 +172,9 @@ class TestCvm:
 
 
 class TestMannWhitneyU:
+    def setup(self):
+        _mwu_state._recursive = True
+
     # All magic numbers are from R wilcox.test unless otherwise specied
     # https://rdrr.io/r/stats/wilcox.test.html
 
@@ -615,6 +618,43 @@ class TestMannWhitneyU:
         res = mannwhitneyu(x, y, use_continuity=True, alternative=alternative,
                            method="asymptotic")
         assert_allclose(res, expected, rtol=1e-12)
+
+    def teardown(self):
+        _mwu_state._recursive = None
+
+
+class TestMannWhitneyU_iterative(TestMannWhitneyU):
+    def setup(self):
+        _mwu_state._recursive = False
+
+    def teardown(self):
+        _mwu_state._recursive = None
+
+
+@pytest.mark.xslow
+def test_mann_whitney_u_switch():
+    # Check that mannwhiteneyu switches between recursive and iterative
+    # implementations at n = 500
+
+    # ensure that recursion is not enforced
+    _mwu_state._recursive = None
+    _mwu_state._fmnks = -np.ones((1, 1, 1))
+
+    rng = np.random.default_rng(9546146887652)
+    x = rng.random(5)
+
+    # use iterative algorithm because n > 500
+    y = rng.random(501)
+    stats.mannwhitneyu(x, y, method='exact')
+    # iterative algorithm doesn't modify _mwu_state._fmnks
+    assert np.all(_mwu_state._fmnks == -1)
+
+    # use recursive algorithm because n <= 500
+    y = rng.random(500)
+    stats.mannwhitneyu(x, y, method='exact')
+
+    # recursive algorithm has modified _mwu_state._fmnks
+    assert not np.all(_mwu_state._fmnks == -1)
 
 
 class TestSomersD(_TestPythranFunc):

@@ -101,6 +101,7 @@ doc = [
     "sphinx-panels>=0.5.2",
     "matplotlib>2",
     "numpydoc",
+    "sphinx-tabs",
 ]
 dev = [
     "mypy",
@@ -115,3 +116,8 @@ documentation = "https://docs.scipy.org/doc/scipy/"
 source = "https://github.com/scipy/scipy"
 download = "https://github.com/scipy/scipy/releases"
 tracker = "https://github.com/scipy/scipy/issues"
+
+
+[tool.doit]
+dodoFile = "do.py"
+

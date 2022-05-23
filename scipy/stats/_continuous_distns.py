@@ -2316,6 +2316,10 @@ class truncweibull_min_gen(rv_continuous):
         ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
         return [ic, ia, ib]
 
+    def _fitstart(self, data):
+        # Arbitrary, but default a=b=c=1 is not valid
+        return super()._fitstart(data, args=(1, 0, 1))
+
     def _get_support(self, c, a, b):
         return a, b
 
@@ -3338,6 +3342,10 @@ class genhyperbolic_gen(rv_continuous):
         ib = _ShapeInfo("b", False, (-np.inf, np.inf), (False, False))
         return [ip, ia, ib]
 
+    def _fitstart(self, data):
+        # Arbitrary, but the default a=b=1 is not valid
+        return super()._fitstart(data, args=(1, 1, 0.5))
+
     def _logpdf(self, x, p, a, b):
         # kve instead of kv works better for large values of p
         # and smaller values of sqrt(a^2  - b^2)
@@ -3659,10 +3667,13 @@ class gumbel_l_gen(rv_continuous):
         # The fit method of `gumbel_r` can be used for this distribution with
         # small modifications. The process to do this is
         # 1. pass the sign negated data into `gumbel_r.fit`
+        #    - if the location is fixed, it should also be negated.
         # 2. negate the sign of the resulting location, leaving the scale
         #    unmodified.
         # `gumbel_r.fit` holds necessary input checks.
 
+        if kwds.get('floc') is not None:
+            kwds['floc'] = -kwds['floc']
         loc_r, scale_r, = gumbel_r.fit(-np.asarray(data), *args, **kwds)
         return (-loc_r, scale_r)
 
@@ -4484,6 +4495,10 @@ class norminvgauss_gen(rv_continuous):
         ia = _ShapeInfo("a", False, (0, np.inf), (False, False))
         ib = _ShapeInfo("b", False, (-np.inf, np.inf), (False, False))
         return [ia, ib]
+
+    def _fitstart(self, data):
+        # Arbitrary, but the default a=b=1 is not valid
+        return super()._fitstart(data, args=(1, 0.5))
 
     def _pdf(self, x, a, b):
         gamma = np.sqrt(a**2 - b**2)
@@ -5478,8 +5493,25 @@ class gibrat_gen(rv_continuous):
         return 0.5 * np.log(2 * np.pi) + 0.5
 
 
+# gilbrat was a spelling error; correct is gibrat, see #15911
 gilbrat = gibrat_gen(a=0.0, name='gilbrat')
 gibrat = gibrat_gen(a=0.0, name='gibrat')
+
+
+# since the deprecated class gets intantiated upon import (and we only want to
+# warn upon use), add the deprecation to each (documented) class method, c.f.
+# https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.gilbrat.html
+_gibrat_method_names = [
+    "cdf", "entropy", "expect", "fit", "interval", "isf", "logcdf", "logpdf",
+    "logsf", "mean", "median", "moment", "pdf", "ppf", "rvs", "sf", "stats",
+    "std", "var"
+]
+for m in _gibrat_method_names:
+    wrapper = np.deprecate(getattr(gilbrat, m), f"gilbrat.{m}", f"gibrat.{m}",
+                           "Please replace all uses of the distribution class "
+                           "`gilbrat` with the corrected spelling `gibrat`. "
+                           "`gilbrat` will be removed in SciPy 1.11.")
+    setattr(gilbrat, m, wrapper)
 
 
 class maxwell_gen(rv_continuous):
@@ -7454,6 +7486,10 @@ class reciprocal_gen(rv_continuous):
         ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
         return [ia, ib]
 
+    def _fitstart(self, data):
+        # Reasonable, since support is [a, b]
+        return super()._fitstart(data, args=(np.min(data), np.max(data)))
+
     def _get_support(self, a, b):
         return a, b
 
@@ -7767,7 +7803,10 @@ class skew_norm_gen(rv_continuous):
         return [_ShapeInfo("a", False, (-np.inf, np.inf), (False, False))]
 
     def _pdf(self, x, a):
-        return 2.*_norm_pdf(x)*_norm_cdf(a*x)
+        return _lazywhere(
+            a == 0, (x, a), lambda x, a: _norm_pdf(x),
+            f2=lambda x, a: 2.*_norm_pdf(x)*_norm_cdf(a*x)
+        )
 
     def _cdf_single(self, x, *args):
         _a, _b = self._get_support(*args)
@@ -8439,6 +8478,10 @@ class truncnorm_gen(rv_continuous):
         ia = _ShapeInfo("a", False, (-np.inf, np.inf), (True, False))
         ib = _ShapeInfo("b", False, (-np.inf, np.inf), (False, True))
         return [ia, ib]
+
+    def _fitstart(self, data):
+        # Reasonable, since support is [a, b]
+        return super()._fitstart(data, args=(np.min(data), np.max(data)))
 
     def _get_support(self, a, b):
         return a, b
@@ -9298,6 +9341,10 @@ class crystalball_gen(rv_continuous):
         ibeta = _ShapeInfo("beta", False, (0, np.inf), (False, False))
         im = _ShapeInfo("m", False, (1, np.inf), (False, False))
         return [ibeta, im]
+
+    def _fitstart(self, data):
+        # Arbitrary, but the default m=1 is not valid
+        return super()._fitstart(data, args=(1, 1.5))
 
     def _pdf(self, x, beta, m):
         """
