@@ -958,6 +958,8 @@ class RefguideCheck(Task):
     submodule = Option(
         ['--submodule', '-s'], default=None, metavar='SUBMODULE',
         help="Submodule whose tests to run (cluster, constants, ...)")
+    verbose = Option(
+        ['--verbose', '-v'], default=False, is_flag=True, help="verbosity")
 
     @classmethod
     def task_meta(cls, **kwargs):
@@ -967,6 +969,8 @@ class RefguideCheck(Task):
         dirs = Dirs(args)
 
         cmd = [str(dirs.root / 'tools' / 'refguide_check.py'), '--doctests']
+        if args.verbose:
+            cmd += ['-vvv']
         if args.submodule:
             cmd += [args.submodule]
         cmd_str = ' '.join(cmd)
