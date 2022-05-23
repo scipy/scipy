@@ -12,7 +12,8 @@ def configuration(parent_package='', top_path=None):
                                     blas_ilp64_pre_build_hook, combine_dict,
                                     uses_blas64, get_f2py_int64_options)
     from scipy._build_utils.compiler_helper import (
-        set_cxx_flags_hook, set_cxx_flags_clib_hook, set_c_flags_hook)
+        set_cxx_flags_clib_hook, set_c_flags_hook)
+    from distutils.sysconfig import get_python_inc
 
     config = Configuration('optimize', parent_package, top_path)
 
@@ -92,6 +93,22 @@ def configuration(parent_package='', top_path=None):
     ext = config.add_extension('_slsqp', sources=[
         join('slsqp', x) for x in sources], **numpy_nodepr_api)
     ext._pre_build_hook = gfortran_legacy_flag_hook
+
+    sources = [join('_direct', x) for x in
+               ('direct_wrap.c', 'DIRect.c', 'DIRsubrout.c', 'DIRserial.c')]
+    headers = ['_directmodule.h',
+               join('_direct', 'direct-internal.h')]
+    config.add_library('_direct_lib',
+                       sources=sources,
+                       headers=headers,
+                       include_dirs=[get_python_inc()],
+                       **numpy_nodepr_api)
+
+    config.add_extension('_directmodule',
+                         sources=['_directmodule.c'],
+                         libraries=['_direct_lib'],
+                         depends=(sources + headers),
+                         **numpy_nodepr_api)
 
     config.add_data_files('__nnls.pyi')
     ext = config.add_extension('__nnls', sources=[
