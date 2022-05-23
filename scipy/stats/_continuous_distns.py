@@ -7003,14 +7003,14 @@ class powerlaw_gen(rv_continuous):
 
         def get_shape(data, loc, scale):
             # The first-order necessary condition on `shape` can be solved in
-            # closed form. It can be used whether no matter the assumption
-            # of the value of the shape.
+            # closed form. It can be used no matter the assumption of the
+            # value of the shape.
             return -len(data) / np.sum(np.log((data - loc)/scale))
 
         def get_scale(data, loc):
             # analytical solution for `scale` based on the location.
-            # It can be used whether no matter the assumption of the value of
-            # the shape.
+            # It can be used no matter the assumption of the value of the
+            # shape.
             return data.max() - loc
 
         # 1) The location and scale are both fixed. Analytically determine the
@@ -7018,9 +7018,8 @@ class powerlaw_gen(rv_continuous):
         if fscale is not None and floc is not None:
             return get_shape(data, floc, fscale), floc, fscale
 
-        # 2) The scale is fixed, and in the case where the scale is set to a
-        # non-optimal value, there may be two possible analytical solutions,
-        # but one gives a better log-likelihood result.
+        # 2) The scale is fixed. The scale is one of two possible analytical
+        # solutions. Choose the one with better log-likelihood.
         if fscale is not None:
             args = [data, (self._fitstart(data),)]
             func = self._reduce_func(args, {})[1]
@@ -7047,7 +7046,7 @@ class powerlaw_gen(rv_continuous):
             shape = fshape or get_shape(data, floc, scale)
             return shape, floc, scale
 
-        # 4) location, scale, and shape are all free, attempt to fit under the
+        # 4) location, scale, and shape are all free. Attempt to fit under the
         # assumption that `shape <= 1` analytically.
         loc = np.nextafter(data.min(), -np.inf)
         scale = np.nextafter(get_scale(data, loc), np.inf)

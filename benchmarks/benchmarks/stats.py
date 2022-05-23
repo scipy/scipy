@@ -407,7 +407,7 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
         # `_distr_params.py`. If there are multiple cases of valid shapes in
         # `distcont`, they are benchmarked separately.
         default_shapes_n = [s[1] for s in distcont if s[0] == dist_name]
-        if n_shape_use >= len(default_shapes_n):
+        if case >= len(default_shapes_n):
             raise NotImplementedError("no alternate case for this dist")
         default_shapes = default_shapes_n[case]
         param_values = self.custom_input.get(dist_name, [*default_shapes,
