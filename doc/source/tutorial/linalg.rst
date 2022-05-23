@@ -400,11 +400,9 @@ Generalized inverse
 ^^^^^^^^^^^^^^^^^^^
 
 The generalized inverse is calculated using the command
-:obj:`linalg.pinv`. These two commands differ
-in how they compute the generalized inverse. The first uses the
-linalg.lstsq algorithm, while the second uses singular value
-decomposition. Let :math:`\mathbf{A}` be an :math:`M\times N` matrix,
-then if :math:`M>N`, the generalized inverse is
+:obj:`linalg.pinv`. Let :math:`\mathbf{A}` be an 
+:math:`M\times N` matrix, then if :math:`M>N`, the generalized
+inverse is
 
 .. math::
 
