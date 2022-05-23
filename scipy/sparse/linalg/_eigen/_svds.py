@@ -286,10 +286,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                           matmat=matmat_XH_X,
                           shape=(min(A.shape), min(A.shape)))
 
-    X_XH = LinearOperator(matvec=matvec_X_XH, dtype=A.dtype,
-                          matmat=matmat_X_XH,
-                          shape=(max(A.shape), max(A.shape)))
-
     # Get a low rank approximation of the implicitly defined gramian matrix.
     # This is not a stable way to approach the problem.
     if solver == 'lobpcg':
@@ -303,7 +299,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                 X = random_state.uniform(size=(min(A.shape), k))
 
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
-                                 largest=largest)
+                           largest=largest)
 
     elif solver == 'propack':
         jobu = return_singular_vectors in {True, 'u'}
