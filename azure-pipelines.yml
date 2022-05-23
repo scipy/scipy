@@ -248,7 +248,7 @@ stages:
         git submodule update --init
       displayName: 'Fetch submodules'
     - script: |
-        python -m pip install --upgrade "pip==22.0.4" "setuptools==59.6.0" wheel
+        python -m pip install --upgrade pip "setuptools==59.6.0" wheel
       displayName: 'Install tools'
     - powershell: |
         $pyversion = python -c "import sys; print(sys.version.split()[0])"
