@@ -292,7 +292,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
                 X = random_state.uniform(size=(min(A.shape), k))
 
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
-                                 largest=largest, )
+                           largest=largest, )
 
     elif solver == 'propack':
         jobu = return_singular_vectors in {True, 'u'}
@@ -324,7 +324,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if v0 is None and not rs_was_None:
             v0 = random_state.uniform(size=(min(A.shape),))
         _, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
-                                ncv=ncv, which=which, v0=v0)
+                          ncv=ncv, which=which, v0=v0)
 
     eigvec, _ = np.linalg.qr(eigvec)
     u = X_matmat(eigvec)
