@@ -353,7 +353,7 @@ where :math:`\mathbf{A}^{\dagger}` is called the pseudo-inverse of
 
 The command :obj:`linalg.lstsq` will solve the linear least-squares
 problem for :math:`\mathbf{c}` given :math:`\mathbf{A}` and
-:math:`\mathbf{y}` . In addition, :obj:`linalg.pinv`will find
+:math:`\mathbf{y}` . In addition, :obj:`linalg.pinv` will find
 :math:`\mathbf{A}^{\dagger}` given :math:`\mathbf{A}.`
 
 The following example and figure demonstrate the use of
