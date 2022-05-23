@@ -198,7 +198,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     The ``solver="arpack"`` supports only
     'np.single', 'np.double', and 'np.cdouble'.
 
-
     Examples
     --------
     Construct a matrix ``A`` from singular values and vectors.
