@@ -1723,6 +1723,7 @@ class Delaunay(_QhullUser):
         Same as `simplices`, but deprecated.
 
         .. deprecated:: 0.12.0
+
         Delaunay attribute `vertices` is deprecated in favour of `simplices`
         and will be removed in Scipy 1.11.0.
     vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
@@ -1871,7 +1872,7 @@ class Delaunay(_QhullUser):
     @property
     def vertices(self):
         msg = ("Delaunay attribute 'vertices' is deprecated in favour of "
-        "'simplices' and will be removed in Scipy 1.11.0.")
+               "'simplices' and will be removed in Scipy 1.11.0.")
         warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
         return self._vertices
 
