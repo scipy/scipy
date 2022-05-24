@@ -110,7 +110,10 @@ class RegularGridInterpolator:
 
     Examples
     --------
-    Evaluate a simple example function on the points of a 3-D grid:
+    **Evaluate a function on the points of a 3-D grid**
+
+    As a first example, we evaluate a simple example function on the points of
+    a 3-D grid:
 
     >>> from scipy.interpolate import RegularGridInterpolator
     >>> def f(x, y, z):
@@ -139,6 +142,7 @@ class RegularGridInterpolator:
     >>> f(2.1, 6.2, 8.3), f(3.3, 5.2, 7.1)
     (125.54200000000002, 145.894)
 
+    **Interpolate and extrapolate a 2D data**
     As a second example, we interpolate and extrapolate a 2D data:
 
     >>> x, y = np.array([-2, 0, 4]), np.array([-2, 0, 2, 5])
@@ -171,16 +175,36 @@ class RegularGridInterpolator:
     ...                   alpha=0.4, label='ground truth')
     >>> plt.legend()
 
+    **Length-one axes**
+    If one of the grid dimensions has length one, linear and nearest
+    interpolators will extrapolate in that direction, as  controlled by the
+    `fill_value`. For instance:
+
+    >>> x = np.array([0, 5., 10])
+    >>> y = np.array([0.])
+    >>> def f(x,y):
+    ...     return (y+1) * x
+    >>> data = f(*np.meshgrid(x,y, indexing='ij', sparse=True))
+    >>> interp = RegularGridInterpolator((x, y), data,
+    ...                                  fill_value=None, bounds_error=False)
+    >>> interp([[6, 0], [6, 1]])
+    array([6., 6.])
+
     Other examples are given
     :ref:`in the tutorial <tutorial-interpolate_regular_grid_interpolator>`.
 
-    See also
+    See Also
     --------
     NearestNDInterpolator : Nearest neighbor interpolation on *unstructured*
                             data in N dimensions
 
     LinearNDInterpolator : Piecewise linear interpolant on *unstructured* data
                            in N dimensions
+
+    interpn : a convenience function which wraps `RegularGridInterpolator`
+
+    scipy.ndimage.map_coordinates : interpolation on grids with equal spacing
+                                    (suitable for e.g., N-D image resampling)
 
     References
     ----------
@@ -511,11 +535,14 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     LinearNDInterpolator : Piecewise linear interpolant on unstructured data
                            in N dimensions
 
-    RegularGridInterpolator : Linear and nearest-neighbor Interpolation on a
-                              regular or rectilinear grid in arbitrary
-                              dimensions
+    RegularGridInterpolator : interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     RectBivariateSpline : Bivariate spline approximation over a rectangular mesh
+
+    scipy.ndimage.map_coordinates : interpolation on grids with equal spacing
+                                    (suitable for e.g., N-D image resampling)
 
     """
     # sanity check 'method' kwarg
