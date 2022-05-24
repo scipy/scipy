@@ -30,7 +30,6 @@ from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
 from .common_tests import check_named_results
-from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
@@ -354,7 +353,8 @@ class TestCorrPearsonr:
     def test_constant_input(self):
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
-        with assert_warns(stats.PearsonRConstantInputWarning):
+        with (assert_warns(stats.PearsonRConstantInputWarning), \
+              assert_warns(DeprecationWarning)):
             r, p = stats.pearsonr([0.667, 0.667, 0.667], [0.123, 0.456, 0.789])
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -363,7 +363,8 @@ class TestCorrPearsonr:
         # Near constant input (but not constant):
         x = [2, 2, 2 + np.spacing(2)]
         y = [3, 3, 3 + 6*np.spacing(3)]
-        with assert_warns(stats.PearsonRNearConstantInputWarning):
+        with (assert_warns(stats.PearsonRNearConstantInputWarning), \
+              assert_warns(DeprecationWarning)):
             # r and p are garbage, so don't bother checking them in this case.
             # (The exact value of r would be 1.)
             r, p = stats.pearsonr(x, y)

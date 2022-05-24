@@ -4093,6 +4093,12 @@ def pearsonr(x, y, *, alternative='two-sided'):
         Numerical errors in the calculation ``x - mean(x)`` in this case might
         result in an inaccurate calculation of r.
 
+    .. deprecated::1.9.0
+        This function currently emits subclasses of ``ConstantInputWarning``
+        and ``NearConstantInputWarning``. As of SciPy 1.9.0, these subclasses
+        are deprecated in favor of their base classes and will be removed in
+        SciPy 1.11.0.
+
     See Also
     --------
     spearmanr : Spearman rank-order correlation coefficient.
@@ -4227,6 +4233,12 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
     # If an input is constant, the correlation coefficient is not defined.
     if (x == x[0]).all() or (y == y[0]).all():
+        dep_msg = ("This function currently emits a subclass of "
+                   "`ConstantInputWarning`, `PearsonRConstantInputWarning`. "
+                   "As of SciPy 1.9.0, `PearsonRConstantInputWarning` is "
+                   "deprecated in favor of its base class and will be removed "
+                   "in SciPy 1.11.0.")
+        warnings.warn(dep_msg, DeprecationWarning)
         warnings.warn(PearsonRConstantInputWarning())
         result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
                                 alternative=alternative)
@@ -4262,6 +4274,13 @@ def pearsonr(x, y, *, alternative='two-sided'):
         # If all the values in x (likewise y) are very close to the mean,
         # the loss of precision that occurs in the subtraction xm = x - xmean
         # might result in large errors in r.
+        dep_msg = ("This function currently emits a subclass of "
+                   "`NearConstantInputWarning`, "
+                   "`PearsonRNearConstantInputWarning`. "
+                   "As of SciPy 1.9.0, `PearsonRNearConstantInputWarning` is "
+                   "deprecated in favor of its base class and will be removed "
+                   "in SciPy 1.11.0.")
+        warnings.warn(dep_msg, DeprecationWarning)
         warnings.warn(PearsonRNearConstantInputWarning())
 
     r = np.dot(xm/normxm, ym/normym)
