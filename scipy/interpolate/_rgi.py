@@ -139,6 +139,7 @@ class RegularGridInterpolator:
     (125.54200000000002, 145.894)
 
     **Interpolate and extrapolate a 2D data**
+
     As a second example, we interpolate and extrapolate a 2D data:
 
     >>> x, y = np.array([-2, 0, 4]), np.array([-2, 0, 2, 5])
@@ -172,6 +173,7 @@ class RegularGridInterpolator:
     >>> plt.legend()
 
     **Length-one axes**
+
     If one of the grid dimensions has length one, linear and nearest
     interpolators will extrapolate in that direction, as  controlled by the
     `fill_value`. For instance:
@@ -186,7 +188,7 @@ class RegularGridInterpolator:
     >>> interp([[6, 0], [6, 1]])
     array([6., 6.])
 
-    Other examples are given
+    **Other examples** are given
     :ref:`in the tutorial <tutorial-interpolate_regular_grid_interpolator>`.
 
     See Also
