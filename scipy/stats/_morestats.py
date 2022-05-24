@@ -2929,8 +2929,8 @@ def _mood_inner_lc(xy, x, diffs, srted, n, m, N) -> float:
     # Psi, as defined by the 6th unnumbered equation on page 312 (Mielke).
     # Note that in the paper there is an error where the denominator `2` is
     # squared when it should be the entire equation.
-    def psi(I):
-        return (I - (N + 1)/2)**2
+    def psi(indicator):
+        return (indicator - (N + 1)/2)**2
 
     # define summation range for use in calculation of phi, as seen in sum
     # in the unnumbered equation on the bottom of page 312 (Mielke).
