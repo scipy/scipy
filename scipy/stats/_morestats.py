@@ -2885,19 +2885,23 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     return FlignerResult(Xsq, pval)
 
 
-@_axis_nan_policy_factory(lambda x1: (x1,), n_samples=2, n_outputs=1)
-def _mood_inner_lc(y, x) -> float:
-    n = x.shape[0]
-    m = y.shape[0]
-    N = n + m
-    xy = np.concatenate((x, y))
-
+@_axis_nan_policy_factory(lambda x1: (x1,), n_samples=4, n_outputs=1)
+def _mood_inner_lc(xy, x, diffs, srted, n, m, N) -> float:
     # obtain the unique values and the counts of each.
     # "a_i, + b_i, = t_i, for j = 1, ... k", where `k` is the number of unique
     # classes, and "[t]he number of values associated with the x's and y's in
     # the jth class will be denoted by a_i, and b_i respectively."
     # (Mielke, 312)
-    uniques, t = np.unique(sorted(xy), return_counts=1)
+    # Prepend `diffs` with a non-zero to indicate that the first element should
+    # be marked as not matching what preceded it.
+    diffs_prep = np.concatenate(([1], diffs))
+    # Unique elements are where the was a difference between elements in the
+    # sorted array
+    uniques = srted[diffs_prep != 0]
+    # The count of each element is the bin size for each set of consecutive
+    # differences where the difference is zero. Replace nonzero differences
+    # with 1 and then use the cumulative sum to count the indices.
+    t = np.bincount(np.cumsum(diffs_prep != 0))[1:]
     k = len(uniques)
     js = list(np.arange(1, k + 1))
 
@@ -2905,8 +2909,10 @@ def _mood_inner_lc(y, x) -> float:
     # calculation of `t`, so we do not need to calculate it separately. Here
     # we calculate `a`. In plain language, `a[i]` is the number of values in
     # `x` that equal `uniques[i]`.
-    _, xyx_counts = np.unique(sorted(np.concatenate((xy, x))),
-                              return_counts=1)
+    srted_xyx = np.sort(np.concatenate((xy, x)))
+    diffs = np.diff(srted_xyx)
+    diffs_prep = np.concatenate(([1], diffs))
+    xyx_counts = np.bincount(np.cumsum(diffs_prep != 0))[1:]
     a = xyx_counts - t
     # "Define .. a_0 = b_0 = t_0 = S_0 = 0" (Mielke 312) so we shift  `a`
     # and `t` arrays over 1 to allow a first element of 0 to accommodate this
@@ -3066,8 +3072,10 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     xy = np.concatenate((x, y), axis=axis)
     # determine if any of the samples contain ties
-    if 0 in np.diff(np.sort(xy)):
-        z = np.asarray(_mood_inner_lc(y, x, axis=axis))
+    srted = np.sort(xy, axis=axis)
+    diffs = np.diff(srted, axis=axis)
+    if 0 in diffs:
+        z = np.asarray(_mood_inner_lc(xy, x, diffs, srted, n, m, N, axis=axis))
     else:
         if axis != 0:
             xy = np.moveaxis(xy, axis, 0)
