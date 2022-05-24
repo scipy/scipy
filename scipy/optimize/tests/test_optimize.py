@@ -1186,8 +1186,10 @@ class TestOptimizeSimple(CheckOptimize):
         jac = bad_grad
         if method in ['nelder-mead', 'powell', 'cobyla']:
             jac = None
-        sol = optimize.minimize(func, x0, jac=jac, method=method,
-                                options=dict(maxiter=20))
+        with suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "'maxiter' has been deprecated...")
+            sol = optimize.minimize(func, x0, jac=jac, method=method,
+                                    options=dict(maxiter=20))
         assert_equal(func(sol.x), sol.fun)
 
         if method == 'slsqp':
@@ -1408,6 +1410,7 @@ class TestOptimizeSimple(CheckOptimize):
             sup.filter(UserWarning, "delta_grad == 0.*")
             sup.filter(RuntimeWarning, ".*does not use Hessian.*")
             sup.filter(RuntimeWarning, ".*does not use gradient.*")
+            sup.filter(DeprecationWarning, "'maxiter' has been deprecated...")
 
             for f, g, h in itertools.product(funcs, grads, hesss):
                 count = [0]
@@ -1721,6 +1724,7 @@ class TestOptimizeScalar:
             sup.filter(UserWarning, "delta_grad == 0.*")
             sup.filter(RuntimeWarning, ".*does not use Hessian.*")
             sup.filter(RuntimeWarning, ".*does not use gradient.*")
+            sup.filter(DeprecationWarning, "'maxiter' has been deprecated...")
 
             count = [0]
             sol = optimize.minimize_scalar(func, bracket=bracket,
