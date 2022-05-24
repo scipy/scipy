@@ -413,7 +413,7 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
     if maxfun is None:
         if maxiter is not None:
             warnings.warn(
-                "`maxiter` has been deprecated in favor of `maxfun`"
+                "'maxiter' has been deprecated in favor of 'maxfun'"
                 " and will be removed in SciPy 1.11.0.",
                 DeprecationWarning, stacklevel=3
             )

@@ -348,7 +348,7 @@ class TestTnc:
         assert_equal(res2.nfev, res.nfev)
 
     def test_maxiter_depreciations(self):
-        msg = "`maxiter` has been deprecated in favor of `maxfun`"
+        msg = "'maxiter' has been deprecated in favor of 'maxfun'"
         with pytest.warns(DeprecationWarning, match=msg):
             optimize.minimize(
                 self.f1, [1, 3], method="TNC", options={"maxiter": 1}
