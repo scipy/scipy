@@ -123,6 +123,7 @@ from ..special import rel_entr
 
 from . import _distance_pybind
 
+from .._lib.deprecation import _deprecated
 
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
@@ -796,6 +797,9 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else 0
 
 
+@_deprecated("Kulsinski has been deprecated from scipy.spatial.distance"
+             " in SciPy 1.9.0 and it will be removed in SciPy 1.11.0."
+             " It is superseded by scipy.spatial.distance.kulczynski1.")
 def kulsinski(u, v, w=None):
     """
     Compute the Kulsinski dissimilarity between two boolean 1-D arrays.
@@ -811,6 +815,12 @@ def kulsinski(u, v, w=None):
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n`.
+
+    .. deprecated:: 0.12.0
+
+    Kulsinski has been deprecated from scipy.spatial.distance in SciPy 1.9.0
+    and it will be removed in SciPy 1.11.0. It is superseded by
+    scipy.spatial.distance.kulczynski1.
 
     Parameters
     ----------
