@@ -430,7 +430,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
     ----------
     a : array_like
         Input array, masked array or object that can be converted to an array.
-    p : float
+    p : int or float
         Exponent.
     axis : int or None, optional
         Axis along which the power mean is computed. Default is 0.
@@ -500,7 +500,8 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
 
     """
     if not isinstance(p, (int, float)):
-        raise ValueError("Power mean only defined for a scalar exponent")
+        raise ValueError("Power mean only defined for exponent of type int or "
+                         "float.")
     if p == 0:
         return gmean(a, axis=axis, dtype=dtype, weights=weights)
 
