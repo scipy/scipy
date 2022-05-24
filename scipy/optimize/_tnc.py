@@ -32,6 +32,8 @@ value of the function, and whose second argument is the gradient of the function
 (as a list of values); or None, to abort the minimization.
 """
 
+import warnings
+
 from scipy.optimize import _moduleTNC as moduleTNC
 from ._optimize import (MemoizeJac, OptimizeResult, _check_unknown_options,
                        _prepare_scalar_function)
@@ -282,7 +284,7 @@ def fmin_tnc(func, x0, fprime=None, args=(), approx_grad=0,
 
 def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
                   eps=1e-8, scale=None, offset=None, mesg_num=None,
-                  maxCGit=-1, eta=-1, stepmx=0, accuracy=0,
+                  maxCGit=-1, maxiter=None, eta=-1, stepmx=0, accuracy=0,
                   minfev=0, ftol=-1, xtol=-1, gtol=-1, rescale=-1, disp=False,
                   callback=None, finite_diff_rel_step=None, maxfun=None,
                   **unknown_options):
@@ -310,6 +312,10 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         iteration. If maxCGit == 0, the direction chosen is
         -gradient if maxCGit < 0, maxCGit is set to
         max(1,min(50,n/2)). Defaults to -1.
+    maxiter : int, optional
+        Maximum number of function evaluations. This keyword is deprecated
+        in favor of `maxfun`. Only if `maxfun` is None is this keyword used.
+        It will be completely removed in SciPy 1.11.0.
     eta : float
         Severity of the line search. If < 0 or > 1, set to 0.25.
         Defaults to -1.
@@ -405,7 +411,14 @@ def _minimize_tnc(fun, x0, args=(), jac=None, bounds=None,
         offset = array([])
 
     if maxfun is None:
-        maxfun = max(100, 10*len(x0))
+        if maxiter is not None:
+            warnings.warn(
+                        "`maxiter` has been deprecated in favor of `maxfun`. "
+                        "It will be completely removed in SciPy 1.11.0.",
+                        DeprecationWarning)
+            maxfun = maxiter
+        else:
+            maxfun = max(100, 10*len(x0))
 
     rc, nf, nit, x, funv, jacv = moduleTNC.tnc_minimize(
         func_and_grad, x0, low, up, scale,

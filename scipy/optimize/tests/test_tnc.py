@@ -346,3 +346,11 @@ class TestTnc:
         assert_allclose(res2.x, res.x)
         assert_allclose(res2.fun, res.fun)
         assert_equal(res2.nfev, res.nfev)
+
+    def test_maxiter_depreciations(self):
+        fg, x = self.f1, [1, 3]
+
+        msg = ("`maxiter` has been deprecated in favor of `maxfun`. "
+               "It will be completely removed in SciPy 1.11.0.")
+        with pytest.warns(DeprecationWarning, match=msg):
+            optimize.minimize(fg, x, method="TNC", options={"maxiter": 200})
