@@ -798,7 +798,7 @@ def jaccard(u, v, w=None):
 
 
 @_deprecated("Kulsinski has been deprecated from scipy.spatial.distance"
-             " in SciPy 1.9.0 and it will be removed in SciPy 2.0."
+             " in SciPy 1.9.0 and it will be removed in SciPy 1.11.0."
              " It is superseded by scipy.spatial.distance.kulczynski1.")
 def kulsinski(u, v, w=None):
     """
@@ -815,6 +815,12 @@ def kulsinski(u, v, w=None):
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n`.
+
+    .. deprecated:: 0.12.0
+
+    Kulsinski has been deprecated from scipy.spatial.distance in SciPy 1.9.0
+    and it will be removed in SciPy 1.11.0. It is superseded by
+    scipy.spatial.distance.kulczynski1.
 
     Parameters
     ----------
