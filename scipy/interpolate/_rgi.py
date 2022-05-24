@@ -96,14 +96,10 @@ class RegularGridInterpolator:
     In other words, this class assumes that the data is defined on a
     *rectilinear* grid.
 
-    If any of `points` have a dimension of size 1, linear interpolation will
-    return an array of `nan` values. Nearest-neighbor interpolation will work
-    as usual in this case.
-
     .. versionadded:: 0.14
 
     The 'slinear'(k=1), 'cubic'(k=3), and 'quintic'(k=5) methods are
-    spline-based interpolators, the `k` is spline degree,
+    tensor-product spline interpolators, where `k` is the spline degree,
     If any dimension has fewer points than `k` + 1, an error will be raised.
 
     .. versionadded:: 1.9
