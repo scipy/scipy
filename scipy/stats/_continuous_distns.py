@@ -9,7 +9,6 @@ from functools import wraps
 import ctypes
 
 import numpy as np
-
 from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring,
                                inherit_docstring_from)
@@ -31,6 +30,7 @@ from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
+from scipy.stats._warnings_errors import FitError
 
 
 def _remove_optimizer_parameters(kwds):
@@ -558,6 +558,7 @@ arcsine = arcsine_gen(a=0.0, b=1.0, name='arcsine')
 
 
 class FitDataError(ValueError):
+    """Raised when input data is inconsistent with fixed parameters."""
     # This exception is raised by, for example, beta_gen.fit when both floc
     # and fscale are fixed and there are values in the data not in the open
     # interval (floc, floc+fscale).
@@ -570,7 +571,10 @@ class FitDataError(ValueError):
         )
 
 
-class FitSolverError(RuntimeError):
+class FitSolverError(FitError):
+    """
+    Raised when a solver fails to converge while fitting a distribution.
+    """
     # This exception is raised by, for example, beta_gen.fit when
     # optimize.fsolve returns with ier != 1.
     def __init__(self, mesg):

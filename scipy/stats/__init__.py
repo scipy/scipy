@@ -455,15 +455,15 @@ Warnings / Errors used in :mod:`scipy.stats`
 .. autosummary::
    :toctree: generated/
 
-   F_onewayConstantInputWarning
-   F_onewayBadInputSizesWarning
-   PearsonRConstantInputWarning
-   PearsonRNearConstantInputWarning
-   SpearmanRConstantInputWarning
-   BootstrapDegenerateDistributionWarning
+   DegenerateDataWarning
+   ConstantInputWarning
+   NearConstantInputWarning
+   FitError
 
 """
 
+from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
+                               DegenerateDataWarning, FitError)
 from ._stats_py import *
 from ._variation import variation
 from .distributions import *
@@ -476,11 +476,10 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
-from ._resampling import (bootstrap, BootstrapDegenerateDistributionWarning,
-                          monte_carlo_test, permutation_test)
+from ._resampling import bootstrap, monte_carlo_test, permutation_test
 from ._entropy import *
 from ._hypotests import *
-from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite  # noqa
+from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._fit import fit
