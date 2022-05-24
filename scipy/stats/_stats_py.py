@@ -3545,6 +3545,12 @@ def f_oneway(*samples, axis=0):
         arrays have length 1.  ``np.nan`` is returned for the F statistic
         and the p-value in these cases.
 
+    .. deprecated::1.9.0
+        This function currently emits subclasses of ``ConstantInputWarning``
+        and ``DegenerateDataWarning``. As of SciPy 1.9.0, these subclasses
+        are deprecated in favor of their base classes and will be removed in
+        SciPy 1.11.0.
+
     Notes
     -----
     The ANOVA test has important assumptions that must be satisfied in order
@@ -3653,15 +3659,22 @@ def f_oneway(*samples, axis=0):
     alldata = np.concatenate(samples, axis=axis)
     bign = alldata.shape[axis]
 
+    dep_msg = ("This function currently emits a subclass of "
+               "`DegenerateDataWarning`, `F_onewayBadInputSizesWarning`. "
+               "As of SciPy 1.9.0, `F_onewayBadInputSizesWarning` is "
+               "deprecated in favor of its base class and will be removed "
+               "in SciPy 1.11.0.")
     # Check this after forming alldata, so shape errors are detected
     # and reported before checking for 0 length inputs.
     if any(sample.shape[axis] == 0 for sample in samples):
+        warnings.warn(dep_msg, DeprecationWarning)
         warnings.warn(F_onewayBadInputSizesWarning('at least one input '
                                                    'has length 0'))
         return _create_f_oneway_nan_result(alldata.shape, axis)
 
     # Must have at least one group with length greater than 1.
     if all(sample.shape[axis] == 1 for sample in samples):
+        warnings.warn(dep_msg, DeprecationWarning)
         msg = ('all input arrays have length 1.  f_oneway requires that at '
                'least one input has length greater than 1.')
         warnings.warn(F_onewayBadInputSizesWarning(msg))
@@ -3688,6 +3701,12 @@ def f_oneway(*samples, axis=0):
     # the same (e.g. [[3, 3, 3], [5, 5, 5, 5], [4, 4, 4]]).
     all_const = is_const.all(axis=axis)
     if all_const.any():
+        dep_msg = ("This function currently emits a subclass of "
+                   "`ConstantInputWarning`, `F_onewayConstantInputWarning`. "
+                   "As of SciPy 1.9.0, `F_onewayConstantInputWarning` is "
+                   "deprecated in favor of its base class and will be removed "
+                   "in SciPy 1.11.0.")
+        warnings.warn(dep_msg, DeprecationWarning)
         warnings.warn(F_onewayConstantInputWarning())
 
     # all_same_const is True if all the values in the groups along the axis=0
@@ -4627,6 +4646,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         Raised if an input is a constant array.  The correlation coefficient
         is not defined in this case, so ``np.nan`` is returned.
 
+    .. deprecated::1.9.0
+        This function currently emits subclasses of ``ConstantInputWarning``.
+        As of SciPy 1.9.0, this subclass is deprecated in favor of the base
+        class and will be removed in SciPy 1.11.0.
+
     References
     ----------
     .. [1] Zwillinger, D. and Kokoska, S. (2000). CRC Standard
@@ -4702,16 +4726,23 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         # Handle empty arrays or single observations.
         return SpearmanrResult(np.nan, np.nan)
 
+    dep_msg = ("This function currently emits a subclass of "
+               "`ConstantInputWarning`, `SpearmanRConstantInputWarning`. "
+               "As of SciPy 1.9.0, `SpearmanRConstantInputWarning` is "
+               "deprecated in favor of its base class and will be removed "
+               "in SciPy 1.11.0.")
     if axisout == 0:
         if (a[:, 0][0] == a[:, 0]).all() or (a[:, 1][0] == a[:, 1]).all():
             # If an input is constant, the correlation coefficient
             # is not defined.
+            warnings.warn(dep_msg, DeprecationWarning)
             warnings.warn(SpearmanRConstantInputWarning())
             return SpearmanrResult(np.nan, np.nan)
     else:  # case when axisout == 1 b/c a is 2 dim only
         if (a[0, :][0] == a[0, :]).all() or (a[1, :][0] == a[1, :]).all():
             # If an input is constant, the correlation coefficient
             # is not defined.
+            warnings.warn(dep_msg, DeprecationWarning)
             warnings.warn(SpearmanRConstantInputWarning())
             return SpearmanrResult(np.nan, np.nan)
 
