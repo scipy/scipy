@@ -2695,6 +2695,7 @@ class TestGlobalOptimization:
                    optimize.differential_evolution(func, [(-4, 4)]),
                    optimize.shgo(func, [(-4, 4)]),
                    optimize.dual_annealing(func, [(-4, 4)]),
+                   optimize.direct(func, [(-4, 4)]),
                    ]
 
         for result in results:

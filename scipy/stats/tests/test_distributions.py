@@ -361,6 +361,12 @@ class TestNBinom:
         val = scipy.stats.nbinom.logpmf(0, 1, 1)
         assert_equal(val, 0)
 
+    def test_logcdf_gh16159(self):
+        # check that gh16159 is resolved.
+        vals = stats.nbinom.logcdf([0, 5, 0, 5], n=4.8, p=0.45)
+        ref = np.log(stats.nbinom.cdf([0, 5, 0, 5], n=4.8, p=0.45))
+        assert_allclose(vals, ref)
+
 
 class TestGenInvGauss:
     def setup_method(self):
@@ -1541,14 +1547,13 @@ class TestPareto:
                      ndata / np.sum(np.log(data_shift/data_shift.min())))
         assert_equal(loc_mle_a, 2)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in "
-                                "double_scalars")
     @pytest.mark.parametrize("rvs_shape", [.1, 2])
     @pytest.mark.parametrize("rvs_loc", [0, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 5])
     @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
                              [p for p in product([True, False], repeat=3)
                               if False in p])
+    @np.errstate(invalid="ignore")
     def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
@@ -1566,8 +1571,7 @@ class TestPareto:
 
         _assert_less_or_close_loglike(stats.pareto, data, func, **kwds)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in "
-                                "double_scalars")
+    @np.errstate(invalid="ignore")
     def test_fit_known_bad_seed(self):
         # Tests a known seed and set of parameters that would produce a result
         # would violate the support of Pareto if the fit method did not check
@@ -3210,6 +3214,14 @@ class TestGumbelL:
         y = stats.gumbel_l.sf(x)
         xx = stats.gumbel_l.isf(y)
         assert_allclose(x, xx)
+
+    @pytest.mark.parametrize('loc', [-1, 1])
+    def test_fit_fixed_param(self, loc):
+        # ensure fixed location is correctly reflected from `gumbel_r.fit`
+        # See comments at end of gh-12737.
+        data = stats.gumbel_l.rvs(size=100, loc=loc)
+        fitted_loc, _ = stats.gumbel_l.fit(data, floc=loc)
+        assert_equal(fitted_loc, loc)
 
 
 class TestGumbelR:

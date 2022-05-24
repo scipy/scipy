@@ -30,6 +30,8 @@ axis_nan_policy_cases = [
     (stats.skew, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstatvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.moment, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.moment, tuple(), dict(moment=[1, 2]), 1, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in
@@ -586,6 +588,9 @@ def _check_arrays_broadcastable(arrays, axis):
 def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
 
+    if unpacker is None:
+        unpacker = lambda res: (res[0], res[1])  # noqa: E731
+
     def small_data_generator(n_samples, n_dims):
 
         def small_sample_generator(n_dims):
@@ -623,12 +628,10 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     expected = np.mean(concat, axis=axis) * np.nan
 
                 res = hypotest(*samples, *args, axis=axis, **kwds)
+                res = unpacker(res)
 
-                if hasattr(res, 'statistic'):
-                    assert_equal(res.statistic, expected)
-                    assert_equal(res.pvalue, expected)
-                else:
-                    assert_equal(res, expected)
+                for i in range(n_outputs):
+                    assert_equal(res[i], expected)
 
             except ValueError:
                 # confirm that the arrays truly are not broadcastable

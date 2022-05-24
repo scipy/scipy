@@ -56,12 +56,13 @@ stages:
     AZURE_CI: 'true'
   jobs:
   - job: prerelease_deps_coverage_64bit_blas
+    timeoutInMinutes: 90
     pool:
-      vmImage: 'ubuntu-18.04'
+      vmImage: 'ubuntu-20.04'
     steps:
     - task: UsePythonVersion@0
       inputs:
-        versionSpec: '3.8'
+        versionSpec: '3.9'
         addToPath: true
         architecture: 'x64'
     - template: ci/azure-travis-template.yaml
@@ -72,6 +73,7 @@ stages:
         other_spec: "--pre --upgrade --timeout=60"
         use_64bit_blas: true
   - job: refguide_asv_check
+    timeoutInMinutes: 90
     pool:
       vmImage: 'ubuntu-20.04'
     steps:
@@ -88,6 +90,7 @@ stages:
         asv_check: true
         use_wheel: true
   - job: source_distribution
+    timeoutInMinutes: 90
     pool:
       vmImage: 'ubuntu-20.04'
     steps:
@@ -102,6 +105,7 @@ stages:
         numpy_spec: "numpy==1.19.3"
         use_sdist: true
   - job: wheel_optimized_gcc6
+    timeoutInMinutes: 90
     pool:
       vmImage: 'ubuntu-18.04'
     variables:
@@ -156,6 +160,7 @@ stages:
       displayName: 'Run Lint Checks'
       failOnStderr: true
   - job: Linux_Python_38_32bit_full
+    timeoutInMinutes: 90
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'ubuntu-20.04'
@@ -196,6 +201,7 @@ stages:
         summaryFileLocation: '$(System.DefaultWorkingDirectory)/**/coverage.xml'
         reportDirectory: '$(System.DefaultWorkingDirectory)/**/htmlcov'
   - job: Windows
+    timeoutInMinutes: 90
     condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
     pool:
       vmImage: 'windows-2019'

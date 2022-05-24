@@ -114,7 +114,7 @@ static struct PyModuleDef moduledef = {
     NULL,
 };
 
-PyObject*
+PyMODINIT_FUNC
 PyInit__lsap_module(void)
 {
     PyObject* m;

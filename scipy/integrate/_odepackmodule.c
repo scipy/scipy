@@ -822,7 +822,7 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *
+PyMODINIT_FUNC
 PyInit__odepack(void)
 {
     PyObject *m, *d, *s;
