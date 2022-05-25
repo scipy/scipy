@@ -1639,10 +1639,6 @@ class multivariate_beta_gen(dirichlet_gen):
     %(_dirichlet_doc_default_callparams)s
     %(_doc_random_state)s
 
-    See Also
-    --------
-    dirichlet
-
     Notes
     -----
     Each :math:`\alpha` entry must be positive. The distribution has only

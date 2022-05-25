@@ -155,7 +155,7 @@ The ``trace`` method has been added for sparse matrices.
 ``concatenate`` method.
 
 Add `scipy.spatial.distance.kulczynski1` in favour of
-`scipy.spatial.distance.kulsinski` which will be deprecated in the next
+``scipy.spatial.distance.kulsinski`` which will be deprecated in the next
 release.
 
 `scipy.spatial.distance.minkowski` now also supports ``0<p<1``.
