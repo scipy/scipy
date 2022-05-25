@@ -9,7 +9,6 @@ from functools import wraps
 import ctypes
 
 import numpy as np
-
 from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring,
                                inherit_docstring_from)
@@ -31,6 +30,7 @@ from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
+from scipy.stats._warnings_errors import FitError
 
 
 def _remove_optimizer_parameters(kwds):
@@ -558,6 +558,7 @@ arcsine = arcsine_gen(a=0.0, b=1.0, name='arcsine')
 
 
 class FitDataError(ValueError):
+    """Raised when input data is inconsistent with fixed parameters."""
     # This exception is raised by, for example, beta_gen.fit when both floc
     # and fscale are fixed and there are values in the data not in the open
     # interval (floc, floc+fscale).
@@ -570,7 +571,10 @@ class FitDataError(ValueError):
         )
 
 
-class FitSolverError(RuntimeError):
+class FitSolverError(FitError):
+    """
+    Raised when a solver fails to converge while fitting a distribution.
+    """
     # This exception is raised by, for example, beta_gen.fit when
     # optimize.fsolve returns with ier != 1.
     def __init__(self, mesg):
@@ -5469,7 +5473,7 @@ class gibrat_gen(rv_continuous):
         return np.exp(random_state.standard_normal(size))
 
     def _pdf(self, x):
-        # gilbrat.pdf(x) = 1/(x*sqrt(2*pi)) * exp(-1/2*(log(x))**2)
+        # gibrat.pdf(x) = 1/(x*sqrt(2*pi)) * exp(-1/2*(log(x))**2)
         return np.exp(self._logpdf(x))
 
     def _logpdf(self, x):
@@ -5493,9 +5497,23 @@ class gibrat_gen(rv_continuous):
         return 0.5 * np.log(2 * np.pi) + 0.5
 
 
-# gilbrat was a spelling error; correct is gibrat, see #15911
-gilbrat = gibrat_gen(a=0.0, name='gilbrat')
+# deprecation of gilbrat, see #15911
+deprmsg = ("`gilbrat` is a misspelling of the correct name for the `gibrat` "
+           "distribution, and will be removed in SciPy 1.11.")
+
+
+class gilbrat_gen(gibrat_gen):
+    # override __call__ protocol from rv_generic to also
+    # deprecate instantiation of frozen distributions
+    def __call__(self, *args, **kwds):
+        # align with warning text from np.deprecated that's used for methods
+        msg = "`gilbrat` is deprecated, use `gibrat` instead!\n" + deprmsg
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        return self.freeze(*args, **kwds)
+
+
 gibrat = gibrat_gen(a=0.0, name='gibrat')
+gilbrat = gilbrat_gen(a=0.0, name='gilbrat')
 
 
 # since the deprecated class gets intantiated upon import (and we only want to
@@ -5508,9 +5526,7 @@ _gibrat_method_names = [
 ]
 for m in _gibrat_method_names:
     wrapper = np.deprecate(getattr(gilbrat, m), f"gilbrat.{m}", f"gibrat.{m}",
-                           "Please replace all uses of the distribution class "
-                           "`gilbrat` with the corrected spelling `gibrat`. "
-                           "`gilbrat` will be removed in SciPy 1.11.")
+                           deprmsg)
     setattr(gilbrat, m, wrapper)
 
 
