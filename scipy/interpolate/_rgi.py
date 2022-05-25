@@ -175,14 +175,14 @@ class RegularGridInterpolator:
     **Length-one axes**
 
     If one of the grid dimensions has length one, linear and nearest
-    interpolators will extrapolate in that direction, as  controlled by the
+    interpolators will extrapolate in that direction, as controlled by the
     `fill_value`. For instance:
 
     >>> x = np.array([0, 5., 10])
     >>> y = np.array([0.])
-    >>> def f(x,y):
+    >>> def f(x, y):
     ...     return (y+1) * x
-    >>> data = f(*np.meshgrid(x,y, indexing='ij', sparse=True))
+    >>> data = f(*np.meshgrid(x, y, indexing='ij', sparse=True))
     >>> interp = RegularGridInterpolator((x, y), data,
     ...                                  fill_value=None, bounds_error=False)
     >>> interp([[6, 0], [6, 1]])
