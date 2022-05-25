@@ -5697,8 +5697,10 @@ class TestPowMean:
         return (np.sum(weights * a**p) / np.sum(weights))**(1/p)
 
     def test_bad_exponent(self):
-        assert_raises(ValueError, stats.pmean, [1, 2, 3], [0])
-        assert_raises(ValueError, stats.pmean, [1, 2, 3], np.array([0]))
+        with pytest.raises(ValueError, match='Power mean only defined for'):
+            stats.pmean([1, 2, 3], [0])
+        with pytest.raises(ValueError, match='Power mean only defined for'):
+            stats.pmean([1, 2, 3], np.array([0]))
 
     def test_1d_list(self):
         a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 3.5
@@ -5721,7 +5723,8 @@ class TestPowMean:
 
     def test_1d_array_with_negative_value(self):
         a, p = np.array([1, 0, -1]), 1.23
-        assert_raises(ValueError, stats.pmean, a, p)
+        with pytest.raises(ValueError, match='Power mean only defined if all'):
+            stats.pmean(a, p)
 
     @pytest.mark.parametrize(
         ("a", "p"),
