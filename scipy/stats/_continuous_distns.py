@@ -7363,6 +7363,15 @@ class reciprocal_gen(rv_continuous):
     def _entropy(self, a, b):
         return 0.5*np.log(a*b)+np.log(np.log(b*1.0/a))
 
+    fit_note = """\
+        `loguniform`/`reciprocal` is over-parameterized. `fit` automatically
+         fixes `scale` to 1 unless `fscale` is provided by the user.\n\n"""
+
+    @extend_notes_in_docstring(rv_continuous, notes=fit_note)
+    def fit(self, data, *args, **kwds):
+        fscale = kwds.pop('fscale', 1)
+        return super().fit(data, *args, fscale=fscale, **kwds)
+
 
 loguniform = reciprocal_gen(name="loguniform")
 reciprocal = reciprocal_gen(name="reciprocal")
