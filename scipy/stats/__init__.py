@@ -161,7 +161,7 @@ Multivariate distributions
    multivariate_normal    -- Multivariate normal distribution
    matrix_normal          -- Matrix normal distribution
    multivariate_beta      -- Multivariate beta distribution (Dirichlet)
-   dirichlet              -- Dirichlet (deprecated; see `multivariate_beta`)
+   dirichlet              -- Dirichlet (for new code, use `multivariate_beta`)
    wishart                -- Wishart
    invwishart             -- Inverse Wishart
    multinomial            -- Multinomial distribution

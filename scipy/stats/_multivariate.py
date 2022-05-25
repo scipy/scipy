@@ -1306,19 +1306,8 @@ become an alias for `multivariate_beta`.
 
 
 class dirichlet_gen(multi_rv_generic):
-    r"""A Dirichlet random variable (deprecated, use `multivariate_beta` instead).
+    r"""A Dirichlet random variable.
 
-    The ``alpha`` keyword specifies the concentration parameters of the
-    distribution.
-
-    .. versionadded:: 0.15.0
-
-    Methods
-    -------
-    pdf(x, alpha)
-        Probability density function.
-    logpdf(x, alpha)
-        Log of the probability density function.
     .. deprecated:: 1.9.0
         Methods `pdf` and `logpdf` of `dirichlet` are deprecated due to an
         interface inconsistency: compared to other distributions, these
@@ -1345,6 +1334,17 @@ class dirichlet_gen(multi_rv_generic):
         In SciPy 1.11.0, this deprecation warning will be removed and
         `dirichlet` will become an alias for `multivariate_beta`.
 
+    The ``alpha`` keyword specifies the concentration parameters of the
+    distribution.
+
+    .. versionadded:: 0.15.0
+
+    Methods
+    -------
+    pdf(x, alpha)
+        Probability density function.
+    logpdf(x, alpha)
+        Log of the probability density function.
     rvs(alpha, size=1, random_state=None)
         Draw random samples from a Dirichlet distribution.
     mean(alpha)
