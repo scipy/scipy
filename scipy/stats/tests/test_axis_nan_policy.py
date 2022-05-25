@@ -26,6 +26,8 @@ axis_nan_policy_cases = [
      lambda res: (res.statistic, res.pvalue)),
     (stats.wilcoxon, tuple(), dict(), 1, 2, True,
      lambda res: (res.statistic, res.pvalue)),
+    (stats.wilcoxon, tuple(), {'mode': 'approx'}, 1, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.zstatistic)),
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
@@ -57,7 +59,8 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
 
 # If the message is one of these, results of the function may be inaccurate,
 # but NaNs are not to be placed
-inaccuracy_messages = {"Precision loss occurred in moment calculation"}
+inaccuracy_messages = {"Precision loss occurred in moment calculation",
+                       "Sample size too small for normal approximation."}
 
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
@@ -239,7 +242,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             # hypothesis tests raise errors instead of returning nans .
             # For vectorized calls, we put nans in the corresponding elements
             # of the output.
-            except (RuntimeWarning, ValueError, ZeroDivisionError) as e:
+            except (RuntimeWarning, UserWarning, ValueError,
+                    ZeroDivisionError) as e:
 
                 # whatever it is, make sure same error is raised by both
                 # `nan_policy_1d` and `hypotest`
@@ -257,6 +261,7 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                           for message in inaccuracy_messages]):
                     with suppress_warnings() as sup:
                         sup.filter(RuntimeWarning)
+                        sup.filter(UserWarning)
                         res1d = nan_policy_1d(hypotest, data1d, unpacker,
                                               *args, n_outputs=n_outputs,
                                               nan_policy=nan_policy,
@@ -280,6 +285,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
         with suppress_warnings() as sup, \
              np.errstate(divide='ignore', invalid='ignore'):
             sup.filter(RuntimeWarning, "Precision loss occurred in moment")
+            sup.filter(UserWarning, "Sample size too small for normal "
+                                    "approximation.")
             res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
                                     *args, **kwds))
 
