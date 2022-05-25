@@ -567,6 +567,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     The marginals (AKA dual values / shadow prices / Lagrange multipliers)
     and residuals (slacks) are also available.
+
     >>> res.ineqlin
      marginals: array([-0., -1.])
       residual: array([39.,  0.])
