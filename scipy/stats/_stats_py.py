@@ -3545,12 +3545,6 @@ def f_oneway(*samples, axis=0):
         arrays have length 1.  ``np.nan`` is returned for the F statistic
         and the p-value in these cases.
 
-    .. deprecated::1.9.0
-        This function currently emits subclasses of ``ConstantInputWarning``
-        and ``DegenerateDataWarning``. As of SciPy 1.9.0, these subclasses
-        are deprecated in favor of their base classes and will be removed in
-        SciPy 1.11.0.
-
     Notes
     -----
     The ANOVA test has important assumptions that must be satisfied in order
@@ -4112,12 +4106,6 @@ def pearsonr(x, y, *, alternative='two-sided'):
         Numerical errors in the calculation ``x - mean(x)`` in this case might
         result in an inaccurate calculation of r.
 
-    .. deprecated::1.9.0
-        This function currently emits subclasses of ``ConstantInputWarning``
-        and ``NearConstantInputWarning``. As of SciPy 1.9.0, these subclasses
-        are deprecated in favor of their base classes and will be removed in
-        SciPy 1.11.0.
-
     See Also
     --------
     spearmanr : Spearman rank-order correlation coefficient.
@@ -4645,11 +4633,6 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     `~scipy.stats.ConstantInputWarning`
         Raised if an input is a constant array.  The correlation coefficient
         is not defined in this case, so ``np.nan`` is returned.
-
-    .. deprecated::1.9.0
-        This function currently emits subclasses of ``ConstantInputWarning``.
-        As of SciPy 1.9.0, this subclass is deprecated in favor of the base
-        class and will be removed in SciPy 1.11.0.
 
     References
     ----------
