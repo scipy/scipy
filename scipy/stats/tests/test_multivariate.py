@@ -849,10 +849,11 @@ class TestDirichlet(DirichletTest):
 
 def test_dirichlet_deprecation():
     with pytest.deprecated_call():
-        dirichlet.rvs([1, 2, 3])
+        dirichlet.pdf([0.1, 0.2, 0.7], [1, 2, 3])
 
+    dist = dirichlet([1, 2, 3])
     with pytest.deprecated_call():
-        dirichlet([1, 2, 3])
+        dist.pdf([0.1, 0.2, 0.7])
 
 
 class TestMultivariateBeta(DirichletTest):

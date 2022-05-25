@@ -1296,9 +1296,10 @@ def _lnB(alpha):
 
 _dirichlet_depr_message = (
 """  # noqa
-`dirichlet` is deprecated due to an interface inconsistency: compared to
-other distributions, methods `pdf` and `logpdf` expect the transpose of the
-input `x`. Please use `multivariate_beta`, which corrects this inconsistency.
+Methods `pdf` and `logpdf` of `dirichlet` are deprecated due to an interface
+inconsistency: compared to other distributions, methods `pdf` and `logpdf`
+expect the transpose of the input `x`. Please use `multivariate_beta`,
+which corrects this inconsistency.
 In SciPy 1.11.0, this deprecation warning will be removed and `dirichlet` will
 become an alias for `multivariate_beta`.
 """)
@@ -1318,6 +1319,32 @@ class dirichlet_gen(multi_rv_generic):
         Probability density function.
     logpdf(x, alpha)
         Log of the probability density function.
+    .. deprecated:: 1.9.0
+        Methods `pdf` and `logpdf` of `dirichlet` are deprecated due to an
+        interface inconsistency: compared to other distributions, these
+        methods expect the transpose of the input `x`. Please use
+        `multivariate_beta`, which corrects this inconsistency.
+
+        `multivariate_beta` is a drop-in replacement for `dirichlet`
+        except that methods `pdf` and `logpdf` use a different convention.
+        For instance, code like this::
+
+            from scipy.stats import dirichlet
+            p = dirichlet.pdf(x)
+            logp = dirichlet.logpdf(x)
+
+        can be changed to::
+
+            from scipy.stats import multivariate_beta
+            p = multivariate_beta.pdf(np.transpose(x))
+            logp = multivariate_beta.logpdf(np.transpose(x))
+
+        All other methods of `multivariate_beta` and `dirichlet` are identical;
+        use of other methods  does not need to be changed.
+
+        In SciPy 1.11.0, this deprecation warning will be removed and
+        `dirichlet` will become an alias for `multivariate_beta`.
+
     rvs(alpha, size=1, random_state=None)
         Draw random samples from a Dirichlet distribution.
     mean(alpha)
@@ -1364,12 +1391,6 @@ class dirichlet_gen(multi_rv_generic):
     and :math:`\boldsymbol\alpha=(\alpha_1,\ldots,\alpha_K)`, the
     concentration parameters and :math:`K` is the dimension of the space
     where :math:`x` takes values.
-
-    Note that the `dirichlet` interface is somewhat inconsistent.
-    The array returned by the rvs function is transposed
-    with respect to the format expected by the pdf and logpdf.
-    For a consistent interface to the same distribution, use
-    `multivariate_beta`.
 
     Examples
     --------
@@ -1419,8 +1440,6 @@ class dirichlet_gen(multi_rv_generic):
         super().__init__(seed)
         self.__doc__ = doccer.docformat(self.__doc__, dirichlet_docdict_params)
 
-    @np.deprecate(old_name="dirichlet", new_name="multivariate_beta",
-                  message=_dirichlet_depr_message)
     def __call__(self, alpha, seed=None):
         return dirichlet_frozen(alpha, seed=seed)
 
@@ -1579,8 +1598,7 @@ dirichlet = dirichlet_gen()
 
 
 # deprecate each public method of `dirichlet` but not `multivariate_beta`
-_dirichlet_method_names = ["entropy", "logpdf", "mean", "pdf",
-                           "rvs", "var"]
+_dirichlet_method_names = ["logpdf", "pdf"]
 for m in _dirichlet_method_names:
     wrapper = np.deprecate(getattr(dirichlet, m), f"dirichlet.{m}",
                            f"multivariate_beta.{m}", _dirichlet_depr_message)
@@ -1592,9 +1610,15 @@ class dirichlet_frozen(multi_rv_frozen):
         self.alpha = _dirichlet_check_parameters(alpha)
         self._dist = dirichlet_gen(seed)
 
+    @np.deprecate(old_name="dirichlet.logpdf",
+                  new_name="multivariate_beta.logpdf",
+                  message=_dirichlet_depr_message)
     def logpdf(self, x):
         return self._dist.logpdf(x, self.alpha)
 
+    @np.deprecate(old_name="dirichlet.pdf",
+                  new_name="multivariate_beta.pdf",
+                  message=_dirichlet_depr_message)
     def pdf(self, x):
         return self._dist.pdf(x, self.alpha)
 
@@ -1728,6 +1752,12 @@ class multivariate_beta_frozen(dirichlet_frozen):
     def __init__(self, alpha, seed=None):
         self.alpha = _dirichlet_check_parameters(alpha)
         self._dist = multivariate_beta_gen(seed)
+
+    def logpdf(self, x):
+        return self._dist.logpdf(x, self.alpha)
+
+    def pdf(self, x):
+        return self._dist.pdf(x, self.alpha)
 
 
 multivariate_beta = multivariate_beta_gen()
