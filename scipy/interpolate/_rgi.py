@@ -138,9 +138,9 @@ class RegularGridInterpolator:
     >>> f(2.1, 6.2, 8.3), f(3.3, 5.2, 7.1)
     (125.54200000000002, 145.894)
 
-    **Interpolate and extrapolate a 2D data**
+    **Interpolate and extrapolate a 2D dataset**
 
-    As a second example, we interpolate and extrapolate a 2D data:
+    As a second example, we interpolate and extrapolate a 2D data set:
 
     >>> x, y = np.array([-2, 0, 4]), np.array([-2, 0, 2, 5])
     >>> def ff(x, y):
@@ -171,24 +171,9 @@ class RegularGridInterpolator:
     >>> ax.plot_wireframe(X, Y, ff(X, Y), rstride=3, cstride=3,
     ...                   alpha=0.4, label='ground truth')
     >>> plt.legend()
+    >>> plt.show()
 
-    **Length-one axes**
-
-    If one of the grid dimensions has length one, linear and nearest
-    interpolators will extrapolate in that direction, as controlled by the
-    `fill_value`. For instance:
-
-    >>> x = np.array([0, 5., 10])
-    >>> y = np.array([0.])
-    >>> def f(x, y):
-    ...     return (y+1) * x
-    >>> data = f(*np.meshgrid(x, y, indexing='ij', sparse=True))
-    >>> interp = RegularGridInterpolator((x, y), data,
-    ...                                  fill_value=None, bounds_error=False)
-    >>> interp([[6, 0], [6, 1]])
-    array([6., 6.])
-
-    **Other examples** are given
+    Other examples are given
     :ref:`in the tutorial <tutorial-interpolate_regular_grid_interpolator>`.
 
     See Also
