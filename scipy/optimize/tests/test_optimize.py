@@ -1184,12 +1184,11 @@ class TestOptimizeSimple(CheckOptimize):
         x0 = np.array([2.0])
         f0 = func(x0)
         jac = bad_grad
+        options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
         if method in ['nelder-mead', 'powell', 'cobyla']:
             jac = None
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "'maxiter' has been deprecated...")
-            sol = optimize.minimize(func, x0, jac=jac, method=method,
-                                    options=dict(maxiter=20))
+        sol = optimize.minimize(func, x0, jac=jac, method=method,
+                                options=options)
         assert_equal(func(sol.x), sol.fun)
 
         if method == 'slsqp':
@@ -1405,17 +1404,17 @@ class TestOptimizeSimple(CheckOptimize):
         funcs = [func, func2]
         grads = [grad] if needs_grad else [grad, None]
         hesss = [hess] if needs_hess else [hess, None]
+        options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
 
         with np.errstate(invalid='ignore'), suppress_warnings() as sup:
             sup.filter(UserWarning, "delta_grad == 0.*")
             sup.filter(RuntimeWarning, ".*does not use Hessian.*")
             sup.filter(RuntimeWarning, ".*does not use gradient.*")
-            sup.filter(DeprecationWarning, "'maxiter' has been deprecated...")
 
             for f, g, h in itertools.product(funcs, grads, hesss):
                 count = [0]
                 sol = optimize.minimize(f, x0, jac=g, hess=h, method=method,
-                                        options=dict(maxiter=20))
+                                        options=options)
                 assert_equal(sol.success, False)
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'cg', 'bfgs',
@@ -1724,7 +1723,6 @@ class TestOptimizeScalar:
             sup.filter(UserWarning, "delta_grad == 0.*")
             sup.filter(RuntimeWarning, ".*does not use Hessian.*")
             sup.filter(RuntimeWarning, ".*does not use gradient.*")
-            sup.filter(DeprecationWarning, "'maxiter' has been deprecated...")
 
             count = [0]
             sol = optimize.minimize_scalar(func, bracket=bracket,
