@@ -395,7 +395,6 @@ Random variate generation / CDF Inversion
    :toctree: generated/
 
    rvs_ratio_uniforms
-   NumericalInverseHermite
 
 Distribution Fitting
 --------------------

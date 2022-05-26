@@ -32,15 +32,20 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "numpy/ndarraytypes.h"
 #include "rectangular_lsap/rectangular_lsap.h"
 
+
 static PyObject*
-calculate_assignment(PyObject* self, PyObject* args)
+linear_sum_assignment(PyObject* self, PyObject* args, PyObject* kwargs)
 {
     PyObject* a = NULL;
     PyObject* b = NULL;
     PyObject* result = NULL;
     PyObject* obj_cost = NULL;
     int maximize = 0;
-    if (!PyArg_ParseTuple(args, "Op", &obj_cost, &maximize))
+	static const char *kwlist[] = {	(const char*)"cost_matrix",
+                                    (const char*)"maximize",
+                                    NULL};
+    if (!PyArg_ParseTupleAndKeywords(args, kwargs, "O|p", (char**)kwlist,
+                                     &obj_cost, &maximize))
         return NULL;
 
     PyArrayObject* obj_cont =
@@ -96,26 +101,96 @@ cleanup:
     return result;
 }
 
-static PyMethodDef lsap_module_methods[] = {
-    { "calculate_assignment", calculate_assignment, METH_VARARGS,
-      "Solves the rectangular linear sum assignment problem." },
+static PyMethodDef lsap_methods[] = {
+    { "linear_sum_assignment",
+      linear_sum_assignment,
+      METH_VARARGS | METH_KEYWORDS,
+"Solve the linear sum assignment problem.\n"
+"\n"
+"Parameters\n"
+"----------\n"
+"cost_matrix : array\n"
+"    The cost matrix of the bipartite graph.\n"
+"\n"
+"maximize : bool (default: False)\n"
+"    Calculates a maximum weight matching if true.\n"
+"\n"
+"Returns\n"
+"-------\n"
+"row_ind, col_ind : array\n"
+"    An array of row indices and one of corresponding column indices giving\n"
+"    the optimal assignment. The cost of the assignment can be computed\n"
+"    as ``cost_matrix[row_ind, col_ind].sum()``. The row indices will be\n"
+"    sorted; in the case of a square cost matrix they will be equal to\n"
+"    ``numpy.arange(cost_matrix.shape[0])``.\n"
+"\n"
+"See Also\n"
+"--------\n"
+"scipy.sparse.csgraph.min_weight_full_bipartite_matching : for sparse inputs\n"
+"\n"
+"Notes\n"
+"-----\n"
+"\n"
+"The linear sum assignment problem [1]_ is also known as minimum weight\n"
+"matching in bipartite graphs. A problem instance is described by a matrix\n"
+"C, where each C[i,j] is the cost of matching vertex i of the first partite\n"
+"set (a 'worker') and vertex j of the second set (a 'job'). The goal is to\n"
+"find a complete assignment of workers to jobs of minimal cost.\n"
+"\n"
+"Formally, let X be a boolean matrix where :math:`X[i,j] = 1` iff row i is\n"
+"assigned to column j. Then the optimal assignment has cost\n"
+"\n"
+".. math::\n"
+"    \\min \\sum_i \\sum_j C_{i,j} X_{i,j}\n"
+"\n"
+"where, in the case where the matrix X is square, each row is assigned to\n"
+"exactly one column, and each column to exactly one row.\n"
+"\n"
+"This function can also solve a generalization of the classic assignment\n"
+"problem where the cost matrix is rectangular. If it has more rows than\n"
+"columns, then not every row needs to be assigned to a column, and vice\n"
+"versa.\n"
+"\n"
+"This implementation is a modified Jonker-Volgenant algorithm with no\n"
+"initialization, described in ref. [2]_.\n"
+"\n"
+".. versionadded:: 0.17.0\n"
+"\n"
+"References\n"
+"----------\n"
+"\n"
+".. [1] https://en.wikipedia.org/wiki/Assignment_problem\n"
+"\n"
+".. [2] DF Crouse. On implementing 2D rectangular assignment algorithms.\n"
+"       *IEEE Transactions on Aerospace and Electronic Systems*,\n"
+"       52(4):1679-1696, August 2016, :doi:`10.1109/TAES.2016.140952`\n"
+"\n"
+"Examples\n"
+"--------\n"
+">>> cost = np.array([[4, 1, 3], [2, 0, 5], [3, 2, 2]])\n"
+">>> from scipy.optimize import linear_sum_assignment\n"
+">>> row_ind, col_ind = linear_sum_assignment(cost)\n"
+">>> col_ind\n"
+"array([1, 0, 2])\n"
+">>> cost[row_ind, col_ind].sum()\n"
+"5\n"},
     { NULL, NULL, 0, NULL }
 };
 
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
-    "_lsap_module",
+    "_lsap",
     "Solves the rectangular linear sum assignment.",
     -1,
-    lsap_module_methods,
+    lsap_methods,
     NULL,
     NULL,
     NULL,
     NULL,
 };
 
-PyMODINIT_FUNC
-PyInit__lsap_module(void)
+PyObject*
+PyInit__lsap(void)
 {
     PyObject* m;
     m = PyModule_Create(&moduledef);
