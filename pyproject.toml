@@ -10,10 +10,13 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.4.0",
+    "meson-python>=0.5.0",
     "Cython>=0.29.21",
     "pybind11>=2.4.3",
     "pythran>=0.9.12",
+    # `wheel` is needed for non-isolated builds, given that `meson-python`
+    # doesn't list it as a runtime requirement (at least in 0.5.0)
+    "wheel",
 
     # NumPy dependencies - to update these, sync from
     # https://github.com/scipy/oldest-supported-numpy/, and then

@@ -127,7 +127,7 @@ steps:
       # Note: don't use a fixed build dir (which would help for ccache), because
       #       --build is partially broken and the workaround in commit b4617dd764
       #       messes with build isolation.
-      pip install scipy*.tar.gz -v --no-build-isolation  # TODO: remove --no-build-isolation once meson-python is fixed
+      pip install scipy*.tar.gz -v
     displayName: 'Install SciPy from SDist'
 - script: 'python -u runtests.py -g -j2 --build-only ${COVERAGE:-} ${USE_WHEEL_BUILD:-}'
   env:
