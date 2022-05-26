@@ -26,6 +26,7 @@ axis_nan_policy_cases = [
     (stats.wilcoxon, tuple(), dict(), 1, 2, True, None),
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.pmean, (1.42,), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.skew, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
@@ -903,14 +904,17 @@ def test_other_axis_tuples(axis):
     np.testing.assert_array_equal(res, res2)
 
 
-@pytest.mark.parametrize(("weighted_fun_name"), ["gmean", "hmean"])
-def test_gmean_mixed_mask_nan_weights(weighted_fun_name):
+@pytest.mark.parametrize(("weighted_fun_name"), ["gmean", "hmean", "pmean"])
+def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # omitting samples with masks and nan_policy='omit' are equivalent
     # also checks paired-sample sentinel value removal
 
-    weighted_fun = getattr(stats, weighted_fun_name)
-    weighted_fun_ma = getattr(stats.mstats, weighted_fun_name)
+    if weighted_fun_name == 'pmean':
+        def weighted_fun(a, **kwargs):
+            return stats.pmean(a, p=0.42, **kwargs)
+    else:
+        weighted_fun = getattr(stats, weighted_fun_name)
 
     m, n = 3, 20
     axis = -1
@@ -960,14 +964,17 @@ def test_gmean_mixed_mask_nan_weights(weighted_fun_name):
         res4 = weighted_fun(a_masked3, weights=b_masked3,
                             nan_policy='propagate', axis=axis)
         # Would test with a_masked3/b_masked3, but there is a bug in np.average
-        # that causes a bug in _no_deco gmean with masked weights. Would use
+        # that causes a bug in _no_deco mean with masked weights. Would use
         # np.ma.average, but that causes other problems. See numpy/numpy#7330.
-        res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
-                               axis=axis, _no_deco=True)
+        if weighted_fun_name not in {'pmean'}:
+            weighted_fun_ma = getattr(stats.mstats, weighted_fun_name)
+            res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
+                                   axis=axis, _no_deco=True)
 
     np.testing.assert_array_equal(res1, res)
     np.testing.assert_array_equal(res2, res)
     np.testing.assert_array_equal(res3, res)
     np.testing.assert_array_equal(res4, res)
-    # _no_deco gmean returns masked array, last element was masked
-    np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
+    if weighted_fun_name not in {'pmean'}:
+        # _no_deco mean returns masked array, last element was masked
+        np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])

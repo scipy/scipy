@@ -353,10 +353,8 @@ where :math:`\mathbf{A}^{\dagger}` is called the pseudo-inverse of
 
 The command :obj:`linalg.lstsq` will solve the linear least-squares
 problem for :math:`\mathbf{c}` given :math:`\mathbf{A}` and
-:math:`\mathbf{y}` . In addition, :obj:`linalg.pinv` or
-:obj:`linalg.pinv2` (uses a different method based on singular value
-decomposition) will find :math:`\mathbf{A}^{\dagger}` given
-:math:`\mathbf{A}.`
+:math:`\mathbf{y}` . In addition, :obj:`linalg.pinv` will find
+:math:`\mathbf{A}^{\dagger}` given :math:`\mathbf{A}.`
 
 The following example and figure demonstrate the use of
 :obj:`linalg.lstsq` and :obj:`linalg.pinv` for solving a data-fitting
@@ -402,11 +400,9 @@ Generalized inverse
 ^^^^^^^^^^^^^^^^^^^
 
 The generalized inverse is calculated using the command
-:obj:`linalg.pinv` or :obj:`linalg.pinv2`. These two commands differ
-in how they compute the generalized inverse. The first uses the
-linalg.lstsq algorithm, while the second uses singular value
-decomposition. Let :math:`\mathbf{A}` be an :math:`M\times N` matrix,
-then if :math:`M>N`, the generalized inverse is
+:obj:`linalg.pinv`. Let :math:`\mathbf{A}` be an 
+:math:`M\times N` matrix, then if :math:`M>N`, the generalized
+inverse is
 
 .. math::
 

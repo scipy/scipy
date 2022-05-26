@@ -6,7 +6,7 @@ To build the html docs for local development, SciPy itself needs to be built so 
 environment needs to be set up for that.  For details on that, see the
 [Contributor Guide](http://scipy.github.io/devdocs/dev/contributor/contributor_toc.html#development-environment)).
 
-Also ensure to initialize and update submodules (this pulls in the SciPy Sphinx
+Also, ensure to initialize and update submodules (this pulls in the SciPy Sphinx
 theme and `numpydoc`):
 ```
 git submodule update --init
@@ -55,5 +55,5 @@ be redistributed.
     docs and the code of conduct.
   - `tutorial` contains all tutorial content.
 - `release` contains the release notes. Note that those normally should not be
-  updated as part of a PR; we keep releases notes for the upcoming releases
+  updated as part of a PR; we keep release notes for the upcoming releases
   on the wiki of the main SciPy repo.

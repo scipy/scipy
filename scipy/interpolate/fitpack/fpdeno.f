@@ -1,4 +1,5 @@
-      subroutine fpdeno(maxtr,up,left,right,nbind,merk)
+      recursive subroutine fpdeno(maxtr,up,left,right,nbind,merk)
+      implicit none
 c  subroutine fpdeno frees the nodes of all branches of a triply linked
 c  tree with length < nbind by putting to zero their up field.
 c  on exit the parameter merk points to the terminal node of the
