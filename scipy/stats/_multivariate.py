@@ -1294,45 +1294,30 @@ def _lnB(alpha):
     return np.sum(gammaln(alpha)) - gammaln(np.sum(alpha))
 
 
-_dirichlet_depr_message = (
-"""  # noqa
-Methods `pdf` and `logpdf` of `dirichlet` are deprecated due to an interface
-inconsistency: compared to other distributions, methods `pdf` and `logpdf`
-expect the transpose of the input `x`. Please use `multivariate_beta`,
-which corrects this inconsistency.
-In SciPy 1.11.0, this deprecation warning will be removed and `dirichlet` will
-become an alias for `multivariate_beta`.
-""")
-
-
 class dirichlet_gen(multi_rv_generic):
     r"""A Dirichlet random variable.
 
-    .. deprecated:: 1.9.0
-        Methods `pdf` and `logpdf` of `dirichlet` are deprecated due to an
-        interface inconsistency: compared to other distributions, these
-        methods expect the transpose of the input `x`. Please use
-        `multivariate_beta`, which corrects this inconsistency.
+    .. note::
+        It is recommended to use `multivariate_beta` instead of `dirichlet`
+        for an interface more consistent with other multivariate
+        distributions; compared to other distributions, the `pdf` and `logpdf`
+        methods of `dirichlet` expect the transpose of the input `x`.
+        Otherwise, `multivariate_beta` is a drop-in replacement for
+        `dirichlet`.
 
-        `multivariate_beta` is a drop-in replacement for `dirichlet`
-        except that methods `pdf` and `logpdf` use a different convention.
         For instance, code like this::
 
             from scipy.stats import dirichlet
-            p = dirichlet.pdf(x)
-            logp = dirichlet.logpdf(x)
+            p = dirichlet.pdf(np.transpose(x))
+            logp = dirichlet.logpdf(np.transpose(x))
 
         can be changed to::
 
             from scipy.stats import multivariate_beta
-            p = multivariate_beta.pdf(np.transpose(x))
-            logp = multivariate_beta.logpdf(np.transpose(x))
+            p = multivariate_beta.pdf(x)
+            logp = multivariate_beta.logpdf(x)
 
-        All other methods of `multivariate_beta` and `dirichlet` are identical;
-        use of other methods  does not need to be changed.
-
-        In SciPy 1.11.0, this deprecation warning will be removed and
-        `dirichlet` will become an alias for `multivariate_beta`.
+        All other methods of `multivariate_beta` and `dirichlet` are identical.
 
     The ``alpha`` keyword specifies the concentration parameters of the
     distribution.
@@ -1597,28 +1582,14 @@ class dirichlet_gen(multi_rv_generic):
 dirichlet = dirichlet_gen()
 
 
-# deprecate each public method of `dirichlet` but not `multivariate_beta`
-_dirichlet_method_names = ["logpdf", "pdf"]
-for m in _dirichlet_method_names:
-    wrapper = np.deprecate(getattr(dirichlet, m), f"dirichlet.{m}",
-                           f"multivariate_beta.{m}", _dirichlet_depr_message)
-    setattr(dirichlet, m, wrapper)
-
-
 class dirichlet_frozen(multi_rv_frozen):
     def __init__(self, alpha, seed=None):
         self.alpha = _dirichlet_check_parameters(alpha)
         self._dist = dirichlet_gen(seed)
 
-    @np.deprecate(old_name="dirichlet.logpdf",
-                  new_name="multivariate_beta.logpdf",
-                  message=_dirichlet_depr_message)
     def logpdf(self, x):
         return self._dist.logpdf(x, self.alpha)
 
-    @np.deprecate(old_name="dirichlet.pdf",
-                  new_name="multivariate_beta.pdf",
-                  message=_dirichlet_depr_message)
     def pdf(self, x):
         return self._dist.pdf(x, self.alpha)
 
@@ -1752,12 +1723,6 @@ class multivariate_beta_frozen(dirichlet_frozen):
     def __init__(self, alpha, seed=None):
         self.alpha = _dirichlet_check_parameters(alpha)
         self._dist = multivariate_beta_gen(seed)
-
-    def logpdf(self, x):
-        return self._dist.logpdf(x, self.alpha)
-
-    def pdf(self, x):
-        return self._dist.pdf(x, self.alpha)
 
 
 multivariate_beta = multivariate_beta_gen()

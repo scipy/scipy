@@ -842,18 +842,8 @@ class DirichletTest:
         assert_almost_equal(b.var(), d.var()[0])
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestDirichlet(DirichletTest):
     dist = dirichlet
-
-
-def test_dirichlet_deprecation():
-    with pytest.deprecated_call():
-        dirichlet.pdf([0.1, 0.2, 0.7], [1, 2, 3])
-
-    dist = dirichlet([1, 2, 3])
-    with pytest.deprecated_call():
-        dist.pdf([0.1, 0.2, 0.7])
 
 
 class TestMultivariateBeta(DirichletTest):
