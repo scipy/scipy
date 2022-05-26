@@ -29,7 +29,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 This code implements the shortest augmenting path algorithm for the
-rectangular assignment problem.  This implementation is based on the
+rectangular assignment problem. This implementation is based on the
 pseudocode described in pages 1685-1686 of:
 
     DF Crouse. On implementing 2D rectangular assignment algorithms.
@@ -66,7 +66,7 @@ augmenting_path(intptr_t nc, double *cost, std::vector<double>& u,
 {
     double minVal = 0;
 
-    // Crouse's pseudocode uses set complements to keep track of remaining
+    // Crouse's pseudocode uses set-complements to keep track of remaining
     // nodes.  Here we use a vector, as it is more efficient in C++.
     intptr_t num_remaining = nc;
     for (intptr_t it = 0; it < nc; it++) {
@@ -98,7 +98,7 @@ augmenting_path(intptr_t nc, double *cost, std::vector<double>& u,
 
             // When multiple nodes have the minimum cost, we select one which
             // gives us a new sink node. This is particularly important for
-            // integer cost matrices with small co-efficients.
+            // integer cost matrices with small coefficients.
             if (shortestPathCosts[j] < lowest ||
                 (shortestPathCosts[j] == lowest && row4col[j] == -1)) {
                 lowest = shortestPathCosts[j];
