@@ -7522,7 +7522,7 @@ def test_rename_mode_method(fun, args):
 class TestContainsNaNTest:
 
     def test_policy(self):
-        data = [1, 2, 3, np.nan]
+        data = np.array([1, 2, 3, np.nan])
 
         contains_nan, nan_policy = _contains_nan(data, nan_policy="propagate")
         assert contains_nan
@@ -7541,24 +7541,24 @@ class TestContainsNaNTest:
             _contains_nan(data, nan_policy="nan")
 
     def test_contains_nan_1d(self):
-        data1 = [1, 2, 3]
+        data1 = np.array([1, 2, 3])
         assert not _contains_nan(data1)[0]
 
-        data2 = [1, 2, 3, np.nan]
+        data2 = np.array([1, 2, 3, np.nan])
         assert _contains_nan(data2)[0]
 
-        data3 = [np.nan, 2, 3, np.nan]
+        data3 = np.array([np.nan, 2, 3, np.nan])
         assert _contains_nan(data3)[0]
 
-        data4 = [1, 2, "3", np.nan]
+        data4 = np.array([1, 2, "3", np.nan])
         assert _contains_nan(data4)[0]
 
     def test_contains_nan_2d(self):
-        data1 = [[1, 2], [3, 4]]
+        data1 = np.array([[1, 2], [3, 4]])
         assert not _contains_nan(data1)[0]
 
-        data2 = [[1, 2], [3, np.nan]]
+        data2 = np.array([[1, 2], [3, np.nan]])
         assert _contains_nan(data2)[0]
 
-        data3 = [["1", 2], [3, np.nan]]
+        data3 = np.array([["1", 2], [3, np.nan]])
         assert _contains_nan(data3)[0]

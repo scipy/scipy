@@ -103,9 +103,7 @@ def _contains_nan(a, nan_policy='propagate'):
             try:
                 # This can happen when attempting to check nan with np.isnan
                 # for string array (e.g. as in the function `rankdata`).
-                a = np.array(a)
-                nan_str = np.array([np.nan]).astype(str)[0]
-                contains_nan = a[np.where(a.astype(str) == nan_str)].size != 0
+                contains_nan = np.any(a == "nan")
             except TypeError:
                 # Don't know what to do. Fall back to omitting nan values and
                 # issue a warning.
