@@ -76,7 +76,7 @@ tests, benchmarks, and correct code style.
     `doctest`_ format -- is put in docstrings.  Those docstrings can be read
     within the interpreter, and are compiled into a reference guide in HTML and
     pdf format.  Higher-level documentation for key (areas of) functionality is
-    provided in a tutorial format and/or in module docstrings.  A guide on how to
+    provided in tutorial format and/or in module docstrings.  A guide on how to
     write documentation is given in :ref:`numpy:howto-document`, and
     :ref:`rendering-documentation` explains how to preview the documentation
     as it will appear online.
