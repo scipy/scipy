@@ -176,7 +176,7 @@ def test_nnlf_and_related_methods(dist, params):
 
 def cases_test_fit():
     # These three fail default test; check separately
-    skip_basic_fit = {'argus', 'foldnorm', 'truncweibull_min'}
+    skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min'}
     # status of 'studentized_range', 'ksone', 'kstwo' unknown; all others pass
     slow_basic_fit = {'burr12', 'johnsonsb', 'bradford', 'fisk', 'mielke',
                       'exponpow', 'rdist', 'norminvgauss', 'betaprime',
@@ -423,6 +423,20 @@ class TestFit:
         shapes = (1.952125337355587, 2., 3.)
         data = dist.rvs(*shapes, size=N, random_state=rng)
         shape_bounds = {'c': (0.1, 10), 'loc': (0.1, 10), 'scale': (0.1, 10)}
+        res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
+
+        assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
+
+    def test_truncpareto(self):
+        # Can't guarantee that all distributions will fit all data with
+        # arbitrary bounds. This distribution just happens to fail above.
+        # Try something slightly different.
+        N = 1000
+        rng = np.random.default_rng(self.seed)
+        dist = stats.truncpareto
+        shapes = (1.8, 5.3, 2.3, 4.1)
+        data = dist.rvs(*shapes, size=N, random_state=rng)
+        shape_bounds = [(0.1, 10)]*4
         res = stats.fit(dist, data, shape_bounds, optimizer=self.opt)
 
         assert_nllf_less_or_close(dist, data, res.params, shapes, **self.tols)
