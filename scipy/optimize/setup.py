@@ -104,7 +104,7 @@ def configuration(parent_package='', top_path=None):
                        include_dirs=[get_python_inc()],
                        **numpy_nodepr_api)
 
-    config.add_extension('_directmodule',
+    config.add_extension('_direct',
                          sources=['_directmodule.c'],
                          libraries=['_direct_lib'],
                          depends=(sources + headers),
