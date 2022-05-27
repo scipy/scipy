@@ -6,7 +6,7 @@ from typing import (
 import numpy as np
 from scipy.optimize import OptimizeResult
 from ._constraints import old_bound_to_new, Bounds
-from ._directmodule import direct as _direct  # type: ignore
+from ._direct import direct as _direct  # type: ignore
 
 if TYPE_CHECKING:
     import numpy.typing as npt
