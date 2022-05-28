@@ -554,13 +554,6 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit__spline(void)
 {
-    PyObject *module;
-    module = PyModule_Create(&moduledef);
-    if (module == NULL) {
-        return NULL;
-    }
-
     import_array();
-
-    return module;
+    return PyModule_Create(&moduledef);
 }
