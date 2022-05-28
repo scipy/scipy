@@ -67,10 +67,7 @@ import shutil
 import subprocess
 import time
 import datetime
-try:
-    from types import ModuleType as new_module
-except ImportError:  # old Python
-    from imp import new_module
+from types import ModuleType as new_module  # noqa: E402
 
 ROOT_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__)))
 
@@ -226,6 +223,8 @@ def main(argv):
     if args.refguide_check:
         cmd = [os.path.join(ROOT_DIR, 'tools', 'refguide_check.py'),
                '--doctests']
+        if args.verbose:
+            cmd += ['-' + 'v'*args.verbose]
         if args.submodule:
             cmd += [args.submodule]
         os.execv(sys.executable, [sys.executable] + cmd)

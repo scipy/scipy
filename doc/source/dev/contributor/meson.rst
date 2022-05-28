@@ -34,8 +34,8 @@ Clone the repo if you haven't done so yet, and initialize the git submodules::
 Create a conda development environment, build SciPy with Meson and run the test
 suite::
 
-  conda env create -f environment_meson.yml
-  conda activate scipy-meson
+  conda env create -f environment.yml
+  conda activate scipy-dev
   python dev.py
 
 
@@ -57,12 +57,12 @@ recommended installer is
 
 To create a development environment::
 
-  conda env create -f environment_meson.yml  # `mamba` works too for this command
-  conda activate scipy-meson
+  conda env create -f environment.yml  # `mamba` works too for this command
+  conda activate scipy-dev
 
 Support for Cython in Meson is very new, and we also need some recent bug
 fixes and new features in Meson - hence we need a ``>=0.60.x`` release
-(automatically installed via use of ``environment_meson.yml`` above).
+(automatically installed via use of ``environment.yml`` above).
 
 Meson uses a configure and a build stage. To configure it for putting the build
 artifacts in ``build/`` and a local install under ``installdir/`` and then
@@ -150,9 +150,10 @@ good resource.
 For running the Linux Meson CI job locally, one can use the ``act`` tool, see
 :ref:`using-act`.
 
+.. _meson-faq:
 
-Frequently asked questions
-==========================
+Meson frequently asked questions
+================================
 
 **Q: What are the changes in dependencies when switching to Meson?**
 

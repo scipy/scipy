@@ -822,22 +822,29 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *
+PyMODINIT_FUNC
 PyInit__odepack(void)
 {
-    PyObject *m, *d, *s;
+    PyObject *module, *mdict;
 
-    m = PyModule_Create(&moduledef);
     import_array();
-    d = PyModule_GetDict(m);
 
-    s = PyUnicode_FromString(" 1.9 ");
-    PyDict_SetItemString(d, "__version__", s);
-    odepack_error = PyErr_NewException ("odepack.error", NULL, NULL);
-    Py_DECREF(s);
-    PyDict_SetItemString(d, "error", odepack_error);
-    if (PyErr_Occurred()) {
-        Py_FatalError("can't initialize module odepack");
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return NULL;
     }
-    return m;
+
+    mdict = PyModule_GetDict(module);
+    if (mdict == NULL) {
+        return NULL;
+    }
+    odepack_error = PyErr_NewException("_odepack.error", NULL, NULL);
+    if (odepack_error == NULL) {
+        return NULL;
+    }
+    if (PyDict_SetItemString(mdict, "error", odepack_error)) {
+        return NULL;
+    }
+
+    return module;
 }

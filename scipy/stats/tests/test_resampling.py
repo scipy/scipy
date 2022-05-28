@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
-from scipy.stats import (bootstrap, BootstrapDegenerateDistributionWarning,
-                         monte_carlo_test, permutation_test)
+from scipy.stats import bootstrap, monte_carlo_test, permutation_test
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy import special
@@ -361,7 +360,8 @@ def test_bootstrap_degenerate(method):
     data = 35 * [10000.]
     if method == "BCa":
         with np.errstate(invalid='ignore'):
-            with pytest.warns(BootstrapDegenerateDistributionWarning):
+            msg = "The bootstrap distribution is degenerate"
+            with pytest.warns(stats.DegenerateDataWarning, match=msg):
                 res = bootstrap([data, ], np.mean, method=method)
                 assert_equal(res.confidence_interval, (np.nan, np.nan))
     else:

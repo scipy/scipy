@@ -551,23 +551,9 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__spline(void)
+PyMODINIT_FUNC
+PyInit__spline(void)
 {
-    PyObject *m, *d, *s;
-
-    m = PyModule_Create(&moduledef);
     import_array();
-
-    /* Add some symbolic constants to the module */
-    d = PyModule_GetDict(m);
-
-    s = PyUnicode_FromString("0.2");
-    PyDict_SetItemString(d, "__version__", s);
-    Py_DECREF(s);
-
-    /* Check for errors */
-    if (PyErr_Occurred()) {
-        Py_FatalError("can't initialize module array");
-    }
-    return m;
+    return PyModule_Create(&moduledef);
 }

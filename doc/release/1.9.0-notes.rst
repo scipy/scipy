@@ -111,6 +111,42 @@ Other changes
 *************
 
 
+SciPy switched to Meson as its build system
+===========================================
+
+This is the first release that ships with [Meson](https://mesonbuild.com) as
+the build system. When installing with ``pip`` or ``pypa/build``, Meson will be
+used (invoked via the ``meson-python`` build hook). This change brings
+significant benefits - most importantly much faster build times, but also
+better support for cross-compilation and cleaner build logs.
+
+.. note::
+
+   This release still ships with support for ``numpy.distutils``-based builds
+   as well. Those can be invoked through the ``setup.py`` command-line
+   interface (e.g., ``python setup.py install``). It is planned to remove
+   ``numpy.distutils`` support before the 1.10.0 release.
+
+When building from source, a number of things have changed compared to building
+with ``numpy.distutils``:
+
+- New build dependencies: ``meson``, ``ninja``, and ``pkg-config``.
+  ``setuptools`` and ``wheel`` are no longer needed.
+- BLAS and LAPACK libraries that are supported haven't changed, however the
+  discovery mechanism has: that is now using ``pkg-config`` instead of hardcoded
+  paths or a ``site.cfg`` file.
+- The build defaults to using OpenBLAS. See :ref:`blas-lapack-selection` for
+  details.
+
+The two CLIs that can be used to build wheels are ``pip`` and ``build``. In
+addition, the SciPy repo contains a ``python dev.py`` CLI for any kind of
+development task (see its ``--help`` for details). For a comparison between old
+(``distutils``) and new (``meson``) build commands, see :ref:`meson-faq`.
+
+For more information on the introduction of Meson support in SciPy, see
+`gh-13615 <https://github.com/scipy/scipy/issues/13615>`__ and
+`this blog post <https://labs.quansight.org/blog/2021/07/moving-scipy-to-meson/>`__.
+
 
 *******
 Authors
