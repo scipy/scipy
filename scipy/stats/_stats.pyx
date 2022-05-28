@@ -760,7 +760,9 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
 def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0):
     """
     def gaussian_kernel_estimate_log(points, real[:, :] values, xi, precision)
+
     Evaluate the log of the estimated pdf on a provided set of points.
+
     Parameters
     ----------
     points : array_like with shape (n, d)
@@ -771,10 +773,12 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
         Coordinates to evaluate the estimate at in ``d`` dimensions.
     precision : array_like with shape (d, d)
         Precision matrix for the Gaussian kernel.
+
     Returns
     -------
     estimate : double[:, :] with shape (m, p)
-        The log of the multivariate Gaussian kernel estimate evaluated at the input coordinates.
+        The log of the multivariate Gaussian kernel estimate evaluated at the
+        input coordinates.
     """
     cdef:
         real[:, :] points_, xi_, values_, log_values_
