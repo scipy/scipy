@@ -151,7 +151,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         ``sparse.linalg.lsmr`` for more information). This output can be
         useful for determining the convergence of the least squares solver,
         particularly the iterative ``'lsmr'`` solver. The unbounded least
-        squares problem is to minimize 0.5 * ||A x - b||**2.
+        squares problem is to minimize ``0.5 * ||A x - b||**2``.
     nit : int
         Number of iterations. Zero if the unconstrained solution is optimal.
     status : int
@@ -297,8 +297,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         raise ValueError("`lsmr_maxiter` must be None or positive integer.")
 
     if not ((isinstance(lsmr_tol, float) and lsmr_tol > 0) or
-            (isinstance(lsmr_tol, str) and lsmr_tol == 'auto') or
-            lsmr_tol is None):
+            lsmr_tol in ('auto', None)):
         raise ValueError("`lsmr_tol` must be None, 'auto', or positive float.")
 
     if lsq_solver == 'exact':
