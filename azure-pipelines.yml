@@ -169,6 +169,11 @@ stages:
         git submodule update --init
       displayName: 'Fetch submodules'
     - script: |
+            # For when updating this job to Meson: the `openblas` used here is
+            # missing pkg-config files. Ubunty Jammy (LTS 22.04) has openblas
+            # 3.20, so if that Docker image is available by then, just remove
+            # the unusual install method. For the bug report about missing .pc
+            # files: https://github.com/MacPython/openblas-libs/issues/74
             set -euo pipefail
             docker pull i386/ubuntu:bionic
             docker run -v $(pwd):/scipy i386/ubuntu:bionic /usr/bin/linux32 /bin/bash -c "cd scipy && \
@@ -177,7 +182,7 @@ stages:
             curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
             python3.8 get-pip.py && \
             pip3 --version && \
-            pip3 install setuptools==59.6.0 wheel numpy==1.18.5 cython==0.29.18 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran==0.10.0 --user && \
+            pip3 install setuptools==59.6.0 wheel numpy==1.18.5 cython==0.29.21 pybind11 pytest pytest-timeout pytest-xdist pytest-env pytest-cov Pillow mpmath pythran==0.10.0 && \
             apt-get -y install gcc-5 g++-5 gfortran-8 wget && \
             cd .. && \
             mkdir openblas && cd openblas && \
@@ -185,7 +190,7 @@ stages:
             cp -r \$target/lib/* /usr/lib && \
             cp \$target/include/* /usr/include && \
             cd ../scipy && \
-            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 pip3 install . && \
+            CC=gcc-5 CXX=g++-5 F77=gfortran-8 F90=gfortran-8 python3.8 setup.py install && \
             python3.8 tools/openblas_support.py --check_version $(openblas_version) && \
             python3.8 runtests.py -n --mode=full -- -n auto -s --junitxml=junit/test-results.xml --cov-config=.coveragerc --cov-report=xml --cov-report=html"
       displayName: 'Run 32-bit Ubuntu Docker Build / Tests'
@@ -333,8 +338,9 @@ stages:
         }
         $env:PATH = "C:\\ProgramData\\chocolatey\\lib\\mingw\\tools\\install\\mingw$(BITS)\\bin;" + $env:PATH
 
-        mkdir dist
-        pip wheel --no-build-isolation -v -v -v --wheel-dir=dist .
+        # Still testing distutils here (`pip wheel --no-use-pep517` cannot be
+        # used, so back to `setup.py` it is ...)
+        python setup.py bdist_wheel
         ls dist -r | Foreach-Object {
             pip install $_.FullName
         }

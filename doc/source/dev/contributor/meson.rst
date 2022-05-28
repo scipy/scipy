@@ -150,9 +150,10 @@ good resource.
 For running the Linux Meson CI job locally, one can use the ``act`` tool, see
 :ref:`using-act`.
 
+.. _meson-faq:
 
-Frequently asked questions
-==========================
+Meson frequently asked questions
+================================
 
 **Q: What are the changes in dependencies when switching to Meson?**
 

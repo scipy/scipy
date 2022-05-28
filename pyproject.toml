@@ -8,12 +8,15 @@
 #     "pybind11>=2.4.3,<2.5.0",
 
 [build-system]
+build-backend = 'mesonpy'
 requires = [
-    "wheel",
-    "setuptools<60.0",  # do not increase, 60.0 enables vendored distutils
-    "Cython>=0.29.18",
+    "meson-python>=0.5.0",
+    "Cython>=0.29.21",
     "pybind11>=2.4.3",
     "pythran>=0.9.12",
+    # `wheel` is needed for non-isolated builds, given that `meson-python`
+    # doesn't list it as a runtime requirement (at least in 0.5.0)
+    "wheel",
 
     # NumPy dependencies - to update these, sync from
     # https://github.com/scipy/oldest-supported-numpy/, and then
@@ -66,6 +69,8 @@ maintainers = [
 #     https://scipy.github.io/devdocs/dev/core-dev/index.html#version-ranges-for-numpy-and-other-dependencies
 requires-python = ">=3.8"
 dependencies = [
+    # TODO: update to "pin-compatible" once possible, see
+    # https://github.com/FFY00/meson-python/issues/29
     "numpy>=1.18.5",
 ]
 readme = "README.rst"
