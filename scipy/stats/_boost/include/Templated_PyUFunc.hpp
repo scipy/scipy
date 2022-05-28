@@ -2,30 +2,6 @@
 #define TEMPLATED_PYUFUNC_HPP
 
 #include <cstddef>
-
-// C++ standard dependent implementation
-// TODO: remove C++11 implementation when SciPy supports C++14 on all platforms
-#define USE_CPP14 (__cplusplus >= 201402L)
-
-#if USE_CPP14 && !defined(__wasm32__) && !defined(__wasm64__)
-
-#include <type_traits>
-#include <utility>
-#define UFUNC_STATIC_ASSERT(cond, msg) static_assert(cond, msg)
-#define UFUNC_CALLFUNC(RealType, NINPUTS, func, inputs)		      \
-    *output = callfunc<RealType>(std::make_index_sequence<NINPUTS>{}, \
-				 func, inputs);
-
-// Variadic magic to cast to and call a function with NINPUTS
-template <class RealType, std::size_t ... Is>
-RealType
-callfunc(std::index_sequence<Is ...>, void* func, RealType **inputs)
-{
-    return (reinterpret_cast<RealType(*)(...)>(func))(*inputs[Is] ...);
-}
-
-#else // USE_CPP14
-
 #include <stdexcept>
 #include <boost/static_assert.hpp>
 #define UFUNC_STATIC_ASSERT(cond, msg) BOOST_STATIC_ASSERT_MSG(cond, msg)
@@ -53,8 +29,6 @@ callfunc(void* func, RealType **inputs)
 				 "handles too few args!");
     }
 }
-
-#endif // USE_CPP14
 
 
 /** \brief UFUNC loop function that handles any type and number of inputs.

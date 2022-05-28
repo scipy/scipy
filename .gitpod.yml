@@ -12,14 +12,13 @@ tasks:
     init: |
       mkdir -p .vscode
       cp tools/docker_dev/settings.json .vscode/settings.json
-      conda activate scipy-dev
+      conda activate scipy-meson
       git submodule update --init
-      python setup.py build_ext --inplace
+      python dev.py --build-only -j2
       echo "🛠 Completed rebuilding SciPy!! 🛠 "
-      conda develop .
       echo "📖 Building docs 📖 "
       cd doc 
-      make html-scipyorg
+      python dev.py --doc
       echo "✨ Pre-build complete! You can close this terminal ✨ "
   
 # --------------------------------------------------------
@@ -32,14 +31,13 @@ ports:
 # some useful extensions to have
 vscode:
   extensions:
-    - eamodio.gitlens
-    - njpwerner.autodocstring
-    - lextudio.restructuredtext
-    - ritwickdey.liveserver
-    - ms-python.python
-    - yzhang.markdown-all-in-one
     - bungcip.better-toml
-    - mhutchie.git-graph
+    - eamodio.gitlens
+    - lextudio.restructuredtext
+    - ms-python.python
+    - njpwerner.autodocstring
+    - ritwickdey.liveserver
+    - yzhang.markdown-all-in-one
 
 # --------------------------------------------------------
 # using prebuilds for the container - note: atm this only
