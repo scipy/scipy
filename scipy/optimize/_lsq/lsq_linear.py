@@ -33,7 +33,7 @@ TERMINATION_MESSAGES = {
 
 def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
                lsq_solver=None, lsmr_tol=None, max_iter=None,
-               verbose=0, *, lsmr_max_iter=None,):
+               verbose=0, *, lsmr_maxiter=None,):
     r"""Solve a linear least-squares problem with bounds on the variables.
 
     Given a m-by-n design matrix A and a target vector b with m elements,
@@ -107,7 +107,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
             * 0 : work silently (default).
             * 1 : display a termination report.
             * 2 : display progress during iterations.
-    lsmr_max_iter : None or int, optional
+    lsmr_maxiter : None or int, optional
         Maximum number of iterations for the lsmr least squares solver,
         if it is used (by setting ``lsq_solver='lsmr'``). If None (default), it
         uses lsmr's default of ``min(m, n)`` where ``m`` and ``n`` are the
@@ -293,8 +293,8 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         raise ValueError("Each lower bound must be strictly less than each "
                          "upper bound.")
 
-    if lsmr_max_iter is not None and lsmr_max_iter < 1:
-        raise ValueError("`lsmr_max_iter` must be None or positive integer.")
+    if lsmr_maxiter is not None and lsmr_maxiter < 1:
+        raise ValueError("`lsmr_maxiter` must be None or positive integer.")
 
     if not ((isinstance(lsmr_tol, float) and lsmr_tol > 0) or
             (isinstance(lsmr_tol, str) and lsmr_tol == 'auto') or
@@ -307,7 +307,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
         first_lsmr_tol = lsmr_tol  # tol of first call to lsmr
         if lsmr_tol is None or lsmr_tol == 'auto':
             first_lsmr_tol = 1e-2 * tol  # default if lsmr_tol not defined
-        unbd_lsq = lsmr(A, b, maxiter=lsmr_max_iter,
+        unbd_lsq = lsmr(A, b, maxiter=lsmr_maxiter,
                         atol=first_lsmr_tol, btol=first_lsmr_tol)
     x_lsq = unbd_lsq[0]  # extract the solution from the least squares solver
 
@@ -332,7 +332,7 @@ def lsq_linear(A, b, bounds=(-np.inf, np.inf), method='trf', tol=1e-10,
 
     if method == 'trf':
         res = trf_linear(A, b, x_lsq, lb, ub, tol, lsq_solver, lsmr_tol,
-                         max_iter, verbose, lsmr_max_iter=lsmr_max_iter)
+                         max_iter, verbose, lsmr_maxiter=lsmr_maxiter)
     elif method == 'bvls':
         res = bvls(A, b, x_lsq, lb, ub, tol, max_iter, verbose)
 

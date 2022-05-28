@@ -203,7 +203,7 @@ class SparseMixin:
         assert_allclose(res.optimality, 0.0, atol=1e-6)
 
         res = lsq_linear(A, b, (lb, ub), lsmr_tol=1e-13,
-                         lsmr_max_iter=1500)
+                         lsmr_maxiter=1500)
         assert_allclose(res.optimality, 0.0, atol=1e-6)
 
         res = lsq_linear(A, b, (lb, ub), lsmr_tol='auto')
@@ -225,7 +225,7 @@ class SparseMixin:
             assert_allclose(exact_sol.x, default_lsmr_sol.x)
 
         # By increasing the maximum lsmr iters, it will converge
-        conv_lsmr = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=10)
+        conv_lsmr = lsq_linear(A, b, lsq_solver='lsmr', lsmr_maxiter=10)
         assert_allclose(exact_sol.x, conv_lsmr.x)
 
 
@@ -256,14 +256,14 @@ class TestErrorChecking:
         with pytest.raises(ValueError, match=err_message):
             _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_tol=1)
 
-    def test_option_lsmr_max_iter(self):
+    def test_option_lsmr_maxiter(self):
         # Should work with positive integers or None
-        _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=1)
-        _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=None)
+        _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_maxiter=1)
+        _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_maxiter=None)
 
         # Should raise error with 0 or negative max iter
-        err_message = "`lsmr_max_iter` must be None or positive integer."
+        err_message = "`lsmr_maxiter` must be None or positive integer."
         with pytest.raises(ValueError, match=err_message):
-            _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=0)
+            _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_maxiter=0)
         with pytest.raises(ValueError, match=err_message):
-            _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_max_iter=-1)
+            _ = lsq_linear(A, b, lsq_solver='lsmr', lsmr_maxiter=-1)
