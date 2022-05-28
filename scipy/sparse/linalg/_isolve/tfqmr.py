@@ -110,10 +110,12 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     ndofs = A.shape[0]
     if maxiter is None:
         maxiter = min(10000, ndofs * 10)
-    if x0 is None:
-        x0 = x.copy()
 
-    u = r = b - A.matvec(x)
+    if x0 is None:
+        r = b.copy()
+    else:
+        r = b - A.matvec(x)
+    u = r
     w = r.copy()
     # Take rstar as b - Ax0, that is rstar := r = b - Ax0 mathematically
     rstar = r

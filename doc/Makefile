@@ -72,7 +72,7 @@ dist:
 	install -d build
 	rm -rf build/env
 	$(PYTHON) -mvenv --system-site-packages build/env
-	$(CURDIR)/build/env/bin/python -mpip install Sphinx
+	$(CURDIR)/build/env/bin/python -mpip install -r ../doc_requirements.txt
 	$(CURDIR)/build/env/bin/python -mpip install ..
 	make PYTHON="$(CURDIR)/build/env/bin/python" doc-dist
 
@@ -82,9 +82,8 @@ doc-dist: html-scipyorg html
 	-test -d build/htmlhelp || make htmlhelp-build
 	-rm -rf build/dist
 	mkdir -p build/dist
-	cp -r build/html-scipyorg build/dist
-	touch build/dist/index.html
-	(cd build/html && zip -9qr ../dist/scipy-html.zip .)
+	cp -r build/html-scipyorg/* build/dist
+	(cd build/html-scipyorg && zip -9qr ../dist/scipy-html.zip .)
 	chmod ug=rwX,o=rX -R build/dist
 	find build/dist -type d -print0 | xargs -0r chmod g+s
 	cd build/dist && tar czf ../dist.tar.gz *

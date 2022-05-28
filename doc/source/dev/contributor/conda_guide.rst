@@ -35,10 +35,8 @@ the latest release of conda from either
 	  or Linux PATH?" in the `Anaconda FAQ`_.
 
 #. The Python-level dependencies for building SciPy will be installed as part of
-   the conda environment creation. They are listed on the
+   the conda environment creation - see
    `environment.yml <https://github.com/scipy/scipy/blob/main/environment.yml>`_
-   or `environment_meson.yml <https://github.com/scipy/scipy/blob/main/environment_meson.yml>`_
-   (depending on the build system you are planning to use.)
 
    Note that we're installing SciPy's build dependencies and some other
    software, but not (yet) SciPy itself. Also note that you'll need to have

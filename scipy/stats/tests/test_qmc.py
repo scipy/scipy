@@ -775,44 +775,113 @@ class TestSobol(QMCEngineTests):
         sample = engine.random(8)
         assert_array_equal(self.unscramble_nd, sample)
 
+
+class TestPoisson(QMCEngineTests):
+    qmce = qmc.PoissonDisk
+    can_scramble = False
+
+    def test_bounds(self, *args):
+        pytest.skip("Too costly in memory.")
+
+    def test_fast_forward(self, *args):
+        pytest.skip("Not applicable: recursive process.")
+
+    def test_sample(self, *args):
+        pytest.skip("Not applicable: the value of reference sample is"
+                    " implementation dependent.")
+
+    def test_continuing(self, *args):
+        # can continue a sampling, but will not preserve the same order
+        # because candidates are lost, so we will not select the same center
+        radius = 0.05
+        ns = 6
+        engine = self.engine(d=2, radius=radius, scramble=False)
+
+        sample_init = engine.random(n=ns)
+        assert len(sample_init) <= ns
+        assert l2_norm(sample_init) >= radius
+
+        sample_continued = engine.random(n=ns)
+        assert len(sample_continued) <= ns
+        assert l2_norm(sample_continued) >= radius
+
+        sample = np.concatenate([sample_init, sample_continued], axis=0)
+        assert len(sample) <= ns * 2
+        assert l2_norm(sample) >= radius
+
+    def test_mindist(self):
+        rng = np.random.default_rng(132074951149370773672162394161442690287)
+        ns = 100
+
+        low, high = 0.01, 0.1
+        radii = (high - low) * rng.random(10) + low
+
+        dimensions = [1, 2, 3, 4]
+        hypersphere_methods = ["volume", "surface"]
+
+        gen = product(dimensions, radii, hypersphere_methods)
+
+        for d, radius, hypersphere in gen:
+            engine = self.qmce(
+                d=2, radius=radius, hypersphere=hypersphere, seed=rng
+            )
+            sample = engine.random(ns)
+
+            assert len(sample) <= ns
+            assert l2_norm(sample) >= radius
+
+    def test_fill_space(self):
+        radius = 0.2
+        engine = self.qmce(d=2, radius=radius)
+
+        sample = engine.fill_space()
+        # circle packing problem is np complex
+        assert l2_norm(sample) >= radius
+
+    def test_raises(self):
+        message = r"'toto' is not a valid hypersphere sampling"
+        with pytest.raises(ValueError, match=message):
+            qmc.PoissonDisk(1, hypersphere="toto")
+
+
 class TestMultinomialQMC:
     def test_validations(self):
         # negative Ps
         p = np.array([0.12, 0.26, -0.05, 0.35, 0.22])
         with pytest.raises(ValueError, match=r"Elements of pvals must "
                                              r"be non-negative."):
-            qmc.MultinomialQMC(p)
+            qmc.MultinomialQMC(p, n_trials=10)
 
         # sum of P too large
         p = np.array([0.12, 0.26, 0.1, 0.35, 0.22])
         message = r"Elements of pvals must sum to 1."
         with pytest.raises(ValueError, match=message):
-            qmc.MultinomialQMC(p)
+            qmc.MultinomialQMC(p, n_trials=10)
 
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
 
         message = r"Dimension of `engine` must be 1."
         with pytest.raises(ValueError, match=message):
-            qmc.MultinomialQMC(p, engine=qmc.Sobol(d=2))
+            qmc.MultinomialQMC(p, n_trials=10, engine=qmc.Sobol(d=2))
 
         message = r"`engine` must be an instance of..."
         with pytest.raises(ValueError, match=message):
-            qmc.MultinomialQMC(p, engine=np.random.default_rng())
+            qmc.MultinomialQMC(p, n_trials=10, engine=np.random.default_rng())
 
     @pytest.mark.filterwarnings('ignore::UserWarning')
     def test_MultinomialBasicDraw(self):
         seed = np.random.default_rng(6955663962957011631562466584467607969)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([13, 24, 6, 35, 22])
-        engine = qmc.MultinomialQMC(p, seed=seed)
-        assert_array_equal(engine.random(100), expected)
+        expected = np.array([[13, 24, 6, 35, 22]])
+        engine = qmc.MultinomialQMC(p, n_trials=100, seed=seed)
+        assert_array_equal(engine.random(1), expected)
 
     def test_MultinomialDistribution(self):
         seed = np.random.default_rng(77797854505813727292048130876699859000)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        engine = qmc.MultinomialQMC(p, seed=seed)
-        draws = engine.random(8192)
-        assert_allclose(draws / np.sum(draws), p, atol=1e-4)
+        engine = qmc.MultinomialQMC(p, n_trials=8192, seed=seed)
+        draws = engine.random(1)
+        assert_allclose(draws / np.sum(draws), np.atleast_2d(p), atol=1e-4)
 
     def test_FindIndex(self):
         p_cumulative = np.array([0.1, 0.4, 0.45, 0.6, 0.75, 0.9, 0.99, 1.0])
@@ -828,10 +897,11 @@ class TestMultinomialQMC:
         # same as test_MultinomialBasicDraw with different engine
         seed = np.random.default_rng(283753519042773243071753037669078065412)
         p = np.array([0.12, 0.26, 0.05, 0.35, 0.22])
-        expected = np.array([12, 25, 5, 36, 22])
+        expected = np.array([[12, 25, 5, 36, 22]])
         base_engine = qmc.Sobol(1, scramble=True, seed=seed)
-        engine = qmc.MultinomialQMC(p, engine=base_engine, seed=seed)
-        assert_array_equal(engine.random(100), expected)
+        engine = qmc.MultinomialQMC(p, n_trials=100, engine=base_engine,
+                                    seed=seed)
+        assert_array_equal(engine.random(1), expected)
 
 
 class TestNormalQMC:
@@ -1180,10 +1250,6 @@ class TestMultivariateNormalQMC:
 
 class TestLloyd:
     def test_lloyd(self):
-        # mindist
-        def l2_norm(sample):
-            return distance.pdist(sample).min()
-
         # quite sensible seed as it can go up before going further down
         rng = np.random.RandomState(1809831)
         sample = rng.uniform(0, 1, size=(128, 2))
@@ -1236,3 +1302,8 @@ class TestLloyd:
         with pytest.raises(ValueError, match=msg):
             sample = [[-1.1, 0], [0.1, 0.4], [1, 2]]
             lloyd_centroidal_voronoi_tessellation(sample)
+
+
+# mindist
+def l2_norm(sample):
+    return distance.pdist(sample).min()

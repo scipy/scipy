@@ -30,7 +30,7 @@ You will then be asked to install the `Gitpod GitHub app <https://github.com/mar
 Make sure to select **All repositories** access option to avoid issues with permissions later on. Click on the green **Install** button
 
 .. image:: ../../_static/gitpod/installing-gitpod-io.png
-    :alt: Gitpod repository access and installation screenshot
+    :alt: Gitpod application repository access and installation screenshot - All repositories checked (read and write access)
 
 This will install the necessary hooks for the integration.
 
@@ -59,9 +59,13 @@ Once you have authenticated to Gitpod through GitHub, you can install the `Gitpo
 
 #. Once the build is complete, you can test the build by entering::
 
-        python runtests.py -v
+        python dev.py
 
-``runtests.py`` is another script in the SciPy root directory. It runs a suite of tests that make sure SciPy is working as it should, and ``-v`` activates the ``--verbose`` option to show all the test output.
+This command make use of Meson, for more details on how this affects your workflow migrating from ``distutils`` check the :ref:`meson` section in the Developer documentation.
+
+   .. note::
+
+      If you are a regular VSCode user you can install the Gitpod Remote extension on your local VSCode editor and sync your local editor to the remote Gitpod server. To do this click <kbd> F1 </kbd> and search for Gitpod open on VSCode.
 
 Quick workspace tour
 ---------------------
@@ -70,9 +74,10 @@ Gitpod uses VSCode as the editor. If you have not used this editor before, you c
 Your workspace will look similar to the image below:
 
 .. image:: ../../_static/gitpod/gitpod-workspace.png
-    :alt: Gitpod workspace screenshot
+    :alt: Gitpod workspace showing the VSCode editor - some parts are highlighted: 1- Python interpreter, 2- Git branch, 3- GitHub Pull Requests extension on the side bar 4- VsCode Marketplace 5- Current directory
 
-.. note::  By default VSCode initialises with a light theme, you can change to a dark theme by with the keyboard shortcut :kbd:`Cmd-K Cmd-T` in Mac or :kbd:`Ctrl-K Ctrl-T` in Linux and Windows.
+.. note::
+    By default VSCode initialises with a light theme, you can change to a dark theme by with the keyboard shortcut :kbd:`Cmd-K Cmd-T` in Mac or :kbd:`Ctrl-K Ctrl-T` in Linux and Windows.
 
 We have marked some important sections in the editor:
 
@@ -97,11 +102,11 @@ The  :ref:`development-workflow` section of this documentation contains informat
 
 When using Gitpod, note these main differences with the setup described in :ref:`development-workflow`.
 
-#. You do not need to configure your git username, and email as this should be done for you as you authenticated through GitHub. You can check the git configuration with the command ``git config --list`` in your terminal.
+#. You **do not** need to configure your git username, and email as this should be done for you as you authenticated through GitHub. You can check the git configuration with the command ``git config --list`` in your terminal.
 #. As you started your workspace from your own SciPy fork, you will by default have both "upstream" and "origin" added as remotes. You can verify this by typing ``git remote`` on your terminal or by clicking on the **branch name** on the status bar (see image below).
 
 .. image:: ../../_static/gitpod/scipy-gitpod-branches.png
-    :alt: Gitpod workspace branches plugin screenshot
+    :alt: Gitpod VSCode editor - git branches dropdown expanded
 
 Rendering the SciPy documentation
 ----------------------------------
@@ -112,11 +117,11 @@ The documentation is pre-built during your workspace initialization. So once thi
 Option 1: Using Liveserve
 ***************************
 
-#. View the documentation in ``scipy/doc/build/html-scipyorg``. You can start with "index.html" and browse, or you can jump straight to the file you're interested in.
+#. View the documentation in ``scipy/doc/build/html-scipyorg``. You can start with ``index.html`` and browse, or you can jump straight to the file you're interested in.
 #. To see the rendered version of a page, you can right-click on the ``.html`` file and click on **Open with Live Serve**. Alternatively, you can open the file in the editor and click on the **Go live** button on the status bar.
 
     .. image:: ../../_static/gitpod/vscode-statusbar.png
-        :alt: Gitpod workspace VSCode start live serve screenshot
+        :alt: Gitpod VSCode editor - status bar zoom with "Go Live" tab highligthed by a teal rectangle
 
 #. A simple browser will open to the right-hand side of the editor. We recommend closing it and click on the **Open in browser** button in the pop-up.
 #. To stop the server click on the **Port: 5500** button on the status bar.
@@ -126,18 +131,19 @@ Option 2: Using the rst extension
 
 A quick and easy way to see live changes in a ``.rst`` file as you work on it uses the rst extension with docutils.
 
-.. note:: This will generate a simple live preview of the document without the ``html`` theme, and some backlinks might not be added correctly. But it is an easy and lightweight way to get instant feedback on your work.
+.. note::
+    This will generate a simple live preview of the document without the ``html`` theme, and some backlinks might not be added correctly. But it is an easy and lightweight way to get instant feedback on your work.
 
 #. Open any of the source documentation files located in ``doc/source`` in the editor.
 #. Open VSCode Command Palette with :kbd:`Cmd-Shift-P` in Mac or :kbd:`Ctrl-Shift-P` in Linux and Windows. Start typing "restructured" and choose either "Open preview" or "Open preview to the Side".
 
     .. image:: ../../_static/gitpod/vscode-rst.png
-        :alt: Gitpod workspace VSCode open rst screenshot
+        :alt: Gitpod VSCode editor - command palette expanded showing autocomplete options for "restruct"
 
 #. As you work on the document, you will see a live rendering of it on the editor.
 
     .. image:: ../../_static/gitpod/rst-rendering.png
-        :alt: Gitpod workspace VSCode rst rendering screenshot
+        :alt: Gitpod workspace - Quickstart Docker rst file opened on the left and rendered version on the right group of the editor.
 
 If you want to see the final output with the ``html`` theme you will need to rebuild the docs with ``make html-scipyorg`` and use Live Serve as described in option 1.
 
@@ -158,7 +164,7 @@ FAQ's
     Click on **Update Permissions** and confirm the changes in the GitHub application page.
 
     .. image:: ../../_static/gitpod/gitpod-edit-permissions-gh.png
-        :alt: Gitpod integrations - edit GH permissions screenshot
+        :alt: Gitpod dashboard integrations section - edit GitHub permissions dropdown expanded
 
 #. How long does my workspace stay active if I'm not using it?
     If you keep your workspace open in a browser tab but don't interact with it, it will shut down after 30 minutes. If you close the browser tab, it will shut down after 3 minutes.

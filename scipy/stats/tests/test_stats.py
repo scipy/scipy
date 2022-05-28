@@ -34,8 +34,7 @@ from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
-from scipy.stats._stats_py import (_permutation_distribution_t,
-                            AlexanderGovernConstantInputWarning)
+from scipy.stats._stats_py import _permutation_distribution_t
 
 
 """ Numbers in docstrings beginning with 'W' refer to the section numbers
@@ -2964,11 +2963,17 @@ class TestMoments:
         mm = stats.moment(a, 2, axis=1, nan_policy="propagate")
         np.testing.assert_allclose(mm, [1.25, np.nan], atol=1e-15)
 
+    def test_moment_empty_moment(self):
+        # tests moment with empty `moment` list
+        with pytest.raises(ValueError, match=r"'moment' must be a scalar or a"
+                                             r" non-empty 1D list/array."):
+            stats.moment([1, 2, 3, 4], moment=[])
+
     def test_skewness(self):
         # Scalar test case
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             y = stats.skew(self.scalar_testcase)
-            assert_approx_equal(y, 0.0)
+            assert np.isnan(y)
         # sum((testmathworks-mean(testmathworks,axis=0))**3,axis=0) /
         #     ((sqrt(var(testmathworks)*4/5))**3)/5
         y = stats.skew(self.testmathworks)
@@ -3004,20 +3009,20 @@ class TestMoments:
         # exact (gh-13245)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             a = np.repeat(-0.27829495, 10)
-            assert stats.skew(a) == 0.0
-            assert stats.skew(a * float(2**50)) == 0.0
-            assert stats.skew(a / float(2**50)) == 0.0
-            assert stats.skew(a, bias=False) == 0.0
+            assert np.isnan(stats.skew(a))
+            assert np.isnan(stats.skew(a * float(2**50)))
+            assert np.isnan(stats.skew(a / float(2**50)))
+            assert np.isnan(stats.skew(a, bias=False))
 
             # similarly, from gh-11086:
-            assert stats.skew([14.3]*7) == 0.0
-            assert stats.skew(1 + np.arange(-3, 4)*1e-16) == 0
+            assert np.isnan(stats.skew([14.3]*7))
+            assert np.isnan(stats.skew(1 + np.arange(-3, 4)*1e-16))
 
     def test_kurtosis(self):
         # Scalar test case
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             y = stats.kurtosis(self.scalar_testcase)
-            assert_approx_equal(y, -3.0)
+            assert np.isnan(y)
         #   sum((testcase-mean(testcase,axis=0))**4,axis=0)/((sqrt(var(testcase)*3/4))**4)/4
         #   sum((test2-mean(testmathworks,axis=0))**4,axis=0)/((sqrt(var(testmathworks)*4/5))**4)/5
         #   Set flags for axis = 0 and
@@ -3057,10 +3062,10 @@ class TestMoments:
         # exact (gh-13245)
         a = np.repeat(-0.27829495, 10)
         with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
-            assert stats.kurtosis(a, fisher=False) == 0.0
-            assert stats.kurtosis(a * float(2**50), fisher=False) == 0.0
-            assert stats.kurtosis(a / float(2**50), fisher=False) == 0.0
-            assert stats.kurtosis(a, fisher=False, bias=False) == 0.0
+            assert np.isnan(stats.kurtosis(a, fisher=False))
+            assert np.isnan(stats.kurtosis(a * float(2**50), fisher=False))
+            assert np.isnan(stats.kurtosis(a / float(2**50), fisher=False))
+            assert np.isnan(stats.kurtosis(a, fisher=False, bias=False))
 
     def test_moment_accuracy(self):
         # 'moment' must have a small enough error compared to the slower
@@ -3096,7 +3101,8 @@ class TestStudentTest:
     P1_1_g = 1 - (P1_1 / 2)
 
     def test_onesample(self):
-        with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+        with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
+                pytest.warns(RuntimeWarning, match="Precision loss occurred"):
             sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
             t, p = stats.ttest_1samp(4., 3.)
         assert_(np.isnan(t))
@@ -3151,82 +3157,119 @@ class TestStudentTest:
         assert_allclose(t, self.T1_1)
 
 
-def test_percentileofscore():
-    pcos = stats.percentileofscore
+class TestPercentileOfScore:
 
-    assert_equal(pcos([1,2,3,4,5,6,7,8,9,10],4), 40.0)
+    def f(self, *args, **kwargs):
+        return stats.percentileofscore(*args, **kwargs)
 
-    for (kind, result) in [('mean', 35.0),
-                           ('strict', 30.0),
-                           ('weak', 40.0)]:
-        assert_equal(pcos(np.arange(10) + 1, 4, kind=kind), result)
+    @pytest.mark.parametrize("kind, result", [("rank", 40),
+                                              ("mean", 35),
+                                              ("strict", 30),
+                                              ("weak", 40)])
+    def test_unique(self, kind, result):
+        a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        assert_equal(self.f(a, 4, kind=kind), result)
 
-    # multiple - 2
-    for (kind, result) in [('rank', 45.0),
-                           ('strict', 30.0),
-                           ('weak', 50.0),
-                           ('mean', 40.0)]:
-        assert_equal(pcos([1,2,3,4,4,5,6,7,8,9], 4, kind=kind), result)
+    @pytest.mark.parametrize("kind, result", [("rank", 45),
+                                              ("mean", 40),
+                                              ("strict", 30),
+                                              ("weak", 50)])
+    def test_multiple2(self, kind, result):
+        a = [1, 2, 3, 4, 4, 5, 6, 7, 8, 9]
+        assert_equal(self.f(a, 4, kind=kind), result)
 
-    # multiple - 3
-    assert_equal(pcos([1,2,3,4,4,4,5,6,7,8], 4), 50.0)
-    for (kind, result) in [('rank', 50.0),
-                           ('mean', 45.0),
-                           ('strict', 30.0),
-                           ('weak', 60.0)]:
+    @pytest.mark.parametrize("kind, result", [("rank", 50),
+                                              ("mean", 45),
+                                              ("strict", 30),
+                                              ("weak", 60)])
+    def test_multiple3(self, kind, result):
+        a = [1, 2, 3, 4, 4, 4, 5, 6, 7, 8]
+        assert_equal(self.f(a, 4, kind=kind), result)
 
-        assert_equal(pcos([1,2,3,4,4,4,5,6,7,8], 4, kind=kind), result)
+    @pytest.mark.parametrize("kind, result", [("rank", 30),
+                                              ("mean", 30),
+                                              ("strict", 30),
+                                              ("weak", 30)])
+    def test_missing(self, kind, result):
+        a = [1, 2, 3, 5, 6, 7, 8, 9, 10, 11]
+        assert_equal(self.f(a, 4, kind=kind), result)
 
-    # missing
-    for kind in ('rank', 'mean', 'strict', 'weak'):
-        assert_equal(pcos([1,2,3,5,6,7,8,9,10,11], 4, kind=kind), 30)
+    @pytest.mark.parametrize("kind, result", [("rank", 40),
+                                              ("mean", 35),
+                                              ("strict", 30),
+                                              ("weak", 40)])
+    def test_large_numbers(self, kind, result):
+        a = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+        assert_equal(self.f(a, 40, kind=kind), result)
 
-    # larger numbers
-    for (kind, result) in [('mean', 35.0),
-                           ('strict', 30.0),
-                           ('weak', 40.0)]:
-        assert_equal(
-              pcos([10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 40,
-                   kind=kind), result)
+    @pytest.mark.parametrize("kind, result", [("rank", 50),
+                                              ("mean", 45),
+                                              ("strict", 30),
+                                              ("weak", 60)])
+    def test_large_numbers_multiple3(self, kind, result):
+        a = [10, 20, 30, 40, 40, 40, 50, 60, 70, 80]
+        assert_equal(self.f(a, 40, kind=kind), result)
 
-    for (kind, result) in [('mean', 45.0),
-                           ('strict', 30.0),
-                           ('weak', 60.0)]:
-        assert_equal(
-              pcos([10, 20, 30, 40, 40, 40, 50, 60, 70, 80],
-                   40, kind=kind), result)
+    @pytest.mark.parametrize("kind, result", [("rank", 30),
+                                              ("mean", 30),
+                                              ("strict", 30),
+                                              ("weak", 30)])
+    def test_large_numbers_missing(self, kind, result):
+        a = [10, 20, 30, 50, 60, 70, 80, 90, 100, 110]
+        assert_equal(self.f(a, 40, kind=kind), result)
 
-    for kind in ('rank', 'mean', 'strict', 'weak'):
-        assert_equal(
-              pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
-                   40, kind=kind), 30.0)
+    @pytest.mark.parametrize("kind, result", [("rank", [0, 10, 100, 100]),
+                                              ("mean", [0, 5, 95, 100]),
+                                              ("strict", [0, 0, 90, 100]),
+                                              ("weak", [0, 10, 100, 100])])
+    def test_boundaries(self, kind, result):
+        a = [10, 20, 30, 50, 60, 70, 80, 90, 100, 110]
+        assert_equal(self.f(a, [0, 10, 110, 200], kind=kind), result)
 
-    # boundaries
-    for (kind, result) in [('rank', 10.0),
-                           ('mean', 5.0),
-                           ('strict', 0.0),
-                           ('weak', 10.0)]:
-        assert_equal(
-              pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
-                   10, kind=kind), result)
+    @pytest.mark.parametrize("kind, result", [("rank", [0, 10, 100]),
+                                              ("mean", [0, 5, 95]),
+                                              ("strict", [0, 0, 90]),
+                                              ("weak", [0, 10, 100])])
+    def test_inf(self, kind, result):
+        a = [1, 2, 3, 4, 5, 6, 7, 8, 9, +np.inf]
+        assert_equal(self.f(a, [-np.inf, 1, +np.inf], kind=kind), result)
 
-    for (kind, result) in [('rank', 100.0),
-                           ('mean', 95.0),
-                           ('strict', 90.0),
-                           ('weak', 100.0)]:
-        assert_equal(
-              pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
-                   110, kind=kind), result)
+    cases = [("propagate", [], 1, np.nan),
+             ("propagate", [np.nan], 1, np.nan),
+             ("propagate", [np.nan], [0, 1, 2], [np.nan, np.nan, np.nan]),
+             ("propagate", [1, 2], [1, 2, np.nan], [50, 100, np.nan]),
+             ("omit", [1, 2, np.nan], [0, 1, 2], [0, 50, 100]),
+             ("omit", [1, 2], [0, 1, np.nan], [0, 50, np.nan]),
+             ("omit", [np.nan, np.nan], [0, 1, 2], [np.nan, np.nan, np.nan])]
 
-    # out of bounds
-    for (kind, score, result) in [('rank', 200, 100.0),
-                                  ('mean', 200, 100.0),
-                                  ('mean', 0, 0.0)]:
-        assert_equal(
-              pcos([10, 20, 30, 50, 60, 70, 80, 90, 100, 110],
-                   score, kind=kind), result)
+    @pytest.mark.parametrize("policy, a, score, result", cases)
+    def test_nans_ok(self, policy, a, score, result):
+        assert_equal(self.f(a, score, nan_policy=policy), result)
 
-    assert_raises(ValueError, pcos, [1, 2, 3, 3, 4], 3, kind='unrecognized')
+    cases = [
+        ("raise", [1, 2, 3, np.nan], [1, 2, 3],
+         "The input contains nan values"),
+        ("raise", [1, 2, 3], [1, 2, 3, np.nan],
+         "The input contains nan values"),
+    ]
+
+    @pytest.mark.parametrize("policy, a, score, message", cases)
+    def test_nans_fail(self, policy, a, score, message):
+        with assert_raises(ValueError, match=message):
+            self.f(a, score, nan_policy=policy)
+
+    @pytest.mark.parametrize("shape", [
+        (6, ),
+        (2, 3),
+        (2, 1, 3),
+        (2, 1, 1, 3),
+    ])
+    def test_nd(self, shape):
+        a = np.array([0, 1, 2, 3, 4, 5])
+        scores = a.reshape(shape)
+        results = scores*10
+        a = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+        assert_equal(self.f(a, scores, kind="rank"), results)
 
 
 PowerDivCase = namedtuple('Case',  # type: ignore[name-match]
@@ -4007,7 +4050,8 @@ def test_ttest_rel():
     assert_array_almost_equal([t,p],tpr)
 
     # test scalars
-    with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+    with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
+            pytest.warns(RuntimeWarning, match="Precision loss occurred"):
         sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
         t, p = stats.ttest_rel(4., 3.)
     assert_(np.isnan(t))
@@ -4061,7 +4105,8 @@ def test_ttest_rel():
     assert_raises(ValueError, stats.ttest_rel, x, y, nan_policy='foobar')
 
     # test zero division problem
-    t, p = stats.ttest_rel([0, 0, 0], [1, 1, 1])
+    with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+        t, p = stats.ttest_rel([0, 0, 0], [1, 1, 1])
     assert_equal((np.abs(t), p), (np.inf, 0))
     with np.errstate(invalid="ignore"):
         assert_equal(stats.ttest_rel([0, 0, 0], [0, 0, 0]), (np.nan, np.nan))
@@ -4195,7 +4240,8 @@ def test_ttest_ind():
                               [t, p])
 
     # test scalars
-    with suppress_warnings() as sup, np.errstate(invalid="ignore"):
+    with suppress_warnings() as sup, np.errstate(invalid="ignore"), \
+            pytest.warns(RuntimeWarning, match="Precision loss occurred"):
         sup.filter(RuntimeWarning, "Degrees of freedom <= 0 for slice")
         t, p = stats.ttest_ind(4., 3.)
     assert_(np.isnan(t))
@@ -4256,7 +4302,8 @@ def test_ttest_ind():
     assert_raises(ValueError, stats.ttest_ind, x, y, nan_policy='foobar')
 
     # test zero division problem
-    t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1])
+    with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+        t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1])
     assert_equal((np.abs(t), p), (np.inf, 0))
 
     with np.errstate(invalid="ignore"):
@@ -4593,6 +4640,7 @@ class Test_ttest_ind_common:
         with suppress_warnings() as sup, np.errstate(invalid="ignore"):
             sup.filter(RuntimeWarning,
                        "invalid value encountered in less_equal")
+            sup.filter(RuntimeWarning, "Precision loss occurred")
             res = stats.ttest_ind(a, b, axis=axis, **kwds)
         p_nans = np.isnan(res.pvalue)
         assert_array_equal(p_nans, expected)
@@ -4848,7 +4896,8 @@ def test_ttest_ind_with_uneq_var():
     assert_equal(t.shape, (3, 2))
 
     # test zero division problem
-    t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1], equal_var=False)
+    with pytest.warns(RuntimeWarning, match="Precision loss occurred"):
+        t, p = stats.ttest_ind([0, 0, 0], [1, 1, 1], equal_var=False)
     assert_equal((np.abs(t), p), (np.inf, 0))
     with np.errstate(all='ignore'):
         assert_equal(stats.ttest_ind([0, 0, 0], [0, 0, 0], equal_var=False),
@@ -5029,9 +5078,9 @@ class TestDescribe:
         assert_equal(n, 1)
         assert_equal(mm, (4.0, 4.0))
         assert_equal(m, 4.0)
-        assert_(np.isnan(v))
-        assert_array_almost_equal(sk, 0.0, decimal=13)
-        assert_array_almost_equal(kurt, -3.0, decimal=13)
+        assert np.isnan(v)
+        assert np.isnan(sk)
+        assert np.isnan(kurt)
 
     def test_describe_numbers(self):
         x = np.vstack((np.ones((3,4)), np.full((2, 4), 2)))
@@ -5510,6 +5559,13 @@ def check_equal_hmean(array_like, desired, axis=None, dtype=None, rtol=1e-7,
     assert_equal(x.dtype, dtype)
 
 
+def check_equal_pmean(array_like, exp, desired, axis=None, dtype=None,
+                      rtol=1e-7, weights=None):
+    x = stats.pmean(array_like, exp, axis=axis, dtype=dtype, weights=weights)
+    assert_allclose(x, desired, rtol=rtol)
+    assert_equal(x.dtype, dtype)
+
+
 class TestHarMean:
     def test_1d_list(self):
         #  Test a 1d list
@@ -5574,8 +5630,8 @@ class TestHarMean:
     def test_weights_1d_list(self):
         # Desired result from:
         # https://www.hackmath.net/en/math-problem/35871
-        weights = [10, 5, 3]
         a = [2, 10, 6]
+        weights = [10, 5, 3]
         desired = 3
         check_equal_hmean(a, desired, weights=weights, rtol=1e-5)
 
@@ -5688,8 +5744,8 @@ class TestGeoMean:
     def test_weights_1d_list(self):
         # Desired result from:
         # https://www.dummies.com/education/math/business-statistics/how-to-find-the-weighted-geometric-mean-of-a-data-set/
-        weights = [2, 5, 6, 4, 3]
         a = [1, 2, 3, 4, 5]
+        weights = [2, 5, 6, 4, 3]
         desired = 2.77748
         check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
 
@@ -5708,6 +5764,106 @@ class TestGeoMean:
         weights = np.ma.array([2, 5, 6, 4, 3, 5], mask=[0, 0, 0, 0, 0, 1])
         desired = 2.77748
         check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
+
+
+class TestPowMean:
+
+    def pmean_reference(a, p):
+        return (np.sum(a**p) / a.size)**(1/p)
+
+    def wpmean_reference(a, p, weights):
+        return (np.sum(weights * a**p) / np.sum(weights))**(1/p)
+
+    def test_bad_exponent(self):
+        with pytest.raises(ValueError, match='Power mean only defined for'):
+            stats.pmean([1, 2, 3], [0])
+        with pytest.raises(ValueError, match='Power mean only defined for'):
+            stats.pmean([1, 2, 3], np.array([0]))
+
+    def test_1d_list(self):
+        a, p = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100], 3.5
+        desired = TestPowMean.pmean_reference(np.array(a), p)
+        check_equal_pmean(a, p, desired)
+
+        a, p = [1, 2, 3, 4], 2
+        desired = np.sqrt((1**2 + 2**2 + 3**2 + 4**2) / 4)
+        check_equal_pmean(a, p, desired)
+
+    def test_1d_array(self):
+        a, p = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100]), -2.5
+        desired = TestPowMean.pmean_reference(a, p)
+        check_equal_pmean(a, p, desired)
+
+    def test_1d_array_with_zero(self):
+        a, p = np.array([1, 0]), -1
+        desired = 0.0
+        assert_equal(stats.pmean(a, p), desired)
+
+    def test_1d_array_with_negative_value(self):
+        a, p = np.array([1, 0, -1]), 1.23
+        with pytest.raises(ValueError, match='Power mean only defined if all'):
+            stats.pmean(a, p)
+
+    @pytest.mark.parametrize(
+        ("a", "p"),
+        [([[10, 20], [50, 60], [90, 100]], -0.5),
+         (np.array([[10, 20], [50, 60], [90, 100]]), 0.5)]
+    )
+    def test_2d_axisnone(self, a, p):
+        desired = TestPowMean.pmean_reference(np.array(a), p)
+        check_equal_pmean(a, p, desired)
+
+    @pytest.mark.parametrize(
+        ("a", "p"),
+        [([[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5),
+         ([[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], 0.5)]
+    )
+    def test_2d_list_axis0(self, a, p):
+        desired = [
+            TestPowMean.pmean_reference(
+                np.array([a[i][j] for i in range(len(a))]), p
+            )
+            for j in range(len(a[0]))
+        ]
+        check_equal_pmean(a, p, desired, axis=0)
+
+    @pytest.mark.parametrize(
+        ("a", "p"),
+        [([[10, 20, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], -0.5),
+         ([[10, 0, 30, 40], [50, 60, 70, 80], [90, 100, 110, 120]], 0.5)]
+    )
+    def test_2d_list_axis1(self, a, p):
+        desired = [TestPowMean.pmean_reference(np.array(a_), p) for a_ in a]
+        check_equal_pmean(a, p, desired, axis=1)
+
+    def test_weights_1d_list(self):
+        a, p = [2, 10, 6], -1.23456789
+        weights = [10, 5, 3]
+        desired = TestPowMean.wpmean_reference(np.array(a), p, weights)
+        check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5)
+
+    def test_weights_masked_1d_array(self):
+        a, p = np.array([2, 10, 6, 42]), 1
+        weights = np.ma.array([10, 5, 3, 42], mask=[0, 0, 0, 1])
+        desired = np.average(a, weights=weights)
+        check_equal_pmean(a, p, desired, weights=weights, rtol=1e-5)
+
+    @pytest.mark.parametrize(
+        ("axis", "fun_name", "p"),
+        [(None, "wpmean_reference", 9.87654321),
+         (0, "gmean", 0),
+         (1, "hmean", -1)]
+    )
+    def test_weights_2d_array(self, axis, fun_name, p):
+        if fun_name == 'wpmean_reference':
+            def fun(a, axis, weights):
+                return TestPowMean.wpmean_reference(a, p, weights)
+        else:
+            fun = getattr(stats, fun_name)
+        a = np.array([[2, 5], [10, 5], [6, 5]])
+        weights = np.array([[10, 1], [5, 1], [3, 1]])
+        desired = fun(a, axis=axis, weights=weights)
+        check_equal_pmean(a, p, desired, axis=axis, weights=weights, rtol=1e-5)
 
 
 class TestGeometricStandardDeviation:
@@ -6298,7 +6454,8 @@ class TestAlexanderGovern:
 
     def test_constant_input(self):
         # Zero variance input, consistent with `stats.pearsonr`
-        with assert_warns(AlexanderGovernConstantInputWarning):
+        msg = "An input array is constant; the statistic is not defined."
+        with assert_warns(stats.ConstantInputWarning, match=msg):
             res = stats.alexandergovern([0.667, 0.667, 0.667],
                                         [0.123, 0.456, 0.789])
             assert_equal(res.statistic, np.nan)
