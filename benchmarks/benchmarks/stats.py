@@ -402,11 +402,11 @@ class DescriptiveStats(Benchmark):
 
 
 class GaussianKDE(Benchmark):
+    param_names = ['points']
+    params = [10, 6400]
 
-    params = [10, 40000]
-
-    def setup(self, length):
-        self.length = length
+    def setup(self, points):
+        self.length = points
         rng = np.random.default_rng(12345678)
         n = 2000
         m1 = rng.normal(size=n)
@@ -417,7 +417,7 @@ class GaussianKDE(Benchmark):
         ymin = m2.min()
         ymax = m2.max()
 
-        X, Y = np.mgrid[xmin:xmax:200j, ymin:ymax:200j]
+        X, Y = np.mgrid[xmin:xmax:80j, ymin:ymax:80j]
         self.positions = np.vstack([X.ravel(), Y.ravel()])
         values = np.vstack([m1, m2])
         self.kernel = stats.gaussian_kde(values)
