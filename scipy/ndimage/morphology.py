@@ -14,7 +14,7 @@ __all__ = [  # noqa: F822
     'grey_opening', 'grey_closing', 'morphological_gradient',
     'morphological_laplace', 'white_tophat', 'black_tophat',
     'distance_transform_bf', 'distance_transform_cdt',
-    'distance_transform_edt', 'filters'
+    'distance_transform_edt'
 ]
 
 

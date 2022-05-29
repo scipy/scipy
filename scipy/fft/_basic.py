@@ -86,7 +86,6 @@ def fft(x, n=None, axis=-1, norm=None, overwrite_x=False, workers=None, *,
 
     Notes
     -----
-
     FFT (Fast Fourier Transform) refers to a way the discrete Fourier Transform
     (DFT) can be calculated efficiently, by using symmetries in the calculated
     terms. The symmetry is highest when `n` is a power of 2, and the transform
@@ -1391,7 +1390,6 @@ def hfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 
     Notes
     -----
-
     For a 1-D signal ``x`` to have a real spectrum, it must satisfy
     the Hermitian property::
 
@@ -1547,7 +1545,6 @@ def ihfftn(x, s=None, axes=None, norm=None, overwrite_x=False, workers=None, *,
 
     Notes
     -----
-
     The transform for real input is performed over the last transformation
     axis, as by `ihfft`, then the transform over the remaining axes is
     performed as by `ifftn`. The order of the output is the positive part of

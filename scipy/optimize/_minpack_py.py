@@ -532,7 +532,7 @@ def _initialize_feasible(lb, ub):
 
 def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
               check_finite=True, bounds=(-np.inf, np.inf), method=None,
-              jac=None, **kwargs):
+              jac=None, *, full_output=False, **kwargs):
     """
     Use non-linear least squares to fit a function, f, to data.
 
@@ -613,7 +613,12 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         a finite difference scheme, see `least_squares`.
 
         .. versionadded:: 0.18
-    kwargs
+    full_output : boolean, optional
+        If True, this function returns additioal information: `infodict`,
+        `mesg`, and `ier`.
+
+        .. versionadded:: 1.9
+    **kwargs
         Keyword arguments passed to `leastsq` for ``method='lm'`` or
         `least_squares` otherwise.
 
@@ -634,6 +639,45 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         'lm' method returns a matrix filled with ``np.inf``, on the other hand
         'trf'  and 'dogbox' methods use Moore-Penrose pseudoinverse to compute
         the covariance matrix.
+    infodict : dict (returned only if `full_output` is True)
+        a dictionary of optional outputs with the keys:
+
+        ``nfev``
+            The number of function calls. Methods 'trf' and 'dogbox' do not
+            count function calls for numerical Jacobian approximation,
+            as opposed to 'lm' method.
+        ``fvec``
+            The function values evaluated at the solution.
+        ``fjac``
+            A permutation of the R matrix of a QR
+            factorization of the final approximate
+            Jacobian matrix, stored column wise.
+            Together with ipvt, the covariance of the
+            estimate can be approximated.
+            Method 'lm' only provides this information.
+        ``ipvt``
+            An integer array of length N which defines
+            a permutation matrix, p, such that
+            fjac*p = q*r, where r is upper triangular
+            with diagonal elements of nonincreasing
+            magnitude. Column j of p is column ipvt(j)
+            of the identity matrix.
+            Method 'lm' only provides this information.
+        ``qtf``
+            The vector (transpose(q) * fvec).
+            Method 'lm' only provides this information.
+
+        .. versionadded:: 1.9
+    mesg : str (returned only if `full_output` is True)
+        A string message giving information about the solution.
+
+        .. versionadded:: 1.9
+    ier : int (returnned only if `full_output` is True)
+        An integer flag. If it is equal to 1, 2, 3 or 4, the solution was
+        found. Otherwise, the solution was not found. In either case, the
+        optional output variable `mesg` gives more information.
+
+        .. versionadded:: 1.9
 
     Raises
     ------
@@ -655,6 +699,9 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
 
     Notes
     -----
+    Users should ensure that inputs `xdata`, `ydata`, and the output of `f`
+    are ``float64``, or else the optimization may return incorrect results.
+    
     With ``method='lm'``, the algorithm uses the Levenberg-Marquardt algorithm
     through `leastsq`. Note that this algorithm can only deal with
     unconstrained problems.
@@ -784,8 +831,6 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if ydata.size != 1 and n > ydata.size:
             raise TypeError(f"The number of func parameters={n} must not"
                             f" exceed the number of data points={ydata.size}")
-        # Remove full_output from kwargs, otherwise we're passing it in twice.
-        return_full = kwargs.pop('full_output', False)
         res = leastsq(func, p0, Dfun=jac, full_output=1, **kwargs)
         popt, pcov, infodict, errmsg, ier = res
         ysize = len(infodict['fvec'])
@@ -803,6 +848,10 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         if not res.success:
             raise RuntimeError("Optimal parameters not found: " + res.message)
 
+        infodict = dict(nfev=res.nfev, fvec=res.fun)
+        ier = res.status
+        errmsg = res.message
+
         ysize = len(res.fun)
         cost = 2 * res.cost  # res.cost is half sum of squares!
         popt = res.x
@@ -813,7 +862,6 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         s = s[s > threshold]
         VT = VT[:s.size]
         pcov = np.dot(VT.T / s**2, VT)
-        return_full = False
 
     warn_cov = False
     if pcov is None:
@@ -833,7 +881,7 @@ def curve_fit(f, xdata, ydata, p0=None, sigma=None, absolute_sigma=False,
         warnings.warn('Covariance of the parameters could not be estimated',
                       category=OptimizeWarning)
 
-    if return_full:
+    if full_output:
         return popt, pcov, infodict, errmsg, ier
     else:
         return popt, pcov

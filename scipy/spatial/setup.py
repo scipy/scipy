@@ -88,7 +88,6 @@ def configuration(parent_package='', top_path=None):
                          include_dirs=[
                              get_numpy_include_dirs(),
                              join(dirname(dirname(__file__)), '_lib')],
-                         extra_info=get_misc_info("npymath"),
                          **numpy_nodepr_api)
 
     distance_pybind_includes = [

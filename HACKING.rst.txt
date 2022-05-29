@@ -31,7 +31,7 @@ this code belong?  That question is hard to answer here, so we start with a
 more specific one: *what code is suitable for putting into SciPy?*
 Almost all of the new code added to SciPy has in common that it's potentially
 useful in multiple scientific domains and it fits in the scope of existing
-SciPy subpackages (see :ref:`deciding-on-new-features`).  In principle new
+SciPy subpackages (see :ref:`deciding-on-new-features`).  In principle, new
 subpackages can be added too, but this is far less common.  For code that is
 specific to a single application, there may be an existing project that can
 use the code.  Some SciKits (`scikit-learn`_, `scikit-image`_, `statsmodels`_,
@@ -41,9 +41,9 @@ more domain-specific code than SciPy.
 Now if you have code that you would like to see included in SciPy, how do you
 go about it?  After checking that your code can be distributed in SciPy under a
 compatible license (see :ref:`license-considerations`), the first step is to
-discuss on the scipy-dev mailing list.  All new features, as well as changes to
-existing code, are discussed and decided on there.  You can, and probably
-should, already start this discussion before your code is finished. Remember
+discuss it on the scipy-dev mailing list.  All new features, as well as changes to
+existing code, are discussed and decided on there. You can, and probably
+should already start this discussion before your code is finished. Remember
 that in order to be added to SciPy your code will need to be reviewed by
 someone else, so try to find someone willing to review your work while you're
 at it.
@@ -54,7 +54,7 @@ Before code is added to SciPy, it at least has to have good documentation, unit
 tests, benchmarks, and correct code style.
 
 1. Unit tests
-    In principle you should aim to create unit tests that exercise all the code
+    In principle, you should aim to create unit tests that exercise all the code
     that you are adding.  This gives some degree of confidence that your code
     runs correctly, also on Python versions and hardware or OSes that you don't
     have available yourself.  An extensive description of how to write unit
@@ -74,7 +74,7 @@ tests, benchmarks, and correct code style.
     and classes -- which includes at least a basic description, type and
     meaning of all parameters and returns values, and usage examples in
     `doctest`_ format -- is put in docstrings.  Those docstrings can be read
-    within the interpreter, and are compiled into a reference guide in html and
+    within the interpreter, and are compiled into a reference guide in HTML and
     pdf format.  Higher-level documentation for key (areas of) functionality is
     provided in tutorial format and/or in module docstrings.  A guide on how to
     write documentation is given in :ref:`numpy:howto-document`, and
@@ -95,7 +95,7 @@ available at the end of the example :ref:`development-workflow`.
 
 Another question you may have is: *where exactly do I put my code*?  To answer
 this, it is useful to understand how the SciPy public API (application
-programming interface) is defined.  For most modules the API is two levels
+programming interface) is defined.  For most modules, the API is two levels
 deep, which means your new function should appear as
 ``scipy.subpackage.my_new_func``.  ``my_new_func`` can be put in an existing or
 new file under ``/scipy/<subpackage>/``, its name is added to the ``__all__``
@@ -113,11 +113,11 @@ feature, be sure to also mention this on the scipy-dev mailing list.  This can
 prompt interested people to help review your PR.  Assuming that you already got
 positive feedback before on the general idea of your code/feature, the purpose
 of the code review is to ensure that the code is correct, efficient and meets
-the requirements outlined above.  In many cases the code review happens
+the requirements outlined above.  In many cases, the code review happens
 relatively quickly, but it's possible that it stalls.  If you have addressed
 all feedback already given, it's perfectly fine to ask on the mailing list
 again for review (after a reasonable amount of time, say a couple of weeks, has
-passed).  Once the review is completed, the PR is merged into the "master"
+passed).  Once the review is completed, the PR is merged into the "main"
 branch of SciPy.
 
 The above describes the requirements and process for adding code to SciPy.  It
@@ -159,7 +159,7 @@ Maintaining existing code
 =========================
 
 The previous section talked specifically about adding new functionality to
-SciPy.  A large part of that discussion also applies to maintenance of existing
+SciPy.  A large part of that discussion also applies to the maintenance of existing
 code.  Maintenance means fixing bugs, improving code quality, documenting
 existing functionality better, adding missing unit tests, adding performance
 benchmarks, keeping build scripts up-to-date, etc.  The SciPy `issue list`_
@@ -207,7 +207,7 @@ themselves some or all of the following questions:
   literature; otherwise, closer look at correctness is valuable.
 - Is the intended behavior clear under all conditions (e.g. unexpected inputs
   like empty arrays or nan/inf values)?
-- Does the code meet the quality, test and documentation expectation outline
+- Does the code meet the quality, test and documentation expectations outlined
   under `Contributing new code`_?
 
 If we do not know you yet, consider introducing yourself.
@@ -220,7 +220,7 @@ There are many ways to contribute other than writing code.
 
 Triaging issues (investigating bug reports for validity and possible actions to
 take) is also a useful activity.  SciPy has many hundreds of open issues;
-closing invalid ones and correctly labeling valid ones (ideally with some first
+closing invalid ones and correctly labelling valid ones (ideally with some first
 thoughts in a comment) allows prioritizing maintenance work and finding related
 issues easily when working on an existing function or subpackage.
 

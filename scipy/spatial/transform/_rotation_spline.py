@@ -114,7 +114,7 @@ def _angular_acceleration_nonlinear_term(rotvecs, rotvecs_dot):
     ----------
     rotvecs : ndarray, shape (n, 3)
         Set of rotation vectors.
-    rotvecs_dot: ndarray, shape (n, 3)
+    rotvecs_dot : ndarray, shape (n, 3)
         Set of rotation vector derivatives.
 
     Returns

@@ -33,6 +33,8 @@ __all__ = ['UNURANError', 'TransformedDensityRejection', 'DiscreteAliasUrn',
 
 cdef extern from "Python.h":
     PyObject *PyErr_Occurred()
+    void PyErr_Fetch(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
+    void PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 
 
 # Internal API for handling Python callbacks.
@@ -166,7 +168,9 @@ cdef class _URNG:
     cdef unur_urng *get_qurng(self, size, qmc_engine) except *:
         cdef unur_urng *unuran_urng
         self.i = 0
-        self.qrvs_array = np.ascontiguousarray(qmc_engine.random(size).ravel())
+        self.qrvs_array = np.ascontiguousarray(
+            qmc_engine.random(size).ravel().astype(np.float64)
+        )
         unuran_urng = unur_urng_new(<URNG_FUNCT>self._next_qdouble,
                                     <void *>self)
         return unuran_urng
@@ -371,6 +375,26 @@ cdef double[::1] _validate_pv(pv) except *:
     return pv_view
 
 
+def _validate_qmc_input(qmc_engine, d):
+    # Input validation for `qmc_engine` and `d`
+    # Error messages for invalid `d` are raised by QMCEngine
+    # we could probably use a stats.qmc.check_qrandom_state
+    if isinstance(qmc_engine, stats.qmc.QMCEngine):
+        if d is not None and qmc_engine.d != d:
+            message = "`d` must be consistent with dimension of `qmc_engine`."
+            raise ValueError(message)
+        d = qmc_engine.d if d is None else d
+    elif qmc_engine is None:
+        d = 1 if d is None else d
+        qmc_engine = stats.qmc.Halton(d)
+    else:
+        message = ("`qmc_engine` must be an instance of "
+                    "`scipy.stats.qmc.QMCEngine` or `None`.")
+        raise ValueError(message)
+
+    return qmc_engine, d
+
+
 cdef class Method:
     """
     A base class for all the wrapped generators.
@@ -430,8 +454,9 @@ cdef class Method:
         if self.urng == NULL:
             raise UNURANError(self._messages.get())
         self._check_errorcode(unur_set_urng(self.par, self.urng))
+        has_callback_wrapper = (self._callback_wrapper is not None)
         try:
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 init_unuran_callback(&callback, self._callback_wrapper)
             self.rng = unur_init(self.par)
             # set self.par = NULL because a call to `unur_init` destroys
@@ -445,7 +470,7 @@ cdef class Method:
             unur_distr_free(self.distr)
             self.distr = NULL
         finally:
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 release_unuran_callback(&callback)
 
     @cython.boundscheck(False)
@@ -464,24 +489,35 @@ cdef class Method:
             unur_gen *rng = self.rng
             size_t i
             size_t size = len(out)
+            PyObject *type
+            PyObject *value
+            PyObject *traceback
+
+        has_callback_wrapper = (self._callback_wrapper is not None)
+        error = 0
 
         _lock.acquire()
         try:
             self._messages.clear()
             unur_set_stream(self._messages.handle)
 
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 init_unuran_callback(&callback, self._callback_wrapper)
             for i in range(size):
                 out[i] = unur_sample_cont(rng)
                 if PyErr_Occurred():
+                    error = 1
                     return
             msg = self._messages.get()
             if msg:
                 raise UNURANError(msg)
         finally:
+            if error:
+                PyErr_Fetch(&type, &value, &traceback)
             _lock.release()
-            if self._callback_wrapper is not None:
+            if error:
+                PyErr_Restore(type, value, traceback)
+            if has_callback_wrapper:
                 release_unuran_callback(&callback)
 
     @cython.boundscheck(False)
@@ -500,24 +536,35 @@ cdef class Method:
             unur_gen *rng = self.rng
             size_t i
             size_t size = len(out)
+            PyObject *type
+            PyObject *value
+            PyObject *traceback
+
+        has_callback_wrapper = (self._callback_wrapper is not None)
+        error = 0
 
         _lock.acquire()
         try:
             self._messages.clear()
             unur_set_stream(self._messages.handle)
 
-            if self._callback_wrapper is not None:
+            if has_callback_wrapper:
                 init_unuran_callback(&callback, self._callback_wrapper)
             for i in range(size):
                 out[i] = unur_sample_discr(rng)
                 if PyErr_Occurred():
+                    error = 1
                     return
             msg = self._messages.get()
             if msg:
                 raise UNURANError(msg)
         finally:
+            if error:
+                PyErr_Fetch(&type, &value, &traceback)
             _lock.release()
-            if self._callback_wrapper is not None:
+            if error:
+                PyErr_Restore(type, value, traceback)
+            if has_callback_wrapper:
                 release_unuran_callback(&callback)
 
     def rvs(self, size=None, random_state=None):
@@ -1254,13 +1301,6 @@ cdef class NumericalInversePolynomial(Method):
         If `random_state` is already a ``Generator`` or ``RandomState`` instance then
         that instance is used.
 
-    Notes
-    -----
-    This method does not work for densities with constant parts (e.g. `uniform`
-    distribution) and segmentation faults if such a density is passed to the
-    constructor. It is recommended to use the composition method to sample from
-    such distributions.
-
     References
     ----------
     .. [1] Derflinger, Gerhard, Wolfgang Hörmann, and Josef Leydold. "Random variate
@@ -1452,6 +1492,11 @@ cdef class NumericalInversePolynomial(Method):
         cdef:
             size_t i
             ccallback_t callback
+            PyObject *type
+            PyObject *value
+            PyObject *traceback
+
+        error = 0
 
         _lock.acquire()
         try:
@@ -1461,11 +1506,16 @@ cdef class NumericalInversePolynomial(Method):
             for i in range(N):
                 out[i] = unur_pinv_eval_approxcdf(self.rng, x[i])
                 if PyErr_Occurred():
+                    error = 1
                     return
                 if out[i] == UNUR_INFINITY or out[i] == -UNUR_INFINITY:
                     raise UNURANError(self._messages.get())
         finally:
+            if error:
+                PyErr_Fetch(&type, &value, &traceback)
             _lock.release()
+            if error:
+                PyErr_Restore(type, value, traceback)
             release_unuran_callback(&callback)
 
     def cdf(self, x):
@@ -1579,6 +1629,100 @@ cdef class NumericalInversePolynomial(Method):
         return UError(max_error, mae)
 
 
+    def qrvs(self, size=None, d=None, qmc_engine=None):
+        """
+        qrvs(size=None, d=None, qmc_engine=None)
+
+        Quasi-random variates of the given RV.
+
+        The `qmc_engine` is used to draw uniform quasi-random variates, and
+        these are converted to quasi-random variates of the given RV using
+        inverse transform sampling.
+
+        Parameters
+        ----------
+        size : int, tuple of ints, or None; optional
+            Defines shape of random variates array. Default is ``None``.
+        d : int or None, optional
+            Defines dimension of uniform quasi-random variates to be
+            transformed. Default is ``None``.
+        qmc_engine : scipy.stats.qmc.QMCEngine(d=1), optional
+            Defines the object to use for drawing
+            quasi-random variates. Default is ``None``, which uses
+            `scipy.stats.qmc.Halton(1)`.
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Quasi-random variates. See Notes for shape information.
+
+        Notes
+        -----
+        The shape of the output array depends on `size`, `d`, and `qmc_engine`.
+        The intent is for the interface to be natural, but the detailed rules
+        to achieve this are complicated.
+
+        - If `qmc_engine` is ``None``, a `scipy.stats.qmc.Halton` instance is
+          created with dimension `d`. If `d` is not provided, ``d=1``.
+        - If `qmc_engine` is not ``None`` and `d` is ``None``, `d` is
+          determined from the dimension of the `qmc_engine`.
+        - If `qmc_engine` is not ``None`` and `d` is not ``None`` but the
+          dimensions are inconsistent, a ``ValueError`` is raised.
+        - After `d` is determined according to the rules above, the output
+          shape is ``tuple_shape + d_shape``, where:
+
+              - ``tuple_shape = tuple()`` if `size` is ``None``,
+              - ``tuple_shape = (size,)`` if `size` is an ``int``,
+              - ``tuple_shape = size`` if `size` is a sequence,
+              - ``d_shape = tuple()`` if `d` is ``None`` or `d` is 1, and
+              - ``d_shape = (d,)`` if `d` is greater than 1.
+
+        The elements of the returned array are part of a low-discrepancy
+        sequence. If `d` is 1, this means that none of the samples are truly
+        independent. If `d` > 1, each slice ``rvs[..., i]`` will be of a
+        quasi-independent sequence; see `scipy.stats.qmc.QMCEngine` for
+        details. Note that when `d` > 1, the samples returned are still those
+        of the provided univariate distribution, not a multivariate
+        generalization of that distribution.
+
+        """
+        qmc_engine, d = _validate_qmc_input(qmc_engine, d)
+        # `rvs` is flexible about whether `size` is an int or tuple, so this
+        # should be, too.
+        try:
+            if size is None:
+                tuple_size = (1, )
+            else:
+                tuple_size = tuple(size)
+        except TypeError:
+            tuple_size = (size,)
+
+        cdef unur_urng *unuran_urng
+        cdef double[::1] qrvs_view
+        N = 1 if size is None else np.prod(size)
+        N = N*d
+        qrvs_view = np.empty(N, dtype=np.float64)
+        _lock.acquire()
+        try:
+            # the call below must be under a lock
+            unuran_urng = self._urng_builder.get_qurng(size=N, qmc_engine=qmc_engine)
+            unur_chg_urng(self.rng, unuran_urng)
+            self._rvs_cont(qrvs_view)
+            self.set_random_state(self.numpy_rng)
+            qrvs = np.asarray(qrvs_view).reshape(tuple_size + (d,))
+        finally:
+            _lock.release()
+
+        # Output reshaping for user convenience
+        if size is None:
+            return qrvs.squeeze()[()]
+        else:
+            if d == 1:
+                return qrvs.reshape(tuple_size)
+            else:
+                return qrvs.reshape(tuple_size + (d,))    
+
+
 cdef class NumericalInverseHermite(Method):
     """
     NumericalInverseHermite(dist, *, domain=None, order=3, u_resolution=1e-12, construction_points=None, random_state=None)
@@ -1687,7 +1831,7 @@ cdef class NumericalInverseHermite(Method):
 
     This method accepted a `tol` parameter to specify the maximum tolerable u-error
     but it has now been deprecated in the favor of `u_resolution`. `tol` will be
-    removed completely in a future release.
+    removed completely in SciPy 1.10.0.
 
     References
     ----------
@@ -1896,11 +2040,11 @@ cdef class NumericalInverseHermite(Method):
             raise ValueError("`max_intervals' must be an integer greater than 1.")
         if max_intervals != 100000:
             warnings.warn("`max_intervals` has been deprecated. "
-                          "It will be completely removed in a future release.",
+                          "It will be completely removed in SciPy 1.10.0.",
                           DeprecationWarning)
         if tol is not None:
             warnings.warn("`tol` has been deprecated and replaced with `u_resolution`. "
-                          "It will be completely removed in a future release.",
+                          "It will be completely removed in SciPy 1.10.0.",
                           DeprecationWarning)
             u_resolution = tol
         u_resolution = float(u_resolution)
@@ -2047,22 +2191,7 @@ cdef class NumericalInverseHermite(Method):
         generalization of that distribution.
 
         """
-        # Input validation for `qmc_engine` and `d`
-        # Error messages for invalid `d` are raised by QMCEngine
-        # we could probably use a stats.qmc.check_qrandom_state
-        if isinstance(qmc_engine, stats.qmc.QMCEngine):
-            message = "`d` must be consistent with dimension of `qmc_engine`."
-            if d is not None and qmc_engine.d != d:
-                raise ValueError(message)
-            d = qmc_engine.d if d is None else d
-        elif qmc_engine is None:
-            d = 1 if d is None else d
-            qmc_engine = stats.qmc.Halton(d)
-        else:
-            message = ("`qmc_engine` must be an instance of "
-                       "`scipy.stats.qmc.QMCEngine` or `None`.")
-            raise ValueError(message)
-
+        qmc_engine, d = _validate_qmc_input(qmc_engine, d)
         # `rvs` is flexible about whether `size` is an int or tuple, so this
         # should be, too.
         try:

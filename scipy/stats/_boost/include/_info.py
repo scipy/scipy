@@ -13,6 +13,7 @@ _klass_mapper = {
     'binomial': _KlassMap('binom', ('n', 'p')),
     'negative_binomial': _KlassMap('nbinom', ('n', 'p')),
     'hypergeometric': _KlassMap('hypergeom', ('r', 'n', 'N')),
+    'non_central_f': _KlassMap('ncf', ('dfn', 'dfd', 'nc')),
 }
 
 # functions that take ctor params and parameter "x"

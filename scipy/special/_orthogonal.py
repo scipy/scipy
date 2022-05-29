@@ -83,8 +83,7 @@ from scipy.special import airy
 
 # Local imports.
 from . import _ufuncs
-from . import _ufuncs as cephes
-_gam = cephes.gamma
+_gam = _ufuncs.gamma
 # There is no .pyi file for _specfun
 from . import _specfun  # type: ignore
 
@@ -95,29 +94,22 @@ _polyfuns = ['legendre', 'chebyt', 'chebyu', 'chebyc', 'chebys',
 
 # Correspondence between new and old names of root functions
 _rootfuns_map = {'roots_legendre': 'p_roots',
-               'roots_chebyt': 't_roots',
-               'roots_chebyu': 'u_roots',
-               'roots_chebyc': 'c_roots',
-               'roots_chebys': 's_roots',
-               'roots_jacobi': 'j_roots',
-               'roots_laguerre': 'l_roots',
-               'roots_genlaguerre': 'la_roots',
-               'roots_hermite': 'h_roots',
-               'roots_hermitenorm': 'he_roots',
-               'roots_gegenbauer': 'cg_roots',
-               'roots_sh_legendre': 'ps_roots',
-               'roots_sh_chebyt': 'ts_roots',
-               'roots_sh_chebyu': 'us_roots',
-               'roots_sh_jacobi': 'js_roots'}
+                 'roots_chebyt': 't_roots',
+                 'roots_chebyu': 'u_roots',
+                 'roots_chebyc': 'c_roots',
+                 'roots_chebys': 's_roots',
+                 'roots_jacobi': 'j_roots',
+                 'roots_laguerre': 'l_roots',
+                 'roots_genlaguerre': 'la_roots',
+                 'roots_hermite': 'h_roots',
+                 'roots_hermitenorm': 'he_roots',
+                 'roots_gegenbauer': 'cg_roots',
+                 'roots_sh_legendre': 'ps_roots',
+                 'roots_sh_chebyt': 'ts_roots',
+                 'roots_sh_chebyu': 'us_roots',
+                 'roots_sh_jacobi': 'js_roots'}
 
-_evalfuns = ['eval_legendre', 'eval_chebyt', 'eval_chebyu',
-             'eval_chebyc', 'eval_chebys', 'eval_jacobi',
-             'eval_laguerre', 'eval_genlaguerre', 'eval_hermite',
-             'eval_hermitenorm', 'eval_gegenbauer',
-             'eval_sh_legendre', 'eval_sh_chebyt', 'eval_sh_chebyu',
-             'eval_sh_jacobi']
-
-__all__ = _polyfuns + list(_rootfuns_map.keys()) + _evalfuns + ['poch', 'binom']
+__all__ = _polyfuns + list(_rootfuns_map.keys())
 
 
 class orthopoly1d(np.poly1d):
@@ -190,9 +182,13 @@ def _gen_roots_and_weights(n, mu0, an_func, bn_func, f, df, symmetrize, mu):
     dy = df(n, x)
     x -= y/dy
 
+    # fm and dy may contain very large/small values, so we
+    # log-normalize them to maintain precision in the product fm*dy
     fm = f(n-1, x)
-    fm /= np.abs(fm).max()
-    dy /= np.abs(dy).max()
+    log_fm = np.log(np.abs(fm))
+    log_dy = np.log(np.abs(dy))
+    fm /= np.exp((log_fm.max() + log_fm.min()) / 2.)
+    dy /= np.exp((log_dy.max() + log_dy.min()) / 2.)
     w = 1.0 / (fm * dy)
 
     if symmetrize:
@@ -263,7 +259,12 @@ def roots_jacobi(n, alpha, beta, mu=False):
     if alpha == beta:
         return roots_gegenbauer(m, alpha+0.5, mu)
 
-    mu0 = 2.0**(alpha+beta+1)*cephes.beta(alpha+1, beta+1)
+    if (alpha + beta) <= 1000:
+        mu0 = 2.0**(alpha+beta+1) * _ufuncs.beta(alpha+1, beta+1)
+    else:
+        # Avoid overflows in pow and beta for very large parameters
+        mu0 = np.exp((alpha + beta + 1) * np.log(2.0)
+                     + _ufuncs.betaln(alpha+1, beta+1))
     a = alpha
     b = beta
     if a + b == 0.0:
@@ -275,9 +276,9 @@ def roots_jacobi(n, alpha, beta, mu=False):
     bn_func = lambda k: 2.0 / (2.0*k+a+b)*np.sqrt((k+a)*(k+b) / (2*k+a+b+1)) \
               * np.where(k == 1, 1.0, np.sqrt(k*(k+a+b) / (2.0*k+a+b-1)))
 
-    f = lambda n, x: cephes.eval_jacobi(n, a, b, x)
-    df = lambda n, x: 0.5 * (n + a + b + 1) \
-                      * cephes.eval_jacobi(n-1, a+1, b+1, x)
+    f = lambda n, x: _ufuncs.eval_jacobi(n, a, b, x)
+    df = lambda n, x: (0.5 * (n + a + b + 1)
+                       * _ufuncs.eval_jacobi(n-1, a+1, b+1, x))
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
 
 
@@ -372,7 +373,7 @@ def jacobi(n, alpha, beta, monic=False):
     kn = _gam(2 * n + ab1) / 2.0**n / _gam(n + 1) / _gam(n + ab1)
     # here kn = coefficient on x^n term
     p = orthopoly1d(x, w, hn, kn, wfunc, (-1, 1), monic,
-                    lambda x: eval_jacobi(n, alpha, beta, x))
+                    lambda x: _ufuncs.eval_jacobi(n, alpha, beta, x))
     return p
 
 # Jacobi Polynomials shifted         G_n(p,q,x)
@@ -433,6 +434,7 @@ def roots_sh_jacobi(n, p1, q1, mu=False):
     else:
         return x, w
 
+
 def sh_jacobi(n, p, q, monic=False):
     r"""Shifted Jacobi polynomial.
 
@@ -483,7 +485,7 @@ def sh_jacobi(n, p, q, monic=False):
     # kn = 1.0 in standard form so monic is redundant. Kept for compatibility.
     kn = 1.0
     pp = orthopoly1d(x, w, hn, kn, wfunc=wfunc, limits=(0, 1), monic=monic,
-                     eval_func=lambda x: eval_sh_jacobi(n, p, q, x))
+                     eval_func=lambda x: _ufuncs.eval_sh_jacobi(n, p, q, x))
     return pp
 
 # Generalized Laguerre               L^(alpha)_n(x)
@@ -536,7 +538,7 @@ def roots_genlaguerre(n, alpha, mu=False):
     if alpha < -1:
         raise ValueError("alpha must be greater than -1.")
 
-    mu0 = cephes.gamma(alpha + 1)
+    mu0 = _ufuncs.gamma(alpha + 1)
 
     if m == 1:
         x = np.array([alpha+1.0], 'd')
@@ -548,9 +550,9 @@ def roots_genlaguerre(n, alpha, mu=False):
 
     an_func = lambda k: 2 * k + alpha + 1
     bn_func = lambda k: -np.sqrt(k * (k + alpha))
-    f = lambda n, x: cephes.eval_genlaguerre(n, alpha, x)
-    df = lambda n, x: (n*cephes.eval_genlaguerre(n, alpha, x)
-                     - (n + alpha)*cephes.eval_genlaguerre(n-1, alpha, x))/x
+    f = lambda n, x: _ufuncs.eval_genlaguerre(n, alpha, x)
+    df = lambda n, x: (n*_ufuncs.eval_genlaguerre(n, alpha, x)
+                       - (n + alpha)*_ufuncs.eval_genlaguerre(n-1, alpha, x))/x
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, False, mu)
 
 
@@ -651,7 +653,7 @@ def genlaguerre(n, alpha, monic=False):
     hn = _gam(n + alpha + 1) / _gam(n + 1)
     kn = (-1)**n / _gam(n + 1)
     p = orthopoly1d(x, w, hn, kn, wfunc, (0, inf), monic,
-                    lambda x: eval_genlaguerre(n, alpha, x))
+                    lambda x: _ufuncs.eval_genlaguerre(n, alpha, x))
     return p
 
 # Laguerre                      L_n(x)
@@ -790,7 +792,7 @@ def laguerre(n, monic=False):
     hn = 1.0
     kn = (-1)**n / _gam(n + 1)
     p = orthopoly1d(x, w, hn, kn, lambda x: exp(-x), (0, inf), monic,
-                    lambda x: eval_laguerre(n, x))
+                    lambda x: _ufuncs.eval_laguerre(n, x))
     return p
 
 # Hermite  1                         H_n(x)
@@ -867,8 +869,8 @@ def roots_hermite(n, mu=False):
     if n <= 150:
         an_func = lambda k: 0.0*k
         bn_func = lambda k: np.sqrt(k/2.0)
-        f = cephes.eval_hermite
-        df = lambda n, x: 2.0 * n * cephes.eval_hermite(n-1, x)
+        f = _ufuncs.eval_hermite
+        df = lambda n, x: 2.0 * n * _ufuncs.eval_hermite(n-1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
     else:
         nodes, weights = _roots_hermite_asy(m)
@@ -1305,7 +1307,7 @@ def hermite(n, monic=False):
     hn = 2**n * _gam(n + 1) * sqrt(pi)
     kn = 2**n
     p = orthopoly1d(x, w, hn, kn, wfunc, (-inf, inf), monic,
-                    lambda x: eval_hermite(n, x))
+                    lambda x: _ufuncs.eval_hermite(n, x))
     return p
 
 # Hermite  2                         He_n(x)
@@ -1371,8 +1373,8 @@ def roots_hermitenorm(n, mu=False):
     if n <= 150:
         an_func = lambda k: 0.0*k
         bn_func = lambda k: np.sqrt(k)
-        f = cephes.eval_hermitenorm
-        df = lambda n, x: n * cephes.eval_hermitenorm(n-1, x)
+        f = _ufuncs.eval_hermitenorm
+        df = lambda n, x: n * _ufuncs.eval_hermitenorm(n-1, x)
         return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
     else:
         nodes, weights = _roots_hermite_asy(m)
@@ -1430,7 +1432,7 @@ def hermitenorm(n, monic=False):
     hn = sqrt(2 * pi) * _gam(n + 1)
     kn = 1.0
     p = orthopoly1d(x, w, hn, kn, wfunc=wfunc, limits=(-inf, inf), monic=monic,
-                    eval_func=lambda x: eval_hermitenorm(n, x))
+                    eval_func=lambda x: _ufuncs.eval_hermitenorm(n, x))
     return p
 
 # The remainder of the polynomials can be derived from the ones above.
@@ -1491,13 +1493,28 @@ def roots_gegenbauer(n, alpha, mu=False):
         # keep doing so.
         return roots_chebyt(n, mu)
 
-    mu0 = np.sqrt(np.pi) * cephes.gamma(alpha + 0.5) / cephes.gamma(alpha + 1)
+    if alpha <= 170:
+        mu0 = (np.sqrt(np.pi) * _ufuncs.gamma(alpha + 0.5)) \
+              / _ufuncs.gamma(alpha + 1)
+    else:
+        # For large alpha we use a Taylor series expansion around inf,
+        # expressed as a 6th order polynomial of a^-1 and using Horner's
+        # method to minimize computation and maximize precision
+        inv_alpha = 1. / alpha
+        coeffs = np.array([0.000207186, -0.00152206, -0.000640869,
+                           0.00488281, 0.0078125, -0.125, 1.])
+        mu0 = coeffs[0]
+        for term in range(1, len(coeffs)):
+            mu0 = mu0 * inv_alpha + coeffs[term]
+        mu0 = mu0 * np.sqrt(np.pi / alpha)
     an_func = lambda k: 0.0 * k
     bn_func = lambda k: np.sqrt(k * (k + 2 * alpha - 1)
                         / (4 * (k + alpha) * (k + alpha - 1)))
-    f = lambda n, x: cephes.eval_gegenbauer(n, alpha, x)
-    df = lambda n, x: (-n*x*cephes.eval_gegenbauer(n, alpha, x)
-         + (n + 2*alpha - 1)*cephes.eval_gegenbauer(n-1, alpha, x))/(1-x**2)
+    f = lambda n, x: _ufuncs.eval_gegenbauer(n, alpha, x)
+    df = lambda n, x: ((-n*x*_ufuncs.eval_gegenbauer(n, alpha, x)
+                        + ((n + 2*alpha - 1)
+                           * _ufuncs.eval_gegenbauer(n - 1, alpha, x)))
+                       / (1 - x**2))
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
@@ -1572,7 +1589,8 @@ def gegenbauer(n, alpha, monic=False):
     factor = (_gam(2*alpha + n) * _gam(alpha + 0.5) /
               _gam(2*alpha) / _gam(alpha + 0.5 + n))
     base._scale(factor)
-    base.__dict__['_eval_func'] = lambda x: eval_gegenbauer(float(n), alpha, x)
+    base.__dict__['_eval_func'] = lambda x: _ufuncs.eval_gegenbauer(float(n),
+                                                                    alpha, x)
     return base
 
 # Chebyshev of the first kind: T_n(x) =
@@ -1729,13 +1747,13 @@ def chebyt(n, monic=False):
     wfunc = lambda x: 1.0 / sqrt(1 - x * x)
     if n == 0:
         return orthopoly1d([], [], pi, 1.0, wfunc, (-1, 1), monic,
-                           lambda x: eval_chebyt(n, x))
+                           lambda x: _ufuncs.eval_chebyt(n, x))
     n1 = n
     x, w, mu = roots_chebyt(n1, mu=True)
     hn = pi / 2
     kn = 2**(n - 1)
     p = orthopoly1d(x, w, hn, kn, wfunc, (-1, 1), monic,
-                    lambda x: eval_chebyt(n, x))
+                    lambda x: _ufuncs.eval_chebyt(n, x))
     return p
 
 # Chebyshev of the second kind
@@ -1994,7 +2012,7 @@ def chebyc(n, monic=False):
                     limits=(-2, 2), monic=monic)
     if not monic:
         p._scale(2.0 / p(2))
-        p.__dict__['_eval_func'] = lambda x: eval_chebyc(n, x)
+        p.__dict__['_eval_func'] = lambda x: _ufuncs.eval_chebyc(n, x)
     return p
 
 # Chebyshev of the second kind       S_n(x)
@@ -2101,7 +2119,7 @@ def chebys(n, monic=False):
     if not monic:
         factor = (n + 1.0) / p(2)
         p._scale(factor)
-        p.__dict__['_eval_func'] = lambda x: eval_chebys(n, x)
+        p.__dict__['_eval_func'] = lambda x: _ufuncs.eval_chebys(n, x)
     return p
 
 # Shifted Chebyshev of the first kind     T^*_n(x)
@@ -2228,7 +2246,7 @@ def roots_sh_chebyu(n, mu=False):
     """
     x, w, m = roots_chebyu(n, True)
     x = (x + 1) / 2
-    m_us = cephes.beta(1.5, 1.5)
+    m_us = _ufuncs.beta(1.5, 1.5)
     w *= m_us / m
     if mu:
         return x, w, m_us
@@ -2386,9 +2404,9 @@ def roots_legendre(n, mu=False):
     mu0 = 2.0
     an_func = lambda k: 0.0 * k
     bn_func = lambda k: k * np.sqrt(1.0 / (4 * k * k - 1))
-    f = cephes.eval_legendre
-    df = lambda n, x: (-n*x*cephes.eval_legendre(n, x)
-                       + n*cephes.eval_legendre(n-1, x))/(1-x**2)
+    f = _ufuncs.eval_legendre
+    df = lambda n, x: (-n*x*_ufuncs.eval_legendre(n, x)
+                       + n*_ufuncs.eval_legendre(n-1, x))/(1-x**2)
     return _gen_roots_and_weights(m, mu0, an_func, bn_func, f, df, True, mu)
 
 
@@ -2443,7 +2461,8 @@ def legendre(n, monic=False):
     hn = 2.0 / (2 * n + 1)
     kn = _gam(2 * n + 1) / _gam(n + 1)**2 / 2.0**n
     p = orthopoly1d(x, w, hn, kn, wfunc=lambda x: 1.0, limits=(-1, 1),
-                    monic=monic, eval_func=lambda x: eval_legendre(n, x))
+                    monic=monic,
+                    eval_func=lambda x: _ufuncs.eval_legendre(n, x))
     return p
 
 # Shifted Legendre              P^*_n(x)
@@ -2495,6 +2514,7 @@ def roots_sh_legendre(n, mu=False):
     else:
         return x, w
 
+
 def sh_legendre(n, monic=False):
     r"""Shifted Legendre polynomial.
 
@@ -2526,31 +2546,14 @@ def sh_legendre(n, monic=False):
     wfunc = lambda x: 0.0 * x + 1.0
     if n == 0:
         return orthopoly1d([], [], 1.0, 1.0, wfunc, (0, 1), monic,
-                           lambda x: eval_sh_legendre(n, x))
+                           lambda x: _ufuncs.eval_sh_legendre(n, x))
     x, w = roots_sh_legendre(n)
     hn = 1.0 / (2 * n + 1.0)
     kn = _gam(2 * n + 1) / _gam(n + 1)**2
     p = orthopoly1d(x, w, hn, kn, wfunc, limits=(0, 1), monic=monic,
-                    eval_func=lambda x: eval_sh_legendre(n, x))
+                    eval_func=lambda x: _ufuncs.eval_sh_legendre(n, x))
     return p
 
-
-# -----------------------------------------------------------------------------
-# Code for backwards compatibility
-# -----------------------------------------------------------------------------
-
-# Import functions in case someone is still calling the orthogonal
-# module directly. (They shouldn't be; it's not in the public API).
-poch = cephes.poch
-
-# eval_chebyu, eval_sh_chebyt and eval_sh_chebyu: These functions are not
-# used in _orthogonal.py, they are not in _rootfuns_map, but their names
-# do appear in _evalfuns, so they must be kept.
-from ._ufuncs import (binom, eval_jacobi, eval_sh_jacobi, eval_gegenbauer,
-                      eval_chebyt, eval_chebyu, eval_chebys, eval_chebyc,
-                      eval_sh_chebyt, eval_sh_chebyu, eval_legendre,
-                      eval_sh_legendre, eval_genlaguerre, eval_laguerre,
-                      eval_hermite, eval_hermitenorm)
 
 # Make the old root function names an alias for the new ones
 _modattrs = globals()

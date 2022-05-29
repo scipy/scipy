@@ -12,8 +12,8 @@ from tempfile import mkstemp, gettempdir
 from urllib.request import urlopen, Request
 from urllib.error import HTTPError
 
-OPENBLAS_V = '0.3.17'
-OPENBLAS_LONG = 'v0.3.17'
+OPENBLAS_V = '0.3.18'
+OPENBLAS_LONG = 'v0.3.18'
 BASE_LOC = 'https://anaconda.org/multibuild-wheels-staging/openblas-libs'
 BASEURL = f'{BASE_LOC}/{OPENBLAS_LONG}/download'
 SUPPORTED_PLATFORMS = [
@@ -324,12 +324,17 @@ if __name__ == '__main__':
     parser.add_argument('--test', nargs='*', default=None,
                         help='Test different architectures. "all", or any of '
                              f'{SUPPORTED_PLATFORMS}')
+    parser.add_argument('--write-init', nargs=1,
+                        metavar='OUT_SCIPY_DIR',
+                        help='Write distribution init to named dir')
     parser.add_argument('--check_version', nargs='?', default='',
                         help='Check provided OpenBLAS version string '
                              'against available OpenBLAS')
     args = parser.parse_args()
     if args.check_version != '':
         test_version(args.check_version)
+    elif args.write_init:
+        make_init(args.write_init[0])
     elif args.test is None:
         print(setup_openblas())
     else:

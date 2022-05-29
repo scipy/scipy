@@ -53,6 +53,8 @@ steps:
     sudo apt-get install -y
     libatlas-base-dev
     liblapack-dev
+    libopenblas-dev
+    pkg-config
     gfortran
     libgmp-dev
     libmpfr-dev
@@ -64,10 +66,10 @@ steps:
   displayName: 'Add ccache to path'
 - script: >-
     pip install --upgrade ${{parameters.numpy_spec}} &&
-    pip install --upgrade pip==20.2.4 'setuptools<58.5' wheel &&
+    pip install --upgrade pip setuptools==59.6.0 wheel build meson meson-python &&
     pip install ${{parameters.other_spec}}
     cython
-    gmpy2==2.1.0rc1
+    gmpy2
     threadpoolctl
     mpmath
     pythran
@@ -82,7 +84,7 @@ steps:
   - script: pip install pytest-cov coverage codecov
     displayName: 'Install coverage dependencies'
 - ${{ if eq(parameters.refguide_check, true) }}:
-  - script: pip install matplotlib sphinx==3.1
+  - script: pip install matplotlib sphinx numpydoc
     displayName: 'Install documentation dependencies'
   - script: sudo apt-get install -y wamerican-small
     displayName: 'Install word list (for csgraph tutorial)'
@@ -107,15 +109,17 @@ steps:
       # and make more efficient use of ccache
       echo "setup.py build"
       python tools/suppress_output.py python setup.py build
-      echo "pip wheel"
-      python tools/suppress_output.py pip wheel --no-build-isolation .
-      pip install --no-cache-dir scipy*.whl
+      echo "setup.py bdist_wheel"
+      # Still testing distutils here (`pip wheel --no-use-pep517` cannot be
+      # used, so back to `setup.py` it is ...)
+      python tools/suppress_output.py python setup.py bdist_wheel
+      pip install --no-cache-dir dist/scipy*.whl
     displayName: 'Install SciPy from Wheel'
 - ${{ if eq(parameters.use_sdist, true) }}:
   - script: |
       set -euo pipefail
-      echo "setup.py sdist"
-      python tools/suppress_output.py python setup.py sdist
+      echo "Build sdist via `build` (uses pyproject.toml)"
+      python -m build --sdist
       # Move out of source directory to avoid finding local scipy
       cd dist
       echo "pip install"
@@ -123,7 +127,7 @@ steps:
       # Note: don't use a fixed build dir (which would help for ccache), because
       #       --build is partially broken and the workaround in commit b4617dd764
       #       messes with build isolation.
-      pip install $PWD/scipy* -v
+      pip install scipy*.tar.gz -v
     displayName: 'Install SciPy from SDist'
 - script: 'python -u runtests.py -g -j2 --build-only ${COVERAGE:-} ${USE_WHEEL_BUILD:-}'
   env:
@@ -141,14 +145,14 @@ steps:
       COVERAGE: '--coverage --gcov'
     ${{ if or(eq(parameters.use_wheel, true), eq(parameters.use_sdist, true))}}:
       USE_WHEEL_BUILD: '--no-build'
-  # Only run tests on master for the coverage build
+  # Only run tests on main for the coverage build
   ${{ if eq(parameters.coverage, false) }}:
-    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/master'))  # skip for PR merges
+    condition: and(succeeded(), ne(variables['Build.SourceBranch'], 'refs/heads/main'))  # skip for PR merges
   displayName: 'Run tests'
-- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/master'), eq(parameters.refguide_check, true)) }}:
+- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), eq(parameters.refguide_check, true)) }}:
   - script: python runtests.py -g --refguide-check
     displayName: 'Refguide Check'
-- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/master'), eq(parameters.asv_check, true)) }}:
+- ${{ if and(ne(variables['Build.SourceBranch'], 'refs/heads/main'), eq(parameters.asv_check, true)) }}:
   - script: |
       set -euo pipefail
       cd benchmarks
@@ -157,7 +161,7 @@ steps:
       ! SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0 python -masv check -E existing > /dev/null
 - script: ./tools/check_pyext_symbol_hiding.sh build
   displayName: "Check dynamic symbol hiding works"
-  condition: ne(variables['Build.SourceBranch'], 'refs/heads/master')
+  condition: ne(variables['Build.SourceBranch'], 'refs/heads/main')
   failOnStderr: true
 - ${{ if eq(parameters.coverage, true) }}:
   - script: |

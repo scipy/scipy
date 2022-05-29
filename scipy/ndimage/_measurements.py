@@ -610,7 +610,7 @@ def sum_labels(input, labels=None, index=None):
         by `labels` with the same shape as `index`. If 'index' is None or scalar,
         a scalar is returned.
 
-    See also
+    See Also
     --------
     mean, median
 
@@ -619,11 +619,11 @@ def sum_labels(input, labels=None, index=None):
     >>> from scipy import ndimage
     >>> input =  [0,1,2,3]
     >>> labels = [1,1,2,2]
-    >>> ndimage.sum(input, labels, index=[1,2])
+    >>> ndimage.sum_labels(input, labels, index=[1,2])
     [1.0, 5.0]
-    >>> ndimage.sum(input, labels, index=1)
+    >>> ndimage.sum_labels(input, labels, index=1)
     1
-    >>> ndimage.sum(input, labels)
+    >>> ndimage.sum_labels(input, labels)
     6
 
 
@@ -656,7 +656,7 @@ def mean(input, labels=None, index=None):
         Sequence of same length as `index`, with the mean of the different
         regions labeled by the labels in `index`.
 
-    See also
+    See Also
     --------
     variance, standard_deviation, minimum, maximum, sum, label
 
@@ -931,7 +931,7 @@ def minimum(input, labels=None, index=None):
         and the minimal value of elements where `labels` is greater than zero
         if `index` is None.
 
-    See also
+    See Also
     --------
     label, maximum, median, minimum_position, extrema, sum, mean, variance,
     standard_deviation
@@ -993,7 +993,7 @@ def maximum(input, labels=None, index=None):
         and the maximal value of elements where `labels` is greater than zero
         if `index` is None.
 
-    See also
+    See Also
     --------
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation
@@ -1072,7 +1072,7 @@ def median(input, labels=None, index=None):
         and the median value of elements where `labels` is greater than zero
         if `index` is None.
 
-    See also
+    See Also
     --------
     label, minimum, maximum, extrema, sum, mean, variance, standard_deviation
 
@@ -1138,7 +1138,7 @@ def minimum_position(input, labels=None, index=None):
         If `index` or `labels` are not specified, a tuple of ints is
         returned specifying the location of the first minimal value of `input`.
 
-    See also
+    See Also
     --------
     label, minimum, median, maximum_position, extrema, sum, mean, variance,
     standard_deviation

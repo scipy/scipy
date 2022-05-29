@@ -16,7 +16,7 @@ from ._solve_toeplitz import levinson
 
 __all__ = ['solve', 'solve_triangular', 'solveh_banded', 'solve_banded',
            'solve_toeplitz', 'solve_circulant', 'inv', 'det', 'lstsq',
-           'pinv', 'pinv2', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
+           'pinv', 'pinvh', 'matrix_balance', 'matmul_toeplitz']
 
 
 # Linear equations
@@ -38,7 +38,7 @@ def _solve_check(n, info, lamch=None, rcond=None):
 
 
 def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
-          overwrite_b=False, debug=None, check_finite=True, assume_a='gen',
+          overwrite_b=False, check_finite=True, assume_a='gen',
           transposed=False):
     """
     Solves the linear equation set ``a * x = b`` for the unknown ``x``
@@ -68,10 +68,13 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         Square input data
     b : (N, NRHS) array_like
         Input data for the right hand side.
-    sym_pos : bool, optional
-        Assume `a` is symmetric and positive definite. This key is deprecated
-        and assume_a = 'pos' keyword is recommended instead. The functionality
-        is the same. It will be removed in the future.
+    sym_pos : bool, optional, deprecated
+        Assume `a` is symmetric and positive definite.
+
+        .. deprecated:: 0.19.0
+            This keyword is deprecated and should be replaced by using
+           ``assume_a = 'pos'``. `sym_pos` will be removed in SciPy 1.11.0.
+
     lower : bool, optional
         If True, only the data contained in the lower triangle of `a`. Default
         is to use upper triangle. (ignored for ``'gen'``)
@@ -87,7 +90,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
     assume_a : str, optional
         Valid entries are explained above.
-    transposed: bool, optional
+    transposed : bool, optional
         If True, ``a^T x = b`` for real matrices, raises `NotImplementedError`
         for complex matrices (only for True).
 
@@ -164,6 +167,10 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
     # Backwards compatibility - old keyword.
     if sym_pos:
+        message = ("The 'sym_pos' keyword is deprecated and should be "
+                   "replaced by using 'assume_a = \"pos\"'. 'sym_pos' will be"
+                   " removed in SciPy 1.11.0.")
+        warn(message, DeprecationWarning, stacklevel=2)
         assume_a = 'pos'
 
     if assume_a not in ('gen', 'sym', 'her', 'pos'):
@@ -174,12 +181,6 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
     # (lapack doesn't know what to do with real hermitian matrices)
     if assume_a == 'her' and not np.iscomplexobj(a1):
         assume_a = 'sym'
-
-    # Deprecate keyword "debug"
-    if debug is not None:
-        warn('Use of the "debug" keyword is deprecated '
-             'and this keyword will be removed in future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=2)
 
     # Get the correct lamch function.
     # The LAMCH functions only exists for S and D
@@ -262,7 +263,7 @@ def solve(a, b, sym_pos=False, lower=False, overwrite_a=False,
 
 
 def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
-                     overwrite_b=False, debug=None, check_finite=True):
+                     overwrite_b=False, check_finite=True):
     """
     Solve the equation `a x = b` for `x`, assuming a is a triangular matrix.
 
@@ -329,12 +330,6 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
     """
 
-    # Deprecate keyword "debug"
-    if debug is not None:
-        warn('Use of the "debug" keyword is deprecated '
-             'and this keyword will be removed in the future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=2)
-
     a1 = _asarray_validated(a, check_finite=check_finite)
     b1 = _asarray_validated(b, check_finite=check_finite)
     if len(a1.shape) != 2 or a1.shape[0] != a1.shape[1]:
@@ -343,8 +338,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
         raise ValueError('shapes of a {} and b {} are incompatible'
                          .format(a1.shape, b1.shape))
     overwrite_b = overwrite_b or _datacopied(b1, b)
-    if debug:
-        print('solve:overwrite_b=', overwrite_b)
+
     trans = {'N': 0, 'T': 1, 'C': 2}.get(trans, trans)
     trtrs, = get_lapack_funcs(('trtrs',), (a1, b1))
     if a1.flags.f_contiguous or trans == 2:
@@ -365,7 +359,7 @@ def solve_triangular(a, b, trans=0, lower=False, unit_diagonal=False,
 
 
 def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
-                 debug=None, check_finite=True):
+                 check_finite=True):
     """
     Solve the equation a x = b for x, assuming a is banded matrix.
 
@@ -432,12 +426,6 @@ def solve_banded(l_and_u, ab, b, overwrite_ab=False, overwrite_b=False,
     array([-2.37288136,  3.93220339, -4.        ,  4.3559322 , -1.3559322 ])
 
     """
-
-    # Deprecate keyword "debug"
-    if debug is not None:
-        warn('Use of the "debug" keyword is deprecated '
-             'and this keyword will be removed in the future '
-             'versions of SciPy.', DeprecationWarning, stacklevel=2)
 
     a1 = _asarray_validated(ab, check_finite=check_finite, as_inexact=True)
     b1 = _asarray_validated(b, check_finite=check_finite, as_inexact=True)
@@ -1256,12 +1244,12 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
     ----------
     a : (M, N) array_like
         Matrix to be pseudo-inverted.
-    atol: float, optional
+    atol : float, optional
         Absolute threshold term, default value is 0.
 
         .. versionadded:: 1.7.0
 
-    rtol: float, optional
+    rtol : float, optional
         Relative threshold term, default value is ``max(M, N) * eps`` where
         ``eps`` is the machine precision value of the datatype of ``a``.
 
@@ -1346,61 +1334,6 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
         return B
 
 
-def pinv2(a, cond=None, rcond=None, return_rank=False, check_finite=True):
-    """
-    Compute the (Moore-Penrose) pseudo-inverse of a matrix.
-
-    `scipy.linalg.pinv2` is deprecated since SciPy 1.7.0, use
-    `scipy.linalg.pinv` instead for better tolerance control.
-
-    Calculate a generalized inverse of a matrix using its
-    singular-value decomposition and including all 'large' singular
-    values.
-
-    Parameters
-    ----------
-    a : (M, N) array_like
-        Matrix to be pseudo-inverted.
-    cond, rcond : float or None
-        Cutoff for 'small' singular values; singular values smaller than this
-        value are considered as zero. If both are omitted, the default value
-        ``max(M,N)*largest_singular_value*eps`` is used where ``eps`` is the
-        machine precision value of the datatype of ``a``.
-
-        .. versionchanged:: 1.3.0
-            Previously the default cutoff value was just ``eps*f`` where ``f``
-            was ``1e3`` for single precision and ``1e6`` for double precision.
-
-    return_rank : bool, optional
-        If True, return the effective rank of the matrix.
-    check_finite : bool, optional
-        Whether to check that the input matrix contains only finite numbers.
-        Disabling may give a performance gain, but may result in problems
-        (crashes, non-termination) if the inputs do contain infinities or NaNs.
-
-    Returns
-    -------
-    B : (N, M) ndarray
-        The pseudo-inverse of matrix `a`.
-    rank : int
-        The effective rank of the matrix. Returned if `return_rank` is True.
-
-    Raises
-    ------
-    LinAlgError
-        If SVD computation does not converge.
-
-    """
-    # SciPy 1.7.0 2021-04-10
-    warn('scipy.linalg.pinv2 is deprecated since SciPy 1.7.0, use '
-         'scipy.linalg.pinv instead', DeprecationWarning, stacklevel=2)
-    if rcond is not None:
-        cond = rcond
-
-    return pinv(a=a, atol=cond, rtol=None, return_rank=return_rank,
-                check_finite=check_finite)
-
-
 def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
           check_finite=True, cond=None, rcond=None):
     """
@@ -1414,12 +1347,13 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     ----------
     a : (N, N) array_like
         Real symmetric or complex hermetian matrix to be pseudo-inverted
-    atol: float, optional
+
+    atol : float, optional
         Absolute threshold term, default value is 0.
 
         .. versionadded:: 1.7.0
 
-    rtol: float, optional
+    rtol : float, optional
         Relative threshold term, default value is ``N * eps`` where
         ``eps`` is the machine precision value of the datatype of ``a``.
 
@@ -1563,7 +1497,6 @@ def matrix_balance(A, permute=True, scale=True, separate=False,
 
     Notes
     -----
-
     This algorithm is particularly useful for eigenvalue and matrix
     decompositions and in many cases it is already called by various
     LAPACK routines.
@@ -1676,10 +1609,10 @@ def _validate_args_for_toeplitz_ops(c_or_cr, b, check_finite, keep_b_shape,
         Whether to check that the input matrices contain only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (result entirely NaNs) if the inputs do contain infinities or NaNs.
-    keep_b_shape: bool
+    keep_b_shape : bool
         Whether to convert a (M,) dimensional b into a (M, 1) dimensional
         matrix.
-    enforce_square: bool, optional
+    enforce_square : bool, optional
         If True (default), this verifies that the Toeplitz matrix is square.
 
     Returns

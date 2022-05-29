@@ -13,7 +13,7 @@
 #endif
 
 #ifdef __GNUC__
-#define CONJ(a) (~((__complex__)a))
+#define CONJ(a) (~((__complex__ double)a))
 #define ABSQ(a) (__real__ (a*CONJ(a)))
 #else
 #define CONJ(a) ((a))

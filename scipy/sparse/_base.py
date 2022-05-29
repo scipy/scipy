@@ -410,7 +410,10 @@ class spmatrix:
         array([ 1, -3, -1], dtype=int64)
 
         """
-        return self @ other
+        if np.isscalar(other):
+            return self * other
+        else:
+            return self @ other
 
     def power(self, n, dtype=None):
         """Element-wise power."""
@@ -717,7 +720,7 @@ class spmatrix:
 
             if other == 0:
                 from ._construct import eye
-                E = eye(M)
+                E = eye(M, dtype=self.dtype)
                 if self._is_array:
                     from ._arrays import dia_array
                     E = dia_array(E)

@@ -41,6 +41,7 @@ import warnings
 from collections import namedtuple
 
 from . import distributions
+from scipy._lib._util import _rename_parameter
 import scipy.special as special
 import scipy.stats._stats_py
 
@@ -94,7 +95,7 @@ def argstoarray(*args):
 
     Parameters
     ----------
-    args : sequences
+    *args : sequences
         Group of sequences.
 
     Returns
@@ -303,7 +304,7 @@ def mode(a, axis=0):
 
     Notes
     -----
-    For more details, see `stats.mode`.
+    For more details, see `scipy.stats.mode`.
 
     Examples
     --------
@@ -751,7 +752,7 @@ def kendalltau(x, y, use_ties=True, use_missing=False, method='auto',
     use_missing : {False, True}, optional
         Whether missing data should be allocated a rank of 0 (False) or the
         average rank (True)
-    method: {'auto', 'asymptotic', 'exact'}, optional
+    method : {'auto', 'asymptotic', 'exact'}, optional
         Defines which method is used to calculate the p-value [1]_.
         'asymptotic' uses a normal approximation valid for large samples.
         'exact' computes the exact p-value, but can only be used if no ties
@@ -944,7 +945,7 @@ def pointbiserialr(x, y):
     Missing values are considered pair-wise: if a value is missing in x,
     the corresponding value in y is masked.
 
-    For more details on `pointbiserialr`, see `stats.pointbiserialr`.
+    For more details on `pointbiserialr`, see `scipy.stats.pointbiserialr`.
 
     """
     x = ma.fix_invalid(x, copy=True).astype(bool)
@@ -1041,8 +1042,8 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
         Method to be used for computing estimate for intercept.
         Following methods are supported,
 
-            * 'joint': Uses np.median(y - medslope * x) as intercept.
-            * 'separate': Uses np.median(y) - medslope * np.median(x)
+            * 'joint': Uses np.median(y - slope * x) as intercept.
+            * 'separate': Uses np.median(y) - slope * np.median(x)
                           as intercept.
 
         The default is 'separate'.
@@ -1051,23 +1052,26 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
 
     Returns
     -------
-    medslope : float
-        Theil slope.
-    medintercept : float
-        Intercept of the Theil line, as ``median(y) - medslope*median(x)``.
-    lo_slope : float
-        Lower bound of the confidence interval on `medslope`.
-    up_slope : float
-        Upper bound of the confidence interval on `medslope`.
+    result : ``TheilslopesResult`` instance
+        The return value is an object with the following attributes:
 
-    See also
+        slope : float
+            Theil slope.
+        intercept : float
+            Intercept of the Theil line.
+        low_slope : float
+            Lower bound of the confidence interval on `slope`.
+        high_slope : float
+            Upper bound of the confidence interval on `slope`.
+
+    See Also
     --------
-    siegelslopes : a similar technique with repeated medians
+    siegelslopes : a similar technique using repeated medians
 
 
     Notes
     -----
-    For more details on `theilslopes`, see `stats.theilslopes`.
+    For more details on `theilslopes`, see `scipy.stats.theilslopes`.
 
     """
     y = ma.asarray(y).flatten()
@@ -1083,7 +1087,7 @@ def theilslopes(y, x=None, alpha=0.95, method='separate'):
     # Disregard any masked elements of x or y
     y = y.compressed()
     x = x.compressed().astype(float)
-    # We now have unmasked arrays so can use `stats.theilslopes`
+    # We now have unmasked arrays so can use `scipy.stats.theilslopes`
     return stats_theilslopes(y, x, alpha=alpha, method=method)
 
 
@@ -1104,18 +1108,21 @@ def siegelslopes(y, x=None, method="hierarchical"):
         Independent variable. If None, use ``arange(len(y))`` instead.
     method : {'hierarchical', 'separate'}
         If 'hierarchical', estimate the intercept using the estimated
-        slope ``medslope`` (default option).
+        slope ``slope`` (default option).
         If 'separate', estimate the intercept independent of the estimated
         slope. See Notes for details.
 
     Returns
     -------
-    medslope : float
-        Estimate of the slope of the regression line.
-    medintercept : float
-        Estimate of the intercept of the regression line.
+    result : ``SiegelslopesResult`` instance
+        The return value is an object with the following attributes:
 
-    See also
+        slope : float
+            Estimate of the slope of the regression line.
+        intercept : float
+            Estimate of the intercept of the regression line.
+
+    See Also
     --------
     theilslopes : a similar technique without repeated medians
 
@@ -1137,8 +1144,8 @@ def siegelslopes(y, x=None, method="hierarchical"):
     # Disregard any masked elements of x or y
     y = y.compressed()
     x = x.compressed().astype(float)
-    # We now have unmasked arrays so can use `stats.siegelslopes`
-    return stats_siegelslopes(y, x)
+    # We now have unmasked arrays so can use `scipy.stats.siegelslopes`
+    return stats_siegelslopes(y, x, method=method)
 
 
 def sen_seasonal_slopes(x):
@@ -1191,7 +1198,7 @@ def ttest_1samp(a, popmean, axis=0, alternative='two-sided'):
 
     Notes
     -----
-    For more details on `ttest_1samp`, see `stats.ttest_1samp`.
+    For more details on `ttest_1samp`, see `scipy.stats.ttest_1samp`.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -1260,7 +1267,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, alternative='two-sided'):
 
     Notes
     -----
-    For more details on `ttest_ind`, see `stats.ttest_ind`.
+    For more details on `ttest_ind`, see `scipy.stats.ttest_ind`.
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -1333,7 +1340,7 @@ def ttest_rel(a, b, axis=0, alternative='two-sided'):
 
     Notes
     -----
-    For more details on `ttest_rel`, see `stats.ttest_rel`.
+    For more details on `ttest_rel`, see `scipy.stats.ttest_rel`.
 
     """
     a, b, axis = _chk2_asarray(a, b, axis)
@@ -1430,7 +1437,7 @@ def kruskal(*args):
 
     Notes
     -----
-    For more details on `kruskal`, see `stats.kruskal`.
+    For more details on `kruskal`, see `scipy.stats.kruskal`.
 
     Examples
     --------
@@ -1474,7 +1481,8 @@ def kruskal(*args):
 kruskalwallis = kruskal
 
 
-def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
+@_rename_parameter("mode", "method")
+def ks_1samp(x, cdf, args=(), alternative="two-sided", method='auto'):
     """
     Computes the Kolmogorov-Smirnov test on one sample of masked values.
 
@@ -1491,7 +1499,7 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
         Distribution parameters, used if `cdf` is a string.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Indicates the alternative hypothesis.  Default is 'two-sided'.
-    mode : {'auto', 'exact', 'asymp'}, optional
+    method : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -1510,10 +1518,11 @@ def ks_1samp(x, cdf, args=(), alternative="two-sided", mode='auto'):
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
     return scipy.stats._stats_py.ks_1samp(
-        x, cdf, args=args, alternative=alternative, mode=mode)
+        x, cdf, args=args, alternative=alternative, method=method)
 
 
-def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
+@_rename_parameter("mode", "method")
+def ks_2samp(data1, data2, alternative="two-sided", method='auto'):
     """
     Computes the Kolmogorov-Smirnov test on two samples.
 
@@ -1527,7 +1536,7 @@ def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
         Second data set
     alternative : {'two-sided', 'less', 'greater'}, optional
         Indicates the alternative hypothesis.  Default is 'two-sided'.
-    mode : {'auto', 'exact', 'asymp'}, optional
+    method : {'auto', 'exact', 'asymp'}, optional
         Defines the method used for calculating the p-value.
         The following options are available (default is 'auto'):
 
@@ -1548,14 +1557,16 @@ def ks_2samp(data1, data2, alternative="two-sided", mode='auto'):
     # but the circular dependencies between _mstats_basic and stats prevent that.
     alternative = {'t': 'two-sided', 'g': 'greater', 'l': 'less'}.get(
        alternative.lower()[0], alternative)
-    return scipy.stats._stats_py.ks_2samp(data1, data2, alternative=alternative,
-                                      mode=mode)
+    return scipy.stats._stats_py.ks_2samp(data1, data2,
+                                          alternative=alternative,
+                                          method=method)
 
 
 ks_twosamp = ks_2samp
 
 
-def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
+@_rename_parameter("mode", "method")
+def kstest(data1, data2, args=(), alternative='two-sided', method='auto'):
     """
 
     Parameters
@@ -1565,7 +1576,7 @@ def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
     args : tuple, sequence, optional
         Distribution parameters, used if `data1` or `data2` are strings.
     alternative : str, as documented in stats.kstest
-    mode : str, as documented in stats.kstest
+    method : str, as documented in stats.kstest
 
     Returns
     -------
@@ -1573,7 +1584,7 @@ def kstest(data1, data2, args=(), alternative='two-sided', mode='auto'):
 
     """
     return scipy.stats._stats_py.kstest(data1, data2, args,
-                                    alternative=alternative, mode=mode)
+                                        alternative=alternative, method=method)
 
 
 def trima(a, limits=None, inclusive=(True,True)):
@@ -2055,7 +2066,7 @@ def tmean(a, limits=None, inclusive=(True, True), axis=None):
 
     Notes
     -----
-    For more details on `tmean`, see `stats.tmean`.
+    For more details on `tmean`, see `scipy.stats.tmean`.
 
     Examples
     --------
@@ -2111,7 +2122,7 @@ def tvar(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
     Notes
     -----
-    For more details on `tvar`, see `stats.tvar`.
+    For more details on `tvar`, see `scipy.stats.tvar`.
 
     """
     a = a.astype(float).ravel()
@@ -2148,7 +2159,7 @@ def tmin(a, lowerlimit=None, axis=0, inclusive=True):
 
     Notes
     -----
-    For more details on `tmin`, see `stats.tmin`.
+    For more details on `tmin`, see `scipy.stats.tmin`.
 
     Examples
     --------
@@ -2198,7 +2209,7 @@ def tmax(a, upperlimit=None, axis=0, inclusive=True):
 
     Notes
     -----
-    For more details on `tmax`, see `stats.tmax`.
+    For more details on `tmax`, see `scipy.stats.tmax`.
 
     Examples
     --------
@@ -2253,7 +2264,7 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 
     Notes
     -----
-    For more details on `tsem`, see `stats.tsem`.
+    For more details on `tsem`, see `scipy.stats.tsem`.
 
     """
     a = ma.asarray(a).ravel()
@@ -2404,7 +2415,7 @@ def moment(a, moment=1, axis=0):
 
     Notes
     -----
-    For more details about `moment`, see `stats.moment`.
+    For more details about `moment`, see `scipy.stats.moment`.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2502,7 +2513,7 @@ def variation(a, axis=0, ddof=0):
 
     Notes
     -----
-    For more details about `variation`, see `stats.variation`.
+    For more details about `variation`, see `scipy.stats.variation`.
 
     Examples
     --------
@@ -2516,7 +2527,7 @@ def variation(a, axis=0, ddof=0):
     0.5345224838248487
 
     In the example above, it can be seen that this works the same as
-    `stats.variation` except 'stats.mstats.variation' ignores masked
+    `scipy.stats.variation` except 'stats.mstats.variation' ignores masked
     array elements.
 
     """
@@ -2546,7 +2557,7 @@ def skew(a, axis=0, bias=True):
 
     Notes
     -----
-    For more details about `skew`, see `stats.skew`.
+    For more details about `skew`, see `scipy.stats.skew`.
 
     """
     a, axis = _chk_asarray(a,axis)
@@ -2603,7 +2614,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True):
 
     Notes
     -----
-    For more details about `kurtosis`, see `stats.kurtosis`.
+    For more details about `kurtosis`, see `scipy.stats.kurtosis`.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2763,7 +2774,7 @@ def skewtest(a, axis=0, alternative='two-sided'):
 
     Notes
     -----
-    For more details about `skewtest`, see `stats.skewtest`.
+    For more details about `skewtest`, see `scipy.stats.skewtest`.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2824,7 +2835,7 @@ def kurtosistest(a, axis=0, alternative='two-sided'):
 
     Notes
     -----
-    For more details about `kurtosistest`, see `stats.kurtosistest`.
+    For more details about `kurtosistest`, see `scipy.stats.kurtosistest`.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -2887,7 +2898,7 @@ def normaltest(a, axis=0):
 
     Notes
     -----
-    For more details about `normaltest`, see `stats.normaltest`.
+    For more details about `normaltest`, see `scipy.stats.normaltest`.
 
     """
     a, axis = _chk_asarray(a, axis)
@@ -3148,8 +3159,8 @@ def sem(a, axis=0, ddof=1):
     Notes
     -----
     The default value for `ddof` changed in scipy 0.15.0 to be consistent with
-    `stats.sem` as well as with the most common definition used (like in the R
-    documentation).
+    `scipy.stats.sem` as well as with the most common definition used (like in
+    the R documentation).
 
     Examples
     --------
@@ -3274,11 +3285,11 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
     ----------
     x, y : array_like
         Array of samples, should be one-dimensional.
-    alternative :  'less', 'two-sided', or 'greater', optional
+    alternative : 'less', 'two-sided', or 'greater', optional
         Whether to get the p-value for the one-sided hypothesis ('less'
         or 'greater') or for the two-sided hypothesis ('two-sided').
         Defaults value is 'two-sided' .
-    distribution: 't' or 'normal', optional
+    distribution : 't' or 'normal', optional
         Whether to get the p-value by t-distribution or by standard normal
         distribution.
         Defaults value is 't' .
@@ -3297,7 +3308,7 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t"):
 
     Notes
     -----
-    For more details on `brunnermunzel`, see `stats.brunnermunzel`.
+    For more details on `brunnermunzel`, see `scipy.stats.brunnermunzel`.
 
     """
     x = ma.asarray(x).compressed().view(ndarray)

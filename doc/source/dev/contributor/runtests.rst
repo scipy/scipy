@@ -85,8 +85,7 @@ Other useful options include:
    installed.*
 -  ``--doc`` to build the docs in ``scipy/doc/build``. By default,
    docs are built only in the ``html-scipyorg`` format, but you can
-   change this by appending the name of the desired format
-   (e.g. ``--doc latex``).
+   change this by appending the name of the desired format.
 -  ``--refguide-check`` to check whether the objects in a Scipy submodule's
    ``__all__`` dict correspond to the objects included in the reference
    guide. It also checks the validity of code samples in docstrings.
@@ -126,7 +125,7 @@ They can be enabled by setting the environment variable ``SCIPY_XSLOW=1``
 before running the test suite.
 
 .. |runtests-py| replace:: ``runtests.py``
-.. _runtests-py: https://github.com/scipy/scipy/blob/master/runtests.py
+.. _runtests-py: https://github.com/scipy/scipy/blob/main/runtests.py
 
 .. |pytest-cov| replace:: ``pytest-cov``
 .. _pytest-cov: https://pypi.org/project/pytest-cov/
@@ -136,10 +135,10 @@ before running the test suite.
 .. |pytest-xdist| replace:: ``pytest-xdist``
 .. _pytest-xdist: https://pypi.org/project/pytest-xdist/
 
-.. _NumPy/SciPy Testing Guidelines: https://github.com/numpy/numpy/blob/master/doc/TESTS.rst.txt
+.. _NumPy/SciPy Testing Guidelines: https://github.com/numpy/numpy/blob/main/doc/TESTS.rst.txt
 
 .. |pytest| replace:: ``pytest``
 .. _pytest: https://docs.pytest.org/en/latest/
 
 .. |test-linprog| replace:: ``scipy/optimize/tests/test_linprog.py``
-.. _test-linprog: https://github.com/scipy/scipy/blob/master/scipy/optimize/tests/test_linprog.py
+.. _test-linprog: https://github.com/scipy/scipy/blob/main/scipy/optimize/tests/test_linprog.py

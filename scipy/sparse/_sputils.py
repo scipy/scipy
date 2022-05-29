@@ -3,7 +3,6 @@
 
 import sys
 import operator
-import warnings
 import numpy as np
 from scipy._lib._util import prod
 
@@ -111,7 +110,9 @@ def getdtype(dtype, a=None, default=None):
     else:
         newdtype = np.dtype(dtype)
         if newdtype == np.object_:
-            warnings.warn("object dtype is not supported by sparse matrices")
+            raise ValueError(
+                "object dtype is not supported by sparse matrices"
+            )
 
     return newdtype
 
@@ -211,8 +212,8 @@ def isintlike(x):
         except (TypeError, ValueError):
             return False
         if loose_int:
-            warnings.warn("Inexact indices into sparse matrices are deprecated",
-                          DeprecationWarning)
+            msg = "Inexact indices into sparse matrices are not allowed"
+            raise ValueError(msg)
         return loose_int
     return True
 

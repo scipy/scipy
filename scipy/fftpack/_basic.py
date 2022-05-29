@@ -403,7 +403,7 @@ def ifft2(x, shape=None, axes=(-2,-1), overwrite_x=False):
 
     See `ifft` for more information.
 
-    See also
+    See Also
     --------
     fft2, ifft
 

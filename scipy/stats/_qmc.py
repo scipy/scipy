@@ -14,6 +14,7 @@ from typing import (
     List,
     Optional,
     overload,
+    Tuple,
     TYPE_CHECKING,
 )
 
@@ -28,11 +29,13 @@ if TYPE_CHECKING:
 
 import scipy.stats as stats
 from scipy._lib._util import rng_integers
-from scipy.stats._sobol import (
-    initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
-    _categorize, initialize_direction_numbers, _MAXDIM, _MAXBIT
+from scipy.spatial import distance, Voronoi
+from scipy.special import gammainc
+from ._sobol import (
+    _initialize_v, _cscramble, _fill_p_cumulative, _draw, _fast_forward,
+    _categorize, _MAXDIM
 )
-from scipy.stats._qmc_cy import (
+from ._qmc_cy import (
     _cy_wrapper_centered_discrepancy,
     _cy_wrapper_wrap_around_discrepancy,
     _cy_wrapper_mixture_discrepancy,
@@ -44,7 +47,7 @@ from scipy.stats._qmc_cy import (
 
 
 __all__ = ['scale', 'discrepancy', 'update_discrepancy',
-           'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube',
+           'QMCEngine', 'Sobol', 'Halton', 'LatinHypercube', 'PoissonDisk',
            'MultinomialQMC', 'MultivariateNormalQMC']
 
 
@@ -147,24 +150,18 @@ def scale(
 
     """
     sample = np.asarray(sample)
-    lower = np.atleast_1d(l_bounds)
-    upper = np.atleast_1d(u_bounds)
 
     # Checking bounds and sample
     if not sample.ndim == 2:
         raise ValueError('Sample is not a 2D array')
 
-    lower, upper = np.broadcast_arrays(lower, upper)
-
-    if not np.all(lower < upper):
-        raise ValueError('Bounds are not consistent a < b')
-
-    if len(lower) != sample.shape[1]:
-        raise ValueError('Sample dimension is different than bounds dimension')
+    lower, upper = _validate_bounds(
+        l_bounds=l_bounds, u_bounds=u_bounds, d=sample.shape[1]
+    )
 
     if not reverse:
         # Checking that sample is within the hypercube
-        if not (np.all(sample >= 0) and np.all(sample <= 1)):
+        if (sample.max() > 1.) or (sample.min() < 0.):
             raise ValueError('Sample is not in unit hypercube')
 
         return sample * (upper - lower) + lower
@@ -253,10 +250,10 @@ def discrepancy(
     ----------
     .. [1] Fang et al. "Design and modeling for computer experiments".
        Computer Science and Data Analysis Series, 2006.
-    .. [2] Zhou Y.-D. et al. Mixture discrepancy for quasi-random point sets.
+    .. [2] Zhou Y.-D. et al. "Mixture discrepancy for quasi-random point sets."
        Journal of Complexity, 29 (3-4) , pp. 283-301, 2013.
     .. [3] T. T. Warnock. "Computational investigations of low discrepancy
-       point sets". Applications of Number Theory to Numerical
+       point sets." Applications of Number Theory to Numerical
        Analysis, Academic Press, pp. 319-343, 1972.
 
     Examples
@@ -294,7 +291,7 @@ def discrepancy(
     if not sample.ndim == 2:
         raise ValueError("Sample is not a 2D array")
 
-    if not (np.all(sample >= 0) and np.all(sample <= 1)):
+    if (sample.max() > 1.) or (sample.min() < 0.):
         raise ValueError("Sample is not in unit hypercube")
 
     workers = _validate_workers(workers)
@@ -357,7 +354,7 @@ def update_discrepancy(
     if not sample.ndim == 2:
         raise ValueError('Sample is not a 2D array')
 
-    if not (np.all(sample >= 0) and np.all(sample <= 1)):
+    if (sample.max() > 1.) or (sample.min() < 0.):
         raise ValueError('Sample is not in unit hypercube')
 
     # Checking that x_new is within the hypercube and 1D
@@ -579,7 +576,7 @@ def van_der_corput(
     References
     ----------
     .. [1] A. B. Owen. "A randomized Halton algorithm in R",
-       arXiv:1706.02808, 2017.
+       :arxiv:`1706.02808`, 2017.
 
     """
     if base < 2:
@@ -642,7 +639,7 @@ class QMCEngine(ABC):
 
     Optionally, two other methods can be overwritten by subclasses:
 
-    * ``reset``: Reset the engine to it's original state.
+    * ``reset``: Reset the engine to its original state.
     * ``fast_forward``: If the sequence is deterministic (like Halton
       sequence), then ``fast_forward(n)`` is skipping the ``n`` first draw.
 
@@ -727,6 +724,88 @@ class QMCEngine(ABC):
         """
         # self.num_generated += n
 
+    def integers(
+        self,
+        l_bounds: npt.ArrayLike,
+        *,
+        u_bounds: Optional[npt.ArrayLike] = None,
+        n: IntNumber = 1,
+        endpoint: bool = False,
+        workers: IntNumber = 1
+    ) -> np.ndarray:
+        r"""
+        Draw `n` integers from `l_bounds` (inclusive) to `u_bounds`
+        (exclusive), or if endpoint=True, `l_bounds` (inclusive) to
+        `u_bounds` (inclusive).
+
+        Parameters
+        ----------
+        l_bounds : int or array-like of ints
+            Lowest (signed) integers to be drawn (unless ``u_bounds=None``,
+            in which case this parameter is 0 and this value is used for
+            `u_bounds`).
+        u_bounds : int or array-like of ints, optional
+            If provided, one above the largest (signed) integer to be drawn
+            (see above for behavior if ``u_bounds=None``).
+            If array-like, must contain integer values.
+        n : int, optional
+            Number of samples to generate in the parameter space.
+            Default is 1.
+        endpoint : bool, optional
+            If true, sample from the interval ``[l_bounds, u_bounds]`` instead
+            of the default ``[l_bounds, u_bounds)``. Defaults is False.
+        workers : int, optional
+            Number of workers to use for parallel processing. If -1 is
+            given all CPU threads are used. Only supported when using `Halton`
+            Default is 1.
+
+        Returns
+        -------
+        sample : array_like (n, d)
+            QMC sample.
+
+        Notes
+        -----
+        It is safe to just use the same ``[0, 1)`` to integer mapping
+        with QMC that you would use with MC. You still get unbiasedness,
+        a strong law of large numbers, an asymptotically infinite variance
+        reduction and a finite sample variance bound.
+
+        To convert a sample from :math:`[0, 1)` to :math:`[a, b), b>a`,
+        with :math:`a` the lower bounds and :math:`b` the upper bounds,
+        the following transformation is used:
+
+        .. math::
+
+            \text{floor}((b - a) \cdot \text{sample} + a)
+
+        """
+        if u_bounds is None:
+            u_bounds = l_bounds
+            l_bounds = 0
+
+        u_bounds = np.atleast_1d(u_bounds)
+        l_bounds = np.atleast_1d(l_bounds)
+
+        if endpoint:
+            u_bounds = u_bounds + 1
+
+        if (not np.issubdtype(l_bounds.dtype, np.integer) or
+                not np.issubdtype(u_bounds.dtype, np.integer)):
+            message = ("'u_bounds' and 'l_bounds' must be integers or"
+                       " array-like of integers")
+            raise ValueError(message)
+
+        if isinstance(self, Halton):
+            sample = self.random(n=n, workers=workers)
+        else:
+            sample = self.random(n=n)
+
+        sample = scale(sample, l_bounds=l_bounds, u_bounds=u_bounds)
+        sample = np.floor(sample).astype(np.int64)
+
+        return sample
+
     def reset(self) -> QMCEngine:
         """Reset the engine to base state.
 
@@ -794,7 +873,7 @@ class Halton(QMCEngine):
        points in evaluating multi-dimensional integrals", Numerische
        Mathematik, 1960.
     .. [2] A. B. Owen. "A randomized Halton algorithm in R",
-       arXiv:1706.02808, 2017.
+       :arxiv:`1706.02808`, 2017.
 
     Examples
     --------
@@ -1218,8 +1297,14 @@ class Sobol(QMCEngine):
     d : int
         Dimensionality of the sequence. Max dimensionality is 21201.
     scramble : bool, optional
-        If True, use Owen scrambling. Otherwise no scrambling is done.
+        If True, use LMS+shift scrambling. Otherwise, no scrambling is done.
         Default is True.
+    bits : int, optional
+        Number of bits of the generator. Control the maximum number of points
+        that can be generated, which is ``2**bits``. Maximal value is 64.
+        It does not correspond to the return type, which is always
+        ``np.float64`` to prevent points from repeating themselves.
+        Default is None, which for backward compatibility, corresponds to 30.
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1230,12 +1315,14 @@ class Sobol(QMCEngine):
     Notes
     -----
     Sobol' sequences [1]_ provide :math:`n=2^m` low discrepancy points in
-    :math:`[0,1)^{d}`. Scrambling them [2]_ makes them suitable for singular
+    :math:`[0,1)^{d}`. Scrambling them [3]_ makes them suitable for singular
     integrands, provides a means of error estimation, and can improve their
-    rate of convergence.
+    rate of convergence. The scrambling strategy which is implemented is a
+    (left) linear matrix scramble (LMS) followed by a digital random shift
+    (LMS+shift) [2]_.
 
     There are many versions of Sobol' sequences depending on their
-    'direction numbers'. This code uses direction numbers from [3]_. Hence,
+    'direction numbers'. This code uses direction numbers from [4]_. Hence,
     the maximum number of dimension is 21201. The direction numbers have been
     precomputed with search criterion 6 and can be retrieved at
     https://web.maths.unsw.edu.au/~fkuo/sobol/.
@@ -1244,31 +1331,31 @@ class Sobol(QMCEngine):
 
        Sobol' sequences are a quadrature rule and they lose their balance
        properties if one uses a sample size that is not a power of 2, or skips
-       the first point, or thins the sequence [4]_.
+       the first point, or thins the sequence [5]_.
 
        If :math:`n=2^m` points are not enough then one should take :math:`2^M`
        points for :math:`M>m`. When scrambling, the number R of independent
        replicates does not have to be a power of 2.
 
        Sobol' sequences are generated to some number :math:`B` of bits.
-       After :math:`2^B` points have been generated, the sequence will repeat.
-       Currently :math:`B=30`.
+       After :math:`2^B` points have been generated, the sequence would
+       repeat. Hence, an error is raised.
+       The number of bits can be controlled with the parameter `bits`.
 
     References
     ----------
-    .. [1] I. M. Sobol. The distribution of points in a cube and the accurate
-       evaluation of integrals. Zh. Vychisl. Mat. i Mat. Phys., 7:784-802,
+    .. [1] I. M. Sobol', "The distribution of points in a cube and the accurate
+       evaluation of integrals." Zh. Vychisl. Mat. i Mat. Phys., 7:784-802,
        1967.
-
-    .. [2] Art B. Owen. Scrambling Sobol and Niederreiter-Xing points.
+    .. [2] J. Matousek, "On the L2-discrepancy for anchored boxes."
+       J. of Complexity 14, 527-556, 1998.
+    .. [3] Art B. Owen, "Scrambling Sobol and Niederreiter-Xing points."
        Journal of Complexity, 14(4):466-489, December 1998.
-
-    .. [3] S. Joe and F. Y. Kuo. Constructing sobol sequences with better
-       two-dimensional projections. SIAM Journal on Scientific Computing,
+    .. [4] S. Joe and F. Y. Kuo, "Constructing sobol sequences with better
+       two-dimensional projections." SIAM Journal on Scientific Computing,
        30(5):2635-2654, 2008.
-
-    .. [4] Art B. Owen. On dropping the first Sobol' point. arXiv 2008.08051,
-       2020.
+    .. [5] Art B. Owen, "On dropping the first Sobol' point."
+       :arxiv:`2008.08051`, 2020.
 
     Examples
     --------
@@ -1318,47 +1405,68 @@ class Sobol(QMCEngine):
     """
 
     MAXDIM: ClassVar[int] = _MAXDIM
-    MAXBIT: ClassVar[int] = _MAXBIT
 
     def __init__(
-            self, d: IntNumber, *, scramble: bool = True,
-            seed: SeedType = None
+        self, d: IntNumber, *, scramble: bool = True,
+        bits: Optional[IntNumber] = None, seed: SeedType = None
     ) -> None:
         super().__init__(d=d, seed=seed)
         if d > self.MAXDIM:
             raise ValueError(
-                "Maximum supported dimensionality is {}.".format(self.MAXDIM)
+                f"Maximum supported dimensionality is {self.MAXDIM}."
             )
 
-        # initialize direction numbers
-        initialize_direction_numbers()
+        self.bits = bits
+        self.dtype_i: type
 
-        # v is d x MAXBIT matrix
-        self._sv = np.zeros((d, self.MAXBIT), dtype=int)
-        initialize_v(self._sv, d)
+        if self.bits is None:
+            self.bits = 30
+
+        if self.bits <= 32:
+            self.dtype_i = np.uint32
+        elif 32 < self.bits <= 64:
+            self.dtype_i = np.uint64
+        else:
+            raise ValueError("Maximum supported 'bits' is 64")
+
+        self.maxn = 2**self.bits
+
+        # v is d x maxbit matrix
+        self._sv: np.ndarray = np.zeros((d, self.bits), dtype=self.dtype_i)
+        _initialize_v(self._sv, dim=d, bits=self.bits)
 
         if not scramble:
-            self._shift = np.zeros(d, dtype=int)
+            self._shift: np.ndarray = np.zeros(d, dtype=self.dtype_i)
         else:
+            # scramble self._shift and self._sv
             self._scramble()
 
         self._quasi = self._shift.copy()
-        self._first_point = (self._quasi / 2 ** self.MAXBIT).reshape(1, -1)
+
+        # normalization constant with the largest possible number
+        # calculate in Python to not overflow int with 2**64
+        self._scale = 1.0 / 2 ** self.bits
+
+        self._first_point = (self._quasi * self._scale).reshape(1, -1)
+        # explicit casting to float64
+        self._first_point = self._first_point.astype(np.float64)
 
     def _scramble(self) -> None:
-        """Scramble the sequence."""
+        """Scramble the sequence using LMS+shift."""
         # Generate shift vector
         self._shift = np.dot(
-            rng_integers(self.rng, 2, size=(self.d, self.MAXBIT), dtype=int),
-            2 ** np.arange(self.MAXBIT, dtype=int),
+            rng_integers(self.rng, 2, size=(self.d, self.bits),
+                         dtype=self.dtype_i),
+            2 ** np.arange(self.bits, dtype=self.dtype_i),
         )
-        self._quasi = self._shift.copy()
         # Generate lower triangular matrices (stacked across dimensions)
         ltm = np.tril(rng_integers(self.rng, 2,
-                                   size=(self.d, self.MAXBIT, self.MAXBIT),
-                                   dtype=int))
-        _cscramble(self.d, ltm, self._sv)
-        self.num_generated = 0
+                                   size=(self.d, self.bits, self.bits),
+                                   dtype=self.dtype_i))
+        _cscramble(
+            dim=self.d, bits=self.bits,  # type: ignore[arg-type]
+            ltm=ltm, sv=self._sv
+        )
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw next point(s) in the Sobol' sequence.
@@ -1374,23 +1482,45 @@ class Sobol(QMCEngine):
             Sobol' sample.
 
         """
-        sample = np.empty((n, self.d), dtype=float)
+        sample: np.ndarray = np.empty((n, self.d), dtype=np.float64)
+
+        if n == 0:
+            return sample
+
+        total_n = self.num_generated + n
+        if total_n > self.maxn:
+            msg = (
+                f"At most 2**{self.bits}={self.maxn} distinct points can be "
+                f"generated. {self.num_generated} points have been previously "
+                f"generated, then: n={self.num_generated}+{n}={total_n}. "
+            )
+            if self.bits != 64:
+                msg += "Consider increasing `bits`."
+            raise ValueError(msg)
 
         if self.num_generated == 0:
             # verify n is 2**n
             if not (n & (n - 1) == 0):
                 warnings.warn("The balance properties of Sobol' points require"
-                              " n to be a power of 2.")
+                              " n to be a power of 2.", stacklevel=2)
 
             if n == 1:
                 sample = self._first_point
             else:
-                _draw(n - 1, self.num_generated, self.d, self._sv,
-                      self._quasi, sample)
-                sample = np.concatenate([self._first_point, sample])[:n]  # type: ignore[misc]
+                _draw(
+                    n=n - 1, num_gen=self.num_generated, dim=self.d,
+                    scale=self._scale, sv=self._sv, quasi=self._quasi,
+                    sample=sample
+                )
+                sample = np.concatenate(
+                    [self._first_point, sample]
+                )[:n]  # type: ignore[misc]
         else:
-            _draw(n, self.num_generated - 1, self.d, self._sv,
-                  self._quasi, sample)
+            _draw(
+                n=n, num_gen=self.num_generated - 1, dim=self.d,
+                scale=self._scale, sv=self._sv, quasi=self._quasi,
+                sample=sample
+            )
 
         self.num_generated += n
         return sample
@@ -1453,16 +1583,321 @@ class Sobol(QMCEngine):
 
         """
         if self.num_generated == 0:
-            _fast_forward(n - 1, self.num_generated, self.d,
-                          self._sv, self._quasi)
+            _fast_forward(
+                n=n - 1, num_gen=self.num_generated, dim=self.d,
+                sv=self._sv, quasi=self._quasi
+            )
         else:
-            _fast_forward(n, self.num_generated - 1, self.d,
-                          self._sv, self._quasi)
+            _fast_forward(
+                n=n, num_gen=self.num_generated - 1, dim=self.d,
+                sv=self._sv, quasi=self._quasi
+            )
         self.num_generated += n
         return self
 
 
-class MultivariateNormalQMC(QMCEngine):
+class PoissonDisk(QMCEngine):
+    """Poisson disk sampling.
+
+    Parameters
+    ----------
+    d : int
+        Dimension of the parameter space.
+    radius : float
+        Minimal distance to keep between points when sampling new candidates.
+    hypersphere : {"volume", "surface"}, optional
+        Sampling strategy to generate potential candidates to be added in the
+        final sample. Default is "volume".
+
+        * ``volume``: original Bridson algorithm as described in [1]_.
+          New candidates are sampled *within* the hypersphere.
+        * ``surface``: only sample the surface of the hypersphere.
+    ncandidates : int
+        Number of candidates to sample per iteration. More candidates result
+        in a denser sampling as more candidates can be accepted per iteration.
+    seed : {None, int, `numpy.random.Generator`}, optional
+        If `seed` is None the `numpy.random.Generator` singleton is used.
+        If `seed` is an int, a new ``Generator`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` instance then that instance is
+        used.
+
+    Notes
+    -----
+    Poisson disk sampling is an iterative sampling strategy. Starting from
+    a seed sample, `ncandidates` are sampled in the hypersphere
+    surrounding the seed. Candidates bellow a certain `radius` or outside the
+    domain are rejected. New samples are added in a pool of sample seed. The
+    process stops when the pool is empty or when the number of required
+    samples is reached.
+
+    The maximum number of point that a sample can contain is directly linked
+    to the `radius`. As the dimension of the space increases, a higher radius
+    spreads the points further and help overcome the curse of dimensionality.
+    See the :ref:`quasi monte carlo tutorial <quasi-monte-carlo>` for more
+    details.
+
+    .. warning::
+
+       The algorithm is more suitable for low dimensions and sampling size
+       due to its iterative nature and memory requirements.
+       Selecting a small radius with a high dimension would
+       mean that the space could contain more samples than using lower
+       dimension or a bigger radius.
+
+    Some code taken from [2]_, written consent given on 31.03.2021
+    by the original author, Shamis, for free use in SciPy under
+    the 3-clause BSD.
+
+    References
+    ----------
+    .. [1] Robert Bridson, "Fast Poisson Disk Sampling in Arbitrary
+       Dimensions." SIGGRAPH, 2007.
+    .. [2] `StackOverflow <https://stackoverflow.com/questions/66047540>`__.
+
+    Examples
+    --------
+    Generate a 2D sample using a `radius` of 0.2.
+
+    >>> import matplotlib.pyplot as plt
+    >>> from matplotlib.collections import PatchCollection
+    >>> from scipy.stats import qmc
+    >>>
+    >>> rng = np.random.default_rng()
+    >>> radius = 0.2
+    >>> engine = qmc.PoissonDisk(d=2, radius=0.2, seed=rng)
+    >>> sample = engine.random(20)
+
+    Visualizing the 2D sample and showing that no points are closer than
+    `radius`. ``radius/2`` is used to visualize non-intersecting circles.
+    If two samples are exactly at `radius` from each other, then their circle
+    of radius ``radius/2`` will touch.
+
+    >>> fig, ax = plt.subplots()
+    >>> _ = ax.scatter(sample[:, 0], sample[:, 1])
+    >>> circles = [plt.Circle((xi, yi), radius=radius/2, fill=False)
+    ...            for xi, yi in sample]
+    >>> collection = PatchCollection(circles, match_original=True)
+    >>> ax.add_collection(collection)
+    >>> _ = ax.set(aspect='equal', xlabel=r'$x_1$', ylabel=r'$x_2$',
+    ...            xlim=[0, 1], ylim=[0, 1])
+    >>> plt.show()
+
+    Such visualization can be seen as circle packing: how many circle can
+    we put in the space. It is a np-hard problem. The method `fill_space`
+    can be used to add samples until no more samples can be added. This is
+    a hard problem and parameters may need to be adjusted manually. Beware of
+    the dimension: as the dimensionality increases, the number of samples
+    required to fill the space increases exponentially
+    (curse-of-dimensionality).
+
+    """
+
+    def __init__(
+        self,
+        d: IntNumber,
+        *,
+        radius: DecimalNumber = 0.05,
+        hypersphere: Literal["volume", "surface"] = "volume",
+        ncandidates: IntNumber = 30,
+        seed: SeedType = None
+    ) -> None:
+        super().__init__(d=d, seed=seed)
+
+        hypersphere_sample = {
+            "volume": self._hypersphere_volume_sample,
+            "surface": self._hypersphere_surface_sample
+        }
+
+        try:
+            self.hypersphere_method = hypersphere_sample[hypersphere]
+        except KeyError as exc:
+            message = (
+                f"{hypersphere!r} is not a valid hypersphere sampling"
+                f" method. It must be one of {set(hypersphere_sample)!r}")
+            raise ValueError(message) from exc
+
+        # size of the sphere from which the samples are drawn relative to the
+        # size of a disk (radius)
+        # for the surface sampler, all new points are almost exactly 1 radius
+        # away from at least one existing sample +eps to avoid rejection
+        self.radius_factor = 2 if hypersphere == "volume" else 1.001
+        self.radius = radius
+        self.radius_squared = self.radius**2
+
+        # sample to generate per iteration in the hypersphere around center
+        self.ncandidates = ncandidates
+
+        with np.errstate(divide='ignore'):
+            self.cell_size = self.radius / np.sqrt(self.d)
+            self.grid_size = (
+                np.ceil(np.ones(self.d) / self.cell_size)
+            ).astype(int)
+
+        self._initialize_grid_pool()
+
+    def _initialize_grid_pool(self):
+        """Sampling pool and sample grid."""
+        self.sample_pool = []
+        # Positions of cells
+        # n-dim value for each grid cell
+        self.sample_grid = np.empty(
+            np.append(self.grid_size, self.d),
+            dtype=np.float32
+        )
+        # Initialise empty cells with NaNs
+        self.sample_grid.fill(np.nan)
+
+    def random(self, n: IntNumber = 1) -> np.ndarray:
+        """Draw `n` in the interval ``[0, 1]``.
+
+        Note that it can return fewer samples if the space is full.
+        See the note section of the class.
+
+        Parameters
+        ----------
+        n : int, optional
+            Number of samples to generate in the parameter space. Default is 1.
+
+        Returns
+        -------
+        sample : array_like (n, d)
+            QMC sample.
+
+        """
+        if n == 0 or self.d == 0:
+            return np.empty((n, self.d))
+
+        def in_limits(sample: np.ndarray) -> bool:
+            return (sample.max() <= 1.) and (sample.min() >= 0.)
+
+        def in_neighborhood(candidate: np.ndarray, n: int = 2) -> bool:
+            """
+            Check if there are samples closer than ``radius_squared`` to the
+            `candidate` sample.
+            """
+            indices = (candidate / self.cell_size).astype(int)
+            ind_min = np.maximum(indices - n, np.zeros(self.d, dtype=int))
+            ind_max = np.minimum(indices + n + 1, self.grid_size)
+
+            # Check if the center cell is empty
+            if not np.isnan(self.sample_grid[tuple(indices)][0]):
+                return True
+
+            a = [slice(ind_min[i], ind_max[i]) for i in range(self.d)]
+
+            # guards against: invalid value encountered in less as we are
+            # comparing with nan and returns False. Which is wanted.
+            with np.errstate(invalid='ignore'):
+                if np.any(
+                    np.sum(
+                        np.square(candidate - self.sample_grid[tuple(a)]),
+                        axis=self.d
+                    ) < self.radius_squared
+                ):
+                    return True
+
+            return False
+
+        def add_sample(candidate: np.ndarray) -> None:
+            self.sample_pool.append(candidate)
+            indices = (candidate / self.cell_size).astype(int)
+            self.sample_grid[tuple(indices)] = candidate
+            curr_sample.append(candidate)
+
+        curr_sample: List[np.ndarray] = []
+
+        if len(self.sample_pool) == 0:
+            # the pool is being initialized with a single random sample
+            add_sample(self.rng.random(self.d))
+            num_drawn = 1
+        else:
+            num_drawn = 0
+
+        # exhaust sample pool to have up to n sample
+        while len(self.sample_pool) and num_drawn < n:
+            # select a sample from the available pool
+            idx_center = rng_integers(self.rng, len(self.sample_pool))
+            center = self.sample_pool[idx_center]
+            del self.sample_pool[idx_center]
+
+            # generate candidates around the center sample
+            candidates = self.hypersphere_method(
+                center, self.radius * self.radius_factor, self.ncandidates
+            )
+
+            # keep candidates that satisfy some conditions
+            for candidate in candidates:
+                if in_limits(candidate) and not in_neighborhood(candidate):
+                    add_sample(candidate)
+
+                    num_drawn += 1
+                    if num_drawn >= n:
+                        break
+
+        self.num_generated += num_drawn
+        return np.array(curr_sample)
+
+    def fill_space(self) -> np.ndarray:
+        """Draw ``n`` samples in the interval ``[0, 1]``.
+
+        Unlike `random`, this method will try to add points until
+        the space is full. Depending on ``candidates`` (and to a lesser extent
+        other parameters), some empty areas can still be present in the sample.
+
+        .. warning::
+
+           This can be extremely slow in high dimensions or if the
+           ``radius`` is very small-with respect to the dimensionality.
+
+        Returns
+        -------
+        sample : array_like (n, d)
+            QMC sample.
+
+        """
+        return self.random(np.inf)  # type: ignore[arg-type]
+
+    def reset(self) -> PoissonDisk:
+        """Reset the engine to base state.
+
+        Returns
+        -------
+        engine : PoissonDisk
+            Engine reset to its base state.
+
+        """
+        super().reset()
+        self._initialize_grid_pool()
+        return self
+
+    def _hypersphere_volume_sample(
+        self, center: np.ndarray, radius: DecimalNumber,
+        candidates: IntNumber = 1
+    ) -> np.ndarray:
+        """Uniform sampling within hypersphere."""
+        # should remove samples within r/2
+        x = self.rng.standard_normal(size=(candidates, self.d))
+        ssq = np.sum(x**2, axis=1)
+        fr = radius * gammainc(self.d/2, ssq/2)**(1/self.d) / np.sqrt(ssq)
+        fr_tiled = np.tile(
+            fr.reshape(-1, 1), (1, self.d)  # type: ignore[arg-type]
+        )
+        p = center + np.multiply(x, fr_tiled)
+        return p
+
+    def _hypersphere_surface_sample(
+        self, center: np.ndarray, radius: DecimalNumber,
+        candidates: IntNumber = 1
+    ) -> np.ndarray:
+        """Uniform sampling on the hypersphere's surface."""
+        vec = self.rng.standard_normal(size=(candidates, self.d))
+        vec /= np.linalg.norm(vec, axis=1)[:, None]
+        p = center + np.multiply(vec, radius)
+        return p
+
+
+class MultivariateNormalQMC:
     r"""QMC sampling from a multivariate Normal :math:`N(\mu, \Sigma)`.
 
     Parameters
@@ -1490,8 +1925,8 @@ class MultivariateNormalQMC(QMCEngine):
     --------
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import qmc
-    >>> engine = qmc.MultivariateNormalQMC(mean=[0, 5], cov=[[1, 0], [0, 1]])
-    >>> sample = engine.random(512)
+    >>> dist = qmc.MultivariateNormalQMC(mean=[0, 5], cov=[[1, 0], [0, 1]])
+    >>> sample = dist.random(512)
     >>> _ = plt.scatter(sample[:, 0], sample[:, 1])
     >>> plt.show()
 
@@ -1535,7 +1970,6 @@ class MultivariateNormalQMC(QMCEngine):
             # corresponds to identity covariance matrix
             cov_root = None
 
-        super().__init__(d=d, seed=seed)
         self._inv_transform = inv_transform
 
         if not inv_transform:
@@ -1544,11 +1978,15 @@ class MultivariateNormalQMC(QMCEngine):
         else:
             engine_dim = d
         if engine is None:
-            self.engine = Sobol(d=engine_dim, scramble=True, seed=seed)  # type: QMCEngine
+            self.engine = Sobol(
+                d=engine_dim, scramble=True, bits=30, seed=seed
+            )  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
-            if engine.d != d:
+            if engine.d != engine_dim:
                 raise ValueError("Dimension of `engine` must be consistent"
-                                 " with dimensions of mean and covariance.")
+                                 " with dimensions of mean and covariance."
+                                 " If `inv_transform` is False, it must be"
+                                 " an even number.")
             self.engine = engine
         else:
             raise ValueError("`engine` must be an instance of "
@@ -1556,6 +1994,8 @@ class MultivariateNormalQMC(QMCEngine):
 
         self._mean = mean
         self._corr_matrix = cov_root
+
+        self._d = d
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` QMC samples from the multivariate Normal.
@@ -1572,21 +2012,7 @@ class MultivariateNormalQMC(QMCEngine):
 
         """
         base_samples = self._standard_normal_samples(n)
-        self.num_generated += n
         return self._correlate(base_samples)
-
-    def reset(self) -> MultivariateNormalQMC:
-        """Reset the engine to base state.
-
-        Returns
-        -------
-        engine : MultivariateNormalQMC
-            Engine reset to its base state.
-
-        """
-        super().reset()
-        self.engine.reset()
-        return self
 
     def _correlate(self, base_samples: np.ndarray) -> np.ndarray:
         if self._corr_matrix is not None:
@@ -1625,10 +2051,10 @@ class MultivariateNormalQMC(QMCEngine):
             transf_samples = np.stack([Rs * cos, Rs * sin],
                                       -1).reshape(n, -1)
             # make sure we only return the number of dimension requested
-            return transf_samples[:, : self.d]  # type: ignore[misc]
+            return transf_samples[:, : self._d]
 
 
-class MultinomialQMC(QMCEngine):
+class MultinomialQMC:
     r"""QMC sampling from a multinomial distribution.
 
     Parameters
@@ -1636,6 +2062,8 @@ class MultinomialQMC(QMCEngine):
     pvals : array_like (k,)
         Vector of probabilities of size ``k``, where ``k`` is the number
         of categories. Elements must be non-negative and sum to 1.
+    n_trials : int
+        Number of trials.
     engine : QMCEngine, optional
         Quasi-Monte Carlo engine sampler. If None, `Sobol` is used.
     seed : {None, int, `numpy.random.Generator`}, optional
@@ -1648,22 +2076,26 @@ class MultinomialQMC(QMCEngine):
     Examples
     --------
     >>> from scipy.stats import qmc
-    >>> engine = qmc.MultinomialQMC(pvals=[0.2, 0.4, 0.4])
-    >>> sample = engine.random(10)
+    >>> dist = qmc.MultinomialQMC(pvals=[0.2, 0.4, 0.4], n_trials=10)
+    >>> sample = dist.random(10)
 
     """
 
     def __init__(
-            self, pvals: npt.ArrayLike, *, engine: Optional[QMCEngine] = None,
-            seed: SeedType = None
+        self, pvals: npt.ArrayLike, n_trials: IntNumber,
+        *, engine: Optional[QMCEngine] = None,
+        seed: SeedType = None
     ) -> None:
         self.pvals = np.array(pvals, copy=False, ndmin=1)
         if np.min(pvals) < 0:
             raise ValueError('Elements of pvals must be non-negative.')
         if not np.isclose(np.sum(pvals), 1):
             raise ValueError('Elements of pvals must sum to 1.')
+        self.n_trials = n_trials
         if engine is None:
-            self.engine = Sobol(d=1, scramble=True, seed=seed)  # type: QMCEngine
+            self.engine = Sobol(
+                d=1, scramble=True, bits=30, seed=seed
+            )  # type: QMCEngine
         elif isinstance(engine, QMCEngine):
             if engine.d != 1:
                 raise ValueError("Dimension of `engine` must be 1.")
@@ -1671,8 +2103,6 @@ class MultinomialQMC(QMCEngine):
         else:
             raise ValueError("`engine` must be an instance of "
                              "`scipy.stats.qmc.QMCEngine` or `None`.")
-
-        super().__init__(d=1, seed=seed)
 
     def random(self, n: IntNumber = 1) -> np.ndarray:
         """Draw `n` QMC samples from the multinomial distribution.
@@ -1684,30 +2114,232 @@ class MultinomialQMC(QMCEngine):
 
         Returns
         -------
-        samples : array_like (pvals,)
-            Vector of size ``p`` summing to `n`.
+        samples : array_like (n, pvals)
+            Sample.
 
         """
-        base_draws = self.engine.random(n).ravel()
-        p_cumulative = np.empty_like(self.pvals, dtype=float)
-        _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
-        sample = np.zeros_like(self.pvals, dtype=int)
-        _categorize(base_draws, p_cumulative, sample)
-        self.num_generated += n
+        sample = np.empty((n, len(self.pvals)))
+        for i in range(n):
+            base_draws = self.engine.random(self.n_trials).ravel()
+            p_cumulative = np.empty_like(self.pvals, dtype=float)
+            _fill_p_cumulative(np.array(self.pvals, dtype=float), p_cumulative)
+            sample_ = np.zeros_like(self.pvals, dtype=int)
+            _categorize(base_draws, p_cumulative, sample_)
+            sample[i] = sample_
         return sample
 
-    def reset(self) -> MultinomialQMC:
-        """Reset the engine to base state.
 
-        Returns
-        -------
-        engine : MultinomialQMC
-            Engine reset to its base state.
+def _l1_norm(sample: np.ndarray) -> float:
+    return distance.pdist(sample, 'cityblock').min()
 
-        """
-        super().reset()
-        self.engine.reset()
-        return self
+
+def _lloyd_centroidal_voronoi_tessellation(
+        sample: np.ndarray,
+        decay: float,
+        qhull_options: str,
+) -> np.ndarray:
+    """Lloyd-Max algorithm iteration.
+
+    Based on the implementation of Stéfan van der Walt:
+
+    https://github.com/stefanv/lloyd
+
+    which is:
+
+        Copyright (c) 2021-04-21 Stéfan van der Walt
+        https://github.com/stefanv/lloyd
+        MIT License
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample to iterate on.
+    decay : float
+        Relaxation decay. A positive value would move the samples toward
+        their centroid, and negative value would move them away.
+        1 would move the samples to their centroid.
+    qhull_options : str
+        Additional options to pass to Qhull. See Qhull manual
+        for details. (Default: "Qbb Qc Qz Qj Qx" for ndim > 4 and
+        "Qbb Qc Qz Qj" otherwise.)
+
+    Returns
+    -------
+    sample : array_like (n, d)
+        The sample after an iteration of Lloyd's algorithm.
+
+    """
+    new_sample = np.empty_like(sample)
+
+    voronoi = Voronoi(sample, qhull_options=qhull_options)
+
+    for ii, idx in enumerate(voronoi.point_region):
+        # the region is a series of indices into self.voronoi.vertices
+        # remove samples at infinity, designated by index -1
+        region = [i for i in voronoi.regions[idx] if i != -1]
+
+        # get the vertices for this region
+        verts = voronoi.vertices[region]
+
+        # clipping would be wrong, we need to intersect
+        # verts = np.clip(verts, 0, 1)
+
+        # move samples towards centroids:
+        # Centroid in n-D is the mean for uniformly distributed nodes
+        # of a geometry.
+        centroid = np.mean(verts, axis=0)
+        new_sample[ii] = sample[ii] + (centroid - sample[ii]) * decay
+
+    # only update sample to centroid within the region
+    is_valid = np.all(np.logical_and(new_sample >= 0, new_sample <= 1), axis=1)
+    sample[is_valid] = new_sample[is_valid]
+
+    return sample
+
+
+def lloyd_centroidal_voronoi_tessellation(
+        sample: npt.ArrayLike,
+        *,
+        tol: DecimalNumber = 1e-5,
+        maxiter: IntNumber = 10,
+        qhull_options: Optional[str] = None,
+) -> np.ndarray:
+    """Approximate Centroidal Voronoi Tessellation.
+
+    Perturb samples in N-dimensions using Lloyd-Max algorithm.
+
+    Parameters
+    ----------
+    sample : array_like (n, d)
+        The sample to iterate on. With ``n`` the number of samples and ``d``
+        the dimension. Samples must be in :math:`[0, 1]^d`, with ``d>=2``.
+    tol : float, optional
+        Tolerance for termination. If the min of the L1-norm over the samples
+        changes less than `tol`, it stops the algorithm. Default is 1e-5.
+    maxiter : int, optional
+        Maximum number of iterations. It will stop the algorithm even if
+        `tol` is above the threshold.
+        Too many iterations tend to cluster the samples as a hypersphere.
+        Default is 10.
+    qhull_options : str, optional
+        Additional options to pass to Qhull. See Qhull manual
+        for details. (Default: "Qbb Qc Qz Qj Qx" for ndim > 4 and
+        "Qbb Qc Qz Qj" otherwise.)
+
+    Returns
+    -------
+    sample : array_like (n, d)
+        The sample after being processed by Lloyd-Max algorithm.
+
+    Notes
+    -----
+    Lloyd-Max algorithm is an iterative process with the purpose of improving
+    the dispersion of samples. For given sample: (i) compute a Voronoi
+    Tessellation; (ii) find the centroid of each Voronoi cell; (iii) move the
+    samples toward the centroid of their respective cell. See [1]_, [2]_.
+
+    A relaxation factor is used to control how fast samples can move at each
+    iteration. This factor is starting at 2 and ending at 1 after `maxiter`
+    following an exponential decay.
+
+    The process converges to equally spaced samples. It implies that measures
+    like the discrepancy could suffer from too many iterations. On the other
+    hand, L1 and L2 distances should improve. This is especially true with
+    QMC methods which tend to favor the discrepancy over other criteria.
+
+    .. note::
+
+        The current implementation does not intersect the Voronoi Tessellation
+        with the boundaries. This implies that for a low number of samples,
+        empirically below 20, no Voronoi cell is touching the boundaries.
+        Hence, samples cannot be moved close to the boundaries.
+
+        Further improvements could consider the samples at infinity so that
+        all boundaries are segments of some Voronoi cells. This would fix
+        the computation of the centroid position.
+
+    .. warning::
+
+       The Voronoi Tessellation step is expensive and quickly becomes
+       intractable with dimensions as low as 10 even for a sample
+       of size as low as 1000.
+
+    .. versionadded:: 1.9.0
+
+    References
+    ----------
+    .. [1] Lloyd. "Least Squares Quantization in PCM".
+       IEEE Transactions on Information Theory, 1982.
+    .. [2] Max J. "Quantizing for minimum distortion".
+       IEEE Transactions on Information Theory, 1960.
+
+    Examples
+    --------
+    >>> from scipy.spatial import distance
+    >>> rng = np.random.default_rng()
+    >>> sample = rng.random((128, 2))
+
+    .. note::
+
+        The samples need to be in :math:`[0, 1]^d`. `scipy.stats.qmc.scale`
+        can be used to scale the samples from their
+        original bounds to :math:`[0, 1]^d`. And back to their original bounds.
+
+    Compute the quality of the sample using the L1 criterion.
+
+    >>> def l1_norm(sample):
+    ...    return distance.pdist(sample, 'cityblock').min()
+
+    >>> l1_norm(sample)
+    0.00161...  # random
+
+    Now process the sample using Lloyd's algorithm and check the improvement
+    on the L1. The value should increase.
+
+    >>> sample = lloyd_centroidal_voronoi_tessellation(sample)
+    >>> l1_norm(sample)
+    0.0278...  # random
+
+    """
+    sample = np.asarray(sample).copy()
+
+    if not sample.ndim == 2:
+        raise ValueError('`sample` is not a 2D array')
+
+    if not sample.shape[1] >= 2:
+        raise ValueError('`sample` dimension is not >= 2')
+
+    # Checking that sample is within the hypercube
+    if (sample.max() > 1.) or (sample.min() < 0.):
+        raise ValueError('`sample` is not in unit hypercube')
+
+    if qhull_options is None:
+        qhull_options = 'Qbb Qc Qz QJ'
+
+        if sample.shape[1] >= 5:
+            qhull_options += ' Qx'
+
+    # Fit an exponential to be 2 at 0 and 1 at `maxiter`.
+    # The decay is used for relaxation.
+    # analytical solution for y=exp(-maxiter/x) - 0.1
+    root = -maxiter / np.log(0.1)
+    decay = [np.exp(-x / root)+0.9 for x in range(maxiter)]
+
+    l1_old = _l1_norm(sample=sample)
+    for i in range(maxiter):
+        sample = _lloyd_centroidal_voronoi_tessellation(
+                sample=sample, decay=decay[i],
+                qhull_options=qhull_options,
+        )
+
+        l1_new = _l1_norm(sample=sample)
+
+        if abs(l1_new - l1_old) < tol:
+            break
+        else:
+            l1_old = l1_new
+
+    return sample
 
 
 def _validate_workers(workers: IntNumber = 1) -> IntNumber:
@@ -1738,3 +2370,35 @@ def _validate_workers(workers: IntNumber = 1) -> IntNumber:
                          "or > 0")
 
     return workers
+
+
+def _validate_bounds(
+    l_bounds: npt.ArrayLike, u_bounds: npt.ArrayLike, d: int
+) -> Tuple[np.ndarray, ...]:
+    """Bounds input validation.
+
+    Parameters
+    ----------
+    l_bounds, u_bounds : array_like (d,)
+        Lower and upper bounds.
+    d : int
+        Dimension to use for broadcasting.
+
+    Returns
+    -------
+    l_bounds, u_bounds : array_like (d,)
+        Lower and upper bounds.
+
+    """
+    try:
+        lower = np.broadcast_to(l_bounds, d)
+        upper = np.broadcast_to(u_bounds, d)
+    except ValueError as exc:
+        msg = ("'l_bounds' and 'u_bounds' must be broadcastable and respect"
+               " the sample dimension")
+        raise ValueError(msg) from exc
+
+    if not np.all(lower < upper):
+        raise ValueError("Bounds are not consistent 'l_bounds' < 'u_bounds'")
+
+    return lower, upper

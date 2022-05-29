@@ -842,6 +842,17 @@ class _BivariateSplineBase:
         a bivariate spline on a spherical grid
     """
 
+    @classmethod
+    def _from_tck(cls, tck):
+        """Construct a spline object from given tck and degree"""
+        self = cls.__new__(cls)
+        if len(tck) != 5:
+            raise ValueError("tck should be a 5 element tuple of tx,"
+                             " ty, c, kx, ky")
+        self.tck = tck[:3]
+        self.degrees = tck[3:]
+        return self
+
     def get_residual(self):
         """ Return weighted sum of squared residuals of the spline
         approximation: sum ((w[i]*(z[i]-s(x[i],y[i])))**2,axis=0)
@@ -940,6 +951,55 @@ class _BivariateSplineBase:
             z = z.reshape(shape)
         return z
 
+    def partial_derivative(self, dx, dy):
+        """Construct a new spline representing a partial derivative of this
+        spline.
+
+        Parameters
+        ----------
+        dx, dy : int
+            Orders of the derivative in x and y respectively. They must be
+            non-negative integers and less than the respective degree of the
+            original spline (self) in that direction (``kx``, ``ky``).
+
+        Returns
+        -------
+        spline :
+            A new spline of degrees (``kx - dx``, ``ky - dy``) representing the
+            derivative of this spline.
+
+        Notes
+        -----
+
+        .. versionadded:: 1.9.0
+
+        """
+        if dx == 0 and dy == 0:
+            return self
+        else:
+            kx, ky = self.degrees
+            if not (dx >= 0 and dy >= 0):
+                raise ValueError("order of derivative must be positive or"
+                                 " zero")
+            if not (dx < kx and dy < ky):
+                raise ValueError("order of derivative must be less than"
+                                 " degree of spline")
+            tx, ty, c = self.tck[:3]
+            newc, ier = dfitpack.pardtc(tx, ty, c, kx, ky, dx, dy)
+            if ier != 0:
+                # This should not happen under normal conditions.
+                raise ValueError("Unexpected error code returned by"
+                                 " pardtc: %d" % ier)
+            nx = len(tx)
+            ny = len(ty)
+            newtx = tx[dx:nx - dx]
+            newty = ty[dy:ny - dy]
+            newkx, newky = kx - dx, ky - dy
+            newclen = (nx - dx - kx - 1) * (ny - dy - ky - 1)
+            return _DerivedBivariateSpline._from_tck((newtx, newty,
+                                                      newc[:newclen],
+                                                      newkx, newky))
+
 
 _surfit_messages = {1: """
 The required storage space exceeds the available storage space: nxest
@@ -1018,17 +1078,6 @@ class BivariateSpline(_BivariateSplineBase):
         a function to evaluate a bivariate B-spline and its derivatives
     """
 
-    @classmethod
-    def _from_tck(cls, tck):
-        """Construct a spline object from given tck and degree"""
-        self = cls.__new__(cls)
-        if len(tck) != 5:
-            raise ValueError("tck should be a 5 element tuple of tx,"
-                             " ty, c, kx, ky")
-        self.tck = tck[:3]
-        self.degrees = tck[3:]
-        return self
-
     def ev(self, xi, yi, dx=0, dy=0):
         """
         Evaluate the spline at points
@@ -1090,6 +1139,33 @@ class BivariateSpline(_BivariateSplineBase):
             raise ValueError('The length of x, y and z should be at least'
                              ' (kx+1) * (ky+1)')
         return x, y, z, w
+
+
+class _DerivedBivariateSpline(_BivariateSplineBase):
+    """Bivariate spline constructed from the coefficients and knots of another
+    spline.
+
+    Notes
+    -----
+    The class is not meant to be instantiated directly from the data to be
+    interpolated or smoothed. As a result, its ``fp`` attribute and
+    ``get_residual`` method are inherited but overriden; ``AttributeError`` is
+    raised when they are accessed.
+
+    The other inherited attributes can be used as usual.
+    """
+    _invalid_why = ("is unavailable, because _DerivedBivariateSpline"
+                    " instance is not constructed from data that are to be"
+                    " interpolated or smoothed, but derived from the"
+                    " underlying knots and coefficients of another spline"
+                    " object")
+
+    @property
+    def fp(self):
+        raise AttributeError("attribute \"fp\" %s" % self._invalid_why)
+
+    def get_residual(self):
+        raise AttributeError("method \"get_residual\" %s" % self._invalid_why)
 
 
 class SmoothBivariateSpline(BivariateSpline):
@@ -1285,11 +1361,13 @@ class RectBivariateSpline(BivariateSpline):
     ----------
     x,y : array_like
         1-D arrays of coordinates in strictly ascending order.
+        Evaluated points outside the data range will be extrapolated.
     z : array_like
         2-D array of data with shape (x.size,y.size).
     bbox : array_like, optional
         Sequence of length 4 specifying the boundary of the rectangular
-        approximation domain.  By default,
+        approximation domain, which means the start and end spline knots of
+        each dimension are set by these values. By default,
         ``bbox=[min(x), max(x), min(y), max(y)]``.
     kx, ky : ints, optional
         Degrees of the bivariate spline. Default is 3.

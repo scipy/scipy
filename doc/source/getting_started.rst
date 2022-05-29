@@ -42,18 +42,12 @@ Installation
     In-depth instructions?
     ^^^^^^^^^^^^^^^^^^^^^^
 
-    Installing a specific version? Installing from source? Check the advanced
+    Installing a specific version? Installing from source? Check the
     installation page.
 
     .. container:: custom-button
 
-        :ref:`Learn more <installing-upgrading>`
-
-.. toctree::
-   :maxdepth: 1
-   :hidden:
-
-   install_upgrade
+        `Learn more <https://scipy.org/install/>`__
 
 Tutorials
 ---------

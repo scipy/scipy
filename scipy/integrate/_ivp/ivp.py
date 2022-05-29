@@ -275,7 +275,7 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         So if, for example, `fun` has the signature ``fun(t, y, a, b, c)``,
         then `jac` (if given) and any event functions must have the same
         signature, and `args` must be a tuple of length 3.
-    options
+    **options
         Options passed to a chosen solver. All options available for already
         implemented solvers are listed below.
     first_step : float or None, optional
@@ -289,11 +289,11 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         estimates less than ``atol + rtol * abs(y)``. Here `rtol` controls a
         relative accuracy (number of correct digits), while `atol` controls
         absolute accuracy (number of correct decimal places). To achieve the
-        desired `rtol`, set `atol` to be lower than the lowest value that can
-        be expected from ``rtol * abs(y)`` so that `rtol` dominates the
+        desired `rtol`, set `atol` to be smaller than the smallest value that
+        can be expected from ``rtol * abs(y)`` so that `rtol` dominates the
         allowable error. If `atol` is larger than ``rtol * abs(y)`` the
         number of correct digits is not guaranteed. Conversely, to achieve the
-        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always lower
+        desired `atol` set `rtol` such that ``rtol * abs(y)`` is always smaller
         than `atol`. If components of y have different scales, it might be
         beneficial to set different `atol` values for different components by
         passing array_like with shape (n,) for `atol`. Default values are
@@ -515,6 +515,15 @@ def solve_ivp(fun, t_span, y0, method='RK45', t_eval=None, dense_output=False,
         # Wrap the user's fun (and jac, if given) in lambdas to hide the
         # additional parameters.  Pass in the original fun as a keyword
         # argument to keep it in the scope of the lambda.
+        try:
+            _ = [*(args)]
+        except TypeError as exp:
+            suggestion_tuple = (
+                "Supplied 'args' cannot be unpacked. Please supply `args`"
+                f" as a tuple (e.g. `args=({args},)`)"
+            )
+            raise TypeError(suggestion_tuple) from exp
+
         fun = lambda t, x, fun=fun: fun(t, x, *args)
         jac = options.get('jac')
         if callable(jac):

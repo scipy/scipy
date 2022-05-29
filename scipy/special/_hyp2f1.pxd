@@ -1,19 +1,21 @@
-"""
-Implementation of Gauss's hypergeometric function for complex values. This is
-an effort to incrementally translate the Fortran implementation from specfun.f
-into Cython so that it's easier to maintain and it's easier to correct defects
-in the original implementation.  Computation of Gauss's hypergeometric function
-involves handling a patchwork of special cases. The goal is to translate the
-cases into Cython little by little, falling back to the Fortran implementation
-for the cases that are yet to be handled. By default the Fortran original is
-followed as closely as possible except for situations when an improvement is
-obvious. Attempts are made to document the why behind certain decisions made by
-the original implementation, with references to the NIST Digital Library of
-Mathematical Functions [1] added where they are appropriate. The review paper
-by Pearson et al [2] is an excellent resource for best practices for numerical
-computation of hypergeometric functions, and the intent is to follow this paper
-when making improvements to and correcting defects in the original
-implementation.
+"""Implementation of Gauss's hypergeometric function for complex values.
+
+This implementation is based on the Fortran implementation by Shanjie Zhang and
+Jianming Jin included in specfun.f [1]_.  Computation of Gauss's hypergeometric
+function involves handling a patchwork of special cases. Zhang and Jin's
+implementation is being replaced case by case with this Cython implementation,
+which falls back to their implementation for the cases that are yet to be
+handled. By default the Zhang and Jin implementation has been followed as
+closely as possible except for situations where an improvement was
+obvious. We've attempted to document the reasons behind decisions made by Zhang
+and Jin and to document the reasons for deviating from their implementation
+when this has been done. References to the NIST Digital Library of Mathematical
+Functions [2]_ have been added where they are appropriate. The review paper by
+Pearson et al [3]_ is an excellent resource for best practices for numerical
+computation of hypergeometric functions. We have followed this review paper
+when making improvements to and correcting defects in Zhang and Jin's
+implementation. When Pearson et al propose several competing alternatives for a
+given case, we've used our best judgment to decide on the method to use.
 
 Author: Albert Steppi
 
@@ -21,28 +23,30 @@ Distributed under the same license as Scipy.
 
 References
 ----------
-[1] NIST Digital Library of Mathematical Functions. http://dlmf.nist.gov/,
-    Release 1.1.1 of 2021-03-15. F. W. J. Olver, A. B. Olde Daalhuis,
-    D. W. Lozier, B. I. Schneider, R. F. Boisvert, C. W. Clark, B. R. Miller,
-    B. V. Saunders, H. S. Cohl, and M. A. McClain, eds.
-[2] Pearson, J.W., Olver, S. & Porter, M.A.
-    "Numerical methods for the computation of the confluent and Gauss
-    hypergeometric functions."
-    Numer Algor 74, 821-866 (2017). https://doi.org/10.1007/s11075-016-0173-0
-[3] Raimundas Vidunas, "Degenerate Gauss Hypergeometric Functions",
-    Kyushu Journal of Mathematics, 2007, Volume 61, Issue 1, Pages 109-135,
-[4] López, J.L., Temme, N.M. New series expansions of the Gauss hypergeometric
-    function. Adv Comput Math 39, 349-365 (2013).
-    https://doi.org/10.1007/s10444-012-9283-y
+.. [1] S. Zhang and J.M. Jin, "Computation of Special Functions", Wiley 1996
+.. [2] NIST Digital Library of Mathematical Functions. http://dlmf.nist.gov/,
+       Release 1.1.1 of 2021-03-15. F. W. J. Olver, A. B. Olde Daalhuis,
+       D. W. Lozier, B. I. Schneider, R. F. Boisvert, C. W. Clark, B. R. Miller,
+       B. V. Saunders, H. S. Cohl, and M. A. McClain, eds.
+.. [3] Pearson, J.W., Olver, S. & Porter, M.A.
+       "Numerical methods for the computation of the confluent and Gauss
+       hypergeometric functions."
+       Numer Algor 74, 821-866 (2017). https://doi.org/10.1007/s11075-016-0173-0
+.. [4] Raimundas Vidunas, "Degenerate Gauss Hypergeometric Functions",
+       Kyushu Journal of Mathematics, 2007, Volume 61, Issue 1, Pages 109-135,
+.. [5] López, J.L., Temme, N.M. New series expansions of the Gauss hypergeometric
+       function. Adv Comput Math 39, 349-365 (2013).
+       https://doi.org/10.1007/s10444-012-9283-y
 """
 
 cimport cython
 from numpy cimport npy_cdouble
 from libc.stdint cimport uint64_t, UINT64_MAX
-from libc.math cimport fabs, exp, M_LN2, M_PI, pow, trunc
+from libc.math cimport exp, fabs, M_PI, M_1_PI, log1p, pow, sin, trunc
 
 from . cimport sf_error
-from ._cephes cimport Gamma, gammasgn, lgam
+from ._cephes cimport Gamma, gammasgn, lanczos_sum_expg_scaled, lgam
+
 from ._complexstuff cimport (
     double_complex_from_npy_cdouble,
     npy_cdouble_from_double_complex,
@@ -53,6 +57,8 @@ from ._complexstuff cimport (
     zpow,
 )
 
+cdef extern from "cephes/lanczos.h":
+    double lanczos_g
 
 cdef extern from "numpy/npy_math.h":
     double NPY_NAN
@@ -68,7 +74,7 @@ cdef extern from 'specfun_wrappers.h':
     ) nogil
 
 
-# Small value from the Fortran original.
+# Small value from Zhang and Jin's Fortran implementation.
 DEF EPS = 1e-15
 
 DEF SQRT_PI = 1.7724538509055159  # sqrt(M_PI)
@@ -117,36 +123,23 @@ cdef inline double complex hyp2f1_complex(
     # Todo: Actually check for overflow instead of using a fixed tolerance for
     # all parameter combinations like in the Fortran original. This will have to
     # wait until all points in the neighborhood of z = 1 are handled in Cython.
-    if fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0:
+    # Note that in the following three conditionals, we avoid the case where
+    # c is a non-positive integer. This is because if c is a non-positive
+    # integer and we have not returned already, then one of a or b must
+    # be a negative integer and the desired result can be computed as a
+    # polynomial with finite sum.
+    if (
+            fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0 and
+            not c_non_pos_int
+    ):
         return NPY_INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
-    if z == 1.0 and c - a - b > 0:
-        result = Gamma(c) * Gamma(c - a - b)
-        result /= Gamma(c - a) * Gamma(c - b)
-        # Try again with logs if there has been an overflow.
-        if zisnan(result) or zisinf(result) or result == 0.0:
-            result = exp(
-                lgam(c) - lgam(c - a) +
-                lgam(c - a - b) - lgam(c - b)
-            )
-            result *= gammasgn(c) * gammasgn(c - a - b)
-            result *= gammasgn(c - a) * gammasgn(c - b)
-        return result
+    if z == 1.0 and c - a - b > 0 and not c_non_pos_int:
+        return four_gammas(c, c - a - b, c - a, c - b)
     # Kummer's Theorem for z = -1; c = 1 + a - b (DLMF 15.4.26).
-    if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS:
-        # The computation below has been simplified through
-        # Legendre duplication for the Gamma function (DLMF 5.5.5).
-        result = SQRT_PI * pow(2, -a) * Gamma(c)
-        result /= Gamma(1 + 0.5*a - b) * Gamma(0.5 + 0.5*a)
-        # Try again with logs if there has been an overflow.
-        if zisnan(result) or zisinf(result) or result == 0.0:
-            result = exp(
-                LOG_PI_2 + lgam(c) - a * M_LN2 +
-                -lgam(1 + 0.5*a - b) - lgam(0.5 + 0.5*a)
-            )
-            result *= gammasgn(c) * gammasgn(1 + 0.5*a - b)
-            result *= gammasgn(0.5 + 0.5*a)
-        return result
+    if zabs(z + 1) < EPS and fabs(1 + a - b - c) < EPS and not c_non_pos_int:
+        return four_gammas(a - b + 1, 0.5*a + 1, a + 1, 0.5*a - b + 1)
+
     # Reduces to a polynomial when a or b is a negative integer.
     # If a and b are both negative integers, we take care to terminate
     # the series at a or b of smaller magnitude. This is to ensure proper
@@ -188,21 +181,25 @@ cdef inline double complex hyp2f1_complex(
     # --------------------------------------------------------------------------
     if modulus_z < 0.9 and z.real >= 0:
         # Apply Euler Hypergeometric Transformation (DLMF 15.8.1) to reduce
-        # size of a and b if possible. We follow the original Fortran
-        # implementation although there is very likely a better heuristic to
-        # determine when this transformation should be applied. As it stands,
-        # it hurts precision in some cases.
+        # size of a and b if possible. We follow Zhang and Jin's
+        # implementation [1] although there is very likely a better heuristic
+        # to determine when this transformation should be applied. As it
+        # stands, it hurts precision in some cases.
         if c - a < a and c - b < b:
             result = zpow(1 - z, c - a - b)
-            # Maximum number of terms 1500 comes from Fortran original.
+            # Maximum number of terms 1500 comes from Zhang and Jin.
             result *= hyp2f1_series(c - a, c - b, c, z, 1500, True, EPS)
             return result
-        # Maximum number of terms 1500 comes from Fortran original.
+        # Maximum number of terms 1500 comes from Zhang and Jin.
         return hyp2f1_series(a, b, c, z, 1500, True, EPS)
+    # Points near exp(iπ/3), exp(-iπ/3) not handled by any of the standard
+    # transformations. Use series of López and Temme [5]. These regions
+    # were not correctly handled by Zhang and Jin's implementation.
+    # -------------------------------------------------------------------------
     if 0.9 <= modulus_z < 1.1 and zabs(1 - z) >= 0.9 and z.real >= 0:
         # This condition for applying Euler Transformation (DLMF 15.8.1)
         # was determined empirically to work better for this case than that
-        # used in the original Fortran implementation for |z| < 0.9,
+        # used in Zhang and Jin's implementation for |z| < 0.9,
         # real(z) >= 0.
         if (
                 c - a <= a and c - b < b or
@@ -212,7 +209,16 @@ cdef inline double complex hyp2f1_complex(
             result *= hyp2f1_lopez_temme_series(c - a, c - b, c, z, 1500, EPS)
             return result
         return hyp2f1_lopez_temme_series(a, b, c, z, 1500, EPS)
-    # Fall through to original Fortran implementation.
+    # z/(z - 1) transformation (DLMF 15.8.1). Avoids cancellation issues that
+    # occur with Maclaurin series for real(z) < 0.
+    # ------------------------------------------------------------------------
+    if modulus_z < 1.1 and z.real < 0:
+        if 0 < b < a < c:
+            a, b = b, a
+        return zpow(1 - z, -a) * hyp2f1_series(
+            a, c - b, c, z/(z - 1), 500, True, EPS
+        )
+    # Fall through to Zhang and Jin's Fortran implementation.
     # -------------------------------------------------------------------------
     return double_complex_from_npy_cdouble(
         chyp2f1_wrap(a, b, c, npy_cdouble_from_double_complex(z))
@@ -260,7 +266,7 @@ cdef inline double complex hyp2f1_series(
         double complex previous = 0 + 0j
         double complex result = 1 + 0j
     for k in range(max_degree + 1):
-        # Follows the Fortran original exactly. Using *= degrades precision.
+        # Follows Zhang and Jin [1] exactly. Using *= degrades precision.
         # Todo: Check generated assembly to see what's going on.
         term = term * (a + k) * (b + k) / ((k + 1) * (c + k)) * z
         previous = result
@@ -275,7 +281,7 @@ cdef inline double complex hyp2f1_series(
             result = zpack(NPY_NAN, NPY_NAN)
     return result
 
-
+@cython.cdivision(True)
 cdef inline double complex hyp2f1_lopez_temme_series(
         double a,
         double b,
@@ -314,4 +320,157 @@ cdef inline double complex hyp2f1_lopez_temme_series(
     else:
         sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
         result = zpack(NPY_NAN, NPY_NAN)
+    return result
+
+
+@cython.cdivision(True)
+cdef inline double four_gammas(double u, double v, double w, double x) nogil:
+    cdef double result
+    # Without loss of generality, assume |u| >= |v|, |w| >= |x|.
+    if fabs(v) > fabs(u):
+        u, v = v, u
+    if fabs(x) > fabs(w):
+        w, x = x, w
+    # Direct ratio tends more accurate for arguments in this range. Range
+    # chosen empirically based on the relevant benchmarks in
+    # scipy/special/_precompute/hyp2f1_data.py
+    if fabs(u) <= 100 and fabs(v) <= 100 and fabs(w) <= 100 and fabs(x) <= 100:
+        result = Gamma(u) * Gamma(v) / (Gamma(w) * Gamma(x))
+        if not (zisinf(result) or zisnan(result) or result == 0):
+            return result
+    result = four_gammas_lanczos(u, v, w, x)
+    if not (zisinf(result) or zisnan(result) or result == 0):
+        return result
+    # If overflow or underflow, try again with logs.
+    result = exp(
+        lgam(v) - lgam(x) +
+        lgam(u) - lgam(w)
+    )
+    result *= gammasgn(u) * gammasgn(w) * gammasgn(v) * gammasgn(x)
+    return result
+
+
+@cython.cdivision(True)
+cdef inline double four_gammas_lanczos(
+        double u, double v, double w, double x
+) nogil:
+    """Compute ratio of gamma functions using lanczos approximation.
+
+    Computes gamma(u)*gamma(v)/(gamma(w)*gamma(x))
+
+    It is assumed that x = u + v - w, but it is left to the user to
+    ensure this.
+
+    The lanczos approximation takes the form
+
+    gamma(x) = factor(x) * lanczos_sum_expg_scaled(x)
+    
+    where factor(x) = ((x + lanczos_g - 0.5)/e)**(x - 0.5).
+
+    The formula above is only valid for x >= 0.5, but can be extended to
+    x < 0.5 with the reflection principle.
+
+    Using the lanczos approximation when computing this ratio of gamma functions
+    allows factors to be combined analytically to avoid underflow and overflow
+    and produce a more accurate result. The condition x = u + v - w makes it
+    possible to cancel the factors in the expression
+
+    factor(u) * factor(v) / (factor(w) * factor(x))
+
+    by taking one factor and absorbing it into the others. Currently, this
+    implementation takes the factor corresponding to the argument with largest
+    absolute value and absorbs it into the others.
+    """
+
+    cdef:
+        double result
+        double ugh, vgh, wgh, xgh
+
+    # Without loss of generality, assume |u| >= |v|, |w| >= |x|.
+    if fabs(v) > fabs(u):
+        u, v = v, u
+    if fabs(x) > fabs(w):
+        w, x = x, w
+
+    # The below implementation may incorrectly return finite results
+    # at poles of the gamma function. Handle these cases explicitly.
+    if u == trunc(u) and u <= 0 or v == trunc(v) and v <= 0:
+        # Return nan if numerator has pole. Diverges to +- infinity
+        # depending on direction so value is undefined.
+        return NPY_NAN
+    if w == trunc(w) and w <= 0 or x == trunc(x) and x <= 0:
+        # Return 0 if denominator has pole but not numerator.
+        return 0
+
+    result = 1
+
+    if u >= 0.5:
+        result *= lanczos_sum_expg_scaled(u)
+        ugh = u + lanczos_g - 0.5
+        u_prime = u
+    else:
+        result /= lanczos_sum_expg_scaled(1 - u) * sin(M_PI * u) * M_1_PI
+        ugh = 0.5 - u + lanczos_g
+        u_prime = 1 - u
+        
+    if v >= 0.5:
+        result *= lanczos_sum_expg_scaled(v)
+        vgh = v + lanczos_g - 0.5
+        v_prime = v
+    else:
+        result /= lanczos_sum_expg_scaled(1 - v) * sin(M_PI * v) * M_1_PI
+        vgh = 0.5 - v + lanczos_g
+        v_prime = 1 - v
+
+    if w >= 0.5:
+        result /= lanczos_sum_expg_scaled(w)
+        wgh = w + lanczos_g - 0.5
+        w_prime = w
+    else:
+        result *= lanczos_sum_expg_scaled(1 - w) * sin(M_PI * w) * M_1_PI
+        wgh = 0.5 - w + lanczos_g
+        w_prime = 1 - w
+        
+    if x >= 0.5:
+        result /= lanczos_sum_expg_scaled(x)
+        xgh = x + lanczos_g - 0.5
+        x_prime = x
+    else:
+        result *= lanczos_sum_expg_scaled(1 - x) * sin(M_PI * x) * M_1_PI
+        xgh = 0.5 - x + lanczos_g
+        x_prime = 1 - x
+
+    if fabs(u) >= fabs(w):
+        # u has greatest absolute value. Absorb ugh into the others.
+        if fabs((v_prime - u_prime)*(v - 0.5)) < 100*ugh and v > 100:
+            # Special case where base is close to 1. Condition taken from
+            # Boost's beta function implementation.
+            result *= exp((v - 0.5)*log1p((v_prime - u_prime)/ugh))
+        else:
+            result *= pow(vgh / ugh, v - 0.5)
+
+        if fabs((u_prime - w_prime)*(w - 0.5)) < 100*wgh and u > 100:
+            result *= exp((w - 0.5)*log1p((u_prime - w_prime)/wgh))
+        else:
+            result *= pow(ugh / wgh, w - 0.5)
+
+        if fabs((u_prime - x_prime)*(x - 0.5)) < 100*xgh and u > 100:
+            result *= exp((x - 0.5)*log1p((u_prime - x_prime)/xgh))
+        else:
+            result *= pow(ugh / xgh, x - 0.5)
+    else:
+        # w has greatest absolute value. Absorb wgh into the others.
+        if fabs((u_prime - w_prime)*(u - 0.5)) < 100*wgh and u > 100:
+            result *= exp((u - 0.5)*log1p((u_prime - w_prime)/wgh))
+        else:
+            result *= pow(ugh / wgh, u - 0.5)
+        if fabs((v_prime - w_prime)*(v - 0.5)) < 100*wgh and v > 100:
+            result *= exp((v - 0.5)*log1p((v_prime - w_prime)/wgh))
+        else:
+            result *= pow(vgh / wgh, v - 0.5)
+        if fabs((w_prime - x_prime)*(x - 0.5)) < 100*xgh and x > 100:
+            result *= exp((x - 0.5)*log1p((w_prime - x_prime)/xgh))
+        else:
+            result *= pow(wgh / xgh, x - 0.5)
+
     return result

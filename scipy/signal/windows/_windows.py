@@ -7,10 +7,11 @@ import numpy as np
 from scipy import linalg, special, fft as sp_fft
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
-           'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
-           'hamming', 'kaiser', 'gaussian', 'general_cosine',
-           'general_gaussian', 'general_hamming', 'chebwin', 'cosine',
-           'hann', 'exponential', 'tukey', 'taylor', 'dpss', 'get_window']
+           'blackmanharris', 'flattop', 'bartlett', 'barthann',
+           'hamming', 'kaiser', 'kaiser_bessel_derived', 'gaussian',
+           'general_cosine', 'general_gaussian', 'general_hamming',
+           'chebwin', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',
+           'dpss', 'get_window']
 
 
 def _len_guards(M):
@@ -787,11 +788,6 @@ def hann(M, sym=True):
     return general_hamming(M, 0.5, sym)
 
 
-@np.deprecate(new_name='scipy.signal.windows.hann')
-def hanning(*args, **kwargs):
-    return hann(*args, **kwargs)
-
-
 def tukey(M, alpha=0.5, sym=True):
     r"""Return a Tukey window, also known as a tapered cosine window.
 
@@ -1211,6 +1207,90 @@ def kaiser(M, beta, sym=True):
          special.i0(beta))
 
     return _truncate(w, needs_trunc)
+
+
+def kaiser_bessel_derived(M, beta, *, sym=True):
+    """Return a Kaiser-Bessel derived window.
+
+    Parameters
+    ----------
+    M : int
+        Number of points in the output window. If zero or less, an empty
+        array is returned. Note that this window is only defined for an even
+        number of points.
+    beta : float
+        Kaiser window shape parameter.
+    sym : bool, optional
+        This parameter only exists to comply with the interface offered by
+        the other window functions and to be callable by `get_window`.
+        When True (default), generates a symmetric window, for use in filter
+        design.
+
+    Returns
+    -------
+    w : ndarray
+        The window, normalized to fulfil the Princen-Bradley condition.
+
+    See Also
+    --------
+    kaiser
+
+    Notes
+    -----
+    It is designed to be suitable for use with the modified discrete cosine
+    transform (MDCT) and is mainly used in audio signal processing and
+    audio coding.
+
+    .. versionadded:: 1.9.0
+
+    References
+    ----------
+    .. [1] Bosi, Marina, and Richard E. Goldberg. Introduction to Digital
+           Audio Coding and Standards. Dordrecht: Kluwer, 2003.
+    .. [2] Wikipedia, "Kaiser window",
+           https://en.wikipedia.org/wiki/Kaiser_window
+
+    Examples
+    --------
+    Plot the Kaiser-Bessel derived window based on the wikipedia
+    reference [2]_:
+
+    >>> from scipy import signal
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots()
+    >>> N = 50
+    >>> for alpha in [0.64, 2.55, 7.64, 31.83]:
+    ...     ax.plot(signal.windows.kaiser_bessel_derived(2*N, np.pi*alpha),
+    ...             label=f"{alpha=}")
+    >>> ax.grid(True)
+    >>> ax.set_title("Kaiser-Bessel derived window")
+    >>> ax.set_ylabel("Amplitude")
+    >>> ax.set_xlabel("Sample")
+    >>> ax.set_xticks([0, N, 2*N-1])
+    >>> ax.set_xticklabels(["0", "N", "2N+1"])  # doctest: +SKIP
+    >>> ax.set_yticks([0.0, 0.2, 0.4, 0.6, 0.707, 0.8, 1.0])
+    >>> fig.legend(loc="center")
+    >>> fig.tight_layout()
+    >>> fig.show()
+    """
+    if not sym:
+        raise ValueError(
+            "Kaiser-Bessel Derived windows are only defined for symmetric "
+            "shapes"
+        )
+    elif M < 1:
+        return np.array([])
+    elif M % 2:
+        raise ValueError(
+            "Kaiser-Bessel Derived windows are only defined for even number "
+            "of points"
+        )
+
+    kaiser_window = kaiser(M // 2 + 1, beta)
+    csum = np.cumsum(kaiser_window)
+    half_window = np.sqrt(csum[:-1] / csum[-1])
+    w = np.concatenate((half_window, half_window[::-1]), axis=0)
+    return w
 
 
 def gaussian(M, std, sym=True):
@@ -1663,7 +1743,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
 
     See Also
     --------
-    chebwin, kaiser, bartlett, blackman, hamming, hanning
+    chebwin, kaiser, bartlett, blackman, hamming, hann
 
     References
     ----------
@@ -2026,8 +2106,9 @@ _win_equiv_raw = {
         'general gauss', 'general_gauss', 'ggs'): (general_gaussian, True),
     ('general hamming', 'general_hamming'): (general_hamming, True),
     ('hamming', 'hamm', 'ham'): (hamming, False),
-    ('hanning', 'hann', 'han'): (hann, False),
+    ('hann', 'han'): (hann, False),
     ('kaiser', 'ksr'): (kaiser, True),
+    ('kaiser bessel derived', 'kbd'): (kaiser_bessel_derived, True),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),
     ('parzen', 'parz', 'par'): (parzen, False),
     ('taylor', 'taylorwin'): (taylor, False),
@@ -2090,6 +2171,7 @@ def get_window(window, Nx, fftbins=True):
     - `~scipy.signal.windows.tukey`
     - `~scipy.signal.windows.taylor`
     - `~scipy.signal.windows.kaiser` (needs beta)
+    - `~scipy.signal.windows.kaiser_bessel_derived` (needs beta)
     - `~scipy.signal.windows.gaussian` (needs standard deviation)
     - `~scipy.signal.windows.general_cosine` (needs weighting coefficients)
     - `~scipy.signal.windows.general_gaussian` (needs power, width)

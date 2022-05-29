@@ -43,8 +43,11 @@ import sphinx
 from docutils.parsers.rst import directives
 from pkg_resources import parse_version
 
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'doc', 'sphinxext'))
 from numpydoc.docscrape_sphinx import get_doc_object
+from numpydoc.docscrape import NumpyDocString  # noqa
+from scipy.stats._distr_params import distcont, distdiscrete  # noqa
+from scipy import stats  # noqa
+
 
 if parse_version(sphinx.__version__) >= parse_version('1.5'):
     # Enable specific Sphinx directives
@@ -117,7 +120,6 @@ DOCTEST_SKIPLIST = set([
     'scipy.special.sinc',  # comes from numpy
     'scipy.misc.who',  # comes from numpy
     'scipy.optimize.show_options',
-    'scipy.integrate.quad_explain',
     'io.rst',   # XXX: need to figure out how to deal w/ mat files
 ])
 
@@ -144,8 +146,14 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.stats\.contingency\.chi2_contingency',
     r'scipy\.stats\.contingency\.expected_freq',
     r'scipy\.stats\.contingency\.margins',
-    r'scipy\.stats\.reciprocal',
+    r'scipy\.stats\.reciprocal',  # alias for lognormal
+    r'scipy\.stats\.gilbrat',  # alias for gibrat
     r'scipy\.stats\.trapz',   # alias for trapezoid
+    r'scipy\.stats\.F_onewayBadInputSizesWarning',  # shouldn't
+    r'scipy\.stats\.F_onewayConstantInputWarning',  # have
+    r'scipy\.stats\.PearsonRConstantInputWarning',  # been
+    r'scipy\.stats\.PearsonRNearConstantInputWarning',  # in
+    r'scipy\.stats\.SpearmanRConstantInputWarning',  # __all__
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
@@ -268,6 +276,7 @@ def compare(all_dict, others, names, module_name):
 
     return only_all, only_ref, missing
 
+
 def is_deprecated(f):
     with warnings.catch_warnings(record=True) as w:
         warnings.simplefilter("error")
@@ -278,6 +287,7 @@ def is_deprecated(f):
         except Exception:
             pass
         return False
+
 
 def check_items(all_dict, names, deprecated, others, module_name, dots=True):
     num_all = len(all_dict)
@@ -444,10 +454,11 @@ def check_rest(module, names, dots=True):
                                 traceback.format_exc()))
                 continue
 
-        m = re.search("([\x00-\x09\x0b-\x1f])", text)
+        m = re.search(".*?([\x00-\x09\x0b-\x1f]).*", text)
         if m:
-            msg = ("Docstring contains a non-printable character %r! "
-                   "Maybe forgot r\"\"\"?" % (m.group(1),))
+            msg = ("Docstring contains a non-printable character "
+                   f"{m.group(1)!r} in the line\n\n{m.group(0)!r}\n\n"
+                   "Maybe forgot r\"\"\"?")
             results.append((full_name, False, msg))
             continue
 
@@ -503,7 +514,7 @@ def try_convert_namedtuple(got):
     regex = (r'[\w\d_]+\(' +
              ', '.join([r'[\w\d_]+=(.+)']*num) +
              r'\)')
-    grp = re.findall(regex, got.replace('\n', ' '))
+    grp = re.findall(regex, " ".join(got.split()))
     # fold it back to a tuple
     got_again = '(' + ', '.join(grp[0]) + ')'
     return got_again
@@ -548,6 +559,7 @@ class DTRunner(doctest.DocTestRunner):
         self._report_item_name(out)
         return doctest.DocTestRunner.report_failure(self, out, test,
                                                     example, got)
+
 
 class Checker(doctest.OutputChecker):
     obj_pattern = re.compile(r'at 0x[0-9a-fA-F]+>')
@@ -643,7 +655,6 @@ class Checker(doctest.OutputChecker):
                 return False
             else:
                 return self.check_output(want_again, got_again, optionflags)
-
 
         # ... and defer to numpy
         try:
@@ -865,6 +876,58 @@ def init_matplotlib():
         HAVE_MATPLOTLIB = False
 
 
+def check_dist_keyword_names():
+    # Look for collisions between names of distribution shape parameters and
+    # keywords of distribution methods. See gh-5982.
+    distnames = set(distdata[0] for distdata in distcont + distdiscrete)
+    mod_results = []
+    for distname in distnames:
+        dist = getattr(stats, distname)
+
+        method_members = inspect.getmembers(dist, predicate=inspect.ismethod)
+        method_names = [method[0] for method in method_members
+                        if not method[0].startswith('_')]
+        for methodname in method_names:
+            method = getattr(dist, methodname)
+            try:
+                params = NumpyDocString(method.__doc__)['Parameters']
+            except TypeError:
+                result = (f'stats.{distname}.{methodname}', False,
+                          "Method parameters are not documented properly.")
+                mod_results.append(result)
+                continue
+
+            if not dist.shapes:  # can't have collision if there are no shapes
+                continue
+            shape_names = dist.shapes.split(', ')
+
+            param_names1 = set(param.name for param in params)
+            param_names2 = set(inspect.signature(method).parameters)
+            param_names = param_names1.union(param_names2)
+
+            # # Disabling this check in this PR;
+            # # these discrepancies are a separate issue.
+            # no_doc_params = {'args', 'kwds', 'kwargs'}  # no need to document
+            # undoc_params = param_names2 - param_names1 - no_doc_params
+            # if un_doc_params:
+            #     result = (f'stats.{distname}.{methodname}', False,
+            #               f'Parameter(s) {undoc_params} are not documented.')
+            #     mod_results.append(result)
+            #     continue
+
+            intersection = param_names.intersection(shape_names)
+
+            if intersection:
+                message = ("Distribution/method keyword collision: "
+                           f"{intersection} ")
+                result = (f'stats.{distname}.{methodname}', False, message)
+            else:
+                result = (f'stats.{distname}.{methodname}', True, '')
+            mod_results.append(result)
+
+    return mod_results
+
+
 def main(argv):
     parser = ArgumentParser(usage=__doc__.lstrip())
     parser.add_argument("module_names", metavar="SUBMODULES", default=[],
@@ -895,7 +958,12 @@ def main(argv):
                 module_names.append(name)
 
     for submodule_name in module_names:
-        module_name = BASE_MODULE + '.' + submodule_name
+        prefix = BASE_MODULE + '.'
+        if not submodule_name.startswith(prefix):
+            module_name = prefix + submodule_name
+        else:
+            module_name = submodule_name
+
         __import__(module_name)
         module = sys.modules[module_name]
 
@@ -931,6 +999,8 @@ def main(argv):
         if args.doctests:
             mod_results += check_doctests(module, (args.verbose >= 2), dots=dots,
                                           doctest_warnings=args.doctest_warnings)
+        if module.__name__ == 'scipy.stats':
+            mod_results += check_dist_keyword_names()
 
         for v in mod_results:
             assert isinstance(v, tuple), v

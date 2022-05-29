@@ -865,7 +865,7 @@ class TransferFunctionDiscrete(TransferFunction, dlti):
     >>> num = [1, 3, 3]
     >>> den = [1, 2, 1]
 
-    >>> signal.TransferFunction(num, den, 0.5)
+    >>> signal.TransferFunction(num, den, dt=0.5)
     TransferFunctionDiscrete(
     array([ 1.,  3.,  3.]),
     array([ 1.,  2.,  1.]),

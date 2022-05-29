@@ -36,12 +36,10 @@ def _exact_1_norm(A):
 
 def _trace(A):
     # A compatibility function which should eventually disappear.
-    if scipy.sparse.isspmatrix(A):
-        return A.diagonal().sum()
-    elif is_pydata_spmatrix(A):
-        return A.to_scipy_sparse().diagonal().sum()
+    if is_pydata_spmatrix(A):
+        return A.to_scipy_sparse().trace()
     else:
-        return np.trace(A)
+        return A.trace()
 
 
 def traceest(A, m3, seed=None):
@@ -388,7 +386,8 @@ def _onenormest_matrix_power(A, p,
     #XXX Eventually turn this into an API function in the  _onenormest module,
     #XXX and remove its underscore,
     #XXX but wait until expm_multiply goes into scipy.
-    return scipy.sparse.linalg.onenormest(aslinearoperator(A) ** p)
+    from scipy.sparse.linalg._onenormest import onenormest
+    return onenormest(aslinearoperator(A) ** p)
 
 class LazyOperatorNormInfo:
     """

@@ -79,7 +79,7 @@ def schur(a, output='real', lwork=None, overwrite_a=False, sort=None,
         3. If eigenvalue sorting was requested, roundoff errors caused the
            leading eigenvalues to no longer satisfy the sorting condition.
 
-    See also
+    See Also
     --------
     rsf2csf : Convert real Schur form to complex Schur form
 

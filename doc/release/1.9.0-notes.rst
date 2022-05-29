@@ -1,0 +1,165 @@
+==========================
+SciPy 1.9.0 Release Notes
+==========================
+
+.. note:: Scipy 1.9.0 is not released yet!
+
+.. contents::
+
+SciPy 1.9.0 is the culmination of X months of hard work. It contains
+many new features, numerous bug-fixes, improved test coverage and better
+documentation. There have been a number of deprecations and API changes
+in this release, which are documented below. All users are encouraged to
+upgrade to this release, as there are a large number of bug-fixes and
+optimizations. Before upgrading, we recommend that users check that
+their own code does not use deprecated SciPy functionality (to do so,
+run your code with ``python -Wd`` and check for ``DeprecationWarning`` s).
+Our development attention will now shift to bug-fix releases on the
+1.9.x branch, and on adding new features on the main branch.
+
+This release requires Python 3.8+ and NumPy 1.17.3 or greater.
+
+For running on PyPy, PyPy3 6.0+ is required.
+
+
+**************************
+Highlights of this release
+**************************
+
+
+************
+New features
+************
+
+`scipy.cluster` improvements
+============================
+
+
+`scipy.interpolate` improvements
+================================
+
+
+`scipy.linalg` improvements
+===========================
+
+
+`scipy.ndimage` improvements
+============================
+
+
+`scipy.optimize` improvements
+=============================
+
+
+`scipy.signal` improvements
+===========================
+
+
+`scipy.sparse` improvements
+===========================
+
+
+
+`scipy.spatial` improvements
+============================
+
+
+`scipy.special` improvements
+============================
+
+
+`scipy.stats` improvements
+==========================
+
+Hypothesis Tests
+----------------
+
+
+Sample statistics
+-----------------
+
+
+Statistical Distributions
+-------------------------
+
+
+Other
+-----
+
+
+
+
+*******************
+Deprecated features
+*******************
+
+`scipy.linalg` deprecations
+===========================
+
+
+`scipy.spatial` deprecations
+============================
+
+
+
+******************************
+Backwards incompatible changes
+******************************
+
+*************
+Other changes
+*************
+
+
+SciPy switched to Meson as its build system
+===========================================
+
+This is the first release that ships with [Meson](https://mesonbuild.com) as
+the build system. When installing with ``pip`` or ``pypa/build``, Meson will be
+used (invoked via the ``meson-python`` build hook). This change brings
+significant benefits - most importantly much faster build times, but also
+better support for cross-compilation and cleaner build logs.
+
+.. note::
+
+   This release still ships with support for ``numpy.distutils``-based builds
+   as well. Those can be invoked through the ``setup.py`` command-line
+   interface (e.g., ``python setup.py install``). It is planned to remove
+   ``numpy.distutils`` support before the 1.10.0 release.
+
+When building from source, a number of things have changed compared to building
+with ``numpy.distutils``:
+
+- New build dependencies: ``meson``, ``ninja``, and ``pkg-config``.
+  ``setuptools`` and ``wheel`` are no longer needed.
+- BLAS and LAPACK libraries that are supported haven't changed, however the
+  discovery mechanism has: that is now using ``pkg-config`` instead of hardcoded
+  paths or a ``site.cfg`` file.
+- The build defaults to using OpenBLAS. See :ref:`blas-lapack-selection` for
+  details.
+
+The two CLIs that can be used to build wheels are ``pip`` and ``build``. In
+addition, the SciPy repo contains a ``python dev.py`` CLI for any kind of
+development task (see its ``--help`` for details). For a comparison between old
+(``distutils``) and new (``meson``) build commands, see :ref:`meson-faq`.
+
+For more information on the introduction of Meson support in SciPy, see
+`gh-13615 <https://github.com/scipy/scipy/issues/13615>`__ and
+`this blog post <https://labs.quansight.org/blog/2021/07/moving-scipy-to-meson/>`__.
+
+
+*******
+Authors
+*******
+
+
+
+***********************
+Issues closed for 1.9.0
+***********************
+
+
+***********************
+Pull requests for 1.9.0
+***********************
+

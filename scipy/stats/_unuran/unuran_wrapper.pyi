@@ -104,6 +104,10 @@ class NumericalInversePolynomial(Method):
     @overload
     def cdf(self, x: npt.ArrayLike) -> np.ndarray: ...
     def u_error(self, sample_size: int = ...) -> UError: ...
+    def qrvs(self,
+             size: None | int | Tuple[int, ...] = ...,
+             d: None | int = ...,
+             qmc_engine: None | stats.qmc.QMCEngine = ...) -> npt.ArrayLike: ...
 
 
 class HINVDist(Protocol):

@@ -22,7 +22,6 @@ window_funcs = [
     ('blackmanharris', ()),
     ('flattop', ()),
     ('bartlett', ()),
-    ('hanning', ()),
     ('barthann', ()),
     ('hamming', ()),
     ('kaiser', (1,)),
@@ -437,6 +436,47 @@ class TestKaiser:
                          0.5985765418119844])
 
 
+class TestKaiserBesselDerived:
+
+    def test_basic(self):
+        M = 100
+        w = windows.kaiser_bessel_derived(M, beta=4.0)
+        w2 = windows.get_window(('kaiser bessel derived', 4.0),
+                                M, fftbins=False)
+        assert_allclose(w, w2)
+
+        # Test for Princen-Bradley condition
+        assert_allclose(w[:M // 2] ** 2 + w[-M // 2:] ** 2, 1.)
+
+        # Test actual values from other implementations
+        # M = 2:  sqrt(2) / 2
+        # M = 4:  0.518562710536, 0.855039598640
+        # M = 6:  0.436168993154, 0.707106781187, 0.899864772847
+        # Ref:https://github.com/scipy/scipy/pull/4747#issuecomment-172849418
+        assert_allclose(windows.kaiser_bessel_derived(2, beta=np.pi / 2)[:1],
+                        np.sqrt(2) / 2)
+
+        assert_allclose(windows.kaiser_bessel_derived(4, beta=np.pi / 2)[:2],
+                        [0.518562710536, 0.855039598640])
+
+        assert_allclose(windows.kaiser_bessel_derived(6, beta=np.pi / 2)[:3],
+                        [0.436168993154, 0.707106781187, 0.899864772847])
+
+    def test_exceptions(self):
+        M = 100
+        # Assert ValueError for odd window length
+        msg = ("Kaiser-Bessel Derived windows are only defined for even "
+               "number of points")
+        with assert_raises(ValueError, match=msg):
+            windows.kaiser_bessel_derived(M + 1, beta=4.)
+
+        # Assert ValueError for non-symmetric setting
+        msg = ("Kaiser-Bessel Derived windows are only defined for "
+               "symmetric shapes")
+        with assert_raises(ValueError, match=msg):
+            windows.kaiser_bessel_derived(M + 1, beta=4., sym=False)
+
+
 class TestNuttall:
 
     def test_basic(self):
@@ -662,8 +702,6 @@ def test_windowfunc_basics():
         window = getattr(windows, window_name)
         with suppress_warnings() as sup:
             sup.filter(UserWarning, "This window is not suitable")
-            if window_name in ('hanning',):
-                sup.filter(DeprecationWarning)
             # Check symmetry for odd and even lengths
             w1 = window(8, *params, sym=True)
             w2 = window(7, *params, sym=False)
@@ -711,7 +749,8 @@ def test_windowfunc_basics():
 
 
 def test_needs_params():
-    for winstr in ['kaiser', 'ksr', 'gaussian', 'gauss', 'gss',
+    for winstr in ['kaiser', 'ksr', 'kaiser_bessel_derived', 'kbd',
+                   'gaussian', 'gauss', 'gss',
                    'general gaussian', 'general_gaussian',
                    'general gauss', 'general_gauss', 'ggs',
                    'dss', 'dpss', 'general cosine', 'general_cosine',
@@ -730,7 +769,6 @@ def test_not_needs_params():
                    'cosine',
                    'flattop',
                    'hamming',
-                   'hanning',
                    'nuttall',
                    'parzen',
                    'taylor',

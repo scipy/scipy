@@ -6,17 +6,18 @@ on:
 
 jobs:
   build:
-    name: Build Gitpod Docker image 
+    name: Build Gitpod Docker image
     runs-on: ubuntu-latest
     environment: scipy-dev
     if: "github.repository_owner == 'scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]')"
     steps:
       - name: Clone repository
-        uses: actions/checkout@v2
-      - name: Lint Docker 
+        uses: actions/checkout@v3
+      - name: Lint Docker
         uses: brpaz/hadolint-action@v1.2.1
-        with: 
+        with:
           dockerfile: ./tools/docker_dev/gitpod.Dockerfile
+
       - name: Get refs
         shell: bash
         run: |
@@ -28,7 +29,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v1
       - name: Cache Docker layers
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: /tmp/.buildx-cache
           key: ${{ runner.os }}-buildx-${{ github.sha }}
@@ -38,6 +39,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
+
       - name: Build and push
         id: docker_build
         uses: docker/build-push-action@v2
@@ -48,7 +50,8 @@ jobs:
           cache-from: type=local,src=/tmp/.buildx-cache
           cache-to: type=local,dest=/tmp/.buildx-cache
           tags: |
-            scipy/scipy-gitpod:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}, scipy/scipy-gitpod:latest
-      - name: Image digest 
+            scipy/scipy-gitpod:${{ steps.getrefs.outputs.date }}-${{ steps.getrefs.outputs.branch}}-${{ steps.getrefs.outputs.sha8 }}
+            scipy/scipy-gitpod:latest
+      - name: Image digest
         # Return details of the image build: sha and shell
         run: echo ${{ steps.docker_build.outputs.digest }}
