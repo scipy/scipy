@@ -2694,6 +2694,10 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     because the returned p-value is greater than the critical value of 5%.
 
     """
+    msg = ("'binom_test' is deprecated in favour of"
+           "'binomtest' and will be removed in Scipy 1.11.0.")
+    warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+
     x = atleast_1d(x).astype(np.int_)
     if len(x) == 2:
         n = x[1] + x[0]
