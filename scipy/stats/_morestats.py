@@ -2658,6 +2658,10 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     that the probability of success in a Bernoulli experiment
     is `p`.
 
+    .. deprecated:: 0.19.0
+        'binom_test' is deprecated in favour of 'binomtest' and will
+        be removed in Scipy 1.11.0.
+
     Parameters
     ----------
     x : int or array_like
