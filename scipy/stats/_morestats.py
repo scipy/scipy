@@ -3114,14 +3114,14 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     pvalue : array_like
         The p-value for the test depending on `alternative` and `method`.
     zstatistic : array_like
-        When `method='approx'`, this is the normalized z-statistic::
+        When `method = 'approx'`, this is the normalized z-statistic::
 
             z = (T - mn - d) / se
 
         where ``T`` is `statistic` as defined above, ``mn`` is the mean of the
         distribution under the null hypothesis, ``d`` is a continuity
         correction, and ``se`` is the standard error.
-
+        When `method != 'approx'`, this attribute is not available.
     See Also
     --------
     kruskal, mannwhitneyu
