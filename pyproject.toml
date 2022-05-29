@@ -54,13 +54,7 @@ requires = [
 [project]
 name = "SciPy"
 license = {file = "LICENSE.txt"}
-description = """
-SciPy (pronounced "Sigh Pie") is an open-source software for mathematics,
-science, and engineering. It includes modules for statistics, optimization,
-integration, linear algebra, Fourier transforms, signal and image processing,
-ODE solvers, and more.
-"""
-
+description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
     {name = "SciPy Developers", email = "scipy-dev@python.org"},
 ]
