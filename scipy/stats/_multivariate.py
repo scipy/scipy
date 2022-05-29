@@ -1230,6 +1230,7 @@ def _dirichlet_check_parameters(alpha):
 
 
 def _dirichlet_check_input(alpha, x):
+    x = np.asarray(x)
 
     if x.shape[0] + 1 != alpha.shape[0] and x.shape[0] != alpha.shape[0]:
         raise ValueError("Vector 'x' must have either the same number "
@@ -1405,12 +1406,8 @@ class dirichlet_gen(multi_rv_generic):
     def __call__(self, alpha, seed=None):
         return dirichlet_frozen(alpha, seed=seed)
 
-    def _check_input(self, alpha, x):
-        x = np.asarray(x)
-        return _dirichlet_check_input(alpha, x)
-
     def _logpdf(self, x, alpha):
-        """Log of the Dirichlet PDF.
+        """Log of the Dirichlet probability density function.
 
         Parameters
         ----------
@@ -1429,7 +1426,7 @@ class dirichlet_gen(multi_rv_generic):
         return - lnB + np.sum((xlogy(alpha - 1, x.T)).T, 0)
 
     def logpdf(self, x, alpha):
-        """Log of the Dirichlet PDF.
+        """Log of the Dirichlet probability density function.
 
         Parameters
         ----------
@@ -1444,7 +1441,7 @@ class dirichlet_gen(multi_rv_generic):
 
         """
         alpha = _dirichlet_check_parameters(alpha)
-        x = self._check_input(alpha, x)
+        x = _dirichlet_check_input(alpha, x)
 
         out = self._logpdf(x, alpha)
         return _squeeze_output(out)
@@ -1465,7 +1462,7 @@ class dirichlet_gen(multi_rv_generic):
 
         """
         alpha = _dirichlet_check_parameters(alpha)
-        x = self._check_input(alpha, x)
+        x = _dirichlet_check_input(alpha, x)
 
         out = np.exp(self._logpdf(x, alpha))
         return _squeeze_output(out)
@@ -1581,6 +1578,16 @@ class dirichlet_frozen(multi_rv_frozen):
 
     def rvs(self, size=1, random_state=None):
         return self._dist.rvs(self.alpha, size, random_state)
+
+
+# Set frozen generator docstrings from corresponding docstrings in
+# multivariate_normal_gen and fill in default strings in class docstrings
+for name in ['logpdf', 'pdf', 'rvs', 'mean', 'var', 'entropy']:
+    method = dirichlet_gen.__dict__[name]
+    method_frozen = dirichlet_frozen.__dict__[name]
+    method_frozen.__doc__ = doccer.docformat(
+        method.__doc__, dirichlet_docdict_noparams)
+    method.__doc__ = doccer.docformat(method.__doc__, dirichlet_docdict_params)
 
 
 _wishart_doc_default_callparams = """\
