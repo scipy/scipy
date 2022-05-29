@@ -5954,7 +5954,7 @@ class TestGeometricStandardDeviation:
 
 def test_binom_test_deprecation():
     deprecation_msg = ("'binom_test' is deprecated in favour of"
-                       "'binomtest' and will be removed in Scipy 1.11.0.")
+                       " 'binomtest' and will be removed in Scipy 1.11.0.")
     with pytest.warns(DeprecationWarning, match=deprecation_msg):
         stats.binom_test([1, 1])
 
