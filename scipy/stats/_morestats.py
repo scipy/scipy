@@ -22,6 +22,7 @@ from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
+from .._lib.deprecation import _deprecated
 
 
 __all__ = ['mvsdist',
@@ -2645,6 +2646,8 @@ def levene(*samples, center='median', proportiontocut=0.05):
     return LeveneResult(W, pval)
 
 
+@_deprecated("'binom_test' is deprecated in favour of"
+             "'binomtest' and will be removed in Scipy 1.11.0.")
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """Perform a test that the probability of success is p.
 
@@ -2694,10 +2697,6 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     because the returned p-value is greater than the critical value of 5%.
 
     """
-    msg = ("'binom_test' is deprecated in favour of"
-           "'binomtest' and will be removed in Scipy 1.11.0.")
-    warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
-
     x = atleast_1d(x).astype(np.int_)
     if len(x) == 2:
         n = x[1] + x[0]
