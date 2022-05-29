@@ -3022,19 +3022,21 @@ def mood(x, y, axis=0, alternative="two-sided"):
     return z, pval
 
 
-WilcoxonResult = namedtuple('WilcoxonResult', ('statistic', 'pvalue'))
-WilcoxonResultApprox = namedtuple('WilcoxonResultApprox',
-                                  ('statistic', 'pvalue', 'zstatistic'))
+WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
 
 
 def wilcoxon_result_unpacker(res):
-    return tuple(res)
+    if hasattr(res, 'zstatistic'):
+        return res.statistic, res.pvalue, res.zstatistic
+    else:
+        return res.statistic, res.pvalue
 
 
 def wilcoxon_result_object(statistic, pvalue, zstatistic=None):
-    if zstatistic is None:
-        return WilcoxonResult(statistic, pvalue)
-    return WilcoxonResultApprox(statistic, pvalue, zstatistic)
+    res = WilcoxonResult(statistic, pvalue)
+    if zstatistic is not None:
+        res.zstatistic = zstatistic
+    return res
 
 
 def wilcoxon_outputs(kwds):
@@ -3235,9 +3237,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         d = x - y
 
     if len(d) == 0:
-        return (WilcoxonResultApprox(np.nan, np.nan, np.nan)
-                if method == 'approx'
-                else WilcoxonResult(np.nan, np.nan))
+        res = WilcoxonResult(np.nan, np.nan)
+        if method == 'approx':
+            res.zstatistic = np.nan
+        return res
 
     if mode == "auto":
         if len(d) <= 50:
@@ -3341,9 +3344,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             prob = np.sum(pmf[:r_plus + 1])
         prob = np.clip(prob, 0, 1)
 
+    res = WilcoxonResult(T, prob)
     if method == 'approx':
-        return WilcoxonResultApprox(T, prob, z)
-    return WilcoxonResult(T, prob)
+        res.zstatistic = z
+    return res
 
 
 def median_test(*samples, ties='below', correction=True, lambda_=1,
