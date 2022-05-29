@@ -127,7 +127,6 @@ class TestExpmActionSimple:
                 )
                 assert_allclose(observed, expected)
 
-
     def test_scaled_expm_multiply_single_timepoint(self):
         np.random.seed(1234)
         t = 0.1
@@ -203,7 +202,7 @@ class TestExpmActionInterval:
                                " the CSC matrix format")
                     for solution, t in zip(X, samples):
                         assert_allclose(solution, sp_expm(t*A).dot(target))
-                        
+
     def test_expm_multiply_interval_vector(self):
         np.random.seed(1234)
         interval = {'start': 0.1, 'stop': 3.2, 'endpoint': True}
