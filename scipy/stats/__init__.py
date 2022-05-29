@@ -160,7 +160,6 @@ Multivariate distributions
 
    multivariate_normal    -- Multivariate normal distribution
    matrix_normal          -- Matrix normal distribution
-   multivariate_beta      -- Multivariate beta distribution (Dirichlet)
    wishart                -- Wishart
    invwishart             -- Inverse Wishart
    multinomial            -- Multinomial distribution
