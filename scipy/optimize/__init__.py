@@ -418,7 +418,7 @@ from ._constraints import (NonlinearConstraint,
                            LinearConstraint,
                            Bounds)
 from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
-from ._shgo import shgo
+from ._shgo import shgo, SHGO
 from ._dual_annealing import dual_annealing
 from ._qap import quadratic_assignment
 from ._direct import direct
