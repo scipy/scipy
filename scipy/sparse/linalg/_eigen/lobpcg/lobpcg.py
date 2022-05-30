@@ -768,6 +768,10 @@ def lobpcg(
             UserWarning, stacklevel=2
         )
 
+    if verbosityLevel > 0:
+        print(f"Final iterative eigenvalue(s):\n{_lambda}")
+        print(f"Final iterative residual norm(s):\n{residualNorms}")
+
     # Future work: Need to add Postprocessing here:
     # Making sure eigenvectors "exactly" satisfy the blockVectorY constrains
     if blockVectorY is not None:
@@ -777,10 +781,49 @@ def lobpcg(
                           blockVectorY)
 
     # Making sure eigenvecotrs are "exactly" othonormalized by final "exact" RR
-    # Keeping the best iterates in case of divergence
+    gramXAX = np.dot(blockVectorX.T.conj(), A(blockVectorX))
+
+    blockVectorBX = blockVectorX
+    if B is not None:
+        blockVectorBX = B(blockVectorX)
+    gramXBX = np.dot(blockVectorX.T.conj(), blockVectorBX)
+    _handle_gramA_gramB_verbosity(gramXAX, gramXBX)
+    gramXAX = (gramXAX + gramXAX.T.conj()) / 2
+    gramXBX = (gramXBX + gramXBX.T.conj()) / 2
+    try:
+        _lambda, eigBlockVectorX = eigh(gramXAX,
+                                       gramXBX,
+                                       check_finite=False)
+    except LinAlgError as e:
+        raise ValueError("eigh has failed in lobpcg postprocessing") from e
+
+    blockVectorX = np.dot(blockVectorX, eigBlockVectorX)
+    blockVectorAX = np.dot(blockVectorAX, eigBlockVectorX)
+
+    if B is not None:
+        blockVectorBX = np.dot(blockVectorBX, eigBlockVectorX)
+        aux = blockVectorBX * _lambda[np.newaxis, :]
+
+    else:
+        aux = blockVectorX * _lambda[np.newaxis, :]
+
+    blockVectorR = blockVectorAX - aux
+
+    aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
+    residualNorms = np.sqrt(aux)
+
+    if np.max(residualNorms) > residualTolerance:
+        warnings.warn(
+            f"Exited postprocessing with accuracies \n"
+            f"{residualNorms}\n"
+            f"not reaching the requested tolerance {residualTolerance}.",
+            UserWarning, stacklevel=2
+        )
+
+    # 2do: Keeping the best iterates in case of divergence
 
     if verbosityLevel > 0:
-        print(f"Final eigenvalue(s):\n{_lambda}")
+        print(f"Final postprocessing eigenvalue(s):\n{_lambda}")
         print(f"Final residual norm(s):\n{residualNorms}")
 
     if retLambdaHistory:
