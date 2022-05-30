@@ -1809,14 +1809,15 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     Notes
     -----
-    This function uses `scipy.integrate.odeint` to solve the
-    system's differential equations.  Additional keyword arguments
-    given to `lsim2` are passed on to `odeint`.  See the documentation
+    This function uses `scipy.integrate.odeint` to solve the system's 
+    differential equations.  Additional keyword arguments given to `lsim2`
+    are passed on to `scipy.integrate.odeint`.  See the documentation
     for `scipy.integrate.odeint` for the full list of arguments.
 
     As `lsim2` is now deprecated, users are adviced to switch to the faster
-    and more accurate `lsim` function. Keyword arguments for `odeint` are not
-    supported in `lsim`, but not needed in general.
+    and more accurate `lsim` function. Keyword arguments for 
+    `scipy.integrate.odeint` are not supported in `lsim`, but not needed in 
+    general.
     
     If (num, den) is passed in for ``system``, coefficients for both the
     numerator and denominator should be specified in descending exponent
@@ -2337,8 +2338,9 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     the differential equation solver `scipy.integrate.odeint`.
 
     As `impulse2` is now deprecated, users are adviced to switch to the faster
-    and more accurate `impulse` function. Keyword arguments for `odeint` are not
-    supported in `impulse`, but not needed in general.
+    and more accurate `impulse` function. Keyword arguments for 
+    `scipy.integrate.odeint` are not supported in `impulse`, but not needed in
+    general.
 
     If (num, den) is passed in for ``system``, coefficients for both the
     numerator and denominator should be specified in descending exponent
@@ -2512,7 +2514,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     Notes
     -----
     As `step2` is now deprecated, users are adviced to switch to the faster
-    and more accurate `step` function. Keyword arguments for `odeint` are not
+    and more accurate `step` function. Keyword arguments for `scipy.integrate.odeint` are not
     supported in `step`, but not needed in general.
 
     If (num, den) is passed in for ``system``, coefficients for both the
