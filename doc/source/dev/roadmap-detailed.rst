@@ -416,9 +416,9 @@ with downstream projects is inevitable and not necessarily a bad thing.)
 In addition to the items described in the :ref:`scipy-roadmap`, the following
 improvements will help SciPy better serve this role.
 
-- Add fundamental and widely used hypothesis tests:
+- Add fundamental and widely used hypothesis tests, such as:
 
-  - Dunnett's test and the Student–Newman–Keuls test
+  - post hoc tests (e.g. Dunnett's test)
   - the various types of analysis of variance (ANOVA):
 
     - two-way ANOVA (single replicate, uniform number of replicates, variable
@@ -430,8 +430,8 @@ improvements will help SciPy better serve this role.
   Also, provide an infrastructure for implementing hypothesis tests.
 - Add additional tools for meta-analysis
 - Add tools for survival analysis
-- Replace inverse transform sampling with a more suitable method of random
-  variate sampling where appropriate
+- Speed up random variate sampling (method ``rvs``) of distributions, 
+  leveraging ``scipy.stats.sampling`` where appropriate
 - Expand QMC capabilities and performance
 - Enhance the `fit` method of the continuous probability distributions:
 
