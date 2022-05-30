@@ -788,16 +788,32 @@ class TestEigh:
                       type=4)
         # Both value and index subsets requested
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      subset_by_value=[1, 2], eigvals=[2, 4])
+                      subset_by_value=[1, 2], subset_by_index=[2, 4])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "'eigh' keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          subset_by_value=[1, 2], eigvals=[2, 4])
         # Invalid upper index spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      eigvals=[0, 4])
+                      subset_by_index=[0, 4])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "'eigh' keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          eigvals=[0, 4])
         # Invalid lower index
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      eigvals=[-2, 2])
+                      subset_by_index=[-2, 2])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "'eigh' keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          eigvals=[-2, 2])
         # Invalid index spec #2
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      eigvals=[2, 0])
+                      subset_by_index=[2, 0])
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "'eigh' keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          subset_by_index=[2, 0])
         # Invalid value spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[2, 0])
@@ -810,7 +826,11 @@ class TestEigh:
                       driver='evr', turbo=False)
         # Subset request from invalid driver
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
-                      driver='gvd', eigvals=[1, 2], turbo=False)
+                      driver='gvd', subset_by_index=[1, 2], turbo=False)
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "'eigh' keyword argument 'eigvals")
+            assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
+                          driver='gvd', subset_by_index=[1, 2], turbo=False)
 
     def test_nonpositive_b(self):
         assert_raises(LinAlgError, eigh, np.ones([3, 3]), np.ones([3, 3]))
