@@ -34,6 +34,7 @@ mle_failing_fits = [
         'pearson3',
         'powerlognorm',
         'truncexpon',
+        'truncpareto',
         'tukeylambda',
         'vonmises',
         'levy_stable',
@@ -50,7 +51,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
                    'kappa3', 'ksone', 'kstwo', 'levy', 'levy_l',
                    'levy_stable', 'loglaplace', 'lomax', 'mielke', 'nakagami',
                    'ncf', 'nct', 'ncx2', 'pareto', 'powerlognorm', 'powernorm',
-                   'skewcauchy', 't', 'trapezoid', 'triang',
+                   'skewcauchy', 't', 'trapezoid', 'triang', 'truncpareto',
                    'truncweibull_min', 'tukeylambda', 'studentized_range']
 
 # not sure if these fail, but they caused my patience to fail

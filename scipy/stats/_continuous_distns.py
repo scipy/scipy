@@ -8631,8 +8631,7 @@ class truncpareto_gen(rv_continuous):
 
     .. math::
 
-        1 = (u_l - loc)/scale
-        c = (u_r - loc)/scale
+        1 = (u_l - loc)/scale \quad ; \quad c = (u_r - loc)/scale
 
     where :math:`u_l` and :math:`u_r` are the specific left and right
     truncation values, respectively. In other words, the support of the
