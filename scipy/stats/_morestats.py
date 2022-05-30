@@ -3072,10 +3072,11 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     xy = np.concatenate((x, y), axis=axis)
     # determine if any of the samples contain ties
-    srted = np.sort(xy, axis=axis)
-    diffs = np.diff(srted, axis=axis)
+    sorted_xy = np.sort(xy, axis=axis)
+    diffs = np.diff(sorted_xy, axis=axis)
     if 0 in diffs:
-        z = np.asarray(_mood_inner_lc(xy, x, diffs, srted, n, m, N, axis=axis))
+        z = np.asarray(_mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N,
+                                      axis=axis))
     else:
         if axis != 0:
             xy = np.moveaxis(xy, axis, 0)
