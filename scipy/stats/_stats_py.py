@@ -103,7 +103,12 @@ def _contains_nan(a, nan_policy='propagate'):
             try:
                 # This can happen when attempting to check nan with np.isnan
                 # for string array (e.g. as in the function `rankdata`).
-                contains_nan = np.any(a == "nan")
+                contains_nan = False
+                for el in a.ravel():
+                    # isnan doesn't work on elements of string arrays
+                    if np.issubdtype(type(el), np.number) and np.isnan(el):
+                        contains_nan = True
+                        break
             except TypeError:
                 # Don't know what to do. Fall back to omitting nan values and
                 # issue a warning.
