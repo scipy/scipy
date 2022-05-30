@@ -79,14 +79,14 @@ New features
   of execution time. See
   `gh-14300 <https://github.com/scipy/scipy/pull/14300>`__ for more details.
 
-- Add a `full_output` parameter to `scipy.optimize.curve_fit` to output
+- Add a ``full_output`` parameter to `scipy.optimize.curve_fit` to output
   additional solution information.
-- Add a `integrality` parameter to `scipy.optimize.differential_evolution`,
+- Add a ``integrality`` parameter to `scipy.optimize.differential_evolution`,
   enabling integer constraints on parameters.
-- Add a `vectorized` parameter to call a vectorized objective function only
+- Add a ``vectorized`` parameter to call a vectorized objective function only
   once per iteration. This can improve minimization speed by reducing
   interpreter overhead from the multiple objective function calls.
-- The default method of ``scipy.optimize.linprog`` is now ``'highs'``.
+- The default method of `scipy.optimize.linprog` is now ``'highs'``.
 - Added `scipy.optimize.milp`, new function for mixed-integer linear
   programming.
 - added Newton-TFQMR method to ``newton_krylov``
@@ -115,7 +115,7 @@ New features
   * ``array`` is a numpy array (backward compatible default);
   * ``function`` is a pointer to a lambda-function evaluating the
   Laplacian-vector or Laplacian-matrix product;
-  * ``lo`` results in the format of the `LinearOperator`.
+  * ``lo`` results in the format of the ``LinearOperator``.
 
 `scipy.sparse.linalg` improvements
 ==================================
@@ -123,8 +123,8 @@ New features
 
 `scipy.spatial` improvements
 ============================
-- Add a `order` parameter to `scipy.spatial.transform.Rotation.from_quat` and
-  `scipy.spatial.transform.Rotation.as_quat` to specify quaternion format.
+- Add an ``order`` parameter to `scipy.spatial.transform.Rotation.from_quat` 
+  and `scipy.spatial.transform.Rotation.as_quat` to specify quaternion format.
 
 
 `scipy.stats` improvements
@@ -136,11 +136,11 @@ New features
   size limitations, it makes it possible to perform similar tests using arbitrary
   statistics and distributions.
 
-- Several ``scipy.stats`` functions support new ``axis`` (integer or tuple of
+- Several `scipy.stats` functions support new ``axis`` (integer or tuple of
   integers) and ``nan_policy`` ('raise', 'omit', or 'propagate'), and
   ``keepdims`` arguments.
   These functions also support masked arrays as inputs, even if they do not have
-  a ``scipy.stats.mstats`` counterpart. Edge cases for multidimensional arrays,
+  a `scipy.stats.mstats` counterpart. Edge cases for multidimensional arrays,
   such as when axis-slices have no unmasked elements or entire inputs are of
   size zero, are handled consistently.
 
@@ -228,8 +228,8 @@ Deprecated features
   or ``highs-ipm`` should be used in new code.
 - Support for non-numeric arrays has been deprecated from ``stats.mode``.
   ``pandas.DataFrame.mode`` can be used instead.
-- The function ``spatial.distance.kulsinski`` has been deprecated in favor
-  of ``spatial.distance.kulczynski1``.
+- The function `spatial.distance.kulsinski` has been deprecated in favor
+  of `spatial.distance.kulczynski1`.
 - The ``maxiter`` keyword of the truncated Newton (TNC) algorithm has been
   deprecated in favour of ``maxfun``.
 - The ``vertices`` keyword of ``Delauney.qhull`` now raises a
@@ -247,14 +247,14 @@ The following previously deprecated features are affected:
 
 - Object arrays in sparse matrices now raise an error
 - Inexact indices into sparse matrices now raise an error
-- Passing ``radius=None`` to ``spatial.SphericalVoronoi`` now raises an error
-  (not adding ``radius`` defaults to 1, as before)
+- Passing ``radius=None`` to `scipy.spatial.SphericalVoronoi` now raises an
+  error (not adding ``radius`` defaults to 1, as before)
 - Several BSpline methods now raise an error if inputs have ``ndim > 1``.
 - The ``_rvs`` method of statistical distributions now requires a ``size``
   parameter
 - Passing a ``fillvalue`` that cannot be cast to the output type in
-  ``signal.convolve2d`` now raises an error
-- The ``spatial.distance`` now enforce that the input vectors are
+  `scipy.signal.convolve2d` now raises an error
+- `scipy.spatial.distance` now enforces that the input vectors are
   one-dimensional.
 - Removed ``stats.itemfreq``
 - Removed ``stats.median_absolute_deviation``
@@ -289,7 +289,7 @@ Backwards incompatible changes
   Similarly, while masked elements of masked arrays are still ignored, the
   output will be a scalar or ``np.ndarray`` rather than a masked array with
   ``mask=False``.
-- The default method of ``scipy.optimize.linprog`` is now ``'highs'``, not
+- The default method of `scipy.optimize.linprog` is now ``'highs'``, not
   ``'interior-point'`` (which is now deprecated), so callback functions and some
   options are no longer supported with the default method.
 - For `scipy.stats.combine_pvalues`, the sign of the test statistic returned
