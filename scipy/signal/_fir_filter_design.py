@@ -318,7 +318,6 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
         between 0 and `nyq`. Default is 1.
 
         .. Deprecated:: 1.0.0
-
            `firwin` keyword argument `nyq` is deprecated in favour of `fs` and
            will be removed in SciPy 1.11.0.
     fs : float, optional
@@ -531,7 +530,6 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
         between 0 and `nyq`. Default is 1.
 
         .. Deprecated:: 1.0.0
-
            `firwin2` keyword argument `nyq` is deprecated in favour of `fs` and
            will be removed in SciPy 1.11.0.
     antisymmetric : bool, optional
@@ -723,7 +721,6 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
         The sampling frequency in Hz. Default is 1.
 
         .. Deprecated:: 1.0.0
-
            `remez` keyword argument `Hz` is deprecated in favour of `fs` and
            will be removed in SciPy 1.11.0.
     type : {'bandpass', 'differentiator', 'hilbert'}, optional
@@ -904,7 +901,6 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
         between 0 and `nyq` (inclusive). Default is 1.
 
         .. Deprecated:: 1.0.0
-
            `firls` keyword argument `nyq` is deprecated in favour of `fs` and
            will be removed in SciPy 1.11.0.
     fs : float, optional
