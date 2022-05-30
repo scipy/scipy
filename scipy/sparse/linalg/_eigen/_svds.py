@@ -293,6 +293,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                            largest=largest)
+        # lobpcg does not guarantee exactly orthonormal eigenvectors
+        eigvec, _ = np.linalg.qr(eigvec)
 
     elif solver == 'propack':
         jobu = return_singular_vectors in {True, 'u'}
@@ -325,10 +327,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             v0 = random_state.uniform(size=(min(A.shape),))
         _, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                           ncv=ncv, which=which, v0=v0)
-
-    # solver lobpcg does not guarantee exactly orthonormal eigenvectors
-    if solver == 'lobpcg':
-        eigvec, _ = np.linalg.qr(eigvec)
 
     Av = X_matmat(eigvec)
     if not return_singular_vectors:
