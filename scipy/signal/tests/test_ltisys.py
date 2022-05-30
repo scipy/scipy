@@ -555,7 +555,7 @@ class Test_lsim2(_TestLsimFunctions):
             t, y, x = lsim2(*args, **kwargs)
         return t, np.squeeze(y), np.squeeze(x)
 
-    def test_01(self):
+    def test_integrator_nonequal_timestamp(self):
         t = np.array([0.0, 1.0, 1.0, 3.0])
         u = np.array([0.0, 0.0, 1.0, 1.0])
         # Simple integrator: x'(t) = u(t)
@@ -564,7 +564,7 @@ class Test_lsim2(_TestLsimFunctions):
         expected_x = np.maximum(1.0, tout)
         assert_almost_equal(x, expected_x)
 
-    def test_02(self):
+    def test_integrator_nonequal_timestamp_kwarg(self):
         t = np.array([0.0, 1.0, 1.0, 1.1, 1.1, 2.0])
         u = np.array([0.0, 0.0, 1.0, 1.0, 0.0, 0.0])
         # Simple integrator:  x'(t) = u(t)
@@ -573,7 +573,7 @@ class Test_lsim2(_TestLsimFunctions):
         expected_x = np.array([0.0, 0.0, 0.0, 0.1, 0.1, 0.1])
         assert_almost_equal(x, expected_x)
 
-    def test_03(self):
+    def test_default_arguments(self):
         # Test use of the default values of the arguments `T` and `U`.
         # Second order system with a repeated root: x''(t) + 2*x(t) + x(t) = 0.
         # With initial conditions x(0)=1.0 and x'(t)=0.0, the exact solution
@@ -587,7 +587,7 @@ class Test_lsim2(_TestLsimFunctions):
 class _TestImpulseFuncs:
     # Common tests for impulse/impulse2 (= self.func)
 
-    def test_01(self):
+    def test_first_order(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact impulse response is x(t) = exp(-t).
         system = ([1.0], [1.0,1.0])
@@ -595,7 +595,7 @@ class _TestImpulseFuncs:
         expected_y = np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_02(self):
+    def test_first_order_fixed_time(self):
         # Specify the desired time values for the output.
 
         # First order system: x'(t) + x(t) = u(t)
@@ -609,7 +609,7 @@ class _TestImpulseFuncs:
         expected_y = np.exp(-t)
         assert_almost_equal(y, expected_y)
 
-    def test_03(self):
+    def test_first_order_initial(self):
         # Specify an initial condition as a scalar.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
@@ -619,7 +619,7 @@ class _TestImpulseFuncs:
         expected_y = 4.0 * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_04(self):
+    def test_first_order_initial_list(self):
         # Specify an initial condition as a list.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
@@ -629,14 +629,14 @@ class _TestImpulseFuncs:
         expected_y = 4.0 * np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_05(self):
+    def test_integrator(self):
         # Simple integrator: x'(t) = u(t)
         system = ([1.0], [1.0,0.0])
         tout, y = self.func(system)
         expected_y = np.ones_like(tout)
         assert_almost_equal(y, expected_y)
 
-    def test_06(self):
+    def test_second_order(self):
         # Second order system with a repeated root:
         #     x''(t) + 2*x(t) + x(t) = u(t)
         # The exact impulse response is t*exp(-t).
@@ -671,7 +671,7 @@ class TestImpulse(_TestImpulseFuncs):
 
 
 class _TestStepFuncs:
-    def test_01(self):
+    def test_first_order(self):
         # First order system: x'(t) + x(t) = u(t)
         # Exact step response is x(t) = 1 - exp(-t).
         system = ([1.0], [1.0,1.0])
@@ -679,7 +679,7 @@ class _TestStepFuncs:
         expected_y = 1.0 - np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_02(self):
+    def test_first_order_fixed_time(self):
         # Specify the desired time values for the output.
 
         # First order system: x'(t) + x(t) = u(t)
@@ -693,7 +693,7 @@ class _TestStepFuncs:
         expected_y = 1 - np.exp(-t)
         assert_almost_equal(y, expected_y)
 
-    def test_03(self):
+    def test_first_order_initial(self):
         # Specify an initial condition as a scalar.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
@@ -703,7 +703,7 @@ class _TestStepFuncs:
         expected_y = 1 + 2.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_04(self):
+    def test_first_order_initial_list(self):
         # Specify an initial condition as a list.
 
         # First order system: x'(t) + x(t) = u(t), x(0)=3.0
@@ -713,7 +713,7 @@ class _TestStepFuncs:
         expected_y = 1 + 2.0*np.exp(-tout)
         assert_almost_equal(y, expected_y)
 
-    def test_05(self):
+    def test_integrator(self):
         # Simple integrator: x'(t) = u(t)
         # Exact step response is x(t) = t.
         system = ([1.0],[1.0,0.0])
@@ -721,7 +721,7 @@ class _TestStepFuncs:
         expected_y = tout
         assert_almost_equal(y, expected_y)
 
-    def test_06(self):
+    def test_second_order(self):
         # Second order system with a repeated root:
         #     x''(t) + 2*x(t) + x(t) = u(t)
         # The exact step response is 1 - (1 + t)*exp(-t).
@@ -742,7 +742,7 @@ class TestStep2(_TestStepFuncs):
         with warns(DeprecationWarning, match="step2 is deprecated"):
             return step2(*args, **kwargs)
 
-    def test_05(self):
+    def test_integrator(self):
         # This test is almost the same as the one it overwrites in the base
         # class.  The only difference is the tolerances passed to step2:
         # the default tolerances are not accurate enough for this test
