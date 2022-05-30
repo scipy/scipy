@@ -1122,9 +1122,9 @@ class TestMood:
         proc contents data=mt;
         proc print data=mt;
           format     Prob1 17.16 Prob2 17.16 Statistic 17.16 Z 17.16 ;
-            title “Mood Two-Sample Test”;
+            title "Mood Two-Sample Test";
         proc print data=myData;
-            title “Data for above results”;
+            title "Data for above results";
           run;
         """
         statistic, pvalue = stats.mood(x, y, alternative=alternative)
