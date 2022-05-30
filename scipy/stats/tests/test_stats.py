@@ -7553,8 +7553,8 @@ class TestContainsNaNTest:
         data4 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
         assert not _contains_nan(data4)[0]
 
-        data4 = np.array([1, 2, "3", np.nan], dtype='object')
-        assert _contains_nan(data4)[0]
+        data5 = np.array([1, 2, "3", np.nan], dtype='object')
+        assert _contains_nan(data5)[0]
 
     def test_contains_nan_2d(self):
         data1 = np.array([[1, 2], [3, 4]])
@@ -7566,5 +7566,5 @@ class TestContainsNaNTest:
         data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
         assert not _contains_nan(data3)[0]
 
-        data3 = np.array([["1", 2], [3, np.nan]], dtype='object')
-        assert _contains_nan(data3)[0]
+        data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
+        assert _contains_nan(data4)[0]
