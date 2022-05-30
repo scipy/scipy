@@ -66,6 +66,15 @@ main branch and add release notes for that new version.  Send an email to
 scipy-dev to let people know that you've done this.
 
 
+Updating the version switcher
+------------------------------
+The version switcher dropdown needs to be updated with the new release
+information.
+
+- ``doc/source/_static/version_switcher.json``: add the new release as well
+  as the new development version.
+
+
 Updating upper bounds of dependencies
 -------------------------------------
 In main we do not set upper bounds, because we want to test new releases or
