@@ -87,6 +87,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
 
 
 def _contains_nan(a, nan_policy='propagate', use_summation=True):
+    if not isinstance(a, np.ndarray):
+        use_summation = False  # some array_likes ignore nans (e.g. pandas)
     policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
         raise ValueError("nan_policy must be one of {%s}" %
