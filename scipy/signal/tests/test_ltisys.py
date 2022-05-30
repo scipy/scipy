@@ -543,7 +543,8 @@ class TestLsim(_TestLsimFunctions):
         u = np.array([0.0, 0.0, 1.0, 1.0])
         # Simple integrator: x'(t) = u(t)
         system = ([1.0], [1.0, 0.0])
-        with assert_raises(ValueError, match="Time steps are not equally spaced."):
+        with assert_raises(ValueError,
+                           match="Time steps are not equally spaced."):
             tout, y, x = self.func(system, u, t, X0=[1.0])
 
 

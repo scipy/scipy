@@ -1809,16 +1809,16 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     Notes
     -----
-    This function uses `scipy.integrate.odeint` to solve the system's 
+    This function uses `scipy.integrate.odeint` to solve the system's
     differential equations.  Additional keyword arguments given to `lsim2`
     are passed on to `scipy.integrate.odeint`.  See the documentation
     for `scipy.integrate.odeint` for the full list of arguments.
 
     As `lsim2` is now deprecated, users are adviced to switch to the faster
-    and more accurate `lsim` function. Keyword arguments for 
-    `scipy.integrate.odeint` are not supported in `lsim`, but not needed in 
+    and more accurate `lsim` function. Keyword arguments for
+    `scipy.integrate.odeint` are not supported in `lsim`, but not needed in
     general.
-    
+
     If (num, den) is passed in for ``system``, coefficients for both the
     numerator and denominator should be specified in descending exponent
     order (e.g. ``s^2 + 3s + 5`` would be represented as ``[1, 3, 5]``).
@@ -2338,7 +2338,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     the differential equation solver `scipy.integrate.odeint`.
 
     As `impulse2` is now deprecated, users are adviced to switch to the faster
-    and more accurate `impulse` function. Keyword arguments for 
+    and more accurate `impulse` function. Keyword arguments for
     `scipy.integrate.odeint` are not supported in `impulse`, but not needed in
     general.
 
@@ -2364,8 +2364,8 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     >>> plt.plot(t, y)
 
     """
-    warnings.warn("impulse2 is deprecated and will be removed from scipy 1.11. "
-                  "Use the feature equivalent impulse function.",
+    warnings.warn("impulse2 is deprecated and will be removed from "
+                  "scipy 1.11. Use the feature equivalent impulse function.",
                   DeprecationWarning, stacklevel=2)
 
     if isinstance(system, lti):
@@ -2390,9 +2390,10 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     # solve using lsim2().
     ic = B + X0
     with warnings.catch_warnings():
-        warnings.filterwarnings(action='ignore', message="lsim2 is deprecated " 
-            "and will be removed from scipy 1.11. "
-            "Use the feature equivalent lsim function.", 
+        warnings.filterwarnings(
+            action='ignore',
+            message="lsim2 is deprecated and will be removed from scipy 1.11. "
+                    "Use the feature equivalent lsim function.",
             category=DeprecationWarning)
         Tr, Yr, Xr = lsim2(sys, T=T, X0=ic, **kwargs)
     return Tr, Yr
@@ -2514,8 +2515,9 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     Notes
     -----
     As `step2` is now deprecated, users are adviced to switch to the faster
-    and more accurate `step` function. Keyword arguments for `scipy.integrate.odeint` are not
-    supported in `step`, but not needed in general.
+    and more accurate `step` function. Keyword arguments for
+    `scipy.integrate.odeint` are not supported in `step`, but not needed in
+    general.
 
     If (num, den) is passed in for ``system``, coefficients for both the
     numerator and denominator should be specified in descending exponent
@@ -2560,9 +2562,10 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
         T = asarray(T)
     U = ones(T.shape, sys.A.dtype)
     with warnings.catch_warnings():
-        warnings.filterwarnings(action='ignore', message="lsim2 is deprecated " 
-            "and will be removed from scipy 1.11. "
-            "Use the feature equivalent lsim function.", 
+        warnings.filterwarnings(
+            action='ignore',
+            message="lsim2 is deprecated and will be removed from scipy 1.11. "
+            "Use the feature equivalent lsim function.",
             category=DeprecationWarning)
         vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]
