@@ -43,10 +43,6 @@ New features
 ************
 
 
-`scipy.cluster` improvements
-============================
-
-
 `scipy.interpolate` improvements
 ================================
 - Speed up the ``RBFInterpolator`` evaluation with high dimensional
@@ -67,8 +63,6 @@ New features
 - `scipy.linalg.expm` now accepts nD arrays. It's speed is also improved.
 - Minimum required LAPACK version is bumped to ``3.7.1``
 
-`scipy.ndimage` improvements
-============================
 
 `scipy.fft` improvements
 ========================
@@ -131,10 +125,6 @@ New features
 ============================
 - Add a `order` parameter to `scipy.spatial.transform.Rotation.from_quat` and
   `scipy.spatial.transform.Rotation.as_quat` to specify quaternion format.
-
-
-`scipy.special` improvements
-============================
 
 
 `scipy.stats` improvements
@@ -238,30 +228,38 @@ Deprecated features
   or ``highs-ipm`` should be used in new code.
 - Support for non-numeric arrays has been deprecated from ``stats.mode``.
   ``pandas.DataFrame.mode`` can be used instead.
+- The function ``spatial.distance.kulsinski`` has been deprecated in favor
+  of ``spatial.distance.kulczynski1``.
+- The ``maxiter`` keyword of the truncated Newton (TNC) algorithm has been
+  deprecated in favour of ``maxfun``.
+- The ``vertices`` keyword of ``Delauney.qhull`` now raises a
+  DeprecationWarning, after having been deprecated in documentation only
+  for a long time.
 - The ``extradoc`` keyword of ``rv_continuous``, ``rv_discrete`` and
   ``rv_sample`` now raises a DeprecationWarning, after having been deprecated in
-  documentation only for a long time already.
+  documentation only for a long time.
 
 ********************
 Expired Deprecations
 ********************
 There is an ongoing effort to follow through on long-standing deprecations.
 The following previously deprecated features are affected:
+
 - Object arrays in sparse matrices now raise an error
 - Inexact indices into sparse matrices now raise an error
 - Passing ``radius=None`` to ``spatial.SphericalVoronoi`` now raises an error
-(not adding ``radius`` defaults to 1, as before)
+  (not adding ``radius`` defaults to 1, as before)
 - Several BSpline methods now raise an error if inputs have ``ndim > 1``.
 - The ``_rvs`` method of statistical distributions now requires a ``size``
-parameter
+  parameter
 - Passing a ``fillvalue`` that cannot be cast to the output type in
-``signal.convolve2d`` now raises an error
+  ``signal.convolve2d`` now raises an error
 - The ``spatial.distance`` now enforce that the input vectors are
-one-dimensional.
+  one-dimensional.
 - Removed ``stats.itemfreq``
 - Removed ``stats.median_absolute_deviation``
 - Removed ``n_jobs`` keyword argument and use of ``k=None`` from
-``kdtree.query``
+  ``kdtree.query``
 - Removed ``right`` keyword from ``interpolate.PPoly.extend``
 - Removed ``debug`` keyword from ``scipy.linalg.solve_*``
 - Removed class ``_ppform`` ``scipy.interpolate``
@@ -269,16 +267,16 @@ one-dimensional.
 - Removed ``mlab`` truncation mode from ``cluster.dendrogram``
 - Removed ``cluster.vq.py_vq2``
 - Removed keyword arguments ``ftol`` and ``xtol`` from
-``optimize.minimize(method='Nelder-Mead')``
+  ``optimize.minimize(method='Nelder-Mead')``
 - Removed ``signal.windows.hanning``
 - Removed LAPACK ``gegv`` functions from ``linalg``; this raises the minimally
-required LAPACK version to 3.7.1
+  required LAPACK version to 3.7.1
 - Removed ``spatial.distance.matching``
 - Removed the alias ``scipy.random`` for ``numpy.random``
 - Removed docstring related functions from ``scipy.misc`` (``docformat``,
-``inherit_docstring_from``, ``extend_notes_in_docstring``,
-``replace_notes_in_docstring``, ``indentcount_lines``, ``filldoc``,
-``unindent_dict``, ``unindent_string``).
+  ``inherit_docstring_from``, ``extend_notes_in_docstring``,
+  ``replace_notes_in_docstring``, ``indentcount_lines``, ``filldoc``,
+  ``unindent_dict``, ``unindent_string``).
 - Removed ``linalg.pinv2``
 
 ******************************
@@ -344,10 +342,10 @@ etc.) had to be explicitly imported. Now, these subpackages are lazily loaded
 as soon as they are accessed, so that the following is possible (if desired
 for interactive use, it's not actually recommended for code,
 see :ref:`scipy-api`):
-`import scipy as sp; sp.fft.dct([1, 2, 3])`. Advantages include: making it
+``import scipy as sp; sp.fft.dct([1, 2, 3])``. Advantages include: making it
 easier to navigate SciPy in interactive terminals, reducing subpackage import
 conflicts (which before required
-`import networkx.linalg as nla; import scipy.linalg as sla`),
+``import networkx.linalg as nla; import scipy.linalg as sla``),
 and avoiding repeatedly having to update imports during teaching &
 experimentation. Also see
 [the related community specification document](https://scientific-python.org/specs/spec-0001/).
@@ -443,15 +441,16 @@ Authors
 * Sameer Deshmukh (13) +
 * Niels Doucet (1) +
 * DWesl (8)
+* eytanadler (30) +
 * Thomas J. Fan (5)
 * Isuru Fernando (3)
 * Joseph Fox-Rabinovitz (1)
 * Ryan Gibson (4) +
-* Ralf Gommers (292)
+* Ralf Gommers (302)
 * Srinivas Gorur-Shandilya (1) +
 * Alex Griffing (2)
 * h-vetinari (3)
-* Matt Haberland (428)
+* Matt Haberland (435)
 * Tristan Hearn (1) +
 * Jonathan Helgert (1) +
 * Samuel Hinton (1) +
@@ -463,7 +462,7 @@ Authors
 * jyuv (12) +
 * Chris Keefe (1) +
 * Robert Kern (4)
-* Andrew Knyazev (9)
+* Andrew Knyazev (11)
 * Matthias Koeppe (4) +
 * Sergey Koposov (1)
 * Volodymyr Kozachynskyi (1) +
@@ -489,18 +488,19 @@ Authors
 * Matthew Murray (1) +
 * Andrew Nelson (50)
 * Dimitri Papadopoulos Orfanos (1) +
+* Evgueni Ovtchinnikov (2) +
 * Sambit Panda (1)
 * Nick Papior (2)
-* Tirth Patel (40)
+* Tirth Patel (43)
 * Petar Mlinarić (1)
 * petroselo (1) +
-* Ilhan Polat (63)
+* Ilhan Polat (64)
 * Anthony Polloreno (1)
 * Amit Portnoy (1) +
 * Quentin Barthélemy (9)
 * Patrick N. Raanes (1) +
-* Tyler Reddy (83)
-* Pamphile Roy (188)
+* Tyler Reddy (93)
+* Pamphile Roy (192)
 * Vivek Roy (2) +
 * Niyas Sait (2) +
 * Atsushi Sakai (25)
@@ -532,6 +532,7 @@ Authors
 * Samuel Wallan (5)
 * Stefan van der Walt (8)
 * Warren Weckesser (81)
+* Anreas Weh (1)
 * Nils Werner (1)
 * Aviv Yaish (1) +
 * Dowon Yi (1)
@@ -543,7 +544,7 @@ Authors
 * Pavel Zun (1) +
 * David Zwicker (1) +
 
-A total of 149 people contributed to this release.
+A total of 152 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -560,6 +561,7 @@ Issues closed for 1.9.0
 * `#3758 <https://github.com/scipy/scipy/issues/3758>`__: discrete distribution defined by \`values\` with non-integer...
 * `#4130 <https://github.com/scipy/scipy/issues/4130>`__: BUG: stats: fisher_exact returns incorrect p-value
 * `#4897 <https://github.com/scipy/scipy/issues/4897>`__: expm is 10x as slow as matlab according to http://stackoverflow.com/questions/30048315
+* `#5103 <https://github.com/scipy/scipy/issues/5103>`__: Docs suggest scipy.sparse.linalg.expm_multiply supports LinearOperator...
 * `#5266 <https://github.com/scipy/scipy/issues/5266>`__: Deprecated routines in Netlib LAPACK >3.5.0
 * `#5890 <https://github.com/scipy/scipy/issues/5890>`__: Undefined behavior when using scipy.interpolate.RegularGridInterpolator...
 * `#5982 <https://github.com/scipy/scipy/issues/5982>`__: Keyword collision in scipy.stats.levy_stable.interval
@@ -577,6 +579,7 @@ Issues closed for 1.9.0
 * `#9999 <https://github.com/scipy/scipy/issues/9999>`__: BUG: malloc() calls in Cython and C that are not checked for...
 * `#10983 <https://github.com/scipy/scipy/issues/10983>`__: LOBPCG inefficinet when computing > 20% of eigenvalues
 * `#11145 <https://github.com/scipy/scipy/issues/11145>`__: unexpected SparseEfficiencyWarning at scipy.sparse.linalg.splu
+* `#11406 <https://github.com/scipy/scipy/issues/11406>`__: scipy.sparse.linalg.svds (v1.4.1) on singular matrix does not...
 * `#11447 <https://github.com/scipy/scipy/issues/11447>`__: scipy.interpolate.interpn: Handle ValueError('The points in dimension...
 * `#11828 <https://github.com/scipy/scipy/issues/11828>`__: UnivariateSpline gives varying results when multithreaded on...
 * `#12456 <https://github.com/scipy/scipy/issues/12456>`__: Add generalized mean calculation
@@ -691,6 +694,7 @@ Pull requests for 1.9.0
 ***********************
 
 * `#9523 <https://github.com/scipy/scipy/pull/9523>`__: ENH: improvements to the Stable distribution
+* `#11829 <https://github.com/scipy/scipy/pull/11829>`__: Fixes safe handling of small singular values in svds.
 * `#13490 <https://github.com/scipy/scipy/pull/13490>`__: DEV: stats: check for distribution/method keyword name collisions
 * `#13572 <https://github.com/scipy/scipy/pull/13572>`__: ENH: n-D and nan_policy support for scipy.stats.percentileofscore
 * `#13918 <https://github.com/scipy/scipy/pull/13918>`__: ENH: Poisson Disk sampling for QMC
@@ -698,6 +702,7 @@ Pull requests for 1.9.0
 * `#14003 <https://github.com/scipy/scipy/pull/14003>`__: DOC: clarify the definition of the pdf of \`stats.fisk\`
 * `#14036 <https://github.com/scipy/scipy/pull/14036>`__: ENH: fix numerical issues in roots_jacobi and related special...
 * `#14142 <https://github.com/scipy/scipy/pull/14142>`__: DOC: Add better error message for unpacking issue
+* `#14143 <https://github.com/scipy/scipy/pull/14143>`__: Support LinearOperator in expm_multiply
 * `#14300 <https://github.com/scipy/scipy/pull/14300>`__: ENH: Adding DIRECT algorithm to \`\`scipy.optimize\`\`
 * `#14576 <https://github.com/scipy/scipy/pull/14576>`__: ENH: stats: add one-sample Monte Carlo hypothesis test
 * `#14642 <https://github.com/scipy/scipy/pull/14642>`__: ENH: add Lloyd's algorithm to \`scipy.spatial\` to improve a...
@@ -835,6 +840,7 @@ Pull requests for 1.9.0
 * `#15583 <https://github.com/scipy/scipy/pull/15583>`__: DOC: clarify O(N) SO(N) in random rotations
 * `#15590 <https://github.com/scipy/scipy/pull/15590>`__: DOC: factorialk docstring inconsistent with code
 * `#15597 <https://github.com/scipy/scipy/pull/15597>`__: DOC: update \`hyp2f1\` docstring example based on doctest
+* `#15598 <https://github.com/scipy/scipy/pull/15598>`__: BUG/ENH: \`lsq_linear\`: fixed incorrect \`lsmr_tol\` in first...
 * `#15603 <https://github.com/scipy/scipy/pull/15603>`__: BENCH: optimize: milp: add MILP benchmarks
 * `#15606 <https://github.com/scipy/scipy/pull/15606>`__: MAINT: allow multiplication sign \`×\`
 * `#15611 <https://github.com/scipy/scipy/pull/15611>`__: BUG:signal: Fix median bias in csd(..., average="median")
@@ -994,6 +1000,7 @@ Pull requests for 1.9.0
 * `#16104 <https://github.com/scipy/scipy/pull/16104>`__: DOC: stats: symmetry not checked for (inv)wishart distributions
 * `#16111 <https://github.com/scipy/scipy/pull/16111>`__: BUG: Fix norm for sparse arrays
 * `#16115 <https://github.com/scipy/scipy/pull/16115>`__: MAINT: merge \`environment.yml\` and \`environment_meson.yml\`
+* `#16117 <https://github.com/scipy/scipy/pull/16117>`__: MAINT: stats.wilcoxon: return \`zstatistic\` only when \`method='approx'\`
 * `#16118 <https://github.com/scipy/scipy/pull/16118>`__: Download openblas binary from GH repo
 * `#16122 <https://github.com/scipy/scipy/pull/16122>`__: CI: Speed up ci build that keeps timing out
 * `#16125 <https://github.com/scipy/scipy/pull/16125>`__: DOC: interpolate: fix typos "the the" -> "the"
@@ -1045,6 +1052,11 @@ Pull requests for 1.9.0
 * `#16282 <https://github.com/scipy/scipy/pull/16282>`__: BUG: special: DECREF scipy_special object before exiting sf_error().
 * `#16283 <https://github.com/scipy/scipy/pull/16283>`__: Corrections To Docs
 * `#16287 <https://github.com/scipy/scipy/pull/16287>`__: BLD: sync pyproject.toml changes from oldest-supported-numpy
+* `#16289 <https://github.com/scipy/scipy/pull/16289>`__: MAINT: stats: remove function-specific warning messages
 * `#16290 <https://github.com/scipy/scipy/pull/16290>`__: BLD: fix issue with \`python setup.py install\` and \`_directmodule\`
 * `#16295 <https://github.com/scipy/scipy/pull/16295>`__: MAINT: move \`import_array\` before module creation in module...
 * `#16296 <https://github.com/scipy/scipy/pull/16296>`__: DOC: REL: fix \`make dist\` issue with missing dependencies
+* `#16303 <https://github.com/scipy/scipy/pull/16303>`__: MAINT: revert addition of multivariate_beta
+* `#16304 <https://github.com/scipy/scipy/pull/16304>`__: MAINT: add a more informative error message for broken installs
+* `#16309 <https://github.com/scipy/scipy/pull/16309>`__: BLD: CI: fix issue in wheel metadata, and add basic "build in...
+* `#16316 <https://github.com/scipy/scipy/pull/16316>`__: REL: update version switcher for 1.8.1
