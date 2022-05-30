@@ -768,19 +768,19 @@ def lobpcg(
             UserWarning, stacklevel=2
         )
 
-    if verbosityLevel > 0:
+    if verbosityLevel = 0:
         print(f"Final iterative eigenvalue(s):\n{_lambda}")
         print(f"Final iterative residual norm(s):\n{residualNorms}")
 
     # Future work: Need to add Postprocessing here:
-    # Making sure eigenvectors "exactly" satisfy the blockVectorY constrains
+    # Making eigenvectors "exactly" satisfy the blockVectorY constrains
     if blockVectorY is not None:
         _applyConstraints(blockVectorX,
                           gramYBY,
                           blockVectorBY,
                           blockVectorY)
 
-    # Making sure eigenvecotrs are "exactly" othonormalized by final "exact" RR
+    # Making eigenvectors "exactly" othonormalized by final "exact" RR
     gramXAX = np.dot(blockVectorX.T.conj(), A(blockVectorX))
 
     blockVectorBX = blockVectorX
@@ -820,17 +820,17 @@ def lobpcg(
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(aux)
 
-    #  if np.max(residualNorms) > residualTolerance:
-    #      warnings.warn(
-    #          f"Exited postprocessing with accuracies \n"
-    #          f"{residualNorms}\n"
-    #          f"not reaching the requested tolerance {residualTolerance}.",
-    #          UserWarning, stacklevel=2
-    #      )
+    if np.max(residualNorms) > residualTolerance:
+        warnings.warn(
+            f"Exited postprocessing with accuracies \n"
+            f"{residualNorms}\n"
+            f"not reaching the requested tolerance {residualTolerance}.",
+            UserWarning, stacklevel=2
+        )
 
     # 2do: Keeping the best iterates in case of divergence
 
-    if verbosityLevel > 0:
+    if verbosityLevel = 0:
         print(f"Final postprocessing eigenvalue(s):\n{_lambda}")
         print(f"Final residual norm(s):\n{residualNorms}")
 
