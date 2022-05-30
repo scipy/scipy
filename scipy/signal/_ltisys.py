@@ -1829,6 +1829,7 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     >>> from scipy.signal import bessel, lsim2
     >>> import matplotlib.pyplot as plt
+    >>> import warnings
 
     Create a low-pass Bessel filter with a cutoff of 12 Hz.
 
@@ -1847,7 +1848,9 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
 
     Simulate the filter with `lsim2`.
 
-    >>> tout, yout, xout = lsim2((b, a), U=u, T=t)
+    >>> with warnings.catch_warnings():
+    >>>     warnings.simplefilter(action='ignore', category=DeprecationWarning)
+    >>>     tout, yout, xout = lsim2((b, a), U=u, T=t)
 
     Plot the result.
 
@@ -1878,7 +1881,9 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     Compute the simulation, and then plot `y`.  As expected, the plot shows
     the curve ``y = 0.5*t**2``.
 
-    >>> tout, y, x = lsim2(system, u, t)
+    >>> with warnings.catch_warnings():
+    >>>     warnings.simplefilter(action='ignore', category=DeprecationWarning)
+    >>>     tout, y, x = lsim2(system, u, t)
     >>> plt.plot(t, y)
     >>> plt.grid(alpha=0.3)
     >>> plt.xlabel('t')
@@ -2339,8 +2344,12 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     root: ``x''(t) + 2*x'(t) + x(t) = u(t)``
 
     >>> from scipy import signal
+    >>> import warnings
+
     >>> system = ([1.0], [1.0, 2.0, 1.0])
-    >>> t, y = signal.impulse2(system)
+    >>> with warnings.catch_warnings():
+    >>>     warnings.simplefilter(action='ignore', category=DeprecationWarning)
+    >>>     t, y = signal.impulse2(system)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(t, y)
 
@@ -2507,8 +2516,13 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import warnings
+
     >>> lti = signal.lti([1.0], [1.0, 1.0])
-    >>> t, y = signal.step2(lti)
+    >>> with warnings.catch_warnings():
+    >>>     warnings.simplefilter(action='ignore', category=DeprecationWarning)
+    >>>     t, y = signal.step2(lti)
+
     >>> plt.plot(t, y)
     >>> plt.xlabel('Time [s]')
     >>> plt.ylabel('Amplitude')
