@@ -791,18 +791,18 @@ def lobpcg(
     gramXAX = (gramXAX + gramXAX.T.conj()) / 2
     gramXBX = (gramXBX + gramXBX.T.conj()) / 2
     try:
-        _lambda, eigBlockVectorX = eigh(gramXAX,
+        _lambdaf, eigBlockVectorX = eigh(gramXAX,
                                        gramXBX,
                                        check_finite=False)
     except LinAlgError as e:
         raise ValueError("eigh has failed in lobpcg postprocessing") from e
 
-    ii = _get_indx(_lambda, sizeX, largest)
+    ii = _get_indx(_lambdaf, sizeX, largest)
     if verbosityLevel > 10:
         print(ii)
-        print(f"lambda:\n{_lambda}")
+        print(f"lambda:\n{_lambdaf}")
 
-    _lambda = _lambda[ii]
+    _lambda = _lambdaf[ii]
     eigBlockVector = eigBlockVector[:, ii]
 
     blockVectorX = np.dot(blockVectorX, eigBlockVectorX)
@@ -820,13 +820,13 @@ def lobpcg(
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(aux)
 
-    if np.max(residualNorms) > residualTolerance:
-        warnings.warn(
-            f"Exited postprocessing with accuracies \n"
-            f"{residualNorms}\n"
-            f"not reaching the requested tolerance {residualTolerance}.",
-            UserWarning, stacklevel=2
-        )
+    #  if np.max(residualNorms) > residualTolerance:
+    #      warnings.warn(
+    #          f"Exited postprocessing with accuracies \n"
+    #          f"{residualNorms}\n"
+    #          f"not reaching the requested tolerance {residualTolerance}.",
+    #          UserWarning, stacklevel=2
+    #      )
 
     # 2do: Keeping the best iterates in case of divergence
 
