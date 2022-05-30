@@ -2887,13 +2887,14 @@ def fligner(*samples, center='median', proportiontocut=0.05):
 
 @_axis_nan_policy_factory(lambda x1: (x1,), n_samples=4, n_outputs=1)
 def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
-    # obtain the unique values and the counts of each.
-    # "a_j, + b_j, = t_j, for j = 1, ... k", where `k` is the number of unique
+    # Obtain the unique values and their frequencies from the pooled samples.
+    # "a_j, + b_j, = t_j, for j = 1, ... k" where `k` is the number of unique
     # classes, and "[t]he number of values associated with the x's and y's in
     # the jth class will be denoted by a_j, and b_j respectively."
     # (Mielke, 312)
-    # Prepend `diffs` with a non-zero to indicate that the first element should
-    # be marked as not matching what preceded it.
+    # Reuse previously computed sorted array and `diff` arrays to obtain the
+    # unique values and counts. Prepend `diffs` with a non-zero to indicate
+    # that the first element should be marked as not matching what preceded it.
     diffs_prep = np.concatenate(([1], diffs))
     # Unique elements are where the was a difference between elements in the
     # sorted array
@@ -2901,10 +2902,9 @@ def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
     # The count of each element is the bin size for each set of consecutive
     # differences where the difference is zero. Replace nonzero differences
     # with 1 and then use the cumulative sum to count the indices.
-    t = np.bincount(np.cumsum(diffs_prep != 0))[1:]
+    t = np.bincount(np.cumsum(np.asarray(diffs_prep != 0, dtype=int)))[1:]
     k = len(uniques)
-    js = list(range(1, k + 1))
-
+    js = np.arange(1, k + 1, dtype=int)
     # the `b` array mentioned in the paper is not used, outside of the
     # calculation of `t`, so we do not need to calculate it separately. Here
     # we calculate `a`. In plain language, `a[j]` is the number of values in
@@ -2912,18 +2912,18 @@ def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
     sorted_xyx = np.sort(np.concatenate((xy, x)))
     diffs = np.diff(sorted_xyx)
     diffs_prep = np.concatenate(([1], diffs))
-    xyx_counts = np.bincount(np.cumsum(diffs_prep != 0))[1:]
+    diff_is_zero = np.asarray(diffs_prep != 0, dtype=int)
+    xyx_counts = np.bincount(np.cumsum(diff_is_zero))[1:]
     a = xyx_counts - t
     # "Define .. a_0 = b_0 = t_0 = S_0 = 0" (Mielke 312) so we shift  `a`
     # and `t` arrays over 1 to allow a first element of 0 to accommodate this
     # indexing.
     t = np.concatenate(([0], t))
     a = np.concatenate(([0], a))
-
     # S is built from `t`, so it does not need a preceding zero added on.
     S = np.cumsum(t)
     # define a copy of `S` with a prepending zero for later use to avoid
-    # indexing
+    # the need for indexing.
     S_i_m1 = np.concatenate(([0], S[:-1]))
 
     # Psi, as defined by the 6th unnumbered equation on page 313 (Mielke).
@@ -2934,17 +2934,14 @@ def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
 
     # define summation range for use in calculation of phi, as seen in sum
     # in the unnumbered equation on the bottom of page 312 (Mielke).
-    s_lower = [S[jsi - 1] + 1 for jsi in js]
-    s_upper = [S[jsi] + 1 for jsi in js]
-    phi_I = [range(s_lower[idx], s_upper[idx]) for idx in range(k)]
+    s_lower = S[js - 1] + 1
+    s_upper = S[js] + 1
+    phi_J = [np.arange(s_lower[idx], s_upper[idx]) for idx in range(k)]
 
     # for every range in the above array, determine the sum of psi(I) for
     # every element in the range. Divide all the sums by `t`. Following the
     # last unnumbered equation on page 312.
-    phis = []
-    for i in range(len(phi_I)):
-        psi_temp = [psi(phi_I_i) for phi_I_i in phi_I[i]]
-        phis.append(sum(psi_temp) / t[(i + 1)])
+    phis = [np.sum(psi(I_j)) for I_j in phi_J] / t[js]
 
     # `T` is equal to a[j] * phi[j], per the first unnumbered equation on
     # page 312. `phis` is already in the order based on `js`, so we index
