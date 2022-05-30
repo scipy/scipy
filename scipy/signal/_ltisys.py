@@ -2417,9 +2417,6 @@ def step(system, X0=None, T=None, N=None):
     yout : 1D ndarray
         Step response of system.
 
-    See also
-    --------
-    scipy.signal.step2
 
     Notes
     -----
