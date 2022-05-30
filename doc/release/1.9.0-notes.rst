@@ -310,6 +310,11 @@ Backwards incompatible changes
   `MultivariateNormalQMC`. It removes the methods `fast_forward` and `reset`.
 - Init of `MultinomialQMC` now require the number of trials with `n_trials`.
   Hence, `MultinomialQMC.random` output has now the correct shape ``(n, pvals)``.
+- Several function-specific warnings (``F_onewayConstantInputWarning``,
+  ``F_onewayBadInputSizesWarning``, ``PearsonRConstantInputWarning``, 
+  ``PearsonRNearConstantInputWarning``, ``SpearmanRConstantInputWarning``, and
+  ``BootstrapDegenerateDistributionWarning``) have been replaced with more
+  general warnings.
 
 
 *************
