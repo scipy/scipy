@@ -769,7 +769,13 @@ def lobpcg(
         )
 
     # Future work: Need to add Postprocessing here:
-    # Making sure eigenvectors "exactly" satisfy the blockVectorY constrains?
+    # Making sure eigenvectors "exactly" satisfy the blockVectorY constrains
+    if blockVectorY is not None:
+        _applyConstraints(blockVectorX,
+                          gramYBY,
+                          blockVectorBY,
+                          blockVectorY)
+
     # Making sure eigenvecotrs are "exactly" othonormalized by final "exact" RR
     # Keeping the best iterates in case of divergence
 
