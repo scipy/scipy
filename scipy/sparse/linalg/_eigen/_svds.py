@@ -289,7 +289,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             if rs_was_None:
                 X = np.random.RandomState(52).randn(min(A.shape), k)
             else:
-                X = random_state.uniform(size=(min(A.shape), k))
+                X = random_state.normal(size=(min(A.shape), k))
 
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                            largest=largest)
