@@ -787,7 +787,7 @@ def lobpcg(
     if B is not None:
         blockVectorBX = B(blockVectorX)
     gramXBX = np.dot(blockVectorX.T.conj(), blockVectorBX)
-    _handle_gramA_gramB_verbosity(gramXAX, gramXBX)
+    #  _handle_gramA_gramB_verbosity(gramXAX, gramXBX)
     gramXAX = (gramXAX + gramXAX.T.conj()) / 2
     gramXBX = (gramXBX + gramXBX.T.conj()) / 2
     try:
@@ -796,6 +796,14 @@ def lobpcg(
                                        check_finite=False)
     except LinAlgError as e:
         raise ValueError("eigh has failed in lobpcg postprocessing") from e
+
+    ii = _get_indx(_lambda, sizeX, largest)
+    if verbosityLevel > 10:
+        print(ii)
+        print(f"lambda:\n{_lambda}")
+
+    _lambda = _lambda[ii]
+    eigBlockVector = eigBlockVector[:, ii]
 
     blockVectorX = np.dot(blockVectorX, eigBlockVectorX)
     blockVectorAX = np.dot(blockVectorAX, eigBlockVectorX)
