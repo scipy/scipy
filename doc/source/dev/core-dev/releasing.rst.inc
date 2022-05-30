@@ -66,7 +66,7 @@ main branch and add release notes for that new version.  Send an email to
 scipy-dev to let people know that you've done this.
 
 
-Udpdating the version switcher
+Updating the version switcher
 ------------------------------
 The version switcher dropdown needs to be updated with the new release
 information.
