@@ -189,7 +189,7 @@ New features
 - Add a `bits` parameter to `scipy.stats.qmc.Sobol`. It allows to use from 0
   to 64 bits to compute the sequence. Default is ``None`` which corresponds to
   30 for backward compatibility. Using a higher value allow to sample more
-  points. Note: it does not correspond to the output type.
+  points. Note: ``bits`` does not affect the output dtype.
 
 - Add a `integers` method to `scipy.stats.qmc.QMCEngine`. It allows sampling
   integers using any QMC sampler.
