@@ -410,10 +410,6 @@ class SVDSCommonTests:
         _check_svds(A, k, *res1a, atol=2e-10, rtol=1e-6)
         _check_svds(A, k, *res2a, atol=2e-10, rtol=1e-6)
 
-        message = "Arrays are not equal"
-        with pytest.raises(AssertionError, match=message):
-            assert_equal(res1a, res2a)
-
     def test_svd_maxiter(self):
         # check that maxiter works as expected: should not return accurate
         # solution after 1 iteration, but should with default `maxiter`
