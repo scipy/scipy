@@ -5986,9 +5986,9 @@ def test_binomtest():
     for p, res in zip(pp, results):
         assert_approx_equal(stats.binomtest(x, n, p).pvalue, res,
                             significant=12, err_msg='fail forp=%f' % p)
-        assert_approx_equal(stats.binomtest(50, 100, 0.1).pvalue,
-                            5.8320387857343647e-024,
-                            significant=12)
+    assert_approx_equal(stats.binomtest(50, 100, 0.1).pvalue,
+                        5.8320387857343647e-024,
+                        significant=12)
 
 
 def test_binomtest2():
