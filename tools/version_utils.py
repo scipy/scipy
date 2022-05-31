@@ -81,8 +81,7 @@ def git_version(cwd):
         return out
 
     try:
-        cwd = os.getcwd()
-        git_dir = os.path.join(cwd, ".git")
+        git_dir = os.path.join(os.path.dirname(__file__), '..')
         out = _minimal_ext_cmd(['git', '--git-dir', git_dir, 'rev-parse', 'HEAD'])
         GIT_REVISION = out.strip().decode('ascii')[:7]
 
