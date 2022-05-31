@@ -162,7 +162,7 @@ def main(argv):
     parser.add_argument("--mypy", action="store_true", default=False,
                         help="Run mypy on the codebase")
     parser.add_argument("--doc", action="append", nargs="?",
-                        const="html-scipyorg", help="Build documentation")
+                        const="html", help="Build documentation")
     parser.add_argument("--win-cp-openblas", action="store_true",
                         help="If set, and on Windows, copy OpenBLAS lib to "
                         "install directory after meson install. "
