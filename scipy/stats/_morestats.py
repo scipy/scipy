@@ -2647,7 +2647,8 @@ def levene(*samples, center='median', proportiontocut=0.05):
 
 
 @_deprecated("'binom_test' is deprecated in favour of"
-             " 'binomtest' and will be removed in Scipy 1.11.0.")
+             " 'binomtest' from version 1.7.0 and will"
+             " be removed in Scipy 1.12.0.")
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """Perform a test that the probability of success is p.
 
@@ -2658,9 +2659,9 @@ def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     that the probability of success in a Bernoulli experiment
     is `p`.
 
-    .. deprecated:: 0.19.0
+    .. deprecated:: 1.12.0
         'binom_test' is deprecated in favour of 'binomtest' and will
-        be removed in Scipy 1.11.0.
+        be removed in Scipy 1.12.0.
 
     Parameters
     ----------
