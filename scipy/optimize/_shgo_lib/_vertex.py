@@ -1,14 +1,11 @@
 import collections
 from abc import ABC, abstractmethod
-import logging
-import copy
+
 import numpy as np
-from functools import partial
+
 from scipy._lib._util import MapWrapper
 
-#from hyperct._field import *
 
-"""Vertex objects"""
 class VertexBase(ABC):
     """
     Base class for a vertex.
@@ -47,7 +44,6 @@ class VertexBase(ABC):
             self.x_a = np.array(self.x)
             return self.x_a
 
-
     @abstractmethod
     def connect(self, v):
         raise NotImplementedError("This method is only implemented with an "
@@ -67,19 +63,27 @@ class VertexBase(ABC):
         print(constr)
 
     def star(self):
-        """
-        Returns the star domain st(v) of the vertex.
+        """Returns the star domain ``st(v)`` of the vertex.
 
-        :param v: The vertex v in st(v)
-        :return: st, a set containing all the vertices in st(v)
+        Parameters
+        ----------
+        v :
+            The vertex ``v`` in ``st(v)``
+
+        Returns
+        -------
+        st : set
+            A set containing all the vertices in ``st(v)``
         """
         self.st = self.nn
         self.st.add(self)
         return self.st
 
 class VertexScalarField(VertexBase):
-    """Add homology properties of a scalar field f: R^n --> R associated with
-    the geometry built from the VertexBase class"""
+    """
+    Add homology properties of a scalar field f: R^n --> R associated with
+    the geometry built from the VertexBase class
+    """
 
     def __init__(self, x, field=None, nn=None, index=None, field_args=(),
                  g_cons=None, g_cons_args=()):
@@ -98,20 +102,18 @@ class VertexScalarField(VertexBase):
 
         # Note Vertex is only initiated once for all x so only
         # evaluated once
-        #self.feasible = None
+        # self.feasible = None
 
         # self.f is externally defined by the cache to allow parallel
         # processing
-        #self.f = None  # None type that will break arithmetic operations unless
-                       # defined
+        # None type that will break arithmetic operations unless defined
+        # self.f = None
 
         self.check_min = True
         self.check_max = True
 
-
     def connect(self, v):
-        """
-        Connects self to another vertex object v.
+        """Connects self to another vertex object v.
 
         Parameters
         ----------
@@ -147,8 +149,10 @@ class VertexScalarField(VertexBase):
         return self._min
 
     def maximiser(self):
-        """Check whether this vertex is strictly greater than all its
-        neighbours"""
+        """
+        Check whether this vertex is strictly greater than all its
+        neighbours.
+        """
         if self.check_max:
             self._max = all(self.f > v.f for v in self.nn)
             self.check_max = False
@@ -156,8 +160,10 @@ class VertexScalarField(VertexBase):
         return self._max
 
 class VertexVectorField(VertexBase):
-    """Add homology properties of a scalar field f: R^n --> R^m associated with
-    the geometry built from the VertexBase class"""
+    """
+    Add homology properties of a scalar field f: R^n --> R^m associated with
+    the geometry built from the VertexBase class.
+    """
 
     def __init__(self, x, sfield=None, vfield=None, field_args=(),
                  vfield_args=(), g_cons=None,
@@ -166,13 +172,9 @@ class VertexVectorField(VertexBase):
 
         raise NotImplementedError("This class is still a work in progress")
 
-"""
-Cache objects
-"""
-class VertexCacheBase(object):
-    """
-    Base class for a vertex cache for a simplicial complex.
-    """
+
+class VertexCacheBase:
+    """Base class for a vertex cache for a simplicial complex."""
     def __init__(self):
 
         self.cache = collections.OrderedDict()
@@ -185,11 +187,7 @@ class VertexCacheBase(object):
         return
 
     def size(self):
-        """
-        Returns the size of the vertex cache
-
-        :return:
-        """
+        """Returns the size of the vertex cache."""
         return self.index + 1
 
     def print_out(self):
@@ -244,7 +242,7 @@ class VertexCacheField(VertexCacheBase):
 
         if workers == 1:
             self.process_gpool = self.proc_gpool
-            if g_cons == None:
+            if g_cons is None:
                 self.process_fpool = self.proc_fpool_nog
             else:
                 self.process_fpool = self.proc_fpool_g
@@ -253,11 +251,10 @@ class VertexCacheField(VertexCacheBase):
             self._mapwrapper = MapWrapper(workers)
             self.pool = self._mapwrapper.pool
             self.process_gpool = self.pproc_gpool
-            if g_cons == None:
+            if g_cons is None:
                 self.process_fpool = self.pproc_fpool_nog
             else:
                 self.process_fpool = self.pproc_fpool_g
-
 
     def __getitem__(self, x, nn=None):
         try:
@@ -293,8 +290,7 @@ class VertexCacheField(VertexCacheBase):
                 break
 
     def compute_sfield(self, v):
-        """
-        Compute the scalar field values of a vertex object `v`.
+        """Compute the scalar field values of a vertex object `v`.
 
         Parameters
         ----------
@@ -306,14 +302,12 @@ class VertexCacheField(VertexCacheBase):
             self.nfev += 1
         except:
             v.f = np.inf
-            #logging.warning(f"Field function not found at x = {self.x_a}")
+            # logging.warning(f"Field function not found at x = {self.x_a}")
         if np.isnan(v.f):
             v.f = np.inf
 
     def proc_gpool(self):
-        """
-        Process all constraints.
-        """
+        """Process all constraints."""
         if self.g_cons is not None:
             for v in self.gpool:
                 self.feasibility_check(v)
@@ -321,9 +315,7 @@ class VertexCacheField(VertexCacheBase):
         self.gpool = set()
 
     def pproc_gpool(self):
-        """
-        Process all constraints in parallel.
-        """
+        """Process all constraints in parallel."""
         gpool_l = []
         for v in self.gpool:
             gpool_l.append(v.x_a)
@@ -333,9 +325,7 @@ class VertexCacheField(VertexCacheBase):
             v.feasible = g  # set vertex object attribute v.feasible = g (bool)
 
     def proc_fpool_g(self):
-        """
-        Process all field functions with constraints supplied.
-        """
+        """Process all field functions with constraints supplied."""
         for v in self.fpool:
             if v.feasible:
                 self.compute_sfield(v)
@@ -343,9 +333,7 @@ class VertexCacheField(VertexCacheBase):
         self.fpool = set()
 
     def proc_fpool_nog(self):
-        """
-        Process all field functions with no constraints supplied.
-        """
+        """Process all field functions with no constraints supplied."""
         for v in self.fpool:
             self.compute_sfield(v)
         # Clean the pool
@@ -388,18 +376,14 @@ class VertexCacheField(VertexCacheBase):
         self.fpool = set()
 
     def proc_minimisers(self):
-        """
-        Check for minimisers
-        """
+        """Check for minimisers."""
         for v in self:
             v.minimiser()
             v.maximiser()
 
 
 class ConstraintWraper(object):
-    """
-    Object to wrap constraints to pass to `multiprocessing.Pool`.
-    """
+    """Object to wrap constraints to pass to `multiprocessing.Pool`."""
     def __init__(self, g_cons, g_cons_args):
         self.g_cons = g_cons
         self.g_cons_args = g_cons_args
@@ -412,10 +396,8 @@ class ConstraintWraper(object):
                 break
         return vfeasible
 
-class FieldWraper(object):
-    """
-    Object to wrap field to pass to `multiprocessing.Pool`.
-    """
+class FieldWraper:
+    """Object to wrap field to pass to `multiprocessing.Pool`."""
     def __init__(self, field, field_args):
         self.field = field
         self.field_args = field_args

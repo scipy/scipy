@@ -679,7 +679,7 @@ class TestShgoArguments:
 
         bounds = [(None, None), ] * 41
         SHGOc = SHGO(f, bounds, sampling_method='sobol')
-       # SHGOc.sobol_points(2, 50)
+        # SHGOc.sobol_points(2, 50)
         SHGOc.sampling_function(2, 50)
 
     def test_14_local_iter(self):

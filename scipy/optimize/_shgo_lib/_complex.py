@@ -1,116 +1,104 @@
-"""
-Base classes for low memory simplicial complex structures.
-"""
-# Std. Library
+"""Base classes for low memory simplicial complex structures."""
 import copy
-import collections
 import logging
-import os
 import itertools
-import json
 import decimal
-from functools import lru_cache  # For Python 3 only
-from abc import ABC, abstractmethod
-# Required modules:
+from functools import lru_cache
+
 import numpy
 
-# Module specific imports
 from ._vertex import VertexCacheField
 
-import matplotlib
-from matplotlib import pyplot
-from matplotlib.patches import FancyArrowPatch
-from matplotlib.tri import Triangulation
-from mpl_toolkits.mplot3d import axes3d, Axes3D, proj3d
 
-matplotlib_available = True
-
-
-
-# Main complex class:
 class Complex:
+    """
+    Base class for a simplicial complex described as a cache of vertices
+    together with their connections.
+
+    Important methods:
+        Domain triangulation:
+                Complex.triangulate, Complex.split_generation
+        Triangulating arbitrary points (must be traingulable,
+            may exist outside domain):
+                Complex.triangulate(sample_set)
+        Converting another simplicial complex structure data type to the
+            structure used in Complex (ex. OBJ wavefront)
+                Complex.convert(datatype, data)
+
+    Important objects:
+        HC.V: The cache of vertices and their connection
+        HC.H: Storage structure of all vertex groups
+
+    Parameters
+    ----------
+    dim : int
+        Spatial dimensionality of the complex R^dim
+    domain : list of tuples, optional
+        The bounds [x_l, x_u]^dim of the hyperrectangle space
+        ex. The default domain is the hyperrectangle [0, 1]^dim
+        Note: The domain must be convex, non-convex spaces can be cut
+              away from this domain using the non-linear
+              g_cons functions to define any arbitrary domain
+              (these domains may also be disconnected from each other)
+    sfield :
+        A scalar function defined in the associated domain f: R^dim --> R
+    sfield_args : tuple
+        Additional arguments to be passed to `sfield`
+    vfield :
+        A scalar function defined in the associated domain
+                       f: R^dim --> R^m
+                   (for example a gradient function of the scalar field)
+    vfield_args : tuple
+        Additional arguments to be passed to sfield
+    symmetry :
+        If all the variables in the field are symmetric this
+        option will reduce complexity of the triangulation by O(n!)
+    constraints : dict or sequence of dict, optional
+        Constraints definition.
+        Function(s) ``R**n`` in the form::
+
+            g(x) <= 0 applied as g : R^n -> R^m
+            h(x) == 0 applied as h : R^n -> R^p
+
+        Each constraint is defined in a dictionary with fields:
+
+            type : str
+                Constraint type: 'eq' for equality, 'ineq' for inequality.
+            fun : callable
+                The function defining the constraint.
+            jac : callable, optional
+                The Jacobian of `fun` (only for SLSQP).
+            args : sequence, optional
+                Extra arguments to be passed to the function and Jacobian.
+
+        Equality constraint means that the constraint function result is to
+        be zero whereas inequality means that it is to be non-negative.constraints : dict or sequence of dict, optional
+        Constraints definition.
+        Function(s) ``R**n`` in the form::
+
+            g(x) <= 0 applied as g : R^n -> R^m
+            h(x) == 0 applied as h : R^n -> R^p
+
+        Each constraint is defined in a dictionary with fields:
+
+            type : str
+                Constraint type: 'eq' for equality, 'ineq' for inequality.
+            fun : callable
+                The function defining the constraint.
+            jac : callable, optional
+                The Jacobian of `fun` (unused).
+            args : sequence, optional
+                Extra arguments to be passed to the function and Jacobian.
+
+        Equality constraint means that the constraint function result is to
+        be zero whereas inequality means that it is to be non-negative.
+
+    workers : int  optional
+        Uses `multiprocessing.Pool <multiprocessing>`) to compute the field
+         functions in parrallel.
+    """
     def __init__(self, dim, domain=None, sfield=None, sfield_args=(),
                  symmetry=None, constraints=None, workers=1):
-        """
-        A base class for a simplicial complex described as a cache of vertices
-        together with their connections.
-
-        Important methods:
-            Domain triangulation:
-                    Complex.triangulate, Complex.split_generation
-            Triangulating arbitrary points (must be traingulable,
-                may exist outside domain):
-                    Complex.triangulate(sample_set)
-            Converting another simplicial complex structure data type to the
-                structure used in Complex (ex. OBJ wavefront)
-                    Complex.convert(datatype, data)
-
-        Important objects:
-            HC.V: The cache of vertices and their connection
-            HC.H: Storage structure of all vertex groups
-
-        :param dim: int, Spatial dimensionality of the complex R^dim
-        :param domain: list of tuples, optional
-                The bounds [x_l, x_u]^dim of the hyperrectangle space
-                ex. The default domain is the hyperrectangle [0, 1]^dim
-                Note: The domain must be convex, non-convex spaces can be cut
-                      away from this domain using the non-linear
-                      g_cons functions to define any arbitrary domain
-                      (these domains may also be disconnected from each other)
-        :param sfield: A scalar function defined in the associated domain
-                           f: R^dim --> R
-        :param sfield_args: tuple, Additional arguments to be passed to sfield
-        :param vfield: A scalar function defined in the associated domain
-                           f: R^dim --> R^m
-                       (for example a gradient function of the scalar field)
-        :param vfield_args: tuple, Additional arguments to be passed to sfield
-        :param symmetry: If all the variables in the field are symmetric this
-                option will reduce complexity of the triangulation by O(n!)
-
-        constraints : dict or sequence of dict, optional
-            Constraints definition.
-            Function(s) ``R**n`` in the form::
-
-                g(x) <= 0 applied as g : R^n -> R^m
-                h(x) == 0 applied as h : R^n -> R^p
-
-            Each constraint is defined in a dictionary with fields:
-
-                type : str
-                    Constraint type: 'eq' for equality, 'ineq' for inequality.
-                fun : callable
-                    The function defining the constraint.
-                jac : callable, optional
-                    The Jacobian of `fun` (only for SLSQP).
-                args : sequence, optional
-                    Extra arguments to be passed to the function and Jacobian.
-
-            Equality constraint means that the constraint function result is to
-            be zero whereas inequality means that it is to be non-negative.constraints : dict or sequence of dict, optional
-            Constraints definition.
-            Function(s) ``R**n`` in the form::
-
-                g(x) <= 0 applied as g : R^n -> R^m
-                h(x) == 0 applied as h : R^n -> R^p
-
-            Each constraint is defined in a dictionary with fields:
-
-                type : str
-                    Constraint type: 'eq' for equality, 'ineq' for inequality.
-                fun : callable
-                    The function defining the constraint.
-                jac : callable, optional
-                    The Jacobian of `fun` (unused).
-                args : sequence, optional
-                    Extra arguments to be passed to the function and Jacobian.
-
-            Equality constraint means that the constraint function result is to
-            be zero whereas inequality means that it is to be non-negative.
-
-        workers : int  optional
-            Uses `multiprocessing.Pool <multiprocessing>`) to compute the field
-             functions in parrallel.
-        """
         self.dim = dim
 
         # Domains
@@ -187,7 +175,6 @@ class Complex:
     # %% Triangulation methods
     def cyclic_product(self, bounds, origin, supremum, centroid=True):
         """Generate initial triangulation using cyclic product"""
-
         vot = tuple(origin)
         vut = tuple(supremum)  # Hyperrectangle supremum
         self.V[vot]
@@ -354,14 +341,15 @@ class Complex:
             yield vut
             return vut
 
-
     def triangulate(self, n=None, symmetry=None, centroid=True, printout=False):
         """
         Triangulate the initial domain, if n is not None then a limited number
         of points will be generated
 
-        :param n:
-        :param symmetry:
+        Parameters
+        ----------
+        n :
+        symmetry :
 
             Ex. Dictionary/hashtable
             f(x) = (x_1 + x_2 + x_3) + (x_4)**2 + (x_5)**2 + (x_6)**2
@@ -374,8 +362,7 @@ class Complex:
                        symmetry[5]: 3,  # symmetric to variable 4
                         }
 
-        :param printout:
-        :return:
+        printout :
 
         NOTES:
         ------
@@ -505,10 +492,7 @@ class Complex:
         return
 
     def refine_all(self, centroids=True):
-        """
-        Refine the entire domain of the current complex
-        :return:
-        """
+        """Refine the entire domain of the current complex."""
         try:
             self.triangulated_vectors
             tvs = copy.copy(self.triangulated_vectors)
@@ -966,10 +950,7 @@ class Complex:
         return
 
     def refine_star(self, v):
-        """
-        Refine the star domain of a vertex v
-        :param v: Vertex object
-        """
+        """Refine the star domain of a vertex `v`."""
         # Copy lists before iteration
         vnn = copy.copy(v.nn)
         v1nn = []
@@ -1047,9 +1028,12 @@ class Complex:
         """
         Convert a vertex-face mesh to a vertex-vertex mesh used by this class
 
-        :param vertices: list of vertices
-        :param simplices: list of simplices
-        :return:
+        Parameters
+        ----------
+        vertices : list
+            Vertices
+        simplices : list
+            Simplices
         """
         if self.dim > 1:
             for s in simplices:
@@ -1075,9 +1059,12 @@ class Complex:
         If near is not specified this method will search the entire simplicial
         complex structure.
 
-        :param v_x: tuple, coordinates of non-symmetric vertex
-        :param near: set or list of vertices, these are points near v to check for
-        :return:
+        Parameters
+        ----------
+        v_x : tuple
+            Coordinates of non-symmetric vertex
+        near : set or list
+            List of vertices, these are points near v to check for
         """
         if near is None:
             star = self.V
@@ -1098,7 +1085,7 @@ class Complex:
 
         S_rows = numpy.array(S_rows)
         A = numpy.array(S_rows) - numpy.array(v_x)
-        #Iterate through all the possible simplices of S_rows
+        # Iterate through all the possible simplices of S_rows
         for s_i in itertools.combinations(range(S_rows.shape[0]),
                                           r=self.dim + 1):
             # Check if connected, else s_i is not a simplex
@@ -1122,7 +1109,7 @@ class Complex:
             # If s_i is a valid simplex we can test if v_x is inside si
             if valid_simplex:
                 # Find the A_j0 value from the precalculated values
-                A_j0 = A[[s_i]]
+                A_j0 = A[tuple([s_i])]
                 if self.in_simplex(S, v_x, A_j0):
                     found_nn = True
                     break  # breaks the main for loop, s_i is the target simplex
@@ -1136,39 +1123,45 @@ class Complex:
         return found_nn  # this bool value indicates a successful connection if True
 
     def in_simplex(self, S, v_x, A_j0=None):
-        """
-        Check if a vector v_x is in simplex S
-        :param S: array containing simplex entries of vertices as rows
-        :param v_x: a candidate vertex
-        :param A_j0: array, optional, allows for A_j0 to be pre-calculated
-        :return: boolean, if True v_x is in S, if False v_x is not in S
+        """Check if a vector v_x is in simplex `S`.
 
-        Notes:
-        https://stackoverflow.com/questions/21819132/how-do-i-check-if-a-simplex-contains-the-origin
+        Parameters
+        ----------
+        S : array_like
+            Array containing simplex entries of vertices as rows
+        v_x :
+            A candidate vertex
+        A_j0 : array, optional,
+            Allows for A_j0 to be pre-calculated
+
+        Returns
+        -------
+        res : boolean
+            True if `v_x` is in `S`
         """
         A_11 = numpy.delete(S, 0, 0) - S[0]
 
         sign_det_A_11 = numpy.sign(numpy.linalg.det(A_11))
         if sign_det_A_11 == 0:
-            #NOTE: We keep the variable A_11, but we loop through A_jj
-            #ind=
-            #while sign_det_A_11 == 0:
+            # NOTE: We keep the variable A_11, but we loop through A_jj
+            # ind=
+            # while sign_det_A_11 == 0:
             #    A_11 = numpy.delete(S, ind, 0) - S[ind]
             #    sign_det_A_11 = numpy.sign(numpy.linalg.det(A_11))
 
-            sign_det_A_11 = -1  #TODO: Choose another det of j instead?
-            #TODO: Unlikely to work in many cases
+            sign_det_A_11 = -1  # TODO: Choose another det of j instead?
+            # TODO: Unlikely to work in many cases
 
         if A_j0 is None:
             A_j0 = S - v_x
 
         for d in range(self.dim + 1):
             det_A_jj = (-1)**d * sign_det_A_11
-            #TODO: Note that scipy might be faster to add as an optional
-            #      dependency
+            # TODO: Note that scipy might be faster to add as an optional
+            #       dependency
             sign_det_A_j0 = numpy.sign(numpy.linalg.det(numpy.delete(A_j0, d, 0)))
-            #TODO: Note if sign_det_A_j0 == then the point is coplanar to the
-            #      current simplex facet, so perhaps return True and attach?
+            # TODO: Note if sign_det_A_j0 == then the point is coplanar to the
+            #       current simplex facet, so perhaps return True and attach?
             if det_A_jj == sign_det_A_j0:
                 continue
             else:
@@ -1177,12 +1170,15 @@ class Complex:
         return True
 
     def deg_simplex(self, S, proj=None):
-        """
-        Test a simplex S for degeneracy (linear dependence in R^dim)
-        :param S: Numpy array of simplex with rows as vertex vectors
-        :param proj: array, optional, if the projection S[1:] - S[0] is already
-                     computed it can be added as an optional argument.
-        :return:
+        """Test a simplex S for degeneracy (linear dependence in R^dim).
+
+        Parameters
+        ----------
+        S : np.array
+            Simplex with rows as vertex vectors
+        proj : array, optional,
+            If the projection S[1:] - S[0] is already
+            computed it can be added as an optional argument.
         """
         # Strategy: we test all combination of faces, if any of the determinants
         # are zero then the vectors lie on the same face and is therefore
@@ -1190,1001 +1186,12 @@ class Complex:
         if proj is None:
             proj = S[1:] - S[0]
 
-        #TODO: Is checking the projection of one vertex against faces of other
+        # TODO: Is checking the projection of one vertex against faces of other
         #       vertices sufficient? Or do we need to check more vertices in
         #       dimensions higher than 2?
-        #TODO: Literature seems to suggest using proj.T, but why is this needed?
-        if numpy.linalg.det(proj) == 0.0: #TODO: Repalace with tolerance?
+        # TODO: Literature seems to suggest using proj.T, but why is this
+        #       needed?
+        if numpy.linalg.det(proj) == 0.0:  # TODO: Repalace with tolerance?
             return True  # Simplex is degenerate
         else:
             return False  # Simplex is not degenerate
-
-
-
-    ### TODO: DELETE ALL BELOW:
-    def plot_complex(self, show=True, directed=True, complex_plot=True,
-                     contour_plot=True, surface_plot=True,
-                     surface_field_plot=True, minimiser_points=True,
-                     point_color='do', line_color='do',
-                     complex_color_f='lo', complex_color_e='do', pointsize=7,
-                     no_grids=False, save_fig=True, strpath=None,
-                     plot_path='fig/', fig_name='complex.pdf', arrow_width=None,
-                     fig_surface=None, ax_surface=None, fig_complex=None,
-                     ax_complex=None
-                     ):
-        """
-        Plots the current simplicial complex contained in the class. It requires
-        at least one vector in the self.V to have been defined.
-
-
-        :param show: boolean, optional, show the output plots
-        :param directed: boolean, optional, adds directed arrows to edges
-        :param contour_plot: boolean, optional, contour plots of the field functions
-        :param surface_plot: boolean, optional, a 3 simplicial complex + sfield plot
-        :param surface_field_plot: boolean, optional, 3 dimensional surface + contour plot
-        :param minimiser_points: boolean, optional, adds minimiser points
-        :param point_color: str or vec, optional, colour of complex points
-        :param line_color: str or vec, optional, colour of complex edges
-        :param complex_color_f: str or vec, optional, colour of surface complex faces
-        :param complex_color_e: str or vec, optional, colour of surface complex edges
-        :param pointsize: float, optional, size of vectices on plots
-        :param no_grids: boolean, optional, removes gridlines and axes
-        :param save_fig: boolean, optional, save the output figure to file
-        :param strpath: str, optional, string path of the file name
-        :param plot_path: str, optional, relative path to file outputs
-        :param fig_name: str, optional, name of the complex file to save
-        :param arrow_width: float, optional, fixed size for arrows
-        :return: self.ax_complex, a matplotlib Axes class containing the complex and field contour
-        :return: self.ax_surface, a matplotlib Axes class containing the complex surface and field surface
-        TODO: self.fig_* missing
-        Examples
-        --------
-        # Initiate a complex class
-        >>> import pylab
-        >>> H = Complex(2, domain=[(0, 10)], sfield=func)
-
-        # As an example we'll use the built in triangulation to generate vertices
-        >>> H.triangulate()
-        >>> H.split_generation()
-
-        # Plot the complex
-        >>> H.plot_complex()
-
-        # You can add any sort of custom drawings to the Axes classes of the
-        plots
-        >>> H.ax_complex.plot(0.25, 0.25, '.', color='k', markersize=10)
-        >>> H.ax_surface.scatter(0.25, 0.25, 0.25, '.', color='k', s=10)
-
-        # Show the final plot
-        >>> pylab.show()
-
-        # Clear current plot instances
-        >>> H.plot_clean()
-
-        Example 2: Subplots  #TODO: Test
-        >>> import matplotlib.pyplot as plt
-        >>> fig, axes = plt.subplots(ncols=2)
-        >>> H = Complex(2, domain=[(0, 10)], sfield=func)
-        >>> H.triangulate()
-        >>> H.split_generation()
-
-        # Plot the complex on the same subplot
-        >>> H.plot_complex(fig_surface=fig, ax_surface=axes[0],
-        ...                fig_complex=fig, ax_complex=axes[1])
-
-        # Note you can also plot several complex objects on larger subplots
-        #  using this method.
-
-        """
-        if not matplotlib_available:
-            logging.warning("Plotting functions are unavailable. To "
-                            "install matplotlib install using ex. `pip install "
-                            "matplotlib` ")
-            return
-        if self.sfield is None:
-            directed = False  #TODO: We used this to avoid v.minimiser_point
-                              # errors when is no field, should check for field
-                              # instead
-        # Check if fix or ax arguments are passed
-        if fig_complex is not None:
-            self.fig_complex = fig_complex
-        if ax_complex is not None:
-            self.ax_complex = ax_complex
-        if fig_surface is not None:
-            self.fig_surface = fig_surface
-        if ax_surface is not None:
-            self.ax_surface = ax_surface
-
-        # Create pyplot.figure instance if none exists yet
-        try:
-            self.fig_complex
-        except AttributeError:
-            self.fig_complex = pyplot.figure()
-
-        # Consistency
-        if self.sfield is None:
-            if contour_plot:
-                contour_plot = False
-                logging.warning("Warning, no associated scalar field found. "
-                                "Not plotting contour_plot.")
-
-            if surface_field_plot:
-                surface_field_plot = False
-                logging.warning("Warning, no associated scalar field found. "
-                                "Not plotting surface field.")
-
-        # Define colours:
-        coldict = {'lo': numpy.array([242, 189, 138]) / 255,  # light orange
-                   'do': numpy.array([235, 129, 27]) / 255  # Dark alert orange
-                   }
-
-        def define_cols(col):
-            if (col == 'lo') or (col == 'do'):
-                col = coldict[col]
-            elif col is None:
-                col = None
-            return col
-
-        point_color = define_cols(point_color)  # None will generate
-        line_color = define_cols(line_color)
-        complex_color_f = define_cols(complex_color_f)
-        complex_color_e = define_cols(complex_color_e)
-
-        if self.dim == 1:
-            if arrow_width is not None:
-                self.arrow_width = arrow_width
-                self.mutation_scale = 58.83484054145521 * self.arrow_width * 1.3
-            else:  # heuristic
-                dx = self.bounds[0][1] - self.bounds[0][0]
-                self.arrow_width = (dx * 0.13
-                                    / (numpy.sqrt(len(self.V.cache))))
-                self.mutation_scale = 58.83484054145521 * self.arrow_width * 1.3
-
-            try:
-                self.ax_complex
-            except:
-                self.ax_complex = self.fig_complex.add_subplot(1, 1, 1)
-
-            min_points = []
-            for v in self.V.cache:
-                self.ax_complex.plot(v, 0, '.',
-                                     color=point_color,
-                                     markersize=pointsize)
-                xlines = []
-                ylines = []
-                for v2 in self.V[v].nn:
-                    xlines.append(v2.x)
-                    ylines.append(0)
-
-                    if directed:
-                        if self.V[v].f > v2.f:  # direct V2 --> V1
-                            x1_vec = list(self.V[v].x)
-                            x2_vec = list(v2.x)
-                            x1_vec.append(0)
-                            x2_vec.append(0)
-                            ap = self.plot_directed_edge(self.V[v].f, v2.f,
-                                                         x1_vec, x2_vec,
-                                                         mut_scale=0.5 * self.mutation_scale,
-                                                         proj_dim=2,
-                                                         color=line_color)
-
-                            self.ax_complex.add_patch(ap)
-
-                if directed:
-                    if minimiser_points:
-                        if self.V[v].minimiser():
-                            v_min = list(v)
-                            v_min.append(0)
-                            min_points.append(v_min)
-
-                self.ax_complex.plot(xlines, ylines, color=line_color)
-
-            if minimiser_points:
-                self.ax_complex = self.plot_min_points(self.ax_complex,
-                                                       min_points,
-                                                       proj_dim=2,
-                                                       point_color=point_color,
-                                                       pointsize=pointsize)
-
-            # Clean up figure
-            if self.bounds is None:
-                pyplot.ylim([-1e-2, 1 + 1e-2])
-                pyplot.xlim([-1e-2, 1 + 1e-2])
-            else:
-                fac = 1e-2  # TODO: TEST THIS
-                pyplot.ylim([0 - fac, 0 + fac])
-                pyplot.xlim(
-                    [self.bounds[0][0] - fac * (self.bounds[0][1]
-                                                - self.bounds[0][0]),
-                     self.bounds[0][1] + fac * (self.bounds[0][1]
-                                                - self.bounds[0][0])])
-            if no_grids:
-                self.ax_complex.set_xticks([])
-                self.ax_complex.set_yticks([])
-                self.ax_complex.axis('off')
-
-            # Surface plots
-            if surface_plot or surface_field_plot:
-                try:
-                    self.fig_surface
-                except AttributeError:
-                    self.fig_surface = pyplot.figure()
-                try:
-                    self.ax_surface
-                except:
-                    self.ax_surface = self.fig_surface.add_subplot(1, 1, 1)
-
-                # Add a plot of the field function.
-                if surface_field_plot:
-                    self.fig_surface, self.ax_surface = self.plot_field_surface(
-                        self.fig_surface,
-                        self.ax_surface,
-                        self.bounds,
-                        self.sfield,
-                        self.sfield_args,
-                        proj_dim=2,
-                        color=complex_color_f)  # TODO: Custom field colour
-
-                if surface_plot:
-                    self.fig_surface, self.ax_surface = self.plot_complex_surface(
-                        self.fig_surface,
-                        self.ax_surface,
-                        directed=directed,
-                        pointsize=pointsize,
-                        color_e=complex_color_e,
-                        color_f=complex_color_f,
-                        min_points=min_points)
-
-                if no_grids:
-                    self.ax_surface.set_xticks([])
-                    self.ax_surface.set_yticks([])
-                    self.ax_surface.axis('off')
-
-        elif self.dim == 2:
-            if arrow_width is not None:
-                self.arrow_width = arrow_width
-            else:  # heuristic
-                dx1 = self.bounds[0][1] - self.bounds[0][0]
-                dx2 = self.bounds[1][1] - self.bounds[1][0]
-
-                try:
-                    self.arrow_width = (min(dx1, dx2) * 0.13
-                                        / (numpy.sqrt(len(self.V.cache))))
-                except TypeError:  # Allow for decimal operations
-                    self.arrow_width = (min(dx1, dx2) * decimal.Decimal(0.13)
-                                        / decimal.Decimal(
-                                (numpy.sqrt(len(self.V.cache)))))
-
-            try:
-                self.mutation_scale = 58.8348 * self.arrow_width * 1.5
-            except TypeError:  # Allow for decimal operations
-                self.mutation_scale = (decimal.Decimal(58.8348)
-                                       * self.arrow_width
-                                       * decimal.Decimal(1.5))
-
-            try:
-                self.ax_complex
-            except:
-                self.ax_complex = self.fig_complex.add_subplot(1, 1, 1)
-
-            if contour_plot:
-                self.plot_contour(self.bounds, self.sfield,
-                                  self.sfield_args)
-
-            if complex_plot:
-                min_points = []
-                for v in self.V.cache:
-                    self.ax_complex.plot(v[0], v[1], '.', color=point_color,
-                                         markersize=pointsize)
-
-                    xlines = []
-                    ylines = []
-                    for v2 in self.V[v].nn:
-                        xlines.append(v2.x[0])
-                        ylines.append(v2.x[1])
-                        xlines.append(v[0])
-                        ylines.append(v[1])
-
-                        if directed:
-                            if self.V[v].f > v2.f:  # direct V2 --> V1
-                                ap = self.plot_directed_edge(self.V[v].f, v2.f,
-                                                             self.V[v].x, v2.x,
-                                                             mut_scale=self.mutation_scale,
-                                                             proj_dim=2,
-                                                             color=line_color)
-
-                                self.ax_complex.add_patch(ap)
-                    if directed:
-                        if minimiser_points:
-                            if self.V[v].minimiser():
-                                min_points.append(v)
-
-                    self.ax_complex.plot(xlines, ylines, color=line_color)
-
-                if directed:
-                    if minimiser_points:
-                        self.ax_complex = self.plot_min_points(self.ax_complex,
-                                                               min_points,
-                                                               proj_dim=2,
-                                                               point_color=point_color,
-                                                               pointsize=pointsize)
-                else:
-                    min_points = []
-
-            # Clean up figure
-            if self.bounds is None:
-                pyplot.ylim([-1e-2, 1 + 1e-2])
-                pyplot.xlim([-1e-2, 1 + 1e-2])
-            else:
-                fac = 1e-2  # TODO: TEST THIS
-                pyplot.ylim(
-                    [self.bounds[1][0] - fac * (self.bounds[1][1]
-                                                - self.bounds[1][0]),
-                     self.bounds[1][1] + fac * (self.bounds[1][1]
-                                                - self.bounds[1][0])])
-                pyplot.xlim(
-                    [self.bounds[0][0] - fac * (self.bounds[1][1]
-                                                - self.bounds[1][0]),
-                     self.bounds[0][1] + fac * (self.bounds[1][1]
-                                                - self.bounds[1][0])])
-
-            if no_grids:
-                self.ax_complex.set_xticks([])
-                self.ax_complex.set_yticks([])
-                self.ax_complex.axis('off')
-
-            # Surface plots
-            if surface_plot or surface_field_plot:
-                try:
-                    self.fig_surface
-                except AttributeError:
-                    self.fig_surface = pyplot.figure()
-                try:
-                    self.ax_surface
-                except:
-                    self.ax_surface = self.fig_surface.gca(projection='3d')
-
-                # Add a plot of the field function.
-                if surface_field_plot:
-                    self.fig_surface, self.ax_surface = self.plot_field_surface(
-                        self.fig_surface,
-                        self.ax_surface,
-                        self.bounds,
-                        self.sfield,
-                        self.sfield_args,
-                        proj_dim=3)
-
-                if surface_plot:
-                    self.fig_surface, self.ax_surface = self.plot_complex_surface(
-                        self.fig_surface,
-                        self.ax_surface,
-                        directed=directed,
-                        pointsize=pointsize,
-                        color_e=complex_color_e,
-                        color_f=complex_color_f,
-                        min_points=min_points)
-
-                if no_grids:
-                    self.ax_surface.set_xticks([])
-                    self.ax_surface.set_yticks([])
-                    self.ax_surface.axis('off')
-
-
-        elif self.dim == 3:
-            try:
-                self.ax_complex
-            except:
-                self.ax_complex = Axes3D(self.fig_complex)
-
-            min_points = []
-            for v in self.V.cache:
-                self.ax_complex.scatter(v[0], v[1], v[2],
-                                        color=point_color, s=pointsize)
-                x = []
-                y = []
-                z = []
-                x.append(self.V[v].x[0])
-                y.append(self.V[v].x[1])
-                z.append(self.V[v].x[2])
-                for v2 in self.V[v].nn:
-                    x.append(v2.x[0])
-                    y.append(v2.x[1])
-                    z.append(v2.x[2])
-                    x.append(self.V[v].x[0])
-                    y.append(self.V[v].x[1])
-                    z.append(self.V[v].x[2])
-                    if directed:
-                        if self.V[v].f > v2.f:  # direct V2 --> V1
-                            ap = self.plot_directed_edge(self.V[v].f, v2.f,
-                                                         self.V[v].x, v2.x,
-                                                         proj_dim=3,
-                                                         color=line_color)
-                            self.ax_complex.add_artist(ap)
-
-                self.ax_complex.plot(x, y, z,
-                                     color=line_color)
-                if directed:
-                    if minimiser_points:
-                        if self.V[v].minimiser():
-                            min_points.append(v)
-
-            if minimiser_points:
-                self.ax_complex = self.plot_min_points(self.ax_complex,
-                                                       min_points,
-                                                       proj_dim=3,
-                                                       point_color=point_color,
-                                                       pointsize=pointsize)
-
-            self.fig_surface = None  # Current default
-            self.ax_surface = None  # Current default
-
-        else:
-            logging.warning("dimension higher than 3 or wrong complex format")
-            self.fig_complex = None
-            self.ax_complex = None
-            self.fig_surface = None
-            self.ax_surface = None
-
-        # Save figure to file
-        if save_fig:
-            if strpath is None:
-                script_dir = os.getcwd()  # os.path.dirname(__file__)
-                results_dir = os.path.join(script_dir, plot_path)
-                sample_file_name = fig_name
-
-                if not os.path.isdir(results_dir):
-                    os.makedirs(results_dir)
-
-                strpath = results_dir + sample_file_name
-
-            self.plot_save_figure(strpath)
-
-
-        if show and (not self.dim > 3):
-            self.fig_complex.show()
-        try:
-            self.fig_surface
-            self.ax_surface
-            if show:
-                self.fig_surface.show()
-        except AttributeError:
-            self.fig_surface = None  # Set to None for return reference
-            self.ax_surface = None
-
-        return self.fig_complex, self.ax_complex, self.fig_surface, self.ax_surface
-
-
-    def plot_save_figure(self, strpath):
-
-        self.fig_complex.savefig(strpath, transparent=True,
-                                 bbox_inches='tight', pad_inches=0)
-
-    def plot_clean(self, del_ax=True, del_fig=True):
-        try:
-            if del_ax:
-                del (self.ax_complex)
-            if del_fig:
-                del (self.fig_complex)
-        except AttributeError:
-            pass
-
-    def plot_contour(self, bounds, func, func_args=()):
-        """
-        Plots the field functions. Mostly for developmental purposes
-        :param fig:
-        :param bounds:
-        :param func:
-        :param func_args:
-        :param surface:
-        :param contour:
-        :return:
-        """
-        xg, yg, Z = self.plot_field_grids(bounds, func, func_args)
-        cs = pyplot.contour(xg, yg, Z, cmap='binary_r', color='k')
-        pyplot.clabel(cs)
-
-    def plot_complex_surface(self, fig, ax, directed=True, pointsize=5,
-                             color_e=None, color_f=None, min_points=[]):
-        """
-        fig and ax need to be supplied outside the method
-        :param fig: ex. ```fig = pyplot.figure()```
-        :param ax: ex.  ```ax = fig.gca(projection='3d')```
-        :param bounds:
-        :param func:
-        :param func_args:
-        :return:
-        """
-        if self.dim == 1:
-            # Plot edges
-            z = []
-            for v in self.V.cache:
-                ax.plot(v, self.V[v].f, '.', color=color_e,
-                        markersize=pointsize)
-                z.append(self.V[v].f)
-                for v2 in self.V[v].nn:
-                    ax.plot([v, v2.x],
-                            [self.V[v].f, v2.f],
-                            color=color_e)
-
-                    if directed:
-                        if self.V[v].f > v2.f:  # direct V2 --> V1
-                            x1_vec = [float(self.V[v].x[0]), self.V[v].f]
-                            x2_vec = [float(v2.x[0]), v2.f]
-
-                            a = self.plot_directed_edge(self.V[v].f, v2.f,
-                                                        x1_vec, x2_vec,
-                                                        proj_dim=2,
-                                                        color=color_e)
-                            ax.add_artist(a)
-
-            ax.set_xlabel('$x$')
-            ax.set_ylabel('$f$')
-
-            if len(min_points) > 0:
-                iter_min = min_points.copy()
-                for ind, v in enumerate(iter_min):
-                    min_points[ind][1] = float(self.V[v[0],].f)
-
-                ax = self.plot_min_points(ax,
-                                          min_points,
-                                          proj_dim=2,
-                                          point_color=color_e,
-                                          pointsize=pointsize
-                                          )
-
-        elif self.dim == 2:
-            # Plot edges
-            z = []
-            for v in self.V.cache:
-                z.append(self.V[v].f)
-                for v2 in self.V[v].nn:
-                    ax.plot([v[0], v2.x[0]],
-                            [v[1], v2.x[1]],
-                            [self.V[v].f, v2.f],
-                            color=color_e)
-
-                    if directed:
-                        if self.V[v].f > v2.f:  # direct V2 --> V1
-                            x1_vec = list(self.V[v].x)
-                            x2_vec = list(v2.x)
-                            x1_vec.append(self.V[v].f)
-                            x2_vec.append(v2.f)
-                            a = self.plot_directed_edge(self.V[v].f, v2.f,
-                                                        x1_vec, x2_vec,
-                                                        proj_dim=3,
-                                                        color=color_e)
-
-                            ax.add_artist(a)
-
-            # TODO: For some reason adding the scatterplots for minimiser spheres
-            #      makes the directed edges disappear behind the field surface
-            if len(min_points) > 0:
-                iter_min = min_points.copy()
-                for ind, v in enumerate(iter_min):
-                    min_points[ind] = list(min_points[ind])
-                    min_points[ind].append(self.V[v].f)
-
-                ax = self.plot_min_points(ax,
-                                          min_points,
-                                          proj_dim=3,
-                                          point_color=color_e,
-                                          pointsize=pointsize
-                                          )
-
-            # Triangulation to plot faces
-            # Compute a triangulation #NOTE: can eat memory
-            self.vertex_face_mesh()
-
-            ax.plot_trisurf(numpy.array(self.vertices_fm)[:, 0],
-                            numpy.array(self.vertices_fm)[:, 1],
-                            z,
-                            triangles=numpy.array(self.simplices_fm_i),
-                            # TODO: Select colour scheme
-                            color=color_f,
-                            alpha=0.4,
-                            linewidth=0.2,
-                            antialiased=True)
-
-            ax.set_xlabel('$x_1$')
-            ax.set_ylabel('$x_2$')
-            ax.set_zlabel('$f$')
-
-        return fig, ax
-
-    def plot_field_surface(self, fig, ax, bounds, func, func_args=(),
-                           proj_dim=2, color=None):
-        """
-        fig and ax need to be supplied outside the method
-        :param fig: ex. ```fig = pyplot.figure()```
-        :param ax: ex.  ```ax = fig.gca(projection='3d')```
-        :param bounds:
-        :param func:
-        :param func_args:
-        :return:
-        """
-        if proj_dim == 2:
-            from matplotlib import cm
-            xr = numpy.linspace(self.bounds[0][0], self.bounds[0][1], num=1000)
-            fr = numpy.zeros_like(xr)
-            for i in range(xr.shape[0]):
-                fr[i] = func(xr[i], *func_args)
-
-            ax.plot(xr, fr, alpha=0.6, color=color)
-
-            ax.set_xlabel('$x$')
-            ax.set_ylabel('$f$')
-
-        if proj_dim == 3:
-            from matplotlib import cm
-            xg, yg, Z = self.plot_field_grids(bounds, func, func_args)
-            ax.plot_surface(xg, yg, Z, rstride=1, cstride=1,
-                            # cmap=cm.coolwarm,
-                            # cmap=cm.magma,
-                        #    cmap=cm.plasma,  #TODO: Restore
-                            # cmap=cm.inferno,
-                            # cmap=cm.pink,
-                            # cmap=cm.viridis,
-                            #facecolors="do it differently, ok?",
-                            color = [0.94901961, 0.74117647, 0.54117647],
-                            linewidth=0,
-                            antialiased=True, alpha=0.8, shade=True)
-
-            ax.set_xlabel('$x_1$')
-            ax.set_ylabel('$x_2$')
-            ax.set_zlabel('$f$')
-        return fig, ax
-
-    def plot_field_grids(self, bounds, func, func_args):
-        try:
-            return self.plot_xg, self.plot_yg, self.plot_Z
-        except AttributeError:
-            X = numpy.linspace(bounds[0][0], bounds[0][1])
-            Y = numpy.linspace(bounds[1][0], bounds[1][1])
-            xg, yg = numpy.meshgrid(X, Y)
-            Z = numpy.zeros((xg.shape[0],
-                             yg.shape[0]))
-
-            for i in range(xg.shape[0]):
-                for j in range(yg.shape[0]):
-                    Z[i, j] = func(numpy.array([xg[i, j], yg[i, j]]),
-                                   *func_args)
-
-            self.plot_xg, self.plot_yg, self.plot_Z = xg, yg, Z
-            return self.plot_xg, self.plot_yg, self.plot_Z
-
-    def plot_directed_edge(self, f_v1, f_v2, x_v1, x_v2, mut_scale=20,
-                           proj_dim=2,
-                           color=None):
-        """
-        Draw a directed edge embeded in 2 or 3 dimensional space between two
-        vertices v1 and v2.
-
-        :param f_v1: field value at f(v1)
-        :param f_v2: field value at f(v2)
-        :param x_v1: coordinate vector 1
-        :param x_v2: coordinate vector 2
-        :param proj_dim: int, must be either 2 or 3
-        :param color: edge color
-        :return: a, artist arrow object (add with ex. Axes.add_artist(a)
-        """
-        if proj_dim == 2:
-            if f_v1 > f_v2:  # direct V2 --> V1
-                dV = numpy.array(x_v1) - numpy.array(x_v2)
-                ap = matplotlib.patches.FancyArrowPatch(
-                    numpy.array(x_v2) + 0.5 * dV,  # tail
-                    numpy.array(x_v2) + 0.6 * dV,  # head
-                    mutation_scale=mut_scale,
-                    arrowstyle='-|>',
-                    fc=color, ec=color,
-                    color=color,
-                )
-
-        if proj_dim == 3:
-            if f_v1 > f_v2:  # direct V2 --> V1
-                dV = numpy.array(x_v1) - numpy.array(x_v2)
-                # TODO: Might not be correct (unvalidated)
-                ap = Arrow3D([x_v2[0], x_v2[0] + 0.5 * dV[0]],
-                             [x_v2[1], x_v2[1] + 0.5 * dV[1]],
-                             [x_v2[2], x_v2[2] + 0.5 * dV[2]],
-                             mutation_scale=20,
-                             lw=1, arrowstyle="-|>",
-                             color=color)
-
-        return ap
-
-    def plot_min_points(self, axes, min_points, proj_dim=2, point_color=None,
-                        pointsize=5):
-        """
-        Add a given list of highlighted minimiser points to axes
-
-        :param ax: An initiated matplotlib Axes class
-        :param min_points: list of minimsier points
-        :param proj_dim: projection dimension, must be either 2 or 3
-        :param point_color: optional
-        :param point_size: optional
-        :return:
-        """
-        if proj_dim == 2:
-            for v in min_points:
-                if point_color == 'r':
-                    min_col = 'k'
-                else:
-                    min_col = 'r'
-
-                axes.plot(v[0], v[1], '.', color=point_color,
-                          markersize=2.5 * pointsize)
-
-                axes.plot(v[0], v[1], '.', color='k',
-                          markersize=1.5 * pointsize)
-
-                axes.plot(v[0], v[1], '.', color=min_col,
-                          markersize=1.4 * pointsize)
-
-        if proj_dim == 3:
-            for v in min_points:
-                if point_color == 'r':
-                    min_col = 'k'
-                else:
-                    min_col = 'r'
-
-                axes.scatter(v[0], v[1], v[2], color=point_color,
-                             s=2.5 * pointsize)
-
-                axes.scatter(v[0], v[1], v[2], color='k',
-                             s=1.5 * pointsize)
-
-                axes.scatter(v[0], v[1], v[2], color=min_col,
-                             s=1.4 * pointsize)
-
-        return axes
-
-    def vertex_face_mesh(self, field_conversions=True):
-        """
-        Convert the current simplicial complex from the default
-        vertex-vertex mesh (low memory) to a
-
-        NM
-
-        :param field_conversions, boolean, optional
-                If True then any associated field properties will be added to
-                ordered lists ex, self.sfield_vf and self.vfield_vf
-
-        :return: self.vertices_fm, A list of vertex vectors (corresponding to
-                                   the ordered dict in self.V.cache)
-                 self.simplices_fm, A list of (dim + 1)-lists containing vertex
-                                    objects in a simplex.
-
-                 self.simplices_fm_i, Same as self.simplices_fm except contains
-                                      the indices corresponding to the list in
-                                      self.vertices_fm
-
-                 self.sfield_fm, Scalar field values corresponding to the
-                                 vertices in self.vertices_fm
-        """
-        #TODO: UNTESindexTED FOR DIMENSIONS HIGHER THAN 2
-        self.vertices_fm = []  # Vertices (A list of ob
-        self.simplices_fm = []  # Faces
-        self.simplices_fm_i = []
-
-        # TODO: Add in field
-        for v in self.V.cache:  # Note that cache is an OrderedDict
-            self.vertices_fm.append(v)
-
-            #TODO: Should this not be outside the initial loop?
-            simplex = (self.dim + 1) * [None]  # Predetermined simplex sizes
-            simplex[0] = self.V[v]
-
-            # indexed simplices
-            simplex_i = (self.dim + 1) * [None]
-            simplex_i[0] = self.V[v].index
-
-            # TODO: We need to recursively call a function that checks each nn
-            #  and checks that the nn is in all parent nns (otherwise there is
-            #  a deviding line in the simplex)
-            # NOTE: The recursion depth is (self.dim + 1)
-
-            # Start looping through the vertices in the star domain
-            for v2 in self.V[v].nn:
-                # For every v2 we loop through its neighbours in v2.nn, for
-                # every v2.nn that is also in self.V[v].nn we want to build
-                # simplices connecting to the current v. Note that we want to
-                # try and build simplices from v, v2 and any connected
-                # neighbours.
-                # Since all simplices are ordered vertices, we can check that
-                # all simplices are unique.
-                # The reason we avoid recursion in higher dimensions is because
-                # we only want to find the connecting chains v1--v2--v3--v1
-                # to add to simplex stacks. Once a simplex is full we try to
-                # find another chain v1--v2--vi--v1 to add to the simplex until
-                # it is full, here vi is any neighbour of v2
-                simplex_i[1] = v2.index
-                build_simpl_i = simplex_i.copy()
-                ind = 1
-
-                if self.dim > 1:
-                    for v3 in v2.nn:
-                        # if v3 has a connection to v1, not in current simplex
-                        # and not v1 itself:
-                        if ((v3 in self.V[v].nn) and (v3 not in build_simpl_i)
-                                and (v3 is not self.V[v])):
-                            try:  # Fill simplex with v's neighbours until it is full
-                                ind += 1
-                                # (if v2.index not in build_simpl_i) and v2.index in v2.nn
-                                build_simpl_i[ind] = v3.index
-                            except IndexError:  # When the simplex is full
-                                # ind = 1 #TODO: Check
-                                # Append full simplex and create a new one
-                                s_b_s_i = sorted(
-                                    build_simpl_i)  # Sorted simplex indices
-                                if s_b_s_i not in self.simplices_fm_i:
-                                    self.simplices_fm_i.append(s_b_s_i)
-                                    # TODO: Build simplices_fm
-                                    # self.simplices_fm.append(s_b_s_i)
-
-                                build_simpl_i = simplex_i.copy()
-                                # Start the new simplex with current neighbour as second
-                                #  entry
-                                if ((v3 in self.V[v].nn) and (
-                                        v3 not in build_simpl_i)
-                                        and (v3 is not self.V[v])):
-                                    build_simpl_i[2] = v3.index #TODO: Check missing index 1?
-                                    ind = 2
-
-                                if self.dim == 2:  # Special case, for dim > 2
-                                    # it will not be full
-                                    if s_b_s_i not in self.simplices_fm_i:
-                                        self.simplices_fm_i.append(s_b_s_i)
-
-                    # After loop check if we have a filled simplex
-                    if len(build_simpl_i) == self.dim + 1:
-                        if not (None in build_simpl_i):
-                            s_b_s_i = sorted(
-                                build_simpl_i)  # Sorted simplex indices
-                            if s_b_s_i not in self.simplices_fm_i:
-                                self.simplices_fm_i.append(s_b_s_i)
-
-                    # NOTE: If we run out of v3 in v2.nn before a simplex is
-                    # completed then there were not enough vertices to form a
-                    # simplex with.
-
-        # TODO: BUILD self.vertices_fm from  self.simplices_fm_i and
-        # self.vertices_fm
-        for s in self.simplices_fm_i:
-            sl = []
-            for i in s:
-                sl.append(self.vertices_fm[i])
-
-            # Append the newly built simplex
-            self.simplices_fm.append(sl)
-
-        return
-
-
-### DELTE:
-import collections, time, functools
-
-from matplotlib.patches import FancyArrowPatch
-from mpl_toolkits.mplot3d import proj3d
-import numpy as np
-
-class Arrow3D(FancyArrowPatch):
-    def __init__(self, xs, ys, zs, *args, **kwargs):
-        super().__init__((0,0), (0,0), *args, **kwargs)
-        self._verts3d = xs, ys, zs
-
-    def do_3d_projection(self, renderer=None):
-        xs3d, ys3d, zs3d = self._verts3d
-        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, self.axes.M)
-        self.set_positions((xs[0],ys[0]),(xs[1],ys[1]))
-
-        return np.min(zs)
-
-class Arrow3D_old_broken_delete(FancyArrowPatch):
-    """
-    Arrow used in the plotting of 3D vecotrs
-
-    ex.
-    a = Arrow3D([0, 1], [0, 1], [0, 1], mutation_scale=20,
-            lw=1, arrowstyle="-|>", color="k")
-    ax.add_artist(a)
-    """
-    def __init__(self, xs, ys, zs, *args, **kwargs):
-        FancyArrowPatch.__init__(self, (0, 0), (0, 0), *args, **kwargs)
-        self._verts3d = xs, ys, zs
-
-    def draw(self, renderer):
-        xs3d, ys3d, zs3d = self._verts3d
-        xs, ys, zs = proj3d.proj_transform(xs3d, ys3d, zs3d, renderer.M)
-        self.set_positions((xs[0], ys[0]), (xs[1], ys[1]))
-        FancyArrowPatch.draw(self, renderer)
-
-
-# Note to avoid using external packages such as functools32 we use this code
-# only using the standard library
-def lru_cache(maxsize=255, timeout=None):
-    """
-    Thanks to ilialuk @ https://stackoverflow.com/users/2121105/ilialuk for
-    this code snippet. Modifications by S. Endres
-    """
-
-    class LruCacheClass(object):
-        def __init__(self, input_func, max_size, timeout):
-            self._input_func = input_func
-            self._max_size = max_size
-            self._timeout = timeout
-
-            # This will store the cache for this function,
-            # format - {caller1 : [OrderedDict1, last_refresh_time1],
-            #  caller2 : [OrderedDict2, last_refresh_time2]}.
-            #   In case of an instance method - the caller is the instance,
-            # in case called from a regular function - the caller is None.
-            self._caches_dict = {}
-
-        def cache_clear(self, caller=None):
-            # Remove the cache for the caller, only if exists:
-            if caller in self._caches_dict:
-                del self._caches_dict[caller]
-                self._caches_dict[caller] = [collections.OrderedDict(),
-                                             time.time()]
-
-        def __get__(self, obj, objtype):
-            """ Called for instance methods """
-            return_func = functools.partial(self._cache_wrapper, obj)
-            return_func.cache_clear = functools.partial(self.cache_clear,
-                                                        obj)
-            # Return the wrapped function and wraps it to maintain the
-            # docstring and the name of the original function:
-            return functools.wraps(self._input_func)(return_func)
-
-        def __call__(self, *args, **kwargs):
-            """ Called for regular functions """
-            return self._cache_wrapper(None, *args, **kwargs)
-
-        # Set the cache_clear function in the __call__ operator:
-        __call__.cache_clear = cache_clear
-
-        def _cache_wrapper(self, caller, *args, **kwargs):
-            # Create a unique key including the types (in order to
-            # differentiate between 1 and '1'):
-            kwargs_key = "".join(map(
-                lambda x: str(x) + str(type(kwargs[x])) + str(kwargs[x]),
-                sorted(kwargs)))
-            key = "".join(
-                map(lambda x: str(type(x)) + str(x), args)) + kwargs_key
-
-            # Check if caller exists, if not create one:
-            if caller not in self._caches_dict:
-                self._caches_dict[caller] = [collections.OrderedDict(),
-                                             time.time()]
-            else:
-                # Validate in case the refresh time has passed:
-                if self._timeout is not None:
-                    if (time.time() - self._caches_dict[caller][1]
-                            > self._timeout):
-                        self.cache_clear(caller)
-
-            # Check if the key exists, if so - return it:
-            cur_caller_cache_dict = self._caches_dict[caller][0]
-            if key in cur_caller_cache_dict:
-                return cur_caller_cache_dict[key]
-
-            # Validate we didn't exceed the max_size:
-            if len(cur_caller_cache_dict) >= self._max_size:
-                # Delete the first item in the dict:
-                try:
-                    cur_caller_cache_dict.popitem(False)
-                except KeyError:
-                    pass
-            # Call the function and store the data in the cache (call it
-            # with the caller in case it's an instance function)
-            if caller is not None:
-                args = (caller,) + args
-            cur_caller_cache_dict[key] = self._input_func(*args, **kwargs)
-
-            return cur_caller_cache_dict[key]
-
-    # Return the decorator wrapping the class (also wraps the instance to
-    # maintain the docstring and the name of the original function):
-    return (lambda input_func: functools.wraps(input_func)(
-        LruCacheClass(input_func, maxsize, timeout)))
-

@@ -1,29 +1,28 @@
-
-"""
-shgo: The simplicial homology global optimisation algorithm
-"""
-
-# Std. library imports
-from __future__ import division, print_function, absolute_import
+"""shgo: The simplicial homology global optimisation algorithm."""
 from collections import namedtuple
 import time
 import logging
 import warnings
 import sys
+
 import numpy as np
-# Scientific python imports
+
 from scipy import spatial
 from scipy.optimize import OptimizeResult, minimize, Bounds
 from scipy.optimize._optimize import MemoizeJac
 from scipy.optimize._constraints import new_bounds_to_old
 from scipy._lib._util import _FunctionWrapper
+
 from scipy.optimize._shgo_lib._complex import Complex
 
 __all__ = ['shgo', 'SHGO']
 
-def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
-         minimizer_kwargs=None, options=None, sampling_method='simplicial', *,
-         workers=1):
+
+def shgo(
+    func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
+    minimizer_kwargs=None, options=None, sampling_method='simplicial', *,
+    workers=1
+):
     """
     Finds the global minimum of a function using SHG optimization.
 
@@ -429,7 +428,6 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
     (-5.062616992290714e-14, -2.9594104944408173e-12, 0.0)
 
     """
-
     # if necessary, convert bounds class to old bounds
     if isinstance(bounds, Bounds):
         bounds = new_bounds_to_old(bounds.lb, bounds.ub, len(bounds.lb))
@@ -461,9 +459,9 @@ def shgo(func, bounds, args=(), constraints=None, n=100, iters=1, callback=None,
         shc.res.nfev = shc.fn
         shc.res.tnev = shc.n_sampled
     else:
-        # Test that the optimal solultions do not violate any constraints
-        pass  #TODO
-    
+        # Test that the optimal solutions do not violate any constraints
+        pass  # TODO
+
     # Confirm the routine ran successfully
     if not shc.break_routine:
         shc.res.message = 'Optimization terminated successfully.'
@@ -491,7 +489,7 @@ class SHGO:
                 self.func = MemoizeJac(func)
                 jac = self.func.derivative
                 minimizer_kwargs['jac'] = jac
-                func = self.func  #.fun
+                func = self.func  # .fun
             else:
                 self.func = func  # Normal definition of objective function
         except (TypeError, KeyError):
@@ -1438,7 +1436,7 @@ class SHGO:
                 self.Tri = spatial.Delaunay(self.C,
                                             incremental=self.qhull_incremental,
                                             )
-            except:
+            except spatial.QhullError:
                 if str(sys.exc_info()[1])[:6] == 'QH6239':
                     logging.warning('QH6239 Qhull precision error detected, '
                         'this usually occurs when no bounds are specified, '
