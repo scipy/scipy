@@ -5958,9 +5958,10 @@ def test_binom_test_deprecation(alternative):
                        " 'binomtest' from version 1.7.0 and will"
                        " be removed in Scipy 1.12.0.")
     num = 10
-    X = np.random.randint(10, 100, (num,))
-    N = X + np.random.randint(0, 100, (num,))
-    P = np.random.uniform(0, 1, (num,))
+    rng = np.random.default_rng(156114182869662948677852568516310985853)
+    X = rng.integers(10, 100, (num,))
+    N = X + rng.integers(0, 100, (num,))
+    P = rng.uniform(0, 1, (num,))
     for x, n, p in zip(X, N, P):
         with pytest.warns(DeprecationWarning, match=deprecation_msg):
             res = stats.binom_test(x, n, p, alternative=alternative)
