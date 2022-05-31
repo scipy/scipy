@@ -1319,7 +1319,7 @@ class Complex:
                    }
 
         def define_cols(col):
-            if (col is 'lo') or (col is 'do'):
+            if (col == 'lo') or (col == 'do'):
                 col = coldict[col]
             elif col is None:
                 col = None
@@ -1906,7 +1906,7 @@ class Complex:
         """
         if proj_dim == 2:
             for v in min_points:
-                if point_color is 'r':
+                if point_color == 'r':
                     min_col = 'k'
                 else:
                     min_col = 'r'
@@ -1922,7 +1922,7 @@ class Complex:
 
         if proj_dim == 3:
             for v in min_points:
-                if point_color is 'r':
+                if point_color == 'r':
                     min_col = 'k'
                 else:
                     min_col = 'r'
