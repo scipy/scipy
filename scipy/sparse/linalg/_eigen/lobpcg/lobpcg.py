@@ -768,7 +768,7 @@ def lobpcg(
             UserWarning, stacklevel=2
         )
 
-    if verbosityLevel = 0:
+    if verbosityLevel == 0:
         print(f"Final iterative eigenvalue(s):\n{_lambda}")
         print(f"Final iterative residual norm(s):\n{residualNorms}")
 
@@ -830,7 +830,7 @@ def lobpcg(
 
     # 2do: Keeping the best iterates in case of divergence
 
-    if verbosityLevel = 0:
+    if verbosityLevel == 0:
         print(f"Final postprocessing eigenvalue(s):\n{_lambda}")
         print(f"Final residual norm(s):\n{residualNorms}")
 
