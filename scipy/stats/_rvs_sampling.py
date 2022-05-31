@@ -175,7 +175,8 @@ def rvs_ratio_uniforms(pdf, umax, vmin, vmax, size=1, c=0, random_state=None):
 
 class NumericalInverseHermite:
     @_deprecated(
-        "NumericalInverseHermite has been deprecated from `scipy.stats`. "
+        "NumericalInverseHermite has been deprecated from `scipy.stats` "
+        "and will be removed in SciPy 1.10.0. "
         " To use `NumericalInverseHermite`, import/use it from "
         "`scipy.stats.sampling` module instead. "
         "i.e. `from scipy.stats.sampling import NumericalInverseHermite`"

@@ -149,6 +149,11 @@ REFGUIDE_AUTOSUMMARY_SKIPLIST = [
     r'scipy\.stats\.reciprocal',  # alias for lognormal
     r'scipy\.stats\.gilbrat',  # alias for gibrat
     r'scipy\.stats\.trapz',   # alias for trapezoid
+    r'scipy\.stats\.F_onewayBadInputSizesWarning',  # shouldn't
+    r'scipy\.stats\.F_onewayConstantInputWarning',  # have
+    r'scipy\.stats\.PearsonRConstantInputWarning',  # been
+    r'scipy\.stats\.PearsonRNearConstantInputWarning',  # in
+    r'scipy\.stats\.SpearmanRConstantInputWarning',  # __all__
 ]
 # deprecated windows in scipy.signal namespace
 for name in ('barthann', 'bartlett', 'blackmanharris', 'blackman', 'bohman',
@@ -953,7 +958,12 @@ def main(argv):
                 module_names.append(name)
 
     for submodule_name in module_names:
-        module_name = BASE_MODULE + '.' + submodule_name
+        prefix = BASE_MODULE + '.'
+        if not submodule_name.startswith(prefix):
+            module_name = prefix + submodule_name
+        else:
+            module_name = submodule_name
+
         __import__(module_name)
         module = sys.modules[module_name]
 

@@ -1394,7 +1394,10 @@ class TestWilcoxon:
         assert_allclose(res.zstatistic, ref)
 
         res = stats.wilcoxon(x, y, mode="exact")
-        assert np.isnan(res.zstatistic)
+        assert not hasattr(res, 'zstatistic')
+
+        res = stats.wilcoxon(x, y)
+        assert not hasattr(res, 'zstatistic')
 
     def test_wilcoxon_tie(self):
         # Regression test for gh-2391.

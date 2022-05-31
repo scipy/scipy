@@ -6702,13 +6702,36 @@ class TestHistogram:
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
 
 
-def test_loguniform():
-    # This test makes sure the alias of "loguniform" is log-uniform
-    rv = stats.loguniform(10 ** -3, 10 ** 0)
-    rvs = rv.rvs(size=10000, random_state=42)
-    vals, _ = np.histogram(np.log10(rvs), bins=10)
-    assert 900 <= vals.min() <= vals.max() <= 1100
-    assert np.abs(np.median(vals) - 1000) <= 10
+class TestLogUniform:
+    def test_alias(self):
+        # This test makes sure that "reciprocal" and "loguniform" are
+        # aliases of the same distribution and that both are log-uniform
+        rng = np.random.default_rng(98643218961)
+        rv = stats.loguniform(10 ** -3, 10 ** 0)
+        rvs = rv.rvs(size=10000, random_state=rng)
+
+        rng = np.random.default_rng(98643218961)
+        rv2 = stats.reciprocal(10 ** -3, 10 ** 0)
+        rvs2 = rv2.rvs(size=10000, random_state=rng)
+
+        assert_allclose(rvs2, rvs)
+
+        vals, _ = np.histogram(np.log10(rvs), bins=10)
+        assert 900 <= vals.min() <= vals.max() <= 1100
+        assert np.abs(np.median(vals) - 1000) <= 10
+
+    @pytest.mark.parametrize("method", ['mle', 'mm'])
+    def test_fit_override(self, method):
+        # loguniform is overparameterized, so check that fit override enforces
+        # scale=1 unless fscale is provided by the user
+        rng = np.random.default_rng(98643218961)
+        rvs = stats.loguniform.rvs(0.1, 1, size=1000, random_state=rng)
+
+        a, b, loc, scale = stats.loguniform.fit(rvs, method=method)
+        assert scale == 1
+
+        a, b, loc, scale = stats.loguniform.fit(rvs, fscale=2, method=method)
+        assert scale == 2
 
 
 class TestArgus:
@@ -7064,6 +7087,7 @@ def test_distr_params_lists():
     assert cont_distnames == invcont_distnames
 
 
+@pytest.mark.xslow
 def test_moment_order_4():
     # gh-13655 reported that if a distribution has a `_stats` method that
     # accepts the `moments` parameter, then if the distribution's `moment`

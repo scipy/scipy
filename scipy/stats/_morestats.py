@@ -3022,24 +3022,36 @@ def mood(x, y, axis=0, alternative="two-sided"):
     return z, pval
 
 
-WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'],
-                                   ['zstatistic'])
+WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
 
 
 def wilcoxon_result_unpacker(res):
-    return res.statistic, res.pvalue, res.zstatistic
+    if hasattr(res, 'zstatistic'):
+        return res.statistic, res.pvalue, res.zstatistic
+    else:
+        return res.statistic, res.pvalue
 
 
-def wilcoxon_result_object(statistic, pvalue, zstatistic):
-    return WilcoxonResult(statistic, pvalue, zstatistic=zstatistic)
+def wilcoxon_result_object(statistic, pvalue, zstatistic=None):
+    res = WilcoxonResult(statistic, pvalue)
+    if zstatistic is not None:
+        res.zstatistic = zstatistic
+    return res
+
+
+def wilcoxon_outputs(kwds):
+    method = kwds.get('method', 'auto')
+    if method == 'approx':
+        return 3
+    return 2
 
 
 @_rename_parameter("mode", "method")
-@_axis_nan_policy_factory(wilcoxon_result_object, paired=True,
-                          n_samples=lambda kwds: 2
-                          if kwds.get('y', None) is not None else 1,
-                          result_to_tuple=wilcoxon_result_unpacker,
-                          n_outputs=3,)
+@_axis_nan_policy_factory(
+    wilcoxon_result_object, paired=True,
+    n_samples=lambda kwds: 2 if kwds.get('y', None) is not None else 1,
+    result_to_tuple=wilcoxon_result_unpacker, n_outputs=wilcoxon_outputs,
+)
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
              alternative="two-sided", method='auto'):
     """Calculate the Wilcoxon signed-rank test.
@@ -3095,23 +3107,21 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     -------
     An object with the following attributes.
 
-    statistic : float
+    statistic : array_like
         If `alternative` is "two-sided", the sum of the ranks of the
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
-    pvalue : float
+    pvalue : array_like
         The p-value for the test depending on `alternative` and `method`.
-    zstatistic : float
-        When the the approximate method is used, this is the normalized
-        z-statistic::
+    zstatistic : array_like
+        When ``method = 'approx'``, this is the normalized z-statistic::
 
             z = (T - mn - d) / se
 
         where ``T`` is `statistic` as defined above, ``mn`` is the mean of the
         distribution under the null hypothesis, ``d`` is a continuity
         correction, and ``se`` is the standard error.
-
-        When the exact method is used, this is ``np.nan``.
+        When ``method != 'approx'``, this attribute is not available.
 
     See Also
     --------
@@ -3228,7 +3238,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         d = x - y
 
     if len(d) == 0:
-        return WilcoxonResult(np.nan, np.nan, zstatistic=np.nan)
+        res = WilcoxonResult(np.nan, np.nan)
+        if method == 'approx':
+            res.zstatistic = np.nan
+        return res
 
     if mode == "auto":
         if len(d) <= 50:
@@ -3332,7 +3345,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             prob = np.sum(pmf[:r_plus + 1])
         prob = np.clip(prob, 0, 1)
 
-    return WilcoxonResult(T, prob, zstatistic=np.nan if mode == 'exact' else z)
+    res = WilcoxonResult(T, prob)
+    if method == 'approx':
+        res.zstatistic = z
+    return res
 
 
 def median_test(*samples, ties='below', correction=True, lambda_=1,

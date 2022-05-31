@@ -83,7 +83,8 @@ fitpack_src = [
   'fitpack/splint.f',
   'fitpack/sproot.f',
   'fitpack/surev.f',
-  'fitpack/surfit.f'
+  'fitpack/surfit.f',
+  'fitpack/pardtc.f'
 ]
 
 # TODO: Add flags for 64 bit ints
