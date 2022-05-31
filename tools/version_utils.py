@@ -81,7 +81,9 @@ def git_version(cwd):
         return out
 
     try:
-        out = _minimal_ext_cmd(['git', 'rev-parse', 'HEAD'])
+        cwd = os.getcwd()
+        git_dir = os.path.join(cwd, ".git")
+        out = _minimal_ext_cmd(['git', '--git-dir', git_dir, 'rev-parse', 'HEAD'])
         GIT_REVISION = out.strip().decode('ascii')[:7]
 
         # We need a version number that's regularly incrementing for newer commits,
