@@ -21,7 +21,7 @@ Alternatively, if you prefer to build SciPy and the docs separately rather
 than use `runtests.py`:
 ```
 python setup.py develop  # in the root of the repo
-cd doc && make html-scipyorg
+cd doc && make html
 ```
 
 In case the SciPy version found by the above command is different from that of the
@@ -34,7 +34,7 @@ This indicates that you're likely picking up the wrong SciPy install, check
 with `python -c "import scipy; print(scipy.__file__)"`.
 
 If the build is successful, you can open it in your browser with `make show`
-(which will open `build/html-scipyorg/index.html`).
+(which will open `build/html/index.html`).
 
 ## Building documentation for a release
 
