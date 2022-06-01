@@ -35,7 +35,7 @@ SciPy requires the following software installed for your platform:
 
 __ https://www.python.org
 
-2) NumPy__ >= 1.18.5
+2) NumPy__ >= 1.19.5
 
 __ https://www.numpy.org/
 
