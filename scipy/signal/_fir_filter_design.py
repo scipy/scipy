@@ -796,7 +796,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     >>> trans_width = 100  # Width of transition from pass band to stop band, Hz
     >>> numtaps = 400      # Size of the FIR filter.
     >>> taps = signal.remez(numtaps, [0, cutoff, cutoff + trans_width, 0.5*fs],
-                            [1, 0], fs=fs)
+    ...                     [1, 0], fs=fs)
     >>> w, h = signal.freqz(taps, [1], worN=2000)
     >>> plot_response(fs, w, h, "Low-pass Filter")
 
