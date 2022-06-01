@@ -27,7 +27,7 @@ def _get_fs(fs, nyq):
         if fs is not None:
             raise ValueError("Values cannot be given for both 'nyq' and 'fs'.")
         msg = ("Keyword argument 'nyq' is deprecated in favour of 'fs' and "
-               "will be removed in SciPy 1.11.0.")
+               "will be removed in SciPy 1.12.0.")
         warnings.warn(msg, DeprecationWarning, stacklevel=3)
         fs = 2*nyq
     return fs
@@ -319,7 +319,7 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
 
         .. Deprecated:: 1.0.0
            `firwin` keyword argument `nyq` is deprecated in favour of `fs` and
-           will be removed in SciPy 1.11.0.
+           will be removed in SciPy 1.12.0.
     fs : float, optional
         The sampling frequency of the signal. Each frequency in `cutoff`
         must be between 0 and ``fs/2``.  Default is 2.
@@ -531,7 +531,7 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
 
         .. Deprecated:: 1.0.0
            `firwin2` keyword argument `nyq` is deprecated in favour of `fs` and
-           will be removed in SciPy 1.11.0.
+           will be removed in SciPy 1.12.0.
     antisymmetric : bool, optional
         Whether resulting impulse response is symmetric/antisymmetric.
         See Notes for more details.
@@ -722,7 +722,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
 
         .. Deprecated:: 1.0.0
            `remez` keyword argument `Hz` is deprecated in favour of `fs` and
-           will be removed in SciPy 1.11.0.
+           will be removed in SciPy 1.12.0.
     type : {'bandpass', 'differentiator', 'hilbert'}, optional
         The type of filter:
 
@@ -850,7 +850,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
         if fs is not None:
             raise ValueError("Values cannot be given for both 'Hz' and 'fs'.")
         msg = ("'remez' keyword argument 'Hz' is deprecated in favour of 'fs'"
-               " and will be removed in SciPy 1.11.0.")
+               " and will be removed in SciPy 1.12.0.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
         fs = Hz
 
@@ -902,7 +902,7 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
 
         .. Deprecated:: 1.0.0
            `firls` keyword argument `nyq` is deprecated in favour of `fs` and
-           will be removed in SciPy 1.11.0.
+           will be removed in SciPy 1.12.0.
     fs : float, optional
         The sampling frequency of the signal. Each frequency in `bands`
         must be between 0 and ``fs/2`` (inclusive). Default is 2.
