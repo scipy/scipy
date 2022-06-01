@@ -1854,8 +1854,8 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     Simulate the filter with `lsim2`.
 
     >>> with warnings.catch_warnings():
-    >>>     warnings.simplefilter(action='ignore', category=DeprecationWarning)
-    >>>     tout, yout, xout = lsim2((b, a), U=u, T=t)
+    ...     warnings.simplefilter(action='ignore', category=DeprecationWarning)
+    ...     tout, yout, xout = lsim2((b, a), U=u, T=t)
 
     Plot the result.
 
@@ -1887,8 +1887,8 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     the curve ``y = 0.5*t**2``.
 
     >>> with warnings.catch_warnings():
-    >>>     warnings.simplefilter(action='ignore', category=DeprecationWarning)
-    >>>     tout, y, x = lsim2(system, u, t)
+    ...     warnings.simplefilter(action='ignore', category=DeprecationWarning)
+    ...     tout, y, x = lsim2(system, u, t)
     >>> plt.plot(t, y)
     >>> plt.grid(alpha=0.3)
     >>> plt.xlabel('t')
@@ -2358,8 +2358,8 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     >>> system = ([1.0], [1.0, 2.0, 1.0])
     >>> with warnings.catch_warnings():
-    >>>     warnings.simplefilter(action='ignore', category=DeprecationWarning)
-    >>>     t, y = signal.impulse2(system)
+    ...     warnings.simplefilter(action='ignore', category=DeprecationWarning)
+    ...     t, y = signal.impulse2(system)
     >>> import matplotlib.pyplot as plt
     >>> plt.plot(t, y)
 
@@ -2533,8 +2533,8 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
 
     >>> lti = signal.lti([1.0], [1.0, 1.0])
     >>> with warnings.catch_warnings():
-    >>>     warnings.simplefilter(action='ignore', category=DeprecationWarning)
-    >>>     t, y = signal.step2(lti)
+    ...     warnings.simplefilter(action='ignore', category=DeprecationWarning)
+    ...     t, y = signal.step2(lti)
 
     >>> plt.plot(t, y)
     >>> plt.xlabel('Time [s]')
