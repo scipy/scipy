@@ -216,7 +216,7 @@ def kaiserord(ripple, width):
     Use `firwin` to create the FIR filter.
 
     >>> taps = firwin(numtaps, cutoff, window=('kaiser', beta),
-    ...               scale=False, nyq=0.5*fs)
+    ...               scale=False, fs=0.5*fs)
 
     Compute the frequency response of the filter.  ``w`` is the array of
     frequencies, and ``h`` is the corresponding complex array of frequency
@@ -795,7 +795,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     >>> cutoff = 8000.0    # Desired cutoff frequency, Hz
     >>> trans_width = 100  # Width of transition from pass band to stop band, Hz
     >>> numtaps = 400      # Size of the FIR filter.
-    >>> taps = signal.remez(numtaps, [0, cutoff, cutoff + trans_width, 0.5*fs], [1, 0], Hz=fs)
+    >>> taps = signal.remez(numtaps, [0, cutoff, cutoff + trans_width, 0.5*fs], [1, 0], fs=fs)
     >>> w, h = signal.freqz(taps, [1], worN=2000)
     >>> plot_response(fs, w, h, "Low-pass Filter")
 
@@ -806,7 +806,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     >>> trans_width = 250  # Width of transition from pass band to stop band, Hz
     >>> numtaps = 125      # Size of the FIR filter.
     >>> taps = signal.remez(numtaps, [0, cutoff - trans_width, cutoff, 0.5*fs],
-    ...                     [0, 1], Hz=fs)
+    ...                     [0, 1], fs=fs)
     >>> w, h = signal.freqz(taps, [1], worN=2000)
     >>> plot_response(fs, w, h, "High-pass Filter")
 
@@ -820,7 +820,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     >>> numtaps = 10        # Size of the FIR filter.
     >>> edges = [0, band[0] - trans_width, band[0], band[1],
     ...          band[1] + trans_width, 0.5*fs]
-    >>> taps = signal.remez(numtaps, edges, [0, 1, 0], Hz=fs)
+    >>> taps = signal.remez(numtaps, edges, [0, 1, 0], fs=fs)
     >>> w, h = signal.freqz(taps, [1], worN=2000)
     >>> plot_response(fs, w, h, "Band-pass Filter")
 
@@ -837,7 +837,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     >>> trans_width = 200    # Width of transition from pass band to stop band, Hz
     >>> numtaps = 175        # Size of the FIR filter.
     >>> edges = [0, band[0] - trans_width, band[0], band[1], band[1] + trans_width, 0.5*fs]
-    >>> taps = signal.remez(numtaps, edges, [1, 0, 1], Hz=fs)
+    >>> taps = signal.remez(numtaps, edges, [1, 0, 1], fs=fs)
     >>> w, h = signal.freqz(taps, [1], worN=2000)
     >>> plot_response(fs, w, h, "Band-stop Filter")
 
@@ -1179,7 +1179,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     >>> import matplotlib.pyplot as plt
     >>> freq = [0, 0.2, 0.3, 1.0]
     >>> desired = [1, 0]
-    >>> h_linear = remez(151, freq, desired, Hz=2.)
+    >>> h_linear = remez(151, freq, desired, fs=2.)
 
     Convert it to minimum phase:
 
