@@ -291,7 +291,11 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
                                     *args, **kwds))
 
-        assert_equal(res[0], statistics)
+        if hypotest.__name__ in {"gmean"}:
+            assert_allclose(res[0], statistics, rtol=2e-16)
+        else:
+            assert_equal(res[0], statistics)
+
         assert_equal(res[0].dtype, statistics.dtype)
         if len(res) == 2:
             assert_equal(res[1], pvalues)
