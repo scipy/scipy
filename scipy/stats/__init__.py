@@ -479,7 +479,7 @@ from .contingency import chi2_contingency
 from ._resampling import bootstrap, monte_carlo_test, permutation_test
 from ._entropy import *
 from ._hypotests import *
-from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite
+from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
 from ._fit import fit
