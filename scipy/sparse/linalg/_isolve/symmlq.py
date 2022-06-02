@@ -6,7 +6,7 @@ __all__ = ['symmlq']
 
 
 def symmlq(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
-           atol=None, haptol=1e-18, show=False):
+           atol=0., verbose=False):
     """
     Use Symmetric LQ iteration to solve ``Ax = b``.
 
@@ -22,18 +22,11 @@ def symmlq(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
     x0 : {ndarray}
         Starting guess for the solution.
     tol, atol : float, optional
-        Tolerances for convergence, ``norm(b - Ax) < max(tol*norm(b), atol)``.
+        Tolerances for convergence, `tol` represents relative tolerance and
+        `atol` represents absolute tolerance,
+        ``norm(b - Ax) < max(tol*norm(b), atol)``.
         The default for `tol` is 1.0e-5.
-        The default for `atol` is ``tol * norm(b)``.
-
-        .. warning::
-
-           The default value for `atol` will be changed in a future release.
-           For future compatibility, specify `atol` explicitly.
-    haptol : float, optional
-        Tolerance for happy breakdown, ``abs(np.inner(r.conjugate(), Mr)) <
-        haptol``.
-        Default is 1.0e-18.
+        The default for `atol` is 0.
     maxiter : int, optional
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -46,10 +39,9 @@ def symmlq(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
         error tolerance. By default, no preconditioner is used.
     callback : function, optional
         User-supplied function to call after each iteration. It is called
-        as `callback(rnorm)`, where `rnorm` is the current preconditioned
-        residual norm.
-    show : bool, optional
-        Specify ``show = True`` to show the convergence, ``show = False`` is
+        as `callback(xk)`, where `xk` is the current solution vector.
+    verbose : bool, optional
+        Specify ``verbose = True`` to show the convergence, ``verbose = False`` is
         to close the output of the convergence.
         Default is `False`.
 
@@ -76,7 +68,7 @@ def symmlq(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
     .. [1] C. C. Paige, M. A. Saunders, Solution of Sparse Indefinite Systems
            of Linear Equations, SIAM J. Numer. Anal., Vol. 12, No. 4, 1975.
 
-    This file is a python translation of PETSc implementation:
+    This file is adapted from PETSc implementation by
         https://gitlab.com/petsc/petsc/-/blob/main/src/ksp/ksp/impls/symmlq/symmlq.c
 
     Examples
@@ -102,7 +94,7 @@ def symmlq(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
     bnorm = np.linalg.norm(b)
     if bnorm == 0.:
         x = np.zeros(n)
-        if show:
+        if verbose:
             print("SYMMLQ: Linear solve converged due to zero right-hand side "
                   "iterations 0")
         return (postprocess(x), 0)
@@ -113,10 +105,8 @@ def symmlq(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
     else:
         r = b - A.matvec(x)
 
-    if atol is None:
-        atol = tol * bnorm
-    else:
-        atol = max(atol, tol * bnorm)
+    # Set absolute tolerance
+    atol = max(atol, tol * bnorm)
 
     c = cold = 1.
     s = sold = 0.
@@ -126,28 +116,29 @@ def symmlq(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
 
     # Check initial residual norm
     rnorm = np.linalg.norm(z)  # preconditioned residual norm
-    if rnorm < atol:
+    if rnorm <= atol:
         if callback is not None:
-            callback(rnorm)
-        if show:
+            callback(x)
+        if verbose:
             print("SYMMLQ: Linear solve converged due to reach TOL "
                   "iterations 0")
         return (postprocess(x), 0)
 
     # Check breakdown
     dp = np.inner(r.conjugate(), z)
+    haptol = 1e-18
     if abs(dp) < haptol:
         if callback is not None:
-            callback(rnorm)
-        if show:
+            callback(x)
+        if verbose:
             print("SYMMLQ: Linear solve converged due to HAPPY BREAKDOWN "
                   "iterations 0")
         return (postprocess(x), 0)
 
     if not np.iscomplex(dp) and dp < 0.:
         if callback is not None:
-            callback(rnorm)
-        if show:
+            callback(x)
+        if verbose:
             print("SYMMLQ: Linear solve not converged due to DIVERGED "
                   "INDEFINITE PC iterations 0")
         return (postprocess(x), -1)
@@ -185,8 +176,8 @@ def symmlq(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
                 ceta_bar = ceta / c
             x += ceta_bar * wbar
             if callback is not None:
-                callback(np.linalg.norm(M.matvec(b - A.matvec(x))))
-            if show:
+                callback(x)
+            if verbose:
                 print("SYMMLQ: Linear solve not converged due to DIVERGED "
                       f"INDEFINITE PC iterations {iter+1}")
             return (postprocess(x), -1)
@@ -208,20 +199,19 @@ def symmlq(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
 
         s_prod *= abs(s)
         if c == 0.:
-            rnorm = s_prod * 1e16
+            rnorm = s_prod * 1e15
         else:
             rnorm = s_prod / abs(c)
 
-        # Callback of preconditioned residual norm
-        if callback is not None:
-            callback(rnorm)
-
         # Convergence criterion
-        if rnorm < atol:
-            if show:
+        if rnorm <= atol:
+            if verbose:
                 print("SYMMLQ: Linear solve converged due to reach TOL "
                       f"iterations {iter+1}")
             break
+
+        if callback is not None and iter != maxiter-1:
+            callback(x)
 
     if c == 0.:
         ceta_bar = ceta * 1e15
@@ -230,10 +220,13 @@ def symmlq(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None,
 
     x += ceta_bar * wbar
 
-    if rnorm < atol:
+    if callback is not None:
+        callback(x)
+
+    if rnorm <= atol:
         return (postprocess(x), 0)
     else:
-        if show:
+        if verbose:
             print("SYMMLQ: Linear solve not converged due to reach MAXIT "
                   f"iterations {maxiter}")
         return (postprocess(x), maxiter)

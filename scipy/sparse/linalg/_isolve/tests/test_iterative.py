@@ -188,10 +188,7 @@ def check_maxiter(solver, case):
     residuals = []
 
     def callback(x):
-        if solver is symmlq:
-            residuals.append(x)
-        else:
-            residuals.append(norm(b - case.A*x))
+        residuals.append(norm(b - case.A*x))
 
     x, info = solver(A, b, x0=x0, tol=tol, maxiter=1, callback=callback)
 
@@ -353,7 +350,7 @@ def test_precond_inverse(case):
 
 def test_reentrancy():
     non_reentrant = [cg, cgs, bicg, bicgstab, gmres, qmr]
-    reentrant = [lgmres, minres, gcrotmk, tfqmr]
+    reentrant = [lgmres, minres, gcrotmk, tfqmr, symmlq]
     for solver in reentrant + non_reentrant:
         with suppress_warnings() as sup:
             sup.filter(DeprecationWarning, ".*called without specifying.*")
@@ -539,7 +536,7 @@ def test_x0_equals_Mb(solver):
 
 @pytest.mark.parametrize(('solver', 'solverstring'), [(tfqmr, 'TFQMR'),
                          (symmlq, 'SYMMLQ')])
-def test_show(solver, solverstring, capsys):
+def test_verbose(solver, solverstring, capsys):
     def cb(x):
         count[0] += 1
 
@@ -548,7 +545,7 @@ def test_show(solver, solverstring, capsys):
         A = case.A
         b = case.b
         count = [0]
-        x, info = solver(A, b, callback=cb, show=True)
+        x, info = solver(A, b, callback=cb, verbose=True)
         out, err = capsys.readouterr()
         if i == 20:  # Asymmetric and Positive Definite
             assert_equal(out, f"{solverstring}: Linear solve not converged "

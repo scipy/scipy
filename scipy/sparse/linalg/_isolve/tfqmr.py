@@ -6,7 +6,7 @@ __all__ = ['tfqmr']
 
 
 def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
-          callback=None, atol=None, show=False):
+          callback=None, atol=None, verbose=False):
     """
     Use Transpose-Free Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
@@ -43,8 +43,8 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
     callback : function, optional
         User-supplied function to call after each iteration.  It is called
         as `callback(xk)`, where `xk` is the current solution vector.
-    show : bool, optional
-        Specify ``show = True`` to show the convergence, ``show = False`` is
+    verbose : bool, optional
+        Specify ``verbose = True`` to show the convergence, ``verbose = False`` is
         to close the output of the convergence.
         Default is `False`.
 
@@ -159,7 +159,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
 
         # Convergence criteron
         if tau * np.sqrt(iter+1) < atol:
-            if (show):
+            if verbose:
                 print("TFQMR: Linear solve converged due to reach TOL "
                       "iterations {}".format(iter+1))
             return (postprocess(x), 0)
@@ -177,7 +177,7 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
             u = uNext
             rhoLast = rho
 
-    if (show):
+    if verbose:
         print("TFQMR: Linear solve not converged due to reach MAXIT "
               "iterations {}".format(iter+1))
     return (postprocess(x), maxiter)
