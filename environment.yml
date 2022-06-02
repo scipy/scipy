@@ -18,7 +18,7 @@ dependencies:
   - pkg-config  # note: not available on Windows
   - libblas=*=*openblas  # helps avoid pulling in MKL
   - pybind11
-  - pythran>=0.9.12
+  - pythran>=0.11.0
   # For testing and benchmarking
   - pytest
   - pytest-cov
