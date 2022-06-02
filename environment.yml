@@ -12,6 +12,7 @@ dependencies:
   - cython
   - compilers
   - meson
+  - meson-python
   - ninja
   - numpy
   - openblas
