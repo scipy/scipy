@@ -102,7 +102,7 @@ stages:
     - template: ci/azure-travis-template.yaml
       parameters:
         test_mode: fast
-        numpy_spec: "numpy==1.19.3"
+        numpy_spec: "numpy==1.19.5"
         use_sdist: true
   - job: wheel_optimized_gcc6
     timeoutInMinutes: 90
