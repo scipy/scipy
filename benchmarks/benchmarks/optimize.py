@@ -185,7 +185,7 @@ class _BenchOptimizers(Benchmark):
 
     def run_shgo(self):
         """
-        Do an optimization run for direct
+        Do an optimization run for shgo
         """
         self.function.nfev = 0
 
@@ -197,7 +197,7 @@ class _BenchOptimizers(Benchmark):
         t1 = time.time()
         res.success = self.function.success(res.x)
         res.nfev = self.function.nfev
-        self.add_result(res, t1 - t0, 'DIRECT')
+        self.add_result(res, t1 - t0, 'SHGO')
 
     def run_differentialevolution(self):
         """
@@ -238,7 +238,7 @@ class _BenchOptimizers(Benchmark):
         """
 
         if methods is None:
-            methods = ['DE', 'basinh.', 'DA','DIRECT', 'SHGO']
+            methods = ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO']
 
         stochastic_methods = ['DE', 'basinh.', 'DA']
 
@@ -490,7 +490,7 @@ class BenchGlobal(Benchmark):
     params = [
         list(_functions.keys()),
         ["success%", "<nfev>"],
-        ['DA', 'basinh.', 'DE', 'DIRECT', 'SHGO'],
+        ['DE', 'basinh.', 'DA', 'DIRECT', 'SHGO'],
     ]
     param_names = ["test function", "result type", "solver"]
 
