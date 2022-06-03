@@ -449,7 +449,7 @@ def setup_package():
     # Rationale: SciPy builds without deprecation warnings with N; deprecations
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
-    np_minversion = '1.18.5'
+    np_minversion = '1.19.5'
     np_maxversion = '9.9.99'
     python_minversion = '3.8'
     python_maxversion = '3.10'
