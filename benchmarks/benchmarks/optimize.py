@@ -16,7 +16,7 @@ with safe_import():
     import scipy.optimize
     from scipy.optimize.optimize import rosen, rosen_der, rosen_hess
     from scipy.optimize import (leastsq, basinhopping, differential_evolution,
-                                dual_annealing)
+                                dual_annealing, shgo, direct)
     from scipy.optimize._minimize import MINIMIZE_METHODS
 
 
@@ -167,6 +167,38 @@ class _BenchOptimizers(Benchmark):
         res.nfev = self.function.nfev
         self.add_result(res, t1 - t0, 'basinh.')
 
+    def run_direct(self):
+        """
+        Do an optimization run for direct
+        """
+        self.function.nfev = 0
+
+        t0 = time.time()
+
+        res = direct(self.fun,
+                     self.bounds)
+
+        t1 = time.time()
+        res.success = self.function.success(res.x)
+        res.nfev = self.function.nfev
+        self.add_result(res, t1 - t0, 'DIRECT')
+
+    def run_shgo(self):
+        """
+        Do an optimization run for direct
+        """
+        self.function.nfev = 0
+
+        t0 = time.time()
+
+        res = shgo(self.fun,
+                   self.bounds)
+
+        t1 = time.time()
+        res.success = self.function.success(res.x)
+        res.nfev = self.function.nfev
+        self.add_result(res, t1 - t0, 'DIRECT')
+
     def run_differentialevolution(self):
         """
         Do an optimization run for differential_evolution
@@ -206,14 +238,21 @@ class _BenchOptimizers(Benchmark):
         """
 
         if methods is None:
-            methods = ['DE', 'basinh.', 'DA']
+            methods = ['DE', 'basinh.', 'DA','DIRECT', 'SHGO']
+
+        stochastic_methods = ['DE', 'basinh.', 'DA']
 
         method_fun = {'DE': self.run_differentialevolution,
                       'basinh.': self.run_basinhopping,
-                      'DA': self.run_dualannealing,}
+                      'DA': self.run_dualannealing,
+                      'DIRECT':self.run_direct,
+                      'SHGO':self.run_shgo,}
 
-        for i in range(numtrials):
-            for m in methods:
+        for m in methods:
+            if m in stochastic_methods:
+                for i in range(numtrials):
+                    method_fun[m]()
+            else:
                 method_fun[m]()
 
     def bench_run(self, x0, methods=None, **minimizer_kwargs):
@@ -451,7 +490,7 @@ class BenchGlobal(Benchmark):
     params = [
         list(_functions.keys()),
         ["success%", "<nfev>"],
-        ['DE', 'basinh.', 'DA'],
+        ['DA', 'basinh.', 'DE', 'DIRECT', 'SHGO'],
     ]
     param_names = ["test function", "result type", "solver"]
 
