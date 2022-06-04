@@ -135,7 +135,7 @@ else:
     # In maintenance branch, change to np_maxversion N+3 if numpy is at N
     # See setup.py for more details
     np_minversion = '1.18.5'
-    np_maxversion = '9.9.99'
+    np_maxversion = '1.25.0'
     if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
             _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
         import warnings
