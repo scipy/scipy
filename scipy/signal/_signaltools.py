@@ -1852,9 +1852,33 @@ def medfilt2d(input, kernel_size=3):
     -----
     This is faster than `medfilt` when the input dtype is ``uint8``,
     ``float32``, or ``float64``; for other types, this falls back to
-    `medfilt`; you should use `scipy.ndimage.median_filter` instead as it is
-    much faster.  In some situations, `scipy.ndimage.median_filter` may be
+    `medfilt`. In some situations, `scipy.ndimage.median_filter` may be
     faster than this function.
+    
+    Examples
+    ------
+    Create a zero padded median filtering across an array. 
+    
+    >>> from scipy import signal
+    >>> x = np.random.random((5,5))
+    >>> x
+    array([[0.95157023, 0.78549349, 0.61620029, 0.44345056, 0.24886966],
+           [0.89000255, 0.49646211, 0.73132388, 0.19831186, 0.6719002 ],
+           [0.04592854, 0.73661483, 0.7901954 , 0.46936498, 0.51947463],
+           [0.78158824, 0.78524121, 0.48212208, 0.35493545, 0.86697816],
+           [0.07418323, 0.43975184, 0.11419559, 0.26172898, 0.72896183]])
+    >>> signal.medfilt2d(x, kernel_size=5)
+    array([[0.        , 0.        , 0.24886966, 0.        , 0.        ],
+           [0.        , 0.44345056, 0.49646211, 0.44345056, 0.        ],
+           [0.11419559, 0.44345056, 0.51947463, 0.46936498, 0.24886966],
+           [0.        , 0.19831186, 0.46936498, 0.35493545, 0.        ],
+           [0.        , 0.        , 0.11419559, 0.        , 0.        ]])
+    >>> signal.medfilt2d(x, kernel_size=3)
+    array([[0.        , 0.61620029, 0.44345056, 0.24886966, 0.        ],
+           [0.49646211, 0.73661483, 0.61620029, 0.51947463, 0.24886966],
+           [0.49646211, 0.73661483, 0.49646211, 0.51947463, 0.35493545],
+           [0.07418323, 0.48212208, 0.46936498, 0.48212208, 0.35493545],
+           [0.        , 0.11419559, 0.26172898, 0.26172898, 0.        ]])
 
     """
     image = np.asarray(input)
