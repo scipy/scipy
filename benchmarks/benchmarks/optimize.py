@@ -245,8 +245,8 @@ class _BenchOptimizers(Benchmark):
         method_fun = {'DE': self.run_differentialevolution,
                       'basinh.': self.run_basinhopping,
                       'DA': self.run_dualannealing,
-                      'DIRECT':self.run_direct,
-                      'SHGO':self.run_shgo,}
+                      'DIRECT': self.run_direct,
+                      'SHGO': self.run_shgo, }
 
         for m in methods:
             if m in stochastic_methods:
