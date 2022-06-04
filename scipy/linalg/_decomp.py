@@ -344,16 +344,18 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
         requested.
 
             .. deprecated:: 1.5.0
-                `eigh` keyword argument `turbo` is deprecated in favour if
-                ``driver=gvd`` keyword instead
+                `eigh` keyword argument `turbo` is deprecated in favour of
+                ``driver=gvd`` keyword instead and will be removed in SciPy
+                1.12.0.
     eigvals : tuple (lo, hi), optional, deprecated
         Indexes of the smallest and largest (in ascending order) eigenvalues
         and corresponding eigenvectors to be returned: 0 <= lo <= hi <= M-1.
         If omitted, all eigenvalues and eigenvectors are returned.
 
             .. deprecated:: 1.5.0
-                `eigh` keyword argument `eigvals` is deprecated in favour if
-                `subset_by_index` keyword instead
+                `eigh` keyword argument `eigvals` is deprecated in favour of
+                `subset_by_index` keyword instead and will be removed in SciPy
+                1.12.0.
 
     Returns
     -------
@@ -443,12 +445,14 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
     """
     if turbo:
-        warnings.warn("Keyword argument 'turbo' is deprecated in "
-                      "favour if 'driver=gvd' keyword instead",
+        warnings.warn("Keyword argument 'turbo' is deprecated in favour of '"
+                      "driver=gvd' keyword instead and will be removed in "
+                      "SciPy 1.12.0.",
                       DeprecationWarning, stacklevel=2)
     if eigvals:
-        warnings.warn("Keyword argument 'eigvals' is deprecated in "
-                      "favour if 'subset_by_index' keyword instead",
+        warnings.warn("Keyword argument 'eigvals' is deprecated in favour of "
+                      "'subset_by_index' keyword instead and will be removed "
+                      "in SciPy 1.12.0.",
                       DeprecationWarning, stacklevel=2)
 
     # set lower
@@ -971,7 +975,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
 
         .. deprecated:: 1.5.0
             'eigvalsh' keyword argument `turbo` is deprecated in favor of
-            ``driver=gvd`` option
+            ``driver=gvd`` option and will be removed in SciPy 1.12.0.
 
     eigvals : tuple (lo, hi), optional
         Indexes of the smallest and largest (in ascending order) eigenvalues
@@ -980,7 +984,7 @@ def eigvalsh(a, b=None, lower=True, overwrite_a=False,
 
         .. deprecated:: 1.5.0
             'eigvalsh' keyword argument `eigvals` is deprecated in favor of
-            `subset_by_index` option
+            `subset_by_index` option and will be removed in SciPy 1.12.0.
 
     Returns
     -------
