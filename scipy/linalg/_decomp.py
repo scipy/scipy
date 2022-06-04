@@ -443,11 +443,11 @@ def eigh(a, b=None, lower=True, eigvals_only=False, overwrite_a=False,
 
     """
     if turbo:
-        warnings.warn("'eigh' keyword argument 'turbo' is deprecated in "
+        warnings.warn("Keyword argument 'turbo' is deprecated in "
                       "favour if 'driver=gvd' keyword instead",
                       DeprecationWarning, stacklevel=2)
     if eigvals:
-        warnings.warn("'eigh' keyword argument 'eigvals' is deprecated in "
+        warnings.warn("Keyword argument 'eigvals' is deprecated in "
                       "favour if 'subset_by_index' keyword instead",
                       DeprecationWarning, stacklevel=2)
 

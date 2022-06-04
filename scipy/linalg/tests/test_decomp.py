@@ -790,28 +790,28 @@ class TestEigh:
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_value=[1, 2], subset_by_index=[2, 4])
         with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "'eigh' keyword argument 'eigvals")
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
             assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                           subset_by_value=[1, 2], eigvals=[2, 4])
         # Invalid upper index spec
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[0, 4])
         with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "'eigh' keyword argument 'eigvals")
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
             assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                           eigvals=[0, 4])
         # Invalid lower index
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[-2, 2])
         with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "'eigh' keyword argument 'eigvals")
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
             assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                           eigvals=[-2, 2])
         # Invalid index spec #2
         assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                       subset_by_index=[2, 0])
         with np.testing.suppress_warnings() as sup:
-            sup.filter(DeprecationWarning, "'eigh' keyword argument 'eigvals")
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals")
             assert_raises(ValueError, eigh, np.ones([3, 3]), np.ones([3, 3]),
                           subset_by_index=[2, 0])
         # Invalid value spec
@@ -894,28 +894,35 @@ class TestEigh:
     @pytest.mark.parametrize('dtype_', ('f', 'd', 'F', 'D'))
     @pytest.mark.parametrize('dim', (6,))
     def test_eigh(self, dim, dtype_, overwrite, lower, turbo, eigvals):
-        atol = 1e-11 if dtype_ in ('dD') else 1e-4
-        a = _random_hermitian_matrix(n=dim, dtype=dtype_)
-        w, z = eigh(a, overwrite_a=overwrite, lower=lower, eigvals=eigvals)
-        assert_dtype_equal(z.dtype, dtype_)
-        w = w.astype(dtype_)
-        diag_ = diag(z.T.conj() @ a @ z).real
-        assert_allclose(diag_, w, rtol=0., atol=atol)
+        with np.testing.suppress_warnings() as sup:
+            if turbo:
+                sup.filter(DeprecationWarning,
+                           "Keyword argument 'turbo'")
+            if eigvals:
+                sup.filter(DeprecationWarning,
+                           "Keyword argument 'eigvals'")
+            atol = 1e-11 if dtype_ in ('dD') else 1e-4
+            a = _random_hermitian_matrix(n=dim, dtype=dtype_)
+            w, z = eigh(a, overwrite_a=overwrite, lower=lower, eigvals=eigvals)
+            assert_dtype_equal(z.dtype, dtype_)
+            w = w.astype(dtype_)
+            diag_ = diag(z.T.conj() @ a @ z).real
+            assert_allclose(diag_, w, rtol=0., atol=atol)
 
-        a = _random_hermitian_matrix(n=dim, dtype=dtype_)
-        b = _random_hermitian_matrix(n=dim, dtype=dtype_, posdef=True)
-        w, z = eigh(a, b, overwrite_a=overwrite, lower=lower,
-                    overwrite_b=overwrite, turbo=turbo, eigvals=eigvals)
-        assert_dtype_equal(z.dtype, dtype_)
-        w = w.astype(dtype_)
-        diag1_ = diag(z.T.conj() @ a @ z).real
-        assert_allclose(diag1_, w, rtol=0., atol=atol)
-        diag2_ = diag(z.T.conj() @ b @ z).real
-        assert_allclose(diag2_, ones(diag2_.shape[0]), rtol=0., atol=atol)
+            a = _random_hermitian_matrix(n=dim, dtype=dtype_)
+            b = _random_hermitian_matrix(n=dim, dtype=dtype_, posdef=True)
+            w, z = eigh(a, b, overwrite_a=overwrite, lower=lower,
+                        overwrite_b=overwrite, turbo=turbo, eigvals=eigvals)
+            assert_dtype_equal(z.dtype, dtype_)
+            w = w.astype(dtype_)
+            diag1_ = diag(z.T.conj() @ a @ z).real
+            assert_allclose(diag1_, w, rtol=0., atol=atol)
+            diag2_ = diag(z.T.conj() @ b @ z).real
+            assert_allclose(diag2_, ones(diag2_.shape[0]), rtol=0., atol=atol)
 
     def test_eigvalsh_new_args(self):
         a = _random_hermitian_matrix(5)
-        w = eigvalsh(a, eigvals=[1, 2])
+        w = eigvalsh(a, subset_by_index=[1, 2])
         assert_equal(len(w), 2)
 
         w2 = eigvalsh(a, subset_by_index=[1, 2])
@@ -926,6 +933,15 @@ class TestEigh:
         w3 = eigvalsh(b, subset_by_value=[1, 1.4])
         assert_equal(len(w3), 2)
         assert_allclose(w3, np.array([1.2, 1.3]))
+
+    @pytest.mark.parametrize("method", [eigh, eigvalsh])
+    def test_deprecations(self, method):
+        with pytest.warns(DeprecationWarning,
+                          match="Keyword argument 'turbo'"):
+            method(np.zeros((2, 2)), turbo=True)
+        with pytest.warns(DeprecationWarning,
+                          match="Keyword argument 'eigvals'"):
+            method(np.zeros((2, 2)), eigvals=[0, 1])
 
 
 class TestLU:
