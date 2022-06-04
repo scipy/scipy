@@ -385,7 +385,7 @@ def lobpcg(
 
         vals, vecs = eigh(A,
                           B,
-                          eigvals=eigvals,
+                          subset_by_index=eigvals,
                           check_finite=False)
         if largest:
             # Reverse order to be compatible with eigs() in 'LM' mode.
