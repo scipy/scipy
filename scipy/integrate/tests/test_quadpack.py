@@ -264,7 +264,7 @@ class TestQuad:
     @pytest.mark.parametrize('kwargs', [{'epsabs': 0.1}, {'epsrel': 0.1}])
     def test_double_integral_warns_with_deprecated_input(self, kwargs):
 
-        if scipy_version.startswith("1.11"):
+        if scipy_version.startswith("1.12"):
             raise Exception("Reminder to remove deprecated behaviour")
 
         def func(x0, x1):
@@ -288,7 +288,7 @@ class TestQuad:
     @pytest.mark.parametrize('kwargs', [{'epsabs': 0.1}, {'epsrel': 0.1}])
     def test_triple_integral_warns_with_deprecated_input(self, kwargs):
 
-        if scipy_version.startswith("1.11"):
+        if scipy_version.startswith("1.12"):
             raise Exception("Reminder to remove deprecated behaviour")
 
         def simpfunc(z, y, x, t):

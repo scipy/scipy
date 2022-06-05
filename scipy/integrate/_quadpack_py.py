@@ -618,12 +618,12 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
         where ``i`` = inner integral of ``func(y, x)`` from ``gfun(x)``
         to ``hfun(x)``, and ``result`` is the numerical approximation.
         See `epsrel` below. This argument is deprecated and will be
-        removed in SciPy 1.11.0. Please use the `opts` argument instead.
+        removed in SciPy 1.12.0. Please use the `opts` argument instead.
     epsrel : float, optional
         Relative tolerance of the inner 1-D integrals. Default is 1.49e-8.
         If ``epsabs <= 0``, `epsrel` must be greater than both 5e-29
         and ``50 * (machine epsilon)``. See `epsabs` above. This argument is
-        deprecated and will be removed in SciPy 1.11.0. Please use the
+        deprecated and will be removed in SciPy 1.12.0. Please use the
         `opts` argument instead.
     opts : iterable object or dict, optional
         Options to be passed to `quad`. May be empty, a dict, or
@@ -784,13 +784,13 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
 
     if epsabs != inspect.signature(dblquad).parameters.get('epsabs').default:
         msg = ("Passing `epsabs` explicitly is deprecated and will be removed "
-               "in SciPy 1.11.0. Please pass it via the `opts` argument. "
+               "in SciPy 1.12.0. Please pass it via the `opts` argument. "
                "instead. `epsabs` will be ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     if epsrel != inspect.signature(dblquad).parameters.get('epsrel').default:
         msg = ("Passing `epsrel` explicitly is deprecated and will be removed "
-               "in SciPy 1.11.0. Please pass it via the `opts` argument. "
+               "in SciPy 1.12.0. Please pass it via the `opts` argument. "
                "instead. `epsrel` will be ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
@@ -833,11 +833,11 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     epsabs : float, optional
         Absolute tolerance passed directly to the innermost 1-D quadrature
         integration. Default is 1.49e-8. This argument is deprecated
-        and will be removed in SciPy 1.11.0. Please use the `opts` argument
+        and will be removed in SciPy 1.12.0. Please use the `opts` argument
         instead.
     epsrel : float, optional
         Relative tolerance of the innermost 1-D integrals. Default is 1.49e-8.
-        This argument is deprecated and will be removed in SciPy 1.11.0.
+        This argument is deprecated and will be removed in SciPy 1.12.0.
         Please use the `opts` argument instead.
     opts : iterable object or dict, optional
         Options to be passed to `quad`. May be empty, a dict, or
@@ -1006,13 +1006,13 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     if epsabs != inspect.signature(tplquad).parameters.get('epsabs').default:
         msg = ("Passing `epsabs` explicitly is deprecated and will be removed "
-               "in SciPy 1.11.0. Please pass it via the `opts` argument. "
+               "in SciPy 1.12.0. Please pass it via the `opts` argument. "
                "instead. `epsabs` will be ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     if epsrel != inspect.signature(tplquad).parameters.get('epsrel').default:
         msg = ("Passing `epsrel` explicitly is deprecated and will be removed "
-               "in SciPy 1.11.0. Please pass it via the `opts` argument. "
+               "in SciPy 1.12.0. Please pass it via the `opts` argument. "
                "instead. `epsrel` will be ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
