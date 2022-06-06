@@ -1854,7 +1854,7 @@ def medfilt2d(input, kernel_size=3):
     ``float32``, or ``float64``; for other types, this falls back to
     `medfilt`. In some situations, `scipy.ndimage.median_filter` may be
     faster than this function.
-    
+
     Examples
     --------
     >>> from scipy import signal
@@ -1877,7 +1877,7 @@ def medfilt2d(input, kernel_size=3):
            [ 6, 11, 12, 13,  9],
            [11, 16, 17, 18, 14],
            [ 0, 16, 17, 18,  0]])
-           
+
     """
     image = np.asarray(input)
 
