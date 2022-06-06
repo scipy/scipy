@@ -1723,9 +1723,8 @@ class Delaunay(_QhullUser):
         Same as `simplices`, but deprecated.
 
         .. deprecated:: 0.12.0
-
-        Delaunay attribute `vertices` is deprecated in favour of `simplices`
-        and will be removed in Scipy 1.11.0.
+            Delaunay attribute `vertices` is deprecated in favour of `simplices`
+            and will be removed in Scipy 1.11.0.
     vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
         vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.

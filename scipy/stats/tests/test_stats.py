@@ -354,7 +354,8 @@ class TestCorrPearsonr:
     def test_constant_input(self):
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
-        with assert_warns(stats.PearsonRConstantInputWarning):
+        msg = "An input array is constant"
+        with assert_warns(stats.ConstantInputWarning, match=msg):
             r, p = stats.pearsonr([0.667, 0.667, 0.667], [0.123, 0.456, 0.789])
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -363,7 +364,8 @@ class TestCorrPearsonr:
         # Near constant input (but not constant):
         x = [2, 2, 2 + np.spacing(2)]
         y = [3, 3, 3 + 6*np.spacing(3)]
-        with assert_warns(stats.PearsonRNearConstantInputWarning):
+        msg = "An input array is nearly constant; the computed"
+        with assert_warns(stats.NearConstantInputWarning, match=msg):
             # r and p are garbage, so don't bother checking them in this case.
             # (The exact value of r would be 1.)
             r, p = stats.pearsonr(x, y)
@@ -950,7 +952,8 @@ class TestCorrSpearmanr2:
 
     def test_tie0(self):
         # with only ties in one or both inputs
-        with assert_warns(stats.SpearmanRConstantInputWarning):
+        warn_msg = "An input array is constant"
+        with assert_warns(stats.ConstantInputWarning, match=warn_msg):
             r, p = stats.spearmanr([2, 2, 2], [2, 2, 2])
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -992,7 +995,8 @@ class TestCorrSpearmanr2:
         z1 = np.array([[1, 1, 1, 1], [1, 2, 3, 4]])
         z2 = np.array([[1, 2, 3, 4], [1, 1, 1, 1]])
         z3 = np.array([[1, 1, 1, 1], [1, 1, 1, 1]])
-        with assert_warns(stats.SpearmanRConstantInputWarning):
+        warn_msg = "An input array is constant"
+        with assert_warns(stats.ConstantInputWarning, match=warn_msg):
             r, p = stats.spearmanr(z1, axis=1)
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -1008,7 +1012,8 @@ class TestCorrSpearmanr2:
         y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
             0.0007535430349118562, 0.0002661781514710257, 0, 0,
             0.0007835762419683435])
-        with assert_warns(stats.SpearmanRConstantInputWarning):
+        warn_msg = "An input array is constant"
+        with assert_warns(stats.ConstantInputWarning, match=warn_msg):
             r, p = stats.spearmanr(x, y)
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -6540,7 +6545,8 @@ class TestFOneWay:
         ])
     def test_constant_input(self, a, b, expected):
         # For more details, look on https://github.com/scipy/scipy/issues/11669
-        with assert_warns(stats.F_onewayConstantInputWarning):
+        msg = "Each of the input arrays is constant;"
+        with assert_warns(stats.ConstantInputWarning, match=msg):
             f, p = stats.f_oneway(a, b)
             assert f, p == expected
 
@@ -6572,7 +6578,8 @@ class TestFOneWay:
         else:
             take_axis = 1
 
-        with assert_warns(stats.F_onewayConstantInputWarning):
+        warn_msg = "Each of the input arrays is constant;"
+        with assert_warns(stats.ConstantInputWarning, match=warn_msg):
             f, p = stats.f_oneway(a, b, c, axis=axis)
 
         # Verify that the result computed with the 2d arrays matches
@@ -6584,7 +6591,7 @@ class TestFOneWay:
             assert_allclose(f[j], fj, rtol=1e-14)
             assert_allclose(p[j], pj, rtol=1e-14)
         for j in [2, 3]:
-            with assert_warns(stats.F_onewayConstantInputWarning):
+            with assert_warns(stats.ConstantInputWarning, match=warn_msg):
                 fj, pj = stats.f_oneway(np.take(a, j, take_axis),
                                         np.take(b, j, take_axis),
                                         np.take(c, j, take_axis))
@@ -6610,12 +6617,14 @@ class TestFOneWay:
 
     def test_length0_1d_error(self):
         # Require at least one value in each group.
-        with assert_warns(stats.F_onewayBadInputSizesWarning):
+        msg = 'all input arrays have length 1.'
+        with assert_warns(stats.DegenerateDataWarning, match=msg):
             result = stats.f_oneway([1, 2, 3], [], [4, 5, 6, 7])
             assert_equal(result, (np.nan, np.nan))
 
     def test_length0_2d_error(self):
-        with assert_warns(stats.F_onewayBadInputSizesWarning):
+        msg = 'all input arrays have length 1.'
+        with assert_warns(stats.DegenerateDataWarning, match=msg):
             ncols = 3
             a = np.ones((4, ncols))
             b = np.ones((0, ncols))
@@ -6626,7 +6635,8 @@ class TestFOneWay:
             assert_equal(p, nans)
 
     def test_all_length_one(self):
-        with assert_warns(stats.F_onewayBadInputSizesWarning):
+        msg = 'all input arrays have length 1.'
+        with assert_warns(stats.DegenerateDataWarning, match=msg):
             result = stats.f_oneway([10], [11], [12], [13])
             assert_equal(result, (np.nan, np.nan))
 
