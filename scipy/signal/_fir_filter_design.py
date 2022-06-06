@@ -216,7 +216,7 @@ def kaiserord(ripple, width):
     Use `firwin` to create the FIR filter.
 
     >>> taps = firwin(numtaps, cutoff, window=('kaiser', beta),
-    ...               scale=False, fs=0.5*fs)
+    ...               scale=False, fs=fs)
 
     Compute the frequency response of the filter.  ``w`` is the array of
     frequencies, and ``h`` is the corresponding complex array of frequency
