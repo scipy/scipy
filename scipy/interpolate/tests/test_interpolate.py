@@ -434,7 +434,7 @@ class TestInterp1D:
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 5., 6.]))
 
-    def bounds_check_helper(self,interpolant, test_array, fail_value):
+    def bounds_check_helper(self, interpolant, test_array, fail_value):
         # Asserts that a ValueError is raised and that the error message
         # contains the value causing this exception.
         assert_raises(ValueError, interpolant, test_array)
