@@ -88,8 +88,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
 # branching based on dtype.
 def _contains_nan(a, nan_policy='propagate'):
     # only inexact (floating/complexfloating) and object arrays support np.nan
-    if isinstance(a, np.ndarray) and not (np.issubdtype(a.dtype, np.inexact) or
-                                          np.issubdtype(a.dtype, object)):
+    if not (np.issubdtype(a.dtype, np.inexact)
+            or np.issubdtype(a.dtype, object)):
         return False, nan_policy
     policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
