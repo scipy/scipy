@@ -696,7 +696,12 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
 
     # Compute the expm action up to the initial time point.
-    X[0] = _expm_multiply_simple_core(A, B, t_0, mu, m_star, s)
+    if t_0*A_1_norm == 0:
+        m_star_0, s_0 = 0, 1
+    else:
+        norm_info_0 = LazyOperatorNormInfo(t_0*A, A_1_norm=t_0*A_1_norm, ell=ell)
+        m_star_0, s_0 = _fragment_3_1(norm_info_0, n0, tol, ell=ell)
+    X[0] = _expm_multiply_simple_core(A, B, t_0, mu, m_star_0, s_0)
 
     # Compute the expm action at the rest of the time points.
     if q <= s:
