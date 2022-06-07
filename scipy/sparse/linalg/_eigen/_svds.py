@@ -304,7 +304,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     elif solver == 'propack':
         if not HAS_PROPACK:
             raise ValueError("`solver='propack'` is opt-in due to potential issues on Windows, "
-                             "it can be enabled by setting the `USE_PROPACK` environment "
+                             "it can be enabled by setting the `SCIPY_USE_PROPACK` environment "
                              "variable before importing scipy")
         jobu = return_singular_vectors in {True, 'u'}
         jobv = return_singular_vectors in {True, 'vh'}
