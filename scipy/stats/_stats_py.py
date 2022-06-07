@@ -86,14 +86,14 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
 # This should probably be rewritten to avoid nested TypeErrors in favor of
 # branching based on dtype.
 def _contains_nan(a, nan_policy='propagate', use_summation=True):
-    # only inexact (floating/complexfloating) and object arrays support np.nan
-    if not (np.issubdtype(a.dtype, np.inexact)
-            or np.issubdtype(a.dtype, object)):
-        return False, nan_policy
     policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
+    # only inexact (floating/complexfloating) and object arrays support np.nan
+    if not (np.issubdtype(a.dtype, np.inexact)
+            or np.issubdtype(a.dtype, object)):
+        return False, nan_policy
     try:
         # The summation method avoids creating a (potentially huge) array.
         # But, it will set contains_nan to True for (e.g.) [-inf, ..., +inf].
