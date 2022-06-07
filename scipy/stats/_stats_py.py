@@ -83,7 +83,6 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'brunnermunzel', 'alexandergovern']
 
 
-
 # This should probably be rewritten to avoid nested TypeErrors in favor of
 # branching based on dtype.
 def _contains_nan(a, nan_policy='propagate', use_summation=True):
