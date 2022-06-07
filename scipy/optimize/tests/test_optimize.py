@@ -1542,10 +1542,10 @@ class TestOptimizeScalar:
         assert_allclose(x, self.solution, atol=1e-6)
 
         with pytest.raises(ValueError, match='Bracketing values (xa, xb, xc) do not fulfill this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))'):
-            optimize.fminbound(self.fun, brack=(-1,0,1))
+            optimize.brent(self.fun, brack=(-1,0,1))
 
         with pytest.raises(ValueError, match='Bracketing values (xa, xb, xc) do not fulfill this requirement: (xa < xb) and (xb < xc)'):
-            optimize.fminbound(self.fun, brack=(0,-1,1))
+            optimize.brent(self.fun, brack=(0,-1,1))
 
     def test_golden(self):
         x = optimize.golden(self.fun)
