@@ -1,3 +1,14 @@
+fs = import('fs')
+if not fs.exists('boost/README.rst')
+  error('Missing the `boost` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('highs/README.md')
+  error('Missing the `highs` submodule! Run `git submodule update --init` to fix this.')
+endif
+if not fs.exists('unuran/README.md')
+  error('Missing the `unuran` submodule! Run `git submodule update --init` to fix this.')
+endif
+
 _lib_pxd = custom_target('_lib_pxd',
   output: [
     '__init__.py',

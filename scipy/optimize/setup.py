@@ -33,8 +33,8 @@ def configuration(parent_package='', top_path=None):
                        headers='rectangular_lsap/rectangular_lsap.h',
                        _pre_build_hook=set_cxx_flags_clib_hook)
     _lsap = config.add_extension(
-        '_lsap_module',
-        sources=['_lsap_module.c'],
+        '_lsap',
+        sources=['_lsap.c'],
         libraries=['rectangular_lsap'],
         depends=(['rectangular_lsap/rectangular_lsap.cpp',
                   'rectangular_lsap/rectangular_lsap.h']),
@@ -104,7 +104,7 @@ def configuration(parent_package='', top_path=None):
                        include_dirs=[get_python_inc()],
                        **numpy_nodepr_api)
 
-    config.add_extension('_directmodule',
+    config.add_extension('_direct',
                          sources=['_directmodule.c'],
                          libraries=['_direct_lib'],
                          depends=(sources + headers),

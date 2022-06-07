@@ -134,7 +134,7 @@ else:
     from scipy._lib import _pep440
     # In maintenance branch, change to np_maxversion N+3 if numpy is at N
     # See setup.py for more details
-    np_minversion = '1.18.5'
+    np_minversion = '1.19.5'
     np_maxversion = '9.9.99'
     if (_pep440.parse(__numpy_version__) < _pep440.Version(np_minversion) or
             _pep440.parse(__numpy_version__) >= _pep440.Version(np_maxversion)):
@@ -145,7 +145,17 @@ else:
                       UserWarning)
     del _pep440
 
-    from scipy._lib._ccallback import LowLevelCallable
+    # This is the first import of an extension module within SciPy. If there's
+    # a general issue with the install, such that extension modules are missing
+    # or cannot be imported, this is where we'll get a failure - so give an
+    # informative error message.
+    try:
+        from scipy._lib._ccallback import LowLevelCallable
+    except ImportError as e:
+        msg = "The `scipy` install you are using seems to be broken, " + \
+              "(extension modules cannot be imported), " + \
+              "please try reinstalling."
+        raise ImportError(msg) from e
 
     from scipy._lib._testutils import PytestTester
     test = PytestTester(__name__)

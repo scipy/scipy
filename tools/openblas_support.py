@@ -6,6 +6,7 @@ import sys
 import shutil
 import tarfile
 import textwrap
+import time
 import zipfile
 
 from tempfile import mkstemp, gettempdir
@@ -92,11 +93,16 @@ def download_openblas(target, plat, ilp64):
         return None
     filename = f'{BASEURL}/openblas{fnsuffix}-{OPENBLAS_LONG}-{suffix}'
     req = Request(url=filename, headers=headers)
-    try:
-        response = urlopen(req)
-    except HTTPError:
-        print(f'Could not download "{filename}"', file=sys.stderr)
-        raise
+
+    for _ in range(3):
+        try:
+            time.sleep(1)
+            response = urlopen(req)
+            break
+        except HTTPError:
+            print(f'Could not download "{filename}"', file=sys.stderr)
+            raise
+
     length = response.getheader('content-length')
     if response.status != 200:
         print(f'Could not download "{filename}"', file=sys.stderr)
