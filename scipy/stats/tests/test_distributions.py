@@ -5502,7 +5502,11 @@ class TestStudentizedRange:
         src_case = case_result["src_case"]
         mp_result = case_result["mp_result"]
         mkv = src_case["m"], src_case["k"], src_case["v"]
-        res = stats.studentized_range.moment(*mkv)
+
+        # Silence invalid value encountered warnings. Actual problems will be
+        # caught by the result comparison.
+        with np.errstate(invalid='ignore'):
+            res = stats.studentized_range.moment(*mkv)
 
         assert_allclose(res, mp_result,
                         atol=src_case["expected_atol"],
@@ -5534,7 +5538,8 @@ class TestStudentizedRange:
     def test_cdf_against_r(self, r_case_result):
         # Test large `v` values using R
         q, k, v, r_res = r_case_result
-        res = stats.studentized_range.cdf(q, k, v)
+        with np.errstate(invalid='ignore'):
+            res = stats.studentized_range.cdf(q, k, v)
         assert_allclose(res, r_res)
 
     @pytest.mark.slow
@@ -5542,7 +5547,12 @@ class TestStudentizedRange:
     def test_moment_vectorization(self):
         # Test moment broadcasting. Calls `_munp` directly because
         # `rv_continuous.moment` is broken at time of writing. See gh-12192
-        m = stats.studentized_range._munp([1, 2], [4, 5], [10, 11])
+
+        # Silence invalid value encountered warnings. Actual problems will be
+        # caught by the result comparison.
+        with np.errstate(invalid='ignore'):
+            m = stats.studentized_range._munp([1, 2], [4, 5], [10, 11])
+
         assert_allclose(m.shape, (2,))
 
         with pytest.raises(ValueError, match="...could not be broadcast..."):
@@ -5555,6 +5565,38 @@ class TestStudentizedRange:
             sup.filter(IntegrationWarning)
             k, df, _, _ = stats.studentized_range._fitstart([1, 2, 3])
         assert_(stats.studentized_range._argcheck(k, df))
+
+    def test_infinite_df(self):
+        # Check that the CDF and PDF infinite and normal integrators
+        # roughly match for a high df case
+        res = stats.studentized_range.pdf(3, 10, np.inf)
+        res_finite = stats.studentized_range.pdf(3, 10, 99999)
+        assert_allclose(res, res_finite, atol=1e-4, rtol=1e-4)
+
+        res = stats.studentized_range.cdf(3, 10, np.inf)
+        res_finite = stats.studentized_range.cdf(3, 10, 99999)
+        assert_allclose(res, res_finite, atol=1e-4, rtol=1e-4)
+
+    def test_df_cutoff(self):
+        # Test that the CDF and PDF properly switch integrators at df=100,000.
+        # The infinite integrator should be different enough that it fails
+        # an allclose assertion. Also sanity check that using the same
+        # integrator does pass the allclose with a 1-df difference, which
+        # should be tiny.
+
+        res = stats.studentized_range.pdf(3, 10, 100000)
+        res_finite = stats.studentized_range.pdf(3, 10, 99999)
+        res_sanity = stats.studentized_range.pdf(3, 10, 99998)
+        assert_raises(AssertionError, assert_allclose, res, res_finite,
+                      atol=1e-6, rtol=1e-6)
+        assert_allclose(res_finite, res_sanity, atol=1e-6, rtol=1e-6)
+
+        res = stats.studentized_range.cdf(3, 10, 100000)
+        res_finite = stats.studentized_range.cdf(3, 10, 99999)
+        res_sanity = stats.studentized_range.cdf(3, 10, 99998)
+        assert_raises(AssertionError, assert_allclose, res, res_finite,
+                      atol=1e-6, rtol=1e-6)
+        assert_allclose(res_finite, res_sanity, atol=1e-6, rtol=1e-6)
 
     def test_clipping(self):
         # The result of this computation was -9.9253938401489e-14 on some

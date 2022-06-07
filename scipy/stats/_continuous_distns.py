@@ -9693,7 +9693,7 @@ class studentized_range_gen(rv_continuous):
 
     When :math:`\nu` exceeds 100,000, an asymptotic approximation (infinite
     degrees of freedom) is used to compute the cumulative distribution
-    function [4]_.
+    function [4]_ and probability distribution function.
 
     %(after_notes)s
 
@@ -9810,18 +9810,25 @@ class studentized_range_gen(rv_continuous):
         return np.float64(ufunc(K, k, df))
 
     def _pdf(self, x, k, df):
-        cython_symbol = '_studentized_range_pdf'
 
         def _single_pdf(q, k, df):
-            log_const = _stats._studentized_range_pdf_logconst(k, df)
-            arg = [q, k, df, log_const]
-            usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
+            # The infinite form of the PDF is derived from the infinite
+            # CDF.
+            if df < 100000:
+                cython_symbol = '_studentized_range_pdf'
+                log_const = _stats._studentized_range_pdf_logconst(k, df)
+                arg = [q, k, df, log_const]
+                usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
+                ranges = [(-np.inf, np.inf), (0, np.inf)]
+
+            else:
+                cython_symbol = '_studentized_range_pdf_asymptotic'
+                arg = [q, k]
+                usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
+                ranges = [(-np.inf, np.inf)]
 
             llc = LowLevelCallable.from_cython(_stats, cython_symbol, usr_data)
-
-            ranges = [(-np.inf, np.inf), (0, np.inf)]
             opts = dict(epsabs=1e-11, epsrel=1e-12)
-
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_pdf, 3, 1)
@@ -9840,6 +9847,7 @@ class studentized_range_gen(rv_continuous):
                 arg = [q, k, df, log_const]
                 usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
                 ranges = [(-np.inf, np.inf), (0, np.inf)]
+
             else:
                 cython_symbol = '_studentized_range_cdf_asymptotic'
                 arg = [q, k]
@@ -9851,6 +9859,7 @@ class studentized_range_gen(rv_continuous):
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_cdf, 3, 1)
+
         # clip p-values to ensure they are in [0, 1].
         return np.clip(np.float64(ufunc(x, k, df)), 0, 1)
 
