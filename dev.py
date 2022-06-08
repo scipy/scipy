@@ -155,7 +155,7 @@ rich_click.GROUP_ARGUMENTS_OPTIONS = False
 rich_click.SHOW_METAVARS_COLUMN = True
 rich_click.USE_MARKDOWN = True
 rich_click.OPTION_GROUPS = {
-    "do.py": [
+    "dev.py": [
         {
             "name": "Options",
             "options": [
@@ -163,7 +163,7 @@ rich_click.OPTION_GROUPS = {
         },
     ],
 
-    "do.py test": [
+    "dev.py test": [
         {
             "name": "Options",
             "options": ["--help", "--verbose", "--parallel", "--coverage"],
@@ -175,7 +175,7 @@ rich_click.OPTION_GROUPS = {
     ],
 }
 rich_click.COMMAND_GROUPS = {
-    "do.py": [
+    "dev.py": [
         {
             "name": "build & testing",
             "commands": ["build", "test"],
@@ -267,7 +267,7 @@ def cli(ctx, **kwargs):
 
 
 
-    **python do.py --build-dir my-build test -s stats**
+    **python dev.py --build-dir my-build test -s stats**
     """
     CLI.update_context(ctx, kwargs)
 
@@ -602,9 +602,9 @@ class Test(Task):
 
     Examples:
 
-    $ python do.py test -s {SAMPLE_SUBMODULE}
-    $ python do.py test -t scipy.optimize.tests.test_minimize_constrained
-    $ python do.py test -s stats -- --tb=line
+    $ python dev.py test -s {SAMPLE_SUBMODULE}
+    $ python dev.py test -t scipy.optimize.tests.test_minimize_constrained
+    $ python dev.py test -s stats -- --tb=line
     """
     ctx = CONTEXT
 
@@ -698,9 +698,9 @@ class Bench(Task):
 
      Examples:
 
-    $ python do.py bench -t integrate.SolveBVP
-    $ python do.py bench -t linalg.Norm
-    $ python do.py bench --compare main
+    $ python dev.py bench -t integrate.SolveBVP
+    $ python dev.py bench -t linalg.Norm
+    $ python dev.py bench --compare main
 
     """
     ctx = CONTEXT
@@ -1057,7 +1057,7 @@ def notes(ctx_obj, version_args):
 
      Example:
 
-    $ python do.py notes v1.7.0 v1.8.0
+    $ python dev.py notes v1.7.0 v1.8.0
     """
     if version_args:
         sys.argv = version_args
@@ -1079,7 +1079,7 @@ def authors(ctx_obj, revision_args):
 
     Example:
 
-    $ python do.py authors v1.7.0 v1.8.0
+    $ python dev.py authors v1.7.0 v1.8.0
     """
     if revision_args:
         sys.argv = revision_args
