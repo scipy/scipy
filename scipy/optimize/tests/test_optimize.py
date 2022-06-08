@@ -1569,7 +1569,8 @@ class TestOptimizeScalar:
             nfev0, nfev = x0[2], x[2]
             assert_equal(nfev - nfev0, maxiter)
 
-        with pytest.raises(ValueError, match='(f(xb) < f(xa)) and (f(xb) < f(xc))'):
+        msg = '(f(xb) < f(xa)) and (f(xb) < f(xc))'
+        with pytest.raises(ValueError, match=msg):
             optimize.golden(self.fun, brack=(-1,0,1))
 
         with pytest.raises(ValueError, match='(xa < xb) and (xb < xc)'):
