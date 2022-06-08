@@ -361,6 +361,12 @@ class TestNBinom:
         val = scipy.stats.nbinom.logpmf(0, 1, 1)
         assert_equal(val, 0)
 
+    def test_logcdf_gh16159(self):
+        # check that gh16159 is resolved.
+        vals = stats.nbinom.logcdf([0, 5, 0, 5], n=4.8, p=0.45)
+        ref = np.log(stats.nbinom.cdf([0, 5, 0, 5], n=4.8, p=0.45))
+        assert_allclose(vals, ref)
+
 
 class TestGenInvGauss:
     def setup_method(self):
@@ -1541,14 +1547,13 @@ class TestPareto:
                      ndata / np.sum(np.log(data_shift/data_shift.min())))
         assert_equal(loc_mle_a, 2)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in "
-                                "double_scalars")
     @pytest.mark.parametrize("rvs_shape", [.1, 2])
     @pytest.mark.parametrize("rvs_loc", [0, 2])
     @pytest.mark.parametrize("rvs_scale", [1, 5])
     @pytest.mark.parametrize('fix_shape, fix_loc, fix_scale',
                              [p for p in product([True, False], repeat=3)
                               if False in p])
+    @np.errstate(invalid="ignore")
     def test_fit_MLE_comp_optimzer(self, rvs_shape, rvs_loc, rvs_scale,
                                    fix_shape, fix_loc, fix_scale, rng):
         data = stats.pareto.rvs(size=100, b=rvs_shape, scale=rvs_scale,
@@ -1566,8 +1571,7 @@ class TestPareto:
 
         _assert_less_or_close_loglike(stats.pareto, data, func, **kwds)
 
-    @pytest.mark.filterwarnings("ignore:invalid value encountered in "
-                                "double_scalars")
+    @np.errstate(invalid="ignore")
     def test_fit_known_bad_seed(self):
         # Tests a known seed and set of parameters that would produce a result
         # would violate the support of Pareto if the fit method did not check
@@ -3210,6 +3214,14 @@ class TestGumbelL:
         y = stats.gumbel_l.sf(x)
         xx = stats.gumbel_l.isf(y)
         assert_allclose(x, xx)
+
+    @pytest.mark.parametrize('loc', [-1, 1])
+    def test_fit_fixed_param(self, loc):
+        # ensure fixed location is correctly reflected from `gumbel_r.fit`
+        # See comments at end of gh-12737.
+        data = stats.gumbel_l.rvs(size=100, loc=loc)
+        fitted_loc, _ = stats.gumbel_l.fit(data, floc=loc)
+        assert_equal(fitted_loc, loc)
 
 
 class TestGumbelR:
@@ -5490,7 +5502,11 @@ class TestStudentizedRange:
         src_case = case_result["src_case"]
         mp_result = case_result["mp_result"]
         mkv = src_case["m"], src_case["k"], src_case["v"]
-        res = stats.studentized_range.moment(*mkv)
+
+        # Silence invalid value encountered warnings. Actual problems will be
+        # caught by the result comparison.
+        with np.errstate(invalid='ignore'):
+            res = stats.studentized_range.moment(*mkv)
 
         assert_allclose(res, mp_result,
                         atol=src_case["expected_atol"],
@@ -5522,7 +5538,8 @@ class TestStudentizedRange:
     def test_cdf_against_r(self, r_case_result):
         # Test large `v` values using R
         q, k, v, r_res = r_case_result
-        res = stats.studentized_range.cdf(q, k, v)
+        with np.errstate(invalid='ignore'):
+            res = stats.studentized_range.cdf(q, k, v)
         assert_allclose(res, r_res)
 
     @pytest.mark.slow
@@ -5530,7 +5547,12 @@ class TestStudentizedRange:
     def test_moment_vectorization(self):
         # Test moment broadcasting. Calls `_munp` directly because
         # `rv_continuous.moment` is broken at time of writing. See gh-12192
-        m = stats.studentized_range._munp([1, 2], [4, 5], [10, 11])
+
+        # Silence invalid value encountered warnings. Actual problems will be
+        # caught by the result comparison.
+        with np.errstate(invalid='ignore'):
+            m = stats.studentized_range._munp([1, 2], [4, 5], [10, 11])
+
         assert_allclose(m.shape, (2,))
 
         with pytest.raises(ValueError, match="...could not be broadcast..."):
@@ -5543,6 +5565,38 @@ class TestStudentizedRange:
             sup.filter(IntegrationWarning)
             k, df, _, _ = stats.studentized_range._fitstart([1, 2, 3])
         assert_(stats.studentized_range._argcheck(k, df))
+
+    def test_infinite_df(self):
+        # Check that the CDF and PDF infinite and normal integrators
+        # roughly match for a high df case
+        res = stats.studentized_range.pdf(3, 10, np.inf)
+        res_finite = stats.studentized_range.pdf(3, 10, 99999)
+        assert_allclose(res, res_finite, atol=1e-4, rtol=1e-4)
+
+        res = stats.studentized_range.cdf(3, 10, np.inf)
+        res_finite = stats.studentized_range.cdf(3, 10, 99999)
+        assert_allclose(res, res_finite, atol=1e-4, rtol=1e-4)
+
+    def test_df_cutoff(self):
+        # Test that the CDF and PDF properly switch integrators at df=100,000.
+        # The infinite integrator should be different enough that it fails
+        # an allclose assertion. Also sanity check that using the same
+        # integrator does pass the allclose with a 1-df difference, which
+        # should be tiny.
+
+        res = stats.studentized_range.pdf(3, 10, 100000)
+        res_finite = stats.studentized_range.pdf(3, 10, 99999)
+        res_sanity = stats.studentized_range.pdf(3, 10, 99998)
+        assert_raises(AssertionError, assert_allclose, res, res_finite,
+                      atol=1e-6, rtol=1e-6)
+        assert_allclose(res_finite, res_sanity, atol=1e-6, rtol=1e-6)
+
+        res = stats.studentized_range.cdf(3, 10, 100000)
+        res_finite = stats.studentized_range.cdf(3, 10, 99999)
+        res_sanity = stats.studentized_range.cdf(3, 10, 99998)
+        assert_raises(AssertionError, assert_allclose, res, res_finite,
+                      atol=1e-6, rtol=1e-6)
+        assert_allclose(res_finite, res_sanity, atol=1e-6, rtol=1e-6)
 
     def test_clipping(self):
         # The result of this computation was -9.9253938401489e-14 on some
@@ -6690,13 +6744,36 @@ class TestHistogram:
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
 
 
-def test_loguniform():
-    # This test makes sure the alias of "loguniform" is log-uniform
-    rv = stats.loguniform(10 ** -3, 10 ** 0)
-    rvs = rv.rvs(size=10000, random_state=42)
-    vals, _ = np.histogram(np.log10(rvs), bins=10)
-    assert 900 <= vals.min() <= vals.max() <= 1100
-    assert np.abs(np.median(vals) - 1000) <= 10
+class TestLogUniform:
+    def test_alias(self):
+        # This test makes sure that "reciprocal" and "loguniform" are
+        # aliases of the same distribution and that both are log-uniform
+        rng = np.random.default_rng(98643218961)
+        rv = stats.loguniform(10 ** -3, 10 ** 0)
+        rvs = rv.rvs(size=10000, random_state=rng)
+
+        rng = np.random.default_rng(98643218961)
+        rv2 = stats.reciprocal(10 ** -3, 10 ** 0)
+        rvs2 = rv2.rvs(size=10000, random_state=rng)
+
+        assert_allclose(rvs2, rvs)
+
+        vals, _ = np.histogram(np.log10(rvs), bins=10)
+        assert 900 <= vals.min() <= vals.max() <= 1100
+        assert np.abs(np.median(vals) - 1000) <= 10
+
+    @pytest.mark.parametrize("method", ['mle', 'mm'])
+    def test_fit_override(self, method):
+        # loguniform is overparameterized, so check that fit override enforces
+        # scale=1 unless fscale is provided by the user
+        rng = np.random.default_rng(98643218961)
+        rvs = stats.loguniform.rvs(0.1, 1, size=1000, random_state=rng)
+
+        a, b, loc, scale = stats.loguniform.fit(rvs, method=method)
+        assert scale == 1
+
+        a, b, loc, scale = stats.loguniform.fit(rvs, fscale=2, method=method)
+        assert scale == 2
 
 
 class TestArgus:
@@ -7052,6 +7129,7 @@ def test_distr_params_lists():
     assert cont_distnames == invcont_distnames
 
 
+@pytest.mark.xslow
 def test_moment_order_4():
     # gh-13655 reported that if a distribution has a `_stats` method that
     # accepts the `moments` parameter, then if the distribution's `moment`

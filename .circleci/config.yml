@@ -119,16 +119,16 @@ jobs:
           no_output_timeout: 25m
           command: |
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
-            python dev.py -n -j2 --doc html-scipyorg
+            python dev.py -n -j2 --doc html
 
       - store_artifacts:
-          path: doc/build/html-scipyorg
-          destination: html-scipyorg
+          path: doc/build/html
+          destination: html
 
       - persist_to_workspace:
           root: doc/build
           paths:
-            - html-scipyorg
+            - html
 
 # Run benchmarks
 
@@ -185,7 +185,7 @@ jobs:
             (git checkout --orphan tmp && git branch -D gh-pages || true);
             git checkout --orphan gh-pages;
             git reset --hard;
-            cp -R /tmp/build/html-scipyorg/. .;
+            cp -R /tmp/build/html/. .;
             touch .nojekyll;
             git config --global user.email "scipy-circleci-bot@nomail";
             git config --global user.name "scipy-circleci-bot";

@@ -8,6 +8,6 @@ jobs:
         uses: larsoner/circleci-artifacts-redirector-action@master
         with:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
-          artifact-path: 0/html-scipyorg/index.html
+          artifact-path: 0/html/index.html
           circleci-jobs: build_docs
           job-title: Check the rendered docs here!

@@ -86,7 +86,7 @@ for computing reorderings of sparse graphs were added.
 ``scipy.stats`` improvements
 ----------------------------
 
-Added a Dirichlet multivariate distribution, `scipy.stats.dirichlet`.
+Added a Dirichlet multivariate distribution, ``scipy.stats.dirichlet``.
 
 The new function `scipy.stats.median_test` computes Mood's median test.
 

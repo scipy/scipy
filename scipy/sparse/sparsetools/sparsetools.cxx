@@ -563,12 +563,11 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__sparsetools(void)
+PyMODINIT_FUNC
+PyInit__sparsetools(void)
 {
-    PyObject *m;
-    m = PyModule_Create(&moduledef);
     import_array();
-    return m;
+    return PyModule_Create(&moduledef);
 }
 
 } /* extern "C" */

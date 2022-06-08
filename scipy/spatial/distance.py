@@ -60,7 +60,6 @@ computing the distances between all pairs.
    dice             -- the Dice dissimilarity.
    hamming          -- the Hamming distance.
    jaccard          -- the Jaccard distance.
-   kulsinski        -- the Kulsinski distance.
    kulczynski1      -- the Kulczynski 1 distance.
    rogerstanimoto   -- the Rogers-Tanimoto dissimilarity.
    russellrao       -- the Russell-Rao dissimilarity.
@@ -92,7 +91,6 @@ __all__ = [
     'kulsinski',
     'kulczynski1',
     'mahalanobis',
-    'matching',
     'minkowski',
     'num_obs_dm',
     'num_obs_y',
@@ -124,6 +122,7 @@ from ..special import rel_entr
 
 from . import _distance_pybind
 
+from .._lib.deprecation import _deprecated
 
 def _copy_array_if_base_present(a):
     """Copy the array if its base points to a parent array."""
@@ -299,16 +298,7 @@ def _validate_vector(u, dtype=None):
     u = np.asarray(u, dtype=dtype, order='c')
     if u.ndim == 1:
         return u
-
-    # Ensure values such as u=1 and u=[1] still return 1-D arrays.
-    u = np.atleast_1d(u.squeeze())
-    if u.ndim > 1:
-        raise ValueError("Input vector should be 1-D.")
-    warnings.warn(
-        "scipy.spatial.distance metrics ignoring length-1 dimensions is "
-        "deprecated in SciPy 1.7 and will raise an error in SciPy 1.9.",
-        DeprecationWarning)
-    return u
+    raise ValueError("Input vector should be 1-D.")
 
 
 def _validate_weights(w, dtype=np.double):
@@ -806,6 +796,9 @@ def jaccard(u, v, w=None):
     return (a / b) if b != 0 else 0
 
 
+@_deprecated("Kulsinski has been deprecated from scipy.spatial.distance"
+             " in SciPy 1.9.0 and it will be removed in SciPy 1.11.0."
+             " It is superseded by scipy.spatial.distance.kulczynski1.")
 def kulsinski(u, v, w=None):
     """
     Compute the Kulsinski dissimilarity between two boolean 1-D arrays.
@@ -821,6 +814,11 @@ def kulsinski(u, v, w=None):
     where :math:`c_{ij}` is the number of occurrences of
     :math:`\\mathtt{u[k]} = i` and :math:`\\mathtt{v[k]} = j` for
     :math:`k < n`.
+
+    .. deprecated:: 0.12.0
+        Kulsinski has been deprecated from `scipy.spatial.distance` in
+        SciPy 1.9.0 and it will be removed in SciPy 1.11.0. It is superseded
+        by scipy.spatial.distance.kulczynski1.
 
     Parameters
     ----------
@@ -893,11 +891,6 @@ def kulczynski1(u, v, *, w=None):
     kulczynski1 : float
         The Kulczynski 1 distance between vectors `u` and `v`.
 
-    See Also
-    --------
-
-    kulsinski
-
     Notes
     -----
     This measure has a minimum value of 0 and no upper limit.
@@ -920,7 +913,7 @@ def kulczynski1(u, v, *, w=None):
     0.0
     >>> distance.kulczynski1([True, False, False], [True, True, False])
     1.0
-    >>> distance.kulczynski1([True, False, False], True)
+    >>> distance.kulczynski1([True, False, False], [True])
     0.5
     >>> distance.kulczynski1([1, 0, 0], [3, 1, 0])
     -3.0
@@ -1352,17 +1345,6 @@ def yule(u, v, w=None):
         return 0.0
     else:
         return float(2.0 * half_R / (ntt * nff + half_R))
-
-
-@np.deprecate(message="spatial.distance.matching is deprecated in scipy 1.0.0; "
-                      "use spatial.distance.hamming instead.")
-def matching(u, v, w=None):
-    """
-    Compute the Hamming distance between two boolean 1-D arrays.
-
-    This is a deprecated synonym for :func:`hamming`.
-    """
-    return hamming(u, v, w=w)
 
 
 def dice(u, v, w=None):
@@ -1973,7 +1955,7 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         The distance metric to use. The distance function can
         be 'braycurtis', 'canberra', 'chebyshev', 'cityblock',
         'correlation', 'cosine', 'dice', 'euclidean', 'hamming',
-        'jaccard', 'jensenshannon', 'kulsinski', 'kulczynski1',
+        'jaccard', 'jensenshannon', 'kulczynski1',
         'mahalanobis', 'matching', 'minkowski', 'rogerstanimoto',
         'russellrao', 'seuclidean', 'sokalmichener', 'sokalsneath',
         'sqeuclidean', 'yule'.
@@ -2165,10 +2147,10 @@ def pdist(X, metric='euclidean', *, out=None, **kwargs):
         Computes the Dice distance between each pair of boolean
         vectors. (see dice function documentation)
 
-    18. ``Y = pdist(X, 'kulsinski')``
+    18. ``Y = pdist(X, 'kulczynski1')``
 
-        Computes the Kulsinski distance between each pair of
-        boolean vectors. (see kulsinski function documentation)
+        Computes the kulczynski1 distance between each pair of
+        boolean vectors. (see kulczynski1 function documentation)
 
     19. ``Y = pdist(X, 'rogerstanimoto')``
 
@@ -2634,7 +2616,7 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         The distance metric to use. If a string, the distance function can be
         'braycurtis', 'canberra', 'chebyshev', 'cityblock', 'correlation',
         'cosine', 'dice', 'euclidean', 'hamming', 'jaccard', 'jensenshannon',
-        'kulsinski', 'kulczynski1', 'mahalanobis', 'matching', 'minkowski',
+        'kulczynski1', 'mahalanobis', 'matching', 'minkowski',
         'rogerstanimoto', 'russellrao', 'seuclidean', 'sokalmichener',
         'sokalsneath', 'sqeuclidean', 'yule'.
     **kwargs : dict, optional
@@ -2822,10 +2804,10 @@ def cdist(XA, XB, metric='euclidean', *, out=None, **kwargs):
         Computes the Dice distance between the boolean vectors. (see
         `dice` function documentation)
 
-    18. ``Y = cdist(XA, XB, 'kulsinski')``
+    18. ``Y = cdist(XA, XB, 'kulczynski1')``
 
-        Computes the Kulsinski distance between the boolean
-        vectors. (see `kulsinski` function documentation)
+        Computes the kulczynski distance between the boolean
+        vectors. (see `kulczynski1` function documentation)
 
     19. ``Y = cdist(XA, XB, 'rogerstanimoto')``
 

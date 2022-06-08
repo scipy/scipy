@@ -775,6 +775,75 @@ class TestSobol(QMCEngineTests):
         sample = engine.random(8)
         assert_array_equal(self.unscramble_nd, sample)
 
+
+class TestPoisson(QMCEngineTests):
+    qmce = qmc.PoissonDisk
+    can_scramble = False
+
+    def test_bounds(self, *args):
+        pytest.skip("Too costly in memory.")
+
+    def test_fast_forward(self, *args):
+        pytest.skip("Not applicable: recursive process.")
+
+    def test_sample(self, *args):
+        pytest.skip("Not applicable: the value of reference sample is"
+                    " implementation dependent.")
+
+    def test_continuing(self, *args):
+        # can continue a sampling, but will not preserve the same order
+        # because candidates are lost, so we will not select the same center
+        radius = 0.05
+        ns = 6
+        engine = self.engine(d=2, radius=radius, scramble=False)
+
+        sample_init = engine.random(n=ns)
+        assert len(sample_init) <= ns
+        assert l2_norm(sample_init) >= radius
+
+        sample_continued = engine.random(n=ns)
+        assert len(sample_continued) <= ns
+        assert l2_norm(sample_continued) >= radius
+
+        sample = np.concatenate([sample_init, sample_continued], axis=0)
+        assert len(sample) <= ns * 2
+        assert l2_norm(sample) >= radius
+
+    def test_mindist(self):
+        rng = np.random.default_rng(132074951149370773672162394161442690287)
+        ns = 100
+
+        low, high = 0.01, 0.1
+        radii = (high - low) * rng.random(10) + low
+
+        dimensions = [1, 2, 3, 4]
+        hypersphere_methods = ["volume", "surface"]
+
+        gen = product(dimensions, radii, hypersphere_methods)
+
+        for d, radius, hypersphere in gen:
+            engine = self.qmce(
+                d=2, radius=radius, hypersphere=hypersphere, seed=rng
+            )
+            sample = engine.random(ns)
+
+            assert len(sample) <= ns
+            assert l2_norm(sample) >= radius
+
+    def test_fill_space(self):
+        radius = 0.2
+        engine = self.qmce(d=2, radius=radius)
+
+        sample = engine.fill_space()
+        # circle packing problem is np complex
+        assert l2_norm(sample) >= radius
+
+    def test_raises(self):
+        message = r"'toto' is not a valid hypersphere sampling"
+        with pytest.raises(ValueError, match=message):
+            qmc.PoissonDisk(1, hypersphere="toto")
+
+
 class TestMultinomialQMC:
     def test_validations(self):
         # negative Ps
@@ -1181,10 +1250,6 @@ class TestMultivariateNormalQMC:
 
 class TestLloyd:
     def test_lloyd(self):
-        # mindist
-        def l2_norm(sample):
-            return distance.pdist(sample).min()
-
         # quite sensible seed as it can go up before going further down
         rng = np.random.RandomState(1809831)
         sample = rng.uniform(0, 1, size=(128, 2))
@@ -1237,3 +1302,8 @@ class TestLloyd:
         with pytest.raises(ValueError, match=msg):
             sample = [[-1.1, 0], [0.1, 0.4], [1, 2]]
             lloyd_centroidal_voronoi_tessellation(sample)
+
+
+# mindist
+def l2_norm(sample):
+    return distance.pdist(sample).min()

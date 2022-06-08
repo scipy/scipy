@@ -39,6 +39,7 @@ from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
 
 import numpy as np
 from ._constants import _XMAX
+from scipy.stats._warnings_errors import FitError
 
 # These are the docstring parts used for substitution in specific
 # distribution docstrings
@@ -1532,6 +1533,18 @@ class rv_generic:
             end-points of range that contain ``100 * alpha %`` of the rv's
             possible values.
 
+        Notes
+        -----
+        This is implemented as ``ppf([p_tail, 1-p_tail])``, where
+        ``ppf`` is the inverse cumulative distribution function and
+        ``p_tail = (1-confidence)/2``. Suppose ``[c, d]`` is the support of a
+        discrete distribution; then ``ppf([0, 1]) == (c-1, d)``. Therefore,
+        when ``confidence==1`` and the distribution is discrete, the left end
+        of the interval will be beyond the support of the distribution.
+        For discrete distributions, the interval will limit the probability
+        in each tail to be less than or equal to ``p_tail`` (usually
+        strictly less).
+
         """
         # This function was originally written with parameter `alpha`, but
         # `alpha` is also the name of a shape parameter of two distributions.
@@ -1683,10 +1696,6 @@ def _get_fixed_fit_value(kwds, names):
                          ', '.join(repeated))
     return vals[0][1] if vals else None
 
-
-class FitError(RuntimeError):
-    """Represents an error condition when fitting a distribution to data"""
-    pass
 
 #  continuous random variables: implement maybe later
 #
@@ -2560,7 +2569,7 @@ class rv_continuous(rv_generic):
         ------
         TypeError, ValueError
             If an input is invalid
-        FitError
+        `~scipy.stats.FitError`
             If fitting fails or the fit produced would be invalid
 
         Returns
