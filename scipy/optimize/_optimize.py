@@ -2257,8 +2257,8 @@ class Brent:
             fc = func(*((xc,) + args))
             if not ((fb < fa) and (fb < fc)):
                  raise ValueError(
-                    "Bracketing values (xa, xb, xc) do not"
-             " fulfill this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+                    "Bracketing values (xa, xb, xc) do not fulfill"
+                    " this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
                 )
 
             funcalls = 3
