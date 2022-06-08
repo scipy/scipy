@@ -816,10 +816,9 @@ def kulsinski(u, v, w=None):
     :math:`k < n`.
 
     .. deprecated:: 0.12.0
-
-    Kulsinski has been deprecated from scipy.spatial.distance in SciPy 1.9.0
-    and it will be removed in SciPy 1.11.0. It is superseded by
-    scipy.spatial.distance.kulczynski1.
+        Kulsinski has been deprecated from `scipy.spatial.distance` in
+        SciPy 1.9.0 and it will be removed in SciPy 1.11.0. It is superseded
+        by scipy.spatial.distance.kulczynski1.
 
     Parameters
     ----------

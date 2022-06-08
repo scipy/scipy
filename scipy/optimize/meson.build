@@ -6,7 +6,7 @@ fortran_ignore_warnings = [
   '-Wno-unused-variable'
 ]
 
-_directmodule = py3.extension_module('_directmodule',
+_direct = py3.extension_module('_direct',
   ['_direct/direct_wrap.c',
    '_direct/direct-internal.h',
    '_direct/DIRect.c',
@@ -281,7 +281,7 @@ py3.install_sources([
   '_constraints.py',
   '_differentiable_functions.py',
   '_differentialevolution.py',
-  '_direct.py',
+  '_direct_py.py',
   '_dual_annealing.py',
   '_hessian_update_strategy.py',
   '_lbfgsb_py.py',

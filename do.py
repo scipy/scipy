@@ -907,7 +907,7 @@ class Mypy(Task):
 class Doc(Task):
     """:wrench: Build documentation
 
-TARGETS: Sphinx build targets [default: 'html-scipyorg']
+TARGETS: Sphinx build targets [default: 'html']
 """
     ctx = CONTEXT
 
@@ -928,7 +928,7 @@ TARGETS: Sphinx build targets [default: 'html-scipyorg']
             targets = ''
         else:
             task_dep = ['build']
-            targets = ' '.join(args) if args else 'html-scipyorg'
+            targets = ' '.join(args) if args else 'html'
 
         kwargs.update(cls.ctx.get())
         Args = namedtuple('Args', [k for k in kwargs.keys()])

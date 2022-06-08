@@ -96,21 +96,20 @@ class RegularGridInterpolator:
     In other words, this class assumes that the data is defined on a
     *rectilinear* grid.
 
-    If any of `points` have a dimension of size 1, linear interpolation will
-    return an array of `nan` values. Nearest-neighbor interpolation will work
-    as usual in this case.
-
     .. versionadded:: 0.14
 
     The 'slinear'(k=1), 'cubic'(k=3), and 'quintic'(k=5) methods are
-    spline-based interpolators, the `k` is spline degree,
+    tensor-product spline interpolators, where `k` is the spline degree,
     If any dimension has fewer points than `k` + 1, an error will be raised.
 
     .. versionadded:: 1.9
 
     Examples
     --------
-    Evaluate a simple example function on the points of a 3-D grid:
+    **Evaluate a function on the points of a 3-D grid**
+
+    As a first example, we evaluate a simple example function on the points of
+    a 3-D grid:
 
     >>> from scipy.interpolate import RegularGridInterpolator
     >>> def f(x, y, z):
@@ -139,7 +138,9 @@ class RegularGridInterpolator:
     >>> f(2.1, 6.2, 8.3), f(3.3, 5.2, 7.1)
     (125.54200000000002, 145.894)
 
-    As a second example, we interpolate and extrapolate a 2D data:
+    **Interpolate and extrapolate a 2D dataset**
+
+    As a second example, we interpolate and extrapolate a 2D data set:
 
     >>> x, y = np.array([-2, 0, 4]), np.array([-2, 0, 2, 5])
     >>> def ff(x, y):
@@ -170,17 +171,23 @@ class RegularGridInterpolator:
     >>> ax.plot_wireframe(X, Y, ff(X, Y), rstride=3, cstride=3,
     ...                   alpha=0.4, label='ground truth')
     >>> plt.legend()
+    >>> plt.show()
 
     Other examples are given
     :ref:`in the tutorial <tutorial-interpolate_regular_grid_interpolator>`.
 
-    See also
+    See Also
     --------
     NearestNDInterpolator : Nearest neighbor interpolation on *unstructured*
                             data in N dimensions
 
     LinearNDInterpolator : Piecewise linear interpolant on *unstructured* data
                            in N dimensions
+
+    interpn : a convenience function which wraps `RegularGridInterpolator`
+
+    scipy.ndimage.map_coordinates : interpolation on grids with equal spacing
+                                    (suitable for e.g., N-D image resampling)
 
     References
     ----------
@@ -511,11 +518,14 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     LinearNDInterpolator : Piecewise linear interpolant on unstructured data
                            in N dimensions
 
-    RegularGridInterpolator : Linear and nearest-neighbor Interpolation on a
-                              regular or rectilinear grid in arbitrary
-                              dimensions
+    RegularGridInterpolator : interpolation on a regular or rectilinear grid
+                              in arbitrary dimensions (`interpn` wraps this
+                              class).
 
     RectBivariateSpline : Bivariate spline approximation over a rectangular mesh
+
+    scipy.ndimage.map_coordinates : interpolation on grids with equal spacing
+                                    (suitable for e.g., N-D image resampling)
 
     """
     # sanity check 'method' kwarg

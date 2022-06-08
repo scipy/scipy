@@ -192,8 +192,6 @@ static struct PyModuleDef moduledef = {
 PyObject*
 PyInit__lsap(void)
 {
-    PyObject* m;
-    m = PyModule_Create(&moduledef);
     import_array();
-    return m;
+    return PyModule_Create(&moduledef);
 }

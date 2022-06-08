@@ -117,7 +117,7 @@ The documentation is pre-built during your workspace initialization. So once thi
 Option 1: Using Liveserve
 ***************************
 
-#. View the documentation in ``scipy/doc/build/html-scipyorg``. You can start with ``index.html`` and browse, or you can jump straight to the file you're interested in.
+#. View the documentation in ``scipy/doc/build/html``. You can start with ``index.html`` and browse, or you can jump straight to the file you're interested in.
 #. To see the rendered version of a page, you can right-click on the ``.html`` file and click on **Open with Live Serve**. Alternatively, you can open the file in the editor and click on the **Go live** button on the status bar.
 
     .. image:: ../../_static/gitpod/vscode-statusbar.png
@@ -145,7 +145,7 @@ A quick and easy way to see live changes in a ``.rst`` file as you work on it us
     .. image:: ../../_static/gitpod/rst-rendering.png
         :alt: Gitpod workspace - Quickstart Docker rst file opened on the left and rendered version on the right group of the editor.
 
-If you want to see the final output with the ``html`` theme you will need to rebuild the docs with ``make html-scipyorg`` and use Live Serve as described in option 1.
+If you want to see the final output with the ``html`` theme you will need to rebuild the docs with ``make html`` and use Live Serve as described in option 1.
 
 FAQ's
 -----
