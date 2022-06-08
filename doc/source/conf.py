@@ -185,7 +185,6 @@ html_logo = '_static/logo.svg'
 html_favicon = '_static/favicon.ico'
 
 html_theme_options = {
-  "logo_link": "index",
   "github_url": "https://github.com/scipy/scipy",
   "twitter_url": "https://twitter.com/SciPy_team",
   "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
