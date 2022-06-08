@@ -2250,7 +2250,7 @@ class Brent:
             if not ((xa < xb) and (xb < xc)):
                  raise ValueError(
                     "Bracketing values (xa, xb, xc) do not"
-                " fulfill this requirement: (xa < xb) and (xb < xc)"
+                    "fulfill this requirement: (xa < xb) and (xb < xc)"
                 )
             fa = func(*((xa,) + args))
             fb = func(*((xb,) + args))
@@ -2258,7 +2258,7 @@ class Brent:
             if not ((fb < fa) and (fb < fc)):
                  raise ValueError(
                     "Bracketing values (xa, xb, xc) do not fulfill"
-                    " this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+                    "this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
                 )
 
             funcalls = 3
@@ -2620,14 +2620,17 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         if (xa > xc):  # swap so xa < xc can be assumed
             xc, xa = xa, xc
         if not ((xa < xb) and (xb < xc)):
-            raise ValueError("Bracketing values (xa, xb, xc) do not fulfill this\
-requirement: (xa < xb) and (xb < xc)")
-        fa = func(*((xa,) + args))
+                 raise ValueError(
+                    "Bracketing values (xa, xb, xc) do not"
+                    "fulfill this requirement: (xa < xb) and (xb < xc)"
+                )
         fb = func(*((xb,) + args))
         fc = func(*((xc,) + args))
         if not ((fb < fa) and (fb < fc)):
-            raise ValueError("Bracketing values (xa, xb, xc) do not fulfill this\
-requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))")
+                 raise ValueError(
+                    "Bracketing values (xa, xb, xc) do not fulfill"
+                    "this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+                )
         funcalls = 3
     else:
         raise ValueError("Bracketing interval must be length 2 or 3 sequence.")
