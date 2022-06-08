@@ -101,6 +101,7 @@ jobs:
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
+        export SCIPY_USE_PROPACK=1
         python dev.py -n -j 2
 
   test_venv_install:
