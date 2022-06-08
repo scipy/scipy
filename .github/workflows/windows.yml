@@ -79,6 +79,7 @@ jobs:
       - name: prep-test
         run: |
           echo "PYTHONPATH=${env:installed_path}" >> $env:GITHUB_ENV
+          echo "SCIPY_USE_PROPACK=1" >> $env:GITHUB_ENV
       - name: test
         run: |
           mkdir tmp
