@@ -827,12 +827,12 @@ PyInit__odepack(void)
 {
     PyObject *module, *mdict;
 
+    import_array();
+
     module = PyModule_Create(&moduledef);
     if (module == NULL) {
         return NULL;
     }
-
-    import_array();
 
     mdict = PyModule_GetDict(module);
     if (mdict == NULL) {

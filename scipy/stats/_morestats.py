@@ -2885,6 +2885,80 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     return FlignerResult(Xsq, pval)
 
 
+@_axis_nan_policy_factory(lambda x1: (x1,), n_samples=4, n_outputs=1)
+def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
+    # Obtain the unique values and their frequencies from the pooled samples.
+    # "a_j, + b_j, = t_j, for j = 1, ... k" where `k` is the number of unique
+    # classes, and "[t]he number of values associated with the x's and y's in
+    # the jth class will be denoted by a_j, and b_j respectively."
+    # (Mielke, 312)
+    # Reuse previously computed sorted array and `diff` arrays to obtain the
+    # unique values and counts. Prepend `diffs` with a non-zero to indicate
+    # that the first element should be marked as not matching what preceded it.
+    diffs_prep = np.concatenate(([1], diffs))
+    # Unique elements are where the was a difference between elements in the
+    # sorted array
+    uniques = sorted_xy[diffs_prep != 0]
+    # The count of each element is the bin size for each set of consecutive
+    # differences where the difference is zero. Replace nonzero differences
+    # with 1 and then use the cumulative sum to count the indices.
+    t = np.bincount(np.cumsum(np.asarray(diffs_prep != 0, dtype=int)))[1:]
+    k = len(uniques)
+    js = np.arange(1, k + 1, dtype=int)
+    # the `b` array mentioned in the paper is not used, outside of the
+    # calculation of `t`, so we do not need to calculate it separately. Here
+    # we calculate `a`. In plain language, `a[j]` is the number of values in
+    # `x` that equal `uniques[j]`.
+    sorted_xyx = np.sort(np.concatenate((xy, x)))
+    diffs = np.diff(sorted_xyx)
+    diffs_prep = np.concatenate(([1], diffs))
+    diff_is_zero = np.asarray(diffs_prep != 0, dtype=int)
+    xyx_counts = np.bincount(np.cumsum(diff_is_zero))[1:]
+    a = xyx_counts - t
+    # "Define .. a_0 = b_0 = t_0 = S_0 = 0" (Mielke 312) so we shift  `a`
+    # and `t` arrays over 1 to allow a first element of 0 to accommodate this
+    # indexing.
+    t = np.concatenate(([0], t))
+    a = np.concatenate(([0], a))
+    # S is built from `t`, so it does not need a preceding zero added on.
+    S = np.cumsum(t)
+    # define a copy of `S` with a prepending zero for later use to avoid
+    # the need for indexing.
+    S_i_m1 = np.concatenate(([0], S[:-1]))
+
+    # Psi, as defined by the 6th unnumbered equation on page 313 (Mielke).
+    # Note that in the paper there is an error where the denominator `2` is
+    # squared when it should be the entire equation.
+    def psi(indicator):
+        return (indicator - (N + 1)/2)**2
+
+    # define summation range for use in calculation of phi, as seen in sum
+    # in the unnumbered equation on the bottom of page 312 (Mielke).
+    s_lower = S[js - 1] + 1
+    s_upper = S[js] + 1
+    phi_J = [np.arange(s_lower[idx], s_upper[idx]) for idx in range(k)]
+
+    # for every range in the above array, determine the sum of psi(I) for
+    # every element in the range. Divide all the sums by `t`. Following the
+    # last unnumbered equation on page 312.
+    phis = [np.sum(psi(I_j)) for I_j in phi_J] / t[js]
+
+    # `T` is equal to a[j] * phi[j], per the first unnumbered equation on
+    # page 312. `phis` is already in the order based on `js`, so we index
+    # into `a` with `js` as well.
+    T = sum(phis * a[js])
+
+    # The approximate statistic
+    E_0_T = n * (N * N - 1) / 12
+
+    varM = (m * n * (N + 1.0) * (N ** 2 - 4) / 180 -
+            m * n / (180 * N * (N - 1)) * np.sum(
+                t * (t**2 - 1) * (t**2 - 4 + (15 * (N - S - S_i_m1) ** 2))
+            ))
+
+    return ((T - E_0_T) / np.sqrt(varM),)
+
+
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
 
@@ -2940,8 +3014,11 @@ def mood(x, y, axis=0, alternative="two-sided"):
     resulting z and p values will have shape ``(n0, n2, n3)``.  Note that
     ``n1`` and ``m1`` don't have to be equal, but the other dimensions do.
 
-    In this implementation, the test statistic and p-value are only valid when
-    all observations are unique.
+    References
+    ----------
+    [1] Mielke, Paul W. "Note on Some Squared Rank Tests with Existing Ties."
+        Technometrics, vol. 9, no. 2, 1967, pp. 312-14. JSTOR,
+        https://doi.org/10.2307/1266427. Accessed 18 May 2022.
 
     Examples
     --------
@@ -2991,24 +3068,30 @@ def mood(x, y, axis=0, alternative="two-sided"):
         raise ValueError("Not enough observations.")
 
     xy = np.concatenate((x, y), axis=axis)
-    if axis != 0:
-        xy = np.moveaxis(xy, axis, 0)
+    # determine if any of the samples contain ties
+    sorted_xy = np.sort(xy, axis=axis)
+    diffs = np.diff(sorted_xy, axis=axis)
+    if 0 in diffs:
+        z = np.asarray(_mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N,
+                                      axis=axis))
+    else:
+        if axis != 0:
+            xy = np.moveaxis(xy, axis, 0)
 
-    xy = xy.reshape(xy.shape[0], -1)
+        xy = xy.reshape(xy.shape[0], -1)
+        # Generalized to the n-dimensional case by adding the axis argument,
+        # and using for loops, since rankdata is not vectorized.  For improving
+        # performance consider vectorizing rankdata function.
+        all_ranks = np.empty_like(xy)
+        for j in range(xy.shape[1]):
+            all_ranks[:, j] = _stats_py.rankdata(xy[:, j])
 
-    # Generalized to the n-dimensional case by adding the axis argument, and
-    # using for loops, since rankdata is not vectorized.  For improving
-    # performance consider vectorizing rankdata function.
-    all_ranks = np.empty_like(xy)
-    for j in range(xy.shape[1]):
-        all_ranks[:, j] = _stats_py.rankdata(xy[:, j])
-
-    Ri = all_ranks[:n]
-    M = np.sum((Ri - (N + 1.0) / 2)**2, axis=0)
-    # Approx stat.
-    mnM = n * (N * N - 1.0) / 12
-    varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
-    z = (M - mnM) / sqrt(varM)
+        Ri = all_ranks[:n]
+        M = np.sum((Ri - (N + 1.0) / 2) ** 2, axis=0)
+        # Approx stat.
+        mnM = n * (N * N - 1.0) / 12
+        varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
+        z = (M - mnM) / sqrt(varM)
     z, pval = _normtest_finish(z, alternative)
 
     if res_shape == ():
@@ -3018,28 +3101,39 @@ def mood(x, y, axis=0, alternative="two-sided"):
     else:
         z.shape = res_shape
         pval.shape = res_shape
-
     return z, pval
 
 
-WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'],
-                                   ['zstatistic'])
+WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
 
 
 def wilcoxon_result_unpacker(res):
-    return res.statistic, res.pvalue, res.zstatistic
+    if hasattr(res, 'zstatistic'):
+        return res.statistic, res.pvalue, res.zstatistic
+    else:
+        return res.statistic, res.pvalue
 
 
-def wilcoxon_result_object(statistic, pvalue, zstatistic):
-    return WilcoxonResult(statistic, pvalue, zstatistic=zstatistic)
+def wilcoxon_result_object(statistic, pvalue, zstatistic=None):
+    res = WilcoxonResult(statistic, pvalue)
+    if zstatistic is not None:
+        res.zstatistic = zstatistic
+    return res
+
+
+def wilcoxon_outputs(kwds):
+    method = kwds.get('method', 'auto')
+    if method == 'approx':
+        return 3
+    return 2
 
 
 @_rename_parameter("mode", "method")
-@_axis_nan_policy_factory(wilcoxon_result_object, paired=True,
-                          n_samples=lambda kwds: 2
-                          if kwds.get('y', None) is not None else 1,
-                          result_to_tuple=wilcoxon_result_unpacker,
-                          n_outputs=3,)
+@_axis_nan_policy_factory(
+    wilcoxon_result_object, paired=True,
+    n_samples=lambda kwds: 2 if kwds.get('y', None) is not None else 1,
+    result_to_tuple=wilcoxon_result_unpacker, n_outputs=wilcoxon_outputs,
+)
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
              alternative="two-sided", method='auto'):
     """Calculate the Wilcoxon signed-rank test.
@@ -3095,23 +3189,21 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     -------
     An object with the following attributes.
 
-    statistic : float
+    statistic : array_like
         If `alternative` is "two-sided", the sum of the ranks of the
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
-    pvalue : float
+    pvalue : array_like
         The p-value for the test depending on `alternative` and `method`.
-    zstatistic : float
-        When the the approximate method is used, this is the normalized
-        z-statistic::
+    zstatistic : array_like
+        When ``method = 'approx'``, this is the normalized z-statistic::
 
             z = (T - mn - d) / se
 
         where ``T`` is `statistic` as defined above, ``mn`` is the mean of the
         distribution under the null hypothesis, ``d`` is a continuity
         correction, and ``se`` is the standard error.
-
-        When the exact method is used, this is ``np.nan``.
+        When ``method != 'approx'``, this attribute is not available.
 
     See Also
     --------
@@ -3228,7 +3320,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         d = x - y
 
     if len(d) == 0:
-        return WilcoxonResult(np.nan, np.nan, zstatistic=np.nan)
+        res = WilcoxonResult(np.nan, np.nan)
+        if method == 'approx':
+            res.zstatistic = np.nan
+        return res
 
     if mode == "auto":
         if len(d) <= 50:
@@ -3332,7 +3427,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             prob = np.sum(pmf[:r_plus + 1])
         prob = np.clip(prob, 0, 1)
 
-    return WilcoxonResult(T, prob, zstatistic=np.nan if mode == 'exact' else z)
+    res = WilcoxonResult(T, prob)
+    if method == 'approx':
+        res.zstatistic = z
+    return res
 
 
 def median_test(*samples, ties='below', correction=True, lambda_=1,

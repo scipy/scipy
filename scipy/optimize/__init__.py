@@ -421,7 +421,7 @@ from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
 from ._shgo import shgo
 from ._dual_annealing import dual_annealing
 from ._qap import quadratic_assignment
-from ._direct import direct
+from ._direct_py import direct
 from ._milp import milp
 
 # Deprecated namespaces, to be removed in v2.0.0

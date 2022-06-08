@@ -1033,10 +1033,6 @@ class TestNumericalInverseHermite:
             NumericalInverseHermite(StandardNormal(),
                                     u_resolution='ekki')
 
-        match = "`max_intervals' must be..."
-        with pytest.raises(ValueError, match=match):
-            NumericalInverseHermite(StandardNormal(), max_intervals=-1)
-
     rngs = [None, 0, np.random.RandomState(0)]
     if NumpyVersion(np.__version__) >= '1.18.0':
         rngs.append(np.random.default_rng(0))  # type: ignore
@@ -1128,12 +1124,6 @@ class TestNumericalInverseHermite:
         max_error, mae = rng.u_error()
         assert max_error < 1e-14
         assert mae <= max_error
-
-    def test_deprecations(self):
-        msg = ("`tol` has been deprecated and replaced with `u_resolution`. "
-               "It will be completely removed in SciPy 1.10.0.")
-        with pytest.warns(DeprecationWarning, match=msg):
-            NumericalInverseHermite(StandardNormal(), tol=1e-12)
 
 
 class TestDiscreteGuideTable:

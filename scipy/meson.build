@@ -55,7 +55,8 @@ cc = meson.get_compiler('c')
 npymath_path = incdir_numpy / '..' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 npyrandom_path = incdir_numpy / '..' / '..' / 'random' / 'lib'
-npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
+# Note: `required: false` can be removed once numpy 1.19 is the minimum version
+npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path, required: false)
 
 # pybind11 include directory - needed in several submodules
 incdir_pybind11 = run_command(py3,

@@ -1179,10 +1179,6 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit__nd_image(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&moduledef);
     import_array();
-
-    return m;
+    return PyModule_Create(&moduledef);
 }
