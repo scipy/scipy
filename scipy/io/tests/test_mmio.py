@@ -1,4 +1,4 @@
-from tempfile import mkdtemp, mktemp
+from tempfile import mkdtemp, mkstemp
 import os
 import io
 import shutil
@@ -710,7 +710,7 @@ class TestMMIOCoordinate:
         for mat in mats:
             expected = mat.toarray()
             for fmt in ['csr', 'csc', 'coo']:
-                fn = mktemp(dir=self.tmpdir)  # safe, we own tmpdir
+                fn = mkstemp(suffix='.mtx', dir=self.tmpdir)[1]
                 mmwrite(fn, mat.asformat(fmt))
 
                 result = mmread(fn).toarray()
