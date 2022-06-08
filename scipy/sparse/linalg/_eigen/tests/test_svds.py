@@ -10,7 +10,6 @@ from scipy.linalg import hilbert, svd, null_space
 from scipy.sparse import csc_matrix, isspmatrix, spdiags, random
 from scipy.sparse.linalg import LinearOperator, aslinearoperator
 if os.environ.get("SCIPY_USE_PROPACK"):
-    import scipy.sparse.linalg._svdp
     has_propack = True
 else:
     has_propack = False
