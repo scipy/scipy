@@ -512,7 +512,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         Default is None, which means that no plot is created.
     rvalue : bool, optional
         If `plot` is provided and `fit` is True, setting `rvalue` to True
-        includes the coefficient of determination on the plot. 
+        includes the coefficient of determination on the plot.
         Default is False.
 
     Returns
