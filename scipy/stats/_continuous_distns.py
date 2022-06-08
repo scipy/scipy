@@ -3591,7 +3591,7 @@ class gumbel_r_gen(rv_continuous):
                 loc = floc
 
                 # equation to use if the location is fixed.
-                # note that one cannot use the equation in Evans, Hastings, 
+                # note that one cannot use the equation in Evans, Hastings,
                 # and Peacock (2000) (since it assumes that the derivative
                 # w.r.t. the log-likelihood is zero). however, it is easy to
                 # derive the MLE condition directly if loc is fixed
