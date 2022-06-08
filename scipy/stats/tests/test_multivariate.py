@@ -637,6 +637,7 @@ class TestMatrixNormal:
                                                         N*num_cols,num_rows).T)
         assert_allclose(sample_rowcov, U, atol=0.1)
 
+
 class TestDirichlet:
 
     def test_frozen_dirichlet(self):
@@ -1975,6 +1976,17 @@ class TestMultivariateHypergeom:
         rv = multivariate_hypergeom(m=[[3, 5], [5, 10]], n=[4, 9])
         rvs = rv.rvs(size=(1000, 2), random_state=123)
         assert_allclose(rvs.mean(0), rv.mean(), rtol=1e-2)
+
+    @pytest.mark.parametrize('m, n', (
+        ([0, 0, 20, 0, 0], 5), ([0, 0, 0, 0, 0], 0),
+        ([0, 0], 0), ([0], 0)
+    ))
+    def test_rvs_gh16171(self, m, n):
+        res = multivariate_hypergeom.rvs(m, n)
+        m = np.asarray(m)
+        res_ex = m.copy()
+        res_ex[m != 0] = n
+        assert_equal(res, res_ex)
 
     @pytest.mark.parametrize(
         "x, m, n, expected",

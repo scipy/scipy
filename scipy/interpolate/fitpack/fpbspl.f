@@ -1,4 +1,4 @@
-      subroutine fpbspl(t,n,k,x,l,h)
+      recursive subroutine fpbspl(t,n,k,x,l,h)
 c  subroutine fpbspl evaluates the (k+1) non-zero b-splines of
 c  degree k at t(l) <= x < t(l+1) using the stable recurrence
 c  relation of de boor and cox.

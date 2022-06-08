@@ -23,7 +23,7 @@ ERFRES_N =   13    (number of tables)
 ERFRES_L =   48    (length of each table)
 
 * Copyright 2004-2008 by Agner Fog. 
-* GNU General Public License http://www.gnu.org/licenses/gpl.html
+* Released under SciPy's license with permission of Agner Fog; see license.txt
 *****************************************************************************/
 extern "C" {
 

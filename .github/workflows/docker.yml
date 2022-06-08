@@ -7,7 +7,7 @@ on:
     branches:
       - main
     paths:
-      - "environment_meson.yml"
+      - "environment.yml"
 
 jobs:
   build-base-docker:
