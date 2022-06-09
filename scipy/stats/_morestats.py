@@ -510,6 +510,10 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
         or a custom object with the same methods.
         Default is None, which means that no plot is created.
+    rvalue : bool, optional
+        If `plot` is provided and `fit` is True, setting `rvalue` to True
+        includes the coefficient of determination on the plot.
+        Default is False.
 
     Returns
     -------
@@ -622,7 +626,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
                                title='Probability Plot')
 
         # Add R^2 value to the plot as text
-        if rvalue:
+        if fit and rvalue:
             xmin = amin(osm)
             xmax = amax(osm)
             ymin = amin(x)
