@@ -570,7 +570,8 @@ class TestQMR:
         U = spdiags([4*dat, -dat], [0,1], n, n)
 
         with suppress_warnings() as sup:
-            sup.filter(SparseEfficiencyWarning, "splu requires CSC matrix format")
+            sup.filter(SparseEfficiencyWarning,
+                       "splu converted its input to CSC format")
             L_solver = splu(L)
             U_solver = splu(U)
 

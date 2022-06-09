@@ -84,7 +84,7 @@ Other useful options include:
    ``scipy/build/coverage/index.html``. *Note:* |pytest-cov|_ *must be
    installed.*
 -  ``--doc`` to build the docs in ``scipy/doc/build``. By default,
-   docs are built only in the ``html-scipyorg`` format, but you can
+   docs are built only in the ``html`` format, but you can
    change this by appending the name of the desired format.
 -  ``--refguide-check`` to check whether the objects in a Scipy submodule's
    ``__all__`` dict correspond to the objects included in the reference

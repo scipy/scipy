@@ -1,5 +1,6 @@
 # This module exists only to allow Sphinx to generate docs
-# for the result objects returned by some functions in stats.
+# for the result objects returned by some functions in stats
+# _without_ adding them to the main stats documentation page.
 
 """
 Result classes

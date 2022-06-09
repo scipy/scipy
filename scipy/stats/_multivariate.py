@@ -1351,7 +1351,7 @@ class dirichlet_gen(multi_rv_generic):
     concentration parameters and :math:`K` is the dimension of the space
     where :math:`x` takes values.
 
-    Note that the dirichlet interface is somewhat inconsistent.
+    Note that the `dirichlet` interface is somewhat inconsistent.
     The array returned by the rvs function is transposed
     with respect to the format expected by the pdf and logpdf.
 
@@ -1468,7 +1468,7 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def mean(self, alpha):
-        """Compute the mean of the dirichlet distribution.
+        """Mean of the Dirichlet distribution.
 
         Parameters
         ----------
@@ -1486,7 +1486,7 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def var(self, alpha):
-        """Compute the variance of the dirichlet distribution.
+        """Variance of the Dirichlet distribution.
 
         Parameters
         ----------
@@ -1506,7 +1506,8 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def entropy(self, alpha):
-        """Compute the differential entropy of the dirichlet distribution.
+        """
+        Differential entropy of the Dirichlet distribution.
 
         Parameters
         ----------
@@ -1530,7 +1531,8 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def rvs(self, alpha, size=1, random_state=None):
-        """Draw random samples from a Dirichlet distribution.
+        """
+        Draw random samples from a Dirichlet distribution.
 
         Parameters
         ----------
@@ -1643,6 +1645,11 @@ class wishart_gen(multi_rv_generic):
     %(_doc_default_callparams)s
     %(_doc_random_state)s
 
+    Raises
+    ------
+    scipy.linalg.LinAlgError
+        If the scale matrix `scale` is not positive definite.
+
     See Also
     --------
     invwishart, chi2
@@ -1653,7 +1660,8 @@ class wishart_gen(multi_rv_generic):
 
     The scale matrix `scale` must be a symmetric positive definite
     matrix. Singular matrices, including the symmetric positive semi-definite
-    case, are not supported.
+    case, are not supported. Symmetry is not checked; only the lower triangular
+    portion is used.
 
     The Wishart distribution is often denoted
 
@@ -2378,6 +2386,11 @@ class invwishart_gen(wishart_gen):
     %(_doc_default_callparams)s
     %(_doc_random_state)s
 
+    Raises
+    ------
+    scipy.linalg.LinAlgError
+        If the scale matrix `scale` is not positive definite.
+
     See Also
     --------
     wishart
@@ -2388,7 +2401,8 @@ class invwishart_gen(wishart_gen):
 
     The scale matrix `scale` must be a symmetric positive definite
     matrix. Singular matrices, including the symmetric positive semi-definite
-    case, are not supported.
+    case, are not supported. Symmetry is not checked; only the lower triangular
+    portion is used.
 
     The inverse Wishart distribution is often denoted
 
@@ -4860,9 +4874,11 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         # https://github.com/numpy/numpy/pull/13794
         for c in range(m.shape[-1] - 1):
             rem = rem - m[..., c]
-            rvs[..., c] = ((n != 0) *
-                           random_state.hypergeometric(m[..., c], rem,
-                                                       n + (n == 0),
+            n0mask = n == 0
+            rvs[..., c] = (~n0mask *
+                           random_state.hypergeometric(m[..., c],
+                                                       rem + n0mask,
+                                                       n + n0mask,
                                                        size=size))
             n = n - rvs[..., c]
         rvs[..., m.shape[-1] - 1] = n
