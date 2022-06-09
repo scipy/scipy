@@ -112,6 +112,10 @@ dev = [
     "typing_extensions",
     "pycodestyle",
     "flake8",
+    "rich-click",
+    "click",
+    "doit>=0.36.0",
+    "pydevtool",
 ]
 
 [project.urls]
