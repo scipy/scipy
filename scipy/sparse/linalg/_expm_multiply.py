@@ -268,12 +268,16 @@ def _expm_multiply_simple(A, B, t=1.0, traceA=None, balance=False):
         m_star, s = 0, 1
     else:
         ell = 2
-        norm_info = LazyOperatorNormInfo(t*A, A_1_norm=abs(t)*A_1_norm, ell=ell)
+        norm_info = LazyOperatorNormInfo(
+                t*A,
+                A_1_norm=abs(t)*A_1_norm,
+                ell=ell)
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
     return _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol, balance)
 
 
-def _expm_multiply_simple_core(A, B, t, mu, m_star, s, tol=None, balance=False):
+def _expm_multiply_simple_core(A, B, t, mu, m_star, s,
+                               tol=None, balance=False):
     """
     A helper function.
     """
