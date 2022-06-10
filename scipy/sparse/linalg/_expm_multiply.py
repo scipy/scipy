@@ -673,6 +673,10 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         linspace_kwargs['num'] = num
     if endpoint is not None:
         linspace_kwargs['endpoint'] = endpoint
+    reverse = False
+    if start > stop:
+        reverse = True
+        stop, start = start, stop
     samples, step = np.linspace(start, stop, **linspace_kwargs)
 
     # Convert the linspace output to the notation used by the publication.
@@ -716,22 +720,23 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
         if status_only:
             return 0
         else:
-            return _expm_multiply_interval_core_0(A, X,
+            X, status = _expm_multiply_interval_core_0(A, X,
                     h, mu, q, norm_info, tol, ell,n0)
     elif not (q % s):
         if status_only:
             return 1
         else:
-            return _expm_multiply_interval_core_1(A, X,
+            X, status = _expm_multiply_interval_core_1(A, X,
                     h, mu, m_star, s, q, tol)
     elif (q % s):
         if status_only:
             return 2
         else:
-            return _expm_multiply_interval_core_2(A, X,
+            X, status = _expm_multiply_interval_core_2(A, X,
                     h, mu, m_star, s, q, tol)
     else:
         raise Exception('internal error')
+    return X if not reverse else X[::-1], status
 
 
 def _expm_multiply_interval_core_0(A, X, h, mu, q, norm_info, tol, ell, n0):
