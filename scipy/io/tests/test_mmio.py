@@ -715,6 +715,7 @@ class TestMMIOCoordinate:
 
                 result = mmread(fn).toarray()
                 assert_array_almost_equal(result, expected)
+                os.remove(fn)
 
     def test_precision(self):
         test_values = [pi] + [10**(i) for i in range(0, -10, -1)]
