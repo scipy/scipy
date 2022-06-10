@@ -22,6 +22,7 @@ from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
+from .._lib.deprecation import _deprecated
 
 
 __all__ = ['mvsdist',
@@ -2649,15 +2650,19 @@ def levene(*samples, center='median', proportiontocut=0.05):
     return LeveneResult(W, pval)
 
 
+@_deprecated("'binom_test' is deprecated in favour of"
+             " 'binomtest' from version 1.7.0 and will"
+             " be removed in Scipy 1.12.0.")
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """Perform a test that the probability of success is p.
-
-    Note: `binom_test` is deprecated; it is recommended that `binomtest`
-    be used instead.
 
     This is an exact, two-sided test of the null hypothesis
     that the probability of success in a Bernoulli experiment
     is `p`.
+
+    .. deprecated:: 1.10.0
+        'binom_test' is deprecated in favour of 'binomtest' and will
+        be removed in Scipy 1.12.0.
 
     Parameters
     ----------

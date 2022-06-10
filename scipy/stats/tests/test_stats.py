@@ -5952,6 +5952,22 @@ class TestGeometricStandardDeviation:
         assert_equal(gstd_actual.mask, mask)
 
 
+@pytest.mark.parametrize('alternative', ['two-sided', 'greater', 'less'])
+def test_binom_test_deprecation(alternative):
+    deprecation_msg = ("'binom_test' is deprecated in favour of"
+                       " 'binomtest' from version 1.7.0 and will"
+                       " be removed in Scipy 1.12.0.")
+    num = 10
+    rng = np.random.default_rng(156114182869662948677852568516310985853)
+    X = rng.integers(10, 100, (num,))
+    N = X + rng.integers(0, 100, (num,))
+    P = rng.uniform(0, 1, (num,))
+    for x, n, p in zip(X, N, P):
+        with pytest.warns(DeprecationWarning, match=deprecation_msg):
+            res = stats.binom_test(x, n, p, alternative=alternative)
+        assert res == stats.binomtest(x, n, p, alternative=alternative).pvalue
+
+
 def test_binomtest():
     # precision tests compared to R for ticket:986
     pp = np.concatenate((np.linspace(0.1, 0.2, 5),
@@ -5968,10 +5984,9 @@ def test_binomtest():
                2.6102587134694721e-006]
 
     for p, res in zip(pp, results):
-        assert_approx_equal(stats.binom_test(x, n, p), res,
+        assert_approx_equal(stats.binomtest(x, n, p).pvalue, res,
                             significant=12, err_msg='fail forp=%f' % p)
-
-    assert_approx_equal(stats.binom_test(50, 100, 0.1),
+    assert_approx_equal(stats.binomtest(50, 100, 0.1).pvalue,
                         5.8320387857343647e-024,
                         significant=12)
 
@@ -5995,16 +6010,15 @@ def test_binomtest2():
          1.000000000, 0.753906250, 0.343750000, 0.109375000, 0.021484375,
          0.001953125]
     ]
-
     for k in range(1, 11):
-        res1 = [stats.binom_test(v, k, 0.5) for v in range(k + 1)]
+        res1 = [stats.binomtest(v, k, 0.5).pvalue for v in range(k + 1)]
         assert_almost_equal(res1, res2[k-1], decimal=10)
 
 
 def test_binomtest3():
     # test added for issue #2384
     # test when x == n*p and neighbors
-    res3 = [stats.binom_test(v, v*k, 1./k)
+    res3 = [stats.binomtest(v, v*k, 1./k).pvalue
             for v in range(1, 11) for k in range(2, 11)]
     assert_equal(res3, np.ones(len(res3), int))
 
@@ -6086,9 +6100,9 @@ def test_binomtest3():
          0.736270323773157, 0.737718376096348
         ])
 
-    res4_p1 = [stats.binom_test(v+1, v*k, 1./k)
+    res4_p1 = [stats.binomtest(v+1, v*k, 1./k).pvalue
                for v in range(1, 11) for k in range(2, 11)]
-    res4_m1 = [stats.binom_test(v-1, v*k, 1./k)
+    res4_m1 = [stats.binomtest(v-1, v*k, 1./k).pvalue
                for v in range(1, 11) for k in range(2, 11)]
 
     assert_almost_equal(res4_p1, binom_testp1, decimal=13)

@@ -728,10 +728,27 @@ class TestLevene:
         assert_raises(ValueError, stats.levene, g1, x)
 
 
-class TestBinomP:
-    """Tests for stats.binom_test."""
+class TestBinomTestP:
+    """
+    Tests for stats.binomtest as a replacement for deprecated stats.binom_test.
+    """
+    @staticmethod
+    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
+        # This processing of x and n is copied from from binom_test.
+        x = np.atleast_1d(x).astype(np.int_)
+        if len(x) == 2:
+            n = x[1] + x[0]
+            x = x[0]
+        elif len(x) == 1:
+            x = x[0]
+            if n is None or n < x:
+                raise ValueError("n must be >= x")
+            n = np.int_(n)
+        else:
+            raise ValueError("Incorrect length for x.")
 
-    binom_test_func = staticmethod(stats.binom_test)
+        result = stats.binomtest(x, n, p=p, alternative=alternative)
+        return result.pvalue
 
     def test_data(self):
         pval = self.binom_test_func(100, 250)
@@ -770,29 +787,6 @@ class TestBinomP:
     def test_boost_overflow_raises(self):
         # Boost.Math error policy should raise exceptions in Python
         assert_raises(OverflowError, self.binom_test_func, 5.0, 6, p=sys.float_info.min)
-
-
-class TestBinomTestP(TestBinomP):
-    """
-    Tests for stats.binomtest as a replacement for stats.binom_test.
-    """
-    @staticmethod
-    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
-        # This processing of x and n is copied from from binom_test.
-        x = np.atleast_1d(x).astype(np.int_)
-        if len(x) == 2:
-            n = x[1] + x[0]
-            x = x[0]
-        elif len(x) == 1:
-            x = x[0]
-            if n is None or n < x:
-                raise ValueError("n must be >= x")
-            n = np.int_(n)
-        else:
-            raise ValueError("Incorrect length for x.")
-
-        result = stats.binomtest(x, n, p=p, alternative=alternative)
-        return result.pvalue
 
 
 class TestBinomTest:
