@@ -305,7 +305,7 @@ class RegularGridInterpolator:
         if xi.shape[-1] != len(self.grid):
             raise ValueError("The requested sample points xi have dimension "
                              "%d, but this RegularGridInterpolator has "
-                             "dimension %d" % (xi.shape[1], ndim))
+                             "dimension %d" % (xi.shape[-1], ndim))
 
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi_shape[-1])
