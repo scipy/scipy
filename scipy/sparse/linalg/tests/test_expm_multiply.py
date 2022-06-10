@@ -204,45 +204,22 @@ class TestExpmActionInterval:
                         assert_allclose(solution, sp_expm(t*A).dot(target))
 
     def test_expm_multiply_interval_vector(self):
-        np.random.seed(1234)
-        interval = {'start': 0.1, 'stop': 3.2, 'endpoint': True}
-        for num, n in product([14, 13, 2], [1, 2, 5, 20, 40]):
-            A = scipy.linalg.inv(np.random.randn(n, n))
-            v = np.random.randn(n)
-            samples = np.linspace(num=num, **interval)
-            X = expm_multiply(A, v, num=num, **interval)
-            for solution, t in zip(X, samples):
-                assert_allclose(solution, sp_expm(t*A).dot(v))
-            # test for linear operator with unknown trace -> estimate trace
-            Xguess = estimated(expm_multiply)(aslinearoperator(A), v,
-                                              num=num, **interval)
-            # test for linear operator with given trace
-            Xgiven = expm_multiply(aslinearoperator(A), v, num=num, **interval,
-                                   traceA=np.trace(A))
-            # test robustness for linear operator with wrong trace
-            Xwrong = expm_multiply(aslinearoperator(A), v, num=num, **interval,
-                                   traceA=np.trace(A)*5)
-            for sol_guess, sol_given, sol_wrong, t in zip(Xguess, Xgiven,
-                                                          Xwrong, samples):
-                correct = sp_expm(t*A).dot(v)
-                assert_allclose(sol_guess, correct)
-                assert_allclose(sol_given, correct)
-                assert_allclose(sol_wrong, correct)
+        # test various start and stop values
+        starts = [0, 0.1, -0.1, 3.2, 5, 1e-5]
+        stops = starts
+        for start, stop in product(starts, stops):
+            if start == stop:
+                continue
+            self._help_test_expm_multiply_interval_vector(start, stop)
 
     def test_expm_multiply_interval_matrix(self):
-        np.random.seed(1234)
-        interval = {'start': 0.1, 'stop': 3.2, 'endpoint': True}
-        for num, n, k in product([14, 13, 2], [1, 2, 5, 20, 40], [1, 2]):
-            A = scipy.linalg.inv(np.random.randn(n, n))
-            B = np.random.randn(n, k)
-            samples = np.linspace(num=num, **interval)
-            X = expm_multiply(A, B, num=num, **interval)
-            for solution, t in zip(X, samples):
-                assert_allclose(solution, sp_expm(t*A).dot(B))
-            X = estimated(expm_multiply)(aslinearoperator(A), B, num=num,
-                                         **interval)
-            for solution, t in zip(X, samples):
-                assert_allclose(solution, sp_expm(t*A).dot(B))
+        # test various start and stop values
+        starts = [0, 0.1, -0.1, 3.2, 5, 1e-5]
+        stops = starts
+        for start, stop in product(starts, stops):
+            if start == stop:
+                continue
+            self._help_test_expm_multiply_interval_matrix(start, stop)
 
     def test_sparse_expm_multiply_interval_dtypes(self):
         # Test A & B int
@@ -301,6 +278,55 @@ class TestExpmActionInterval:
         if not nsuccesses:
             msg = 'failed to find a status-' + str(target_status) + ' interval'
             raise Exception(msg)
+
+    def _help_test_expm_multiply_interval_vector(self, start, stop):
+        """
+            A helper function for testing expm_multiply with various values of
+            start and stop
+        """
+        np.random.seed(1234)
+        interval = {'start': start, 'stop': stop, 'endpoint': True}
+        for num, n in product([14, 13, 2], [1, 2, 5, 20, 40]):
+            A = scipy.linalg.inv(np.random.randn(n, n))
+            v = np.random.randn(n)
+            samples = np.linspace(num=num, **interval)
+            X = expm_multiply(A, v, num=num, **interval)
+            for solution, t in zip(X, samples):
+                assert_allclose(solution, sp_expm(t*A).dot(v))
+            # test for linear operator with unknown trace -> estimate trace
+            Xguess = estimated(expm_multiply)(aslinearoperator(A), v,
+                                              num=num, **interval)
+            # test for linear operator with given trace
+            Xgiven = expm_multiply(aslinearoperator(A), v, num=num, **interval,
+                                   traceA=np.trace(A))
+            # test robustness for linear operator with wrong trace
+            Xwrong = expm_multiply(aslinearoperator(A), v, num=num, **interval,
+                                   traceA=np.trace(A)*5)
+            for sol_guess, sol_given, sol_wrong, t in zip(Xguess, Xgiven,
+                                                          Xwrong, samples):
+                correct = sp_expm(t*A).dot(v)
+                assert_allclose(sol_guess, correct)
+                assert_allclose(sol_given, correct)
+                assert_allclose(sol_wrong, correct)
+
+    def _help_test_expm_multiply_interval_matrix(self, start, stop):
+        """
+            A helper function for testing expm_multiply with various values of
+            start and stop
+        """
+        np.random.seed(1234)
+        interval = {'start': start, 'stop': stop, 'endpoint': True}
+        for num, n, k in product([14, 13, 2], [1, 2, 5, 20, 40], [1, 2]):
+            A = scipy.linalg.inv(np.random.randn(n, n))
+            B = np.random.randn(n, k)
+            samples = np.linspace(num=num, **interval)
+            X = expm_multiply(A, B, num=num, **interval)
+            for solution, t in zip(X, samples):
+                assert_allclose(solution, sp_expm(t*A).dot(B))
+            X = estimated(expm_multiply)(aslinearoperator(A), B, num=num,
+                                         **interval)
+            for solution, t in zip(X, samples):
+                assert_allclose(solution, sp_expm(t*A).dot(B))
 
 
 @pytest.mark.parametrize("dtype_a", DTYPES)
