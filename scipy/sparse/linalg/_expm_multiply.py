@@ -711,7 +711,6 @@ def _expm_multiply_interval(A, B, start=None, stop=None, num=None,
     else:
         m_star, s = _fragment_3_1(norm_info, n0, tol, ell=ell)
 
-
     # Compute the expm action at the rest of the time points.
     if q <= s:
         if status_only:
