@@ -303,8 +303,8 @@ class RegularGridInterpolator:
         ndim = len(self.grid)
         xi = _ndim_coords_from_arrays(xi, ndim=ndim)
         if xi.shape[-1] != len(self.grid):
-            raise ValueError(f"The requested sample points xi have dimension "\
-                             f"{xi.shape[-1]} but this "\
+            raise ValueError("The requested sample points xi have dimension "
+                             f"{xi.shape[-1]} but this "
                              f"RegularGridInterpolator has dimension {ndim}")
 
         xi_shape = xi.shape
