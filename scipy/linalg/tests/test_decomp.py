@@ -886,39 +886,6 @@ class TestEigh:
         else:
             assert_allclose(b @ a @ v - v * w, 0., atol=atol, rtol=0.)
 
-    # Old eigh tests kept for backwards compatibility
-    @pytest.mark.parametrize('eigvals', (None, (2, 4)))
-    @pytest.mark.parametrize('turbo', (True, False))
-    @pytest.mark.parametrize('lower', (True, False))
-    @pytest.mark.parametrize('overwrite', (True, False))
-    @pytest.mark.parametrize('dtype_', ('f', 'd', 'F', 'D'))
-    @pytest.mark.parametrize('dim', (6,))
-    def test_eigh(self, dim, dtype_, overwrite, lower, turbo, eigvals):
-        with np.testing.suppress_warnings() as sup:
-            if turbo:
-                sup.filter(DeprecationWarning,
-                           "Keyword argument 'turbo'")
-            if eigvals:
-                sup.filter(DeprecationWarning,
-                           "Keyword argument 'eigvals'")
-            atol = 1e-11 if dtype_ in ('dD') else 1e-4
-            a = _random_hermitian_matrix(n=dim, dtype=dtype_)
-            w, z = eigh(a, overwrite_a=overwrite, lower=lower, eigvals=eigvals)
-            assert_dtype_equal(z.dtype, dtype_)
-            w = w.astype(dtype_)
-            diag_ = diag(z.T.conj() @ a @ z).real
-            assert_allclose(diag_, w, rtol=0., atol=atol)
-
-            a = _random_hermitian_matrix(n=dim, dtype=dtype_)
-            b = _random_hermitian_matrix(n=dim, dtype=dtype_, posdef=True)
-            w, z = eigh(a, b, overwrite_a=overwrite, lower=lower,
-                        overwrite_b=overwrite, turbo=turbo, eigvals=eigvals)
-            assert_dtype_equal(z.dtype, dtype_)
-            w = w.astype(dtype_)
-            diag1_ = diag(z.T.conj() @ a @ z).real
-            assert_allclose(diag1_, w, rtol=0., atol=atol)
-            diag2_ = diag(z.T.conj() @ b @ z).real
-            assert_allclose(diag2_, ones(diag2_.shape[0]), rtol=0., atol=atol)
 
     def test_eigvalsh_new_args(self):
         a = _random_hermitian_matrix(5)
@@ -935,13 +902,33 @@ class TestEigh:
         assert_allclose(w3, np.array([1.2, 1.3]))
 
     @pytest.mark.parametrize("method", [eigh, eigvalsh])
-    def test_deprecations(self, method):
+    def test_deprecation_warnings(self, method):
         with pytest.warns(DeprecationWarning,
                           match="Keyword argument 'turbo'"):
             method(np.zeros((2, 2)), turbo=True)
         with pytest.warns(DeprecationWarning,
                           match="Keyword argument 'eigvals'"):
             method(np.zeros((2, 2)), eigvals=[0, 1])
+
+    def test_deprecation_results(self):
+        a = _random_hermitian_matrix(3)
+        b = _random_hermitian_matrix(3, posdef=True)
+
+        # check turbo gives same result as driver='gvd'
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'turbo'")
+            w_dep, v_dep = eigh(a, b, turbo=True)
+        w, v = eigh(a, b, driver='gvd')
+        assert_allclose(w_dep, w)
+        assert_allclose(v_dep, v)
+
+        # check eigvals gives the same result as subset_by_index
+        with np.testing.suppress_warnings() as sup:
+            sup.filter(DeprecationWarning, "Keyword argument 'eigvals'")
+            w_dep, v_dep = eigh(a, eigvals=[0, 1])
+        w, v = eigh(a, subset_by_index=[0, 1])
+        assert_allclose(w_dep, w)
+        assert_allclose(v_dep, v)
 
 
 class TestLU:
