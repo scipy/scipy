@@ -5,6 +5,8 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "_splinemodule.h"
+
 #define NO_IMPORT_ARRAY
 #include "numpy/arrayobject.h"
 
