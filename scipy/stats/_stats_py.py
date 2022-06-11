@@ -8477,6 +8477,10 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     return BrunnerMunzelResult(wbfn, p)
 
 
+CombinePValuesResult = _make_tuple_bunch('CombinePValuesResult',
+                                         ['statistic', 'pvalue'], [])
+
+
 def combine_pvalues(pvalues, method='fisher', weights=None):
     """
     Combine p-values from independent tests that bear upon the same hypothesis.
@@ -8511,10 +8515,13 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     Returns
     -------
-    statistic: float
-        The statistic calculated by the specified method.
-    pval: float
-        The combined p-value.
+    res : CombinePValuesResult
+        An object containing attributes:
+
+        statistic : float
+            The statistic calculated by the specified method.
+        pvalue : float
+            The combined p-value.
 
     Notes
     -----
@@ -8616,7 +8623,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             "'pearson', 'mudholkar_george', 'tippett', and 'stouffer'"
         )
 
-    return (statistic, pval)
+    return CombinePValuesResult(statistic, pval)
 
 
 #####################################
