@@ -179,12 +179,12 @@ void {{SUB}}_IIR_order2_cascade({{TYP}} cs, {{TYP}} z1, {{TYP}} z2,
 #ifdef __GNUC__
 {{endif}}
 int {{SUB}}_IIR_forback1({{TYP}} c0, {{TYP}} z1, {{TYP}} *x, {{TYP}} *y,
-               int N, int stridex, int stridey, float precision)
+               int N, int stridex, int stridey, {{TYP}} precision)
 {
     {{TYP}} *yp = NULL;
     {{TYP}} *xptr = x;
     {{TYP}} yp0, powz1, diff;
-    float err;
+    {{TYP}} err;
     int k;
 
     if (ABSQ(z1) >= 1.0) return -2; /* z1 not less than 1 */
@@ -430,7 +430,7 @@ static {{TYP}} {{SUB}}_hs(int, {{TYP}}, double, double);
 
 {{for SUB, TYP in zip(RNAME, RTYPE)}}
 int {{SUB}}_IIR_forback2 (double r, double omega, {{TYP}} *x, {{TYP}} *y,
-		int N, int stridex, int stridey, float precision) {
+		int N, int stridex, int stridey, {{TYP}} precision) {
     {{TYP}} cs;
     {{TYP}} *yp = NULL;
     {{TYP}} *yptr;
