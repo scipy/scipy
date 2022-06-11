@@ -1569,10 +1569,10 @@ class rv_generic:
                 message = "interval() got multiple values for first argument"
                 raise TypeError(message)
             else:
-                message = ("Use of keyword argument `alpha` for method "
-                           "`interval` is deprecated. Use first positional "
-                           "argument or keyword argument `confidence` "
-                           "instead.")
+                message = ("Use of keyword argument 'alpha' for method "
+                           "'interval' is deprecated and wil be removed in "
+                           "SciPy 1.11.0. Use first positional argument or "
+                           "keyword argument 'confidence' instead.")
                 confidence = kwds.pop("alpha")
                 warnings.warn(message, DeprecationWarning, stacklevel=2)
         alpha = confidence
