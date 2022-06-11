@@ -1333,9 +1333,10 @@ class rv_generic:
                 message = "moment() got multiple values for first argument"
                 raise TypeError(message)
             else:  # B2
-                message = ("Use of keyword argument `n` for method "
-                           "`moment` is deprecated. Use first positional "
-                           "argument or keyword argument `order` instead.")
+                message = ("Use of keyword argument 'n' for method 'moment is"
+                           " deprecated and will be removed in SciPy 1.11.0. "
+                           "Use first positional argument or keyword argument"
+                           " 'order' instead.")
                 order = kwds.pop("n")
                 warnings.warn(message, DeprecationWarning, stacklevel=2)
         n = order
