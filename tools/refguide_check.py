@@ -719,7 +719,8 @@ def _run_doctests(tests, full_name, verbose, doctest_warnings):
             if fails > 0:
                 success = False
 
-    LOGFILE.write(str(runner._name2ft) + "\n")
+    for entry in runner._name2ft:
+        LOGFILE.write(str(entry) + "\n")
 
     output.seek(0)
     return success, output.read()

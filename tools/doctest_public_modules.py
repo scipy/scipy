@@ -62,6 +62,8 @@ config.user_context_mgr = warnings_errors
 
 module_names = PUBLIC_SUBMODULES
 
+LOGFILE = open('doctest.log', 'a')
+
 all_success = True
 for submodule_name in module_names:
     prefix = BASE_MODULE + '.'
@@ -79,6 +81,11 @@ for submodule_name in module_names:
     sys.stderr.write(f"\n{line}\n")
 
     result, history = testmod(module, strategy='api', config=config) 
+
+    LOGFILE.write(module_name + '\n')
+    LOGFILE.write("="*len(module_name)  + '\n')
+    for entry in history:
+        LOGFILE.write(str(entry) + '\n')
 
     sys.stderr.write(str(result))
 

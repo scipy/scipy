@@ -1942,6 +1942,7 @@ kstat
 kstatvar
 kstest
 kstwo
+kstwobign
 kurtosis
 kurtosistest
 laplace
@@ -1949,6 +1950,7 @@ laplace_asymmetric
 levene
 levy
 levy_l
+levy_stable
 linregress
 loggamma
 logistic
