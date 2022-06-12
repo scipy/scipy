@@ -152,9 +152,7 @@ warnings.filterwarnings('error')
 warnings.filterwarnings('default', module='sphinx')  # internal warnings
 # global weird ones that can be safely ignored
 for key in (
-        r"'U' mode is deprecated",  # sphinx io
         r"OpenSSL\.rand is deprecated",  # OpenSSL package in linkcheck
-        r"Using or importing the ABCs from",  # 3.5 importlib._bootstrap
         r"distutils Version",  # distutils
         ):
     warnings.filterwarnings(  # deal with other modules having bad imports
@@ -187,9 +185,9 @@ html_logo = '_static/logo.svg'
 html_favicon = '_static/favicon.ico'
 
 html_theme_options = {
-  "logo_link": "index",
   "github_url": "https://github.com/scipy/scipy",
-  "navbar_end": ["version-switcher", "navbar-icon-links"],
+  "twitter_url": "https://twitter.com/SciPy_team",
+  "navbar_end": ["theme-switcher", "version-switcher", "navbar-icon-links"],
   "switcher": {
       "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
       "version_match": version,

@@ -5,13 +5,14 @@ from warnings import warn
 from textwrap import dedent
 from shutil import copyfile
 import pathlib
-import os
+import sys
 import argparse
 
 from gen_func_defs_pxd import (  # type: ignore
     _gen_func_defs_pxd)
 from _info import (  # type: ignore
     _x_funcs, _no_x_funcs, _klass_mapper)
+
 
 class _MethodDef(NamedTuple):
     ufunc_name: str
@@ -182,10 +183,14 @@ if __name__ == '__main__':
         f'{src_dir}/func_defs.pxd',
         x_funcs=_x_funcs,
         no_x_funcs=_no_x_funcs)
+    float_types = ['NPY_FLOAT', 'NPY_DOUBLE']
+    # Don't generate the 'long double' ufunc loops on Windows.
+    if sys.platform != 'win32':
+        float_types.append('NPY_LONGDOUBLE')
     for b, s in _klass_mapper.items():
         _ufunc_gen(
             scipy_dist=s.scipy_name,
-            types=['NPY_FLOAT', 'NPY_DOUBLE', 'NPY_LONGDOUBLE'],
+            types=float_types,
             ctor_args=s.ctor_args,
             filename=f'{src_dir}/{s.scipy_name}_ufunc.pyx',
             boost_dist=f'{b}_distribution',

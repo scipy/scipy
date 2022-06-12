@@ -4,6 +4,30 @@
 Advanced Meson build topics
 ===========================
 
+.. _blas-lapack-selection:
+
+Select a different BLAS or LAPACK library
+=========================================
+
+BLAS and LAPACK library selection, other than the OpenBLAS default, is
+implemented via Meson `build options
+<https://mesonbuild.com/Build-options.html#build-options>`__. For example, to
+select plain ``libblas`` and ``liblapack`` (this is typically Netlib
+BLAS/LAPACK on Linux distros, and can be dynamically switched between
+implementations on conda-forge), use::
+
+    $ # for a development build
+    $ meson setup build -Dblas=blas -Dlapack=lapack --prefix=$PWD/build-install
+    $ python dev.py
+
+    $ # to build and install a wheel
+    $ python -m build -C-Dblas=blas -C-Dlapack=lapack
+    $ pip install dist/scipy*.whl
+
+Other options that should work (as long as they're installed with
+``pkg-config`` support) include ``mkl`` and ``blis``.
+
+
 Use different build types with Meson
 ====================================
 

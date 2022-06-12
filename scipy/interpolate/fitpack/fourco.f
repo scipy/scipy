@@ -1,4 +1,5 @@
-      subroutine fourco(t,n,c,alfa,m,ress,resc,wrk1,wrk2,ier)
+      recursive subroutine fourco(t,n,c,alfa,m,ress,resc,wrk1,wrk2,ier)
+      implicit none
 c  subroutine fourco calculates the integrals
 c                    /t(n-3)
 c    ress(i) =      !        s(x)*sin(alfa(i)*x) dx    and

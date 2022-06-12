@@ -242,6 +242,7 @@ class StrategyChain:
         Instance of `EnergyState` class.
 
     """
+
     def __init__(self, acceptance_param, visit_dist, func_wrapper,
                  minimizer_wrapper, rand_gen, energy_state):
         # Local strategy chain minimum energy and location
@@ -437,7 +438,7 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
                    minimizer_kwargs=None, initial_temp=5230.,
                    restart_temp_ratio=2.e-5, visit=2.62, accept=-5.0,
                    maxfun=1e7, seed=None, no_local_search=False,
-                   callback=None, x0=None, local_search_options=None):
+                   callback=None, x0=None):
     """
     Find the global minimum of a function using Dual Annealing.
 
@@ -517,13 +518,6 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
         If the callback implementation returns True, the algorithm will stop.
     x0 : ndarray, shape(n,), optional
         Coordinates of a single N-D starting point.
-    local_search_options : dict, optional
-        Backwards compatible flag for `minimizer_kwargs`, only one of these
-        should be supplied.
-
-        .. deprecated:: 1.8.0
-            dual_annealing argument `local_search_options` is deprecated in
-            favor of `minimizer_kwargs` and will be removed in SciPy 1.10.0.
 
     Returns
     -------
@@ -648,16 +642,6 @@ def dual_annealing(func, bounds, args=(), maxiter=1000,
 
     # Wrapper for the objective function
     func_wrapper = ObjectiveFunWrapper(func, maxfun, *args)
-    # Wrapper for the minimizer
-    if local_search_options and minimizer_kwargs:
-        raise ValueError("dual_annealing only allows either 'minimizer_kwargs' (preferred) or "
-                         "'local_search_options' (deprecated); not both!")
-    if local_search_options is not None:
-        warnings.warn("dual_annealing argument 'local_search_options' is "
-                      "deprecated in favor of 'minimizer_kwargs' and will be "
-                      "removed in SciPy 1.10.0.",
-                      category=DeprecationWarning, stacklevel=2)
-        minimizer_kwargs = local_search_options
 
     # minimizer_kwargs has to be a dict, not None
     minimizer_kwargs = minimizer_kwargs or {}

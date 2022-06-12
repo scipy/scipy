@@ -34,6 +34,7 @@ from collections import namedtuple, Counter
 import numpy as np
 from numpy import array, asarray, ma
 from numpy.lib import NumpyVersion
+from numpy.testing import suppress_warnings
 
 from scipy.spatial.distance import cdist
 from scipy.ndimage import _measurements
@@ -56,10 +57,11 @@ from ._axis_nan_policy import (_axis_nan_policy_factory,
                                _broadcast_concatenate)
 from ._binomtest import _binary_search_for_binom_tst as _binary_search
 from scipy._lib._bunch import _make_tuple_bunch
+from scipy import stats
 
 
 # Functions/classes in other files should be added in `__init__.py`, not here
-__all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
+__all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'tmin', 'tmax', 'tstd', 'tsem', 'moment',
            'skew', 'kurtosis', 'describe', 'skewtest', 'kurtosistest',
            'normaltest', 'jarque_bera',
@@ -68,11 +70,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'sem', 'zmap', 'zscore', 'gzscore', 'iqr', 'gstd',
            'median_abs_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
-           'f_oneway', 'F_onewayConstantInputWarning',
-           'F_onewayBadInputSizesWarning',
-           'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
-           'pearsonr', 'fisher_exact',
-           'SpearmanRConstantInputWarning', 'spearmanr', 'pointbiserialr',
+           'f_oneway', 'pearsonr', 'fisher_exact',
+           'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau', 'multiscale_graphcorr',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
@@ -84,21 +83,25 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'mode', 'tmean', 'tvar',
            'brunnermunzel', 'alexandergovern']
 
 
-def _contains_nan(a, nan_policy='propagate'):
+def _contains_nan(a, nan_policy='propagate', use_summation=True):
     policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
     try:
-        # Calling np.sum to avoid creating a huge array into memory
-        # e.g. np.isnan(a).any()
-        with np.errstate(invalid='ignore', over='ignore'):
-            contains_nan = np.isnan(np.sum(a))
+        # The summation method avoids creating a (potentially huge) array.
+        # But, it will set contains_nan to True for (e.g.) [-inf, ..., +inf].
+        # If this is undesirable, set use_summation to False instead.
+        if use_summation:
+            with np.errstate(invalid='ignore', over='ignore'):
+                contains_nan = np.isnan(np.sum(a))
+        else:
+            contains_nan = np.isnan(a).any()
     except TypeError:
         # This can happen when attempting to sum things which are not
         # numbers (e.g. as in the function `mode`). Try an alternative method:
         try:
-            contains_nan = np.nan in set(a.ravel())
+            contains_nan = np.any(np.isnan(a))
         except TypeError:
             # Don't know what to do. Fall back to omitting nan values and
             # issue a warning.
@@ -401,6 +404,132 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
             return 1.0 / np.average(1.0 / a, axis=axis, weights=weights)
     else:
         raise ValueError("Harmonic mean only defined if all elements greater "
+                         "than or equal to zero")
+
+
+@_axis_nan_policy_factory(
+        lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
+        result_to_tuple=lambda x: (x,), kwd_samples=['weights'])
+def pmean(a, p, *, axis=0, dtype=None, weights=None):
+    r"""Calculate the weighted power mean along the specified axis.
+
+    The weighted power mean of the array :math:`a_i` associated to weights
+    :math:`w_i` is:
+
+    .. math::
+
+        \left( \frac{ \sum_{i=1}^n w_i a_i^p }{ \sum_{i=1}^n w_i }
+              \right)^{ 1 / p } \, ,
+
+    and, with equal weights, it gives:
+
+    .. math::
+
+        \left( \frac{ 1 }{ n } \sum_{i=1}^n a_i^p \right)^{ 1 / p }  \, .
+
+    This mean is also called generalized mean or Hölder mean, and must not be
+    confused with the Kolmogorov generalized mean, also called
+    quasi-arithmetic mean or generalized f-mean [3]_.
+
+    Parameters
+    ----------
+    a : array_like
+        Input array, masked array or object that can be converted to an array.
+    p : int or float
+        Exponent.
+    axis : int or None, optional
+        Axis along which the power mean is computed. Default is 0.
+        If None, compute over the whole array `a`.
+    dtype : dtype, optional
+        Type of the returned array and of the accumulator in which the
+        elements are summed. If `dtype` is not specified, it defaults to the
+        dtype of `a`, unless `a` has an integer `dtype` with a precision less
+        than that of the default platform integer. In that case, the default
+        platform integer is used.
+    weights : array_like, optional
+        The weights array can either be 1-D (in which case its length must be
+        the size of `a` along the given `axis`) or of the same shape as `a`.
+        Default is None, which gives each value a weight of 1.0.
+
+    Returns
+    -------
+    pmean : ndarray, see `dtype` parameter above.
+        Output array containing the power mean values.
+
+    See Also
+    --------
+    numpy.average : Weighted average
+    gmean : Geometric mean
+    hmean : Harmonic mean
+
+    Notes
+    -----
+    The power mean is computed over a single dimension of the input
+    array, ``axis=0`` by default, or all values in the array if ``axis=None``.
+    float64 intermediate and return values are used for integer inputs.
+
+    .. versionadded:: 1.9
+
+    References
+    ----------
+    .. [1] "Generalized Mean", *Wikipedia*,
+           https://en.wikipedia.org/wiki/Generalized_mean
+    .. [2] Norris, N., "Convexity properties of generalized mean value
+           functions", The Annals of Mathematical Statistics, vol. 8,
+           pp. 118-120, 1937
+    .. [3] Bullen, P.S., Handbook of Means and Their Inequalities, 2003
+
+    Examples
+    --------
+    >>> from scipy.stats import pmean, hmean, gmean
+    >>> pmean([1, 4], 1.3)
+    2.639372938300652
+    >>> pmean([1, 2, 3, 4, 5, 6, 7], 1.3)
+    4.157111214492084
+    >>> pmean([1, 4, 7], -2, weights=[3, 1, 3])
+    1.4969684896631954
+
+    For p=-1, power mean is equal to harmonic mean:
+
+    >>> pmean([1, 4, 7], -1, weights=[3, 1, 3])
+    1.9029126213592233
+    >>> hmean([1, 4, 7], weights=[3, 1, 3])
+    1.9029126213592233
+
+    For p=0, power mean is defined as the geometric mean:
+
+    >>> pmean([1, 4, 7], 0, weights=[3, 1, 3])
+    2.80668351922014
+    >>> gmean([1, 4, 7], weights=[3, 1, 3])
+    2.80668351922014
+
+    """
+    if not isinstance(p, (int, float)):
+        raise ValueError("Power mean only defined for exponent of type int or "
+                         "float.")
+    if p == 0:
+        return gmean(a, axis=axis, dtype=dtype, weights=weights)
+
+    if not isinstance(a, np.ndarray):
+        a = np.array(a, dtype=dtype)
+    elif dtype:
+        # Must change the default dtype allowing array type
+        if isinstance(a, np.ma.MaskedArray):
+            a = np.ma.asarray(a, dtype=dtype)
+        else:
+            a = np.asarray(a, dtype=dtype)
+
+    if np.all(a >= 0):
+        # Power mean only defined if greater than or equal to zero
+        if weights is not None:
+            weights = np.asanyarray(weights, dtype=dtype)
+
+        with np.errstate(divide='ignore'):
+            return np.float_power(
+                np.average(np.float_power(a, p), axis=axis, weights=weights),
+                1/p)
+    else:
+        raise ValueError("Power mean only defined if all elements greater "
                          "than or equal to zero")
 
 
@@ -894,6 +1023,46 @@ def tsem(a, limits=None, inclusive=(True, True), axis=0, ddof=1):
 #####################################
 
 
+def _moment_outputs(kwds):
+    moment = np.atleast_1d(kwds.get('moment', 1))
+    if moment.size == 0:
+        raise ValueError("'moment' must be a scalar or a non-empty 1D "
+                         "list/array.")
+    return len(moment)
+
+
+def _moment_result_object(*args):
+    if len(args) == 1:
+        return args[0]
+    return np.asarray(args)
+
+# `moment` fits into the `_axis_nan_policy` pattern, but it is a bit unusual
+# because the number of outputs is variable. Specifically,
+# `result_to_tuple=lambda x: (x,)` may be surprising for a function that
+# can produce more than one output, but it is intended here.
+# When `moment is called to produce the output:
+# - `result_to_tuple` packs the returned array into a single-element tuple,
+# - `_moment_result_object` extracts and returns that single element.
+# However, when the input array is empty, `moment` is never called. Instead,
+# - `_check_empty_inputs` is used to produce an empty array with the
+#   appropriate dimensions.
+# - A list comprehension creates the appropriate number of copies of this
+#   array, depending on `n_outputs`.
+# - This list - which may have multiple elements - is passed into
+#   `_moment_result_object`.
+# - If there is a single output, `_moment_result_object` extracts and returns
+#   the single output from the list.
+# - If there are multiple outputs, and therefore multiple elements in the list,
+#   `_moment_result_object` converts the list of arrays to a single array and
+#   returns it.
+# Currently this leads to a slight inconsistency: when the input array is
+# empty, there is no distinction between the `moment` function being called
+# with parameter `moments=1` and `moments=[1]`; the latter *should* produce
+# the same as the former but with a singleton zeroth dimension.
+@_axis_nan_policy_factory(  # noqa: E302
+    _moment_result_object, n_samples=1, result_to_tuple=lambda x: (x,),
+    n_outputs=_moment_outputs
+)
 def moment(a, moment=1, axis=0, nan_policy='propagate'):
     r"""Calculate the nth moment about the mean for a sample.
 
@@ -939,6 +1108,10 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 
     Where n is the number of samples and x-bar is the mean. This function uses
     exponentiation by squares [1]_ for efficiency.
+
+    Note that, if `a` is an empty array (``a.size == 0``), array `moment` with
+    one element (`moment.size == 1`) is treated the same as scalar `moment`
+    (``np.isscalar(moment)``). This might produce arrays of unexpected shape.
 
     References
     ----------
@@ -1013,6 +1186,19 @@ def _moment(a, moment, axis, *, mean=None):
         # Starting point for exponentiation by squares
         mean = a.mean(axis, keepdims=True) if mean is None else mean
         a_zero_mean = a - mean
+
+        eps = np.finfo(a_zero_mean.dtype).resolution * 10
+        with np.errstate(divide='ignore', invalid='ignore'):
+            rel_diff = np.max(np.abs(a_zero_mean), axis=axis,
+                              keepdims=True) / np.abs(mean)
+        with np.errstate(invalid='ignore'):
+            precision_loss = np.any(rel_diff < eps)
+        if precision_loss:
+            message = ("Precision loss occurred in moment calculation due to "
+                       "catastrophic cancellation. This occurs when the data "
+                       "are nearly identical. Results may be unreliable.")
+            warnings.warn(message, RuntimeWarning, stacklevel=4)
+
         if n_list[-1] == 1:
             s = a_zero_mean.copy()
         else:
@@ -1024,6 +1210,15 @@ def _moment(a, moment, axis, *, mean=None):
             if n % 2:
                 s *= a_zero_mean
         return np.mean(s, axis)
+
+
+def _var(x, axis=0, ddof=0, mean=None):
+    # Calculate variance of sample, warning if precision is lost
+    var = _moment(x, 2, axis, mean=mean)
+    if ddof != 0:
+        n = x.shape[axis] if axis is not None else x.size
+        var *= np.divide(n, n-ddof)  # to avoid error on division by zero
+    return var
 
 
 @_axis_nan_policy_factory(
@@ -1117,7 +1312,7 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     m3 = _moment(a, 3, axis, mean=mean)
     with np.errstate(all='ignore'):
         zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
-        vals = np.where(zero, 0, m3 / m2**1.5)
+        vals = np.where(zero, np.nan, m3 / m2**1.5)
     if not bias:
         can_correct = ~zero & (n > 2)
         if can_correct.any():
@@ -1229,7 +1424,7 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     m4 = _moment(a, 4, axis, mean=mean)
     with np.errstate(all='ignore'):
         zero = (m2 <= (np.finfo(m2.dtype).resolution * mean.squeeze(axis))**2)
-        vals = np.where(zero, 0, m4 / m2**2.0)
+        vals = np.where(zero, np.nan, m4 / m2**2.0)
 
     if not bias:
         can_correct = ~zero & (n > 3)
@@ -1327,7 +1522,7 @@ def describe(a, axis=0, ddof=1, bias=True, nan_policy='propagate'):
     n = a.shape[axis]
     mm = (np.min(a, axis=axis), np.max(a, axis=axis))
     m = np.mean(a, axis=axis)
-    v = np.var(a, axis=axis, ddof=ddof)
+    v = _var(a, axis=axis, ddof=ddof)
     sk = skew(a, axis, bias=bias)
     kurt = kurtosis(a, axis, bias=bias)
 
@@ -1832,7 +2027,7 @@ def _compute_qth_percentile(sorted_, per, interpolation_method, axis):
     return np.add.reduce(sorted_[tuple(indexer)] * weights, axis=axis) / sumval
 
 
-def percentileofscore(a, score, kind='rank'):
+def percentileofscore(a, score, kind='rank', nan_policy='propagate'):
     """Compute the percentile rank of a score relative to a list of scores.
 
     A `percentileofscore` of, for example, 80% means that 80% of the
@@ -1842,9 +2037,9 @@ def percentileofscore(a, score, kind='rank'):
     Parameters
     ----------
     a : array_like
-        Array of scores to which `score` is compared.
-    score : int or float
-        Score that is compared to the elements in `a`.
+        Array to which `score` is compared.
+    score : array_like
+        Scores to compute percentiles for.
     kind : {'rank', 'weak', 'strict', 'mean'}, optional
         Specifies the interpretation of the resulting score.
         The following options are available (default is 'rank'):
@@ -1858,6 +2053,13 @@ def percentileofscore(a, score, kind='rank'):
             strictly less than the given score are counted.
           * 'mean': The average of the "weak" and "strict" scores, often used
             in testing.  See https://en.wikipedia.org/wiki/Percentile_rank
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Specifies how to treat `nan` values in `a`.
+        The following options are available (default is 'propagate'):
+
+          * 'propagate': returns nan (for each value in `score`).
+          * 'raise': throws an error
+          * 'omit': performs the calculations ignoring nan values
 
     Returns
     -------
@@ -1867,6 +2069,7 @@ def percentileofscore(a, score, kind='rank'):
     See Also
     --------
     numpy.percentile
+    scipy.stats.scoreatpercentile, scipy.stats.rankdata
 
     Examples
     --------
@@ -1897,29 +2100,93 @@ def percentileofscore(a, score, kind='rank'):
     >>> stats.percentileofscore([1, 2, 3, 3, 4], 3, kind='mean')
     60.0
 
+    Score arrays (of any dimensionality) are supported:
+
+    >>> stats.percentileofscore([1, 2, 3, 3, 4], [2, 3])
+    array([40., 70.])
+
+    The inputs can be infinite:
+
+    >>> stats.percentileofscore([-np.inf, 0, 1, np.inf], [1, 2, np.inf])
+    array([75., 75., 100.])
+
+    If `a` is empty, then the resulting percentiles are all `nan`:
+
+    >>> stats.percentileofscore([], [1, 2])
+    array([nan, nan])
     """
-    if np.isnan(score):
-        return np.nan
+
     a = np.asarray(a)
     n = len(a)
-    if n == 0:
-        return 100.0
+    score = np.asarray(score)
 
-    if kind == 'rank':
-        left = np.count_nonzero(a < score)
-        right = np.count_nonzero(a <= score)
-        pct = (right + left + (1 if right > left else 0)) * 50.0/n
-        return pct
-    elif kind == 'strict':
-        return np.count_nonzero(a < score) / n * 100
-    elif kind == 'weak':
-        return np.count_nonzero(a <= score) / n * 100
-    elif kind == 'mean':
-        pct = (np.count_nonzero(a < score)
-               + np.count_nonzero(a <= score)) / n * 50
-        return pct
+    # Nan treatment
+    cna, npa = _contains_nan(a, nan_policy, use_summation=False)
+    cns, nps = _contains_nan(score, nan_policy, use_summation=False)
+
+    if (cna or cns) and nan_policy == 'raise':
+        raise ValueError("The input contains nan values")
+
+    if cns:
+        # If a score is nan, then the output should be nan
+        # (also if nan_policy is "omit", because it only applies to `a`)
+        score = ma.masked_where(np.isnan(score), score)
+
+    if cna:
+        if nan_policy == "omit":
+            # Don't count nans
+            a = ma.masked_where(np.isnan(a), a)
+            n = a.count()
+
+        if nan_policy == "propagate":
+            # All outputs should be nans
+            n = 0
+
+    # Cannot compare to empty list ==> nan
+    if n == 0:
+        perct = np.full_like(score, np.nan, dtype=np.float64)
+
     else:
-        raise ValueError("kind can only be 'rank', 'strict', 'weak' or 'mean'")
+        # Prepare broadcasting
+        score = score[..., None]
+
+        def count(x):
+            return np.count_nonzero(x, -1)
+
+        # Despite using masked_array to omit nan values from processing,
+        # the CI tests on "Azure pipelines" (but not on the other CI servers)
+        # emits warnings when there are nan values, contrarily to the purpose
+        # of masked_arrays. As a fix, we simply suppress the warnings.
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning,
+                       "invalid value encountered in less")
+            sup.filter(RuntimeWarning,
+                       "invalid value encountered in greater")
+
+            # Main computations/logic
+            if kind == 'rank':
+                left = count(a < score)
+                right = count(a <= score)
+                plus1 = left < right
+                perct = (left + right + plus1) * (50.0 / n)
+            elif kind == 'strict':
+                perct = count(a < score) * (100.0 / n)
+            elif kind == 'weak':
+                perct = count(a <= score) * (100.0 / n)
+            elif kind == 'mean':
+                left = count(a < score)
+                right = count(a <= score)
+                perct = (left + right) * (50.0 / n)
+            else:
+                raise ValueError(
+                    "kind can only be 'rank', 'strict', 'weak' or 'mean'")
+
+    # Re-insert nan values
+    perct = ma.filled(perct, np.nan)
+
+    if perct.ndim == 0:
+        return perct[()]
+    return perct
 
 
 HistogramResult = namedtuple('HistogramResult',
@@ -3400,27 +3667,6 @@ def trim_mean(a, proportiontocut, axis=0):
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 
-class F_onewayConstantInputWarning(RuntimeWarning):
-    """
-    Warning generated by `f_oneway` when an input is constant, e.g.
-    each of the samples provided is an array of identical values.
-    """
-
-    def __init__(self, msg=None):
-        if msg is None:
-            msg = ("Each of the input arrays is constant;"
-                   "the F statistic is not defined or infinite")
-        self.args = (msg,)
-
-
-class F_onewayBadInputSizesWarning(RuntimeWarning):
-    """
-    Warning generated by `f_oneway` when an input has length 0,
-    or if all the inputs have length 1.
-    """
-    pass
-
-
 def _create_f_oneway_nan_result(shape, axis):
     """
     This is a helper function for f_oneway for creating the return values
@@ -3469,12 +3715,12 @@ def f_oneway(*samples, axis=0):
 
     Warns
     -----
-    F_onewayConstantInputWarning
+    `~scipy.stats.ConstantInputWarning`
         Raised if all values within each of the input arrays are identical.
         In this case the F statistic is either infinite or isn't defined,
         so ``np.inf`` or ``np.nan`` is returned.
 
-    F_onewayBadInputSizesWarning
+    `~scipy.stats.DegenerateDataWarning`
         Raised if the length of any input array is 0, or if all the input
         arrays have length 1.  ``np.nan`` is returned for the F statistic
         and the p-value in these cases.
@@ -3590,15 +3836,15 @@ def f_oneway(*samples, axis=0):
     # Check this after forming alldata, so shape errors are detected
     # and reported before checking for 0 length inputs.
     if any(sample.shape[axis] == 0 for sample in samples):
-        warnings.warn(F_onewayBadInputSizesWarning('at least one input '
-                                                   'has length 0'))
+        warnings.warn(stats.DegenerateDataWarning('at least one input '
+                                                  'has length 0'))
         return _create_f_oneway_nan_result(alldata.shape, axis)
 
     # Must have at least one group with length greater than 1.
     if all(sample.shape[axis] == 1 for sample in samples):
         msg = ('all input arrays have length 1.  f_oneway requires that at '
                'least one input has length greater than 1.')
-        warnings.warn(F_onewayBadInputSizesWarning(msg))
+        warnings.warn(stats.DegenerateDataWarning(msg))
         return _create_f_oneway_nan_result(alldata.shape, axis)
 
     # Check if all values within each group are identical, and if the common
@@ -3622,7 +3868,9 @@ def f_oneway(*samples, axis=0):
     # the same (e.g. [[3, 3, 3], [5, 5, 5, 5], [4, 4, 4]]).
     all_const = is_const.all(axis=axis)
     if all_const.any():
-        warnings.warn(F_onewayConstantInputWarning())
+        msg = ("Each of the input arrays is constant;"
+               "the F statistic is not defined or infinite")
+        warnings.warn(stats.ConstantInputWarning(msg))
 
     # all_same_const is True if all the values in the groups along the axis=0
     # slice are the same (e.g. [[3, 3, 3], [3, 3, 3, 3], [3, 3, 3]]).
@@ -3704,7 +3952,7 @@ def alexandergovern(*samples, nan_policy='propagate'):
 
     Warns
     -----
-    AlexanderGovernConstantInputWarning
+    `~scipy.stats.ConstantInputWarning`
         Raised if an input is a constant array.  The statistic is not defined
         in this case, so ``np.nan`` is returned.
 
@@ -3763,7 +4011,8 @@ def alexandergovern(*samples, nan_policy='propagate'):
     samples = _alexandergovern_input_validation(samples, nan_policy)
 
     if np.any([(sample == sample[0]).all() for sample in samples]):
-        warnings.warn(AlexanderGovernConstantInputWarning())
+        msg = "An input array is constant; the statistic is not defined."
+        warnings.warn(stats.ConstantInputWarning(msg))
         return AlexanderGovernResult(np.nan, np.nan)
 
     # The following formula numbers reference the equation described on
@@ -3834,35 +4083,6 @@ def _alexandergovern_input_validation(samples, nan_policy):
 
 AlexanderGovernResult = make_dataclass("AlexanderGovernResult", ("statistic",
                                                                  "pvalue"))
-
-
-class AlexanderGovernConstantInputWarning(RuntimeWarning):
-    """Warning generated by `alexandergovern` when an input is constant."""
-
-    def __init__(self, msg=None):
-        if msg is None:
-            msg = ("An input array is constant; the statistic is not defined.")
-        self.args = (msg,)
-
-
-class PearsonRConstantInputWarning(RuntimeWarning):
-    """Warning generated by `pearsonr` when an input is constant."""
-
-    def __init__(self, msg=None):
-        if msg is None:
-            msg = ("An input array is constant; the correlation coefficient "
-                   "is not defined.")
-        self.args = (msg,)
-
-
-class PearsonRNearConstantInputWarning(RuntimeWarning):
-    """Warning generated by `pearsonr` when an input is nearly constant."""
-
-    def __init__(self, msg=None):
-        if msg is None:
-            msg = ("An input array is nearly constant; the computed "
-                   "correlation coefficient may be inaccurate.")
-        self.args = (msg,)
 
 
 def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
@@ -4025,11 +4245,11 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
     Warns
     -----
-    PearsonRConstantInputWarning
+    `~scipy.stats.ConstantInputWarning`
         Raised if an input is a constant array.  The correlation coefficient
         is not defined in this case, so ``np.nan`` is returned.
 
-    PearsonRNearConstantInputWarning
+    `~scipy.stats.NearConstantInputWarning`
         Raised if an input is "nearly" constant.  The array ``x`` is considered
         nearly constant if ``norm(x - mean(x)) < 1e-13 * abs(mean(x))``.
         Numerical errors in the calculation ``x - mean(x)`` in this case might
@@ -4169,7 +4389,9 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
     # If an input is constant, the correlation coefficient is not defined.
     if (x == x[0]).all() or (y == y[0]).all():
-        warnings.warn(PearsonRConstantInputWarning())
+        msg = ("An input array is constant; the correlation coefficient "
+               "is not defined.")
+        warnings.warn(stats.ConstantInputWarning(msg))
         result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
                                 alternative=alternative)
         return result
@@ -4204,7 +4426,9 @@ def pearsonr(x, y, *, alternative='two-sided'):
         # If all the values in x (likewise y) are very close to the mean,
         # the loss of precision that occurs in the subtraction xm = x - xmean
         # might result in large errors in r.
-        warnings.warn(PearsonRNearConstantInputWarning())
+        msg = ("An input array is nearly constant; the computed "
+               "correlation coefficient may be inaccurate.")
+        warnings.warn(stats.NearConstantInputWarning(msg))
 
     r = np.dot(xm/normxm, ym/normym)
 
@@ -4469,16 +4693,6 @@ def fisher_exact(table, alternative='two-sided'):
     return oddsratio, pvalue
 
 
-class SpearmanRConstantInputWarning(RuntimeWarning):
-    """Warning generated by `spearmanr` when an input is constant."""
-
-    def __init__(self, msg=None):
-        if msg is None:
-            msg = ("An input array is constant; the correlation coefficient "
-                   "is not defined.")
-        self.args = (msg,)
-
-
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
 
 
@@ -4543,6 +4757,12 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         is that two sets of data are uncorrelated. See `alternative` above
         for alternative hypotheses. `pvalue` has the same
         shape as `correlation`.
+
+    Warns
+    -----
+    `~scipy.stats.ConstantInputWarning`
+        Raised if an input is a constant array.  The correlation coefficient
+        is not defined in this case, so ``np.nan`` is returned.
 
     References
     ----------
@@ -4619,17 +4839,19 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         # Handle empty arrays or single observations.
         return SpearmanrResult(np.nan, np.nan)
 
+    warn_msg = ("An input array is constant; the correlation coefficient "
+                "is not defined.")
     if axisout == 0:
         if (a[:, 0][0] == a[:, 0]).all() or (a[:, 1][0] == a[:, 1]).all():
             # If an input is constant, the correlation coefficient
             # is not defined.
-            warnings.warn(SpearmanRConstantInputWarning())
+            warnings.warn(stats.ConstantInputWarning(warn_msg))
             return SpearmanrResult(np.nan, np.nan)
     else:  # case when axisout == 1 b/c a is 2 dim only
         if (a[0, :][0] == a[0, :]).all() or (a[1, :][0] == a[1, :]).all():
             # If an input is constant, the correlation coefficient
             # is not defined.
-            warnings.warn(SpearmanRConstantInputWarning())
+            warnings.warn(stats.ConstantInputWarning(warn_msg))
             return SpearmanrResult(np.nan, np.nan)
 
     a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
@@ -5819,7 +6041,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     df = n - 1
 
     d = np.mean(a, axis) - popmean
-    v = np.var(a, axis, ddof=1)
+    v = _var(a, axis, ddof=1)
     denom = np.sqrt(v / n)
 
     with np.errstate(divide='ignore', invalid='ignore'):
@@ -5900,13 +6122,13 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
     mean1 : array_like
         The mean(s) of sample 1.
     std1 : array_like
-        The standard deviation(s) of sample 1.
+        The corrected sample standard deviation of sample 1 (i.e. ``ddof=1``).
     nobs1 : array_like
         The number(s) of observations of sample 1.
     mean2 : array_like
         The mean(s) of sample 2.
     std2 : array_like
-        The standard deviations(s) of sample 2.
+        The corrected sample standard deviation of sample 2 (i.e. ``ddof=1``).
     nobs2 : array_like
         The number(s) of observations of sample 2.
     equal_var : bool, optional
@@ -5951,7 +6173,8 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
     Examples
     --------
-    Suppose we have the summary data for two samples, as follows::
+    Suppose we have the summary data for two samples, as follows (with the
+    Sample Variance being the corrected sample variance)::
 
                          Sample   Sample
                    Size   Mean   Variance
@@ -5981,16 +6204,16 @@ def ttest_ind_from_stats(mean1, std1, nobs1, mean2, std2, nobs2,
 
                           Number of    Sample     Sample
                     Size    ones        Mean     Variance
-        Sample 1    150      30         0.2        0.16
-        Sample 2    200      45         0.225      0.174375
+        Sample 1    150      30         0.2        0.161073
+        Sample 2    200      45         0.225      0.175251
 
     The sample mean :math:`\hat{p}` is the proportion of ones in the sample
     and the variance for a binary observation is estimated by
     :math:`\hat{p}(1-\hat{p})`.
 
-    >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.16), nobs1=150,
-    ...                      mean2=0.225, std2=np.sqrt(0.17437), nobs2=200)
-    Ttest_indResult(statistic=-0.564327545549774, pvalue=0.5728947691244874)
+    >>> ttest_ind_from_stats(mean1=0.2, std1=np.sqrt(0.161073), nobs1=150,
+    ...                      mean2=0.225, std2=np.sqrt(0.175251), nobs2=200)
+    Ttest_indResult(statistic=-0.5627187905196761, pvalue=0.5739887114209541)
 
     For comparison, we could compute the t statistic and p-value using
     arrays of 0s and 1s and `scipy.stat.ttest_ind`, as above.
@@ -6328,8 +6551,8 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
         n2 = b.shape[axis]
 
         if trim == 0:
-            v1 = np.var(a, axis, ddof=1)
-            v2 = np.var(b, axis, ddof=1)
+            v1 = _var(a, axis, ddof=1)
+            v2 = _var(b, axis, ddof=1)
             m1 = np.mean(a, axis)
             m2 = np.mean(b, axis)
         else:
@@ -6372,7 +6595,7 @@ def _calculate_winsorized_variance(a, g, axis):
     """Calculates g-times winsorized variance along specified axis"""
     # it is expected that the input `a` is sorted along the correct axis
     if g == 0:
-        return np.var(a, ddof=1, axis=axis)
+        return _var(a, ddof=1, axis=axis)
     # move the intended axis to the end that way it is easier to manipulate
     a_win = np.moveaxis(a, axis, -1)
 
@@ -6394,7 +6617,7 @@ def _calculate_winsorized_variance(a, g, axis):
     # page 369, beginning of page 370). This is converted to NumPy's format,
     # `n - ddof` for use with with `np.var`. The result is converted to an
     # array to accommodate indexing later.
-    var_win = np.asarray(np.var(a_win, ddof=(2 * g + 1), axis=-1))
+    var_win = np.asarray(_var(a_win, ddof=(2 * g + 1), axis=-1))
 
     # with `nan_policy='propagate'`, NaNs may be completely trimmed out
     # because they were sorted into the tail of the array. In these cases,
@@ -6447,8 +6670,8 @@ def _calc_t_stat(a, b, equal_var, axis=-1):
     nb = b.shape[axis]
     avg_a = np.mean(a, axis=axis)
     avg_b = np.mean(b, axis=axis)
-    var_a = np.var(a, axis=axis, ddof=1)
-    var_b = np.var(b, axis=axis, ddof=1)
+    var_a = _var(a, axis=axis, ddof=1)
+    var_b = _var(b, axis=axis, ddof=1)
 
     if not equal_var:
         denom = _unequal_var_ttest_denom(var_a, na, var_b, nb)[1]
@@ -6648,7 +6871,7 @@ def ttest_rel(a, b, axis=0, nan_policy='propagate', alternative="two-sided"):
     df = n - 1
 
     d = (a - b).astype(np.float64)
-    v = np.var(d, axis, ddof=1)
+    v = _var(d, axis, ddof=1)
     dm = np.mean(d, axis)
     denom = np.sqrt(v / n)
 

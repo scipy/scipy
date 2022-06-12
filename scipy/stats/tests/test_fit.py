@@ -212,6 +212,25 @@ def cases_test_fit():
             yield dist
 
 
+def cases_test_fitstart():
+    for distname, shapes in dict(distcont).items():
+        if not isinstance(distname, str) or distname in {'studentized_range'}:
+            continue
+        yield distname, shapes
+
+
+@pytest.mark.parametrize('distname, shapes', cases_test_fitstart())
+def test_fitstart(distname, shapes):
+    dist = getattr(stats, distname)
+    rng = np.random.default_rng(216342614)
+    data = rng.random(10)
+
+    with np.errstate(invalid='ignore', divide='ignore'):  # irrelevant to test
+        guess = dist._fitstart(data)
+
+    assert dist._argcheck(*guess[:-2])
+
+
 def assert_nllf_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0):
     nllf1 = dist.nnlf(params1, data)
     nllf0 = dist.nnlf(params0, data)
