@@ -324,9 +324,15 @@ class multivariate_normal_gen(multi_rv_generic):
                \exp\left( -\frac{1}{2} (x - \mu)^T \Sigma^{-1} (x - \mu) \right),
 
     where :math:`\mu` is the mean, :math:`\Sigma` the covariance matrix,
-    and :math:`k` is the dimension of the space where :math:`x` takes values.
+    :math:`k` the rank of :math:`\Sigma`. In case of singular :math:`\Sigma`,
+    SciPy extends this definition according to [1]_.
 
     .. versionadded:: 0.14.0
+
+    References
+    ----------
+    .. [1] Multivariate Normal Distribution - Degenerate Case, Wikipedia,
+           https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Degenerate_case
 
     Examples
     --------
