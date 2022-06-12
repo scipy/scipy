@@ -83,11 +83,17 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'brunnermunzel', 'alexandergovern']
 
 
+# This should probably be rewritten to avoid nested TypeErrors in favor of
+# branching based on dtype.
 def _contains_nan(a, nan_policy='propagate', use_summation=True):
     policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
+    # only inexact (floating/complexfloating) and object arrays support np.nan
+    if not (np.issubdtype(a.dtype, np.inexact)
+            or np.issubdtype(a.dtype, object)):
+        return False, nan_policy
     try:
         # The summation method avoids creating a (potentially huge) array.
         # But, it will set contains_nan to True for (e.g.) [-inf, ..., +inf].
@@ -103,13 +109,23 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
         try:
             contains_nan = np.any(np.isnan(a))
         except TypeError:
-            # Don't know what to do. Fall back to omitting nan values and
-            # issue a warning.
-            contains_nan = False
-            nan_policy = 'omit'
-            warnings.warn("The input array could not be properly "
-                          "checked for nan values. nan values "
-                          "will be ignored.", RuntimeWarning)
+            try:
+                # This can happen when attempting to check nan with np.isnan
+                # for string array (e.g. as in the function `rankdata`).
+                contains_nan = False
+                for el in a.ravel():
+                    # isnan doesn't work on elements of string arrays
+                    if np.issubdtype(type(el), np.number) and np.isnan(el):
+                        contains_nan = True
+                        break
+            except TypeError:
+                # Don't know what to do. Fall back to omitting nan values and
+                # issue a warning.
+                contains_nan = False
+                nan_policy = 'omit'
+                warnings.warn("The input array could not be properly "
+                              "checked for nan values. nan values "
+                              "will be ignored.", RuntimeWarning)
 
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")

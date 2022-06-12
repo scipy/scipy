@@ -26,6 +26,7 @@ import numpy as np
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats._mstats_basic as mstats_basic
+from scipy.stats._stats_py import _contains_nan
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
@@ -7684,3 +7685,54 @@ def test_rename_mode_method(fun, args):
     err = rf"{fun.__name__}() got multiple values for argument"
     with pytest.raises(TypeError, match=re.escape(err)):
         fun(*args, method='exact', mode='exact')
+
+
+class TestContainsNaNTest:
+
+    def test_policy(self):
+        data = np.array([1, 2, 3, np.nan])
+
+        contains_nan, nan_policy = _contains_nan(data, nan_policy="propagate")
+        assert contains_nan
+        assert nan_policy == "propagate"
+
+        contains_nan, nan_policy = _contains_nan(data, nan_policy="omit")
+        assert contains_nan
+        assert nan_policy == "omit"
+
+        msg = "The input contains nan values"
+        with pytest.raises(ValueError, match=msg):
+            _contains_nan(data, nan_policy="raise")
+
+        msg = "nan_policy must be one of"
+        with pytest.raises(ValueError, match=msg):
+            _contains_nan(data, nan_policy="nan")
+
+    def test_contains_nan_1d(self):
+        data1 = np.array([1, 2, 3])
+        assert not _contains_nan(data1)[0]
+
+        data2 = np.array([1, 2, 3, np.nan])
+        assert _contains_nan(data2)[0]
+
+        data3 = np.array([np.nan, 2, 3, np.nan])
+        assert _contains_nan(data3)[0]
+
+        data4 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
+        assert not _contains_nan(data4)[0]
+
+        data5 = np.array([1, 2, "3", np.nan], dtype='object')
+        assert _contains_nan(data5)[0]
+
+    def test_contains_nan_2d(self):
+        data1 = np.array([[1, 2], [3, 4]])
+        assert not _contains_nan(data1)[0]
+
+        data2 = np.array([[1, 2], [3, np.nan]])
+        assert _contains_nan(data2)[0]
+
+        data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
+        assert not _contains_nan(data3)[0]
+
+        data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
+        assert _contains_nan(data4)[0]
