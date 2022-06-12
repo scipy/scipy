@@ -57,8 +57,10 @@ def test_milp_iv():
         milp([1, 2, 3], bounds=([1, 2, 3], [set(), 4, 5]))
 
 
-@pytest.mark.xfail(strict=True, reason="Needs to be fixed in `_highs_wrapper`")
+@pytest.mark.xfail(run=False,
+                   reason="Needs to be fixed in `_highs_wrapper`")
 def test_milp_options(capsys):
+    # run=False now because of gh-16347
     message = "Unrecognized options detected: {'ekki'}..."
     options = {'ekki': True}
     with pytest.warns(RuntimeWarning, match=message):
