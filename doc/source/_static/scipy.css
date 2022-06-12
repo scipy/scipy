@@ -38,18 +38,21 @@ Nat Methods 8, 441 (2011). https://doi.org/10.1038/nmeth.1618
 #version_switcher_button[data-active-version-name*="dev"] {
   background-color: #E69F00;
   border-color: #E69F00;
+  color: white;
 }
 
 /* green for `stable` */
 #version_switcher_button[data-active-version-name*="stable"] {
   background-color: #009E73;
   border-color: #009E73;
+  color: white;
 }
 
 /* red for `old` */
 #version_switcher_button:not([data-active-version-name*="stable"]):not([data-active-version-name*="dev"]):not([data-active-version-name*="pull"]) {
   background-color: #980F0F;
   border-color: #980F0F;
+  color: white;
 }
 
 /* Taken from NumPy */

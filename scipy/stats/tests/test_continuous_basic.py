@@ -714,6 +714,18 @@ def test_gilbrat_deprecation(method):
     assert result == expected
 
 
+@pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
+                                    'sf', 'logsf', 'ppf', 'isf'])
+def test_gilbrat_deprecation_frozen(method):
+    expected = getattr(stats.gibrat, method)(1)
+    with pytest.warns(DeprecationWarning, match=r"\s*`gilbrat` is deprecated"):
+        # warn on instantiation of frozen distribution...
+        g = stats.gilbrat()
+    # ... not on its methods
+    result = getattr(g, method)(1)
+    assert result == expected
+
+
 def test_burr_fisk_moment_gh13234_regression():
     vals0 = stats.burr.moment(1, 5, 4)
     assert isinstance(vals0, float)

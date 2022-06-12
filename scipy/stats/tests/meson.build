@@ -4,6 +4,7 @@ py3.install_sources([
     'studentized_range_mpmath_ref.py',
     'test_axis_nan_policy.py',
     'test_binned_statistic.py',
+    'test_boost_ufuncs.py',
     'test_contingency.py',
     'test_continuous_basic.py',
     'test_crosstab.py',

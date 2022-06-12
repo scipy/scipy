@@ -850,10 +850,6 @@ static struct PyModuleDef moduledef = {
 PyMODINIT_FUNC
 PyInit__distance_wrap(void)
 {
-    PyObject *m;
-
-    m = PyModule_Create(&moduledef);
     import_array();
-
-    return m;
+    return PyModule_Create(&moduledef);
 }

@@ -6,6 +6,22 @@ fortran_ignore_warnings = [
   '-Wno-unused-variable'
 ]
 
+_direct = py3.extension_module('_direct',
+  ['_direct/direct_wrap.c',
+   '_direct/direct-internal.h',
+   '_direct/DIRect.c',
+   '_direct/DIRserial.c',
+   '_direct/DIRsubrout.c',
+   '_directmodule.h',
+   '_directmodule.c'
+  ],
+  c_args: [numpy_nodepr_api],
+  include_directories: include_dirs,
+  dependencies: [py3_dep],
+  install: true,
+  subdir: 'scipy/optimize'
+)
+
 minpack_lib = static_library('minpack',
   [
     'minpack/chkder.f',
@@ -45,16 +61,16 @@ _minpack = py3.extension_module('_minpack',
   subdir: 'scipy/optimize'
 )
 
-rectangular_lasp = static_library('rectangular_lasp',
+rectangular_lsap = static_library('rectangular_lsap',
   [
     'rectangular_lsap/rectangular_lsap.h',
     'rectangular_lsap/rectangular_lsap.cpp'
   ],
 )
 
-py3.extension_module('_lsap_module',
-  ['_lsap_module.c'],
-  link_with: rectangular_lasp,
+py3.extension_module('_lsap',
+  ['_lsap.c'],
+  link_with: rectangular_lsap,
   c_args: numpy_nodepr_api,
   dependencies: [py3_dep],
   include_directories: include_dirs,
@@ -265,6 +281,7 @@ py3.install_sources([
   '_constraints.py',
   '_differentiable_functions.py',
   '_differentialevolution.py',
+  '_direct_py.py',
   '_dual_annealing.py',
   '_hessian_update_strategy.py',
   '_lbfgsb_py.py',
@@ -276,7 +293,6 @@ py3.install_sources([
   '_linprog_rs.py',
   '_linprog_simplex.py',
   '_linprog_util.py',
-  '_lsap.py',
   '_milp.py',
   '_minimize.py',
   '_minpack_py.py',

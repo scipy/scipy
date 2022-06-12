@@ -61,7 +61,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10"]
+        python-version: ["3.11-dev"]
 
     steps:
     - uses: actions/checkout@v3
@@ -73,18 +73,6 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         architecture: x64
-
-# Keeping this for later 3.11. Might not be needed as GH seems to provide
-# pre-released versions of 3.11
-#    - name: Install Python 3.11
-#      if: matrix.python-version == '3.11'
-#      run: |
-#        sudo add-apt-repository ppa:deadsnakes/ppa
-#        sudo apt-get update
-#        sudo apt install -y --no-install-recommends python3.11-dev python3.11-distutils python3.11-venv
-#        # GitHub doesn't provide a pip interface with py3.11 yet. Therefore, install it manually :
-#        curl -O https://bootstrap.pypa.io/get-pip.py && python3.11 get-pip.py && rm get-pip.py
-#        python3.11 -m pip install --upgrade pip setuptools
 
     - name: Install other build dependencies
       run: |
