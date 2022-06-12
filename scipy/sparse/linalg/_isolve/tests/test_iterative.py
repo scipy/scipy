@@ -781,3 +781,10 @@ class TestGMRES:
         assert info == 20
         assert count[0] == 21
         x_cb(x)
+
+    def test_restrt_dep(self):
+        with pytest.warns(
+            DeprecationWarning,
+            match="'gmres' keyword argument 'restrt'"
+        ):
+            gmres(np.array([1]), np.array([1]), restrt=10)
