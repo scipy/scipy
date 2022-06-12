@@ -9063,19 +9063,25 @@ def rankdata(a, method='average', *, axis=None, nan_policy='omit'):
     axis : {None, int}, optional
         Axis along which to perform the ranking. If ``None``, the data array
         is first flattened.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan in `a`. 'propagate' just
-        execute the function without checking for nan, 'raise' throws an error,
-        'omit' performs the calculations ignoring nan values. Default is
-        'omit'.
+    nan_policy : {'omit', 'propagate', 'raise'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'omit'):
+
+          * 'omit': performs the calculations ignoring nan values
+          * 'propagate': propagates nans through the rank calculation
+          * 'raise': raises an error
 
         .. note::
 
-            When the `nan_policy` is 'omit', nans in `a` is ignored and those
-            ranks are nans, and they do not affect the ranks. This behabior is
-            default because it is intuitive for users.
-            When the `nan_policy` is 'propagate', other element's ranks are
-            also nans because ranks relative to the NaN are undefined.
+            When `nan_policy` is 'omit', nans in `a` are ignored when ranking
+            the other values, and the corresponding locations of the output
+            are nan. This behavior is the default because it is intuitive and
+            compatible with the behavior before the `nan_policy` parameter
+            was introduced.
+            When `nan_policy` is 'propagate', the output is an array of *all*
+            nans because ranks relative to nans in the input are undefined.
+
+        .. versionadded:: 1.10
 
     Returns
     -------
