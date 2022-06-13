@@ -1444,3 +1444,17 @@ def test_kdtree_count_neighbors_weighted(kdtree_class):
     expect = [np.sum(weights[(prev_radius < dist) & (dist <= radius)])
               for prev_radius, radius in zip(itertools.chain([0], r[:-1]), r)]
     assert_allclose(nAB, expect)
+
+
+def test_ckdtree_parallel_build():
+    np.random.seed(1234)
+
+    for dim in range(1, 5):
+        data = np.random.random((12345, dim))
+
+        # sequential reference
+        tree = cKDTree(data, leafsize=3, workers=1)
+
+        for workers in range(2, 4):
+            ptree = cKDTree(data, leafsize=3, workers=workers)
+            assert_array_equal(tree.tree.indices, ptree.tree.indices)

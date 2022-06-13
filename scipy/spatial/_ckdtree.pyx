@@ -74,7 +74,8 @@ cdef extern from "ckdtree_decl.h":
                          np.float64_t *maxes,
                          np.float64_t *mins,
                          int _median,
-                         int _compact) nogil except +
+                         int _compact,
+                         int _workers) nogil except +
 
     int build_weights(ckdtree *self,
                          np.float64_t *node_weights,
@@ -410,7 +411,7 @@ cdef np.intp_t get_num_workers(workers: object, kwargs: dict) except -1:
 cdef class cKDTree:
     """
     cKDTree(data, leafsize=16, compact_nodes=True, copy_data=False,
-            balanced_tree=True, boxsize=None)
+            balanced_tree=True, boxsize=None, *, workers=1)
 
     kd-tree for quick nearest-neighbor lookup
 
@@ -454,6 +455,9 @@ cdef class cKDTree:
         is the boxsize along i-th dimension. The input data shall be wrapped
         into :math:`[0, L_i)`. A ValueError is raised if any of the data is
         outside of this bound.
+    workers : int, optional
+        Number of workers to use for parallel build. If -1 is given all
+        CPU threads are used. Default is 1.
 
     Notes
     -----
@@ -543,14 +547,14 @@ cdef class cKDTree:
         self.cself.tree_buffer = NULL
 
     def __init__(cKDTree self, data, np.intp_t leafsize=16, compact_nodes=True,
-            copy_data=False, balanced_tree=True, boxsize=None):
+            copy_data=False, balanced_tree=True, boxsize=None, *, workers=1):
 
         cdef:
             np.float64_t [::1] tmpmaxes, tmpmins
             np.float64_t *ptmpmaxes
             np.float64_t *ptmpmins
             ckdtree *cself = self.cself
-            int compact, median
+            int compact, median, build_workers
 
         self._python_tree = None
 
@@ -597,6 +601,18 @@ cdef class cKDTree:
         compact = 1 if compact_nodes else 0
         median = 1 if balanced_tree else 0
 
+        if workers == -1:
+            build_workers = os.cpu_count()
+            if build_workers is None:
+                raise NotImplementedError(
+                    "Cannot determine the number of cpus using os.cpu_count(), "
+                    "cannot use -1 for the number of workers"
+                )
+        elif workers > 0:
+            build_workers = workers
+        else:
+            raise ValueError(f'Invalid number of workers {workers}, must be -1 or > 0')
+
         cself.tree_buffer = new vector[ckdtreenode]()
 
         tmpmaxes = np.copy(self.maxes)
@@ -605,7 +621,7 @@ cdef class cKDTree:
         ptmpmaxes = &tmpmaxes[0]
         ptmpmins = &tmpmins[0]
         with nogil:
-            build_ckdtree(cself, 0, cself.n, ptmpmaxes, ptmpmins, median, compact)
+            build_ckdtree(cself, 0, cself.n, ptmpmaxes, ptmpmins, median, compact, build_workers)
 
         # set up the tree structure pointers
         self._post_init()

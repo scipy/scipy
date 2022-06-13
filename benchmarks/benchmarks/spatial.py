@@ -16,16 +16,39 @@ with safe_import():
     from scipy.spatial.transform import Rotation
 
 
+def filterKWArgsDict(func, positional, kwargs):
+    """ Filter kwargs dictionary with which a given function can be called.
+
+    Parameters
+    ----------
+    func : function to filter for
+    positional : leading postional arugments to be forwarded on each call
+    kwargs : keyword args to be check one-by-one, each must be optional if
+    present
+    """
+
+    kwargsdict = {}
+    for k, v in kwargs.items():
+        try:
+            func(*positional, **{k: v})
+            kwargsdict[k] = v
+        except TypeError:
+            pass
+    return kwargsdict
+
 class Build(Benchmark):
     params = [
         [(3,10000,1000), (8,10000,1000), (16,10000,1000)],
         ['KDTree', 'cKDTree'],
+        [1, 2],
     ]
-    param_names = ['(m, n, r)', 'class']
+    param_names = ['(m, n, r)', 'class', 'workers']
 
-    def setup(self, mnr, cls_name):
+    def setup(self, mnr, cls_name, workers):
         self.cls = KDTree if cls_name == 'KDTree' else cKDTree
         m, n, r = mnr
+        self.additionalArgs = filterKWArgsDict(self.cls, (np.ones((1, 3)),),
+                                               {'workers': workers})
 
         rng = np.random.default_rng(1234)
         self.data = np.concatenate((rng.standard_normal((n//2,m)),
@@ -34,7 +57,7 @@ class Build(Benchmark):
         self.queries = np.concatenate((rng.standard_normal((r//2,m)),
                                        rng.standard_normal((r-r//2,m))+np.ones(m)))
 
-    def time_build(self, mnr, cls_name):
+    def time_build(self, mnr, cls_name, workers):
         """
         Constructing kd-tree
         =======================
@@ -44,7 +67,7 @@ class Build(Benchmark):
         if cls_name == 'cKDTree_flat':
             self.T = self.cls(self.data, leafsize=n)
         else:
-            self.cls(self.data)
+            self.cls(self.data, **self.additionalArgs)
 
 
 class PresortedDataSetup(Benchmark):
@@ -72,14 +95,17 @@ class PresortedDataSetup(Benchmark):
 
 
 class BuildUnbalanced(PresortedDataSetup):
-    params = PresortedDataSetup.params[:-1]
-    param_names = PresortedDataSetup.param_names[:-1]
+    params = PresortedDataSetup.params[:-1] + [[1, 2]]
+    param_names = PresortedDataSetup.param_names[:-1] + ['workers']
 
     def setup(self, *args):
-        super().setup(*args, None)
+        super().setup(*args[:-1], None)
+        self.additionalArgs = filterKWArgsDict(self.cls, (np.ones((1, 3)),),
+                                               {'workers': args[-1]})
 
-    def time_build(self, mnr, balanced, order):
-        cKDTree(self.data.get(order), balanced_tree=balanced)
+    def time_build(self, mnr, balanced, order, workers):
+        cKDTree(self.data.get(order), balanced_tree=balanced,
+                **self.additionalArgs)
 
 
 class QueryUnbalanced(PresortedDataSetup):
