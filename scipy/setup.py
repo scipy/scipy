@@ -4,6 +4,7 @@ def configuration(parent_package='',top_path=None):
 
     from numpy.distutils.misc_util import Configuration
     config = Configuration('scipy',parent_package,top_path)
+    config.add_subpackage('_lib')
     config.add_subpackage('cluster')
     config.add_subpackage('constants')
     config.add_subpackage('fft')
@@ -23,7 +24,6 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('stats')
     config.add_subpackage('ndimage')
     config.add_subpackage('_build_utils')
-    config.add_subpackage('_lib')
     config.make_config_py()
     return config
 

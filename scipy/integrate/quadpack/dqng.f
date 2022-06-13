@@ -1,4 +1,5 @@
-      subroutine dqng(f,a,b,epsabs,epsrel,result,abserr,neval,ier)
+      recursive subroutine dqng(f,a,b,epsabs,epsrel,result,abserr,
+     *   neval,ier)
 c***begin prologue  dqng
 c***date written   800101   (yymmdd)
 c***revision date  810101   (yymmdd)

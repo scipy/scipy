@@ -31,7 +31,7 @@ fi
 echo ". ${CONDA_DIR}/etc/profile.d/conda.sh" >>~/.bashrc
 
 # Ensures the environment is readily available
-echo "conda activate scipy-meson" >>~/.bashrc
+echo "conda activate scipy-dev" >>~/.bashrc
 
 # Enable prompt color in the skeleton .bashrc
 # hadolint ignore=SC2016

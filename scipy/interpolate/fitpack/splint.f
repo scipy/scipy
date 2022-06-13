@@ -1,5 +1,6 @@
-      real*8 function splint(t,n,c,k,a,b,wrk)
+      recursive function splint(t,n,c,k,a,b,wrk) result(splint_res)
       implicit none
+      real*8 :: splint_res
 c  function splint calculates the integral of a spline function s(x)
 c  of degree k, which is given in its normalized b-spline representation
 c
@@ -51,9 +52,9 @@ c  calculate the integrals wrk(i) of the normalized b-splines
 c  ni,k+1(x), i=1,2,...nk1.
       call fpintb(t,n,wrk,nk1,a,b)
 c  calculate the integral of s(x).
-      splint = 0.0d0
+      splint_res = 0.0d0
       do 10 i=1,nk1
-        splint = splint+c(i)*wrk(i)
+        splint_res = splint_res+c(i)*wrk(i)
   10  continue
       return
       end

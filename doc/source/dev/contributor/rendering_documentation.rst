@@ -38,7 +38,7 @@ To render the documentation on your own machine:
    Some of the documentation theme files are not distributed
    with the main ``scipy`` repository; this keeps them up to date using
    `git submodules`_.
-#. Enter ``make html-scipyorg``. If you have multiple version of Python on
+#. Enter ``make html``. If you have multiple version of Python on
    your path, you can choose which version to use by appending
    ``PYTHON=python3.9`` to this command, where ``python3.9`` is to be
    replaced with the name of the Python you use for SciPy development.
@@ -46,7 +46,7 @@ To render the documentation on your own machine:
    to execute the documentation build instructions from the ``Makefile``.
    This can take a while the first time, but subsequent documentation builds
    are typically much faster.
-#. View the documentation in ``scipy/doc/build/html-scipyorg``. You can start
+#. View the documentation in ``scipy/doc/build/html``. You can start
    with ``index.html`` and browse, or you can jump straight to the file you’re
    interested in.
 

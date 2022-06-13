@@ -23,7 +23,7 @@ FROM ${BASE_CONTAINER} as build
 
 # Build argument - can pass Meson arguments during the build:
 ARG BUILD_ARG="python dev.py --build-only -j2" \
-    CONDA_ENV=scipy-meson
+    CONDA_ENV=scipy-dev
 
 # -----------------------------------------------------------------------------
 USER root
@@ -48,6 +48,7 @@ WORKDIR ${WORKSPACE}
 
 # Build scipy to populate the cache used by ccache
 # Must re-activate conda to ensure the ccache flags are picked up
+RUN git config --global --add safe.directory /workspace/scipy
 RUN git submodule update --init --depth=1 -- scipy/_lib/boost && \
     git submodule update --init --depth=1 -- scipy/sparse/linalg/_propack/PROPACK && \ 
     git submodule update --init --depth=1 -- scipy/_lib/unuran && \ 

@@ -9,7 +9,6 @@ from functools import wraps
 import ctypes
 
 import numpy as np
-
 from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring,
                                inherit_docstring_from)
@@ -31,6 +30,7 @@ from ._constants import (_XMIN, _EULER, _ZETA3,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
+from scipy.stats._warnings_errors import FitError
 
 
 def _remove_optimizer_parameters(kwds):
@@ -558,6 +558,7 @@ arcsine = arcsine_gen(a=0.0, b=1.0, name='arcsine')
 
 
 class FitDataError(ValueError):
+    """Raised when input data is inconsistent with fixed parameters."""
     # This exception is raised by, for example, beta_gen.fit when both floc
     # and fscale are fixed and there are values in the data not in the open
     # interval (floc, floc+fscale).
@@ -570,7 +571,10 @@ class FitDataError(ValueError):
         )
 
 
-class FitSolverError(RuntimeError):
+class FitSolverError(FitError):
+    """
+    Raised when a solver fails to converge while fitting a distribution.
+    """
     # This exception is raised by, for example, beta_gen.fit when
     # optimize.fsolve returns with ier != 1.
     def __init__(self, mesg):
@@ -3569,34 +3573,66 @@ class gumbel_r_gen(rv_continuous):
         data, floc, fscale = _check_fit_input_parameters(self, data,
                                                          args, kwds)
 
-        # if user has provided `floc` or `fscale`, fall back on super fit
-        # method. This scenario is not suitable for solving a system of
-        # equations
-        if floc is not None or fscale is not None:
-            return super().fit(data, *args, **kwds)
-
-        # rv_continuous provided guesses
-        loc, scale = self._fitstart(data)
-        # account for user provided guesses
-        loc = kwds.pop('loc', loc)
-        scale = kwds.pop('scale', scale)
-
         # By the method of maximum likelihood, the estimators of the
-        # location and scale are the roots of the equation defined in
+        # location and scale are the roots of the equations defined in
         # `func` and the value of the expression for `loc` that follows.
-        # Source: Statistical Distributions, 3rd Edition. Evans, Hastings,
-        # and Peacock (2000), Page 101
+        # The first `func` is a first order derivative of the log-likelihood
+        # equation and the second is from Source: Statistical Distributions,
+        # 3rd Edition. Evans, Hastings, and Peacock (2000), Page 101.
 
-        def func(scale, data):
-            sdata = -data / scale
-            wavg = _average_with_log_weights(data, logweights=sdata)
-            return data.mean() - wavg - scale
+        def get_loc_from_scale(scale):
+            return -scale * (sc.logsumexp(-data / scale) - np.log(len(data)))
 
-        soln = optimize.root(func, scale, args=(data,),
-                             options={'xtol': 1e-14})
-        scale = soln.x[0]
-        loc = -scale * (sc.logsumexp(-data/scale) - np.log(len(data)))
+        if fscale is not None:
+            # if the scale is fixed, the location can be analytically
+            # determined.
+            scale = fscale
+            loc = get_loc_from_scale(scale)
+        else:
+            # A different function is solved depending on whether the location
+            # is fixed.
+            if floc is not None:
+                loc = floc
 
+                # equation to use if the location is fixed.
+                # note that one cannot use the equation in Evans, Hastings,
+                # and Peacock (2000) (since it assumes that the derivative
+                # w.r.t. the log-likelihood is zero). however, it is easy to
+                # derive the MLE condition directly if loc is fixed
+                def func(scale):
+                    term1 = (loc - data) * np.exp((loc - data) / scale) + data
+                    term2 = len(data) * (loc + scale)
+                    return term1.sum() - term2
+            else:
+
+                # equation to use if both location and scale are free
+                def func(scale):
+                    sdata = -data / scale
+                    wavg = _average_with_log_weights(data, logweights=sdata)
+                    return data.mean() - wavg - scale
+
+            # set brackets for `root_scalar` to use when optimizing over the
+            # scale such that a root is likely between them. Use user supplied
+            # guess or default 1.
+            brack_start = kwds.get('scale', 1)
+            lbrack, rbrack = brack_start / 2, brack_start * 2
+
+            # if a root is not between the brackets, iteratively expand them
+            # until they include a sign change, checking after each bracket is
+            # modified.
+            def interval_contains_root(lbrack, rbrack):
+                # return true if the signs disagree.
+                return (np.sign(func(lbrack)) !=
+                        np.sign(func(rbrack)))
+            while (not interval_contains_root(lbrack, rbrack)
+                   and (lbrack > 0 or rbrack < np.inf)):
+                lbrack /= 2
+                rbrack *= 2
+
+            res = optimize.root_scalar(func, bracket=(lbrack, rbrack),
+                                       rtol=1e-14, xtol=1e-14)
+            scale = res.root
+            loc = floc if floc is not None else get_loc_from_scale(scale)
         return loc, scale
 
 
@@ -3629,6 +3665,7 @@ class gumbel_l_gen(rv_continuous):
     %(example)s
 
     """
+
     def _shape_info(self):
         return []
 
@@ -3667,12 +3704,15 @@ class gumbel_l_gen(rv_continuous):
         # The fit method of `gumbel_r` can be used for this distribution with
         # small modifications. The process to do this is
         # 1. pass the sign negated data into `gumbel_r.fit`
+        #    - if the location is fixed, it should also be negated.
         # 2. negate the sign of the resulting location, leaving the scale
         #    unmodified.
         # `gumbel_r.fit` holds necessary input checks.
 
+        if kwds.get('floc') is not None:
+            kwds['floc'] = -kwds['floc']
         loc_r, scale_r, = gumbel_r.fit(-np.asarray(data), *args, **kwds)
-        return (-loc_r, scale_r)
+        return -loc_r, scale_r
 
 
 gumbel_l = gumbel_l_gen(name='gumbel_l')
@@ -5466,7 +5506,7 @@ class gibrat_gen(rv_continuous):
         return np.exp(random_state.standard_normal(size))
 
     def _pdf(self, x):
-        # gilbrat.pdf(x) = 1/(x*sqrt(2*pi)) * exp(-1/2*(log(x))**2)
+        # gibrat.pdf(x) = 1/(x*sqrt(2*pi)) * exp(-1/2*(log(x))**2)
         return np.exp(self._logpdf(x))
 
     def _logpdf(self, x):
@@ -5490,9 +5530,23 @@ class gibrat_gen(rv_continuous):
         return 0.5 * np.log(2 * np.pi) + 0.5
 
 
-# gilbrat was a spelling error; correct is gibrat, see #15911
-gilbrat = gibrat_gen(a=0.0, name='gilbrat')
+# deprecation of gilbrat, see #15911
+deprmsg = ("`gilbrat` is a misspelling of the correct name for the `gibrat` "
+           "distribution, and will be removed in SciPy 1.11.")
+
+
+class gilbrat_gen(gibrat_gen):
+    # override __call__ protocol from rv_generic to also
+    # deprecate instantiation of frozen distributions
+    def __call__(self, *args, **kwds):
+        # align with warning text from np.deprecated that's used for methods
+        msg = "`gilbrat` is deprecated, use `gibrat` instead!\n" + deprmsg
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+        return self.freeze(*args, **kwds)
+
+
 gibrat = gibrat_gen(a=0.0, name='gibrat')
+gilbrat = gilbrat_gen(a=0.0, name='gilbrat')
 
 
 # since the deprecated class gets intantiated upon import (and we only want to
@@ -5505,9 +5559,7 @@ _gibrat_method_names = [
 ]
 for m in _gibrat_method_names:
     wrapper = np.deprecate(getattr(gilbrat, m), f"gilbrat.{m}", f"gibrat.{m}",
-                           "Please replace all uses of the distribution class "
-                           "`gilbrat` with the corrected spelling `gibrat`. "
-                           "`gilbrat` will be removed in SciPy 1.11.")
+                           deprmsg)
     setattr(gilbrat, m, wrapper)
 
 
@@ -7344,6 +7396,15 @@ class reciprocal_gen(rv_continuous):
     def _entropy(self, a, b):
         return 0.5*np.log(a*b)+np.log(np.log(b*1.0/a))
 
+    fit_note = """\
+        `loguniform`/`reciprocal` is over-parameterized. `fit` automatically
+         fixes `scale` to 1 unless `fscale` is provided by the user.\n\n"""
+
+    @extend_notes_in_docstring(rv_continuous, notes=fit_note)
+    def fit(self, data, *args, **kwds):
+        fscale = kwds.pop('fscale', 1)
+        return super().fit(data, *args, fscale=fscale, **kwds)
+
 
 loguniform = reciprocal_gen(name="loguniform")
 reciprocal = reciprocal_gen(name="reciprocal")
@@ -7635,7 +7696,10 @@ class skew_norm_gen(rv_continuous):
         return [_ShapeInfo("a", False, (-np.inf, np.inf), (False, False))]
 
     def _pdf(self, x, a):
-        return 2.*_norm_pdf(x)*_norm_cdf(a*x)
+        return _lazywhere(
+            a == 0, (x, a), lambda x, a: _norm_pdf(x),
+            f2=lambda x, a: 2.*_norm_pdf(x)*_norm_cdf(a*x)
+        )
 
     def _cdf_single(self, x, *args):
         _a, _b = self._get_support(*args)
@@ -9662,7 +9726,7 @@ class studentized_range_gen(rv_continuous):
 
     When :math:`\nu` exceeds 100,000, an asymptotic approximation (infinite
     degrees of freedom) is used to compute the cumulative distribution
-    function [4]_.
+    function [4]_ and probability distribution function.
 
     %(after_notes)s
 
@@ -9779,18 +9843,25 @@ class studentized_range_gen(rv_continuous):
         return np.float64(ufunc(K, k, df))
 
     def _pdf(self, x, k, df):
-        cython_symbol = '_studentized_range_pdf'
 
         def _single_pdf(q, k, df):
-            log_const = _stats._studentized_range_pdf_logconst(k, df)
-            arg = [q, k, df, log_const]
-            usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
+            # The infinite form of the PDF is derived from the infinite
+            # CDF.
+            if df < 100000:
+                cython_symbol = '_studentized_range_pdf'
+                log_const = _stats._studentized_range_pdf_logconst(k, df)
+                arg = [q, k, df, log_const]
+                usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
+                ranges = [(-np.inf, np.inf), (0, np.inf)]
+
+            else:
+                cython_symbol = '_studentized_range_pdf_asymptotic'
+                arg = [q, k]
+                usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
+                ranges = [(-np.inf, np.inf)]
 
             llc = LowLevelCallable.from_cython(_stats, cython_symbol, usr_data)
-
-            ranges = [(-np.inf, np.inf), (0, np.inf)]
             opts = dict(epsabs=1e-11, epsrel=1e-12)
-
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_pdf, 3, 1)
@@ -9809,6 +9880,7 @@ class studentized_range_gen(rv_continuous):
                 arg = [q, k, df, log_const]
                 usr_data = np.array(arg, float).ctypes.data_as(ctypes.c_void_p)
                 ranges = [(-np.inf, np.inf), (0, np.inf)]
+
             else:
                 cython_symbol = '_studentized_range_cdf_asymptotic'
                 arg = [q, k]
@@ -9820,6 +9892,7 @@ class studentized_range_gen(rv_continuous):
             return integrate.nquad(llc, ranges=ranges, opts=opts)[0]
 
         ufunc = np.frompyfunc(_single_cdf, 3, 1)
+
         # clip p-values to ensure they are in [0, 1].
         return np.clip(np.float64(ufunc(x, k, df)), 0, 1)
 
