@@ -1,4 +1,4 @@
-from tempfile import mkdtemp, mkstemp
+from tempfile import mkdtemp
 import os
 import io
 import shutil
@@ -694,9 +694,12 @@ class TestMMIOCoordinate:
         b = mmread(self.fn).toarray()
         assert_array_almost_equal(a, b)
 
-    def test_sparse_formats(self):
-        mats = []
+    def test_sparse_formats(self, tmp_path):
+        # Note: `tmp_path` is a pytest fixture, it handles cleanup
+        tmpdir = tmp_path / 'sparse_formats'
+        tmpdir.mkdir()
 
+        mats = []
         I = array([0, 0, 1, 2, 3, 3, 3, 4])
         J = array([0, 3, 1, 2, 1, 3, 4, 4])
 
@@ -710,12 +713,10 @@ class TestMMIOCoordinate:
         for mat in mats:
             expected = mat.toarray()
             for fmt in ['csr', 'csc', 'coo']:
-                fn = mkstemp(suffix='.mtx', dir=self.tmpdir)[1]
-                mmwrite(fn, mat.asformat(fmt))
-
-                result = mmread(fn).toarray()
+                fname = tmpdir / (fmt + '.mtx')
+                mmwrite(fname, mat.asformat(fmt))
+                result = mmread(fname).toarray()
                 assert_array_almost_equal(result, expected)
-                os.remove(fn)
 
     def test_precision(self):
         test_values = [pi] + [10**(i) for i in range(0, -10, -1)]
