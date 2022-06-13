@@ -2524,3 +2524,11 @@ class TestMedianTest:
         exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
+
+    @pytest.mark.parametrize("correction", [False, True])
+    def test_result(self, correction):
+        x = [1, 2, 3]
+        y = [1, 2, 3]
+
+        res = stats.median_test(x, y, correction=correction)
+        assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
