@@ -1613,6 +1613,20 @@ class PoissonDisk(QMCEngine):
     ncandidates : int
         Number of candidates to sample per iteration. More candidates result
         in a denser sampling as more candidates can be accepted per iteration.
+    optimization : {None, "random-cd", "lloyd"}, optional
+        Whether to use an optimization scheme to improve the quality after
+        sampling.
+        Default is None.
+
+        * ``random-cd``: random permutations of coordinates to lower the
+          centered discrepancy. The best design based on the centered
+          discrepancy is constantly updated. Centered discrepancy-based
+          design shows better space filling robustness toward 2D and 3D
+          subprojections compared to using other discrepancy measures.
+        * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
+          The process converges to equally spaced samples.
+
+        .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1698,9 +1712,10 @@ class PoissonDisk(QMCEngine):
         radius: DecimalNumber = 0.05,
         hypersphere: Literal["volume", "surface"] = "volume",
         ncandidates: IntNumber = 30,
+        optimization: Optional[Literal["random-cd", "lloyd"]] = None,
         seed: SeedType = None
     ) -> None:
-        super().__init__(d=d, seed=seed)
+        super().__init__(d=d, optimization=optimization, seed=seed)
 
         hypersphere_sample = {
             "volume": self._hypersphere_volume_sample,
@@ -1746,7 +1761,9 @@ class PoissonDisk(QMCEngine):
         # Initialise empty cells with NaNs
         self.sample_grid.fill(np.nan)
 
-    def random(self, n: IntNumber = 1) -> np.ndarray:
+    def _random(
+        self, n: IntNumber = 1, *, workers: IntNumber = 1
+    ) -> np.ndarray:
         """Draw `n` in the interval ``[0, 1]``.
 
         Note that it can return fewer samples if the space is full.
