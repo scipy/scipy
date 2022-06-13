@@ -1540,11 +1540,11 @@ class TestOptimizeScalar:
         x = optimize.brent(self.fun, brack=(-15, -1, 15))
         assert_allclose(x, self.solution, atol=1e-6)
 
-        message="fulfill this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+        message = "fulfill this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
         with pytest.raises(ValueError, match= message):
             optimize.brent(self.fun, brack=(-1, 0, 1))
 
-        message="fulfill this requirement: (xa < xb) and (xb < xc)"
+        message = "fulfill this requirement: (xa < xb) and (xb < xc)"
         with pytest.raises(ValueError, match=message):
             optimize.brent(self.fun, brack=(0, -1, 1))
 
@@ -1571,11 +1571,11 @@ class TestOptimizeScalar:
             nfev0, nfev = x0[2], x[2]
             assert_equal(nfev - nfev0, maxiter)
 
-        message="fulfill this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+        message = "fulfill this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
         with pytest.raises(ValueError, match=message):
             optimize.golden(self.fun, brack=(-1, 0, 1))
 
-        message="fulfill this requirement: (xa < xb) and (xb < xc)"
+        message = "fulfill this requirement: (xa < xb) and (xb < xc)"
         with pytest.raises(ValueError, match=message):
             optimize.golden(self.fun, brack=(0, -1, 1))
 
