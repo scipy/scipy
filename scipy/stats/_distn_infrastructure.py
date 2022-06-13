@@ -1333,9 +1333,10 @@ class rv_generic:
                 message = "moment() got multiple values for first argument"
                 raise TypeError(message)
             else:  # B2
-                message = ("Use of keyword argument `n` for method "
-                           "`moment` is deprecated. Use first positional "
-                           "argument or keyword argument `order` instead.")
+                message = ("Use of keyword argument 'n' for method 'moment is"
+                           " deprecated and will be removed in SciPy 1.11.0. "
+                           "Use first positional argument or keyword argument"
+                           " 'order' instead.")
                 order = kwds.pop("n")
                 warnings.warn(message, DeprecationWarning, stacklevel=2)
         n = order
@@ -1569,10 +1570,10 @@ class rv_generic:
                 message = "interval() got multiple values for first argument"
                 raise TypeError(message)
             else:
-                message = ("Use of keyword argument `alpha` for method "
-                           "`interval` is deprecated. Use first positional "
-                           "argument or keyword argument `confidence` "
-                           "instead.")
+                message = ("Use of keyword argument 'alpha' for method "
+                           "'interval' is deprecated and wil be removed in "
+                           "SciPy 1.11.0. Use first positional argument or "
+                           "keyword argument 'confidence' instead.")
                 confidence = kwds.pop("alpha")
                 warnings.warn(message, DeprecationWarning, stacklevel=2)
         alpha = confidence
@@ -1745,7 +1746,8 @@ class rv_continuous(rv_generic):
     extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
-        backwards compatibility, do not use for new subclasses.
+        backwards compatibility and will be removed in SciPy 1.11.0, do not
+        use for new subclasses.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
 
@@ -3065,7 +3067,8 @@ class rv_discrete(rv_generic):
     extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
-        backwards compatibility, do not use for new subclasses.
+        backwards compatibility and will be removed in SciPy 1.11.0, do not
+        use for new subclasses.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
 
