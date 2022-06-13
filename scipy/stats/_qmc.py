@@ -623,10 +623,10 @@ class QMCEngine(ABC):
           discrepancy is constantly updated. Centered discrepancy-based
           design shows better space filling robustness toward 2D and 3D
           subprojections compared to using other discrepancy measures.
-        * ``lloyd``: Perturb samples using Lloyd-Max algorithm. The process
-          converges to equally spaced samples.
+        * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
+          The process converges to equally spaced samples.
 
-        .. versionadded:: 1.9.0
+        .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -650,7 +650,7 @@ class QMCEngine(ABC):
       does not take advantage of a ``seed`` (deterministic methods like
       Halton), this parameter can be omitted.
     * ``_random(n, *, workers=1)``: draw ``n`` from the engine. ``workers``
-      is used for parralelism. See `Halton` for example.
+      is used for parallelism. See `Halton` for example.
 
     Optionally, two other methods can be overwritten by subclasses:
 
@@ -728,8 +728,8 @@ class QMCEngine(ABC):
             "rng": self.rng,
 
             # lloyd
-            "tol":  1e-5,
-            "maxiter":  10,
+            "tol": 1e-5,
+            "maxiter": 10,
             "qhull_options": None,
         }
         self.optimization_method = _select_optimizer(optimization, config)
@@ -908,10 +908,10 @@ class Halton(QMCEngine):
           discrepancy is constantly updated. Centered discrepancy-based
           design shows better space filling robustness toward 2D and 3D
           subprojections compared to using other discrepancy measures.
-        * ``lloyd``: Perturb samples using Lloyd-Max algorithm. The process
-          converges to equally spaced samples.
+        * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
+          The process converges to equally spaced samples.
 
-        .. versionadded:: 1.9.0
+        .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
@@ -1043,11 +1043,11 @@ class LatinHypercube(QMCEngine):
           discrepancy is constantly updated. Centered discrepancy-based
           design shows better space filling robustness toward 2D and 3D
           subprojections compared to using other discrepancy measures [6]_.
-        * ``lloyd``: Perturb samples using Lloyd-Max algorithm. The process
-          converges to equally spaced samples.
+        * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
+          The process converges to equally spaced samples.
 
         .. versionadded:: 1.8.0
-        .. versionchanged:: 1.9.0
+        .. versionchanged:: 1.10.0
             Add ``lloyd``.
 
     strength : {1, 2}, optional
@@ -1297,10 +1297,10 @@ class Sobol(QMCEngine):
           discrepancy is constantly updated. Centered discrepancy-based
           design shows better space filling robustness toward 2D and 3D
           subprojections compared to using other discrepancy measures.
-        * ``lloyd``: Perturb samples using Lloyd-Max algorithm. The process
-          converges to equally spaced samples.
+        * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
+          The process converges to equally spaced samples.
 
-        .. versionadded:: 1.9.0
+        .. versionadded:: 1.10.0
     seed : {None, int, `numpy.random.Generator`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
