@@ -455,8 +455,8 @@ class interp1d(_Interpolator1D):
         elif isinstance(kind, int):
             order = kind
             kind = 'spline'
-        elif kind not in ('linear', 'exponential', 'nearest', 'nearest-up', 'previous',
-                          'next'):
+        elif kind not in ('linear', 'exponential', 'nearest', 'nearest-up',
+                          'previous', 'next'):
             raise NotImplementedError("%s is unsupported: Use fitpack "
                                       "routines for other types." % kind)
         x = array(x, copy=self.copy)
@@ -490,7 +490,8 @@ class interp1d(_Interpolator1D):
         # interpolation methods, in order to avoid circular references to self
         # stored in the bound instance methods, and therefore delayed garbage
         # collection.  See: https://docs.python.org/reference/datamodel.html
-        if kind in ('linear', 'exponential','nearest', 'nearest-up', 'previous', 'next'):
+        if kind in ('linear', 'exponential','nearest', 'nearest-up',
+                    'previous', 'next'):
             # Make a "view" of the y array that is rotated to the interpolation
             # axis.
             minval = 2
@@ -656,7 +657,7 @@ class interp1d(_Interpolator1D):
         y_new = slope*(x_new - x_lo)[:, None] + y_lo
 
         return y_new
-      
+
     def _call_exponential(self, x_new):
         # 2. Find where in the original data, the values to interpolate
         #    would be inserted.
@@ -668,7 +669,8 @@ class interp1d(_Interpolator1D):
         #    of x_new[n] = x[0]
         x_new_indices = x_new_indices.clip(1, len(self.x)-1).astype(int)
 
-        # 4. Calculate the exponential slope of regions that each x_new value falls in.
+        # 4. Calculate the exponential slope of regions that each x_new value
+        # falls in.
         lo = x_new_indices - 1
         hi = x_new_indices
 
@@ -685,7 +687,7 @@ class interp1d(_Interpolator1D):
         y_new = np.exp(b*(x_new))/np.exp(b*(x_lo[:, None])) * y_lo
 
         return y_new
-      
+
     def _call_nearest(self, x_new):
         """ Find nearest neighbor interpolated y_new = f(x_new)."""
 
