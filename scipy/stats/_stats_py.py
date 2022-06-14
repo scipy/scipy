@@ -9038,7 +9038,7 @@ def _square_of_sums(a, axis=0):
         return float(s) * s
 
 
-def rankdata(a, method='average', *, axis=None):
+def rankdata(a, method='average', *, axis=None, nan_policy='omit'):
     """Assign ranks to data, dealing with ties appropriately.
 
     By default (``axis=None``), the data array is first flattened, and a flat
@@ -9071,6 +9071,25 @@ def rankdata(a, method='average', *, axis=None):
     axis : {None, int}, optional
         Axis along which to perform the ranking. If ``None``, the data array
         is first flattened.
+    nan_policy : {'omit', 'propagate', 'raise'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'omit'):
+
+          * 'omit': performs the calculations ignoring nan values
+          * 'propagate': propagates nans through the rank calculation
+          * 'raise': raises an error
+
+        .. note::
+
+            When `nan_policy` is 'omit', nans in `a` are ignored when ranking
+            the other values, and the corresponding locations of the output
+            are nan. This behavior is the default because it is intuitive and
+            compatible with the behavior before the `nan_policy` parameter
+            was introduced.
+            When `nan_policy` is 'propagate', the output is an array of *all*
+            nans because ranks relative to nans in the input are undefined.
+
+        .. versionadded:: 1.10
 
     Returns
     -------
@@ -9101,13 +9120,18 @@ def rankdata(a, method='average', *, axis=None):
     >>> rankdata([[0, 2, 2], [3, 2, 5]], axis=1)
     array([[1. , 2.5, 2.5],
            [2. , 1. , 3. ]])
+    >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="omit")
+    array([ 2.,  3.,  4., nan,  1., nan])
+    >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="propagate")
+    array([nan, nan, nan, nan, nan, nan])
 
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
         raise ValueError('unknown method "{0}"'.format(method))
 
+    a = np.asarray(a)
+
     if axis is not None:
-        a = np.asarray(a)
         if a.size == 0:
             # The return values of `normalize_axis_index` are ignored.  The
             # call validates `axis`, even though we won't use it.
@@ -9115,9 +9139,18 @@ def rankdata(a, method='average', *, axis=None):
             np.core.multiarray.normalize_axis_index(axis, a.ndim)
             dt = np.float64 if method == 'average' else np.int_
             return np.empty(a.shape, dtype=dt)
-        return np.apply_along_axis(rankdata, axis, a, method)
+        return np.apply_along_axis(rankdata, axis, a, method,
+                                   nan_policy=nan_policy)
 
-    arr = np.ravel(np.asarray(a))
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    nan_indexes = None
+    if contains_nan:
+        if nan_policy == 'omit':
+            nan_indexes = np.isnan(a)
+        if nan_policy == 'propagate':
+            return np.full_like(a, np.nan)
+
+    arr = np.ravel(a)
     algo = 'mergesort' if method == 'ordinal' else 'quicksort'
     sorter = np.argsort(arr, kind=algo)
 
@@ -9125,23 +9158,29 @@ def rankdata(a, method='average', *, axis=None):
     inv[sorter] = np.arange(sorter.size, dtype=np.intp)
 
     if method == 'ordinal':
-        return inv + 1
+        result = inv + 1
 
     arr = arr[sorter]
     obs = np.r_[True, arr[1:] != arr[:-1]]
     dense = obs.cumsum()[inv]
 
     if method == 'dense':
-        return dense
+        result = dense
 
     # cumulative counts of each unique value
     count = np.r_[np.nonzero(obs)[0], len(obs)]
 
     if method == 'max':
-        return count[dense]
+        result = count[dense]
 
     if method == 'min':
-        return count[dense - 1] + 1
+        result = count[dense - 1] + 1
 
-    # average method
-    return .5 * (count[dense] + count[dense - 1] + 1)
+    if method == 'average':
+        result = .5 * (count[dense] + count[dense - 1] + 1)
+
+    if nan_indexes is not None:
+        result = result.astype('float64')
+        result[nan_indexes] = np.nan
+
+    return result
