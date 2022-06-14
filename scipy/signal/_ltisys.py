@@ -1766,9 +1766,9 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     Simulate output of a continuous-time linear system, by using
     the ODE solver `scipy.integrate.odeint`.
 
-    .. deprecated:: 1.9.0
+    .. deprecated:: 1.10.0
         Function `lsim2` is deprecated in favor of the faster `lsim` function.
-        `lsim2` will be removed in SciPy 1.11.
+        `lsim2` will be removed in SciPy 1.12.
 
     Parameters
     ----------
@@ -1895,8 +1895,8 @@ def lsim2(system, U=None, T=None, X0=None, **kwargs):
     >>> plt.show()
 
     """
-    warnings.warn("lsim2 is deprecated and will be removed from scipy 1.11. "
-                  "Use the feature equivalent lsim function.",
+    warnings.warn("lsim2 is deprecated and will be removed from scipy 1.12. "
+                  "Use the feature-equivalent lsim function.",
                   DeprecationWarning, stacklevel=2)
 
     if isinstance(system, lti):
@@ -2290,9 +2290,9 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     """
     Impulse response of a single-input, continuous-time linear system.
 
-    .. deprecated:: 1.9.0
+    .. deprecated:: 1.10.0
         Function `impulse2` is deprecated in favor of the faster `impulse`
-        function. `impulse2` will be removed in SciPy 1.11.
+        function. `impulse2` will be removed in SciPy 1.12.
 
     Parameters
     ----------
@@ -2365,7 +2365,7 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
 
     """
     warnings.warn("impulse2 is deprecated and will be removed from "
-                  "scipy 1.11. Use the feature equivalent impulse function.",
+                  "scipy 1.12. Use the feature-equivalent impulse function.",
                   DeprecationWarning, stacklevel=2)
 
     if isinstance(system, lti):
@@ -2392,8 +2392,8 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     with warnings.catch_warnings():
         warnings.filterwarnings(
             action='ignore',
-            message="lsim2 is deprecated and will be removed from scipy 1.11. "
-                    "Use the feature equivalent lsim function.",
+            message="lsim2 is deprecated and will be removed from scipy 1.12. "
+                    "Use the feature-equivalent lsim function.",
             category=DeprecationWarning)
         Tr, Yr, Xr = lsim2(sys, T=T, X0=ic, **kwargs)
     return Tr, Yr
@@ -2473,9 +2473,9 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     it uses the function `scipy.signal.lsim2` to compute the step
     response.
 
-    .. deprecated:: 1.9.0
+    .. deprecated:: 1.10.0
         Function `step2` is deprecated in favor of the faster `step` function.
-        `step2` will be removed in SciPy 1.11.
+        `step2` will be removed in SciPy 1.12.
 
     Parameters
     ----------
@@ -2543,8 +2543,8 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     >>> plt.grid()
 
     """
-    warnings.warn("step2 is deprecated and will be removed from scipy 1.11. "
-                  "Use the feature equivalent step function.",
+    warnings.warn("step2 is deprecated and will be removed from scipy 1.12. "
+                  "Use the feature-equivalent step function.",
                   DeprecationWarning, stacklevel=2)
 
     if isinstance(system, lti):
@@ -2564,8 +2564,8 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     with warnings.catch_warnings():
         warnings.filterwarnings(
             action='ignore',
-            message="lsim2 is deprecated and will be removed from scipy 1.11. "
-            "Use the feature equivalent lsim function.",
+            message="lsim2 is deprecated and will be removed from scipy 1.12. "
+            "Use the feature-equivalent lsim function.",
             category=DeprecationWarning)
         vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]
