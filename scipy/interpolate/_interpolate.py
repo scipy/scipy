@@ -356,14 +356,14 @@ class interp1d(_Interpolator1D):
     kind : str or int, optional
         Specifies the kind of interpolation as a string or as an integer
         specifying the order of the spline interpolator to use.
-        The string has to be one of 'linear', 'nearest', 'nearest-up', 'zero',
-        'slinear', 'quadratic', 'cubic', 'previous', or 'next'. 'zero',
-        'slinear', 'quadratic' and 'cubic' refer to a spline interpolation of
-        zeroth, first, second or third order; 'previous' and 'next' simply
-        return the previous or next value of the point; 'nearest-up' and
-        'nearest' differ when interpolating half-integers (e.g. 0.5, 1.5)
-        in that 'nearest-up' rounds up and 'nearest' rounds down. Default
-        is 'linear'.
+        The string has to be one of 'linear', 'exponential', 'nearest', 
+        'nearest-up', 'zero', 'slinear', 'quadratic', 'cubic', 'previous',
+        or 'next'. 'zero', 'slinear', 'quadratic' and 'cubic' refer to a 
+        spline interpolation of zeroth, first, second or third order; 
+        'previous' and 'next' simply return the previous or next value of the
+        point; 'nearest-up' and 'nearest' differ when interpolating half-integers 
+        (e.g. 0.5, 1.5) in that 'nearest-up' rounds up and 'nearest' rounds down. 
+        Default is 'linear'.
     axis : int, optional
         Specifies the axis of `y` along which to interpolate.
         Interpolation defaults to the last axis of `y`.
@@ -455,7 +455,7 @@ class interp1d(_Interpolator1D):
         elif isinstance(kind, int):
             order = kind
             kind = 'spline'
-        elif kind not in ('linear', 'nearest', 'nearest-up', 'previous',
+        elif kind not in ('linear', 'exponential', 'nearest', 'nearest-up', 'previous',
                           'next'):
             raise NotImplementedError("%s is unsupported: Use fitpack "
                                       "routines for other types." % kind)
@@ -529,6 +529,8 @@ class interp1d(_Interpolator1D):
                 if _do_extrapolate(fill_value):
                     self._check_and_update_bounds_error_for_extrapolation()
                     fill_value = (self.y.min(axis=axis), np.nan)
+            elif kind == 'exponential':
+                self._call = self.__class__._call_exponential
             else:
                 # Check if we can delegate to numpy.interp (2x-10x faster).
                 np_types = (np.float_, np.int_)
@@ -654,7 +656,36 @@ class interp1d(_Interpolator1D):
         y_new = slope*(x_new - x_lo)[:, None] + y_lo
 
         return y_new
+      
+    def _call_exponential(self, x_new):
+        # 2. Find where in the original data, the values to interpolate
+        #    would be inserted.
+        #    Note: If x_new[n] == x[m], then m is returned by searchsorted.
+        x_new_indices = searchsorted(self.x, x_new)
 
+        # 3. Clip x_new_indices so that they are within the range of
+        #    self.x indices and at least 1. Removes mis-interpolation
+        #    of x_new[n] = x[0]
+        x_new_indices = x_new_indices.clip(1, len(self.x)-1).astype(int)
+
+        # 4. Calculate the exponential slope of regions that each x_new value falls in.
+        lo = x_new_indices - 1
+        hi = x_new_indices
+
+        x_lo = self.x[lo]
+        x_hi = self.x[hi]
+        y_lo = self._y[lo]
+        y_hi = self._y[hi]
+
+        # Note that the following two expressions rely on the specifics of the
+        # broadcasting semantics.
+        b = np.log((y_hi / y_lo)) / (x_hi - x_lo)[:, None]
+
+        # 5. Calculate the actual value for each entry in x_new.
+        y_new = np.exp(b*(x_new))/np.exp(b*(x_lo[:, None])) * y_lo
+
+        return y_new
+      
     def _call_nearest(self, x_new):
         """ Find nearest neighbor interpolated y_new = f(x_new)."""
 
