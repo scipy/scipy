@@ -87,8 +87,11 @@ def _percentile_along_axis(theta_hat_b, alpha):
     for indices, alpha_i in np.ndenumerate(alpha):
         if np.isnan(alpha_i):
             # e.g. when bootstrap distribution has only one unique element
-            msg = ("The bootstrap distribution is degenerate; the "
-                   "confidence interval is not defined.")
+            msg = (
+                "The BCa confidence interval cannot be calculated."
+                " This problem is known to occur when the distribution"
+                " is degenerate or the statistic is np.min."
+            )
             warnings.warn(DegenerateDataWarning(msg))
             percentiles[indices] = np.nan
         else:
