@@ -139,13 +139,13 @@ def test_dense_divide(A):
 
 @parametrize_sparrays
 def test_no_A_attr(A):
-    with pytest.warns(np.VisibleDeprecationWarning):
+    with pytest.warns(DeprecationWarning, match="Attribute 'A'"):
         A.A
 
 
 @parametrize_sparrays
 def test_no_H_attr(A):
-    with pytest.warns(np.VisibleDeprecationWarning):
+    with pytest.warns(DeprecationWarning, match="Attribute 'H'"):
         A.H
 
 
