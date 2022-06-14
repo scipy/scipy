@@ -684,7 +684,7 @@ class interp1d(_Interpolator1D):
         b = np.log((y_hi / y_lo)) / (x_hi - x_lo)[:, None]
 
         # 5. Calculate the actual value for each entry in x_new.
-        y_new = np.exp(b*(x_new))/np.exp(b*(x_lo[:, None])) * y_lo
+        y_new = np.exp(b*(x_new[:, None]))/np.exp(b*(x_lo[:, None])) * y_lo
 
         return y_new
 
