@@ -1507,6 +1507,21 @@ class KrylovJacobian(Jacobian):
             if hasattr(self.preconditioner, 'setup'):
                 self.preconditioner.setup(x, f, func)
 
+class ExactKrylovJacobian(KrylovJacobian):
+
+    def __init__(self,exactgrad, rdiff=None, method='lgmres', inner_maxiter=20,inner_M=None, outer_k=10, **kw):
+
+        KrylovJacobian.__init__(self, rdiff, method, inner_maxiter,inner_M, outer_k, **kw)
+        self.exactgrad = exactgrad
+
+    def matvec(self, v):
+        return self.exactgrad(self.x0,v)
+
+    def rmatvec(self, v):
+        return self.exactgrad(self.x0,v)
+        
+    
+
 
 #------------------------------------------------------------------------------
 # Wrapper functions
