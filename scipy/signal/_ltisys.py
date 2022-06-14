@@ -3415,7 +3415,7 @@ def place_poles(A, B, poles, method="YT", rtol=1e-3, maxiter=30):
                     "You asked for a relative tolerance of %f we got %f" %
                     (rtol, cur_rtol)
                     )
-                warnings.warn(err_msg)
+                warnings.warn(err_msg, stacklevel=2)
 
         # reconstruct transfer_matrix to match complex conjugate pairs,
         # ie transfer_matrix_j/transfer_matrix_j+1 are
