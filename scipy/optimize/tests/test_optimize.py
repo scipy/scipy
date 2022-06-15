@@ -1540,6 +1540,14 @@ class TestOptimizeScalar:
         x = optimize.brent(self.fun, brack=(-15, -1, 15))
         assert_allclose(x, self.solution, atol=1e-6)
 
+        message = r"\(f\(xb\) < f\(xa\)\) and \(f\(xb\) < f\(xc\)\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.brent(self.fun, brack=(-1, 0, 1))
+
+        message = r"\(xa < xb\) and \(xb < xc\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.brent(self.fun, brack=(0, -1, 1))
+
     def test_golden(self):
         x = optimize.golden(self.fun)
         assert_allclose(x, self.solution, atol=1e-6)
@@ -1562,6 +1570,14 @@ class TestOptimizeScalar:
             x = optimize.golden(self.fun, maxiter=maxiter, full_output=True)
             nfev0, nfev = x0[2], x[2]
             assert_equal(nfev - nfev0, maxiter)
+
+        message = r"\(f\(xb\) < f\(xa\)\) and \(f\(xb\) < f\(xc\)\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.golden(self.fun, brack=(-1, 0, 1))
+
+        message = r"\(xa < xb\) and \(xb < xc\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.golden(self.fun, brack=(0, -1, 1))
 
     def test_fminbound(self):
         x = optimize.fminbound(self.fun, 0, 1)

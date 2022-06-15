@@ -40,7 +40,7 @@ def upcast(*args):
     if t is not None:
         return t
 
-    upcast = np.find_common_type(args, [])
+    upcast = np.result_type(*args)
 
     for t in supported_dtypes:
         if np.can_cast(upcast, t):

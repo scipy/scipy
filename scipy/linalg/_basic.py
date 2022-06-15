@@ -1335,7 +1335,7 @@ def pinv(a, atol=None, rtol=None, return_rank=False, check_finite=True,
 
 
 def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
-          check_finite=True, cond=None, rcond=None):
+          check_finite=True):
     """
     Compute the (Moore-Penrose) pseudo-inverse of a Hermitian matrix.
 
@@ -1368,20 +1368,6 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
         Whether to check that the input matrix contains only finite numbers.
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
-    cond, rcond : float, optional
-        In older versions, these values were meant to be used as ``atol`` with
-        ``rtol=0``. If both were given ``rcond`` overwrote ``cond`` and hence
-        the code was not correct. Thus using these are strongly discouraged and
-        the tolerances above are recommended instead.  In fact, if provided,
-        atol, rtol takes precedence over these keywords.
-
-        .. versionchanged:: 1.7.0
-            Deprecated in favor of ``rtol`` and ``atol`` parameters above and
-            will be removed in future versions of SciPy.
-
-        .. versionchanged:: 1.3.0
-            Previously the default cutoff value was just ``eps*f`` where ``f``
-            was ``1e3`` for single precision and ``1e6`` for double precision.
 
     Returns
     -------
@@ -1412,16 +1398,6 @@ def pinvh(a, atol=None, rtol=None, lower=True, return_rank=False,
     s, u = _decomp.eigh(a, lower=lower, check_finite=False)
     t = u.dtype.char.lower()
     maxS = np.max(np.abs(s))
-
-    if rcond or cond:
-        warn('Use of the "cond" and "rcond" keywords are deprecated and '
-             'will be removed in future versions of SciPy. Use "atol" and '
-             '"rtol" keywords instead', DeprecationWarning, stacklevel=2)
-
-    # backwards compatible only atol and rtol are both missing
-    if (rcond or cond) and (atol is None) and (rtol is None):
-        atol = rcond or cond
-        rtol = 0.
 
     atol = 0. if atol is None else atol
     rtol = max(a.shape) * np.finfo(t).eps if (rtol is None) else rtol
