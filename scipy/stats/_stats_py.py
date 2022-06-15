@@ -8477,8 +8477,8 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     return BrunnerMunzelResult(wbfn, p)
 
 
-SignificanceResult= _make_tuple_bunch('SignificanceResult',
-                                      ['statistic', 'pvalue'], [])
+SignificanceResult = _make_tuple_bunch('SignificanceResult',
+                                       ['statistic', 'pvalue'], [])
 
 
 def combine_pvalues(pvalues, method='fisher', weights=None):
