@@ -2200,6 +2200,16 @@ class TestBrute:
                           match=r'Either final optimization did not succeed'):
             optimize.brute(func, self.rranges, args=self.params, disp=True)
 
+    def test_coerce_args_param(self):
+        # As for optimize.minimize, optimize.brute should coerce non-tuple args.
+        # See https://stackoverflow.com/q/72629505/4316405 for a case where
+        # this previously caused confusion.
+        def f(x, *args):
+            return x ** args
+
+        resbrute = optimize.brute(f, (slice(-4, 4, .25),), args=2)
+        assert_almost_equal(resbrute, 0)
+
 
 def test_cobyla_threadsafe():
 
