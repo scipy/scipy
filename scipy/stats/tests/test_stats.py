@@ -632,13 +632,10 @@ class TestFisherExact:
         # before, this would have risen a ValueError
         odds, pvalue = stats.fisher_exact([[1, 2], [9, 84419233]])
 
-    def test_result(self):
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_result(self, alternative):
         table = np.array([[14500, 20000], [30000, 40000]])
-        res = stats.fisher_exact(table, alternative='two-sided')
-        assert_equal((res.statistic, res.pvalue), res)
-        res = stats.fisher_exact(table, alternative='less')
-        assert_equal((res.statistic, res.pvalue), res)
-        res = stats.fisher_exact(table, alternative='greater')
+        res = stats.fisher_exact(table, alternative=alternative)
         assert_equal((res.statistic, res.pvalue), res)
 
 
