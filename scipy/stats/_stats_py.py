@@ -241,6 +241,10 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
+SignificanceResult = _make_tuple_bunch('SignificanceResult',
+                                       ['statistic', 'pvalue'], [])
+
+
 # note that `weights` are paired with `x`
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
@@ -4477,10 +4481,6 @@ def pearsonr(x, y, *, alternative='two-sided'):
                           alternative=alternative)
 
 
-FisherExactResult = _make_tuple_bunch('FisherExactResult',
-                                      ['statistic', 'pvalue'], [])
-
-
 def fisher_exact(table, alternative='two-sided'):
     """Perform a Fisher exact test on a 2x2 contingency table.
 
@@ -4512,13 +4512,13 @@ def fisher_exact(table, alternative='two-sided'):
 
     Returns
     -------
-    res : FisherExactResult
+    res : SignificanceResult
         An object containing attributes:
 
         statistic : float
-            This is prior odds ratio and not a posterior estimate.
+            This is the prior odds ratio, not a posterior estimate.
         pvalue : float
-            P-value, the probability under the null hypothesis of obtaining a
+            The probability under the null hypothesis of obtaining a
             table at least as extreme as the one that was actually observed.
 
     See Also
@@ -4665,7 +4665,7 @@ def fisher_exact(table, alternative='two-sided'):
     if 0 in c.sum(axis=0) or 0 in c.sum(axis=1):
         # If both values in a row or column are zero, the p-value is 1 and
         # the odds ratio is NaN.
-        return FisherExactResult(np.nan, 1.0)
+        return SignificanceResult(np.nan, 1.0)
 
     if c[1, 0] > 0 and c[0, 1] > 0:
         oddsratio = c[0, 0] * c[1, 1] / (c[1, 0] * c[0, 1])
@@ -4693,19 +4693,19 @@ def fisher_exact(table, alternative='two-sided'):
         gamma = 1 + epsilon
 
         if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= epsilon:
-            return FisherExactResult(oddsratio, 1.)
+            return SignificanceResult(oddsratio, 1.)
 
         elif c[0, 0] < mode:
             plower = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
             if hypergeom.pmf(n, n1 + n2, n1, n) > pexact * gamma:
-                return FisherExactResult(oddsratio, plower)
+                return SignificanceResult(oddsratio, plower)
 
             guess = _binary_search(lambda x: -pmf(x), -pexact * gamma, mode, n)
             pvalue = plower + hypergeom.sf(guess, n1 + n2, n1, n)
         else:
             pupper = hypergeom.sf(c[0, 0] - 1, n1 + n2, n1, n)
             if hypergeom.pmf(0, n1 + n2, n1, n) > pexact * gamma:
-                return FisherExactResult(oddsratio, pupper)
+                return SignificanceResult(oddsratio, pupper)
 
             guess = _binary_search(pmf, pexact * gamma, 0, mode)
             pvalue = pupper + hypergeom.cdf(guess, n1 + n2, n1, n)
@@ -4715,7 +4715,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     pvalue = min(pvalue, 1.0)
 
-    return FisherExactResult(oddsratio, pvalue)
+    return SignificanceResult(oddsratio, pvalue)
 
 
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
@@ -8506,10 +8506,6 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
             "alternative should be 'less', 'greater' or 'two-sided'")
 
     return BrunnerMunzelResult(wbfn, p)
-
-
-SignificanceResult = _make_tuple_bunch('SignificanceResult',
-                                       ['statistic', 'pvalue'], [])
 
 
 def combine_pvalues(pvalues, method='fisher', weights=None):
