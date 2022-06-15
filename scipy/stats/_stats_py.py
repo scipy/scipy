@@ -8477,8 +8477,8 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
     return BrunnerMunzelResult(wbfn, p)
 
 
-CombinePValuesResult = _make_tuple_bunch('CombinePValuesResult',
-                                         ['statistic', 'pvalue'], [])
+SignificanceResult= _make_tuple_bunch('SignificanceResult',
+                                      ['statistic', 'pvalue'], [])
 
 
 def combine_pvalues(pvalues, method='fisher', weights=None):
@@ -8515,7 +8515,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     Returns
     -------
-    res : CombinePValuesResult
+    res : SignificanceResult
         An object containing attributes:
 
         statistic : float
@@ -8623,7 +8623,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             "'pearson', 'mudholkar_george', 'tippett', and 'stouffer'"
         )
 
-    return CombinePValuesResult(statistic, pval)
+    return SignificanceResult(statistic, pval)
 
 
 #####################################
