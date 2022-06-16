@@ -503,8 +503,8 @@ Authors
 * Amit Portnoy (1) +
 * Quentin Barthélemy (9)
 * Patrick N. Raanes (1) +
-* Tyler Reddy (104)
-* Pamphile Roy (194)
+* Tyler Reddy (108)
+* Pamphile Roy (196)
 * Vivek Roy (2) +
 * Niyas Sait (2) +
 * Atsushi Sakai (25)
@@ -729,6 +729,7 @@ Issues closed for 1.9.0
 * `#16337 <https://github.com/scipy/scipy/issues/16337>`__: TST: stats/tests/test_axis_nan_policy.py::test_axis_nan_policy_full...
 * `#16347 <https://github.com/scipy/scipy/issues/16347>`__: TST, MAINT: 32-bit Linux test failures in wheels repo
 * `#16358 <https://github.com/scipy/scipy/issues/16358>`__: TST, MAINT: test_theilslopes_warnings fails on 32-bit Windows
+* `#16378 <https://github.com/scipy/scipy/issues/16378>`__: DOC: pydata-sphinx-theme v0.9 defaults to darkmode...
 * `#16409 <https://github.com/scipy/scipy/issues/16409>`__: BUG: SIGSEGV in qhull when array type is wrong
 
 ***********************
@@ -1122,5 +1123,6 @@ Pull requests for 1.9.0
 * `#16361 <https://github.com/scipy/scipy/pull/16361>`__: MAINT: SCIPY_USE_PROPACK
 * `#16370 <https://github.com/scipy/scipy/pull/16370>`__: MAINT: update Boost submodule to include Cygwin fix
 * `#16374 <https://github.com/scipy/scipy/pull/16374>`__: MAINT: update pydata-sphinx-theme
+* `#16379 <https://github.com/scipy/scipy/pull/16379>`__: DOC: dark theme css adjustments
 * `#16390 <https://github.com/scipy/scipy/pull/16390>`__: TST, MAINT: adjust 32-bit xfails for HiGHS
 * `#16414 <https://github.com/scipy/scipy/pull/16414>`__: BUG: spatial: Handle integer arrays in HalfspaceIntersection.
