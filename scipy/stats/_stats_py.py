@@ -241,6 +241,10 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
     return shp
 
 
+SignificanceResult = _make_tuple_bunch('SignificanceResult',
+                                       ['statistic', 'pvalue'], [])
+
+
 # note that `weights` are paired with `x`
 @_axis_nan_policy_factory(
         lambda x: x, n_samples=1, n_outputs=1, too_small=0, paired=True,
@@ -4508,11 +4512,14 @@ def fisher_exact(table, alternative='two-sided'):
 
     Returns
     -------
-    oddsratio : float
-        This is prior odds ratio and not a posterior estimate.
-    p_value : float
-        P-value, the probability under the null hypothesis of obtaining a
-        table at least as extreme as the one that was actually observed.
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : float
+            This is the prior odds ratio, not a posterior estimate.
+        pvalue : float
+            The probability under the null hypothesis of obtaining a
+            table at least as extreme as the one that was actually observed.
 
     See Also
     --------
@@ -4582,16 +4589,16 @@ def fisher_exact(table, alternative='two-sided'):
     is ``0.0163 + 0.0816 + 0.00466 ~= 0.10256``::
 
         >>> from scipy.stats import fisher_exact
-        >>> oddsr, p = fisher_exact(table, alternative='two-sided')
-        >>> p
+        >>> res = fisher_exact(table, alternative='two-sided')
+        >>> res.pvalue
         0.10256410256410257
 
     The one-sided p-value for ``alternative='greater'`` is the probability
     that a random table has ``x >= a``, which in our example is ``x >= 6``,
     or ``0.0816 + 0.00466 ~= 0.08626``::
 
-        >>> oddsr, p = fisher_exact(table, alternative='greater')
-        >>> p
+        >>> res = fisher_exact(table, alternative='greater')
+        >>> res.pvalue
         0.08624708624708627
 
     This is equivalent to computing the survival function of the
@@ -4605,8 +4612,8 @@ def fisher_exact(table, alternative='two-sided'):
     that a random table has ``x <= a``, (i.e. ``x <= 6`` in our example),
     or ``0.0163 + 0.163 + 0.408 + 0.326 + 0.0816 ~= 0.9949``::
 
-        >>> oddsr, p = fisher_exact(table, alternative='less')
-        >>> p
+        >>> res = fisher_exact(table, alternative='less')
+        >>> res.pvalue
         0.9953379953379957
 
     This is equivalent to computing the cumulative distribution function
@@ -4635,8 +4642,8 @@ def fisher_exact(table, alternative='two-sided'):
     We use this table to find the p-value:
 
     >>> from scipy.stats import fisher_exact
-    >>> oddsratio, pvalue = fisher_exact([[8, 2], [1, 5]])
-    >>> pvalue
+    >>> res = fisher_exact([[8, 2], [1, 5]])
+    >>> res.pvalue
     0.0349...
 
     The probability that we would observe this or an even more imbalanced ratio
@@ -4658,7 +4665,7 @@ def fisher_exact(table, alternative='two-sided'):
     if 0 in c.sum(axis=0) or 0 in c.sum(axis=1):
         # If both values in a row or column are zero, the p-value is 1 and
         # the odds ratio is NaN.
-        return np.nan, 1.0
+        return SignificanceResult(np.nan, 1.0)
 
     if c[1, 0] > 0 and c[0, 1] > 0:
         oddsratio = c[0, 0] * c[1, 1] / (c[1, 0] * c[0, 1])
@@ -4686,19 +4693,19 @@ def fisher_exact(table, alternative='two-sided'):
         gamma = 1 + epsilon
 
         if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= epsilon:
-            return oddsratio, 1.
+            return SignificanceResult(oddsratio, 1.)
 
         elif c[0, 0] < mode:
             plower = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
             if hypergeom.pmf(n, n1 + n2, n1, n) > pexact * gamma:
-                return oddsratio, plower
+                return SignificanceResult(oddsratio, plower)
 
             guess = _binary_search(lambda x: -pmf(x), -pexact * gamma, mode, n)
             pvalue = plower + hypergeom.sf(guess, n1 + n2, n1, n)
         else:
             pupper = hypergeom.sf(c[0, 0] - 1, n1 + n2, n1, n)
             if hypergeom.pmf(0, n1 + n2, n1, n) > pexact * gamma:
-                return oddsratio, pupper
+                return SignificanceResult(oddsratio, pupper)
 
             guess = _binary_search(pmf, pexact * gamma, 0, mode)
             pvalue = pupper + hypergeom.cdf(guess, n1 + n2, n1, n)
@@ -4708,7 +4715,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     pvalue = min(pvalue, 1.0)
 
-    return oddsratio, pvalue
+    return SignificanceResult(oddsratio, pvalue)
 
 
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
@@ -8499,10 +8506,6 @@ def brunnermunzel(x, y, alternative="two-sided", distribution="t",
             "alternative should be 'less', 'greater' or 'two-sided'")
 
     return BrunnerMunzelResult(wbfn, p)
-
-
-SignificanceResult = _make_tuple_bunch('SignificanceResult',
-                                       ['statistic', 'pvalue'], [])
 
 
 def combine_pvalues(pvalues, method='fisher', weights=None):
