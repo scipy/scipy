@@ -2201,9 +2201,7 @@ class TestBrute:
             optimize.brute(func, self.rranges, args=self.params, disp=True)
 
     def test_coerce_args_param(self):
-        # As for optimize.minimize, optimize.brute should coerce non-tuple args.
-        # See https://stackoverflow.com/q/72629505/4316405 for a case where
-        # this previously caused confusion.
+        # optimize.brute should coerce non-iterable args to a tuple.
         def f(x, *args):
             return x ** args
 
