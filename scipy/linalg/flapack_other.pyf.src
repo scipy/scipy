@@ -29,9 +29,10 @@ subroutine <prefix2>gejsv(joba,jobu,jobv,jobr,jobt,jobp,m,n,a,lda,sva,u,ldu,v,ld
     <ftype2> intent(in,copy), dimension(lda, n) :: a
     integer intent(hide), depend(a) :: lda = max(1, shape(a, 0))
     <ftype2> intent(out), depend(n), dimension(n) :: sva
-    <ftype2> intent(out), depend(ldu, n, jobt, jobu, m), dimension(((jobt == 0)&&(jobu == 3)?0:m), ((jobt == 0)&&(jobu == 3)?0:(jobu == 1?m:n))) :: u
+    ! TODO: Use arithmetic because f2py does not like nested conditionals
+    <ftype2> intent(out), depend(ldu, n, jobt, jobu, m), dimension(((jobt == 0)*(jobu == 3)?0:m), ((jobt == 0)*(jobu == 3)?0:(jobu == 1?m:n))) :: u
     integer intent(hide), depend(m, jobu) :: ldu = max(1, (jobu < 3?m:1))
-    <ftype2> intent(out), depend(ldv, n, jobt, jobv), dimension(((jobt == 0)&&(jobv == 3)?0:ldv),((jobt == 0)&&(jobv == 3)?0:n)) :: v
+    <ftype2> intent(out), depend(ldv, n, jobt, jobv), dimension(((jobt == 0)*(jobv == 3)?0:ldv),((jobt == 0)*(jobv == 3)?0:n)) :: v
     integer intent(hide), depend(n, jobv) :: ldv = max(1, (jobv < 3?n:1))
     <ftype2> intent(hide), depend(lwork), dimension(lwork) :: work
     <ftype2> intent(out), dimension(7) :: workout
@@ -563,7 +564,7 @@ subroutine <prefix2c>uncsd(compute_u1,compute_u2,compute_v1t,compute_v2t,trans,s
     !  Moreover, the rank of the identity matrices are min(p, q) - r,
     !  min(p, m - q) - r, min(m - p, q) - r, and min(m - p, m - q) - r
     !  respectively.
-    
+
 
     callstatement (*f2py_func)((compute_u1?"Y":"N"),(compute_u2?"Y":"N"),(compute_v1t?"Y":"N"),(compute_v2t?"Y":"N"),(trans?"T":"N"),(signs?"O":"D"),&m,&p,&q,x11,&ldx11,x12,&ldx12,x21,&ldx21,x22,&ldx22,theta,u1,&ldu1,u2,&ldu2,v1t,&ldv1t,v2t,&ldv2t,work,&lwork,rwork,&lrwork,iwork,&info)
     callprotoargument char*,char*,char*,char*,char*,char*,F_INT*,F_INT*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
@@ -1311,7 +1312,7 @@ subroutine <prefix>ppcon(lower,n,ap,anorm,rcond,work,irwork,info,L)
     threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,ap,&anorm,&rcond,work,irwork,&info)
     callprotoargument char*,F_INT*,<ctype>*,<ctypereal>*,<ctypereal>*,<ctype>*,<F_INT,F_INT,float,double>*,F_INT*
- 
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer intent(in),check(n>=0) :: n
     <ftype> dimension(L),intent(in) :: ap
@@ -1321,7 +1322,7 @@ subroutine <prefix>ppcon(lower,n,ap,anorm,rcond,work,irwork,info,L)
     <ftype> depend(n),dimension(<3*n,3*n,2*n,2*n>),intent(hide,cache):: work
     <integer,integer,real, double precision> dimension(n), intent(hide,cache),depend(n) :: irwork
     integer intent(out):: info
- 
+
 end subroutine <prefix>ppcon
 
 subroutine <prefix>ppsv(lower,n,nrhs,ap,b,ldb,info,L)
@@ -1339,7 +1340,7 @@ subroutine <prefix>ppsv(lower,n,nrhs,ap,b,ldb,info,L)
     threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,ap,b,&ldb,&info)
     callprotoargument char*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
-    
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer intent(in),check(n>=0) :: n
     integer intent(hide),depend(b) :: ldb = max(1, shape(b,0))
@@ -1354,7 +1355,7 @@ end subroutine <prefix>ppsv
 subroutine <prefix>pptrf(lower,n,ap,info,L)
     ! ?PPTRF computes the Cholesky factorization of a symmetric/hermitian
     ! positive definite matrix A stored in packed format.
-    ! 
+    !
     ! The factorization has the form
     !    A = U**T * U,  if UPLO = 'U', or
     !    A = L  * L**T,  if UPLO = 'L',
@@ -1362,7 +1363,7 @@ subroutine <prefix>pptrf(lower,n,ap,info,L)
     threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,ap,&info)
     callprotoargument char*,F_INT*,<ctype>*,F_INT*
-    
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer intent(in),check(n>=0) :: n
     <ftype> dimension(L),intent(in,out,copy,out=ul) :: ap
@@ -1378,7 +1379,7 @@ subroutine <prefix>pptri(lower,n,ap,info,L)
     threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,ap,&info)
     callprotoargument char*,F_INT*,<ctype>*,F_INT*
-    
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer intent(in),check(n>=0) :: n
     <ftype> dimension(L),intent(in,out,copy,out=uli) :: ap
@@ -1394,7 +1395,7 @@ subroutine <prefix>pptrs(lower,n,nrhs,ap,b,ldb,info,L)
     threadsafe
     callstatement (*f2py_func)((lower?"L":"U"),&n,&nrhs,ap,b,&ldb,&info)
     callprotoargument char*,F_INT*,F_INT*,<ctype>*,<ctype>*,F_INT*,F_INT*
-    
+
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer intent(in),check(n>=0) :: n
     integer intent(hide),depend(b) :: ldb = max(1, shape(b,0))

@@ -38,18 +38,18 @@ subroutine <prefix2>syev_lwork(lower,n,w,a,lda,work,lwork,info)
 
     callstatement (*f2py_func)("N",(lower?"L":"U"),&n,&a,&lda,&w,&work,&lwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
-    
+
      integer intent(in):: n
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
-     
+
      integer intent(hide),depend(n):: lda = MAX(1, n)
      <ftype2> intent(hide):: a
      <ftype2> intent(hide):: w
      integer intent(hide):: lwork = -1
-    
+
      <ftype2> intent(out):: work
      integer intent(out):: info
-     
+
 end subroutine <prefix2>syev_lwork
 
 subroutine <prefix2c>heev(compute_v,lower,n,w,a,lda,work,lwork,rwork,info)
@@ -91,7 +91,7 @@ subroutine <prefix2c>heev_lwork(lower,n,w,a,lda,work,lwork,rwork,info)
 
      integer intent(in):: n
      integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
-     
+
      integer intent(hide),depend(n):: lda = MAX(1, n)
      <ftype2c> intent(hide):: a
      <ftype2> intent(hide):: w
@@ -100,7 +100,7 @@ subroutine <prefix2c>heev_lwork(lower,n,w,a,lda,work,lwork,rwork,info)
 
      <ftype2c> intent(out):: work
      integer intent(out):: info
-     
+
 end subroutine <prefix2c>heev_lwork
 
 subroutine <prefix2>syevd(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,info)
@@ -145,13 +145,13 @@ subroutine <prefix2>syevd_lwork(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwor
     integer intent(in):: n
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer optional,intent(in),check(compute_v==0||compute_v==1) :: compute_v = 1
-    
+
     integer intent(hide):: lda = MAX(1,n)
     <ftype2> intent(hide):: a
     <ftype2> intent(hide):: w
     integer intent(hide):: lwork = -1
     integer intent(hide):: liwork = -1
-    
+
     <ftype2> intent(out):: work
     integer intent(out):: iwork
     integer intent(out):: info
@@ -194,23 +194,23 @@ end subroutine <prefix2c>heevd
 
 subroutine <prefix2c>heevd_lwork(compute_v,lower,n,w,a,lda,work,lwork,iwork,liwork,rwork,lrwork,info)
     ! LWORK routines for heevd
-    
+
     fortranname <prefix2c>heevd
-    
+
     callstatement (*f2py_func)((compute_v?"V":"N"),(lower?"L":"U"),&n,&a,&lda,&w,&work,&lwork,&rwork,&lrwork,&iwork,&liwork,&info)
     callprotoargument char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
 
     integer intent(in):: n
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
     integer optional,intent(in),check(compute_v==0||compute_v==1) :: compute_v = 1
-    
+
     integer intent(hide):: lda=MAX(1,n)
     <ftype2c> intent(hide):: a
     <ftype2> intent(hide):: w
     integer intent(hide):: lwork=-1
     integer intent(hide):: liwork=-1
     integer intent(hide):: lrwork=-1
-    
+
     <ftype2c> intent(out):: work
     <ftype2> intent(out):: rwork
     integer intent(out):: iwork
@@ -775,7 +775,8 @@ subroutine <prefix2>syevr(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,m
     <ftype2> intent(out),dimension((compute_v?MAX(0,n):0),(compute_v?(*range=='I'?iu-il+1:MAX(1,n)):0)),depend(n,compute_v,range,iu,il) :: z
     integer intent(out) :: m
     ! Only returned if range=='A' or range=='I' and il, iu = 1, n
-    integer intent(out),dimension((compute_v?(2*(*range=='A'||(*range=='I' && iu-il+1==n)?n:0)):0)),depend(n,iu,il,compute_v,range) :: isuppz
+    ! TODO: Use arithmetic because f2py does not like nested conditionals
+    integer intent(out),dimension((compute_v?(2*((*range=='A')*((*range=='I')+(iu-il+1==n))?n:0)):0)),depend(n,iu,il,compute_v,range) :: isuppz
     integer intent(out) :: info
 
 end subroutine <prefix2>syevr
@@ -900,7 +901,7 @@ subroutine <prefix2>syevx(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,m
 
     callstatement (*f2py_func)((compute_v?"V":"N"),range,(lower?"L":"U"),&n,a,&lda,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,&lwork,iwork,ifail,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
-    
+
     integer optional,intent(in),check(compute_v==1||compute_v==0):: compute_v = 1
     character optional,intent(in),check(*range=='A'||*range=='V' ||*range=='I') :: range='A'
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
@@ -923,7 +924,7 @@ subroutine <prefix2>syevx(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,m
     integer intent(out) :: m
     integer intent(out),dimension((compute_v?n:0)),depend(compute_v,n):: ifail
     integer intent(out) :: info
-    
+
 end subroutine <prefix2>syevx
 
 subroutine <prefix2>syevx_lwork(lower,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,work,lwork,iwork,ifail,info)
@@ -932,7 +933,7 @@ subroutine <prefix2>syevx_lwork(lower,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,work,
     fortranname <prefix2>syevx
     callstatement (*f2py_func)("N","A",(lower?"L":"U"),&n,&a,&lda,&vl,&vu,&il,&iu,&abstol,&m,&w,&z,&ldz,&work,&lwork,&iwork,&ifail,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
-    
+
     integer intent(in):: n
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
 
@@ -950,7 +951,7 @@ subroutine <prefix2>syevx_lwork(lower,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,work,
     integer intent(hide):: lwork = -1
     integer intent(hide):: iwork
     integer intent(hide):: ifail
-        
+
     <ftype2> intent(out):: work
     integer intent(out):: info
 
@@ -964,7 +965,7 @@ subroutine <prefix2c>heevx(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,
 
     callstatement (*f2py_func)((compute_v?"V":"N"),range,(lower?"L":"U"),&n,a,&lda,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,&lwork,rwork,iwork,ifail,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
-    
+
     integer optional,intent(in),check(compute_v==1||compute_v==0):: compute_v = 1
     character optional,intent(in),check(*range=='A'||*range=='V' ||*range=='I') :: range='A'
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
@@ -988,7 +989,7 @@ subroutine <prefix2c>heevx(compute_v,range,lower,n,a,lda,vl,vu,il,iu,abstol,w,z,
     integer intent(out) :: m
     integer intent(out),dimension(compute_v*n),depend(compute_v,n):: ifail
     integer intent(out) :: info
-    
+
 end subroutine <prefix2c>heevx
 
 subroutine <prefix2c>heevx_lwork(lower,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,work,lwork,rwork,iwork,ifail,info)
@@ -997,7 +998,7 @@ subroutine <prefix2c>heevx_lwork(lower,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,work
     fortranname <prefix2c>heevx
     callstatement (*f2py_func)("N","A",(lower?"L":"U"),&n,&a,&lda,&vl,&vu,&il,&iu,&abstol,&m,&w,&z,&ldz,&work,&lwork,&rwork,&iwork,&ifail,&info)
     callprotoargument char*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
-    
+
     integer intent(in):: n
     integer optional,intent(in),check(lower==0||lower==1) :: lower = 0
 
@@ -1016,7 +1017,7 @@ subroutine <prefix2c>heevx_lwork(lower,n,a,lda,vl,vu,il,iu,abstol,m,w,z,ldz,work
     <ftype2> intent(hide):: rwork
     integer intent(hide):: iwork
     integer intent(hide):: ifail
-        
+
     <ftype2c> intent(out):: work
     integer intent(out):: info
 
@@ -1200,7 +1201,7 @@ subroutine <prefix2>sygvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,abstol
 
     callstatement (*f2py_func)(&itype,jobz,range,uplo,&n,a,&lda,b,&ldb,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,&lwork,iwork,ifail,&info)
     callprotoargument F_INT*,char*,char*,char*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*,F_INT*
-    
+
     integer optional,intent(in),check(itype>0||itype<4) :: itype=1
     character optional,intent(in),check(*jobz=='N'||*jobz=='V') :: jobz="V"
     character optional,intent(in),check(*uplo=='U'||*uplo=='L') :: uplo="L"
@@ -1270,7 +1271,7 @@ subroutine <prefix2c>hegvx(itype,jobz,range,uplo,n,a,lda,b,ldb,vl,vu,il,iu,absto
     ! range of values or a range of indices for the desired eigenvalues.
     callstatement (*f2py_func)(&itype,jobz,range,uplo,&n,a,&lda,b,&ldb,&vl,&vu,&il,&iu,&abstol,&m,w,z,&ldz,work,&lwork,rwork,iwork,ifail,&info)
     callprotoargument F_INT*,char*,char*,char*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,F_INT*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,F_INT*,F_INT*,F_INT*
-    
+
     integer optional,intent(in),check(itype>0||itype<4) :: itype=1
     character optional,intent(in),check(*jobz=='N'||*jobz=='V') :: jobz='V'
     character optional,intent(in),check(*uplo=='U'||*uplo=='L') :: uplo='L'

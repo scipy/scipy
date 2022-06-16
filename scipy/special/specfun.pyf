@@ -70,14 +70,14 @@ python module _specfun ! in
             double precision intent(in), check(v>=1) :: v
             double precision intent(in) :: x
             double precision intent(out) :: vm
-            double precision intent(out),depend(v),dimension((int)v+1) :: vl
-            double precision intent(out),depend(v),dimension((int)v+1) :: dl
+            double precision intent(out),depend(v),dimension(v+1) :: vl
+            double precision intent(out),depend(v),dimension(v+1) :: dl
         end subroutine lamv
         subroutine pbdv(v,x,dv,dp,pdf,pdd) ! in :_specfun:specfun.f
-            double precision intent(in),check((abs((int)v)+2)>=2) :: v
+            double precision intent(in),check((abs(v)+2)>=2) :: v
             double precision intent(in) :: x
-            double precision intent(out),depend(v),dimension(abs((int)v)+2) :: dv
-            double precision intent(out),depend(v),dimension(abs((int)v)+2) :: dp
+            double precision intent(out),depend(v),dimension(abs(v)+2) :: dv
+            double precision intent(out),depend(v),dimension(abs(v)+2) :: dp
             double precision intent(out) :: pdf
             double precision intent(out) :: pdd
         end subroutine pbdv
