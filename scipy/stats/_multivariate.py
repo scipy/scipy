@@ -56,7 +56,7 @@ def _squeeze_output(out):
     return out
 
 
-def _eigvalsh_to_eps(spectrum, cond=None, rcond=None):
+def _eigvalsh_to_eps(s, u, atol=None, rtol=None):
     """Determine which eigenvalues are "small" given the spectrum.
 
     This is for compatibility across various linear algebra functions
@@ -66,28 +66,34 @@ def _eigvalsh_to_eps(spectrum, cond=None, rcond=None):
 
     Parameters
     ----------
-    spectrum : 1d ndarray
+    s : 1d ndarray
         Array of eigenvalues of a Hermitian matrix.
-    cond, rcond : float, optional
-        Cutoff for small eigenvalues.
-        Singular values smaller than rcond * largest_eigenvalue are
-        considered zero.
-        If None or -1, suitable machine precision is used.
+    u : 2d ndarray
+        Array of eigenvectors of a Hermitian matrix.
+    atol: float, optional
+        Absolute threshold term, default value is 0.
+    rtol: float, optional
+        Relative threshold term, default value is ``N * eps`` where
+        ``eps`` is the machine precision value of the datatype of ``a``.
 
     Returns
     -------
-    eps : float
+    val : float
         Magnitude cutoff for numerical negligibility.
 
     """
-    if rcond is not None:
-        cond = rcond
-    if cond in [None, -1]:
-        t = spectrum.dtype.char.lower()
-        factor = {'f': 1E3, 'd': 1E6}
-        cond = factor[t] * np.finfo(t).eps
-    eps = cond * np.max(abs(spectrum))
-    return eps
+    N = u.shape[0]
+    eps = np.finfo(u.dtype.char.lower()).eps
+    maxS = np.max(np.abs(s))
+
+    atol = 0. if atol is None else atol
+    rtol = N * eps if (rtol is None) else rtol
+
+    if (atol < 0.) or (rtol < 0.):
+        raise ValueError("atol and rtol values must be positive.")
+
+    val = atol + maxS * rtol
+    return val
 
 
 def _pinv_1d(v, eps=1e-5):
@@ -125,13 +131,13 @@ class _PSD:
 
     Parameters
     ----------
-    M : array_like
+    M : (N, N) array_like
         Symmetric positive semidefinite matrix (2-D).
-    cond, rcond : float, optional
-        Cutoff for small eigenvalues.
-        Singular values smaller than rcond * largest_eigenvalue are
-        considered zero.
-        If None or -1, suitable machine precision is used.
+    atol: float, optional
+        Absolute threshold term, default value is 0.
+    rtol: float, optional
+        Relative threshold term, default value is ``N * eps`` where
+        ``eps`` is the machine precision value of the datatype of ``M``.
     lower : bool, optional
         Whether the pertinent array data is taken from the lower
         or upper triangle of M. (Default: lower)
@@ -149,14 +155,14 @@ class _PSD:
 
     """
 
-    def __init__(self, M, cond=None, rcond=None, lower=True,
+    def __init__(self, M, atol=None, rtol=None, lower=True,
                  check_finite=True, allow_singular=True):
         # Compute the symmetric eigendecomposition.
         # Note that eigh takes care of array conversion, chkfinite,
         # and assertion that the matrix is square.
         s, u = scipy.linalg.eigh(M, lower=lower, check_finite=check_finite)
 
-        eps = _eigvalsh_to_eps(s, cond, rcond)
+        eps = _eigvalsh_to_eps(s, u, atol, rtol)
         if np.min(s) < -eps:
             msg = "The input matrix must be symmetric positive semidefinite."
             raise ValueError(msg)

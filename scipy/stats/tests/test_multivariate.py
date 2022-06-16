@@ -131,7 +131,8 @@ class TestMultivariateNormal:
     def test_degenerate_distributions(self):
 
         def _sample_orthonormal_matrix(n):
-            M = np.random.randn(n, n)
+            rng = np.random.default_rng(84350250264)
+            M = rng.normal(size=(n, n))
             u, s, v = scipy.linalg.svd(M)
             return u
 
@@ -289,8 +290,8 @@ class TestMultivariateNormal:
 
         # Set cond so that the lowest eigenvalue is below the cutoff
         cond = 1e-5
-        psd = _PSD(cov, cond=cond)
-        psd_pinv = _PSD(psd.pinv, cond=cond)
+        psd = _PSD(cov, atol=cond)
+        psd_pinv = _PSD(psd.pinv, atol=cond)
 
         # Check that the log pseudo-determinant agrees with the sum
         # of the logs of all but the smallest eigenvalue
