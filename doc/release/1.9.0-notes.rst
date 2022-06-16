@@ -334,6 +334,10 @@ Other changes
   ``FITPACK`` routines in `scipy.interpolate`, which power ``splrep``,
   ``splev`` etc., and ``*UnivariateSpline`` and ``*BivariateSpline`` classes.
 
+- the ``USE_PROPACK`` environment variable has been renamed to
+  ``SCIPY_USE_PROPACK``; setting to a non-zero value will enable
+  the usage of the ``PROPACK`` library as before
+
 Lazy access to subpackages
 ==========================
 
@@ -417,7 +421,7 @@ Authors
 * bobcatCA (2) +
 * boussoffara (2) +
 * Islem BOUZENIA (1) +
-* Jake Bowhay (40) +
+* Jake Bowhay (41) +
 * Matthew Brett (11)
 * Dietrich Brunn (2) +
 * Michael Burkhart (2) +
@@ -446,11 +450,11 @@ Authors
 * Isuru Fernando (3)
 * Joseph Fox-Rabinovitz (1)
 * Ryan Gibson (4) +
-* Ralf Gommers (302)
+* Ralf Gommers (304)
 * Srinivas Gorur-Shandilya (1) +
 * Alex Griffing (2)
 * h-vetinari (3)
-* Matt Haberland (435)
+* Matt Haberland (440)
 * Tristan Hearn (1) +
 * Jonathan Helgert (1) +
 * Samuel Hinton (1) +
@@ -499,8 +503,8 @@ Authors
 * Amit Portnoy (1) +
 * Quentin Barthélemy (9)
 * Patrick N. Raanes (1) +
-* Tyler Reddy (93)
-* Pamphile Roy (192)
+* Tyler Reddy (104)
+* Pamphile Roy (194)
 * Vivek Roy (2) +
 * Niyas Sait (2) +
 * Atsushi Sakai (25)
@@ -531,7 +535,7 @@ Authors
 * Arthur Volant (1)
 * Samuel Wallan (5)
 * Stefan van der Walt (8)
-* Warren Weckesser (81)
+* Warren Weckesser (82)
 * Anreas Weh (1)
 * Nils Werner (1)
 * Aviv Yaish (1) +
@@ -585,23 +589,43 @@ Issues closed for 1.9.0
 * `#11828 <https://github.com/scipy/scipy/issues/11828>`__: UnivariateSpline gives varying results when multithreaded on...
 * `#12456 <https://github.com/scipy/scipy/issues/12456>`__: Add generalized mean calculation
 * `#12480 <https://github.com/scipy/scipy/issues/12480>`__: RectBivariateSpline derivative evaluator is slow
+* `#12485 <https://github.com/scipy/scipy/issues/12485>`__: linprog returns an incorrect message
+* `#12633 <https://github.com/scipy/scipy/issues/12633>`__: Offer simpler development workflow?
 * `#12658 <https://github.com/scipy/scipy/issues/12658>`__: scipy.stats.levy_stable.pdf can be inaccurate and return nan
 * `#12838 <https://github.com/scipy/scipy/issues/12838>`__: Accept multiple matrices in \`scipy.linalg.expm\`
+* `#12848 <https://github.com/scipy/scipy/issues/12848>`__: DOC: stats: multivariate distribution documentation issues
 * `#12870 <https://github.com/scipy/scipy/issues/12870>`__: Levy Stable Random Variates Code has a typo
 * `#12871 <https://github.com/scipy/scipy/issues/12871>`__: Levy Stable distribution uses parameterisation that is not location...
+* `#13200 <https://github.com/scipy/scipy/issues/13200>`__: Errors made by scipy.optimize.linprog
 * `#13462 <https://github.com/scipy/scipy/issues/13462>`__: Too many warnings and results objects in public API for scipy.stats
 * `#13615 <https://github.com/scipy/scipy/issues/13615>`__: RFC: switch to Meson as a build system
+* `#13632 <https://github.com/scipy/scipy/issues/13632>`__: stats.rv_discrete is not checking that xk values are integers
 * `#13655 <https://github.com/scipy/scipy/issues/13655>`__: MAINT: stats.rv_generic: \`moment\` method falls back to \`_munp\`...
+* `#13689 <https://github.com/scipy/scipy/issues/13689>`__: Wilcoxon does not appropriately detect ties when mode=exact.
+* `#13835 <https://github.com/scipy/scipy/issues/13835>`__: Change name of \`alpha\` parameter in \`interval()\` method
+* `#13872 <https://github.com/scipy/scipy/issues/13872>`__: Add method details or reference to \`scipy.integrate.dblquad\`
 * `#13912 <https://github.com/scipy/scipy/issues/13912>`__: Adding Poisson Disc sampling to QMC
+* `#13996 <https://github.com/scipy/scipy/issues/13996>`__: Fisk distribution documentation typo
 * `#14035 <https://github.com/scipy/scipy/issues/14035>`__: \`roots_jacobi\` support for large parameter values
+* `#14081 <https://github.com/scipy/scipy/issues/14081>`__: \`scipy.optimize._linprog_simplex._apply_pivot\` relies on asymmetric...
 * `#14162 <https://github.com/scipy/scipy/issues/14162>`__: Thread safety RectBivariateSpline
 * `#14267 <https://github.com/scipy/scipy/issues/14267>`__: BUG: online doc returns 404 - wrong \`reference\` in url
+* `#14313 <https://github.com/scipy/scipy/issues/14313>`__: ks_2samp: example description does not match example output
+* `#14418 <https://github.com/scipy/scipy/issues/14418>`__: \`ttest_ind\` for two sampled distributions with the same single...
+* `#14455 <https://github.com/scipy/scipy/issues/14455>`__: Adds Mixed Integer Linear Programming from highs
 * `#14462 <https://github.com/scipy/scipy/issues/14462>`__: Shapiro test returning negative p-value
+* `#14471 <https://github.com/scipy/scipy/issues/14471>`__: methods 'revised simplex' and 'interior-point' are extremely...
+* `#14505 <https://github.com/scipy/scipy/issues/14505>`__: \`Optimization converged to parameters that are outside the range\`...
 * `#14548 <https://github.com/scipy/scipy/issues/14548>`__: Add convention flag to quanternion in \`Scipy.spatial.transform.rotation.Rotation\`
+* `#14565 <https://github.com/scipy/scipy/issues/14565>`__: optimize.minimize: Presence of callback causes method TNC to...
+* `#14622 <https://github.com/scipy/scipy/issues/14622>`__: BUG: (sort of) mannwhitneyu hits max recursion limit with imbalanced...
+* `#14645 <https://github.com/scipy/scipy/issues/14645>`__: ENH: MemoryError when trying to bootstrap with large amounts...
 * `#14716 <https://github.com/scipy/scipy/issues/14716>`__: BUG: stats: The \`loguniform\` distribution is overparametrized.
 * `#14731 <https://github.com/scipy/scipy/issues/14731>`__: BUG: Incorrect residual graph in scipy.sparse.csgraph.maximum_flow
 * `#14745 <https://github.com/scipy/scipy/issues/14745>`__: BUG: scipy.ndimage.convolve documentation is incorrect
+* `#14750 <https://github.com/scipy/scipy/issues/14750>`__: ENH: Add one more derivative-free optimization method
 * `#14777 <https://github.com/scipy/scipy/issues/14777>`__: BUG: Wrong limit and no warning in stats.t for df=np.inf
+* `#14861 <https://github.com/scipy/scipy/issues/14861>`__: BUG: unclear error message when all bounds are all equal for...
 * `#14889 <https://github.com/scipy/scipy/issues/14889>`__: BUG: NumPy's \`random\` module should not be in the \`scipy\`...
 * `#14914 <https://github.com/scipy/scipy/issues/14914>`__: CI job with code coverage is failing (yet again)
 * `#14926 <https://github.com/scipy/scipy/issues/14926>`__: RegularGridInterpolator should be called RectilinearGridInterpolator
@@ -617,7 +641,9 @@ Issues closed for 1.9.0
 * `#15199 <https://github.com/scipy/scipy/issues/15199>`__: BUG: Error occured \`spsolve_triangular\`
 * `#15245 <https://github.com/scipy/scipy/issues/15245>`__: MAINT: scipy.stats._levy_stable should be treated as subpackage...
 * `#15252 <https://github.com/scipy/scipy/issues/15252>`__: DOC: Multivariate normal CDF docstring typo
+* `#15296 <https://github.com/scipy/scipy/issues/15296>`__: BUG: SciPy 1.7.x build failure on Cygwin
 * `#15308 <https://github.com/scipy/scipy/issues/15308>`__: BUG: OpenBLAS 0.3.18 support
+* `#15338 <https://github.com/scipy/scipy/issues/15338>`__: DOC: Rename \`\*args\` param in \`f_oneway\` to \`\*samples\`
 * `#15345 <https://github.com/scipy/scipy/issues/15345>`__: BUG: boschloo_exact gives pvalue > 1 (and sometimes nan)
 * `#15368 <https://github.com/scipy/scipy/issues/15368>`__: build warnings for \`unuran_wrapper.pyx\`
 * `#15373 <https://github.com/scipy/scipy/issues/15373>`__: BUG: Tippett’s and Pearson’s method for combine_pvalues are not...
@@ -625,25 +651,33 @@ Issues closed for 1.9.0
 * `#15456 <https://github.com/scipy/scipy/issues/15456>`__: Segfault in HiGHS code when building with Mingw-w64 on Windows
 * `#15458 <https://github.com/scipy/scipy/issues/15458>`__: DOC: Documentation inaccuracy of scipy.interpolate.bisplev
 * `#15488 <https://github.com/scipy/scipy/issues/15488>`__: ENH: missing examples for scipy.optimize in docs
+* `#15507 <https://github.com/scipy/scipy/issues/15507>`__: BUG: scipy.optimize.linprog: the algorithm determines the problem...
+* `#15508 <https://github.com/scipy/scipy/issues/15508>`__: BUG: Incorrect error message in multivariate_normal
 * `#15541 <https://github.com/scipy/scipy/issues/15541>`__: BUG: scipy.stats.powerlaw, why should x ∈ (0,1)? x can exceed...
+* `#15551 <https://github.com/scipy/scipy/issues/15551>`__: MAINT: stats: deprecating non-numeric array support in \`stats.mode\`
 * `#15568 <https://github.com/scipy/scipy/issues/15568>`__: BENCH/CI: Benchmark timeout
 * `#15572 <https://github.com/scipy/scipy/issues/15572>`__: BUG: \`scipy.spatial.transform.rotation\`, wrong deprecation...
 * `#15575 <https://github.com/scipy/scipy/issues/15575>`__: BUG: Tests failing for initial build [arm64 machine]
 * `#15589 <https://github.com/scipy/scipy/issues/15589>`__: BUG: scipy.special.factorialk docstring inconsistent with behaviour
 * `#15601 <https://github.com/scipy/scipy/issues/15601>`__: BUG: Scalefactors for \`signal.csd\` with \`average=='median'\`...
+* `#15617 <https://github.com/scipy/scipy/issues/15617>`__: ENH: stats: all multivariate distributions should be freezable
+* `#15631 <https://github.com/scipy/scipy/issues/15631>`__: BUG: stats.fit: intermittent failure in doctest
 * `#15635 <https://github.com/scipy/scipy/issues/15635>`__: CI:ASK: Remove LaTeX doc builds?
 * `#15638 <https://github.com/scipy/scipy/issues/15638>`__: DEV: \`dev.py\` missing PYTHONPATH when building doc
 * `#15644 <https://github.com/scipy/scipy/issues/15644>`__: DOC: stats.ks_1samp: incorrect commentary in examples
 * `#15666 <https://github.com/scipy/scipy/issues/15666>`__: CI: CircleCI build_docs failure on main
 * `#15670 <https://github.com/scipy/scipy/issues/15670>`__: BUG: AssertionError in test__dual_annealing.py in test_bounds_class
+* `#15689 <https://github.com/scipy/scipy/issues/15689>`__: BUG: default value of shape parameter in fit method of rv_continuous...
 * `#15692 <https://github.com/scipy/scipy/issues/15692>`__: CI: scipy.scipy (Main refguide_asv_check) failure in main
 * `#15696 <https://github.com/scipy/scipy/issues/15696>`__: DOC: False information in docs - scipy.stats.ttest_1samp
 * `#15700 <https://github.com/scipy/scipy/issues/15700>`__: BUG: AssertionError in test_propack.py
+* `#15730 <https://github.com/scipy/scipy/issues/15730>`__: BUG: "terminate called after throwing an instance of 'std::out_of_range'"...
 * `#15732 <https://github.com/scipy/scipy/issues/15732>`__: DEP: execute deprecation of inexact indices into sparse matrices
 * `#15734 <https://github.com/scipy/scipy/issues/15734>`__: DEP: deal with deprecation of ndim >1 in bspline
 * `#15735 <https://github.com/scipy/scipy/issues/15735>`__: DEP: add actual DeprecationWarning for sym_pos-keyword of scipy.linalg.solve
 * `#15736 <https://github.com/scipy/scipy/issues/15736>`__: DEP: Remove \`debug\` keyword from \`scipy.linalg.solve_\*\`
 * `#15737 <https://github.com/scipy/scipy/issues/15737>`__: DEP: Execute deprecation of pinv2
+* `#15739 <https://github.com/scipy/scipy/issues/15739>`__: DEP: sharpen deprecation for >1-dim inputs in optimize.minimize
 * `#15740 <https://github.com/scipy/scipy/issues/15740>`__: DEP: Execute deprecation for squeezing input vectors in spatial.distance
 * `#15741 <https://github.com/scipy/scipy/issues/15741>`__: DEP: remove spatial.distance.matching
 * `#15742 <https://github.com/scipy/scipy/issues/15742>`__: DEP: raise if fillvalue cannot be cast to output type in \`signal.convolve2d\`
@@ -665,6 +699,7 @@ Issues closed for 1.9.0
 * `#15762 <https://github.com/scipy/scipy/issues/15762>`__: DEP: remove stats.median_absolute_deviation
 * `#15773 <https://github.com/scipy/scipy/issues/15773>`__: BUG: iirfilter allows Wn[1] < Wn[0] for band-pass and band-stop...
 * `#15780 <https://github.com/scipy/scipy/issues/15780>`__: BUG: CI on Azure broken with PyTest 7.1
+* `#15843 <https://github.com/scipy/scipy/issues/15843>`__: BUG: scipy.stats.brunnermunzel incorrectly returns nan for undocumented...
 * `#15854 <https://github.com/scipy/scipy/issues/15854>`__: CI: Windows Meson job failing sometimes on OpenBLAS binary download
 * `#15866 <https://github.com/scipy/scipy/issues/15866>`__: BUG/CI: Wrong python version used for tests labeled "Linux Tests...
 * `#15899 <https://github.com/scipy/scipy/issues/15899>`__: BUG: _calc_uniform_order_statistic_medians documentation example...
@@ -674,6 +709,7 @@ Issues closed for 1.9.0
 * `#15961 <https://github.com/scipy/scipy/issues/15961>`__: BUG: scipy.stats.beta and bernoulli fails with float32 inputs
 * `#15962 <https://github.com/scipy/scipy/issues/15962>`__: Race condition in macOS Meson build between \`_matfuncs_expm\`...
 * `#15987 <https://github.com/scipy/scipy/issues/15987>`__: CI: \`np.matrix\` deprecation warning
+* `#16007 <https://github.com/scipy/scipy/issues/16007>`__: BUG: Confusing documentation in \`ttest_ind_from_stats\`
 * `#16011 <https://github.com/scipy/scipy/issues/16011>`__: BUG: typo in documentation for scipy.optimize.basinhopping
 * `#16020 <https://github.com/scipy/scipy/issues/16020>`__: BUG: dev.py FileNotFoundError
 * `#16027 <https://github.com/scipy/scipy/issues/16027>`__: jc should be (n-1)/2
@@ -689,6 +725,11 @@ Issues closed for 1.9.0
 * `#16219 <https://github.com/scipy/scipy/issues/16219>`__: \`TestSobol.test_0dim\` failure on 32-bit Linux job
 * `#16233 <https://github.com/scipy/scipy/issues/16233>`__: BUG: Memory leak in function \`sf_error\` due to new reference...
 * `#16254 <https://github.com/scipy/scipy/issues/16254>`__: DEP: add deprecation warning to \`maxiter\` kwarg in \`_minimize_tnc\`
+* `#16292 <https://github.com/scipy/scipy/issues/16292>`__: BUG: compilation error: no matching constructor for initialization...
+* `#16337 <https://github.com/scipy/scipy/issues/16337>`__: TST: stats/tests/test_axis_nan_policy.py::test_axis_nan_policy_full...
+* `#16347 <https://github.com/scipy/scipy/issues/16347>`__: TST, MAINT: 32-bit Linux test failures in wheels repo
+* `#16358 <https://github.com/scipy/scipy/issues/16358>`__: TST, MAINT: test_theilslopes_warnings fails on 32-bit Windows
+* `#16409 <https://github.com/scipy/scipy/issues/16409>`__: BUG: SIGSEGV in qhull when array type is wrong
 
 ***********************
 Pull requests for 1.9.0
@@ -707,6 +748,7 @@ Pull requests for 1.9.0
 * `#14300 <https://github.com/scipy/scipy/pull/14300>`__: ENH: Adding DIRECT algorithm to \`\`scipy.optimize\`\`
 * `#14576 <https://github.com/scipy/scipy/pull/14576>`__: ENH: stats: add one-sample Monte Carlo hypothesis test
 * `#14642 <https://github.com/scipy/scipy/pull/14642>`__: ENH: add Lloyd's algorithm to \`scipy.spatial\` to improve a...
+* `#14718 <https://github.com/scipy/scipy/pull/14718>`__: DOC: stats: adjust bootstrap doc to emphasize that batch controls...
 * `#14781 <https://github.com/scipy/scipy/pull/14781>`__: BUG: stats: handle infinite \`df\` in \`t\` distribution
 * `#14847 <https://github.com/scipy/scipy/pull/14847>`__: ENH: BLD: enable building SciPy with Meson
 * `#14877 <https://github.com/scipy/scipy/pull/14877>`__: DOC: ndimage convolve origin documentation (#14745)
@@ -749,6 +791,7 @@ Pull requests for 1.9.0
 * `#15286 <https://github.com/scipy/scipy/pull/15286>`__: MAINT: Highs submodule CI issue - use shallow cloning
 * `#15289 <https://github.com/scipy/scipy/pull/15289>`__: DOC: Misc numpydoc formatting.
 * `#15291 <https://github.com/scipy/scipy/pull/15291>`__: DOC: some more docstring/numpydoc formatting.
+* `#15294 <https://github.com/scipy/scipy/pull/15294>`__: ENH: add integrality constraints for linprog
 * `#15300 <https://github.com/scipy/scipy/pull/15300>`__: DOC: Misc manual docs updates.
 * `#15302 <https://github.com/scipy/scipy/pull/15302>`__: DOC: More docstring reformatting.
 * `#15304 <https://github.com/scipy/scipy/pull/15304>`__: CI: fix Gitpod build by adding HiGHS submodule checkout
@@ -887,6 +930,7 @@ Pull requests for 1.9.0
 * `#15775 <https://github.com/scipy/scipy/pull/15775>`__: DOC: stats.lognorm: rephrase note about parameterization
 * `#15776 <https://github.com/scipy/scipy/pull/15776>`__: DOC: stats.powerlaw: more explicit explanation of support
 * `#15777 <https://github.com/scipy/scipy/pull/15777>`__: MAINT: stats.shapiro: subtract median from shapiro input
+* `#15778 <https://github.com/scipy/scipy/pull/15778>`__: MAINT: stats: more specific error type from \`rv_continuous.fit\`
 * `#15779 <https://github.com/scipy/scipy/pull/15779>`__: CI: don't run meson tests on forks and remove skip flags
 * `#15782 <https://github.com/scipy/scipy/pull/15782>`__: DEPR: remove k=None in KDTree.query
 * `#15783 <https://github.com/scipy/scipy/pull/15783>`__: CI:Pin pytest version to 7.0.1 on Azure
@@ -923,6 +967,7 @@ Pull requests for 1.9.0
 * `#15840 <https://github.com/scipy/scipy/pull/15840>`__: DOC: special: Add 'Examples' for wrightomega.
 * `#15842 <https://github.com/scipy/scipy/pull/15842>`__: DOC: Add examples for \`CGS\`, \`GCROTMK\` and \`BiCGSTAB\` iterative...
 * `#15846 <https://github.com/scipy/scipy/pull/15846>`__: DOC: Add efficiency condition for CSC sparse matrix and remove...
+* `#15847 <https://github.com/scipy/scipy/pull/15847>`__: BUG: adds warning to scipy.stats.brunnermunzel
 * `#15848 <https://github.com/scipy/scipy/pull/15848>`__: DOC: fix interp2d docs showing wrong Z array ordering.
 * `#15850 <https://github.com/scipy/scipy/pull/15850>`__: MAINT: sparse.linalg: Missing tfqmr in the re-entrancy test
 * `#15853 <https://github.com/scipy/scipy/pull/15853>`__: DEP: remove the keyword debug from linalg.solve
@@ -940,6 +985,7 @@ Pull requests for 1.9.0
 * `#15887 <https://github.com/scipy/scipy/pull/15887>`__: DEP: remove ftol/xtol from neldermead
 * `#15894 <https://github.com/scipy/scipy/pull/15894>`__: [BUG] make p-values consistent with the literature
 * `#15895 <https://github.com/scipy/scipy/pull/15895>`__: CI: remove pin on Jinja2
+* `#15898 <https://github.com/scipy/scipy/pull/15898>`__: DOC: stats: correct documentation of \`wilcoxon\`'s behavior...
 * `#15900 <https://github.com/scipy/scipy/pull/15900>`__: DOC: fix import in example in _morestats
 * `#15905 <https://github.com/scipy/scipy/pull/15905>`__: MAINT: stats._moment: warn when catastrophic cancellation occurs
 * `#15909 <https://github.com/scipy/scipy/pull/15909>`__: DEP: deal with deprecation of ndim >1 in bspline
@@ -947,6 +993,7 @@ Pull requests for 1.9.0
 * `#15914 <https://github.com/scipy/scipy/pull/15914>`__: MAINT: special: Clean up C style in ndtr.c
 * `#15916 <https://github.com/scipy/scipy/pull/15916>`__: MAINT: stats: adjust tolerance of failing TestTruncnorm
 * `#15917 <https://github.com/scipy/scipy/pull/15917>`__: MAINT: stats: remove support for \`_rvs\` without \`size\` parameter
+* `#15920 <https://github.com/scipy/scipy/pull/15920>`__: ENH: stats.mannwhitneyu: add iterative implementation
 * `#15923 <https://github.com/scipy/scipy/pull/15923>`__: MAINT: stats: attempt to consolidate warnings and errors
 * `#15932 <https://github.com/scipy/scipy/pull/15932>`__: MAINT: stats: fix and thoroughly test \`rv_sample\` at non-integer...
 * `#15933 <https://github.com/scipy/scipy/pull/15933>`__: TST: test_nodata respect endianness
@@ -957,6 +1004,7 @@ Pull requests for 1.9.0
 * `#15947 <https://github.com/scipy/scipy/pull/15947>`__: DOC: Revamp contributor setup guides
 * `#15953 <https://github.com/scipy/scipy/pull/15953>`__: DOC: Add meson docs to use gcc, clang build in parallel and optimization...
 * `#15959 <https://github.com/scipy/scipy/pull/15959>`__: ENH: Developer CLI for SciPy
+* `#15965 <https://github.com/scipy/scipy/pull/15965>`__: MAINT: stats: ensure that \`rv_continuous._fitstart\` shapes...
 * `#15968 <https://github.com/scipy/scipy/pull/15968>`__: BUG: Fix debug and coverage arguments with dev.py
 * `#15970 <https://github.com/scipy/scipy/pull/15970>`__: BLD: specify \`cython_lapack\` dependency for \`matfuncs_expm\`
 * `#15973 <https://github.com/scipy/scipy/pull/15973>`__: DOC: Add formula renderings to integrate.nquad.
@@ -977,6 +1025,7 @@ Pull requests for 1.9.0
 * `#16024 <https://github.com/scipy/scipy/pull/16024>`__: CI: unpin pytest and pytest-xdist
 * `#16026 <https://github.com/scipy/scipy/pull/16026>`__: BUG: Allow \`spsolve_triangular\` to work with matrices with...
 * `#16029 <https://github.com/scipy/scipy/pull/16029>`__: BUG: Fix meson-info file errors and add more informative exception
+* `#16030 <https://github.com/scipy/scipy/pull/16030>`__: MAINT: stats: more accurate error message for \`multivariate_normal\`
 * `#16032 <https://github.com/scipy/scipy/pull/16032>`__: FIX: show warning when passing NAN into input of convolve method
 * `#16037 <https://github.com/scipy/scipy/pull/16037>`__: MAINT: fix missing \`f\` prefix on f-strings
 * `#16042 <https://github.com/scipy/scipy/pull/16042>`__: MAINT: stats.dirichlet: fix interface inconsistency
@@ -984,6 +1033,7 @@ Pull requests for 1.9.0
 * `#16045 <https://github.com/scipy/scipy/pull/16045>`__: ENH: Use circleci-artifacts-redirector-action
 * `#16051 <https://github.com/scipy/scipy/pull/16051>`__: MAINT: Miscellaneous small changes to filter_design
 * `#16053 <https://github.com/scipy/scipy/pull/16053>`__: Mark fitpack sources as \`recursive\`
+* `#16055 <https://github.com/scipy/scipy/pull/16055>`__: MAINT: stats: replace \`np.var\` with \`_moment(..., 2)\` to...
 * `#16058 <https://github.com/scipy/scipy/pull/16058>`__: DEV: Fix meson debian python build
 * `#16060 <https://github.com/scipy/scipy/pull/16060>`__: MAINT: Allow all Latin-1 Unicode letters in the source code.
 * `#16062 <https://github.com/scipy/scipy/pull/16062>`__: DOC: Document QUADPACK routines used in \`\*quad\`
@@ -1041,6 +1091,7 @@ Pull requests for 1.9.0
 * `#16241 <https://github.com/scipy/scipy/pull/16241>`__: DOC: stats: update roadmap
 * `#16245 <https://github.com/scipy/scipy/pull/16245>`__: DEP: Execute deprecation of pinv2
 * `#16247 <https://github.com/scipy/scipy/pull/16247>`__: DOC:linalg: Remove references to removed pinv2 function
+* `#16248 <https://github.com/scipy/scipy/pull/16248>`__: DOC: prep 1.9.0 release notes
 * `#16249 <https://github.com/scipy/scipy/pull/16249>`__: Refguide check verbosity abs names
 * `#16257 <https://github.com/scipy/scipy/pull/16257>`__: DEP: Deprecation follow-ups
 * `#16259 <https://github.com/scipy/scipy/pull/16259>`__: Revert "CI: pin Pip to 22.0.4 to avoid issues with \`--no-build-isolation\`"
@@ -1062,3 +1113,14 @@ Pull requests for 1.9.0
 * `#16304 <https://github.com/scipy/scipy/pull/16304>`__: MAINT: add a more informative error message for broken installs
 * `#16309 <https://github.com/scipy/scipy/pull/16309>`__: BLD: CI: fix issue in wheel metadata, and add basic "build in...
 * `#16316 <https://github.com/scipy/scipy/pull/16316>`__: REL: update version switcher for 1.8.1
+* `#16321 <https://github.com/scipy/scipy/pull/16321>`__: DOC: fix incorrect formatting of deprecation tags
+* `#16326 <https://github.com/scipy/scipy/pull/16326>`__: REL: update version switcher for 1.9
+* `#16329 <https://github.com/scipy/scipy/pull/16329>`__: MAINT: git security shim for 1.9.x
+* `#16339 <https://github.com/scipy/scipy/pull/16339>`__: MAINT, TST: bump tol for _axis_nan_policy_test
+* `#16341 <https://github.com/scipy/scipy/pull/16341>`__: BLD: update Pythran requirement to 0.11.0, to support Clang >=13
+* `#16360 <https://github.com/scipy/scipy/pull/16360>`__: MAINT, TST: sup warning for theilslopes
+* `#16361 <https://github.com/scipy/scipy/pull/16361>`__: MAINT: SCIPY_USE_PROPACK
+* `#16370 <https://github.com/scipy/scipy/pull/16370>`__: MAINT: update Boost submodule to include Cygwin fix
+* `#16374 <https://github.com/scipy/scipy/pull/16374>`__: MAINT: update pydata-sphinx-theme
+* `#16390 <https://github.com/scipy/scipy/pull/16390>`__: TST, MAINT: adjust 32-bit xfails for HiGHS
+* `#16414 <https://github.com/scipy/scipy/pull/16414>`__: BUG: spatial: Handle integer arrays in HalfspaceIntersection.
