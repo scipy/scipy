@@ -19,9 +19,9 @@ from numpy import (eye, ones, zeros, zeros_like, triu, tril, tril_indices,
 
 from numpy.random import rand, randint, seed
 
-from scipy.linalg import _flapack as flapack, lapack
-from scipy.linalg import inv, svd, cholesky, solve, ldl, norm, block_diag, qr
-from scipy.linalg import eigh
+from scipy.linalg import (_flapack as flapack, lapack, inv, svd, cholesky,
+                          solve, ldl, norm, block_diag, qr, eigh)
+
 from scipy.linalg.lapack import _compute_lwork
 from scipy.stats import ortho_group, unitary_group
 
@@ -55,7 +55,7 @@ def test_lapack_documented():
     names = set(lapack.__doc__.split())
     ignore_list = set([
         'absolute_import', 'clapack', 'division', 'find_best_lapack_type',
-        'flapack', 'print_function',
+        'flapack', 'print_function', 'HAS_ILP64',
     ])
     missing = list()
     for name in dir(lapack):
@@ -65,7 +65,7 @@ def test_lapack_documented():
     assert missing == [], 'Name(s) missing from lapack.__doc__ or ignore_list'
 
 
-class TestFlapackSimple(object):
+class TestFlapackSimple:
 
     def test_gebal(self):
         a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
@@ -161,7 +161,7 @@ class TestFlapackSimple(object):
                     assert_equal(value, ref)
 
 
-class TestLapack(object):
+class TestLapack:
 
     def test_flapack(self):
         if hasattr(flapack, 'empty_module'):
@@ -174,7 +174,7 @@ class TestLapack(object):
             pass
 
 
-class TestLeastSquaresSolvers(object):
+class TestLeastSquaresSolvers:
 
     def test_gels(self):
         seed(1234)
@@ -426,7 +426,7 @@ def test_geqrf_lwork(dtype, shape):
     assert_equal(info, 0)
 
 
-class TestRegression(object):
+class TestRegression:
 
     def test_ticket_1645(self):
         # Check that RQ routines have correct lwork
@@ -447,7 +447,7 @@ class TestRegression(object):
                 ungrq(rq[-2:], tau, lwork=2)
 
 
-class TestDpotr(object):
+class TestDpotr:
     def test_gh_2691(self):
         # 'lower' argument of dportf/dpotri
         for lower in [True, False]:
@@ -467,7 +467,7 @@ class TestDpotr(object):
                     assert_allclose(np.triu(dpt), np.triu(inv(a)))
 
 
-class TestDlasd4(object):
+class TestDlasd4:
     def test_sing_val_update(self):
 
         sigmas = np.array([4., 3., 2., 0])
@@ -499,7 +499,7 @@ class TestDlasd4(object):
                         rtol=100*np.finfo(np.float64).eps)
 
 
-class TestTbtrs(object):
+class TestTbtrs:
 
     @pytest.mark.parametrize('dtype', DTYPES)
     def test_nag_example_f07vef_f07vsf(self, dtype):
@@ -555,32 +555,37 @@ class TestTbtrs(object):
     @pytest.mark.parametrize('diag', ['N', 'U'])
     def test_random_matrices(self, dtype, trans, uplo, diag):
         seed(1724)
-        # lda, ldb, nrhs, kd are used to specify A and b.
-        # A is of shape lda x ldb with kd super/sub-diagonals
-        # b is of shape ldb x nrhs matrix
-        lda, ldb, nrhs, kd = 4, 4, 3, 2
-        ldab = kd + 1
+        # n, nrhs, kd are used to specify A and b.
+        # A is of shape n x n with kd super/sub-diagonals
+        # b is of shape n x nrhs matrix
+        n, nrhs, kd = 4, 3, 2
+        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+
+        is_upper = (uplo == 'U')
+        ku = kd * is_upper
+        kl = kd - ku
 
         # Construct the diagonal and kd super/sub diagonals of A with
         # the corresponding offsets.
-        band_widths = range(lda, lda - kd - 1, -1)
-        band_offsets = np.arange(ldab) if uplo == 'U' else np.arange(ldab) * -1
-        if dtype in REAL_DTYPES:
-            b = rand(ldb, nrhs).astype(dtype)
-            bands = [rand(width).astype(dtype) for width in band_widths]
-        elif dtype in COMPLEX_DTYPES:
-            b = (rand(ldb, nrhs) + rand(ldb, nrhs) * 1j).astype(dtype)
-            bands = [(rand(width) + rand(width) * 1j).astype(dtype)
-                     for width in band_widths]
+        band_offsets = range(ku, -kl - 1, -1)
+        band_widths = [n - abs(x) for x in band_offsets]
+        bands = [generate_random_dtype_array((width,), dtype)
+                 for width in band_widths]
 
         if diag == 'U':  # A must be unit triangular
-            bands[0] = np.ones(lda, dtype=dtype)
+            bands[ku] = np.ones(n, dtype=dtype)
 
         # Construct the diagonal banded matrix A from the bands and offsets.
         a = sps.diags(bands, band_offsets, format='dia')
-        ab = np.flipud(a.data) if uplo == 'U' else a.data
 
-        tbtrs = get_lapack_funcs('tbtrs', dtype=dtype)
+        # Convert A into banded storage form
+        ab = np.zeros((kd + 1, n), dtype)
+        for row, k in enumerate(band_offsets):
+            ab[row, max(k, 0):min(n+k, n)] = a.diagonal(k)
+
+        # The RHS values.
+        b = generate_random_dtype_array((n, nrhs), dtype)
+
         x, info = tbtrs(ab=ab, b=b, uplo=uplo, trans=trans, diag=diag)
         assert_equal(info, 0)
 
@@ -601,7 +606,7 @@ class TestTbtrs(object):
         """Test if invalid values of uplo, trans and diag raise exceptions"""
         # Argument checks occur independently of used datatype.
         # This mean we must not parameterize all available datatypes.
-        tbtrs = get_lapack_funcs('tbtrs', dtype=np.float)
+        tbtrs = get_lapack_funcs('tbtrs', dtype=np.float64)
         ab = rand(4, 2)
         b = rand(2, 4)
         assert_raises(Exception, tbtrs, ab, b, uplo, trans, diag)
@@ -773,10 +778,10 @@ def test_sgesdd_lwork_bug_workaround():
         p.terminate()
 
     assert_equal(returncode, 0,
-                 "Code apparently failed: " + p.stdout.read())
+                 "Code apparently failed: " + p.stdout.read().decode())
 
 
-class TestSytrd(object):
+class TestSytrd:
     @pytest.mark.parametrize('dtype', REAL_DTYPES)
     def test_sytrd_with_zero_dim_array(self, dtype):
         # Assert that a 0x0 matrix raises an error
@@ -844,7 +849,7 @@ class TestSytrd(object):
         assert_allclose(QTAQ, T, atol=5*np.finfo(dtype).eps, rtol=1.0)
 
 
-class TestHetrd(object):
+class TestHetrd:
     @pytest.mark.parametrize('complex_dtype', COMPLEX_DTYPES)
     def test_hetrd_with_zero_dim_array(self, complex_dtype):
         # Assert that a 0x0 matrix raises an error
@@ -1451,7 +1456,7 @@ def test_syconv():
         assert_allclose(triu(a, 1), triu(U[perm, :], 1), atol=tol, rtol=0.)
 
 
-class TestBlockedQR(object):
+class TestBlockedQR:
     """
     Tests for the blocked QR factorization, namely through geqrt, gemqrt, tpqrt
     and tpmqr.
@@ -1743,24 +1748,24 @@ def test_syequb():
         assert_equal(np.log2(s).astype(int), desired_log2s)
 
 
+@pytest.mark.skipif(True,
+                    reason="Failing on some OpenBLAS version, see gh-12276")
 def test_heequb():
-    desired_log2s = np.array([[-2, -7, -2, -4, -2, -3, -2, -2, -1, -2],
-                              [1, -10, 0, -6, -1, -4, -1, -2, -1, -2]])
-    for ind, dtype in enumerate(COMPLEX_DTYPES):
-        heequb = get_lapack_funcs('heequb', dtype=dtype)
+    # zheequb has a bug for versions =< LAPACK 3.9.0
+    # See Reference-LAPACK gh-61 and gh-408
+    # Hence the zheequb test is customized accordingly to avoid
+    # work scaling.
+    A = np.diag([2]*5 + [1002]*5) + np.diag(np.ones(9), k=1)*1j
+    s, scond, amax, info = lapack.zheequb(A)
+    assert_equal(info, 0)
+    assert_allclose(np.log2(s), [0., -1.]*2 + [0.] + [-4]*5)
 
-        d = np.array([dtype(1j) * 2**x for x in range(-5, 5)], dtype=dtype)
-        A = np.diag(d)
-        subdiags = np.array([dtype(1j) * 2**(9-x) for x in range(9)],
-                            dtype=dtype)
-        A[range(1, 10), range(0, 9)] = subdiags
-        s, scond, amax, info = heequb(A, lower=1)
-
-        # See gh-10741
-        pre3_7_lapack_result = np.log2(s).astype(int) == desired_log2s[0, :]
-        post3_7_lapack_result = np.log2(s).astype(int) == desired_log2s[1, :]
-
-        assert pre3_7_lapack_result.all() or post3_7_lapack_result.all()
+    A = np.diag(2**np.abs(np.arange(-5, 6)) + 0j)
+    A[5, 5] = 1024
+    A[5, 0] = 16j
+    s, scond, amax, info = lapack.cheequb(A.astype(np.complex64), lower=1)
+    assert_equal(info, 0)
+    assert_allclose(np.log2(s), [-2, -1, -1, 0, 0, -5, 0, -1, -1, -2, -2])
 
 
 def test_getc2_gesc2():
@@ -1792,6 +1797,199 @@ def test_getc2_gesc2():
         else:
             assert_array_almost_equal(desired_cplx.astype(dtype),
                                       x/scale, decimal=4)
+
+
+@pytest.mark.parametrize('size', [(6, 5), (5, 5)])
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+@pytest.mark.parametrize('joba', range(6))  # 'C', 'E', 'F', 'G', 'A', 'R'
+@pytest.mark.parametrize('jobu', range(4))  # 'U', 'F', 'W', 'N'
+@pytest.mark.parametrize('jobv', range(4))  # 'V', 'J', 'W', 'N'
+@pytest.mark.parametrize('jobr', [0, 1])
+@pytest.mark.parametrize('jobp', [0, 1])
+def test_gejsv_general(size, dtype, joba, jobu, jobv, jobr, jobp, jobt=0):
+    """Test the lapack routine ?gejsv.
+
+    This function tests that a singular value decomposition can be performed
+    on the random M-by-N matrix A. The test performs the SVD using ?gejsv
+    then performs the following checks:
+
+    * ?gejsv exist successfully (info == 0)
+    * The returned singular values are correct
+    * `A` can be reconstructed from `u`, `SIGMA`, `v`
+    * Ensure that u.T @ u is the identity matrix
+    * Ensure that v.T @ v is the identity matrix
+    * The reported matrix rank
+    * The reported number of singular values
+    * If denormalized floats are required
+
+    Notes
+    -----
+    joba specifies several choices effecting the calculation's accuracy
+    Although all arguments are tested, the tests only check that the correct
+    solution is returned - NOT that the prescribed actions are performed
+    internally.
+
+    jobt is, as of v3.9.0, still experimental and removed to cut down number of
+    test cases. However keyword itself is tested externally.
+    """
+    seed(42)
+
+    # Define some constants for later use:
+    m, n = size
+    atol = 100 * np.finfo(dtype).eps
+    A = generate_random_dtype_array(size, dtype)
+    gejsv = get_lapack_funcs('gejsv', dtype=dtype)
+
+    # Set up checks for invalid job? combinations
+    # if an invalid combination occurs we set the appropriate
+    # exit status.
+    lsvec = jobu < 2  # Calculate left singular vectors
+    rsvec = jobv < 2  # Calculate right singular vectors
+    l2tran = (jobt == 1) and (m == n)
+    is_complex = np.iscomplexobj(A)
+
+    invalid_real_jobv = (jobv == 1) and (not lsvec) and (not is_complex)
+    invalid_cplx_jobu = (jobu == 2) and not (rsvec and l2tran) and is_complex
+    invalid_cplx_jobv = (jobv == 2) and not (lsvec and l2tran) and is_complex
+
+    # Set the exit status to the expected value.
+    # Here we only check for invalid combinations, not individual
+    # parameters.
+    if invalid_cplx_jobu:
+        exit_status = -2
+    elif invalid_real_jobv or invalid_cplx_jobv:
+        exit_status = -3
+    else:
+        exit_status = 0
+
+    if (jobu > 1) and (jobv == 1):
+        assert_raises(Exception, gejsv, A, joba, jobu, jobv, jobr, jobt, jobp)
+    else:
+        sva, u, v, work, iwork, info = gejsv(A,
+                                             joba=joba,
+                                             jobu=jobu,
+                                             jobv=jobv,
+                                             jobr=jobr,
+                                             jobt=jobt,
+                                             jobp=jobp)
+
+        # Check that ?gejsv exited successfully/as expected
+        assert_equal(info, exit_status)
+
+        # If exit_status is non-zero the combination of jobs is invalid.
+        # We test this above but no calculations are performed.
+        if not exit_status:
+
+            # Check the returned singular values
+            sigma = (work[0] / work[1]) * sva[:n]
+            assert_allclose(sigma, svd(A, compute_uv=False), atol=atol)
+
+            if jobu == 1:
+                # If JOBU = 'F', then u contains the M-by-M matrix of
+                # the left singular vectors, including an ONB of the orthogonal
+                # complement of the Range(A)
+                # However, to recalculate A we are concerned about the
+                # first n singular values and so can ignore the latter.
+                # TODO: Add a test for ONB?
+                u = u[:, :n]
+
+            if lsvec and rsvec:
+                assert_allclose(u @ np.diag(sigma) @ v.conj().T, A, atol=atol)
+            if lsvec:
+                assert_allclose(u.conj().T @ u, np.identity(n), atol=atol)
+            if rsvec:
+                assert_allclose(v.conj().T @ v, np.identity(n), atol=atol)
+
+            assert_equal(iwork[0], np.linalg.matrix_rank(A))
+            assert_equal(iwork[1], np.count_nonzero(sigma))
+            # iwork[2] is non-zero if requested accuracy is not warranted for
+            # the data. This should never occur for these tests.
+            assert_equal(iwork[2], 0)
+
+
+@pytest.mark.parametrize('dtype', REAL_DTYPES)
+def test_gejsv_edge_arguments(dtype):
+    """Test edge arguments return expected status"""
+    gejsv = get_lapack_funcs('gejsv', dtype=dtype)
+
+    # scalar A
+    sva, u, v, work, iwork, info = gejsv(1.)
+    assert_equal(info, 0)
+    assert_equal(u.shape, (1, 1))
+    assert_equal(v.shape, (1, 1))
+    assert_equal(sva, np.array([1.], dtype=dtype))
+
+    # 1d A
+    A = np.ones((1,), dtype=dtype)
+    sva, u, v, work, iwork, info = gejsv(A)
+    assert_equal(info, 0)
+    assert_equal(u.shape, (1, 1))
+    assert_equal(v.shape, (1, 1))
+    assert_equal(sva, np.array([1.], dtype=dtype))
+
+    # 2d empty A
+    A = np.ones((1, 0), dtype=dtype)
+    sva, u, v, work, iwork, info = gejsv(A)
+    assert_equal(info, 0)
+    assert_equal(u.shape, (1, 0))
+    assert_equal(v.shape, (1, 0))
+    assert_equal(sva, np.array([], dtype=dtype))
+
+    # make sure "overwrite_a" is respected - user reported in gh-13191
+    A = np.sin(np.arange(100).reshape(10, 10)).astype(dtype)
+    A = np.asfortranarray(A + A.T)  # make it symmetric and column major
+    Ac = A.copy('A')
+    _ = gejsv(A)
+    assert_allclose(A, Ac)
+
+
+@pytest.mark.parametrize(('kwargs'),
+                         ({'joba': 9},
+                          {'jobu': 9},
+                          {'jobv': 9},
+                          {'jobr': 9},
+                          {'jobt': 9},
+                          {'jobp': 9})
+                         )
+def test_gejsv_invalid_job_arguments(kwargs):
+    """Test invalid job arguments raise an Exception"""
+    A = np.ones((2, 2), dtype=float)
+    gejsv = get_lapack_funcs('gejsv', dtype=float)
+    assert_raises(Exception, gejsv, A, **kwargs)
+
+
+@pytest.mark.parametrize("A,sva_expect,u_expect,v_expect",
+                         [(np.array([[2.27, -1.54, 1.15, -1.94],
+                                     [0.28, -1.67, 0.94, -0.78],
+                                     [-0.48, -3.09, 0.99, -0.21],
+                                     [1.07, 1.22, 0.79, 0.63],
+                                     [-2.35, 2.93, -1.45, 2.30],
+                                     [0.62, -7.39, 1.03, -2.57]]),
+                           np.array([9.9966, 3.6831, 1.3569, 0.5000]),
+                           np.array([[0.2774, -0.6003, -0.1277, 0.1323],
+                                     [0.2020, -0.0301, 0.2805, 0.7034],
+                                     [0.2918, 0.3348, 0.6453, 0.1906],
+                                     [-0.0938, -0.3699, 0.6781, -0.5399],
+                                     [-0.4213, 0.5266, 0.0413, -0.0575],
+                                     [0.7816, 0.3353, -0.1645, -0.3957]]),
+                           np.array([[0.1921, -0.8030, 0.0041, -0.5642],
+                                     [-0.8794, -0.3926, -0.0752, 0.2587],
+                                     [0.2140, -0.2980, 0.7827, 0.5027],
+                                     [-0.3795, 0.3351, 0.6178, -0.6017]]))])
+def test_gejsv_NAG(A, sva_expect, u_expect, v_expect):
+    """
+    This test implements the example found in the NAG manual, f08khf.
+    An example was not found for the complex case.
+    """
+    # NAG manual provides accuracy up to 4 decimals
+    atol = 1e-4
+    gejsv = get_lapack_funcs('gejsv', dtype=A.dtype)
+
+    sva, u, v, work, iwork, info = gejsv(A)
+
+    assert_allclose(sva_expect, sva, atol=atol)
+    assert_allclose(u_expect, u, atol=atol)
+    assert_allclose(v_expect, v, atol=atol)
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -2216,6 +2414,7 @@ def test_pteqr_NAG_f08jgf(compute_z, d, e, d_expect, z_expect):
     assert_allclose(_d, d_expect, atol=atol)
     assert_allclose(np.abs(_z), np.abs(z_expect), atol=atol)
 
+
 @pytest.mark.parametrize('dtype', DTYPES)
 @pytest.mark.parametrize('matrix_size', [(3, 4), (7, 6), (6, 6)])
 def test_geqrfp(dtype, matrix_size):
@@ -2573,3 +2772,258 @@ def test_gtsvx_NAG(du, d, dl, b, x):
     dlf, df, duf, du2f, ipiv, x_soln, rcond, ferr, berr, info = gtsvx_out
 
     assert_array_almost_equal(x, x_soln)
+
+
+@pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
+                                               + REAL_DTYPES))
+@pytest.mark.parametrize("fact,df_de_lambda",
+                         [("F",
+                           lambda d, e:get_lapack_funcs('pttrf',
+                                                        dtype=e.dtype)(d, e)),
+                          ("N", lambda d, e: (None, None, None))])
+def test_ptsvx(dtype, realtype, fact, df_de_lambda):
+    '''
+    This tests the ?ptsvx lapack routine wrapper to solve a random system
+    Ax = b for all dtypes and input variations. Tests for: unmodified
+    input parameters, fact options, incompatible matrix shapes raise an error,
+    and singular matrices return info of illegal value.
+    '''
+    seed(42)
+    # set test tolerance appropriate for dtype
+    atol = 100 * np.finfo(dtype).eps
+    ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
+    n = 5
+    # create diagonals according to size and dtype
+    d = generate_random_dtype_array((n,), realtype) + 4
+    e = generate_random_dtype_array((n-1,), dtype)
+    A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
+    x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
+    b = A @ x_soln
+
+    # use lambda to determine what df, ef are
+    df, ef, info = df_de_lambda(d, e)
+
+    # create copy to later test that they are unmodified
+    diag_cpy = [d.copy(), e.copy(), b.copy()]
+
+    # solve using routine
+    df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b, fact=fact,
+                                               df=df, ef=ef)
+    # d, e, and b should be unmodified
+    assert_array_equal(d, diag_cpy[0])
+    assert_array_equal(e, diag_cpy[1])
+    assert_array_equal(b, diag_cpy[2])
+    assert_(info == 0, "info should be 0 but is {}.".format(info))
+    assert_array_almost_equal(x_soln, x)
+
+    # test that the factors from ptsvx can be recombined to make A
+    L = np.diag(ef, -1) + np.diag(np.ones(n))
+    D = np.diag(df)
+    assert_allclose(A, L@D@(np.conj(L).T), atol=atol)
+
+    # assert that the outputs are of correct type or shape
+    # rcond should be a scalar
+    assert not hasattr(rcond, "__len__"), \
+        "rcond should be scalar but is {}".format(rcond)
+    # ferr should be length of # of cols in x
+    assert_(ferr.shape == (2,), "ferr.shape is {} but shoud be ({},)"
+            .format(ferr.shape, x_soln.shape[1]))
+    # berr should be length of # of cols in x
+    assert_(berr.shape == (2,), "berr.shape is {} but shoud be ({},)"
+            .format(berr.shape, x_soln.shape[1]))
+
+@pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
+                                               + REAL_DTYPES))
+@pytest.mark.parametrize("fact,df_de_lambda",
+                         [("F",
+                           lambda d, e:get_lapack_funcs('pttrf',
+                                                        dtype=e.dtype)(d, e)),
+                          ("N", lambda d, e: (None, None, None))])
+def test_ptsvx_error_raise_errors(dtype, realtype, fact, df_de_lambda):
+    seed(42)
+    ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
+    n = 5
+    # create diagonals according to size and dtype
+    d = generate_random_dtype_array((n,), realtype) + 4
+    e = generate_random_dtype_array((n-1,), dtype)
+    A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
+    x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
+    b = A @ x_soln
+
+    # use lambda to determine what df, ef are
+    df, ef, info = df_de_lambda(d, e)
+
+    # test with malformatted array sizes
+    assert_raises(ValueError, ptsvx, d[:-1], e, b, fact=fact, df=df, ef=ef)
+    assert_raises(ValueError, ptsvx, d, e[:-1], b, fact=fact, df=df, ef=ef)
+    assert_raises(Exception, ptsvx, d, e, b[:-1], fact=fact, df=df, ef=ef)
+
+
+@pytest.mark.parametrize("dtype,realtype", zip(DTYPES, REAL_DTYPES
+                                               + REAL_DTYPES))
+@pytest.mark.parametrize("fact,df_de_lambda",
+                         [("F",
+                           lambda d, e:get_lapack_funcs('pttrf',
+                                                        dtype=e.dtype)(d, e)),
+                          ("N", lambda d, e: (None, None, None))])
+def test_ptsvx_non_SPD_singular(dtype, realtype, fact, df_de_lambda):
+    seed(42)
+    ptsvx = get_lapack_funcs('ptsvx', dtype=dtype)
+    n = 5
+    # create diagonals according to size and dtype
+    d = generate_random_dtype_array((n,), realtype) + 4
+    e = generate_random_dtype_array((n-1,), dtype)
+    A = np.diag(d) + np.diag(e, -1) + np.diag(np.conj(e), 1)
+    x_soln = generate_random_dtype_array((n, 2), dtype=dtype)
+    b = A @ x_soln
+
+    # use lambda to determine what df, ef are
+    df, ef, info = df_de_lambda(d, e)
+
+    if fact == "N":
+        d[3] = 0
+        # obtain new df, ef
+        df, ef, info = df_de_lambda(d, e)
+        # solve using routine
+        df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b)
+        # test for the singular matrix.
+        assert info > 0 and info <= n
+
+        # non SPD matrix
+        d = generate_random_dtype_array((n,), realtype)
+        df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b)
+        assert info > 0 and info <= n
+    else:
+        # assuming that someone is using a singular factorization
+        df, ef, info = df_de_lambda(d, e)
+        df[0] = 0
+        ef[0] = 0
+        df, ef, x, rcond, ferr, berr, info = ptsvx(d, e, b, fact=fact,
+                                                   df=df, ef=ef)
+        assert info > 0
+
+
+@pytest.mark.parametrize('d,e,b,x',
+                         [(np.array([4, 10, 29, 25, 5]),
+                           np.array([-2, -6, 15, 8]),
+                           np.array([[6, 10], [9, 4], [2, 9], [14, 65],
+                                     [7, 23]]),
+                           np.array([[2.5, 2], [2, -1], [1, -3],
+                                     [-1, 6], [3, -5]])),
+                          (np.array([16, 41, 46, 21]),
+                           np.array([16 + 16j, 18 - 9j, 1 - 4j]),
+                           np.array([[64 + 16j, -16 - 32j],
+                                     [93 + 62j, 61 - 66j],
+                                     [78 - 80j, 71 - 74j],
+                                     [14 - 27j, 35 + 15j]]),
+                           np.array([[2 + 1j, -3 - 2j],
+                                     [1 + 1j, 1 + 1j],
+                                     [1 - 2j, 1 - 2j],
+                                     [1 - 1j, 2 + 1j]]))])
+def test_ptsvx_NAG(d, e, b, x):
+    # test to assure that wrapper is consistent with NAG Manual Mark 26
+    # example problemss: f07jbf, f07jpf
+    # (Links expire, so please search for "NAG Library Manual Mark 26" online)
+
+    # obtain routine with correct type based on e.dtype
+    ptsvx = get_lapack_funcs('ptsvx', dtype=e.dtype)
+    # solve using routine
+    df, ef, x_ptsvx, rcond, ferr, berr, info = ptsvx(d, e, b)
+    # determine ptsvx's solution and x are the same.
+    assert_array_almost_equal(x, x_ptsvx)
+
+
+@pytest.mark.parametrize('lower', [False, True])
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_pptrs_pptri_pptrf_ppsv_ppcon(dtype, lower):
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+    # Manual conversion to/from packed format is feasible here.
+    n, nrhs = 10, 4
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+    b = generate_random_dtype_array([n, nrhs], dtype=dtype)
+
+    a = a.conj().T + a + np.eye(n, dtype=dtype) * dtype(5.)
+    if lower:
+        inds = ([x for y in range(n) for x in range(y, n)],
+                [y for y in range(n) for x in range(y, n)])
+    else:
+        inds = ([x for y in range(1, n+1) for x in range(y)],
+                [y-1 for y in range(1, n+1) for x in range(y)])
+    ap = a[inds]
+    ppsv, pptrf, pptrs, pptri, ppcon = get_lapack_funcs(
+        ('ppsv', 'pptrf', 'pptrs', 'pptri', 'ppcon'),
+        dtype=dtype,
+        ilp64="preferred")
+
+    ul, info = pptrf(n, ap, lower=lower)
+    assert_equal(info, 0)
+    aul = cholesky(a, lower=lower)[inds]
+    assert_allclose(ul, aul, rtol=0, atol=atol)
+
+    uli, info = pptri(n, ul, lower=lower)
+    assert_equal(info, 0)
+    auli = inv(a)[inds]
+    assert_allclose(uli, auli, rtol=0, atol=atol)
+
+    x, info = pptrs(n, ul, b, lower=lower)
+    assert_equal(info, 0)
+    bx = solve(a, b)
+    assert_allclose(x, bx, rtol=0, atol=atol)
+
+    xv, info = ppsv(n, ap, b, lower=lower)
+    assert_equal(info, 0)
+    assert_allclose(xv, bx, rtol=0, atol=atol)
+
+    anorm = np.linalg.norm(a, 1)
+    rcond, info = ppcon(n, ap, anorm=anorm, lower=lower)
+    assert_equal(info, 0)
+    assert_(abs(1/rcond - np.linalg.cond(a, p=1))*rcond < 1)
+
+
+@pytest.mark.parametrize('dtype', DTYPES)
+def test_gges_tgexc(dtype):
+    seed(1234)
+    atol = np.finfo(dtype).eps*100
+
+    n = 10
+    a = generate_random_dtype_array([n, n], dtype=dtype)
+    b = generate_random_dtype_array([n, n], dtype=dtype)
+
+    gges, tgexc = get_lapack_funcs(('gges', 'tgexc'), dtype=dtype)
+
+    result = gges(lambda x: None, a, b, overwrite_a=False, overwrite_b=False)
+    assert_equal(result[-1], 0)
+
+    s = result[0]
+    t = result[1]
+    q = result[-4]
+    z = result[-3]
+
+    d1 = s[0, 0] / t[0, 0]
+    d2 = s[6, 6] / t[6, 6]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(s, np.triu(s), rtol=0, atol=atol)
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(q @ s @ z.conj().T, a, rtol=0, atol=atol)
+    assert_allclose(q @ t @ z.conj().T, b, rtol=0, atol=atol)
+
+    result = tgexc(s, t, q, z, 6, 0)
+    assert_equal(result[-1], 0)
+
+    s = result[0]
+    t = result[1]
+    q = result[2]
+    z = result[3]
+
+    if dtype in COMPLEX_DTYPES:
+        assert_allclose(s, np.triu(s), rtol=0, atol=atol)
+        assert_allclose(t, np.triu(t), rtol=0, atol=atol)
+
+    assert_allclose(q @ s @ z.conj().T, a, rtol=0, atol=atol)
+    assert_allclose(q @ t @ z.conj().T, b, rtol=0, atol=atol)
+
+    assert_allclose(s[0, 0] / t[0, 0], d2, rtol=0, atol=atol)
+    assert_allclose(s[1, 1] / t[1, 1], d1, rtol=0, atol=atol)

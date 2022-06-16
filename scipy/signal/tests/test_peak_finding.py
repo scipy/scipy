@@ -20,6 +20,7 @@ from scipy.signal._peak_finding import (
     find_peaks_cwt,
     _identify_ridge_lines
 )
+from scipy.signal.windows import gaussian
 from scipy.signal._peak_finding_utils import _local_maxima_1d, PeakPropertyWarning
 
 
@@ -83,7 +84,7 @@ def _gen_ridge_line(start_locs, max_locs, length, distances, gaps):
     return [locs[:, 0], locs[:, 1]]
 
 
-class TestLocalMaxima1d(object):
+class TestLocalMaxima1d:
 
     def test_empty(self):
         """Test with empty signal."""
@@ -142,7 +143,7 @@ class TestLocalMaxima1d(object):
             _local_maxima_1d(None)
 
 
-class TestRidgeLines(object):
+class TestRidgeLines:
 
     def test_empty(self):
         test_matr = np.zeros([20, 100])
@@ -234,7 +235,7 @@ class TestRidgeLines(object):
             np.testing.assert_array_less(np.abs(agaps), max(gaps) + 0.1)
 
 
-class TestArgrel(object):
+class TestArgrel:
 
     def test_empty(self):
         # Regression test for gh-2832.
@@ -317,7 +318,7 @@ class TestArgrel(object):
             assert_((act_locs == (rel_max_cols[inds] - rot_factor*rw)).all())
 
 
-class TestPeakProminences(object):
+class TestPeakProminences:
 
     def test_empty(self):
         """
@@ -434,7 +435,7 @@ class TestPeakProminences(object):
             peak_prominences([0, 1, 1, 1, 0], [2], wlen=2)
 
 
-class TestPeakWidths(object):
+class TestPeakWidths:
 
     def test_empty(self):
         """
@@ -599,7 +600,7 @@ def test_unpack_condition_args():
         _unpack_condition_args((None, amin_true), np.arange(11), peaks)
 
 
-class TestFindPeaks(object):
+class TestFindPeaks:
 
     # Keys of optionally returned properties
     property_keys = {'peak_heights', 'left_thresholds', 'right_thresholds',
@@ -770,7 +771,7 @@ class TestFindPeaks(object):
             assert_equal(props[key], peaks)
 
 
-class TestFindPeaksCwt(object):
+class TestFindPeaksCwt:
 
     def test_find_peaks_exact(self):
         """
@@ -819,3 +820,48 @@ class TestFindPeaksCwt(object):
         widths = np.arange(10, 50)
         found_locs = find_peaks_cwt(test_data, widths, min_snr=5, noise_perc=30)
         np.testing.assert_equal(len(found_locs), 0)
+
+    def test_find_peaks_with_non_default_wavelets(self):
+        x = gaussian(200, 2)
+        widths = np.array([1, 2, 3, 4])
+        a = find_peaks_cwt(x, widths, wavelet=gaussian)
+
+        np.testing.assert_equal(np.array([100]), a)
+
+    def test_find_peaks_window_size(self):
+        """
+        Verify that window_size is passed correctly to private function and
+        affects the result.
+        """
+        sigmas = [2.0, 2.0]
+        num_points = 1000
+        test_data, act_locs = _gen_gaussians_even(sigmas, num_points)
+        widths = np.arange(0.1, max(sigmas), 0.2)
+        noise_amp = 0.05
+        np.random.seed(18181911)
+        test_data += (np.random.rand(num_points) - 0.5)*(2*noise_amp)
+
+        # Possibly contrived negative region to throw off peak finding
+        # when window_size is too large
+        test_data[250:320] -= 1
+
+        found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=3,
+                                    min_length=None, window_size=None)
+        with pytest.raises(AssertionError):
+            assert found_locs.size == act_locs.size
+
+        found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=3,
+                                    min_length=None, window_size=20)
+        assert found_locs.size == act_locs.size
+
+    def test_find_peaks_with_one_width(self):
+        """
+        Verify that the `width` argument
+        in `find_peaks_cwt` can be a float
+        """
+        xs = np.arange(0, np.pi, 0.05)
+        test_data = np.sin(xs)
+        widths = 1
+        found_locs = find_peaks_cwt(test_data, widths)
+
+        np.testing.assert_equal(found_locs, 32)

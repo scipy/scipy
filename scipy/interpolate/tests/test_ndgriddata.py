@@ -5,7 +5,7 @@ from pytest import raises as assert_raises
 from scipy.interpolate import griddata, NearestNDInterpolator
 
 
-class TestGriddata(object):
+class TestGriddata:
     def test_fill_value(self):
         x = [(0,0), (0,1), (1,0)]
         y = [1, 2, 3]
@@ -160,7 +160,7 @@ class TestGriddata(object):
                           method=method)
             assert_raises(ValueError, griddata, x, y, xi3,
                           method=method)
-        
+
 
 def test_nearest_options():
     # smoke test that NearestNDInterpolator accept cKDTree options

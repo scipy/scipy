@@ -1,10 +1,12 @@
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
-         assert_array_almost_equal, assert_approx_equal, assert_allclose)
+                           assert_array_almost_equal, assert_approx_equal,
+                           assert_allclose)
+import pytest
 from pytest import raises as assert_raises
-
 from scipy.special import xlogy
-from scipy.stats.contingency import margins, expected_freq, chi2_contingency
+from scipy.stats.contingency import (margins, expected_freq,
+                                     chi2_contingency, association)
 
 
 def test_margins():
@@ -168,10 +170,12 @@ def test_chi2_contingency_R():
 
 def test_chi2_contingency_g():
     c = np.array([[15, 60], [15, 90]])
-    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood', correction=False)
+    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood',
+                                    correction=False)
     assert_allclose(g, 2*xlogy(c, c/e).sum())
 
-    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood', correction=True)
+    g, p, dof, e = chi2_contingency(c, lambda_='log-likelihood',
+                                    correction=True)
     c_corr = c + np.array([[-0.5, 0.5], [0.5, -0.5]])
     assert_allclose(g, 2*xlogy(c_corr, c_corr/e).sum())
 
@@ -196,3 +200,35 @@ def test_chi2_contingency_bad_args():
     obs = np.empty((0, 8))
     assert_raises(ValueError, chi2_contingency, obs)
 
+
+def test_chi2_contingency_yates_gh13875():
+    # Magnitude of Yates' continuity correction should not exceed difference
+    # between expected and observed value of the statistic; see gh-13875
+    observed = np.array([[1573, 3], [4, 0]])
+    p = chi2_contingency(observed)[1]
+    assert_allclose(p, 1, rtol=1e-12)
+
+
+def test_bad_association_args():
+    # Invalid Test Statistic
+    assert_raises(ValueError, association, [[1, 2], [3, 4]], "X")
+    # Invalid array shape
+    assert_raises(ValueError, association, [[[1, 2]], [[3, 4]]], "cramer")
+    # chi2_contingency exception
+    assert_raises(ValueError, association, [[-1, 10], [1, 2]], 'cramer')
+    # Invalid Array Item Data Type
+    assert_raises(ValueError, association,
+                  np.array([[1, 2], ["dd", 4]], dtype=object), 'cramer')
+
+
+@pytest.mark.parametrize('stat, expected',
+                         [('cramer', 0.09222412010290792),
+                          ('tschuprow', 0.0775509319944633),
+                          ('pearson', 0.12932925727138758)])
+def test_assoc(stat, expected):
+    # 2d Array
+    obs1 = np.array([[12, 13, 14, 15, 16],
+                     [17, 16, 18, 19, 11],
+                     [9, 15, 14, 12, 11]])
+    a = association(observed=obs1, method=stat)
+    assert_allclose(a, expected)

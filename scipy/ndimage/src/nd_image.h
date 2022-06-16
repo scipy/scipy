@@ -37,6 +37,4 @@
 #define PY_ARRAY_UNIQUE_SYMBOL _scipy_ndimage_ARRAY_API
 #include <numpy/arrayobject.h>
 
-#include "numpy/npy_3kcompat.h"
-
 #endif /* ND_IMAGE_H */

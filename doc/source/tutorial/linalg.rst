@@ -353,10 +353,8 @@ where :math:`\mathbf{A}^{\dagger}` is called the pseudo-inverse of
 
 The command :obj:`linalg.lstsq` will solve the linear least-squares
 problem for :math:`\mathbf{c}` given :math:`\mathbf{A}` and
-:math:`\mathbf{y}` . In addition, :obj:`linalg.pinv` or
-:obj:`linalg.pinv2` (uses a different method based on singular value
-decomposition) will find :math:`\mathbf{A}^{\dagger}` given
-:math:`\mathbf{A}.`
+:math:`\mathbf{y}` . In addition, :obj:`linalg.pinv` will find
+:math:`\mathbf{A}^{\dagger}` given :math:`\mathbf{A}.`
 
 The following example and figure demonstrate the use of
 :obj:`linalg.lstsq` and :obj:`linalg.pinv` for solving a data-fitting
@@ -376,12 +374,13 @@ linear least squares.
    >>> import numpy as np
    >>> from scipy import linalg
    >>> import matplotlib.pyplot as plt
+   >>> rng = np.random.default_rng()
 
    >>> c1, c2 = 5.0, 2.0
    >>> i = np.r_[1:11]
    >>> xi = 0.1*i
    >>> yi = c1*np.exp(-xi) + c2*xi
-   >>> zi = yi + 0.05 * np.max(yi) * np.random.randn(len(yi))
+   >>> zi = yi + 0.05 * np.max(yi) * rng.standard_normal(len(yi))
 
    >>> A = np.c_[np.exp(-xi)[:, np.newaxis], xi[:, np.newaxis]]
    >>> c, resid, rank, sigma = linalg.lstsq(A, zi)
@@ -401,11 +400,9 @@ Generalized inverse
 ^^^^^^^^^^^^^^^^^^^
 
 The generalized inverse is calculated using the command
-:obj:`linalg.pinv` or :obj:`linalg.pinv2`. These two commands differ
-in how they compute the generalized inverse. The first uses the
-linalg.lstsq algorithm, while the second uses singular value
-decomposition. Let :math:`\mathbf{A}` be an :math:`M\times N` matrix,
-then if :math:`M>N`, the generalized inverse is
+:obj:`linalg.pinv`. Let :math:`\mathbf{A}` be an 
+:math:`M\times N` matrix, then if :math:`M>N`, the generalized
+inverse is
 
 .. math::
 
@@ -886,24 +883,24 @@ needs to accept complex numbers* as input in order to work with this
 algorithm. For example, the following code computes the zeroth-order
 Bessel function applied to a matrix.
 
-    >>> from scipy import special, random, linalg
-    >>> np.random.seed(1234)
-    >>> A = random.rand(3, 3)
+    >>> from scipy import special, linalg
+    >>> rng = np.random.default_rng()
+    >>> A = rng.random((3, 3))
     >>> B = linalg.funm(A, lambda x: special.jv(0, x))
     >>> A
-    array([[ 0.19151945,  0.62210877,  0.43772774],
-           [ 0.78535858,  0.77997581,  0.27259261],
-           [ 0.27646426,  0.80187218,  0.95813935]])
+    array([[0.06369197, 0.90647174, 0.98024544],
+           [0.68752227, 0.5604377 , 0.49142032],
+           [0.86754578, 0.9746787 , 0.37932682]])
     >>> B
-    array([[ 0.86511146, -0.19676526, -0.13856748],
-           [-0.17479869,  0.7259118 , -0.16606258],
-           [-0.19212044, -0.32052767,  0.73590704]])
+    array([[ 0.6929219 , -0.29728805, -0.15930896],
+           [-0.16226043,  0.71967826, -0.22709386],
+           [-0.19945564, -0.33379957,  0.70259022]])
     >>> linalg.eigvals(A)
-    array([ 1.73881510+0.j, -0.20270676+0.j,  0.39352627+0.j])
+    array([ 1.94835336+0.j, -0.72219681+0.j, -0.22270006+0.j])
     >>> special.jv(0, linalg.eigvals(A))
-    array([ 0.37551908+0.j,  0.98975384+0.j,  0.96165739+0.j])
+    array([0.25375345+0.j, 0.87379738+0.j, 0.98763955+0.j])
     >>> linalg.eigvals(B)
-    array([ 0.37551908+0.j,  0.98975384+0.j,  0.96165739+0.j])
+    array([0.25375345+0.j, 0.87379738+0.j, 0.98763955+0.j])
 
 Note how, by virtue of how matrix analytic functions are defined,
 the Bessel function has acted on the matrix eigenvalues.
@@ -915,31 +912,43 @@ Special matrices
 SciPy and NumPy provide several functions for creating special matrices
 that are frequently used in engineering and science.
 
-====================  =========================  =========================================================
-Type                  Function                   Description
-====================  =========================  =========================================================
-block diagonal        `scipy.linalg.block_diag`  Create a block diagonal matrix from the provided arrays.
---------------------  -------------------------  ---------------------------------------------------------
-circulant             `scipy.linalg.circulant`   Construct a circulant matrix.
---------------------  -------------------------  ---------------------------------------------------------
-companion             `scipy.linalg.companion`   Create a companion matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Hadamard              `scipy.linalg.hadamard`    Construct an Hadamard matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Hankel                `scipy.linalg.hankel`      Construct a Hankel matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Hilbert               `scipy.linalg.hilbert`     Construct a Hilbert matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Inverse Hilbert       `scipy.linalg.invhilbert`  Construct the inverse of a Hilbert matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Leslie                `scipy.linalg.leslie`      Create a Leslie matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Pascal                `scipy.linalg.pascal`      Create a Pascal matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Toeplitz              `scipy.linalg.toeplitz`    Construct a Toeplitz matrix.
---------------------  -------------------------  ---------------------------------------------------------
-Van der Monde         `numpy.vander`             Generate a Van der Monde matrix.
-====================  =========================  =========================================================
+====================  =================================  =========================================================
+Type                  Function                           Description
+====================  =================================  =========================================================
+block diagonal        `scipy.linalg.block_diag`          Create a block diagonal matrix from the provided arrays.
+--------------------  ---------------------------------  ---------------------------------------------------------
+circulant             `scipy.linalg.circulant`           Create a circulant matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+companion             `scipy.linalg.companion`           Create a companion matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+convolution           `scipy.linalg.convolution_matrix`  Create a convolution matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Discrete Fourier      `scipy.linalg.dft`                 Create a discrete Fourier transform matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Fiedler               `scipy.linalg.fiedler`             Create a symmetric Fiedler matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Fiedler Companion     `scipy.linalg.fiedler_companion`   Create a Fiedler companion matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Hadamard              `scipy.linalg.hadamard`            Create an Hadamard matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Hankel                `scipy.linalg.hankel`              Create a Hankel matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Helmert               `scipy.linalg.helmert`             Create a Helmert matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Hilbert               `scipy.linalg.hilbert`             Create a Hilbert matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Inverse Hilbert       `scipy.linalg.invhilbert`          Create the inverse of a Hilbert matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Leslie                `scipy.linalg.leslie`              Create a Leslie matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Pascal                `scipy.linalg.pascal`              Create a Pascal matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Inverse Pascal        `scipy.linalg.invpascal`           Create the inverse of a Pascal matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Toeplitz              `scipy.linalg.toeplitz`            Create a Toeplitz matrix.
+--------------------  ---------------------------------  ---------------------------------------------------------
+Van der Monde         `numpy.vander`                     Create a Van der Monde matrix.
+====================  =================================  =========================================================
 
 
 For examples of the use of these functions, see their respective docstrings.

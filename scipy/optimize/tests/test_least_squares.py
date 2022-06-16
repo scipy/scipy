@@ -74,7 +74,7 @@ def fun_bvp(x):
     return y.ravel()
 
 
-class BroydenTridiagonal(object):
+class BroydenTridiagonal:
     def __init__(self, n=100, mode='sparse'):
         np.random.seed(0)
 
@@ -125,7 +125,7 @@ class BroydenTridiagonal(object):
         return J
 
 
-class ExponentialFittingProblem(object):
+class ExponentialFittingProblem:
     """Provide data and function for exponential fitting in the form
     y = a + exp(b * x) + noise."""
 
@@ -170,7 +170,7 @@ def cubic_soft_l1(z):
 LOSSES = list(IMPLEMENTED_LOSSES.keys()) + [cubic_soft_l1]
 
 
-class BaseMixin(object):
+class BaseMixin:
     def test_basic(self):
         # Test that the basic calling sequence works.
         res = least_squares(fun_trivial, 2., method=self.method)
@@ -241,7 +241,6 @@ class BaseMixin(object):
         assert_allclose(res3.x, 0, atol=1e-4)
         assert_equal(res1.x, res2.x)
         assert_equal(res1.nfev, res2.nfev)
-        assert_(res2.nfev != res3.nfev)
 
     def test_incorrect_options_usage(self):
         assert_raises(TypeError, least_squares, fun_trivial, 2.0,
@@ -382,7 +381,7 @@ class BaseMixin(object):
             assert_allclose(res.x, x_opt)
 
 
-class BoundsMixin(object):
+class BoundsMixin:
     def test_inconsistent(self):
         assert_raises(ValueError, least_squares, fun_trivial, 2.0,
                       bounds=(10.0, 0.0), method=self.method)
@@ -456,7 +455,7 @@ class BoundsMixin(object):
                 assert_allclose(res.optimality, 0.0, atol=1e-5)
 
 
-class SparseMixin(object):
+class SparseMixin:
     def test_exact_tr_solver(self):
         p = BroydenTridiagonal()
         assert_raises(ValueError, least_squares, p.fun, p.x0, p.jac,
@@ -557,7 +556,7 @@ class SparseMixin(object):
                       method=self.method, x_scale='jac')
 
 
-class LossFunctionMixin(object):
+class LossFunctionMixin:
     def test_options(self):
         for loss in LOSSES:
             res = least_squares(fun_trivial, 2.0, loss=loss,
@@ -754,3 +753,28 @@ def test_small_tolerances_for_lm():
                              (1e-13, 1e-13, None)]:
         assert_raises(ValueError, least_squares, fun_trivial, 2.0, xtol=xtol,
                       ftol=ftol, gtol=gtol, method='lm')
+
+
+def test_fp32_gh12991():
+    # checks that smaller FP sizes can be used in least_squares
+    # this is the minimum working example reported for gh12991
+    np.random.seed(1)
+
+    x = np.linspace(0, 1, 100).astype("float32")
+    y = np.random.random(100).astype("float32")
+
+    def func(p, x):
+        return p[0] + p[1] * x
+
+    def err(p, x, y):
+        return func(p, x) - y
+
+    res = least_squares(err, [-1.0, -1.0], args=(x, y))
+    # previously the initial jacobian calculated for this would be all 0
+    # and the minimize would terminate immediately, with nfev=1, would
+    # report a successful minimization (it shouldn't have done), but be
+    # unchanged from the initial solution.
+    # It was terminating early because the underlying approx_derivative
+    # used a step size for FP64 when the working space was FP32.
+    assert res.nfev > 3
+    assert_allclose(res.x, np.array([0.4082241, 0.15530563]), atol=5e-5)

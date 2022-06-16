@@ -12,14 +12,14 @@ import warnings
 import numpy as np
 from numpy.linalg import inv, LinAlgError, norm, cond, svd
 
-from .basic import solve, solve_triangular, matrix_balance
+from ._basic import solve, solve_triangular, matrix_balance
 from .lapack import get_lapack_funcs
-from .decomp_schur import schur
-from .decomp_lu import lu
-from .decomp_qr import qr
+from ._decomp_schur import schur
+from ._decomp_lu import lu
+from ._decomp_qr import qr
 from ._decomp_qz import ordqz
-from .decomp import _asarray_validated
-from .special_matrices import kron, block_diag
+from ._decomp import _asarray_validated
+from ._special_matrices import kron, block_diag
 
 __all__ = ['solve_sylvester',
            'solve_continuous_lyapunov', 'solve_discrete_lyapunov',
@@ -412,7 +412,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
     ----------
     .. [1]  P. van Dooren , "A Generalized Eigenvalue Approach For Solving
        Riccati Equations.", SIAM Journal on Scientific and Statistical
-       Computing, Vol.2(2), DOI: 10.1137/0902010
+       Computing, Vol.2(2), :doi:`10.1137/0902010`
 
     .. [2] A.J. Laub, "A Schur Method for Solving Algebraic Riccati
        Equations.", Massachusetts Institute of Technology. Laboratory for
@@ -420,7 +420,7 @@ def solve_continuous_are(a, b, q, r, e=None, s=None, balanced=True):
        http://hdl.handle.net/1721.1/1301
 
     .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001,
-       SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993
+       SIAM J. Sci. Comput., 2001, Vol.22(5), :doi:`10.1137/S1064827500367993`
 
     Examples
     --------
@@ -617,7 +617,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
     ----------
     .. [1]  P. van Dooren , "A Generalized Eigenvalue Approach For Solving
        Riccati Equations.", SIAM Journal on Scientific and Statistical
-       Computing, Vol.2(2), DOI: 10.1137/0902010
+       Computing, Vol.2(2), :doi:`10.1137/0902010`
 
     .. [2] A.J. Laub, "A Schur Method for Solving Algebraic Riccati
        Equations.", Massachusetts Institute of Technology. Laboratory for
@@ -625,7 +625,7 @@ def solve_discrete_are(a, b, q, r, e=None, s=None, balanced=True):
        http://hdl.handle.net/1721.1/1301
 
     .. [3] P. Benner, "Symplectic Balancing of Hamiltonian Matrices", 2001,
-       SIAM J. Sci. Comput., 2001, Vol.22(5), DOI: 10.1137/S1064827500367993
+       SIAM J. Sci. Comput., 2001, Vol.22(5), :doi:`10.1137/S1064827500367993`
 
     Examples
     --------

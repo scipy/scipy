@@ -8,12 +8,15 @@ Functions
 """
 import numpy as np
 
-from . import zeros as optzeros
+from . import _zeros_py as optzeros
 
 __all__ = ['root_scalar']
 
+ROOT_SCALAR_METHODS = ['bisect', 'brentq', 'brenth', 'ridder', 'toms748',
+                       'newton', 'secant', 'halley']
 
-class MemoizeDer(object):
+
+class MemoizeDer:
     """Decorator that caches the value and derivative(s) of function each
     time it is called.
 
@@ -235,8 +238,8 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
     try:
         methodc = getattr(optzeros, map2underlying.get(meth, meth))
-    except AttributeError:
-        raise ValueError('Unknown solver %s' % meth)
+    except AttributeError as e:
+        raise ValueError('Unknown solver %s' % meth) from e
 
     if meth in ['bisect', 'ridder', 'brentq', 'brenth', 'toms748']:
         if not isinstance(bracket, (list, tuple, np.ndarray)):

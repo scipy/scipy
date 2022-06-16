@@ -1,16 +1,42 @@
-version: 2
-jobs:
-  build_docs:
-    docker:
-      # CircleCI maintains a library of pre-built images
-      # documented at https://circleci.com/docs/2.0/circleci-images/
-      - image: circleci/python:3.7.0
+version: 2.1
 
-    working_directory: ~/repo
+# Aliases to reuse
+_defaults: &defaults
+  docker:
+    # CircleCI maintains a library of pre-built images
+    # documented at https://circleci.com/docs/2.0/circleci-images/
+    - image: cimg/python:3.8
+  working_directory: ~/repo
 
+commands:
+  check-skip:
     steps:
-      - checkout
+      - run:
+          name: Check-skip
+          command: |
+            if [ ! -d "scipy" ]; then
+              echo "Build was not run due to skip, exiting job ${CIRCLE_JOB} for PR ${CIRCLE_PULL_REQUEST}."
+              circleci-agent step halt;
+            fi
 
+            export git_log=$(git log --max-count=1 --pretty=format:"%B" | tr "\n" " ")
+            echo "Got commit message:"
+            echo "${git_log}"
+            if [[ -v CIRCLE_PULL_REQUEST ]] && ([[ "$git_log" == *"[skip circle]"* ]] || [[ "$git_log" == *"[circle skip]"* ]]); then
+              echo "Skip detected, exiting job ${CIRCLE_JOB} for PR ${CIRCLE_PULL_REQUEST}."
+              circleci-agent step halt;
+            fi
+
+  apt-install:
+    steps:
+      - run:
+          name: Install apt packages
+          command: |
+            sudo apt-get update
+            sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache
+
+  merge:
+    steps:
       - run:
           name: merge with upstream
           command: |
@@ -18,10 +44,21 @@ jobs:
             echo ${CI_PULL_REQUEST//*pull\//} | tee merge.txt
             if [[ $(cat merge.txt) != "" ]]; then
               echo "Merging $(cat merge.txt)";
-              git remote add upstream git://github.com/scipy/scipy.git;
+              git remote add upstream https://github.com/scipy/scipy.git;
               git pull --ff-only upstream "refs/pull/$(cat merge.txt)/merge";
-              git fetch upstream master;
+              git fetch upstream main;
             fi
+
+jobs:
+# Build SciPy from source
+  build_scipy:
+    <<: *defaults
+    steps:
+      - checkout
+      - check-skip
+      - merge
+
+      - apt-install
 
       - run:
           name: update submodules
@@ -29,56 +66,105 @@ jobs:
             git submodule init
             git submodule update
 
-      - run:
-          name: install Debian dependencies
-          command: |
-            sudo apt-get update
-            sudo apt-get install libatlas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libfreetype6-dev libpng-dev zlib1g zlib1g-dev texlive-fonts-recommended texlive-latex-recommended texlive-latex-extra texlive-generic-extra latexmk texlive-xetex fonts-freefont-otf
+      - restore_cache:
+          keys:
+              - deps_ccache-{{ .Branch }}
+              - deps_ccache
 
       - run:
           name: setup Python venv
           command: |
-            python3 -m venv venv
-            . venv/bin/activate
             pip install --install-option="--no-cython-compile" cython
-            pip install numpy
-            pip install nose mpmath argparse Pillow codecov matplotlib Sphinx
+            pip install numpy==1.21.5
+            pip install -r doc_requirements.txt
+            # `asv` pin because of slowdowns reported in gh-15568
+            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson
             pip install pybind11
+            # extra benchmark deps
+            pip install pyfftw cffi pytest
+
+      - run:
+          name: build SciPy
+          command: |
+            python dev.py --build-only -j2
+
+      - save_cache:
+          key: deps_ccache-{{ .Branch }}
+          paths:
+            - ~/.ccache
+            - ~/.cache/pip
+
+      - run:
+          name: ccache performance
+          command: |
+            ccache -s
+
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - .
+
+# Build docs
+  build_docs:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+
+      - check-skip
+      - apt-install
 
       - run:
           name: build docs
+          no_output_timeout: 25m
           command: |
-            . venv/bin/activate
-            export SHELL=$(which bash)
-            python -u runtests.py -g -j2 --doc html-scipyorg --doc latex
-            make -C doc/build/latex all-pdf LATEXOPTS="-file-line-error -halt-on-error"
-            cp -f doc/build/latex/scipy-ref.pdf doc/build/html-scipyorg/
+            export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
+            python dev.py -n -j2 --doc html
 
       - store_artifacts:
-          path: doc/build/html-scipyorg
-          destination: html-scipyorg
-
-      - store_artifacts:
-          path: doc/build/latex
-          destination: latex
+          path: doc/build/html
+          destination: html
 
       - persist_to_workspace:
           root: doc/build
           paths:
-            - html-scipyorg
+            - html
 
+# Run benchmarks
+
+  run_benchmarks:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+
+      - check-skip
+      - apt-install
+
+      - run:
+          name: run asv
+          no_output_timeout: 30m
+          command: |
+            export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
+            cd benchmarks
+            asv machine --machine CircleCI
+            export SCIPY_GLOBAL_BENCH_NUMTRIALS=1
+            export SCIPY_ALLOW_BENCH_IMPORT_ERRORS=0
+            export OPENBLAS_NUM_THREADS=1
+            time asv --config asv.conf.json dev -m CircleCI --python=same --bench '^((?!BenchGlobal|QuadraticAssignment).)*$'
+            asv --config asv.conf.json publish
+
+      - store_artifacts:
+          path: benchmarks/html
+          destination: html-benchmarks
 
 # Upload build output to scipy/devdocs repository, using SSH deploy keys.
-# The keys are only available for builds on master branch.
+# The keys are only available for builds on main branch.
 # https://developer.github.com/guides/managing-deploy-keys/
 # https://circleci.com/docs/2.0/configuration-reference/#add_ssh_keys
 
   deploy:
-    docker:
-      - image: circleci/python:3.7.0
-
-    working_directory: ~/repo
-
+    <<: *defaults
     steps:
       - attach_workspace:
           at: /tmp/build
@@ -99,7 +185,7 @@ jobs:
             (git checkout --orphan tmp && git branch -D gh-pages || true);
             git checkout --orphan gh-pages;
             git reset --hard;
-            cp -R /tmp/build/html-scipyorg/. .;
+            cp -R /tmp/build/html/. .;
             touch .nojekyll;
             git config --global user.email "scipy-circleci-bot@nomail";
             git config --global user.name "scipy-circleci-bot";
@@ -112,11 +198,16 @@ workflows:
   version: 2
   default:
     jobs:
-      - build_docs
+      - build_scipy
+      - build_docs:
+          requires:
+            - build_scipy
+      - run_benchmarks:
+          requires:
+            - build_scipy
       - deploy:
           requires:
             - build_docs
-
           filters:
             branches:
-              only: master
+              only: main

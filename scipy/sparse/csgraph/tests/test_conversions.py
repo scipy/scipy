@@ -12,11 +12,8 @@ def test_csgraph_from_dense():
 
     for null_value in [0, np.nan, np.inf]:
         G[all_nulls] = null_value
-        olderr = np.seterr(invalid="ignore")
-        try:
+        with np.errstate(invalid="ignore"):
             G_csr = csgraph_from_dense(G, null_value=0)
-        finally:
-            np.seterr(**olderr)
 
         G[all_nulls] = 0
         assert_array_almost_equal(G, G_csr.toarray())
@@ -24,11 +21,8 @@ def test_csgraph_from_dense():
     for null_value in [np.nan, np.inf]:
         G[all_nulls] = 0
         G[some_nulls] = null_value
-        olderr = np.seterr(invalid="ignore")
-        try:
+        with np.errstate(invalid="ignore"):
             G_csr = csgraph_from_dense(G, null_value=0)
-        finally:
-            np.seterr(**olderr)
 
         G[all_nulls] = 0
         assert_array_almost_equal(G, G_csr.toarray())

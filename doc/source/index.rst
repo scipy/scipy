@@ -1,113 +1,101 @@
-SciPy
-=====
-
-:Release: |release|
-:Date: |today|
-
-SciPy (pronounced "Sigh Pie") is open-source software for mathematics,
-science, and engineering.
-
-.. toctree::
-   :maxdepth: 1
-
-   install_upgrade
-   api
-   release
-
-Tutorial
---------
-
-Tutorials with worked examples and background information for most SciPy
-submodules.
-
-.. toctree::
-   :maxdepth: 2
-
-   tutorial/index.rst
-
-Developer Documentation
------------------------
-
-If you're interested in contributing to SciPy, start here:
-
-.. toctree::
-   :maxdepth: 1
-
-   dev/conduct/code_of_conduct
-   hacking
-   dev/contributor/contributor_toc
-
-To get an overview of where help or new features are desired or planned, see
-the roadmap:
-
-.. toctree::
-   :maxdepth: 1
-
-   roadmap
-   roadmap-detailed
-   toolchain
-
-For a more detailed look at how the SciPy project works:
-
-.. toctree::
-   :maxdepth: 1
-
-   dev/core-dev/index
-   dev/governance/governance
-
-.. This toctree defines previous/next for contributor guide documents
-.. toctree::
-   :hidden:
-
-   dev/contributor/quickstart_mac
-   dev/contributor/quickstart_ubuntu
-   dev/contributor/development_workflow
-   dev/contributor/pep8
-   dev/contributor/rendering_documentation
-   dev/contributor/runtests
-   dev/contributor/benchmarking
-   dev/contributor/cython
-   dev/contributor/adding_new
-
-.. These files are not intended to be in any toctree. because they have not
-   been maintained.They should only be reached via the contributor guide if
-   they are specifically sought, not via next/previous links.
-..   building/index
-..   dev/gitwash/gitwash
-..   dev/contributor/recommended_development_setup
-..   dev/contributor/compiled_code
-
+.. template taken from Pandas
 
 .. module:: scipy
 
-API Reference
--------------
+*******************
+SciPy documentation
+*******************
 
-The exact API of all functions and classes, as given by the docstrings. The API
-documents expected types and allowed features for all functions, and all
-parameters available for the algorithms.
+**Date**: |today| **Version**: |version|
+
+**Download documentation**: https://docs.scipy.org/doc/
+
+**Useful links**:
+`Install <https://scipy.org/install/>`__ |
+`Source Repository <https://github.com/scipy/scipy>`__ |
+`Issues & Ideas <https://github.com/scipy/scipy/issues>`__ |
+`Q&A Support <https://stackoverflow.com/questions/tagged/scipy>`__ |
+`Mailing List <https://mail.python.org/mailman3/lists/scipy-dev.python.org/>`__
+
+**SciPy** (pronounced "Sigh Pie") is an open-source software for mathematics,
+science, and engineering.
+
+.. panels::
+    :card: + intro-card text-center
+    :column: col-lg-6 col-md-6 col-sm-6 col-xs-12 d-flex
+
+    ---
+    :img-top: _static/index_getting_started.png
+
+    Getting started
+    ^^^^^^^^^^^^^^^
+
+    New to *SciPy*? Check out the getting started guides. They contain an
+    introduction to *SciPy'* main concepts and links to additional tutorials.
+
+    +++
+
+    .. link-button:: getting_started_ref
+            :type: ref
+            :text: To the getting started guides
+            :classes: btn-block btn-secondary stretched-link
+
+    ---
+    :img-top: _static/index_user_guide.png
+
+    User guide
+    ^^^^^^^^^^
+
+    The user guide provides in-depth information on the
+    key concepts of SciPy with useful background information and explanation.
+
+    +++
+
+    .. link-button:: user_guide
+            :type: ref
+            :text: To the user guide
+            :classes: btn-block btn-secondary stretched-link
+
+    ---
+    :img-top: _static/index_api.png
+
+    API reference
+    ^^^^^^^^^^^^^
+
+    The reference guide contains a detailed description of
+    the SciPy API. The reference describes how the methods work and which parameters can
+    be used. It assumes that you have an understanding of the key concepts.
+
+    +++
+
+    .. link-button:: scipy-api
+            :type: ref
+            :text: To the reference guide
+            :classes: btn-block btn-secondary stretched-link
+
+    ---
+    :img-top: _static/index_contribute.png
+
+    Developer guide
+    ^^^^^^^^^^^^^^^
+
+    Saw a typo in the documentation? Want to improve
+    existing functionalities? The contributing guidelines will guide
+    you through the process of improving SciPy.
+
+    +++
+
+    .. link-button:: scipy-development
+            :type: ref
+            :text: To the development guide
+            :classes: btn-block btn-secondary stretched-link
 
 .. toctree::
    :maxdepth: 1
+   :hidden:
 
-   cluster
-   constants
-   fft
-   fftpack
-   integrate
-   interpolate
-   io
-   linalg
-   misc
-   ndimage
-   odr
-   optimize
-   signal
-   sparse
-   sparse.linalg
-   sparse.csgraph
-   spatial
-   special
-   stats
-   stats.mstats
-   ccallback
+   Getting started <getting_started>
+   User Guide <tutorial/index>
+   API reference <reference/index>
+   Development <dev/index>
+   Release notes <release>

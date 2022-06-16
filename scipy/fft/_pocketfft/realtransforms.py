@@ -6,14 +6,14 @@ import functools
 
 
 def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
-         overwrite_x=False, workers=None):
+         overwrite_x=False, workers=None, orthogonalize=None):
     """Forward or backward 1-D DCT/DST
 
     Parameters
     ----------
-    forward: bool
+    forward : bool
         Transform direction (determines type and normalisation)
-    transform: {pypocketfft.dct, pypocketfft.dst}
+    transform : {pypocketfft.dct, pypocketfft.dst}
         The transform to perform
     """
     tmp = _asfarray(x)
@@ -36,14 +36,14 @@ def _r2r(forward, transform, x, type=2, n=None, axis=-1, norm=None,
 
     out = (tmp if overwrite_x else None)
 
-    # For complex input, transform real and imaginary components seperably
+    # For complex input, transform real and imaginary components separably
     if np.iscomplexobj(x):
-        out = out or np.empty_like(tmp)
+        out = np.empty_like(tmp) if out is None else out
         transform(tmp.real, type, (axis,), norm, out.real, workers)
         transform(tmp.imag, type, (axis,), norm, out.imag, workers)
         return out
 
-    return transform(tmp, type, (axis,), norm, out, workers)
+    return transform(tmp, type, (axis,), norm, out, workers, orthogonalize)
 
 
 dct = functools.partial(_r2r, True, pfft.dct)
@@ -58,14 +58,14 @@ idst.__name__ = 'idst'
 
 
 def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
-          overwrite_x=False, workers=None):
+          overwrite_x=False, workers=None, orthogonalize=None):
     """Forward or backward nd DCT/DST
 
     Parameters
     ----------
-    forward: bool
+    forward : bool
         Transform direction (determines type and normalisation)
-    transform: {pypocketfft.dct, pypocketfft.dst}
+    transform : {pypocketfft.dct, pypocketfft.dst}
         The transform to perform
     """
     tmp = _asfarray(x)
@@ -89,14 +89,14 @@ def _r2rn(forward, transform, x, type=2, s=None, axes=None, norm=None,
     workers = _workers(workers)
     out = (tmp if overwrite_x else None)
 
-    # For complex input, transform real and imaginary components seperably
+    # For complex input, transform real and imaginary components separably
     if np.iscomplexobj(x):
-        out = out or np.empty_like(tmp)
+        out = np.empty_like(tmp) if out is None else out
         transform(tmp.real, type, axes, norm, out.real, workers)
         transform(tmp.imag, type, axes, norm, out.imag, workers)
         return out
 
-    return transform(tmp, type, axes, norm, out, workers)
+    return transform(tmp, type, axes, norm, out, workers, orthogonalize)
 
 
 dctn = functools.partial(_r2rn, True, pfft.dct)

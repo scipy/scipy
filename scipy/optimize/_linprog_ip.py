@@ -23,11 +23,12 @@ import scipy as sp
 import scipy.sparse as sps
 from warnings import warn
 from scipy.linalg import LinAlgError
-from .optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
+from ._optimize import OptimizeWarning, OptimizeResult, _check_unknown_options
 from ._linprog_util import _postsolve
 has_umfpack = True
 has_cholmod = True
 try:
+    import sksparse
     from sksparse.cholmod import cholesky as cholmod
     from sksparse.cholmod import analyze as cholmod_analyze
 except ImportError:
@@ -113,7 +114,10 @@ def _get_solver(M, sparse=False, lstsq=False, sym_pos=True,
                 # this seems to cache the matrix factorization, so solving
                 # with multiple right hand sides is much faster
                 def solve(r, sym_pos=sym_pos):
-                    return sp.linalg.solve(M, r, sym_pos=sym_pos)
+                    if sym_pos:
+                        return sp.linalg.solve(M, r, assume_a="pos")
+                    else:
+                        return sp.linalg.solve(M, r)
     # There are many things that can go wrong here, and it's hard to say
     # what all of them are. It doesn't really matter: if the matrix can't be
     # factorized, return None. get_solver will be called again with different
@@ -708,8 +712,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
     if disp:
         _display_iter(rho_p, rho_d, rho_g, "-", rho_mu, obj, header=True)
     if callback is not None:
-        x_o, fun, slack, con, _ = _postsolve(x/tau, postsolve_args,
-                                                tol=tol)
+        x_o, fun, slack, con = _postsolve(x/tau, postsolve_args)
         res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                               'con': con, 'nit': iteration, 'phase': 1,
                               'complete': False, 'status': 0,
@@ -789,8 +792,7 @@ def _ip_hsd(A, b, c, c0, alpha0, beta, maxiter, disp, tol, sparse, lstsq,
         if disp:
             _display_iter(rho_p, rho_d, rho_g, alpha, rho_mu, obj)
         if callback is not None:
-            x_o, fun, slack, con, _ = _postsolve(x/tau, postsolve_args,
-                                                    tol=tol)
+            x_o, fun, slack, con = _postsolve(x/tau, postsolve_args)
             res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
                                   'con': con, 'nit': iteration, 'phase': 1,
                                   'complete': False, 'status': 0,
@@ -837,6 +839,8 @@ def _linprog_ip(c, c0, A, b, callback, postsolve_args, maxiter=1000, tol=1e-8,
 
         A @ x == b
             x >= 0
+
+    User-facing documentation is in _linprog_doc.py.
 
     Parameters
     ----------

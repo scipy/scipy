@@ -10,7 +10,7 @@ from scipy._lib._util import check_random_state
 __all__ = ['basinhopping']
 
 
-class Storage(object):
+class Storage:
     """
     Class used to store the lowest energy structure
     """
@@ -32,7 +32,7 @@ class Storage(object):
         return self.minres
 
 
-class BasinHoppingRunner(object):
+class BasinHoppingRunner:
     """This class implements the core of the basinhopping algorithm.
 
     x0 : ndarray
@@ -178,7 +178,7 @@ class BasinHoppingRunner(object):
                                 accept, minres.fun))
 
 
-class AdaptiveStepsize(object):
+class AdaptiveStepsize:
     """
     Class to implement adaptive stepsize.
 
@@ -245,9 +245,8 @@ class AdaptiveStepsize(object):
             self.naccept += 1
 
 
-class RandomDisplacement(object):
-    """
-    Add a random displacement of maximum size `stepsize` to each coordinate
+class RandomDisplacement:
+    """Add a random displacement of maximum size `stepsize` to each coordinate.
 
     Calling this updates `x` in-place.
 
@@ -255,9 +254,18 @@ class RandomDisplacement(object):
     ----------
     stepsize : float, optional
         Maximum stepsize in any dimension
-    random_gen : {None, `np.random.RandomState`, `np.random.Generator`}
-        The random number generator that generates the displacements
+    random_gen : {None, int, `numpy.random.Generator`,
+                  `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+
     """
+
     def __init__(self, stepsize=0.5, random_gen=None):
         self.stepsize = stepsize
         self.random_gen = check_random_state(random_gen)
@@ -268,7 +276,7 @@ class RandomDisplacement(object):
         return x
 
 
-class MinimizerWrapper(object):
+class MinimizerWrapper:
     """
     wrap a minimizer function as a minimizer class
     """
@@ -284,17 +292,26 @@ class MinimizerWrapper(object):
             return self.minimizer(self.func, x0, **self.kwargs)
 
 
-class Metropolis(object):
-    """
-    Metropolis acceptance criterion
+class Metropolis:
+    """Metropolis acceptance criterion.
 
     Parameters
     ----------
     T : float
         The "temperature" parameter for the accept or reject criterion.
-    random_gen : {None, `np.random.RandomState`, `np.random.Generator`}
-        Random number generator used for acceptance test
+    random_gen : {None, int, `numpy.random.Generator`,
+                  `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
+        Random number generator used for acceptance test.
+
     """
+
     def __init__(self, T, random_gen=None):
         # Avoid ZeroDivisionError since "MBH can be regarded as a special case
         # of the BH framework with the Metropolis criterion, where temperature
@@ -308,7 +325,18 @@ class Metropolis(object):
         If new is higher than old, there is a chance it will be accepted,
         less likely for larger differences.
         """
-        w = math.exp(min(0, -float(energy_new - energy_old) * self.beta))
+        with np.errstate(invalid='ignore'):
+            # The energy values being fed to Metropolis are 1-length arrays, and if
+            # they are equal, their difference is 0, which gets multiplied by beta,
+            # which is inf, and array([0]) * float('inf') causes
+            #
+            # RuntimeWarning: invalid value encountered in multiply
+            #
+            # Ignore this warning so so when the algorithm is on a flat plane, it always
+            # accepts the step, to try to move off the plane.
+            prod = -(energy_new - energy_old) * self.beta
+            w = math.exp(min(0, prod))
+
         rand = self.random_gen.uniform()
         return w >= rand
 
@@ -323,9 +351,8 @@ class Metropolis(object):
 def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
                  minimizer_kwargs=None, take_step=None, accept_test=None,
                  callback=None, interval=50, disp=False, niter_success=None,
-                 seed=None):
-    """
-    Find the global minimum of a function using the basin-hopping algorithm
+                 seed=None, *, target_accept_rate=0.5, stepwise_factor=0.9):
+    """Find the global minimum of a function using the basin-hopping algorithm.
 
     Basin-hopping is a two-phase method that combines a global stepping
     algorithm with local minimization at each step. Designed to mimic
@@ -345,7 +372,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     x0 : array_like
         Initial guess.
     niter : integer, optional
-        The number of basin-hopping iterations
+        The number of basin-hopping iterations. There will be a total of
+        ``niter + 1`` runs of the local minimizer.
     T : float, optional
         The "temperature" parameter for the accept or reject criterion. Higher
         "temperatures" mean that larger jumps in function value will be
@@ -394,19 +422,34 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     niter_success : integer, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
-    seed : {int, `~np.random.RandomState`, `~np.random.Generator`}, optional
-        If `seed` is not specified the `~np.random.RandomState` singleton is
-        used.
-        If `seed` is an int, a new ``RandomState`` instance is used, seeded
-        with seed.
-        If `seed` is already a ``RandomState`` or ``Generator`` instance, then
-        that object is used.
+    seed : {None, int, `numpy.random.Generator`,
+            `numpy.random.RandomState`}, optional
+
+        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
+        singleton is used.
+        If `seed` is an int, a new ``RandomState`` instance is used,
+        seeded with `seed`.
+        If `seed` is already a ``Generator`` or ``RandomState`` instance then
+        that instance is used.
         Specify `seed` for repeatable minimizations. The random numbers
         generated with this seed only affect the default Metropolis
         `accept_test` and the default `take_step`. If you supply your own
         `take_step` and `accept_test`, and these functions use random
         number generation, then those functions are responsible for the state
         of their random number generator.
+    target_accept_rate : float, optional
+        The target acceptance rate that is used to adjust the `stepsize`.
+        If the current acceptance rate is greater than the target,
+        then the `stepsize` is increased. Otherwise, it is decreased.
+        Range is (0, 1). Default is 0.5.
+
+        .. versionadded:: 1.8.0
+
+    stepwise_factor : float, optional
+        The `stepsize` is multiplied or divided by this stepwise factor upon
+        each update. Range is (0, 1). Default is 0.9.
+
+        .. versionadded:: 1.8.0
 
     Returns
     -------
@@ -526,8 +569,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> minimizer_kwargs = {"method": "BFGS"}
     >>> ret = basinhopping(func, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200)
-    >>> print("global minimum: x = %.4f, f(x0) = %.4f" % (ret.x, ret.fun))
-    global minimum: x = -0.1951, f(x0) = -1.0009
+    >>> print("global minimum: x = %.4f, f(x) = %.4f" % (ret.x, ret.fun))
+    global minimum: x = -0.1951, f(x) = -1.0009
 
     Next consider a 2-D minimization problem. Also, this time, we
     will use gradient information to significantly speed up the search.
@@ -547,23 +590,24 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> x0 = [1.0, 1.0]
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200)
-    >>> print("global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
+    >>> print("global minimum: x = [%.4f, %.4f], f(x) = %.4f" % (ret.x[0],
     ...                                                           ret.x[1],
     ...                                                           ret.fun))
-    global minimum: x = [-0.1951, -0.1000], f(x0) = -1.0109
+    global minimum: x = [-0.1951, -0.1000], f(x) = -1.0109
 
 
     Here is an example using a custom step-taking routine. Imagine you want
     the first coordinate to take larger steps than the rest of the coordinates.
     This can be implemented like so:
 
-    >>> class MyTakeStep(object):
+    >>> class MyTakeStep:
     ...    def __init__(self, stepsize=0.5):
     ...        self.stepsize = stepsize
+    ...        self.rng = np.random.default_rng()
     ...    def __call__(self, x):
     ...        s = self.stepsize
-    ...        x[0] += np.random.uniform(-2.*s, 2.*s)
-    ...        x[1:] += np.random.uniform(-s, s, x[1:].shape)
+    ...        x[0] += self.rng.uniform(-2.*s, 2.*s)
+    ...        x[1:] += self.rng.uniform(-s, s, x[1:].shape)
     ...        return x
 
     Since ``MyTakeStep.stepsize`` exists basinhopping will adjust the magnitude
@@ -573,10 +617,10 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> mytakestep = MyTakeStep()
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200, take_step=mytakestep)
-    >>> print("global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
+    >>> print("global minimum: x = [%.4f, %.4f], f(x) = %.4f" % (ret.x[0],
     ...                                                           ret.x[1],
     ...                                                           ret.fun))
-    global minimum: x = [-0.1951, -0.1000], f(x0) = -1.0109
+    global minimum: x = [-0.1951, -0.1000], f(x) = -1.0109
 
 
     Now, let's do an example using a custom callback function which prints the
@@ -587,19 +631,20 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     We'll run it for only 10 basinhopping steps this time.
 
-    >>> np.random.seed(1)
+    >>> rng = np.random.default_rng()
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
-    ...                    niter=10, callback=print_fun)
+    ...                    niter=10, callback=print_fun, seed=rng)
     at minimum 0.4159 accepted 1
+    at minimum -0.4317 accepted 1
+    at minimum -1.0109 accepted 1
     at minimum -0.9073 accepted 1
+    at minimum -0.4317 accepted 0
     at minimum -0.1021 accepted 1
-    at minimum -0.1021 accepted 1
-    at minimum 0.9102 accepted 1
-    at minimum 0.9102 accepted 1
-    at minimum 2.2945 accepted 0
-    at minimum -0.1021 accepted 1
-    at minimum -1.0109 accepted 1
-    at minimum -1.0109 accepted 1
+    at minimum -0.7425 accepted 1
+    at minimum -0.9073 accepted 1
+    at minimum -0.4317 accepted 0
+    at minimum -0.7425 accepted 1
+    at minimum -0.9073 accepted 1
 
 
     The minimum at -1.0109 is actually the global minimum, found already on the
@@ -607,7 +652,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     Now let's implement bounds on the problem using a custom ``accept_test``:
 
-    >>> class MyBounds(object):
+    >>> class MyBounds:
     ...     def __init__(self, xmax=[1.1,1.1], xmin=[-1.1,-1.1] ):
     ...         self.xmax = np.array(xmax)
     ...         self.xmin = np.array(xmin)
@@ -622,9 +667,14 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     ...                    niter=10, accept_test=mybounds)
 
     """
+    if target_accept_rate <= 0. or target_accept_rate >= 1.:
+        raise ValueError('target_accept_rate has to be in range (0, 1)')
+    if stepwise_factor <= 0. or stepwise_factor >= 1.:
+        raise ValueError('stepwise_factor has to be in range (0, 1)')
+
     x0 = np.array(x0)
 
-    # set up the np.random.RandomState generator
+    # set up the np.random generator
     rng = check_random_state(seed)
 
     # set up minimizer
@@ -640,14 +690,19 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
         # if take_step.stepsize exists then use AdaptiveStepsize to control
         # take_step.stepsize
         if hasattr(take_step, "stepsize"):
-            take_step_wrapped = AdaptiveStepsize(take_step, interval=interval,
-                                                 verbose=disp)
+            take_step_wrapped = AdaptiveStepsize(
+                take_step, interval=interval,
+                accept_rate=target_accept_rate,
+                factor=stepwise_factor,
+                verbose=disp)
         else:
             take_step_wrapped = take_step
     else:
         # use default
         displace = RandomDisplacement(stepsize=stepsize, random_gen=rng)
         take_step_wrapped = AdaptiveStepsize(displace, interval=interval,
+                                             accept_rate=target_accept_rate,
+                                             factor=stepwise_factor,
                                              verbose=disp)
 
     # set up accept tests
@@ -666,6 +721,11 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
 
     bh = BasinHoppingRunner(x0, wrapped_minimizer, take_step_wrapped,
                             accept_tests, disp=disp)
+
+    # The wrapped minimizer is called once during construction of
+    # BasinHoppingRunner, so run the callback
+    if callable(callback):
+        callback(bh.storage.minres.x, bh.storage.minres.fun, True)
 
     # start main iteration loop
     count, i = 0, 0
@@ -697,6 +757,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     res.fun = res.lowest_optimization_result.fun
     res.message = message
     res.nit = i + 1
+    res.success = res.lowest_optimization_result.success
     return res
 
 

@@ -1,7 +1,10 @@
+#include "ckdtree_decl.h"
+
 #include <cmath>
 #include <cstdlib>
 #include <cstring>
 
+#include <algorithm>
 #include <vector>
 #include <string>
 #include <sstream>
@@ -9,10 +12,6 @@
 #include <typeinfo>
 #include <stdexcept>
 #include <ios>
-
-#include "ckdtree_decl.h"
-#include "ordered_pair.h"
-#include "partial_sort.h"
 
 #define tree_buffer_root(buf) (&(buf)[0][0])
 
@@ -28,7 +27,7 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
 
     ckdtreenode new_node, *n, *root;
     ckdtree_intp_t node_index, _less, _greater;
-    ckdtree_intp_t i, j, p, q, d;
+    ckdtree_intp_t i, j, p, d;
     double size, split, minval, maxval;
 
     /* put a new node into the node stack */
@@ -91,69 +90,70 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
         }
 
         /* construct new inner node */
+        auto index_compare = [=](ckdtree_intp_t a, ckdtree_intp_t b) {
+            const double point_a = data[a * m + d];
+            const double point_b = data[b * m + d];
+            return point_a < point_b;
+        };
+
+        auto partition_pivot = [=](ckdtree_intp_t* first, ckdtree_intp_t* last, double pivot) {
+            const auto partition_ptr = std::partition(
+                first, last,
+                [&](ckdtree_intp_t a) { return data[a * m + d] < pivot; });
+            return partition_ptr - indices;
+        };
 
         if (CKDTREE_LIKELY(_median)) {
             /* split on median to create a balanced tree
              * adopted from scikit-learn
              */
-            i = (end_idx - start_idx) / 2;
-            partition_node_indices(data, indices + start_idx, d, i, m,
-                end_idx - start_idx);
-            p = start_idx + i;
-            split = data[indices[p]*m+d];
+            const auto n_points = end_idx - start_idx;
+            auto* node_indices = indices + start_idx;
+            auto mid = node_indices + n_points / 2;
+            std::nth_element(
+                node_indices, mid, node_indices + n_points, index_compare);
+
+            split = data[*mid * m + d];
+            p = partition_pivot(node_indices, mid, split);
         }
         else {
             /* split with the sliding midpoint rule */
             split = (maxval + minval) / 2;
+
+            p = partition_pivot(indices + start_idx, indices + end_idx, split);
         }
 
-        p = start_idx;
-        q = end_idx - 1;
-        while (p <= q) {
-            if (data[indices[p] * m + d] < split)
-                ++p;
-            else if (data[indices[q] * m + d] >= split)
-                --q;
-            else {
-                ckdtree_intp_t t = indices[p];
-                indices[p] = indices[q];
-                indices[q] = t;
-                ++p;
-                --q;
-            }
-        }
         /* slide midpoint if necessary */
         if (p == start_idx) {
             /* no points less than split */
-            j = start_idx;
-            split = data[indices[j] * m + d];
-            for (i = start_idx+1; i < end_idx; ++i) {
-                if (data[indices[i] * m + d] < split) {
-                    j = i;
-                    split = data[indices[j] * m + d];
-                }
-            }
-            ckdtree_intp_t t = indices[start_idx];
-            indices[start_idx] = indices[j];
-            indices[j] = t;
-            p = start_idx + 1;
-            q = start_idx;
+            auto min_idx = *std::min_element(
+                indices + start_idx, indices + end_idx, index_compare);
+            split = std::nextafter(data[min_idx * m + d], HUGE_VAL);
+            p = partition_pivot(indices + start_idx, indices + end_idx, split);
         }
         else if (p == end_idx) {
             /* no points greater than split */
-            j = end_idx - 1;
-            split = data[indices[j] * m + d];
-            for (i = start_idx; i < end_idx-1; ++i) {
-                if (data[indices[i] * m + d] > split) {
-                    j = i;
-                    split = data[indices[j] * m + d];
-                }
-            }
-            ckdtree_intp_t t = indices[end_idx-1];
-            indices[end_idx-1] = indices[j];
-            indices[j] = t;
-            p = end_idx - 1;
-            q = end_idx - 2;
+            auto max_idx = *std::max_element(
+                indices + start_idx, indices + end_idx, index_compare);
+            split = data[max_idx * m + d];
+            p = partition_pivot(indices + start_idx, indices + end_idx, split);
+        }
+
+        if (CKDTREE_UNLIKELY(p == start_idx || p == end_idx)) {
+            // All children are equal in this dimenion, try again with new bounds
+            assert(!_compact);
+            self->tree_buffer->pop_back();
+            std::vector<double> tmp_bounds(2 * m);
+            double* tmp_mins = &tmp_bounds[0];
+            std::copy_n(mins, m, tmp_mins);
+            double* tmp_maxes = &tmp_bounds[m];
+            std::copy_n(maxes, m, tmp_maxes);
+
+            const auto fixed_val = data[indices[start_idx]*m + d];
+            tmp_mins[d] = fixed_val;
+            tmp_maxes[d] = fixed_val;
+
+            return build(self, start_idx, end_idx, tmp_maxes, tmp_mins, _median, _compact);
         }
 
         if (CKDTREE_LIKELY(_compact)) {
@@ -244,4 +244,3 @@ build_weights (ckdtree *self, double *node_weights, double *weights)
     add_weights(self, node_weights, 0, weights);
     return 0;
 }
-

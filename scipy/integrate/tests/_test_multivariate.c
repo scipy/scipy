@@ -67,7 +67,7 @@ static const routine_t routines[] = {
 static int create_pointers(PyObject *module)
 {
     PyObject *d, *obj = NULL;
-    int i;
+    size_t i;
 
     d = PyModule_GetDict(module);
     if (d == NULL) {

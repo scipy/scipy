@@ -157,6 +157,44 @@ def test_sg_coeffs_large():
     coeffs1 = savgol_coeffs(31, 9, deriv=1)
     assert_array_almost_equal(coeffs1, -coeffs1[::-1])
 
+# --------------------------------------------------------------------
+# savgol_coeffs tests for even window length
+# --------------------------------------------------------------------
+
+
+def test_sg_coeffs_even_window_length():
+    # Simple case - deriv=0, polyorder=0, 1
+    window_lengths = [4, 6, 8, 10, 12, 14, 16]
+    for length in window_lengths:
+        h_p_d = savgol_coeffs(length, 0, 0)
+        assert_allclose(h_p_d, 1/length)
+
+    # Verify with closed forms
+    # deriv=1, polyorder=1, 2
+    def h_p_d_closed_form_1(k, m):
+        return 6*(k - 0.5)/((2*m + 1)*m*(2*m - 1))
+
+    # deriv=2, polyorder=2
+    def h_p_d_closed_form_2(k, m):
+        numer = 15*(-4*m**2 + 1 + 12*(k - 0.5)**2)
+        denom = 4*(2*m + 1)*(m + 1)*m*(m - 1)*(2*m - 1)
+        return numer/denom
+
+    for length in window_lengths:
+        m = length//2
+        expected_output = [h_p_d_closed_form_1(k, m)
+                           for k in range(-m + 1, m + 1)][::-1]
+        actual_output = savgol_coeffs(length, 1, 1)
+        assert_allclose(expected_output, actual_output)
+        actual_output = savgol_coeffs(length, 2, 1)
+        assert_allclose(expected_output, actual_output)
+
+        expected_output = [h_p_d_closed_form_2(k, m)
+                           for k in range(-m + 1, m + 1)][::-1]
+        actual_output = savgol_coeffs(length, 2, 2)
+        assert_allclose(expected_output, actual_output)
+        actual_output = savgol_coeffs(length, 3, 2)
+        assert_allclose(expected_output, actual_output)
 
 #--------------------------------------------------------------------
 # savgol_filter tests

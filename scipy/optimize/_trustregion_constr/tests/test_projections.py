@@ -148,9 +148,9 @@ class TestProjections(TestCase):
             for z in test_points:
                 # Test if x is in the null_space
                 x = Z.matvec(z)
-                assert_array_almost_equal(A.dot(x), 0, decimal=14)
+                assert_allclose(A.dot(x), 0, rtol=0, atol=2.5e-14)
                 # Test orthogonality
-                assert_array_almost_equal(orthogonality(A, x), 0, decimal=16)
+                assert_allclose(orthogonality(A, x), 0, rtol=0, atol=5e-16)
 
     def test_rowspace_dense(self):
         A = np.array([[1, 2, 3, 4, 0, 5, 0, 7],

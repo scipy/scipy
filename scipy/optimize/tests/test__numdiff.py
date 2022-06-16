@@ -9,7 +9,7 @@ from scipy.sparse import csr_matrix, csc_matrix, lil_matrix
 
 from scipy.optimize._numdiff import (
     _adjust_scheme_to_bounds, approx_derivative, check_derivative,
-    group_columns)
+    group_columns, _eps_for_method, _compute_absolute_step)
 
 
 def test_group_columns():
@@ -40,7 +40,43 @@ def test_group_columns():
     assert_equal(groups_1, groups_2)
 
 
-class TestAdjustSchemeToBounds(object):
+def test_correct_fp_eps():
+    # check that relative step size is correct for FP size
+    EPS = np.finfo(np.float64).eps
+    relative_step = {"2-point": EPS**0.5,
+                    "3-point": EPS**(1/3),
+                     "cs": EPS**0.5}
+    for method in ['2-point', '3-point', 'cs']:
+        assert_allclose(
+            _eps_for_method(np.float64, np.float64, method),
+            relative_step[method])
+        assert_allclose(
+            _eps_for_method(np.complex128, np.complex128, method),
+            relative_step[method]
+        )
+
+    # check another FP size
+    EPS = np.finfo(np.float32).eps
+    relative_step = {"2-point": EPS**0.5,
+                    "3-point": EPS**(1/3),
+                     "cs": EPS**0.5}
+
+    for method in ['2-point', '3-point', 'cs']:
+        assert_allclose(
+            _eps_for_method(np.float64, np.float32, method),
+            relative_step[method]
+        )
+        assert_allclose(
+            _eps_for_method(np.float32, np.float64, method),
+            relative_step[method]
+        )
+        assert_allclose(
+            _eps_for_method(np.float32, np.float32, method),
+            relative_step[method]
+        )
+
+
+class TestAdjustSchemeToBounds:
     def test_no_bounds(self):
         x0 = np.zeros(3)
         h = np.full(3, 1e-2)
@@ -114,7 +150,7 @@ class TestAdjustSchemeToBounds(object):
         assert_equal(one_sided, np.array([False, True]))
 
 
-class TestApproxDerivativesDense(object):
+class TestApproxDerivativesDense:
     def fun_scalar_scalar(self, x):
         return np.sinh(x)
 
@@ -183,7 +219,10 @@ class TestApproxDerivativesDense(object):
         return math.exp(x)
 
     def jac_non_numpy(self, x):
-        return math.exp(x)
+        # x can be a scalar or an array [val].
+        # Cast to true scalar before handing over to math.exp
+        xp = np.asarray(x).item()
+        return math.exp(xp)
 
     def test_scalar_scalar(self):
         x0 = 1.0
@@ -389,6 +428,59 @@ class TestApproxDerivativesDense(object):
         assert_raises(TypeError, approx_derivative, self.jac_non_numpy, x0,
                       **dict(method='cs'))
 
+    def test_fp(self):
+        # checks that approx_derivative works for FP size other than 64.
+        # Example is derived from the minimal working example in gh12991.
+        np.random.seed(1)
+
+        def func(p, x):
+            return p[0] + p[1] * x
+
+        def err(p, x, y):
+            return func(p, x) - y
+
+        x = np.linspace(0, 1, 100, dtype=np.float64)
+        y = np.random.random(100).astype(np.float64)
+        p0 = np.array([-1.0, -1.0])
+
+        jac_fp64 = approx_derivative(err, p0, method='2-point', args=(x, y))
+
+        # parameter vector is float32, func output is float64
+        jac_fp = approx_derivative(err, p0.astype(np.float32),
+                                   method='2-point', args=(x, y))
+        assert err(p0, x, y).dtype == np.float64
+        assert_allclose(jac_fp, jac_fp64, atol=1e-3)
+
+        # parameter vector is float64, func output is float32
+        err_fp32 = lambda p: err(p, x, y).astype(np.float32)
+        jac_fp = approx_derivative(err_fp32, p0,
+                                   method='2-point')
+        assert err_fp32(p0).dtype == np.float32
+        assert_allclose(jac_fp, jac_fp64, atol=1e-3)
+
+        # check upper bound of error on the derivative for 2-point
+        f = lambda x: np.sin(x)
+        g = lambda x: np.cos(x)
+        hess = lambda x: -np.sin(x)
+
+        def calc_atol(h, x0, f, hess, EPS):
+            # truncation error
+            t0 = h / 2 * max(np.abs(hess(x0)), np.abs(hess(x0 + h)))
+            # roundoff error. There may be a divisor (>1) missing from
+            # the following line, so this contribution is possibly
+            # overestimated
+            t1 = EPS / h * max(np.abs(f(x0)), np.abs(f(x0 + h)))
+            return t0 + t1
+
+        for dtype in [np.float16, np.float32, np.float64]:
+            EPS = np.finfo(dtype).eps
+            x0 = np.array(1.0).astype(dtype)
+            h = _compute_absolute_step(None, x0, f(x0), '2-point')
+            atol = calc_atol(h, x0, f, hess, EPS)
+            err = approx_derivative(f, x0, method='2-point',
+                                    abs_step=h) - g(x0)
+            assert abs(err) < atol
+
     def test_check_derivative(self):
         x0 = np.array([-10.0, 10])
         accuracy = check_derivative(self.fun_vector_vector,
@@ -407,7 +499,7 @@ class TestApproxDerivativesDense(object):
         assert_(accuracy == 0)
 
 
-class TestApproxDerivativeSparse(object):
+class TestApproxDerivativeSparse:
     # Example from Numerical Optimization 2nd edition, p. 198.
     def setup_method(self):
         np.random.seed(0)
@@ -482,7 +574,8 @@ class TestApproxDerivativeSparse(object):
             J_dense = approx_derivative(self.fun, self.x0, method=method)
             J_sparse = approx_derivative(
                 self.fun, self.x0, sparsity=(structure, groups), method=method)
-            assert_equal(J_dense, J_sparse.toarray())
+            assert_allclose(J_dense, J_sparse.toarray(),
+                            rtol=5e-16, atol=7e-15)
 
     def test_check_derivative(self):
         def jac(x):
@@ -497,7 +590,7 @@ class TestApproxDerivativeSparse(object):
         assert_(accuracy < 1e-9)
 
 
-class TestApproxDerivativeLinearOperator(object):
+class TestApproxDerivativeLinearOperator:
 
     def fun_scalar_scalar(self, x):
         return np.sinh(x)
@@ -622,3 +715,99 @@ class TestApproxDerivativeLinearOperator(object):
         assert_raises(ValueError, approx_derivative,
                       self.fun_vector_vector, x0,
                       method='2-point', bounds=(1, np.inf))
+
+
+def test_absolute_step_sign():
+    # test for gh12487
+    # if an absolute step is specified for 2-point differences make sure that
+    # the side corresponds to the step. i.e. if step is positive then forward
+    # differences should be used, if step is negative then backwards
+    # differences should be used.
+
+    # function has double discontinuity at x = [-1, -1]
+    # first component is \/, second component is /\
+    def f(x):
+        return -np.abs(x[0] + 1) + np.abs(x[1] + 1)
+
+    # check that the forward difference is used
+    grad = approx_derivative(f, [-1, -1], method='2-point', abs_step=1e-8)
+    assert_allclose(grad, [-1.0, 1.0])
+
+    # check that the backwards difference is used
+    grad = approx_derivative(f, [-1, -1], method='2-point', abs_step=-1e-8)
+    assert_allclose(grad, [1.0, -1.0])
+
+    # check that the forwards difference is used with a step for both
+    # parameters
+    grad = approx_derivative(
+        f, [-1, -1], method='2-point', abs_step=[1e-8, 1e-8]
+    )
+    assert_allclose(grad, [-1.0, 1.0])
+
+    # check that we can mix forward/backwards steps.
+    grad = approx_derivative(
+        f, [-1, -1], method='2-point', abs_step=[1e-8, -1e-8]
+     )
+    assert_allclose(grad, [-1.0, -1.0])
+    grad = approx_derivative(
+        f, [-1, -1], method='2-point', abs_step=[-1e-8, 1e-8]
+    )
+    assert_allclose(grad, [1.0, 1.0])
+
+    # the forward step should reverse to a backwards step if it runs into a
+    # bound
+    # This is kind of tested in TestAdjustSchemeToBounds, but only for a lower level
+    # function.
+    grad = approx_derivative(
+        f, [-1, -1], method='2-point', abs_step=1e-8,
+        bounds=(-np.inf, -1)
+    )
+    assert_allclose(grad, [1.0, -1.0])
+
+    grad = approx_derivative(
+        f, [-1, -1], method='2-point', abs_step=-1e-8, bounds=(-1, np.inf)
+    )
+    assert_allclose(grad, [-1.0, 1.0])
+
+
+def test__compute_absolute_step():
+    # tests calculation of absolute step from rel_step
+    methods = ['2-point', '3-point', 'cs']
+
+    x0 = np.array([1e-5, 0, 1, 1e5])
+
+    EPS = np.finfo(np.float64).eps
+    relative_step = {
+        "2-point": EPS**0.5,
+        "3-point": EPS**(1/3),
+        "cs": EPS**0.5
+    }
+    f0 = np.array(1.0)
+
+    for method in methods:
+        rel_step = relative_step[method]
+        correct_step = np.array([rel_step,
+                                 rel_step * 1.,
+                                 rel_step * 1.,
+                                 rel_step * np.abs(x0[3])])
+
+        abs_step = _compute_absolute_step(None, x0, f0, method)
+        assert_allclose(abs_step, correct_step)
+
+        sign_x0 = (-x0 >= 0).astype(float) * 2 - 1
+        abs_step = _compute_absolute_step(None, -x0, f0, method)
+        assert_allclose(abs_step, sign_x0 * correct_step)
+
+    # if a relative step is provided it should be used
+    rel_step = np.array([0.1, 1, 10, 100])
+    correct_step = np.array([rel_step[0] * x0[0],
+                             relative_step['2-point'],
+                             rel_step[2] * 1.,
+                             rel_step[3] * np.abs(x0[3])])
+
+    abs_step = _compute_absolute_step(rel_step, x0, f0, '2-point')
+    assert_allclose(abs_step, correct_step)
+
+    sign_x0 = (-x0 >= 0).astype(float) * 2 - 1
+    abs_step = _compute_absolute_step(rel_step, -x0, f0, '2-point')
+    assert_allclose(abs_step, sign_x0 * correct_step)

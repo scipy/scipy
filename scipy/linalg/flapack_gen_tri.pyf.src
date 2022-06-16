@@ -3,7 +3,7 @@
 
 subroutine <prefix>gtsv(n, nrhs, dl, d, du, b, info)
     callstatement (*f2py_func)(&n, &nrhs, dl, d, du, b, &n, &info);
-    callprotoargument int*, int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, int*
+    callprotoargument F_INT*, F_INT*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, F_INT*, F_INT*
     integer intent(hide), depend(d) :: n = len(d)
     integer intent(hide), depend(b) :: nrhs = shape(b, 1)
     <ftype> dimension(n-1), intent(in,out,copy,out=du2), depend(d,n) :: dl
@@ -27,7 +27,7 @@ subroutine <prefix>gttrf(n, dl, d, du, du2, ipiv, info)
     ! matrices and U is upper triangular with nonzeros in only the main
     ! diagonal and first two superdiagonals.
     callstatement (*f2py_func)(&n, dl, d, du, du2, ipiv, &info)
-    callprotoargument int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, int*
+    callprotoargument F_INT*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, F_INT*, F_INT*
 
     integer intent(hide), depend(d) :: n = max(3, len(d))
     <ftype> intent(in,out,copy), depend(n), dimension(n-1) :: dl
@@ -48,7 +48,7 @@ subroutine <prefix>gttrs(trans, n, nrhs, dl, d, du, du2, ipiv, b, ldb, info)
     ! with a tridiagonal matrix A using the LU factorization computed
     ! by ?GTTRF.
     callstatement (*f2py_func)(trans, &n, &nrhs, dl, d, du, du2, ipiv, b, &ldb, &info)
-    callprotoargument char*, int*, int*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, int*, <ctype>*, int*, int*
+    callprotoargument char*, F_INT*, F_INT*, <ctype>*, <ctype>*, <ctype>*, <ctype>*, F_INT*, <ctype>*, F_INT*, F_INT*
     threadsafe
 
     character optional, intent(in), check(*trans=='N'||*trans=='T'||*trans=='C') :: trans = "N"
@@ -75,7 +75,7 @@ subroutine <prefix2>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x,
     ! Error bounds on the solution and a condition estimate are also
     !provided.
     callstatement (*f2py_func)(fact,trans,&n,&nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,iwork,&info);
-    callprotoargument char*,char*,int*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,int*,int*
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2>*,F_INT*,F_INT*
 
     character optional, intent(in), check(*fact=='F'||*fact=='N') :: fact = 'N'
     character optional, intent(in), check(*trans=='N'||*trans=='C'||*trans=='T') :: trans = 'N'
@@ -112,7 +112,7 @@ subroutine <prefix2c>gtsvx(fact,trans,n,nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,ldb,x
     ! Error bounds on the solution and a condition estimate are also
     !provided.
     callstatement (*f2py_func)(fact,trans,&n,&nrhs,dl,d,du,dlf,df,duf,du2,ipiv,b,&ldb,x,&ldx,&rcond,ferr,berr,work,rwork,&info);
-    callprotoargument char*,char*,int*,int*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2c>*,int*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,int*
+    callprotoargument char*,char*,F_INT*,F_INT*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2c>*,F_INT*,<ctype2>*,<ctype2>*,<ctype2>*,<ctype2c>*,<ctype2>*,F_INT*
 
     character optional, intent(in), check(*fact=='F'||*fact=='N') :: fact = 'N'
     character optional, intent(in), check(*trans=='N'||*trans=='C'||*trans=='T') :: trans = 'N'
