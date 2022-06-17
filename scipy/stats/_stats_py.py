@@ -83,51 +83,39 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'brunnermunzel', 'alexandergovern']
 
 
-# This should probably be rewritten to avoid nested TypeErrors in favor of
-# branching based on dtype.
 def _contains_nan(a, nan_policy='propagate', use_summation=True):
-    if not isinstance(a, np.ndarray):
-        use_summation = False  # some array_likes ignore nans (e.g. pandas)
     policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
-    # only inexact (floating/complexfloating) and object arrays support np.nan
-    if not (np.issubdtype(a.dtype, np.inexact)
-            or np.issubdtype(a.dtype, object)):
-        return False, nan_policy
-    try:
+
+    if np.issubdtype(a.dtype, np.number):
         # The summation method avoids creating a (potentially huge) array.
         # But, it will set contains_nan to True for (e.g.) [-inf, ..., +inf].
         # If this is undesirable, set use_summation to False instead.
         if use_summation:
             with np.errstate(invalid='ignore', over='ignore'):
-                contains_nan = np.isnan(np.sum(a))
+                # we should use build-in sum instead of np.sum because np.sum
+                # ignores nan when the input is pandas series.
+                contains_nan = np.isnan(sum(a.ravel()))
         else:
             contains_nan = np.isnan(a).any()
-    except TypeError:
-        # This can happen when attempting to sum things which are not
-        # numbers (e.g. as in the function `mode`). Try an alternative method:
-        try:
-            contains_nan = np.any(np.isnan(a))
-        except TypeError:
-            try:
-                # This can happen when attempting to check nan with np.isnan
-                # for string array (e.g. as in the function `rankdata`).
-                contains_nan = False
-                for el in a.ravel():
-                    # isnan doesn't work on elements of string arrays
-                    if np.issubdtype(type(el), np.number) and np.isnan(el):
-                        contains_nan = True
-                        break
-            except TypeError:
-                # Don't know what to do. Fall back to omitting nan values and
-                # issue a warning.
-                contains_nan = False
-                nan_policy = 'omit'
-                warnings.warn("The input array could not be properly "
-                              "checked for nan values. nan values "
-                              "will be ignored.", RuntimeWarning)
+    elif np.issubdtype(a.dtype, np.character) or np.issubdtype(a.dtype, object):
+        # This can happen when attempting to check nan with np.isnan
+        # for string array (e.g. as in the function `rankdata`).
+        contains_nan = False
+        for el in a.ravel():
+            # isnan doesn't work on elements of string arrays
+            if np.issubdtype(type(el), np.number) and np.isnan(el):
+                contains_nan = True
+                break
+    else:
+        # Don't know what to do for this dtype. Fall back to return no nans and
+        # issue a warning.
+        contains_nan = False
+        warnings.warn("The input array could not be properly "
+                      "checked for nan values. nan values "
+                      "will be ignored.", RuntimeWarning)
 
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
