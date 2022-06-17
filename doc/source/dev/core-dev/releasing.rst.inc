@@ -115,7 +115,7 @@ and PRs under the Milestone for the release
 (https://github.com/scipy/scipy/milestones), PRs labeled "backport-candidate",
 and that the release notes are up-to-date and included in the html docs.
 
-Then edit ``meson.build`` and ``setup.py`` to get the correct version number (set
+Then edit ``meson.build`` and ``tools/version_utils.py`` to get the correct version number (set
 ``version:`` in the former, and ``ISRELEASED = True`` in the latter) and commit
 it with a message like ``REL: set version to <version-number>``.  Don't push
 this commit to the SciPy repo yet.
