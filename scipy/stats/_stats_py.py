@@ -98,7 +98,7 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
         # If this is undesirable, set use_summation to False instead.
         if use_summation:
             with np.errstate(invalid='ignore', over='ignore'):
-                contains_nan = np.isnan(np.sum(a.ravel()))
+                contains_nan = np.isnan(np.sum(a))
         else:
             contains_nan = np.isnan(a).any()
     elif np.issubdtype(a.dtype, object):
