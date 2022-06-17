@@ -78,7 +78,7 @@ jobs:
             pip install numpy==1.21.5
             pip install -r doc_requirements.txt
             # `asv` pin because of slowdowns reported in gh-15568
-            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson
+            pip install mpmath gmpy2 "asv==0.4.2" pythran ninja meson click rich-click doit pydevtool
             pip install pybind11
             # extra benchmark deps
             pip install pyfftw cffi pytest
@@ -86,7 +86,7 @@ jobs:
       - run:
           name: build SciPy
           command: |
-            python dev.py --build-only -j2
+            python dev.py build -j2
 
       - save_cache:
           key: deps_ccache-{{ .Branch }}
@@ -119,7 +119,7 @@ jobs:
           no_output_timeout: 25m
           command: |
             export PYTHONPATH=$PWD/build-install/lib/python3.8/site-packages
-            python dev.py -n -j2 --doc html
+            python dev.py --no-build doc -j2
 
       - store_artifacts:
           path: doc/build/html

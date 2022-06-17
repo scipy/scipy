@@ -57,7 +57,7 @@ jobs:
 
     - name: Install Python packages
       run: |
-        python -m pip install numpy setuptools wheel cython pytest pytest-xdist pybind11 mpmath gmpy2 pythran ninja meson
+        python -m pip install numpy setuptools wheel cython pytest pytest-xdist pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -86,7 +86,7 @@ jobs:
 
     - name: Setup build and install scipy
       run: |
-        python dev.py -j 2 --build-only --werror
+        python dev.py build -j 2 --werror
 
     - name: Ccache performance
       shell: bash -l {0}
@@ -102,7 +102,7 @@ jobs:
       run: |
         export OMP_NUM_THREADS=2
         export SCIPY_USE_PROPACK=1
-        python dev.py -n -j 2
+        python dev.py --no-build test -j 2
 
   test_venv_install:
     name: Pip install into venv
