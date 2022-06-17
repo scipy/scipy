@@ -100,7 +100,7 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
                 contains_nan = np.isnan(sum(a.ravel()))
         else:
             contains_nan = np.isnan(a).any()
-    elif np.issubdtype(a.dtype, np.character) or np.issubdtype(a.dtype, object):
+    elif np.issubdtype(a.dtype, object):
         # This can happen when attempting to check nan with np.isnan
         # for string array (e.g. as in the function `rankdata`).
         contains_nan = False
@@ -110,12 +110,8 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
                 contains_nan = True
                 break
     else:
-        # Don't know what to do for this dtype. Fall back to return no nans and
-        # issue a warning.
+        # Don't know what to do for this dtype. Fall back to return no nans
         contains_nan = False
-        warnings.warn("The input array could not be properly "
-                      "checked for nan values. nan values "
-                      "will be ignored.", RuntimeWarning)
 
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
