@@ -89,15 +89,16 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
 
+    if not isinstance(a, np.ndarray):
+        use_summation = False  # some array_likes ignore nans (e.g. pandas)
+
     if np.issubdtype(a.dtype, np.number):
         # The summation method avoids creating a (potentially huge) array.
         # But, it will set contains_nan to True for (e.g.) [-inf, ..., +inf].
         # If this is undesirable, set use_summation to False instead.
         if use_summation:
             with np.errstate(invalid='ignore', over='ignore'):
-                # we should use build-in sum instead of np.sum because np.sum
-                # ignores nan when the input is pandas series.
-                contains_nan = np.isnan(sum(a.ravel()))
+                contains_nan = np.isnan(np.sum(a.ravel()))
         else:
             contains_nan = np.isnan(a).any()
     elif np.issubdtype(a.dtype, object):
