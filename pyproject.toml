@@ -13,7 +13,7 @@ requires = [
     "meson-python>=0.5.0",
     "Cython>=0.29.21",
     "pybind11>=2.4.3",
-    "pythran>=0.9.12",
+    "pythran>=0.11.0",
     # `wheel` is needed for non-isolated builds, given that `meson-python`
     # doesn't list it as a runtime requirement (at least in 0.5.0)
     "wheel",
@@ -101,8 +101,8 @@ test = [
     "scikit-umfpack",
 ]
 doc = [
-    "sphinx!=3.1.0, !=4.1.0",
-    "pydata-sphinx-theme>=0.8.1",
+    "sphinx!=4.1.0",
+    "pydata-sphinx-theme>=0.9.0",
     "sphinx-panels>=0.5.2",
     "matplotlib>2",
     "numpydoc",

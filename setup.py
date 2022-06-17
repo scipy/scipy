@@ -143,9 +143,9 @@ def get_build_ext_override():
         else:
             BaseBuildExt = PythranBuildExt[npy_build_ext]
             _pep440 = importlib.import_module('scipy._lib._pep440')
-            if _pep440.parse(pythran.__version__) < _pep440.Version('0.9.12'):
+            if _pep440.parse(pythran.__version__) < _pep440.Version('0.11.0'):
                 raise RuntimeError("The installed `pythran` is too old, >= "
-                                   "0.9.12 is needed, {} detected. Please "
+                                   "0.11.0 is needed, {} detected. Please "
                                    "upgrade Pythran, or use `export "
                                    "SCIPY_USE_PYTHRAN=0`.".format(
                                    pythran.__version__))
