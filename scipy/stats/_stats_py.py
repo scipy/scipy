@@ -601,7 +601,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
 
     .. deprecated:: 1.9.0
         Support for non-numeric arrays has been deprecated and will be removed
-        in the second release after SciPy 1.9.0. `pandas.DataFrame.mode`_ can
+        in 1.11.0. `pandas.DataFrame.mode`_ can
         be used instead.
 
         .. _pandas.DataFrame.mode: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html
@@ -634,7 +634,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
         warnings.warn("Unlike other reduction functions, the default behavior "
                       "of `mode` is consistent with `keepdims=False: it does "
                       "not consume the axis it acts along. In SciPy 1.11.0, "
-                      "the default will be `keepdims=True`, and this warning "
+                      "the default will be `keepdims=False`, and this warning "
                       "will disappear. To silence this warning before then, "
                       "please pass `keepdims` as True or False explicitly.",
                       FutureWarning, stacklevel=2)
@@ -658,8 +658,8 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
 
     if not np.issubdtype(a.dtype, np.number):
         warnings.warn("Support for non-numeric arrays has been deprecated "
-                      "and will be removed in the second release after "
-                      "1.9.0. `pandas.DataFrame.mode` can be used instead, "
+                      "and will be removed in SciPy "
+                      "1.11.0. `pandas.DataFrame.mode` can be used instead, "
                       "see https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html.",  # noqa: E501
                       DeprecationWarning, stacklevel=2)
 
