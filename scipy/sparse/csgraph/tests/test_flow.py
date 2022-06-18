@@ -271,3 +271,23 @@ def test_minimum_cost_flow_exceptions():
         demand = np.array([0, 1], dtype=np.int32)
         cost = np.array([0], dtype=np.int32)
         minimum_cost_flow(g, demand, cost)
+
+def test_minimum_cost_flow_corner_cases():
+    A = csr_matrix([[0, 1], [0, 0]])
+    demand = [-1, 1]
+    cost = [2]
+    result = minimum_cost_flow(A, demand, cost)
+    assert result.flow_cost == 2
+
+    def case_2(n):
+        indices = np.arange(1, n)
+        indptr = np.array(list(range(n)) + [n - 1])
+        data = np.ones(n - 1, dtype=np.int32)
+        graph = csr_matrix((data, indices, indptr), shape=(n, n))
+        res = maximum_flow(graph, 0, n - 1)
+        assert res.flow_value == 1
+        return minimum_cost_flow(graph, [-1] + [0] * (n - 2) + [1], [1] * (n - 1))
+
+    assert case_2(100).flow_cost == 99
+
+    assert case_2(1000).flow_cost == 999
