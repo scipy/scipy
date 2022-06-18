@@ -26,6 +26,7 @@ import numpy as np
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats._mstats_basic as mstats_basic
+from scipy.stats._stats_py import _contains_nan
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
@@ -354,7 +355,8 @@ class TestCorrPearsonr:
     def test_constant_input(self):
         # Zero variance input
         # See https://github.com/scipy/scipy/issues/3728
-        with assert_warns(stats.PearsonRConstantInputWarning):
+        msg = "An input array is constant"
+        with assert_warns(stats.ConstantInputWarning, match=msg):
             r, p = stats.pearsonr([0.667, 0.667, 0.667], [0.123, 0.456, 0.789])
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -363,7 +365,8 @@ class TestCorrPearsonr:
         # Near constant input (but not constant):
         x = [2, 2, 2 + np.spacing(2)]
         y = [3, 3, 3 + 6*np.spacing(3)]
-        with assert_warns(stats.PearsonRNearConstantInputWarning):
+        msg = "An input array is nearly constant; the computed"
+        with assert_warns(stats.NearConstantInputWarning, match=msg):
             # r and p are garbage, so don't bother checking them in this case.
             # (The exact value of r would be 1.)
             r, p = stats.pearsonr(x, y)
@@ -628,6 +631,12 @@ class TestFisherExact:
         # check if issue #3014 has been fixed.
         # before, this would have risen a ValueError
         odds, pvalue = stats.fisher_exact([[1, 2], [9, 84419233]])
+
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_result(self, alternative):
+        table = np.array([[14500, 20000], [30000, 40000]])
+        res = stats.fisher_exact(table, alternative=alternative)
+        assert_equal((res.statistic, res.pvalue), res)
 
 
 class TestCorrSpearmanr:
@@ -950,7 +959,8 @@ class TestCorrSpearmanr2:
 
     def test_tie0(self):
         # with only ties in one or both inputs
-        with assert_warns(stats.SpearmanRConstantInputWarning):
+        warn_msg = "An input array is constant"
+        with assert_warns(stats.ConstantInputWarning, match=warn_msg):
             r, p = stats.spearmanr([2, 2, 2], [2, 2, 2])
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -992,7 +1002,8 @@ class TestCorrSpearmanr2:
         z1 = np.array([[1, 1, 1, 1], [1, 2, 3, 4]])
         z2 = np.array([[1, 2, 3, 4], [1, 1, 1, 1]])
         z3 = np.array([[1, 1, 1, 1], [1, 1, 1, 1]])
-        with assert_warns(stats.SpearmanRConstantInputWarning):
+        warn_msg = "An input array is constant"
+        with assert_warns(stats.ConstantInputWarning, match=warn_msg):
             r, p = stats.spearmanr(z1, axis=1)
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -1008,7 +1019,8 @@ class TestCorrSpearmanr2:
         y = np.array([0, 0.009783728115345005, 0, 0, 0.0019759230121848587,
             0.0007535430349118562, 0.0002661781514710257, 0, 0,
             0.0007835762419683435])
-        with assert_warns(stats.SpearmanRConstantInputWarning):
+        warn_msg = "An input array is constant"
+        with assert_warns(stats.ConstantInputWarning, match=warn_msg):
             r, p = stats.spearmanr(x, y)
             assert_equal(r, np.nan)
             assert_equal(p, np.nan)
@@ -1324,6 +1336,14 @@ def test_kendalltau_nan_2nd_arg():
     r1 = stats.kendalltau(x, y, nan_policy='omit')
     r2 = stats.kendalltau(x[1:], y[1:])
     assert_allclose(r1.correlation, r2.correlation, atol=1e-15)
+
+
+def test_kendalltau_dep_initial_lexsort():
+    with pytest.warns(
+        DeprecationWarning,
+        match="'kendalltau' keyword argument 'initial_lexsort'"
+    ):
+        stats.kendalltau([], [], initial_lexsort=True)
 
 
 class TestKendallTauAlternative:
@@ -2865,6 +2885,12 @@ class TestIQR:
 
         # Bad scale
         assert_raises(ValueError, stats.iqr, x, scale='foobar')
+
+        with pytest.warns(
+            DeprecationWarning,
+            match="The use of 'scale=\"raw\"'"
+        ):
+            stats.iqr([1], scale='raw')
 
 
 class TestMoments:
@@ -5947,6 +5973,22 @@ class TestGeometricStandardDeviation:
         assert_equal(gstd_actual.mask, mask)
 
 
+@pytest.mark.parametrize('alternative', ['two-sided', 'greater', 'less'])
+def test_binom_test_deprecation(alternative):
+    deprecation_msg = ("'binom_test' is deprecated in favour of"
+                       " 'binomtest' from version 1.7.0 and will"
+                       " be removed in Scipy 1.12.0.")
+    num = 10
+    rng = np.random.default_rng(156114182869662948677852568516310985853)
+    X = rng.integers(10, 100, (num,))
+    N = X + rng.integers(0, 100, (num,))
+    P = rng.uniform(0, 1, (num,))
+    for x, n, p in zip(X, N, P):
+        with pytest.warns(DeprecationWarning, match=deprecation_msg):
+            res = stats.binom_test(x, n, p, alternative=alternative)
+        assert res == stats.binomtest(x, n, p, alternative=alternative).pvalue
+
+
 def test_binomtest():
     # precision tests compared to R for ticket:986
     pp = np.concatenate((np.linspace(0.1, 0.2, 5),
@@ -5963,10 +6005,9 @@ def test_binomtest():
                2.6102587134694721e-006]
 
     for p, res in zip(pp, results):
-        assert_approx_equal(stats.binom_test(x, n, p), res,
+        assert_approx_equal(stats.binomtest(x, n, p).pvalue, res,
                             significant=12, err_msg='fail forp=%f' % p)
-
-    assert_approx_equal(stats.binom_test(50, 100, 0.1),
+    assert_approx_equal(stats.binomtest(50, 100, 0.1).pvalue,
                         5.8320387857343647e-024,
                         significant=12)
 
@@ -5990,16 +6031,15 @@ def test_binomtest2():
          1.000000000, 0.753906250, 0.343750000, 0.109375000, 0.021484375,
          0.001953125]
     ]
-
     for k in range(1, 11):
-        res1 = [stats.binom_test(v, k, 0.5) for v in range(k + 1)]
+        res1 = [stats.binomtest(v, k, 0.5).pvalue for v in range(k + 1)]
         assert_almost_equal(res1, res2[k-1], decimal=10)
 
 
 def test_binomtest3():
     # test added for issue #2384
     # test when x == n*p and neighbors
-    res3 = [stats.binom_test(v, v*k, 1./k)
+    res3 = [stats.binomtest(v, v*k, 1./k).pvalue
             for v in range(1, 11) for k in range(2, 11)]
     assert_equal(res3, np.ones(len(res3), int))
 
@@ -6081,9 +6121,9 @@ def test_binomtest3():
          0.736270323773157, 0.737718376096348
         ])
 
-    res4_p1 = [stats.binom_test(v+1, v*k, 1./k)
+    res4_p1 = [stats.binomtest(v+1, v*k, 1./k).pvalue
                for v in range(1, 11) for k in range(2, 11)]
-    res4_m1 = [stats.binom_test(v-1, v*k, 1./k)
+    res4_m1 = [stats.binomtest(v-1, v*k, 1./k).pvalue
                for v in range(1, 11) for k in range(2, 11)]
 
     assert_almost_equal(res4_p1, binom_testp1, decimal=13)
@@ -6540,7 +6580,8 @@ class TestFOneWay:
         ])
     def test_constant_input(self, a, b, expected):
         # For more details, look on https://github.com/scipy/scipy/issues/11669
-        with assert_warns(stats.F_onewayConstantInputWarning):
+        msg = "Each of the input arrays is constant;"
+        with assert_warns(stats.ConstantInputWarning, match=msg):
             f, p = stats.f_oneway(a, b)
             assert f, p == expected
 
@@ -6572,7 +6613,8 @@ class TestFOneWay:
         else:
             take_axis = 1
 
-        with assert_warns(stats.F_onewayConstantInputWarning):
+        warn_msg = "Each of the input arrays is constant;"
+        with assert_warns(stats.ConstantInputWarning, match=warn_msg):
             f, p = stats.f_oneway(a, b, c, axis=axis)
 
         # Verify that the result computed with the 2d arrays matches
@@ -6584,7 +6626,7 @@ class TestFOneWay:
             assert_allclose(f[j], fj, rtol=1e-14)
             assert_allclose(p[j], pj, rtol=1e-14)
         for j in [2, 3]:
-            with assert_warns(stats.F_onewayConstantInputWarning):
+            with assert_warns(stats.ConstantInputWarning, match=warn_msg):
                 fj, pj = stats.f_oneway(np.take(a, j, take_axis),
                                         np.take(b, j, take_axis),
                                         np.take(c, j, take_axis))
@@ -6610,12 +6652,14 @@ class TestFOneWay:
 
     def test_length0_1d_error(self):
         # Require at least one value in each group.
-        with assert_warns(stats.F_onewayBadInputSizesWarning):
+        msg = 'all input arrays have length 1.'
+        with assert_warns(stats.DegenerateDataWarning, match=msg):
             result = stats.f_oneway([1, 2, 3], [], [4, 5, 6, 7])
             assert_equal(result, (np.nan, np.nan))
 
     def test_length0_2d_error(self):
-        with assert_warns(stats.F_onewayBadInputSizesWarning):
+        msg = 'all input arrays have length 1.'
+        with assert_warns(stats.DegenerateDataWarning, match=msg):
             ncols = 3
             a = np.ones((4, ncols))
             b = np.ones((0, ncols))
@@ -6626,7 +6670,8 @@ class TestFOneWay:
             assert_equal(p, nans)
 
     def test_all_length_one(self):
-        with assert_warns(stats.F_onewayBadInputSizesWarning):
+        msg = 'all input arrays have length 1.'
+        with assert_warns(stats.DegenerateDataWarning, match=msg):
             result = stats.f_oneway([10], [11], [12], [13])
             assert_equal(result, (np.nan, np.nan))
 
@@ -6776,11 +6821,10 @@ class TestCombinePvalues:
         Z_p, p_p = stats.combine_pvalues([.01, .2, .3], method='pearson')
         assert_approx_equal(0.5 * (Z_f+Z_p), Z, significant=4)
 
+    methods = ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"]
+
     @pytest.mark.parametrize("variant", ["single", "all", "random"])
-    @pytest.mark.parametrize(
-        "method",
-        ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"],
-    )
+    @pytest.mark.parametrize("method", methods)
     def test_monotonicity(self, variant, method):
         # Test that result increases monotonically with respect to input.
         m, n = 10, 7
@@ -6803,6 +6847,12 @@ class TestCombinePvalues:
             for pvalues in pvaluess
         ]
         assert np.all(np.diff(combined_pvalues) >= 0)
+
+    @pytest.mark.parametrize("method", methods)
+    def test_result(self, method):
+        res = stats.combine_pvalues([.01, .2, .3], method=method)
+        assert_equal((res.statistic, res.pvalue), res)
+
 
 class TestCdfDistanceValidation:
     """
@@ -7660,3 +7710,54 @@ def test_rename_mode_method(fun, args):
     err = rf"{fun.__name__}() got multiple values for argument"
     with pytest.raises(TypeError, match=re.escape(err)):
         fun(*args, method='exact', mode='exact')
+
+
+class TestContainsNaNTest:
+
+    def test_policy(self):
+        data = np.array([1, 2, 3, np.nan])
+
+        contains_nan, nan_policy = _contains_nan(data, nan_policy="propagate")
+        assert contains_nan
+        assert nan_policy == "propagate"
+
+        contains_nan, nan_policy = _contains_nan(data, nan_policy="omit")
+        assert contains_nan
+        assert nan_policy == "omit"
+
+        msg = "The input contains nan values"
+        with pytest.raises(ValueError, match=msg):
+            _contains_nan(data, nan_policy="raise")
+
+        msg = "nan_policy must be one of"
+        with pytest.raises(ValueError, match=msg):
+            _contains_nan(data, nan_policy="nan")
+
+    def test_contains_nan_1d(self):
+        data1 = np.array([1, 2, 3])
+        assert not _contains_nan(data1)[0]
+
+        data2 = np.array([1, 2, 3, np.nan])
+        assert _contains_nan(data2)[0]
+
+        data3 = np.array([np.nan, 2, 3, np.nan])
+        assert _contains_nan(data3)[0]
+
+        data4 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
+        assert not _contains_nan(data4)[0]
+
+        data5 = np.array([1, 2, "3", np.nan], dtype='object')
+        assert _contains_nan(data5)[0]
+
+    def test_contains_nan_2d(self):
+        data1 = np.array([[1, 2], [3, 4]])
+        assert not _contains_nan(data1)[0]
+
+        data2 = np.array([[1, 2], [3, np.nan]])
+        assert _contains_nan(data2)[0]
+
+        data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
+        assert not _contains_nan(data3)[0]
+
+        data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
+        assert _contains_nan(data4)[0]

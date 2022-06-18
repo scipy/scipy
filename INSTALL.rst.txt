@@ -35,15 +35,15 @@ SciPy requires the following software installed for your platform:
 
 __ https://www.python.org
 
-2) NumPy__ >= 1.18.5
+2) NumPy__ >= 1.19.5
 
 __ https://www.numpy.org/
 
 If building from source, SciPy also requires:
 
-3) setuptools__ < 60.0
+3) Meson >= 0.62.1
 
-__ https://github.com/pypa/setuptools
+__ https://github.com/mesonbuild/meson
 
 4) pybind11__ >= 2.4.3
 
@@ -56,6 +56,17 @@ __ http://www.sphinx-doc.org/
 6) Cython__ >= 0.29.21
 
 __ http://cython.org/
+
+7) Pythran__ => 0.11.0
+
+__ https://pythran.readthedocs.io/en/latest/
+
+8) Ninja__
+
+__ https://ninja-build.org/
+
+9) If you want to install via wheels: `meson-python` and `wheel`
+
 
 Windows
 -------

@@ -70,11 +70,8 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'sem', 'zmap', 'zscore', 'gzscore', 'iqr', 'gstd',
            'median_abs_deviation',
            'sigmaclip', 'trimboth', 'trim1', 'trim_mean',
-           'f_oneway', 'F_onewayConstantInputWarning',
-           'F_onewayBadInputSizesWarning',
-           'PearsonRConstantInputWarning', 'PearsonRNearConstantInputWarning',
-           'pearsonr', 'fisher_exact',
-           'SpearmanRConstantInputWarning', 'spearmanr', 'pointbiserialr',
+           'f_oneway', 'pearsonr', 'fisher_exact',
+           'spearmanr', 'pointbiserialr',
            'kendalltau', 'weightedtau', 'multiscale_graphcorr',
            'linregress', 'siegelslopes', 'theilslopes', 'ttest_1samp',
            'ttest_ind', 'ttest_ind_from_stats', 'ttest_rel',
@@ -86,11 +83,19 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'brunnermunzel', 'alexandergovern']
 
 
+# This should probably be rewritten to avoid nested TypeErrors in favor of
+# branching based on dtype.
 def _contains_nan(a, nan_policy='propagate', use_summation=True):
+    if not isinstance(a, np.ndarray):
+        use_summation = False  # some array_likes ignore nans (e.g. pandas)
     policies = ['propagate', 'raise', 'omit']
     if nan_policy not in policies:
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
+    # only inexact (floating/complexfloating) and object arrays support np.nan
+    if not (np.issubdtype(a.dtype, np.inexact)
+            or np.issubdtype(a.dtype, object)):
+        return False, nan_policy
     try:
         # The summation method avoids creating a (potentially huge) array.
         # But, it will set contains_nan to True for (e.g.) [-inf, ..., +inf].
@@ -106,13 +111,23 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
         try:
             contains_nan = np.any(np.isnan(a))
         except TypeError:
-            # Don't know what to do. Fall back to omitting nan values and
-            # issue a warning.
-            contains_nan = False
-            nan_policy = 'omit'
-            warnings.warn("The input array could not be properly "
-                          "checked for nan values. nan values "
-                          "will be ignored.", RuntimeWarning)
+            try:
+                # This can happen when attempting to check nan with np.isnan
+                # for string array (e.g. as in the function `rankdata`).
+                contains_nan = False
+                for el in a.ravel():
+                    # isnan doesn't work on elements of string arrays
+                    if np.issubdtype(type(el), np.number) and np.isnan(el):
+                        contains_nan = True
+                        break
+            except TypeError:
+                # Don't know what to do. Fall back to omitting nan values and
+                # issue a warning.
+                contains_nan = False
+                nan_policy = 'omit'
+                warnings.warn("The input array could not be properly "
+                              "checked for nan values. nan values "
+                              "will be ignored.", RuntimeWarning)
 
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
@@ -224,6 +239,10 @@ def _broadcast_shapes_with_dropped_axis(a, b, axis):
         raise ValueError(f'non-axis shapes {shp1} and {shp2} could not be '
                          'broadcast together') from None
     return shp
+
+
+SignificanceResult = _make_tuple_bunch('SignificanceResult',
+                                       ['statistic', 'pvalue'], [])
 
 
 # note that `weights` are paired with `x`
@@ -3057,7 +3076,8 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
           * 'normal' : Scale by
             :math:`2 \sqrt{2} erf^{-1}(\frac{1}{2}) \approx 1.349`.
 
-        The default is 1.0. The use of ``scale='raw'`` is deprecated.
+        The default is 1.0. The use of ``scale='raw'`` is deprecated infavor
+        of ``scale=1`` and will raise an error in SciPy 1.12.0.
         Array-like `scale` is also allowed, as long
         as it broadcasts correctly to the output such that
         ``out / scale`` is a valid operation. The output dimensions
@@ -3141,10 +3161,9 @@ def iqr(x, axis=None, rng=(25, 75), scale=1.0, nan_policy='propagate',
         if scale_key not in _scale_conversions:
             raise ValueError("{0} not a valid scale for `iqr`".format(scale))
         if scale_key == 'raw':
-            warnings.warn(
-                "use of scale='raw' is deprecated, use scale=1.0 instead",
-                np.VisibleDeprecationWarning
-            )
+            msg = ("The use of 'scale=\"raw\"' is deprecated infavor of "
+                   "'scale=1' and will raise an error in SciPy 1.12.0.")
+            warnings.warn(msg, DeprecationWarning, stacklevel=2)
         scale = _scale_conversions[scale_key]
 
     # Select the percentile function to use based on nans and policy
@@ -3670,26 +3689,6 @@ def trim_mean(a, proportiontocut, axis=0):
 F_onewayResult = namedtuple('F_onewayResult', ('statistic', 'pvalue'))
 
 
-class F_onewayConstantInputWarning(stats.ConstantInputWarning):
-    """
-    Warning generated by `f_oneway` when an input is constant, e.g.
-    each of the samples provided is an array of identical values.
-    """
-
-    def __init__(self, msg=None):
-        if msg is None:
-            msg = ("Each of the input arrays is constant;"
-                   "the F statistic is not defined or infinite")
-        self.args = (msg,)
-
-
-class F_onewayBadInputSizesWarning(stats.DegenerateDataWarning):
-    """
-    Warning generated by `f_oneway` when an input has length 0,
-    or if all the inputs have length 1.
-    """
-
-
 def _create_f_oneway_nan_result(shape, axis):
     """
     This is a helper function for f_oneway for creating the return values
@@ -3859,15 +3858,15 @@ def f_oneway(*samples, axis=0):
     # Check this after forming alldata, so shape errors are detected
     # and reported before checking for 0 length inputs.
     if any(sample.shape[axis] == 0 for sample in samples):
-        warnings.warn(F_onewayBadInputSizesWarning('at least one input '
-                                                   'has length 0'))
+        warnings.warn(stats.DegenerateDataWarning('at least one input '
+                                                  'has length 0'))
         return _create_f_oneway_nan_result(alldata.shape, axis)
 
     # Must have at least one group with length greater than 1.
     if all(sample.shape[axis] == 1 for sample in samples):
         msg = ('all input arrays have length 1.  f_oneway requires that at '
                'least one input has length greater than 1.')
-        warnings.warn(F_onewayBadInputSizesWarning(msg))
+        warnings.warn(stats.DegenerateDataWarning(msg))
         return _create_f_oneway_nan_result(alldata.shape, axis)
 
     # Check if all values within each group are identical, and if the common
@@ -3891,7 +3890,9 @@ def f_oneway(*samples, axis=0):
     # the same (e.g. [[3, 3, 3], [5, 5, 5, 5], [4, 4, 4]]).
     all_const = is_const.all(axis=axis)
     if all_const.any():
-        warnings.warn(F_onewayConstantInputWarning())
+        msg = ("Each of the input arrays is constant;"
+               "the F statistic is not defined or infinite")
+        warnings.warn(stats.ConstantInputWarning(msg))
 
     # all_same_const is True if all the values in the groups along the axis=0
     # slice are the same (e.g. [[3, 3, 3], [3, 3, 3, 3], [3, 3, 3]]).
@@ -4104,26 +4105,6 @@ def _alexandergovern_input_validation(samples, nan_policy):
 
 AlexanderGovernResult = make_dataclass("AlexanderGovernResult", ("statistic",
                                                                  "pvalue"))
-
-
-class PearsonRConstantInputWarning(stats.ConstantInputWarning):
-    """Warning generated by `pearsonr` when an input is constant."""
-
-    def __init__(self, msg=None):
-        if msg is None:
-            msg = ("An input array is constant; the correlation coefficient "
-                   "is not defined.")
-        self.args = (msg,)
-
-
-class PearsonRNearConstantInputWarning(stats.NearConstantInputWarning):
-    """Warning generated by `pearsonr` when an input is nearly constant."""
-
-    def __init__(self, msg=None):
-        if msg is None:
-            msg = ("An input array is nearly constant; the computed "
-                   "correlation coefficient may be inaccurate.")
-        self.args = (msg,)
 
 
 def _pearsonr_fisher_ci(r, n, confidence_level, alternative):
@@ -4430,7 +4411,9 @@ def pearsonr(x, y, *, alternative='two-sided'):
 
     # If an input is constant, the correlation coefficient is not defined.
     if (x == x[0]).all() or (y == y[0]).all():
-        warnings.warn(PearsonRConstantInputWarning())
+        msg = ("An input array is constant; the correlation coefficient "
+               "is not defined.")
+        warnings.warn(stats.ConstantInputWarning(msg))
         result = PearsonRResult(statistic=np.nan, pvalue=np.nan, n=n,
                                 alternative=alternative)
         return result
@@ -4465,7 +4448,9 @@ def pearsonr(x, y, *, alternative='two-sided'):
         # If all the values in x (likewise y) are very close to the mean,
         # the loss of precision that occurs in the subtraction xm = x - xmean
         # might result in large errors in r.
-        warnings.warn(PearsonRNearConstantInputWarning())
+        msg = ("An input array is nearly constant; the computed "
+               "correlation coefficient may be inaccurate.")
+        warnings.warn(stats.NearConstantInputWarning(msg))
 
     r = np.dot(xm/normxm, ym/normym)
 
@@ -4527,11 +4512,14 @@ def fisher_exact(table, alternative='two-sided'):
 
     Returns
     -------
-    oddsratio : float
-        This is prior odds ratio and not a posterior estimate.
-    p_value : float
-        P-value, the probability under the null hypothesis of obtaining a
-        table at least as extreme as the one that was actually observed.
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : float
+            This is the prior odds ratio, not a posterior estimate.
+        pvalue : float
+            The probability under the null hypothesis of obtaining a
+            table at least as extreme as the one that was actually observed.
 
     See Also
     --------
@@ -4601,16 +4589,16 @@ def fisher_exact(table, alternative='two-sided'):
     is ``0.0163 + 0.0816 + 0.00466 ~= 0.10256``::
 
         >>> from scipy.stats import fisher_exact
-        >>> oddsr, p = fisher_exact(table, alternative='two-sided')
-        >>> p
+        >>> res = fisher_exact(table, alternative='two-sided')
+        >>> res.pvalue
         0.10256410256410257
 
     The one-sided p-value for ``alternative='greater'`` is the probability
     that a random table has ``x >= a``, which in our example is ``x >= 6``,
     or ``0.0816 + 0.00466 ~= 0.08626``::
 
-        >>> oddsr, p = fisher_exact(table, alternative='greater')
-        >>> p
+        >>> res = fisher_exact(table, alternative='greater')
+        >>> res.pvalue
         0.08624708624708627
 
     This is equivalent to computing the survival function of the
@@ -4624,8 +4612,8 @@ def fisher_exact(table, alternative='two-sided'):
     that a random table has ``x <= a``, (i.e. ``x <= 6`` in our example),
     or ``0.0163 + 0.163 + 0.408 + 0.326 + 0.0816 ~= 0.9949``::
 
-        >>> oddsr, p = fisher_exact(table, alternative='less')
-        >>> p
+        >>> res = fisher_exact(table, alternative='less')
+        >>> res.pvalue
         0.9953379953379957
 
     This is equivalent to computing the cumulative distribution function
@@ -4654,8 +4642,8 @@ def fisher_exact(table, alternative='two-sided'):
     We use this table to find the p-value:
 
     >>> from scipy.stats import fisher_exact
-    >>> oddsratio, pvalue = fisher_exact([[8, 2], [1, 5]])
-    >>> pvalue
+    >>> res = fisher_exact([[8, 2], [1, 5]])
+    >>> res.pvalue
     0.0349...
 
     The probability that we would observe this or an even more imbalanced ratio
@@ -4677,7 +4665,7 @@ def fisher_exact(table, alternative='two-sided'):
     if 0 in c.sum(axis=0) or 0 in c.sum(axis=1):
         # If both values in a row or column are zero, the p-value is 1 and
         # the odds ratio is NaN.
-        return np.nan, 1.0
+        return SignificanceResult(np.nan, 1.0)
 
     if c[1, 0] > 0 and c[0, 1] > 0:
         oddsratio = c[0, 0] * c[1, 1] / (c[1, 0] * c[0, 1])
@@ -4705,19 +4693,19 @@ def fisher_exact(table, alternative='two-sided'):
         gamma = 1 + epsilon
 
         if np.abs(pexact - pmode) / np.maximum(pexact, pmode) <= epsilon:
-            return oddsratio, 1.
+            return SignificanceResult(oddsratio, 1.)
 
         elif c[0, 0] < mode:
             plower = hypergeom.cdf(c[0, 0], n1 + n2, n1, n)
             if hypergeom.pmf(n, n1 + n2, n1, n) > pexact * gamma:
-                return oddsratio, plower
+                return SignificanceResult(oddsratio, plower)
 
             guess = _binary_search(lambda x: -pmf(x), -pexact * gamma, mode, n)
             pvalue = plower + hypergeom.sf(guess, n1 + n2, n1, n)
         else:
             pupper = hypergeom.sf(c[0, 0] - 1, n1 + n2, n1, n)
             if hypergeom.pmf(0, n1 + n2, n1, n) > pexact * gamma:
-                return oddsratio, pupper
+                return SignificanceResult(oddsratio, pupper)
 
             guess = _binary_search(pmf, pexact * gamma, 0, mode)
             pvalue = pupper + hypergeom.cdf(guess, n1 + n2, n1, n)
@@ -4727,17 +4715,7 @@ def fisher_exact(table, alternative='two-sided'):
 
     pvalue = min(pvalue, 1.0)
 
-    return oddsratio, pvalue
-
-
-class SpearmanRConstantInputWarning(stats.ConstantInputWarning):
-    """Warning generated by `spearmanr` when an input is constant."""
-
-    def __init__(self, msg=None):
-        if msg is None:
-            msg = ("An input array is constant; the correlation coefficient "
-                   "is not defined.")
-        self.args = (msg,)
+    return SignificanceResult(oddsratio, pvalue)
 
 
 SpearmanrResult = namedtuple('SpearmanrResult', ('correlation', 'pvalue'))
@@ -4886,17 +4864,19 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
         # Handle empty arrays or single observations.
         return SpearmanrResult(np.nan, np.nan)
 
+    warn_msg = ("An input array is constant; the correlation coefficient "
+                "is not defined.")
     if axisout == 0:
         if (a[:, 0][0] == a[:, 0]).all() or (a[:, 1][0] == a[:, 1]).all():
             # If an input is constant, the correlation coefficient
             # is not defined.
-            warnings.warn(SpearmanRConstantInputWarning())
+            warnings.warn(stats.ConstantInputWarning(warn_msg))
             return SpearmanrResult(np.nan, np.nan)
     else:  # case when axisout == 1 b/c a is 2 dim only
         if (a[0, :][0] == a[0, :]).all() or (a[1, :][0] == a[1, :]).all():
             # If an input is constant, the correlation coefficient
             # is not defined.
-            warnings.warn(SpearmanRConstantInputWarning())
+            warnings.warn(stats.ConstantInputWarning(warn_msg))
             return SpearmanrResult(np.nan, np.nan)
 
     a_contains_nan, nan_policy = _contains_nan(a, nan_policy)
@@ -5045,8 +5025,12 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     x, y : array_like
         Arrays of rankings, of the same shape. If arrays are not 1-D, they
         will be flattened to 1-D.
-    initial_lexsort : bool, optional
-        Unused (deprecated).
+    initial_lexsort : bool, optional, deprecated
+        This argument is unused.
+
+        .. deprecated:: 1.10.0
+           `kendalltau` keyword argument `initial_lexsort` is deprecated as it
+           is unused and will be removed in SciPy 1.12.0.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
@@ -5129,6 +5113,11 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
     0.2827454599327748
 
     """
+    if initial_lexsort is not None:
+        msg = ("'kendalltau' keyword argument 'initial_lexsort' is deprecated"
+               " as it is unused and will be removed in SciPy 1.12.0.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
+
     x = np.asarray(x).ravel()
     y = np.asarray(y).ravel()
 
@@ -5159,9 +5148,6 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
             message = ("nan_policy='omit' is currently compatible only with "
                        "variant='b'.")
             raise ValueError(message)
-
-    if initial_lexsort is not None:  # deprecate to drop!
-        warnings.warn('"initial_lexsort" is gone!')
 
     def count_rank_tie(ranks):
         cnt = np.bincount(ranks).astype('int64', copy=False)
@@ -8556,10 +8542,13 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
 
     Returns
     -------
-    statistic: float
-        The statistic calculated by the specified method.
-    pval: float
-        The combined p-value.
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : float
+            The statistic calculated by the specified method.
+        pvalue : float
+            The combined p-value.
 
     Notes
     -----
@@ -8661,7 +8650,7 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
             "'pearson', 'mudholkar_george', 'tippett', and 'stouffer'"
         )
 
-    return (statistic, pval)
+    return SignificanceResult(statistic, pval)
 
 
 #####################################
@@ -9059,7 +9048,7 @@ def _square_of_sums(a, axis=0):
         return float(s) * s
 
 
-def rankdata(a, method='average', *, axis=None):
+def rankdata(a, method='average', *, axis=None, nan_policy='omit'):
     """Assign ranks to data, dealing with ties appropriately.
 
     By default (``axis=None``), the data array is first flattened, and a flat
@@ -9092,6 +9081,25 @@ def rankdata(a, method='average', *, axis=None):
     axis : {None, int}, optional
         Axis along which to perform the ranking. If ``None``, the data array
         is first flattened.
+    nan_policy : {'omit', 'propagate', 'raise'}, optional
+        Defines how to handle when input contains nan.
+        The following options are available (default is 'omit'):
+
+          * 'omit': performs the calculations ignoring nan values
+          * 'propagate': propagates nans through the rank calculation
+          * 'raise': raises an error
+
+        .. note::
+
+            When `nan_policy` is 'omit', nans in `a` are ignored when ranking
+            the other values, and the corresponding locations of the output
+            are nan. This behavior is the default because it is intuitive and
+            compatible with the behavior before the `nan_policy` parameter
+            was introduced.
+            When `nan_policy` is 'propagate', the output is an array of *all*
+            nans because ranks relative to nans in the input are undefined.
+
+        .. versionadded:: 1.10
 
     Returns
     -------
@@ -9122,13 +9130,18 @@ def rankdata(a, method='average', *, axis=None):
     >>> rankdata([[0, 2, 2], [3, 2, 5]], axis=1)
     array([[1. , 2.5, 2.5],
            [2. , 1. , 3. ]])
+    >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="omit")
+    array([ 2.,  3.,  4., nan,  1., nan])
+    >>> rankdata([0, 2, 3, np.nan, -2, np.nan], nan_policy="propagate")
+    array([nan, nan, nan, nan, nan, nan])
 
     """
     if method not in ('average', 'min', 'max', 'dense', 'ordinal'):
         raise ValueError('unknown method "{0}"'.format(method))
 
+    a = np.asarray(a)
+
     if axis is not None:
-        a = np.asarray(a)
         if a.size == 0:
             # The return values of `normalize_axis_index` are ignored.  The
             # call validates `axis`, even though we won't use it.
@@ -9136,9 +9149,18 @@ def rankdata(a, method='average', *, axis=None):
             np.core.multiarray.normalize_axis_index(axis, a.ndim)
             dt = np.float64 if method == 'average' else np.int_
             return np.empty(a.shape, dtype=dt)
-        return np.apply_along_axis(rankdata, axis, a, method)
+        return np.apply_along_axis(rankdata, axis, a, method,
+                                   nan_policy=nan_policy)
 
-    arr = np.ravel(np.asarray(a))
+    contains_nan, nan_policy = _contains_nan(a, nan_policy)
+    nan_indexes = None
+    if contains_nan:
+        if nan_policy == 'omit':
+            nan_indexes = np.isnan(a)
+        if nan_policy == 'propagate':
+            return np.full_like(a, np.nan)
+
+    arr = np.ravel(a)
     algo = 'mergesort' if method == 'ordinal' else 'quicksort'
     sorter = np.argsort(arr, kind=algo)
 
@@ -9146,23 +9168,29 @@ def rankdata(a, method='average', *, axis=None):
     inv[sorter] = np.arange(sorter.size, dtype=np.intp)
 
     if method == 'ordinal':
-        return inv + 1
+        result = inv + 1
 
     arr = arr[sorter]
     obs = np.r_[True, arr[1:] != arr[:-1]]
     dense = obs.cumsum()[inv]
 
     if method == 'dense':
-        return dense
+        result = dense
 
     # cumulative counts of each unique value
     count = np.r_[np.nonzero(obs)[0], len(obs)]
 
     if method == 'max':
-        return count[dense]
+        result = count[dense]
 
     if method == 'min':
-        return count[dense - 1] + 1
+        result = count[dense - 1] + 1
 
-    # average method
-    return .5 * (count[dense] + count[dense - 1] + 1)
+    if method == 'average':
+        result = .5 * (count[dense] + count[dense - 1] + 1)
+
+    if nan_indexes is not None:
+        result = result.astype('float64')
+        result[nan_indexes] = np.nan
+
+    return result
