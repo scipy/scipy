@@ -101,3 +101,24 @@ if all_success:
 else:
     sys.stderr.write('\n\n>>>> ERROR: doctests FAILED\n')
     sys.exit(-1)
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="doctest runner")
+    parser.add_argument('-v', '--verbose', action='count', default=0,
+                        help='print verbose (`-v`) or very verbose (`-vv`) '
+                              'output for all tests')
+    parser.add_argument('-x', '--fail-fast', action='store_true',
+                        help=('stop running tests after first failure'))
+    parser.add_argument( "-s", "--submodule", default=None,
+                        help="Submodule whose tests to run (cluster,"
+                             " constants, ...)")
+    parser.add_argument( "-t", "--tests", action='append',
+                        help="Specify a .py file to check")
+##    parser.add_argument('file', nargs='+',
+##                        help='file containing the tests to run')
+    args = parser.parse_args()
+    testfiles = args.file
+    verbose = args.verbose
