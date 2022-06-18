@@ -2524,3 +2524,32 @@ class TestMedianTest:
         exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
+
+class TestSpherfuncs:
+    # Reference implementations are not available
+    def test_sphermean_correctness(self):
+        # Data from Fisher: Dispersion on a sphere, 1953 and
+        # Mardia and Jupp, Directional Statistics.
+        # For x coordinate, result for spherical mean does not agree with 
+        # Mardia & Jupp, probably due to rounding errors in reference, that's why the
+        # first entry of the spherical mean reference is different than in the book.
+
+        decl = -np.deg2rad(np.array([343.2, 62., 36.9, 27., 359.,
+                                     5.7, 50.4, 357.6, 44.]))
+        incl = -np.deg2rad(np.array([66.1, 68.7, 70.1, 82.1, 79.5,
+                                     73., 69.3, 58.8, 51.4]))
+        data=np.stack((np.cos(incl)*np.cos(decl),
+                       np.cos(incl)*np.sin(decl),
+                       np.sin(incl))).T
+
+        directional_mean = stats.sphermean(data)
+        mean_rounded = np.round(directional_mean, 3)
+
+        reference_mean = np.array([0.298, -0.135, -0.945])
+        assert_allclose(mean_rounded, reference_mean)
+
+    def test_sphermean_wrong_dimensions(self):
+        # test that one-dimensional data raises ValueError
+
+        data = np.ones((5, ))
+        assert_raises(ValueError, stats.sphermean, data)
