@@ -413,6 +413,14 @@ Circular statistical functions
    circvar
    circstd
 
+Statistical functions on the n-dimensional unit sphere
+------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   sphermean
+
 Contingency table functions
 ---------------------------
 

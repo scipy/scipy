@@ -31,7 +31,7 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot'
+           'yeojohnson_normplot', 'sphermean',
            ]
 
 
@@ -3881,3 +3881,24 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     if not normalize:
         res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
     return res
+
+def sphermean(samples, axis=0, nan_policy='propagate'):
+    """
+    samples : array_like
+        Input array
+    axis : int, optional
+        Axis along which standard deviations are computed. Default is 0.
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
+    """
+    samples = np.asarray(samples)
+    if samples.ndim < 2:
+        raise ValueError("samples must at least be two-dimensional. "
+                         "Instead samples has shape: %r." % samples.shape)
+
+    #contains_nan, nan_policy = _contains_nan(samples)
+    mean=np.mean(samples, axis=axis)
+    spherical_mean = mean/np.linalg.norm(mean)
+    return spherical_mean
