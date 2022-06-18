@@ -55,7 +55,7 @@ class RegularGridInterpolator:
         The method of interpolation to perform. Supported are "linear",
         "nearest", "slinear", "cubic", "quintic" and "pchip". This
         parameter will become the default for the object's ``__call__``
-         method. Default is "linear".
+        method. Default is "linear".
 
     bounds_error : bool, optional
         If True, when interpolated values are requested outside of the
