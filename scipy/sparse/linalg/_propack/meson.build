@@ -1,3 +1,8 @@
+fs = import('fs')
+if not fs.exists('PROPACK/README')
+  error('Missing the `PROPACK` submodule! Run `git submodule update --init` to fix this.')
+endif
+
 fortran_ignore_warnings = [
   '-Wno-tabs', '-Wno-conversion',
   '-Wno-argument-mismatch', '-Wno-unused-dummy-argument',

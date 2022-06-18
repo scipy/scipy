@@ -388,6 +388,22 @@ def test_frozen_attributes():
     delattr(stats.binom, 'pdf')
 
 
+@pytest.mark.parametrize('distname, shapes', distdiscrete)
+def test_interval(distname, shapes):
+    # gh-11026 reported that `interval` returns incorrect values when
+    # `confidence=1`. The values were not incorrect, but it was not intuitive
+    # that the left end of the interval should extend beyond the support of the
+    # distribution. Confirm that this is the behavior for all distributions.
+    if isinstance(distname, str):
+        dist = getattr(stats, distname)
+    else:
+        dist = distname
+    a, b = dist.support(*shapes)
+    npt.assert_equal(dist.ppf([0, 1], *shapes), (a-1, b))
+    npt.assert_equal(dist.isf([1, 0], *shapes), (a-1, b))
+    npt.assert_equal(dist.interval(1, *shapes), (a-1, b))
+
+
 def test_rv_sample():
     # Thoroughly test rv_sample and check that gh-3758 is resolved
 

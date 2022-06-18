@@ -947,7 +947,8 @@ def test_theilslopes_warnings():
     with pytest.warns(RuntimeWarning, match="All `x` coordinates are..."):
         res = mstats.theilslopes([0, 1], [0, 0])
         assert np.all(np.isnan(res))
-    with pytest.warns(RuntimeWarning, match="invalid value encountered..."):
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "invalid value encountered...")
         res = mstats.theilslopes([0, 0, 0], [0, 1, 0])
         assert_allclose(res, (0, 0, np.nan, np.nan))
 

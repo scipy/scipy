@@ -637,6 +637,7 @@ class TestMatrixNormal:
                                                         N*num_cols,num_rows).T)
         assert_allclose(sample_rowcov, U, atol=0.1)
 
+
 class TestDirichlet:
 
     def test_frozen_dirichlet(self):

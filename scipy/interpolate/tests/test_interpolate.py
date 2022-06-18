@@ -434,6 +434,15 @@ class TestInterp1D:
         assert_array_almost_equal(interp10([2.4, 5.6, 6.0]),
                                   np.array([2., 5., 6.]))
 
+    def bounds_check_helper(self, interpolant, test_array, fail_value):
+        # Asserts that a ValueError is raised and that the error message
+        # contains the value causing this exception.
+        assert_raises(ValueError, interpolant, test_array)
+        try:
+            interpolant(test_array)
+        except ValueError as err:
+            assert("{}".format(fail_value) in str(err))
+
     def _bounds_check(self, kind='linear'):
         # Test that our handling of out-of-bounds input is correct.
         extrap10 = interp1d(self.x10, self.y10, fill_value=self.fill_value,
@@ -450,8 +459,12 @@ class TestInterp1D:
 
         raises_bounds_error = interp1d(self.x10, self.y10, bounds_error=True,
                                        kind=kind)
-        assert_raises(ValueError, raises_bounds_error, -1.0)
-        assert_raises(ValueError, raises_bounds_error, 11.0)
+
+        self.bounds_check_helper(raises_bounds_error, -1.0, -1.0)
+        self.bounds_check_helper(raises_bounds_error, 11.0, 11.0)
+        self.bounds_check_helper(raises_bounds_error, [0.0, -1.0, 0.0], -1.0)
+        self.bounds_check_helper(raises_bounds_error, [0.0, 1.0, 21.0], 21.0)
+
         raises_bounds_error([0.0, 5.0, 9.0])
 
     def _bounds_check_int_nan_fill(self, kind='linear'):
