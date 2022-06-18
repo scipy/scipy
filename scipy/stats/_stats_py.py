@@ -558,7 +558,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
-def mode(a, axis=0, nan_policy='propagate'):
+def mode(a, axis=0, nan_policy='propagate', keepdims=None):
     r"""Return an array of the modal (most common) value in the passed array.
 
     If there is more than one such value, only one is returned.
@@ -578,6 +578,10 @@ def mode(a, axis=0, nan_policy='propagate'):
           * 'propagate': treats nan as it would treat any other value
           * 'raise': throws an error
           * 'omit': performs the calculations ignoring nan values
+    keepdims : bool, default: False
+        If this is set to True, the axes which are reduced are left in the
+        result as dimensions with size one. With this option, the result will
+        broadcast correctly against the input array.
 
     Returns
     -------
@@ -625,8 +629,26 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     """  # noqa: E501
     a, axis = _chk_asarray(a, axis)
+
+    if keepdims is None:
+        warnings.warn("Unlike other reduction functions, the default behavior "
+                      "of `mode` is consistent with `keepdims=False: it does "
+                      "not consume the axis it acts along. In SciPy 1.11.0, "
+                      "the default will be `keepdims=True`, and this warning "
+                      "will disappear. To silence this warning before then, "
+                      "please pass `keepdims` as True or False explicitly.",
+                      FutureWarning, stacklevel=2)
+        keepdims = True
+
     if a.size == 0:
-        return ModeResult(np.array([]), np.array([]))
+        if keepdims:
+            return ModeResult(np.array([]), np.array([]))
+        else:
+            # This is incorrect for arrays with more than one dimension
+            # when axis is not None. This can be fixed in 1.11, when
+            # object support is removed and we can use the _axis_nan_policy
+            # decorator.
+            return ModeResult(np.nan, np.nan)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
@@ -662,9 +684,13 @@ def mode(a, axis=0, nan_policy='propagate'):
     counts = np.empty(a_view.shape[:-1], dtype=np.int_)
     for ind in inds:
         modes[ind], counts[ind] = _mode1D(a_view[ind])
-    newshape = list(a.shape)
-    newshape[axis] = 1
-    return ModeResult(modes.reshape(newshape), counts.reshape(newshape))
+
+    if keepdims:
+        newshape = list(a.shape)
+        newshape[axis] = 1
+        return ModeResult(modes.reshape(newshape), counts.reshape(newshape))
+    else:
+        return ModeResult(modes[()], counts[()])
 
 
 def _mask_to_limits(a, limits, inclusive):
