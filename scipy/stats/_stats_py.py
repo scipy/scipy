@@ -110,7 +110,7 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
                 contains_nan = True
                 break
     else:
-        # Don't know what to do for this dtype. Fall back to return no nans
+        # Only `object` and `inexact` arrays can have NaNs
         contains_nan = False
 
     if contains_nan and nan_policy == 'raise':
