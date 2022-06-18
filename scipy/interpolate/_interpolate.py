@@ -729,13 +729,16 @@ class interp1d(_Interpolator1D):
         below_bounds = x_new < self.x[0]
         above_bounds = x_new > self.x[-1]
 
-        # !! Could provide more information about which values are out of bounds
         if self.bounds_error and below_bounds.any():
-            raise ValueError("A value in x_new is below the interpolation "
-                             "range.")
+            below_bounds_value = x_new[np.argmax(below_bounds)]
+            raise ValueError("A value ({}) in x_new is below "
+                             "the interpolation range's minimum value ({})."
+                             .format(below_bounds_value, self.x[0]))
         if self.bounds_error and above_bounds.any():
-            raise ValueError("A value in x_new is above the interpolation "
-                             "range.")
+            above_bounds_value = x_new[np.argmax(above_bounds)]
+            raise ValueError("A value ({}) in x_new is above "
+                             "the interpolation range's maximum value ({})."
+                             .format(above_bounds_value, self.x[-1]))
 
         # !! Should we emit a warning if some values are out of bounds?
         # !! matlab does not.

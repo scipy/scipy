@@ -1008,14 +1008,15 @@ class Test_HalfspaceIntersection:
             truths[indexes[0]] = True
         assert_(truths.all())
 
-    def test_cube_halfspace_intersection(self):
-        halfspaces = np.array([[-1.0, 0.0, 0.0],
-                               [0.0, -1.0, 0.0],
-                               [1.0, 0.0, -1.0],
-                               [0.0, 1.0, -1.0]])
-        feasible_point = np.array([0.5, 0.5])
+    @pytest.mark.parametrize("dt", [np.float64, int])
+    def test_cube_halfspace_intersection(self, dt):
+        halfspaces = np.array([[-1, 0, 0],
+                               [0, -1, 0],
+                               [1, 0, -2],
+                               [0, 1, -2]], dtype=dt)
+        feasible_point = np.array([1, 1], dtype=dt)
 
-        points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+        points = np.array([[0.0, 0.0], [2.0, 0.0], [0.0, 2.0], [2.0, 2.0]])
 
         hull = qhull.HalfspaceIntersection(halfspaces, feasible_point)
 

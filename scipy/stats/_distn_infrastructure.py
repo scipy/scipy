@@ -649,12 +649,12 @@ class rv_generic:
     def random_state(self):
         """Get or set the generator object for generating random variates.
 
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+        If `random_state` is None (or `np.random`), the
+        `numpy.random.RandomState` singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance, that instance is used.
 
         """
         return self._random_state
@@ -1040,12 +1040,12 @@ class rv_generic:
         random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
 
-            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-            singleton is used.
-            If `seed` is an int, a new ``RandomState`` instance is used,
-            seeded with `seed`.
-            If `seed` is already a ``Generator`` or ``RandomState`` instance
-            then that instance is used.
+            If `random_state` is None (or `np.random`), the
+            `numpy.random.RandomState` singleton is used.
+            If `random_state` is an int, a new ``RandomState`` instance is
+            used, seeded with `random_state`.
+            If `random_state` is already a ``Generator`` or ``RandomState``
+            instance, that instance is used.
 
         Returns
         -------
@@ -1333,9 +1333,10 @@ class rv_generic:
                 message = "moment() got multiple values for first argument"
                 raise TypeError(message)
             else:  # B2
-                message = ("Use of keyword argument `n` for method "
-                           "`moment` is deprecated. Use first positional "
-                           "argument or keyword argument `order` instead.")
+                message = ("Use of keyword argument 'n' for method 'moment is"
+                           " deprecated and will be removed in SciPy 1.11.0. "
+                           "Use first positional argument or keyword argument"
+                           " 'order' instead.")
                 order = kwds.pop("n")
                 warnings.warn(message, DeprecationWarning, stacklevel=2)
         n = order
@@ -1533,6 +1534,18 @@ class rv_generic:
             end-points of range that contain ``100 * alpha %`` of the rv's
             possible values.
 
+        Notes
+        -----
+        This is implemented as ``ppf([p_tail, 1-p_tail])``, where
+        ``ppf`` is the inverse cumulative distribution function and
+        ``p_tail = (1-confidence)/2``. Suppose ``[c, d]`` is the support of a
+        discrete distribution; then ``ppf([0, 1]) == (c-1, d)``. Therefore,
+        when ``confidence==1`` and the distribution is discrete, the left end
+        of the interval will be beyond the support of the distribution.
+        For discrete distributions, the interval will limit the probability
+        in each tail to be less than or equal to ``p_tail`` (usually
+        strictly less).
+
         """
         # This function was originally written with parameter `alpha`, but
         # `alpha` is also the name of a shape parameter of two distributions.
@@ -1557,10 +1570,10 @@ class rv_generic:
                 message = "interval() got multiple values for first argument"
                 raise TypeError(message)
             else:
-                message = ("Use of keyword argument `alpha` for method "
-                           "`interval` is deprecated. Use first positional "
-                           "argument or keyword argument `confidence` "
-                           "instead.")
+                message = ("Use of keyword argument 'alpha' for method "
+                           "'interval' is deprecated and wil be removed in "
+                           "SciPy 1.11.0. Use first positional argument or "
+                           "keyword argument 'confidence' instead.")
                 confidence = kwds.pop("alpha")
                 warnings.warn(message, DeprecationWarning, stacklevel=2)
         alpha = confidence
@@ -1733,7 +1746,8 @@ class rv_continuous(rv_generic):
     extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
-        backwards compatibility, do not use for new subclasses.
+        backwards compatibility and will be removed in SciPy 1.11.0, do not
+        use for new subclasses.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
 
@@ -2081,7 +2095,7 @@ class rv_continuous(rv_generic):
         args, loc, scale = self._parse_args(*args, **kwds)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
-        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        dtyp = np.promote_types(x.dtype, np.float64)
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._support_mask(x, *args) & (scale > 0)
@@ -2122,7 +2136,7 @@ class rv_continuous(rv_generic):
         args, loc, scale = self._parse_args(*args, **kwds)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
-        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        dtyp = np.promote_types(x.dtype, np.float64)
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._support_mask(x, *args) & (scale > 0)
@@ -2164,7 +2178,7 @@ class rv_continuous(rv_generic):
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        dtyp = np.promote_types(x.dtype, np.float64)
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
@@ -2205,7 +2219,7 @@ class rv_continuous(rv_generic):
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        dtyp = np.promote_types(x.dtype, np.float64)
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
@@ -2247,7 +2261,7 @@ class rv_continuous(rv_generic):
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        dtyp = np.promote_types(x.dtype, np.float64)
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
@@ -2291,7 +2305,7 @@ class rv_continuous(rv_generic):
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        dtyp = np.promote_types(x.dtype, np.float64)
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
@@ -3053,7 +3067,8 @@ class rv_discrete(rv_generic):
     extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
-        backwards compatibility, do not use for new subclasses.
+        backwards compatibility and will be removed in SciPy 1.11.0, do not
+        use for new subclasses.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
 
@@ -3318,12 +3333,12 @@ class rv_discrete(rv_generic):
         random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
 
-            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-            singleton is used.
-            If `seed` is an int, a new ``RandomState`` instance is used,
-            seeded with `seed`.
-            If `seed` is already a ``Generator`` or ``RandomState`` instance
-            then that instance is used.
+            If `random_state` is None (or `np.random`), the
+            `numpy.random.RandomState` singleton is used.
+            If `random_state` is an int, a new ``RandomState`` instance is
+            used, seeded with `random_state`.
+            If `random_state` is already a ``Generator`` or ``RandomState``
+            instance, that instance is used.
 
         Returns
         -------

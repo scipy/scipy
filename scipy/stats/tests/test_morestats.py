@@ -728,10 +728,27 @@ class TestLevene:
         assert_raises(ValueError, stats.levene, g1, x)
 
 
-class TestBinomP:
-    """Tests for stats.binom_test."""
+class TestBinomTestP:
+    """
+    Tests for stats.binomtest as a replacement for deprecated stats.binom_test.
+    """
+    @staticmethod
+    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
+        # This processing of x and n is copied from from binom_test.
+        x = np.atleast_1d(x).astype(np.int_)
+        if len(x) == 2:
+            n = x[1] + x[0]
+            x = x[0]
+        elif len(x) == 1:
+            x = x[0]
+            if n is None or n < x:
+                raise ValueError("n must be >= x")
+            n = np.int_(n)
+        else:
+            raise ValueError("Incorrect length for x.")
 
-    binom_test_func = staticmethod(stats.binom_test)
+        result = stats.binomtest(x, n, p=p, alternative=alternative)
+        return result.pvalue
 
     def test_data(self):
         pval = self.binom_test_func(100, 250)
@@ -770,29 +787,6 @@ class TestBinomP:
     def test_boost_overflow_raises(self):
         # Boost.Math error policy should raise exceptions in Python
         assert_raises(OverflowError, self.binom_test_func, 5.0, 6, p=sys.float_info.min)
-
-
-class TestBinomTestP(TestBinomP):
-    """
-    Tests for stats.binomtest as a replacement for stats.binom_test.
-    """
-    @staticmethod
-    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
-        # This processing of x and n is copied from from binom_test.
-        x = np.atleast_1d(x).astype(np.int_)
-        if len(x) == 2:
-            n = x[1] + x[0]
-            x = x[0]
-        elif len(x) == 1:
-            x = x[0]
-            if n is None or n < x:
-                raise ValueError("n must be >= x")
-            n = np.int_(n)
-        else:
-            raise ValueError("Incorrect length for x.")
-
-        result = stats.binomtest(x, n, p=p, alternative=alternative)
-        return result.pvalue
 
 
 class TestBinomTest:
@@ -1073,13 +1067,79 @@ class TestFligner:
         assert_equal((np.nan, np.nan), stats.fligner(x, x**2, []))
 
 
+def mood_cases_with_ties():
+    # Generate random `x` and `y` arrays with ties both between and within the
+    # samples. Expected results are (statistic, pvalue) from SAS.
+    expected_results = [(-1.76658511464992, .0386488678399305),
+                        (-.694031428192304, .2438312498647250),
+                        (-1.15093525352151, .1248794365836150)]
+    seeds = [23453254, 1298352315, 987234597]
+    for si, seed in enumerate(seeds):
+        rng = np.random.default_rng(seed)
+        xy = rng.random(100)
+        # Generate random indices to make ties
+        tie_ind = rng.integers(low=0, high=99, size=5)
+        # Generate a random number of ties for each index.
+        num_ties_per_ind = rng.integers(low=1, high=5, size=5)
+        # At each `tie_ind`, mark the next `n` indices equal to that value.
+        for i, n in zip(tie_ind, num_ties_per_ind):
+            for j in range(i + 1, i + n):
+                xy[j] = xy[i]
+        # scramble order of xy before splitting into `x, y`
+        rng.shuffle(xy)
+        x, y = np.split(xy, 2)
+        yield x, y, 'less', *expected_results[si]
+
 class TestMood:
-    def test_mood(self):
-        # numbers from R: mood.test in package stats
-        x1 = np.arange(5)
-        assert_array_almost_equal(stats.mood(x1, x1**2),
-                                  (-1.3830857299399906, 0.16663858066771478),
-                                  11)
+    @pytest.mark.parametrize("x,y,alternative,stat_expect,p_expect",
+                             mood_cases_with_ties())
+    def test_against_SAS(self, x, y, alternative, stat_expect, p_expect):
+        """
+        Example code used to generate SAS output:
+        DATA myData;
+        INPUT X Y;
+        CARDS;
+        1 0
+        1 1
+        1 2
+        1 3
+        1 4
+        2 0
+        2 1
+        2 4
+        2 9
+        2 16
+        ods graphics on;
+        proc npar1way mood data=myData ;
+           class X;
+            ods output  MoodTest=mt;
+        proc contents data=mt;
+        proc print data=mt;
+          format     Prob1 17.16 Prob2 17.16 Statistic 17.16 Z 17.16 ;
+            title "Mood Two-Sample Test";
+        proc print data=myData;
+            title "Data for above results";
+          run;
+        """
+        statistic, pvalue = stats.mood(x, y, alternative=alternative)
+        assert_allclose(stat_expect, statistic, atol=1e-16)
+        assert_allclose(p_expect, pvalue, atol=1e-16)
+
+    @pytest.mark.parametrize("alternative, expected",
+                             [('two-sided', (1.019938533549930,
+                                             .3077576129778760)),
+                              ('less', (1.019938533549930,
+                                        1 - .1538788064889380)),
+                              ('greater', (1.019938533549930,
+                                           .1538788064889380))])
+    def test_against_SAS_2(self, alternative, expected):
+        # Code to run in SAS in above function
+        x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
+             101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
+        y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100,
+             96, 108, 103, 104, 114, 114, 113, 108, 106, 99]
+        res = stats.mood(x, y, alternative=alternative)
+        assert_allclose(res, expected)
 
     def test_mood_order_of_args(self):
         # z should change sign when the order of arguments changes, pvalue
@@ -1192,27 +1252,6 @@ class TestMood:
 
         with pytest.raises(ValueError, match="alternative must be..."):
             stats.mood(x, y, alternative='ekki-ekki')
-
-    @pytest.mark.xfail(reason="SciPy needs tie correction like R (gh-13730)")
-    @pytest.mark.parametrize("alternative, expected",
-                             [('two-sided', (1.037127561496, 0.299676411857)),
-                              ('less', (1.0371275614961, 0.8501617940715)),
-                              ('greater', (1.037127561496, 0.1498382059285))])
-    def test_mood_alternative_against_R(self, alternative, expected):
-        ## Test againts R mood.test: https://rdrr.io/r/stats/mood.test.html
-        # options(digits=16)
-        # x <- c(111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
-        #             101, 96, 97, 102, 107, 113, 116, 113, 110, 98)
-        # y <- c(107, 108, 106, 98, 105, 103, 110, 105, 104,
-        #             100, 96, 108, 103, 104, 114, 114, 113, 108, 106, 99)
-        # mood.test(x, y, alternative='less')
-        x = [111, 107, 100, 99, 102, 106, 109, 108, 104, 99,
-             101, 96, 97, 102, 107, 113, 116, 113, 110, 98]
-        y = [107, 108, 106, 98, 105, 103, 110, 105, 104, 100,
-             96, 108, 103, 104, 114, 114, 113, 108, 106, 99]
-
-        res = stats.mood(x, y, alternative=alternative)
-        assert_allclose(res, expected)
 
 
 class TestProbplot:

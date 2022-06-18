@@ -207,9 +207,9 @@ workflow instead of ``python dev.py``, then you have a few options:
 
 Please ignore these warnings, they are innocuous. They indicate that the
 install path is outside of a ``site-packages`` directory (which we prefer as
-the default for ``python dev.py``). We are working with the Meson maintainers
-to improve the support for this install method or at least make the warnings
-less scary.
+the default for ``python dev.py``).
+
+Upgrading Meson to 0.62.0 will make the warning go away.
 
 **Q: How do the current build/install commands change?**
 
