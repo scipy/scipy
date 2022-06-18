@@ -2565,7 +2565,7 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
         warnings.filterwarnings(
             action='ignore',
             message="lsim2 is deprecated and will be removed from scipy 1.12. "
-            "Use the feature-equivalent lsim function.",
+                    "Use the feature-equivalent lsim function.",
             category=DeprecationWarning)
         vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]
