@@ -33,7 +33,7 @@ dependencies:
   - numpydoc
   - ipython
   - matplotlib
-  - pydata-sphinx-theme>=0.8.1
+  - pydata-sphinx-theme>=0.9.0
   - sphinx-panels
   - sphinx-tabs
   # For linting

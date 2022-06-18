@@ -40,7 +40,7 @@ def upcast(*args):
     if t is not None:
         return t
 
-    upcast = np.find_common_type(args, [])
+    upcast = np.result_type(*args)
 
     for t in supported_dtypes:
         if np.can_cast(upcast, t):
@@ -151,11 +151,12 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
     """
 
-    int32min = np.iinfo(np.int32).min
-    int32max = np.iinfo(np.int32).max
+    int32min = np.int32(np.iinfo(np.int32).min)
+    int32max = np.int32(np.iinfo(np.int32).max)
 
     dtype = np.intc
     if maxval is not None:
+        maxval = np.int64(maxval)
         if maxval > int32max:
             dtype = np.int64
 

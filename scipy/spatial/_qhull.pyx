@@ -2822,8 +2822,9 @@ class HalfspaceIntersection(_QhullUser):
 
         # Run qhull
         mode_option = "H"
-        qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options, required_options=None,
-                       incremental=incremental, interior_point=interior_point)
+        qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options,
+                       required_options=None, incremental=incremental,
+                       interior_point=self.interior_point)
 
         _QhullUser.__init__(self, qhull, incremental=incremental)
 

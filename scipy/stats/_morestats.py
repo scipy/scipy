@@ -22,6 +22,7 @@ from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
+from .._lib.deprecation import _deprecated
 
 
 __all__ = ['mvsdist',
@@ -510,6 +511,10 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
         or a custom object with the same methods.
         Default is None, which means that no plot is created.
+    rvalue : bool, optional
+        If `plot` is provided and `fit` is True, setting `rvalue` to True
+        includes the coefficient of determination on the plot.
+        Default is False.
 
     Returns
     -------
@@ -622,7 +627,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
                                title='Probability Plot')
 
         # Add R^2 value to the plot as text
-        if rvalue:
+        if fit and rvalue:
             xmin = amin(osm)
             xmax = amax(osm)
             ymin = amin(x)
@@ -1786,7 +1791,7 @@ def shapiro(x):
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
-    x -= np.median(x)
+    x = x - np.median(x)
 
     a = zeros(N, 'f')
     init = 0
@@ -2645,15 +2650,19 @@ def levene(*samples, center='median', proportiontocut=0.05):
     return LeveneResult(W, pval)
 
 
+@_deprecated("'binom_test' is deprecated in favour of"
+             " 'binomtest' from version 1.7.0 and will"
+             " be removed in Scipy 1.12.0.")
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """Perform a test that the probability of success is p.
-
-    Note: `binom_test` is deprecated; it is recommended that `binomtest`
-    be used instead.
 
     This is an exact, two-sided test of the null hypothesis
     that the probability of success in a Bernoulli experiment
     is `p`.
+
+    .. deprecated:: 1.10.0
+        'binom_test' is deprecated in favour of 'binomtest' and will
+        be removed in Scipy 1.12.0.
 
     Parameters
     ----------
