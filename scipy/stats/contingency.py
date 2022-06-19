@@ -236,21 +236,23 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     >>> from scipy.stats import chi2_contingency
     >>> obs = np.array([[10, 10, 20], [20, 20, 20]])
     >>> chi2_contingency(obs)
-    Chi2ContingencyResult(statistic=2.7777777777777777,
-                          pvalue=0.24935220877729619,
-                          dof=2,
-                          expected_freq=array([[ 12.,  12.,  16.],
-                                               [ 18.,  18.,  24.]]))
+    Chi2ContingencyResult(
+        statistic=2.7777777777777777,
+        pvalue=0.24935220877729619,
+        dof=2,
+        expected_freq=array([[ 12.,  12.,  16.],
+                             [ 18.,  18.,  24.]]))
 
     Perform the test using the log-likelihood ratio (i.e. the "G-test")
     instead of Pearson's chi-squared statistic.
 
     >>> chi2_contingency(obs, lambda_="log-likelihood")
-    Chi2ContingencyResult(statistic=2.7688587616781319,
-                          pvalue=0.25046668010954165,
-                          dof=2,
-                          expected_freq=array([[ 12.,  12.,  16.],
-                                               [ 18.,  18.,  24.]]))
+    Chi2ContingencyResult(
+        statistic=2.7688587616781319,
+        pvalue=0.25046668010954165,
+        dof=2,
+        expected_freq=array([[ 12.,  12.,  16.],
+                             [ 18.,  18.,  24.]]))
 
     A four-way example (2 x 2 x 2 x 2):
 
@@ -264,17 +266,18 @@ def chi2_contingency(observed, correction=True, lambda_=None):
     ...       [[14, 17],
     ...        [15, 16]]]])
     >>> chi2_contingency(obs)
-    Chi2ContingencyResult(statistic=8.7584514426741897,
-                          pvalue=0.64417725029295503,
-                          dof=11,
-                          expected_freq=array([[[[ 14.15462386,  14.15462386],
-                                                 [ 16.49423111,  16.49423111]],
-                                                [[ 11.2461395 ,  11.2461395 ],
-                                                 [ 13.10500554,  13.10500554]]],
-                                               [[[ 19.5591166 ,  19.5591166 ],
-                                                 [ 22.79202844,  22.79202844]],
-                                                [[ 15.54012004,  15.54012004],
-                                                 [ 18.10873492,  18.10873492]]]]))
+    Chi2ContingencyResult(
+        statistic=8.7584514426741897,
+        pvalue=0.64417725029295503,
+        dof=11,
+        expected_freq=array([[[[ 14.15462386,  14.15462386],
+                               [ 16.49423111,  16.49423111]],
+                              [[ 11.2461395 ,  11.2461395 ],
+                               [ 13.10500554,  13.10500554]]],
+                             [[[ 19.5591166 ,  19.5591166 ],
+                               [ 22.79202844,  22.79202844]],
+                              [[ 15.54012004,  15.54012004],
+                               [ 18.10873492,  18.10873492]]]]))
     """
     observed = np.asarray(observed)
     if np.any(observed < 0):
