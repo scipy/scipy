@@ -2538,9 +2538,9 @@ class TestSpherfuncs:
                                      5.7, 50.4, 357.6, 44.]))
         incl = -np.deg2rad(np.array([66.1, 68.7, 70.1, 82.1, 79.5,
                                      73., 69.3, 58.8, 51.4]))
-        data=np.stack((np.cos(incl) * np.cos(decl),
-                       np.cos(incl) * np.sin(decl),
-                       np.sin(incl))).T
+        data = np.stack((np.cos(incl) * np.cos(decl),
+                         np.cos(incl) * np.sin(decl),
+                         np.sin(incl))).T
 
         directional_mean = stats.directionalmean(data)
         mean_rounded = np.round(directional_mean, 3)

@@ -3951,8 +3951,8 @@ def directionalmean(samples, axis=0, nan_policy='propagate'):
 
     contains_nan, nan_policy = _contains_nan(samples, nan_policy)
     if contains_nan and nan_policy == 'omit':
-        mean=np.nanmean(samples, axis = axis)
+        mean = np.nanmean(samples, axis = axis)
     else:
-        mean=np.mean(samples, axis = axis)
+        mean = np.mean(samples, axis = axis)
     directional_mean = mean/np.linalg.norm(mean)
     return directional_mean
