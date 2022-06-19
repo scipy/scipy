@@ -2527,10 +2527,10 @@ class TestMedianTest:
 
 class TestSpherfuncs:
     # Reference implementations are not available
-    def test_sphermean_correctness(self):
+    def test_directionalmean_correctness(self):
         # Data from Fisher: Dispersion on a sphere, 1953 and
         # Mardia and Jupp, Directional Statistics.
-        # For x coordinate, result for spherical mean does not agree with 
+        # For x coordinate, result for spherical mean does not agree with
         # Mardia & Jupp, probably due to rounding errors in reference, that's why the
         # first entry of the spherical mean reference is different than in the book.
 
@@ -2542,14 +2542,14 @@ class TestSpherfuncs:
                        np.cos(incl)*np.sin(decl),
                        np.sin(incl))).T
 
-        directional_mean = stats.sphermean(data)
+        directional_mean = stats.directionalmean(data)
         mean_rounded = np.round(directional_mean, 3)
 
         reference_mean = np.array([0.298, -0.135, -0.945])
         assert_allclose(mean_rounded, reference_mean)
 
-    def test_sphermean_wrong_dimensions(self):
+    def test_directionalmean_wrong_dimensions(self):
         # test that one-dimensional data raises ValueError
 
         data = np.ones((5, ))
-        assert_raises(ValueError, stats.sphermean, data)
+        assert_raises(ValueError, stats.directionalmean, data)

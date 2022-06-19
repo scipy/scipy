@@ -413,13 +413,13 @@ Circular statistical functions
    circvar
    circstd
 
-Statistical functions on the n-dimensional unit sphere
+Directional statistical functions on the unit sphere
 ------------------------------
 
 .. autosummary::
    :toctree: generated/
 
-   sphermean
+   directionalmean
 
 Contingency table functions
 ---------------------------

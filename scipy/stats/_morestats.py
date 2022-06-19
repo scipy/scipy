@@ -32,7 +32,7 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot', 'sphermean',
+           'yeojohnson_normplot', 'directionalmean'
            ]
 
 
@@ -3891,23 +3891,68 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
         res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
     return res
 
-def sphermean(samples, axis=0, nan_policy='propagate'):
+#@_axis_nan_policy_factory(
+#    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
+#)
+def directionalmean(samples, axis=0, nan_policy='propagate'):
     """
+    Computes the directional mean of a sample of vectors.
+
+    Serves as equivalent of the sample mean for directional data whose
+    magnitude is irrelevant, e. g. unit vectors.
+
+    Parameters
+    ----------
     samples : array_like
-        Input array
+        Input array. Must at least be two-dimensional.
     axis : int, optional
-        Axis along which standard deviations are computed. Default is 0.
+        Axis along which directional means are computed. Default is 0.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+
+    Returns
+    -------
+    directionalmean : ndarray
+        Directional mean.
+
+    Notes
+    -----
+    This uses a definition of directional mean from [1]_.
+    Essentially, the calculation is as follows.
+
+    .. code-block:: python
+
+        mean=samples.mean()
+        directionalmean = mean/np.linalg.norm(mean)
+
+    References
+    ----------
+    .. [1] Mardia, Jupp. (2000). *Directional Statistics*
+       (p. 163). Wiley.
+
+    Examples
+    --------
+    >>> data = np.array([[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0.]])
+    >>> directionalmean(data)
+    array([1., 0., 0.])
+
+    The `regular`sample mean in contrast does not lie on the unit sphere.
+
+    >>> data.mean(axis=0)
+    array([0.8660254, 0., 0.])
+
     """
     samples = np.asarray(samples)
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
                          "Instead samples has shape: %r." % samples.shape)
 
-    #contains_nan, nan_policy = _contains_nan(samples)
-    mean=np.mean(samples, axis=axis)
-    spherical_mean = mean/np.linalg.norm(mean)
-    return spherical_mean
+    contains_nan, nan_policy = _contains_nan(samples, nan_policy)
+    if contains_nan and nan_policy == 'omit':
+        mean=np.nanmean(samples, axis=axis)
+    else:
+        mean=np.mean(samples, axis=axis)
+    directional_mean = mean/np.linalg.norm(mean)
+    return directional_mean
