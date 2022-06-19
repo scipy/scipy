@@ -1253,6 +1253,15 @@ class TestMood:
         with pytest.raises(ValueError, match="alternative must be..."):
             stats.mood(x, y, alternative='ekki-ekki')
 
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_result(self, alternative):
+        np.random.seed(1234)
+        x1 = np.random.randn(10, 1)
+        x2 = np.random.randn(15, 1)
+
+        res = stats.mood(x1, x2, alternative=alternative)
+        assert_equal((res.statistic, res.pvalue), res)
+
 
 class TestProbplot:
 

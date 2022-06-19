@@ -16,7 +16,8 @@ from scipy._lib._util import _rename_parameter
 
 from . import _statlib
 from . import _stats_py
-from ._stats_py import find_repeats, _contains_nan, _normtest_finish
+from ._stats_py import (find_repeats, _contains_nan, _normtest_finish,
+                        SignificanceResult)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -2999,11 +3000,14 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     Returns
     -------
-    z : scalar or ndarray
-        The z-score for the hypothesis test.  For 1-D inputs a scalar is
-        returned.
-    p-value : scalar ndarray
-        The p-value for the hypothesis test.
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : scalar or ndarray
+            The z-score for the hypothesis test.  For 1-D inputs a scalar is
+            returned.
+        pvalue : scalar ndarray
+            The p-value for the hypothesis test.
 
     See Also
     --------
@@ -3035,13 +3039,13 @@ def mood(x, y, axis=0, alternative="two-sided"):
     >>> rng = np.random.default_rng()
     >>> x2 = rng.standard_normal((2, 45, 6, 7))
     >>> x1 = rng.standard_normal((2, 30, 6, 7))
-    >>> z, p = stats.mood(x1, x2, axis=1)
-    >>> p.shape
+    >>> res = stats.mood(x1, x2, axis=1)
+    >>> res.pvalue.shape
     (2, 6, 7)
 
     Find the number of points where the difference in scale is not significant:
 
-    >>> (p > 0.1).sum()
+    >>> (res.pvalue > 0.1).sum()
     78
 
     Perform the test with different scales:
@@ -3049,7 +3053,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     >>> x1 = rng.standard_normal((2, 30))
     >>> x2 = rng.standard_normal((2, 35)) * 10.0
     >>> stats.mood(x1, x2, axis=1)
-    (array([-5.76174136, -6.12650783]), array([8.32505043e-09, 8.98287869e-10]))
+    SignificanceResult(statistic=array([-5.76174136, -6.12650783]),
+                       pvalue=array([8.32505043e-09, 8.98287869e-10]))
 
     """
     x = np.asarray(x, dtype=float)
@@ -3110,7 +3115,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     else:
         z.shape = res_shape
         pval.shape = res_shape
-    return z, pval
+    return SignificanceResult(z, pval)
 
 
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
