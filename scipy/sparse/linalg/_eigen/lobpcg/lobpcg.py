@@ -800,7 +800,7 @@ def lobpcg(
         print(ii)
         print(f"lambda:\n{_lambdaf}")
 
-    _lambda = _lambdaf[ii]
+    _lambda = _lambdaf[ii].copy()
     eigBlockVector = eigBlockVector[:, ii]
 
     blockVectorX = np.dot(blockVectorX, eigBlockVectorX)
