@@ -1,6 +1,7 @@
-      subroutine fpgrpa(ifsu,ifsv,ifbu,ifbv,idim,ipar,u,mu,v,mv,z,mz,
-     * tu,nu,tv,nv,p,c,nc,fp,fpu,fpv,mm,mvnu,spu,spv,right,q,au,au1,
-     * av,av1,bu,bv,nru,nrv)
+      recursive subroutine fpgrpa(ifsu,ifsv,ifbu,ifbv,idim,ipar,u,mu,
+     * v,mv,z,mz,tu,nu,tv,nv,p,c,nc,fp,fpu,fpv,mm,mvnu,spu,spv,
+     * right,q,au,au1,av,av1,bu,bv,nru,nrv)
+      implicit none
 c  ..
 c  ..scalar arguments..
       real*8 p,fp
@@ -14,7 +15,7 @@ c  ..local scalars..
       real*8 arg,fac,term,one,half,value
       integer i,id,ii,it,iz,i1,i2,j,jz,k,k1,k2,l,l1,l2,mvv,k0,muu,
      * ncof,nroldu,nroldv,number,nmd,numu,numu1,numv,numv1,nuu,nvv,
-     * nu4,nu7,nu8,nv4,nv7,nv8
+     * nu4,nu7,nu8,nv4,nv7,nv8, n33
 c  ..local arrays..
       real*8 h(5)
 c  ..subroutine references..

@@ -359,8 +359,8 @@ def splev(x, tck, der=0, ext=0):
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
             mesg = ("Calling splev() with BSpline objects with c.ndim > 1 is "
-                   "not recommended. Use BSpline.__call__(x) instead.")
-            warnings.warn(mesg, DeprecationWarning)
+                    "not allowed. Use BSpline.__call__(x) instead.")
+            raise ValueError(mesg)
 
         # remap the out-of-bounds behavior
         try:
@@ -427,8 +427,8 @@ def splint(a, b, tck, full_output=0):
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
             mesg = ("Calling splint() with BSpline objects with c.ndim > 1 is "
-                   "not recommended. Use BSpline.integrate() instead.")
-            warnings.warn(mesg, DeprecationWarning)
+                    "not allowed. Use BSpline.integrate() instead.")
+            raise ValueError(mesg)
 
         if full_output != 0:
             mesg = ("full_output = %s is not supported. Proceeding as if "
@@ -491,8 +491,8 @@ def sproot(tck, mest=10):
     if isinstance(tck, BSpline):
         if tck.c.ndim > 1:
             mesg = ("Calling sproot() with BSpline objects with c.ndim > 1 is "
-                    "not recommended.")
-            warnings.warn(mesg, DeprecationWarning)
+                    "not allowed.")
+            raise ValueError(mesg)
 
         t, c, k = tck.tck
 

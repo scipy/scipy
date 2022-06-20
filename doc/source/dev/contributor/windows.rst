@@ -379,12 +379,12 @@ Now install the dependencies that we need to build and test SciPy.
 
 .. code:: shell
 
-    python -m pip install wheel setuptools numpy>=1.16.5 Cython>=0.29.18 pybind11>=2.4.3 pythran>=0.9.12 pytest pytest-xdist
+    python -m pip install wheel setuptools numpy Cython pybind11 pythran pytest pytest-xdist
 
 .. note::
 
     These instructions use ``pip`` as the package manager. You can also use ``conda``
-    according to the instructions in the :ref:`quickstart-ubuntu` with minimal modifications
+    according to the instructions in the :ref:`conda-guide` with minimal modifications
     (e.g. you don't need to install ``gfortran`` and ``git`` because you already have them).
 
 The last two are for using SciPy's test suite, which is handy if you want to test

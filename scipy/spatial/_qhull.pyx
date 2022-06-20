@@ -22,6 +22,7 @@ from scipy._lib.messagestream cimport MessageStream
 import os
 import sys
 import tempfile
+import warnings
 
 np.import_array()
 
@@ -1720,6 +1721,10 @@ class Delaunay(_QhullUser):
         .. versionadded:: 0.12.0
     vertices
         Same as `simplices`, but deprecated.
+
+        .. deprecated:: 0.12.0
+            Delaunay attribute `vertices` is deprecated in favour of `simplices`
+            and will be removed in Scipy 1.11.0.
     vertex_neighbor_vertices : tuple of two ndarrays of int; (indptr, indices)
         Neighboring vertices of vertices. The indices of neighboring
         vertices of vertex `k` are ``indices[indptr[k]:indptr[k+1]]``.
@@ -1859,9 +1864,16 @@ class Delaunay(_QhullUser):
         self._vertex_neighbor_vertices = None
 
         # Backwards compatibility (Scipy < 0.12.0)
-        self.vertices = self.simplices
+        self._vertices = self.simplices
 
         _QhullUser._update(self, qhull)
+
+    @property
+    def vertices(self):
+        msg = ("Delaunay attribute 'vertices' is deprecated in favour of "
+               "'simplices' and will be removed in Scipy 1.11.0.")
+        warnings.warn(msg, category=DeprecationWarning, stacklevel=2)
+        return self._vertices
 
     def add_points(self, points, restart=False):
         self._add_points(points, restart)
@@ -2810,8 +2822,9 @@ class HalfspaceIntersection(_QhullUser):
 
         # Run qhull
         mode_option = "H"
-        qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options, required_options=None,
-                       incremental=incremental, interior_point=interior_point)
+        qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options,
+                       required_options=None, incremental=incremental,
+                       interior_point=self.interior_point)
 
         _QhullUser.__init__(self, qhull, incremental=incremental)
 

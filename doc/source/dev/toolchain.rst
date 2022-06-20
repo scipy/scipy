@@ -78,6 +78,8 @@ The table shows the NumPy versions suitable for each major Python version.
  1.7.0/1            >=3.7, <3.10                >=1.16.5, <1.23.0
  1.7.2-x            >=3.7, <3.11                >=1.16.5, <1.24.0
  1.8                >=3.8, <3.11                >=1.17.3, <1.24.0
+ 1.9                >=3.8, <3.12                >=1.18.5, <1.25.0
+ 1.10               >=3.8, <3.12                >=1.19.5, <1.26.0
 =================  ========================    =======================
 
 In specific cases, such as a particular architecture, these requirements
@@ -239,7 +241,7 @@ OpenBLAS, ATLAS, MKL, BLIS, and reference Netlib libraries are known to work.
 =============== =====================================================
  Library           Minimum version
 =============== =====================================================
-LAPACK           3.4.1
+LAPACK           3.7.1
 BLAS             A recent version of OpenBLAS, MKL or ATLAS.
                  The Accelerate BLAS library is no longer supported.
 =============== =====================================================
@@ -285,8 +287,9 @@ Building the Documentation
  Tool                 Version
 ====================  =================================================
 Sphinx                Whatever recent versions work. >= 2.0.
-PyData Sphinx theme   Whatever recent versions work. >= 0.6.1.
+PyData Sphinx theme   Whatever recent versions work. >= 0.8.1.
 Sphinx-Panels         Whatever recent versions work. >= 0.5.2.
+Sphinx-Tabs           Whatever recent versions work. >= 3.2.0.
 numpydoc              Whatever recent versions work. >= 0.8.0.
 matplotlib            Generally suggest >= 2.0.
 ====================  =================================================

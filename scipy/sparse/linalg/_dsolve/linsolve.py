@@ -51,6 +51,18 @@ def use_solver(**kwargs):
     sure that the matrix fulfills this, pass ``assumeSortedIndices=True``
     to gain some speed.
 
+    Examples
+    --------
+    >>> from scipy.sparse.linalg import use_solver, spsolve
+    >>> from scipy.sparse import csc_matrix
+    >>> R = np.random.randn(5, 5)
+    >>> A = csc_matrix(R)
+    >>> b = np.random.randn(5)
+    >>> use_solver(useUmfpack=False) # enforce superLU over UMFPACK
+    >>> x = spsolve(A, b)
+    >>> np.allclose(A.dot(x), b)
+    True
+    >>> use_solver(useUmfpack=True) # reset umfPack usage to default
     """
     if 'useUmfpack' in kwargs:
         globals()['useUmfpack'] = kwargs['useUmfpack']
@@ -105,7 +117,8 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         - ``NATURAL``: natural ordering.
         - ``MMD_ATA``: minimum degree ordering on the structure of A^T A.
         - ``MMD_AT_PLUS_A``: minimum degree ordering on the structure of A^T+A.
-        - ``COLAMD``: approximate minimum degree column ordering
+        - ``COLAMD``: approximate minimum degree column ordering [1]_, [2]_.
+
     use_umfpack : bool, optional
         if True (default) then use umfpack for the solution.  This is
         only referenced if b is a vector and ``scikit-umfpack`` is installed.
@@ -124,6 +137,17 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     resulting X is dense, the construction of this sparse result will be
     relatively expensive.  In that case, consider converting A to a dense
     matrix and using scipy.linalg.solve or its variants.
+
+    References
+    ----------
+    .. [1] T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, Algorithm 836:
+           COLAMD, an approximate column minimum degree ordering algorithm,
+           ACM Trans. on Mathematical Software, 30(3), 2004, pp. 377--380.
+           :doi:`10.1145/1024074.1024080`
+
+    .. [2] T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, A column approximate
+           minimum degree ordering algorithm, ACM Trans. on Mathematical
+           Software, 30(3), 2004, pp. 353--376. :doi:`10.1145/1024074.1024079`
 
     Examples
     --------
@@ -253,7 +277,8 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
     Parameters
     ----------
     A : sparse matrix
-        Sparse matrix to factorize. Should be in CSR or CSC format.
+        Sparse matrix to factorize. Most efficient when provided in CSC
+        format. Other formats will be converted to CSC before factorization.
     permc_spec : str, optional
         How to permute the columns of the matrix for sparsity preservation.
         (default: 'COLAMD')
@@ -319,7 +344,7 @@ def splu(A, permc_spec=None, diag_pivot_thresh=None,
 
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
-        warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+        warn('splu converted its input to CSC format', SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -353,7 +378,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
     Parameters
     ----------
     A : (N, N) array_like
-        Sparse matrix to factorize
+        Sparse matrix to factorize. Most efficient when provided in CSC format.
+        Other formats will be converted to CSC before factorization.
     drop_tol : float, optional
         Drop tolerance (0 <= tol <= 1) for an incomplete LU decomposition.
         (default: 1e-4)
@@ -408,7 +434,8 @@ def spilu(A, drop_tol=None, fill_factor=None, drop_rule=None, permc_spec=None,
 
     if not isspmatrix_csc(A):
         A = csc_matrix(A)
-        warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+        warn('spilu converted its input to CSC format',
+             SparseEfficiencyWarning)
 
     # sum duplicates for non-canonical format
     A.sum_duplicates()
@@ -441,7 +468,8 @@ def factorized(A):
     Parameters
     ----------
     A : (N, N) array_like
-        Input.
+        Input. A in CSC format is most efficient. A CSR format matrix will
+        be converted to CSC before factorization.
 
     Returns
     -------
@@ -470,7 +498,8 @@ def factorized(A):
 
         if not isspmatrix_csc(A):
             A = csc_matrix(A)
-            warn('splu requires CSC matrix format', SparseEfficiencyWarning)
+            warn('splu converted its input to CSC format',
+                 SparseEfficiencyWarning)
 
         A = A.asfptype()  # upcast to a floating point format
 
@@ -602,6 +631,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
         # Get indices for i-th row.
         indptr_start = A.indptr[i]
         indptr_stop = A.indptr[i + 1]
+
         if lower:
             A_diagonal_index_row_i = indptr_stop - 1
             A_off_diagonal_indices_row_i = slice(indptr_start, indptr_stop - 1)
@@ -614,7 +644,7 @@ def spsolve_triangular(A, b, lower=True, overwrite_A=False, overwrite_b=False,
                                   or A.indices[A_diagonal_index_row_i] < i):
             raise LinAlgError(
                 'A is singular: diagonal {} is zero.'.format(i))
-        if A.indices[A_diagonal_index_row_i] > i:
+        if not unit_diagonal and A.indices[A_diagonal_index_row_i] > i:
             raise LinAlgError(
                 'A is not triangular: A[{}, {}] is nonzero.'
                 ''.format(i, A.indices[A_diagonal_index_row_i]))

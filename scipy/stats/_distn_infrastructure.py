@@ -9,7 +9,6 @@ import keyword
 import re
 import types
 import warnings
-import inspect
 from itertools import zip_longest
 from collections import namedtuple
 
@@ -40,6 +39,7 @@ from numpy import (arange, putmask, ravel, ones, shape, ndarray, zeros, floor,
 
 import numpy as np
 from ._constants import _XMAX
+from scipy.stats._warnings_errors import FitError
 
 # These are the docstring parts used for substitution in specific
 # distribution docstrings
@@ -645,32 +645,16 @@ class rv_generic:
                                    ('moments' in sig.kwonlyargs))
         self._random_state = check_random_state(seed)
 
-        # For historical reasons, `size` was made an attribute that was read
-        # inside _rvs().  The code is being changed so that 'size'
-        # is an argument
-        # to self._rvs(). However some external (non-SciPy) distributions
-        # have not
-        # been updated.  Maintain backwards compatibility by checking if
-        # the self._rvs() signature has the 'size' keyword, or a **kwarg,
-        # and if not set self._size inside self.rvs()
-        # before calling self._rvs().
-        argspec = inspect.getfullargspec(self._rvs)
-        self._rvs_uses_size_attribute = (argspec.varkw is None and
-                                         'size' not in argspec.args and
-                                         'size' not in argspec.kwonlyargs)
-        # Warn on first use only
-        self._rvs_size_warned = False
-
     @property
     def random_state(self):
         """Get or set the generator object for generating random variates.
 
-        If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-        singleton is used.
-        If `seed` is an int, a new ``RandomState`` instance is used,
-        seeded with `seed`.
-        If `seed` is already a ``Generator`` or ``RandomState`` instance then
-        that instance is used.
+        If `random_state` is None (or `np.random`), the
+        `numpy.random.RandomState` singleton is used.
+        If `random_state` is an int, a new ``RandomState`` instance is used,
+        seeded with `random_state`.
+        If `random_state` is already a ``Generator`` or ``RandomState``
+        instance, that instance is used.
 
         """
         return self._random_state
@@ -1056,12 +1040,12 @@ class rv_generic:
         random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
 
-            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-            singleton is used.
-            If `seed` is an int, a new ``RandomState`` instance is used,
-            seeded with `seed`.
-            If `seed` is already a ``Generator`` or ``RandomState`` instance
-            then that instance is used.
+            If `random_state` is None (or `np.random`), the
+            `numpy.random.RandomState` singleton is used.
+            If `random_state` is an int, a new ``RandomState`` instance is
+            used, seeded with `random_state`.
+            If `random_state` is already a ``Generator`` or ``RandomState``
+            instance, that instance is used.
 
         Returns
         -------
@@ -1091,20 +1075,7 @@ class rv_generic:
         else:
             random_state = self._random_state
 
-        # Maintain backwards compatibility by setting self._size
-        # for distributions that still need it.
-        if self._rvs_uses_size_attribute:
-            if not self._rvs_size_warned:
-                warnings.warn(
-                    f'The signature of {self._rvs} does not contain '
-                    f'a "size" keyword.  Such signatures are deprecated.',
-                    np.VisibleDeprecationWarning)
-                self._rvs_size_warned = True
-            self._size = size
-            self._random_state = random_state
-            vals = self._rvs(*args)
-        else:
-            vals = self._rvs(*args, size=size, random_state=random_state)
+        vals = self._rvs(*args, size=size, random_state=random_state)
 
         vals = vals * scale + loc
 
@@ -1113,7 +1084,7 @@ class rv_generic:
             self._random_state = random_state_saved
 
         # Cast to int if discrete
-        if discrete:
+        if discrete and not isinstance(self, rv_sample):
             if size == ():
                 vals = int(vals)
             else:
@@ -1362,9 +1333,10 @@ class rv_generic:
                 message = "moment() got multiple values for first argument"
                 raise TypeError(message)
             else:  # B2
-                message = ("Use of keyword argument `n` for method "
-                           "`moment` is deprecated. Use first positional "
-                           "argument or keyword argument `order` instead.")
+                message = ("Use of keyword argument 'n' for method 'moment is"
+                           " deprecated and will be removed in SciPy 1.11.0. "
+                           "Use first positional argument or keyword argument"
+                           " 'order' instead.")
                 order = kwds.pop("n")
                 warnings.warn(message, DeprecationWarning, stacklevel=2)
         n = order
@@ -1562,6 +1534,18 @@ class rv_generic:
             end-points of range that contain ``100 * alpha %`` of the rv's
             possible values.
 
+        Notes
+        -----
+        This is implemented as ``ppf([p_tail, 1-p_tail])``, where
+        ``ppf`` is the inverse cumulative distribution function and
+        ``p_tail = (1-confidence)/2``. Suppose ``[c, d]`` is the support of a
+        discrete distribution; then ``ppf([0, 1]) == (c-1, d)``. Therefore,
+        when ``confidence==1`` and the distribution is discrete, the left end
+        of the interval will be beyond the support of the distribution.
+        For discrete distributions, the interval will limit the probability
+        in each tail to be less than or equal to ``p_tail`` (usually
+        strictly less).
+
         """
         # This function was originally written with parameter `alpha`, but
         # `alpha` is also the name of a shape parameter of two distributions.
@@ -1586,10 +1570,10 @@ class rv_generic:
                 message = "interval() got multiple values for first argument"
                 raise TypeError(message)
             else:
-                message = ("Use of keyword argument `alpha` for method "
-                           "`interval` is deprecated. Use first positional "
-                           "argument or keyword argument `confidence` "
-                           "instead.")
+                message = ("Use of keyword argument 'alpha' for method "
+                           "'interval' is deprecated and wil be removed in "
+                           "SciPy 1.11.0. Use first positional argument or "
+                           "keyword argument 'confidence' instead.")
                 confidence = kwds.pop("alpha")
                 warnings.warn(message, DeprecationWarning, stacklevel=2)
         alpha = confidence
@@ -1713,6 +1697,7 @@ def _get_fixed_fit_value(kwds, names):
                          ', '.join(repeated))
     return vals[0][1] if vals else None
 
+
 #  continuous random variables: implement maybe later
 #
 #  hf  --- Hazard Function (PDF / SF)
@@ -1761,7 +1746,8 @@ class rv_continuous(rv_generic):
     extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
-        backwards compatibility, do not use for new subclasses.
+        backwards compatibility and will be removed in SciPy 1.11.0, do not
+        use for new subclasses.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
 
@@ -2109,7 +2095,7 @@ class rv_continuous(rv_generic):
         args, loc, scale = self._parse_args(*args, **kwds)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
-        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        dtyp = np.promote_types(x.dtype, np.float64)
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._support_mask(x, *args) & (scale > 0)
@@ -2150,7 +2136,7 @@ class rv_continuous(rv_generic):
         args, loc, scale = self._parse_args(*args, **kwds)
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
-        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        dtyp = np.promote_types(x.dtype, np.float64)
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._support_mask(x, *args) & (scale > 0)
@@ -2192,7 +2178,7 @@ class rv_continuous(rv_generic):
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        dtyp = np.promote_types(x.dtype, np.float64)
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
@@ -2233,7 +2219,7 @@ class rv_continuous(rv_generic):
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        dtyp = np.promote_types(x.dtype, np.float64)
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
@@ -2275,7 +2261,7 @@ class rv_continuous(rv_generic):
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        dtyp = np.promote_types(x.dtype, np.float64)
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
@@ -2319,7 +2305,7 @@ class rv_continuous(rv_generic):
         x, loc, scale = map(asarray, (x, loc, scale))
         args = tuple(map(asarray, args))
         _a, _b = self._get_support(*args)
-        dtyp = np.find_common_type([x.dtype, np.float64], [])
+        dtyp = np.promote_types(x.dtype, np.float64)
         x = np.asarray((x - loc)/scale, dtype=dtyp)
         cond0 = self._argcheck(*args) & (scale > 0)
         cond1 = self._open_support_mask(x, *args) & (scale > 0)
@@ -2581,6 +2567,12 @@ class rv_continuous(rv_generic):
               Likelihood Estimate); "MM" (Method of Moments)
               is also available.
 
+        Raises
+        ------
+        TypeError, ValueError
+            If an input is invalid
+        `~scipy.stats.FitError`
+            If fitting fails or the fit produced would be invalid
 
         Returns
         -------
@@ -2667,7 +2659,7 @@ class rv_continuous(rv_generic):
             raise TypeError("Too many input arguments.")
 
         if not np.isfinite(data).all():
-            raise RuntimeError("The data contains non-finite values.")
+            raise ValueError("The data contains non-finite values.")
 
         start = [None]*2
         if (Narg < self.numargs) or not ('loc' in kwds and
@@ -2699,14 +2691,14 @@ class rv_continuous(rv_generic):
 
         loc, scale, shapes = self._unpack_loc_scale(vals)
         if not (np.all(self._argcheck(*shapes)) and scale > 0):
-            raise Exception("Optimization converged to parameters that are "
-                            "outside the range allowed by the distribution.")
+            raise FitError("Optimization converged to parameters that are "
+                           "outside the range allowed by the distribution.")
 
         if method == 'mm':
             if not np.isfinite(obj):
-                raise Exception("Optimization failed: either a data moment "
-                                "or fitted distribution moment is "
-                                "non-finite.")
+                raise FitError("Optimization failed: either a data moment "
+                               "or fitted distribution moment is "
+                               "non-finite.")
 
         return vals
 
@@ -3075,7 +3067,8 @@ class rv_discrete(rv_generic):
     extradoc :  str, optional, deprecated
         This string is used as the last part of the docstring returned when a
         subclass has no docstring of its own. Note: `extradoc` exists for
-        backwards compatibility, do not use for new subclasses.
+        backwards compatibility and will be removed in SciPy 1.11.0, do not
+        use for new subclasses.
     seed : {None, int, `numpy.random.Generator`,
             `numpy.random.RandomState`}, optional
 
@@ -3340,12 +3333,12 @@ class rv_discrete(rv_generic):
         random_state : {None, int, `numpy.random.Generator`,
                         `numpy.random.RandomState`}, optional
 
-            If `seed` is None (or `np.random`), the `numpy.random.RandomState`
-            singleton is used.
-            If `seed` is an int, a new ``RandomState`` instance is used,
-            seeded with `seed`.
-            If `seed` is already a ``Generator`` or ``RandomState`` instance
-            then that instance is used.
+            If `random_state` is None (or `np.random`), the
+            `numpy.random.RandomState` singleton is used.
+            If `random_state` is an int, a new ``RandomState`` instance is
+            used, seeded with `random_state`.
+            If `random_state` is already a ``Generator`` or ``RandomState``
+            instance, that instance is used.
 
         Returns
         -------
@@ -3381,8 +3374,10 @@ class rv_discrete(rv_generic):
         _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
+        cond1 = (k >= _a) & (k <= _b)
         cond = cond0 & cond1
+        if not isinstance(self, rv_sample):
+            cond1 = cond1 & self._nonzero(k, *args)
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         if np.any(cond):
@@ -3417,7 +3412,9 @@ class rv_discrete(rv_generic):
         _a, _b = self._get_support(*args)
         k = asarray((k-loc))
         cond0 = self._argcheck(*args)
-        cond1 = (k >= _a) & (k <= _b) & self._nonzero(k, *args)
+        cond1 = (k >= _a) & (k <= _b)
+        if not isinstance(self, rv_sample):
+            cond1 = cond1 & self._nonzero(k, *args)
         cond = cond0 & cond1
         output = empty(shape(cond), 'd')
         output.fill(NINF)

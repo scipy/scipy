@@ -7,6 +7,7 @@ from scipy import stats
 from scipy.optimize import differential_evolution
 
 from .test_continuous_basic import distcont
+from scipy.stats._distn_infrastructure import FitError
 from scipy.stats._distr_params import distdiscrete
 
 
@@ -146,6 +147,14 @@ def test_expon_fit():
     assert_allclose(phat, [0, 1.0], atol=1e-3)
 
 
+def test_fit_error():
+    data = np.concatenate([np.zeros(29), np.ones(21)])
+    message = "Optimization converged to parameters that are..."
+    with pytest.raises(FitError, match=message), \
+            pytest.warns(RuntimeWarning):
+        stats.beta.fit(data)
+
+
 @pytest.mark.parametrize("dist, params",
                          [(stats.norm, (0.5, 2.5)),  # type: ignore[attr-defined] # noqa
                           (stats.binom, (10, 0.3, 2))])  # type: ignore[attr-defined] # noqa
@@ -201,6 +210,25 @@ def cases_test_fit():
             yield pytest.param(dist, marks=pytest.mark.xslow(reason=reason))
         else:
             yield dist
+
+
+def cases_test_fitstart():
+    for distname, shapes in dict(distcont).items():
+        if not isinstance(distname, str) or distname in {'studentized_range'}:
+            continue
+        yield distname, shapes
+
+
+@pytest.mark.parametrize('distname, shapes', cases_test_fitstart())
+def test_fitstart(distname, shapes):
+    dist = getattr(stats, distname)
+    rng = np.random.default_rng(216342614)
+    data = rng.random(10)
+
+    with np.errstate(invalid='ignore', divide='ignore'):  # irrelevant to test
+        guess = dist._fitstart(data)
+
+    assert dist._argcheck(*guess[:-2])
 
 
 def assert_nllf_less_or_close(dist, data, params1, params0, rtol=1e-7, atol=0):

@@ -23,12 +23,12 @@ jobs:
     runs-on: windows-2019
     steps:
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v3
         with:
           python-version: '3.9'
           architecture: 'x64'
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: show-python-version
         run: |
           python --version
@@ -48,9 +48,9 @@ jobs:
           # Download and install pre-built OpenBLAS library
           # Built with mingw-w64, -ucrt -static.
           # https://github.com/matthew-brett/openblas-libs/blob/ucrt-build/build_openblas.ps1
-          choco install unzip
-          pip install gdown
-          gdown --id 1G3jwxMY4ZVRqvz6owl0kmw_Innmr4ZnV
+          choco install unzip -y
+          choco install wget -y
+          wget https://github.com/scipy/scipy-ci-artifacts/raw/main/openblas_32_if.zip
           unzip -d c:\ openblas_32_if.zip
           echo "PKG_CONFIG_PATH=c:\opt\openblas\if_32\64\lib\pkgconfig;" >> $env:GITHUB_ENV
       - name: meson-configure
@@ -79,6 +79,7 @@ jobs:
       - name: prep-test
         run: |
           echo "PYTHONPATH=${env:installed_path}" >> $env:GITHUB_ENV
+          echo "SCIPY_USE_PROPACK=1" >> $env:GITHUB_ENV
       - name: test
         run: |
           mkdir tmp

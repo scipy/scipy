@@ -26,6 +26,9 @@ def _get_fs(fs, nyq):
     elif nyq is not None:
         if fs is not None:
             raise ValueError("Values cannot be given for both 'nyq' and 'fs'.")
+        msg = ("Keyword argument 'nyq' is deprecated in favour of 'fs' and "
+               "will be removed in SciPy 1.12.0.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=3)
         fs = 2*nyq
     return fs
 
@@ -213,7 +216,7 @@ def kaiserord(ripple, width):
     Use `firwin` to create the FIR filter.
 
     >>> taps = firwin(numtaps, cutoff, window=('kaiser', beta),
-    ...               scale=False, nyq=0.5*fs)
+    ...               scale=False, fs=fs)
 
     Compute the frequency response of the filter.  ``w`` is the array of
     frequencies, and ``h`` is the corresponding complex array of frequency
@@ -310,10 +313,13 @@ def firwin(numtaps, cutoff, width=None, window='hamming', pass_zero=True,
           `fs/2` (i.e the filter is a single band highpass filter);
           center of first passband otherwise
 
-    nyq : float, optional
-        *Deprecated. Use `fs` instead.* This is the Nyquist frequency.
-        Each frequency in `cutoff` must be between 0 and `nyq`. Default
-        is 1.
+    nyq : float, optional, deprecated
+        This is the Nyquist frequency. Each frequency in `cutoff` must be
+        between 0 and `nyq`. Default is 1.
+
+        .. deprecated:: 1.0.0
+           `firwin` keyword argument `nyq` is deprecated in favour of `fs` and
+           will be removed in SciPy 1.12.0.
     fs : float, optional
         The sampling frequency of the signal. Each frequency in `cutoff`
         must be between 0 and ``fs/2``.  Default is 2.
@@ -519,9 +525,13 @@ def firwin2(numtaps, freq, gain, nfreqs=None, window='hamming', nyq=None,
         Window function to use. Default is "hamming". See
         `scipy.signal.get_window` for the complete list of possible values.
         If None, no window function is applied.
-    nyq : float, optional
-        *Deprecated. Use `fs` instead.* This is the Nyquist frequency.
-        Each frequency in `freq` must be between 0 and `nyq`.  Default is 1.
+    nyq : float, optional, deprecated
+        This is the Nyquist frequency. Each frequency in `freq` must be
+        between 0 and `nyq`. Default is 1.
+
+        .. deprecated:: 1.0.0
+           `firwin2` keyword argument `nyq` is deprecated in favour of `fs` and
+           will be removed in SciPy 1.12.0.
     antisymmetric : bool, optional
         Whether resulting impulse response is symmetric/antisymmetric.
         See Notes for more details.
@@ -707,9 +717,12 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     weight : array_like, optional
         A relative weighting to give to each band region. The length of
         `weight` has to be half the length of `bands`.
-    Hz : scalar, optional
-        *Deprecated.  Use `fs` instead.*
+    Hz : scalar, optional, deprecated
         The sampling frequency in Hz. Default is 1.
+
+        .. deprecated:: 1.0.0
+           `remez` keyword argument `Hz` is deprecated in favour of `fs` and
+           will be removed in SciPy 1.12.0.
     type : {'bandpass', 'differentiator', 'hilbert'}, optional
         The type of filter:
 
@@ -782,7 +795,8 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     >>> cutoff = 8000.0    # Desired cutoff frequency, Hz
     >>> trans_width = 100  # Width of transition from pass band to stop band, Hz
     >>> numtaps = 400      # Size of the FIR filter.
-    >>> taps = signal.remez(numtaps, [0, cutoff, cutoff + trans_width, 0.5*fs], [1, 0], Hz=fs)
+    >>> taps = signal.remez(numtaps, [0, cutoff, cutoff + trans_width, 0.5*fs],
+    ...                     [1, 0], fs=fs)
     >>> w, h = signal.freqz(taps, [1], worN=2000)
     >>> plot_response(fs, w, h, "Low-pass Filter")
 
@@ -793,7 +807,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     >>> trans_width = 250  # Width of transition from pass band to stop band, Hz
     >>> numtaps = 125      # Size of the FIR filter.
     >>> taps = signal.remez(numtaps, [0, cutoff - trans_width, cutoff, 0.5*fs],
-    ...                     [0, 1], Hz=fs)
+    ...                     [0, 1], fs=fs)
     >>> w, h = signal.freqz(taps, [1], worN=2000)
     >>> plot_response(fs, w, h, "High-pass Filter")
 
@@ -807,7 +821,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     >>> numtaps = 10        # Size of the FIR filter.
     >>> edges = [0, band[0] - trans_width, band[0], band[1],
     ...          band[1] + trans_width, 0.5*fs]
-    >>> taps = signal.remez(numtaps, edges, [0, 1, 0], Hz=fs)
+    >>> taps = signal.remez(numtaps, edges, [0, 1, 0], fs=fs)
     >>> w, h = signal.freqz(taps, [1], worN=2000)
     >>> plot_response(fs, w, h, "Band-pass Filter")
 
@@ -824,7 +838,7 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     >>> trans_width = 200    # Width of transition from pass band to stop band, Hz
     >>> numtaps = 175        # Size of the FIR filter.
     >>> edges = [0, band[0] - trans_width, band[0], band[1], band[1] + trans_width, 0.5*fs]
-    >>> taps = signal.remez(numtaps, edges, [1, 0, 1], Hz=fs)
+    >>> taps = signal.remez(numtaps, edges, [1, 0, 1], fs=fs)
     >>> w, h = signal.freqz(taps, [1], worN=2000)
     >>> plot_response(fs, w, h, "Band-stop Filter")
 
@@ -836,6 +850,9 @@ def remez(numtaps, bands, desired, weight=None, Hz=None, type='bandpass',
     elif Hz is not None:
         if fs is not None:
             raise ValueError("Values cannot be given for both 'Hz' and 'fs'.")
+        msg = ("'remez' keyword argument 'Hz' is deprecated in favour of 'fs'"
+               " and will be removed in SciPy 1.12.0.")
+        warnings.warn(msg, DeprecationWarning, stacklevel=2)
         fs = Hz
 
     # Convert type
@@ -880,10 +897,13 @@ def firls(numtaps, bands, desired, weight=None, nyq=None, fs=None):
         A relative weighting to give to each band region when solving
         the least squares problem. `weight` has to be half the size of
         `bands`.
-    nyq : float, optional
-        *Deprecated. Use `fs` instead.*
-        Nyquist frequency. Each frequency in `bands` must be between 0
-        and `nyq` (inclusive). Default is 1.
+    nyq : float, optional, deprecated
+        This is the Nyquist frequency. Each frequency in `bands` must be
+        between 0 and `nyq` (inclusive). Default is 1.
+
+        .. deprecated:: 1.0.0
+           `firls` keyword argument `nyq` is deprecated in favour of `fs` and
+           will be removed in SciPy 1.12.0.
     fs : float, optional
         The sampling frequency of the signal. Each frequency in `bands`
         must be between 0 and ``fs/2`` (inclusive). Default is 2.
@@ -1160,7 +1180,7 @@ def minimum_phase(h, method='homomorphic', n_fft=None):
     >>> import matplotlib.pyplot as plt
     >>> freq = [0, 0.2, 0.3, 1.0]
     >>> desired = [1, 0]
-    >>> h_linear = remez(151, freq, desired, Hz=2.)
+    >>> h_linear = remez(151, freq, desired, fs=2.)
 
     Convert it to minimum phase:
 

@@ -22,6 +22,7 @@ from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
+from .._lib.deprecation import _deprecated
 
 
 __all__ = ['mvsdist',
@@ -510,6 +511,10 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
         or a custom object with the same methods.
         Default is None, which means that no plot is created.
+    rvalue : bool, optional
+        If `plot` is provided and `fit` is True, setting `rvalue` to True
+        includes the coefficient of determination on the plot.
+        Default is False.
 
     Returns
     -------
@@ -622,7 +627,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
                                title='Probability Plot')
 
         # Add R^2 value to the plot as text
-        if rvalue:
+        if fit and rvalue:
             xmin = amin(osm)
             xmax = amax(osm)
             ymin = amin(x)
@@ -1579,10 +1584,17 @@ def yeojohnson_llf(lmb, data):
         return np.nan
 
     trans = _yeojohnson_transform(data, lmb)
+    trans_var = trans.var(axis=0)
+    loglike = np.empty_like(trans_var)
 
-    loglike = -n_samples / 2 * np.log(trans.var(axis=0))
-    loglike += (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum(axis=0)
+    # Avoid RuntimeWarning raised by np.log when the variance is too low
+    tiny_variance = trans_var < np.finfo(trans_var.dtype).tiny
+    loglike[tiny_variance] = np.inf
 
+    loglike[~tiny_variance] = (
+        -n_samples / 2 * np.log(trans_var[~tiny_variance]))
+    loglike[~tiny_variance] += (
+        (lmb - 1) * (np.sign(data) * np.log(np.abs(data) + 1)).sum(axis=0))
     return loglike
 
 
@@ -1634,9 +1646,14 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
 
     """
     def _neg_llf(lmbda, data):
-        return -yeojohnson_llf(lmbda, data)
+        llf = yeojohnson_llf(lmbda, data)
+        # reject likelihoods that are inf which are likely due to small
+        # variance in the transformed space
+        llf[np.isinf(llf)] = -np.inf
+        return -llf
 
-    return optimize.brent(_neg_llf, brack=brack, args=(x,))
+    with np.errstate(invalid='ignore'):
+        return optimize.brent(_neg_llf, brack=brack, args=(x,))
 
 
 def yeojohnson_normplot(x, la, lb, plot=None, N=80):
@@ -1774,7 +1791,7 @@ def shapiro(x):
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
-    x -= np.median(x)
+    x = x - np.median(x)
 
     a = zeros(N, 'f')
     init = 0
@@ -2633,15 +2650,19 @@ def levene(*samples, center='median', proportiontocut=0.05):
     return LeveneResult(W, pval)
 
 
+@_deprecated("'binom_test' is deprecated in favour of"
+             " 'binomtest' from version 1.7.0 and will"
+             " be removed in Scipy 1.12.0.")
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """Perform a test that the probability of success is p.
-
-    Note: `binom_test` is deprecated; it is recommended that `binomtest`
-    be used instead.
 
     This is an exact, two-sided test of the null hypothesis
     that the probability of success in a Bernoulli experiment
     is `p`.
+
+    .. deprecated:: 1.10.0
+        'binom_test' is deprecated in favour of 'binomtest' and will
+        be removed in Scipy 1.12.0.
 
     Parameters
     ----------
@@ -2873,6 +2894,80 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     return FlignerResult(Xsq, pval)
 
 
+@_axis_nan_policy_factory(lambda x1: (x1,), n_samples=4, n_outputs=1)
+def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
+    # Obtain the unique values and their frequencies from the pooled samples.
+    # "a_j, + b_j, = t_j, for j = 1, ... k" where `k` is the number of unique
+    # classes, and "[t]he number of values associated with the x's and y's in
+    # the jth class will be denoted by a_j, and b_j respectively."
+    # (Mielke, 312)
+    # Reuse previously computed sorted array and `diff` arrays to obtain the
+    # unique values and counts. Prepend `diffs` with a non-zero to indicate
+    # that the first element should be marked as not matching what preceded it.
+    diffs_prep = np.concatenate(([1], diffs))
+    # Unique elements are where the was a difference between elements in the
+    # sorted array
+    uniques = sorted_xy[diffs_prep != 0]
+    # The count of each element is the bin size for each set of consecutive
+    # differences where the difference is zero. Replace nonzero differences
+    # with 1 and then use the cumulative sum to count the indices.
+    t = np.bincount(np.cumsum(np.asarray(diffs_prep != 0, dtype=int)))[1:]
+    k = len(uniques)
+    js = np.arange(1, k + 1, dtype=int)
+    # the `b` array mentioned in the paper is not used, outside of the
+    # calculation of `t`, so we do not need to calculate it separately. Here
+    # we calculate `a`. In plain language, `a[j]` is the number of values in
+    # `x` that equal `uniques[j]`.
+    sorted_xyx = np.sort(np.concatenate((xy, x)))
+    diffs = np.diff(sorted_xyx)
+    diffs_prep = np.concatenate(([1], diffs))
+    diff_is_zero = np.asarray(diffs_prep != 0, dtype=int)
+    xyx_counts = np.bincount(np.cumsum(diff_is_zero))[1:]
+    a = xyx_counts - t
+    # "Define .. a_0 = b_0 = t_0 = S_0 = 0" (Mielke 312) so we shift  `a`
+    # and `t` arrays over 1 to allow a first element of 0 to accommodate this
+    # indexing.
+    t = np.concatenate(([0], t))
+    a = np.concatenate(([0], a))
+    # S is built from `t`, so it does not need a preceding zero added on.
+    S = np.cumsum(t)
+    # define a copy of `S` with a prepending zero for later use to avoid
+    # the need for indexing.
+    S_i_m1 = np.concatenate(([0], S[:-1]))
+
+    # Psi, as defined by the 6th unnumbered equation on page 313 (Mielke).
+    # Note that in the paper there is an error where the denominator `2` is
+    # squared when it should be the entire equation.
+    def psi(indicator):
+        return (indicator - (N + 1)/2)**2
+
+    # define summation range for use in calculation of phi, as seen in sum
+    # in the unnumbered equation on the bottom of page 312 (Mielke).
+    s_lower = S[js - 1] + 1
+    s_upper = S[js] + 1
+    phi_J = [np.arange(s_lower[idx], s_upper[idx]) for idx in range(k)]
+
+    # for every range in the above array, determine the sum of psi(I) for
+    # every element in the range. Divide all the sums by `t`. Following the
+    # last unnumbered equation on page 312.
+    phis = [np.sum(psi(I_j)) for I_j in phi_J] / t[js]
+
+    # `T` is equal to a[j] * phi[j], per the first unnumbered equation on
+    # page 312. `phis` is already in the order based on `js`, so we index
+    # into `a` with `js` as well.
+    T = sum(phis * a[js])
+
+    # The approximate statistic
+    E_0_T = n * (N * N - 1) / 12
+
+    varM = (m * n * (N + 1.0) * (N ** 2 - 4) / 180 -
+            m * n / (180 * N * (N - 1)) * np.sum(
+                t * (t**2 - 1) * (t**2 - 4 + (15 * (N - S - S_i_m1) ** 2))
+            ))
+
+    return ((T - E_0_T) / np.sqrt(varM),)
+
+
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
 
@@ -2928,8 +3023,11 @@ def mood(x, y, axis=0, alternative="two-sided"):
     resulting z and p values will have shape ``(n0, n2, n3)``.  Note that
     ``n1`` and ``m1`` don't have to be equal, but the other dimensions do.
 
-    In this implementation, the test statistic and p-value are only valid when
-    all observations are unique.
+    References
+    ----------
+    [1] Mielke, Paul W. "Note on Some Squared Rank Tests with Existing Ties."
+        Technometrics, vol. 9, no. 2, 1967, pp. 312-14. JSTOR,
+        https://doi.org/10.2307/1266427. Accessed 18 May 2022.
 
     Examples
     --------
@@ -2979,24 +3077,30 @@ def mood(x, y, axis=0, alternative="two-sided"):
         raise ValueError("Not enough observations.")
 
     xy = np.concatenate((x, y), axis=axis)
-    if axis != 0:
-        xy = np.moveaxis(xy, axis, 0)
+    # determine if any of the samples contain ties
+    sorted_xy = np.sort(xy, axis=axis)
+    diffs = np.diff(sorted_xy, axis=axis)
+    if 0 in diffs:
+        z = np.asarray(_mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N,
+                                      axis=axis))
+    else:
+        if axis != 0:
+            xy = np.moveaxis(xy, axis, 0)
 
-    xy = xy.reshape(xy.shape[0], -1)
+        xy = xy.reshape(xy.shape[0], -1)
+        # Generalized to the n-dimensional case by adding the axis argument,
+        # and using for loops, since rankdata is not vectorized.  For improving
+        # performance consider vectorizing rankdata function.
+        all_ranks = np.empty_like(xy)
+        for j in range(xy.shape[1]):
+            all_ranks[:, j] = _stats_py.rankdata(xy[:, j])
 
-    # Generalized to the n-dimensional case by adding the axis argument, and
-    # using for loops, since rankdata is not vectorized.  For improving
-    # performance consider vectorizing rankdata function.
-    all_ranks = np.empty_like(xy)
-    for j in range(xy.shape[1]):
-        all_ranks[:, j] = _stats_py.rankdata(xy[:, j])
-
-    Ri = all_ranks[:n]
-    M = np.sum((Ri - (N + 1.0) / 2)**2, axis=0)
-    # Approx stat.
-    mnM = n * (N * N - 1.0) / 12
-    varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
-    z = (M - mnM) / sqrt(varM)
+        Ri = all_ranks[:n]
+        M = np.sum((Ri - (N + 1.0) / 2) ** 2, axis=0)
+        # Approx stat.
+        mnM = n * (N * N - 1.0) / 12
+        varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
+        z = (M - mnM) / sqrt(varM)
     z, pval = _normtest_finish(z, alternative)
 
     if res_shape == ():
@@ -3006,35 +3110,46 @@ def mood(x, y, axis=0, alternative="two-sided"):
     else:
         z.shape = res_shape
         pval.shape = res_shape
-
     return z, pval
 
 
-WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'],
-                                   ['zstatistic'])
+WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
 
 
 def wilcoxon_result_unpacker(res):
-    return res.statistic, res.pvalue, res.zstatistic
+    if hasattr(res, 'zstatistic'):
+        return res.statistic, res.pvalue, res.zstatistic
+    else:
+        return res.statistic, res.pvalue
 
 
-def wilcoxon_result_object(statistic, pvalue, zstatistic):
-    return WilcoxonResult(statistic, pvalue, zstatistic=zstatistic)
+def wilcoxon_result_object(statistic, pvalue, zstatistic=None):
+    res = WilcoxonResult(statistic, pvalue)
+    if zstatistic is not None:
+        res.zstatistic = zstatistic
+    return res
+
+
+def wilcoxon_outputs(kwds):
+    method = kwds.get('method', 'auto')
+    if method == 'approx':
+        return 3
+    return 2
 
 
 @_rename_parameter("mode", "method")
-@_axis_nan_policy_factory(wilcoxon_result_object, paired=True,
-                          n_samples=lambda kwds: 2
-                          if kwds.get('y', None) is not None else 1,
-                          result_to_tuple=wilcoxon_result_unpacker,
-                          n_outputs=3,)
+@_axis_nan_policy_factory(
+    wilcoxon_result_object, paired=True,
+    n_samples=lambda kwds: 2 if kwds.get('y', None) is not None else 1,
+    result_to_tuple=wilcoxon_result_unpacker, n_outputs=wilcoxon_outputs,
+)
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
              alternative="two-sided", method='auto'):
     """Calculate the Wilcoxon signed-rank test.
 
     The Wilcoxon signed-rank test tests the null hypothesis that two
     related paired samples come from the same distribution. In particular,
-    it tests whether the distribution of the differences x - y is symmetric
+    it tests whether the distribution of the differences ``x - y`` is symmetric
     about zero. It is a non-parametric version of the paired T-test.
 
     Parameters
@@ -3048,21 +3163,34 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         Either the second set of measurements (if ``x`` is the first set of
         measurements), or not specified (if ``x`` is the differences between
         two sets of measurements.)  Must be one-dimensional.
-    zero_method : {"pratt", "wilcox", "zsplit"}, optional
-        The following options are available (default is "wilcox"):
+    zero_method : {"wilcox", "pratt", "zsplit"}, optional
+        There are different conventions for handling pairs of observations
+        with equal values ("zero-differences", or "zeros").
 
-          * "pratt": Includes zero-differences in the ranking process,
-            but drops the ranks of the zeros, see [4]_, (more conservative).
-          * "wilcox": Discards all zero-differences, the default.
-          * "zsplit": Includes zero-differences in the ranking process and
-            split the zero rank between positive and negative ones.
+        * "wilcox": Discards all zero-differences (default); see [4]_.
+        * "pratt": Includes zero-differences in the ranking process,
+          but drops the ranks of the zeros (more conservative); see [3]_.
+          In this case, the normal approximation is adjusted as in [5]_.
+        * "zsplit": Includes zero-differences in the ranking process and
+          splits the zero rank between positive and negative ones.
+
     correction : bool, optional
         If True, apply continuity correction by adjusting the Wilcoxon rank
         statistic by 0.5 towards the mean value when computing the
         z-statistic if a normal approximation is used.  Default is False.
     alternative : {"two-sided", "greater", "less"}, optional
-        The alternative hypothesis to be tested, see Notes. Default is
-        "two-sided".
+        Defines the alternative hypothesis. Default is 'two-sided'.
+        In the following, let ``d`` represent the difference between the paired
+        samples: ``d = x - y`` if both ``x`` and ``y`` are provided, or
+        ``d = x`` otherwise.
+
+        * 'two-sided': the distribution underlying ``d`` is not symmetric
+          about zero.
+        * 'less': the distribution underlying ``d`` is stochastically less
+          than a distribution symmetric about zero.
+        * 'greater': the distribution underlying ``d`` is stochastically
+          greater than a distribution symmetric about zero.
+
     method : {"auto", "exact", "approx"}, optional
         Method to calculate the p-value, see Notes. Default is "auto".
 
@@ -3070,23 +3198,21 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     -------
     An object with the following attributes.
 
-    statistic : float
+    statistic : array_like
         If `alternative` is "two-sided", the sum of the ranks of the
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
-    pvalue : float
+    pvalue : array_like
         The p-value for the test depending on `alternative` and `method`.
-    zstatistic : float
-        When the the approximate method is used, this is the normalized
-        z-statistic::
+    zstatistic : array_like
+        When ``method = 'approx'``, this is the normalized z-statistic::
 
             z = (T - mn - d) / se
 
         where ``T`` is `statistic` as defined above, ``mn`` is the mean of the
         distribution under the null hypothesis, ``d`` is a continuity
         correction, and ``se`` is the standard error.
-
-        When the exact method is used, this is ``np.nan``.
+        When ``method != 'approx'``, this attribute is not available.
 
     See Also
     --------
@@ -3094,24 +3220,35 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
 
     Notes
     -----
-    The test has been introduced in [4]_. Given n independent samples
-    (xi, yi) from a bivariate distribution (i.e. paired samples),
-    it computes the differences di = xi - yi. One assumption of the test
-    is that the differences are symmetric, see [2]_.
-    The two-sided test has the null hypothesis that the median of the
-    differences is zero against the alternative that it is different from
-    zero. The one-sided test has the null hypothesis that the median is
-    positive against the alternative that it is negative
-    (``alternative == 'less'``), or vice versa (``alternative == 'greater.'``).
+    In the following, let ``d`` represent the difference between the paired
+    samples: ``d = x - y`` if both ``x`` and ``y`` are provided, or ``d = x``
+    otherwise. Assume that all elements of ``d`` are independent and
+    identically distributed observations, and all are distinct and nonzero.
 
-    To derive the p-value, the exact distribution (``method == 'exact'``)
-    can be used for small sample sizes. The default ``method == 'auto'``
-    uses the exact distribution if there are at most 50 observations and no
-    ties, otherwise a normal approximation is used (``method == 'approx'``).
+    - When ``len(d)`` is sufficiently large, the null distribution of the
+      normalized test statistic (`zstatistic` above) is approximately normal,
+      and ``method = 'approx'`` can be used to compute the p-value.
 
-    The treatment of ties can be controlled by the parameter `zero_method`.
-    If ``zero_method == 'pratt'``, the normal approximation is adjusted as in
-    [5]_. A typical rule is to require that n > 20 ([2]_, p. 383).
+    - When ``len(d)`` is small, the normal approximation may not be accurate,
+      and ``method='exact'`` is preferred (at the cost of additional
+      execution time).
+
+    - The default, ``method='auto'``, selects between the two: when
+      ``len(d) <= 50``, the exact method is used; otherwise, the approximate
+      method is used.
+
+    The presence of "ties" (i.e. not all elements of ``d`` are unique) and
+    "zeros" (i.e. elements of ``d`` are zero) changes the null distribution
+    of the test statistic, and ``method='exact'`` no longer calculates
+    the exact p-value. If ``method='approx'``, the z-statistic is adjusted
+    for more accurate comparison against the standard normal, but still,
+    for finite sample sizes, the standard normal is only an approximation of
+    the true null distribution of the z-statistic. There is no clear
+    consensus among references on which method most accurately approximates
+    the p-value for small samples in the presence of zeros and/or ties. In any
+    case, this is the behavior of `wilcoxon` when ``method='auto':
+    ``method='exact'`` is used when ``len(d) <= 50`` *and there are no zeros*;
+    otherwise, ``method='approx'`` is used.
 
     References
     ----------
@@ -3192,7 +3329,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         d = x - y
 
     if len(d) == 0:
-        return WilcoxonResult(np.nan, np.nan, zstatistic=np.nan)
+        res = WilcoxonResult(np.nan, np.nan)
+        if method == 'approx':
+            res.zstatistic = np.nan
+        return res
 
     if mode == "auto":
         if len(d) <= 50:
@@ -3204,7 +3344,7 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     if n_zero > 0 and mode == "exact":
         mode = "approx"
         warnings.warn("Exact p-value calculation does not work if there are "
-                      "ties. Switching to normal approximation.")
+                      "zeros. Switching to normal approximation.")
 
     if mode == "approx":
         if zero_method in ["wilcox", "pratt"]:
@@ -3296,7 +3436,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             prob = np.sum(pmf[:r_plus + 1])
         prob = np.clip(prob, 0, 1)
 
-    return WilcoxonResult(T, prob, zstatistic=np.nan if mode == 'exact' else z)
+    res = WilcoxonResult(T, prob)
+    if method == 'approx':
+        res.zstatistic = z
+    return res
 
 
 def median_test(*samples, ties='below', correction=True, lambda_=1,
@@ -3545,11 +3688,11 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     samples : array_like
         Input array.
     high : float or int, optional
-        High boundary for circular mean range.  Default is ``2*pi``.
+        High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
-        Low boundary for circular mean range.  Default is 0.
+        Low boundary for the sample range. Default is 0.
     axis : int, optional
-        Axis along which means are computed.  The default is to compute
+        Axis along which means are computed. The default is to compute
         the mean of the flattened array.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
@@ -3613,11 +3756,11 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     samples : array_like
         Input array.
     high : float or int, optional
-        High boundary for circular variance range.  Default is ``2*pi``.
+        High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
-        Low boundary for circular variance range.  Default is 0.
+        Low boundary for the sample range. Default is 0.
     axis : int, optional
-        Axis along which variances are computed.  The default is to compute
+        Axis along which variances are computed. The default is to compute
         the variance of the flattened array.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
@@ -3631,14 +3774,22 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Notes
     -----
-    This uses a definition of circular variance that in the limit of small
-    angles returns a number close to the 'linear' variance.
+    This uses the following definition of circular variance: ``1-R``, where
+    ``R`` is the mean resultant vector. The
+    returned value is in the range [0, 1], 0 standing for no variance, and 1
+    for a large variance. In the limit of small angles, this value is similar
+    to half the 'linear' variance.
+
+    References
+    ----------
+    ..[1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
+          University Press, 1993.
 
     Examples
     --------
     >>> from scipy.stats import circvar
     >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
-    2.19722457734
+    0.6666666666666665
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
@@ -3655,10 +3806,12 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     with np.errstate(invalid='ignore'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))
 
-    return ((high - low)/2.0/pi)**2 * -2 * log(R)
+    res = 1. - R
+    return res
 
 
-def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
+def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
+            normalize=False):
     """
     Compute the circular standard deviation for samples assumed to be in the
     range [low to high].
@@ -3668,17 +3821,20 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     samples : array_like
         Input array.
     high : float or int, optional
-        High boundary for circular standard deviation range.
-        Default is ``2*pi``.
+        High boundary for the sample range. Default is ``2*pi``.
     low : float or int, optional
-        Low boundary for circular standard deviation range.  Default is 0.
+        Low boundary for the sample range. Default is 0.
     axis : int, optional
-        Axis along which standard deviations are computed.  The default is
+        Axis along which standard deviations are computed. The default is
         to compute the standard deviation of the flattened array.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan. 'propagate' returns nan,
         'raise' throws an error, 'omit' performs the calculations ignoring nan
         values. Default is 'propagate'.
+    normalize : boolean, optional
+        If True, the returned value is equal to ``sqrt(-2*log(R))`` and does
+        not depend on the variable units. If False (default), the returned
+        value is scaled by ``((high-low)/(2*pi))``.
 
     Returns
     -------
@@ -3730,4 +3886,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     with np.errstate(invalid='ignore'):
         R = np.minimum(1, hypot(sin_mean, cos_mean))  # [1] (2.2.4)
 
-    return ((high - low)/2.0/pi) * sqrt(-2*log(R))  # [1] (2.3.14) w/ (2.3.7)
+    res = sqrt(-2*log(R))
+    if not normalize:
+        res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
+    return res
