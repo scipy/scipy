@@ -789,18 +789,18 @@ def lobpcg(
     gramXAX = (gramXAX + gramXAX.T.conj()) / 2
     gramXBX = (gramXBX + gramXBX.T.conj()) / 2
     try:
-        _lambdaf, eigBlockVectorX = eigh(gramXAX,
+        _lambda, eigBlockVectorX = eigh(gramXAX,
                                          gramXBX,
                                          check_finite=False)
     except LinAlgError as e:
         raise ValueError("eigh has failed in lobpcg postprocessing") from e
 
-    ii = _get_indx(_lambdaf, sizeX, largest)
+    ii = _get_indx(_lambda, sizeX, largest)
     if verbosityLevel > 10:
         print(ii)
-        print(f"lambda:\n{_lambdaf}")
+        print(f"lambda:\n{_lambda}")
 
-    _lambda = _lambdaf[ii].copy()
+    _lambda = _lambda[ii]
     eigBlockVector = eigBlockVector[:, ii]
 
     blockVectorX = np.dot(blockVectorX, eigBlockVectorX)
