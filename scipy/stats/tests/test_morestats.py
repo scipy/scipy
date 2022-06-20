@@ -1255,7 +1255,7 @@ class TestMood:
 
     @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
     def test_result(self, alternative):
-        rng = np.random.default_rng('265827767938813079281100964083953437622')
+        rng = np.random.default_rng(265827767938813079281100964083953437622)
         x1 = rng.standard_normal((10, 1))
         x2 = rng.standard_normal((15, 1))
 
