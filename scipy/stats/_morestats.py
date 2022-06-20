@@ -3894,9 +3894,8 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 #@_axis_nan_policy_factory(
 #    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1, default_axis=None
 #)
-def directionalmean(samples, axis=0, nan_policy='propagate'):
-    """
-    Computes the directional mean of a sample of vectors.
+def directionalmean(samples, *, axis=0, nan_policy='propagate'):
+    """Computes the directional mean of a sample of vectors.
 
     Serves as equivalent of the sample mean for directional data whose
     magnitude is irrelevant, e. g. unit vectors.
@@ -3904,7 +3903,7 @@ def directionalmean(samples, axis=0, nan_policy='propagate'):
     Parameters
     ----------
     samples : array_like
-        Input array. Must at least be two-dimensional.
+        Input array. Must be at least two-dimensional.
     axis : int, optional
         Axis along which directional means are computed. Default is 0.
     nan_policy : {'propagate', 'raise', 'omit'}, optional
@@ -3947,7 +3946,7 @@ def directionalmean(samples, axis=0, nan_policy='propagate'):
     samples = np.asarray(samples)
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
-                         "Instead samples has shape: %r." % samples.shape)
+                         f"Instead samples has shape: {samples.shape!r}")
 
     contains_nan, nan_policy = _contains_nan(samples, nan_policy)
     if contains_nan and nan_policy == 'omit':

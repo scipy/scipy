@@ -414,7 +414,7 @@ Circular statistical functions
    circstd
 
 Directional statistical functions on the unit sphere
-------------------------------
+----------------------------------------------------
 
 .. autosummary::
    :toctree: generated/
