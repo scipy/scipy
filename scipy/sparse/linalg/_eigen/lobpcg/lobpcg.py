@@ -790,8 +790,8 @@ def lobpcg(
     gramXBX = (gramXBX + gramXBX.T.conj()) / 2
     try:
         _lambdaf, eigBlockVectorX = eigh(gramXAX,
-                                       gramXBX,
-                                       check_finite=False)
+                                         gramXBX,
+                                         check_finite=False)
     except LinAlgError as e:
         raise ValueError("eigh has failed in lobpcg postprocessing") from e
 
