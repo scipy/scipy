@@ -1237,6 +1237,7 @@ def sen_seasonal_slopes(x):
 
     then element ``i`` of ``intra_slope`` is the median of ``dijk[x[:, i]]``:
 
+    >>> i = 4
     >>> np.allclose(np.median(dijk(x[:, i])), intra_slope[i])
     True
 
