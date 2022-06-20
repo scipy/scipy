@@ -2203,10 +2203,10 @@ class TestBrute:
     def test_coerce_args_param(self):
         # optimize.brute should coerce non-iterable args to a tuple.
         def f(x, *args):
-            return x ** args
+            return x ** args[0]
 
         resbrute = optimize.brute(f, (slice(-4, 4, .25),), args=2)
-        assert_almost_equal(resbrute, 0)
+        assert_allclose(resbrute, 0)
 
 
 def test_cobyla_threadsafe():
