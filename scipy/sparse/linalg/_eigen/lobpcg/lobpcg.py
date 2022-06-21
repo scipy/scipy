@@ -182,9 +182,9 @@ def lobpcg(
         Array of ``k`` eigenvalues.
     v : ndarray
         An array of ``k`` eigenvectors.  `v` has the same shape as `X`.
-    lambdas : list of ndarray, optional
+    lambdas : ndarray, optional
         The eigenvalue history, if `retLambdaHistory` is True.
-    rnorms : list of ndarray, optional
+    rnorms : ndarray, optional
         The history of residual norms, if `retResidualNormsHistory` is True.
 
     Notes
@@ -323,6 +323,10 @@ def lobpcg(
         raise ValueError("expected rank-2 array for argument X")
 
     n, sizeX = blockVectorX.shape
+    lambdaHistory = np.zeros((sizeX, maxiter + 2),
+                             dtype=blockVectorX.dtype)
+    residualNormsHistory = np.zeros((sizeX, maxiter + 2),
+                                    dtype=blockVectorX.dtype)
 
     if verbosityLevel:
         aux = "Solving "
@@ -349,7 +353,8 @@ def lobpcg(
         warnings.warn(
             f"The problem size {n} minus the constraints size {sizeY} "
             f"is too small relative to the block size {sizeX}. "
-            f"Using a dense eigensolver instead of LOBPCG.",
+            f"Using a dense eigensolver instead of LOBPCG iterations.",
+            f"No output of the history of the iterations.",
             UserWarning, stacklevel=2
         )
 
@@ -431,6 +436,7 @@ def lobpcg(
     _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
     ii = _get_indx(_lambda, sizeX, largest)
     _lambda = _lambda[ii]
+    lambdaHistory[0] = _lambda
 
     eigBlockVector = np.asarray(eigBlockVector[:, ii])
     blockVectorX = np.dot(blockVectorX, eigBlockVector)
@@ -441,10 +447,6 @@ def lobpcg(
     ##
     # Active index set.
     activeMask = np.ones((sizeX,), dtype=bool)
-
-    lambdaHistory = np.zeros(maxiter + 2)
-    lambdaHistory[0] = _lambda
-    residualNormsHistory = np.zeros((sizeX, maxiter + 2), dtype=blockVectorX.dtype)
 
     previousBlockSize = sizeX
     ident = np.eye(sizeX, dtype=A.dtype)
