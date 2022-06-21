@@ -3447,6 +3447,12 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     return res
 
 
+MedianTestResult = _make_tuple_bunch(
+    'MedianTestResult',
+    ['statistic', 'pvalue', 'median', 'table'], []
+)
+
+
 def median_test(*samples, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
     """Perform a Mood's median test.
@@ -3495,22 +3501,25 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     Returns
     -------
-    stat : float
-        The test statistic.  The statistic that is returned is determined by
-        `lambda_`.  The default is Pearson's chi-squared statistic.
-    p : float
-        The p-value of the test.
-    m : float
-        The grand median.
-    table : ndarray
-        The contingency table.  The shape of the table is (2, n), where
-        n is the number of samples.  The first row holds the counts of the
-        values above the grand median, and the second row holds the counts
-        of the values below the grand median.  The table allows further
-        analysis with, for example, `scipy.stats.chi2_contingency`, or with
-        `scipy.stats.fisher_exact` if there are two samples, without having
-        to recompute the table.  If ``nan_policy`` is "propagate" and there
-        are nans in the input, the return value for ``table`` is ``None``.
+    res : MedianTestResult
+        An object containing attributes:
+
+        statistic : float
+            The test statistic.  The statistic that is returned is determined
+            by `lambda_`.  The default is Pearson's chi-squared statistic.
+        pvalue : float
+            The p-value of the test.
+        median : float
+            The grand median.
+        table : ndarray
+            The contingency table.  The shape of the table is (2, n), where
+            n is the number of samples.  The first row holds the counts of the
+            values above the grand median, and the second row holds the counts
+            of the values below the grand median.  The table allows further
+            analysis with, for example, `scipy.stats.chi2_contingency`, or with
+            `scipy.stats.fisher_exact` if there are two samples, without having
+            to recompute the table.  If ``nan_policy`` is "propagate" and there
+            are nans in the input, the return value for ``table`` is ``None``.
 
     See Also
     --------
@@ -3545,39 +3554,39 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     >>> g2 = [28, 30, 31, 33, 34, 35, 36, 40, 44, 55, 57, 61, 91, 92, 99]
     >>> g3 = [0, 3, 9, 22, 23, 25, 25, 33, 34, 34, 40, 45, 46, 48, 62, 67, 84]
     >>> from scipy.stats import median_test
-    >>> stat, p, med, tbl = median_test(g1, g2, g3)
+    >>> res = median_test(g1, g2, g3)
 
     The median is
 
-    >>> med
+    >>> res.median
     34.0
 
     and the contingency table is
 
-    >>> tbl
+    >>> res.table
     array([[ 5, 10,  7],
            [11,  5, 10]])
 
     `p` is too large to conclude that the medians are not the same:
 
-    >>> p
+    >>> res.pvalue
     0.12609082774093244
 
     The "G-test" can be performed by passing ``lambda_="log-likelihood"`` to
     `median_test`.
 
-    >>> g, p, med, tbl = median_test(g1, g2, g3, lambda_="log-likelihood")
-    >>> p
+    >>> res = median_test(g1, g2, g3, lambda_="log-likelihood")
+    >>> res.pvalue
     0.12224779737117837
 
     The median occurs several times in the data, so we'll get a different
     result if, for example, ``ties="above"`` is used:
 
-    >>> stat, p, med, tbl = median_test(g1, g2, g3, ties="above")
-    >>> p
+    >>> res = median_test(g1, g2, g3, ties="above")
+    >>> res.pvalue
     0.063873276069553273
 
-    >>> tbl
+    >>> res.table
     array([[ 5, 11,  9],
            [11,  4,  8]])
 
@@ -3609,7 +3618,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     cdata = np.concatenate(data)
     contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
     if contains_nan and nan_policy == 'propagate':
-        return np.nan, np.nan, np.nan, None
+        return MedianTestResult(np.nan, np.nan, np.nan, None)
 
     if contains_nan:
         grand_median = np.median(cdata[~np.isnan(cdata)])
@@ -3658,7 +3667,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     stat, p, dof, expected = chi2_contingency(table, lambda_=lambda_,
                                               correction=correction)
-    return stat, p, grand_median, table
+    return MedianTestResult(stat, p, grand_median, table)
 
 
 def _circfuncs_common(samples, high, low, nan_policy='propagate'):
