@@ -353,7 +353,7 @@ def lobpcg(
         warnings.warn(
             f"The problem size {n} minus the constraints size {sizeY} "
             f"is too small relative to the block size {sizeX}. "
-            f"Using a dense eigensolver instead of LOBPCG iterations.",
+            f"Using a dense eigensolver instead of LOBPCG iterations."
             f"No output of the history of the iterations.",
             UserWarning, stacklevel=2
         )
