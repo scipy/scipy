@@ -678,6 +678,7 @@ class SVDSCommonTests:
     SHAPES = ((100, 100), (100, 101), (101, 100))
 
     @pytest.mark.filterwarnings("ignore:Exited at iteration")
+    @pytest.mark.filterwarnings("ignore:Exited postprocessing")
     @pytest.mark.parametrize("shape", SHAPES)
     # ARPACK supports only dtype float, complex, or np.float32
     @pytest.mark.parametrize("dtype", (float, complex, np.float32))

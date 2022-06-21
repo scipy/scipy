@@ -84,6 +84,7 @@ def test_MikotaPair():
 
 
 @pytest.mark.filterwarnings("ignore:Exited at iteration 0")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_nonhermitian_warning(capsys):
     """Check the warning of a Ritz matrix being not Hermitian
     by feeding a non-Hermitian input matrix.
