@@ -436,7 +436,7 @@ def lobpcg(
     _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
     ii = _get_indx(_lambda, sizeX, largest)
     _lambda = _lambda[ii]
-    lambdaHistory[0] = _lambda
+    lambdaHistory[:, 0] = _lambda
 
     eigBlockVector = np.asarray(eigBlockVector[:, ii])
     blockVectorX = np.dot(blockVectorX, eigBlockVector)
@@ -674,7 +674,7 @@ def lobpcg(
         _lambda = _lambda[ii]
         eigBlockVector = eigBlockVector[:, ii]
 
-        lambdaHistory[iterationNumber] = _lambda
+        lambdaHistory[:, iterationNumber] = _lambda
 
         if verbosityLevel > 10:
             print(f"lambda:\n{_lambda}")
@@ -760,7 +760,7 @@ def lobpcg(
 
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(aux)
-    lambdaHistory[iterationNumber + 1] = _lambda
+    lambdaHistory[:, iterationNumber + 1] = _lambda
     residualNormsHistory[:, iterationNumber + 1] = residualNorms
 
     if np.max(residualNorms) > residualTolerance:
@@ -823,8 +823,11 @@ def lobpcg(
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(aux)
 
-    lambdaHistory[iterationNumber + 2] = _lambda
+    lambdaHistory[:, iterationNumber + 2] = _lambda
     residualNormsHistory[:, iterationNumber + 2] = residualNorms
+
+    lambdaHistory = lambdaHistory[:, : iterationNumber + 2]
+    residualNormsHistory = residualNormsHistory[:, : iterationNumber + 2]
 
     if np.max(residualNorms) > residualTolerance:
         warnings.warn(
