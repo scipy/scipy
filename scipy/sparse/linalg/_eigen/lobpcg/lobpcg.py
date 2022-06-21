@@ -818,13 +818,13 @@ def lobpcg(
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(aux)
 
-    if np.max(residualNorms) > residualTolerance:
-        warnings.warn(
-            f"Exited postprocessing with accuracies \n"
-            f"{residualNorms}\n"
-            f"not reaching the requested tolerance {residualTolerance}.",
-            UserWarning, stacklevel=2
-        )
+    # if np.max(residualNorms) > residualTolerance:
+    #     warnings.warn(
+    #         f"Exited postprocessing with accuracies \n"
+    #         f"{residualNorms}\n"
+    #         f"not reaching the requested tolerance {residualTolerance}.",
+    #         UserWarning, stacklevel=2
+    #     )
 
     # 2do: Keeping the best iterates in case of divergence
 
