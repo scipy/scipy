@@ -442,8 +442,9 @@ def lobpcg(
     # Active index set.
     activeMask = np.ones((sizeX,), dtype=bool)
 
-    lambdaHistory = [_lambda]
-    residualNormsHistory = []
+    lambdaHistory = np.zeros(maxiter + 2)
+    lambdaHistory[0] = _lambda
+    residualNormsHistory = np.zeros((sizeX, maxiter + 2), dtype=blockVectorX.dtype)
 
     previousBlockSize = sizeX
     ident = np.eye(sizeX, dtype=A.dtype)
@@ -475,7 +476,7 @@ def lobpcg(
         aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
         residualNorms = np.sqrt(aux)
 
-        residualNormsHistory.append(residualNorms)
+        residualNormsHistory[:, iterationNumber] = residualNorms
 
         ii = np.where(residualNorms > residualTolerance, True, False)
         activeMask = activeMask & ii
@@ -671,7 +672,7 @@ def lobpcg(
         _lambda = _lambda[ii]
         eigBlockVector = eigBlockVector[:, ii]
 
-        lambdaHistory.append(_lambda)
+        lambdaHistory[iterationNumber] = _lambda
 
         if verbosityLevel > 10:
             print(f"lambda:\n{_lambda}")
@@ -757,6 +758,8 @@ def lobpcg(
 
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(aux)
+    lambdaHistory[iterationNumber + 1] = _lambda
+    residualNormsHistory[:, iterationNumber + 1] = residualNorms
 
     if np.max(residualNorms) > residualTolerance:
         warnings.warn(
@@ -790,8 +793,8 @@ def lobpcg(
     gramXBX = (gramXBX + gramXBX.T.conj()) / 2
     try:
         _lambda, eigBlockVector = eigh(gramXAX,
-                                         gramXBX,
-                                         check_finite=False)
+                                       gramXBX,
+                                       check_finite=False)
     except LinAlgError as e:
         raise ValueError("eigh has failed in lobpcg postprocessing") from e
 
@@ -817,6 +820,9 @@ def lobpcg(
 
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(aux)
+
+    lambdaHistory[iterationNumber + 2] = _lambda
+    residualNormsHistory[:, iterationNumber + 2] = residualNorms
 
     if np.max(residualNorms) > residualTolerance:
         warnings.warn(
