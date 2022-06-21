@@ -323,9 +323,9 @@ def lobpcg(
         raise ValueError("expected rank-2 array for argument X")
 
     n, sizeX = blockVectorX.shape
-    lambdaHistory = np.zeros((sizeX, maxiter + 2),
+    lambdaHistory = np.zeros((sizeX, maxiter + 3),
                              dtype=blockVectorX.dtype)
-    residualNormsHistory = np.zeros((sizeX, maxiter + 2),
+    residualNormsHistory = np.zeros((sizeX, maxiter + 3),
                                     dtype=blockVectorX.dtype)
 
     if verbosityLevel:
@@ -459,6 +459,8 @@ def lobpcg(
     blockVectorAP = None
     blockVectorBP = None
 
+    smallestResidualNorm = np.finfo(A.dtype).max
+    bestIterationNumber = 0
     iterationNumber = -1
     restart = True
     explicitGramFlag = False
@@ -479,6 +481,11 @@ def lobpcg(
         residualNorms = np.sqrt(aux)
 
         residualNormsHistory[:, iterationNumber] = residualNorms
+        residualNorm = np.max(abs(residualNorms))
+        if residualNorm < smallestResidualNorm:
+            smallestResidualNorm = residualNorm
+            bestIterationNumber = iterationNumber
+            bestblockVectorX = blockVectorX
 
         ii = np.where(residualNorms > residualTolerance, True, False)
         activeMask = activeMask & ii
@@ -762,12 +769,19 @@ def lobpcg(
     residualNorms = np.sqrt(aux)
     lambdaHistory[:, iterationNumber + 1] = _lambda
     residualNormsHistory[:, iterationNumber + 1] = residualNorms
+    residualNorm = np.max(abs(residualNorms))
+    if residualNorm < smallestResidualNorm:
+        smallestResidualNorm = residualNorm
+        bestIterationNumber = iterationNumber + 1
+        bestblockVectorX = blockVectorX
 
-    if np.max(residualNorms) > residualTolerance:
+    if np.max(abs(residualNorms)) > residualTolerance:
         warnings.warn(
-            f"Exited at iteration {iterationNumber} with accuracies \n"
+            f"Loop ended at iteration {iterationNumber} with accuracies \n"
             f"{residualNorms}\n"
-            f"not reaching the requested tolerance {residualTolerance}.",
+            f"not reaching the requested tolerance {residualTolerance}.\n"
+            f"Use iteration {bestIterationNumber} instead with accuracy \n"
+            f"{smallestResidualNorm}.\n",
             UserWarning, stacklevel=2
         )
 
@@ -775,7 +789,7 @@ def lobpcg(
         print(f"Final iterative eigenvalue(s):\n{_lambda}")
         print(f"Final iterative residual norm(s):\n{residualNorms}")
 
-    # Future work: Need to add Postprocessing here:
+    blockVectorX = bestblockVectorX
     # Making eigenvectors "exactly" satisfy the blockVectorY constrains
     if blockVectorY is not None:
         _applyConstraints(blockVectorX,
@@ -829,7 +843,7 @@ def lobpcg(
     lambdaHistory = lambdaHistory[:, : iterationNumber + 2]
     residualNormsHistory = residualNormsHistory[:, : iterationNumber + 2]
 
-    if np.max(residualNorms) > residualTolerance:
+    if np.max(abs(residualNorms)) > residualTolerance:
         warnings.warn(
             f"Exited postprocessing with accuracies \n"
             f"{residualNorms}\n"
