@@ -341,6 +341,7 @@ def test_verbosity(tmpdir):
                    reason="tolerance violation on windows")
 @pytest.mark.xfail(platform.machine() == 'ppc64le',
                    reason="fails on ppc64le")
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_tolerance_float32():
     """Check lobpcg for attainable tolerance in float32.
     """
