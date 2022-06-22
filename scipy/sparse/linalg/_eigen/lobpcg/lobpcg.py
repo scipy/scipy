@@ -457,7 +457,7 @@ def lobpcg(
     blockVectorAP = None
     blockVectorBP = None
 
-    smallestResidualNorm = np.finfo(X.dtype).max
+    smallestResidualNorm = np.abs(np.finfo(X.dtype).max)
     bestIterationNumber = 0
     iterationNumber = -1
     restart = True
@@ -476,10 +476,10 @@ def lobpcg(
         blockVectorR = blockVectorAX - aux
 
         aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
-        residualNorms = np.sqrt(aux)
+        residualNorms = np.sqrt(np.abs(aux))
 
         residualNormsHistory[:, iterationNumber] = residualNorms
-        residualNorm = np.max(abs(residualNorms))
+        residualNorm = np.max(np.abs(residualNorms))
         if residualNorm < smallestResidualNorm:
             smallestResidualNorm = residualNorm
             bestIterationNumber = iterationNumber
@@ -762,16 +762,16 @@ def lobpcg(
     blockVectorR = blockVectorAX - aux
 
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
-    residualNorms = np.sqrt(aux)
+    residualNorms = np.sqrt(np.abs(aux))
     lambdaHistory[:, iterationNumber + 1] = _lambda
     residualNormsHistory[:, iterationNumber + 1] = residualNorms
-    residualNorm = np.max(abs(residualNorms))
+    residualNorm = np.max(np.abs(residualNorms))
     if residualNorm < smallestResidualNorm:
         smallestResidualNorm = residualNorm
         bestIterationNumber = iterationNumber + 1
         bestblockVectorX = blockVectorX
 
-    if np.max(abs(residualNorms)) > residualTolerance:
+    if np.max(np.abs(residualNorms)) > residualTolerance:
         warnings.warn(
             f"Loop ended at iteration {iterationNumber} with accuracies \n"
             f"{residualNorms}\n"
@@ -831,7 +831,7 @@ def lobpcg(
     blockVectorR = blockVectorAX - aux
 
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
-    residualNorms = np.sqrt(aux)
+    residualNorms = np.sqrt(np.abs(aux))
 
     lambdaHistory[:, iterationNumber + 2] = _lambda
     residualNormsHistory[:, iterationNumber + 2] = residualNorms
@@ -839,7 +839,7 @@ def lobpcg(
     lambdaHistory = lambdaHistory[:, : iterationNumber + 2]
     residualNormsHistory = residualNormsHistory[:, : iterationNumber + 2]
 
-    if np.max(abs(residualNorms)) > residualTolerance:
+    if np.max(np.abs(residualNorms)) > residualTolerance:
         warnings.warn(
             f"Exited postprocessing with accuracies \n"
             f"{residualNorms}\n"
