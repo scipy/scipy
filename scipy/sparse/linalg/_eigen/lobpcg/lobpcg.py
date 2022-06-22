@@ -667,9 +667,9 @@ def lobpcg(
                                                gramB,
                                                check_finite=False)
             except LinAlgError as e:
-                # raise ValueError("eigh has failed in lobpcg iterations") from e
+                # raise ValueError("eigh failed in lobpcg iterations") from e
                 warnings.warn(
-                    f"eigh failed at iteration {iterationNumber} with the error\n"
+                    f"eigh failed at iteration {iterationNumber} with error\n"
                     f"{e}\n",
                     UserWarning, stacklevel=2
                 )
