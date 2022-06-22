@@ -773,7 +773,7 @@ def lobpcg(
 
     if np.max(np.abs(residualNorms)) > residualTolerance:
         warnings.warn(
-            f"Loop ended at iteration {iterationNumber} with accuracies \n"
+            f"Exited at iteration {iterationNumber} with accuracies \n"
             f"{residualNorms}\n"
             f"not reaching the requested tolerance {residualTolerance}.\n"
             f"Use iteration {bestIterationNumber} instead with accuracy \n"
