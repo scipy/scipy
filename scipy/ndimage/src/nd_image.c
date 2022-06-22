@@ -885,7 +885,7 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
         npy_intp idx =
                 PyArray_NDIM(input) > 0 ? 2 * PyArray_NDIM(input) * ii : ii;
         if (regions[idx] >= 0) {
-            PyObject *tuple = PyTuple_New(PyArray_NDIM(input));
+            tuple = PyTuple_New(PyArray_NDIM(input));
             if (!tuple) {
                 PyErr_NoMemory();
                 goto exit;
@@ -903,8 +903,8 @@ static PyObject *Py_FindObjects(PyObject *obj, PyObject *args)
                     PyErr_NoMemory();
                     goto exit;
                 }
-                Py_XDECREF(start);
-                Py_XDECREF(end);
+                Py_DECREF(start);
+                Py_DECREF(end);
                 start = end = NULL;
                 PyTuple_SetItem(tuple, jj, slc);
                 slc = NULL;

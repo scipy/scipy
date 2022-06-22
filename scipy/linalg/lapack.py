@@ -820,10 +820,6 @@ except ImportError:
     HAS_ILP64 = False
     _flapack_64 = None
 
-# Backward compatibility
-from scipy._lib._util import DeprecatedImport as _DeprecatedImport
-clapack = _DeprecatedImport("scipy.linalg.blas.clapack", "scipy.linalg.lapack")
-flapack = _DeprecatedImport("scipy.linalg.blas.flapack", "scipy.linalg.lapack")
 
 # Expose all functions (only flapack --- clapack is an implementation detail)
 empty_module = None

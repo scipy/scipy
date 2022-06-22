@@ -1420,20 +1420,34 @@ class TestLogser:
 
 
 class TestGumbel_r_l:
-    def setup_method(self):
-        np.random.seed(1234)
+    @pytest.fixture(scope='function')
+    def rng(self):
+        return np.random.default_rng(1234)
 
     @pytest.mark.parametrize("dist", [stats.gumbel_r, stats.gumbel_l])
-    @pytest.mark.parametrize("loc_rvs,scale_rvs", ([np.random.rand(2)]))
-    def test_fit_comp_optimizer(self, dist, loc_rvs, scale_rvs):
-        data = dist.rvs(size=100, loc=loc_rvs, scale=scale_rvs)
+    @pytest.mark.parametrize("loc_rvs", [-1, 0, 1])
+    @pytest.mark.parametrize("scale_rvs", [.1, 1, 5])
+    @pytest.mark.parametrize('fix_loc, fix_scale',
+                             ([True, False], [False, True]))
+    def test_fit_comp_optimizer(self, dist, loc_rvs, scale_rvs,
+                                fix_loc, fix_scale, rng):
+        data = dist.rvs(size=100, loc=loc_rvs, scale=scale_rvs,
+                        random_state=rng)
 
         # obtain objective function to compare results of the fit methods
         args = [data, (dist._fitstart(data),)]
         func = dist._reduce_func(args, {})[1]
 
+        kwds = dict()
+        # the fixed location and scales are arbitrarily modified to not be
+        # close to the true value.
+        if fix_loc:
+            kwds['floc'] = loc_rvs * 2
+        if fix_scale:
+            kwds['fscale'] = scale_rvs * 2
+
         # test that the gumbel_* fit method is better than super method
-        _assert_less_or_close_loglike(dist, data, func)
+        _assert_less_or_close_loglike(dist, data, func, **kwds)
 
     @pytest.mark.parametrize("dist, sgn", [(stats.gumbel_r, 1),
                                            (stats.gumbel_l, -1)])

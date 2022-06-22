@@ -728,10 +728,27 @@ class TestLevene:
         assert_raises(ValueError, stats.levene, g1, x)
 
 
-class TestBinomP:
-    """Tests for stats.binom_test."""
+class TestBinomTestP:
+    """
+    Tests for stats.binomtest as a replacement for deprecated stats.binom_test.
+    """
+    @staticmethod
+    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
+        # This processing of x and n is copied from from binom_test.
+        x = np.atleast_1d(x).astype(np.int_)
+        if len(x) == 2:
+            n = x[1] + x[0]
+            x = x[0]
+        elif len(x) == 1:
+            x = x[0]
+            if n is None or n < x:
+                raise ValueError("n must be >= x")
+            n = np.int_(n)
+        else:
+            raise ValueError("Incorrect length for x.")
 
-    binom_test_func = staticmethod(stats.binom_test)
+        result = stats.binomtest(x, n, p=p, alternative=alternative)
+        return result.pvalue
 
     def test_data(self):
         pval = self.binom_test_func(100, 250)
@@ -770,29 +787,6 @@ class TestBinomP:
     def test_boost_overflow_raises(self):
         # Boost.Math error policy should raise exceptions in Python
         assert_raises(OverflowError, self.binom_test_func, 5.0, 6, p=sys.float_info.min)
-
-
-class TestBinomTestP(TestBinomP):
-    """
-    Tests for stats.binomtest as a replacement for stats.binom_test.
-    """
-    @staticmethod
-    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
-        # This processing of x and n is copied from from binom_test.
-        x = np.atleast_1d(x).astype(np.int_)
-        if len(x) == 2:
-            n = x[1] + x[0]
-            x = x[0]
-        elif len(x) == 1:
-            x = x[0]
-            if n is None or n < x:
-                raise ValueError("n must be >= x")
-            n = np.int_(n)
-        else:
-            raise ValueError("Incorrect length for x.")
-
-        result = stats.binomtest(x, n, p=p, alternative=alternative)
-        return result.pvalue
 
 
 class TestBinomTest:
@@ -1258,6 +1252,15 @@ class TestMood:
 
         with pytest.raises(ValueError, match="alternative must be..."):
             stats.mood(x, y, alternative='ekki-ekki')
+
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_result(self, alternative):
+        rng = np.random.default_rng(265827767938813079281100964083953437622)
+        x1 = rng.standard_normal((10, 1))
+        x2 = rng.standard_normal((15, 1))
+
+        res = stats.mood(x1, x2, alternative=alternative)
+        assert_equal((res.statistic, res.pvalue), res)
 
 
 class TestProbplot:
@@ -2530,3 +2533,11 @@ class TestMedianTest:
         exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
+
+    @pytest.mark.parametrize("correction", [False, True])
+    def test_result(self, correction):
+        x = [1, 2, 3]
+        y = [1, 2, 3]
+
+        res = stats.median_test(x, y, correction=correction)
+        assert_equal((res.statistic, res.pvalue, res.median, res.table), res)

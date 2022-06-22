@@ -155,7 +155,7 @@ def _nbool_correspond_all(u, v, w=None):
         ntf = (u & not_v).sum()
         ntt = (u & v).sum()
     else:
-        dtype = np.find_common_type([int], [u.dtype, v.dtype])
+        dtype = np.result_type(int, u.dtype, v.dtype)
         u = u.astype(dtype)
         v = v.astype(dtype)
         not_u = 1.0 - u
@@ -177,7 +177,7 @@ def _nbool_correspond_ft_tf(u, v, w=None):
         nft = (not_u & v).sum()
         ntf = (u & not_v).sum()
     else:
-        dtype = np.find_common_type([int], [u.dtype, v.dtype])
+        dtype = np.result_type(int, u.dtype, v.dtype)
         u = u.astype(dtype)
         v = v.astype(dtype)
         not_u = 1.0 - u
@@ -1395,7 +1395,7 @@ def dice(u, v, w=None):
     if u.dtype == v.dtype == bool and w is None:
         ntt = (u & v).sum()
     else:
-        dtype = np.find_common_type([int], [u.dtype, v.dtype])
+        dtype = np.result_type(int, u.dtype, v.dtype)
         u = u.astype(dtype)
         v = v.astype(dtype)
         if w is None:

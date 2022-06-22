@@ -101,8 +101,8 @@ test = [
     "pooch",
 ]
 doc = [
-    "sphinx!=3.1.0, !=4.1.0",
-    "pydata-sphinx-theme>=0.8.1",
+    "sphinx!=4.1.0",
+    "pydata-sphinx-theme>=0.9.0",
     "sphinx-panels>=0.5.2",
     "matplotlib>2",
     "numpydoc",
@@ -113,6 +113,10 @@ dev = [
     "typing_extensions",
     "pycodestyle",
     "flake8",
+    "rich-click",
+    "click",
+    "doit>=0.36.0",
+    "pydevtool",
 ]
 
 [project.urls]
@@ -124,5 +128,5 @@ tracker = "https://github.com/scipy/scipy/issues"
 
 
 [tool.doit]
-dodoFile = "do.py"
+dodoFile = "dev.py"
 

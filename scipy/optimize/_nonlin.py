@@ -1431,7 +1431,7 @@ class KrylovJacobian(Jacobian):
 
         if self.method is scipy.sparse.linalg.gmres:
             # Replace GMRES's outer iteration with Newton steps
-            self.method_kw['restrt'] = inner_maxiter
+            self.method_kw['restart'] = inner_maxiter
             self.method_kw['maxiter'] = 1
             self.method_kw.setdefault('atol', 0)
         elif self.method in (scipy.sparse.linalg.gcrotmk,

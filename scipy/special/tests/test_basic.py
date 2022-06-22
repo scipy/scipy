@@ -1318,7 +1318,7 @@ class TestCombinatorics:
         assert_equal(special.comb(ii, ii-1, exact=True), ii)
 
         expected = 100891344545564193334812497256
-        assert_equal(special.comb(100, 50, exact=True), expected)
+        assert special.comb(100, 50, exact=True) == expected
 
     @pytest.mark.parametrize("repetition", [True, False])
     @pytest.mark.parametrize("legacy", [True, False])
@@ -1355,8 +1355,9 @@ class TestCombinatorics:
         k = 30
         np_n = np.int64(n)
         np_k = np.int64(k)
-        assert_equal(special.comb(np_n, np_k, exact=True),
-                     special.comb(n, k, exact=True))
+        res_np = special.comb(np_n, np_k, exact=True)
+        res_py = special.comb(n, k, exact=True)
+        assert res_np == res_py
 
     def test_comb_zeros(self):
         assert_equal(special.comb(2, 3, exact=True), 0)
