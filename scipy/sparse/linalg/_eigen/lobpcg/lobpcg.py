@@ -126,6 +126,12 @@ def _get_indx(_lambda, num, largest):
     return ii
 
 
+def _handle_gramA_gramB_verbosity(gramA, gramB, verbosityLevel):
+    if verbosityLevel > 0:
+        _report_nonhermitian(gramA, "gramA")
+        _report_nonhermitian(gramB, "gramB")
+
+
 def lobpcg(
     A,
     X,
@@ -464,9 +470,6 @@ def lobpcg(
     explicitGramFlag = False
     while iterationNumber < maxiter:
         iterationNumber += 1
-        if verbosityLevel > 0:
-            print("-"*50)
-            print(f"iteration {iterationNumber}")
 
         if B is not None:
             aux = blockVectorBX * _lambda[np.newaxis, :]
@@ -477,9 +480,9 @@ def lobpcg(
 
         aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
         residualNorms = np.sqrt(np.abs(aux))
-
         residualNormsHistory[iterationNumber, :] = residualNorms
         residualNorm = np.max(np.abs(residualNorms))
+
         if residualNorm < smallestResidualNorm:
             smallestResidualNorm = residualNorm
             bestIterationNumber = iterationNumber
@@ -487,9 +490,6 @@ def lobpcg(
 
         ii = np.where(residualNorms > residualTolerance, True, False)
         activeMask = activeMask & ii
-        if verbosityLevel > 2:
-            print(activeMask)
-
         currentBlockSize = activeMask.sum()
         if currentBlockSize != previousBlockSize:
             previousBlockSize = currentBlockSize
@@ -499,11 +499,10 @@ def lobpcg(
             break
 
         if verbosityLevel > 0:
+            print(f"iteration {iterationNumber}")
             print(f"current block size: {currentBlockSize}")
             print(f"eigenvalue(s):\n{_lambda}")
             print(f"residual norm(s):\n{residualNorms}")
-        if verbosityLevel > 10:
-            print(eigBlockVector)
 
         activeBlockVectorR = _as2d(blockVectorR[:, activeMask])
 
@@ -609,15 +608,6 @@ def lobpcg(
             gramRBR = ident
             gramXBR = np.zeros((sizeX, currentBlockSize), dtype=A.dtype)
 
-        def _handle_gramA_gramB_verbosity(gramA, gramB):
-            if verbosityLevel > 0:
-                _report_nonhermitian(gramA, "gramA")
-                _report_nonhermitian(gramB, "gramB")
-            if verbosityLevel > 10:
-                # Note: not documented, but leave it in here for now
-                np.savetxt("gramA.txt", gramA)
-                np.savetxt("gramB.txt", gramB)
-
         if not restart:
             gramXAP = np.dot(blockVectorX.T.conj(), activeBlockVectorAP)
             gramRAP = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorAP)
@@ -646,7 +636,7 @@ def lobpcg(
                 ]
             )
 
-            _handle_gramA_gramB_verbosity(gramA, gramB)
+            _handle_gramA_gramB_verbosity(gramA, gramB, verbosityLevel)
 
             try:
                 _lambda, eigBlockVector = eigh(gramA,
@@ -660,7 +650,7 @@ def lobpcg(
             gramA = bmat([[gramXAX, gramXAR], [gramXAR.T.conj(), gramRAR]])
             gramB = bmat([[gramXBX, gramXBR], [gramXBR.T.conj(), gramRBR]])
 
-            _handle_gramA_gramB_verbosity(gramA, gramB)
+            _handle_gramA_gramB_verbosity(gramA, gramB, verbosityLevel)
 
             try:
                 _lambda, eigBlockVector = eigh(gramA,
@@ -676,25 +666,9 @@ def lobpcg(
                 break
 
         ii = _get_indx(_lambda, sizeX, largest)
-        if verbosityLevel > 10:
-            print(ii)
-            print(f"lambda:\n{_lambda}")
-
         _lambda = _lambda[ii]
         eigBlockVector = eigBlockVector[:, ii]
-
-        lambdaHistory[iterationNumber, :] = _lambda
-
-        if verbosityLevel > 10:
-            print(f"lambda:\n{_lambda}")
-        #         # Normalize eigenvectors!
-        #         aux = np.sum( eigBlockVector.conj() * eigBlockVector, 0 )
-        #         eigVecNorms = np.sqrt( aux )
-        #         eigBlockVector = eigBlockVector / eigVecNorms[np.newaxis, :]
-        #         eigBlockVector, aux = _b_orthonormalize( B, eigBlockVector )
-
-        if verbosityLevel > 10:
-            print(eigBlockVector)
+        lambdaHistory[iterationNumber + 1, :] = _lambda
 
         # Compute Ritz vectors.
         if B is not None:
@@ -719,11 +693,6 @@ def lobpcg(
                 pp = np.dot(activeBlockVectorR, eigBlockVectorR)
                 app = np.dot(activeBlockVectorAR, eigBlockVectorR)
                 bpp = np.dot(activeBlockVectorBR, eigBlockVectorR)
-
-            if verbosityLevel > 10:
-                print(pp)
-                print(app)
-                print(bpp)
 
             blockVectorX = np.dot(blockVectorX, eigBlockVectorX) + pp
             blockVectorAX = np.dot(blockVectorAX, eigBlockVectorX) + app
@@ -750,10 +719,6 @@ def lobpcg(
                 pp = np.dot(activeBlockVectorR, eigBlockVectorR)
                 app = np.dot(activeBlockVectorAR, eigBlockVectorR)
 
-            if verbosityLevel > 10:
-                print(pp)
-                print(app)
-
             blockVectorX = np.dot(blockVectorX, eigBlockVectorX) + pp
             blockVectorAX = np.dot(blockVectorAX, eigBlockVectorX) + app
 
@@ -761,7 +726,6 @@ def lobpcg(
 
     if B is not None:
         aux = blockVectorBX * _lambda[np.newaxis, :]
-
     else:
         aux = blockVectorX * _lambda[np.newaxis, :]
 
@@ -769,6 +733,7 @@ def lobpcg(
 
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(np.abs(aux))
+    # Use old lambda in case of early loop exit.
     lambdaHistory[iterationNumber + 1, :] = _lambda
     residualNormsHistory[iterationNumber + 1, :] = residualNorms
     residualNorm = np.max(np.abs(residualNorms))
@@ -806,7 +771,7 @@ def lobpcg(
     if B is not None:
         blockVectorBX = B(blockVectorX)
     gramXBX = np.dot(blockVectorX.T.conj(), blockVectorBX)
-    #  _handle_gramA_gramB_verbosity(gramXAX, gramXBX)
+    _handle_gramA_gramB_verbosity(gramXAX, gramXBX, verbosityLevel)
     gramXAX = (gramXAX + gramXAX.T.conj()) / 2
     gramXBX = (gramXBX + gramXBX.T.conj()) / 2
     try:
@@ -817,10 +782,6 @@ def lobpcg(
         raise ValueError("eigh has failed in lobpcg postprocessing") from e
 
     ii = _get_indx(_lambda, sizeX, largest)
-    if verbosityLevel > 10:
-        print(ii)
-        print(f"lambda:\n{_lambda}")
-
     _lambda = _lambda[ii]
     eigBlockVector = np.asarray(eigBlockVector[:, ii])
 
@@ -842,8 +803,8 @@ def lobpcg(
     lambdaHistory[iterationNumber + 2, :] = _lambda
     residualNormsHistory[iterationNumber + 2, :] = residualNorms
 
-    lambdaHistory = lambdaHistory[: iterationNumber + 2, :]
-    residualNormsHistory = residualNormsHistory[: iterationNumber + 2, :]
+    lambdaHistory = lambdaHistory[: bestIterationNumber + 2, :]
+    residualNormsHistory = residualNormsHistory[: bestIterationNumber + 2, :]
 
     if np.max(np.abs(residualNorms)) > residualTolerance:
         warnings.warn(
@@ -852,8 +813,6 @@ def lobpcg(
             f"not reaching the requested tolerance {residualTolerance}.",
             UserWarning, stacklevel=2
         )
-
-    # 2do: Keeping the best iterates in case of divergence
 
     if verbosityLevel > 0:
         print(f"Final postprocessing eigenvalue(s):\n{_lambda}")
