@@ -323,10 +323,8 @@ def lobpcg(
         raise ValueError("expected rank-2 array for argument X")
 
     n, sizeX = blockVectorX.shape
-    lambdaHistory = np.zeros((sizeX, maxiter + 3),
-                             dtype=blockVectorX.dtype)
-    residualNormsHistory = np.zeros((sizeX, maxiter + 3),
-                                    dtype=blockVectorX.dtype)
+    lambdaHistory = np.zeros((sizeX, maxiter + 3), dtype=X.dtype)
+    residualNormsHistory = np.zeros((sizeX, maxiter + 3), dtype=X.dtype)
 
     if verbosityLevel:
         aux = "Solving "
@@ -398,7 +396,7 @@ def lobpcg(
         return vals, vecs
 
     if (residualTolerance is None) or (residualTolerance <= 0.0):
-        residualTolerance = np.sqrt(1e-15) * n
+        residualTolerance = np.sqrt(np.finfo(X.dtype).eps) * n
 
     A = _makeOperator(A, (n, n))
     B = _makeOperator(B, (n, n))
@@ -459,7 +457,7 @@ def lobpcg(
     blockVectorAP = None
     blockVectorBP = None
 
-    smallestResidualNorm = np.finfo(A.dtype).max
+    smallestResidualNorm = np.finfo(X.dtype).max
     bestIterationNumber = 0
     iterationNumber = -1
     restart = True
@@ -578,10 +576,8 @@ def lobpcg(
 
         if activeBlockVectorAR.dtype == "float32":
             myeps = 1
-        elif activeBlockVectorR.dtype == "float32":
-            myeps = 1e-4
         else:
-            myeps = 1e-8
+            myeps = np.sqrt(np.finfo(activeBlockVectorR.dtype).eps)
 
         if residualNorms.max() > myeps and not explicitGramFlag:
             explicitGramFlag = False
