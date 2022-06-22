@@ -141,6 +141,8 @@ def test_bootstrap_vectorized(method, axis, paired):
     z = np.random.rand(n_samples)
     res1 = bootstrap((x, y, z), my_statistic, paired=paired, method=method,
                      random_state=0, axis=0, n_resamples=100)
+    assert (res1.bootstrap_distribution.shape
+            == res1.standard_error.shape + (100,))
 
     reshape = [1, 1, 1]
     reshape[axis] = n_samples
@@ -512,7 +514,7 @@ def test_vector_valued_statistic(method):
         return stats.norm.fit(data)
 
     res = bootstrap((sample,), statistic, method=method, axis=-1,
-                    vectorized=False)
+                    vectorized=False, n_resamples=9999)
 
     counts = np.sum((res.confidence_interval.low.T < params)
                     & (res.confidence_interval.high.T > params),
@@ -522,6 +524,7 @@ def test_vector_valued_statistic(method):
     assert res.confidence_interval.low.shape == (2, 100)
     assert res.confidence_interval.high.shape == (2, 100)
     assert res.standard_error.shape == (2, 100)
+    assert res.bootstrap_distribution.shape == (2, 100, 9999)
 
 
 # --- Test Monte Carlo Hypothesis Test --- #
