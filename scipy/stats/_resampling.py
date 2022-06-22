@@ -103,17 +103,27 @@ def _percentile_along_axis(theta_hat_b, alpha):
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     """Bias-corrected and accelerated interval."""
     # closely follows [2] "BCa Bootstrap CIs"
-    sample = data[0]  # only works with 1 sample statistics right now
+    # for extension to multiple samples, see:
+    # https://github.com/scipy/scipy/issues/16433#issuecomment-1161358545
 
     # calculate z0_hat
-    theta_hat = np.asarray(statistic(sample, axis=axis))[..., None]
+    theta_hat = np.asarray(statistic(*data, axis=axis))[..., None]
     percentile = _percentile_of_score(theta_hat_b, theta_hat, axis=-1)
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
     theta_hat_i = []  # would be better to fill pre-allocated array
-    for jackknife_sample in _jackknife_resample(sample, batch):
-        theta_hat_i.append(statistic(jackknife_sample, axis=-1))
+    for i, sample in enumerate(data):
+        # jackknife resampling will add an axis prior to the last axis that
+        # corresponds with the different jackknife resamples. Do the same for
+        # each sample of the data to ensure broadcastability. We need to
+        # create a copy of the list containing the samples anyway, so do this
+        # in the loop to simplify the code. This is not the bottleneck...
+        samples = [np.expand_dims(sample, -2) for sample in data]
+        for jackknife_sample in _jackknife_resample(sample, batch):
+            samples[i] = jackknife_sample
+            samples = _broadcast_arrays(samples, axis=-1)
+            theta_hat_i.append(statistic(*samples, axis=-1))
     theta_hat_i = np.concatenate(theta_hat_i, axis=-1)
     theta_hat_dot = theta_hat_i.mean(axis=-1, keepdims=True)
     num = ((theta_hat_dot - theta_hat_i)**3).sum(axis=-1)
@@ -199,10 +209,6 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if method not in methods:
         raise ValueError(f"`method` must be in {methods}")
 
-    message = "`method = 'BCa' is only available for one-sample statistics"
-    if not paired and n_samples > 1 and method == 'bca':
-        raise ValueError(message)
-
     random_state = check_random_state(random_state)
 
     return (data_iv, statistic, vectorized, paired, axis_int,
@@ -279,10 +285,9 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         The confidence level of the confidence interval.
     method : {'percentile', 'basic', 'bca'}, default: ``'BCa'``
         Whether to return the 'percentile' bootstrap confidence interval
-        (``'percentile'``), the 'reverse' or the bias-corrected and accelerated
-        bootstrap confidence interval (``'BCa'``).
-        Note that only ``'percentile'`` and ``'basic'`` support multi-sample
-        statistics at this time.
+        (``'percentile'``), the 'basic' (AKA 'reverse') bootstrap confidence
+        interval (``'basic'``), or the bias-corrected and accelerated bootstrap
+        confidence interval (``'BCa'``).
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
