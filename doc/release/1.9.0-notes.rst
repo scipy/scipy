@@ -51,7 +51,7 @@ New features
   `scipy.interpolate.RegularGridInterpolator` and its tutorial.
 - `scipy.interpolate.RegularGridInterpolator` and `scipy.interpolate.interpn`
   now accept descending ordered points.
-- ``RegularGridInterpolator`` now handles length-1 grid axes
+- ``RegularGridInterpolator`` now handles length-1 grid axes.
 - The ``BivariateSpline`` subclasses have a new method ``partial_derivative``
   which constructs a new spline object representing a derivative of an
   original spline. This mirrors the corresponding functionality for univariate
@@ -60,15 +60,15 @@ New features
 
 `scipy.linalg` improvements
 ===========================
-- `scipy.linalg.expm` now accepts nD arrays. It's speed is also improved.
-- Minimum required LAPACK version is bumped to ``3.7.1``
+- `scipy.linalg.expm` now accepts nD arrays. Its speed is also improved.
+- Minimum required LAPACK version is bumped to ``3.7.1``.
 
 
 `scipy.fft` improvements
 ========================
-- added ``uarray`` multimethods for `scipy.fft.fht` and `scipy.fft.ifht`
+- Added ``uarray`` multimethods for `scipy.fft.fht` and `scipy.fft.ifht`
   to allow provision of third party backend implementations such as those
-  recently added to CuPy
+  recently added to CuPy.
 
 `scipy.optimize` improvements
 =============================
@@ -89,18 +89,18 @@ New features
 - The default method of `scipy.optimize.linprog` is now ``'highs'``.
 - Added `scipy.optimize.milp`, new function for mixed-integer linear
   programming.
-- added Newton-TFQMR method to ``newton_krylov``
-- added support for the ``Bounds`` class in ``shgo`` and ``dual_annealing`` for
-  a more uniform API across `scipy.optimize`
-- added the ``vectorized`` keyword to ``differential_evolution``
-- ``approx_fprime`` now works with vector-valued functions
+- Added Newton-TFQMR method to ``newton_krylov``.
+- Added support for the ``Bounds`` class in ``shgo`` and ``dual_annealing`` for
+  a more uniform API across `scipy.optimize`.
+- Added the ``vectorized`` keyword to ``differential_evolution``.
+- ``approx_fprime`` now works with vector-valued functions.
 
 `scipy.signal` improvements
 ===========================
 - The new window function `scipy.signal.windows.kaiser_bessel_derived` was
   added to compute the Kaiser-Bessel derived window.
-- single-precision ``hilbert`` operations are now faster as a result of more
-  consistent ``dtype`` handling
+- Single-precision ``hilbert`` operations are now faster as a result of more
+  consistent ``dtype`` handling.
 
 `scipy.sparse` improvements
 ===========================
@@ -119,7 +119,7 @@ New features
 
 `scipy.sparse.linalg` improvements
 ==================================
-- ``lobpcg`` performance improvements for small input cases
+- ``lobpcg`` performance improvements for small input cases.
 
 `scipy.spatial` improvements
 ============================
@@ -194,12 +194,12 @@ New features
 - Add a `integers` method to `scipy.stats.qmc.QMCEngine`. It allows sampling
   integers using any QMC sampler.
 
-- improved the fit speed and accuracy of ``stats.pareto``
+- Improved the fit speed and accuracy of ``stats.pareto``.
 
-- added ``qrvs`` method to ``NumericalInversePolynomial`` to match the
-  situation for ``NumericalInverseHermite``
+- Added ``qrvs`` method to ``NumericalInversePolynomial`` to match the
+  situation for ``NumericalInverseHermite``.
 
-- faster random variate generation for ``gennorm`` and ``nakagami``
+- Faster random variate generation for ``gennorm`` and ``nakagami``.
 
 - ``lloyd_centroidal_voronoi_tessellation`` has been added to allow improved
   sample distributions via iterative application of Voronoi diagrams and
@@ -245,39 +245,39 @@ Expired Deprecations
 There is an ongoing effort to follow through on long-standing deprecations.
 The following previously deprecated features are affected:
 
-- Object arrays in sparse matrices now raise an error
-- Inexact indices into sparse matrices now raise an error
+- Object arrays in sparse matrices now raise an error.
+- Inexact indices into sparse matrices now raise an error.
 - Passing ``radius=None`` to `scipy.spatial.SphericalVoronoi` now raises an
-  error (not adding ``radius`` defaults to 1, as before)
+  error (not adding ``radius`` defaults to 1, as before).
 - Several BSpline methods now raise an error if inputs have ``ndim > 1``.
 - The ``_rvs`` method of statistical distributions now requires a ``size``
-  parameter
+  parameter.
 - Passing a ``fillvalue`` that cannot be cast to the output type in
-  `scipy.signal.convolve2d` now raises an error
+  `scipy.signal.convolve2d` now raises an error.
 - `scipy.spatial.distance` now enforces that the input vectors are
   one-dimensional.
-- Removed ``stats.itemfreq``
-- Removed ``stats.median_absolute_deviation``
+- Removed ``stats.itemfreq``.
+- Removed ``stats.median_absolute_deviation``.
 - Removed ``n_jobs`` keyword argument and use of ``k=None`` from
-  ``kdtree.query``
-- Removed ``right`` keyword from ``interpolate.PPoly.extend``
-- Removed ``debug`` keyword from ``scipy.linalg.solve_*``
-- Removed class ``_ppform`` ``scipy.interpolate``
-- Removed BSR methods ``matvec`` and ``matmat``
-- Removed ``mlab`` truncation mode from ``cluster.dendrogram``
-- Removed ``cluster.vq.py_vq2``
+  ``kdtree.query``.
+- Removed ``right`` keyword from ``interpolate.PPoly.extend``.
+- Removed ``debug`` keyword from ``scipy.linalg.solve_*``.
+- Removed class ``_ppform`` ``scipy.interpolate``.
+- Removed BSR methods ``matvec`` and ``matmat``.
+- Removed ``mlab`` truncation mode from ``cluster.dendrogram``.
+- Removed ``cluster.vq.py_vq2``.
 - Removed keyword arguments ``ftol`` and ``xtol`` from
-  ``optimize.minimize(method='Nelder-Mead')``
-- Removed ``signal.windows.hanning``
+  ``optimize.minimize(method='Nelder-Mead')``.
+- Removed ``signal.windows.hanning``.
 - Removed LAPACK ``gegv`` functions from ``linalg``; this raises the minimally
-  required LAPACK version to 3.7.1
-- Removed ``spatial.distance.matching``
-- Removed the alias ``scipy.random`` for ``numpy.random``
+  required LAPACK version to 3.7.1.
+- Removed ``spatial.distance.matching``.
+- Removed the alias ``scipy.random`` for ``numpy.random``.
 - Removed docstring related functions from ``scipy.misc`` (``docformat``,
   ``inherit_docstring_from``, ``extend_notes_in_docstring``,
   ``replace_notes_in_docstring``, ``indentcount_lines``, ``filldoc``,
   ``unindent_dict``, ``unindent_string``).
-- Removed ``linalg.pinv2``
+- Removed ``linalg.pinv2``.
 
 ******************************
 Backwards incompatible changes
@@ -450,11 +450,11 @@ Authors
 * Isuru Fernando (3)
 * Joseph Fox-Rabinovitz (1)
 * Ryan Gibson (4) +
-* Ralf Gommers (307)
+* Ralf Gommers (308)
 * Srinivas Gorur-Shandilya (1) +
 * Alex Griffing (2)
 * h-vetinari (3)
-* Matt Haberland (441)
+* Matt Haberland (442)
 * Tristan Hearn (1) +
 * Jonathan Helgert (1) +
 * Samuel Hinton (1) +
@@ -504,7 +504,7 @@ Authors
 * Amit Portnoy (1) +
 * Quentin Barthélemy (9)
 * Patrick N. Raanes (1) +
-* Tyler Reddy (114)
+* Tyler Reddy (121)
 * Pamphile Roy (196)
 * Vivek Roy (2) +
 * Niyas Sait (2) +
@@ -528,7 +528,7 @@ Authors
 * Aleksandr Tagilov (1) +
 * Masayuki Takagi (1) +
 * Sai Teja (1) +
-* Ewout ter Hoeven (1) +
+* Ewout ter Hoeven (2) +
 * Will Tirone (2)
 * Bas van Beek (7)
 * Dhruv Vats (1)
@@ -536,7 +536,7 @@ Authors
 * Arthur Volant (1)
 * Samuel Wallan (5)
 * Stefan van der Walt (8)
-* Warren Weckesser (82)
+* Warren Weckesser (83)
 * Anreas Weh (1)
 * Nils Werner (1)
 * Aviv Yaish (1) +
@@ -1160,6 +1160,7 @@ Pull requests for 1.9.0
 * `#16329 <https://github.com/scipy/scipy/pull/16329>`__: MAINT: git security shim for 1.9.x
 * `#16339 <https://github.com/scipy/scipy/pull/16339>`__: MAINT, TST: bump tol for _axis_nan_policy_test
 * `#16341 <https://github.com/scipy/scipy/pull/16341>`__: BLD: update Pythran requirement to 0.11.0, to support Clang >=13
+* `#16353 <https://github.com/scipy/scipy/pull/16353>`__: MAINT: version bounds 1.9.0rc1
 * `#16360 <https://github.com/scipy/scipy/pull/16360>`__: MAINT, TST: sup warning for theilslopes
 * `#16361 <https://github.com/scipy/scipy/pull/16361>`__: MAINT: SCIPY_USE_PROPACK
 * `#16370 <https://github.com/scipy/scipy/pull/16370>`__: MAINT: update Boost submodule to include Cygwin fix
@@ -1170,3 +1171,7 @@ Pull requests for 1.9.0
 * `#16420 <https://github.com/scipy/scipy/pull/16420>`__: MAINT: next round of 1.9.0 backports
 * `#16422 <https://github.com/scipy/scipy/pull/16422>`__: TST: fix test issues with casting-related warnings with numpy...
 * `#16427 <https://github.com/scipy/scipy/pull/16427>`__: MAINT: stats.shapiro: don't modify input in place
+* `#16436 <https://github.com/scipy/scipy/pull/16436>`__: DOC: optimize: Mark depreciated linprog methods explicitly
+* `#16451 <https://github.com/scipy/scipy/pull/16451>`__: MAINT: few more 1.9.0 backports
+* `#16453 <https://github.com/scipy/scipy/pull/16453>`__: DOC: Copy-edit 1.9.0-notes.rst
+* `#16457 <https://github.com/scipy/scipy/pull/16457>`__: TST: skip 32-bit test_pdist_correlation_iris_nonC
