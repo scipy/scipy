@@ -994,13 +994,7 @@ class TestPermutationTest:
                                 random_state=0)
 
         assert_allclose(res1.statistic, res2.statistic, rtol=self.rtol)
-
-        if permutations == 30:
-            # Even one-sided p-value is defined differently in ttest_ind for
-            # randomized tests. See permutation_test references [2] and [3].
-            assert_allclose((res1.pvalue*30+1)/31, res2.pvalue, rtol=self.rtol)
-        else:
-            assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
+        assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
 
     # -- Independent (Unpaired) Sample Tests -- #
 
