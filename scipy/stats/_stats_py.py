@@ -6771,6 +6771,8 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
 
     # Calculate the p-values
     cmps = compare[alternative](t_stat, t_stat_observed)
+    # Randomized test p-value calculation should use biased estimate; see e.g.
+    # https://www.degruyter.com/document/doi/10.2202/1544-6115.1585/
     if n_max > permutations:
         pvalues = (cmps.sum(axis=0) + 1) / (permutations + 1)
     else:
