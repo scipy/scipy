@@ -450,11 +450,11 @@ Authors
 * Isuru Fernando (3)
 * Joseph Fox-Rabinovitz (1)
 * Ryan Gibson (4) +
-* Ralf Gommers (307)
+* Ralf Gommers (308)
 * Srinivas Gorur-Shandilya (1) +
 * Alex Griffing (2)
 * h-vetinari (3)
-* Matt Haberland (441)
+* Matt Haberland (442)
 * Tristan Hearn (1) +
 * Jonathan Helgert (1) +
 * Samuel Hinton (1) +
@@ -504,7 +504,7 @@ Authors
 * Amit Portnoy (1) +
 * Quentin Barthélemy (9)
 * Patrick N. Raanes (1) +
-* Tyler Reddy (114)
+* Tyler Reddy (121)
 * Pamphile Roy (196)
 * Vivek Roy (2) +
 * Niyas Sait (2) +
@@ -528,7 +528,7 @@ Authors
 * Aleksandr Tagilov (1) +
 * Masayuki Takagi (1) +
 * Sai Teja (1) +
-* Ewout ter Hoeven (1) +
+* Ewout ter Hoeven (2) +
 * Will Tirone (2)
 * Bas van Beek (7)
 * Dhruv Vats (1)
@@ -536,7 +536,7 @@ Authors
 * Arthur Volant (1)
 * Samuel Wallan (5)
 * Stefan van der Walt (8)
-* Warren Weckesser (82)
+* Warren Weckesser (83)
 * Anreas Weh (1)
 * Nils Werner (1)
 * Aviv Yaish (1) +
@@ -1160,6 +1160,7 @@ Pull requests for 1.9.0
 * `#16329 <https://github.com/scipy/scipy/pull/16329>`__: MAINT: git security shim for 1.9.x
 * `#16339 <https://github.com/scipy/scipy/pull/16339>`__: MAINT, TST: bump tol for _axis_nan_policy_test
 * `#16341 <https://github.com/scipy/scipy/pull/16341>`__: BLD: update Pythran requirement to 0.11.0, to support Clang >=13
+* `#16353 <https://github.com/scipy/scipy/pull/16353>`__: MAINT: version bounds 1.9.0rc1
 * `#16360 <https://github.com/scipy/scipy/pull/16360>`__: MAINT, TST: sup warning for theilslopes
 * `#16361 <https://github.com/scipy/scipy/pull/16361>`__: MAINT: SCIPY_USE_PROPACK
 * `#16370 <https://github.com/scipy/scipy/pull/16370>`__: MAINT: update Boost submodule to include Cygwin fix
@@ -1170,3 +1171,7 @@ Pull requests for 1.9.0
 * `#16420 <https://github.com/scipy/scipy/pull/16420>`__: MAINT: next round of 1.9.0 backports
 * `#16422 <https://github.com/scipy/scipy/pull/16422>`__: TST: fix test issues with casting-related warnings with numpy...
 * `#16427 <https://github.com/scipy/scipy/pull/16427>`__: MAINT: stats.shapiro: don't modify input in place
+* `#16436 <https://github.com/scipy/scipy/pull/16436>`__: DOC: optimize: Mark depreciated linprog methods explicitly
+* `#16451 <https://github.com/scipy/scipy/pull/16451>`__: MAINT: few more 1.9.0 backports
+* `#16453 <https://github.com/scipy/scipy/pull/16453>`__: DOC: Copy-edit 1.9.0-notes.rst
+* `#16457 <https://github.com/scipy/scipy/pull/16457>`__: TST: skip 32-bit test_pdist_correlation_iris_nonC
