@@ -4490,7 +4490,8 @@ class Test_ttest_ind_permutations():
         na, nb = len(a), len(b)
 
         permutations = 100000
-        t_stat, _, _ = _permutation_distribution_t(data, permutations, na, True)
+        t_stat, _, _ = _permutation_distribution_t(data, permutations, na,
+                                                   True)
 
         n_unique = len(set(t_stat))
         assert n_unique == binom(na + nb, na)
