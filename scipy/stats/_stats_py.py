@@ -6773,10 +6773,8 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     cmps = compare[alternative](t_stat, t_stat_observed)
     # Randomized test p-value calculation should use biased estimate; see e.g.
     # https://www.degruyter.com/document/doi/10.2202/1544-6115.1585/
-    if n_max > permutations:
-        pvalues = (cmps.sum(axis=0) + 1) / (permutations + 1)
-    else:
-        pvalues = cmps.sum(axis=0) / permutations
+    adjustment = 1 if n_max > permutations else 0
+    pvalues = (cmps.sum(axis=0) + adjustment) / (permutations + adjustment)
 
     # nans propagate naturally in statistic calculation, but need to be
     # propagated manually into pvalues
