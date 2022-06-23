@@ -4600,6 +4600,15 @@ class Test_ttest_ind_permutations():
             stats.ttest_ind(self.a, self.b, permutations=1,
                             random_state='hello')
 
+    def test_ttest_ind_permutation_check_p_values(self):
+        # p-values should never be exactly zero
+        N = 10
+        a = np.random.rand(N, 20)
+        b = np.random.rand(N, 20)
+        p_values = stats.ttest_ind(a, b, permutations=1).pvalue
+        print(0.0 not in p_values)
+        assert 0.0 not in p_values
+
 
 class Test_ttest_ind_common:
     # for tests that are performed on variations of the t-test such as
