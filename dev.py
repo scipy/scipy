@@ -370,7 +370,16 @@ def get_test_runner(project_module):
 
 @cli.cls_cmd('build')
 class Build(Task):
-    """:wrench: build & install package on path"""
+    """:wrench: build & install package on path
+
+    Examples:
+
+    $ python dev.py build --asan ;
+        ASAN_OPTIONS=detect_leaks=0:symbolize=1:strict_init_order=true
+        LD_PRELOAD=$(gcc --print-file-name=libasan.so)
+        python dev.py test -v -t
+        ./scipy/ndimage/tests/test_morphology.py -- -s
+    """
     ctx = CONTEXT
 
     werror = Option(
@@ -386,13 +395,7 @@ class Build(Task):
               "Note: the build system doesn't check whether "
               "the project is already compiled with ASan. "
               "If not, you need to do a clean build (delete "
-              "build and build-install directories). "
-              "Example: "
-              "python dev.py build --asan ; "
-              "ASAN_OPTIONS=detect_leaks=0:symbolize=1:strict_init_order=true "
-              "LD_PRELOAD=$(gcc --print-file-name=libasan.so) "
-              "python dev.py test -v -t "
-              "./scipy/ndimage/tests/test_morphology.py -- -s"))
+              "build and build-install directories)."))
     debug = Option(
         ['--debug', '-d'], default=False, is_flag=True, help="Debug build")
     parallel = Option(
