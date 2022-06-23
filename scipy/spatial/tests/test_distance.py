@@ -32,6 +32,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+import sys
 import os.path
 
 from functools import wraps, partial
@@ -958,7 +959,10 @@ class TestPdist:
 
     @pytest.mark.slow
     def test_pdist_correlation_iris_nonC(self):
-        eps = 1e-7
+        if sys.maxsize > 2**32:
+            eps = 1e-7
+        else:
+            pytest.skip("see gh-16456")
         X = eo['iris']
         Y_right = eo['pdist-correlation-iris']
         Y_test2 = wpdist(X, 'test_correlation')
