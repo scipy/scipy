@@ -326,7 +326,7 @@ def test_eigs_consistency(n, atol):
     assert_allclose(np.sort(vals), np.sort(lvals), atol=1e-14)
 
 
-def test_verbosity(tmpdir):
+def test_verbosity():
     """Check that nonzero verbosity level code runs.
     """
     rnd = np.random.RandomState(0)
@@ -373,10 +373,11 @@ def test_random_initial_float32():
 
 
 def test_maxit():
-    """Check lobpcg if maxit=10 runs 10 iterations
+    """Check lobpcg if maxit=maxiter runs maxiter iterations and
     if maxit=None runs 20 iterations (the default)
     by checking the size of the iteration history output, which should
-    be the number of iterations plus 3 (initial, final, and postprocessing).
+    be the number of iterations plus 3 (initial, final, and postprocessing)
+    typically when maxiter is small and the choice of the best is passive.
     """
     rnd = np.random.RandomState(0)
     n = 50
@@ -385,13 +386,21 @@ def test_maxit():
     A = diags([vals], [0], (n, n))
     A = A.astype(np.float32)
     X = rnd.standard_normal((n, m))
-    X = X.astype(np.float32)
+    X = X.astype(np.float64)
+    for maxiter in range(1, 4):
+        with pytest.warns(UserWarning, match="Exited at iteration"):
+            _, _, l_h, r_h = lobpcg(A, X, tol=1e-8, maxiter=maxiter,
+                                    retLambdaHistory=True,
+                                    retResidualNormsHistory=True)
+        assert_allclose(np.shape(l_h)[0], maxiter+3)
+        assert_allclose(np.shape(r_h)[0], maxiter+3)
     with pytest.warns(UserWarning, match="Exited at iteration"):
-        _, _, l_h = lobpcg(A, X, tol=1e-8, maxiter=10, retLambdaHistory=True)
-    assert_allclose(np.shape(l_h)[0], 10+3)
-    with pytest.warns(UserWarning, match="Exited at iteration"):
-        _, _, l_h = lobpcg(A, X, tol=1e-8, retLambdaHistory=True)
+        _, _, l_h, r_h = lobpcg(A, X, tol=1e-8,
+                                retLambdaHistory=True,
+                                retResidualNormsHistory=True)
     assert_allclose(np.shape(l_h)[0], 20+3)
+    assert_allclose(np.shape(r_h)[0], 20+3)
+
 
 @pytest.mark.slow
 def test_diagonal_data_types():
