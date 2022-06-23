@@ -6692,7 +6692,7 @@ def _permutation_distribution_t(data, permutations, size_a, equal_var,
 
     t_stat = np.concatenate(t_stat, axis=0)
 
-    return t_stat, permutations
+    return t_stat, permutations, n_max
 
 
 def _calc_t_stat(a, b, equal_var, axis=-1):
@@ -6761,7 +6761,7 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    t_stat, permutations = _permutation_distribution_t(
+    t_stat, permutations, n_max = _permutation_distribution_t(
         mat, permutations, size_a=na, equal_var=equal_var,
         random_state=random_state)
 
@@ -6771,10 +6771,6 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
 
     # Calculate the p-values
     cmps = compare[alternative](t_stat, t_stat_observed)
-    # check if all combinations where used
-    size = mat.shape[-1]
-    # number of distinct combinations
-    n_max = special.comb(size, na)
     if n_max > permutations:
         pvalues = (cmps.sum(axis=0) + 1) / (permutations + 1)
     else:
