@@ -4545,7 +4545,8 @@ class Test_ttest_ind_permutations():
 
         # For random permutations, the chance of ties between the observed
         # test statistic and the population is small, so:
-        assert_equal(res_g_ab.pvalue + res_l_ab.pvalue, 1)
+        assert_equal(res_g_ab.pvalue + res_l_ab.pvalue,
+                     1 + 1/(options_p['permutations'] + 1))
 
         # For for large sample sizes, the distribution should be approximately
         # symmetric, so these identities should be approximately satisfied

@@ -6522,7 +6522,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
     ...                 random_state=rng)
-    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0052)
+    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0052994700529947)
 
     Take these two samples, one of which has an extreme tail.
 
