@@ -34,6 +34,7 @@ from ._lti_conversion import (tf2ss, abcd_normalize, ss2tf, zpk2ss, ss2zpk,
 
 import numpy
 import numpy as np
+from numpy.testing import suppress_warnings
 from numpy import (real, atleast_1d, atleast_2d, squeeze, asarray, zeros,
                    dot, transpose, ones, zeros_like, linspace, nan_to_num)
 import copy
@@ -2389,12 +2390,11 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     # Move the impulse in the input to the initial conditions, and then
     # solve using lsim2().
     ic = B + X0
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            action='ignore',
-            message="lsim2 is deprecated and will be removed from scipy 1.12. "
-                    "Use the feature-equivalent lsim function.",
-            category=DeprecationWarning)
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning,
+            "lsim2 is deprecated and will be removed from scipy 1.12. "
+            "Use the feature-equivalent lsim function.")
+
         Tr, Yr, Xr = lsim2(sys, T=T, X0=ic, **kwargs)
     return Tr, Yr
 
@@ -2561,12 +2561,11 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
     else:
         T = asarray(T)
     U = ones(T.shape, sys.A.dtype)
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            action='ignore',
-            message="lsim2 is deprecated and will be removed from scipy 1.12. "
-                    "Use the feature-equivalent lsim function.",
-            category=DeprecationWarning)
+
+    with suppress_warnings() as sup:
+        sup.filter(DeprecationWarning,
+            "lsim2 is deprecated and will be removed from scipy 1.12. "
+            "Use the feature-equivalent lsim function.")
         vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]
 
