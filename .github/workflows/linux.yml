@@ -17,7 +17,7 @@ concurrency:
 jobs:
   Python-38-dbg:
     name: Python 3.8-dbg
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'anirudhdagar/scipy' || github.repository == ''"
     runs-on: ubuntu-18.04
     steps:
       - uses: actions/checkout@v3
@@ -41,7 +41,8 @@ jobs:
           python3.8-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
           python3.8-dbg -m pip install --upgrade pip "setuptools<60.0" wheel
           python3.8-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pybind11
-          python3.8-dbg -m pip install --upgrade mpmath gmpy2 pythran threadpoolctl pooch
+          python3.8-dbg -m pip install --upgrade mpmath gmpy2 pythran threadpoolctl
+          python3.8-dbg -m pip install git+https://github.com/fatiando/pooch.git
           python3.8-dbg -m pip uninstall -y nose
           cd ..
       - name: Building SciPy
@@ -57,7 +58,7 @@ jobs:
 
   test_numpy_main:
     name: NumPy main ${{ matrix.python-version }}
-    if: "github.repository == 'scipy/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')"
+    if: "github.repository == 'anirudhdagar/scipy' && !contains(github.event.head_commit.message, '[ci skip]') && !contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, '[skip github]') && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/')"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -81,8 +82,9 @@ jobs:
     - name: Install packages
       run: |
         pip install --user git+https://github.com/numpy/numpy.git
-        python -m pip install --user "setuptools<60.0" wheel cython pytest pybind11 pytest-xdist pooch
+        python -m pip install --user "setuptools<60.0" wheel cython pytest pybind11 pytest-xdist
         pip install --user git+https://github.com/serge-sans-paille/pythran.git
+        pip install --user git+https://github.com/fatiando/pooch.git
         python -m pip install -r mypy_requirements.txt
 
         # Packages that are only needed for their annotations
