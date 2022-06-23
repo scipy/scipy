@@ -6771,7 +6771,7 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
 
     # Calculate the p-values
     cmps = compare[alternative](t_stat, t_stat_observed)
-    pvalues = cmps.sum(axis=0) / permutations
+    pvalues = (cmps.sum(axis=0) + 1) / (permutations + 1)
 
     # nans propagate naturally in statistic calculation, but need to be
     # propagated manually into pvalues
