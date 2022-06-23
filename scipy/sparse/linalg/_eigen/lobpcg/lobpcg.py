@@ -481,7 +481,7 @@ def lobpcg(
         aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
         residualNorms = np.sqrt(np.abs(aux))
         residualNormsHistory[iterationNumber, :] = residualNorms
-        residualNorm = np.max(np.abs(residualNorms))
+        residualNorm = np.sum(np.abs(residualNorms)) / sizeX
 
         if residualNorm < smallestResidualNorm:
             smallestResidualNorm = residualNorm
@@ -736,7 +736,7 @@ def lobpcg(
     # Use old lambda in case of early loop exit.
     lambdaHistory[iterationNumber + 1, :] = _lambda
     residualNormsHistory[iterationNumber + 1, :] = residualNorms
-    residualNorm = np.max(np.abs(residualNorms))
+    residualNorm = np.sum(np.abs(residualNorms)) / sizeX
     if residualNorm < smallestResidualNorm:
         smallestResidualNorm = residualNorm
         bestIterationNumber = iterationNumber + 1
