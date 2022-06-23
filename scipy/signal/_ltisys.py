@@ -2392,8 +2392,8 @@ def impulse2(system, X0=None, T=None, N=None, **kwargs):
     ic = B + X0
     with suppress_warnings() as sup:
         sup.filter(DeprecationWarning,
-            "lsim2 is deprecated and will be removed from scipy 1.12. "
-            "Use the feature-equivalent lsim function.")
+                   "lsim2 is deprecated and will be removed from scipy 1.12. "
+                   "Use the feature-equivalent lsim function.")
 
         Tr, Yr, Xr = lsim2(sys, T=T, X0=ic, **kwargs)
     return Tr, Yr
@@ -2564,8 +2564,8 @@ def step2(system, X0=None, T=None, N=None, **kwargs):
 
     with suppress_warnings() as sup:
         sup.filter(DeprecationWarning,
-            "lsim2 is deprecated and will be removed from scipy 1.12. "
-            "Use the feature-equivalent lsim function.")
+                   "lsim2 is deprecated and will be removed from scipy 1.12. "
+                   "Use the feature-equivalent lsim function.")
         vals = lsim2(sys, U, T, X0=X0, **kwargs)
     return vals[0], vals[1]
 
