@@ -66,7 +66,8 @@ class TestRegularGridInterpolator:
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
 
-        for method in ['linear', 'nearest', 'slinear', 'cubic', 'quintic']:
+        for method in ['linear', 'nearest',
+                       'slinear', 'cubic', 'quintic', 'pchip']:
             interp = RegularGridInterpolator(points,
                                              values.tolist(),
                                              method=method)
@@ -82,7 +83,7 @@ class TestRegularGridInterpolator:
         match = "points in dimension"
 
         # Check error raise when creating interpolator
-        for method in ['cubic', 'quintic']:
+        for method in ['cubic', 'quintic', 'pchip']:
             with pytest.raises(ValueError, match=match):
                 RegularGridInterpolator(points, values, method=method)
 
@@ -90,7 +91,7 @@ class TestRegularGridInterpolator:
         interp = RegularGridInterpolator(points, values)
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
-        for method in ['cubic', 'quintic']:
+        for method in ['cubic', 'quintic', 'pchip']:
             with pytest.raises(ValueError, match=match):
                 interp(sample, method=method)
 
@@ -118,7 +119,8 @@ class TestRegularGridInterpolator:
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
 
-        for method in ['linear', 'nearest', "slinear", "cubic", "quintic"]:
+        for method in ['linear', 'nearest',
+                       'slinear', 'cubic', 'quintic', 'pchip']:
             interp = RegularGridInterpolator(points, values,
                                              method=method)
             rinterp = RegularGridInterpolator(points, values.real,
@@ -129,6 +131,18 @@ class TestRegularGridInterpolator:
             v1 = interp(sample)
             v2 = rinterp(sample) + 1j*iinterp(sample)
             assert_allclose(v1, v2)
+
+    def test_cubic_vs_pchip(self):
+        x, y = [1, 2, 3, 4], [1, 2, 3, 4]
+        xg, yg = np.meshgrid(x, y, indexing='ij')
+
+        values = (lambda x, y: x**4 * y**4)(xg, yg)
+        cubic = RegularGridInterpolator((x, y), values, method='cubic')
+        pchip = RegularGridInterpolator((x, y), values, method='pchip')
+
+        vals_cubic = cubic([1.5, 2])
+        vals_pchip = pchip([1.5, 2])
+        assert not np.allclose(vals_cubic, vals_pchip, atol=1e-14, rtol=0)
 
     def test_linear_xi1d(self):
         points, values = self._get_sample_4d_2()
