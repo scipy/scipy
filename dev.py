@@ -263,14 +263,11 @@ class CLI(CliGroup):
 def cli(ctx, **kwargs):
     """Developer Tool for SciPy
 
-\b
-```python
-
-    Commands that require a built/installed instance are marked with :wrench:.
+  \bCommands that require a built/installed instance are marked with :wrench:.
 
 
-    **python dev.py --build-dir my-build test -s stats**
-```
+  \b**python dev.py --build-dir my-build test -s stats**
+
     """
     CLI.update_context(ctx, kwargs)
 
