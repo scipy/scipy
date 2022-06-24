@@ -1864,6 +1864,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
 JarqueBeraResult = namedtuple('JarqueBeraResult', ('statistic', 'pvalue'))
 
 
+@_axis_nan_policy_factory(tuple_to_result=JarqueBeraResult, default_axis=None)
 def jarque_bera(x, *, axis=None):
     """Perform the Jarque-Bera goodness of fit test on sample data.
 
