@@ -6522,7 +6522,7 @@ def ttest_ind(a, b, axis=0, equal_var=True, nan_policy='propagate',
 
     >>> stats.ttest_ind(rvs1, rvs5, permutations=10000,
     ...                 random_state=rng)
-    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0052)
+    Ttest_indResult(statistic=-2.8415950600298774, pvalue=0.0052994700529947)
 
     Take these two samples, one of which has an extreme tail.
 
@@ -6692,7 +6692,7 @@ def _permutation_distribution_t(data, permutations, size_a, equal_var,
 
     t_stat = np.concatenate(t_stat, axis=0)
 
-    return t_stat, permutations
+    return t_stat, permutations, n_max
 
 
 def _calc_t_stat(a, b, equal_var, axis=-1):
@@ -6761,7 +6761,7 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
     mat = _broadcast_concatenate((a, b), axis=axis)
     mat = np.moveaxis(mat, axis, -1)
 
-    t_stat, permutations = _permutation_distribution_t(
+    t_stat, permutations, n_max = _permutation_distribution_t(
         mat, permutations, size_a=na, equal_var=equal_var,
         random_state=random_state)
 
@@ -6771,7 +6771,10 @@ def _permutation_ttest(a, b, permutations, axis=0, equal_var=True,
 
     # Calculate the p-values
     cmps = compare[alternative](t_stat, t_stat_observed)
-    pvalues = cmps.sum(axis=0) / permutations
+    # Randomized test p-value calculation should use biased estimate; see e.g.
+    # https://www.degruyter.com/document/doi/10.2202/1544-6115.1585/
+    adjustment = 1 if n_max > permutations else 0
+    pvalues = (cmps.sum(axis=0) + adjustment) / (permutations + adjustment)
 
     # nans propagate naturally in statistic calculation, but need to be
     # propagated manually into pvalues
