@@ -1861,7 +1861,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
-Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
+JarqueBeraResult = namedtuple('JarqueBeraResult', ('statistic', 'pvalue'))
 
 
 def jarque_bera(x):
@@ -1881,10 +1881,13 @@ def jarque_bera(x):
 
     Returns
     -------
-    jb_value : float
-        The test statistic.
-    p : float
-        The p-value for the hypothesis test.
+    result : JarqueBeraResult
+        An object with the following attributes:
+
+        statistic : float
+            The test statistic.
+        pvalue : float
+            The p-value for the hypothesis test.
 
     References
     ----------
@@ -1918,7 +1921,7 @@ def jarque_bera(x):
     jb_value = n / 6 * (skewness**2 + (kurtosis - 3)**2 / 4)
     p = 1 - distributions.chi2.cdf(jb_value, 2)
 
-    return Jarque_beraResult(jb_value, p)
+    return JarqueBeraResult(jb_value, p)
 
 
 #####################################
