@@ -5387,8 +5387,6 @@ class TestJarqueBera:
         assert_allclose(res, resT)
 
 
-
-
 def test_skewtest_too_few_samples():
     # Regression test for ticket #1492.
     # skewtest requires at least 8 samples; 7 should raise a ValueError.
