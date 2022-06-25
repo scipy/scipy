@@ -3479,23 +3479,33 @@ class _TestMinMax:
         X = self.spmatrix(D)
 
         for axis in axes_even:
-            assert_array_equal(X.max(axis=axis, explicit=True).A.flatten(),
-                               np.array([40, 41, 42, 43, 44, 45, 46, 47, 48, 0]))
+            assert_array_equal(
+                X.max(axis=axis, explicit=True).A.flatten(),
+                np.array([40, 41, 42, 43, 44, 45, 46, 47, 48, 0])
+            )
 
             if np.any(X.data == 0):
                 # Noncanonical case
-                assert_array_equal(X.min(axis=axis, explicit=True).A.flatten(),
-                                   np.array([20, 1, -1, 3, 4, 5, 0, 7, 8, 0]))
+                assert_array_equal(
+                    X.min(axis=axis, explicit=True).A.flatten(),
+                    np.array([20, 1, -1, 3, 4, 5, 0, 7, 8, 0])
+                )
             else:
                 # Canonical case.
-                assert_array_equal(X.min(axis=axis, explicit=True).A.flatten(),
-                                   np.array([20, 1, -1, 3, 4, 5, 6, 7, 8, 0]))
+                assert_array_equal(
+                    X.min(axis=axis, explicit=True).A.flatten(),
+                    np.array([20, 1, -1, 3, 4, 5, 6, 7, 8, 0])
+                )
 
         for axis in axes_odd:
-            assert_array_equal(X.max(axis=axis, explicit=True).A.flatten(),
-                               np.array([8, 0, 28, 38, 48]))
-            assert_array_equal(X.min(axis=axis, explicit=True).A.flatten(),
-                               np.array([1, 0, -1, 30, 40]))
+            assert_array_equal(
+                X.max(axis=axis, explicit=True).A.flatten(),
+                np.array([8, 0, 28, 38, 48])
+            )
+            assert_array_equal(
+                X.min(axis=axis, explicit=True).A.flatten(),
+                np.array([1, 0, -1, 30, 40])
+            )
 
         # full matrix
         D = matrix(np.arange(1, 51).reshape(10, 5))
@@ -3508,22 +3518,38 @@ class _TestMinMax:
                                np.array([1, 2, 3, 4, 5]))
 
         for axis in axes_odd:
-            assert_array_equal(X.max(axis=axis, explicit=True).A.flatten(),
-                               np.array([5, 10, 15, 20, 25, 30, 35, 40, 45, 50]))
-            assert_array_equal(X.min(axis=axis, explicit=True).A.flatten(),
-                               np.array([1, 6, 11, 16, 21, 26, 31, 36, 41, 46]))
+            assert_array_equal(
+                X.max(axis=axis, explicit=True).A.flatten(),
+                np.array([5, 10, 15, 20, 25, 30, 35, 40, 45, 50])
+            )
+            assert_array_equal(
+                X.min(axis=axis, explicit=True).A.flatten(),
+                np.array([1, 6, 11, 16, 21, 26, 31, 36, 41, 46])
+            )
 
         # empty matrix
         D = matrix(np.zeros((10, 5)))
         X = self.spmatrix(D)
 
         for axis in axes_even:
-            assert_array_equal(X.max(axis=axis, explicit=True).A.flatten(), np.zeros(5))
-            assert_array_equal(X.min(axis=axis, explicit=True).A.flatten(), np.zeros(5))
+            assert_array_equal(
+                X.max(axis=axis, explicit=True).A.flatten(),
+                np.zeros(5)
+            )
+            assert_array_equal(
+                X.min(axis=axis, explicit=True).A.flatten(),
+                np.zeros(5)
+            )
 
         for axis in axes_odd:
-            assert_array_equal(X.max(axis=axis, explicit=True).A.flatten(), np.zeros(10))
-            assert_array_equal(X.min(axis=axis, explicit=True).A.flatten(), np.zeros(10))
+            assert_array_equal(
+                X.max(axis=axis, explicit=True).A.flatten(),
+                np.zeros(10)
+            )
+            assert_array_equal(
+                X.min(axis=axis, explicit=True).A.flatten(),
+                np.zeros(10)
+            )
 
         # zero-size matrices
         D = np.zeros((0, 10))
@@ -3532,8 +3558,14 @@ class _TestMinMax:
             assert_raises(ValueError, X.min, axis=axis, explicit=True)
             assert_raises(ValueError, X.max, axis=axis, explicit=True)
         for axis in axes_odd:
-            assert_array_equal(np.zeros((0, 1)), X.min(axis=axis, explicit=True).A)
-            assert_array_equal(np.zeros((0, 1)), X.max(axis=axis, explicit=True).A)
+            assert_array_equal(
+                np.zeros((0, 1)),
+                X.min(axis=axis, explicit=True).A
+            )
+            assert_array_equal(
+                np.zeros((0, 1)),
+                X.max(axis=axis, explicit=True).A
+            )
 
         D = np.zeros((10, 0))
         X = self.spmatrix(D)
@@ -3541,8 +3573,14 @@ class _TestMinMax:
             assert_raises(ValueError, X.min, axis=axis, explicit=True)
             assert_raises(ValueError, X.max, axis=axis, explicit=True)
         for axis in axes_even:
-            assert_array_equal(np.zeros((1, 0)), X.min(axis=axis, explicit=True).A)
-            assert_array_equal(np.zeros((1, 0)), X.max(axis=axis, explicit=True).A)
+            assert_array_equal(
+                np.zeros((1, 0)),
+                X.min(axis=axis, explicit=True).A
+            )
+            assert_array_equal(
+                np.zeros((1, 0)),
+                X.max(axis=axis, explicit=True).A
+            )
 
     def test_argmax_explicit(self):
         D1 = np.array([[-1, 5, 2, 3],
@@ -3553,15 +3591,23 @@ class _TestMinMax:
 
         mat = csr_matrix(D1)
 
-        assert_equal(mat.argmax(axis=0, explicit=True).A.flatten(),
-                     np.array([3, 0, 3, 3]))
-        assert_equal(mat.argmin(axis=0, explicit=True).A.flatten(),
-                     np.array([0, 2, 2, 2]))
+        assert_equal(
+            mat.argmax(axis=0, explicit=True).A.flatten(),
+            np.array([3, 0, 3, 3])
+        )
+        assert_equal(
+            mat.argmin(axis=0, explicit=True).A.flatten(),
+            np.array([0, 2, 2, 2])
+        )
 
-        assert_equal(mat.argmax(axis=1, explicit=True).A.flatten(),
-                     np.array([1, 2, 0, 3, 1]))
-        assert_equal(mat.argmin(axis=1, explicit=True).A.flatten(),
-                     np.array([0, 3, 3, 0, 0]))
+        assert_equal(
+            mat.argmax(axis=1, explicit=True).A.flatten(),
+            np.array([1, 2, 0, 3, 1])
+        )
+        assert_equal(
+            mat.argmin(axis=1, explicit=True).A.flatten(),
+            np.array([0, 3, 3, 0, 0])
+        )
 
         D1 = np.empty((0, 5))
         D2 = np.empty((5, 0))

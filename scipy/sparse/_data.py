@@ -355,7 +355,7 @@ class _minmax_mixin:
             This argument is in the signature *solely* for NumPy
             compatibility reasons. Do not pass in anything except for
             the default value, as this argument is not used.
-            
+
         explicit : {False, True} optional
             Indicates whether the nonzero entries of the matrix should be
             considered. If a row/column is empty, a zero will be returned
