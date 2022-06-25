@@ -60,47 +60,44 @@ config = DTConfig()
 config.user_context_mgr = warnings_errors
 ############################################################################
 
-module_names = PUBLIC_SUBMODULES
-
 LOGFILE = open('doctest.log', 'a')
 
-all_success = True
-for submodule_name in module_names:
-    prefix = BASE_MODULE + '.'
-    if not submodule_name.startswith(prefix):
-        module_name = prefix + submodule_name
-    else:
-        module_name = submodule_name
-
-    module = importlib.import_module(module_name)
-
-    full_name = module.__name__
-    line = '='*len(full_name)
-    sys.stderr.write(f"\n\n{line}\n")
-    sys.stderr.write(full_name)
-    sys.stderr.write(f"\n{line}\n")
-
-    result, history = testmod(module, strategy='api', config=config) 
-
-    LOGFILE.write(module_name + '\n')
-    LOGFILE.write("="*len(module_name)  + '\n')
-    for entry in history:
-        LOGFILE.write(str(entry) + '\n')
-
-    sys.stderr.write(str(result))
-
-    all_success = all_success and (result.failed == 0)
 
 
-LOGFILE.close()
+def doctest_submodules(module_names, verbose, fail_fast):
+    all_success = True
+    for submodule_name in module_names:
+        prefix = BASE_MODULE + '.'
+        if not submodule_name.startswith(prefix):
+            module_name = prefix + submodule_name
+        else:
+            module_name = submodule_name
 
-# final report
-if all_success:
-    sys.stderr.write('\n\n>>>> OK: doctests PASSED\n')
-    sys.exit(0)
-else:
-    sys.stderr.write('\n\n>>>> ERROR: doctests FAILED\n')
-    sys.exit(-1)
+        module = importlib.import_module(module_name)
+
+        full_name = module.__name__
+        line = '='*len(full_name)
+        sys.stderr.write(f"\n\n{line}\n")
+        sys.stderr.write(full_name)
+        sys.stderr.write(f"\n{line}\n")
+
+        result, history = testmod(module, strategy='api',
+                                  verbose=verbose,
+                                  raise_on_error=fail_fast, config=config) 
+
+        LOGFILE.write(module_name + '\n')
+        LOGFILE.write("="*len(module_name)  + '\n')
+        for entry in history:
+            LOGFILE.write(str(entry) + '\n')
+
+        sys.stderr.write(str(result))
+        all_success = all_success and (result.failed == 0)
+        return all_success
+
+
+def doctest_single_file(fname):
+    raise NotImplementedError
+
 
 
 if __name__ == "__main__":
@@ -115,10 +112,29 @@ if __name__ == "__main__":
     parser.add_argument( "-s", "--submodule", default=None,
                         help="Submodule whose tests to run (cluster,"
                              " constants, ...)")
-    parser.add_argument( "-t", "--tests", action='append',
+    parser.add_argument( "-t", "--tests", default=None,
                         help="Specify a .py file to check")
-##    parser.add_argument('file', nargs='+',
-##                        help='file containing the tests to run')
     args = parser.parse_args()
-    testfiles = args.file
-    verbose = args.verbose
+
+    # TODO: verbosity
+
+    if args.submodule and args.tests:
+        raise ValueError("Specify either a submodule or a single file, not both.")
+
+    if args.tests:
+        all_success = doctest_single_file(args.tests)
+    else:
+        name = args.submodule   # XXX : dance w/ subsubmodules : cluster.vq etc
+        submodule_names = [name]  if name else list(PUBLIC_SUBMODULES)
+        all_success = doctest_submodules(submodule_names,
+                                         verbose=args.verbose,
+                                         fail_fast=args.fail_fast)
+
+    # final report
+    if all_success:
+        sys.stderr.write('\n\n>>>> OK: doctests PASSED\n')
+        sys.exit(0)
+    else:
+        sys.stderr.write('\n\n>>>> ERROR: doctests FAILED\n')
+        sys.exit(1)
+

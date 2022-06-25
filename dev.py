@@ -1086,7 +1086,7 @@ class RefguideCheck(Task):
         if args.verbose:
             cmd += ['-vvv']
         if args.submodule:
-            cmd += [args.submodule]
+            cmd += ['-s ', args.submodule]
         cmd_str = ' '.join(cmd)
         return {
             'actions': [f'env PYTHONPATH={dirs.site} {cmd_str}'],
