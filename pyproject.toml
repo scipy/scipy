@@ -112,6 +112,10 @@ dev = [
     "typing_extensions",
     "pycodestyle",
     "flake8",
+    "rich-click",
+    "click",
+    "doit>=0.36.0",
+    "pydevtool",
 ]
 
 [project.urls]
@@ -123,5 +127,5 @@ tracker = "https://github.com/scipy/scipy/issues"
 
 
 [tool.doit]
-dodoFile = "do.py"
+dodoFile = "dev.py"
 

@@ -183,7 +183,7 @@ def test_milp_3():
     c = [0, -1]
     A = [[-1, 1], [3, 2], [2, 3]]
     b_u = [1, 12, 12]
-    b_l = np.full_like(b_u, -np.inf)
+    b_l = np.full_like(b_u, -np.inf, dtype=np.float64)
     constraints = LinearConstraint(A, b_l, b_u)
 
     integrality = np.ones_like(c)

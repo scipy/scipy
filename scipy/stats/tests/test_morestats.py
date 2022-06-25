@@ -1253,6 +1253,15 @@ class TestMood:
         with pytest.raises(ValueError, match="alternative must be..."):
             stats.mood(x, y, alternative='ekki-ekki')
 
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_result(self, alternative):
+        rng = np.random.default_rng(265827767938813079281100964083953437622)
+        x1 = rng.standard_normal((10, 1))
+        x2 = rng.standard_normal((15, 1))
+
+        res = stats.mood(x1, x2, alternative=alternative)
+        assert_equal((res.statistic, res.pvalue), res)
+
 
 class TestProbplot:
 
@@ -2524,3 +2533,11 @@ class TestMedianTest:
         exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
+
+    @pytest.mark.parametrize("correction", [False, True])
+    def test_result(self, correction):
+        x = [1, 2, 3]
+        y = [1, 2, 3]
+
+        res = stats.median_test(x, y, correction=correction)
+        assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
