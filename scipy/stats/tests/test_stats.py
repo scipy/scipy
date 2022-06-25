@@ -2155,6 +2155,7 @@ class TestScoreatpercentile:
         assert_equal(stats.scoreatpercentile([], [50, 99]), [np.nan, np.nan])
 
 
+@pytest.mark.filterwarnings('ignore::FutureWarning')
 class TestMode:
 
     deprecation_msg = r"Support for non-numeric arrays has been deprecated"
@@ -2313,6 +2314,14 @@ class TestMode:
         with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
             res = stats.mode(a)
         assert_array_equal(res, [[10], [2]])
+
+
+def test_mode_futurewarning():
+    a = [1, 2, 5, 3, 5]
+    future_msg = "Unlike other reduction functions..."
+    with pytest.warns(FutureWarning, match=future_msg):
+        res = stats.mode(a)
+    assert_array_equal(res, ([5], [2]))
 
 
 class TestSEM:

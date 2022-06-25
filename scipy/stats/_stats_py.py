@@ -571,6 +571,18 @@ def mode(a, axis=0, nan_policy='propagate'):
     axis : int or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
+
+        .. warning::
+            Unlike other reduction functions (e.g. `skew`, `kurtosis`), the
+            default behavior of `mode` is is to preserve the the axis it acts
+            along. In SciPy 1.11.0, the default behavior will change to become
+            consistent with other reduction functions: consume (remove) the
+            axis it acts along. At that time, an optional parameter
+            ``keepdims`` (like that of `skew`, `kurtosis`) will become
+            available, and users will have the option of setting
+            ``keepdims=True`` to preserve all the original dimensions of the
+            input.
+
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
@@ -624,6 +636,18 @@ def mode(a, axis=0, nan_policy='propagate'):
     ModeResult(mode=[3], count=[3])
 
     """  # noqa: E501
+
+    message = ("Unlike other reduction functions (e.g. `skew`, `kurtosis`), "
+               "the default behavior of `mode` is is to preserve the the axis "
+               "it acts along. In SciPy 1.11.0, the default behavior will "
+               "change to become consistent with other reduction functions: "
+               "consume (remove) the axis it acts along. At that time, an "
+               "optional parameter ``keepdims`` (like that of `skew`, "
+               "`kurtosis`) will become available, and users will have the "
+               "option of setting ``keepdims=True`` to preserve all the "
+               "original dimensions of the input.")
+    warnings.warn(message, FutureWarning, stacklevel=2)
+
     a, axis = _chk_asarray(a, axis)
     if a.size == 0:
         return ModeResult(np.array([]), np.array([]))
@@ -636,8 +660,8 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     if not np.issubdtype(a.dtype, np.number):
         warnings.warn("Support for non-numeric arrays has been deprecated "
-                      "and will be removed in the second release after "
-                      "1.9.0. `pandas.DataFrame.mode` can be used instead, "
+                      "as of SciPy 1.9.0 and will be removed in "
+                      "1.11.0. `pandas.DataFrame.mode` can be used instead, "
                       "see https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html.",  # noqa: E501
                       DeprecationWarning, stacklevel=2)
 
