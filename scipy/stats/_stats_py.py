@@ -1861,10 +1861,7 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
-JarqueBeraResult = namedtuple('JarqueBeraResult', ('statistic', 'pvalue'))
-
-
-@_axis_nan_policy_factory(tuple_to_result=JarqueBeraResult, default_axis=None)
+@_axis_nan_policy_factory(SignificanceResult, default_axis=None)
 def jarque_bera(x, *, axis=None):
     """Perform the Jarque-Bera goodness of fit test on sample data.
 
@@ -1887,7 +1884,7 @@ def jarque_bera(x, *, axis=None):
 
     Returns
     -------
-    result : JarqueBeraResult
+    result : SignificanceResult
         An object with the following attributes:
 
         statistic : float
@@ -1931,7 +1928,7 @@ def jarque_bera(x, *, axis=None):
     statistic = n / 6 * (s**2 + k**2 / 4)
     pvalue = distributions.chi2.sf(statistic, df=2)
 
-    return JarqueBeraResult(statistic, pvalue)
+    return SignificanceResult(statistic, pvalue)
 
 
 #####################################
