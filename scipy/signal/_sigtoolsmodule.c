@@ -806,7 +806,7 @@ static void fill_buffer(char *ip1, PyArrayObject *ap1, PyArrayObject *ap2,
 }
 
 #define COMPARE(fname, type) \
-int fname(type *ip1, type *ip2) { return *ip1 < *ip2 ? -1 : *ip1 == *ip2 ? 0 : 1; }
+int fname(const type * const ip1, const type * const ip2) { return *ip1 < *ip2 ? -1 : *ip1 == *ip2 ? 0 : 1; }
 
 COMPARE(DOUBLE_compare, double)
 COMPARE(FLOAT_compare, float)
@@ -833,7 +833,112 @@ int OBJECT_compare(PyObject **ip1, PyObject **ip2) {
           return 1;
 }
 
-typedef int (*CompareFunction)(const void *, const void *);
+typedef int (*CompareFunction)(const void * const, const void * const);
+
+
+/* The QUICK_SELECT routine is based on Hoare's Quickselect algorithm,
+ * with unrolled recursion.
+ * Author: Thouis R. Jones, 2008
+ */
+
+/** Swap the values in memory at first and second.
+ */
+static inline void swap_values(void *first, void *second, const size_t element_size) {
+  int8_t tmp[element_size];
+  memmove(tmp, first, element_size);
+  memmove(first, second, element_size);
+  memmove(second, tmp, element_size);
+}
+
+static inline _Bool first_lowest(const void *const x, const void *const y, const void * const z, const CompareFunction comparison_function) {
+  return comparison_function(x, y) < 0 && comparison_function(x, z) < 0;
+}
+static inline _Bool first_highest(const void *const x, const void *const y, const void * const z, const CompareFunction comparison_function) {
+  return comparison_function(x, y) > 0 && comparison_function(x, z) > 0;
+}
+static inline size_t lowest_index(const void *const restrict arr, const size_t x, const size_t y, const size_t element_size, const CompareFunction comparison_function) {
+  if (comparison_function(arr + x * element_size, arr + y * element_size) < 0) {
+    return x;
+  } else {
+    return y;
+  }
+}
+static inline size_t highest_index(const void * const restrict arr, const size_t x, const size_t y, const size_t element_size, const CompareFunction comparison_function) {
+  if (comparison_function(arr + x * element_size, arr + y * element_size) > 0) {
+    return x;
+  } else {
+    return y;
+  }
+}
+
+/* if (l is index of lowest) {return lower of mid,hi} else if (l is index of highest) {return higher of mid,hi} else return l */
+static inline size_t median_index(const void *const restrict arr, const size_t low, const size_t mid, const size_t high, const size_t element_size, const CompareFunction comparison_function) {
+  if (first_lowest(arr + low * element_size, arr + mid * element_size, arr + high * element_size, comparison_function)) {
+    return lowest_index(arr, mid, high, element_size, comparison_function);
+  } else if (first_highest(arr + low * element_size, arr + mid * element_size, arr + high * element_size, comparison_function)) {
+    return highest_index(arr, mid, high, element_size, comparison_function);
+  } else {
+    return low;
+  }
+}
+
+/** Find the `element_to_return`th-smallest element in base.
+
+    Counting should start with zero
+ */
+void *quick_select(void * restrict base, const size_t num_elements,
+                   const size_t element_size,
+		   const CompareFunction comparison_function,
+		   const size_t element_to_return) {
+  size_t lo, hi, mid, md;
+  size_t ll, hh;
+  int8_t piv[element_size];
+
+  lo = 0;
+  hi = num_elements - 1;
+
+  while (1) {
+    if ((hi - lo) < 2) {
+      if (comparison_function(base + hi * element_size, base + lo * element_size) < 0) {
+	swap_values(base + lo * element_size, base + hi * element_size, element_size);
+      }
+      return base + element_to_return * element_size;
+    }
+
+    mid = (hi + lo) / 2;
+    md = median_index(base, lo, mid, hi, element_size, comparison_function);
+    /* put the median of lo,mid,hi at position lo - this will be the pivot */
+    swap_values(base + lo * element_size, base + md * element_size, element_size);
+
+    /* Nibble from each end towards middle, swapping misordered items */
+    memcpy(piv, base + lo * element_size, element_size);
+    for (ll = lo + 1, hh = hi;; ll++, hh--) {
+      while (comparison_function(base + ll * element_size, piv) < 0) {
+	ll++;
+      }
+      while (comparison_function(base + hh * element_size, piv) > 0) {
+	hh--;
+      }
+      if (hh <= ll) {
+	break;
+      }
+      swap_values(base + ll * element_size, base + hh * element_size, element_size);
+    }
+    /* move pivot to top of lower partition */
+    swap_values(base + hh * element_size, base + lo * element_size, element_size);
+    /* set lo, hi for new range to search */
+    if (hh < element_to_return) {
+      /* search upper partition */
+      lo = hh + 1;
+    } else if (hh > element_to_return) {
+      /* search lower partition */
+      hi = hh - 1;
+    } else {
+      return base + hh * element_size;
+    }
+  }
+}
+
 
 CompareFunction compare_functions[] = \
 	{NULL, (CompareFunction)BYTE_compare,(CompareFunction)UBYTE_compare,\
@@ -994,7 +1099,8 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
                      (ret_ind[k] > check_ind[k]));
 
 	  fill_buffer(ap1_ptr,ap1,ap2,sort_buffer,n2,check,b_ind,temp_ind,offsets);
-	  qsort(sort_buffer, n2_nonzero, is1, compare_func);
+	  /* qsort(sort_buffer, n2_nonzero, is1, compare_func); */
+	  void *ptr_to_orderth = quick_select(sort_buffer, n2_nonzero, is1, compare_func, order);
 
 	  /*
 	   * Use copyswap for correct refcounting with object arrays
@@ -1002,7 +1108,7 @@ PyObject *PyArray_OrderFilterND(PyObject *op1, PyObject *op2, int order) {
 	   * also that os == PyArray_ITEMSIZE(ret) and we are copying a single
 	   * scalar here.
 	   */
-	  copyswap(op, sort_buffer + order*is1, 0, NULL);
+	  copyswap(op, ptr_to_orderth, 0, NULL);
 
           /* increment index counter */
 	  incr = increment(ret_ind,PyArray_NDIM(ret),PyArray_DIMS(ret));

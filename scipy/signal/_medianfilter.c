@@ -13,63 +13,6 @@ void b_medfilt2(unsigned char*,unsigned char*,npy_intp*,npy_intp*);
 extern char *check_malloc (int);
 
 
-/* The QUICK_SELECT routine is based on Hoare's Quickselect algorithm,
- * with unrolled recursion.
- * Author: Thouis R. Jones, 2008
- */
-
-#define ELEM_SWAP(t, a, x, y) {register t temp = (a)[x]; (a)[x] = (a)[y]; (a)[y] = temp;}
-#define FIRST_LOWEST(x, y, z) (((x) < (y)) && ((x) < (z)))
-#define FIRST_HIGHEST(x, y, z) (((x) > (y)) && ((x) > (z)))
-#define LOWEST_IDX(a, x, y) (((a)[x] < (a)[y]) ? (x) : (y))
-#define HIGHEST_IDX(a, x, y) (((a)[x] > (a)[y]) ? (x) : (y))
-
-/* if (l is index of lowest) {return lower of mid,hi} else if (l is index of highest) {return higher of mid,hi} else return l */
-#define MEDIAN_IDX(a, l, m, h) (FIRST_LOWEST((a)[l], (a)[m], (a)[h]) ? LOWEST_IDX(a, m, h) : (FIRST_HIGHEST((a)[l], (a)[m], (a)[h]) ? HIGHEST_IDX(a, m, h) : (l)))
-
-#define QUICK_SELECT(NAME, TYPE)                                        \
-TYPE NAME(TYPE arr[], int n)                                            \
-{                                                                       \
-    int lo, hi, mid, md;                                                \
-    int median_idx;                                                     \
-    int ll, hh;                                                         \
-    TYPE piv;                                                           \
-                                                                        \
-    lo = 0; hi = n-1;                                                   \
-    median_idx = (n - 1) / 2; /* lower of middle values for even-length arrays */ \
-                                                                        \
-    while (1) {                                                         \
-        if ((hi - lo) < 2) {                                            \
-            if (arr[hi] < arr[lo]) ELEM_SWAP(TYPE, arr, lo, hi);        \
-            return arr[median_idx];                                     \
-        }                                                               \
-                                                                        \
-        mid = (hi + lo) / 2;                                            \
-        /* put the median of lo,mid,hi at position lo - this will be the pivot */ \
-        md = MEDIAN_IDX(arr, lo, mid, hi);                              \
-        ELEM_SWAP(TYPE, arr, lo, md);                                   \
-                                                                        \
-        /* Nibble from each end towards middle, swapping misordered items */ \
-        piv = arr[lo];                                                  \
-        for (ll = lo+1, hh = hi;; ll++, hh--) {                         \
-	    while (arr[ll] < piv) ll++;					\
-	    while (arr[hh] > piv) hh--;					\
-	    if (hh <= ll) break;					\
-	    ELEM_SWAP(TYPE, arr, ll, hh);				\
-        }                                                               \
-        /* move pivot to top of lower partition */                      \
-        ELEM_SWAP(TYPE, arr, hh, lo);                                   \
-        /* set lo, hi for new range to search */                        \
-        if (hh < median_idx) /* search upper partition */               \
-            lo = hh+1;                                                  \
-        else if (hh > median_idx) /* search lower partition */          \
-            hi = hh-1;                                                  \
-        else                                                            \
-            return piv;                                                 \
-    }                                                                   \
-}
-
-
 /* 2-D median filter with zero-padding on edges. */
 #define MEDIAN_FILTER_2D(NAME, TYPE, SELECT)                            \
 void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns)                    \
@@ -122,9 +65,28 @@ void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns)                    
 
 
 /* define quick_select for floats, doubles, and unsigned characters */
-QUICK_SELECT(f_quick_select, float)
-QUICK_SELECT(d_quick_select, double)
-QUICK_SELECT(b_quick_select, unsigned char)
+typedef int (*CompareFunction)(const void * const, const void * const);
+extern void *quick_select(void * restrict base, const size_t num_elements,
+                   const size_t element_size,
+		   const CompareFunction comparison_function,
+		   const size_t element_to_return);
+extern int FLOAT_compare(const float *const ip1, const float *const ip2);
+extern int DOUBLE_compare(const double *const ip1, const double *const ip2);
+extern int UBYTE_compare(const npy_byte *const ip1, const npy_byte *const ip2);
+
+/* index = (n - 1) / 2; use lower of middle values for even-length arrays */
+float f_quick_select(float arr[], const int n) {
+  float *result = quick_select(arr, n, sizeof(float), FLOAT_compare, (n - 1) / 2);
+  return *result;
+}
+double d_quick_select(double arr[], const int n) {
+  double *result = quick_select(arr, n, sizeof(double), DOUBLE_compare, (n - 1) / 2);
+  return *result;
+}
+unsigned char b_quick_select(unsigned char arr[], const int n) {
+  unsigned char *result = quick_select(arr, n, sizeof(unsigned char), UBYTE_compare, (n - 1) / 2);
+  return *result;
+}
 
 /* define medfilt for floats, doubles, and unsigned characters */
 MEDIAN_FILTER_2D(f_medfilt2, float, f_quick_select)
