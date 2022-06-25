@@ -841,10 +841,23 @@ typedef int (*CompareFunction)(const void * const, const void * const);
  * Author: Thouis R. Jones, 2008
  */
 
+/* Stolen from CYTHON_RESTRICT and BOOST_RESTRICT */
+#ifndef SCIPY_RESTRICT
+#  if defined(__GNUC__) && __GNUC__ > 3
+#    define SCIPY_RESTRICT __restrict__
+#  elif defined(_MSC_VER) && _MSC_VER >= 1400
+#    define SCIPY_RESTRICT __restrict
+#  elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
+#    define SCIPY_RESTRICT restrict
+#  else
+#    define SCIPY_RESTRICT
+#  endif
+#endif
+
 /** Swap the values in memory at first and second.
  */
 static inline void swap_values(void *first, void *second, const size_t element_size) {
-  int8_t tmp[element_size];
+  int64_t tmp[4];
   memmove(tmp, first, element_size);
   memmove(first, second, element_size);
   memmove(second, tmp, element_size);
@@ -856,14 +869,14 @@ static inline _Bool first_lowest(const void *const x, const void *const y, const
 static inline _Bool first_highest(const void *const x, const void *const y, const void * const z, const CompareFunction comparison_function) {
   return comparison_function(x, y) > 0 && comparison_function(x, z) > 0;
 }
-static inline size_t lowest_index(const void *const restrict arr, const size_t x, const size_t y, const size_t element_size, const CompareFunction comparison_function) {
+static inline size_t lowest_index(const void *const SCIPY_RESTRICT arr, const size_t x, const size_t y, const size_t element_size, const CompareFunction comparison_function) {
   if (comparison_function(arr + x * element_size, arr + y * element_size) < 0) {
     return x;
   } else {
     return y;
   }
 }
-static inline size_t highest_index(const void * const restrict arr, const size_t x, const size_t y, const size_t element_size, const CompareFunction comparison_function) {
+static inline size_t highest_index(const void * const SCIPY_RESTRICT arr, const size_t x, const size_t y, const size_t element_size, const CompareFunction comparison_function) {
   if (comparison_function(arr + x * element_size, arr + y * element_size) > 0) {
     return x;
   } else {
@@ -872,7 +885,7 @@ static inline size_t highest_index(const void * const restrict arr, const size_t
 }
 
 /* if (l is index of lowest) {return lower of mid,hi} else if (l is index of highest) {return higher of mid,hi} else return l */
-static inline size_t median_index(const void *const restrict arr, const size_t low, const size_t mid, const size_t high, const size_t element_size, const CompareFunction comparison_function) {
+static inline size_t median_index(const void *const SCIPY_RESTRICT arr, const size_t low, const size_t mid, const size_t high, const size_t element_size, const CompareFunction comparison_function) {
   if (first_lowest(arr + low * element_size, arr + mid * element_size, arr + high * element_size, comparison_function)) {
     return lowest_index(arr, mid, high, element_size, comparison_function);
   } else if (first_highest(arr + low * element_size, arr + mid * element_size, arr + high * element_size, comparison_function)) {
@@ -886,13 +899,13 @@ static inline size_t median_index(const void *const restrict arr, const size_t l
 
     Counting should start with zero
  */
-void *quick_select(void * restrict base, const size_t num_elements,
+void *quick_select(void * SCIPY_RESTRICT base, const size_t num_elements,
                    const size_t element_size,
 		   const CompareFunction comparison_function,
 		   const size_t element_to_return) {
   size_t lo, hi, mid, md;
   size_t ll, hh;
-  int8_t piv[element_size];
+  int64_t piv[4];
 
   lo = 0;
   hi = num_elements - 1;
