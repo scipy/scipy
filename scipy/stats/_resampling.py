@@ -397,9 +397,12 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> norm.interval(0.9, loc=std_sample, scale=res.standard_error)
     (3.5442759991341726, 4.3478528599786)
 
-    However, the normal approximation is not always accurate. By default,
-    `bootstrap` uses more advanced techniques to make the confidence interval
-    more accurate.
+    Due to central limit theorem, this normal approximation is accurate for a
+    variety of statistics and distributions underlying the samples; however,
+    the approximation is not reliable in all cases. Because `bootstrap` is
+    designed to work with arbitrary underyling distributions and statistics,
+    it uses more advanced techniques to generate an accurate confidence
+    interval.
 
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=3.57655333533867, high=4.382043696342881)
