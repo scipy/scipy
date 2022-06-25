@@ -365,11 +365,11 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> data = (data,)  # samples must be in a sequence
     >>> res = bootstrap(data, np.std, confidence_level=0.9,
     ...                 random_state=rng)
-    >>> plt.hist(res.bootstrap_distribution, bins=25)
-    >>> plt.title('Bootstrap Distribution')
-    >>> plt.xlabel('statistic value')
-    >>> plt.ylabel('frequency')
-    >>> plt.show()
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(res.bootstrap_distribution, bins=25)
+    >>> ax.set_title('Bootstrap Distribution')
+    >>> ax.set_xlabel('statistic value')
+    >>> ax.set_ylabel('frequency')
 
     The standard error quantifies this variability. It is calculated as the
     standard deviation of the bootstrap distribution.
@@ -384,12 +384,12 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
 
     >>> x = np.linspace(3, 5)
     >>> pdf = norm.pdf(x, loc=std_sample, scale=res.standard_error)
-    >>> plt.hist(res.bootstrap_distribution, bins=25, density=True)
-    >>> plt.plot(x, pdf)
-    >>> plt.title('Normal Approximation of the Bootstrap Distribution')
-    >>> plt.xlabel('statistic value')
-    >>> plt.ylabel('pdf')
-    >>> plt.show()
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(res.bootstrap_distribution, bins=25, density=True)
+    >>> ax.plot(x, pdf)
+    >>> ax.set_title('Normal Approximation of the Bootstrap Distribution')
+    >>> ax.set_xlabel('statistic value')
+    >>> ax.set_ylabel('pdf')
 
     This suggests that we could construct a 90% confidence interval on the
     statistic based on quantiles of this normal distribution.
