@@ -370,6 +370,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> ax.set_title('Bootstrap Distribution')
     >>> ax.set_xlabel('statistic value')
     >>> ax.set_ylabel('frequency')
+    >>> plt.show()
 
     The standard error quantifies this variability. It is calculated as the
     standard deviation of the bootstrap distribution.
@@ -390,6 +391,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> ax.set_title('Normal Approximation of the Bootstrap Distribution')
     >>> ax.set_xlabel('statistic value')
     >>> ax.set_ylabel('pdf')
+    >>> plt.show()
 
     This suggests that we could construct a 90% confidence interval on the
     statistic based on quantiles of this normal distribution.
@@ -400,7 +402,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     Due to central limit theorem, this normal approximation is accurate for a
     variety of statistics and distributions underlying the samples; however,
     the approximation is not reliable in all cases. Because `bootstrap` is
-    designed to work with arbitrary underyling distributions and statistics,
+    designed to work with arbitrary underlying distributions and statistics,
     it uses more advanced techniques to generate an accurate confidence
     interval.
 
