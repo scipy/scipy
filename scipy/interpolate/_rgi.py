@@ -53,9 +53,9 @@ class RegularGridInterpolator:
 
     method : str, optional
         The method of interpolation to perform. Supported are "linear",
-        "nearest", "slinear", "cubic", and "quintic". This parameter will
-        become the default for the object's ``__call__`` method.
-        Default is "linear".
+        "nearest", "slinear", "cubic", "quintic" and "pchip". This
+        parameter will become the default for the object's ``__call__``
+        method. Default is "linear".
 
     bounds_error : bool, optional
         If True, when interpolated values are requested outside of the
@@ -205,7 +205,7 @@ class RegularGridInterpolator:
     # this class is based on code originally programmed by Johannes Buchner,
     # see https://github.com/JohannesBuchner/regulargrid
 
-    _SPLINE_DEGREE_MAP = {"slinear": 1, "cubic": 3, "quintic": 5, }
+    _SPLINE_DEGREE_MAP = {"slinear": 1, "cubic": 3, "quintic": 5, 'pchip': 3}
     _SPLINE_METHODS = list(_SPLINE_DEGREE_MAP.keys())
     _ALL_METHODS = ["linear", "nearest"] + _SPLINE_METHODS
 
@@ -332,8 +332,7 @@ class RegularGridInterpolator:
         elif method in self._SPLINE_METHODS:
             if is_method_changed:
                 self._validate_grid_dimensions(self.grid, method)
-            result = self._evaluate_spline(self.values.T, xi,
-                                           self._SPLINE_DEGREE_MAP[method])
+            result = self._evaluate_spline(self.values.T, xi, method)
 
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
@@ -347,14 +346,29 @@ class RegularGridInterpolator:
         # slice for broadcasting over trailing dimensions in self.values
         vslice = (slice(None),) + (None,)*(self.values.ndim - len(indices))
 
-        # find relevant values
-        # each i and i+1 represents a edge
-        edges = itertools.product(*[[i, i + 1] for i in indices])
+        # Compute shifting up front before zipping everything together
+        shift_norm_distances = [1 - yi for yi in norm_distances]
+        shift_indices = [i + 1 for i in indices]
+
+        # The formula for linear interpolation in 2d takes the form:
+        # values = self.values[(i0, i1)] * (1 - y0) * (1 - y1) + \
+        #          self.values[(i0, i1 + 1)] * (1 - y0) * y1 + \
+        #          self.values[(i0 + 1, i1)] * y0 * (1 - y1) + \
+        #          self.values[(i0 + 1, i1 + 1)] * y0 * y1
+        # We pair i with 1 - yi (zipped1) and i + 1 with yi (zipped2)
+        zipped1 = zip(indices, shift_norm_distances)
+        zipped2 = zip(shift_indices, norm_distances)
+
+        # Take all products of zipped1 and zipped2 and iterate over them
+        # to get the terms in the above formula. This corresponds to iterating
+        # over the vertices of a hypercube.
+        hypercube = itertools.product(*zip(zipped1, zipped2))
         values = 0.
-        for edge_indices in edges:
+        for h in hypercube:
+            edge_indices, weights = zip(*h)
             weight = 1.
-            for ei, i, yi in zip(edge_indices, indices, norm_distances):
-                weight *= np.where(ei == i, 1 - yi, yi)
+            for w in weights:
+                weight *= w
             values += np.asarray(self.values[edge_indices]) * weight[vslice]
         return values
 
@@ -372,11 +386,17 @@ class RegularGridInterpolator:
                                  f" but method {method} requires at least "
                                  f" {k+1} points per dimension.")
 
-    def _evaluate_spline(self, values, xi, spline_degree):
+    def _evaluate_spline(self, values, xi, method):
         # ensure xi is 2D list of points to evaluate
         if xi.ndim == 1:
             xi = xi.reshape((1, xi.size))
         m, n = xi.shape
+
+        if method == 'pchip':
+            _eval_func = self._do_pchip
+        else:
+            _eval_func = self._do_spline_fit
+        k = self._SPLINE_DEGREE_MAP[method]
 
         # Non-stationary procedure: difficult to vectorize this part entirely
         # into numpy-level operations. Unfortunately this requires explicit
@@ -385,10 +405,10 @@ class RegularGridInterpolator:
         # can at least vectorize the first pass across all points in the
         # last variable of xi.
         last_dim = n - 1
-        first_values = self._do_spline_fit(self.grid[last_dim],
-                                           values,
-                                           xi[:, last_dim],
-                                           spline_degree)
+        first_values = _eval_func(self.grid[last_dim],
+                                  values,
+                                  xi[:, last_dim],
+                                  k)
 
         # the rest of the dimensions have to be on a per point-in-xi basis
         result = np.empty(m, dtype=self.values.dtype)
@@ -400,11 +420,10 @@ class RegularGridInterpolator:
             for i in range(last_dim-1, -1, -1):
                 # Interpolate for each 1D from the last dimensions.
                 # This collapses each 1D sequence into a scalar.
-                folded_values = self._do_spline_fit(self.grid[i],
-                                                    folded_values,
-                                                    xi[j, i],
-                                                    spline_degree)
-
+                folded_values = _eval_func(self.grid[i],
+                                           folded_values,
+                                           xi[j, i],
+                                           k)
             result[j] = folded_values
 
         return result
@@ -412,6 +431,12 @@ class RegularGridInterpolator:
     @staticmethod
     def _do_spline_fit(x, y, pt, k):
         local_interp = make_interp_spline(x, y, k=k, axis=0)
+        values = local_interp(pt)
+        return values
+
+    @staticmethod
+    def _do_pchip(x, y, pt, k):
+        local_interp = PchipInterpolator(x, y, axis=0)
         values = local_interp(pt)
         return values
 

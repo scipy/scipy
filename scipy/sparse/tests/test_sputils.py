@@ -101,7 +101,7 @@ class TestSparseUtils:
             sputils.validateaxis(axis)
 
     def test_get_index_dtype(self):
-        imax = np.iinfo(np.int32).max
+        imax = np.int64(np.iinfo(np.int32).max)
         too_big = imax + 1
 
         # Check that uint32's with no values too large doesn't return
