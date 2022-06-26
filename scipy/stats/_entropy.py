@@ -71,7 +71,9 @@ def entropy(pk: np.typing.ArrayLike,
     by the equation ``H(pk, qk) = H(pk) + KL(pk|qk)``. Informally, the
     Kullback-Leibler divergence quantifies the expected surplus of surprise
     experienced if one believes the true distribution is `qk` when it is
-    actually `pk`. See [2]_ for more information.
+    actually `pk`.
+
+    See [2]_ for more information.
 
     References
     ----------
