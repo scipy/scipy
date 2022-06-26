@@ -4726,9 +4726,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     """Calculate a Spearman correlation coefficient with associated p-value.
 
     The Spearman rank-order correlation coefficient is a nonparametric measure
-    of the monotonicity of the relationship between two datasets. Unlike the
-    Pearson correlation, the Spearman correlation does not assume that both
-    datasets are normally distributed. Like other correlation coefficients,
+    of the monotonicity of the relationship between two datasets.
+    Like other correlation coefficients,
     this one varies between -1 and +1 with 0 implying no correlation.
     Correlations of -1 or +1 imply an exact monotonic relationship. Positive
     correlations imply that as x increases, so does y. Negative correlations
@@ -4736,8 +4735,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     The p-value roughly indicates the probability of an uncorrelated system
     producing datasets that have a Spearman correlation at least as extreme
-    as the one computed from these datasets. The p-values are not entirely
-    reliable but are probably reasonable for datasets larger than 500 or so.
+    as the one computed from these datasets. Although calculation of the
+    p-value does not make strong assumptions about the distributions underlying
+    the samples, it is only accurate for very large samples (>500
+    observations). For smaller sample sizes, consider a permutation test (see
+    Examples section below).
 
     Parameters
     ----------
@@ -4834,6 +4836,24 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     >>> xint = rng.integers(10, size=(100, 2))
     >>> stats.spearmanr(xint)
     SpearmanrResult(correlation=0.09800224850707953, pvalue=0.3320271757932076)
+
+    For small samples, consider performing a permutation test instead of
+    relying on the asymptotic p-value. Note that to calculate the null
+    distribution of the statistic (for all possibly pairings between
+    observations in sample ``x`` and ``y``), only one of the two inputs needs
+    to be permuted.
+
+    >>> x = [1.76405235, 0.40015721, 0.97873798,
+    ...      2.2408932, 1.86755799, -0.97727788]
+    >>> y = [2.71414076, 0.2488, 0.87551913,
+    ...      2.6514917, 2.01160156, 0.47699563]
+    >>> def statistic(x):  # permute only `x`
+    ...     return stats.spearmanr(x, y).correlation
+    >>> res_exact = stats.permutation_test((x,), statistic,
+    ...                                    permutation_type='pairings')
+    >>> res_asymptotic = stats.spearmanr(x, y)
+    >>> res_exact.pvalue, res_asymptotic.pvalue  # asymptotic pvalue is too low
+    (0.10277777777777777, 0.07239650145772594)
 
     """
     if axis is not None and axis > 1:
