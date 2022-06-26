@@ -21,11 +21,12 @@ def entropy(pk: np.typing.ArrayLike,
             ) -> Union[np.number, np.ndarray]:
     """Calculate the entropy of a distribution for given probability values.
 
-    If only probabilities `pk` are given, the entropy is calculated as
+    If only probabilities `pk` are given, the Shannon entropy is calculated as
     ``S = -sum(pk * log(pk), axis=axis)``.
 
     If `qk` is not None, then compute the Kullback-Leibler divergence
-    ``S = sum(pk * log(pk / qk), axis=axis)``.
+    ``S = sum(pk * log(pk / qk), axis=axis)``. This quantity is also known
+    as the relative entropy.
 
     This routine will normalize `pk` and `qk` if they don't sum to 1.
 
@@ -40,13 +41,47 @@ def entropy(pk: np.typing.ArrayLike,
         the same format as `pk`.
     base : float, optional
         The logarithmic base to use, defaults to ``e`` (natural logarithm).
-    axis : int, optional
+    axis: int, optional
         The axis along which the entropy is calculated. Default is 0.
 
     Returns
     -------
     S : {float, array_like}
         The calculated entropy.
+
+    Notes
+    -----
+    Informally, the Shannon entropy quantifies the expected uncertainty
+    inherent in the possible outcomes of a discrete random variable.
+
+    If messages consisting of sequences of symbols from a set S are to be
+    encoded and transmitted over a noiseless channel, then the Shannon entropy
+    ``H(pk)`` gives a lower bound for the average number of information units
+    needed per symbol if the symbols occur with frequencies governed by the
+    discrete distribution `pk` [1]_. The choice of base determines the choice
+    of units, ``e`` for nats, ``2`` for bits etc.
+
+    A related quantity, the cross entropy ``H(pk, qk)`` gives a lower bound for
+    the average number of information units needed per symbol if the encoding
+    is optimized for the probability distribution `qk` but the true
+    distribution is `pk`. The formula for cross entropy is
+    ``S = -sum(pk * log(qk), axis=axis)``.
+
+    Shannon entropy, cross entropy, and Kullback-Leibler divergence are related
+    by the equation ``H(pk, qk) = H(pk) + KL(pk|qk)``. Informally, the
+    Kullback-Leibler divergence quantifies the expected surplus of surprise
+    experienced if one believes the true distribution is `qk` when it is
+    actually `pk`. See [2]_ for more information.
+
+    References
+    ----------
+    .. [1] Shannon, C.E. (1948), A Mathematical Theory of Communication.
+           Bell System Technical Journal, 27: 379-423.
+           https://doi.org/10.1002/j.1538-7305.1948.tb01338.x
+    .. [2] Thomas M. Cover and Joy A. Thomas. 2006. Elements of Information
+           Theory (Wiley Series in Telecommunications and Signal Processing).
+           Wiley-Interscience, USA.
+    
 
     Examples
     --------
@@ -68,6 +103,14 @@ def entropy(pk: np.typing.ArrayLike,
 
     >>> entropy([1/2, 1/2], qk=[9/10, 1/10])
     0.5108256237659907
+
+    Cross entropy:
+
+    The cross entropy can be computed using the equation
+    ``H(pk, qk) = H(pk) + KL(pk|qk)``:
+
+    >>> entropy([1/2, 1/2]) + entropy([1/2, 1/2], qk=[9/10, 1/10])
+    1.203972804325936
 
     """
     if base is not None and base <= 0:
