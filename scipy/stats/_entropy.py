@@ -56,15 +56,15 @@ def entropy(pk: np.typing.ArrayLike,
 
     If messages consisting of sequences of symbols from a set S are to be
     encoded and transmitted over a noiseless channel, then the Shannon entropy
-    ``H(pk)`` gives a lower bound for the average number of units of
+    ``H(pk)`` gives a tight lower bound for the average number of units of
     information needed per symbol if the symbols occur with frequencies
     governed by the discrete distribution `pk` [1]_. The choice of base
     determines the choice of units, ``e`` for nats, ``2`` for bits, etc.
 
-    A related quantity, the cross entropy ``H(pk, qk)``, gives a lower bound
-    for the average number of units of information needed per symbol if the
-    encoding is optimized for the probability distribution `qk` but the true
-    distribution is `pk`. The formula for cross entropy is ``S = -sum(pk *
+    A related quantity, the cross entropy ``H(pk, qk)``, gives a tight lower
+    bound for the average number of units of information needed per symbol if
+    the encoding is optimized for the probability distribution `qk` but the
+    true distribution is `pk`. The formula for cross entropy is ``S = -sum(pk *
     log(qk), axis=axis)``.
 
     Shannon entropy, cross entropy, and Kullback-Leibler divergence are related
