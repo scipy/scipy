@@ -857,14 +857,16 @@ static inline _Bool first_highest(const void *const x, const void *const y, cons
   return comparison_function(x, y) > 0 && comparison_function(x, z) > 0;
 }
 static inline size_t lowest_index(const void *const arr, const size_t x, const size_t y, const size_t element_size, const CompareFunction comparison_function) {
-  if (comparison_function(arr + x * element_size, arr + y * element_size) < 0) {
+  const int8_t *const array_start = arr;
+  if (comparison_function(array_start + x * element_size, array_start + y * element_size) < 0) {
     return x;
   } else {
     return y;
   }
 }
 static inline size_t highest_index(const void * const arr, const size_t x, const size_t y, const size_t element_size, const CompareFunction comparison_function) {
-  if (comparison_function(arr + x * element_size, arr + y * element_size) > 0) {
+  const int8_t *const array_start = arr;
+  if (comparison_function(array_start + x * element_size, array_start + y * element_size) > 0) {
     return x;
   } else {
     return y;
@@ -873,9 +875,10 @@ static inline size_t highest_index(const void * const arr, const size_t x, const
 
 /* if (l is index of lowest) {return lower of mid,hi} else if (l is index of highest) {return higher of mid,hi} else return l */
 static inline size_t median_index(const void *const arr, const size_t low, const size_t mid, const size_t high, const size_t element_size, const CompareFunction comparison_function) {
-  if (first_lowest(arr + low * element_size, arr + mid * element_size, arr + high * element_size, comparison_function)) {
-    return lowest_index(arr, mid, high, element_size, comparison_function);
-  } else if (first_highest(arr + low * element_size, arr + mid * element_size, arr + high * element_size, comparison_function)) {
+  const int8_t * const array_start = arr;
+  if (first_lowest(array_start + low * element_size, array_start + mid * element_size, array_start + high * element_size, comparison_function)) {
+    return lowest_index(array_start, mid, high, element_size, comparison_function);
+  } else if (first_highest(array_start + low * element_size, array_start + mid * element_size, array_start + high * element_size, comparison_function)) {
     return highest_index(arr, mid, high, element_size, comparison_function);
   } else {
     return low;
@@ -890,6 +893,7 @@ void *quick_select(void *base, const size_t num_elements,
                    const size_t element_size,
 		   const CompareFunction comparison_function,
 		   const size_t element_to_return) {
+  int8_t *arr = base;
   size_t lo, hi, mid, md;
   size_t ll, hh;
   int64_t piv[4];
@@ -899,33 +903,33 @@ void *quick_select(void *base, const size_t num_elements,
 
   while (1) {
     if ((hi - lo) < 2) {
-      if (comparison_function(base + hi * element_size, base + lo * element_size) < 0) {
-	swap_values(base + lo * element_size, base + hi * element_size, element_size);
+      if (comparison_function(arr + hi * element_size, arr + lo * element_size) < 0) {
+	swap_values(arr + lo * element_size, arr + hi * element_size, element_size);
       }
-      return base + element_to_return * element_size;
+      return arr + element_to_return * element_size;
     }
 
     mid = (hi + lo) / 2;
-    md = median_index(base, lo, mid, hi, element_size, comparison_function);
+    md = median_index(arr, lo, mid, hi, element_size, comparison_function);
     /* put the median of lo,mid,hi at position lo - this will be the pivot */
-    swap_values(base + lo * element_size, base + md * element_size, element_size);
+    swap_values(arr + lo * element_size, arr + md * element_size, element_size);
 
     /* Nibble from each end towards middle, swapping misordered items */
-    memcpy(piv, base + lo * element_size, element_size);
+    memcpy(piv, arr + lo * element_size, element_size);
     for (ll = lo + 1, hh = hi;; ll++, hh--) {
-      while (comparison_function(base + ll * element_size, piv) < 0) {
+      while (comparison_function(arr + ll * element_size, piv) < 0) {
 	ll++;
       }
-      while (comparison_function(base + hh * element_size, piv) > 0) {
+      while (comparison_function(arr + hh * element_size, piv) > 0) {
 	hh--;
       }
       if (hh <= ll) {
 	break;
       }
-      swap_values(base + ll * element_size, base + hh * element_size, element_size);
+      swap_values(arr + ll * element_size, arr + hh * element_size, element_size);
     }
     /* move pivot to top of lower partition */
-    swap_values(base + hh * element_size, base + lo * element_size, element_size);
+    swap_values(arr + hh * element_size, arr + lo * element_size, element_size);
     /* set lo, hi for new range to search */
     if (hh < element_to_return) {
       /* search upper partition */
@@ -934,7 +938,7 @@ void *quick_select(void *base, const size_t num_elements,
       /* search lower partition */
       hi = hh - 1;
     } else {
-      return base + hh * element_size;
+      return arr + hh * element_size;
     }
   }
 }
