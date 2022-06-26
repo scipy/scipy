@@ -123,7 +123,7 @@ New features
 
 `scipy.spatial` improvements
 ============================
-- Add an ``order`` parameter to `scipy.spatial.transform.Rotation.from_quat` 
+- Add an ``order`` parameter to `scipy.spatial.transform.Rotation.from_quat`
   and `scipy.spatial.transform.Rotation.as_quat` to specify quaternion format.
 
 
@@ -219,7 +219,7 @@ Deprecated features
 
 - Due to collision with the shape parameter ``n`` of several distributions,
   use of the distribution ``moment`` method with keyword argument ``n`` is
-  deprecated. Keyword ``n`` is replaced with keyword ``order``. 
+  deprecated. Keyword ``n`` is replaced with keyword ``order``.
 - Similarly, use of the distribution ``interval`` method with keyword arguments
   ``alpha`` is deprecated. Keyword ``alpha`` is replaced with keyword
   ``confidence``.
@@ -290,8 +290,11 @@ Backwards incompatible changes
   output will be a scalar or ``np.ndarray`` rather than a masked array with
   ``mask=False``.
 - The default method of `scipy.optimize.linprog` is now ``'highs'``, not
-  ``'interior-point'`` (which is now deprecated), so callback functions and some
-  options are no longer supported with the default method.
+  ``'interior-point'`` (which is now deprecated), so callback functions and
+  some options are no longer supported with the default method. With the
+  default method, the ``x`` attribute of the returned ``OptimizeResult`` is
+  now ``None`` (instead of a non-optimal array) when an optimal solution
+  cannot be found (e.g. infeasible problem).
 - For `scipy.stats.combine_pvalues`, the sign of the test statistic returned
   for the method ``"pearson"`` has been flipped so that higher values of the
   statistic now correspond to lower p-values, making the statistic more
@@ -309,7 +312,7 @@ Backwards incompatible changes
 - Init of `MultinomialQMC` now require the number of trials with `n_trials`.
   Hence, `MultinomialQMC.random` output has now the correct shape ``(n, pvals)``.
 - Several function-specific warnings (``F_onewayConstantInputWarning``,
-  ``F_onewayBadInputSizesWarning``, ``PearsonRConstantInputWarning``, 
+  ``F_onewayBadInputSizesWarning``, ``PearsonRConstantInputWarning``,
   ``PearsonRNearConstantInputWarning``, ``SpearmanRConstantInputWarning``, and
   ``BootstrapDegenerateDistributionWarning``) have been replaced with more
   general warnings.
