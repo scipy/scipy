@@ -290,8 +290,8 @@ class TestMultivariateNormal:
 
         # Set cond so that the lowest eigenvalue is below the cutoff
         cond = 1e-5
-        psd = _PSD(cov, atol=cond)
-        psd_pinv = _PSD(psd.pinv, atol=cond)
+        psd = _PSD(cov, atol=cond, rtol=0)
+        psd_pinv = _PSD(psd.pinv, atol=cond, rtol=0)
 
         # Check that the log pseudo-determinant agrees with the sum
         # of the logs of all but the smallest eigenvalue
