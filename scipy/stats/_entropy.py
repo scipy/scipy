@@ -61,8 +61,8 @@ def entropy(pk: np.typing.ArrayLike,
     governed by the discrete distribution `pk` [1]_. The choice of base
     determines the choice of units, ``e`` for nats, ``2`` for bits, etc.
 
-    A related quantity, the cross entropy ``H(pk, qk)``, gives the expected
-    average number of units of information needed per symbol if the encoding is
+    A related quantity, the cross entropy ``H(pk, qk)``, gives the average
+    number of units of information needed per symbol if the encoding is
     optimized for the probability distribution `qk` but the true distribution
     is `pk`. The formula for cross entropy is ``S = -sum(pk * log(qk),
     axis=axis)``.
