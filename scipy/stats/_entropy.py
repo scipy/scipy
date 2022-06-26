@@ -56,16 +56,16 @@ def entropy(pk: np.typing.ArrayLike,
 
     If messages consisting of sequences of symbols from a set S are to be
     encoded and transmitted over a noiseless channel, then the Shannon entropy
-    ``H(pk)`` gives a lower bound for the average number of information units
-    needed per symbol if the symbols occur with frequencies governed by the
-    discrete distribution `pk` [1]_. The choice of base determines the choice
-    of units, ``e`` for nats, ``2`` for bits etc.
+    ``H(pk)`` gives a lower bound for the average number of units of
+    information needed per symbol if the symbols occur with frequencies
+    governed by the discrete distribution `pk` [1]_. The choice of base
+    determines the choice of units, ``e`` for nats, ``2`` for bits, etc.
 
-    A related quantity, the cross entropy ``H(pk, qk)`` gives a lower bound for
-    the average number of information units needed per symbol if the encoding
-    is optimized for the probability distribution `qk` but the true
-    distribution is `pk`. The formula for cross entropy is
-    ``S = -sum(pk * log(qk), axis=axis)``.
+    A related quantity, the cross entropy ``H(pk, qk)``, gives a lower bound
+    for the average number of units of information needed per symbol if the
+    encoding is optimized for the probability distribution `qk` but the true
+    distribution is `pk`. The formula for cross entropy is ``S = -sum(pk *
+    log(qk), axis=axis)``.
 
     Shannon entropy, cross entropy, and Kullback-Leibler divergence are related
     by the equation ``H(pk, qk) = H(pk) + KL(pk|qk)``. Informally, the
@@ -106,7 +106,7 @@ def entropy(pk: np.typing.ArrayLike,
 
     Cross entropy:
 
-    The cross entropy can be computed using the equation
+    The cross entropy can be calculated using the equation
     ``H(pk, qk) = H(pk) + KL(pk|qk)``:
 
     >>> entropy([1/2, 1/2]) + entropy([1/2, 1/2], qk=[9/10, 1/10])
