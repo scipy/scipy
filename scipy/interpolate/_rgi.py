@@ -320,12 +320,13 @@ class RegularGridInterpolator:
                     raise ValueError("One of the requested xi is out of bounds "
                                      "in dimension %d" % i)
 
-        indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
         if method == "linear":
+            indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
             result = self._evaluate_linear(indices,
                                            norm_distances,
                                            out_of_bounds)
         elif method == "nearest":
+            indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
             result = self._evaluate_nearest(indices,
                                             norm_distances,
                                             out_of_bounds)
