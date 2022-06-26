@@ -61,11 +61,11 @@ def entropy(pk: np.typing.ArrayLike,
     governed by the discrete distribution `pk` [1]_. The choice of base
     determines the choice of units, ``e`` for nats, ``2`` for bits, etc.
 
-    A related quantity, the cross entropy ``H(pk, qk)``, gives a tight lower
-    bound for the average number of units of information needed per symbol if
-    the encoding is optimized for the probability distribution `qk` but the
-    true distribution is `pk`. The formula for cross entropy is ``S = -sum(pk *
-    log(qk), axis=axis)``.
+    A related quantity, the cross entropy ``H(pk, qk)``, gives the average
+    number of units of information needed per symbol if the encoding is
+    optimized for the probability distribution `qk` but the true distribution
+    is `pk`. The formula for cross entropy is ``S = -sum(pk * log(qk),
+    axis=axis)``.
 
     Shannon entropy, cross entropy, and Kullback-Leibler divergence are related
     by the equation ``H(pk, qk) = H(pk) + KL(pk|qk)``. Informally, the
