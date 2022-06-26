@@ -1861,10 +1861,8 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
-Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
-
-
-def jarque_bera(x):
+@_axis_nan_policy_factory(SignificanceResult, default_axis=None)
+def jarque_bera(x, *, axis=None):
     """Perform the Jarque-Bera goodness of fit test on sample data.
 
     The Jarque-Bera test tests whether the sample data has the skewness and
@@ -1878,13 +1876,21 @@ def jarque_bera(x):
     ----------
     x : array_like
         Observations of a random variable.
+    axis : int or None, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in
+        a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
-    jb_value : float
-        The test statistic.
-    p : float
-        The p-value for the hypothesis test.
+    result : SignificanceResult
+        An object with the following attributes:
+
+        statistic : float
+            The test statistic.
+        pvalue : float
+            The p-value for the hypothesis test.
 
     References
     ----------
@@ -1907,18 +1913,22 @@ def jarque_bera(x):
 
     """
     x = np.asarray(x)
-    n = x.size
+    if axis is None:
+        x = x.ravel()
+        axis = 0
+
+    n = x.shape[axis]
     if n == 0:
         raise ValueError('At least one observation is required.')
 
-    mu = x.mean()
+    mu = x.mean(axis=axis, keepdims=True)
     diffx = x - mu
-    skewness = (1 / n * np.sum(diffx**3)) / (1 / n * np.sum(diffx**2))**(3 / 2.)
-    kurtosis = (1 / n * np.sum(diffx**4)) / (1 / n * np.sum(diffx**2))**2
-    jb_value = n / 6 * (skewness**2 + (kurtosis - 3)**2 / 4)
-    p = 1 - distributions.chi2.cdf(jb_value, 2)
+    s = skew(diffx, axis=axis, _no_deco=True)
+    k = kurtosis(diffx, axis=axis, _no_deco=True)
+    statistic = n / 6 * (s**2 + k**2 / 4)
+    pvalue = distributions.chi2.sf(statistic, df=2)
 
-    return Jarque_beraResult(jb_value, p)
+    return SignificanceResult(statistic, pvalue)
 
 
 #####################################
