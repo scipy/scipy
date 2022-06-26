@@ -188,7 +188,7 @@ rich_click.COMMAND_GROUPS = {
         },
         {
             "name": "documentation",
-            "commands": ["doc", "refguide-check", "doctest"],
+            "commands": ["doc", "refguide-check"],
         },
         {
             "name": "release",
@@ -1086,38 +1086,6 @@ class RefguideCheck(Task):
         if args.verbose:
             cmd += ['-vvv']
         if args.submodule:
-            cmd += ['-s ', args.submodule]
-        cmd_str = ' '.join(cmd)
-        return {
-            'actions': [f'env PYTHONPATH={dirs.site} {cmd_str}'],
-            'task_dep': ['build'],
-            'io': {'capture': False},
-        }
-
-
-@cli.cls_cmd('doctest')
-class Doctest(Task):
-    """:wrench: Run doctests"""
-    ctx = CONTEXT
-
-    submodule = Option(
-        ['--submodule', '-s'], default=None, metavar='SUBMODULE',
-        help="Submodule whose tests to run (cluster, constants, ...)")
-    verbose = Option(
-        ['--verbose', '-v'], default=False, is_flag=True, help="verbosity")
-
-    @classmethod
-    def task_meta(cls, **kwargs):
-        kwargs.update(cls.ctx.get())
-        Args = namedtuple('Args', [k for k in kwargs.keys()])
-        args = Args(**kwargs)
-        dirs = Dirs(args)
-
-        cmd = [sys.executable,
-               str(dirs.root / 'tools' / 'doctest_public_modules.py')]
-        if args.verbose:
-            cmd += ['-vvv']
-        if args.submodule:
             cmd += [args.submodule]
         cmd_str = ' '.join(cmd)
         return {
@@ -1125,6 +1093,7 @@ class Doctest(Task):
             'task_dep': ['build'],
             'io': {'capture': False},
         }
+
 
 ##########################################
 # ENVS
