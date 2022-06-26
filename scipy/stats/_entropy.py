@@ -83,7 +83,7 @@ def entropy(pk: np.typing.ArrayLike,
     .. [2] Thomas M. Cover and Joy A. Thomas. 2006. Elements of Information
            Theory (Wiley Series in Telecommunications and Signal Processing).
            Wiley-Interscience, USA.
-    
+
 
     Examples
     --------
