@@ -60,7 +60,7 @@ config = DTConfig()
 config.user_context_mgr = warnings_errors
 ############################################################################
 
-LOGFILE = open('doctest.log', 'a')
+#LOGFILE = open('doctest.log', 'a')
 
 
 
@@ -85,14 +85,14 @@ def doctest_submodules(module_names, verbose, fail_fast):
                                   verbose=verbose,
                                   raise_on_error=fail_fast, config=config) 
 
-        LOGFILE.write(module_name + '\n')
-        LOGFILE.write("="*len(module_name)  + '\n')
-        for entry in history:
-            LOGFILE.write(str(entry) + '\n')
+#        LOGFILE.write(module_name + '\n')
+#        LOGFILE.write("="*len(module_name)  + '\n')
+#        for entry in history:
+#            LOGFILE.write(str(entry) + '\n')
 
         sys.stderr.write(str(result))
         all_success = all_success and (result.failed == 0)
-        return all_success
+    return all_success
 
 
 def doctest_single_file(fname):
