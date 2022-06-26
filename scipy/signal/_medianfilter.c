@@ -63,23 +63,9 @@ void NAME(TYPE* in, TYPE* out, npy_intp* Nwin, npy_intp* Ns)                    
     free(myvals);                                                       \
 }
 
-
-/* Stolen from CYTHON_RESTRICT and BOOST_RESTRICT */
-#ifndef SCIPY_RESTRICT
-#  if defined(__GNUC__) && __GNUC__ > 3
-#    define SCIPY_RESTRICT __restrict__
-#  elif defined(_MSC_VER) && _MSC_VER >= 1400
-#    define SCIPY_RESTRICT __restrict
-#  elif defined(__STDC_VERSION__) && __STDC_VERSION__ >= 199901L
-#    define SCIPY_RESTRICT restrict
-#  else
-#    define SCIPY_RESTRICT
-#  endif
-#endif
-
 /* define quick_select for floats, doubles, and unsigned characters */
 typedef int (*CompareFunction)(const void * const, const void * const);
-extern void *quick_select(void * SCIPY_RESTRICT base, const size_t num_elements,
+extern void *quick_select(void *base, const size_t num_elements,
                    const size_t element_size,
 		   const CompareFunction comparison_function,
 		   const size_t element_to_return);
