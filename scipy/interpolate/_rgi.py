@@ -492,9 +492,9 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
         The coordinates to sample the gridded data at
 
     method : str, optional
-        The method of interpolation to perform. Supported are "linear" and
-        "nearest", and "splinef2d". "splinef2d" is only supported for
-        2-dimensional data.
+        The method of interpolation to perform. Supported are "linear",
+        "nearest", "cubic", "quintic", "pchip", and "splinef2d". "splinef2d"
+        is only supported for 2-dimensional data.
 
     bounds_error : bool, optional
         If True, when interpolated values are requested outside of the
@@ -555,10 +555,11 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     """
     # sanity check 'method' kwarg
-    if method not in ["linear", "nearest", "splinef2d"]:
+    if method not in ["linear", "nearest", "cubic", "quintic", "pchip",
+                      "splinef2d"]:
         raise ValueError("interpn only understands the methods 'linear', "
-                         "'nearest', and 'splinef2d'. You provided %s." %
-                         method)
+                         "'nearest', 'cubic', 'quintic', 'pchip', and "
+                         f"'splinef2d'. You provided {method}.")
 
     if not hasattr(values, 'ndim'):
         values = np.asarray(values)
@@ -612,13 +613,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                                 "in dimension %d" % i)
 
     # perform interpolation
-    if method == "linear":
-        interp = RegularGridInterpolator(points, values, method="linear",
-                                         bounds_error=bounds_error,
-                                         fill_value=fill_value)
-        return interp(xi)
-    elif method == "nearest":
-        interp = RegularGridInterpolator(points, values, method="nearest",
+    if method in ["linear", "nearest", "cubic", "quintic", "pchip"]:
+        interp = RegularGridInterpolator(points, values, method=method,
                                          bounds_error=bounds_error,
                                          fill_value=fill_value)
         return interp(xi)

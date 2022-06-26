@@ -554,9 +554,7 @@ class MyValue:
 
 class TestInterpN:
     def _sample_2d_data(self):
-        x = np.arange(1, 6)
         x = np.array([.5, 2., 3., 4., 5.5])
-        y = np.arange(1, 6)
         y = np.array([.5, 2., 3., 4., 5.5])
         z = np.array([[1, 2, 1, 2, 1], [1, 2, 1, 2, 1], [1, 2, 3, 2, 1],
                       [1, 2, 2, 2, 1], [1, 2, 1, 2, 1]])
@@ -571,16 +569,19 @@ class TestInterpN:
         assert_array_almost_equal(interpn((x, y), z, xi, method="splinef2d"),
                                   lut.ev(xi[:, 0], xi[:, 1]))
 
-    def test_list_input(self):
+    @pytest.mark.parametrize(
+        "method",
+        ["linear", "nearest", "cubic", "quintic", "pchip", "splinef2d"]
+    )
+    def test_list_input(self, method):
         x, y, z = self._sample_2d_data()
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                        [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
 
-        for method in ['nearest', 'linear', 'splinef2d']:
-            v1 = interpn((x, y), z, xi, method=method)
-            v2 = interpn((x.tolist(), y.tolist()), z.tolist(),
-                         xi.tolist(), method=method)
-            assert_allclose(v1, v2, err_msg=method)
+        v1 = interpn((x, y), z, xi, method=method)
+        v2 = interpn((x.tolist(), y.tolist()), z.tolist(),
+                      xi.tolist(), method=method)
+        assert_allclose(v1, v2, err_msg=method)
 
     def test_spline_2d_outofbounds(self):
         x = np.array([.5, 2., 3., 4., 5.5])
@@ -668,7 +669,11 @@ class TestInterpN:
                      method='nearest', bounds_error=False)
         assert_allclose(v1, v2.reshape(v1.shape))
 
-    def test_xi_broadcast(self):
+    @pytest.mark.parametrize(
+        "method",
+        ["linear", "nearest", "cubic", "quintic", "pchip", "splinef2d"]
+    )
+    def test_xi_broadcast(self, method):
         # verify that the interpolators broadcast xi
         x, y, values = self._sample_2d_data()
         points = (x, y)
@@ -676,20 +681,23 @@ class TestInterpN:
         xi = np.linspace(0, 1, 2)
         yi = np.linspace(0, 3, 3)
 
-        for method in ['nearest', 'linear', 'splinef2d']:
-            sample = (xi[:,None], yi[None,:])
-            v1 = interpn(points, values, sample, method=method,
-                         bounds_error=False)
-            assert_equal(v1.shape, (2, 3))
+        sample = (xi[:,None], yi[None,:])
+        v1 = interpn(points, values, sample, method=method,
+                        bounds_error=False)
+        assert_equal(v1.shape, (2, 3))
 
-            xx, yy = np.meshgrid(xi, yi)
-            sample = np.c_[xx.T.ravel(), yy.T.ravel()]
+        xx, yy = np.meshgrid(xi, yi)
+        sample = np.c_[xx.T.ravel(), yy.T.ravel()]
 
-            v2 = interpn(points, values, sample,
-                         method=method, bounds_error=False)
-            assert_allclose(v1, v2.reshape(v1.shape))
+        v2 = interpn(points, values, sample,
+                        method=method, bounds_error=False)
+        assert_allclose(v1, v2.reshape(v1.shape))
 
-    def test_nonscalar_values(self):
+    @pytest.mark.parametrize(
+        "method",
+        ["linear", "nearest", "cubic", "quintic", "pchip"]
+    )
+    def test_nonscalar_values(self, method):
         # Verify that non-scalar valued values also works
         points, values = self._sample_4d_data()
 
@@ -697,23 +705,32 @@ class TestInterpN:
         values = np.random.rand(3, 3, 3, 3, 6)
         sample = np.random.rand(7, 11, 4)
 
-        for method in ['nearest', 'linear']:
-            v = interpn(points, values, sample, method=method,
+        v = interpn(points, values, sample, method=method,
+                    bounds_error=False)
+        assert_equal(v.shape, (7, 11, 6), err_msg=method)
+
+        vs = [interpn(points, values[...,j], sample, method=method,
                         bounds_error=False)
-            assert_equal(v.shape, (7, 11, 6), err_msg=method)
+                for j in range(6)]
+        v2 = np.array(vs).transpose(1, 2, 0)
 
-            vs = [interpn(points, values[...,j], sample, method=method,
-                          bounds_error=False)
-                  for j in range(6)]
-            v2 = np.array(vs).transpose(1, 2, 0)
+        assert_allclose(v, v2, err_msg=method)
 
-            assert_allclose(v, v2, err_msg=method)
-
+    def test_non_scalar_values_splinef2d(self):
         # Vector-valued splines supported with fitpack
+        points, values = self._sample_4d_data()
+
+        np.random.seed(1234)
+        values = np.random.rand(3, 3, 3, 3, 6)
+        sample = np.random.rand(7, 11, 4)
         assert_raises(ValueError, interpn, points, values, sample,
                       method='splinef2d')
 
-    def test_complex(self):
+    @pytest.mark.parametrize(
+        "method",
+        ["linear", "nearest", "cubic", "quintic", "pchip"]
+    )
+    def test_complex(self, method):
         x, y, values = self._sample_2d_data()
         points = (x, y)
         values = values - 2j*values
@@ -721,29 +738,42 @@ class TestInterpN:
         sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
                            [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
 
-        for method in ['linear', 'nearest']:
-            v1 = interpn(points, values, sample, method=method)
-            v2r = interpn(points, values.real, sample, method=method)
-            v2i = interpn(points, values.imag, sample, method=method)
-            v2 = v2r + 1j*v2i
-            assert_allclose(v1, v2)
+        v1 = interpn(points, values, sample, method=method)
+        v2r = interpn(points, values.real, sample, method=method)
+        v2i = interpn(points, values.imag, sample, method=method)
+        v2 = v2r + 1j*v2i
+        assert_allclose(v1, v2)
 
+    def test_complex_spline2fd(self):
         # Complex-valued data not supported by spline2fd
-        assert_warns(np.ComplexWarning, interpn, points, values,
-                     sample, method='splinef2d')
+        x, y, values = self._sample_2d_data()
+        points = (x, y)
+        values = values - 2j*values
 
-    def test_duck_typed_values(self):
+        sample = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
+                           [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
+        with assert_warns(np.ComplexWarning):
+            interpn(points, values, sample, method='splinef2d')
+
+    @pytest.mark.parametrize(
+        "method",
+        ["linear", "nearest"]
+    )
+    def test_duck_typed_values(self, method):
         x = np.linspace(0, 2, 5)
         y = np.linspace(0, 1, 7)
 
         values = MyValue((5, 7))
 
-        for method in ('nearest', 'linear'):
-            v1 = interpn((x, y), values, [0.4, 0.7], method=method)
-            v2 = interpn((x, y), values._v, [0.4, 0.7], method=method)
-            assert_allclose(v1, v2)
+        v1 = interpn((x, y), values, [0.4, 0.7], method=method)
+        v2 = interpn((x, y), values._v, [0.4, 0.7], method=method)
+        assert_allclose(v1, v2)
 
-    def test_matrix_input(self):
+    @pytest.mark.parametrize(
+        "method",
+        ["linear", "nearest", "cubic", "quintic", "pchip", "splinef2d"]
+    )
+    def test_matrix_input(self, method):
         x = np.linspace(0, 2, 5)
         y = np.linspace(0, 1, 7)
 
@@ -751,10 +781,9 @@ class TestInterpN:
 
         sample = np.random.rand(3, 7, 2)
 
-        for method in ('nearest', 'linear', 'splinef2d'):
-            v1 = interpn((x, y), values, sample, method=method)
-            v2 = interpn((x, y), np.asarray(values), sample, method=method)
-            assert_allclose(v1, v2)
+        v1 = interpn((x, y), values, sample, method=method)
+        v2 = interpn((x, y), np.asarray(values), sample, method=method)
+        assert_allclose(v1, v2)
 
     def test_length_one_axis(self):
         # gh-5890, gh-9524 : length-1 axis is legal for method='linear'.
