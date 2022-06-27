@@ -2,7 +2,7 @@ import os
 import sys
 import importlib
 
-from scpdt import testmod, DTConfig
+from scpdt import testmod, testfile, DTConfig
 from scpdt.util import get_all_list
 
 
@@ -96,8 +96,8 @@ def doctest_submodules(module_names, verbose, fail_fast):
 
 
 def doctest_single_file(fname):
-    raise NotImplementedError
-
+    result, history = testfile(fname, config=config, module_relative=False)
+    return result.failed == 0
 
 
 if __name__ == "__main__":
