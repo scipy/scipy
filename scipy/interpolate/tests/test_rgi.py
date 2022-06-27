@@ -774,10 +774,10 @@ class TestInterpN:
         ["linear", "nearest", "cubic", "quintic", "pchip", "splinef2d"]
     )
     def test_matrix_input(self, method):
-        x = np.linspace(0, 2, 5)
+        x = np.linspace(0, 2, 6)
         y = np.linspace(0, 1, 7)
 
-        values = matrix(np.random.rand(5, 7))
+        values = matrix(np.random.rand(6, 7))
 
         sample = np.random.rand(3, 7, 2)
 
