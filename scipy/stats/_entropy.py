@@ -20,7 +20,7 @@ def entropy(pk: np.typing.ArrayLike,
             axis: int = 0
             ) -> Union[np.number, np.ndarray]:
     """
-    Calculate the Shannon entropy/cross entropy of given distribution(s).
+    Calculate the Shannon entropy/relative entropy of given distribution(s).
 
     If only probabilities `pk` are given, the Shannon entropy is calculated as
     ``H = -sum(pk * log(pk))``.
@@ -47,7 +47,7 @@ def entropy(pk: np.typing.ArrayLike,
 
     Returns
     -------
-    H : {float, array_like}
+    S : {float, array_like}
         The calculated entropy.
 
     Notes
@@ -55,12 +55,12 @@ def entropy(pk: np.typing.ArrayLike,
     Informally, the Shannon entropy quantifies the expected uncertainty
     inherent in the possible outcomes of a discrete random variable.
     For example,
-    if messages consisting of sequences of symbols from a set ``S`` are to be
+    if messages consisting of sequences of symbols from a set are to be
     encoded and transmitted over a noiseless channel, then the Shannon entropy
     ``H(pk)`` gives a tight lower bound for the average number of units of
     information needed per symbol if the symbols occur with frequencies
     governed by the discrete distribution `pk` [1]_. The choice of base
-    determines the choice of units; e.g. ``e`` for nats, ``2`` for bits, etc.
+    determines the choice of units; e.g., ``e`` for nats, ``2`` for bits, etc.
 
     The relative entropy, ``D(pk|qk)``, quantifies the increase in the average
     number of units of information needed per symbol if the encoding is
