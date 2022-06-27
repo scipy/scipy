@@ -1168,8 +1168,8 @@ def sen_seasonal_slopes(x):
     ----------
     x : 2D array_like
         Each column of `x` contains measurements of the dependent variable
-        within a season. The independent variable of each season is assumed
-        to be ``np.arange(x.shape[0])``.
+        within a season. The independent variable (usually time) of each season
+        is assumed to be ``np.arange(x.shape[0])``.
 
     Returns
     -------
@@ -1208,7 +1208,7 @@ def sen_seasonal_slopes(x):
     ----------
     .. [1] Hirsch, Robert M., James R. Slack, and Richard A. Smith.
            "Techniques of trend analysis for monthly water quality data."
-           *Water resources research* 18.1 (1982): 107-121.
+           *Water Resources Research* 18.1 (1982): 107-121.
 
     Examples
     --------
@@ -1220,6 +1220,7 @@ def sen_seasonal_slopes(x):
     >>> x = rng.random(size=(100, 10))
 
     We compute the seasonal slopes as:
+
     >>> from scipy import stats
     >>> intra_slope, inter_slope = stats.mstats.sen_seasonal_slopes(x)
 
