@@ -1186,6 +1186,7 @@ def sen_seasonal_slopes(x):
     See Also
     --------
     theilslopes : the analogous function for non-seasonal data
+    scipy.stats.theilslopes : non-seasonal slopes for non-masked arrays
 
     Notes
     -----
@@ -1212,12 +1213,12 @@ def sen_seasonal_slopes(x):
 
     Examples
     --------
-    Suppose we have 100 observations of a dependent variable for each of 10
+    Suppose we have 100 observations of a dependent variable for each of four
     seasons:
 
     >>> import numpy as np
     >>> rng = np.random.default_rng()
-    >>> x = rng.random(size=(100, 10))
+    >>> x = rng.random(size=(100, 4))
 
     We compute the seasonal slopes as:
 
@@ -1238,7 +1239,7 @@ def sen_seasonal_slopes(x):
 
     then element ``i`` of ``intra_slope`` is the median of ``dijk[x[:, i]]``:
 
-    >>> i = 4
+    >>> i = 2
     >>> np.allclose(np.median(dijk(x[:, i])), intra_slope[i])
     True
 
@@ -1248,6 +1249,14 @@ def sen_seasonal_slopes(x):
     >>> all_slopes = np.concatenate([dijk(x[:, i]) for i in range(x.shape[1])])
     >>> np.allclose(np.median(all_slopes), inter_slope)
     True
+
+    Because the data are randomly generated, we would expect the median slopes
+    to be nearly zero both within and across all seasons, and indeed they are:
+
+    >>> intra_slope.data
+    array([ 0.00124504, -0.00277761, -0.00221245, -0.00036338])
+    >>> inter_slope
+    -0.0010511779872922058
 
     """
     x = ma.array(x, subok=True, copy=False, ndmin=2)
