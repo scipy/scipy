@@ -567,7 +567,7 @@ class gaussian_kde:
             self._data_inv_cov = linalg.inv(self._data_covariance)
 
         self.covariance = self._data_covariance * self.factor**2
-        self.inv_cov = self._data_inv_cov / self.factor**2
+        self.inv_cov = (self._data_inv_cov / self.factor**2).astype(np.float64)
         L = linalg.cholesky(self.covariance*2*pi)
         self.log_det = 2*np.log(np.diag(L)).sum()
 

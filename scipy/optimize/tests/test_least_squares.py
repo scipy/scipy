@@ -776,5 +776,5 @@ def test_fp32_gh12991():
     # unchanged from the initial solution.
     # It was terminating early because the underlying approx_derivative
     # used a step size for FP64 when the working space was FP32.
-    assert res.nfev > 3
+    assert res.nfev > 2
     assert_allclose(res.x, np.array([0.4082241, 0.15530563]), atol=5e-5)

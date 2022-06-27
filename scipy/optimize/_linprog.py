@@ -228,10 +228,11 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         :ref:`'highs' <optimize.linprog-highs>` (default),
         :ref:`'highs-ds' <optimize.linprog-highs-ds>`,
         :ref:`'highs-ipm' <optimize.linprog-highs-ipm>`,
-        :ref:`'interior-point' <optimize.linprog-interior-point>`,
-        :ref:`'revised simplex' <optimize.linprog-revised_simplex>`, and
-        :ref:`'simplex' <optimize.linprog-simplex>` (legacy)
-        are supported.
+        :ref:`'interior-point' <optimize.linprog-interior-point>` (legacy),
+        :ref:`'revised simplex' <optimize.linprog-revised_simplex>` (legacy),
+        and
+        :ref:`'simplex' <optimize.linprog-simplex>` (legacy) are supported.
+        The legacy methods are deprecated and will be removed in SciPy 1.11.0.
     callback : callable, optional
         If a callback function is provided, it will be called at least once per
         iteration of the algorithm. The callback function must accept a single

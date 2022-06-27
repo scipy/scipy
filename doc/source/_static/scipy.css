@@ -162,3 +162,40 @@ h3 {
   margin-bottom: 0rem;
   color: #484848;
 }
+
+
+/* Dark theme tweaking
+
+Matplotlib images are in png and inverted while other output
+types are assumed to be normal images.
+
+*/
+html[data-theme=dark] img[src*='.png'] {
+    filter: invert(0.82) brightness(0.8) contrast(1.2);
+}
+
+html[data-theme=dark] .MathJax_SVG *  {
+    fill: var(--pst-color-text-base);
+}
+
+/* Main index page overview cards */
+html[data-theme=dark] .shadow {
+    box-shadow: 0 .5rem 1rem rgba(250, 250, 250, .6) !important
+}
+
+html[data-theme=dark] .intro-card .card-header {
+  background-color:var(--pst-color-background);
+  color: #150458 !important;
+}
+
+html[data-theme=dark] .intro-card .card-footer {
+  background-color:var(--pst-color-background);
+}
+
+html[data-theme=dark] h1 {
+  color: var(--pst-color-primary);
+}
+
+html[data-theme=dark] h3 {
+  color: #0a6774;
+}

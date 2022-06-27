@@ -1444,3 +1444,13 @@ def test_kdtree_count_neighbors_weighted(kdtree_class):
     expect = [np.sum(weights[(prev_radius < dist) & (dist <= radius)])
               for prev_radius, radius in zip(itertools.chain([0], r[:-1]), r)]
     assert_allclose(nAB, expect)
+
+
+def test_kdtree_nan():
+    vals = [1, 5, -10, 7, -4, -16, -6, 6, 3, -11]
+    n = len(vals)
+    data = np.concatenate([vals, np.full(n, np.nan)])[:, None]
+
+    query_with_nans = KDTree(data).query_pairs(2)
+    query_without_nans = KDTree(data[:n]).query_pairs(2)
+    assert query_with_nans == query_without_nans
