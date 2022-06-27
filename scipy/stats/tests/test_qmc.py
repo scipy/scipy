@@ -580,10 +580,27 @@ class QMCEngineTests:
             np.percentile(sample, 75, axis=0), np.repeat(0.75, d), atol=1e-2
         )
 
-    @pytest.mark.parametrize("optimization", [None, "random-CD", "lloyd"])
-    def test_select_optimizer(self, optimization):
-        engine = self.engine(d=2, optimization=optimization, scramble=False)
-        engine.random(32)
+    def test_raises_optimizer(self):
+        message = r"'toto' is not a valid optimization method"
+        with pytest.raises(ValueError, match=message):
+            self.engine(d=1, scramble=False, optimization="toto")
+
+    @pytest.mark.parametrize(
+        "optimization,metric",
+        [
+            ("random-CD", qmc.discrepancy),
+            ("lloyd", lambda sample: -_l1_norm(sample))]
+    )
+    def test_optimizers(self, optimization, metric):
+        engine = self.engine(d=2, scramble=False)
+        sample_ref = engine.random(n=64)
+        metric_ref = metric(sample_ref)
+
+        optimal_ = self.engine(d=2, scramble=False, optimization=optimization)
+        sample_ = optimal_.random(n=64)
+        metric_ = metric(sample_)
+
+        assert metric_ < metric_ref
 
 
 class TestHalton(QMCEngineTests):
@@ -668,23 +685,7 @@ class TestLHS(QMCEngineTests):
                 res_set = set((tuple(row) for row in res))
                 assert_equal(res_set, desired)
 
-    def test_discrepancy_hierarchy(self):
-        seed = 68756348576543
-        lhs = qmc.LatinHypercube(d=2, seed=seed)
-        sample_ref = lhs.random(n=20)
-        disc_ref = qmc.discrepancy(sample_ref)
-
-        optimal_ = qmc.LatinHypercube(d=2, seed=seed, optimization="random-CD")
-        sample_ = optimal_.random(n=20)
-        disc_ = qmc.discrepancy(sample_)
-
-        assert disc_ < disc_ref
-
     def test_raises(self):
-        message = r"'toto' is not a valid optimization method"
-        with pytest.raises(ValueError, match=message):
-            qmc.LatinHypercube(1, optimization="toto")
-
         message = r"not a valid strength"
         with pytest.raises(ValueError, match=message):
             qmc.LatinHypercube(1, strength=3)
