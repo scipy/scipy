@@ -61,18 +61,19 @@ def entropy(pk: np.typing.ArrayLike,
     governed by the discrete distribution `pk` [1]_. The choice of base
     determines the choice of units, ``e`` for nats, ``2`` for bits, etc.
 
-    The relative entropy, ``D(pk|qk)``, quantifies the average number of
-    additional units of information needed per symbol if the encoding is
-    optimized for the probability distribution `qk` when the true distribution
-    is `pk`. Informally, the relative entropy quantifies the expected excess
-    in surprise experienced if one believes the true distribution is `qk` when
-    it is actually `pk`.
+    The relative entropy, ``D(pk|qk)``, quantifies the increase in the average
+    number of units of information needed per symbol if the encoding is
+    optimized for the probability distribution `qk` instead of the true
+    distribution `pk`. Informally, the relative entropy quantifies the expected
+    excess in surprise experienced if one believes the true distribution is
+    `qk` when it is actually `pk`.
 
     A related quantity, the cross entropy ``CE(pk, qk)``, satisfies the
-    equation ``CE(pk, qk) = H(pk) + D(pk|qk)`` and follows the formula ``S =
-    -sum(pk * log(qk), axis=axis)``. It gives the average total number of units
-    of information needed per symbol if an encoding is optimized for the
-    probability distribution `qk` when the true distribution is `pk`.
+    equation ``CE(pk, qk) = H(pk) + D(pk|qk)`` and can also be calculated with
+    the formula ``S = -sum(pk * log(qk), axis=axis)``. It gives the average
+    number of units of information needed per symbol if an encoding is
+    optimized for the probability distribution `qk` when the true distribution
+    is `pk`.
 
     See [2]_ for more information.
 
