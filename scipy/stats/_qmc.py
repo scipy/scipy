@@ -2230,7 +2230,7 @@ def _l1_norm(sample: np.ndarray) -> float:
     return distance.pdist(sample, 'cityblock').min()
 
 
-def _centroidal_voronoi_tessellation(
+def _lloyd_iteration(
     sample: np.ndarray,
     decay: float,
     qhull_options: str
@@ -2427,7 +2427,7 @@ def _lloyd_centroidal_voronoi_tessellation(
 
     l1_old = _l1_norm(sample=sample)
     for i in range(maxiter):
-        sample = _centroidal_voronoi_tessellation(
+        sample = _lloyd_iteration(
                 sample=sample, decay=decay[i],
                 qhull_options=qhull_options,
         )
