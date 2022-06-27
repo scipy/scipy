@@ -1044,7 +1044,8 @@ class LatinHypercube(QMCEngine):
           design shows better space filling robustness toward 2D and 3D
           subprojections compared to using other discrepancy measures [6]_.
         * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
-          The process converges to equally spaced samples.
+          The process converges to equally spaced samples. This does not
+          ensure that the sample will remain a LHS.
 
         .. versionadded:: 1.8.0
         .. versionchanged:: 1.10.0
