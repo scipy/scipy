@@ -816,19 +816,19 @@ class TestPoisson(QMCEngineTests):
 
     def test_mindist(self):
         rng = np.random.default_rng(132074951149370773672162394161442690287)
-        ns = 100
+        ns = 50
 
         low, high = 0.01, 0.1
-        radii = (high - low) * rng.random(10) + low
+        radii = (high - low) * rng.random(5) + low
 
-        dimensions = [1, 2, 3, 4]
+        dimensions = [1, 3, 4]
         hypersphere_methods = ["volume", "surface"]
 
         gen = product(dimensions, radii, hypersphere_methods)
 
         for d, radius, hypersphere in gen:
             engine = self.qmce(
-                d=2, radius=radius, hypersphere=hypersphere, seed=rng
+                d=d, radius=radius, hypersphere=hypersphere, seed=rng
             )
             sample = engine.random(ns)
 
