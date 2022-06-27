@@ -19,13 +19,14 @@ def entropy(pk: np.typing.ArrayLike,
             base: Optional[float] = None,
             axis: int = 0
             ) -> Union[np.number, np.ndarray]:
-    """Calculate the entropy of a distribution for given probability values.
+    """
+    Calculate the Shannon entropy/relative entropy of given distribution(s).
 
     If only probabilities `pk` are given, the Shannon entropy is calculated as
-    ``S = -sum(pk * log(pk), axis=axis)``.
+    ``H = -sum(pk * log(pk))``.
 
     If `qk` is not None, then compute the relative entropy
-    ``S = sum(pk * log(pk / qk), axis=axis)``. This quantity is also known
+    ``D = sum(pk * log(pk / qk))``. This quantity is also known
     as the Kullback-Leibler divergence.
 
     This routine will normalize `pk` and `qk` if they don't sum to 1.
@@ -53,13 +54,13 @@ def entropy(pk: np.typing.ArrayLike,
     -----
     Informally, the Shannon entropy quantifies the expected uncertainty
     inherent in the possible outcomes of a discrete random variable.
-
-    If messages consisting of sequences of symbols from a set S are to be
+    For example,
+    if messages consisting of sequences of symbols from a set are to be
     encoded and transmitted over a noiseless channel, then the Shannon entropy
     ``H(pk)`` gives a tight lower bound for the average number of units of
     information needed per symbol if the symbols occur with frequencies
     governed by the discrete distribution `pk` [1]_. The choice of base
-    determines the choice of units, ``e`` for nats, ``2`` for bits, etc.
+    determines the choice of units; e.g., ``e`` for nats, ``2`` for bits, etc.
 
     The relative entropy, ``D(pk|qk)``, quantifies the increase in the average
     number of units of information needed per symbol if the encoding is
@@ -70,10 +71,11 @@ def entropy(pk: np.typing.ArrayLike,
 
     A related quantity, the cross entropy ``CE(pk, qk)``, satisfies the
     equation ``CE(pk, qk) = H(pk) + D(pk|qk)`` and can also be calculated with
-    the formula ``S = -sum(pk * log(qk), axis=axis)``. It gives the average
+    the formula ``CE = -sum(pk * log(qk))``. It gives the average
     number of units of information needed per symbol if an encoding is
     optimized for the probability distribution `qk` when the true distribution
-    is `pk`.
+    is `pk`. It is not computed directly by `entropy`, but it can be computed
+    using two calls to the function (see Examples).
 
     See [2]_ for more information.
 
@@ -89,32 +91,40 @@ def entropy(pk: np.typing.ArrayLike,
 
     Examples
     --------
-
-    >>> from scipy.stats import entropy
-
-    Bernoulli trial with different p.
     The outcome of a fair coin is the most uncertain:
 
-    >>> entropy([1/2, 1/2], base=2)
+    >>> from scipy.stats import entropy
+    >>> base = 2  # work in units of bits
+    >>> pk = np.array([1/2, 1/2])  # fair coin
+    >>> H = entropy(pk, base=base)
+    >>> H
     1.0
+    >>> H == -np.sum(pk * np.log(pk)) / np.log(base)
+    True
 
     The outcome of a biased coin is less uncertain:
 
-    >>> entropy([9/10, 1/10], base=2)
+    >>> qk = np.array([9/10, 1/10])  # biased coin
+    >>> entropy(qk, base=base)
     0.46899559358928117
 
-    Relative entropy:
+    The relative entropy between the fair coin and biased coin is calculated
+    as:
 
-    >>> entropy([1/2, 1/2], qk=[9/10, 1/10])
-    0.5108256237659907
+    >>> D = entropy(pk, qk, base=base)
+    >>> D
+    0.7369655941662062
+    >>> D == np.sum(pk * np.log(pk/qk)) / np.log(base)
+    True
 
-    Cross entropy:
+    The cross entropy can be calculated as the sum of the entropy and
+    relative entropy`:
 
-    The cross entropy can be calculated using the equation
-    ``CE(pk, qk) = H(pk) + D(pk|qk)``:
-
-    >>> entropy([1/2, 1/2]) + entropy([1/2, 1/2], qk=[9/10, 1/10])
-    1.203972804325936
+    >>> CE = entropy(pk, base=base) + entropy(pk, qk, base=base)
+    >>> CE
+    1.736965594166206
+    >>> CE == -np.sum(pk * np.log(qk)) / np.log(base)
+    True
 
     """
     if base is not None and base <= 0:
