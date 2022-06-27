@@ -24,9 +24,9 @@ def entropy(pk: np.typing.ArrayLike,
     If only probabilities `pk` are given, the Shannon entropy is calculated as
     ``S = -sum(pk * log(pk), axis=axis)``.
 
-    If `qk` is not None, then compute the Kullback-Leibler divergence
+    If `qk` is not None, then compute the relative entropy
     ``S = sum(pk * log(pk / qk), axis=axis)``. This quantity is also known
-    as the relative entropy.
+    as the Kullback-Leibler divergence.
 
     This routine will normalize `pk` and `qk` if they don't sum to 1.
 
@@ -61,17 +61,20 @@ def entropy(pk: np.typing.ArrayLike,
     governed by the discrete distribution `pk` [1]_. The choice of base
     determines the choice of units, ``e`` for nats, ``2`` for bits, etc.
 
-    A related quantity, the cross entropy ``H(pk, qk)``, gives the average
-    number of units of information needed per symbol if the encoding is
-    optimized for the probability distribution `qk` but the true distribution
-    is `pk`. The formula for cross entropy is ``S = -sum(pk * log(qk),
-    axis=axis)``.
+    The relative entropy, ``D(pk|qk)``, quantifies the average number of
+    additional units of information needed per symbol if the encoding is
+    optimized for the probability distribution `qk` when the true distribution
+    is `pk`. Informally, the relative entropy quantifies the expected excess
+    in surprise experienced if one believes the true distribution is `qk` when
+    it is actually `pk`.
 
-    Shannon entropy, cross entropy, and Kullback-Leibler divergence are related
-    by the equation ``H(pk, qk) = H(pk) + KL(pk|qk)``. Informally, the
-    Kullback-Leibler divergence quantifies the expected surplus of surprise
-    experienced if one believes the true distribution is `qk` when it is
-    actually `pk`.
+    A related quantity, the cross entropy ``CE(pk, qk)``, satisfies the
+    equation ``CE(pk, qk) = H(pk) + D(pk|qk)`` and follows the formula 
+    ``S = -sum(pk * log(qk), axis=axis)``.
+
+    It gives the average total number of units of information needed per
+    symbol if an encoding is optimized for the probability distribution `qk`
+    when the true distribution is `pk`.
 
     See [2]_ for more information.
 
@@ -109,7 +112,7 @@ def entropy(pk: np.typing.ArrayLike,
     Cross entropy:
 
     The cross entropy can be calculated using the equation
-    ``H(pk, qk) = H(pk) + KL(pk|qk)``:
+    ``CE(pk, qk) = H(pk) + D(pk|qk)``:
 
     >>> entropy([1/2, 1/2]) + entropy([1/2, 1/2], qk=[9/10, 1/10])
     1.203972804325936
