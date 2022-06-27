@@ -69,12 +69,10 @@ def entropy(pk: np.typing.ArrayLike,
     it is actually `pk`.
 
     A related quantity, the cross entropy ``CE(pk, qk)``, satisfies the
-    equation ``CE(pk, qk) = H(pk) + D(pk|qk)`` and follows the formula 
-    ``S = -sum(pk * log(qk), axis=axis)``.
-
-    It gives the average total number of units of information needed per
-    symbol if an encoding is optimized for the probability distribution `qk`
-    when the true distribution is `pk`.
+    equation ``CE(pk, qk) = H(pk) + D(pk|qk)`` and follows the formula ``S =
+    -sum(pk * log(qk), axis=axis)``. It gives the average total number of units
+    of information needed per symbol if an encoding is optimized for the
+    probability distribution `qk` when the true distribution is `pk`.
 
     See [2]_ for more information.
 
