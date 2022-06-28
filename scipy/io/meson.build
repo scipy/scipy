@@ -14,13 +14,12 @@ _test_fortran_module = custom_target('_test_fortran_module',
 _test_fortran = py3.extension_module('_test_fortran',
   [
     _test_fortran_module,
-     fortranobject_c,
     '_test_fortran.f'
   ],
   c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
   fortran_args: fortran_ignore_warnings,
   include_directories: [incdir_numpy, incdir_f2py],
-  dependencies: [py3_dep, lapack],
+  dependencies: [py3_dep, lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/io'

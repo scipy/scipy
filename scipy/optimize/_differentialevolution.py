@@ -123,7 +123,9 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
         can improve the minimization slightly. If a constrained problem is
-        being studied then the `trust-constr` method is used instead.
+        being studied then the `trust-constr` method is used instead. For large
+        problems with many constraints, polishing can take a long time due to
+        the Jacobian computations.
     init : str or array-like, optional
         Specify which type of population initialization is performed. Should be
         one of:
@@ -487,7 +489,9 @@ class DifferentialEvolutionSolver:
         If True (default), then `scipy.optimize.minimize` with the `L-BFGS-B`
         method is used to polish the best population member at the end, which
         can improve the minimization slightly. If a constrained problem is
-        being studied then the `trust-constr` method is used instead.
+        being studied then the `trust-constr` method is used instead. For large
+        problems with many constraints, polishing can take a long time due to
+        the Jacobian computations.
     maxfun : int, optional
         Set the maximum number of function evaluations. However, it probably
         makes more sense to set `maxiter` instead.
@@ -1048,7 +1052,8 @@ class DifferentialEvolutionSolver:
                                   " solution satisfying the constraints,"
                                   " attempting to polish from the least"
                                   " infeasible solution", UserWarning)
-
+            if self.disp:
+                print(f"Polishing solution with '{polish_method}'")
             result = minimize(self.func,
                               np.copy(DE_result.x),
                               method=polish_method,
