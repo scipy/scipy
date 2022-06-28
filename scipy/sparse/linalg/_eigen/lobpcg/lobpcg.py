@@ -144,6 +144,7 @@ def lobpcg(
     verbosityLevel=0,
     retLambdaHistory=False,
     retResidualNormsHistory=False,
+    restartControl=20,
 ):
     """Locally Optimal Block Preconditioned Conjugate Gradient Method (LOBPCG).
 
@@ -464,9 +465,10 @@ def lobpcg(
     blockVectorBP = None
 
     smallestResidualNorm = np.abs(np.finfo(X.dtype).max)
-    bestIterationNumber = 0
+
     iterationNumber = -1
     restart = True
+    forcedRestart = False
     explicitGramFlag = False
     while iterationNumber < maxiter:
         iterationNumber += 1
@@ -482,27 +484,34 @@ def lobpcg(
         residualNorms = np.sqrt(np.abs(aux))
         residualNormsHistory[iterationNumber, :] = residualNorms
         residualNorm = np.sum(np.abs(residualNorms)) / sizeX
+        print(np.max(blockVectorX @ blockVectorR.T))
 
         if residualNorm < smallestResidualNorm:
             smallestResidualNorm = residualNorm
             bestIterationNumber = iterationNumber
             bestblockVectorX = blockVectorX
+        elif residualNorm > 2**restartControl * smallestResidualNorm:
+            forcedRestart = True
+            blockVectorAX = A(blockVectorX)
+            if B is not None:
+                blockVectorBX = B(blockVectorX)
 
         ii = np.where(residualNorms > residualTolerance, True, False)
         activeMask = activeMask & ii
         currentBlockSize = activeMask.sum()
-        if currentBlockSize != previousBlockSize:
-            previousBlockSize = currentBlockSize
-            ident = np.eye(currentBlockSize, dtype=A.dtype)
-
-        if currentBlockSize == 0:
-            break
 
         if verbosityLevel > 0:
             print(f"iteration {iterationNumber}")
             print(f"current block size: {currentBlockSize}")
             print(f"eigenvalue(s):\n{_lambda}")
             print(f"residual norm(s):\n{residualNorms}")
+
+        if currentBlockSize == 0:
+            break
+
+        if currentBlockSize != previousBlockSize:
+            previousBlockSize = currentBlockSize
+            ident = np.eye(currentBlockSize, dtype=A.dtype)
 
         activeBlockVectorR = _as2d(blockVectorR[:, activeMask])
 
@@ -565,7 +574,7 @@ def lobpcg(
             if activeBlockVectorP is not None:
                 activeBlockVectorAP = activeBlockVectorAP / normal
                 activeBlockVectorAP = np.dot(activeBlockVectorAP, invR)
-                restart = False
+                restart = forcedRestart
             else:
                 restart = True
 
@@ -765,7 +774,8 @@ def lobpcg(
                           blockVectorY)
 
     # Making eigenvectors "exactly" othonormalized by final "exact" RR
-    gramXAX = np.dot(blockVectorX.T.conj(), A(blockVectorX))
+    blockVectorAX = A(blockVectorX)
+    gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
 
     blockVectorBX = blockVectorX
     if B is not None:
@@ -791,7 +801,6 @@ def lobpcg(
     if B is not None:
         blockVectorBX = np.dot(blockVectorBX, eigBlockVector)
         aux = blockVectorBX * _lambda[np.newaxis, :]
-
     else:
         aux = blockVectorX * _lambda[np.newaxis, :]
 
@@ -800,8 +809,8 @@ def lobpcg(
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(np.abs(aux))
 
-    lambdaHistory[iterationNumber + 2, :] = _lambda
-    residualNormsHistory[iterationNumber + 2, :] = residualNorms
+    lambdaHistory[bestIterationNumber + 1, :] = _lambda
+    residualNormsHistory[bestIterationNumber + 1, :] = residualNorms
 
     lambdaHistory = lambdaHistory[: bestIterationNumber + 2, :]
     residualNormsHistory = residualNormsHistory[: bestIterationNumber + 2, :]
