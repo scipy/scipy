@@ -95,9 +95,33 @@ def doctest_submodules(module_names, verbose, fail_fast):
     return all_success
 
 
-def doctest_single_file(fname):
-    result, history = testfile(fname, config=config, module_relative=False)
+def doctest_single_file(fname, verbose, fail_fast):
+    result, history = testfile(fname, config=config, module_relative=False,
+                               verbose=verbose, raise_on_error=fail_fast)
     return result.failed == 0
+
+
+def main(args):
+    if args.submodule and args.filename:
+        raise ValueError("Specify either a submodule or a single file, not both.")
+
+    if args.filename:
+        all_success = doctest_single_file(args.filename,
+                                          verbose=args.verbose,
+                                          fail_fast=args.fail_fast)
+    else:
+        name = args.submodule   # XXX : dance w/ subsubmodules : cluster.vq etc
+        submodule_names = [name]  if name else list(PUBLIC_SUBMODULES)
+        all_success = doctest_submodules(submodule_names,
+                                         verbose=args.verbose,
+                                         fail_fast=args.fail_fast)
+    # final report
+    if all_success:
+        sys.stderr.write('\n\n>>>> OK: doctests PASSED\n')
+        sys.exit(0)
+    else:
+        sys.stderr.write('\n\n>>>> ERROR: doctests FAILED\n')
+        sys.exit(1)
 
 
 if __name__ == "__main__":
@@ -112,29 +136,9 @@ if __name__ == "__main__":
     parser.add_argument( "-s", "--submodule", default=None,
                         help="Submodule whose tests to run (cluster,"
                              " constants, ...)")
-    parser.add_argument( "-t", "--tests", default=None,
+    parser.add_argument( "-t", "--filename", default=None,
                         help="Specify a .py file to check")
     args = parser.parse_args()
 
-    # TODO: verbosity
-
-    if args.submodule and args.tests:
-        raise ValueError("Specify either a submodule or a single file, not both.")
-
-    if args.tests:
-        all_success = doctest_single_file(args.tests)
-    else:
-        name = args.submodule   # XXX : dance w/ subsubmodules : cluster.vq etc
-        submodule_names = [name]  if name else list(PUBLIC_SUBMODULES)
-        all_success = doctest_submodules(submodule_names,
-                                         verbose=args.verbose,
-                                         fail_fast=args.fail_fast)
-
-    # final report
-    if all_success:
-        sys.stderr.write('\n\n>>>> OK: doctests PASSED\n')
-        sys.exit(0)
-    else:
-        sys.stderr.write('\n\n>>>> ERROR: doctests FAILED\n')
-        sys.exit(1)
+    main(args)
 
