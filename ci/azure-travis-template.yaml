@@ -76,6 +76,7 @@ steps:
     pybind11
     pytest
     pytest-xdist
+    pytest-timeout
   displayName: 'Install common python dependencies'
 - ${{ if eq(parameters.test_mode, 'full') }}:
   - script: pip install matplotlib scikit-umfpack scikit-sparse
