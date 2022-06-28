@@ -139,7 +139,7 @@ steps:
   displayName: 'Build SciPy'
 - script: |
     set -euo pipefail
-    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} ${COVERAGE:-} ${USE_WHEEL_BUILD:-} -- -rfEX --durations=10 2>&1 | tee runtests.log
+    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} ${COVERAGE:-} ${USE_WHEEL_BUILD:-} -- -rfEX --durations=10 --timeout=60 2>&1 | tee runtests.log
     tools/validate_runtests_log.py ${{ parameters.test_mode }} < runtests.log
   env:
     ${{ if eq(parameters.coverage, true) }}:
