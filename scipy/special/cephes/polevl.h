@@ -49,17 +49,25 @@
  * Direct inquiries to 30 Frost Street, Cambridge, MA 02140
  */
 
+/* Sources:
+ * [1] Holin et. al., "Polynomial and Rational Function Evaluation",
+ *     https://www.boost.org/doc/libs/1_61_0/libs/math/doc/html/math_toolkit/roots/rational.html
+ */
+
+/* Scipy changes:
+ * - 06-23-2016: add code for evaluating rational functions
+ */
+
 #ifndef CEPHES_POLEV
 #define CEPHES_POLEV
 
-#include "protos.h"
 #include <numpy/npy_common.h>
 
-static NPY_INLINE double polevl(double x, double coef[], int N)
+static NPY_INLINE double polevl(double x, const double coef[], int N)
 {
     double ans;
     int i;
-    double *p;
+    const double *p;
 
     p = coef;
     ans = *p++;
@@ -78,10 +86,10 @@ static NPY_INLINE double polevl(double x, double coef[], int N)
  * Otherwise same as polevl.
  */
 
-static NPY_INLINE double p1evl(double x, double coef[], int N)
+static NPY_INLINE double p1evl(double x, const double coef[], int N)
 {
     double ans;
-    double *p;
+    const double *p;
     int i;
 
     p = coef;
@@ -93,6 +101,57 @@ static NPY_INLINE double p1evl(double x, double coef[], int N)
     while (--i);
 
     return (ans);
+}
+
+/* Evaluate a rational function. See [1]. */
+
+static NPY_INLINE double ratevl(double x, const double num[], int M,
+                                          const double denom[], int N)
+{
+    int i, dir;
+    double y, num_ans, denom_ans;
+    double absx = fabs(x);
+    const double *p;
+
+    if (absx > 1) {
+	/* Evaluate as a polynomial in 1/x. */
+	dir = -1;
+	p = num + M;
+	y = 1 / x;
+    } else {
+	dir = 1;
+	p = num;
+	y = x;
+    }
+
+    /* Evaluate the numerator */
+    num_ans = *p;
+    p += dir;
+    for (i = 1; i <= M; i++) {
+	num_ans = num_ans * y + *p;
+	p += dir;
+    }
+
+    /* Evaluate the denominator */
+    if (absx > 1) {
+	p = denom + N;
+    } else {
+	p = denom;
+    }
+
+    denom_ans = *p;
+    p += dir;
+    for (i = 1; i <= N; i++) {
+	denom_ans = denom_ans * y + *p;
+	p += dir;
+    }
+
+    if (absx > 1) {
+	i = N - M;
+	return pow(x, i) * num_ans / denom_ans;
+    } else {
+	return num_ans / denom_ans;
+    }
 }
 
 #endif

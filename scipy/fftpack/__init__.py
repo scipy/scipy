@@ -1,7 +1,12 @@
 """
-==================================================
-Discrete Fourier transforms (:mod:`scipy.fftpack`)
-==================================================
+=========================================================
+Legacy discrete Fourier transforms (:mod:`scipy.fftpack`)
+=========================================================
+
+.. warning::
+
+   This submodule is now considered legacy, new code should use
+   :mod:`scipy.fft`.
 
 Fast Fourier Transforms (FFTs)
 ==============================
@@ -11,16 +16,20 @@ Fast Fourier Transforms (FFTs)
 
    fft - Fast (discrete) Fourier Transform (FFT)
    ifft - Inverse FFT
-   fft2 - Two dimensional FFT
-   ifft2 - Two dimensional inverse FFT
-   fftn - n-dimensional FFT
-   ifftn - n-dimensional inverse FFT
+   fft2 - 2-D FFT
+   ifft2 - 2-D inverse FFT
+   fftn - N-D FFT
+   ifftn - N-D inverse FFT
    rfft - FFT of strictly real-valued sequence
    irfft - Inverse of rfft
    dct - Discrete cosine transform
    idct - Inverse discrete cosine transform
+   dctn - N-D Discrete cosine transform
+   idctn - N-D Inverse discrete cosine transform
    dst - Discrete sine transform
    idst - Inverse discrete sine transform
+   dstn - N-D Discrete sine transform
+   idstn - N-D Inverse discrete sine transform
 
 Differential and pseudo-differential operators
 ==============================================
@@ -49,6 +58,7 @@ Helper functions
    ifftshift - The inverse of `fftshift`
    fftfreq - Return the Discrete Fourier Transform sample frequencies
    rfftfreq - DFT sample frequencies (for usage with rfft, irfft)
+   next_fast_len - Find the optimal length to zero-pad an FFT for speed
 
 Note that ``fftshift``, ``ifftshift`` and ``fftfreq`` are numpy functions
 exposed by ``fftpack``; importing them from ``numpy`` should be preferred.
@@ -68,17 +78,6 @@ Convolutions (:mod:`scipy.fftpack.convolve`)
 
 """
 
-# List of possibly useful functions in scipy.fftpack._fftpack:
-#   drfft
-#   zfft
-#   zrfft
-#   zfftnd
-#   destroy_drfft_cache
-#   destroy_zfft_cache
-#   destroy_zfftnd_cache
-
-from __future__ import division, print_function, absolute_import
-
 
 __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'fft2','ifft2',
@@ -86,23 +85,20 @@ __all__ = ['fft','ifft','fftn','ifftn','rfft','irfft',
            'tilbert','itilbert','hilbert','ihilbert',
            'sc_diff','cs_diff','cc_diff','ss_diff',
            'shift',
-           'rfftfreq'
+           'fftfreq', 'rfftfreq',
+           'fftshift', 'ifftshift',
+           'next_fast_len',
+           'dct', 'idct', 'dst', 'idst', 'dctn', 'idctn', 'dstn', 'idstn'
            ]
 
-from .fftpack_version import fftpack_version as __version__
+from ._basic import *
+from ._pseudo_diffs import *
+from ._helper import *
+from ._realtransforms import *
 
-from .basic import *
-from .pseudo_diffs import *
-from .helper import *
+# Deprecated namespaces, to be removed in v2.0.0
+from . import basic, helper, pseudo_diffs, realtransforms
 
-from numpy.dual import register_func
-for k in ['fft', 'ifft', 'fftn', 'ifftn', 'fft2', 'ifft2']:
-    register_func(k, eval(k))
-del k, register_func
-
-from .realtransforms import *
-__all__.extend(['dct', 'idct', 'dst', 'idst'])
-
-from numpy.testing import Tester
-test = Tester().test
-bench = Tester().bench
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

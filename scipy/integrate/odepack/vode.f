@@ -836,7 +836,7 @@ C-----------------------------------------------------------------------
 C Interrupting and Restarting
 C
 C If the integration of a given problem by DVODE is to be
-C interrrupted and then later continued, such as when restarting
+C interrupted and then later continued, such as when restarting
 C an interrupted run or alternating between two or more ODE problems,
 C the user should save, following the return from the last DVODE call
 C prior to the interruption, the contents of the call sequence
@@ -1084,7 +1084,7 @@ C
 C The variables stored in the internal COMMON blocks are as follows..
 C
 C ACNRM  = Weighted r.m.s. norm of accumulated correction vectors.
-C CCMXJ  = Threshhold on DRC for updating the Jacobian. (See DRC.)
+C CCMXJ  = Threshold on DRC for updating the Jacobian. (See DRC.)
 C CONP   = The saved value of TQ(5).
 C CRATE  = Estimated corrector convergence rate constant.
 C DRC    = Relative change in H*RL1 since last DVJAC call.
@@ -1127,7 +1127,7 @@ C                  HMIN, HMXI, N, METH, MITER, and/or matrix parameters.
 C          On return, DVSTEP sets JSTART = 1.
 C JSV    = Integer flag for Jacobian saving, = sign(MF).
 C KFLAG  = A completion code from DVSTEP with the following meanings..
-C               0      the step was succesful.
+C               0      the step was successful.
 C              -1      the requested error could not be achieved.
 C              -2      corrector convergence could not be achieved.
 C              -3, -4  fatal error in VNLS (can not occur here).
@@ -1508,11 +1508,8 @@ C Then Y is loaded from YH, and T is set to TN.
 C The optional output is loaded into the work arrays before returning.
 C-----------------------------------------------------------------------
 C The maximum number of steps was taken before reaching TOUT. ----------
- 500  MSG = 'DVODE--  At current T (=R1), MXSTEP (=I1) steps   '
-      CALL XERRWD (MSG, 50, 201, 1, 0, 0, 0, 0, ZERO, ZERO)
-      MSG = '      taken on this call before reaching TOUT     '
-      CALL XERRWD (MSG, 50, 201, 1, 1, MXSTEP, 0, 1, TN, ZERO)
-      ISTATE = -1
+c Error message removed, see gh-7888
+ 500  ISTATE = -1
       GO TO 580
 C EWT(i) .le. 0.0 for some i (not at start of problem). ----------------
  510  EWTI = RWORK(LEWT+I-1)

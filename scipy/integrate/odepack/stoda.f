@@ -86,7 +86,7 @@ c              -2  take the next step with a new value of h,
 c                    but with other inputs unchanged.
 c          on return, jstart is set to 1 to facilitate continuation.
 c kflag  = a completion code with the following meanings..
-c               0  the step was succesful.
+c               0  the step was successful.
 c              -1  the requested error could not be achieved.
 c              -2  corrector convergence could not be achieved.
 c              -3  fatal error in pjac or slvs.
@@ -184,7 +184,7 @@ c-----------------------------------------------------------------------
       nqnyh = nq*nyh
       rc = rc*el(1)/el0
       el0 = el(1)
-      conit = 0.5d0/dfloat(nq+2)
+      conit = 0.5d0/dble(nq+2)
       go to (160, 170, 200), iret
 c-----------------------------------------------------------------------
 c if h is being changed, the h ratio rh is checked against
@@ -427,7 +427,7 @@ c-----------------------------------------------------------------------
       nqm2 = min0(nq,mxords)
       go to 478
  470  continue
-      exsm = 1.0d0/dfloat(l)
+      exsm = 1.0d0/dble(l)
       rh1 = 1.0d0/(1.2d0*dsm**exsm + 0.0000012d0)
       rh1it = 2.0d0*rh1
       pdh = pdlast*dabs(h)
@@ -436,7 +436,7 @@ c-----------------------------------------------------------------------
       if (nq .le. mxords) go to 474
          nqm2 = mxords
          lm2 = mxords + 1
-         exm2 = 1.0d0/dfloat(lm2)
+         exm2 = 1.0d0/dble(lm2)
          lm2p1 = lm2 + 1
          dm2 = vmnorm (n, yh(1,lm2p1), ewt)/cm2(mxords)
          rh2 = 1.0d0/(1.2d0*dm2**exm2 + 0.0000012d0)
@@ -466,11 +466,11 @@ c if the step size for adams would be so small as to cause
 c roundoff pollution, we stay with bdf.
 c-----------------------------------------------------------------------
  480  continue
-      exsm = 1.0d0/dfloat(l)
+      exsm = 1.0d0/dble(l)
       if (mxordn .ge. nq) go to 484
          nqm1 = mxordn
          lm1 = mxordn + 1
-         exm1 = 1.0d0/dfloat(lm1)
+         exm1 = 1.0d0/dble(lm1)
          lm1p1 = lm1 + 1
          dm1 = vmnorm (n, yh(1,lm1p1), ewt)/cm1(mxordn)
          rh1 = 1.0d0/(1.2d0*dm1**exm1 + 0.0000012d0)
@@ -543,14 +543,14 @@ c-----------------------------------------------------------------------
       do 530 i = 1,n
  530    savf(i) = acor(i) - yh(i,lmax)
       dup = vmnorm (n, savf, ewt)/tesco(3,nq)
-      exup = 1.0d0/dfloat(l+1)
+      exup = 1.0d0/dble(l+1)
       rhup = 1.0d0/(1.4d0*dup**exup + 0.0000014d0)
- 540  exsm = 1.0d0/dfloat(l)
+ 540  exsm = 1.0d0/dble(l)
       rhsm = 1.0d0/(1.2d0*dsm**exsm + 0.0000012d0)
       rhdn = 0.0d0
       if (nq .eq. 1) go to 550
       ddn = vmnorm (n, yh(1,l), ewt)/tesco(1,nq)
-      exdn = 1.0d0/dfloat(nq)
+      exdn = 1.0d0/dble(nq)
       rhdn = 1.0d0/(1.3d0*ddn**exdn + 0.0000013d0)
 c if meth = 1, limit rh according to the stability region also. --------
  550  if (meth .eq. 2) go to 560
@@ -573,7 +573,7 @@ c if meth = 1, limit rh according to the stability region also. --------
  590  newq = l
       rh = rhup
       if (rh .lt. 1.1d0) go to 610
-      r = el(l)/dfloat(l)
+      r = el(l)/dble(l)
       do 600 i = 1,n
  600    yh(i,newq+1) = acor(i)*r
       go to 630
@@ -595,7 +595,7 @@ c-----------------------------------------------------------------------
       iret = 2
       go to 150
 c-----------------------------------------------------------------------
-c control reaches this section if 3 or more failures have occured.
+c control reaches this section if 3 or more failures have occurred.
 c if 10 failures have occurred, exit with kflag = -1.
 c it is assumed that the derivatives that have accumulated in the
 c yh array have errors of the wrong order.  hence the first

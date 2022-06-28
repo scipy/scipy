@@ -14,25 +14,26 @@ given where :math:`L=0.0` and :math:`S=1.0.` The nonstandard forms can be obtain
 (note :math:`U` is a standard uniform random variate).
 
 
-======================================  ==============================================================================================================================  =========================================================================================================================================
-Function Name                           Standard Function                                                                                                               Transformation
-======================================  ==============================================================================================================================  =========================================================================================================================================
-Cumulative Distribution Function (CDF)  :math:`F\left(x\right)`                                                                                                         :math:`F\left(x;L,S\right)=F\left(\frac{\left(x-L\right)}{S}\right)`
-Probability Density Function (PDF)      :math:`f\left(x\right)=F^{\prime}\left(x\right)`                                                                                :math:`f\left(x;L,S\right)=\frac{1}{S}f\left(\frac{\left(x-L\right)}{S}\right)`
-Percent Point Function (PPF)            :math:`G\left(q\right)=F^{-1}\left(q\right)`                                                                                    :math:`G\left(q;L,S\right)=L+SG\left(q\right)`
-Probability Sparsity Function (PSF)     :math:`g\left(q\right)=G^{\prime}\left(q\right)`                                                                                :math:`g\left(q;L,S\right)=Sg\left(q\right)`
-Hazard Function (HF)                    :math:`h_{a}\left(x\right)=\frac{f\left(x\right)}{1-F\left(x\right)}`                                                           :math:`h_{a}\left(x;L,S\right)=\frac{1}{S}h_{a}\left(\frac{\left(x-L\right)}{S}\right)`
-Cumulative Hazard Functon (CHF)         :math:`H_{a}\left(x\right)=` :math:`\log\frac{1}{1-F\left(x\right)}`                                                            :math:`H_{a}\left(x;L,S\right)=H_{a}\left(\frac{\left(x-L\right)}{S}\right)`
-Survival Function (SF)                  :math:`S\left(x\right)=1-F\left(x\right)`                                                                                       :math:`S\left(x;L,S\right)=S\left(\frac{\left(x-L\right)}{S}\right)`
-Inverse Survival Function (ISF)         :math:`Z\left(\alpha\right)=S^{-1}\left(\alpha\right)=G\left(1-\alpha\right)`                                                   :math:`Z\left(\alpha;L,S\right)=L+SZ\left(\alpha\right)`
-Moment Generating Function (MGF)        :math:`M_{Y}\left(t\right)=E\left[e^{Yt}\right]`                                                                                :math:`M_{X}\left(t\right)=e^{Lt}M_{Y}\left(St\right)`
-Random Variates                         :math:`Y=G\left(U\right)`                                                                                                       :math:`X=L+SY`
-(Differential) Entropy                  :math:`h\left[Y\right]=-\int f\left(y\right)\log f\left(y\right)dy`                                                             :math:`h\left[X\right]=h\left[Y\right]+\log S`
-(Non-central) Moments                   :math:`\mu_{n}^{\prime}=E\left[Y^{n}\right]`                                                                                    :math:`E\left[X^{n}\right]=L^{n}\sum_{k=0}^{N}\left(\begin{array}{c} n\\ k\end{array}\right)\left(\frac{S}{L}\right)^{k}\mu_{k}^{\prime}`
-Central Moments                         :math:`\mu_{n}=E\left[\left(Y-\mu\right)^{n}\right]`                                                                            :math:`E\left[\left(X-\mu_{X}\right)^{n}\right]=S^{n}\mu_{n}`
-mean (mode, median), var                :math:`\mu,\,\mu_{2}`                                                                                                           :math:`L+S\mu,\, S^{2}\mu_{2}`
-skewness, kurtosis                      :math:`\gamma_{1}=\frac{\mu_{3}}{\left(\mu_{2}\right)^{3/2}},\,` :math:`\gamma_{2}=\frac{\mu_{4}}{\left(\mu_{2}\right)^{2}}-3`  :math:`\gamma_{1},\,\gamma_{2}`
-======================================  ==============================================================================================================================  =========================================================================================================================================
+======================================  =============================================================================  =========================================================================================================================================
+Function Name                           Standard Function                                                              Transformation
+======================================  =============================================================================  =========================================================================================================================================
+Cumulative Distribution Function (CDF)  :math:`F\left(x\right)`                                                        :math:`F\left(x;L,S\right)=F\left(\frac{\left(x-L\right)}{S}\right)`
+Probability Density Function (PDF)      :math:`f\left(x\right)=F^{\prime}\left(x\right)`                               :math:`f\left(x;L,S\right)=\frac{1}{S}f\left(\frac{\left(x-L\right)}{S}\right)`
+Percent Point Function (PPF)            :math:`G\left(q\right)=F^{-1}\left(q\right)`                                   :math:`G\left(q;L,S\right)=L+SG\left(q\right)`
+Probability Sparsity Function (PSF)     :math:`g\left(q\right)=G^{\prime}\left(q\right)`                               :math:`g\left(q;L,S\right)=Sg\left(q\right)`
+Hazard Function (HF)                    :math:`h_{a}\left(x\right)=\frac{f\left(x\right)}{1-F\left(x\right)}`          :math:`h_{a}\left(x;L,S\right)=\frac{1}{S}h_{a}\left(\frac{\left(x-L\right)}{S}\right)`
+Cumulative Hazard Function (CHF)        :math:`H_{a}\left(x\right)=` :math:`\log\frac{1}{1-F\left(x\right)}`           :math:`H_{a}\left(x;L,S\right)=H_{a}\left(\frac{\left(x-L\right)}{S}\right)`
+Survival Function (SF)                  :math:`S\left(x\right)=1-F\left(x\right)`                                      :math:`S\left(x;L,S\right)=S\left(\frac{\left(x-L\right)}{S}\right)`
+Inverse Survival Function (ISF)         :math:`Z\left(\alpha\right)=S^{-1}\left(\alpha\right)=G\left(1-\alpha\right)`  :math:`Z\left(\alpha;L,S\right)=L+SZ\left(\alpha\right)`
+Moment Generating Function (MGF)        :math:`M_{Y}\left(t\right)=E\left[e^{Yt}\right]`                               :math:`M_{X}\left(t\right)=e^{Lt}M_{Y}\left(St\right)`
+Random Variates                         :math:`Y=G\left(U\right)`                                                      :math:`X=L+SY`
+(Differential) Entropy                  :math:`h\left[Y\right]=-\int f\left(y\right)\log f\left(y\right)dy`            :math:`h\left[X\right]=h\left[Y\right]+\log S`
+(Non-central) Moments                   :math:`\mu_{n}^{\prime}=E\left[Y^{n}\right]`                                   :math:`E\left[X^{n}\right]=L^{n}\sum_{k=0}^{N}\left(\begin{array}{c} n\\ k\end{array}\right)\left(\frac{S}{L}\right)^{k}\mu_{k}^{\prime}`
+Central Moments                         :math:`\mu_{n}=E\left[\left(Y-\mu\right)^{n}\right]`                           :math:`E\left[\left(X-\mu_{X}\right)^{n}\right]=S^{n}\mu_{n}`
+mean (mode, median), var                :math:`\mu,\,\mu_{2}`                                                          :math:`L+S\mu,\, S^{2}\mu_{2}`
+skewness                                :math:`\gamma_{1}=\frac{\mu_{3}}{\left(\mu_{2}\right)^{3/2}}`                  :math:`\gamma_{1}`
+kurtosis                                :math:`\gamma_{2}=\frac{\mu_{4}}{\left(\mu_{2}\right)^{2}}-3`                  :math:`\gamma_{2}`
+======================================  =============================================================================  =========================================================================================================================================
 
 
 Moments
@@ -166,20 +167,40 @@ References
 
 -  Documentation for ranlib, rv2, cdflib
 
--  Eric Weisstein~s world of mathematics http://mathworld.wolfram.com/,
+-  Eric Weisstein's world of mathematics http://mathworld.wolfram.com/,
    http://mathworld.wolfram.com/topics/StatisticalDistributions.html
 
 -  Documentation to Regress+ by Michael McLaughlin item Engineering and
    Statistics Handbook (NIST),
-   http://www.itl.nist.gov/div898/handbook/index.htm
+   https://www.itl.nist.gov/div898/handbook/
 
 -  Documentation for DATAPLOT from NIST,
-   http://www.itl.nist.gov/div898/software/dataplot/distribu.htm
+   https://www.itl.nist.gov/div898/software/dataplot/distribu.htm
 
 -  Norman Johnson, Samuel Kotz, and N. Balakrishnan Continuous
    Univariate Distributions, second edition, Volumes I and II, Wiley &
    Sons, 1994.
 
+
+In the tutorials several special functions appear repeatedly and are listed here.
+
+===============================================================  ======================================================================================  =============================================================================================================================
+Symbol                                                           Description                                                                             Definition
+===============================================================  ======================================================================================  =============================================================================================================================
+:math:`\gamma\left(s, x\right)`                                  lower incomplete Gamma function                                                         :math:`\int_0^x t^{s-1} e^{-t} dt`
+:math:`\Gamma\left(s, x\right)`                                  upper incomplete Gamma function                                                         :math:`\int_x^\infty t^{s-1} e^{-t} dt`
+:math:`B\left(x;a,b\right)`                                      incomplete Beta function                                                                :math:`\int_{0}^{x} t^{a-1}\left(1-t\right)^{b-1} dt`
+:math:`I\left(x;a,b\right)`                                      regularized incomplete Beta function                                                    :math:`\frac{\Gamma\left(a+b\right)}{\Gamma\left(a\right)\Gamma\left(b\right)} \int_{0}^{x} t^{a-1}\left(1-t\right)^{b-1} dt`
+:math:`\phi\left(x\right)`                                       PDF for normal distribution                                                             :math:`\frac{1}{\sqrt{2\pi}}e^{-x^{2}/2}`
+:math:`\Phi\left(x\right)`                                       CDF for normal distribution                                                             :math:`\int_{-\infty}^{x}\phi\left(t\right) dt = \frac{1}{2}+\frac{1}{2}\mathrm{erf}\left(\frac{x}{\sqrt{2}}\right)`
+:math:`\psi\left(z\right)`                                       digamma function                                                                        :math:`\frac{d}{dz} \log\left(\Gamma\left(z\right)\right)`
+:math:`\psi_{n}\left(z\right)`                                   polygamma function                                                                      :math:`\frac{d^{n+1}}{dz^{n+1}}\log\left(\Gamma\left(z\right)\right)`
+:math:`I_{\nu}\left(y\right)`                                    modified Bessel function of the first kind
+:math:`\mathrm{Ei}(\mathrm{z})`                                  exponential integral                                                                    :math:`-\int_{-x}^\infty \frac{e^{-t}}{t} dt`
+:math:`\zeta\left(n\right)`                                      Riemann zeta function                                                                   :math:`\sum_{k=1}^{\infty} \frac{1}{k^{n}}`
+:math:`\zeta\left(n,z\right)`                                    Hurwitz zeta function                                                                   :math:`\sum_{k=0}^{\infty} \frac{1}{\left(k+z\right)^{n}}`
+:math:`\,{}_{p}F_{q}(a_{1},\ldots,a_{p};b_{1},\ldots,b_{q};z)`   Hypergeometric function                                                                 :math:`\sum_{n=0}^{\infty} {\frac{(a_{1})_{n}\cdots(a_{p})_{n}}{(b_{1})_{n}\cdots(b_{q})_{n}}} \,{\frac{z^{n}}{n!}}`
+===============================================================  ======================================================================================  =============================================================================================================================
 
 
 Continuous Distributions in `scipy.stats`
@@ -194,7 +215,9 @@ Continuous Distributions in `scipy.stats`
    continuous_betaprime
    continuous_bradford
    continuous_burr
+   continuous_burr12
    continuous_cauchy
+   continuous_skewcauchy
    continuous_chi
    continuous_chi2
    continuous_cosine
@@ -209,8 +232,6 @@ Continuous Distributions in `scipy.stats`
    continuous_foldcauchy
    continuous_foldnorm
    continuous_f
-   continuous_frechet_r
-   continuous_frechet_l
    continuous_gamma
    continuous_genlogistic
    continuous_genpareto
@@ -218,7 +239,10 @@ Continuous Distributions in `scipy.stats`
    continuous_genextreme
    continuous_gengamma
    continuous_genhalflogistic
-   continuous_gilbrat
+   continuous_genhyperbolic
+   continuous_geninvgauss
+   continuous_gennorm
+   continuous_gibrat
    continuous_gompertz
    continuous_gumbel_r
    continuous_gumbel_l
@@ -233,14 +257,17 @@ Continuous Distributions in `scipy.stats`
    continuous_johnsonsb
    continuous_johnsonsu
    continuous_ksone
+   continuous_kstwo
    continuous_kstwobign
    continuous_laplace
+   continuous_laplace_asymmetric
    continuous_levy_l
    continuous_levy
    continuous_logistic
    continuous_loglaplace
    continuous_loggamma
    continuous_lognorm
+   continuous_loguniform
    continuous_maxwell
    continuous_mielke
    continuous_nakagami
@@ -248,6 +275,7 @@ Continuous Distributions in `scipy.stats`
    continuous_ncf
    continuous_nct
    continuous_norm
+   continuous_norminvgauss
    continuous_pareto
    continuous_lomax
    continuous_powerlognorm
@@ -256,15 +284,19 @@ Continuous Distributions in `scipy.stats`
    continuous_rdist
    continuous_rayleigh
    continuous_rice
-   continuous_reciprocal
    continuous_recipinvgauss
    continuous_semicircular
+   continuous_studentized_range
    continuous_t
+   continuous_trapezoid
    continuous_triang
    continuous_truncexpon
    continuous_truncnorm
+   continuous_truncweibull_min
    continuous_tukeylambda
    continuous_uniform
    continuous_vonmises
    continuous_wald
+   continuous_weibull_max
+   continuous_weibull_min
    continuous_wrapcauchy

@@ -5,18 +5,48 @@ Optimization and root finding (:mod:`scipy.optimize`)
 
 .. currentmodule:: scipy.optimize
 
-Optimization
-============
+SciPy ``optimize`` provides functions for minimizing (or maximizing)
+objective functions, possibly subject to constraints. It includes
+solvers for nonlinear problems (with support for both local and global
+optimization algorithms), linear programing, constrained
+and nonlinear least-squares, root finding, and curve fitting.
 
-Local Optimization
-------------------
+Common functions and objects, shared across different solvers, are:
 
 .. autosummary::
    :toctree: generated/
 
-   minimize - Unified interface for minimizers of multivariate functions
-   minimize_scalar - Unified interface for minimizers of univariate functions
-   OptimizeResult - The optimization result returned by some optimizers
+   show_options - Show specific options optimization solvers.
+   OptimizeResult - The optimization result returned by some optimizers.
+   OptimizeWarning - The optimization encountered problems.
+
+
+Optimization
+============
+
+Scalar functions optimization
+-----------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   minimize_scalar - Interface for minimizers of univariate functions
+
+The `minimize_scalar` function supports the following methods:
+
+.. toctree::
+
+   optimize.minimize_scalar-brent
+   optimize.minimize_scalar-bounded
+   optimize.minimize_scalar-golden
+
+Local (multivariate) optimization
+---------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   minimize - Interface for minimizers of multivariate functions.
 
 The `minimize` function supports the following methods:
 
@@ -31,89 +61,81 @@ The `minimize` function supports the following methods:
    optimize.minimize-tnc
    optimize.minimize-cobyla
    optimize.minimize-slsqp
+   optimize.minimize-trustconstr
    optimize.minimize-dogleg
    optimize.minimize-trustncg
+   optimize.minimize-trustkrylov
+   optimize.minimize-trustexact
 
-The `minimize_scalar` function supports the following methods:
-
-.. toctree::
-
-   optimize.minimize_scalar-brent
-   optimize.minimize_scalar-bounded
-   optimize.minimize_scalar-golden
-
-The specific optimization method interfaces below in this subsection are
-not recommended for use in new scripts; all of these methods are accessible
-via a newer, more consistent interface provided by the functions above.
-
-General-purpose multivariate methods:
+Constraints are passed to `minimize` function as a single object or
+as a list of objects from the following classes:
 
 .. autosummary::
    :toctree: generated/
 
-   fmin - Nelder-Mead Simplex algorithm
-   fmin_powell - Powell's (modified) level set method
-   fmin_cg - Non-linear (Polak-Ribiere) conjugate gradient algorithm
-   fmin_bfgs - Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno)
-   fmin_ncg - Line-search Newton Conjugate Gradient
+   NonlinearConstraint - Class defining general nonlinear constraints.
+   LinearConstraint - Class defining general linear constraints.
 
-Constrained multivariate methods:
+Simple bound constraints are handled separately and there is a special class
+for them:
 
 .. autosummary::
    :toctree: generated/
 
-   fmin_l_bfgs_b - Zhu, Byrd, and Nocedal's constrained optimizer
-   fmin_tnc - Truncated Newton code
-   fmin_cobyla - Constrained optimization by linear approximation
-   fmin_slsqp - Minimization using sequential least-squares programming
-   differential_evolution - stochastic minimization using differential evolution
+   Bounds - Bound constraints.
 
-Univariate (scalar) minimization methods:
-
-.. autosummary::
-   :toctree: generated/
-
-   fminbound - Bounded minimization of a scalar function
-   brent - 1-D function minimization using Brent method
-   golden - 1-D function minimization using Golden Section method
-
-Equation (Local) Minimizers
----------------------------
+Quasi-Newton strategies implementing `HessianUpdateStrategy`
+interface can be used to approximate the Hessian in `minimize`
+function (available only for the 'trust-constr' method). Available
+quasi-Newton methods implementing this interface are:
 
 .. autosummary::
    :toctree: generated/
 
-   leastsq - Minimize the sum of squares of M equations in N unknowns
-   nnls - Linear least-squares problem with non-negativity constraint
+   BFGS - Broyden-Fletcher-Goldfarb-Shanno (BFGS) Hessian update strategy.
+   SR1 - Symmetric-rank-1 Hessian update strategy.
 
-Global Optimization
+Global optimization
 -------------------
 
 .. autosummary::
    :toctree: generated/
 
-   basinhopping - Basinhopping stochastic optimizer
-   brute - Brute force searching optimizer
-   differential_evolution - stochastic minimization using differential evolution
+   basinhopping - Basinhopping stochastic optimizer.
+   brute - Brute force searching optimizer.
+   differential_evolution - Stochastic optimizer using differential evolution.
 
-Rosenbrock function
--------------------
+   shgo - Simplicial homology global optimizer.
+   dual_annealing - Dual annealing stochastic optimizer.
+   direct - DIRECT (Dividing Rectangles) optimizer.
 
-.. autosummary::
-   :toctree: generated/
+Least-squares and curve fitting
+===============================
 
-   rosen - The Rosenbrock function.
-   rosen_der - The derivative of the Rosenbrock function.
-   rosen_hess - The Hessian matrix of the Rosenbrock function.
-   rosen_hess_prod - Product of the Rosenbrock Hessian with a vector.
-
-Fitting
-=======
+Nonlinear least-squares
+-----------------------
 
 .. autosummary::
    :toctree: generated/
 
-   curve_fit -- Fit curve to a set of points
+   least_squares - Solve a nonlinear least-squares problem with bounds on the variables.
+
+Linear least-squares
+--------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   nnls - Linear least-squares problem with non-negativity constraint.
+   lsq_linear - Linear least-squares problem with bound constraints.
+
+Curve fitting
+-------------
+
+.. autosummary::
+   :toctree: generated/
+
+   curve_fit -- Fit curve to a set of points.
 
 Root finding
 ============
@@ -123,31 +145,77 @@ Scalar functions
 .. autosummary::
    :toctree: generated/
 
-   brentq - quadratic interpolation Brent method
-   brenth - Brent method, modified by Harris with hyperbolic extrapolation
-   ridder - Ridder's method
-   bisect - Bisection method
-   newton - Secant method or Newton's method
+   root_scalar - Unified interface for nonlinear solvers of scalar functions.
+   brentq - quadratic interpolation Brent method.
+   brenth - Brent method, modified by Harris with hyperbolic extrapolation.
+   ridder - Ridder's method.
+   bisect - Bisection method.
+   newton - Newton's method (also Secant and Halley's methods).
+   toms748 - Alefeld, Potra & Shi Algorithm 748.
+   RootResults - The root finding result returned by some root finders.
+
+The `root_scalar` function supports the following methods:
+
+.. toctree::
+
+   optimize.root_scalar-brentq
+   optimize.root_scalar-brenth
+   optimize.root_scalar-bisect
+   optimize.root_scalar-ridder
+   optimize.root_scalar-newton
+   optimize.root_scalar-toms748
+   optimize.root_scalar-secant
+   optimize.root_scalar-halley
+
+
+
+The table below lists situations and appropriate methods, along with
+*asymptotic* convergence rates per iteration (and per function evaluation)
+for successful convergence to a simple root(*).
+Bisection is the slowest of them all, adding one bit of accuracy for each
+function evaluation, but is guaranteed to converge.
+The other bracketing methods all (eventually) increase the number of accurate
+bits by about 50% for every function evaluation.
+The derivative-based methods, all built on `newton`, can converge quite quickly
+if the initial value is close to the root.  They can also be applied to
+functions defined on (a subset of) the complex plane.
+
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| Domain of f | Bracket? |    Derivatives?      | Solvers     |        Convergence           |
++             +          +----------+-----------+             +-------------+----------------+
+|             |          | `fprime` | `fprime2` |             | Guaranteed? |  Rate(s)(*)    |
++=============+==========+==========+===========+=============+=============+================+
+| `R`         | Yes      | N/A      | N/A       | - bisection | - Yes       | - 1 "Linear"   |
+|             |          |          |           | - brentq    | - Yes       | - >=1, <= 1.62 |
+|             |          |          |           | - brenth    | - Yes       | - >=1, <= 1.62 |
+|             |          |          |           | - ridder    | - Yes       | - 2.0 (1.41)   |
+|             |          |          |           | - toms748   | - Yes       | - 2.7 (1.65)   |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| `R` or `C`  | No       | No       | No        | secant      | No          | 1.62 (1.62)    |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| `R` or `C`  | No       | Yes      | No        | newton      | No          | 2.00 (1.41)    |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+| `R` or `C`  | No       | Yes      | Yes       | halley      | No          | 3.00 (1.44)    |
++-------------+----------+----------+-----------+-------------+-------------+----------------+
+
+.. seealso::
+
+   `scipy.optimize.cython_optimize` -- Typed Cython versions of zeros functions
 
 Fixed point finding:
 
 .. autosummary::
    :toctree: generated/
 
-   fixed_point - Single-variable fixed-point solver
+   fixed_point - Single-variable fixed-point solver.
 
 Multidimensional
 ----------------
 
-General nonlinear solvers:
-
 .. autosummary::
    :toctree: generated/
 
-   root - Unified interface for nonlinear solvers of multivariate functions
-   fsolve - Non-linear multi-variable equation solver
-   broyden1 - Broyden's first method
-   broyden2 - Broyden's second method
+   root - Unified interface for nonlinear solvers of multivariate functions.
 
 The `root` function supports the following methods:
 
@@ -164,6 +232,152 @@ The `root` function supports the following methods:
    optimize.root-krylov
    optimize.root-dfsane
 
+Linear programming / MILP
+=========================
+
+.. autosummary::
+   :toctree: generated/
+
+   milp -- Mixed integer linear programming.
+   linprog -- Unified interface for minimizers of linear programming problems.
+
+The `linprog` function supports the following methods:
+
+.. toctree::
+
+   optimize.linprog-simplex
+   optimize.linprog-interior-point
+   optimize.linprog-revised_simplex
+   optimize.linprog-highs-ipm
+   optimize.linprog-highs-ds
+   optimize.linprog-highs
+
+The simplex, interior-point, and revised simplex methods support callback
+functions, such as:
+
+.. autosummary::
+   :toctree: generated/
+
+   linprog_verbose_callback -- Sample callback function for linprog (simplex).
+
+Assignment problems
+===================
+
+.. autosummary::
+   :toctree: generated/
+
+   linear_sum_assignment -- Solves the linear-sum assignment problem.
+   quadratic_assignment -- Solves the quadratic assignment problem.
+
+The `quadratic_assignment` function supports the following methods:
+
+.. toctree::
+
+   optimize.qap-faq
+   optimize.qap-2opt
+
+Utilities
+=========
+
+Finite-difference approximation
+-------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   approx_fprime - Approximate the gradient of a scalar function.
+   check_grad - Check the supplied derivative using finite differences.
+
+
+Line search
+-----------
+
+.. autosummary::
+   :toctree: generated/
+
+   bracket - Bracket a minimum, given two starting points.
+   line_search - Return a step that satisfies the strong Wolfe conditions.
+
+Hessian approximation
+---------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian.
+   HessianUpdateStrategy - Interface for implementing Hessian update strategies
+
+Benchmark problems
+------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   rosen - The Rosenbrock function.
+   rosen_der - The derivative of the Rosenbrock function.
+   rosen_hess - The Hessian matrix of the Rosenbrock function.
+   rosen_hess_prod - Product of the Rosenbrock Hessian with a vector.
+
+Legacy functions
+================
+
+The functions below are not recommended for use in new scripts;
+all of these methods are accessible via a newer, more consistent
+interfaces, provided by the interfaces above.
+
+Optimization
+------------
+
+General-purpose multivariate methods:
+
+.. autosummary::
+   :toctree: generated/
+
+   fmin - Nelder-Mead Simplex algorithm.
+   fmin_powell - Powell's (modified) level set method.
+   fmin_cg - Non-linear (Polak-Ribiere) conjugate gradient algorithm.
+   fmin_bfgs - Quasi-Newton method (Broydon-Fletcher-Goldfarb-Shanno).
+   fmin_ncg - Line-search Newton Conjugate Gradient.
+
+Constrained multivariate methods:
+
+.. autosummary::
+   :toctree: generated/
+
+   fmin_l_bfgs_b - Zhu, Byrd, and Nocedal's constrained optimizer.
+   fmin_tnc - Truncated Newton code.
+   fmin_cobyla - Constrained optimization by linear approximation.
+   fmin_slsqp - Minimization using sequential least-squares programming.
+
+Univariate (scalar) minimization methods:
+
+.. autosummary::
+   :toctree: generated/
+
+   fminbound - Bounded minimization of a scalar function.
+   brent - 1-D function minimization using Brent method.
+   golden - 1-D function minimization using Golden Section method.
+
+Least-squares
+-------------
+
+.. autosummary::
+   :toctree: generated/
+
+   leastsq - Minimize the sum of squares of M equations in N unknowns.
+
+Root finding
+------------
+
+General nonlinear solvers:
+
+.. autosummary::
+   :toctree: generated/
+
+   fsolve - Non-linear multivariable equation solver.
+   broyden1 - Broyden's first method.
+   broyden2 - Broyden's second method.
+
 Large-scale nonlinear solvers:
 
 .. autosummary::
@@ -172,7 +386,7 @@ Large-scale nonlinear solvers:
    newton_krylov
    anderson
 
-Simple iterations:
+Simple iteration solvers:
 
 .. autosummary::
    :toctree: generated/
@@ -181,60 +395,43 @@ Simple iterations:
    linearmixing
    diagbroyden
 
-:mod:`Additional information on the nonlinear solvers <scipy.optimize.nonlin>`
-
-Linear Programming
-==================
-
-Simplex Algorithm:
-
-.. autosummary::
-   :toctree: generated/
-
-   linprog -- Linear programming using the simplex algorithm
-
-The `linprog` function supports the following methods:
-
-.. toctree::
-
-   optimize.linprog-simplex
-
-
-Utilities
-=========
-
-.. autosummary::
-   :toctree: generated/
-
-   approx_fprime - Approximate the gradient of a scalar function
-   bracket - Bracket a minimum, given two starting points
-   check_grad - Check the supplied derivative using finite differences
-   line_search - Return a step that satisfies the strong Wolfe conditions
-
-   show_options - Show specific options optimization solvers
-   LbfgsInvHessProduct - Linear operator for L-BFGS approximate inverse Hessian
-
 """
 
-from __future__ import division, print_function, absolute_import
-
-from .optimize import *
+from ._optimize import *
 from ._minimize import *
 from ._root import *
-from .minpack import *
-from .zeros import *
-from .lbfgsb import fmin_l_bfgs_b, LbfgsInvHessProduct
-from .tnc import fmin_tnc
-from .cobyla import fmin_cobyla
-from .nonlin import *
-from .slsqp import fmin_slsqp
-from .nnls import nnls
+from ._root_scalar import *
+from ._minpack_py import *
+from ._zeros_py import *
+from ._lbfgsb_py import fmin_l_bfgs_b, LbfgsInvHessProduct
+from ._tnc import fmin_tnc
+from ._cobyla_py import fmin_cobyla
+from ._nonlin import *
+from ._slsqp_py import fmin_slsqp
+from ._nnls import nnls
 from ._basinhopping import basinhopping
 from ._linprog import linprog, linprog_verbose_callback
+from ._lsap import linear_sum_assignment
 from ._differentialevolution import differential_evolution
+from ._lsq import least_squares, lsq_linear
+from ._constraints import (NonlinearConstraint,
+                           LinearConstraint,
+                           Bounds)
+from ._hessian_update_strategy import HessianUpdateStrategy, BFGS, SR1
+from ._shgo import shgo
+from ._dual_annealing import dual_annealing
+from ._qap import quadratic_assignment
+from ._direct_py import direct
+from ._milp import milp
 
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    cobyla, lbfgsb, linesearch, minpack, minpack2, moduleTNC, nonlin, optimize,
+    slsqp, tnc, zeros
+)
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
-bench = Tester().bench
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

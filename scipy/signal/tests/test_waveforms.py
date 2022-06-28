@@ -1,11 +1,9 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy.testing import (TestCase, assert_almost_equal, assert_equal,
-                           assert_, assert_raises, run_module_suite,
-                           assert_allclose)
+from numpy.testing import (assert_almost_equal, assert_equal,
+                           assert_, assert_allclose, assert_array_equal)
+from pytest import raises as assert_raises
 
-import scipy.signal.waveforms as waveforms
+import scipy.signal._waveforms as waveforms
 
 
 # These chirp_* functions are the instantaneous frequencies of the signals
@@ -35,8 +33,10 @@ def chirp_hyperbolic(t, f0, f1, t1):
 
 
 def compute_frequency(t, theta):
-    """Compute theta'(t)/(2*pi), where theta'(t) is the derivative of theta(t)."""
-    # Assume theta and t are 1D numpy arrays.
+    """
+    Compute theta'(t)/(2*pi), where theta'(t) is the derivative of theta(t).
+    """
+    # Assume theta and t are 1-D NumPy arrays.
     # Assume that t is uniformly spaced.
     dt = t[1] - t[0]
     f = np.diff(theta)/(2*np.pi) / dt
@@ -44,7 +44,7 @@ def compute_frequency(t, theta):
     return tf, f
 
 
-class TestChirp(TestCase):
+class TestChirp:
 
     def test_linear_at_zero(self):
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='linear')
@@ -219,7 +219,7 @@ class TestChirp(TestCase):
         assert_equal(int_result, float_result, err_msg=err_msg)
 
 
-class TestSweepPoly(TestCase):
+class TestSweepPoly:
 
     def test_sweep_poly_quad1(self):
         p = np.poly1d([1.0, 0.0, 1.0])
@@ -287,7 +287,7 @@ class TestSweepPoly(TestCase):
         assert_(abserr < 1e-6)
 
 
-class TestGaussPulse(TestCase):
+class TestGaussPulse:
 
     def test_integer_fc(self):
         float_result = waveforms.gausspulse('cutoff', fc=1000.0)
@@ -314,5 +314,38 @@ class TestGaussPulse(TestCase):
         assert_equal(int_result, float_result, err_msg=err_msg)
 
 
-if __name__ == "__main__":
-    run_module_suite()
+class TestUnitImpulse:
+
+    def test_no_index(self):
+        assert_array_equal(waveforms.unit_impulse(7), [1, 0, 0, 0, 0, 0, 0])
+        assert_array_equal(waveforms.unit_impulse((3, 3)),
+                           [[1, 0, 0], [0, 0, 0], [0, 0, 0]])
+
+    def test_index(self):
+        assert_array_equal(waveforms.unit_impulse(10, 3),
+                           [0, 0, 0, 1, 0, 0, 0, 0, 0, 0])
+        assert_array_equal(waveforms.unit_impulse((3, 3), (1, 1)),
+                           [[0, 0, 0], [0, 1, 0], [0, 0, 0]])
+
+        # Broadcasting
+        imp = waveforms.unit_impulse((4, 4), 2)
+        assert_array_equal(imp, np.array([[0, 0, 0, 0],
+                                          [0, 0, 0, 0],
+                                          [0, 0, 1, 0],
+                                          [0, 0, 0, 0]]))
+
+    def test_mid(self):
+        assert_array_equal(waveforms.unit_impulse((3, 3), 'mid'),
+                           [[0, 0, 0], [0, 1, 0], [0, 0, 0]])
+        assert_array_equal(waveforms.unit_impulse(9, 'mid'),
+                           [0, 0, 0, 0, 1, 0, 0, 0, 0])
+
+    def test_dtype(self):
+        imp = waveforms.unit_impulse(7)
+        assert_(np.issubdtype(imp.dtype, np.floating))
+
+        imp = waveforms.unit_impulse(5, 3, dtype=int)
+        assert_(np.issubdtype(imp.dtype, np.integer))
+
+        imp = waveforms.unit_impulse((5, 2), (3, 1), dtype=complex)
+        assert_(np.issubdtype(imp.dtype, np.complexfloating))

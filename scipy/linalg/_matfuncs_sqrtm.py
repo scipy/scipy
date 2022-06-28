@@ -4,8 +4,6 @@ Matrix square root for general matrices and for upper triangular matrices.
 This module exists to avoid cyclic imports.
 
 """
-from __future__ import division, print_function, absolute_import
-
 __all__ = ['sqrtm']
 
 import numpy as np
@@ -14,13 +12,16 @@ from scipy._lib._util import _asarray_validated
 
 
 # Local imports
-from .misc import norm
+from ._misc import norm
 from .lapack import ztrsyl, dtrsyl
-from .decomp_schur import schur, rsf2csf
+from ._decomp_schur import schur, rsf2csf
 
 
 class SqrtmError(np.linalg.LinAlgError):
     pass
+
+
+from ._matfuncs_sqrtm_triu import within_block_loop
 
 
 def _sqrtm_triu(T, blocksize=64):
@@ -51,8 +52,15 @@ def _sqrtm_triu(T, blocksize=64):
     """
     T_diag = np.diag(T)
     keep_it_real = np.isrealobj(T) and np.min(T_diag) >= 0
+
+    # Cast to complex as necessary + ensure double precision
     if not keep_it_real:
-        T_diag = T_diag.astype(complex)
+        T = np.asarray(T, dtype=np.complex128, order="C")
+        T_diag = np.asarray(T_diag, dtype=np.complex128)
+    else:
+        T = np.asarray(T, dtype=np.float64, order="C")
+        T_diag = np.asarray(T_diag, dtype=np.float64)
+
     R = np.diag(np.sqrt(T_diag))
 
     # Compute the number of blocks to use; use at least one block.
@@ -75,27 +83,21 @@ def _sqrtm_triu(T, blocksize=64):
             start_stop_pairs.append((start, start + size))
             start += size
 
-    # Within-block interactions.
-    for start, stop in start_stop_pairs:
-        for j in range(start, stop):
-            for i in range(j-1, start-1, -1):
-                s = 0
-                if j - i > 1:
-                    s = R[i, i+1:j].dot(R[i+1:j, j])
-                denom = R[i, i] + R[j, j]
-                if not denom:
-                    raise SqrtmError('failed to find the matrix square root')
-                R[i,j] = (T[i,j] - s) / denom
+    # Within-block interactions (Cythonized)
+    try:
+        within_block_loop(R, T, start_stop_pairs, nblocks)
+    except RuntimeError as e:
+        raise SqrtmError(*e.args) from e
 
-    # Between-block interactions.
+    # Between-block interactions (Cython would give no significant speedup)
     for j in range(nblocks):
         jstart, jstop = start_stop_pairs[j]
         for i in range(j-1, -1, -1):
             istart, istop = start_stop_pairs[i]
             S = T[istart:istop, jstart:jstop]
             if j - i > 1:
-                S = S - R[istart:istop, istop:jstart].dot(
-                        R[istop:jstart, jstart:jstop])
+                S = S - R[istart:istop, istop:jstart].dot(R[istop:jstart,
+                                                            jstart:jstop])
 
             # Invoke LAPACK.
             # For more details, see the solve_sylvester implemention
@@ -165,7 +167,7 @@ def sqrtm(A, disp=True, blocksize=64):
     if keep_it_real:
         T, Z = schur(A)
         if not np.array_equal(T, np.triu(T)):
-            T, Z = rsf2csf(T,Z)
+            T, Z = rsf2csf(T, Z)
     else:
         T, Z = schur(A, output='complex')
     failflag = False
@@ -173,21 +175,18 @@ def sqrtm(A, disp=True, blocksize=64):
         R = _sqrtm_triu(T, blocksize=blocksize)
         ZH = np.conjugate(Z).T
         X = Z.dot(R).dot(ZH)
-    except SqrtmError as e:
+    except SqrtmError:
         failflag = True
         X = np.empty_like(A)
         X.fill(np.nan)
 
     if disp:
-        nzeig = np.any(np.diag(T) == 0)
-        if nzeig:
-            print("Matrix is singular and may not have a square root.")
-        elif failflag:
+        if failflag:
             print("Failed to find a square root.")
         return X
     else:
         try:
-            arg2 = norm(X.dot(X) - A,'fro')**2 / norm(A,'fro')
+            arg2 = norm(X.dot(X) - A, 'fro')**2 / norm(A, 'fro')
         except ValueError:
             # NaNs in matrix
             arg2 = np.inf

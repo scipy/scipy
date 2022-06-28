@@ -1,7 +1,5 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy.testing import (run_module_suite, assert_allclose, assert_equal,
+from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal, assert_array_equal,
                            assert_array_almost_equal)
 
@@ -30,7 +28,7 @@ def test_polyder():
         ([[3, 2, 1], [5, 6, 7]], 3, [[0], [0]]),
     ]
     for p, m, expected in cases:
-        yield check_polyder, np.array(p).T, m, np.array(expected).T
+        check_polyder(np.array(p).T, m, np.array(expected).T)
 
 
 #--------------------------------------------------------------------
@@ -40,7 +38,7 @@ def test_polyder():
 def alt_sg_coeffs(window_length, polyorder, pos):
     """This is an alternative implementation of the SG coefficients.
 
-    It uses numpy.polyfit and numpy.polyval.  The results should be
+    It uses numpy.polyfit and numpy.polyval. The results should be
     equivalent to those of savgol_coeffs(), but this implementation
     is slower.
 
@@ -89,7 +87,7 @@ def test_sg_coeffs_compare():
     # Compare savgol_coeffs() to alt_sg_coeffs().
     for window_length in range(1, 8, 2):
         for order in range(window_length):
-            yield compare_coeffs_to_alt, window_length, order
+            compare_coeffs_to_alt(window_length, order)
 
 
 def test_sg_coeffs_exact():
@@ -127,7 +125,7 @@ def test_sg_coeffs_deriv():
     i = np.array([-2.0, 0.0, 2.0, 4.0, 6.0])
     x = i ** 2 / 4
     dx = i / 2
-    d2x = 0.5 * np.ones_like(i)
+    d2x = np.full_like(i, 0.5)
     for pos in range(x.size):
         coeffs0 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot')
         assert_allclose(coeffs0.dot(x), x[pos], atol=1e-10)
@@ -135,6 +133,19 @@ def test_sg_coeffs_deriv():
         assert_allclose(coeffs1.dot(x), dx[pos], atol=1e-10)
         coeffs2 = savgol_coeffs(5, 3, pos=pos, delta=2.0, use='dot', deriv=2)
         assert_allclose(coeffs2.dot(x), d2x[pos], atol=1e-10)
+
+
+def test_sg_coeffs_deriv_gt_polyorder():
+    """
+    If deriv > polyorder, the coefficients should be all 0.
+    This is a regression test for a bug where, e.g.,
+        savgol_coeffs(5, polyorder=1, deriv=2)
+    raised an error.
+    """
+    coeffs = savgol_coeffs(5, polyorder=1, deriv=2)
+    assert_array_equal(coeffs, np.zeros(5))
+    coeffs = savgol_coeffs(7, polyorder=4, deriv=6)
+    assert_array_equal(coeffs, np.zeros(7))
 
 
 def test_sg_coeffs_large():
@@ -146,6 +157,44 @@ def test_sg_coeffs_large():
     coeffs1 = savgol_coeffs(31, 9, deriv=1)
     assert_array_almost_equal(coeffs1, -coeffs1[::-1])
 
+# --------------------------------------------------------------------
+# savgol_coeffs tests for even window length
+# --------------------------------------------------------------------
+
+
+def test_sg_coeffs_even_window_length():
+    # Simple case - deriv=0, polyorder=0, 1
+    window_lengths = [4, 6, 8, 10, 12, 14, 16]
+    for length in window_lengths:
+        h_p_d = savgol_coeffs(length, 0, 0)
+        assert_allclose(h_p_d, 1/length)
+
+    # Verify with closed forms
+    # deriv=1, polyorder=1, 2
+    def h_p_d_closed_form_1(k, m):
+        return 6*(k - 0.5)/((2*m + 1)*m*(2*m - 1))
+
+    # deriv=2, polyorder=2
+    def h_p_d_closed_form_2(k, m):
+        numer = 15*(-4*m**2 + 1 + 12*(k - 0.5)**2)
+        denom = 4*(2*m + 1)*(m + 1)*m*(m - 1)*(2*m - 1)
+        return numer/denom
+
+    for length in window_lengths:
+        m = length//2
+        expected_output = [h_p_d_closed_form_1(k, m)
+                           for k in range(-m + 1, m + 1)][::-1]
+        actual_output = savgol_coeffs(length, 1, 1)
+        assert_allclose(expected_output, actual_output)
+        actual_output = savgol_coeffs(length, 2, 1)
+        assert_allclose(expected_output, actual_output)
+
+        expected_output = [h_p_d_closed_form_2(k, m)
+                           for k in range(-m + 1, m + 1)][::-1]
+        actual_output = savgol_coeffs(length, 2, 2)
+        assert_allclose(expected_output, actual_output)
+        actual_output = savgol_coeffs(length, 3, 2)
+        assert_allclose(expected_output, actual_output)
 
 #--------------------------------------------------------------------
 # savgol_filter tests
@@ -158,7 +207,7 @@ def test_sg_filter_trivial():
     y = savgol_filter(x, 1, 0)
     assert_equal(y, [1.0])
 
-    # Input is a single value.  With a window length of 3 and polyorder 1,
+    # Input is a single value. With a window length of 3 and polyorder 1,
     # the value in y is from the straight-line fit of (-1,0), (0,3) and
     # (1, 0) at 0. This is just the average of the three values, hence 1.0.
     x = np.array([3.0])
@@ -201,7 +250,7 @@ def test_sg_filter_2d():
 
 def test_sg_filter_interp_edges():
     # Another test with low degree polynomial data, for which we can easily
-    # give the exact results.  In this test, we use mode='interp', so
+    # give the exact results. In this test, we use mode='interp', so
     # savgol_filter should match the exact solution for the entire data set,
     # including the edges.
     t = np.linspace(-5, 5, 21)
@@ -214,7 +263,7 @@ def test_sg_filter_interp_edges():
                    6 * t,
                    3 * t ** 2 - 1.0])
     d2x = np.array([np.zeros_like(t),
-                    6 * np.ones_like(t),
+                    np.full_like(t, 6),
                     6 * t])
 
     window_length = 7
@@ -288,7 +337,3 @@ def test_sg_filter_interp_edges_3d():
 
     dy = savgol_filter(z, 7, 3, axis=0, mode='interp', deriv=1, delta=delta)
     assert_allclose(dy, dz, atol=1e-10)
-
-
-if __name__ == "__main__":
-    run_module_suite()

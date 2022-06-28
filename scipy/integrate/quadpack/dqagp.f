@@ -1,5 +1,5 @@
-      subroutine dqagp(f,a,b,npts2,points,epsabs,epsrel,result,abserr,
-     *   neval,ier,leniw,lenw,last,iwork,work)
+      recursive subroutine dqagp(f,a,b,npts2,points,epsabs,epsrel,
+     *   result,abserr,neval,ier,leniw,lenw,last,iwork,work)
 c***begin prologue  dqagp
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)
@@ -116,7 +116,7 @@ c                             the integration range or
 c                             (epsabs.le.0 and
 c                              epsrel.lt.max(50*rel.mach.acc.,0.5d-28))
 c                             result, abserr, neval, last are set to
-c                             zero. exept when leniw or lenw or npts2 is
+c                             zero. except when leniw or lenw or npts2 is
 c                             invalid, iwork(1), iwork(limit+1),
 c                             work(limit*2+1) and work(limit*3+1)
 c                             are set to zero.

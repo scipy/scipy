@@ -1,14 +1,13 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy.testing import (TestCase, assert_raises, run_module_suite,
-                           assert_allclose, assert_array_equal)
+from numpy.testing import assert_allclose, assert_array_equal
+from pytest import raises as assert_raises
+
 from numpy.fft import fft, ifft
 
 from scipy.signal import max_len_seq
 
 
-class TestMLS(TestCase):
+class TestMLS:
 
     def test_mls_inputs(self):
         # can't all be zero state
@@ -51,7 +50,7 @@ class TestMLS(TestCase):
                     assert_allclose(tester[0], out_len, err_msg=err_msg)
                     # steady-state is -1
                     err_msg = "mls steady-state has incorrect value"
-                    assert_allclose(tester[1:], -1 * np.ones(out_len - 1),
+                    assert_allclose(tester[1:], np.full(out_len - 1, -1),
                                     err_msg=err_msg)
                     # let's do the split thing using a couple options
                     for n in (1, 2**(nbits - 1)):
@@ -64,6 +63,3 @@ class TestMLS(TestCase):
                         new_m = np.concatenate((m1, m2, m3))
                         assert_array_equal(orig_m, new_m)
 
-
-if __name__ == "__main__":
-    run_module_suite()

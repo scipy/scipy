@@ -1,16 +1,18 @@
 # Author: Jeffrey Armstrong <jeff@approximatrix.com>
 # April 4, 2011
 
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
-from numpy.testing import TestCase, run_module_suite, assert_equal, \
-                          assert_array_almost_equal, assert_array_equal, \
-                          assert_allclose
-from scipy.signal import dlsim, dstep, dimpulse, tf2zpk
+from numpy.testing import (assert_equal,
+                           assert_array_almost_equal, assert_array_equal,
+                           assert_allclose, assert_, assert_almost_equal,
+                           suppress_warnings)
+from pytest import raises as assert_raises
+from scipy.signal import (dlsim, dstep, dimpulse, tf2zpk, lti, dlti,
+                          StateSpace, TransferFunction, ZerosPolesGain,
+                          dfreqresp, dbode, BadCoefficients)
 
 
-class TestDLTI(TestCase):
+class TestDLTI:
 
     def test_dlsim(self):
 
@@ -22,17 +24,17 @@ class TestDLTI(TestCase):
 
         # Create an input matrix with inputs down the columns (3 cols) and its
         # respective time input vector
-        u = np.hstack((np.asmatrix(np.linspace(0, 4.0, num=5)).transpose(),
-                       0.01 * np.ones((5, 1)),
-                       -0.002 * np.ones((5, 1))))
+        u = np.hstack((np.linspace(0, 4.0, num=5)[:, np.newaxis],
+                       np.full((5, 1), 0.01),
+                       np.full((5, 1), -0.002)))
         t_in = np.linspace(0, 2.0, num=5)
 
         # Define the known result
-        yout_truth = np.asmatrix([-0.001,
-                                  -0.00073,
-                                  0.039446,
-                                  0.0915387,
-                                  0.13195948]).transpose()
+        yout_truth = np.array([[-0.001,
+                                -0.00073,
+                                0.039446,
+                                0.0915387,
+                                0.13195948]]).T
         xout_truth = np.asarray([[0, 0],
                                  [0.0012, 0.0005],
                                  [0.40233, 0.00071],
@@ -44,6 +46,9 @@ class TestDLTI(TestCase):
         assert_array_almost_equal(yout_truth, yout)
         assert_array_almost_equal(xout_truth, xout)
         assert_array_almost_equal(t_in, tout)
+
+        # Make sure input with single-dimension doesn't raise error
+        dlsim((1, 2, 3), 4)
 
         # Interpolated control - inputs should have different time steps
         # than the discrete model uses internally
@@ -59,11 +64,11 @@ class TestDLTI(TestCase):
         # Transfer functions (assume dt = 0.5)
         num = np.asarray([1.0, -0.1])
         den = np.asarray([0.3, 1.0, 0.2])
-        yout_truth = np.asmatrix([0.0,
-                                  0.0,
-                                  3.33333333333333,
-                                  -4.77777777777778,
-                                  23.0370370370370]).transpose()
+        yout_truth = np.array([[0.0,
+                                0.0,
+                                3.33333333333333,
+                                -4.77777777777778,
+                                23.0370370370370]]).T
 
         # Assume use of the first column of the control input built earlier
         tout, yout = dlsim((num, den, 0.5), u[:, 0], t_in)
@@ -83,12 +88,16 @@ class TestDLTI(TestCase):
         zd = np.array([0.5, -0.5])
         pd = np.array([1.j / np.sqrt(2), -1.j / np.sqrt(2)])
         k = 1.0
-        yout_truth = np.asmatrix([0.0, 1.0, 2.0, 2.25, 2.5]).transpose()
+        yout_truth = np.array([[0.0, 1.0, 2.0, 2.25, 2.5]]).T
 
         tout, yout = dlsim((zd, pd, k, 0.5), u[:, 0], t_in)
 
         assert_array_almost_equal(yout, yout_truth)
         assert_array_almost_equal(t_in, tout)
+
+        # Raise an error for continuous-time systems
+        system = lti([1], [1, 1])
+        assert_raises(AttributeError, dlsim, system, u)
 
     def test_dstep(self):
 
@@ -131,6 +140,10 @@ class TestDLTI(TestCase):
         assert_equal(len(yout), 1)
         assert_array_almost_equal(yout[0].flatten(), yout_tfstep)
 
+        # Raise an error for continuous-time systems
+        system = lti([1], [1, 1])
+        assert_raises(AttributeError, dstep, system)
+
     def test_dimpulse(self):
 
         a = np.asarray([[0.9, 0.1], [-0.2, 0.9]])
@@ -170,6 +183,10 @@ class TestDLTI(TestCase):
         tout, yout = dimpulse(zpkin, n=3)
         assert_equal(len(yout), 1)
         assert_array_almost_equal(yout[0].flatten(), yout_tfimpulse)
+
+        # Raise an error for continuous-time systems
+        system = lti([1], [1, 1])
+        assert_raises(AttributeError, dimpulse, system)
 
     def test_dlsim_trivial(self):
         a = np.array([[0.0]])
@@ -264,5 +281,318 @@ class TestDLTI(TestCase):
         assert_array_equal(y.T, [[0, 1, 0.5]])
 
 
-if __name__ == "__main__":
-    run_module_suite()
+class TestDlti:
+    def test_dlti_instantiation(self):
+        # Test that lti can be instantiated.
+
+        dt = 0.05
+        # TransferFunction
+        s = dlti([1], [-1], dt=dt)
+        assert_(isinstance(s, TransferFunction))
+        assert_(isinstance(s, dlti))
+        assert_(not isinstance(s, lti))
+        assert_equal(s.dt, dt)
+
+        # ZerosPolesGain
+        s = dlti(np.array([]), np.array([-1]), 1, dt=dt)
+        assert_(isinstance(s, ZerosPolesGain))
+        assert_(isinstance(s, dlti))
+        assert_(not isinstance(s, lti))
+        assert_equal(s.dt, dt)
+
+        # StateSpace
+        s = dlti([1], [-1], 1, 3, dt=dt)
+        assert_(isinstance(s, StateSpace))
+        assert_(isinstance(s, dlti))
+        assert_(not isinstance(s, lti))
+        assert_equal(s.dt, dt)
+
+        # Number of inputs
+        assert_raises(ValueError, dlti, 1)
+        assert_raises(ValueError, dlti, 1, 1, 1, 1, 1)
+
+
+class TestStateSpaceDisc:
+    def test_initialization(self):
+        # Check that all initializations work
+        dt = 0.05
+        StateSpace(1, 1, 1, 1, dt=dt)
+        StateSpace([1], [2], [3], [4], dt=dt)
+        StateSpace(np.array([[1, 2], [3, 4]]), np.array([[1], [2]]),
+                   np.array([[1, 0]]), np.array([[0]]), dt=dt)
+        StateSpace(1, 1, 1, 1, dt=True)
+
+    def test_conversion(self):
+        # Check the conversion functions
+        s = StateSpace(1, 2, 3, 4, dt=0.05)
+        assert_(isinstance(s.to_ss(), StateSpace))
+        assert_(isinstance(s.to_tf(), TransferFunction))
+        assert_(isinstance(s.to_zpk(), ZerosPolesGain))
+
+        # Make sure copies work
+        assert_(StateSpace(s) is not s)
+        assert_(s.to_ss() is not s)
+
+    def test_properties(self):
+        # Test setters/getters for cross class properties.
+        # This implicitly tests to_tf() and to_zpk()
+
+        # Getters
+        s = StateSpace(1, 1, 1, 1, dt=0.05)
+        assert_equal(s.poles, [1])
+        assert_equal(s.zeros, [0])
+
+
+class TestTransferFunction:
+    def test_initialization(self):
+        # Check that all initializations work
+        dt = 0.05
+        TransferFunction(1, 1, dt=dt)
+        TransferFunction([1], [2], dt=dt)
+        TransferFunction(np.array([1]), np.array([2]), dt=dt)
+        TransferFunction(1, 1, dt=True)
+
+    def test_conversion(self):
+        # Check the conversion functions
+        s = TransferFunction([1, 0], [1, -1], dt=0.05)
+        assert_(isinstance(s.to_ss(), StateSpace))
+        assert_(isinstance(s.to_tf(), TransferFunction))
+        assert_(isinstance(s.to_zpk(), ZerosPolesGain))
+
+        # Make sure copies work
+        assert_(TransferFunction(s) is not s)
+        assert_(s.to_tf() is not s)
+
+    def test_properties(self):
+        # Test setters/getters for cross class properties.
+        # This implicitly tests to_ss() and to_zpk()
+
+        # Getters
+        s = TransferFunction([1, 0], [1, -1], dt=0.05)
+        assert_equal(s.poles, [1])
+        assert_equal(s.zeros, [0])
+
+
+class TestZerosPolesGain:
+    def test_initialization(self):
+        # Check that all initializations work
+        dt = 0.05
+        ZerosPolesGain(1, 1, 1, dt=dt)
+        ZerosPolesGain([1], [2], 1, dt=dt)
+        ZerosPolesGain(np.array([1]), np.array([2]), 1, dt=dt)
+        ZerosPolesGain(1, 1, 1, dt=True)
+
+    def test_conversion(self):
+        # Check the conversion functions
+        s = ZerosPolesGain(1, 2, 3, dt=0.05)
+        assert_(isinstance(s.to_ss(), StateSpace))
+        assert_(isinstance(s.to_tf(), TransferFunction))
+        assert_(isinstance(s.to_zpk(), ZerosPolesGain))
+
+        # Make sure copies work
+        assert_(ZerosPolesGain(s) is not s)
+        assert_(s.to_zpk() is not s)
+
+
+class Test_dfreqresp:
+
+    def test_manual(self):
+        # Test dfreqresp() real part calculation (manual sanity check).
+        # 1st order low-pass filter: H(z) = 1 / (z - 0.2),
+        system = TransferFunction(1, [1, -0.2], dt=0.1)
+        w = [0.1, 1, 10]
+        w, H = dfreqresp(system, w=w)
+
+        # test real
+        expected_re = [1.2383, 0.4130, -0.7553]
+        assert_almost_equal(H.real, expected_re, decimal=4)
+
+        # test imag
+        expected_im = [-0.1555, -1.0214, 0.3955]
+        assert_almost_equal(H.imag, expected_im, decimal=4)
+
+    def test_auto(self):
+        # Test dfreqresp() real part calculation.
+        # 1st order low-pass filter: H(z) = 1 / (z - 0.2),
+        system = TransferFunction(1, [1, -0.2], dt=0.1)
+        w = [0.1, 1, 10, 100]
+        w, H = dfreqresp(system, w=w)
+        jw = np.exp(w * 1j)
+        y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
+
+        # test real
+        expected_re = y.real
+        assert_almost_equal(H.real, expected_re)
+
+        # test imag
+        expected_im = y.imag
+        assert_almost_equal(H.imag, expected_im)
+
+    def test_freq_range(self):
+        # Test that freqresp() finds a reasonable frequency range.
+        # 1st order low-pass filter: H(z) = 1 / (z - 0.2),
+        # Expected range is from 0.01 to 10.
+        system = TransferFunction(1, [1, -0.2], dt=0.1)
+        n = 10
+        expected_w = np.linspace(0, np.pi, 10, endpoint=False)
+        w, H = dfreqresp(system, n=n)
+        assert_almost_equal(w, expected_w)
+
+    def test_pole_one(self):
+        # Test that freqresp() doesn't fail on a system with a pole at 0.
+        # integrator, pole at zero: H(s) = 1 / s
+        system = TransferFunction([1], [1, -1], dt=0.1)
+
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, message="divide by zero")
+            sup.filter(RuntimeWarning, message="invalid value encountered")
+            w, H = dfreqresp(system, n=2)
+        assert_equal(w[0], 0.)  # a fail would give not-a-number
+
+    def test_error(self):
+        # Raise an error for continuous-time systems
+        system = lti([1], [1, 1])
+        assert_raises(AttributeError, dfreqresp, system)
+
+    def test_from_state_space(self):
+        # H(z) = 2 / z^3 - 0.5 * z^2
+
+        system_TF = dlti([2], [1, -0.5, 0, 0])
+
+        A = np.array([[0.5, 0, 0],
+                      [1, 0, 0],
+                      [0, 1, 0]])
+        B = np.array([[1, 0, 0]]).T
+        C = np.array([[0, 0, 2]])
+        D = 0
+
+        system_SS = dlti(A, B, C, D)
+        w = 10.0**np.arange(-3,0,.5)
+        with suppress_warnings() as sup:
+            sup.filter(BadCoefficients)
+            w1, H1 = dfreqresp(system_TF, w=w)
+            w2, H2 = dfreqresp(system_SS, w=w)
+
+        assert_almost_equal(H1, H2)
+
+    def test_from_zpk(self):
+        # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
+        system_ZPK = dlti([],[0.2],0.3)
+        system_TF = dlti(0.3, [1, -0.2])
+        w = [0.1, 1, 10, 100]
+        w1, H1 = dfreqresp(system_ZPK, w=w)
+        w2, H2 = dfreqresp(system_TF, w=w)
+        assert_almost_equal(H1, H2)
+
+
+class Test_bode:
+
+    def test_manual(self):
+        # Test bode() magnitude calculation (manual sanity check).
+        # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
+        dt = 0.1
+        system = TransferFunction(0.3, [1, -0.2], dt=dt)
+        w = [0.1, 0.5, 1, np.pi]
+        w2, mag, phase = dbode(system, w=w)
+
+        # Test mag
+        expected_mag = [-8.5329, -8.8396, -9.6162, -12.0412]
+        assert_almost_equal(mag, expected_mag, decimal=4)
+
+        # Test phase
+        expected_phase = [-7.1575, -35.2814, -67.9809, -180.0000]
+        assert_almost_equal(phase, expected_phase, decimal=4)
+
+        # Test frequency
+        assert_equal(np.array(w) / dt, w2)
+
+    def test_auto(self):
+        # Test bode() magnitude calculation.
+        # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
+        system = TransferFunction(0.3, [1, -0.2], dt=0.1)
+        w = np.array([0.1, 0.5, 1, np.pi])
+        w2, mag, phase = dbode(system, w=w)
+        jw = np.exp(w * 1j)
+        y = np.polyval(system.num, jw) / np.polyval(system.den, jw)
+
+        # Test mag
+        expected_mag = 20.0 * np.log10(abs(y))
+        assert_almost_equal(mag, expected_mag)
+
+        # Test phase
+        expected_phase = np.rad2deg(np.angle(y))
+        assert_almost_equal(phase, expected_phase)
+
+    def test_range(self):
+        # Test that bode() finds a reasonable frequency range.
+        # 1st order low-pass filter: H(s) = 0.3 / (z - 0.2),
+        dt = 0.1
+        system = TransferFunction(0.3, [1, -0.2], dt=0.1)
+        n = 10
+        # Expected range is from 0.01 to 10.
+        expected_w = np.linspace(0, np.pi, n, endpoint=False) / dt
+        w, mag, phase = dbode(system, n=n)
+        assert_almost_equal(w, expected_w)
+
+    def test_pole_one(self):
+        # Test that freqresp() doesn't fail on a system with a pole at 0.
+        # integrator, pole at zero: H(s) = 1 / s
+        system = TransferFunction([1], [1, -1], dt=0.1)
+
+        with suppress_warnings() as sup:
+            sup.filter(RuntimeWarning, message="divide by zero")
+            sup.filter(RuntimeWarning, message="invalid value encountered")
+            w, mag, phase = dbode(system, n=2)
+        assert_equal(w[0], 0.)  # a fail would give not-a-number
+
+    def test_imaginary(self):
+        # bode() should not fail on a system with pure imaginary poles.
+        # The test passes if bode doesn't raise an exception.
+        system = TransferFunction([1], [1, 0, 100], dt=0.1)
+        dbode(system, n=2)
+
+    def test_error(self):
+        # Raise an error for continuous-time systems
+        system = lti([1], [1, 1])
+        assert_raises(AttributeError, dbode, system)
+
+
+class TestTransferFunctionZConversion:
+    """Test private conversions between 'z' and 'z**-1' polynomials."""
+
+    def test_full(self):
+        # Numerator and denominator same order
+        num = [2, 3, 4]
+        den = [5, 6, 7]
+        num2, den2 = TransferFunction._z_to_zinv(num, den)
+        assert_equal(num, num2)
+        assert_equal(den, den2)
+
+        num2, den2 = TransferFunction._zinv_to_z(num, den)
+        assert_equal(num, num2)
+        assert_equal(den, den2)
+
+    def test_numerator(self):
+        # Numerator lower order than denominator
+        num = [2, 3]
+        den = [5, 6, 7]
+        num2, den2 = TransferFunction._z_to_zinv(num, den)
+        assert_equal([0, 2, 3], num2)
+        assert_equal(den, den2)
+
+        num2, den2 = TransferFunction._zinv_to_z(num, den)
+        assert_equal([2, 3, 0], num2)
+        assert_equal(den, den2)
+
+    def test_denominator(self):
+        # Numerator higher order than denominator
+        num = [2, 3, 4]
+        den = [5, 6]
+        num2, den2 = TransferFunction._z_to_zinv(num, den)
+        assert_equal(num, num2)
+        assert_equal([0, 5, 6], den2)
+
+        num2, den2 = TransferFunction._zinv_to_z(num, den)
+        assert_equal(num, num2)
+        assert_equal([5, 6, 0], den2)
+

@@ -1,15 +1,13 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
 
-class _FakeMatrix(object):
+class _FakeMatrix:
     def __init__(self, data):
         self._data = data
         self.__array_interface__ = data.__array_interface__
 
 
-class _FakeMatrix2(object):
+class _FakeMatrix2:
     def __init__(self, data):
         self._data = data
 
@@ -26,16 +24,16 @@ def _get_array(shape, dtype):
     if len(shape) == 2 and shape[0] == 2:
         # yield a banded positive definite one
         x = np.zeros(shape, dtype=dtype)
-        x[0,1:] = -1
+        x[0, 1:] = -1
         x[1] = 2
         return x
     elif len(shape) == 2 and shape[0] == shape[1]:
         # always yield a positive definite matrix
         x = np.zeros(shape, dtype=dtype)
         j = np.arange(shape[0])
-        x[j,j] = 2
-        x[j[:-1],j[:-1]+1] = -1
-        x[j[:-1]+1,j[:-1]] = -1
+        x[j, j] = 2
+        x[j[:-1], j[:-1]+1] = -1
+        x[j[:-1]+1, j[:-1]] = -1
         return x
     else:
         np.random.seed(1234)

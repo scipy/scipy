@@ -1,7 +1,7 @@
+#include <Python.h>
+
 #include <stdlib.h>
 #include <stdarg.h>
-
-#include <Python.h>
 
 #include "sf_error.h"
 
@@ -19,38 +19,55 @@ const char *sf_error_messages[] = {
     NULL
 };
 
-static int print_error_messages = 0;
+/* If this isn't volatile clang tries to optimize it away */
+static volatile sf_action_t sf_error_actions[] = {
+    SF_ERROR_IGNORE, /* SF_ERROR_OK */
+    SF_ERROR_IGNORE, /* SF_ERROR_SINGULAR */
+    SF_ERROR_IGNORE, /* SF_ERROR_UNDERFLOW */
+    SF_ERROR_IGNORE, /* SF_ERROR_OVERFLOW */
+    SF_ERROR_IGNORE, /* SF_ERROR_SLOW */
+    SF_ERROR_IGNORE, /* SF_ERROR_LOSS */
+    SF_ERROR_IGNORE, /* SF_ERROR_NO_RESULT */
+    SF_ERROR_IGNORE, /* SF_ERROR_DOMAIN */
+    SF_ERROR_IGNORE, /* SF_ERROR_ARG */
+    SF_ERROR_IGNORE, /* SF_ERROR_OTHER */
+    SF_ERROR_IGNORE  /* SF_ERROR__LAST */
+};
 
-extern int wrap_PyUFunc_getfperr();
+extern int wrap_PyUFunc_getfperr(void);
 
-int sf_error_set_print(int flag)
+
+void sf_error_set_action(sf_error_t code, sf_action_t action)
 {
-    int old_flag = print_error_messages;
-    print_error_messages = flag;
-    return old_flag;
+    sf_error_actions[(int)code] = action;
 }
 
-int sf_error_get_print()
+
+sf_action_t sf_error_get_action(sf_error_t code)
 {
-    return print_error_messages;
+    return sf_error_actions[(int)code];
 }
 
-void sf_error(char *func_name, sf_error_t code, char *fmt, ...)
+
+void sf_error(const char *func_name, sf_error_t code, const char *fmt, ...)
 {
+    PyGILState_STATE save;
+    PyObject *scipy_special = NULL;
     char msg[2048], info[1024];
     static PyObject *py_SpecialFunctionWarning = NULL;
+    sf_action_t action;
     va_list ap;
 
-    if (!print_error_messages) {
+    if ((int)code < 0 || (int)code >= 10) {
+	code = SF_ERROR_OTHER;
+    }
+    action = sf_error_get_action(code);
+    if (action == SF_ERROR_IGNORE) {
         return;
     }
 
     if (func_name == NULL) {
         func_name = "?";
-    }
-
-    if ((int)code < 0 || (int)code >= 10) {
-        code = SF_ERROR_OTHER;
     }
 
     if (fmt != NULL && fmt[0] != '\0') {
@@ -65,53 +82,69 @@ void sf_error(char *func_name, sf_error_t code, char *fmt, ...)
                       func_name, sf_error_messages[(int)code]);
     }
 
-    {
 #ifdef WITH_THREAD
-        PyGILState_STATE save = PyGILState_Ensure();
+    save = PyGILState_Ensure();
 #endif
 
-        if (PyErr_Occurred())
-            goto skip_warn;
+    if (PyErr_Occurred()) {
+      goto skip_warn;
+    }
 
-        if (py_SpecialFunctionWarning == NULL) {
-            PyObject *scipy_special = NULL;
+    scipy_special = PyImport_ImportModule("scipy.special");
+    if (scipy_special == NULL) {
+	PyErr_Clear();
+	goto skip_warn;
+    }
 
-            scipy_special = PyImport_ImportModule("scipy.special");
-            if (scipy_special == NULL) {
-                PyErr_Clear();
-                goto skip_warn;
-            }
+    if (action == SF_ERROR_WARN) {
+	py_SpecialFunctionWarning =
+	    PyObject_GetAttrString(scipy_special, "SpecialFunctionWarning");
+    }
+    else if (action == SF_ERROR_RAISE) {
+	py_SpecialFunctionWarning =
+	    PyObject_GetAttrString(scipy_special, "SpecialFunctionError");
+    }
+    else {
+	/* Sentinel, should never get here */
+	py_SpecialFunctionWarning = NULL;
+    }
+    /* Done with scipy_special */
+    Py_DECREF(scipy_special);
 
-            py_SpecialFunctionWarning = PyObject_GetAttrString(
-                scipy_special, "SpecialFunctionWarning");
-            if (py_SpecialFunctionWarning == NULL) {
-                PyErr_Clear();
-                goto skip_warn;
-            }
-        }
+    if (py_SpecialFunctionWarning == NULL) {
+	PyErr_Clear();
+	goto skip_warn;
+    }
 
-        if (py_SpecialFunctionWarning != NULL) {
-            PyErr_WarnEx(py_SpecialFunctionWarning, msg, 1);
-
-            /*
-             * The return value is ignored! We rely on the fact that the
-             * Ufunc loop will call PyErr_Occurred() later on.
-             */
-        }
+    if (action == SF_ERROR_WARN) {
+	PyErr_WarnEx(py_SpecialFunctionWarning, msg, 1);
+	/*
+	 * For ufuncs the return value is ignored! We rely on the fact
+	 * that the Ufunc loop will call PyErr_Occurred() later on.
+	 */
+    }
+    else if (action == SF_ERROR_RAISE) {
+	PyErr_SetString(py_SpecialFunctionWarning, msg);
+    }
+    else {
+	goto skip_warn;
+    }
 
     skip_warn:
 #ifdef WITH_THREAD
         PyGILState_Release(save);
+#else
+	;
 #endif
-    }
 }
+
 
 #define UFUNC_FPE_DIVIDEBYZERO  1
 #define UFUNC_FPE_OVERFLOW      2
 #define UFUNC_FPE_UNDERFLOW     4
 #define UFUNC_FPE_INVALID       8
 
-void sf_error_check_fpe(char *func_name)
+void sf_error_check_fpe(const char *func_name)
 {
     int status;
     status = wrap_PyUFunc_getfperr();

@@ -19,17 +19,14 @@ A Bernoulli random variable of parameter :math:`p` takes one of only two values 
     \end{eqnarray*}
 
 .. math::
-   :nowrap:
 
     M\left(t\right) = 1-p\left(1-e^{t}\right)
 
 .. math::
-   :nowrap:
 
     \mu_{m}^{\prime}=p
 
 .. math::
-   :nowrap:
 
     h\left[X\right]=p\log p+\left(1-p\right)\log\left(1-p\right)
 

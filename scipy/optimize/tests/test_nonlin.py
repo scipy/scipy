@@ -2,17 +2,15 @@
 Author: Ondrej Certik
 May 2007
 """
-from __future__ import division, print_function, absolute_import
+from numpy.testing import assert_
+import pytest
 
-from numpy.testing import assert_, dec, TestCase, run_module_suite
-
-from scipy._lib.six import xrange
-from scipy.optimize import nonlin, root
-from numpy import matrix, diag, dot
+from scipy.optimize import _nonlin as nonlin, root
+from numpy import diag, dot
 from numpy.linalg import inv
 import numpy as np
 
-from test_minpack import pressure_network
+from .test_minpack import pressure_network
 
 SOLVERS = {'anderson': nonlin.anderson, 'diagbroyden': nonlin.diagbroyden,
            'linearmixing': nonlin.linearmixing, 'excitingmixing': nonlin.excitingmixing,
@@ -27,51 +25,81 @@ MUST_WORK = {'anderson': nonlin.anderson, 'broyden1': nonlin.broyden1,
 
 
 def F(x):
-    x = np.asmatrix(x).T
-    d = matrix(diag([3,2,1.5,1,0.5]))
+    x = np.asarray(x).T
+    d = diag([3,2,1.5,1,0.5])
     c = 0.01
-    f = -d*x - c*float(x.T*x)*x
+    f = -d @ x - c * float(x.T @ x) * x
     return f
+
+
 F.xin = [1,1,1,1,1]
 F.KNOWN_BAD = {}
+F.JAC_KSP_BAD = {}
+F.ROOT_JAC_KSP_BAD = {}
 
 
 def F2(x):
     return x
+
+
 F2.xin = [1,2,3,4,5,6]
 F2.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
                 'excitingmixing': nonlin.excitingmixing}
+F2.JAC_KSP_BAD = {}
+F2.ROOT_JAC_KSP_BAD = {}
 
 
 def F2_lucky(x):
     return x
+
+
 F2_lucky.xin = [0,0,0,0,0,0]
 F2_lucky.KNOWN_BAD = {}
+F2_lucky.JAC_KSP_BAD = {}
+F2_lucky.ROOT_JAC_KSP_BAD = {}
 
 
 def F3(x):
-    A = np.mat('-2 1 0; 1 -2 1; 0 1 -2')
-    b = np.mat('1 2 3')
-    return np.dot(A, x) - b
+    A = np.array([[-2, 1, 0.], [1, -2, 1], [0, 1, -2]])
+    b = np.array([1, 2, 3.])
+    return A @ x - b
+
+
 F3.xin = [1,2,3]
 F3.KNOWN_BAD = {}
+F3.JAC_KSP_BAD = {}
+F3.ROOT_JAC_KSP_BAD = {}
 
 
 def F4_powell(x):
     A = 1e4
     return [A*x[0]*x[1] - 1, np.exp(-x[0]) + np.exp(-x[1]) - (1 + 1/A)]
+
+
 F4_powell.xin = [-1, -2]
 F4_powell.KNOWN_BAD = {'linearmixing': nonlin.linearmixing,
                        'excitingmixing': nonlin.excitingmixing,
                        'diagbroyden': nonlin.diagbroyden}
+# In the extreme case, it does not converge for nolinear problem solved by
+# MINRES and root problem solved by GMRES/BiCGStab/CGS/MINRES/TFQMR when using
+# Krylov method to approximate Jacobian
+F4_powell.JAC_KSP_BAD = {'minres'}
+F4_powell.ROOT_JAC_KSP_BAD = {'gmres', 'bicgstab', 'cgs', 'minres', 'tfqmr'}
 
 
 def F5(x):
     return pressure_network(x, 4, np.array([.5, .5, .5, .5]))
+
+
 F5.xin = [2., 0, 2, 0]
 F5.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
                 'linearmixing': nonlin.linearmixing,
                 'diagbroyden': nonlin.diagbroyden}
+# In the extreme case, the Jacobian inversion yielded zero vector for nonlinear
+# problem solved by CGS/MINRES and it does not converge for root problem solved
+# by MINRES and when using Krylov method to approximate Jacobian
+F5.JAC_KSP_BAD = {'cgs', 'minres'}
+F5.ROOT_JAC_KSP_BAD = {'minres'}
 
 
 def F6(x):
@@ -81,10 +109,14 @@ def F6(x):
     v = np.array([(x1 + 3) * (x2**5 - 7) + 3*6,
                   np.sin(x2 * np.exp(x1) - 1)])
     return -np.linalg.solve(J0, v)
+
+
 F6.xin = [-0.5, 1.4]
 F6.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
                 'linearmixing': nonlin.linearmixing,
                 'diagbroyden': nonlin.diagbroyden}
+F6.JAC_KSP_BAD = {}
+F6.ROOT_JAC_KSP_BAD = {}
 
 
 #-------------------------------------------------------------------------------
@@ -92,7 +124,7 @@ F6.KNOWN_BAD = {'excitingmixing': nonlin.excitingmixing,
 #-------------------------------------------------------------------------------
 
 
-class TestNonlin(object):
+class TestNonlin:
     """
     Check the Broyden methods for a few test problems.
 
@@ -102,15 +134,37 @@ class TestNonlin(object):
     """
 
     def _check_nonlin_func(self, f, func, f_tol=1e-2):
+        # Test all methods mentioned in the class `KrylovJacobian`
+        if func == SOLVERS['krylov']:
+            for method in ['gmres', 'bicgstab', 'cgs', 'minres', 'tfqmr']:
+                if method in f.JAC_KSP_BAD:
+                    continue
+
+                x = func(f, f.xin, method=method, line_search=None,
+                         f_tol=f_tol, maxiter=200, verbose=0)
+                assert_(np.absolute(f(x)).max() < f_tol)
+
         x = func(f, f.xin, f_tol=f_tol, maxiter=200, verbose=0)
         assert_(np.absolute(f(x)).max() < f_tol)
 
     def _check_root(self, f, method, f_tol=1e-2):
+        # Test Krylov methods
+        if method == 'krylov':
+            for jac_method in ['gmres', 'bicgstab', 'cgs', 'minres', 'tfqmr']:
+                if jac_method in f.ROOT_JAC_KSP_BAD:
+                    continue
+
+                res = root(f, f.xin, method=method,
+                           options={'ftol': f_tol, 'maxiter': 200,
+                                    'disp': 0,
+                                    'jac_options': {'method': jac_method}})
+                assert_(np.absolute(res.fun).max() < f_tol)
+
         res = root(f, f.xin, method=method,
                    options={'ftol': f_tol, 'maxiter': 200, 'disp': 0})
         assert_(np.absolute(res.fun).max() < f_tol)
 
-    @dec.knownfailureif(True)
+    @pytest.mark.xfail
     def _check_func_fail(self, *a, **kw):
         pass
 
@@ -119,11 +173,13 @@ class TestNonlin(object):
             for func in SOLVERS.values():
                 if func in f.KNOWN_BAD.values():
                     if func in MUST_WORK.values():
-                        yield self._check_func_fail, f, func
+                        self._check_func_fail(f, func)
                     continue
-                yield self._check_nonlin_func, f, func
+                self._check_nonlin_func(f, func)
 
-    def test_tol_norm_called(self):
+    @pytest.mark.parametrize("method", ['lgmres', 'gmres', 'bicgstab', 'cgs',
+                                        'minres', 'tfqmr'])
+    def test_tol_norm_called(self, method):
         # Check that supplying tol_norm keyword to nonlin_solve works
         self._tol_norm_used = False
 
@@ -131,8 +187,9 @@ class TestNonlin(object):
             self._tol_norm_used = True
             return np.absolute(x).max()
 
-        nonlin.newton_krylov(F, F.xin, f_tol=1e-2, maxiter=200, verbose=0,
-             tol_norm=local_norm_func)
+        nonlin.newton_krylov(F, F.xin, method=method, f_tol=1e-2,
+                             maxiter=200, verbose=0,
+                             tol_norm=local_norm_func)
         assert_(self._tol_norm_used)
 
     def test_problem_root(self):
@@ -140,12 +197,12 @@ class TestNonlin(object):
             for meth in SOLVERS:
                 if meth in f.KNOWN_BAD:
                     if meth in MUST_WORK:
-                        yield self._check_func_fail, f, meth
+                        self._check_func_fail(f, meth)
                     continue
-                yield self._check_root, f, meth
+                self._check_root(f, meth)
 
 
-class TestSecant(TestCase):
+class TestSecant:
     """Check that some Jacobian approximations satisfy the secant condition"""
 
     xs = [np.array([1,2,3,4,5], float),
@@ -168,7 +225,7 @@ class TestSecant(TestCase):
         for j, (x, f) in enumerate(zip(self.xs[1:], self.fs[1:])):
             jac.update(x, f)
 
-            for k in xrange(min(npoints, j+1)):
+            for k in range(min(npoints, j+1)):
                 dx = self.xs[j-k+1] - self.xs[j-k]
                 df = self.fs[j-k+1] - self.fs[j-k]
                 assert_(np.allclose(dx, jac.solve(df)))
@@ -221,7 +278,7 @@ class TestSecant(TestCase):
         self._check_secant(nonlin.Anderson, M=3, w0=0, npoints=3)
 
 
-class TestLinear(TestCase):
+class TestLinear:
     """Solve a linear equation;
     some methods find the exact solution in a finite number of steps"""
 
@@ -263,7 +320,7 @@ class TestLinear(TestCase):
         self._check(nonlin.KrylovJacobian, 20, 2, True, inner_m=10)
 
 
-class TestJacobianDotSolve(object):
+class TestJacobianDotSolve:
     """Check that solve/dot methods in Jacobian approximations are consistent"""
 
     def _func(self, x):
@@ -294,7 +351,7 @@ class TestJacobianDotSolve(object):
         jac.setup(x0, self._func(x0), self._func)
 
         # check consistency
-        for k in xrange(2*N):
+        for k in range(2*N):
             v = rand(N)
 
             if hasattr(jac, '__array__'):
@@ -354,11 +411,11 @@ class TestJacobianDotSolve(object):
         self._check_dot(nonlin.ExcitingMixing, complex=True)
 
     def test_krylov(self):
-        self._check_dot(nonlin.KrylovJacobian, complex=False, tol=1e-4)
-        self._check_dot(nonlin.KrylovJacobian, complex=True, tol=1e-4)
+        self._check_dot(nonlin.KrylovJacobian, complex=False, tol=1e-3)
+        self._check_dot(nonlin.KrylovJacobian, complex=True, tol=1e-3)
 
 
-class TestNonlinOldTests(TestCase):
+class TestNonlinOldTests:
     """ Test case for a simple constrained entropy maximization problem
     (the machine translation example of Berger et al in
     Computational Linguistics, vol 22, num 1, pp 39--72, 1996.)
@@ -431,6 +488,3 @@ class TestNonlinOldTests(TestCase):
                             'jac_options': {'alpha': 1}})
         assert_(nonlin.norm(res.x) < 1e-8)
         assert_(nonlin.norm(res.fun) < 1e-8)
-
-if __name__ == "__main__":
-    run_module_suite()

@@ -1,8 +1,8 @@
 /*
   From Multipack project
  */
-#include "quadpack.h"
 #include "__quadpack.h"
+
 static struct PyMethodDef quadpack_module_methods[] = {
 {"_qagse", quadpack_qagse, METH_VARARGS, doc_qagse},
 {"_qagie", quadpack_qagie, METH_VARARGS, doc_qagie},
@@ -14,7 +14,6 @@ static struct PyMethodDef quadpack_module_methods[] = {
 {NULL,		NULL, 0, NULL}
 };
 
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_quadpack",
@@ -27,37 +26,30 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__quadpack(void)
+PyMODINIT_FUNC
+PyInit__quadpack(void)
 {
-    PyObject *m, *d, *s;
+    PyObject *module, *mdict;
 
-    m = PyModule_Create(&moduledef);
     import_array();
-    d = PyModule_GetDict(m);
 
-    s = PyUString_FromString(" 1.13 ");
-    PyDict_SetItemString(d, "__version__", s);
-    quadpack_error = PyErr_NewException ("quadpack.error", NULL, NULL);
-    Py_DECREF(s);
-    PyDict_SetItemString(d, "error", quadpack_error);
-    if (PyErr_Occurred()) {
-        Py_FatalError("can't initialize module quadpack");
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return NULL;
     }
-    return m;
-}
-#else
-PyMODINIT_FUNC init_quadpack(void) {
-  PyObject *m, *d, *s;
-  m = Py_InitModule("_quadpack", quadpack_module_methods);
-  import_array();
-  d = PyModule_GetDict(m);
 
-  s = PyUString_FromString(" 1.13 ");
-  PyDict_SetItemString(d, "__version__", s);
-  quadpack_error = PyErr_NewException ("quadpack.error", NULL, NULL);
-  Py_DECREF(s);
-  PyDict_SetItemString(d, "error", quadpack_error);
-  if (PyErr_Occurred())
-    Py_FatalError("can't initialize module quadpack");
+    mdict = PyModule_GetDict(module);
+    if (mdict == NULL) {
+        return NULL;
+    }
+
+    quadpack_error = PyErr_NewException ("_quadpack.error", NULL, NULL);
+    if (quadpack_error == NULL) {
+        return NULL;
+    }
+    if (PyDict_SetItemString(mdict, "error", quadpack_error)) {
+        return NULL;
+    }
+
+    return module;
 }
-#endif

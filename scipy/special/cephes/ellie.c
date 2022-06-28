@@ -17,15 +17,15 @@
  * Approximates the integral
  *
  *
- *                phi
- *                 -
- *                | |
- *                |                   2
+ *                 phi
+ *                  -
+ *                 | |
+ *                 |                   2
  * E(phi_\m)  =    |    sqrt( 1 - m sin t ) dt
- *                |
- *              | |    
- *               -
- *                0
+ *                 |
+ *               | |    
+ *                -
+ *                 0
  *
  * of amplitude phi and modulus m, using the arithmetic -
  * geometric mean algorithm.
@@ -38,10 +38,7 @@
  * [0, 1].
  *                      Relative error:
  * arithmetic   domain     # trials      peak         rms
- *    DEC        0,2         2000       1.9e-16     3.4e-17
  *    IEEE     -10,10      150000       3.3e-15     1.4e-16
- *
- *
  */
 
 
@@ -182,7 +179,7 @@ double ellie(double phi, double m)
  * use the first form, accounting for the smallness of phi.
  * 
  * The algorithm used is described in Carlson, B. C. Numerical computation of
- * real or complex elliptic integrals. (1994) http://arxiv.org/abs/math/9409227
+ * real or complex elliptic integrals. (1994) https://arxiv.org/abs/math/9409227
  * Most variable names reflect Carlson's usage.
  *
  * In this routine, we assume m < 0 and  0 > phi > pi/2.

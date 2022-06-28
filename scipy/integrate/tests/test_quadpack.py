@@ -1,26 +1,19 @@
-from __future__ import division, print_function, absolute_import
-
 import sys
 import math
 import numpy as np
 from numpy import sqrt, cos, sin, arctan, exp, log, pi, Inf
-from numpy.testing import (assert_, TestCase, run_module_suite, dec,
+from numpy.testing import (assert_,
         assert_allclose, assert_array_less, assert_almost_equal)
+import pytest
+
 from scipy.integrate import quad, dblquad, tplquad, nquad
-from scipy._lib.six import xrange
+from scipy._lib._ccallback import LowLevelCallable
 
-try:
-    import ctypes
-    import ctypes.util
-    _ctypes_missing = False
-except ImportError:
-    _ctypes_missing = True
+import ctypes
+import ctypes.util
+from scipy._lib._ccallback_c import sine_ctypes
 
-try:
-    import scipy.integrate._test_multivariate as clib_test
-    _ctypes_multivariate_fail = False
-except:
-    _ctypes_multivariate_fail = True
+import scipy.integrate._test_multivariate as clib_test
 
 
 def assert_quad(value_and_err, tabled_value, errTol=1.5e-8):
@@ -30,16 +23,31 @@ def assert_quad(value_and_err, tabled_value, errTol=1.5e-8):
         assert_array_less(err, errTol)
 
 
-class TestCtypesQuad(TestCase):
-    @dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
-    def setUp(self):
+def get_clib_test_routine(name, restype, *argtypes):
+    ptr = getattr(clib_test, name)
+    return ctypes.cast(ptr, ctypes.CFUNCTYPE(restype, *argtypes))
+
+
+class TestCtypesQuad:
+    def setup_method(self):
         if sys.platform == 'win32':
-            file = ctypes.util.find_msvcrt()
+            files = ['api-ms-win-crt-math-l1-1-0.dll']
         elif sys.platform == 'darwin':
-            file = 'libm.dylib'
+            files = ['libm.dylib']
         else:
-            file = 'libm.so'
-        self.lib = ctypes.CDLL(file)
+            files = ['libm.so', 'libm.so.6']
+
+        for file in files:
+            try:
+                self.lib = ctypes.CDLL(file)
+                break
+            except OSError:
+                pass
+        else:
+            # This test doesn't work on some Linux platforms (Fedora for
+            # example) that put an ld script in libm.so - see gh-5370
+            pytest.skip("Ctypes can't import libm.so")
+
         restype = ctypes.c_double
         argtypes = (ctypes.c_double,)
         for name in ['sin', 'cos', 'tan']:
@@ -47,84 +55,78 @@ class TestCtypesQuad(TestCase):
             func.restype = restype
             func.argtypes = argtypes
 
-    @dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
     def test_typical(self):
         assert_quad(quad(self.lib.sin, 0, 5), quad(math.sin, 0, 5)[0])
         assert_quad(quad(self.lib.cos, 0, 5), quad(math.cos, 0, 5)[0])
         assert_quad(quad(self.lib.tan, 0, 1), quad(math.tan, 0, 1)[0])
 
-    #@dec.skipif(_ctypes_missing, msg="Ctypes library could not be found")
-    # This doesn't seem to always work.  Need a better way to figure out
-    # whether the fast path is called.
-    @dec.knownfailureif(True, msg="Unreliable test, see ticket 1684.")
-    def test_improvement(self):
-        import time
-        start = time.time()
-        for i in xrange(100):
-            quad(self.lib.sin, 0, 100)
-        fast = time.time() - start
-        start = time.time()
-        for i in xrange(100):
-            quad(math.sin, 0, 100)
-        slow = time.time() - start
-        assert_(fast < 0.5*slow, (fast, slow))
+    def test_ctypes_sine(self):
+        quad(LowLevelCallable(sine_ctypes), 0, 1)
+
+    def test_ctypes_variants(self):
+        sin_0 = get_clib_test_routine('_sin_0', ctypes.c_double,
+                                      ctypes.c_double, ctypes.c_void_p)
+
+        sin_1 = get_clib_test_routine('_sin_1', ctypes.c_double,
+                                      ctypes.c_int, ctypes.POINTER(ctypes.c_double),
+                                      ctypes.c_void_p)
+
+        sin_2 = get_clib_test_routine('_sin_2', ctypes.c_double,
+                                      ctypes.c_double)
+
+        sin_3 = get_clib_test_routine('_sin_3', ctypes.c_double,
+                                      ctypes.c_int, ctypes.POINTER(ctypes.c_double))
+
+        sin_4 = get_clib_test_routine('_sin_3', ctypes.c_double,
+                                      ctypes.c_int, ctypes.c_double)
+
+        all_sigs = [sin_0, sin_1, sin_2, sin_3, sin_4]
+        legacy_sigs = [sin_2, sin_4]
+        legacy_only_sigs = [sin_4]
+
+        # LowLevelCallables work for new signatures
+        for j, func in enumerate(all_sigs):
+            callback = LowLevelCallable(func)
+            if func in legacy_only_sigs:
+                pytest.raises(ValueError, quad, callback, 0, pi)
+            else:
+                assert_allclose(quad(callback, 0, pi)[0], 2.0)
+
+        # Plain ctypes items work only for legacy signatures
+        for j, func in enumerate(legacy_sigs):
+            if func in legacy_sigs:
+                assert_allclose(quad(func, 0, pi)[0], 2.0)
+            else:
+                pytest.raises(ValueError, quad, func, 0, pi)
 
 
-class TestMultivariateCtypesQuad(TestCase):
-    @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiled test functions not loaded")
-    def setUp(self):
-        self.lib = ctypes.CDLL(clib_test.__file__)
+class TestMultivariateCtypesQuad:
+    def setup_method(self):
         restype = ctypes.c_double
         argtypes = (ctypes.c_int, ctypes.c_double)
         for name in ['_multivariate_typical', '_multivariate_indefinite',
                      '_multivariate_sin']:
-            func = getattr(self.lib, name)
-            func.restype = restype
-            func.argtypes = argtypes
+            func = get_clib_test_routine(name, restype, *argtypes)
+            setattr(self, name, func)
 
-    @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiled test functions not loaded")
     def test_typical(self):
         # 1) Typical function with two extra arguments:
-        assert_quad(quad(self.lib._multivariate_typical, 0, pi, (2, 1.8)),
+        assert_quad(quad(self._multivariate_typical, 0, pi, (2, 1.8)),
                     0.30614353532540296487)
 
-    @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiled test functions not loaded")
     def test_indefinite(self):
         # 2) Infinite integration limits --- Euler's constant
-        assert_quad(quad(self.lib._multivariate_indefinite, 0, Inf),
+        assert_quad(quad(self._multivariate_indefinite, 0, Inf),
                     0.577215664901532860606512)
 
-    @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiled test functions not loaded")
     def test_threadsafety(self):
         # Ensure multivariate ctypes are threadsafe
         def threadsafety(y):
-            return y + quad(self.lib._multivariate_sin, 0, 1)[0]
+            return y + quad(self._multivariate_sin, 0, 1)[0]
         assert_quad(quad(threadsafety, 0, 1), 0.9596976941318602)
 
-    @dec.skipif(_ctypes_missing or _ctypes_multivariate_fail,
-                msg="Compiled test functions not loaded")
-    def test_improvement(self):
-        def myfunc(x):           # Euler's constant integrand
-            return -exp(-x)*log(x)
-        import time
-        start = time.time()
-        for i in xrange(20):
-            quad(self.lib._multivariate_indefinite, 0, 100)
-        fast = time.time() - start
-        start = time.time()
-        for i in xrange(20):
-            quad(myfunc, 0, 100)
-        slow = time.time() - start
-        # 2+ times faster speeds generated by nontrivial ctypes
-        # function (single variable)
-        assert_(fast < 0.5*slow, (fast, slow))
 
-
-class TestQuad(TestCase):
+class TestQuad:
     def test_typical(self):
         # 1) Typical function with two extra arguments:
         def myfunc(x, n, z):       # Bessel function integrand
@@ -140,9 +142,9 @@ class TestQuad(TestCase):
     def test_singular(self):
         # 3) Singular points in region of integration.
         def myfunc(x):
-            if x > 0 and x < 2.5:
+            if 0 < x < 2.5:
                 return sin(x)
-            elif x >= 2.5 and x <= 5.0:
+            elif 2.5 <= x <= 5.0:
                 return exp(-x)
             else:
                 return 0.0
@@ -203,6 +205,39 @@ class TestQuad(TestCase):
         assert_quad(quad(myfunc, 0, 5, args=0.4, weight='cauchy', wvar=2.0),
                     tabledValue, errTol=1.9e-8)
 
+    def test_b_less_than_a(self):
+        def f(x, p, q):
+            return p * np.exp(-q*x)
+
+        val_1, err_1 = quad(f, 0, np.inf, args=(2, 3))
+        val_2, err_2 = quad(f, np.inf, 0, args=(2, 3))
+        assert_allclose(val_1, -val_2, atol=max(err_1, err_2))
+
+    def test_b_less_than_a_2(self):
+        def f(x, s):
+            return np.exp(-x**2 / 2 / s) / np.sqrt(2.*s)
+
+        val_1, err_1 = quad(f, -np.inf, np.inf, args=(2,))
+        val_2, err_2 = quad(f, np.inf, -np.inf, args=(2,))
+        assert_allclose(val_1, -val_2, atol=max(err_1, err_2))
+
+    def test_b_less_than_a_3(self):
+        def f(x):
+            return 1.0
+
+        val_1, err_1 = quad(f, 0, 1, weight='alg', wvar=(0, 0))
+        val_2, err_2 = quad(f, 1, 0, weight='alg', wvar=(0, 0))
+        assert_allclose(val_1, -val_2, atol=max(err_1, err_2))
+
+    def test_b_less_than_a_full_output(self):
+        def f(x):
+            return 1.0
+
+        res_1 = quad(f, 0, 1, weight='alg', wvar=(0, 0), full_output=True)
+        res_2 = quad(f, 1, 0, weight='alg', wvar=(0, 0), full_output=True)
+        err = max(res_1[1], res_2[1])
+        assert_allclose(res_1[0], -res_2[0], atol=err)
+
     def test_double_integral(self):
         # 8) Double Integral test
         def simpfunc(y, x):       # Note order of arguments.
@@ -212,19 +247,33 @@ class TestQuad(TestCase):
         assert_quad(dblquad(simpfunc, a, b, lambda x: x, lambda x: 2*x),
                     5/6.0 * (b**3.0-a**3.0))
 
+    def test_double_integral2(self):
+        def func(x0, x1, t0, t1):
+            return x0 + x1 + t0 + t1
+        g = lambda x: x
+        h = lambda x: 2 * x
+        args = 1, 2
+        assert_quad(dblquad(func, 1, 2, g, h, args=args),35./6 + 9*.5)
+
+    def test_double_integral3(self):
+        def func(x0, x1):
+            return x0 + x1 + 1 + 2
+        assert_quad(dblquad(func, 1, 2, 1, 2),6.)
+        
     def test_triple_integral(self):
         # 9) Triple Integral test
-        def simpfunc(z, y, x):      # Note order of arguments.
-            return x+y+z
+        def simpfunc(z, y, x, t):      # Note order of arguments.
+            return (x+y+z)*t
 
         a, b = 1.0, 2.0
         assert_quad(tplquad(simpfunc, a, b,
                             lambda x: x, lambda x: 2*x,
-                            lambda x, y: x - y, lambda x, y: x + y),
-                    8/3.0 * (b**4.0 - a**4.0))
+                            lambda x, y: x - y, lambda x, y: x + y,
+                            (2.,)),
+                     2*8/3.0 * (b**4.0 - a**4.0))
 
 
-class TestNQuad(TestCase):
+class TestNQuad:
     def test_fixed_limits(self):
         def func1(x0, x1, x2, x3):
             val = (x0**2 + x1*x2 - x3**3 + np.sin(x0) +
@@ -235,9 +284,10 @@ class TestNQuad(TestCase):
             return {'points': [0.2*args[2] + 0.5 + 0.25*args[0]]}
 
         res = nquad(func1, [[0, 1], [-1, 1], [.13, .8], [-.15, 1]],
-                    opts=[opts_basic, {}, {}, {}])
-        assert_quad(res, 1.5267454070738635)
-
+                    opts=[opts_basic, {}, {}, {}], full_output=True)
+        assert_quad(res[:-1], 1.5267454070738635)
+        assert_(res[-1]['neval'] > 0 and res[-1]['neval'] < 4e5) 
+        
     def test_variable_limits(self):
         scale = .1
 
@@ -355,10 +405,7 @@ class TestNQuad(TestCase):
 
     def test_dict_as_opts(self):
         try:
-            out = nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
+            nquad(lambda x, y: x * y, [[0, 1], [0, 1]], opts={'epsrel': 0.0001})
         except(TypeError):
             assert False
 
-
-if __name__ == "__main__":
-    run_module_suite()

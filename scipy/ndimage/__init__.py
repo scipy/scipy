@@ -1,51 +1,47 @@
 """
 =========================================================
-Multi-dimensional image processing (:mod:`scipy.ndimage`)
+Multidimensional image processing (:mod:`scipy.ndimage`)
 =========================================================
 
 .. currentmodule:: scipy.ndimage
 
-This package contains various functions for multi-dimensional image
+This package contains various functions for multidimensional image
 processing.
 
 
-Filters :mod:`scipy.ndimage.filters`
-====================================
-
-.. module:: scipy.ndimage.filters
+Filters
+=======
 
 .. autosummary::
    :toctree: generated/
 
-   convolve - Multi-dimensional convolution
+   convolve - Multidimensional convolution
    convolve1d - 1-D convolution along the given axis
-   correlate - Multi-dimensional correlation
+   correlate - Multidimensional correlation
    correlate1d - 1-D correlation along the given axis
    gaussian_filter
    gaussian_filter1d
    gaussian_gradient_magnitude
    gaussian_laplace
-   generic_filter - Multi-dimensional filter using a given function
+   generic_filter - Multidimensional filter using a given function
    generic_filter1d - 1-D generic filter along the given axis
    generic_gradient_magnitude
    generic_laplace
-   laplace - n-D Laplace filter based on approximate second derivatives
+   laplace - N-D Laplace filter based on approximate second derivatives
    maximum_filter
    maximum_filter1d
-   median_filter - Calculates a multi-dimensional median filter
+   median_filter - Calculates a multidimensional median filter
    minimum_filter
    minimum_filter1d
-   percentile_filter - Calculates a multi-dimensional percentile filter
+   percentile_filter - Calculates a multidimensional percentile filter
    prewitt
-   rank_filter - Calculates a multi-dimensional rank filter
+   rank_filter - Calculates a multidimensional rank filter
    sobel
-   uniform_filter - Multi-dimensional uniform filter
+   uniform_filter - Multidimensional uniform filter
    uniform_filter1d - 1-D uniform filter along the given axis
 
-Fourier filters :mod:`scipy.ndimage.fourier`
-============================================
-
-.. module:: scipy.ndimage.fourier
+Fourier filters
+===============
 
 .. autosummary::
    :toctree: generated/
@@ -55,10 +51,8 @@ Fourier filters :mod:`scipy.ndimage.fourier`
    fourier_shift
    fourier_uniform
 
-Interpolation :mod:`scipy.ndimage.interpolation`
-================================================
-
-.. module:: scipy.ndimage.interpolation
+Interpolation
+=============
 
 .. autosummary::
    :toctree: generated/
@@ -72,10 +66,8 @@ Interpolation :mod:`scipy.ndimage.interpolation`
    spline_filter1d
    zoom - Zoom an array
 
-Measurements :mod:`scipy.ndimage.measurements`
-==============================================
-
-.. module:: scipy.ndimage.measurements
+Measurements
+============
 
 .. autosummary::
    :toctree: generated/
@@ -89,17 +81,16 @@ Measurements :mod:`scipy.ndimage.measurements`
    maximum
    maximum_position
    mean - Mean of the values of an array at labels
+   median
    minimum
    minimum_position
-   standard_deviation - Standard deviation of an n-D image array
-   sum - Sum of the values of the array
-   variance - Variance of the values of an n-D image array
+   standard_deviation - Standard deviation of an N-D image array
+   sum_labels - Sum of the values of the array
+   variance - Variance of the values of an N-D image array
    watershed_ift
 
-Morphology :mod:`scipy.ndimage.morphology`
-==========================================
-
-.. module:: scipy.ndimage.morphology
+Morphology
+==========
 
 .. autosummary::
    :toctree: generated/
@@ -124,16 +115,6 @@ Morphology :mod:`scipy.ndimage.morphology`
    morphological_gradient
    morphological_laplace
    white_tophat
-
-Utility
-=======
-
-.. currentmodule:: scipy.ndimage
-
-.. autosummary::
-   :toctree: generated/
-
-   imread - Load an image from a file
 
 """
 
@@ -167,17 +148,21 @@ Utility
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from __future__ import division, print_function, absolute_import
+from ._filters import *  # noqa: F401 F403
+from ._fourier import *  # noqa: F401 F403
+from ._interpolation import *  # noqa: F401 F403
+from ._measurements import *  # noqa: F401 F403
+from ._morphology import *  # noqa: F401 F403
 
-from .filters import *
-from .fourier import *
-from .interpolation import *
-from .measurements import *
-from .morphology import *
-from .io import *
-
-__version__ = '2.0'
+# Deprecated namespaces, to be removed in v2.0.0
+from . import filters  # noqa: F401
+from . import fourier  # noqa: F401
+from . import interpolation  # noqa: F401
+from . import measurements  # noqa: F401
+from . import morphology  # noqa: F401
 
 __all__ = [s for s in dir() if not s.startswith('_')]
-from numpy.testing import Tester
-test = Tester().test
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

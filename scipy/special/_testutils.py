@@ -1,64 +1,59 @@
-from __future__ import division, print_function, absolute_import
-
 import os
-import warnings
+import functools
+import operator
+from scipy._lib import _pep440
 
 import numpy as np
 from numpy.testing import assert_
-from numpy.testing.noseclasses import KnownFailureTest
+import pytest
 
 import scipy.special as sc
 
-__all__ = ['with_special_errors', 'assert_tol_equal', 'assert_func_equal',
-           'FuncData']
+__all__ = ['with_special_errors', 'assert_func_equal', 'FuncData']
+
+
+#------------------------------------------------------------------------------
+# Check if a module is present to be used in tests
+#------------------------------------------------------------------------------
+
+class MissingModule:
+    def __init__(self, name):
+        self.name = name
+
+
+def check_version(module, min_ver):
+    if type(module) == MissingModule:
+        return pytest.mark.skip(reason="{} is not installed".format(module.name))
+    return pytest.mark.skipif(_pep440.parse(module.__version__) < _pep440.Version(min_ver),
+                              reason="{} version >= {} required".format(module.__name__, min_ver))
+
 
 #------------------------------------------------------------------------------
 # Enable convergence and loss of precision warnings -- turn off one by one
 #------------------------------------------------------------------------------
-
 
 def with_special_errors(func):
     """
     Enable special function errors (such as underflow, overflow,
     loss of precision, etc.)
     """
+    @functools.wraps(func)
     def wrapper(*a, **kw):
-        old_filters = list(getattr(warnings, 'filters', []))
-        old_errprint = sc.errprint(1)
-        warnings.filterwarnings("error", category=sc.SpecialFunctionWarning)
-        try:
-            return func(*a, **kw)
-        finally:
-            sc.errprint(old_errprint)
-            setattr(warnings, 'filters', old_filters)
-    wrapper.__name__ = func.__name__
-    wrapper.__doc__ = func.__doc__
+        with sc.errstate(all='raise'):
+            res = func(*a, **kw)
+        return res
     return wrapper
 
-#------------------------------------------------------------------------------
-# Comparing function values at many data points at once, with helpful
-#------------------------------------------------------------------------------
-
-
-def assert_tol_equal(a, b, rtol=1e-7, atol=0, err_msg='', verbose=True):
-    """Assert that `a` and `b` are equal to tolerance ``atol + rtol*abs(b)``"""
-    def compare(x, y):
-        return np.allclose(x, y, rtol=rtol, atol=atol)
-    a, b = np.asanyarray(a), np.asanyarray(b)
-    header = 'Not equal to tolerance rtol=%g, atol=%g' % (rtol, atol)
-    np.testing.utils.assert_array_compare(compare, a, b, err_msg=str(err_msg),
-                                          verbose=verbose, header=header)
 
 #------------------------------------------------------------------------------
 # Comparing function values at many data points at once, with helpful
 # error reports
 #------------------------------------------------------------------------------
 
-
 def assert_func_equal(func, results, points, rtol=None, atol=None,
                       param_filter=None, knownfailure=None,
                       vectorized=True, dtype=None, nan_ok=False,
-                      ignore_inf_sign=False):
+                      ignore_inf_sign=False, distinguish_nan_and_inf=True):
     if hasattr(points, 'next'):
         # it's a generator
         points = list(points)
@@ -83,11 +78,12 @@ def assert_func_equal(func, results, points, rtol=None, atol=None,
                      result_columns=result_columns, result_func=result_func,
                      rtol=rtol, atol=atol, param_filter=param_filter,
                      knownfailure=knownfailure, nan_ok=nan_ok, vectorized=vectorized,
-                     ignore_inf_sign=ignore_inf_sign)
+                     ignore_inf_sign=ignore_inf_sign,
+                     distinguish_nan_and_inf=distinguish_nan_and_inf)
     fdata.check()
 
 
-class FuncData(object):
+class FuncData:
     """
     Data set for checking a special function.
 
@@ -95,8 +91,8 @@ class FuncData(object):
     ----------
     func : function
         Function to test
-    filename : str
-        Input file name
+    data : numpy array
+        columnar data to use for testing
     param_columns : int or tuple of ints
         Columns indices in which the parameters to `func` lie.
         Can be imaginary integers to indicate that the parameter
@@ -122,13 +118,16 @@ class FuncData(object):
     ignore_inf_sign : bool, optional
         Whether to ignore signs of infinities.
         (Doesn't matter for complex-valued functions.)
+    distinguish_nan_and_inf : bool, optional
+        If True, treat numbers which contain nans or infs as as
+        equal. Sets ignore_inf_sign to be True.
 
     """
 
     def __init__(self, func, data, param_columns, result_columns=None,
                  result_func=None, rtol=None, atol=None, param_filter=None,
                  knownfailure=None, dataname=None, nan_ok=False, vectorized=True,
-                 ignore_inf_sign=False):
+                 ignore_inf_sign=False, distinguish_nan_and_inf=True):
         self.func = func
         self.data = data
         self.dataname = dataname
@@ -155,6 +154,9 @@ class FuncData(object):
         self.nan_ok = nan_ok
         self.vectorized = vectorized
         self.ignore_inf_sign = ignore_inf_sign
+        self.distinguish_nan_and_inf = distinguish_nan_and_inf
+        if not self.distinguish_nan_and_inf:
+            self.ignore_inf_sign = True
 
     def get_tolerances(self, dtype):
         if not np.issubdtype(dtype, np.inexact):
@@ -167,11 +169,14 @@ class FuncData(object):
             atol = 5*info.tiny
         return rtol, atol
 
-    def check(self, data=None, dtype=None):
+    def check(self, data=None, dtype=None, dtypes=None):
         """Check the special function against the data."""
+        __tracebackhide__ = operator.methodcaller(
+            'errisinstance', AssertionError
+        )
 
         if self.knownfailure:
-            raise KnownFailureTest(self.knownfailure)
+            pytest.xfail(reason=self.knownfailure)
 
         if data is None:
             data = self.data
@@ -193,10 +198,12 @@ class FuncData(object):
 
         # Pick parameters from the correct columns
         params = []
-        for j in self.param_columns:
+        for idx, j in enumerate(self.param_columns):
             if np.iscomplexobj(j):
                 j = int(j.imag)
-                params.append(data[:,j].astype(np.complex))
+                params.append(data[:,j].astype(complex))
+            elif dtypes and idx < len(dtypes):
+                params.append(data[:, j].astype(dtypes[idx]))
             else:
                 params.append(data[:,j])
 
@@ -248,8 +255,7 @@ class FuncData(object):
             nan_x = np.isnan(x)
             nan_y = np.isnan(y)
 
-            olderr = np.seterr(all='ignore')
-            try:
+            with np.errstate(all='ignore'):
                 abs_y = np.absolute(y)
                 abs_y[~np.isfinite(abs_y)] = 0
                 diff = np.absolute(x - y)
@@ -257,8 +263,6 @@ class FuncData(object):
 
                 rdiff = diff / np.absolute(y)
                 rdiff[~np.isfinite(rdiff)] = 0
-            finally:
-                np.seterr(**olderr)
 
             tol_mask = (diff <= atol + rtol*abs_y)
             pinf_mask = (pinf_x == pinf_y)
@@ -274,14 +278,22 @@ class FuncData(object):
                 bad_j &= ~nan_y
                 point_count -= (nan_x | nan_y).sum()
 
+            if not self.distinguish_nan_and_inf and not self.nan_ok:
+                # If nan's are okay we've already covered all these cases
+                inf_x = np.isinf(x)
+                inf_y = np.isinf(y)
+                both_nonfinite = (inf_x & nan_y) | (nan_x & inf_y)
+                bad_j &= ~both_nonfinite
+                point_count -= both_nonfinite.sum()
+
             if np.any(bad_j):
                 # Some bad results: inform what, where, and how bad
                 msg = [""]
-                msg.append("Max |adiff|: %g" % diff.max())
-                msg.append("Max |rdiff|: %g" % rdiff.max())
+                msg.append("Max |adiff|: %g" % diff[bad_j].max())
+                msg.append("Max |rdiff|: %g" % rdiff[bad_j].max())
                 msg.append("Bad results (%d out of %d) for the following points (in output %d):"
                            % (np.sum(bad_j), point_count, output_num,))
-                for j in np.where(bad_j)[0]:
+                for j in np.nonzero(bad_j)[0]:
                     j = int(j)
                     fmt = lambda x: "%30s" % np.array2string(x[j], precision=18)
                     a = "  ".join(map(fmt, params))

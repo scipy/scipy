@@ -4,15 +4,33 @@ Module to read / write Fortran unformatted sequential files.
 This is in the spirit of code written by Neil Martinsen-Burrell and Joe Zuntz.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 import numpy as np
 
-__all__ = ['FortranFile']
+__all__ = ['FortranFile', 'FortranEOFError', 'FortranFormattingError']
 
 
-class FortranFile(object):
+class FortranEOFError(TypeError, OSError):
+    """Indicates that the file ended properly.
+
+    This error descends from TypeError because the code used to raise
+    TypeError (and this was the only way to know that the file had
+    ended) so users might have ``except TypeError:``.
+
+    """
+    pass
+
+
+class FortranFormattingError(TypeError, OSError):
+    """Indicates that the file ended mid-record.
+
+    Descends from TypeError for backward compatibility.
+
+    """
+    pass
+
+
+class FortranFile:
     """
     A file object for unformatted sequential files from Fortran code.
 
@@ -56,23 +74,35 @@ class FortranFile(object):
 
     >>> from scipy.io import FortranFile
     >>> f = FortranFile('test.unf', 'w')
-    >>> f.write_record(np.array([1,2,3,4,5],dtype=np.int32))
-    >>> f.write_record(np.linspace(0,1,20).reshape((5,-1)))
+    >>> f.write_record(np.array([1,2,3,4,5], dtype=np.int32))
+    >>> f.write_record(np.linspace(0,1,20).reshape((5,4)).T)
     >>> f.close()
 
     To read this file:
 
-    >>> from scipy.io import FortranFile
     >>> f = FortranFile('test.unf', 'r')
-    >>> print(f.read_ints(dtype=np.int32))
+    >>> print(f.read_ints(np.int32))
     [1 2 3 4 5]
-    >>> print(f.read_reals(dtype=np.float).reshape((5,-1)))
-    [[ 0.          0.05263158  0.10526316  0.15789474]
-     [ 0.21052632  0.26315789  0.31578947  0.36842105]
-     [ 0.42105263  0.47368421  0.52631579  0.57894737]
-     [ 0.63157895  0.68421053  0.73684211  0.78947368]
-     [ 0.84210526  0.89473684  0.94736842  1.        ]]
+    >>> print(f.read_reals(float).reshape((5,4), order="F"))
+    [[0.         0.05263158 0.10526316 0.15789474]
+     [0.21052632 0.26315789 0.31578947 0.36842105]
+     [0.42105263 0.47368421 0.52631579 0.57894737]
+     [0.63157895 0.68421053 0.73684211 0.78947368]
+     [0.84210526 0.89473684 0.94736842 1.        ]]
     >>> f.close()
+
+    Or, in Fortran::
+
+        integer :: a(5), i
+        double precision :: b(5,4)
+        open(1, file='test.unf', form='unformatted')
+        read(1) a
+        read(1) b
+        close(1)
+        write(*,*) a
+        do i = 1, 5
+            write(*,*) b(i,:)
+        end do
 
     """
     def __init__(self, filename, mode='r', header_dtype=np.uint32):
@@ -93,69 +123,116 @@ class FortranFile(object):
 
         self._header_dtype = header_dtype
 
-    def _read_size(self):
-        return int(np.fromfile(self._fp, dtype=self._header_dtype, count=1))
+    def _read_size(self, eof_ok=False):
+        n = self._header_dtype.itemsize
+        b = self._fp.read(n)
+        if (not b) and eof_ok:
+            raise FortranEOFError("End of file occurred at end of record")
+        elif len(b) < n:
+            raise FortranFormattingError(
+                "End of file in the middle of the record size")
+        return int(np.frombuffer(b, dtype=self._header_dtype, count=1)[0])
 
-    def write_record(self, s):
+    def write_record(self, *items):
         """
         Write a record (including sizes) to the file.
 
         Parameters
         ----------
-        s : array_like
-           The data to write.
+        *items : array_like
+            The data arrays to write.
+
+        Notes
+        -----
+        Writes data items to a file::
+
+            write_record(a.T, b.T, c.T, ...)
+
+            write(1) a, b, c, ...
+
+        Note that data in multidimensional arrays is written in
+        row-major order --- to make them read correctly by Fortran
+        programs, you need to transpose the arrays yourself when
+        writing them.
 
         """
-        s = np.array(s, order='F')
-        np.array([s.nbytes],dtype=self._header_dtype).tofile(self._fp)
-        s.tofile(self._fp)
-        np.array([s.nbytes],dtype=self._header_dtype).tofile(self._fp)
+        items = tuple(np.asarray(item) for item in items)
+        total_size = sum(item.nbytes for item in items)
 
-    def read_record(self, dtype=None):
+        nb = np.array([total_size], dtype=self._header_dtype)
+
+        nb.tofile(self._fp)
+        for item in items:
+            item.tofile(self._fp)
+        nb.tofile(self._fp)
+
+    def read_record(self, *dtypes, **kwargs):
         """
         Reads a record of a given type from the file.
 
         Parameters
         ----------
-        dtype : dtype, optional
-            Data type specifying the size and endiness of the data.
+        *dtypes : dtypes, optional
+            Data type(s) specifying the size and endiness of the data.
 
         Returns
         -------
         data : ndarray
-            A one-dimensional array object.
+            A 1-D array object.
+
+        Raises
+        ------
+        FortranEOFError
+            To signal that no further records are available
+        FortranFormattingError
+            To signal that the end of the file was encountered
+            part-way through a record
 
         Notes
         -----
-        If the record contains a multi-dimensional array, calling reshape or
-        resize will restructure the array to the correct size.
-        Since Fortran multidimensional arrays are stored in column-major format,
-        this may have some non-intuitive consequences. If the variable was
-        declared as 'INTEGER var(5,4)', for example, var could be read with
-        'read_record(dtype=np.integer).reshape( (4,5) )' since Python uses
-        row-major ordering of indices.
+        If the record contains a multidimensional array, you can specify
+        the size in the dtype. For example::
 
-        One can transpose to obtain the indices in the same order as in Fortran.
+            INTEGER var(5,4)
+
+        can be read with::
+
+            read_record('(4,5)i4').T
+
+        Note that this function does **not** assume the file data is in Fortran
+        column major order, so you need to (i) swap the order of dimensions
+        when reading and (ii) transpose the resulting array.
+
+        Alternatively, you can read the data as a 1-D array and handle the
+        ordering yourself. For example::
+
+            read_record('i4').reshape(5, 4, order='F')
 
         For records that contain several variables or mixed types (as opposed
-        to single scalar or array types), it is possible to specify a dtype
-        with mixed types:
+        to single scalar or array types), give them as separate arguments::
 
-        >>> record = f.read_record([('a', '<f4'), ('b', '<i4')])
-        >>> record['a']  # access the variable 'a'
-        5.6
+            double precision :: a
+            integer :: b
+            write(1) a, b
+
+            record = f.read_record('<f4', '<i4')
+            a = record[0]  # first number
+            b = record[1]  # second number
 
         and if any of the variables are arrays, the shape can be specified as
-        the third item in the relevant tuple:
+        the third item in the relevant dtype::
 
-        >>> record = f.read_record([('a', '<f4'), ('b', '<i4', (3,3))])
+            double precision :: a
+            integer :: b(3,4)
+            write(1) a, b
 
-        Numpy also supports a short syntax for this kind of type:
+            record = f.read_record('<f4', np.dtype(('<i4', (4, 3))))
+            a = record[0]
+            b = record[1].T
 
-        >>> record = f.read_record('<f4,(3,3)<i4')
-        >>> record['f0']  # variables are called f0, f1, ...
-        5.6
+        NumPy also supports a short syntax for this kind of type::
 
+            record = f.read_record('<f4', '(3,3)<i4')
 
         See Also
         --------
@@ -163,26 +240,61 @@ class FortranFile(object):
         read_ints
 
         """
-        if dtype is None:
-            raise ValueError('Must specify dtype')
-        dtype = np.dtype(dtype)
+        dtype = kwargs.pop('dtype', None)
+        if kwargs:
+            raise ValueError("Unknown keyword arguments {}".format(tuple(kwargs.keys())))
 
-        firstSize = self._read_size()
-        if firstSize % dtype.itemsize != 0:
+        if dtype is not None:
+            dtypes = dtypes + (dtype,)
+        elif not dtypes:
+            raise ValueError('Must specify at least one dtype')
+
+        first_size = self._read_size(eof_ok=True)
+
+        dtypes = tuple(np.dtype(dtype) for dtype in dtypes)
+        block_size = sum(dtype.itemsize for dtype in dtypes)
+
+        num_blocks, remainder = divmod(first_size, block_size)
+        if remainder != 0:
             raise ValueError('Size obtained ({0}) is not a multiple of the '
-                             'dtype given ({1}).'.format(firstSize, dtype.itemsize))
+                             'dtypes given ({1}).'.format(first_size, block_size))
 
-        data = np.fromfile(self._fp, dtype=dtype, count=firstSize//dtype.itemsize)
-        secondSize = self._read_size()
-        if firstSize != secondSize:
-            raise IOError('Sizes do not agree in the header and footer for '
-                          'this record - check header dtype')
-        return data
+        if len(dtypes) != 1 and first_size != block_size:
+            # Fortran does not write mixed type array items in interleaved order,
+            # and it's not possible to guess the sizes of the arrays that were written.
+            # The user must specify the exact sizes of each of the arrays.
+            raise ValueError('Size obtained ({0}) does not match with the expected '
+                             'size ({1}) of multi-item record'.format(first_size, block_size))
+
+        data = []
+        for dtype in dtypes:
+            r = np.fromfile(self._fp, dtype=dtype, count=num_blocks)
+            if len(r) != num_blocks:
+                raise FortranFormattingError(
+                    "End of file in the middle of a record")
+            if dtype.shape != ():
+                # Squeeze outmost block dimension for array items
+                if num_blocks == 1:
+                    assert r.shape == (1,) + dtype.shape
+                    r = r[0]
+
+            data.append(r)
+
+        second_size = self._read_size()
+        if first_size != second_size:
+            raise ValueError('Sizes do not agree in the header and footer for '
+                             'this record - check header dtype')
+
+        # Unpack result
+        if len(dtypes) == 1:
+            return data[0]
+        else:
+            return tuple(data)
 
     def read_ints(self, dtype='i4'):
         """
         Reads a record of a given type from the file, defaulting to an integer
-        type (INTEGER*4 in Fortran)
+        type (``INTEGER*4`` in Fortran).
 
         Parameters
         ----------
@@ -192,7 +304,7 @@ class FortranFile(object):
         Returns
         -------
         data : ndarray
-            A one-dimensional array object.
+            A 1-D array object.
 
         See Also
         --------
@@ -200,12 +312,12 @@ class FortranFile(object):
         read_record
 
         """
-        return self.read_record(dtype=dtype)
+        return self.read_record(dtype)
 
     def read_reals(self, dtype='f8'):
         """
         Reads a record of a given type from the file, defaulting to a floating
-        point number (real*8 in Fortran)
+        point number (``real*8`` in Fortran).
 
         Parameters
         ----------
@@ -215,7 +327,7 @@ class FortranFile(object):
         Returns
         -------
         data : ndarray
-            A one-dimensional array object.
+            A 1-D array object.
 
         See Also
         --------
@@ -223,7 +335,7 @@ class FortranFile(object):
         read_record
 
         """
-        return self.read_record(dtype=dtype)
+        return self.read_record(dtype)
 
     def close(self):
         """

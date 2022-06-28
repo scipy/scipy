@@ -2,17 +2,15 @@
 Matrix functions that use Pade approximation with inverse scaling and squaring.
 
 """
-from __future__ import division, print_function, absolute_import
-
 import warnings
 
 import numpy as np
 
 from scipy.linalg._matfuncs_sqrtm import SqrtmError, _sqrtm_triu
-from scipy.linalg.decomp_schur import schur, rsf2csf
-from scipy.linalg.matfuncs import funm
+from scipy.linalg._decomp_schur import schur, rsf2csf
+from scipy.linalg._matfuncs import funm
 from scipy.linalg import svdvals, solve_triangular
-from scipy.sparse.linalg.interface import LinearOperator
+from scipy.sparse.linalg._interface import LinearOperator
 from scipy.sparse.linalg import onenormest
 import scipy.special
 
@@ -72,7 +70,7 @@ class _MatrixM1PowerOperator(LinearOperator):
         return _MatrixM1PowerOperator(self._A.T, self._p)
 
 
-#TODO renovate or move this function when scipy operators are more mature
+#TODO renovate or move this function when SciPy operators are more mature
 def _onenormest_m1_power(A, p,
         t=2, itmax=5, compute_v=False, compute_w=False):
     """
@@ -164,7 +162,7 @@ def _briggs_helper_function(a, k):
     Parameters
     ----------
     a : complex
-        A complex number preferably belonging to the closed negative real axis.
+        A complex number.
     k : integer
         A nonnegative integer.
 
@@ -175,10 +173,10 @@ def _briggs_helper_function(a, k):
 
     Notes
     -----
-    The algorithm as written in the publication does not handle k=0 or k=1
+    The algorithm as formulated in the reference does not handle k=0 or k=1
     correctly, so these are special-cased in this implementation.
     This function is intended to not allow `a` to belong to the closed
-    negative real axis, but this is constraint is relaxed.
+    negative real axis, but this constraint is relaxed.
 
     References
     ----------
@@ -232,8 +230,8 @@ def _fractional_power_superdiag_entry(l1, l2, t12, p):
 
     Notes
     -----
-    Some amount of care has been taken to return a real number
-    if all of the inputs are real.
+    Care has been taken to return a real number if possible when
+    all of the inputs are real numbers.
 
     References
     ----------
@@ -245,7 +243,7 @@ def _fractional_power_superdiag_entry(l1, l2, t12, p):
     """
     if l1 == l2:
         f12 = t12 * p * l1**(p-1)
-    elif abs(l1) < abs(l2) / 2 or abs(l2) < abs(l1) / 2:
+    elif abs(l2 - l1) > abs(l1 + l2) / 2:
         f12 = t12 * ((l2**p) - (l1**p)) / (l2 - l1)
     else:
         # This is Eq. (5.5) in [1].
@@ -268,7 +266,8 @@ def _logm_superdiag_entry(l1, l2, t12):
     """
     Compute a superdiagonal entry of a matrix logarithm.
 
-    This is Eq. (11.28) in [1]_.
+    This is like Eq. (11.28) in [1]_, except the determination of whether
+    l1 and l2 are sufficiently far apart has been modified.
 
     Parameters
     ----------
@@ -286,8 +285,8 @@ def _logm_superdiag_entry(l1, l2, t12):
 
     Notes
     -----
-    Some amount of care has been taken to return a real number
-    if all of the inputs are real.
+    Care has been taken to return a real number if possible when
+    all of the inputs are real numbers.
 
     References
     ----------
@@ -298,15 +297,13 @@ def _logm_superdiag_entry(l1, l2, t12):
     """
     if l1 == l2:
         f12 = t12 / l1
-    elif abs(l1) < abs(l2) / 2 or abs(l2) < abs(l1) / 2:
+    elif abs(l2 - l1) > abs(l1 + l2) / 2:
         f12 = t12 * (np.log(l2) - np.log(l1)) / (l2 - l1)
     else:
         z = (l2 - l1) / (l2 + l1)
-        ua = _unwindk(np.log(l2) - np.log(l1))
-        ub = _unwindk(np.log(1+z) - np.log(1-z))
-        u = ua + ub
+        u = _unwindk(np.log(l2) - np.log(l1))
         if u:
-            f12 = t12 * (2*np.arctanh(z) + 2*np.pi*1j*(ua + ub)) / (l2 - l1)
+            f12 = t12 * 2 * (np.arctanh(z) + np.pi*1j*u) / (l2 - l1)
         else:
             f12 = t12 * 2 * np.arctanh(z) / (l2 - l1)
     return f12
@@ -370,7 +367,7 @@ def _inverse_squaring_helper(T0, theta):
     s0 = 0
     tmp_diag = np.diag(T)
     if np.count_nonzero(tmp_diag) != n:
-        raise Exception('internal inconsistency')
+        raise Exception('Diagonal entries of T must be nonzero')
     while np.max(np.absolute(tmp_diag - 1)) > theta[7]:
         tmp_diag = np.sqrt(tmp_diag)
         s0 += 1
@@ -445,7 +442,7 @@ def _inverse_squaring_helper(T0, theta):
 
     # Return the T-I matrix, the number of square roots, and the Pade degree.
     if not np.array_equal(R, np.triu(R)):
-        raise Exception('internal inconsistency')
+        raise Exception('R is not upper triangular')
     return R, s, m
 
 
@@ -464,7 +461,7 @@ def _fractional_power_pade_constant(i, t):
         j = (i - 1) // 2
         return (-j - t) / (2 * (2*j + 1))
     else:
-        raise Exception('internal error')
+        raise Exception('unnexpected value of i, i = {}'.format(i))
 
 
 def _fractional_power_pade(R, t, m):
@@ -513,7 +510,7 @@ def _fractional_power_pade(R, t, m):
         Y = solve_triangular(ident + Y, rhs)
     U = ident + Y
     if not np.array_equal(U, np.triu(U)):
-        raise Exception('internal inconsistency')
+        raise Exception('U is not upper triangular')
     return U
 
 
@@ -592,7 +589,7 @@ def _remainder_matrix_power_triu(T, t):
                         f12 = _fractional_power_superdiag_entry(l1, l2, t12, p)
                         U[j, j+1] = f12
     if not np.array_equal(U, np.triu(U)):
-        raise Exception('internal inconsistency')
+        raise Exception('U is not upper triangular')
     return U
 
 
@@ -704,7 +701,7 @@ def _fractional_matrix_power(A, p):
             R = _remainder_matrix_power(A, b)
             Q = np.linalg.matrix_power(A, a)
             return Q.dot(R)
-        except np.linalg.LinAlgError as e:
+        except np.linalg.LinAlgError:
             pass
     # If p is negative then we are going to give up.
     # If p is non-negative then we can fall back to generic funm.
@@ -816,7 +813,7 @@ def _logm_triu(T):
 
     # Return the logm of the upper triangular matrix.
     if not np.array_equal(U, np.triu(U)):
-        raise Exception('internal inconsistency')
+        raise Exception('U is not upper triangular')
     return U
 
 
@@ -849,18 +846,17 @@ def _logm(A):
     Notes
     -----
     In this function we look at triangular matrices that are similar
-    to the input matrix.  If any diagonal entry of such a triangular matrix
+    to the input matrix. If any diagonal entry of such a triangular matrix
     is exactly zero then the original matrix is singular.
     The matrix logarithm does not exist for such matrices,
     but in such cases we will pretend that the diagonal entries that are zero
     are actually slightly positive by an ad-hoc amount, in the interest
-    of returning something more useful than NaN.  This will cause a warning.
+    of returning something more useful than NaN. This will cause a warning.
 
     """
     A = np.asarray(A)
     if len(A.shape) != 2 or A.shape[0] != A.shape[1]:
         raise ValueError('expected a square matrix')
-    n = A.shape[0]
 
     # If the input matrix dtype is integer then copy to a float dtype matrix.
     if issubclass(A.dtype.type, np.integer):
@@ -877,14 +873,14 @@ def _logm(A):
             if keep_it_real:
                 T, Z = schur(A)
                 if not np.array_equal(T, np.triu(T)):
-                    T, Z = rsf2csf(T,Z)
+                    T, Z = rsf2csf(T, Z)
             else:
                 T, Z = schur(A, output='complex')
             T = _logm_force_nonsingular_triangular_matrix(T, inplace=True)
             U = _logm_triu(T)
             ZH = np.conjugate(Z).T
             return Z.dot(U).dot(ZH)
-    except (SqrtmError, LogmError) as e:
+    except (SqrtmError, LogmError):
         X = np.empty_like(A)
         X.fill(np.nan)
         return X

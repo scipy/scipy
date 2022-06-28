@@ -1,5 +1,6 @@
-      subroutine fpcons(iopt,idim,m,u,mx,x,w,ib,ie,k,s,nest,tol,maxit,
-     * k1,k2,n,t,nc,c,fp,fpint,z,a,b,g,q,nrdata,ier)
+      recursive subroutine fpcons(iopt,idim,m,u,mx,x,w,ib,ie,k,s,nest,
+     *  tol,maxit,k1,k2,n,t,nc,c,fp,fpint,z,a,b,g,q,nrdata,ier)
+ccc      implicit none   c XXX: mmnin/nmin variables on line 61
 c  ..
 c  ..scalar arguments..
       real*8 s,tol,fp
@@ -49,7 +50,7 @@ c      we compute directly the polynomial curve of degree k.           c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c  determine nmin, the number of knots for polynomial approximation.
       nmin = 2*k1
-c  find which data points are to be concidered.
+c  find which data points are to be considered.
       mb = 2
       jb = ib
       if(ib.gt.0) go to 10

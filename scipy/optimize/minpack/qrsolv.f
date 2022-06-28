@@ -1,4 +1,5 @@
-      subroutine qrsolv(n,r,ldr,ipvt,diag,qtb,x,sdiag,wa)
+      recursive
+     *subroutine qrsolv(n,r,ldr,ipvt,diag,qtb,x,sdiag,wa)
       integer n,ldr
       integer ipvt(n)
       double precision r(ldr,n),diag(n),qtb(n),x(n),sdiag(n),wa(n)
@@ -138,7 +139,7 @@ c
             qtbpj = -sin*wa(k) + cos*qtbpj
             wa(k) = temp
 c
-c           accumulate the tranformation in the row of s.
+c           accumulate the transformation in the row of s.
 c
             kp1 = k + 1
             if (n .lt. kp1) go to 70

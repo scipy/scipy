@@ -3,30 +3,33 @@
 Special functions (:mod:`scipy.special`)
 ========================================
 
-.. module:: scipy.special
+.. currentmodule:: scipy.special
 
 Nearly all of the functions below are universal functions and follow
-broadcasting and automatic array-looping rules. Exceptions are noted.
+broadcasting and automatic array-looping rules.
+
+.. seealso::
+
+   `scipy.special.cython_special` -- Typed Cython versions of special functions
+
 
 Error handling
 ==============
 
-Errors are handled by returning nans, or other appropriate values.
-Some of the special function routines will emit warnings when an error
-occurs.  By default this is disabled.  To enable such messages use
-``errprint(1)``, and to disable such messages use ``errprint(0)``.
-
-Example:
-
-    >>> print scipy.special.bdtr(-1,10,0.3)
-    >>> scipy.special.errprint(1)
-    >>> print scipy.special.bdtr(-1,10,0.3)
+Errors are handled by returning NaNs or other appropriate values.
+Some of the special function routines can emit warnings or raise
+exceptions when an error occurs. By default this is disabled; to
+query and control the current error handling state the following
+functions are provided.
 
 .. autosummary::
    :toctree: generated/
 
-   errprint
-   SpecialFunctionWarning -- Warning that can be issued with ``errprint(True)``
+   geterr                 -- Get the current way of handling special-function errors.
+   seterr                 -- Set how special-function errors are handled.
+   errstate               -- Context manager for special-function error handling.
+   SpecialFunctionWarning -- Warning that can be emitted by special functions.
+   SpecialFunctionError   -- Exception that can be raised by special functions.
 
 Available functions
 ===================
@@ -38,54 +41,68 @@ Airy functions
    :toctree: generated/
 
    airy     -- Airy functions and their derivatives.
-   airye    -- Exponentially scaled Airy functions
-   ai_zeros -- [+]Zeros of Airy functions Ai(x) and Ai'(x)
-   bi_zeros -- [+]Zeros of Airy functions Bi(x) and Bi'(x)
-   itairy   --
-   
+   airye    -- Exponentially scaled Airy functions and their derivatives.
+   ai_zeros -- Compute `nt` zeros and values of the Airy function Ai and its derivative.
+   bi_zeros -- Compute `nt` zeros and values of the Airy function Bi and its derivative.
+   itairy   -- Integrals of Airy functions
 
-Elliptic Functions and Integrals
+
+Elliptic functions and integrals
 --------------------------------
 
 .. autosummary::
    :toctree: generated/
 
-   ellipj    -- Jacobian elliptic functions
+   ellipj    -- Jacobian elliptic functions.
    ellipk    -- Complete elliptic integral of the first kind.
-   ellipkm1  -- ellipkm1(x) == ellipk(1 - x)
+   ellipkm1  -- Complete elliptic integral of the first kind around `m` = 1.
    ellipkinc -- Incomplete elliptic integral of the first kind.
    ellipe    -- Complete elliptic integral of the second kind.
    ellipeinc -- Incomplete elliptic integral of the second kind.
+   elliprc   -- Degenerate symmetric integral RC.
+   elliprd   -- Symmetric elliptic integral of the second kind.
+   elliprf   -- Completely-symmetric elliptic integral of the first kind.
+   elliprg   -- Completely-symmetric elliptic integral of the second kind.
+   elliprj   -- Symmetric elliptic integral of the third kind.
 
-Bessel Functions
+Bessel functions
 ----------------
 
 .. autosummary::
    :toctree: generated/
 
-   jv       -- Bessel function of real-valued order and complex argument.
-   jve      -- Exponentially scaled Bessel function.
-   yn       -- Bessel function of second kind (integer order).
-   yv       -- Bessel function of the second kind (real-valued order).
-   yve      -- Exponentially scaled Bessel function of the second kind.
-   kn       -- Modified Bessel function of the second kind (integer order).
-   kv       -- Modified Bessel function of the second kind (real order).
-   kve      -- Exponentially scaled modified Bessel function of the second kind.
-   iv       -- Modified Bessel function.
-   ive      -- Exponentially scaled modified Bessel function.
-   hankel1  -- Hankel function of the first kind.
-   hankel1e -- Exponentially scaled Hankel function of the first kind.
-   hankel2  -- Hankel function of the second kind.
-   hankel2e -- Exponentially scaled Hankel function of the second kind.
+   jv            -- Bessel function of the first kind of real order and \
+                    complex argument.
+   jve           -- Exponentially scaled Bessel function of order `v`.
+   yn            -- Bessel function of the second kind of integer order and \
+                    real argument.
+   yv            -- Bessel function of the second kind of real order and \
+                    complex argument.
+   yve           -- Exponentially scaled Bessel function of the second kind \
+                    of real order.
+   kn            -- Modified Bessel function of the second kind of integer \
+                    order `n`
+   kv            -- Modified Bessel function of the second kind of real order \
+                    `v`
+   kve           -- Exponentially scaled modified Bessel function of the \
+                    second kind.
+   iv            -- Modified Bessel function of the first kind of real order.
+   ive           -- Exponentially scaled modified Bessel function of the \
+                    first kind.
+   hankel1       -- Hankel function of the first kind.
+   hankel1e      -- Exponentially scaled Hankel function of the first kind.
+   hankel2       -- Hankel function of the second kind.
+   hankel2e      -- Exponentially scaled Hankel function of the second kind.
+   wright_bessel -- Wright's generalized Bessel function.
 
-The following is not an universal function:
+The following is not a universal function:
 
 .. autosummary::
    :toctree: generated/
 
-   lmbda       -- [+]Sequence of lambda functions with arbitrary order v.
+   lmbda -- Jahnke-Emden Lambda function, Lambdav(x).
 
-Zeros of Bessel Functions
+Zeros of Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^
 
 These are not universal functions:
@@ -93,76 +110,72 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   jnjnp_zeros -- [+]Zeros of integer-order Bessel functions and derivatives sorted in order.
-   jnyn_zeros  -- [+]Zeros of integer-order Bessel functions and derivatives as separate arrays.
-   jn_zeros    -- [+]Zeros of Jn(x)
-   jnp_zeros   -- [+]Zeros of Jn'(x)
-   yn_zeros    -- [+]Zeros of Yn(x)
-   ynp_zeros   -- [+]Zeros of Yn'(x)
-   y0_zeros    -- [+]Complex zeros: Y0(z0)=0 and values of Y0'(z0)
-   y1_zeros    -- [+]Complex zeros: Y1(z1)=0 and values of Y1'(z1)
-   y1p_zeros   -- [+]Complex zeros of Y1'(z1')=0 and values of Y1(z1')
+   jnjnp_zeros -- Compute zeros of integer-order Bessel functions Jn and Jn'.
+   jnyn_zeros  -- Compute nt zeros of Bessel functions Jn(x), Jn'(x), Yn(x), and Yn'(x).
+   jn_zeros    -- Compute zeros of integer-order Bessel function Jn(x).
+   jnp_zeros   -- Compute zeros of integer-order Bessel function derivative Jn'(x).
+   yn_zeros    -- Compute zeros of integer-order Bessel function Yn(x).
+   ynp_zeros   -- Compute zeros of integer-order Bessel function derivative Yn'(x).
+   y0_zeros    -- Compute nt zeros of Bessel function Y0(z), and derivative at each zero.
+   y1_zeros    -- Compute nt zeros of Bessel function Y1(z), and derivative at each zero.
+   y1p_zeros   -- Compute nt zeros of Bessel derivative Y1'(z), and value at each zero.
 
-Faster versions of common Bessel Functions
+Faster versions of common Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autosummary::
    :toctree: generated/
 
-   j0       -- Bessel function of order 0.
-   j1       -- Bessel function of order 1.
-   y0       -- Bessel function of second kind of order 0.
-   y1       -- Bessel function of second kind of order 1.
-   i0       -- Modified Bessel function of order 0.
-   i0e      -- Exponentially scaled modified Bessel function of order 0.
-   i1       -- Modified Bessel function of order 1.
-   i1e      -- Exponentially scaled modified Bessel function of order 1.
-   k0       -- Modified Bessel function of the second kind of order 0.
-   k0e      -- Exponentially scaled modified Bessel function of the second kind of order 0.
-   k1       -- Modified Bessel function of the second kind of order 1.
-   k1e      -- Exponentially scaled modified Bessel function of the second kind of order 1.
+   j0  -- Bessel function of the first kind of order 0.
+   j1  -- Bessel function of the first kind of order 1.
+   y0  -- Bessel function of the second kind of order 0.
+   y1  -- Bessel function of the second kind of order 1.
+   i0  -- Modified Bessel function of order 0.
+   i0e -- Exponentially scaled modified Bessel function of order 0.
+   i1  -- Modified Bessel function of order 1.
+   i1e -- Exponentially scaled modified Bessel function of order 1.
+   k0  -- Modified Bessel function of the second kind of order 0, :math:`K_0`.
+   k0e -- Exponentially scaled modified Bessel function K of order 0
+   k1  -- Modified Bessel function of the second kind of order 1, :math:`K_1(x)`.
+   k1e -- Exponentially scaled modified Bessel function K of order 1.
 
-Integrals of Bessel Functions
+Integrals of Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autosummary::
    :toctree: generated/
 
-   itj0y0     -- Basic integrals of j0 and y0 from 0 to x.
-   it2j0y0    -- Integrals of (1-j0(t))/t from 0 to x and y0(t)/t from x to inf.
-   iti0k0     -- Basic integrals of i0 and k0 from 0 to x.
-   it2i0k0    -- Integrals of (i0(t)-1)/t from 0 to x and k0(t)/t from x to inf.
-   besselpoly -- Integral of a Bessel function: Jv(2* a* x) * x[+]lambda from x=0 to 1.
+   itj0y0     -- Integrals of Bessel functions of order 0.
+   it2j0y0    -- Integrals related to Bessel functions of order 0.
+   iti0k0     -- Integrals of modified Bessel functions of order 0.
+   it2i0k0    -- Integrals related to modified Bessel functions of order 0.
+   besselpoly -- Weighted integral of a Bessel function.
 
-Derivatives of Bessel Functions
+Derivatives of Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. autosummary::
    :toctree: generated/
 
-   jvp     -- Nth derivative of Jv(v,z)
-   yvp     -- Nth derivative of Yv(v,z)
-   kvp     -- Nth derivative of Kv(v,z)
-   ivp     -- Nth derivative of Iv(v,z)
-   h1vp    -- Nth derivative of H1v(v,z)
-   h2vp    -- Nth derivative of H2v(v,z)
+   jvp  -- Compute nth derivative of Bessel function Jv(z) with respect to `z`.
+   yvp  -- Compute nth derivative of Bessel function Yv(z) with respect to `z`.
+   kvp  -- Compute nth derivative of real-order modified Bessel function Kv(z)
+   ivp  -- Compute nth derivative of modified Bessel function Iv(z) with respect to `z`.
+   h1vp -- Compute nth derivative of Hankel function H1v(z) with respect to `z`.
+   h2vp -- Compute nth derivative of Hankel function H2v(z) with respect to `z`.
 
-Spherical Bessel Functions
+Spherical Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-These are not universal functions:
 
 .. autosummary::
    :toctree: generated/
 
-   sph_jn   -- [+]Sequence of spherical Bessel functions, jn(z)
-   sph_yn   -- [+]Sequence of spherical Bessel functions, yn(z)
-   sph_jnyn -- [+]Sequence of spherical Bessel functions, jn(z) and yn(z)
-   sph_in   -- [+]Sequence of spherical Bessel functions, in(z)
-   sph_kn   -- [+]Sequence of spherical Bessel functions, kn(z)
-   sph_inkn -- [+]Sequence of spherical Bessel functions, in(z) and kn(z)
+   spherical_jn -- Spherical Bessel function of the first kind or its derivative.
+   spherical_yn -- Spherical Bessel function of the second kind or its derivative.
+   spherical_in -- Modified spherical Bessel function of the first kind or its derivative.
+   spherical_kn -- Modified spherical Bessel function of the second kind or its derivative.
 
-Riccati-Bessel Functions
+Riccati-Bessel functions
 ^^^^^^^^^^^^^^^^^^^^^^^^
 
 These are not universal functions:
@@ -170,23 +183,23 @@ These are not universal functions:
 .. autosummary::
    :toctree: generated/
 
-   riccati_jn -- [+]Sequence of Ricatti-Bessel functions of first kind.
-   riccati_yn -- [+]Sequence of Ricatti-Bessel functions of second kind.
+   riccati_jn -- Compute Ricatti-Bessel function of the first kind and its derivative.
+   riccati_yn -- Compute Ricatti-Bessel function of the second kind and its derivative.
 
-Struve Functions
+Struve functions
 ----------------
 
 .. autosummary::
    :toctree: generated/
 
-   struve       -- Struve function --- Hv(x)
-   modstruve    -- Modified Struve function --- Lv(x)
-   itstruve0    -- Integral of H0(t) from 0 to x
-   it2struve0   -- Integral of H0(t)/t from x to Inf.
-   itmodstruve0 -- Integral of L0(t) from 0 to x.
+   struve       -- Struve function.
+   modstruve    -- Modified Struve function.
+   itstruve0    -- Integral of the Struve function of order 0.
+   it2struve0   -- Integral related to the Struve function of order 0.
+   itmodstruve0 -- Integral of the modified Struve function of order 0.
 
 
-Raw Statistical Functions
+Raw statistical functions
 -------------------------
 
 .. seealso:: :mod:`scipy.stats`: Friendly versions of these functions.
@@ -194,165 +207,171 @@ Raw Statistical Functions
 .. autosummary::
    :toctree: generated/
 
-   bdtr       -- Sum of terms 0 through k of the binomial pdf.
-   bdtrc      -- Sum of terms k+1 through n of the binomial pdf.
-   bdtri      -- Inverse of bdtr
-   bdtrik     --
-   bdtrin     --
-   btdtr      -- Integral from 0 to x of beta pdf.
-   btdtri     -- Quantiles of beta distribution
-   btdtria    --
-   btdtrib    --
-   fdtr       -- Integral from 0 to x of F pdf.
-   fdtrc      -- Integral from x to infinity under F pdf.
-   fdtri      -- Inverse of fdtrc
-   gdtr       -- Integral from 0 to x of gamma pdf.
-   gdtrc      -- Integral from x to infinity under gamma pdf.
-   gdtria     -- Inverse with respect to `a` of gdtr.
-   gdtrib     -- Inverse with respect to `b` of gdtr.
-   gdtrix     -- Inverse with respect to `x` of gdtr.
-   nbdtr      -- Sum of terms 0 through k of the negative binomial pdf.
-   nbdtrc     -- Sum of terms k+1 to infinity under negative binomial pdf.
-   nbdtri     -- Inverse of nbdtr
-   nbdtrik    --
-   nbdtrin    --
-   ncfdtr     -- CDF of non-central t distribution.
-   ncfdtridfd -- Find degrees of freedom (denominator) of noncentral F distribution.
-   ncfdtridfn -- Find degrees of freedom (numerator) of noncentral F distribution.
-   ncfdtri    -- Inverse CDF of noncentral F distribution.
-   ncfdtrinc  -- Find noncentrality parameter of noncentral F distribution.
-   nctdtr     -- CDF of noncentral t distribution.
-   nctdtridf  -- Find degrees of freedom of noncentral t distribution.
-   nctdtrit   -- Inverse CDF of noncentral t distribution.
-   nctdtrinc  -- Find noncentrality parameter of noncentral t distribution.
-   nrdtrimn   -- Find mean of normal distribution from cdf and std.
-   nrdtrisd   -- Find std of normal distribution from cdf and mean.
-   pdtr       -- Sum of terms 0 through k of the Poisson pdf.
-   pdtrc      -- Sum of terms k+1 to infinity of the Poisson pdf.
-   pdtri      -- Inverse of pdtr
-   pdtrik     --
-   stdtr      -- Integral from -infinity to t of the Student-t pdf.
-   stdtridf   --
-   stdtrit    --
-   chdtr      -- Integral from 0 to x of the Chi-square pdf.
-   chdtrc     -- Integral from x to infnity of Chi-square pdf.
-   chdtri     -- Inverse of chdtrc.
-   chdtriv    --
-   ndtr       -- Integral from -infinity to x of standard normal pdf
-   log_ndtr   -- Logarithm of integral from -infinity to x of standard normal pdf
-   ndtri      -- Inverse of ndtr (quantiles)
-   chndtr     --
-   chndtridf  --
-   chndtrinc  --
-   chndtrix   --
-   smirnov    -- Kolmogorov-Smirnov complementary CDF for one-sided test statistic (Dn+ or Dn-)
-   smirnovi   -- Inverse of smirnov.
-   kolmogorov -- The complementary CDF of the (scaled) two-sided test statistic (Kn*) valid for large n.
-   kolmogi    -- Inverse of kolmogorov
-   tklmbda    -- Tukey-Lambda CDF
-   logit      --
-   expit      --
-   boxcox     -- Compute the Box-Cox transformation.
-   boxcox1p   -- Compute the Box-Cox transformation of 1 + x.
-   inv_boxcox -- Compute the inverse of the Box-Cox tranformation.
-   inv_boxcox1p -- Compute the inverse of the Box-Cox transformation of 1 + x.
+   bdtr         -- Binomial distribution cumulative distribution function.
+   bdtrc        -- Binomial distribution survival function.
+   bdtri        -- Inverse function to `bdtr` with respect to `p`.
+   bdtrik       -- Inverse function to `bdtr` with respect to `k`.
+   bdtrin       -- Inverse function to `bdtr` with respect to `n`.
+   btdtr        -- Cumulative distribution function of the beta distribution.
+   btdtri       -- The `p`-th quantile of the beta distribution.
+   btdtria      -- Inverse of `btdtr` with respect to `a`.
+   btdtrib      -- btdtria(a, p, x).
+   fdtr         -- F cumulative distribution function.
+   fdtrc        -- F survival function.
+   fdtri        -- The `p`-th quantile of the F-distribution.
+   fdtridfd     -- Inverse to `fdtr` vs dfd.
+   gdtr         -- Gamma distribution cumulative distribution function.
+   gdtrc        -- Gamma distribution survival function.
+   gdtria       -- Inverse of `gdtr` vs a.
+   gdtrib       -- Inverse of `gdtr` vs b.
+   gdtrix       -- Inverse of `gdtr` vs x.
+   nbdtr        -- Negative binomial cumulative distribution function.
+   nbdtrc       -- Negative binomial survival function.
+   nbdtri       -- Inverse of `nbdtr` vs `p`.
+   nbdtrik      -- Inverse of `nbdtr` vs `k`.
+   nbdtrin      -- Inverse of `nbdtr` vs `n`.
+   ncfdtr       -- Cumulative distribution function of the non-central F distribution.
+   ncfdtridfd   -- Calculate degrees of freedom (denominator) for the noncentral F-distribution.
+   ncfdtridfn   -- Calculate degrees of freedom (numerator) for the noncentral F-distribution.
+   ncfdtri      -- Inverse cumulative distribution function of the non-central F distribution.
+   ncfdtrinc    -- Calculate non-centrality parameter for non-central F distribution.
+   nctdtr       -- Cumulative distribution function of the non-central `t` distribution.
+   nctdtridf    -- Calculate degrees of freedom for non-central t distribution.
+   nctdtrit     -- Inverse cumulative distribution function of the non-central t distribution.
+   nctdtrinc    -- Calculate non-centrality parameter for non-central t distribution.
+   nrdtrimn     -- Calculate mean of normal distribution given other params.
+   nrdtrisd     -- Calculate standard deviation of normal distribution given other params.
+   pdtr         -- Poisson cumulative distribution function.
+   pdtrc        -- Poisson survival function.
+   pdtri        -- Inverse to `pdtr` vs m.
+   pdtrik       -- Inverse to `pdtr` vs k.
+   stdtr        -- Student t distribution cumulative distribution function.
+   stdtridf     -- Inverse of `stdtr` vs df.
+   stdtrit      -- Inverse of `stdtr` vs `t`.
+   chdtr        -- Chi square cumulative distribution function.
+   chdtrc       -- Chi square survival function.
+   chdtri       -- Inverse to `chdtrc`.
+   chdtriv      -- Inverse to `chdtr` vs `v`.
+   ndtr         -- Gaussian cumulative distribution function.
+   log_ndtr     -- Logarithm of Gaussian cumulative distribution function.
+   ndtri        -- Inverse of `ndtr` vs x.
+   ndtri_exp    -- Inverse of `log_ndtr` vs x.
+   chndtr       -- Non-central chi square cumulative distribution function.
+   chndtridf    -- Inverse to `chndtr` vs `df`.
+   chndtrinc    -- Inverse to `chndtr` vs `nc`.
+   chndtrix     -- Inverse to `chndtr` vs `x`.
+   smirnov      -- Kolmogorov-Smirnov complementary cumulative distribution function.
+   smirnovi     -- Inverse to `smirnov`.
+   kolmogorov   -- Complementary cumulative distribution function of Kolmogorov distribution.
+   kolmogi      -- Inverse function to `kolmogorov`.
+   tklmbda      -- Tukey-Lambda cumulative distribution function.
+   logit        -- Logit ufunc for ndarrays.
+   expit        -- Logistic sigmoid function.
+   log_expit    -- Logarithm of the logistic sigmoid function.
+   boxcox       -- Compute the Box-Cox transformation.
+   boxcox1p     -- Compute the Box-Cox transformation of 1 + `x`.
+   inv_boxcox   -- Compute the inverse of the Box-Cox transformation.
+   inv_boxcox1p -- Compute the inverse of the Box-Cox transformation.
+   owens_t      -- Owen's T Function.
 
 
-Information Theory Functions
+Information Theory functions
 ----------------------------
 
 .. autosummary::
    :toctree: generated/
 
-   entr         -- entr(x) = -x*log(x)
-   rel_entr     -- rel_entr(x, y) = x*log(x/y)
-   kl_div       -- kl_div(x, y) = x*log(x/y) - x + y
+   entr         -- Elementwise function for computing entropy.
+   rel_entr     -- Elementwise function for computing relative entropy.
+   kl_div       -- Elementwise function for computing Kullback-Leibler divergence.
    huber        -- Huber loss function.
    pseudo_huber -- Pseudo-Huber loss function.
 
 
-Gamma and Related Functions
+Gamma and related functions
 ---------------------------
 
 .. autosummary::
    :toctree: generated/
 
    gamma        -- Gamma function.
-   gammaln      -- Log of the absolute value of the gamma function.
+   gammaln      -- Logarithm of the absolute value of the Gamma function for real inputs.
+   loggamma     -- Principal branch of the logarithm of the Gamma function.
    gammasgn     -- Sign of the gamma function.
-   gammainc     -- Incomplete gamma integral.
-   gammaincinv  -- Inverse of gammainc.
-   gammaincc    -- Complemented incomplete gamma integral.
-   gammainccinv -- Inverse of gammaincc.
+   gammainc     -- Regularized lower incomplete gamma function.
+   gammaincinv  -- Inverse to `gammainc`.
+   gammaincc    -- Regularized upper incomplete gamma function.
+   gammainccinv -- Inverse to `gammaincc`.
    beta         -- Beta function.
-   betaln       -- Log of the absolute value of the beta function.
+   betaln       -- Natural logarithm of absolute value of beta function.
    betainc      -- Incomplete beta integral.
-   betaincinv   -- Inverse of betainc.
-   psi          -- Logarithmic derivative of the gamma function.
-   rgamma       -- One divided by the gamma function.
-   polygamma    -- Nth derivative of psi function.
-   multigammaln -- Log of the multivariate gamma.
-   digamma      -- Digamma function (derivative of the logarithm of gamma).
-   poch         -- The Pochhammer symbol (rising factorial).
+   betaincinv   -- Inverse function to beta integral.
+   psi          -- The digamma function.
+   rgamma       -- Gamma function inverted.
+   polygamma    -- Polygamma function n.
+   multigammaln -- Returns the log of multivariate gamma, also sometimes called the generalized gamma.
+   digamma      -- psi(x[, out]).
+   poch         -- Rising factorial (z)_m.
 
 
-Error Function and Fresnel Integrals
+Error function and Fresnel integrals
 ------------------------------------
 
 .. autosummary::
    :toctree: generated/
 
-   erf           -- Error function.
-   erfc          -- Complemented error function (1- erf(x))
-   erfcx         -- Scaled complemented error function exp(x**2)*erfc(x)
-   erfi          -- Imaginary error function, -i erf(i x)
-   erfinv        -- Inverse of error function
-   erfcinv       -- Inverse of erfc
-   wofz          -- Fadeeva function.
+   erf           -- Returns the error function of complex argument.
+   erfc          -- Complementary error function, ``1 - erf(x)``.
+   erfcx         -- Scaled complementary error function, ``exp(x**2) * erfc(x)``.
+   erfi          -- Imaginary error function, ``-i erf(i z)``.
+   erfinv        -- Inverse function for erf.
+   erfcinv       -- Inverse function for erfc.
+   wofz          -- Faddeeva function.
    dawsn         -- Dawson's integral.
-   fresnel       -- Fresnel sine and cosine integrals.
-   fresnel_zeros -- Complex zeros of both Fresnel integrals
-   modfresnelp   -- Modified Fresnel integrals F_+(x) and K_+(x)
-   modfresnelm   -- Modified Fresnel integrals F_-(x) and K_-(x)
+   fresnel       -- Fresnel sin and cos integrals.
+   fresnel_zeros -- Compute nt complex zeros of sine and cosine Fresnel integrals S(z) and C(z).
+   modfresnelp   -- Modified Fresnel positive integrals.
+   modfresnelm   -- Modified Fresnel negative integrals.
+   voigt_profile -- Voigt profile.
 
 These are not universal functions:
 
 .. autosummary::
    :toctree: generated/
 
-   erf_zeros      -- [+]Complex zeros of erf(z)
-   fresnelc_zeros -- [+]Complex zeros of Fresnel cosine integrals
-   fresnels_zeros -- [+]Complex zeros of Fresnel sine integrals
+   erf_zeros      -- Compute nt complex zeros of error function erf(z).
+   fresnelc_zeros -- Compute nt complex zeros of cosine Fresnel integral C(z).
+   fresnels_zeros -- Compute nt complex zeros of sine Fresnel integral S(z).
 
-Legendre Functions
+Legendre functions
 ------------------
 
 .. autosummary::
    :toctree: generated/
 
-   lpmv     -- Associated Legendre Function of arbitrary non-negative degree v.
-   sph_harm -- Spherical Harmonics (complex-valued) Y^m_n(theta,phi)
+   lpmv     -- Associated Legendre function of integer order and real degree.
+   sph_harm -- Compute spherical harmonics.
 
 These are not universal functions:
 
 .. autosummary::
    :toctree: generated/
 
-   clpmn    -- [+]Associated Legendre Function of the first kind for complex arguments.
-   lpn      -- [+]Legendre Functions (polynomials) of the first kind
-   lqn      -- [+]Legendre Functions of the second kind.
-   lpmn     -- [+]Associated Legendre Function of the first kind for real arguments.
-   lqmn     -- [+]Associated Legendre Function of the second kind.
+   clpmn -- Associated Legendre function of the first kind for complex arguments.
+   lpn   -- Legendre function of the first kind.
+   lqn   -- Legendre function of the second kind.
+   lpmn  -- Sequence of associated Legendre functions of the first kind.
+   lqmn  -- Sequence of associated Legendre functions of the second kind.
 
-Ellipsoidal Harmonics
+Ellipsoidal harmonics
 ---------------------
 
 .. autosummary::
    :toctree: generated/
 
-   ellip_harm    -- Ellipsoidal harmonic E
-   ellip_harm_2  -- Ellipsoidal harmonic F
-   ellip_normal  -- Ellipsoidal normalization constant
+   ellip_harm   -- Ellipsoidal harmonic functions E^p_n(l).
+   ellip_harm_2 -- Ellipsoidal harmonic functions F^p_n(l).
+   ellip_normal -- Ellipsoidal harmonic normalization constants gamma^p_n.
 
 Orthogonal polynomials
 ----------------------
@@ -362,50 +381,72 @@ The following functions evaluate values of orthogonal polynomials:
 .. autosummary::
    :toctree: generated/
 
-   assoc_laguerre
-   eval_legendre
-   eval_chebyt
-   eval_chebyu
-   eval_chebyc
-   eval_chebys
-   eval_jacobi
-   eval_laguerre
-   eval_genlaguerre
-   eval_hermite
-   eval_hermitenorm
-   eval_gegenbauer
-   eval_sh_legendre
-   eval_sh_chebyt
-   eval_sh_chebyu
-   eval_sh_jacobi
+   assoc_laguerre   -- Compute the generalized (associated) Laguerre polynomial of degree n and order k.
+   eval_legendre    -- Evaluate Legendre polynomial at a point.
+   eval_chebyt      -- Evaluate Chebyshev polynomial of the first kind at a point.
+   eval_chebyu      -- Evaluate Chebyshev polynomial of the second kind at a point.
+   eval_chebyc      -- Evaluate Chebyshev polynomial of the first kind on [-2, 2] at a point.
+   eval_chebys      -- Evaluate Chebyshev polynomial of the second kind on [-2, 2] at a point.
+   eval_jacobi      -- Evaluate Jacobi polynomial at a point.
+   eval_laguerre    -- Evaluate Laguerre polynomial at a point.
+   eval_genlaguerre -- Evaluate generalized Laguerre polynomial at a point.
+   eval_hermite     -- Evaluate physicist's Hermite polynomial at a point.
+   eval_hermitenorm -- Evaluate probabilist's (normalized) Hermite polynomial at a point.
+   eval_gegenbauer  -- Evaluate Gegenbauer polynomial at a point.
+   eval_sh_legendre -- Evaluate shifted Legendre polynomial at a point.
+   eval_sh_chebyt   -- Evaluate shifted Chebyshev polynomial of the first kind at a point.
+   eval_sh_chebyu   -- Evaluate shifted Chebyshev polynomial of the second kind at a point.
+   eval_sh_jacobi   -- Evaluate shifted Jacobi polynomial at a point.
+
+The following functions compute roots and quadrature weights for
+orthogonal polynomials:
+
+.. autosummary::
+   :toctree: generated/
+
+   roots_legendre    -- Gauss-Legendre quadrature.
+   roots_chebyt      -- Gauss-Chebyshev (first kind) quadrature.
+   roots_chebyu      -- Gauss-Chebyshev (second kind) quadrature.
+   roots_chebyc      -- Gauss-Chebyshev (first kind) quadrature.
+   roots_chebys      -- Gauss-Chebyshev (second kind) quadrature.
+   roots_jacobi      -- Gauss-Jacobi quadrature.
+   roots_laguerre    -- Gauss-Laguerre quadrature.
+   roots_genlaguerre -- Gauss-generalized Laguerre quadrature.
+   roots_hermite     -- Gauss-Hermite (physicst's) quadrature.
+   roots_hermitenorm -- Gauss-Hermite (statistician's) quadrature.
+   roots_gegenbauer  -- Gauss-Gegenbauer quadrature.
+   roots_sh_legendre -- Gauss-Legendre (shifted) quadrature.
+   roots_sh_chebyt   -- Gauss-Chebyshev (first kind, shifted) quadrature.
+   roots_sh_chebyu   -- Gauss-Chebyshev (second kind, shifted) quadrature.
+   roots_sh_jacobi   -- Gauss-Jacobi (shifted) quadrature.
 
 The functions below, in turn, return the polynomial coefficients in
-:class:`~.orthopoly1d` objects, which function similarly as :ref:`numpy.poly1d`.
-The :class:`~.orthopoly1d` class also has an attribute ``weights`` which returns
+``orthopoly1d`` objects, which function similarly as `numpy.poly1d`.
+The ``orthopoly1d`` class also has an attribute ``weights``, which returns
 the roots, weights, and total weights for the appropriate form of Gaussian
-quadrature.  These are returned in an ``n x 3`` array with roots in the first
+quadrature. These are returned in an ``n x 3`` array with roots in the first
 column, weights in the second column, and total weights in the final column.
-Note that :class:`~.orthopoly1d` objects are converted to ``poly1d`` when doing
+Note that ``orthopoly1d`` objects are converted to `~numpy.poly1d` when doing
 arithmetic, and lose information of the original orthogonal polynomial.
 
 .. autosummary::
    :toctree: generated/
 
-   legendre    -- [+]Legendre polynomial P_n(x) (lpn -- for function).
-   chebyt      -- [+]Chebyshev polynomial T_n(x)
-   chebyu      -- [+]Chebyshev polynomial U_n(x)
-   chebyc      -- [+]Chebyshev polynomial C_n(x)
-   chebys      -- [+]Chebyshev polynomial S_n(x)
-   jacobi      -- [+]Jacobi polynomial P^(alpha,beta)_n(x)
-   laguerre    -- [+]Laguerre polynomial, L_n(x)
-   genlaguerre -- [+]Generalized (Associated) Laguerre polynomial, L^alpha_n(x)
-   hermite     -- [+]Hermite polynomial H_n(x)
-   hermitenorm -- [+]Normalized Hermite polynomial, He_n(x)
-   gegenbauer  -- [+]Gegenbauer (Ultraspherical) polynomials, C^(alpha)_n(x)
-   sh_legendre -- [+]shifted Legendre polynomial, P*_n(x)
-   sh_chebyt   -- [+]shifted Chebyshev polynomial, T*_n(x)
-   sh_chebyu   -- [+]shifted Chebyshev polynomial, U*_n(x)
-   sh_jacobi   -- [+]shifted Jacobi polynomial, J*_n(x) = G^(p,q)_n(x)
+   legendre    -- Legendre polynomial.
+   chebyt      -- Chebyshev polynomial of the first kind.
+   chebyu      -- Chebyshev polynomial of the second kind.
+   chebyc      -- Chebyshev polynomial of the first kind on :math:`[-2, 2]`.
+   chebys      -- Chebyshev polynomial of the second kind on :math:`[-2, 2]`.
+   jacobi      -- Jacobi polynomial.
+   laguerre    -- Laguerre polynomial.
+   genlaguerre -- Generalized (associated) Laguerre polynomial.
+   hermite     -- Physicist's Hermite polynomial.
+   hermitenorm -- Normalized (probabilist's) Hermite polynomial.
+   gegenbauer  -- Gegenbauer (ultraspherical) polynomial.
+   sh_legendre -- Shifted Legendre polynomial.
+   sh_chebyt   -- Shifted Chebyshev polynomial of the first kind.
+   sh_chebyu   -- Shifted Chebyshev polynomial of the second kind.
+   sh_jacobi   -- Shifted Jacobi polynomial.
 
 .. warning::
 
@@ -414,208 +455,242 @@ arithmetic, and lose information of the original orthogonal polynomial.
    values, the ``eval_*`` functions should be used instead.
 
 
-
-Hypergeometric Functions
+Hypergeometric functions
 ------------------------
 
 .. autosummary::
    :toctree: generated/
 
-   hyp2f1   -- Gauss hypergeometric function (2F1)
-   hyp1f1   -- Confluent hypergeometric function (1F1)
-   hyperu   -- Confluent hypergeometric function (U)
-   hyp0f1   -- Confluent hypergeometric limit function (0F1)
-   hyp2f0   -- Hypergeometric function (2F0)
-   hyp1f2   -- Hypergeometric function (1F2)
-   hyp3f0   -- Hypergeometric function (3F0)
+   hyp2f1 -- Gauss hypergeometric function 2F1(a, b; c; z).
+   hyp1f1 -- Confluent hypergeometric function 1F1(a, b; x).
+   hyperu -- Confluent hypergeometric function U(a, b, x) of the second kind.
+   hyp0f1 -- Confluent hypergeometric limit function 0F1.
 
 
-Parabolic Cylinder Functions
+Parabolic cylinder functions
 ----------------------------
 
 .. autosummary::
    :toctree: generated/
 
-   pbdv     -- Parabolic cylinder function Dv(x) and derivative.
-   pbvv     -- Parabolic cylinder function Vv(x) and derivative.
-   pbwa     -- Parabolic cylinder function W(a,x) and derivative.
+   pbdv -- Parabolic cylinder function D.
+   pbvv -- Parabolic cylinder function V.
+   pbwa -- Parabolic cylinder function W.
 
 These are not universal functions:
 
 .. autosummary::
    :toctree: generated/
 
-   pbdv_seq -- [+]Sequence of parabolic cylinder functions Dv(x)
-   pbvv_seq -- [+]Sequence of parabolic cylinder functions Vv(x)
-   pbdn_seq -- [+]Sequence of parabolic cylinder functions Dn(z), complex z
+   pbdv_seq -- Parabolic cylinder functions Dv(x) and derivatives.
+   pbvv_seq -- Parabolic cylinder functions Vv(x) and derivatives.
+   pbdn_seq -- Parabolic cylinder functions Dn(z) and derivatives.
 
-Mathieu and Related Functions
+Mathieu and related functions
 -----------------------------
 
 .. autosummary::
    :toctree: generated/
 
-   mathieu_a       -- Characteristic values for even solution (ce_m)
-   mathieu_b       -- Characteristic values for odd solution (se_m)
+   mathieu_a -- Characteristic value of even Mathieu functions.
+   mathieu_b -- Characteristic value of odd Mathieu functions.
 
 These are not universal functions:
 
 .. autosummary::
    :toctree: generated/
 
-   mathieu_even_coef -- [+]sequence of expansion coefficients for even solution
-   mathieu_odd_coef  -- [+]sequence of expansion coefficients for odd solution
+   mathieu_even_coef -- Fourier coefficients for even Mathieu and modified Mathieu functions.
+   mathieu_odd_coef  -- Fourier coefficients for even Mathieu and modified Mathieu functions.
 
 The following return both function and first derivative:
 
 .. autosummary::
    :toctree: generated/
 
-   mathieu_cem     -- Even Mathieu function
-   mathieu_sem     -- Odd Mathieu function
-   mathieu_modcem1 -- Even modified Mathieu function of the first kind
-   mathieu_modcem2 -- Even modified Mathieu function of the second kind
-   mathieu_modsem1 -- Odd modified Mathieu function of the first kind
-   mathieu_modsem2 -- Odd modified Mathieu function of the second kind
+   mathieu_cem     -- Even Mathieu function and its derivative.
+   mathieu_sem     -- Odd Mathieu function and its derivative.
+   mathieu_modcem1 -- Even modified Mathieu function of the first kind and its derivative.
+   mathieu_modcem2 -- Even modified Mathieu function of the second kind and its derivative.
+   mathieu_modsem1 -- Odd modified Mathieu function of the first kind and its derivative.
+   mathieu_modsem2 -- Odd modified Mathieu function of the second kind and its derivative.
 
-Spheroidal Wave Functions
+Spheroidal wave functions
 -------------------------
 
 .. autosummary::
    :toctree: generated/
 
-   pro_ang1   -- Prolate spheroidal angular function of the first kind
-   pro_rad1   -- Prolate spheroidal radial function of the first kind
-   pro_rad2   -- Prolate spheroidal radial function of the second kind
-   obl_ang1   -- Oblate spheroidal angular function of the first kind
-   obl_rad1   -- Oblate spheroidal radial function of the first kind
-   obl_rad2   -- Oblate spheroidal radial function of the second kind
-   pro_cv     -- Compute characteristic value for prolate functions
-   obl_cv     -- Compute characteristic value for oblate functions
-   pro_cv_seq -- Compute sequence of prolate characteristic values
-   obl_cv_seq -- Compute sequence of oblate characteristic values
+   pro_ang1   -- Prolate spheroidal angular function of the first kind and its derivative.
+   pro_rad1   -- Prolate spheroidal radial function of the first kind and its derivative.
+   pro_rad2   -- Prolate spheroidal radial function of the secon kind and its derivative.
+   obl_ang1   -- Oblate spheroidal angular function of the first kind and its derivative.
+   obl_rad1   -- Oblate spheroidal radial function of the first kind and its derivative.
+   obl_rad2   -- Oblate spheroidal radial function of the second kind and its derivative.
+   pro_cv     -- Characteristic value of prolate spheroidal function.
+   obl_cv     -- Characteristic value of oblate spheroidal function.
+   pro_cv_seq -- Characteristic values for prolate spheroidal wave functions.
+   obl_cv_seq -- Characteristic values for oblate spheroidal wave functions.
 
 The following functions require pre-computed characteristic value:
 
 .. autosummary::
    :toctree: generated/
 
-   pro_ang1_cv -- Prolate spheroidal angular function of the first kind
-   pro_rad1_cv -- Prolate spheroidal radial function of the first kind
-   pro_rad2_cv -- Prolate spheroidal radial function of the second kind
-   obl_ang1_cv -- Oblate spheroidal angular function of the first kind
-   obl_rad1_cv -- Oblate spheroidal radial function of the first kind
-   obl_rad2_cv -- Oblate spheroidal radial function of the second kind
+   pro_ang1_cv -- Prolate spheroidal angular function pro_ang1 for precomputed characteristic value.
+   pro_rad1_cv -- Prolate spheroidal radial function pro_rad1 for precomputed characteristic value.
+   pro_rad2_cv -- Prolate spheroidal radial function pro_rad2 for precomputed characteristic value.
+   obl_ang1_cv -- Oblate spheroidal angular function obl_ang1 for precomputed characteristic value.
+   obl_rad1_cv -- Oblate spheroidal radial function obl_rad1 for precomputed characteristic value.
+   obl_rad2_cv -- Oblate spheroidal radial function obl_rad2 for precomputed characteristic value.
 
-Kelvin Functions
+Kelvin functions
 ----------------
 
 .. autosummary::
    :toctree: generated/
 
-   kelvin       -- All Kelvin functions (order 0) and derivatives.
-   kelvin_zeros -- [+]Zeros of All Kelvin functions (order 0) and derivatives
-   ber          -- Kelvin function ber x
-   bei          -- Kelvin function bei x
-   berp         -- Derivative of Kelvin function ber x
-   beip         -- Derivative of Kelvin function bei x
-   ker          -- Kelvin function ker x
-   kei          -- Kelvin function kei x
-   kerp         -- Derivative of Kelvin function ker x
-   keip         -- Derivative of Kelvin function kei x
+   kelvin       -- Kelvin functions as complex numbers.
+   kelvin_zeros -- Compute nt zeros of all Kelvin functions.
+   ber          -- Kelvin function ber.
+   bei          -- Kelvin function bei
+   berp         -- Derivative of the Kelvin function `ber`.
+   beip         -- Derivative of the Kelvin function `bei`.
+   ker          -- Kelvin function ker.
+   kei          -- Kelvin function ker.
+   kerp         -- Derivative of the Kelvin function ker.
+   keip         -- Derivative of the Kelvin function kei.
 
 These are not universal functions:
 
 .. autosummary::
    :toctree: generated/
 
-   ber_zeros    -- [+]Zeros of Kelvin function bei x
-   bei_zeros    -- [+]Zeros of Kelvin function ber x
-   berp_zeros   -- [+]Zeros of derivative of Kelvin function ber x
-   beip_zeros   -- [+]Zeros of derivative of Kelvin function bei x
-   ker_zeros    -- [+]Zeros of Kelvin function kei x
-   kei_zeros    -- [+]Zeros of Kelvin function ker x
-   kerp_zeros   -- [+]Zeros of derivative of Kelvin function ker x
-   keip_zeros   -- [+]Zeros of derivative of Kelvin function kei x
+   ber_zeros  -- Compute nt zeros of the Kelvin function ber(x).
+   bei_zeros  -- Compute nt zeros of the Kelvin function bei(x).
+   berp_zeros -- Compute nt zeros of the Kelvin function ber'(x).
+   beip_zeros -- Compute nt zeros of the Kelvin function bei'(x).
+   ker_zeros  -- Compute nt zeros of the Kelvin function ker(x).
+   kei_zeros  -- Compute nt zeros of the Kelvin function kei(x).
+   kerp_zeros -- Compute nt zeros of the Kelvin function ker'(x).
+   keip_zeros -- Compute nt zeros of the Kelvin function kei'(x).
 
 Combinatorics
 -------------
 
 .. autosummary::
-    :toctree: generated/
+   :toctree: generated/
 
-    comb    -- [+]Combinations of N things taken k at a time, "N choose k"
-    perm    -- [+]Permutations of N things taken k at a time, "k-permutations of N"
+   comb -- The number of combinations of N things taken k at a time.
+   perm -- Permutations of N things taken k at a time, i.e., k-permutations of N.
 
-Other Special Functions
+Lambert W and related functions
+-------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   lambertw    -- Lambert W function.
+   wrightomega -- Wright Omega function.
+
+Other special functions
 -----------------------
 
 .. autosummary::
    :toctree: generated/
 
-   agm          -- Arithmetic-Geometric Mean
-   bernoulli    -- Bernoulli numbers
-   binom        -- Binomial coefficient.
-   diric        -- Dirichlet function (periodic sinc)
-   euler        -- Euler numbers
-   expn         -- Exponential integral.
-   exp1         -- Exponential integral of order 1 (for complex argument)
-   expi         -- Another exponential integral -- Ei(x)
-   factorial    -- The factorial function, n! = special.gamma(n+1)
-   factorial2   -- Double factorial, (n!)!
-   factorialk   -- [+](...((n!)!)!...)! where there are k '!'
-   shichi       -- Hyperbolic sine and cosine integrals.
-   sici         -- Integral of the sinc and "cosinc" functions.
-   spence       -- Dilogarithm integral.
-   lambertw     -- Lambert W function
-   zeta         -- Riemann zeta function of two arguments.
-   zetac        -- Standard Riemann zeta function minus 1.
+   agm         -- Arithmetic, Geometric Mean.
+   bernoulli   -- Bernoulli numbers B0..Bn (inclusive).
+   binom       -- Binomial coefficient
+   diric       -- Periodic sinc function, also called the Dirichlet function.
+   euler       -- Euler numbers E0..En (inclusive).
+   expn        -- Exponential integral E_n.
+   exp1        -- Exponential integral E_1 of complex argument z.
+   expi        -- Exponential integral Ei.
+   factorial   -- The factorial of a number or array of numbers.
+   factorial2  -- Double factorial.
+   factorialk  -- Multifactorial of n of order k, n(!!...!).
+   shichi      -- Hyperbolic sine and cosine integrals.
+   sici        -- Sine and cosine integrals.
+   softmax     -- Softmax function.
+   log_softmax -- Logarithm of softmax function.
+   spence      -- Spence's function, also known as the dilogarithm.
+   zeta        -- Riemann zeta function.
+   zetac       -- Riemann zeta function minus 1.
 
-Convenience Functions
+Convenience functions
 ---------------------
 
 .. autosummary::
    :toctree: generated/
 
-   cbrt     -- Cube root.
-   exp10    -- 10 raised to the x power.
-   exp2     -- 2 raised to the x power.
-   radian   -- radian angle given degrees, minutes, and seconds.
-   cosdg    -- cosine of the angle given in degrees.
-   sindg    -- sine of the angle given in degrees.
-   tandg    -- tangent of the angle given in degrees.
-   cotdg    -- cotangent of the angle given in degrees.
-   log1p    -- log(1+x)
-   expm1    -- exp(x)-1
-   cosm1    -- cos(x)-1
-   round    -- round the argument to the nearest integer. If argument ends in 0.5 exactly, pick the nearest even integer.
-   xlogy    -- x*log(y)
-   xlog1py  -- x*log1p(y)
-
-.. [+] in the description indicates a function which is not a universal
-.. function and does not follow broadcasting and automatic
-.. array-looping rules.
+   cbrt      -- Cube root of `x`.
+   exp10     -- 10**x.
+   exp2      -- 2**x.
+   radian    -- Convert from degrees to radians.
+   cosdg     -- Cosine of the angle `x` given in degrees.
+   sindg     -- Sine of angle given in degrees.
+   tandg     -- Tangent of angle x given in degrees.
+   cotdg     -- Cotangent of the angle `x` given in degrees.
+   log1p     -- Calculates log(1+x) for use when `x` is near zero.
+   expm1     -- exp(x) - 1 for use when `x` is near zero.
+   cosm1     -- cos(x) - 1 for use when `x` is near zero.
+   round     -- Round to nearest integer.
+   xlogy     -- Compute ``x*log(y)`` so that the result is 0 if ``x = 0``.
+   xlog1py   -- Compute ``x*log1p(y)`` so that the result is 0 if ``x = 0``.
+   logsumexp -- Compute the log of the sum of exponentials of input elements.
+   exprel    -- Relative error exponential, (exp(x)-1)/x, for use when `x` is near zero.
+   sinc      -- Return the sinc function.
 
 """
 
-from __future__ import division, print_function, absolute_import
+from ._sf_error import SpecialFunctionWarning, SpecialFunctionError
 
+from . import _ufuncs
 from ._ufuncs import *
 
-from .basic import *
-from . import specfun
-from . import orthogonal
-from .orthogonal import *
-from .spfun_stats import multigammaln
-from ._ellip_harm import ellip_harm, ellip_harm_2, ellip_normal
-from .lambertw import lambertw
+from . import _basic
+from ._basic import *
 
+from ._logsumexp import logsumexp, softmax, log_softmax
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+from . import _orthogonal
+from ._orthogonal import *
 
-from numpy.dual import register_func
-register_func('i0',i0)
-del register_func
+from ._spfun_stats import multigammaln
+from ._ellip_harm import (
+    ellip_harm,
+    ellip_harm_2,
+    ellip_normal
+)
+from ._lambertw import lambertw
+from ._spherical_bessel import (
+    spherical_jn,
+    spherical_yn,
+    spherical_in,
+    spherical_kn
+)
 
-from numpy.testing import Tester
-test = Tester().test
+# Deprecated namespaces, to be removed in v2.0.0
+from . import add_newdocs, basic, orthogonal, specfun, sf_error, spfun_stats
+
+__all__ = _ufuncs.__all__ + _basic.__all__ + _orthogonal.__all__ + [
+    'SpecialFunctionWarning',
+    'SpecialFunctionError',
+    'logsumexp',
+    'softmax',
+    'log_softmax',
+    'multigammaln',
+    'ellip_harm',
+    'ellip_harm_2',
+    'ellip_normal',
+    'lambertw',
+    'spherical_jn',
+    'spherical_yn',
+    'spherical_in',
+    'spherical_kn',
+]
+
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

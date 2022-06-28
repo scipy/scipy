@@ -1,19 +1,17 @@
-from __future__ import division, print_function, absolute_import
-
 import itertools
 
 import numpy as np
-from numpy.testing import (assert_, assert_allclose, assert_raises,
-         assert_equal, run_module_suite)
+from numpy.testing import assert_, assert_allclose, assert_equal
+from pytest import raises as assert_raises
 from scipy import linalg
 import scipy.linalg._decomp_update as _decomp_update
-from scipy.linalg._decomp_update import *
+from scipy.linalg._decomp_update import qr_delete, qr_update, qr_insert
 
 def assert_unitary(a, rtol=None, atol=None, assert_sqr=True):
     if rtol is None:
         rtol = 10.0 ** -(np.finfo(a.dtype).precision-2)
     if atol is None:
-        atol = 2*np.finfo(a.dtype).eps
+        atol = 10*np.finfo(a.dtype).eps
 
     if assert_sqr:
         assert_(a.shape[0] == a.shape[1], 'unitary matrices must be square')
@@ -49,11 +47,13 @@ def make_strided(arrs):
             s = strides[k % kmax]
             t = strides[(k+1) % kmax]
             k += 2
-            base = np.zeros((s[0]*a.shape[0]+s[1], t[0]*a.shape[1]+t[1]), a.dtype)
+            base = np.zeros((s[0]*a.shape[0]+s[1], t[0]*a.shape[1]+t[1]),
+                            a.dtype)
             view = base[s[1]::s[0], t[1]::t[0]]
             view[...] = a
         else:
-            raise ValueError('make_strided only works for ndim = 1 or 2 arrays')
+            raise ValueError('make_strided only works for ndim = 1 or'
+                             ' 2 arrays')
         ret.append(view)
     return ret
 
@@ -66,7 +66,8 @@ def negate_strides(arrs):
         elif b.ndim == 1:
             b = b[::-1]
         else:
-            raise ValueError('negate_strides only works for ndim = 1 or 2 arrays')
+            raise ValueError('negate_strides only works for ndim = 1 or'
+                             ' 2 arrays')
         b[...] = a
         ret.append(b)
     return ret
@@ -81,14 +82,13 @@ def nonitemsize_strides(arrs):
         out.append(c)
     return out
 
-def make_nonnative(arrs):
-    out = []
-    for a in arrs:
-        out.append(a.astype(a.dtype.newbyteorder()))
-    return out
 
-class BaseQRdeltas(object):
-    def __init__(self):
+def make_nonnative(arrs):
+    return [a.astype(a.dtype.newbyteorder()) for a in arrs]
+
+
+class BaseQRdeltas:
+    def setup_method(self):
         self.rtol = 10.0 ** -(np.finfo(self.dtype).precision-2)
         self.atol = 10 * np.finfo(self.dtype).eps
 
@@ -206,7 +206,7 @@ class BaseQRdelete(BaseQRdeltas):
             a1 = np.delete(a, row, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
-    # for economic row deletes 
+    # for economic row deletes
     # eco - prow = eco
     # eco - prow = sqr
     # eco - prow = fat
@@ -292,7 +292,7 @@ class BaseQRdelete(BaseQRdeltas):
                 check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
     def test_delete_last_1_row(self):
-        # full and eco are the same for 1xN 
+        # full and eco are the same for 1xN
         a, q, r = self.generate('1xN')
         q1, r1 = qr_delete(q, r, 0, 1, 'row')
         assert_equal(q1, np.ndarray(shape=(0, 0), dtype=q.dtype))
@@ -351,10 +351,11 @@ class BaseQRdelete(BaseQRdeltas):
     # all full qr, row deletes and single column deletes should be able to
     # handle any non negative strides. (only row and column vector
     # operations are used.) p column delete require fortran ordered
-    # Q and R and will make a copy as necessary.  Economic qr row deletes 
+    # Q and R and will make a copy as necessary.  Economic qr row deletes
     # requre a contigous q.
 
-    def base_non_simple_strides(self, adjust_strides, ks, p, which, overwriteable):
+    def base_non_simple_strides(self, adjust_strides, ks, p, which,
+                                overwriteable):
         if which == 'row':
             qind = (slice(p,None), slice(p,None))
             rind = (slice(p,None), slice(None))
@@ -370,7 +371,8 @@ class BaseQRdelete(BaseQRdeltas):
             else:
                 s = slice(k,k+p)
                 if k < 0:
-                    s = slice(k, k + p + (a.shape[0] if which == 'row' else a.shape[1]))
+                    s = slice(k, k + p +
+                              (a.shape[0] if which == 'row' else a.shape[1]))
                 a1 = np.delete(a, s, 0 if which == 'row' else 1)
 
             # for each variable, q, r we try with it strided and
@@ -378,7 +380,7 @@ class BaseQRdelete(BaseQRdeltas):
             # sure that q and r are still overwritten.
 
             q = q0.copy('F')
-            r = r0.copy('F') 
+            r = r0.copy('F')
             q1, r1 = qr_delete(qs, r, k, p, which, False)
             check_qr(q1, r1, a1, self.rtol, self.atol)
             q1o, r1o = qr_delete(qs, r, k, p, which, True)
@@ -528,7 +530,7 @@ class BaseQRdelete(BaseQRdeltas):
 
     def test_overwrite_qr_p_col(self):
         # only F orderd q and r can be overwritten for cols
-        # full and eco share code paths 
+        # full and eco share code paths
         self.base_overwrite_qr('col', 3, False, True)
 
     def test_bad_which(self):
@@ -572,7 +574,7 @@ class BaseQRdelete(BaseQRdeltas):
         assert_raises(ValueError, qr_delete, q, r, 0, 1)
 
     def test_unsupported_dtypes(self):
-        dts = ['int8', 'int16', 'int32', 'int64', 
+        dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
                'float16', 'longdouble', 'longcomplex',
                'bool']
@@ -628,7 +630,7 @@ class TestQRdelete_D(BaseQRdelete):
 
 class BaseQRinsert(BaseQRdeltas):
     def generate(self, type, mode='full', which='row', p=1):
-        a, q, r = super(BaseQRinsert, self).generate(type, mode)
+        a, q, r = super().generate(type, mode)
 
         assert_(p > 0)
 
@@ -655,22 +657,22 @@ class BaseQRinsert(BaseQRdeltas):
 
     def test_sqr_1_row(self):
         a, q, r, u = self.generate('sqr', which='row')
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
             a1 = np.insert(a, row, u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol)
-    
+
     def test_sqr_p_row(self):
         # sqr + rows --> fat always
         a, q, r, u = self.generate('sqr', which='row', p=3)
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
-            a1 = np.insert(a, row*np.ones(3, np.intp), u, 0)
+            a1 = np.insert(a, np.full(3, row, np.intp), u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_sqr_1_col(self):
         a, q, r, u = self.generate('sqr', which='col')
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
@@ -678,14 +680,14 @@ class BaseQRinsert(BaseQRdeltas):
     def test_sqr_p_col(self):
         # sqr + cols --> fat always
         a, q, r, u = self.generate('sqr', which='col', p=3)
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
-            a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
+            a1 = np.insert(a, np.full(3, col, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_tall_1_row(self):
         a, q, r, u = self.generate('tall', which='row')
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
             a1 = np.insert(a, row, u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol)
@@ -693,14 +695,14 @@ class BaseQRinsert(BaseQRdeltas):
     def test_tall_p_row(self):
         # tall + rows --> tall always
         a, q, r, u = self.generate('tall', which='row', p=3)
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
-            a1 = np.insert(a, row*np.ones(3, np.intp), u, 0)
+            a1 = np.insert(a, np.full(3, row, np.intp), u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_tall_1_col(self):
         a, q, r, u = self.generate('tall', which='col')
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
@@ -711,9 +713,9 @@ class BaseQRinsert(BaseQRdeltas):
     # tall + pcol --> fat
     def base_tall_p_col_xxx(self, p):
         a, q, r, u = self.generate('tall', which='col', p=p)
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
-            a1 = np.insert(a, col*np.ones(p, np.intp), u, 1)
+            a1 = np.insert(a, np.full(p, col, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_tall_p_col_tall(self):
@@ -730,7 +732,7 @@ class BaseQRinsert(BaseQRdeltas):
 
     def test_fat_1_row(self):
         a, q, r, u = self.generate('fat', which='row')
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
             a1 = np.insert(a, row, u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol)
@@ -741,11 +743,11 @@ class BaseQRinsert(BaseQRdeltas):
     # fat + prow --> tall
     def base_fat_p_row_xxx(self, p):
         a, q, r, u = self.generate('fat', which='row', p=p)
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
-            a1 = np.insert(a, row*np.ones(p, np.intp), u, 0)
+            a1 = np.insert(a, np.full(p, row, np.intp), u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol)
-    
+
     def test_fat_p_row_fat(self):
         # 7x12 + 3x12 = 10x12 --> stays fat
         self.base_fat_p_row_xxx(3)
@@ -760,7 +762,7 @@ class BaseQRinsert(BaseQRdeltas):
 
     def test_fat_1_col(self):
         a, q, r, u = self.generate('fat', which='col')
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
@@ -768,14 +770,14 @@ class BaseQRinsert(BaseQRdeltas):
     def test_fat_p_col(self):
         # fat + cols --> fat always
         a, q, r, u = self.generate('fat', which='col', p=3)
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
-            a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
+            a1 = np.insert(a, np.full(3, col, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_economic_1_row(self):
         a, q, r, u = self.generate('tall', 'economic', 'row')
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row, overwrite_qru=False)
             a1 = np.insert(a, row, u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
@@ -783,14 +785,14 @@ class BaseQRinsert(BaseQRdeltas):
     def test_economic_p_row(self):
         # tall + rows --> tall always
         a, q, r, u = self.generate('tall', 'economic', 'row', 3)
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row, overwrite_qru=False)
-            a1 = np.insert(a, row*np.ones(3, np.intp), u, 0)
+            a1 = np.insert(a, np.full(3, row, np.intp), u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
     def test_economic_1_col(self):
         a, q, r, u = self.generate('tall', 'economic', which='col')
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u.copy(), col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
@@ -809,9 +811,9 @@ class BaseQRinsert(BaseQRdeltas):
     # eco + pcol --> fat
     def base_economic_p_col_xxx(self, p):
         a, q, r, u = self.generate('tall', 'economic', which='col', p=p)
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
-            a1 = np.insert(a, col*np.ones(p, np.intp), u, 1)
+            a1 = np.insert(a, np.full(p, col, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
     def test_economic_p_col_eco(self):
@@ -828,116 +830,116 @@ class BaseQRinsert(BaseQRdeltas):
 
     def test_Mx1_1_row(self):
         a, q, r, u = self.generate('Mx1', which='row')
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
             a1 = np.insert(a, row, u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol)
-    
+
     def test_Mx1_p_row(self):
         a, q, r, u = self.generate('Mx1', which='row', p=3)
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
-            a1 = np.insert(a, row*np.ones(3, np.intp), u, 0)
+            a1 = np.insert(a, np.full(3, row, np.intp), u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_Mx1_1_col(self):
         a, q, r, u = self.generate('Mx1', which='col')
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_Mx1_p_col(self):
         a, q, r, u = self.generate('Mx1', which='col', p=3)
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
-            a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
+            a1 = np.insert(a, np.full(3, col, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_Mx1_economic_1_row(self):
         a, q, r, u = self.generate('Mx1', 'economic', 'row')
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
             a1 = np.insert(a, row, u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
-    
+
     def test_Mx1_economic_p_row(self):
         a, q, r, u = self.generate('Mx1', 'economic', 'row', 3)
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
-            a1 = np.insert(a, row*np.ones(3, np.intp), u, 0)
+            a1 = np.insert(a, np.full(3, row, np.intp), u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
     def test_Mx1_economic_1_col(self):
         a, q, r, u = self.generate('Mx1', 'economic', 'col')
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
     def test_Mx1_economic_p_col(self):
-        a, q, r, u = self.generate('Mx1', 'full', 'col', 3)
-        for col in range(r.shape[1]):
+        a, q, r, u = self.generate('Mx1', 'economic', 'col', 3)
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
-            a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
+            a1 = np.insert(a, np.full(3, col, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
     def test_1xN_1_row(self):
         a, q, r, u = self.generate('1xN', which='row')
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
             a1 = np.insert(a, row, u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol)
-    
+
     def test_1xN_p_row(self):
         a, q, r, u = self.generate('1xN', which='row', p=3)
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
-            a1 = np.insert(a, row*np.ones(3, np.intp), u, 0)
+            a1 = np.insert(a, np.full(3, row, np.intp), u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_1xN_1_col(self):
         a, q, r, u = self.generate('1xN', which='col')
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_1xN_p_col(self):
         a, q, r, u = self.generate('1xN', which='col', p=3)
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
-            a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
+            a1 = np.insert(a, np.full(3, col, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_1x1_1_row(self):
         a, q, r, u = self.generate('1x1', which='row')
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
             a1 = np.insert(a, row, u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol)
-    
+
     def test_1x1_p_row(self):
         a, q, r, u = self.generate('1x1', which='row', p=3)
-        for row in range(r.shape[0]):
+        for row in range(r.shape[0] + 1):
             q1, r1 = qr_insert(q, r, u, row)
-            a1 = np.insert(a, row*np.ones(3, np.intp), u, 0)
+            a1 = np.insert(a, np.full(3, row, np.intp), u, 0)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_1x1_1_col(self):
         a, q, r, u = self.generate('1x1', which='col')
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
             a1 = np.insert(a, col, u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_1x1_p_col(self):
         a, q, r, u = self.generate('1x1', which='col', p=3)
-        for col in range(r.shape[1]):
+        for col in range(r.shape[1] + 1):
             q1, r1 = qr_insert(q, r, u, col, 'col', overwrite_qru=False)
-            a1 = np.insert(a, col*np.ones(3, np.intp), u, 1)
+            a1 = np.insert(a, np.full(3, col, np.intp), u, 1)
             check_qr(q1, r1, a1, self.rtol, self.atol)
-    
+
     def test_1x1_1_scalar(self):
         a, q, r, u = self.generate('1x1', which='row')
         assert_raises(ValueError, qr_insert, q[0, 0], r, u, 0, 'row')
@@ -955,8 +957,8 @@ class BaseQRinsert(BaseQRdeltas):
             if p == 1:
                 ai = np.insert(a, k, u0, 0 if which == 'row' else 1)
             else:
-                ai = np.insert(a, k*np.ones(p, np.intp),
-                        u0 if which == 'row' else u0, 
+                ai = np.insert(a, np.full(p, k, np.intp),
+                        u0 if which == 'row' else u0,
                         0 if which == 'row' else 1)
 
             # for each variable, q, r, u we try with it strided and
@@ -997,7 +999,7 @@ class BaseQRinsert(BaseQRdeltas):
             check_qr(q5, r5, ai, self.rtol, self.atol)
             q5o, r5o = qr_insert(qs, rs, us, k, which, overwrite_qru=True)
             check_qr(q5o, r5o, ai, self.rtol, self.atol)
-    
+
     def test_non_unit_strides_1_row(self):
         self.base_non_simple_strides(make_strided, 0, 1, 'row')
 
@@ -1048,7 +1050,7 @@ class BaseQRinsert(BaseQRdeltas):
 
     def test_overwrite_qu_rank_1(self):
         # when inserting rows, the size of both Q and R change, so only
-        # column inserts can overwrite q. Only complex column inserts 
+        # column inserts can overwrite q. Only complex column inserts
         # with C ordered Q overwrite u. Any contiguous Q is overwritten
         # when inserting 1 column
         a, q0, r, u, = self.generate('sqr', which='col', p=1)
@@ -1116,7 +1118,7 @@ class BaseQRinsert(BaseQRdeltas):
         assert_raises(ValueError, qr_insert, q, r, u[1:], 0, 'col')
 
     def test_unsupported_dtypes(self):
-        dts = ['int8', 'int16', 'int32', 'int64', 
+        dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
                'float16', 'longdouble', 'longcomplex',
                'bool']
@@ -1170,7 +1172,7 @@ class TestQRinsert_D(BaseQRinsert):
 
 class BaseQRupdate(BaseQRdeltas):
     def generate(self, type, mode='full', p=1):
-        a, q, r = super(BaseQRupdate, self).generate(type, mode)
+        a, q, r = super().generate(type, mode)
 
         # super call set the seed...
         if p == 1:
@@ -1263,7 +1265,7 @@ class BaseQRupdate(BaseQRdeltas):
         check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_Mx1_rank_p(self):
-        # when M or N == 1, only a rank 1 update is allowed. This isn't 
+        # when M or N == 1, only a rank 1 update is allowed. This isn't
         # fundamental limitation, but the code does not support it.
         a, q, r, u, v = self.generate('Mx1', p=1)
         u = u.reshape(u.size, 1)
@@ -1279,7 +1281,7 @@ class BaseQRupdate(BaseQRdeltas):
         check_qr(q1, r1, a1, self.rtol, self.atol, False)
 
     def test_Mx1_economic_rank_p(self):
-        # when M or N == 1, only a rank 1 update is allowed. This isn't 
+        # when M or N == 1, only a rank 1 update is allowed. This isn't
         # fundamental limitation, but the code does not support it.
         a, q, r, u, v = self.generate('Mx1', 'economic', p=1)
         u = u.reshape(u.size, 1)
@@ -1295,7 +1297,7 @@ class BaseQRupdate(BaseQRdeltas):
         check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_1xN_rank_p(self):
-        # when M or N == 1, only a rank 1 update is allowed. This isn't 
+        # when M or N == 1, only a rank 1 update is allowed. This isn't
         # fundamental limitation, but the code does not support it.
         a, q, r, u, v = self.generate('1xN', p=1)
         u = u.reshape(u.size, 1)
@@ -1311,7 +1313,7 @@ class BaseQRupdate(BaseQRdeltas):
         check_qr(q1, r1, a1, self.rtol, self.atol)
 
     def test_1x1_rank_p(self):
-        # when M or N == 1, only a rank 1 update is allowed. This isn't 
+        # when M or N == 1, only a rank 1 update is allowed. This isn't
         # fundamental limitation, but the code does not support it.
         a, q, r, u, v = self.generate('1x1', p=1)
         u = u.reshape(u.size, 1)
@@ -1427,7 +1429,7 @@ class BaseQRupdate(BaseQRdeltas):
 
     def test_neg_strides_economic_rank_p(self):
         self.base_non_simple_strides(negate_strides, 'economic', 3, False)
-     
+
     def test_non_itemsize_strides_rank_1(self):
         self.base_non_simple_strides(nonitemsize_strides, 'full', 1, False)
 
@@ -1453,7 +1455,7 @@ class BaseQRupdate(BaseQRdeltas):
         self.base_non_simple_strides(make_nonnative, 'economic', 3, False)
 
     def test_overwrite_qruv_rank_1(self):
-        # Any positive strided q, r, u, and v can be overwritten for a rank 1 
+        # Any positive strided q, r, u, and v can be overwritten for a rank 1
         # update, only checking C and F contiguous.
         a, q0, r0, u0, v0 = self.generate('sqr')
         a1 = a + np.outer(u0, v0.conj())
@@ -1549,7 +1551,7 @@ class BaseQRupdate(BaseQRdeltas):
         assert_raises(ValueError, qr_update, q, r, u, v[1:])
 
     def test_unsupported_dtypes(self):
-        dts = ['int8', 'int16', 'int32', 'int64', 
+        dts = ['int8', 'int16', 'int32', 'int64',
                'uint8', 'uint16', 'uint32', 'uint64',
                'float16', 'longdouble', 'longcomplex',
                'bool']
@@ -1617,6 +1619,15 @@ class BaseQRupdate(BaseQRdeltas):
         assert_raises(ValueError, qr_update, q0, r0, u[:,0], v[:,0])
         assert_raises(ValueError, qr_update, q0, r0, u, v)
 
+    def test_u_exactly_in_span_q(self):
+        q = np.array([[0, 0], [0, 0], [1, 0], [0, 1]], self.dtype)
+        r = np.array([[1, 0], [0, 1]], self.dtype)
+        u = np.array([0, 0, 0, -1], self.dtype)
+        v = np.array([1, 2], self.dtype)
+        q1, r1 = qr_update(q, r, u, v)
+        a1 = np.dot(q, r) + np.outer(u, v.conj())
+        check_qr(q1, r1, a1, self.rtol, self.atol, False)
+
 class TestQRupdate_f(BaseQRupdate):
     dtype = np.dtype('f')
 
@@ -1634,7 +1645,7 @@ def test_form_qTu():
     # tested. Most of them should be hit with the rest of test suite, but
     # explicit tests make clear precisely what is being tested.
     #
-    # This function expects that Q is either C or F contiguous and square. 
+    # This function expects that Q is either C or F contiguous and square.
     # Economic mode decompositions (Q is (M, N), M != N) do not go through this
     # function. U may have any positive strides.
     #
@@ -1642,7 +1653,7 @@ def test_form_qTu():
     # and F.
 
     q_order = ['F', 'C']
-    q_shape = [(8, 8), (1,1)]
+    q_shape = [(8, 8), ]
     u_order = ['F', 'C', 'A']  # here A means is not F not C
     u_shape = [1, 3]
     dtype = ['f', 'd', 'F', 'D']
@@ -1650,11 +1661,11 @@ def test_form_qTu():
     for qo, qs, uo, us, d in \
             itertools.product(q_order, q_shape, u_order, u_shape, dtype):
         if us == 1:
-            yield check_form_qTu, qo, qs, uo, us, 1, d
-            yield check_form_qTu, qo, qs, uo, us, 2, d
+            check_form_qTu(qo, qs, uo, us, 1, d)
+            check_form_qTu(qo, qs, uo, us, 2, d)
         else:
-            yield check_form_qTu, qo, qs, uo, us, 2, d
-    
+            check_form_qTu(qo, qs, uo, us, 2, d)
+
 def check_form_qTu(q_order, q_shape, u_order, u_shape, u_ndim, dtype):
     np.random.seed(47)
     if u_shape == 1 and u_ndim == 1:
@@ -1677,15 +1688,10 @@ def check_form_qTu(q_order, q_shape, u_order, u_shape, u_ndim, dtype):
         u = np.require(u, dtype, u_order)
     else:
         u, = make_strided((u.astype(dtype),))
-    
+
     rtol = 10.0 ** -(np.finfo(dtype).precision-2)
     atol = 2*np.finfo(dtype).eps
 
     expected = np.dot(q.T.conj(), u)
     res = _decomp_update._form_qTu(q, u)
     assert_allclose(res, expected, rtol=rtol, atol=atol)
-
-
-if __name__ == "__main__":
-    run_module_suite()
- 

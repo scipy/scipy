@@ -18,8 +18,15 @@ Package Content
    Output        -- Result from the fit.
    odr           -- Low-level function for ODR.
 
-   odr_error     -- Error exception.
-   odr_stop      -- Stop exception.
+   OdrWarning    -- Warning about potential problems when running ODR.
+   OdrError      -- Error exception.
+   OdrStop       -- Stop exception.
+
+   polynomial    -- Factory function for a general polynomial model.
+   exponential   -- Exponential model
+   multilinear   -- Arbitrary-dimensional linear model
+   unilinear     -- Univariate linear model
+   quadratic     -- Quadratic model
 
 Usage information
 =================
@@ -27,7 +34,7 @@ Usage information
 Introduction
 ------------
 
-Why Orthogonal Distance Regression (ODR)?  Sometimes one has
+Why Orthogonal Distance Regression (ODR)? Sometimes one has
 measurement errors in the explanatory (a.k.a., "independent")
 variable(s), not just the response (a.k.a., "dependent") variable(s).
 Ordinary Least Squares (OLS) fitting procedures treat the data for
@@ -39,13 +46,13 @@ handle both of these cases with ease, and can even reduce to the OLS
 case if that is sufficient for the problem.
 
 ODRPACK is a FORTRAN-77 library for performing ODR with possibly
-non-linear fitting functions.  It uses a modified trust-region
+non-linear fitting functions. It uses a modified trust-region
 Levenberg-Marquardt-type algorithm [1]_ to estimate the function
 parameters.  The fitting functions are provided by Python functions
-operating on NumPy arrays.  The required derivatives may be provided
-by Python functions as well, or may be estimated numerically.  ODRPACK
-can do explicit or implicit ODR fits, or it can do OLS.  Input and
-output variables may be multi-dimensional.  Weights can be provided to
+operating on NumPy arrays. The required derivatives may be provided
+by Python functions as well, or may be estimated numerically. ODRPACK
+can do explicit or implicit ODR fits, or it can do OLS. Input and
+output variables may be multidimensional. Weights can be provided to
 account for different variances of the observations, and even
 covariances between dimensions of the variables.
 
@@ -54,7 +61,7 @@ ODRPACK, in addition to the low-level `odr` function.
 
 Additional background information about ODRPACK can be found in the
 `ODRPACK User's Guide
-<http://docs.scipy.org/doc/external/odrpack_guide.pdf>`_, reading
+<https://docs.scipy.org/doc/external/odrpack_guide.pdf>`_, reading
 which is recommended.
 
 Basic usage
@@ -109,13 +116,16 @@ References
 # author: Robert Kern <robert.kern@gmail.com>
 # date: 2006-09-21
 
-from __future__ import division, print_function, absolute_import
+from ._odrpack import *
+from ._models import *
+from . import _add_newdocs
 
-from .odrpack import *
-from .models import *
-from . import add_newdocs
+# Deprecated namespaces, to be removed in v2.0.0
+from . import models, odrpack
 
-__all__ = [s for s in dir() if not s.startswith('_')]
+__all__ = [s for s in dir()
+           if not (s.startswith('_') or s in ('odr_stop', 'odr_error'))]
 
-from numpy.testing import Tester
-test = Tester().test
+from scipy._lib._testutils import PytestTester
+test = PytestTester(__name__)
+del PytestTester

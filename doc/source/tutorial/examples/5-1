@@ -72,7 +72,7 @@ Optimization Tools
                            instead of directly computing the inverse Jacobian,
                            it remembers how to construct it using vectors, and
                            when computing inv(J)*F, it uses those vectors to
-                           compute this product, thus avoding the expensive NxN
+                           compute this product, thus avoiding the expensive NxN
                            matrix multiplication.
    broyden_generalized --  Generalized Broyden's method, the same as broyden2,
                            but instead of approximating the full NxN Jacobian,

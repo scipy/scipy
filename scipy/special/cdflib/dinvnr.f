@@ -82,7 +82,7 @@ C
    20 strtx = stvaln(pp)
       xcur = strtx
 C
-C     NEWTON INTERATIONS
+C     NEWTON ITERATIONS
 C
       DO 30,i = 1,maxit
           CALL cumnor(xcur,cum,ccum)
@@ -97,7 +97,7 @@ C
       IF (.NOT.qporq) dinvnr = -dinvnr
       RETURN
 C
-C     IF WE GET HERE, NEWTON HAS SUCCEDED
+C     IF WE GET HERE, NEWTON HAS SUCCEEDED
 C
    40 dinvnr = xcur
       IF (.NOT.qporq) dinvnr = -dinvnr

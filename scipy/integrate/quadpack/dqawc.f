@@ -1,5 +1,5 @@
-      subroutine dqawc(f,a,b,c,epsabs,epsrel,result,abserr,neval,ier,
-     *   limit,lenw,last,iwork,work)
+      recursive subroutine dqawc(f,a,b,c,epsabs,epsrel,result,abserr,
+     *   neval,ier,limit,lenw,last,iwork,work)
 c***begin prologue  dqawc
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)
@@ -92,7 +92,7 @@ c                             (epsabs.le.0 and
 c                              epsrel.lt.max(50*rel.mach.acc.,0.5d-28))
 c                             or limit.lt.1 or lenw.lt.limit*4.
 c                             result, abserr, neval, last are set to
-c                             zero. exept when lenw or limit is invalid,
+c                             zero. except when lenw or limit is invalid,
 c                             iwork(1), work(limit*2+1) and
 c                             work(limit*3+1) are set to zero, work(1)
 c                             is set to a and work(limit+1) to b.

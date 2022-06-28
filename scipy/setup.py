@@ -1,13 +1,13 @@
-from __future__ import division, print_function, absolute_import
-
-import sys
-
-
 def configuration(parent_package='',top_path=None):
+    from scipy._build_utils.system_info import get_info
+    lapack_opt = get_info("lapack_opt")
+
     from numpy.distutils.misc_util import Configuration
     config = Configuration('scipy',parent_package,top_path)
+    config.add_subpackage('_lib')
     config.add_subpackage('cluster')
     config.add_subpackage('constants')
+    config.add_subpackage('fft')
     config.add_subpackage('fftpack')
     config.add_subpackage('integrate')
     config.add_subpackage('interpolate')
@@ -23,12 +23,10 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('special')
     config.add_subpackage('stats')
     config.add_subpackage('ndimage')
-    if sys.version_info[0] < 3:
-        config.add_subpackage('weave')
     config.add_subpackage('_build_utils')
-    config.add_subpackage('_lib')
     config.make_config_py()
     return config
+
 
 if __name__ == '__main__':
     from numpy.distutils.core import setup

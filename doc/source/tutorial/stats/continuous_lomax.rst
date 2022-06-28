@@ -4,7 +4,8 @@
 Pareto Second Kind (Lomax) Distribution
 =======================================
 
-:math:`c>0.` This is Pareto of the first kind with :math:`L=-1.0` so :math:`x\geq0`
+This is Pareto of the first kind with :math:`L=-1.0` .  There is one shape parameter
+:math:`c>0` and support :math:`x\geq0`.
 
 .. math::
    :nowrap:

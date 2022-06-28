@@ -5,7 +5,7 @@ Negative Binomial Distribution
 ==============================
 
 The negative binomial random variable with parameters :math:`n` and :math:`p\in\left(0,1\right)` can be defined as the number of *extra* independent trials (beyond :math:`n` ) required to accumulate a total of :math:`n` successes where the probability of a success on each trial is :math:`p.` Equivalently, this random variable is the number of failures
-encoutered while accumulating :math:`n` successes during independent trials of an experiment that succeeds
+encountered while accumulating :math:`n` successes during independent trials of an experiment that succeeds
 with probability :math:`p.` Thus,
 
 .. math::

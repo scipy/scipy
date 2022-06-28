@@ -1,16 +1,13 @@
 """Compare the speed of exact one-norm calculation vs. its estimation.
 """
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 
-try:
-    import scipy.sparse.linalg
-    import scipy.sparse
-except ImportError:
-    pass
+from .common import Benchmark, safe_import
 
-from .common import Benchmark
+with safe_import():
+    import scipy.sparse
+    import scipy.special  # import cycle workaround for some versions
+    import scipy.sparse.linalg
 
 
 class BenchmarkOneNormEst(Benchmark):
@@ -21,26 +18,27 @@ class BenchmarkOneNormEst(Benchmark):
     param_names = ['n', 'solver']
 
     def setup(self, n, solver):
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         nrepeats = 100
-        shape = (n, n)
+        shape = (int(n), int(n))
+
+        if solver == 'exact' and n >= 300:
+            # skip: slow, and not useful to benchmark
+            raise NotImplementedError()
 
         if n <= 1000:
             # Sample the matrices.
             self.matrices = []
             for i in range(nrepeats):
-                M = np.random.randn(*shape)
+                M = rng.standard_normal(shape)
                 self.matrices.append(M)
         else:
-            if solver == 'exact':
-                raise NotImplementedError()
-
             max_nnz = 100000
             nrepeats = 1
 
             self.matrices = []
             for i in range(nrepeats):
-                M = scipy.sparse.rand(shape[0], shape[1], min(max_nnz/(shape[0]*shape[1]), 1e-5))
+                M = scipy.sparse.rand(shape[0], shape[1], min(max_nnz/(shape[0]*shape[1]), 1e-5), random_state=rng)
                 self.matrices.append(M)
 
     def time_onenormest(self, n, solver):
@@ -48,8 +46,11 @@ class BenchmarkOneNormEst(Benchmark):
             # Get the exact values of one-norms of squares.
             for M in self.matrices:
                 M.dot(M)
-                scipy.sparse.linalg.matfuncs._onenorm(M)
+                scipy.sparse.linalg._matfuncs._onenorm(M)
         elif solver == 'onenormest':
             # Get the estimates of one-norms of squares.
             for M in self.matrices:
-                scipy.sparse.linalg.matfuncs._onenormest_matrix_power(M, 2)
+                scipy.sparse.linalg._matfuncs._onenormest_matrix_power(M, 2)
+
+    # Retain old benchmark results (remove this if changing the benchmark)
+    time_onenormest.version = "f7b31b4bf5caa50d435465e78dab6e133f3c263a52c4523eec785446185fdb6f"

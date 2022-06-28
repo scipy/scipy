@@ -2,9 +2,12 @@
 """
 import gc
 
-from scipy._lib._gcutils import set_gc_state, gc_state, assert_deallocated, ReferenceError
+from scipy._lib._gcutils import (set_gc_state, gc_state, assert_deallocated,
+                                 ReferenceError, IS_PYPY)
 
-from nose.tools import assert_equal, raises
+from numpy.testing import assert_equal
+
+import pytest
 
 
 def test_set_gc_state():
@@ -44,9 +47,10 @@ def test_gc_state():
             gc.enable()
 
 
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated():
     # Ordinary use
-    class C(object):
+    class C:
         def __init__(self, arg0, arg1, name='myname'):
             self.name = name
     for gc_current in (True, False):
@@ -61,30 +65,37 @@ def test_assert_deallocated():
             assert_equal(gc.isenabled(), gc_current)
 
 
-@raises(ReferenceError)
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated_nodel():
-    class C(object):
+    class C:
         pass
-    # Need to delete after using if in with-block context
-    with assert_deallocated(C) as c:
-        pass
+    with pytest.raises(ReferenceError):
+        # Need to delete after using if in with-block context
+        # Note: assert_deallocated(C) needs to be assigned for the test
+        # to function correctly.  It is assigned to c, but c itself is
+        # not referenced in the body of the with, it is only there for
+        # the refcount.
+        with assert_deallocated(C) as c:
+            pass
 
 
-@raises(ReferenceError)
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated_circular():
-    class C(object):
+    class C:
         def __init__(self):
             self._circular = self
-    # Circular reference, no automatic garbage collection
-    with assert_deallocated(C) as c:
-        del c
+    with pytest.raises(ReferenceError):
+        # Circular reference, no automatic garbage collection
+        with assert_deallocated(C) as c:
+            del c
 
 
-@raises(ReferenceError)
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_assert_deallocated_circular2():
-    class C(object):
+    class C:
         def __init__(self):
             self._circular = self
-    # Still circular reference, no automatic garbage collection
-    with assert_deallocated(C):
-        pass
+    with pytest.raises(ReferenceError):
+        # Still circular reference, no automatic garbage collection
+        with assert_deallocated(C):
+            pass

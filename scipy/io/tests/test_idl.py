@@ -1,20 +1,20 @@
-from __future__ import division, print_function, absolute_import
-
 from os import path
-from warnings import catch_warnings
-
-DATA_PATH = path.join(path.dirname(__file__), 'data')
+import warnings
 
 import numpy as np
-from numpy.testing import (assert_equal, assert_array_equal, run_module_suite,
-    assert_)
+from numpy.testing import (assert_equal, assert_array_equal,
+                           assert_, suppress_warnings)
+import pytest
 
-from scipy.io.idl import readsav
+from scipy.io import readsav
+from scipy.io import _idl
+
+DATA_PATH = path.join(path.dirname(__file__), 'data')
 
 
 def object_array(*args):
     """Constructs a numpy array of objects"""
-    array = np.empty(len(args), dtype=np.object)
+    array = np.empty(len(args), dtype=object)
     for i in range(len(args)):
         array[i] = args[i]
     return array
@@ -23,7 +23,7 @@ def object_array(*args):
 def assert_identical(a, b):
     """Assert whether value AND type are the same"""
     assert_equal(a, b)
-    if type(b) is np.str:
+    if type(b) is str:
         assert_equal(type(a), type(b))
     else:
         assert_equal(np.asarray(a).dtype.type, np.asarray(b).dtype.type)
@@ -125,7 +125,7 @@ class TestCompressed(TestScalars):
         assert_identical(s.arrays.a[0], np.array([1, 2, 3], dtype=np.int16))
         assert_identical(s.arrays.b[0], np.array([4., 5., 6., 7.], dtype=np.float32))
         assert_identical(s.arrays.c[0], np.array([np.complex64(1+2j), np.complex64(7+8j)]))
-        assert_identical(s.arrays.d[0], np.array([b"cheese", b"bacon", b"spam"], dtype=np.object))
+        assert_identical(s.arrays.d[0], np.array([b"cheese", b"bacon", b"spam"], dtype=object))
 
 
 class TestArrayDimensions:
@@ -172,7 +172,7 @@ class TestStructures:
         assert_identical(s.scalars.b, np.array(np.int32(2)))
         assert_identical(s.scalars.c, np.array(np.float32(3.)))
         assert_identical(s.scalars.d, np.array(np.float64(4.)))
-        assert_identical(s.scalars.e, np.array([b"spam"], dtype=np.object))
+        assert_identical(s.scalars.e, np.array([b"spam"], dtype=object))
         assert_identical(s.scalars.f, np.array(np.complex64(-1.+3j)))
 
     def test_scalars_replicated(self):
@@ -181,7 +181,7 @@ class TestStructures:
         assert_identical(s.scalars_rep.b, np.repeat(np.int32(2), 5))
         assert_identical(s.scalars_rep.c, np.repeat(np.float32(3.), 5))
         assert_identical(s.scalars_rep.d, np.repeat(np.float64(4.), 5))
-        assert_identical(s.scalars_rep.e, np.repeat(b"spam", 5).astype(np.object))
+        assert_identical(s.scalars_rep.e, np.repeat(b"spam", 5).astype(object))
         assert_identical(s.scalars_rep.f, np.repeat(np.complex64(-1.+3j), 5))
 
     def test_scalars_replicated_3d(self):
@@ -190,7 +190,7 @@ class TestStructures:
         assert_identical(s.scalars_rep.b, np.repeat(np.int32(2), 24).reshape(4, 3, 2))
         assert_identical(s.scalars_rep.c, np.repeat(np.float32(3.), 24).reshape(4, 3, 2))
         assert_identical(s.scalars_rep.d, np.repeat(np.float64(4.), 24).reshape(4, 3, 2))
-        assert_identical(s.scalars_rep.e, np.repeat(b"spam", 24).reshape(4, 3, 2).astype(np.object))
+        assert_identical(s.scalars_rep.e, np.repeat(b"spam", 24).reshape(4, 3, 2).astype(object))
         assert_identical(s.scalars_rep.f, np.repeat(np.complex64(-1.+3j), 24).reshape(4, 3, 2))
 
     def test_arrays(self):
@@ -198,7 +198,7 @@ class TestStructures:
         assert_array_identical(s.arrays.a[0], np.array([1, 2, 3], dtype=np.int16))
         assert_array_identical(s.arrays.b[0], np.array([4., 5., 6., 7.], dtype=np.float32))
         assert_array_identical(s.arrays.c[0], np.array([np.complex64(1+2j), np.complex64(7+8j)]))
-        assert_array_identical(s.arrays.d[0], np.array([b"cheese", b"bacon", b"spam"], dtype=np.object))
+        assert_array_identical(s.arrays.d[0], np.array([b"cheese", b"bacon", b"spam"], dtype=object))
 
     def test_arrays_replicated(self):
         s = readsav(path.join(DATA_PATH, 'struct_arrays_replicated.sav'), verbose=False)
@@ -226,7 +226,7 @@ class TestStructures:
                                              np.complex64(7+8j)]))
             assert_array_identical(s.arrays_rep.d[i],
                                    np.array([b"cheese", b"bacon", b"spam"],
-                                            dtype=np.object))
+                                            dtype=object))
 
     def test_arrays_replicated_3d(self):
         s = readsav(path.join(DATA_PATH, 'struct_arrays_replicated_3d.sav'), verbose=False)
@@ -257,7 +257,7 @@ class TestStructures:
                                                      np.complex64(7+8j)]))
                     assert_array_identical(s.arrays_rep.d[i, j, k],
                                            np.array([b"cheese", b"bacon", b"spam"],
-                                                    dtype=np.object))
+                                                    dtype=object))
 
     def test_inheritance(self):
         s = readsav(path.join(DATA_PATH, 'struct_inherit.sav'), verbose=False)
@@ -265,6 +265,15 @@ class TestStructures:
         assert_identical(s.fc.y, np.array([0], dtype=np.int16))
         assert_identical(s.fc.r, np.array([0], dtype=np.int16))
         assert_identical(s.fc.c, np.array([4], dtype=np.int16))
+
+    def test_arrays_corrupt_idl80(self):
+        # test byte arrays with missing nbyte information from IDL 8.0 .sav file
+        with suppress_warnings() as sup:
+            sup.filter(UserWarning, "Not able to verify number of bytes from header")
+            s = readsav(path.join(DATA_PATH,'struct_arrays_byte_idl80.sav'),
+                        verbose=False)
+
+        assert_identical(s.y.x[0], np.array([55,66], dtype=np.uint8))
 
 
 class TestPointers:
@@ -422,7 +431,8 @@ def test_invalid_pointer():
     # that variable and replace the variable with None and emit a warning.
     # Since it's difficult to artificially produce such files, the file used
     # here has been edited to force the pointer reference to be invalid.
-    with catch_warnings(record=True) as w:
+    with warnings.catch_warnings(record=True) as w:
+        warnings.simplefilter("always")
         s = readsav(path.join(DATA_PATH, 'invalid_pointer.sav'), verbose=False)
     assert_(len(w) == 1)
     assert_(str(w[0].message) == ("Variable referenced by pointer not found in "
@@ -430,5 +440,11 @@ def test_invalid_pointer():
     assert_identical(s['a'], np.array([None, None]))
 
 
-if __name__ == "__main__":
-    run_module_suite()
+def test_attrdict():
+    d = _idl.AttrDict({'one': 1})
+    assert d['one'] == 1
+    assert d.one == 1
+    with pytest.raises(KeyError):
+        d['two']
+    with pytest.raises(AttributeError, match='has no attribute'):
+        d.two

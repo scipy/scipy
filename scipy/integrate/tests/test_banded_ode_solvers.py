@@ -1,9 +1,6 @@
-
-from __future__ import division, print_function, absolute_import
-
 import itertools
 import numpy as np
-from numpy.testing import run_module_suite, assert_allclose
+from numpy.testing import assert_allclose
 from scipy.integrate import ode
 
 
@@ -36,9 +33,7 @@ def _linear_jac(t, y, a):
 def _linear_banded_jac(t, y, a):
     """Banded Jacobian."""
     ml, mu = _band_count(a)
-    bjac = []
-    for k in range(mu, 0, -1):
-        bjac.append(np.r_[[0] * k, np.diag(a, k)])
+    bjac = [np.r_[[0] * k, np.diag(a, k)] for k in range(mu, 0, -1)]
     bjac.append(np.diag(a))
     for k in range(-1, -ml-1, -1):
         bjac.append(np.r_[np.diag(a, k), [0] * (-k)])
@@ -120,7 +115,7 @@ def _analytical_solution(a, y0, t):
 
     The solution is only valid if `a` is diagonalizable.
 
-    Returns a 2-d array with shape (len(t), len(y0)).
+    Returns a 2-D array with shape (len(t), len(y0)).
     """
     lam, v = np.linalg.eig(a)
     c = np.linalg.solve(v, y0)
@@ -182,7 +177,7 @@ def test_banded_ode_solvers():
              [False, True],      # with_jacobian
              [False, True]]      # banded
         for solver, meth, use_jac, with_jac, banded in itertools.product(*p):
-            yield check_real, idx, solver, meth, use_jac, with_jac, banded
+            check_real(idx, solver, meth, use_jac, with_jac, banded)
 
     # --- Complex arrays for testing the "zvode" solver ---
 
@@ -220,8 +215,4 @@ def test_banded_ode_solvers():
              [False, True],      # with_jacobian
              [False, True]]      # banded
         for meth, use_jac, with_jac, banded in itertools.product(*p):
-            yield check_complex, idx, "zvode", meth, use_jac, with_jac, banded
-
-
-if __name__ == "__main__":
-    run_module_suite()
+            check_complex(idx, "zvode", meth, use_jac, with_jac, banded)

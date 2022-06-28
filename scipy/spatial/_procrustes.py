@@ -5,8 +5,6 @@ This code was originally written by Justin Kucynski and ported over from
 scikit-bio by Yoshiki Vazquez-Baeza.
 """
 
-from __future__ import absolute_import, division, print_function
-
 import numpy as np
 from scipy.linalg import orthogonal_procrustes
 
@@ -32,8 +30,8 @@ def procrustes(data1, data2):
 
     This function was not designed to handle datasets with different numbers of
     datapoints (rows).  If two data sets have different dimensionality
-    (different number of columns), simply add columns of zeros the smaller of
-    the two.
+    (different number of columns), simply add columns of zeros to the smaller
+    of the two.
 
     Parameters
     ----------
@@ -65,6 +63,8 @@ def procrustes(data1, data2):
     See Also
     --------
     scipy.linalg.orthogonal_procrustes
+    scipy.spatial.distance.directed_hausdorff : Another similarity test
+      for two data sets
 
     Notes
     -----

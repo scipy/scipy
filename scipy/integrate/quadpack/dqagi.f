@@ -1,5 +1,5 @@
-      subroutine dqagi(f,bound,inf,epsabs,epsrel,result,abserr,neval,
-     *   ier,limit,lenw,last,iwork,work)
+      recursive subroutine dqagi(f,bound,inf,epsabs,epsrel,result,
+     *   abserr,neval,ier,limit,lenw,last,iwork,work)
 c***begin prologue  dqagi
 c***date written   800101   (yymmdd)
 c***revision date  830518   (yymmdd)
@@ -105,7 +105,7 @@ c                             (epsabs.le.0 and
 c                              epsrel.lt.max(50*rel.mach.acc.,0.5d-28))
 c                              or limit.lt.1 or leniw.lt.limit*4.
 c                             result, abserr, neval, last are set to
-c                             zero. exept when limit or leniw is
+c                             zero. except when limit or leniw is
 c                             invalid, iwork(1), work(limit*2+1) and
 c                             work(limit*3+1) are set to zero, work(1)
 c                             is set to a and work(limit+1) to b.
