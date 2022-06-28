@@ -94,4 +94,4 @@ jobs:
 
     - name: Test SciPy
       run: |
-        python -u runtests.py -n -m fast --durations=10 --timeout=60
+        python -u runtests.py -n -m fast -- --durations=10 --timeout=60
