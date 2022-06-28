@@ -60,10 +60,10 @@ fblas_module = custom_target('fblas_module',
 # the float/double routines are in BLAS while the complex routines are in
 # LAPACK - we have historically put these in `_fblas`.
 py3.extension_module('_fblas',
-  [fblas_module, fortranobject_c, g77_abi_wrappers],
+  [fblas_module, g77_abi_wrappers],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, blas, lapack],
+  dependencies: [py3_dep, blas, lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -80,7 +80,6 @@ flapack_module = custom_target('flapack_module',
 py3.extension_module('_flapack',
   [
     flapack_module,
-    fortranobject_c,
     g77_abi_wrappers,
   ],
   c_args: [
@@ -88,7 +87,7 @@ py3.extension_module('_flapack',
     '-Wno-empty-body',  # comes from `callstatement`s in flapack_other.pyf.src
   ],
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, lapack],
+  dependencies: [py3_dep, lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -104,10 +103,10 @@ flinalg_module = custom_target('flinalg_module',
 )
 
 py3.extension_module('_flinalg',
-  ['src/det.f', 'src/lu.f', flinalg_module, fortranobject_c],
+  ['src/det.f', 'src/lu.f', flinalg_module],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, lapack],
+  dependencies: [py3_dep, lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
@@ -159,7 +158,6 @@ py3.extension_module('_interpolative',
     'src/id_dist/src/idzr_rsvd.f',
     'src/id_dist/src/prini.f',
     interpolative_module,
-    fortranobject_c
   ],
   c_args: numpy_nodepr_api,
   fortran_args: [
@@ -168,7 +166,7 @@ py3.extension_module('_interpolative',
   ],
   # TODO: add -fallow-argument-mismatch for gfortran >= 10, see gh-11842
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, lapack],
+  dependencies: [py3_dep, lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/linalg'
