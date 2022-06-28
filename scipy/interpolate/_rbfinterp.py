@@ -456,13 +456,20 @@ class RBFInterpolator:
             out = np.dot(vec, coeffs)
         return out
 
-    def __call__(self, x):
+    def __call__(self, x, memory_budget=None):
         """Evaluate the interpolant at `x`.
 
         Parameters
         ----------
         x : (Q, N) array_like
             Evaluation point coordinates.
+
+        memory_budget: int, optional
+            Total amount of memory (in units of sizeof(float)) we wish
+            to devote for storing the array of coefficients for
+            interpolated points. If we need more memory than that, we
+            chunk the input.
+            Default is a million.
 
         Returns
         -------
@@ -484,7 +491,9 @@ class RBFInterpolator:
         # If this number is below 1e6 we just use 1e6
         # This memory budget is used to decide how we chunk
         # the inputs
-        memory_budget = max(x.size + self.y.size + self.d.size, 1000000)
+        if memory_budget is None:
+            memory_budget = 1000000
+        memory_budget = max(x.size + self.y.size + self.d.size, memory_budget)
 
         if self.neighbors is None:
             out = self._chunk_evaluator(
