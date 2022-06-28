@@ -3489,6 +3489,9 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     if (N > 1):
         grid = np.reshape(grid, (inpt_shape[0], np.prod(inpt_shape[1:]))).T
 
+    if not np.iterable(args):
+        args = (args,)
+
     wrapped_func = _Brute_Wrapper(func, args)
 
     # iterate over input arrays, possibly in parallel
