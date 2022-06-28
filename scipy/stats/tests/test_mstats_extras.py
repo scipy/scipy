@@ -108,8 +108,6 @@ class TestQuantiles:
                             [0.006514031, 0.995309248])
         hdq = ms.hdquantiles(data,[0.25, 0.5, 0.75])
         assert_almost_equal(hdq, [0.253210762, 0.512847491, 0.762232442,])
-        hdq = ms.hdquantiles_sd(data,[0.25, 0.5, 0.75])
-        assert_almost_equal(hdq, [0.03786954, 0.03805389, 0.03800152,], 4)
 
         data = np.array(data).reshape(10,10)
         hdq = ms.hdquantiles(data,[0.25,0.5,0.75],axis=0)
@@ -122,9 +120,29 @@ class TestQuantiles:
                             ms.hdquantiles(data[:,-1],[0.25,0.5,0.75], var=True))
 
     def test_hdquantiles_sd(self):
-        # Only test that code runs, implementation not checked for correctness
-        res = ms.hdquantiles_sd(self.data)
-        assert_(res.size == 3)
+        # Standard deviation is a jackknife estimator, so we can check if
+        # the efficient version (hdquantiles_sd) matches a rudimentary,
+        # but clear version here.
+
+        hd_std_errs = ms.hdquantiles_sd(self.data, [0.25, 0.5, 0.75])
+
+        n = len(self.data)
+        s_bar = np.array([0.0, 0.0, 0.0])
+        sum_of_estimators_squared = np.array([0.0, 0.0, 0.0])
+        for index, _ in enumerate(self.data):
+            hd_quantile = ms.hdquantiles(self.data[0:index] +
+                                         self.data[index + 1:],
+                                         [0.25, 0.5, 0.75])
+            s_bar += hd_quantile / n
+            sum_of_estimators_squared += hd_quantile ** 2
+
+        jackknife_estimates = np.sqrt(
+            (n-1) * (sum_of_estimators_squared/n - s_bar ** 2)
+            )
+
+        assert_almost_equal(hd_std_errs, jackknife_estimates)
+        # Test actual values for good measure
+        assert_almost_equal(hd_std_errs, [0.0379258, 0.0380656, 0.0380013])
 
     def test_mquantiles_cimj(self):
         # Only test that code runs, implementation not checked for correctness
