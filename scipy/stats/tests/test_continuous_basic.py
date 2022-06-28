@@ -1,4 +1,3 @@
-import sys
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -260,8 +259,8 @@ def cases_test_moments():
             yield pytest.param(distname, arg, True, True, True,
                                marks=pytest.mark.xslow(reason="too slow"))
             continue
-        # takes ~200 sec on Azure Windows
-        if distname == 'skewnorm' and sys.platform == 'win32':
+        # takes > 60 sec on Linux 32-bit and ~200 sec on Azure Windows
+        if distname == 'skewnorm':
             yield pytest.param(distname, arg, True, True, True,
                                marks=pytest.mark.timeout(300))
             continue
