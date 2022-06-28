@@ -41,8 +41,8 @@ Other Parameters
 ----------------
 x0 : ndarray
     Starting guess for the solution.
-tol, atol : float, optional
-    Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
+rtol, atol : float, optional
+    Tolerances for convergence, ``norm(residual) <= max(rtol*norm(b), atol)``.
     The default for ``atol`` is ``'legacy'``, which emulates
     a different legacy behavior.
 
@@ -75,13 +75,13 @@ def _stoptest(residual, atol):
         return resid, 0
 
 
-def _get_atol(tol, atol, bnrm2, get_residual, routine_name):
+def _get_atol(rtol, atol, bnrm2, get_residual, routine_name):
     """
     Parse arguments for absolute tolerance in termination condition.
 
     Parameters
     ----------
-    tol, atol : object
+    rtol, atol : object
         The arguments passed into the solver routine by user.
     bnrm2 : float
         2-norm of the rhs vector.
@@ -101,19 +101,19 @@ def _get_atol(tol, atol, bnrm2, get_residual, routine_name):
                       category=DeprecationWarning, stacklevel=4)
         atol = 'legacy'
 
-    tol = float(tol)
+    rtol = float(rtol)
 
     if atol == 'legacy':
         # emulate old legacy behavior
         resid = get_residual()
-        if resid <= tol:
+        if resid <= rtol:
             return 'exit'
         if bnrm2 == 0:
-            return tol
+            return rtol
         else:
-            return tol * float(bnrm2)
+            return rtol * float(bnrm2)
     else:
-        return max(float(atol), tol * float(bnrm2))
+        return max(float(atol), rtol * float(bnrm2))
 
 
 def set_docstring(header, Ainfo, footer='', atol_default='0'):
@@ -146,7 +146,7 @@ def set_docstring(header, Ainfo, footer='', atol_default='0'):
                """
                )
 @non_reentrant()
-def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
+def bicg(A, b, x0=None, rtol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A,M,x,b,postprocess = make_system(A, M, x0, b)
 
     n = len(b)
@@ -159,7 +159,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
     revcom = getattr(_iterative, ltr + 'bicgrevcom')
 
     get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'bicg')
+    atol = _get_atol(rtol, atol, np.linalg.norm(b), get_residual, 'bicg')
     if atol == 'exit':
         return postprocess(x), 0
 
@@ -235,7 +235,7 @@ def bicg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None
                True
                """)
 @non_reentrant()
-def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
+def bicgstab(A, b, x0=None, rtol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = len(b)
@@ -248,7 +248,7 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
     revcom = getattr(_iterative, ltr + 'bicgstabrevcom')
 
     get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'bicgstab')
+    atol = _get_atol(rtol, atol, np.linalg.norm(b), get_residual, 'bicgstab')
     if atol == 'exit':
         return postprocess(x), 0
 
@@ -320,7 +320,7 @@ def bicgstab(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=
 
                """)
 @non_reentrant()
-def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
+def cg(A, b, x0=None, rtol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = len(b)
@@ -333,7 +333,7 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     revcom = getattr(_iterative, ltr + 'cgrevcom')
 
     get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'cg')
+    atol = _get_atol(rtol, atol, np.linalg.norm(b), get_residual, 'cg')
     if atol == 'exit':
         return postprocess(x), 0
 
@@ -409,7 +409,7 @@ def cg(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
                """
                )
 @non_reentrant()
-def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None):
+def cgs(A, b, x0=None, rtol=1e-5, maxiter=None, M=None, callback=None, atol=None):
     A, M, x, b, postprocess = make_system(A, M, x0, b)
 
     n = len(b)
@@ -422,7 +422,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
     revcom = getattr(_iterative, ltr + 'cgsrevcom')
 
     get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'cgs')
+    atol = _get_atol(rtol, atol, np.linalg.norm(b), get_residual, 'cgs')
     if atol == 'exit':
         return postprocess(x), 0
 
@@ -481,7 +481,7 @@ def cgs(A, b, x0=None, tol=1e-5, maxiter=None, M=None, callback=None, atol=None)
 
 
 @non_reentrant()
-def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=None,
+def gmres(A, b, x0=None, rtol=1e-5, restart=None, maxiter=None, M=None, callback=None,
           restrt=None, atol=None, callback_type=None):
     """
     Use Generalized Minimal RESidual iteration to solve ``Ax = b``.
@@ -510,8 +510,8 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     ----------------
     x0 : ndarray
         Starting guess for the solution (a vector of zeros by default).
-    tol, atol : float, optional
-        Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
+    rtol, atol : float, optional
+        Tolerances for convergence, ``norm(residual) <= max(rtol*norm(b), atol)``.
         The default for ``atol`` is ``'legacy'``, which emulates
         a different legacy behavior.
 
@@ -627,7 +627,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
     bnrm2 = np.linalg.norm(b)
     Mb_nrm2 = np.linalg.norm(psolve(b))
     get_residual = lambda: np.linalg.norm(matvec(x) - b)
-    atol = _get_atol(tol, atol, bnrm2, get_residual, 'gmres')
+    atol = _get_atol(rtol, atol, bnrm2, get_residual, 'gmres')
     if atol == 'exit':
         return postprocess(x), 0
 
@@ -721,7 +721,7 @@ def gmres(A, b, x0=None, tol=1e-5, restart=None, maxiter=None, M=None, callback=
 
 
 @non_reentrant()
-def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
+def qmr(A, b, x0=None, rtol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
         atol=None):
     """Use Quasi-Minimal Residual iteration to solve ``Ax = b``.
 
@@ -749,8 +749,8 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     ----------------
     x0 : ndarray
         Starting guess for the solution.
-    tol, atol : float, optional
-        Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
+    rtol, atol : float, optional
+        Tolerances for convergence, ``norm(residual) <= max(rtol*norm(b), atol)``.
         The default for ``atol`` is ``'legacy'``, which emulates
         a different legacy behavior.
 
@@ -819,7 +819,7 @@ def qmr(A, b, x0=None, tol=1e-5, maxiter=None, M1=None, M2=None, callback=None,
     revcom = getattr(_iterative, ltr + 'qmrrevcom')
 
     get_residual = lambda: np.linalg.norm(A.matvec(x) - b)
-    atol = _get_atol(tol, atol, np.linalg.norm(b), get_residual, 'qmr')
+    atol = _get_atol(rtol, atol, np.linalg.norm(b), get_residual, 'qmr')
     if atol == 'exit':
         return postprocess(x), 0
 

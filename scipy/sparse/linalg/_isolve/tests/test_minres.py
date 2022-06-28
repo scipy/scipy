@@ -23,7 +23,7 @@ def test_singular():
     b[0] = 0
     xp, info = minres(A, b)
     assert_equal(info, 0)
-    assert_normclose(A.dot(xp), b, tol=1e-5)
+    assert_normclose(A.dot(xp), b, rtol=1e-5)
 
 
 def test_x0_is_used_by():
@@ -69,8 +69,8 @@ def test_minres_non_default_x0():
     a = np.dot(a, a.T)
     b = np.random.randn(5)
     c = np.random.randn(5)
-    x = minres(a, b, x0=c, tol=tol)[0]
-    assert_normclose(a.dot(x), b, tol=tol)
+    x = minres(a, b, x0=c, rtol=tol)[0]
+    assert_normclose(a.dot(x), b, rtol=tol)
 
 
 def test_minres_precond_non_default_x0():
@@ -82,8 +82,8 @@ def test_minres_precond_non_default_x0():
     c = np.random.randn(5)
     m = np.random.randn(5, 5)
     m = np.dot(m, m.T)
-    x = minres(a, b, M=m, x0=c, tol=tol)[0]
-    assert_normclose(a.dot(x), b, tol=tol)
+    x = minres(a, b, M=m, x0=c, rtol=tol)[0]
+    assert_normclose(a.dot(x), b, rtol=tol)
 
 
 def test_minres_precond_exact_x0():
@@ -94,5 +94,5 @@ def test_minres_precond_exact_x0():
     c = np.ones(10)
     m = np.random.randn(10, 10)
     m = np.dot(m, m.T)
-    x = minres(a, b, M=m, x0=c, tol=tol)[0]
-    assert_normclose(a.dot(x), b, tol=tol)
+    x = minres(a, b, M=m, x0=c, rtol=tol)[0]
+    assert_normclose(a.dot(x), b, rtol=tol)

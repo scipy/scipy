@@ -7,7 +7,7 @@ from .utils import make_system
 __all__ = ['minres']
 
 
-def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
+def minres(A, b, x0=None, shift=0.0, rtol=1e-5, maxiter=None,
            M=None, callback=None, show=False, check=False):
     """
     Use MINimum RESidual iteration to solve Ax=b
@@ -43,9 +43,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         Starting guess for the solution.
     shift : float
         Value to apply to the system ``(A - shift * I)x = b``. Default is 0.
-    tol : float
+    rtol : float
         Tolerance to achieve. The algorithm terminates when the relative
-        residual is below `tol`.
+        residual is below `rtol`.
     maxiter : integer
         Maximum number of iterations.  Iteration will stop after maxiter
         steps even if the specified tolerance has not been achieved.
@@ -116,8 +116,8 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
 
     if show:
         print(first + 'Solution of symmetric Ax = b')
-        print(first + 'n      =  %3g     shift  =  %23.14e' % (n,shift))
-        print(first + 'itnlim =  %3g     rtol   =  %11.2e' % (maxiter,tol))
+        print(first + 'n      =  %3g     shift  =  %23.14e' % (n, shift))
+        print(first + 'itnlim =  %3g     rtol   =  %11.2e' % (maxiter, rtol))
         print()
 
     istop = 0
@@ -271,7 +271,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         ynorm = norm(x)
         epsa = Anorm * eps
         epsx = Anorm * ynorm * eps
-        epsr = Anorm * ynorm * tol
+        epsr = Anorm * ynorm * rtol
         diag = gbar
 
         if diag == 0:
@@ -300,7 +300,7 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
         # In rare cases, istop is already -1 from above (Abar = const*I).
 
         if istop == 0:
-            t1 = 1 + test1      # These tests work if tol < eps
+            t1 = 1 + test1      # These tests work if rtol < eps
             t2 = 1 + test2
             if t2 <= 1:
                 istop = 2
@@ -315,9 +315,9 @@ def minres(A, b, x0=None, shift=0.0, tol=1e-5, maxiter=None,
                 istop = 3
             # if rnorm <= epsx   : istop = 2
             # if rnorm <= epsr   : istop = 1
-            if test2 <= tol:
+            if test2 <= rtol:
                 istop = 2
-            if test1 <= tol:
+            if test1 <= rtol:
                 istop = 1
 
         # See if it is time to print something.
@@ -388,5 +388,5 @@ if __name__ == '__main__':
     M = spdiags([1.0/arange(1,n+1,dtype=float)], [0], n, n, format='csr')
     A.psolve = M.matvec
     b = zeros(A.shape[0])
-    x = minres(A,b,tol=1e-12,maxiter=None,callback=cb)
-    # x = cg(A,b,x0=b,tol=1e-12,maxiter=None,callback=cb)[0]
+    x = minres(A, b, rtol=1e-12, maxiter=None, callback=cb)
+    # x = cg(A,b,x0=b,rtol=1e-12,maxiter=None,callback=cb)[0]

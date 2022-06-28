@@ -5,7 +5,7 @@ from .utils import make_system
 __all__ = ['tfqmr']
 
 
-def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
+def tfqmr(A, b, x0=None, rtol=1e-5, maxiter=None, M=None,
           callback=None, atol=None, show=False):
     """
     Use Transpose-Free Quasi-Minimal Residual iteration to solve ``Ax = b``.
@@ -21,10 +21,10 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0 : {ndarray}
         Starting guess for the solution.
-    tol, atol : float, optional
-        Tolerances for convergence, ``norm(residual) <= max(tol*norm(b-Ax0), atol)``.
-        The default for `tol` is 1.0e-5.
-        The default for `atol` is ``tol * norm(b-Ax0)``.
+    rtol, atol : float, optional
+        Tolerances for convergence, ``norm(residual) <= max(rtol*norm(b-Ax0), atol)``.
+        The default for `rtol` is 1.0e-5.
+        The default for `atol` is ``rtol * norm(b-Ax0)``.
 
         .. warning::
 
@@ -130,9 +130,9 @@ def tfqmr(A, b, x0=None, tol=1e-5, maxiter=None, M=None,
         return (postprocess(x), 0)
 
     if atol is None:
-        atol = tol * r0norm
+        atol = rtol * r0norm
     else:
-        atol = max(atol, tol * r0norm)
+        atol = max(atol, rtol * r0norm)
 
     for iter in range(maxiter):
         even = iter % 2 == 0

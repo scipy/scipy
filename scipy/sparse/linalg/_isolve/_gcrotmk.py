@@ -179,7 +179,7 @@ def _fgmres(matvec, v0, m, atol, lpsolve=None, rpsolve=None, cs=(), outer_v=(),
     return Q, R, B, vs, zs, y, res
 
 
-def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
+def gcrotmk(A, b, x0=None, rtol=1e-5, maxiter=1000, M=None, callback=None,
             m=20, k=None, CU=None, discard_C=False, truncate='oldest',
             atol=None):
     """
@@ -196,9 +196,9 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         Right hand side of the linear system. Has shape (N,) or (N,1).
     x0 : ndarray
         Starting guess for the solution.
-    tol, atol : float, optional
-        Tolerances for convergence, ``norm(residual) <= max(tol*norm(b), atol)``.
-        The default for ``atol`` is `tol`.
+    rtol, atol : float, optional
+        Tolerances for convergence, ``norm(residual) <= max(rtol*norm(b), atol)``.
+        The default for ``atol`` is None (use `rtol`).
 
         .. warning::
 
@@ -285,9 +285,9 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
     if atol is None:
         warnings.warn("scipy.sparse.linalg.gcrotmk called without specifying `atol`. "
                       "The default value will change in the future. To preserve "
-                      "current behavior, set ``atol=tol``.",
+                      "current behavior, set ``atol=rtol``.",
                       category=DeprecationWarning, stacklevel=2)
-        atol = tol
+        atol = rtol
 
     matvec = A.matvec
     psolve = M.matvec
@@ -380,7 +380,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
         beta = nrm2(r)
 
         # -- check stopping condition
-        beta_tol = max(atol, tol * b_norm)
+        beta_tol = max(atol, rtol * b_norm)
 
         if beta <= beta_tol and (j_outer > 0 or CU):
             # recompute residual to avoid rounding error
@@ -400,7 +400,7 @@ def gcrotmk(A, b, x0=None, tol=1e-5, maxiter=1000, M=None, callback=None,
                                                r/beta,
                                                ml,
                                                rpsolve=psolve,
-                                               atol=max(atol, tol*b_norm)/beta,
+                                               atol=max(atol, rtol*b_norm)/beta,
                                                cs=cs)
             y *= beta
         except LinAlgError:
