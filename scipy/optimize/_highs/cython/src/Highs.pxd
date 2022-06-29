@@ -17,6 +17,9 @@ from .HighsLp cimport (
 )
 from .HConst cimport HighsModelStatus
 
+cdef extern from "util/HighsInt.h":
+    ctypedef int HighsInt  # because we're compiling with HIGHSINT64 off
+
 cdef extern from "Highs.h":
     # From HiGHS/src/Highs.h
     cdef cppclass Highs:
@@ -54,3 +57,11 @@ cdef extern from "Highs.h":
         HighsStatus setHighsOptionValueDbl "setOptionValue" (const string & option, const double value)
 
         string primalDualStatusToString(const int primal_dual_status)
+
+        HighsStatus getBasicVariables(HighsInt* basic_variables)
+        HighsStatus getReducedRow(const HighsInt row, double* row_vector,
+                                 HighsInt* row_num_nz, HighsInt* row_indices,
+                                 const double* pass_basis_inverse_row_vector)
+        HighsStatus getReducedColumn(const HighsInt col, double* col_vector,
+                                    HighsInt* col_num_nz,
+                                    HighsInt* col_indices)
