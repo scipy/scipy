@@ -360,7 +360,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         A :class:`scipy.optimize.OptimizeResult` consisting of the fields
         below. Note that the return types of the fields may depend on whether
         the optimization was successful, therefore it is recommended to check
-        `OptimizeResult.success` before relying on the other fields:
+        `OptimizeResult.status` before relying on the other fields:
 
         x : 1-D array
             The values of the decision variables that minimizes the
