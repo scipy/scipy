@@ -163,7 +163,7 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
         betacdf = beta.cdf
 
         for (i,p) in enumerate(prob):
-            _w = betacdf(vv, (n+1)*p, (n+1)*(1-p))
+            _w = betacdf(vv, n*p, n*(1-p))
             w = _w[1:] - _w[:-1]
             mx_ = np.fromiter([w[:k] @ xsorted[:k] + w[k:] @ xsorted[k+1:]
                                for k in range(n)], dtype=float_)
