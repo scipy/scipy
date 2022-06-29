@@ -370,7 +370,16 @@ def get_test_runner(project_module):
 
 @cli.cls_cmd('build')
 class Build(Task):
-    """:wrench: build & install package on path"""
+    """:wrench: build & install package on path
+
+    Examples:
+
+    $ python dev.py build --asan ;
+        ASAN_OPTIONS=detect_leaks=0:symbolize=1:strict_init_order=true
+        LD_PRELOAD=$(gcc --print-file-name=libasan.so)
+        python dev.py test -v -t
+        ./scipy/ndimage/tests/test_morphology.py -- -s
+    """
     ctx = CONTEXT
 
     werror = Option(
@@ -380,6 +389,13 @@ class Build(Task):
         ['--gcov'], default=False, is_flag=True,
         help="enable C code coverage via gcov (requires GCC)."
              "gcov output goes to build/**/*.gc*")
+    asan = Option(
+        ['--asan'], default=False, is_flag=True,
+        help=("Build and run with AddressSanitizer support. "
+              "Note: the build system doesn't check whether "
+              "the project is already compiled with ASan. "
+              "If not, you need to do a clean build (delete "
+              "build and build-install directories)."))
     debug = Option(
         ['--debug', '-d'], default=False, is_flag=True, help="Debug build")
     parallel = Option(
@@ -436,6 +452,8 @@ class Build(Task):
             cmd += ["--werror"]
         if args.gcov:
             cmd += ['-Db_coverage=true']
+        if args.asan:
+            cmd += ['-Db_sanitize=address,undefined']
         # Setting up meson build
         cmd_str = ' '.join([str(p) for p in cmd])
         cls.console.print(f"{EMOJI.cmd} [cmd] {cmd_str}")
