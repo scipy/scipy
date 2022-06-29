@@ -58,19 +58,12 @@ def _as2d(ar):
         return aux
 
 
-def _makeOperator(operatorInput, expectedShape):
-    """Takes a dense numpy array or a sparse matrix or
-    a function and makes an operator performing matrix * blockvector
-    products."""
-    if operatorInput is None:
+def _makeMatMat(m):
+    if m is None:
+        # return lambda v: v
         return None
     else:
-        operator = aslinearoperator(operatorInput)
-
-    if operator.shape != expectedShape:
-        raise ValueError("operator has invalid shape")
-
-    return operator
+        return lambda v: m @ v
 
 
 def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
@@ -405,9 +398,9 @@ def lobpcg(
     if (residualTolerance is None) or (residualTolerance <= 0.0):
         residualTolerance = np.sqrt(np.finfo(X.dtype).eps) * n
 
-    A = _makeOperator(A, (n, n))
-    B = _makeOperator(B, (n, n))
-    M = _makeOperator(M, (n, n))
+    A = _makeMatMat(A)
+    B = _makeMatMat(B)
+    M = _makeMatMat(M)
 
     # Apply constraints to X.
     if blockVectorY is not None:
@@ -452,10 +445,6 @@ def lobpcg(
     ##
     # Active index set.
     activeMask = np.ones((sizeX,), dtype=bool)
-
-    previousBlockSize = sizeX
-    ident = np.eye(sizeX, dtype=A.dtype)
-    ident0 = np.eye(sizeX, dtype=A.dtype)
 
     ##
     # Main iteration loop.
@@ -507,10 +496,6 @@ def lobpcg(
 
         if currentBlockSize == 0:
             break
-
-        if currentBlockSize != previousBlockSize:
-            previousBlockSize = currentBlockSize
-            ident = np.eye(currentBlockSize, dtype=A.dtype)
 
         activeBlockVectorR = _as2d(blockVectorR[:, activeMask])
 
@@ -603,6 +588,7 @@ def lobpcg(
         gramXAR = np.dot(blockVectorX.T.conj(), activeBlockVectorAR)
         gramRAR = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorAR)
 
+        gramDtype = activeBlockVectorAR.dtype
         if explicitGramFlag:
             gramRAR = (gramRAR + gramRAR.T.conj()) / 2
             gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
@@ -611,10 +597,10 @@ def lobpcg(
             gramRBR = np.dot(activeBlockVectorR.T.conj(), activeBlockVectorBR)
             gramXBR = np.dot(blockVectorX.T.conj(), activeBlockVectorBR)
         else:
-            gramXAX = np.diag(_lambda)
-            gramXBX = ident0
-            gramRBR = ident
-            gramXBR = np.zeros((sizeX, currentBlockSize), dtype=A.dtype)
+            gramXAX = np.diag(_lambda).astype(gramDtype)
+            gramXBX = np.eye(sizeX, dtype=gramDtype)
+            gramRBR = np.eye(currentBlockSize, dtype=gramDtype)
+            gramXBR = np.zeros((sizeX, currentBlockSize), dtype=gramDtype)
 
         if not restart:
             gramXAP = np.dot(blockVectorX.T.conj(), activeBlockVectorAP)
@@ -627,7 +613,7 @@ def lobpcg(
                 gramPBP = np.dot(activeBlockVectorP.T.conj(),
                                  activeBlockVectorBP)
             else:
-                gramPBP = ident
+                gramPBP = np.eye(currentBlockSize, dtype=gramDtype)
 
             gramA = bmat(
                 [
