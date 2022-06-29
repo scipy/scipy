@@ -1,12 +1,3 @@
-.. raw:: html
-
-    <p>
-      <h1>
-        <a href="https://docs.scipy.org/doc/scipy/reference/"><img valign="middle" src="doc/source/_static/logo.svg" height="50" height="50" alt="SciPy logo"/></a>
-        SciPy
-      </h1>
-    </p>
-
 .. image:: https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
   :target: https://numfocus.org
 
