@@ -201,6 +201,7 @@ from ._decomp import *
 from ._decomp_lu import *
 from ._decomp_ldl import *
 from ._decomp_cholesky import *
+from ._cholesky_update import *
 from ._decomp_qr import *
 from ._decomp_qz import *
 from ._decomp_svd import *

@@ -146,6 +146,9 @@ def configuration(parent_package='', top_path=None):
     config.add_extension('_decomp_update',
                          sources=['_decomp_update.c'])
 
+    config.add_extension('_cholesky_update',
+                         sources=['_cholesky_update.c'])
+
     config.add_data_files('_cythonized_array_utils.pxd')
 
     config.add_extension('_cythonized_array_utils',

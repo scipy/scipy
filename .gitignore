@@ -188,6 +188,7 @@ scipy/linalg/_interpolativemodule.c
 scipy/linalg/_solve_toeplitz.c
 scipy/linalg/_decomp_update.c
 scipy/linalg/_decomp_update.pyx
+scipy/linalg/_cholesky_update.c
 scipy/linalg/_cythonized_array_utils.c
 scipy/linalg/_blas_subroutine_wrappers.f
 scipy/linalg/_blas_subroutines.h

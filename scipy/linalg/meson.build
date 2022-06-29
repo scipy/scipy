@@ -247,6 +247,15 @@ py3.extension_module('_decomp_update',
   subdir: 'scipy/linalg'
 )
 
+py3.extension_module('_cholesky_update',
+  linalg_cython_gen.process('_cholesky_update.pyx'),
+  c_args: cython_c_args,
+  include_directories: inc_np,
+  dependencies: py3_dep,
+  install: true,
+  subdir: 'scipy/linalg'
+)
+
 # _matfuncs_expm:
 _matfuncs_expm_pyx = custom_target('_matfuncs_expm',
   output: '_matfuncs_expm.pyx',
