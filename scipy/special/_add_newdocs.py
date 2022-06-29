@@ -3132,8 +3132,9 @@ add_newdoc("entr",
 
     References
     ----------
-    .. [1] Grant, Boyd, and Ye, "The CVX Users' Guide",
-           http://web.cvxr.com/cvx/doc/CVX.pdf
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`https://doi.org/10.1017/CBO9780511804441`
 
     """)
 
@@ -7438,9 +7439,9 @@ add_newdoc("kl_div",
 
     References
     ----------
-    .. [1] Grant, Boyd, and Ye, "The CVX Users' Guide",
-           http://web.cvxr.com/cvx/doc/CVX.pdf
-
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`https://doi.org/10.1017/CBO9780511804441`
 
     """)
 
@@ -10247,8 +10248,9 @@ add_newdoc("rel_entr",
 
     References
     ----------
-    .. [1] Grant, Boyd, and Ye, "The CVX Users' Guide",
-           http://web.cvxr.com/cvx/doc/CVX.pdf
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`https://doi.org/10.1017/CBO9780511804441`
     .. [2] Kullback-Leibler divergence,
            https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 
