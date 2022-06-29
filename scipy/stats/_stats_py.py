@@ -608,8 +608,8 @@ def mode(a, axis=0, nan_policy='propagate'):
     treats NaNs with different binary representations as distinct.
 
     .. deprecated:: 1.9.0
-        Support for non-numeric arrays has been deprecated and will be removed
-        in the second release after SciPy 1.9.0. `pandas.DataFrame.mode`_ can
+        Support for non-numeric arrays has been deprecated as of SciPy 1.9.0
+        and will be removed in 1.11.0.. `pandas.DataFrame.mode`_ can
         be used instead.
 
         .. _pandas.DataFrame.mode: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html
