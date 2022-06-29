@@ -84,8 +84,6 @@ class gaussian_kde:
         (`kde.factor`).
     inv_cov : ndarray
         The inverse of `covariance`.
-    covariance_chol : (ndarray, bool)
-        The output returned by `linalg.cho_solve(covariance)`.
 
     Methods
     -------
@@ -252,8 +250,35 @@ class gaussian_kde:
         else:
             raise TypeError('%s has unexpected item size %d' %
                             (output_dtype, itemsize))
-        result = gaussian_kernel_estimate[spec](self.dataset.T, self.weights[:, None],
-                                                points.T, self.inv_cov, output_dtype)
+
+        result = gaussian_kernel_estimate[spec](
+            self.dataset.T, self.weights[:, None],
+            points.T, self.covariance_cho, output_dtype)
+
+        precision = self.inv_cov
+        dtype = np.float64
+        xi = points.T
+        points = self.dataset.T
+
+        x = xi
+        A = self.covariance
+        P = linalg.inv(A)
+        Lp = linalg.cholesky(P)
+        res = np.dot(x, Lp)
+
+        whitening = np.linalg.cholesky(precision).astype(dtype, copy=False)
+        points_ = np.dot(points, whitening).astype(dtype, copy=False)
+        xi_ = np.dot(xi, whitening).astype(dtype, copy=False)
+
+        JAJ = A[::-1, ::-1]
+        L2 = linalg.cholesky(JAJ)
+        JL2J = L2[::-1, ::-1]
+        res2 = linalg.solve_triangular(JL2J, x.T, lower=True).T
+
+        covariance_cho = self.covariance_cho
+        points2_ = linalg.solve_triangular(covariance_cho, points.T, lower=True).T
+        xi2_ = linalg.solve_triangular(covariance_cho, xi.T, lower=True).T
+
         return result[:, 0]
 
     __call__ = evaluate
@@ -562,12 +587,13 @@ class gaussian_kde:
         """
         self.factor = self.covariance_factor()
         # Cache covariance and cholesky decomp of covariance of the data
-        if not hasattr(self, '_data_cov_chol'):
+        if not hasattr(self, '_data_cov_cho'):
             self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
                                                bias=False,
                                                aweights=self.weights))
             # cho_solve returns a pair (ndarray, bool)
-            self._data_cov_chol = linalg.cho_factor(self._data_covariance)
+            self._data_cov_cho = linalg.cholesky(
+                self._data_covariance[::-1, ::-1])[::-1, ::-1].copy()
 
         self.covariance = self._data_covariance * self.factor**2
 
@@ -575,9 +601,8 @@ class gaussian_kde:
         self.inv_cov = linalg.inv(self._data_covariance) / self.factor**2
 
         # We should do this instead
-        self.covariance_chol = (self._data_cov_chol[0] * self.factor,
-                self._data_cov_chol[1])
-        self.log_det = 2*np.log(np.diag(self.covariance_chol[0]
+        self.covariance_cho = self._data_cov_cho * self.factor
+        self.log_det = 2*np.log(np.diag(self.covariance_cho
                                         * np.sqrt(2*pi))).sum()
 
     def pdf(self, x):
