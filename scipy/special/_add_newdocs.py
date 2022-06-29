@@ -3110,9 +3110,7 @@ add_newdoc("entr",
 
     See Also
     --------
-    kl_div
-    rel_entr
-    scipy.stats.entropy
+    kl_div, rel_entr, scipy.stats.entropy
 
     Notes
     -----
@@ -7421,9 +7419,7 @@ add_newdoc("kl_div",
 
     See Also
     --------
-    entr
-    rel_entr
-    scipy.stats.entropy
+    entr, rel_entr, scipy.stats.entropy
 
     Notes
     -----
@@ -10223,9 +10219,7 @@ add_newdoc("rel_entr",
 
     See Also
     --------
-    entr
-    kl_div
-    scipy.stats.entropy
+    entr, kl_div, scipy.stats.entropy
 
     Notes
     -----
