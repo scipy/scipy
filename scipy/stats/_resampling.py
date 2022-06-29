@@ -210,7 +210,7 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
             method, random_state)
 
 
-fields = ['confidence_interval', 'standard_error']
+fields = ['confidence_interval', 'bootstrap_distribution', 'standard_error']
 BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 
@@ -303,9 +303,13 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         confidence_interval : ConfidenceInterval
             The bootstrap confidence interval as an instance of
             `collections.namedtuple` with attributes `low` and `high`.
+        bootstrap_distribution : ndarray
+            The bootstrap distribution, that is, the value of `statistic` for
+            each resample. The last dimension corresponds with the resamples
+            (e.g. ``res.bootstrap_distribution.shape[-1] == n_resamples``).
         standard_error : float or ndarray
             The bootstrap standard error, that is, the sample standard
-            deviation of the bootstrap distribution
+            deviation of the bootstrap distribution.
 
     Warns
     -----
@@ -340,7 +344,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> dist = norm(loc=2, scale=4)  # our "unknown" distribution
     >>> data = dist.rvs(size=100, random_state=rng)
 
-    We are interested int the standard deviation of the distribution.
+    We are interested in the standard deviation of the distribution.
 
     >>> std_true = dist.std()      # the true value of the statistic
     >>> print(std_true)
@@ -349,19 +353,65 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> print(std_sample)
     3.9460644295563863
 
-    We can calculate a 90% confidence interval of the statistic using
-    `bootstrap`.
+    The bootstrap is used to approximate the variability we would expect if we
+    were to repeatedly sample from the unknown distribution and calculate the
+    statistic of the sample each time. It does this by repeatedly resampling
+    values *from the original sample* with replacement and calculating the
+    statistic of each resample. This results in a "bootstrap distribution" of
+    the statistic.
 
+    >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import bootstrap
     >>> data = (data,)  # samples must be in a sequence
     >>> res = bootstrap(data, np.std, confidence_level=0.9,
     ...                 random_state=rng)
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(res.bootstrap_distribution, bins=25)
+    >>> ax.set_title('Bootstrap Distribution')
+    >>> ax.set_xlabel('statistic value')
+    >>> ax.set_ylabel('frequency')
+    >>> plt.show()
+
+    The standard error quantifies this variability. It is calculated as the
+    standard deviation of the bootstrap distribution.
+
+    >>> res.standard_error
+    0.24427002125829136
+    >>> res.standard_error == np.std(res.bootstrap_distribution, ddof=1)
+    True
+
+    The bootstrap distribution of the statistic is often approximately normal
+    with scale equal to the standard error.
+
+    >>> x = np.linspace(3, 5)
+    >>> pdf = norm.pdf(x, loc=std_sample, scale=res.standard_error)
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(res.bootstrap_distribution, bins=25, density=True)
+    >>> ax.plot(x, pdf)
+    >>> ax.set_title('Normal Approximation of the Bootstrap Distribution')
+    >>> ax.set_xlabel('statistic value')
+    >>> ax.set_ylabel('pdf')
+    >>> plt.show()
+
+    This suggests that we could construct a 90% confidence interval on the
+    statistic based on quantiles of this normal distribution.
+
+    >>> norm.interval(0.9, loc=std_sample, scale=res.standard_error)
+    (3.5442759991341726, 4.3478528599786)
+
+    Due to central limit theorem, this normal approximation is accurate for a
+    variety of statistics and distributions underlying the samples; however,
+    the approximation is not reliable in all cases. Because `bootstrap` is
+    designed to work with arbitrary underlying distributions and statistics,
+    it uses more advanced techniques to generate an accurate confidence
+    interval.
+
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=3.57655333533867, high=4.382043696342881)
 
-    If we sample from the distribution 1000 times and form a bootstrap
+    If we sample from the original distribution 1000 times and form a bootstrap
     confidence interval for each sample, the confidence interval
-    contains the true value of the statistic approximately 900 times.
+    contains the true value of the statistic approximately 90% of the time.
 
     >>> n_trials = 1000
     >>> ci_contains_true_std = 0
@@ -493,6 +543,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
 
     return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
+                           bootstrap_distribution=theta_hat_b,
                            standard_error=np.std(theta_hat_b, ddof=1, axis=-1))
 
 

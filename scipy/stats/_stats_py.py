@@ -1861,10 +1861,8 @@ def normaltest(a, axis=0, nan_policy='propagate'):
     return NormaltestResult(k2, distributions.chi2.sf(k2, 2))
 
 
-Jarque_beraResult = namedtuple('Jarque_beraResult', ('statistic', 'pvalue'))
-
-
-def jarque_bera(x):
+@_axis_nan_policy_factory(SignificanceResult, default_axis=None)
+def jarque_bera(x, *, axis=None):
     """Perform the Jarque-Bera goodness of fit test on sample data.
 
     The Jarque-Bera test tests whether the sample data has the skewness and
@@ -1878,13 +1876,21 @@ def jarque_bera(x):
     ----------
     x : array_like
         Observations of a random variable.
+    axis : int or None, default: 0
+        If an int, the axis of the input along which to compute the statistic.
+        The statistic of each axis-slice (e.g. row) of the input will appear in
+        a corresponding element of the output.
+        If ``None``, the input will be raveled before computing the statistic.
 
     Returns
     -------
-    jb_value : float
-        The test statistic.
-    p : float
-        The p-value for the hypothesis test.
+    result : SignificanceResult
+        An object with the following attributes:
+
+        statistic : float
+            The test statistic.
+        pvalue : float
+            The p-value for the hypothesis test.
 
     References
     ----------
@@ -1907,18 +1913,22 @@ def jarque_bera(x):
 
     """
     x = np.asarray(x)
-    n = x.size
+    if axis is None:
+        x = x.ravel()
+        axis = 0
+
+    n = x.shape[axis]
     if n == 0:
         raise ValueError('At least one observation is required.')
 
-    mu = x.mean()
+    mu = x.mean(axis=axis, keepdims=True)
     diffx = x - mu
-    skewness = (1 / n * np.sum(diffx**3)) / (1 / n * np.sum(diffx**2))**(3 / 2.)
-    kurtosis = (1 / n * np.sum(diffx**4)) / (1 / n * np.sum(diffx**2))**2
-    jb_value = n / 6 * (skewness**2 + (kurtosis - 3)**2 / 4)
-    p = 1 - distributions.chi2.cdf(jb_value, 2)
+    s = skew(diffx, axis=axis, _no_deco=True)
+    k = kurtosis(diffx, axis=axis, _no_deco=True)
+    statistic = n / 6 * (s**2 + k**2 / 4)
+    pvalue = distributions.chi2.sf(statistic, df=2)
 
-    return Jarque_beraResult(jb_value, p)
+    return SignificanceResult(statistic, pvalue)
 
 
 #####################################
@@ -4726,9 +4736,8 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     """Calculate a Spearman correlation coefficient with associated p-value.
 
     The Spearman rank-order correlation coefficient is a nonparametric measure
-    of the monotonicity of the relationship between two datasets. Unlike the
-    Pearson correlation, the Spearman correlation does not assume that both
-    datasets are normally distributed. Like other correlation coefficients,
+    of the monotonicity of the relationship between two datasets.
+    Like other correlation coefficients,
     this one varies between -1 and +1 with 0 implying no correlation.
     Correlations of -1 or +1 imply an exact monotonic relationship. Positive
     correlations imply that as x increases, so does y. Negative correlations
@@ -4736,8 +4745,11 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
 
     The p-value roughly indicates the probability of an uncorrelated system
     producing datasets that have a Spearman correlation at least as extreme
-    as the one computed from these datasets. The p-values are not entirely
-    reliable but are probably reasonable for datasets larger than 500 or so.
+    as the one computed from these datasets. Although calculation of the
+    p-value does not make strong assumptions about the distributions underlying
+    the samples, it is only accurate for very large samples (>500
+    observations). For smaller sample sizes, consider a permutation test (see
+    Examples section below).
 
     Parameters
     ----------
@@ -4834,6 +4846,24 @@ def spearmanr(a, b=None, axis=0, nan_policy='propagate',
     >>> xint = rng.integers(10, size=(100, 2))
     >>> stats.spearmanr(xint)
     SpearmanrResult(correlation=0.09800224850707953, pvalue=0.3320271757932076)
+
+    For small samples, consider performing a permutation test instead of
+    relying on the asymptotic p-value. Note that to calculate the null
+    distribution of the statistic (for all possibly pairings between
+    observations in sample ``x`` and ``y``), only one of the two inputs needs
+    to be permuted.
+
+    >>> x = [1.76405235, 0.40015721, 0.97873798,
+    ...      2.2408932, 1.86755799, -0.97727788]
+    >>> y = [2.71414076, 0.2488, 0.87551913,
+    ...      2.6514917, 2.01160156, 0.47699563]
+    >>> def statistic(x):  # permute only `x`
+    ...     return stats.spearmanr(x, y).correlation
+    >>> res_exact = stats.permutation_test((x,), statistic,
+    ...                                    permutation_type='pairings')
+    >>> res_asymptotic = stats.spearmanr(x, y)
+    >>> res_exact.pvalue, res_asymptotic.pvalue  # asymptotic pvalue is too low
+    (0.10277777777777777, 0.07239650145772594)
 
     """
     if axis is not None and axis > 1:

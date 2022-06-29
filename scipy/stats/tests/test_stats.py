@@ -5384,6 +5384,22 @@ class TestJarqueBera:
     def test_jarque_bera_size(self):
         assert_raises(ValueError, stats.jarque_bera, [])
 
+    def test_axis(self):
+        rng = np.random.default_rng(abs(hash('JarqueBera')))
+        x = rng.random(size=(2, 45))
+
+        assert_equal(stats.jarque_bera(x, axis=None),
+                     stats.jarque_bera(x.ravel()))
+
+        res = stats.jarque_bera(x, axis=1)
+        s0, p0 = stats.jarque_bera(x[0, :])
+        s1, p1 = stats.jarque_bera(x[1, :])
+        assert_allclose(res.statistic, [s0, s1])
+        assert_allclose(res.pvalue, [p0, p1])
+
+        resT = stats.jarque_bera(x.T, axis=0)
+        assert_allclose(res, resT)
+
 
 def test_skewtest_too_few_samples():
     # Regression test for ticket #1492.
