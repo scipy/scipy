@@ -124,23 +124,18 @@ class TestQuantiles:
         # the efficient version (hdquantiles_sd) matches a rudimentary,
         # but clear version here.
 
-        hd_std_errs = ms.hdquantiles_sd(self.data, [0.25, 0.5, 0.75])
+        hd_std_errs = ms.hdquantiles_sd(self.data)
 
+        # jacknnife standard error, Introduction to the Bootstrap Eq. 11.5
         n = len(self.data)
-        s_bar = np.array([0.0, 0.0, 0.0])
-        sum_of_estimators_squared = np.array([0.0, 0.0, 0.0])
-        for index, _ in enumerate(self.data):
-            hd_quantile = ms.hdquantiles(self.data[0:index] +
-                                         self.data[index + 1:],
-                                         [0.25, 0.5, 0.75])
-            s_bar += hd_quantile / n
-            sum_of_estimators_squared += hd_quantile ** 2
+        jdata = np.broadcast_to(self.data, (n, n))
+        jselector = np.logical_not(np.eye(n))  # leave out one sample each row
+        jdata = jdata[jselector].reshape(n, n-1)
+        jdist = ms.hdquantiles(jdata, axis=1)
+        jdist_mean = np.mean(jdist, axis=0)
+        jstd = ((n-1)/n * np.sum((jdist - jdist_mean)**2, axis=0))**.5
 
-        jackknife_estimates = np.sqrt(
-            (n-1) * (sum_of_estimators_squared/n - s_bar ** 2)
-            )
-
-        assert_almost_equal(hd_std_errs, jackknife_estimates)
+        assert_almost_equal(hd_std_errs, jstd)
         # Test actual values for good measure
         assert_almost_equal(hd_std_errs, [0.0379258, 0.0380656, 0.0380013])
 
