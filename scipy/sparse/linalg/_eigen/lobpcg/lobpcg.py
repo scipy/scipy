@@ -127,7 +127,7 @@ def _get_indx(_lambda, num, largest):
 
 
 def _handle_gramA_gramB_verbosity(gramA, gramB, verbosityLevel):
-    if verbosityLevel > 0:
+    if verbosityLevel:
         _report_nonhermitian(gramA, "gramA")
         _report_nonhermitian(gramB, "gramB")
 
@@ -484,7 +484,6 @@ def lobpcg(
         residualNorms = np.sqrt(np.abs(aux))
         residualNormsHistory[iterationNumber, :] = residualNorms
         residualNorm = np.sum(np.abs(residualNorms)) / sizeX
-        print(np.max(blockVectorX @ blockVectorR.T))
 
         if residualNorm < smallestResidualNorm:
             smallestResidualNorm = residualNorm
@@ -500,7 +499,7 @@ def lobpcg(
         activeMask = activeMask & ii
         currentBlockSize = activeMask.sum()
 
-        if verbosityLevel > 0:
+        if verbosityLevel:
             print(f"iteration {iterationNumber}")
             print(f"current block size: {currentBlockSize}")
             print(f"eigenvalue(s):\n{_lambda}")
@@ -761,7 +760,7 @@ def lobpcg(
             UserWarning, stacklevel=2
         )
 
-    if verbosityLevel > 0:
+    if verbosityLevel:
         print(f"Final iterative eigenvalue(s):\n{_lambda}")
         print(f"Final iterative residual norm(s):\n{residualNorms}")
 
@@ -823,7 +822,7 @@ def lobpcg(
             UserWarning, stacklevel=2
         )
 
-    if verbosityLevel > 0:
+    if verbosityLevel:
         print(f"Final postprocessing eigenvalue(s):\n{_lambda}")
         print(f"Final residual norm(s):\n{residualNorms}")
 
