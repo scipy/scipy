@@ -264,9 +264,13 @@ def cases_test_moments():
         cond2 = distname not in fail_higher
 
         marks = list()
-        if distname == 'skewnorm':
-            # takes > 60 sec on Linux 32-bit and ~200 sec on Azure Windows
-            marks.append(pytest.mark.timeout(300))
+        # Currently unused, `marks` can be used to add a timeout to a test of
+        # a specific distribution.  For example, this shows how a timeout could
+        # be added for the 'skewnorm' distribution:
+        #
+        #     marks = list()
+        #     if distname == 'skewnorm':
+        #         marks.append(pytest.mark.timeout(300))
 
         yield pytest.param(distname, arg, cond1, cond2, False, marks=marks)
 
