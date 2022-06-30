@@ -36,7 +36,7 @@ class CholUpdate(Benchmark):
                         overwrite_rz=False, check_finite=False)
 
     def time_cholesky(self, *args):
-        # overwrite = True will fail with LinAlgErrors 
+        # overwrite = True will fail with LinAlgErrors
         # unclear why since setup should always be called.
         scipy.linalg.cholesky(self.a, lower=False, check_finite=False,
                               overwrite_a=False)

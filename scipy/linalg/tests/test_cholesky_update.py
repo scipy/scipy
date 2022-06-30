@@ -42,7 +42,8 @@ def check_cholesky(a, r, lower, rtol, atol):
         assert_upper_tri(r, rtol=rtol, atol=atol)
         a1 = np.dot(r.T.conj(), r)
     assert_allclose(a1, a, rtol=rtol, atol=atol)
-    assert_allclose(scipy.linalg.cholesky(a, lower=lower), r, rtol=rtol, atol=atol)
+    assert_allclose(scipy.linalg.cholesky(a, lower=lower), r,
+                    rtol=rtol, atol=atol)
 
 
 def make_strided(arrs):
@@ -119,7 +120,7 @@ class BaseCholdeltas:
 
         # Make symmetric and PD
         a = a + a.T.conj() + a.shape[0] * np.eye(a.shape[0], dtype=self.dtype)
-        l = scipy.linalg.cholesky(a, lower=True)
+        lo = scipy.linalg.cholesky(a, lower=True)
         r = scipy.linalg.cholesky(a, lower=False)
 
         # Generate the update vector
@@ -136,7 +137,7 @@ class BaseCholdeltas:
             b = np.random.random(u.shape)
             u = u + 1j * b
         u = u.astype(self.dtype)
-        return a, u, l, r
+        return a, u, lo, r
 
 
 def get_updated(a, u, downdate):
@@ -151,10 +152,10 @@ def get_updated(a, u, downdate):
 
 
 class BaseCholUpdate(BaseCholdeltas):
-    def base_update1_test(self, a, u, l, r, lower: bool, downdate: bool):
+    def base_update1_test(self, a, u, lo, r, lower: bool, downdate: bool):
         a1 = get_updated(a, u, downdate)
         if lower:
-            d = cholesky_update(l, u, downdate=downdate, lower=True,
+            d = cholesky_update(lo, u, downdate=downdate, lower=True,
                                 overwrite_rz=False)
         else:
             d = cholesky_update(r, u, downdate=downdate, lower=False,
@@ -163,7 +164,7 @@ class BaseCholUpdate(BaseCholdeltas):
 
         # Check with the same matrix passed to fn to ensure no overwrite
         if lower:
-            a2 = np.dot(l, l.T.conj())
+            a2 = np.dot(lo, lo.T.conj())
         else:
             a2 = np.dot(r.T.conj(), r)
         a2 = get_updated(a2, u, downdate)
@@ -171,98 +172,98 @@ class BaseCholUpdate(BaseCholdeltas):
 
     def test_u1_l_dd_sqr(self):
         for which in ['1d', 'col']:
-            a, u, l, r = self.generate('sqr', which=which)
-            self.base_update1_test(a, u, l, r, lower=True, downdate=True)
+            a, u, lo, r = self.generate('sqr', which=which)
+            self.base_update1_test(a, u, lo, r, lower=True, downdate=True)
 
     def test_u1_l_dd_1x1(self):
         for which in ['1d', 'col']:
-            a, u, l, r = self.generate('1x1', which=which)
-            self.base_update1_test(a, u, l, r, lower=True, downdate=True)
+            a, u, lo, r = self.generate('1x1', which=which)
+            self.base_update1_test(a, u, lo, r, lower=True, downdate=True)
 
     def test_u1_u_dd_sqr(self):
         for which in ['1d', 'col']:
-            a, u, l, r = self.generate('sqr', which=which)
-            self.base_update1_test(a, u, l, r, lower=False, downdate=True)
+            a, u, lo, r = self.generate('sqr', which=which)
+            self.base_update1_test(a, u, lo, r, lower=False, downdate=True)
 
     def test_u1_u_dd_1x1(self):
         for which in ['1d', 'col']:
-            a, u, l, r = self.generate('1x1', which=which)
-            self.base_update1_test(a, u, l, r, lower=False, downdate=True)
+            a, u, lo, r = self.generate('1x1', which=which)
+            self.base_update1_test(a, u, lo, r, lower=False, downdate=True)
 
     def test_u1_l_ud_sqr(self):
         for which in ['1d', 'col']:
-            a, u, l, r = self.generate('sqr', which=which)
-            self.base_update1_test(a, u, l, r, lower=True, downdate=False)
+            a, u, lo, r = self.generate('sqr', which=which)
+            self.base_update1_test(a, u, lo, r, lower=True, downdate=False)
 
     def test_u1_l_ud_1x1(self):
         for which in ['1d', 'col']:
-            a, u, l, r = self.generate('1x1', which=which)
-            self.base_update1_test(a, u, l, r, lower=True, downdate=False)
+            a, u, lo, r = self.generate('1x1', which=which)
+            self.base_update1_test(a, u, lo, r, lower=True, downdate=False)
 
     def test_u1_u_ud_sqr(self):
         for which in ['1d', 'col']:
-            a, u, l, r = self.generate('sqr', which=which)
-            self.base_update1_test(a, u, l, r, lower=False, downdate=False)
+            a, u, lo, r = self.generate('sqr', which=which)
+            self.base_update1_test(a, u, lo, r, lower=False, downdate=False)
 
     def test_u1_u_ud_1x1(self):
         for which in ['1d', 'col']:
-            a, u, l, r = self.generate('1x1', which=which)
-            self.base_update1_test(a, u, l, r, lower=True, downdate=False)
+            a, u, lo, r = self.generate('1x1', which=which)
+            self.base_update1_test(a, u, lo, r, lower=True, downdate=False)
 
     def test_up_l_dd_sqr(self):
         for which in ['p']:
-            a, u, l, r = self.generate('sqr', which=which)
-            self.base_update1_test(a, u, l, r, lower=True, downdate=True)
+            a, u, lo, r = self.generate('sqr', which=which)
+            self.base_update1_test(a, u, lo, r, lower=True, downdate=True)
 
     def test_up_l_dd_1x1(self):
         for which in ['p']:
-            a, u, l, r = self.generate('1x1', which=which)
-            self.base_update1_test(a, u, l, r, lower=True, downdate=True)
+            a, u, lo, r = self.generate('1x1', which=which)
+            self.base_update1_test(a, u, lo, r, lower=True, downdate=True)
 
     def test_up_u_dd_sqr(self):
         for which in ['p']:
-            a, u, l, r = self.generate('sqr', which=which)
-            self.base_update1_test(a, u, l, r, lower=False, downdate=True)
+            a, u, lo, r = self.generate('sqr', which=which)
+            self.base_update1_test(a, u, lo, r, lower=False, downdate=True)
 
     def test_up_u_dd_1x1(self):
         for which in ['p']:
-            a, u, l, r = self.generate('1x1', which=which)
-            self.base_update1_test(a, u, l, r, lower=False, downdate=True)
+            a, u, lo, r = self.generate('1x1', which=which)
+            self.base_update1_test(a, u, lo, r, lower=False, downdate=True)
 
     def test_up_l_ud_sqr(self):
         for which in ['p']:
-            a, u, l, r = self.generate('sqr', which=which)
-            self.base_update1_test(a, u, l, r, lower=True, downdate=False)
+            a, u, lo, r = self.generate('sqr', which=which)
+            self.base_update1_test(a, u, lo, r, lower=True, downdate=False)
 
     def test_up_l_ud_1x1(self):
         for which in ['p']:
-            a, u, l, r = self.generate('1x1', which=which)
-            self.base_update1_test(a, u, l, r, lower=True, downdate=False)
+            a, u, lo, r = self.generate('1x1', which=which)
+            self.base_update1_test(a, u, lo, r, lower=True, downdate=False)
 
     def test_up_u_ud_sqr(self):
         for which in ['p']:
-            a, u, l, r = self.generate('sqr', which=which)
-            self.base_update1_test(a, u, l, r, lower=False, downdate=False)
+            a, u, lo, r = self.generate('sqr', which=which)
+            self.base_update1_test(a, u, lo, r, lower=False, downdate=False)
 
     def test_up_u_ud_1x1(self):
         for which in ['p']:
-            a, u, l, r = self.generate('1x1', which=which)
-            self.base_update1_test(a, u, l, r, lower=False, downdate=False)
+            a, u, lo, r = self.generate('1x1', which=which)
+            self.base_update1_test(a, u, lo, r, lower=False, downdate=False)
 
     def test_list_input(self):
-        a, u, l, r = self.generate('sqr', '1d')
+        a, u, lo, r = self.generate('sqr', '1d')
 
-        d = cholesky_update(l, list(u), downdate=False, lower=True,
+        d = cholesky_update(lo, list(u), downdate=False, lower=True,
                             overwrite_rz=False)
         check_cholesky(get_updated(a, u, downdate=False), d, lower=True,
                        rtol=self.rtol, atol=self.atol)
 
-        d = cholesky_update(list(l), u, downdate=False, lower=True,
+        d = cholesky_update(list(lo), u, downdate=False, lower=True,
                             overwrite_rz=False)
         check_cholesky(get_updated(a, u, downdate=False), d, lower=True,
                        rtol=self.rtol, atol=self.atol)
 
-        d = cholesky_update(list(l), list(u), downdate=False, lower=True,
+        d = cholesky_update(list(lo), list(u), downdate=False, lower=True,
                             overwrite_rz=False)
         check_cholesky(get_updated(a, u, downdate=False), d, lower=True,
                        rtol=self.rtol, atol=self.atol)
@@ -270,12 +271,12 @@ class BaseCholUpdate(BaseCholdeltas):
     def test_check_nan(self):
         a, u0, l0, r = self.generate('sqr', '1d')
 
-        l = l0.copy('F')
-        l[1, 1] = np.nan
-        assert_raises(ValueError, cholesky_update, l, u0, False, False)
-        assert_raises(ValueError, cholesky_update, l, u0, False, True)
-        assert_raises(ValueError, cholesky_update, l, u0, True, False)
-        assert_raises(ValueError, cholesky_update, l, u0, True, True)
+        lo = l0.copy('F')
+        lo[1, 1] = np.nan
+        assert_raises(ValueError, cholesky_update, lo, u0, False, False)
+        assert_raises(ValueError, cholesky_update, lo, u0, False, True)
+        assert_raises(ValueError, cholesky_update, lo, u0, True, False)
+        assert_raises(ValueError, cholesky_update, lo, u0, True, True)
 
         u = u0.copy('F')
         u[1] = np.nan
@@ -287,12 +288,12 @@ class BaseCholUpdate(BaseCholdeltas):
     def test_check_nan_p(self):
         a, u0, l0, r = self.generate('sqr', 'p')
 
-        l = l0.copy('F')
-        l[1, 1] = np.nan
-        assert_raises(ValueError, cholesky_update, l, u0, False, False)
-        assert_raises(ValueError, cholesky_update, l, u0, False, True)
-        assert_raises(ValueError, cholesky_update, l, u0, True, False)
-        assert_raises(ValueError, cholesky_update, l, u0, True, True)
+        lo = l0.copy('F')
+        lo[1, 1] = np.nan
+        assert_raises(ValueError, cholesky_update, lo, u0, False, False)
+        assert_raises(ValueError, cholesky_update, lo, u0, False, True)
+        assert_raises(ValueError, cholesky_update, lo, u0, True, False)
+        assert_raises(ValueError, cholesky_update, lo, u0, True, True)
 
         u = u0.copy('F')
         u[0, 0] = np.nan
@@ -304,12 +305,12 @@ class BaseCholUpdate(BaseCholdeltas):
     def test_check_finite(self):
         a, u0, l0, r = self.generate('sqr', '1d')
 
-        l = l0.copy('F')
-        l[1, 1] = np.inf
-        assert_raises(ValueError, cholesky_update, l, u0, False, False)
-        assert_raises(ValueError, cholesky_update, l, u0, False, True)
-        assert_raises(ValueError, cholesky_update, l, u0, True, False)
-        assert_raises(ValueError, cholesky_update, l, u0, True, True)
+        lo = l0.copy('F')
+        lo[1, 1] = np.inf
+        assert_raises(ValueError, cholesky_update, lo, u0, False, False)
+        assert_raises(ValueError, cholesky_update, lo, u0, False, True)
+        assert_raises(ValueError, cholesky_update, lo, u0, True, False)
+        assert_raises(ValueError, cholesky_update, lo, u0, True, True)
 
         u = u0.copy('F')
         u[1] = np.inf
@@ -321,12 +322,12 @@ class BaseCholUpdate(BaseCholdeltas):
     def test_check_finite_p(self):
         a, u0, l0, r = self.generate('sqr', 'p')
 
-        l = l0.copy('F')
-        l[1, 1] = np.inf
-        assert_raises(ValueError, cholesky_update, l, u0, False, False)
-        assert_raises(ValueError, cholesky_update, l, u0, False, True)
-        assert_raises(ValueError, cholesky_update, l, u0, True, False)
-        assert_raises(ValueError, cholesky_update, l, u0, True, True)
+        lo = l0.copy('F')
+        lo[1, 1] = np.inf
+        assert_raises(ValueError, cholesky_update, lo, u0, False, False)
+        assert_raises(ValueError, cholesky_update, lo, u0, False, True)
+        assert_raises(ValueError, cholesky_update, lo, u0, True, False)
+        assert_raises(ValueError, cholesky_update, lo, u0, True, True)
 
         u = u0.copy('F')
         u[1, 0] = np.inf
@@ -343,11 +344,11 @@ class BaseCholUpdate(BaseCholdeltas):
             a1 = get_updated(a, u0, downdate=False)
 
             # if overwriteable is True
-            # For l and u we try first with overwrite=False, then with
+            # For lo and u we try first with overwrite=False, then with
             # overwrite=True and make sure that overwriting occurred
             # appropriately.
             u = u0.copy('F')
-            l = l0.copy('F')
+            lo = l0.copy('F')
             d1 = cholesky_update(ls, u, False, lower=True, overwrite_rz=False)
             check_cholesky(a1, d1, lower=True, rtol=self.rtol, atol=self.atol)
             d1o = cholesky_update(ls, u, False, lower=True, overwrite_rz=True)
@@ -363,13 +364,13 @@ class BaseCholUpdate(BaseCholdeltas):
                               self.rtol, self.atol)
 
             u = u0.copy('F')
-            l = l0.copy('F')
-            d2 = cholesky_update(l, us, False, lower=True, overwrite_rz=False)
+            lo = l0.copy('F')
+            d2 = cholesky_update(lo, us, False, lower=True, overwrite_rz=False)
             check_cholesky(a1, d2, lower=True, rtol=self.rtol, atol=self.atol)
-            d2o = cholesky_update(l, us, False, lower=True, overwrite_rz=True)
+            d2o = cholesky_update(lo, us, False, lower=True, overwrite_rz=True)
             check_cholesky(a1, d2o, lower=True, rtol=self.rtol, atol=self.atol)
             if r_overwriteable:
-                assert_allclose(d2o, l, rtol=self.rtol, atol=self.atol)
+                assert_allclose(d2o, lo, rtol=self.rtol, atol=self.atol)
             elif type != '1x1':
                 assert_raises(AssertionError, assert_allclose, d2o, ls,
                               rtol=self.rtol, atol=self.atol)
@@ -380,9 +381,9 @@ class BaseCholUpdate(BaseCholdeltas):
             # Now with both strided (need to be recreated since they were
             # overwritten above)
             u = u0.copy('F')
-            l = l0.copy('F')
+            lo = l0.copy('F')
             # since some of these were consumed above
-            us, ls = adjust_strides((u, l))
+            us, ls = adjust_strides((u, lo))
             d3 = cholesky_update(ls, us, False, lower=True, overwrite_rz=False)
             check_cholesky(a1, d3, lower=True, rtol=self.rtol, atol=self.atol)
             d3o = cholesky_update(ls, us, False, lower=True, overwrite_rz=True)
@@ -504,12 +505,12 @@ class BaseCholUpdate(BaseCholdeltas):
 
     """ Test edge cases which should error out """
     def test_empty_l(self):
-        a, u, l, r = self.generate('sqr', which='col')
+        a, u, lo, r = self.generate('sqr', which='col')
         assert_raises(ValueError, cholesky_update, np.array([]), u)
 
     def test_empty_u(self):
-        a, u, l, r = self.generate('sqr', which='col')
-        assert_raises(ValueError, cholesky_update, l, np.array([]))
+        a, u, lo, r = self.generate('sqr', which='col')
+        assert_raises(ValueError, cholesky_update, lo, np.array([]))
 
     def test_unsupported_dtypes(self):
         dts = ['int8', 'int16', 'int32', 'int64',
@@ -518,12 +519,12 @@ class BaseCholUpdate(BaseCholdeltas):
                'bool']
         a, u0, l0, r = self.generate('sqr', which='col')
         for dtype in dts:
-            l = l0.real.astype(dtype)
+            lo = l0.real.astype(dtype)
             u = u0.real.astype(dtype)
-            assert_raises(ValueError, cholesky_update, l, u0)
-            assert_raises(ValueError, cholesky_update, l, u0)
-            assert_raises(ValueError, cholesky_update, l, u0)
-            assert_raises(ValueError, cholesky_update, l, u0)
+            assert_raises(ValueError, cholesky_update, lo, u0)
+            assert_raises(ValueError, cholesky_update, lo, u0)
+            assert_raises(ValueError, cholesky_update, lo, u0)
+            assert_raises(ValueError, cholesky_update, lo, u0)
 
             assert_raises(ValueError, cholesky_update, l0, u)
             assert_raises(ValueError, cholesky_update, l0, u)
@@ -536,24 +537,24 @@ class BaseCholUpdate(BaseCholdeltas):
         assert_raises(ValueError, cholesky_update, l0, u0[0, 0])
 
     def test_mismatched_shapes(self):
-        a, u, l, r = self.generate('sqr', which='col')
+        a, u, lo, r = self.generate('sqr', which='col')
         a0, u0, l0, r0 = self.generate('1x1', which='col')
 
-        assert_raises(ValueError, cholesky_update, l, u0)
+        assert_raises(ValueError, cholesky_update, lo, u0)
         assert_raises(ValueError, cholesky_update, l0, u)
 
     def test_l_nonsquare(self):
         a, u, l0, r = self.generate('sqr', which='col')
-        l = np.concatenate((l0, l0[0, None]), axis=0)
-        assert_raises(ValueError, cholesky_update, l, u)
+        lo = np.concatenate((l0, l0[0, None]), axis=0)
+        assert_raises(ValueError, cholesky_update, lo, u)
 
-        l = np.concatenate((l0, l0[:, 0][:, None]), axis=1)
-        assert_raises(ValueError, cholesky_update, l, u)
+        lo = np.concatenate((l0, l0[:, 0][:, None]), axis=1)
+        assert_raises(ValueError, cholesky_update, lo, u)
 
     def test_3d_inputs(self):
         a, u0, l0, r = self.generate('sqr', which='col')
-        l = l0[..., None]
-        assert_raises(ValueError, cholesky_update, l, u0)
+        lo = l0[..., None]
+        assert_raises(ValueError, cholesky_update, lo, u0)
         u = u0[..., None]
         assert_raises(ValueError, cholesky_update, l0, u)
 

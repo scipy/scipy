@@ -82,6 +82,7 @@ Decompositions
    ldl - LDL.T decomposition of a Hermitian or a symmetric matrix.
    cholesky - Cholesky decomposition of a matrix
    cholesky_banded - Cholesky decomp. of a sym. or Hermitian banded matrix
+   cholesky_update - Rank-k update of a Cholesky decomposition
    cho_factor - Cholesky decomposition for use in solving a linear system
    cho_solve - Solve previously factored linear system
    cho_solve_banded - Solve previously factored banded linear system

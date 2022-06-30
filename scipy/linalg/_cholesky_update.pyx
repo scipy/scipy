@@ -34,10 +34,6 @@ from . cimport cython_lapack as lapack_pointers
 import numpy as np
 
 
-cdef extern from "<complex.h>" nogil:
-    float complex I
-
-
 # These are commented out in the numpy support we cimported above.
 # Here I have declared them as taking void* instead of PyArrayDescr
 # and object. In this file, only NULL is passed to these parameters.
@@ -62,9 +58,6 @@ ctypedef fused real_t:
     float
     double
 
-ctypedef fused complex_t:
-    float_complex
-    double_complex
 
 #------------------------------------------------------------------------------
 # Helper functions for indexing and complex support
@@ -220,7 +213,8 @@ cdef void neg_larfg_fc(int n, float_complex *alpha, float_complex *x, int incx,
     cdef int nm1 = n - 1
     xnorm = blas_pointers.scnrm2(&nm1, x, &incx)
     beta = -copysign(cathetus(alpha[0].real, xnorm), alpha[0].real)
-    tau[0] = (beta - alpha[0].real) / beta + (-alpha[0].imag / beta) * I
+    tau[0].real = (beta - alpha[0].real) / beta
+    tau[0].imag = -alpha[0].imag / beta
     scal(n - 1, 1 / (alpha[0] - beta), x, incx)
     alpha[0] = beta
 
@@ -230,7 +224,8 @@ cdef void neg_larfg_dc(int n, double_complex *alpha, double_complex *x,
     cdef int nm1 = n - 1
     xnorm = blas_pointers.dznrm2(&nm1, x, &incx)
     beta = -copysign(cathetus(alpha[0].real, xnorm), alpha[0].real)
-    tau[0] = (beta - alpha[0].real) / beta + (-alpha[0].imag / beta) * I
+    tau[0].real = (beta - alpha[0].real) / beta
+    tau[0].imag = -alpha[0].imag / beta
     scal(n - 1, 1 / (alpha[0] - beta), x, incx)
     alpha[0] = beta
 
@@ -287,7 +282,10 @@ cdef int upd1_u(float_t *r, int *rs, float_t *z, int *zs, int n,
     return 0
 
 
-
+@cython.boundscheck(False)
+@cython.wraparound(False)
+@cython.nonecheck(False)
+@cython.cdivision(True)
 cdef int updp_u(float_t *r, int *rs, float_t *z, int *zs, float_t *w,
                 int n, int p, bint zisF, float_t eps, bint downdate) nogil:
     """
@@ -463,8 +461,8 @@ def cholesky_update(R, z, downdate=False, lower=False, overwrite_rz=False,
     Given the Cholesky factorization of ``A`` as ``A = LL^*`` or ``A = U^* U``,
     returns the updated factorization of ``A + zz^*`` or ``A - zz^*``.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     R : (N, N) array_like
         Triangular matrix from the Cholesky decomposition of `A`.
     z : (N,) or (N, P) array_like
@@ -481,8 +479,8 @@ def cholesky_update(R, z, downdate=False, lower=False, overwrite_rz=False,
         Disabling may give a performance gain, but may result in problems
         (crashes, non-termination) if the inputs do contain infinities or NaNs.
 
-    Returns:
-    --------
+    Returns
+    -------
     R1 : ndarray
         Updated Cholesky decomposition. Will have the same triangular pattern
         as `R`.
@@ -506,7 +504,8 @@ def cholesky_update(R, z, downdate=False, lower=False, overwrite_rz=False,
 
     Raises
     ------
-    LinAlgError : if the downdate results in a non-positive definite matrix.
+    LinAlgError : 
+        If a downdate results in a non-positive definite matrix.
     """
     cdef cnp.ndarray r1, z1
     cdef int typecode, n, p
