@@ -556,8 +556,16 @@ class TestInterpN:
     def _sample_2d_data(self):
         x = np.array([.5, 2., 3., 4., 5.5, 6.])
         y = np.array([.5, 2., 3., 4., 5.5, 6.])
-        z = np.array([[1, 2, 1, 2, 1, 1], [1, 2, 1, 2, 1, 1], [1, 2, 3, 2, 1, 1],
-                      [1, 2, 2, 2, 1, 1], [1, 2, 1, 2, 1, 1], [1, 2, 2, 2, 1, 1]])
+        z = np.array(
+            [
+                [1, 2, 1, 2, 1, 1],
+                [1, 2, 1, 2, 1, 1],
+                [1, 2, 3, 2, 1, 1],
+                [1, 2, 2, 2, 1, 1],
+                [1, 2, 1, 2, 1, 1],
+                [1, 2, 2, 2, 1, 1],
+            ]
+        )
         return x, y, z
 
     def test_spline_2d(self):
@@ -579,8 +587,9 @@ class TestInterpN:
                        [1, 3.3, 1.2, 4.0, 5.0, 1.0, 3]]).T
 
         v1 = interpn((x, y), z, xi, method=method)
-        v2 = interpn((x.tolist(), y.tolist()), z.tolist(),
-                      xi.tolist(), method=method)
+        v2 = interpn(
+            (x.tolist(), y.tolist()), z.tolist(), xi.tolist(), method=method
+        )
         assert_allclose(v1, v2, err_msg=method)
 
     def test_spline_2d_outofbounds(self):
@@ -681,16 +690,15 @@ class TestInterpN:
         xi = np.linspace(0, 1, 2)
         yi = np.linspace(0, 3, 3)
 
-        sample = (xi[:,None], yi[None,:])
-        v1 = interpn(points, values, sample, method=method,
-                        bounds_error=False)
+        sample = (xi[:, None], yi[None, :])
+        v1 = interpn(points, values, sample, method=method, bounds_error=False)
         assert_equal(v1.shape, (2, 3))
 
         xx, yy = np.meshgrid(xi, yi)
         sample = np.c_[xx.T.ravel(), yy.T.ravel()]
 
         v2 = interpn(points, values, sample,
-                        method=method, bounds_error=False)
+                     method=method, bounds_error=False)
         assert_allclose(v1, v2.reshape(v1.shape))
 
     @pytest.mark.parametrize(
@@ -699,19 +707,20 @@ class TestInterpN:
     )
     def test_nonscalar_values(self, method):
         # Verify that non-scalar valued values also works
-        points, values = self._sample_4d_data()
+        points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5)] * 2 + [
+            (0.0, 5.0, 10.0, 15.0, 20, 25.0)
+        ] * 2
 
         np.random.seed(1234)
-        values = np.random.rand(3, 3, 3, 3, 6)
+        values = np.random.rand(6, 6, 6, 6, 6)
         sample = np.random.rand(7, 11, 4)
 
         v = interpn(points, values, sample, method=method,
                     bounds_error=False)
         assert_equal(v.shape, (7, 11, 6), err_msg=method)
 
-        vs = [interpn(points, values[...,j], sample, method=method,
-                        bounds_error=False)
-                for j in range(6)]
+        vs = [interpn(points, values[..., j], sample, method=method,
+                      bounds_error=False) for j in range(6)]
         v2 = np.array(vs).transpose(1, 2, 0)
 
         assert_allclose(v, v2, err_msg=method)
