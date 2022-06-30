@@ -899,7 +899,7 @@ class SHGO:
             # Initial triangulation of the hyper-rectangle
             self.HC = Complex(self.dim, self.func, self.args,
                               self.symmetry, self.bounds, self.g_cons,
-                              self.g_args)
+                              ())
         else:
             self.HC.split_generation()
 
