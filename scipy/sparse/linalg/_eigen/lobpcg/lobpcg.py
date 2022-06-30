@@ -179,7 +179,7 @@ def lobpcg(
         Whether to return eigenvalue history.  Default is False.
     retResidualNormsHistory : bool, optional.
         Whether to return history of residual norms.  Default is False.
-    restartControl : int, optional. 
+    restartControl : int, optional.
         Iterations restrart if the resuduals jump up 2**restartControl times
         compared to the smallest ones recorded in retResidualNormsHistory.
         The default is ``restartControl=20``, making the restarts rare for
