@@ -286,7 +286,8 @@ def test_hermitian():
         H = rnd.random((s, s)) + 1.j * rnd.random((s, s))
         H = 10 * np.eye(s) + H + H.T.conj()
 
-        X = rnd.random((s, k))
+        X = rnd.standard_normal((s, k))
+        X += 1.j * rnd.standard_normal((s, k))
 
         if not gen:
             B = np.eye(s)
@@ -403,12 +404,12 @@ def test_maxit():
 
 
 @pytest.mark.slow
-def test_diagonal_data_types():
+@pytest.mark.parametrize("n", [10, 20])
+@pytest.mark.parametrize("m", [1, 3])
+def test_diagonal_data_types(n, m):
     """Check lobpcg for diagonal matrices for all matrix types.
     """
     rnd = np.random.RandomState(0)
-    n = 40
-    m = 4
     # Define the generalized eigenvalue problem Av = cBv
     # where (c, v) is a generalized eigenpair,
     # and where we choose A  and B to be diagonal.
@@ -422,11 +423,27 @@ def test_diagonal_data_types():
         As32 = As64.astype(np.float32)
         Af64 = As64.toarray()
         Af32 = Af64.astype(np.float32)
-        listA = [Af64, As64, Af32, As32]
+        
+        def As32f(x):
+            return As32 @ x
+        As32LO = LinearOperator(matvec=As32f,
+                                matmat=As32f,
+                                shape=(n, n),
+                                dtype=As32.dtype)
+        
+        listA = [Af64, As64, Af32, As32, As32f, As32LO, lambda v: As32 @ v]
 
         Bs64 = diags([vals], [0], (n, n), format=s_f)
         Bf64 = Bs64.toarray()
-        listB = [Bf64, Bs64]
+        Bs32 = Bs64.astype(np.float32)
+        
+        def Bs32f(x):
+            return Bs32 @ x
+        Bs32LO = LinearOperator(matvec=Bs32f,
+                                matmat=Bs32f,
+                                shape=(n, n),
+                                dtype=Bs32.dtype)
+        listB = [Bf64, Bs64, Bs32, Bs32f, Bs32LO, lambda v: Bs32 @ v]
 
         # Define the preconditioner function as LinearOperator.
         Ms64 = diags([1./vals], [0], (n, n), format=s_f)
@@ -436,7 +453,7 @@ def test_diagonal_data_types():
         Ms64precondLO = LinearOperator(matvec=Ms64precond,
                                        matmat=Ms64precond,
                                        shape=(n, n),
-                                       dtype=float)
+                                       dtype=Ms64.dtype)
         Mf64 = Ms64.toarray()
 
         def Mf64precond(x):
@@ -444,7 +461,7 @@ def test_diagonal_data_types():
         Mf64precondLO = LinearOperator(matvec=Mf64precond,
                                        matmat=Mf64precond,
                                        shape=(n, n),
-                                       dtype=float)
+                                       dtype=Mf64.dtype)
         Ms32 = Ms64.astype(np.float32)
 
         def Ms32precond(x):
@@ -452,7 +469,7 @@ def test_diagonal_data_types():
         Ms32precondLO = LinearOperator(matvec=Ms32precond,
                                        matmat=Ms32precond,
                                        shape=(n, n),
-                                       dtype=np.float32)
+                                       dtype=Ms32.dtype)
         Mf32 = Ms32.toarray()
 
         def Mf32precond(x):
@@ -460,9 +477,9 @@ def test_diagonal_data_types():
         Mf32precondLO = LinearOperator(matvec=Mf32precond,
                                        matmat=Mf32precond,
                                        shape=(n, n),
-                                       dtype=np.float32)
-        listM = [None, Ms64precondLO, Mf64precondLO,
-                 Ms32precondLO, Mf32precondLO]
+                                       dtype=Mf32.dtype)
+        listM = [None, Ms64, Ms64precondLO, Mf64precondLO, Ms64precond,
+                 Ms32, Ms32precondLO, Mf32precondLO, Ms32precond]
 
         # Setup matrix of the initial approximation to the eigenvectors
         # (cannot be sparse array).
