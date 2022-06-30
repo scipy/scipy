@@ -8612,7 +8612,7 @@ class truncpareto_gen(rv_continuous):
 
     See Also
     --------
-    pareto
+    pareto : Pareto distribution
 
     Notes
     -----
@@ -8624,35 +8624,32 @@ class truncpareto_gen(rv_continuous):
 
     for :math:`b > 0`, :math:`c > 1` and :math:`1 \le x \le c`.
 
-    `truncpareto` takes :math:`b`, :math:`c` as shape parameters.
+    `truncpareto` takes `b` and `c` as shape parameters for :math:`b` and
+    :math:`c`.
 
     Notice that the upper truncation value :math:`c` is defined in
-    standardized form:
-
-    .. math::
-
-        1 = (u_l - loc)/scale \quad ; \quad c = (u_r - loc)/scale
-
-    where :math:`u_l` and :math:`u_r` are the specific left and right
-    truncation values, respectively. In other words, the support of the
-    distribution becomes :math:`(scale + loc) <= x <= (c*scale + loc)` when
-    :math:`loc` and/or :math:`scale` are provided.
+    standardized form so that random values of an unscaled, unshifted variable
+    are within the range ``[1, c]``.
+    If `u_r` is the upper bound to a scaled and/or shifted variable,
+    then `c = (u_r - loc) / scale`. In other words, the support of the
+    distribution becomes `(scale + loc) <= x <= (c*scale + loc)` when
+    `scale` and/or `loc` are provided.
 
     %(after_notes)s
 
     References
     ----------
     .. [1] Burroughs, S. M., and Tebbens S. F.
-    "Upper-truncated power laws in natural systems."
-    Pure and Applied Geophysics 158.4 (2001): 741-757.
+        "Upper-truncated power laws in natural systems."
+        Pure and Applied Geophysics 158.4 (2001): 741-757.
 
     %(example)s
 
     """
 
     def _shape_info(self):
-        ib = _ShapeInfo("b", False, (0, np.inf), (False, False))
-        ic = _ShapeInfo("c", False, (0, np.inf), (False, False))
+        ib = _ShapeInfo("b", False, (0.0, np.inf), (False, False))
+        ic = _ShapeInfo("c", False, (1.0, np.inf), (False, False))
         return [ib, ic]
 
     def _argcheck(self, b, c):
@@ -8695,16 +8692,10 @@ class truncpareto_gen(rv_continuous):
         else:
             return b / (b-n) * (c**b - c**n) / (c**b - 1)
 
-    def _fitstart(self, data, args=None):
-        x0_ = pareto.fit(data)
-        b_ = x0_[0]
-        c_ = (max(data) - x0_[1])/x0_[2]
-        loc_ = x0_[1]
-        scale_ = x0_[2]
-        if args is None:
-            args = (b_, c_)
-        args += (loc_, scale_)
-        return args
+    def _fitstart(self, data):
+        b, loc, scale = pareto.fit(data)
+        c = (max(data) - loc)/scale
+        return b, c, loc, scale
 
 
 truncpareto = truncpareto_gen(a=1.0, name='truncpareto')

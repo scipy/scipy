@@ -23,7 +23,7 @@ The entropy is
 
 .. math::
 
-     h\left(X\right)= \log\left(\frac{b}{1 - c^{-b}}\right) + (b+1)\times\left(\frac{\log c}{c^b - 1} - \frac{1}{b}\right).
+     h\left(X\right)= -\left[\log\left(\frac{b}{1 - c^{-b}}\right) + (b+1)\left(\frac{\log c}{c^b - 1} - \frac{1}{b}\right)\right].
 
 
 Implementation: `scipy.stats.truncpareto`
