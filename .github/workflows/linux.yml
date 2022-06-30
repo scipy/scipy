@@ -40,7 +40,7 @@ jobs:
         run: |
           python3.8-dbg -c 'import sys; print("Python debug build:", hasattr(sys, "gettotalrefcount"))'
           python3.8-dbg -m pip install --upgrade pip "setuptools<60.0" wheel
-          python3.8-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pybind11
+          python3.8-dbg -m pip install --upgrade numpy cython pytest pytest-xdist pytest-timeout pybind11
           python3.8-dbg -m pip install --upgrade mpmath gmpy2 pythran threadpoolctl
           python3.8-dbg -m pip uninstall -y nose
           cd ..
@@ -49,7 +49,7 @@ jobs:
       - name: Testing SciPy
         if: ${{ github.event_name == 'pull_request' }}
         run: |
-          python3.8-dbg -u runtests.py -n -g -j2 -m fast -- -rfEX --durations=10 2>&1 | tee runtests.log
+          python3.8-dbg -u runtests.py -n -g -j2 -m fast -- -rfEX --durations=10 --timeout=60 2>&1 | tee runtests.log
           python3.8-dbg tools/validate_runtests_log.py fast < runtests.log
       - name: Dynamic symbol hiding check on Linux
         if: ${{ github.event_name == 'pull_request' }}
@@ -81,7 +81,7 @@ jobs:
     - name: Install packages
       run: |
         pip install --user git+https://github.com/numpy/numpy.git
-        python -m pip install --user "setuptools<60.0" wheel cython pytest pybind11 pytest-xdist
+        python -m pip install --user "setuptools<60.0" wheel cython pytest pybind11 pytest-xdist pytest-timeout
         pip install --user git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install -r mypy_requirements.txt
 
@@ -94,4 +94,4 @@ jobs:
 
     - name: Test SciPy
       run: |
-        python -u runtests.py -n -m fast
+        python -u runtests.py -n -m fast -- --durations=10 --timeout=60
