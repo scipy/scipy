@@ -1,4 +1,3 @@
-
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -264,13 +263,18 @@ def cases_test_moments():
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
 
-        yield distname, arg, cond1, cond2, False
+        marks = list()
+        if distname == 'skewnorm':
+            # takes > 60 sec on Linux 32-bit and ~200 sec on Azure Windows
+            marks.append(pytest.mark.timeout(300))
+
+        yield pytest.param(distname, arg, cond1, cond2, False, marks=marks)
 
         if not cond1 or not cond2:
             # Run the distributions that have issues twice, once skipping the
             # not_ok parts, once with the not_ok parts but marked as knownfail
             yield pytest.param(distname, arg, True, True, True,
-                               marks=pytest.mark.xfail)
+                               marks=[pytest.mark.xfail] + marks)
 
 
 @pytest.mark.slow

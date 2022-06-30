@@ -80,9 +80,9 @@ jobs:
     - name: Install packages
       run: |
         pip install ${{ matrix.numpy-version }}
-        pip install setuptools==59.8.0 wheel cython pytest pytest-xdist pybind11 pytest-xdist mpmath gmpy2 pythran
+        pip install setuptools==59.8.0 wheel cython pytest pytest-xdist pytest-timeout pybind11 pytest-xdist mpmath gmpy2 pythran
 
     - name: Test SciPy
       run: |
         export LIBRARY_PATH="$LIBRARY_PATH:/Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib"
-        SCIPY_USE_PYTHRAN=`test ${{ matrix.python-version }} != 3.9; echo $?` python -u runtests.py
+        SCIPY_USE_PYTHRAN=`test ${{ matrix.python-version }} != 3.9; echo $?` python -u runtests.py -- --durations=10 --timeout=60
