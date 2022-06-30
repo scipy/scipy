@@ -372,6 +372,8 @@ def get_test_runner(project_module):
 class Build(Task):
     """:wrench: build & install package on path
 
+\b
+```python
     Examples:
 
     $ python dev.py build --asan ;
@@ -379,6 +381,7 @@ class Build(Task):
         LD_PRELOAD=$(gcc --print-file-name=libasan.so)
         python dev.py test -v -t
         ./scipy/ndimage/tests/test_morphology.py -- -s
+```
     """
     ctx = CONTEXT
 
