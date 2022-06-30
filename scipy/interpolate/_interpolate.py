@@ -112,7 +112,7 @@ class interp2d:
 
     If `z` is a vector value, consider using `interpn`.
 
-    Note that calling `interp2d` with NaNs present in input values, or with 
+    Note that calling `interp2d` with NaNs present in input values, or with
     decreasing values in `x` an `y` results in undefined behaviour.
 
     Methods
@@ -123,7 +123,6 @@ class interp2d:
     ----------
     x, y : array_like
         Arrays defining the data point coordinates. 
-        
         The data point coordinates need to be sorted by increasing order. 
 
         If the points lie on a regular grid, `x` can specify the column
@@ -176,9 +175,9 @@ class interp2d:
     The interpolator is constructed by `bisplrep`, with a smoothing factor
     of 0. If more control over smoothing is needed, `bisplrep` should be
     used directly.
-    
-    The new data points to interpolate `xnew` and `ynew` have to be 
-    sorted by increasing order. 
+
+    The new data points to interpolate `xnew` and `ynew` have to be
+    sorted by increasing order.
 
     Examples
     --------
