@@ -287,7 +287,7 @@ def test_hermitian():
         H = 10 * np.eye(s) + H + H.T.conj()
 
         X = rnd.standard_normal((s, k))
-        X += 1.j * rnd.standard_normal((s, k))
+        X = X + 1.j * rnd.standard_normal((s, k))
 
         if not gen:
             B = np.eye(s)
