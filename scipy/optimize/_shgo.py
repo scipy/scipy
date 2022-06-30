@@ -463,6 +463,7 @@ class SHGO:
                               " Valid methods: {}").format(', '.join(methods)))
 
         # Initiate class
+        self._raw_func = func
         _, self.func = _wrap_scalar_function(func, args)
         self.bounds = bounds
         self.args = args
@@ -897,9 +898,9 @@ class SHGO:
         # Iterate the complex
         if self.n_sampled == 0:
             # Initial triangulation of the hyper-rectangle
-            self.HC = Complex(self.dim, self.func, self.args,
+            self.HC = Complex(self.dim, self._raw_func, self.args,
                               self.symmetry, self.bounds, self.g_cons,
-                              ())
+                              self.g_args)
         else:
             self.HC.split_generation()
 

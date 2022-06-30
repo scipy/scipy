@@ -269,6 +269,12 @@ class StructTestInfeasible(StructTestFunction):
     g = (g1, g2, g3, g4)
     cons = wrap_constraints(g)
 
+class StructTestExtraArgs(StructTestFunction):
+    def f(self, x, cx, cy):
+        return (x[0] - cx) ** 2 + (x[1] - cy) ** 2
+    g = None
+    cons = wrap_constraints(g)
+
 
 test_infeasible = StructTestInfeasible(bounds=[(2, 50), (-1, 1)],
                                        expected_fun=None,
@@ -468,6 +474,8 @@ class TestShgoArguments:
 
             shgo(test.f, test.bounds, n=1, sampling_method='simplicial',
                  callback=callback_func, options={'disp': True})
+    def test_extra_args(self):
+        ret = shgo(func=lambda x,y,z: x+y, bounds=[(0,3)], args=(1,2))
 
     @pytest.mark.slow
     def test_4_1_known_f_min(self):
