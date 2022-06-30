@@ -373,6 +373,8 @@ def lobpcg(
 
         if isinstance(A, LinearOperator):
             A = A(np.eye(n, dtype=A.dtype))
+        elif callable(A):
+            A = A(np.eye(n))
         elif isspmatrix(A):
             A = A.toarray()
         else:
@@ -381,6 +383,8 @@ def lobpcg(
         if B is not None:
             if isinstance(B, LinearOperator):
                 B = B(np.eye(n, dtype=B.dtype))
+            elif callable(B):
+                B = B(np.eye(n))
             elif isspmatrix(B):
                 B = B.toarray()
             else:
