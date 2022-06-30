@@ -8,8 +8,7 @@ import pytest
 import numpy as np
 from numpy import ones, r_, diag
 from numpy.testing import (assert_almost_equal, assert_equal,
-                           assert_allclose, assert_array_less,
-                           suppress_warnings)
+                           assert_allclose, assert_array_less)
 
 from scipy.linalg import eig, eigh, toeplitz, orth
 from scipy.sparse import spdiags, diags, eye, csr_matrix
@@ -402,8 +401,9 @@ def test_maxit():
 
 
 @pytest.mark.slow
-@pytest.mark.parametrize("n", [10, 20])
+@pytest.mark.parametrize("n", [20])
 @pytest.mark.parametrize("m", [1, 3])
+@pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_diagonal_data_types(n, m):
     """Check lobpcg for diagonal matrices for all matrix types.
     """
@@ -505,4 +505,5 @@ def test_diagonal_data_types(n, m):
             eigvals, _ = lobpcg(A, X, B=B, M=M, Y=Y, tol=1e-4,
                                 maxiter=100, largest=False)
             assert_allclose(eigvals,
-                            np.arange(1 + m_excluded, 1 + m_excluded + m))
+                            np.arange(1 + m_excluded, 1 + m_excluded + m),
+                            atol=1e-5)
