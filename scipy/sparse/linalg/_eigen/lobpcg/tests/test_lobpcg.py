@@ -4,15 +4,13 @@
 import itertools
 import platform
 import sys
-
+import pytest
 import numpy as np
+from numpy import ones, r_, diag
 from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_allclose, assert_array_less,
                            suppress_warnings)
 
-import pytest
-
-from numpy import ones, r_, diag
 from scipy.linalg import eig, eigh, toeplitz, orth
 from scipy.sparse import spdiags, diags, eye, csr_matrix
 from scipy.sparse.linalg import eigs, LinearOperator
@@ -423,20 +421,20 @@ def test_diagonal_data_types(n, m):
         As32 = As64.astype(np.float32)
         Af64 = As64.toarray()
         Af32 = Af64.astype(np.float32)
-        
+
         def As32f(x):
             return As32 @ x
         As32LO = LinearOperator(matvec=As32f,
                                 matmat=As32f,
                                 shape=(n, n),
                                 dtype=As32.dtype)
-        
+
         listA = [Af64, As64, Af32, As32, As32f, As32LO, lambda v: As32 @ v]
 
         Bs64 = diags([vals], [0], (n, n), format=s_f)
         Bf64 = Bs64.toarray()
         Bs32 = Bs64.astype(np.float32)
-        
+
         def Bs32f(x):
             return Bs32 @ x
         Bs32LO = LinearOperator(matvec=Bs32f,
