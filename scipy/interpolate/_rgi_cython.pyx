@@ -1,5 +1,6 @@
 import numpy as np
 cimport numpy as np
+cimport cython
 
 import itertools
 
@@ -35,28 +36,39 @@ def evaluate_linear(values, indices, norm_distances, out_of_bounds):
     return value
 
 
-def find_indices(grids, bounds_error, xi):
+@cython.wraparound(False)
+@cython.boundscheck(False)
+def find_indices(grid, bounds_error, xi):
+    cdef int i
+    cdef int j
+    cdef np.ndarray[long, ndim=2] indices
+    cdef np.ndarray[double, ndim=2] norm_distances
+    cdef np.ndarray denom
+
     # find relevant edges between which xi are situated
-    indices = []
+    indices = np.empty(shape=xi.shape, dtype=int)
     # compute distance to lower edge in unity units
-    norm_distances = []
+    norm_distances = np.empty_like(xi)
     # check for out of bounds xi
-    out_of_bounds = np.zeros((xi.shape[1]), dtype=bool)
+    out_of_bounds = np.zeros(xi.shape[1], dtype=bool)
     # iterate through dimensions
-    for x, grid in zip(xi, grids):
-        i = np.searchsorted(grid, x) - 1
-        i[i < 0] = 0
-        i[i > grid.size - 2] = grid.size - 2
-        indices.append(i)
+
+    for i in range(xi.shape[0]):
+        index = np.searchsorted(grid[i], xi[i]) - 1
+        index[index < 0] = 0
+        index[index > grid[i].size - 2] = grid[i].size - 2
+        indices[i] = index
 
         # compute norm_distances, incl length-1 grids,
-        # where `grid[i+1] == grid[i]`
-        denom = grid[i + 1] - grid[i]
-        with np.errstate(divide='ignore', invalid='ignore'):
-            norm_dist = np.where(denom != 0, (x - grid[i]) / denom, 0)
-        norm_distances.append(norm_dist)
+        # where `grid[index+1] == grid[index]`
+        denom = grid[i][index + 1] - grid[i][index]
+        for j in range(denom.shape[0]):
+            if denom[j] == 0:
+                norm_distances[i][j] = 0
+            else:
+                norm_distances[i][j] = (xi[i][j] - grid[i][index][j]) / denom[j]
 
         if not bounds_error:
-            out_of_bounds += x < grid[0]
-            out_of_bounds += x > grid[-1]
+            out_of_bounds += xi[i] < grid[i][0]
+            out_of_bounds += xi[i] > grid[i][grid[i].shape[0] - 1]
     return indices, norm_distances, out_of_bounds
