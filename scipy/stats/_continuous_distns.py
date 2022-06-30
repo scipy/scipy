@@ -9,6 +9,7 @@ from functools import wraps
 import ctypes
 
 import numpy as np
+from numpy.polynomial import Polynomial
 from scipy._lib.doccer import (extend_notes_in_docstring,
                                replace_notes_in_docstring,
                                inherit_docstring_from)
@@ -26,7 +27,7 @@ from ._distn_infrastructure import (
     get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
-from ._constants import (_XMIN, _EULER, _ZETA3,
+from ._constants import (_XMIN, _EULER, _ZETA3, _SQRT_PI,
                          _SQRT_2_OVER_PI, _LOG_SQRT_2_OVER_PI)
 import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
@@ -7663,6 +7664,28 @@ class skewcauchy_gen(rv_continuous):
 skewcauchy = skewcauchy_gen(name='skewcauchy')
 
 
+# For odd order, the noncentral moments for the skew-normal distribution
+# with location 0 and scale 1 can be expressed as a polynomial in delta,
+# where delta = a/sqrt(1 + a**2) and `a` is the skew-normal shape parameter.
+# This dictionary holds coefficents for that polynomial for orders up to 19.
+_skewnorm_odd_moments = {
+    1: Polynomial([1]),
+    3: Polynomial([3, -1]),
+    5: Polynomial([15, -10, 3]),
+    7: Polynomial([105, -105, 63, -15]),
+    9: Polynomial([945, -1260, 1134, -540, 105]),
+    11: Polynomial([10395, -17325, 20790, -14850, 5775, -945]),
+    13: Polynomial([135135, -270270, 405405, -386100, 225225, -73710, 10395]),
+    15: Polynomial([2027025, -4729725, 8513505, -10135125, 7882875, -3869775,
+                    1091475, -135135]),
+    17: Polynomial([34459425, -91891800, 192972780, -275675400, 268017750,
+                    -175429800, 74220300, -18378360, 2027025]),
+    19: Polynomial([654729075, -1964187225, 4714049340, -7856748900,
+                    9166207050, -7499623950, 4230557100, -1571349780,
+                    346621275, -34459425]),
+}
+
+
 class skew_norm_gen(rv_continuous):
     r"""A skew-normal random variable.
 
@@ -7684,9 +7707,9 @@ class skew_norm_gen(rv_continuous):
 
     References
     ----------
-    .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of the
-        multivariate skew-normal distribution. J. Roy. Statist. Soc., B 61, 579-602.
-        :arxiv:`0911.2093`
+    .. [1] A. Azzalini and A. Capitanio (1999). Statistical applications of
+        the multivariate skew-normal distribution. J. Roy. Statist. Soc.,
+        B 61, 579-602. :arxiv:`0911.2093`
 
     """
     def _argcheck(self, a):
@@ -7738,6 +7761,25 @@ class skew_norm_gen(rv_continuous):
             output[3] = (2*(np.pi - 3)) * (const**4/(1 - const**2)**2)
 
         return output
+
+    def _munp(self, order, a):
+        if order & 1:
+            if order > 19:
+                raise NotImplementedError("skewnorm noncentral moments not "
+                                          "implemented for odd orders greater "
+                                          "than 19.")
+            # Use the precomputed polynomials that were derived from the
+            # moment generating function.
+            delta = a/np.sqrt(1 + a**2)
+            return delta*_skewnorm_odd_moments[order](delta**2)*_SQRT_2_OVER_PI
+        else:
+            # For even order, the moment is just (order-1)!!, where !! is the
+            # notation for the double factorial; for an odd integer m, m!! is
+            # m*(m-2)*...*3*1.
+            # We could use special.factorial2, but we know the argument is odd,
+            # so avoid the overhead of that function and compute the result
+            # directly here.
+            return sc.gamma((order + 1)/2) * 2**(order/2) / _SQRT_PI
 
 
 skewnorm = skew_norm_gen(name='skewnorm')
