@@ -146,13 +146,13 @@ cdef inline void axpy(int n, float_t a, float_t* x, int incx, float_t* y,
 cdef inline void larfg(int n, float_t* alpha, float_t* x, int incx,
                        float_t* tau) nogil:
     if float_t is float:
-        lapack_pointers.slarfg(&n, alpha, x, &incx, tau)
+        lapack_pointers.slarfgp(&n, alpha, x, &incx, tau)
     elif float_t is double:
-        lapack_pointers.dlarfg(&n, alpha, x, &incx, tau)
+        lapack_pointers.dlarfgp(&n, alpha, x, &incx, tau)
     elif float_t is float_complex:
-        lapack_pointers.clarfg(&n, alpha, x, &incx, tau)
+        lapack_pointers.clarfgp(&n, alpha, x, &incx, tau)
     else:  # float_t is double_complex:
-        lapack_pointers.zlarfg(&n, alpha, x, &incx, tau)
+        lapack_pointers.zlarfgp(&n, alpha, x, &incx, tau)
 
 cdef inline void gemv(char* trans, int m, int n, float_t alpha, float_t* a,
                       int lda, float_t* x, int incx, float_t beta, float_t* y,
@@ -314,8 +314,12 @@ cdef int updp_u(float_t *r, int *rs, float_t *z, int *zs, float_t *w,
         # Compute householder rotation. The rotation vector overwrites z[i, :],
         # and the scalar beta overwrites r[i, i].
         if downdate:
+            # neg_larfg does not implement larfgp due to a loss of precision
+            # in its naive implementation. Hence the signs are flipped and
+            # we must flip all outputs at the end.
             neg_larfg(p + 1, index2(r, rs, i, i), x=index2(z, zs, i, 0),
                       incx=zs[1], tau=&tau)
+            index2(r, rs, i, i)[0] = -index2(r, rs, i, i)[0]
             if tau != tau:
                 return -(i + 1)
         else:
@@ -324,7 +328,7 @@ cdef int updp_u(float_t *r, int *rs, float_t *z, int *zs, float_t *w,
         if i >= n - 1:
             break
 
-        # We call the working arrays for the current iteration (loosely following the paper)
+        # Working array names loosely following the paper:
         # r12: r[i, i+1:]   n - i - 1
         # c2: z[i+1:, :]    n - i - 1, p
         # u: z[i, :]        p
@@ -356,7 +360,10 @@ cdef int updp_u(float_t *r, int *rs, float_t *z, int *zs, float_t *w,
                 y=w, incy=1, a=index2(z, zs, i+1, 0), lda=zs[0])
         # 4. r12 = r12 - w
         for j in range(n - i - 1):
-            index2(r, rs, i, i + 1 + j)[0] -= w[j]
+            if downdate:  # refer to comment at start of loop.
+                index2(r, rs, i, i + 1 + j)[0] = -index2(r, rs, i, i + 1 + j)[0] + w[j]
+            else:
+                index2(r, rs, i, i + 1 + j)[0] -= w[j]
     return 0
 
 

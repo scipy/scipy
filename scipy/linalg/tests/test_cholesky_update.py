@@ -42,6 +42,7 @@ def check_cholesky(a, r, lower, rtol, atol):
         assert_upper_tri(r, rtol=rtol, atol=atol)
         a1 = np.dot(r.T.conj(), r)
     assert_allclose(a1, a, rtol=rtol, atol=atol)
+    assert_allclose(scipy.linalg.cholesky(a, lower=lower), r, rtol=rtol, atol=atol)
 
 
 def make_strided(arrs):
