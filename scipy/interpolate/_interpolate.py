@@ -122,8 +122,8 @@ class interp2d:
     Parameters
     ----------
     x, y : array_like
-        Arrays defining the data point coordinates. 
-        The data point coordinates need to be sorted by increasing order. 
+        Arrays defining the data point coordinates.
+        The data point coordinates need to be sorted by increasing order.
 
         If the points lie on a regular grid, `x` can specify the column
         coordinates and `y` the row coordinates, for example::
