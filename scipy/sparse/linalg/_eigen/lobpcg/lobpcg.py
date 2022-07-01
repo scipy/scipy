@@ -60,7 +60,6 @@ def _as2d(ar):
 
 def _makeMatMat(m):
     if m is None:
-        # return lambda v: v
         return None
     elif callable(m):
         return lambda v: m(v)
@@ -75,7 +74,8 @@ def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
     blockVectorV -= np.dot(blockVectorY, tmp)
 
 
-def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
+def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False,
+                      verbosityLevel=0):
     """B-orthonormalize the given block vector using Cholesky."""
     normalization = blockVectorV.max(axis=0) + np.finfo(blockVectorV.dtype).eps
     blockVectorV = blockVectorV / normalization
@@ -106,6 +106,11 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
         else:
             blockVectorBV = None
     except LinAlgError:
+        if verbosityLevel:
+            warnings.warn(
+                f"Cholesky has failed.",
+                UserWarning, stacklevel=3
+            )
         # raise ValueError('Cholesky has failed')
         blockVectorV = None
         blockVectorBV = None
@@ -324,23 +329,50 @@ def lobpcg(
     eigenvalues. The results returned are orthogonal to those.
     """
     blockVectorX = X
+    bestblockVectorX = blockVectorX
     blockVectorY = Y
     residualTolerance = tol
     if maxiter is None:
         maxiter = 20
 
+    bestIterationNumber = maxiter
+
+    sizeY = 0
     if blockVectorY is not None:
-        sizeY = blockVectorY.shape[1]
-    else:
-        sizeY = 0
+        if len(blockVectorY.shape) != 2:
+            warnings.warn(
+                f"Expected rank-2 array for argument Y, instead got "
+                f"{len(blockVectorY.shape)}, "
+                f"so ignore it and use no constraints.",
+                UserWarning, stacklevel=2
+            )
+            blockVectorY = None
+        else:
+            sizeY = blockVectorY.shape[1]
 
     # Block size.
+    if blockVectorX is None:
+        raise ValueError("The mandatory initial matrix X cannot be None")
     if len(blockVectorX.shape) != 2:
         raise ValueError("expected rank-2 array for argument X")
 
     n, sizeX = blockVectorX.shape
-    lambdaHistory = np.zeros((maxiter + 3, sizeX), dtype=X.dtype)
-    residualNormsHistory = np.zeros((maxiter + 3, sizeX), dtype=X.dtype)
+
+    # Data type of iterates, determined by X, must be inexect
+    if not np.issubclass_(blockVectorX.dtype, np.inexact):
+        warnings.warn(
+            f"Data type for argument X is {blockVectorX.dtype}, "
+            f"which is not inexact, so casted to np.float32.",
+            UserWarning, stacklevel=2
+        )
+        blockVectorX = np.asarray(blockVectorX, dtype=np.float32)
+
+    if retLambdaHistory:
+        lambdaHistory = np.zeros((maxiter + 3, sizeX),
+                                dtype=blockVectorX.dtype)
+    if retResidualNormsHistory:
+        residualNormsHistory = np.zeros((maxiter + 3, sizeX),
+                                        dtype=blockVectorX.dtype)
 
     if verbosityLevel:
         aux = "Solving "
@@ -386,24 +418,24 @@ def lobpcg(
             eigvals = (0, sizeX - 1)
 
         if isinstance(A, LinearOperator):
-            A = A(np.eye(n, dtype=A.dtype))
+            A = A(np.eye(n, dtype=int))
         elif callable(A):
-            A = A(np.eye(n))
+            A = A(np.eye(n, dtype=int))
             if A.shape != (n, n):
                 raise ValueError(
                     f"The shape {A.shape} of the primary matrix\n"
                     f"defined by a callable object is wrong.\n"
                 )
         elif isspmatrix(A):
-                A = A.toarray()
+            A = A.toarray()
         else:
             A = np.asarray(A)
 
         if B is not None:
             if isinstance(B, LinearOperator):
-                B = B(np.eye(n, dtype=B.dtype))
+                B = B(np.eye(n, dtype=int))
             elif callable(B):
-                B = B(np.eye(n))
+                B = B(np.eye(n, dtype=int))
                 if B.shape != (n, n):
                     raise ValueError(
                         f"The shape {B.shape} of the secondary matrix\n"
@@ -426,7 +458,7 @@ def lobpcg(
         return vals, vecs
 
     if (residualTolerance is None) or (residualTolerance <= 0.0):
-        residualTolerance = np.sqrt(np.finfo(X.dtype).eps) * n
+        residualTolerance = np.sqrt(np.finfo(blockVectorX.dtype).eps) * n
 
     A = _makeMatMat(A)
     B = _makeMatMat(B)
@@ -459,7 +491,8 @@ def lobpcg(
 
     ##
     # B-orthonormalize X.
-    blockVectorX, blockVectorBX = _b_orthonormalize(B, blockVectorX)
+    blockVectorX, blockVectorBX = _b_orthonormalize(
+        B, blockVectorX, verbosityLevel=verbosityLevel)
     if blockVectorX is None:
         raise ValueError("Linearly dependent initial approximations")
 
@@ -479,7 +512,8 @@ def lobpcg(
     _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
     ii = _get_indx(_lambda, sizeX, largest)
     _lambda = _lambda[ii]
-    lambdaHistory[0, :] = _lambda
+    if retLambdaHistory:
+        lambdaHistory[0, :] = _lambda
 
     eigBlockVector = np.asarray(eigBlockVector[:, ii])
     blockVectorX = np.dot(blockVectorX, eigBlockVector)
@@ -498,7 +532,7 @@ def lobpcg(
     blockVectorAP = None
     blockVectorBP = None
 
-    smallestResidualNorm = np.abs(np.finfo(X.dtype).max)
+    smallestResidualNorm = np.abs(np.finfo(blockVectorX.dtype).max)
 
     iterationNumber = -1
     restart = True
@@ -516,7 +550,8 @@ def lobpcg(
 
         aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
         residualNorms = np.sqrt(np.abs(aux))
-        residualNormsHistory[iterationNumber, :] = residualNorms
+        if retResidualNormsHistory:
+            residualNormsHistory[iterationNumber, :] = residualNorms
         residualNorm = np.sum(np.abs(residualNorms)) / sizeX
 
         if residualNorm < smallestResidualNorm:
@@ -526,8 +561,22 @@ def lobpcg(
         elif residualNorm > 2**restartControl * smallestResidualNorm:
             forcedRestart = True
             blockVectorAX = A(blockVectorX)
+            if blockVectorAX.shape != blockVectorX.shape:
+                raise ValueError(
+                    f"The shape {blockVectorX.shape} "
+                    f"of the restarted iterate not preserved\n"
+                    f"and changed to {blockVectorAX.shape} "
+                    f"after multiplying by the primary matrix.\n"
+                )
             if B is not None:
                 blockVectorBX = B(blockVectorX)
+                if blockVectorBX.shape != blockVectorX.shape:
+                    raise ValueError(
+                        f"The shape {blockVectorX.shape} "
+                        f"of the restarted iterate not preserved\n"
+                        f"and changed to {blockVectorBX.shape} "
+                        f"after multiplying by the secondary matrix.\n"
+                    )
 
         ii = np.where(residualNorms > residualTolerance, True, False)
         activeMask = activeMask & ii
@@ -577,7 +626,8 @@ def lobpcg(
 
         ##
         # B-orthonormalize the preconditioned residuals.
-        aux = _b_orthonormalize(B, activeBlockVectorR)
+        aux = _b_orthonormalize(
+            B, activeBlockVectorR, verbosityLevel=verbosityLevel)
         activeBlockVectorR, activeBlockVectorBR = aux
 
         if activeBlockVectorR is None:
@@ -593,11 +643,13 @@ def lobpcg(
         if iterationNumber > 0:
             if B is not None:
                 aux = _b_orthonormalize(
-                    B, activeBlockVectorP, activeBlockVectorBP, retInvR=True
+                    B, activeBlockVectorP, activeBlockVectorBP, retInvR=True,
+                    verbosityLevel=verbosityLevel
                 )
                 activeBlockVectorP, activeBlockVectorBP, invR, normal = aux
             else:
-                aux = _b_orthonormalize(B, activeBlockVectorP, retInvR=True)
+                aux = _b_orthonormalize(B, activeBlockVectorP, retInvR=True,
+                                        verbosityLevel=verbosityLevel)
                 activeBlockVectorP, _, invR, normal = aux
             # Function _b_orthonormalize returns None if Cholesky fails
             if activeBlockVectorP is not None:
@@ -707,7 +759,8 @@ def lobpcg(
         ii = _get_indx(_lambda, sizeX, largest)
         _lambda = _lambda[ii]
         eigBlockVector = eigBlockVector[:, ii]
-        lambdaHistory[iterationNumber + 1, :] = _lambda
+        if retLambdaHistory:
+            lambdaHistory[iterationNumber + 1, :] = _lambda
 
         # Compute Ritz vectors.
         if B is not None:
@@ -773,8 +826,10 @@ def lobpcg(
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(np.abs(aux))
     # Use old lambda in case of early loop exit.
-    lambdaHistory[iterationNumber + 1, :] = _lambda
-    residualNormsHistory[iterationNumber + 1, :] = residualNorms
+    if retLambdaHistory:
+        lambdaHistory[iterationNumber + 1, :] = _lambda
+    if retResidualNormsHistory:
+        residualNormsHistory[iterationNumber + 1, :] = residualNorms
     residualNorm = np.sum(np.abs(residualNorms)) / sizeX
     if residualNorm < smallestResidualNorm:
         smallestResidualNorm = residualNorm
@@ -805,11 +860,26 @@ def lobpcg(
 
     # Making eigenvectors "exactly" othonormalized by final "exact" RR
     blockVectorAX = A(blockVectorX)
+    if blockVectorAX.shape != blockVectorX.shape:
+        raise ValueError(
+            f"The shape {blockVectorX.shape} "
+            f"of the postprocessing iterate not preserved\n"
+            f"and changed to {blockVectorAX.shape} "
+            f"after multiplying by the primary matrix.\n"
+        )
     gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
 
     blockVectorBX = blockVectorX
     if B is not None:
         blockVectorBX = B(blockVectorX)
+        if blockVectorBX.shape != blockVectorX.shape:
+            raise ValueError(
+                f"The shape {blockVectorX.shape} "
+                f"of the postprocessing iterate not preserved\n"
+                f"and changed to {blockVectorBX.shape} "
+                f"after multiplying by the secondary matrix.\n"
+            )
+
     gramXBX = np.dot(blockVectorX.T.conj(), blockVectorBX)
     _handle_gramA_gramB_verbosity(gramXAX, gramXBX, verbosityLevel)
     gramXAX = (gramXAX + gramXAX.T.conj()) / 2
@@ -839,11 +909,15 @@ def lobpcg(
     aux = np.sum(blockVectorR.conj() * blockVectorR, 0)
     residualNorms = np.sqrt(np.abs(aux))
 
-    lambdaHistory[bestIterationNumber + 1, :] = _lambda
-    residualNormsHistory[bestIterationNumber + 1, :] = residualNorms
+    if retLambdaHistory:
+        lambdaHistory[bestIterationNumber + 1, :] = _lambda
+    if retResidualNormsHistory:
+        residualNormsHistory[bestIterationNumber + 1, :] = residualNorms
 
-    lambdaHistory = lambdaHistory[: bestIterationNumber + 2, :]
-    residualNormsHistory = residualNormsHistory[: bestIterationNumber + 2, :]
+    if retLambdaHistory:
+        lambdaHistory = lambdaHistory[: bestIterationNumber + 2, :]
+    if retResidualNormsHistory:
+        residualNormsHistory = residualNormsHistory[: bestIterationNumber + 2, :]
 
     if np.max(np.abs(residualNorms)) > residualTolerance:
         warnings.warn(
