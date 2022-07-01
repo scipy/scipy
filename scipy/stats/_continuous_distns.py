@@ -5,7 +5,7 @@
 #
 import warnings
 from collections.abc import Iterable
-from functools import wraps
+from functools import wraps, lru_cache
 import ctypes
 
 import numpy as np
@@ -7668,22 +7668,28 @@ skewcauchy = skewcauchy_gen(name='skewcauchy')
 # with location 0 and scale 1 can be expressed as a polynomial in delta,
 # where delta = a/sqrt(1 + a**2) and `a` is the skew-normal shape parameter.
 # This dictionary holds coefficents for that polynomial for orders up to 19.
-_skewnorm_odd_moments = {
-    1: Polynomial([1]),
-    3: Polynomial([3, -1]),
-    5: Polynomial([15, -10, 3]),
-    7: Polynomial([105, -105, 63, -15]),
-    9: Polynomial([945, -1260, 1134, -540, 105]),
-    11: Polynomial([10395, -17325, 20790, -14850, 5775, -945]),
-    13: Polynomial([135135, -270270, 405405, -386100, 225225, -73710, 10395]),
-    15: Polynomial([2027025, -4729725, 8513505, -10135125, 7882875, -3869775,
-                    1091475, -135135]),
-    17: Polynomial([34459425, -91891800, 192972780, -275675400, 268017750,
-                    -175429800, 74220300, -18378360, 2027025]),
-    19: Polynomial([654729075, -1964187225, 4714049340, -7856748900,
-                    9166207050, -7499623950, 4230557100, -1571349780,
-                    346621275, -34459425]),
-}
+# The dict is wrapped in a cached function to reduce the impact of the
+# creation of the dict on import time.
+@lru_cache
+def _get_skewnorm_odd_moments():
+    _skewnorm_odd_moments = {
+        1: Polynomial([1]),
+        3: Polynomial([3, -1]),
+        5: Polynomial([15, -10, 3]),
+        7: Polynomial([105, -105, 63, -15]),
+        9: Polynomial([945, -1260, 1134, -540, 105]),
+        11: Polynomial([10395, -17325, 20790, -14850, 5775, -945]),
+        13: Polynomial([135135, -270270, 405405, -386100, 225225, -73710,
+                        10395]),
+        15: Polynomial([2027025, -4729725, 8513505, -10135125, 7882875,
+                        -3869775, 1091475, -135135]),
+        17: Polynomial([34459425, -91891800, 192972780, -275675400, 268017750,
+                        -175429800, 74220300, -18378360, 2027025]),
+        19: Polynomial([654729075, -1964187225, 4714049340, -7856748900,
+                        9166207050, -7499623950, 4230557100, -1571349780,
+                        346621275, -34459425]),
+    }
+    return _skewnorm_odd_moments
 
 
 class skew_norm_gen(rv_continuous):
@@ -7771,7 +7777,8 @@ class skew_norm_gen(rv_continuous):
             # Use the precomputed polynomials that were derived from the
             # moment generating function.
             delta = a/np.sqrt(1 + a**2)
-            return delta*_skewnorm_odd_moments[order](delta**2)*_SQRT_2_OVER_PI
+            return (delta * _get_skewnorm_odd_moments()[order](delta**2)
+                    * _SQRT_2_OVER_PI)
         else:
             # For even order, the moment is just (order-1)!!, where !! is the
             # notation for the double factorial; for an odd integer m, m!! is
