@@ -109,7 +109,7 @@ Currently, SciPy wheels are being built as follows:
 Linux (nightly)    ``ubuntu-18.04``          GCC 6.5                      See ``azure-pipelines.yml``
 Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [6]_
 OSX                ``macOS-10.15``           LLVM 12.0.0                  Built in separate repo [6]_
-Windows            ``windows-2019``          Visual Studio 2019 (16.11)   See ``azure-pipelines.yml``
+Windows            ``windows-2019``          Visual Studio 2019 (16.11)   Built in separate repo [6]_
 ================  ========================  ===========================  ==============================
 
 Note that the OSX wheels additionally vendor gfortran 4.9,
