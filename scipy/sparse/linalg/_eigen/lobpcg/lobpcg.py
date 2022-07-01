@@ -82,6 +82,13 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False):
     if blockVectorBV is None:
         if B is not None:
             blockVectorBV = B(blockVectorV)
+            if blockVectorBV.shape != blockVectorV.shape:
+                raise ValueError(
+                    f"The shape {blockVectorV.shape} "
+                    f"of the orthogonalized matrix not preserved\n"
+                    f"and changed to {blockVectorBV.shape} "
+                    f"after multiplying by the secondary matrix.\n"
+                )
         else:
             blockVectorBV = blockVectorV  # Shared data!!!
     else:
@@ -382,8 +389,13 @@ def lobpcg(
             A = A(np.eye(n, dtype=A.dtype))
         elif callable(A):
             A = A(np.eye(n))
+            if A.shape != (n, n):
+                raise ValueError(
+                    f"The shape {A.shape} of the primary matrix\n"
+                    f"defined by a callable object is wrong.\n"
+                )
         elif isspmatrix(A):
-            A = A.toarray()
+                A = A.toarray()
         else:
             A = np.asarray(A)
 
@@ -392,6 +404,11 @@ def lobpcg(
                 B = B(np.eye(n, dtype=B.dtype))
             elif callable(B):
                 B = B(np.eye(n))
+                if B.shape != (n, n):
+                    raise ValueError(
+                        f"The shape {B.shape} of the secondary matrix\n"
+                        f"defined by a callable object is wrong.\n"
+                    )
             elif isspmatrix(B):
                 B = B.toarray()
             else:
@@ -420,6 +437,13 @@ def lobpcg(
 
         if B is not None:
             blockVectorBY = B(blockVectorY)
+            if blockVectorBY.shape != blockVectorY.shape:
+                raise ValueError(
+                    f"The shape {blockVectorY.shape} "
+                    f"of the constraint not preserved\n"
+                    f"and changed to {blockVectorBY.shape} "
+                    f"after multiplying by the secondary matrix.\n"
+                )
         else:
             blockVectorBY = blockVectorY
 
@@ -442,6 +466,14 @@ def lobpcg(
     ##
     # Compute the initial Ritz vectors: solve the eigenproblem.
     blockVectorAX = A(blockVectorX)
+    if blockVectorAX.shape != blockVectorX.shape:
+        raise ValueError(
+            f"The shape {blockVectorX.shape} "
+            f"of the initial approximations not preserved\n"
+            f"and changed to {blockVectorAX.shape} "
+            f"after multiplying by the primary matrix.\n"
+        )
+
     gramXAX = np.dot(blockVectorX.T.conj(), blockVectorAX)
 
     _lambda, eigBlockVector = eigh(gramXAX, check_finite=False)
