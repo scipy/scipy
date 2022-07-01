@@ -166,7 +166,9 @@ class interp2d:
     BivariateSpline : a more recent wrapper of the FITPACK routines
     interp1d : 1-D version of this function
     RegularGridInterpolator : interpolation on a regular or rectilinear grid
-        in arbitrary dimensions (`interpn` wraps this class).
+        in arbitrary dimensions.
+    interpn : Multidimensional interpolation on regular grids (wraps
+        `RegularGridInterpolator` and `RectBivariateSpline`).
 
     Notes
     -----
