@@ -173,6 +173,37 @@ class RegularGridInterpolator:
     >>> plt.legend()
     >>> plt.show()
 
+    **Sort original data points to create interpolation surface and
+    interpolate a 2D dataset**
+
+    As a third example, we want to create a 2D interpolation surface
+    from data points which are not sorted in ascending order 
+    and interpolate new data on the surface generated:
+
+    >>> x0 = [-97, -98, -99]
+    >>> y0 = [43.0, 42.0]
+    >>> data0 = [[305.92, 281.50, 275.83], [262.39, 321.09, 257.64]]
+
+    Original data points have to be reorganised so coordinates are in 
+    ascending order:
+	>>> if x0[-1]<x0[0]:
+	...	    x0 = x0[::-1]
+	...	    for i,d in enumerate(data0):
+	...	        data0[i] = d[::-1]
+    ...
+	>>> if y0[-1]<y0[0]:
+	...	    y0 = y0[::-1]
+	...	    data0 = data0[::-1]
+
+	>>> f = interpolate.RegularGridInterpolator((y0,x0), data0)
+
+    Interpolation of new data points:
+	>>> yi=[43,42.5,42,42]
+	>>> xi=[-98.5,-98,-97.5,-97]
+	>>> ptsi = [[j,i] for j,i in zip(yi,xi)]
+    >>> f(ptsi).round(decimals=2)
+    array([278.66, 301.29, 291.74, 262.39])
+
     Other examples are given
     :ref:`in the tutorial <tutorial-interpolate_regular_grid_interpolator>`.
 
