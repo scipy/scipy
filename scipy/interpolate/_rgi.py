@@ -177,14 +177,14 @@ class RegularGridInterpolator:
     interpolate a 2D dataset**
 
     As a third example, we want to create a 2D interpolation surface
-    from data points which are not sorted in ascending order 
+    from data points which are not sorted in ascending order
     and interpolate new data on the surface generated:
 
     >>> x0 = [-97, -98, -99]
     >>> y0 = [43.0, 42.0]
     >>> data0 = [[305.92, 281.50, 275.83], [262.39, 321.09, 257.64]]
 
-    Original data points have to be reorganised so coordinates are in 
+    Original data points have to be reorganised so coordinates are in
     ascending order:
     >>> if x0[-1]<x0[0]:
     ...	    x0 = x0[::-1]
