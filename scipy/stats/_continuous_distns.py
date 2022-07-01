@@ -8630,9 +8630,9 @@ class truncpareto_gen(rv_continuous):
     Notice that the upper truncation value :math:`c` is defined in
     standardized form so that random values of an unscaled, unshifted variable
     are within the range ``[1, c]``.
-    If `u_r` is the upper bound to a scaled and/or shifted variable,
-    then `c = (u_r - loc) / scale`. In other words, the support of the
-    distribution becomes `(scale + loc) <= x <= (c*scale + loc)` when
+    If ``u_r`` is the upper bound to a scaled and/or shifted variable,
+    then ``c = (u_r - loc) / scale``. In other words, the support of the
+    distribution becomes ``(scale + loc) <= x <= (c*scale + loc)`` when
     `scale` and/or `loc` are provided.
 
     %(after_notes)s
