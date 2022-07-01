@@ -77,7 +77,8 @@ def mat_reader_factory(file_name, appendmat=True, **kwargs):
     elif mjv == 1:
         return MatFile5Reader(byte_stream, **kwargs), file_opened
     elif mjv == 2:
-        raise NotImplementedError('Please use HDF reader for matlab v7.3 files')
+        raise NotImplementedError('Please use HDF reader for matlab v7.3 files,'\
+                                  ' e.g. h5py')
     else:
         raise TypeError('Did not recognize version %s' % mjv)
 
@@ -324,7 +325,7 @@ def whosmat(file_name, appendmat=True, **kwargs):
     v4 (Level 1.0), v6 and v7 to 7.2 matfiles are supported.
 
     You will need an HDF5 python library to read matlab 7.3 format mat
-    files. Because SciPy does not supply one, we do not implement the
+    files (e.g. h5py). Because SciPy does not supply one, we do not implement the
     HDF5 / 7.3 interface here.
 
     .. versionadded:: 0.12.0
