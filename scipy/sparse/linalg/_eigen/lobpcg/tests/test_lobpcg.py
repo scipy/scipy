@@ -414,7 +414,8 @@ def test_diagonal_data_types(n, m):
     # and where we choose A  and B to be diagonal.
     vals = np.arange(1, n + 1)
 
-    list_sparse_format = ['bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil']
+    # list_sparse_format = ['bsr', 'coo', 'csc', 'csr', 'dia', 'dok', 'lil']
+    list_sparse_format = ['coo']
     sparse_formats = len(list_sparse_format)
     for s_f_i, s_f in enumerate(list_sparse_format):
 
