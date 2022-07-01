@@ -572,7 +572,7 @@ def read(filename, mmap=False):
     =====================  ===========  ===========  =============
          WAV format            Min          Max       NumPy dtype
     =====================  ===========  ===========  =============
-    32-bit floating-point  -1.0         +1.0         float32
+    32-bit floating-point  -3.4028e+38  +3.4028e+38  float32
     32-bit integer PCM     -2147483648  +2147483647  int32
     24-bit integer PCM     -2147483648  +2147483392  int32
     16-bit integer PCM     -32768       +32767       int16
@@ -732,7 +732,7 @@ def write(filename, rate, data):
     =====================  ===========  ===========  =============
          WAV format            Min          Max       NumPy dtype
     =====================  ===========  ===========  =============
-    32-bit floating-point  -1.0         +1.0         float32
+    32-bit floating-point  -3.4028e+38  +3.4028e+38  float32
     32-bit PCM             -2147483648  +2147483647  int32
     16-bit PCM             -32768       +32767       int16
     8-bit PCM              0            255          uint8
