@@ -2357,6 +2357,13 @@ def test_binary_input_as_output(function, iterations, brute_force):
     assert_array_equal(expected, data)
 
 
+# XXX: This ends up calling NI_BinaryErosion, which calls NI_InitFilterOffsets.
+# In the latter, footprint_size is computed and set to 0, so malloc(0) is called
+# for offsets.  Then in NI_BinaryErosion, the offsets pointer would be passed to
+# NI_FilterNext2 where it would be adjusted, which would be invalid.
+# Currently, we catch this right away by checking if the size passed to malloc
+# is 0 or not.
+@pytest.mark.xfail(reason="footprint_size equals 0")
 def test_binary_hit_or_miss_input_as_output():
     rstate = numpy.random.RandomState(123)
     data = rstate.randint(low=0, high=2, size=100).astype(bool)
