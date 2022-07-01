@@ -167,12 +167,10 @@ def hdquantiles_sd(data, prob=list([.25,.5,.75]), axis=None):
             w = _w[1:] - _w[:-1]
             # cumulative sum of weights and data points if
             # ith point is left out for jackknife
-            cumulativeSumLeft = np.append([0], np.cumsum(w * xsorted[:-1]))
+            mx_ = np.zeros_like(xsorted)
+            mx_[1:] = np.cumsum(w * xsorted[:-1])
             # similar but from the right
-            cumulativeSumRight = np.append([0],
-                                           np.cumsum(w[::-1] * xsorted[:0:-1])
-                                           )[::-1]
-            mx_ = cumulativeSumLeft + cumulativeSumRight
+            mx_[:-1] += np.cumsum(w[::-1] * xsorted[:0:-1])[::-1]
             hdsd[i] = np.sqrt(mx_.var() * (n - 1))
         return hdsd
 
