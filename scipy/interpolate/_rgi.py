@@ -186,21 +186,21 @@ class RegularGridInterpolator:
 
     Original data points have to be reorganised so coordinates are in 
     ascending order:
-	>>> if x0[-1]<x0[0]:
-	...	    x0 = x0[::-1]
-	...	    for i,d in enumerate(data0):
-	...	        data0[i] = d[::-1]
+    >>> if x0[-1]<x0[0]:
+    ...	    x0 = x0[::-1]
+    ...	    for i,d in enumerate(data0):
+    ...	        data0[i] = d[::-1]
     ...
-	>>> if y0[-1]<y0[0]:
-	...	    y0 = y0[::-1]
-	...	    data0 = data0[::-1]
+    >>> if y0[-1]<y0[0]:
+    ...	    y0 = y0[::-1]
+    ...	    data0 = data0[::-1]
 
-	>>> f = interpolate.RegularGridInterpolator((y0,x0), data0)
+    >>> f = interpolate.RegularGridInterpolator((y0,x0), data0)
 
     Interpolation of new data points:
-	>>> yi=[43,42.5,42,42]
-	>>> xi=[-98.5,-98,-97.5,-97]
-	>>> ptsi = [[j,i] for j,i in zip(yi,xi)]
+    >>> yi=[43,42.5,42,42]
+    >>> xi=[-98.5,-98,-97.5,-97]
+    >>> ptsi = [[j,i] for j,i in zip(yi,xi)]
     >>> f(ptsi).round(decimals=2)
     array([278.66, 301.29, 291.74, 262.39])
 
