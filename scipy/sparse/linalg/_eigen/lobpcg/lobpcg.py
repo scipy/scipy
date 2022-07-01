@@ -108,7 +108,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False,
     except LinAlgError:
         if verbosityLevel:
             warnings.warn(
-                f"Cholesky has failed.",
+                "Cholesky has failed.",
                 UserWarning, stacklevel=3
             )
         # raise ValueError('Cholesky has failed')
