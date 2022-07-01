@@ -95,7 +95,7 @@ fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
                          'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                          'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
-                         'invweibull']
+                         'truncpareto', 'invweibull']
                          + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
                             'pareto', 'powernorm', 'powerlognorm']
                          + ['pearson3'])
@@ -176,7 +176,7 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
              distfn.logsf]
     # make sure arguments are within support
     spec_x = {'weibull_max': -0.5, 'levy_l': -0.5,
-              'pareto': 1.5, 'tukeylambda': 0.3,
+              'pareto': 1.5, 'truncpareto': 3.2, 'tukeylambda': 0.3,
               'rv_histogram_instance': 5.0}
     x = spec_x.get(distname, 0.5)
     if distname == 'invweibull':

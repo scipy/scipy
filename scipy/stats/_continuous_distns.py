@@ -8605,6 +8605,102 @@ class truncnorm_gen(rv_continuous):
 truncnorm = truncnorm_gen(name='truncnorm', momtype=1)
 
 
+class truncpareto_gen(rv_continuous):
+    r"""An upper truncated Pareto continuous random variable.
+
+    %(before_notes)s
+
+    See Also
+    --------
+    pareto : Pareto distribution
+
+    Notes
+    -----
+    The probability density function for `truncpareto` is:
+
+    .. math::
+
+        f(x, b, c) = \frac{b}{1 - c^{-b}} \frac{1}{x^{b+1}}
+
+    for :math:`b > 0`, :math:`c > 1` and :math:`1 \le x \le c`.
+
+    `truncpareto` takes `b` and `c` as shape parameters for :math:`b` and
+    :math:`c`.
+
+    Notice that the upper truncation value :math:`c` is defined in
+    standardized form so that random values of an unscaled, unshifted variable
+    are within the range ``[1, c]``.
+    If ``u_r`` is the upper bound to a scaled and/or shifted variable,
+    then ``c = (u_r - loc) / scale``. In other words, the support of the
+    distribution becomes ``(scale + loc) <= x <= (c*scale + loc)`` when
+    `scale` and/or `loc` are provided.
+
+    %(after_notes)s
+
+    References
+    ----------
+    .. [1] Burroughs, S. M., and Tebbens S. F.
+        "Upper-truncated power laws in natural systems."
+        Pure and Applied Geophysics 158.4 (2001): 741-757.
+
+    %(example)s
+
+    """
+
+    def _shape_info(self):
+        ib = _ShapeInfo("b", False, (0.0, np.inf), (False, False))
+        ic = _ShapeInfo("c", False, (1.0, np.inf), (False, False))
+        return [ib, ic]
+
+    def _argcheck(self, b, c):
+        return (b > 0) & (c > 1)
+
+    def _get_support(self, b, c):
+        return self.a, c
+
+    def _pdf(self, x, b, c):
+        return b * x**-(b+1) / (1 - c**-b)
+
+    def _logpdf(self, x, b, c):
+        return np.log(b) - np.log1p(-c**-b) - (b+1)*np.log(x)
+
+    def _cdf(self, x, b, c):
+        return (1 - x**-b) / (1 - c**-b)
+
+    def _logcdf(self, x, b, c):
+        return np.log1p(-x**-b) - np.log1p(-c**-b)
+
+    def _ppf(self, q, b, c):
+        return pow(1 - (1 - c**-b)*q, -1/b)
+
+    def _sf(self, x, b, c):
+        return (x**-b - c**-b) / (1 - c**-b)
+
+    def _logsf(self, x, b, c):
+        return np.log(x**-b - c**-b) - np.log1p(-c**-b)
+
+    def _isf(self, q, b, c):
+        return pow(c**-b + (1 - c**-b)*q, -1/b)
+
+    def _entropy(self, b, c):
+        return -(np.log(b/(1 - c**-b))
+                 + (b+1)*(np.log(c)/(c**b - 1) - 1/b))
+
+    def _munp(self, n, b, c):
+        if n == b:
+            return b*np.log(c) / (1 - c**-b)
+        else:
+            return b / (b-n) * (c**b - c**n) / (c**b - 1)
+
+    def _fitstart(self, data):
+        b, loc, scale = pareto.fit(data)
+        c = (max(data) - loc)/scale
+        return b, c, loc, scale
+
+
+truncpareto = truncpareto_gen(a=1.0, name='truncpareto')
+
+
 class tukeylambda_gen(rv_continuous):
     r"""A Tukey-Lamdba continuous random variable.
 
