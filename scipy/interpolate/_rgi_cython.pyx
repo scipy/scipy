@@ -2,6 +2,8 @@ import numpy as np
 cimport numpy as np
 cimport cython
 
+np.import_array()
+
 import itertools
 
 
@@ -46,13 +48,13 @@ def find_indices(grid, bounds_error, xi):
     cdef np.ndarray denom
 
     # find relevant edges between which xi are situated
-    indices = np.empty(shape=xi.shape, dtype=int)
+    indices = np.empty_like(xi, dtype=int)
     # compute distance to lower edge in unity units
-    norm_distances = np.empty_like(xi)
+    norm_distances = np.empty_like(xi, dtype=np.float64)
     # check for out of bounds xi
     out_of_bounds = np.zeros(xi.shape[1], dtype=bool)
-    # iterate through dimensions
 
+    # iterate through dimensions
     for i in range(xi.shape[0]):
         index = np.searchsorted(grid[i], xi[i]) - 1
         index[index < 0] = 0
