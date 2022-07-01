@@ -31,10 +31,17 @@ def is_32bit():
     return sys.maxsize <= 2**32  # (usually 2**31-1 on 32-bit)
 
 
+def is_windows():
+    return 'win32' in sys.platform
+
+
 _dtype_testing = []
 for dtype in _dtype_map:
     if 'complex' in dtype and is_32bit():
         # PROPACK has issues w/ complex on 32-bit; see gh-14433
+        marks = [pytest.mark.skip]
+    elif 'complex16' in dtype and is_windows():
+        # windows crashes for complex128 (so don't xfail); see gh-15108
         marks = [pytest.mark.skip]
     elif 'complex' in dtype:
         marks = [pytest.mark.slow]  # type: ignore[list-item]
