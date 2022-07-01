@@ -359,7 +359,7 @@ def lobpcg(
     n, sizeX = blockVectorX.shape
 
     # Data type of iterates, determined by X, must be inexect
-    if not np.issubclass_(blockVectorX.dtype, np.inexact):
+    if not np.issubdtype(blockVectorX.dtype, np.inexact):
         warnings.warn(
             f"Data type for argument X is {blockVectorX.dtype}, "
             f"which is not inexact, so casted to np.float32.",
@@ -369,7 +369,7 @@ def lobpcg(
 
     if retLambdaHistory:
         lambdaHistory = np.zeros((maxiter + 3, sizeX),
-                                dtype=blockVectorX.dtype)
+                                 dtype=blockVectorX.dtype)
     if retResidualNormsHistory:
         residualNormsHistory = np.zeros((maxiter + 3, sizeX),
                                         dtype=blockVectorX.dtype)
@@ -915,9 +915,11 @@ def lobpcg(
         residualNormsHistory[bestIterationNumber + 1, :] = residualNorms
 
     if retLambdaHistory:
-        lambdaHistory = lambdaHistory[: bestIterationNumber + 2, :]
+        lambdaHistory = lambdaHistory[
+            : bestIterationNumber + 2, :]
     if retResidualNormsHistory:
-        residualNormsHistory = residualNormsHistory[: bestIterationNumber + 2, :]
+        residualNormsHistory = residualNormsHistory[
+            : bestIterationNumber + 2, :]
 
     if np.max(np.abs(residualNorms)) > residualTolerance:
         warnings.warn(

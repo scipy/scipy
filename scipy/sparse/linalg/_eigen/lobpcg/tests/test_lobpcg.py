@@ -261,7 +261,7 @@ def test_failure_to_run_iterations():
     X = rnd.standard_normal((100, 10))
     A = X @ X.T
     Q = rnd.standard_normal((X.shape[0], 4))
-    with pytest.warns(UserWarning, match="Exited at iteration"):
+    with pytest.warns(UserWarning, match="Failed at iteration"):
         eigenvalues, _ = lobpcg(A, Q, maxiter=20)
     assert(np.max(eigenvalues) > 0)
 
