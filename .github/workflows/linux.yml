@@ -69,10 +69,11 @@ jobs:
         submodules: recursive
 
     - name: Set up Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
         architecture: x64
+        cache: 'pip'
 
     - name: Install other build dependencies
       run: |
