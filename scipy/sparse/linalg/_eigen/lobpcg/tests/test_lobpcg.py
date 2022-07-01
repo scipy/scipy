@@ -403,6 +403,7 @@ def test_maxit():
 @pytest.mark.slow
 @pytest.mark.parametrize("n", [20])
 @pytest.mark.parametrize("m", [1, 3])
+@pytest.mark.filterwarnings("ignore:Exited at iteration")
 @pytest.mark.filterwarnings("ignore:Exited postprocessing")
 def test_diagonal_data_types(n, m):
     """Check lobpcg for diagonal matrices for all matrix types.
