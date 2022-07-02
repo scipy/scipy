@@ -934,6 +934,15 @@ def rms(a, *, axis=0):
     To avoid the possibility of unexpected conversions, convert `a` to an
     `np.ndarray` of the desired type before using `rms`.
 
+    For complex inputs, the absolute value is taken first:
+    ``sqrt(mean(abs(a)**2))``._[1]
+
+    References
+    ----------
+    .. [1] Smith, J. O. (2007). "Mathematics of the Discrete Fourier Transform
+       (DFT): With Audio Applications".
+       https://ccrma.stanford.edu/~jos/st/Other_Lp_Norms.html
+
     Examples
     --------
     >>> a = np.array([[6, 8, 3, 0],
