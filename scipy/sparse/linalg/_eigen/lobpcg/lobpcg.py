@@ -112,20 +112,14 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
         if B is not None:
             blockVectorBV = blockVectorBV @ VBV
             # blockVectorBV = (cho_solve((VBV.T, True), blockVectorBV.T)).T
-        else:
-            blockVectorBV = None
+        return blockVectorV, blockVectorBV, VBV, normalization
     except LinAlgError:
         if verbosityLevel:
             warnings.warn(
                 "Cholesky has failed.",
                 UserWarning, stacklevel=3
             )
-        # raise ValueError('Cholesky has failed')
-        blockVectorV = None
-        blockVectorBV = None
-        VBV = None
-
-    return blockVectorV, blockVectorBV, VBV, normalization
+        return None, None, None, normalization
 
 
 def _get_indx(_lambda, num, largest):
