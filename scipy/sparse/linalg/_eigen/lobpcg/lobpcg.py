@@ -74,14 +74,23 @@ def _applyConstraints(blockVectorV, factYBY, blockVectorBY, blockVectorY):
     blockVectorV -= np.dot(blockVectorY, tmp)
 
 
-def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False,
+def _b_orthonormalize(B, blockVectorV, blockVectorBV=None,
                       verbosityLevel=0):
-    """B-orthonormalize the given block vector using Cholesky."""
+    """in-place B-orthonormalize the given block vector using Cholesky."""
     normalization = blockVectorV.max(axis=0) + np.finfo(blockVectorV.dtype).eps
     blockVectorV = blockVectorV / normalization
     if blockVectorBV is None:
         if B is not None:
-            blockVectorBV = B(blockVectorV)
+            try:
+                blockVectorBV = B(blockVectorV)
+            except Exception as e:
+                if verbosityLevel:
+                    warnings.warn(
+                        f"Secondary MatMul call failed with error\n"
+                        f"{e}\n",
+                        UserWarning, stacklevel=3
+                    )
+                    return None, None, None, normalization
             if blockVectorBV.shape != blockVectorV.shape:
                 raise ValueError(
                     f"The shape {blockVectorV.shape} "
@@ -116,10 +125,7 @@ def _b_orthonormalize(B, blockVectorV, blockVectorBV=None, retInvR=False,
         blockVectorBV = None
         VBV = None
 
-    if retInvR:
-        return blockVectorV, blockVectorBV, VBV, normalization
-    else:
-        return blockVectorV, blockVectorBV
+    return blockVectorV, blockVectorBV, VBV, normalization
 
 
 def _get_indx(_lambda, num, largest):
@@ -417,45 +423,61 @@ def lobpcg(
         else:
             eigvals = (0, sizeX - 1)
 
-        if isinstance(A, LinearOperator):
-            A = A(np.eye(n, dtype=int))
-        elif callable(A):
-            A = A(np.eye(n, dtype=int))
-            if A.shape != (n, n):
-                raise ValueError(
-                    f"The shape {A.shape} of the primary matrix\n"
-                    f"defined by a callable object is wrong.\n"
-                )
-        elif isspmatrix(A):
-            A = A.toarray()
-        else:
-            A = np.asarray(A)
-
-        if B is not None:
-            if isinstance(B, LinearOperator):
-                B = B(np.eye(n, dtype=int))
-            elif callable(B):
-                B = B(np.eye(n, dtype=int))
-                if B.shape != (n, n):
+        try:
+            if isinstance(A, LinearOperator):
+                A = A(np.eye(n, dtype=int))
+            elif callable(A):
+                A = A(np.eye(n, dtype=int))
+                if A.shape != (n, n):
                     raise ValueError(
-                        f"The shape {B.shape} of the secondary matrix\n"
+                        f"The shape {A.shape} of the primary matrix\n"
                         f"defined by a callable object is wrong.\n"
                     )
-            elif isspmatrix(B):
-                B = B.toarray()
+            elif isspmatrix(A):
+                A = A.toarray()
             else:
-                B = np.asarray(B)
+                A = np.asarray(A)
+        except Exception as e:
+            raise Exception(
+                f"Primary MatMul call failed with error\n"
+                f"{e}\n")
 
-        vals, vecs = eigh(A,
-                          B,
-                          eigvals=eigvals,
-                          check_finite=False)
-        if largest:
-            # Reverse order to be compatible with eigs() in 'LM' mode.
-            vals = vals[::-1]
-            vecs = vecs[:, ::-1]
+        if B is not None:
+            try:
+                if isinstance(B, LinearOperator):
+                    B = B(np.eye(n, dtype=int))
+                elif callable(B):
+                    B = B(np.eye(n, dtype=int))
+                    if B.shape != (n, n):
+                        raise ValueError(
+                            f"The shape {B.shape} of the secondary matrix\n"
+                            f"defined by a callable object is wrong.\n"
+                        )
+                elif isspmatrix(B):
+                    B = B.toarray()
+                else:
+                    B = np.asarray(B)
+            except Exception as e:
+                raise Exception(
+                    f"Secondary MatMul call failed with error\n"
+                    f"{e}\n")
 
-        return vals, vecs
+        try:
+            vals, vecs = eigh(A,
+                            B,
+                            eigvals=eigvals,
+                            check_finite=False)
+            if largest:
+                # Reverse order to be compatible with eigs() in 'LM' mode.
+                vals = vals[::-1]
+                vecs = vecs[:, ::-1]
+
+            return vals, vecs
+        except Exception as e:
+            raise Exception(
+                f"Dense eigensolver failed with error\n"
+                f"{e}\n"
+            )
 
     if (residualTolerance is None) or (residualTolerance <= 0.0):
         residualTolerance = np.sqrt(np.finfo(blockVectorX.dtype).eps) * n
@@ -468,7 +490,9 @@ def lobpcg(
     if blockVectorY is not None:
 
         if B is not None:
+
             blockVectorBY = B(blockVectorY)
+
             if blockVectorBY.shape != blockVectorY.shape:
                 raise ValueError(
                     f"The shape {blockVectorY.shape} "
@@ -476,8 +500,8 @@ def lobpcg(
                     f"and changed to {blockVectorBY.shape} "
                     f"after multiplying by the secondary matrix.\n"
                 )
-        else:
-            blockVectorBY = blockVectorY
+            else:
+                blockVectorBY = blockVectorY
 
         # gramYBY is a dense array.
         gramYBY = np.dot(blockVectorY.T.conj(), blockVectorBY)
@@ -491,7 +515,7 @@ def lobpcg(
 
     ##
     # B-orthonormalize X.
-    blockVectorX, blockVectorBX = _b_orthonormalize(
+    blockVectorX, blockVectorBX, _, _ = _b_orthonormalize(
         B, blockVectorX, verbosityLevel=verbosityLevel)
     if blockVectorX is None:
         raise ValueError("Linearly dependent initial approximations")
@@ -628,7 +652,7 @@ def lobpcg(
         # B-orthonormalize the preconditioned residuals.
         aux = _b_orthonormalize(
             B, activeBlockVectorR, verbosityLevel=verbosityLevel)
-        activeBlockVectorR, activeBlockVectorBR = aux
+        activeBlockVectorR, activeBlockVectorBR, _, _ = aux
 
         if activeBlockVectorR is None:
             warnings.warn(
@@ -643,12 +667,12 @@ def lobpcg(
         if iterationNumber > 0:
             if B is not None:
                 aux = _b_orthonormalize(
-                    B, activeBlockVectorP, activeBlockVectorBP, retInvR=True,
+                    B, activeBlockVectorP, activeBlockVectorBP,
                     verbosityLevel=verbosityLevel
                 )
                 activeBlockVectorP, activeBlockVectorBP, invR, normal = aux
             else:
-                aux = _b_orthonormalize(B, activeBlockVectorP, retInvR=True,
+                aux = _b_orthonormalize(B, activeBlockVectorP,
                                         verbosityLevel=verbosityLevel)
                 activeBlockVectorP, _, invR, normal = aux
             # Function _b_orthonormalize returns None if Cholesky fails
@@ -733,7 +757,14 @@ def lobpcg(
                 _lambda, eigBlockVector = eigh(gramA,
                                                gramB,
                                                check_finite=False)
-            except LinAlgError:
+            except LinAlgError as e:
+                # raise ValueError("eigh failed in lobpcg iterations") from e
+                if verbosityLevel:
+                    warnings.warn(
+                        f"eigh failed at iteration {iterationNumber} \n"
+                        f"with error {e} causing a restart.\n",
+                        UserWarning, stacklevel=2
+                    )
                 # try again after dropping the direction vectors P from RR
                 restart = True
 
