@@ -602,7 +602,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     if xi.shape[-1] != len(grid):
         raise ValueError("The requested sample points xi have dimension "
                          "%d, but this RegularGridInterpolator has "
-                         "dimension %d" % (xi.shape[1], len(grid)))
+                         "dimension %d" % (xi.shape[-1], len(grid)))
 
     if bounds_error:
         for i, p in enumerate(xi.T):
