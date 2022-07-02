@@ -464,9 +464,9 @@ def lobpcg(
 
         try:
             vals, vecs = eigh(A,
-                            B,
-                            eigvals=eigvals,
-                            check_finite=False)
+                              B,
+                              eigvals=eigvals,
+                              check_finite=False)
             if largest:
                 # Reverse order to be compatible with eigs() in 'LM' mode.
                 vals = vals[::-1]
@@ -490,9 +490,7 @@ def lobpcg(
     if blockVectorY is not None:
 
         if B is not None:
-
             blockVectorBY = B(blockVectorY)
-
             if blockVectorBY.shape != blockVectorY.shape:
                 raise ValueError(
                     f"The shape {blockVectorY.shape} "
@@ -500,8 +498,8 @@ def lobpcg(
                     f"and changed to {blockVectorBY.shape} "
                     f"after multiplying by the secondary matrix.\n"
                 )
-            else:
-                blockVectorBY = blockVectorY
+        else:
+            blockVectorBY = blockVectorY
 
         # gramYBY is a dense array.
         gramYBY = np.dot(blockVectorY.T.conj(), blockVectorBY)
