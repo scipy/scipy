@@ -1001,20 +1001,22 @@ class TestPermutationTest:
 
     # -- Independent (Unpaired) Sample Tests -- #
 
-    def test_against_kstest(self):
+    @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
+    def test_against_kstest(self, alternative):
         np.random.seed(0)
         x = stats.norm.rvs(size=4, scale=1)
         y = stats.norm.rvs(size=5, loc=3, scale=3)
 
-        alternative = 'greater'
         expected = stats.ks_2samp(x, y, alternative=alternative, mode='exact')
 
         def statistic1d(x, y):
             return stats.ks_2samp(x, y, mode='asymp',
                                   alternative=alternative).statistic
 
+        # kstest is always a one-tailed 'greater' test
+        # it's the statistic that changes (D+ vs D- vs max(D+, D-))
         res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
-                               alternative=alternative)
+                               alternative='greater')
 
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
