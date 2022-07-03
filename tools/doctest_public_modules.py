@@ -56,6 +56,22 @@ OTHER_MODULE_DOCS = {
 
 ################### A user ctx mgr to turn warnings to errors ###################
 from scpdt.util import warnings_errors
+from contextlib import contextmanager
+import warnings
+
+@contextmanager
+def warnings_errors(test):
+    """Temporarily turn (almost) all warnings to errors.
+
+    `linalg.norm` is allowed to emit warnings.
+    """
+    with warnings.catch_warnings(record=True) as w:
+        if test.name == 'scipy.linalg.norm':
+            yield
+        else:
+            warnings.simplefilter('error', Warning)
+            yield
+
 
 config = DTConfig()
 config.user_context_mgr = warnings_errors
@@ -142,8 +158,8 @@ def main(args):
         all_success = doctest_submodules(submodule_names,
                                          verbose=args.verbose,
                                          fail_fast=args.fail_fast)
-        all_success = True
 
+        # if full run: also check the tutorial
         if not args.submodule:
             tut_success = doctest_tutorial(verbose=args.verbose,
                                            fail_fast=args.fail_fast)
