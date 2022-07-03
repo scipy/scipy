@@ -1,4 +1,5 @@
 import os
+import glob
 import sys
 import importlib
 
@@ -101,6 +102,32 @@ def doctest_single_file(fname, verbose, fail_fast):
     return result.failed == 0
 
 
+def doctest_tutorial(verbose, fail_fast):
+    base_dir = os.path.join(os.path.abspath(os.path.dirname(__file__)), '..')
+    tut_path = os.path.join(base_dir, 'doc', 'source', 'tutorial', '*.rst')
+    sys.stderr.write('\nChecking tutorial files at %s:\n'
+                     % os.path.relpath(tut_path, os.getcwd()))
+
+    tutorials = [f for f in sorted(glob.glob(tut_path))]
+
+    # XXX: cf https://github.com/ev-br/scpdt/issues/43
+    tutorials = [f for f in tutorials if 'io.rst' not in f]
+
+    # set up scipy-specific config
+    config.pseudocode = set(['integrate.nquad(func,'])
+
+    all_success = True
+    for filename in tutorials:
+        sys.stderr.write('\n' + filename + '\n')
+        sys.stderr.write("="*len(filename) + '\n')
+
+        result, history = testfile(filename, module_relative=False,
+                                    verbose=verbose, raise_on_error=fail_fast,
+                                    report=True, config=config)
+        all_success = all_success and (result.failed == 0)
+    return all_success
+
+
 def main(args):
     if args.submodule and args.filename:
         raise ValueError("Specify either a submodule or a single file, not both.")
@@ -115,6 +142,13 @@ def main(args):
         all_success = doctest_submodules(submodule_names,
                                          verbose=args.verbose,
                                          fail_fast=args.fail_fast)
+        all_success = True
+
+        if not args.submodule:
+            tut_success = doctest_tutorial(verbose=args.verbose,
+                                           fail_fast=args.fail_fast)
+            all_success = all_success and tut_success
+
     # final report
     if all_success:
         sys.stderr.write('\n\n>>>> OK: doctests PASSED\n')
