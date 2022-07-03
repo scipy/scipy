@@ -26,7 +26,7 @@ jobs:
       - name: Configuring Test Environment
         run: |
           sudo apt-get update
-          sudo apt install python3.8-dbg python3.8-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache swig libmpc-dev
+          sudo apt install python3.8-dbg python3.8-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev ccache swig libmpc-dev
           free -m
           python3.8-dbg --version # just to check
           export NPY_NUM_BUILD_JOBS=2
@@ -76,7 +76,7 @@ jobs:
 
     - name: Install other build dependencies
       run: |
-        sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
+        sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev ccache libmpc-dev
 
     - name: Install packages
       run: |
