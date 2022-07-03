@@ -14,20 +14,20 @@ ctypedef fused double_or_long:
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-cdef int find_interval_descending(const double *x,
+cdef int find_interval_ascending(const double *x,
                                  size_t nx,
                                  double xval,
                                  int prev_interval=0,
                                  bint extrapolate=1) nogil:
     """
-    Find an interval such that x[interval + 1] < xval <= x[interval], assuming
-    that x are sorted in the descending order.
-    If xval > x[0], then interval = 0, if xval < x[-1] then interval = n - 2.
+    Find an interval such that x[interval] <= xval < x[interval+1]. Assuming
+    that x is sorted in the ascending order.
+    If xval < x[0], then interval = 0, if xval > x[-1] then interval = n - 2.
 
     Parameters
     ----------
     x : array of double, shape (m,)
-        Piecewise polynomial breakpoints sorted in descending order.
+        Piecewise polynomial breakpoints sorted in ascending order.
     xval : double
         Point to find.
     prev_interval : int, optional
@@ -45,7 +45,6 @@ cdef int find_interval_descending(const double *x,
     cdef int interval, high, low, mid
     cdef double a, b
 
-    # Note that now a > b.
     a = x[0]
     b = x[nx-1]
 
@@ -53,44 +52,42 @@ cdef int find_interval_descending(const double *x,
     if interval < 0 or interval >= nx:
         interval = 0
 
-    if not (b <= xval <= a):
-        # Out-of-bounds or NaN.
-        if xval > a and extrapolate:
-            # Above a.
+    if not (a <= xval <= b):
+        # Out-of-bounds (or nan)
+        if xval < a and extrapolate:
+            # below
             interval = 0
-        elif xval < b and extrapolate:
-            # Below b.
+        elif xval > b and extrapolate:
+            # above
             interval = nx - 2
         else:
-            # No extrapolation.
+            # nan or no extrapolation
             interval = -1
     elif xval == b:
-        # Make the interval closed from the left.
+        # Make the interval closed from the right
         interval = nx - 2
     else:
-        # Apply the binary search in a general case. Note that low and high
-        # are used in terms of interval number, not in terms of abscissas.
-        # The conversion from find_interval_ascending is simply to change
-        # < to > and >= to <= in comparison with xval.
-        if xval <= x[interval]:
+        # Find the interval the coordinate is in
+        # (binary search with locality)
+        if xval >= x[interval]:
             low = interval
             high = nx - 2
         else:
             low = 0
             high = interval
 
-        if xval > x[low + 1]:
+        if xval < x[low+1]:
             high = low
 
         while low < high:
-            mid = (high + low) // 2
-            if xval > x[mid]:
+            mid = (high + low)//2
+            if xval < x[mid]:
                 # mid < high
                 high = mid
-            elif xval <= x[mid + 1]:
+            elif xval >= x[mid + 1]:
                 low = mid + 1
             else:
-                # x[mid] >= xval > x[mid+1]
+                # x[mid] <= xval < x[mid+1]
                 low = mid
                 break
 
@@ -155,7 +152,7 @@ def find_indices(grid, bounds_error, xi):
         # index[index > grid[i].size - 2] = grid[i].size - 2
         # indices[i] = index
         for j in range(xi.shape[1]):
-            index = find_interval_descending(&grid_i[0], xi.shape[1], xi[i][j]) - 1
+            index = find_interval_ascending(&grid_i[0], xi.shape[1], xi[i][j]) - 1
             indices[i][j] = index
 
         # compute norm_distances, incl length-1 grids,
