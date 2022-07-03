@@ -35,6 +35,7 @@ The suite of window functions for filtering and spectral estimation.
    taylor                  -- Taylor window
    triang                  -- Triangular window
    tukey                   -- Tukey window
+   lanczos                 -- Lanczos window also known as a sinc window
 
 """
 
@@ -48,4 +49,4 @@ __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'hamming', 'kaiser', 'kaiser_bessel_derived', 'gaussian',
            'general_gaussian', 'general_cosine', 'general_hamming',
            'chebwin', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',
-           'get_window', 'dpss']
+           'get_window', 'dpss', 'lanczos']
