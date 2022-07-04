@@ -401,7 +401,7 @@ class _minmax_mixin:
         """
         return self._arg_min_or_max(axis, out, np.argmax, np.greater, explicit)
 
-    def argmin(self, axis=None, out=None, explicit=False):
+    def argmin(self, axis=None, out=None, *, explicit=False):
         """Return indices of minimum elements along an axis.
 
         Implicit zero elements are also taken into account. If there are
