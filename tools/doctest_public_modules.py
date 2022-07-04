@@ -13,7 +13,7 @@ PUBLIC_SUBMODULES = [
     'cluster',
     'cluster.hierarchy',
     'cluster.vq',
-    'constants',     ## obj.__name__
+    'constants',
     'fft',
     'fftpack',
     'fftpack.convolve',
@@ -47,13 +47,6 @@ PUBLIC_SUBMODULES = [
     'stats.sampling'
 ]
 
-# Docs for these modules are included in the parent module
-OTHER_MODULE_DOCS = {
-    'fftpack.convolve': 'fftpack',
-    'io.wavfile': 'io',
-    'io.arff': 'io',
-}
-
 ################### A user ctx mgr to turn warnings to errors ###################
 from scpdt.util import warnings_errors
 from contextlib import contextmanager
@@ -77,7 +70,7 @@ config = DTConfig()
 config.user_context_mgr = warnings_errors
 ############################################################################
 
-#LOGFILE = open('doctest.log', 'a')
+LOGFILE = open('doctest.log', 'a')
 
 
 
@@ -102,10 +95,10 @@ def doctest_submodules(module_names, verbose, fail_fast):
                                   verbose=verbose,
                                   raise_on_error=fail_fast, config=config) 
 
-#        LOGFILE.write(module_name + '\n')
-#        LOGFILE.write("="*len(module_name)  + '\n')
-#        for entry in history:
-#            LOGFILE.write(str(entry) + '\n')
+        LOGFILE.write(module_name + '\n')
+        LOGFILE.write("="*len(module_name)  + '\n')
+        for entry in history:
+            LOGFILE.write(str(entry) + '\n')
 
         sys.stderr.write(str(result))
         all_success = all_success and (result.failed == 0)
