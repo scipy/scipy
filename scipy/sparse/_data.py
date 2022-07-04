@@ -337,7 +337,7 @@ class _minmax_mixin:
         """
         return self._min_or_max(axis, out, np.maximum, explicit)
 
-    def min(self, axis=None, out=None, explicit=False):
+    def min(self, axis=None, out=None, *, explicit=False):
         """
         Return the minimum of the matrix or maximum along an axis.
         This takes all elements into account, not just the non-zero ones.
