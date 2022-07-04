@@ -117,6 +117,7 @@ coefficients and is faster than :func:`convolve2d`, which convolves arbitrary
 conditions.
 
 .. plot::
+   :alt: "..."
 
    >>> import numpy as np
    >>> from scipy import signal, misc
@@ -308,6 +309,7 @@ enhancing, and edge-detection for an image.
 
 
 .. plot::
+   :alt: "..."
 
    >>> import numpy as np
    >>> from scipy import signal, misc
@@ -354,6 +356,7 @@ example, we consider a Gaussian filter :func:`~scipy.signal.windows.gaussian`
 which is often used for blurring.
 
 .. plot::
+   :alt: "..."
 
    >>> import numpy as np
    >>> from scipy import signal, misc
@@ -525,6 +528,7 @@ types (e.g., low-pass, band-pass...).
 The example below designs a low-pass and a band-stop filter, respectively.
 
 .. plot::
+   :alt: "..."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -556,6 +560,7 @@ gains, respectively.
 The example below designs a filter with such an arbitrary amplitude response.
 
 .. plot::
+   :alt: "..."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -590,6 +595,7 @@ compared with the FIR filters from the examples above in order to reach the same
 stop-band attenuation of :math:`\approx 60` dB.
 
 .. plot::
+   :alt: "..."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -870,6 +876,7 @@ in the amplitude response.
 
 
 .. plot::
+   :alt: "..."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -913,6 +920,7 @@ The example below calculates the periodogram of a sine signal in white
 Gaussian noise.
 
 .. plot::
+   :alt: "..."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -949,6 +957,7 @@ the spectrogram.
 
 
 .. plot::
+   :alt: "..."
 
    >>> import numpy as np
    >>> import scipy.signal as signal
@@ -1051,6 +1060,7 @@ The example below removes the constant and linear trend of a second-order
 polynomial time series and plots the remaining signal components.
 
 .. plot::
+   :alt: "..."
 
    >>> import numpy as np
    >>> import scipy.signal as signal

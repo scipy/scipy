@@ -776,6 +776,7 @@ This function looks like an egg carton::
    >>> plt.show()
 
 .. plot:: tutorial/examples/optimize_global_2.py
+   :alt: "..."
    :align: center
    :include-source: 0
 
@@ -851,6 +852,7 @@ We'll now plot all found minima on a heatmap of the function::
 
 .. plot:: tutorial/examples/optimize_global_1.py
    :align: center
+   :alt: "..."
    :include-source: 0
 
 Least-squares minimization (:func:`least_squares`)
@@ -920,6 +922,7 @@ The code below implements least-squares estimation of :math:`\mathbf{x}` and
 finally plots the original data and the fitted model function:
 
 .. plot::
+    :alt: "..."
 
     >>> from scipy.optimize import least_squares
 
@@ -1251,6 +1254,7 @@ exactly, forms an approximation for it.
 The problem we have can now be solved as follows:
 
 .. plot::
+    :alt: "..."
 
     import numpy as np
     from scipy.optimize import root

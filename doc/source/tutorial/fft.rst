@@ -80,6 +80,7 @@ corresponding to positive frequencies is plotted.
 The example plots the FFT of the sum of two sines.
 
 .. plot::
+    :alt: "..."
 
     >>> from scipy.fft import fft, fftfreq
     >>> # Number of sample points
@@ -107,6 +108,7 @@ and shows the effect of windowing (the zero component of the FFT has been
 truncated for illustrative purposes).
 
 .. plot::
+    :alt: "..."
 
     >>> from scipy.fft import fft, fftfreq
     >>> # Number of sample points
@@ -151,6 +153,7 @@ The example below plots the FFT of two complex exponentials; note the
 asymmetric spectrum.
 
 .. plot::
+    :alt: "..."
 
     >>> from scipy.fft import fft, fftfreq, fftshift
     >>> # number of signal points
@@ -232,6 +235,7 @@ The example below demonstrates a 2-D IFFT and plots the resulting
 (2-D) time-domain signals.
 
 .. plot::
+    :alt: "..."
 
     >>> from scipy.fft import ifftn
     >>> import matplotlib.pyplot as plt
@@ -427,6 +431,7 @@ provides a five-fold compression rate.
 
 
 .. plot::
+    :alt: "..."
 
     >>> from scipy.fft import dct, idct
     >>> import matplotlib.pyplot as plt

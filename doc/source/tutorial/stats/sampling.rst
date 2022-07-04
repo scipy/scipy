@@ -186,6 +186,7 @@ We can also check that the samples are drawn from the correct distribution
 by visualizing the histogram of the samples:
 
 .. plot::
+    :alt: "..."
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import norm

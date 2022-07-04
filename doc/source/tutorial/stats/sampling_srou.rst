@@ -51,6 +51,7 @@ We can check that the samples are from the given distribution by visualizing
 its histogram:
 
 .. plot::
+    :alt: "..."
 
     >>> from scipy.stats.sampling import SimpleRatioUniforms
     >>> from scipy.stats import norm
