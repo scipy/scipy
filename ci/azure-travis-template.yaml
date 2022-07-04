@@ -80,12 +80,12 @@ steps:
   displayName: 'Install common python dependencies'
 - ${{ if eq(parameters.test_mode, 'full') }}:
   - script: >-
-      pip install matplotlib
-      # These two scikits both depend on scipy, so use `--no-deps`
+      pip install matplotlib &&
+      pip install scikit-umfpack scikit-sparse --no-deps --no-build-isolation
+      # The above two scikits both depend on scipy, so use `--no-deps`
       # Also note that they don't provide wheels, so we build them from
       # source (only in this job, it's a small optional dependency so test
       # only in a single place)
-      pip install scikit-umfpack scikit-sparse --no-deps
     displayName: 'Install full mode optional dependencies'
 - ${{ if eq(parameters.coverage, true) }}:
   - script: pip install pytest-cov coverage codecov
