@@ -2075,9 +2075,27 @@ class MultinomialQMC:
 
     Examples
     --------
+    Let's define 3 categories and for a given sample, the sum of the trials
+    of each category is 8. The number of trials per category is determined
+    by the `pvals` associated to each category.
+    Then, we sample this distribution 64 times.
+
+    >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import qmc
-    >>> dist = qmc.MultinomialQMC(pvals=[0.2, 0.4, 0.4], n_trials=10)
-    >>> sample = dist.random(10)
+    >>> dist = qmc.MultinomialQMC(
+    ...     pvals=[0.2, 0.4, 0.4], n_trials=10, engine=qmc.Halton(d=1)
+    ... )
+    >>> sample = dist.random(64)
+
+    We can plot the sample and verify that the median of number of trials
+    for each category is following the `pvals`. That would be
+    ``pvals * n_trials = [2, 4, 4]``.
+
+    >>> fig, ax = plt.subplots()
+    >>> ax.yaxis.get_major_locator().set_params(integer=True)
+    >>> _ = ax.boxplot(sample)
+    >>> ax.set(xlabel="Categories", ylabel="Trials")
+    >>> plt.show()
 
     """
 
