@@ -68,11 +68,13 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.python-version }}
-        mamba-version: "*"
         channels: conda-forge
         channel-priority: true
         activate-environment: scipy-dev
         use-only-tar-bz2: true
+        miniforge-variant: Mambaforge
+        miniforge-version: latest
+        use-mamba: true
 
     - name: Cache conda
       uses: actions/cache@v3
