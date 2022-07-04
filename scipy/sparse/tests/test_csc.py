@@ -71,28 +71,34 @@ def test_csc_empty_slices(matrix_input, axis, expected_shape):
     assert actual_shape_1 == actual_shape_2
 
 
+@pytest.mark.parametrize('explicit', [True, False])
 @pytest.mark.parametrize('ax', (-2, -1, 0, 1, None))
-def test_argmax_overflow(ax):
+def test_argmax_overflow(ax, explicit):
     # See gh-13646: Windows integer overflow for large sparse matrices.
     dim = (100000, 100000)
     A = lil_matrix(dim)
     A[-2, -2] = 42
     A[-3, -3] = 0.1234
     A = csc_matrix(A)
-    idx = A.argmax(axis=ax)
+    idx = A.argmax(axis=ax, explicit=explicit)
 
     if ax is None:
-        # idx is a single flattened index
-        # that we need to convert to a 2d index pair;
-        # can't do this with np.unravel_index because
-        # the dimensions are too large
-        ii = idx % dim[0]
-        jj = idx // dim[0]
+        if explicit:
+            a = A.data[idx]
+        else:
+            # idx is a single flattened index
+            # that we need to convert to a 2d index pair;
+            # can't do this with np.unravel_index because
+            # the dimensions are too large
+            ii = idx % dim[0]
+            jj = idx // dim[0]
+            a = A[ii, jj]
     else:
         # idx is an array of size of A.shape[ax];
         # check the max index to make sure no overflows
         # we encountered
         assert np.count_nonzero(idx) == A.nnz
         ii, jj = np.max(idx), np.argmax(idx)
+        a = A[ii, jj]
 
-    assert A[ii, jj] == A[-2, -2]
+    assert a == A[-2, -2]
