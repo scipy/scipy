@@ -87,7 +87,7 @@ jobs:
         # Increase this value to reset cache if environment.yml has not changed
         CACHE_NUMBER: 0
       with:
-        path: /usr/local/miniconda/envs/scipy-dev
+        path: ${{ env.CONDA }}/envs/scipy-dev
         key:
           ${{ runner.os }}--${{ steps.get-date.outputs.today }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
       id: envcache
