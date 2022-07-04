@@ -76,6 +76,11 @@ jobs:
         miniforge-version: latest
         use-mamba: true
 
+    - name: Get Date
+      id: get-date
+      run: echo "::set-output name=today::$(/bin/date -u '+%Y%m%d')"
+      shell: bash
+
     - name: Cache conda
       uses: actions/cache@v3
       env:
@@ -84,11 +89,12 @@ jobs:
       with:
         path: /usr/local/miniconda/envs/scipy-dev
         key:
-          ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+          ${{ runner.os }}--${{ steps.get-date.outputs.today }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
       id: envcache
 
     - name: Update Conda Environment
       run: mamba env update -n scipy-dev -f environment.yml
+      if: steps.cache.outputs.cache-hit != 'true'
 
     - name: Build and Install SciPy
       shell: bash -l {0}
