@@ -20,6 +20,7 @@ Run tests if sparse is not installed:
 import contextlib
 import functools
 import operator
+from pdb import Pdb
 import platform
 import itertools
 import sys
@@ -3531,59 +3532,62 @@ class _TestMinMax:
             assert_equal(mat.argmin(axis=1),
                          asmatrix(np.argmin(D, axis=1).reshape(-1, 1)))
 
-        D1 = np.empty((0, 5))
-        D2 = np.empty((5, 0))
-
-        for axis in [None, 0]:
-            mat = self.spmatrix(D1)
-            assert_raises(ValueError, mat.argmax, axis=axis)
-            assert_raises(ValueError, mat.argmin, axis=axis)
-
-        for axis in [None, 1]:
-            mat = self.spmatrix(D2)
-            assert_raises(ValueError, mat.argmax, axis=axis)
-            assert_raises(ValueError, mat.argmin, axis=axis)
-
-    def test_argmax_explicit(self):
-        D1 = np.array([[-1, 5, 2, 3],
-                       [0, 0, -1, -2],
-                       [-1, -2, -3, -4],
-                       [1, 2, 3, 4],
-                       [1, 2, 0, 0]])
-
         mat = csr_matrix(D1)
-
-        assert_equal(
-            mat.argmax(axis=0, explicit=True).A.flatten(),
-            np.array([3, 0, 3, 3])
-        )
-        assert_equal(
-            mat.argmin(axis=0, explicit=True).A.flatten(),
-            np.array([0, 2, 2, 2])
-        )
-
-        assert_equal(
-            mat.argmax(axis=1, explicit=True).A.flatten(),
-            np.array([1, 2, 0, 3, 1])
-        )
-        assert_equal(
-            mat.argmin(axis=1, explicit=True).A.flatten(),
-            np.array([0, 3, 3, 0, 0])
-        )
+        assert_array_equal(mat.argmax(axis=0, explicit=True).A,
+                           np.array([[3, 0, 3, 3]]))
+        assert_array_equal(mat.argmin(axis=0, explicit=True).A,
+                           np.array([[0, 2, 2, 2]]))
+        assert_array_equal(mat.argmax(axis=1, explicit=True).A,
+                           np.array([[1], [2], [0], [3], [1]]))
+        assert_array_equal(mat.argmin(axis=1, explicit=True).A,
+                           np.array([[0], [3], [3], [0], [0]]))
 
         D1 = np.empty((0, 5))
         D2 = np.empty((5, 0))
+        explicit_values = [True, False]
 
-        for axis in [None, 0]:
+        for axis, explicit in itertools.product([None, 0], explicit_values):
             mat = self.spmatrix(D1)
-            assert_raises(ValueError, mat.argmax, axis=axis, explicit=True)
-            assert_raises(ValueError, mat.argmin, axis=axis, explicit=True)
+            assert_raises(ValueError, mat.argmax, axis=axis, explicit=explicit)
+            assert_raises(ValueError, mat.argmin, axis=axis, explicit=explicit)
 
-        for axis in [None, 1]:
+        for axis, explicit in itertools.product([None, 1], explicit_values):
             mat = self.spmatrix(D2)
-            assert_raises(ValueError, mat.argmax, axis=axis, explicit=True)
-            assert_raises(ValueError, mat.argmin, axis=axis, explicit=True)
+            assert_raises(ValueError, mat.argmax, axis=axis, explicit=explicit)
+            assert_raises(ValueError, mat.argmin, axis=axis, explicit=explicit)
 
+        # zero-size matrices
+        D = np.zeros((0, 10))
+        mat = self.spmatrix(D)
+        axes_even = [0, -2]
+        axes_odd = [1, -1]
+        even_explicit_pairs = itertools.product(axes_even, explicit_values)
+        odd_explicit_pairs = itertools.product(axes_odd, explicit_values)
+
+        for axis, explicit in even_explicit_pairs:
+            assert_raises(ValueError, mat.argmin, axis=axis, explicit=explicit)
+            assert_raises(ValueError, mat.argmax, axis=axis, explicit=explicit)
+        for axis, explicit in odd_explicit_pairs:
+            assert_array_equal(
+                np.zeros((0, 1)),
+                mat.argmin(axis=axis, explicit=explicit).A)
+            assert_array_equal(
+                np.zeros((0, 1)),
+                mat.argmax(axis=axis, explicit=explicit).A)
+
+        D = np.zeros((10, 0))
+        X = self.spmatrix(D)
+
+        for axis, explicit in odd_explicit_pairs:
+            assert_raises(ValueError, X.min, axis=axis, explicit=explicit)
+            assert_raises(ValueError, X.max, axis=axis, explicit=explicit)
+        for axis, explicit in even_explicit_pairs:
+            assert_array_equal(
+                np.zeros((1, 0)),
+                X.min(axis=axis, explicit=explicit).A)
+            assert_array_equal(
+                np.zeros((1, 0)),
+                X.max(axis=axis, explicit=explicit).A)
 
 class _TestGetNnzAxis:
     def test_getnnz_axis(self):
