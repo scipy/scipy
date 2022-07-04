@@ -270,18 +270,16 @@ class _minmax_mixin:
                                  "an empty matrix.")
 
             if self.nnz == 0:
+                if explicit:
+                        raise ValueError("Can't apply the operation to zero matrix when explicit is True.")
                 return 0
             else:
                 zero = self.dtype.type(0)
                 mat = self.tocoo()
-                mat.sum_duplicates()
                 am = op(mat.data)
-                m = mat.data[am]
-
                 if explicit:
-                    if m == 0:
-                        return []
                     return am
+                m = mat.data[am]
 
                 if compare(m, zero):
                     # cast to Python int to avoid overflow

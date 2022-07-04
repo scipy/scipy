@@ -3449,8 +3449,10 @@ class _TestMinMax:
         D = np.zeros((0, 10))
         X = self.spmatrix(D)
         explicit_values = [True, False]
-        even_explicit_pairs = itertools.product(axes_even, explicit_values)
-        odd_explicit_pairs = itertools.product(axes_odd, explicit_values)
+        even_explicit_pairs = list(itertools.product(axes_even,
+                                                     explicit_values))
+        odd_explicit_pairs = list(itertools.product(axes_odd,
+                                                    explicit_values))
         for axis, explicit in even_explicit_pairs:
             assert_raises(ValueError, X.min, axis=axis, explicit=explicit)
             assert_raises(ValueError, X.max, axis=axis, explicit=explicit)
@@ -3533,10 +3535,18 @@ class _TestMinMax:
                          asmatrix(np.argmin(D, axis=1).reshape(-1, 1)))
 
         mat = csr_matrix(D1)
+
+        # import pdb
+        # pdb.set_trace()
+        # mat.argmin(explicit=True)
+        assert_equal(mat.argmin(explicit=True), np.argmin(mat.data))
+        assert_equal(mat.argmax(explicit=True), np.argmax(mat.data))
+
         assert_array_equal(mat.argmax(axis=0, explicit=True).A,
                            np.array([[3, 0, 3, 3]]))
         assert_array_equal(mat.argmin(axis=0, explicit=True).A,
                            np.array([[0, 2, 2, 2]]))
+
         assert_array_equal(mat.argmax(axis=1, explicit=True).A,
                            np.array([[1], [2], [0], [3], [1]]))
         assert_array_equal(mat.argmin(axis=1, explicit=True).A,
@@ -3561,8 +3571,10 @@ class _TestMinMax:
         mat = self.spmatrix(D)
         axes_even = [0, -2]
         axes_odd = [1, -1]
-        even_explicit_pairs = itertools.product(axes_even, explicit_values)
-        odd_explicit_pairs = itertools.product(axes_odd, explicit_values)
+        even_explicit_pairs = list(itertools.product(axes_even,
+                                                     explicit_values))
+        odd_explicit_pairs = list(itertools.product(axes_odd,
+                                                    explicit_values))
 
         for axis, explicit in even_explicit_pairs:
             assert_raises(ValueError, mat.argmin, axis=axis, explicit=explicit)
@@ -3576,18 +3588,26 @@ class _TestMinMax:
                 mat.argmax(axis=axis, explicit=explicit).A)
 
         D = np.zeros((10, 0))
-        X = self.spmatrix(D)
+        mat = self.spmatrix(D)
+
+        for axis, explicit in even_explicit_pairs:
+            mat.argmin(axis=axis, explicit=explicit)
+            assert_array_equal(
+                np.zeros((1, 0)),
+                mat.argmin(axis=axis, explicit=explicit).A)
+            assert_array_equal(
+                np.zeros((1, 0)),
+                mat.argmax(axis=axis, explicit=explicit).A)
 
         for axis, explicit in odd_explicit_pairs:
-            assert_raises(ValueError, X.min, axis=axis, explicit=explicit)
-            assert_raises(ValueError, X.max, axis=axis, explicit=explicit)
-        for axis, explicit in even_explicit_pairs:
-            assert_array_equal(
-                np.zeros((1, 0)),
-                X.min(axis=axis, explicit=explicit).A)
-            assert_array_equal(
-                np.zeros((1, 0)),
-                X.max(axis=axis, explicit=explicit).A)
+            assert_raises(ValueError, mat.argmin, axis=axis, explicit=explicit)
+            assert_raises(ValueError, mat.argmax, axis=axis, explicit=explicit)
+
+        D = np.zeros((2, 2))
+        mat = self.spmatrix(D)
+
+        assert_raises(ValueError, mat.argmin, axis=None, explicit=True)
+        assert_raises(ValueError, mat.argmax, axis=None, explicit=True)
 
 class _TestGetNnzAxis:
     def test_getnnz_axis(self):
