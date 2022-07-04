@@ -514,7 +514,11 @@ def factorized(A):
         umf.numeric(A)
 
         def solve(b):
-            return umf.solve(umfpack.UMFPACK_A, A, b, autoTranspose=True)
+            with np.errstate(divide="ignore", invalid="ignore"):
+                # Ignoring warnings with numpy >= 1.23.0, see gh-16523
+                result = umf.solve(umfpack.UMFPACK_A, A, b, autoTranspose=True)
+
+            return result
 
         return solve
     else:

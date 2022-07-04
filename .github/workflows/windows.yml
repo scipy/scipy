@@ -42,7 +42,7 @@ jobs:
           gfortran --version
       - name: pip-packages
         run: |
-          pip install numpy==1.22.2 cython pybind11 pythran meson ninja pytest pytest-xdist
+          pip install numpy==1.22.2 cython pybind11 pythran meson ninja pytest pytest-xdist pytest-timeout
       - name: openblas-libs
         run: |
           # Download and install pre-built OpenBLAS library
