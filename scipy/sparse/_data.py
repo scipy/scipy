@@ -299,7 +299,7 @@ class _minmax_mixin:
 
         return self._arg_min_or_max_axis(axis, op, compare, explicit)
 
-    def max(self, axis=None, out=None, explicit=False):
+    def max(self, axis=None, out=None, *, explicit=False):
         """
         Return the maximum of the matrix or maximum along an axis.
         This takes all elements into account, not just the non-zero ones.
