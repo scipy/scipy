@@ -419,7 +419,7 @@ Authors
 * Christoph Baumgarten (3)
 * Nickolai Belakovski (1)
 * Peter Bell (9)
-* Sebastian Berg (2)
+* Sebastian Berg (3)
 * Bharath (1) +
 * bobcatCA (2) +
 * boussoffara (2) +
@@ -453,7 +453,7 @@ Authors
 * Isuru Fernando (3)
 * Joseph Fox-Rabinovitz (1)
 * Ryan Gibson (4) +
-* Ralf Gommers (312)
+* Ralf Gommers (314)
 * Srinivas Gorur-Shandilya (1) +
 * Alex Griffing (2)
 * h-vetinari (3)
@@ -508,8 +508,8 @@ Authors
 * Amit Portnoy (1) +
 * Quentin Barthélemy (9)
 * Patrick N. Raanes (1) +
-* Tyler Reddy (137)
-* Pamphile Roy (196)
+* Tyler Reddy (144)
+* Pamphile Roy (197)
 * Vivek Roy (2) +
 * sabonerune (1) +
 * Niyas Sait (2) +
@@ -517,7 +517,7 @@ Authors
 * Mazen Sayed (1) +
 * Eduardo Schettino (5) +
 * Daniel Schmitz (6) +
-* Eli Schwartz (3) +
+* Eli Schwartz (4) +
 * SELEE (2) +
 * Namami Shanker (4)
 * siddhantwahal (1) +
@@ -769,6 +769,8 @@ Issues closed for 1.9.0
 * `#16426 <https://github.com/scipy/scipy/issues/16426>`__: BUG: stats.shapiro inplace modification of user array
 * `#16465 <https://github.com/scipy/scipy/issues/16465>`__: BLD: new sdist has some metadata issues
 * `#16466 <https://github.com/scipy/scipy/issues/16466>`__: BUG: linprog failure - OptimizeResult.x returns NoneType
+* `#16523 <https://github.com/scipy/scipy/issues/16523>`__: BUG: test failure in pre-release job: \`TestFactorized.test_singular_with_umfpack\`
+* `#16540 <https://github.com/scipy/scipy/issues/16540>`__: BLD: meson 0.63.0 and new CI testing failures on Linux
 
 ***********************
 Pull requests for 1.9.0
@@ -1177,6 +1179,7 @@ Pull requests for 1.9.0
 * `#16374 <https://github.com/scipy/scipy/pull/16374>`__: MAINT: update pydata-sphinx-theme
 * `#16379 <https://github.com/scipy/scipy/pull/16379>`__: DOC: dark theme css adjustments
 * `#16390 <https://github.com/scipy/scipy/pull/16390>`__: TST, MAINT: adjust 32-bit xfails for HiGHS
+* `#16393 <https://github.com/scipy/scipy/pull/16393>`__: MAINT: use correct type for element wise comparison
 * `#16414 <https://github.com/scipy/scipy/pull/16414>`__: BUG: spatial: Handle integer arrays in HalfspaceIntersection.
 * `#16420 <https://github.com/scipy/scipy/pull/16420>`__: MAINT: next round of 1.9.0 backports
 * `#16422 <https://github.com/scipy/scipy/pull/16422>`__: TST: fix test issues with casting-related warnings with numpy...
@@ -1194,3 +1197,6 @@ Pull requests for 1.9.0
 * `#16493 <https://github.com/scipy/scipy/pull/16493>`__: BLD: clean up unwanted files in sdist, via \`.gitattributes\`
 * `#16507 <https://github.com/scipy/scipy/pull/16507>`__: REL: more tweaks to sdist contents
 * `#16512 <https://github.com/scipy/scipy/pull/16512>`__: [1.9] MAINT: skip complex128 propack tests on windows
+* `#16526 <https://github.com/scipy/scipy/pull/16526>`__: MAINT: 1.9.0rc2 backports
+* `#16530 <https://github.com/scipy/scipy/pull/16530>`__: MAINT: fix umfpack test failure with numpy 1.23
+* `#16541 <https://github.com/scipy/scipy/pull/16541>`__: BLD: fix regression in building _lsap with symbol visibility
