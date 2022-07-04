@@ -20,7 +20,6 @@ Run tests if sparse is not installed:
 import contextlib
 import functools
 import operator
-from pdb import Pdb
 import platform
 import itertools
 import sys
@@ -3536,9 +3535,6 @@ class _TestMinMax:
 
         mat = csr_matrix(D1)
 
-        # import pdb
-        # pdb.set_trace()
-        # mat.argmin(explicit=True)
         assert_equal(mat.argmin(explicit=True), np.argmin(mat.data))
         assert_equal(mat.argmax(explicit=True), np.argmax(mat.data))
 
