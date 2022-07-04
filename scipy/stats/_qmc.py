@@ -616,13 +616,13 @@ class QMCEngine(ABC):
     optimization : {None, "random-cd", "lloyd"}, optional
         Whether to use an optimization scheme to improve the quality after
         sampling. Note that this is a post-processing step that does not
-        guarrantee that all properties of the sample would be conserved.
+        guarantee that all properties of the sample will be conserved.
         Default is None.
 
         * ``random-cd``: random permutations of coordinates to lower the
           centered discrepancy. The best sample based on the centered
           discrepancy is constantly updated. Centered discrepancy-based
-          sample shows better space filling robustness toward 2D and 3D
+          sampling shows better space-filling robustness toward 2D and 3D
           subprojections compared to using other discrepancy measures.
         * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
           The process converges to equally spaced samples.
@@ -902,13 +902,13 @@ class Halton(QMCEngine):
     optimization : {None, "random-cd", "lloyd"}, optional
         Whether to use an optimization scheme to improve the quality after
         sampling. Note that this is a post-processing step that does not
-        guarrantee that all properties of the sample would be conserved.
+        guarantee that all properties of the sample will be conserved.
         Default is None.
 
         * ``random-cd``: random permutations of coordinates to lower the
           centered discrepancy. The best sample based on the centered
           discrepancy is constantly updated. Centered discrepancy-based
-          sample shows better space filling robustness toward 2D and 3D
+          sampling shows better space-filling robustness toward 2D and 3D
           subprojections compared to using other discrepancy measures.
         * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
           The process converges to equally spaced samples.
@@ -1039,13 +1039,13 @@ class LatinHypercube(QMCEngine):
     optimization : {None, "random-cd", "lloyd"}, optional
         Whether to use an optimization scheme to improve the quality after
         sampling. Note that this is a post-processing step that does not
-        guarrantee that all properties of the sample would be conserved.
+        guarantee that all properties of the sample will be conserved.
         Default is None.
 
         * ``random-cd``: random permutations of coordinates to lower the
           centered discrepancy. The best sample based on the centered
           discrepancy is constantly updated. Centered discrepancy-based
-          sample shows better space filling robustness toward 2D and 3D
+          sampling shows better space-filling robustness toward 2D and 3D
           subprojections compared to using other discrepancy measures.
         * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
           The process converges to equally spaced samples.
@@ -1294,13 +1294,13 @@ class Sobol(QMCEngine):
     optimization : {None, "random-cd", "lloyd"}, optional
         Whether to use an optimization scheme to improve the quality after
         sampling. Note that this is a post-processing step that does not
-        guarrantee that all properties of the sample would be conserved.
+        guarantee that all properties of the sample will be conserved.
         Default is None.
 
         * ``random-cd``: random permutations of coordinates to lower the
           centered discrepancy. The best sample based on the centered
           discrepancy is constantly updated. Centered discrepancy-based
-          sample shows better space filling robustness toward 2D and 3D
+          sampling shows better space-filling robustness toward 2D and 3D
           subprojections compared to using other discrepancy measures.
         * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
           The process converges to equally spaced samples.
@@ -1621,13 +1621,13 @@ class PoissonDisk(QMCEngine):
     optimization : {None, "random-cd", "lloyd"}, optional
         Whether to use an optimization scheme to improve the quality after
         sampling. Note that this is a post-processing step that does not
-        guarrantee that all properties of the sample would be conserved.
+        guarantee that all properties of the sample will be conserved.
         Default is None.
 
         * ``random-cd``: random permutations of coordinates to lower the
           centered discrepancy. The best sample based on the centered
           discrepancy is constantly updated. Centered discrepancy-based
-          sample shows better space filling robustness toward 2D and 3D
+          sampling shows better space-filling robustness toward 2D and 3D
           subprojections compared to using other discrepancy measures.
         * ``lloyd``: Perturb samples using a modified Lloyd-Max algorithm.
           The process converges to equally spaced samples.
