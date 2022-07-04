@@ -34,6 +34,7 @@ jobs:
       with:
         python-version: ${{ matrix.python-version }}
         cache: 'pip'
+        cache-dependency-path: 'environment.yml'
 
     - name: Setup gfortran
       run: |

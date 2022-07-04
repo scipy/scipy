@@ -28,6 +28,7 @@ jobs:
           python-version: '3.9'
           architecture: 'x64'
           cache: 'pip'
+          cache-dependency-path: 'environment.yml'
       - name: Checkout
         uses: actions/checkout@v3
       - name: show-python-version
