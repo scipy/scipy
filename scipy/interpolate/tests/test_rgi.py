@@ -14,7 +14,7 @@ from scipy.interpolate import (RegularGridInterpolator, interpn,
 
 from scipy.sparse._sputils import matrix
 
-paramatize_rgi_interp_methods = pytest.mark.parametrize(
+parametrize_rgi_interp_methods = pytest.mark.parametrize(
     "method", ['linear', 'nearest', 'slinear', 'cubic', 'quintic', 'pchip']
 )
 
@@ -63,7 +63,7 @@ class TestRegularGridInterpolator:
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
         return points, values
 
-    @paramatize_rgi_interp_methods
+    @parametrize_rgi_interp_methods
     def test_list_input(self, method):
         points, values = self._get_sample_4d_3()
 
@@ -115,7 +115,7 @@ class TestRegularGridInterpolator:
         v2 = interp(sample)
         assert_allclose(v1, v2)
 
-    @paramatize_rgi_interp_methods
+    @parametrize_rgi_interp_methods
     def test_complex(self, method):
         points, values = self._get_sample_4d_3()
         values = values - 2j*values
@@ -528,6 +528,12 @@ class TestRegularGridInterpolator:
         match = "must be strictly ascending or descending"
         with pytest.raises(ValueError, match=match):
             RegularGridInterpolator(points, values)
+    
+    @parametrize_rgi_interp_methods
+    def test_fill_value(self, method):
+        interp = RegularGridInterpolator([np.arange(6)], np.ones(6),
+                                         method=method, bounds_error=False)
+        assert np.isnan(interp([10]))
 
 
 class MyValue:
