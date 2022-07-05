@@ -17,7 +17,7 @@ run your code with ``python -Wd`` and check for ``DeprecationWarning`` s).
 Our development attention will now shift to bug-fix releases on the
 1.9.x branch, and on adding new features on the main branch.
 
-This release requires Python 3.8+ and NumPy 1.18.5 or greater.
+This release requires Python 3.8-3.11 and NumPy 1.18.5 or greater.
 
 For running on PyPy, PyPy3 6.0+ is required.
 
@@ -27,15 +27,16 @@ Highlights of this release
 **************************
 
 - We have modernized our build system to use ``meson``, substantially reducing
-  our source build times
+  our build performance, and providing better build-time configuration and
+  cross-compilation support,
 - Added `scipy.optimize.milp`, new function for mixed-integer linear
-  programming.
+  programming,
 - Added `scipy.stats.fit` for fitting discrete and continuous distributions
-  to data.
+  to data,
 - Tensor-product spline interpolation modes were added to
-  `scipy.interpolate.RegularGridInterpolator`.
+  `scipy.interpolate.RegularGridInterpolator`,
 - A new global optimizer (DIviding RECTangles algorithm)
-  `scipy.optimize.direct`
+  `scipy.optimize.direct`.
 
 
 ************
