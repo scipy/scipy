@@ -561,7 +561,8 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s does not use Hessian-vector product '
              'information (hessp).' % method, RuntimeWarning)
     # - constraints or bounds
-    if meth not in ('cobyla', 'slsqp', 'trust-constr', '_custom') and np.any(constraints):
+    if meth not in ('cobyla', 'slsqp', 'trust-constr', '_custom') and
+            np.any(constraints):
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
     if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc', 'slsqp',
