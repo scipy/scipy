@@ -57,6 +57,19 @@ Utility tools
 
 """
 
+# Note: this patch is specific to SciPy 1.9.0; other SciPy versions will
+#       have a correct upper bound in `python_requires` in pyproject.toml
+#       (or in setup.py for SciPy 1.7.x-1.8.x).
+import sys
+if sys.version_info >= (3, 12):
+    _msg = ("Your Python version is too new. SciPy 1.9 supports "
+            "Python 3.8-3.11; if you are trying to build from source for the "
+            "most recent SciPy version you may hit this error as well. Please "
+            "build from the `main` branch on GitHub instead.")
+    raise RuntimeError(_msg)
+del sys
+
+
 from numpy import show_config as show_numpy_config
 if show_numpy_config is None:
     raise ImportError(
