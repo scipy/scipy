@@ -102,17 +102,11 @@ jobs:
   test_venv_install:
     name: Pip install into venv
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
-
-    - name: Setup Python
-      uses: actions/setup-python@v4
-      with:
-        python-version: "3.10"
-        cache-dependency-path: 'environment.yml'
 
     - name: Install Ubuntu dependencies
       run: |
@@ -120,7 +114,7 @@ jobs:
         # into a venv is working, so leave out optional dependencies. That's
         # also why we can get away with an old version of OpenBLAS from Ubuntu
         sudo apt-get update
-        sudo apt-get install -y libopenblas-dev pkg-config gfortran
+        sudo apt-get install -y python3-dev libopenblas-dev pkg-config gfortran
 
     - name: Create venv, install SciPy
       run: |
