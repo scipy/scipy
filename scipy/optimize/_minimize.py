@@ -569,7 +569,7 @@ def minimize(fun, x0, args=(), method=None, jac=None, hess=None,
         warn('Method %s cannot handle constraints.' % method,
              RuntimeWarning)
     if meth not in ('nelder-mead', 'powell', 'l-bfgs-b', 'tnc', 'slsqp',
-                    'trust-constr') and bounds is not None:
+                    'trust-constr', '_custom') and bounds is not None:
         warn('Method %s cannot handle bounds.' % method,
              RuntimeWarning)
     # - return_all
