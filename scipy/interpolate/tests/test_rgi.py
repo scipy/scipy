@@ -528,7 +528,7 @@ class TestRegularGridInterpolator:
         match = "must be strictly ascending or descending"
         with pytest.raises(ValueError, match=match):
             RegularGridInterpolator(points, values)
-    
+
     @parametrize_rgi_interp_methods
     def test_fill_value(self, method):
         interp = RegularGridInterpolator([np.arange(6)], np.ones(6),

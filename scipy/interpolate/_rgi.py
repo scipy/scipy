@@ -464,7 +464,7 @@ class RegularGridInterpolator:
             norm_distances.append(norm_dist)
 
         return indices, norm_distances
-    
+
     def _find_out_of_bounds(self, xi):
         # check for out of bounds xi
         out_of_bounds = np.zeros((xi.shape[1]), dtype=bool)
