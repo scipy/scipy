@@ -26,7 +26,7 @@ For running on PyPy, PyPy3 6.0+ is required.
 Highlights of this release
 **************************
 
-- We have modernized our build system to use ``meson``, substantially reducing
+- We have modernized our build system to use ``meson``, substantially improving
   our build performance, and providing better build-time configuration and
   cross-compilation support,
 - Added `scipy.optimize.milp`, new function for mixed-integer linear
