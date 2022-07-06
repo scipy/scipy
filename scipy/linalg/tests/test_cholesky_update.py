@@ -106,8 +106,8 @@ def make_nonnative(arrs):
 
 class BaseCholdeltas:
     def setup_method(self):
-        self.rtol = 10.0 ** -(np.finfo(self.dtype).precision)
-        self.atol = 1 * np.finfo(self.dtype).eps
+        self.rtol = 10.0 ** -(np.finfo(self.dtype).precision - 2)
+        self.atol = 5 * np.finfo(self.dtype).eps
 
     def generate(self, type, which='1d'):
         np.random.seed(12)
