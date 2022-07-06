@@ -456,10 +456,10 @@ cdef void* extract(cnp.ndarray arr, int* arrs):
 def cholesky_update(R, z, downdate=False, lower=False, overwrite_rz=False,
                     check_finite=True):
     """
-    Rank-P Cholesky decomposition update
+    Rank-P Cholesky decomposition update.
 
-    Given the Cholesky factorization of ``A`` as ``A = LL^*`` or ``A = U^* U``,
-    returns the updated factorization of ``A + zz^*`` or ``A - zz^*``.
+    Given the Cholesky factorization :math:`A=LL^*` or :math:`A=U^*U`,
+    returns the updated factorization of :math:`A + zz^*` or :math:`A - zz^*`.
 
     Parameters
     ----------
@@ -481,7 +481,7 @@ def cholesky_update(R, z, downdate=False, lower=False, overwrite_rz=False,
 
     Returns
     -------
-    R1 : ndarray
+    R1 : (N, N) ndarray
         Updated Cholesky decomposition. Will have the same triangular pattern
         as `R`.
 
