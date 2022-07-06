@@ -3591,15 +3591,16 @@ class ortho_group_gen(multi_rv_generic):
         dim = self._process_parameters(dim)
 
         if not hasattr(size, '__len__'):
-           size = (size,)
+            size = (size,)
         a = random_state.normal(size=size + (dim, dim))
-        q, r = np.linalg.qr(a) # use numpy's qr because it's vectorized
+        q, r = np.linalg.qr(a)  # use numpy's qr because it's vectorized
         return q * np.sign(np.diagonal(r, 0, -2, -1))[..., None, :]
         # Any convention that fixes the signs of the diagonal of r would
         # work, here we take them positive. Alternatively, the signs can
         # be independently flipped at random with probability 1/2, since
         # this makes the sign distribution a Bernoulli with P=0.5
         # irrespective of the initial distribution.
+
 
 ortho_group = ortho_group_gen()
 
