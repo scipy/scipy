@@ -34,9 +34,3 @@ class CholUpdate(Benchmark):
     def time_update20(self, *args):
         cholesky_update(self.r, self.u2, downdate=False, lower=False,
                         overwrite_rz=False, check_finite=False)
-
-    def time_cholesky(self, *args):
-        # overwrite = True will fail with LinAlgErrors
-        # unclear why since setup should always be called.
-        scipy.linalg.cholesky(self.a, lower=False, check_finite=False,
-                              overwrite_a=False)
