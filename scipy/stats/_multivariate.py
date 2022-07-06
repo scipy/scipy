@@ -3582,26 +3582,24 @@ class ortho_group_gen(multi_rv_generic):
         """
         random_state = self._get_random_state(random_state)
 
+        # the code below supports tuple/integer size, this preprocessing
+        # is for backward compatibility, to be removed in the future
         size = int(size)
-        if size > 1:
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
+        if size == 1:
+            size = ()
 
         dim = self._process_parameters(dim)
 
-        H = np.eye(dim)
-        for n in range(dim):
-            x = random_state.normal(size=(dim-n,))
-            norm2 = np.dot(x, x)
-            x0 = x[0].item()
-            # random sign, 50/50, but chosen carefully to avoid roundoff error
-            D = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D * np.sqrt(norm2)
-            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
-            # Householder transformation
-            H[:, n:] = -D * (H[:, n:] - np.outer(np.dot(H[:, n:], x), x))
-        return H
-
+        if not hasattr(size, '__len__'):
+           size = (size,)
+        a = random_state.normal(size=size + (dim, dim))
+        q, r = np.linalg.qr(a) # use numpy's qr because it's vectorized
+        return q * np.sign(np.diagonal(r, 0, -2, -1))[..., None, :]
+        # Any convention that fixes the signs of the diagonal of r would
+        # work, here we take them positive. Alternatively, the signs can
+        # be independently flipped at random with probability 1/2, since
+        # this makes the sign distribution a Bernoulli with P=0.5
+        # irrespective of the initial distribution.
 
 ortho_group = ortho_group_gen()
 
