@@ -197,13 +197,16 @@ def doctest_tutorial(verbose, fail_fast):
     sys.stderr.write('\nChecking tutorial files at %s:\n'
                      % os.path.relpath(tut_path, os.getcwd()))
 
-    tutorials = [f for f in sorted(glob.glob(tut_path)) + sorted(glob.glob(tut_path2))]
-
-    # XXX: cf https://github.com/ev-br/scpdt/issues/43
-   # tutorials = [f for f in tutorials if 'io.rst' not in f]
+    tutorials = [
+        f for f in sorted(glob.glob(tut_path)) + sorted(glob.glob(tut_path2))
+    ]
 
     # set up scipy-specific config
     config.pseudocode = set(['integrate.nquad(func,'])
+
+    io_matfiles = glob.glob(os.path.join(tut_path.replace('.rst', '.mat')))
+    config.local_resources = {'io.rst': io_matfiles}
+
 
     all_success = True
     for filename in tutorials:
