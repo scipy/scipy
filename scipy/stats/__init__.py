@@ -142,6 +142,7 @@ Continuous distributions
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
+   truncpareto       -- Truncated Pareto
    truncweibull_min  -- Truncated minimum Weibull distribution
    tukeylambda       -- Tukey-Lambda
    uniform           -- Uniform

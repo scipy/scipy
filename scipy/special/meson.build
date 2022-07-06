@@ -318,10 +318,10 @@ specfun_module = custom_target('specfun_module',
 )
 
 py3.extension_module('_specfun',
-  [specfun_module, fortranobject_c],
+  specfun_module,
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
-  dependencies: py3_dep,
+  dependencies: [py3_dep, fortranobject_dep],
   link_with: specfun_lib,
   link_language: 'fortran',
   install: true,

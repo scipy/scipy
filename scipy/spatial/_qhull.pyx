@@ -1802,7 +1802,7 @@ class Delaunay(_QhullUser):
 
     The returned integers in the array are the indices of the simplex the
     corresponding point is in. If -1 is returned, the point is in no simplex.
-    Be aware that the shortcut in the following example only works corretcly
+    Be aware that the shortcut in the following example only works correctly
     for valid points as invalid points result in -1 which is itself a valid
     index for the last simplex in the list.
 
