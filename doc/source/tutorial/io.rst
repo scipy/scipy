@@ -85,13 +85,13 @@ Now, to Python:
 
   >>> mat_contents = sio.loadmat('octave_a.mat')
   >>> mat_contents
-  {'a': array([[[  1.,   4.,   7.,  10.],
-          [  2.,   5.,   8.,  11.],
-          [  3.,   6.,   9.,  12.]]]),
+  {'__header__': b'MATLAB 5.0 MAT-file, written
+   by Octave 3.2.3, 2010-05-30 02:13:40 UTC',
    '__version__': '1.0',
-   '__header__': 'MATLAB 5.0 MAT-file, written by
-   Octave 3.6.3, 2013-02-17 21:02:11 UTC',
-   '__globals__': []}
+   '__globals__': [],
+   'a': array([[[ 1.,  4.,  7., 10.],
+                [ 2.,  5.,  8., 11.],
+                [ 3.,  6.,  9., 12.]]])}
   >>> oct_a = mat_contents['a']
   >>> oct_a
   array([[[  1.,   4.,   7.,  10.],
@@ -156,8 +156,12 @@ We can load this in Python:
 
    >>> mat_contents = sio.loadmat('octave_struct.mat')
    >>> mat_contents
-   {'my_struct': array([[([[1.0]], [[2.0]])]],
-         dtype=[('field1', 'O'), ('field2', 'O')]), '__version__': '1.0', '__header__': 'MATLAB 5.0 MAT-file, written by Octave 3.6.3, 2013-02-17 21:23:14 UTC', '__globals__': []}
+    {'__header__': b'MATLAB 5.0 MAT-file, written by Octave 3.2.3, 2010-05-30 02:00:26 UTC',
+     '__version__': '1.0',
+     '__globals__': [],
+     'my_struct': array([[(array([[1.]]), array([[2.]]))]], dtype=[('field1', 'O'), ('field2', 'O')])
+    }
+
    >>> oct_struct = mat_contents['my_struct']
    >>> oct_struct.shape
    (1, 1)
@@ -214,7 +218,7 @@ this, use the ``struct_as_record=False`` parameter setting to ``loadmat``.
      File "<stdin>", line 1, in <module>
    AttributeError: 'mat_struct' object has no attribute 'shape'
    >>> type(oct_struct)
-   <class 'scipy.io.matlab.mio5_params.mat_struct'>
+   <class 'scipy.io.matlab._mio5_params.mat_struct'>
    >>> oct_struct.field1
    1.0
 
@@ -287,12 +291,12 @@ Back to Python:
 
 Saving to a MATLAB cell array just involves making a NumPy object array:
 
-   >>> obj_arr = np.zeros((2,), dtype=np.object)
+   >>> obj_arr = np.zeros((2,), dtype=object)
    >>> obj_arr[0] = 1
    >>> obj_arr[1] = 'a string'
    >>> obj_arr
    array([1, 'a string'], dtype=object)
-   >>> sio.savemat('np_cells.mat', {'obj_arr':obj_arr})
+   >>> sio.savemat('np_cells.mat', {'obj_arr': obj_arr})
 
 .. sourcecode:: octave
 
