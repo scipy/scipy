@@ -2155,7 +2155,18 @@ def lanczos(M, *, sym=True):
         return np.ones(M)
     M, needs_trunc = _extend(M, sym)
 
-    w = np.sinc(2. * np.arange(0, M) / (M - 1) - 1.)
+    # To make sure that the window is symmetric, we concatenate the right hand
+    # half of the window and the flipped one which is the left hand half of
+    # the window.
+    def _calc_right_side_lanczos(n, m):
+        return np.sinc(2. * np.arange(n, m) / (m - 1) - 1.0)
+
+    if M % 2 == 0:
+        wh = _calc_right_side_lanczos(M/2, M)
+        w = np.r_[np.flip(wh), wh]
+    else:
+        wh = _calc_right_side_lanczos((M+1)/2, M)
+        w = np.r_[np.flip(wh), 1.0, wh]
 
     return _truncate(w, needs_trunc)
 

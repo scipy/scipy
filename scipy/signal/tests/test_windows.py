@@ -831,3 +831,10 @@ def test_deprecation():
 def test_deprecated_pickleable():
     dep_hann2 = pickle.loads(pickle.dumps(dep_hann))
     assert_(dep_hann2 is dep_hann)
+
+
+def test_symmetric():
+    for win in [windows.lanczos]:
+        w = win(4096)
+        error = np.max(np.abs(w-np.flip(w)))
+        assert_equal(error, 0.0)
