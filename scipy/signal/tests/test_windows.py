@@ -834,7 +834,14 @@ def test_deprecated_pickleable():
 
 
 def test_symmetric():
+
     for win in [windows.lanczos]:
+        # Even sampling points
         w = win(4096)
+        error = np.max(np.abs(w-np.flip(w)))
+        assert_equal(error, 0.0)
+
+        # Odd sampling points
+        w = win(4097)
         error = np.max(np.abs(w-np.flip(w)))
         assert_equal(error, 0.0)
