@@ -8993,6 +8993,10 @@ class vonmises_gen(rv_continuous):
         #                        = exp(kappa * cosm1(x)) / (2*pi*i0e(kappa))
         return np.exp(kappa*sc.cosm1(x)) / (2*np.pi*sc.i0e(kappa))
 
+    def _logpdf(self, x, kappa):
+        # vonmises.pdf(x, kappa) = exp(kappa * cos(x)) / (2*pi*I[0](kappa))
+        return kappa * np.cos(x) - np.log(2*np.pi) - np.log(sc.i0(kappa))
+
     def _cdf(self, x, kappa):
         return _stats.von_mises_cdf(kappa, x)
 
