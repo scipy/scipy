@@ -143,11 +143,11 @@ class BaseCholdeltas:
 def get_updated(a, u, downdate):
     if downdate:
         if u.ndim > 1:
-            return a - u @ u.T.conjugate()
+            return a - np.dot(u, u.T.conjugate())
         return a - np.outer(u, u.conj())
     else:
         if u.ndim > 1:
-            return a + u @ u.T.conjugate()
+            return a + np.dot(u, u.T.conjugate())
         return a + np.outer(u, u.conj())
 
 
