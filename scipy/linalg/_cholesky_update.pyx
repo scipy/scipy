@@ -506,6 +506,34 @@ def cholesky_update(R, z, downdate=False, lower=False, overwrite_rz=False,
     ------
     LinAlgError : 
         If a downdate results in a non-positive definite matrix.
+
+    Examples
+    --------
+    >>> from scipy import linalg
+    >>> a = np.array([[  3., -1.,  0.],
+    ...               [ -2.,  4.,  1.],
+    ...               [ -3., -8.,  7.]])
+    >>> r = linalg.cholesky(a, lower=False)
+
+    Given this Cholesky decomposition, perform a rank-1 update
+
+    >>> u = np.array([  1.,  4., -2.])
+    >>> r_upd = linalg.cholesky_update(r, u, downdate=False)
+    >>> r_upd
+    array([[ 2.        ,  1.5       , -1.        ],
+           [ 0.        ,  4.21307489, -1.30545982],
+           [ 0.        ,  0.        ,  2.88023864]])
+
+    The equivalent update can be obtained more slowly with the following.
+
+    >>> a1 = a + np.outer(u, u)
+    >>> r_upd_direct = linalg.cholesky(a1, lower=False)
+
+    Check that the results are equivalent:
+
+    >>> np.allclose(r_upd_direct, r_upd)
+    True
+
     """
     cdef cnp.ndarray r1, z1
     cdef int typecode, n, p
