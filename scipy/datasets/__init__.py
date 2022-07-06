@@ -13,8 +13,14 @@ Datasets (:mod:`scipy.datasets`)
    electrocardiogram - Load an example of a one-dimensional signal.
 
 """
+import warnings
+
 try:
-    import pooch
+    # https://github.com/scipy/scipy/pull/15607#issuecomment-1176457275
+    # TODO: Remove warning filter after next certifi release
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', category=DeprecationWarning)
+        import pooch
 except ImportError:
     pooch = None
 

@@ -1,9 +1,15 @@
-import pooch
 from scipy.datasets._registry import registry
 from scipy.datasets._fetchers import data
 from scipy.datasets import ascent, face, electrocardiogram
-from numpy.testing import assert_equal, assert_almost_equal
+from numpy.testing import assert_equal, assert_almost_equal, suppress_warnings
 import os
+
+
+# https://github.com/scipy/scipy/pull/15607#issuecomment-1176457275
+# TODO: Remove warning filter after next certifi release
+with suppress_warnings() as sup:
+    sup.filter(category=DeprecationWarning)
+    import pooch
 
 
 def _has_hash(path, expected_hash):
