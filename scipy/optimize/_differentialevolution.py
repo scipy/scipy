@@ -1086,8 +1086,8 @@ class DifferentialEvolutionSolver:
             if DE_result.maxcv > 0:
                 # if the result is infeasible then success must be False
                 DE_result.success = False
-                DE_result.message = ("The solution does not satisfy the"
-                                    " constraints, MAXCV = " % DE_result.maxcv)
+                DE_result.message = ("The solution does not satisfy the "
+                                     f"constraints, MAXCV = {DE_result.maxcv}")
 
         return DE_result
 
