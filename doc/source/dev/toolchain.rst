@@ -109,7 +109,7 @@ Currently, SciPy wheels are being built as follows:
 Linux (nightly)    ``ubuntu-18.04``          GCC 6.5                      See ``azure-pipelines.yml``
 Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [6]_
 OSX                ``macOS-10.15``           LLVM 12.0.0                  Built in separate repo [6]_
-Windows            ``windows-2019``          Visual Studio 2019 (16.11)   Built in separate repo [6]_
+Windows            ``windows-2019``          Visual Studio 2019 (vc142)   Built in separate repo [6]_
 ================  ========================  ===========================  ==============================
 
 Note that the OSX wheels additionally vendor gfortran 4.9,
@@ -178,6 +178,25 @@ and is compiled against by far fewer projects than NumPy. Additionally, using
 a newer toolset means that users of libraries that compile C++ code (as SciPy
 does) might also need a newer Microsoft Visual C++ Redistributable, which
 might have to be distributed to them [12]_.
+
+Summing up, the minimal requirement for the MSVC compiler resp. toolset per
+SciPy version was determined predominantly by the oldest supported CPython
+version at the time. The first SciPy version to raise the minimal requirement
+beyond that was SciPy 1.9, due to the inclusion of the HiGHS submodule, which
+does not compile with vc141 (and the aggressive removal of VS2017 in public CI
+making it infeasible to keep ensuring that everything everywhere works with
+non-default toolset versions).
+
+==============  =================  =================  =================
+SciPy version    CPython support    MS Visual C++      Toolset version
+==============  =================  =================  =================
+ Until 1.2       2.7 & 3.4+         VS 2008 (9.0)      vc90
+ 1.3, 1.4        3.5+               VS 2010 (10.0)     vc100
+ 1.5             3.6+               VS 2015 (14.0)     vc140
+ 1.6, 1.7        3.7+               VS 2017 (14.1)     vc141
+ 1.8             3.8+               VS 2017 (14.1)     vc141
+ 1.9             3.8+               VS 2019 (14.20)    vc142
+==============  =================  =================  =================
 
 In terms of C language standards, it's relevant to note that C11 has optional
 features [13]_ (e.g. atomics, threading), some of which (VLAs & complex types)
