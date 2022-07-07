@@ -119,7 +119,7 @@ def test_vonmises_numerical():
 #     num = mpmath.exp(kappa*mpmath.cos(x))
 #     den = 2 * mpmath.pi * mpmath.besseli(0, kappa)
 #     return num/den
-#
+
 @pytest.mark.parametrize('x, kappa, expected_pdf',
                          [(0.1, 0.01, 0.16074242744907072),
                           (0.1, 25.0, 1.7515464099118245),
@@ -127,10 +127,25 @@ def test_vonmises_numerical():
                           (2.0, 0.01, 0.15849003875385817),
                           (2.0, 25.0, 8.356882934278192e-16),
                           (2.0, 800, 0.0)])
+
 def test_vonmises_pdf(x, kappa, expected_pdf):
     pdf = stats.vonmises.pdf(x, kappa)
     assert_allclose(pdf, expected_pdf, rtol=1e-15)
 
+# Expected values of the vonmises LOGPDF were computed
+# using wolfram alpha:
+# kappa * cos(x) - log(2*pi*I0(kappa))
+@pytest.mark.parametrize('x, kappa, expected_logpdf',
+                         [(0.1, 0.01, -1.82795),
+                          (0.1, 25.0, 0.560499),
+                          (0.1, 800, -1.57346),
+                          (2.0, 0.01, -1.84206),
+                          (2.0, 25.0, -34.718276),
+                          (2.0, 800, -1130.494258)])
+
+def test_vonmises_logpdf(x, kappa, expected_logpdf):
+    logpdf = stats.vonmises.logpdf(x, kappa)
+    assert_allclose(logpdf, expected_logpdf, rtol=1e-5)
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
     """
