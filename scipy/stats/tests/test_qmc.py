@@ -13,7 +13,7 @@ from scipy.stats import qmc
 from scipy.stats._qmc import (
     van_der_corput, n_primes, primes_from_2_to,
     update_discrepancy, QMCEngine, _l1_norm,
-    _perturb_discrepancy, lloyd_centroidal_voronoi_tessellation
+    _perturb_discrepancy, _lloyd_centroidal_voronoi_tessellation
 )  # noqa
 
 
@@ -366,11 +366,10 @@ class TestVDC:
 
 
 class RandomEngine(qmc.QMCEngine):
-    def __init__(self, d, seed=None):
-        super().__init__(d=d, seed=seed)
+    def __init__(self, d, optimization=None, seed=None):
+        super().__init__(d=d, optimization=optimization, seed=seed)
 
-    def random(self, n=1):
-        self.num_generated += n
+    def _random(self, n=1, *, workers=1):
         sample = self.rng.random((n, self.d))
         return sample
 
@@ -581,6 +580,28 @@ class QMCEngineTests:
             np.percentile(sample, 75, axis=0), np.repeat(0.75, d), atol=1e-2
         )
 
+    def test_raises_optimizer(self):
+        message = r"'toto' is not a valid optimization method"
+        with pytest.raises(ValueError, match=message):
+            self.engine(d=1, scramble=False, optimization="toto")
+
+    @pytest.mark.parametrize(
+        "optimization,metric",
+        [
+            ("random-CD", qmc.discrepancy),
+            ("lloyd", lambda sample: -_l1_norm(sample))]
+    )
+    def test_optimizers(self, optimization, metric):
+        engine = self.engine(d=2, scramble=False)
+        sample_ref = engine.random(n=64)
+        metric_ref = metric(sample_ref)
+
+        optimal_ = self.engine(d=2, scramble=False, optimization=optimization)
+        sample_ = optimal_.random(n=64)
+        metric_ = metric(sample_)
+
+        assert metric_ < metric_ref
+
 
 class TestHalton(QMCEngineTests):
     qmce = qmc.Halton
@@ -664,23 +685,7 @@ class TestLHS(QMCEngineTests):
                 res_set = set((tuple(row) for row in res))
                 assert_equal(res_set, desired)
 
-    def test_discrepancy_hierarchy(self):
-        seed = 68756348576543
-        lhs = qmc.LatinHypercube(d=2, seed=seed)
-        sample_ref = lhs.random(n=20)
-        disc_ref = qmc.discrepancy(sample_ref)
-
-        optimal_ = qmc.LatinHypercube(d=2, seed=seed, optimization="random-CD")
-        sample_ = optimal_.random(n=20)
-        disc_ = qmc.discrepancy(sample_)
-
-        assert disc_ < disc_ref
-
     def test_raises(self):
-        message = r"'toto' is not a valid optimization method"
-        with pytest.raises(ValueError, match=message):
-            qmc.LatinHypercube(1, optimization="toto")
-
         message = r"not a valid strength"
         with pytest.raises(ValueError, match=message):
             qmc.LatinHypercube(1, strength=3)
@@ -809,21 +814,23 @@ class TestPoisson(QMCEngineTests):
         assert len(sample) <= ns * 2
         assert l2_norm(sample) >= radius
 
+    @pytest.mark.slow
+    @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_mindist(self):
         rng = np.random.default_rng(132074951149370773672162394161442690287)
-        ns = 100
+        ns = 50
 
         low, high = 0.01, 0.1
-        radii = (high - low) * rng.random(10) + low
+        radii = (high - low) * rng.random(5) + low
 
-        dimensions = [1, 2, 3, 4]
+        dimensions = [1, 3, 4]
         hypersphere_methods = ["volume", "surface"]
 
         gen = product(dimensions, radii, hypersphere_methods)
 
         for d, radius, hypersphere in gen:
             engine = self.qmce(
-                d=2, radius=radius, hypersphere=hypersphere, seed=rng
+                d=d, radius=radius, hypersphere=hypersphere, seed=rng
             )
             sample = engine.random(ns)
 
@@ -1257,7 +1264,7 @@ class TestLloyd:
         base_l2 = l2_norm(sample)
 
         for _ in range(4):
-            sample_lloyd = lloyd_centroidal_voronoi_tessellation(
+            sample_lloyd = _lloyd_centroidal_voronoi_tessellation(
                     sample, maxiter=1,
             )
             curr_l1 = _l1_norm(sample_lloyd)
@@ -1282,7 +1289,7 @@ class TestLloyd:
                                 [0.2, 0.1],
                                 [0.2, 0.2]])
         sample_copy = sample_orig.copy()
-        new_sample = lloyd_centroidal_voronoi_tessellation(
+        new_sample = _lloyd_centroidal_voronoi_tessellation(
             sample=sample_orig
         )
         assert_allclose(sample_orig, sample_copy)
@@ -1291,17 +1298,17 @@ class TestLloyd:
     def test_lloyd_errors(self):
         with pytest.raises(ValueError, match=r"`sample` is not a 2D array"):
             sample = [0, 1, 0.5]
-            lloyd_centroidal_voronoi_tessellation(sample)
+            _lloyd_centroidal_voronoi_tessellation(sample)
 
         msg = r"`sample` dimension is not >= 2"
         with pytest.raises(ValueError, match=msg):
             sample = [[0], [0.4], [1]]
-            lloyd_centroidal_voronoi_tessellation(sample)
+            _lloyd_centroidal_voronoi_tessellation(sample)
 
         msg = r"`sample` is not in unit hypercube"
         with pytest.raises(ValueError, match=msg):
             sample = [[-1.1, 0], [0.1, 0.4], [1, 2]]
-            lloyd_centroidal_voronoi_tessellation(sample)
+            _lloyd_centroidal_voronoi_tessellation(sample)
 
 
 # mindist
