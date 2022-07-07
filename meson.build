@@ -49,6 +49,14 @@ copier = find_program(['cp', 'scipy/_build_utils/copyfiles.py'])
 # https://mesonbuild.com/Python-module.html
 py_mod = import('python')
 py3 = py_mod.find_installation()
+# SciPy 1.9.0-specific error message, see the same message in
+# `scipy/__init__.py` and gh-14986
+if py3.language_version().version_compare('>=3.12')
+  error('Your Python version is too new. SciPy 1.9 supports ' +
+        'Python 3.8-3.11; if you are trying to build from source for the ' +
+        'most recent SciPy version you may hit this error as well. Please ' +
+        'build from the `main` branch on GitHub instead.')
+endif
 py3_dep = py3.dependency()
 
 subdir('scipy')
