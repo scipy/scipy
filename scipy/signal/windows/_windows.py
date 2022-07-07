@@ -2082,8 +2082,8 @@ def lanczos(M, *, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If it is negative, ValueError
+        is thrown.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.

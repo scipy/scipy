@@ -663,6 +663,14 @@ class TestLanczos:
                          0.413496672, 0.],
                         atol=1e-9)
 
+    def test_array_size(self):
+        for n in [0, 10, 11]:
+            assert_equal(len(windows.lanczos(n, sym=False)), n)
+            assert_equal(len(windows.lanczos(n, sym=True)), n)
+
+        # If zero or less, an ValueError is thrown.
+        assert_raises(ValueError, windows.lanczos, -1)
+
 
 class TestGetWindow:
 
