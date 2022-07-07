@@ -7648,7 +7648,8 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
                 jrange = np.arange(h)
                 prob = np.prod((n1 - jrange) / (n1 + jrange + 1.0))
             else:
-                num_paths = _count_paths_outside_method(n1, n2, g, h)
+                with np.errstate(over='raise'):
+                    num_paths = _count_paths_outside_method(n1, n2, g, h)
                 bin = special.binom(n1 + n2, n1)
                 if not np.isfinite(bin) or not np.isfinite(num_paths)\
                         or num_paths > bin:
@@ -7843,14 +7844,16 @@ def ks_2samp(data1, data2, alternative='two-sided', method='auto'):
             mode = 'asymp'
             warnings.warn(
                 f"Exact ks_2samp calculation not possible with samples sizes "
-                f"{n1} and {n2}. Switching to 'asymp'.", RuntimeWarning)
+                f"{n1} and {n2}. Switching to 'asymp'.", RuntimeWarning,
+                stacklevel=3)
 
     if mode == 'exact':
         success, d, prob = _attempt_exact_2kssamp(n1, n2, g, d, alternative)
         if not success:
             mode = 'asymp'
             warnings.warn(f"ks_2samp: Exact calculation unsuccessful. "
-                          f"Switching to method={mode}.", RuntimeWarning)
+                          f"Switching to method={mode}.", RuntimeWarning,
+                          stacklevel=3)
 
     if mode == 'asymp':
         # The product n1*n2 is large.  Use Smirnov's asymptoptic formula.
