@@ -3593,8 +3593,18 @@ class ortho_group_gen(multi_rv_generic):
         if not hasattr(size, '__len__'):
             size = (size,)
         a = random_state.normal(size=size + (dim, dim))
-        q, r = np.linalg.qr(a)  # use numpy's qr because it's vectorized
-        return q * np.sign(np.diagonal(r, 0, -2, -1))[..., None, :]
+
+        try:
+            q, r = np.linalg.qr(a)  # use numpy's qr because it's vectorized
+        except np.linalg.LinAlgError:
+            # workaround for numpy<1.22
+            q = np.empty_like(a)
+            r = np.empty_like(a)
+            for idx in np.ndindex(*size):
+                q[idx], r[idx] = np.linalg.qr(a[idx])
+
+        q *= np.sign(np.diagonal(r, 0, -2, -1))[..., None, :]
+        return q
         # Any convention that fixes the signs of the diagonal of r would
         # work, here we take them positive. Alternatively, the signs can
         # be independently flipped at random with probability 1/2, since
