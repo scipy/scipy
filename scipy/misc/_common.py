@@ -156,8 +156,8 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     return val / prod((dx,)*n,axis=0)
 
 
-@np.deprecate(message="scipy.misc.ascent has been deprecated in SciPy v1.10.0; "
-                      "Dataset methods have moved into the scipy.datasets "
+@np.deprecate(message="scipy.misc.ascent has been deprecated in SciPy v1.10.0;"
+                      " Dataset methods have moved into the scipy.datasets "
                       "module. Use scipy.datasets.ascent instead.")
 def ascent():
     """
