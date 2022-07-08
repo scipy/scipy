@@ -3582,34 +3582,18 @@ class ortho_group_gen(multi_rv_generic):
         """
         random_state = self._get_random_state(random_state)
 
-        # the code below supports tuple/integer size, this preprocessing
-        # is for backward compatibility, to be removed in the future
         size = int(size)
-        if size == 1:
-            size = ()
+        if size > 1:
+            return np.array([self.rvs(dim, size=1, random_state=random_state)
+                             for i in range(size)])
 
         dim = self._process_parameters(dim)
 
-        if not hasattr(size, '__len__'):
-            size = (size,)
-        a = random_state.normal(size=size + (dim, dim))
-
-        try:
-            q, r = np.linalg.qr(a)  # use numpy's qr because it's vectorized
-        except np.linalg.LinAlgError:
-            # workaround for numpy<1.22
-            q = np.empty_like(a)
-            r = np.empty_like(a)
-            for idx in np.ndindex(*size):
-                q[idx], r[idx] = np.linalg.qr(a[idx])
-
-        q *= np.sign(np.diagonal(r, 0, -2, -1))[..., None, :]
+        z = random_state.normal(size=(dim, dim))
+        q, r = scipy.linalg.qr(z)
+        d = r.diagonal()
+        q *= d/abs(d)
         return q
-        # Any convention that fixes the signs of the diagonal of r would
-        # work, here we take them positive. Alternatively, the signs can
-        # be independently flipped at random with probability 1/2, since
-        # this makes the sign distribution a Bernoulli with P=0.5
-        # irrespective of the initial distribution.
 
 
 ortho_group = ortho_group_gen()
