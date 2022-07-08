@@ -142,7 +142,6 @@ def test_vonmises_pdf(x, kappa, expected_pdf):
                           (2.0, 0.01, -1.84206),
                           (2.0, 25.0, -34.718276),
                           (2.0, 800, -1130.494258)])
-
 def test_vonmises_logpdf(x, kappa, expected_logpdf):
     logpdf = stats.vonmises.logpdf(x, kappa)
     assert_allclose(logpdf, expected_logpdf, rtol=1e-5)
