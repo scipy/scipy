@@ -3589,18 +3589,11 @@ class ortho_group_gen(multi_rv_generic):
 
         dim = self._process_parameters(dim)
 
-        H = np.eye(dim)
-        for n in range(dim):
-            x = random_state.normal(size=(dim-n,))
-            norm2 = np.dot(x, x)
-            x0 = x[0].item()
-            # random sign, 50/50, but chosen carefully to avoid roundoff error
-            D = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D * np.sqrt(norm2)
-            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
-            # Householder transformation
-            H[:, n:] = -D * (H[:, n:] - np.outer(np.dot(H[:, n:], x), x))
-        return H
+        z = random_state.normal(size=(dim, dim))
+        q, r = scipy.linalg.qr(z)
+        d = r.diagonal()
+        q *= d/abs(d)
+        return q
 
 
 ortho_group = ortho_group_gen()
@@ -3704,10 +3697,10 @@ class random_correlation_gen(multi_rv_generic):
     >>> rng = np.random.default_rng()
     >>> x = random_correlation.rvs((.5, .8, 1.2, 1.5), random_state=rng)
     >>> x
-    array([[ 1.        , -0.07198934, -0.20411041, -0.24385796],
-           [-0.07198934,  1.        ,  0.12968613, -0.29471382],
-           [-0.20411041,  0.12968613,  1.        ,  0.2828693 ],
-           [-0.24385796, -0.29471382,  0.2828693 ,  1.        ]])
+    array([[ 1.        , -0.02423399,  0.03130519,  0.4946965 ],
+           [-0.02423399,  1.        ,  0.20334736,  0.04039817],
+           [ 0.03130519,  0.20334736,  1.        ,  0.02694275],
+           [ 0.4946965 ,  0.04039817,  0.02694275,  1.        ]])
     >>> import scipy.linalg
     >>> e, v = scipy.linalg.eigh(x)
     >>> e
