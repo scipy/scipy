@@ -109,7 +109,7 @@ Currently, SciPy wheels are being built as follows:
 Linux (nightly)    ``ubuntu-18.04``          GCC 6.5                      See ``azure-pipelines.yml``
 Linux (release)    ``ubuntu-18.04``          GCC 7.5                      Built in separate repo [6]_
 OSX                ``macOS-10.15``           LLVM 12.0.0                  Built in separate repo [6]_
-Windows            ``windows-2019``          Visual Studio 2019 (16.11)   Built in separate repo [6]_
+Windows            ``windows-2019``          Visual Studio 2019 (vc142)   Built in separate repo [6]_
 ================  ========================  ===========================  ==============================
 
 Note that the OSX wheels additionally vendor gfortran 4.9,
@@ -120,36 +120,98 @@ C Compilers
 ~~~~~~~~~~~
 
 SciPy is compatible with most modern C compilers (in particular ``clang``).
-In addition to concerns about compatibility with non-standard platforms,
-there was a long-standing restriction that Windows builds of SciPy had to use
-the same version of the Microsoft Visual C++ compiler as were used for CPython
-itself, for reasons of ABI-compatibility [7]_, [8]_.
+Nowadays, there is reasonable support for recent C language standards across
+all relevant compilers, though this is very different from how things used to
+be. The following paragraphs primarily discuss the evolution of these
+constraints; readers who do not care about historical context can skip ahead
+to the table at the end.
 
-With the introduction of the "Universal C Runtime" [9]_ since the release of
-Visual Studio 2015, this restriction has been lifted. For more context, see the
-explanations by Steve Dower (member of the CPython-on-Windows core developers)
-on this topic [10]_.
+In the past, the most restrictive compiler on relevant platform in terms
+of C support was the Microsoft Visual C++ compiler & toolset (together known
+as MSVC) [7]_ [8]_. Up until Visual Studio 2013, each MSVC version came with
+an updated C Runtime (CRT) library that was incompatible with the previous
+ones.
 
-The use of MS Visual Studio 9.0 (which doesn't have support for C99)
-to build Python 2.7 has meant that C code in SciPy has had to conform
-to the earlier C90 standard for the language and standard library.
-With the dropping of Python 2.7 for SciPy 1.3.x, the C90 restriction is no
-longer imposed by compilers.
+This lack of compatibility of the Application Binary Interface (ABI) meant
+that all projects wanting to communicate across this interface (e.g. calling a
+function from a shared library) needed to be (re)compiled with the same MSVC
+version. The long support of CPython 2.7 meant that python itself was stuck
+for a long time with VS 2008 (in order not to break the ABI in patch
+releases), and thus SciPy was stuck on that version as well.
+
+The use of VS 2008 (which doesn't have support for C99) to compile builds for
+CPython 2.7 meant for a long time that C code in SciPy has had to conform
+to the earlier C90 standard for the language and standard library. After
+dropping support for CPython 2.7 in SciPy 1.3.x, that restriction was finally
+lifted (though only gradually at first).
+
+With the introduction of the "Universal C Runtime" (UCRT) [9]_ since the
+release of Visual Studio 2015, the ABI of C Runtime has been stable, which
+means that the restriction of having to use the same compiler version for
+SciPy as for the underlying CPython version is no longer applicable. This
+stability is not indefinite though: Microsoft has been planning [10]_ an
+ABI-breaking release - across the compiler resp. C/C++ standard libraries -
+(tentatively called "vNext") for quite a while, but so far it is unclear
+when this will arrive. Once that happens, SciPy will again be restricted to
+at most the last ABI-compatible Visual Studio release (currently VS 2022)
+until all CPython versions supported according to NEP29 have been built
+upstream with vNext-compatible compilers.
+
+More specifically, there is a distinction between the Microsoft Visual
+Studio version and the version of the targeted "toolset", which is defined
+[11]_ as "The Microsoft C++ compiler, linker, standard libraries, and related
+utilities". Each version of Visual Studio comes with a default version of the
+MSVC toolset (for example VS2017 with vc141, VS2019 with vc142), but it is
+possible to target older toolsets even in newer versions of Visual Studio.
+Due to the nature of compilers (i.e. split into frontend and backend), it
+depends whether the limiting factor for supporting a given feature (e.g. in C)
+is due to the version of Visual Studio or the toolset, but in general the
+latter is a harder barrier and thus the effective lower bound.
+
+This is due to the fact that while the ABI stays compatible between toolset
+versions (until vNext), all linking operations must use a toolset at least
+as new as the one used to build any of the involved artefacts, meaning that
+toolset version bumps tend to be "infectious", as in: requiring all consuming
+libraries to also bump their toolset (and probably compiler) version. This is
+more of an issue for NumPy than SciPy, as the latter has only a small C API
+and is compiled against by far fewer projects than NumPy. Additionally, using
+a newer toolset means that users of libraries that compile C++ code (as SciPy
+does) might also need a newer Microsoft Visual C++ Redistributable, which
+might have to be distributed to them [12]_.
+
+Summing up, the minimal requirement for the MSVC compiler resp. toolset per
+SciPy version was determined predominantly by the oldest supported CPython
+version at the time. The first SciPy version to raise the minimal requirement
+beyond that was SciPy 1.9, due to the inclusion of the HiGHS submodule, which
+does not compile with vc141 (and the aggressive removal of VS2017 in public CI
+making it infeasible to keep ensuring that everything everywhere works with
+non-default toolset versions).
+
+==============  =================  =================  =================
+SciPy version    CPython support    MS Visual C++      Toolset version
+==============  =================  =================  =================
+ Until 1.2       2.7 & 3.4+         VS 2008 (9.0)      vc90
+ 1.3, 1.4        3.5+               VS 2010 (10.0)     vc100
+ 1.5             3.6+               VS 2015 (14.0)     vc140
+ 1.6, 1.7        3.7+               VS 2017 (14.1)     vc141
+ 1.8             3.8+               VS 2017 (14.1)     vc141
+ 1.9             3.8+               VS 2019 (14.20)    vc142
+==============  =================  =================  =================
 
 In terms of C language standards, it's relevant to note that C11 has optional
-features [11]_ (e.g. atomics, threading), some of which (VLAs & complex types)
+features [13]_ (e.g. atomics, threading), some of which (VLAs & complex types)
 were mandatory in the C99 standard. C17 (occasionally called C18) can be
 considered a bug fix for C11, so generally, C11 may be skipped entirely.
 
 SciPy has been restricted in the use of more advanced language features by the
 available compiler support, and Microsoft in particular has taken very long to
 achieve conformance to C99/C11/C17, however starting from MS Visual Studio 16.8,
-C11/C17 is supported [12]_ (though without the C11 optional features).
+C11/C17 is supported [14]_ (though without the C11 optional features).
 C99 ``<complex.h>`` would be particularly interesting for SciPy;
-MSVC conformance for this is being tracked here [13]_.
+MSVC conformance for this is being tracked here [15]_.
 
 Therefore, using C features beyond C90 was only possible insofar there was support on
-windows; however, as of as of the end of 2021, a sufficiently recent compiler is used.
+Windows; however, as of as of the end of 2021, a sufficiently recent compiler is used.
 This is because GCC & LLVM support all relevant C11 features with the oldest currently
 used versions, and C17 is just a bugfix for C11, as mentioned above. In short:
 
@@ -188,20 +250,20 @@ CPython) has been recent enough to support even C++17.
 Since the official builds (see above) use a pretty recent version of LLVM,
 the bottleneck for C++ support is therefore the oldest supported GCC version,
 where SciPy has been constrained mainly by the version in the oldest supported
-manylinux versions & images [14]_.
+manylinux versions & images [16]_.
 
 At the end of 2021 (with the final removal of ``manylinux1`` wheels), SciPy
 now has a minimum GCC requirement of GCC 6.3, which has full C++14 support
-[15]_. This corresponds to the lowest present GCC version in relevant manylinux
+[17]_. This corresponds to the lowest present GCC version in relevant manylinux
 versions - somewhat surprisingly, it is not the oldest remaining
 ``manylinux2010`` that is the most restrictive (due to the ABI-compatible
 "RHEL Dev Toolset" backports, it has GCC 8.3), but actually ``manylinux_2_24``
-that only comes with GCC 6.3 [16]_.
+that only comes with GCC 6.3 [18]_.
 
 C++17 _language_ support will require GCC >= 7 (released May 2017). As of the
 end of 2021, support for the entirety of the C++17 standard library has not yet
 been completed across all compilers; similarly, support for C++20 and C++23
-is still under heavy development. [15]_
+is still under heavy development. [17]_
 
 Fortran Compilers
 ~~~~~~~~~~~~~~~~~
@@ -228,7 +290,7 @@ is a build dependency (currently with the possibility to opt out).
 OpenMP support
 ^^^^^^^^^^^^^^
 
-For various reasons [17]_, SciPy cannot be distributed with built-in OpenMP support.
+For various reasons [19]_, SciPy cannot be distributed with built-in OpenMP support.
 When using the optional Pythran support, OpenMP-enabled parallel code can be
 generated when building from source.
 
@@ -257,7 +319,7 @@ scikit-umfpack  Recent    https://pypi.org/project/scikit-umfpack/
 =============== ======== ==========================================
 
 
-Moreover, Scipy supports interaction with other libraries. The test suite
+Moreover, SciPy supports interaction with other libraries. The test suite
 has additional compatibility tests that are run when these are installed:
 
 =========================  ========  ====================================
@@ -329,14 +391,16 @@ References
 .. [4] https://github.com/scipy/oldest-supported-numpy
 .. [5] https://docs.microsoft.com/en-us/azure/devops/pipelines/agents/hosted
 .. [6] https://github.com/MacPython/scipy-wheels
-.. [7] https://pythondev.readthedocs.io/windows.html#python-and-visual-studio-version-matrix
+.. [7] https://docs.microsoft.com/en-us/cpp/overview/visual-cpp-in-visual-studio
 .. [8] https://en.wikipedia.org/wiki/Microsoft_Visual_C%2B%2B#Internal_version_numbering
 .. [9] https://docs.microsoft.com/en-gb/cpp/windows/universal-crt-deployment
-.. [10] https://discuss.python.org/t/toolchain-upgrade-on-windows/6377/4
-.. [11] https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29#Optional_features
-.. [12] https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/
-.. [13] https://developercommunity.visualstudio.com/t/Support-for-C99-Complex-numbers/1409049?space=8&q=complex
-.. [14] https://github.com/mayeut/pep600_compliance
-.. [15] https://en.cppreference.com/w/cpp/compiler_support
-.. [16] https://github.com/pypa/manylinux/issues/1012
-.. [17] https://github.com/scipy/scipy/issues/10239
+.. [10] https://github.com/microsoft/STL/issues/169
+.. [11] https://docs.microsoft.com/en-us/cpp/build/projects-and-build-systems-cpp#the-msvc-toolset
+.. [12] https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
+.. [13] https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29#Optional_features
+.. [14] https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/
+.. [15] https://developercommunity.visualstudio.com/t/Support-for-C99-Complex-numbers/1409049?space=8&q=complex
+.. [16] https://github.com/mayeut/pep600_compliance
+.. [17] https://en.cppreference.com/w/cpp/compiler_support
+.. [18] https://github.com/pypa/manylinux/issues/1012
+.. [19] https://github.com/scipy/scipy/issues/10239
