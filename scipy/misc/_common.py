@@ -11,7 +11,7 @@ __all__ = ['central_diff_weights', 'derivative', 'ascent', 'face',
 
 
 @np.deprecate(message="scipy.misc.central_diff_weights is deprecated in "
-                      "SciPy v1.9.0; and will be completely removed in "
+                      "SciPy v1.10.0; and will be completely removed in "
                       "SciPy v2.0.0. You may consider using "
                       "findiff: https://github.com/maroba/findiff or "
                       "numdifftools: https://github.com/pbrod/numdifftools")
@@ -79,7 +79,7 @@ def central_diff_weights(Np, ndiv=1):
 
 
 @np.deprecate(message="scipy.misc.derivative is deprecated in "
-                      "SciPy v1.9.0; and will be completely removed in "
+                      "SciPy v1.10.0; and will be completely removed in "
                       "SciPy v2.0.0. You may consider using "
                       "findiff: https://github.com/maroba/findiff or "
                       "numdifftools: https://github.com/pbrod/numdifftools")
@@ -156,7 +156,7 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     return val / prod((dx,)*n,axis=0)
 
 
-@np.deprecate(message="scipy.misc.ascent has been deprecated in SciPy v1.9.0; "
+@np.deprecate(message="scipy.misc.ascent has been deprecated in SciPy v1.10.0; "
                       "Dataset methods have moved into the scipy.datasets "
                       "module. Use scipy.datasets.ascent instead.")
 def ascent():
@@ -198,7 +198,7 @@ def ascent():
     return ascent
 
 
-@np.deprecate(message="scipy.misc.face has been deprecated in SciPy v1.9.0; "
+@np.deprecate(message="scipy.misc.face has been deprecated in SciPy v1.10.0; "
                       "Dataset methods have moved into the scipy.datasets "
                       "module. Use scipy.datasets.face instead.")
 def face(gray=False):
@@ -247,7 +247,7 @@ def face(gray=False):
 
 
 @np.deprecate(message="scipy.misc.electrocardiogram has been "
-                      "deprecated in SciPy v1.9.0; "
+                      "deprecated in SciPy v1.10.0; "
                       "Dataset methods have moved into the scipy.datasets "
                       "module. Use scipy.datasets.electrocardiogram instead.")
 def electrocardiogram():
