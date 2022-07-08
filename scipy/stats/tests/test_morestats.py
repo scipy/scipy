@@ -2542,14 +2542,16 @@ class TestMedianTest:
         res = stats.median_test(x, y, correction=correction)
         assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
 
-class TestSpherfuncs:
+
+class TestDirectionalFuncs:
     # Reference implementations are not available
     def test_directionalmean_correctness(self):
         # Data from Fisher: Dispersion on a sphere, 1953 and
         # Mardia and Jupp, Directional Statistics.
         # For x coordinate, result for spherical mean does not agree with
-        # Mardia & Jupp, probably due to rounding errors in reference, that's why the
-        # first entry of the spherical mean reference is different than in the book.
+        # Mardia & Jupp, probably due to rounding errors in reference, that's
+        # why the first entry of the spherical mean reference is different
+        # than in the book.
 
         decl = -np.deg2rad(np.array([343.2, 62., 36.9, 27., 359.,
                                      5.7, 50.4, 357.6, 44.]))
@@ -2564,6 +2566,20 @@ class TestSpherfuncs:
 
         reference_mean = np.array([0.298, -0.135, -0.945])
         assert_allclose(mean_rounded, reference_mean)
+
+    def test_directionalmean_2d(self):
+        # Test that for circular data directionalmean yields
+        # same result as circmean
+        rng = np.random.default_rng(seed=42)
+        testdata = 2 * np.pi * rng.random((1000, ))
+        testdata_vector = np.array([np.cos(testdata), np.sin(testdata)]).T
+        directional_mean = stats.directionalmean(testdata_vector)
+        directional_mean_angle = np.arctan2(directional_mean[1],
+                                            directional_mean[0])
+        directional_mean_angle = directional_mean_angle % (2*np.pi)
+
+        circmean = stats.circmean(testdata)
+        assert_allclose(circmean, directional_mean_angle)
 
     def test_directionalmean_wrong_dimensions(self):
         # test that one-dimensional data raises ValueError

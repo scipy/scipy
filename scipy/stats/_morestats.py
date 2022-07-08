@@ -3905,6 +3905,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
         res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
     return res
 
+
 @_axis_nan_policy_factory(
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
@@ -3943,13 +3944,14 @@ def directionalmean(samples, *, axis=0):
 
     Examples
     --------
+    >>> from scipy.stats import directionalmean
     >>> data = np.array([[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0.]])
     >>> directionalmean(data)
     array([1., 0., 0.])
 
-    The `regular`sample mean in contrast does not lie on the unit sphere.
+    The `regular` sample mean in contrast does not lie on the unit sphere.
 
-    >>> data.mean(axis=0)
+    >>> data.mean()
     array([0.8660254, 0., 0.])
 
     """
@@ -3958,6 +3960,6 @@ def directionalmean(samples, *, axis=0):
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {samples.shape!r}")
 
-    mean = np.mean(samples, axis = axis)
+    mean = np.mean(samples, axis=axis)
     directional_mean = mean / np.linalg.norm(mean)
     return directional_mean
