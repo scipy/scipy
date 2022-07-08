@@ -157,7 +157,8 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
 
 
 @np.deprecate(message="scipy.misc.ascent has been deprecated in SciPy v1.10.0;"
-                      " Dataset methods have moved into the scipy.datasets "
+                      " and will be completely removed in SciPy v1.12.0. "
+                      "Dataset methods have moved into the scipy.datasets "
                       "module. Use scipy.datasets.ascent instead.")
 def ascent():
     """
@@ -199,6 +200,7 @@ def ascent():
 
 
 @np.deprecate(message="scipy.misc.face has been deprecated in SciPy v1.10.0; "
+                      "and will be completely removed in SciPy v1.12.0. "
                       "Dataset methods have moved into the scipy.datasets "
                       "module. Use scipy.datasets.face instead.")
 def face(gray=False):
@@ -247,7 +249,8 @@ def face(gray=False):
 
 
 @np.deprecate(message="scipy.misc.electrocardiogram has been "
-                      "deprecated in SciPy v1.10.0; "
+                      "deprecated in SciPy v1.10.0; and will "
+                      "be completely removed in SciPy v1.12.0. "
                       "Dataset methods have moved into the scipy.datasets "
                       "module. Use scipy.datasets.electrocardiogram instead.")
 def electrocardiogram():
