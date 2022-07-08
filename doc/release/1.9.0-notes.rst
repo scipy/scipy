@@ -454,10 +454,10 @@ Authors
 * Isuru Fernando (3)
 * Joseph Fox-Rabinovitz (1)
 * Ryan Gibson (4) +
-* Ralf Gommers (314)
+* Ralf Gommers (321)
 * Srinivas Gorur-Shandilya (1) +
 * Alex Griffing (2)
-* h-vetinari (3)
+* h-vetinari (5)
 * Matt Haberland (446)
 * Tristan Hearn (1) +
 * Jonathan Helgert (1) +
@@ -509,7 +509,7 @@ Authors
 * Amit Portnoy (1) +
 * Quentin Barthélemy (9)
 * Patrick N. Raanes (1) +
-* Tyler Reddy (144)
+* Tyler Reddy (156)
 * Pamphile Roy (197)
 * Vivek Roy (2) +
 * sabonerune (1) +
@@ -591,6 +591,7 @@ Issues closed for 1.9.0
 * `#7560 <https://github.com/scipy/scipy/issues/7560>`__: Should RegularGridInterpolator support length 1 dimensions?
 * `#8850 <https://github.com/scipy/scipy/issues/8850>`__: Scipy.interpolate.griddata Error : Exception ignored in: 'scipy.spatial.qhull._Qhull.__dealloc__'
 * `#8928 <https://github.com/scipy/scipy/issues/8928>`__: BUG: scipy.stats.norm wrong expected value of function when loc...
+* `#9213 <https://github.com/scipy/scipy/issues/9213>`__: __STDC_VERSION__ check in C++ code
 * `#9231 <https://github.com/scipy/scipy/issues/9231>`__: infinite loop in stats.fisher_exact
 * `#9313 <https://github.com/scipy/scipy/issues/9313>`__: geometric distribution stats.geom returns negative values if...
 * `#9524 <https://github.com/scipy/scipy/issues/9524>`__: interpn returns nan with perfectly valid data
@@ -660,6 +661,7 @@ Issues closed for 1.9.0
 * `#14889 <https://github.com/scipy/scipy/issues/14889>`__: BUG: NumPy's \`random\` module should not be in the \`scipy\`...
 * `#14914 <https://github.com/scipy/scipy/issues/14914>`__: CI job with code coverage is failing (yet again)
 * `#14926 <https://github.com/scipy/scipy/issues/14926>`__: RegularGridInterpolator should be called RectilinearGridInterpolator
+* `#14986 <https://github.com/scipy/scipy/issues/14986>`__: Prevent new Python versions from trying to install older releases...
 * `#14994 <https://github.com/scipy/scipy/issues/14994>`__: BUG: Levy stable
 * `#15009 <https://github.com/scipy/scipy/issues/15009>`__: BUG: scipy.stats.multiscale_graphcorr p-values are computed differently...
 * `#15059 <https://github.com/scipy/scipy/issues/15059>`__: BUG: documentation inconsistent with code for find_peaks_cwt
@@ -758,6 +760,7 @@ Issues closed for 1.9.0
 * `#16233 <https://github.com/scipy/scipy/issues/16233>`__: BUG: Memory leak in function \`sf_error\` due to new reference...
 * `#16254 <https://github.com/scipy/scipy/issues/16254>`__: DEP: add deprecation warning to \`maxiter\` kwarg in \`_minimize_tnc\`
 * `#16292 <https://github.com/scipy/scipy/issues/16292>`__: BUG: compilation error: no matching constructor for initialization...
+* `#16300 <https://github.com/scipy/scipy/issues/16300>`__: BLD: pip install build issue with meson in Ubuntu virtualenv
 * `#16337 <https://github.com/scipy/scipy/issues/16337>`__: TST: stats/tests/test_axis_nan_policy.py::test_axis_nan_policy_full...
 * `#16347 <https://github.com/scipy/scipy/issues/16347>`__: TST, MAINT: 32-bit Linux test failures in wheels repo
 * `#16358 <https://github.com/scipy/scipy/issues/16358>`__: TST, MAINT: test_theilslopes_warnings fails on 32-bit Windows
@@ -768,8 +771,10 @@ Issues closed for 1.9.0
 * `#16409 <https://github.com/scipy/scipy/issues/16409>`__: BUG: SIGSEGV in qhull when array type is wrong
 * `#16419 <https://github.com/scipy/scipy/issues/16419>`__: BUG: scipy.stats.nbinom.logcdf returns wrong results when some...
 * `#16426 <https://github.com/scipy/scipy/issues/16426>`__: BUG: stats.shapiro inplace modification of user array
+* `#16446 <https://github.com/scipy/scipy/issues/16446>`__: BUG: Issue with stripping on macOS Monterey + xcode 13.2
 * `#16465 <https://github.com/scipy/scipy/issues/16465>`__: BLD: new sdist has some metadata issues
 * `#16466 <https://github.com/scipy/scipy/issues/16466>`__: BUG: linprog failure - OptimizeResult.x returns NoneType
+* `#16495 <https://github.com/scipy/scipy/issues/16495>`__: HiGHS does not compile on windows (on conda-forge infra)
 * `#16523 <https://github.com/scipy/scipy/issues/16523>`__: BUG: test failure in pre-release job: \`TestFactorized.test_singular_with_umfpack\`
 * `#16540 <https://github.com/scipy/scipy/issues/16540>`__: BLD: meson 0.63.0 and new CI testing failures on Linux
 
@@ -1198,6 +1203,13 @@ Pull requests for 1.9.0
 * `#16493 <https://github.com/scipy/scipy/pull/16493>`__: BLD: clean up unwanted files in sdist, via \`.gitattributes\`
 * `#16507 <https://github.com/scipy/scipy/pull/16507>`__: REL: more tweaks to sdist contents
 * `#16512 <https://github.com/scipy/scipy/pull/16512>`__: [1.9] MAINT: skip complex128 propack tests on windows
+* `#16514 <https://github.com/scipy/scipy/pull/16514>`__: DOC: reflect correctly where windows wheels are built
 * `#16526 <https://github.com/scipy/scipy/pull/16526>`__: MAINT: 1.9.0rc2 backports
 * `#16530 <https://github.com/scipy/scipy/pull/16530>`__: MAINT: fix umfpack test failure with numpy 1.23
+* `#16539 <https://github.com/scipy/scipy/pull/16539>`__: MAINT: more 1.9.0rc2 backports
 * `#16541 <https://github.com/scipy/scipy/pull/16541>`__: BLD: fix regression in building _lsap with symbol visibility
+* `#16549 <https://github.com/scipy/scipy/pull/16549>`__: BLD: fix an outdated requirement for macOS arm64 in pyproject.toml
+* `#16551 <https://github.com/scipy/scipy/pull/16551>`__: BLD: fix \`__STDC_VERSION__\` check in \`special/_round.h\`
+* `#16553 <https://github.com/scipy/scipy/pull/16553>`__: BLD: raise an error with clear message for too-new Python version
+* `#16556 <https://github.com/scipy/scipy/pull/16556>`__: DOC: small tweaks to 1.9.0 release notes
+* `#16563 <https://github.com/scipy/scipy/pull/16563>`__: DOC: Reflect MSVC minimum toolchain requirement
