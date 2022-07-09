@@ -271,7 +271,9 @@ class _minmax_mixin:
 
             if self.nnz == 0:
                 if explicit:
-                        raise ValueError("Can't apply the operation to zero matrix when explicit is True.")
+                    raise ValueError(
+                        "Can't apply the operation "
+                        "to zero matrix when explicit is True.")
                 return 0
             else:
                 zero = self.dtype.type(0)

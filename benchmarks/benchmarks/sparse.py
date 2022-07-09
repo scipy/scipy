@@ -482,6 +482,7 @@ class Random(Benchmark):
         sparse.rand(self.nrows, self.ncols,
                     format=self.format, density=density)
 
+
 class Argmax(Benchmark):
     params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo']]
     param_names = ['density', 'format']
