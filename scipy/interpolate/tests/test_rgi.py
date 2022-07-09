@@ -17,6 +17,10 @@ from scipy.sparse._sputils import matrix
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
     "method", ['linear', 'nearest', 'slinear', 'cubic', 'quintic', 'pchip']
 )
+parametrize_interpolators = pytest.mark.parametrize(
+    "interpolator", [NearestNDInterpolator, LinearNDInterpolator,
+                     CloughTocher2DInterpolator]
+)
 
 class TestRegularGridInterpolator:
     def _get_sample_4d(self):
@@ -271,21 +275,19 @@ class TestRegularGridInterpolator:
                              [0.5, 0.5, .5, .5]])
         assert_array_almost_equal(interp(sample), interp_qhull(sample))
 
-    def test_duck_typed_values(self):
+    @pytest.mark.parametrize("method", ["nearest", "linear"])
+    def test_duck_typed_values(self, method):
         x = np.linspace(0, 2, 5)
         y = np.linspace(0, 1, 7)
 
         values = MyValue((5, 7))
 
-        for method in ('nearest', 'linear'):
-            interp = RegularGridInterpolator((x, y), values,
-                                             method=method)
-            v1 = interp([0.4, 0.7])
+        interp = RegularGridInterpolator((x, y), values, method=method)
+        v1 = interp([0.4, 0.7])
 
-            interp = RegularGridInterpolator((x, y), values._v,
-                                             method=method)
-            v2 = interp([0.4, 0.7])
-            assert_allclose(v1, v2)
+        interp = RegularGridInterpolator((x, y), values._v, method=method)
+        v2 = interp([0.4, 0.7])
+        assert_allclose(v1, v2)
 
     def test_invalid_fill_value(self):
         np.random.seed(1234)
@@ -438,7 +440,8 @@ class TestRegularGridInterpolator:
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], interp(z[~i]))
 
-    def test_broadcastable_input(self):
+    @parametrize_interpolators
+    def test_broadcastable_input(self, interpolator):
         # input data
         np.random.seed(0)
         x = np.random.random(10)
@@ -451,25 +454,24 @@ class TestRegularGridInterpolator:
         X, Y = np.meshgrid(X, Y)
         XY = np.vstack((X.ravel(), Y.ravel())).T
 
-        for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
-                             CloughTocher2DInterpolator):
-            interp = interpolator(list(zip(x, y)), z)
-            # single array input
-            interp_points0 = interp(XY)
-            # tuple input
-            interp_points1 = interp((X, Y))
-            interp_points2 = interp((X, 0.0))
-            # broadcastable input
-            interp_points3 = interp(X, Y)
-            interp_points4 = interp(X, 0.0)
+        interp = interpolator(list(zip(x, y)), z)
+        # single array input
+        interp_points0 = interp(XY)
+        # tuple input
+        interp_points1 = interp((X, Y))
+        interp_points2 = interp((X, 0.0))
+        # broadcastable input
+        interp_points3 = interp(X, Y)
+        interp_points4 = interp(X, 0.0)
 
-            assert_equal(interp_points0.size ==
-                         interp_points1.size ==
-                         interp_points2.size ==
-                         interp_points3.size ==
-                         interp_points4.size, True)
+        assert_equal(interp_points0.size ==
+                        interp_points1.size ==
+                        interp_points2.size ==
+                        interp_points3.size ==
+                        interp_points4.size, True)
 
-    def test_read_only(self):
+    @parametrize_interpolators
+    def test_read_only(self, interpolator):
         # input data
         np.random.seed(0)
         xy = np.random.random((10, 2))
@@ -483,10 +485,8 @@ class TestRegularGridInterpolator:
         z.setflags(write=False)
         XY.setflags(write=False)
 
-        for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
-                             CloughTocher2DInterpolator):
-            interp = interpolator(xy, z)
-            interp(XY)
+        interp = interpolator(xy, z)
+        interp(XY)
 
     def test_descending_points(self):
         def val_func_3d(x, y, z):
