@@ -581,10 +581,7 @@ class TestInterpN:
         assert_array_almost_equal(interpn((x, y), z, xi, method="splinef2d"),
                                   lut.ev(xi[:, 0], xi[:, 1]))
 
-    @pytest.mark.parametrize(
-        "method",
-        ["linear", "nearest", "cubic", "quintic", "pchip", "splinef2d"]
-    )
+    @parametrize_rgi_interp_methods
     def test_list_input(self, method):
         x, y, z = self._sample_2d_data()
         xi = np.array([[1, 2.3, 5.3, 0.5, 3.3, 1.2, 3],
@@ -682,10 +679,7 @@ class TestInterpN:
                      method='nearest', bounds_error=False)
         assert_allclose(v1, v2.reshape(v1.shape))
 
-    @pytest.mark.parametrize(
-        "method",
-        ["linear", "nearest", "cubic", "quintic", "pchip", "splinef2d"]
-    )
+    @parametrize_rgi_interp_methods
     def test_xi_broadcast(self, method):
         # verify that the interpolators broadcast xi
         x, y, values = self._sample_2d_data()
@@ -705,10 +699,7 @@ class TestInterpN:
                      method=method, bounds_error=False)
         assert_allclose(v1, v2.reshape(v1.shape))
 
-    @pytest.mark.parametrize(
-        "method",
-        ["linear", "nearest", "cubic", "quintic", "pchip"]
-    )
+    @parametrize_rgi_interp_methods
     def test_nonscalar_values(self, method):
         # Verify that non-scalar valued values also works
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5)] * 2 + [
@@ -739,10 +730,7 @@ class TestInterpN:
         assert_raises(ValueError, interpn, points, values, sample,
                       method='splinef2d')
 
-    @pytest.mark.parametrize(
-        "method",
-        ["linear", "nearest", "cubic", "quintic", "pchip"]
-    )
+    @parametrize_rgi_interp_methods
     def test_complex(self, method):
         x, y, values = self._sample_2d_data()
         points = (x, y)
@@ -782,10 +770,7 @@ class TestInterpN:
         v2 = interpn((x, y), values._v, [0.4, 0.7], method=method)
         assert_allclose(v1, v2)
 
-    @pytest.mark.parametrize(
-        "method",
-        ["linear", "nearest", "cubic", "quintic", "pchip", "splinef2d"]
-    )
+    @parametrize_rgi_interp_methods
     def test_matrix_input(self, method):
         x = np.linspace(0, 2, 6)
         y = np.linspace(0, 1, 7)
