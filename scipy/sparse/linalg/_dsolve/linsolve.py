@@ -33,23 +33,45 @@ def use_solver(**kwargs):
     Parameters
     ----------
     useUmfpack : bool, optional
-        Use UMFPACK over SuperLU. Has effect only if scikits.umfpack is
-        installed. Default: True
+        Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
+        if ``scikits.umfpack`` is installed. Default: True
     assumeSortedIndices : bool, optional
         Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
-        Has effect only if useUmfpack is True and scikits.umfpack is installed.
-        Default: False
+        Has effect only if useUmfpack is True and ``scikits.umfpack`` is
+        installed. Default: False
 
     Notes
     -----
-    The default sparse solver is umfpack when available
-    (scikits.umfpack is installed). This can be changed by passing
+    The default sparse solver is UMFPACK when available
+    (``scikits.umfpack`` is installed). This can be changed by passing
     useUmfpack = False, which then causes the always present SuperLU
     based solver to be used.
 
-    Umfpack requires a CSR/CSC matrix to have sorted column/row indices. If
+    UMFPACK requires a CSR/CSC matrix to have sorted column/row indices. If
     sure that the matrix fulfills this, pass ``assumeSortedIndices=True``
     to gain some speed.
+
+    References
+    ----------
+    .. [1] T. A. Davis, Algorithm 832:  UMFPACK - an unsymmetric-pattern
+           multifrontal method with a column pre-ordering strategy, ACM
+           Trans. on Mathematical Software, 30(2), 2004, pp. 196--199.
+           https://dl.acm.org/doi/abs/10.1145/992200.992206
+
+    .. [2] T. A. Davis, A column pre-ordering strategy for the
+           unsymmetric-pattern multifrontal method, ACM Trans.
+           on Mathematical Software, 30(2), 2004, pp. 165--195.
+           https://dl.acm.org/doi/abs/10.1145/992200.992205
+
+    .. [3] T. A. Davis and I. S. Duff, A combined unifrontal/multifrontal
+           method for unsymmetric sparse matrices, ACM Trans. on
+           Mathematical Software, 25(1), 1999, pp. 1--19.
+           https://doi.org/10.1145/305658.287640
+
+    .. [4] T. A. Davis and I. S. Duff, An unsymmetric-pattern multifrontal
+           method for sparse LU factorization, SIAM J. Matrix Analysis and
+           Computations, 18(1), 1997, pp. 140--158.
+           https://doi.org/10.1137/S0895479894246905T.
 
     Examples
     --------
@@ -120,8 +142,9 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
         - ``COLAMD``: approximate minimum degree column ordering [1]_, [2]_.
 
     use_umfpack : bool, optional
-        if True (default) then use umfpack for the solution.  This is
-        only referenced if b is a vector and ``scikit-umfpack`` is installed.
+        if True (default) then use UMFPACK for the solution [3]_, [4]_, [5]_,
+        [6]_ . This is only referenced if b is a vector and
+        ``scikits.umfpack`` is installed.
 
     Returns
     -------
@@ -148,6 +171,27 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     .. [2] T. A. Davis, J. R. Gilbert, S. Larimore, E. Ng, A column approximate
            minimum degree ordering algorithm, ACM Trans. on Mathematical
            Software, 30(3), 2004, pp. 353--376. :doi:`10.1145/1024074.1024079`
+
+    .. [3] T. A. Davis, Algorithm 832:  UMFPACK - an unsymmetric-pattern
+           multifrontal method with a column pre-ordering strategy, ACM
+           Trans. on Mathematical Software, 30(2), 2004, pp. 196--199.
+           https://dl.acm.org/doi/abs/10.1145/992200.992206
+
+    .. [4] T. A. Davis, A column pre-ordering strategy for the
+           unsymmetric-pattern multifrontal method, ACM Trans.
+           on Mathematical Software, 30(2), 2004, pp. 165--195.
+           https://dl.acm.org/doi/abs/10.1145/992200.992205
+
+    .. [5] T. A. Davis and I. S. Duff, A combined unifrontal/multifrontal
+           method for unsymmetric sparse matrices, ACM Trans. on
+           Mathematical Software, 25(1), 1999, pp. 1--19.
+           https://doi.org/10.1145/305658.287640
+
+    .. [6] T. A. Davis and I. S. Duff, An unsymmetric-pattern multifrontal
+           method for sparse LU factorization, SIAM J. Matrix Analysis and
+           Computations, 18(1), 1997, pp. 140--158.
+           https://doi.org/10.1137/S0895479894246905T.
+
 
     Examples
     --------

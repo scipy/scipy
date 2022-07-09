@@ -319,14 +319,17 @@ class RegularGridInterpolator:
                                       np.all(p <= self.grid[i][-1])):
                     raise ValueError("One of the requested xi is out of bounds "
                                      "in dimension %d" % i)
+            out_of_bounds = None
+        else:
+            out_of_bounds = self._find_out_of_bounds(xi.T)
 
         if method == "linear":
-            indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
+            indices, norm_distances = self._find_indices(xi.T)
             result = self._evaluate_linear(indices,
                                            norm_distances,
                                            out_of_bounds)
         elif method == "nearest":
-            indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
+            indices, norm_distances = self._find_indices(xi.T)
             result = self._evaluate_nearest(indices,
                                             norm_distances,
                                             out_of_bounds)
@@ -446,8 +449,6 @@ class RegularGridInterpolator:
         indices = []
         # compute distance to lower edge in unity units
         norm_distances = []
-        # check for out of bounds xi
-        out_of_bounds = np.zeros((xi.shape[1]), dtype=bool)
         # iterate through dimensions
         for x, grid in zip(xi, self.grid):
             i = np.searchsorted(grid, x) - 1
@@ -462,10 +463,16 @@ class RegularGridInterpolator:
                 norm_dist = np.where(denom != 0, (x - grid[i]) / denom, 0)
             norm_distances.append(norm_dist)
 
-            if not self.bounds_error:
-                out_of_bounds += x < grid[0]
-                out_of_bounds += x > grid[-1]
-        return indices, norm_distances, out_of_bounds
+        return indices, norm_distances
+
+    def _find_out_of_bounds(self, xi):
+        # check for out of bounds xi
+        out_of_bounds = np.zeros((xi.shape[1]), dtype=bool)
+        # iterate through dimensions
+        for x, grid in zip(xi, self.grid):
+            out_of_bounds += x < grid[0]
+            out_of_bounds += x > grid[-1]
+        return out_of_bounds
 
 
 def interpn(points, values, xi, method="linear", bounds_error=True,
