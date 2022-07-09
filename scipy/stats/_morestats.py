@@ -3951,7 +3951,7 @@ def directionalmean(samples, *, axis=0):
 
     The `regular` sample mean in contrast does not lie on the unit sphere.
 
-    >>> data.mean()
+    >>> data.mean(axis=0)
     array([0.8660254, 0., 0.])
 
     """
