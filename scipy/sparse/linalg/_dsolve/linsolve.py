@@ -34,20 +34,20 @@ def use_solver(**kwargs):
     ----------
     useUmfpack : bool, optional
         Use UMFPACK [1]_, [2]_, [3]_, [4]_. over SuperLU. Has effect only
-        if scikits.umfpack is installed. Default: True
+        if ``scikits.umfpack`` is installed. Default: True
     assumeSortedIndices : bool, optional
         Allow UMFPACK to skip the step of sorting indices for a CSR/CSC matrix.
-        Has effect only if useUmfpack is True and scikits.umfpack is installed.
-        Default: False
+        Has effect only if useUmfpack is True and ``scikits.umfpack`` is
+        installed. Default: False
 
     Notes
     -----
-    The default sparse solver is umfpack when available
-    (scikits.umfpack is installed). This can be changed by passing
+    The default sparse solver is UMFPACK when available
+    (``scikits.umfpack`` is installed). This can be changed by passing
     useUmfpack = False, which then causes the always present SuperLU
     based solver to be used.
 
-    Umfpack requires a CSR/CSC matrix to have sorted column/row indices. If
+    UMFPACK requires a CSR/CSC matrix to have sorted column/row indices. If
     sure that the matrix fulfills this, pass ``assumeSortedIndices=True``
     to gain some speed.
 
@@ -144,7 +144,7 @@ def spsolve(A, b, permc_spec=None, use_umfpack=True):
     use_umfpack : bool, optional
         if True (default) then use UMFPACK for the solution [3]_, [4]_, [5]_,
         [6]_ . This is only referenced if b is a vector and
-        ``scikit-umfpack`` is installed.
+        ``scikits.umfpack`` is installed.
 
     Returns
     -------
