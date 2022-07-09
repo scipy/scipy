@@ -1434,8 +1434,8 @@ def chebwin(M, at, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero an empty array is returned.
-        An exception thrown when it is negative.
+        Number of points in the output window. If zero an empty array
+        is returned. An exception thrown when it is negative.
     at : float
         Attenuation (in dB).
     sym : bool, optional
@@ -1560,8 +1560,8 @@ def cosine(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero an empty array is returned.
-        An exception thrown when it is negative.
+        Number of points in the output window. If zero an empty array
+        is returned. An exception thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -1619,8 +1619,8 @@ def exponential(M, center=None, tau=1., sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero an empty array is returned.
-        An exception thrown when it is negative.
+        Number of points in the output window. If zero an empty array
+        is returned. An exception thrown when it is negative.
     center : float, optional
         Parameter defining the center location of the window function.
         The default value if not given is ``center = (M-1) / 2``.  This
