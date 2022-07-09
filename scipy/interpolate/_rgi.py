@@ -500,8 +500,8 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
 
     method : str, optional
         The method of interpolation to perform. Supported are "linear",
-        "nearest", "cubic", "quintic", "pchip", and "splinef2d". "splinef2d"
-        is only supported for 2-dimensional data.
+        "nearest", "slinear", "cubic", "quintic", "pchip", and "splinef2d".
+        "splinef2d" is only supported for 2-dimensional data.
 
     bounds_error : bool, optional
         If True, when interpolated values are requested outside of the
@@ -563,10 +563,10 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     """
     # sanity check 'method' kwarg
     if method not in ["linear", "nearest", "cubic", "quintic", "pchip",
-                      "splinef2d"]:
+                      "splinef2d", "slinear"]:
         raise ValueError("interpn only understands the methods 'linear', "
-                         "'nearest', 'cubic', 'quintic', 'pchip', and "
-                         f"'splinef2d'. You provided {method}.")
+                         "'nearest', 'slinear', 'cubic', 'quintic', 'pchip', "
+                         f"and 'splinef2d'. You provided {method}.")
 
     if not hasattr(values, 'ndim'):
         values = np.asarray(values)
@@ -620,7 +620,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
                                 "in dimension %d" % i)
 
     # perform interpolation
-    if method in ["linear", "nearest", "cubic", "quintic", "pchip"]:
+    if method in ["linear", "nearest", "slinear", "cubic", "quintic", "pchip"]:
         interp = RegularGridInterpolator(points, values, method=method,
                                          bounds_error=bounds_error,
                                          fill_value=fill_value)
