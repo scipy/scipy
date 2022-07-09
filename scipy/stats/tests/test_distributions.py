@@ -136,12 +136,12 @@ def test_vonmises_pdf(x, kappa, expected_pdf):
 # using wolfram alpha:
 # kappa * cos(x) - log(2*pi*I0(kappa))
 @pytest.mark.parametrize('x, kappa, expected_logpdf',
-                         [(0.1, 0.01, -1.82795),
-                          (0.1, 25.0, 0.560499),
-                          (0.1, 800, -1.57346),
-                          (2.0, 0.01, -1.84206),
-                          (2.0, 25.0, -34.718276),
-                          (2.0, 800, -1130.494258)])
+                         [(0.1, 0.01, -1.8279520246003170),
+                          (0.1, 25.0, 0.5604990605420549),
+                          (0.1, 800, -1.5734679473375139),
+                          (2.0, 0.01, -1.8420635346185686),
+                          (2.0, 25.0, -34.7182759850871489),
+                          (2.0, 800, -1130.4942582548682739)])
 
 def test_vonmises_logpdf(x, kappa, expected_logpdf):
     logpdf = stats.vonmises.logpdf(x, kappa)
