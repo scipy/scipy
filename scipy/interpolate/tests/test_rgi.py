@@ -465,10 +465,10 @@ class TestRegularGridInterpolator:
         interp_points4 = interp(X, 0.0)
 
         assert_equal(interp_points0.size ==
-                        interp_points1.size ==
-                        interp_points2.size ==
-                        interp_points3.size ==
-                        interp_points4.size, True)
+                     interp_points1.size ==
+                     interp_points2.size ==
+                     interp_points3.size ==
+                     interp_points4.size, True)
 
     @parametrize_interpolators
     def test_read_only(self, interpolator):
