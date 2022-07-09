@@ -145,7 +145,7 @@ def test_vonmises_pdf(x, kappa, expected_pdf):
 
 def test_vonmises_logpdf(x, kappa, expected_logpdf):
     logpdf = stats.vonmises.logpdf(x, kappa)
-    assert_allclose(logpdf, expected_logpdf, rtol=1e-5)
+    assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
     """
