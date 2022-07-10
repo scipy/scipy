@@ -2583,11 +2583,18 @@ class TestDirectionalFuncs:
 
     def test_directionalmean_wrong_dimensions(self):
         # test that one-dimensional data raises ValueError
-
         data = np.ones((5, ))
         assert_raises(ValueError, stats.directionalmean, data)
 
     def test_directionalmean_nan_raise(self):
         data = np.array([[0.8660254, 0.5, 0.], [0.8660254, -0.5, np.nan]])
-        assert_raises(ValueError, stats.directionalmean, data, nan_policy='raise')
+        assert_raises(ValueError, stats.directionalmean, data,
+                      nan_policy='raise')
 
+    def test_directionalmean_nan_omit(self):
+        data = np.array([[0.8660254, 0.5, 0.],
+                        [0.8660254, -0.5, np.nan],
+                        [1., 0., 0.]])
+        expected = np.array([0.96592583, 0.25881905, 0.])
+        directional_mean = stats.directionalmean(data, nan_policy='omit')
+        assert_allclose(directional_mean, expected)
