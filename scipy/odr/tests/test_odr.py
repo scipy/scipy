@@ -529,4 +529,5 @@ class TestODR:
             return b[0] + b[1] * x
 
         p = Model(func)
-        assert_equal(p.meta, {})
+        p.set_meta(name='Sample Model Meta',ref='ODRPACK')
+        assert_equal(p.meta, {'name': 'Sample Model Meta', 'ref': 'ODRPACK'})
