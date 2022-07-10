@@ -506,7 +506,7 @@ class Model:
     """
 
     def __init__(self, fcn, fjacb=None, fjacd=None,
-        extra_args=None, estimate=None, implicit=0, meta={}):
+                 extra_args=None, estimate=None, implicit=0, meta={}):
 
         self.fcn = fcn
         self.fjacb = fjacb
