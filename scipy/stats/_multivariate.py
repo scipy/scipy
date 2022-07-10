@@ -3443,7 +3443,6 @@ class special_ortho_group_gen(multi_rv_generic):
         H = (D*H.T).T
         return H
 
-
     def rvs2(self, dim, size=1, random_state=None):
         random_state = self._get_random_state(random_state)
 
@@ -3460,7 +3459,7 @@ class special_ortho_group_gen(multi_rv_generic):
             xrow = x[..., None, :]
             xcol = x[..., :, None]
             norm2 = np.matmul(xrow, xcol).squeeze((-2, -1))
-            x0 = np.copy(x[..., 0])
+            x0 = x[..., 0].copy()
             D[..., n] = np.where(x0 != 0, np.sign(x0), 1)
             x[..., 0] += D[..., n]*np.sqrt(norm2)
             x /= np.sqrt((norm2 - x0**2 + x[..., 0]**2) / 2.)[..., None]
