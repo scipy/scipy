@@ -3444,6 +3444,32 @@ class special_ortho_group_gen(multi_rv_generic):
         return H
 
 
+    def rvs2(self, dim, size=1, random_state=None):
+        random_state = self._get_random_state(random_state)
+
+        size = int(size)
+        size = (size,) if size > 1 else ()
+
+        dim = self._process_parameters(dim)
+
+        H = np.empty(size + (dim, dim))
+        H[..., :, :] = np.eye(dim)
+        D = np.empty(size + (dim,))
+        for n in range(dim-1):
+            x = random_state.normal(size=size + (dim-n))
+            norm2 = np.matmul(x[..., None, :], x[..., :, None])
+            x0 = np.copy(x[..., 0])
+            D[..., n] = np.where(x[..., 0] != 0, np.sign(x[..., 0]), 1)
+            x[..., 0] += D[..., n]*np.sqrt(norm2)
+            x /= np.sqrt((norm2 - x0**2 + x[..., 0]**2) / 2.)
+            # Householder transformation
+            H[..., :, n:] -= np.matmul(H[..., :, n:], x[..., :, None]) * x[..., None, :]
+        D[..., -1] = (-1)**(dim-1)*D[..., :-1].prod(axis=-1)
+        # Equivalent to np.dot(np.diag(D), H) but faster, apparently
+        H *= D[..., :, None]
+        return H
+
+
 special_ortho_group = special_ortho_group_gen()
 
 
