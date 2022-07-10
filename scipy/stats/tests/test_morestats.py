@@ -2586,3 +2586,8 @@ class TestDirectionalFuncs:
 
         data = np.ones((5, ))
         assert_raises(ValueError, stats.directionalmean, data)
+
+    def test_directionalmean_nan_raise(self):
+        data = np.array([[0.8660254, 0.5, 0.], [0.8660254, -0.5, np.nan]])
+        assert_raises(ValueError, stats.directionalmean, data, nan_policy='raise')
+
