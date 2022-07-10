@@ -3910,7 +3910,8 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
 )
 def directionalmean(samples, *, axis=0):
-    """Computes the directional mean of a sample of vectors.
+    """
+    Computes the directional mean of a sample of vectors.
 
     Serves as equivalent of the sample mean for directional data whose
     magnitude is irrelevant, e. g. unit vectors.
@@ -3936,6 +3937,11 @@ def directionalmean(samples, *, axis=0):
 
         mean=samples.mean()
         directionalmean = mean/np.linalg.norm(mean)
+
+    This definition is applicable for `directional` data but not
+    for `axial` data. In practice, this means that if your data
+    are symmetric around the origin (`x` has the same meaning as
+    `-x`), this function should not be used.
 
     References
     ----------
