@@ -2559,7 +2559,8 @@ class TestDirectionalFuncs:
                                      73., 69.3, 58.8, 51.4]))
         data = np.stack((np.cos(incl) * np.cos(decl),
                          np.cos(incl) * np.sin(decl),
-                         np.sin(incl))).T
+                         np.sin(incl)),
+                         axis=1)
 
         directional_mean = stats.directionalmean(data)
         mean_rounded = np.round(directional_mean, 3)
@@ -2572,7 +2573,9 @@ class TestDirectionalFuncs:
         # same result as circmean
         rng = np.random.default_rng(seed=42)
         testdata = 2 * np.pi * rng.random((1000, ))
-        testdata_vector = np.array([np.cos(testdata), np.sin(testdata)]).T
+        testdata_vector = np.stack((np.cos(testdata),
+                                   np.sin(testdata)),
+                                   axis=1)
         directional_mean = stats.directionalmean(testdata_vector)
         directional_mean_angle = np.arctan2(directional_mean[1],
                                             directional_mean[0])
@@ -2580,6 +2583,14 @@ class TestDirectionalFuncs:
 
         circmean = stats.circmean(testdata)
         assert_allclose(circmean, directional_mean_angle)
+
+    def test_list_ndarray_input(self):
+        # test that list and numpy array inputs yield same results
+        data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
+        data_array = np.asarray(data)
+        directional_mean = stats.directionalmean(data)
+        directional_mean_array = stats.directionalmean(data_array)
+        assert_allclose(directional_mean, directional_mean_array)
 
     def test_directionalmean_wrong_dimensions(self):
         # test that one-dimensional data raises ValueError
