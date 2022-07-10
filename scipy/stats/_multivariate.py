@@ -3456,14 +3456,16 @@ class special_ortho_group_gen(multi_rv_generic):
         H[..., :, :] = np.eye(dim)
         D = np.empty(size + (dim,))
         for n in range(dim-1):
-            x = random_state.normal(size=size + (dim-n))
-            norm2 = np.matmul(x[..., None, :], x[..., :, None])
+            x = random_state.normal(size=size + (dim-n,))
+            xrow = x[..., None, :]
+            xcol = x[..., :, None]
+            norm2 = np.matmul(xrow, xcol).squeeze((-2, -1))
             x0 = np.copy(x[..., 0])
-            D[..., n] = np.where(x[..., 0] != 0, np.sign(x[..., 0]), 1)
+            D[..., n] = np.where(x0 != 0, np.sign(x0), 1)
             x[..., 0] += D[..., n]*np.sqrt(norm2)
-            x /= np.sqrt((norm2 - x0**2 + x[..., 0]**2) / 2.)
+            x /= np.sqrt((norm2 - x0**2 + x[..., 0]**2) / 2.)[..., None]
             # Householder transformation
-            H[..., :, n:] -= np.matmul(H[..., :, n:], x[..., :, None]) * x[..., None, :]
+            H[..., :, n:] -= np.matmul(H[..., :, n:], xcol) * xrow
         D[..., -1] = (-1)**(dim-1)*D[..., :-1].prod(axis=-1)
         # Equivalent to np.dot(np.diag(D), H) but faster, apparently
         H *= D[..., :, None]
