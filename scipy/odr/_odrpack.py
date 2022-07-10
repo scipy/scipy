@@ -518,7 +518,7 @@ class Model:
         self.extra_args = extra_args
         self.estimate = estimate
         self.implicit = implicit
-        self.meta = meta
+        self.meta = meta if meta is not None else {}
 
     def set_meta(self, **kwds):
         """ Update the metadata dictionary with the keywords and data provided
