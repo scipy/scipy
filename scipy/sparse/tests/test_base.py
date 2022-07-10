@@ -3601,9 +3601,13 @@ class _TestMinMax:
 
         D = np.zeros((2, 2))
         mat = self.spmatrix(D)
-
-        assert_raises(ValueError, mat.argmin, axis=None, explicit=True)
-        assert_raises(ValueError, mat.argmax, axis=None, explicit=True)
+        if mat.nnz != 0:
+            # Noncanonical case
+            assert_equal(mat.argmin(axis=None, explicit=True), 0)
+            assert_equal(mat.argmax(axis=None, explicit=True), 0)
+        else:
+            assert_raises(ValueError, mat.argmin, axis=None, explicit=True)
+            assert_raises(ValueError, mat.argmax, axis=None, explicit=True)
 
 class _TestGetNnzAxis:
     def test_getnnz_axis(self):
