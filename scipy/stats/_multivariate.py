@@ -3402,22 +3402,7 @@ class special_ortho_group_gen(multi_rv_generic):
 
         return dim
 
-    def rvs(self, dim, size=1, random_state=None):
-        """Draw random samples from SO(N).
-
-        Parameters
-        ----------
-        dim : integer
-            Dimension of rotation space (N).
-        size : integer, optional
-            Number of samples to draw (default 1).
-
-        Returns
-        -------
-        rvs : ndarray or scalar
-            Random size N-dimensional matrices, dimension (size, dim, dim)
-
-        """
+    def rvs_old(self, dim, size=1, random_state=None):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
@@ -3443,7 +3428,22 @@ class special_ortho_group_gen(multi_rv_generic):
         H = (D*H.T).T
         return H
 
-    def rvs2(self, dim, size=1, random_state=None):
+    def rvs(self, dim, size=1, random_state=None):
+        """Draw random samples from SO(N).
+
+        Parameters
+        ----------
+        dim : integer
+            Dimension of rotation space (N).
+        size : integer, optional
+            Number of samples to draw (default 1).
+
+        Returns
+        -------
+        rvs : ndarray or scalar
+            Random size N-dimensional matrices, dimension (size, dim, dim)
+
+        """
         random_state = self._get_random_state(random_state)
 
         size = int(size)
