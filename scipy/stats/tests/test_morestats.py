@@ -2560,7 +2560,7 @@ class TestDirectionalFuncs:
         data = np.stack((np.cos(incl) * np.cos(decl),
                          np.cos(incl) * np.sin(decl),
                          np.sin(incl)),
-                         axis=1)
+                        axis=1)
 
         directional_mean = stats.directionalmean(data)
         mean_rounded = np.round(directional_mean, 3)
@@ -2574,7 +2574,7 @@ class TestDirectionalFuncs:
         rng = np.random.default_rng(seed=42)
         testdata = 2 * np.pi * rng.random((1000, ))
         testdata_vector = np.stack((np.cos(testdata),
-                                   np.sin(testdata)),
+                                    np.sin(testdata)),
                                    axis=1)
         directional_mean = stats.directionalmean(testdata_vector)
         directional_mean_angle = np.arctan2(directional_mean[1],
