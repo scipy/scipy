@@ -2295,6 +2295,21 @@ class TestMode:
         assert np.all(m.mode == 'Oxidation') and m.mode.shape == (1, 1)
         assert np.all(m.count == 2) and m.count.shape == (1, 1)
 
+    @pytest.mark.parametrize('axis', np.arange(-3, 3))
+    @pytest.mark.parametrize('dtype', [np.float64, 'object'])
+    def test_mode_shape_gh_9955(self, axis, dtype):
+        rng = np.random.default_rng(984213899)
+        a = rng.uniform(size=(3, 4, 5)).astype(dtype)
+        if dtype == 'object':
+            with pytest.warns(DeprecationWarning, match=self.deprecation_msg):
+                res = stats.mode(a, axis=axis, keepdims=False)
+        else:
+            res = stats.mode(a, axis=axis, keepdims=False)
+        reference_shape = list(a.shape)
+        reference_shape.pop(axis)
+        np.testing.assert_array_equal(res.mode.shape, reference_shape)
+        np.testing.assert_array_equal(res.count.shape, reference_shape)
+
     def test_nan_policy_propagate_gh_9815(self):
         # mode should treat np.nan as it would any other object when
         # nan_policy='propagate'
@@ -2373,10 +2388,18 @@ class TestMode:
 
 def test_mode_futurewarning():
     a = [1, 2, 5, 3, 5]
+
     future_msg = "Unlike other reduction functions..."
     with pytest.warns(FutureWarning, match=future_msg):
         res = stats.mode(a)
     assert_array_equal(res, ([5], [2]))
+
+    # no FutureWarning if `keepdims` is specified
+    res = stats.mode(a, keepdims=True)
+    assert_array_equal(res, ([5], [2]))
+
+    res = stats.mode(a, keepdims=False)
+    assert_array_equal(res, [5, 2])
 
 
 class TestSEM:
