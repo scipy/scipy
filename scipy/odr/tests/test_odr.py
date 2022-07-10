@@ -5,7 +5,8 @@ import os
 import numpy as np
 from numpy import pi
 from numpy.testing import (assert_array_almost_equal,
-                           assert_equal, assert_warns)
+                           assert_equal, assert_warns,
+                           assert_no_warnings)
 import pytest
 from pytest import raises as assert_raises
 
@@ -524,3 +525,9 @@ class TestODR:
             # remove output files for clean up
             shutil.rmtree(tmp_dir)
 
+    def test_model_meta_value_default(self):
+        def func(b, x):
+            return b[0] + b[1] * x
+
+        p = Model(func)
+        assert_no_warnings(iter, p.meta)
