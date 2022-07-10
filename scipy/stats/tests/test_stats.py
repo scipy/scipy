@@ -2315,6 +2315,61 @@ class TestMode:
             res = stats.mode(a)
         assert_array_equal(res, [[10], [2]])
 
+    def test_keepdims(self):
+        # test empty arrays (handled by `np.mean`)
+        a = np.zeros((1, 2, 3, 0))
+
+        res = stats.mode(a, axis=1, keepdims=False)
+        assert res.mode.shape == res.count.shape == (1, 3, 0)
+
+        res = stats.mode(a, axis=1, keepdims=True)
+        assert res.mode.shape == res.count.shape == (1, 1, 3, 0)
+
+        # test nan_policy='propagate'
+        a = [[1, 3, 3, np.nan], [1, 1, np.nan, 1]]
+
+        res = stats.mode(a, axis=1, keepdims=False)
+        assert_array_equal(res.mode, [3, 1])
+        assert_array_equal(res.count, [2, 3])
+
+        res = stats.mode(a, axis=1, keepdims=True)
+        assert_array_equal(res.mode, [[3], [1]])
+        assert_array_equal(res.count, [[2], [3]])
+
+        a = np.array(a)
+        res = stats.mode(a, axis=None, keepdims=False)
+        ref = stats.mode(a.ravel(), keepdims=False)
+        assert_array_equal(res, ref)
+        assert res.mode.shape == ref.mode.shape == ()
+
+        res = stats.mode(a, axis=None, keepdims=True)
+        ref = stats.mode(a.ravel(), keepdims=True)
+        assert_array_equal(res, ref)
+        assert res.mode.shape == ref.mode.shape == (1,)
+
+        # test nan_policy='omit'
+        a = [[1, np.nan, np.nan, np.nan, 1],
+             [np.nan, np.nan, np.nan, np.nan, 2]]
+
+        res = stats.mode(a, axis=1, keepdims=False, nan_policy='omit')
+        assert_array_equal(res.mode, [1, 2])
+        assert_array_equal(res.count, [2, 1])
+
+        res = stats.mode(a, axis=1, keepdims=True, nan_policy='omit')
+        assert_array_equal(res.mode, [[1], [2]])
+        assert_array_equal(res.count, [[2], [1]])
+
+        a = np.array(a)
+        res = stats.mode(a, axis=None, keepdims=False, nan_policy='omit')
+        ref = stats.mode(a.ravel(), keepdims=False, nan_policy='omit')
+        assert_array_equal(res, ref)
+        assert res.mode.shape == ref.mode.shape == ()
+
+        res = stats.mode(a, axis=None, keepdims=True, nan_policy='omit')
+        ref = stats.mode(a.ravel(), keepdims=True, nan_policy='omit')
+        assert_array_equal(res, ref)
+        assert res.mode.shape == ref.mode.shape == (1,)
+
 
 def test_mode_futurewarning():
     a = [1, 2, 5, 3, 5]
