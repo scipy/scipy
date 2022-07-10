@@ -3583,20 +3583,38 @@ class ortho_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1:
+        if size > 1 and not _has_vectorized_qr():
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
         dim = self._process_parameters(dim)
 
-        z = random_state.normal(size=(dim, dim))
-        q, r = scipy.linalg.qr(z)
-        d = r.diagonal()
-        q *= d/abs(d)
+        size = (size,) if size > 1 else ()
+        z = random_state.normal(size=size + (dim, dim))
+        q, r = np.linalg.qr(z)
+        d = r.diagonal(0, -2, -1)
+        q *= (d/abs(d))[..., None, :]
         return q
 
 
 ortho_group = ortho_group_gen()
+
+
+class _has_vectorized_qr:
+    # used by ortho_group_gen.rvs and unitary_group_gen.rvs,
+    # exclusively for compatibility with numpy<1.22
+
+    cache = None
+
+    def __new__(cls):
+        if cls.cache is None:
+            try:
+                np.linalg.qr(np.reshape(1, (1, 1, 1)))
+            except np.linalg.LinAlgError:
+                cls.cache = False
+            else:
+                cls.cache = True
+        return cls.cache
 
 
 class ortho_group_frozen(multi_rv_frozen):
@@ -3997,17 +4015,18 @@ class unitary_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1:
+        if size > 1 and not _has_vectorized_qr():
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
         dim = self._process_parameters(dim)
 
-        z = 1/math.sqrt(2)*(random_state.normal(size=(dim, dim)) +
-                            1j*random_state.normal(size=(dim, dim)))
-        q, r = scipy.linalg.qr(z)
-        d = r.diagonal()
-        q *= d/abs(d)
+        size = (size,) if size > 1 else ()
+        z = 1/math.sqrt(2)*(random_state.normal(size=size + (dim, dim)) +
+                            1j*random_state.normal(size=size + (dim, dim)))
+        q, r = np.linalg.qr(z)
+        d = r.diagonal(0, -2, -1)
+        q *= (d/abs(d))[..., None, :]
         return q
 
 
