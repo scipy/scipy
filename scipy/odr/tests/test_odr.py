@@ -530,4 +530,3 @@ class TestODR:
 
         p = Model(func)
         assert_equal(p.meta, {})
-
