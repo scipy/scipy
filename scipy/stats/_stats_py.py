@@ -558,7 +558,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
-def mode(a, axis=0, nan_policy='propagate'):
+def mode(a, axis=0, nan_policy='propagate', keepdims=None):
     r"""Return an array of the modal (most common) value in the passed array.
 
     If there is more than one such value, only one is returned.
@@ -571,17 +571,21 @@ def mode(a, axis=0, nan_policy='propagate'):
     axis : int or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
+    keepdims : bool, optional
+        If set ``False``, the `axis` over which the statistic is taken
+        is consumed (eliminated from the output array) like other reduction
+        functions (e.g. `skew`, `kurtosis`). If set ``True``, the `axis` is
+        retained with size one, and the result will broadcast correctly
+        against the input array. The default, ``None``, is undefined legacy
+        behavior retained for backward compatibility.
 
         .. warning::
             Unlike other reduction functions (e.g. `skew`, `kurtosis`), the
-            default behavior of `mode` is is to preserve the the axis it acts
-            along. In SciPy 1.11.0, the default behavior will change to become
-            consistent with other reduction functions: consume (remove) the
-            axis it acts along. At that time, an optional parameter
-            ``keepdims`` (like that of `skew`, `kurtosis`) will become
-            available, and users will have the option of setting
-            ``keepdims=True`` to preserve all the original dimensions of the
-            input.
+            default behavior of `mode` usually retains the the axis it acts
+            along. In SciPy 1.11.0, this behavior will change: the default
+            value of `keepdims` will become ``False``, the `axis` over which
+            the statistic is taken will be eliminated, and the value ``None``
+            will no longer be accepted.
 
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
@@ -637,26 +641,32 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     """  # noqa: E501
 
-    message = ("Unlike other reduction functions (e.g. `skew`, `kurtosis`), "
-               "the default behavior of `mode` is is to preserve the the axis "
-               "it acts along. In SciPy 1.11.0, the default behavior will "
-               "change to become consistent with other reduction functions: "
-               "consume (remove) the axis it acts along. At that time, an "
-               "optional parameter ``keepdims`` (like that of `skew`, "
-               "`kurtosis`) will become available, and users will have the "
-               "option of setting ``keepdims=True`` to preserve all the "
-               "original dimensions of the input.")
-    warnings.warn(message, FutureWarning, stacklevel=2)
+    if keepdims is None:
+        message = ("Unlike other reduction functions (e.g. `skew`, "
+                   "`kurtosis`), the default behavior of `mode` typically "
+                   "preserves the the axis it acts along. In SciPy 1.11.0, "
+                   "this behavior will change: the default value of "
+                   "`keepdims` will become ``False``, the `axis` over which "
+                   "the statistic is taken will be eliminated, and the value "
+                   "``None`` will no longer be accepted.")
+        warnings.warn(message, FutureWarning, stacklevel=2)
+
+    a = np.asarray(a)
+    if a.size == 0:
+        if keepdims is None:
+            return ModeResult(np.array([]), np.array([]))
+        else:
+            # this is tricky to get right; let np.mean do it
+            out = np.mean(a, axis=axis, keepdims=keepdims)
+            return ModeResult(out, out.copy())
 
     a, axis = _chk_asarray(a, axis)
-    if a.size == 0:
-        return ModeResult(np.array([]), np.array([]))
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.mode(a, axis)
+        return mstats_basic.mode(a, axis, _keepdims=keepdims)
 
     if not np.issubdtype(a.dtype, np.number):
         warnings.warn("Support for non-numeric arrays has been deprecated "
@@ -686,9 +696,13 @@ def mode(a, axis=0, nan_policy='propagate'):
     counts = np.empty(a_view.shape[:-1], dtype=np.int_)
     for ind in inds:
         modes[ind], counts[ind] = _mode1D(a_view[ind])
-    newshape = list(a.shape)
-    newshape[axis] = 1
-    return ModeResult(modes.reshape(newshape), counts.reshape(newshape))
+
+    if keepdims is None or keepdims:
+        newshape = list(a.shape)
+        newshape[axis] = 1
+        return ModeResult(modes.reshape(newshape), counts.reshape(newshape))
+    else:
+        return ModeResult(modes[()], counts[()])
 
 
 def _mask_to_limits(a, limits, inclusive):
