@@ -131,6 +131,7 @@ def test_vonmises_pdf(x, kappa, expected_pdf):
     pdf = stats.vonmises.pdf(x, kappa)
     assert_allclose(pdf, expected_pdf, rtol=1e-15)
 
+
 # Expected values of the vonmises LOGPDF were computed
 # using wolfram alpha:
 # kappa * cos(x) - log(2*pi*I0(kappa))
