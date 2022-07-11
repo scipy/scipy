@@ -130,7 +130,7 @@ def evaluate_linear(values, indices, norm_distances, out_of_bounds):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def find_indices(grid, xi):
-    cdef int i, j
+    cdef long i, j, index
     cdef double denom
     cdef np.ndarray[long, ndim=2] indices
     cdef np.ndarray[double, ndim=2] norm_distances
@@ -139,7 +139,7 @@ def find_indices(grid, xi):
     # find relevant edges between which xi are situated
     indices = np.empty_like(xi, dtype=int)
     # compute distance to lower edge in unity units
-    norm_distances = np.zeros_like(xi, dtype=np.float64)
+    norm_distances = np.zeros_like(xi, dtype=float)
 
     # iterate through dimensions
     for i in range(xi.shape[0]):
