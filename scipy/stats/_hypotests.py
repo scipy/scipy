@@ -2,25 +2,22 @@ from collections import namedtuple
 from dataclasses import make_dataclass
 import numpy as np
 import warnings
-from itertools import combinations, permutations, product
+from itertools import combinations
 import scipy.stats
 from scipy.optimize import shgo
 from . import distributions
 from ._common import ConfidenceInterval
 from ._continuous_distns import chi2, norm
-from scipy.special import gamma, kv, gammaln, comb, factorial
+from scipy.special import gamma, kv, gammaln
 from scipy.fft import ifft
-import scipy.stats._bootstrap as _bootstrap
-from scipy._lib._util import check_random_state
 from ._hypotests_pythran import _a_ij_Aij_Dij2
 from ._hypotests_pythran import (
     _concordant_pairs as _P, _discordant_pairs as _Q
 )
-from ._axis_nan_policy import _broadcast_arrays
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
-           'permutation_test', 'tukey_hsd']
+           'tukey_hsd']
 
 Epps_Singleton_2sampResult = namedtuple('Epps_Singleton_2sampResult',
                                         ('statistic', 'pvalue'))
@@ -670,6 +667,7 @@ def somersd(x, y=None, alternative='two-sided'):
     return SomersDResult(d, p, table)
 
 
+# This could be combined with `_all_partitions` in `_resampling.py`
 def _all_partitions(nx, ny):
     """
     Partition a set of indices into two fixed-length sets in all possible ways
@@ -1016,11 +1014,15 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     is a uniformly more powerful alternative to Fisher's exact test
     for 2x2 contingency tables.
 
+    Boschloo's exact test uses the p-value of Fisher's exact test as a
+    statistic, and Boschloo's p-value is the probability under the null
+    hypothesis of observing such an extreme value of this statistic.
+
     Let's define :math:`X_0` a 2x2 matrix representing the observed sample,
     where each column stores the binomial experiment, as in the example
     below. Let's also define :math:`p_1, p_2` the theoretical binomial
     probabilities for  :math:`x_{11}` and :math:`x_{12}`. When using
-    Boschloo exact test, we can assert three different null hypotheses :
+    Boschloo exact test, we can assert three different alternative hypotheses:
 
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 < p_2`,
       with `alternative` = "less"
@@ -1029,14 +1031,15 @@ def boschloo_exact(table, alternative="two-sided", n=32):
       with `alternative` = "greater"
 
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
-      with `alternative` = "two-sided" (default one)
+      with `alternative` = "two-sided" (default)
 
-    Boschloo's exact test uses the p-value of Fisher's exact test as a
-    statistic, and Boschloo's p-value is the probability under the null
-    hypothesis of observing such an extreme value of this statistic.
-
-    Boschloo's and Barnard's are both more powerful than Fisher's exact
-    test.
+    There are multiple conventions for computing a two-sided p-value when the
+    null distribution is asymmetric. Here, we apply the convention that the
+    p-value of a two-sided test is twice the minimum of the p-values of the
+    one-sided tests (clipped to 1.0). Note that `fisher_exact` follows a
+    different convention, so for a given `table`, the statistic reported by
+    `boschloo_exact` may differ from the p-value reported by `fisher_exact`
+    when ``alternative='two-sided'``.
 
     .. versionadded:: 1.7.0
 
@@ -1136,7 +1139,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
         # Two-sided p-value is defined as twice the minimum of the one-sided
         # p-values
-        pvalue = 2 * res.pvalue
+        pvalue = np.clip(2 * res.pvalue, a_min=0, a_max=1)
         return BoschlooExactResult(res.statistic, pvalue)
     else:
         msg = (
@@ -1440,650 +1443,6 @@ def cramervonmises_2samp(x, y, method='auto'):
             p = max(0, 1. - _cdf_cvm_inf(tn))
 
     return CramerVonMisesResult(statistic=t, pvalue=p)
-
-
-attributes = ('statistic', 'pvalue', 'null_distribution')
-PermutationTestResult = make_dataclass('PermutationTestResult', attributes)
-
-
-def _all_partitions_concatenated(ns):
-    """
-    Generate all partitions of indices of groups of given sizes, concatenated
-
-    `ns` is an iterable of ints.
-    """
-    def all_partitions(z, n):
-        for c in combinations(z, n):
-            x0 = set(c)
-            x1 = z - x0
-            yield [x0, x1]
-
-    def all_partitions_n(z, ns):
-        if len(ns) == 0:
-            yield [z]
-            return
-        for c in all_partitions(z, ns[0]):
-            for d in all_partitions_n(c[1], ns[1:]):
-                yield c[0:1] + d
-
-    z = set(range(np.sum(ns)))
-    for partitioning in all_partitions_n(z, ns[:]):
-        x = np.concatenate([list(partition)
-                            for partition in partitioning]).astype(int)
-        yield x
-
-
-def _batch_generator(iterable, batch):
-    """A generator that yields batches of elements from an iterable"""
-    iterator = iter(iterable)
-    if batch <= 0:
-        raise ValueError("`batch` must be positive.")
-    z = [item for i, item in zip(range(batch), iterator)]
-    while z:  # we don't want StopIteration without yielding an empty list
-        yield z
-        z = [item for i, item in zip(range(batch), iterator)]
-
-
-def _calculate_null_both(data, statistic, n_permutations, batch,
-                         random_state=None):
-    """
-    Calculate null distribution for independent sample tests.
-    """
-    n_samples = len(data)
-
-    # compute number of permutations
-    # (distinct partitions of data into samples of these sizes)
-    n_obs_i = [sample.shape[-1] for sample in data]  # observations per sample
-    n_obs_ic = np.cumsum(n_obs_i)
-    n_obs = n_obs_ic[-1]  # total number of observations
-    n_max = np.prod([comb(n_obs_ic[i], n_obs_ic[i-1])
-                     for i in range(n_samples-1, 0, -1)])
-
-    # perm_generator is an iterator that produces permutations of indices
-    # from 0 to n_obs. We'll concatenate the samples, use these indices to
-    # permute the data, then split the samples apart again.
-    if n_permutations >= n_max:
-        exact_test = True
-        n_permutations = n_max
-        perm_generator = _all_partitions_concatenated(n_obs_i)
-    else:
-        exact_test = False
-        # Neither RandomState.permutation nor Generator.permutation
-        # can permute axis-slices independently. If this feature is
-        # added in the future, batches of the desired size should be
-        # generated in a single call.
-        perm_generator = (random_state.permutation(n_obs)
-                          for i in range(n_permutations))
-
-    batch = batch or int(n_permutations)
-    null_distribution = []
-
-    # First, concatenate all the samples. In batches, permute samples with
-    # indices produced by the `perm_generator`, split them into new samples of
-    # the original sizes, compute the statistic for each batch, and add these
-    # statistic values to the null distribution.
-    data = np.concatenate(data, axis=-1)
-    for indices in _batch_generator(perm_generator, batch=batch):
-        indices = np.array(indices)
-
-        # `indices` is 2D: each row is a permutation of the indices.
-        # We use it to index `data` along its last axis, which corresponds
-        # with observations.
-        # After indexing, the second to last axis of `data_batch` corresponds
-        # with permutations, and the last axis corresponds with observations.
-        data_batch = data[..., indices]
-
-        # Move the permutation axis to the front: we'll concatenate a list
-        # of batched statistic values along this zeroth axis to form the
-        # null distribution.
-        data_batch = np.moveaxis(data_batch, -2, 0)
-        data_batch = np.split(data_batch, n_obs_ic[:-1], axis=-1)
-        null_distribution.append(statistic(*data_batch, axis=-1))
-    null_distribution = np.concatenate(null_distribution, axis=0)
-
-    return null_distribution, n_permutations, exact_test
-
-
-def _calculate_null_pairings(data, statistic, n_permutations, batch,
-                             random_state=None):
-    """
-    Calculate null distribution for association tests.
-    """
-    n_samples = len(data)
-
-    # compute number of permutations (factorial(n) permutations of each sample)
-    n_obs_sample = data[0].shape[-1]  # observations per sample; same for each
-    n_max = factorial(n_obs_sample)**n_samples
-
-    # `perm_generator` is an iterator that produces a list of permutations of
-    # indices from 0 to n_obs_sample, one for each sample.
-    if n_permutations >= n_max:
-        exact_test = True
-        n_permutations = n_max
-        # cartesian product of the sets of all permutations of indices
-        perm_generator = product(*(permutations(range(n_obs_sample))
-                                   for i in range(n_samples)))
-    else:
-        exact_test = False
-        # Separate random permutations of indices for each sample.
-        # Again, it would be nice if RandomState/Generator.permutation
-        # could permute each axis-slice separately.
-        perm_generator = ([random_state.permutation(n_obs_sample)
-                           for i in range(n_samples)]
-                          for j in range(n_permutations))
-
-    batch = batch or int(n_permutations)
-    null_distribution = []
-
-    for indices in _batch_generator(perm_generator, batch=batch):
-        indices = np.array(indices)
-
-        # `indices` is 3D: the zeroth axis is for permutations, the next is
-        # for samples, and the last is for observations. Swap the first two
-        # to make the zeroth axis correspond with samples, as it does for
-        # `data`.
-        indices = np.swapaxes(indices, 0, 1)
-
-        # When we're done, `data_batch` will be a list of length `n_samples`.
-        # Each element will be a batch of random permutations of one sample.
-        # The zeroth axis of each batch will correspond with permutations,
-        # and the last will correspond with observations. (This makes it
-        # easy to pass into `statistic`.)
-        data_batch = [None]*n_samples
-        for i in range(n_samples):
-            data_batch[i] = data[i][..., indices[i]]
-            data_batch[i] = np.moveaxis(data_batch[i], -2, 0)
-
-        null_distribution.append(statistic(*data_batch, axis=-1))
-    null_distribution = np.concatenate(null_distribution, axis=0)
-
-    return null_distribution, n_permutations, exact_test
-
-
-def _calculate_null_samples(data, statistic, n_permutations, batch,
-                            random_state=None):
-    """
-    Calculate null distribution for paired-sample tests.
-    """
-    n_samples = len(data)
-
-    # By convention, the meaning of the "samples" permutations type for
-    # data with only one sample is to flip the sign of the observations.
-    # Achieve this by adding a second sample - the negative of the original.
-    if n_samples == 1:
-        data = [data[0], -data[0]]
-
-    # The "samples" permutation strategy is the same as the "pairings"
-    # strategy except the roles of samples and observations are flipped.
-    # So swap these axes, then we'll use the function for the "pairings"
-    # strategy to do all the work!
-    data = np.swapaxes(data, 0, -1)
-
-    # (Of course, the user's statistic doesn't know what we've done here,
-    # so we need to pass it what it's expecting.)
-    def statistic_wrapped(*data, axis):
-        data = np.swapaxes(data, 0, -1)
-        if n_samples == 1:
-            data = data[0:1]
-        return statistic(*data, axis=axis)
-
-    return _calculate_null_pairings(data, statistic_wrapped, n_permutations,
-                                    batch, random_state)
-
-
-def _permutation_test_iv(data, statistic, permutation_type, vectorized,
-                         n_resamples, batch, alternative, axis, random_state):
-    """Input validation for `permutation_test`."""
-
-    axis_int = int(axis)
-    if axis != axis_int:
-        raise ValueError("`axis` must be an integer.")
-
-    permutation_types = {'samples', 'pairings', 'independent'}
-    permutation_type = permutation_type.lower()
-    if permutation_type not in permutation_types:
-        raise ValueError(f"`permutation_type` must be in {permutation_types}.")
-
-    if vectorized not in {True, False}:
-        raise ValueError("`vectorized` must be `True` or `False`.")
-
-    if not vectorized:
-        statistic = _bootstrap._vectorize_statistic(statistic)
-
-    message = "`data` must be a tuple containing at least two samples"
-    try:
-        if len(data) < 2 and permutation_type == 'independent':
-            raise ValueError(message)
-    except TypeError:
-        raise TypeError(message)
-
-    data = _broadcast_arrays(data, axis)
-    data_iv = []
-    for sample in data:
-        sample = np.atleast_1d(sample)
-        if sample.shape[axis] <= 1:
-            raise ValueError("each sample in `data` must contain two or more "
-                             "observations along `axis`.")
-        sample = np.moveaxis(sample, axis_int, -1)
-        data_iv.append(sample)
-
-    n_resamples_int = (int(n_resamples) if not np.isinf(n_resamples)
-                       else np.inf)
-    if n_resamples != n_resamples_int or n_resamples_int <= 0:
-        raise ValueError("`n_resamples` must be a positive integer.")
-
-    if batch is None:
-        batch_iv = batch
-    else:
-        batch_iv = int(batch)
-        if batch != batch_iv or batch_iv <= 0:
-            raise ValueError("`batch` must be a positive integer or None.")
-
-    alternatives = {'two-sided', 'greater', 'less'}
-    alternative = alternative.lower()
-    if alternative not in alternatives:
-        raise ValueError(f"`alternative` must be in {alternatives}")
-
-    random_state = check_random_state(random_state)
-
-    return (data_iv, statistic, permutation_type, vectorized, n_resamples_int,
-            batch_iv, alternative, axis_int, random_state)
-
-
-def permutation_test(data, statistic, *, permutation_type='independent',
-                     vectorized=False, n_resamples=9999, batch=None,
-                     alternative="two-sided", axis=0, random_state=None):
-    r"""
-    Performs a permutation test of a given statistic on provided data.
-
-    For independent sample statistics, the null hypothesis is that the data are
-    randomly sampled from the same distribution.
-    For paired sample statistics, two null hypothesis can be tested:
-    that the data are paired at random or that the data are assigned to samples
-    at random.
-
-    Parameters
-    ----------
-    data : iterable of array-like
-        Contains the samples, each of which is an array of observations.
-        Dimensions of sample arrays must be compatible for broadcasting except
-        along `axis`.
-    statistic : callable
-        Statistic for which the p-value of the hypothesis test is to be
-        calculated. `statistic` must be a callable that accepts samples
-        as separate arguments (e.g. ``statistic(*data)``) and returns the
-        resulting statistic.
-        If `vectorized` is set ``True``, `statistic` must also accept a keyword
-        argument `axis` and be vectorized to compute the statistic along the
-        provided `axis` of the sample arrays.
-    permutation_type : {'independent', 'samples', 'pairings'}, optional
-        The type of permutations to be performed, in accordance with the
-        null hypothesis. The first two permutation types are for paired sample
-        statistics, in which all samples contain the same number of
-        observations and observations with corresponding indices along `axis`
-        are considered to be paired; the third is for independent sample
-        statistics.
-
-        - ``'samples'`` : observations are assigned to different samples
-          but remain paired with the same observations from other samples.
-          This permutation type is appropriate for paired sample hypothesis
-          tests such as the Wilcoxon signed-rank test and the paired t-test.
-        - ``'pairings'`` : observations are paired with different observations,
-          but they remain within the same sample. This permutation type is
-          appropriate for association/correlation tests with statistics such
-          as Spearman's :math:`\rho`, Kendall's :math:`\tau`, and Pearson's
-          :math:`r`.
-        - ``'independent'`` (default) : observations are assigned to different
-          samples. Samples may contain different numbers of observations. This
-          permutation type is appropriate for independent sample hypothesis
-          tests such as the Mann-Whitney :math:`U` test and the independent
-          sample t-test.
-
-          Please see the Notes section below for more detailed descriptions
-          of the permutation types.
-
-    vectorized : bool, default: ``False``
-        By default, `statistic` is assumed to calculate the statistic only for
-        1D arrays contained in `data`. If `vectorized` is set ``True``,
-        `statistic` must also accept a keyword argument `axis` and be
-        vectorized to compute the statistic along the provided `axis` of the ND
-        arrays in `data`. Use of a vectorized statistic can reduce computation
-        time.
-    n_resamples : int or np.inf, default: 9999
-        Number of random permutations (resamples) used to approximate the null
-        distribution. If greater than or equal to the number of distinct
-        permutations, the exact null distribution will be computed.
-        Note that the number of distinct permutations grows very rapidly with
-        the sizes of samples, so exact tests are feasible only for very small
-        data sets.
-    batch : int, optional
-        The number of permutations to process in each call to `statistic`.
-        Memory usage is O(`batch`*``n``), where ``n`` is the total size
-        of all samples, regardless of the value of `vectorized`. Default is
-        ``None``, in which case ``batch`` is the number of permutations.
-    alternative : {'two-sided', 'less', 'greater'}, optional
-        The alternative hypothesis for which the p-value is calculated.
-        For each alternative, the p-value is defined for exact tests as
-        follows.
-
-        - ``'greater'`` : the percentage of the null distribution that is
-          greater than or equal to the observed value of the test statistic.
-        - ``'less'`` : the percentage of the null distribution that is
-          less than or equal to the observed value of the test statistic.
-        - ``'two-sided'`` (default) : twice the smaller of the p-values above.
-
-        Note that p-values for randomized tests are calculated according to the
-        conservative (over-estimated) approximation suggested in [2]_ and [3]_
-        rather than the unbiased estimator suggested in [4]_. That is, when
-        calculating the proportion of the randomized null distribution that is
-        as extreme as the observed value of the test statistic, the values in
-        the numerator and denominator are both increased by one. An
-        interpretation of this adjustment is that the observed value of the
-        test statistic is always included as an element of the randomized
-        null distribution.
-        The convention used for two-sided p-values is not universal;
-        the observed test statistic and null distribution are returned in
-        case a different definition is preferred.
-
-    axis : int, default: 0
-        The axis of the (broadcasted) samples over which to calculate the
-        statistic. If samples have a different number of dimensions,
-        singleton dimensions are prepended to samples with fewer dimensions
-        before `axis` is considered.
-    random_state : {None, int, `numpy.random.Generator`,
-                    `numpy.random.RandomState`}, optional
-
-        Pseudorandom number generator state used to generate permutations.
-
-        If `random_state` is ``None`` (default), the
-        `numpy.random.RandomState` singleton is used.
-        If `random_state` is an int, a new ``RandomState`` instance is used,
-        seeded with `random_state`.
-        If `random_state` is already a ``Generator`` or ``RandomState``
-        instance then that instance is used.
-
-    Returns
-    -------
-    statistic : float or ndarray
-        The observed test statistic of the data.
-    pvalue : float or ndarray
-        The p-value for the given alternative.
-    null_distribution : ndarray
-        The values of the test statistic generated under the null hypothesis.
-
-    Notes
-    -----
-
-    The three types of permutation tests supported by this function are
-    described below.
-
-    **Unpaired statistics** (``permutation_type='independent'``):
-
-    The null hypothesis associated with this permutation type is that all
-    observations are sampled from the same underlying distribution and that
-    they have been assigned to one of the samples at random.
-
-    Suppose ``data`` contains two samples; e.g. ``a, b = data``.
-    When ``1 < n_resamples < binom(n, k)``, where
-
-    * ``k`` is the number of observations in ``a``,
-    * ``n`` is the total number of observations in ``a`` and ``b``, and
-    * ``binom(n, k)`` is the binomial coefficient (``n`` choose ``k``),
-
-    the data are pooled (concatenated), randomly assigned to either the first
-    or second sample, and the statistic is calculated. This process is
-    performed repeatedly, `permutation` times, generating a distribution of the
-    statistic under the null hypothesis. The statistic of the original
-    data is compared to this distribution to determine the p-value.
-
-    When ``n_resamples >= binom(n, k)``, an exact test is performed: the data
-    are *partitioned* between the samples in each distinct way exactly once,
-    and the exact null distribution is formed.
-    Note that for a given partitioning of the data between the samples,
-    only one ordering/permutation of the data *within* each sample is
-    considered. For statistics that do not depend on the order of the data
-    within samples, this dramatically reduces computational cost without
-    affecting the shape of the null distribution (because the frequency/count
-    of each value is affected by the same factor).
-
-    For ``a = [a1, a2, a3, a4]`` and ``b = [b1, b2, b3]``, an example of this
-    permutation type is ``x = [b3, a1, a2, b2]`` and ``y = [a4, b1, a3]``.
-    Because only one ordering/permutation of the data *within* each sample
-    is considered in an exact test, a resampling like ``x = [b3, a1, b2, a2]``
-    and ``y = [a4, a3, b1]`` would *not* be considered distinct from the
-    example above.
-
-    ``permutation_type='independent'`` does not support one-sample statistics,
-    but it can be applied to statistics with more than two samples. In this
-    case, if ``n`` is an array of the number of observations within each
-    sample, the number of distinct partitions is::
-
-        np.product([binom(sum(n[i:]), sum(n[i+1:])) for i in range(len(n)-1)])
-
-    **Paired statistics, permute pairings** (``permutation_type='pairings'``):
-
-    The null hypothesis associated with this permutation type is that
-    observations within each sample are drawn from the same underlying
-    distribution and that pairings with elements of other samples are
-    assigned at random.
-
-    Suppose ``data`` contains only one sample; e.g. ``a, = data``, and we
-    wish to consider all possible pairings of elements of ``a`` with elements
-    of a second sample, ``b``. Let ``n`` be the number of observations in
-    ``a``, which must also equal the number of observations in ``b``.
-
-    When ``1 < n_resamples < factorial(n)``, the elements of ``a`` are
-    randomly permuted. The user-supplied statistic accepts one data argument,
-    say ``a_perm``, and calculates the statistic considering ``a_perm`` and
-    ``b``. This process is performed repeatedly, `permutation` times,
-    generating a distribution of the statistic under the null hypothesis.
-    The statistic of the original data is compared to this distribution to
-    determine the p-value.
-
-    When ``n_resamples >= factorial(n)``, an exact test is performed:
-    ``a`` is permuted in each distinct way exactly once. Therefore, the
-    `statistic` is computed for each unique pairing of samples between ``a``
-    and ``b`` exactly once.
-
-    For ``a = [a1, a2, a3]`` and ``b = [b1, b2, b3]``, an example of this
-    permutation type is ``a_perm = [a3, a1, a2]`` while ``b`` is left
-    in its original order.
-
-    ``permutation_type='pairings'`` supports ``data`` containing any number
-    of samples, each of which must contain the same number of observations.
-    All samples provided in ``data`` are permuted *independently*. Therefore,
-    if ``m`` is the number of samples and ``n`` is the number of observations
-    within each sample, then the number of permutations in an exact test is::
-
-        factorial(n)**m
-
-    Note that if a two-sample statistic, for example, does not inherently
-    depend on the order in which observations are provided - only on the
-    *pairings* of observations - then only one of the two samples should be
-    provided in ``data``. This dramatically reduces computational cost without
-    affecting the shape of the null distribution (because the frequency/count
-    of each value is affected by the same factor).
-
-    **Paired statistics, permute samples** (``permutation_type='samples'``):
-
-    The null hypothesis associated with this permutation type is that
-    observations within each pair are drawn from the same underlying
-    distribution and that the sample to which they are assigned is random.
-
-    Suppose ``data`` contains two samples; e.g. ``a, b = data``.
-    Let ``n`` be the number of observations in ``a``, which must also equal
-    the number of observations in ``b``.
-
-    When ``1 < n_resamples < 2**n``, the elements of ``a`` are ``b`` are
-    randomly swapped between samples (maintaining their pairings) and the
-    statistic is calculated. This process is performed repeatedly,
-    `permutation` times,  generating a distribution of the statistic under the
-    null hypothesis. The statistic of the original data is compared to this
-    distribution to determine the p-value.
-
-    When ``n_resamples >= 2**n``, an exact test is performed: the observations
-    are assigned to the two samples in each distinct way (while maintaining
-    pairings) exactly once.
-
-    For ``a = [a1, a2, a3]`` and ``b = [b1, b2, b3]``, an example of this
-    permutation type is ``x = [b1, a2, b3]`` and ``y = [a1, b2, a3]``.
-
-    ``permutation_type='samples'`` supports ``data`` containing any number
-    of samples, each of which must contain the same number of observations.
-    If ``data`` contains more than one sample, paired observations within
-    ``data`` are exchanged between samples *independently*. Therefore, if ``m``
-    is the number of samples and ``n`` is the number of observations within
-    each sample, then the number of permutations in an exact test is::
-
-        factorial(m)**n
-
-    Several paired-sample statistical tests, such as the Wilcoxon signed rank
-    test and paired-sample t-test, can be performed considering only the
-    *difference* between two paired elements. Accordingly, if ``data`` contains
-    only one sample, then the null distribution is formed by independently
-    changing the *sign* of each observation.
-
-    References
-    ----------
-
-    .. [1] R. A. Fisher. The Design of Experiments, 6th Ed (1951).
-    .. [2] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
-       Zero: Calculating Exact P-values When Permutations Are Randomly Drawn."
-       Statistical Applications in Genetics and Molecular Biology 9.1 (2010).
-    .. [3] M. D. Ernst. "Permutation Methods: A Basis for Exact Inference".
-       Statistical Science (2004).
-    .. [4] B. Efron and R. J. Tibshirani. An Introduction to the Bootstrap
-       (1993).
-
-    Examples
-    --------
-
-    Suppose we wish to test whether two samples are drawn from the same
-    distribution. Assume that the underlying distributions are unknown to us,
-    and that before observing the data, we hypothesized that the mean of the
-    first sample would be less than that of the second sample. We decide that
-    we will use the difference between the sample means as a test statistic,
-    and we will consider a p-value of 0.05 to be statistically significant.
-
-    For efficiency, we write the function defining the test statistic in a
-    vectorized fashion: the samples ``x`` and ``y`` can be ND arrays, and the
-    statistic will be calculated for each axis-slice along `axis`.
-
-    >>> def statistic(x, y, axis):
-    ...     return np.mean(x, axis=axis) - np.mean(y, axis=axis)
-
-    After collecting our data, we calculate the observed value of the test
-    statistic.
-
-    >>> from scipy.stats import norm
-    >>> rng = np.random.default_rng()
-    >>> x = norm.rvs(size=5, random_state=rng)
-    >>> y = norm.rvs(size=6, loc = 3, random_state=rng)
-    >>> statistic(x, y, 0)
-    -3.5411688580987266
-
-    Indeed, the test statistic is negative, suggesting that the true mean of
-    the distribution underlying ``x`` is less than that of the distribution
-    underlying ``y``. To determine the probability of this occuring by chance
-    if the two samples were drawn from the same distribution, we perform
-    a permutation test.
-
-    >>> from scipy.stats import permutation_test
-    >>> # because our statistic is vectorized, we pass `vectorized=True`
-    >>> # `n_resamples=np.inf` indicates that an exact test is to be performed
-    >>> res = permutation_test((x, y), statistic, vectorized=True,
-    ...                        n_resamples=np.inf, alternative='less')
-    >>> print(res.statistic)
-    -3.5411688580987266
-    >>> print(res.pvalue)
-    0.004329004329004329
-
-    The probability of obtaining a test statistic less than or equal to the
-    observed value under the null hypothesis is 0.4329%. This is less than our
-    chosen threshold of 5%, so we consider this to to be significant evidence
-    against the null hypothesis in favor of the alternative.
-
-    Because the size of the samples above was small, `permutation_test` could
-    perform an exact test. For larger samples, we resort to a randomized
-    permutation test.
-
-    >>> x = norm.rvs(size=100, random_state=rng)
-    >>> y = norm.rvs(size=120, loc=0.3, random_state=rng)
-    >>> res = permutation_test((x, y), statistic, n_resamples=100000,
-    ...                        vectorized=True, alternative='less',
-    ...                        random_state=rng)
-    >>> print(res.statistic)
-    -0.5230459671240913
-    >>> print(res.pvalue)
-    0.00016999830001699983
-
-    The approximate probability of obtaining a test statistic less than or
-    equal to the observed value under the null hypothesis is 0.0225%. This is
-    again less than our chosen threshold of 5%, so again we have significant
-    evidence to reject the null hypothesis in favor of the alternative.
-
-    For large samples and number of permutations, the result is comparable to
-    that of the corresponding asymptotic test, the independent sample t-test.
-
-    >>> from scipy.stats import ttest_ind
-    >>> res_asymptotic = ttest_ind(x, y, alternative='less')
-    >>> print(res_asymptotic.pvalue)
-    0.00012688101537979522
-
-    The permutation distribution of the test statistic is provided for
-    further investigation.
-
-    >>> import matplotlib.pyplot as plt
-    >>> plt.hist(res.null_distribution, bins=50)
-    >>> plt.title("Permutation distribution of test statistic")
-    >>> plt.xlabel("Value of Statistic")
-    >>> plt.ylabel("Frequency")
-
-    """
-    args = _permutation_test_iv(data, statistic, permutation_type, vectorized,
-                                n_resamples, batch, alternative, axis,
-                                random_state)
-    (data, statistic, permutation_type, vectorized, n_resamples, batch,
-     alternative, axis, random_state) = args
-
-    observed = statistic(*data, axis=-1)
-
-    null_calculators = {"pairings": _calculate_null_pairings,
-                        "samples": _calculate_null_samples,
-                        "independent": _calculate_null_both}
-    null_calculator_args = (data, statistic, n_resamples,
-                            batch, random_state)
-    calculate_null = null_calculators[permutation_type]
-    null_distribution, n_resamples, exact_test = (
-        calculate_null(*null_calculator_args))
-
-    # See References [2] and [3]
-    adjustment = 0 if exact_test else 1
-
-    def less(null_distribution, observed):
-        cmps = null_distribution <= observed
-        pvalues = (cmps.sum(axis=0) + adjustment) / (n_resamples + adjustment)
-        return pvalues
-
-    def greater(null_distribution, observed):
-        cmps = null_distribution >= observed
-        pvalues = (cmps.sum(axis=0) + adjustment) / (n_resamples + adjustment)
-        return pvalues
-
-    def two_sided(null_distribution, observed):
-        pvalues_less = less(null_distribution, observed)
-        pvalues_greater = greater(null_distribution, observed)
-        pvalues = np.minimum(pvalues_less, pvalues_greater) * 2
-        return pvalues
-
-    compare = {"less": less,
-               "greater": greater,
-               "two-sided": two_sided}
-
-    pvalues = compare[alternative](null_distribution, observed)
-    pvalues = np.clip(pvalues, 0, 1)
-
-    return PermutationTestResult(observed, pvalues, null_distribution)
 
 
 class TukeyHSDResult:

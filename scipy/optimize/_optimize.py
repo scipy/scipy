@@ -686,27 +686,6 @@ def _minimize_neldermead(func, x0, args=(), callback=None,
        51:1, pp. 259-277
 
     """
-    if 'ftol' in unknown_options:
-        warnings.warn("ftol is deprecated for Nelder-Mead,"
-                      " use fatol instead. If you specified both, only"
-                      " fatol is used.",
-                      DeprecationWarning)
-        if (np.isclose(fatol, 1e-4) and
-                not np.isclose(unknown_options['ftol'], 1e-4)):
-            # only ftol was probably specified, use it.
-            fatol = unknown_options['ftol']
-        unknown_options.pop('ftol')
-    if 'xtol' in unknown_options:
-        warnings.warn("xtol is deprecated for Nelder-Mead,"
-                      " use xatol instead. If you specified both, only"
-                      " xatol is used.",
-                      DeprecationWarning)
-        if (np.isclose(xatol, 1e-4) and
-                not np.isclose(unknown_options['xtol'], 1e-4)):
-            # only xtol was probably specified, use it.
-            xatol = unknown_options['xtol']
-        unknown_options.pop('xtol')
-
     _check_unknown_options(unknown_options)
     maxfun = maxfev
     retall = return_all
@@ -2269,12 +2248,19 @@ class Brent:
             if (xa > xc):  # swap so xa < xc can be assumed
                 xc, xa = xa, xc
             if not ((xa < xb) and (xb < xc)):
-                raise ValueError("Not a bracketing interval.")
+                raise ValueError(
+                    "Bracketing values (xa, xb, xc) do not"
+                    " fulfill this requirement: (xa < xb) and (xb < xc)"
+                )
             fa = func(*((xa,) + args))
             fb = func(*((xb,) + args))
             fc = func(*((xc,) + args))
             if not ((fb < fa) and (fb < fc)):
-                raise ValueError("Not a bracketing interval.")
+                raise ValueError(
+                    "Bracketing values (xa, xb, xc) do not fulfill"
+                    " this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+                )
+
             funcalls = 3
         else:
             raise ValueError("Bracketing interval must be "
@@ -2634,12 +2620,18 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         if (xa > xc):  # swap so xa < xc can be assumed
             xc, xa = xa, xc
         if not ((xa < xb) and (xb < xc)):
-            raise ValueError("Not a bracketing interval.")
+            raise ValueError(
+                "Bracketing values (xa, xb, xc) do not"
+                " fulfill this requirement: (xa < xb) and (xb < xc)"
+            )
         fa = func(*((xa,) + args))
         fb = func(*((xb,) + args))
         fc = func(*((xc,) + args))
         if not ((fb < fa) and (fb < fc)):
-            raise ValueError("Not a bracketing interval.")
+            raise ValueError(
+                "Bracketing values (xa, xb, xc) do not fulfill"
+                " this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+            )
         funcalls = 3
     else:
         raise ValueError("Bracketing interval must be length 2 or 3 sequence.")
@@ -3496,6 +3488,9 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     inpt_shape = grid.shape
     if (N > 1):
         grid = np.reshape(grid, (inpt_shape[0], np.prod(inpt_shape[1:]))).T
+
+    if not np.iterable(args):
+        args = (args,)
 
     wrapped_func = _Brute_Wrapper(func, args)
 

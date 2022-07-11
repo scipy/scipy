@@ -569,8 +569,8 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> minimizer_kwargs = {"method": "BFGS"}
     >>> ret = basinhopping(func, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200)
-    >>> print("global minimum: x = %.4f, f(x0) = %.4f" % (ret.x, ret.fun))
-    global minimum: x = -0.1951, f(x0) = -1.0009
+    >>> print("global minimum: x = %.4f, f(x) = %.4f" % (ret.x, ret.fun))
+    global minimum: x = -0.1951, f(x) = -1.0009
 
     Next consider a 2-D minimization problem. Also, this time, we
     will use gradient information to significantly speed up the search.
@@ -590,10 +590,10 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> x0 = [1.0, 1.0]
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200)
-    >>> print("global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
+    >>> print("global minimum: x = [%.4f, %.4f], f(x) = %.4f" % (ret.x[0],
     ...                                                           ret.x[1],
     ...                                                           ret.fun))
-    global minimum: x = [-0.1951, -0.1000], f(x0) = -1.0109
+    global minimum: x = [-0.1951, -0.1000], f(x) = -1.0109
 
 
     Here is an example using a custom step-taking routine. Imagine you want
@@ -617,10 +617,10 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     >>> mytakestep = MyTakeStep()
     >>> ret = basinhopping(func2d, x0, minimizer_kwargs=minimizer_kwargs,
     ...                    niter=200, take_step=mytakestep)
-    >>> print("global minimum: x = [%.4f, %.4f], f(x0) = %.4f" % (ret.x[0],
+    >>> print("global minimum: x = [%.4f, %.4f], f(x) = %.4f" % (ret.x[0],
     ...                                                           ret.x[1],
     ...                                                           ret.fun))
-    global minimum: x = [-0.1951, -0.1000], f(x0) = -1.0109
+    global minimum: x = [-0.1951, -0.1000], f(x) = -1.0109
 
 
     Now, let's do an example using a custom callback function which prints the

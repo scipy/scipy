@@ -1225,10 +1225,9 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
         Minimum length a ridge line needs to be acceptable.
         Default is ``cwt.shape[0] / 4``, ie 1/4-th the number of widths.
     min_snr : float, optional
-        Minimum SNR ratio. Default 1. The signal is the value of
-        the cwt matrix at the shortest length scale (``cwt[0, loc]``), the
-        noise is the `noise_perc`th percentile of datapoints contained within a
-        window of `window_size` around ``cwt[0, loc]``.
+        Minimum SNR ratio. Default 1. The signal is the maximum CWT coefficient
+        on the largest ridge line. The noise is `noise_perc` th percentile of
+        datapoints contained within the same ridge line.
     noise_perc : float, optional
         When calculating the noise floor, percentile of data points
         examined below which to consider noise. Calculated using
@@ -1290,7 +1289,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
     if wavelet is None:
         wavelet = ricker
 
-    cwt_dat = cwt(vector, wavelet, widths, window_size=window_size)
+    cwt_dat = cwt(vector, wavelet, widths)
     ridge_lines = _identify_ridge_lines(cwt_dat, max_distances, gap_thresh)
     filtered = _filter_ridge_lines(cwt_dat, ridge_lines, min_length=min_length,
                                    window_size=window_size, min_snr=min_snr,

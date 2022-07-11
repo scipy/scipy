@@ -249,6 +249,95 @@ class DistributionsAll(Benchmark):
         self.method(*self.args, **self.kwds)
 
 
+class TrackContinuousRoundtrip(Benchmark):
+    # Benchmarks that track a value for every distribution can go here
+    param_names = ['dist_name']
+    params = list(dict(distcont).keys())
+    dist_data = dict(distcont)
+
+    def setup(self, dist_name):
+        # Distribution setup follows `DistributionsAll` benchmark.
+        # This focuses on ppf, so the code for handling other functions is
+        # removed for simplicity.
+        self.dist = getattr(stats, dist_name)
+        self.shape_args = self.dist_data[dist_name]
+
+    def track_distribution_ppf_roundtrip(self, dist_name):
+        # Tracks the worst relative error of a
+        # couple of round-trip ppf -> cdf calculations.
+        vals = [0.001, 0.5, 0.999]
+
+        ppf = self.dist.ppf(vals, *self.shape_args)
+        round_trip = self.dist.cdf(ppf, *self.shape_args)
+
+        err_rel = np.abs(vals - round_trip) / vals
+        return np.max(err_rel)
+
+    def track_distribution_ppf_roundtrip_extrema(self, dist_name):
+        # Tracks the absolute error of an "extreme" round-trip
+        # ppf -> cdf calculation.
+        v = 1e-6
+        ppf = self.dist.ppf(v, *self.shape_args)
+        round_trip = self.dist.cdf(ppf, *self.shape_args)
+
+        err_abs = np.abs(v - round_trip)
+        return err_abs
+
+    def track_distribution_isf_roundtrip(self, dist_name):
+        # Tracks the worst relative error of a
+        # couple of round-trip isf -> sf calculations.
+        vals = [0.001, 0.5, 0.999]
+
+        isf = self.dist.isf(vals, *self.shape_args)
+        round_trip = self.dist.sf(isf, *self.shape_args)
+
+        err_rel = np.abs(vals - round_trip) / vals
+        return np.max(err_rel)
+
+    def track_distribution_isf_roundtrip_extrema(self, dist_name):
+        # Tracks the absolute error of an "extreme" round-trip
+        # isf -> sf calculation.
+        v = 1e-6
+        ppf = self.dist.isf(v, *self.shape_args)
+        round_trip = self.dist.sf(ppf, *self.shape_args)
+
+        err_abs = np.abs(v - round_trip)
+        return err_abs
+
+
+class PDFPeakMemory(Benchmark):
+    # Tracks peak memory when a distribution is given a large array to process
+    # See gh-14095
+
+    # Run for up to 30 min - some dists are quite slow.
+    timeout = 1800.0
+
+    x = np.arange(1e6)
+
+    param_names = ['dist_name']
+    params = list(dict(distcont).keys())
+    dist_data = dict(distcont)
+
+    # So slow that 30min isn't enough time to finish.
+    slow_dists = ["levy_stable"]
+
+    def setup(self, dist_name):
+        # This benchmark is demanding. Skip it if the env isn't xslow.
+        if not is_xslow():
+            raise NotImplementedError("skipped - enviroment is not xslow. "
+                                      "To enable this benchamark, set the "
+                                      "enviroment variable SCIPY_XSLOW=1")
+
+        if dist_name in self.slow_dists:
+            raise NotImplementedError("skipped - dist is too slow.")
+
+        self.dist = getattr(stats, dist_name)
+        self.shape_args = self.dist_data[dist_name]
+
+    def peakmem_bigarr_pdf(self, dist_name):
+        self.dist.pdf(self.x, *self.shape_args)
+
+
 class Distribution(Benchmark):
     # though there is a new version of this benchmark that runs all the
     # distributions, at the time of writing there was odd behavior on
@@ -503,11 +592,11 @@ class BenchQMCSobol(Benchmark):
 
     def setup(self, d, base2):
         self.rng = np.random.default_rng(168525179735951991038384544)
-        stats.qmc.Sobol(1)  # make it load direction numbers
+        stats.qmc.Sobol(1, bits=32)  # make it load direction numbers
 
     def time_sobol(self, d, base2):
         # scrambling is happening at init only, not worth checking
-        seq = stats.qmc.Sobol(d, scramble=False, seed=self.rng)
+        seq = stats.qmc.Sobol(d, scramble=False, bits=32, seed=self.rng)
         seq.random_base2(base2)
 
 

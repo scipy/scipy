@@ -3,7 +3,6 @@
 
 import sys
 import operator
-import warnings
 import numpy as np
 from scipy._lib._util import prod
 
@@ -41,7 +40,7 @@ def upcast(*args):
     if t is not None:
         return t
 
-    upcast = np.find_common_type(args, [])
+    upcast = np.result_type(*args)
 
     for t in supported_dtypes:
         if np.can_cast(upcast, t):
@@ -111,7 +110,9 @@ def getdtype(dtype, a=None, default=None):
     else:
         newdtype = np.dtype(dtype)
         if newdtype == np.object_:
-            warnings.warn("object dtype is not supported by sparse matrices")
+            raise ValueError(
+                "object dtype is not supported by sparse matrices"
+            )
 
     return newdtype
 
@@ -150,11 +151,12 @@ def get_index_dtype(arrays=(), maxval=None, check_contents=False):
 
     """
 
-    int32min = np.iinfo(np.int32).min
-    int32max = np.iinfo(np.int32).max
+    int32min = np.int32(np.iinfo(np.int32).min)
+    int32max = np.int32(np.iinfo(np.int32).max)
 
     dtype = np.intc
     if maxval is not None:
+        maxval = np.int64(maxval)
         if maxval > int32max:
             dtype = np.int64
 
@@ -211,8 +213,8 @@ def isintlike(x):
         except (TypeError, ValueError):
             return False
         if loose_int:
-            warnings.warn("Inexact indices into sparse matrices are deprecated",
-                          DeprecationWarning)
+            msg = "Inexact indices into sparse matrices are not allowed"
+            raise ValueError(msg)
         return loose_int
     return True
 

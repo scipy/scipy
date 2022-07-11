@@ -83,7 +83,8 @@ fitpack_src = [
   'fitpack/splint.f',
   'fitpack/sproot.f',
   'fitpack/surev.f',
-  'fitpack/surfit.f'
+  'fitpack/surfit.f',
+  'fitpack/pardtc.f'
 ]
 
 # TODO: Add flags for 64 bit ints
@@ -139,10 +140,10 @@ dfitpack_module = custom_target('dfitpack_module',
 
 # TODO: Add flags for 64 bit ints
 dfitpack = py3.extension_module('dfitpack',
-  [dfitpack_module, fortranobject_c],
+  dfitpack_module,
   c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
   include_directories: [incdir_numpy, incdir_f2py],
-  dependencies: [py3_dep, lapack],
+  dependencies: [py3_dep, lapack, fortranobject_dep],
   link_with: [fitpack_lib],
   install: true,
   link_language: 'fortran',
@@ -191,6 +192,7 @@ py3.install_sources([
     '_rbf.py',
     '_rbfinterp.py',
     '_rbfinterp_pythran.py',
+    '_rgi.py',
     'fitpack.py',
     'fitpack2.py',
     'interpolate.py',

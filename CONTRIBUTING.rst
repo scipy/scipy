@@ -7,7 +7,7 @@ any help you give. Note that a code of conduct applies to all spaces
 managed by the SciPy project, including issues and pull requests:
 https://github.com/scipy/scipy/blob/main/doc/source/dev/conduct/code_of_conduct.rst.
 
-When submitting a pull request, we ask you check the following:
+When submitting a pull request, we ask you to check the following:
 
 1. **Unit tests**, **documentation**, and **code style** are in order.
    For details, please read
@@ -21,5 +21,5 @@ When submitting a pull request, we ask you check the following:
    https://github.com/scipy/scipy/blob/main/LICENSE.txt.
    If you did not write the code yourself, you ensure the existing
    license is compatible and include the license information in the
-   contributed files, or obtain a permission from the original
+   contributed files, or obtain permission from the original
    author to relicense the contributed code.
