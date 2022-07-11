@@ -6,10 +6,6 @@ np.import_array()
 
 import itertools
 
-ctypedef fused double_or_long:
-    double
-    long
-
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
@@ -130,9 +126,9 @@ def evaluate_linear(values, indices, norm_distances, out_of_bounds):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def find_indices(grid, xi):
+def find_indices(grid, double[:, :] xi):
     cdef long i, j, I, J, index, grid_i_size, nx
-    cdef double denom, xi_ij, grid_i_index
+    cdef double denom, grid_i_index
     cdef np.ndarray[long, ndim=2] indices
     cdef np.ndarray[double, ndim=2] norm_distances
     cdef np.ndarray[double, ndim=1] grid_i
@@ -143,16 +139,16 @@ def find_indices(grid, xi):
     norm_distances = np.zeros_like(xi, dtype=float)
 
     # indexes to iterate over
-    I, J = xi.shape
+    I = xi.shape[0]
+    J = xi.shape[1]
 
     # iterate through dimensions
     for i in range(I):
         grid_i = np.asarray(grid[i], dtype=float)  # FIXME: do it earlier
-        grid_i_size = len(grid_i)
-        nx = grid_i.shape[0]
+        grid_i_size = grid_i.shape[0]
+
         for j in range(J):
-            xi_ij = xi[i, j]
-            index = find_interval_ascending(&grid_i[0], nx, xi_ij) - 1
+            index = find_interval_ascending(&grid_i[0], grid_i_size, xi[i, j]) - 1
             if index < 0:
                 index = 0
             elif index < grid_i_size - 2:
@@ -163,7 +159,6 @@ def find_indices(grid, xi):
             # where `grid[index+1] == grid[index]`
             denom = grid_i[index + 1] - grid_i[index]
             if denom:
-                grid_i_index = grid_i[index]
-                norm_distances[i, j] = (xi_ij - grid_i_index) / denom
+                norm_distances[i, j] = (xi[i, j] - grid_i[index]) / denom
 
     return indices, norm_distances
