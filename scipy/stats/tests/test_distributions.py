@@ -127,7 +127,6 @@ def test_vonmises_numerical():
                           (2.0, 0.01, 0.15849003875385817),
                           (2.0, 25.0, 8.356882934278192e-16),
                           (2.0, 800, 0.0)])
-
 def test_vonmises_pdf(x, kappa, expected_pdf):
     pdf = stats.vonmises.pdf(x, kappa)
     assert_allclose(pdf, expected_pdf, rtol=1e-15)
