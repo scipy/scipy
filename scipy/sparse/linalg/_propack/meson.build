@@ -106,10 +106,10 @@ foreach ele: elements
   )
 
   propacklib = py3.extension_module(ele[0],
-    [propack_module, fortranobject_c],
+    propack_module,
     link_with: propack_lib,
     c_args: ['-U_OPENMP', '-Wno-maybe-uninitialized', '-Wno-cpp'],
-    dependencies: [py3_dep, lapack],
+    dependencies: [py3_dep, lapack, fortranobject_dep],
     include_directories: [inc_np, inc_f2py],
     install: true,
     link_language: 'fortran',

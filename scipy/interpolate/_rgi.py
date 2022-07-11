@@ -320,14 +320,17 @@ class RegularGridInterpolator:
                                       np.all(p <= self.grid[i][-1])):
                     raise ValueError("One of the requested xi is out of bounds "
                                      "in dimension %d" % i)
+            out_of_bounds = None
+        else:
+            out_of_bounds = self._find_out_of_bounds(xi.T)
 
         if method == "linear":
-            indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
+            indices, norm_distances = self._find_indices(xi.T)
             result = self._evaluate_linear(indices,
                                            norm_distances,
                                            out_of_bounds)
         elif method == "nearest":
-            indices, norm_distances, out_of_bounds = self._find_indices(xi.T)
+            indices, norm_distances = self._find_indices(xi.T)
             result = self._evaluate_nearest(indices,
                                             norm_distances,
                                             out_of_bounds)
@@ -416,7 +419,17 @@ class RegularGridInterpolator:
         return values
 
     def _find_indices(self, xi):
+
         return find_indices(self.grid, self.bounds_error, xi)
+
+    def _find_out_of_bounds(self, xi):
+        # check for out of bounds xi
+        out_of_bounds = np.zeros((xi.shape[1]), dtype=bool)
+        # iterate through dimensions
+        for x, grid in zip(xi, self.grid):
+            out_of_bounds += x < grid[0]
+            out_of_bounds += x > grid[-1]
+        return out_of_bounds
 
 
 def interpn(points, values, xi, method="linear", bounds_error=True,
@@ -553,7 +566,7 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     if xi.shape[-1] != len(grid):
         raise ValueError("The requested sample points xi have dimension "
                          "%d, but this RegularGridInterpolator has "
-                         "dimension %d" % (xi.shape[1], len(grid)))
+                         "dimension %d" % (xi.shape[-1], len(grid)))
 
     if bounds_error:
         for i, p in enumerate(xi.T):
