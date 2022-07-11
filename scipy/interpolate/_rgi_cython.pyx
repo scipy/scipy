@@ -133,6 +133,7 @@ def find_indices(grid, double[:, :] xi):
     cdef np.ndarray[double, ndim=2] norm_distances
     cdef np.ndarray[double, ndim=1] grid_i
 
+    cdef int index = 0
     # find relevant edges between which xi are situated
     indices = np.empty_like(xi, dtype=int)
     # compute distance to lower edge in unity units
@@ -148,7 +149,7 @@ def find_indices(grid, double[:, :] xi):
         grid_i_size = grid_i.shape[0]
 
         for j in range(J):
-            index = find_interval_ascending(&grid_i[0], grid_i_size, xi[i, j]) - 1
+            index = find_interval_ascending(&grid_i[0],grid_i_size, xi[i, j], prev_interval=index) - 1
             if index < 0:
                 index = 0
             elif index < grid_i_size - 2:
