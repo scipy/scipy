@@ -137,11 +137,10 @@ def test_vonmises_pdf(x, kappa, expected_pdf):
 @pytest.mark.parametrize('x, kappa, expected_logpdf',
                          [(0.1, 0.01, -1.8279520246003170),
                           (0.1, 25.0, 0.5604990605420549),
-                          (0.1, 800, -1.5734679473375139),
+                          (0.1, 800, -1.5734567947337514),
                           (2.0, 0.01, -1.8420635346185686),
                           (2.0, 25.0, -34.7182759850871489),
                           (2.0, 800, -1130.4942582548682739)])
-
 def test_vonmises_logpdf(x, kappa, expected_logpdf):
     logpdf = stats.vonmises.logpdf(x, kappa)
     assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
