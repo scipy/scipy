@@ -1014,11 +1014,15 @@ def boschloo_exact(table, alternative="two-sided", n=32):
     is a uniformly more powerful alternative to Fisher's exact test
     for 2x2 contingency tables.
 
+    Boschloo's exact test uses the p-value of Fisher's exact test as a
+    statistic, and Boschloo's p-value is the probability under the null
+    hypothesis of observing such an extreme value of this statistic.
+
     Let's define :math:`X_0` a 2x2 matrix representing the observed sample,
     where each column stores the binomial experiment, as in the example
     below. Let's also define :math:`p_1, p_2` the theoretical binomial
     probabilities for  :math:`x_{11}` and :math:`x_{12}`. When using
-    Boschloo exact test, we can assert three different null hypotheses :
+    Boschloo exact test, we can assert three different alternative hypotheses:
 
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 < p_2`,
       with `alternative` = "less"
@@ -1027,14 +1031,15 @@ def boschloo_exact(table, alternative="two-sided", n=32):
       with `alternative` = "greater"
 
     - :math:`H_0 : p_1=p_2` versus :math:`H_1 : p_1 \neq p_2`,
-      with `alternative` = "two-sided" (default one)
+      with `alternative` = "two-sided" (default)
 
-    Boschloo's exact test uses the p-value of Fisher's exact test as a
-    statistic, and Boschloo's p-value is the probability under the null
-    hypothesis of observing such an extreme value of this statistic.
-
-    Boschloo's and Barnard's are both more powerful than Fisher's exact
-    test.
+    There are multiple conventions for computing a two-sided p-value when the
+    null distribution is asymmetric. Here, we apply the convention that the
+    p-value of a two-sided test is twice the minimum of the p-values of the
+    one-sided tests (clipped to 1.0). Note that `fisher_exact` follows a
+    different convention, so for a given `table`, the statistic reported by
+    `boschloo_exact` may differ from the p-value reported by `fisher_exact`
+    when ``alternative='two-sided'``.
 
     .. versionadded:: 1.7.0
 
@@ -1134,7 +1139,7 @@ def boschloo_exact(table, alternative="two-sided", n=32):
 
         # Two-sided p-value is defined as twice the minimum of the one-sided
         # p-values
-        pvalue = 2 * res.pvalue
+        pvalue = np.clip(2 * res.pvalue, a_min=0, a_max=1)
         return BoschlooExactResult(res.statistic, pvalue)
     else:
         msg = (

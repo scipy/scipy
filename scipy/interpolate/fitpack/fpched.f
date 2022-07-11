@@ -1,4 +1,5 @@
-      subroutine fpched(x,m,t,n,k,ib,ie,ier)
+      recursive subroutine fpched(x,m,t,n,k,ib,ie,ier)
+      implicit none
 c  subroutine fpched verifies the number and the position of the knots
 c  t(j),j=1,2,...,n of a spline of degree k,with ib derative constraints
 c  at x(1) and ie constraints at x(m), in relation to the number and

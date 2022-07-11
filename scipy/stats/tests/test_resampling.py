@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
-from scipy.stats import (bootstrap, BootstrapDegenerateDistributionWarning,
-                         monte_carlo_test, permutation_test)
+from scipy.stats import bootstrap, monte_carlo_test, permutation_test
 from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy import special
@@ -142,6 +141,8 @@ def test_bootstrap_vectorized(method, axis, paired):
     z = np.random.rand(n_samples)
     res1 = bootstrap((x, y, z), my_statistic, paired=paired, method=method,
                      random_state=0, axis=0, n_resamples=100)
+    assert (res1.bootstrap_distribution.shape
+            == res1.standard_error.shape + (100,))
 
     reshape = [1, 1, 1]
     reshape[axis] = n_samples
@@ -361,7 +362,8 @@ def test_bootstrap_degenerate(method):
     data = 35 * [10000.]
     if method == "BCa":
         with np.errstate(invalid='ignore'):
-            with pytest.warns(BootstrapDegenerateDistributionWarning):
+            msg = "The BCa confidence interval cannot be calculated"
+            with pytest.warns(stats.DegenerateDataWarning, match=msg):
                 res = bootstrap([data, ], np.mean, method=method)
                 assert_equal(res.confidence_interval, (np.nan, np.nan))
     else:
@@ -512,7 +514,7 @@ def test_vector_valued_statistic(method):
         return stats.norm.fit(data)
 
     res = bootstrap((sample,), statistic, method=method, axis=-1,
-                    vectorized=False)
+                    vectorized=False, n_resamples=9999)
 
     counts = np.sum((res.confidence_interval.low.T < params)
                     & (res.confidence_interval.high.T > params),
@@ -522,6 +524,7 @@ def test_vector_valued_statistic(method):
     assert res.confidence_interval.low.shape == (2, 100)
     assert res.confidence_interval.high.shape == (2, 100)
     assert res.standard_error.shape == (2, 100)
+    assert res.bootstrap_distribution.shape == (2, 100, 9999)
 
 
 # --- Test Monte Carlo Hypothesis Test --- #
@@ -994,30 +997,26 @@ class TestPermutationTest:
                                 random_state=0)
 
         assert_allclose(res1.statistic, res2.statistic, rtol=self.rtol)
-
-        if permutations == 30:
-            # Even one-sided p-value is defined differently in ttest_ind for
-            # randomized tests. See permutation_test references [2] and [3].
-            assert_allclose((res1.pvalue*30+1)/31, res2.pvalue, rtol=self.rtol)
-        else:
-            assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
+        assert_allclose(res1.pvalue, res2.pvalue, rtol=self.rtol)
 
     # -- Independent (Unpaired) Sample Tests -- #
 
-    def test_against_kstest(self):
-        np.random.seed(0)
-        x = stats.norm.rvs(size=4, scale=1)
-        y = stats.norm.rvs(size=5, loc=3, scale=3)
+    @pytest.mark.parametrize('alternative', ("less", "greater", "two-sided"))
+    def test_against_ks_2samp(self, alternative):
+        rng = np.random.default_rng(abs(hash("ks_2samp")))
+        x = rng.normal(size=4, scale=1)
+        y = rng.normal(size=5, loc=3, scale=3)
 
-        alternative = 'greater'
         expected = stats.ks_2samp(x, y, alternative=alternative, mode='exact')
 
         def statistic1d(x, y):
             return stats.ks_2samp(x, y, mode='asymp',
                                   alternative=alternative).statistic
 
+        # ks_2samp is always a one-tailed 'greater' test
+        # it's the statistic that changes (D+ vs D- vs max(D+, D-))
         res = permutation_test((x, y), statistic1d, n_resamples=np.inf,
-                               alternative=alternative)
+                               alternative='greater')
 
         assert_allclose(res.statistic, expected.statistic, rtol=self.rtol)
         assert_allclose(res.pvalue, expected.pvalue, rtol=self.rtol)
@@ -1392,6 +1391,29 @@ class TestPermutationTest:
     def test_batch_generator(self, iterable, batch, expected):
         got = list(_resampling._batch_generator(iterable, batch))
         assert got == expected
+
+    def test_finite_precision_statistic(self):
+        # Some statistics return numerically distinct values when the values
+        # should be equal in theory. Test that `permutation_test` accounts
+        # for this in some way.
+        x = [1, 2, 4, 3]
+        y = [2, 4, 6, 8]
+
+        def statistic(x, y):
+            return stats.pearsonr(x, y)[0]
+
+        res = stats.permutation_test((x, y), statistic, vectorized=False,
+                                     permutation_type='pairings')
+        r, pvalue, null = res.statistic, res.pvalue, res.null_distribution
+
+        correct_p = 2 * np.sum(null >= r - 1e-14) / len(null)
+        assert pvalue == correct_p == 1/3
+        # Compare against other exact correlation tests using R corr.test
+        # options(digits=16)
+        # x = c(1, 2, 4, 3)
+        # y = c(2, 4, 6, 8)
+        # cor.test(x, y, alternative = "t", method = "spearman")  # 0.333333333
+        # cor.test(x, y, alternative = "t", method = "kendall")  # 0.333333333
 
 
 def test_all_partitions_concatenated():

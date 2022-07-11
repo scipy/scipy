@@ -1,4 +1,3 @@
-
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -96,7 +95,7 @@ fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
                          'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                          'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
-                         'invweibull']
+                         'truncpareto', 'invweibull']
                          + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
                             'pareto', 'powernorm', 'powerlognorm']
                          + ['pearson3'])
@@ -151,7 +150,8 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     rvs = distfn.rvs(size=sn, *arg, random_state=rng)
     m, v = distfn.stats(*arg)
 
-    check_sample_meanvar_(m, v, rvs)
+    if distname not in {'laplace_asymmetric'}:
+        check_sample_meanvar_(m, v, rvs)
     check_cdf_ppf(distfn, arg, distname)
     check_sf_isf(distfn, arg, distname)
     check_pdf(distfn, arg, distname)
@@ -176,7 +176,7 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
              distfn.logsf]
     # make sure arguments are within support
     spec_x = {'weibull_max': -0.5, 'levy_l': -0.5,
-              'pareto': 1.5, 'tukeylambda': 0.3,
+              'pareto': 1.5, 'truncpareto': 3.2, 'tukeylambda': 0.3,
               'rv_histogram_instance': 5.0}
     x = spec_x.get(distname, 0.5)
     if distname == 'invweibull':
@@ -248,8 +248,8 @@ def test_levy_stable_random_state_property():
 
 
 def cases_test_moments():
-    fail_normalization = set(['vonmises'])
-    fail_higher = set(['vonmises', 'ncf'])
+    fail_normalization = set()
+    fail_higher = set(['ncf'])
 
     for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
         if distname == 'levy_stable':
@@ -263,13 +263,18 @@ def cases_test_moments():
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
 
-        yield distname, arg, cond1, cond2, False
+        marks = list()
+        if distname == 'skewnorm':
+            # takes > 60 sec on Linux 32-bit and ~200 sec on Azure Windows
+            marks.append(pytest.mark.timeout(300))
+
+        yield pytest.param(distname, arg, cond1, cond2, False, marks=marks)
 
         if not cond1 or not cond2:
             # Run the distributions that have issues twice, once skipping the
             # not_ok parts, once with the not_ok parts but marked as knownfail
             yield pytest.param(distname, arg, True, True, True,
-                               marks=pytest.mark.xfail)
+                               marks=[pytest.mark.xfail] + marks)
 
 
 @pytest.mark.slow
@@ -286,19 +291,23 @@ def test_moments(distname, arg, normalization_ok, higher_ok, is_xfailing):
     with npt.suppress_warnings() as sup:
         sup.filter(IntegrationWarning,
                    "The integral is probably divergent, or slowly convergent.")
+        sup.filter(IntegrationWarning,
+                   "The maximum number of subdivisions.")
+
         if is_xfailing:
             sup.filter(IntegrationWarning)
 
         m, v, s, k = distfn.stats(*arg, moments='mvsk')
 
-        if normalization_ok:
-            check_normalization(distfn, arg, distname)
+        with np.errstate(all="ignore"):
+            if normalization_ok:
+                check_normalization(distfn, arg, distname)
 
-        if higher_ok:
-            check_mean_expect(distfn, arg, m, distname)
-            check_skew_expect(distfn, arg, m, v, s, distname)
-            check_var_expect(distfn, arg, m, v, distname)
-            check_kurt_expect(distfn, arg, m, v, k, distname)
+            if higher_ok:
+                check_mean_expect(distfn, arg, m, distname)
+                check_skew_expect(distfn, arg, m, v, s, distname)
+                check_var_expect(distfn, arg, m, v, distname)
+                check_kurt_expect(distfn, arg, m, v, k, distname)
 
         check_moment(distfn, arg, m, v, distname)
 
@@ -465,11 +474,10 @@ def test_method_of_moments():
 
 
 def check_sample_meanvar_(popmean, popvar, sample):
-    # this did not work, skipped silently by nose
     if np.isfinite(popmean):
         check_sample_mean(sample, popmean)
     if np.isfinite(popvar):
-        check_sample_var(sample.var(), len(sample), popvar)
+        check_sample_var(sample, popvar)
 
 
 def check_sample_mean(sample, popmean):
@@ -478,14 +486,18 @@ def check_sample_mean(sample, popmean):
     assert prob > 0.01
 
 
-def check_sample_var(sv, n, popvar):
-    # two-sided chisquare test for sample variance equal to
-    # hypothesized variance
-    df = n-1
-    chi2 = (n - 1)*sv/popvar
-    pval = stats.distributions.chi2.sf(chi2, df) * 2
-    npt.assert_(pval > 0.01, 'var fail, t, pval = %f, %f, v, sv=%f, %f' %
-                (chi2, pval, popvar, sv))
+def check_sample_var(sample, popvar):
+    # check that population mean lies within the CI bootstrapped from the
+    # sample. This used to be a chi-squared test for variance, but there were
+    # too many false positives
+    res = stats.bootstrap(
+        (sample,),
+        lambda x, axis: x.var(ddof=1, axis=axis),
+        confidence_level=0.995,
+    )
+    conf = res.confidence_interval
+    low, high = conf.low, conf.high
+    assert low <= popvar <= high
 
 
 def check_cdf_ppf(distfn, arg, msg):
@@ -694,6 +706,30 @@ def test_methods_with_lists(method, distname, args):
                         rtol=1e-14, atol=5e-14)
 
 
+@pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
+                                    'sf', 'logsf', 'ppf', 'isf'])
+def test_gilbrat_deprecation(method):
+    expected = getattr(stats.gibrat, method)(1)
+    with pytest.warns(
+        DeprecationWarning,
+        match=rf"\s*`gilbrat\.{method}` is deprecated,.*",
+    ):
+        result = getattr(stats.gilbrat, method)(1)
+    assert result == expected
+
+
+@pytest.mark.parametrize('method', ['pdf', 'logpdf', 'cdf', 'logcdf',
+                                    'sf', 'logsf', 'ppf', 'isf'])
+def test_gilbrat_deprecation_frozen(method):
+    expected = getattr(stats.gibrat, method)(1)
+    with pytest.warns(DeprecationWarning, match=r"\s*`gilbrat` is deprecated"):
+        # warn on instantiation of frozen distribution...
+        g = stats.gilbrat()
+    # ... not on its methods
+    result = getattr(g, method)(1)
+    assert result == expected
+
+
 def test_burr_fisk_moment_gh13234_regression():
     vals0 = stats.burr.moment(1, 5, 4)
     assert isinstance(vals0, float)
@@ -822,6 +858,7 @@ def test_kappa3_array_gh13582():
     npt.assert_allclose(res, res2)
 
 
+@pytest.mark.timeout(120)
 def test_kappa4_array_gh13582():
     h = np.array([-0.5, 2.5, 3.5, 4.5, -3])
     k = np.array([-0.5, 1, -1.5, 0, 3.5])
@@ -858,3 +895,16 @@ def test_frozen_attributes():
     frozen_norm = stats.norm()
     assert isinstance(frozen_norm, rv_continuous_frozen)
     delattr(stats.norm, 'pmf')
+
+
+def test_skewnorm_pdf_gh16038():
+    rng = np.random.default_rng(0)
+    x, a = -np.inf, 0
+    npt.assert_equal(stats.skewnorm.pdf(x, a), stats.norm.pdf(x))
+    x, a = rng.random(size=(3, 3)), rng.random(size=(3, 3))
+    mask = rng.random(size=(3, 3)) < 0.5
+    a[mask] = 0
+    x_norm = x[mask]
+    res = stats.skewnorm.pdf(x, a)
+    npt.assert_equal(res[mask], stats.norm.pdf(x_norm))
+    npt.assert_equal(res[~mask], stats.skewnorm.pdf(x[~mask], a[~mask]))
