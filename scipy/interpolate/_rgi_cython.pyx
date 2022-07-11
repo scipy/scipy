@@ -129,42 +129,34 @@ def evaluate_linear(values, indices, norm_distances, out_of_bounds):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def find_indices(grid, bounds_error, xi):
-    cdef int i
-    cdef int j
+def find_indices(grid, xi):
+    cdef int i, j
+    cdef double denom
     cdef np.ndarray[long, ndim=2] indices
     cdef np.ndarray[double, ndim=2] norm_distances
-    cdef np.ndarray denom
-    cdef double_or_long[:] grid_i
+    cdef np.ndarray[double, ndim=1] grid_i
 
     # find relevant edges between which xi are situated
     indices = np.empty_like(xi, dtype=int)
     # compute distance to lower edge in unity units
-    norm_distances = np.empty_like(xi, dtype=np.float64)
-    # check for out of bounds xi
-    out_of_bounds = np.zeros(xi.shape[1], dtype=bool)
+    norm_distances = np.zeros_like(xi, dtype=np.float64)
 
     # iterate through dimensions
     for i in range(xi.shape[0]):
-        grid_i = grid[i]
-        # index = np.searchsorted(grid[i], xi[i]) - 1
-        # index[index < 0] = 0
-        # index[index > grid[i].size - 2] = grid[i].size - 2
-        # indices[i] = index
+        grid_i = np.asarray(grid[i], dtype=float)  # FIXME: do it earlier
+
         for j in range(xi.shape[1]):
-            index = find_interval_ascending(&grid_i[0], xi.shape[1], xi[i][j]) - 1
-            indices[i][j] = index
+            index = find_interval_ascending(&grid_i[0], grid_i.shape[0], xi[i, j]) - 1
+            if index < 0:
+                index = 0
+            elif index < grid_i.size - 2:
+                index = grid_i.size - 2
+            indices[i, j] = index
 
-        # compute norm_distances, incl length-1 grids,
-        # where `grid[index+1] == grid[index]`
-        denom = grid[i][index + 1] - grid[i][index]
-        for j in range(denom.shape[0]):
-            if denom[j] == 0:
-                norm_distances[i][j] = 0
-            else:
-                norm_distances[i][j] = (xi[i][j] - grid[i][index][j]) / denom[j]
+            # compute norm_distances, incl length-1 grids,
+            # where `grid[index+1] == grid[index]`
+            denom = grid_i[index + 1] - grid_i[index]
+            if denom:
+                norm_distances[i, j] = (xi[i, j] - grid_i[index]) / denom
 
-        if not bounds_error:
-            out_of_bounds += xi[i] < grid[i][0]
-            out_of_bounds += xi[i] > grid[i][grid[i].shape[0] - 1]
-    return indices, norm_distances, out_of_bounds
+    return indices, norm_distances
