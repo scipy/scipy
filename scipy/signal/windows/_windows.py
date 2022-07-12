@@ -1022,8 +1022,8 @@ def hamming(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero an empty array
-        is returned. An exception thrown when it is negative.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
