@@ -155,6 +155,7 @@ class gaussian_kde:
     --------
     Generate some random two-dimensional data:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> def measure(n):
     ...     "Measurement model, return two coupled measurements."

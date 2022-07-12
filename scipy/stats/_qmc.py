@@ -1127,6 +1127,7 @@ class LatinHypercube(QMCEngine):
     --------
     Generate samples from a Latin hypercube generator.
 
+    >>> import numpy as np
     >>> from scipy.stats import qmc
     >>> sampler = qmc.LatinHypercube(d=2)
     >>> sample = sampler.random(n=5)
@@ -1679,7 +1680,7 @@ class PoissonDisk(QMCEngine):
     --------
     Generate a 2D sample using a `radius` of 0.2.
 
-    >>> import numpy as np
+    >>> import numpy
     >>> import matplotlib.pyplot as plt
     >>> from matplotlib.collections import PatchCollection
     >>> from scipy.stats import qmc
@@ -2403,6 +2404,7 @@ def _lloyd_centroidal_voronoi_tessellation(
     >>> import numpy as np
     >>> from scipy.spatial import distance
     >>> rng = np.random.default_rng()
+    >>> import numpy as np
     >>> sample = rng.random((128, 2))
 
     .. note::
