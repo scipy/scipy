@@ -8094,75 +8094,6 @@ def _truncnorm_pdf_scalar(x, a, b):
         return (out[0] if (shp == ()) else out)
 
 
-def _truncnorm_logcdf_scalar(x, a, b):
-    with np.errstate(invalid='ignore'):
-        if np.isscalar(x):
-            if x <= a:
-                return -np.inf
-            if x >= b:
-                return 0
-        shp = np.shape(x)
-        x = np.atleast_1d(x)
-        out = np.full_like(x, np.nan, dtype=np.double)
-        condlea, condgeb = (x <= a), (x >= b)
-        if np.any(condlea):
-            np.place(out, condlea, -np.inf)
-        if np.any(condgeb):
-            np.place(out, condgeb, 0.0)
-        cond_inner = ~condlea & ~condgeb
-        if np.any(cond_inner):
-            delta = _truncnorm_get_delta_scalar(a, b)
-            if delta > 0:
-                np.place(out, cond_inner,
-                         np.log((_norm_cdf(x[cond_inner]) - _norm_cdf(a))
-                                / delta))
-            else:
-                with np.errstate(divide='ignore'):
-                    if a < 0:
-                        nla, nlb = _norm_logcdf(a), _norm_logcdf(b)
-                        tab = np.log1p(-np.exp(nla - nlb))
-                        nlx = _norm_logcdf(x[cond_inner])
-                        tax = np.log1p(-np.exp(nla - nlx))
-                        np.place(out, cond_inner, nlx + tax - (nlb + tab))
-                    else:
-                        sla = _norm_logsf(a)
-                        slb = _norm_logsf(b)
-                        np.place(out, cond_inner,
-                                 np.log1p(-np.exp(_norm_logsf(x[cond_inner])
-                                                  - sla))
-                                 - np.log1p(-np.exp(slb - sla)))
-        return (out[0] if (shp == ()) else out)
-
-
-def _truncnorm_cdf_scalar(x, a, b):
-    with np.errstate(invalid='ignore'):
-        if np.isscalar(x):
-            if x <= a:
-                return -0
-            if x >= b:
-                return 1
-        shp = np.shape(x)
-        x = np.atleast_1d(x)
-        out = np.full_like(x, np.nan, dtype=np.double)
-        condlea, condgeb = (x <= a), (x >= b)
-        if np.any(condlea):
-            np.place(out, condlea, 0)
-        if np.any(condgeb):
-            np.place(out, condgeb, 1.0)
-        cond_inner = ~condlea & ~condgeb
-        if np.any(cond_inner):
-            delta = _truncnorm_get_delta_scalar(a, b)
-            if delta > 0:
-                np.place(out, cond_inner,
-                         (_norm_cdf(x[cond_inner]) - _norm_cdf(a)) / delta)
-            else:
-                with np.errstate(divide='ignore'):
-                    np.place(out, cond_inner,
-                             np.exp(_truncnorm_logcdf_scalar(x[cond_inner],
-                                                             a, b)))
-        return (out[0] if (shp == ()) else out)
-
-
 def _truncnorm_logsf_scalar(x, a, b):
     with np.errstate(invalid='ignore'):
         if np.isscalar(x):
@@ -8343,6 +8274,49 @@ def _truncnorm_ppf_scalar(q, a, b):
     return (out[0] if (shp == ()) else out)
 
 
+def _log_gauss_mass(a, b):
+    """Log of Gaussian probability mass within an interval"""
+    a, b = np.atleast_1d(a), np.atleast_1d(b)
+    a, b = np.broadcast_arrays(a, b)
+
+    # Calculations in right tail are inaccurate, so we'll exploit the
+    # symmetry and work only in the left tail
+    case_left = b <= 0.5
+    case_right = a > 0.5
+    case_central = ~(case_left | case_right)
+
+    # logsumexp trick for log(p + q) with only log(p) and log(q)
+    def log_sum(log_p, log_q):
+        return sc.logsumexp([log_p, log_q], axis=0)
+
+    # same as above, but using -exp(x) = exp(x + πi)
+    def log_diff(log_p, log_q):
+        # need to broadcast in case a or b is 0.5; logsumexp doesn't
+        log_p, log_q = np.broadcast_arrays(log_p, log_q)
+        return sc.logsumexp([log_p, log_q+np.pi*1j], axis=0)
+
+    def mass_case_left(a, b):
+        return log_diff(sc.log_ndtr(b), sc.log_ndtr(a))
+
+    def mass_case_right(a, b):
+        return mass_case_left(-b, -a)
+
+    def mass_case_central(a, b):
+        left_mass = mass_case_left(a, 0.5)
+        right_mass = mass_case_right(0.5, b)
+        return log_sum(left_mass, right_mass)
+
+    # _lazyselect not working; don't care to debug it
+    out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
+    if a[case_left].size:
+        out[case_left] = mass_case_left(a[case_left], b[case_left])
+    if a[case_right].size:
+        out[case_right] = mass_case_right(a[case_right], b[case_right])
+    if a[case_central].size:
+        out[case_central] = mass_case_central(a[case_central], b[case_central])
+    return np.real(out)  # discard ~0j
+
+
 class truncnorm_gen(rv_continuous):
     r"""A truncated normal continuous random variable.
 
@@ -8406,31 +8380,10 @@ class truncnorm_gen(rv_continuous):
         return it.operands[3]
 
     def _cdf(self, x, a, b):
-        if np.isscalar(a) and np.isscalar(b):
-            return _truncnorm_cdf_scalar(x, a, b)
-        a, b = np.atleast_1d(a), np.atleast_1d(b)
-        if a.size == 1 and b.size == 1:
-            return _truncnorm_cdf_scalar(x, a.item(), b.item())
-        out = None
-        it = np.nditer([x, a, b, out], [],
-                       [['readonly'], ['readonly'], ['readonly'],
-                        ['writeonly', 'allocate']])
-        for (_x, _a, _b, _p) in it:
-            _p[...] = _truncnorm_cdf_scalar(_x, _a, _b)
-        return it.operands[3]
+        return np.exp(self._logcdf(x, a, b))
 
     def _logcdf(self, x, a, b):
-        if np.isscalar(a) and np.isscalar(b):
-            return _truncnorm_logcdf_scalar(x, a, b)
-        a, b = np.atleast_1d(a), np.atleast_1d(b)
-        if a.size == 1 and b.size == 1:
-            return _truncnorm_logcdf_scalar(x, a.item(), b.item())
-        it = np.nditer([x, a, b, None], [],
-                       [['readonly'], ['readonly'], ['readonly'],
-                        ['writeonly', 'allocate']])
-        for (_x, _a, _b, _p) in it:
-            _p[...] = _truncnorm_logcdf_scalar(_x, _a, _b)
-        return it.operands[3]
+        return _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
 
     def _sf(self, x, a, b):
         if np.isscalar(a) and np.isscalar(b):
