@@ -1300,8 +1300,8 @@ def gaussian(M, std, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero an empty array
-        is returned. An exception thrown when it is negative.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     std : float
         The standard deviation, sigma.
     sym : bool, optional
