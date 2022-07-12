@@ -1215,8 +1215,8 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero an empty array is
-        returned.  An exception thrown when it is negative.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
         Note that this window is only defined for an even
         number of points.
     beta : float
