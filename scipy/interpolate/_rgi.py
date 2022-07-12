@@ -325,14 +325,10 @@ class RegularGridInterpolator:
 
         if method == "linear":
             indices, norm_distances = self._find_indices(xi.T)
-            result = self._evaluate_linear(indices,
-                                           norm_distances,
-                                           out_of_bounds)
+            result = self._evaluate_linear(indices, norm_distances)
         elif method == "nearest":
             indices, norm_distances = self._find_indices(xi.T)
-            result = self._evaluate_nearest(indices,
-                                            norm_distances,
-                                            out_of_bounds)
+            result = self._evaluate_nearest(indices, norm_distances)
         elif method in self._SPLINE_METHODS:
             if is_method_changed:
                 self._validate_grid_dimensions(self.grid, method)
@@ -346,7 +342,7 @@ class RegularGridInterpolator:
             result[nans] = np.nan
         return result.reshape(xi_shape[:-1] + self.values.shape[ndim:])
 
-    def _evaluate_linear(self, indices, norm_distances, out_of_bounds):
+    def _evaluate_linear(self, indices, norm_distances):
         # slice for broadcasting over trailing dimensions in self.values
         vslice = (slice(None),) + (None,)*(self.values.ndim - len(indices))
 
@@ -376,7 +372,7 @@ class RegularGridInterpolator:
             values += np.asarray(self.values[edge_indices]) * weight[vslice]
         return values
 
-    def _evaluate_nearest(self, indices, norm_distances, out_of_bounds):
+    def _evaluate_nearest(self, indices, norm_distances):
         idx_res = [np.where(yi <= .5, i, i + 1)
                    for i, yi in zip(indices, norm_distances)]
         return self.values[tuple(idx_res)]
