@@ -126,7 +126,7 @@ def evaluate_linear(values, indices, norm_distances, out_of_bounds):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def find_indices(grid, double[:, ::1] xi):
+def find_indices(tuple grid not None, double[:, :] xi):
     cdef long i, j, I, J, grid_i_size
     cdef double denom, grid_i_index
     cdef long[:,::1] indices
@@ -145,11 +145,11 @@ def find_indices(grid, double[:, ::1] xi):
 
     # iterate through dimensions
     for i in range(I):
-        grid_i = np.asarray(grid[i], dtype=float)  # FIXME: do it earlier
+        grid_i = grid[i]
         grid_i_size = grid_i.shape[0]
 
         for j in range(J):
-            index = find_interval_ascending(&grid_i[0],grid_i_size, xi[i, j], prev_interval=index) - 1
+            index = find_interval_ascending(&grid_i[0], grid_i_size, xi[i, j], prev_interval=index) - 1
             if index < 0:
                 index = 0
             elif index < grid_i_size - 2:

@@ -257,7 +257,7 @@ class RegularGridInterpolator:
             if not values.shape[i] == len(p):
                 raise ValueError("There are %d points and %d values in "
                                  "dimension %d" % (len(p), values.shape[i], i))
-        self.grid = tuple([np.asarray(p) for p in points])
+        self.grid = tuple([np.asarray(p, dtype=float) for p in points])
         self.values = values
 
     def __call__(self, xi, method=None):
@@ -310,6 +310,7 @@ class RegularGridInterpolator:
 
         xi_shape = xi.shape
         xi = xi.reshape(-1, xi_shape[-1])
+        xi = np.asarray(xi, dtype=float)
 
         # find nans in input
         nans = np.any(np.isnan(xi), axis=-1)
