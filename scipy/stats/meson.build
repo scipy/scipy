@@ -120,7 +120,8 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
     'nbinom_ufunc.pyx',  # 5 (S_B)
     'templated_pyufunc.pxd',  # 6 (S_B)
     'unuran_wrapper.pyx',  # 7 (used in stats/_unuran)
-    'ncf_ufunc.pyx'  # 8 (S_B)
+    'ncf_ufunc.pyx',  # 8 (S_B)
+    'ncx2_ufunc.pyx',  # 9 (S_B)
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
@@ -139,6 +140,7 @@ binom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[2])
 hypergeom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[4])
 nbinom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[5])
 ncf_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
+ncx2_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
 # Extra dependency from _lib
 unuran_wrap_pyx = lib_cython_gen.process(_stats_gen_pyx[7])
 

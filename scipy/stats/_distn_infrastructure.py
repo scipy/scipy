@@ -598,38 +598,6 @@ def _parse_args_stats(self, %(shape_arg_str)s %(locscale_in)s, moments='mv'):
 """
 
 
-# Both the continuous and discrete distributions depend on ncx2.
-# The function name ncx2 is an abbreviation for noncentral chi squared.
-
-def _ncx2_log_pdf(x, df, nc):
-    # We use (xs**2 + ns**2)/2 = (xs - ns)**2/2  + xs*ns, and include the
-    # factor of exp(-xs*ns) into the ive function to improve numerical
-    # stability at large values of xs. See also `rice.pdf`.
-    df2 = df/2.0 - 1.0
-    xs, ns = np.sqrt(x), np.sqrt(nc)
-    res = xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
-    corr = ive(df2, xs*ns) / 2.0
-    # Return res + np.log(corr) avoiding np.log(0)
-    return _lazywhere(
-        corr > 0,
-        (res, corr),
-        f=lambda r, c: r + np.log(c),
-        fillvalue=-np.inf)
-
-
-def _ncx2_pdf(x, df, nc):
-    # Copy of _ncx2_log_pdf avoiding np.log(0) when corr = 0
-    df2 = df/2.0 - 1.0
-    xs, ns = np.sqrt(x), np.sqrt(nc)
-    res = xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
-    corr = ive(df2, xs*ns) / 2.0
-    return np.exp(res) * corr
-
-
-def _ncx2_cdf(x, df, nc):
-    return chndtr(x, df, nc)
-
-
 class rv_generic:
     """Class which encapsulates common functionality between rv_discrete
     and rv_continuous.
@@ -3453,9 +3421,12 @@ class rv_discrete(rv_generic):
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
         cond2 = (k >= _b)
-        cond = cond0 & cond1
+        cond3 = np.isneginf(k)
+        cond = cond0 & cond1 & np.isfinite(k)
+
         output = zeros(shape(cond), 'd')
         place(output, cond2*(cond0 == cond0), 1.0)
+        place(output, cond3*(cond0 == cond0), 0.0)
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
 
         if np.any(cond):
@@ -3531,8 +3502,8 @@ class rv_discrete(rv_generic):
         k = asarray(k-loc)
         cond0 = self._argcheck(*args)
         cond1 = (k >= _a) & (k < _b)
-        cond2 = (k < _a) & cond0
-        cond = cond0 & cond1
+        cond2 = ((k < _a) | np.isneginf(k)) & cond0
+        cond = cond0 & cond1 & np.isfinite(k)
         output = zeros(shape(cond), 'd')
         place(output, (1-cond0) + np.isnan(k), self.badvalue)
         place(output, cond2, 1.0)

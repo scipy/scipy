@@ -14,9 +14,8 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
-from ._distn_infrastructure import (
-    rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
-    _check_shape, _ShapeInfo)
+from ._distn_infrastructure import (rv_discrete, get_distribution_names,
+                                    _check_shape, _ShapeInfo)
 import scipy.stats._boost as _boost
 from ._biasedurn import (_PyFishersNCHypergeometric,
                         _PyWalleniusNCHypergeometric,
@@ -1419,17 +1418,20 @@ class skellam_gen(rv_discrete):
                 random_state.poisson(mu2, n))
 
     def _pmf(self, x, mu1, mu2):
-        px = np.where(x < 0,
-                      _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                      _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
-        # ncx2.pdf() returns nan's for extremely low probabilities
+        with warnings.catch_warnings():
+            message = "overflow encountered in _ncx2_pdf"
+            warnings.filterwarnings("ignore", message=message)
+            px = np.where(x < 0,
+                          _boost._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                          _boost._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+            # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
         px = np.where(x < 0,
-                      _ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                      1 - _ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                      _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                      1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):
