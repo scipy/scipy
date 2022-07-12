@@ -149,10 +149,14 @@ def find_indices(tuple grid not None, double[:, :] xi):
         grid_i_size = grid_i.shape[0]
 
         for j in range(J):
-            index = find_interval_ascending(&grid_i[0], grid_i_size, xi[i, j], prev_interval=index) - 1
+            index = find_interval_ascending(&grid_i[0],
+                                            grid_i_size,
+                                            xi[i, j],
+                                            prev_interval=index,
+                                            extrapolate=1)
             if index < 0:
                 index = 0
-            elif index < grid_i_size - 2:
+            if index > grid_i_size - 2:
                 index = grid_i_size - 2
             indices[i, j] = index
 
