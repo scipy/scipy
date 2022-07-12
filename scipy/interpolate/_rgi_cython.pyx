@@ -126,12 +126,12 @@ def evaluate_linear(values, indices, norm_distances, out_of_bounds):
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
-def find_indices(grid, double[:, :] xi):
-    cdef long i, j, I, J, index, grid_i_size, nx
+def find_indices(grid, double[:, ::1] xi):
+    cdef long i, j, I, J, grid_i_size
     cdef double denom, grid_i_index
-    cdef np.ndarray[long, ndim=2] indices
-    cdef np.ndarray[double, ndim=2] norm_distances
-    cdef np.ndarray[double, ndim=1] grid_i
+    cdef long[:,::1] indices
+    cdef double[:,::1] norm_distances
+    cdef double[::1] grid_i
 
     cdef int index = 0
     # find relevant edges between which xi are situated
@@ -162,4 +162,4 @@ def find_indices(grid, double[:, :] xi):
             if denom:
                 norm_distances[i, j] = (xi[i, j] - grid_i[index]) / denom
 
-    return indices, norm_distances
+    return np.asarray(indices), np.asarray(norm_distances)
