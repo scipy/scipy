@@ -935,8 +935,8 @@ def general_hamming(M, alpha, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero an empty array
-        is returned. An exception thrown when it is negative.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     alpha : float
         The window coefficient, :math:`\alpha`
     sym : bool, optional
