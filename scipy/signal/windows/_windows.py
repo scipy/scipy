@@ -1099,8 +1099,8 @@ def kaiser(M, beta, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero an empty array
-        is returned. An exception thrown when it is negative.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     beta : float
         Shape parameter, determines trade-off between main-lobe width and
         side lobe level. As beta gets large, the window narrows.
