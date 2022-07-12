@@ -794,8 +794,8 @@ def tukey(M, alpha=0.5, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero an empty array
-        is returned. An exception thrown when it is negative.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     alpha : float, optional
         Shape parameter of the Tukey window, representing the fraction of the
         window inside the cosine tapered region.
