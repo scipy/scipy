@@ -1363,8 +1363,8 @@ def general_gaussian(M, p, sig, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero an empty
-        array is returned. An exception thrown when it is negative.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     p : float
         Shape parameter.  p = 1 is identical to `gaussian`, p = 0.5 is
         the same shape as the Laplace distribution.
