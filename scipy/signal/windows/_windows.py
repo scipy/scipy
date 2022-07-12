@@ -1717,8 +1717,8 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero an empty array is returned.
-        An exception is thrown when it is negative.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     nbar : int, optional
         Number of nearly constant level sidelobes adjacent to the mainlobe.
     sll : float, optional
