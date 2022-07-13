@@ -184,7 +184,8 @@ class TruncnormStats(Benchmark):
     def track_truncnorm_stats_error(self, case, moment):
         result_indices = dict(zip(['m', 'v', 's', 'k'], range(2, 6)))
         ref = truncnorm_cases[case, result_indices[moment]]
-        res = stats.truncnorm(*case).stats(moments=moment)
+        a, b = truncnorm_cases[case, 0:2]
+        res = stats.truncnorm(a, b).stats(moments=moment)
         return np.abs((res - ref)/ref)
 
 
