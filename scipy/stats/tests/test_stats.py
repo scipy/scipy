@@ -2945,16 +2945,18 @@ class TestMoments:
         assert_allclose(y, [0, 1.25, 0, 2.5625])
 
         # test empty input
-        y = stats.moment([])
-        self._assert_equal(y, np.nan, dtype=np.float64)
-        y = stats.moment(np.array([], dtype=np.float32))
-        self._assert_equal(y, np.nan, dtype=np.float32)
-        y = stats.moment(np.zeros((1, 0)), axis=0)
-        self._assert_equal(y, [], shape=(0,), dtype=np.float64)
-        y = stats.moment([[]], axis=1)
-        self._assert_equal(y, np.nan, shape=(1,), dtype=np.float64)
-        y = stats.moment([[]], moment=[0, 1], axis=0)
-        self._assert_equal(y, [], shape=(2, 0))
+        message = "Mean of empty slice."
+        with pytest.warns(RuntimeWarning, match=message):
+            y = stats.moment([])
+            self._assert_equal(y, np.nan, dtype=np.float64)
+            y = stats.moment(np.array([], dtype=np.float32))
+            self._assert_equal(y, np.nan, dtype=np.float32)
+            y = stats.moment(np.zeros((1, 0)), axis=0)
+            self._assert_equal(y, [], shape=(0,), dtype=np.float64)
+            y = stats.moment([[]], axis=1)
+            self._assert_equal(y, np.nan, shape=(1,), dtype=np.float64)
+            y = stats.moment([[]], moment=[0, 1], axis=0)
+            self._assert_equal(y, [], shape=(2, 0))
 
         x = np.arange(10.)
         x[9] = np.nan
@@ -3110,6 +3112,13 @@ class TestMoments:
             a = rng.random(size=(100, 10))
             a[:, 0] = 1.01
             stats.skew(a)[0]
+
+    def test_empty_1d(self):
+        message = "Mean of empty slice."
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.skew([])
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.kurtosis([])
 
 
 class TestStudentTest:
@@ -4056,6 +4065,18 @@ class TestKSTwoSamples:
         stats.ks_2samp(rvs1, rvs2, alternative='greater', mode='asymp')
         stats.ks_2samp(rvs1, rvs2, alternative='less', mode='asymp')
         stats.ks_2samp(rvs1, rvs2, alternative='two-sided', mode='asymp')
+
+    def test_warnings_gh_14019(self):
+        # Check that RuntimeWarning is raised when method='auto' and exact
+        # p-value calculation fails. See gh-14019.
+        rng = np.random.default_rng(abs(hash('test_warnings_gh_14019')))
+        # random samples of the same size as in the issue
+        data1 = rng.random(size=881) + 0.5
+        data2 = rng.random(size=369)
+        message = "ks_2samp: Exact calculation unsuccessful"
+        with pytest.warns(RuntimeWarning, match=message):
+            res = stats.ks_2samp(data1, data2, alternative='less')
+            assert_allclose(res.pvalue, 0, atol=1e-14)
 
 
 def test_ttest_rel():

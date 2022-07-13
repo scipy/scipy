@@ -119,7 +119,7 @@ def test_vonmises_numerical():
 #     num = mpmath.exp(kappa*mpmath.cos(x))
 #     den = 2 * mpmath.pi * mpmath.besseli(0, kappa)
 #     return num/den
-#
+
 @pytest.mark.parametrize('x, kappa, expected_pdf',
                          [(0.1, 0.01, 0.16074242744907072),
                           (0.1, 25.0, 1.7515464099118245),
@@ -130,6 +130,35 @@ def test_vonmises_numerical():
 def test_vonmises_pdf(x, kappa, expected_pdf):
     pdf = stats.vonmises.pdf(x, kappa)
     assert_allclose(pdf, expected_pdf, rtol=1e-15)
+
+
+def test_vonmises_rvs_gh4598():
+    # check that random variates wrap around as discussed in gh-4598
+    seed = abs(hash('von_mises_rvs'))
+    rng1 = np.random.default_rng(seed)
+    rng2 = np.random.default_rng(seed)
+    rng3 = np.random.default_rng(seed)
+    rvs1 = stats.vonmises(1, loc=0, scale=1).rvs(random_state=rng1)
+    rvs2 = stats.vonmises(1, loc=2*np.pi, scale=1).rvs(random_state=rng2)
+    rvs3 = stats.vonmises(1, loc=0,
+                          scale=(2*np.pi/abs(rvs1)+1)).rvs(random_state=rng3)
+    assert_allclose(rvs1, rvs2, atol=1e-15)
+    assert_allclose(rvs1, rvs3, atol=1e-15)
+
+
+# Expected values of the vonmises LOGPDF were computed
+# using wolfram alpha:
+# kappa * cos(x) - log(2*pi*I0(kappa))
+@pytest.mark.parametrize('x, kappa, expected_logpdf',
+                         [(0.1, 0.01, -1.8279520246003170),
+                          (0.1, 25.0, 0.5604990605420549),
+                          (0.1, 800, -1.5734567947337514),
+                          (2.0, 0.01, -1.8420635346185686),
+                          (2.0, 25.0, -34.7182759850871489),
+                          (2.0, 800, -1130.4942582548682739)])
+def test_vonmises_logpdf(x, kappa, expected_logpdf):
+    logpdf = stats.vonmises.logpdf(x, kappa)
+    assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
 
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
@@ -1008,6 +1037,16 @@ class TestTruncnorm:
                                 stats.truncnorm.cdf(xvals2, -high, -low)[::-1])
             assert_almost_equal(stats.truncnorm.pdf(xvals, low, high),
                                 stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
+
+    def test_cdf_tail_15110_14753(self):
+        # Check accuracy issues reported in gh-14753 and gh-155110
+        # Ground truth values calculated using Wolfram Alpha, e.g.
+        # (CDF[NormalDistribution[0,1],83/10]-CDF[NormalDistribution[0,1],8])/
+        #     (1 - CDF[NormalDistribution[0,1],8])
+        assert_allclose(stats.truncnorm(13., 15.).cdf(14.),
+                        0.9999987259565643)
+        assert_allclose(stats.truncnorm(8, np.inf).cdf(8.3),
+                        0.9163220907327540)
 
     def _test_moments_one_range(self, a, b, expected, rtol=1e-7):
         m0, v0, s0, k0 = expected[:4]
@@ -6086,6 +6125,21 @@ def test_ncx2_gh8665():
                    0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
                    0.0000000000000000]
     assert_allclose(sf, sf_expected, atol=1e-12)
+
+
+def test_ncx2_gh11777():
+    # regression test for gh-11777:
+    # At high values of degrees of freedom df, ensure the pdf of ncx2 does
+    # not get clipped to zero when the non-centrality parameter is
+    # sufficiently less than df
+    df = 6700
+    nc = 5300
+    x = np.linspace(stats.ncx2.ppf(0.001, df, nc),
+                    stats.ncx2.ppf(0.999, df, nc), num=10000)
+    ncx2_pdf = stats.ncx2.pdf(x, df, nc)
+    gauss_approx = stats.norm.pdf(x, df + nc, np.sqrt(2 * df + 4 * nc))
+    # use huge tolerance as we're only looking for obvious discrepancy
+    assert_allclose(ncx2_pdf, gauss_approx, atol=1e-4)
 
 
 def test_foldnorm_zero():

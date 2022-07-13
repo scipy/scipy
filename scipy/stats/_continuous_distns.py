@@ -23,7 +23,7 @@ from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (
-    get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
+    get_distribution_names, _kurtosis,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
@@ -6199,6 +6199,23 @@ class nakagami_gen(rv_continuous):
 nakagami = nakagami_gen(a=0.0, name="nakagami")
 
 
+# The function name ncx2 is an abbreviation for noncentral chi squared.
+def _ncx2_log_pdf(x, df, nc):
+    # We use (xs**2 + ns**2)/2 = (xs - ns)**2/2  + xs*ns, and include the
+    # factor of exp(-xs*ns) into the ive function to improve numerical
+    # stability at large values of xs. See also `rice.pdf`.
+    df2 = df/2.0 - 1.0
+    xs, ns = np.sqrt(x), np.sqrt(nc)
+    res = sc.xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
+    corr = sc.ive(df2, xs*ns) / 2.0
+    # Return res + np.log(corr) avoiding np.log(0)
+    return _lazywhere(
+        corr > 0,
+        (res, corr),
+        f=lambda r, c: r + np.log(c),
+        fillvalue=-np.inf)
+
+
 class ncx2_gen(rv_continuous):
     r"""A non-central chi-squared continuous random variable.
 
@@ -6228,7 +6245,7 @@ class ncx2_gen(rv_continuous):
 
     """
     def _argcheck(self, df, nc):
-        return (df > 0) & (nc >= 0)
+        return (df > 0) & np.isfinite(df) & (nc >= 0)
 
     def _shape_info(self):
         idf = _ShapeInfo("df", False, (0, np.inf), (False, False))
@@ -6240,28 +6257,50 @@ class ncx2_gen(rv_continuous):
 
     def _logpdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_ncx2_log_pdf, f2=chi2.logpdf)
+        return _lazywhere(cond, (x, df, nc), f=_ncx2_log_pdf,
+                          f2=lambda x, df, _: chi2._logpdf(x, df))
 
     def _pdf(self, x, df, nc):
-        # ncx2.pdf(x, df, nc) = exp(-(nc+x)/2) * 1/2 * (x/nc)**((df-2)/4)
-        #                       * I[(df-2)/2](sqrt(nc*x))
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_ncx2_pdf, f2=chi2.pdf)
+        with warnings.catch_warnings():
+            message = "overflow encountered in _ncx2_pdf"
+            warnings.filterwarnings("ignore", message=message)
+            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_pdf,
+                              f2=lambda x, df, _: chi2._pdf(x, df))
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_ncx2_cdf, f2=chi2.cdf)
+        return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf,
+                          f2=lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (q, df, nc), f=sc.chndtrix, f2=chi2.ppf)
+        with warnings.catch_warnings():
+            message = "overflow encountered in _ncx2_ppf"
+            warnings.filterwarnings("ignore", message=message)
+            return _lazywhere(cond, (q, df, nc), f=_boost._ncx2_ppf,
+                              f2=lambda x, df, _: chi2._ppf(x, df))
+
+    def _sf(self, x, df, nc):
+        cond = np.ones_like(x, dtype=bool) & (nc != 0)
+        return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_sf,
+                          f2=lambda x, df, _: chi2._sf(x, df))
+
+    def _isf(self, x, df, nc):
+        cond = np.ones_like(x, dtype=bool) & (nc != 0)
+        with warnings.catch_warnings():
+            message = "overflow encountered in _ncx2_isf"
+            warnings.filterwarnings("ignore", message=message)
+            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_isf,
+                              f2=lambda x, df, _: chi2._isf(x, df))
 
     def _stats(self, df, nc):
-        val = df + 2.0*nc
-        return (df + nc,
-                2*val,
-                np.sqrt(8)*(val+nc)/val**1.5,
-                12.0*(val+2*nc)/val**2.0)
+        return (
+            _boost._ncx2_mean(df, nc),
+            _boost._ncx2_variance(df, nc),
+            _boost._ncx2_skewness(df, nc),
+            _boost._ncx2_kurtosis_excess(df, nc),
+        )
 
 
 ncx2 = ncx2_gen(a=0.0, name='ncx2')
@@ -8094,75 +8133,6 @@ def _truncnorm_pdf_scalar(x, a, b):
         return (out[0] if (shp == ()) else out)
 
 
-def _truncnorm_logcdf_scalar(x, a, b):
-    with np.errstate(invalid='ignore'):
-        if np.isscalar(x):
-            if x <= a:
-                return -np.inf
-            if x >= b:
-                return 0
-        shp = np.shape(x)
-        x = np.atleast_1d(x)
-        out = np.full_like(x, np.nan, dtype=np.double)
-        condlea, condgeb = (x <= a), (x >= b)
-        if np.any(condlea):
-            np.place(out, condlea, -np.inf)
-        if np.any(condgeb):
-            np.place(out, condgeb, 0.0)
-        cond_inner = ~condlea & ~condgeb
-        if np.any(cond_inner):
-            delta = _truncnorm_get_delta_scalar(a, b)
-            if delta > 0:
-                np.place(out, cond_inner,
-                         np.log((_norm_cdf(x[cond_inner]) - _norm_cdf(a))
-                                / delta))
-            else:
-                with np.errstate(divide='ignore'):
-                    if a < 0:
-                        nla, nlb = _norm_logcdf(a), _norm_logcdf(b)
-                        tab = np.log1p(-np.exp(nla - nlb))
-                        nlx = _norm_logcdf(x[cond_inner])
-                        tax = np.log1p(-np.exp(nla - nlx))
-                        np.place(out, cond_inner, nlx + tax - (nlb + tab))
-                    else:
-                        sla = _norm_logsf(a)
-                        slb = _norm_logsf(b)
-                        np.place(out, cond_inner,
-                                 np.log1p(-np.exp(_norm_logsf(x[cond_inner])
-                                                  - sla))
-                                 - np.log1p(-np.exp(slb - sla)))
-        return (out[0] if (shp == ()) else out)
-
-
-def _truncnorm_cdf_scalar(x, a, b):
-    with np.errstate(invalid='ignore'):
-        if np.isscalar(x):
-            if x <= a:
-                return -0
-            if x >= b:
-                return 1
-        shp = np.shape(x)
-        x = np.atleast_1d(x)
-        out = np.full_like(x, np.nan, dtype=np.double)
-        condlea, condgeb = (x <= a), (x >= b)
-        if np.any(condlea):
-            np.place(out, condlea, 0)
-        if np.any(condgeb):
-            np.place(out, condgeb, 1.0)
-        cond_inner = ~condlea & ~condgeb
-        if np.any(cond_inner):
-            delta = _truncnorm_get_delta_scalar(a, b)
-            if delta > 0:
-                np.place(out, cond_inner,
-                         (_norm_cdf(x[cond_inner]) - _norm_cdf(a)) / delta)
-            else:
-                with np.errstate(divide='ignore'):
-                    np.place(out, cond_inner,
-                             np.exp(_truncnorm_logcdf_scalar(x[cond_inner],
-                                                             a, b)))
-        return (out[0] if (shp == ()) else out)
-
-
 def _truncnorm_logsf_scalar(x, a, b):
     with np.errstate(invalid='ignore'):
         if np.isscalar(x):
@@ -8343,6 +8313,49 @@ def _truncnorm_ppf_scalar(q, a, b):
     return (out[0] if (shp == ()) else out)
 
 
+def _log_gauss_mass(a, b):
+    """Log of Gaussian probability mass within an interval"""
+    a, b = np.atleast_1d(a), np.atleast_1d(b)
+    a, b = np.broadcast_arrays(a, b)
+
+    # Calculations in right tail are inaccurate, so we'll exploit the
+    # symmetry and work only in the left tail
+    case_left = b <= 0.5
+    case_right = a > 0.5
+    case_central = ~(case_left | case_right)
+
+    # logsumexp trick for log(p + q) with only log(p) and log(q)
+    def log_sum(log_p, log_q):
+        return sc.logsumexp([log_p, log_q], axis=0)
+
+    # same as above, but using -exp(x) = exp(x + πi)
+    def log_diff(log_p, log_q):
+        # need to broadcast in case a or b is 0.5; logsumexp doesn't
+        log_p, log_q = np.broadcast_arrays(log_p, log_q)
+        return sc.logsumexp([log_p, log_q+np.pi*1j], axis=0)
+
+    def mass_case_left(a, b):
+        return log_diff(sc.log_ndtr(b), sc.log_ndtr(a))
+
+    def mass_case_right(a, b):
+        return mass_case_left(-b, -a)
+
+    def mass_case_central(a, b):
+        left_mass = mass_case_left(a, 0.5)
+        right_mass = mass_case_right(0.5, b)
+        return log_sum(left_mass, right_mass)
+
+    # _lazyselect not working; don't care to debug it
+    out = np.full_like(a, fill_value=np.nan, dtype=np.complex128)
+    if a[case_left].size:
+        out[case_left] = mass_case_left(a[case_left], b[case_left])
+    if a[case_right].size:
+        out[case_right] = mass_case_right(a[case_right], b[case_right])
+    if a[case_central].size:
+        out[case_central] = mass_case_central(a[case_central], b[case_central])
+    return np.real(out)  # discard ~0j
+
+
 class truncnorm_gen(rv_continuous):
     r"""A truncated normal continuous random variable.
 
@@ -8406,31 +8419,10 @@ class truncnorm_gen(rv_continuous):
         return it.operands[3]
 
     def _cdf(self, x, a, b):
-        if np.isscalar(a) and np.isscalar(b):
-            return _truncnorm_cdf_scalar(x, a, b)
-        a, b = np.atleast_1d(a), np.atleast_1d(b)
-        if a.size == 1 and b.size == 1:
-            return _truncnorm_cdf_scalar(x, a.item(), b.item())
-        out = None
-        it = np.nditer([x, a, b, out], [],
-                       [['readonly'], ['readonly'], ['readonly'],
-                        ['writeonly', 'allocate']])
-        for (_x, _a, _b, _p) in it:
-            _p[...] = _truncnorm_cdf_scalar(_x, _a, _b)
-        return it.operands[3]
+        return np.exp(self._logcdf(x, a, b))
 
     def _logcdf(self, x, a, b):
-        if np.isscalar(a) and np.isscalar(b):
-            return _truncnorm_logcdf_scalar(x, a, b)
-        a, b = np.atleast_1d(a), np.atleast_1d(b)
-        if a.size == 1 and b.size == 1:
-            return _truncnorm_logcdf_scalar(x, a.item(), b.item())
-        it = np.nditer([x, a, b, None], [],
-                       [['readonly'], ['readonly'], ['readonly'],
-                        ['writeonly', 'allocate']])
-        for (_x, _a, _b, _p) in it:
-            _p[...] = _truncnorm_logcdf_scalar(_x, _a, _b)
-        return it.operands[3]
+        return _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
 
     def _sf(self, x, a, b):
         if np.isscalar(a) and np.isscalar(b):
@@ -8986,12 +8978,21 @@ class vonmises_gen(rv_continuous):
     def _rvs(self, kappa, size=None, random_state=None):
         return random_state.vonmises(0.0, kappa, size=size)
 
+    @inherit_docstring_from(rv_continuous)
+    def rvs(self, *args, **kwds):
+        rvs = super().rvs(*args, **kwds)
+        return np.mod(rvs + np.pi, 2*np.pi) - np.pi
+
     def _pdf(self, x, kappa):
         # vonmises.pdf(x, kappa) = exp(kappa * cos(x)) / (2*pi*I[0](kappa))
         #                        = exp(kappa * (cos(x) - 1)) /
         #                          (2*pi*exp(-kappa)*I[0](kappa))
         #                        = exp(kappa * cosm1(x)) / (2*pi*i0e(kappa))
         return np.exp(kappa*sc.cosm1(x)) / (2*np.pi*sc.i0e(kappa))
+
+    def _logpdf(self, x, kappa):
+        # vonmises.pdf(x, kappa) = exp(kappa * cosm1(x)) / (2*pi*i0e(kappa))
+        return kappa * sc.cosm1(x) - np.log(2*np.pi) - np.log(sc.i0e(kappa))
 
     def _cdf(self, x, kappa):
         return _stats.von_mises_cdf(kappa, x)
