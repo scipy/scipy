@@ -1038,6 +1038,16 @@ class TestTruncnorm:
             assert_almost_equal(stats.truncnorm.pdf(xvals, low, high),
                                 stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
 
+    def test_cdf_tail_15110_14753(self):
+        # Check accuracy issues reported in gh-14753 and gh-155110
+        # Ground truth values calculated using Wolfram Alpha, e.g.
+        # (CDF[NormalDistribution[0,1],83/10]-CDF[NormalDistribution[0,1],8])/
+        #     (1 - CDF[NormalDistribution[0,1],8])
+        assert_allclose(stats.truncnorm(13., 15.).cdf(14.),
+                        0.9999987259565643)
+        assert_allclose(stats.truncnorm(8, np.inf).cdf(8.3),
+                        0.9163220907327540)
+
     def _test_moments_one_range(self, a, b, expected, rtol=1e-7):
         m0, v0, s0, k0 = expected[:4]
         m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
