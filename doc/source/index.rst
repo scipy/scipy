@@ -31,7 +31,7 @@ science, and engineering.
     ^^^^^^^^^^^^^^^
 
     New to *SciPy*? Check out the getting started guides. They contain an
-    introduction to *SciPy'* main concepts and links to additional tutorials.
+    introduction to *SciPy's* main concepts and links to additional tutorials.
 
     +++
 
