@@ -6507,60 +6507,25 @@ class nct_gen(rv_continuous):
         return n * np.sqrt(df) / np.sqrt(c2)
 
     def _pdf(self, x, df, nc):
-        n = df*1.0
-        nc = nc*1.0
-        x2 = x*x
-        ncx2 = nc*nc*x2
-        fac1 = n + x2
-        trm1 = (n/2.*np.log(n) + sc.gammaln(n+1)
-                - (n*np.log(2) + nc*nc/2 + (n/2)*np.log(fac1)
-                   + sc.gammaln(n/2)))
-        Px = np.exp(trm1)
-        valF = ncx2 / (2*fac1)
-        trm1 = (np.sqrt(2)*nc*x*sc.hyp1f1(n/2+1, 1.5, valF)
-                / np.asarray(fac1*sc.gamma((n+1)/2)))
-        trm2 = (sc.hyp1f1((n+1)/2, 0.5, valF)
-                / np.asarray(np.sqrt(fac1)*sc.gamma(n/2+1)))
-        Px *= trm1+trm2
-        return Px
+        return np.clip(_boost._nct_pdf(x, df, nc), 0, None)
 
     def _cdf(self, x, df, nc):
-        return sc.nctdtr(df, nc, x)
+        return np.clip(_boost._nct_cdf(x, df, nc), 0, 1)
 
     def _ppf(self, q, df, nc):
-        return sc.nctdtrit(df, nc, q)
+        return _boost._nct_ppf(q, df, nc)
+
+    def _sf(self, x, df, nc):
+        return np.clip(_boost._nct_sf(x, df, nc), 0, 1)
+
+    def _isf(self, x, df, nc):
+        return _boost._nct_isf(x, df, nc)
 
     def _stats(self, df, nc, moments='mv'):
-        #
-        # See D. Hogben, R.S. Pinkham, and M.B. Wilk,
-        # 'The moments of the non-central t-distribution'
-        # Biometrika 48, p. 465 (2961).
-        # e.g. https://www.jstor.org/stable/2332772 (gated)
-        #
-        mu, mu2, g1, g2 = None, None, None, None
-
-        gfac = np.exp(sc.betaln(df/2-0.5, 0.5) - sc.gammaln(0.5))
-        c11 = np.sqrt(df/2.) * gfac
-        c20 = np.where(df > 2., df / (df-2.), np.nan)
-        c22 = c20 - c11*c11
-        mu = np.where(df > 1, nc*c11, np.nan)
-        mu2 = np.where(df > 2, c22*nc*nc + c20, np.nan)
-        if 's' in moments:
-            c33t = df * (7.-2.*df) / (df-2.) / (df-3.) + 2.*c11*c11
-            c31t = 3.*df / (df-2.) / (df-3.)
-            mu3 = (c33t*nc*nc + c31t) * c11*nc
-            g1 = np.where(df > 3, mu3 / np.power(mu2, 1.5), np.nan)
-        # kurtosis
-        if 'k' in moments:
-            c44 = df*df / (df-2.) / (df-4.)
-            c44 -= c11*c11 * 2.*df*(5.-df) / (df-2.) / (df-3.)
-            c44 -= 3.*c11**4
-            c42 = df / (df-4.) - c11*c11 * (df-1.) / (df-3.)
-            c42 *= 6.*df / (df-2.)
-            c40 = 3.*df*df / (df-2.) / (df-4.)
-
-            mu4 = c44 * nc**4 + c42*nc**2 + c40
-            g2 = np.where(df > 4, mu4/mu2**2 - 3., np.nan)
+        mu = _boost._nct_mean(df, nc)
+        mu2 = _boost._nct_variance(df, nc)
+        g1 = _boost._nct_skewness(df, nc) if 's' in moments else None
+        g2 = _boost._nct_kurtosis_excess(df, nc) if 'k' in moments else None
         return mu, mu2, g1, g2
 
 
