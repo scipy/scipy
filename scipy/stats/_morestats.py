@@ -3914,7 +3914,9 @@ def directionalmean(samples, *, axis=0):
     Computes the directional mean of a sample of vectors.
 
     Serves as equivalent of the sample mean for directional data whose
-    magnitude is irrelevant, e. g. unit vectors.
+    magnitude is irrelevant, e. g. unit vectors. The vectorial data
+    whose directionals means are computed must be located in the last
+    axis.
 
     Parameters
     ----------
@@ -3968,5 +3970,5 @@ def directionalmean(samples, *, axis=0):
 
     samples = np.moveaxis(samples, axis, 0)
     mean = np.mean(samples, axis=0)
-    directional_mean = mean / np.linalg.norm(mean)
-    return directional_mean.ravel()
+    directional_mean = mean / np.linalg.norm(mean, axis=-1)[..., np.newaxis]
+    return directional_mean
