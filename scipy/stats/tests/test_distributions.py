@@ -141,7 +141,7 @@ def test_vonmises_rvs_gh4598():
     rvs1 = stats.vonmises(1, loc=0, scale=1).rvs(random_state=rng1)
     rvs2 = stats.vonmises(1, loc=2*np.pi, scale=1).rvs(random_state=rng2)
     rvs3 = stats.vonmises(1, loc=0,
-                          scale=(2*np.pi/rvs1+1)).rvs(random_state=rng3)
+                          scale=(2*np.pi/abs(rvs1)+1)).rvs(random_state=rng3)
     assert_allclose(rvs1, rvs2, atol=1e-15)
     assert_allclose(rvs1, rvs3, atol=1e-15)
 
