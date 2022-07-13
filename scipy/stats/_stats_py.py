@@ -1156,18 +1156,6 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.moment(a, moment, axis)
 
-    if a.size == 0:
-        moment_shape = list(a.shape)
-        del moment_shape[axis]
-        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
-        # empty array, return nan(s) with shape matching `moment`
-        out_shape = (moment_shape if np.isscalar(moment)
-                     else [len(moment)] + moment_shape)
-        if len(out_shape) == 0:
-            return dtype(np.nan)
-        else:
-            return np.full(out_shape, np.nan, dtype=dtype)
-
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
         mean = a.mean(axis, keepdims=True)
@@ -1181,6 +1169,10 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 def _moment(a, moment, axis, *, mean=None):
     if np.abs(moment - np.round(moment)) > 0:
         raise ValueError("All moment parameters must be integers")
+
+    # moment of empty array is the same regardless of order
+    if a.size == 0:
+        return np.mean(a, axis=axis)
 
     if moment == 0 or moment == 1:
         # By definition the zeroth moment about the mean is 1, and the first

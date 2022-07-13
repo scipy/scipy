@@ -14,6 +14,7 @@ _klass_mapper = {
     'negative_binomial': _KlassMap('nbinom', ('n', 'p')),
     'hypergeometric': _KlassMap('hypergeom', ('r', 'n', 'N')),
     'non_central_f': _KlassMap('ncf', ('dfn', 'dfd', 'nc')),
+    'non_central_chi_squared': _KlassMap('ncx2', ('df', 'nc')),
     'non_central_t': _KlassMap('nct', ('df', 'nc')),
 }
 

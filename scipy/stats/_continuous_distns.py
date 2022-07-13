@@ -23,7 +23,7 @@ from . import _stats
 from ._tukeylambda_stats import (tukeylambda_variance as _tlvar,
                                  tukeylambda_kurtosis as _tlkurt)
 from ._distn_infrastructure import (
-    get_distribution_names, _kurtosis, _ncx2_cdf, _ncx2_log_pdf, _ncx2_pdf,
+    get_distribution_names, _kurtosis,
     rv_continuous, _skew, _get_fixed_fit_value, _check_shape, _ShapeInfo)
 from ._ksstats import kolmogn, kolmognp, kolmogni
 from ._constants import (_XMIN, _EULER, _ZETA3,
@@ -6199,6 +6199,23 @@ class nakagami_gen(rv_continuous):
 nakagami = nakagami_gen(a=0.0, name="nakagami")
 
 
+# The function name ncx2 is an abbreviation for noncentral chi squared.
+def _ncx2_log_pdf(x, df, nc):
+    # We use (xs**2 + ns**2)/2 = (xs - ns)**2/2  + xs*ns, and include the
+    # factor of exp(-xs*ns) into the ive function to improve numerical
+    # stability at large values of xs. See also `rice.pdf`.
+    df2 = df/2.0 - 1.0
+    xs, ns = np.sqrt(x), np.sqrt(nc)
+    res = sc.xlogy(df2/2.0, x/nc) - 0.5*(xs - ns)**2
+    corr = sc.ive(df2, xs*ns) / 2.0
+    # Return res + np.log(corr) avoiding np.log(0)
+    return _lazywhere(
+        corr > 0,
+        (res, corr),
+        f=lambda r, c: r + np.log(c),
+        fillvalue=-np.inf)
+
+
 class ncx2_gen(rv_continuous):
     r"""A non-central chi-squared continuous random variable.
 
@@ -6228,7 +6245,7 @@ class ncx2_gen(rv_continuous):
 
     """
     def _argcheck(self, df, nc):
-        return (df > 0) & (nc >= 0)
+        return (df > 0) & np.isfinite(df) & (nc >= 0)
 
     def _shape_info(self):
         idf = _ShapeInfo("df", False, (0, np.inf), (False, False))
@@ -6240,28 +6257,50 @@ class ncx2_gen(rv_continuous):
 
     def _logpdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_ncx2_log_pdf, f2=chi2.logpdf)
+        return _lazywhere(cond, (x, df, nc), f=_ncx2_log_pdf,
+                          f2=lambda x, df, _: chi2._logpdf(x, df))
 
     def _pdf(self, x, df, nc):
-        # ncx2.pdf(x, df, nc) = exp(-(nc+x)/2) * 1/2 * (x/nc)**((df-2)/4)
-        #                       * I[(df-2)/2](sqrt(nc*x))
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_ncx2_pdf, f2=chi2.pdf)
+        with warnings.catch_warnings():
+            message = "overflow encountered in _ncx2_pdf"
+            warnings.filterwarnings("ignore", message=message)
+            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_pdf,
+                              f2=lambda x, df, _: chi2._pdf(x, df))
 
     def _cdf(self, x, df, nc):
         cond = np.ones_like(x, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (x, df, nc), f=_ncx2_cdf, f2=chi2.cdf)
+        return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_cdf,
+                          f2=lambda x, df, _: chi2._cdf(x, df))
 
     def _ppf(self, q, df, nc):
         cond = np.ones_like(q, dtype=bool) & (nc != 0)
-        return _lazywhere(cond, (q, df, nc), f=sc.chndtrix, f2=chi2.ppf)
+        with warnings.catch_warnings():
+            message = "overflow encountered in _ncx2_ppf"
+            warnings.filterwarnings("ignore", message=message)
+            return _lazywhere(cond, (q, df, nc), f=_boost._ncx2_ppf,
+                              f2=lambda x, df, _: chi2._ppf(x, df))
+
+    def _sf(self, x, df, nc):
+        cond = np.ones_like(x, dtype=bool) & (nc != 0)
+        return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_sf,
+                          f2=lambda x, df, _: chi2._sf(x, df))
+
+    def _isf(self, x, df, nc):
+        cond = np.ones_like(x, dtype=bool) & (nc != 0)
+        with warnings.catch_warnings():
+            message = "overflow encountered in _ncx2_isf"
+            warnings.filterwarnings("ignore", message=message)
+            return _lazywhere(cond, (x, df, nc), f=_boost._ncx2_isf,
+                              f2=lambda x, df, _: chi2._isf(x, df))
 
     def _stats(self, df, nc):
-        val = df + 2.0*nc
-        return (df + nc,
-                2*val,
-                np.sqrt(8)*(val+nc)/val**1.5,
-                12.0*(val+2*nc)/val**2.0)
+        return (
+            _boost._ncx2_mean(df, nc),
+            _boost._ncx2_variance(df, nc),
+            _boost._ncx2_skewness(df, nc),
+            _boost._ncx2_kurtosis_excess(df, nc),
+        )
 
 
 ncx2 = ncx2_gen(a=0.0, name='ncx2')
@@ -8957,6 +8996,10 @@ class vonmises_gen(rv_continuous):
         #                          (2*pi*exp(-kappa)*I[0](kappa))
         #                        = exp(kappa * cosm1(x)) / (2*pi*i0e(kappa))
         return np.exp(kappa*sc.cosm1(x)) / (2*np.pi*sc.i0e(kappa))
+
+    def _logpdf(self, x, kappa):
+        # vonmises.pdf(x, kappa) = exp(kappa * cosm1(x)) / (2*pi*i0e(kappa))
+        return kappa * sc.cosm1(x) - np.log(2*np.pi) - np.log(sc.i0e(kappa))
 
     def _cdf(self, x, kappa):
         return _stats.von_mises_cdf(kappa, x)
