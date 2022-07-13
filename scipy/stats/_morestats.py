@@ -3966,6 +3966,7 @@ def directionalmean(samples, *, axis=0):
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {samples.shape!r}")
 
-    mean = np.mean(samples, axis=axis)
+    samples = np.moveaxis(samples, axis, 0)
+    mean = np.mean(samples, axis=0)
     directional_mean = mean / np.linalg.norm(mean)
-    return directional_mean
+    return directional_mean.ravel()

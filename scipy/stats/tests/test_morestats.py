@@ -2584,6 +2584,16 @@ class TestDirectionalFuncs:
         circmean = stats.circmean(testdata)
         assert_allclose(circmean, directional_mean_angle)
 
+    def test_different_axis(self):
+        # test that directionalmean works for axis != 0
+        data = np.array([[0.8660254, 0.5, 0.],
+                        [0.8660254, -0.5, 0.]])
+        full_array = np.ones((1, 1, 3, 2))
+        full_array[0, 0, :, :] = data.T
+        expected = np.array([1., 0., 0.])
+        directionalmean = stats.directionalmean(full_array, axis=3)
+        assert_allclose(expected, directionalmean)
+
     def test_list_ndarray_input(self):
         # test that list and numpy array inputs yield same results
         data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
