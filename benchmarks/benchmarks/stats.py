@@ -179,7 +179,7 @@ truncnorm_cases = np.array(truncnorm_cases)
 
 class TruncnormStats(Benchmark):
     param_names = ['case', 'moment']
-    params = [range(len(truncnorm_cases)), ['m', 'v', 's', 'k']]
+    params = [list(range(len(truncnorm_cases))), ['m', 'v', 's', 'k']]
 
     def track_truncnorm_stats_error(self, case, moment):
         result_indices = dict(zip(['m', 'v', 's', 'k'], range(2, 6)))
