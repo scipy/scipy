@@ -1094,26 +1094,6 @@ class TestTruncnorm:
          0.011448805821636248,
          -1.8985607290949496,
          5.0733461105025075],
-        [-20, -19,
-         -19.052343945976656,
-         0.002725073018195613,
-         -1.9838693623377885,
-         5.871801893091683],
-        [-30, -29,
-         -29.034401237736176,
-         0.0011806604886186853,
-         -1.9929615171469608,
-         5.943905539773037],
-        [-40, -39,
-         -39.02560741993011,
-         0.0006548827702932775,
-         -1.9960847672775606,
-         5.968744357649675],
-        [39, 40,
-         39.02560741993011,
-         0.0006548827702932775,
-         1.9960847672775606,
-         5.968744357649675],
     ]
     _truncnorm_stats_data = np.array(_truncnorm_stats_data)
 
@@ -1121,7 +1101,7 @@ class TestTruncnorm:
     def test_moments(self, case):
         a, b, m0, v0, s0, k0 = case
         m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
-        assert_allclose([m, v, s, k], [m0, v0, s0, k0])
+        assert_allclose([m, v, s, k], [m0, v0, s0, k0], atol=1e-17)
 
     def test_9902_moments(self):
         m, v = stats.truncnorm.stats(0, np.inf, moments='mv')
