@@ -9025,6 +9025,7 @@ class vonmises_gen(rv_continuous):
     def _rvs(self, kappa, size=None, random_state=None):
         return random_state.vonmises(0.0, kappa, size=size)
 
+    @inherit_docstring_from(rv_continuous)
     def rvs(self, *args, **kwds):
         rvs = super().rvs(*args, **kwds)
         return np.mod(rvs + np.pi, 2*np.pi) - np.pi
