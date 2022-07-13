@@ -132,6 +132,20 @@ def test_vonmises_pdf(x, kappa, expected_pdf):
     assert_allclose(pdf, expected_pdf, rtol=1e-15)
 
 
+def test_vonmises_rvs_gh4598():
+    # check that random variates wrap around as discussed in gh-4598
+    seed = abs(hash('von_mises_rvs'))
+    rng1 = np.random.default_rng(seed)
+    rng2 = np.random.default_rng(seed)
+    rng3 = np.random.default_rng(seed)
+    rvs1 = stats.vonmises(1, loc=0, scale=1).rvs(random_state=rng1)
+    rvs2 = stats.vonmises(1, loc=2*np.pi, scale=1).rvs(random_state=rng2)
+    rvs3 = stats.vonmises(1, loc=0,
+                          scale=(2*np.pi/rvs1+1)).rvs(random_state=rng3)
+    assert_allclose(rvs1, rvs2, atol=1e-15)
+    assert_allclose(rvs1, rvs3, atol=1e-15)
+
+
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
     """
     This utility function checks that the log-likelihood (computed by
