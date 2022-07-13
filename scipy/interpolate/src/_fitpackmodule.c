@@ -191,6 +191,9 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     ny = PyArray_DIMS(ap_ty)[0];
     mx = PyArray_DIMS(ap_x)[0];
     my = PyArray_DIMS(ap_y)[0];
+   /* v = INT_MAX/my is largest integer multiple of `my` such that
+       v * my <= INT_MAX
+    */
     if (my != 0 && INT_MAX/my < mx) {
         /* Integer overflow */
         PyErr_Format(PyExc_RuntimeError,
