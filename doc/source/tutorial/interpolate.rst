@@ -10,29 +10,150 @@ Interpolation (:mod:`scipy.interpolate`)
 
 .. contents::
 
-There are several general interpolation facilities available in SciPy,
-for data in 1, 2, and higher dimensions:
+There are several general facilities available in SciPy for interpolation and
+smoothing for data in 1, 2, and higher dimensions. The choice of a specific
+interpolation routine depends on whether your data is
 
-- A class representing an interpolant (:class:`interp1d`) in 1-D,
-  offering several interpolation methods.
+- :ref:`One-dimensional <tutorial-interpolate_1Dsection>` (1-D);
 
-- Convenience function :func:`griddata` offering a simple interface to
-  interpolation in N dimensions (N = 1, 2, 3, 4, ...).
-  Object-oriented interface for the underlying routines is also
-  available.
+- Is given on a :ref:`structured grid <tutorial-interpolate_regular_grid_interpolator>`
+  in arbitrary (N) dimensions;
 
-- :class:`RegularGridInterpolator` provides several interpolation methods
-  on a regular grid in arbitrary (N) dimensions,
+- Is :ref:`unstructured <tutorial-interpolate_NDunstructured>`;
 
-- Functions for 1- and 2-D (smoothed) cubic-spline
-  interpolation, based on the FORTRAN library FITPACK. They are both
-  procedural and object-oriented interfaces for the FITPACK library.
-
-- Interpolation using radial basis functions.
+For data smoothing, functions are provided for 1- and 2-D (smoothed)
+cubic-spline interpolation, based on the FORTRAN library FITPACK. There are
+two interfaces for the FITPACK library, a procedural interface and an
+object-oriented interface.  **TODO**
 
 
-1-D interpolation (:class:`interp1d`)
-=====================================
+Missing data
+============
+
+Before describing various interpolators in detail, we note the (lack of) support
+for interpolation with missing data. Two popular ways of representing missing
+data are using masked arrays of the `numpy.ma` library, and encoding missing
+values as not-a-number, ``NaN``. 
+
+None of these two approaches is directly suppored in `scipy.interpolate`.
+Individual routines may offer partial support, and/or workarounds, but in
+general the library firmly adheres to the IEEE 754 semantics where a ``NaN``
+means *not-a-number*, i.e. a result of an illegal mathematical operation
+(think a division by zero), not *missing*.
+
+
+1-D interpolation
+=================
+
+.. _tutorial-interpolate_1Dsection:
+
+Piecewise linear interpolation
+------------------------------
+
+If all you need is a linear (a.k.a. broken line) interpolation, you can use
+the `numpy.interp` routine. It takes two arrays of data to interpolate, ``x``,
+and ``y``, and a third array, ``xnew``, of points to evaluate the interpolation on:
+
+
+.. plot::
+
+   >>> import numpy as np
+
+   >>> x = np.linspace(0, 10, num=11)
+   >>> y = np.cos(-x**2 / 9.0)
+
+   Construct the interpolation
+
+   >>> xnew = np.linspace(0, 10, num=1001)
+   >>> ynew = np.interp(xnew, x, y)
+
+   And plot it
+
+   >>> import matplotlib.pyplot as plt
+   >>> plt.plot(xnew, ynew, '-', label='linear interp')
+   >>> plt.plot(x, y, 'o', label='data')
+   >>> plt.legend(loc='best')
+   >>> plt.show()
+
+..   :caption: One-dimensional interpolation using `numpy.interp`
+
+
+Cubic splines
+-------------
+
+Of course, piecewise linear interpolation produces cusps at data points,
+where linear pieces join. To produce a smoother curve, you can use cubic
+splines, where the interpolating curve is made of cubic pieces with matching
+first and second derivatives. In code, these objects are represented via the
+`CubicSpline`` class instances. An instance is constructed with the ``x`` and
+``y`` arrays of data, and then it can be evaluated using the target ``xnew``
+values:
+
+    >>> from scipy.interpolate import CubicSpline
+    >>> spl = CubicSpline([1, 2, 3, 4, 5, 6], [1, 4, 8, 16, 25, 36])
+    >>> spl(2.5)
+    5.57
+
+A `CubicSpline` object's ``__call__`` method accepts both scalar values and
+arrays. It also accepts a second argument, ``nu``, to evaluate the 
+derivative of order ``nu``. As an example, we plot the derivatives of a spline:
+
+.. plot::
+
+    >>> from scipy.interpolate import CubicSpline
+    >>> x = np.linspace(0, 10, num=11)
+    >>> y = np.cos(-x**2 / 9.)
+    >>> spl = CubicSpline(x, y)
+
+    >>> import matplotlib.pyplot as plt
+    >>> fig, ax = plt.subplots(4, 1, figsize=(5, 7))
+    >>> xnew = np.linspace(0, 10, num=1001)
+    >>> ax[0].plot(xnew, spl(xnew))
+    >>> ax[0].plot(x, y, 'o', label='data')
+    >>> ax[1].plot(xnew, spl(xnew, nu=1), '--', label='1st derivative')
+    >>> ax[2].plot(xnew, spl(xnew, nu=2), '--', label='2nd derivative')
+    >>> ax[3].plot(xnew, spl(xnew, nu=3), '--', label='3rd derivative')
+    >>> for j in range(4):
+    ...     ax[j].legend(loc='best')
+    >>> plt.tight_layout()
+    >>> plt.show()
+
+Note that the first and second derivatives are continuous, and the third
+derivative jumps at data points. 
+
+
+Monotone interpolants
+---------------------
+
+Cubic splines are by construction twice continuously differentiable. This may
+lead to the spline function overshooting'' between data points.
+In these situations, an alternative is to use the so-called *monotone*
+cubic interpolants: these are constructed to be only once continuously
+differentiable, but are guaranteed to preserve the local shape implied by the data.
+There are two objects of this class in `scipy.interpolate` : `PchipInterpolator`
+and `Akima1DInterpolator` . To illustrate, let's consider a data with an outlier:
+
+.. plot::
+
+    >>> from scipy.interpolate import CubicSpline, PchipInterpolator, Akima1DInterpolator
+    >>> x = np.array([1., 2., 3., 4., 4.5, 5., 6., 7., 8])
+    >>> y = x**2
+    >>> y[4] += 101
+
+    >>> import matplotlib.pyplot as plt
+    >>> xx = np.linspace(1, 8, 51)
+    >>> plt.plot(xx, CubicSpline(x, y)(xx), '--', label='spline')
+    >>> plt.plot(xx, Akima1DInterpolator(x, y)(xx), '-', label='Akima1D')
+    >>> plt.plot(xx, PchipInterpolator(x, y)(xx), '-', label='pchip')
+    >>> plt.plot(x, y, 'o')
+    >>> plt.legend()
+    >>> plt.show()
+
+
+Legacy interface for 1-D interpolation (:class:`interp1d`)
+----------------------------------------------------------
+
+.. _tutorial-interpolate_interp1d:
 
 The `interp1d` class in `scipy.interpolate` is a convenient method to
 create a function based on fixed data points, which can be evaluated
@@ -96,8 +217,29 @@ same data as in the previous example:
 ..             `next`.
 
 
+- A class representing an interpolant (:class:`interp1d`) in 1-D,
+  offering several interpolation methods.
+
+- Convenience function :func:`griddata` offering a simple interface to
+  interpolation in N dimensions (N = 1, 2, 3, 4, ...).
+  Object-oriented interface for the underlying routines is also
+  available.
+
+- :class:`RegularGridInterpolator` provides several interpolation methods
+  on a regular grid in arbitrary (N) dimensions,
+
+- Functions for 1- and 2-D (smoothed) cubic-spline
+  interpolation, based on the FORTRAN library FITPACK. They are both
+  procedural and object-oriented interfaces for the FITPACK library.
+
+- Interpolation using radial basis functions.
+
+
+
 Multivariate data interpolation (:func:`griddata`)
 ==================================================
+
+.. _tutorial-interpolate_NDunstructured:
 
 Suppose you have multidimensional data, for instance, for an underlying
 function *f(x, y)* you only know the values at points *(x[i], y[i])*
