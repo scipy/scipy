@@ -7976,91 +7976,6 @@ def _truncnorm_get_delta_scalar(a, b):
     return delta
 
 
-def _truncnorm_get_delta(a, b):
-    if np.isscalar(a) and np.isscalar(b):
-        return _truncnorm_get_delta_scalar(a, b)
-    a, b = np.atleast_1d(a), np.atleast_1d(b)
-    if a.size == 1 and b.size == 1:
-        return _truncnorm_get_delta_scalar(a.item(), b.item())
-    delta = np.zeros(np.shape(a))
-    condinner = (a <= TRUNCNORM_TAIL_X) & (b >= -TRUNCNORM_TAIL_X)
-    conda = (a > 0) & condinner
-    condb = (a <= 0) & condinner
-    if np.any(conda):
-        np.place(delta, conda, _norm_sf(a[conda]) - _norm_sf(b[conda]))
-    if np.any(condb):
-        np.place(delta, condb, _norm_cdf(b[condb]) - _norm_cdf(a[condb]))
-    delta[delta < 0] = 0
-    return delta
-
-
-def _truncnorm_get_logdelta_scalar(a, b):
-    if (a <= TRUNCNORM_TAIL_X) and (b >= -TRUNCNORM_TAIL_X):
-        if a > 0:
-            delta = _norm_sf(a) - _norm_sf(b)
-        else:
-            delta = _norm_cdf(b) - _norm_cdf(a)
-        delta = max(delta, 0)
-        if delta > 0:
-            return np.log(delta)
-
-    if b < 0 or (np.abs(a) >= np.abs(b)):
-        nla, nlb = _norm_logcdf(a), _norm_logcdf(b)
-        logdelta = nlb + np.log1p(-np.exp(nla - nlb))
-    else:
-        sla, slb = _norm_logsf(a), _norm_logsf(b)
-        logdelta = sla + np.log1p(-np.exp(slb - sla))
-    return logdelta
-
-
-def _truncnorm_logpdf_scalar(x, a, b):
-    with np.errstate(invalid='ignore'):
-        if np.isscalar(x):
-            if x < a:
-                return -np.inf
-            if x > b:
-                return -np.inf
-        shp = np.shape(x)
-        x = np.atleast_1d(x)
-        out = np.full_like(x, np.nan, dtype=np.double)
-        condlta, condgtb = (x < a), (x > b)
-        if np.any(condlta):
-            np.place(out, condlta, -np.inf)
-        if np.any(condgtb):
-            np.place(out, condgtb, -np.inf)
-        cond_inner = ~condlta & ~condgtb
-        if np.any(cond_inner):
-            _logdelta = _truncnorm_get_logdelta_scalar(a, b)
-            np.place(out, cond_inner, _norm_logpdf(x[cond_inner]) - _logdelta)
-        return (out[0] if (shp == ()) else out)
-
-
-def _truncnorm_pdf_scalar(x, a, b):
-    with np.errstate(invalid='ignore'):
-        if np.isscalar(x):
-            if x < a:
-                return 0.0
-            if x > b:
-                return 0.0
-        shp = np.shape(x)
-        x = np.atleast_1d(x)
-        out = np.full_like(x, np.nan, dtype=np.double)
-        condlta, condgtb = (x < a), (x > b)
-        if np.any(condlta):
-            np.place(out, condlta, 0.0)
-        if np.any(condgtb):
-            np.place(out, condgtb, 0.0)
-        cond_inner = ~condlta & ~condgtb
-        if np.any(cond_inner):
-            delta = _truncnorm_get_delta_scalar(a, b)
-            if delta > 0:
-                np.place(out, cond_inner, _norm_pdf(x[cond_inner]) / delta)
-            else:
-                np.place(out, cond_inner,
-                         np.exp(_truncnorm_logpdf_scalar(x[cond_inner], a, b)))
-        return (out[0] if (shp == ()) else out)
-
-
 def _truncnorm_logsf_scalar(x, a, b):
     with np.errstate(invalid='ignore'):
         if np.isscalar(x):
@@ -8321,30 +8236,10 @@ class truncnorm_gen(rv_continuous):
         return a, b
 
     def _pdf(self, x, a, b):
-        if np.isscalar(a) and np.isscalar(b):
-            return _truncnorm_pdf_scalar(x, a, b)
-        a, b = np.atleast_1d(a), np.atleast_1d(b)
-        if a.size == 1 and b.size == 1:
-            return _truncnorm_pdf_scalar(x, a.item(), b.item())
-        it = np.nditer([x, a, b, None], [],
-                       [['readonly'], ['readonly'], ['readonly'],
-                        ['writeonly', 'allocate']])
-        for (_x, _a, _b, _ld) in it:
-            _ld[...] = _truncnorm_pdf_scalar(_x, _a, _b)
-        return it.operands[3]
+        return np.exp(self._logpdf(x, a, b))
 
     def _logpdf(self, x, a, b):
-        if np.isscalar(a) and np.isscalar(b):
-            return _truncnorm_logpdf_scalar(x, a, b)
-        a, b = np.atleast_1d(a), np.atleast_1d(b)
-        if a.size == 1 and b.size == 1:
-            return _truncnorm_logpdf_scalar(x, a.item(), b.item())
-        it = np.nditer([x, a, b, None], [],
-                       [['readonly'], ['readonly'], ['readonly'],
-                        ['writeonly', 'allocate']])
-        for (_x, _a, _b, _ld) in it:
-            _ld[...] = _truncnorm_logpdf_scalar(_x, _a, _b)
-        return it.operands[3]
+        return _norm_logpdf(x) - _log_gauss_mass(a, b)
 
     def _cdf(self, x, a, b):
         return np.exp(self._logcdf(x, a, b))
