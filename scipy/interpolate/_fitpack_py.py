@@ -485,7 +485,32 @@ def sproot(tck, mest=10):
 
     Examples
     --------
-    Examples are given :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
+
+    For some data, this method may miss a root. This happens when one of
+    the spline knots (which FITPACK places automatically) happens to
+    coincide with the true root. A workaround is to convert to `PPoly`,
+    which uses a different root-finding algorithm.
+
+    For example,
+
+    >>> x = [1.96, 1.97, 1.98, 1.99, 2.00, 2.01, 2.02, 2.03, 2.04, 2.05]
+    >>> y = [-6.365470e-03, -4.790580e-03, -3.204320e-03, -1.607270e-03,
+    ...      4.440892e-16,  1.616930e-03,  3.243000e-03,  4.877670e-03,
+    ...      6.520430e-03,  8.170770e-03]
+    >>> from scipy.interpolate import splrep, sproot, PPoly
+    >>> tck = splrep(x, y, s=0)
+    >>> sproot(tck)
+    array([], dtype=float64)
+
+    Converting to a PPoly object does find the roots at `x=2`:
+
+    >>> ppoly = PPoly.from_spline(tck)
+    >>> ppoly.roots(extrapolate=False)
+    array([2.])
+
+
+    Further examples are given :ref:`in the tutorial
+    <tutorial-interpolate_splXXX>`.
 
     """
     if isinstance(tck, BSpline):

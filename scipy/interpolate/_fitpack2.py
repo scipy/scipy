@@ -455,7 +455,43 @@ class UnivariateSpline:
     def roots(self):
         """ Return the zeros of the spline.
 
-        Restriction: only cubic splines are supported by fitpack.
+        Notes
+        -----
+        Restriction: only cubic splines are supported by FITPACK. For non-cubic
+        splines, use `PPoly.root` (see below for an example).
+
+        Examples
+        --------
+
+        For some data, this method may miss a root. This happens when one of
+        the spline knots (which FITPACK places automatically) happens to
+        coincide with the true root. A workaround is to convert to `PPoly`,
+        which uses a different root-finding algorithm.
+
+        For example,
+
+        >>> x = [1.96, 1.97, 1.98, 1.99, 2.00, 2.01, 2.02, 2.03, 2.04, 2.05]
+        >>> y = [-6.365470e-03, -4.790580e-03, -3.204320e-03, -1.607270e-03,
+        ...      4.440892e-16,  1.616930e-03,  3.243000e-03,  4.877670e-03,
+        ...      6.520430e-03,  8.170770e-03]
+        >>> from scipy.interpolate import UnivariateSpline
+        >>> spl = UnivariateSpline(x, y, s=0)
+        >>> spl.roots()
+        array([], dtype=float64)
+
+        Converting to a PPoly object does find the roots at `x=2`:
+
+        >>> from scipy.interpolate import splrep, PPoly
+        >>> tck = splrep(x, y, s=0)
+        >>> ppoly = PPoly.from_spline(tck)
+        >>> ppoly.roots(extrapolate=False)
+        array([2.])
+
+        See Also
+        --------
+        sproot
+        PPoly.roots
+
         """
         k = self._data[5]
         if k == 3:
