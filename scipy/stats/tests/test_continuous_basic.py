@@ -942,3 +942,5 @@ def test_scalar_for_scalar2():
     res = stats.norm.fit_loc_scale([1, 2, 3])
     assert res[0].shape == () and not isinstance(res[0], np.ndarray)
     assert res[1].shape == () and not isinstance(res[1], np.ndarray)
+    res = stats.norm.nnlf((0, 1), [1, 2, 3])
+    assert res.shape == () and not isinstance(res, np.ndarray)

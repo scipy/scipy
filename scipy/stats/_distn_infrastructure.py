@@ -1599,7 +1599,7 @@ class rv_generic:
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
-        x = asarray((x-loc) / scale)
+        x = (asarray(x)-loc) / scale
         n_log_scale = len(x) * log(scale)
         if np.any(~self._support_mask(x, *args)):
             return inf
