@@ -118,20 +118,21 @@ derivative of order ``nu``. As an example, we plot the derivatives of a spline:
     >>> plt.tight_layout()
     >>> plt.show()
 
-Note that the first and second derivatives are continuous, and the third
-derivative jumps at data points. 
+Note that the first and second derivatives are continuous by construction, and
+the third derivative jumps at data points. 
 
 
 Monotone interpolants
 ---------------------
 
 Cubic splines are by construction twice continuously differentiable. This may
-lead to the spline function overshooting'' between data points.
-In these situations, an alternative is to use the so-called *monotone*
-cubic interpolants: these are constructed to be only once continuously
-differentiable, but are guaranteed to preserve the local shape implied by the data.
-There are two objects of this class in `scipy.interpolate` : `PchipInterpolator`
-and `Akima1DInterpolator` . To illustrate, let's consider a data with an outlier:
+lead to the spline function oscillating and ''overshooting'' in between the
+data points. In these situations, an alternative is to use the so-called
+*monotone* cubic interpolants: these are constructed to be only once
+continuously differentiable, and attempt to preserve the local shape implied
+by the data. There are two objects of this class in `scipy.interpolate` :
+`PchipInterpolator` and `Akima1DInterpolator` . To illustrate, let's consider
+a data with an outlier:
 
 .. plot::
 
@@ -148,6 +149,101 @@ and `Akima1DInterpolator` . To illustrate, let's consider a data with an outlier
     >>> plt.plot(x, y, 'o')
     >>> plt.legend()
     >>> plt.show()
+
+
+Piecewise polynomials
+---------------------
+
+Internally, `CubicSpline` and monotone interpolants are represented as instances
+of a `PPoly` class, which represents pieciwise polynomials in terms of
+breakpoints and coefficients (`PPoly` objects can represent polynomials of 
+arbitrary orders, not only cubics). For the data array ``x``, breakpoints are at
+the data points, and the array of coefficients, ``c`` , define cubic polynomials
+such that ``c[k, j]`` is a coefficient for ``(x - x[j])**(3-k)`` on the segment
+between ``x[j]`` and ``x[j+1]`` .
+
+
+Manipulating ``PPoly`` objects
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+`PPoly` objects have convenient methods for constructing derivatives
+and antiderivatives, computing integrals and root-finding. For example, we
+tabulate the sine function and find the roots of its derivative.
+
+    >>> from scipy.interpolate import CubicSpline
+    >>> x = np.linspace(0, 10, 71)
+    >>> y = np.sin(x)
+    >>> spl = CubicSpline(x, y)
+
+Now, differentiate the spline:
+
+    >>> dspl = spl.derivative()
+
+Here ``dspl`` is a `PPoly` instance which represents a polynomial approximation
+to the derivative of the original object, ``spl`` . Evaluating ``dspl`` at a
+fixed argument is equivalent to evaluating the original spline with the ``nu=1``
+argument:
+
+    >>> dspl(1.1), spl(1.1, nu=1)
+    (0.45361436, 0.45361436)
+
+However with the ``dspl`` object, we find the zeros of the derivative of ``spl``:
+
+    >>> dspl.root() / np.pi
+    array([-0.45480801,  0.50000034,  1.50000099,  2.5000016 ,  3.46249993])
+
+This agrees well with roots :math:`\pi/2 + \pi\,n` of
+:math:`\cos(x) = \sin'(x)`.
+Note that by default it computed the roots *extrapolated* to the outside of
+the interpolation interval :math:`0 \leqslant x \leqslant 10`, and that
+the extrapolated results (the first and last values) are much less accurate.
+We can switch off the extrapolation and limit the root-finding to the
+interpolation interval:
+
+    >>> dspl.root(extrapolate=False) / np.pi
+    array([0.50000034,  1.50000099,  2.5000016])
+
+In fact, the ``root`` method is a special case of a more general ``solve``
+method which finds for a given value of :math:`y` the solutions of the
+equation :math:`f(x) = y` , where :math:`f(x)` is a piecewise polynomial:
+
+    >>> dspl.solve(0.5, extrapolate=False)
+    array([0.33332755, 1.66667195, 2.3333271])
+
+which agrees well with the expected values of  :math:`\arccos(1/2) + \pi\,n`.
+
+
+Antiderivative (an indefinite integral) is an inverse operation to the
+derivative, so that ``spl.derivative().antiderivative()`` is equivalent to the
+original ``spl``, modulo floating-point errors. As an example, we compute
+an approximation to the complete elliptic integral
+:math:`K(m) = \int_0^{\pi/2} [1 - m\sin^2 x]^{-1/2} dx`:
+
+    >>> from scipy.special import ellipk
+    >>> ellipk(0.5)
+    1.8540746773013719
+
+To this end, tabulate the integrand, interpolate using the monotone interpolant
+(we could as well used a `CubicSpline`):
+
+    >>> from scipy.interpolate import PchipInterpolator
+    >>> x = np.linspace(0, np.pi/2, 70)
+    >>> y = 1 / np.sqrt(1 - 0.5*np.sin(x)**2)
+    >>> spl = PchipInterpolator(x, y)
+
+and integrate
+
+    >>> ader = spl.antiderivative()
+    >>> ader(np.pi/2) - ader(0)
+    1.854074674965991
+
+which is indeed close to the value computed by `scipy.special.ellipk`.
+
+
+B-splines
+---------
+
+**FIXME**
 
 
 Legacy interface for 1-D interpolation (:class:`interp1d`)
