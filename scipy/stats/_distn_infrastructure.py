@@ -1204,7 +1204,7 @@ class rv_generic:
         goodscale = goodargs[0]
         goodargs = goodargs[1:]
         place(output, cond0, self.vecentropy(*goodargs) + log(goodscale))
-        return output
+        return output[()]
 
     def moment(self, order=None, *args, **kwds):
         """non-central moment of distribution of specified order.
