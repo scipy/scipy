@@ -18,9 +18,10 @@ def pytest_configure(config):
     config.addinivalue_line("markers",
         "xfail_on_32bit: mark test as failing on 32-bit platforms")
     try:
-        import pytest_timeout
+        import pytest_timeout  # noqa:F401
     except Exception:
-        config.addinivalue_line("markers", 'timeout: mark a test for a non-default timeout')
+        config.addinivalue_line(
+            "markers", 'timeout: mark a test for a non-default timeout')
 
 
 def _get_mark(item, name):
