@@ -90,7 +90,6 @@ def check_kurt_expect(distfn, arg, m, v, k, msg):
 
 def check_entropy(distfn, arg, msg):
     ent = distfn.entropy(*arg)
-    assert ent.shape == () and not isinstance(ent, np.ndarray)
     npt.assert_(not np.isnan(ent), msg + 'test Entropy is nan')
 
 
