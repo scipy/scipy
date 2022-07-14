@@ -411,7 +411,8 @@ class RegularGridInterpolator:
                                   k)
 
         # the rest of the dimensions have to be on a per point-in-xi basis
-        result = np.empty(m, dtype=self.values.dtype)
+        shape = (m, *self.values.shape[len(self.grid):])
+        result = np.empty(shape, dtype=self.values.dtype)
         for j in range(m):
             # Main process: Apply 1D interpolate in each dimension
             # sequentially, starting with the last dimension.
