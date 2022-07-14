@@ -3937,13 +3937,13 @@ def directionalmean(samples, *, axis=0):
 
     .. code-block:: python
 
-        mean=samples.mean()
+        mean=samples.mean(axis=0)
         directionalmean = mean/np.linalg.norm(mean)
 
-    This definition is applicable for `directional` data but not
-    for `axial` data. In practice, this means that if your data
+    This definition is applicable for *directional* data but not
+    for *axial* data. In practice, this means that if your data
     are symmetric around the origin (`x` has the same meaning as
-    `-x`), this function should not be used.
+    -`x`), this function should not be used.
 
     References
     ----------
@@ -3970,5 +3970,5 @@ def directionalmean(samples, *, axis=0):
 
     samples = np.moveaxis(samples, axis, 0)
     mean = np.mean(samples, axis=0)
-    directional_mean = mean / np.linalg.norm(mean, axis=-1)[..., np.newaxis]
+    directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
     return directional_mean
