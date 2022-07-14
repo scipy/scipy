@@ -149,8 +149,6 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     rng = np.random.RandomState(765456)
     rvs = distfn.rvs(size=sn, *arg, random_state=rng)
     m, v = distfn.stats(*arg)
-    assert m.shape == () and not isinstance(m, np.ndarray)
-    assert v.shape == () and not isinstance(v, np.ndarray)
 
     if distname not in {'laplace_asymmetric'}:
         check_sample_meanvar_(m, v, rvs)
@@ -922,7 +920,7 @@ scalars_out = [['interval', [0.95]], ['support', []], ['stats', ['mv']]]
 
 @pytest.mark.parametrize('case', scalar_out + scalars_out)
 def test_scalar_for_scalar(case):
-    # Some rv_continuous functions returns 0d array instead of numpy scalar
+    # Some rv_continuous functions returned 0d array instead of NumPy scalar
     # Guard against regression
     method_name, args = case
     method = getattr(stats.norm(), method_name)
@@ -935,7 +933,7 @@ def test_scalar_for_scalar(case):
 
 
 def test_scalar_for_scalar2():
-    # test methods that are not part of frozen distributions
+    # test methods that are not attributes of frozen distributions
     res = stats.norm.fit([1, 2, 3])
     assert res[0].shape == () and not isinstance(res[0], np.ndarray)
     assert res[1].shape == () and not isinstance(res[1], np.ndarray)
