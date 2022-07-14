@@ -149,6 +149,8 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
     rng = np.random.RandomState(765456)
     rvs = distfn.rvs(size=sn, *arg, random_state=rng)
     m, v = distfn.stats(*arg)
+    assert m.shape == () and not isinstance(m, np.ndarray)
+    assert v.shape == () and not isinstance(v, np.ndarray)
 
     if distname not in {'laplace_asymmetric'}:
         check_sample_meanvar_(m, v, rvs)
