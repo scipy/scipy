@@ -1373,9 +1373,7 @@ class rv_generic:
             res2 *= loc**n
             place(result, i2, res2)
 
-        if result.ndim == 0:
-            return result.item()
-        return result
+        return result[()]
 
     def median(self, *args, **kwds):
         """Median of the distribution.
@@ -2912,7 +2910,7 @@ class rv_continuous(rv_generic):
 
         if conditional:
             vals /= invfac
-        return vals
+        return np.array(vals)[()]  # make it a numpy scalar like other methods
 
     def _param_info(self):
         shape_info = self._shape_info()
