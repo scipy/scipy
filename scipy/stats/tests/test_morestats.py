@@ -2627,7 +2627,6 @@ class TestDirectionalFuncs:
         data = np.array([[0.8660254, 0.5, 0.],
                         [0.8660254, -0.5, np.nan],
                         [1., 0., 0.]])
-        expected = np.nan
         directional_mean = stats.directionalmean(data,
                                                  nan_policy='propagate')
-        assert expected == directional_mean
+        assert np.isnan(directional_mean)

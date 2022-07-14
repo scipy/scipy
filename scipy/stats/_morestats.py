@@ -3906,10 +3906,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     return res
 
 
-@_axis_nan_policy_factory(
-    lambda x: x, result_to_tuple=lambda x: (x,), n_outputs=1
-)
-def directionalmean(samples, *, axis=0):
+def directionalmean(samples, *, axis=0, nan_policy='propagate'):
     """
     Computes the directional mean of a sample of vectors.
 
@@ -3924,7 +3921,10 @@ def directionalmean(samples, *, axis=0):
         Input array. Must be at least two-dimensional.
     axis : int, optional
         Axis along which directional means are computed. Default is 0.
-
+    nan_policy : {'propagate', 'raise', 'omit'}, optional
+        Defines how to handle when input contains nan. 'propagate' returns nan,
+        'raise' throws an error, 'omit' performs the calculations ignoring nan
+        values. Default is 'propagate'.
     Returns
     -------
     directionalmean : ndarray
@@ -3964,11 +3964,22 @@ def directionalmean(samples, *, axis=0):
 
     """
     samples = np.asarray(samples)
+    if nan_policy not in ['raise', 'propagate', 'omit']:
+        raise ValueError("nan_policty must be one of 'propagate', 'omit', "
+                         "'raise'.")
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {samples.shape!r}")
-
     samples = np.moveaxis(samples, axis, 0)
-    mean = np.mean(samples, axis=0)
+    contains_nan = np.isnan(samples).any()
+    if contains_nan:
+        if nan_policy == 'propagate':
+            return np.nan
+        elif nan_policy == 'omit':
+            mean = np.nanmean(samples, axis=0)
+        elif nan_policy == 'raise':
+            raise ValueError("samples contains NaN values.")
+    else:
+        mean = np.mean(samples, axis=0)
     directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
     return directional_mean
