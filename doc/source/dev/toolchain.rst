@@ -96,7 +96,19 @@ starting from version 1.7.0).
 
 To maintain compatibility with a large number of platforms & setups, especially
 where using the official wheels (or other distribution channels like Anaconda
-or conda-forge) is not possible, SciPy keeps compatibility with old compilers.
+or conda-forge) is not possible, SciPy tries to keep compatibility with older
+compilers, on platforms that have not yet reached their official end-of-life.
+
+As explained in more detail below, the current minimal compiler versions are:
+
+==========  ===========================  ===============================  ============================
+ Compiler    Default Platform (tested)    Secondary Platform (untested)    Minimal Version
+==========  ===========================  ===============================  ============================
+ GCC         Linux                        AIX, Alpine Linux, OSX           GCC 8.x
+ LLVM        OSX                          Linux, FreeBSD, Windows          LLVM 12.x
+ MSVC        Windows                      -                                Visual Studio 2019 (vc142)
+==========  ===========================  ===============================  ============================
+
 
 Official Builds
 ~~~~~~~~~~~~~~~
@@ -240,7 +252,7 @@ attempting to predict adoption timelines for newer standards.
  2020              C++11
  2021              C++14
  2022              C++17 (core language + universally available stdlib features)
- ?                 C++17, C++20, C++23
+ ?                 C++17 (with full stdlib), C++20, C++23
 ================  =======================================================================
 
 Since dropping support for Python 2.7, C++11 can be used
@@ -285,22 +297,23 @@ LLVM 10 (and GCC 10 is available as a freebsd-port [25]_).
 
 Finally there is the question of which machines are widely used by people
 needing to compile SciPy from source for other reasons (e.g. SciPy developers,
-or people wanting to compile for themselves or performance reasons). The oldest
-relevant distributions (without RHEL-style backports) are Ubuntu 18.04 LTS
-(which has GCC 7 but also has a backport of GCC 8; Ubuntu 20.04 LTS has GCC 9)
-and Debian Buster (with GCC 8; Bullseye has GCC 10).
+or people wanting to compile for themselves for performance reasons).
+The oldest relevant distributions (without RHEL-style backports) are Ubuntu
+18.04 LTS (which has GCC 7 but also has a backport of GCC 8; Ubuntu 20.04 LTS
+has GCC 9) and Debian Buster (with GCC 8; Bullseye has GCC 10).
 This is the weakest restriction for determining the lower bounds of compiler
 support (power users and developers can be expected to keep their systems at
 least somewhat up-to-date, or use backports where available), and gradually
 becomes less important as usage numbers of old distributions dwindle.
 
-All the lowest-supported compiler versions (GCC 8, LLVM X, VS2019 with vc142)
-have full support for the C++17 _core language_, which can therefore be used
-unconditionally. However, as of mid-2022, support for the entirety of the
-C++17 standard library has not yet been completed across all compilers [17]_,
-particularly LLVM. It is therefore necessary to check if a given stdlib-feature
-is supported by all compilers before it can be used in SciPy.
-Support for C++20 and C++23 is still under heavy development [17]_.
+All the currently lowest-supported compiler versions (GCC 8, LLVM 12,
+VS2019 with vc142) have full support for the C++17 _core language_,
+which can therefore be used unconditionally.
+However, as of mid-2022, support for the entirety of the C++17 standard library
+has not yet been completed across all compilers [17]_, particularly LLVM.
+It is therefore necessary to check if a given stdlib-feature is supported by
+all compilers before it can be used in SciPy.
+Compiler support for C++20 and C++23 is still under heavy development [17]_.
 
 Fortran Compilers
 ~~~~~~~~~~~~~~~~~
