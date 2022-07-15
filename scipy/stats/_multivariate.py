@@ -3595,7 +3595,9 @@ class ortho_group_gen(multi_rv_generic):
         # The last two dimensions are the rows and columns of R matrices.
         # Extract the diagonals. Note that this eliminates a dimension.
         d = r.diagonal(offset=0, axis1=-2, axis2=-1)
-        q *= (d/abs(d))[..., None, :]
+        # Add back a dimension for proper broadcasting: we're dividing
+        # each row of each R matrix by the diagonal of the R matrix.
+        q *= (d/abs(d))[..., np.newaxis, :]  # to broadcast properly
         return q
 
 
