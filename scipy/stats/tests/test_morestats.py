@@ -12,6 +12,7 @@ from numpy.testing import (assert_array_equal,
     assert_, assert_allclose, assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
+import re
 from scipy import optimize
 from scipy import stats
 from scipy.stats._morestats import _abw_state
@@ -2588,16 +2589,16 @@ class TestDirectionalFuncs:
         # test that directionalmean works for higher dimensions
         # here a 4D array is reduced over axis = 2
         data = np.array([[0.8660254, 0.5, 0.],
-                        [0.8660254, -0.5, 0.]])
+                         [0.8660254, -0.5, 0.]])
         full_array = np.tile(data, (2, 2, 2, 1))
         expected = np.array([[[1., 0., 0.],
-                            [1., 0., 0.]],
-                            [[1., 0., 0.],
-                             [1., 0., 0.]]])
+                              [1., 0., 0.]],
+                             [[1., 0., 0.],
+                              [1., 0., 0.]]])
         directionalmean = stats.directionalmean(full_array, axis=2)
         assert_allclose(expected, directionalmean)
 
-    def test_list_ndarray_input(self):
+    def test_directionalmean_list_ndarray_input(self):
         # test that list and numpy array inputs yield same results
         data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
         data_array = np.asarray(data)
@@ -2605,28 +2606,17 @@ class TestDirectionalFuncs:
         directional_mean_array = stats.directionalmean(data_array)
         assert_allclose(directional_mean, directional_mean_array)
 
-    def test_directionalmean_wrong_dimensions(self):
+    def test_directionalmean_1d_error(self):
         # test that one-dimensional data raises ValueError
         data = np.ones((5, ))
-        assert_raises(ValueError, stats.directionalmean, data)
+        message = (r"samples must at least be two-dimensional. "
+                   r"Instead samples has shape: (5,)")
+        with pytest.raises(ValueError, match=re.escape(message)):
+            stats.directionalmean(data)
 
-    def test_directionalmean_nan_raise(self):
-        data = np.array([[0.8660254, 0.5, 0.], [0.8660254, -0.5, np.nan]])
-        assert_raises(ValueError, stats.directionalmean, data,
-                      nan_policy='raise')
-
-    def test_directionalmean_nan_omit(self):
-        data = np.array([[0.8660254, 0.5, 0.],
-                        [0.8660254, -0.5, np.nan],
-                        [1., 0., 0.]])
-        expected = np.array([0.96592583, 0.25881905, 0.])
-        directional_mean = stats.directionalmean(data, nan_policy='omit')
-        assert_allclose(directional_mean, expected)
-
-    def test_directionalmean_nan_propagate(self):
-        data = np.array([[0.8660254, 0.5, 0.],
-                        [0.8660254, -0.5, np.nan],
-                        [1., 0., 0.]])
-        directional_mean = stats.directionalmean(data,
-                                                 nan_policy='propagate')
-        assert np.isnan(directional_mean)
+    def test_directionalmean_wrong_dimensions_error(self):
+        # test that last axis contains more than one element
+        data = np.ones((5, 1))
+        message = "Expected multidimensional data in last axis."
+        with pytest.raises(ValueError, match=message):
+            stats.directionalmean(data)

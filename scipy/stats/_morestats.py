@@ -3906,13 +3906,13 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     return res
 
 
-def directionalmean(samples, *, axis=0, nan_policy='propagate'):
+def directionalmean(samples, *, axis=0):
     """
     Computes the directional mean of a sample of vectors.
 
     Serves as equivalent of the sample mean for directional data whose
     magnitude is irrelevant, e. g. unit vectors. The vectorial data
-    whose directionals means are computed must be located in the last
+    whose directional mean are computed must be located in the last
     axis.
 
     Parameters
@@ -3921,14 +3921,15 @@ def directionalmean(samples, *, axis=0, nan_policy='propagate'):
         Input array. Must be at least two-dimensional.
     axis : int, optional
         Axis along which directional means are computed. Default is 0.
-    nan_policy : {'propagate', 'raise', 'omit'}, optional
-        Defines how to handle when input contains nan. 'propagate' returns nan,
-        'raise' throws an error, 'omit' performs the calculations ignoring nan
-        values. Default is 'propagate'.
+
     Returns
     -------
     directionalmean : ndarray
         Directional mean.
+
+    See also
+    --------
+    circmean: directional mean in two dimensions for circular data
 
     Notes
     -----
@@ -3957,29 +3958,19 @@ def directionalmean(samples, *, axis=0, nan_policy='propagate'):
     >>> directionalmean(data)
     array([1., 0., 0.])
 
-    The `regular` sample mean in contrast does not lie on the unit sphere.
+    The *regular* sample mean in contrast does not lie on the unit sphere.
 
     >>> data.mean(axis=0)
     array([0.8660254, 0., 0.])
 
     """
     samples = np.asarray(samples)
-    if nan_policy not in ['raise', 'propagate', 'omit']:
-        raise ValueError("nan_policty must be one of 'propagate', 'omit', "
-                         "'raise'.")
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {samples.shape!r}")
+    if samples.shape[-1] < 2:
+        raise ValueError("Expected multidimensional data in last axis.")
     samples = np.moveaxis(samples, axis, 0)
-    contains_nan = np.isnan(samples).any()
-    if contains_nan:
-        if nan_policy == 'propagate':
-            return np.nan
-        elif nan_policy == 'omit':
-            mean = np.nanmean(samples, axis=0)
-        elif nan_policy == 'raise':
-            raise ValueError("samples contains NaN values.")
-    else:
-        mean = np.mean(samples, axis=0)
+    mean = np.mean(samples, axis=0)
     directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
     return directional_mean
