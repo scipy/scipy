@@ -3968,8 +3968,6 @@ def directionalmean(samples, *, axis=0):
     if samples.ndim < 2:
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {samples.shape!r}")
-    if samples.shape[-1] < 2:
-        raise ValueError("Expected multidimensional data in last axis.")
     samples = np.moveaxis(samples, axis, 0)
     mean = np.mean(samples, axis=0)
     directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)

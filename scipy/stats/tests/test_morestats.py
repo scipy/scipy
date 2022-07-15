@@ -2613,10 +2613,3 @@ class TestDirectionalFuncs:
                    r"Instead samples has shape: (5,)")
         with pytest.raises(ValueError, match=re.escape(message)):
             stats.directionalmean(data)
-
-    def test_directionalmean_wrong_dimensions_error(self):
-        # test that last axis contains more than one element
-        data = np.ones((5, 1))
-        message = "Expected multidimensional data in last axis."
-        with pytest.raises(ValueError, match=message):
-            stats.directionalmean(data)
