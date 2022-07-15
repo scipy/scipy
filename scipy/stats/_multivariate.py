@@ -3592,7 +3592,9 @@ class ortho_group_gen(multi_rv_generic):
         size = (size,) if size > 1 else ()
         z = random_state.normal(size=size + (dim, dim))
         q, r = np.linalg.qr(z)
-        d = r.diagonal(0, -2, -1)
+        # The last two dimensions are the rows and columns of R matrices.
+        # Extract the diagonals. Note that this eliminates a dimension.
+        d = r.diagonal(offset=0, axis1=-2, axis2=-1)
         q *= (d/abs(d))[..., None, :]
         return q
 
