@@ -3583,7 +3583,7 @@ class ortho_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1 and not _has_vectorized_qr():
+        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
