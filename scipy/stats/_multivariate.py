@@ -4,6 +4,7 @@
 import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray
+from numpy.lib import NumpyVersion
 import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln
@@ -3583,16 +3584,21 @@ class ortho_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1:
+        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
         dim = self._process_parameters(dim)
 
-        z = random_state.normal(size=(dim, dim))
-        q, r = scipy.linalg.qr(z)
-        d = r.diagonal()
-        q *= d/abs(d)
+        size = (size,) if size > 1 else ()
+        z = random_state.normal(size=size + (dim, dim))
+        q, r = np.linalg.qr(z)
+        # The last two dimensions are the rows and columns of R matrices.
+        # Extract the diagonals. Note that this eliminates a dimension.
+        d = r.diagonal(offset=0, axis1=-2, axis2=-1)
+        # Add back a dimension for proper broadcasting: we're dividing
+        # each row of each R matrix by the diagonal of the R matrix.
+        q *= (d/abs(d))[..., np.newaxis, :]  # to broadcast properly
         return q
 
 
@@ -3997,17 +4003,22 @@ class unitary_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1:
+        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
         dim = self._process_parameters(dim)
 
-        z = 1/math.sqrt(2)*(random_state.normal(size=(dim, dim)) +
-                            1j*random_state.normal(size=(dim, dim)))
-        q, r = scipy.linalg.qr(z)
-        d = r.diagonal()
-        q *= d/abs(d)
+        size = (size,) if size > 1 else ()
+        z = 1/math.sqrt(2)*(random_state.normal(size=size + (dim, dim)) +
+                            1j*random_state.normal(size=size + (dim, dim)))
+        q, r = np.linalg.qr(z)
+        # The last two dimensions are the rows and columns of R matrices.
+        # Extract the diagonals. Note that this eliminates a dimension.
+        d = r.diagonal(offset=0, axis1=-2, axis2=-1)
+        # Add back a dimension for proper broadcasting: we're dividing
+        # each row of each R matrix by the diagonal of the R matrix.
+        q *= (d/abs(d))[..., np.newaxis, :]  # to broadcast properly
         return q
 
 
