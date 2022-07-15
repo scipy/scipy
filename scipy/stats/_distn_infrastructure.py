@@ -1165,6 +1165,7 @@ class rv_generic:
         else:  # no valid args
             output = [default.copy() for _ in moments]
 
+        output = [out[()] for out in output]
         if len(output) == 1:
             return output[0]
         else:
@@ -1203,7 +1204,7 @@ class rv_generic:
         goodscale = goodargs[0]
         goodargs = goodargs[1:]
         place(output, cond0, self.vecentropy(*goodargs) + log(goodscale))
-        return output
+        return output[()]
 
     def moment(self, order=None, *args, **kwds):
         """non-central moment of distribution of specified order.
@@ -1372,9 +1373,7 @@ class rv_generic:
             res2 *= loc**n
             place(result, i2, res2)
 
-        if result.ndim == 0:
-            return result.item()
-        return result
+        return result[()]
 
     def median(self, *args, **kwds):
         """Median of the distribution.
@@ -1600,7 +1599,7 @@ class rv_generic:
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
-        x = asarray((x-loc) / scale)
+        x = (asarray(x)-loc) / scale
         n_log_scale = len(x) * log(scale)
         if np.any(~self._support_mask(x, *args)):
             return inf
@@ -2911,7 +2910,7 @@ class rv_continuous(rv_generic):
 
         if conditional:
             vals /= invfac
-        return vals
+        return np.array(vals)[()]  # make it a numpy scalar like other methods
 
     def _param_info(self):
         shape_info = self._shape_info()
