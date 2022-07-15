@@ -3600,23 +3600,6 @@ class ortho_group_gen(multi_rv_generic):
 ortho_group = ortho_group_gen()
 
 
-class _has_vectorized_qr:
-    # used by ortho_group_gen.rvs and unitary_group_gen.rvs,
-    # exclusively for compatibility with numpy<1.22
-
-    cache = None
-
-    def __new__(cls):
-        if cls.cache is None:
-            try:
-                np.linalg.qr(np.reshape(1, (1, 1, 1)))
-            except np.linalg.LinAlgError:
-                cls.cache = False
-            else:
-                cls.cache = True
-        return cls.cache
-
-
 class ortho_group_frozen(multi_rv_frozen):
     def __init__(self, dim=None, seed=None):
         """Create a frozen O(N) distribution.
