@@ -93,6 +93,7 @@ dynamic = ['version']
 test = [
     "pytest",
     "pytest-cov",
+    "pytest-timeout",
     "pytest-xdist",
     "asv",
     "mpmath",
@@ -129,4 +130,3 @@ tracker = "https://github.com/scipy/scipy/issues"
 
 [tool.doit]
 dodoFile = "dev.py"
-

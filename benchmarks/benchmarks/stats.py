@@ -162,6 +162,33 @@ class InferentialStats(Benchmark):
         stats.mstats.kruskal(self.a, self.b)
 
 
+# Benchmark data for the truncnorm stats() method.
+# The data in each row is:
+#   a, b, mean, variance, skewness, excess kurtosis. Generated using
+# https://gist.github.com/WarrenWeckesser/636b537ee889679227d53543d333a720
+truncnorm_cases = [[-20, -19, -19.052343945976656, 0.002725073018195613,
+                   -1.9838693623377885, 5.871801893091683],
+                   [-30, -29, -29.034401237736176, 0.0011806604886186853,
+                    -1.9929615171469608, 5.943905539773037],
+                   [-40, -39, -39.02560741993011, 0.0006548827702932775,
+                    -1.9960847672775606, 5.968744357649675],
+                   [39, 40, 39.02560741993011, 0.0006548827702932775,
+                    1.9960847672775606, 5.968744357649675]]
+truncnorm_cases = np.array(truncnorm_cases)
+
+
+class TruncnormStats(Benchmark):
+    param_names = ['case', 'moment']
+    params = [list(range(len(truncnorm_cases))), ['m', 'v', 's', 'k']]
+
+    def track_truncnorm_stats_error(self, case, moment):
+        result_indices = dict(zip(['m', 'v', 's', 'k'], range(2, 6)))
+        ref = truncnorm_cases[case, result_indices[moment]]
+        a, b = truncnorm_cases[case, 0:2]
+        res = stats.truncnorm(a, b).stats(moments=moment)
+        return np.abs((res - ref)/ref)
+
+
 class DistributionsAll(Benchmark):
     # all distributions are in this list. A conversion to a set is used to
     # remove duplicates that appear more than once in either `distcont` or
