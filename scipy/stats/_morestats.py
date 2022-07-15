@@ -3906,7 +3906,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     return res
 
 
-def directionalmean(samples, *, axis=0):
+def directionalmean(samples, *, axis=0, normalize=True):
     """
     Computes the directional mean of a sample of vectors.
 
@@ -3921,6 +3921,8 @@ def directionalmean(samples, *, axis=0):
         Input array. Must be at least two-dimensional.
     axis : int, optional
         Axis along which directional means are computed. Default is 0.
+    normalize: boolean, optional
+        If True, normalize the input data to unit vectors of norm 1.
 
     Returns
     -------
@@ -3969,6 +3971,9 @@ def directionalmean(samples, *, axis=0):
         raise ValueError("samples must at least be two-dimensional. "
                          f"Instead samples has shape: {samples.shape!r}")
     samples = np.moveaxis(samples, axis, 0)
+    if normalize:
+        vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
+        samples = samples/vectornorms
     mean = np.mean(samples, axis=0)
     directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
     return directional_mean

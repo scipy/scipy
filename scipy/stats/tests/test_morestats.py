@@ -2613,3 +2613,12 @@ class TestDirectionalFuncs:
                    r"Instead samples has shape: (5,)")
         with pytest.raises(ValueError, match=re.escape(message)):
             stats.directionalmean(data)
+
+    def test_directionalmean_unnormalized(self):
+        # test that unit vectors get properly normalized before
+        # directionalmean calculation
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [1.7320508, -1., 0.]])
+        expected = np.array([1., 0., 0.])
+        directional_mean = stats.directionalmean(data)
+        assert_allclose(expected, directional_mean)
