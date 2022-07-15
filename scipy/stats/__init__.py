@@ -403,23 +403,16 @@ Distribution Fitting
 
    fit
 
-Circular statistical functions
-------------------------------
-
-.. autosummary::
-   :toctree: generated/
-
-   circmean
-   circvar
-   circstd
-
-Directional statistical functions on the unit sphere
-----------------------------------------------------
+Directional statistical functions
+---------------------------------
 
 .. autosummary::
    :toctree: generated/
 
    directionalmean
+   circmean
+   circvar
+   circstd
 
 Contingency table functions
 ---------------------------
