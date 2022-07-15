@@ -3402,32 +3402,6 @@ class special_ortho_group_gen(multi_rv_generic):
 
         return dim
 
-    def rvs_old(self, dim, size=1, random_state=None):
-        random_state = self._get_random_state(random_state)
-
-        size = int(size)
-        if size > 1:
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
-
-        dim = self._process_parameters(dim)
-
-        H = np.eye(dim)
-        D = np.empty((dim,))
-        for n in range(dim-1):
-            x = random_state.normal(size=(dim-n,))
-            norm2 = np.dot(x, x)
-            x0 = x[0].item()
-            D[n] = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D[n]*np.sqrt(norm2)
-            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
-            # Householder transformation
-            H[:, n:] -= np.outer(np.dot(H[:, n:], x), x)
-        D[-1] = (-1)**(dim-1)*D[:-1].prod()
-        # Equivalent to np.dot(np.diag(D), H) but faster, apparently
-        H = (D*H.T).T
-        return H
-
     def rvs(self, dim, size=1, random_state=None):
         """Draw random samples from SO(N).
 
