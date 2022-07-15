@@ -4,6 +4,7 @@
 import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray
+from numpy.lib import NumpyVersion
 import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln
@@ -3583,24 +3584,22 @@ class ortho_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1:
+        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
         dim = self._process_parameters(dim)
 
-        H = np.eye(dim)
-        for n in range(dim):
-            x = random_state.normal(size=(dim-n,))
-            norm2 = np.dot(x, x)
-            x0 = x[0].item()
-            # random sign, 50/50, but chosen carefully to avoid roundoff error
-            D = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D * np.sqrt(norm2)
-            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
-            # Householder transformation
-            H[:, n:] = -D * (H[:, n:] - np.outer(np.dot(H[:, n:], x), x))
-        return H
+        size = (size,) if size > 1 else ()
+        z = random_state.normal(size=size + (dim, dim))
+        q, r = np.linalg.qr(z)
+        # The last two dimensions are the rows and columns of R matrices.
+        # Extract the diagonals. Note that this eliminates a dimension.
+        d = r.diagonal(offset=0, axis1=-2, axis2=-1)
+        # Add back a dimension for proper broadcasting: we're dividing
+        # each row of each R matrix by the diagonal of the R matrix.
+        q *= (d/abs(d))[..., np.newaxis, :]  # to broadcast properly
+        return q
 
 
 ortho_group = ortho_group_gen()
@@ -3704,10 +3703,10 @@ class random_correlation_gen(multi_rv_generic):
     >>> rng = np.random.default_rng()
     >>> x = random_correlation.rvs((.5, .8, 1.2, 1.5), random_state=rng)
     >>> x
-    array([[ 1.        , -0.07198934, -0.20411041, -0.24385796],
-           [-0.07198934,  1.        ,  0.12968613, -0.29471382],
-           [-0.20411041,  0.12968613,  1.        ,  0.2828693 ],
-           [-0.24385796, -0.29471382,  0.2828693 ,  1.        ]])
+    array([[ 1.        , -0.02423399,  0.03130519,  0.4946965 ],
+           [-0.02423399,  1.        ,  0.20334736,  0.04039817],
+           [ 0.03130519,  0.20334736,  1.        ,  0.02694275],
+           [ 0.4946965 ,  0.04039817,  0.02694275,  1.        ]])
     >>> import scipy.linalg
     >>> e, v = scipy.linalg.eigh(x)
     >>> e
@@ -4004,17 +4003,22 @@ class unitary_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1:
+        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
         dim = self._process_parameters(dim)
 
-        z = 1/math.sqrt(2)*(random_state.normal(size=(dim, dim)) +
-                            1j*random_state.normal(size=(dim, dim)))
-        q, r = scipy.linalg.qr(z)
-        d = r.diagonal()
-        q *= d/abs(d)
+        size = (size,) if size > 1 else ()
+        z = 1/math.sqrt(2)*(random_state.normal(size=size + (dim, dim)) +
+                            1j*random_state.normal(size=size + (dim, dim)))
+        q, r = np.linalg.qr(z)
+        # The last two dimensions are the rows and columns of R matrices.
+        # Extract the diagonals. Note that this eliminates a dimension.
+        d = r.diagonal(offset=0, axis1=-2, axis2=-1)
+        # Add back a dimension for proper broadcasting: we're dividing
+        # each row of each R matrix by the diagonal of the R matrix.
+        q *= (d/abs(d))[..., np.newaxis, :]  # to broadcast properly
         return q
 
 

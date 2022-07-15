@@ -28,12 +28,12 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
                            integrality=None, vectorized=False):
     """Finds the global minimum of a multivariate function.
 
-    Differential Evolution is stochastic in nature (does not use gradient
-    methods) to find the minimum, and can search large areas of candidate
-    space, but often requires larger numbers of function evaluations than
-    conventional gradient-based techniques.
+    The differential evolution method [1]_ is stochastic in nature. It does
+    not use gradient methods to find the minimum, and can search large areas
+    of candidate space, but often requires larger numbers of function
+    evaluations than conventional gradient-based techniques.
 
-    The algorithm is due to Storn and Price [1]_.
+    The algorithm is due to Storn and Price [2]_.
 
     Parameters
     ----------
@@ -247,24 +247,24 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     Notes
     -----
     Differential evolution is a stochastic population based method that is
-    useful for global optimization problems. At each pass through the population
-    the algorithm mutates each candidate solution by mixing with other candidate
-    solutions to create a trial candidate. There are several strategies [2]_ for
-    creating trial candidates, which suit some problems more than others. The
-    'best1bin' strategy is a good starting point for many systems. In this
-    strategy two members of the population are randomly chosen. Their difference
-    is used to mutate the best member (the 'best' in 'best1bin'), :math:`b_0`,
-    so far:
+    useful for global optimization problems. At each pass through the
+    population the algorithm mutates each candidate solution by mixing with
+    other candidate solutions to create a trial candidate. There are several
+    strategies [3]_ for creating trial candidates, which suit some problems
+    more than others. The 'best1bin' strategy is a good starting point for
+    many systems. In this strategy two members of the population are randomly
+    chosen. Their difference is used to mutate the best member (the 'best' in
+    'best1bin'), :math:`b_0`, so far:
 
     .. math::
 
         b' = b_0 + mutation * (population[rand0] - population[rand1])
 
     A trial vector is then constructed. Starting with a randomly chosen ith
-    parameter the trial is sequentially filled (in modulo) with parameters from
-    ``b'`` or the original candidate. The choice of whether to use ``b'`` or the
-    original candidate is made with a binomial distribution (the 'bin' in
-    'best1bin') - a random number in [0, 1) is generated. If this number is
+    parameter the trial is sequentially filled (in modulo) with parameters
+    from ``b'`` or the original candidate. The choice of whether to use ``b'``
+    or the original candidate is made with a binomial distribution (the 'bin'
+    in 'best1bin') - a random number in [0, 1) is generated. If this number is
     less than the `recombination` constant then the parameter is loaded from
     ``b'``, otherwise it is loaded from the original candidate. The final
     parameter is always loaded from ``b'``. Once the trial candidate is built
@@ -298,6 +298,25 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
 
     .. versionadded:: 0.15.0
 
+    References
+    ----------
+    .. [1] Differential evolution, Wikipedia,
+           http://en.wikipedia.org/wiki/Differential_evolution
+    .. [2] Storn, R and Price, K, Differential Evolution - a Simple and
+           Efficient Heuristic for Global Optimization over Continuous Spaces,
+           Journal of Global Optimization, 1997, 11, 341 - 359.
+    .. [3] http://www1.icsi.berkeley.edu/~storn/code.html
+    .. [4] Wormington, M., Panaccione, C., Matney, K. M., Bowen, D. K., -
+           Characterization of structures from X-ray scattering data using
+           genetic algorithms, Phil. Trans. R. Soc. Lond. A, 1999, 357,
+           2827-2848
+    .. [5] Lampinen, J., A constraint handling approach for the differential
+           evolution algorithm. Proceedings of the 2002 Congress on
+           Evolutionary Computation. CEC'02 (Cat. No. 02TH8600). Vol. 2. IEEE,
+           2002.
+    .. [6] https://mpi4py.readthedocs.io/en/stable/
+    .. [7] https://schwimmbad.readthedocs.io/en/latest/
+
     Examples
     --------
     Let us consider the problem of minimizing the Rosenbrock function. This
@@ -316,26 +335,28 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result.x, result.fun
     (array([1., 1., 1., 1., 1.]), 1.9216496320061384e-19)
 
-    Let's try and do a constrained minimization
+    Let's do a constrained minimization.
 
-    >>> from scipy.optimize import NonlinearConstraint, Bounds
-    >>> def constr_f(x):
-    ...     return np.array(x[0] + x[1])
-    >>>
-    >>> # the sum of x[0] and x[1] must be less than 1.9
-    >>> nlc = NonlinearConstraint(constr_f, -np.inf, 1.9)
-    >>> # specify limits using a `Bounds` object.
+    >>> from scipy.optimize import LinearConstraint, Bounds
+
+    We add the constraint that the sum of ``x[0]`` and ``x[1]`` must be less
+    than or equal to 1.9.  This is a linear constraint, which may be written
+    ``A @ x <= 1.9``, where ``A = array([[1, 1]])``.  This can be encoded as
+    a `LinearConstraint` instance:
+
+    >>> lc = LinearConstraint([[1, 1]], -np.inf, 1.9)
+
+    Specify limits using a `Bounds` object.
+
     >>> bounds = Bounds([0., 0.], [2., 2.])
-    >>> result = differential_evolution(rosen, bounds, constraints=(nlc),
+    >>> result = differential_evolution(rosen, bounds, constraints=lc,
     ...                                 seed=1)
     >>> result.x, result.fun
-    (array([0.96633867, 0.93363577]), 0.0011361355854792312)
+    (array([0.96632622, 0.93367155]), 0.0011352416852625719)
 
     Next find the minimum of the Ackley function
     (https://en.wikipedia.org/wiki/Test_functions_for_optimization).
 
-    >>> from scipy.optimize import differential_evolution
-    >>> import numpy as np
     >>> def ackley(x):
     ...     arg1 = -0.2 * np.sqrt(0.5 * (x[0] ** 2 + x[1] ** 2))
     ...     arg2 = 0.5 * (np.cos(2. * np.pi * x[0]) + np.cos(2. * np.pi * x[1]))
@@ -355,23 +376,6 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     >>> result.x, result.fun, result.nfev
     (array([0., 0.]), 4.440892098500626e-16, 190)
 
-    References
-    ----------
-    .. [1] Storn, R and Price, K, Differential Evolution - a Simple and
-           Efficient Heuristic for Global Optimization over Continuous Spaces,
-           Journal of Global Optimization, 1997, 11, 341 - 359.
-    .. [2] http://www1.icsi.berkeley.edu/~storn/code.html
-    .. [3] http://en.wikipedia.org/wiki/Differential_evolution
-    .. [4] Wormington, M., Panaccione, C., Matney, K. M., Bowen, D. K., -
-           Characterization of structures from X-ray scattering data using
-           genetic algorithms, Phil. Trans. R. Soc. Lond. A, 1999, 357,
-           2827-2848
-    .. [5] Lampinen, J., A constraint handling approach for the differential
-           evolution algorithm. Proceedings of the 2002 Congress on
-           Evolutionary Computation. CEC'02 (Cat. No. 02TH8600). Vol. 2. IEEE,
-           2002.
-    .. [6] https://mpi4py.readthedocs.io/en/stable/
-    .. [7] https://schwimmbad.readthedocs.io/en/latest/
     """
 
     # using a context manager means that any created Pool objects are
@@ -1086,8 +1090,8 @@ class DifferentialEvolutionSolver:
             if DE_result.maxcv > 0:
                 # if the result is infeasible then success must be False
                 DE_result.success = False
-                DE_result.message = ("The solution does not satisfy the"
-                                    " constraints, MAXCV = " % DE_result.maxcv)
+                DE_result.message = ("The solution does not satisfy the "
+                                     f"constraints, MAXCV = {DE_result.maxcv}")
 
         return DE_result
 

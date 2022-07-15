@@ -76,10 +76,17 @@ steps:
     pybind11
     pytest
     pytest-xdist
+    pytest-timeout
   displayName: 'Install common python dependencies'
 - ${{ if eq(parameters.test_mode, 'full') }}:
-  - script: pip install matplotlib scikit-umfpack scikit-sparse
-    displayName: 'Install full mode dependencies'
+  - script: >-
+      pip install matplotlib &&
+      pip install scikit-umfpack scikit-sparse --no-deps --no-build-isolation
+      # The above two scikits both depend on scipy, so use `--no-deps`
+      # Also note that they don't provide wheels, so we build them from
+      # source (only in this job, it's a small optional dependency so test
+      # only in a single place)
+    displayName: 'Install full mode optional dependencies'
 - ${{ if eq(parameters.coverage, true) }}:
   - script: pip install pytest-cov coverage codecov
     displayName: 'Install coverage dependencies'
@@ -138,7 +145,7 @@ steps:
   displayName: 'Build SciPy'
 - script: |
     set -euo pipefail
-    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} ${COVERAGE:-} ${USE_WHEEL_BUILD:-} -- -rfEX --durations=10 2>&1 | tee runtests.log
+    python -u runtests.py -g -j2 -m ${{ parameters.test_mode }} ${COVERAGE:-} ${USE_WHEEL_BUILD:-} -- -rfEX --durations=10 --timeout=60 2>&1 | tee runtests.log
     tools/validate_runtests_log.py ${{ parameters.test_mode }} < runtests.log
   env:
     ${{ if eq(parameters.coverage, true) }}:

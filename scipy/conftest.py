@@ -17,6 +17,11 @@ def pytest_configure(config):
         "xslow: mark test as extremely slow (not run unless explicitly requested)")
     config.addinivalue_line("markers",
         "xfail_on_32bit: mark test as failing on 32-bit platforms")
+    try:
+        import pytest_timeout  # noqa:F401
+    except Exception:
+        config.addinivalue_line(
+            "markers", 'timeout: mark a test for a non-default timeout')
 
 
 def _get_mark(item, name):
