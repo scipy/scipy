@@ -2614,7 +2614,7 @@ class TestDirectionalFuncs:
         with pytest.raises(ValueError, match=re.escape(message)):
             stats.directionalmean(data)
 
-    def test_directionalmean_unnormalized(self):
+    def test_directionalmean_normalize(self):
         # test that unit vectors get properly normalized before
         # directionalmean calculation
         data = np.array([[0.8660254, 0.5, 0.],
@@ -2622,3 +2622,15 @@ class TestDirectionalFuncs:
         expected = np.array([1., 0., 0.])
         directional_mean = stats.directionalmean(data)
         assert_allclose(expected, directional_mean)
+
+    def test_directionalmean_normalize_false(self):
+        # test that for already normalized unit vectors
+        # normalize=False returns same result as default
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [0.8660254, -0.5, 0]])
+        expected = np.array([1., 0., 0.])
+        directional_mean_default = stats.directionalmean(data)
+        directional_mean = stats.directionalmean(data,
+                                                 normalize=False)
+        assert_allclose(expected, directional_mean)
+        assert_allclose(directional_mean_default, directional_mean)

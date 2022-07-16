@@ -3922,7 +3922,8 @@ def directionalmean(samples, *, axis=0, normalize=True):
     axis : int, optional
         Axis along which directional means are computed. Default is 0.
     normalize: boolean, optional
-        If True, normalize the input data to unit vectors of norm 1.
+        If True, normalize the input data in the last axis
+        to unit vectors of norm 1. Default is True.
 
     Returns
     -------
