@@ -1466,6 +1466,7 @@ def qr_delete(Q, R, k, int p=1, which='row', overwrite_qr=False,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -9.,  -3.],
@@ -1692,6 +1693,7 @@ def qr_insert(Q, R, u, k, which='row', rcond=None, overwrite_qru=False, check_fi
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -7.,   4.],
@@ -2093,6 +2095,7 @@ def qr_update(Q, R, u, v, overwrite_qruv=False, check_finite=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import linalg
     >>> a = np.array([[  3.,  -2.,  -2.],
     ...               [  6.,  -9.,  -3.],
