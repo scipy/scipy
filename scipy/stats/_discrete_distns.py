@@ -74,9 +74,7 @@ class binom_gen(rv_discrete):
 
     def _pmf(self, x, n, p):
         # binom.pmf(k) = choose(n, k) * p**k * (1-p)**(n-k)
-        # Ignore innocuous divide-by-zero, see #15101
-        with np.errstate(divide='ignore'):
-            return _boost._binom_pdf(x, n, p)
+        return _boost._binom_pdf(x, n, p)
 
     def _cdf(self, x, n, p):
         k = floor(x)
