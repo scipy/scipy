@@ -24,6 +24,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
+  - pytest-timeout
   - asv<0.5
   # For type annotations
   - mypy

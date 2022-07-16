@@ -508,13 +508,17 @@ class spmatrix:
             return NotImplemented
 
     def _mul_dispatch(self, other):
-        """interpret other and call one of the following
+        """`np.matrix`-compatible mul, i.e. `dot` or `NotImplemented`
 
+        interpret other and call one of the following
         self._mul_scalar()
         self._mul_vector()
         self._mul_multivector()
         self._mul_sparse_matrix()
         """
+        # This method has to be different from `__mul__` because it is also
+        # called by sparse array classes via matmul, while their mul is
+        # elementwise.
 
         M, N = self.shape
 
@@ -600,14 +604,17 @@ class spmatrix:
 
     def _rmul_dispatch(self, other):
         if isscalarlike(other):
-            return self._mul_dispatch(other)
+            return self._mul_scalar(other)
         else:
             # Don't use asarray unless we have to
             try:
                 tr = other.transpose()
             except AttributeError:
                 tr = np.asarray(other).transpose()
-            return (self.transpose() @ tr).transpose()
+            ret = self.transpose()._mul_dispatch(tr)
+            if ret is NotImplemented:
+                return NotImplemented
+            return ret.transpose()
 
     def __rmul__(self, other):  # other * self
         return self._rmul_dispatch(other)
