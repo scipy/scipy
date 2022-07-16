@@ -429,7 +429,7 @@ def idct(x, type=2, n=None, axis=-1, norm=None, overwrite_x=False):
     input is used to generate half of the IFFT output:
 
     >>> from scipy.fftpack import ifft, idct
-    >>> importy numpy as np
+    >>> import numpy as np
     >>> ifft(np.array([ 30.,  -8.,   6.,  -2.,   6.,  -8.])).real
     array([  4.,   3.,   5.,  10.,   5.,   3.])
     >>> idct(np.array([ 30.,  -8.,   6.,  -2.]), 1) / 6
