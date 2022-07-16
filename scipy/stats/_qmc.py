@@ -261,7 +261,6 @@ def discrepancy(
     --------
     Calculate the quality of the sample using the discrepancy:
 
-    >>> import numpy as np
     >>> from scipy.stats import qmc
     >>> space = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
     >>> l_bounds = [0.5, 0.5]
@@ -337,7 +336,6 @@ def update_discrepancy(
     We can also compute iteratively the discrepancy by using
     ``iterative=True``.
 
-    >>> import numpy as np
     >>> from scipy.stats import qmc
     >>> space = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
     >>> l_bounds = [0.5, 0.5]
@@ -1682,8 +1680,7 @@ class PoissonDisk(QMCEngine):
     >>> import matplotlib.pyplot as plt
     >>> from matplotlib.collections import PatchCollection
     >>> from scipy.stats import qmc
-    >>> import numpy as np
-
+    >>>
     >>> rng = np.random.default_rng()
     >>> radius = 0.2
     >>> engine = qmc.PoissonDisk(d=2, radius=0.2, seed=rng)
@@ -2400,7 +2397,6 @@ def _lloyd_centroidal_voronoi_tessellation(
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy.spatial import distance
     >>> rng = np.random.default_rng()
     >>> sample = rng.random((128, 2))
