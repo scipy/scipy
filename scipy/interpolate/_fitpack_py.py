@@ -131,6 +131,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     --------
     Generate a discretization of a limacon curve in the polar coordinates:
 
+    >>> import numpy as np
     >>> phi = np.linspace(0, 2.*np.pi, 40)
     >>> r = 0.5 + np.cos(phi)         # polar coords
     >>> x, y = r * np.cos(phi), r * np.sin(phi)    # convert to cartesian
@@ -277,6 +278,7 @@ def splrep(x, y, w=None, xb=None, xe=None, k=3, task=0, s=None, t=None,
     Further examples are given in
     :ref:`in the tutorial <tutorial-interpolate_splXXX>`.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.interpolate import splev, splrep
     >>> x = np.linspace(0, 10, 10)
@@ -630,6 +632,7 @@ def insert(x, tck, m=1, per=0):
     You can insert knots into a B-spline.
 
     >>> from scipy.interpolate import splrep, insert
+    >>> import numpy as np
     >>> x = np.linspace(0, 10, 5)
     >>> y = np.sin(x)
     >>> tck = splrep(x, y)
@@ -701,6 +704,7 @@ def splder(tck, n=1):
     This can be used for finding maxima of a curve:
 
     >>> from scipy.interpolate import splrep, splder, sproot
+    >>> import numpy as np
     >>> x = np.linspace(0, 10, 70)
     >>> y = np.sin(x)
     >>> spl = splrep(x, y, k=4)
@@ -758,6 +762,7 @@ def splantider(tck, n=1):
     Examples
     --------
     >>> from scipy.interpolate import splrep, splder, splantider, splev
+    >>> import numpy as np
     >>> x = np.linspace(0, np.pi/2, 70)
     >>> y = 1 / np.sqrt(1 - 0.8*np.sin(x)**2)
     >>> spl = splrep(x, y)
