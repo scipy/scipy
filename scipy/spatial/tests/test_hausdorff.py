@@ -118,7 +118,7 @@ class TestHausdorff:
         rng = np.random.default_rng(189048172503940875434364128139223470523)
         A = rng.random((3, 2))
         B = rng.random((3, 5))
-        msg = r"number of columns is not the same"
+        msg = r"need to have the same number of columns"
         with pytest.raises(ValueError, match=msg):
             directed_hausdorff(A, B)
 
