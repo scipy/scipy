@@ -2845,7 +2845,7 @@ def _digammainv(y):
     to solve `sc.digamma(x) - y = 0`.  There is probably room for
     improvement, but currently it works over a wide range of y:
 
-    >>> import numpy.np
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> y = 64*rng.standard_normal(1000000)
     >>> y.min(), y.max()
