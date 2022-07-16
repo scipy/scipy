@@ -115,10 +115,11 @@ class TestHausdorff:
     def test_invalid_dimensions(self):
         # Ensure that a ValueError is raised when the number of columns
         # is not the same
-        np.random.seed(1234)
-        A = np.random.rand(3, 2)
-        B = np.random.rand(4, 5)
-        with pytest.raises(ValueError):
+        rng = np.random.default_rng(189048172503940875434364128139223470523)
+        A = rng.random((3, 2))
+        B = rng.random((3, 5))
+        msg = r"number of columns is not the same"
+        with pytest.raises(ValueError, match=msg):
             directed_hausdorff(A, B)
 
     @pytest.mark.parametrize("A, B, seed, expected", [
