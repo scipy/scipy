@@ -243,6 +243,47 @@ which is indeed close to the value computed by `scipy.special.ellipk`.
 B-splines
 ---------
 
+B-splines are piecewise polynomials, represented as linear combinations of
+*b-spline basis elements* , as opposed to a usual monomials, :math:`x^m` with
+:math:`m=0, 1, \dots`. The main feature is that these basis elements are
+localized and equal zero outside of an interval defined by the *knots*.
+Specifically, a b-spline basis element of degree k (e.g. k=3 for cubic splines)
+is defined by :math:`k+2` knots and is zero outside of these knots.
+To illustrate, plot a collection of non-zero basis elements on a certain
+interval:
+
+.. plot ::
+
+    >>> k = 3      # cubic splines
+    >>> t = [0., 1.4, 2., 3.1, 4.]   # internal knots
+    >>> t = np.r_[[t[0]]*k, t, [t[-1]]*k]  # add boundary knots
+
+    >>> from scipy.interpolate import BSpline
+    >>> import matplotlib.pyplot as plt
+    >>> for j in [-2, -1, 0, 1, 2]:
+    ...     a, b = t[k+j], t[-k+j-1]
+    ...     xx = np.linspace(a, b, 101)
+    ...     bspl = BSpline.basis_element(t[k+j:-k+j])
+    ...     plt.plot(xx, bspl(xx), label=f'j = {j}')
+    >>> plt.legend(loc='best')
+    >>> plt.show()
+
+
+Note that the API is similar to that of the `PPoly` objects: we create a callable
+object via `BSpline.basis_element` and evaluate it on an array of target values.
+
+A b-spline functions, defined as a linear combination of b-spline basis elements,
+is represented by a `BSpline` object which has the interface similar to that of
+`PPoly`. 
+
+Interpolation with b-splines
+----------------------------
+
+To construct an interpolating spline given the data arrays, ``x`` and ``y``,
+use the `make_interp_spline` function. It takes the data arrays as arguments,
+and returns a `BSpline` object. 
+
+
 **FIXME**
 
 
