@@ -1,6 +1,6 @@
 import numpy as np
 from numpy.testing import assert_array_almost_equal, assert_
-from scipy.sparse import csr_matrix
+from scipy.sparse import csr_matrix, hstack
 
 import pytest
 
@@ -113,3 +113,23 @@ def test_csr_bool_indexing():
     assert (slice_list2 == slice_array2).all()
     assert (slice_list3 == slice_array3).all()
 
+def test_csr_hstack_int64():
+    """
+    Tests if hstack properly promotes to np.int64 if the output sparse matrix
+    has indices too large for np.int64"""
+    data = [1.0]
+    row = [0]
+
+    max_int32 = np.iinfo(np.int32).max
+    ind_1 = max_int32
+    ind_2 = 2
+    assert ind_1 + ind_2 - 1 > max_int32 #condition of failure
+    assert max(ind_1 - 1, ind_2 - 1) < max_int32 #condition of failure
+
+    col_1 = [ind_1 - 1]
+    col_2 = [ind_2 - 1]
+    X_1 = csr_matrix((data, (row, col_1)))
+    X_2 = csr_matrix((data, (row, col_2)))
+    Z = hstack([X_1, X_2], format="csr")
+
+    assert Z.indices.max() == ind_1 + ind_2 - 1

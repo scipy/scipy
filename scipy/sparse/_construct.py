@@ -465,8 +465,12 @@ def _stack_along_minor_axis(blocks, axis):
     # Do the stacking
     indptr_list = [b.indptr for b in blocks]
     data_cat = np.concatenate([b.data for b in blocks])
-    idx_dtype = get_index_dtype(arrays=indptr_list,
-                                maxval=max(data_cat.size, constant_dim))
+    max_output_index = 0
+    for b in blocks[:-1]:
+        max_output_index += b.shape[1]
+    max_output_index += blocks[-1].indices.max()
+    max_int32 = np.iinfo(np.int32).max
+    idx_dtype = np.int32 if max_output_index < max_int32 else np.int64
     stack_dim_cat = np.array([b.shape[axis] for b in blocks], dtype=idx_dtype)
     if data_cat.size > 0:
         indptr_cat = np.concatenate(indptr_list).astype(idx_dtype)
