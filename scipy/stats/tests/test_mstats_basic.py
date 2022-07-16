@@ -1209,7 +1209,7 @@ class TestTtest_rel():
     def test_fully_masked(self):
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3, 2),
-                                  mask=[[1, 1, 1], [0, 0, 0]])
+                                  mask=[[1, 0], [1, 0], [1, 0]])
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "invalid value encountered in absolute")
             for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
@@ -1307,7 +1307,8 @@ class TestTtest_ind():
 
     def test_fully_masked(self):
         np.random.seed(1234567)
-        outcome = ma.masked_array(np.random.randn(3, 2), mask=[[1, 1, 1], [0, 0, 0]])
+        outcome = ma.masked_array(np.random.randn(3, 2),
+                                  mask=[[1, 0], [1, 0], [1, 0]])
         with suppress_warnings() as sup:
             sup.filter(RuntimeWarning, "invalid value encountered in absolute")
             for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
