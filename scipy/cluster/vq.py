@@ -119,9 +119,10 @@ def whiten(obs, check_finite=True):
     Examples
     --------
     >>> from scipy.cluster.vq import whiten
-    >>> features  = np.array([[1.9, 2.3, 1.7],
-    ...                       [1.5, 2.5, 2.2],
-    ...                       [0.8, 0.6, 1.7,]])
+    >>> import numpy as np
+    >>> features = np.array([[ 1.9,2.3,1.7],
+    ...                      [ 1.5,2.5,2.2],
+    ...                      [ 0.8,0.6,1.7,]])
     >>> whiten(features)
     array([[ 4.17944278,  2.69811351,  7.21248917],
            [ 3.29956009,  2.93273208,  9.33380951],
@@ -186,15 +187,15 @@ def vq(obs, code_book, check_finite=True):
 
     Examples
     --------
-    >>> from numpy import array
+    >>> import numpy as np
     >>> from scipy.cluster.vq import vq
-    >>> code_book = array([[1.,1.,1.],
-    ...                    [2.,2.,2.]])
-    >>> features  = array([[  1.9,2.3,1.7],
-    ...                    [  1.5,2.5,2.2],
-    ...                    [  0.8,0.6,1.7]])
+    >>> code_book = np.array([[ 1.,1.,1.],
+    ...                       [ 2.,2.,2.]])
+    >>> features = np.array([[ 1.9,2.3,1.7],
+    ...                      [ 1.5,2.5,2.2],
+    ...                      [ 0.8,0.6,1.7]])
     >>> vq(features,code_book)
-    (array([1, 1, 0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
+    (array([ 1,  1,  0],'i'), array([ 0.43588989,  0.73484692,  0.83066239]))
 
     """
     obs = _asarray_validated(obs, check_finite=check_finite)
@@ -281,17 +282,17 @@ def _kmeans(obs, guess, thresh=1e-5):
     --------
     Note: not whitened in this example.
 
-    >>> from numpy import array
+    >>> import numpy as np
     >>> from scipy.cluster.vq import _kmeans
-    >>> features  = array([[ 1.9,2.3],
-    ...                    [ 1.5,2.5],
-    ...                    [ 0.8,0.6],
-    ...                    [ 0.4,1.8],
-    ...                    [ 1.0,1.0]])
-    >>> book = array((features[0],features[2]))
+    >>> features = np.array([[ 1.9,2.3],
+    ...                      [ 1.5,2.5],
+    ...                      [ 0.8,0.6],
+    ...                      [ 0.4,1.8],
+    ...                      [ 1.0,1.0]])
+    >>> book = np.array((features[0],features[2]))
     >>> _kmeans(features,book)
     (array([[ 1.7       ,  2.4       ],
-           [ 0.73333333,  1.13333333]]), 0.40563916697728591)
+            [ 0.73333333,  1.13333333]]), 0.40563916697728591)
 
     """
 
@@ -406,29 +407,29 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
 
     Examples
     --------
-    >>> from numpy import array
+    >>> import numpy as np
     >>> from scipy.cluster.vq import vq, kmeans, whiten
     >>> import matplotlib.pyplot as plt
-    >>> features  = array([[ 1.9,2.3],
-    ...                    [ 1.5,2.5],
-    ...                    [ 0.8,0.6],
-    ...                    [ 0.4,1.8],
-    ...                    [ 0.1,0.1],
-    ...                    [ 0.2,1.8],
-    ...                    [ 2.0,0.5],
-    ...                    [ 0.3,1.5],
-    ...                    [ 1.0,1.0]])
+    >>> features = np.array([[ 1.9,2.3],
+    ...                      [ 1.5,2.5],
+    ...                      [ 0.8,0.6],
+    ...                      [ 0.4,1.8],
+    ...                      [ 0.1,0.1],
+    ...                      [ 0.2,1.8],
+    ...                      [ 2.0,0.5],
+    ...                      [ 0.3,1.5],
+    ...                      [ 1.0,1.0]])
     >>> whitened = whiten(features)
     >>> book = np.array((whitened[0],whitened[2]))
     >>> kmeans(whitened,book)
     (array([[ 2.3110306 ,  2.86287398],    # random
-           [ 0.93218041,  1.24398691]]), 0.85684700941625547)
+            [ 0.93218041,  1.24398691]]), 0.85684700941625547)
 
     >>> codes = 3
     >>> kmeans(whitened,codes)
     (array([[ 2.3110306 ,  2.86287398],    # random
-           [ 1.32544402,  0.65607529],
-           [ 0.40782893,  2.02786907]]), 0.5196582527686241)
+            [ 1.32544402,  0.65607529],
+            [ 0.40782893,  2.02786907]]), 0.5196582527686241)
 
     >>> # Create 50 datapoints in two clusters a and b
     >>> pts = 50
@@ -699,6 +700,7 @@ def kmeans2(data, k, iter=10, thresh=1e-5, minit='random',
     Examples
     --------
     >>> from scipy.cluster.vq import kmeans2
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
 
     Create z, an array with shape (100, 2) containing a mixture of samples
