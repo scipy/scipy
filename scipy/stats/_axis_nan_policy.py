@@ -102,6 +102,7 @@ def _broadcast_array_shapes_remove_axis(arrays, axis=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.zeros((5, 2, 1))
     >>> b = np.zeros((9, 3))
     >>> _broadcast_array_shapes((a, b), 1)
