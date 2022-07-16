@@ -5156,7 +5156,6 @@ def kendalltau(x, y, initial_lexsort=None, nan_policy='propagate',
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy import stats
     >>> x1 = [12, 2, 1, 12, 2]
     >>> x2 = [1, 4, 7, 1, 0]
@@ -8148,7 +8147,6 @@ def tiecorrect(rankvals):
 
     Examples
     --------
-    >>> import numpy as np
     >>> from scipy.stats import tiecorrect, rankdata
     >>> tiecorrect([1, 2.5, 2.5, 4])
     0.9
