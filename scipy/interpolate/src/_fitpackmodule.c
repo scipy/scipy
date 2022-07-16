@@ -10,6 +10,7 @@ static PyObject *fitpack_error;
 
 #define F_INT npy_int64
 #define F_INT_NPY NPY_INT64
+#define F_INT_MAX INTPTR_MAX
 
 #if NPY_BITSOF_SHORT == 64
 #define F_INT_PYFMT   "h"
@@ -30,6 +31,7 @@ static PyObject *fitpack_error;
 #define F_INT int
 #define F_INT_NPY NPY_INT
 #define F_INT_PYFMT   "i"
+#define F_INT_MAX INT_MAX
 
 #endif
 
@@ -189,7 +191,7 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
    /* v = INT_MAX/my is largest integer multiple of `my` such that
        v * my <= INT_MAX
     */
-    if (my != 0 && INT_MAX/my < mx) {
+    if (my != 0 && F_INT_MAX/my < mx) {
         /* Integer overflow */
         PyErr_Format(PyExc_RuntimeError,
                      "Cannot produce output of size %dx%d (size too large)",
