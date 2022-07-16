@@ -190,7 +190,7 @@ def vq(obs, code_book, check_finite=True):
     >>> import numpy as np
     >>> from scipy.cluster.vq import vq
     >>> code_book = np.array([[1.,1.,1.],
-    ...                      [2.,2.,2.]])
+    ...                       [2.,2.,2.]])
     >>> features  = np.array([[  1.9,2.3,1.7],
     ...                       [  1.5,2.5,2.2],
     ...                       [  0.8,0.6,1.7]])
@@ -285,10 +285,10 @@ def _kmeans(obs, guess, thresh=1e-5):
     >>> import numpy as np
     >>> from scipy.cluster.vq import _kmeans
     >>> features  = np.array([[ 1.9,2.3],
-    ...                      [ 1.5,2.5],
-    ...                      [ 0.8,0.6],
-    ...                      [ 0.4,1.8],
-    ...                      [ 1.0,1.0]])
+    ...                       [ 1.5,2.5],
+    ...                       [ 0.8,0.6],
+    ...                       [ 0.4,1.8],
+    ...                       [ 1.0,1.0]])
     >>> book = np.array((features[0],features[2]))
     >>> _kmeans(features,book)
     (array([[ 1.7       ,  2.4       ],
@@ -411,14 +411,14 @@ def kmeans(obs, k_or_guess, iter=20, thresh=1e-5, check_finite=True,
     >>> from scipy.cluster.vq import vq, kmeans, whiten
     >>> import matplotlib.pyplot as plt
     >>> features  = np.array([[ 1.9,2.3],
-    ...                      [ 1.5,2.5],
-    ...                      [ 0.8,0.6],
-    ...                      [ 0.4,1.8],
-    ...                      [ 0.1,0.1],
-    ...                      [ 0.2,1.8],
-    ...                      [ 2.0,0.5],
-    ...                      [ 0.3,1.5],
-    ...                      [ 1.0,1.0]])
+    ...                       [ 1.5,2.5],
+    ...                       [ 0.8,0.6],
+    ...                       [ 0.4,1.8],
+    ...                       [ 0.1,0.1],
+    ...                       [ 0.2,1.8],
+    ...                       [ 2.0,0.5],
+    ...                       [ 0.3,1.5],
+    ...                       [ 1.0,1.0]])
     >>> whitened = whiten(features)
     >>> book = np.array((whitened[0],whitened[2]))
     >>> kmeans(whitened,book)
