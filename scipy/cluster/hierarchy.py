@@ -1444,6 +1444,7 @@ def to_tree(Z, rd=False):
     Examples
     --------
     >>> from scipy.cluster import hierarchy
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> x = rng.random((5, 2))
     >>> Z = hierarchy.linkage(x)
@@ -1525,6 +1526,7 @@ def optimal_leaf_ordering(Z, y, metric='euclidean'):
     Examples
     --------
     >>> from scipy.cluster import hierarchy
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> X = rng.standard_normal((10, 10))
     >>> Z = hierarchy.ward(X)
@@ -2983,6 +2985,7 @@ def set_link_color_palette(palette):
     Examples
     --------
     >>> from scipy.cluster import hierarchy
+    >>> import numpy as np
     >>> ytdist = np.array([662., 877., 255., 412., 996., 295., 468., 268.,
     ...                    400., 754., 564., 138., 219., 869., 669.])
     >>> Z = hierarchy.linkage(ytdist, 'single')
@@ -3258,6 +3261,7 @@ def dendrogram(Z, p=30, truncate_mode=None, color_threshold=None,
     Examples
     --------
     >>> from scipy.cluster import hierarchy
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
 
     A very basic example:
