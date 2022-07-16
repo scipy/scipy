@@ -483,6 +483,7 @@ class hypergeom_gen(rv_discrete):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import hypergeom
     >>> import matplotlib.pyplot as plt
 
@@ -647,6 +648,7 @@ class nhypergeom_gen(rv_discrete):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import nhypergeom
     >>> import matplotlib.pyplot as plt
 
@@ -1154,6 +1156,7 @@ class zipf_gen(rv_discrete):
 
     Confirm that `zipf` is the large `n` limit of `zipfian`.
 
+    >>> import numpy as np
     >>> from scipy.stats import zipfian
     >>> k = np.arange(11)
     >>> np.allclose(zipf.pmf(k, a), zipfian.pmf(k, a, n=10000000))
@@ -1250,6 +1253,7 @@ class zipfian_gen(rv_discrete):
 
     Confirm that `zipfian` reduces to `zipf` for large `n`, `a > 1`.
 
+    >>> import numpy as np
     >>> from scipy.stats import zipf
     >>> k = np.arange(11)
     >>> np.allclose(zipfian.pmf(k, a=3.5, n=10000000), zipf.pmf(k, a=3.5))
