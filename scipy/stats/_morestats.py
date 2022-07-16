@@ -3910,20 +3910,23 @@ def directionalmean(samples, *, axis=0, normalize=True):
     """
     Computes the directional mean of a sample of vectors.
 
-    Serves as equivalent of the sample mean for directional data whose
-    magnitude is irrelevant, e. g. unit vectors. The vectorial data
-    whose directional mean are computed must be located in the last
-    axis.
+    The directional mean is a measure of "preferred direction" of vector data.
+    It is analogous to the sample mean, but it is for use when the magnitude
+    the data is irrelevant (e.g. unit vectors).
 
     Parameters
     ----------
     samples : array_like
-        Input array. Must be at least two-dimensional.
-    axis : int, optional
-        Axis along which directional means are computed. Default is 0.
-    normalize: boolean, optional
-        If True, normalize the input data in the last axis
-        to unit vectors of norm 1. Default is True.
+        Input array. Must be at least two-dimensional, and the last axis of the
+        input must correspond with the dimensionality of the vector space.
+        When the input is exactly two dimensional, this means that each row
+        of the data is a vector observation.
+    axis : int, default: 0
+        Axis along which the directional mean is computed.
+    normalize: boolean, default: True
+        If True, normalize the input to ensure that each observation is a
+        unit vector. It the observations are already unit vectors, consider
+        seting this False to avoid unnecessary computation.
 
     Returns
     -------
@@ -3932,22 +3935,22 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     See also
     --------
-    circmean: directional mean in two dimensions for circular data
+    circmean: circular mean; i.e. directional mean for 2D *angles*
 
     Notes
     -----
     This uses a definition of directional mean from [1]_.
-    Essentially, the calculation is as follows.
+    Assuming the observations are unit vectors, the calculation is as follows.
 
     .. code-block:: python
 
         mean=samples.mean(axis=0)
         directionalmean = mean/np.linalg.norm(mean)
 
-    This definition is applicable for *directional* data but not
-    for *axial* data. In practice, this means that if your data
-    are symmetric around the origin (`x` has the same meaning as
-    -`x`), this function should not be used.
+    This definition is appropriate for *directional* data (i.e. vector data
+    for which the magnitude of each observation is irrelevant) but not
+    for *axial* data (i.e. vector data for which the magnitude and *sign* of
+    each observation is irrelevant).
 
     References
     ----------
@@ -3957,14 +3960,17 @@ def directionalmean(samples, *, axis=0, normalize=True):
     Examples
     --------
     >>> from scipy.stats import directionalmean
-    >>> data = np.array([[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0.]])
+    >>> data = np.array([[3, 4],    # first observation, 2D vector space
+    ...                  [6, -8]])  # second observation
     >>> directionalmean(data)
-    array([1., 0., 0.])
+    array([1., 0.])
 
-    The *regular* sample mean in contrast does not lie on the unit sphere.
+    In contrast, the regular sample mean of the vectors would be influenced
+    by the magnitude of each observation. Furthermore, the result would not be
+    a unit vector.
 
     >>> data.mean(axis=0)
-    array([0.8660254, 0., 0.])
+    array([4.5, -2.])
 
     """
     samples = np.asarray(samples)
