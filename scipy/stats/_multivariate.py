@@ -4442,6 +4442,7 @@ class multivariate_t_frozen(multi_rv_frozen):
 
         Examples
         --------
+        >>> import numpy as np
         >>> loc = np.zeros(3)
         >>> shape = np.eye(3)
         >>> df = 10
