@@ -10,6 +10,7 @@ static PyObject *fitpack_error;
 
 #define F_INT npy_int64
 #define F_INT_NPY NPY_INT64
+#define F_INT_MAX NPY_MAX_INT64
 
 #if NPY_BITSOF_SHORT == 64
 #define F_INT_PYFMT   "h"
@@ -27,9 +28,20 @@ static PyObject *fitpack_error;
 
 #else
 
-#define F_INT int
-#define F_INT_NPY NPY_INT
+#define F_INT npy_int32
+#define F_INT_NPY NPY_INT32
+#define F_INT_MAX NPY_MAX_INT32
+#if NPY_BITSOF_SHORT == 32
+#define F_INT_PYFMT   "h"
+#elif NPY_BITSOF_INT == 32
 #define F_INT_PYFMT   "i"
+#elif NPY_BITSOF_LONG == 32
+#define F_INT_PYFMT   "l"
+#else
+#error No compatible 32-bit integer size. \
+       Please contact NumPy maintainers and give detailed information about your \
+       compiler and platform
+#endif
 
 #endif
 
@@ -155,7 +167,7 @@ static PyObject *
 fitpack_bispev(PyObject *dummy, PyObject *args)
 {
     F_INT nx, ny, kx, ky, mx, my, lwrk, *iwrk, kwrk, ier, lwa, nux, nuy;
-    npy_intp mxy;
+    npy_intp int_max, mxy;
     double *tx, *ty, *c, *x, *y, *z, *wrk, *wa = NULL;
     PyArrayObject *ap_x = NULL, *ap_y = NULL, *ap_z = NULL, *ap_tx = NULL;
     PyArrayObject *ap_ty = NULL, *ap_c = NULL;
@@ -186,10 +198,12 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     ny = PyArray_DIMS(ap_ty)[0];
     mx = PyArray_DIMS(ap_x)[0];
     my = PyArray_DIMS(ap_y)[0];
-   /* v = INT_MAX/my is largest integer multiple of `my` such that
-       v * my <= INT_MAX
+    /* Limit is min of (largest array size, max of Fortran int) */
+    int_max = (F_INT_MAX < NPY_MAX_INTP) ? F_INT_MAX : NPY_MAX_INTP;
+    /* v = int_max/my is largest integer multiple of `my` such that
+       v * my <= int_max
     */
-    if (my != 0 && INT_MAX/my < mx) {
+    if (my != 0 && int_max/my < mx) {
         /* Integer overflow */
         PyErr_Format(PyExc_RuntimeError,
                      "Cannot produce output of size %dx%d (size too large)",
