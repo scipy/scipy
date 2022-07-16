@@ -782,10 +782,10 @@ class TestFindPeaks:
         Test readonly arrays are accepted.
         """
         x = np.linspace(0, 10, 15)
-        peaks, _ = find_peaks(x)
-
         x_readonly = x.copy()
         x_readonly.flags.writeable = False
+
+        peaks, _ = find_peaks(x)
         peaks_readonly, _ = find_peaks(x_readonly, **kwargs)
 
         assert_allclose(peaks, peaks_readonly)
