@@ -40,6 +40,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
     >>> def f(a, b):
     ...     return a*b
@@ -86,6 +87,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
 
     Examples
     --------
+    >>> import numpy as np
     >>> x = np.arange(6)
     >>> np.select([x <3, x > 3], [x**2, x**3], default=0)
     array([  0,   1,   4,   0,  64, 125])
@@ -545,6 +547,7 @@ def _first_nonnan(a, axis):
 
     Examples
     --------
+    >>> import numpy as np
     >>> nan = np.nan
     >>> a = np.array([[ 3.,  3., nan,  3.],
                       [ 1., nan,  2.,  4.],
