@@ -786,9 +786,9 @@ class TestFindPeaks:
 
         x_readonly = x.copy()
         x_readonly.flags.writeable = False
-        peaks_only, _ = find_peaks(x_readonly, **kwargs)
+        peaks_readonly, _ = find_peaks(x_readonly, **kwargs)
 
-        assert_allclose(peaks, peaks_only)
+        assert_allclose(peaks, peaks_readonly)
 
 
 class TestFindPeaksCwt:
