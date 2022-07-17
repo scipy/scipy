@@ -101,16 +101,16 @@ class TestHausdorff:
         new_global_state = rs2.get_state()
         assert_equal(new_global_state, old_global_state)
 
-    def test_random_state_None_int(self):
+    @pytest.mark.parametrize("seed", [None, 27870671])
+    def test_random_state_None_int(self, seed):
         # check that seed values of None or int do not alter global
         # random state
-        for seed in [None, 27870671]:
-            rs = check_random_state(None)
-            old_global_state = rs.get_state()
-            directed_hausdorff(self.path_1, self.path_2, seed)
-            rs2 = check_random_state(None)
-            new_global_state = rs2.get_state()
-            assert_equal(new_global_state, old_global_state)
+        rs = check_random_state(None)
+        old_global_state = rs.get_state()
+        directed_hausdorff(self.path_1, self.path_2, seed)
+        rs2 = check_random_state(None)
+        new_global_state = rs2.get_state()
+        assert_equal(new_global_state, old_global_state)
 
     def test_invalid_dimensions(self):
         # Ensure that a ValueError is raised when the number of columns
