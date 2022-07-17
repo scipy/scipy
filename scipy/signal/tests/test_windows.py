@@ -668,9 +668,6 @@ class TestLanczos:
             assert_equal(len(windows.lanczos(n, sym=False)), n)
             assert_equal(len(windows.lanczos(n, sym=True)), n)
 
-        # If zero or less, an ValueError is thrown.
-        assert_raises(ValueError, windows.lanczos, -1)
-
 
 class TestGetWindow:
 
