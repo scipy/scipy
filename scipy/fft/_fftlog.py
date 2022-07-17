@@ -114,7 +114,9 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     --------
 
     This example is the adapted version of ``fftlogtest.f`` which is provided
-    in [2]_. It evaluates the integral::
+    in [2]_. It evaluates the integral
+
+    .. math::
 
         \int^\infty_0 r^{\mu+1} \exp(-r^2/2) J_\mu(k, r) k dr
         = k^{\mu+1} \exp(-k^2/2) .
