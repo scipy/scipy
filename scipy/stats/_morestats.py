@@ -3971,17 +3971,19 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     >>> data.mean(axis=0)
     array([4.5, -2.])
-An exemplary use case for `directionalmean` is to find a *meaningful* center for a set of observations on a sphere, e.g. geographical locations.
 
->>> data = np.array([[0.8660254, 0.5, 0.],
-...                  [0.8660254, -0.5, 0.]])
->>> directionalmean(data)
-array([1., 0., 0.])
+    An exemplary use case for `directionalmean` is to find a *meaningful* center for a set of observations on a sphere, e.g. geographical locations.
 
-The regular sample mean on the other hand yields a result which does not lie on the surface of the sphere.
+    >>> data = np.array([[0.8660254, 0.5, 0.],
+    ...                  [0.8660254, -0.5, 0.]])
+    >>> directionalmean(data)
+    array([1., 0., 0.])
 
->>> data.mean(axis=0)
-array([0.8660254, 0., 0.])
+    The regular sample mean on the other hand yields a result which does not lie on the surface of the sphere.
+
+    >>> data.mean(axis=0)
+    array([0.8660254, 0., 0.])
+
     """
     samples = np.asarray(samples)
     if samples.ndim < 2:
