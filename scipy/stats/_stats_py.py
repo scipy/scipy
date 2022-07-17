@@ -2350,9 +2350,8 @@ def cumfreq(a, numbins=10, defaultreallimits=None, weights=None):
     --------
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from numpy.random import default_rng
     >>> from scipy import stats
-    >>> rng = default_rng()
+    >>> rng = np.default_rng()
     >>> x = [1, 4, 2, 1, 3, 1]
     >>> res = stats.cumfreq(x, numbins=4, defaultreallimits=(1.5, 5))
     >>> res.cumcount
@@ -2433,9 +2432,8 @@ def relfreq(a, numbins=10, defaultreallimits=None, weights=None):
     --------
     >>> import numpy as np
     >>> import matplotlib.pyplot as plt
-    >>> from numpy.random import default_rng
     >>> from scipy import stats
-    >>> rng = default_rng()
+    >>> rng = np.default_rng()
     >>> a = np.array([2, 4, 1, 2, 3, 2])
     >>> res = stats.relfreq(a, numbins=4)
     >>> res.frequency
