@@ -1210,8 +1210,7 @@ class TestTtest_rel():
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3, 2),
                                   mask=[[1, 0], [1, 0], [1, 0]])
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
+        with np.errstate(invalid='ignore', divide='ignore'):
             for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
                 t, p = mstats.ttest_rel(*pair)
                 assert_array_equal(t, (np.nan, np.nan))
@@ -1309,9 +1308,9 @@ class TestTtest_ind():
         np.random.seed(1234567)
         outcome = ma.masked_array(np.random.randn(3, 2),
                                   mask=[[1, 0], [1, 0], [1, 0]])
-        with suppress_warnings() as sup:
-            sup.filter(RuntimeWarning, "invalid value encountered in absolute")
-            for pair in [(outcome[:, 0], outcome[:, 1]), ([np.nan, np.nan], [1.0, 2.0])]:
+        with np.errstate(invalid='ignore', divide='ignore'):
+            for pair in [(outcome[:, 0], outcome[:, 1]),
+                         ([np.nan, np.nan], [1.0, 2.0])]:
                 t, p = mstats.ttest_ind(*pair)
                 assert_array_equal(t, (np.nan, np.nan))
                 assert_array_equal(p, (np.nan, np.nan))
