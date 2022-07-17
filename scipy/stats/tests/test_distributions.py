@@ -1814,11 +1814,11 @@ class TestPearson3:
         # The first moment is equal to the loc, which defaults to zero
         moment = stats.pearson3.moment(1, 2)
         assert_equal(moment, 0)
-        assert_equal(type(moment), float)
+        assert isinstance(moment, np.number)
 
         moment = stats.pearson3.moment(1, 0.000001)
         assert_equal(moment, 0)
-        assert_equal(type(moment), float)
+        assert isinstance(moment, np.number)
 
 
 class TestKappa4:
