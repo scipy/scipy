@@ -113,6 +113,7 @@ def test_csr_bool_indexing():
     assert (slice_list2 == slice_array2).all()
     assert (slice_list3 == slice_array3).all()
 
+
 def test_csr_hstack_int64():
     """
     Tests if hstack properly promotes to np.int64 if the output sparse matrix
@@ -123,8 +124,8 @@ def test_csr_hstack_int64():
     max_int32 = np.iinfo(np.int32).max
     ind_1 = max_int32
     ind_2 = 2
-    assert ind_1 + ind_2 - 1 > max_int32 #condition of failure
-    assert max(ind_1 - 1, ind_2 - 1) < max_int32 #condition of failure
+    assert ind_1 + ind_2 - 1 > max_int32  # condition of failure
+    assert max(ind_1 - 1, ind_2 - 1) < max_int32  # condition of failure
 
     col_1 = [ind_1 - 1]
     col_2 = [ind_2 - 1]
