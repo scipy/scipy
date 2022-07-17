@@ -110,6 +110,66 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     .. [1] Talman J. D., 1978, J. Comp. Phys., 29, 35
     .. [2] Hamilton A. J. S., 2000, MNRAS, 312, 257 (astro-ph/9905191)
 
+    Examples
+    --------
+
+    This example is the adapted version of ``fftlogtest.f`` which is provided
+    in [2]_. It evaluates the integral::
+
+        \int^\infty_0 r^{\mu+1} \exp(-r^2/2) J_\mu(k, r) k dr
+        = k^{\mu+1} \exp(-k^2/2) .
+
+    >>> from scipy import fft
+    >>> import matplotlib.pyplot as plt
+
+    Parameters for the transform.
+
+    >>> mu = 0.0                    # Order mu of Bessel function
+    >>> r = np.logspace(-4, 4, 64)  # Input evaluation points
+    >>> dln = np.log(r[1]/r[0])     # Step size
+    >>> offset = fft.fhtoffset(dln, mu=mu)  # Optimal offset
+    >>> k = np.exp(offset)/r[::-1]  # Output evaluation points
+
+    Define the theoretical function (same for input and output).
+
+    >>> def theoretical(x, mu):
+    >>>     """Theoretical input/output function: x^(mu+1) exp(-x^2/2)."""
+    >>>     return x**(mu + 1)*np.exp(-x**2/2)
+
+    Evaluate the theoretical function at ``r`` and ``k``.
+
+    >>> a_r = theoretical(r, mu)
+    >>> a_k = theoretical(k, mu)
+
+    Compute the output values using FFTLog.
+
+    >>> transform = fft.fht(a_r, dln, mu=mu, offset=offset)
+
+    Compute the normalized root-mean square error 200*|a-b|/(|a|+|b|)
+
+    >>> nrmsd = 200*abs(transform-a_k)/(abs(a_k)+abs(transform))
+
+    Plot the result.
+
+    >>> figargs = {'sharex': True, 'sharey': True, 'constrained_layout': True}
+    >>> fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 4), **figargs)
+    >>> ax1.set_title(r'$r^{\mu+1}\ \exp(-r^2/2)$')
+    >>> ax1.loglog(r, a_r, 'k', lw=2)
+    >>> ax1.set_xlabel('r')
+    >>> ax2.set_title(r'$k^{\mu+1} \exp(-k^2/2)$')
+    >>> ax2.loglog(k, a_k, 'k', lw=2, label='Theoretical')
+    >>> ax2.loglog(k, transform, 'C3--', lw=2, label='FFTLog')
+    >>> ax2.set_xlabel('k')
+    >>> ax2.legend(loc=2, framealpha=1)
+    >>> ax2.set_ylim([1e-8, 1e1])
+    >>> ax2b = ax2.twinx()
+    >>> ax2b.loglog(k, nrmsd, 'C0', label='NRMSD (%)')
+    >>> ax2b.set_ylabel('NRMSD (%)', color='C0')
+    >>> ax2b.tick_params(axis='y', labelcolor='C0')
+    >>> ax2b.legend(loc=1, framealpha=1)
+    >>> ax2b.set_ylim([1e-4, 1e2])
+    >>> plt.show()
+
     '''
 
     # size of transform
