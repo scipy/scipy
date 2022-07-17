@@ -609,19 +609,19 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     Examples
     --------
-    >>> a = np.array([[6, 8, 3, 0],
-    ...               [3, 2, 1, 7],
-    ...               [8, 1, 8, 4],
-    ...               [5, 3, 0, 5],
-    ...               [4, 7, 5, 9]])
+    >>> a = np.array([[3, 0, 3, 7],
+    ...               [3, 2, 6, 2],
+    ...               [1, 7, 2, 8],
+    ...               [3, 0, 6, 1],
+    ...               [3, 2, 5, 5]])
     >>> from scipy import stats
     >>> stats.mode(a)
-    ModeResult(mode=array([3, 1, 0, 0]), count=array([1, 1, 1, 1]))
+    ModeResult(mode=array([3, 0, 6, 1]), count=array([4, 2, 2, 1]))
 
     To get mode of whole array, specify ``axis=None``:
 
     >>> stats.mode(a, axis=None)
-    ModeResult(mode=3, count=3)
+    ModeResult(mode=3, count=5)
 
     """  # noqa: E501
     a, axis = _chk_asarray(a, axis)
