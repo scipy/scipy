@@ -3911,7 +3911,7 @@ def directionalmean(samples, *, axis=0, normalize=True):
     Computes the directional mean of a sample of vectors.
 
     The directional mean is a measure of "preferred direction" of vector data.
-    It is analogous to the sample mean, but it is for use when the magnitude
+    It is analogous to the sample mean, but it is for use when the magnitude of
     the data is irrelevant (e.g. unit vectors).
 
     Parameters
@@ -3926,7 +3926,7 @@ def directionalmean(samples, *, axis=0, normalize=True):
     normalize: boolean, default: True
         If True, normalize the input to ensure that each observation is a
         unit vector. It the observations are already unit vectors, consider
-        seting this False to avoid unnecessary computation.
+        setting this to False to avoid unnecessary computation.
 
     Returns
     -------
@@ -3971,7 +3971,17 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     >>> data.mean(axis=0)
     array([4.5, -2.])
+An exemplary use case for `directionalmean` is to find a *meaningful* center for a set of observations on a sphere, e.g. geographical locations.
 
+>>> data = np.array([[0.8660254, 0.5, 0.],
+...                  [0.8660254, -0.5, 0.]])
+>>> directionalmean(data)
+array([1., 0., 0.])
+
+The regular sample mean on the other hand yields a result which does not lie on the surface of the sphere.
+
+>>> data.mean(axis=0)
+array([0.8660254, 0., 0.])
     """
     samples = np.asarray(samples)
     if samples.ndim < 2:
