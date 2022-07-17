@@ -3959,6 +3959,7 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import directionalmean
     >>> data = np.array([[3, 4],    # first observation, 2D vector space
     ...                  [6, -8]])  # second observation
