@@ -136,6 +136,11 @@ class gaussian_kde:
 
     as detailed in [5]_.
 
+    `gaussian_kde` does not currently support data that lies in a
+    lower-dimensional subspace of the space in which it is expressed. For such
+    data, consider performing principle component analysis / dimensionality
+    reduction and using `gaussian_kde` with the transformed data.
+
     References
     ----------
     .. [1] D.W. Scott, "Multivariate Density Estimation: Theory, Practice, and
@@ -568,7 +573,18 @@ class gaussian_kde:
 
         self.covariance = self._data_covariance * self.factor**2
         self.inv_cov = (self._data_inv_cov / self.factor**2).astype(np.float64)
-        L = linalg.cholesky(self.covariance*2*pi)
+        try:
+            L = linalg.cholesky(self.covariance*2*pi)
+        except linalg.LinAlgError as e:
+            msg = ("The data appears to lie in a lower-dimensional subspace "
+                   "of the space in which it is expressed. This has resulted "
+                   "in a singular data covariance matrix, which cannot be "
+                   "treated using the algorithms implemented in "
+                   "`gaussian_kde`. Consider performing principle component "
+                   "analysis / dimensionality reduction and using "
+                   "`gaussian_kde` with the transformed data.")
+            raise linalg.LinAlgError(msg) from e
+
         self.log_det = 2*np.log(np.diag(L)).sum()
 
     def pdf(self, x):
