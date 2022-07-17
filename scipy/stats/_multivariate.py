@@ -337,6 +337,7 @@ class multivariate_normal_gen(multi_rv_generic):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import multivariate_normal
 
@@ -910,6 +911,7 @@ class matrix_normal_gen(multi_rv_generic):
     Examples
     --------
 
+    >>> import numpy as np
     >>> from scipy.stats import matrix_normal
 
     >>> M = np.arange(6).reshape(3,2); M
@@ -1183,6 +1185,7 @@ class matrix_normal_frozen(multi_rv_frozen):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import matrix_normal
 
     >>> distn = matrix_normal(mean=np.zeros((3,3)))
@@ -1386,6 +1389,7 @@ class dirichlet_gen(multi_rv_generic):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import dirichlet
 
     Generate a dirichlet random variable
@@ -1735,6 +1739,7 @@ class wishart_gen(multi_rv_generic):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import wishart, chi2
     >>> x = np.linspace(1e-5, 8, 100)
@@ -2472,6 +2477,7 @@ class invwishart_gen(wishart_gen):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import invwishart, invgamma
     >>> x = np.linspace(0.01, 1, 100)
@@ -3356,6 +3362,7 @@ class special_ortho_group_gen(multi_rv_generic):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import special_ortho_group
     >>> x = special_ortho_group.rvs(3)
 
@@ -3519,6 +3526,7 @@ class ortho_group_gen(multi_rv_generic):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import ortho_group
     >>> x = ortho_group.rvs(3)
 
@@ -3699,6 +3707,7 @@ class random_correlation_gen(multi_rv_generic):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import random_correlation
     >>> rng = np.random.default_rng()
     >>> x = random_correlation.rvs((.5, .8, 1.2, 1.5), random_state=rng)
@@ -3943,6 +3952,7 @@ class unitary_group_gen(multi_rv_generic):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import unitary_group
     >>> x = unitary_group.rvs(3)
 
@@ -4146,6 +4156,7 @@ class multivariate_t_gen(multi_rv_generic):
     `df`, and `allow_singular` parameters, returning a "frozen"
     multivariate_t random variable:
 
+    >>> import numpy as np
     >>> from scipy.stats import multivariate_t
     >>> rv = multivariate_t([1.0, -0.5], [[2.1, 0.3], [0.3, 1.5]], df=2)
     >>> # Frozen object with the same methods but holding the given location,
@@ -4431,6 +4442,7 @@ class multivariate_t_frozen(multi_rv_frozen):
 
         Examples
         --------
+        >>> import numpy as np
         >>> loc = np.zeros(3)
         >>> shape = np.eye(3)
         >>> df = 10

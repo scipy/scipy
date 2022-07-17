@@ -163,6 +163,7 @@ def variation(a, axis=0, nan_policy='propagate', ddof=0, *, keepdims=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import variation
     >>> variation([1, 2, 3, 4, 5], ddof=1)
     0.5270462766947299
