@@ -1,7 +1,3 @@
-# Author: Gael Varoquaux <gael.varoquaux@normalesup.org>
-#         Jake Vanderplas <vanderplas@astro.washington.edu>
-#         Andrew Knyazev <Andrew.Knyazev@ucdenver.edu>
-# License: BSD
 import pytest
 import numpy as np
 from numpy.testing import assert_allclose
@@ -9,6 +5,12 @@ from pytest import raises as assert_raises
 from scipy import sparse
 
 from scipy.sparse import csgraph
+
+
+def check_int_type(mat):
+    return np.issubdtype(mat.dtype, np.signedinteger) or np.issubdtype(
+        mat.dtype, np.uint
+    )
 
 
 def test_laplacian_value_error():
@@ -59,8 +61,7 @@ def _check_symmetric_graph_laplacian(mat, normed, copy=True):
         assert_allclose(mat, mat_copy)
         _assert_allclose_sparse(sp_mat, sp_mat_copy)
     else:
-        if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
-                            or np.issubdtype(mat.dtype, np.uint))):
+        if not (normed and check_int_type(mat)):
             assert_allclose(laplacian, mat)
             if sp_mat.format == 'coo':
                 _assert_allclose_sparse(sp_laplacian, sp_mat)
@@ -99,29 +100,71 @@ def _assert_allclose_sparse(a, b, **kwargs):
     assert_allclose(a, b, **kwargs)
 
 
-def _check_laplacian(A, desired_L, desired_d,
-                     normed, use_out_degree, copy, dtype, arr_type):
+def _check_laplacian_dtype_none(
+    A, desired_L, desired_d, normed, use_out_degree, copy, dtype, arr_type
+):
     mat = arr_type(A, dtype=dtype)
-    L, d = csgraph.laplacian(mat, normed=normed, return_diag=True,
-                             use_out_degree=use_out_degree,
-                             copy=copy)
+    L, d = csgraph.laplacian(
+        mat,
+        normed=normed,
+        return_diag=True,
+        use_out_degree=use_out_degree,
+        copy=copy,
+        dtype=None,
+    )
+    if normed and check_int_type(mat):
+        assert L.dtype == np.float64
+        assert d.dtype == np.float64
+        _assert_allclose_sparse(L, desired_L, atol=1e-12)
+        _assert_allclose_sparse(d, desired_d, atol=1e-12)
+    else:
+        assert L.dtype == dtype
+        assert d.dtype == dtype
+        desired_L = np.asarray(desired_L).astype(dtype)
+        desired_d = np.asarray(desired_d).astype(dtype)
+        _assert_allclose_sparse(L, desired_L, atol=1e-12)
+        _assert_allclose_sparse(d, desired_d, atol=1e-12)
+
+    if not copy:
+        if not (normed and check_int_type(mat)):
+            if type(mat) is np.ndarray:
+                assert_allclose(L, mat)
+            elif mat.format == "coo":
+                _assert_allclose_sparse(L, mat)
+
+
+def _check_laplacian_dtype(
+    A, desired_L, desired_d, normed, use_out_degree, copy, dtype, arr_type
+):
+    mat = arr_type(A, dtype=dtype)
+    L, d = csgraph.laplacian(
+        mat,
+        normed=normed,
+        return_diag=True,
+        use_out_degree=use_out_degree,
+        copy=copy,
+        dtype=dtype,
+    )
+    assert L.dtype == dtype
+    assert d.dtype == dtype
+    desired_L = np.asarray(desired_L).astype(dtype)
+    desired_d = np.asarray(desired_d).astype(dtype)
     _assert_allclose_sparse(L, desired_L, atol=1e-12)
     _assert_allclose_sparse(d, desired_d, atol=1e-12)
 
     if not copy:
-        if not (normed and (np.issubdtype(mat.dtype, np.signedinteger)
-                            or np.issubdtype(mat.dtype, np.uint))):
+        if not (normed and check_int_type(mat)):
             if type(mat) is np.ndarray:
                 assert_allclose(L, mat)
             elif mat.format == 'coo':
                 _assert_allclose_sparse(L, mat)
 
 
-REAL_DTYPES = {np.intc, np.int_, np.longlong,
-               np.single, np.double, np.longdouble}
+INT_DTYPES = {np.intc, np.int_, np.longlong}
+REAL_DTYPES = {np.single, np.double, np.longdouble}
 COMPLEX_DTYPES = {np.csingle, np.cdouble, np.clongdouble}
 # use sorted tuple to ensure fixed order of tests
-DTYPES = tuple(sorted(REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
+DTYPES = tuple(sorted(INT_DTYPES ^ REAL_DTYPES ^ COMPLEX_DTYPES, key=str))
 
 
 @pytest.mark.parametrize("dtype", DTYPES)
@@ -138,6 +181,7 @@ def test_asymmetric_laplacian(use_out_degree, normed,
          [4, 2, 0],
          [0, 0, 0]]
     A = arr_type(np.array(A), dtype=dtype)
+    A_copy = A.copy()
 
     if not normed and use_out_degree:
         # Laplacian matrix using out-degree
@@ -167,12 +211,27 @@ def test_asymmetric_laplacian(use_out_degree, normed,
              [0, 0, 0]]
         d = [2, 1, 1]
 
-    _check_laplacian(A, L, d,
-                     normed=normed,
-                     use_out_degree=use_out_degree,
-                     copy=copy,
-                     dtype=dtype,
-                     arr_type=arr_type)
+    _check_laplacian_dtype_none(
+        A,
+        L,
+        d,
+        normed=normed,
+        use_out_degree=use_out_degree,
+        copy=copy,
+        dtype=dtype,
+        arr_type=arr_type,
+    )
+
+    _check_laplacian_dtype(
+        A_copy,
+        L,
+        d,
+        normed=normed,
+        use_out_degree=use_out_degree,
+        copy=copy,
+        dtype=dtype,
+        arr_type=arr_type,
+    )
 
 
 @pytest.mark.parametrize("fmt", ['csr', 'csc', 'coo', 'lil',
@@ -182,3 +241,118 @@ def test_asymmetric_laplacian(use_out_degree, normed,
 def test_sparse_formats(fmt, normed, copy):
     mat = sparse.diags([1, 1], [-1, 1], shape=(4, 4), format=fmt)
     _check_symmetric_graph_laplacian(mat, normed, copy)
+
+
+@pytest.mark.parametrize(
+    "arr_type", [np.asarray, sparse.csr_matrix, sparse.coo_matrix]
+)
+@pytest.mark.parametrize("form", ["array", "function", "lo"])
+def test_laplacian_symmetrized(arr_type, form):
+    # adjacency matrix
+    n = 3
+    mat = arr_type(np.arange(n * n).reshape(n, n))
+    L_in, d_in = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        form=form,
+    )
+    L_out, d_out = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        use_out_degree=True,
+        form=form,
+    )
+    Ls, ds = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        symmetrized=True,
+        form=form,
+    )
+    Ls_normed, ds_normed = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        symmetrized=True,
+        normed=True,
+        form=form,
+    )
+    mat += mat.T
+    Lss, dss = csgraph.laplacian(mat, return_diag=True, form=form)
+    Lss_normed, dss_normed = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        normed=True,
+        form=form,
+    )
+
+    assert_allclose(ds, d_in + d_out)
+    assert_allclose(ds, dss)
+    assert_allclose(ds_normed, dss_normed)
+
+    d = {}
+    for L in ["L_in", "L_out", "Ls", "Ls_normed", "Lss", "Lss_normed"]:
+        if form == "array":
+            d[L] = eval(L)
+        else:
+            d[L] = eval(L)(np.eye(n, dtype=mat.dtype))
+
+    _assert_allclose_sparse(d["Ls"], d["L_in"] + d["L_out"].T)
+    _assert_allclose_sparse(d["Ls"], d["Lss"])
+    _assert_allclose_sparse(d["Ls_normed"], d["Lss_normed"])
+
+
+@pytest.mark.parametrize(
+    "arr_type", [np.asarray, sparse.csr_matrix, sparse.coo_matrix]
+)
+@pytest.mark.parametrize("dtype", DTYPES)
+@pytest.mark.parametrize("normed", [True, False])
+@pytest.mark.parametrize("symmetrized", [True, False])
+@pytest.mark.parametrize("use_out_degree", [True, False])
+@pytest.mark.parametrize("form", ["function", "lo"])
+def test_format(dtype, arr_type, normed, symmetrized, use_out_degree, form):
+    n = 3
+    mat = [[0, 1, 0], [4, 2, 0], [0, 0, 0]]
+    mat = arr_type(np.array(mat), dtype=dtype)
+    Lo, do = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        normed=normed,
+        symmetrized=symmetrized,
+        use_out_degree=use_out_degree,
+        dtype=dtype,
+    )
+    La, da = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        normed=normed,
+        symmetrized=symmetrized,
+        use_out_degree=use_out_degree,
+        dtype=dtype,
+        form="array",
+    )
+    assert_allclose(do, da)
+    _assert_allclose_sparse(Lo, La)
+
+    L, d = csgraph.laplacian(
+        mat,
+        return_diag=True,
+        normed=normed,
+        symmetrized=symmetrized,
+        use_out_degree=use_out_degree,
+        dtype=dtype,
+        form=form,
+    )
+    assert_allclose(d, do)
+    assert d.dtype == dtype
+    Lm = L(np.eye(n, dtype=mat.dtype)).astype(dtype)
+    _assert_allclose_sparse(Lm, Lo, rtol=2e-7, atol=2e-7)
+    x = np.arange(6).reshape(3, 2)
+    if not (normed and dtype in INT_DTYPES):
+        assert_allclose(L(x), Lo @ x)
+    else:
+        # Normalized Lo is casted to integer, but L() is not
+        pass
+
+
+def test_format_error_message():
+    with pytest.raises(ValueError, match="Invalid form: 'toto'"):
+        _ = csgraph.laplacian(np.eye(1), form='toto')

@@ -1,4 +1,5 @@
-      subroutine fpback(a,z,n,k,c,nest)
+      recursive subroutine fpback(a,z,n,k,c,nest)
+      implicit none
 c  subroutine fpback calculates the solution of the system of
 c  equations a*c = z with a a n x n upper triangular matrix
 c  of bandwidth k.

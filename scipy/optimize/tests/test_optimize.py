@@ -596,9 +596,6 @@ def test_neldermead_xatol_fatol():
 
     optimize._minimize._minimize_neldermead(func, [1, 1], maxiter=2,
                                             xatol=1e-3, fatol=1e-3)
-    assert_warns(DeprecationWarning,
-                 optimize._minimize._minimize_neldermead,
-                 func, [1, 1], xtol=1e-3, ftol=1e-3, maxiter=2)
 
 
 def test_neldermead_adaptive():
@@ -1187,10 +1184,11 @@ class TestOptimizeSimple(CheckOptimize):
         x0 = np.array([2.0])
         f0 = func(x0)
         jac = bad_grad
+        options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
         if method in ['nelder-mead', 'powell', 'cobyla']:
             jac = None
         sol = optimize.minimize(func, x0, jac=jac, method=method,
-                                options=dict(maxiter=20))
+                                options=options)
         assert_equal(func(sol.x), sol.fun)
 
         if method == 'slsqp':
@@ -1406,6 +1404,7 @@ class TestOptimizeSimple(CheckOptimize):
         funcs = [func, func2]
         grads = [grad] if needs_grad else [grad, None]
         hesss = [hess] if needs_hess else [hess, None]
+        options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
 
         with np.errstate(invalid='ignore'), suppress_warnings() as sup:
             sup.filter(UserWarning, "delta_grad == 0.*")
@@ -1415,7 +1414,7 @@ class TestOptimizeSimple(CheckOptimize):
             for f, g, h in itertools.product(funcs, grads, hesss):
                 count = [0]
                 sol = optimize.minimize(f, x0, jac=g, hess=h, method=method,
-                                        options=dict(maxiter=20))
+                                        options=options)
                 assert_equal(sol.success, False)
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'cg', 'bfgs',
@@ -1541,6 +1540,14 @@ class TestOptimizeScalar:
         x = optimize.brent(self.fun, brack=(-15, -1, 15))
         assert_allclose(x, self.solution, atol=1e-6)
 
+        message = r"\(f\(xb\) < f\(xa\)\) and \(f\(xb\) < f\(xc\)\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.brent(self.fun, brack=(-1, 0, 1))
+
+        message = r"\(xa < xb\) and \(xb < xc\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.brent(self.fun, brack=(0, -1, 1))
+
     def test_golden(self):
         x = optimize.golden(self.fun)
         assert_allclose(x, self.solution, atol=1e-6)
@@ -1563,6 +1570,14 @@ class TestOptimizeScalar:
             x = optimize.golden(self.fun, maxiter=maxiter, full_output=True)
             nfev0, nfev = x0[2], x[2]
             assert_equal(nfev - nfev0, maxiter)
+
+        message = r"\(f\(xb\) < f\(xa\)\) and \(f\(xb\) < f\(xc\)\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.golden(self.fun, brack=(-1, 0, 1))
+
+        message = r"\(xa < xb\) and \(xb < xc\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.golden(self.fun, brack=(0, -1, 1))
 
     def test_fminbound(self):
         x = optimize.fminbound(self.fun, 0, 1)
@@ -2185,6 +2200,14 @@ class TestBrute:
                           match=r'Either final optimization did not succeed'):
             optimize.brute(func, self.rranges, args=self.params, disp=True)
 
+    def test_coerce_args_param(self):
+        # optimize.brute should coerce non-iterable args to a tuple.
+        def f(x, *args):
+            return x ** args[0]
+
+        resbrute = optimize.brute(f, (slice(-4, 4, .25),), args=2)
+        assert_allclose(resbrute, 0)
+
 
 def test_cobyla_threadsafe():
 
@@ -2698,6 +2721,7 @@ class TestGlobalOptimization:
                    optimize.differential_evolution(func, [(-4, 4)]),
                    optimize.shgo(func, [(-4, 4)]),
                    optimize.dual_annealing(func, [(-4, 4)]),
+                   optimize.direct(func, [(-4, 4)]),
                    ]
 
         for result in results:

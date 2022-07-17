@@ -319,14 +319,10 @@ def test_kde_integer_input():
 _ftypes = ['float32', 'float64', 'float96', 'float128', 'int32', 'int64']
 
 @pytest.mark.parametrize("bw_type", _ftypes + ["scott", "silverman"])
-@pytest.mark.parametrize("weights_type", _ftypes)
-@pytest.mark.parametrize("dataset_type", _ftypes)
-@pytest.mark.parametrize("point_type", _ftypes)
-def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
+@pytest.mark.parametrize("dtype", _ftypes)
+def test_kde_output_dtype(dtype, bw_type):
     # Check whether the datatypes are available
-    point_type = getattr(np, point_type, None)
-    dataset_type = getattr(np, weights_type, None)
-    weights_type = getattr(np, weights_type, None)
+    dtype = getattr(np, dtype, None)
 
     if bw_type in ["scott", "silverman"]:
         bw = bw_type
@@ -334,13 +330,13 @@ def test_kde_output_dtype(point_type, dataset_type, weights_type, bw_type):
         bw_type = getattr(np, bw_type, None)
         bw = bw_type(3) if bw_type else None
 
-    if any(dt is None for dt in [point_type, dataset_type, weights_type, bw]):
+    if any(dt is None for dt in [dtype, bw]):
         pytest.skip()
 
-    weights = np.arange(5, dtype=weights_type)
-    dataset = np.arange(5, dtype=dataset_type)
+    weights = np.arange(5, dtype=dtype)
+    dataset = np.arange(5, dtype=dtype)
     k = stats.gaussian_kde(dataset, bw_method=bw, weights=weights)
-    points = np.arange(5, dtype=point_type)
+    points = np.arange(5, dtype=dtype)
     result = k(points)
     # weights are always cast to float64
     assert result.dtype == np.result_type(dataset, points, np.float64(weights),

@@ -24,9 +24,7 @@ def check_normalization(distfn, args, distname):
     norm_moment = distfn.moment(0, *args)
     npt.assert_allclose(norm_moment, 1.0)
 
-    # this is a temporary plug: either ncf or expect is problematic;
-    # best be marked as a knownfail, but I've no clue how to do it.
-    if distname == "ncf":
+    if distname == "rv_histogram_instance":
         atol, rtol = 1e-5, 0
     else:
         atol, rtol = 1e-7, 1e-7
@@ -66,10 +64,10 @@ def check_mean_expect(distfn, arg, m, msg):
 
 
 def check_var_expect(distfn, arg, m, v, msg):
+    kwargs = {'rtol': 5e-6} if msg == "rv_histogram_instance" else {}
     if np.isfinite(v):
         m2 = distfn.expect(lambda x: x*x, arg)
-        npt.assert_almost_equal(m2, v + m*m, decimal=5, err_msg=msg +
-                            ' - 2st moment (expect)')
+        npt.assert_allclose(m2, v + m*m, **kwargs)
 
 
 def check_skew_expect(distfn, arg, m, v, s, msg):

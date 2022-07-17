@@ -7,7 +7,7 @@ import numpy as np
 from scipy import linalg, special, fft as sp_fft
 
 __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
-           'blackmanharris', 'flattop', 'bartlett', 'hanning', 'barthann',
+           'blackmanharris', 'flattop', 'bartlett', 'barthann',
            'hamming', 'kaiser', 'kaiser_bessel_derived', 'gaussian',
            'general_cosine', 'general_gaussian', 'general_hamming',
            'chebwin', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',
@@ -128,8 +128,8 @@ def boxcar(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         Whether the window is symmetric. (Has no effect for boxcar.)
 
@@ -178,8 +178,8 @@ def triang(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -242,8 +242,8 @@ def parzen(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -306,8 +306,8 @@ def bohman(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -367,8 +367,8 @@ def blackman(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -448,8 +448,8 @@ def nuttall(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -505,8 +505,8 @@ def blackmanharris(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -552,8 +552,8 @@ def flattop(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -620,8 +620,8 @@ def bartlett(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -716,8 +716,8 @@ def hann(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -788,19 +788,14 @@ def hann(M, sym=True):
     return general_hamming(M, 0.5, sym)
 
 
-@np.deprecate(new_name='scipy.signal.windows.hann')
-def hanning(*args, **kwargs):
-    return hann(*args, **kwargs)
-
-
 def tukey(M, alpha=0.5, sym=True):
     r"""Return a Tukey window, also known as a tapered cosine window.
 
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     alpha : float, optional
         Shape parameter of the Tukey window, representing the fraction of the
         window inside the cosine tapered region.
@@ -882,8 +877,8 @@ def barthann(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -940,8 +935,8 @@ def general_hamming(M, alpha, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     alpha : float
         The window coefficient, :math:`\alpha`
     sym : bool, optional
@@ -1027,8 +1022,8 @@ def hamming(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -1104,8 +1099,8 @@ def kaiser(M, beta, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     beta : float
         Shape parameter, determines trade-off between main-lobe width and
         side lobe level. As beta gets large, the window narrows.
@@ -1220,8 +1215,9 @@ def kaiser_bessel_derived(M, beta, *, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned. Note that this window is only defined for an even
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
+        Note that this window is only defined for an even
         number of points.
     beta : float
         Kaiser window shape parameter.
@@ -1304,8 +1300,8 @@ def gaussian(M, std, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     std : float
         The standard deviation, sigma.
     sym : bool, optional
@@ -1367,8 +1363,8 @@ def general_gaussian(M, p, sig, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     p : float
         Shape parameter.  p = 1 is identical to `gaussian`, p = 0.5 is
         the same shape as the Laplace distribution.
@@ -1438,8 +1434,8 @@ def chebwin(M, at, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     at : float
         Attenuation (in dB).
     sym : bool, optional
@@ -1564,8 +1560,8 @@ def cosine(M, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     sym : bool, optional
         When True (default), generates a symmetric window, for use in filter
         design.
@@ -1623,8 +1619,8 @@ def exponential(M, center=None, tau=1., sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an empty
-        array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     center : float, optional
         Parameter defining the center location of the window function.
         The default value if not given is ``center = (M-1) / 2``.  This
@@ -1721,8 +1717,8 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
     Parameters
     ----------
     M : int
-        Number of points in the output window. If zero or less, an
-        empty array is returned.
+        Number of points in the output window. If zero, an empty array
+        is returned. An exception is thrown when it is negative.
     nbar : int, optional
         Number of nearly constant level sidelobes adjacent to the mainlobe.
     sll : float, optional
@@ -1748,7 +1744,7 @@ def taylor(M, nbar=4, sll=30, norm=True, sym=True):
 
     See Also
     --------
-    chebwin, kaiser, bartlett, blackman, hamming, hanning
+    chebwin, kaiser, bartlett, blackman, hamming, hann
 
     References
     ----------
@@ -2111,7 +2107,7 @@ _win_equiv_raw = {
         'general gauss', 'general_gauss', 'ggs'): (general_gaussian, True),
     ('general hamming', 'general_hamming'): (general_hamming, True),
     ('hamming', 'hamm', 'ham'): (hamming, False),
-    ('hanning', 'hann', 'han'): (hann, False),
+    ('hann', 'han'): (hann, False),
     ('kaiser', 'ksr'): (kaiser, True),
     ('kaiser bessel derived', 'kbd'): (kaiser_bessel_derived, True),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),

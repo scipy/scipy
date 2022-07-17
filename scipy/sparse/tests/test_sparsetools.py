@@ -295,7 +295,10 @@ def test_upcast():
             if np.issubdtype(b_dtype, np.complexfloating):
                 b = b0.copy().astype(b_dtype)
             else:
-                b = b0.real.copy().astype(b_dtype)
+                with np.errstate(invalid="ignore"):
+                    # Casting a large value (2**32) to int8 causes a warning in
+                    # numpy >1.23
+                    b = b0.real.copy().astype(b_dtype)
 
             if not (a_dtype == np.bool_ and b_dtype == np.bool_):
                 c = np.zeros((2,), dtype=np.bool_)

@@ -160,8 +160,8 @@ If you would like to contribute changes to the SciPy project, please see
 :ref:`development-workflow`.
 
 The Docker image contains all the compilers and dependencies needed for you
-to work on SciPy. Similar to the :ref:`quickstart-ubuntu`,the Docker image uses 
-the  `Anaconda Distribution of Python`_ to manage the development environment.
+to work on SciPy. The Docker image uses the `Anaconda Distribution of Python`_
+to manage the development environment.
 
 .. _here: https://docs.docker.com/get-started/
 .. _Docker Hub repository: https://cloud.docker.com/repository/docker/scipy/scipy-dev

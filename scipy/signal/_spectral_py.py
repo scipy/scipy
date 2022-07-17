@@ -1025,7 +1025,7 @@ def check_NOLA(window, nperseg, noverlap, tol=1e-10):
 
 def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
          detrend=False, return_onesided=True, boundary='zeros', padded=True,
-         axis=-1):
+         axis=-1, scaling='spectrum'):
     r"""Compute the Short Time Fourier Transform (STFT).
 
     STFTs can be used as a way of quantifying the change of a
@@ -1082,6 +1082,13 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     axis : int, optional
         Axis along which the STFT is computed; the default is over the
         last axis (i.e. ``axis=-1``).
+    scaling: {'spectrum', 'psd'}
+        The default 'spectrum' scaling allows each frequency line of `Zxx` to
+        be interpreted as a magnitude spectrum. The 'psd' option scales each
+        line to a power spectral density - it allows to calculate the signal's
+        energy by numerically integrating over ``abs(Zxx)**2``.
+
+        .. versionadded:: 1.9.0
 
     Returns
     -------
@@ -1169,10 +1176,28 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
     >>> plt.xlabel('Time [sec]')
     >>> plt.show()
 
+    Compare the energy of the signal `x` with the energy of its STFT:
+
+    >>> E_x = sum(x**2) / fs  # Energy of x
+    >>> # Calculate a two-sided STFT with PSD scaling:
+    >>> f, t, Zxx = signal.stft(x, fs, nperseg=1000, return_onesided=False,
+    ...                         scaling='psd')
+    >>> # Integrate numerically over abs(Zxx)**2:
+    >>> df, dt = f[1] - f[0], t[1] - t[0]
+    >>> E_Zxx = sum(np.sum(Zxx.real**2 + Zxx.imag**2, axis=0) * df) * dt
+    >>> # The energy is the same, but the numerical errors are quite large:
+    >>> np.isclose(E_x, E_Zxx, rtol=1e-2)
+    True
+
     """
+    if scaling == 'psd':
+        scaling = 'density'
+    elif scaling != 'spectrum':
+        raise ValueError(f"Parameter {scaling=} not in ['spectrum', 'psd']!")
+
     freqs, time, Zxx = _spectral_helper(x, x, fs, window, nperseg, noverlap,
                                         nfft, detrend, return_onesided,
-                                        scaling='spectrum', axis=axis,
+                                        scaling=scaling, axis=axis,
                                         mode='stft', boundary=boundary,
                                         padded=padded)
 
@@ -1180,7 +1205,8 @@ def stft(x, fs=1.0, window='hann', nperseg=256, noverlap=None, nfft=None,
 
 
 def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
-          input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2):
+          input_onesided=True, boundary=True, time_axis=-1, freq_axis=-2,
+          scaling='spectrum'):
     r"""Perform the inverse Short Time Fourier transform (iSTFT).
 
     Parameters
@@ -1236,6 +1262,11 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     freq_axis : int, optional
         Where the frequency axis of the STFT is located; the default is
         the penultimate axis (i.e. ``axis=-2``).
+    scaling: {'spectrum', 'psd'}
+        The default 'spectrum' scaling allows each frequency line of `Zxx` to
+        be interpreted as a magnitude spectrum. The 'psd' option scales each
+        line to a power spectral density - it allows to calculate the signal's
+        energy by numerically integrating over ``abs(Zxx)**2``.
 
     Returns
     -------
@@ -1423,7 +1454,12 @@ def istft(Zxx, fs=1.0, window='hann', nperseg=None, noverlap=None, nfft=None,
     if np.result_type(win, xsubs) != xsubs.dtype:
         win = win.astype(xsubs.dtype)
 
-    xsubs *= win.sum()  # This takes care of the 'spectrum' scaling
+    if scaling == 'spectrum':
+        xsubs *= win.sum()
+    elif scaling == 'psd':
+        xsubs *= np.sqrt(fs * sum(win**2))
+    else:
+        raise ValueError(f"Parameter {scaling=} not in ['spectrum', 'psd']!")
 
     # Construct the output from the ifft segments
     # This loop could perhaps be vectorized/strided somehow...

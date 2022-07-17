@@ -4,7 +4,7 @@ import os
 def check_boost_submodule():
     from scipy._lib._boost_utils import _boost_dir
 
-    if not os.path.exists(_boost_dir(ret_path=True) / 'README.md'):
+    if not os.path.exists(_boost_dir(ret_path=True) / 'README.rst'):
         raise RuntimeError("Missing the `boost` submodule! Run `git submodule "
                            "update --init` to fix this.")
 

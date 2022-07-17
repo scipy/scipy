@@ -726,10 +726,8 @@ class TestInterop:
 
         # With N-D coefficients, there's a quirck:
         # splev(x, BSpline) is equivalent to BSpline(x)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       "Calling splev.. with BSpline objects with c.ndim > 1 is not recommended.")
-            assert_allclose(splev(xnew, b2), b2(xnew), atol=1e-15, rtol=1e-15)
+        with assert_raises(ValueError, match="Calling splev.. with BSpline"):
+            splev(xnew, b2)
 
         # However, splev(x, BSpline.tck) needs some transposes. This is because
         # BSpline interpolates along the first axis, while the legacy FITPACK
@@ -835,14 +833,8 @@ class TestInterop:
         assert_allclose(sproot((b.t, b.c, b.k)), roots, atol=1e-7, rtol=1e-7)
 
         # ... and deals with trailing dimensions if coef array is N-D
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       "Calling sproot.. with BSpline objects with c.ndim > 1 is not recommended.")
-            r = sproot(b2, mest=50)
-        r = np.asarray(r)
-
-        assert_equal(r.shape, (3, 2, 4))
-        assert_allclose(r - roots, 0, atol=1e-12)
+        with assert_raises(ValueError, match="Calling sproot.. with BSpline"):
+            sproot(b2, mest=50)
 
         # and legacy behavior is preserved for a tck tuple w/ N-D coef
         c2r = b2.c.transpose(1, 2, 0)
@@ -859,10 +851,8 @@ class TestInterop:
                         b.integrate(0, 1), atol=1e-14)
 
         # ... and deals with N-D arrays of coefficients
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       "Calling splint.. with BSpline objects with c.ndim > 1 is not recommended.")
-            assert_allclose(splint(0, 1, b2), b2.integrate(0, 1), atol=1e-14)
+        with assert_raises(ValueError, match="Calling splint.. with BSpline"):
+            splint(0, 1, b2)
 
         # and the legacy behavior is preserved for a tck tuple w/ N-D coef
         c2r = b2.c.transpose(1, 2, 0)

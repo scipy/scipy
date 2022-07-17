@@ -331,3 +331,9 @@ def test_spilu():
     ])
     LU = spla.spilu(X)
     npt.assert_allclose(LU.solve(np.array([1, 2, 3, 4])), [1, 0, 0, 0])
+
+
+@parametrize_sparrays
+def test_power_operator(A):
+    # https://github.com/scipy/scipy/issues/15948
+    npt.assert_equal((A**2).todense(), (A.todense())**2)

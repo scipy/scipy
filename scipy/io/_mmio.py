@@ -13,6 +13,7 @@
 import os
 import sys
 
+import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
 
@@ -382,8 +383,10 @@ class MMFile:
             else:
                 if issymm and aij != aji:
                     issymm = False
-                if isskew and aij != -aji:
-                    isskew = False
+                with np.errstate(over="ignore"):
+                    # This can give a warning for uint dtypes, so silence that
+                    if isskew and aij != -aji:
+                        isskew = False
                 if isherm and aij != conj(aji):
                     isherm = False
             if not (issymm or isskew or isherm):

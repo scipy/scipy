@@ -243,3 +243,36 @@ class Interpolate(Benchmark):
             interpolate.interp1d(self.x, self.y, kind="linear")
         else:
             np.interp(self.z, self.x, self.y)
+
+
+class RegularGridInterpolator(Benchmark):
+    """
+    Benchmark RegularGridInterpolator with method="linear".
+    """
+    param_names = ['ndim', 'max_coord_size', 'n_samples']
+    params = [
+        [2, 3, 4],
+        [10, 40, 200],
+        [10, 100, 1000, 10000],
+    ]
+
+    def setup(self, ndim, max_coord_size, n_samples):
+        rng = np.random.default_rng(314159)
+
+        # coordinates halve in size over the dimensions
+        coord_sizes = [max_coord_size // 2**i for i in range(ndim)]
+        self.points = [np.sort(rng.random(size=s)) for s in coord_sizes]
+        self.values = rng.random(size=coord_sizes)
+
+        # choose in-bounds sample points xi
+        bounds = [(p[0], p[-1]) for p in self.points]
+        xi = [rng.uniform(low, high, size=n_samples) for low, high in bounds]
+        self.xi = np.array(xi).T
+
+        self.interp = interpolate.RegularGridInterpolator(
+            self.points,
+            self.values,
+        )
+
+    def time_rgi(self, ndim, max_coord_size, n_samples):
+        self.interp(self.xi)
