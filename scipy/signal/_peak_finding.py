@@ -55,6 +55,7 @@ def _boolrelextrema(data, comparator, axis=0, order=1, mode='clip'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> testdata = np.array([1,2,3,2,1])
     >>> _boolrelextrema(testdata, np.greater, axis=0)
     array([False, False,  True, False, False], dtype=bool)
@@ -120,6 +121,7 @@ def argrelmin(data, axis=0, order=1, mode='clip'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import argrelmin
     >>> x = np.array([2, 1, 2, 3, 2, 0, 1, 0])
     >>> argrelmin(x)
@@ -177,6 +179,7 @@ def argrelmax(data, axis=0, order=1, mode='clip'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import argrelmax
     >>> x = np.array([2, 1, 2, 3, 2, 0, 1, 0])
     >>> argrelmax(x)
@@ -230,6 +233,7 @@ def argrelextrema(data, comparator, axis=0, order=1, mode='clip'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import argrelextrema
     >>> x = np.array([2, 1, 2, 3, 2, 0, 1, 0])
     >>> argrelextrema(x, np.greater)
@@ -404,6 +408,7 @@ def peak_prominences(x, peaks, wlen=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import find_peaks, peak_prominences
     >>> import matplotlib.pyplot as plt
 
@@ -548,6 +553,7 @@ def peak_widths(x, peaks, rel_height=0.5, prominence_data=None, wlen=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.signal import chirp, find_peaks, peak_widths
     >>> import matplotlib.pyplot as plt
 
@@ -866,6 +872,7 @@ def find_peaks(x, height=None, threshold=None, distance=None,
     SciPy (see `scipy.misc.electrocardiogram`). Let's find all peaks (local
     maxima) in `x` whose amplitude lies above 0.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.misc import electrocardiogram
     >>> from scipy.signal import find_peaks
@@ -1039,6 +1046,7 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
 
     Examples
     --------
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> data = rng.random((5,5))
     >>> ridge_lines = _identify_ridge_lines(data, 1, 1)
@@ -1272,6 +1280,7 @@ def find_peaks_cwt(vector, widths, wavelet=None, max_distances=None,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import signal
     >>> xs = np.arange(0, np.pi, 0.05)
     >>> data = np.sin(xs)
