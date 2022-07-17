@@ -36,7 +36,7 @@ jobs:
           echo "::set-output name=sha8::$(echo ${GITHUB_SHA} | cut -c1-8)"
         id: getrefs
 
-      - name: Set up Docker Buildx
+      - name: Setup Docker Buildx
         uses: docker/setup-buildx-action@v1
 
       - name: Login to Docker Hub

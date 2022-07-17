@@ -1852,9 +1852,58 @@ def medfilt2d(input, kernel_size=3):
     -----
     This is faster than `medfilt` when the input dtype is ``uint8``,
     ``float32``, or ``float64``; for other types, this falls back to
-    `medfilt`; you should use `scipy.ndimage.median_filter` instead as it is
-    much faster.  In some situations, `scipy.ndimage.median_filter` may be
+    `medfilt`. In some situations, `scipy.ndimage.median_filter` may be
     faster than this function.
+
+    Examples
+    --------
+    >>> from scipy import signal
+    >>> x = np.arange(25).reshape(5, 5)
+    >>> x
+    array([[ 0,  1,  2,  3,  4],
+           [ 5,  6,  7,  8,  9],
+           [10, 11, 12, 13, 14],
+           [15, 16, 17, 18, 19],
+           [20, 21, 22, 23, 24]])
+
+    # Replaces i,j with the median out of 5*5 window
+
+    >>> signal.medfilt2d(x, kernel_size=5)
+    array([[ 0,  0,  2,  0,  0],
+           [ 0,  3,  7,  4,  0],
+           [ 2,  8, 12,  9,  4],
+           [ 0,  8, 12,  9,  0],
+           [ 0,  0, 12,  0,  0]])
+
+    # Replaces i,j with the median out of default 3*3 window
+
+    >>> signal.medfilt2d(x)
+    array([[ 0,  1,  2,  3,  0],
+           [ 1,  6,  7,  8,  4],
+           [ 6, 11, 12, 13,  9],
+           [11, 16, 17, 18, 14],
+           [ 0, 16, 17, 18,  0]])
+
+    # Replaces i,j with the median out of default 5*3 window
+
+    >>> signal.medfilt2d(x, kernel_size=[5,3])
+    array([[ 0,  1,  2,  3,  0],
+           [ 0,  6,  7,  8,  3],
+           [ 5, 11, 12, 13,  8],
+           [ 5, 11, 12, 13,  8],
+           [ 0, 11, 12, 13,  0]])
+
+    # Replaces i,j with the median out of default 3*5 window
+
+    >>> signal.medfilt2d(x, kernel_size=[3,5])
+    array([[ 0,  0,  2,  1,  0],
+           [ 1,  5,  7,  6,  3],
+           [ 6, 10, 12, 11,  8],
+           [11, 15, 17, 16, 13],
+           [ 0, 15, 17, 16,  0]])
+
+    # As seen in the examples,
+    # kernel numbers must be odd and not exceed original array dim
 
     """
     image = np.asarray(input)

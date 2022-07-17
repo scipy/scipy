@@ -1,7 +1,6 @@
 from contextlib import contextmanager
 import functools
 import operator
-import sys
 import warnings
 import numbers
 from collections import namedtuple
@@ -41,6 +40,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
     >>> def f(a, b):
     ...     return a*b
@@ -87,6 +87,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
 
     Examples
     --------
+    >>> import numpy as np
     >>> x = np.arange(6)
     >>> np.select([x <3, x > 3], [x**2, x**3], default=0)
     array([  0,   1,   4,   0,  64, 125])
@@ -168,40 +169,6 @@ def float_factorial(n: int) -> float:
     Returns infinity when result is too large for a double
     """
     return float(math.factorial(n)) if n < 171 else np.inf
-
-
-class DeprecatedImport:
-    """
-    Deprecated import with redirection and warning.
-
-    Examples
-    --------
-    Suppose you previously had in some module::
-
-        from foo import spam
-
-    If this has to be deprecated, do::
-
-        spam = DeprecatedImport("foo.spam", "baz")
-
-    to redirect users to use "baz" module instead.
-
-    """
-
-    def __init__(self, old_module_name, new_module_name):
-        self._old_name = old_module_name
-        self._new_name = new_module_name
-        __import__(self._new_name)
-        self._mod = sys.modules[self._new_name]
-
-    def __dir__(self):
-        return dir(self._mod)
-
-    def __getattr__(self, name):
-        warnings.warn("Module %s is deprecated, use %s instead"
-                      % (self._old_name, self._new_name),
-                      DeprecationWarning)
-        return getattr(self._mod, name)
 
 
 # copy-pasted from scikit-learn utils/validation.py
@@ -580,6 +547,7 @@ def _first_nonnan(a, axis):
 
     Examples
     --------
+    >>> import numpy as np
     >>> nan = np.nan
     >>> a = np.array([[ 3.,  3., nan,  3.],
                       [ 1., nan,  2.,  4.],
@@ -620,13 +588,13 @@ def _nan_allsame(a, axis, keepdims=False):
 
     Examples
     --------
-    >>> a
-    array([[ 3.,  3., nan,  3.],
-           [ 1., nan,  2.,  4.],
-           [nan, nan,  9., -1.],
-           [nan,  5.,  4.,  3.],
-           [ 2.,  2.,  2.,  2.],
-           [nan, nan, nan, nan]])
+    >>> import numpy as np
+    >>> a = np.array([[ 3.,  3., nan,  3.],
+                      [ 1., nan,  2.,  4.],
+                      [nan, nan,  9., -1.],
+                      [nan,  5.,  4.,  3.],
+                      [ 2.,  2.,  2.,  2.],
+                      [nan, nan, nan, nan]])
     >>> _nan_allsame(a, axis=1, keepdims=True)
     array([[ True],
            [False],

@@ -110,12 +110,11 @@ _lbfgsb = py3.extension_module('_lbfgsb',
     'lbfgsb_src/linpack.f',
     'lbfgsb_src/timer.f',
     lbfgsb_module,
-    fortranobject_c
   ],
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, lapack],
+  dependencies: [py3_dep, lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
@@ -139,11 +138,11 @@ cobyla_module = custom_target('cobyla_module',
 )
 
 _cobyla = py3.extension_module('_cobyla',
-  [cobyla_module, fortranobject_c, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
+  [cobyla_module, 'cobyla/cobyla2.f', 'cobyla/trstlp.f'],
   c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep],
+  dependencies: [py3_dep, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
@@ -156,11 +155,11 @@ minpack2_module = custom_target('minpack2_module',
 )
 
 minpack2 = py3.extension_module('_minpack2',
-  [minpack2_module, fortranobject_c, 'minpack2/dcsrch.f', 'minpack2/dcstep.f'],
+  [minpack2_module, 'minpack2/dcsrch.f', 'minpack2/dcstep.f'],
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep],
+  dependencies: [py3_dep, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
@@ -173,11 +172,11 @@ slsqp_module = custom_target('slsqp_module',
 )
 
 _slsqp = py3.extension_module('_slsqp',
-  [slsqp_module, fortranobject_c, 'slsqp/slsqp_optmz.f'],
+  [slsqp_module, 'slsqp/slsqp_optmz.f'],
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep],
+  dependencies: [py3_dep, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'
@@ -196,11 +195,11 @@ py3.install_sources(
 )
 
 __nnls = py3.extension_module('__nnls',
-  ['__nnls/nnls.f', __nnls_module, fortranobject_c],
+  ['__nnls/nnls.f', __nnls_module],
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep],
+  dependencies: [py3_dep, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/optimize'

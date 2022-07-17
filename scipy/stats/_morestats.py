@@ -16,7 +16,8 @@ from scipy._lib._util import _rename_parameter
 
 from . import _statlib
 from . import _stats_py
-from ._stats_py import find_repeats, _contains_nan, _normtest_finish
+from ._stats_py import (find_repeats, _contains_nan, _normtest_finish,
+                        SignificanceResult)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
@@ -394,6 +395,7 @@ def _calc_uniform_order_statistic_medians(n):
     the interval, but the distributions are skewed in a way that
     pushes the medians slightly towards the endpoints of the unit interval:
 
+    >>> import numpy as np
     >>> n = 4
     >>> k = np.arange(1, n+1)
     >>> from scipy.stats import beta
@@ -552,6 +554,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> nsample = 100
@@ -692,6 +695,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     First we generate some random data from a Weibull distribution
     with shape parameter 2.5:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -784,6 +788,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     First we generate some random data from a Weibull distribution
     with shape parameter 2.5, and plot the histogram of the data:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -866,6 +871,7 @@ def boxcox_llf(lmb, data):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -1162,6 +1168,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -1534,6 +1541,7 @@ def yeojohnson_llf(lmb, data):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -1628,6 +1636,7 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -1773,6 +1782,7 @@ def shapiro(x):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(loc=5, scale=3, size=100, random_state=rng)
@@ -2108,6 +2118,7 @@ def anderson_ksamp(samples, midrank=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
 
@@ -2310,6 +2321,7 @@ def ansari(x, y, alternative='two-sided'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import ansari
     >>> rng = np.random.default_rng()
 
@@ -2474,6 +2486,7 @@ def bartlett(*samples):
     Test whether or not the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
     >>> from scipy.stats import bartlett
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
@@ -2577,6 +2590,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     Test whether or not the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
     >>> from scipy.stats import levene
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
@@ -2832,6 +2846,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     Test whether or not the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
     >>> from scipy.stats import fligner
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
@@ -2999,11 +3014,14 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     Returns
     -------
-    z : scalar or ndarray
-        The z-score for the hypothesis test.  For 1-D inputs a scalar is
-        returned.
-    p-value : scalar ndarray
-        The p-value for the hypothesis test.
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : scalar or ndarray
+            The z-score for the hypothesis test.  For 1-D inputs a scalar is
+            returned.
+        pvalue : scalar ndarray
+            The p-value for the hypothesis test.
 
     See Also
     --------
@@ -3031,17 +3049,18 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x2 = rng.standard_normal((2, 45, 6, 7))
     >>> x1 = rng.standard_normal((2, 30, 6, 7))
-    >>> z, p = stats.mood(x1, x2, axis=1)
-    >>> p.shape
+    >>> res = stats.mood(x1, x2, axis=1)
+    >>> res.pvalue.shape
     (2, 6, 7)
 
     Find the number of points where the difference in scale is not significant:
 
-    >>> (p > 0.1).sum()
+    >>> (res.pvalue > 0.1).sum()
     78
 
     Perform the test with different scales:
@@ -3049,7 +3068,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     >>> x1 = rng.standard_normal((2, 30))
     >>> x2 = rng.standard_normal((2, 35)) * 10.0
     >>> stats.mood(x1, x2, axis=1)
-    (array([-5.76174136, -6.12650783]), array([8.32505043e-09, 8.98287869e-10]))
+    SignificanceResult(statistic=array([-5.76174136, -6.12650783]),
+                       pvalue=array([8.32505043e-09, 8.98287869e-10]))
 
     """
     x = np.asarray(x, dtype=float)
@@ -3110,7 +3130,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
     else:
         z.shape = res_shape
         pval.shape = res_shape
-    return z, pval
+    return SignificanceResult(z, pval)
 
 
 WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
@@ -3442,6 +3462,12 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     return res
 
 
+MedianTestResult = _make_tuple_bunch(
+    'MedianTestResult',
+    ['statistic', 'pvalue', 'median', 'table'], []
+)
+
+
 def median_test(*samples, ties='below', correction=True, lambda_=1,
                 nan_policy='propagate'):
     """Perform a Mood's median test.
@@ -3490,22 +3516,25 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     Returns
     -------
-    stat : float
-        The test statistic.  The statistic that is returned is determined by
-        `lambda_`.  The default is Pearson's chi-squared statistic.
-    p : float
-        The p-value of the test.
-    m : float
-        The grand median.
-    table : ndarray
-        The contingency table.  The shape of the table is (2, n), where
-        n is the number of samples.  The first row holds the counts of the
-        values above the grand median, and the second row holds the counts
-        of the values below the grand median.  The table allows further
-        analysis with, for example, `scipy.stats.chi2_contingency`, or with
-        `scipy.stats.fisher_exact` if there are two samples, without having
-        to recompute the table.  If ``nan_policy`` is "propagate" and there
-        are nans in the input, the return value for ``table`` is ``None``.
+    res : MedianTestResult
+        An object containing attributes:
+
+        statistic : float
+            The test statistic.  The statistic that is returned is determined
+            by `lambda_`.  The default is Pearson's chi-squared statistic.
+        pvalue : float
+            The p-value of the test.
+        median : float
+            The grand median.
+        table : ndarray
+            The contingency table.  The shape of the table is (2, n), where
+            n is the number of samples.  The first row holds the counts of the
+            values above the grand median, and the second row holds the counts
+            of the values below the grand median.  The table allows further
+            analysis with, for example, `scipy.stats.chi2_contingency`, or with
+            `scipy.stats.fisher_exact` if there are two samples, without having
+            to recompute the table.  If ``nan_policy`` is "propagate" and there
+            are nans in the input, the return value for ``table`` is ``None``.
 
     See Also
     --------
@@ -3540,39 +3569,39 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     >>> g2 = [28, 30, 31, 33, 34, 35, 36, 40, 44, 55, 57, 61, 91, 92, 99]
     >>> g3 = [0, 3, 9, 22, 23, 25, 25, 33, 34, 34, 40, 45, 46, 48, 62, 67, 84]
     >>> from scipy.stats import median_test
-    >>> stat, p, med, tbl = median_test(g1, g2, g3)
+    >>> res = median_test(g1, g2, g3)
 
     The median is
 
-    >>> med
+    >>> res.median
     34.0
 
     and the contingency table is
 
-    >>> tbl
+    >>> res.table
     array([[ 5, 10,  7],
            [11,  5, 10]])
 
     `p` is too large to conclude that the medians are not the same:
 
-    >>> p
+    >>> res.pvalue
     0.12609082774093244
 
     The "G-test" can be performed by passing ``lambda_="log-likelihood"`` to
     `median_test`.
 
-    >>> g, p, med, tbl = median_test(g1, g2, g3, lambda_="log-likelihood")
-    >>> p
+    >>> res = median_test(g1, g2, g3, lambda_="log-likelihood")
+    >>> res.pvalue
     0.12224779737117837
 
     The median occurs several times in the data, so we'll get a different
     result if, for example, ``ties="above"`` is used:
 
-    >>> stat, p, med, tbl = median_test(g1, g2, g3, ties="above")
-    >>> p
+    >>> res = median_test(g1, g2, g3, ties="above")
+    >>> res.pvalue
     0.063873276069553273
 
-    >>> tbl
+    >>> res.table
     array([[ 5, 11,  9],
            [11,  4,  8]])
 
@@ -3604,7 +3633,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     cdata = np.concatenate(data)
     contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
     if contains_nan and nan_policy == 'propagate':
-        return np.nan, np.nan, np.nan, None
+        return MedianTestResult(np.nan, np.nan, np.nan, None)
 
     if contains_nan:
         grand_median = np.median(cdata[~np.isnan(cdata)])
@@ -3653,7 +3682,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     stat, p, dof, expected = chi2_contingency(table, lambda_=lambda_,
                                               correction=correction)
-    return stat, p, grand_median, table
+    return MedianTestResult(stat, p, grand_median, table)
 
 
 def _circfuncs_common(samples, high, low, nan_policy='propagate'):
@@ -3706,6 +3735,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import circmean
     >>> circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
     0.2
@@ -3787,6 +3817,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import circvar
     >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
     0.6666666666666665
@@ -3848,6 +3879,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     .. code-block:: python
 
+        import numpy as np
         C = np.cos(samples).mean()
         S = np.sin(samples).mean()
         R = np.sqrt(C**2 + S**2)
@@ -3864,6 +3896,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import circstd
     >>> small_samples = [0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2]
     >>> circstd(small_samples)
