@@ -2572,7 +2572,7 @@ class TestDirectionalFuncs:
     def test_directionalmean_2d(self):
         # Test that for circular data directionalmean yields
         # same result as circmean
-        rng = np.random.default_rng(seed=42)
+        rng = np.random.default_rng(0xec9a6899d5a2830e0d1af479dbe1fd0c)
         testdata = 2 * np.pi * rng.random((1000, ))
         testdata_vector = np.stack((np.cos(testdata),
                                     np.sin(testdata)),
