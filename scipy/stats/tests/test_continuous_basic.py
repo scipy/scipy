@@ -926,19 +926,19 @@ def test_scalar_for_scalar(case):
     method = getattr(stats.norm(), method_name)
     res = method(*args)
     if case in scalar_out:
-        assert res.shape == () and not isinstance(res, np.ndarray)
+        assert isinstance(res, np.number)
     else:
-        assert res[0].shape == () and not isinstance(res[0], np.ndarray)
-        assert res[1].shape == () and not isinstance(res[1], np.ndarray)
+        assert isinstance(res[0], np.number)
+        assert isinstance(res[1], np.number)
 
 
 def test_scalar_for_scalar2():
     # test methods that are not attributes of frozen distributions
     res = stats.norm.fit([1, 2, 3])
-    assert res[0].shape == () and not isinstance(res[0], np.ndarray)
-    assert res[1].shape == () and not isinstance(res[1], np.ndarray)
+    assert isinstance(res[0], np.number)
+    assert isinstance(res[1], np.number)
     res = stats.norm.fit_loc_scale([1, 2, 3])
-    assert res[0].shape == () and not isinstance(res[0], np.ndarray)
-    assert res[1].shape == () and not isinstance(res[1], np.ndarray)
+    assert isinstance(res[0], np.number)
+    assert isinstance(res[1], np.number)
     res = stats.norm.nnlf((0, 1), [1, 2, 3])
-    assert res.shape == () and not isinstance(res, np.ndarray)
+    assert isinstance(res, np.number)
