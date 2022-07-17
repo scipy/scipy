@@ -8014,212 +8014,6 @@ class truncexpon_gen(rv_continuous):
 truncexpon = truncexpon_gen(a=0.0, name='truncexpon')
 
 
-TRUNCNORM_TAIL_X = 30
-TRUNCNORM_MAX_BRENT_ITERS = 40
-
-
-def _truncnorm_get_delta_scalar(a, b):
-    if (a > TRUNCNORM_TAIL_X) or (b < -TRUNCNORM_TAIL_X):
-        return 0
-    if a > 0:
-        delta = _norm_sf(a) - _norm_sf(b)
-    else:
-        delta = _norm_cdf(b) - _norm_cdf(a)
-    delta = max(delta, 0)
-    return delta
-
-
-def _truncnorm_get_delta(a, b):
-    if np.isscalar(a) and np.isscalar(b):
-        return _truncnorm_get_delta_scalar(a, b)
-    a, b = np.atleast_1d(a), np.atleast_1d(b)
-    if a.size == 1 and b.size == 1:
-        return _truncnorm_get_delta_scalar(a.item(), b.item())
-    delta = np.zeros(np.shape(a))
-    condinner = (a <= TRUNCNORM_TAIL_X) & (b >= -TRUNCNORM_TAIL_X)
-    conda = (a > 0) & condinner
-    condb = (a <= 0) & condinner
-    if np.any(conda):
-        np.place(delta, conda, _norm_sf(a[conda]) - _norm_sf(b[conda]))
-    if np.any(condb):
-        np.place(delta, condb, _norm_cdf(b[condb]) - _norm_cdf(a[condb]))
-    delta[delta < 0] = 0
-    return delta
-
-
-def _truncnorm_get_logdelta_scalar(a, b):
-    if (a <= TRUNCNORM_TAIL_X) and (b >= -TRUNCNORM_TAIL_X):
-        if a > 0:
-            delta = _norm_sf(a) - _norm_sf(b)
-        else:
-            delta = _norm_cdf(b) - _norm_cdf(a)
-        delta = max(delta, 0)
-        if delta > 0:
-            return np.log(delta)
-
-    if b < 0 or (np.abs(a) >= np.abs(b)):
-        nla, nlb = _norm_logcdf(a), _norm_logcdf(b)
-        logdelta = nlb + np.log1p(-np.exp(nla - nlb))
-    else:
-        sla, slb = _norm_logsf(a), _norm_logsf(b)
-        logdelta = sla + np.log1p(-np.exp(slb - sla))
-    return logdelta
-
-
-def _truncnorm_logpdf_scalar(x, a, b):
-    with np.errstate(invalid='ignore'):
-        if np.isscalar(x):
-            if x < a:
-                return -np.inf
-            if x > b:
-                return -np.inf
-        shp = np.shape(x)
-        x = np.atleast_1d(x)
-        out = np.full_like(x, np.nan, dtype=np.double)
-        condlta, condgtb = (x < a), (x > b)
-        if np.any(condlta):
-            np.place(out, condlta, -np.inf)
-        if np.any(condgtb):
-            np.place(out, condgtb, -np.inf)
-        cond_inner = ~condlta & ~condgtb
-        if np.any(cond_inner):
-            _logdelta = _truncnorm_get_logdelta_scalar(a, b)
-            np.place(out, cond_inner, _norm_logpdf(x[cond_inner]) - _logdelta)
-        return (out[0] if (shp == ()) else out)
-
-
-def _truncnorm_pdf_scalar(x, a, b):
-    with np.errstate(invalid='ignore'):
-        if np.isscalar(x):
-            if x < a:
-                return 0.0
-            if x > b:
-                return 0.0
-        shp = np.shape(x)
-        x = np.atleast_1d(x)
-        out = np.full_like(x, np.nan, dtype=np.double)
-        condlta, condgtb = (x < a), (x > b)
-        if np.any(condlta):
-            np.place(out, condlta, 0.0)
-        if np.any(condgtb):
-            np.place(out, condgtb, 0.0)
-        cond_inner = ~condlta & ~condgtb
-        if np.any(cond_inner):
-            delta = _truncnorm_get_delta_scalar(a, b)
-            if delta > 0:
-                np.place(out, cond_inner, _norm_pdf(x[cond_inner]) / delta)
-            else:
-                np.place(out, cond_inner,
-                         np.exp(_truncnorm_logpdf_scalar(x[cond_inner], a, b)))
-        return (out[0] if (shp == ()) else out)
-
-
-def _truncnorm_logsf_scalar(x, a, b):
-    with np.errstate(invalid='ignore'):
-        if np.isscalar(x):
-            if x <= a:
-                return 0.0
-            if x >= b:
-                return -np.inf
-        shp = np.shape(x)
-        x = np.atleast_1d(x)
-        out = np.full_like(x, np.nan, dtype=np.double)
-
-        condlea, condgeb = (x <= a), (x >= b)
-        if np.any(condlea):
-            np.place(out, condlea, 0)
-        if np.any(condgeb):
-            np.place(out, condgeb, -np.inf)
-        cond_inner = ~condlea & ~condgeb
-        if np.any(cond_inner):
-            delta = _truncnorm_get_delta_scalar(a, b)
-            if delta > 0:
-                np.place(out, cond_inner,
-                         np.log((_norm_sf(x[cond_inner]) - _norm_sf(b))
-                                / delta))
-            else:
-                with np.errstate(divide='ignore'):
-                    if b < 0:
-                        nla, nlb = _norm_logcdf(a), _norm_logcdf(b)
-                        np.place(out, cond_inner,
-                                 np.log1p(-np.exp(_norm_logcdf(x[cond_inner])
-                                                  - nlb))
-                                 - np.log1p(-np.exp(nla - nlb)))
-                    else:
-                        sla, slb = _norm_logsf(a), _norm_logsf(b)
-                        tab = np.log1p(-np.exp(slb - sla))
-                        slx = _norm_logsf(x[cond_inner])
-                        tax = np.log1p(-np.exp(slb - slx))
-                        np.place(out, cond_inner, slx + tax - (sla + tab))
-        return (out[0] if (shp == ()) else out)
-
-
-def _truncnorm_sf_scalar(x, a, b):
-    with np.errstate(invalid='ignore'):
-        if np.isscalar(x):
-            if x <= a:
-                return 1.0
-            if x >= b:
-                return 0.0
-        shp = np.shape(x)
-        x = np.atleast_1d(x)
-        out = np.full_like(x, np.nan, dtype=np.double)
-
-        condlea, condgeb = (x <= a), (x >= b)
-        if np.any(condlea):
-            np.place(out, condlea, 1.0)
-        if np.any(condgeb):
-            np.place(out, condgeb, 0.0)
-        cond_inner = ~condlea & ~condgeb
-        if np.any(cond_inner):
-            delta = _truncnorm_get_delta_scalar(a, b)
-            if delta > 0:
-                np.place(out, cond_inner,
-                         (_norm_sf(x[cond_inner]) - _norm_sf(b)) / delta)
-            else:
-                np.place(out, cond_inner,
-                         np.exp(_truncnorm_logsf_scalar(x[cond_inner], a, b)))
-        return (out[0] if (shp == ()) else out)
-
-
-def _norm_logcdfprime(z):
-    # derivative of special.log_ndtr (See special/cephes/ndtr.c)
-    # Differentiate formula for log Phi(z)_truncnorm_ppf
-    # log Phi(z) = -z^2/2 - log(-z) - log(2pi)/2
-    #              + log(1 + sum (-1)^n (2n-1)!! / z^(2n))
-    # Convergence of series is slow for |z| < 10, but can use
-    #     d(log Phi(z))/dz = dPhi(z)/dz / Phi(z)
-    # Just take the first 10 terms because that is sufficient for use
-    # in _norm_ilogcdf
-    assert np.all(z <= -10)
-    lhs = -z - 1/z
-    denom_cons = 1/z**2
-    numerator = 1
-    pwr = 1.0
-    denom_total, numerator_total = 0, 0
-    sign = -1
-    for i in range(1, 11):
-        pwr *= denom_cons
-        numerator *= 2 * i - 1
-        term = sign * numerator * pwr
-        denom_total += term
-        numerator_total += term * (2 * i) / z
-        sign = -sign
-    return lhs - numerator_total / (1 + denom_total)
-
-
-def _norm_ilogcdf(y):
-    """Inverse function to _norm_logcdf==sc.log_ndtr."""
-    # Apply approximate Newton-Raphson
-    # Only use for very negative values of y.
-    # At minimum requires y <= -(log(2pi)+2^2)/2 ~= -2.9
-    # Much better convergence for y <= -10
-    z = -np.sqrt(-2 * (y + np.log(2*np.pi)/2))
-    for _ in range(4):
-        z = z - (_norm_logcdf(z) - y) / _norm_logcdfprime(z)
-    return z
-
-
 # logsumexp trick for log(p + q) with only log(p) and log(q)
 def _log_sum(log_p, log_q):
     return sc.logsumexp([log_p, log_q], axis=0)
@@ -8286,6 +8080,7 @@ class truncnorm_gen(rv_continuous):
     %(example)s
 
     """
+
     def _argcheck(self, a, b):
         return a < b
 
@@ -8302,30 +8097,10 @@ class truncnorm_gen(rv_continuous):
         return a, b
 
     def _pdf(self, x, a, b):
-        if np.isscalar(a) and np.isscalar(b):
-            return _truncnorm_pdf_scalar(x, a, b)
-        a, b = np.atleast_1d(a), np.atleast_1d(b)
-        if a.size == 1 and b.size == 1:
-            return _truncnorm_pdf_scalar(x, a.item(), b.item())
-        it = np.nditer([x, a, b, None], [],
-                       [['readonly'], ['readonly'], ['readonly'],
-                        ['writeonly', 'allocate']])
-        for (_x, _a, _b, _ld) in it:
-            _ld[...] = _truncnorm_pdf_scalar(_x, _a, _b)
-        return it.operands[3]
+        return np.exp(self._logpdf(x, a, b))
 
     def _logpdf(self, x, a, b):
-        if np.isscalar(a) and np.isscalar(b):
-            return _truncnorm_logpdf_scalar(x, a, b)
-        a, b = np.atleast_1d(a), np.atleast_1d(b)
-        if a.size == 1 and b.size == 1:
-            return _truncnorm_logpdf_scalar(x, a.item(), b.item())
-        it = np.nditer([x, a, b, None], [],
-                       [['readonly'], ['readonly'], ['readonly'],
-                        ['writeonly', 'allocate']])
-        for (_x, _a, _b, _ld) in it:
-            _ld[...] = _truncnorm_logpdf_scalar(_x, _a, _b)
-        return it.operands[3]
+        return _norm_logpdf(x) - _log_gauss_mass(a, b)
 
     def _cdf(self, x, a, b):
         return np.exp(self._logcdf(x, a, b))
@@ -8334,32 +8109,10 @@ class truncnorm_gen(rv_continuous):
         return _log_gauss_mass(a, x) - _log_gauss_mass(a, b)
 
     def _sf(self, x, a, b):
-        if np.isscalar(a) and np.isscalar(b):
-            return _truncnorm_sf_scalar(x, a, b)
-        a, b = np.atleast_1d(a), np.atleast_1d(b)
-        if a.size == 1 and b.size == 1:
-            return _truncnorm_sf_scalar(x, a.item(), b.item())
-        out = None
-        it = np.nditer([x, a, b, out], [],
-                       [['readonly'], ['readonly'], ['readonly'],
-                        ['writeonly', 'allocate']])
-        for (_x, _a, _b, _p) in it:
-            _p[...] = _truncnorm_sf_scalar(_x, _a, _b)
-        return it.operands[3]
+        return np.exp(self._logsf(x, a, b))
 
     def _logsf(self, x, a, b):
-        if np.isscalar(a) and np.isscalar(b):
-            return _truncnorm_logsf_scalar(x, a, b)
-        a, b = np.atleast_1d(a), np.atleast_1d(b)
-        if a.size == 1 and b.size == 1:
-            return _truncnorm_logsf_scalar(x, a.item(), b.item())
-        out = None
-        it = np.nditer([x, a, b, out], [],
-                       [['readonly'], ['readonly'], ['readonly'],
-                        ['writeonly', 'allocate']])
-        for (_x, _a, _b, _p) in it:
-            _p[...] = _truncnorm_logsf_scalar(_x, _a, _b)
-        return it.operands[3]
+        return _log_gauss_mass(x, b) - _log_gauss_mass(a, b)
 
     def _ppf(self, q, a, b):
         q, a, b = np.broadcast_arrays(q, a, b)
@@ -8377,7 +8130,7 @@ class truncnorm_gen(rv_continuous):
                                  np.log1p(-q) + _log_gauss_mass(a, b))
             return -sc.ndtri_exp(log_Phi_x)
 
-        out = np.empty_like(q, dtype=np.complex128)
+        out = np.empty_like(q)
 
         q_left = q[case_left]
         q_right = q[case_right]
@@ -8387,7 +8140,36 @@ class truncnorm_gen(rv_continuous):
         if q_right.size:
             out[case_right] = ppf_right(q_right, a[case_right], b[case_right])
 
-        return np.real(out)
+        return out
+
+    def _isf(self, q, a, b):
+        # Mostly copy-paste of _ppf, but I think this is simpler than combining
+        q, a, b = np.broadcast_arrays(q, a, b)
+
+        case_left = b < 0
+        case_right = ~case_left
+
+        def isf_left(q, a, b):
+            log_Phi_x = _log_diff(sc.log_ndtr(b),
+                                  np.log(q) + _log_gauss_mass(a, b))
+            return sc.ndtri_exp(np.real(log_Phi_x))
+
+        def isf_right(q, a, b):
+            log_Phi_x = _log_diff(sc.log_ndtr(-a),
+                                  np.log1p(-q) + _log_gauss_mass(a, b))
+            return -sc.ndtri_exp(np.real(log_Phi_x))
+
+        out = np.empty_like(q)
+
+        q_left = q[case_left]
+        q_right = q[case_right]
+
+        if q_left.size:
+            out[case_left] = isf_left(q_left, a[case_left], b[case_left])
+        if q_right.size:
+            out[case_right] = isf_right(q_right, a[case_right], b[case_right])
+
+        return out
 
     def _munp(self, n, a, b):
         def n_th_moment(n, a, b):
