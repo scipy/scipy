@@ -117,7 +117,8 @@ def test_csr_bool_indexing():
 def test_csr_hstack_int64():
     """
     Tests if hstack properly promotes to np.int64 if the output sparse matrix
-    has indices too large for np.int64"""
+    has indices too large for np.int64
+    """
     data = [1.0]
     row = [0]
 
