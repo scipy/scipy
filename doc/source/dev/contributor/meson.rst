@@ -14,7 +14,7 @@ How to build SciPy with Meson
    Building SciPy on Windows has always been a little tricky - it does work
    provided that all build dependencies are installed (most importantly,
    OpenBLAS and a compatible set of compilers: either Mingw-w64 or MSVC + Intel
-   Fortran works.  If you have issues on Windows, please look at
+   Fortran works).  If you have issues on Windows, please look at
    `this CI job <https://github.com/scipy/scipy/blob/main/.github/workflows/windows.yml>`_
    for details.
 
