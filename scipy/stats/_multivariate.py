@@ -3425,9 +3425,10 @@ class special_ortho_group_gen(multi_rv_generic):
 
         dim = self._process_parameters(dim)
 
-        # H represents a (dim, dim) matrix, while D represents the diagonal of a
-        # (dim, dim) diagonal matrix. The algorithm that follows is broadcasted
-        # on the leading shape in `size` to vectorize along samples.
+        # H represents a (dim, dim) matrix, while D represents the diagonal of
+        # a (dim, dim) diagonal matrix. The algorithm that follows is
+        # broadcasted on the leading shape in `size` to vectorize along
+        # samples.
         H = np.empty(size + (dim, dim))
         H[..., :, :] = np.eye(dim)
         D = np.empty(size + (dim,))
@@ -3464,7 +3465,7 @@ class special_ortho_group_gen(multi_rv_generic):
         # Without vectorization this could be written as H = diag(D) @ H,
         # left-multiplication by a diagonal matrix amounts to multiplying each
         # row of H by an element of the diagonal, so we add a dummy axis for
-        # columns
+        # the column index
         H *= D[..., :, None]
         return H
 
