@@ -181,7 +181,9 @@ class interp2d:
     used directly.
 
     The coordinates of the data points to interpolate `xnew` and `ynew`
-    have to be sorted by ascending order. interp2d is legacy and is not
+    have to be sorted by ascending order. 
+    
+    `interp2d` is legacy and is not
     recommended for use in new code. New code should use
     `RegularGridInterpolator` instead.
 
