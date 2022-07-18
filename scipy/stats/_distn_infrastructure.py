@@ -162,6 +162,7 @@ rv = %(name)s(%(shapes)s, loc=0, scale=1)
 _doc_default_example = """\
 Examples
 --------
+>>> import numpy as np
 >>> from scipy.stats import %(name)s
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
@@ -291,6 +292,7 @@ docdict_discrete['frozennote'] = _doc_default_frozen_note
 _doc_default_discrete_example = """\
 Examples
 --------
+>>> import numpy as np
 >>> from scipy.stats import %(name)s
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
@@ -543,6 +545,7 @@ def argsreduce(cond, *args):
 
     Examples
     --------
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> A = rng.random((4, 5))
     >>> B = 2
@@ -1188,6 +1191,7 @@ class rv_generic:
         -----
         Entropy is defined base `e`:
 
+        >>> import numpy as np
         >>> drv = rv_discrete(values=((0, 1), (0.5, 0.5)))
         >>> np.allclose(drv.entropy(), np.log(2.0))
         True
@@ -3110,6 +3114,7 @@ class rv_discrete(rv_generic):
     --------
     Custom made discrete distribution:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> xk = np.arange(7)
     >>> pk = (0.1, 0.2, 0.3, 0.1, 0.1, 0.0, 0.2)
