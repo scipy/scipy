@@ -3425,22 +3425,46 @@ class special_ortho_group_gen(multi_rv_generic):
 
         dim = self._process_parameters(dim)
 
+        # H represents a (dim, dim) matrix, while D represents the diagonal of a
+        # (dim, dim) diagonal matrix. The algorithm that follows is broadcasted
+        # on the leading shape in `size` to vectorize along samples.
         H = np.empty(size + (dim, dim))
         H[..., :, :] = np.eye(dim)
         D = np.empty(size + (dim,))
+
         for n in range(dim-1):
+
+            # x is a vector with length dim-n, xrow and xcol are views of it as
+            # a row vector and column vector respectively. It's important they
+            # are views and not copies because we are going to modify x
+            # in-place.
             x = random_state.normal(size=size + (dim-n,))
             xrow = x[..., None, :]
             xcol = x[..., :, None]
+
+            # This is the squared norm of x, without vectorization it would be
+            # dot(x, x), to have proper broadcasting we use matmul and squeeze
+            # out (convert to scalar) the resulting 1x1 matrix
             norm2 = np.matmul(xrow, xcol).squeeze((-2, -1))
+
             x0 = x[..., 0].copy()
             D[..., n] = np.where(x0 != 0, np.sign(x0), 1)
             x[..., 0] += D[..., n]*np.sqrt(norm2)
+
+            # In renormalizing x we have to append an additional axis with
+            # [..., None] to broadcast the scalar against the vector x
             x /= np.sqrt((norm2 - x0**2 + x[..., 0]**2) / 2.)[..., None]
-            # Householder transformation
+
+            # Householder transformation, without vectorization the RHS can be
+            # written as outer(H @ x, x) (apart from the slicing)
             H[..., :, n:] -= np.matmul(H[..., :, n:], xcol) * xrow
+
         D[..., -1] = (-1)**(dim-1)*D[..., :-1].prod(axis=-1)
-        # Equivalent to np.dot(np.diag(D), H) but faster, apparently
+
+        # Without vectorization this could be written as H = diag(D) @ H,
+        # left-multiplication by a diagonal matrix amounts to multiplying each
+        # row of H by an element of the diagonal, so we add a dummy axis for
+        # columns
         H *= D[..., :, None]
         return H
 
