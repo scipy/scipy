@@ -162,6 +162,7 @@ rv = %(name)s(%(shapes)s, loc=0, scale=1)
 _doc_default_example = """\
 Examples
 --------
+>>> import numpy as np
 >>> from scipy.stats import %(name)s
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
@@ -291,6 +292,7 @@ docdict_discrete['frozennote'] = _doc_default_frozen_note
 _doc_default_discrete_example = """\
 Examples
 --------
+>>> import numpy as np
 >>> from scipy.stats import %(name)s
 >>> import matplotlib.pyplot as plt
 >>> fig, ax = plt.subplots(1, 1)
@@ -543,6 +545,7 @@ def argsreduce(cond, *args):
 
     Examples
     --------
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> A = rng.random((4, 5))
     >>> B = 2
@@ -1165,6 +1168,7 @@ class rv_generic:
         else:  # no valid args
             output = [default.copy() for _ in moments]
 
+        output = [out[()] for out in output]
         if len(output) == 1:
             return output[0]
         else:
@@ -1187,6 +1191,7 @@ class rv_generic:
         -----
         Entropy is defined base `e`:
 
+        >>> import numpy as np
         >>> drv = rv_discrete(values=((0, 1), (0.5, 0.5)))
         >>> np.allclose(drv.entropy(), np.log(2.0))
         True
@@ -1203,7 +1208,7 @@ class rv_generic:
         goodscale = goodargs[0]
         goodargs = goodargs[1:]
         place(output, cond0, self.vecentropy(*goodargs) + log(goodscale))
-        return output
+        return output[()]
 
     def moment(self, order=None, *args, **kwds):
         """non-central moment of distribution of specified order.
@@ -1372,9 +1377,7 @@ class rv_generic:
             res2 *= loc**n
             place(result, i2, res2)
 
-        if result.ndim == 0:
-            return result.item()
-        return result
+        return result[()]
 
     def median(self, *args, **kwds):
         """Median of the distribution.
@@ -1600,7 +1603,7 @@ class rv_generic:
         loc, scale, args = self._unpack_loc_scale(theta)
         if not self._argcheck(*args) or scale <= 0:
             return inf
-        x = asarray((x-loc) / scale)
+        x = (asarray(x)-loc) / scale
         n_log_scale = len(x) * log(scale)
         if np.any(~self._support_mask(x, *args)):
             return inf
@@ -2911,7 +2914,7 @@ class rv_continuous(rv_generic):
 
         if conditional:
             vals /= invfac
-        return vals
+        return np.array(vals)[()]  # make it a numpy scalar like other methods
 
     def _param_info(self):
         shape_info = self._shape_info()
@@ -3111,6 +3114,7 @@ class rv_discrete(rv_generic):
     --------
     Custom made discrete distribution:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> xk = np.arange(7)
     >>> pk = (0.1, 0.2, 0.3, 0.1, 0.1, 0.0, 0.2)

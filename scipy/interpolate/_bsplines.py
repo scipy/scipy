@@ -185,6 +185,7 @@ class BSpline:
     functions active on the base interval.
 
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
     >>> fig, ax = plt.subplots()
     >>> xx = np.linspace(1.5, 4.5, 50)
     >>> ax.plot(xx, [bspline(x, t, c ,k) for x in xx], 'r-', lw=3, label='naive')
@@ -356,6 +357,7 @@ class BSpline:
         Construct a design matrix for a B-spline
 
         >>> from scipy.interpolate import make_interp_spline, BSpline
+        >>> import numpy as np
         >>> x = np.linspace(0, np.pi * 2, 4)
         >>> y = np.sin(x)
         >>> k = 3
@@ -1143,7 +1145,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     --------
 
     Use cubic interpolation on Chebyshev nodes:
-
+    >>> import numpy as np
     >>> def cheb_nodes(N):
     ...     jj = 2.*np.arange(N) + 1
     ...     x = np.cos(np.pi * jj / 2 / N)[::-1]
@@ -1414,7 +1416,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     Examples
     --------
     Generate some noisy data:
-
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> x = np.linspace(-3, 3, 50)
     >>> y = np.exp(-x**2) + 0.1 * rng.standard_normal(50)
