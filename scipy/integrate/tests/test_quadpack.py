@@ -7,6 +7,7 @@ from numpy.testing import (assert_,
 import pytest
 
 from scipy.integrate import quad, dblquad, tplquad, nquad
+from scipy.special import erf, erfc
 from scipy._lib._ccallback import LowLevelCallable
 
 import ctypes
@@ -259,7 +260,52 @@ class TestQuad:
         def func(x0, x1):
             return x0 + x1 + 1 + 2
         assert_quad(dblquad(func, 1, 2, 1, 2),6.)
-        
+
+    @pytest.mark.parametrize("x_lower, x_upper, y_lower, y_upper, expected",
+                             [(-np.inf, 0, -np.inf, 0, np.pi / 4),
+                              (-np.inf, -1, -np.inf, 0,
+                               np.pi / 4 * (erfc(1))),
+                              (-np.inf, 0, -np.inf, -1,
+                               np.pi / 4 * (erfc(1))),
+                              (-np.inf, -1, -np.inf, -1,
+                               np.pi / 4 * (erfc(1) ** 2)),
+                              (-np.inf, 1, -np.inf, 0,
+                               np.pi / 4 * (erf(1) + 1)),
+                              (-np.inf, 0, -np.inf, 1,
+                               np.pi / 4 * (erf(1) + 1)),
+                              (-np.inf, 1, -np.inf, 1,
+                               np.pi / 4 * (erf(1) + 1) ** 2),
+                              (-np.inf, -1, -np.inf, 1,
+                               np.pi / 4 * (erf(1) + 1) * erfc(1)),
+                              (-np.inf, 1, -np.inf, -1,
+                               np.pi / 4 * (erf(1) + 1) * erfc(1)),
+                              (0, np.inf, 0, np.inf, np.pi / 4),
+                              (1, np.inf, 0, np.inf,
+                               np.pi / 4 * (erfc(1))),
+                              (0, np.inf, 1, np.inf,
+                               np.pi / 4 * (erfc(1))),
+                              (1, np.inf, 1, np.inf,
+                               np.pi / 4 * (erfc(1) ** 2)),
+                              (-1, np.inf, 0, np.inf,
+                               np.pi / 4 * (erf(1) + 1)),
+                              (0, np.inf, -1, np.inf,
+                               np.pi / 4 * (erf(1) + 1)),
+                              (-1, np.inf, -1, np.inf,
+                               np.pi / 4 * (erf(1) + 1) ** 2),
+                              (-1, np.inf, 1, np.inf,
+                               np.pi / 4 * (erf(1) + 1) * erfc(1)),
+                              (1, np.inf, -1, np.inf,
+                               np.pi / 4 * (erf(1) + 1) * erfc(1)),
+                              (-np.inf, np.inf, -np.inf, np.inf, np.pi)])
+    def test_double_integral_improper(self, x_lower, x_upper, y_lower, y_upper,
+                                      expected):
+        # The Gaussian Integral.
+        def f(x, y):
+            return np.exp(-x ** 2 - y ** 2)
+
+        assert_quad(dblquad(f, x_lower, x_upper, y_lower, y_upper), expected,
+                    errTol=3e-8)
+
     def test_triple_integral(self):
         # 9) Triple Integral test
         def simpfunc(z, y, x, t):      # Note order of arguments.
