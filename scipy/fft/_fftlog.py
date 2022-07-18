@@ -121,6 +121,7 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
         \int^\infty_0 r^{\mu+1} \exp(-r^2/2) J_\mu(k, r) k dr
         = k^{\mu+1} \exp(-k^2/2) .
 
+    >>> import numpy as np
     >>> from scipy import fft
     >>> import matplotlib.pyplot as plt
 
@@ -135,8 +136,8 @@ def fht(a, dln, mu, offset=0.0, bias=0.0):
     Define the theoretical function (same for input and output).
 
     >>> def theoretical(x, mu):
-    >>>     """Theoretical input/output function: x^(mu+1) exp(-x^2/2)."""
-    >>>     return x**(mu + 1)*np.exp(-x**2/2)
+    ...     """Theoretical input/output function: x^(mu+1) exp(-x^2/2)."""
+    ...     return x**(mu + 1)*np.exp(-x**2/2)
 
     Evaluate the theoretical function at ``r`` and ``k``.
 
