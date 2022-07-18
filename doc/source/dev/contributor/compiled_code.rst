@@ -41,9 +41,13 @@ invokes the C code whose execution you want to debug. For instance
     from scipy.special import hyp2f1
     print(hyp2f1(5.0, 1.0, -1.8, 0.95))
 
+Build SciPy in debug mode::
+
+    python dev.py build -d
+
 Now, you can run::
 
-    gdb --args python runtests.py -g --python mytest.py
+    gdb --args python dev.py python mytest.py
 
 If you didn't compile with debug symbols enabled before, remove the
 ``build`` directory first. While in the debugger::
@@ -54,4 +58,4 @@ If you didn't compile with debug symbols enabled before, remove the
 The execution will now stop at the corresponding C function and you
 can step through it as usual. Instead of plain ``gdb`` you can, of
 course, use your favorite alternative debugger; run it on the
-``python`` binary with arguments ``runtests.py -g --python mytest.py``.
+``python`` binary with arguments ``python dev.py python mytest.py``.

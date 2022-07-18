@@ -136,6 +136,11 @@ class gaussian_kde:
 
     as detailed in [5]_.
 
+    `gaussian_kde` does not currently support data that lies in a
+    lower-dimensional subspace of the space in which it is expressed. For such
+    data, consider performing principle component analysis / dimensionality
+    reduction and using `gaussian_kde` with the transformed data.
+
     References
     ----------
     .. [1] D.W. Scott, "Multivariate Density Estimation: Theory, Practice, and
@@ -204,7 +209,17 @@ class gaussian_kde:
                 raise ValueError("`weights` input should be of length n")
             self._neff = 1/sum(self._weights**2)
 
-        self.set_bandwidth(bw_method=bw_method)
+        try:
+            self.set_bandwidth(bw_method=bw_method)
+        except linalg.LinAlgError as e:
+            msg = ("The data appears to lie in a lower-dimensional subspace "
+                   "of the space in which it is expressed. This has resulted "
+                   "in a singular data covariance matrix, which cannot be "
+                   "treated using the algorithms implemented in "
+                   "`gaussian_kde`. Consider performing principle component "
+                   "analysis / dimensionality reduction and using "
+                   "`gaussian_kde` with the transformed data.")
+            raise linalg.LinAlgError(msg) from e
 
     def evaluate(self, points):
         """Evaluate the estimated pdf on a set of points.

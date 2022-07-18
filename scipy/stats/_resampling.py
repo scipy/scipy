@@ -1315,6 +1315,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     vectorized fashion: the samples ``x`` and ``y`` can be ND arrays, and the
     statistic will be calculated for each axis-slice along `axis`.
 
+    >>> import numpy as np
     >>> def statistic(x, y, axis):
     ...     return np.mean(x, axis=axis) - np.mean(y, axis=axis)
 
