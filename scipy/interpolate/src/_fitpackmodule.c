@@ -10,7 +10,7 @@ static PyObject *fitpack_error;
 
 #define F_INT npy_int64
 #define F_INT_NPY NPY_INT64
-#define F_INT_MAX INTPTR_MAX
+#define F_INT_MAX NPY_MAX_INT64
 
 #if NPY_BITSOF_SHORT == 64
 #define F_INT_PYFMT   "h"
@@ -28,10 +28,20 @@ static PyObject *fitpack_error;
 
 #else
 
-#define F_INT int
-#define F_INT_NPY NPY_INT
+#define F_INT npy_int32
+#define F_INT_NPY NPY_INT32
+#define F_INT_MAX NPY_MAX_INT32
+#if NPY_BITSOF_SHORT == 32
+#define F_INT_PYFMT   "h"
+#elif NPY_BITSOF_INT == 32
 #define F_INT_PYFMT   "i"
-#define F_INT_MAX INT_MAX
+#elif NPY_BITSOF_LONG == 32
+#define F_INT_PYFMT   "l"
+#else
+#error No compatible 32-bit integer size. \
+       Please contact NumPy maintainers and give detailed information about your \
+       compiler and platform
+#endif
 
 #endif
 
@@ -188,8 +198,8 @@ fitpack_bispev(PyObject *dummy, PyObject *args)
     ny = PyArray_DIMS(ap_ty)[0];
     mx = PyArray_DIMS(ap_x)[0];
     my = PyArray_DIMS(ap_y)[0];
-   /* v = INT_MAX/my is largest integer multiple of `my` such that
-       v * my <= INT_MAX
+   /* v = int_max/my is largest integer multiple of `my` such that
+       v * my <= int_max
     */
     if (my != 0 && F_INT_MAX/my < mx) {
         /* Integer overflow */
