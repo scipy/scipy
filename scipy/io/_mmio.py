@@ -11,7 +11,6 @@
 #  http://math.nist.gov/MatrixMarket/
 #
 import os
-import sys
 
 import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
@@ -27,6 +26,7 @@ def asstr(s):
     if isinstance(s, bytes):
         return s.decode('latin1')
     return str(s)
+
 
 def mminfo(source):
     """
@@ -159,7 +159,8 @@ class MMFile:
     FIELD_REAL = 'real'
     FIELD_COMPLEX = 'complex'
     FIELD_PATTERN = 'pattern'
-    FIELD_VALUES = (FIELD_INTEGER, FIELD_UNSIGNED, FIELD_REAL, FIELD_COMPLEX, FIELD_PATTERN)
+    FIELD_VALUES = (FIELD_INTEGER, FIELD_UNSIGNED, FIELD_REAL, FIELD_COMPLEX,
+                    FIELD_PATTERN)
 
     @classmethod
     def _validate_field(self, field):
@@ -741,7 +742,7 @@ class MMFile:
         self.__class__._validate_symmetry(symmetry)
 
         # write initial header line
-        data = '%%MatrixMarket matrix {0} {1} {2}\n'.format(rep, field, symmetry)
+        data = f'%%MatrixMarket matrix {rep} {field} {symmetry}\n'
         stream.write(data.encode('latin1'))
 
         # write comments
@@ -756,7 +757,8 @@ class MMFile:
             data = '%i %i\n' % (rows, cols)
             stream.write(data.encode('latin1'))
 
-            if field in (self.FIELD_INTEGER, self.FIELD_REAL, self.FIELD_UNSIGNED):
+            if field in (self.FIELD_INTEGER, self.FIELD_REAL,
+                         self.FIELD_UNSIGNED):
                 if symmetry == self.SYMMETRY_GENERAL:
                     for j in range(cols):
                         for i in range(rows):
@@ -818,7 +820,8 @@ class MMFile:
                 for r, c in zip(coo.row+1, coo.col+1):
                     data = "%i %i\n" % (r, c)
                     stream.write(data.encode('latin1'))
-            elif field in (self.FIELD_INTEGER, self.FIELD_REAL, self.FIELD_UNSIGNED):
+            elif field in (self.FIELD_INTEGER, self.FIELD_REAL,
+                           self.FIELD_UNSIGNED):
                 for r, c, d in zip(coo.row+1, coo.col+1, coo.data):
                     data = ("%i %i " % (r, c)) + (template % d)
                     stream.write(data.encode('latin1'))
