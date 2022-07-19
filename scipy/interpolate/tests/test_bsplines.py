@@ -6,15 +6,17 @@ import pytest
 
 from scipy.interpolate import (BSpline, BPoly, PPoly, make_interp_spline,
         make_lsq_spline, _bspl, splev, splrep, splprep, splder, splantider,
-         sproot, splint, insert, CubicSpline)
+         sproot, splint, insert, CubicSpline, make_smoothing_spline)
 import scipy.linalg as sl
 from scipy._lib import _pep440
 
 from scipy.interpolate._bsplines import (_not_a_knot, _augknt,
                                         _woodbury_algorithm, _periodic_knots,
-                                         _make_interp_per_full_matr)
+                                         _make_interp_per_full_matr,
+                                         _make_smoothing_spline)
 import scipy.interpolate._fitpack_impl as _impl
 from scipy.interpolate._fitpack import _splint
+import os
 
 
 class TestBSpline:
@@ -1459,3 +1461,78 @@ class TestLSQ:
         for z in [np.nan, np.inf, -np.inf]:
             y[-1] = z
             assert_raises(ValueError, make_lsq_spline, x, y, t)
+
+
+def data_file(basename):
+    return os.path.join(os.path.abspath(os.path.dirname(__file__)),
+                        'data', basename)
+
+
+class TestSmoothingSpline:
+    #
+    # test make_smoothing_spline
+    #
+    def test_invalid_input(self):
+        np.random.seed(1234)
+        n = 100
+        x = np.sort(np.random.random_sample(100) * 4 - 2)
+        y = x**2 * np.sin(4 * x) + x**3 + np.random.normal(0., 1.5, n)
+
+        x_dupl = np.copy(x)
+        x_dupl[0] = x_dupl[1]
+        # ``x`` should be an ascending array
+        with assert_raises(ValueError):
+            make_smoothing_spline(x[::-1], y)
+        with assert_raises(ValueError):
+            make_smoothing_spline(x_dupl, y)
+            
+
+    def test_compare_with_GCVSPL(self):
+        '''
+        Data is generated in the following way:
+        >>> np.random.seed(1234)
+        >>> n = 100
+        >>> x = np.sort(np.random.random_sample(n) * 4 - 2)
+        >>> y = np.sin(x) + np.random.normal(scale=.5, size=n)
+
+        Notes
+        -----
+        We obtain the result of performing the GCV smoothing splines
+        package (by GCVSPL, Woltring) on the sample data points 
+        using its version for Octave (https://github.com/srkuberski/gcvspl).
+        In Octave, we load up ``x`` and ``y`` and then perform the following
+        script:
+        >>> c = gcvsplmex( x, y, 2 );
+        >>> y0 = spldermex( x, c, 2, x, 0 );
+        '''
+        # load the data sample
+        data = np.load(data_file('gcvspl.npz'))
+        # data points
+        x = data['x']
+        y = data['y']
+        
+        y_GCVSPL = data['y_GCVSPL']
+        y_compr = make_smoothing_spline(x, y)(x)
+        assert_allclose(y_compr, y_GCVSPL, atol=1e-5, rtol=1e-6)
+
+
+    def test_ridge_case(self):
+        '''
+        In case the regularization parameter is 0, the resulting spline
+        is an interpolation spline with natural boundary conditions.
+        '''
+        # create data sample
+        np.random.seed(1234)
+        n = 100
+        x = np.sort(np.random.random_sample(100) * 4 - 2)
+        y = x**2 * np.sin(4 * x) + x**3 + np.random.normal(0., 1.5, n)
+
+        # in this case, the matrix of weights does not matter
+        # because it is multiplied by :math:`\lambda` which is 0.
+        spline_GCV = _make_smoothing_spline(x, y, 0.)
+        spline_interp = make_interp_spline(x, y, 3, bc_type='natural')
+
+        grid = np.linspace(x[0], x[-1], 2 * n)
+        assert_allclose(spline_GCV(grid),
+                        spline_interp(grid),
+                        atol=1e-15)
