@@ -52,6 +52,29 @@ def mminfo(source):
         Either 'real', 'complex', 'pattern', or 'integer'.
     symmetry : str
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
+
+    Examples
+    --------
+    >>> from io import StringIO
+    >>> from scipy.io import mminfo
+
+    >>> text = '''%%MatrixMarket matrix coordinate real general
+    ...  5 5 7
+    ...  2 3 1.0
+    ...  3 4 2.0
+    ...  3 5 3.0
+    ...  4 1 4.0
+    ...  4 2 5.0
+    ...  4 3 6.0
+    ...  4 4 7.0
+    ... '''
+
+
+    ``mminfo(source)`` returns the number of rows, number of columns,
+    format, field type and symmetry attribute of the source file.
+
+    >>> mminfo(StringIO(text))
+    (5, 5, 7, 'coordinate', 'real', 'general')
     """
     return MMFile.info(source)
 
@@ -73,6 +96,35 @@ def mmread(source):
     a : ndarray or coo_matrix
         Dense or sparse matrix depending on the matrix format in the
         Matrix Market file.
+
+    Examples
+    --------
+    >>> from io import StringIO
+    >>> from scipy.io import mmread
+
+    >>> text = '''%%MatrixMarket matrix coordinate real general
+    ...  5 5 7
+    ...  2 3 1.0
+    ...  3 4 2.0
+    ...  3 5 3.0
+    ...  4 1 4.0
+    ...  4 2 5.0
+    ...  4 3 6.0
+    ...  4 4 7.0
+    ... '''
+
+    ``mmread(source)`` returns the data as sparse matrix in COO format.
+
+    >>> m = mmread(StringIO(text))
+    >>> m
+    <5x5 sparse matrix of type '<class 'numpy.float64'>'
+    with 7 stored elements in COOrdinate format>
+    >>> m.A
+    array([[0., 0., 0., 0., 0.],
+           [0., 0., 1., 0., 0.],
+           [0., 0., 0., 2., 3.],
+           [4., 5., 6., 7., 0.],
+           [0., 0., 0., 0., 0.]])
     """
     return MMFile().read(source)
 
@@ -80,7 +132,7 @@ def mmread(source):
 
 
 def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
-    """
+    r"""
     Writes the sparse or dense array `a` to Matrix Market file-like `target`.
 
     Parameters
@@ -99,6 +151,93 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
         If symmetry is None the symmetry type of 'a' is determined by its
         values.
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    >>> from io import BytesIO
+    >>> import numpy as np
+    >>> from scipy.sparse import coo_matrix
+    >>> from scipy.io import mmwrite
+
+    Write a small NumPy array to a matrix market file.  The file will be
+    written in the ``'array'`` format.
+
+    >>> a = np.array([[1.0, 0, 0, 0], [0, 2.5, 0, 6.25]])
+    >>> target = BytesIO()
+    >>> mmwrite(target, a)
+    >>> print(target.getvalue().decode('latin1'))
+    %%MatrixMarket matrix array real general
+    %
+    2 4
+    1.0000000000000000e+00
+    0.0000000000000000e+00
+    0.0000000000000000e+00
+    2.5000000000000000e+00
+    0.0000000000000000e+00
+    0.0000000000000000e+00
+    0.0000000000000000e+00
+    6.2500000000000000e+00
+
+    Add a comment to the output file, and set the precision to 3.
+
+    >>> target = BytesIO()
+    >>> mmwrite(target, a, comment='\n Some test data.\n', precision=3)
+    >>> print(target.getvalue().decode('latin1'))
+    %%MatrixMarket matrix array real general
+    %
+    % Some test data.
+    %
+    2 4
+    1.000e+00
+    0.000e+00
+    0.000e+00
+    2.500e+00
+    0.000e+00
+    0.000e+00
+    0.000e+00
+    6.250e+00
+
+    Convert to a sparse matrix before calling ``mmwrite``.  This will
+    result in the output format being ``'coordinate'`` rather than
+    ``'array'``.
+
+    >>> target = BytesIO()
+    >>> mmwrite(target, coo_matrix(a), precision=3)
+    >>> print(target.getvalue().decode('latin1'))
+    %%MatrixMarket matrix coordinate real general
+    %
+    2 4 3
+    1 1 1.00e+00
+    2 2 2.50e+00
+    2 4 6.25e+00
+
+    Write a complex Hermitian array to a matrix market file.  Note that
+    only six values are actually written to the file; the other values
+    are implied by the symmetry.
+
+    >>> z = np.array([[3, 1+2j, 4-3j], [1-2j, 1, -5j], [4+3j, 5j, 2.5]])
+    >>> z
+    array([[ 3. +0.j,  1. +2.j,  4. -3.j],
+           [ 1. -2.j,  1. +0.j, -0. -5.j],
+           [ 4. +3.j,  0. +5.j,  2.5+0.j]])
+
+    >>> target = BytesIO()
+    >>> mmwrite(target, z, precision=2)
+    >>> print(target.getvalue().decode('latin1'))
+    %%MatrixMarket matrix array complex hermitian
+    %
+    3 3
+    3.00e+00 0.00e+00
+    1.00e+00 -2.00e+00
+    4.00e+00 3.00e+00
+    1.00e+00 0.00e+00
+    0.00e+00 5.00e+00
+    2.50e+00 0.00e+00
+
     """
     MMFile().write(target, a, comment, field, precision, symmetry)
 
