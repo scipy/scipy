@@ -852,14 +852,3 @@ def _is_fromfile_compatible(stream):
 
     bad_cls = tuple(bad_cls)
     return not isinstance(stream, bad_cls)
-
-
-# -----------------------------------------------------------------------------
-if __name__ == '__main__':
-    import time
-    for filename in sys.argv[1:]:
-        print('Reading', filename, '...', end=' ')
-        sys.stdout.flush()
-        t = time.time()
-        mmread(filename)
-        print('took %s seconds' % (time.time() - t))
