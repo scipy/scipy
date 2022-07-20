@@ -1457,14 +1457,15 @@ class TestSpecialOrthoGroup:
 
 class TestOrthoGroup:
     def test_reproducibility(self):
-        np.random.seed(515)
+        seed = 514
+        np.random.seed(seed)
         x = ortho_group.rvs(3)
-        x2 = ortho_group.rvs(3, random_state=515)
+        x2 = ortho_group.rvs(3, random_state=seed)
         # Note this matrix has det -1, distinguishing O(N) from SO(N)
         assert_almost_equal(np.linalg.det(x), -1)
-        expected = np.array([[0.94449759, -0.21678569, -0.24683651],
-                             [-0.13147569, -0.93800245, 0.3207266],
-                             [0.30106219, 0.27047251, 0.9144431]])
+        expected = np.array([[0.381686, -0.090374, 0.919863],
+                             [0.905794, -0.161537, -0.391718],
+                             [-0.183993, -0.98272, -0.020204]])
         assert_array_almost_equal(x, expected)
         assert_array_almost_equal(x2, expected)
 
@@ -1566,10 +1567,10 @@ class TestRandomCorrelation:
         eigs = (.5, .8, 1.2, 1.5)
         x = random_correlation.rvs(eigs)
         x2 = random_correlation.rvs(eigs, random_state=514)
-        expected = np.array([[1., -0.20387311, 0.18366501, -0.04953711],
-                             [-0.20387311, 1., -0.24351129, 0.06703474],
-                             [0.18366501, -0.24351129, 1., 0.38530195],
-                             [-0.04953711, 0.06703474, 0.38530195, 1.]])
+        expected = np.array([[1., -0.184851, 0.109017, -0.227494],
+                             [-0.184851, 1., 0.231236, 0.326669],
+                             [0.109017, 0.231236, 1., -0.178912],
+                             [-0.227494, 0.326669, -0.178912, 1.]])
         assert_array_almost_equal(x, expected)
         assert_array_almost_equal(x2, expected)
 

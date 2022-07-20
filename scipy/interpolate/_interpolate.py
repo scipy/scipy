@@ -112,8 +112,8 @@ class interp2d:
 
     If `z` is a vector value, consider using `interpn`.
 
-    Note that calling `interp2d` with NaNs present in input values results in
-    undefined behaviour.
+    Note that calling `interp2d` with NaNs present in input values, or with
+    decreasing values in `x` an `y` results in undefined behaviour.
 
     Methods
     -------
@@ -123,6 +123,7 @@ class interp2d:
     ----------
     x, y : array_like
         Arrays defining the data point coordinates.
+        The data point coordinates need to be sorted by increasing order.
 
         If the points lie on a regular grid, `x` can specify the column
         coordinates and `y` the row coordinates, for example::
@@ -164,6 +165,10 @@ class interp2d:
         Spline interpolation based on FITPACK
     BivariateSpline : a more recent wrapper of the FITPACK routines
     interp1d : 1-D version of this function
+    RegularGridInterpolator : interpolation on a regular or rectilinear grid
+        in arbitrary dimensions.
+    interpn : Multidimensional interpolation on regular grids (wraps
+        `RegularGridInterpolator` and `RectBivariateSpline`).
 
     Notes
     -----
@@ -174,6 +179,12 @@ class interp2d:
     The interpolator is constructed by `bisplrep`, with a smoothing factor
     of 0. If more control over smoothing is needed, `bisplrep` should be
     used directly.
+
+    The coordinates of the data points to interpolate `xnew` and `ynew`
+    have to be sorted by ascending order.
+    `interp2d` is legacy and is not
+    recommended for use in new code. New code should use
+    `RegularGridInterpolator` instead.
 
     Examples
     --------
