@@ -60,7 +60,7 @@ def _check_kkt(res, fun, constraints):
         DhTlam.append(Dh.T @ lam)
 
     # stationarity
-    assert_allclose(gradf + np.sum(DgTmu, axis=0) + np.sum(DhTlam, axis=0),
+    assert_allclose(gradf - np.sum(DgTmu, axis=0) - np.sum(DhTlam, axis=0),
                     0, atol=1e-6)
 
 
@@ -706,6 +706,31 @@ class TestSLSQP:
 
         x0 = [0.4149, 0.1701]
         bounds = [(0, 1), (-0.5, 2)]
+        constraints = [{'type': 'ineq', 'fun': g},
+                       {'type': 'eq', 'fun': h}]
+        res = minimize(fun, x0, bounds=bounds, constraints=constraints,
+                       method='slsqp')
+
+        _check_kkt(res, fun, constraints)
+
+    def test_kkt_constrained_stackexchange(self):
+        # Check test with example from:
+        # https://math.stackexchange.com/questions/3056670/kkt-condition-with-equality-and-inequality-constraints  # noqa
+
+        def fun(x):
+            x1, x2 = x
+            return (x1 - 3)**2 + (x2 - 2)**2
+
+        def g(x):
+            x1, x2 = x
+            return -np.array([x1**2 + x2**2 - 5])
+
+        def h(x):
+            x1, x2 = x
+            return np.array([x1 + 2*x2 - 4])
+
+        x0 = [2, 1]
+        bounds = [(0, None), (0, None)]
         constraints = [{'type': 'ineq', 'fun': g},
                        {'type': 'eq', 'fun': h}]
         res = minimize(fun, x0, bounds=bounds, constraints=constraints,
