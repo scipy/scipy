@@ -498,6 +498,8 @@ class TestAndersonKSamp:
         attributes = ('statistic', 'critical_values', 'significance_level')
         check_named_results(res, attributes)
 
+        assert_equal(res.significance_level, res.pvalue)
+
 
 class TestAnsari:
 
