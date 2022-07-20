@@ -1679,7 +1679,7 @@ class PoissonDisk(QMCEngine):
     --------
     Generate a 2D sample using a `radius` of 0.2.
 
-    >>> import numpy
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from matplotlib.collections import PatchCollection
     >>> from scipy.stats import qmc
