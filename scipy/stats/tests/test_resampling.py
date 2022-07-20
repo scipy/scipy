@@ -166,33 +166,6 @@ def test_bootstrap_vectorized(method, axis, paired):
     assert_equal(res2.standard_error.shape, result_shape)
 
 
-def test_bootstrap_param_vectorized():
-    # Test that bootstrap's  parameter `vectorized` is working as expected
-    rng = np.random.default_rng(75245098234592)
-    sample = rng.random(size=10)
-    data = (sample,)
-
-    def options():
-        return {'method': 'percentile', 'n_resamples': 100,
-                'random_state': np.random.default_rng(892435923458248)}
-
-    def statistic(x, axis):
-        assert x.ndim > 1
-        return np.mean(x, axis=axis)
-
-    fun = stats.bootstrap
-    res = fun(data, statistic, vectorized=None, **options())
-    ref = fun(data, statistic, vectorized=True, **options())
-    assert res.standard_error == ref.standard_error
-
-    def statistic(x):
-        assert x.ndim == 1
-        return np.mean(x)
-    res = fun(data, statistic, vectorized=None, **options())
-    ref = fun(data, statistic, vectorized=False, **options())
-    assert res.standard_error == ref.standard_error
-
-
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
 def test_bootstrap_against_theory(method):
     # based on https://www.statology.org/confidence-intervals-python/
@@ -665,35 +638,6 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
 
-    def test_vectorized(self):
-        # test that parameter `vectorized` is working as expected
-        rng = np.random.default_rng(75245098234592)
-        sample = rng.random(size=10)
-
-        def get_rvs():
-            rng = np.random.default_rng(892435923458248)
-
-            def rvs(size):
-                return stats.norm.rvs(size=size, random_state=rng)
-
-            return rvs
-
-        def statistic(x, axis):
-            assert x.ndim > 1 or np.array_equal(x, sample)
-            return np.mean(x, axis=axis)
-
-        fun = stats.monte_carlo_test
-        res = fun(sample, get_rvs(), statistic, vectorized=None)
-        ref = fun(sample, get_rvs(), statistic, vectorized=True)
-        assert res.pvalue == ref.pvalue
-
-        def statistic(x):
-            assert x.ndim == 1
-            return np.mean(x)
-        res = fun(sample, get_rvs(), statistic, vectorized=None)
-        ref = fun(sample, get_rvs(), statistic, vectorized=False)
-        assert res.pvalue == ref.pvalue
-
     @pytest.mark.parametrize('alternative', ("less", "greater"))
     @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
     def test_against_ks_1samp(self, alternative, a):
@@ -937,32 +881,6 @@ class TestPermutationTest:
 
         res = stats.permutation_test((x, y), statistic, **kwds)
         assert_equal(res.null_distribution.size, exact_size)
-
-    def test_vectorized(self):
-        # Test that bootstrap's  parameter `vectorized` is working as expected
-        rng = np.random.default_rng(75245098234592)
-        sample = rng.random(size=10)
-        data = (sample,)
-
-        def options():
-            return {'n_resamples': 100, 'permutation_type': 'samples',
-                    'random_state': np.random.default_rng(892435923458248)}
-
-        def statistic(x, axis):
-            assert x.ndim > 1 or np.array_equal(x, sample)
-            return np.mean(x, axis=axis)
-
-        fun = stats.permutation_test
-        res = fun(data, statistic, vectorized=None, **options())
-        ref = fun(data, statistic, vectorized=True, **options())
-        assert res.pvalue == ref.pvalue
-
-        def statistic(x):
-            assert x.ndim == 1
-            return np.mean(x)
-        res = fun(data, statistic, vectorized=None, **options())
-        ref = fun(data, statistic, vectorized=False, **options())
-        assert res.pvalue == ref.pvalue
 
     # -- Randomized Permutation Tests -- #
 
@@ -1517,3 +1435,38 @@ def test_all_partitions_concatenated():
 
     assert_equal(counter, expected)
     assert_equal(len(all_partitions), expected)
+
+
+@pytest.mark.parametrize('fun_name',
+                         ['bootstrap', 'permutation_test', 'monte_carlo_test'])
+def test_parameter_vectorized(fun_name):
+    # Check that parameter `vectorized` is working as desired for all
+    # resampling functions. Results don't matter; just don't fail asserts.
+    rng = np.random.default_rng(75245098234592)
+    sample = rng.random(size=10)
+
+    def rvs(size):  # needed by `monte_carlo_test`
+        return stats.norm.rvs(size=size, random_state=rng)
+
+    fun_options = {'bootstrap': {'data': (sample,), 'random_state': rng,
+                                 'method': 'percentile'},
+                   'permutation_test': {'data': (sample,), 'random_state': rng,
+                                        'permutation_type': 'samples'},
+                   'monte_carlo_test': {'sample': sample, 'rvs': rvs}}
+    common_options = {'n_resamples': 100}
+
+    fun = getattr(stats, fun_name)
+    options = fun_options[fun_name]
+    options.update(common_options)
+
+    def statistic(x, axis):
+        assert x.ndim > 1 or np.array_equal(x, sample)
+        return np.mean(x, axis=axis)
+    fun(statistic=statistic, vectorized=None, **options)
+    fun(statistic=statistic, vectorized=True, **options)
+
+    def statistic(x):
+        assert x.ndim == 1
+        return np.mean(x)
+    fun(statistic=statistic, vectorized=None, **options)
+    fun(statistic=statistic, vectorized=False, **options)
