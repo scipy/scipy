@@ -1,7 +1,5 @@
 # -*- coding: utf-8 -*-
 import numpy as np
-from ._unuran import unuran_wrapper
-from scipy._lib.deprecation import _deprecated
 from scipy._lib._util import check_random_state
 
 
