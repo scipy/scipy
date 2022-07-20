@@ -8,14 +8,6 @@ class for generic tests" section.
 
 """
 
-__usage__ = """
-Build sparse:
-  python setup.py build
-Run tests if scipy is installed:
-  python -c 'import scipy;scipy.sparse.test()'
-Run tests if sparse is not installed:
-  python tests/test_base.py
-"""
 
 import contextlib
 import functools
