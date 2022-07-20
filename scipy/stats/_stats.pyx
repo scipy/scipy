@@ -740,8 +740,8 @@ def gaussian_kernel_estimate(points, values, xi, covariance_cho, dtype,
         raise ValueError("Covariance matrix must match data dims")
 
     # Rescale the data
-    points_ = linalg.solve_triangular(covariance_cho, points.T, lower=True).T
-    xi_ = linalg.solve_triangular(covariance_cho, xi.T, lower=True).T
+    points_ = linalg.solve_triangular(covariance_cho, points.T, lower=False).T
+    xi_ = linalg.solve_triangular(covariance_cho, xi.T, lower=False).T
 
     points_ = np.array(points_).astype(dtype)
     xi_ = np.array(xi_).astype(dtype)

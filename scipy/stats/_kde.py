@@ -255,30 +255,6 @@ class gaussian_kde:
             self.dataset.T, self.weights[:, None],
             points.T, self.covariance_cho, output_dtype)
 
-        precision = self.inv_cov
-        dtype = np.float64
-        xi = points.T
-        points = self.dataset.T
-
-        x = xi
-        A = self.covariance
-        P = linalg.inv(A)
-        Lp = linalg.cholesky(P)
-        res = np.dot(x, Lp)
-
-        whitening = np.linalg.cholesky(precision).astype(dtype, copy=False)
-        points_ = np.dot(points, whitening).astype(dtype, copy=False)
-        xi_ = np.dot(xi, whitening).astype(dtype, copy=False)
-
-        JAJ = A[::-1, ::-1]
-        L2 = linalg.cholesky(JAJ)
-        JL2J = L2[::-1, ::-1]
-        res2 = linalg.solve_triangular(JL2J, x.T, lower=True).T
-
-        covariance_cho = self.covariance_cho
-        points2_ = linalg.solve_triangular(covariance_cho, points.T, lower=True).T
-        xi2_ = linalg.solve_triangular(covariance_cho, xi.T, lower=True).T
-
         return result[:, 0]
 
     __call__ = evaluate
@@ -593,7 +569,7 @@ class gaussian_kde:
                                                aweights=self.weights))
             # cho_solve returns a pair (ndarray, bool)
             self._data_cov_cho = linalg.cholesky(
-                self._data_covariance[::-1, ::-1])[::-1, ::-1].copy()
+                (self._data_covariance[::-1, ::-1]).T)[::-1, ::-1].copy()
 
         self.covariance = self._data_covariance * self.factor**2
 
