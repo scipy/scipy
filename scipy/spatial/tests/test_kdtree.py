@@ -783,7 +783,7 @@ def test_kdtree_query_pairs(kdtree_type):
 
 
 def test_query_pairs_eps(kdtree_type):
-    spacing = np.sqrt(2) 
+    spacing = np.sqrt(2)
     # irrational spacing to have potential rounding errors
     x_range = np.linspace(0, 3 * spacing, 4)
     y_range = np.linspace(0, 3 * spacing, 4)
