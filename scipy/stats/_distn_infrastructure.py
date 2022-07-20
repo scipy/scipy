@@ -10,14 +10,12 @@ import re
 import types
 import warnings
 from itertools import zip_longest
-from collections import namedtuple
 
 from scipy._lib import doccer
-from scipy._lib._util import _lazywhere
 from ._distr_params import distcont, distdiscrete
 from scipy._lib._util import check_random_state
 
-from scipy.special import (comb, chndtr, entr, xlogy, ive)
+from scipy.special import comb, entr
 
 # for root finding for continuous distribution ppf, and max likelihood
 # estimation

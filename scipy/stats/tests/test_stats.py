@@ -31,7 +31,6 @@ from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
 from .common_tests import check_named_results
-from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
@@ -1973,6 +1972,7 @@ class TestRegression:
         with assert_raises(ValueError, match=msg):
             stats.linregress(x, y)
 
+
 def test_theilslopes():
     # Basic slope test.
     slope, intercept, lower, upper = stats.theilslopes([0,1,1])
@@ -3765,6 +3765,7 @@ class TestKSTest:
         self._test_kstest_and_ks1samp(x, 'less', mode='exact')
 
     # missing: no test that uses *args
+
 
 class TestKSOneSample:
     """Tests kstest and ks_samp 1-samples with K-S various sizes, alternatives, modes."""
