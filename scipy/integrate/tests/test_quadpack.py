@@ -17,11 +17,11 @@ from scipy._lib._ccallback_c import sine_ctypes
 import scipy.integrate._test_multivariate as clib_test
 
 
-def assert_quad(value_and_err, tabled_value, errTol=1.5e-8):
+def assert_quad(value_and_err, tabled_value, error_tolerance=1.5e-8):
     value, err = value_and_err
     assert_allclose(value, tabled_value, atol=err, rtol=0)
-    if errTol is not None:
-        assert_array_less(err, errTol)
+    if error_tolerance is not None:
+        assert_array_less(err, error_tolerance)
 
 
 def get_clib_test_routine(name, restype, *argtypes):
@@ -204,7 +204,7 @@ class TestQuad:
                         arctan(2.0**a)) /
                        (4.0**(-a) + 1))
         assert_quad(quad(myfunc, 0, 5, args=0.4, weight='cauchy', wvar=2.0),
-                    tabledValue, errTol=1.9e-8)
+                    tabledValue, error_tolerance=1.9e-8)
 
     def test_b_less_than_a(self):
         def f(x, p, q):
@@ -325,7 +325,7 @@ class TestQuad:
         assert_quad(
             dblquad(f, x_lower, x_upper, y_lower, y_upper),
             expected,
-            errTol=3e-8
+            error_tolerance=3e-8
         )
 
     def test_triple_integral(self):
@@ -500,7 +500,7 @@ class TestQuad:
         assert_quad(
             tplquad(f, x_lower, x_upper, y_lower, y_upper, z_lower, z_upper),
             expected,
-            errTol=6e-8
+            error_tolerance=6e-8
         )
 
 
