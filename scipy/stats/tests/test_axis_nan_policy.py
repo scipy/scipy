@@ -11,7 +11,7 @@ import pytest
 
 import numpy as np
 from numpy.lib import NumpyVersion
-from numpy.testing import assert_allclose, assert_equal
+from numpy.testing import assert_allclose, assert_equal, suppress_warnings
 from scipy import stats
 from scipy.stats._axis_nan_policy import _masked_arrays_2_sentinel_arrays
 
@@ -22,12 +22,22 @@ axis_nan_policy_cases = [
     (stats.kruskal, tuple(), dict(), 3, 2, False, None),  # 4 samples is slow
     (stats.ranksums, ('less',), dict(), 2, 2, False, None),
     (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, 2, False, None),
-    (stats.wilcoxon, ('pratt',), {'mode': 'auto'}, 2, 2, True, None),
-    (stats.wilcoxon, tuple(), dict(), 1, 2, True, None),
+    (stats.wilcoxon, ('pratt',), {'mode': 'auto'}, 2, 2, True,
+     lambda res: (res.statistic, res.pvalue)),
+    (stats.wilcoxon, tuple(), dict(), 1, 2, True,
+     lambda res: (res.statistic, res.pvalue)),
+    (stats.wilcoxon, tuple(), {'mode': 'approx'}, 1, 3, True,
+     lambda res: (res.statistic, res.pvalue, res.zstatistic)),
     (stats.gmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.hmean, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.pmean, (1.42,), dict(), 1, 1, False, lambda x: (x,)),
     (stats.kurtosis, tuple(), dict(), 1, 1, False, lambda x: (x,)),
     (stats.skew, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.kstat, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.kstatvar, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.moment, tuple(), dict(), 1, 1, False, lambda x: (x,)),
+    (stats.moment, tuple(), dict(moment=[1, 2]), 1, 2, False, None),
+    (stats.jarque_bera, tuple(), dict(), 1, 2, False, None),
 ]
 
 # If the message is one of those expected, put nans in
@@ -46,7 +56,13 @@ too_small_messages = {"The input contains nan",  # for nan_policy="raise"
                       "At least one observation is required",
                       "zero-size array to reduction operation maximum",
                       "`x` and `y` must be of nonzero size.",
-                      "The exact distribution of the Wilcoxon test"}
+                      "The exact distribution of the Wilcoxon test",
+                      "Data input must not be empty"}
+
+# If the message is one of these, results of the function may be inaccurate,
+# but NaNs are not to be placed
+inaccuracy_messages = {"Precision loss occurred in moment calculation",
+                       "Sample size too small for normal approximation."}
 
 
 def _mixed_data_generator(n_samples, n_repetitions, axis, rng,
@@ -228,7 +244,8 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             # hypothesis tests raise errors instead of returning nans .
             # For vectorized calls, we put nans in the corresponding elements
             # of the output.
-            except (RuntimeWarning, ValueError, ZeroDivisionError) as e:
+            except (RuntimeWarning, UserWarning, ValueError,
+                    ZeroDivisionError) as e:
 
                 # whatever it is, make sure same error is raised by both
                 # `nan_policy_1d` and `hypotest`
@@ -242,6 +259,16 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
                 if any([str(e).startswith(message)
                         for message in too_small_messages]):
                     res1d = np.full(n_outputs, np.nan)
+                elif any([str(e).startswith(message)
+                          for message in inaccuracy_messages]):
+                    with suppress_warnings() as sup:
+                        sup.filter(RuntimeWarning)
+                        sup.filter(UserWarning)
+                        res1d = nan_policy_1d(hypotest, data1d, unpacker,
+                                              *args, n_outputs=n_outputs,
+                                              nan_policy=nan_policy,
+                                              paired=paired, _no_deco=True,
+                                              **kwds)
                 else:
                     raise e
         statistics[i] = res1d[0]
@@ -257,11 +284,19 @@ def _axis_nan_policy_test(hypotest, args, kwds, n_samples, n_outputs, paired,
             hypotest(*data, axis=axis, nan_policy=nan_policy, *args, **kwds)
 
     else:
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with suppress_warnings() as sup, \
+             np.errstate(divide='ignore', invalid='ignore'):
+            sup.filter(RuntimeWarning, "Precision loss occurred in moment")
+            sup.filter(UserWarning, "Sample size too small for normal "
+                                    "approximation.")
             res = unpacker(hypotest(*data, axis=axis, nan_policy=nan_policy,
                                     *args, **kwds))
 
-        assert_equal(res[0], statistics)
+        if hypotest.__name__ in {"gmean"}:
+            assert_allclose(res[0], statistics, rtol=2e-16)
+        else:
+            assert_equal(res[0], statistics)
+
         assert_equal(res[0].dtype, statistics.dtype)
         if len(res) == 2:
             assert_equal(res[1], pvalues)
@@ -347,6 +382,82 @@ def test_axis_nan_policy_axis_is_None(hypotest, args, kwds, n_samples,
                 assert_equal(res1dc, res1da)
 
 
+# Test keepdims for:
+#     - single-output and multi-output functions (gmean and mannwhitneyu)
+#     - Axis negative, positive, None, and tuple
+#     - 1D with no NaNs
+#     - 1D with NaN propagation
+#     - Zero-sized output
+@pytest.mark.parametrize("nan_policy", ("omit", "propagate"))
+@pytest.mark.parametrize(
+    ("hypotest", "args", "kwds", "n_samples", "unpacker"),
+    ((stats.gmean, tuple(), dict(), 1, lambda x: (x,)),
+     (stats.mannwhitneyu, tuple(), {'method': 'asymptotic'}, 2, None))
+)
+@pytest.mark.parametrize(
+    ("sample_shape", "axis_cases"),
+    (((2, 3, 3, 4), (None, 0, -1, (0, 2), (1, -1), (3, 1, 2, 0))),
+     ((10, ), (0, -1)),
+     ((20, 0), (0, 1)))
+)
+def test_keepdims(hypotest, args, kwds, n_samples, unpacker,
+                  sample_shape, axis_cases, nan_policy):
+    # test if keepdims parameter works correctly
+    if not unpacker:
+        def unpacker(res):
+            return res
+    rng = np.random.default_rng(0)
+    data = [rng.random(sample_shape) for _ in range(n_samples)]
+    nan_data = [sample.copy() for sample in data]
+    nan_mask = [rng.random(sample_shape) < 0.2 for _ in range(n_samples)]
+    for sample, mask in zip(nan_data, nan_mask):
+        sample[mask] = np.nan
+    for axis in axis_cases:
+        expected_shape = list(sample_shape)
+        if axis is None:
+            expected_shape = np.ones(len(sample_shape))
+        else:
+            if isinstance(axis, int):
+                expected_shape[axis] = 1
+            else:
+                for ax in axis:
+                    expected_shape[ax] = 1
+        expected_shape = tuple(expected_shape)
+        res = unpacker(hypotest(*data, *args, axis=axis, keepdims=True,
+                                **kwds))
+        res_base = unpacker(hypotest(*data, *args, axis=axis, keepdims=False,
+                                     **kwds))
+        nan_res = unpacker(hypotest(*nan_data, *args, axis=axis,
+                                    keepdims=True, nan_policy=nan_policy,
+                                    **kwds))
+        nan_res_base = unpacker(hypotest(*nan_data, *args, axis=axis,
+                                         keepdims=False,
+                                         nan_policy=nan_policy, **kwds))
+        for r, r_base, rn, rn_base in zip(res, res_base, nan_res,
+                                          nan_res_base):
+            assert r.shape == expected_shape
+            r = np.squeeze(r, axis=axis)
+            assert_equal(r, r_base)
+            assert rn.shape == expected_shape
+            rn = np.squeeze(rn, axis=axis)
+            assert_equal(rn, rn_base)
+
+
+@pytest.mark.parametrize(("fun", "nsamp"),
+                         [(stats.kstat, 1),
+                          (stats.kstatvar, 1)])
+def test_hypotest_back_compat_no_axis(fun, nsamp):
+    m, n = 8, 9
+
+    rng = np.random.default_rng(0)
+    x = rng.random((nsamp, m, n))
+    res = fun(*x)
+    res2 = fun(*x, _no_deco=True)
+    res3 = fun([xi.ravel() for xi in x])
+    assert_equal(res, res2)
+    assert_equal(res, res3)
+
+
 @pytest.mark.parametrize(("axis"), (0, 1, 2))
 def test_axis_nan_policy_decorated_positional_axis(axis):
     # Test for correct behavior of function decorated with
@@ -380,12 +491,12 @@ def test_axis_nan_policy_decorated_positional_args():
     x[0, 0, 0, 0] = np.nan
     stats.kruskal(*x)
 
-    message = "kruskal() got an unexpected keyword argument 'args'"
+    message = "kruskal() got an unexpected keyword argument 'samples'"
     with pytest.raises(TypeError, match=re.escape(message)):
-        stats.kruskal(args=x)
+        stats.kruskal(samples=x)
 
     with pytest.raises(TypeError, match=re.escape(message)):
-        stats.kruskal(*x, args=x)
+        stats.kruskal(*x, samples=x)
 
 
 def test_axis_nan_policy_decorated_keyword_samples():
@@ -492,6 +603,9 @@ def _check_arrays_broadcastable(arrays, axis):
 def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
     # test for correct output shape when at least one input is empty
 
+    if unpacker is None:
+        unpacker = lambda res: (res[0], res[1])  # noqa: E731
+
     def small_data_generator(n_samples, n_dims):
 
         def small_sample_generator(n_dims):
@@ -529,12 +643,10 @@ def test_empty(hypotest, args, kwds, n_samples, n_outputs, paired, unpacker):
                     expected = np.mean(concat, axis=axis) * np.nan
 
                 res = hypotest(*samples, *args, axis=axis, **kwds)
+                res = unpacker(res)
 
-                if hasattr(res, 'statistic'):
-                    assert_equal(res.statistic, expected)
-                    assert_equal(res.pvalue, expected)
-                else:
-                    assert_equal(res, expected)
+                for i in range(n_outputs):
+                    assert_equal(res[i], expected)
 
             except ValueError:
                 # confirm that the arrays truly are not broadcastable
@@ -775,13 +887,13 @@ def test_other_axis_tuples(axis):
 
     if len(set(axis)) != len(axis):
         message = "`axis` must contain only distinct elements"
-        with pytest.raises(ValueError, match=re.escape(message)):
+        with pytest.raises(np.AxisError, match=re.escape(message)):
             stats.mannwhitneyu(x, y, axis=axis_original)
         return
 
     if axis[0] < 0 or axis[-1] > 2:
         message = "`axis` is out of bounds for array of dimension 3"
-        with pytest.raises(ValueError, match=re.escape(message)):
+        with pytest.raises(np.AxisError, match=re.escape(message)):
             stats.mannwhitneyu(x, y, axis=axis_original)
         return
 
@@ -806,14 +918,17 @@ def test_other_axis_tuples(axis):
     np.testing.assert_array_equal(res, res2)
 
 
-@pytest.mark.parametrize(("weighted_fun_name"), ["gmean", "hmean"])
-def test_gmean_mixed_mask_nan_weights(weighted_fun_name):
+@pytest.mark.parametrize(("weighted_fun_name"), ["gmean", "hmean", "pmean"])
+def test_mean_mixed_mask_nan_weights(weighted_fun_name):
     # targeted test of _axis_nan_policy_factory with 2D masked sample:
     # omitting samples with masks and nan_policy='omit' are equivalent
     # also checks paired-sample sentinel value removal
 
-    weighted_fun = getattr(stats, weighted_fun_name)
-    weighted_fun_ma = getattr(stats.mstats, weighted_fun_name)
+    if weighted_fun_name == 'pmean':
+        def weighted_fun(a, **kwargs):
+            return stats.pmean(a, p=0.42, **kwargs)
+    else:
+        weighted_fun = getattr(stats, weighted_fun_name)
 
     m, n = 3, 20
     axis = -1
@@ -863,14 +978,17 @@ def test_gmean_mixed_mask_nan_weights(weighted_fun_name):
         res4 = weighted_fun(a_masked3, weights=b_masked3,
                             nan_policy='propagate', axis=axis)
         # Would test with a_masked3/b_masked3, but there is a bug in np.average
-        # that causes a bug in _no_deco gmean with masked weights. Would use
+        # that causes a bug in _no_deco mean with masked weights. Would use
         # np.ma.average, but that causes other problems. See numpy/numpy#7330.
-        res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
-                               axis=axis, _no_deco=True)
+        if weighted_fun_name not in {'pmean'}:
+            weighted_fun_ma = getattr(stats.mstats, weighted_fun_name)
+            res5 = weighted_fun_ma(a_masked4, weights=b_masked4,
+                                   axis=axis, _no_deco=True)
 
     np.testing.assert_array_equal(res1, res)
     np.testing.assert_array_equal(res2, res)
     np.testing.assert_array_equal(res3, res)
     np.testing.assert_array_equal(res4, res)
-    # _no_deco gmean returns masked array, last element was masked
-    np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])
+    if weighted_fun_name not in {'pmean'}:
+        # _no_deco mean returns masked array, last element was masked
+        np.testing.assert_allclose(res5.compressed(), res[~np.isnan(res)])

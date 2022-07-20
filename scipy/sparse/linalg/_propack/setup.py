@@ -45,10 +45,9 @@ def configuration(parent_package='', top_path=None):
 
     for prefix, directory in type_dict.items():
         propack_lib = f'_{prefix}propack'
-
         # Use risc msg implementation for 64-bit machines, pentium for 32-bit
-        src = list((pathlib.Path(
-            __file__).parent / 'PROPACK' / directory).glob('*.F'))
+        src_dir = pathlib.Path(__file__).parent / 'PROPACK' / directory
+        src = list(src_dir.glob('*.F'))
         if _is_32bit():
             # don't ask me why, 32-bit blows up without second.F
             src = [str(p) for p in src if 'risc' not in str(p)]
@@ -67,6 +66,7 @@ def configuration(parent_package='', top_path=None):
         config.add_library(propack_lib,
                            sources=src,
                            macros=cmacros,
+                           include_dirs=src_dir,
                            depends=['setup.py'])
         ext = config.add_extension(f'_{prefix}propack',
                                    sources=f'{prefix}propack.pyf',

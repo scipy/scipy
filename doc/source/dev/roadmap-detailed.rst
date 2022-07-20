@@ -413,12 +413,12 @@ may also be included in SciPy, especially if no other widely used and
 well-supported package covers the topic.  Also note that *some* duplication
 with downstream projects is inevitable and not necessarily a bad thing.)
 
-The following improvements will help SciPy better serve this role.
+In addition to the items described in the :ref:`scipy-roadmap`, the following
+improvements will help SciPy better serve this role.
 
-- Add fundamental and widely used hypothesis tests:
+- Add fundamental and widely used hypothesis tests, such as:
 
-  - Tukey-Kramer test
-  - Dunnett's test
+  - post hoc tests (e.g. Dunnett's test)
   - the various types of analysis of variance (ANOVA):
 
     - two-way ANOVA (single replicate, uniform number of replicates, variable
@@ -427,7 +427,12 @@ The following improvements will help SciPy better serve this role.
     - nested ANOVA
     - analysis of covariance (ANCOVA)
 
-- Add additional tools for meta-analysis; currently we have just `combine_pvalues`.
+  Also, provide an infrastructure for implementing hypothesis tests.
+- Add additional tools for meta-analysis
+- Add tools for survival analysis
+- Speed up random variate sampling (method ``rvs``) of distributions, 
+  leveraging ``scipy.stats.sampling`` where appropriate
+- Expand QMC capabilities and performance
 - Enhance the `fit` method of the continuous probability distributions:
 
   - Expand the options for fitting to include:
@@ -449,8 +454,6 @@ The following improvements will help SciPy better serve this role.
 
 In addition, we should:
 
-- Consistently handle ``nan_policy`` and ``axis`` arguments in all ``stats``
-  functions (where appropriate).
 - Continue work on making the function signatures of ``stats`` and
   ``stats.mstats`` more consistent, and add tests to ensure that that
   remains the case.

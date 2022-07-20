@@ -78,10 +78,10 @@ Now you can check out the branch::
 which converts the code in your local repository to match the author's modified
 version of SciPy.
 
-Assuming you set up your development environment according to
-:ref:`quickstart-mac` or :ref:`quickstart-ubuntu`, you you can now activate your development environment::
+Assuming you set up your development environment according to one of the
+:ref:`dev-env` pages, you can now activate your development environment::
 
-   conda activate scipydev
+   conda activate scipy-dev
 
 build the code and test it::
 

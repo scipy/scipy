@@ -98,6 +98,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     We can filter an image using 1-D spline along the given axis:
 
     >>> from scipy.ndimage import spline_filter1d
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> orig_img = np.eye(20)  # create an image
     >>> orig_img[10, :] = 1.0
@@ -161,6 +162,7 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     We can filter an image using multidimentional splines:
 
     >>> from scipy.ndimage import spline_filter
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> orig_img = np.eye(20)  # create an image
     >>> orig_img[10, :] = 1.0
@@ -403,6 +405,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.arange(12.).reshape((4, 3))
     >>> a
     array([[  0.,   1.,   2.],

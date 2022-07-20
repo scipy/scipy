@@ -55,7 +55,8 @@ cc = meson.get_compiler('c')
 npymath_path = incdir_numpy / '..' / 'lib'
 npymath_lib = cc.find_library('npymath', dirs: npymath_path)
 npyrandom_path = incdir_numpy / '..' / '..' / 'random' / 'lib'
-npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path)
+# Note: `required: false` can be removed once numpy 1.19 is the minimum version
+npyrandom_lib = cc.find_library('npyrandom', dirs: npyrandom_path, required: false)
 
 # pybind11 include directory - needed in several submodules
 incdir_pybind11 = run_command(py3,
@@ -106,6 +107,17 @@ cpp_args_pythran = [
 #
 numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 
+# Share this object across multiple modules.
+fortranobject_lib = static_library('_fortranobject',
+  fortranobject_c,
+  c_args: numpy_nodepr_api,
+  dependencies: py3_dep,
+  include_directories: [inc_np, inc_f2py],
+)
+fortranobject_dep = declare_dependency(
+  link_with: fortranobject_lib,
+  include_directories: [inc_np, inc_f2py],
+)
 
 # TODO: 64-bit BLAS and LAPACK
 #
@@ -119,7 +131,7 @@ numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 blas = dependency(get_option('blas'))
 lapack = dependency(get_option('lapack'))
 
-if blas.name() == 'mkl' or lapack.name() == 'mkl'
+if blas.name() == 'mkl' or lapack.name() == 'mkl' or get_option('use-g77-abi')
   g77_abi_wrappers = files([
     '_build_utils/src/wrap_g77_abi_f.f',
     '_build_utils/src/wrap_g77_abi_c.c'

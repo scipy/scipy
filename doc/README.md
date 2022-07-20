@@ -6,7 +6,7 @@ To build the html docs for local development, SciPy itself needs to be built so 
 environment needs to be set up for that.  For details on that, see the
 [Contributor Guide](http://scipy.github.io/devdocs/dev/contributor/contributor_toc.html#development-environment)).
 
-Also ensure to initialize and update submodules (this pulls in the SciPy Sphinx
+Also, ensure to initialize and update submodules (this pulls in the SciPy Sphinx
 theme and `numpydoc`):
 ```
 git submodule update --init
@@ -21,7 +21,7 @@ Alternatively, if you prefer to build SciPy and the docs separately rather
 than use `runtests.py`:
 ```
 python setup.py develop  # in the root of the repo
-cd doc && make html-scipyorg
+cd doc && make html
 ```
 
 In case the SciPy version found by the above command is different from that of the
@@ -34,29 +34,7 @@ This indicates that you're likely picking up the wrong SciPy install, check
 with `python -c "import scipy; print(scipy.__file__)"`.
 
 If the build is successful, you can open it in your browser with `make show`
-(which will open `build/html-scipyorg/index.html`).
-
-
-## Building pdf docs
-
-To build the pdf docs, which requires a LaTeX install and can be more fiddly
-to get to work, replace the doc build commands in the section above with:
-```
-python3 runtests.py --doc latex
-```
-or:
-```
-make latex
-```
-
-That will use Sphinx to generate the LaTeX sources. To then produce a pdf,
-navigate to `doc/build/latex/` and run:
-```
-make all-pdf
-```
-
-That will produce a file `scipy-ref.pdf` in `build/latex/`.
-
+(which will open `build/html/index.html`).
 
 ## Building documentation for a release
 
@@ -77,5 +55,5 @@ be redistributed.
     docs and the code of conduct.
   - `tutorial` contains all tutorial content.
 - `release` contains the release notes. Note that those normally should not be
-  updated as part of a PR; we keep releases notes for the upcoming releases
+  updated as part of a PR; we keep release notes for the upcoming releases
   on the wiki of the main SciPy repo.

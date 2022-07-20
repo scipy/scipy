@@ -20,6 +20,7 @@ Produces a tab separated values file with 11 columns. The first four columns
 contain the parameters a, b, c and the argument z. The next two contain |z| and
 a region code for which region of the complex plane belongs to. The regions are
 
+    0) z == 1
     1) |z| < 0.9 and real(z) >= 0
     2) |z| <= 1 and real(z) < 0
     3) 0.9 <= |z| <= 1 and |1 - z| < 0.9:
@@ -36,7 +37,7 @@ Parameters a, b, c are taken from a 10 * 10 * 10 grid with values at
 
 with random perturbations applied.
 
-There are 8 parameter groups handling the following cases.
+There are 9 parameter groups handling the following cases.
 
     1) A, B, C, B - A, C - A, C - B, C - A - B all non-integral.
     2) B - A integral
@@ -46,6 +47,7 @@ There are 8 parameter groups handling the following cases.
     6) A integral
     7) B integral
     8) C integral
+    9) Wider range with c - a - b > 0.
 
 The seventh column of the output file is an integer between 1 and 8 specifying
 the parameter group as above.
@@ -84,7 +86,9 @@ from scipy.special.tests.test_hyp2f1 import mp_hyp2f1
 
 def get_region(z):
     """Assign numbers for regions where hyp2f1 must be handled differently."""
-    if abs(z) < 0.9 and z.real >= 0:
+    if z == 1 + 0j:
+        return 0
+    elif abs(z) < 0.9 and z.real >= 0:
         return 1
     elif abs(z) <= 1 and z.real < 0:
         return 2
@@ -101,7 +105,21 @@ def get_region(z):
 def get_result(a, b, c, z, group):
     """Get results for given parameter and value combination."""
     expected, observed = mp_hyp2f1(a, b, c, z), hyp2f1(a, b, c, z)
-    relative_error = abs(expected - observed) / abs(expected)
+    if (
+            np.isnan(observed) and np.isnan(expected) or
+            expected == observed
+    ):
+        relative_error = 0.0
+        absolute_error = 0.0
+    elif np.isnan(observed):
+        # Set error to infinity if result is nan when not expected to be.
+        # Makes results easier to interpret.
+        relative_error = float("inf")
+        absolute_error = float("inf")
+    else:
+        absolute_error = abs(expected - observed)
+        relative_error = absolute_error / abs(expected)
+
     return (
         a,
         b,
@@ -113,7 +131,7 @@ def get_result(a, b, c, z, group):
         expected,
         observed,
         relative_error,
-        abs(expected - observed),
+        absolute_error,
     )
 
 
@@ -336,7 +354,22 @@ def main(
         )
     )
 
+    # Parameter group 9
+    # -----------------
+    # Wide range of magnitudes, c - a - b > 0.
+    phi = (1 + np.sqrt(5))/2
+    P = phi**np.arange(16)
+    P = np.hstack([-P, P])
+    group_9_params = sorted(
+        (
+            (a, b, c, 9) for a, b, c in product(P, P, P) if c - a - b > 0
+        ),
+        key=lambda x: max(abs(x[0]), abs(x[1])),
+    )
+
     if parameter_groups is not None:
+        # Group 9 params only used if specified in arguments.
+        params.extend(group_9_params)
         params = [
             (a, b, c, group) for a, b, c, group in params
             if group in parameter_groups
@@ -350,6 +383,8 @@ def main(
     )
     Z = X + Y * 1j
     Z = Z.flatten().tolist()
+    # Add z = 1 + 0j (region 0).
+    Z.append(1 + 0j)
     if regions is not None:
         Z = [z for z in Z if get_region(z) in regions]
 
@@ -437,6 +472,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     compute_mp = not args.no_mp
+    print(args.parameter_groups)
     main(
         args.outpath,
         n_jobs=args.n_jobs,

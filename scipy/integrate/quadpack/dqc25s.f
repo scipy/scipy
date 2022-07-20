@@ -1,5 +1,5 @@
-      subroutine dqc25s(f,a,b,bl,br,alfa,beta,ri,rj,rg,rh,result,
-     *   abserr,resasc,integr,nev)
+      recursive subroutine dqc25s(f,a,b,bl,br,alfa,beta,ri,rj,rg,rh,
+     *   result,abserr,resasc,integr,nev)
 c***begin prologue  dqc25s
 c***date written   810101   (yymmdd)
 c***revision date  830518   (yymmdd)

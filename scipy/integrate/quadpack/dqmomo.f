@@ -1,4 +1,4 @@
-      subroutine dqmomo(alfa,beta,ri,rj,rg,rh,integr)
+      recursive subroutine dqmomo(alfa,beta,ri,rj,rg,rh,integr)
 c***begin prologue  dqmomo
 c***date written   820101   (yymmdd)
 c***revision date  830518   (yymmdd)
