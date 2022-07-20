@@ -7,7 +7,9 @@ from pytest import raises as assert_raises
 import pytest
 import numpy as np
 
-from scipy.optimize import fmin_slsqp, minimize, Bounds, NonlinearConstraint
+from scipy.optimize import (fmin_slsqp, minimize, Bounds, NonlinearConstraint,
+                            rosen)
+from scipy.optimize._numdiff import approx_derivative
 
 
 class MyCallBack:
@@ -22,6 +24,44 @@ class MyCallBack:
     def __call__(self, x):
         self.been_called = True
         self.ncalls += 1
+
+
+def _check_kkt(res, fun, constraints):
+    # checks KKT conditions, neglecting simple bound constraints
+    # https://en.wikipedia.org/wiki/Karush_Kuhn_Tucker_conditions#Matrix_representation  # noqa
+    x = res.x
+    gradf = res.jac
+    mus = res.kkt['ineq']
+    lams = res.kkt['eq']
+
+    gs = [constraint['fun'] for constraint in constraints
+          if constraint['type'] == 'ineq']
+    hs = [constraint['fun'] for constraint in constraints
+          if constraint['type'] == 'eq']
+
+    DgTmu = []
+    for mu, g in zip(mus, gs):
+        # primal feasibility
+        assert np.all(g(x) >= 0)
+        # dual feasibility
+        assert np.all(mu >= 0)
+        # complementary slackness
+        assert_allclose(g(x) @ mu, 0, atol=1e-6)
+
+        Dg = np.atleast_2d(approx_derivative(g, x))
+        DgTmu.append(Dg.T @ mu)
+
+    DhTlam = []
+    for lam, h in zip(lams, hs):
+        # primal feasibility
+        assert_allclose(h(x), 0, atol=1e-6)
+
+        Dh = np.atleast_2d(approx_derivative(h, x))
+        DhTlam.append(Dh.T @ lam)
+
+    # stationarity
+    assert_allclose(gradf + np.sum(DgTmu, axis=0) + np.sum(DhTlam, axis=0),
+                    0, atol=1e-6)
 
 
 class TestSLSQP:
@@ -648,3 +688,27 @@ class TestSLSQP:
         con = {'fun': con_fun, 'type': 'eq'}
         res = minimize(fun, 3.0, constraints=[con], method='SLSQP')
         assert_allclose(res.kkt['eq'][0], np.array([2.0]))
+
+    def test_kkt_constrained_rosen(self):
+
+        fun = rosen
+
+        def g(x):
+            x0, x1 = x
+            c1 = x0 + 2*x1 - 1
+            c2 = x0**2 + x1 - 1
+            c3 = x0**2 - x1 - 1
+            return -np.array([c1, c2, c3])
+
+        def h(x):
+            x0, x1 = x
+            return np.array([2*x0 + x1 - 1])
+
+        x0 = [0.4149, 0.1701]
+        bounds = [(0, 1), (-0.5, 2)]
+        constraints = [{'type': 'ineq', 'fun': g},
+                       {'type': 'eq', 'fun': h}]
+        res = minimize(fun, x0, bounds=bounds, constraints=constraints,
+                       method='slsqp')
+
+        _check_kkt(res, fun, constraints)
