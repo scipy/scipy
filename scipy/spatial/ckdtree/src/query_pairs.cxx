@@ -98,6 +98,7 @@ traverse_checking(const ckdtree *self,
             const double p = tracker->p;
             const double tub = tracker->upper_bound;
             const double *data = self->raw_data;
+            const double epsfac = tracker->epsfac;
             const ckdtree_intp_t *indices = self->raw_indices;
             const ckdtree_intp_t m = self->m;
             const ckdtree_intp_t start1 = lnode1->start_idx;
@@ -136,7 +137,7 @@ traverse_checking(const ckdtree *self,
                             data + indices[j] * m,
                             p, m, tub);
 
-                    if (d <= tub)
+                    if (d <= tub/epsfac)
                         add_ordered_pair(results, indices[i], indices[j]);
                 }
             }
