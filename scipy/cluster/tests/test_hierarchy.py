@@ -960,7 +960,7 @@ class TestDendrogram:
             [0, 1, 0], 
             [0, 1, 0]])
         z = linkage(x, "single")
-        d = dendrogram(z)
+        d = dendrogram(z, no_plot=True)
         exp_colors = ['C0', 'C1', 'C1', 'C0', 'C2', 'C2']
         colors = d["leaves_color_list"]
         assert_equal(colors, exp_colors)
@@ -975,10 +975,10 @@ class TestDendrogram:
             [0, 1, 0], 
             [0, 1, 0]])
         z = linkage(x, "single")
-        d = dendrogram(z)
+        d = dendrogram(z, no_plot=True)
         exp_colors = ['C0', 'C1', 'C1', 'C0', 'C2', 'C2']
         colors = d["leaves_color_list"]
-        assert_equal(colors, exp_colors)        
+        assert_equal(colors, exp_colors)
         
 
 def calculate_maximum_distances(Z):
