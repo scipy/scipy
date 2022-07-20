@@ -27,7 +27,7 @@ def test_bootstrap_iv():
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3], [1, 2, 3, 4]), np.mean, paired=True)
 
-    message = "`vectorized` must be `True` or `False`."
+    message = "`vectorized` must be `True`, `False`, or `None`."
     with pytest.raises(ValueError, match=message):
         bootstrap(1, np.mean, vectorized='ekki')
 
@@ -164,6 +164,33 @@ def test_bootstrap_vectorized(method, axis, paired):
     assert_equal(res2.confidence_interval.low.shape, result_shape)
     assert_equal(res2.confidence_interval.high.shape, result_shape)
     assert_equal(res2.standard_error.shape, result_shape)
+
+
+def test_bootstrap_param_vectorized():
+    # Test that bootstrap's  parameter `vectorized` is working as expected
+    rng = np.random.default_rng(75245098234592)
+    sample = rng.random(size=10)
+    data = (sample,)
+
+    def options():
+        return {'method': 'percentile', 'n_resamples': 100,
+                'random_state': np.random.default_rng(892435923458248)}
+
+    def statistic(x, axis):
+        assert x.ndim > 1
+        return np.mean(x, axis=axis)
+
+    fun = stats.bootstrap
+    res = fun(data, statistic, vectorized=None, **options())
+    ref = fun(data, statistic, vectorized=True, **options())
+    assert res.standard_error == ref.standard_error
+
+    def statistic(x):
+        assert x.ndim == 1
+        return np.mean(x)
+    res = fun(data, statistic, vectorized=None, **options())
+    ref = fun(data, statistic, vectorized=False, **options())
+    assert res.standard_error == ref.standard_error
 
 
 @pytest.mark.parametrize("method", ['basic', 'percentile', 'BCa'])
@@ -545,7 +572,7 @@ class TestMonteCarloHypothesisTest:
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, axis=1.5)
 
-        message = "`vectorized` must be `True` or `False`."
+        message = "`vectorized` must be `True`, `False`, or `None`."
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, vectorized=1.5)
 
@@ -637,6 +664,35 @@ class TestMonteCarloHypothesisTest:
 
         assert_allclose(res.statistic, expected.statistic)
         assert_allclose(res.pvalue, expected.pvalue, atol=self.atol)
+
+    def test_vectorized(self):
+        # test that parameter `vectorized` is working as expected
+        rng = np.random.default_rng(75245098234592)
+        sample = rng.random(size=10)
+
+        def get_rvs():
+            rng = np.random.default_rng(892435923458248)
+
+            def rvs(size):
+                return stats.norm.rvs(size=size, random_state=rng)
+
+            return rvs
+
+        def statistic(x, axis):
+            assert x.ndim > 1 or np.array_equal(x, sample)
+            return np.mean(x, axis=axis)
+
+        fun = stats.monte_carlo_test
+        res = fun(sample, get_rvs(), statistic, vectorized=None)
+        ref = fun(sample, get_rvs(), statistic, vectorized=True)
+        assert res.pvalue == ref.pvalue
+
+        def statistic(x):
+            assert x.ndim == 1
+            return np.mean(x)
+        res = fun(sample, get_rvs(), statistic, vectorized=None)
+        ref = fun(sample, get_rvs(), statistic, vectorized=False)
+        assert res.pvalue == ref.pvalue
 
     @pytest.mark.parametrize('alternative', ("less", "greater"))
     @pytest.mark.parametrize('a', np.linspace(-0.5, 0.5, 5))  # skewness
@@ -794,7 +850,7 @@ class TestPermutationTest:
             permutation_test(([1, 2, 3], [1, 2, 3]), stat,
                              permutation_type="ekki")
 
-        message = "`vectorized` must be `True` or `False`."
+        message = "`vectorized` must be `True`, `False`, or `None`."
         with pytest.raises(ValueError, match=message):
             permutation_test(([1, 2, 3], [1, 2, 3]), stat, vectorized=1.5)
 
@@ -881,6 +937,32 @@ class TestPermutationTest:
 
         res = stats.permutation_test((x, y), statistic, **kwds)
         assert_equal(res.null_distribution.size, exact_size)
+
+    def test_vectorized(self):
+        # Test that bootstrap's  parameter `vectorized` is working as expected
+        rng = np.random.default_rng(75245098234592)
+        sample = rng.random(size=10)
+        data = (sample,)
+
+        def options():
+            return {'n_resamples': 100, 'permutation_type': 'samples',
+                    'random_state': np.random.default_rng(892435923458248)}
+
+        def statistic(x, axis):
+            assert x.ndim > 1 or np.array_equal(x, sample)
+            return np.mean(x, axis=axis)
+
+        fun = stats.permutation_test
+        res = fun(data, statistic, vectorized=None, **options())
+        ref = fun(data, statistic, vectorized=True, **options())
+        assert res.pvalue == ref.pvalue
+
+        def statistic(x):
+            assert x.ndim == 1
+            return np.mean(x)
+        res = fun(data, statistic, vectorized=None, **options())
+        ref = fun(data, statistic, vectorized=False, **options())
+        assert res.pvalue == ref.pvalue
 
     # -- Randomized Permutation Tests -- #
 
