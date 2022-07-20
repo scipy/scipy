@@ -212,19 +212,17 @@ equation :math:`f(x) = y` , where :math:`f(x)` is a piecewise polynomial:
 
 which agrees well with the expected values of  :math:`\arccos(1/2) + \pi\,n`.
 
-
-Antiderivative (an indefinite integral) is an inverse operation to the
-derivative, so that ``spl.derivative().antiderivative()`` is equivalent to the
-original ``spl``, modulo floating-point errors. As an example, we compute
-an approximation to the complete elliptic integral
+Integrals of piecewise polynomials can be computed using the ``.integrate``
+method which accepts the lower and the upper limits of integration. As an
+example, we compute an approximation to the complete elliptic integral
 :math:`K(m) = \int_0^{\pi/2} [1 - m\sin^2 x]^{-1/2} dx`:
 
     >>> from scipy.special import ellipk
     >>> ellipk(0.5)
     1.8540746773013719
 
-To this end, tabulate the integrand, interpolate using the monotone interpolant
-(we could as well used a `CubicSpline`):
+To this end, we tabulate the integrand, interpolate using the monotone
+interpolant (we could as well used a `CubicSpline`):
 
     >>> from scipy.interpolate import PchipInterpolator
     >>> x = np.linspace(0, np.pi/2, 70)
@@ -233,11 +231,35 @@ To this end, tabulate the integrand, interpolate using the monotone interpolant
 
 and integrate
 
-    >>> ader = spl.antiderivative()
-    >>> ader(np.pi/2) - ader(0)
+    >>> spl.integrate(0, np.pi/2)
     1.854074674965991
 
 which is indeed close to the value computed by `scipy.special.ellipk`.
+
+All piecewise polynomials can be constructed with N-dimensional ``y`` values.
+If ``y.ndim > 1``, it is understood as a stack of 1D ``y`` values, which are
+stacked along the interpolation axis. The latter is specified via the ``axis``
+argument, and the invariant is that ``len(x) == y.shape[axis]``. As an example,
+we extend the elliptic integral example above to compute the approximation
+for a range of ``m`` values, using the NumPy broadcasting:
+
+.. plot::
+
+    >>> from scipy.interpolate import PchipInterpolator
+    >>> m = np.linspace(0, 0.9, 11)
+    >>> x = np.linspace(0, np.pi/2, 70)
+    >>> y = 1 / np.sqrt(1 - m[:, None]*np.sin(x)**2)
+
+    Now the ``y`` array has the shape ``(11, 70)``, so that the values of ``y``
+    for fixed value of ``m`` are along the second axis of the ``y`` array.
+
+    >>> spl = PchipInterpolator(x, y, axis=1)  # the default is axis=0
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(mm, spl.integrate(0, np.pi/2), '--')
+
+    >>> from scipy.special import ellipk
+    >>> plt.plot(mm, ellipk(mm), 'o')
+    >>> plt.show()
 
 
 B-splines
