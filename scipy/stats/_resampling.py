@@ -219,7 +219,7 @@ BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
-              vectorized=True, paired=False, axis=0, confidence_level=0.95,
+              vectorized=None, paired=False, axis=0, confidence_level=0.95,
               method='BCa', random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
@@ -566,14 +566,14 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
     if vectorized not in {True, False, None}:
         raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
 
-    if vectorized is None:
-        vectorized = 'axis' in inspect.signature(statistic).parameters
-
     if not callable(rvs):
         raise TypeError("`rvs` must be callable.")
 
     if not callable(statistic):
         raise TypeError("`statistic` must be callable.")
+
+    if vectorized is None:
+        vectorized = 'axis' in inspect.signature(statistic).parameters
 
     if not vectorized:
         statistic_vectorized = _vectorize_statistic(statistic)
@@ -607,7 +607,7 @@ fields = ['statistic', 'pvalue', 'null_distribution']
 MonteCarloTestResult = make_dataclass("MonteCarloTestResult", fields)
 
 
-def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
+def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
                      n_resamples=9999, batch=None, alternative="two-sided",
                      axis=0):
     r"""
@@ -1038,7 +1038,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 
 
 def permutation_test(data, statistic, *, permutation_type='independent',
-                     vectorized=False, n_resamples=9999, batch=None,
+                     vectorized=None, n_resamples=9999, batch=None,
                      alternative="two-sided", axis=0, random_state=None):
     r"""
     Performs a permutation test of a given statistic on provided data.
