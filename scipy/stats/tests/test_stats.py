@@ -7550,6 +7550,14 @@ class TestMGCStat:
         _, pvalue, _ = stats.multiscale_graphcorr(x, y, random_state=1)
         assert_allclose(pvalue, 1/1001)
 
+    @pytest.mark.slow
+    @pytest.mark.parametrize("is_twosamp", [True, False])
+    def test_alias(self, is_twosamp):
+        x = np.arange(100)
+        y = np.arange(100)
+        res = stats.multiscale_graphcorr(x, y, is_twosamp=is_twosamp)
+        assert_equal(res.stat, res.statistic)
+
 
 class TestPageTrendTest:
     # expected statistic and p-values generated using R at
