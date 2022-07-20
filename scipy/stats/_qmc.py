@@ -1127,7 +1127,6 @@ class LatinHypercube(QMCEngine):
     --------
     Generate samples from a Latin hypercube generator.
 
-    >>> import numpy as np
     >>> from scipy.stats import qmc
     >>> sampler = qmc.LatinHypercube(d=2)
     >>> sample = sampler.random(n=5)
@@ -2404,7 +2403,6 @@ def _lloyd_centroidal_voronoi_tessellation(
     >>> import numpy as np
     >>> from scipy.spatial import distance
     >>> rng = np.random.default_rng()
-    >>> import numpy as np
     >>> sample = rng.random((128, 2))
 
     .. note::
