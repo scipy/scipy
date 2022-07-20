@@ -2121,24 +2121,17 @@ def anderson_ksamp(samples, midrank=True):
     >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
-
-    The null hypothesis that the two random samples come from the same
-    distribution can be rejected at the 5% level because the returned
-    test value is greater than the critical value for 5% (1.961) but
-    not at the 2.5% level. The interpolation gives an approximate
-    significance level of 3.2%:
-
     >>> stats.anderson_ksamp([rng.normal(size=50),
     ... rng.normal(loc=0.5, size=30)])
     (1.974403288713695,
       array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546]),
       0.04991293614572478)
 
-
-    The null hypothesis cannot be rejected for three samples from an
-    identical distribution. The reported p-value (25%) has been capped and
-    may not be very accurate (since it corresponds to the value 0.449
-    whereas the statistic is -0.731):
+    The null hypothesis that the two random samples come from the same
+    distribution can be rejected at the 5% level because the returned
+    test value is greater than the critical value for 5% (1.961) but
+    not at the 2.5% level. The interpolation gives an approximate
+    p-value of 5.0%.
 
     >>> stats.anderson_ksamp([rng.normal(size=50),
     ... rng.normal(size=30), rng.normal(size=20)])
@@ -2146,6 +2139,11 @@ def anderson_ksamp(samples, midrank=True):
       array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
       4.07210043, 5.56419101]),
       0.25)
+
+    The null hypothesis cannot be rejected for three samples from an
+    identical distribution. The reported p-value (25%) has been capped and
+    may not be very accurate (since it corresponds to the value 0.449
+    whereas the statistic is -0.291).
 
     """
     k = len(samples)
