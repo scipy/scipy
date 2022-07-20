@@ -1536,3 +1536,27 @@ class TestSmoothingSpline:
         assert_allclose(spline_GCV(grid),
                         spline_interp(grid),
                         atol=1e-15)
+
+
+    def test_weighted_smoothing_spline(self):
+        # create data sample
+        np.random.seed(1234)
+        n = 100
+        x = np.sort(np.random.random_sample(100) * 4 - 2)
+        y = x**2 * np.sin(4 * x) + x**3 + np.random.normal(0., 1.5, n)
+
+        spl = make_smoothing_spline(x, y)
+
+        for ind in [0, 20, 49, 60]:
+            w = np.ones(n)
+            w[ind] = 30.
+            spl_w = make_smoothing_spline(x, y, w)
+            # check that spline with weight in a certain point is closer to the
+            # original point then the one without weights
+            orig = abs(spl(x[ind]) - y[ind])
+            weighted = abs(spl_w(x[ind]) - y[ind])
+
+            if orig < weighted:
+                raise ValueError(f'Spline with weights should be closer to the'
+                                 f' points than the original one: {orig:.4} < '
+                                 f'{weighted:.4}')
