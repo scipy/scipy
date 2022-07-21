@@ -214,10 +214,10 @@ def _masked_arrays_2_sentinel_arrays(samples):
     # replace masked elements with sentinel value
     out_samples = []
     for sample in samples:
-        mask = getattr(sample, 'mask', False)
-        if np.any(mask):
+        mask = getattr(sample, 'mask', None)
+        if mask is not None:  # turn all masked arrays into sentinel arrays
             mask = np.broadcast_to(mask, sample.shape)
-            sample = sample.data.copy()  # don't modify original array
+            sample = np.asarray(sample)  # don't modify original array
             sample[mask] = sentinel
         out_samples.append(sample)
 
