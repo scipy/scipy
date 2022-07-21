@@ -1,7 +1,7 @@
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal, assert_array_equal,
-                           assert_array_almost_equal)
+                           assert_array_almost_equal, assert_raises)
 
 from scipy.ndimage import convolve1d
 
@@ -337,3 +337,21 @@ def test_sg_filter_interp_edges_3d():
 
     dy = savgol_filter(z, 7, 3, axis=0, mode='interp', deriv=1, delta=delta)
     assert_allclose(dy, dz, atol=1e-10)
+
+
+def test_sg_filter_valid_window_length_3d():
+    """Tests that the window_length check is using the correct axis."""
+
+    x = np.random.rand(10, 20, 30)
+
+    savgol_filter(x, window_length=29, polyorder=3, mode='interp')
+
+    with assert_raises(ValueError):
+
+        savgol_filter(x, window_length=31, polyorder=3, mode='interp')
+
+    savgol_filter(x, window_length=9, polyorder=3, axis=0, mode='interp')
+
+    with assert_raises(ValueError):
+        # Can only raise window_length error if axis 0 is the one being checked
+        savgol_filter(x, window_length=11, polyorder=3, axis=0, mode='interp')
