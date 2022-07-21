@@ -35,6 +35,7 @@ science, and engineering.
 
         .. button-ref:: getting_started_ref
             :expand:
+            :color: secondary
             :click-parent:
 
             To the getting started guides
@@ -52,6 +53,7 @@ science, and engineering.
 
         .. button-ref:: user_guide
             :expand:
+            :color: secondary
             :click-parent:
 
             To the user guide
@@ -70,6 +72,7 @@ science, and engineering.
 
         .. button-ref:: scipy-api
             :expand:
+            :color: secondary
             :click-parent:
 
             To the reference guide
@@ -88,6 +91,7 @@ science, and engineering.
 
         .. button-ref:: scipy-development
             :expand:
+            :color: secondary
             :click-parent:
 
             To the development guide

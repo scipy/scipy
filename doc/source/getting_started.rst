@@ -37,6 +37,7 @@ Installation
             pip install scipy
 
     .. grid-item-card::
+        :columns: 12
 
         In-depth instructions?
         ^^^^^^^^^^^^^^^^^^^^^^
