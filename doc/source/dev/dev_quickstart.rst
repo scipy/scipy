@@ -47,9 +47,9 @@ account and then create your local repository via::
 
 Next, set up your development environment.
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: conda
+    .. tab-item:: conda
 
         With ``conda`` installed (through
         `Miniforge or Mambaforge <https://github.com/conda-forge/miniforge>`_,
@@ -66,7 +66,7 @@ Next, set up your development environment.
         Your command prompt now lists the name of your new environment, like so
         ``(scipy-dev)$``.
 
-    .. tab:: pip+venv
+    .. tab-item:: pip+venv
 
         **With** :ref:`system-level dependencies <system-level>` **installed**, execute
         the following commands at the terminal from the base directory of your

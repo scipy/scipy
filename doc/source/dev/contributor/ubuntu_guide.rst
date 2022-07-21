@@ -159,7 +159,7 @@ With conda
 	  or Linux PATH?" in the `Anaconda FAQ`_.
 
 #. Enter ``conda config --env --add channels conda-forge`` to tell Anaconda the
-   source we want for our packages. Then enter ``conda create --name scipy-dev python=3.9 numpy pybind11 cython pythran pytest gfortran gxx sphinx pydata-sphinx-theme sphinx-panels matplotlib mypy git``. |br| This tells ``conda`` to create a virtual environment named ``scipy-dev`` (or another name that you prefer) with several packages.
+   source we want for our packages. Then enter ``conda create --name scipy-dev python=3.9 numpy pybind11 cython pythran pytest gfortran gxx sphinx pydata-sphinx-theme sphinx-design matplotlib mypy git``. |br| This tells ``conda`` to create a virtual environment named ``scipy-dev`` (or another name that you prefer) with several packages.
 
    * ``numpy pybind11 cython pythran`` are four packages that SciPy depends on.
 
@@ -167,7 +167,7 @@ With conda
 
    * ``pytest`` is needed for running the test suite.
 
-   * ``sphinx``, ``pydata-sphinx-theme``, ``sphinx-panels`` and ``matplotlib`` are required to render the SciPy documentation.
+   * ``sphinx``, ``pydata-sphinx-theme``, ``sphinx-design`` and ``matplotlib`` are required to render the SciPy documentation.
 
    * ``mypy`` is a static type checker for Python. Consider using it.
 
