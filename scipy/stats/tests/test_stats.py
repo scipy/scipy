@@ -5843,6 +5843,10 @@ class TestGeoMean:
         desired = 2.77748
         check_equal_gmean(a, desired, weights=weights, rtol=1e-5)
 
+    def test_zero_in_input_gh6551(self):
+        # Check that zero in input does not cause divide warnings
+        assert stats.gmean([0, 1, 2]) == 0
+
 
 class TestPowMean:
 

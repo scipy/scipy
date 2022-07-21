@@ -275,10 +275,7 @@ def gmean(a, axis=0, dtype=None, weights=None):
         If None, compute over the whole array `a`.
     dtype : dtype, optional
         Type of the returned array and of the accumulator in which the
-        elements are summed. If dtype is not specified, it defaults to the
-        dtype of a, unless a has an integer dtype with a precision less than
-        that of the default platform integer. In that case, the default
-        platform integer is used.
+        elements are summed.
     weights : array_like, optional
         The `weights` array must be broadcastable to the same shape as `a`.
         Default is None, which gives each value a weight of 1.0.
@@ -316,17 +313,18 @@ def gmean(a, axis=0, dtype=None, weights=None):
     2.80668351922014
 
     """
-    if not isinstance(a, np.ndarray):
-        # if not an ndarray object attempt to convert it
-        log_a = np.log(np.array(a, dtype=dtype))
-    elif dtype:
-        # Must change the default dtype allowing array type
-        if isinstance(a, np.ma.MaskedArray):
-            log_a = np.log(np.ma.asarray(a, dtype=dtype))
+    with np.errstate(divide='ignore'):
+        if not isinstance(a, np.ndarray):
+            # if not an ndarray object attempt to convert it
+            log_a = np.log(np.array(a, dtype=dtype))
+        elif dtype:
+            # Must change the default dtype allowing array type
+            if isinstance(a, np.ma.MaskedArray):
+                log_a = np.log(np.ma.asarray(a, dtype=dtype))
+            else:
+                log_a = np.log(np.asarray(a, dtype=dtype))
         else:
-            log_a = np.log(np.asarray(a, dtype=dtype))
-    else:
-        log_a = np.log(a)
+            log_a = np.log(a)
 
     if weights is not None:
         weights = np.asanyarray(weights, dtype=dtype)
@@ -362,10 +360,7 @@ def hmean(a, axis=0, dtype=None, *, weights=None):
         If None, compute over the whole array `a`.
     dtype : dtype, optional
         Type of the returned array and of the accumulator in which the
-        elements are summed. If `dtype` is not specified, it defaults to the
-        dtype of `a`, unless `a` has an integer `dtype` with a precision less
-        than that of the default platform integer. In that case, the default
-        platform integer is used.
+        elements are summed.
     weights : array_like, optional
         The weights array can either be 1-D (in which case its length must be
         the size of `a` along the given `axis`) or of the same shape as `a`.
