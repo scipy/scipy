@@ -27,7 +27,7 @@ def test_bootstrap_iv():
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3], [1, 2, 3, 4]), np.mean, paired=True)
 
-    message = "`vectorized` must be `True` or `False`."
+    message = "`vectorized` must be `True`, `False`, or `None`."
     with pytest.raises(ValueError, match=message):
         bootstrap(1, np.mean, vectorized='ekki')
 
@@ -545,7 +545,7 @@ class TestMonteCarloHypothesisTest:
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, axis=1.5)
 
-        message = "`vectorized` must be `True` or `False`."
+        message = "`vectorized` must be `True`, `False`, or `None`."
         with pytest.raises(ValueError, match=message):
             monte_carlo_test([1, 2, 3], stats.norm.rvs, stat, vectorized=1.5)
 
@@ -794,7 +794,7 @@ class TestPermutationTest:
             permutation_test(([1, 2, 3], [1, 2, 3]), stat,
                              permutation_type="ekki")
 
-        message = "`vectorized` must be `True` or `False`."
+        message = "`vectorized` must be `True`, `False`, or `None`."
         with pytest.raises(ValueError, match=message):
             permutation_test(([1, 2, 3], [1, 2, 3]), stat, vectorized=1.5)
 
@@ -1435,3 +1435,38 @@ def test_all_partitions_concatenated():
 
     assert_equal(counter, expected)
     assert_equal(len(all_partitions), expected)
+
+
+@pytest.mark.parametrize('fun_name',
+                         ['bootstrap', 'permutation_test', 'monte_carlo_test'])
+def test_parameter_vectorized(fun_name):
+    # Check that parameter `vectorized` is working as desired for all
+    # resampling functions. Results don't matter; just don't fail asserts.
+    rng = np.random.default_rng(75245098234592)
+    sample = rng.random(size=10)
+
+    def rvs(size):  # needed by `monte_carlo_test`
+        return stats.norm.rvs(size=size, random_state=rng)
+
+    fun_options = {'bootstrap': {'data': (sample,), 'random_state': rng,
+                                 'method': 'percentile'},
+                   'permutation_test': {'data': (sample,), 'random_state': rng,
+                                        'permutation_type': 'samples'},
+                   'monte_carlo_test': {'sample': sample, 'rvs': rvs}}
+    common_options = {'n_resamples': 100}
+
+    fun = getattr(stats, fun_name)
+    options = fun_options[fun_name]
+    options.update(common_options)
+
+    def statistic(x, axis):
+        assert x.ndim > 1 or np.array_equal(x, sample)
+        return np.mean(x, axis=axis)
+    fun(statistic=statistic, vectorized=None, **options)
+    fun(statistic=statistic, vectorized=True, **options)
+
+    def statistic(x):
+        assert x.ndim == 1
+        return np.mean(x)
+    fun(statistic=statistic, vectorized=None, **options)
+    fun(statistic=statistic, vectorized=False, **options)
