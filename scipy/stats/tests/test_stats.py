@@ -26,11 +26,11 @@ import numpy as np
 import scipy.stats as stats
 import scipy.stats.mstats as mstats
 import scipy.stats._mstats_basic as mstats_basic
+from scipy.stats._stats_py import _contains_nan
 from scipy.stats._ksstats import kolmogn
 from scipy.special._testutils import FuncData
 from scipy.special import binom
 from .common_tests import check_named_results
-from scipy.sparse._sputils import matrix
 from scipy.spatial.distance import cdist
 from numpy.lib import NumpyVersion
 from scipy.stats._axis_nan_policy import _broadcast_concatenate
@@ -630,6 +630,12 @@ class TestFisherExact:
         # check if issue #3014 has been fixed.
         # before, this would have risen a ValueError
         odds, pvalue = stats.fisher_exact([[1, 2], [9, 84419233]])
+
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_result(self, alternative):
+        table = np.array([[14500, 20000], [30000, 40000]])
+        res = stats.fisher_exact(table, alternative=alternative)
+        assert_equal((res.statistic, res.pvalue), res)
 
 
 class TestCorrSpearmanr:
@@ -1331,6 +1337,14 @@ def test_kendalltau_nan_2nd_arg():
     assert_allclose(r1.correlation, r2.correlation, atol=1e-15)
 
 
+def test_kendalltau_dep_initial_lexsort():
+    with pytest.warns(
+        DeprecationWarning,
+        match="'kendalltau' keyword argument 'initial_lexsort'"
+    ):
+        stats.kendalltau([], [], initial_lexsort=True)
+
+
 class TestKendallTauAlternative:
     def test_kendalltau_alternative_asymptotic(self):
         # Test alternative parameter, asymptotic method (due to tie)
@@ -1957,6 +1971,7 @@ class TestRegression:
         msg = "Cannot calculate a linear regression"
         with assert_raises(ValueError, match=msg):
             stats.linregress(x, y)
+
 
 def test_theilslopes():
     # Basic slope test.
@@ -2871,6 +2886,12 @@ class TestIQR:
         # Bad scale
         assert_raises(ValueError, stats.iqr, x, scale='foobar')
 
+        with pytest.warns(
+            DeprecationWarning,
+            match="The use of 'scale=\"raw\"'"
+        ):
+            stats.iqr([1], scale='raw')
+
 
 class TestMoments:
     """
@@ -2924,16 +2945,18 @@ class TestMoments:
         assert_allclose(y, [0, 1.25, 0, 2.5625])
 
         # test empty input
-        y = stats.moment([])
-        self._assert_equal(y, np.nan, dtype=np.float64)
-        y = stats.moment(np.array([], dtype=np.float32))
-        self._assert_equal(y, np.nan, dtype=np.float32)
-        y = stats.moment(np.zeros((1, 0)), axis=0)
-        self._assert_equal(y, [], shape=(0,), dtype=np.float64)
-        y = stats.moment([[]], axis=1)
-        self._assert_equal(y, np.nan, shape=(1,), dtype=np.float64)
-        y = stats.moment([[]], moment=[0, 1], axis=0)
-        self._assert_equal(y, [], shape=(2, 0))
+        message = "Mean of empty slice."
+        with pytest.warns(RuntimeWarning, match=message):
+            y = stats.moment([])
+            self._assert_equal(y, np.nan, dtype=np.float64)
+            y = stats.moment(np.array([], dtype=np.float32))
+            self._assert_equal(y, np.nan, dtype=np.float32)
+            y = stats.moment(np.zeros((1, 0)), axis=0)
+            self._assert_equal(y, [], shape=(0,), dtype=np.float64)
+            y = stats.moment([[]], axis=1)
+            self._assert_equal(y, np.nan, shape=(1,), dtype=np.float64)
+            y = stats.moment([[]], moment=[0, 1], axis=0)
+            self._assert_equal(y, [], shape=(2, 0))
 
         x = np.arange(10.)
         x[9] = np.nan
@@ -3089,6 +3112,13 @@ class TestMoments:
             a = rng.random(size=(100, 10))
             a[:, 0] = 1.01
             stats.skew(a)[0]
+
+    def test_empty_1d(self):
+        message = "Mean of empty slice."
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.skew([])
+        with pytest.warns(RuntimeWarning, match=message):
+            stats.kurtosis([])
 
 
 class TestStudentTest:
@@ -3736,6 +3766,7 @@ class TestKSTest:
 
     # missing: no test that uses *args
 
+
 class TestKSOneSample:
     """Tests kstest and ks_samp 1-samples with K-S various sizes, alternatives, modes."""
 
@@ -4035,6 +4066,18 @@ class TestKSTwoSamples:
         stats.ks_2samp(rvs1, rvs2, alternative='greater', mode='asymp')
         stats.ks_2samp(rvs1, rvs2, alternative='less', mode='asymp')
         stats.ks_2samp(rvs1, rvs2, alternative='two-sided', mode='asymp')
+
+    def test_warnings_gh_14019(self):
+        # Check that RuntimeWarning is raised when method='auto' and exact
+        # p-value calculation fails. See gh-14019.
+        rng = np.random.default_rng(abs(hash('test_warnings_gh_14019')))
+        # random samples of the same size as in the issue
+        data1 = rng.random(size=881) + 0.5
+        data2 = rng.random(size=369)
+        message = "ks_2samp: Exact calculation unsuccessful"
+        with pytest.warns(RuntimeWarning, match=message):
+            res = stats.ks_2samp(data1, data2, alternative='less')
+            assert_allclose(res.pvalue, 0, atol=1e-14)
 
 
 def test_ttest_rel():
@@ -4364,9 +4407,10 @@ class Test_ttest_ind_permutations():
                           size=500).reshape(100, 5).T
     rvs2 = stats.norm.rvs(loc=8, scale=20, size=100)  # type: ignore
 
-    p_d = [0, 0.676]  # desired pvalues
-    p_d_gen = [0, 0.672]  # desired pvalues for Generator seed
-    p_d_big = [0.993, 0.685, 0.84, 0.955, 0.255]
+    p_d = [1/1001, (676+1)/1001]  # desired pvalues
+    p_d_gen = [1/1001, (672 + 1)/1001]  # desired pvalues for Generator seed
+    p_d_big = [(993+1)/1001, (685+1)/1001, (840+1)/1001,
+               (955+1)/1001, (255+1)/1001]
 
     params = [
         (a, b, {"axis": 1}, p_d),                     # basic test
@@ -4376,7 +4420,7 @@ class Test_ttest_ind_permutations():
         # different seeds
         (a, b, {'random_state': 0, "axis": 1}, p_d),
         (a, b, {'random_state': np.random.RandomState(0), "axis": 1}, p_d),
-        (a2, b2, {'equal_var': True}, 0),  # equal variances
+        (a2, b2, {'equal_var': True}, 1/1001),  # equal variances
         (rvs1, rvs2, {'axis': -1, 'random_state': 0}, p_d_big),  # bigger test
         (a3, b3, {}, 1/3)  # exact test
         ]
@@ -4468,7 +4512,8 @@ class Test_ttest_ind_permutations():
         na, nb = len(a), len(b)
 
         permutations = 100000
-        t_stat, _ = _permutation_distribution_t(data, permutations, na, True)
+        t_stat, _, _ = _permutation_distribution_t(data, permutations, na,
+                                                   True)
 
         n_unique = len(set(t_stat))
         assert n_unique == binom(na + nb, na)
@@ -4498,8 +4543,10 @@ class Test_ttest_ind_permutations():
 
         # For random permutations, the chance of ties between the observed
         # test statistic and the population is small, so:
-        assert_equal(res_g_ab.pvalue + res_l_ab.pvalue, 1)
-        assert_equal(res_g_ba.pvalue + res_l_ba.pvalue, 1)
+        assert_equal(res_g_ab.pvalue + res_l_ab.pvalue,
+                     1 + 1/(options_p['permutations'] + 1))
+        assert_equal(res_g_ba.pvalue + res_l_ba.pvalue,
+                     1 + 1/(options_p['permutations'] + 1))
 
     @pytest.mark.slow()
     def test_ttest_ind_randperm_alternative2(self):
@@ -4520,7 +4567,8 @@ class Test_ttest_ind_permutations():
 
         # For random permutations, the chance of ties between the observed
         # test statistic and the population is small, so:
-        assert_equal(res_g_ab.pvalue + res_l_ab.pvalue, 1)
+        assert_equal(res_g_ab.pvalue + res_l_ab.pvalue,
+                     1 + 1/(options_p['permutations'] + 1))
 
         # For for large sample sizes, the distribution should be approximately
         # symmetric, so these identities should be approximately satisfied
@@ -4578,6 +4626,15 @@ class Test_ttest_ind_permutations():
         with assert_raises(ValueError, match="'hello' cannot be used"):
             stats.ttest_ind(self.a, self.b, permutations=1,
                             random_state='hello')
+
+    def test_ttest_ind_permutation_check_p_values(self):
+        # p-values should never be exactly zero
+        N = 10
+        a = np.random.rand(N, 20)
+        b = np.random.rand(N, 20)
+        p_values = stats.ttest_ind(a, b, permutations=1).pvalue
+        print(0.0 not in p_values)
+        assert 0.0 not in p_values
 
 
 class Test_ttest_ind_common:
@@ -5349,6 +5406,22 @@ class TestJarqueBera:
     def test_jarque_bera_size(self):
         assert_raises(ValueError, stats.jarque_bera, [])
 
+    def test_axis(self):
+        rng = np.random.default_rng(abs(hash('JarqueBera')))
+        x = rng.random(size=(2, 45))
+
+        assert_equal(stats.jarque_bera(x, axis=None),
+                     stats.jarque_bera(x.ravel()))
+
+        res = stats.jarque_bera(x, axis=1)
+        s0, p0 = stats.jarque_bera(x[0, :])
+        s1, p1 = stats.jarque_bera(x[1, :])
+        assert_allclose(res.statistic, [s0, s1])
+        assert_allclose(res.pvalue, [p0, p1])
+
+        resT = stats.jarque_bera(x.T, axis=0)
+        assert_allclose(res, resT)
+
 
 def test_skewtest_too_few_samples():
     # Regression test for ticket #1492.
@@ -5952,6 +6025,22 @@ class TestGeometricStandardDeviation:
         assert_equal(gstd_actual.mask, mask)
 
 
+@pytest.mark.parametrize('alternative', ['two-sided', 'greater', 'less'])
+def test_binom_test_deprecation(alternative):
+    deprecation_msg = ("'binom_test' is deprecated in favour of"
+                       " 'binomtest' from version 1.7.0 and will"
+                       " be removed in Scipy 1.12.0.")
+    num = 10
+    rng = np.random.default_rng(156114182869662948677852568516310985853)
+    X = rng.integers(10, 100, (num,))
+    N = X + rng.integers(0, 100, (num,))
+    P = rng.uniform(0, 1, (num,))
+    for x, n, p in zip(X, N, P):
+        with pytest.warns(DeprecationWarning, match=deprecation_msg):
+            res = stats.binom_test(x, n, p, alternative=alternative)
+        assert res == stats.binomtest(x, n, p, alternative=alternative).pvalue
+
+
 def test_binomtest():
     # precision tests compared to R for ticket:986
     pp = np.concatenate((np.linspace(0.1, 0.2, 5),
@@ -5968,10 +6057,9 @@ def test_binomtest():
                2.6102587134694721e-006]
 
     for p, res in zip(pp, results):
-        assert_approx_equal(stats.binom_test(x, n, p), res,
+        assert_approx_equal(stats.binomtest(x, n, p).pvalue, res,
                             significant=12, err_msg='fail forp=%f' % p)
-
-    assert_approx_equal(stats.binom_test(50, 100, 0.1),
+    assert_approx_equal(stats.binomtest(50, 100, 0.1).pvalue,
                         5.8320387857343647e-024,
                         significant=12)
 
@@ -5995,16 +6083,15 @@ def test_binomtest2():
          1.000000000, 0.753906250, 0.343750000, 0.109375000, 0.021484375,
          0.001953125]
     ]
-
     for k in range(1, 11):
-        res1 = [stats.binom_test(v, k, 0.5) for v in range(k + 1)]
+        res1 = [stats.binomtest(v, k, 0.5).pvalue for v in range(k + 1)]
         assert_almost_equal(res1, res2[k-1], decimal=10)
 
 
 def test_binomtest3():
     # test added for issue #2384
     # test when x == n*p and neighbors
-    res3 = [stats.binom_test(v, v*k, 1./k)
+    res3 = [stats.binomtest(v, v*k, 1./k).pvalue
             for v in range(1, 11) for k in range(2, 11)]
     assert_equal(res3, np.ones(len(res3), int))
 
@@ -6086,9 +6173,9 @@ def test_binomtest3():
          0.736270323773157, 0.737718376096348
         ])
 
-    res4_p1 = [stats.binom_test(v+1, v*k, 1./k)
+    res4_p1 = [stats.binomtest(v+1, v*k, 1./k).pvalue
                for v in range(1, 11) for k in range(2, 11)]
-    res4_m1 = [stats.binom_test(v-1, v*k, 1./k)
+    res4_m1 = [stats.binomtest(v-1, v*k, 1./k).pvalue
                for v in range(1, 11) for k in range(2, 11)]
 
     assert_almost_equal(res4_p1, binom_testp1, decimal=13)
@@ -6786,11 +6873,10 @@ class TestCombinePvalues:
         Z_p, p_p = stats.combine_pvalues([.01, .2, .3], method='pearson')
         assert_approx_equal(0.5 * (Z_f+Z_p), Z, significant=4)
 
+    methods = ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"]
+
     @pytest.mark.parametrize("variant", ["single", "all", "random"])
-    @pytest.mark.parametrize(
-        "method",
-        ["fisher", "pearson", "tippett", "stouffer", "mudholkar_george"],
-    )
+    @pytest.mark.parametrize("method", methods)
     def test_monotonicity(self, variant, method):
         # Test that result increases monotonically with respect to input.
         m, n = 10, 7
@@ -6813,6 +6899,12 @@ class TestCombinePvalues:
             for pvalues in pvaluess
         ]
         assert np.all(np.diff(combined_pvalues) >= 0)
+
+    @pytest.mark.parametrize("method", methods)
+    def test_result(self, method):
+        res = stats.combine_pvalues([.01, .2, .3], method=method)
+        assert_equal((res.statistic, res.pvalue), res)
+
 
 class TestCdfDistanceValidation:
     """
@@ -7670,3 +7762,54 @@ def test_rename_mode_method(fun, args):
     err = rf"{fun.__name__}() got multiple values for argument"
     with pytest.raises(TypeError, match=re.escape(err)):
         fun(*args, method='exact', mode='exact')
+
+
+class TestContainsNaNTest:
+
+    def test_policy(self):
+        data = np.array([1, 2, 3, np.nan])
+
+        contains_nan, nan_policy = _contains_nan(data, nan_policy="propagate")
+        assert contains_nan
+        assert nan_policy == "propagate"
+
+        contains_nan, nan_policy = _contains_nan(data, nan_policy="omit")
+        assert contains_nan
+        assert nan_policy == "omit"
+
+        msg = "The input contains nan values"
+        with pytest.raises(ValueError, match=msg):
+            _contains_nan(data, nan_policy="raise")
+
+        msg = "nan_policy must be one of"
+        with pytest.raises(ValueError, match=msg):
+            _contains_nan(data, nan_policy="nan")
+
+    def test_contains_nan_1d(self):
+        data1 = np.array([1, 2, 3])
+        assert not _contains_nan(data1)[0]
+
+        data2 = np.array([1, 2, 3, np.nan])
+        assert _contains_nan(data2)[0]
+
+        data3 = np.array([np.nan, 2, 3, np.nan])
+        assert _contains_nan(data3)[0]
+
+        data4 = np.array([1, 2, "3", np.nan])  # converted to string "nan"
+        assert not _contains_nan(data4)[0]
+
+        data5 = np.array([1, 2, "3", np.nan], dtype='object')
+        assert _contains_nan(data5)[0]
+
+    def test_contains_nan_2d(self):
+        data1 = np.array([[1, 2], [3, 4]])
+        assert not _contains_nan(data1)[0]
+
+        data2 = np.array([[1, 2], [3, np.nan]])
+        assert _contains_nan(data2)[0]
+
+        data3 = np.array([["1", 2], [3, np.nan]])  # converted to string "nan"
+        assert not _contains_nan(data3)[0]
+
+        data4 = np.array([["1", 2], [3, np.nan]], dtype='object')
+        assert _contains_nan(data4)[0]

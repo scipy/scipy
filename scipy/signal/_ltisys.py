@@ -1414,7 +1414,7 @@ class StateSpace(LinearTimeInvariant):
             c = self.C
             d = np.dot(self.D, other)
 
-        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        common_dtype = np.result_type(a.dtype, b.dtype, c.dtype, d.dtype)
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
@@ -1432,7 +1432,7 @@ class StateSpace(LinearTimeInvariant):
         c = np.dot(other, self.C)
         d = np.dot(other, self.D)
 
-        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        common_dtype = np.result_type(a.dtype, b.dtype, c.dtype, d.dtype)
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),
@@ -1487,7 +1487,7 @@ class StateSpace(LinearTimeInvariant):
                                  "dimensions ({} and {})"
                                  .format(self.D.shape, other.shape))
 
-        common_dtype = np.find_common_type((a.dtype, b.dtype, c.dtype, d.dtype), ())
+        common_dtype = np.result_type(a.dtype, b.dtype, c.dtype, d.dtype)
         return StateSpace(np.asarray(a, dtype=common_dtype),
                           np.asarray(b, dtype=common_dtype),
                           np.asarray(c, dtype=common_dtype),

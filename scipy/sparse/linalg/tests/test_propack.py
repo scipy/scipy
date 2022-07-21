@@ -6,7 +6,7 @@ import numpy as np
 from numpy.testing import assert_allclose
 from pytest import raises as assert_raises
 from scipy.sparse.linalg._svdp import _svdp
-from scipy.sparse import csr_matrix, csc_matrix, coo_matrix
+from scipy.sparse import csr_matrix, csc_matrix
 
 TOLS = {
     np.float32: 1e-4,
@@ -110,6 +110,7 @@ def test_svdp(ctor, precision, irl, which):
 
 @pytest.mark.parametrize('precision', _dtype_testing)
 @pytest.mark.parametrize('irl', (False, True))
+@pytest.mark.timeout(120)  # True, complex8 > 60 s: prerel deps cov 64bit blas
 def test_examples(precision, irl):
     # Note: atol for complex8 bumped from 1e-4 to 1e-3 because of test failures
     # with BLIS, Netlib, and MKL+AVX512 - see

@@ -2,6 +2,7 @@
 Unit test for Linear Programming
 """
 import sys
+import platform
 
 import numpy as np
 from numpy.testing import (assert_, assert_allclose, assert_equal,
@@ -2199,6 +2200,10 @@ class TestLinprogHiGHSMIP():
     method = "highs"
     options = {}
 
+    @pytest.mark.xfail(condition=(sys.maxsize < 2 ** 32 and
+                       platform.system() == "Linux"),
+                       run=False,
+                       reason="gh-16347")
     def test_mip1(self):
         # solve non-relaxed magic square problem (finally!)
         # also check that values are all integers - they don't always
@@ -2290,6 +2295,7 @@ class TestLinprogHiGHSMIP():
         np.testing.assert_allclose(res.fun, -12)
 
     @pytest.mark.slow
+    @pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
     def test_mip6(self):
         # solve a larger MIP with only equality constraints
         # source: https://www.mathworks.com/help/optim/ug/intlinprog.html

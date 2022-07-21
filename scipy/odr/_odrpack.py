@@ -506,7 +506,7 @@ class Model:
     """
 
     def __init__(self, fcn, fjacb=None, fjacd=None,
-        extra_args=None, estimate=None, implicit=0, meta=None):
+                 extra_args=None, estimate=None, implicit=0, meta=None):
 
         self.fcn = fcn
         self.fjacb = fjacb
@@ -518,7 +518,7 @@ class Model:
         self.extra_args = extra_args
         self.estimate = estimate
         self.implicit = implicit
-        self.meta = meta
+        self.meta = meta if meta is not None else {}
 
     def set_meta(self, **kwds):
         """ Update the metadata dictionary with the keywords and data provided

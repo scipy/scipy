@@ -552,7 +552,7 @@ class TestPascal:
 
     def test_big(self):
         p = pascal(50)
-        assert_equal(p[-1, -1], comb(98, 49, exact=True))
+        assert p[-1, -1] == comb(98, 49, exact=True)
 
     def test_threshold(self):
         # Regression test.  An early version of `pascal` returned an
@@ -562,7 +562,7 @@ class TestPascal:
         p = pascal(34)
         assert_equal(2*p.item(-1, -2), p.item(-1, -1), err_msg="n = 34")
         p = pascal(35)
-        assert_equal(2*p.item(-1, -2), p.item(-1, -1), err_msg="n = 35")
+        assert_equal(2.*p.item(-1, -2), 1.*p.item(-1, -1), err_msg="n = 35")
 
 
 def test_invpascal():

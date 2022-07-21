@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 from .arpack import _arpack  # type: ignore[attr-defined]
@@ -6,7 +7,11 @@ from . import eigsh
 from scipy._lib._util import check_random_state
 from scipy.sparse.linalg._interface import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg  # type: ignore[no-redef]
-from scipy.sparse.linalg._svdp import _svdp
+if os.environ.get("SCIPY_USE_PROPACK"):
+    from scipy.sparse.linalg._svdp import _svdp
+    HAS_PROPACK = True
+else:
+    HAS_PROPACK = False
 from scipy.linalg import svd
 
 arpack_int = _arpack.timing.nbx.dtype
@@ -297,6 +302,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         eigvec, _ = np.linalg.qr(eigvec)
 
     elif solver == 'propack':
+        if not HAS_PROPACK:
+            raise ValueError("`solver='propack'` is opt-in due "
+                             "to potential issues on Windows, "
+                             "it can be enabled by setting the "
+                             "`SCIPY_USE_PROPACK` environment "
+                             "variable before importing scipy")
         jobu = return_singular_vectors in {True, 'u'}
         jobv = return_singular_vectors in {True, 'vh'}
         irl_mode = (which == 'SM')

@@ -2248,12 +2248,19 @@ class Brent:
             if (xa > xc):  # swap so xa < xc can be assumed
                 xc, xa = xa, xc
             if not ((xa < xb) and (xb < xc)):
-                raise ValueError("Not a bracketing interval.")
+                raise ValueError(
+                    "Bracketing values (xa, xb, xc) do not"
+                    " fulfill this requirement: (xa < xb) and (xb < xc)"
+                )
             fa = func(*((xa,) + args))
             fb = func(*((xb,) + args))
             fc = func(*((xc,) + args))
             if not ((fb < fa) and (fb < fc)):
-                raise ValueError("Not a bracketing interval.")
+                raise ValueError(
+                    "Bracketing values (xa, xb, xc) do not fulfill"
+                    " this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+                )
+
             funcalls = 3
         else:
             raise ValueError("Bracketing interval must be "
@@ -2613,12 +2620,18 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         if (xa > xc):  # swap so xa < xc can be assumed
             xc, xa = xa, xc
         if not ((xa < xb) and (xb < xc)):
-            raise ValueError("Not a bracketing interval.")
+            raise ValueError(
+                "Bracketing values (xa, xb, xc) do not"
+                " fulfill this requirement: (xa < xb) and (xb < xc)"
+            )
         fa = func(*((xa,) + args))
         fb = func(*((xb,) + args))
         fc = func(*((xc,) + args))
         if not ((fb < fa) and (fb < fc)):
-            raise ValueError("Not a bracketing interval.")
+            raise ValueError(
+                "Bracketing values (xa, xb, xc) do not fulfill"
+                " this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+            )
         funcalls = 3
     else:
         raise ValueError("Bracketing interval must be length 2 or 3 sequence.")
@@ -3475,6 +3488,9 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     inpt_shape = grid.shape
     if (N > 1):
         grid = np.reshape(grid, (inpt_shape[0], np.prod(inpt_shape[1:]))).T
+
+    if not np.iterable(args):
+        args = (args,)
 
     wrapped_func = _Brute_Wrapper(func, args)
 

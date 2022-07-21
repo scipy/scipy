@@ -2073,9 +2073,9 @@ def bilinear(b, a, fs=1.0):
 
     Returns
     -------
-    z : ndarray
+    b : ndarray
         Numerator of the transformed digital filter transfer function.
-    p : ndarray
+    a : ndarray
         Denominator of the transformed digital filter transfer function.
 
     See Also
@@ -4843,6 +4843,8 @@ def besselap(N, norm='phase'):
     """
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
+
+    N = int(N)  # calculation below doesn't always fit in np.int64
     if N == 0:
         p = []
         k = 1

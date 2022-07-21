@@ -782,6 +782,20 @@ def test_kdtree_query_pairs(kdtree_type):
     assert_array_equal(l0, l2)
 
 
+def test_query_pairs_eps(kdtree_type):
+    spacing = np.sqrt(2)
+    # irrational spacing to have potential rounding errors
+    x_range = np.linspace(0, 3 * spacing, 4)
+    y_range = np.linspace(0, 3 * spacing, 4)
+    xy_array = [(xi, yi) for xi in x_range for yi in y_range]
+    tree = kdtree_type(xy_array)
+    pairs_eps = tree.query_pairs(r=spacing, eps=.1)
+    # result: 24 with eps, 16 without due to rounding
+    pairs = tree.query_pairs(r=spacing * 1.01)
+    # result: 24
+    assert_equal(pairs, pairs_eps)
+
+
 def test_ball_point_ints(kdtree_type):
     # Regression test for #1373.
     x, y = np.mgrid[0:4, 0:4]
@@ -1444,3 +1458,13 @@ def test_kdtree_count_neighbors_weighted(kdtree_class):
     expect = [np.sum(weights[(prev_radius < dist) & (dist <= radius)])
               for prev_radius, radius in zip(itertools.chain([0], r[:-1]), r)]
     assert_allclose(nAB, expect)
+
+
+def test_kdtree_nan():
+    vals = [1, 5, -10, 7, -4, -16, -6, 6, 3, -11]
+    n = len(vals)
+    data = np.concatenate([vals, np.full(n, np.nan)])[:, None]
+
+    query_with_nans = KDTree(data).query_pairs(2)
+    query_without_nans = KDTree(data[:n]).query_pairs(2)
+    assert query_with_nans == query_without_nans
