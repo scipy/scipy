@@ -182,7 +182,8 @@ html_favicon = '_static/favicon.ico'
 html_theme_options = {
   "github_url": "https://github.com/scipy/scipy",
   "twitter_url": "https://twitter.com/SciPy_team",
-  "navbar_end": ["search-field.html", "theme-switcher", "version-switcher", "navbar-icon-links"],
+  "navbar_end": ["search-field.html", "theme-switcher", 
+                 "version-switcher", "navbar-icon-links"],
   "switcher": {
       "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
       "version_match": version,
