@@ -738,7 +738,7 @@ def test_masked_dtype():
     # a masked value can be used as the sentinel
     mask1[1] = True
     a1 = np.ma.array(a, mask=mask1)
-    out_arrays, sentinel = _masked_arrays_2_sentinel_arrays([a1,])
+    out_arrays, sentinel = _masked_arrays_2_sentinel_arrays([a1])
     assert sentinel == min8+1
 
     # unless it's the smallest possible; skipped for simiplicity (see code)
@@ -746,7 +746,7 @@ def test_masked_dtype():
     a0 = np.ma.array(a, mask=mask0)
     message = "This function replaces masked elements with sentinel..."
     with pytest.raises(ValueError, match=message):
-            _masked_arrays_2_sentinel_arrays([a0,])
+        _masked_arrays_2_sentinel_arrays([a0])
 
 
 def test_masked_stat_1d():

@@ -200,7 +200,7 @@ def _masked_arrays_2_sentinel_arrays(samples):
     # For simplicity, min_possible/np.infs are not candidate sentinel values
     while sentinel > min_possible:
         for sample in samples:
-            if np.any(sample == sentinel): # choose a new sentinel value
+            if np.any(sample == sentinel):  # choose a new sentinel value
                 sentinel = nextafter(sentinel, -np.inf)
                 break
         else:  # when sentinel value is OK, break the while loop
@@ -217,7 +217,8 @@ def _masked_arrays_2_sentinel_arrays(samples):
         mask = getattr(sample, 'mask', None)
         if mask is not None:  # turn all masked arrays into sentinel arrays
             mask = np.broadcast_to(mask, sample.shape)
-            sample = np.asarray(sample)  # don't modify original array
+            sample = sample.data.copy() if np.any(mask) else sample.data
+            sample = np.asarray(sample)  # `sample.data` could be a memoryview?
             sample[mask] = sentinel
         out_samples.append(sample)
 
