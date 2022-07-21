@@ -25,9 +25,9 @@ dependencies to build it on your system.
     You can skip these steps if you are using ``conda``, as these dependencies
     will be installed automatically.
 
-.. tabs::
+.. tab-set::
 
-  .. tab:: Linux
+  .. tab-item:: Linux
   
     If you want to use the system Python and ``pip``, you will need:
 
@@ -41,9 +41,9 @@ dependencies to build it on your system.
       `ATLAS <http://math-atlas.sourceforge.net/>`__ and
       `MKL <https://software.intel.com/en-us/intel-mkl>`__. 
 
-    .. tabs::
+    .. tab-set::
 
-      .. tab:: Debian/Ubuntu Linux
+      .. tab-item:: Debian/Ubuntu Linux
 
         .. note::
 
@@ -67,7 +67,7 @@ dependencies to build it on your system.
         See also :ref:`ubuntu-guide`.
 
 
-      .. tab:: Fedora
+      .. tab-item:: Fedora
 
         To install SciPy build requirements, you can do::
 
@@ -81,7 +81,7 @@ dependencies to build it on your system.
         advantage that new dependencies or updates to required versions are
         handled by the package managers.
 
-      .. tab:: CentOS/RHEL
+      .. tab-item:: CentOS/RHEL
 
         To install SciPy build requirements, you can do::
 
@@ -95,7 +95,7 @@ dependencies to build it on your system.
         advantage that new dependencies or updates to required versions are
         handled by the package managers.
 
-      .. tab:: Arch
+      .. tab-item:: Arch
 
         To install SciPy build requirements, you can do::
 
@@ -115,7 +115,7 @@ dependencies to build it on your system.
     If you are using conda, these dependencies can be installed in the conda
     environment itself. See :ref:`conda-guide` for more details.
 
-  .. tab:: OSX
+  .. tab-item:: OSX
 
     Install Apple Developer Tools. An easy way to do this is to
     `open a terminal window <https://blog.teamtreehouse.com/introduction-to-the-mac-os-x-command-line>`_,
@@ -129,7 +129,7 @@ dependencies to build it on your system.
     `git <https://git-scm.com/>`_, the software we need to download and manage the
     SciPy source code. See also :ref:`build-osx`.
 
-  .. tab:: Windows
+  .. tab-item:: Windows
 
     See :ref:`build-windows`.
 
