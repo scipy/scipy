@@ -2135,7 +2135,7 @@ def anderson_ksamp(samples, midrank=True):
     distribution can be rejected at the 5% level because the returned
     test value is greater than the critical value for 5% (1.961) but
     not at the 2.5% level. The interpolation gives an approximate
-    p-value of 5.0%.
+    p-value of 4.99%.
 
     >>> res = stats.anderson_ksamp([rng.normal(size=50),
     ... rng.normal(size=30), rng.normal(size=20)])
