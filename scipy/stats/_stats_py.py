@@ -274,11 +274,8 @@ def gmean(a, axis=0, dtype=None, weights=None):
         Axis along which the geometric mean is computed. Default is 0.
         If None, compute over the whole array `a`.
     dtype : dtype, optional
-        Type of the returned array and of the accumulator in which the
-        elements are summed. If dtype is not specified, it defaults to the
-        dtype of a, unless a has an integer dtype with a precision less than
-        that of the default platform integer. In that case, the default
-        platform integer is used.
+        Type to which the input arrays are cast before the calculation is
+        performed.
     weights : array_like, optional
         The `weights` array must be broadcastable to the same shape as `a`.
         Default is None, which gives each value a weight of 1.0.
@@ -293,12 +290,6 @@ def gmean(a, axis=0, dtype=None, weights=None):
     numpy.mean : Arithmetic average
     numpy.average : Weighted average
     hmean : Harmonic mean
-
-    Notes
-    -----
-    The geometric average is computed over a single dimension of the input
-    array, axis=0 by default, or all values in the array if axis=None.
-    float64 intermediate and return values are used for integer inputs.
 
     References
     ----------
@@ -316,21 +307,14 @@ def gmean(a, axis=0, dtype=None, weights=None):
     2.80668351922014
 
     """
-    if not isinstance(a, np.ndarray):
-        # if not an ndarray object attempt to convert it
-        a = np.array(a, dtype=dtype)
-    elif dtype:
-        # Must change the default dtype allowing array type
-        if isinstance(a, np.ma.MaskedArray):
-            a = np.ma.asarray(a, dtype=dtype)
-        else:
-            a = np.asarray(a, dtype=dtype)
+
+    a = np.asarray(a, dtype=dtype)
+
+    if weights is not None:
+        weights = np.asarray(weights, dtype=dtype)
 
     with np.errstate(divide='ignore'):
         log_a = np.log(a)
-
-    if weights is not None:
-        weights = np.asanyarray(weights, dtype=dtype)
 
     return np.exp(np.average(log_a, axis=axis, weights=weights))
 

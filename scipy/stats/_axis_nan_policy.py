@@ -451,7 +451,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     # all the dimensions are reduced.
                     n_dims = np.max([sample.ndim for sample in samples])
                     reduced_axes = tuple(range(n_dims))
-                samples = [sample.ravel() for sample in samples]
+                samples = [np.asarray(sample.ravel()) for sample in samples]
             else:
                 samples = _broadcast_arrays(samples, axis=axis)
                 axis = np.atleast_1d(axis)
