@@ -285,7 +285,7 @@ def rankdata(data, axis=None, use_missing=False):
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
-def mode(a, axis=0):
+def mode(a, axis=0, **kwargs):
     """
     Returns an array of the modal (most common) value in the passed array.
 
@@ -314,12 +314,16 @@ def mode(a, axis=0):
     >>> from scipy import stats
     >>> from scipy.stats import mstats
     >>> m_arr = np.ma.array([1, 1, 0, 0, 0, 0], mask=[0, 0, 1, 1, 1, 0])
-    >>> stats.mode(m_arr)
-    ModeResult(mode=array([0]), count=array([4]))
-    >>> mstats.mode(m_arr)
+    >>> mstats.mode(m_arr)  # note that most zeros are masked
     ModeResult(mode=array([1.]), count=array([2.]))
 
     """
+    keepdims = kwargs.pop("_keepdims", True)
+    if kwargs:
+        unexpected = list(kwargs)[0]
+        message = f"mode() got an unexpected keyword argument '{unexpected}'"
+        raise TypeError(message)
+
     a, axis = _chk_asarray(a, axis)
 
     def _mode1D(a):
@@ -336,14 +340,15 @@ def mode(a, axis=0):
         output = (ma.array(output[0]), ma.array(output[1]))
     else:
         output = ma.apply_along_axis(_mode1D, axis, a)
-        newshape = list(a.shape)
-        newshape[axis] = 1
-        slices = [slice(None)] * output.ndim
-        slices[axis] = 0
-        modes = output[tuple(slices)].reshape(newshape)
-        slices[axis] = 1
-        counts = output[tuple(slices)].reshape(newshape)
-        output = (modes, counts)
+        if keepdims is None or keepdims:
+            newshape = list(a.shape)
+            newshape[axis] = 1
+            slices = [slice(None)] * output.ndim
+            slices[axis] = 0
+            modes = output[tuple(slices)].reshape(newshape)
+            slices[axis] = 1
+            counts = output[tuple(slices)].reshape(newshape)
+            output = (modes, counts)
 
     return ModeResult(*output)
 
