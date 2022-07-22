@@ -124,7 +124,7 @@ def evaluate_linear(values, indices, norm_distances, out_of_bounds):
 
 
 @cython.wraparound(False)
-@cython.boundscheck(False)
+@cython.boundscheck(True)
 @cython.cdivision(True)
 def find_indices(tuple grid not None, double[:, :] xi):
     cdef long i, j, I, J, grid_i_size
@@ -148,22 +148,44 @@ def find_indices(tuple grid not None, double[:, :] xi):
         grid_i = grid[i]
         grid_i_size = grid_i.shape[0]
 
-        for j in range(J):
-            index = find_interval_ascending(&grid_i[0],
-                                            grid_i_size,
-                                            xi[i, j],
-                                            prev_interval=index,
-                                            extrapolate=1)
-            if index < 0:
-                index = 0
-            if index > grid_i_size - 2:
-                index = grid_i_size - 2
-            indices[i, j] = index
+        if grid_i_size == 1:
+            # special case length-one dimensions
+            for j in range(J):
+                indices[i, j] = -1    # Should equal 0. Setting it to -1 is a hack: evaluate_linear looks at indices [i, i+1]
+                                      # which both end up =0 with wraparound. 
+                                      # Conclusion: change -1 to 0 here together with refactoring evaluate_linear, which
+                                      # will also need to special-case length-one axes
+                # norm_distances[i, j] is already zero
+        else:
+            for j in range(J):
+                index = find_interval_ascending(&grid_i[0],
+                                                grid_i_size,
+                                                xi[i, j],
+                                                prev_interval=index,
+                                                extrapolate=1)
+                indices[i, j] = index
 
-            # compute norm_distances, incl length-1 grids,
-            # where `grid[index+1] == grid[index]`
-            denom = grid_i[index + 1] - grid_i[index]
-            if denom:
-                norm_distances[i, j] = (xi[i, j] - grid_i[index]) / denom
+                # XXX: remove when done debugging
+                i_srch = np.searchsorted(grid_i, xi[i, j]) - 1
+                if i_srch < 0:
+                    i_srch = 0
+                if i_srch > grid_i_size - 2:
+                    i_srch = grid_i_size - 2
+
+                if index != i_srch:
+                    import sys
+                    sys.stderr.write(f'\n>>> {index}  - {i_srch}  -- {grid_i_size}\n')
+                    sys.stderr.write(f'xi = {xi[i, j]} \n grid_i = ')
+                    for _ in range(grid_i.shape[0]):
+                        sys.stderr.write(f'{grid_i[_]}  ')
+                    sys.stderr.write('\n')
+                    sys.stderr.flush()
+                # ##################################
+
+                # compute norm_distances, incl length-1 grids,
+                # where `grid[index+1] == grid[index]`
+                denom = grid_i[index + 1] - grid_i[index]
+                if denom:
+                    norm_distances[i, j] = (xi[i, j] - grid_i[index]) / denom
 
     return np.asarray(indices), np.asarray(norm_distances)
