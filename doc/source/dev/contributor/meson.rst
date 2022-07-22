@@ -187,7 +187,7 @@ workflow instead of ``python dev.py``, then you have a few options:
   before running your script.
 - If your IDE supports it, customize what the "Run" button does before running
   the script, to do the install each time (this is expected to take 2-3 sec)
-  before executing the script. For this to work, the install directory
+  For this to work, the install directory
   (``build-install/lib/python3.X/site-packages`` inside the repo by default)
   should be added to ``PYTHONPATH``. *Note that the Spyder IDE does not yet
   support this; its developers are looking at implementing support before the
