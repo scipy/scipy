@@ -11,6 +11,10 @@ ctypedef fused double_or_long:
     long
 
 
+cdef extern from "numpy/npy_math.h":
+    double nan "NPY_NAN"
+
+
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
@@ -128,11 +132,11 @@ def evaluate_linear(values, indices, norm_distances, out_of_bounds):
 
 
 @cython.wraparound(False)
-@cython.boundscheck(False)
+@cython.boundscheck(True)
 @cython.cdivision(True)
 def find_indices(tuple grid not None, double[:, :] xi):
     cdef long i, j, I, J, grid_i_size
-    cdef double denom, grid_i_index
+    cdef double denom, value
     cdef long[:,::1] indices
     cdef double[:,::1] norm_distances
     cdef double[::1] grid_i
@@ -148,22 +152,30 @@ def find_indices(tuple grid not None, double[:, :] xi):
         grid_i = grid[i]
         grid_i_size = grid_i.shape[0]
 
-        for j in range(J):
-            index = find_interval_ascending(&grid_i[0],
-                                            grid_i_size,
-                                            xi[i, j],
-                                            prev_interval=index,
-                                            extrapolate=1)
-            if index < 0:
-                index = 0
-            if index > grid_i_size - 2:
-                index = grid_i_size - 2
-            indices[i, j] = index
+        if grid_i_size == 1:
+            # special case length-one dimensions
+            for j in range(J):
+                indices[i, j] = -1    # Should equal 0. Setting it to -1 is a hack: evaluate_linear looks at indices [i, i+1]
+                                      # which both end up =0 with wraparound. 
+                                      # Conclusion: change -1 to 0 here together with refactoring evaluate_linear, which
+                                      # will also need to special-case length-one axes
+                # norm_distances[i, j] is already zero
+        else:
+            for j in range(J):
+                value = xi[i, j]
+                index = find_interval_ascending(&grid_i[0],
+                                                grid_i_size,
+                                                value,
+                                                prev_interval=index,
+                                                extrapolate=1)
+                indices[i, j] = index
 
-            # compute norm_distances, incl length-1 grids,
-            # where `grid[index+1] == grid[index]`
-            denom = grid_i[index + 1] - grid_i[index]
-            if denom:
-                norm_distances[i, j] = (xi[i, j] - grid_i[index]) / denom
+                if value == value:
+                    denom = grid_i[index + 1] - grid_i[index]
+                    norm_distances[i, j] = (value - grid_i[index]) / denom
+                else:
+                    # xi[i, j] is nan
+                    norm_distances[i, j] = nan
+
 
     return np.asarray(indices), np.asarray(norm_distances)
