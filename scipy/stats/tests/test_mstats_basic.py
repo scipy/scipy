@@ -773,13 +773,6 @@ class TestMode:
         mstats.mode(im, None)
         assert_equal(im, cp)
 
-    def test_unexpected_keyword_gh16429(self):
-        # `keepdims` is not added as a public parameter of `mstats.mode`
-        m_arr = np.ma.array([1, 1, 0, 0, 0, 0], mask=[0, 0, 1, 1, 1, 0])
-        message = "...got an unexpected keyword argument 'keepdims'"
-        with pytest.raises(TypeError, match=message):
-            mstats.mode(m_arr, keepdims=False)
-
 
 class TestPercentile:
     def setup_method(self):

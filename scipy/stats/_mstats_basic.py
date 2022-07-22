@@ -285,7 +285,7 @@ def rankdata(data, axis=None, use_missing=False):
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
-def mode(a, axis=0, **kwargs):
+def mode(a, axis=0):
     """
     Returns an array of the modal (most common) value in the passed array.
 
@@ -318,12 +318,11 @@ def mode(a, axis=0, **kwargs):
     ModeResult(mode=array([1.]), count=array([2.]))
 
     """
-    keepdims = kwargs.pop("_keepdims", True)
-    if kwargs:
-        unexpected = list(kwargs)[0]
-        message = f"mode() got an unexpected keyword argument '{unexpected}'"
-        raise TypeError(message)
+    return _mode(a, axis=axis, keepdims=True)
 
+
+def _mode(a, axis=0, keepdims=True):
+    # Don't want to expose `keepdims` from the public `mstats.mode`
     a, axis = _chk_asarray(a, axis)
 
     def _mode1D(a):
