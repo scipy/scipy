@@ -10,7 +10,7 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.5.0",
+    "meson-python>=0.7.0",
     "Cython>=0.29.21",
     "pybind11>=2.4.3",
     "pythran>=0.11.0",
