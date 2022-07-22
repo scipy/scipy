@@ -7,6 +7,10 @@ np.import_array()
 import itertools
 
 
+cdef extern from "numpy/npy_math.h":
+    double nan "NPY_NAN"
+
+
 @cython.wraparound(False)
 @cython.boundscheck(False)
 @cython.cdivision(True)
@@ -182,10 +186,12 @@ def find_indices(tuple grid not None, double[:, :] xi):
                     sys.stderr.flush()
                 # ##################################
 
-                # compute norm_distances, incl length-1 grids,
-                # where `grid[index+1] == grid[index]`
-                denom = grid_i[index + 1] - grid_i[index]
-                if denom:
+                if xi[i, j] == xi[i, j]:
+                    denom = grid_i[index + 1] - grid_i[index]
                     norm_distances[i, j] = (xi[i, j] - grid_i[index]) / denom
+                else:
+                    # xi[i, j] is nan
+                    norm_distances[i, j] = nan
+
 
     return np.asarray(indices), np.asarray(norm_distances)
