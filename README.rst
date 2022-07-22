@@ -20,6 +20,7 @@ ODE solvers, and more.
 
 - **Website:** https://scipy.org
 - **Documentation:** https://docs.scipy.org/doc/scipy/
+- **Development version of the documentation:** https://scipy.github.io/devdocs
 - **Mailing list:** https://mail.python.org/mailman3/lists/scipy-dev.python.org/
 - **Source code:** https://github.com/scipy/scipy
 - **Contributing:** https://scipy.github.io/devdocs/dev/index.html
