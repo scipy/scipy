@@ -748,6 +748,10 @@ def test_masked_dtype():
     with pytest.raises(ValueError, match=message):
         _masked_arrays_2_sentinel_arrays([a0])
 
+    # test that dtype is preserved in functions
+    a = np.ma.array([1, 2, 3], mask=[0, 1, 0], dtype=np.float32)
+    assert stats.gmean(a).dtype == np.float32
+
 
 def test_masked_stat_1d():
     # basic test of _axis_nan_policy_factory with 1D masked sample
