@@ -572,9 +572,9 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
     keepdims : bool, optional
-        If set ``False``, the `axis` over which the statistic is taken
+        If set to ``False``, the `axis` over which the statistic is taken
         is consumed (eliminated from the output array) like other reduction
-        functions (e.g. `skew`, `kurtosis`). If set ``True``, the `axis` is
+        functions (e.g. `skew`, `kurtosis`). If set to ``True``, the `axis` is
         retained with size one, and the result will broadcast correctly
         against the input array. The default, ``None``, is undefined legacy
         behavior retained for backward compatibility.
@@ -604,10 +604,6 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
 
     Notes
     -----
-    Input `a` is converted to an `np.ndarray` before taking the mode.
-    To avoid the possibility of unexpected conversions, convert `a` to an
-    `np.ndarray` of the desired type before using `mode`.
-
     The mode of object arrays is calculated using `collections.Counter`, which
     treats NaNs with different binary representations as distinct.
 
@@ -618,7 +614,7 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
 
         .. _pandas.DataFrame.mode: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html
 
-    The mode of arrays with other dtypes is calculated using `np.unique`.
+    The mode of arrays with other dtypes is calculated using `numpy.unique`.
     In NumPy versions 1.21 and after, all NaNs - even those with different
     binary representations - are treated as equivalent and counted as separate
     instances of the same value.
@@ -632,24 +628,27 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
     ...               [3, 0, 6, 1],
     ...               [3, 2, 5, 5]])
     >>> from scipy import stats
-    >>> stats.mode(a)
+    >>> stats.mode(a, keepdims=True)
     ModeResult(mode=array([[3, 0, 6, 1]]), count=array([[4, 2, 2, 1]]))
 
     To get mode of whole array, specify ``axis=None``:
 
-    >>> stats.mode(a, axis=None)
+    >>> stats.mode(a, axis=None, keepdims=True)
     ModeResult(mode=[3], count=[5])
+    >>> stats.mode(a, axis=None, keepdims=False)
+    ModeResult(mode=3, count=5)
 
     """  # noqa: E501
 
     if keepdims is None:
         message = ("Unlike other reduction functions (e.g. `skew`, "
                    "`kurtosis`), the default behavior of `mode` typically "
-                   "preserves the the axis it acts along. In SciPy 1.11.0, "
+                   "preserves the axis it acts along. In SciPy 1.11.0, "
                    "this behavior will change: the default value of "
-                   "`keepdims` will become ``False``, the `axis` over which "
+                   "`keepdims` will become False, the `axis` over which "
                    "the statistic is taken will be eliminated, and the value "
-                   "``None`` will no longer be accepted.")
+                   "None will no longer be accepted. "
+                   "Set `keepdims` to True or False to avoid this warning.")
         warnings.warn(message, FutureWarning, stacklevel=2)
 
     a = np.asarray(a)

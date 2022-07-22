@@ -314,9 +314,9 @@ def mode(a, axis=0, **kwargs):
     >>> from scipy import stats
     >>> from scipy.stats import mstats
     >>> m_arr = np.ma.array([1, 1, 0, 0, 0, 0], mask=[0, 0, 1, 1, 1, 0])
-    >>> stats.mode(m_arr)
+    >>> stats.mode(m_arr, keepdims=True)
     ModeResult(mode=array([0]), count=array([4]))
-    >>> mstats.mode(m_arr)
+    >>> mstats.mode(m_arr, keepdims=True)
     ModeResult(mode=array([1.]), count=array([2.]))
 
     """
