@@ -186,10 +186,12 @@ workflow instead of ``python dev.py``, then you have a few options:
   line with ``python dev.py build``, or with ``meson install -C build``
   before running your script.
 - If your IDE supports it, customize what the "Run" button does before running
-  the script, to do the install each time (this is expected to take 2-3 sec.)
-  before executing the script. *Note that the Spyder IDE does not yet support
-  this; its developers are looking at implementing support before the SciPy
-  1.9.0 release).*
+  the script, to do the install each time (this is expected to take 2-3 sec)
+  before executing the script. For this to work, the install directory
+  (``build-install/lib/python3.X/site-packages`` inside the repo by default)
+  should be added to ``PYTHONPATH``. *Note that the Spyder IDE does not yet
+  support this; its developers are looking at implementing support before the
+  SciPy 1.9.0 release).*
 
 **Q: I'm seeing a warning "Broken python installation detected. ..."**
 
