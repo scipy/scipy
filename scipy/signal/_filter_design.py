@@ -1415,9 +1415,9 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     The coefficients of the numerators of the sections:
 
     >>> sos[:, :3]
-    array([[ 0.0014154 ,  0.00248707,  0.0014154 ],
-           [ 1.        ,  0.72965193,  1.        ],
-           [ 1.        ,  0.17594966,  1.        ]])
+    array([[0.0014152 , 0.00248677, 0.0014152 ],
+           [1.        , 0.72976874, 1.        ],
+           [1.        , 0.17607852, 1.        ]])
 
     The symmetry in the coefficients occurs because all the zeros are on the
     unit circle.
@@ -1425,9 +1425,9 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     The coefficients of the denominators of the sections:
 
     >>> sos[:, 3:]
-    array([[ 1.        , -1.32543251,  0.46989499],
-           [ 1.        , -1.26117915,  0.6262586 ],
-           [ 1.        , -1.25707217,  0.86199667]])
+    array([[ 1.        , -1.32544025,  0.46989976],
+           [ 1.        , -1.26118294,  0.62625924],
+           [ 1.        , -1.2570723 ,  0.8619958 ]])
 
     The next example shows the effect of the `pairing` option.  We have a
     system with three poles and three zeros, so the SOS array will have

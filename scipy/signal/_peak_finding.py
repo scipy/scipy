@@ -1049,7 +1049,9 @@ def _identify_ridge_lines(matr, max_distances, gap_thresh):
     >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> data = rng.random((5,5))
-    >>> ridge_lines = _identify_ridge_lines(data, 1, 1)
+    >>> max_dist = 3
+    >>> max_distances = np.full(20, max_dist)
+    >>> ridge_lines = _identify_ridge_lines(data, max_distances, 1)
 
     Notes
     -----

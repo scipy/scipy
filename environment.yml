@@ -35,8 +35,7 @@ dependencies:
   - ipython
   - matplotlib
   - pydata-sphinx-theme>=0.9.0
-  - sphinx-panels
-  - sphinx-tabs
+  - sphinx-design
   # For linting
   - flake8
   # Some optional test dependencies

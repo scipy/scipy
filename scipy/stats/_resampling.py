@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
 from itertools import combinations, permutations, product
+import inspect
 
 from scipy._lib._util import check_random_state
 from scipy.special import ndtr, ndtri, comb, factorial
@@ -134,8 +135,11 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
                   n_resamples, batch, method, random_state):
     """Input validation and standardization for `bootstrap`."""
 
-    if vectorized not in {True, False}:
-        raise ValueError("`vectorized` must be `True` or `False`.")
+    if vectorized not in {True, False, None}:
+        raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
+
+    if vectorized is None:
+        vectorized = 'axis' in inspect.signature(statistic).parameters
 
     if not vectorized:
         statistic = _vectorize_statistic(statistic)
@@ -215,7 +219,7 @@ BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
-              vectorized=True, paired=False, axis=0, confidence_level=0.95,
+              vectorized=None, paired=False, axis=0, confidence_level=0.95,
               method='BCa', random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
@@ -265,10 +269,14 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         `statistic`. Memory usage is O(`batch`*``n``), where ``n`` is the
         sample size. Default is ``None``, in which case ``batch = n_resamples``
         (or ``batch = max(n_resamples, n)`` for ``method='BCa'``).
-    vectorized : bool, default: ``True``
+    vectorized : bool, optional
         If `vectorized` is set ``False``, `statistic` will not be passed
-        keyword argument `axis`, and is assumed to calculate the statistic
-        only for 1D samples.
+        keyword argument `axis` and is expected to calculate the statistic
+        only for 1D samples. If ``True``, `statistic` will be passed keyword
+        argument `axis` and is expected to calculate the statistic along `axis`
+        when passed an ND sample array. If ``None`` (default), `vectorized`
+        will be set ``True`` if ``axis`` is a parameter of `statistic`. Use of
+        a vectorized statistic typically reduces computation time.
     paired : bool, default: ``False``
         Whether the statistic treats corresponding elements of the samples
         in `data` as paired.
@@ -555,14 +563,17 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
 
-    if vectorized not in {True, False}:
-        raise ValueError("`vectorized` must be `True` or `False`.")
+    if vectorized not in {True, False, None}:
+        raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
 
     if not callable(rvs):
         raise TypeError("`rvs` must be callable.")
 
     if not callable(statistic):
         raise TypeError("`statistic` must be callable.")
+
+    if vectorized is None:
+        vectorized = 'axis' in inspect.signature(statistic).parameters
 
     if not vectorized:
         statistic_vectorized = _vectorize_statistic(statistic)
@@ -596,7 +607,7 @@ fields = ['statistic', 'pvalue', 'null_distribution']
 MonteCarloTestResult = make_dataclass("MonteCarloTestResult", fields)
 
 
-def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
+def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
                      n_resamples=9999, batch=None, alternative="two-sided",
                      axis=0):
     r"""
@@ -626,12 +637,14 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
         If `vectorized` is set ``True``, `statistic` must also accept a keyword
         argument `axis` and be vectorized to compute the statistic along the
         provided `axis` of the sample array.
-    vectorized : bool, default: ``False``
-        By default, `statistic` is assumed to calculate the statistic only for
-        a 1D arrays `sample`. If `vectorized` is set ``True``, `statistic` must
-        also accept a keyword argument `axis` and be vectorized to compute the
-        statistic along the provided `axis` of an ND sample array. Use of a
-        vectorized statistic can reduce computation time.
+    vectorized : bool, optional
+        If `vectorized` is set ``False``, `statistic` will not be passed
+        keyword argument `axis` and is expected to calculate the statistic
+        only for 1D samples. If ``True``, `statistic` will be passed keyword
+        argument `axis` and is expected to calculate the statistic along `axis`
+        when passed an ND sample array. If ``None`` (default), `vectorized`
+        will be set ``True`` if ``axis`` is a parameter of `statistic`. Use of
+        a vectorized statistic typically reduces computation time.
     n_resamples : int, default: 9999
         Number of random permutations used to approximate the Monte Carlo null
         distribution.
@@ -975,8 +988,11 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
     if permutation_type not in permutation_types:
         raise ValueError(f"`permutation_type` must be in {permutation_types}.")
 
-    if vectorized not in {True, False}:
-        raise ValueError("`vectorized` must be `True` or `False`.")
+    if vectorized not in {True, False, None}:
+        raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
+
+    if vectorized is None:
+        vectorized = 'axis' in inspect.signature(statistic).parameters
 
     if not vectorized:
         statistic = _vectorize_statistic(statistic)
@@ -1022,7 +1038,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 
 
 def permutation_test(data, statistic, *, permutation_type='independent',
-                     vectorized=False, n_resamples=9999, batch=None,
+                     vectorized=None, n_resamples=9999, batch=None,
                      alternative="two-sided", axis=0, random_state=None):
     r"""
     Performs a permutation test of a given statistic on provided data.
@@ -1073,13 +1089,14 @@ def permutation_test(data, statistic, *, permutation_type='independent',
           Please see the Notes section below for more detailed descriptions
           of the permutation types.
 
-    vectorized : bool, default: ``False``
-        By default, `statistic` is assumed to calculate the statistic only for
-        1D arrays contained in `data`. If `vectorized` is set ``True``,
-        `statistic` must also accept a keyword argument `axis` and be
-        vectorized to compute the statistic along the provided `axis` of the ND
-        arrays in `data`. Use of a vectorized statistic can reduce computation
-        time.
+    vectorized : bool, optional
+        If `vectorized` is set ``False``, `statistic` will not be passed
+        keyword argument `axis` and is expected to calculate the statistic
+        only for 1D samples. If ``True``, `statistic` will be passed keyword
+        argument `axis` and is expected to calculate the statistic along `axis`
+        when passed an ND sample array. If ``None`` (default), `vectorized`
+        will be set ``True`` if ``axis`` is a parameter of `statistic`. Use
+        of a vectorized statistic typically reduces computation time.
     n_resamples : int or np.inf, default: 9999
         Number of random permutations (resamples) used to approximate the null
         distribution. If greater than or equal to the number of distinct
