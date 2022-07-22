@@ -183,30 +183,42 @@ def _masked_arrays_2_sentinel_arrays(samples):
 
     # Choose a sentinel value. We can't use `np.nan`, because sentinel (masked)
     # values are always omitted, but there are different nan policies.
+    dtype = np.result_type(*samples)
+    dtype = dtype if np.issubdtype(dtype, np.number) else np.float64
     for i in range(len(samples)):
         # Things get more complicated if the arrays are of different types.
         # We could have different sentinel values for each array, but
         # the purpose of this code is convenience, not efficiency.
-        samples[i] = samples[i].astype(np.float64, copy=False)
+        samples[i] = samples[i].astype(dtype, copy=False)
 
-    max_possible, eps = np.finfo(np.float64).max, np.finfo(np.float64).eps
+    inexact = np.issubdtype(dtype, np.inexact)
+    info = np.finfo if inexact else np.iinfo
+    max_possible, min_possible = info(dtype).max, info(dtype).min
+    nextafter = np.nextafter if inexact else (lambda x, _: x - 1)
 
     sentinel = max_possible
-    while sentinel > 0:
+    # For simplicity, min_possible/np.infs are not candidate sentinel values
+    while sentinel > min_possible:
         for sample in samples:
-            if np.any(sample == sentinel):
-                sentinel *= (1 - 2*eps)  # choose a new sentinel value
+            if np.any(sample == sentinel):  # choose a new sentinel value
+                sentinel = nextafter(sentinel, -np.inf)
                 break
         else:  # when sentinel value is OK, break the while loop
             break
+    else:
+        message = ("This function replaces masked elements with sentinel "
+                   "values, but the data contains all distinct values of this "
+                   "data type. Consider promoting the dtype to `np.float64`.")
+        raise ValueError(message)
 
     # replace masked elements with sentinel value
     out_samples = []
     for sample in samples:
-        mask = getattr(sample, 'mask', False)
-        if np.any(mask):
+        mask = getattr(sample, 'mask', None)
+        if mask is not None:  # turn all masked arrays into sentinel arrays
             mask = np.broadcast_to(mask, sample.shape)
-            sample = sample.data.copy()  # don't modify original array
+            sample = sample.data.copy() if np.any(mask) else sample.data
+            sample = np.asarray(sample)  # `sample.data` could be a memoryview?
             sample[mask] = sentinel
         out_samples.append(sample)
 
