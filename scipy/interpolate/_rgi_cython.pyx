@@ -132,7 +132,7 @@ def evaluate_linear(values, indices, norm_distances, out_of_bounds):
 @cython.cdivision(True)
 def find_indices(tuple grid not None, double[:, :] xi):
     cdef long i, j, I, J, grid_i_size
-    cdef double denom, grid_i_index
+    cdef double denom, value
     cdef long[:,::1] indices
     cdef double[:,::1] norm_distances
     cdef double[::1] grid_i
@@ -162,33 +162,17 @@ def find_indices(tuple grid not None, double[:, :] xi):
                 # norm_distances[i, j] is already zero
         else:
             for j in range(J):
+                value = xi[i, j]
                 index = find_interval_ascending(&grid_i[0],
                                                 grid_i_size,
-                                                xi[i, j],
+                                                value,
                                                 prev_interval=index,
                                                 extrapolate=1)
                 indices[i, j] = index
 
-                # XXX: remove when done debugging
-                i_srch = np.searchsorted(grid_i, xi[i, j]) - 1
-                if i_srch < 0:
-                    i_srch = 0
-                if i_srch > grid_i_size - 2:
-                    i_srch = grid_i_size - 2
-
-                if index != i_srch:
-                    import sys
-                    sys.stderr.write(f'\n>>> {index}  - {i_srch}  -- {grid_i_size}\n')
-                    sys.stderr.write(f'xi = {xi[i, j]} \n grid_i = ')
-                    for _ in range(grid_i.shape[0]):
-                        sys.stderr.write(f'{grid_i[_]}  ')
-                    sys.stderr.write('\n')
-                    sys.stderr.flush()
-                # ##################################
-
-                if xi[i, j] == xi[i, j]:
+                if value == value:
                     denom = grid_i[index + 1] - grid_i[index]
-                    norm_distances[i, j] = (xi[i, j] - grid_i[index]) / denom
+                    norm_distances[i, j] = (value - grid_i[index]) / denom
                 else:
                     # xi[i, j] is nan
                     norm_distances[i, j] = nan

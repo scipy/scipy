@@ -401,6 +401,15 @@ class TestRegularGridInterpolator:
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], f(x[~i]))
 
+        # also test the length-one axis f(nan)
+        x = [1, 2, 3]
+        y = [1,]
+        data = np.ones((3, 1))
+        f = RegularGridInterpolator((x, y), data, fill_value=1,
+                                    bounds_error=False, method=method)
+        assert np.isnan(f([np.nan, 1]))
+        assert np.isnan(f([1, np.nan]))
+
     @pytest.mark.parametrize("method", ['nearest', 'linear'])
     def test_nan_x_2d(self, method):
         x, y = np.array([0, 1, 2]), np.array([1, 3, 7])
