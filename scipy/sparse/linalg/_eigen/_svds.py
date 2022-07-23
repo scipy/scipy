@@ -291,10 +291,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if k == 1 and v0 is not None:
             X = np.reshape(v0, (-1, 1))
         else:
-            if rs_was_None:
-                X = np.random.RandomState(52).randn(min(A.shape), k)
-            else:
-                X = random_state.uniform(size=(min(A.shape), k))
+            X = random_state.standard_normal(size=(min(A.shape), k))
 
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                            largest=largest)
@@ -334,8 +331,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             return s
 
     elif solver == 'arpack' or solver is None:
-        if v0 is None and not rs_was_None:
-            v0 = random_state.uniform(size=(min(A.shape),))
+        if v0 is None:
+            v0 = random_state.standard_normal(size=(min(A.shape),))
         _, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                           ncv=ncv, which=which, v0=v0)
 
