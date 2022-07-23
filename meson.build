@@ -23,6 +23,19 @@ project(
 
 cc = meson.get_compiler('c')
 cpp = meson.get_compiler('cpp')
+
+# Check compiler is recent enough (see "Toolchain Roadmap" for details)
+if cc.get_id() == 'gcc'
+  if not cc.version().version_compare('>=8.0')
+    error('SciPy requires GCC >= 8.0')
+  endif
+elif cc.get_id() == 'msvc'
+  if not cc.version().version_compare('>=1920')
+    error('SciPy requires at least vc142 (default with Visual Studio 2019) ' + \
+          'when building with MSVC')
+  endif
+endif
+
 # This argument is called -Wno-unused-but-set-variable by GCC, however Clang
 # doesn't recognize that.
 if cc.has_argument('-Wno-unused-but-set-variable')
