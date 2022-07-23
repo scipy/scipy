@@ -1,7 +1,6 @@
 __all__ = ['splrep', 'splprep', 'splev', 'splint', 'sproot', 'spalde',
            'bisplrep', 'bisplev', 'insert', 'splder', 'splantider']
 
-import warnings
 
 import numpy as np
 
