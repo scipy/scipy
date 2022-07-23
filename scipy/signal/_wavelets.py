@@ -386,7 +386,7 @@ def morlet2(M, s, w=5):
     return output
 
 
-def cwt(data, wavelet, widths, dtype=None, y_flip=False, **kwargs):
+def cwt(data, wavelet, widths, dtype=None, **kwargs):
     """
     Continuous wavelet transform.
 
@@ -412,9 +412,6 @@ def cwt(data, wavelet, widths, dtype=None, y_flip=False, **kwargs):
     dtype : data-type, optional
         The desired data type of output. Defaults to ``float64`` if the
         output of `wavelet` is real and ``complex128`` if it is complex.
-    y_flip : flip output, optional
-        Flips the output array y-axis to follow conventional/natural
-        vertical axis incrementing
 
         .. versionadded:: 1.4.0
 
@@ -454,8 +451,8 @@ def cwt(data, wavelet, widths, dtype=None, y_flip=False, **kwargs):
     >>> t = np.linspace(-1, 1, 200, endpoint=False)
     >>> sig  = np.cos(2 * np.pi * 7 * t) + signal.gausspulse(t - 0.4, fc=2)
     >>> widths = np.arange(1, 31)
-    >>> cwtmatr = signal.cwt(sig, signal.ricker, widths, y_flip=True)
-    >>> plt.imshow(cwtmatr, extent=[-1, 1, 1, 31], cmap='PRGn', aspect='auto',
+    >>> cwtmatr = signal.cwt(sig, signal.ricker, widths)
+    >>> plt.imshow(cwtmatr, extent=[-1, 1, 31, 1], cmap='PRGn', aspect='auto',
     ...            vmax=abs(cwtmatr).max(), vmin=-abs(cwtmatr).max())
     >>> plt.show()
     """
@@ -471,7 +468,4 @@ def cwt(data, wavelet, widths, dtype=None, y_flip=False, **kwargs):
         N = np.min([10 * width, len(data)])
         wavelet_data = np.conj(wavelet(N, width, **kwargs)[::-1])
         output[ind] = convolve(data, wavelet_data, mode='same')
-    if y_flip:
-        return np.flipud(output)
-    else:
-        return output
+    return output
