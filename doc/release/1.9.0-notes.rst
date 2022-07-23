@@ -342,6 +342,9 @@ Other changes
   ``SCIPY_USE_PROPACK``; setting to a non-zero value will enable
   the usage of the ``PROPACK`` library as before
 
+- Building SciPy on windows with MSVC now requires at least the vc142
+  toolset (available in Visual Studio 2019 and higher).
+
 Lazy access to subpackages
 ==========================
 

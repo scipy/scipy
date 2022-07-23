@@ -606,14 +606,14 @@ def mode(a, axis=0, nan_policy='propagate', keepdims=None):
     ...               [4, 7, 5, 9]])
     >>> from scipy import stats
     >>> stats.mode(a, keepdims=True)
-    ModeResult(mode=array([[3, 0, 6, 1]]), count=array([[4, 2, 2, 1]]))
+    ModeResult(mode=array([[3, 1, 0, 0]]), count=array([[1, 1, 1, 1]]))
 
     To get mode of whole array, specify ``axis=None``:
 
     >>> stats.mode(a, axis=None, keepdims=True)
-    ModeResult(mode=[3], count=[5])
+    ModeResult(mode=array([3]), count=array([3]))
     >>> stats.mode(a, axis=None, keepdims=False)
-    ModeResult(mode=3, count=5)
+    ModeResult(mode=3, count=3)
 
     """  # noqa: E501
 
