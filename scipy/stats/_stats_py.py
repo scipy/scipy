@@ -536,7 +536,7 @@ def pmean(a, p, *, axis=0, dtype=None, weights=None):
 ModeResult = namedtuple('ModeResult', ('mode', 'count'))
 
 
-def mode(a, axis=0, nan_policy='propagate'):
+def mode(a, axis=0, nan_policy='propagate', keepdims=None):
     r"""Return an array of the modal (most common) value in the passed array.
 
     If there is more than one such value, only one is returned.
@@ -549,6 +549,22 @@ def mode(a, axis=0, nan_policy='propagate'):
     axis : int or None, optional
         Axis along which to operate. Default is 0. If None, compute over
         the whole array `a`.
+    keepdims : bool, optional
+        If set to ``False``, the `axis` over which the statistic is taken
+        is consumed (eliminated from the output array) like other reduction
+        functions (e.g. `skew`, `kurtosis`). If set to ``True``, the `axis` is
+        retained with size one, and the result will broadcast correctly
+        against the input array. The default, ``None``, is undefined legacy
+        behavior retained for backward compatibility.
+
+        .. warning::
+            Unlike other reduction functions (e.g. `skew`, `kurtosis`), the
+            default behavior of `mode` usually retains the the axis it acts
+            along. In SciPy 1.11.0, this behavior will change: the default
+            value of `keepdims` will become ``False``, the `axis` over which
+            the statistic is taken will be eliminated, and the value ``None``
+            will no longer be accepted.
+
     nan_policy : {'propagate', 'raise', 'omit'}, optional
         Defines how to handle when input contains nan.
         The following options are available (default is 'propagate'):
@@ -566,21 +582,17 @@ def mode(a, axis=0, nan_policy='propagate'):
 
     Notes
     -----
-    Input `a` is converted to an `np.ndarray` before taking the mode.
-    To avoid the possibility of unexpected conversions, convert `a` to an
-    `np.ndarray` of the desired type before using `mode`.
-
     The mode of object arrays is calculated using `collections.Counter`, which
     treats NaNs with different binary representations as distinct.
 
     .. deprecated:: 1.9.0
-        Support for non-numeric arrays has been deprecated and will be removed
-        in the second release after SciPy 1.9.0. `pandas.DataFrame.mode`_ can
+        Support for non-numeric arrays has been deprecated as of SciPy 1.9.0
+        and will be removed in 1.11.0. `pandas.DataFrame.mode`_ can
         be used instead.
 
         .. _pandas.DataFrame.mode: https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html
 
-    The mode of arrays with other dtypes is calculated using `np.unique`.
+    The mode of arrays with other dtypes is calculated using `numpy.unique`.
     In NumPy versions 1.21 and after, all NaNs - even those with different
     binary representations - are treated as equivalent and counted as separate
     instances of the same value.
@@ -593,29 +605,50 @@ def mode(a, axis=0, nan_policy='propagate'):
     ...               [5, 3, 0, 5],
     ...               [4, 7, 5, 9]])
     >>> from scipy import stats
-    >>> stats.mode(a)
-    ModeResult(mode=array([3, 1, 0, 0]), count=array([1, 1, 1, 1]))
+    >>> stats.mode(a, keepdims=True)
+    ModeResult(mode=array([[3, 1, 0, 0]]), count=array([[1, 1, 1, 1]]))
 
     To get mode of whole array, specify ``axis=None``:
 
-    >>> stats.mode(a, axis=None)
+    >>> stats.mode(a, axis=None, keepdims=True)
+    ModeResult(mode=array([3]), count=array([3]))
+    >>> stats.mode(a, axis=None, keepdims=False)
     ModeResult(mode=3, count=3)
 
     """  # noqa: E501
-    a, axis = _chk_asarray(a, axis)
+
+    if keepdims is None:
+        message = ("Unlike other reduction functions (e.g. `skew`, "
+                   "`kurtosis`), the default behavior of `mode` typically "
+                   "preserves the axis it acts along. In SciPy 1.11.0, "
+                   "this behavior will change: the default value of "
+                   "`keepdims` will become False, the `axis` over which "
+                   "the statistic is taken will be eliminated, and the value "
+                   "None will no longer be accepted. "
+                   "Set `keepdims` to True or False to avoid this warning.")
+        warnings.warn(message, FutureWarning, stacklevel=2)
+
+    a = np.asarray(a)
     if a.size == 0:
-        return ModeResult(np.array([]), np.array([]))
+        if keepdims is None:
+            return ModeResult(np.array([]), np.array([]))
+        else:
+            # this is tricky to get right; let np.mean do it
+            out = np.mean(a, axis=axis, keepdims=keepdims)
+            return ModeResult(out, out.copy())
+
+    a, axis = _chk_asarray(a, axis)
 
     contains_nan, nan_policy = _contains_nan(a, nan_policy)
 
     if contains_nan and nan_policy == 'omit':
         a = ma.masked_invalid(a)
-        return mstats_basic.mode(a, axis)
+        return mstats_basic.mode(a, axis, _keepdims=keepdims)
 
     if not np.issubdtype(a.dtype, np.number):
         warnings.warn("Support for non-numeric arrays has been deprecated "
-                      "and will be removed in the second release after "
-                      "1.9.0. `pandas.DataFrame.mode` can be used instead, "
+                      "as of SciPy 1.9.0 and will be removed in "
+                      "1.11.0. `pandas.DataFrame.mode` can be used instead, "
                       "see https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.mode.html.",  # noqa: E501
                       DeprecationWarning, stacklevel=2)
 
@@ -641,7 +674,12 @@ def mode(a, axis=0, nan_policy='propagate'):
     for ind in inds:
         modes[ind], counts[ind] = _mode1D(a_view[ind])
 
-    return ModeResult(modes[()], counts[()])
+    if keepdims is None or keepdims:
+        newshape = list(a.shape)
+        newshape[axis] = 1
+        return ModeResult(modes.reshape(newshape), counts.reshape(newshape))
+    else:
+        return ModeResult(modes[()], counts[()])
 
 
 def _mask_to_limits(a, limits, inclusive):
@@ -1134,18 +1172,6 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
         a = ma.masked_invalid(a)
         return mstats_basic.moment(a, moment, axis)
 
-    if a.size == 0:
-        moment_shape = list(a.shape)
-        del moment_shape[axis]
-        dtype = a.dtype.type if a.dtype.kind in 'fc' else np.float64
-        # empty array, return nan(s) with shape matching `moment`
-        out_shape = (moment_shape if np.isscalar(moment)
-                     else [len(moment)] + moment_shape)
-        if len(out_shape) == 0:
-            return dtype(np.nan)
-        else:
-            return np.full(out_shape, np.nan, dtype=dtype)
-
     # for array_like moment input, return a value for each.
     if not np.isscalar(moment):
         mean = a.mean(axis, keepdims=True)
@@ -1159,6 +1185,10 @@ def moment(a, moment=1, axis=0, nan_policy='propagate'):
 def _moment(a, moment, axis, *, mean=None):
     if np.abs(moment - np.round(moment)) > 0:
         raise ValueError("All moment parameters must be integers")
+
+    # moment of empty array is the same regardless of order
+    if a.size == 0:
+        return np.mean(a, axis=axis)
 
     if moment == 0 or moment == 1:
         # By definition the zeroth moment about the mean is 1, and the first

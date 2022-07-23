@@ -732,6 +732,8 @@ class TestMoments:
                                        stats.kurtosis(self.testcase_2d[2, :]),
                                        nulp=4)
 
+
+class TestMode:
     def test_mode(self):
         a1 = [0,0,0,1,1,1,2,3,3,3,3,4,5,6,7]
         a2 = np.reshape(a1, (3,5))
@@ -770,6 +772,13 @@ class TestMoments:
         cp = im.copy()
         mstats.mode(im, None)
         assert_equal(im, cp)
+
+    def test_unexpected_keyword_gh16429(self):
+        # `keepdims` is not added as a public parameter of `mstats.mode`
+        m_arr = np.ma.array([1, 1, 0, 0, 0, 0], mask=[0, 0, 1, 1, 1, 0])
+        message = "...got an unexpected keyword argument 'keepdims'"
+        with pytest.raises(TypeError, match=message):
+            mstats.mode(m_arr, keepdims=False)
 
 
 class TestPercentile:

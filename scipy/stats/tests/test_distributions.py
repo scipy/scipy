@@ -1009,6 +1009,16 @@ class TestTruncnorm:
             assert_almost_equal(stats.truncnorm.pdf(xvals, low, high),
                                 stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
 
+    def test_cdf_tail_15110_14753(self):
+        # Check accuracy issues reported in gh-14753 and gh-155110
+        # Ground truth values calculated using Wolfram Alpha, e.g.
+        # (CDF[NormalDistribution[0,1],83/10]-CDF[NormalDistribution[0,1],8])/
+        #     (1 - CDF[NormalDistribution[0,1],8])
+        assert_allclose(stats.truncnorm(13., 15.).cdf(14.),
+                        0.9999987259565643)
+        assert_allclose(stats.truncnorm(8, np.inf).cdf(8.3),
+                        0.9163220907327540)
+
     def _test_moments_one_range(self, a, b, expected, rtol=1e-7):
         m0, v0, s0, k0 = expected[:4]
         m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
@@ -1017,62 +1027,52 @@ class TestTruncnorm:
         assert_allclose(s, s0, rtol=rtol)
         assert_allclose(k, k0, rtol=rtol)
 
-    @pytest.mark.xfail_on_32bit("reduced accuracy with 32bit platforms.")
-    def test_moments(self):
-        # Values validated by changing TRUNCNORM_TAIL_X so as to evaluate
-        # using both the _norm_XXX() and _norm_logXXX() functions, and by
-        # removing the _stats and _munp methods in truncnorm tp force
-        # numerical quadrature.
-        # For m,v,s,k expect k to have the largest error as it is
-        # constructed from powers of lower moments
+    # Test data for the truncnorm stats() method.
+    # The data in each row is:
+    #   a, b, mean, variance, skewness, excess kurtosis. Generated using
+    # https://gist.github.com/WarrenWeckesser/636b537ee889679227d53543d333a720
+    _truncnorm_stats_data = [
+        [-30, 30,
+         0.0, 1.0, 0.0, 0.0],
+        [-10, 10,
+         0.0, 1.0, 0.0, -1.4927521335810455e-19],
+        [-3, 3,
+         0.0, 0.9733369246625415, 0.0, -0.17111443639774404],
+        [-2, 2,
+         0.0, 0.7737413035499232, 0.0, -0.6344632828703505],
+        [0, np.inf,
+         0.7978845608028654,
+         0.3633802276324187,
+         0.995271746431156,
+         0.8691773036059741],
+        [-np.inf, 0,
+         -0.7978845608028654,
+         0.3633802276324187,
+         -0.995271746431156,
+         0.8691773036059741],
+        [-1, 3,
+         0.282786110727154,
+         0.6161417353578293,
+         0.5393018494027877,
+         -0.20582065135274694],
+        [-3, 1,
+         -0.282786110727154,
+         0.6161417353578293,
+         -0.5393018494027877,
+         -0.20582065135274694],
+        [-10, -9,
+         -9.108456288012409,
+         0.011448805821636248,
+         -1.8985607290949496,
+         5.0733461105025075],
+    ]
+    _truncnorm_stats_data = np.array(_truncnorm_stats_data)
 
-        self._test_moments_one_range(-30, 30, [0, 1, 0.0, 0.0])
-        self._test_moments_one_range(-10, 10, [0, 1, 0.0, 0.0])
-        self._test_moments_one_range(-3, 3, [0.0, 0.9733369246625415,
-                                             0.0, -0.1711144363977444])
-        self._test_moments_one_range(-2, 2, [0.0, 0.7737413035499232,
-                                             0.0, -0.6344632828703505])
-
-        self._test_moments_one_range(0, np.inf, [0.7978845608028654,
-                                                 0.3633802276324186,
-                                                 0.9952717464311565,
-                                                 0.8691773036059725])
-        self._test_moments_one_range(-np.inf, 0, [-0.7978845608028654,
-                                                  0.3633802276324186,
-                                                  -0.9952717464311565,
-                                                  0.8691773036059725])
-
-        self._test_moments_one_range(-1, 3, [0.2827861107271540,
-                                             0.6161417353578292,
-                                             0.5393018494027878,
-                                             -0.2058206513527461])
-        self._test_moments_one_range(-3, 1, [-0.2827861107271540,
-                                             0.6161417353578292,
-                                             -0.5393018494027878,
-                                             -0.2058206513527461])
-
-        self._test_moments_one_range(-10, -9, [-9.1084562880124764,
-                                               0.0114488058210104,
-                                               -1.8985607337519652,
-                                               5.0733457094223553])
-        self._test_moments_one_range(-20, -19, [-19.0523439459766628,
-                                                0.0027250730180314,
-                                                -1.9838694022629291,
-                                                5.8717850028287586],
-                                     rtol=1e-5)
-        self._test_moments_one_range(-30, -29, [-29.0344012377394698,
-                                                0.0011806603928891,
-                                                -1.9930304534611458,
-                                                5.8854062968996566],
-                                     rtol=1e-6)
-        self._test_moments_one_range(-40, -39, [-39.0256074199326264,
-                                                0.0006548826719649,
-                                                -1.9963146354109957,
-                                                5.6167758371700494])
-        self._test_moments_one_range(39, 40, [39.0256074199326264,
-                                              0.0006548826719649,
-                                              1.9963146354109957,
-                                              5.6167758371700494])
+    @pytest.mark.parametrize("case", _truncnorm_stats_data)
+    def test_moments(self, case):
+        a, b, m0, v0, s0, k0 = case
+        m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
+        assert_allclose([m, v, s, k], [m0, v0, s0, k0], atol=1e-17)
 
     def test_9902_moments(self):
         m, v = stats.truncnorm.stats(0, np.inf, moments='mv')
