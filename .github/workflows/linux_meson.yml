@@ -38,9 +38,11 @@ jobs:
         submodules: recursive
 
     - name: Setup Python
-      uses: actions/setup-python@v3
+      uses: actions/setup-python@v4
       with:
         python-version: ${{ matrix.python-version }}
+        cache: 'pip'
+        cache-dependency-path: 'environment.yml'
 
     - name: Install Ubuntu dependencies
       run: |
@@ -48,16 +50,9 @@ jobs:
         sudo apt-get update
         sudo apt-get install -y libopenblas-dev libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev libsuitesparse-dev ccache libmpc-dev
 
-    - name: Caching Python dependencies
-      uses: actions/cache@v3
-      id: cache
-      with:
-        path: ~/.cache/pip
-        key: ${{ runner.os }}-pip
-
     - name: Install Python packages
       run: |
-        python -m pip install numpy setuptools wheel cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool
+        python -m pip install numpy setuptools==59.8.0 wheel cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -102,21 +97,16 @@ jobs:
       run: |
         export OMP_NUM_THREADS=2
         export SCIPY_USE_PROPACK=1
-        python dev.py --no-build test -j 2
+        python dev.py --no-build test -j 2 --durations 10
 
   test_venv_install:
     name: Pip install into venv
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
     - uses: actions/checkout@v3
       with:
         submodules: recursive
-
-    - name: Setup Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: "3.10"
 
     - name: Install Ubuntu dependencies
       run: |
@@ -124,7 +114,7 @@ jobs:
         # into a venv is working, so leave out optional dependencies. That's
         # also why we can get away with an old version of OpenBLAS from Ubuntu
         sudo apt-get update
-        sudo apt-get install -y libopenblas-dev pkg-config gfortran
+        sudo apt-get install -y python3-dev libopenblas-dev pkg-config gfortran
 
     - name: Create venv, install SciPy
       run: |

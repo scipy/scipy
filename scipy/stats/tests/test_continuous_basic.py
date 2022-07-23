@@ -5,7 +5,6 @@ from pytest import raises as assert_raises
 from scipy.integrate import IntegrationWarning
 
 from scipy import stats
-from scipy.special import betainc
 from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,
@@ -858,6 +857,7 @@ def test_kappa3_array_gh13582():
     npt.assert_allclose(res, res2)
 
 
+@pytest.mark.timeout(120)
 def test_kappa4_array_gh13582():
     h = np.array([-0.5, 2.5, 3.5, 4.5, -3])
     k = np.array([-0.5, 1, -1.5, 0, 3.5])
@@ -907,3 +907,37 @@ def test_skewnorm_pdf_gh16038():
     res = stats.skewnorm.pdf(x, a)
     npt.assert_equal(res[mask], stats.norm.pdf(x_norm))
     npt.assert_equal(res[~mask], stats.skewnorm.pdf(x[~mask], a[~mask]))
+
+
+# for scalar input, these functions should return scalar output
+scalar_out = [['rvs', []], ['pdf', [0]], ['logpdf', [0]], ['cdf', [0]],
+              ['logcdf', [0]], ['sf', [0]], ['logsf', [0]], ['ppf', [0]],
+              ['isf', [0]], ['moment', [1]], ['entropy', []], ['expect', []],
+              ['median', []], ['mean', []], ['std', []], ['var', []]]
+scalars_out = [['interval', [0.95]], ['support', []], ['stats', ['mv']]]
+
+
+@pytest.mark.parametrize('case', scalar_out + scalars_out)
+def test_scalar_for_scalar(case):
+    # Some rv_continuous functions returned 0d array instead of NumPy scalar
+    # Guard against regression
+    method_name, args = case
+    method = getattr(stats.norm(), method_name)
+    res = method(*args)
+    if case in scalar_out:
+        assert isinstance(res, np.number)
+    else:
+        assert isinstance(res[0], np.number)
+        assert isinstance(res[1], np.number)
+
+
+def test_scalar_for_scalar2():
+    # test methods that are not attributes of frozen distributions
+    res = stats.norm.fit([1, 2, 3])
+    assert isinstance(res[0], np.number)
+    assert isinstance(res[1], np.number)
+    res = stats.norm.fit_loc_scale([1, 2, 3])
+    assert isinstance(res[0], np.number)
+    assert isinstance(res[1], np.number)
+    res = stats.norm.nnlf((0, 1), [1, 2, 3])
+    assert isinstance(res, np.number)

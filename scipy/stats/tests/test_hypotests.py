@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 from itertools import product
 
 import numpy as np
@@ -17,7 +15,6 @@ from scipy.stats._hypotests import (epps_singleton_2samp, cramervonmises,
                                     boschloo_exact)
 from scipy.stats._mannwhitneyu import mannwhitneyu, _mwu_state
 from .common_tests import check_named_results
-from scipy import special
 from scipy._lib._testutils import _TestPythranFunc
 
 

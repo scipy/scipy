@@ -400,7 +400,7 @@ Generalized inverse
 ^^^^^^^^^^^^^^^^^^^
 
 The generalized inverse is calculated using the command
-:obj:`linalg.pinv`. Let :math:`\mathbf{A}` be an 
+:obj:`linalg.pinv`. Let :math:`\mathbf{A}` be an
 :math:`M\times N` matrix, then if :math:`M>N`, the generalized
 inverse is
 
@@ -804,8 +804,11 @@ square matrix :math:`\mathbf{A}` as
 
     f\left(\mathbf{A}\right)=\sum_{k=0}^{\infty}\frac{f^{\left(k\right)}\left(0\right)}{k!}\mathbf{A}^{k}.
 
-While this serves as a useful representation of a matrix function, it
-is rarely the best way to calculate a matrix function.
+.. note::
+
+    While this serves as a useful representation of a matrix function, it is
+    rarely the best way to calculate a matrix function. In particular, if the
+    matrix is not diagonalizable, results may be innacurate.
 
 
 Exponential and logarithm functions

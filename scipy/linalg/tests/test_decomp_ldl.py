@@ -1,4 +1,3 @@
-import itertools
 from numpy.testing import assert_array_almost_equal, assert_allclose, assert_
 from numpy import (array, eye, zeros, empty_like, empty, tril_indices_from,
                    tril, triu_indices_from, spacing, float32, float64,

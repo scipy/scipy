@@ -165,6 +165,10 @@ class interp2d:
         Spline interpolation based on FITPACK
     BivariateSpline : a more recent wrapper of the FITPACK routines
     interp1d : 1-D version of this function
+    RegularGridInterpolator : interpolation on a regular or rectilinear grid
+        in arbitrary dimensions.
+    interpn : Multidimensional interpolation on regular grids (wraps
+        `RegularGridInterpolator` and `RectBivariateSpline`).
 
     Notes
     -----
@@ -176,8 +180,11 @@ class interp2d:
     of 0. If more control over smoothing is needed, `bisplrep` should be
     used directly.
 
-    The new data points to interpolate `xnew` and `ynew` have to be
-    sorted by increasing order.
+    The coordinates of the data points to interpolate `xnew` and `ynew`
+    have to be sorted by ascending order.
+    `interp2d` is legacy and is not
+    recommended for use in new code. New code should use
+    `RegularGridInterpolator` instead.
 
     Examples
     --------
