@@ -96,7 +96,23 @@ starting from version 1.7.0).
 
 To maintain compatibility with a large number of platforms & setups, especially
 where using the official wheels (or other distribution channels like Anaconda
-or conda-forge) is not possible, SciPy keeps compatibility with old compilers.
+or conda-forge) is not possible, SciPy tries to keep compatibility with older
+compilers, on platforms that have not yet reached their official end-of-life.
+
+As explained in more detail below, the current minimal compiler versions are:
+
+==========  ===========================  ===============================  ============================
+ Compiler    Default Platform (tested)    Secondary Platform (untested)    Minimal Version
+==========  ===========================  ===============================  ============================
+ GCC         Linux                        AIX, Alpine Linux, OSX           GCC 8.x
+ LLVM        OSX                          Linux, FreeBSD, Windows          LLVM 10.x
+ MSVC        Windows                      -                                Visual Studio 2019 (vc142)
+==========  ===========================  ===============================  ============================
+
+Note that the lower bound for LLVM is not enforced. Older versions should
+work - as long as they support core (non-stdlib) C++17 -, but no version
+below LLVM 12 is tested regularly during development. Please file an issue
+if you encounter a problem during compilation.
 
 Official Builds
 ~~~~~~~~~~~~~~~
@@ -239,7 +255,8 @@ attempting to predict adoption timelines for newer standards.
  <= 2019           C++03
  2020              C++11
  2021              C++14
- ?                 C++17, C++20, C++23
+ 2022              C++17 (core language + universally available stdlib features)
+ ?                 C++17 (with full stdlib), C++20, C++23
 ================  =======================================================================
 
 Since dropping support for Python 2.7, C++11 can be used
@@ -252,18 +269,55 @@ the bottleneck for C++ support is therefore the oldest supported GCC version,
 where SciPy has been constrained mainly by the version in the oldest supported
 manylinux versions & images [16]_.
 
-At the end of 2021 (with the final removal of ``manylinux1`` wheels), SciPy
-now has a minimum GCC requirement of GCC 6.3, which has full C++14 support
-[17]_. This corresponds to the lowest present GCC version in relevant manylinux
-versions - somewhat surprisingly, it is not the oldest remaining
-``manylinux2010`` that is the most restrictive (due to the ABI-compatible
-"RHEL Dev Toolset" backports, it has GCC 8.3), but actually ``manylinux_2_24``
-that only comes with GCC 6.3 [18]_.
+At the end of 2021 (with the final removal of ``manylinux1`` wheels), the
+minimal requirement of GCC moved to 6.3, which has full C++14 support [17]_.
+This corresponded to the lowest-present GCC version in relevant manylinux
+versions, though this was still considering the Debian-based "outlier"
+``manylinux_2_24``, which - in contrast to previous manylinux images based on
+RHEL-derivative CentOS that could benefit from the ABI-compatible GCC backports
+in the "RHEL Dev Toolset" - was stuck with GCC 6.3. That image failed to take
+off not least due to those outdated compilers [18]_ and reached its EOL in
+mid-2022 [19]_. For different reasons, ``manylinux2010`` also reached its EOL
+around the same time [20]_.
 
-C++17 _language_ support will require GCC >= 7 (released May 2017). As of the
-end of 2021, support for the entirety of the C++17 standard library has not yet
-been completed across all compilers; similarly, support for C++20 and C++23
-is still under heavy development. [17]_
+The remaining images ``manylinux2014`` and ``manylinux_2_28`` currently support
+GCC 10 and 11, respectively. The latter will continue to receive updates as new
+GCC versions become available as backports, but the former will likely not
+change since the CentOS project is not responsive anymore about publishing
+aarch64 backports of GCC 11 [21]_.
+
+This leaves all the main platforms and their compilers with comparatively
+recent versions. However, SciPy has historically also endeavored to support
+less common platforms as well - if not with binary artefacts (i.e. wheels),
+then at least by remaining compilable from source - which includes for example
+AIX, Alpine Linux and FreeBSD.
+
+For AIX 7.1 & 7.2 the default compiler is GCC 8 (AIX 6.1 had its EOL in 2017),
+but GCC 10 is installable (side-by-side) [22]_.
+The oldest currently-supported Alpine Linux release is 3.12 [23]_, and already
+comes with GCC 10.
+For FreeBSD, the oldest currently-supported 12.x release [24]_ comes with
+LLVM 10 (and GCC 10 is available as a freebsd-port [25]_).
+
+Finally there is the question of which machines are widely used by people
+needing to compile SciPy from source for other reasons (e.g. SciPy developers,
+or people wanting to compile for themselves for performance reasons).
+The oldest relevant distributions (without RHEL-style backports) are Ubuntu
+18.04 LTS (which has GCC 7 but also has a backport of GCC 8; Ubuntu 20.04 LTS
+has GCC 9) and Debian Buster (with GCC 8; Bullseye has GCC 10).
+This is the weakest restriction for determining the lower bounds of compiler
+support (power users and developers can be expected to keep their systems at
+least somewhat up-to-date, or use backports where available), and gradually
+becomes less important as usage numbers of old distributions dwindle.
+
+All the currently lowest-supported compiler versions (GCC 8, LLVM 12,
+VS2019 with vc142) have full support for the C++17 _core language_,
+which can therefore be used unconditionally.
+However, as of mid-2022, support for the entirety of the C++17 standard library
+has not yet been completed across all compilers [17]_, particularly LLVM.
+It is therefore necessary to check if a given stdlib-feature is supported by
+all compilers before it can be used in SciPy.
+Compiler support for C++20 and C++23 is still under heavy development [17]_.
 
 Fortran Compilers
 ~~~~~~~~~~~~~~~~~
@@ -290,7 +344,7 @@ is a build dependency (currently with the possibility to opt out).
 OpenMP support
 ^^^^^^^^^^^^^^
 
-For various reasons [19]_, SciPy cannot be distributed with built-in OpenMP support.
+For various reasons [26]_, SciPy cannot be distributed with built-in OpenMP support.
 When using the optional Pythran support, OpenMP-enabled parallel code can be
 generated when building from source.
 
@@ -402,4 +456,11 @@ References
 .. [16] https://github.com/mayeut/pep600_compliance
 .. [17] https://en.cppreference.com/w/cpp/compiler_support
 .. [18] https://github.com/pypa/manylinux/issues/1012
-.. [19] https://github.com/scipy/scipy/issues/10239
+.. [19] https://github.com/pypa/manylinux/issues/1332
+.. [20] https://github.com/pypa/manylinux/issues/1281
+.. [21] https://github.com/pypa/manylinux/issues/1266
+.. [22] https://www.ibm.com/support/pages/aix-toolbox-open-source-software-downloads-alpha#G
+.. [23] https://alpinelinux.org/releases/
+.. [24] https://www.freebsd.org/releases/
+.. [25] https://www.freebsd.org/status/report-2021-04-2021-06/gcc/
+.. [26] https://github.com/scipy/scipy/issues/10239
