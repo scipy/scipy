@@ -814,13 +814,11 @@ class TestPoisson(QMCEngineTests):
         assert len(sample) <= ns * 2
         assert l2_norm(sample) >= radius
 
-    @pytest.mark.slow
-    @pytest.mark.xfail_on_32bit("Can't create large array for test")
     def test_mindist(self):
         rng = np.random.default_rng(132074951149370773672162394161442690287)
         ns = 50
 
-        low, high = 0.01, 0.1
+        low, high = 0.08, 0.2
         radii = (high - low) * rng.random(5) + low
 
         dimensions = [1, 3, 4]
