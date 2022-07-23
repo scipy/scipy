@@ -105,10 +105,14 @@ As explained in more detail below, the current minimal compiler versions are:
  Compiler    Default Platform (tested)    Secondary Platform (untested)    Minimal Version
 ==========  ===========================  ===============================  ============================
  GCC         Linux                        AIX, Alpine Linux, OSX           GCC 8.x
- LLVM        OSX                          Linux, FreeBSD, Windows          LLVM 12.x
+ LLVM        OSX                          Linux, FreeBSD, Windows          LLVM 10.x
  MSVC        Windows                      -                                Visual Studio 2019 (vc142)
 ==========  ===========================  ===============================  ============================
 
+Note that the lower bound for LLVM is not enforced. Older versions should
+work - as long as they support core (non-stdlib) C++17 -, but no version
+below LLVM 12 is tested regularly during development. Please file an issue
+if you encounter a problem during compilation.
 
 Official Builds
 ~~~~~~~~~~~~~~~
