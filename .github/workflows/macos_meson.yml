@@ -33,11 +33,6 @@ jobs:
       with:
         submodules: recursive
 
-    - name: Setup Python
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-
     - name: Install Ccache
       run: |
         brew install ccache
@@ -73,11 +68,18 @@ jobs:
       uses: conda-incubator/setup-miniconda@v2
       with:
         python-version: ${{ matrix.python-version }}
-        mamba-version: "*"
         channels: conda-forge
         channel-priority: true
         activate-environment: scipy-dev
         use-only-tar-bz2: true
+        miniforge-variant: Mambaforge
+        miniforge-version: latest
+        use-mamba: true
+
+    - name: Get Date
+      id: get-date
+      run: echo "::set-output name=today::$(/bin/date -u '+%Y%m%d')"
+      shell: bash
 
     - name: Cache conda
       uses: actions/cache@v3
@@ -85,19 +87,19 @@ jobs:
         # Increase this value to reset cache if environment.yml has not changed
         CACHE_NUMBER: 0
       with:
-        path: /usr/local/miniconda/envs/scipy-dev
+        path: ${{ env.CONDA }}/envs/scipy-dev
         key:
-          ${{ runner.os }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
+          ${{ runner.os }}--${{ steps.get-date.outputs.today }}-conda-${{ env.CACHE_NUMBER }}-${{ hashFiles('environment.yml') }}
       id: envcache
 
     - name: Update Conda Environment
       run: mamba env update -n scipy-dev -f environment.yml
+      if: steps.envcache.outputs.cache-hit != 'true'
 
     - name: Build and Install SciPy
       shell: bash -l {0}
       run: |
         conda activate scipy-dev
-        python -m pip install meson==0.61.1
         # Python.org installers still use 10.9, so let's use that too. Note
         # that scikit-learn already changed to 10.13 in Jan 2021, so increasing
         # this number in the future (if needed) should not be a problem.

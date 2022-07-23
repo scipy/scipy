@@ -3110,13 +3110,29 @@ add_newdoc("entr",
 
     See Also
     --------
-    kl_div, rel_entr
+    kl_div, rel_entr, scipy.stats.entropy
 
     Notes
     -----
+    .. versionadded:: 0.15.0
+
     This function is concave.
 
-    .. versionadded:: 0.15.0
+    The origin of this function is in convex programming; see [1]_.
+    Given a probability distribution :math:`p_1, \ldots, p_n`,
+    the definition of entropy in the context of *information theory* is
+
+    .. math::
+
+        \sum_{i = 1}^n \mathrm{entr}(p_i).
+
+    To compute the latter quantity, use `scipy.stats.entropy`.
+
+    References
+    ----------
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`https://doi.org/10.1017/CBO9780511804441`
 
     """)
 
@@ -7403,7 +7419,7 @@ add_newdoc("kl_div",
 
     See Also
     --------
-    entr, rel_entr
+    entr, rel_entr, scipy.stats.entropy
 
     Notes
     -----
@@ -7419,9 +7435,9 @@ add_newdoc("kl_div",
 
     References
     ----------
-    .. [1] Grant, Boyd, and Ye, "CVX: Matlab Software for Disciplined Convex
-        Programming", http://cvxr.com/cvx/
-
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`https://doi.org/10.1017/CBO9780511804441`
 
     """)
 
@@ -10203,7 +10219,7 @@ add_newdoc("rel_entr",
 
     See Also
     --------
-    entr, kl_div
+    entr, kl_div, scipy.stats.entropy
 
     Notes
     -----
@@ -10213,21 +10229,24 @@ add_newdoc("rel_entr",
 
     The origin of this function is in convex programming; see
     [1]_. Given two discrete probability distributions :math:`p_1,
-    \ldots, p_n` and :math:`q_1, \ldots, q_n`, to get the relative
-    entropy of statistics compute the sum
+    \ldots, p_n` and :math:`q_1, \ldots, q_n`, the definition of relative
+    entropy in the context of *information theory* is
 
     .. math::
 
         \sum_{i = 1}^n \mathrm{rel\_entr}(p_i, q_i).
 
+    To compute the latter quantity, use `scipy.stats.entropy`.
+
     See [2]_ for details.
 
     References
     ----------
-    .. [1] Grant, Boyd, and Ye, "CVX: Matlab Software for Disciplined Convex
-        Programming", http://cvxr.com/cvx/
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`https://doi.org/10.1017/CBO9780511804441`
     .. [2] Kullback-Leibler divergence,
-        https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+           https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 
     """)
 
@@ -10662,6 +10681,59 @@ add_newdoc("spence",
       -\int_0^z \frac{\log(1 - t)}{t}dt;
 
     this is our ``spence(1 - z)``.
+
+    Examples
+    --------
+    >>> from scipy.special import spence
+    >>> import matplotlib.pyplot as plt
+
+    The function is defined for complex inputs:
+
+    >>> spence([1-1j, 1.5+2j, 3j, -10-5j])
+    array([-0.20561676+0.91596559j, -0.86766909-1.39560134j,
+           -0.59422064-2.49129918j, -1.14044398+6.80075924j])
+
+    For complex inputs on the branch cut, which is the negative real axis,
+    the function returns the limit for ``z`` with positive imaginary part.
+    For example, in the following, note the sign change of the imaginary
+    part of the output for ``z = -2`` and ``z = -2 - 1e-8j``:
+
+    >>> spence([-2 + 1e-8j, -2, -2 - 1e-8j])
+    array([2.32018041-3.45139229j, 2.32018042-3.4513923j ,
+           2.32018041+3.45139229j])
+
+    The function returns ``nan`` for real inputs on the branch cut:
+
+    >>> spence(-1.5)
+    nan
+
+    Verify some particular values: ``spence(0) = pi**2/6``,
+    ``spence(1) = 0`` and ``spence(2) = -pi**2/12``.
+
+    >>> spence([0, 1, 2])
+    array([ 1.64493407,  0.        , -0.82246703])
+    >>> np.pi**2/6, -np.pi**2/12
+    (1.6449340668482264, -0.8224670334241132)
+
+    Verify the identity::
+
+        spence(z) + spence(1 - z) = pi**2/6 - log(z)*log(1 - z)
+
+    >>> z = 3 + 4j
+    >>> spence(z) + spence(1 - z)
+    (-2.6523186143876067+1.8853470951513935j)
+    >>> np.pi**2/6 - np.log(z)*np.log(1 - z)
+    (-2.652318614387606+1.885347095151394j)
+
+    Plot the function for positive real input.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0, 6, 400)
+    >>> ax.plot(x, spence(x))
+    >>> ax.grid()
+    >>> ax.set_xlabel('x')
+    >>> ax.set_title('spence(x)')
+    >>> plt.show()
     """)
 
 add_newdoc("stdtr",

@@ -263,11 +263,11 @@ class CLI(CliGroup):
 def cli(ctx, **kwargs):
     """Developer Tool for SciPy
 
-    Commands that require a built/installed instance are marked with :wrench:.
+    \bCommands that require a built/installed instance are marked with :wrench:.
 
 
+    \b**python dev.py --build-dir my-build test -s stats**
 
-    **python dev.py --build-dir my-build test -s stats**
     """
     CLI.update_context(ctx, kwargs)
 
@@ -372,6 +372,8 @@ def get_test_runner(project_module):
 class Build(Task):
     """:wrench: build & install package on path
 
+    \b
+    ```python
     Examples:
 
     $ python dev.py build --asan ;
@@ -379,6 +381,7 @@ class Build(Task):
         LD_PRELOAD=$(gcc --print-file-name=libasan.so)
         python dev.py test -v -t
         ./scipy/ndimage/tests/test_morphology.py -- -s
+    ```
     """
     ctx = CONTEXT
 
@@ -618,11 +621,14 @@ class Build(Task):
 class Test(Task):
     """:wrench: Run tests
 
+    \b
+    ```python
     Examples:
 
     $ python dev.py test -s {SAMPLE_SUBMODULE}
     $ python dev.py test -t scipy.optimize.tests.test_minimize_constrained
     $ python dev.py test -s stats -- --tb=line
+    ```
     """
     ctx = CONTEXT
 
@@ -714,12 +720,14 @@ class Test(Task):
 class Bench(Task):
     """:wrench: Run benchmarks
 
+    \b
+    ```python
      Examples:
 
     $ python dev.py bench -t integrate.SolveBVP
     $ python dev.py bench -t linalg.Norm
     $ python dev.py bench --compare main
-
+    ```
     """
     ctx = CONTEXT
     TASK_META = {
@@ -926,6 +934,7 @@ class Doc(Task):
     """:wrench: Build documentation
 
 TARGETS: Sphinx build targets [default: 'html']
+
 """
     ctx = CONTEXT
 
@@ -1073,9 +1082,12 @@ class Shell(Python):
 def notes(ctx_obj, version_args):
     """:ledger: Release notes and log generation
 
+    \b
+    ```python
      Example:
 
     $ python dev.py notes v1.7.0 v1.8.0
+    ```
     """
     if version_args:
         sys.argv = version_args
@@ -1095,9 +1107,12 @@ def notes(ctx_obj, version_args):
 def authors(ctx_obj, revision_args):
     """:ledger: Generate list of authors who contributed within revision interval
 
+    \b
+    ```python
     Example:
 
     $ python dev.py authors v1.7.0 v1.8.0
+    ```
     """
     if revision_args:
         sys.argv = revision_args

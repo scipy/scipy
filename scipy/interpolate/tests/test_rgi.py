@@ -815,3 +815,13 @@ class TestInterpN:
         match = "must be strictly ascending or descending"
         with pytest.raises(ValueError, match=match):
             interpn((x, y), z, xi)
+
+    def test_invalid_xi_dimensions(self):
+        # https://github.com/scipy/scipy/issues/16519
+        points = [(0, 1)]
+        values = [0, 1]
+        xi = np.ones((1, 1, 3))
+        msg = ("The requested sample points xi have dimension 3, but this "
+               "RegularGridInterpolator has dimension 1")
+        with assert_raises(ValueError, match=msg):
+            interpn(points, values, xi)

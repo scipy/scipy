@@ -768,6 +768,7 @@ class TestSpsolveTriangular:
             assert_array_almost_equal(A.dot(x), b)
 
     @pytest.mark.slow
+    @pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
     @sup_sparse_efficiency
     def test_random(self):
         def random_triangle_matrix(n, lower=True):
