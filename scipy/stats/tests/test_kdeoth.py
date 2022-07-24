@@ -1,4 +1,4 @@
-from scipy import stats
+from scipy import stats, linalg
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_allclose)
@@ -482,3 +482,18 @@ def test_seed():
     test_seed_sub(gkde_2d)
     gkde_2d_weighted = stats.gaussian_kde(xn_2d, weights=wn)
     test_seed_sub(gkde_2d_weighted)
+
+
+def test_singular_data_covariance_gh10205():
+    # When the data lie in a lower-dimensional subspace and this causes
+    # and exception, check that the error message is informative.
+    rng = np.random.default_rng(2321583144339784787)
+    mu = np.array([1, 10, 20])
+    sigma = np.array([[4, 10, 0], [10, 25, 0], [0, 0, 100]])
+    data = rng.multivariate_normal(mu, sigma, 1000)
+    try:  # doesn't raise any error on some platforms, and that's OK
+        stats.gaussian_kde(data.T)
+    except linalg.LinAlgError:
+        msg = "The data appears to lie in a lower-dimensional subspace..."
+        with assert_raises(linalg.LinAlgError, match=msg):
+            stats.gaussian_kde(data.T)

@@ -2256,8 +2256,9 @@ class TestLinprogHiGHSMIP():
         res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
                       method=self.method, integrality=integrality)
 
-        np.testing.assert_allclose(res.x, [1, 2])
         np.testing.assert_allclose(res.fun, -2)
+        # two optimal solutions possible, just need one of them
+        assert np.allclose(res.x, [1, 2]) or np.allclose(res.x, [2, 2])
 
     def test_mip4(self):
         # solve MIP with inequality constraints and only one integer constraint
@@ -2295,6 +2296,7 @@ class TestLinprogHiGHSMIP():
         np.testing.assert_allclose(res.fun, -12)
 
     @pytest.mark.slow
+    @pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
     def test_mip6(self):
         # solve a larger MIP with only equality constraints
         # source: https://www.mathworks.com/help/optim/ug/intlinprog.html

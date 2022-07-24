@@ -135,7 +135,7 @@ before running the test suite.
 .. |pytest-xdist| replace:: ``pytest-xdist``
 .. _pytest-xdist: https://pypi.org/project/pytest-xdist/
 
-.. _NumPy/SciPy Testing Guidelines: https://github.com/numpy/numpy/blob/main/doc/TESTS.rst.txt
+.. _NumPy/SciPy Testing Guidelines: https://github.com/numpy/numpy/blob/main/doc/TESTS.rst
 
 .. |pytest| replace:: ``pytest``
 .. _pytest: https://docs.pytest.org/en/latest/
