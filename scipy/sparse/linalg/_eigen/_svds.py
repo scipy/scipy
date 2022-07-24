@@ -247,8 +247,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     """
-    rs_was_None = random_state is None  # avoid changing v0 for arpack/lobpcg
-
     args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
                solver, random_state)
     (A, k, ncv, tol, which, v0, maxiter,
