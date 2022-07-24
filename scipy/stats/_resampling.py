@@ -103,9 +103,7 @@ def _percentile_along_axis(theta_hat_b, alpha):
 
 def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     """Bias-corrected and accelerated interval."""
-    # closely follows [2] "BCa Bootstrap CIs"
-    # for extension to multiple samples, see:
-    # https://github.com/scipy/scipy/issues/16433#issuecomment-1161358545
+    # closely follows [1] 14.3 and 15.4 (Eq. 15.36)
 
     # calculate z0_hat
     theta_hat = np.asarray(statistic(*data, axis=axis))[..., None]
@@ -113,23 +111,36 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     z0_hat = ndtri(percentile)
 
     # calculate a_hat
-    theta_hat_i = []  # would be better to fill pre-allocated array
-    for i, sample in enumerate(data):
-        # jackknife resampling will add an axis prior to the last axis that
+    theta_hat_ji = []  # j is for sample of data, i is for jackknife resample
+    for j, sample in enumerate(data):
+        # _jackknife_resample will add an axis prior to the last axis that
         # corresponds with the different jackknife resamples. Do the same for
         # each sample of the data to ensure broadcastability. We need to
         # create a copy of the list containing the samples anyway, so do this
         # in the loop to simplify the code. This is not the bottleneck...
         samples = [np.expand_dims(sample, -2) for sample in data]
+        theta_hat_i = []
         for jackknife_sample in _jackknife_resample(sample, batch):
-            samples[i] = jackknife_sample
+            samples[j] = jackknife_sample
             samples = _broadcast_arrays(samples, axis=-1)
             theta_hat_i.append(statistic(*samples, axis=-1))
-    theta_hat_i = np.concatenate(theta_hat_i, axis=-1)
-    theta_hat_dot = theta_hat_i.mean(axis=-1, keepdims=True)
-    num = ((theta_hat_dot - theta_hat_i)**3).sum(axis=-1)
-    den = 6*((theta_hat_dot - theta_hat_i)**2).sum(axis=-1)**(3/2)
-    a_hat = num / den
+        theta_hat_ji.append(theta_hat_i)
+
+    theta_hat_ji = [np.concatenate(theta_hat_i, axis=-1)
+                    for theta_hat_i in theta_hat_ji]
+
+    n_j = [len(theta_hat_i) for theta_hat_i in theta_hat_ji]
+
+    theta_hat_j_dot = [theta_hat_i.mean(axis=-1, keepdims=True)
+                       for theta_hat_i in theta_hat_ji]
+
+    U_ji = [(n - 1) * (theta_hat_dot - theta_hat_i)
+            for theta_hat_dot, theta_hat_i, n
+            in zip(theta_hat_j_dot, theta_hat_ji, n_j)]
+
+    nums = [(U_i**3).sum(axis=-1)/n**3 for U_i, n in zip(U_ji, n_j)]
+    dens = [(U_i**2).sum(axis=-1)/n**2 for U_i, n in zip(U_ji, n_j)]
+    a_hat = 1/6 * sum(nums) / sum(dens)**(3/2)
 
     # calculate alpha_1, alpha_2
     z_alpha = ndtri(alpha)
