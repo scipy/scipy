@@ -700,11 +700,9 @@ ctypedef fused real:
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
-def gaussian_kernel_estimate(points, values, xi, covariance_cho, dtype,
+def gaussian_kernel_estimate(points, values, xi, cho_cov, dtype,
                              real _=0):
     """
-    def gaussian_kernel_estimate(points, real[:, :] values, xi, covariance_cho)
-
     Evaluate a multivariate Gaussian kernel estimate.
 
     Parameters
@@ -715,8 +713,8 @@ def gaussian_kernel_estimate(points, values, xi, covariance_cho, dtype,
         Multivariate values associated with the data points.
     xi : array_like with shape (m, d)
         Coordinates to evaluate the estimate at in d dimensions.
-    covariance_cho : array_like with shape (d, d)
-        Cholesky factor of the covariance matrix for the Gaussian kernel.
+    cho_cov : array_like with shape (d, d)
+        Permuted Cholesky factor of permuted covariance of the data.
 
     Returns
     -------
@@ -736,20 +734,20 @@ def gaussian_kernel_estimate(points, values, xi, covariance_cho, dtype,
 
     if xi.shape[1] != d:
         raise ValueError("points and xi must have same trailing dim")
-    if covariance_cho.shape[0] != d or covariance_cho.shape[1] != d:
+    if cho_cov.shape[0] != d or cho_cov.shape[1] != d:
         raise ValueError("Covariance matrix must match data dims")
 
     # Rescale the data
-    points_ = linalg.solve_triangular(covariance_cho, points.T, lower=False).T
-    xi_ = linalg.solve_triangular(covariance_cho, xi.T, lower=False).T
-
-    points_ = np.array(points_).astype(dtype)
-    xi_ = np.array(xi_).astype(dtype)
+    points_ = linalg.solve_triangular(cho_cov, points.T, lower=False).T
+    points_ = np.asarray(points_).astype(dtype, copy=False)
+    xi_ = linalg.solve_triangular(cho_cov, xi.T, lower=False).T
+    xi_ = np.asarray(xi_).astype(dtype, copy=False)
     values_ = values.astype(dtype, copy=False)
 
     # Evaluate the normalisation
     norm = math.pow((2 * PI) ,(- d / 2))
-    norm /= np.prod(np.diag(covariance_cho))
+    for i in range(d):
+        norm /= cho_cov[i, i]
 
     # Create the result array and evaluate the weighted sum
     estimate = np.zeros((m, p), dtype)

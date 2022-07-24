@@ -269,7 +269,7 @@ class gaussian_kde:
 
         result = gaussian_kernel_estimate[spec](
             self.dataset.T, self.weights[:, None],
-            points.T, self.covariance_cho, output_dtype)
+            points.T, self.cho_cov, output_dtype)
 
         return result[:, 0]
 
@@ -579,24 +579,25 @@ class gaussian_kde:
         covariance_factor().
         """
         self.factor = self.covariance_factor()
-        # Cache covariance and cholesky decomp of covariance of the data
-        if not hasattr(self, '_data_cov_cho'):
+        # Cache covariance and permuted cholesky decomp of permuted covariance
+        if not hasattr(self, '_data_cho_cov'):
             self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
                                                bias=False,
                                                aweights=self.weights))
-            # cho_solve returns a pair (ndarray, bool)
-            self._data_cov_cho = linalg.cholesky(
-                (self._data_covariance[::-1, ::-1]).T)[::-1, ::-1].copy()
+            self._data_cho_cov = linalg.cholesky(
+                self._data_covariance[::-1, ::-1]).T[::-1, ::-1]
 
         self.covariance = self._data_covariance * self.factor**2
-
-        # This is very bad and should be deprecated.
-        self.inv_cov = linalg.inv(self._data_covariance) / self.factor**2
-
-        # We should do this instead
-        self.covariance_cho = self._data_cov_cho * self.factor
-        self.log_det = 2*np.log(np.diag(self.covariance_cho
+        self.cho_cov = self._data_cho_cov * self.factor
+        self.log_det = 2*np.log(np.diag(self.cho_cov
                                         * np.sqrt(2*pi))).sum()
+
+    @property
+    def inv_cov(self):
+        self.factor = self.covariance_factor()
+        self._data_covariance = atleast_2d(cov(self.dataset, rowvar=1,
+                                           bias=False, aweights=self.weights))
+        return linalg.inv(self._data_covariance) / self.factor**2
 
     def pdf(self, x):
         """
