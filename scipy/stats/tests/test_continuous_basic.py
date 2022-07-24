@@ -5,7 +5,6 @@ from pytest import raises as assert_raises
 from scipy.integrate import IntegrationWarning
 
 from scipy import stats
-from scipy.special import betainc
 from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,

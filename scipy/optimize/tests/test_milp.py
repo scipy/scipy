@@ -191,7 +191,8 @@ def test_milp_3():
     # solve original problem
     res = milp(c=c, constraints=constraints, integrality=integrality)
     assert_allclose(res.fun, -2)
-    assert_allclose(res.x, [1, 2])
+    # two optimal solutions possible, just need one of them
+    assert np.allclose(res.x, [1, 2]) or np.allclose(res.x, [2, 2])
 
     # solve relaxed problem
     res = milp(c=c, constraints=constraints)
@@ -251,3 +252,22 @@ def test_milp_6():
     res = milp(c=c, constraints=(A_eq, b_eq, b_eq), integrality=integrality)
 
     np.testing.assert_allclose(res.fun, 1854)
+
+
+def test_infeasible_prob_16609():
+    # Ensure presolve does not mark trivially infeasible problems
+    # as Optimal -- see gh-16609
+    c = [1.0, 0.0]
+    integrality = [0, 1]
+
+    lb = [0, -np.inf]
+    ub = [np.inf, np.inf]
+    bounds = Bounds(lb, ub)
+
+    A_eq = [[0.0, 1.0]]
+    b_eq = [0.5]
+    constraints = LinearConstraint(A_eq, b_eq, b_eq)
+
+    res = milp(c, integrality=integrality, bounds=bounds,
+               constraints=constraints)
+    np.testing.assert_equal(res.status, 2)
