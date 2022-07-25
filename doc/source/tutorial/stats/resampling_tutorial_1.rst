@@ -15,15 +15,13 @@ normally distributed population (although some tests are quite robust to
 deviations from this assumption, as we will see later). The weights are
 recorded in the array ``x`` below.
 
-.. code:: ipython3
-
-    import numpy as np
-    x = np.array([148, 154, 158, 160, 161, 162, 166, 170, 182, 195, 236])  # weights (lbs)
+    >>> import numpy as np
+    >>> x = np.array([148, 154, 158, 160, 161, 162, 166, 170, 182, 195, 236])  # weights (lbs)
 
 One way of testing for departures for normality, chosen based on its
 simplicity rather than its sensitivity, is the `Jarque-Bera test
 [2] <https://www.sciencedirect.com/science/article/abs/pii/0165176580900245>`__
-implemented in SciPy as ``scipy.stats.jarque_bera``. The test, like many
+implemented in SciPy as `scipy.stats.jarque_bera`. The test, like many
 other hypothesis tests, computes a *statistic* based on the sample and
 compares its value to the distribution of the statistic derived under
 the *null hypothesis* that the sample is normally distributed. If the
@@ -35,46 +33,34 @@ null hypothesis.
 The statistic is calculated based on the skewness and kurtosis of the
 sample as follows.
 
-.. code:: ipython3
+    >>> from scipy import stats
 
-    from scipy import stats
+    >>> def statistic(x):
+    ...     # Calculates the Jarque-Bera Statistic
+    ...     # Compare against `scipy.stats.jarque_bera`:
+    ...     # https://github.com/scipy/scipy/blob/4cf21e753cf937d1c6c2d2a0e372fbc1dbbeea81/scipy/stats/_stats_py.py#L1583-L1637
+    ...     n = len(x)
+    ...     mu = np.mean(x, axis=0)
+    ...     x = x - mu  # remove the mean from the data
+    ...     s = stats.skew(x)  # calculate the sample skewness
+    ...     k = stats.kurtosis(x)  # calculate the sample kurtosis
+    ...     statistic = n/6 * (s**2 + k**2/4)
+    ...     return statistic
 
-    def statistic(x):
-        # Calculates the Jarque-Bera Statistic
-        # Compare against `scipy.stats.jarque_bera`:
-        # https://github.com/scipy/scipy/blob/4cf21e753cf937d1c6c2d2a0e372fbc1dbbeea81/scipy/stats/_stats_py.py#L1583-L1637
-        n = len(x)
-        mu = np.mean(x, axis=0)
-        x = x - mu  # remove the mean from the data
-        s = stats.skew(x)  # calculate the sample skewness
-        k = stats.kurtosis(x)  # calculate the sample kurtosis
-        statistic = n/6 * (s**2 + k**2/4)
-        return statistic
-
-    stat1 = statistic(x)
-    stat2, _ = stats.jarque_bera(x)
-    np.testing.assert_allclose(stat1, stat2, rtol=1e-14)
-    stat1
-
-
-
-
-.. parsed-literal::
-
+    >>> stat1 = statistic(x)
+    >>> stat2, _ = stats.jarque_bera(x)
+    >>> np.testing.assert_allclose(stat1, stat2, rtol=1e-14)
+    >>> stat1
     6.982848237344646
-
-
 
 Note that the value of the statistic is unaffected by the scale and
 location of the data.
 
-.. code:: ipython3
-
-    old_location = np.mean(x)
-    old_scale = np.std(x)
-    x_new = (x - old_location) / old_scale  # make location 0 and scale 1
-    stat3 = statistic(x_new)
-    np.testing.assert_allclose(stat1, stat3, rtol=1e-14)
+    >>> old_location = np.mean(x)
+    >>> old_scale = np.std(x)
+    >>> x_new = (x - old_location) / old_scale  # make location 0 and scale 1
+    >>> stat3 = statistic(x_new)
+    >>> np.testing.assert_allclose(stat1, stat3, rtol=1e-14)
 
 Consequently, it can be shown that large samples drawn from a normal
 distribution with any mean and variance will produce statistic values
@@ -113,16 +99,11 @@ the value of the statistic for each sample.
     >>> plt.legend(['Asymptotic Null Distribution', 'Monte Carlo Null Distribution (500 observations/sample)'])
     >>> plt.show()
 
-
 As we can see, the *Monte Carlo null distribution*
 \ `[2] <#cite_note-2>`__ of the test statistic when samples are drawn
 according to the null hypothesis (from a normal distribution) appears to
 follow the *asymptotic null distribution* (chi-squared with two degrees
 of freedom).
-
-\ `[2] <#cite_note-2>`__ Named after the Monte Carlo Casino in Monaco,
-apparently
-`[3] <https://en.wikipedia.org/wiki/Monte_Carlo_method#Historyhttps://en.wikipedia.org/wiki/Monte_Carlo_method#History>`__.
 
 Note that the originally observed value of the statistic, 6.98, is
 located in the right tail of the null distribution. Random samples from
@@ -133,17 +114,11 @@ under the null hypothesis that the sample is drawn from a normal
 population. This probability is quantified by the *inverse survival
 function* of the null distribution:
 
-.. code:: ipython3
-
-    pvalue = null_dist.sf(stat1)
-    message = ("Under the null hypothesis, the chance of drawing a sample "
-               f"that produces a statistic value greater than \n{stat1}\n"
-               f"is\n{pvalue}")
-    print(message)
-
-
-.. parsed-literal::
-
+    >>> pvalue = null_dist.sf(stat1)
+    >>> message = ("Under the null hypothesis, the chance of drawing a sample "
+    ...            f"that produces a statistic value greater than \n{stat1}\n"
+    ...            f"is\n{pvalue}")
+    >>> print(message)
     Under the null hypothesis, the chance of drawing a sample that produces a statistic value greater than
     6.982848237344646
     is
@@ -152,9 +127,7 @@ function* of the null distribution:
 
 This is the ``pvalue`` returned by ``stats.jarque_bera``.
 
-.. code:: ipython3
-
-    np.testing.assert_allclose(pvalue, stats.jarque_bera(x).pvalue, rtol=1e-14)
+    >>> np.testing.assert_allclose(pvalue, stats.jarque_bera(x).pvalue, rtol=1e-14)
 
 When the :math:`p`-value is small, we take this as evidence against the
 null hypothesis, since samples drawn under the null hypothesis have a
@@ -178,23 +151,22 @@ distribution and the asymptotic null distribution.
 
 .. plot::
 
-    # Draw 10000 samples, each with 11 observations
-    n_observations = 11
-    n_samples = 10000
-    y = norm_dist.rvs(size=(n_observations, n_samples))
+    >>> # Draw 10000 samples, each with 11 observations
+    >>> n_observations = 11
+    >>> n_samples = 10000
+    >>> y = norm_dist.rvs(size=(n_observations, n_samples))
 
-    # calculate the value of the statistic for each sample
-    null_dist_mc = statistic(y)
+    >>> # calculate the value of the statistic for each sample
+    >>> null_dist_mc = statistic(y)
 
-    # compare the MC and asymptotic distributions
-    plt.plot(y_grid, pdf)
-    plt.hist(null_dist_mc, density=True, bins=200)
-    plt.xlim(0, np.max(y_grid))
-    plt.xlabel("Value of test statistic")
-    plt.ylabel("Probability Density / Observed Frequency")
-    plt.legend(['Asymptotic Null Distribution', 'Monte Carlo Null Distribution (11 observations/sample)'])
-    plt.show()
-
+    >>> # compare the MC and asymptotic distributions
+    >>> plt.plot(y_grid, pdf)
+    >>> plt.hist(null_dist_mc, density=True, bins=200)
+    >>> plt.xlim(0, np.max(y_grid))
+    >>> plt.xlabel("Value of test statistic")
+    >>> plt.ylabel("Probability Density / Observed Frequency")
+    >>> plt.legend(['Asymptotic Null Distribution', 'Monte Carlo Null Distribution (11 observations/sample)'])
+    >>> plt.show()
 
 This is because the asymptotic null distribution was derived under the
 assumption that the number of observations approaches infinity (hence
@@ -210,21 +182,14 @@ to determine the :math:`p`-value, the approach of the *Monte Carlo test*
 is to compare the test statistic against the Monte Carlo null
 distribution.
 
-.. code:: ipython3
-
-    res = stats.jarque_bera(x)
-    stat, p_asymptotic = res
-    count = np.sum(null_dist_mc >= stat)
-    p_mc = count / n_samples
-    print(f"Asymptotic p-value {p_asymptotic}")
-    print(f"Monte Carlo p-value: {p_mc}")
-
-
-.. parsed-literal::
-
+    >>> res = stats.jarque_bera(x)
+    >>> stat, p_asymptotic = res
+    >>> count = np.sum(null_dist_mc >= stat)
+    >>> p_mc = count / n_samples
+    >>> print(f"Asymptotic p-value {p_asymptotic}")
+    >>> print(f"Monte Carlo p-value: {p_mc}")
     Asymptotic p-value 0.03045746622458189
     Monte Carlo p-value: 0.0085
-
 
 These :math:`p`-values are substantially different, so we might draw
 different conclusions about the validity of the null hypothesis
@@ -242,21 +207,14 @@ that computes the test statistic. ``monte_carlo_test`` returns an object
 with the observed statistic value, an empirical null distribution of the
 statistic, and the corresponding :math:`p`-value.
 
-.. code:: ipython3
-
-    res = stats.monte_carlo_test(sample=x, rvs=norm_dist.rvs, statistic=statistic,
-                                 n_resamples=10000, alternative='greater')
-    print(f"Observed values of the statistic: {res.statistic}")
-    print(f"Monte Carlo p-value: {res.pvalue}")
-    print(f"Empirical null distribution shape: {res.null_distribution.shape}")
-
-
-.. parsed-literal::
-
+    >>> res = stats.monte_carlo_test(sample=x, rvs=norm_dist.rvs, statistic=statistic,
+    ...                              n_resamples=10000, alternative='greater')
+    >>> print(f"Observed values of the statistic: {res.statistic}")
+    >>> print(f"Monte Carlo p-value: {res.pvalue}")
+    >>> print(f"Empirical null distribution shape: {res.null_distribution.shape}")
     Observed values of the statistic: 6.982848237344646
     Monte Carlo p-value: 0.0076
     Empirical null distribution shape: (10000,)
-
 
 Note that the :math:`p`-value here is slightly different than ``p_mc``
 above because the algorithm is stochastic. Nevertheless, ``res.pvalue``
@@ -294,14 +252,8 @@ already vectorized in some sense. Above, we wrote
 ``null_dist_emperical = statistic(y)``, and ``statistic`` computed the
 statistic for each column of the two-dimensional ``y``.
 
-.. code:: ipython3
-
-    print(y.shape)  # 10000 samples, each with 11 observations
-    print(statistic(y).shape)  # statistic for each column of y
-
-
-.. parsed-literal::
-
+    >>> print(y.shape)  # 10000 samples, each with 11 observations
+    >>> print(statistic(y).shape)  # statistic for each column of y
     (11, 10000)
     (10000,)
 
@@ -310,44 +262,28 @@ However, ``monte_carlo_test`` requires that the statistic function
 accept an ``axis`` argument to compute the statistic along *any* axis.
 Only minor modifications are required:
 
-.. code:: ipython3
+    >>> def statistic_vectorized(x, axis=0):
+    ...     # Calculates the Jarque-Bera Statistic
+    ...     # Compare against https://github.com/scipy/scipy/blob/4cf21e753cf937d1c6c2d2a0e372fbc1dbbeea81/scipy/stats/_stats_py.py#L1583-L1637
+    ...     n = x.shape[axis]
+    ...     mu = np.mean(x, axis=axis, keepdims=True)
+    ...     x = x - mu  # remove the mean from the data
+    ...     s = stats.skew(x, axis=axis)  # calculate the sample skewness
+    ...     k = stats.kurtosis(x, axis=axis)  # calculate the sample kurtosis
+    ...     statistic = n/6 * (s**2 + k**2/4)
+    ...     return statistic
 
-    def statistic_vectorized(x, axis=0):
-        # Calculates the Jarque-Bera Statistic
-        # Compare against https://github.com/scipy/scipy/blob/4cf21e753cf937d1c6c2d2a0e372fbc1dbbeea81/scipy/stats/_stats_py.py#L1583-L1637
-        n = x.shape[axis]
-        mu = np.mean(x, axis=axis, keepdims=True)
-        x = x - mu  # remove the mean from the data
-        s = stats.skew(x, axis=axis)  # calculate the sample skewness
-        k = stats.kurtosis(x, axis=axis)  # calculate the sample kurtosis
-        statistic = n/6 * (s**2 + k**2/4)
-        return statistic
-
-    np.testing.assert_allclose(statistic_vectorized(y, axis=0), statistic_vectorized(y.T, axis=1))
+    >>> np.testing.assert_allclose(statistic_vectorized(y, axis=0), statistic_vectorized(y.T, axis=1))
 
 But ``monte_carlo_test`` becomes much faster:
 
-.. code:: ipython3
-
-    # Before
-    %timeit -r1 -n1 stats.monte_carlo_test(sample=x, rvs=norm_dist.rvs, statistic=statistic, n_resamples=10000, alternative='greater')
-
-
-.. parsed-literal::
-
+    >>> # Before
+    >>> %timeit -r1 -n1 stats.monte_carlo_test(sample=x, rvs=norm_dist.rvs, statistic=statistic, n_resamples=10000, alternative='greater')
     21.6 s ± 0 ns per loop (mean ± std. dev. of 1 run, 1 loop each)
 
-
-.. code:: ipython3
-
-    # After
-    %timeit stats.monte_carlo_test(sample=x, rvs=norm_dist.rvs, statistic=statistic_vectorized, n_resamples=10000, alternative='greater', vectorized=True)
-
-
-.. parsed-literal::
-
+    >>> # After
+    >>> %timeit stats.monte_carlo_test(sample=x, rvs=norm_dist.rvs, statistic=statistic_vectorized, n_resamples=10000, alternative='greater', vectorized=True)
     35 ms ± 1.7 ms per loop (mean ± std. dev. of 7 runs, 10 loops each)
-
 
 When a statistical test is already implemented in SciPy (like
 ``stats.jarque_bera``), it becomes even easier to perform a Monte Carlo
@@ -355,43 +291,30 @@ version of the test. We simply need to “wrap” it in another function
 which only returns the test statistic rather than the full result
 object.
 
-.. code:: ipython3
+    >>> def statistic_scipy(x):
+    ...     # `jarque_bera` returns a result obeject
+    ...     res = stats.jarque_bera(x)
+    ...     # Our wrapper returns only the statistic, as required by `monte_carlo_test`
+    ...     return res.statistic
 
-    def statistic_scipy(x):
-        # `jarque_bera` returns a result obeject
-        res = stats.jarque_bera(x)
-        # Our wrapper returns only the statistic, as required by `monte_carlo_test`
-        return res.statistic
-
-    res = stats.monte_carlo_test(sample=x, rvs=norm_dist.rvs, statistic=statistic_scipy, n_resamples=10000, alternative='greater')
-    res.pvalue
-
-
-
-
-.. parsed-literal::
-
+    >>> res = stats.monte_carlo_test(sample=x, rvs=norm_dist.rvs, statistic=statistic_scipy, n_resamples=10000, alternative='greater')
+    >>> res.pvalue
     0.0067
-
-
 
 Of course, besides enabling more accurate tests for small sample sizes,
 ``monte_carlo_test`` makes it easy to perform hypothesis tests *not*
 implemented in SciPy. For instance, suppose we want to assess whether
-our data is distributed according to a ```rayleigh``
-distribution <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.rayleigh>`__.
+our data is distributed according to a `scipy.stats.rayleigh` distribution.
 Just as the “normal distribution” is really a *family* of distributions
-parameterized by mean and standard deviations, so ``rayleigh`` is a
+parameterized by mean and standard deviations, so `scipy.stats.rayleigh` is a
 family of distributions rather than one specific distribution. In
 contrast with the normal distribution, however, there are no tests in
 SciPy specifically designed to determine whether a sample is drawn from
 a Rayleigh distribution.
 
-The closest options are tests like
-```ks_1samp`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ks_1samp.html>`__
-and
-```cramervonmises`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.cramervonmises.html>`__,
-which can assess whether a sample is drawn from a *specific*
+The closest options are tests like `scipy.stats.ks_1samp` and
+`scipy.stats.cramervonmises`, which can assess whether a sample is drawn
+from a *specific*
 distribution. If we want to use these tests to assess whether the sample
 is distributed according to *any* Rayleigh distribution, one approach is
 to fit a Rayleigh distribution to the data, and then apply ``ks_1samp``
@@ -400,17 +323,17 @@ fitted Rayleigh distribution.
 
 .. plot::
 
-    dist_family = stats.rayleigh
-    params = dist_family.fit(x)
-    dist_specific = dist_family(*params)
+    >>> dist_family = stats.rayleigh
+    >>> params = dist_family.fit(x)
+    >>> dist_specific = dist_family(*params)
 
-    z = np.linspace(dist_specific.ppf(0), dist_specific.isf(0.001))
-    plt.plot(z, dist_specific.pdf(z))
-    plt.plot(x, np.zeros_like(x), 'x')
-    plt.legend(('Candidate PDF', 'Observed Data'))
-    plt.xlabel('Weight (lb)')
-    plt.ylabel('Probability Density')
-    plt.show()
+    >>> z = np.linspace(dist_specific.ppf(0), dist_specific.isf(0.001))
+    >>> plt.plot(z, dist_specific.pdf(z))
+    >>> plt.plot(x, np.zeros_like(x), 'x')
+    >>> plt.legend(('Candidate PDF', 'Observed Data'))
+    >>> plt.xlabel('Weight (lb)')
+    >>> plt.ylabel('Probability Density')
+    >>> plt.show()
 
 
 To the eyes of the author, this does not look like a terrific fit. The
@@ -421,69 +344,39 @@ than ~135 lb, which does not seem realistic. However, the ``ks_1samp``
 and ``cramervonmises`` tests are both inconclusive, with relatively
 large :math:`p`-values.
 
-.. code:: ipython3
-
-    stats.ks_1samp(x, dist_specific.cdf)
-
-
-
-
-.. parsed-literal::
-
+    >>> stats.ks_1samp(x, dist_specific.cdf)
     KstestResult(statistic=0.26884627441317677, pvalue=0.3412228239139401)
 
-
-
-.. code:: ipython3
-
-    stats.cramervonmises(x, dist_specific.cdf)
-
-
-
-
-.. parsed-literal::
-
+    >>> stats.cramervonmises(x, dist_specific.cdf)
     CramerVonMisesResult(statistic=0.17536330558707267, pvalue=0.32395064743536117)
-
-
 
 A much more powerful test of the null hypothesis that the data is
 distributed according to *any* Rayleigh distribution is the
 `Anderson-Darling
 Test <https://en.wikipedia.org/wiki/Anderson%E2%80%93Darling_test>`__.
-```scipy.stats.anderson`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.anderson.html>`__
+`scipy.stats.anderson`
 implements the test for some families of distributions, but not for the
 Rayleigh distribution. A simple implementation is included below.
 
-.. code:: ipython3
+    >>> def statistic(x):
+    ...     """Compute the Anderson-Darling statistic A^2"""
+    ...     # fit a distribution to the data
+    ...     params = dist_family.fit(x)
+    ...     dist = dist_family(*params)
+    ...
+    ...     # compute A^2
+    ...     x = np.sort(x)
+    ...     n = len(x)
+    ...     i = np.arange(1, n+1)
+    ...     Si = (2*i - 1)/n * (dist.logcdf(x) + dist.logsf(x[::-1]))
+    ...     S = np.sum(Si)
+    ...     return -n - S
 
-    def statistic(x):
-        """Compute the Anderson-Darling statistic A^2"""
-        # fit a distribution to the data
-        params = dist_family.fit(x)
-        dist = dist_family(*params)
-
-        # compute A^2
-        x = np.sort(x)
-        n = len(x)
-        i = np.arange(1, n+1)
-        Si = (2*i - 1)/n * (dist.logcdf(x) + dist.logsf(x[::-1]))
-        S = np.sum(Si)
-        return -n - S
-
-    params = dist_family.fit(x)
-    dist = dist_family(*params)
-    res = stats.monte_carlo_test(x, rvs=dist.rvs, statistic=statistic, alternative='greater')
-    res.pvalue
-
-
-
-
-.. parsed-literal::
-
+    >>> params = dist_family.fit(x)
+    >>> dist = dist_family(*params)
+    >>> res = stats.monte_carlo_test(x, rvs=dist.rvs, statistic=statistic, alternative='greater')
+    >>> res.pvalue
     0.047004700470047005
-
-
 
 Although this does not meet the threshold for significance used above
 (1%), it does begin to cast doubt on the null hypothesis.
@@ -494,16 +387,16 @@ Provided a statistic and null distribution, it can replicate the
 :math:`p`-value of any such tests in SciPy, and it may be more accurate
 than these existing implementations, especially for small samples:
 
--  `scipy.stats.skewtest`__
--  ```kurtosistest`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.kurtosistest.html>`__
--  ```normaltest`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.normaltest.html>`__
--  ```shapiro`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.shapiro.html>`__
--  ```anderson`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.anderson.html>`__
--  ```chisquare`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.chisquare.html>`__
--  ```power_divergence`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.power_divergence.html>`__
--  ```cramervonmises`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.cramervonmises.html>`__
--  ```ks_1samp`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.ks_1samp.html>`__
--  ```binomtest`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.binomtest.html>`__
+-  `scipy.stats.skewtest`
+-  `scipy.stats.kurtosistest`
+-  `scipy.stats.normaltest`
+-  `scipy.stats.shapiro`
+-  `scipy.stats.anderson`
+-  `scipy.stats.chisquare`
+-  `scipy.stats.power_divergence`
+-  `scipy.stats.cramervonmises`
+-  `scipy.stats.ks_1samp`
+-  `scipy.stats.binomtest`
 
 In addition, ``monte_carlo_test`` can be used to perform tests not yet
 implemented in SciPy, such as `the Lilliefors
@@ -515,4 +408,3 @@ whether a sample is drawn from a particular distribution or family of
 distributions, but instead test whether multiple samples are drawn from
 the same distribution. For these situations, we turn our attention to
 ``permutation_test``.
-

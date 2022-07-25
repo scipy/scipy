@@ -20,13 +20,11 @@ a shiny demon… in the middle… of the road. And he says:
    will be less than or equal to :math:`x=45`? Answer correctly, or I’ll
    eat your souls.
 
-.. code:: ipython3
-
-    import math
-    import numpy as np
-    p = 0.5  # probability of flipping heads each flip
-    n = 100  # number of coin flips per trial
-    x = 45  # we want to know the probability that the number of heads per trial will be less than or equal to this
+    >>> import math
+    >>> import numpy as np
+    >>> p = 0.5  # probability of flipping heads each flip
+    >>> n = 100  # number of coin flips per trial
+    >>> x = 45  # we want to know the probability that the number of heads per trial will be less than or equal to this
 
 Your brother Kyle is the analytical one. He answers:
 
@@ -41,20 +39,13 @@ Your brother Kyle is the analytical one. He answers:
 
 .. math:: F(x; \mu, \sigma) = \frac{1}{2} \left[ 1 + \mbox{erf} \left( \frac{x-\mu}{\sigma \sqrt{2}} \right) \right]
 
-.. code:: ipython3
-
-    # Kyle's Analytical Approach
-    mean = p*n
-    std = math.sqrt(n*p*(1-p))
-    # CDF of the normal distribution. (Unfortunately, Kyle forgets a continuity correction that would produce a more accurate answer.)
-    prob = 0.5 * (1 + math.erf((x - mean) / (std * math.sqrt(2))))
-    print(f"The normal approximation estimates the probability as {prob}")
-
-
-.. parsed-literal::
-
+    >>> # Kyle's Analytical Approach
+    >>> mean = p*n
+    >>> std = math.sqrt(n*p*(1-p))
+    >>> # CDF of the normal distribution. (Unfortunately, Kyle forgets a continuity correction that would produce a more accurate answer.)
+    >>> prob = 0.5 * (1 + math.erf((x - mean) / (std * math.sqrt(2))))
+    >>> print(f"The normal approximation estimates the probability as {prob}")
     The normal approximation estimates the probability as 0.15865525393145713
-
 
 You are a little more practical, so you decide to take a computational
 approach (or more precisely, a Monte Carlo approach): just simulate many
@@ -62,20 +53,13 @@ sequences of coin tosses, count the the number of heads in each toss,
 and estimate the probability as the fraction of sequences in which the
 count does not exceed 45.
 
-.. code:: ipython3
-
-    # Your Monte Carlo Approach
-    N = 100000  # We'll do 100000 trials, each with 100 flips
-    simulation = np.random.rand(n, N) < p  # False for tails, True for heads
-    counts = np.sum(simulation, axis=0)  # count the number of heads each trial
-    prob = np.sum(counts <= x) / N  # estimate the probability as the observed proportion of cases in which the count did not exceed 45
-    print(f"The Monte Carlo approach estimates the probability as {prob}")
-
-
-.. parsed-literal::
-
+    >>> # Your Monte Carlo Approach
+    >>> N = 100000  # We'll do 100000 trials, each with 100 flips
+    >>> simulation = np.random.rand(n, N) < p  # False for tails, True for heads
+    >>> counts = np.sum(simulation, axis=0)  # count the number of heads each trial
+    >>> prob = np.sum(counts <= x) / N  # estimate the probability as the observed proportion of cases in which the count did not exceed 45
+    >>> print(f"The Monte Carlo approach estimates the probability as {prob}")
     The Monte Carlo approach estimates the probability as 0.18348
-
 
 The demon replies:
 
@@ -84,18 +68,11 @@ The demon replies:
 
 .. math:: \sum_{i=0}^{x} {n \choose i} p^i (1-p)^{n-i}
 
-.. code:: ipython3
-
-    # The Demon's Exact Probability
-    from scipy.stats import binom
-    prob = binom.cdf(x, n, p)
-    print(f"The correct answer is approximately {prob}")
-
-
-.. parsed-literal::
-
+    >>> # The Demon's Exact Probability
+    >>> from scipy.stats import binom
+    >>> prob = binom.cdf(x, n, p)
+    >>> print(f"The correct answer is approximately {prob}")
     The correct answer is approximately 0.18410080866334788
-
 
 As your soul is being eaten, you take solace in the knowledge that your
 simple Monte Carlo approach was more accurate than the normal
