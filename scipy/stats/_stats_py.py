@@ -7633,6 +7633,7 @@ def _compute_prob_outside_square(n, h):
 
 def _count_paths_outside_method(m, n, g, h):
     """Count the number of paths that pass outside the specified diagonal.
+
     Parameters
     ----------
     m : integer
@@ -7643,6 +7644,7 @@ def _count_paths_outside_method(m, n, g, h):
         g is greatest common divisor of m and n
     h : integer
         0 <= h <= lcm(m,n)
+
     Returns
     -------
     p : float
@@ -7655,10 +7657,12 @@ def _count_paths_outside_method(m, n, g, h):
       m*y <= n*x - h*g
     The paths make steps of size +1 in either positive x or positive y
     directions.
+
     We generally follow Hodges' treatment of Drion/Gnedenko/Korolyuk.
     Hodges, J.L. Jr.,
     "The Significance Probability of the Smirnov Two-Sample Test,"
     Arkiv fiur Matematik, 3, No. 43 (1958), 469-86.
+
     """
     # Compute #paths which stay lower than x/m-y/n = h/lcm(m,n)
     # B(x, y) = #{paths from (0,0) to (x,y) without
@@ -7702,9 +7706,11 @@ def _count_paths_outside_method(m, n, g, h):
 
 def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
     """Attempts to compute the exact 2sample probability.
+
     n1, n2 are the sample sizes
     g is the gcd(n1, n2)
     d is the computed max difference in ECDFs
+
     Returns (success, d, probability)
     """
     lcm = (n1 // g) * n2
@@ -7731,7 +7737,7 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
                     with np.errstate(over='raise'):
                         num_paths = _count_paths_outside_method(n1, n2, g, h)
                     bin = special.binom(n1 + n2, n1)
-                    if num_paths > bin:
+                    if num_paths > bin or np.isinf(bin):
                         saw_fp_error = True
                     else:
                         prob = num_paths / bin

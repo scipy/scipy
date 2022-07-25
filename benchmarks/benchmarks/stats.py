@@ -681,7 +681,8 @@ class KolmogorovSmirnov(Benchmark):
         self.a = a
 
     def time_ks(self, alternative, mode, size):
-        stats.kstest(self.a, 'norm', alternative=alternative, mode=mode, N=size)
+        stats.kstest(self.a, 'norm', alternative=alternative, 
+                     mode=mode, N=size)
 
 
 class KolmogorovSmirnovTwoSamples(Benchmark):
