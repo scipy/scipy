@@ -347,7 +347,7 @@ def test_sg_filter_valid_window_length_3d():
 
     savgol_filter(x, window_length=29, polyorder=3, mode='interp')
 
-    with pytest.raises(ValueError,  match='window_length must be less than'):
+    with pytest.raises(ValueError, match='window_length must be less than'):
         # window_length is more than x.shape[-1].
         savgol_filter(x, window_length=31, polyorder=3, mode='interp')
 
