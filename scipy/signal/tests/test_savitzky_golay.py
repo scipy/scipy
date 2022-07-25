@@ -1,7 +1,8 @@
+import pytest
 import numpy as np
 from numpy.testing import (assert_allclose, assert_equal,
                            assert_almost_equal, assert_array_equal,
-                           assert_array_almost_equal, assert_raises)
+                           assert_array_almost_equal)
 
 from scipy.ndimage import convolve1d
 
@@ -342,16 +343,16 @@ def test_sg_filter_interp_edges_3d():
 def test_sg_filter_valid_window_length_3d():
     """Tests that the window_length check is using the correct axis."""
 
-    x = np.random.rand(10, 20, 30)
+    x = np.ones((10, 20, 30))
 
     savgol_filter(x, window_length=29, polyorder=3, mode='interp')
 
-    with assert_raises(ValueError):
-
+    with pytest.raises(ValueError,  match='window_length must be less than'):
+        # window_length is more than x.shape[-1].
         savgol_filter(x, window_length=31, polyorder=3, mode='interp')
 
     savgol_filter(x, window_length=9, polyorder=3, axis=0, mode='interp')
 
-    with assert_raises(ValueError):
-        # Can only raise window_length error if axis 0 is the one being checked
+    with pytest.raises(ValueError, match='window_length must be less than'):
+        # window_length is more than x.shape[0].
         savgol_filter(x, window_length=11, polyorder=3, axis=0, mode='interp')
