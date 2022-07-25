@@ -475,14 +475,18 @@ Legacy interface for 1-D interpolation (:class:`interp1d`)
 
 .. _tutorial-interpolate_interp1d:
 
+.. note::
+    `interp1d` is considered legacy API and is not recommended for use in new
+    code. Consider using more specific interpolators instead. 
+
 The `interp1d` class in `scipy.interpolate` is a convenient method to
 create a function based on fixed data points, which can be evaluated
 anywhere within the domain defined by the given data using linear
 interpolation. An instance of this class is created by passing the 1-D
 vectors comprising the data. The instance of this class defines a
-__call__ method and can therefore by treated like a function which
-interpolates between known data values to obtain unknown values (it
-also has a docstring for help). Behavior at the boundary can be
+``__call__`` method and can therefore by treated like a function which
+interpolates between known data values to obtain unknown values.
+Behavior at the boundary can be
 specified at instantiation time. The following example demonstrates
 its use, for linear and cubic spline interpolation:
 
