@@ -7,5 +7,4 @@
    :hidden:
    :maxdepth: 1
 
-   optimize.nonlin
    optimize.cython_optimize

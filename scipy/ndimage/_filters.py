@@ -236,6 +236,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     Examples
     --------
     >>> from scipy.ndimage import gaussian_filter1d
+    >>> import numpy as np
     >>> gaussian_filter1d([1.0, 2.0, 3.0, 4.0, 5.0], 1)
     array([ 1.42704095,  2.06782203,  3.        ,  3.93217797,  4.57295905])
     >>> gaussian_filter1d([1.0, 2.0, 3.0, 4.0, 5.0], 4)
@@ -303,6 +304,7 @@ def gaussian_filter(input, sigma, order=0, output=None,
     Examples
     --------
     >>> from scipy.ndimage import gaussian_filter
+    >>> import numpy as np
     >>> a = np.arange(50, step=2).reshape((5,5))
     >>> a
     array([[ 0,  2,  4,  6,  8],
@@ -723,6 +725,7 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     as kernel over the image and computing the sum of products at each location.
 
     >>> from scipy.ndimage import correlate
+    >>> import numpy as np
     >>> input_img = np.arange(25).reshape(5,5)
     >>> print(input_img)
     [[ 0  1  2  3  4]
@@ -771,7 +774,11 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     cval : scalar, optional
         Value to fill past edges of input if `mode` is 'constant'. Default
         is 0.0
-    %(origin_multiple)s
+    origin : int, optional
+        Controls the origin of the input signal, which is where the
+        filter is centered to produce the first element of the output.
+        Positive values shift the filter to the right, and negative values
+        shift the filter to the left. Default is 0.
 
     Returns
     -------
@@ -796,6 +803,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     because in this case borders (i.e., where the `weights` kernel, centered
     on any one value, extends beyond an edge of `input`) are treated as zeros.
 
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],
@@ -1316,7 +1324,7 @@ def rank_filter(input, rank, size=None, footprint=None, output=None,
     ----------
     %(input)s
     rank : int
-        The rank parameter may be less then zero, i.e., rank = -1
+        The rank parameter may be less than zero, i.e., rank = -1
         indicates the largest element.
     %(size_foot)s
     %(output)s
@@ -1368,7 +1376,7 @@ def median_filter(input, size=None, footprint=None, output=None,
     median_filter : ndarray
         Filtered array. Has the same shape as `input`.
 
-    See also
+    See Also
     --------
     scipy.signal.medfilt2d
 
@@ -1405,7 +1413,7 @@ def percentile_filter(input, percentile, size=None, footprint=None,
     ----------
     %(input)s
     percentile : scalar
-        The percentile parameter may be less then zero, i.e.,
+        The percentile parameter may be less than zero, i.e.,
         percentile = -20 equals percentile = 80
     %(size_foot)s
     %(output)s

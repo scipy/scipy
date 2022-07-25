@@ -165,7 +165,7 @@ Note that modes mirror and reflect differ only in whether the sample at the
 boundary is repeated upon reflection. For mode mirror, the point of symmetry is
 exactly at the final sample, so that value is not repeated. This mode is also
 known as whole-sample symmetric since the point of symmetry falls on the final
-sample. Similarly, reflect is often refered to as half-sample symmetric as the
+sample. Similarly, reflect is often referred to as half-sample symmetric as the
 point of symmetry is half a sample beyond the array boundary.
 
 .. note::
@@ -214,7 +214,9 @@ Smoothing filters
   corresponds to convolution with a Gaussian kernel. An order of 1, 2,
   or 3 corresponds to convolution with the first, second, or third
   derivatives of a Gaussian. Higher-order derivatives are not
-  implemented.
+  implemented. 
+
+
 
 - The :func:`gaussian_filter` function implements a multidimensional
   Gaussian filter. The standard deviations of the Gaussian filter
@@ -227,7 +229,13 @@ Smoothing filters
   first, second, or third derivatives of a Gaussian. Higher-order
   derivatives are not implemented. The *order* parameter must be a
   number, to specify the same order for all axes, or a sequence of
-  numbers to specify a different order for each axis.
+  numbers to specify a different order for each axis. The example below
+  shows the filter applied on test data with different values of *sigma*.
+  The *order* parameter is kept at 0. 
+
+  .. plot:: tutorial/examples/gaussian_filter_plot1.py
+      :align: center
+      :include-source: 0
 
   .. note::
 
@@ -284,7 +292,7 @@ Filters based on order statistics
   shape of the kernel by its non-zero elements.
 
 - The :func:`rank_filter` function calculates a multidimensional rank
-  filter. The *rank* may be less then zero, i.e., *rank* = -1
+  filter. The *rank* may be less than zero, i.e., *rank* = -1
   indicates the largest element. Either the sizes of a rectangular
   kernel or the footprint of the kernel must be provided. The *size*
   parameter, if provided, must be a sequence of sizes or a single
@@ -293,7 +301,7 @@ Filters based on order statistics
   defines the shape of the kernel by its non-zero elements.
 
 - The :func:`percentile_filter` function calculates a multidimensional
-  percentile filter. The *percentile* may be less then zero, i.e.,
+  percentile filter. The *percentile* may be less than zero, i.e.,
   *percentile* = -20 equals *percentile* = 80. Either the sizes of a
   rectangular kernel or the footprint of the kernel must be provided.
   The *size* parameter, if provided, must be a sequence of sizes or a
@@ -962,8 +970,18 @@ Binary morphology
 	    [ True,  True,  True],
             [ True,  True,  True]], dtype=bool)
 
+This is a viusal presentation of `generate_binary_structure` in 3D:
+
+  .. plot:: tutorial/examples/ndimage/3D_binary_structure.py
+      :align: center
+      :include-source: 0
+
 Most binary morphology functions can be expressed in terms of the
-basic operations erosion and dilation.
+basic operations erosion and dilation, which can be seen here:
+
+  .. plot:: tutorial/examples/morphology_binary_dilation_erosion.py
+      :align: center
+      :include-source: 0
 
 - The :func:`binary_erosion` function implements binary erosion of
   arrays of arbitrary rank with the given structuring element. The

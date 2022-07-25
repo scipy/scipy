@@ -219,14 +219,14 @@ class RRCommonTests:
         assert_equal(np.linalg.matrix_rank(A1), rank)
 
     def test_magic_square(self):
-        A, b, c, numbers = magic_square(3)
+        A, b, c, numbers, _ = magic_square(3)
         A1, b1, status, message = self.rr(A, b)
         assert_equal(status, 0)
         assert_equal(A1.shape[0], 23)
         assert_equal(np.linalg.matrix_rank(A1), 23)
 
     def test_magic_square2(self):
-        A, b, c, numbers = magic_square(4)
+        A, b, c, numbers, _ = magic_square(4)
         A1, b1, status, message = self.rr(A, b)
         assert_equal(status, 0)
         assert_equal(A1.shape[0], 39)

@@ -206,7 +206,7 @@ class TestKrogh:
         Pi = [KroghInterpolator(xs,ys[:,i]) for i in range(ys.shape[1])]
         test_xs = np.linspace(-1,3,100)
         assert_almost_equal(P(test_xs),
-                np.rollaxis(np.asarray([p(test_xs) for p in Pi]),-1))
+                            np.asarray([p(test_xs) for p in Pi]).T)
         assert_almost_equal(P.derivatives(test_xs),
                 np.transpose(np.asarray([p.derivatives(test_xs) for p in Pi]),
                     (1,2,0)))
@@ -326,7 +326,7 @@ class TestBarycentric:
         Pi = [BI(xs, ys[:, i]) for i in range(ys.shape[1])]
         test_xs = np.linspace(-1, 3, 100)
         assert_almost_equal(P(test_xs),
-                np.rollaxis(np.asarray([p(test_xs) for p in Pi]), -1))
+                            np.asarray([p(test_xs) for p in Pi]).T)
 
     def test_shapes_scalarvalue(self):
         P = BarycentricInterpolator(self.xs, self.ys)

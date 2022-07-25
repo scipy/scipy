@@ -16,7 +16,7 @@ import numpy as np
 from numpy.testing import assert_, assert_equal
 from pytest import raises as assert_raises
 
-from scipy.io.matlab.streams import (make_stream,
+from scipy.io.matlab._streams import (make_stream,
     GenericStream, ZlibInputStream,
     _read_into, _read_string, BLOCK_SIZE)
 

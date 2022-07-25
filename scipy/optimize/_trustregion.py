@@ -1,9 +1,10 @@
 """Trust-region optimization."""
 import math
+import warnings
 
 import numpy as np
 import scipy.linalg
-from .optimize import (_check_unknown_options, _status_message,
+from ._optimize import (_check_unknown_options, _status_message,
                        OptimizeResult, _prepare_scalar_function)
 from scipy.optimize._hessian_update_strategy import HessianUpdateStrategy
 from scipy.optimize._differentiable_functions import FD_METHODS
@@ -221,7 +222,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         # has reached the trust region boundary or not.
         try:
             p, hits_boundary = m.solve(trust_radius)
-        except np.linalg.linalg.LinAlgError:
+        except np.linalg.LinAlgError:
             warnflag = 3
             break
 
@@ -279,7 +280,7 @@ def _minimize_trust_region(fun, x0, args=(), jac=None, hess=None, hessp=None,
         if warnflag == 0:
             print(status_messages[warnflag])
         else:
-            print('Warning: ' + status_messages[warnflag])
+            warnings.warn(status_messages[warnflag], RuntimeWarning, 3)
         print("         Current function value: %f" % m.fun)
         print("         Iterations: %d" % k)
         print("         Function evaluations: %d" % sf.nfev)

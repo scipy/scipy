@@ -6,8 +6,10 @@ import warnings
 from . import _fourier
 
 
-__all__ = ['fourier_gaussian', 'fourier_uniform',  # noqa: F822
-           'fourier_ellipsoid', 'fourier_shift']
+__all__ = [  # noqa: F822
+    'fourier_gaussian', 'fourier_uniform',
+    'fourier_ellipsoid', 'fourier_shift', 'normalize_axis_index'
+]
 
 
 def __dir__():

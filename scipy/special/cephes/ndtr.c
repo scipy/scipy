@@ -45,7 +45,7 @@
  * erfc underflow    x > 37.519379347       0.0
  *
  */
-/*							erf.c
+/*							erf.c
  *
  *	Error function
  *
@@ -83,7 +83,7 @@
  *    IEEE      0,1         30000       3.7e-16     1.0e-16
  *
  */
-/*							erfc.c
+/*							erfc.c
  *
  *	Complementary error function
  *
@@ -122,7 +122,7 @@
  * arithmetic   domain     # trials      peak         rms
  *    IEEE      0,26.6417   30000       5.7e-14     1.5e-14
  */
-
+
 
 /*
  * Cephes Math Library Release 2.2:  June, 1992
@@ -203,24 +203,24 @@ double ndtr(double a)
     double x, y, z;
 
     if (cephes_isnan(a)) {
-	sf_error("ndtr", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+        sf_error("ndtr", SF_ERROR_DOMAIN, NULL);
+        return NPY_NAN;
     }
 
     x = a * NPY_SQRT1_2;
     z = fabs(x);
 
-    if (z < NPY_SQRT1_2)
-	y = 0.5 + 0.5 * erf(x);
-
+    if (z < NPY_SQRT1_2) {
+        y = 0.5 + 0.5 * erf(x);
+    }
     else {
-	y = 0.5 * erfc(z);
-
-	if (x > 0)
-	    y = 1.0 - y;
+        y = 0.5 * erfc(z);
+        if (x > 0) {
+            y = 1.0 - y;
+        }
     }
 
-    return (y);
+    return y;
 }
 
 
@@ -230,47 +230,54 @@ double erfc(double a)
 
     if (cephes_isnan(a)) {
         sf_error("erfc", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+        return NPY_NAN;
     }
 
-    if (a < 0.0)
-	x = -a;
-    else
-	x = a;
+    if (a < 0.0) {
+        x = -a;
+    }
+    else {
+        x = a;
+    }
 
-    if (x < 1.0)
-	return (1.0 - erf(a));
+    if (x < 1.0) {
+        return 1.0 - erf(a);
+    }
 
     z = -a * a;
 
     if (z < -MAXLOG) {
-      under:
-	sf_error("erfc", SF_ERROR_UNDERFLOW, NULL);
-	if (a < 0)
-	    return (2.0);
-	else
-	    return (0.0);
+        goto under;
     }
 
     z = exp(z);
 
     if (x < 8.0) {
-	p = polevl(x, P, 8);
-	q = p1evl(x, Q, 8);
+        p = polevl(x, P, 8);
+        q = p1evl(x, Q, 8);
     }
     else {
-	p = polevl(x, R, 5);
-	q = p1evl(x, S, 6);
+        p = polevl(x, R, 5);
+        q = p1evl(x, S, 6);
     }
     y = (z * p) / q;
 
-    if (a < 0)
-	y = 2.0 - y;
+    if (a < 0) {
+        y = 2.0 - y;
+    }
 
-    if (y == 0.0)
-	goto under;
+    if (y != 0.0) {
+        return y;
+    }
 
-    return (y);
+under:
+    sf_error("erfc", SF_ERROR_UNDERFLOW, NULL);
+    if (a < 0) {
+        return 2.0;
+    }
+    else {
+        return 0.0;
+    }
 }
 
 
@@ -280,66 +287,19 @@ double erf(double x)
     double y, z;
 
     if (cephes_isnan(x)) {
-	sf_error("erf", SF_ERROR_DOMAIN, NULL);
-	return (NPY_NAN);
+        sf_error("erf", SF_ERROR_DOMAIN, NULL);
+        return NPY_NAN;
     }
 
     if (x < 0.0) {
-	return -erf(-x);
+        return -erf(-x);
     }
 
-    if (fabs(x) > 1.0)
-	return (1.0 - erfc(x));
+    if (fabs(x) > 1.0) {
+        return (1.0 - erfc(x));
+    }
     z = x * x;
 
     y = x * polevl(z, T, 4) / p1evl(z, U, 5);
-    return (y);
-
-}
-
-/*
- * double log_ndtr(double a)
- *
- * For a > -20, use the existing ndtr technique and take a log.
- * for a <= -20, we use the Taylor series approximation of erf to compute
- * the log CDF directly. The Taylor series consists of two parts which we will name "left"
- * and "right" accordingly.  The right part involves a summation which we compute until the
- * difference in terms falls below the machine-specific EPSILON.
- *
- * \Phi(z) &=&
- *   \frac{e^{-z^2/2}}{-z\sqrt{2\pi}}  * [1 +  \sum_{n=1}^{N-1}  (-1)^n \frac{(2n-1)!!}{(z^2)^n}]
- *   + O(z^{-2N+2})
- *   = [\mbox{LHS}] * [\mbox{RHS}] + \mbox{error}.
- *
- */
-
-double log_ndtr(double a)
-{
-
-    double log_LHS,		/* we compute the left hand side of the approx (LHS) in one shot */
-     last_total = 0,		/* variable used to check for convergence */
-	right_hand_side = 1,	/* includes first term from the RHS summation */
-	numerator = 1,		/* numerator for RHS summand */
-	denom_factor = 1,	/* use reciprocal for denominator to avoid division */
-	denom_cons = 1.0 / (a * a);	/* the precomputed division we use to adjust the denominator */
-    long sign = 1, i = 0;
-
-    if (a > 6) {
-	return -ndtr(-a);     /* log(1+x) \approx x */
-    }
-    if (a > -20) {
-	return log(ndtr(a));
-    }
-    log_LHS = -0.5 * a * a - log(-a) - 0.5 * log(2 * M_PI);
-
-    while (fabs(last_total - right_hand_side) > DBL_EPSILON) {
-	i += 1;
-	last_total = right_hand_side;
-	sign = -sign;
-	denom_factor *= denom_cons;
-	numerator *= 2 * i - 1;
-	right_hand_side += sign * numerator * denom_factor;
-
-    }
-    return log_LHS + log(right_hand_side);
+    return y;
 }

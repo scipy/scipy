@@ -4,10 +4,11 @@ Routines for evaluating and manipulating B-splines.
 """
 
 import numpy as np
-from scipy.sparse import csr_matrix
 cimport numpy as cnp
 
 cimport cython
+
+cnp.import_array()
 
 cdef extern from "src/__fitpack.h":
     void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
@@ -149,7 +150,7 @@ def evaluate_spline(const double[::1] t,
                 continue
 
             # Evaluate (k+1) b-splines which are non-zero on the interval.
-            # on return, first k+1 elemets of work are B_{m-k},..., B_{m}
+            # on return, first k+1 elements of work are B_{m-k},..., B_{m}
             _deBoor_D(&t[0], xval, k, interval, nu, &work[0])
 
             # Form linear combinations
@@ -190,15 +191,14 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     Consider a cubic spline
 
     >>> k = 3
-    >>> t = [0., 2., 2., 3., 4.]   # internal knots
+    >>> t = [0., 1., 2., 3., 4.]   # internal knots
     >>> a, b = t[0], t[-1]    # base interval is [a, b)
-    >>> t = [a]*k + t + [b]*k  # add boundary knots
+    >>> t = np.array([a]*k + t + [b]*k)  # add boundary knots
 
     >>> import matplotlib.pyplot as plt
     >>> xx = np.linspace(a, b, 100)
     >>> plt.plot(xx, BSpline.basis_element(t[k:-k])(xx),
-    ...          'r-', lw=5, alpha=0.5)
-    >>> c = ['b', 'g', 'c', 'k']
+    ...          lw=3, alpha=0.5, label='basis_element')
 
     Now we use slide an interval ``t[m]..t[m+1]`` along the base interval
     ``a..b`` and use `evaluate_all_bspl` to compute the restriction of
@@ -208,7 +208,7 @@ def evaluate_all_bspl(const double[::1] t, int k, double xval, int m, int nu=0):
     ...    x1, x2 = t[2*k - i], t[2*k - i + 1]
     ...    xx = np.linspace(x1 - 0.5, x2 + 0.5)
     ...    yy = [evaluate_all_bspl(t, k, x, 2*k - i)[i] for x in xx]
-    ...    plt.plot(xx, yy, c[i] + '--', lw=3, label=str(i))
+    ...    plt.plot(xx, yy, '--', label=str(i))
     ...
     >>> plt.grid(True)
     >>> plt.legend()
@@ -417,15 +417,15 @@ def _norm_eq_lsq(const double[::1] x,
 @cython.wraparound(False)
 @cython.boundscheck(False)
 def _make_design_matrix(const double[::1] x,
-                const double[::1] t,
-                int k):
+                        const double[::1] t,
+                        int k):
     """
     Returns a design matrix in CSR format
     
     Parameters
     ----------
     x : array_like, shape (n,)
-        Points to evaluate the spline at.   
+        Points to evaluate the spline at.
     t : array_like, shape (nt,)
         Sorted 1D array of knots.
     k : int
@@ -433,22 +433,22 @@ def _make_design_matrix(const double[::1] x,
 
     Returns
     -------
-    design_matrix : `csr_matrix` object
-        Sparse matrix in CSR format where in each row all the basis
-        elemets are evaluated at the certain point (first row - x[0],
+    data, (row_idx, col_idx)
+        Constructor parameters for a CSR matrix: in each row all the basis
+        elements are evaluated at the certain point (first row - x[0],
         ..., last row - x[-1]).
     """
     cdef:
-        cnp.npy_intp i
+        cnp.npy_intp i, ind
         cnp.npy_intp n = x.shape[0]
-        cnp.npy_intp nt = t.shape[0]
         double[::1] wrk = np.empty(2*k+2, dtype=float)
         double[::1] data = np.zeros(n * (k + 1), dtype=float)
         cnp.ndarray[long, ndim=1] row_ind = np.zeros(n * (k + 1), dtype=int)
         cnp.ndarray[long, ndim=1] col_ind = np.zeros(n * (k + 1), dtype=int)
+    ind = k
     for i in range(n):
-        ind = find_interval(t, k, x[i], k - 1, 0)
         
+        ind = find_interval(t, k, x[i], ind, 0)
         _deBoor_D(&t[0], x[i], k, ind, 0, &wrk[0])
 
         data[(k + 1) * i : (k + 1) * (i + 1)] = wrk[:k + 1]
@@ -457,4 +457,4 @@ def _make_design_matrix(const double[::1] x,
                                                             ,ind + 1
                                                             ,dtype=int)
 
-    return csr_matrix((np.asarray(data), (row_ind, col_ind)), (n, nt - k - 1))       
+    return np.asarray(data), (row_ind, col_ind)

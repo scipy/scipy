@@ -16,7 +16,7 @@ Get the local copy of the code
 
 From the command line::
 
-   git clone git://github.com/scipy/scipy.git
+   git clone https://github.com/scipy/scipy.git
 
 You now have a copy of the code tree in the new ``scipy`` directory.
 If this doesn't work you can try the alternative read-only url::

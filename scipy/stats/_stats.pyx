@@ -6,12 +6,12 @@ from numpy.math cimport PI
 from numpy.math cimport INFINITY
 from numpy.math cimport NAN
 from numpy cimport ndarray, int64_t, float64_t, intp_t
-
 import warnings
 import numpy as np
 import scipy.stats, scipy.special
 cimport scipy.special.cython_special as cs
 
+np.import_array()
 
 cdef double von_mises_cdf_series(double k, double x, unsigned int p):
     cdef double s, c, sn, cn, R, V
@@ -529,7 +529,7 @@ cdef double _Phi(double z) nogil:
     """evaluates the normal CDF. Used in `studentized_range`"""
     # use a custom function because using cs.ndtr results in incorrect PDF at
     # q=0 on 32bit systems. Use a hardcoded 1/sqrt(2) constant rather than
-    # math constants because they're not availible on all systems.
+    # math constants because they're not available on all systems.
     cdef double inv_sqrt_2 = 0.7071067811865475
     return 0.5 * math.erfc(-z * inv_sqrt_2)
 
@@ -600,6 +600,15 @@ cdef double _studentized_range_pdf(int n, double[2] integration_var,
 
     # multiply remaining term outside of log because it can be 0
     return math.exp(log_terms) * math.pow(_Phi(s * q + z) - _Phi(z), k - 2)
+
+
+cdef double _studentized_range_pdf_asymptotic(double z, void *user_data) nogil:
+    # evaluates the integrand of equation (2) by Lund, Lund, page 205. [4]
+    # destined to be used in a LowLevelCallable
+    q = (<double *> user_data)[0]
+    k = (<double *> user_data)[1]
+
+    return k * (k - 1) * _phi(z) * _phi(z + q) * math.pow(_Phi(z + q) - _Phi(z), k - 2)
 
 
 cdef double _studentized_range_moment(int n, double[3] integration_var,
@@ -699,7 +708,7 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
     Parameters
     ----------
     points : array_like with shape (n, d)
-        Data points to estimate from in d dimenions.
+        Data points to estimate from in d dimensions.
     values : real[:, :] with shape (n, p)
         Multivariate values associated with the data points.
     xi : array_like with shape (m, d)

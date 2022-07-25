@@ -14,7 +14,7 @@ from .common import Benchmark, safe_import
 
 with safe_import():
     from scipy import sparse
-    from scipy.sparse import (csr_matrix, coo_matrix, dia_matrix, lil_matrix,
+    from scipy.sparse import (coo_matrix, dia_matrix, lil_matrix,
                               dok_matrix, rand, SparseEfficiencyWarning)
 
 
@@ -217,6 +217,20 @@ class BlockDiagSparseConstruction(Benchmark):
 
     def time_block_diag(self, num_matrices):
         sparse.block_diag(self.matrices)
+
+
+class CsrHstack(Benchmark):
+    param_names = ['num_rows']
+    params = [10000, 25000, 50000, 100000, 250000]
+
+    def setup(self, num_rows):
+        num_cols = int(1e5)
+        density = 2e-3
+        nnz_per_row = int(density*num_cols)
+        self.mat = random_sparse(num_rows, num_cols, nnz_per_row)
+
+    def time_csr_hstack(self, num_rows):
+        sparse.hstack([self.mat, self.mat])
 
 
 class Conversion(Benchmark):

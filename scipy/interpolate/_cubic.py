@@ -3,7 +3,7 @@
 import numpy as np
 
 from . import PPoly
-from .polyint import _isscalar
+from ._polyint import _isscalar
 from scipy.linalg import solve_banded, solve
 
 
@@ -15,7 +15,7 @@ def prepare_input(x, y, axis, dydx=None):
     """Prepare input for cubic spline interpolators.
 
     All data are converted to numpy arrays and checked for correctness.
-    Axes equal to `axis` of arrays `y` and `dydx` are rolled to be the 0th
+    Axes equal to `axis` of arrays `y` and `dydx` are moved to be the 0th
     axis. The value of `axis` is converted to lie in
     [0, number of dimensions of `y`).
     """
@@ -60,9 +60,9 @@ def prepare_input(x, y, axis, dydx=None):
     if np.any(dx <= 0):
         raise ValueError("`x` must be strictly increasing sequence.")
 
-    y = np.rollaxis(y, axis)
+    y = np.moveaxis(y, axis, 0)
     if dydx is not None:
-        dydx = np.rollaxis(dydx, axis)
+        dydx = np.moveaxis(dydx, axis, 0)
 
     return x, dx, y, axis, dydx
 
@@ -314,7 +314,7 @@ def pchip_interpolate(xi, yi, x, der=0, axis=0):
     ----------
     xi : array_like
         A sorted list of x-coordinates, of length N.
-    yi :  array_like
+    yi : array_like
         A 1-D array of real values. `yi`'s length along the interpolation
         axis must be equal to the length of `xi`. If N-D array, use axis
         parameter to select correct axis.
@@ -434,7 +434,7 @@ class Akima1DInterpolator(CubicHermiteSpline):
         f1 = dm[2:]
         f2 = dm[:-2]
         f12 = f1 + f2
-        # These are the mask of where the the slope at breakpoint is defined:
+        # These are the mask of where the slope at breakpoint is defined:
         ind = np.nonzero(f12 > 1e-9 * np.max(f12))
         x_ind, y_ind = ind[0], ind[1:]
         # Set the slope at breakpoint
@@ -548,7 +548,7 @@ class CubicSpline(CubicHermiteSpline):
 
     Notes
     -----
-    Parameters `bc_type` and ``interpolate`` work independently, i.e. the
+    Parameters `bc_type` and ``extrapolate`` work independently, i.e. the
     former controls only construction of a spline, and the latter only
     evaluation.
 

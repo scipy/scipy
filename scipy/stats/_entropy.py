@@ -19,13 +19,15 @@ def entropy(pk: np.typing.ArrayLike,
             base: Optional[float] = None,
             axis: int = 0
             ) -> Union[np.number, np.ndarray]:
-    """Calculate the entropy of a distribution for given probability values.
+    """
+    Calculate the Shannon entropy/relative entropy of given distribution(s).
 
-    If only probabilities `pk` are given, the entropy is calculated as
-    ``S = -sum(pk * log(pk), axis=axis)``.
+    If only probabilities `pk` are given, the Shannon entropy is calculated as
+    ``H = -sum(pk * log(pk))``.
 
-    If `qk` is not None, then compute the Kullback-Leibler divergence
-    ``S = sum(pk * log(pk / qk), axis=axis)``.
+    If `qk` is not None, then compute the relative entropy
+    ``D = sum(pk * log(pk / qk))``. This quantity is also known
+    as the Kullback-Leibler divergence.
 
     This routine will normalize `pk` and `qk` if they don't sum to 1.
 
@@ -40,7 +42,7 @@ def entropy(pk: np.typing.ArrayLike,
         the same format as `pk`.
     base : float, optional
         The logarithmic base to use, defaults to ``e`` (natural logarithm).
-    axis: int, optional
+    axis : int, optional
         The axis along which the entropy is calculated. Default is 0.
 
     Returns
@@ -48,26 +50,82 @@ def entropy(pk: np.typing.ArrayLike,
     S : {float, array_like}
         The calculated entropy.
 
+    Notes
+    -----
+    Informally, the Shannon entropy quantifies the expected uncertainty
+    inherent in the possible outcomes of a discrete random variable.
+    For example,
+    if messages consisting of sequences of symbols from a set are to be
+    encoded and transmitted over a noiseless channel, then the Shannon entropy
+    ``H(pk)`` gives a tight lower bound for the average number of units of
+    information needed per symbol if the symbols occur with frequencies
+    governed by the discrete distribution `pk` [1]_. The choice of base
+    determines the choice of units; e.g., ``e`` for nats, ``2`` for bits, etc.
+
+    The relative entropy, ``D(pk|qk)``, quantifies the increase in the average
+    number of units of information needed per symbol if the encoding is
+    optimized for the probability distribution `qk` instead of the true
+    distribution `pk`. Informally, the relative entropy quantifies the expected
+    excess in surprise experienced if one believes the true distribution is
+    `qk` when it is actually `pk`.
+
+    A related quantity, the cross entropy ``CE(pk, qk)``, satisfies the
+    equation ``CE(pk, qk) = H(pk) + D(pk|qk)`` and can also be calculated with
+    the formula ``CE = -sum(pk * log(qk))``. It gives the average
+    number of units of information needed per symbol if an encoding is
+    optimized for the probability distribution `qk` when the true distribution
+    is `pk`. It is not computed directly by `entropy`, but it can be computed
+    using two calls to the function (see Examples).
+
+    See [2]_ for more information.
+
+    References
+    ----------
+    .. [1] Shannon, C.E. (1948), A Mathematical Theory of Communication.
+           Bell System Technical Journal, 27: 379-423.
+           https://doi.org/10.1002/j.1538-7305.1948.tb01338.x
+    .. [2] Thomas M. Cover and Joy A. Thomas. 2006. Elements of Information
+           Theory (Wiley Series in Telecommunications and Signal Processing).
+           Wiley-Interscience, USA.
+
+
     Examples
     --------
-
-    >>> from scipy.stats import entropy
-
-    Bernoulli trial with different p.
     The outcome of a fair coin is the most uncertain:
 
-    >>> entropy([1/2, 1/2], base=2)
+    >>> import numpy as np
+    >>> from scipy.stats import entropy
+    >>> base = 2  # work in units of bits
+    >>> pk = np.array([1/2, 1/2])  # fair coin
+    >>> H = entropy(pk, base=base)
+    >>> H
     1.0
+    >>> H == -np.sum(pk * np.log(pk)) / np.log(base)
+    True
 
     The outcome of a biased coin is less uncertain:
 
-    >>> entropy([9/10, 1/10], base=2)
+    >>> qk = np.array([9/10, 1/10])  # biased coin
+    >>> entropy(qk, base=base)
     0.46899559358928117
 
-    Relative entropy:
+    The relative entropy between the fair coin and biased coin is calculated
+    as:
 
-    >>> entropy([1/2, 1/2], qk=[9/10, 1/10])
-    0.5108256237659907
+    >>> D = entropy(pk, qk, base=base)
+    >>> D
+    0.7369655941662062
+    >>> D == np.sum(pk * np.log(pk/qk)) / np.log(base)
+    True
+
+    The cross entropy can be calculated as the sum of the entropy and
+    relative entropy`:
+
+    >>> CE = entropy(pk, base=base) + entropy(pk, qk, base=base)
+    >>> CE
+    1.736965594166206
+    >>> CE == -np.sum(pk * np.log(qk)) / np.log(base)
+    True
 
     """
     if base is not None and base <= 0:
@@ -181,6 +239,7 @@ def differential_entropy(
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import differential_entropy, norm
 
     Entropy of a standard normal distribution:
