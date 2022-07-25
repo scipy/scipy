@@ -7650,6 +7650,7 @@ def _count_paths_outside_method(m, n, g, h):
     p : float
         The number of paths that go low.
         The calculation may overflow - check for a finite answer.
+
     Notes
     -----
     Count the integer lattice paths from (0, 0) to (m, n), which at some
