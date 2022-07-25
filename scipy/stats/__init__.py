@@ -404,12 +404,13 @@ Distribution Fitting
 
    fit
 
-Circular statistical functions
-------------------------------
+Directional statistical functions
+---------------------------------
 
 .. autosummary::
    :toctree: generated/
 
+   directionalmean
    circmean
    circvar
    circstd
