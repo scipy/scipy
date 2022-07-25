@@ -340,7 +340,7 @@ def savgol_filter(x, window_length, polyorder, deriv=0, delta=1.0,
     coeffs = savgol_coeffs(window_length, polyorder, deriv=deriv, delta=delta)
 
     if mode == "interp":
-        if window_length > x.size:
+        if window_length > x.shape[axis]:
             raise ValueError("If mode is 'interp', window_length must be less "
                              "than or equal to the size of x.")
 
