@@ -83,46 +83,35 @@ degrees of freedom. We can check this numerically by drawing 1000
 samples of size 500 from a standard normal distribution and computing
 the value of the statistic for each sample.
 
-.. code:: ipython3
+.. plot::
 
-    np.random.seed(0)
-    n_observations = 500  # number of observations
-    n_samples = 1000  # number of samples
-    # standard normal distribution can be used, since the
-    # statistic is unaffected by location and scale
-    norm_dist = stats.norm()
-    # Draw 1000 samples, each with 500 observations
-    y = norm_dist.rvs(size=(n_observations, n_samples))
+    >>> np.random.seed(0)
+    >>> n_observations = 500  # number of observations
+    >>> n_samples = 1000  # number of samples
+    >>> # standard normal distribution can be used, since the
+    >>> # statistic is unaffected by location and scale
+    >>> norm_dist = stats.norm()
+    >>> # Draw 1000 samples, each with 500 observations
+    >>> y = norm_dist.rvs(size=(n_observations, n_samples))
 
-    # calculate the value of the statistic for each sample
-    # we'll call this the "Monte Carlo null distribution"
-    null_dist_mc = statistic(y)
+    >>> # calculate the value of the statistic for each sample
+    >>> # we'll call this the "Monte Carlo null distribution"
+    >>> null_dist_mc = statistic(y)
 
-    # the asymptotic null distribution is chi-squared with df=2
-    null_dist = stats.chi2(df=2)
-    y_grid = np.linspace(0, null_dist.isf(0.001))
-    pdf = null_dist.pdf(y_grid)
+    >>> # the asymptotic null distribution is chi-squared with df=2
+    >>> null_dist = stats.chi2(df=2)
+    >>> y_grid = np.linspace(0, null_dist.isf(0.001))
+    >>> pdf = null_dist.pdf(y_grid)
 
-    # compare the two
-    import matplotlib.pyplot as plt
-    plt.plot(y_grid, pdf)
-    plt.hist(null_dist_mc, density=True, bins=100)
-    plt.xlim(0, np.max(y_grid))
-    plt.xlabel("Value of statistic")
-    plt.ylabel("Probability Density")
-    plt.legend(['Asymptotic Null Distribution', 'Monte Carlo Null Distribution (500 observations/sample)'])
-
-
-
-
-.. parsed-literal::
-
-    <matplotlib.legend.Legend at 0x1a63a726cd0>
-
-
-
-
-.. image:: resampling_tutorial_1_files%5Cresampling_tutorial_1_7_1.png
+    >>> # compare the two
+    >>> import matplotlib.pyplot as plt
+    >>> plt.plot(y_grid, pdf)
+    >>> plt.hist(null_dist_mc, density=True, bins=100)
+    >>> plt.xlim(0, np.max(y_grid))
+    >>> plt.xlabel("Value of statistic")
+    >>> plt.ylabel("Probability Density")
+    >>> plt.legend(['Asymptotic Null Distribution', 'Monte Carlo Null Distribution (500 observations/sample)'])
+    >>> plt.show()
 
 
 As we can see, the *Monte Carlo null distribution*
@@ -187,7 +176,7 @@ Carlo null distribution of the statistic for sample size of only 11
 observations, there is marked disagreement between the Monte Carlo null
 distribution and the asymptotic null distribution.
 
-.. code:: ipython3
+.. plot::
 
     # Draw 10000 samples, each with 11 observations
     n_observations = 11
@@ -204,18 +193,7 @@ distribution and the asymptotic null distribution.
     plt.xlabel("Value of test statistic")
     plt.ylabel("Probability Density / Observed Frequency")
     plt.legend(['Asymptotic Null Distribution', 'Monte Carlo Null Distribution (11 observations/sample)'])
-
-
-
-
-.. parsed-literal::
-
-    <matplotlib.legend.Legend at 0x1a63d10a0d0>
-
-
-
-
-.. image:: resampling_tutorial_1_files%5Cresampling_tutorial_1_15_1.png
+    plt.show()
 
 
 This is because the asymptotic null distribution was derived under the
@@ -420,7 +398,7 @@ to fit a Rayleigh distribution to the data, and then apply ``ks_1samp``
 and ``cramervonmises`` to test whether the data were drawn from the
 fitted Rayleigh distribution.
 
-.. code:: ipython3
+.. plot::
 
     dist_family = stats.rayleigh
     params = dist_family.fit(x)
@@ -432,18 +410,7 @@ fitted Rayleigh distribution.
     plt.legend(('Candidate PDF', 'Observed Data'))
     plt.xlabel('Weight (lb)')
     plt.ylabel('Probability Density')
-
-
-
-
-.. parsed-literal::
-
-    Text(0, 0.5, 'Probability Density')
-
-
-
-
-.. image:: resampling_tutorial_1_files%5Cresampling_tutorial_1_30_1.png
+    plt.show()
 
 
 To the eyes of the author, this does not look like a terrific fit. The
@@ -521,13 +488,13 @@ Rayleigh distribution. A simple implementation is included below.
 Although this does not meet the threshold for significance used above
 (1%), it does begin to cast doubt on the null hypothesis.
 
-As we can see, ``monte_carlo_test`` is a versatile tool for comparing a
+As we can see, `scipy.stats.monte_carlo_test` is a versatile tool for comparing a
 sample against a distribution by means of an arbitrary statistic.
 Provided a statistic and null distribution, it can replicate the
 :math:`p`-value of any such tests in SciPy, and it may be more accurate
 than these existing implementations, especially for small samples:
 
--  ```skewtest`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.skewtest.html>`__
+-  `scipy.stats.skewtest`__
 -  ```kurtosistest`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.kurtosistest.html>`__
 -  ```normaltest`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.normaltest.html>`__
 -  ```shapiro`` <https://docs.scipy.org/doc/scipy/reference/generated/scipy.stats.shapiro.html>`__

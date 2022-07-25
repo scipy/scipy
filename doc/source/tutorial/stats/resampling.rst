@@ -107,7 +107,7 @@ such cases, a computational approach is the only way to go.
 
 Although it’s best to use an exact approach when it’s available,
 learning to use computational statistics techniques can improve the
-accuracy of ``scipy.stats`` features that rely on analytical
+accuracy of `scipy.stats` features that rely on analytical
 approximations, dramatically extend your statistical analysis
 capabilities, and even improve your understanding of statistics.
 
