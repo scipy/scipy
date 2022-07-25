@@ -25,6 +25,7 @@ Note: This documentation is work in progress.
    stats/discrete
    stats/continuous
    stats/sampling
+   stats/resampling
 
 
 Random variables
