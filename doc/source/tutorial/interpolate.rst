@@ -618,36 +618,18 @@ and
 
 Finally, we note that if you are dealing with data on Cartesian grids with
 integer coordinates, e.g. resampling image data, these routines may not be the
-optimal choice. Consider using `ndimage.map_coordinates` instead.
+optimal choice. Consider using `scipy.ndimage.map_coordinates` instead.
 
 
 
-- A class representing an interpolant (:class:`interp1d`) in 1-D,
-  offering several interpolation methods.
 
-- Convenience function :func:`griddata` offering a simple interface to
-  interpolation in N dimensions (N = 1, 2, 3, 4, ...).
-  Object-oriented interface for the underlying routines is also
-  available.
-
-- :class:`RegularGridInterpolator` provides several interpolation methods
-  on a regular grid in arbitrary (N) dimensions,
-
-- Functions for 1- and 2-D (smoothed) cubic-spline
-  interpolation, based on the FORTRAN library FITPACK. They are both
-  procedural and object-oriented interfaces for the FITPACK library.
-
-- Interpolation using radial basis functions.
-
-
-
-Multivariate data interpolation (:func:`griddata`)
-==================================================
+Scattered data interpolation (:func:`griddata`)
+===============================================
 
 .. _tutorial-interpolate_NDunstructured:
 
 Suppose you have multidimensional data, for instance, for an underlying
-function *f(x, y)* you only know the values at points *(x[i], y[i])*
+function *f(x, y)* you only know the values at points ``(x[i], y[i])``
 that do not form a regular grid.
 
 .. plot::
@@ -660,7 +642,8 @@ that do not form a regular grid.
 
     on a grid in [0, 1]x[0, 1]
 
-    >>> grid_x, grid_y = np.mgrid[0:1:100j, 0:1:200j]
+    >>> grid_x, grid_y = np.meshgrid(np.linspace(0, 1, 100),
+    ...                              np.linspace(0, 1, 200), indexing='ij')
 
     but we only know its values at 1000 data points:
 
@@ -697,6 +680,10 @@ that do not form a regular grid.
     >>> plt.gcf().set_size_inches(6, 6)
     >>> plt.show()
 
+For each interpolation method, this function delegates to a corresponding
+class object --- these classes can be used directly as well ---
+`NearestNDInterpolator`, `LinearNDInterpolator` and `CloughTocher2DInterpolator`                                                     
+for piecewise cubic interpolation in 2D.
 
 .. _tutorial-interpolate_regular_grid_interpolator:
 
@@ -751,6 +738,24 @@ using each method.
    true values, though are more expensive to compute than with `linear`
    or `nearest`. The `slinear` interpolation also matches the `linear`
    interpolation.
+
+
+- A class representing an interpolant (:class:`interp1d`) in 1-D,
+  offering several interpolation methods.
+
+- Convenience function :func:`griddata` offering a simple interface to
+  interpolation in N dimensions (N = 1, 2, 3, 4, ...).
+  Object-oriented interface for the underlying routines is also
+  available.
+
+- :class:`RegularGridInterpolator` provides several interpolation methods
+  on a regular grid in arbitrary (N) dimensions,
+
+- Functions for 1- and 2-D (smoothed) cubic-spline
+  interpolation, based on the FORTRAN library FITPACK. They are both
+  procedural and object-oriented interfaces for the FITPACK library.
+
+- Interpolation using radial basis functions.
 
 
 Spline interpolation
