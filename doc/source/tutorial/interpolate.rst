@@ -21,7 +21,8 @@ interpolation routine depends on whether your data is
 
 - Is :ref:`unstructured <tutorial-interpolate_NDunstructured>`;
 
-For data smoothing, functions are provided for 1- and 2-D (smoothed)
+For data smoothing, :ref:`functions are provided <tutorial-interpolate_fitpack>`
+for 1- and 2-D (smoothed)
 cubic-spline interpolation, based on the FORTRAN library FITPACK. There are
 two interfaces for the FITPACK library, a procedural interface and an
 object-oriented interface.  **TODO**
@@ -397,6 +398,8 @@ avoided because it accumulates rounding errors.
 Parametric spline curves
 ------------------------
 
+.. _tutorial-interpolate_parametric:
+
 So far we considered spline *functions*, where the data, ``y``, is expected to
 depend explicitly on the independent variable ``x``---so that the interpolating
 function satisfies :math:`f(x_j) = y_j`. Spline *curves* treat
@@ -749,31 +752,58 @@ using each method.
    interpolation.
 
 
-- A class representing an interpolant (:class:`interp1d`) in 1-D,
-  offering several interpolation methods.
+Smoothing splines
+=================
 
-- Convenience function :func:`griddata` offering a simple interface to
-  interpolation in N dimensions (N = 1, 2, 3, 4, ...).
-  Object-oriented interface for the underlying routines is also
-  available.
+.. _tutorial-interpolate_fitpack:
 
-- :class:`RegularGridInterpolator` provides several interpolation methods
-  on a regular grid in arbitrary (N) dimensions,
+For the interpolation problem, the task is to construct a curve which passes
+through a given set of data points. This may be not appropriate if the data is
+noisy: we then want to construct a smooth curve, ``g(x)``, which *approximates*
+the input data without passing through each point exactly.
+To this end, `scipy.interpolate` allows constructing *smoothing splines*, based
+on the Fortran library FITPACK by P. Dierckx.
 
-- Functions for 1- and 2-D (smoothed) cubic-spline
-  interpolation, based on the FORTRAN library FITPACK. They are both
-  procedural and object-oriented interfaces for the FITPACK library.
+Specifically, given the data arrays ``x`` and ``y`` and the array of
+non-negative *weights*, ``w``, we look for a spline function ``g(x)`` which
+satisfies
 
-- Interpolation using radial basis functions.
+.. math::
+
+    \sum_j \left[ w_j (g(x_j) - y_j)\right]^2 \leqslant s
+
+where ``s`` is the input parameter which controls the interplay between the
+smoothness of the resulting curve ``g(x)`` and the quality of the approximation
+of the data (i.e., the differences between :math:`g(x_j)` and :math:`y_j`).
+
+Note that the limit ``s = 0`` corresponds to the interpolation problem where
+:math:`g(x_j) = y_j`. Increasing ``s`` leads to smoother fits, and in the limit
+of a very large ``s``, :math:`g(x)` degenerates into a single best-fit polynomial.
+
+Finding a good value of the ``s`` parameter is a trial-and-error process. If
+the weights correspond to the inverse of standard deviations of the input data,
+the "good" value of ``s`` is expected to be somewhere between :math:`m - \sqrt{2m}`
+and :math:`m + \sqrt{2m}`, where :math:`m` is the number of the data points.
+If all weights equal unity, a reasonable choice might be around :math:`s \sim m\,\sigma^2`,
+where :math:`\sigma` is an estimate for the standard deviation of the data. 
+
+Internally, the FITPACK library works by adding internal knots to the spline
+fit ``g(x)``, so that **the resulting knots do not necessarily coincide with the input data**.
 
 
-Spline interpolation
-====================
+Spline smoothing in 1-D
+-----------------------
+
+`scipy.interpolate` provides two interfaces for the FITPACK library, a functional
+interface and an object-oriented interface. While equivalent, these interfaces
+have different defaults. Below we discuss them in turn, starting from the
+functional interface --- which we recommend for use in new code.
+
+
+Procedural (interpolate.splXXX)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 .. _tutorial-interpolate_splXXX:
-
-Spline interpolation in 1-D: Procedural (interpolate.splXXX)
-------------------------------------------------------------
 
 Spline interpolation requires two essential steps: (1) a spline
 representation of the curve is computed, and (2) the spline is
@@ -789,6 +819,12 @@ a 3-tuple, :math:`\left(t,c,k\right)` , containing the knot-points,
 spline. The default spline order is cubic, but this can be changed
 with the input keyword, *k.*
 
+The ``tck``-tuple format is compatible with
+:ref:`interpolating b-splines <tutorial-interpolate_bspl_basis>`: the output of
+`splrep` can be wrapped into a `BSpline` object, e.g. ``BSpline(*tck)``, and
+the evaluation/integration/root-finding routines described below
+can use ``tck``-tuples and `BSpline` objects interchangeably.
+
 For curves in N-D space the function
 :obj:`splprep` allows defining the curve
 parametrically. For this function only 1 input argument is
@@ -796,13 +832,15 @@ required. This input is a list of :math:`N`-arrays representing the
 curve in N-D space. The length of each array is the
 number of curve points, and each array provides one component of the
 N-D data point. The parameter variable is given
-with the keyword argument, *u,*, which defaults to an equally-spaced
-monotonic sequence between :math:`0` and :math:`1` . The default
-output consists of two objects: a 3-tuple, :math:`\left(t,c,k\right)`
+with the keyword argument, ``u``, which defaults to an equally-spaced
+monotonic sequence between :math:`0` and :math:`1` (i.e., the :ref:`uniform
+parametrization <tutorial-interpolate_parametric>`).
+
+The output consists of two objects: a 3-tuple, :math:`\left(t,c,k\right)`
 , containing the spline representation and the parameter variable
 :math:`u.`
 
-The keyword argument, *s* , is used to specify the amount of smoothing
+The keyword argument, ``s`` , is used to specify the amount of smoothing
 to perform during the spline fit. The default value of :math:`s` is
 :math:`s=m-\sqrt{2m}` where :math:`m` is the number of data-points
 being fit. Therefore, **if no smoothing is desired a value of**
@@ -825,13 +863,15 @@ example that follows.
    >>> import matplotlib.pyplot as plt
    >>> from scipy import interpolate
 
-   Cubic-spline
+   Cubic spline
 
    >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/8)
    >>> y = np.sin(x)
    >>> tck = interpolate.splrep(x, y, s=0)
    >>> xnew = np.arange(0, 2*np.pi, np.pi/50)
    >>> ynew = interpolate.splev(xnew, tck, der=0)
+
+   Note that the last line is equivalent to ``BSpline(*tck)(xnew)``.
 
    >>> plt.figure()
    >>> plt.plot(x, y, 'x', xnew, ynew, xnew, np.sin(xnew), x, y, 'b')
@@ -842,7 +882,7 @@ example that follows.
 
    Derivative of spline
 
-   >>> yder = interpolate.splev(xnew, tck, der=1)
+   >>> yder = interpolate.splev(xnew, tck, der=1)   # or BSpline(*tck)(xnew, 1)
    >>> plt.figure()
    >>> plt.plot(xnew, yder, xnew, np.cos(xnew),'--')
    >>> plt.legend(['Cubic Spline', 'True'])
@@ -909,8 +949,24 @@ example that follows.
    >>> plt.title('Spline of parametrically-defined curve')
    >>> plt.show()
 
-Spline interpolation in 1-d: Object-oriented (:class:`UnivariateSpline`)
-------------------------------------------------------------------------
+Note that in the last example, `splprep` returns the spline coefficients as a
+list of arrays, where each array corresponds to a dimension of the input data.
+Thus to wrap its output to a `BSpline`, we need to transpose the coefficients
+(or use ``BSpline(..., axis=1)``):
+
+  >>> tt, cc, k = tck
+  >>> cc = np.array(cc)
+  >>> bspl = BSpline(tt, cc.T, k)    # note the transpose
+  >>> xy = bspl(u)
+  >>> xx, yy = xy.T   # transpose to unpack into a pair of arrays
+  >>> np.allclose(x, xx)
+  True
+  >>> np.allclose(y, yy)
+  True
+
+
+Object-oriented (:class:`UnivariateSpline`)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The spline-fitting capabilities described above are also available via
 an objected-oriented interface.  The 1-D splines are
@@ -980,42 +1036,54 @@ spline.
    >>> plt.title('Spline with Specified Interior Knots')
    >>> plt.show()
 
-.. _tutorial-interpolate_2d_spline:
 
-2-D spline representation: Procedural (:func:`bisplrep`)
---------------------------------------------------------------------
+
+2-D smoothing splines
+---------------------
+
+In addition to smoothing 1-D splines, the FITPACK library provides the means of
+fitting 2-D *surfaces* to two-dimensional data, represented as tensor products
+of 1-D splines. There are also two interfaces: a procedural interface and an
+object-oriented interface.
+
+
+Procedural (:func:`bisplrep`)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+.. _tutorial-interpolate_2d_spline:
 
 For (smooth) spline-fitting to a 2-D surface, the function
 :func:`bisplrep` is available. This function takes as required inputs
-the **1-D** arrays *x*, *y*, and *z*, which represent points on the
-surface :math:`z=f\left(x,y\right).` The default output is a list
-:math:`\left[tx,ty,c,kx,ky\right]` whose entries represent
+the **1-D** arrays ``x``, ``y``, and ``z``, which represent points on the
+surface :math:`z=f(x, y).` The default output is a list
+``[tx ,ty, c, kx, ky]`` whose entries represent
 respectively, the components of the knot positions, the coefficients
 of the spline, and the order of the spline in each coordinate. It is
-convenient to hold this list in a single object, *tck,* so that it can
+convenient to hold this list in a single object, ``tck``, so that it can
 be passed easily to the function :obj:`bisplev`. The
-keyword, *s* , can be used to change the amount of smoothing performed
+keyword, ``s`` , can be used to change the amount of smoothing performed
 on the data while determining the appropriate spline. The default
 value is :math:`s=m-\sqrt{2m}`, where :math:`m` is the number of data
-points in the *x, y,* and *z* vectors. As a result, if no smoothing is
-desired, then :math:`s=0` should be passed to
-:obj:`bisplrep`.
+points in the ``x``, ``y``, and ``z`` vectors. As a result, if no smoothing is
+desired, then ``s=0`` should be passed to :obj:`bisplrep`.
 
 To evaluate the 2-D spline and its partial derivatives
 (up to the order of the spline), the function
 :obj:`bisplev` is required. This function takes as the
 first two arguments **two 1-D arrays** whose cross-product specifies
 the domain over which to evaluate the spline. The third argument is
-the *tck* list returned from :obj:`bisplrep`. If desired,
+the ``tck`` list returned from :obj:`bisplrep`. If desired,
 the fourth and fifth arguments provide the orders of the partial
 derivative in the :math:`x` and :math:`y` direction, respectively.
 
 It is important to note that 2-D interpolation should not
 be used to find the spline representation of images. The algorithm
-used is not amenable to large numbers of input points. The signal-processing
-toolbox contains more appropriate algorithms for finding
-the spline representation of an image. The 2-D
-interpolation commands are intended for use when interpolating a 2-D
+used is not amenable to large numbers of input points. `scipy.signal`
+and `scipy.ndimage` contain more appropriate algorithms for finding
+the spline representation of an image. 
+
+The 2-D interpolation commands are intended for use when interpolating a 2-D
 function as shown in the example that follows. This
 example uses the :obj:`mgrid <numpy.mgrid>` command in NumPy which is
 useful for defining a "mesh-grid" in many dimensions. (See also the
@@ -1062,8 +1130,8 @@ passed in :obj:`mgrid <numpy.mgrid>`.
 ..   :caption: Example of a 2-D spline interpolation.
 
 
-2-D spline representation: Object-oriented (:class:`BivariateSpline`)
----------------------------------------------------------------------------------
+Object-oriented (:class:`BivariateSpline`)
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The :class:`BivariateSpline` class is the 2-D analog of the
 :class:`UnivariateSpline` class.  It and its subclasses implement
@@ -1071,6 +1139,7 @@ the FITPACK functions described above in an object-oriented fashion,
 allowing objects to be instantiated that can be called to compute
 the spline value by passing in the two coordinates as the two
 arguments.
+
 
 
 Using radial basis functions for smoothing/interpolation
