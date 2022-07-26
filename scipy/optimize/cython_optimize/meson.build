@@ -35,7 +35,6 @@ _zeros = py3.extension_module('_zeros',
   cy_opt_gen.process(_zeros_pyx),
   c_args: cython_c_args,
   include_directories: inc_np,
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/optimize/cython_optimize'
 )

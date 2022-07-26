@@ -254,7 +254,6 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
     '../../_lib/highs/src/util/'
   ],
   link_with: [highs_lib, ipx_lib, basiclu_lib],
-  dependencies: [py3_dep],
   cpp_args: [
     '-Wno-unused-variable',
     '-Wno-sign-compare',
@@ -284,7 +283,6 @@ _highs_constants = py3.extension_module('_highs_constants',
     '../../_lib/highs/src/lp_data/',
     '../../_lib/highs/src/simplex/'
   ],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/optimize/_highs'
 )

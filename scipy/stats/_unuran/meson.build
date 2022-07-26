@@ -215,7 +215,6 @@ statlib = py3.extension_module('unuran_wrapper',
     unuran_sources
   ],
   c_args: [unuran_defines, cython_c_args],
-  dependencies: [py3_dep],
   include_directories: [inc_np, unuran_include_dirs],
   install: true,
   subdir: 'scipy/stats/_unuran'
