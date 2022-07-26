@@ -16,7 +16,6 @@ hypergeom_ufunc = py3.extension_module('hypergeom_ufunc',
   hypergeom_ufunc_pyx,
   include_directories: [include, inc_np, inc_boost],
   cpp_args: [cpp_args, cython_cpp_args],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/stats/_boost'
 )
@@ -25,7 +24,6 @@ nbinom_ufunc = py3.extension_module('nbinom_ufunc',
   nbinom_ufunc_pyx,
   include_directories: [include, inc_np, inc_boost],
   cpp_args: [cpp_args, cython_cpp_args],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/stats/_boost'
 )
@@ -34,7 +32,6 @@ beta_ufunc = py3.extension_module('beta_ufunc',
   beta_ufunc_pyx,
   include_directories: [include, inc_np, inc_boost],
   cpp_args: [cpp_args, cython_cpp_args],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/stats/_boost'
 )
@@ -43,7 +40,6 @@ binom_ufunc = py3.extension_module('binom_ufunc',
   binom_ufunc_pyx,
   include_directories: [include, inc_np, inc_boost],
   cpp_args: [cpp_args, cython_cpp_args],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/stats/_boost'
 )
@@ -52,7 +48,6 @@ ncf_ufunc = py3.extension_module('ncf_ufunc',
   ncf_ufunc_pyx,
   include_directories: [include, inc_np, inc_boost],
   cpp_args: [cpp_args, cython_cpp_args],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/stats/_boost'
 )
@@ -61,7 +56,6 @@ ncx2_ufunc = py3.extension_module('ncx2_ufunc',
   ncx2_ufunc_pyx,
   include_directories: [include, inc_np, inc_boost],
   cpp_args: [cpp_args, cython_cpp_args],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/stats/_boost'
 )
@@ -70,7 +64,6 @@ ncf_ufunc = py3.extension_module('nct_ufunc',
   nct_ufunc_pyx,
   include_directories: [include, inc_np, inc_boost],
   cpp_args: [cpp_args, cython_cpp_args],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/stats/_boost'
 )
