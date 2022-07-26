@@ -661,21 +661,22 @@ that do not form a regular grid.
 
     One can see that the exact result is reproduced by all of the
     methods to some degree, but for this smooth function the piecewise
-    cubic interpolant gives the best results:
+    cubic interpolant gives the best results (black dots show the data being
+    interpolated):
 
     >>> import matplotlib.pyplot as plt
     >>> plt.subplot(221)
-    >>> plt.imshow(func(grid_x, grid_y).T, extent=(0,1,0,1), origin='lower')
-    >>> plt.plot(points[:,0], points[:,1], 'k.', ms=1)
+    >>> plt.imshow(func(grid_x, grid_y).T, extent=(0, 1, 0, 1), origin='lower')
+    >>> plt.plot(points[:, 0], points[:, 1], 'k.', ms=1)   # data
     >>> plt.title('Original')
     >>> plt.subplot(222)
-    >>> plt.imshow(grid_z0.T, extent=(0,1,0,1), origin='lower')
+    >>> plt.imshow(grid_z0.T, extent=(0, 1, 0, 1), origin='lower')
     >>> plt.title('Nearest')
     >>> plt.subplot(223)
-    >>> plt.imshow(grid_z1.T, extent=(0,1,0,1), origin='lower')
+    >>> plt.imshow(grid_z1.T, extent=(0, 1, 0, 1), origin='lower')
     >>> plt.title('Linear')
     >>> plt.subplot(224)
-    >>> plt.imshow(grid_z2.T, extent=(0,1,0,1), origin='lower')
+    >>> plt.imshow(grid_z2.T, extent=(0, 1, 0, 1), origin='lower')
     >>> plt.title('Cubic')
     >>> plt.gcf().set_size_inches(6, 6)
     >>> plt.show()
@@ -684,6 +685,14 @@ For each interpolation method, this function delegates to a corresponding
 class object --- these classes can be used directly as well ---
 `NearestNDInterpolator`, `LinearNDInterpolator` and `CloughTocher2DInterpolator`                                                     
 for piecewise cubic interpolation in 2D.
+
+.. note::
+
+    `griddata` is based on triangulation, hence is appropriate for unstructures,
+    scattered data. If your data is on a full grid,  the `griddata` function ---
+    despite its name --- is not the right tool. Use `RegularGridInterpolator`
+    instead.
+
 
 .. _tutorial-interpolate_regular_grid_interpolator:
 
