@@ -25,7 +25,10 @@ For data smoothing, :ref:`functions are provided <tutorial-interpolate_fitpack>`
 for 1- and 2-D (smoothed)
 cubic-spline interpolation, based on the FORTRAN library FITPACK. There are
 two interfaces for the FITPACK library, a procedural interface and an
-object-oriented interface.  **TODO**
+object-oriented interface.
+
+Additionally, routines are provided for interpolation / smoothing using
+:ref:`radial basis functions <tutorial-interpolate_RBF>` with several kernels.
 
 
 Missing data
@@ -43,10 +46,10 @@ means *not-a-number*, i.e. a result of an illegal mathematical operation
 (think a division by zero), not *missing*.
 
 
+.. _tutorial-interpolate_1Dsection:
+
 1-D interpolation
 =================
-
-.. _tutorial-interpolate_1Dsection:
 
 Piecewise linear interpolation
 ------------------------------
@@ -164,10 +167,10 @@ such that ``c[k, j]`` is a coefficient for ``(x - x[j])**(3-k)`` on the segment
 between ``x[j]`` and ``x[j+1]`` .
 
 
+.. _tutorial-interpolate_ppoly:
+
 Manipulating ``PPoly`` objects
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. _tutorial-interpolate_ppoly:
 
 `PPoly` objects have convenient methods for constructing derivatives
 and antiderivatives, computing integrals and root-finding. For example, we
@@ -343,10 +346,10 @@ coefficients. Note that the coeffients are given in the
 of :math:`1, x, \cdots, x^k`.
 
 
+.. _tutorial-interpolate_bspl_basis:
+
 B-spline basis elements
 -----------------------
-
-.. _tutorial-interpolate_bspl_basis:
 
 B-splines are piecewise polynomials, represented as linear combinations of
 *b-spline basis elements* --- which themselves are certain linear combinations
@@ -395,10 +398,10 @@ If desired, a b-spline can be converted into a `PPoly` object using
 avoided because it accumulates rounding errors.
 
 
+.. _tutorial-interpolate_parametric:
+
 Parametric spline curves
 ------------------------
-
-.. _tutorial-interpolate_parametric:
 
 So far we considered spline *functions*, where the data, ``y``, is expected to
 depend explicitly on the independent variable ``x``---so that the interpolating
@@ -473,10 +476,10 @@ Chapter 6 of Ref [1] listed in the `BSpline` docstring:
     >>> plt.show()
 
 
+.. _tutorial-interpolate_interp1d:
+
 Legacy interface for 1-D interpolation (:class:`interp1d`)
 ----------------------------------------------------------
-
-.. _tutorial-interpolate_interp1d:
 
 .. note::
     `interp1d` is considered legacy API and is not recommended for use in new
@@ -544,11 +547,10 @@ same data as in the previous example:
 ..             `next`.
 
 
+.. _tutorial-interpolate_regular_grid_interpolator:
 
 Multivariate data interpolation on a regular grid  (:class:`RegularGridInterpolator`)
 ======================================================================================
-
-.. _tutorial-interpolate_regular_grid_interpolator:
 
 Suppose you have n-dimensional data on a regular grid, and you want to interpolate it.
 In such a case, :class:`RegularGridInterpolator` can be useful.
@@ -624,12 +626,10 @@ integer coordinates, e.g. resampling image data, these routines may not be the
 optimal choice. Consider using `scipy.ndimage.map_coordinates` instead.
 
 
-
+.. _tutorial-interpolate_NDunstructured:
 
 Scattered data interpolation (:func:`griddata`)
 ===============================================
-
-.. _tutorial-interpolate_NDunstructured:
 
 Suppose you have multidimensional data, for instance, for an underlying
 function *f(x, y)* you only know the values at points ``(x[i], y[i])``
@@ -752,10 +752,10 @@ using each method.
    interpolation.
 
 
+.. _tutorial-interpolate_fitpack:
+
 Smoothing splines
 =================
-
-.. _tutorial-interpolate_fitpack:
 
 For the interpolation problem, the task is to construct a curve which passes
 through a given set of data points. This may be not appropriate if the data is
@@ -800,10 +800,10 @@ have different defaults. Below we discuss them in turn, starting from the
 functional interface --- which we recommend for use in new code.
 
 
+.. _tutorial-interpolate_splXXX:
+
 Procedural (interpolate.splXXX)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-.. _tutorial-interpolate_splXXX:
 
 Spline interpolation requires two essential steps: (1) a spline
 representation of the curve is computed, and (2) the spline is
@@ -1047,11 +1047,10 @@ of 1-D splines. There are also two interfaces: a procedural interface and an
 object-oriented interface.
 
 
+.. _tutorial-interpolate_2d_spline:
+
 Procedural (:func:`bisplrep`)
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-.. _tutorial-interpolate_2d_spline:
 
 For (smooth) spline-fitting to a 2-D surface, the function
 :func:`bisplrep` is available. This function takes as required inputs
@@ -1141,6 +1140,7 @@ the spline value by passing in the two coordinates as the two
 arguments.
 
 
+.. _tutorial-interpolate_RBF:
 
 Using radial basis functions for smoothing/interpolation
 ========================================================
