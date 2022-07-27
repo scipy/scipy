@@ -294,7 +294,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                            largest=largest)
         # lobpcg does not guarantee exactly orthonormal eigenvectors
-        eigvec, _ = np.linalg.qr(eigvec)
+        # eigvec, _ = np.linalg.qr(eigvec)
 
     elif solver == 'propack':
         if not HAS_PROPACK:
@@ -334,6 +334,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         _, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                           ncv=ncv, which=which, v0=v0)
 
+    # lobpcg/arpack do not guarantee exactly orthonormal eigenvectors
+    eigvec, _ = np.linalg.qr(eigvec)
     Av = X_matmat(eigvec)
     if not return_singular_vectors:
         s = svd(Av, compute_uv=False, overwrite_a=True)
