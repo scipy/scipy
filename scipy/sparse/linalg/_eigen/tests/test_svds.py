@@ -553,6 +553,8 @@ class SVDSCommonTests:
     # In gh-14299, it was suggested the `svds` should _not_ work with lists
     @pytest.mark.parametrize('lo_type', (np.asarray, csc_matrix,
                                          aslinearoperator))
+    @pytest.mark.filterwarnings("ignore:k >= N - 1 for N * N",
+                                reason="platform depended")
     def test_svd_simple(self, A, k, real, transpose, lo_type):
 
         if self.solver == 'propack':
@@ -578,9 +580,6 @@ class SVDSCommonTests:
 
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
-                u, s, vh = svds(A2, k, solver=self.solver)
-        elif self.solver == 'arpack':
-            with pytest.warns(UserWarning, match="k >= N - 1 for N * N"):
                 u, s, vh = svds(A2, k, solver=self.solver)
         else:
             u, s, vh = svds(A2, k, solver=self.solver)
