@@ -2109,6 +2109,7 @@ def lanczos(M, *, sym=True):
     filtering climate timeseries with good properties in the physical and
     spectral domains.
 
+    .. versionadded:: 1.10
     References
     ----------
     .. [1] Lanczos, C., and Teichmann, T. (1957). Applied analysis.
