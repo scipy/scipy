@@ -187,6 +187,14 @@ html_theme_options = {
   "switcher": {
       "json_url": "https://scipy.github.io/devdocs/_static/version_switcher.json",
       "version_match": version,
+  },
+  # The service https://plausible.io is used to gather simple
+  # and privacy-friendly analytics for the site. The dashboard can be accessed
+  # at https://analytics.scientific-python.org/docs.scipy.org
+  # The Scientific-Python community is hosting and managing the account.
+  "analytics": {
+      "plausible_analytics_domain": "docs.scipy.org",
+      "plausible_analytics_url": "https://views.scientific-python.org/js/script.js",
   }
 }
 
