@@ -2110,6 +2110,7 @@ def lanczos(M, *, sym=True):
     spectral domains.
 
     .. versionadded:: 1.10
+
     References
     ----------
     .. [1] Lanczos, C., and Teichmann, T. (1957). Applied analysis.
