@@ -39,11 +39,11 @@ def test_bootstrap_iv():
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3],), np.mean, confidence_level='ni')
 
-    message = "`n_resamples` must be a positive integer."
+    message = "`n_resamples` must be a non-negative integer."
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3],), np.mean, n_resamples=-1000)
 
-    message = "`n_resamples` must be a positive integer."
+    message = "`n_resamples` must be a non-negative integer."
     with pytest.raises(ValueError, match=message):
         bootstrap(([1, 2, 3],), np.mean, n_resamples=1000.5)
 
@@ -68,6 +68,14 @@ def test_bootstrap_iv():
 
     with pytest.raises(ValueError, match=message):
         bootstrap(([.1, .2, .3], [.1, .2, .3]), statistic, method='BCa')
+
+    message = "`bootstrap_result` must have attribute `bootstrap_distribution'"
+    with pytest.raises(ValueError, match=message):
+        bootstrap(([1, 2, 3],), np.mean, bootstrap_result=10)
+
+    message = "Either `bootstrap_result.bootstrap_distribution.size`"
+    with pytest.raises(ValueError, match=message):
+        bootstrap(([1, 2, 3],), np.mean, n_resamples=0)
 
     message = "'herring' cannot be used to seed a"
     with pytest.raises(ValueError, match=message):
@@ -388,6 +396,32 @@ def test_bootstrap_gh15678(method):
     assert_allclose(res.confidence_interval, ref.confidence_interval)
     assert_allclose(res.standard_error, ref.standard_error)
     assert isinstance(res.standard_error, np.float64)
+
+
+@pytest.mark.parametrize("additional_resamples", [0, 1000])
+def test_re_boostrap(additional_resamples):
+    # Test behavior of parameter `bootstrap_result`
+    rng = np.random.default_rng(8958153316228384)
+    x = rng.random(size=100)
+
+    n1 = 1000
+    n2 = additional_resamples
+    n3 = n1 + additional_resamples
+
+    rng = np.random.default_rng(296689032789913033)
+    res = stats.bootstrap((x,), np.mean, n_resamples=n1, random_state=rng,
+                          confidence_level=0.95, method='percentile')
+    res = stats.bootstrap((x,), np.mean, n_resamples=n2, random_state=rng,
+                          confidence_level=0.90, method='BCa',
+                          bootstrap_result=res)
+
+    rng = np.random.default_rng(296689032789913033)
+    ref = stats.bootstrap((x,), np.mean, n_resamples=n3, random_state=rng,
+                          confidence_level=0.90, method='BCa')
+
+    assert_allclose(res.standard_error, ref.standard_error, rtol=1e-14)
+    assert_allclose(res.confidence_interval, ref.confidence_interval,
+                    rtol=1e-14)
 
 
 def test_jackknife_resample():
