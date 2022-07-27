@@ -721,10 +721,10 @@ class SVDSCommonTests:
             U, s, VH = svds(A, k, solver=self.solver)
 
         # Check some generic properties of svd.
-        # if (self.solver == 'arpack' and dtype is complex):
-        #     pytest.skip("The ARPACK-based svds does not reliably produce "
-        #                 "orthogonal vectors in VH when there are repeated "
-        #                 "singular values")
+        if (self.solver == 'arpack' and dtype is complex):
+            pytest.skip("The ARPACK-based svds does not reliably produce "
+                        "orthogonal vectors in VH when there are repeated "
+                        "singular values")
         _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
 
         # Check that the largest singular value is near sqrt(n*m)
@@ -745,9 +745,9 @@ class SVDSCommonTests:
         n, m = shape
         A = np.zeros((n, m), dtype=dtype)
 
-        # if (self.solver == 'arpack' and dtype is complex
-        #         and k == min(A.shape) - 1):
-        #     pytest.skip("ARPACK has additional restriction for complex dtype")
+        if (self.solver == 'arpack' and dtype is complex
+                and k == min(A.shape) - 1):
+            pytest.skip("ARPACK has additional restriction for complex dtype")
 
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
