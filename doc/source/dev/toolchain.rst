@@ -224,7 +224,9 @@ available compiler support, and Microsoft in particular has taken very long to
 achieve conformance to C99/C11/C17, however starting from MS Visual Studio 16.8,
 C11/C17 is supported [14]_ (though without the C11 optional features).
 C99 ``<complex.h>`` would be particularly interesting for SciPy;
-MSVC conformance for this is being tracked here [15]_.
+MSVC conformance for this and ``<stdatomic.h>`` is being tracked here [15]_ [16]_.
+However, it's still possible to use complex types on windows, provided that
+windows-specific types are used [17]_.
 
 Therefore, using C features beyond C90 was only possible insofar there was support on
 Windows; however, as of as of the end of 2021, a sufficiently recent compiler is used.
@@ -267,24 +269,24 @@ CPython) has been recent enough to support even C++17.
 Since the official builds (see above) use a pretty recent version of LLVM,
 the bottleneck for C++ support is therefore the oldest supported GCC version,
 where SciPy has been constrained mainly by the version in the oldest supported
-manylinux versions & images [16]_.
+manylinux versions & images [18]_.
 
 At the end of 2021 (with the final removal of ``manylinux1`` wheels), the
-minimal requirement of GCC moved to 6.3, which has full C++14 support [17]_.
+minimal requirement of GCC moved to 6.3, which has full C++14 support [19]_.
 This corresponded to the lowest-present GCC version in relevant manylinux
 versions, though this was still considering the Debian-based "outlier"
 ``manylinux_2_24``, which - in contrast to previous manylinux images based on
 RHEL-derivative CentOS that could benefit from the ABI-compatible GCC backports
 in the "RHEL Dev Toolset" - was stuck with GCC 6.3. That image failed to take
-off not least due to those outdated compilers [18]_ and reached its EOL in
-mid-2022 [19]_. For different reasons, ``manylinux2010`` also reached its EOL
-around the same time [20]_.
+off not least due to those outdated compilers [20]_ and reached its EOL in
+mid-2022 [21]_. For different reasons, ``manylinux2010`` also reached its EOL
+around the same time [22]_.
 
 The remaining images ``manylinux2014`` and ``manylinux_2_28`` currently support
 GCC 10 and 11, respectively. The latter will continue to receive updates as new
 GCC versions become available as backports, but the former will likely not
 change since the CentOS project is not responsive anymore about publishing
-aarch64 backports of GCC 11 [21]_.
+aarch64 backports of GCC 11 [23]_.
 
 This leaves all the main platforms and their compilers with comparatively
 recent versions. However, SciPy has historically also endeavored to support
@@ -293,11 +295,11 @@ then at least by remaining compilable from source - which includes for example
 AIX, Alpine Linux and FreeBSD.
 
 For AIX 7.1 & 7.2 the default compiler is GCC 8 (AIX 6.1 had its EOL in 2017),
-but GCC 10 is installable (side-by-side) [22]_.
-The oldest currently-supported Alpine Linux release is 3.12 [23]_, and already
+but GCC 10 is installable (side-by-side) [24]_.
+The oldest currently-supported Alpine Linux release is 3.12 [25]_, and already
 comes with GCC 10.
-For FreeBSD, the oldest currently-supported 12.x release [24]_ comes with
-LLVM 10 (and GCC 10 is available as a freebsd-port [25]_).
+For FreeBSD, the oldest currently-supported 12.x release [26]_ comes with
+LLVM 10 (and GCC 10 is available as a freebsd-port [27]_).
 
 Finally there is the question of which machines are widely used by people
 needing to compile SciPy from source for other reasons (e.g. SciPy developers,
@@ -314,10 +316,10 @@ All the currently lowest-supported compiler versions (GCC 8, LLVM 12,
 VS2019 with vc142) have full support for the C++17 _core language_,
 which can therefore be used unconditionally.
 However, as of mid-2022, support for the entirety of the C++17 standard library
-has not yet been completed across all compilers [17]_, particularly LLVM.
+has not yet been completed across all compilers [19]_, particularly LLVM.
 It is therefore necessary to check if a given stdlib-feature is supported by
 all compilers before it can be used in SciPy.
-Compiler support for C++20 and C++23 is still under heavy development [17]_.
+Compiler support for C++20 and C++23 is still under heavy development [19]_.
 
 Fortran Compilers
 ~~~~~~~~~~~~~~~~~
@@ -344,7 +346,7 @@ is a build dependency (currently with the possibility to opt out).
 OpenMP support
 ^^^^^^^^^^^^^^
 
-For various reasons [26]_, SciPy cannot be distributed with built-in OpenMP support.
+For various reasons [28]_, SciPy cannot be distributed with built-in OpenMP support.
 When using the optional Pythran support, OpenMP-enabled parallel code can be
 generated when building from source.
 
@@ -451,16 +453,18 @@ References
 .. [11] https://docs.microsoft.com/en-us/cpp/build/projects-and-build-systems-cpp#the-msvc-toolset
 .. [12] https://docs.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
 .. [13] https://en.wikipedia.org/wiki/C11_%28C_standard_revision%29#Optional_features
-.. [14] https://devblogs.microsoft.com/cppblog/c11-and-c17-standard-support-arriving-in-msvc/
-.. [15] https://developercommunity.visualstudio.com/t/Support-for-C99-Complex-numbers/1409049?space=8&q=complex
-.. [16] https://github.com/mayeut/pep600_compliance
-.. [17] https://en.cppreference.com/w/cpp/compiler_support
-.. [18] https://github.com/pypa/manylinux/issues/1012
-.. [19] https://github.com/pypa/manylinux/issues/1332
-.. [20] https://github.com/pypa/manylinux/issues/1281
-.. [21] https://github.com/pypa/manylinux/issues/1266
-.. [22] https://www.ibm.com/support/pages/aix-toolbox-open-source-software-downloads-alpha#G
-.. [23] https://alpinelinux.org/releases/
-.. [24] https://www.freebsd.org/releases/
-.. [25] https://www.freebsd.org/status/report-2021-04-2021-06/gcc/
-.. [26] https://github.com/scipy/scipy/issues/10239
+.. [14] https://docs.microsoft.com/en-us/cpp/overview/visual-cpp-language-conformance#c-standard-library-features-1
+.. [15] https://developercommunity.visualstudio.com/t/714008
+.. [16] https://developercommunity.visualstudio.com/t/1204057
+.. [17] https://docs.microsoft.com/en-us/cpp/c-runtime-library/complex-math-support
+.. [18] https://github.com/mayeut/pep600_compliance
+.. [19] https://en.cppreference.com/w/cpp/compiler_support
+.. [20] https://github.com/pypa/manylinux/issues/1012
+.. [21] https://github.com/pypa/manylinux/issues/1332
+.. [22] https://github.com/pypa/manylinux/issues/1281
+.. [23] https://github.com/pypa/manylinux/issues/1266
+.. [24] https://www.ibm.com/support/pages/aix-toolbox-open-source-software-downloads-alpha#G
+.. [25] https://alpinelinux.org/releases/
+.. [26] https://www.freebsd.org/releases/
+.. [27] https://www.freebsd.org/status/report-2021-04-2021-06/gcc/
+.. [28] https://github.com/scipy/scipy/issues/10239
