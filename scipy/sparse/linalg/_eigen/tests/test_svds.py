@@ -545,6 +545,8 @@ class SVDSCommonTests:
     A1 = [[1, 2, 3], [3, 4, 3], [1 + 1j, 0, 2], [0, 0, 1]]
     A2 = [[1, 2, 3, 8 + 5j], [3 - 2j, 4, 3, 5], [1, 0, 2, 3], [0, 0, 1, 0]]
 
+    @pytest.mark.filterwarnings("ignore:k >= N - 1 for N * N square matrix. ",
+                                reason="platform depended")
     @pytest.mark.parametrize('A', (A1, A2))
     @pytest.mark.parametrize('k', range(1, 5))
     # PROPACK fails a lot if @pytest.mark.parametrize('which', ("SM", "LM"))
@@ -553,8 +555,6 @@ class SVDSCommonTests:
     # In gh-14299, it was suggested the `svds` should _not_ work with lists
     @pytest.mark.parametrize('lo_type', (np.asarray, csc_matrix,
                                          aslinearoperator))
-    @pytest.mark.filterwarnings("ignore:k >= N - 1 for N * N",
-                                reason="platform depended")
     def test_svd_simple(self, A, k, real, transpose, lo_type):
 
         if self.solver == 'propack':
