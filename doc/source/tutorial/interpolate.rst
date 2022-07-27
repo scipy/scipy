@@ -195,7 +195,7 @@ argument:
 
 However with the ``dspl`` object, we find the zeros of the derivative of ``spl``:
 
-    >>> dspl.root() / np.pi
+    >>> dspl.roots() / np.pi
     array([-0.45480801,  0.50000034,  1.50000099,  2.5000016 ,  3.46249993])
 
 This agrees well with roots :math:`\pi/2 + \pi\,n` of
@@ -206,14 +206,14 @@ the extrapolated results (the first and last values) are much less accurate.
 We can switch off the extrapolation and limit the root-finding to the
 interpolation interval:
 
-    >>> dspl.root(extrapolate=False) / np.pi
+    >>> dspl.roots(extrapolate=False) / np.pi
     array([0.50000034,  1.50000099,  2.5000016])
 
 In fact, the ``root`` method is a special case of a more general ``solve``
 method which finds for a given value of :math:`y` the solutions of the
 equation :math:`f(x) = y` , where :math:`f(x)` is a piecewise polynomial:
 
-    >>> dspl.solve(0.5, extrapolate=False)
+    >>> dspl.solve(0.5, extrapolate=False) / np.pi
     array([0.33332755, 1.66667195, 2.3333271])
 
 which agrees well with the expected values of  :math:`\pm\arccos(1/2) + 2\pi\,n`.
@@ -304,10 +304,11 @@ with b-splines:
     >>> plt.legend()
     >>> plt.show()
 
-Note that by default `make_interp_spline` constructs a cubic spline:
+Note that by default `make_interp_spline` constructs a cubic spline;
+its derivative is a quadratic:
 
-    >>> der.k
-    3
+    >>> bspl.k, der.k
+    (3, 2)
 
 This way, the default result of ``make_interp_spline(x, y)`` is equivalent to
 ``CubicSpline(x, y)``. The difference is that the former allows several optional
