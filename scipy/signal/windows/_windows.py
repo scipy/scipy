@@ -2205,12 +2205,12 @@ _win_equiv_raw = {
     ('hann', 'han'): (hann, False),
     ('kaiser', 'ksr'): (kaiser, True),
     ('kaiser bessel derived', 'kbd'): (kaiser_bessel_derived, True),
+    ('lanczos', 'sinc'): (lanczos, False),
     ('nuttall', 'nutl', 'nut'): (nuttall, False),
     ('parzen', 'parz', 'par'): (parzen, False),
     ('taylor', 'taylorwin'): (taylor, False),
     ('triangle', 'triang', 'tri'): (triang, False),
     ('tukey', 'tuk'): (tukey, False),
-    ('lanczos', 'sinc'): (lanczos, False),
 }
 
 # Fill dict with all valid window name strings

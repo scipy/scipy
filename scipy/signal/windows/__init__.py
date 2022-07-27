@@ -30,12 +30,12 @@ The suite of window functions for filtering and spectral estimation.
    hann                    -- Hann window
    kaiser                  -- Kaiser window
    kaiser_bessel_derived   -- Kaiser-Bessel derived window
+   lanczos                 -- Lanczos window also known as a sinc window
    nuttall                 -- Nuttall's minimum 4-term Blackman-Harris window
    parzen                  -- Parzen window
    taylor                  -- Taylor window
    triang                  -- Triangular window
    tukey                   -- Tukey window
-   lanczos                 -- Lanczos window also known as a sinc window
 
 """
 
