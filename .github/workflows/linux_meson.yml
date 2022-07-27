@@ -97,7 +97,7 @@ jobs:
       run: |
         export OMP_NUM_THREADS=2
         export SCIPY_USE_PROPACK=1
-        python dev.py --no-build test -j 2
+        python dev.py --no-build test -j 2 --durations 10
 
   test_venv_install:
     name: Pip install into venv

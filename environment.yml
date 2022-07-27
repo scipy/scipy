@@ -11,7 +11,7 @@ dependencies:
   - setuptools<60.0
   - cython
   - compilers
-  - meson
+  - meson>=0.63.0
   - meson-python
   - ninja
   - numpy
