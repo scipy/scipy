@@ -786,7 +786,7 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
         real[:] max_, zeros_max
         int i, j, k
         int n, d, m, p
-        real arg, residual, log_arg, log_norm
+        real arg, residual, log_norm
 
     n = points.shape[0]
     d = points.shape[1]
@@ -819,14 +819,13 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
         estimate_ = empty_estimate_.copy()
         for i in range(n):
             arg = 0
-            log_arg = 0
             for k in range(d):
                 residual = (points_[i, k] - xi_[j, k])
                 arg += residual * residual
 
-            log_arg = -arg / 2 + log_norm
+            arg = -arg / 2 + log_norm
             for k in range(p):
-                estimate_[k, i] = log_values_[i, k] + log_arg
+                estimate_[k, i] = log_values_[i, k] + arg
 
                 # Collect max value for logsumexp
                 if max_[k] < estimate_[k, i]:
