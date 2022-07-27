@@ -545,8 +545,7 @@ cdef class Rotation:
         """Whether this instance represents a single rotation."""
         return self._single
 
-    @staticmethod
-    def __bool__():
+    def __bool__(self):
         """Comply with Python convention for objects to be True.
 
         Required because `Rotation.__len__()` is defined and not always truthy.
