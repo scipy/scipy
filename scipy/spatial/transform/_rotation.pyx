@@ -545,6 +545,13 @@ cdef class Rotation:
         """Whether this instance represents a single rotation."""
         return self._single
 
+    def __bool__(self):
+        """Comply with Python convention for objects to be True.
+
+        Required because `Rotation.__len__()` is defined and not always truthy.
+        """
+        return True
+
     def __len__(self):
         """Number of rotations contained in this object.
 
