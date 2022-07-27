@@ -579,6 +579,9 @@ class SVDSCommonTests:
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
                 u, s, vh = svds(A2, k, solver=self.solver)
+        elif self.solver == 'arpack':
+            with pytest.warns(UserWarning, match="k >= N - 1 for N * N"):
+                u, s, vh = svds(A2, k, solver=self.solver)
         else:
             u, s, vh = svds(A2, k, solver=self.solver)
         _check_svds(A, k, u, s, vh, atol=3e-10)
