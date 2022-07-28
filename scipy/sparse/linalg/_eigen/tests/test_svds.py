@@ -545,7 +545,7 @@ class SVDSCommonTests:
     A1 = [[1, 2, 3], [3, 4, 3], [1 + 1j, 0, 2], [0, 0, 1]]
     A2 = [[1, 2, 3, 8 + 5j], [3 - 2j, 4, 3, 5], [1, 0, 2, 3], [0, 0, 1, 0]]
 
-    @pytest.mark.filterwarnings("ignore:k >= N - 1 for N * N square matrix. ",
+    @pytest.mark.filterwarnings("ignore:k >= N - 1",
                                 reason="platform depended")
     @pytest.mark.parametrize('A', (A1, A2))
     @pytest.mark.parametrize('k', range(1, 5))
