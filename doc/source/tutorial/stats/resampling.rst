@@ -92,4 +92,9 @@ capabilities, and even improve your understanding of statistics.
 Resampling / Monte Carlo Methods in :mod:`scipy.stats`
 ------------------------------------------------------
 
-(links to be added)
+1. `Monte Carlo Hypothesis Tests <https://github.com/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_1.ipynb>`_
+2. `Introduction to Permutation Tests <https://github.com/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2.ipynb>`_
+2a. `Independent-Sample Permutation Tests <https://github.com/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2a.ipynb>`_
+2b. `Paired-Sample Permutation Tests <https://github.com/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2b.ipynb>`_
+2c. `Correlated-Sample Permutation Tests <https://github.com/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2c.ipynb>`_
+3. `The Bootstrap <https://github.com/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_3.ipynb>`_
