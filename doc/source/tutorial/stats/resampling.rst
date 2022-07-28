@@ -17,7 +17,7 @@ a shiny demon… in the middle… of the road. And he says:
 
    If you flip a coin with probability of heads :math:`p=0.5` exactly
    :math:`n=100` times, what is the probability that the number of heads
-   will be less than or equal to :math:`x=45`? Answer correctly, or I’ll
+   will be less than or equal to :math:`x=45`? Answer correctly, or I'll
    eat your souls.
 
     >>> import math
@@ -55,7 +55,8 @@ count does not exceed 45.
 
     >>> # Your Monte Carlo Approach
     >>> N = 100000  # We'll do 100000 trials, each with 100 flips
-    >>> simulation = np.random.rand(n, N) < p  # False for tails, True for heads
+    >>> rng = np.random.default_rng()  # use the "new" Generator interface
+    >>> simulation = rng.random(size=(n, N)) < p  # False for tails, True for heads
     >>> counts = np.sum(simulation, axis=0)  # count the number of heads each trial
     >>> prob = np.sum(counts <= x) / N  # estimate the probability as the observed proportion of cases in which the count did not exceed 45
     >>> print(f"The Monte Carlo approach estimates the probability as {prob}")
@@ -78,11 +79,11 @@ As your soul is being eaten, you take solace in the knowledge that your
 simple Monte Carlo approach was more accurate than the normal
 approximation. This is not uncommon: when an exact answer is unknown,
 often a computational approximation is more accurate than an analytical
-approximation. Also, it’s easy for demons to invent questions for which
+approximation. Also, it's easy for demons to invent questions for which
 analytical approximations (let alone exact answers) are unavailable. In
 such cases, a computational approach is the only way to go.
 
-Although it’s best to use an exact approach when it’s available,
+Although it's best to use an exact approach when it's available,
 learning to use computational statistics techniques can improve the
 accuracy of `scipy.stats` features that rely on analytical
 approximations, dramatically extend your statistical analysis
@@ -90,7 +91,5 @@ capabilities, and even improve your understanding of statistics.
 
 Resampling / Monte Carlo Methods in :mod:`scipy.stats`
 ------------------------------------------------------
-.. toctree::
-   :maxdepth: 1
 
-   resampling_tutorial_1
+(links to be added)
