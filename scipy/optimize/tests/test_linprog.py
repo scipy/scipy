@@ -2230,12 +2230,13 @@ class TestLinprogHiGHSMIP():
         # source: slide 5,
         # https://www.cs.upc.edu/~erodri/webpage/cps/theory/lp/milp/slides.pdf
 
+        # use all array inputs to test gh-16681 (integrality couldn't be array)
         A_ub = np.array([[2, -2], [-8, 10]])
         b_ub = np.array([-1, 13])
         c = -np.array([1, 1])
 
-        bounds = [(0, np.inf)] * len(c)
-        integrality = [1] * len(c)
+        bounds = np.array([(0, np.inf)] * len(c))
+        integrality = np.ones_like(c)
 
         res = linprog(c=c, A_ub=A_ub, b_ub=b_ub, bounds=bounds,
                       method=self.method, integrality=integrality)
