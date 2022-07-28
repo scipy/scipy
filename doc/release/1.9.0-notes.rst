@@ -2,8 +2,6 @@
 SciPy 1.9.0 Release Notes
 ==========================
 
-.. note:: Scipy 1.9.0 is not released yet!
-
 .. contents::
 
 SciPy 1.9.0 is the culmination of 6 months of hard work. It contains
@@ -403,6 +401,7 @@ Authors
 *******
 
 * endolith (12)
+* h-vetinari (11)
 * Caio Agiani (2) +
 * Emmy Albert (1) +
 * Joseph Albert (1)
@@ -457,11 +456,10 @@ Authors
 * Isuru Fernando (3)
 * Joseph Fox-Rabinovitz (1)
 * Ryan Gibson (4) +
-* Ralf Gommers (323)
+* Ralf Gommers (327)
 * Srinivas Gorur-Shandilya (1) +
 * Alex Griffing (2)
-* h-vetinari (5)
-* Matt Haberland (459)
+* Matt Haberland (461)
 * Tristan Hearn (1) +
 * Jonathan Helgert (1) +
 * Samuel Hinton (1) +
@@ -512,8 +510,8 @@ Authors
 * Amit Portnoy (1) +
 * Quentin Barthélemy (9)
 * Patrick N. Raanes (1) +
-* Tyler Reddy (174)
-* Pamphile Roy (197)
+* Tyler Reddy (185)
+* Pamphile Roy (199)
 * Vivek Roy (2) +
 * sabonerune (1) +
 * Niyas Sait (2) +
@@ -541,11 +539,10 @@ Authors
 * Will Tirone (2)
 * Bas van Beek (7)
 * Dhruv Vats (1)
-* H. Vetinari (6)
 * Arthur Volant (1)
 * Samuel Wallan (5)
 * Stefan van der Walt (8)
-* Warren Weckesser (83)
+* Warren Weckesser (84)
 * Anreas Weh (1)
 * Nils Werner (1)
 * Aviv Yaish (1) +
@@ -558,7 +555,7 @@ Authors
 * Pavel Zun (1) +
 * David Zwicker (1) +
 
-A total of 155 people contributed to this release.
+A total of 154 people contributed to this release.
 People with a "+" by their names contributed a patch for the first time.
 This list of names is automatically generated, and may not be fully complete.
 
@@ -587,6 +584,7 @@ Issues closed for 1.9.0
 * `#5890 <https://github.com/scipy/scipy/issues/5890>`__: Undefined behavior when using scipy.interpolate.RegularGridInterpolator...
 * `#5982 <https://github.com/scipy/scipy/issues/5982>`__: Keyword collision in scipy.stats.levy_stable.interval
 * `#6472 <https://github.com/scipy/scipy/issues/6472>`__: scipy.stats.invwishart does not check if scale matrix is symmetric
+* `#6551 <https://github.com/scipy/scipy/issues/6551>`__: BUG: stats: inconsistency in docs and behavior of gmean and hmean
 * `#6624 <https://github.com/scipy/scipy/issues/6624>`__: incorrect handling of nan by RegularGridInterpolator
 * `#6882 <https://github.com/scipy/scipy/issues/6882>`__: Certain recursive scipy.integrate.quad (e.g. dblquad and nquad)...
 * `#7469 <https://github.com/scipy/scipy/issues/7469>`__: Misleading interp2d documentation
@@ -788,6 +786,8 @@ Issues closed for 1.9.0
 * `#16540 <https://github.com/scipy/scipy/issues/16540>`__: BLD: meson 0.63.0 and new CI testing failures on Linux
 * `#16555 <https://github.com/scipy/scipy/issues/16555>`__: Building 1.9.x branch from source requires fix in meson-python...
 * `#16609 <https://github.com/scipy/scipy/issues/16609>`__: BUG: \`scipy.optimize.linprog\` reports optimal for trivially...
+* `#16681 <https://github.com/scipy/scipy/issues/16681>`__: BUG: linprog integrality only accepts list, not array
+* `#16718 <https://github.com/scipy/scipy/issues/16718>`__: BUG: memoryview error with Cython 0.29.31
 
 ***********************
 Pull requests for 1.9.0
@@ -1225,6 +1225,7 @@ Pull requests for 1.9.0
 * `#16553 <https://github.com/scipy/scipy/pull/16553>`__: BLD: raise an error with clear message for too-new Python version
 * `#16556 <https://github.com/scipy/scipy/pull/16556>`__: DOC: small tweaks to 1.9.0 release notes
 * `#16563 <https://github.com/scipy/scipy/pull/16563>`__: DOC: Reflect MSVC minimum toolchain requirement
+* `#16570 <https://github.com/scipy/scipy/pull/16570>`__: MAINT: backports before 1.9.0rc3
 * `#16572 <https://github.com/scipy/scipy/pull/16572>`__: MAINT: update bundled licenses for removal of scipy-sphinx-theme
 * `#16581 <https://github.com/scipy/scipy/pull/16581>`__: MAINT: stats: fix skew/kurtosis empty 1d input
 * `#16586 <https://github.com/scipy/scipy/pull/16586>`__: MAINT: stats.truncnorm: improve CDF accuracy/speed
@@ -1235,3 +1236,7 @@ Pull requests for 1.9.0
 * `#16638 <https://github.com/scipy/scipy/pull/16638>`__: DOC: update docs on building with Meson
 * `#16664 <https://github.com/scipy/scipy/pull/16664>`__: MAINT: stats._axis_nan_policy: preserve dtype of masked arrays...
 * `#16671 <https://github.com/scipy/scipy/pull/16671>`__: BLD: update \`meson\` and \`meson-python\` versions for 1.9.0...
+* `#16684 <https://github.com/scipy/scipy/pull/16684>`__: MAINT: optimize.linprog: ensure integrality can be an array
+* `#16688 <https://github.com/scipy/scipy/pull/16688>`__: DOC: a few mailmap updates
+* `#16719 <https://github.com/scipy/scipy/pull/16719>`__: MAINT: stats: Work around Cython bug.
+* `#16721 <https://github.com/scipy/scipy/pull/16721>`__: MAINT: stats.monte_carlo_test: used biased estimate of p-value
