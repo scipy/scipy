@@ -1354,10 +1354,13 @@ def test_concatenate_wrong_type():
 def test_len_and_bool():
     rotation_single = Rotation([0, 0, 0, 1])
     rotation_multi = Rotation([[0, 0, 0, 1], [0, 0, 0, 1]])
+    rotation_multi_empty = Rotation(np.empty((0, 4)))
 
     with pytest.raises(TypeError, match="Single rotation has no len()."):
         len(rotation_single)
     assert len(rotation_multi) == 2
+    assert len(rotation_multi_empty) == 0
 
     assert rotation_single
     assert rotation_multi
+    assert rotation_multi_empty  # Rotation should alwas be true. See gh-16663
