@@ -546,7 +546,7 @@ class SVDSCommonTests:
     A2 = [[1, 2, 3, 8 + 5j], [3 - 2j, 4, 3, 5], [1, 0, 2, 3], [0, 0, 1, 0]]
 
     @pytest.mark.filterwarnings("ignore:k >= N - 1",
-                                reason="platform depended")
+                                reason="needed to demonstrate #16725")
     @pytest.mark.parametrize('A', (A1, A2))
     @pytest.mark.parametrize('k', range(1, 5))
     # PROPACK fails a lot if @pytest.mark.parametrize('which', ("SM", "LM"))
@@ -571,8 +571,8 @@ class SVDSCommonTests:
             pytest.skip("`k` cannot be greater than `min(A.shape)`")
         if self.solver != 'propack' and k >= min(A.shape):
             pytest.skip("Only PROPACK supports complete SVD")
-        # if self.solver == 'arpack' and not real and k == min(A.shape) - 1:
-        #    pytest.skip("ARPACK has additional restriction for complex dtype")
+        if self.solver == 'arpack' and not real and k == min(A.shape) - 1:
+           pytest.skip("#16725")
 
         if self.solver == 'propack' and (np.intp(0).itemsize < 8 and not real):
             pytest.skip('PROPACK complex-valued SVD methods not available '
