@@ -1,0 +1,19 @@
+[
+  {
+    "scipyFunctionName": "_tgamma",
+    "boostFunctionName": "boost::math::detail::tgamma",
+    "boostInclude": "boost/math/special_functions/gamma.hpp",
+    "numArgs": 2,
+    "numTemplateParameters": 2,
+    "specializedTypes": ["float", "double", "long double"],
+    "extraPolicyArg": "boost::false_type()"
+  },
+  {
+    "scipyFunctionName": "_erfc",
+    "boostFunctionName": "boost::math::erfc",
+    "boostInclude": "boost/math/special_functions/erf.hpp",
+    "numArgs": 1,
+    "numTemplateParameters": 1,
+    "specializedTypes": ["float", "double", "long double"]
+  }
+]

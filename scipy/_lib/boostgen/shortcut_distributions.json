@@ -1,0 +1,38 @@
+[
+  {
+    "boostInclude": "boost/math/distributions/non_central_chi_squared.hpp",
+    "boostClassName": "boost::math::non_central_chi_squared_distribution",
+    "numCtorArgs": 2,
+    "scipyPrefix": "_ncx2"
+  },
+  {
+    "boostInclude": "boost/math/distributions/beta.hpp",
+    "boostClassName": "boost::math::beta_distribution",
+    "numCtorArgs": 2,
+    "scipyPrefix": "_beta"
+  },
+  {
+    "boostInclude": "boost/math/distributions/binomial.hpp",
+    "boostClassName": "boost::math::binomial_distribution",
+    "numCtorArgs": 2,
+    "scipyPrefix": "_binom"
+  },
+  {
+    "boostInclude": "boost/math/distributions/negative_binomial.hpp",
+    "boostClassName": "boost::math::negative_binomial_distribution",
+    "numCtorArgs": 2,
+    "scipyPrefix": "_nbinom"
+  },
+  {
+    "boostInclude": "boost/math/distributions/hypergeometric.hpp",
+    "boostClassName": "boost::math::hypergeometric_distribution",
+    "numCtorArgs": 3,
+    "scipyPrefix": "_hypergeom"
+  },
+  {
+    "boostInclude": "boost/math/distributions/non_central_f.hpp",
+    "boostClassName": "boost::math::non_central_f_distribution",
+    "numCtorArgs": 3,
+    "scipyPrefix": "_ncf"
+  }
+]
