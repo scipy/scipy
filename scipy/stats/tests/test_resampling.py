@@ -763,6 +763,15 @@ class TestMonteCarloHypothesisTest:
         assert_allclose(res.statistic, expected_stat)
         assert_allclose(res.pvalue, expected_p, atol=2*self.atol)
 
+    def test_p_never_zero(self):
+        # Use biased estimate of p-value to ensure that p-value is never zero
+        # per monte_carlo_test reference [1]
+        rng = np.random.default_rng(2190176673029737545)
+        x = np.zeros(100)
+        res = monte_carlo_test(x, rng.random, np.mean,
+                               vectorized=True, alternative='less')
+        assert res.pvalue == 0.0001
+
 
 class TestPermutationTest:
 
