@@ -342,7 +342,11 @@ object:
     7
 
 The convention is that for ``len(t)`` knots there are ``len(t) - k - 1``
-coefficients. Note that the coeffients are given in the
+coefficients. Some routines (see the :ref:`Smoothing splines section
+<tutorial-interpolate_fitpack>`) zero-pad the ``c`` arrays so that
+``len(c) == len(t)``. These additional coefficients are ignored for evaluation.
+
+Also note that the coeffients are given in the
 :ref:`b-spline basis <tutorial-interpolate_bspl_basis>`, not the power basis
 of :math:`1, x, \cdots, x^k`.
 
@@ -690,6 +694,9 @@ class object --- these classes can be used directly as well ---
 `NearestNDInterpolator`, `LinearNDInterpolator` and `CloughTocher2DInterpolator`                                                     
 for piecewise cubic interpolation in 2D.
 
+All these interpolation methods rely on triangulation of the data using the
+``QHull`` library wrapped in `scipy.spatial`.
+
 .. note::
 
     `griddata` is based on triangulation, hence is appropriate for unstructures,
@@ -820,6 +827,12 @@ a 3-tuple, :math:`\left(t,c,k\right)` , containing the knot-points,
 spline. The default spline order is cubic, but this can be changed
 with the input keyword, *k.*
 
+The knot array defines the interpolation interval to be ``t[k:-k]``, so that 
+first :math:`k+1` and last :math:`k+1` entries of the ``t`` array define
+*boundary knots*. The coefficients are a 1D array of length at least
+``len(t) - k - 1``. Some routines pad this array to have ``len(c) == len(t)``---
+these additional coefficients are ignored for the spline evaluation. 
+
 The ``tck``-tuple format is compatible with
 :ref:`interpolating b-splines <tutorial-interpolate_bspl_basis>`: the output of
 `splrep` can be wrapped into a `BSpline` object, e.g. ``BSpline(*tck)``, and
@@ -829,7 +842,7 @@ can use ``tck``-tuples and `BSpline` objects interchangeably.
 For curves in N-D space the function
 :obj:`splprep` allows defining the curve
 parametrically. For this function only 1 input argument is
-required. This input is a list of :math:`N`-arrays representing the
+required. This input is a list of :math:`N` arrays representing the
 curve in N-D space. The length of each array is the
 number of curve points, and each array provides one component of the
 N-D data point. The parameter variable is given
@@ -840,6 +853,10 @@ parametrization <tutorial-interpolate_parametric>`).
 The output consists of two objects: a 3-tuple, :math:`\left(t,c,k\right)`
 , containing the spline representation and the parameter variable
 :math:`u.`
+
+The coeffients are a list of :math:`N` arrays, where each array corresponds to
+a dimension of the input data. Note that the knots, ``t`` correspond to the
+parametrization of the curve ``u``. 
 
 The keyword argument, ``s`` , is used to specify the amount of smoothing
 to perform during the spline fit. The default value of :math:`s` is
@@ -964,6 +981,34 @@ Thus to wrap its output to a `BSpline`, we need to transpose the coefficients
   True
   >>> np.allclose(y, yy)
   True
+
+So far all examples constructed interpolating splines with ``s=0``. To illustrate
+the effect of the value of ``s`` for noisy data:
+
+.. plot::
+
+   >>> import numpy as np
+   >>> from scipy.interpolate import splrep, splev
+   >>> x = np.arange(0, 2*np.pi+np.pi/4, 2*np.pi/16)
+   >>> rng = np.random.default_rng()
+   >>> y =  np.sin(x) + 0.4*rng.standard_normal(size=len(x))
+   >>> tck = splrep(x, y, s=0)
+   >>> tck_s = splrep(x, y, s=len(x))
+   >>> import matplotlib.pyplot as plt
+   >>> xnew = np.arange(0, 2*np.pi, np.pi/50)
+   >>> plt.plot(xnew, np.sin(xnew), '-.', label='sin(x)')
+   >>> plt.plot(xnew, splev(xnew, tck), '-', label='s=0')
+   >>> plt.plot(xnew, splev(xnew, tck_s), '-', label=f's={len(x)}')
+   >>> plt.plot(x, y, 'o')
+   >>> plt.legend()
+   >>> plt.show()
+
+We see that the ``s=0`` curve follows the (random) fluctuations of the data points,
+while the ``s > 0`` curve is close to the underlying sine function.
+
+The default value of ``s`` depends on whether the weights are supplied or not,
+and also differs for `splrep` and `splprep`. Therefore, we recommend to always
+supply the value of ``s`` explicitly.
 
 
 Object-oriented (:class:`UnivariateSpline`)
