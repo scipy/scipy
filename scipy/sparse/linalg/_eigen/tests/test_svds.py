@@ -572,7 +572,7 @@ class SVDSCommonTests:
         if self.solver != 'propack' and k >= min(A.shape):
             pytest.skip("Only PROPACK supports complete SVD")
         if self.solver == 'arpack' and not real and k == min(A.shape) - 1:
-           pytest.skip("#16725")
+            pytest.skip("#16725")
 
         if self.solver == 'propack' and (np.intp(0).itemsize < 8 and not real):
             pytest.skip('PROPACK complex-valued SVD methods not available '
