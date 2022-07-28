@@ -82,8 +82,12 @@ jobs:
 
     - name: Install packages
       run: |
+        # NumPy requires setuptools < 60.0, but versions close to 60.0 have
+        # a problem with Python 3.11, so follow NumPy's example and use a
+        # very old version. 
+        python -m pip install --user 'setuptools<49.2.0'
         pip install --user git+https://github.com/numpy/numpy.git
-        python -m pip install --user "setuptools<60.0" wheel cython pytest pybind11 pytest-xdist pytest-timeout
+        python -m pip install --user wheel cython pytest pybind11 pytest-xdist pytest-timeout
         pip install --user git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install -r mypy_requirements.txt
 
