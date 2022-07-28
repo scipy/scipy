@@ -747,9 +747,9 @@ class SVDSCommonTests:
         n, m = shape
         A = np.zeros((n, m), dtype=dtype)
 
-        if (self.solver == 'arpack' and dtype is complex
-                and k == min(A.shape) - 1):
-            pytest.skip("ARPACK has additional restriction for complex dtype")
+        # if (self.solver == 'arpack' and dtype is complex
+        #         and k == min(A.shape) - 1):
+        #     pytest.skip("ARPACK has additional restriction for complex dtype")
 
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
