@@ -736,6 +736,8 @@ class SVDSCommonTests:
         z = np.ones_like(s)
         assert_allclose(s, z)
 
+    @pytest.mark.filterwarnings("ignore:k >= N - 1",
+                                reason="needed to demonstrate #16725")
     @pytest.mark.parametrize("shape", ((3, 4), (4, 4), (4, 3), (4, 2)))
     @pytest.mark.parametrize("dtype", (float, complex))
     def test_svd_LM_zeros_matrix(self, shape, dtype):
