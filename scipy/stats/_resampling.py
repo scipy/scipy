@@ -674,6 +674,13 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
     null_distribution : ndarray
         The values of the test statistic generated under the null hypothesis.
 
+    References
+    ----------
+
+    .. [1] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+       Zero: Calculating Exact P-values When Permutations Are Randomly Drawn."
+       Statistical Applications in Genetics and Molecular Biology 9.1 (2010).
+
     Examples
     --------
 
@@ -709,7 +716,7 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
     >>> print(res.statistic)
     0.12457412450240658
     >>> print(res.pvalue)
-    0.701070107010701
+    0.7012
 
     The probability of obtaining a test statistic less than or equal to the
     observed value under the null hypothesis is ~70%. This is greater than
@@ -762,12 +769,12 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed
-        pvalues = cmps.sum(axis=0) / n_resamples
+        pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
         return pvalues
 
     def greater(null_distribution, observed):
         cmps = null_distribution >= observed
-        pvalues = cmps.sum(axis=0) / n_resamples
+        pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
         return pvalues
 
     def two_sided(null_distribution, observed):

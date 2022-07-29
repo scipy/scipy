@@ -95,7 +95,9 @@ If you run into a build issue, or need more detailed build documentation
 including building on Windows, see :ref:`building`.
 
 Some of the tests in SciPy are very slow and need to be separately
-enabled. See :ref:`runtests` for details.
+enabled. See :ref:`the-dev-py-interface` for details.
+
+For a complete setup walkthrough, see :ref:`development-workflow`.
 
 Other workflows
 ===============

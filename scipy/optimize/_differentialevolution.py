@@ -101,9 +101,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -471,9 +469,7 @@ class DifferentialEvolutionSolver:
         denoted by CR. Increasing this value allows a larger number of mutants
         to progress into the next generation, but at the risk of population
         stability.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
