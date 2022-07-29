@@ -722,11 +722,6 @@ class SVDSCommonTests:
         else:
             U, s, VH = svds(A, k, solver=self.solver)
 
-        # Check some generic properties of svd.
-        # if (self.solver == 'arpack' and dtype is complex):
-        #     pytest.skip("The ARPACK-based svds does not reliably produce "
-        #                 "orthogonal vectors in VH when there are repeated "
-        #                 "singular values")
         _check_svds(A, k, U, s, VH, check_usvh_A=True, check_svd=False)
 
         # Check that the largest singular value is near sqrt(n*m)
@@ -740,7 +735,7 @@ class SVDSCommonTests:
                                 reason="needed to demonstrate #16725")
     @pytest.mark.parametrize("shape", ((3, 4), (4, 4), (4, 3), (4, 2)))
     @pytest.mark.parametrize("dtype", (float, complex))
-    def test_svd_LM_zeros_matrix(self, shape, dtype):
+    def test_zero_matrix(self, shape, dtype):
         # Check that svds can deal with matrices containing only zeros;
         # see https://github.com/scipy/scipy/issues/3452/
         # shape = (4, 2) is included because it is the particular case
@@ -749,9 +744,9 @@ class SVDSCommonTests:
         n, m = shape
         A = np.zeros((n, m), dtype=dtype)
 
-        # if (self.solver == 'arpack' and dtype is complex
-        #         and k == min(A.shape) - 1):
-        #     pytest.skip("ARPACK has additional restriction for complex dtype")
+        if (self.solver == 'arpack' and dtype is complex
+                and k == min(A.shape) - 1):
+            pytest.skip("#16725")
 
         if self.solver == 'lobpcg':
             with pytest.warns(UserWarning, match="The problem size"):
@@ -826,11 +821,12 @@ class SVDSCommonTests:
         assert_allclose(ss, 0, atol=1e-5, rtol=1e0)
         # Smallest singular vectors via svds in null space:
         n, m = mat.shape
-        if n > m:
-            assert_allclose(sp_mat @ svh.T, 0, atol=1e-5, rtol=1e0)
-        else:
-            assert_allclose(sp_mat.transpose() @ su, 0, atol=1e-5, rtol=1e0)
-
+        # if n > m:
+        #     assert_allclose(sp_mat @ svh.T, 0, atol=1e-5, rtol=1e0)
+        # else:
+        #     assert_allclose(sp_mat.transpose() @ su, 0, atol=1e-5, rtol=1e0)
+        assert_allclose(sp_mat @ svh.T, 0, atol=1e-5, rtol=1e0)
+        assert_allclose(sp_mat.transpose() @ su, 0, atol=1e-5, rtol=1e0)
 
 # --- Perform tests with each solver ---
 
