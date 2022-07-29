@@ -1839,7 +1839,6 @@ def lp2hp(b, a, wo=1.0):
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
-    >>> import numpy as np
 
     >>> lp = signal.lti([1.0], [1.0, 1.0])
     >>> hp = signal.lti(*signal.lp2hp(lp.num, lp.den))
