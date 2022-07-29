@@ -2845,6 +2845,7 @@ def _digammainv(y):
     to solve `sc.digamma(x) - y = 0`.  There is probably room for
     improvement, but currently it works over a wide range of y:
 
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> y = 64*rng.standard_normal(1000000)
     >>> y.min(), y.max()
@@ -5048,6 +5049,9 @@ class levy_gen(rv_continuous):
         # Equivalent to 1.0/(norm.isf(q/2)**2) or 0.5/(erfcinv(q)**2)
         val = -sc.ndtri(q/2)
         return 1.0 / (val * val)
+
+    def _isf(self, p):
+        return 1/(2*sc.erfinv(p)**2)
 
     def _stats(self):
         return np.inf, np.inf, np.nan, np.nan
@@ -8457,6 +8461,7 @@ class uniform_gen(rv_continuous):
 
         Examples
         --------
+        >>> import numpy as np
         >>> from scipy.stats import uniform
 
         We'll fit the uniform distribution to `x`:
@@ -9481,6 +9486,7 @@ class studentized_range_gen(rv_continuous):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import studentized_range
     >>> import matplotlib.pyplot as plt
     >>> fig, ax = plt.subplots(1, 1)

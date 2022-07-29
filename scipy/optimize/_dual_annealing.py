@@ -7,8 +7,6 @@
 A Dual Annealing global optimization algorithm
 """
 
-import warnings
-
 import numpy as np
 from scipy.optimize import OptimizeResult
 from scipy.optimize import minimize, Bounds

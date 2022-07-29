@@ -93,6 +93,7 @@ def entropy(pk: np.typing.ArrayLike,
     --------
     The outcome of a fair coin is the most uncertain:
 
+    >>> import numpy as np
     >>> from scipy.stats import entropy
     >>> base = 2  # work in units of bits
     >>> pk = np.array([1/2, 1/2])  # fair coin
@@ -238,6 +239,7 @@ def differential_entropy(
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import differential_entropy, norm
 
     Entropy of a standard normal distribution:

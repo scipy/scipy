@@ -1348,3 +1348,16 @@ def test_concatenate():
 def test_concatenate_wrong_type():
     with pytest.raises(TypeError, match='Rotation objects only'):
         Rotation.concatenate([Rotation.identity(), 1, None])
+
+
+# Regression test for gh-16663
+def test_len_and_bool():
+    rotation_single = Rotation([0, 0, 0, 1])
+    rotation_multi = Rotation([[0, 0, 0, 1], [0, 0, 0, 1]])
+
+    with pytest.raises(TypeError, match="Single rotation has no len()."):
+        len(rotation_single)
+    assert len(rotation_multi) == 2
+
+    assert rotation_single
+    assert rotation_multi
