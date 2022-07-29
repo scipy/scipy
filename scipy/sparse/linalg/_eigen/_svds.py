@@ -212,7 +212,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> from scipy.sparse.linalg import svds
     >>> rng = np.random.default_rng()
     >>> orthogonal = csc_matrix(ortho_group.rvs(10, random_state=rng))
-    >>> s = [0.0001, 0.001, 3, 4, 5]  # singular values
+    >>> s = [0.0001, 0.01, 3, 4, 5]  # singular values
     >>> u = orthogonal[:, :5]         # left singular vectors
     >>> vT = orthogonal[:, 5:].T      # right singular vectors
     >>> A = u @ diags(s) @ vT
@@ -233,11 +233,15 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> np.allclose(A3, A.toarray())
     True
 
-    The singular values match the expected singular values, and the singular
-    vectors are as expected up to a difference in sign.
+    The singular values match the expected singular values.
 
-    >>> (np.allclose(s3, s) and
-    ...  np.allclose(np.abs(u3), np.abs(u.toarray())) and
+    >>> np.allclose(s3, s)
+    True
+    
+    Since the singular values are not close to each other in this example,
+    every singular vector matchs as expected up to a difference in sign.
+    
+    >>> (np.allclose(np.abs(u3), np.abs(u.toarray())) and
     ...  np.allclose(np.abs(vT3), np.abs(vT.toarray())))
     True
 
