@@ -96,6 +96,7 @@ running the tests should also work, for example::
 The full test suite should pass, without any build warnings on Linux (with GCC
 9 at least) and a moderate amount on the other platforms.
 
+.. _the-dev-py-interface:
 
 The ``dev.py`` interface
 ========================
