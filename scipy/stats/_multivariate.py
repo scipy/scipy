@@ -722,9 +722,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
             distribution.
         allow_singular : bool, default: ``False``
             Whether to allow a singular covariance matrix.
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -1173,9 +1171,7 @@ class matrix_normal_frozen(multi_rv_frozen):
     Parameters
     ----------
     %(_matnorm_doc_default_callparams)s
-    seed : {None, int, `numpy.random.Generator`,
-        `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is `None` the `~np.random.RandomState` singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used, seeded
         with seed.
@@ -2276,9 +2272,7 @@ class wishart_frozen(multi_rv_frozen):
         Degrees of freedom of the distribution
     scale : array_like
         Scale matrix of the distribution
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3267,9 +3261,7 @@ class multinomial_frozen(multi_rv_frozen):
         number of trials
     p: array_like
         probability of a trial falling into each category; should sum to 1
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3489,9 +3481,7 @@ class special_ortho_group_frozen(multi_rv_frozen):
         ----------
         dim : scalar
             Dimension of matrices
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3647,9 +3637,7 @@ class ortho_group_frozen(multi_rv_frozen):
         ----------
         dim : scalar
             Dimension of matrices
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3688,9 +3676,7 @@ class random_correlation_gen(multi_rv_generic):
     ----------
     eigs : 1d ndarray
         Eigenvalues of correlation matrix
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3904,9 +3890,7 @@ class random_correlation_frozen(multi_rv_frozen):
         ----------
         eigs : 1d ndarray
             Eigenvalues of correlation matrix
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -4069,8 +4053,7 @@ class unitary_group_frozen(multi_rv_frozen):
         ----------
         dim : scalar
             Dimension of matrices
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
