@@ -217,37 +217,37 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> vT = orthogonal[:, 5:].T      # right singular vectors
     >>> A = u @ diags(s) @ vT
 
-    With only three singular values/vectors, the SVD approximates the original
+    With only four singular values/vectors, the SVD approximates the original
     matrix.
 
-    >>> u2, s2, vT2 = svds(A, k=3)
-    >>> A2 = u2 @ np.diag(s2) @ vT2
-    >>> np.allclose(A2, A.toarray(), atol=1e-3)
+    >>> u4, s4, vT4 = svds(A, k=4)
+    >>> A4 = u4 @ np.diag(s4) @ vT4
+    >>> np.allclose(A4, A.toarray(), atol=1e-4)
     True
 
-    With all five singular values/vectors, we can reproduce the original
-    matrix.
+    With all five non-zero singular values/vectors, we can reproduce
+    the original matrix more accurately.
 
-    >>> u3, s3, vT3 = svds(A, k=5)
-    >>> A3 = u3 @ np.diag(s3) @ vT3
-    >>> np.allclose(A3, A.toarray())
+    >>> u5, s5, vT5 = svds(A, k=5)
+    >>> A5 = u5 @ np.diag(s5) @ vT5
+    >>> np.allclose(A5, A.toarray())
     True
 
     The singular values match the expected singular values.
 
-    >>> np.allclose(s3, s)
+    >>> np.allclose(s5, s)
     True
-    
+
     Since the singular values are not close to each other in this example,
     every singular vector matchs as expected up to a difference in sign.
-    
-    >>> (np.allclose(np.abs(u3), np.abs(u.toarray())) and
-    ...  np.allclose(np.abs(vT3), np.abs(vT.toarray())))
+
+    >>> (np.allclose(np.abs(u5), np.abs(u.toarray())) and
+    ...  np.allclose(np.abs(vT5), np.abs(vT.toarray())))
     True
 
     The singular vectors are also orthogonal.
-    >>> (np.allclose(u3.T @ u3, np.eye(5)) and
-    ...  np.allclose(vT3 @ vT3.T, np.eye(5)))
+    >>> (np.allclose(u5.T @ u5, np.eye(5)) and
+    ...  np.allclose(vT5 @ vT5.T, np.eye(5)))
     True
 
     """
