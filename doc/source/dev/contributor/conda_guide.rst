@@ -62,7 +62,7 @@ the latest release of conda from either
 
     This will compile the C, C++, and Fortran code that comes with SciPy and
     install it in the directory you already have rather than the default
-    location for Python packages. We installed ``python3`` with Anaconda.
+    location for Python packages. We installed ``python`` with Anaconda.
     ``dev.py`` is a script in the root directory of SciPy which can be used to
     execute several development tasks (see :ref:`the-dev-py-interface` for
     details).

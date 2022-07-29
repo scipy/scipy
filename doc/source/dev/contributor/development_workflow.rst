@@ -114,7 +114,6 @@ development environment, you'll need to activate your development virtual
 environment, perform an in-place build, and run tests::
 
    conda activate name-of-your-virtual-environment
-   python dev.py build
    python dev.py test -v
 
 Otherwise, see :ref:`building`, :ref:`meson` for more information.

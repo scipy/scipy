@@ -204,7 +204,7 @@ With conda
 
 #. Initialize git submodules: ``git submodule update --init``.
 
-#. Build SciPy: enter ``python3 dev.py build`` |br|
+#. Build SciPy: enter ``python3 dev.py build``
 
     This will compile the C, C++, and Fortran code that comes with SciPy and
     install it in the directory you already have rather than the default
