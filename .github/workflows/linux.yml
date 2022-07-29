@@ -78,22 +78,23 @@ jobs:
 
     - name: Install other build dependencies
       run: |
-        sudo apt-get install libatlas-base-dev liblapack-dev gfortran libgmp-dev libmpfr-dev ccache libmpc-dev
+        sudo apt-get install libopenblas-dev gfortran libgmp-dev libmpfr-dev ccache libmpc-dev
 
     - name: Install packages
       run: |
-        pip install --user git+https://github.com/numpy/numpy.git
-        python -m pip install --user "setuptools<60.0" wheel cython pytest pybind11 pytest-xdist pytest-timeout
-        pip install --user git+https://github.com/serge-sans-paille/pythran.git
+        python -m pip install git+https://github.com/numpy/numpy.git
+        python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool
+        python -m pip install git+https://github.com/serge-sans-paille/pythran.git
+        python -m pip install git+https://github.com/mesonbuild/meson.git
         python -m pip install -r mypy_requirements.txt
 
         # Packages that are only needed for their annotations
-        python -m pip install --user types-psutil pybind11 sphinx
+        python -m pip install types-psutil pybind11 sphinx
 
     - name: Mypy
       run: |
-        python -u runtests.py --mypy
+        python -u dev.py mypy
 
     - name: Test SciPy
       run: |
-        python -u runtests.py -n -m fast -- --durations=10 --timeout=60
+        python -u dev.py -n test -- --durations=10 --timeout=60
