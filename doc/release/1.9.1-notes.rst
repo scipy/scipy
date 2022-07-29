@@ -1,0 +1,19 @@
+==========================
+SciPy 1.9.1 Release Notes
+==========================
+
+.. contents::
+
+SciPy 1.9.1 is a bug-fix release with no new features
+compared to 1.9.0.
+
+Authors
+=======
+
+
+Issues closed for 1.9.1
+-----------------------
+
+
+Pull requests for 1.9.1
+-----------------------
