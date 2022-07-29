@@ -3138,7 +3138,6 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
     >>> import numpy as np
-    
 
     >>> b, a = signal.cheby1(4, 5, 100, 'low', analog=True)
     >>> w, h = signal.freqs(b, a)
