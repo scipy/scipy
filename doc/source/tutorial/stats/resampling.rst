@@ -37,7 +37,11 @@ Your brother Kyle is the analytical one. He answers:
    cumulative density function :math:`F(x)` of this normal distribution.
    Specifically:
 
-.. math:: F(x; \mu, \sigma) = \frac{1}{2} \left[ 1 + \mbox{erf} \left( \frac{x-\mu}{\sigma \sqrt{2}} \right) \right]
+.. math::
+
+    F(x; \mu, \sigma) = \frac{1}{2} \left[ 1 + \mbox{erf} \left( \frac{x-\mu}{\sigma \sqrt{2}} \right) \right]
+
+.. code-block::
 
     >>> # Kyle's Analytical Approach
     >>> mean = p*n
@@ -67,7 +71,11 @@ The demon replies:
    You are both incorrect. The probability is given by the binomial
    distribution. Specifically.
 
-.. math:: \sum_{i=0}^{x} {n \choose i} p^i (1-p)^{n-i}
+.. math::
+
+    \sum_{i=0}^{x} {n \choose i} p^i (1-p)^{n-i}
+
+.. code-block::
 
     >>> # The Demon's Exact Probability
     >>> from scipy.stats import binom
@@ -93,8 +101,13 @@ Resampling / Monte Carlo Methods in :mod:`scipy.stats`
 ------------------------------------------------------
 
 1. `Monte Carlo Hypothesis Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_1.ipynb>`_
+
 2. `Introduction to Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2.ipynb>`_
+
 2a. `Independent-Sample Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2a.ipynb>`_
+
 2b. `Paired-Sample Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2b.ipynb>`_
+
 2c. `Correlated-Sample Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2c.ipynb>`_
+
 3. `The Bootstrap <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_3.ipynb>`_
