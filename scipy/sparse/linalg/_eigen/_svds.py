@@ -298,7 +298,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                            largest=largest)
         # lobpcg does not guarantee exactly orthonormal eigenvectors
-        # eigvec, _ = np.linalg.qr(eigvec)
+        # until after gh-16320 is merged
+        eigvec, _ = np.linalg.qr(eigvec)
 
     elif solver == 'propack':
         if not HAS_PROPACK:
@@ -337,9 +338,11 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             v0 = random_state.standard_normal(size=(min(A.shape),))
         _, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                           ncv=ncv, which=which, v0=v0)
+        # arpack do not guarantee exactly orthonormal eigenvectors
+        # for clustered eigenvalues, especially in complex arithmetic
+        eigvec, _ = np.linalg.qr(eigvec)
 
-    # lobpcg/arpack do not guarantee exactly orthonormal eigenvectors
-    eigvec, _ = np.linalg.qr(eigvec)
+    # the eigenvectors eigvec must be orthonomal here; see gh-16712
     Av = X_matmat(eigvec)
     if not return_singular_vectors:
         s = svd(Av, compute_uv=False, overwrite_a=True)
