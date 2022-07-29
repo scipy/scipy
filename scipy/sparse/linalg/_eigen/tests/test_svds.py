@@ -748,7 +748,7 @@ class SVDSCommonTests:
                 and k == min(A.shape) - 1):
             pytest.skip("#16725")
 
-        if solver == 'propack':
+        if self.solver == 'propack':
             pytest.skip("PROPACK failures unrelated to PR #16712")
 
         if self.solver == 'lobpcg':
