@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 from scipy.special import factorial
 from scipy._lib._util import _asarray_validated, float_factorial
@@ -295,6 +297,11 @@ class KroghInterpolator(_Interpolator1DWithDerivatives):
         self.xi = np.asarray(xi)
         self.yi = self._reshape_yi(yi)
         self.n, self.r = self.yi.shape
+
+        if (deg := self.xi.size) > 30:
+            warnings.warn(f"{deg} degrees provided, degrees higher than about"
+                          " thirty cause problems with numerical instability "
+                          "with 'KroghInterpolator'", stacklevel=2)
 
         c = np.zeros((self.n+1, self.r), dtype=self.dtype)
         c[0] = self.yi[0]
