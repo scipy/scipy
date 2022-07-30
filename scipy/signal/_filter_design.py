@@ -163,6 +163,7 @@ def freqs(b, a, worN=200, plot=None):
     Examples
     --------
     >>> from scipy.signal import freqs, iirfilter
+    >>> import numpy as np
 
     >>> b, a = iirfilter(4, [1, 10], 1, 60, analog=True, ftype='cheby1')
 
@@ -363,6 +364,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=Fal
     Examples
     --------
     >>> from scipy import signal
+    >>> import numpy as np
     >>> b = signal.firwin(80, 0.5, window=('kaiser', 8))
     >>> w, h = signal.freqz(b)
 
@@ -781,6 +783,7 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
     Design a 15th-order bandpass filter in SOS format.
 
     >>> from scipy import signal
+    >>> import numpy as np
     >>> sos = signal.ellip(15, 0.5, 60, (0.2, 0.4), btype='bandpass',
     ...                    output='sos')
 
@@ -1406,6 +1409,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     to SOS format with `zpk2sos`:
 
     >>> from scipy import signal
+    >>> import numpy as np
     >>> z, p, k = signal.ellip(6, 0.087, 90, 1000/(0.5*8000), output='zpk')
 
     Now convert to SOS format.
@@ -2087,6 +2091,7 @@ def bilinear(b, a, fs=1.0):
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> fs = 100
     >>> bf = 2 * np.pi * np.array([7, 13])
@@ -3015,6 +3020,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> b, a = signal.butter(4, 100, 'low', analog=True)
     >>> w, h = signal.freqs(b, a)
@@ -3131,6 +3137,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> b, a = signal.cheby1(4, 5, 100, 'low', analog=True)
     >>> w, h = signal.freqs(b, a)
@@ -3243,6 +3250,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> b, a = signal.cheby2(4, 40, 100, 'low', analog=True)
     >>> w, h = signal.freqs(b, a)
@@ -3365,6 +3373,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> b, a = signal.ellip(4, 5, 40, 100, 'low', analog=True)
     >>> w, h = signal.freqs(b, a)
@@ -3500,6 +3509,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> b, a = signal.butter(4, 100, 'low', analog=True)
     >>> w, h = signal.freqs(b, a)
@@ -3696,6 +3706,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> N, Wn = signal.buttord([20, 50], [14, 60], 3, 40, True)
     >>> b, a = signal.butter(N, Wn, 'band', True)
@@ -3869,6 +3880,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> N, Wn = signal.cheb1ord(0.2, 0.3, 3, 40)
     >>> b, a = signal.cheby1(N, 3, Wn, 'low')
@@ -4011,6 +4023,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> N, Wn = signal.cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
     >>> b, a = signal.cheby2(N, 60, Wn, 'stop')
@@ -4182,6 +4195,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> N, Wn = signal.ellipord(30, 10, 3, 60, True)
     >>> b, a = signal.ellip(N, 3, 60, Wn, 'high', True)
@@ -4924,6 +4938,7 @@ def iirnotch(w0, Q, fs=2.0):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> fs = 200.0  # Sample frequency (Hz)
     >>> f0 = 60.0  # Frequency to be removed from signal (Hz)
@@ -5183,6 +5198,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> fs = 200.0  # Sample frequency (Hz)
     >>> f0 = 20.0  # Frequency to be removed from signal (Hz)
@@ -5395,6 +5411,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> b, a = signal.gammatone(440, 'iir', fs=16000)
     >>> w, h = signal.freqz(b, a)
