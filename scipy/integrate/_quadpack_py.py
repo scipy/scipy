@@ -288,7 +288,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
         mapped onto a finite interval and subsequently the same strategy as
         in ``QAGSE`` is applied.
     qagpe
-        serves the same purposes as QAGS, but also allows the
+        serves the same purposes as ``QAGSE``, but also allows the
         user to provide explicit information about the location
         and type of trouble-spots i.e. the abscissae of internal
         singularities, discontinuities and other difficulties of
@@ -701,7 +701,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
         mapped onto a finite interval and subsequently the same strategy as
         in ``QAGSE`` is applied.
     qagpe
-        serves the same purposes as QAGS, but also allows the
+        serves the same purposes as ``QAGSE``, but also allows the
         user to provide explicit information about the location
         and type of trouble-spots i.e. the abscissae of internal
         singularities, discontinuities and other difficulties of
@@ -914,7 +914,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         mapped onto a finite interval and subsequently the same strategy as
         in ``QAGSE`` is applied.
     qagpe
-        serves the same purposes as QAGS, but also allows the
+        serves the same purposes as ``QAGSE``, but also allows the
         user to provide explicit information about the location
         and type of trouble-spots i.e. the abscissae of internal
         singularities, discontinuities and other difficulties of
@@ -1145,7 +1145,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
         mapped onto a finite interval and subsequently the same strategy as
         in ``QAGSE`` is applied.
     qagpe
-        serves the same purposes as QAGS, but also allows the
+        serves the same purposes as ``QAGSE``, but also allows the
         user to provide explicit information about the location
         and type of trouble-spots i.e. the abscissae of internal
         singularities, discontinuities and other difficulties of
