@@ -13,15 +13,16 @@ class TestOddsRatio:
         alternative = parameters.alternative.replace('.', '-')
         result = odds_ratio(parameters.table)
         # The results computed by R are not very accurate.
-        if result.odds_ratio < 400:
+        if result.statistic < 400:
             or_rtol = 5e-4
             ci_rtol = 2e-2
         else:
             or_rtol = 5e-2
             ci_rtol = 1e-1
-        assert_allclose(result.odds_ratio,
+        assert_allclose(result.statistic,
                         rresult.conditional_odds_ratio, rtol=or_rtol)
-        ci = result.odds_ratio_ci(parameters.confidence_level, alternative)
+        ci = result.confidence_interval(parameters.confidence_level,
+                                        alternative)
         assert_allclose((ci.low, ci.high), rresult.conditional_odds_ratio_ci,
                         rtol=ci_rtol)
 
@@ -31,7 +32,7 @@ class TestOddsRatio:
         # parameters table.sum(), table[0].sum(), and table[:,0].sum() as
         # total, ngood and nsample, respectively, the mean of the distribution
         # should equal table[0, 0].
-        cor = result.odds_ratio
+        cor = result.statistic
         table = np.array(parameters.table)
         total = table.sum()
         ngood = table[0].sum()
@@ -78,8 +79,8 @@ class TestOddsRatio:
     ])
     def test_row_or_col_zero(self, table):
         result = odds_ratio(table)
-        assert_equal(result.odds_ratio, np.nan)
-        ci = result.odds_ratio_ci()
+        assert_equal(result.statistic, np.nan)
+        ci = result.confidence_interval()
         assert_equal((ci.low, ci.high), (0, np.inf))
 
     def test_sample_odds_ratio_ci(self):
@@ -96,8 +97,8 @@ class TestOddsRatio:
 
         table = [[10, 20], [41, 93]]
         result = odds_ratio(table, kind='sample')
-        assert_allclose(result.odds_ratio, 1.134146, rtol=1e-6)
-        ci = result.odds_ratio_ci()
+        assert_allclose(result.statistic, 1.134146, rtol=1e-6)
+        ci = result.confidence_interval()
         assert_allclose([ci.low, ci.high], [0.4879913, 2.635883], rtol=1e-6)
 
     @pytest.mark.parametrize('kind', ['sample', 'conditional'])
@@ -121,10 +122,10 @@ class TestOddsRatio:
     def test_invalid_alternative(self):
         result = odds_ratio([[5, 10], [2, 32]])
         with pytest.raises(ValueError, match='`alternative` must be'):
-            result.odds_ratio_ci(alternative='depleneration')
+            result.confidence_interval(alternative='depleneration')
 
     @pytest.mark.parametrize('level', [-0.5, 1.5])
     def test_invalid_confidence_level(self, level):
         result = odds_ratio([[5, 10], [2, 32]])
         with pytest.raises(ValueError, match='must be between 0 and 1'):
-            result.odds_ratio_ci(confidence_level=level)
+            result.confidence_interval(confidence_level=level)

@@ -182,7 +182,7 @@ class OddsRatioResult:
 
     Attributes
     ----------
-    odds_ratio : float
+    statistic : float
         The computed odds ratio.
 
         * If `kind` is ``'sample'``, this is sample (or unconditional)
@@ -196,15 +196,16 @@ class OddsRatioResult:
 
     Methods
     -------
-    odds_ratio_ci :
+    confidence_interval :
         Confidence interval for the odds ratio.
     """
 
-    table: np.ndarray
-    kind: str
-    odds_ratio: float
+    _table: np.ndarray
+    _kind: str
+    statistic: float
 
-    def odds_ratio_ci(self, confidence_level=0.95, alternative='two-sided'):
+    def confidence_interval(self, confidence_level=0.95,
+                            alternative='two-sided'):
         """
         Confidence interval for the odds ratio.
 
@@ -263,7 +264,7 @@ class OddsRatioResult:
         if confidence_level < 0 or confidence_level > 1:
             raise ValueError('confidence_level must be between 0 and 1')
 
-        if self.kind == 'conditional':
+        if self._kind == 'conditional':
             ci = self._conditional_odds_ratio_ci(confidence_level, alternative)
         else:
             ci = self._sample_odds_ratio_ci(confidence_level, alternative)
@@ -275,7 +276,7 @@ class OddsRatioResult:
         Confidence interval for the conditional odds ratio.
         """
 
-        table = self.table
+        table = self._table
         if 0 in table.sum(axis=0) or 0 in table.sum(axis=1):
             # If both values in a row or column are zero, the p-value is 1,
             # the odds ratio is NaN and the confidence interval is (0, inf).
@@ -294,7 +295,7 @@ class OddsRatioResult:
         if confidence_level < 0 or confidence_level > 1:
             raise ValueError('confidence_level must be between 0 and 1')
 
-        table = self.table
+        table = self._table
         if 0 in table.sum(axis=0) or 0 in table.sum(axis=1):
             # If both values in a row or column are zero, the p-value is 1,
             # the odds ratio is NaN and the confidence interval is (0, inf).
@@ -324,7 +325,7 @@ def odds_ratio(table, *, kind='conditional'):
     result : `~scipy.stats._result_classes.OddsRatioResult` instance
         The returned object has two computed attributes:
 
-        odds_ratio : float
+        statistic : float
             * If `kind` is ``'sample'``, this is sample (or unconditional)
               estimate, given by
               ``table[0, 0]*table[1, 1]/(table[0, 1]*table[1, 0])``.
@@ -334,7 +335,7 @@ def odds_ratio(table, *, kind='conditional'):
               hypergeometric distribution with the same hypergeometric
               parameters as `table` and whose mean is ``table[0, 0]``.
 
-        The object has the method `odds_ratio_ci` that computes
+        The object has the method `confidence_interval` that computes
         the confidence interval of the odds ratio.
 
     See Also
@@ -401,8 +402,8 @@ def odds_ratio(table, *, kind='conditional'):
     Compute the odds ratio:
 
     >>> from scipy.stats.contingency import odds_ratio
-    >>> res = odds_ratio([[7, 15], [58, 472]])
-    >>> res.odds_ratio
+    >>> res = statistic([[7, 15], [58, 472]])
+    >>> res.statistic
     3.7836687705553493
 
     For this sample, the odds of getting the disease for those who have
@@ -411,7 +412,7 @@ def odds_ratio(table, *, kind='conditional'):
 
     We can compute the 95% confidence interval for the odds ratio:
 
-    >>> res.odds_ratio_ci(confidence_level=0.95)
+    >>> res.confidence_interval(confidence_level=0.95)
     ConfidenceInterval(low=1.2514829132266785, high=10.363493716701269)
 
     The 95% confidence interval for the conditional odds ratio is
@@ -437,7 +438,7 @@ def odds_ratio(table, *, kind='conditional'):
     if 0 in c.sum(axis=0) or 0 in c.sum(axis=1):
         # If both values in a row or column are zero, the p-value is NaN and
         # the odds ratio is NaN.
-        result = OddsRatioResult(table=c, kind=kind, odds_ratio=np.nan)
+        result = OddsRatioResult(_table=c, _kind=kind, statistic=np.nan)
         return result
 
     if kind == 'sample':
@@ -445,5 +446,5 @@ def odds_ratio(table, *, kind='conditional'):
     else:  # kind is 'conditional'
         oddsratio = _conditional_oddsratio(c)
 
-    result = OddsRatioResult(table=c, kind=kind, odds_ratio=oddsratio)
+    result = OddsRatioResult(_table=c, _kind=kind, statistic=oddsratio)
     return result
