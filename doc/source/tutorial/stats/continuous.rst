@@ -292,6 +292,7 @@ Continuous Distributions in `scipy.stats`
    continuous_triang
    continuous_truncexpon
    continuous_truncnorm
+   continuous_truncpareto
    continuous_truncweibull_min
    continuous_tukeylambda
    continuous_uniform

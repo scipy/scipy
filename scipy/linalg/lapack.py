@@ -705,6 +705,21 @@ All functions
    ctpttr
    ztpttr
 
+   strexc
+   dtrexc
+   ctrexc
+   ztrexc
+
+   strsen
+   dtrsen
+   ctrsen
+   ztrsen
+
+   strsen_lwork
+   dtrsen_lwork
+   ctrsen_lwork
+   ztrsen_lwork
+
    strsyl
    dtrsyl
    ctrsyl

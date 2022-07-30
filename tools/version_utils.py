@@ -98,7 +98,8 @@ def git_version(cwd):
         # point from the current branch (assuming a full `git clone`, it may be
         # less if `--depth` was used - commonly the default in CI):
         prev_version_tag = '^v{}.{}.0'.format(MAJOR, MINOR - 2)
-        out = _minimal_ext_cmd(['git', 'rev-list', 'HEAD', prev_version_tag,
+        out = _minimal_ext_cmd(['git', '--git-dir', git_dir,
+                                'rev-list', 'HEAD', prev_version_tag,
                                 '--count'])
         COMMIT_COUNT = out.strip().decode('ascii')
         COMMIT_COUNT = '0' if not COMMIT_COUNT else COMMIT_COUNT

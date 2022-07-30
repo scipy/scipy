@@ -43,16 +43,13 @@ import warnings
 from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
-                           assert_almost_equal, assert_allclose,
-                           suppress_warnings)
+                           assert_almost_equal, assert_allclose)
 import pytest
 from pytest import raises as assert_raises
 
-import scipy.spatial.distance
-from scipy.spatial import _distance_pybind
 from scipy.spatial.distance import (
     squareform, pdist, cdist, num_obs_y, num_obs_dm, is_valid_dm, is_valid_y,
-    _validate_vector, _METRICS_NAMES, _METRICS)
+    _validate_vector, _METRICS_NAMES)
 
 # these were missing: chebyshev cityblock kulsinski
 # jensenshannon  and seuclidean are referenced by string name.

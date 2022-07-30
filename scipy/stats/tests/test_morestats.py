@@ -12,6 +12,7 @@ from numpy.testing import (assert_array_equal,
     assert_, assert_allclose, assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
+import re
 from scipy import optimize
 from scipy import stats
 from scipy.stats._morestats import _abw_state
@@ -2541,3 +2542,95 @@ class TestMedianTest:
 
         res = stats.median_test(x, y, correction=correction)
         assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
+
+
+class TestDirectionalFuncs:
+    # Reference implementations are not available
+    def test_directionalmean_correctness(self):
+        # Data from Fisher: Dispersion on a sphere, 1953 and
+        # Mardia and Jupp, Directional Statistics.
+        # For x coordinate, result for spherical mean does not agree with
+        # Mardia & Jupp, probably due to rounding errors in reference, that's
+        # why the first entry of the spherical mean reference is different
+        # than in the book.
+
+        decl = -np.deg2rad(np.array([343.2, 62., 36.9, 27., 359.,
+                                     5.7, 50.4, 357.6, 44.]))
+        incl = -np.deg2rad(np.array([66.1, 68.7, 70.1, 82.1, 79.5,
+                                     73., 69.3, 58.8, 51.4]))
+        data = np.stack((np.cos(incl) * np.cos(decl),
+                         np.cos(incl) * np.sin(decl),
+                         np.sin(incl)),
+                        axis=1)
+
+        directional_mean = stats.directionalmean(data)
+        mean_rounded = np.round(directional_mean, 3)
+
+        reference_mean = np.array([0.298, -0.135, -0.945])
+        assert_allclose(mean_rounded, reference_mean)
+
+    def test_directionalmean_2d(self):
+        # Test that for circular data directionalmean yields
+        # same result as circmean
+        rng = np.random.default_rng(0xec9a6899d5a2830e0d1af479dbe1fd0c)
+        testdata = 2 * np.pi * rng.random((1000, ))
+        testdata_vector = np.stack((np.cos(testdata),
+                                    np.sin(testdata)),
+                                   axis=1)
+        directional_mean = stats.directionalmean(testdata_vector)
+        directional_mean_angle = np.arctan2(directional_mean[1],
+                                            directional_mean[0])
+        directional_mean_angle = directional_mean_angle % (2*np.pi)
+
+        circmean = stats.circmean(testdata)
+        assert_allclose(circmean, directional_mean_angle)
+
+    def test_directionalmean_higher_dim(self):
+        # test that directionalmean works for higher dimensions
+        # here a 4D array is reduced over axis = 2
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [0.8660254, -0.5, 0.]])
+        full_array = np.tile(data, (2, 2, 2, 1))
+        expected = np.array([[[1., 0., 0.],
+                              [1., 0., 0.]],
+                             [[1., 0., 0.],
+                              [1., 0., 0.]]])
+        directionalmean = stats.directionalmean(full_array, axis=2)
+        assert_allclose(expected, directionalmean)
+
+    def test_directionalmean_list_ndarray_input(self):
+        # test that list and numpy array inputs yield same results
+        data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
+        data_array = np.asarray(data)
+        directional_mean = stats.directionalmean(data)
+        directional_mean_array = stats.directionalmean(data_array)
+        assert_allclose(directional_mean, directional_mean_array)
+
+    def test_directionalmean_1d_error(self):
+        # test that one-dimensional data raises ValueError
+        data = np.ones((5, ))
+        message = (r"samples must at least be two-dimensional. "
+                   r"Instead samples has shape: (5,)")
+        with pytest.raises(ValueError, match=re.escape(message)):
+            stats.directionalmean(data)
+
+    def test_directionalmean_normalize(self):
+        # test that unit vectors get properly normalized before
+        # directionalmean calculation
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [1.7320508, -1., 0.]])
+        expected = np.array([1., 0., 0.])
+        directional_mean = stats.directionalmean(data)
+        assert_allclose(expected, directional_mean)
+
+    def test_directionalmean_normalize_false(self):
+        # test that for already normalized unit vectors
+        # normalize=False returns same result as default
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [0.8660254, -0.5, 0]])
+        expected = np.array([1., 0., 0.])
+        directional_mean_default = stats.directionalmean(data)
+        directional_mean = stats.directionalmean(data,
+                                                 normalize=False)
+        assert_allclose(expected, directional_mean)
+        assert_allclose(directional_mean_default, directional_mean)
