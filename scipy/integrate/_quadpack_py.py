@@ -631,8 +631,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
         default options from scipy.integrate.quad are used. If a dict, the same
         options are used for all levels of integration. If a sequence, then
         each element of the sequence corresponds to a particular integration.
-        e.g., ``opts[0]`` corresponds to integration over ``x0``, and so on. If
-        a callable, the signature must be the same as for ``ranges``. The
+        If a callable, the signature must be the same as for ``ranges``. The
         available options together with their default values are:
 
         - epsabs = 1.49e-08
@@ -845,8 +844,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         default options from scipy.integrate.quad are used. If a dict, the same
         options are used for all levels of integration. If a sequence, then
         each element of the sequence corresponds to a particular integration.
-        e.g., ``opts[0]`` corresponds to integration over ``x0``, and so on. If
-        a callable, the signature must be the same as for ``ranges``. The
+        If a callable, the signature must be the same as for ``ranges``. The
         available options together with their default values are:
 
         - epsabs = 1.49e-08
