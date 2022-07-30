@@ -28,10 +28,6 @@ API changes
 In general, we want to evolve the API to remove known warts as much as possible,
 *however as much as possible without breaking backwards compatibility*.
 
-Also, it should be made (even) more clear what is public and what is private in
-SciPy.  Everything private should be named starting with an underscore as much
-as possible.
-
 
 Test coverage
 `````````````
@@ -50,56 +46,71 @@ particular) is necessary.
 
 Documentation
 `````````````
-The documentation is in good shape.  Expanding of current docstrings and
-putting them in the standard NumPy format should continue, so the number of
-reST errors and glitches in the html docs decreases.  Most modules also have a
-tutorial in the reference guide that is a good introduction, however there are
-a few missing or incomplete tutorials - this should be fixed.
+The documentation is in good shape. Expanding of current docstrings - adding
+examples, references, and better explanations - should continue.  Most modules
+also have a tutorial in the reference guide that is a good introduction,
+however there are a few missing or incomplete tutorials - this should be fixed.
 
 
 Benchmarks
 ``````````
 The ``asv``-based benchmark system is in reasonable shape.  It is quite easy to
 add new benchmarks, however running the benchmarks is not very intuitive.
-Making this easier is a priority.  In addition, we should run them in our CI
-(gh-8779 is an ongoing attempt at this).
+Making this easier is a priority.
+
+
+Moving to the Meson build system
+````````````````````````````````
+Support for the Meson build system was merged into SciPy main in Dec 2021.
+This significantly improves build performance, and will fix multiple issues
+(e.g., our issues with Windows compilers, cross-compilation support). The aim
+is to make it the default build system for SciPy 1.9.0, and then remove support
+for ``numpy.distutils``/``setuptools`` in SciPy 1.10.0. For more details, see
+`gh-13615 <https://github.com/scipy/scipy/issues/13615>`_.
 
 
 Use of Cython
 `````````````
-Regarding Cython code:
-
-- It's not clear how much functionality can be Cythonized without making the
-  .so files too large.  This needs measuring.
-- Cython's old syntax for using NumPy arrays should be removed and replaced
-  with Cython memoryviews.
+Cython's old syntax for using NumPy arrays should be removed and replaced with
+Cython memoryviews. When Cython 3.0 is released, the last use of the deprecated
+NumPy C API (by Cython, everything in SciPy was fixed) will disappear. Then we
+can define ``NPY_NO_DEPRECATED_API`` unconditionally.
 
 
-Windows build issues
-````````````````````
-SciPy critically relies on Fortran code. This is still problematic on Windows.
-There are currently only two options: using Intel Fortran, or using MSVC +
-gfortran.  The former is expensive, while the latter works (it's what we use
-for releases) but is quite hard to do correctly.  For allowing contributors and
-end users to reliably build SciPy on Windows, using the Flang compiler looks
-like the best way forward long-term.
+Use of Pythran
+``````````````
+Pythran is still an optional build dependency, and can be disabled with
+``SCIPY_USE_PYTHRAN=0``. The aim is to make it a hard dependency - for that to
+happen it must be clear that the maintenance burden is low enough (Meson will
+help here, because it removes the monkey patching that is now done to enable
+Pythran).
 
 
 Continuous integration
 ``````````````````````
-Continuous integration is in good shape, it currently covers the Windows, macOS
-and Linux, ARM64 and ppc64le platforms, as well as a range of versions of our
-dependencies and building release quality wheels.
+Continuous integration currently covers 32/64-bit Windows, macOS on x86-64, and
+32/64-bit Linux on x86, and Linux on aarch64 - as well as a range of versions
+of our dependencies and building release quality wheels. Reliability of CI has
+not been good recently (H2 2021), due to the large amount of configurations to
+support and some CI jobs needing an overhaul. We aim to reduce build times,
+improve caching, move more jobs to GitHub Actions, drop TravisCI and Appveyor
+in the `scipy-wheels repo <https://github.com/MacPython/scipy-wheels>`_,
+move from ``multibuild`` to ``cibuildwheel`` for building wheels for releases,
+and make the set of configurations in CI jobs more orthogonal.
 
 
 Size of binaries
 ````````````````
-SciPy binaries are quite large (e.g. an unzipped manylinux wheel for 1.4.1 is
-91 MB), and this can be problematic - for example for use in AWS Lambda, which
-has a 250 MB size limit. We aim to keep binary size as low as possible; when
-adding new compiled extensions, this needs checking. Stripping of debug symbols
-in ``multibuild`` can likely be improved (see `this issue
-<https://github.com/matthew-brett/multibuild/issues/162>`__).
+SciPy binaries are quite large (e.g. an unzipped manylinux wheel for 1.7.3 is
+39 MB on PyPI and 122 MB after installation), and this can be problematic - for
+example for use in AWS Lambda, which has a 250 MB size limit. We aim to keep
+binary size as low as possible; when adding new compiled extensions, this needs
+checking. Stripping of debug symbols in ``multibuild`` can perhaps be improved
+(see `this issue <https://github.com/matthew-brett/multibuild/issues/162>`__).
+An effort should be made to slim down where possible, and not add new large
+files. In the future, things that are being considered (very tentatively) and
+may help are separating out the bundled` ``libopenblas`` and removing support
+for ``long double``.
 
 
 Modules
@@ -107,7 +118,8 @@ Modules
 
 cluster
 ```````
-This module is in good shape.
+``dendrogram`` needs a rewrite, it has a number of hard to fix open issues and
+feature requests.
 
 
 constants
@@ -142,6 +154,7 @@ Ideas for new features:
 - Transparent tensor-product splines.
 - NURBS support.
 - Mesh refinement and coarsening of B-splines and corresponding tensor products.
+
 
 io
 ``
@@ -198,9 +211,10 @@ misc
 ``scipy.misc`` will be removed as a public module.  Most functions in it have
 been moved to another submodule or deprecated.  The few that are left:
 
-- ``info``, ``who`` : these are NumPy functions
 - ``derivative``, ``central_diff_weight`` : remove, possibly replacing them
   with more extensive functionality for numerical differentiation.
+- ``ascent``, ``face``, ``electrocardiogram`` : remove or move to the
+  appropriate subpackages (e.g. ``scipy.ndimage``, ``scipy.signal``).
 
 
 ndimage
@@ -249,9 +263,8 @@ Overall this module is in good shape. Two good global optimizers were added in
 1.2.0; large-scale optimizers is still a gap that could be filled.  Other
 things that are needed:
 
-- Many ideas for additional functionality (e.g. integer constraints, sparse
-  matrix support, performance improvements) in ``linprog``, see
-  `gh-9269 <https://github.com/scipy/scipy/issues/9269>`__.
+- Many ideas for additional functionality (e.g. integer constraints) in
+  ``linprog``, see `gh-9269 <https://github.com/scipy/scipy/issues/9269>`__.
 - Add functionality to the benchmark suite to compare results more easily
   (e.g. with summary plots).
 - deprecate the ``fmin_*`` functions in the documentation, ``minimize`` is
@@ -301,9 +314,15 @@ sparse
 ``````
 The sparse matrix formats are mostly feature-complete, however the main issue
 is that they act like ``numpy.matrix`` (which will be deprecated in NumPy at
-some point).  What we want is sparse arrays, that act like ``numpy.ndarray``.
-This is being worked on in https://github.com/pydata/sparse, which is quite far
-along.  The tentative plan is:
+some point).
+
+What we want is sparse arrays, that act like ``numpy.ndarray``. In SciPy
+``1.8.0`` a new set of classes (``csr_array`` et al.) has been added - these
+need testing in the real world, as well as a few extra features like 1-D array
+support.
+An alternative (more ambitious, and unclear if it will materialize at this
+point) plan is being worked on in https://github.com/pydata/sparse.  The
+tentative plan for that was/is:
 
 - Start depending on ``pydata/sparse`` once it's feature-complete enough (it
   still needs a CSC/CSR equivalent) and okay performance-wise.
@@ -328,35 +347,32 @@ This module is in good shape.
 
 sparse.linalg
 `````````````
-Arpack is in good shape.
+There are a significant number of open issues for ``_arpack`` and ``lobpcg``.
+``_propack`` is new in 1.8.0, TBD how robust it will turn out to be.
 
-isolve:
+``_isolve``:
 
 - callback keyword is inconsistent
 - tol keyword is broken, should be relative tol
 - Fortran code not re-entrant (but we don't solve, maybe re-use from
   PyKrilov)
 
-dsolve:
+``_dsolve``:
 
-- add sparse Cholesky or incomplete Cholesky
-- look at CHOLMOD
-
-
-Ideas for new features:
-
-- Wrappers for PROPACK for faster sparse SVD computation.
+- add license-compatible sparse Cholesky or incomplete Cholesky
+- add license-compatible sparse QR
+- improve interface to SuiteSparse UMFPACK
+- add interfaces to SuiteSparse CHOLMOD and SPQR
 
 
 spatial
 ```````
-QHull wrappers are in good shape, as is ``cKDTree``.
+QHull wrappers are in good shape, as is ``KDTree``.
 
-Needed:
-
-- ``KDTree`` will be removed, and ``cKDTree`` will be renamed to ``KDTree``
-  in a backwards-compatible way.
-- ``distance_wrap.c`` needs to be cleaned up (maybe rewrite in Cython).
+A rewrite of ``spatial.distance`` metrics in C++ is in progress - this should
+improve performance, make behaviour (e.g., for various non-float64 input
+dtypes) more consistent, and fix a few remaining issues with definitions of the
+math implement by a few of the metrics.
 
 
 special
@@ -397,16 +413,12 @@ may also be included in SciPy, especially if no other widely used and
 well-supported package covers the topic.  Also note that *some* duplication
 with downstream projects is inevitable and not necessarily a bad thing.)
 
-The following improvements will help SciPy better serve this role.
+In addition to the items described in the :ref:`scipy-roadmap`, the following
+improvements will help SciPy better serve this role.
 
-- Add fundamental and widely used hypothesis tests:
+- Add fundamental and widely used hypothesis tests, such as:
 
-  - Alexander-Govern test
-  - Somers' D
-  - Kendall's tau-c
-  - Page's L-test
-  - Tukey-Kramer test
-  - Dunnett's test
+  - post hoc tests (e.g. Dunnett's test)
   - the various types of analysis of variance (ANOVA):
 
     - two-way ANOVA (single replicate, uniform number of replicates, variable
@@ -415,46 +427,36 @@ The following improvements will help SciPy better serve this role.
     - nested ANOVA
     - analysis of covariance (ANCOVA)
 
-- Where appropriate, include confidence intervals for the statistic in the
-  results of any statistical test.
-- Add additional tools for meta-analysis; currently we have just `combine_pvalues`.
+  Also, provide an infrastructure for implementing hypothesis tests.
+- Add additional tools for meta-analysis
+- Add tools for survival analysis
+- Speed up random variate sampling (method ``rvs``) of distributions, 
+  leveraging ``scipy.stats.sampling`` where appropriate
+- Expand QMC capabilities and performance
 - Enhance the `fit` method of the continuous probability distributions:
 
   - Expand the options for fitting to include:
 
-    - method of moments
     - maximal product spacings
     - method of L-moments / probability weighted moments
 
   - Include measures of goodness-of-fit in the results
-  - Handle censored data
+  - Handle censored data (e.g. merge `gh-13699 <https://github.com/scipy/scipy/pull/13699>`__)
 
 - Implement additional widely used continuous and discrete probability
-  distributions:
-
-  - noncentral hypergeometric distribution (both Fisher's and Wallenius')
-  - negative hypergeometric distribution
-  - multivariate hypergeometric distribution
-  - multivariate t distribution
-  - mixture distributions
+  distributions, e.g. mixture distributions.
 
 - Improve the core calculations provided by SciPy's probability distributions
   so they can robustly handle wide ranges of parameter values.  Specifically,
   replace many of the PDF and CDF methods from the Fortran library CDFLIB
-  used in scipy.special with better code, perhaps ported from the Boost C++
-  library.
+  used in scipy.special with Boost implementations as in
+  `gh-13328 <https://github.com/scipy/scipy/pull/13328>`__.
 
 In addition, we should:
 
 - Continue work on making the function signatures of ``stats`` and
   ``stats.mstats`` more consistent, and add tests to ensure that that
   remains the case.
-- Return ``Bunch`` objects from functions that now return many values, and for
-  functions for which extra return values are desired (see
-  `gh-3665 <https://github.com/scipy/scipy/issues/3665>`__).
-- Improve statistical tests (p-value calculation, alternative hypothesis), for
-  example implement an exact two-sided KS test (see
-  `gh-8341 <https://github.com/scipy/scipy/issues/8341>`__) or a one-sided
-  Wilcoxon test (see `gh-9046 <https://github.com/scipy/scipy/issues/9046>`__).
-- Address the various issues regarding ``stats.mannwhitneyu``, and pick up the
-  stalled PR in `gh-4933 <https://github.com/scipy/scipy/pull/4933>`__.
+- Improve statistical tests: return confidence intervals for the test
+  statistic, and implement exact p-value calculations - considering the
+  possibility of ties - where computationally feasible.

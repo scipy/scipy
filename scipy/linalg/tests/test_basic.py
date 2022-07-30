@@ -13,7 +13,7 @@ from numpy.testing import (assert_equal, assert_almost_equal, assert_,
 import pytest
 from pytest import raises as assert_raises
 
-from scipy.linalg import (solve, inv, det, lstsq, pinv, pinv2, pinvh, norm,
+from scipy.linalg import (solve, inv, det, lstsq, pinv, pinvh, norm,
                           solve_banded, solveh_banded, solve_triangular,
                           solve_circulant, circulant, LinAlgError, block_diag,
                           matrix_balance, qr, LinAlgWarning)
@@ -508,36 +508,83 @@ class TestSolve:
 
     def test_simple(self):
         a = [[1, 20], [-30, 4]]
-        for b in ([[1, 0], [0, 1]], [1, 0],
-                  [[2, 1], [-30, 4]]):
+        for b in ([[1, 0], [0, 1]],
+                  [1, 0],
+                  [[2, 1], [-30, 4]]
+                  ):
             x = solve(a, b)
-            assert_array_almost_equal(dot(a, x), b)
-
-    def test_simple_sym(self):
-        a = [[2, 3], [3, 5]]
-        for lower in [0, 1]:
-            for b in ([[1, 0], [0, 1]], [1, 0]):
-                x = solve(a, b, sym_pos=1, lower=lower)
-                assert_array_almost_equal(dot(a, x), b)
-
-    def test_simple_sym_complex(self):
-        a = [[5, 2], [2, 4]]
-        for b in [[1j, 0],
-                  [[1j, 1j],
-                   [0, 2]],
-                  ]:
-            x = solve(a, b, sym_pos=1)
             assert_array_almost_equal(dot(a, x), b)
 
     def test_simple_complex(self):
         a = array([[5, 2], [2j, 4]], 'D')
-        for b in [[1j, 0],
-                  [[1j, 1j],
-                   [0, 2]],
+        for b in ([1j, 0],
+                  [[1j, 1j], [0, 2]],
                   [1, 0j],
                   array([1, 0], 'D'),
-                  ]:
+                  ):
             x = solve(a, b)
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_pos(self):
+        a = [[2, 3], [3, 5]]
+        for lower in [0, 1]:
+            for b in ([[1, 0], [0, 1]],
+                      [1, 0]
+                      ):
+                x = solve(a, b, assume_a='pos', lower=lower)
+                assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_pos_complexb(self):
+        a = [[5, 2], [2, 4]]
+        for b in ([1j, 0],
+                  [[1j, 1j], [0, 2]],
+                  ):
+            x = solve(a, b, assume_a='pos')
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_sym(self):
+        a = [[2, 3], [3, -5]]
+        for lower in [0, 1]:
+            for b in ([[1, 0], [0, 1]],
+                      [1, 0]
+                      ):
+                x = solve(a, b, assume_a='sym', lower=lower)
+                assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_sym_complexb(self):
+        a = [[5, 2], [2, -4]]
+        for b in ([1j, 0],
+                  [[1j, 1j],[0, 2]]
+                  ):
+            x = solve(a, b, assume_a='sym')
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_sym_complex(self):
+        a = [[5, 2+1j], [2+1j, -4]]
+        for b in ([1j, 0],
+                  [1, 0],
+                  [[1j, 1j], [0, 2]]
+                  ):
+            x = solve(a, b, assume_a='sym')
+            assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_her_actuallysym(self):
+        a = [[2, 3], [3, -5]]
+        for lower in [0, 1]:
+            for b in ([[1, 0], [0, 1]],
+                      [1, 0],
+                      [1j, 0],
+                      ):
+                x = solve(a, b, assume_a='her', lower=lower)
+                assert_array_almost_equal(dot(a, x), b)
+
+    def test_simple_her(self):
+        a = [[5, 2+1j], [2-1j, -4]]
+        for b in ([1j, 0],
+                  [1, 0],
+                  [[1j, 1j], [0, 2]]
+                  ):
+            x = solve(a, b, assume_a='her')
             assert_array_almost_equal(dot(a, x), b)
 
     def test_nils_20Feb04(self):
@@ -572,6 +619,13 @@ class TestSolve:
             x = solve(a, b)
             assert_array_almost_equal(dot(a, x), b)
 
+    def test_sym_pos_dep(self):
+        with pytest.warns(
+                DeprecationWarning,
+                match="The 'sym_pos' keyword is deprecated",
+        ):
+            solve([[1.]], [1], sym_pos=True)
+
     def test_random_sym(self):
         n = 20
         a = random([n, n])
@@ -581,7 +635,7 @@ class TestSolve:
                 a[i, j] = a[j, i]
         for i in range(4):
             b = random([n])
-            x = solve(a, b, sym_pos=1)
+            x = solve(a, b, assume_a="pos")
             assert_array_almost_equal(dot(a, x), b)
 
     def test_random_sym_complex(self):
@@ -594,7 +648,7 @@ class TestSolve:
                 a[i, j] = conjugate(a[j, i])
         b = random([n])+2j*random([n])
         for i in range(2):
-            x = solve(a, b, sym_pos=1)
+            x = solve(a, b, assume_a="pos")
             assert_array_almost_equal(dot(a, x), b)
 
     def test_check_finite(self):
@@ -1214,7 +1268,6 @@ class TestLstsq:
             assert_equal(s, np.empty((0,)))
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestPinv:
     def setup_method(self):
         np.random.seed(1234)
@@ -1223,8 +1276,6 @@ class TestPinv:
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 10]], dtype=float)
         a_pinv = pinv(a)
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
-        a_pinv = pinv2(a)
-        assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
 
     def test_simple_complex(self):
         a = (array([[1, 2, 3], [4, 5, 6], [7, 8, 10]],
@@ -1232,39 +1283,42 @@ class TestPinv:
                                        dtype=float))
         a_pinv = pinv(a)
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
-        a_pinv = pinv2(a)
-        assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
 
     def test_simple_singular(self):
         a = array([[1, 2, 3], [4, 5, 6], [7, 8, 9]], dtype=float)
         a_pinv = pinv(a)
-        a_pinv2 = pinv2(a)
-        assert_array_almost_equal(a_pinv, a_pinv2)
+        expected = array([[-6.38888889e-01, -1.66666667e-01, 3.05555556e-01],
+                          [-5.55555556e-02, 1.30136518e-16, 5.55555556e-02],
+                          [5.27777778e-01, 1.66666667e-01, -1.94444444e-01]])
+        assert_array_almost_equal(a_pinv, expected)
 
     def test_simple_cols(self):
         a = array([[1, 2, 3], [4, 5, 6]], dtype=float)
         a_pinv = pinv(a)
-        a_pinv2 = pinv2(a)
-        assert_array_almost_equal(a_pinv, a_pinv2)
+        expected = array([[-0.94444444, 0.44444444],
+                          [-0.11111111, 0.11111111],
+                          [0.72222222, -0.22222222]])
+        assert_array_almost_equal(a_pinv, expected)
 
     def test_simple_rows(self):
         a = array([[1, 2], [3, 4], [5, 6]], dtype=float)
         a_pinv = pinv(a)
-        a_pinv2 = pinv2(a)
-        assert_array_almost_equal(a_pinv, a_pinv2)
+        expected = array([[-1.33333333, -0.33333333, 0.66666667],
+                          [1.08333333, 0.33333333, -0.41666667]])
+        assert_array_almost_equal(a_pinv, expected)
 
     def test_check_finite(self):
         a = array([[1, 2, 3], [4, 5, 6.], [7, 8, 10]])
         a_pinv = pinv(a, check_finite=False)
         assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
-        a_pinv = pinv2(a, check_finite=False)
-        assert_array_almost_equal(dot(a, a_pinv), np.eye(3))
 
     def test_native_list_argument(self):
         a = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
         a_pinv = pinv(a)
-        a_pinv2 = pinv2(a)
-        assert_array_almost_equal(a_pinv, a_pinv2)
+        expected = array([[-6.38888889e-01, -1.66666667e-01, 3.05555556e-01],
+                          [-5.55555556e-02, 1.30136518e-16, 5.55555556e-02],
+                          [5.27777778e-01, 1.66666667e-01, -1.94444444e-01]])
+        assert_array_almost_equal(a_pinv, expected)
 
     def test_atol_rtol(self):
         n = 12
@@ -1294,7 +1348,6 @@ class TestPinv:
         assert_allclose(np.linalg.norm(adiff2), 4.233, rtol=0.01)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestPinvSymmetric:
 
     def setup_method(self):
@@ -1312,7 +1365,7 @@ class TestPinvSymmetric:
         u, s, vt = np.linalg.svd(a)
         s[0] *= -1
         a = np.dot(u * s, vt)  # a is now symmetric non-positive and singular
-        a_pinv = pinv2(a)
+        a_pinv = pinv(a)
         a_pinvh = pinvh(a)
         assert_array_almost_equal(a_pinv, a_pinvh)
 
@@ -1358,9 +1411,8 @@ class TestPinvSymmetric:
         assert_allclose(norm(adiff2), 1e-4, rtol=0.1)
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 @pytest.mark.parametrize('scale', (1e-20, 1., 1e20))
-@pytest.mark.parametrize('pinv_', (pinv, pinvh, pinv2))
+@pytest.mark.parametrize('pinv_', (pinv, pinvh))
 def test_auto_rcond(scale, pinv_):
     x = np.array([[1, 0], [0, 1e-10]]) * scale
     expected = np.diag(1. / np.diag(x))
@@ -1501,10 +1553,6 @@ class TestOverwrite:
     def test_pinv(self):
         assert_no_overwrite(pinv, [(3, 3)])
 
-    @pytest.mark.filterwarnings('ignore::DeprecationWarning')
-    def test_pinv2(self):
-        assert_no_overwrite(pinv2, [(3, 3)])
-
     def test_pinvh(self):
         assert_no_overwrite(pinvh, [(3, 3)])
 
@@ -1578,7 +1626,7 @@ class TestSolveCirculant:
 
         x = solve_circulant(c, b, baxis=1, outaxis=-1)
         assert_equal(x.shape, (2, 3, 4))
-        assert_allclose(np.rollaxis(x, -1), expected)
+        assert_allclose(np.moveaxis(x, -1, 0), expected)
 
         # np.swapaxes(c, 1, 2) has shape (2, 4, 1); b.T has shape (4, 3).
         x = solve_circulant(np.swapaxes(c, 1, 2), b.T, caxis=1)
@@ -1610,7 +1658,7 @@ class TestMatrix_Balance:
         # Pre/post LAPACK 3.5.0 gives the same result up to an offset
         # since in each case col norm is x1000 greater and
         # 1000 / 32 ~= 1 * 32 hence balanced with 2 ** 5.
-        assert_allclose(int(np.diff(np.log2(np.diag(y)))), 5)
+        assert_allclose(np.diff(np.log2(np.diag(y))), [5])
 
     def test_scaling_order(self):
         A = np.array([[1, 0, 1e-4], [1, 1, 1e-2], [1e4, 1e2, 1]])
@@ -1620,7 +1668,7 @@ class TestMatrix_Balance:
     def test_separate(self):
         _, (y, z) = matrix_balance(np.array([[1000, 1], [1000, 0]]),
                                    separate=1)
-        assert_equal(int(np.diff(np.log2(y))), 5)
+        assert_equal(np.diff(np.log2(y)), [5])
         assert_allclose(z, np.arange(2))
 
     def test_permutation(self):

@@ -28,7 +28,7 @@ from scipy.linalg import (eig, eigvals, lu, svd, svdvals, cholesky, qr,
 from scipy.linalg.lapack import (dgbtrf, dgbtrs, zgbtrf, zgbtrs, dsbev,
                                  dsbevd, dsbevx, zhbevd, zhbevx)
 
-from scipy.linalg.misc import norm
+from scipy.linalg._misc import norm
 from scipy.linalg._decomp_qz import _select_function
 from scipy.stats import ortho_group
 
@@ -39,7 +39,7 @@ from numpy import (array, diag, ones, full, linalg, argsort, zeros, arange,
 from numpy.random import seed, random
 
 from scipy.linalg._testutils import assert_no_overwrite
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 from scipy._lib._testutils import check_free_memory
 from scipy.linalg.blas import HAS_ILP64
@@ -2489,7 +2489,7 @@ class TestOrdQZWorkspaceSize:
 class TestDatacopied:
 
     def test_datacopied(self):
-        from scipy.linalg.decomp import _datacopied
+        from scipy.linalg._decomp import _datacopied
 
         M = matrix([[0, 1], [2, 3]])
         A = asarray(M)
@@ -2526,8 +2526,8 @@ def test_aligned_mem_float():
     eig(z.T, overwrite_a=True)
 
 
-@pytest.mark.skip(platform.machine() == 'ppc64le',
-                  reason="crashes on ppc64le")
+@pytest.mark.skipif(platform.machine() == 'ppc64le',
+                    reason="crashes on ppc64le")
 def test_aligned_mem():
     """Check linalg works with non-aligned memory (float64)"""
     # Allocate 804 bytes of memory (allocated on boundary)

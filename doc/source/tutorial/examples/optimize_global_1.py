@@ -18,7 +18,6 @@ results = dict()
 results['shgo'] = optimize.shgo(eggholder, bounds)
 results['DA'] = optimize.dual_annealing(eggholder, bounds)
 results['DE'] = optimize.differential_evolution(eggholder, bounds)
-results['BH'] = optimize.basinhopping(eggholder, bounds)
 results['shgo_sobol'] = optimize.shgo(eggholder, bounds, n=256, iters=5,
                                       sampling_method='sobol')
 
@@ -32,7 +31,6 @@ ax.set_ylabel('y')
 def plot_point(res, marker='o', color=None):
     ax.plot(512+res.x[0], 512+res.x[1], marker=marker, color=color, ms=10)
 
-plot_point(results['BH'], color='y')  # basinhopping           - yellow
 plot_point(results['DE'], color='c')  # differential_evolution - cyan
 plot_point(results['DA'], color='w')  # dual_annealing.        - white
 

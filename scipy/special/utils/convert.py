@@ -33,7 +33,6 @@ IGNORE_PATTERNS = [
 
     # Data files not needed by scipy special tests.
     "ibeta_derivative_",
-    r"ellint_r[cdfjg]_[^d]",
     r"ellint_d2?_",
     "jacobi_",
     "heuman_lambda_",

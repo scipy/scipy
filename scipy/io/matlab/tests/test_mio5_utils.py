@@ -11,10 +11,10 @@ import numpy as np
 from numpy.testing import assert_array_equal, assert_equal, assert_
 from pytest import raises as assert_raises
 
-import scipy.io.matlab.byteordercodes as boc
-import scipy.io.matlab.streams as streams
-import scipy.io.matlab.mio5_params as mio5p
-import scipy.io.matlab.mio5_utils as m5u
+import scipy.io.matlab._byteordercodes as boc
+import scipy.io.matlab._streams as streams
+import scipy.io.matlab._mio5_params as mio5p
+import scipy.io.matlab._mio5_utils as m5u
 
 
 def test_byteswap():
@@ -92,7 +92,7 @@ def test_read_tag():
     r = _make_readerlike(str_io)
     c_reader = m5u.VarReader5(r)
     # This works for StringIO but _not_ cStringIO
-    assert_raises(IOError, c_reader.read_tag)
+    assert_raises(OSError, c_reader.read_tag)
     # bad SDE
     tag = _make_tag('i4', 1, mio5p.miINT32, sde=True)
     tag['byte_count'] = 5
@@ -178,4 +178,3 @@ def test_zero_byte_string():
     hdr.set_dims([4,])
     val = c_reader.read_char(hdr)
     assert_array_equal(val, [' '] * 4)
-

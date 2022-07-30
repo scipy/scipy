@@ -24,11 +24,13 @@ import subprocess
 import textwrap
 import warnings
 import sysconfig
-from distutils.version import LooseVersion
+from tools.version_utils import write_version_py, get_version_info
+from tools.version_utils import IS_RELEASE_BRANCH
+import importlib
 
 
-if sys.version_info[:2] < (3, 7):
-    raise RuntimeError("Python version >= 3.7 required.")
+if sys.version_info[:2] < (3, 8):
+    raise RuntimeError("Python version >= 3.8 required.")
 
 import builtins
 
@@ -41,9 +43,9 @@ License :: OSI Approved :: BSD License
 Programming Language :: C
 Programming Language :: Python
 Programming Language :: Python :: 3
-Programming Language :: Python :: 3.7
 Programming Language :: Python :: 3.8
 Programming Language :: Python :: 3.9
+Programming Language :: Python :: 3.10
 Topic :: Software Development :: Libraries
 Topic :: Scientific/Engineering
 Operating System :: Microsoft :: Windows
@@ -53,51 +55,6 @@ Operating System :: Unix
 Operating System :: MacOS
 
 """
-
-MAJOR = 1
-MINOR = 7
-MICRO = 0
-ISRELEASED = False
-IS_RELEASE_BRANCH = False
-VERSION = '%d.%d.%d' % (MAJOR, MINOR, MICRO)
-
-
-# Return the git revision as a string
-def git_version():
-    def _minimal_ext_cmd(cmd):
-        # construct minimal environment
-        env = {}
-        for k in ['SYSTEMROOT', 'PATH']:
-            v = os.environ.get(k)
-            if v is not None:
-                env[k] = v
-        # LANGUAGE is used on win32
-        env['LANGUAGE'] = 'C'
-        env['LANG'] = 'C'
-        env['LC_ALL'] = 'C'
-        out = subprocess.Popen(cmd, stdout=subprocess.PIPE, env=env).communicate()[0]
-        return out
-
-    try:
-        out = _minimal_ext_cmd(['git', 'rev-parse', 'HEAD'])
-        GIT_REVISION = out.strip().decode('ascii')[:7]
-
-        # We need a version number that's regularly incrementing for newer commits,
-        # so the sort order in a wheelhouse of nightly builds is correct (see
-        # https://github.com/MacPython/scipy-wheels/issues/114). It should also be
-        # a reproducible version number, so don't rely on date/time but base it on
-        # commit history. This gives the commit count since the previous branch
-        # point from the current branch (assuming a full `git clone`, it may be
-        # less if `--depth` was used - commonly the default in CI):
-        prev_version_tag = '^v{}.{}.0'.format(MAJOR, MINOR - 1)
-        out = _minimal_ext_cmd(['git', 'rev-list', 'HEAD', prev_version_tag,
-                                '--count'])
-        COMMIT_COUNT = out.strip().decode('ascii')
-    except OSError:
-        GIT_REVISION = "Unknown"
-        COMMIT_COUNT = "Unknown"
-
-    return GIT_REVISION, COMMIT_COUNT
 
 
 # BEFORE importing setuptools, remove MANIFEST. Otherwise it may not be
@@ -111,56 +68,6 @@ if os.path.exists('MANIFEST'):
 # avoid attempting to load components that aren't built yet.  While ugly, it's
 # a lot more robust than what was previously being used.
 builtins.__SCIPY_SETUP__ = True
-
-
-def get_version_info():
-    # Adding the git rev number needs to be done inside
-    # write_version_py(), otherwise the import of scipy.version messes
-    # up the build under Python 3.
-    FULLVERSION = VERSION
-    if os.path.exists('.git'):
-        GIT_REVISION, COMMIT_COUNT = git_version()
-    elif os.path.exists('scipy/version.py'):
-        # must be a source distribution, use existing version file
-        # load it as a separate module to not load scipy/__init__.py
-        import runpy
-        ns = runpy.run_path('scipy/version.py')
-        GIT_REVISION = ns['git_revision']
-        COMMIT_COUNT = ns['git_revision']
-    else:
-        GIT_REVISION = "Unknown"
-        COMMIT_COUNT = "Unknown"
-
-    if not ISRELEASED:
-        FULLVERSION += '.dev0+' + COMMIT_COUNT + '.' + GIT_REVISION
-
-    return FULLVERSION, GIT_REVISION, COMMIT_COUNT
-
-
-def write_version_py(filename='scipy/version.py'):
-    cnt = """
-# THIS FILE IS GENERATED FROM SCIPY SETUP.PY
-short_version = '%(version)s'
-version = '%(version)s'
-full_version = '%(full_version)s'
-git_revision = '%(git_revision)s'
-commit_count = '%(commit_count)s'
-release = %(isrelease)s
-
-if not release:
-    version = full_version
-"""
-    FULLVERSION, GIT_REVISION, COMMIT_COUNT = get_version_info()
-
-    a = open(filename, 'w')
-    try:
-        a.write(cnt % {'version': VERSION,
-                       'full_version': FULLVERSION,
-                       'git_revision': GIT_REVISION,
-                       'commit_count': COMMIT_COUNT,
-                       'isrelease': str(ISRELEASED)})
-    finally:
-        a.close()
 
 
 def check_submodules():
@@ -228,20 +135,20 @@ def get_build_ext_override():
     """
     from numpy.distutils.command.build_ext import build_ext as npy_build_ext
     if int(os.environ.get('SCIPY_USE_PYTHRAN', 1)):
-        # PythranBuildExt does *not* derive from npy_build_ext
-        # Win the monkey patching race here and patch base class
-        # before it's loaded by Pythran. This should be removed
-        # once Pythran has proper support for base class selection.
-        assert 'pythran' not in sys.modules
-        import distutils.command.build_ext
-        distutils_build_ext = distutils.command.build_ext.build_ext
-        distutils.command.build_ext.build_ext = npy_build_ext
         try:
-            from pythran.dist import PythranBuildExt as BaseBuildExt
+            import pythran
+            from pythran.dist import PythranBuildExt
         except ImportError:
             BaseBuildExt = npy_build_ext
-        finally:
-            distutils.command.build_ext.build_ext = distutils_build_ext
+        else:
+            BaseBuildExt = PythranBuildExt[npy_build_ext]
+            _pep440 = importlib.import_module('scipy._lib._pep440')
+            if _pep440.parse(pythran.__version__) < _pep440.Version('0.11.0'):
+                raise RuntimeError("The installed `pythran` is too old, >= "
+                                   "0.11.0 is needed, {} detected. Please "
+                                   "upgrade Pythran, or use `export "
+                                   "SCIPY_USE_PYTHRAN=0`.".format(
+                                   pythran.__version__))
     else:
         BaseBuildExt = npy_build_ext
 
@@ -345,15 +252,17 @@ def generate_cython():
         try:
             # Note, pip may not be installed or not have been used
             import pip
-            if LooseVersion(pip.__version__) < LooseVersion('18.0.0'):
+        except (ImportError, ModuleNotFoundError):
+            raise RuntimeError("Running cythonize failed!")
+        else:
+            _pep440 = importlib.import_module('scipy._lib._pep440')
+            if _pep440.parse(pip.__version__) < _pep440.Version('18.0.0'):
                 raise RuntimeError("Cython not found or too old. Possibly due "
                                    "to `pip` being too old, found version {}, "
                                    "needed is >= 18.0.0.".format(
                                    pip.__version__))
             else:
                 raise RuntimeError("Running cythonize failed!")
-        except ImportError:
-            raise RuntimeError("Running cythonize failed!")
 
 
 def parse_setuppy_commands():
@@ -487,13 +396,15 @@ def check_setuppy_command():
     run_build = parse_setuppy_commands()
     if run_build:
         try:
+            pkgname = 'numpy'
             import numpy
+            pkgname = 'pybind11'
             import pybind11
         except ImportError as exc:  # We do not have our build deps installed
             print(textwrap.dedent(
                     """Error: '%s' must be installed before running the build.
                     """
-                    % (exc.name,)))
+                    % (pkgname,)))
             sys.exit(1)
 
     return run_build
@@ -538,9 +449,9 @@ def setup_package():
     # Rationale: SciPy builds without deprecation warnings with N; deprecations
     #            in N+1 will turn into errors in N+3
     # For Python versions, if releases is (e.g.) <=3.9.x, set bound to 3.10
-    np_minversion = '1.16.5'
+    np_minversion = '1.19.5'
     np_maxversion = '9.9.99'
-    python_minversion = '3.7'
+    python_minversion = '3.8'
     python_maxversion = '3.10'
     if IS_RELEASE_BRANCH:
         req_np = 'numpy>={},<{}'.format(np_minversion, np_maxversion)
@@ -550,7 +461,7 @@ def setup_package():
         req_py = '>={}'.format(python_minversion)
 
     # Rewrite the version file every time
-    write_version_py()
+    write_version_py('.')
 
     cmdclass = {'sdist': sdist_checked}
 
@@ -573,6 +484,7 @@ def setup_package():
         platforms=["Windows", "Linux", "Solaris", "Mac OS-X", "Unix"],
         install_requires=[req_np],
         python_requires=req_py,
+        zip_safe=False,
     )
 
     if "--force" in sys.argv:
@@ -597,9 +509,10 @@ def setup_package():
         cmdclass['build_ext'] = get_build_ext_override()
         cmdclass['build_clib'] = get_build_clib_override()
 
-        cwd = os.path.abspath(os.path.dirname(__file__))
-        if not os.path.exists(os.path.join(cwd, 'PKG-INFO')):
-            # Generate Cython sources, unless building from source release
+        if not 'sdist' in sys.argv:
+            # Generate Cython sources, unless we're creating an sdist
+            # Cython is a build dependency, and shipping generated .c files
+            # can cause problems (see gh-14199)
             generate_cython()
 
         metadata['configuration'] = configuration
@@ -610,7 +523,7 @@ def setup_package():
 
         # Version number is added to metadata inside configuration() if build
         # is run.
-        metadata['version'] = get_version_info()[0]
+        metadata['version'] = get_version_info('.')[0]
 
     setup(**metadata)
 

@@ -4,5 +4,5 @@ minimize(method='TNC')
 ----------------------------------------
 
 .. scipy-optimize:function:: scipy.optimize.minimize
-   :impl: scipy.optimize.tnc._minimize_tnc
+   :impl: scipy.optimize._tnc._minimize_tnc
    :method: TNC

@@ -5,8 +5,8 @@ import numpy as np
 
 from scipy.special import ndtr, ndtri
 from scipy.optimize import brentq
+from scipy import stats
 from ._discrete_distns import nchypergeom_fisher
-from .stats import fisher_exact
 from ._common import ConfidenceInterval
 
 
@@ -495,7 +495,7 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
         # kind is 'conditional'
         oddsratio = _conditional_oddsratio(c)
         # We can use fisher_exact to compute the p-value.
-        pvalue = fisher_exact(c, alternative=alternative)[1]
+        pvalue = stats.fisher_exact(c, alternative=alternative)[1]
 
     result = OddsRatioResult(table=c, kind=kind, alternative=alternative,
                              odds_ratio=oddsratio, pvalue=pvalue)

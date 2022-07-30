@@ -11,12 +11,11 @@ c        job  = 1 if common is to be saved (written to rsav/isav)
 c        job  = 2 if common is to be restored (read from rsav/isav)
 c        a call with job = 2 presumes a prior call with job = 1.
 c-----------------------------------------------------------------------
-      integer isav, job
+      integer isav(*), job
       integer ieh, ils, ilsa
       integer i, lenrls, lenils, lenrla, lenila
-      double precision rsav
+      double precision rsav(*)
       double precision rls, rlsa
-      dimension rsav(1), isav(1)
       common /ls0001/ rls(218), ils(39)
       common /lsa001/ rlsa(22), ilsa(9)
       common /eh0001/ ieh(2)

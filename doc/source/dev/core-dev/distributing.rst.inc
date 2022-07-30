@@ -28,7 +28,8 @@ are:
 - Pillow_ (for image loading/saving)
 - scikits.umfpack_ (optionally used in ``sparse.linalg``)
 - mpmath_ (for more extended tests in ``special``)
-- pydata/sparse  (compatibility support in ``scipy.sparse``)
+- pydata/sparse (compatibility support in ``scipy.sparse``)
+- threadpoolctl_ (to control BLAS/LAPACK threading in test suite)
 
 *Unconditional build-time dependencies:*
 
@@ -44,10 +45,8 @@ are:
 - wheel_ (``python setup.py bdist_wheel``)
 - Sphinx_ (docs)
 - `PyData Sphinx theme`_ (docs)
-- `Sphinx-Panels`_  (docs)
+- `Sphinx-Design`_  (docs)
 - matplotlib_ (docs)
-- LaTeX (pdf docs)
-- Pillow_ (docs)
 
 Furthermore of course one needs C, C++ and Fortran compilers to build SciPy,
 but those we don't consider to be dependencies and are therefore not discussed
@@ -217,7 +216,8 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _MingwPy: https://mingwpy.github.io
 .. _Sphinx: http://www.sphinx-doc.org/
 .. _PyData Sphinx theme: https://pydata-sphinx-theme.readthedocs.io/en/latest/
-.. _Sphinx-Panels: https://sphinx-panels.readthedocs.io/en/latest/
+.. _Sphinx-Design: https://sphinx-design.readthedocs.io
 .. _six: https://pypi.org/project/six
 .. _decorator: https://github.com/micheles/decorator
 .. _manylinux: https://github.com/pypa/manylinux/
+.. _threadpoolctl: https://github.com/joblib/threadpoolctl

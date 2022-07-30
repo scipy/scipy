@@ -3,7 +3,7 @@ cdef extern from "numpy/npy_math.h":
     double nan "NPY_NAN"
     double inf "NPY_INFINITY"
 
-from libc.math cimport log, sqrt, fabs
+from libc.math cimport log, fabs, expm1, log1p
 
 cdef inline double entr(double x) nogil:
     if npy_isnan(x):
@@ -52,4 +52,8 @@ cdef inline double pseudo_huber(double delta, double r) nogil:
     else:
         u = delta
         v = r / delta
-        return u*u*(sqrt(1 + v*v) - 1)
+        # The formula is u*u*(sqrt(1 + v*v) - 1), but to maintain
+        # precision with small v, we use
+        #   sqrt(1 + v*v) - 1  =  exp(0.5*log(1 + v*v)) - 1
+        #                      =  expm1(0.5*log1p(v*v))
+        return u*u*expm1(0.5*log1p(v*v))

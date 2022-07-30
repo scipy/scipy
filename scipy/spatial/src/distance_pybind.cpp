@@ -225,8 +225,18 @@ ArrayDescriptor get_descriptor(const py::array& arr) {
     const auto arr_strides = arr.strides();
     desc.strides.assign(arr_strides, arr_strides + ndim);
     for (intptr_t i = 0; i < ndim; ++i) {
+        if (arr_shape[i] <= 1) {
+            // Under NumPy's relaxed stride checking, dimensions with
+            // 1 or fewer elements are ignored.
+            desc.strides[i] = 0;
+            continue;
+        }
+
         if (desc.strides[i] % desc.element_size != 0) {
-            throw std::runtime_error("Arrays must be aligned");
+            std::stringstream msg;
+            msg << "Arrays must be aligned to element size, but found stride of ";
+            msg << desc.strides[i] << " bytes for elements of size " << desc.element_size;
+            throw std::runtime_error(msg.str());
         }
         desc.strides[i] /= desc.element_size;
     }
@@ -243,7 +253,7 @@ py::array_t<T> npy_asarray(const py::handle& obj, int flags = 0) {
     if (arr == nullptr) {
         throw py::error_already_set();
     }
-    return py::reinterpret_borrow<py::array_t<T>>(arr);
+    return py::reinterpret_steal<py::array_t<T>>(arr);
 }
 
 // Cast python object to NumPy array with unspecified dtype.
@@ -253,7 +263,7 @@ py::array npy_asarray(const py::handle& obj, int flags = 0) {
     if (arr == nullptr) {
         throw py::error_already_set();
     }
-    return py::reinterpret_borrow<py::array>(arr);
+    return py::reinterpret_steal<py::array>(arr);
 }
 
 template <typename scalar_t>
@@ -542,6 +552,11 @@ PYBIND11_MODULE(_distance_pybind, m) {
         throw py::error_already_set();
     }
     using namespace pybind11::literals;
+    m.def("pdist_canberra",
+          [](py::object x, py::object w, py::object out) {
+              return pdist(out, x, w, CanberraDistance{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("pdist_chebyshev",
           [](py::object x, py::object w, py::object out) {
               return pdist(out, x, w, ChebyshevDistance{});
@@ -570,6 +585,21 @@ PYBIND11_MODULE(_distance_pybind, m) {
               }
           },
           "x"_a, "w"_a=py::none(), "out"_a=py::none(), "p"_a=2.0);
+    m.def("pdist_sqeuclidean",
+          [](py::object x, py::object w, py::object out) {
+              return pdist(out, x, w, SquareEuclideanDistance{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("pdist_braycurtis",
+          [](py::object x, py::object w, py::object out) {
+              return pdist(out, x, w, BraycurtisDistance{});
+          },
+          "x"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_canberra",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cdist(out, x, y, w, CanberraDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
     m.def("cdist_chebyshev",
           [](py::object x, py::object y, py::object w, py::object out) {
               return cdist(out, x, y, w, ChebyshevDistance{});
@@ -599,6 +629,16 @@ PYBIND11_MODULE(_distance_pybind, m) {
               }
           },
           "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none(), "p"_a=2.0);
+    m.def("cdist_sqeuclidean",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cdist(out, x, y, w, SquareEuclideanDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
+    m.def("cdist_braycurtis",
+          [](py::object x, py::object y, py::object w, py::object out) {
+              return cdist(out, x, y, w, BraycurtisDistance{});
+          },
+          "x"_a, "y"_a, "w"_a=py::none(), "out"_a=py::none());
 }
 
 }  // namespace (anonymous)
