@@ -99,8 +99,6 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
         else:
             contains_nan = np.isnan(a).any()
     elif np.issubdtype(a.dtype, object):
-        # This can happen when attempting to check nan with np.isnan
-        # for string array (e.g. as in the function `rankdata`).
         contains_nan = False
         for el in a.ravel():
             # isnan doesn't work on elements of string arrays
