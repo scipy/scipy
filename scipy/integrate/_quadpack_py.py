@@ -286,7 +286,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in ``QAGS`` is applied.
+        in ``QAGSE`` is applied.
     qagpe
         serves the same purposes as QAGS, but also allows the
         user to provide explicit information about the location
@@ -303,7 +303,7 @@ def quad(func, a, b, args=(), full_output=0, epsabs=1.49e-8, epsrel=1.49e-8,
 
         An adaptive subdivision scheme is used in connection
         with an extrapolation procedure, which is a modification
-        of that in ``QAGS`` and allows the algorithm to deal with
+        of that in ``QAGSE`` and allows the algorithm to deal with
         singularities in :math:`f(x)`.
     qawfe
         calculates the Fourier transform
@@ -699,7 +699,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in ``QAGS`` is applied.
+        in ``QAGSE`` is applied.
     qagpe
         serves the same purposes as QAGS, but also allows the
         user to provide explicit information about the location
@@ -716,7 +716,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
 
         An adaptive subdivision scheme is used in connection
         with an extrapolation procedure, which is a modification
-        of that in ``QAGS`` and allows the algorithm to deal with
+        of that in ``QAGSE`` and allows the algorithm to deal with
         singularities in :math:`f(x)`.
     qawfe
         calculates the Fourier transform
@@ -912,7 +912,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in ``QAGS`` is applied.
+        in ``QAGSE`` is applied.
     qagpe
         serves the same purposes as QAGS, but also allows the
         user to provide explicit information about the location
@@ -929,7 +929,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
         An adaptive subdivision scheme is used in connection
         with an extrapolation procedure, which is a modification
-        of that in ``QAGS`` and allows the algorithm to deal with
+        of that in ``QAGSE`` and allows the algorithm to deal with
         singularities in :math:`f(x)`.
     qawfe
         calculates the Fourier transform
@@ -1143,7 +1143,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
     qagie
         handles integration over infinite intervals. The infinite range is
         mapped onto a finite interval and subsequently the same strategy as
-        in ``QAGS`` is applied.
+        in ``QAGSE`` is applied.
     qagpe
         serves the same purposes as QAGS, but also allows the
         user to provide explicit information about the location
@@ -1160,7 +1160,7 @@ def nquad(func, ranges, args=None, opts=None, full_output=False):
 
         An adaptive subdivision scheme is used in connection
         with an extrapolation procedure, which is a modification
-        of that in ``QAGS`` and allows the algorithm to deal with
+        of that in ``QAGSE`` and allows the algorithm to deal with
         singularities in :math:`f(x)`.
     qawfe
         calculates the Fourier transform
