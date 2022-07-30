@@ -212,7 +212,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> from scipy.sparse.linalg import svds
     >>> rng = np.random.default_rng()
     >>> orthogonal = csc_matrix(ortho_group.rvs(10, random_state=rng))
-    >>> s = [0.0001, 0.01, 3, 4, 5]  # singular values
+    >>> s = [1e-3, 1, 2, 3, 4]  # singular values
     >>> u = orthogonal[:, :5]         # left singular vectors
     >>> vT = orthogonal[:, 5:].T      # right singular vectors
     >>> A = u @ diags(s) @ vT
