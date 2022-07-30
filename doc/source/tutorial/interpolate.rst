@@ -210,8 +210,8 @@ interpolation interval:
     array([0.50000034,  1.50000099,  2.5000016])
 
 In fact, the ``root`` method is a special case of a more general ``solve``
-method which finds for a given value of :math:`y` the solutions of the
-equation :math:`f(x) = y` , where :math:`f(x)` is a piecewise polynomial:
+method which finds for a given constant :math:`y` the solutions of the
+equation :math:`f(x) = y` , where :math:`f(x)` is the piecewise polynomial:
 
     >>> dspl.solve(0.5, extrapolate=False) / np.pi
     array([0.33332755, 1.66667195, 2.3333271])
@@ -233,7 +233,7 @@ interpolant (we could as well used a `CubicSpline`):
 
     >>> from scipy.interpolate import PchipInterpolator
     >>> x = np.linspace(0, np.pi/2, 70)
-    >>> y = 1 / np.sqrt(1 - 0.5*np.sin(x)**2)
+    >>> y = (1 - m*np.sin(x)**2))**(-1/2)
     >>> spl = PchipInterpolator(x, y)
 
 and integrate
@@ -312,7 +312,7 @@ its derivative is a quadratic:
     >>> bspl.k, der.k
     (3, 2)
 
-This way, the default result of ``make_interp_spline(x, y)`` is equivalent to
+By default, the result of ``make_interp_spline(x, y)`` is equivalent to
 ``CubicSpline(x, y)``. The difference is that the former allows several optional
 capabilities: it can construct splines of various degrees (via the optional
 argument ``k``) and predefined knots (via the optional argument ``t``). 
