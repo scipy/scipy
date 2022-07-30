@@ -93,8 +93,6 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
 
     if np.issubdtype(a.dtype, np.inexact):
         # The summation method avoids creating a (potentially huge) array.
-        # But, it will set contains_nan to True for (e.g.) [-inf, ..., +inf].
-        # If this is undesirable, set use_summation to False instead.
         if use_summation:
             with np.errstate(invalid='ignore', over='ignore'):
                 contains_nan = np.isnan(np.sum(a))
