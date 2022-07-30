@@ -214,7 +214,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> s = [1e-3, 1, 2, 3, 4]  # singular values
     >>> u = orthogonal[:, :5]         # left singular vectors
     >>> vT = orthogonal[:, 5:].T      # right singular vectors
-    >>> A = u @ s @ vT
+    >>> A = u @ np.diag(s) @ vT
 
     With only four singular values/vectors, the SVD approximates the original
     matrix.
