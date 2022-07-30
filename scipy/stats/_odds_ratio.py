@@ -217,11 +217,23 @@ class OddsRatioResult:
             Default is 0.95 (meaning 95%).
 
         alternative : {'two-sided', 'less', 'greater'}, optional
-            The following options are available (default is 'two-sided'):
+            The alternative hypothesis of the hypothesis test to which the
+            confidence interval corresponds. That is, suppose the null
+            hypothesis is that the true odds ratio equals ``x`` and the
+            confidence interval is ``(low, high)``. Then the following options
+            for `alternative` are available (default is 'two-sided'):
 
-            * 'two-sided': the true odds ratio is not equal to 1.
-            * 'less': the true odds ratio is less than 1.
-            * 'greater': the true odds ratio is greater than 1.
+            * 'two-sided': the true odds ratio is not equal to ``x``. There
+              is evidence against the null hypothesis at the chosen
+              `confidence_level` if ``high < x`` or ``low > x``.
+            * 'less': the true odds ratio is less than ``x``. The ``low`` end
+              of the confidence interval is 0, and there is evidence against
+              the null hypothesis at  the chosen `confidence_level` if
+              ``high < x``.
+            * 'greater': the true odds ratio is greater than ``x``.  The
+              ``high`` end of the confidence interval is ``np.inf``, and there
+              is evidence against the null hypothesis at the chosen
+              `confidence_level` if ``low > x``.
 
         Returns
         -------
