@@ -208,21 +208,20 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     Construct a matrix ``A`` from singular values and vectors.
 
     >>> from scipy.stats import ortho_group
-    >>> from scipy.sparse import csc_matrix, diags
     >>> from scipy.sparse.linalg import svds
     >>> rng = np.random.default_rng()
-    >>> orthogonal = csc_matrix(ortho_group.rvs(10, random_state=rng))
+    >>> orthogonal = ortho_group.rvs(10, random_state=rng)
     >>> s = [1e-3, 1, 2, 3, 4]  # singular values
     >>> u = orthogonal[:, :5]         # left singular vectors
     >>> vT = orthogonal[:, 5:].T      # right singular vectors
-    >>> A = u @ diags(s) @ vT
+    >>> A = u @ s @ vT
 
     With only four singular values/vectors, the SVD approximates the original
     matrix.
 
     >>> u4, s4, vT4 = svds(A, k=4)
     >>> A4 = u4 @ np.diag(s4) @ vT4
-    >>> np.allclose(A4, A.toarray(), atol=1e-4)
+    >>> np.allclose(A4, A, atol=1e-3)
     True
 
     With all five non-zero singular values/vectors, we can reproduce
@@ -230,7 +229,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     >>> u5, s5, vT5 = svds(A, k=5)
     >>> A5 = u5 @ np.diag(s5) @ vT5
-    >>> np.allclose(A5, A.toarray())
+    >>> np.allclose(A5, A())
     True
 
     The singular values match the expected singular values.
@@ -241,11 +240,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     Since the singular values are not close to each other in this example,
     every singular vector matchs as expected up to a difference in sign.
 
-    >>> (np.allclose(np.abs(u5), np.abs(u.toarray())) and
-    ...  np.allclose(np.abs(vT5), np.abs(vT.toarray())))
+    >>> (np.allclose(np.abs(u5), np.abs(u)) and
+    ...  np.allclose(np.abs(vT5), np.abs(vT)))
     True
 
     The singular vectors are also orthogonal.
+
     >>> (np.allclose(u5.T @ u5, np.eye(5)) and
     ...  np.allclose(vT5 @ vT5.T, np.eye(5)))
     True
