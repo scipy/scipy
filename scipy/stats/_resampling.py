@@ -214,8 +214,9 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
 
     message = ("Either `bootstrap_result.bootstrap_distribution.size` or "
                "`n_resamples` must be positive.")
-    if n_resamples_int == 0 and (not bootstrap_result or
-            not bootstrap_result.bootstrap_distribution.size):
+    if ((not bootstrap_result or
+         not bootstrap_result.bootstrap_distribution.size)
+            and n_resamples_int == 0):
         raise ValueError(message)
 
     random_state = check_random_state(random_state)
