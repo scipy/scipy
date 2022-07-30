@@ -21,7 +21,6 @@ class TestOddsRatio:
             ci_rtol = 1e-1
         assert_allclose(result.odds_ratio,
                         rresult.conditional_odds_ratio, rtol=or_rtol)
-        assert_allclose(result.pvalue, rresult.pvalue, rtol=1e-6)
         ci = result.odds_ratio_ci(parameters.confidence_level)
         assert_allclose((ci.low, ci.high), rresult.conditional_odds_ratio_ci,
                         rtol=ci_rtol)

@@ -3,9 +3,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
-from scipy.special import ndtr, ndtri
+from scipy.special import ndtri
 from scipy.optimize import brentq
-from scipy import stats
 from ._discrete_distns import nchypergeom_fisher
 from ._common import ConfidenceInterval
 
@@ -203,15 +202,6 @@ class OddsRatioResult:
           hypergeometric distribution with the same hypergeometric
           parameters as `table` and whose mean is ``table[0, 0]``.
 
-    pvalue : float
-        The p-value of the estimate of the odds ratio.
-
-        * If `kind` is ``'sample'``, the p-value is based on the
-          normal approximation to the distribution of the log of
-          the sample odds ratio.
-        * If `kind` is ``'conditional'``, the p-value is computed
-          by `scipy.stats.fisher_exact`.
-
     Methods
     -------
     odds_ratio_ci :
@@ -222,7 +212,6 @@ class OddsRatioResult:
     kind: str
     alternative: str
     odds_ratio: float
-    pvalue: float
 
     def odds_ratio_ci(self, confidence_level=0.95):
         """
@@ -316,8 +305,6 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     r"""
     Compute the odds ratio for a 2x2 contingency table.
 
-    Also test the null hypothesis that the true odds ratio is 1.
-
     Parameters
     ----------
     table : array_like of ints
@@ -348,16 +335,6 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
               the noncentrality parameter of Fisher's noncentral
               hypergeometric distribution with the same hypergeometric
               parameters as `table` and whose mean is ``table[0, 0]``.
-        pvalue : float
-            The p-value associated with the computed odds ratio.
-            The null hypothesis of the statistical test is that the
-            odds ratio is 1.
-
-            * If `kind` is ``'sample'``, the p-value is based on the
-              normal approximation to the distribution of the log of
-              the sample odds ratio.
-            * If `kind` is ``'conditional'``, the p-value is computed
-              by `scipy.stats.fisher_exact`.
 
         The object also stores the input arguments `table`, `kind`
         and `alternative` as attributes.
@@ -429,26 +406,17 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     Compute the odds ratio:
 
     >>> from scipy.stats.contingency import odds_ratio
-    >>> test = odds_ratio([[7, 15], [58, 472]])
-    >>> test.odds_ratio
+    >>> res = odds_ratio([[7, 15], [58, 472]])
+    >>> res.odds_ratio
     3.7836687705553493
 
     For this sample, the odds of getting the disease for those who have
     been exposed to the chemical are almost 3.8 times that of those who
     have not been exposed.
 
-    Check the p-value:
-
-    >>> test.pvalue
-    0.009208708293019454
-
-    The null hypothesis for this test is that the odds ratio is 1.
-    The p-value tells us that the probability of getting such an
-    extreme odds ratio under the null hypothesis is 0.0092.
-
     We can compute the 95% confidence interval for the odds ratio:
 
-    >>> test.odds_ratio_ci(confidence_level=0.95)
+    >>> res.odds_ratio_ci(confidence_level=0.95)
     ConfidenceInterval(low=1.2514829132266785, high=10.363493716701269)
 
     The 95% confidence interval for the conditional odds ratio is
@@ -478,25 +446,14 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
         # If both values in a row or column are zero, the p-value is NaN and
         # the odds ratio is NaN.
         result = OddsRatioResult(table=c, kind=kind, alternative=alternative,
-                                 odds_ratio=np.nan, pvalue=np.nan)
+                                 odds_ratio=np.nan)
         return result
 
     if kind == 'sample':
         oddsratio = _sample_odds_ratio(c)
-        log_or = np.log(oddsratio)
-        se = np.sqrt((1/c).sum())
-        if alternative == 'two-sided':
-            pvalue = 2*ndtr(-abs(log_or)/se)
-        elif alternative == 'less':
-            pvalue = ndtr(log_or/se)
-        else:
-            pvalue = ndtr(-log_or/se)
-    else:
-        # kind is 'conditional'
+    else:  # kind is 'conditional'
         oddsratio = _conditional_oddsratio(c)
-        # We can use fisher_exact to compute the p-value.
-        pvalue = stats.fisher_exact(c, alternative=alternative)[1]
 
     result = OddsRatioResult(table=c, kind=kind, alternative=alternative,
-                             odds_ratio=oddsratio, pvalue=pvalue)
+                             odds_ratio=oddsratio)
     return result
