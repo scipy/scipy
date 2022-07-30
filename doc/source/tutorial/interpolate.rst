@@ -39,7 +39,7 @@ for interpolation with missing data. Two popular ways of representing missing
 data are using masked arrays of the `numpy.ma` library, and encoding missing
 values as not-a-number, ``NaN``. 
 
-None of these two approaches is directly suppored in `scipy.interpolate`.
+Neither of these two approaches is directly suppored in `scipy.interpolate`.
 Individual routines may offer partial support, and/or workarounds, but in
 general the library firmly adheres to the IEEE 754 semantics where a ``NaN``
 means *not-a-number*, i.e. a result of an illegal mathematical operation
@@ -85,7 +85,7 @@ and ``y``, and a third array, ``xnew``, of points to evaluate the interpolation 
 Cubic splines
 -------------
 
-Of course, piecewise linear interpolation produces cusps at data points,
+Of course, piecewise linear interpolation produces corners at data points,
 where linear pieces join. To produce a smoother curve, you can use cubic
 splines, where the interpolating curve is made of cubic pieces with matching
 first and second derivatives. In code, these objects are represented via the
@@ -159,7 +159,7 @@ Piecewise polynomials
 ---------------------
 
 Internally, `CubicSpline` and monotone interpolants are represented as instances
-of a `PPoly` class, which represents pieciwise polynomials in terms of
+of a `PPoly` class, which represents piecewise polynomials in terms of
 breakpoints and coefficients (`PPoly` objects can represent polynomials of 
 arbitrary orders, not only cubics). For the data array ``x``, breakpoints are at
 the data points, and the array of coefficients, ``c`` , define cubic polynomials
@@ -224,7 +224,8 @@ example, we compute an approximation to the complete elliptic integral
 :math:`K(m) = \int_0^{\pi/2} [1 - m\sin^2 x]^{-1/2} dx`:
 
     >>> from scipy.special import ellipk
-    >>> ellipk(0.5)
+    >>> m = 0.5
+    >>> ellipk(m)
     1.8540746773013719
 
 To this end, we tabulate the integrand, interpolate using the monotone
@@ -244,7 +245,7 @@ which is indeed close to the value computed by `scipy.special.ellipk`.
 
 All piecewise polynomials can be constructed with N-dimensional ``y`` values.
 If ``y.ndim > 1``, it is understood as a stack of 1D ``y`` values, which are
-arranged along the interpolation axis (with the default value if 0).
+arranged along the interpolation axis (with the default value of 0).
 The latter is specified via the ``axis`` argument, and the invariant is that
 ``len(x) == y.shape[axis]``. As an example, we extend the elliptic integral
 example above to compute the approximation for a range of ``m`` values, using
@@ -266,6 +267,7 @@ the NumPy broadcasting:
 
     >>> from scipy.special import ellipk
     >>> plt.plot(m, ellipk(m), 'o')
+    >>> plt.legend(['`ellipk`', 'integrated piecewise polynomial'])
     >>> plt.show()
 
 
