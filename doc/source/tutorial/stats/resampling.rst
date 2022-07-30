@@ -96,18 +96,14 @@ learning to use computational statistics techniques can improve the
 accuracy of `scipy.stats` features that rely on analytical
 approximations, dramatically extend your statistical analysis
 capabilities, and even improve your understanding of statistics.
-
-Resampling / Monte Carlo Methods in :mod:`scipy.stats`
-------------------------------------------------------
+The following tutorials will help you get started with the resampling
+and Monte Carlo methods in `scipy.stats.`
 
 1. `Monte Carlo Hypothesis Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_1.ipynb>`_
+2. `Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2.ipynb>`_
 
-2. `Introduction to Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2.ipynb>`_
-
-2a. `Independent-Sample Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2a.ipynb>`_
-
-2b. `Paired-Sample Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2b.ipynb>`_
-
-2c. `Correlated-Sample Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2c.ipynb>`_
+   a. `Independent-Sample Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2a.ipynb>`_
+   b. `Paired-Sample Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2b.ipynb>`_
+   c. `Correlated-Sample Permutation Tests <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_2c.ipynb>`_
 
 3. `The Bootstrap <https://nbviewer.org/github/mdhaber/scipy/blob/resampling_tutorial/doc/source/tutorial/stats/notebooks/resampling_tutorial_3.ipynb>`_
