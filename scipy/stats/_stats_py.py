@@ -101,7 +101,7 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
     elif np.issubdtype(a.dtype, object):
         contains_nan = False
         for el in a.ravel():
-            # isnan doesn't work on elements of string arrays
+            # isnan doesn't work on non-numeric elements
             if np.issubdtype(type(el), np.number) and np.isnan(el):
                 contains_nan = True
                 break
