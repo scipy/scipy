@@ -274,7 +274,7 @@ class TestQuad:
         with pytest.warns(DeprecationWarning):
             dblquad(func, 1, 2, 1, 2, **kwargs)
 
-  @pytest.mark.parametrize(
+    @pytest.mark.parametrize(
         "x_lower, x_upper, y_lower, y_upper, expected",
         [
             # Multiple integration of a function in n = 2 variables: f(x, y, z)
@@ -352,7 +352,6 @@ class TestQuad:
                             lambda x, y: x - y, lambda x, y: x + y,
                             (2.,)),
                      2*8/3.0 * (b**4.0 - a**4.0))
-
 
     @pytest.mark.parametrize('kwargs', [{'epsabs': 0.1}, {'epsrel': 0.1}])
     def test_triple_integral_warns_with_deprecated_input(self, kwargs):
