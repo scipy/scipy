@@ -5039,7 +5039,7 @@ class levy_gen(rv_continuous):
 
     Display the probability density function (``pdf``):
 
-    >>> # `levy` is very-heavy tailed.
+    >>> # `levy` is very heavy-tailed.
     >>> # To show a nice plot, let's cut off the upper 40 percent.
     >>> a, b = levy.ppf(0), levy.ppf(0.6)
     >>> x = np.linspace(a, b, 100)
@@ -5142,7 +5142,7 @@ class levy_l_gen(rv_continuous):
 
     Display the probability density function (``pdf``):
 
-    >>> # `levy_l` is very-heavy tailed.
+    >>> # `levy_l` is very heavy-tailed.
     >>> # To show a nice plot, let's cut off the lower 40 percent.
     >>> a, b = levy_l.ppf(0.4), levy_l.ppf(1)
     >>> x = np.linspace(a, b, 100)
