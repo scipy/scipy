@@ -220,7 +220,7 @@ def splprep(x, w=None, u=None, ub=None, ue=None, k=3, task=0, s=None, t=None,
     if per:
         for i in range(idim):
             if x[i][0] != x[i][-1]:
-                if quiet < 2:
+                if not quiet:
                     warnings.warn(RuntimeWarning('Setting x[%d][%d]=x[%d][0]' %
                                                  (i, m, i)))
                 x[i][-1] = x[i][0]
