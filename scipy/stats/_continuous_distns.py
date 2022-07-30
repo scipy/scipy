@@ -5039,8 +5039,10 @@ class levy_gen(rv_continuous):
 
     Display the probability density function (``pdf``):
 
-    >>> x = np.linspace(levy.ppf(0.0),
-    ...                 levy.ppf(0.6), 100)
+    >>> # `levy` is very-heavy tailed.
+    >>> # To show a nice plot, let's cut off the upper 40 percent.
+    >>> a, b = levy.ppf(0), levy.ppf(0.6)
+    >>> x = np.linspace(a, b, 100)
     >>> ax.plot(x, levy.pdf(x),
     ...        'r-', lw=5, alpha=0.6, label='levy pdf')
 
@@ -5065,8 +5067,9 @@ class levy_gen(rv_continuous):
 
     And compare the histogram:
 
-    >>> r = r[r <= x[-1]]
-    >>> ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
+    >>> # manual binning to ignore the tail
+    >>> bins = np.concatenate((np.linspace(a, b, 20), [np.max(r)]))
+    >>> ax.hist(r, bins=bins, density=True, histtype='stepfilled', alpha=0.2)
     >>> ax.set_xlim([x[0], x[-1]])
     >>> ax.legend(loc='best', frameon=False)
     >>> plt.show()
@@ -5139,8 +5142,10 @@ class levy_l_gen(rv_continuous):
 
     Display the probability density function (``pdf``):
 
-    >>> x = np.linspace(levy_l.ppf(0.4),
-    ...                 levy_l.ppf(1), 100)
+    >>> # `levy_l` is very-heavy tailed.
+    >>> # To show a nice plot, let's cut off the lower 40 percent.
+    >>> a, b = levy_l.ppf(0.4), levy_l.ppf(1)
+    >>> x = np.linspace(a, b, 100)
     >>> ax.plot(x, levy_l.pdf(x),
     ...        'r-', lw=5, alpha=0.6, label='levy_l pdf')
 
@@ -5165,8 +5170,9 @@ class levy_l_gen(rv_continuous):
 
     And compare the histogram:
 
-    >>> r = r[r >= x[0]]
-    >>> ax.hist(r, density=True, bins='auto', histtype='stepfilled', alpha=0.2)
+    >>> # manual binning to ignore the tail
+    >>> bins = np.concatenate(([np.min(r)], np.linspace(a, b, 20)))
+    >>> ax.hist(r, bins=bins, density=True, histtype='stepfilled', alpha=0.2)
     >>> ax.set_xlim([x[0], x[-1]])
     >>> ax.legend(loc='best', frameon=False)
     >>> plt.show()
