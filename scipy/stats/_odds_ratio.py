@@ -182,14 +182,6 @@ class OddsRatioResult:
 
     Attributes
     ----------
-    table : numpy.ndarray
-        The table that was passed to `odds_ratio`.
-    kind : str
-        The `kind` that was passed to `odds_ratio`. This will be
-        either ``'conditional'`` or ``'sample'``.
-    alternative : str
-        The `alternative` that was passed to `odds_ratio`.  This will
-        be ``'two-sided'``, ``'less'`` or ``'greater'``.
     odds_ratio : float
         The computed odds ratio.
 
@@ -210,10 +202,9 @@ class OddsRatioResult:
 
     table: np.ndarray
     kind: str
-    alternative: str
     odds_ratio: float
 
-    def odds_ratio_ci(self, confidence_level=0.95):
+    def odds_ratio_ci(self, confidence_level=0.95, alternative='two-sided'):
         """
         Confidence interval for the odds ratio.
 
@@ -223,6 +214,13 @@ class OddsRatioResult:
             Desired confidence level for the confidence interval.
             The value must be given as a fraction between 0 and 1.
             Default is 0.95 (meaning 95%).
+
+        alternative : {'two-sided', 'less', 'greater'}, optional
+            The following options are available (default is 'two-sided'):
+
+            * 'two-sided': the true odds ratio is not equal to 1.
+            * 'less': the true odds ratio is less than 1.
+            * 'greater': the true odds ratio is greater than 1.
 
         Returns
         -------
@@ -258,18 +256,24 @@ class OddsRatioResult:
         .. [3] Alan Agresti, An Introduction to Categorical Data Analyis
                (second edition), Wiley, Hoboken, NJ, USA (2007).
         """
+        if alternative not in ['two-sided', 'less', 'greater']:
+            raise ValueError("`alternative` must be 'two-sided', 'less' or "
+                             "'greater'.")
+
+        if confidence_level < 0 or confidence_level > 1:
+            raise ValueError('confidence_level must be between 0 and 1')
+
         if self.kind == 'conditional':
-            ci = self._conditional_odds_ratio_ci(confidence_level)
+            ci = self._conditional_odds_ratio_ci(confidence_level, alternative)
         else:
-            ci = self._sample_odds_ratio_ci(confidence_level)
+            ci = self._sample_odds_ratio_ci(confidence_level, alternative)
         return ci
 
-    def _conditional_odds_ratio_ci(self, confidence_level=0.95):
+    def _conditional_odds_ratio_ci(self, confidence_level=0.95,
+                                   alternative='two-sided'):
         """
         Confidence interval for the conditional odds ratio.
         """
-        if confidence_level < 0 or confidence_level > 1:
-            raise ValueError('confidence_level must be between 0 and 1')
 
         table = self.table
         if 0 in table.sum(axis=0) or 0 in table.sum(axis=1):
@@ -279,10 +283,11 @@ class OddsRatioResult:
         else:
             ci = _conditional_oddsratio_ci(table,
                                            confidence_level=confidence_level,
-                                           alternative=self.alternative)
+                                           alternative=alternative)
         return ConfidenceInterval(low=ci[0], high=ci[1])
 
-    def _sample_odds_ratio_ci(self, confidence_level=0.95):
+    def _sample_odds_ratio_ci(self, confidence_level=0.95,
+                              alternative='two-sided'):
         """
         Confidence interval for the sample odds ratio.
         """
@@ -297,11 +302,11 @@ class OddsRatioResult:
         else:
             ci = _sample_odds_ratio_ci(table,
                                        confidence_level=confidence_level,
-                                       alternative=self.alternative)
+                                       alternative=alternative)
         return ConfidenceInterval(low=ci[0], high=ci[1])
 
 
-def odds_ratio(table, kind='conditional', alternative='two-sided'):
+def odds_ratio(table, *, kind='conditional'):
     r"""
     Compute the odds ratio for a 2x2 contingency table.
 
@@ -313,13 +318,6 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
         Which kind of odds ratio to compute, either the sample
         odds ratio (``kind='sample'``) or the conditional odds ratio
         (``kind='conditional'``).  Default is ``'conditional'``.
-    alternative : {'two-sided', 'less', 'greater'}, optional
-        Defines the alternative hypothesis.
-        The following options are available (default is 'two-sided'):
-
-        * 'two-sided': the true odds ratio is not equal to 1.
-        * 'less': the true odds ratio is less than 1.
-        * 'greater': the true odds ratio is greater than 1.
 
     Returns
     -------
@@ -335,9 +333,6 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
               the noncentrality parameter of Fisher's noncentral
               hypergeometric distribution with the same hypergeometric
               parameters as `table` and whose mean is ``table[0, 0]``.
-
-        The object also stores the input arguments `table`, `kind`
-        and `alternative` as attributes.
 
         The object has the method `odds_ratio_ci` that computes
         the confidence interval of the odds ratio.
@@ -424,9 +419,6 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     """
     if kind not in ['conditional', 'sample']:
         raise ValueError("`kind` must be 'conditional' or 'sample'.")
-    if alternative not in ['two-sided', 'less', 'greater']:
-        raise ValueError("`alternative` must be 'two-sided', 'less' or "
-                         "'greater'.")
 
     c = np.asarray(table)
 
@@ -445,8 +437,7 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     if 0 in c.sum(axis=0) or 0 in c.sum(axis=1):
         # If both values in a row or column are zero, the p-value is NaN and
         # the odds ratio is NaN.
-        result = OddsRatioResult(table=c, kind=kind, alternative=alternative,
-                                 odds_ratio=np.nan)
+        result = OddsRatioResult(table=c, kind=kind, odds_ratio=np.nan)
         return result
 
     if kind == 'sample':
@@ -454,6 +445,5 @@ def odds_ratio(table, kind='conditional', alternative='two-sided'):
     else:  # kind is 'conditional'
         oddsratio = _conditional_oddsratio(c)
 
-    result = OddsRatioResult(table=c, kind=kind, alternative=alternative,
-                             odds_ratio=oddsratio)
+    result = OddsRatioResult(table=c, kind=kind, odds_ratio=oddsratio)
     return result

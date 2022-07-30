@@ -11,7 +11,7 @@ class TestOddsRatio:
     @pytest.mark.parametrize('parameters, rresult', data)
     def test_results_from_r(self, parameters, rresult):
         alternative = parameters.alternative.replace('.', '-')
-        result = odds_ratio(parameters.table, alternative=alternative)
+        result = odds_ratio(parameters.table)
         # The results computed by R are not very accurate.
         if result.odds_ratio < 400:
             or_rtol = 5e-4
@@ -21,7 +21,7 @@ class TestOddsRatio:
             ci_rtol = 1e-1
         assert_allclose(result.odds_ratio,
                         rresult.conditional_odds_ratio, rtol=or_rtol)
-        ci = result.odds_ratio_ci(parameters.confidence_level)
+        ci = result.odds_ratio_ci(parameters.confidence_level, alternative)
         assert_allclose((ci.low, ci.high), rresult.conditional_odds_ratio_ci,
                         rtol=ci_rtol)
 
@@ -119,8 +119,9 @@ class TestOddsRatio:
             odds_ratio([[10, 20], [30, 14]], kind='magnetoreluctance')
 
     def test_invalid_alternative(self):
+        result = odds_ratio([[5, 10], [2, 32]])
         with pytest.raises(ValueError, match='`alternative` must be'):
-            odds_ratio([[10, 20], [30, 14]], alternative='depleneration')
+            result.odds_ratio_ci(alternative='depleneration')
 
     @pytest.mark.parametrize('level', [-0.5, 1.5])
     def test_invalid_confidence_level(self, level):
