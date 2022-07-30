@@ -99,7 +99,7 @@ build(ckdtree *self, ckdtree_intp_t start_idx, intptr_t end_idx,
         auto partition_pivot = [=](ckdtree_intp_t* first, ckdtree_intp_t* last, double pivot) {
             const auto partition_ptr = std::partition(
                 first, last,
-                [&](ckdtree_intp_t a) { return data[a * m + d] < pivot; });
+                [&](ckdtree_intp_t a) { return !(data[a * m + d] >= pivot); });
             return partition_ptr - indices;
         };
 

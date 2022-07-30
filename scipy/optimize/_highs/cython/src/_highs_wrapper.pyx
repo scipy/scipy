@@ -48,7 +48,7 @@ from .HConst cimport (
 from .Highs cimport Highs
 from .HighsStatus cimport (
     HighsStatus,
-    HighsStatusToString,
+    highsStatusToString,
     HighsStatusError,
     HighsStatusWarning,
     HighsStatusOK,
@@ -664,7 +664,7 @@ def _highs_wrapper(
     if run_status == HighsStatusError:
         return {
             'status': <int> highs.getModelStatus(),
-            'message': HighsStatusToString(run_status).decode(),
+            'message': highsStatusToString(run_status).decode(),
         }
 
     # Extract what we need from the solution

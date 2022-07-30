@@ -4,6 +4,7 @@
 import math
 import numpy as np
 from numpy import asarray_chkfinite, asarray
+from numpy.lib import NumpyVersion
 import scipy.linalg
 from scipy._lib import doccer
 from scipy.special import gammaln, psi, multigammaln, xlogy, entr, betaln
@@ -168,13 +169,25 @@ class _PSD:
         s_pinv = _pinv_1d(s, eps)
         U = np.multiply(u, np.sqrt(s_pinv))
 
+        # Save the eigenvector basis, and tolerance for testing support
+        self.eps = 1e3*eps
+        self.V = u[:, s <= eps]
+
         # Initialize the eagerly precomputed attributes.
         self.rank = len(d)
         self.U = U
         self.log_pdet = np.sum(np.log(d))
 
-        # Initialize an attribute to be lazily computed.
+        # Initialize attributes to be lazily computed.
         self._pinv = None
+
+    def _support_mask(self, x):
+        """
+        Check whether x lies in the support of the distribution.
+        """
+        residual = np.linalg.norm(x @ self.V, axis=-1)
+        in_support = residual < self.eps
+        return in_support
 
     @property
     def pinv(self):
@@ -312,12 +325,19 @@ class multivariate_normal_gen(multi_rv_generic):
                \exp\left( -\frac{1}{2} (x - \mu)^T \Sigma^{-1} (x - \mu) \right),
 
     where :math:`\mu` is the mean, :math:`\Sigma` the covariance matrix,
-    and :math:`k` is the dimension of the space where :math:`x` takes values.
+    :math:`k` the rank of :math:`\Sigma`. In case of singular :math:`\Sigma`,
+    SciPy extends this definition according to [1]_.
 
     .. versionadded:: 0.14.0
 
+    References
+    ----------
+    .. [1] Multivariate Normal Distribution - Degenerate Case, Wikipedia,
+           https://en.wikipedia.org/wiki/Multivariate_normal_distribution#Degenerate_case
+
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import multivariate_normal
 
@@ -494,6 +514,9 @@ class multivariate_normal_gen(multi_rv_generic):
         x = self._process_quantiles(x, dim)
         psd = _PSD(cov, allow_singular=allow_singular)
         out = self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank)
+        if allow_singular and (psd.rank < dim):
+            out_of_bounds = ~psd._support_mask(x-mean)
+            out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
     def pdf(self, x, mean=None, cov=1, allow_singular=False):
@@ -519,6 +542,9 @@ class multivariate_normal_gen(multi_rv_generic):
         x = self._process_quantiles(x, dim)
         psd = _PSD(cov, allow_singular=allow_singular)
         out = np.exp(self._logpdf(x, mean, psd.U, psd.log_pdet, psd.rank))
+        if allow_singular and (psd.rank < dim):
+            out_of_bounds = ~psd._support_mask(x-mean)
+            out[out_of_bounds] = 0.0
         return _squeeze_output(out)
 
     def _cdf(self, x, mean, cov, maxpts, abseps, releps):
@@ -696,9 +722,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
             distribution.
         allow_singular : bool, default: ``False``
             Whether to allow a singular covariance matrix.
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -728,6 +752,7 @@ class multivariate_normal_frozen(multi_rv_frozen):
         array([[1.]])
 
         """
+        self.allow_singular = allow_singular
         self._dist = multivariate_normal_gen(seed)
         self.dim, self.mean, self.cov = self._dist._process_parameters(
                                                             None, mean, cov)
@@ -742,6 +767,9 @@ class multivariate_normal_frozen(multi_rv_frozen):
         x = self._dist._process_quantiles(x, self.dim)
         out = self._dist._logpdf(x, self.mean, self.cov_info.U,
                                  self.cov_info.log_pdet, self.cov_info.rank)
+        if self.allow_singular and (self.cov_info.rank < self.dim):
+            out_of_bounds = ~self.cov_info._support_mask(x-self.mean)
+            out[out_of_bounds] = -np.inf
         return _squeeze_output(out)
 
     def pdf(self, x):
@@ -881,6 +909,7 @@ class matrix_normal_gen(multi_rv_generic):
     Examples
     --------
 
+    >>> import numpy as np
     >>> from scipy.stats import matrix_normal
 
     >>> M = np.arange(6).reshape(3,2); M
@@ -1142,9 +1171,7 @@ class matrix_normal_frozen(multi_rv_frozen):
     Parameters
     ----------
     %(_matnorm_doc_default_callparams)s
-    seed : {None, int, `numpy.random.Generator`,
-        `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is `None` the `~np.random.RandomState` singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used, seeded
         with seed.
@@ -1154,6 +1181,7 @@ class matrix_normal_frozen(multi_rv_frozen):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import matrix_normal
 
     >>> distn = matrix_normal(mean=np.zeros((3,3)))
@@ -1351,12 +1379,13 @@ class dirichlet_gen(multi_rv_generic):
     concentration parameters and :math:`K` is the dimension of the space
     where :math:`x` takes values.
 
-    Note that the dirichlet interface is somewhat inconsistent.
+    Note that the `dirichlet` interface is somewhat inconsistent.
     The array returned by the rvs function is transposed
     with respect to the format expected by the pdf and logpdf.
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import dirichlet
 
     Generate a dirichlet random variable
@@ -1468,7 +1497,7 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def mean(self, alpha):
-        """Compute the mean of the dirichlet distribution.
+        """Mean of the Dirichlet distribution.
 
         Parameters
         ----------
@@ -1486,7 +1515,7 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def var(self, alpha):
-        """Compute the variance of the dirichlet distribution.
+        """Variance of the Dirichlet distribution.
 
         Parameters
         ----------
@@ -1506,7 +1535,8 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def entropy(self, alpha):
-        """Compute the differential entropy of the dirichlet distribution.
+        """
+        Differential entropy of the Dirichlet distribution.
 
         Parameters
         ----------
@@ -1530,7 +1560,8 @@ class dirichlet_gen(multi_rv_generic):
         return _squeeze_output(out)
 
     def rvs(self, alpha, size=1, random_state=None):
-        """Draw random samples from a Dirichlet distribution.
+        """
+        Draw random samples from a Dirichlet distribution.
 
         Parameters
         ----------
@@ -1704,6 +1735,7 @@ class wishart_gen(multi_rv_generic):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import wishart, chi2
     >>> x = np.linspace(1e-5, 8, 100)
@@ -2240,9 +2272,7 @@ class wishart_frozen(multi_rv_frozen):
         Degrees of freedom of the distribution
     scale : array_like
         Scale matrix of the distribution
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -2441,6 +2471,7 @@ class invwishart_gen(wishart_gen):
 
     Examples
     --------
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import invwishart, invgamma
     >>> x = np.linspace(0.01, 1, 100)
@@ -3230,9 +3261,7 @@ class multinomial_frozen(multi_rv_frozen):
         number of trials
     p: array_like
         probability of a trial falling into each category; should sum to 1
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3325,6 +3354,7 @@ class special_ortho_group_gen(multi_rv_generic):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import special_ortho_group
     >>> x = special_ortho_group.rvs(3)
 
@@ -3391,26 +3421,52 @@ class special_ortho_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1:
-            return np.array([self.rvs(dim, size=1, random_state=random_state)
-                             for i in range(size)])
+        size = (size,) if size > 1 else ()
 
         dim = self._process_parameters(dim)
 
-        H = np.eye(dim)
-        D = np.empty((dim,))
+        # H represents a (dim, dim) matrix, while D represents the diagonal of
+        # a (dim, dim) diagonal matrix. The algorithm that follows is
+        # broadcasted on the leading shape in `size` to vectorize along
+        # samples.
+        H = np.empty(size + (dim, dim))
+        H[..., :, :] = np.eye(dim)
+        D = np.empty(size + (dim,))
+
         for n in range(dim-1):
-            x = random_state.normal(size=(dim-n,))
-            norm2 = np.dot(x, x)
-            x0 = x[0].item()
-            D[n] = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D[n]*np.sqrt(norm2)
-            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
-            # Householder transformation
-            H[:, n:] -= np.outer(np.dot(H[:, n:], x), x)
-        D[-1] = (-1)**(dim-1)*D[:-1].prod()
-        # Equivalent to np.dot(np.diag(D), H) but faster, apparently
-        H = (D*H.T).T
+
+            # x is a vector with length dim-n, xrow and xcol are views of it as
+            # a row vector and column vector respectively. It's important they
+            # are views and not copies because we are going to modify x
+            # in-place.
+            x = random_state.normal(size=size + (dim-n,))
+            xrow = x[..., None, :]
+            xcol = x[..., :, None]
+
+            # This is the squared norm of x, without vectorization it would be
+            # dot(x, x), to have proper broadcasting we use matmul and squeeze
+            # out (convert to scalar) the resulting 1x1 matrix
+            norm2 = np.matmul(xrow, xcol).squeeze((-2, -1))
+
+            x0 = x[..., 0].copy()
+            D[..., n] = np.where(x0 != 0, np.sign(x0), 1)
+            x[..., 0] += D[..., n]*np.sqrt(norm2)
+
+            # In renormalizing x we have to append an additional axis with
+            # [..., None] to broadcast the scalar against the vector x
+            x /= np.sqrt((norm2 - x0**2 + x[..., 0]**2) / 2.)[..., None]
+
+            # Householder transformation, without vectorization the RHS can be
+            # written as outer(H @ x, x) (apart from the slicing)
+            H[..., :, n:] -= np.matmul(H[..., :, n:], xcol) * xrow
+
+        D[..., -1] = (-1)**(dim-1)*D[..., :-1].prod(axis=-1)
+
+        # Without vectorization this could be written as H = diag(D) @ H,
+        # left-multiplication by a diagonal matrix amounts to multiplying each
+        # row of H by an element of the diagonal, so we add a dummy axis for
+        # the column index
+        H *= D[..., :, None]
         return H
 
 
@@ -3425,9 +3481,7 @@ class special_ortho_group_frozen(multi_rv_frozen):
         ----------
         dim : scalar
             Dimension of matrices
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3488,6 +3542,7 @@ class ortho_group_gen(multi_rv_generic):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import ortho_group
     >>> x = ortho_group.rvs(3)
 
@@ -3553,24 +3608,22 @@ class ortho_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1:
+        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
         dim = self._process_parameters(dim)
 
-        H = np.eye(dim)
-        for n in range(dim):
-            x = random_state.normal(size=(dim-n,))
-            norm2 = np.dot(x, x)
-            x0 = x[0].item()
-            # random sign, 50/50, but chosen carefully to avoid roundoff error
-            D = np.sign(x[0]) if x[0] != 0 else 1
-            x[0] += D * np.sqrt(norm2)
-            x /= np.sqrt((norm2 - x0**2 + x[0]**2) / 2.)
-            # Householder transformation
-            H[:, n:] = -D * (H[:, n:] - np.outer(np.dot(H[:, n:], x), x))
-        return H
+        size = (size,) if size > 1 else ()
+        z = random_state.normal(size=size + (dim, dim))
+        q, r = np.linalg.qr(z)
+        # The last two dimensions are the rows and columns of R matrices.
+        # Extract the diagonals. Note that this eliminates a dimension.
+        d = r.diagonal(offset=0, axis1=-2, axis2=-1)
+        # Add back a dimension for proper broadcasting: we're dividing
+        # each row of each R matrix by the diagonal of the R matrix.
+        q *= (d/abs(d))[..., np.newaxis, :]  # to broadcast properly
+        return q
 
 
 ortho_group = ortho_group_gen()
@@ -3584,9 +3637,7 @@ class ortho_group_frozen(multi_rv_frozen):
         ----------
         dim : scalar
             Dimension of matrices
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3625,9 +3676,7 @@ class random_correlation_gen(multi_rv_generic):
     ----------
     eigs : 1d ndarray
         Eigenvalues of correlation matrix
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3670,14 +3719,15 @@ class random_correlation_gen(multi_rv_generic):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import random_correlation
     >>> rng = np.random.default_rng()
     >>> x = random_correlation.rvs((.5, .8, 1.2, 1.5), random_state=rng)
     >>> x
-    array([[ 1.        , -0.07198934, -0.20411041, -0.24385796],
-           [-0.07198934,  1.        ,  0.12968613, -0.29471382],
-           [-0.20411041,  0.12968613,  1.        ,  0.2828693 ],
-           [-0.24385796, -0.29471382,  0.2828693 ,  1.        ]])
+    array([[ 1.        , -0.02423399,  0.03130519,  0.4946965 ],
+           [-0.02423399,  1.        ,  0.20334736,  0.04039817],
+           [ 0.03130519,  0.20334736,  1.        ,  0.02694275],
+           [ 0.4946965 ,  0.04039817,  0.02694275,  1.        ]])
     >>> import scipy.linalg
     >>> e, v = scipy.linalg.eigh(x)
     >>> e
@@ -3840,9 +3890,7 @@ class random_correlation_frozen(multi_rv_frozen):
         ----------
         eigs : 1d ndarray
             Eigenvalues of correlation matrix
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
-
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -3914,6 +3962,7 @@ class unitary_group_gen(multi_rv_generic):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import unitary_group
     >>> x = unitary_group.rvs(3)
 
@@ -3974,17 +4023,22 @@ class unitary_group_gen(multi_rv_generic):
         random_state = self._get_random_state(random_state)
 
         size = int(size)
-        if size > 1:
+        if size > 1 and NumpyVersion(np.__version__) < '1.22.0':
             return np.array([self.rvs(dim, size=1, random_state=random_state)
                              for i in range(size)])
 
         dim = self._process_parameters(dim)
 
-        z = 1/math.sqrt(2)*(random_state.normal(size=(dim, dim)) +
-                            1j*random_state.normal(size=(dim, dim)))
-        q, r = scipy.linalg.qr(z)
-        d = r.diagonal()
-        q *= d/abs(d)
+        size = (size,) if size > 1 else ()
+        z = 1/math.sqrt(2)*(random_state.normal(size=size + (dim, dim)) +
+                            1j*random_state.normal(size=size + (dim, dim)))
+        q, r = np.linalg.qr(z)
+        # The last two dimensions are the rows and columns of R matrices.
+        # Extract the diagonals. Note that this eliminates a dimension.
+        d = r.diagonal(offset=0, axis1=-2, axis2=-1)
+        # Add back a dimension for proper broadcasting: we're dividing
+        # each row of each R matrix by the diagonal of the R matrix.
+        q *= (d/abs(d))[..., np.newaxis, :]  # to broadcast properly
         return q
 
 
@@ -3999,8 +4053,7 @@ class unitary_group_frozen(multi_rv_frozen):
         ----------
         dim : scalar
             Dimension of matrices
-        seed : {None, int, `numpy.random.Generator`,
-                `numpy.random.RandomState`}, optional
+        seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
             If `seed` is None (or `np.random`), the `numpy.random.RandomState`
             singleton is used.
             If `seed` is an int, a new ``RandomState`` instance is used,
@@ -4112,6 +4165,7 @@ class multivariate_t_gen(multi_rv_generic):
     `df`, and `allow_singular` parameters, returning a "frozen"
     multivariate_t random variable:
 
+    >>> import numpy as np
     >>> from scipy.stats import multivariate_t
     >>> rv = multivariate_t([1.0, -0.5], [[2.1, 0.3], [0.3, 1.5]], df=2)
     >>> # Frozen object with the same methods but holding the given location,
@@ -4397,6 +4451,7 @@ class multivariate_t_frozen(multi_rv_frozen):
 
         Examples
         --------
+        >>> import numpy as np
         >>> loc = np.zeros(3)
         >>> shape = np.eye(3)
         >>> df = 10
@@ -4872,9 +4927,11 @@ class multivariate_hypergeom_gen(multi_rv_generic):
         # https://github.com/numpy/numpy/pull/13794
         for c in range(m.shape[-1] - 1):
             rem = rem - m[..., c]
-            rvs[..., c] = ((n != 0) *
-                           random_state.hypergeometric(m[..., c], rem,
-                                                       n + (n == 0),
+            n0mask = n == 0
+            rvs[..., c] = (~n0mask *
+                           random_state.hypergeometric(m[..., c],
+                                                       rem + n0mask,
+                                                       n + n0mask,
                                                        size=size))
             n = n - rvs[..., c]
         rvs[..., m.shape[-1] - 1] = n

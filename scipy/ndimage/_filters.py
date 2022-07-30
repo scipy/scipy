@@ -236,6 +236,7 @@ def gaussian_filter1d(input, sigma, axis=-1, order=0, output=None,
     Examples
     --------
     >>> from scipy.ndimage import gaussian_filter1d
+    >>> import numpy as np
     >>> gaussian_filter1d([1.0, 2.0, 3.0, 4.0, 5.0], 1)
     array([ 1.42704095,  2.06782203,  3.        ,  3.93217797,  4.57295905])
     >>> gaussian_filter1d([1.0, 2.0, 3.0, 4.0, 5.0], 4)
@@ -303,6 +304,7 @@ def gaussian_filter(input, sigma, order=0, output=None,
     Examples
     --------
     >>> from scipy.ndimage import gaussian_filter
+    >>> import numpy as np
     >>> a = np.arange(50, step=2).reshape((5,5))
     >>> a
     array([[ 0,  2,  4,  6,  8],
@@ -723,6 +725,7 @@ def correlate(input, weights, output=None, mode='reflect', cval=0.0,
     as kernel over the image and computing the sum of products at each location.
 
     >>> from scipy.ndimage import correlate
+    >>> import numpy as np
     >>> input_img = np.arange(25).reshape(5,5)
     >>> print(input_img)
     [[ 0  1  2  3  4]
@@ -800,6 +803,7 @@ def convolve(input, weights, output=None, mode='reflect', cval=0.0,
     because in this case borders (i.e., where the `weights` kernel, centered
     on any one value, extends beyond an edge of `input`) are treated as zeros.
 
+    >>> import numpy as np
     >>> a = np.array([[1, 2, 0, 0],
     ...               [5, 3, 0, 4],
     ...               [0, 0, 0, 7],

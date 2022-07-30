@@ -30,6 +30,7 @@ The suite of window functions for filtering and spectral estimation.
    hann                    -- Hann window
    kaiser                  -- Kaiser window
    kaiser_bessel_derived   -- Kaiser-Bessel derived window
+   lanczos                 -- Lanczos window also known as a sinc window
    nuttall                 -- Nuttall's minimum 4-term Blackman-Harris window
    parzen                  -- Parzen window
    taylor                  -- Taylor window
@@ -48,4 +49,4 @@ __all__ = ['boxcar', 'triang', 'parzen', 'bohman', 'blackman', 'nuttall',
            'hamming', 'kaiser', 'kaiser_bessel_derived', 'gaussian',
            'general_gaussian', 'general_cosine', 'general_hamming',
            'chebwin', 'cosine', 'hann', 'exponential', 'tukey', 'taylor',
-           'get_window', 'dpss']
+           'get_window', 'dpss', 'lanczos']

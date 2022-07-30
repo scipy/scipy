@@ -732,6 +732,8 @@ class TestMoments:
                                        stats.kurtosis(self.testcase_2d[2, :]),
                                        nulp=4)
 
+
+class TestMode:
     def test_mode(self):
         a1 = [0,0,0,1,1,1,2,3,3,3,3,4,5,6,7]
         a2 = np.reshape(a1, (3,5))
@@ -947,9 +949,27 @@ def test_theilslopes_warnings():
     with pytest.warns(RuntimeWarning, match="All `x` coordinates are..."):
         res = mstats.theilslopes([0, 1], [0, 0])
         assert np.all(np.isnan(res))
-    with pytest.warns(RuntimeWarning, match="invalid value encountered..."):
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "invalid value encountered...")
         res = mstats.theilslopes([0, 0, 0], [0, 1, 0])
         assert_allclose(res, (0, 0, np.nan, np.nan))
+
+
+def test_theilslopes_namedtuple_consistency():
+    """
+    Simple test to ensure tuple backwards-compatibility of the returned
+    TheilslopesResult object
+    """
+    y = [1, 2, 4]
+    x = [4, 6, 8]
+    slope, intercept, low_slope, high_slope = mstats.theilslopes(y, x)
+    result = mstats.theilslopes(y, x)
+
+    # note all four returned values are distinct here
+    assert_equal(slope, result.slope)
+    assert_equal(intercept, result.intercept)
+    assert_equal(low_slope, result.low_slope)
+    assert_equal(high_slope, result.high_slope)
 
 
 def test_siegelslopes():
@@ -979,6 +999,21 @@ def test_siegelslopes():
     slope, intercept = mstats.siegelslopes(y, x, method='separate')
     assert_allclose(slope, slope_ols, rtol=0.1)
     assert_allclose(intercept, intercept_ols, rtol=0.1)
+
+
+def test_siegelslopes_namedtuple_consistency():
+    """
+    Simple test to ensure tuple backwards-compatibility of the returned
+    SiegelslopesResult object.
+    """
+    y = [1, 2, 4]
+    x = [4, 6, 8]
+    slope, intercept = mstats.siegelslopes(y, x)
+    result = mstats.siegelslopes(y, x)
+
+    # note both returned values are distinct here
+    assert_equal(slope, result.slope)
+    assert_equal(intercept, result.intercept)
 
 
 def test_plotting_positions():

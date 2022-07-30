@@ -163,6 +163,7 @@ def freqs(b, a, worN=200, plot=None):
     Examples
     --------
     >>> from scipy.signal import freqs, iirfilter
+    >>> import numpy as np
 
     >>> b, a = iirfilter(4, [1, 10], 1, 60, analog=True, ftype='cheby1')
 
@@ -363,6 +364,7 @@ def freqz(b, a=1, worN=512, whole=False, plot=None, fs=2*pi, include_nyquist=Fal
     Examples
     --------
     >>> from scipy import signal
+    >>> import numpy as np
     >>> b = signal.firwin(80, 0.5, window=('kaiser', 8))
     >>> w, h = signal.freqz(b)
 
@@ -781,6 +783,7 @@ def sosfreqz(sos, worN=512, whole=False, fs=2*pi):
     Design a 15th-order bandpass filter in SOS format.
 
     >>> from scipy import signal
+    >>> import numpy as np
     >>> sos = signal.ellip(15, 0.5, 60, (0.2, 0.4), btype='bandpass',
     ...                    output='sos')
 
@@ -1406,6 +1409,7 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     to SOS format with `zpk2sos`:
 
     >>> from scipy import signal
+    >>> import numpy as np
     >>> z, p, k = signal.ellip(6, 0.087, 90, 1000/(0.5*8000), output='zpk')
 
     Now convert to SOS format.
@@ -1415,9 +1419,9 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     The coefficients of the numerators of the sections:
 
     >>> sos[:, :3]
-    array([[ 0.0014154 ,  0.00248707,  0.0014154 ],
-           [ 1.        ,  0.72965193,  1.        ],
-           [ 1.        ,  0.17594966,  1.        ]])
+    array([[0.0014152 , 0.00248677, 0.0014152 ],
+           [1.        , 0.72976874, 1.        ],
+           [1.        , 0.17607852, 1.        ]])
 
     The symmetry in the coefficients occurs because all the zeros are on the
     unit circle.
@@ -1425,9 +1429,9 @@ def zpk2sos(z, p, k, pairing=None, *, analog=False):
     The coefficients of the denominators of the sections:
 
     >>> sos[:, 3:]
-    array([[ 1.        , -1.32543251,  0.46989499],
-           [ 1.        , -1.26117915,  0.6262586 ],
-           [ 1.        , -1.25707217,  0.86199667]])
+    array([[ 1.        , -1.32544025,  0.46989976],
+           [ 1.        , -1.26118294,  0.62625924],
+           [ 1.        , -1.2570723 ,  0.8619958 ]])
 
     The next example shows the effect of the `pairing` option.  We have a
     system with three poles and three zeros, so the SOS array will have
@@ -2073,9 +2077,9 @@ def bilinear(b, a, fs=1.0):
 
     Returns
     -------
-    z : ndarray
+    b : ndarray
         Numerator of the transformed digital filter transfer function.
-    p : ndarray
+    a : ndarray
         Denominator of the transformed digital filter transfer function.
 
     See Also
@@ -2087,6 +2091,7 @@ def bilinear(b, a, fs=1.0):
     --------
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> fs = 100
     >>> bf = 2 * np.pi * np.array([7, 13])
@@ -2342,6 +2347,8 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
         half-cycles / sample.)
 
         For analog filters, `Wn` is an angular frequency (e.g., rad/s).
+
+        When Wn is a length-2 sequence, ``Wn[0]`` must be less than ``Wn[1]``.
     rp : float, optional
         For Chebyshev and elliptic filters, provides the maximum ripple
         in the passband. (dB)
@@ -2461,6 +2468,9 @@ def iirfilter(N, Wn, rp=None, rs=None, btype='band', analog=False,
 
     if numpy.any(Wn <= 0):
         raise ValueError("filter critical frequencies must be greater than 0")
+
+    if Wn.size > 1 and not Wn[0] < Wn[1]:
+        raise ValueError("Wn[0] must be less than Wn[1]")
 
     try:
         btype = band_dict[btype]
@@ -3010,6 +3020,7 @@ def butter(N, Wn, btype='low', analog=False, output='ba', fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> b, a = signal.butter(4, 100, 'low', analog=True)
     >>> w, h = signal.freqs(b, a)
@@ -3126,6 +3137,7 @@ def cheby1(N, rp, Wn, btype='low', analog=False, output='ba', fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> b, a = signal.cheby1(4, 5, 100, 'low', analog=True)
     >>> w, h = signal.freqs(b, a)
@@ -3238,6 +3250,7 @@ def cheby2(N, rs, Wn, btype='low', analog=False, output='ba', fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> b, a = signal.cheby2(4, 40, 100, 'low', analog=True)
     >>> w, h = signal.freqs(b, a)
@@ -3360,6 +3373,7 @@ def ellip(N, rp, rs, Wn, btype='low', analog=False, output='ba', fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> b, a = signal.ellip(4, 5, 40, 100, 'low', analog=True)
     >>> w, h = signal.freqs(b, a)
@@ -3495,6 +3509,7 @@ def bessel(N, Wn, btype='low', analog=False, output='ba', norm='phase',
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> b, a = signal.butter(4, 100, 'low', analog=True)
     >>> w, h = signal.freqs(b, a)
@@ -3691,6 +3706,7 @@ def buttord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> N, Wn = signal.buttord([20, 50], [14, 60], 3, 40, True)
     >>> b, a = signal.butter(N, Wn, 'band', True)
@@ -3864,6 +3880,7 @@ def cheb1ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> N, Wn = signal.cheb1ord(0.2, 0.3, 3, 40)
     >>> b, a = signal.cheby1(N, 3, Wn, 'low')
@@ -4006,6 +4023,7 @@ def cheb2ord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> N, Wn = signal.cheb2ord([0.1, 0.6], [0.2, 0.5], 3, 60)
     >>> b, a = signal.cheby2(N, 60, Wn, 'stop')
@@ -4177,6 +4195,7 @@ def ellipord(wp, ws, gpass, gstop, analog=False, fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> N, Wn = signal.ellipord(30, 10, 3, 60, True)
     >>> b, a = signal.ellip(N, 3, 60, Wn, 'high', True)
@@ -4838,6 +4857,8 @@ def besselap(N, norm='phase'):
     """
     if abs(int(N)) != N:
         raise ValueError("Filter order must be a nonnegative integer")
+
+    N = int(N)  # calculation below doesn't always fit in np.int64
     if N == 0:
         p = []
         k = 1
@@ -4917,6 +4938,7 @@ def iirnotch(w0, Q, fs=2.0):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> fs = 200.0  # Sample frequency (Hz)
     >>> f0 = 60.0  # Frequency to be removed from signal (Hz)
@@ -5102,22 +5124,23 @@ def _design_notch_peak_filter(w0, Q, ftype, fs=2.0):
     return b, a
 
 
-def iircomb(w0, Q, ftype='notch', fs=2.0):
+def iircomb(w0, Q, ftype='notch', fs=2.0, *, pass_zero=False):
     """
     Design IIR notching or peaking digital comb filter.
 
-    A notching comb filter is a band-stop filter with a narrow bandwidth
-    (high quality factor). It rejects a narrow frequency band and
-    leaves the rest of the spectrum little changed.
+    A notching comb filter consists of regularly-spaced band-stop filters with
+    a narrow bandwidth (high quality factor). Each rejects a narrow frequency
+    band and leaves the rest of the spectrum little changed.
 
-    A peaking comb filter is a band-pass filter with a narrow bandwidth
-    (high quality factor). It rejects components outside a narrow
-    frequency band.
+    A peaking comb filter consists of regularly-spaced band-pass filters with
+    a narrow bandwidth (high quality factor). Each rejects components outside
+    a narrow frequency band.
 
     Parameters
     ----------
     w0 : float
-        Frequency to attenuate (notching) or boost (peaking). If `fs` is
+        The fundamental frequency of the comb filter (the spacing between its
+        peaks). This must evenly divide the sampling frequency. If `fs` is
         specified, this is in the same units as `fs`. By default, it is
         a normalized scalar that must satisfy  ``0 < w0 < 1``, with
         ``w0 = 1`` corresponding to half of the sampling frequency.
@@ -5127,12 +5150,17 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
         frequency, ``Q = w0/bw``.
     ftype : {'notch', 'peak'}
         The type of comb filter generated by the function. If 'notch', then
-        it returns a filter with notches at frequencies ``0``, ``w0``,
-        ``2 * w0``, etc. If 'peak', then it returns a filter with peaks at
-        frequencies ``0.5 * w0``, ``1.5 * w0``, ``2.5 * w0```, etc.
-        Default is 'notch'.
+        the Q factor applies to the notches. If 'peak', then the Q factor
+        applies to the peaks.  Default is 'notch'.
     fs : float, optional
         The sampling frequency of the signal. Default is 2.0.
+    pass_zero : bool, optional
+        If False (default), the notches (nulls) of the filter are centered on
+        frequencies [0, w0, 2*w0, ...], and the peaks are centered on the
+        midpoints [w0/2, 3*w0/2, 5*w0/2, ...].  If True, the peaks are centered
+        on [0, w0, 2*w0, ...] (passing zero frequency) and vice versa.
+
+        .. versionadded:: 1.9.0
 
     Returns
     -------
@@ -5170,6 +5198,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> fs = 200.0  # Sample frequency (Hz)
     >>> f0 = 20.0  # Frequency to be removed from signal (Hz)
@@ -5206,7 +5235,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     >>> f0 = 250.0  # Frequency to be retained (Hz)
     >>> Q = 30.0  # Quality factor
     >>> # Design peaking filter
-    >>> b, a = signal.iircomb(f0, Q, ftype='peak', fs=fs)
+    >>> b, a = signal.iircomb(f0, Q, ftype='peak', fs=fs, pass_zero=True)
 
     >>> # Frequency response
     >>> freq, h = signal.freqz(b, a, fs=fs)
@@ -5241,13 +5270,15 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     if not 0 < w0 < fs / 2:
         raise ValueError("w0 must be between 0 and {}"
                          " (nyquist), but given {}.".format(fs / 2, w0))
-    if np.round(fs % w0) != 0:
-        raise ValueError('fs must be divisible by w0.')
     if ftype not in ('notch', 'peak'):
         raise ValueError('ftype must be either notch or peak.')
 
     # Compute the order of the filter
-    N = int(fs // w0)
+    N = round(fs / w0)
+
+    # Check for cutoff frequency divisibility
+    if abs(w0 - fs/N)/fs > 1e-14:
+        raise ValueError('fs must be divisible by w0.')
 
     # Compute frequency in radians and filter bandwidth
     # Eq. 11.3.1 (p. 574) from reference [1]
@@ -5273,12 +5304,17 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     bx = (G0 + G * beta) / (1 + beta)
     cx = (G0 - G * beta) / (1 + beta)
 
+    # Last coefficients are negative to get peaking comb that passes zero or
+    # notching comb that doesn't.
+    negative_coef = ((ftype == 'peak' and pass_zero) or
+                     (ftype == 'notch' and not pass_zero))
+
     # Compute numerator coefficients
     # Eq 11.5.1 (p. 590) or Eq 11.5.4 (p. 591) from reference [1]
     # b - cz^-N or b + cz^-N
     b = np.zeros(N + 1)
     b[0] = bx
-    if ftype == 'notch':
+    if negative_coef:
         b[-1] = -cx
     else:
         b[-1] = +cx
@@ -5288,7 +5324,7 @@ def iircomb(w0, Q, ftype='notch', fs=2.0):
     # 1 - az^-N or 1 + az^-N
     a = np.zeros(N + 1)
     a[0] = 1
-    if ftype == 'notch':
+    if negative_coef:
         a[-1] = -ax
     else:
         a[-1] = +ax
@@ -5375,6 +5411,7 @@ def gammatone(freq, ftype, order=None, numtaps=None, fs=None):
 
     >>> from scipy import signal
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
 
     >>> b, a = signal.gammatone(440, 'iir', fs=16000)
     >>> w, h = signal.freqz(b, a)

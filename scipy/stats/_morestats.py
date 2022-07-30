@@ -16,12 +16,14 @@ from scipy._lib._util import _rename_parameter
 
 from . import _statlib
 from . import _stats_py
-from ._stats_py import find_repeats, _contains_nan, _normtest_finish
+from ._stats_py import (find_repeats, _contains_nan, _normtest_finish,
+                        SignificanceResult)
 from .contingency import chi2_contingency
 from . import distributions
 from ._distn_infrastructure import rv_generic
 from ._hypotests import _get_wilcoxon_distr
 from ._axis_nan_policy import _axis_nan_policy_factory
+from .._lib.deprecation import _deprecated
 
 
 __all__ = ['mvsdist',
@@ -31,7 +33,7 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot'
+           'yeojohnson_normplot', 'directionalmean'
            ]
 
 
@@ -393,6 +395,7 @@ def _calc_uniform_order_statistic_medians(n):
     the interval, but the distributions are skewed in a way that
     pushes the medians slightly towards the endpoints of the unit interval:
 
+    >>> import numpy as np
     >>> n = 4
     >>> k = np.arange(1, n+1)
     >>> from scipy.stats import beta
@@ -510,6 +513,10 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
         The `matplotlib.pyplot` module or a Matplotlib Axes object can be used,
         or a custom object with the same methods.
         Default is None, which means that no plot is created.
+    rvalue : bool, optional
+        If `plot` is provided and `fit` is True, setting `rvalue` to True
+        includes the coefficient of determination on the plot.
+        Default is False.
 
     Returns
     -------
@@ -547,6 +554,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> nsample = 100
@@ -622,7 +630,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
                                title='Probability Plot')
 
         # Add R^2 value to the plot as text
-        if rvalue:
+        if fit and rvalue:
             xmin = amin(osm)
             xmax = amax(osm)
             ymin = amin(x)
@@ -687,6 +695,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     First we generate some random data from a Weibull distribution
     with shape parameter 2.5:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -779,6 +788,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     First we generate some random data from a Weibull distribution
     with shape parameter 2.5, and plot the histogram of the data:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -861,6 +871,7 @@ def boxcox_llf(lmb, data):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -1157,6 +1168,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -1529,6 +1541,7 @@ def yeojohnson_llf(lmb, data):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -1623,6 +1636,7 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -1768,6 +1782,7 @@ def shapiro(x):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(loc=5, scale=3, size=100, random_state=rng)
@@ -1786,7 +1801,7 @@ def shapiro(x):
     if N < 3:
         raise ValueError("Data must be at least length 3.")
 
-    x -= np.median(x)
+    x = x - np.median(x)
 
     a = zeros(N, 'f')
     init = 0
@@ -2103,6 +2118,7 @@ def anderson_ksamp(samples, midrank=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
 
@@ -2305,6 +2321,7 @@ def ansari(x, y, alternative='two-sided'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import ansari
     >>> rng = np.random.default_rng()
 
@@ -2469,6 +2486,7 @@ def bartlett(*samples):
     Test whether or not the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
     >>> from scipy.stats import bartlett
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
@@ -2572,6 +2590,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     Test whether or not the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
     >>> from scipy.stats import levene
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
@@ -2645,15 +2664,19 @@ def levene(*samples, center='median', proportiontocut=0.05):
     return LeveneResult(W, pval)
 
 
+@_deprecated("'binom_test' is deprecated in favour of"
+             " 'binomtest' from version 1.7.0 and will"
+             " be removed in Scipy 1.12.0.")
 def binom_test(x, n=None, p=0.5, alternative='two-sided'):
     """Perform a test that the probability of success is p.
-
-    Note: `binom_test` is deprecated; it is recommended that `binomtest`
-    be used instead.
 
     This is an exact, two-sided test of the null hypothesis
     that the probability of success in a Bernoulli experiment
     is `p`.
+
+    .. deprecated:: 1.10.0
+        'binom_test' is deprecated in favour of 'binomtest' and will
+        be removed in Scipy 1.12.0.
 
     Parameters
     ----------
@@ -2823,6 +2846,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     Test whether or not the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
     >>> from scipy.stats import fligner
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
@@ -2885,6 +2909,80 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     return FlignerResult(Xsq, pval)
 
 
+@_axis_nan_policy_factory(lambda x1: (x1,), n_samples=4, n_outputs=1)
+def _mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N) -> float:
+    # Obtain the unique values and their frequencies from the pooled samples.
+    # "a_j, + b_j, = t_j, for j = 1, ... k" where `k` is the number of unique
+    # classes, and "[t]he number of values associated with the x's and y's in
+    # the jth class will be denoted by a_j, and b_j respectively."
+    # (Mielke, 312)
+    # Reuse previously computed sorted array and `diff` arrays to obtain the
+    # unique values and counts. Prepend `diffs` with a non-zero to indicate
+    # that the first element should be marked as not matching what preceded it.
+    diffs_prep = np.concatenate(([1], diffs))
+    # Unique elements are where the was a difference between elements in the
+    # sorted array
+    uniques = sorted_xy[diffs_prep != 0]
+    # The count of each element is the bin size for each set of consecutive
+    # differences where the difference is zero. Replace nonzero differences
+    # with 1 and then use the cumulative sum to count the indices.
+    t = np.bincount(np.cumsum(np.asarray(diffs_prep != 0, dtype=int)))[1:]
+    k = len(uniques)
+    js = np.arange(1, k + 1, dtype=int)
+    # the `b` array mentioned in the paper is not used, outside of the
+    # calculation of `t`, so we do not need to calculate it separately. Here
+    # we calculate `a`. In plain language, `a[j]` is the number of values in
+    # `x` that equal `uniques[j]`.
+    sorted_xyx = np.sort(np.concatenate((xy, x)))
+    diffs = np.diff(sorted_xyx)
+    diffs_prep = np.concatenate(([1], diffs))
+    diff_is_zero = np.asarray(diffs_prep != 0, dtype=int)
+    xyx_counts = np.bincount(np.cumsum(diff_is_zero))[1:]
+    a = xyx_counts - t
+    # "Define .. a_0 = b_0 = t_0 = S_0 = 0" (Mielke 312) so we shift  `a`
+    # and `t` arrays over 1 to allow a first element of 0 to accommodate this
+    # indexing.
+    t = np.concatenate(([0], t))
+    a = np.concatenate(([0], a))
+    # S is built from `t`, so it does not need a preceding zero added on.
+    S = np.cumsum(t)
+    # define a copy of `S` with a prepending zero for later use to avoid
+    # the need for indexing.
+    S_i_m1 = np.concatenate(([0], S[:-1]))
+
+    # Psi, as defined by the 6th unnumbered equation on page 313 (Mielke).
+    # Note that in the paper there is an error where the denominator `2` is
+    # squared when it should be the entire equation.
+    def psi(indicator):
+        return (indicator - (N + 1)/2)**2
+
+    # define summation range for use in calculation of phi, as seen in sum
+    # in the unnumbered equation on the bottom of page 312 (Mielke).
+    s_lower = S[js - 1] + 1
+    s_upper = S[js] + 1
+    phi_J = [np.arange(s_lower[idx], s_upper[idx]) for idx in range(k)]
+
+    # for every range in the above array, determine the sum of psi(I) for
+    # every element in the range. Divide all the sums by `t`. Following the
+    # last unnumbered equation on page 312.
+    phis = [np.sum(psi(I_j)) for I_j in phi_J] / t[js]
+
+    # `T` is equal to a[j] * phi[j], per the first unnumbered equation on
+    # page 312. `phis` is already in the order based on `js`, so we index
+    # into `a` with `js` as well.
+    T = sum(phis * a[js])
+
+    # The approximate statistic
+    E_0_T = n * (N * N - 1) / 12
+
+    varM = (m * n * (N + 1.0) * (N ** 2 - 4) / 180 -
+            m * n / (180 * N * (N - 1)) * np.sum(
+                t * (t**2 - 1) * (t**2 - 4 + (15 * (N - S - S_i_m1) ** 2))
+            ))
+
+    return ((T - E_0_T) / np.sqrt(varM),)
+
+
 def mood(x, y, axis=0, alternative="two-sided"):
     """Perform Mood's test for equal scale parameters.
 
@@ -2916,11 +3014,14 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     Returns
     -------
-    z : scalar or ndarray
-        The z-score for the hypothesis test.  For 1-D inputs a scalar is
-        returned.
-    p-value : scalar ndarray
-        The p-value for the hypothesis test.
+    res : SignificanceResult
+        An object containing attributes:
+
+        statistic : scalar or ndarray
+            The z-score for the hypothesis test.  For 1-D inputs a scalar is
+            returned.
+        pvalue : scalar ndarray
+            The p-value for the hypothesis test.
 
     See Also
     --------
@@ -2940,22 +3041,26 @@ def mood(x, y, axis=0, alternative="two-sided"):
     resulting z and p values will have shape ``(n0, n2, n3)``.  Note that
     ``n1`` and ``m1`` don't have to be equal, but the other dimensions do.
 
-    In this implementation, the test statistic and p-value are only valid when
-    all observations are unique.
+    References
+    ----------
+    [1] Mielke, Paul W. "Note on Some Squared Rank Tests with Existing Ties."
+        Technometrics, vol. 9, no. 2, 1967, pp. 312-14. JSTOR,
+        https://doi.org/10.2307/1266427. Accessed 18 May 2022.
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x2 = rng.standard_normal((2, 45, 6, 7))
     >>> x1 = rng.standard_normal((2, 30, 6, 7))
-    >>> z, p = stats.mood(x1, x2, axis=1)
-    >>> p.shape
+    >>> res = stats.mood(x1, x2, axis=1)
+    >>> res.pvalue.shape
     (2, 6, 7)
 
     Find the number of points where the difference in scale is not significant:
 
-    >>> (p > 0.1).sum()
+    >>> (res.pvalue > 0.1).sum()
     78
 
     Perform the test with different scales:
@@ -2963,7 +3068,8 @@ def mood(x, y, axis=0, alternative="two-sided"):
     >>> x1 = rng.standard_normal((2, 30))
     >>> x2 = rng.standard_normal((2, 35)) * 10.0
     >>> stats.mood(x1, x2, axis=1)
-    (array([-5.76174136, -6.12650783]), array([8.32505043e-09, 8.98287869e-10]))
+    SignificanceResult(statistic=array([-5.76174136, -6.12650783]),
+                       pvalue=array([8.32505043e-09, 8.98287869e-10]))
 
     """
     x = np.asarray(x, dtype=float)
@@ -2991,24 +3097,30 @@ def mood(x, y, axis=0, alternative="two-sided"):
         raise ValueError("Not enough observations.")
 
     xy = np.concatenate((x, y), axis=axis)
-    if axis != 0:
-        xy = np.moveaxis(xy, axis, 0)
+    # determine if any of the samples contain ties
+    sorted_xy = np.sort(xy, axis=axis)
+    diffs = np.diff(sorted_xy, axis=axis)
+    if 0 in diffs:
+        z = np.asarray(_mood_inner_lc(xy, x, diffs, sorted_xy, n, m, N,
+                                      axis=axis))
+    else:
+        if axis != 0:
+            xy = np.moveaxis(xy, axis, 0)
 
-    xy = xy.reshape(xy.shape[0], -1)
+        xy = xy.reshape(xy.shape[0], -1)
+        # Generalized to the n-dimensional case by adding the axis argument,
+        # and using for loops, since rankdata is not vectorized.  For improving
+        # performance consider vectorizing rankdata function.
+        all_ranks = np.empty_like(xy)
+        for j in range(xy.shape[1]):
+            all_ranks[:, j] = _stats_py.rankdata(xy[:, j])
 
-    # Generalized to the n-dimensional case by adding the axis argument, and
-    # using for loops, since rankdata is not vectorized.  For improving
-    # performance consider vectorizing rankdata function.
-    all_ranks = np.empty_like(xy)
-    for j in range(xy.shape[1]):
-        all_ranks[:, j] = _stats_py.rankdata(xy[:, j])
-
-    Ri = all_ranks[:n]
-    M = np.sum((Ri - (N + 1.0) / 2)**2, axis=0)
-    # Approx stat.
-    mnM = n * (N * N - 1.0) / 12
-    varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
-    z = (M - mnM) / sqrt(varM)
+        Ri = all_ranks[:n]
+        M = np.sum((Ri - (N + 1.0) / 2) ** 2, axis=0)
+        # Approx stat.
+        mnM = n * (N * N - 1.0) / 12
+        varM = m * n * (N + 1.0) * (N + 2) * (N - 2) / 180
+        z = (M - mnM) / sqrt(varM)
     z, pval = _normtest_finish(z, alternative)
 
     if res_shape == ():
@@ -3018,28 +3130,39 @@ def mood(x, y, axis=0, alternative="two-sided"):
     else:
         z.shape = res_shape
         pval.shape = res_shape
+    return SignificanceResult(z, pval)
 
-    return z, pval
 
-
-WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'],
-                                   ['zstatistic'])
+WilcoxonResult = _make_tuple_bunch('WilcoxonResult', ['statistic', 'pvalue'])
 
 
 def wilcoxon_result_unpacker(res):
-    return res.statistic, res.pvalue, res.zstatistic
+    if hasattr(res, 'zstatistic'):
+        return res.statistic, res.pvalue, res.zstatistic
+    else:
+        return res.statistic, res.pvalue
 
 
-def wilcoxon_result_object(statistic, pvalue, zstatistic):
-    return WilcoxonResult(statistic, pvalue, zstatistic=zstatistic)
+def wilcoxon_result_object(statistic, pvalue, zstatistic=None):
+    res = WilcoxonResult(statistic, pvalue)
+    if zstatistic is not None:
+        res.zstatistic = zstatistic
+    return res
+
+
+def wilcoxon_outputs(kwds):
+    method = kwds.get('method', 'auto')
+    if method == 'approx':
+        return 3
+    return 2
 
 
 @_rename_parameter("mode", "method")
-@_axis_nan_policy_factory(wilcoxon_result_object, paired=True,
-                          n_samples=lambda kwds: 2
-                          if kwds.get('y', None) is not None else 1,
-                          result_to_tuple=wilcoxon_result_unpacker,
-                          n_outputs=3,)
+@_axis_nan_policy_factory(
+    wilcoxon_result_object, paired=True,
+    n_samples=lambda kwds: 2 if kwds.get('y', None) is not None else 1,
+    result_to_tuple=wilcoxon_result_unpacker, n_outputs=wilcoxon_outputs,
+)
 def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
              alternative="two-sided", method='auto'):
     """Calculate the Wilcoxon signed-rank test.
@@ -3095,23 +3218,21 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
     -------
     An object with the following attributes.
 
-    statistic : float
+    statistic : array_like
         If `alternative` is "two-sided", the sum of the ranks of the
         differences above or below zero, whichever is smaller.
         Otherwise the sum of the ranks of the differences above zero.
-    pvalue : float
+    pvalue : array_like
         The p-value for the test depending on `alternative` and `method`.
-    zstatistic : float
-        When the the approximate method is used, this is the normalized
-        z-statistic::
+    zstatistic : array_like
+        When ``method = 'approx'``, this is the normalized z-statistic::
 
             z = (T - mn - d) / se
 
         where ``T`` is `statistic` as defined above, ``mn`` is the mean of the
         distribution under the null hypothesis, ``d`` is a continuity
         correction, and ``se`` is the standard error.
-
-        When the exact method is used, this is ``np.nan``.
+        When ``method != 'approx'``, this attribute is not available.
 
     See Also
     --------
@@ -3228,7 +3349,10 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
         d = x - y
 
     if len(d) == 0:
-        return WilcoxonResult(np.nan, np.nan, zstatistic=np.nan)
+        res = WilcoxonResult(np.nan, np.nan)
+        if method == 'approx':
+            res.zstatistic = np.nan
+        return res
 
     if mode == "auto":
         if len(d) <= 50:
@@ -3332,7 +3456,16 @@ def wilcoxon(x, y=None, zero_method="wilcox", correction=False,
             prob = np.sum(pmf[:r_plus + 1])
         prob = np.clip(prob, 0, 1)
 
-    return WilcoxonResult(T, prob, zstatistic=np.nan if mode == 'exact' else z)
+    res = WilcoxonResult(T, prob)
+    if method == 'approx':
+        res.zstatistic = z
+    return res
+
+
+MedianTestResult = _make_tuple_bunch(
+    'MedianTestResult',
+    ['statistic', 'pvalue', 'median', 'table'], []
+)
 
 
 def median_test(*samples, ties='below', correction=True, lambda_=1,
@@ -3383,22 +3516,25 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     Returns
     -------
-    stat : float
-        The test statistic.  The statistic that is returned is determined by
-        `lambda_`.  The default is Pearson's chi-squared statistic.
-    p : float
-        The p-value of the test.
-    m : float
-        The grand median.
-    table : ndarray
-        The contingency table.  The shape of the table is (2, n), where
-        n is the number of samples.  The first row holds the counts of the
-        values above the grand median, and the second row holds the counts
-        of the values below the grand median.  The table allows further
-        analysis with, for example, `scipy.stats.chi2_contingency`, or with
-        `scipy.stats.fisher_exact` if there are two samples, without having
-        to recompute the table.  If ``nan_policy`` is "propagate" and there
-        are nans in the input, the return value for ``table`` is ``None``.
+    res : MedianTestResult
+        An object containing attributes:
+
+        statistic : float
+            The test statistic.  The statistic that is returned is determined
+            by `lambda_`.  The default is Pearson's chi-squared statistic.
+        pvalue : float
+            The p-value of the test.
+        median : float
+            The grand median.
+        table : ndarray
+            The contingency table.  The shape of the table is (2, n), where
+            n is the number of samples.  The first row holds the counts of the
+            values above the grand median, and the second row holds the counts
+            of the values below the grand median.  The table allows further
+            analysis with, for example, `scipy.stats.chi2_contingency`, or with
+            `scipy.stats.fisher_exact` if there are two samples, without having
+            to recompute the table.  If ``nan_policy`` is "propagate" and there
+            are nans in the input, the return value for ``table`` is ``None``.
 
     See Also
     --------
@@ -3433,39 +3569,39 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     >>> g2 = [28, 30, 31, 33, 34, 35, 36, 40, 44, 55, 57, 61, 91, 92, 99]
     >>> g3 = [0, 3, 9, 22, 23, 25, 25, 33, 34, 34, 40, 45, 46, 48, 62, 67, 84]
     >>> from scipy.stats import median_test
-    >>> stat, p, med, tbl = median_test(g1, g2, g3)
+    >>> res = median_test(g1, g2, g3)
 
     The median is
 
-    >>> med
+    >>> res.median
     34.0
 
     and the contingency table is
 
-    >>> tbl
+    >>> res.table
     array([[ 5, 10,  7],
            [11,  5, 10]])
 
     `p` is too large to conclude that the medians are not the same:
 
-    >>> p
+    >>> res.pvalue
     0.12609082774093244
 
     The "G-test" can be performed by passing ``lambda_="log-likelihood"`` to
     `median_test`.
 
-    >>> g, p, med, tbl = median_test(g1, g2, g3, lambda_="log-likelihood")
-    >>> p
+    >>> res = median_test(g1, g2, g3, lambda_="log-likelihood")
+    >>> res.pvalue
     0.12224779737117837
 
     The median occurs several times in the data, so we'll get a different
     result if, for example, ``ties="above"`` is used:
 
-    >>> stat, p, med, tbl = median_test(g1, g2, g3, ties="above")
-    >>> p
+    >>> res = median_test(g1, g2, g3, ties="above")
+    >>> res.pvalue
     0.063873276069553273
 
-    >>> tbl
+    >>> res.table
     array([[ 5, 11,  9],
            [11,  4,  8]])
 
@@ -3497,7 +3633,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
     cdata = np.concatenate(data)
     contains_nan, nan_policy = _contains_nan(cdata, nan_policy)
     if contains_nan and nan_policy == 'propagate':
-        return np.nan, np.nan, np.nan, None
+        return MedianTestResult(np.nan, np.nan, np.nan, None)
 
     if contains_nan:
         grand_median = np.median(cdata[~np.isnan(cdata)])
@@ -3546,7 +3682,7 @@ def median_test(*samples, ties='below', correction=True, lambda_=1,
 
     stat, p, dof, expected = chi2_contingency(table, lambda_=lambda_,
                                               correction=correction)
-    return stat, p, grand_median, table
+    return MedianTestResult(stat, p, grand_median, table)
 
 
 def _circfuncs_common(samples, high, low, nan_policy='propagate'):
@@ -3599,6 +3735,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import circmean
     >>> circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
     0.2
@@ -3680,6 +3817,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import circvar
     >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
     0.6666666666666665
@@ -3741,6 +3879,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     .. code-block:: python
 
+        import numpy as np
         C = np.cos(samples).mean()
         S = np.sin(samples).mean()
         R = np.sqrt(C**2 + S**2)
@@ -3757,6 +3896,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import circstd
     >>> small_samples = [0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2]
     >>> circstd(small_samples)
@@ -3783,3 +3923,98 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     if not normalize:
         res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
     return res
+
+
+def directionalmean(samples, *, axis=0, normalize=True):
+    """
+    Computes the directional mean of a sample of vectors.
+
+    The directional mean is a measure of "preferred direction" of vector data.
+    It is analogous to the sample mean, but it is for use when the magnitude of
+    the data is irrelevant (e.g. unit vectors).
+
+    Parameters
+    ----------
+    samples : array_like
+        Input array. Must be at least two-dimensional, and the last axis of the
+        input must correspond with the dimensionality of the vector space.
+        When the input is exactly two dimensional, this means that each row
+        of the data is a vector observation.
+    axis : int, default: 0
+        Axis along which the directional mean is computed.
+    normalize: boolean, default: True
+        If True, normalize the input to ensure that each observation is a
+        unit vector. It the observations are already unit vectors, consider
+        setting this to False to avoid unnecessary computation.
+
+    Returns
+    -------
+    directionalmean : ndarray
+        Directional mean.
+
+    See also
+    --------
+    circmean: circular mean; i.e. directional mean for 2D *angles*
+
+    Notes
+    -----
+    This uses a definition of directional mean from [1]_.
+    Assuming the observations are unit vectors, the calculation is as follows.
+
+    .. code-block:: python
+
+        mean=samples.mean(axis=0)
+        directionalmean = mean/np.linalg.norm(mean)
+
+    This definition is appropriate for *directional* data (i.e. vector data
+    for which the magnitude of each observation is irrelevant) but not
+    for *axial* data (i.e. vector data for which the magnitude and *sign* of
+    each observation is irrelevant).
+
+    References
+    ----------
+    .. [1] Mardia, Jupp. (2000). *Directional Statistics*
+       (p. 163). Wiley.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import directionalmean
+    >>> data = np.array([[3, 4],    # first observation, 2D vector space
+    ...                  [6, -8]])  # second observation
+    >>> directionalmean(data)
+    array([1., 0.])
+
+    In contrast, the regular sample mean of the vectors would be influenced
+    by the magnitude of each observation. Furthermore, the result would not be
+    a unit vector.
+
+    >>> data.mean(axis=0)
+    array([4.5, -2.])
+
+    An exemplary use case for `directionalmean` is to find a *meaningful*
+    center for a set of observations on a sphere, e.g. geographical locations.
+
+    >>> data = np.array([[0.8660254, 0.5, 0.],
+    ...                  [0.8660254, -0.5, 0.]])
+    >>> directionalmean(data)
+    array([1., 0., 0.])
+
+    The regular sample mean on the other hand yields a result which does not
+    lie on the surface of the sphere.
+
+    >>> data.mean(axis=0)
+    array([0.8660254, 0., 0.])
+
+    """
+    samples = np.asarray(samples)
+    if samples.ndim < 2:
+        raise ValueError("samples must at least be two-dimensional. "
+                         f"Instead samples has shape: {samples.shape!r}")
+    samples = np.moveaxis(samples, axis, 0)
+    if normalize:
+        vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
+        samples = samples/vectornorms
+    mean = np.mean(samples, axis=0)
+    directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
+    return directional_mean
