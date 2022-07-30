@@ -1,4 +1,3 @@
-
 import numpy as np
 import numpy.testing as npt
 import pytest
@@ -6,7 +5,6 @@ from pytest import raises as assert_raises
 from scipy.integrate import IntegrationWarning
 
 from scipy import stats
-from scipy.special import betainc
 from .common_tests import (check_normalization, check_moment, check_mean_expect,
                            check_var_expect, check_skew_expect,
                            check_kurt_expect, check_entropy,
@@ -96,7 +94,7 @@ fail_fit_fix_test_mm = (['alpha', 'betaprime', 'burr', 'burr12', 'cauchy',
                          'genextreme', 'genpareto', 'halfcauchy', 'invgamma',
                          'kappa3', 'levy', 'levy_l', 'loglaplace', 'lomax',
                          'mielke', 'nakagami', 'ncf', 'nct', 'skewcauchy', 't',
-                         'invweibull']
+                         'truncpareto', 'invweibull']
                          + ['genhyperbolic', 'johnsonsu', 'ksone', 'kstwo',
                             'pareto', 'powernorm', 'powerlognorm']
                          + ['pearson3'])
@@ -177,7 +175,7 @@ def test_cont_basic(distname, arg, sn, n_fit_samples):
              distfn.logsf]
     # make sure arguments are within support
     spec_x = {'weibull_max': -0.5, 'levy_l': -0.5,
-              'pareto': 1.5, 'tukeylambda': 0.3,
+              'pareto': 1.5, 'truncpareto': 3.2, 'tukeylambda': 0.3,
               'rv_histogram_instance': 5.0}
     x = spec_x.get(distname, 0.5)
     if distname == 'invweibull':
@@ -264,13 +262,18 @@ def cases_test_moments():
         cond1 = distname not in fail_normalization
         cond2 = distname not in fail_higher
 
-        yield distname, arg, cond1, cond2, False
+        marks = list()
+        if distname == 'skewnorm':
+            # takes > 60 sec on Linux 32-bit and ~200 sec on Azure Windows
+            marks.append(pytest.mark.timeout(300))
+
+        yield pytest.param(distname, arg, cond1, cond2, False, marks=marks)
 
         if not cond1 or not cond2:
             # Run the distributions that have issues twice, once skipping the
             # not_ok parts, once with the not_ok parts but marked as knownfail
             yield pytest.param(distname, arg, True, True, True,
-                               marks=pytest.mark.xfail)
+                               marks=[pytest.mark.xfail] + marks)
 
 
 @pytest.mark.slow
@@ -854,6 +857,7 @@ def test_kappa3_array_gh13582():
     npt.assert_allclose(res, res2)
 
 
+@pytest.mark.timeout(120)
 def test_kappa4_array_gh13582():
     h = np.array([-0.5, 2.5, 3.5, 4.5, -3])
     k = np.array([-0.5, 1, -1.5, 0, 3.5])
@@ -903,3 +907,37 @@ def test_skewnorm_pdf_gh16038():
     res = stats.skewnorm.pdf(x, a)
     npt.assert_equal(res[mask], stats.norm.pdf(x_norm))
     npt.assert_equal(res[~mask], stats.skewnorm.pdf(x[~mask], a[~mask]))
+
+
+# for scalar input, these functions should return scalar output
+scalar_out = [['rvs', []], ['pdf', [0]], ['logpdf', [0]], ['cdf', [0]],
+              ['logcdf', [0]], ['sf', [0]], ['logsf', [0]], ['ppf', [0]],
+              ['isf', [0]], ['moment', [1]], ['entropy', []], ['expect', []],
+              ['median', []], ['mean', []], ['std', []], ['var', []]]
+scalars_out = [['interval', [0.95]], ['support', []], ['stats', ['mv']]]
+
+
+@pytest.mark.parametrize('case', scalar_out + scalars_out)
+def test_scalar_for_scalar(case):
+    # Some rv_continuous functions returned 0d array instead of NumPy scalar
+    # Guard against regression
+    method_name, args = case
+    method = getattr(stats.norm(), method_name)
+    res = method(*args)
+    if case in scalar_out:
+        assert isinstance(res, np.number)
+    else:
+        assert isinstance(res[0], np.number)
+        assert isinstance(res[1], np.number)
+
+
+def test_scalar_for_scalar2():
+    # test methods that are not attributes of frozen distributions
+    res = stats.norm.fit([1, 2, 3])
+    assert isinstance(res[0], np.number)
+    assert isinstance(res[1], np.number)
+    res = stats.norm.fit_loc_scale([1, 2, 3])
+    assert isinstance(res[0], np.number)
+    assert isinstance(res[1], np.number)
+    res = stats.norm.nnlf((0, 1), [1, 2, 3])
+    assert isinstance(res, np.number)

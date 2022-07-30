@@ -325,6 +325,33 @@ class TestUnivariateSpline:
         assert_allclose(spl1([0.1, 0.5, 0.9, 0.99]),
                         spl2([0.1, 0.5, 0.9, 0.99]))
 
+    def test_fpknot_oob_crash(self):
+        # https://github.com/scipy/scipy/issues/3691
+        x = range(109)
+        y = [0., 0., 0., 0., 0., 10.9, 0., 11., 0.,
+             0., 0., 10.9, 0., 0., 0., 0., 0., 0.,
+             10.9, 0., 0., 0., 11., 0., 0., 0., 10.9,
+             0., 0., 0., 10.5, 0., 0., 0., 10.7, 0.,
+             0., 0., 11., 0., 0., 0., 0., 0., 0.,
+             10.9, 0., 0., 10.7, 0., 0., 0., 10.6, 0.,
+             0., 0., 10.5, 0., 0., 10.7, 0., 0., 10.5,
+             0., 0., 11.5, 0., 0., 0., 10.7, 0., 0.,
+             10.7, 0., 0., 10.9, 0., 0., 10.8, 0., 0.,
+             0., 10.7, 0., 0., 10.6, 0., 0., 0., 10.4,
+             0., 0., 10.6, 0., 0., 10.5, 0., 0., 0.,
+             10.7, 0., 0., 0., 10.4, 0., 0., 0., 10.8, 0.]
+        with suppress_warnings() as sup:
+            r = sup.record(
+                UserWarning,
+                r"""
+The maximal number of iterations maxit \(set to 20 by the program\)
+allowed for finding a smoothing spline with fp=s has been reached: s
+too small.
+There is an approximation returned but the corresponding weighted sum
+of squared residuals does not satisfy the condition abs\(fp-s\)/s < tol.""")
+            UnivariateSpline(x, y, k=1)
+            assert_equal(len(r), 1)
+
 
 class TestLSQBivariateSpline:
     # NOTE: The systems in this test class are rank-deficient

@@ -14,6 +14,9 @@ from scipy.interpolate import (RegularGridInterpolator, interpn,
 
 from scipy.sparse._sputils import matrix
 
+parametrize_rgi_interp_methods = pytest.mark.parametrize(
+    "method", ['linear', 'nearest', 'slinear', 'cubic', 'quintic', 'pchip']
+)
 
 class TestRegularGridInterpolator:
     def _get_sample_4d(self):
@@ -60,29 +63,29 @@ class TestRegularGridInterpolator:
         values = (values0 + values1 * 10 + values2 * 100 + values3 * 1000)
         return points, values
 
-    def test_list_input(self):
+    @parametrize_rgi_interp_methods
+    def test_list_input(self, method):
         points, values = self._get_sample_4d_3()
 
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
 
-        for method in ['linear', 'nearest', 'slinear', 'cubic', 'quintic']:
-            interp = RegularGridInterpolator(points,
-                                             values.tolist(),
-                                             method=method)
-            v1 = interp(sample.tolist())
-            interp = RegularGridInterpolator(points,
-                                             values,
-                                             method=method)
-            v2 = interp(sample)
-            assert_allclose(v1, v2)
+        interp = RegularGridInterpolator(points,
+                                         values.tolist(),
+                                         method=method)
+        v1 = interp(sample.tolist())
+        interp = RegularGridInterpolator(points,
+                                         values,
+                                         method=method)
+        v2 = interp(sample)
+        assert_allclose(v1, v2)
 
     def test_spline_dim_error(self):
         points, values = self._get_sample_4d_4()
         match = "points in dimension"
 
         # Check error raise when creating interpolator
-        for method in ['cubic', 'quintic']:
+        for method in ['cubic', 'quintic', 'pchip']:
             with pytest.raises(ValueError, match=match):
                 RegularGridInterpolator(points, values, method=method)
 
@@ -90,7 +93,7 @@ class TestRegularGridInterpolator:
         interp = RegularGridInterpolator(points, values)
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
-        for method in ['cubic', 'quintic']:
+        for method in ['cubic', 'quintic', 'pchip']:
             with pytest.raises(ValueError, match=match):
                 interp(sample, method=method)
 
@@ -112,23 +115,32 @@ class TestRegularGridInterpolator:
         v2 = interp(sample)
         assert_allclose(v1, v2)
 
-    def test_complex(self):
+    @parametrize_rgi_interp_methods
+    def test_complex(self, method):
         points, values = self._get_sample_4d_3()
         values = values - 2j*values
         sample = np.asarray([[0.1, 0.1, 1., .9], [0.2, 0.1, .45, .8],
                              [0.5, 0.5, .5, .5]])
 
-        for method in ['linear', 'nearest', "slinear", "cubic", "quintic"]:
-            interp = RegularGridInterpolator(points, values,
-                                             method=method)
-            rinterp = RegularGridInterpolator(points, values.real,
-                                              method=method)
-            iinterp = RegularGridInterpolator(points, values.imag,
-                                              method=method)
+        interp = RegularGridInterpolator(points, values, method=method)
+        rinterp = RegularGridInterpolator(points, values.real, method=method)
+        iinterp = RegularGridInterpolator(points, values.imag, method=method)
 
-            v1 = interp(sample)
-            v2 = rinterp(sample) + 1j*iinterp(sample)
-            assert_allclose(v1, v2)
+        v1 = interp(sample)
+        v2 = rinterp(sample) + 1j*iinterp(sample)
+        assert_allclose(v1, v2)
+
+    def test_cubic_vs_pchip(self):
+        x, y = [1, 2, 3, 4], [1, 2, 3, 4]
+        xg, yg = np.meshgrid(x, y, indexing='ij')
+
+        values = (lambda x, y: x**4 * y**4)(xg, yg)
+        cubic = RegularGridInterpolator((x, y), values, method='cubic')
+        pchip = RegularGridInterpolator((x, y), values, method='pchip')
+
+        vals_cubic = cubic([1.5, 2])
+        vals_pchip = pchip([1.5, 2])
+        assert not np.allclose(vals_cubic, vals_pchip, atol=1e-14, rtol=0)
 
     def test_linear_xi1d(self):
         points, values = self._get_sample_4d_2()
@@ -517,6 +529,12 @@ class TestRegularGridInterpolator:
         with pytest.raises(ValueError, match=match):
             RegularGridInterpolator(points, values)
 
+    @parametrize_rgi_interp_methods
+    def test_fill_value(self, method):
+        interp = RegularGridInterpolator([np.arange(6)], np.ones(6),
+                                         method=method, bounds_error=False)
+        assert np.isnan(interp([10]))
+
 
 class MyValue:
     """
@@ -801,3 +819,13 @@ class TestInterpN:
         match = "must be strictly ascending or descending"
         with pytest.raises(ValueError, match=match):
             interpn((x, y), z, xi)
+
+    def test_invalid_xi_dimensions(self):
+        # https://github.com/scipy/scipy/issues/16519
+        points = [(0, 1)]
+        values = [0, 1]
+        xi = np.ones((1, 1, 3))
+        msg = ("The requested sample points xi have dimension 3, but this "
+               "RegularGridInterpolator has dimension 1")
+        with assert_raises(ValueError, match=msg):
+            interpn(points, values, xi)

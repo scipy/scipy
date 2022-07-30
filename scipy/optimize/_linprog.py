@@ -357,7 +357,10 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     Returns
     -------
     res : OptimizeResult
-        A :class:`scipy.optimize.OptimizeResult` consisting of the fields:
+        A :class:`scipy.optimize.OptimizeResult` consisting of the fields
+        below. Note that the return types of the fields may depend on whether
+        the optimization was successful, therefore it is recommended to check
+        `OptimizeResult.status` before relying on the other fields:
 
         x : 1-D array
             The values of the decision variables that minimizes the
@@ -578,7 +581,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
         warning_message = "x0 is used only when method is 'revised simplex'. "
         warn(warning_message, OptimizeWarning)
 
-    if integrality and not meth == "highs":
+    if np.any(integrality) and not meth == "highs":
         integrality = None
         warning_message = ("Only `method='highs'` supports integer "
                            "constraints. Ignoring `integrality`.")

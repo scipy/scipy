@@ -225,6 +225,13 @@ def test_issue_6682():
     assert_allclose(nbinom.sf(250, 50, 32./63.), 1.460458510976452e-35)
 
 
+def test_boost_divide_by_zero_issue_15101():
+    n = 1000
+    p = 0.01
+    k = 996
+    assert_allclose(binom.pmf(k, n, p), 0.0)
+
+
 def test_skellam_gh11474():
     # test issue reported in gh-11474 caused by `cdfchn`
     mu = [1, 10, 100, 1000, 5000, 5050, 5100, 5250, 6000]

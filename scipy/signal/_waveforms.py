@@ -370,11 +370,13 @@ def chirp(t, f0, t1, f1, method='linear', phi=0, vertex_zero=True):
 
     >>> def plot_spectrogram(title, w, fs):
     ...     ff, tt, Sxx = spectrogram(w, fs=fs, nperseg=256, nfft=576)
-    ...     plt.pcolormesh(tt, ff[:145], Sxx[:145], cmap='gray_r', shading='gouraud')
-    ...     plt.title(title)
-    ...     plt.xlabel('t (sec)')
-    ...     plt.ylabel('Frequency (Hz)')
-    ...     plt.grid()
+    ...     fig, ax = plt.subplots()
+    ...     ax.pcolormesh(tt, ff[:145], Sxx[:145], cmap='gray_r',
+    ...                   shading='gouraud')
+    ...     ax.set_title(title)
+    ...     ax.set_xlabel('t (sec)')
+    ...     ax.set_ylabel('Frequency (Hz)')
+    ...     ax.grid(True)
     ...
 
     Quadratic chirp from 1500 Hz to 250 Hz

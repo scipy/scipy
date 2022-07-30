@@ -732,6 +732,8 @@ class TestMoments:
                                        stats.kurtosis(self.testcase_2d[2, :]),
                                        nulp=4)
 
+
+class TestMode:
     def test_mode(self):
         a1 = [0,0,0,1,1,1,2,3,3,3,3,4,5,6,7]
         a2 = np.reshape(a1, (3,5))
