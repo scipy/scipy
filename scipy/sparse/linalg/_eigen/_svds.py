@@ -251,7 +251,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     ...  np.allclose(vT5 @ vT5.T, np.eye(5)))
     True
 
-    
     Our second example follows that of sklearn.decomposition.TruncatedSVD.
 
     >>> rng = np.random.RandomState(0)
