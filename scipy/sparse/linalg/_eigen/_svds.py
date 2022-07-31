@@ -190,9 +190,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     Notes
     -----
     This is a naive implementation using ARPACK or LOBPCG as an eigensolver
-    on ``A.conj().T @ A`` or ``A @ A.conj().T``, depending on which one is more
-    efficient, followed by the Rayleigh-Ritz method as postprocessing; see
-    https://w.wiki/4zms
+    on the matrix ``A.conj().T @ A`` or ``A @ A.conj().T``, depending on
+    which one is smaller size, followed by the Rayleigh-Ritz method
+    as postprocessing; see https://w.wiki/4zms
 
     Alternatively, the PROPACK solver can be called. ``form="array"``
 
@@ -205,11 +205,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Examples
     --------
-    Construct a matrix ``A`` from singular values and vectors.
-
     >>> from scipy.stats import ortho_group
     >>> from scipy.sparse.linalg import svds
-    >>> rng = np.random.default_rng()
+    >>> rng = np.random.default_rng(0)
+
+    Construct a dense matrix ``A`` from singular values and vectors.
+
     >>> orthogonal = ortho_group.rvs(10, random_state=rng)
     >>> s = [1e-3, 1, 2, 3, 4]  # singular values
     >>> u = orthogonal[:, :5]         # left singular vectors
@@ -249,6 +250,17 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> (np.allclose(u5.T @ u5, np.eye(5)) and
     ...  np.allclose(vT5 @ vT5.T, np.eye(5)))
     True
+
+    
+    Our second example follows that of sklearn.decomposition.TruncatedSVD.
+
+    >>> rng = np.random.RandomState(0)
+    >>> X_dense = rng.random(size=(100, 100))
+    >>> X_dense[:, 2 * np.arange(50)] = 0
+    >>> X = csr_matrix(X_dense)
+    >>> _, singular_values, _ = svds(X, k=5)
+    >>> print(singular_values)
+    [ 4.3293...  4.4491...  4.5420...  4.5987... 35.2410...]
 
     """
     args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
