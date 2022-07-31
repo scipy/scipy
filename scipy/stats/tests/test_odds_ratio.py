@@ -83,7 +83,10 @@ class TestOddsRatio:
         ci = result.confidence_interval()
         assert_equal((ci.low, ci.high), (0, np.inf))
 
-    def test_sample_odds_ratio_ci(self):
+    @pytest.mark.parametrize("case",
+                             [[0.95, 'two-sided', 0.4879913, 2.635883],
+                              [0.90, 'two-sided', 0.5588516, 2.301663]])
+    def test_sample_odds_ratio_ci(self, case):
         # Compare the sample odds ratio confidence interval to the R function
         # oddsratio.wald from the epitools package, e.g.
         # > library(epitools)
@@ -95,11 +98,24 @@ class TestOddsRatio:
         #   Exposed1 1.000000        NA       NA
         #   Exposed2 1.134146 0.4879913 2.635883
 
+        confidence_level, alternative, ref_low, ref_high = case
         table = [[10, 20], [41, 93]]
         result = odds_ratio(table, kind='sample')
         assert_allclose(result.statistic, 1.134146, rtol=1e-6)
-        ci = result.confidence_interval()
-        assert_allclose([ci.low, ci.high], [0.4879913, 2.635883], rtol=1e-6)
+        ci = result.confidence_interval(confidence_level, alternative)
+        assert_allclose([ci.low, ci.high], [ref_low, ref_high], rtol=1e-6)
+
+    @pytest.mark.parametrize('alternative', ['less', 'greater', 'two-sided'])
+    def test_sample_odds_ratio_one_sided_ci(self, alternative):
+        # can't find a good reference for one-sided CI, so bump up the sample
+        # size and compare against the conditional odds ratio CI
+        table = [[1000, 2000], [4100, 9300]]
+        res = odds_ratio(table, kind='sample')
+        ref = odds_ratio(table, kind='conditional')
+        assert_allclose(res.statistic, ref.statistic, atol=1e-5)
+        assert_allclose(res.confidence_interval(alternative=alternative),
+                        ref.confidence_interval(alternative=alternative),
+                        atol=2e-3)
 
     @pytest.mark.parametrize('kind', ['sample', 'conditional'])
     @pytest.mark.parametrize('bad_table', [123, "foo", [10, 11, 12]])
