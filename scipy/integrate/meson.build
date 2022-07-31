@@ -189,8 +189,6 @@ py3.extension_module('_test_multivariate',
   subdir: 'scipy/integrate'
 )
 
-# FIXME: something is wrong with the signature file, subroutines are not used
-# _test_odeint_banded
 _test_odeint_banded_module = custom_target('_test_odeint_banded_module',
   output: ['_test_odeint_bandedmodule.c', '_test_odeint_banded-f2pywrappers.f'],
   input: 'tests/banded5x5.pyf',
