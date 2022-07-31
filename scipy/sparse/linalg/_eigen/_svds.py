@@ -229,7 +229,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     >>> u5, s5, vT5 = svds(A, k=5)
     >>> A5 = u5 @ np.diag(s5) @ vT5
-    >>> np.allclose(A5, A())
+    >>> np.allclose(A5, A)
     True
 
     The singular values match the expected singular values.
