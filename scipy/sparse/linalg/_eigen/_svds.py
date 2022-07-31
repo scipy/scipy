@@ -207,6 +207,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     --------
     >>> from scipy.stats import ortho_group
     >>> from scipy.sparse.linalg import svds
+    >>> from scipy.sparse import csr_matrix
     >>> rng = np.random.default_rng(0)
 
     Construct a dense matrix ``A`` from singular values and vectors.
