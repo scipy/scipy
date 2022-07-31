@@ -19,6 +19,7 @@ py3.install_sources([
     'test_mstats_basic.py',
     'test_mstats_extras.py',
     'test_multivariate.py',
+    'test_odds_ratio.py',
     'test_qmc.py',
     'test_rank.py',
     'test_relative_risk.py',
