@@ -25,8 +25,8 @@ cython_linalg = custom_target('cython_linalg',
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
-  # FIXME - we only want to install the .pxd files! See comments for
-  #         `pxd_files` further down.
+  # TODO - we only want to install the .pxd files! See comments for
+  #        `pxd_files` further down.
   install: true,
   install_dir: py3.get_install_dir() + 'scipy/linalg'
 )
