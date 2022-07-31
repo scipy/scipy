@@ -261,9 +261,6 @@ _highs_wrapper = py3.extension_module('_highs_wrapper',
     '-Wno-format-truncation',
     '-Wno-non-virtual-dtor',
     '-Wno-class-memaccess',
-    # Pass despite __STDC_FORMAT_MACROS redefinition warning.
-    # Remove after merge of https://github.com/ERGO-Code/HiGHS/pull/674
-    '-Wp,-w',
     Wno_unused_but_set,
     highs_define_macros,
     cython_c_args,
