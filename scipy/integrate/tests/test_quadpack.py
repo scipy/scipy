@@ -262,8 +262,16 @@ class TestQuad:
             return x0 + x1 + 1 + 2
         assert_quad(dblquad(func, 1, 2, 1, 2),6.)
 
-    @pytest.mark.parametrize('kwargs', [{'epsabs': 0.1}, {'epsrel': 0.1}])
-    def test_double_integral_warns_with_deprecated_input(self, kwargs):
+    @pytest.mark.parametrize('kwargs, msg', [
+        ({'epsabs': 0.1},
+         "Passing 'epsabs' explicitly is deprecated and will be removed in"
+         " SciPy 1.12.0. Please pass it via the 'opts' argument instead."
+         " 'epsabs' will be ignored."),
+        ({'epsrel': 0.1},
+         "Passing 'epsrel' explicitly is deprecated and will be removed in"
+         " SciPy 1.12.0. Please pass it via the 'opts' argument instead."
+         " 'epsrel' will be ignored.")])
+    def test_double_integral_warns_with_deprecated_input(self, kwargs, msg):
 
         if scipy_version.startswith("1.12"):
             raise Exception("Reminder to remove deprecated behaviour")
@@ -271,7 +279,7 @@ class TestQuad:
         def func(x0, x1):
             return x0 + x1 + 1 + 2
 
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(DeprecationWarning, match=msg):
             dblquad(func, 1, 2, 1, 2, **kwargs)
 
     @pytest.mark.parametrize(
@@ -353,8 +361,16 @@ class TestQuad:
                             (2.,)),
                      2*8/3.0 * (b**4.0 - a**4.0))
 
-    @pytest.mark.parametrize('kwargs', [{'epsabs': 0.1}, {'epsrel': 0.1}])
-    def test_triple_integral_warns_with_deprecated_input(self, kwargs):
+    @pytest.mark.parametrize('kwargs, msg', [
+        ({'epsabs': 0.1},
+         "Passing 'epsabs' explicitly is deprecated and will be removed in"
+         " SciPy 1.12.0. Please pass it via the 'opts' argument instead."
+         " 'epsabs' will be ignored."),
+        ({'epsrel': 0.1},
+         "Passing 'epsrel' explicitly is deprecated and will be removed in"
+         " SciPy 1.12.0. Please pass it via the 'opts' argument instead."
+         " 'epsrel' will be ignored.")])
+    def test_triple_integral_warns_with_deprecated_input(self, kwargs, msg):
 
         if scipy_version.startswith("1.12"):
             raise Exception("Reminder to remove deprecated behaviour")
@@ -363,7 +379,7 @@ class TestQuad:
             return (x+y+z)*t
 
         a, b = 1.0, 2.0
-        with pytest.warns(DeprecationWarning):
+        with pytest.warns(DeprecationWarning, match=msg):
             tplquad(simpfunc, a, b,
                     lambda x: x, lambda x: 2 * x,
                     lambda x, y: x - y, lambda x, y: x + y,
