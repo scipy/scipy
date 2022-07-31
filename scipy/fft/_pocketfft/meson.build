@@ -16,7 +16,6 @@ else
   pocketfft_threads += ['-DPOCKETFFT_NO_MULTITHREADING']
 endif
 
-#TODO: add the equivalent of set_cxx_flags_hook
 py3.extension_module('pypocketfft',
   'pypocketfft.cxx',
   cpp_args: pocketfft_threads,
