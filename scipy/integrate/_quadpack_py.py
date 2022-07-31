@@ -611,7 +611,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
         The upper boundary curve in y (same requirements as `gfun`).
     args : sequence, optional
         Extra arguments to pass to `func`.
-    epsabs : float, optional
+    epsabs : float, optional, deprecated
         Absolute tolerance passed directly to the inner 1-D quadrature
         integration. Default is 1.49e-8. ``dblquad`` tries to obtain
         an accuracy of ``abs(i-result) <= max(epsabs, epsrel*abs(i))``
@@ -619,7 +619,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
         to ``hfun(x)``, and ``result`` is the numerical approximation.
         See `epsrel` below. This argument is deprecated and will be
         removed in SciPy 1.12.0. Please use the `opts` argument instead.
-    epsrel : float, optional
+    epsrel : float, optional, deprecated
         Relative tolerance of the inner 1-D integrals. Default is 1.49e-8.
         If ``epsabs <= 0``, `epsrel` must be greater than both 5e-29
         and ``50 * (machine epsilon)``. See `epsabs` above. This argument is
@@ -829,12 +829,12 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         The upper boundary surface in z. (Same requirements as `qfun`.)
     args : tuple, optional
         Extra arguments to pass to `func`.
-    epsabs : float, optional
+    epsabs : float, optional, deprecated
         Absolute tolerance passed directly to the innermost 1-D quadrature
         integration. Default is 1.49e-8. This argument is deprecated
         and will be removed in SciPy 1.12.0. Please use the `opts` argument
         instead.
-    epsrel : float, optional
+    epsrel : float, optional, deprecated
         Relative tolerance of the innermost 1-D integrals. Default is 1.49e-8.
         This argument is deprecated and will be removed in SciPy 1.12.0.
         Please use the `opts` argument instead.
