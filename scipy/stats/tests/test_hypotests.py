@@ -1628,7 +1628,7 @@ class TestTukeyHSD:
         assert_allclose(res_ttest.pvalue, res_tukey.pvalue[1, 0])
 
 
-class TestPoissonETest:
+class TestPoissonMeansTest:
     @pytest.mark.parametrize("c1, n1, c2, n2, p_expect", (
         # example from [1], 6. Illustrative examples: Example 1
         [0, 100, 3, 100, 0.0884],
@@ -1658,7 +1658,7 @@ class TestPoissonETest:
     ))
     def test_fortran_authors(self, c1, n1, c2, n2, p_expect, alt, d):
         res = stats.poisson_means_test(c1, n1, c2, n2, alternative=alt, diff=d)
-        assert_allclose(res.pvalue, p_expect, atol=1e-6, rtol=1e-16)
+        assert_allclose(res.pvalue, p_expect, atol=2e-6, rtol=1e-16)
 
     def test_different_results(self):
         # The implementation in Fortran is known to break down at higher
@@ -1677,41 +1677,37 @@ class TestPoissonETest:
         res = stats.poisson_means_test(count1, nobs1, count2, nobs2)
         assert_allclose(res.pvalue, 1)
 
-    def test_non_int_args_error(self):
+    def test_input_validation(self):
         count1, count2 = 0, 0
         nobs1, nobs2 = 1, 1
-        with assert_raises(TypeError, match="...`k2` must be of type int"):
+
+        # test non-integral events
+        message = '`k1` and `k2` must be integers.'
+        with assert_raises(TypeError, match=message):
             stats.poisson_means_test(.7, nobs1, count2, nobs2)
-        with assert_raises(TypeError, match="...`k2` must be of type int"):
+        with assert_raises(TypeError, match=message):
             stats.poisson_means_test(count1, nobs1, .7, nobs2)
 
-    def test_negative_count_error(self):
-        count1, count2 = 0, 0
-        nobs1, nobs2 = 1, 1
-        message = "...`k2` should be greater than or equal to 0"
+        # test negative events
+        message = '`k1` and `k2` must be greater than or equal to 0.'
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(-1, nobs1, count2, nobs2)
-        message = "...`k2` should be greater than or equal to 0"
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(count1, nobs1, -1, nobs2)
 
-    def test_zero_nobs_error(self):
-        count1, count2 = 0, 0
-        nobs1, nobs2 = 1, 1
-        message = "...`n2` should be greater than 0"
+        # test negative sample size
+        message = '`n1` and `n2` must be greater than 0.'
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(count1, -1, count2, nobs2)
-        message = "...`n2` should be greater than 0"
         with assert_raises(ValueError, match=message):
             stats.poisson_means_test(count1, nobs1, count2, -1)
 
-    def test_diff_less_zero_error(self):
-        count1, count2 = 0, 0
-        nobs1, nobs2 = 1, 1
-        diff = -1
-        with assert_raises(ValueError, match="diff can not have negative"):
-            stats.poisson_means_test(count1, nobs1, count2, nobs2, diff=diff)
+        # test negative difference
+        message = 'diff must be greater than or equal to 0.'
+        with assert_raises(ValueError, match=message):
+            stats.poisson_means_test(count1, nobs1, count2, nobs2, diff=-1)
 
-    def test_invalid_alt(self):
-        with assert_raises(ValueError, match="unknown alternative 'error'"):
+        # test invalid alternatvie
+        message = 'Alternative must be one of ...'
+        with assert_raises(ValueError, match=message):
             stats.poisson_means_test(1, 2, 1, 2, alternative='error')

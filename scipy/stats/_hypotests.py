@@ -322,7 +322,8 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
         mask_out_invalid = lmbds_diff > 0
 
     var_x1x2[~mask_out_invalid] = np.inf
-    t_x1x2 = lmbds_diff / np.sqrt(var_x1x2)
+    with np.errstate(invalid='ignore'):
+        t_x1x2 = lmbds_diff / np.sqrt(var_x1x2)
 
     # `[indicator]` implements the "I[.] ... the indicator function" per
     # the paragraph following equation (3.5).
@@ -341,21 +342,22 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
 
 def _poisson_means_test_iv(k1, n1, k2, n2, diff, alternative):
     # """check for valid types and values of input to `poisson_mean_test`."""
-    if not all(isinstance(item, int) for item in [k1, k2]):
-        raise TypeError('`k1`, `k2` must be of type int')
+    if k1 != int(k1) or k2 != int(k2):
+        raise TypeError('`k1` and `k2` must be integers.')
 
-    count_err = '`k1` and `k2` should be greater than or equal to 0'
+    count_err = '`k1` and `k2` must be greater than or equal to 0.'
     if k1 < 0 or k2 < 0:
         raise ValueError(count_err)
 
     if n1 <= 0 or n2 <= 0:
-        raise ValueError('`n1` and `n2` should be greater than 0')
+        raise ValueError('`n1` and `n2` must be greater than 0.')
 
     if diff < 0:
-        raise ValueError('diff can not have negative values')
+        raise ValueError('diff must be greater than or equal to 0.')
 
-    if alternative not in ['two-sided', 'less', 'greater']:
-        raise ValueError(f"unknown alternative '{alternative}'")
+    alternatives = {'two-sided', 'less', 'greater'}
+    if alternative.lower() not in alternatives:
+        raise ValueError(f"Alternative must be one of '{alternatives}'.")
 
 
 class CramerVonMisesResult:
