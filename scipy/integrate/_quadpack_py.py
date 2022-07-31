@@ -782,15 +782,15 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8,
     """
 
     if epsabs != inspect.signature(dblquad).parameters.get('epsabs').default:
-        msg = ("Passing `epsabs` explicitly is deprecated and will be removed "
-               "in SciPy 1.12.0. Please pass it via the `opts` argument. "
-               "instead. `epsabs` will be ignored.")
+        msg = ("Passing 'epsabs' explicitly is deprecated and will be removed "
+               "in SciPy 1.12.0. Please pass it via the 'opts' argument. "
+               "instead. 'epsabs' will be ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     if epsrel != inspect.signature(dblquad).parameters.get('epsrel').default:
-        msg = ("Passing `epsrel` explicitly is deprecated and will be removed "
-               "in SciPy 1.12.0. Please pass it via the `opts` argument. "
-               "instead. `epsrel` will be ignored.")
+        msg = ("Passing 'epsrel' explicitly is deprecated and will be removed "
+               "in SciPy 1.12.0. Please pass it via the 'opts' argument. "
+               "instead. 'epsrel' will be ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     def temp_ranges(*args):
@@ -1003,15 +1003,15 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     # Only qfun / rfun is different API...
 
     if epsabs != inspect.signature(tplquad).parameters.get('epsabs').default:
-        msg = ("Passing `epsabs` explicitly is deprecated and will be removed "
-               "in SciPy 1.12.0. Please pass it via the `opts` argument. "
-               "instead. `epsabs` will be ignored.")
+        msg = ("Passing 'epsabs' explicitly is deprecated and will be removed "
+               "in SciPy 1.12.0. Please pass it via the 'opts' argument. "
+               "instead. 'epsabs' will be ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     if epsrel != inspect.signature(tplquad).parameters.get('epsrel').default:
-        msg = ("Passing `epsrel` explicitly is deprecated and will be removed "
-               "in SciPy 1.12.0. Please pass it via the `opts` argument. "
-               "instead. `epsrel` will be ignored.")
+        msg = ("Passing 'epsrel' explicitly is deprecated and will be removed "
+               "in SciPy 1.12.0. Please pass it via the 'opts' argument. "
+               "instead. 'epsrel' will be ignored.")
         warnings.warn(msg, DeprecationWarning, stacklevel=2)
 
     def ranges0(*args):
