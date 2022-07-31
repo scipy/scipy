@@ -150,68 +150,68 @@ PoissonMeansTestResult = make_dataclass('PoissonMeansTestResult',
 
 def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     r"""
-    Calculates the Poisson means test, the "E-test", for the mean difference of
-    two samples that follow a Poisson distribution from descriptive statistics.
+    Performs the Poisson means test, AKA the "E-test".
 
-    This is a two-sided test. The null hypothesis is that two independent
-    samples have identical average (expected) values.
+    This is a test of the null hypothesis that the difference between means of
+    two Poisson distributions is `diff`. The samples are provided as the
+    number of events `k1` and `k2` observed within measurement intervals
+    (e.g. of time, space, number of observations) of sizes `n1` and `n2`.
 
     Parameters
     ----------
     k1 : int
-        Sample value of interest from sample 1.
+        Number of events observed from distribution 1.
     n1: float
-        Sample size from sample 1.
+        Size of sample from distribution 1.
     k2 : int
-        Sample value of interest from sample 2.
+        Number of events observed from distribution 2.
     n2 : float
-        Sample size from sample 2.
+        Size of sample from distribution 2.
     diff : float, default=0
-        The difference of mean between two samples under the null hypothesis.
+        The hypothesized difference in means between the distributions
+        underlying the samples.
     alternative : {'two-sided', 'less', 'greater'}, optional
         Defines the alternative hypothesis.
         The following options are available (default is 'two-sided'):
 
-          * 'two-sided': asserts that sample one's mean is not equal to sample
-              two's mean plus `diff`.
-          * 'less': asserts that sample one's mean is less than or equal to
-              sample two's mean plus `diff`.
-          * 'greater': asserts that sample one's mean is greater than or equal
-              to sample two's mean plus `diff`.
+          * 'two-sided': the difference between distribution means is not
+            equal to `diff`
+          * 'less': the difference between distribution means is less than
+            `diff`
+          * 'greater': the difference between distribution means is greater
+            than `diff`
 
     Returns
     -------
     statistic : float
-        The test statistic calculated from observed samples.
+        The test statistic (see [1]_ equation 3.3).
     pvalue : float
-        The associated p-value based on the estimated p-value of the
-        standardized difference.
+        The probability of achieving such an extreme value of the test
+        statistic under the null hypothesis.
 
     Notes
     -----
-    A benefit of the E-test is that it maintains its power even
-    with smaller sample sizes which can reduce sampling costs [1]_. It has
-    been evaluated and determined to be more powerful than the comparable
-    C-test, sometimes referred to as the poisson exact test.
 
-    Let :math:`X_{11},...,X_{1n_1}` and :math:`X_{21},...,X_{2n_2}` be
-    independent samples from distributions :math:`Poisson(\lambda_1)` and
-    :math:`Poisson(\lambda_2)`. It is well known that :math:`X_1`
-    and :math:`X_2` are independent:
+    Let:
 
-    .. math:: X_1 = \sum_{i=1}^{n_1} X_{1i} \sim Poisson(n_1\lambda_1)
+    .. math:: X_1 \sim \mbox{Poisson}(\mathtt{n1}\lambda_1)
 
-    .. math:: X_2 = \sum_{i=1}^{n_2} X_{2i} \sim Poisson(n_2\lambda_2)
+    be a random variable independent of
 
-    Let `k1` and `k2` be the observed values of :math:`X_1` and
-    :math:`X_2`, respectively. The null hypothesis and alternative
-    hypothesis under comparison are
+    .. math:: X_2  \sim \mbox{Poisson}(\mathtt{n2}\lambda_2)
+
+    and let ``k1`` and ``k2`` be the observed values of :math:`X_1`
+    and :math:`X_2`, respectively. Then `poisson_means_test` uses the number
+    of observed events ``k1`` and ``k2`` from samples of size ``n1`` and
+    ``n2``, respectively, to test the null hypothesis that
 
     .. math::
-       H_0: \lambda_1 = \lambda_2 + \mathtt{diff} \quad vs. \quad
-       H_a: \lambda_1 \ne \lambda_2 + \mathtt{diff}
+       H_0: \lambda_1 - \lambda_2 = \mathtt{diff}
 
-    for ``alternative=two-sided``, where :math:`\mathtt{diff} \ge 0`.
+    A benefit of the E-test is that it has good power for small sample sizes,
+    which can reduce sampling costs [1]_. It has been evaluated and determined
+    to be more powerful than the comparable C-test, sometimes referred to as
+    the Poisson exact test.
 
     References
     ----------
@@ -236,11 +236,11 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     seeds; that is, `k1` is 0. However, upon arrival, the gardener draws
     another 100 gram sample from the sack. This time, three dodder seeds are
     found in the sample; that is, `k2` is 3. The gardener would like to
-    know if the difference between is significant and not due to chance. The
+    know if the difference is significant and not due to chance. The
     null hypothesis is that the difference between the two samples is merely
-    due to chance, or that :math:`\lambda_1 = \lambda_2 + \mathtt{diff}`
+    due to chance, or that :math:`\lambda_1 - \lambda_2 = \mathtt{diff}`
     where :math:`\mathtt{diff} = 0`. The alternative hypothesis is that the
-    difference is not due to chance, or :math:`\lambda_1 \ne \lambda_2 + 0`.
+    difference is not due to chance, or :math:`\lambda_1 - \lambda_2 \ne 0`.
     The gardener selects a significance level of 5% to reject the null
     hypothesis in favor of the alternative [2]_.
 
@@ -255,7 +255,7 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     regarded as significant at this level.
     """
 
-    _iv_poisson_mean_test(k1, n1, k2, n2, diff, alternative)
+    _poisson_means_test_iv(k1, n1, k2, n2, diff, alternative)
 
     # "for a given k_1 and k_2, an estimate of \lambda_2 is given by" [1] (3.4)
     lmbd_hat2 = ((k1 + k2) / (n1 + n2) - diff * n1 / (n1 + n2))
@@ -339,7 +339,7 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     return PoissonMeansTestResult(t_k1k2, pvalue)
 
 
-def _iv_poisson_mean_test(k1, n1, k2, n2, diff, alternative):
+def _poisson_means_test_iv(k1, n1, k2, n2, diff, alternative):
     # """check for valid types and values of input to `poisson_mean_test`."""
     if not all(isinstance(item, int) for item in [k1, k2]):
         raise TypeError('`k1`, `k2` must be of type int')
