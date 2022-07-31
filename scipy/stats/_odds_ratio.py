@@ -174,7 +174,6 @@ def _sample_odds_ratio_ci(table, confidence_level=0.95,
     return np.exp(loglow), np.exp(loghigh)
 
 
-@dataclass
 class OddsRatioResult:
     """
     Result of `scipy.stats.contingency.odds_ratio`.  See the
@@ -200,9 +199,15 @@ class OddsRatioResult:
         Confidence interval for the odds ratio.
     """
 
-    _table: np.ndarray
-    _kind: str
-    statistic: float
+    def __init__(self, _table, _kind, statistic):
+        # for now, no need to make _table and _kind public, since this sort of
+        # information is returned in very few `scipy.stats` results
+        self._table = _table
+        self._kind = _kind
+        self.statistic = statistic
+
+    def __repr__(self):
+        return f"OddsRatioResult(statistic={self.statistic})"
 
     def confidence_interval(self, confidence_level=0.95,
                             alternative='two-sided'):
@@ -219,21 +224,21 @@ class OddsRatioResult:
         alternative : {'two-sided', 'less', 'greater'}, optional
             The alternative hypothesis of the hypothesis test to which the
             confidence interval corresponds. That is, suppose the null
-            hypothesis is that the true odds ratio equals ``x`` and the
+            hypothesis is that the true odds ratio equals ``OR`` and the
             confidence interval is ``(low, high)``. Then the following options
             for `alternative` are available (default is 'two-sided'):
 
-            * 'two-sided': the true odds ratio is not equal to ``x``. There
+            * 'two-sided': the true odds ratio is not equal to ``OR``. There
               is evidence against the null hypothesis at the chosen
-              `confidence_level` if ``high < x`` or ``low > x``.
-            * 'less': the true odds ratio is less than ``x``. The ``low`` end
+              `confidence_level` if ``high < OR`` or ``low > OR``.
+            * 'less': the true odds ratio is less than ``OR``. The ``low`` end
               of the confidence interval is 0, and there is evidence against
               the null hypothesis at  the chosen `confidence_level` if
-              ``high < x``.
-            * 'greater': the true odds ratio is greater than ``x``.  The
+              ``high < OR``.
+            * 'greater': the true odds ratio is greater than ``OR``.  The
               ``high`` end of the confidence interval is ``np.inf``, and there
               is evidence against the null hypothesis at the chosen
-              `confidence_level` if ``low > x``.
+              `confidence_level` if ``low > OR``.
 
         Returns
         -------
