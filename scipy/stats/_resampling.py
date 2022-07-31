@@ -524,6 +524,29 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=0.9950085825848624, high=0.9971212407917498)
 
+    The result object can be passed back into `bootstrap` to perform additional
+    resampling:
+
+    >>> len(res.bootstrap_distribution)
+    9999
+    >>> res = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
+    ...                 n_resamples=1001, random_state=rng,
+    ...                 bootstrap_result=res)
+    >>> len(res.bootstrap_distribution)
+    11000
+
+    or to change the confidence interval options:
+
+    >>> res2 = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
+    ...                  n_resamples=0, random_state=rng, bootstrap_result=res,
+    ...                  method='percentile', confidence_level=0.9)
+    >>> np.testing.assert_equal(res2.bootstrap_distribution,
+    ...                         res.bootstrap_distribution)
+    >>> res.confidence_interval
+    ConfidenceInterval(low=0.9950035351407804, high=0.9971170323404578)
+
+    without repeating computation of the original bootstrap distribution.
+
     """
     # Input validation
     args = _bootstrap_iv(data, statistic, vectorized, paired, axis,
