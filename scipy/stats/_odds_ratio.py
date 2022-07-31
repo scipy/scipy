@@ -414,7 +414,7 @@ def odds_ratio(table, *, kind='conditional'):
     Compute the odds ratio:
 
     >>> from scipy.stats.contingency import odds_ratio
-    >>> res = statistic([[7, 15], [58, 472]])
+    >>> res = odds_ratio([[7, 15], [58, 472]])
     >>> res.statistic
     3.7836687705553493
 

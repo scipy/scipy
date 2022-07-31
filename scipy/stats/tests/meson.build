@@ -1,7 +1,6 @@
 py3.install_sources([
     '__init__.py',
     'common_tests.py',
-    'studentized_range_mpmath_ref.py',
     'test_axis_nan_policy.py',
     'test_binned_statistic.py',
     'test_boost_ufuncs.py',
