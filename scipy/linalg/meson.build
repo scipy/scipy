@@ -164,7 +164,6 @@ py3.extension_module('_interpolative',
     '-Wno-tabs', '-Wno-conversion', '-Wno-argument-mismatch',
     '-Wno-unused-dummy-argument', '-Wno-maybe-uninitialized'
   ],
-  # TODO: add -fallow-argument-mismatch for gfortran >= 10, see gh-11842
   include_directories: [inc_np, inc_f2py],
   dependencies: [lapack, fortranobject_dep],
   install: true,
