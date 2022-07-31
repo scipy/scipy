@@ -546,6 +546,7 @@ def cramervonmises(rvs, cdf, args=()):
     were, in fact, drawn from the standard normal distribution. We choose a
     significance level of alpha=0.05.
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(size=500, random_state=rng)
@@ -1572,6 +1573,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     ``scipy.stats.norm.rvs`` have the same distribution. We choose a
     significance level of alpha=0.05.
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(size=100, random_state=rng)

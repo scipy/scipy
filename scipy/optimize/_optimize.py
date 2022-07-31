@@ -986,9 +986,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         using `func`. By default it is ``'all'``, in which case, all
         the one hot direction vectors are considered to check `grad`.
         If `func` is a vector valued function then only ``'all'`` can be used.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -2248,12 +2246,19 @@ class Brent:
             if (xa > xc):  # swap so xa < xc can be assumed
                 xc, xa = xa, xc
             if not ((xa < xb) and (xb < xc)):
-                raise ValueError("Not a bracketing interval.")
+                raise ValueError(
+                    "Bracketing values (xa, xb, xc) do not"
+                    " fulfill this requirement: (xa < xb) and (xb < xc)"
+                )
             fa = func(*((xa,) + args))
             fb = func(*((xb,) + args))
             fc = func(*((xc,) + args))
             if not ((fb < fa) and (fb < fc)):
-                raise ValueError("Not a bracketing interval.")
+                raise ValueError(
+                    "Bracketing values (xa, xb, xc) do not fulfill"
+                    " this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+                )
+
             funcalls = 3
         else:
             raise ValueError("Bracketing interval must be "
@@ -2613,12 +2618,18 @@ def _minimize_scalar_golden(func, brack=None, args=(),
         if (xa > xc):  # swap so xa < xc can be assumed
             xc, xa = xa, xc
         if not ((xa < xb) and (xb < xc)):
-            raise ValueError("Not a bracketing interval.")
+            raise ValueError(
+                "Bracketing values (xa, xb, xc) do not"
+                " fulfill this requirement: (xa < xb) and (xb < xc)"
+            )
         fa = func(*((xa,) + args))
         fb = func(*((xb,) + args))
         fc = func(*((xc,) + args))
         if not ((fb < fa) and (fb < fc)):
-            raise ValueError("Not a bracketing interval.")
+            raise ValueError(
+                "Bracketing values (xa, xb, xc) do not fulfill"
+                " this requirement: (f(xb) < f(xa)) and (f(xb) < f(xc))"
+            )
         funcalls = 3
     else:
         raise ValueError("Bracketing interval must be length 2 or 3 sequence.")
@@ -3476,6 +3487,9 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     if (N > 1):
         grid = np.reshape(grid, (inpt_shape[0], np.prod(inpt_shape[1:]))).T
 
+    if not np.iterable(args):
+        args = (args,)
+
     wrapped_func = _Brute_Wrapper(func, args)
 
     # iterate over input arrays, possibly in parallel
@@ -3776,83 +3790,3 @@ def show_options(solver=None, method=None, disp=True):
         return
     else:
         return text
-
-
-def main():
-    import time
-
-    times = []
-    algor = []
-    x0 = [0.8, 1.2, 0.7]
-    print("Nelder-Mead Simplex")
-    print("===================")
-    start = time.time()
-    x = fmin(rosen, x0)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Nelder-Mead Simplex\t')
-
-    print()
-    print("Powell Direction Set Method")
-    print("===========================")
-    start = time.time()
-    x = fmin_powell(rosen, x0)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Powell Direction Set Method.')
-
-    print()
-    print("Nonlinear CG")
-    print("============")
-    start = time.time()
-    x = fmin_cg(rosen, x0, fprime=rosen_der, maxiter=200)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Nonlinear CG     \t')
-
-    print()
-    print("BFGS Quasi-Newton")
-    print("=================")
-    start = time.time()
-    x = fmin_bfgs(rosen, x0, fprime=rosen_der, maxiter=80)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('BFGS Quasi-Newton\t')
-
-    print()
-    print("BFGS approximate gradient")
-    print("=========================")
-    start = time.time()
-    x = fmin_bfgs(rosen, x0, gtol=1e-4, maxiter=100)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('BFGS without gradient\t')
-
-    print()
-    print("Newton-CG with Hessian product")
-    print("==============================")
-    start = time.time()
-    x = fmin_ncg(rosen, x0, rosen_der, fhess_p=rosen_hess_prod, maxiter=80)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Newton-CG with hessian product')
-
-    print()
-    print("Newton-CG with full Hessian")
-    print("===========================")
-    start = time.time()
-    x = fmin_ncg(rosen, x0, rosen_der, fhess=rosen_hess, maxiter=80)
-    print(x)
-    times.append(time.time() - start)
-    algor.append('Newton-CG with full Hessian')
-
-    print()
-    print("\nMinimizing the Rosenbrock function of order 3\n")
-    print(" Algorithm \t\t\t       Seconds")
-    print("===========\t\t\t      =========")
-    for alg, tme in zip(algor, times):
-        print(alg, "\t -- ", tme)
-
-
-if __name__ == "__main__":
-    main()

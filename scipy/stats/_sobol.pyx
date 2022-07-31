@@ -1,7 +1,5 @@
 # cython: language_level=3
 # cython: cdivision=True
-from __future__ import division, absolute_import
-
 cimport cython
 cimport numpy as cnp
 

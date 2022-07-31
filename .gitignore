@@ -81,6 +81,13 @@ pip-wheel-metadata
 # install directory for Meson
 installdir/
 
+# doit
+######
+.doit.db.dat
+.doit.db.dir
+.doit.db.db
+.doit.db
+
 # Paver generated files #
 #########################
 /release
@@ -129,6 +136,7 @@ benchmarks/results
 benchmarks/scipy
 benchmarks/html
 benchmarks/scipy-benchmarks
+.mesonpy-native-file.ini
 scipy/__config__.py
 scipy/_lib/_ccallback_c.c
 scipy/_lib/messagestream.c

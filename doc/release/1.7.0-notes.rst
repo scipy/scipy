@@ -260,7 +260,7 @@ interval and standard error of a statistic.
 The new function `scipy.stats.contingency.crosstab` computes a contingency
 table (i.e. a table of counts of unique entries) for the given data.
 
-`scipy.stats.NumericalInverseHermite` enables fast random variate sampling
+``scipy.stats.NumericalInverseHermite`` enables fast random variate sampling
 and percentile point function evaluation of an arbitrary univariate statistical
 distribution.
 

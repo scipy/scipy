@@ -2,7 +2,6 @@ rotation = py3.extension_module('_rotation',
   [cython_gen.process('_rotation.pyx')],
   c_args: [cython_c_args, c_undefined_ok],
   include_directories: [incdir_numpy],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/spatial/transform'
 )

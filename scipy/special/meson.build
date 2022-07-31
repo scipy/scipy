@@ -283,8 +283,8 @@ endif
 cephes_lib = static_library('cephes',
   cephes_sources,
   c_args: use_math_defines,
+  dependencies: py3_dep,
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: py3_dep
 )
 
 amos_lib = static_library('amos',
@@ -318,16 +318,21 @@ specfun_module = custom_target('specfun_module',
 )
 
 py3.extension_module('_specfun',
-  [specfun_module, fortranobject_c],
+  specfun_module,
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
-  dependencies: py3_dep,
+  dependencies: [fortranobject_dep],
   link_with: specfun_lib,
   link_language: 'fortran',
   install: true,
   subdir: 'scipy/special'
 )
 
+# TODO: this installs all generated files, while we want to install only:
+#       _ufuncs.pyi, cython_special.pxd
+#       There's no good way around this currently, because py3.install_sources
+#       doesn't accept generated targets. See TODO near the end of
+#       scipy/linalg/meson.build for more details.
 cython_special = custom_target('cython_special',
   output: [
     '_ufuncs.pyx',
@@ -340,7 +345,9 @@ cython_special = custom_target('cython_special',
     'cython_special.pxd'
   ],
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
-  command: [py3, '@INPUT0@', '-o', '@OUTDIR@']
+  command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
+  install: true,
+  install_dir: py3.get_install_dir() + '/scipy/special'
 )
 
 # pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
@@ -362,7 +369,6 @@ py3.extension_module('_ufuncs',
   c_args: [cython_c_args, use_math_defines, c_undefined_ok],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies: [
-    py3_dep,
     lapack,
     npymath_lib,
     cython_tree
@@ -402,7 +408,7 @@ py3.extension_module('_ufuncs_cxx',
     ],
   cpp_args: [cython_c_args, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, npymath_lib, ellint_dep],
+  dependencies: [npymath_lib, ellint_dep],
   install: true,
   subdir: 'scipy/special'
 )
@@ -411,7 +417,7 @@ py3.extension_module('_ellip_harm_2',
   [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.c'],
   c_args: [cython_c_args, c_undefined_ok],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, lapack],
+  dependencies: [lapack],
   install: true,
   subdir: 'scipy/special'
 )
@@ -427,7 +433,7 @@ py3.extension_module('cython_special',
   ],
   c_args: [cython_c_args, use_math_defines, c_undefined_ok],
   include_directories: [inc_np, '../_lib', '../_build_utils/src', 'cephes'],
-  dependencies: [py3_dep, npymath_lib, lapack],
+  dependencies: [npymath_lib, lapack],
   link_with: [
     amos_lib,
     cdflib_lib,
@@ -442,7 +448,6 @@ py3.extension_module('cython_special',
 
 py3.extension_module('_comb',
   cython_gen.process('_comb.pyx'),
-  dependencies: py3_dep,
   install: true,
   subdir: 'scipy/special'
 )
@@ -450,7 +455,7 @@ py3.extension_module('_comb',
 py3.extension_module('_test_round',
   cython_gen.process('_test_round.pyx'),
   include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, npymath_lib],
+  dependencies: [npymath_lib],
   install: true,
   subdir: 'scipy/special'
 )
@@ -501,12 +506,15 @@ python_sources = [
   '_logsumexp.py',
   '_mptestutils.py',
   '_orthogonal.py',
+  '_orthogonal.pyi',
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
+  '_test_round.pyi',
   '_testutils.py',
   'add_newdocs.py',
   'basic.py',
+  'cython_special.pyi',
   'orthogonal.py',
   'sf_error.py',
   'specfun.py',
@@ -518,13 +526,6 @@ py3.install_sources(
   pure: false,
   subdir: 'scipy/special'
 )
-
-# FIXME: fails with "Argument must be string or file."
-#py3.install_sources(
-#    cython_special[7],  # cython_special.pxd
-#    pure: false,
-#    subdir: 'scipy/special'
-#)
 
 subdir('tests')
 subdir('_precompute')

@@ -57,8 +57,10 @@ def test_milp_iv():
         milp([1, 2, 3], bounds=([1, 2, 3], [set(), 4, 5]))
 
 
-@pytest.mark.xfail(strict=True, reason="Needs to be fixed in `_highs_wrapper`")
+@pytest.mark.xfail(run=False,
+                   reason="Needs to be fixed in `_highs_wrapper`")
 def test_milp_options(capsys):
+    # run=False now because of gh-16347
     message = "Unrecognized options detected: {'ekki'}..."
     options = {'ekki': True}
     with pytest.warns(RuntimeWarning, match=message):
@@ -181,7 +183,7 @@ def test_milp_3():
     c = [0, -1]
     A = [[-1, 1], [3, 2], [2, 3]]
     b_u = [1, 12, 12]
-    b_l = np.full_like(b_u, -np.inf)
+    b_l = np.full_like(b_u, -np.inf, dtype=np.float64)
     constraints = LinearConstraint(A, b_l, b_u)
 
     integrality = np.ones_like(c)
@@ -189,7 +191,8 @@ def test_milp_3():
     # solve original problem
     res = milp(c=c, constraints=constraints, integrality=integrality)
     assert_allclose(res.fun, -2)
-    assert_allclose(res.x, [1, 2])
+    # two optimal solutions possible, just need one of them
+    assert np.allclose(res.x, [1, 2]) or np.allclose(res.x, [2, 2])
 
     # solve relaxed problem
     res = milp(c=c, constraints=constraints)
@@ -234,6 +237,7 @@ def test_milp_5():
 
 
 @pytest.mark.slow
+@pytest.mark.timeout(120)  # prerelease_deps_coverage_64bit_blas job
 def test_milp_6():
     # solve a larger MIP with only equality constraints
     # source: https://www.mathworks.com/help/optim/ug/intlinprog.html
@@ -248,3 +252,22 @@ def test_milp_6():
     res = milp(c=c, constraints=(A_eq, b_eq, b_eq), integrality=integrality)
 
     np.testing.assert_allclose(res.fun, 1854)
+
+
+def test_infeasible_prob_16609():
+    # Ensure presolve does not mark trivially infeasible problems
+    # as Optimal -- see gh-16609
+    c = [1.0, 0.0]
+    integrality = [0, 1]
+
+    lb = [0, -np.inf]
+    ub = [np.inf, np.inf]
+    bounds = Bounds(lb, ub)
+
+    A_eq = [[0.0, 1.0]]
+    b_eq = [0.5]
+    constraints = LinearConstraint(A_eq, b_eq, b_eq)
+
+    res = milp(c, integrality=integrality, bounds=bounds,
+               constraints=constraints)
+    np.testing.assert_equal(res.status, 2)
