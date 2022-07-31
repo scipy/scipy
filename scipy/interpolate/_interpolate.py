@@ -1337,7 +1337,7 @@ class PPoly(_PPolyBase):
         Examples
         --------
 
-        This funcion only supports 1D splines out of the box.
+        This function only supports 1D splines out of the box.
 
         If the ``tck`` object represents a parametric spline (e.g. constructed
         by `splprep` or a `BSpline` with ``c.ndim > 1``), you will need to loop
@@ -1356,7 +1356,7 @@ class PPoly(_PPolyBase):
 
         To convert this spline to the power basis, we convert each
         component of the list of b-spline coefficients, ``c``, into the
-        corresponding cubic polynomial. 
+        corresponding cubic polynomial.
 
         >>> polys = [PPoly.from_spline((t, cj, k)) for cj in c]
         >>> polys[0].c.shape
