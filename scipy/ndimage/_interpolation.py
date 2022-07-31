@@ -73,7 +73,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
 
     Notes
     -----
-    All functions in `ndimage.interpolation` do spline interpolation of
+    All of the interpolation functions in `ndimage` do spline interpolation of
     the input image. If using B-splines of `order > 1`, the input image
     values have to be converted to B-spline coefficients first, which is
     done by applying this 1-D filter sequentially along all
@@ -98,6 +98,7 @@ def spline_filter1d(input, order=3, axis=-1, output=numpy.float64,
     We can filter an image using 1-D spline along the given axis:
 
     >>> from scipy.ndimage import spline_filter1d
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> orig_img = np.eye(20)  # create an image
     >>> orig_img[10, :] = 1.0
@@ -161,6 +162,7 @@ def spline_filter(input, order=3, output=numpy.float64, mode='mirror'):
     We can filter an image using multidimentional splines:
 
     >>> from scipy.ndimage import spline_filter
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> orig_img = np.eye(20)  # create an image
     >>> orig_img[10, :] = 1.0
@@ -403,6 +405,7 @@ def map_coordinates(input, coordinates, output=None, order=3,
     Examples
     --------
     >>> from scipy import ndimage
+    >>> import numpy as np
     >>> a = np.arange(12.).reshape((4, 3))
     >>> a
     array([[  0.,   1.,   2.],
@@ -662,7 +665,7 @@ def shift(input, shift, output=None, order=3, mode='constant', cval=0.0,
                                      complex_output=complex_output)
     if complex_output:
         # import under different name to avoid confusion with shift parameter
-        from scipy.ndimage.interpolation import shift as _shift
+        from scipy.ndimage._interpolation import shift as _shift
 
         kwargs = dict(order=order, mode=mode, prefilter=prefilter)
         _shift(input.real, shift, output=output.real, cval=numpy.real(cval),
@@ -772,7 +775,7 @@ def zoom(input, zoom, output=None, order=3, mode='constant', cval=0.0,
                                      complex_output=complex_output)
     if complex_output:
         # import under different name to avoid confusion with zoom parameter
-        from scipy.ndimage.interpolation import zoom as _zoom
+        from scipy.ndimage._interpolation import zoom as _zoom
 
         kwargs = dict(order=order, mode=mode, prefilter=prefilter)
         _zoom(input.real, zoom, output=output.real, cval=numpy.real(cval),

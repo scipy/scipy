@@ -241,7 +241,6 @@ class BaseMixin:
         assert_allclose(res3.x, 0, atol=1e-4)
         assert_equal(res1.x, res2.x)
         assert_equal(res1.nfev, res2.nfev)
-        assert_(res2.nfev != res3.nfev)
 
     def test_incorrect_options_usage(self):
         assert_raises(TypeError, least_squares, fun_trivial, 2.0,
@@ -777,5 +776,5 @@ def test_fp32_gh12991():
     # unchanged from the initial solution.
     # It was terminating early because the underlying approx_derivative
     # used a step size for FP64 when the working space was FP32.
-    assert res.nfev > 3
+    assert res.nfev > 2
     assert_allclose(res.x, np.array([0.4082241, 0.15530563]), atol=5e-5)

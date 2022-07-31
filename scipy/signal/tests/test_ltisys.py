@@ -9,9 +9,9 @@ from scipy.signal import (ss2tf, tf2ss, lsim2, impulse2, step2, lti,
                           dlti, bode, freqresp, lsim, impulse, step,
                           abcd_normalize, place_poles,
                           TransferFunction, StateSpace, ZerosPolesGain)
-from scipy.signal.filter_design import BadCoefficients
+from scipy.signal._filter_design import BadCoefficients
 import scipy.linalg as linalg
-from scipy.sparse.sputils import matrix
+from scipy.sparse._sputils import matrix
 
 
 def _assert_poles_close(P1,P2, rtol=1e-8, atol=1e-8):
@@ -44,8 +44,8 @@ class TestPlacePoles:
         """
         fsf = place_poles(A, B, P, **kwargs)
         expected, _ = np.linalg.eig(A - np.dot(B, fsf.gain_matrix))
-        _assert_poles_close(expected,fsf.requested_poles)
-        _assert_poles_close(expected,fsf.computed_poles)
+        _assert_poles_close(expected, fsf.requested_poles)
+        _assert_poles_close(expected, fsf.computed_poles)
         _assert_poles_close(P,fsf.requested_poles)
         return fsf
 
@@ -75,18 +75,28 @@ class TestPlacePoles:
         # Test complex pole placement on a linearized car model, taken from L.
         # Jaulin, Automatique pour la robotique, Cours et Exercices, iSTE
         # editions p 184/185
-        A = np.array([0,7,0,0,0,0,0,7/3.,0,0,0,0,0,0,0,0]).reshape(4,4)
-        B = np.array([0,0,0,0,1,0,0,1]).reshape(4,2)
+        A = np.array([[0, 7, 0, 0],
+                      [0, 0, 0, 7/3.],
+                      [0, 0, 0, 0],
+                      [0, 0, 0, 0]])
+        B = np.array([[0, 0],
+                      [0, 0],
+                      [1, 0],
+                      [0, 1]])
         # Test complex poles on YT
         P = np.array([-3, -1, -2-1j, -2+1j])
-        self._check(A, B, P)
+        # on macOS arm64 this can lead to a RuntimeWarning invalid
+        # value in divide, so suppress it for now
+        with np.errstate(divide='ignore', invalid='ignore'):
+            self._check(A, B, P)
 
         # Try to reach the specific case in _YT_complex where two singular
         # values are almost equal. This is to improve code coverage but I
         # have no way to be sure this code is really reached
 
         P = [0-1e-6j,0+1e-6j,-10,10]
-        self._check(A, B, P, maxiter=1000)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            self._check(A, B, P, maxiter=1000)
 
         # Try to reach the specific case in _YT_complex where the rank two
         # update yields two null vectors. This test was found via Monte Carlo.
@@ -116,7 +126,8 @@ class TestPlacePoles:
         big_B[:6,:5] = B
 
         P = [-10,-20,-30,40,50,60,70,-20-5j,-20+5j,5+3j,5-3j]
-        self._check(big_A, big_B, P)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            self._check(big_A, big_B, P)
 
         #check with only complex poles and only real poles
         P = [-10,-20,-30,-40,-50,-60,-70,-80,-90,-100]
@@ -131,12 +142,14 @@ class TestPlacePoles:
                       0,0,0,5,0,0,0,0,9]).reshape(5,5)
         B = np.array([0,0,0,0,1,0,0,1,2,3]).reshape(5,2)
         P = np.array([-2, -3+1j, -3-1j, -1+1j, -1-1j])
-        place_poles(A, B, P)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            place_poles(A, B, P)
 
         # same test with an odd number of real poles > 1
         # this is another specific case of YT
         P = np.array([-2, -3, -4, -1+1j, -1-1j])
-        self._check(A, B, P)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            self._check(A, B, P)
 
     def test_tricky_B(self):
         # check we handle as we should the 1 column B matrices and
@@ -525,7 +538,7 @@ class Test_lsim2:
 
     def test_05(self):
         # The call to lsim2 triggers a "BadCoefficients" warning from
-        # scipy.signal.filter_design, but the test passes.  I think the warning
+        # scipy.signal._filter_design, but the test passes.  I think the warning
         # is related to the incomplete handling of multi-input systems in
         # scipy.signal.
 
@@ -1275,4 +1288,3 @@ class Test_freqresp:
         expected = 1 / (s + 1)**4
         assert_almost_equal(H.real, expected.real)
         assert_almost_equal(H.imag, expected.imag)
-

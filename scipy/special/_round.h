@@ -49,8 +49,8 @@ double add_round_down(double a, double b)
 
 
 /* Helper code for testing _round.h. */
-#if __STDC_VERSION__ >= 199901L
-/* We have C99 */
+#if defined(__STDC_VERSION__) && (__STDC_VERSION__ >= 199901L) || defined(__cplusplus)
+/* We have C99, or C++11 or higher; both have fenv.h */
 #include <fenv.h>
 #else
 

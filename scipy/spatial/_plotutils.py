@@ -6,7 +6,7 @@ __all__ = ['delaunay_plot_2d', 'convex_hull_plot_2d', 'voronoi_plot_2d']
 
 @_decorator
 def _held_figure(func, obj, ax=None, **kw):
-    import matplotlib.pyplot as plt  # type: ignore[import]
+    import matplotlib.pyplot as plt
 
     if ax is None:
         fig = plt.figure()
@@ -133,7 +133,7 @@ def convex_hull_plot_2d(hull, ax=None):
     >>> plt.show()
 
     """
-    from matplotlib.collections import LineCollection  # type: ignore[import]
+    from matplotlib.collections import LineCollection
 
     if hull.points.shape[1] != 2:
         raise ValueError("Convex hull is not 2-D")
@@ -159,7 +159,7 @@ def voronoi_plot_2d(vor, ax=None, **kw):
         Diagram to plot
     ax : matplotlib.axes.Axes instance, optional
         Axes to plot on
-    show_points: bool, optional
+    show_points : bool, optional
         Add the Voronoi points to the plot.
     show_vertices : bool, optional
         Add the Voronoi vertices to the plot.
@@ -167,11 +167,10 @@ def voronoi_plot_2d(vor, ax=None, **kw):
         Specifies the line color for polygon boundaries
     line_width : float, optional
         Specifies the line width for polygon boundaries
-    line_alpha: float, optional
+    line_alpha : float, optional
         Specifies the line alpha for polygon boundaries
-    point_size: float, optional
+    point_size : float, optional
         Specifies the size of points
-
 
     Returns
     -------

@@ -8,7 +8,7 @@ Functions
 """
 import numpy as np
 
-from . import zeros as optzeros
+from . import _zeros_py as optzeros
 
 __all__ = ['root_scalar']
 

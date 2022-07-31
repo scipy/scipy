@@ -99,7 +99,7 @@ C                ZD --- S'(z)
 C       =========================================================
 C
         IMPLICIT DOUBLE PRECISION (E,P,W)
-        IMPLICIT COMPLEX *16 (C,S,Z)
+        IMPLICIT COMPLEX *16 (C,S,Z,D)
         EPS=1.0D-14
         PI=3.141592653589793D0
         W0=ABS(Z)
@@ -129,20 +129,39 @@ C
               IF (K.NE.INT(K/2)*2) S=S+CF
               CF1=CF0
 15            CF0=CF
-           S=SQRT(2.0D0/(PI*ZP))*SIN(ZP)/CF*S
+           S=2.0D0/(PI*Z)*SIN(ZP)/CF*S
         ELSE
+C          Auxiliary functions f(z) and g(z) can be computed using an
+C          asymptotic expansion in the right quadrant |arg(z)| <= pi/4, not pi/2
+C          as sometimes suggested. Use the symmetry S(z) = -iS(-iz).
+C          Interestingly, most of the expansion code is the same across
+C          the quadrants. (The forth power in Z is the equalizer here.)
+C          Only one constant has to be adapted.
+           IF (DIMAG(Z).GT.-DBLE(Z).AND.DIMAG(Z).LE.DBLE(Z)) THEN
+C            right quadrant
+             D=DCMPLX(.5D0,0.0D0)
+           ELSE IF (DIMAG(Z).GT.DBLE(Z).AND.DIMAG(Z).GE.-DBLE(Z)) THEN
+C            upper quadrant
+             D=DCMPLX(0.0D0,-.5D0)
+           ELSE IF (DIMAG(Z).LT.-DBLE(Z).AND.DIMAG(Z).GE.DBLE(Z)) THEN
+C            left quadrant
+             D=DCMPLX(-.5D0,0.0D0)
+           ELSE
+C            lower quadrant
+             D=DCMPLX(0.0D0,.5D0)
+           ENDIF
            CR=(1.0D0,0.0D0)
            CF=(1.0D0,0.0D0)
            DO 20 K=1,20
               CR=-.25D0*CR*(4.0D0*K-1.0D0)*(4.0D0*K-3.0D0)/ZP2
 20            CF=CF+CR
-           CR=1.0D0
-           CG=CR
+           CR=(1.0D0,0.0D0)
+           CG=(1.0D0,0.0D0)
            DO 25 K=1,12
               CR=-.25D0*CR*(4.0D0*K+1.0D0)*(4.0D0*K-1.0D0)/ZP2
 25            CG=CG+CR
-           CG = CG/(PI*Z*Z)
-           S=.5D0-(CF*COS(ZP)+CG*SIN(ZP))/(PI*Z)
+           CG=CG/(PI*Z*Z)
+           S=D-(CF*COS(ZP)+CG*SIN(ZP))/(PI*Z)
         ENDIF
 30      ZF=S
         ZD=SIN(0.5*PI*Z*Z)
@@ -10879,7 +10898,7 @@ C                ZD --- C'(z)
 C       =========================================================
 C
         IMPLICIT DOUBLE PRECISION (E,P,W)
-        IMPLICIT COMPLEX *16 (C,S,Z)
+        IMPLICIT COMPLEX *16 (C,S,Z,D)
         EPS=1.0D-14
         PI=3.141592653589793D0
         W0=ABS(Z)
@@ -10909,8 +10928,22 @@ C
               IF (K.EQ.INT(K/2)*2) C=C+CF
               CF1=CF0
 15            CF0=CF
-           C=SQRT(2.0D0/(PI*ZP))*SIN(ZP)/CF*C
+           C=2.0D0/(PI*Z)*SIN(ZP)/CF*C
         ELSE
+C          See comment at CFS(), use C(z) = iC(-iz)
+           IF (DIMAG(Z).GT.-DBLE(Z).AND.DIMAG(Z).LE.DBLE(Z)) THEN
+C            right quadrant
+             D=DCMPLX(.5D0,0.0D0)
+           ELSE IF (DIMAG(Z).GT.DBLE(Z).AND.DIMAG(Z).GE.-DBLE(Z)) THEN
+C            upper quadrant
+             D=DCMPLX(0.0D0,.5D0)
+           ELSE IF (DIMAG(Z).LT.-DBLE(Z).AND.DIMAG(Z).GE.DBLE(Z)) THEN
+C            left quadrant
+             D=DCMPLX(-.5D0,0.0D0)
+           ELSE
+C            lower quadrant
+             D=DCMPLX(0.0D0,-.5D0)
+           ENDIF
            CR=(1.0D0,0.0D0)
            CF=(1.0D0,0.0D0)
            DO 20 K=1,20
@@ -10921,7 +10954,7 @@ C
            DO 25 K=1,12
               CR=-.25D0*CR*(4.0D0*K+1.0D0)*(4.0D0*K-1.0D0)/ZP2
 25            CG=CG+CR
-           C=.5D0+(CF*SIN(ZP)-CG*COS(ZP))/(PI*Z)
+           C=D+(CF*SIN(ZP)-CG*COS(ZP))/(PI*Z)
         ENDIF
 30      ZF=C
         ZD=COS(0.5*PI*Z*Z)

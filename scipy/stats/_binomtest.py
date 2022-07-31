@@ -26,11 +26,6 @@ class BinomTestResult:
     proportion_estimate : float
         The estimate of the proportion of successes.
 
-    Methods
-    -------
-    proportion_ci :
-        Compute the confidence interval for the estimate of the proportion.
-
     """
     def __init__(self, k, n, alternative, pvalue, proportion_estimate):
         self.k = k
@@ -356,7 +351,7 @@ def _binary_search_for_binom_tst(a, d, lo, hi):
       The higher end of the range to search.
 
     Returns
-    ----------
+    -------
     int
       The index, i between lo and hi
       such that a(i)<=d<a(i+1)

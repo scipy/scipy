@@ -1,6 +1,7 @@
 from multiprocessing import Pool
 from multiprocessing.pool import Pool as PWL
 import os
+import re
 import math
 from fractions import Fraction
 
@@ -12,7 +13,7 @@ from pytest import raises as assert_raises, deprecated_call
 import scipy
 from scipy._lib._util import (_aligned_zeros, check_random_state, MapWrapper,
                               getfullargspec_no_self, FullArgSpec,
-                              rng_integers, _validate_int)
+                              rng_integers, _validate_int, _rename_parameter)
 
 
 def test__aligned_zeros():
@@ -262,3 +263,66 @@ class TestValidateInt:
         with pytest.raises(ValueError, match='n must be an integer not '
                                              'less than 0'):
             _validate_int(-1, 'n', 0)
+
+
+class TestRenameParameter:
+    # check that wrapper `_rename_parameter` for backward-compatible
+    # keyword renaming works correctly
+
+    # Example method/function that still accepts keyword `old`
+    @_rename_parameter("old", "new")
+    def old_keyword_still_accepted(self, new):
+        return new
+
+    # Example method/function for which keyword `old` is deprecated
+    @_rename_parameter("old", "new", dep_version="1.9.0")
+    def old_keyword_deprecated(self, new):
+        return new
+
+    def test_old_keyword_still_accepted(self):
+        # positional argument and both keyword work identically
+        res1 = self.old_keyword_still_accepted(10)
+        res2 = self.old_keyword_still_accepted(new=10)
+        res3 = self.old_keyword_still_accepted(old=10)
+        assert res1 == res2 == res3 == 10
+
+        # unexpected keyword raises an error
+        message = re.escape("old_keyword_still_accepted() got an unexpected")
+        with pytest.raises(TypeError, match=message):
+            self.old_keyword_still_accepted(unexpected=10)
+
+        # multiple values for the same parameter raises an error
+        message = re.escape("old_keyword_still_accepted() got multiple")
+        with pytest.raises(TypeError, match=message):
+            self.old_keyword_still_accepted(10, new=10)
+        with pytest.raises(TypeError, match=message):
+            self.old_keyword_still_accepted(10, old=10)
+        with pytest.raises(TypeError, match=message):
+            self.old_keyword_still_accepted(new=10, old=10)
+
+    def test_old_keyword_deprecated(self):
+        # positional argument and both keyword work identically,
+        # but use of old keyword results in DeprecationWarning
+        dep_msg = "Use of keyword argument `old` is deprecated"
+        res1 = self.old_keyword_deprecated(10)
+        res2 = self.old_keyword_deprecated(new=10)
+        with pytest.warns(DeprecationWarning, match=dep_msg):
+            res3 = self.old_keyword_deprecated(old=10)
+        assert res1 == res2 == res3 == 10
+
+        # unexpected keyword raises an error
+        message = re.escape("old_keyword_deprecated() got an unexpected")
+        with pytest.raises(TypeError, match=message):
+            self.old_keyword_deprecated(unexpected=10)
+
+        # multiple values for the same parameter raises an error and,
+        # if old keyword is used, results in DeprecationWarning
+        message = re.escape("old_keyword_deprecated() got multiple")
+        with pytest.raises(TypeError, match=message):
+            self.old_keyword_deprecated(10, new=10)
+        with pytest.raises(TypeError, match=message), \
+                pytest.warns(DeprecationWarning, match=dep_msg):
+            self.old_keyword_deprecated(10, old=10)
+        with pytest.raises(TypeError, match=message), \
+                pytest.warns(DeprecationWarning, match=dep_msg):
+            self.old_keyword_deprecated(new=10, old=10)

@@ -24,6 +24,7 @@ Note: This documentation is work in progress.
 
    stats/discrete
    stats/continuous
+   stats/sampling
 
 
 Random variables
@@ -99,7 +100,7 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
     >>> print('number of continuous distributions: %d' % len(dist_continu))
-    number of continuous distributions: 104
+    number of continuous distributions: 107
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
     number of discrete distributions:   19
 
@@ -199,6 +200,11 @@ seed an internal ``Generator`` object:
 
 For further info, see `NumPy's documentation
 <https://numpy.org/doc/stable/reference/random/index.html>`__.
+
+To learn more about the random number samplers implemented in SciPy, see
+:ref:`non-uniform random number sampling tutorial
+<non-uniform-random-number-sampling>` and :ref:`quasi monte carlo tutorial
+<quasi-monte-carlo>`
 
 Shifting and scaling
 ^^^^^^^^^^^^^^^^^^^^
@@ -1209,6 +1215,8 @@ The MGC-map indicates a **strongly nonlinear relationship**. The optimal scale
 in this case is **equivalent to the local scale**, marked by a red spot on the
 map.
 
+.. _quasi-monte-carlo:
+
 Quasi-Monte Carlo
 -----------------
 
@@ -1413,8 +1421,7 @@ defined. Following is an example wrapping `numpy.random.Generator`.
     ...         self.rng = np.random.default_rng(self.rng_seed)
     ...
     ...
-    ...     def random(self, n=1):
-    ...         self.num_generated += n
+    ...     def _random(self, n=1, *, workers=1):
     ...         return self.rng.random((n, self.d))
     ...
     ...

@@ -8,6 +8,7 @@
  */
 
 #include "cdf_wrappers.h"
+#include "cephes.h"
 
 #if defined(NO_APPEND_FORTRAN)
 #if defined(UPPERCASE_FORTRAN)
@@ -395,6 +396,11 @@ double cdft1_wrap(double df, double t){
   double q=0, p=0, bound=0;
   int status=10;
 
+  if (npy_isinf(df)) {
+    if (npy_isnan(t)) return NPY_NAN;
+    return ndtr(t);
+  }
+
   CDFLIB_CALL2(F_FUNC(cdft,CDFT), "stdtr",
                t, df,
                p, NO_RETURN_BOUND);
@@ -404,6 +410,11 @@ double cdft2_wrap(double df, double p){
   int which=2;
   double q=1.0-p, t=0, bound=0;
   int status=10;
+
+  if (npy_isinf(df)) {
+    if (npy_isnan(p)) return NPY_NAN;
+    return ndtri(p);
+  }
 
   CDFLIB_CALL2(F_FUNC(cdft,CDFT), "stdtrit",
                t, df,

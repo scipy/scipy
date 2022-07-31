@@ -46,11 +46,11 @@ class BenchmarkOneNormEst(Benchmark):
             # Get the exact values of one-norms of squares.
             for M in self.matrices:
                 M.dot(M)
-                scipy.sparse.linalg.matfuncs._onenorm(M)
+                scipy.sparse.linalg._matfuncs._onenorm(M)
         elif solver == 'onenormest':
             # Get the estimates of one-norms of squares.
             for M in self.matrices:
-                scipy.sparse.linalg.matfuncs._onenormest_matrix_power(M, 2)
+                scipy.sparse.linalg._matfuncs._onenormest_matrix_power(M, 2)
 
     # Retain old benchmark results (remove this if changing the benchmark)
     time_onenormest.version = "f7b31b4bf5caa50d435465e78dab6e133f3c263a52c4523eec785446185fdb6f"
