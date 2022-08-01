@@ -271,7 +271,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     The angles between the individual exact and computed singular vectors
     are not so small.
-    
+
     >>> s_a(u2[:, :1], u[:, :1]) + s_a(u2[:, 1:], u[:, 1:])
     [0.01541...]
 
