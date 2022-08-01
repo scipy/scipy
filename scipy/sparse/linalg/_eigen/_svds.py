@@ -263,7 +263,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> u, _ = np.linalg.qr(rng.standard_normal((99, 2)))
     >>> v, _ = np.linalg.qr(rng.standard_normal((99, 2)))
     >>> vT = v.T
-    >>> A = u @ diag(s) @ vT
+    >>> A = u @ np.diag(s) @ vT
     >>> A = A.astype(np.float32)
     >>> u2, s2, vT2 = svds(A, k=2)
     >>> np.allclose(s2, s)
