@@ -117,8 +117,18 @@ numpy_nodepr_api = '-DNPY_NO_DEPRECATED_API=NPY_1_9_API_VERSION'
 # For MKL and for auto-detecting one of multiple libs, we'll need a custom
 # dependency in Meson (like is done for scalapack) - see
 # https://github.com/mesonbuild/meson/issues/2835
-blas = dependency(get_option('blas'))
-lapack = dependency(get_option('lapack'))
+blas_name = get_option('blas')
+lapack_name = get_option('lapack')
+# pkg-config uses a lower-case name while CMake uses a capitalized name, so try
+# that too to make the fallback detection with CMake work
+if blas_name == 'openblas'
+  blas_name = ['openblas', 'OpenBLAS']
+endif
+if lapack_name == 'openblas'
+  lapack_name = ['openblas', 'OpenBLAS']
+endif
+blas = dependency(blas_name)
+lapack = dependency(lapack_name)
 
 if blas.name() == 'mkl' or lapack.name() == 'mkl' or get_option('use-g77-abi')
   g77_abi_wrappers = files([
