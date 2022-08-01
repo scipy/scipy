@@ -151,8 +151,6 @@ generate_config = custom_target(
   install_dir: py3.get_install_dir() + '/scipy'
 )
 
-#FIXME: the git revision is Unknown; script works when invoked directly, but
-#       not when it's run by Ninja. See https://github.com/rgommers/scipy/pull/57
 generate_version = custom_target(
   'generate-version',
   install: true,
@@ -167,7 +165,10 @@ generate_version = custom_target(
 python_sources = [
   '__init__.py',
   '_distributor_init.py',
-  'conftest.py'
+  'conftest.py',
+  'linalg.pxd',
+  'optimize.pxd',
+  'special.pxd'
 ]
 
 py3.install_sources(
@@ -187,14 +188,16 @@ _cython_tree = custom_target('_cython_tree',
   output: [
     '__init__.py',
     'linalg.pxd',
+    'optimize.pxd',
     'special.pxd'
   ],
   input: [
     '__init__.py',
     'linalg.pxd',
+    'optimize.pxd',
     'special.pxd'
   ],
-  command: [copier, '@INPUT@', '@OUTDIR@']
+  command: [copier, '@INPUT@', '@OUTDIR@'],
 )
 cython_tree = declare_dependency(sources: _cython_tree)
 
