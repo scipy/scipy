@@ -26,7 +26,7 @@ jobs:
   test_meson:
     name: Meson build
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
-    if: "github.repository == 'scipy/scipy' || github.repository == '' && (matrix.python-version != '3.11-dev' && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/'))"
+    if: "github.repository == 'scipy/scipy' || github.repository == '' || (matrix.python-version != '3.11-dev' && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/'))"
     runs-on: ubuntu-latest
     strategy:
       matrix:
