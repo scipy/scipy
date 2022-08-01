@@ -265,14 +265,16 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     # to compute the p-value". [1] page 26 below eq. (3.6).
     if lmbd_hat2 <= 0:
         return PoissonMeansTestResult(0, 1)
-    # the unbiased variance estimate [1] (3.2)
+
+    # The unbiased variance estimate [1] (3.2)
     var = k1 / (n1 ** 2) + k2 / (n2 ** 2)
 
-    # the _observed_ pivot statistic from the input. It follows the
+    # The _observed_ pivot statistic from the input. It follows the
     # unnumbered equation following equation (3.3) This is used later in
     # comparison with the computed pivot statistics in an indicator function.
     t_k1k2 = (k1 / n1 - k2 / n2 - diff) / np.sqrt(var)
-    # equation (3.5) of [1] is lengthy, so it is broken into several parts,
+
+    # Equation (3.5) of [1] is lengthy, so it is broken into several parts,
     # beginning here. Note that the probability mass function of poisson is
     # exp^(-\mu)*\mu^k/k!, so and this is called with shape \mu, here noted
     # here as nlmbd_hat*. The strategy for evaluating the double summation in
@@ -280,24 +282,24 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     # the summation and then broadcast them together into a matrix, and then
     # sum across the entire matrix.
 
-    # compute constants (as seen in the first and second separated products in
+    # Compute constants (as seen in the first and second separated products in
     # (3.5).). (This is the shape (\mu) parameter of the poisson distribution.)
     nlmbd_hat1 = n1 * (lmbd_hat2 + diff)
     nlmbd_hat2 = n2 * lmbd_hat2
 
-    # determine summation bounds for tail ends of distribution rather than
+    # Determine summation bounds for tail ends of distribution rather than
     # summing to infinity. `x1*` is for the outer sum and `x2*` is the inner
-    # sum
+    # sum.
     x1_lb, x1_ub = distributions.poisson.ppf([1e-10, 1 - 1e-16], nlmbd_hat1)
     x2_lb, x2_ub = distributions.poisson.ppf([1e-10, 1 - 1e-16], nlmbd_hat2)
 
-    # construct arrays to function as the x_1 and x_2 counters on the summation
+    # Construct arrays to function as the x_1 and x_2 counters on the summation
     # in (3.5). `x1` is in columns and `x2` is in rows to allow for
     # broadcasting.
     x1 = np.arange(x1_lb, x1_ub + 1)
     x2 = np.arange(x2_lb, x2_ub + 1)[:, None]
 
-    # these are the two products in equation (3.5) with `prob_x1` being the
+    # These are the two products in equation (3.5) with `prob_x1` being the
     # first (left side) and `prob_x2` being the second (right side). (To
     # make as clear as possible: the 1st contains a "+ d" term, the 2nd does
     # not.)
@@ -311,7 +313,7 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     lmbds_diff = lmbd_x1 - lmbd_x2 - diff
     var_x1x2 = lmbd_x1 / n1 + lmbd_x2 / n2
 
-    # this is the 'pivot statistic' for use in the indicator of the summation
+    # This is the 'pivot statistic' for use in the indicator of the summation
     # (left side of "I[.]"). Before dividing, mask zero-elements in the
     # denominator with infinity so that they are `false` in the indicator.
     if alternative == 'two-sided':
@@ -334,7 +336,7 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     else:
         indicator = t_x1x2 >= t_k1k2
 
-    # multiply all combinations of the products together, exclude terms
+    # Multiply all combinations of the products together, exclude terms
     # based on the `indicator` and then sum. (3.5)
     pvalue = np.sum((prob_x1 * prob_x2)[indicator])
     return PoissonMeansTestResult(t_k1k2, pvalue)
