@@ -208,12 +208,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> from scipy.stats import ortho_group
     >>> from scipy.sparse.linalg import svds
     >>> from scipy.sparse import csr_matrix
-    >>> rng = np.random.default_rng(0)
+    >>> rng = np.random.default_rng()
 
     Construct a dense matrix ``A`` from singular values and vectors.
 
     >>> orthogonal = ortho_group.rvs(10, random_state=rng)
-    >>> s = [1e-3, 1, 2, 3, 4]  # singular values
+    >>> s = [1e-3, 1, 2, 3, 4]  # non-zero singular values
     >>> u = orthogonal[:, :5]         # left singular vectors
     >>> vT = orthogonal[:, 5:].T      # right singular vectors
     >>> A = u @ np.diag(s) @ vT
@@ -252,7 +252,44 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     ...  np.allclose(vT5 @ vT5.T, np.eye(5)))
     True
 
-    Our second example follows that of sklearn.decomposition.TruncatedSVD.
+    If there are (nearly) multiple singular values, the corresponding
+    individual singular vectors may be unstable, but the whole invariant
+    subspace contaning all such singular vectorts is computed accurately
+    as can be measured by angles between subspaces.
+
+    >>> from scipy.linalg import subspace_angles as s_a
+    >>> rng = np.random.default_rng()
+    >>> s = [1, 1 + 1e-6]  # non-zero singular values
+    >>> u, _ = np.linalg.qr(rng.standard_normal((99, 2)))
+    >>> v, _ = np.linalg.qr(rng.standard_normal((99, 2)))
+    >>> vT = v.T
+    >>> A = u @ diag(s) @ vT
+    >>> A = A.astype(np.float32)
+    >>> u2, s2, vT2 = svds(A, k=2)
+    >>> np.allclose(s2, s)
+    True
+
+    The angles between the individual exact and computed singular vectors
+    are not so small.
+    
+    >>> s_a(u2[:, :1], u[:, :1]) + s_a(u2[:, 1:], u[:, 1:])
+    [0.01541...]
+
+    >>> s_a(vT2[:1, :].T, vT[:1, :].T) + s_a(vT2[1:, :].T, vT[1:, :].T)
+    [0.0154...]
+
+    As opposed to the angles between the 2-dimentional invariant subspaces
+    that these vectors span, which are small for rights singular vectors
+
+    >>> s_a(u2, u).sum()
+    3.1...e-07
+
+    as well as for left singular vectors.
+
+    >>> s_a(vT2.T, vT.T).sum()
+    4.3...e-07
+
+    The next example follows that of sklearn.decomposition.TruncatedSVD.
 
     >>> rng = np.random.RandomState(0)
     >>> X_dense = rng.random(size=(100, 100))
@@ -269,6 +306,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> from scipy.linalg import svd
     >>> from scipy.sparse import rand
     >>> from scipy.sparse.linalg import aslinearoperator
+    >>> rng = np.random.RandomState(0)
     >>> G = rand(8, 9, density=0.5, random_state=rng)
     >>> Glo = aslinearoperator(G)
     >>> _, singular_values_svds, _ = svds(Glo, k=5)
