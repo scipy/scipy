@@ -26,7 +26,7 @@ jobs:
   test_meson:
     name: Meson build
     # If using act to run CI locally the github object does not exist and the usual skipping should not be enforced
-    if: "github.repository == 'scipy/scipy' || github.repository == ''"
+    if: "github.repository == 'scipy/scipy' || github.repository == '' && (matrix.python-version != '3.11-dev' && !contains(github.ref, 'maintenance/') && !contains(github.base_ref, 'maintenance/'))"
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -53,7 +53,7 @@ jobs:
     - name: Install Python packages
       if: matrix.python-version == '3.9'
       run: |
-        python -m pip install numpy setuptools==59.8.0 wheel cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool
+        python -m pip install numpy cython pytest pytest-xdist pytest-timeout pybind11 mpmath gmpy2 pythran ninja meson click rich-click doit pydevtool
 
     - name: Install Python packages from repositories
       if: matrix.python-version == '3.11-dev'
@@ -62,10 +62,6 @@ jobs:
         python -m pip install ninja cython pytest pybind11 pytest-xdist pytest-timeout click rich-click doit pydevtool
         python -m pip install git+https://github.com/serge-sans-paille/pythran.git
         python -m pip install git+https://github.com/mesonbuild/meson.git
-        python -m pip install -r mypy_requirements.txt
-
-        # Packages that are only needed for their annotations
-        python -m pip install types-psutil pybind11 sphinx
 
     - name:  Prepare compiler cache
       id:    prep-ccache
@@ -109,8 +105,11 @@ jobs:
     - name: Mypy
       if: matrix.python-version == '3.11-dev'
       run: |
-        python -u dev.py mypy
+        # Packages that are only needed for their annotations
+        python -m pip install -r mypy_requirements.txt
+        python -m pip install types-psutil pybind11 sphinx
 
+        python -u dev.py mypy
     - name: Test SciPy
       run: |
         export OMP_NUM_THREADS=2
