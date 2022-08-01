@@ -313,7 +313,7 @@ least somewhat up-to-date, or use backports where available), and gradually
 becomes less important as usage numbers of old distributions dwindle.
 
 All the currently lowest-supported compiler versions (GCC 8, LLVM 12,
-VS2019 with vc142) have full support for the C++17 _core language_,
+VS2019 with vc142) have full support for the C++17 *core language*,
 which can therefore be used unconditionally.
 However, as of mid-2022, support for the entirety of the C++17 standard library
 has not yet been completed across all compilers [19]_, particularly LLVM.

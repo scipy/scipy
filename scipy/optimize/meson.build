@@ -307,6 +307,7 @@ py3.install_sources([
   '_tstutils.py',
   '_zeros_py.py',
   'cobyla.py',
+  'cython_optimize.pxd',
   'lbfgsb.py',
   'linesearch.py',
   'minpack.py',

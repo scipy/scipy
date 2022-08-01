@@ -5956,6 +5956,29 @@ def test_levy_sf():
     assert_allclose(y, expected, rtol=1e-14)
 
 
+# The expected values for levy.isf(p) were calculated with mpmath.
+# For loc=0 and scale=1, the inverse SF can be computed with
+#
+#     import mpmath
+#
+#     def levy_invsf(p):
+#         return 1/(2*mpmath.erfinv(p)**2)
+#
+# For example, with mpmath.mp.dps set to 60, float(levy_invsf(1e-20))
+# returns 6.366197723675814e+39.
+#
+@pytest.mark.parametrize('p, expected_isf',
+                         [(1e-20, 6.366197723675814e+39),
+                          (1e-8, 6366197723675813.0),
+                          (0.375, 4.185810119346273),
+                          (0.875, 0.42489442055310134),
+                          (0.999, 0.09235685880262713),
+                          (0.9999999962747097, 0.028766845244146945)])
+def test_levy_isf(p, expected_isf):
+    x = stats.levy.isf(p)
+    assert_allclose(x, expected_isf, atol=5e-15)
+
+
 def test_levy_l_sf():
     # Test levy_l.sf for small arguments.
     x = np.array([-0.016, -0.01, -0.005, -0.0015])
