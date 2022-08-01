@@ -24,7 +24,7 @@ def check_text(text):
 
 def main():
     p = argparse.ArgumentParser(usage=__doc__.rstrip())
-    p.add_argument("module", nargs="?", default="scipy")
+    p.add_argument("module", nargs="?", default="SciPy")
     args = p.parse_args()
 
     # Drop '' from sys.path
