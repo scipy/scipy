@@ -262,6 +262,18 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> print(singular_values)
     [ 4.3293...  4.4491...  4.5420...  4.5987... 35.2410...]
 
+    Our final example illustrates a matrix-free call, which is the most
+    memory efficient evaluation, since the transpose of the input matrix
+    is never explicitely constructed.
+
+    >>> from scipy.sparse import rand
+    >>> from scipy.sparse.linalg import aslinearoperator
+    >>> G = rand(8, 9, density=0.5, random_state=rng)
+    >>> Glo = aslinearoperator(G)
+    >>> _, singular_values_svds, _ = svds(Glo, k=5)
+    >>> _, singular_values_svd, _ = svd(G.toarray())
+    >>> np.allclose(singular_values_svds, singular_values_svd[-4::-1])
+    True
     """
     args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
                solver, random_state)
