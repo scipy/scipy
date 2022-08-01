@@ -272,22 +272,23 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     The angles between the individual exact and computed singular vectors
     are not so small.
 
-    >>> s_a(u2[:, :1], u[:, :1]) + s_a(u2[:, 1:], u[:, 1:])
-    [0.01541...]
+    >>> s_a(u2[:, :1], u[:, :1]) + s_a(u2[:, 1:], u[:, 1:]) > 5e-3
+    True
 
-    >>> s_a(vT2[:1, :].T, vT[:1, :].T) + s_a(vT2[1:, :].T, vT[1:, :].T)
-    [0.0154...]
+    >>> (s_a(vT2[:1, :].T, vT[:1, :].T) +
+    ...  s_a(vT2[1:, :].T, vT[1:, :].T)) > 5e-3
+    True
 
     As opposed to the angles between the 2-dimentional invariant subspaces
     that these vectors span, which are small for rights singular vectors
 
-    >>> s_a(u2, u).sum()
-    3.1...e-07
+    >>> s_a(u2, u).sum() < 1e-6
+    True
 
     as well as for left singular vectors.
 
-    >>> s_a(vT2.T, vT.T).sum()
-    4.3...e-07
+    >>> s_a(vT2.T, vT.T).sum() < 1e-6
+    True
 
     The next example follows that of sklearn.decomposition.TruncatedSVD.
 
