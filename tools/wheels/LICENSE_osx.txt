@@ -1,7 +1,7 @@
 
 ----
 
-This binary distribution of Scipy also bundles the following software:
+This binary distribution of SciPy also bundles the following software:
 
 
 Name: GCC runtime library
