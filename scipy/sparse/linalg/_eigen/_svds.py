@@ -266,6 +266,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     memory efficient evaluation, since the transpose of the input matrix
     is never explicitely constructed.
 
+    >>> from scipy.linalg import svd
     >>> from scipy.sparse import rand
     >>> from scipy.sparse.linalg import aslinearoperator
     >>> G = rand(8, 9, density=0.5, random_state=rng)
