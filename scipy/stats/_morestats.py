@@ -33,7 +33,7 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot'
+           'yeojohnson_normplot', 'directionalmean'
            ]
 
 
@@ -395,6 +395,7 @@ def _calc_uniform_order_statistic_medians(n):
     the interval, but the distributions are skewed in a way that
     pushes the medians slightly towards the endpoints of the unit interval:
 
+    >>> import numpy as np
     >>> n = 4
     >>> k = np.arange(1, n+1)
     >>> from scipy.stats import beta
@@ -553,6 +554,7 @@ def probplot(x, sparams=(), dist='norm', fit=True, plot=None, rvalue=False):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> nsample = 100
@@ -693,6 +695,7 @@ def ppcc_max(x, brack=(0.0, 1.0), dist='tukeylambda'):
     First we generate some random data from a Weibull distribution
     with shape parameter 2.5:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -785,6 +788,7 @@ def ppcc_plot(x, a, b, dist='tukeylambda', plot=None, N=80):
     First we generate some random data from a Weibull distribution
     with shape parameter 2.5, and plot the histogram of the data:
 
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> rng = np.random.default_rng()
@@ -867,6 +871,7 @@ def boxcox_llf(lmb, data):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -1163,6 +1168,7 @@ def boxcox_normmax(x, brack=None, method='pearsonr', optimizer=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -1535,6 +1541,7 @@ def yeojohnson_llf(lmb, data):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
     >>> from mpl_toolkits.axes_grid1.inset_locator import inset_axes
@@ -1629,6 +1636,7 @@ def yeojohnson_normmax(x, brack=(-2, 2)):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
 
@@ -1774,6 +1782,7 @@ def shapiro(x):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x = stats.norm.rvs(loc=5, scale=3, size=100, random_state=rng)
@@ -2109,6 +2118,7 @@ def anderson_ksamp(samples, midrank=True):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
 
@@ -2311,6 +2321,7 @@ def ansari(x, y, alternative='two-sided'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import ansari
     >>> rng = np.random.default_rng()
 
@@ -2475,6 +2486,7 @@ def bartlett(*samples):
     Test whether or not the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
     >>> from scipy.stats import bartlett
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
@@ -2578,6 +2590,7 @@ def levene(*samples, center='median', proportiontocut=0.05):
     Test whether or not the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
     >>> from scipy.stats import levene
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
@@ -2833,6 +2846,7 @@ def fligner(*samples, center='median', proportiontocut=0.05):
     Test whether or not the lists `a`, `b` and `c` come from populations
     with equal variances.
 
+    >>> import numpy as np
     >>> from scipy.stats import fligner
     >>> a = [8.88, 9.12, 9.04, 8.98, 9.00, 9.08, 9.01, 8.85, 9.06, 8.99]
     >>> b = [8.88, 8.95, 9.29, 9.44, 9.15, 9.58, 8.36, 9.18, 8.67, 9.05]
@@ -3035,6 +3049,7 @@ def mood(x, y, axis=0, alternative="two-sided"):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
     >>> x2 = rng.standard_normal((2, 45, 6, 7))
@@ -3720,6 +3735,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import circmean
     >>> circmean([0.1, 2*np.pi+0.2, 6*np.pi+0.3])
     0.2
@@ -3801,6 +3817,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import circvar
     >>> circvar([0, 2*np.pi/3, 5*np.pi/3])
     0.6666666666666665
@@ -3862,6 +3879,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     .. code-block:: python
 
+        import numpy as np
         C = np.cos(samples).mean()
         S = np.sin(samples).mean()
         R = np.sqrt(C**2 + S**2)
@@ -3878,6 +3896,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import circstd
     >>> small_samples = [0, 0.1*np.pi/2, 0.001*np.pi, 0.03*np.pi/2]
     >>> circstd(small_samples)
@@ -3904,3 +3923,98 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     if not normalize:
         res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
     return res
+
+
+def directionalmean(samples, *, axis=0, normalize=True):
+    """
+    Computes the directional mean of a sample of vectors.
+
+    The directional mean is a measure of "preferred direction" of vector data.
+    It is analogous to the sample mean, but it is for use when the magnitude of
+    the data is irrelevant (e.g. unit vectors).
+
+    Parameters
+    ----------
+    samples : array_like
+        Input array. Must be at least two-dimensional, and the last axis of the
+        input must correspond with the dimensionality of the vector space.
+        When the input is exactly two dimensional, this means that each row
+        of the data is a vector observation.
+    axis : int, default: 0
+        Axis along which the directional mean is computed.
+    normalize: boolean, default: True
+        If True, normalize the input to ensure that each observation is a
+        unit vector. It the observations are already unit vectors, consider
+        setting this to False to avoid unnecessary computation.
+
+    Returns
+    -------
+    directionalmean : ndarray
+        Directional mean.
+
+    See also
+    --------
+    circmean: circular mean; i.e. directional mean for 2D *angles*
+
+    Notes
+    -----
+    This uses a definition of directional mean from [1]_.
+    Assuming the observations are unit vectors, the calculation is as follows.
+
+    .. code-block:: python
+
+        mean=samples.mean(axis=0)
+        directionalmean = mean/np.linalg.norm(mean)
+
+    This definition is appropriate for *directional* data (i.e. vector data
+    for which the magnitude of each observation is irrelevant) but not
+    for *axial* data (i.e. vector data for which the magnitude and *sign* of
+    each observation is irrelevant).
+
+    References
+    ----------
+    .. [1] Mardia, Jupp. (2000). *Directional Statistics*
+       (p. 163). Wiley.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import directionalmean
+    >>> data = np.array([[3, 4],    # first observation, 2D vector space
+    ...                  [6, -8]])  # second observation
+    >>> directionalmean(data)
+    array([1., 0.])
+
+    In contrast, the regular sample mean of the vectors would be influenced
+    by the magnitude of each observation. Furthermore, the result would not be
+    a unit vector.
+
+    >>> data.mean(axis=0)
+    array([4.5, -2.])
+
+    An exemplary use case for `directionalmean` is to find a *meaningful*
+    center for a set of observations on a sphere, e.g. geographical locations.
+
+    >>> data = np.array([[0.8660254, 0.5, 0.],
+    ...                  [0.8660254, -0.5, 0.]])
+    >>> directionalmean(data)
+    array([1., 0., 0.])
+
+    The regular sample mean on the other hand yields a result which does not
+    lie on the surface of the sphere.
+
+    >>> data.mean(axis=0)
+    array([0.8660254, 0., 0.])
+
+    """
+    samples = np.asarray(samples)
+    if samples.ndim < 2:
+        raise ValueError("samples must at least be two-dimensional. "
+                         f"Instead samples has shape: {samples.shape!r}")
+    samples = np.moveaxis(samples, axis, 0)
+    if normalize:
+        vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
+        samples = samples/vectornorms
+    mean = np.mean(samples, axis=0)
+    directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
+    return directional_mean

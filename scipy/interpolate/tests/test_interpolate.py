@@ -1,6 +1,6 @@
 from numpy.testing import (assert_, assert_equal, assert_almost_equal,
-        assert_array_almost_equal, assert_array_equal,
-        assert_allclose, assert_warns)
+                           assert_array_almost_equal, assert_array_equal,
+                           assert_allclose)
 from pytest import raises as assert_raises
 import pytest
 
@@ -2435,4 +2435,3 @@ def _ppoly4d_eval(c, xs, xnew, ynew, znew, unew, nu=None):
         out[jout] = val
 
     return out
-

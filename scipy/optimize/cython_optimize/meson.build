@@ -1,4 +1,5 @@
 # Needed to trick Cython, it won't do a relative import outside a package
+# (see https://github.com/mesonbuild/meson/issues/8961)
 _dummy_init_cyoptimize = custom_target('_dummy_init_cyoptimize',
   output: [
     '__init__.py',
@@ -13,8 +14,6 @@ _dummy_init_cyoptimize = custom_target('_dummy_init_cyoptimize',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
-# FIXME: generated .pyx which has relative cimport in it doesn't work yet (see
-#        https://github.com/mesonbuild/meson/issues/8961)
 _zeros_pyx = custom_target('_zeros_pyx',
   output: '_zeros.pyx',
   input: '_zeros.pyx.in',
@@ -35,7 +34,6 @@ _zeros = py3.extension_module('_zeros',
   cy_opt_gen.process(_zeros_pyx),
   c_args: cython_c_args,
   include_directories: inc_np,
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/optimize/cython_optimize'
 )

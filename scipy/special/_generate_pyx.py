@@ -226,7 +226,6 @@ import itertools
 import json
 import os
 from stat import ST_MTIME
-import optparse
 import argparse
 import re
 import textwrap

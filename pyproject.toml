@@ -10,7 +10,7 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.5.0",
+    "meson-python>=0.8.0",
     "Cython>=0.29.21",
     "pybind11>=2.4.3",
     "pythran>=0.11.0",
@@ -53,6 +53,8 @@ requires = [
 
 [project]
 name = "SciPy"
+# TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
+#       at that point, no longer include them in `py3.install_sources()`
 license = {file = "LICENSE.txt"}
 description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
@@ -93,6 +95,7 @@ dynamic = ['version']
 test = [
     "pytest",
     "pytest-cov",
+    "pytest-timeout",
     "pytest-xdist",
     "asv",
     "mpmath",
@@ -103,10 +106,9 @@ test = [
 doc = [
     "sphinx!=4.1.0",
     "pydata-sphinx-theme>=0.9.0",
-    "sphinx-panels>=0.5.2",
+    "sphinx-design>=0.2.0",
     "matplotlib>2",
     "numpydoc",
-    "sphinx-tabs",
 ]
 dev = [
     "mypy",
@@ -129,4 +131,3 @@ tracker = "https://github.com/scipy/scipy/issues"
 
 [tool.doit]
 dodoFile = "dev.py"
-

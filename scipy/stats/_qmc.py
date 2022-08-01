@@ -67,9 +67,7 @@ def check_random_state(seed=None):
 
     Parameters
     ----------
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None the `numpy.random.Generator` singleton is used.
         If `seed` is an int, a new ``Generator`` instance is used,
         seeded with `seed`.
@@ -261,6 +259,7 @@ def discrepancy(
     --------
     Calculate the quality of the sample using the discrepancy:
 
+    >>> import numpy as np
     >>> from scipy.stats import qmc
     >>> space = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
     >>> l_bounds = [0.5, 0.5]
@@ -336,6 +335,7 @@ def update_discrepancy(
     We can also compute iteratively the discrepancy by using
     ``iterative=True``.
 
+    >>> import numpy as np
     >>> from scipy.stats import qmc
     >>> space = np.array([[1, 3], [2, 6], [3, 2], [4, 5], [5, 1], [6, 4]])
     >>> l_bounds = [0.5, 0.5]
@@ -1677,6 +1677,7 @@ class PoissonDisk(QMCEngine):
     --------
     Generate a 2D sample using a `radius` of 0.2.
 
+    >>> import numpy as np
     >>> import matplotlib.pyplot as plt
     >>> from matplotlib.collections import PatchCollection
     >>> from scipy.stats import qmc
@@ -2397,6 +2398,7 @@ def _lloyd_centroidal_voronoi_tessellation(
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.spatial import distance
     >>> rng = np.random.default_rng()
     >>> sample = rng.random((128, 2))
