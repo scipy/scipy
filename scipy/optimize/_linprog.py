@@ -592,7 +592,7 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
 
     >>> b = [6, 4]  # reset to original values
     >>> b[0] -= 39
-    >>> res = linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds]).fun
+    >>> linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds]).fun
     -22.0
 
     """
