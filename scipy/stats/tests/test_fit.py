@@ -563,31 +563,3 @@ class TestFit:
 
         res = stats.fit(dist, data, bounds, guess=params, optimizer=self.opt)
         assert_allclose(res.params, params, **self.tols)
-
-    def test_gh16751(self):
-        # the `lambda_` shape parameter of `boltzmann` was incorrectly
-        # entered in `_shape_info` without the underscore. Check that this
-        # is resolved and the proper warnings/errors are emitted when
-        # fitting `boltzmann`
-        rng = np.random.default_rng(self.seed)
-
-        n = 10
-        data = (rng.random(size=100) ** 2 * n).astype(int)
-
-        # no warning/error with the correct parameter name
-        bounds = {"lambda_": (0, 1), "N": n}
-        stats.fit(stats.boltzmann, data, bounds=bounds)
-
-        # warning when additional, invalid parameter is provided
-        warn_message = "Bounds provided for the following unrecognized..."
-        bounds = {"lambda_": (0, 1), "N": n, "lambda": (0, 1)}
-        warns = pytest.warns(RuntimeWarning, match=warn_message)
-        with warns:
-            stats.fit(stats.boltzmann, data, bounds=bounds)
-
-        # warning and error when required parameter is missing
-        raise_message = "The intersection of user-provided bounds..."
-        bounds = {"N": n, "lambda": (0, 1)}
-        raises = pytest.raises(ValueError, match=raise_message)
-        with warns, raises:
-            stats.fit(stats.boltzmann, data, bounds=bounds)
