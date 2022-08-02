@@ -1,5 +1,6 @@
 from collections import namedtuple
 from dataclasses import make_dataclass
+from math import comb
 import numpy as np
 import warnings
 from itertools import combinations
@@ -1266,30 +1267,56 @@ def _get_binomial_log_p_value_with_nuisance_param(
     return -log_pvalue
 
 
-def _pval_cvm_2samp_exact(s, nx, ny):
+def _pval_cvm_2samp_exact(s, m, n):
     """
     Compute the exact p-value of the Cramer-von Mises two-sample test
-    for a given value s (float) of the test statistic by enumerating
-    all possible combinations. nx and ny are the sizes of the samples.
+    for a given value s of the test statistic.
+    m and n are the sizes of the samples.
+
+    [1] Y. Xiao, A. Gordon, and A. Yakovlev, "A C++ Program for
+        the Cramér-Von Mises Two-Sample Test", J. Stat. Soft.,
+        vol. 17, no. 8, pp. 1-15, Dec. 2006.
+    [2] T. W. Anderson "On the Distribution of the Two-Sample Cramer-von Mises
+        Criterion," The Annals of Mathematical Statistics, Ann. Math. Statist.
+        33(3), 1148-1159, (September, 1962)
     """
-    rangex = np.arange(nx)
-    rangey = np.arange(ny)
 
-    us = []
+    # [1, p. 3]
+    lcm = np.lcm(m, n)
+    # [1, p. 4], below eq. 3
+    a = lcm // m
+    b = lcm // n
+    # Combine Eq. 9 in [2] with Eq. 2 in [1] and solve for $\zeta$
+    # Hint: `s` is $U$ in [2], and $T_2$ in [1] is $T$ in [2]
+    mn = m * n
+    zeta = lcm ** 2 * (m + n) * (6 * s - mn * (4 * mn - 1)) // (6 * mn ** 2)
 
-    # x and y are all possible partitions of ranks from 0 to nx + ny - 1
-    # into two sets of length nx and ny
-    # Here, ranks are from 0 to nx + ny - 1 instead of 1 to nx + ny, but
-    # this does not change the value of the statistic.
-    for x, y in _all_partitions(nx, ny):
-        # compute the statistic
-        u = nx * np.sum((x - rangex)**2)
-        u += ny * np.sum((y - rangey)**2)
-        us.append(u)
+    # bound maximum value that may appear in `gs` (remember both rows!)
+    zeta_bound = lcm**2 * (m + n)  # bound elements in row 1
+    combinations = comb(m + n, m)  # sum of row 2
+    max_gs = max(zeta_bound, combinations)
+    dtype = np.min_scalar_type(max_gs)
 
-    # compute the values of u and the frequencies
-    u, cnt = np.unique(us, return_counts=True)
-    return np.sum(cnt[u >= s]) / np.sum(cnt)
+    # the frequency table of $g_{u, v}^+$ defined in [1, p. 6]
+    gs = ([np.array([[0], [1]], dtype=dtype)]
+          + [np.empty((2, 0), dtype=dtype) for _ in range(m)])
+    for u in range(n + 1):
+        next_gs = []
+        tmp = np.empty((2, 0), dtype=dtype)
+        for v, g in enumerate(gs):
+            # Calculate g recursively with eq. 11 in [1]. Even though it
+            # doesn't look like it, this also does 12/13 (all of Algorithm 1).
+            vi, i0, i1 = np.intersect1d(tmp[0], g[0], return_indices=True)
+            tmp = np.concatenate([
+                np.stack([vi, tmp[1, i0] + g[1, i1]]),
+                np.delete(tmp, i0, 1),
+                np.delete(g, i1, 1)
+            ], 1)
+            tmp[0] += (a * v - b * u) ** 2
+            next_gs.append(tmp)
+        gs = next_gs
+    value, freq = gs[m]
+    return np.float64(np.sum(freq[value >= zeta]) / combinations)
 
 
 def cramervonmises_2samp(x, y, method='auto'):
@@ -1334,10 +1361,8 @@ def cramervonmises_2samp(x, y, method='auto'):
     - ``exact``: The exact p-value is computed by enumerating all
       possible combinations of the test statistic, see [2]_.
 
-    The exact calculation will be very slow even for moderate sample
-    sizes as the number of combinations increases rapidly with the
-    size of the samples. If ``method=='auto'``, the exact approach
-    is used if both samples contain less than 10 observations,
+    If ``method=='auto'``, the exact approach is used
+    if both samples contain equal to or less than 20 observations,
     otherwise the asymptotic distribution is used.
 
     If the underlying distribution is not continuous, the p-value is likely to
@@ -1405,7 +1430,7 @@ def cramervonmises_2samp(x, y, method='auto'):
     ny = len(ya)
 
     if method == 'auto':
-        if max(nx, ny) > 10:
+        if max(nx, ny) > 20:
             method = 'asymptotic'
         else:
             method = 'exact'

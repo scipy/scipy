@@ -1362,13 +1362,13 @@ class TestCvm_2samp:
         assert_allclose(r1.pvalue, r2.pvalue, atol=1e-2)
 
     def test_method_auto(self):
-        x = np.arange(10)
+        x = np.arange(20)
         y = [0.5, 4.7, 13.1]
         r1 = cramervonmises_2samp(x, y, method='exact')
         r2 = cramervonmises_2samp(x, y, method='auto')
         assert_equal(r1.pvalue, r2.pvalue)
-        # switch to asymptotic if one sample has more than 10 observations
-        x = np.arange(11)
+        # switch to asymptotic if one sample has more than 20 observations
+        x = np.arange(21)
         r1 = cramervonmises_2samp(x, y, method='asymptotic')
         r2 = cramervonmises_2samp(x, y, method='auto')
         assert_equal(r1.pvalue, r2.pvalue)
