@@ -1291,11 +1291,11 @@ def _pval_cvm_2samp_exact(s, m, n):
     mn = m * n
     zeta = lcm ** 2 * (m + n) * (6 * s - mn * (4 * mn - 1)) // (6 * mn ** 2)
 
-    combinations = comb(m + n, m)
-    # maximum value that may appear in `gs`
-    max_gs = max(combinations, lcm ** 2 * (m + n))
-    # smaller than uint16 has problems
-    dtype = np.result_type(np.uint16, np.min_scalar_type(max_gs))
+    # bound maximum value that may appear in `gs` (remember both rows!)
+    zeta_bound = lcm**2 * (m + n)  # bound elements in row 1
+    combinations = comb(m + n, m)  # sum of row 2
+    max_gs = max(zeta_bound, combinations)
+    dtype = np.min_scalar_type(max_gs)
 
     # the frequency table of $g_{u, v}^+$ defined in [1, p. 6]
     gs = ([np.array([[0], [1]], dtype=dtype)]
@@ -1316,7 +1316,7 @@ def _pval_cvm_2samp_exact(s, m, n):
             next_gs.append(tmp)
         gs = next_gs
     value, freq = gs[m]
-    return np.sum(freq[value >= zeta]) / combinations
+    return np.float64(np.sum(freq[value >= zeta]) / combinations)
 
 
 def cramervonmises_2samp(x, y, method='auto'):
