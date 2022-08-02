@@ -428,7 +428,7 @@ cdef class Rotation:
     array([0.        , 0.        , 1.57079633])
 
     It is also possible to initialize multiple rotations in a single instance
-    using any of the `from_...` functions. Here we initialize a stack of 3
+    using any of the ``from_...`` functions. Here we initialize a stack of 3
     rotations using the ``from_euler`` method:
 
     >>> r = R.from_euler('zyx', [
@@ -544,6 +544,13 @@ cdef class Rotation:
     def single(self):
         """Whether this instance represents a single rotation."""
         return self._single
+
+    def __bool__(self):
+        """Comply with Python convention for objects to be True.
+
+        Required because `Rotation.__len__()` is defined and not always truthy.
+        """
+        return True
 
     def __len__(self):
         """Number of rotations contained in this object.
@@ -1303,13 +1310,18 @@ cdef class Rotation:
         A rotation vector is a 3 dimensional vector which is co-directional to
         the axis of rotation and whose norm gives the angle of rotation [1]_.
 
+        Parameters
+        ----------
+        degrees : boolean, optional
+            Returned magnitudes are in degrees if this flag is True, else they are
+            in radians. Default is False.
+
+            .. versionadded:: 1.7.0
+
         Returns
         -------
         rotvec : ndarray, shape (3,) or (N, 3)
             Shape depends on shape of inputs used for initialization.
-        degrees : boolean, optional
-            Returned magnitudes are in degrees if this flag is True, else they are
-            in radians. Default is False.
 
         References
         ----------

@@ -100,7 +100,7 @@ introspection:
     >>> dist_discrete = [d for d in dir(stats) if
     ...                  isinstance(getattr(stats, d), stats.rv_discrete)]
     >>> print('number of continuous distributions: %d' % len(dist_continu))
-    number of continuous distributions: 105
+    number of continuous distributions: 107
     >>> print('number of discrete distributions:   %d' % len(dist_discrete))
     number of discrete distributions:   19
 
@@ -1421,8 +1421,7 @@ defined. Following is an example wrapping `numpy.random.Generator`.
     ...         self.rng = np.random.default_rng(self.rng_seed)
     ...
     ...
-    ...     def random(self, n=1):
-    ...         self.num_generated += n
+    ...     def _random(self, n=1, *, workers=1):
     ...         return self.rng.random((n, self.d))
     ...
     ...

@@ -20,7 +20,12 @@ npy_cdouble faddeeva_erf(npy_cdouble zp)
     return npy_cpack(real(w), imag(w));
 }
 
-npy_cdouble faddeeva_erfc(npy_cdouble zp)
+double faddeeva_erfc(double x)
+{
+    return Faddeeva::erfc(x);
+}
+
+npy_cdouble faddeeva_erfc_complex(npy_cdouble zp)
 {
     complex<double> z(zp.real, zp.imag);
     complex<double> w = Faddeeva::erfc(z);
@@ -76,6 +81,39 @@ npy_cdouble faddeeva_ndtr(npy_cdouble zp)
 }
 
 /*
+ * Log of the CDF of the normal distribution for double x.
+ *
+ * Let F(x) be the CDF of the standard normal distribution.
+ * This implementation of log(F(x)) is based on the identities
+ *
+ *   F(x) = erfc(-x/√2)/2
+ *        = 1 - erfc(x/√2)/2
+ *
+ * We use the first formula for x < -1, with erfc(z) replaced
+ * by erfcx(z)*exp(-z**2) to ensure high precision for large
+ * negative values when we take the logarithm:
+ *
+ *   log F(x) = log(erfc(-x/√2)/2)
+ *            = log(erfcx(-x/√2)/2)*exp(-x**2/2))
+ *            = log(erfcx(-x/√2)/2) - x**2/2
+ *
+ * For x >= -1, we use the second formula for F(x):
+ *
+ *   log F(x) = log(1 - erfc(x/√2)/2)
+ *            = log1p(-erfc(x/√2)/2)
+ */
+double faddeeva_log_ndtr(double x)
+{
+    double t = x*NPY_SQRT1_2;
+    if (x < -1.0) {
+        return log(faddeeva_erfcx(-t)/2) - t*t;
+    }
+    else {
+        return log1p(-faddeeva_erfc(t)/2);
+    }
+}
+
+/*
  * Log of the normal CDF for complex arguments.
  *
  * This is equivalent to log(ndtr(z)), but is more robust to overflow at $z\to\infty$.
@@ -83,9 +121,8 @@ npy_cdouble faddeeva_ndtr(npy_cdouble zp)
  * taking special care to select the principal branch of the log function
  *           log( exp(-z^2) w(i z) )
  */
-npy_cdouble faddeeva_log_ndtr(npy_cdouble zp)
+npy_cdouble faddeeva_log_ndtr_complex(npy_cdouble zp)
 {
-
     complex<double> z(zp.real, zp.imag);
     if (zp.real > 6) {
         // Underflow. Close to the real axis, expand the log in log(1 - ndtr(-z)).

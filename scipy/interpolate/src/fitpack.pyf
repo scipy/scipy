@@ -403,6 +403,24 @@ static F_INT calc_regrid_lwrk(F_INT mx, F_INT my, F_INT kx, F_INT ky,
        integer intent(out) :: ier
      end subroutine parder
 
+     subroutine pardtc(tx,nx,ty,ny,c,kx,ky,nux,nuy,newc,ier)
+       ! newc,ier = pardtc(tx,ty,c,kx,ky,nux,nuy)
+       threadsafe
+       real*8 dimension(nx),intent(in) :: tx
+       integer intent(hide),depend(tx) :: nx=len(tx)
+       real*8 dimension(ny),intent(in) :: ty
+       integer intent(hide),depend(ty) :: ny=len(ty)
+       real*8 intent(in),dimension((nx-kx-1)*(ny-ky-1)),&
+            depend(nx,ny,kx,ky),check(len(c)==(nx-kx-1)*(ny-ky-1)) :: c
+       integer intent(in),check((1 <= kx) && (kx <= 5)) :: kx
+       integer intent(in),check((1 <= ky) && (ky <= 5)) :: ky
+       integer intent(in),depend(kx),check((0 <= nux) && (nux < kx)) :: nux
+       integer intent(in),depend(ky),check((0 <= nuy) && (nux < ky)) :: nuy
+       real*8 dimension((nx-kx-1)*(ny-ky-1)),&
+            depend(nx,ny,nux,nuy,kx,ky),intent(out) :: newc
+       integer intent(out) :: ier
+     end subroutine pardtc
+
      subroutine bispeu(tx,nx,ty,ny,c,kx,ky,x,y,z,m,wrk,lwrk,ier)
        ! z,ier = bispeu(tx,ty,c,kx,ky,x,y)
        threadsafe

@@ -127,13 +127,13 @@ class FitResult:
             The matplotlib Axes object on which the plot was drawn.
         """
         try:
-            from matplotlib.ticker import MaxNLocator  # type: ignore[import]
+            from matplotlib.ticker import MaxNLocator
         except ModuleNotFoundError as exc:
             message = "matplotlib must be installed to use method `plot`."
             raise ValueError(message) from exc
 
         if ax is None:
-            import matplotlib.pyplot as plt  # type: ignore[import]
+            import matplotlib.pyplot as plt
             ax = plt.gca()
 
         fit_params = np.atleast_1d(self.params)

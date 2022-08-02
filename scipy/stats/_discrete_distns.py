@@ -14,13 +14,16 @@ from numpy import floor, ceil, log, exp, sqrt, log1p, expm1, tanh, cosh, sinh
 
 import numpy as np
 
-from ._distn_infrastructure import (
-    rv_discrete, _ncx2_pdf, _ncx2_cdf, get_distribution_names,
-    _check_shape, _ShapeInfo)
+from ._distn_infrastructure import (rv_discrete, get_distribution_names,
+                                    _check_shape, _ShapeInfo)
 import scipy.stats._boost as _boost
 from ._biasedurn import (_PyFishersNCHypergeometric,
                         _PyWalleniusNCHypergeometric,
                         _PyStochasticLib3)
+
+
+def _isintegral(x):
+    return x == np.round(x)
 
 
 class binom_gen(rv_discrete):
@@ -59,7 +62,7 @@ class binom_gen(rv_discrete):
         return random_state.binomial(n, p, size)
 
     def _argcheck(self, n, p):
-        return (n >= 0) & (p >= 0) & (p <= 1)
+        return (n >= 0) & _isintegral(n) & (p >= 0) & (p <= 1)
 
     def _get_support(self, n, p):
         return self.a, n
@@ -223,7 +226,7 @@ class betabinom_gen(rv_discrete):
         return 0, n
 
     def _argcheck(self, n, a, b):
-        return (n >= 0) & (a > 0) & (b > 0)
+        return (n >= 0) & _isintegral(n) & (a > 0) & (b > 0)
 
     def _logpmf(self, x, n, a, b):
         k = floor(x)
@@ -340,11 +343,12 @@ class nbinom_gen(rv_discrete):
         def f1(k, n, p):
             return np.log1p(-special.betainc(k + 1, n, 1 - p))
 
-        def f2(k, n, p):
-            return np.log(cdf)
-
+        # do calc in place
+        logcdf = cdf
         with np.errstate(divide='ignore'):
-            return _lazywhere(cond, (x, n, p), f=f1, f2=f2)
+            logcdf[cond] = f1(k[cond], n[cond], p[cond])
+            logcdf[~cond] = np.log(cdf[~cond])
+        return logcdf
 
     def _sf(self, x, n, p):
         k = floor(x)
@@ -477,6 +481,7 @@ class hypergeom_gen(rv_discrete):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import hypergeom
     >>> import matplotlib.pyplot as plt
 
@@ -527,6 +532,7 @@ class hypergeom_gen(rv_discrete):
     def _argcheck(self, M, n, N):
         cond = (M > 0) & (n >= 0) & (N >= 0)
         cond &= (n <= M) & (N <= M)
+        cond &= _isintegral(M) & _isintegral(n) & _isintegral(N)
         return cond
 
     def _logpmf(self, k, M, n, N):
@@ -640,6 +646,7 @@ class nhypergeom_gen(rv_discrete):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.stats import nhypergeom
     >>> import matplotlib.pyplot as plt
 
@@ -706,6 +713,7 @@ class nhypergeom_gen(rv_discrete):
 
     def _argcheck(self, M, n, r):
         cond = (n >= 0) & (n <= M) & (r >= 0) & (r <= M-n)
+        cond &= _isintegral(M) & _isintegral(n) & _isintegral(r)
         return cond
 
     def _rvs(self, M, n, r, size=None, random_state=None):
@@ -982,11 +990,11 @@ class boltzmann_gen(rv_discrete):
 
     """
     def _shape_info(self):
-        return [_ShapeInfo("lambda", False, (0, np.inf), (False, False)),
+        return [_ShapeInfo("lambda_", False, (0, np.inf), (False, False)),
                 _ShapeInfo("N", True, (0, np.inf), (False, False))]
 
     def _argcheck(self, lambda_, N):
-        return (lambda_ > 0) & (N > 0)
+        return (lambda_ > 0) & (N > 0) & _isintegral(N)
 
     def _get_support(self, lambda_, N):
         return self.a, N - 1
@@ -1055,7 +1063,7 @@ class randint_gen(rv_discrete):
                 _ShapeInfo("high", True, (-np.inf, np.inf), (False, False))]
 
     def _argcheck(self, low, high):
-        return (high > low)
+        return (high > low) & _isintegral(low) & _isintegral(high)
 
     def _get_support(self, low, high):
         return low, high-1
@@ -1146,6 +1154,7 @@ class zipf_gen(rv_discrete):
 
     Confirm that `zipf` is the large `n` limit of `zipfian`.
 
+    >>> import numpy as np
     >>> from scipy.stats import zipfian
     >>> k = np.arange(11)
     >>> np.allclose(zipf.pmf(k, a), zipfian.pmf(k, a, n=10000000))
@@ -1242,6 +1251,7 @@ class zipfian_gen(rv_discrete):
 
     Confirm that `zipfian` reduces to `zipf` for large `n`, `a > 1`.
 
+    >>> import numpy as np
     >>> from scipy.stats import zipf
     >>> k = np.arange(11)
     >>> np.allclose(zipfian.pmf(k, a=3.5, n=10000000), zipf.pmf(k, a=3.5))
@@ -1412,17 +1422,20 @@ class skellam_gen(rv_discrete):
                 random_state.poisson(mu2, n))
 
     def _pmf(self, x, mu1, mu2):
-        px = np.where(x < 0,
-                      _ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
-                      _ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
-        # ncx2.pdf() returns nan's for extremely low probabilities
+        with warnings.catch_warnings():
+            message = "overflow encountered in _ncx2_pdf"
+            warnings.filterwarnings("ignore", message=message)
+            px = np.where(x < 0,
+                          _boost._ncx2_pdf(2*mu2, 2*(1-x), 2*mu1)*2,
+                          _boost._ncx2_pdf(2*mu1, 2*(1+x), 2*mu2)*2)
+            # ncx2.pdf() returns nan's for extremely low probabilities
         return px
 
     def _cdf(self, x, mu1, mu2):
         x = floor(x)
         px = np.where(x < 0,
-                      _ncx2_cdf(2*mu2, -2*x, 2*mu1),
-                      1 - _ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
+                      _boost._ncx2_cdf(2*mu2, -2*x, 2*mu1),
+                      1 - _boost._ncx2_cdf(2*mu1, 2*(x+1), 2*mu2))
         return px
 
     def _stats(self, mu1, mu2):

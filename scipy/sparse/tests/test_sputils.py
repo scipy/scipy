@@ -1,7 +1,7 @@
 """unit tests for sparse utility functions"""
 
 import numpy as np
-from numpy.testing import assert_equal, suppress_warnings
+from numpy.testing import assert_equal
 from pytest import raises as assert_raises
 from scipy.sparse import _sputils as sputils
 from scipy.sparse._sputils import matrix
@@ -21,6 +21,12 @@ class TestSparseUtils:
         assert_equal(sputils.getdtype(None, default=float), float)
         assert_equal(sputils.getdtype(None, a=A), np.int8)
 
+        with assert_raises(
+            ValueError,
+            match="object dtype is not supported by sparse matrices",
+        ):
+            sputils.getdtype("O")
+
     def test_isscalarlike(self):
         assert_equal(sputils.isscalarlike(3.0), True)
         assert_equal(sputils.isscalarlike(-4), True)
@@ -38,10 +44,11 @@ class TestSparseUtils:
         assert_equal(sputils.isintlike(-4), True)
         assert_equal(sputils.isintlike(np.array(3)), True)
         assert_equal(sputils.isintlike(np.array([3])), False)
-        with suppress_warnings() as sup:
-            sup.filter(DeprecationWarning,
-                       "Inexact indices into sparse matrices are deprecated")
-            assert_equal(sputils.isintlike(3.0), True)
+        with assert_raises(
+            ValueError,
+            match="Inexact indices into sparse matrices are not allowed"
+        ):
+            sputils.isintlike(3.0)
 
         assert_equal(sputils.isintlike(2.5), False)
         assert_equal(sputils.isintlike(1 + 3j), False)
@@ -94,7 +101,7 @@ class TestSparseUtils:
             sputils.validateaxis(axis)
 
     def test_get_index_dtype(self):
-        imax = np.iinfo(np.int32).max
+        imax = np.int64(np.iinfo(np.int32).max)
         too_big = imax + 1
 
         # Check that uint32's with no values too large doesn't return

@@ -102,6 +102,7 @@ def _broadcast_array_shapes_remove_axis(arrays, axis=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a = np.zeros((5, 2, 1))
     >>> b = np.zeros((9, 3))
     >>> _broadcast_array_shapes((a, b), 1)
@@ -182,30 +183,42 @@ def _masked_arrays_2_sentinel_arrays(samples):
 
     # Choose a sentinel value. We can't use `np.nan`, because sentinel (masked)
     # values are always omitted, but there are different nan policies.
+    dtype = np.result_type(*samples)
+    dtype = dtype if np.issubdtype(dtype, np.number) else np.float64
     for i in range(len(samples)):
         # Things get more complicated if the arrays are of different types.
         # We could have different sentinel values for each array, but
         # the purpose of this code is convenience, not efficiency.
-        samples[i] = samples[i].astype(np.float64, copy=False)
+        samples[i] = samples[i].astype(dtype, copy=False)
 
-    max_possible, eps = np.finfo(np.float64).max, np.finfo(np.float64).eps
+    inexact = np.issubdtype(dtype, np.inexact)
+    info = np.finfo if inexact else np.iinfo
+    max_possible, min_possible = info(dtype).max, info(dtype).min
+    nextafter = np.nextafter if inexact else (lambda x, _: x - 1)
 
     sentinel = max_possible
-    while sentinel > 0:
+    # For simplicity, min_possible/np.infs are not candidate sentinel values
+    while sentinel > min_possible:
         for sample in samples:
-            if np.any(sample == sentinel):
-                sentinel *= (1 - 2*eps)  # choose a new sentinel value
+            if np.any(sample == sentinel):  # choose a new sentinel value
+                sentinel = nextafter(sentinel, -np.inf)
                 break
         else:  # when sentinel value is OK, break the while loop
             break
+    else:
+        message = ("This function replaces masked elements with sentinel "
+                   "values, but the data contains all distinct values of this "
+                   "data type. Consider promoting the dtype to `np.float64`.")
+        raise ValueError(message)
 
     # replace masked elements with sentinel value
     out_samples = []
     for sample in samples:
-        mask = getattr(sample, 'mask', False)
-        if np.any(mask):
+        mask = getattr(sample, 'mask', None)
+        if mask is not None:  # turn all masked arrays into sentinel arrays
             mask = np.broadcast_to(mask, sample.shape)
-            sample = sample.data.copy()  # don't modify original array
+            sample = sample.data.copy() if np.any(mask) else sample.data
+            sample = np.asarray(sample)  # `sample.data` could be a memoryview?
             sample[mask] = sentinel
         out_samples.append(sample)
 
@@ -331,12 +344,14 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
         raise an error. This argument prevents the error from being raised when
         input is not 1D and instead places a NaN in the corresponding element
         of the result.
-    n_outputs : int, default: 2
+    n_outputs : int or callable, default: 2
         The number of outputs produced by the function given 1d sample(s). For
         example, hypothesis tests that return a namedtuple or result object
         with attributes ``statistic`` and ``pvalue`` use the default
         ``n_outputs=2``; summary statistics with scalar output use
-        ``n_outputs=1``.
+        ``n_outputs=1``. Alternatively, may be a callable that accepts a
+        dictionary of arguments passed into the wrapped function and returns
+        the number of outputs corresponding with those arguments.
     kwd_samples : sequence, default: []
         The names of keyword parameters that should be treated as samples. For
         example, `gmean` accepts as its first argument a sample `a` but
@@ -397,6 +412,11 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 n_samp = n_samples(kwds)
             else:
                 n_samp = n_samples or len(args)
+
+            # get the number of outputs
+            n_out = n_outputs  # rename to avoid UnboundLocalError
+            if callable(n_out):
+                n_out = n_out(kwds)
 
             # If necessary, rearrange function signature: accept other samples
             # as positional args right after the first n_samp args
@@ -464,7 +484,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                 # currently the hypothesis tests this is applied to do not
                 # propagate nans in a sensible way
                 if any(contains_nans) and nan_policy == 'propagate':
-                    res = np.full(n_outputs, np.nan)
+                    res = np.full(n_out, np.nan)
                     res = _add_reduced_axes(res, reduced_axes, keepdims)
                     return tuple_to_result(*res)
 
@@ -492,7 +512,7 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
             # backward compatibility.
             empty_output = _check_empty_inputs(samples, axis)
             if empty_output is not None:
-                res = [empty_output.copy() for i in range(n_outputs)]
+                res = [empty_output.copy() for i in range(n_out)]
                 res = _add_reduced_axes(res, reduced_axes, keepdims)
                 return tuple_to_result(*res)
 
@@ -520,23 +540,21 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return tuple_to_result(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_out, np.nan)
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             # Addresses nan_policy == "propagate"
             elif contains_nan and nan_policy == 'propagate':
                 def hypotest_fun(x):
                     if np.isnan(x).any():
-                        res = np.full(n_outputs, np.nan)
-                        return tuple_to_result(*res)
+                        return np.full(n_out, np.nan)
+
                     samples = np.split(x, split_indices)[:n_samp+n_kwd_samp]
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return tuple_to_result(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_out, np.nan)
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             else:
                 def hypotest_fun(x):
@@ -544,13 +562,11 @@ def _axis_nan_policy_factory(tuple_to_result, default_axis=0,
                     if sentinel:
                         samples = _remove_sentinel(samples, paired, sentinel)
                     if is_too_small(samples):
-                        res = np.full(n_outputs, np.nan)
-                        return tuple_to_result(*res)
-                    return hypotest_fun_out(*samples, **kwds)
+                        return np.full(n_out, np.nan)
+                    return result_to_tuple(hypotest_fun_out(*samples, **kwds))
 
             x = np.moveaxis(x, axis, 0)
             res = np.apply_along_axis(hypotest_fun, axis=0, arr=x)
-            res = result_to_tuple(res)
             res = _add_reduced_axes(res, reduced_axes, keepdims)
             return tuple_to_result(*res)
 
