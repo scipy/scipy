@@ -706,7 +706,6 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     :math:`\\iint^{\\infty}_{-\\infty} e^{-(x^{2} + y^{2})} \\,dy\\,dx`:
 
     >>> import numpy as np
-    >>> from scipy import integrate
     >>> f = lambda x, y: np.exp(-(x ** 2 + y ** 2))
     >>> integrate.dblquad(f, -np.inf, np.inf, -np.inf, np.inf)
         (3.141592653589777, 2.5173086737433208e-08)
