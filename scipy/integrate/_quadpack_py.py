@@ -838,8 +838,8 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
 
     Compute the three-dimensional Gaussian Integral, which is the integral of
     the Gaussian function :math:`f(x,y,z) = e^{-(x^{2} + y^{2} + z^{2})}`, over
-    :math:`(-\\infty,\\infty)`. That is, compute the integral
-    :math:`\\iiint^{\\infty}_{-\\infty} e^{-(x^{2} + y^{2} + z^{2})} \\,dz\\,dy
+    :math:`(-\\infty,+\\infty)`. That is, compute the integral
+    :math:`\\iiint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2} + z^{2})} \\,dz\\,dy
     \\,dx`:
 
     >>> import numpy as np
