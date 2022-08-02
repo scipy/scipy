@@ -1,5 +1,6 @@
 from collections import namedtuple
 from dataclasses import make_dataclass
+from math import comb
 import numpy as np
 import warnings
 from itertools import combinations
@@ -1289,11 +1290,17 @@ def _pval_cvm_2samp_exact(s, m, n):
     # Hint: `s` is $U$ in [2], and $T_2$ in [1] is $T$ in [2]
     mn = m * n
     zeta = lcm ** 2 * (m + n) * (6 * s - mn * (4 * mn - 1)) // (6 * mn ** 2)
+
+    combinations = comb(m + n, m)
+    # smaller than uint16 has problems
+    dtype = np.result_type(np.uint16, np.min_scalar_type(combinations))
+
     # the frequency table of $g_{u, v}^+$ defined in [1, p. 6]
-    gs = [np.array([[0], [1]])] + [np.empty((2, 0), int) for _ in range(m)]
+    gs = ([np.array([[0], [1]], dtype=dtype)]
+          + [np.empty((2, 0), dtype=dtype) for _ in range(m)])
     for u in range(n + 1):
         next_gs = []
-        tmp = np.empty((2, 0), int)
+        tmp = np.empty((2, 0), dtype=dtype)
         for v, g in enumerate(gs):
             # calculate g recursively with eq. 11 in [1]
             vi, i0, i1 = np.intersect1d(tmp[0], g[0], return_indices=True)
@@ -1306,7 +1313,7 @@ def _pval_cvm_2samp_exact(s, m, n):
             next_gs.append(tmp)
         gs = next_gs
     value, freq = gs[m]
-    return np.sum(freq[value >= zeta]) / comb(m + n, m)
+    return np.sum(freq[value >= zeta]) / combinations
 
 
 def cramervonmises_2samp(x, y, method='auto'):
