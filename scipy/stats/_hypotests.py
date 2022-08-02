@@ -1302,7 +1302,8 @@ def _pval_cvm_2samp_exact(s, m, n):
         next_gs = []
         tmp = np.empty((2, 0), dtype=dtype)
         for v, g in enumerate(gs):
-            # calculate g recursively with eq. 11 in [1]
+            # Calculate g recursively with eq. 11 in [1]. Even though it
+            # doesn't look like it, this also does 12/13 (all of Algorithm 1).
             vi, i0, i1 = np.intersect1d(tmp[0], g[0], return_indices=True)
             tmp = np.concatenate([
                 np.stack([vi, tmp[1, i0] + g[1, i1]]),
