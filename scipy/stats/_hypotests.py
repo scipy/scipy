@@ -1292,8 +1292,10 @@ def _pval_cvm_2samp_exact(s, m, n):
     zeta = lcm ** 2 * (m + n) * (6 * s - mn * (4 * mn - 1)) // (6 * mn ** 2)
 
     combinations = comb(m + n, m)
+    # maximum value that may appear in `gs`
+    max_gs = max(combinations, lcm ** 2 * (m + n))
     # smaller than uint16 has problems
-    dtype = np.result_type(np.uint16, np.min_scalar_type(combinations))
+    dtype = np.result_type(np.uint16, np.min_scalar_type(max_gs))
 
     # the frequency table of $g_{u, v}^+$ defined in [1, p. 6]
     gs = ([np.array([[0], [1]], dtype=dtype)]
