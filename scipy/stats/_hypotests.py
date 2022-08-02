@@ -1281,7 +1281,8 @@ def _pval_cvm_2samp_exact(s, m, n):
     # [1, p. 4], below eq. 3
     a = lcm // m
     b = lcm // n
-    # eq. 9 in [2] and eq. 2 in [1]
+    # Combine Eq. 9 in [2] with Eq. 2 in [1] and solve for $\zeta$
+    # Hint: `s` is $U$ in [2], and $T_2$ in [1] is $T$ in [2]
     mn = m * n
     zeta = lcm ** 2 * (m + n) * (6 * s - mn * (4 * mn - 1)) // (6 * mn ** 2)
     # the frequency table of $g_{u, v}^+$ defined in [1, p. 6]
