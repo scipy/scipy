@@ -706,6 +706,33 @@ ctypedef fused real:
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
+cdef int gaussian_kernel_estimate_inner(real[:, :] points_, real[:, :] values_, real[:, :] xi_,
+                                        real[:, :] estimate, real[:, :] whitening,
+                                        int n, int m, int d, int p) nogil:
+    cdef:
+        int i, j, k
+        real residual, arg, norm
+
+    # Evaluate the normalisation
+    norm = math.pow((2 * PI) ,(- d / 2))
+    for i in range(d):
+        norm *= whitening[i, i]
+
+    for i in range(n):
+        for j in range(m):
+            arg = 0
+            for k in range(d):
+                residual = (points_[i, k] - xi_[j, k])
+                arg += residual * residual
+
+            arg = math.exp(-arg / 2) * norm
+            for k in range(p):
+                estimate[j, k] += values_[i, k] * arg
+    return 0
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
     """
     def gaussian_kernel_estimate(points, real[:, :] values, xi, precision)
@@ -750,23 +777,12 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
     xi_ = np.dot(xi, whitening).astype(dtype, copy=False)
     values_ = values.astype(dtype, copy=False)
 
-    # Evaluate the normalisation
-    norm = math.pow((2 * PI) ,(- d / 2))
-    for i in range(d):
-        norm *= whitening[i, i]
-
     # Create the result array and evaluate the weighted sum
     estimate = np.zeros((m, p), dtype)
-    with nogil:
-        for i in range(n):
-            for j in range(m):
-                arg = 0
-                for k in range(d):
-                    residual = (points_[i, k] - xi_[j, k])
-                    arg += residual * residual
 
-                arg = math.exp(-arg / 2) * norm
-                for k in range(p):
-                    estimate[j, k] += values_[i, k] * arg
+    with nogil:
+        gaussian_kernel_estimate_inner(
+            points_, values_, xi_, estimate,
+            whitening, n, m, d, p)
 
     return np.asarray(estimate)
