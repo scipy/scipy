@@ -757,15 +757,16 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
 
     # Create the result array and evaluate the weighted sum
     estimate = np.zeros((m, p), dtype)
-    for i in range(n):
-        for j in range(m):
-            arg = 0
-            for k in range(d):
-                residual = (points_[i, k] - xi_[j, k])
-                arg += residual * residual
+    with nogil:
+        for i in range(n):
+            for j in range(m):
+                arg = 0
+                for k in range(d):
+                    residual = (points_[i, k] - xi_[j, k])
+                    arg += residual * residual
 
-            arg = math.exp(-arg / 2) * norm
-            for k in range(p):
-                estimate[j, k] += values_[i, k] * arg
+                arg = math.exp(-arg / 2) * norm
+                for k in range(p):
+                    estimate[j, k] += values_[i, k] * arg
 
     return np.asarray(estimate)
