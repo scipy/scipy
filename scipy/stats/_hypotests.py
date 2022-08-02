@@ -14,6 +14,7 @@ from ._hypotests_pythran import _a_ij_Aij_Dij2
 from ._hypotests_pythran import (
     _concordant_pairs as _P, _discordant_pairs as _Q
 )
+from scipy.stats import _stats_py
 
 __all__ = ['epps_singleton_2samp', 'cramervonmises', 'somersd',
            'barnard_exact', 'boschloo_exact', 'cramervonmises_2samp',
@@ -144,10 +145,6 @@ def epps_singleton_2samp(x, y, t=(0.4, 0.8)):
     return Epps_Singleton_2sampResult(w, p)
 
 
-PoissonMeansTestResult = make_dataclass('PoissonMeansTestResult',
-                                        ('statistic', 'pvalue'))
-
-
 def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     r"""
     Performs the Poisson means test, AKA the "E-test".
@@ -264,7 +261,7 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     # case the null hypothesis cannot be rejected ... [and] it is not necessary
     # to compute the p-value". [1] page 26 below eq. (3.6).
     if lmbd_hat2 <= 0:
-        return PoissonMeansTestResult(0, 1)
+        return _stats_py.SignificanceResult(0, 1)
 
     # The unbiased variance estimate [1] (3.2)
     var = k1 / (n1 ** 2) + k2 / (n2 ** 2)
@@ -314,17 +311,8 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     var_x1x2 = lmbd_x1 / n1 + lmbd_x2 / n2
 
     # This is the 'pivot statistic' for use in the indicator of the summation
-    # (left side of "I[.]"). Before dividing, mask zero-elements in the
-    # denominator with infinity so that they are `false` in the indicator.
-    if alternative == 'two-sided':
-        mask_out_invalid = np.abs(lmbd_x1 - lmbd_x2) > diff
-    elif alternative == 'less':
-        mask_out_invalid = lmbds_diff < 0
-    else:
-        mask_out_invalid = lmbds_diff > 0
-
-    var_x1x2[~mask_out_invalid] = np.inf
-    with np.errstate(invalid='ignore'):
+    # (left side of "I[.]").
+    with np.errstate(invalid='ignore', divide='ignore'):
         t_x1x2 = lmbds_diff / np.sqrt(var_x1x2)
 
     # `[indicator]` implements the "I[.] ... the indicator function" per
@@ -339,7 +327,7 @@ def poisson_means_test(k1, n1, k2, n2, *, diff=0, alternative='two-sided'):
     # Multiply all combinations of the products together, exclude terms
     # based on the `indicator` and then sum. (3.5)
     pvalue = np.sum((prob_x1 * prob_x2)[indicator])
-    return PoissonMeansTestResult(t_k1k2, pvalue)
+    return _stats_py.SignificanceResult(t_k1k2, pvalue)
 
 
 def _poisson_means_test_iv(k1, n1, k2, n2, diff, alternative):
