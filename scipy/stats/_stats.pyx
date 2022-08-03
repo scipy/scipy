@@ -792,7 +792,15 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
 
     with nogil:
         gaussian_kernel_estimate_inner(
-            points_, values_, xi_, estimate,
-            whitening, n, m, d, p)
+            points_,
+            values_,
+            xi_,
+            estimate,
+            whitening,
+            n,
+            m,
+            d,
+            p,
+        )
 
     return np.asarray(estimate)
