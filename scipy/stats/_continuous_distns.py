@@ -7817,21 +7817,23 @@ class skew_norm_gen(rv_continuous):
             f2=lambda x, a: 2.*_norm_pdf(x)*_norm_cdf(a*x)
         )
 
-    def _cdf_single(self, x, *args):
-        _a, _b = self._get_support(*args)
-        if x <= 0:
-            cdf = integrate.quad(self._pdf, _a, x, args=args)[0]
-        else:
-            t1 = integrate.quad(self._pdf, _a, 0, args=args)[0]
-            t2 = integrate.quad(self._pdf, 0, x, args=args)[0]
-            cdf = t1 + t2
-        if cdf > 1:
-            # Presumably numerical noise, e.g. 1.0000000000000002
-            cdf = 1.0
-        return cdf
+    def _cdf(self, x, a):
+        cdf = _boost._skewnorm_cdf(x, 0, 1, a)
+        # Boost is not accurate in left tail when a > 0
+        i_small_cdf = (cdf < 1e-6) & (a > 0)
+        cdf[i_small_cdf] = super()._cdf(x[i_small_cdf], a[i_small_cdf])
+        return np.clip(cdf, 0 , 1)
+
+    def _ppf(self, x, a):
+        return _boost._skewnorm_ppf(x, 0, 1, a)
 
     def _sf(self, x, a):
+        # Boost's SF is implemented this way. Use whatever customizations
+        # we made in the _cdf.
         return self._cdf(-x, -a)
+
+    def _isf(self, x, a):
+        return _boost._skewnorm_isf(x, 0, 1, a)
 
     def _rvs(self, a, size=None, random_state=None):
         u0 = random_state.normal(size=size)

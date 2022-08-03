@@ -38,7 +38,7 @@ DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 # For skipping test_cont_basic
 distslow = ['recipinvgauss', 'vonmises', 'kappa4', 'vonmises_line',
             'gausshyper', 'norminvgauss', 'geninvgauss', 'genhyperbolic',
-            'truncnorm', 'skewnorm', 'truncweibull_min']
+            'truncnorm', 'truncweibull_min']
 
 # distxslow are sorted by speed (very slow to slow)
 distxslow = ['studentized_range', 'kstwo', 'ksone', 'wrapcauchy', 'genexpon']

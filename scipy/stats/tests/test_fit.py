@@ -188,7 +188,7 @@ def cases_test_fit():
                       'alpha', 't', 'crystalball', 'fatiguelife', 'nakagami',
                       'kstwobign', 'gompertz', 'dweibull', 'lomax', 'invgauss',
                       'recipinvgauss', 'chi', 'foldcauchy', 'powernorm',
-                      'gennorm', 'skewnorm', 'randint', 'genextreme'}
+                      'gennorm', 'randint', 'genextreme'}
     xslow_basic_fit = {'nchypergeom_fisher', 'nchypergeom_wallenius',
                        'gausshyper', 'genexpon', 'gengamma', 'genhyperbolic',
                        'geninvgauss', 'tukeylambda', 'skellam', 'ncx2',
