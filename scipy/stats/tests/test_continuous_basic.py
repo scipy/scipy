@@ -35,10 +35,9 @@ not for numerically exact results.
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
 # For skipping test_cont_basic
-# distslow are sorted by speed (very slow to slow)
 distslow = ['recipinvgauss', 'vonmises', 'kappa4', 'vonmises_line',
             'gausshyper', 'norminvgauss', 'geninvgauss', 'genhyperbolic',
-            'truncnorm']
+            'truncnorm', 'skewnorm', 'truncweibull_min']
 
 # distxslow are sorted by speed (very slow to slow)
 distxslow = ['studentized_range', 'kstwo', 'ksone', 'wrapcauchy', 'genexpon']
@@ -857,7 +856,7 @@ def test_kappa3_array_gh13582():
     npt.assert_allclose(res, res2)
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.xslow
 def test_kappa4_array_gh13582():
     h = np.array([-0.5, 2.5, 3.5, 4.5, -3])
     k = np.array([-0.5, 1, -1.5, 0, 3.5])
