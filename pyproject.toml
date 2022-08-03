@@ -142,18 +142,14 @@ before-build = "bash {project}/tools/wheels/cibw_before_build.sh {project}"
 manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
 test-skip = "*_aarch64"
-environment = { CFLAGS="-std=c99 -fno-strict-aliasing", LDFLAGS="-Wl,--strip-debug", OPENBLAS64_="/usr/local", NPY_USE_BLAS_ILP64="1", RUNNER_OS="Linux" }
 
 [tool.cibuildwheel.macos]
 # If universal2 wheels are wanted use delocate-fuse
 # TODO figure out arm64 cross compilation
 test-skip = "*_arm64 *_universal2:arm64"
-# MACOS linker doesn't support stripping symbols
-environment = { CFLAGS="-fno-strict-aliasing"}
 
 [tool.cibuildwheel.windows]
-environment = { OPENBLAS64_="openblas", OPENBLAS="", NPY_USE_BLAS_ILP64="1", CFLAGS="", LDFLAGS="" }
 
 [[tool.cibuildwheel.overrides]]
 select = "*-win32"
-environment = { OPENBLAS64_="", OPENBLAS="openblas", NPY_USE_BLAS_ILP64="0", CFLAGS="-m32", LDFLAGS="-m32" }
+environment = { CFLAGS="-m32", LDFLAGS="-m32" }

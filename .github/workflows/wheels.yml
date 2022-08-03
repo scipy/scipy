@@ -74,10 +74,10 @@ jobs:
         buildplat:
         # - [ubuntu-20.04, manylinux*, x86_64]
         # - [ubuntu-20.04, manylinux*, aarch64]`
-        - [macos-11, macosx*, x86_64]
-        # - [windows-2019, win_amd64]
+        # - [macos-11, macosx*, x86_64]
+        - [windows-2019, win*, AMD64]
         # - [windows-2019, win32]
-        python: ["cp38", "cp39", "cp310"] #, "cp38", "cp310", "pp38" "pp39"]
+        python: ["cp38"] #, "cp39", "cp310", "cp38", "cp310", "pp38" "pp39"]
       #    env:
       #      IS_32_BIT: ${{ matrix.buildplat[1] == 'win32' }}
       #      IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
@@ -94,6 +94,13 @@ jobs:
         with:
           python-version: '3.x'
 
+      - name: install-rtools
+        run: |
+          # provides pkg-config. The one pres
+          choco install rtools --no-progress
+          echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
+        if: runner.os == 'Windows'
+
       #      - name: Configure mingw for 32-bit builds
       #        run: |
       #          # Force 32-bit mingw
@@ -108,6 +115,7 @@ jobs:
         env:
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
+          CIBW_ENVIRONMENT_WINDOWS: PKG_CONFIG_PATH=c:\\opt\\openblas\\if_32\\64\\lib\\pkgconfig
 
       - uses: actions/upload-artifact@v3
         with:
