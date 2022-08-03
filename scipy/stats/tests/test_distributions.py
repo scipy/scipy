@@ -6835,12 +6835,11 @@ def test_histogram_non_uniform():
         np.array([0.5, 0.0005]))
     assert dist.median() == 1
     # Omitting density produces a warning for non-uniform bins...
-    with assert_warns(RuntimeWarning):
+    message = "Bin widths are not constant. Assuming..."
+    with assert_warns(RuntimeWarning, match=message):
         dist = stats.rv_histogram((counts, bins))
     # ... but not for uniform bins
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        dist = stats.rv_histogram((counts, [0, 1, 2]))
+    stats.rv_histogram((counts, [0, 1, 2]))
 
 
 class TestLogUniform:

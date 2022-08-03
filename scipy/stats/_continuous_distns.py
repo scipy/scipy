@@ -9401,21 +9401,32 @@ class rv_histogram(rv_continuous):
     Parameters
     ----------
     histogram : tuple of array_like
-      Tuple containing two array_like objects.
-      The first containing the content of n bins,
-      the second containing the (n+1) bin boundaries.
-      In particular, the return value of np.histogram is accepted.
+        Tuple containing two array_like objects.
+        The first containing the content of n bins,
+        the second containing the (n+1) bin boundaries.
+        In particular, the return value of `numpy.histogram` is accepted.
 
     density : bool, optional
-      If False, assumes the histogram is proportional to counts per bin;
-      otherwise, assumes it is proportional to a density.
-      For constant bin widths, these are equivalent.
-      For the default np.histogram output, this should be False.
-      If None (default), sets density=True for backwards compatibility,
-      but may give a warning if the bin widths are variable.
+        If False, assumes the histogram is proportional to counts per bin;
+        otherwise, assumes it is proportional to a density.
+        For constant bin widths, these are equivalent, but the distinction
+        is important when bin widths vary (see Notes).
+        If None (default), sets ``density=True`` for backwards compatibility,
+        but warns if the bin widths are variable. Set `density` explicitly
+        to silence the warning.
 
     Notes
     -----
+    When a histogram has unequal bin widths, there is a distinction between
+    histograms that are proportional to counts per bin and histograms
+    proportional to probability density over a bin. If `numpy.histogram` is
+    called with its default ``density=False``, the resulting histogram is the
+    number of counts per bin, so ``density=False`` should be passed to
+    `rv_histogram`. If `numpy.histogram` is called with ``density=True``, the
+    resulting histogram is in terms of probability density, so ``density=True``
+    should be passed to `rv_histogram`. To avoid warnings, always pass
+    ``density`` explicitly when the input histogram has unequal bin widths.
+
     There are no additional shape parameters except for the loc and scale.
     The pdf is defined as a stepwise function from the provided histogram.
     The cdf is a linear interpolation of the pdf.
@@ -9480,9 +9491,9 @@ class rv_histogram(rv_continuous):
           If False, assumes the histogram is proportional to counts per bin;
           otherwise, assumes it is proportional to a density.
           For constant bin widths, these are equivalent.
-          For the default np.histogram output, this should be False.
-          If None (default), sets density=True for backwards compatibility,
-          but may give a warning if the bin widths are variable.
+          If None (default), sets ``density=True`` for backwards compatibility,
+          but warns if the bin widths are variable. Set `density` explicitly
+          to silence the warning.
         """
         self._histogram = histogram
         self._density = density
@@ -9491,12 +9502,11 @@ class rv_histogram(rv_continuous):
         self._hbins = np.asarray(histogram[1])
         self._hbin_widths = self._hbins[1:] - self._hbins[:-1]
         contents = np.asarray(histogram[0])
-        if density is None:
-            if not np.allclose(self._hbin_widths, self._hbin_widths[0]):
-                warnings.warn(
-                    "Specify density=True or False to disambiguate "
-                    "histograms with variable bin widths.",
-                    RuntimeWarning)
+        bins_vary = not np.allclose(self._hbin_widths, self._hbin_widths[0])
+        if density is None and bins_vary:
+            message = ("Bin widths are not constant. Assuming `density=True`."
+                       "Specify `density` explicitly to silence this warning.")
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
             density = True
         if density:
             # contents are (proportional to) a probability density.
@@ -9507,7 +9517,7 @@ class rv_histogram(rv_continuous):
             self._hpdf = contents / integral_tot
             self._hcdf = integral_cum / integral_tot
         else:
-            # contents are (propotional to) counts/bin.
+            # contents are (proportional to) counts/bin.
             # To build the PDF, divide by the bin widths
             # and the sum of the contents.
             counts_cum = np.cumsum(contents)
