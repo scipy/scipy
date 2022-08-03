@@ -24,10 +24,19 @@ if [[ $RUNNER_OS == "Linux" || $RUNNER_OS == "macOS" ]] ; then
         cp $basedir/include/* /opt/arm64-builds/include
     fi
 elif [[ $RUNNER_OS == "Windows" ]]; then
-    PYTHONPATH=tools python -c "import openblas_support; openblas_support.make_init('numpy')"
-    target=$(python tools/openblas_support.py)
-    mkdir -p openblas
-    cp $target openblas
+    PYTHONPATH=tools python -c "import openblas_support; openblas_support.make_init('scipy')"
+    # target=$(python tools/openblas_support.py)
+    # Download openBLAS and put it into c/opt/64/lib
+    # target=$(python -c "import tools.openblas_support as obs; plat=obs.get_plat(); ilp64=obs.get_ilp64(); target=f'openblas_{plat}.zip'; obs.download_openblas(target, plat, ilp64);print(target)")
+    # unzip $target -d /c/opt
+
+    # the following is used in CI, the previous lines have been used in making wheels. Figure out which one
+    # to use.
+    curl -L https://github.com/scipy/scipy-ci-artifacts/raw/main/openblas_32_if.zip -o openblas_32_if.zip
+    mkdir -p /c/opt
+    unzip openblas_32_if.zip -d /c
+    rm /c/opt/openblas/if_32/64/lib/*.dll.a
+    rm /c/opt/openblas/if_32/64/bin/*.dll
 fi
 
 # Install GFortran
@@ -46,10 +55,6 @@ if [[ $RUNNER_OS == "macOS" ]]; then
     hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
     sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
     otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
-
-    printf "      program thing\n      write(*,*) 'hello world'\n      end\n" >> test.f
-    gfortran test.f -o a.out
-    ./a.out
 
     # arm64 stuff from gfortran_utils
     if [[ $PLATFORM == "macosx-arm64" ]]; then
