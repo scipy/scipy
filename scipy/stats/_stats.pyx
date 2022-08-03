@@ -757,6 +757,25 @@ def gaussian_kernel_estimate(points, values, xi, precision, dtype, real _=0):
 
 @cython.wraparound(False)
 @cython.boundscheck(False)
+cdef real logsumexp(real[:] a):
+    cdef:
+        real[:] a_
+        real a_max, v
+        int i, n
+    n = a.shape[0]
+    a_max = math.log(0) # Same as -np.inf
+    for i in range(n):
+        if a_max < a[i]:
+            a_max = a[i]
+    v = 0.
+    for i in range(n):
+        v += math.exp(a[i] - a_max)
+    v = math.log(v)
+    return v + a_max
+
+
+@cython.wraparound(False)
+@cython.boundscheck(False)
 def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0):
     """
     def gaussian_kernel_estimate_log(points, real[:, :] values, xi, precision)
@@ -781,9 +800,8 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
         input coordinates.
     """
     cdef:
-        real[:, :] points_, xi_, values_, log_values_
-        real[:, :] whitening, estimate, estimate_, zeros_estimate_
-        real[:] max_, zeros_max
+        real[:, :] points_, xi_, values_, log_values_, whitening
+        real[:, :, :] estimate
         int i, j, k
         int n, d, m, p
         real arg, residual, log_norm
@@ -811,12 +829,8 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
         log_norm += math.log(whitening[i, i])
 
     # Create the result array and evaluate the weighted sum
-    estimate = np.zeros((m, p), dtype)
-    zeros_max = np.zeros((p,), dtype) - np.inf
-    empty_estimate_ = np.empty((p, n), dtype)
+    estimate = np.zeros((m, n, p), dtype)
     for j in range(m):
-        max_ = zeros_max.copy()
-        estimate_ = empty_estimate_.copy()
         for i in range(n):
             arg = 0
             for k in range(d):
@@ -825,17 +839,10 @@ def gaussian_kernel_estimate_log(points, values, xi, precision, dtype, real _=0)
 
             arg = -arg / 2 + log_norm
             for k in range(p):
-                estimate_[k, i] = log_values_[i, k] + arg
+                estimate[j, i, k] = log_values_[i, k] + arg
 
-                # Collect max value for logsumexp
-                if max_[k] < estimate_[k, i]:
-                    max_[k] = estimate_[k, i]
-
-        # Calculate logsumexp
         for k in range(p):
-            for i in range(n):
-                estimate[j, k] += math.exp(estimate_[k, i] - max_[k])
-            estimate[j, k] = math.log(estimate[j, k])
-            estimate[j, k] += max_[k]
+            # After logsumexp we no longer use the second dim and want to squeeze
+            estimate[j, 0, k] = logsumexp(estimate[j, :, k])
 
-    return estimate
+    return estimate[:, 0, :]
