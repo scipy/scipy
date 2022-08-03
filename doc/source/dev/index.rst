@@ -3,7 +3,7 @@
 Developer Documentation
 -----------------------
 
-Bellow you will find general information about contributing.
+Below you will find general information about contributing.
 For an overview of where help or new features are desired or planned, see
 the roadmap. And for a more detailed look at how the SciPy project works, see
 the organization section.
@@ -14,7 +14,8 @@ the organization section.
 
    conduct/code_of_conduct
    hacking
-   contributor/quickerstart_conda
+   dev_quickstart
+   contributor/development_workflow
    contributor/contributor_toc
 
 .. toctree::
@@ -31,14 +32,12 @@ the organization section.
 
    core-dev/index
    api-dev/api-dev-toc
-   governance/governance
+   governance
 
 .. This toctree defines previous/next for contributor guide documents
 .. toctree::
    :hidden:
 
-   contributor/quickstart_mac
-   contributor/quickstart_ubuntu
    contributor/development_workflow
    contributor/pep8
    contributor/rendering_documentation
@@ -48,13 +47,10 @@ the organization section.
    contributor/public_cython_api
    contributor/adding_new
    contributor/continuous_integration
-   contributor/meson
    contributor/using_act
 
 .. These files are not intended to be in any toctree. because they have not
    been maintained.They should only be reached via the contributor guide if
    they are specifically sought, not via next/previous links.
-..   building/index
 ..   dev/gitwash/gitwash
-..   dev/contributor/recommended_development_setup
 ..   dev/contributor/compiled_code

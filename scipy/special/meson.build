@@ -76,8 +76,6 @@ _ufuncs_pxi_pxd_sources = custom_target('_ufuncs_pxi_pxd',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
-_ufuncs_pxi_pxd_dep = declare_dependency(sources: _ufuncs_pxi_pxd_sources)
-
 amos_sources = [
   'amos/dgamln.f',
   'amos/zabs.f',
@@ -285,8 +283,8 @@ endif
 cephes_lib = static_library('cephes',
   cephes_sources,
   c_args: use_math_defines,
+  dependencies: py3_dep,
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: py3_dep
 )
 
 amos_lib = static_library('amos',
@@ -320,16 +318,21 @@ specfun_module = custom_target('specfun_module',
 )
 
 py3.extension_module('_specfun',
-  [specfun_module, fortranobject_c],
+  specfun_module,
   c_args: numpy_nodepr_api,
   include_directories: [inc_np, inc_f2py],
-  dependencies: py3_dep,
+  dependencies: [fortranobject_dep],
   link_with: specfun_lib,
   link_language: 'fortran',
   install: true,
   subdir: 'scipy/special'
 )
 
+# TODO: this installs all generated files, while we want to install only:
+#       _ufuncs.pyi, cython_special.pxd
+#       There's no good way around this currently, because py3.install_sources
+#       doesn't accept generated targets. See TODO near the end of
+#       scipy/linalg/meson.build for more details.
 cython_special = custom_target('cython_special',
   output: [
     '_ufuncs.pyx',
@@ -342,29 +345,32 @@ cython_special = custom_target('cython_special',
     'cython_special.pxd'
   ],
   input: ['_generate_pyx.py', 'functions.json', '_add_newdocs.py'],
-  command: [py3, '@INPUT0@', '-o', '@OUTDIR@']
+  command: [py3, '@INPUT0@', '-o', '@OUTDIR@'],
+  install: true,
+  install_dir: py3.get_install_dir() / 'scipy/special'
 )
 
+# pyx -> c, pyx -> cpp generators, depending on copied pxi, pxd files.
+uf_cython_gen = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
 
-# FIXME: the generated ninja.build file is missing the dependency between
-#       copying these files into the build dir and the `.pyx -> .c` stage.
-#       For the `.c -> .so` stage the dependency (see `||` in the `build.ninja`
-#       file) is picked up correctly. This only shows up when running the build
-#       with `-j 1` (when the steps are run in parallel, the copying of sources
-#       seems to always happen quickly enough. This will likely only be fixed
-#       by the "structured sources" PR on the Meson repo.
+uf_cython_gen_cpp = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@', '--cplus'],
+  output : '@BASENAME@.cpp',
+  depends : [_cython_tree, _ufuncs_pxi_pxd_sources])
+
 py3.extension_module('_ufuncs',
   [
     ufuncs_sources,
-    cython_special[0],  # _ufuncs.pyx
+    uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
-  c_args: [numpy_nodepr_api, use_math_defines],
+  c_args: [cython_c_args, use_math_defines, c_undefined_ok],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies: [
-    py3_dep,
     lapack,
     npymath_lib,
-    _ufuncs_pxi_pxd_dep,  # This is not added correctly by Meson (see above)
     cython_tree
   ],
   link_with: [
@@ -397,45 +403,37 @@ ellint_files = [
 ellint_dep = declare_dependency(sources: ellint_files)
 
 py3.extension_module('_ufuncs_cxx',
-  [ufuncs_cxx_sources, cython_special[2], _cython_tree],
-  cpp_args: [numpy_nodepr_api, use_math_defines],
+  [ufuncs_cxx_sources,
+    uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
+    ],
+  cpp_args: [cython_c_args, use_math_defines],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, npymath_lib, _ufuncs_pxi_pxd_dep, ellint_dep],
-  override_options: ['cython_language=cpp'],
+  dependencies: [npymath_lib, ellint_dep],
   install: true,
   subdir: 'scipy/special'
 )
 
-cython_special_pxd = declare_dependency(sources: cython_special)
-special_pxd = declare_dependency(sources: _cython_tree)
-
-_ellip_harm_pyx = custom_target('_ellip_harm_pyx',
-  output: '_ellip_harm_2.pyx',
-  input: '_ellip_harm_2.pyx',
-  command: [copier, '@INPUT@', '@OUTDIR@']
-)
-
 py3.extension_module('_ellip_harm_2',
-  [_ellip_harm_pyx, 'sf_error.c'],
-  c_args: numpy_nodepr_api,
+  [uf_cython_gen.process('_ellip_harm_2.pyx'), 'sf_error.c'],
+  c_args: [cython_c_args, c_undefined_ok],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, lapack, special_pxd],
+  dependencies: [lapack],
   install: true,
   subdir: 'scipy/special'
 )
 
 py3.extension_module('cython_special',
   [
-    cython_special[6],  # cython_special.pyx
+    uf_cython_gen.process(cython_special[6]),  # cython_special.pyx
     '_cosine.c',
     'amos_wrappers.c',
     'cdf_wrappers.c',
     'specfun_wrappers.c',
     'sf_error.c'
   ],
-  c_args: [numpy_nodepr_api, use_math_defines],
+  c_args: [cython_c_args, use_math_defines, c_undefined_ok],
   include_directories: [inc_np, '../_lib', '../_build_utils/src', 'cephes'],
-  dependencies: [py3_dep, npymath_lib, lapack],
+  dependencies: [npymath_lib, lapack],
   link_with: [
     amos_lib,
     cdflib_lib,
@@ -449,16 +447,15 @@ py3.extension_module('cython_special',
 )
 
 py3.extension_module('_comb',
-  '_comb.pyx',
-  dependencies: py3_dep,
+  cython_gen.process('_comb.pyx'),
   install: true,
   subdir: 'scipy/special'
 )
 
 py3.extension_module('_test_round',
-  '_test_round.pyx',
+  cython_gen.process('_test_round.pyx'),
   include_directories: [inc_np, 'cephes', '../_lib', '../_build_utils/src'],
-  dependencies: [py3_dep, npymath_lib],
+  dependencies: [npymath_lib],
   install: true,
   subdir: 'scipy/special'
 )
@@ -495,7 +492,7 @@ foreach npz_file: npz_files
       '--use-timestamp', npz_file[2], '-o', '@OUTDIR@'
     ],
     install: true,
-    install_dir: py3.get_install_dir() + '/scipy/special/tests/data'
+    install_dir: py3.get_install_dir() / 'scipy/special/tests/data'
   )
 endforeach
 
@@ -509,12 +506,15 @@ python_sources = [
   '_logsumexp.py',
   '_mptestutils.py',
   '_orthogonal.py',
+  '_orthogonal.pyi',
   '_sf_error.py',
   '_spfun_stats.py',
   '_spherical_bessel.py',
+  '_test_round.pyi',
   '_testutils.py',
   'add_newdocs.py',
   'basic.py',
+  'cython_special.pyi',
   'orthogonal.py',
   'sf_error.py',
   'specfun.py',
@@ -526,13 +526,6 @@ py3.install_sources(
   pure: false,
   subdir: 'scipy/special'
 )
-
-# FIXME: fails with "Argument must be string or file."
-#py3.install_sources(
-#    cython_special[7],  # cython_special.pxd
-#    pure: false,
-#    subdir: 'scipy/special'
-#)
 
 subdir('tests')
 subdir('_precompute')

@@ -114,7 +114,7 @@ py3.extension_module('_quadpack',
   fortran_args: fortran_ignore_warnings,
   include_directories: [inc_np, '../_lib/src'],
   link_with: [quadpack_lib, mach_lib],
-  dependencies: [py3_dep, lapack],
+  dependencies: [lapack],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
@@ -125,7 +125,7 @@ py3.extension_module('_odepack',
   c_args: numpy_nodepr_api,
   fortran_args: fortran_ignore_warnings,
   link_with: [lsoda_lib, mach_lib],
-  dependencies: [py3_dep, lapack],
+  dependencies: [lapack],
   include_directories: [inc_np],
   install: true,
   link_language: 'fortran',
@@ -139,11 +139,11 @@ vode_module = custom_target('vode_module',
 )
 
 py3.extension_module('_vode',
-  [vode_module, fortranobject_c],
+  vode_module,
   link_with: [vode_lib],
   c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, lapack],
+  dependencies: [lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'
@@ -156,10 +156,10 @@ lsoda_module = custom_target('lsoda_module',
 )
 
 py3.extension_module('_lsoda',
-  [lsoda_module, fortranobject_c],
+  lsoda_module,
   link_with: [lsoda_lib, mach_lib],
   c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
-  dependencies: [py3_dep, lapack],
+  dependencies: [lapack, fortranobject_dep],
   include_directories: [inc_np, inc_f2py],
   install: true,
   link_language: 'fortran',
@@ -173,10 +173,10 @@ _dop_module = custom_target('_dop_module',
 )
 
 py3.extension_module('_dop',
-  [_dop_module, fortranobject_c],
+  _dop_module,
   link_with: [dop_lib],
   c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
-  dependencies: [py3_dep],
+  dependencies: [fortranobject_dep],
   include_directories: [inc_np, inc_f2py],
   install: true,
   link_language: 'fortran',
@@ -185,13 +185,10 @@ py3.extension_module('_dop',
 
 py3.extension_module('_test_multivariate',
   [quadpack_test_src],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/integrate'
 )
 
-# FIXME: something is wrong with the signature file, subroutines are not used
-# _test_odeint_banded
 _test_odeint_banded_module = custom_target('_test_odeint_banded_module',
   output: ['_test_odeint_bandedmodule.c', '_test_odeint_banded-f2pywrappers.f'],
   input: 'tests/banded5x5.pyf',
@@ -199,12 +196,12 @@ _test_odeint_banded_module = custom_target('_test_odeint_banded_module',
 )
 
 py3.extension_module('_test_odeint_banded',
-  ['tests/banded5x5.f', fortranobject_c, _test_odeint_banded_module],
+  ['tests/banded5x5.f', _test_odeint_banded_module],
   c_args: numpy_nodepr_api,
   link_with: [lsoda_lib, mach_lib],
   fortran_args: '-Wno-unused-dummy-argument',
   include_directories: [inc_np, inc_f2py],
-  dependencies: [py3_dep, lapack],
+  dependencies: [lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/integrate'

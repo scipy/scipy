@@ -154,12 +154,12 @@ def test_betabinom_bernoulli():
 
 def test_issue_10317():
     alpha, n, p = 0.9, 10, 1
-    assert_equal(nbinom.interval(alpha=alpha, n=n, p=p), (0, 0))
+    assert_equal(nbinom.interval(confidence=alpha, n=n, p=p), (0, 0))
 
 
 def test_issue_11134():
     alpha, n, p = 0.95, 10, 0
-    assert_equal(binom.interval(alpha=alpha, n=n, p=p), (0, 0))
+    assert_equal(binom.interval(confidence=alpha, n=n, p=p), (0, 0))
 
 
 def test_issue_7406():
@@ -223,6 +223,13 @@ def test_issue_6682():
     # options(digits=16)
     # print(pnbinom(250, 50, 32/63, lower.tail=FALSE))
     assert_allclose(nbinom.sf(250, 50, 32./63.), 1.460458510976452e-35)
+
+
+def test_boost_divide_by_zero_issue_15101():
+    n = 1000
+    p = 0.01
+    k = 996
+    assert_allclose(binom.pmf(k, n, p), 0.0)
 
 
 def test_skellam_gh11474():

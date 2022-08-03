@@ -73,9 +73,7 @@ def configuration(parent_package='', top_path=None):
     # here:
     TODAY_DATE = datetime.today().strftime('%Y-%m-%d')
     DEFINE_MACROS = [
-        ('CMAKE_BUILD_TYPE', '"Release"'),
-        ('HiGHSRELEASE', None),
-        ('IPX_ON', 'ON'),
+        ('CMAKE_BUILD_TYPE', '"RELEASE"'),
         ('HIGHS_GITHASH', '"%s"' % GITHASH),
         ('HIGHS_COMPILATION_DATE', '"' + TODAY_DATE + '"'),
         ('HIGHS_VERSION_MAJOR', HIGHS_VERSION_MAJOR),
@@ -121,6 +119,7 @@ def configuration(parent_package='', top_path=None):
         sources=([join('cython', 'src', '_highs_wrapper.cxx')] +
                  highs_sources + ipx_sources),
         include_dirs=[
+
             # highs_wrapper
             'src',
             str(highs_root / 'src'),
@@ -139,6 +138,7 @@ def configuration(parent_package='', top_path=None):
         libraries=['basiclu'],
         define_macros=DEFINE_MACROS,
         undef_macros=UNDEF_MACROS,
+        depends=["setup.py"] + basiclu_sources + highs_sources + ipx_sources,
     )
     # Add c++11/14 support:
     ext._pre_build_hook = pre_build_hook
@@ -158,6 +158,7 @@ def configuration(parent_package='', top_path=None):
             join(str(highs_root), 'src', 'simplex'),
         ],
         language='c++',
+        depends=["setup.py"],
     )
     ext._pre_build_hook = pre_build_hook
 

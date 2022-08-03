@@ -11,15 +11,14 @@ py3.extension_module('_nd_image',
   ],
   include_directories: [incdir_numpy, '../_lib/src'],
   c_args: numpy_nodepr_api,
-  dependencies: py3_dep,
   install: true,
   subdir: 'scipy/ndimage'
 )
 
 py3.extension_module('_ni_label',
-  'src/_ni_label.pyx',
+  cython_gen.process('src/_ni_label.pyx'),
+  c_args: cython_c_args,
   include_directories: incdir_numpy,
-  dependencies: py3_dep,
   install: true,
   subdir: 'scipy/ndimage'
 )
@@ -28,15 +27,14 @@ py3.extension_module('_ctest',
   'src/_ctest.c',
   include_directories: incdir_numpy,
   c_args: numpy_nodepr_api,
-  dependencies: py3_dep,
   install: true,
   subdir: 'scipy/ndimage'
 )
 
 py3.extension_module('_cytest',
-  'src/_cytest.pyx',
+  cython_gen.process('src/_cytest.pyx'),
+  c_args: cython_c_args,
   include_directories: incdir_numpy,
-  dependencies: py3_dep,
   install: true,
   subdir: 'scipy/ndimage'
 )

@@ -186,7 +186,7 @@ class TestUtilities:
         # |1 \|
         # +---+
 
-        assert_equal(tri.vertices, [[1, 3, 2], [3, 1, 0]])
+        assert_equal(tri.simplices, [[1, 3, 2], [3, 1, 0]])
 
         for p in [(0.25, 0.25, 1),
                   (0.75, 0.75, 0),
@@ -210,7 +210,7 @@ class TestUtilities:
 
         dist = tri.plane_distance(p)
 
-        for j, v in enumerate(tri.vertices):
+        for j, v in enumerate(tri.simplices):
             x1 = z[v[0]]
             x2 = z[v[1]]
             x3 = z[v[2]]
@@ -288,7 +288,7 @@ class TestUtilities:
                                       unit_cube=False,
                                       unit_cube_tol=0):
         """Check that a triangulation has reasonable barycentric transforms"""
-        vertices = tri.points[tri.vertices]
+        vertices = tri.points[tri.simplices]
         sc = 1/(tri.ndim + 1.0)
         centroids = vertices.sum(axis=1) * sc
 
@@ -439,9 +439,9 @@ class TestDelaunay:
 
             tri = qhull.Delaunay(points)
 
-            tri.vertices.sort()
+            tri.simplices.sort()
 
-            assert_equal(tri.vertices, np.arange(nd+1, dtype=int)[None,:])
+            assert_equal(tri.simplices, np.arange(nd+1, dtype=int)[None, :])
             assert_equal(tri.neighbors, -1 + np.zeros((nd+1), dtype=int)[None,:])
 
     def test_2d_square(self):
@@ -449,7 +449,7 @@ class TestDelaunay:
         points = np.array([(0,0), (0,1), (1,1), (1,0)], dtype=np.double)
         tri = qhull.Delaunay(points)
 
-        assert_equal(tri.vertices, [[1, 3, 2], [3, 1, 0]])
+        assert_equal(tri.simplices, [[1, 3, 2], [3, 1, 0]])
         assert_equal(tri.neighbors, [[-1, -1, 1], [-1, -1, 0]])
 
     def test_duplicate_points(self):
@@ -467,13 +467,13 @@ class TestDelaunay:
         # both should succeed
         points = DATASETS['pathological-1']
         tri = qhull.Delaunay(points)
-        assert_equal(tri.points[tri.vertices].max(), points.max())
-        assert_equal(tri.points[tri.vertices].min(), points.min())
+        assert_equal(tri.points[tri.simplices].max(), points.max())
+        assert_equal(tri.points[tri.simplices].min(), points.min())
 
         points = DATASETS['pathological-2']
         tri = qhull.Delaunay(points)
-        assert_equal(tri.points[tri.vertices].max(), points.max())
-        assert_equal(tri.points[tri.vertices].min(), points.min())
+        assert_equal(tri.points[tri.simplices].max(), points.max())
+        assert_equal(tri.points[tri.simplices].min(), points.min())
 
     def test_joggle(self):
         # Check that the option QJ indeed guarantees that all input points
@@ -542,6 +542,13 @@ class TestDelaunay:
 
         assert_unordered_tuple_list_equal(obj2.simplices, obj3.simplices,
                                           tpl=sorted_tuple)
+
+    def test_vertices_deprecation(self):
+        tri = qhull.Delaunay([(0, 0), (0, 1), (1, 0)])
+        msg = ("Delaunay attribute 'vertices' is deprecated in favour of "
+               "'simplices' and will be removed in Scipy 1.11.0.")
+        with pytest.warns(DeprecationWarning, match=msg):
+            tri.vertices
 
 
 def assert_hulls_equal(points, facets_1, facets_2):
@@ -1001,14 +1008,15 @@ class Test_HalfspaceIntersection:
             truths[indexes[0]] = True
         assert_(truths.all())
 
-    def test_cube_halfspace_intersection(self):
-        halfspaces = np.array([[-1.0, 0.0, 0.0],
-                               [0.0, -1.0, 0.0],
-                               [1.0, 0.0, -1.0],
-                               [0.0, 1.0, -1.0]])
-        feasible_point = np.array([0.5, 0.5])
+    @pytest.mark.parametrize("dt", [np.float64, int])
+    def test_cube_halfspace_intersection(self, dt):
+        halfspaces = np.array([[-1, 0, 0],
+                               [0, -1, 0],
+                               [1, 0, -2],
+                               [0, 1, -2]], dtype=dt)
+        feasible_point = np.array([1, 1], dtype=dt)
 
-        points = np.array([[0.0, 0.0], [1.0, 0.0], [0.0, 1.0], [1.0, 1.0]])
+        points = np.array([[0.0, 0.0], [2.0, 0.0], [0.0, 2.0], [2.0, 2.0]])
 
         hull = qhull.HalfspaceIntersection(halfspaces, feasible_point)
 

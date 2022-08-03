@@ -64,5 +64,5 @@
 .. _`NumPy mailing list`: https://numpy.org/community/
 .. _SciPy: https://www.scipy.org
 .. _`SciPy github`: https://github.com/scipy/scipy
-.. _`SciPy mailing list`: https://scipy.org/mailing-lists/
+.. _`SciPy mailing list`: https://mail.python.org/mailman3/lists/scipy-dev.python.org/
 .. _`SciPy repository`: https://github.com/scipy/scipy

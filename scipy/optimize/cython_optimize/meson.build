@@ -1,4 +1,5 @@
 # Needed to trick Cython, it won't do a relative import outside a package
+# (see https://github.com/mesonbuild/meson/issues/8961)
 _dummy_init_cyoptimize = custom_target('_dummy_init_cyoptimize',
   output: [
     '__init__.py',
@@ -13,8 +14,6 @@ _dummy_init_cyoptimize = custom_target('_dummy_init_cyoptimize',
   command: [copier, '@INPUT@', '@OUTDIR@']
 )
 
-# FIXME: generated .pyx which has relative cimport in it doesn't work yet (see
-#        https://github.com/mesonbuild/meson/issues/8961)
 _zeros_pyx = custom_target('_zeros_pyx',
   output: '_zeros.pyx',
   input: '_zeros.pyx.in',
@@ -24,12 +23,19 @@ _zeros_pyx = custom_target('_zeros_pyx',
   ]
 )
 
+cy_opt_gen = generator(cython_cli,
+  arguments : ['@INPUT@', '@OUTPUT@'],
+  output : '@BASENAME@.c',
+  depends : [_cython_tree,
+    _dummy_init_optimize,
+    _dummy_init_cyoptimize])
+
 _zeros = py3.extension_module('_zeros',
-   [_zeros_pyx, _cython_tree, _dummy_init_optimize, _dummy_init_cyoptimize],
-   include_directories: inc_np,
-   dependencies: [py3_dep],
-   install: true,
-   subdir: 'scipy/optimize/cython_optimize'
+  cy_opt_gen.process(_zeros_pyx),
+  c_args: cython_c_args,
+  include_directories: inc_np,
+  install: true,
+  subdir: 'scipy/optimize/cython_optimize'
 )
 
 py3.install_sources([

@@ -32,32 +32,32 @@ from scipy.optimize._optimize import MemoizeJac, show_options
 
 def test_check_grad():
     # Verify if check_grad is able to estimate the derivative of the
-    # logistic function.
+    # expit (logistic sigmoid) function.
 
-    def logit(x):
+    def expit(x):
         return 1 / (1 + np.exp(-x))
 
-    def der_logit(x):
+    def der_expit(x):
         return np.exp(-x) / (1 + np.exp(-x))**2
 
     x0 = np.array([1.5])
 
-    r = optimize.check_grad(logit, der_logit, x0)
+    r = optimize.check_grad(expit, der_expit, x0)
     assert_almost_equal(r, 0)
-    r = optimize.check_grad(logit, der_logit, x0,
+    r = optimize.check_grad(expit, der_expit, x0,
                             direction='random', seed=1234)
     assert_almost_equal(r, 0)
 
-    r = optimize.check_grad(logit, der_logit, x0, epsilon=1e-6)
+    r = optimize.check_grad(expit, der_expit, x0, epsilon=1e-6)
     assert_almost_equal(r, 0)
-    r = optimize.check_grad(logit, der_logit, x0, epsilon=1e-6,
+    r = optimize.check_grad(expit, der_expit, x0, epsilon=1e-6,
                             direction='random', seed=1234)
     assert_almost_equal(r, 0)
 
     # Check if the epsilon parameter is being considered.
-    r = abs(optimize.check_grad(logit, der_logit, x0, epsilon=1e-1) - 0)
+    r = abs(optimize.check_grad(expit, der_expit, x0, epsilon=1e-1) - 0)
     assert r > 1e-7
-    r = abs(optimize.check_grad(logit, der_logit, x0, epsilon=1e-1,
+    r = abs(optimize.check_grad(expit, der_expit, x0, epsilon=1e-1,
                                 direction='random', seed=1234) - 0)
     assert r > 1e-7
 
@@ -76,6 +76,11 @@ def test_check_grad():
     assert_raises(ValueError, optimize.check_grad,
                   x_sinx, der_x_sinx, x0,
                   direction='random_projection', seed=1234)
+
+    # checking can be done for derivatives of vector valued functions
+    r = optimize.check_grad(himmelblau_grad, himmelblau_hess, himmelblau_x0,
+                            direction='all', seed=1234)
+    assert r < 5e-7
 
 
 class CheckOptimize:
@@ -591,9 +596,6 @@ def test_neldermead_xatol_fatol():
 
     optimize._minimize._minimize_neldermead(func, [1, 1], maxiter=2,
                                             xatol=1e-3, fatol=1e-3)
-    assert_warns(DeprecationWarning,
-                 optimize._minimize._minimize_neldermead,
-                 func, [1, 1], xtol=1e-3, ftol=1e-3, maxiter=2)
 
 
 def test_neldermead_adaptive():
@@ -1182,10 +1184,11 @@ class TestOptimizeSimple(CheckOptimize):
         x0 = np.array([2.0])
         f0 = func(x0)
         jac = bad_grad
+        options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
         if method in ['nelder-mead', 'powell', 'cobyla']:
             jac = None
         sol = optimize.minimize(func, x0, jac=jac, method=method,
-                                options=dict(maxiter=20))
+                                options=options)
         assert_equal(func(sol.x), sol.fun)
 
         if method == 'slsqp':
@@ -1401,6 +1404,7 @@ class TestOptimizeSimple(CheckOptimize):
         funcs = [func, func2]
         grads = [grad] if needs_grad else [grad, None]
         hesss = [hess] if needs_hess else [hess, None]
+        options = dict(maxfun=20) if method == 'tnc' else dict(maxiter=20)
 
         with np.errstate(invalid='ignore'), suppress_warnings() as sup:
             sup.filter(UserWarning, "delta_grad == 0.*")
@@ -1410,7 +1414,7 @@ class TestOptimizeSimple(CheckOptimize):
             for f, g, h in itertools.product(funcs, grads, hesss):
                 count = [0]
                 sol = optimize.minimize(f, x0, jac=g, hess=h, method=method,
-                                        options=dict(maxiter=20))
+                                        options=options)
                 assert_equal(sol.success, False)
 
     @pytest.mark.parametrize('method', ['nelder-mead', 'cg', 'bfgs',
@@ -1536,6 +1540,14 @@ class TestOptimizeScalar:
         x = optimize.brent(self.fun, brack=(-15, -1, 15))
         assert_allclose(x, self.solution, atol=1e-6)
 
+        message = r"\(f\(xb\) < f\(xa\)\) and \(f\(xb\) < f\(xc\)\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.brent(self.fun, brack=(-1, 0, 1))
+
+        message = r"\(xa < xb\) and \(xb < xc\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.brent(self.fun, brack=(0, -1, 1))
+
     def test_golden(self):
         x = optimize.golden(self.fun)
         assert_allclose(x, self.solution, atol=1e-6)
@@ -1558,6 +1570,14 @@ class TestOptimizeScalar:
             x = optimize.golden(self.fun, maxiter=maxiter, full_output=True)
             nfev0, nfev = x0[2], x[2]
             assert_equal(nfev - nfev0, maxiter)
+
+        message = r"\(f\(xb\) < f\(xa\)\) and \(f\(xb\) < f\(xc\)\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.golden(self.fun, brack=(-1, 0, 1))
+
+        message = r"\(xa < xb\) and \(xb < xc\)"
+        with pytest.raises(ValueError, match=message):
+            optimize.golden(self.fun, brack=(0, -1, 1))
 
     def test_fminbound(self):
         x = optimize.fminbound(self.fun, 0, 1)
@@ -2180,6 +2200,14 @@ class TestBrute:
                           match=r'Either final optimization did not succeed'):
             optimize.brute(func, self.rranges, args=self.params, disp=True)
 
+    def test_coerce_args_param(self):
+        # optimize.brute should coerce non-iterable args to a tuple.
+        def f(x, *args):
+            return x ** args[0]
+
+        resbrute = optimize.brute(f, (slice(-4, 4, .25),), args=2)
+        assert_allclose(resbrute, 0)
+
 
 def test_cobyla_threadsafe():
 
@@ -2544,6 +2572,50 @@ def test_equal_bounds(method, kwds, bound_type, constraints, callback):
         assert_allclose(res.x[[0, 2]], fd_res.x, rtol=2e-6)
 
 
+@pytest.mark.parametrize('method', eb_data["methods"])
+def test_all_bounds_equal(method):
+    # this only tests methods that have parameters factored out when lb==ub
+    # it does not test other methods that work with bounds
+    def f(x, p1=1):
+        return np.linalg.norm(x) + p1
+
+    bounds = [(1, 1), (2, 2)]
+    x0 = (1.0, 3.0)
+    res = optimize.minimize(f, x0, bounds=bounds, method=method)
+    assert res.success
+    assert_allclose(res.fun, f([1.0, 2.0]))
+    assert res.nfev == 1
+    assert res.message == 'All independent variables were fixed by bounds.'
+
+    args = (2,)
+    res = optimize.minimize(f, x0, bounds=bounds, method=method, args=args)
+    assert res.success
+    assert_allclose(res.fun, f([1.0, 2.0], 2))
+
+    if method.upper() == 'SLSQP':
+        def con(x):
+            return np.sum(x)
+        nlc = NonlinearConstraint(con, -np.inf, 0.0)
+        res = optimize.minimize(
+            f, x0, bounds=bounds, method=method, constraints=[nlc]
+        )
+        assert res.success is False
+        assert_allclose(res.fun, f([1.0, 2.0]))
+        assert res.nfev == 1
+        message = "All independent variables were fixed by bounds, but"
+        assert res.message.startswith(message)
+
+        nlc = NonlinearConstraint(con, -np.inf, 4)
+        res = optimize.minimize(
+            f, x0, bounds=bounds, method=method, constraints=[nlc]
+        )
+        assert res.success is True
+        assert_allclose(res.fun, f([1.0, 2.0]))
+        assert res.nfev == 1
+        message = "All independent variables were fixed by bounds at values"
+        assert res.message.startswith(message)
+
+
 def test_eb_constraints():
     # make sure constraint functions aren't overwritten when equal bounds
     # are employed, and a parameter is factored out. GH14859
@@ -2649,6 +2721,7 @@ class TestGlobalOptimization:
                    optimize.differential_evolution(func, [(-4, 4)]),
                    optimize.shgo(func, [(-4, 4)]),
                    optimize.dual_annealing(func, [(-4, 4)]),
+                   optimize.direct(func, [(-4, 4)]),
                    ]
 
         for result in results:
@@ -2659,3 +2732,13 @@ class TestGlobalOptimization:
             assert hasattr(result, "fun")
             assert hasattr(result, "nfev")
             assert hasattr(result, "nit")
+
+
+def test_approx_fprime():
+    # check that approx_fprime (serviced by approx_derivative) works for
+    # jac and hess
+    g = optimize.approx_fprime(himmelblau_x0, himmelblau)
+    assert_allclose(g, himmelblau_grad(himmelblau_x0), rtol=5e-6)
+
+    h = optimize.approx_fprime(himmelblau_x0, himmelblau_grad)
+    assert_allclose(h, himmelblau_hess(himmelblau_x0), rtol=5e-6)

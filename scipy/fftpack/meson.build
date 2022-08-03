@@ -1,7 +1,7 @@
 py3.extension_module('convolve',
-  'convolve.pyx',
+  cython_gen.process('convolve.pyx'),
+  c_args: cython_c_args,
   include_directories: inc_np,
-  dependencies: py3_dep,
   install: true,
   subdir: 'scipy/fftpack'
 )

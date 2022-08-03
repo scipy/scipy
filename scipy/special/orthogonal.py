@@ -28,16 +28,10 @@ _rootfuns_map = {'roots_legendre': 'p_roots',
                'roots_sh_chebyu': 'us_roots',
                'roots_sh_jacobi': 'js_roots'}
 
-_evalfuns = ['eval_legendre', 'eval_chebyt', 'eval_chebyu',
-             'eval_chebyc', 'eval_chebys', 'eval_jacobi',
-             'eval_laguerre', 'eval_genlaguerre', 'eval_hermite',
-             'eval_hermitenorm', 'eval_gegenbauer',
-             'eval_sh_legendre', 'eval_sh_chebyt', 'eval_sh_chebyu',
-             'eval_sh_jacobi']
 
-__all__ = _polyfuns + list(_rootfuns_map.keys()) + _evalfuns + [  # noqa: F822
-    'poch', 'binom', 'exp', 'inf', 'floor', 'around', 'hstack', 'arange',
-    'linalg', 'airy', 'cephes', 'specfun', 'orthopoly1d', 'newfun',
+__all__ = _polyfuns + list(_rootfuns_map.keys()) + [  # noqa: F822
+    'exp', 'inf', 'floor', 'around', 'hstack', 'arange',
+    'linalg', 'airy', 'orthopoly1d', 'newfun',
     'oldfun', 'p_roots', 't_roots', 'u_roots', 'c_roots', 's_roots',
     'j_roots', 'l_roots', 'la_roots', 'h_roots', 'he_roots', 'cg_roots',
     'ps_roots', 'ts_roots', 'us_roots', 'js_roots'

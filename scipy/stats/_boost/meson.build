@@ -13,41 +13,57 @@ include = include_directories('include')
 inc_boost = include_directories('..' / '..' / '_lib' / 'boost')
 
 hypergeom_ufunc = py3.extension_module('hypergeom_ufunc',
-  _stats_gen_pyx[4],
+  hypergeom_ufunc_pyx,
   include_directories: [include, inc_np, inc_boost],
-  cpp_args: cpp_args,
-  dependencies: [py3_dep],
-  override_options: ['cython_language=cpp'],
+  cpp_args: [cpp_args, cython_cpp_args],
   install: true,
   subdir: 'scipy/stats/_boost'
 )
 
 nbinom_ufunc = py3.extension_module('nbinom_ufunc',
-  _stats_gen_pyx[5],
+  nbinom_ufunc_pyx,
   include_directories: [include, inc_np, inc_boost],
-  cpp_args: cpp_args,
-  dependencies: [py3_dep],
-  override_options: ['cython_language=cpp'],
+  cpp_args: [cpp_args, cython_cpp_args],
   install: true,
   subdir: 'scipy/stats/_boost'
 )
 
 beta_ufunc = py3.extension_module('beta_ufunc',
-  _stats_gen_pyx[1],
+  beta_ufunc_pyx,
   include_directories: [include, inc_np, inc_boost],
-  cpp_args: cpp_args,
-  dependencies: [py3_dep],
-  override_options: ['cython_language=cpp'],
+  cpp_args: [cpp_args, cython_cpp_args],
   install: true,
   subdir: 'scipy/stats/_boost'
 )
 
 binom_ufunc = py3.extension_module('binom_ufunc',
-  _stats_gen_pyx[2],
+  binom_ufunc_pyx,
   include_directories: [include, inc_np, inc_boost],
-  cpp_args: cpp_args,
-  dependencies: [py3_dep],
-  override_options: ['cython_language=cpp'],
+  cpp_args: [cpp_args, cython_cpp_args],
+  install: true,
+  subdir: 'scipy/stats/_boost'
+)
+
+ncf_ufunc = py3.extension_module('ncf_ufunc',
+  ncf_ufunc_pyx,
+  include_directories: [include, inc_np, inc_boost],
+  cpp_args: [cpp_args, cython_cpp_args],
+  install: true,
+  subdir: 'scipy/stats/_boost'
+)
+
+ncx2_ufunc = py3.extension_module('ncx2_ufunc',
+  ncx2_ufunc_pyx,
+  include_directories: [include, inc_np, inc_boost],
+  cpp_args: [cpp_args, cython_cpp_args],
+  install: true,
+  subdir: 'scipy/stats/_boost'
+)
+
+ncf_ufunc = py3.extension_module('nct_ufunc',
+  nct_ufunc_pyx,
+  include_directories: [include, inc_np, inc_boost],
+  cpp_args: [cpp_args, cython_cpp_args],
   install: true,
   subdir: 'scipy/stats/_boost'
 )

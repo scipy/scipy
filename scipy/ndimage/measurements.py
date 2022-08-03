@@ -11,7 +11,7 @@ __all__ = [  # noqa: F822
     'sum', 'mean', 'variance', 'standard_deviation',
     'minimum', 'maximum', 'median', 'minimum_position',
     'maximum_position', 'extrema', 'center_of_mass',
-    'histogram', 'watershed_ift', 'sum_labels', 'morphology'
+    'histogram', 'watershed_ift', 'sum_labels'
 ]
 
 

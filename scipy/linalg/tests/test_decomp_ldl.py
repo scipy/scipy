@@ -1,10 +1,10 @@
-import itertools
 from numpy.testing import assert_array_almost_equal, assert_allclose, assert_
 from numpy import (array, eye, zeros, empty_like, empty, tril_indices_from,
                    tril, triu_indices_from, spacing, float32, float64,
                    complex64, complex128)
 from numpy.random import rand, randint, seed
 from scipy.linalg import ldl
+import pytest
 from pytest import raises as assert_raises, warns
 from numpy import ComplexWarning
 
@@ -90,46 +90,47 @@ def test_permutations():
         assert_(not any(l[p, :][u_ind]), 'Spin {} failed'.format(_))
 
 
-def test_ldl_type_size_combinations():
+@pytest.mark.parametrize("dtype", [float32, float64])
+@pytest.mark.parametrize("n", [30, 150])
+def test_ldl_type_size_combinations_real(n, dtype):
     seed(1234)
-    sizes = [30, 750]
-    real_dtypes = [float32, float64]
-    complex_dtypes = [complex64, complex128]
+    msg = ("Failed for size: {}, dtype: {}".format(n, dtype))
 
-    for n, dtype in itertools.product(sizes, real_dtypes):
-        msg = ("Failed for size: {}, dtype: {}".format(n, dtype))
+    x = rand(n, n).astype(dtype)
+    x = x + x.T
+    x += eye(n, dtype=dtype)*dtype(randint(5, 1e6))
 
-        x = rand(n, n).astype(dtype)
-        x = x + x.T
-        x += eye(n, dtype=dtype)*dtype(randint(5, 1e6))
+    l, d1, p = ldl(x)
+    u, d2, p = ldl(x, lower=0)
+    rtol = 1e-4 if dtype is float32 else 1e-10
+    assert_allclose(l.dot(d1).dot(l.T), x, rtol=rtol, err_msg=msg)
+    assert_allclose(u.dot(d2).dot(u.T), x, rtol=rtol, err_msg=msg)
 
-        l, d1, p = ldl(x)
-        u, d2, p = ldl(x, lower=0)
-        rtol = 1e-4 if dtype is float32 else 1e-10
-        assert_allclose(l.dot(d1).dot(l.T), x, rtol=rtol, err_msg=msg)
-        assert_allclose(u.dot(d2).dot(u.T), x, rtol=rtol, err_msg=msg)
 
-    for n, dtype in itertools.product(sizes, complex_dtypes):
-        msg1 = ("Her failed for size: {}, dtype: {}".format(n, dtype))
-        msg2 = ("Sym failed for size: {}, dtype: {}".format(n, dtype))
+@pytest.mark.parametrize("dtype", [complex64, complex128])
+@pytest.mark.parametrize("n", [30, 150])
+def test_ldl_type_size_combinations_complex(n, dtype):
+    seed(1234)
+    msg1 = ("Her failed for size: {}, dtype: {}".format(n, dtype))
+    msg2 = ("Sym failed for size: {}, dtype: {}".format(n, dtype))
 
-        # Complex hermitian upper/lower
-        x = (rand(n, n)+1j*rand(n, n)).astype(dtype)
-        x = x+x.conj().T
-        x += eye(n, dtype=dtype)*dtype(randint(5, 1e6))
+    # Complex hermitian upper/lower
+    x = (rand(n, n)+1j*rand(n, n)).astype(dtype)
+    x = x+x.conj().T
+    x += eye(n, dtype=dtype)*dtype(randint(5, 1e6))
 
-        l, d1, p = ldl(x)
-        u, d2, p = ldl(x, lower=0)
-        rtol = 1e-4 if dtype is complex64 else 1e-10
-        assert_allclose(l.dot(d1).dot(l.conj().T), x, rtol=rtol, err_msg=msg1)
-        assert_allclose(u.dot(d2).dot(u.conj().T), x, rtol=rtol, err_msg=msg1)
+    l, d1, p = ldl(x)
+    u, d2, p = ldl(x, lower=0)
+    rtol = 1e-4 if dtype is complex64 else 1e-10
+    assert_allclose(l.dot(d1).dot(l.conj().T), x, rtol=rtol, err_msg=msg1)
+    assert_allclose(u.dot(d2).dot(u.conj().T), x, rtol=rtol, err_msg=msg1)
 
-        # Complex symmetric upper/lower
-        x = (rand(n, n)+1j*rand(n, n)).astype(dtype)
-        x = x+x.T
-        x += eye(n, dtype=dtype)*dtype(randint(5, 1e6))
+    # Complex symmetric upper/lower
+    x = (rand(n, n)+1j*rand(n, n)).astype(dtype)
+    x = x+x.T
+    x += eye(n, dtype=dtype)*dtype(randint(5, 1e6))
 
-        l, d1, p = ldl(x, hermitian=0)
-        u, d2, p = ldl(x, lower=0, hermitian=0)
-        assert_allclose(l.dot(d1).dot(l.T), x, rtol=rtol, err_msg=msg2)
-        assert_allclose(u.dot(d2).dot(u.T), x, rtol=rtol, err_msg=msg2)
+    l, d1, p = ldl(x, hermitian=0)
+    u, d2, p = ldl(x, lower=0, hermitian=0)
+    assert_allclose(l.dot(d1).dot(l.T), x, rtol=rtol, err_msg=msg2)
+    assert_allclose(u.dot(d2).dot(u.T), x, rtol=rtol, err_msg=msg2)

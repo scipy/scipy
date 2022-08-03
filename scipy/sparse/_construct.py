@@ -23,7 +23,7 @@ from ._dia import dia_matrix
 from ._base import issparse
 
 
-def spdiags(data, diags, m, n, format=None):
+def spdiags(data, diags, m=None, n=None, format=None):
     """
     Return a sparse matrix from diagonals.
 
@@ -37,8 +37,10 @@ def spdiags(data, diags, m, n, format=None):
         * k = 0  the main diagonal
         * k > 0  the kth upper diagonal
         * k < 0  the kth lower diagonal
-    m, n : int
-        Shape of the result
+    m, n : int, tuple, optional
+        Shape of the result. If `n` is None and `m` is a given tuple,
+        the shape is this tuple. If omitted, the matrix is square and
+        its shape is len(data[0]).
     format : str, optional
         Format of the result. By default (format=None) an appropriate sparse
         matrix format is returned. This choice is subject to change.
@@ -60,6 +62,10 @@ def spdiags(data, diags, m, n, format=None):
            [0, 0, 3, 4]])
 
     """
+    if m is None and n is None:
+        m = n = len(data[0])
+    elif n is None:
+        m, n = m
     return dia_matrix((data, diags), shape=(m, n)).asformat(format)
 
 

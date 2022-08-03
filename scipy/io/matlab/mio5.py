@@ -7,11 +7,8 @@ from . import _mio5
 
 
 __all__ = [  # noqa: F822
-    'MatFile4Reader', 'MatFile4Writer', 'SYS_LITTLE_ENDIAN',
-    'VarHeader4', 'VarReader4', 'VarWriter4', 'arr_to_2d', 'mclass_info',
-    'mdtypes_template', 'miDOUBLE', 'miINT16', 'miINT32', 'miSINGLE',
-    'miUINT16', 'miUINT8', 'mxCHAR_CLASS', 'mxFULL_CLASS', 'mxSPARSE_CLASS',
-    'np_to_mtypes', 'order_codes', 'BytesIO', 'native_code',
+    'mclass_info', 'mxCHAR_CLASS', 'mxSPARSE_CLASS',
+    'BytesIO', 'native_code',
     'swapped_code', 'MatFileReader', 'docfiller', 'matdims',
     'read_dtype', 'arr_to_chars', 'arr_dtype_number', 'MatWriteError',
     'MatReadError', 'MatReadWarning', 'VarReader5', 'MatlabObject',

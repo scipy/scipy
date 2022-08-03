@@ -1,5 +1,6 @@
 """ Test functions for the sparse.linalg._eigen.lobpcg module
 """
+
 import itertools
 import platform
 import sys
@@ -13,7 +14,7 @@ import pytest
 
 from numpy import ones, r_, diag
 from scipy.linalg import eig, eigh, toeplitz, orth
-from scipy.sparse import spdiags, diags, eye
+from scipy.sparse import spdiags, diags, eye, csr_matrix
 from scipy.sparse.linalg import eigs, LinearOperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg
 
@@ -115,36 +116,72 @@ def test_regression():
     assert_allclose(w, [1])
 
 
-def test_diagonal():
-    """Check for diagonal matrices.
+@pytest.mark.filterwarnings("ignore:The problem size")
+@pytest.mark.parametrize('n, m, m_excluded', [(100, 4, 3), (4, 2, 0)])
+def test_diagonal(n, m, m_excluded):
+    """Test ``m - m_excluded`` eigenvalues and eigenvectors of
+    diagonal matrices of the size ``n`` varying matrix formats:
+    dense array, spare matrix, and ``LinearOperator`` for both
+    matrixes in the generalized eigenvalue problem ``Av = cBv``
+    and for the preconditioner.
     """
     rnd = np.random.RandomState(0)
-    n = 100
-    m = 4
 
     # Define the generalized eigenvalue problem Av = cBv
     # where (c, v) is a generalized eigenpair,
     # and where we choose A to be the diagonal matrix whose entries are 1..n
     # and where B is chosen to be the identity matrix.
     vals = np.arange(1, n+1, dtype=float)
-    A = diags([vals], [0], (n, n))
-    B = eye(n)
+    A_s = diags([vals], [0], (n, n))
+    A_a = A_s.toarray()
+
+    def A_f(x):
+        return A_s @ x
+
+    A_lo = LinearOperator(matvec=A_f,
+                          matmat=A_f,
+                          shape=(n, n), dtype=float)
+
+    B_a = eye(n)
+    B_s = csr_matrix(B_a)
+
+    def B_f(x):
+        return B_a @ x
+
+    B_lo = LinearOperator(matvec=B_f,
+                          matmat=B_f,
+                          shape=(n, n), dtype=float)
 
     # Let the preconditioner M be the inverse of A.
-    M = diags([1./vals], [0], (n, n))
+    M_s = diags([1./vals], [0], (n, n))
+    M_a = M_s.toarray()
+
+    def M_f(x):
+        return M_s @ x
+
+    M_lo = LinearOperator(matvec=M_f,
+                          matmat=M_f,
+                          shape=(n, n), dtype=float)
 
     # Pick random initial vectors.
-    X = rnd.random((n, m))
+    X = rnd.normal(size=(n, m))
 
     # Require that the returned eigenvectors be in the orthogonal complement
     # of the first few standard basis vectors.
-    m_excluded = 3
-    Y = np.eye(n, m_excluded)
+    if m_excluded > 0:
+        Y = np.eye(n, m_excluded)
+    else:
+        Y = None
 
-    eigvals, vecs = lobpcg(A, X, B, M=M, Y=Y, tol=1e-4, maxiter=40, largest=False)
+    for A in [A_a, A_s, A_lo]:
+        for B in [B_a, B_s, B_lo]:
+            for M in [M_a, M_s, M_lo]:
+                eigvals, vecs = lobpcg(A, X, B, M=M, Y=Y,
+                                       maxiter=40, largest=False)
 
-    assert_allclose(eigvals, np.arange(1+m_excluded, 1+m_excluded+m))
-    _check_eigen(A, eigvals, vecs, rtol=1e-3, atol=1e-3)
+                assert_allclose(eigvals, np.arange(1+m_excluded,
+                                                   1+m_excluded+m))
+                _check_eigen(A, eigvals, vecs, rtol=1e-3, atol=1e-3)
 
 
 def _check_eigen(M, w, V, rtol=1e-8, atol=1e-14):
@@ -222,7 +259,7 @@ def test_fiedler_large_12():
 def test_failure_to_run_iterations():
     """Check that the code exists gracefully without breaking. Issue #10974.
     """
-    rnd = np.random.RandomState(4120349)
+    rnd = np.random.RandomState(0)
     X = rnd.standard_normal((100, 10))
     A = X @ X.T
     Q = rnd.standard_normal((X.shape[0], 4))
@@ -314,8 +351,8 @@ def test_tolerance_float32():
     A = A.astype(np.float32)
     X = rnd.standard_normal((n, m))
     X = X.astype(np.float32)
-    eigvals, _ = lobpcg(A, X, tol=1e-5, maxiter=50, verbosityLevel=0)
-    assert_allclose(eigvals, -np.arange(1, 1 + m), atol=1.5e-5)
+    eigvals, _ = lobpcg(A, X, tol=1.25e-5, maxiter=50, verbosityLevel=0)
+    assert_allclose(eigvals, -np.arange(1, 1 + m), atol=2e-5, rtol=1e-5)
 
 
 def test_random_initial_float32():
@@ -386,29 +423,33 @@ def test_diagonal_data_types():
         def Ms64precond(x):
             return Ms64 @ x
         Ms64precondLO = LinearOperator(matvec=Ms64precond,
-                                    matmat=Ms64precond,
-                                    shape=(n, n), dtype=float)
+                                       matmat=Ms64precond,
+                                       shape=(n, n),
+                                       dtype=float)
         Mf64 = Ms64.toarray()
 
         def Mf64precond(x):
             return Mf64 @ x
         Mf64precondLO = LinearOperator(matvec=Mf64precond,
-                                    matmat=Mf64precond,
-                                    shape=(n, n), dtype=float)
+                                       matmat=Mf64precond,
+                                       shape=(n, n),
+                                       dtype=float)
         Ms32 = Ms64.astype(np.float32)
 
         def Ms32precond(x):
             return Ms32 @ x
         Ms32precondLO = LinearOperator(matvec=Ms32precond,
-                                    matmat=Ms32precond,
-                                    shape=(n, n), dtype=np.float32)
+                                       matmat=Ms32precond,
+                                       shape=(n, n),
+                                       dtype=np.float32)
         Mf32 = Ms32.toarray()
 
         def Mf32precond(x):
             return Mf32 @ x
         Mf32precondLO = LinearOperator(matvec=Mf32precond,
-                                    matmat=Mf32precond,
-                                    shape=(n, n), dtype=np.float32)
+                                       matmat=Mf32precond,
+                                       shape=(n, n),
+                                       dtype=np.float32)
         listM = [None, Ms64precondLO, Mf64precondLO,
                  Ms32precondLO, Mf32precondLO]
 

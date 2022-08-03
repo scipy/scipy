@@ -720,7 +720,7 @@ _smirnov(int n, double x)
     double cdf, sf, pdf;
 
     int bUseUpperSum;
-    int nxfl, nxceil, n1mxfl, n1mxceil;
+    int nxfl, n1mxfl, n1mxceil;
     ThreeProbs ret;
 
     if (!(n > 0 && x >= 0.0 && x <= 1.0)) {
@@ -737,7 +737,6 @@ _smirnov(int n, double x)
     }
 
     alpha = modNX(n, x, &nxfl, &nx);
-    nxceil = nxfl + (alpha == 0 ? 0: 1);
     n1mxfl = n - nxfl - (alpha == 0 ? 0 : 1);
     n1mxceil = n - nxfl;
     /*

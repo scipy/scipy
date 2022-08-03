@@ -351,7 +351,7 @@ def _binary_search_for_binom_tst(a, d, lo, hi):
       The higher end of the range to search.
 
     Returns
-    ----------
+    -------
     int
       The index, i between lo and hi
       such that a(i)<=d<a(i+1)

@@ -85,7 +85,7 @@ Continuous distributions
    genhalflogistic   -- Generalized Half Logistic
    genhyperbolic     -- Generalized Hyperbolic
    geninvgauss       -- Generalized Inverse Gaussian
-   gilbrat           -- Gilbrat
+   gibrat            -- Gibrat
    gompertz          -- Gompertz (Truncated Gumbel)
    gumbel_r          -- Right Sided Gumbel, Log-Weibull, Fisher-Tippett, Extreme Value Type I
    gumbel_l          -- Left Sided Gumbel, etc.
@@ -142,6 +142,8 @@ Continuous distributions
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
+   truncpareto       -- Truncated Pareto
+   truncweibull_min  -- Truncated minimum Weibull distribution
    tukeylambda       -- Tukey-Lambda
    uniform           -- Uniform
    vonmises          -- Von-Mises (Circular)
@@ -208,6 +210,7 @@ Summary statistics
    describe          -- Descriptive statistics
    gmean             -- Geometric mean
    hmean             -- Harmonic mean
+   pmean             -- Power mean
    kurtosis          -- Fisher or Pearson kurtosis
    mode              -- Modal value
    moment            -- Central moment
@@ -230,9 +233,7 @@ Summary statistics
    mvsdist
    entropy
    differential_entropy
-   median_absolute_deviation
    median_abs_deviation
-   bootstrap
 
 Frequency statistics
 ====================
@@ -241,7 +242,6 @@ Frequency statistics
    :toctree: generated/
 
    cumfreq
-   itemfreq
    percentileofscore
    scoreatpercentile
    relfreq
@@ -301,8 +301,8 @@ Statistical tests
    combine_pvalues
    jarque_bera
    page_trend_test
-   permutation_test
    tukey_hsd
+   poisson_means_test
 
 .. autosummary::
    :toctree: generated/
@@ -331,6 +331,15 @@ Quasi-Monte Carlo
 
    stats.qmc
 
+Resampling Methods
+==================
+
+.. autosummary::
+   :toctree: generated/
+
+   bootstrap
+   permutation_test
+   monte_carlo_test
 
 Masked statistics functions
 ===========================
@@ -387,14 +396,22 @@ Random variate generation / CDF Inversion
    :toctree: generated/
 
    rvs_ratio_uniforms
-   NumericalInverseHermite
 
-Circular statistical functions
-------------------------------
+Distribution Fitting
+--------------------
 
 .. autosummary::
    :toctree: generated/
 
+   fit
+
+Directional statistical functions
+---------------------------------
+
+.. autosummary::
+   :toctree: generated/
+
+   directionalmean
    circmean
    circvar
    circstd
@@ -441,15 +458,15 @@ Warnings / Errors used in :mod:`scipy.stats`
 .. autosummary::
    :toctree: generated/
 
-   F_onewayConstantInputWarning
-   F_onewayBadInputSizesWarning
-   PearsonRConstantInputWarning
-   PearsonRNearConstantInputWarning
-   SpearmanRConstantInputWarning
-   BootstrapDegenerateDistributionWarning
+   DegenerateDataWarning
+   ConstantInputWarning
+   NearConstantInputWarning
+   FitError
 
 """
 
+from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
+                               DegenerateDataWarning, FitError)
 from ._stats_py import *
 from ._variation import variation
 from .distributions import *
@@ -462,12 +479,13 @@ from . import qmc
 from ._multivariate import *
 from . import contingency
 from .contingency import chi2_contingency
-from ._bootstrap import bootstrap, BootstrapDegenerateDistributionWarning
+from ._resampling import bootstrap, monte_carlo_test, permutation_test
 from ._entropy import *
 from ._hypotests import *
-from ._rvs_sampling import rvs_ratio_uniforms, NumericalInverseHermite  # noqa
+from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
+from ._fit import fit
 
 # Deprecated namespaces, to be removed in v2.0.0
 from . import (

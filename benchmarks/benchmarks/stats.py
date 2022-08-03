@@ -162,6 +162,33 @@ class InferentialStats(Benchmark):
         stats.mstats.kruskal(self.a, self.b)
 
 
+# Benchmark data for the truncnorm stats() method.
+# The data in each row is:
+#   a, b, mean, variance, skewness, excess kurtosis. Generated using
+# https://gist.github.com/WarrenWeckesser/636b537ee889679227d53543d333a720
+truncnorm_cases = [[-20, -19, -19.052343945976656, 0.002725073018195613,
+                   -1.9838693623377885, 5.871801893091683],
+                   [-30, -29, -29.034401237736176, 0.0011806604886186853,
+                    -1.9929615171469608, 5.943905539773037],
+                   [-40, -39, -39.02560741993011, 0.0006548827702932775,
+                    -1.9960847672775606, 5.968744357649675],
+                   [39, 40, 39.02560741993011, 0.0006548827702932775,
+                    1.9960847672775606, 5.968744357649675]]
+truncnorm_cases = np.array(truncnorm_cases)
+
+
+class TruncnormStats(Benchmark):
+    param_names = ['case', 'moment']
+    params = [list(range(len(truncnorm_cases))), ['m', 'v', 's', 'k']]
+
+    def track_truncnorm_stats_error(self, case, moment):
+        result_indices = dict(zip(['m', 'v', 's', 'k'], range(2, 6)))
+        ref = truncnorm_cases[case, result_indices[moment]]
+        a, b = truncnorm_cases[case, 0:2]
+        res = stats.truncnorm(a, b).stats(moments=moment)
+        return np.abs((res - ref)/ref)
+
+
 class DistributionsAll(Benchmark):
     # all distributions are in this list. A conversion to a set is used to
     # remove duplicates that appear more than once in either `distcont` or
@@ -247,6 +274,95 @@ class DistributionsAll(Benchmark):
 
     def time_distribution(self, dist_name, method):
         self.method(*self.args, **self.kwds)
+
+
+class TrackContinuousRoundtrip(Benchmark):
+    # Benchmarks that track a value for every distribution can go here
+    param_names = ['dist_name']
+    params = list(dict(distcont).keys())
+    dist_data = dict(distcont)
+
+    def setup(self, dist_name):
+        # Distribution setup follows `DistributionsAll` benchmark.
+        # This focuses on ppf, so the code for handling other functions is
+        # removed for simplicity.
+        self.dist = getattr(stats, dist_name)
+        self.shape_args = self.dist_data[dist_name]
+
+    def track_distribution_ppf_roundtrip(self, dist_name):
+        # Tracks the worst relative error of a
+        # couple of round-trip ppf -> cdf calculations.
+        vals = [0.001, 0.5, 0.999]
+
+        ppf = self.dist.ppf(vals, *self.shape_args)
+        round_trip = self.dist.cdf(ppf, *self.shape_args)
+
+        err_rel = np.abs(vals - round_trip) / vals
+        return np.max(err_rel)
+
+    def track_distribution_ppf_roundtrip_extrema(self, dist_name):
+        # Tracks the absolute error of an "extreme" round-trip
+        # ppf -> cdf calculation.
+        v = 1e-6
+        ppf = self.dist.ppf(v, *self.shape_args)
+        round_trip = self.dist.cdf(ppf, *self.shape_args)
+
+        err_abs = np.abs(v - round_trip)
+        return err_abs
+
+    def track_distribution_isf_roundtrip(self, dist_name):
+        # Tracks the worst relative error of a
+        # couple of round-trip isf -> sf calculations.
+        vals = [0.001, 0.5, 0.999]
+
+        isf = self.dist.isf(vals, *self.shape_args)
+        round_trip = self.dist.sf(isf, *self.shape_args)
+
+        err_rel = np.abs(vals - round_trip) / vals
+        return np.max(err_rel)
+
+    def track_distribution_isf_roundtrip_extrema(self, dist_name):
+        # Tracks the absolute error of an "extreme" round-trip
+        # isf -> sf calculation.
+        v = 1e-6
+        ppf = self.dist.isf(v, *self.shape_args)
+        round_trip = self.dist.sf(ppf, *self.shape_args)
+
+        err_abs = np.abs(v - round_trip)
+        return err_abs
+
+
+class PDFPeakMemory(Benchmark):
+    # Tracks peak memory when a distribution is given a large array to process
+    # See gh-14095
+
+    # Run for up to 30 min - some dists are quite slow.
+    timeout = 1800.0
+
+    x = np.arange(1e6)
+
+    param_names = ['dist_name']
+    params = list(dict(distcont).keys())
+    dist_data = dict(distcont)
+
+    # So slow that 30min isn't enough time to finish.
+    slow_dists = ["levy_stable"]
+
+    def setup(self, dist_name):
+        # This benchmark is demanding. Skip it if the env isn't xslow.
+        if not is_xslow():
+            raise NotImplementedError("skipped - enviroment is not xslow. "
+                                      "To enable this benchamark, set the "
+                                      "enviroment variable SCIPY_XSLOW=1")
+
+        if dist_name in self.slow_dists:
+            raise NotImplementedError("skipped - dist is too slow.")
+
+        self.dist = getattr(stats, dist_name)
+        self.shape_args = self.dist_data[dist_name]
+
+    def peakmem_bigarr_pdf(self, dist_name):
+        self.dist.pdf(self.x, *self.shape_args)
 
 
 class Distribution(Benchmark):
@@ -494,6 +610,23 @@ class BenchQMCHalton(Benchmark):
         seq.random(n, workers=workers)
 
 
+class BenchQMCSobol(Benchmark):
+    param_names = ['d', 'base2']
+    params = [
+        [1, 50, 100],
+        [3, 10, 11, 12],
+    ]
+
+    def setup(self, d, base2):
+        self.rng = np.random.default_rng(168525179735951991038384544)
+        stats.qmc.Sobol(1, bits=32)  # make it load direction numbers
+
+    def time_sobol(self, d, base2):
+        # scrambling is happening at init only, not worth checking
+        seq = stats.qmc.Sobol(d, scramble=False, bits=32, seed=self.rng)
+        seq.random_base2(base2)
+
+
 class DistanceFunctions(Benchmark):
     param_names = ['n_size']
     params = [
@@ -531,3 +664,42 @@ class Somersd(Benchmark):
 
     def time_somersd(self, n_size):
         res = stats.somersd(self.x, self.y)
+
+
+class KolmogorovSmirnov(Benchmark):
+    param_names = ['alternative', 'mode', 'size']
+    # No auto since it defaults to exact for 20 samples
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['exact', 'approx', 'asymp'],
+        [19, 20, 21]
+    ]
+
+    def setup(self, alternative, mode, size):
+        np.random.seed(12345678)
+        a = stats.norm.rvs(size=20)
+        self.a = a
+
+    def time_ks(self, alternative, mode, size):
+        stats.kstest(self.a, 'norm', alternative=alternative,
+                     mode=mode, N=size)
+
+
+class KolmogorovSmirnovTwoSamples(Benchmark):
+    param_names = ['alternative', 'mode', 'size']
+    # No auto since it defaults to exact for 20 samples
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['exact', 'asymp'],
+        [(21, 20), (20, 20)]
+    ]
+
+    def setup(self, alternative, mode, size):
+        np.random.seed(12345678)
+        a = stats.norm.rvs(size=size[0])
+        b = stats.norm.rvs(size=size[1])
+        self.a = a
+        self.b = b
+
+    def time_ks2(self, alternative, mode, size):
+        stats.ks_2samp(self.a, self.b, alternative=alternative, mode=mode)
