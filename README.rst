@@ -1,3 +1,9 @@
+.. image:: doc/source/_static/logo.svg
+  :target: https://scipy.org
+  :width: 100
+  :height: 100
+  :align: left 
+
 .. image:: https://img.shields.io/badge/powered%20by-NumFOCUS-orange.svg?style=flat&colorA=E1523D&colorB=007D8A
   :target: https://numfocus.org
 
