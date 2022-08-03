@@ -9418,7 +9418,7 @@ class rv_histogram(rv_continuous):
     Notes
     -----
     When a histogram has unequal bin widths, there is a distinction between
-    histograms that are proportional to counts per bin and histograms
+    histograms that are proportional to counts per bin and histograms that are
     proportional to probability density over a bin. If `numpy.histogram` is
     called with its default ``density=False``, the resulting histogram is the
     number of counts per bin, so ``density=False`` should be passed to
@@ -9483,51 +9483,40 @@ class rv_histogram(rv_continuous):
         Parameters
         ----------
         histogram : tuple of array_like
-          Tuple containing two array_like objects.
-          The first containing the content of n bins,
-          the second containing the (n+1) bin boundaries.
-          In particular, the return value of np.histogram is accepted.
+            Tuple containing two array_like objects.
+            The first containing the content of n bins,
+            the second containing the (n+1) bin boundaries.
+            In particular, the return value of np.histogram is accepted.
         density : bool, optional
-          If False, assumes the histogram is proportional to counts per bin;
-          otherwise, assumes it is proportional to a density.
-          For constant bin widths, these are equivalent.
-          If None (default), sets ``density=True`` for backwards compatibility,
-          but warns if the bin widths are variable. Set `density` explicitly
-          to silence the warning.
+            If False, assumes the histogram is proportional to counts per bin;
+            otherwise, assumes it is proportional to a density.
+            For constant bin widths, these are equivalent.
+            If None (default), sets ``density=True`` for backward
+            compatibility, but warns if the bin widths are variable. Set
+            `density` explicitly to silence the warning.
         """
         self._histogram = histogram
         self._density = density
         if len(histogram) != 2:
             raise ValueError("Expected length 2 for parameter histogram")
+        self._hpdf = np.asarray(histogram[0])
         self._hbins = np.asarray(histogram[1])
+        if len(self._hpdf) + 1 != len(self._hbins):
+            raise ValueError("Number of elements in histogram content "
+                             "and histogram boundaries do not match, "
+                             "expected n and n+1.")
         self._hbin_widths = self._hbins[1:] - self._hbins[:-1]
-        contents = np.asarray(histogram[0])
         bins_vary = not np.allclose(self._hbin_widths, self._hbin_widths[0])
         if density is None and bins_vary:
             message = ("Bin widths are not constant. Assuming `density=True`."
                        "Specify `density` explicitly to silence this warning.")
             warnings.warn(message, RuntimeWarning, stacklevel=2)
             density = True
-        if density:
-            # contents are (proportional to) a probability density.
-            # To build the PDF, divide by the histogram integral
-            # i.e. sum(bin width * content)
-            integral_cum = np.cumsum(contents * self._hbin_widths)
-            integral_tot = integral_cum[-1]
-            self._hpdf = contents / integral_tot
-            self._hcdf = integral_cum / integral_tot
-        else:
-            # contents are (proportional to) counts/bin.
-            # To build the PDF, divide by the bin widths
-            # and the sum of the contents.
-            counts_cum = np.cumsum(contents)
-            counts_tot = counts_cum[-1]
-            self._hpdf = contents / (counts_tot * self._hbin_widths)
-            self._hcdf = counts_cum / counts_tot
-        if len(self._hpdf) + 1 != len(self._hbins):
-            raise ValueError("Number of elements in histogram content "
-                             "and histogram boundaries do not match, "
-                             "expected n and n+1.")
+        elif not density:
+            self._hpdf = self._hpdf / self._hbin_widths
+
+        self._hpdf = self._hpdf / float(np.sum(self._hpdf * self._hbin_widths))
+        self._hcdf = np.cumsum(self._hpdf * self._hbin_widths)
         self._hpdf = np.hstack([0.0, self._hpdf, 0.0])
         self._hcdf = np.hstack([0.0, self._hcdf])
         # Set support
