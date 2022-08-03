@@ -9415,6 +9415,8 @@ class rv_histogram(rv_continuous):
         but warns if the bin widths are variable. Set `density` explicitly
         to silence the warning.
 
+        .. versionadded:: 1.10.0
+
     Notes
     -----
     When a histogram has unequal bin widths, there is a distinction between
