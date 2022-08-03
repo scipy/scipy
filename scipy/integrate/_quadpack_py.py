@@ -679,6 +679,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     ``x`` ranging from 0 to 2 and ``y`` ranging from 0 to 1.
     That is, :math:`\\int^{x=2}_{x=0} \\int^{y=1}_{y=0} x y^2 \\,dy \\,dx`.
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> f = lambda y, x: x*y**2
     >>> integrate.dblquad(f, 0, 2, 0, 1)
@@ -703,9 +704,8 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     Compute the two-dimensional Gaussian Integral, which is the integral of the
     Gaussian function :math:`f(x,y) = e^{-(x^{2} + y^{2})}`, over
     :math:`(-\\infty,+\\infty)`. That is, compute the integral
-    :math:`\\iint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2})} \\,dy\\,dx`:
+    :math:`\\iint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2})} \\,dy\\,dx`.
 
-    >>> import numpy as np
     >>> f = lambda x, y: np.exp(-(x ** 2 + y ** 2))
     >>> integrate.dblquad(f, -np.inf, np.inf, -np.inf, np.inf)
         (3.141592653589777, 2.5173086737433208e-08)
@@ -840,7 +840,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     the Gaussian function :math:`f(x,y,z) = e^{-(x^{2} + y^{2} + z^{2})}`, over
     :math:`(-\\infty,+\\infty)`. That is, compute the integral
     :math:`\\iiint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2} + z^{2})} \\,dz
-    \\,dy\\,dx`:
+    \\,dy\\,dx`.
 
     >>> import numpy as np
     >>> f = lambda x, y, z: np.exp(-(x ** 2 + y ** 2 + z ** 2))
