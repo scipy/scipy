@@ -54,7 +54,7 @@ jobs:
           echo github.ref ${{ github.ref }}
 
   build_wheels:
-    name: Build wheel for ${{ matrix.python }}-${{ matrix.buildplat[1] }} {{ matrix.buildplat[2] }}
+    name: Build wheel for ${{ matrix.python }}-${{ matrix.buildplat[1] }} ${{ matrix.buildplat[2] }}
     # needs: get_commit_message
     #    if: >-
     #      contains(needs.get_commit_message.outputs.message, '[wheel build]') ||
