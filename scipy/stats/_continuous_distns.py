@@ -4171,80 +4171,99 @@ class invgauss_gen(rv_continuous):
         q = np.broadcast_to(q, x0.shape)
         mu = np.broadcast_to(mu, x0.shape)
 
+        # NOTE: We work on the scale X / mu ~ IG(1, mu) and then return X as
+        # final value. Since mu acts as a scale parameter then for numerical
+        # stability we rescale to mu=1.
+
+        # Rescaled dispersion is (old_dispersion * old_mean) == (1 * mu)
+        phi = mu
+
+        # initialize output variable to the value of the mean
+        x = np.full_like(x0, 1.0)
+
+        inf_mu = np.isinf(mu)
+        if any(inf_mu):
+            # When mu = infinity, invgauss(mu, 1) reduces to invgamma(0.5, 0.5)
+            fn = invgamma.isf if upper else invgamma.ppf
+            x[inf_mu] = fn(q[inf_mu], 0.5, scale=0.5)
+
         # Select the start values for Newton's Method using a quantile of
         # the gamma (if right tail is tiny) or normal distribution
         # if the left tail is tiny.
-        tiny_left = q < 1e-05
-        tiny_right = q > 0.99999  # 1 - 1e-05
+        if upper:
+            tiny_left = (q > 0.9999900000499998) & ~inf_mu  # 1 - 1e-05
+            tiny_right = (q < 1e-05) & ~inf_mu
+        else:
+            tiny_left = (q < 1e-05) & ~inf_mu
+            tiny_right = (q > 0.9999900000499998) & ~inf_mu
+
         if any(tiny_left):
-            x0[tiny_left] = mu[tiny_left] / (_norm_ppf(q[tiny_left]) ** 2)
+            x0[tiny_left] = 1 / (phi[tiny_left] * _norm_ppf(q[tiny_left]) ** 2)
         if any(tiny_right):
             # when the right tail probability is less than 10^-5, we use the
             # corresponding quantile of the gamma distribution with the same
-            # mean and variance as the inverse-gaussian (IG) that produced
-            # the probability ``q``. The mean of this IG is mu and its
-            # variance is mu**3. This then implies the Gamma's shape=1/mu and
-            # its scale=mu**2. To get the corresponding quantile, we invert
-            # the inverse of the regularized lower incomplete gamma function.
+            # mean and variance as IG(1, mu), the unit mean rescaled distribution. 
+            # This implies solving for ``a`` and ``b`` in the equations:
+            # a*b = 1 & a*b^2 = mu.
+            # This implies the Gamma's shape=1/mu and scale=mu.
             m = mu[tiny_right]
-            x0[tiny_right] = sc.gammaincinv(1 / m, q[tiny_right]) * (m ** 2)
+            fn = gamma.isf if upper else gamma.ppf
+            x0[tiny_right] = fn(q[tiny_right], a=1 / m, scale=m)
+
+        def f(k):
+            k_inv = 1 / k
+            return 0.5 * k_inv - 0.125 * (k_inv ** 3)
+
+        def f2(k):
+            return np.sqrt(1 + k ** 2) - k
 
         # when `q` is not very small the initial value for Newton's method is
         # the mode of the distribution. If `k` is large, then we use equation 3
         # of Giner & Smyth (2016) to prevent subtractive cancellation.
-        # Note that the threshold of 100 picked here is arbitrary, a much
+        # Note that the threshold of 500 picked here is arbitrary, a much
         # bigger value could be chosen if necessary.
         ok = ~tiny_left & ~tiny_right
-        mu_ok = mu[ok]
+        x0[ok] = _lazywhere(mu[ok] > 500, (1.5 * phi[ok],), f=f, f2=f2)
 
-        def f(mu, k):
-            return mu * (0.5 / k - 0.125 / (k ** 3) + 0.0625 / (k ** 6))
-
-        def f2(mu, k):
-            return mu * (np.sqrt(1 + k ** 2) - k)
-
-        x0[ok] = _lazywhere(mu_ok > 100, (mu_ok, 1.5 * mu_ok), f=f, f2=f2)
-
-        (logF, sign) = (self._logsf, -1) if upper else (self._logcdf, 1)
+        (logdist_fn, sign) = (self._logsf, -1) if upper else (self._logcdf, 1)
         delta = np.empty_like(x0)
-        logprob = np.log(q)
+        logq = np.log(q)
 
-        x = np.full_like(x0, np.inf)
-        # Should ``has_converged`` just be initialized to False values?
-        # But then what if x0 has Inf values? Those should not be updated.
-        has_converged = np.isclose(x, x0, atol=1e-08, equal_nan=True)
+        has_converged = np.full_like(x, fill_value=False, dtype=bool)
+        has_converged[inf_mu] = True
         # 1000 seems like a reasonable max number of iterations given that
         # convergence is guaranteed in this setup.
-        while not all(has_converged):
-            not_done = np.nonzero(~has_converged)[0]
-            _x = x[not_done]
+        steps = 1000
+        while not all(has_converged) and steps:
+            not_done = ~has_converged
             _x0 = x0[not_done]
-            _mu = mu[not_done]
-            _logprob = logprob[not_done]
+            _logq = logq[not_done]
             _delta = delta[not_done]
             _q = q[not_done]
 
-            logc = logF(_x0, _mu)
-            logd = self._logpdf(_x0, _mu)
-            eps = _logprob - logc
+            logF = logdist_fn(_x0, 1)
+            eps = _logq - logF
             mask = np.abs(eps) < 1e-05
 
             # to avoid subtractive cancellation when `d` is very small we use a
             # taylor series expansion to approximate (p - p(xn)) as shown in
             # page 8 of Giner & Smyth (2016)
             _delta[mask] = (
-                eps[mask] *
-                np.exp(_logprob[mask] + np.log1p(-0.5*eps[mask]) - logd[mask])
+                eps[mask] * np.exp(_logq[mask] + np.log1p(-0.5*eps[mask]))
             )
-            _delta[~mask] = (
-                _q[~mask] *
-                np.exp(-logd[~mask]) - np.exp(logc[~mask] - logd[~mask])
+            _delta[~mask] = _q[~mask] - np.exp(logF[~mask])
+            _delta /= self._pdf(_x0, 1)
+            # ensure that NaN values are not used to update the output values.
+            _delta[np.isnan(_delta)] = 0
+
+            x[not_done] = _x0 + sign * _delta
+            has_converged[not_done] = np.isclose(
+                x[not_done], _x0, rtol=1e-12, atol=2.22e-16
             )
+            x0[not_done] = x[not_done]
+            steps -= 1
 
-            _x = _x0 + sign * _delta
-            has_converged = np.isclose(x, x0, atol=1e-08, equal_nan=True)
-            _x0[...] = _x[...]
-
+        x[~inf_mu] *= mu[~inf_mu]
         return x
 
     def _isf(self, q, mu):

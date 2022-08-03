@@ -2251,7 +2251,7 @@ class TestInvgauss:
         # extreme values have zero density for any finite mean value
         assert_allclose(stats.invgauss.pdf([-1, 0, np.inf], mu=1), [0, 0, 0])
 
-    def test_ppf_sf(self):
+    def test_ppf_isf(self):
         p = [0.000001, 0.00001, 0.0001, 0.001, 0.01, 0.1, 0.5, 0.9, 0.99,
              0.999, 0.9999, 0.99999, 0.999999]
         p1 = stats.invgauss.cdf(stats.invgauss.ppf(p, mu=1), mu=1)
@@ -2260,8 +2260,8 @@ class TestInvgauss:
         fns = np.percentile(
             abs_error, [0, 25, 50, np.mean(abs_error), 75, 100]
         )
-        assert_allclose(fns, [0., 0., 8.13151629e-20, 0.,
-                        5.55111512e-17, 2.22044605e-16], atol=1e-08)
+        assert_allclose(fns, [0., 0., 1.27054940e-21, 1.96413583e-17,
+                        2.16840434e-19, 2.22044605e-16], atol=1e-12)
 
         q = stats.invgauss.ppf(p, mu=1)
         q1 = stats.invgauss.ppf(stats.invgauss.cdf(q, mu=1), mu=1)
@@ -2269,17 +2269,15 @@ class TestInvgauss:
         fns2 = np.percentile(
             rel_error, [0, 25, 50, np.mean(rel_error), 75, 100]
         )
-        assert_allclose(fns2, [0., 0., 1.17819649e-16, 0.,
-                        3.50412747e-16, 1.68867330e-11], atol=1e-08)
+        assert_allclose(fns2, [0., 0., 0., 9.15882970e-17, 1.16804249e-16,
+                        4.92818217e-16], atol=1e-12)
 
         # tests if algorithm does not diverge for small probabilities.
-        assert np.isclose(stats.invgauss.ppf(0.00013, mu=1 / 3) * 3,
-                          0.15039762631802803, atol=1e-17)
+        assert np.isclose(stats.invgauss.ppf(0.00013, mu=1, scale=3),
+                          0.15039762631802803, atol=2.22e-16)
         # test if it returns right tail values accurately
-        assert np.isclose(stats.invgauss.isf(1e-17, mu=1.05) / 0.7,
-                          105.42079072389444, atol=1e-14)
-        assert np.isclose(stats.invgauss.isf(1e-50, mu=1.05) / 0.7,
-                          339.3560284841935, atol=1e-13)
+        assert np.isclose(stats.invgauss.isf(1e-20, mu=1.5, scale=1 / 0.7),
+                          126.3493, atol=2.22e-16)
         # test if correct  out is returned for boundary values
         with np.errstate(invalid='ignore'):
             # because probabilities must be in the interval [0, 1] a
@@ -2291,8 +2289,8 @@ class TestInvgauss:
                 [0, 0.67584131, np.inf, np.nan, np.nan], atol=1e-08
             )
         # test if invalid values for the mean are detected
-        assert_allclose(stats.invgauss.ppf(0.5, mu=[0, 1, 2]),
-                        [np.nan, 0.67584131, 1.02845978], atol=1e-08)
+        assert_allclose(stats.invgauss.ppf(0.5, mu=[0, 1, 2, np.inf]),
+                        [np.nan, 0.67584131, 1.02845978, 2.1981093], atol=1e-08)
 
 
 class TestLaplace:
