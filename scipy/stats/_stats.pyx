@@ -705,16 +705,26 @@ ctypedef fused real:
 
 
 @cython.wraparound(False)
+@cython.initializedcheck(False)
+@cython.cdivision(True)
 @cython.boundscheck(False)
-cdef int gaussian_kernel_estimate_inner(real[:, :] points_, real[:, :] values_, real[:, :] xi_,
-                                        real[:, :] estimate, real[:, :] whitening,
-                                        int n, int m, int d, int p) nogil:
+cdef inline int gaussian_kernel_estimate_inner(
+    real[:, :] points_,
+    real[:, :] values_,
+    real[:, :] xi_,
+    real[:, :] estimate,
+    real[:, :] whitening,
+    int n,
+    int m,
+    int d,
+    int p,
+) nogil:
     cdef:
         int i, j, k
         real residual, arg, norm
 
     # Evaluate the normalisation
-    norm = math.pow((2 * PI) ,(- d / 2))
+    norm = math.pow((2 * PI), (- d / 2.))
     for i in range(d):
         norm *= whitening[i, i]
 
@@ -725,7 +735,7 @@ cdef int gaussian_kernel_estimate_inner(real[:, :] points_, real[:, :] values_, 
                 residual = (points_[i, k] - xi_[j, k])
                 arg += residual * residual
 
-            arg = math.exp(-arg / 2) * norm
+            arg = math.exp(-arg / 2.) * norm
             for k in range(p):
                 estimate[j, k] += values_[i, k] * arg
     return 0
