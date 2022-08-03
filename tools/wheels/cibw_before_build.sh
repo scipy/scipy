@@ -32,30 +32,34 @@ fi
 
 # Install GFortran
 if [[ $RUNNER_OS == "macOS" ]]; then
-    GFORTRAN=$(type -p gfortran-9)
-    sudo ln -s $GFORTRAN /usr/local/bin/gfortran
-#    # same version of gfortran as the openblas-libs and scipy-wheel builds
-#    curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
-#    GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
-#    KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
-#    if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
-#        echo sha256 mismatch
-#        exit 1
-#    fi
-#
-#    hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
-#    sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
-#    otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
-#
-#    # arm64 stuff from gfortran_utils
-#    if [[ $PLATFORM == "macosx-arm64" ]]; then
-#        source $PROJECT_DIR/tools/wheels/gfortran_utils.sh
-#        # The install script requires the PLAT variable in order to set
-#        # the FC variable
-#        export PLAT=arm64
-#        install_arm64_cross_gfortran
-#    fi
-#
+#    GFORTRAN=$(type -p gfortran-9)
+#    sudo ln -s $GFORTRAN /usr/local/bin/gfortran
+    # same version of gfortran as the openblas-libs and scipy-wheel builds
+    curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
+    GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
+    KNOWN_SHA256="d2d5ca5ba8332d63bbe23a07201c4a0a5d7e09ee56f0298a96775f928c3c4b30  gfortran.dmg"
+    if [ "$GFORTRAN_SHA256" != "$KNOWN_SHA256" ]; then
+        echo sha256 mismatch
+        exit 1
+    fi
+
+    hdiutil attach -mountpoint /Volumes/gfortran gfortran.dmg
+    sudo installer -pkg /Volumes/gfortran/gfortran.pkg -target /
+    otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
+
+    printf "      program thing\n      write(*,*) 'hello world'\n      end\n" >> test.f
+    gfortran test.f -o a.out
+    ./a.out
+
+    # arm64 stuff from gfortran_utils
+    if [[ $PLATFORM == "macosx-arm64" ]]; then
+        source $PROJECT_DIR/tools/wheels/gfortran_utils.sh
+        # The install script requires the PLAT variable in order to set
+        # the FC variable
+        export PLAT=arm64
+        install_arm64_cross_gfortran
+    fi
+
 #    # Manually symlink gfortran-4.9 to plain gfortran for f2py.
 #    # No longer needed after Feb 13 2020 as gfortran is already present
 #    # and the attempted link errors. Keep this for future reference.
