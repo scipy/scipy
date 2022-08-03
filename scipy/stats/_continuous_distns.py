@@ -4116,6 +4116,12 @@ class invgauss_gen(rv_continuous):
     def _cdf(self, x, mu):
         return np.exp(self._logcdf(x, mu))
 
+    def _ppf(self, x, mu):
+        return _boost._invgauss_ppf(x, mu, 1)
+
+    def _isf(self, x, mu):
+        return _boost._invgauss_isf(x, mu, 1)
+
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
 
@@ -8779,6 +8785,12 @@ class wald_gen(invgauss_gen):
 
     def _sf(self, x):
         return invgauss._sf(x, 1.0)
+
+    def _ppf(self, x):
+        return invgauss._ppf(x, 1.0)
+
+    def _isf(self, x):
+        return invgauss._isf(x, 1.0)
 
     def _logpdf(self, x):
         return invgauss._logpdf(x, 1.0)

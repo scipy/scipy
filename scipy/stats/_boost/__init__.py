@@ -39,3 +39,9 @@ from scipy.stats._boost.nct_ufunc import (
     _nct_isf, _nct_mean, _nct_variance,
     _nct_skewness, _nct_kurtosis_excess,
 )
+
+from scipy.stats._boost.invgauss_ufunc import (
+    _invgauss_pdf, _invgauss_cdf, _invgauss_sf, _invgauss_ppf,
+    _invgauss_isf, _invgauss_mean, _invgauss_variance,
+    _invgauss_skewness, _invgauss_kurtosis_excess,
+)
