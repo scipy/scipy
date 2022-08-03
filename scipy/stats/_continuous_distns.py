@@ -9401,15 +9401,34 @@ class rv_histogram(rv_continuous):
     Parameters
     ----------
     histogram : tuple of array_like
-      Tuple containing two array_like objects
-      The first containing the content of n bins
-      The second containing the (n+1) bin boundaries
-      In particular the return value np.histogram is accepted
+        Tuple containing two array_like objects.
+        The first containing the content of n bins,
+        the second containing the (n+1) bin boundaries.
+        In particular, the return value of `numpy.histogram` is accepted.
+
+    density : bool, optional
+        If False, assumes the histogram is proportional to counts per bin;
+        otherwise, assumes it is proportional to a density.
+        For constant bin widths, these are equivalent, but the distinction
+        is important when bin widths vary (see Notes).
+        If None (default), sets ``density=True`` for backwards compatibility,
+        but warns if the bin widths are variable. Set `density` explicitly
+        to silence the warning.
 
     Notes
     -----
+    When a histogram has unequal bin widths, there is a distinction between
+    histograms that are proportional to counts per bin and histograms that are
+    proportional to probability density over a bin. If `numpy.histogram` is
+    called with its default ``density=False``, the resulting histogram is the
+    number of counts per bin, so ``density=False`` should be passed to
+    `rv_histogram`. If `numpy.histogram` is called with ``density=True``, the
+    resulting histogram is in terms of probability density, so ``density=True``
+    should be passed to `rv_histogram`. To avoid warnings, always pass
+    ``density`` explicitly when the input histogram has unequal bin widths.
+
     There are no additional shape parameters except for the loc and scale.
-    The pdf is defined as a stepwise function from the provided histogram
+    The pdf is defined as a stepwise function from the provided histogram.
     The cdf is a linear interpolation of the pdf.
 
     .. versionadded:: 0.19.0
@@ -9423,7 +9442,7 @@ class rv_histogram(rv_continuous):
     >>> import numpy as np
     >>> data = scipy.stats.norm.rvs(size=100000, loc=0, scale=1.5, random_state=123)
     >>> hist = np.histogram(data, bins=100)
-    >>> hist_dist = scipy.stats.rv_histogram(hist)
+    >>> hist_dist = scipy.stats.rv_histogram(hist, density=False)
 
     Behaves like an ordinary scipy rv_continuous distribution
 
@@ -9457,19 +9476,27 @@ class rv_histogram(rv_continuous):
     """
     _support_mask = rv_continuous._support_mask
 
-    def __init__(self, histogram, *args, **kwargs):
+    def __init__(self, histogram, *args, density=None, **kwargs):
         """
         Create a new distribution using the given histogram
 
         Parameters
         ----------
         histogram : tuple of array_like
-          Tuple containing two array_like objects
-          The first containing the content of n bins
-          The second containing the (n+1) bin boundaries
-          In particular the return value np.histogram is accepted
+            Tuple containing two array_like objects.
+            The first containing the content of n bins,
+            the second containing the (n+1) bin boundaries.
+            In particular, the return value of np.histogram is accepted.
+        density : bool, optional
+            If False, assumes the histogram is proportional to counts per bin;
+            otherwise, assumes it is proportional to a density.
+            For constant bin widths, these are equivalent.
+            If None (default), sets ``density=True`` for backward
+            compatibility, but warns if the bin widths are variable. Set
+            `density` explicitly to silence the warning.
         """
         self._histogram = histogram
+        self._density = density
         if len(histogram) != 2:
             raise ValueError("Expected length 2 for parameter histogram")
         self._hpdf = np.asarray(histogram[0])
@@ -9479,6 +9506,15 @@ class rv_histogram(rv_continuous):
                              "and histogram boundaries do not match, "
                              "expected n and n+1.")
         self._hbin_widths = self._hbins[1:] - self._hbins[:-1]
+        bins_vary = not np.allclose(self._hbin_widths, self._hbin_widths[0])
+        if density is None and bins_vary:
+            message = ("Bin widths are not constant. Assuming `density=True`."
+                       "Specify `density` explicitly to silence this warning.")
+            warnings.warn(message, RuntimeWarning, stacklevel=2)
+            density = True
+        elif not density:
+            self._hpdf = self._hpdf / self._hbin_widths
+
         self._hpdf = self._hpdf / float(np.sum(self._hpdf * self._hbin_widths))
         self._hcdf = np.cumsum(self._hpdf * self._hbin_widths)
         self._hpdf = np.hstack([0.0, self._hpdf, 0.0])
@@ -9525,6 +9561,7 @@ class rv_histogram(rv_continuous):
         """
         dct = super()._updated_ctor_param()
         dct['histogram'] = self._histogram
+        dct['density'] = self._density
         return dct
 
 
