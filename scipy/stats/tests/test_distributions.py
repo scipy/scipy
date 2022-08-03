@@ -4223,6 +4223,7 @@ class TestFitMethod:
         assert_raises(ValueError, stats.uniform.fit, x, floc=2.0)
         assert_raises(ValueError, stats.uniform.fit, x, fscale=5.0)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize("method", ["MLE", "MM"])
     def test_fshapes(self, method):
         # take a beta distribution, with shapes='a, b', and make sure that

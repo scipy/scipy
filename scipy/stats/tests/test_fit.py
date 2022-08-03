@@ -176,9 +176,9 @@ def test_nnlf_and_related_methods(dist, params):
 
 
 def cases_test_fit():
-    # These three fail default test; check separately
-    skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min'}
-    # status of 'studentized_range', 'ksone', 'kstwo' unknown; all others pass
+    # These fail default test or hang
+    skip_basic_fit = {'argus', 'foldnorm', 'truncpareto', 'truncweibull_min',
+                      'ksone', 'levy_stable', 'studentized_range', 'kstwo'}
     slow_basic_fit = {'burr12', 'johnsonsb', 'bradford', 'fisk', 'mielke',
                       'exponpow', 'rdist', 'norminvgauss', 'betaprime',
                       'powerlaw', 'pareto', 'johnsonsu', 'loglaplace',
@@ -189,8 +189,7 @@ def cases_test_fit():
                       'kstwobign', 'gompertz', 'dweibull', 'lomax', 'invgauss',
                       'recipinvgauss', 'chi', 'foldcauchy', 'powernorm',
                       'gennorm', 'skewnorm', 'randint', 'genextreme'}
-    xslow_basic_fit = {'studentized_range', 'ksone', 'kstwo', 'levy_stable',
-                       'nchypergeom_fisher', 'nchypergeom_wallenius',
+    xslow_basic_fit = {'nchypergeom_fisher', 'nchypergeom_wallenius',
                        'gausshyper', 'genexpon', 'gengamma', 'genhyperbolic',
                        'geninvgauss', 'tukeylambda', 'skellam', 'ncx2',
                        'hypergeom', 'nhypergeom', 'zipfian', 'ncf',
@@ -215,7 +214,8 @@ def cases_test_fit():
 
 def cases_test_fitstart():
     for distname, shapes in dict(distcont).items():
-        if not isinstance(distname, str) or distname in {'studentized_range'}:
+        if (not isinstance(distname, str) or
+                distname in {'studentized_range', 'recipinvgauss'}):  # slow
             continue
         yield distname, shapes
 
