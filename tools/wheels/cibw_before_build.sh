@@ -33,7 +33,7 @@ fi
 # Install GFortran
 if [[ $RUNNER_OS == "macOS" ]]; then
     GFORTRAN=$(type -p gfortran-9)
-    sudo ln -s $GFORTRAN /usr/local/bin
+    sudo ln -s $GFORTRAN /usr/local/bin/gfortran
 #    # same version of gfortran as the openblas-libs and scipy-wheel builds
 #    curl -L https://github.com/MacPython/gfortran-install/raw/master/archives/gfortran-4.9.0-Mavericks.dmg -o gfortran.dmg
 #    GFORTRAN_SHA256=$(shasum -a 256 gfortran.dmg)
