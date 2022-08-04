@@ -34,6 +34,9 @@ class BinomTestResult:
         self.statistic = statistic
         self.pvalue = pvalue
 
+        # add alias for backward compatibility
+        self.proportion_estimate = statistic
+
     def __repr__(self):
         s = ("BinomTestResult("
              f"k={self.k}, "
@@ -42,17 +45,6 @@ class BinomTestResult:
              f"statistic={self.statistic}, "
              f"pvalue={self.pvalue})")
         return s
-
-    @property
-    def proportion_estimate(self):
-        """
-        An alias for ``statistic``.
-        """
-        return self.statistic
-
-    @proportion_estimate.setter
-    def proportion_estimate(self, proportion_estimate):
-        self.statistic = proportion_estimate
 
     def proportion_ci(self, confidence_level=0.95, method='exact'):
         """

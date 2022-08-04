@@ -5818,6 +5818,7 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
                 "opt_scale": opt_scale,
                 "null_dist": null_dist}
 
+    # create result object with alias for backward compatibility
     res = MGCResult(stat, pvalue, mgc_dict)
     res.stat = stat
     return res

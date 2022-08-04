@@ -2207,6 +2207,7 @@ def anderson_ksamp(samples, midrank=True):
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
 
+    # create result object with alias for backward compatibility
     res = Anderson_ksampResult(A2, critical, p)
     res.significance_level = p
     return res

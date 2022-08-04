@@ -1003,10 +1003,6 @@ class TestBinomTest:
     def test_alias(self):
         res = stats.binomtest(3, n=10, p=0.1)
         assert_equal(res.proportion_estimate, res.statistic)
-        res.statistic = 0.5
-        assert_equal(res.proportion_estimate, res.statistic)
-        res.proportion_estimate = 0.7
-        assert_equal(res.proportion_estimate, res.statistic)
 
 
 class TestFligner:
