@@ -813,6 +813,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     That is, :math:`\\int^{x=2}_{x=1} \\int^{y=3}_{y=2} \\int^{z=1}_{z=0} x y z
     \\,dz \\,dy \\,dx`.
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> f = lambda z, y, x: x*y*z
     >>> integrate.tplquad(f, 1, 2, 2, 3, 0, 1)
@@ -842,7 +843,6 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     :math:`\\iiint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2} + z^{2})} \\,dz
     \\,dy\\,dx`.
 
-    >>> import numpy as np
     >>> f = lambda x, y, z: np.exp(-(x ** 2 + y ** 2 + z ** 2))
     >>> integrate.tplquad(f, -np.inf, np.inf, -np.inf, np.inf, -np.inf, np.inf)
         (5.568327996830833, 4.4619078828029765e-08)
