@@ -46,7 +46,7 @@ specified at instantiation time. The following example demonstrates
 its use, for linear and cubic spline interpolation:
 
 .. plot::
-   :alt: "..."
+   :alt: "This code generates an X-Y plot of a time-series with amplitude on the Y axis and time on the X axis. The original time-series is shown as a series of blue markers roughly defining some kind of oscillation. An orange trace showing the linear interpolation is drawn atop the data forming a jagged representation of the original signal. A dotted green cubic interpolation is also drawn that appears to smoothly represent the source data."
 
    >>> from scipy.interpolate import interp1d
 
@@ -73,7 +73,7 @@ interpolating filter. The following example demonstrates their use, using the
 same data as in the previous example:
 
 .. plot::
-   :alt: "..."
+   :alt: "This code generates an X-Y plot of a time-series with amplitude on the Y axis and time on the X axis. The original time-series is shown as a series of blue markers roughly defining some kind of oscillation. An orange trace showing the nearest neighbor interpolation is drawn atop the original with a stair-like appearance where the original data is right in the middle of each stair step. A green trace showing the previous neighbor interpolation looks similar to the orange trace but the original data is at the back of each stair step. Similarly a dotted red trace showing the next neighbor interpolation goes through each of the previous points, but it is centered at the front edge of each stair."
 
    >>> from scipy.interpolate import interp1d
 

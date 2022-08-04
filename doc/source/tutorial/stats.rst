@@ -614,13 +614,13 @@ the probabilities.
 
 .. plot:: tutorial/examples/normdiscr_plot1.py
    :align: center
-   :alt: "..."
+   :alt: "An X-Y histogram plot showing the distribution of random variates. A blue trace shows a normal bell curve. A blue bar chart perfectly approximates the curve showing the true distribution. A red bar chart representing the sample is well described by the blue trace but not exact."
    :include-source: 0
 
 
 .. plot:: tutorial/examples/normdiscr_plot2.py
    :align: center
-   :alt: "..."
+   :alt: "An X-Y histogram plot showing the cumulative distribution of random variates. A blue trace shows a CDF for a typical normal distribution. A blue bar chart perfectly approximates the curve showing the true distribution. A red bar chart representing the sample is well described by the blue trace but not exact."
    :include-source: 0
 
 
@@ -1091,7 +1091,7 @@ the individual data points on top.
 
 .. plot:: tutorial/stats/plots/kde_plot5.py
    :align: center
-   :alt: "..."
+   :alt: "An X-Y plot showing a random scattering of points around a 2-D gaussian. The distribution has a semi-major axis at 45 degrees with a semi-minor axis about half as large. Each point in the plot is highlighted with the outer region in red, then yellow, then green, with the center in blue. "
    :include-source: 0
 
 

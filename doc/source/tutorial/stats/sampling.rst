@@ -186,7 +186,7 @@ We can also check that the samples are drawn from the correct distribution
 by visualizing the histogram of the samples:
 
 .. plot::
-    :alt: "..."
+    :alt: "This code generates an X-Y plot with the probability distribution function of X on the Y axis and values of X on the X axis. A red trace showing the true distribution is a typical normal distribution with tails near zero at the edges and a smooth peak around the center near 0.4. A blue bar graph of random variates is shown below the red trace with a distribution similar to the truth, but with clear imperfections."
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import norm
