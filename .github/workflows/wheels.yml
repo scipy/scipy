@@ -72,16 +72,16 @@ jobs:
         # Github Actions doesn't support pairing matrix values together, let's improvise
         # https://github.com/github/feedback/discussions/7835#discussioncomment-1769026
         buildplat:
-        # - [ubuntu-20.04, manylinux*, x86_64]
-        # - [ubuntu-20.04, manylinux*, aarch64]`
+        - [ubuntu-20.04, manylinux*, x86_64]
+        - [ubuntu-20.04, manylinux*, aarch64]
         # - [macos-11, macosx*, x86_64]
         - [windows-2019, win*, AMD64]
         # - [windows-2019, win32]
-        python: ["cp38"] #, "cp39", "cp310", "cp38", "cp310", "pp38" "pp39"]
-      #    env:
-      #      IS_32_BIT: ${{ matrix.buildplat[1] == 'win32' }}
-      #      IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
-      #      IS_SCHEDULE_DISPATCH: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+        python: ["cp38", "cp39", "cp310"] #, "cp39", "cp310", "cp38", "cp310", "pp38" "pp39"]
+        #    env:
+        #      IS_32_BIT: ${{ matrix.buildplat[1] == 'win32' }}
+        #      IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+        #      IS_SCHEDULE_DISPATCH: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
     steps:
       - name: Checkout scipy
         uses: actions/checkout@v3
@@ -96,7 +96,6 @@ jobs:
 
       - name: install-rtools
         run: |
-          # provides pkg-config. The one pres
           choco install rtools --no-progress
           echo "c:\rtools40\ucrt64\bin;" >> $env:GITHUB_PATH
         if: runner.os == 'Windows'
@@ -110,12 +109,22 @@ jobs:
       #          refreshenv
       #        if: ${{ env.IS_32_BIT == 'true' }}
 
+      - name: Set up QEMU
+        if: runner.os == 'Linux'
+        uses: docker/setup-qemu-action@v1
+        with:
+          platforms: all
+
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.4.0
+        uses: pypa/cibuildwheel@v2.8.1
         env:
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
+          CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
           CIBW_ENVIRONMENT_WINDOWS: PKG_CONFIG_PATH=c:\\opt\\openblas\\if_32\\64\\lib\\pkgconfig
+          # CIBW_ENVIRONMENT_WINDOWS: CMAKE_PREFIX_PATH=c:\\opt\\64
+          # CIBW_BEFORE_BUILD_WINDOWS: "pip install delvewheel"
+          # CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
 
       - uses: actions/upload-artifact@v3
         with:

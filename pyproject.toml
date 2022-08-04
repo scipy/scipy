@@ -41,7 +41,7 @@ requires = [
     # Note that 1.21.3 was the first version with a complete set of 3.10 wheels,
     # however macOS was broken and it's safe to build against 1.21.6 on all platforms
     # (see oldest-supported-numpy issues gh-28 and gh-45)
-    "numpy==1.21.6; python_version=='3.10' and platform_machine!='loongarch64' and platform_python_implementation != 'PyPy'",
+    "numpy==1.21.3; python_version=='3.10' and platform_machine!='loongarch64' and platform_python_implementation != 'PyPy'",
 
     # For Python versions which aren't yet officially supported,
     # we specify an unpinned NumPy which allows source distributions
@@ -132,11 +132,11 @@ tracker = "https://github.com/scipy/scipy/issues"
 dodoFile = "dev.py"
 
 [tool.cibuildwheel]
-skip = "cp36-* cp37-* pp* *-manylinux_i686 *_ppc64le *_s390x *-musllinux*"
+skip = "cp36-* cp37-* pp* *_ppc64le *_i686 *_s390x *-musllinux*"
 build-verbosity = "3"
 before-build = "bash {project}/tools/wheels/cibw_before_build.sh {project}"
-# before-test = "pip install -r {project}/test_requirements.txt"
-# test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
+before-test = "pip install -r {project}/test_requirements.txt"
+test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux2014"
@@ -150,6 +150,6 @@ test-skip = "*_arm64 *_universal2:arm64"
 
 [tool.cibuildwheel.windows]
 
-[[tool.cibuildwheel.overrides]]
-select = "*-win32"
-environment = { CFLAGS="-m32", LDFLAGS="-m32" }
+#[[tool.cibuildwheel.overrides]]
+#select = "*-win32"
+#environment = { CFLAGS="-m32", LDFLAGS="-m32" }

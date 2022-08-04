@@ -3,6 +3,7 @@ set -xe
 PROJECT_DIR="$1"
 PLATFORM=$(PYTHONPATH=tools python -c "import openblas_support; print(openblas_support.get_plat())")
 
+printenv
 # Update license
 if [[ $RUNNER_OS == "Linux" ]] ; then
     cat $PROJECT_DIR/tools/wheels/LICENSE_linux.txt >> $PROJECT_DIR/LICENSE.txt
@@ -25,10 +26,13 @@ if [[ $RUNNER_OS == "Linux" || $RUNNER_OS == "macOS" ]] ; then
     fi
 elif [[ $RUNNER_OS == "Windows" ]]; then
     PYTHONPATH=tools python -c "import openblas_support; openblas_support.make_init('scipy')"
-    # target=$(python tools/openblas_support.py)
-    # Download openBLAS and put it into c/opt/64/lib
-    # target=$(python -c "import tools.openblas_support as obs; plat=obs.get_plat(); ilp64=obs.get_ilp64(); target=f'openblas_{plat}.zip'; obs.download_openblas(target, plat, ilp64);print(target)")
-    # unzip $target -d /c/opt
+    #    target=$(python tools/openblas_support.py)
+    #    # Download openBLAS and put it into c/opt/64/lib
+    #    target=$(python -c "import tools.openblas_support as obs; plat=obs.get_plat(); ilp64=obs.get_ilp64(); target=f'openblas_{plat}.zip'; obs.download_openblas(target, plat, ilp64);print(target)")
+    #    unzip $target -d /c/opt
+    #    pushd /c/opt/64/lib
+    #    mv /c/opt/64/lib/libopenblas_v0.3.18-gcc_8_1_0.a  libopenblas.a
+    #    rm *.lib
 
     # the following is used in CI, the previous lines have been used in making wheels. Figure out which one
     # to use.
@@ -36,7 +40,6 @@ elif [[ $RUNNER_OS == "Windows" ]]; then
     mkdir -p /c/opt
     unzip openblas_32_if.zip -d /c
     rm /c/opt/openblas/if_32/64/lib/*.dll.a
-    rm /c/opt/openblas/if_32/64/bin/*.dll
 fi
 
 # Install GFortran
