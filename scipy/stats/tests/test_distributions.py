@@ -2261,7 +2261,7 @@ class TestInvgauss:
             abs_error, [0, 25, 50, np.mean(abs_error), 75, 100]
         )
         assert_allclose(fns, [0., 0., 1.27054940e-21, 1.96413583e-17,
-                        2.16840434e-19, 2.22044605e-16], atol=1e-12)
+                        2.16840434e-19, 2.22044605e-16], atol=1e-08)
 
         q = stats.invgauss.ppf(p, mu=1)
         q1 = stats.invgauss.ppf(stats.invgauss.cdf(q, mu=1), mu=1)
@@ -2270,14 +2270,14 @@ class TestInvgauss:
             rel_error, [0, 25, 50, np.mean(rel_error), 75, 100]
         )
         assert_allclose(fns2, [0., 0., 0., 9.15882970e-17, 1.16804249e-16,
-                        4.92818217e-16], atol=1e-12)
+                        4.92818217e-16], atol=1e-08)
 
         # tests if algorithm does not diverge for small probabilities.
-        assert np.isclose(stats.invgauss.ppf(0.00013, mu=1, scale=3),
-                          0.15039762631802803, atol=2.22e-16)
+        assert np.isclose(stats.invgauss.ppf(0.00013, mu=1),
+                          0.06067806, atol=1e-08)
         # test if it returns right tail values accurately
-        assert np.isclose(stats.invgauss.isf(1e-20, mu=1.5, scale=1 / 0.7),
-                          126.3493, atol=2.22e-16)
+        assert np.isclose(stats.invgauss.isf(1e-20, mu=1.5),
+                          177.723, atol=1e-08)
         # test if correct  out is returned for boundary values
         with np.errstate(invalid='ignore'):
             # because probabilities must be in the interval [0, 1] a
