@@ -104,7 +104,7 @@ function *f(x, y)* you only know the values at points *(x[i], y[i])*
 that do not form a regular grid.
 
 .. plot::
-    :alt: "..."
+    :alt: " "
 
     Suppose we want to interpolate the 2-D function
 
