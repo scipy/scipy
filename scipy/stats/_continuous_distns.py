@@ -4108,16 +4108,28 @@ class invgauss_gen(rv_continuous):
     # not R code. see gh-13616
 
     def _logcdf(self, x, mu):
-        fac = 1 / np.sqrt(x)
-        a = _norm_logcdf(fac * ((x / mu) - 1))
-        b = 2 / mu + _norm_logcdf(-fac * ((x / mu) + 1))
-        return a + np.log1p(np.exp(b - a))
+        def f(x, mu):
+            return invgamma.logcdf(x, 0.5, scale=0.5)
+
+        def f2(x, mu):
+            fac = 1 / np.sqrt(x)
+            a = _norm_logcdf(fac * ((x / mu) - 1))
+            b = 2 / mu + _norm_logcdf(-fac * ((x / mu) + 1))
+            return a + np.log1p(np.exp(b - a))
+
+        return _lazywhere(np.isposinf(mu), (x, mu), f=f, f2=f2)
 
     def _logsf(self, x, mu):
-        fac = 1 / np.sqrt(x)
-        a = _norm_logsf(fac * ((x / mu) - 1))
-        b = 2 / mu + _norm_logcdf(-fac * (x + mu) / mu)
-        return a + np.log1p(-np.exp(b - a))
+        def f(x, mu):
+            return invgamma.logsf(x, 0.5, scale=0.5)
+
+        def f2(x, mu):
+            fac = 1 / np.sqrt(x)
+            a = _norm_logsf(fac * ((x / mu) - 1))
+            b = 2 / mu + _norm_logcdf(-fac * (x + mu) / mu)
+            return a + np.log1p(-np.exp(b - a))
+
+        return _lazywhere(np.isposinf(mu), (x, mu), f=f, f2=f2)
 
     def _sf(self, x, mu):
         return np.exp(self._logsf(x, mu))
@@ -4181,7 +4193,7 @@ class invgauss_gen(rv_continuous):
         # initialize output variable to the value of the mean
         x = np.full_like(x0, 1.0)
 
-        inf_mu = np.isinf(mu)
+        inf_mu = np.isposinf(mu)
         if any(inf_mu):
             # When mu = infinity, invgauss(mu, 1) reduces to invgamma(0.5, 0.5)
             fn = invgamma.isf if upper else invgamma.ppf
