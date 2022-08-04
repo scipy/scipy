@@ -18,13 +18,14 @@ def check_text(text):
     ok = "Copyright (c)" in text and re.search(
         r"This binary distribution of \w+ also bundles the following software",
         text,
+        re.IGNORECASE
     )
     return ok
 
 
 def main():
     p = argparse.ArgumentParser(usage=__doc__.rstrip())
-    p.add_argument("module", nargs="?", default="SciPy")
+    p.add_argument("module", nargs="?", default="scipy")
     args = p.parse_args()
 
     # Drop '' from sys.path
