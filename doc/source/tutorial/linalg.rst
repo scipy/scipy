@@ -370,7 +370,7 @@ coefficients :math:`c_{1}` and :math:`c_{2}` are estimated using
 linear least squares.
 
 .. plot::
-   :alt: "..."
+   :alt: " "
 
    >>> import numpy as np
    >>> from scipy import linalg

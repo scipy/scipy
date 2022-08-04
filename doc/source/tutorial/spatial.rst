@@ -168,7 +168,7 @@ First, one can use the `KDTree` to answer the question "which of the
 points is closest to this one", and define the regions that way:
 
 .. plot::
-   :alt: "..."
+   :alt: " "
 
    >>> from scipy.spatial import KDTree
    >>> points = np.array([[0, 0], [0, 1], [0, 2], [1, 0], [1, 1], [1, 2],
@@ -286,7 +286,7 @@ Voronoi diagrams can be used to create interesting generative art.  Try playing
 with the settings of this ``mandala`` function to create your own!
 
 .. plot::
-   :alt: "..."
+   :alt: " "
 
    >>> import numpy as np
    >>> from scipy import spatial

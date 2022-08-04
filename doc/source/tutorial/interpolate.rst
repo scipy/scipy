@@ -162,7 +162,7 @@ The following example demonstrates its use, and compares the interpolation resul
 using each method.
 
 .. plot::
-   :alt: "..."
+   :alt: " "
 
    >>> import matplotlib.pyplot as plt
    >>> from scipy.interpolate import RegularGridInterpolator
@@ -258,7 +258,7 @@ and the integral of the spline between any two points (
 example that follows.
 
 .. plot::
-   :alt: "..."
+   :alt: " "
 
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
@@ -385,7 +385,7 @@ spline.
 
 
 .. plot::
-   :alt: "..."
+   :alt: " "
 
    >>> import numpy as np
    >>> import matplotlib.pyplot as plt
@@ -464,7 +464,7 @@ of each argument is determined by the number of indexing objects
 passed in :obj:`mgrid <numpy.mgrid>`.
 
 .. plot::
-   :alt: "..."
+   :alt: " "
 
    >>> import numpy as np
    >>> from scipy import interpolate
@@ -526,7 +526,7 @@ This example compares the usage of the `Rbf` and `UnivariateSpline` classes
 from the scipy.interpolate module.
 
 .. plot::
-    :alt: "..."
+    :alt: " "
 
     >>> import numpy as np
     >>> from scipy.interpolate import Rbf, InterpolatedUnivariateSpline
@@ -566,7 +566,7 @@ from the scipy.interpolate module.
 This example shows how to interpolate scattered 2-D data:
 
 .. plot::
-    :alt: "..."
+    :alt: " "
 
     >>> import numpy as np
     >>> from scipy.interpolate import Rbf

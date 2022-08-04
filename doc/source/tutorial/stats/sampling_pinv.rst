@@ -119,7 +119,7 @@ We can look at the histogram of the random variates to check how well they fit
 our distribution:
 
 .. plot::
-    :alt: "..."
+    :alt: " "
 
     >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import norm
