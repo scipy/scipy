@@ -3925,6 +3925,21 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     return res
 
 
+def _normalize_along_last_axis(array):
+    """
+    Normalizes an array along the last axis. Serves as
+    convenience function for directional stats functions.
+
+    Example:
+    x=np.array([[2., 2., 0.],
+                [5., 0., 0.]])
+    _normalize_along_last_axis(x)
+    array([[sqrt(0.5), sqrt(0.5), 0.],
+            [1., 0., 0.]])
+
+    """
+    return array/np.linalg.norm(array, axis=-1, keepdims=True)
+
 def directionalmean(samples, *, axis=0, normalize=True):
     """
     Computes the directional mean of a sample of vectors.
@@ -4013,8 +4028,7 @@ def directionalmean(samples, *, axis=0, normalize=True):
                          f"Instead samples has shape: {samples.shape!r}")
     samples = np.moveaxis(samples, axis, 0)
     if normalize:
-        vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
-        samples = samples/vectornorms
+        samples = _normalize_along_last_axis(samples)
     mean = np.mean(samples, axis=0)
-    directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
+    directional_mean = _normalize_along_last_axis(mean)
     return directional_mean
