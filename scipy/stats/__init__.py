@@ -420,7 +420,7 @@ Directional statistical functions
 .. autosummary::
    :toctree: generated/
 
-   directionalmean
+   directional_stats
    circmean
    circvar
    circstd

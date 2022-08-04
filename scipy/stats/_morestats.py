@@ -33,7 +33,7 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot', 'directionalmean'
+           'yeojohnson_normplot', 'directional_stats'
            ]
 
 
@@ -4023,13 +4023,23 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     return res
 
 
-def directionalmean(samples, *, axis=0, normalize=True):
+DirectionalStats = namedtuple('DirectionalStats',
+                              ('directional_mean', 'magnitude'))
+
+
+def directional_stats(samples, *, axis=0, normalize=True):
     """
-    Computes the directional mean of a sample of vectors.
+    Computes the directional mean and magnitude of the mean vector
+    of a sample of vectors.
 
     The directional mean is a measure of "preferred direction" of vector data.
     It is analogous to the sample mean, but it is for use when the magnitude of
     the data is irrelevant (e.g. unit vectors).
+
+    The directional variance serves as a measure of "directional spread" for
+    vector data. The magnitude of the mean vector can be used to calculate
+    directional variance using one of the several definitions outlined in
+    [1]_ and [2]_.
 
     Parameters
     ----------
@@ -4047,12 +4057,16 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     Returns
     -------
-    directionalmean : ndarray
+    directional_mean : ndarray
         Directional mean.
+    magnitude : ndarray
+        Magnitude of the directional mean. This can be used to calculate
+        the directional variance.
 
     See also
     --------
-    circmean: circular mean; i.e. directional mean for 2D *angles*
+    circmean: circular mean; i. e. directional mean for 2D *angles*
+    circvar: circular variance; i. e. directional variance for 2D *angles*
 
     Notes
     -----
@@ -4061,26 +4075,37 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     .. code-block:: python
 
-        mean=samples.mean(axis=0)
-        directionalmean = mean/np.linalg.norm(mean)
+        mean = samples.mean(axis=0)
+        magnitude = np.linalg.norm(mean)
+        directional_mean = mean / magnitude
 
     This definition is appropriate for *directional* data (i.e. vector data
     for which the magnitude of each observation is irrelevant) but not
     for *axial* data (i.e. vector data for which the magnitude and *sign* of
     each observation is irrelevant).
 
+    The function also returns the magnitude of mean resultant vector which
+    can be used to calculate directional variance. Several definitions of
+    directional variance have been proposed e.g. ``Var(z) = 1 - R`` (where
+    ``R`` is the magnitude of the mean resultant vector) and
+    ``Var(z) = 1 - R**2``. `directional_stats` instead returns the
+    magnitude of the mean resultant vector so one can choose the
+    appropriate definition based on the use case.
+
     References
     ----------
     .. [1] Mardia, Jupp. (2000). *Directional Statistics*
        (p. 163). Wiley.
+    .. [2] https://en.wikipedia.org/wiki/Directional_statistics
 
     Examples
     --------
     >>> import numpy as np
-    >>> from scipy.stats import directionalmean
+    >>> from scipy.stats import directional_stats
     >>> data = np.array([[3, 4],    # first observation, 2D vector space
     ...                  [6, -8]])  # second observation
-    >>> directionalmean(data)
+    >>> dirstats = directional_stats(data)
+    >>> dirstats.directional_mean
     array([1., 0.])
 
     In contrast, the regular sample mean of the vectors would be influenced
@@ -4090,12 +4115,13 @@ def directionalmean(samples, *, axis=0, normalize=True):
     >>> data.mean(axis=0)
     array([4.5, -2.])
 
-    An exemplary use case for `directionalmean` is to find a *meaningful*
+    An exemplary use case for `directional_stats` is to find a *meaningful*
     center for a set of observations on a sphere, e.g. geographical locations.
 
     >>> data = np.array([[0.8660254, 0.5, 0.],
     ...                  [0.8660254, -0.5, 0.]])
-    >>> directionalmean(data)
+    >>> dirstats = directional_stats(data)
+    >>> dirstats.directional_mean
     array([1., 0., 0.])
 
     The regular sample mean on the other hand yields a result which does not
@@ -4104,6 +4130,31 @@ def directionalmean(samples, *, axis=0, normalize=True):
     >>> data.mean(axis=0)
     array([0.8660254, 0., 0.])
 
+    The function also return the magnitude of the mean vector which can be
+    used to calculate directional variance. For example, using the definition
+    ``Var(z) = 1 - R`` from [2]_ where ``R`` is the magnitude of the mean
+    resultant vector, we can calculate the directional variance of the vectors
+    in the above example as:
+
+    >>> 1 - dirstats.magnitude
+    0.13397459716167093
+
+    As another example, let us calculate the directional variance for 10
+    highly concentrated vectors.
+
+    >>> data = np.array([[0.911, -0.387, 0.14], # first observation
+    ...                  [0.972,0.233, -0.027], # second observation
+    ...                  [0.956, -0.104, -0.273],
+    ...                  [0.889, 0.218, -0.402],
+    ...                  [0.996, 0.076, 0.043],
+    ...                  [0.737, -0.104, -0.668],
+    ...                  [0.987, -0.09, 0.133],
+    ...                  [0.929, 0.127, -0.348],
+    ...                  [0.951, 0.2967, -0.09],
+    ...                  [0.919, -0.142, 0.367]])
+    >>> dirstats = directional_stats(data)
+    >>> 1 - dirstats.magnitude
+    0.06841124416403555
     """
     samples = np.asarray(samples)
     if samples.ndim < 2:
@@ -4114,5 +4165,6 @@ def directionalmean(samples, *, axis=0, normalize=True):
         vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
         samples = samples/vectornorms
     mean = np.mean(samples, axis=0)
-    directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
-    return directional_mean
+    magnitude = np.linalg.norm(mean, axis=-1, keepdims=True)
+    directional_mean = mean / magnitude
+    return DirectionalStats(directional_mean, magnitude.squeeze(-1))
