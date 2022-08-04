@@ -4234,10 +4234,10 @@ class invgauss_gen(rv_continuous):
         # of Giner & Smyth (2016) to prevent subtractive cancellation.
         # Note that the threshold of 500 picked here is arbitrary, a much
         # bigger value could be chosen if necessary.
-        ok = ~tiny_left & ~tiny_right
+        ok = ~tiny_left & ~tiny_right & ~inf_mu
         x0[ok] = _lazywhere(mu[ok] > 500, (1.5 * phi[ok],), f=f, f2=f2)
 
-        (logdist_fn, sign) = (self._logsf, -1) if upper else (self._logcdf, 1)
+        (logdist_fn, sign) = (self.logsf, -1) if upper else (self.logcdf, 1)
         delta = np.empty_like(x0)
         logq = np.log(q)
 
@@ -4250,10 +4250,11 @@ class invgauss_gen(rv_continuous):
             not_done = ~has_converged
             _x0 = x0[not_done]
             _logq = logq[not_done]
-            _delta = delta[not_done]
+            _delta = delta[not_done][...]
             _q = q[not_done]
+            _scale = 1 / phi[not_done]  # 1/dispersion for X/mu ~ IG(1, mu)
 
-            logF = logdist_fn(_x0, 1)
+            logF = logdist_fn(_x0, mu=1.0, scale=_scale)
             eps = _logq - logF
             mask = np.abs(eps) < 1e-05
 
@@ -4264,7 +4265,7 @@ class invgauss_gen(rv_continuous):
                 eps[mask] * np.exp(_logq[mask] + np.log1p(-0.5*eps[mask]))
             )
             _delta[~mask] = _q[~mask] - np.exp(logF[~mask])
-            _delta /= self._pdf(_x0, 1)
+            _delta /= self.pdf(_x0, mu=1, scale=_scale)
             # ensure that NaN values are not used to update the output values.
             _delta[np.isnan(_delta)] = 0
 
