@@ -269,8 +269,11 @@ def periodogram(x, fs=1.0, window='boxcar', nfft=None, detrend='constant',
         window = 'boxcar'
 
     if nfft is None:
-        nperseg = x.shape[axis]
-    elif nfft == x.shape[axis]:
+        nfft = x.shape[axis]
+        if hasattr(window, 'shape'):
+            nfft = window.shape[0]
+
+    if nfft == x.shape[axis]:
         nperseg = nfft
     elif nfft > x.shape[axis]:
         nperseg = x.shape[axis]
