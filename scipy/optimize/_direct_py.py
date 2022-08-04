@@ -253,7 +253,8 @@ def direct(
             f = func(x)
         else:
             f = func(x, *args)
-        return f
+        # always return a float
+        return np.asarray(f).item()
 
     # TODO: fix disp argument
     x, fun, ret_code, nfev, nit = _direct(

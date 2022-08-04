@@ -732,6 +732,8 @@ class TestMoments:
                                        stats.kurtosis(self.testcase_2d[2, :]),
                                        nulp=4)
 
+
+class TestMode:
     def test_mode(self):
         a1 = [0,0,0,1,1,1,2,3,3,3,3,4,5,6,7]
         a2 = np.reshape(a1, (3,5))
@@ -947,7 +949,8 @@ def test_theilslopes_warnings():
     with pytest.warns(RuntimeWarning, match="All `x` coordinates are..."):
         res = mstats.theilslopes([0, 1], [0, 0])
         assert np.all(np.isnan(res))
-    with pytest.warns(RuntimeWarning, match="invalid value encountered..."):
+    with suppress_warnings() as sup:
+        sup.filter(RuntimeWarning, "invalid value encountered...")
         res = mstats.theilslopes([0, 0, 0], [0, 1, 0])
         assert_allclose(res, (0, 0, np.nan, np.nan))
 

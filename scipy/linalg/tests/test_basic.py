@@ -1268,7 +1268,6 @@ class TestLstsq:
             assert_equal(s, np.empty((0,)))
 
 
-@pytest.mark.filterwarnings('ignore::DeprecationWarning')
 class TestPinv:
     def setup_method(self):
         np.random.seed(1234)

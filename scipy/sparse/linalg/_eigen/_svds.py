@@ -1,3 +1,4 @@
+import os
 import numpy as np
 
 from .arpack import _arpack  # type: ignore[attr-defined]
@@ -6,7 +7,11 @@ from . import eigsh
 from scipy._lib._util import check_random_state
 from scipy.sparse.linalg._interface import LinearOperator, aslinearoperator
 from scipy.sparse.linalg._eigen.lobpcg import lobpcg  # type: ignore[no-redef]
-from scipy.sparse.linalg._svdp import _svdp
+if os.environ.get("SCIPY_USE_PROPACK"):
+    from scipy.sparse.linalg._svdp import _svdp
+    HAS_PROPACK = True
+else:
+    HAS_PROPACK = False
 from scipy.linalg import svd
 
 arpack_int = _arpack.timing.nbx.dtype
@@ -242,8 +247,6 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     True
 
     """
-    rs_was_None = random_state is None  # avoid changing v0 for arpack/lobpcg
-
     args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
                solver, random_state)
     (A, k, ncv, tol, which, v0, maxiter,
@@ -286,10 +289,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         if k == 1 and v0 is not None:
             X = np.reshape(v0, (-1, 1))
         else:
-            if rs_was_None:
-                X = np.random.RandomState(52).randn(min(A.shape), k)
-            else:
-                X = random_state.uniform(size=(min(A.shape), k))
+            X = random_state.standard_normal(size=(min(A.shape), k))
 
         _, eigvec = lobpcg(XH_X, X, tol=tol ** 2, maxiter=maxiter,
                            largest=largest)
@@ -297,6 +297,12 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
         eigvec, _ = np.linalg.qr(eigvec)
 
     elif solver == 'propack':
+        if not HAS_PROPACK:
+            raise ValueError("`solver='propack'` is opt-in due "
+                             "to potential issues on Windows, "
+                             "it can be enabled by setting the "
+                             "`SCIPY_USE_PROPACK` environment "
+                             "variable before importing scipy")
         jobu = return_singular_vectors in {True, 'u'}
         jobv = return_singular_vectors in {True, 'vh'}
         irl_mode = (which == 'SM')
@@ -323,8 +329,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
             return s
 
     elif solver == 'arpack' or solver is None:
-        if v0 is None and not rs_was_None:
-            v0 = random_state.uniform(size=(min(A.shape),))
+        if v0 is None:
+            v0 = random_state.standard_normal(size=(min(A.shape),))
         _, eigvec = eigsh(XH_X, k=k, tol=tol ** 2, maxiter=maxiter,
                           ncv=ncv, which=which, v0=v0)
 

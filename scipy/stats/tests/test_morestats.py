@@ -12,6 +12,7 @@ from numpy.testing import (assert_array_equal,
     assert_, assert_allclose, assert_equal, suppress_warnings)
 import pytest
 from pytest import raises as assert_raises
+import re
 from scipy import optimize
 from scipy import stats
 from scipy.stats._morestats import _abw_state
@@ -728,10 +729,27 @@ class TestLevene:
         assert_raises(ValueError, stats.levene, g1, x)
 
 
-class TestBinomP:
-    """Tests for stats.binom_test."""
+class TestBinomTestP:
+    """
+    Tests for stats.binomtest as a replacement for deprecated stats.binom_test.
+    """
+    @staticmethod
+    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
+        # This processing of x and n is copied from from binom_test.
+        x = np.atleast_1d(x).astype(np.int_)
+        if len(x) == 2:
+            n = x[1] + x[0]
+            x = x[0]
+        elif len(x) == 1:
+            x = x[0]
+            if n is None or n < x:
+                raise ValueError("n must be >= x")
+            n = np.int_(n)
+        else:
+            raise ValueError("Incorrect length for x.")
 
-    binom_test_func = staticmethod(stats.binom_test)
+        result = stats.binomtest(x, n, p=p, alternative=alternative)
+        return result.pvalue
 
     def test_data(self):
         pval = self.binom_test_func(100, 250)
@@ -770,29 +788,6 @@ class TestBinomP:
     def test_boost_overflow_raises(self):
         # Boost.Math error policy should raise exceptions in Python
         assert_raises(OverflowError, self.binom_test_func, 5.0, 6, p=sys.float_info.min)
-
-
-class TestBinomTestP(TestBinomP):
-    """
-    Tests for stats.binomtest as a replacement for stats.binom_test.
-    """
-    @staticmethod
-    def binom_test_func(x, n=None, p=0.5, alternative='two-sided'):
-        # This processing of x and n is copied from from binom_test.
-        x = np.atleast_1d(x).astype(np.int_)
-        if len(x) == 2:
-            n = x[1] + x[0]
-            x = x[0]
-        elif len(x) == 1:
-            x = x[0]
-            if n is None or n < x:
-                raise ValueError("n must be >= x")
-            n = np.int_(n)
-        else:
-            raise ValueError("Incorrect length for x.")
-
-        result = stats.binomtest(x, n, p=p, alternative=alternative)
-        return result.pvalue
 
 
 class TestBinomTest:
@@ -1258,6 +1253,15 @@ class TestMood:
 
         with pytest.raises(ValueError, match="alternative must be..."):
             stats.mood(x, y, alternative='ekki-ekki')
+
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_result(self, alternative):
+        rng = np.random.default_rng(265827767938813079281100964083953437622)
+        x1 = rng.standard_normal((10, 1))
+        x2 = rng.standard_normal((15, 1))
+
+        res = stats.mood(x1, x2, alternative=alternative)
+        assert_equal((res.statistic, res.pvalue), res)
 
 
 class TestProbplot:
@@ -2530,3 +2534,103 @@ class TestMedianTest:
         exp_stat, exp_p, dof, e = stats.chi2_contingency(tbl, correction=False)
         assert_allclose(stat, exp_stat)
         assert_allclose(p, exp_p)
+
+    @pytest.mark.parametrize("correction", [False, True])
+    def test_result(self, correction):
+        x = [1, 2, 3]
+        y = [1, 2, 3]
+
+        res = stats.median_test(x, y, correction=correction)
+        assert_equal((res.statistic, res.pvalue, res.median, res.table), res)
+
+
+class TestDirectionalFuncs:
+    # Reference implementations are not available
+    def test_directionalmean_correctness(self):
+        # Data from Fisher: Dispersion on a sphere, 1953 and
+        # Mardia and Jupp, Directional Statistics.
+        # For x coordinate, result for spherical mean does not agree with
+        # Mardia & Jupp, probably due to rounding errors in reference, that's
+        # why the first entry of the spherical mean reference is different
+        # than in the book.
+
+        decl = -np.deg2rad(np.array([343.2, 62., 36.9, 27., 359.,
+                                     5.7, 50.4, 357.6, 44.]))
+        incl = -np.deg2rad(np.array([66.1, 68.7, 70.1, 82.1, 79.5,
+                                     73., 69.3, 58.8, 51.4]))
+        data = np.stack((np.cos(incl) * np.cos(decl),
+                         np.cos(incl) * np.sin(decl),
+                         np.sin(incl)),
+                        axis=1)
+
+        directional_mean = stats.directionalmean(data)
+        mean_rounded = np.round(directional_mean, 3)
+
+        reference_mean = np.array([0.298, -0.135, -0.945])
+        assert_allclose(mean_rounded, reference_mean)
+
+    def test_directionalmean_2d(self):
+        # Test that for circular data directionalmean yields
+        # same result as circmean
+        rng = np.random.default_rng(0xec9a6899d5a2830e0d1af479dbe1fd0c)
+        testdata = 2 * np.pi * rng.random((1000, ))
+        testdata_vector = np.stack((np.cos(testdata),
+                                    np.sin(testdata)),
+                                   axis=1)
+        directional_mean = stats.directionalmean(testdata_vector)
+        directional_mean_angle = np.arctan2(directional_mean[1],
+                                            directional_mean[0])
+        directional_mean_angle = directional_mean_angle % (2*np.pi)
+
+        circmean = stats.circmean(testdata)
+        assert_allclose(circmean, directional_mean_angle)
+
+    def test_directionalmean_higher_dim(self):
+        # test that directionalmean works for higher dimensions
+        # here a 4D array is reduced over axis = 2
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [0.8660254, -0.5, 0.]])
+        full_array = np.tile(data, (2, 2, 2, 1))
+        expected = np.array([[[1., 0., 0.],
+                              [1., 0., 0.]],
+                             [[1., 0., 0.],
+                              [1., 0., 0.]]])
+        directionalmean = stats.directionalmean(full_array, axis=2)
+        assert_allclose(expected, directionalmean)
+
+    def test_directionalmean_list_ndarray_input(self):
+        # test that list and numpy array inputs yield same results
+        data = [[0.8660254, 0.5, 0.], [0.8660254, -0.5, 0]]
+        data_array = np.asarray(data)
+        directional_mean = stats.directionalmean(data)
+        directional_mean_array = stats.directionalmean(data_array)
+        assert_allclose(directional_mean, directional_mean_array)
+
+    def test_directionalmean_1d_error(self):
+        # test that one-dimensional data raises ValueError
+        data = np.ones((5, ))
+        message = (r"samples must at least be two-dimensional. "
+                   r"Instead samples has shape: (5,)")
+        with pytest.raises(ValueError, match=re.escape(message)):
+            stats.directionalmean(data)
+
+    def test_directionalmean_normalize(self):
+        # test that unit vectors get properly normalized before
+        # directionalmean calculation
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [1.7320508, -1., 0.]])
+        expected = np.array([1., 0., 0.])
+        directional_mean = stats.directionalmean(data)
+        assert_allclose(expected, directional_mean)
+
+    def test_directionalmean_normalize_false(self):
+        # test that for already normalized unit vectors
+        # normalize=False returns same result as default
+        data = np.array([[0.8660254, 0.5, 0.],
+                         [0.8660254, -0.5, 0]])
+        expected = np.array([1., 0., 0.])
+        directional_mean_default = stats.directionalmean(data)
+        directional_mean = stats.directionalmean(data,
+                                                 normalize=False)
+        assert_allclose(expected, directional_mean)
+        assert_allclose(directional_mean_default, directional_mean)

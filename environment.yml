@@ -11,7 +11,7 @@ dependencies:
   - setuptools<60.0
   - cython
   - compilers
-  - meson
+  - meson>=0.63.0
   - meson-python
   - ninja
   - numpy
@@ -24,6 +24,7 @@ dependencies:
   - pytest
   - pytest-cov
   - pytest-xdist
+  - pytest-timeout
   - asv<0.5
   # For type annotations
   - mypy
@@ -33,9 +34,8 @@ dependencies:
   - numpydoc
   - ipython
   - matplotlib
-  - pydata-sphinx-theme>=0.8.1
-  - sphinx-panels
-  - sphinx-tabs
+  - pydata-sphinx-theme>=0.9.0
+  - sphinx-design
   # For linting
   - flake8
   # Some optional test dependencies

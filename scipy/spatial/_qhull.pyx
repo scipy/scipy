@@ -1802,7 +1802,7 @@ class Delaunay(_QhullUser):
 
     The returned integers in the array are the indices of the simplex the
     corresponding point is in. If -1 is returned, the point is in no simplex.
-    Be aware that the shortcut in the following example only works corretcly
+    Be aware that the shortcut in the following example only works correctly
     for valid points as invalid points result in -1 which is itself a valid
     index for the last simplex in the list.
 
@@ -1821,7 +1821,7 @@ class Delaunay(_QhullUser):
            [ 0.5       ,  0.5       ,  0.        ]])
 
     The coordinates for the first point are all positive, meaning it
-    is indeed inside the triangle. The third point is on a vertex,
+    is indeed inside the triangle. The third point is on an edge,
     hence its null third coordinate.
 
     """
@@ -2822,8 +2822,9 @@ class HalfspaceIntersection(_QhullUser):
 
         # Run qhull
         mode_option = "H"
-        qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options, required_options=None,
-                       incremental=incremental, interior_point=interior_point)
+        qhull = _Qhull(mode_option.encode(), halfspaces, qhull_options,
+                       required_options=None, incremental=incremental,
+                       interior_point=self.interior_point)
 
         _QhullUser.__init__(self, qhull, incremental=incremental)
 

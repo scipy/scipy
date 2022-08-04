@@ -1,6 +1,7 @@
 import warnings
 import numpy as np
 from itertools import combinations, permutations, product
+import inspect
 
 from scipy._lib._util import check_random_state
 from scipy.special import ndtr, ndtri, comb, factorial
@@ -87,8 +88,11 @@ def _percentile_along_axis(theta_hat_b, alpha):
     for indices, alpha_i in np.ndenumerate(alpha):
         if np.isnan(alpha_i):
             # e.g. when bootstrap distribution has only one unique element
-            msg = ("The bootstrap distribution is degenerate; the "
-                   "confidence interval is not defined.")
+            msg = (
+                "The BCa confidence interval cannot be calculated."
+                " This problem is known to occur when the distribution"
+                " is degenerate or the statistic is np.min."
+            )
             warnings.warn(DegenerateDataWarning(msg))
             percentiles[indices] = np.nan
         else:
@@ -128,11 +132,14 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
 
 
 def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
-                  n_resamples, batch, method, random_state):
+                  n_resamples, batch, method, bootstrap_result, random_state):
     """Input validation and standardization for `bootstrap`."""
 
-    if vectorized not in {True, False}:
-        raise ValueError("`vectorized` must be `True` or `False`.")
+    if vectorized not in {True, False, None}:
+        raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
+
+    if vectorized is None:
+        vectorized = 'axis' in inspect.signature(statistic).parameters
 
     if not vectorized:
         statistic = _vectorize_statistic(statistic)
@@ -181,8 +188,8 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     confidence_level_float = float(confidence_level)
 
     n_resamples_int = int(n_resamples)
-    if n_resamples != n_resamples_int or n_resamples_int <= 0:
-        raise ValueError("`n_resamples` must be a positive integer.")
+    if n_resamples != n_resamples_int or n_resamples_int < 0:
+        raise ValueError("`n_resamples` must be a non-negative integer.")
 
     if batch is None:
         batch_iv = batch
@@ -200,20 +207,32 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if not paired and n_samples > 1 and method == 'bca':
         raise ValueError(message)
 
+    message = "`bootstrap_result` must have attribute `bootstrap_distribution'"
+    if (bootstrap_result is not None
+            and not hasattr(bootstrap_result, "bootstrap_distribution")):
+        raise ValueError(message)
+
+    message = ("Either `bootstrap_result.bootstrap_distribution.size` or "
+               "`n_resamples` must be positive.")
+    if ((not bootstrap_result or
+         not bootstrap_result.bootstrap_distribution.size)
+            and n_resamples_int == 0):
+        raise ValueError(message)
+
     random_state = check_random_state(random_state)
 
     return (data_iv, statistic, vectorized, paired, axis_int,
             confidence_level_float, n_resamples_int, batch_iv,
-            method, random_state)
+            method, bootstrap_result, random_state)
 
 
-fields = ['confidence_interval', 'standard_error']
+fields = ['confidence_interval', 'bootstrap_distribution', 'standard_error']
 BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
-              vectorized=True, paired=False, axis=0, confidence_level=0.95,
-              method='BCa', random_state=None):
+              vectorized=None, paired=False, axis=0, confidence_level=0.95,
+              method='BCa', bootstrap_result=None, random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
@@ -262,10 +281,14 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         `statistic`. Memory usage is O(`batch`*``n``), where ``n`` is the
         sample size. Default is ``None``, in which case ``batch = n_resamples``
         (or ``batch = max(n_resamples, n)`` for ``method='BCa'``).
-    vectorized : bool, default: ``True``
+    vectorized : bool, optional
         If `vectorized` is set ``False``, `statistic` will not be passed
-        keyword argument `axis`, and is assumed to calculate the statistic
-        only for 1D samples.
+        keyword argument `axis` and is expected to calculate the statistic
+        only for 1D samples. If ``True``, `statistic` will be passed keyword
+        argument `axis` and is expected to calculate the statistic along `axis`
+        when passed an ND sample array. If ``None`` (default), `vectorized`
+        will be set ``True`` if ``axis`` is a parameter of `statistic`. Use of
+        a vectorized statistic typically reduces computation time.
     paired : bool, default: ``False``
         Whether the statistic treats corresponding elements of the samples
         in `data` as paired.
@@ -280,6 +303,12 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         bootstrap confidence interval (``'BCa'``).
         Note that only ``'percentile'`` and ``'basic'`` support multi-sample
         statistics at this time.
+    bootstrap_result : BootstrapResult, optional
+        Provide the result object returned by a previous call to `bootstrap`
+        to include the previous bootstrap distribution in the new bootstrap
+        distribution. This can be used, for example, to change
+        `confidence_level`, change `method`, or see the effect of performing
+        additional resampling without repeating computations.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
@@ -300,9 +329,13 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         confidence_interval : ConfidenceInterval
             The bootstrap confidence interval as an instance of
             `collections.namedtuple` with attributes `low` and `high`.
+        bootstrap_distribution : ndarray
+            The bootstrap distribution, that is, the value of `statistic` for
+            each resample. The last dimension corresponds with the resamples
+            (e.g. ``res.bootstrap_distribution.shape[-1] == n_resamples``).
         standard_error : float or ndarray
             The bootstrap standard error, that is, the sample standard
-            deviation of the bootstrap distribution
+            deviation of the bootstrap distribution.
 
     Warns
     -----
@@ -337,7 +370,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> dist = norm(loc=2, scale=4)  # our "unknown" distribution
     >>> data = dist.rvs(size=100, random_state=rng)
 
-    We are interested int the standard deviation of the distribution.
+    We are interested in the standard deviation of the distribution.
 
     >>> std_true = dist.std()      # the true value of the statistic
     >>> print(std_true)
@@ -346,19 +379,65 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> print(std_sample)
     3.9460644295563863
 
-    We can calculate a 90% confidence interval of the statistic using
-    `bootstrap`.
+    The bootstrap is used to approximate the variability we would expect if we
+    were to repeatedly sample from the unknown distribution and calculate the
+    statistic of the sample each time. It does this by repeatedly resampling
+    values *from the original sample* with replacement and calculating the
+    statistic of each resample. This results in a "bootstrap distribution" of
+    the statistic.
 
+    >>> import matplotlib.pyplot as plt
     >>> from scipy.stats import bootstrap
     >>> data = (data,)  # samples must be in a sequence
     >>> res = bootstrap(data, np.std, confidence_level=0.9,
     ...                 random_state=rng)
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(res.bootstrap_distribution, bins=25)
+    >>> ax.set_title('Bootstrap Distribution')
+    >>> ax.set_xlabel('statistic value')
+    >>> ax.set_ylabel('frequency')
+    >>> plt.show()
+
+    The standard error quantifies this variability. It is calculated as the
+    standard deviation of the bootstrap distribution.
+
+    >>> res.standard_error
+    0.24427002125829136
+    >>> res.standard_error == np.std(res.bootstrap_distribution, ddof=1)
+    True
+
+    The bootstrap distribution of the statistic is often approximately normal
+    with scale equal to the standard error.
+
+    >>> x = np.linspace(3, 5)
+    >>> pdf = norm.pdf(x, loc=std_sample, scale=res.standard_error)
+    >>> fig, ax = plt.subplots()
+    >>> ax.hist(res.bootstrap_distribution, bins=25, density=True)
+    >>> ax.plot(x, pdf)
+    >>> ax.set_title('Normal Approximation of the Bootstrap Distribution')
+    >>> ax.set_xlabel('statistic value')
+    >>> ax.set_ylabel('pdf')
+    >>> plt.show()
+
+    This suggests that we could construct a 90% confidence interval on the
+    statistic based on quantiles of this normal distribution.
+
+    >>> norm.interval(0.9, loc=std_sample, scale=res.standard_error)
+    (3.5442759991341726, 4.3478528599786)
+
+    Due to central limit theorem, this normal approximation is accurate for a
+    variety of statistics and distributions underlying the samples; however,
+    the approximation is not reliable in all cases. Because `bootstrap` is
+    designed to work with arbitrary underlying distributions and statistics,
+    it uses more advanced techniques to generate an accurate confidence
+    interval.
+
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=3.57655333533867, high=4.382043696342881)
 
-    If we sample from the distribution 1000 times and form a bootstrap
+    If we sample from the original distribution 1000 times and form a bootstrap
     confidence interval for each sample, the confidence interval
-    contains the true value of the statistic approximately 900 times.
+    contains the true value of the statistic approximately 90% of the time.
 
     >>> n_trials = 1000
     >>> ci_contains_true_std = 0
@@ -445,17 +524,41 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=0.9950085825848624, high=0.9971212407917498)
 
+    The result object can be passed back into `bootstrap` to perform additional
+    resampling:
+
+    >>> len(res.bootstrap_distribution)
+    9999
+    >>> res = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
+    ...                 n_resamples=1001, random_state=rng,
+    ...                 bootstrap_result=res)
+    >>> len(res.bootstrap_distribution)
+    11000
+
+    or to change the confidence interval options:
+
+    >>> res2 = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
+    ...                  n_resamples=0, random_state=rng, bootstrap_result=res,
+    ...                  method='percentile', confidence_level=0.9)
+    >>> np.testing.assert_equal(res2.bootstrap_distribution,
+    ...                         res.bootstrap_distribution)
+    >>> res.confidence_interval
+    ConfidenceInterval(low=0.9950035351407804, high=0.9971170323404578)
+
+    without repeating computation of the original bootstrap distribution.
+
     """
     # Input validation
     args = _bootstrap_iv(data, statistic, vectorized, paired, axis,
                          confidence_level, n_resamples, batch, method,
-                         random_state)
-    data, statistic, vectorized, paired, axis = args[:5]
-    confidence_level, n_resamples, batch, method, random_state = args[5:]
+                         bootstrap_result, random_state)
+    data, statistic, vectorized, paired, axis, confidence_level = args[:6]
+    n_resamples, batch, method, bootstrap_result, random_state = args[6:]
 
-    theta_hat_b = []
+    theta_hat_b = ([] if bootstrap_result is None
+                   else [bootstrap_result.bootstrap_distribution])
 
-    batch_nominal = batch or n_resamples
+    batch_nominal = batch or n_resamples or 1
 
     for k in range(0, n_resamples, batch_nominal):
         batch_actual = min(batch_nominal, n_resamples-k)
@@ -490,6 +593,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         ci_l, ci_u = 2*theta_hat - ci_u, 2*theta_hat - ci_l
 
     return BootstrapResult(confidence_interval=ConfidenceInterval(ci_l, ci_u),
+                           bootstrap_distribution=theta_hat_b,
                            standard_error=np.std(theta_hat_b, ddof=1, axis=-1))
 
 
@@ -501,14 +605,17 @@ def _monte_carlo_test_iv(sample, rvs, statistic, vectorized, n_resamples,
     if axis != axis_int:
         raise ValueError("`axis` must be an integer.")
 
-    if vectorized not in {True, False}:
-        raise ValueError("`vectorized` must be `True` or `False`.")
+    if vectorized not in {True, False, None}:
+        raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
 
     if not callable(rvs):
         raise TypeError("`rvs` must be callable.")
 
     if not callable(statistic):
         raise TypeError("`statistic` must be callable.")
+
+    if vectorized is None:
+        vectorized = 'axis' in inspect.signature(statistic).parameters
 
     if not vectorized:
         statistic_vectorized = _vectorize_statistic(statistic)
@@ -542,7 +649,7 @@ fields = ['statistic', 'pvalue', 'null_distribution']
 MonteCarloTestResult = make_dataclass("MonteCarloTestResult", fields)
 
 
-def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
+def monte_carlo_test(sample, rvs, statistic, *, vectorized=None,
                      n_resamples=9999, batch=None, alternative="two-sided",
                      axis=0):
     r"""
@@ -572,12 +679,14 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
         If `vectorized` is set ``True``, `statistic` must also accept a keyword
         argument `axis` and be vectorized to compute the statistic along the
         provided `axis` of the sample array.
-    vectorized : bool, default: ``False``
-        By default, `statistic` is assumed to calculate the statistic only for
-        a 1D arrays `sample`. If `vectorized` is set ``True``, `statistic` must
-        also accept a keyword argument `axis` and be vectorized to compute the
-        statistic along the provided `axis` of an ND sample array. Use of a
-        vectorized statistic can reduce computation time.
+    vectorized : bool, optional
+        If `vectorized` is set ``False``, `statistic` will not be passed
+        keyword argument `axis` and is expected to calculate the statistic
+        only for 1D samples. If ``True``, `statistic` will be passed keyword
+        argument `axis` and is expected to calculate the statistic along `axis`
+        when passed an ND sample array. If ``None`` (default), `vectorized`
+        will be set ``True`` if ``axis`` is a parameter of `statistic`. Use of
+        a vectorized statistic typically reduces computation time.
     n_resamples : int, default: 9999
         Number of random permutations used to approximate the Monte Carlo null
         distribution.
@@ -606,6 +715,13 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
         The p-value for the given alternative.
     null_distribution : ndarray
         The values of the test statistic generated under the null hypothesis.
+
+    References
+    ----------
+
+    .. [1] B. Phipson and G. K. Smyth. "Permutation P-values Should Never Be
+       Zero: Calculating Exact P-values When Permutations Are Randomly Drawn."
+       Statistical Applications in Genetics and Molecular Biology 9.1 (2010).
 
     Examples
     --------
@@ -642,7 +758,7 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
     >>> print(res.statistic)
     0.12457412450240658
     >>> print(res.pvalue)
-    0.701070107010701
+    0.7012
 
     The probability of obtaining a test statistic less than or equal to the
     observed value under the null hypothesis is ~70%. This is greater than
@@ -695,12 +811,12 @@ def monte_carlo_test(sample, rvs, statistic, *, vectorized=False,
 
     def less(null_distribution, observed):
         cmps = null_distribution <= observed
-        pvalues = cmps.sum(axis=0) / n_resamples
+        pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
         return pvalues
 
     def greater(null_distribution, observed):
         cmps = null_distribution >= observed
-        pvalues = cmps.sum(axis=0) / n_resamples
+        pvalues = (cmps.sum(axis=0) + 1) / (n_resamples + 1)  # see [1]
         return pvalues
 
     def two_sided(null_distribution, observed):
@@ -921,8 +1037,11 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
     if permutation_type not in permutation_types:
         raise ValueError(f"`permutation_type` must be in {permutation_types}.")
 
-    if vectorized not in {True, False}:
-        raise ValueError("`vectorized` must be `True` or `False`.")
+    if vectorized not in {True, False, None}:
+        raise ValueError("`vectorized` must be `True`, `False`, or `None`.")
+
+    if vectorized is None:
+        vectorized = 'axis' in inspect.signature(statistic).parameters
 
     if not vectorized:
         statistic = _vectorize_statistic(statistic)
@@ -968,7 +1087,7 @@ def _permutation_test_iv(data, statistic, permutation_type, vectorized,
 
 
 def permutation_test(data, statistic, *, permutation_type='independent',
-                     vectorized=False, n_resamples=9999, batch=None,
+                     vectorized=None, n_resamples=9999, batch=None,
                      alternative="two-sided", axis=0, random_state=None):
     r"""
     Performs a permutation test of a given statistic on provided data.
@@ -1019,13 +1138,14 @@ def permutation_test(data, statistic, *, permutation_type='independent',
           Please see the Notes section below for more detailed descriptions
           of the permutation types.
 
-    vectorized : bool, default: ``False``
-        By default, `statistic` is assumed to calculate the statistic only for
-        1D arrays contained in `data`. If `vectorized` is set ``True``,
-        `statistic` must also accept a keyword argument `axis` and be
-        vectorized to compute the statistic along the provided `axis` of the ND
-        arrays in `data`. Use of a vectorized statistic can reduce computation
-        time.
+    vectorized : bool, optional
+        If `vectorized` is set ``False``, `statistic` will not be passed
+        keyword argument `axis` and is expected to calculate the statistic
+        only for 1D samples. If ``True``, `statistic` will be passed keyword
+        argument `axis` and is expected to calculate the statistic along `axis`
+        when passed an ND sample array. If ``None`` (default), `vectorized`
+        will be set ``True`` if ``axis`` is a parameter of `statistic`. Use
+        of a vectorized statistic typically reduces computation time.
     n_resamples : int or np.inf, default: 9999
         Number of random permutations (resamples) used to approximate the null
         distribution. If greater than or equal to the number of distinct
@@ -1261,6 +1381,7 @@ def permutation_test(data, statistic, *, permutation_type='independent',
     vectorized fashion: the samples ``x`` and ``y`` can be ND arrays, and the
     statistic will be calculated for each axis-slice along `axis`.
 
+    >>> import numpy as np
     >>> def statistic(x, y, axis):
     ...     return np.mean(x, axis=axis) - np.mean(y, axis=axis)
 

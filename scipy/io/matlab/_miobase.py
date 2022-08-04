@@ -421,7 +421,7 @@ def arr_to_chars(arr):
     arr = np.ndarray(shape=dims,
                      dtype=arr_dtype_number(arr, 1),
                      buffer=arr)
-    empties = [arr == '']
+    empties = [arr == np.array('', dtype=arr.dtype)]
     if not np.any(empties):
         return arr
     arr = arr.copy()

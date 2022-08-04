@@ -10,7 +10,7 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.5.0",
+    "meson-python>=0.8.0",
     "Cython>=0.29.21",
     "pybind11>=2.4.3",
     "pythran>=0.11.0",
@@ -27,9 +27,10 @@ requires = [
     # to be able to sync more easily with oldest-supported-numpy
     "numpy==1.19.5; python_version=='3.8' and platform_machine=='aarch64' and platform_python_implementation != 'PyPy'",
 
-    # arm64 on Darwin supports Python 3.8 and above requires numpy>=1.20.0
-    "numpy==1.20.0; python_version=='3.8' and platform_machine=='arm64' and platform_system=='Darwin'",
-    "numpy==1.20.0; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
+    # arm64 on Darwin supports Python 3.8 and above requires numpy>=1.21.0
+    # (first version with arm64 wheels available)
+    "numpy==1.21.0; python_version=='3.8' and platform_machine=='arm64' and platform_system=='Darwin'",
+    "numpy==1.21.0; python_version=='3.9' and platform_machine=='arm64' and platform_system=='Darwin'",
 
     # loongarch64 requires numpy>=1.22.0
     "numpy==1.22.0; platform_machine=='loongarch64'",
@@ -52,6 +53,8 @@ requires = [
 
 [project]
 name = "SciPy"
+# TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
+#       at that point, no longer include them in `py3.install_sources()`
 license = {file = "LICENSE.txt"}
 description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
@@ -92,6 +95,7 @@ dynamic = ['version']
 test = [
     "pytest",
     "pytest-cov",
+    "pytest-timeout",
     "pytest-xdist",
     "asv",
     "mpmath",
@@ -100,18 +104,21 @@ test = [
     "scikit-umfpack",
 ]
 doc = [
-    "sphinx!=3.1.0, !=4.1.0",
-    "pydata-sphinx-theme>=0.8.1",
-    "sphinx-panels>=0.5.2",
+    "sphinx!=4.1.0",
+    "pydata-sphinx-theme>=0.9.0",
+    "sphinx-design>=0.2.0",
     "matplotlib>2",
     "numpydoc",
-    "sphinx-tabs",
 ]
 dev = [
     "mypy",
     "typing_extensions",
     "pycodestyle",
     "flake8",
+    "rich-click",
+    "click",
+    "doit>=0.36.0",
+    "pydevtool",
 ]
 
 [project.urls]
@@ -123,5 +130,4 @@ tracker = "https://github.com/scipy/scipy/issues"
 
 
 [tool.doit]
-dodoFile = "do.py"
-
+dodoFile = "dev.py"
