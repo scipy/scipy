@@ -387,13 +387,22 @@ class RegularGridInterpolator:
                                  f" {k+1} points per dimension.")
 
     def _evaluate_spline(self, values, xi, method):
-        # ensure xi is 2D list of points to evaluate
+        # ensure xi is 2D list of points to evaluate (`m` is the number of
+        # points and `n` is the number of interpolation dimensions,
+        # ``n == len(self.grid)``.)
         if xi.ndim == 1:
             xi = xi.reshape((1, xi.size))
         m, n = xi.shape
 
-        # number of trailing dimensions of values:
-        n_trailing = values.ndim - n
+        # Reorder the axes: n-dimensional process iterates over the
+        # interpolation axes from the last axis downwards: E.g. for a 4D grid
+        # the order of axes is 3, 2, 1, 0. Each 1D interpolation works along
+        # the 0th axis of its argument array (for 1D routine it's its ``y``
+        # array). Thus permute the interpolation axes of `values` *and keep
+        # trailing dimensions trailing*.
+        axes = tuple(range(values.ndim))
+        axx = axes[:n][::-1] + axes[n:]
+        values = values.transpose(axx)
 
         if method == 'pchip':
             _eval_func = self._do_pchip
@@ -411,42 +420,36 @@ class RegularGridInterpolator:
         first_values = _eval_func(self.grid[last_dim],
                                   values,
                                   xi[:, last_dim],
-                                  k, axis=last_dim)
+                                  k)
 
         # the rest of the dimensions have to be on a per point-in-xi basis
-        shape = (m, *self.values.shape[len(self.grid):])
+        shape = (m, *self.values.shape[n:])
         result = np.empty(shape, dtype=self.values.dtype)
         for j in range(m):
             # Main process: Apply 1D interpolate in each dimension
             # sequentially, starting with the last dimension.
             # These are then "folded" into the next dimension in-place.
-
-            # FIXME : this is a hack
-            if n_trailing == 0:
-                folded_values = first_values[..., j]
-            else:
-                folded_values = first_values[..., j, :]
-
+            folded_values = first_values[j, ...]
             for i in range(last_dim-1, -1, -1):
                 # Interpolate for each 1D from the last dimensions.
                 # This collapses each 1D sequence into a scalar.
                 folded_values = _eval_func(self.grid[i],
                                            folded_values,
                                            xi[j, i],
-                                           k, axis=i)
-            result[j] = folded_values
+                                           k)
+            result[j, ...] = folded_values
 
         return result
 
     @staticmethod
-    def _do_spline_fit(x, y, pt, k, axis):
-        local_interp = make_interp_spline(x, y, k=k, axis=axis)
+    def _do_spline_fit(x, y, pt, k):
+        local_interp = make_interp_spline(x, y, k=k, axis=0)
         values = local_interp(pt)
         return values
 
     @staticmethod
-    def _do_pchip(x, y, pt, k, axis):
-        local_interp = PchipInterpolator(x, y, axis=axis)
+    def _do_pchip(x, y, pt, k):
+        local_interp = PchipInterpolator(x, y, axis=0)
         values = local_interp(pt)
         return values
 

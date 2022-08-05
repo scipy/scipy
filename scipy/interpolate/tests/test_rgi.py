@@ -707,15 +707,15 @@ class TestInterpN:
         ] * 2
 
         np.random.seed(1234)
-        values = np.random.rand(6, 6, 6, 6, 6)
+        values = np.random.rand(6, 6, 6, 6, 8)
         sample = np.random.rand(7, 11, 4)
 
         v = interpn(points, values, sample, method=method,
                     bounds_error=False)
-        assert_equal(v.shape, (7, 11, 6), err_msg=method)
+        assert_equal(v.shape, (7, 11, 8), err_msg=method)
 
         vs = [interpn(points, values[..., j], sample, method=method,
-                      bounds_error=False) for j in range(6)]
+                      bounds_error=False) for j in range(8)]
         v2 = np.array(vs).transpose(1, 2, 0)
 
         assert_allclose(v, v2, err_msg=method)
