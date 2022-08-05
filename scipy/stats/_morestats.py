@@ -4090,5 +4090,4 @@ def directionalvar(samples, *, axis=0, normalize=True):
     n_samples = samples.shape[0]
     resultant_vector = samples.sum(axis=0)
     r = np.linalg.norm(resultant_vector)
-
     return 1 - r/n_samples
