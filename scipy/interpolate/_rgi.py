@@ -392,6 +392,9 @@ class RegularGridInterpolator:
             xi = xi.reshape((1, xi.size))
         m, n = xi.shape
 
+        # number of trailing dimensions of values:
+        n_trailing = values.ndim - n
+
         if method == 'pchip':
             _eval_func = self._do_pchip
         else:
@@ -417,7 +420,13 @@ class RegularGridInterpolator:
             # Main process: Apply 1D interpolate in each dimension
             # sequentially, starting with the last dimension.
             # These are then "folded" into the next dimension in-place.
-            folded_values = first_values[..., j]
+
+            # FIXME : this is a hack
+            if n_trailing == 0:
+                folded_values = first_values[..., j]
+            else:
+                folded_values = first_values[..., j, :]
+
             for i in range(last_dim-1, -1, -1):
                 # Interpolate for each 1D from the last dimensions.
                 # This collapses each 1D sequence into a scalar.
