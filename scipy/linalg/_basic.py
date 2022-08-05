@@ -1037,7 +1037,8 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     cond : float, optional
         Cutoff for 'small' singular values; used to determine effective
         rank of a. Singular values smaller than
-        ``cond * largest_singular_value`` are considered zero.
+        ``cond * largest_singular_value`` are considered zero. Default is 
+        machine precision times `max(M, N)`.
     overwrite_a : bool, optional
         Discard data in `a` (may enhance performance). Default is False.
     overwrite_b : bool, optional
@@ -1177,7 +1178,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     overwrite_b = overwrite_b or _datacopied(b1, b)
 
     if cond is None:
-        cond = np.finfo(lapack_func.dtype).eps
+        cond = np.finfo(lapack_func.dtype).eps * max(m, n)
 
     if driver in ('gelss', 'gelsd'):
         if driver == 'gelss':
