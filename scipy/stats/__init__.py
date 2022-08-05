@@ -412,6 +412,7 @@ Directional statistical functions
    :toctree: generated/
 
    directionalmean
+   directionalvar
    circmean
    circvar
    circstd
