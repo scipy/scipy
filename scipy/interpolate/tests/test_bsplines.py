@@ -946,23 +946,23 @@ class TestInterp:
     def test_incompatible_x_y(self, k):
         x = [0, 1, 2, 3, 4, 5]
         y = [0, 1, 2, 3, 4, 5, 6, 7]
-        with assert_raises(ValueError):
+        with assert_raises(ValueError, match="Shapes of x"):
             make_interp_spline(x, y, k=k)
 
     @pytest.mark.parametrize('k', [0, 1, 2, 3])
     def test_broken_x(self, k):
         x = [0, 1, 1, 2, 3, 4]      # duplicates
         y = [0, 1, 2, 3, 4, 5]
-        with assert_raises(ValueError):
+        with assert_raises(ValueError, match="Expect x to not have duplicates"):
             make_interp_spline(x, y, k=k)
 
         x = [0, 2, 1, 3, 4, 5]      # unsorted
-        with assert_raises(ValueError):
+        with assert_raises(ValueError, match="Expect x to be a 1D strictly"):
             make_interp_spline(x, y, k=k)
 
         x = [0, 1, 2, 3, 4, 5]
         x = np.asarray(x).reshape((1, -1))     # 1D
-        with assert_raises(ValueError):
+        with assert_raises(ValueError, match="Expect x to be a 1D strictly"):
             make_interp_spline(x, y, k=k)
 
     def test_not_a_knot(self):
