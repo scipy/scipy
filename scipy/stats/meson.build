@@ -121,8 +121,8 @@ _stats_gen_pyx = custom_target('_stats_gen_pyx',
     'ncf_ufunc.pyx',  # 8 (S_B)
     'ncx2_ufunc.pyx',  # 9 (S_B)
     'nct_ufunc.pyx',  # 10 (S_B)
-    'invgauss_ufunc.pyx'  # 11 (S_B)
-
+    'skewnorm_ufunc.pyx',  # 11 (S_B)
+    'invgauss_ufunc.pyx',  # 12 (S_B)
   ],
   input: '_generate_pyx.py',
   command: [py3, '@INPUT@', '-o', '@OUTDIR@'],
@@ -143,7 +143,8 @@ nbinom_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[5])
 ncf_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[8])
 ncx2_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[9])
 nct_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[10])
-invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[11])
+skewnorm_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[11])
+invgauss_ufunc_pyx = cython_stats_gen_cpp.process(_stats_gen_pyx[12])
 
 # Extra dependency from _lib
 unuran_wrap_pyx = lib_cython_gen.process(_stats_gen_pyx[7])

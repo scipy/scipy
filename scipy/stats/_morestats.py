@@ -2042,9 +2042,10 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
     return A2kN
 
 
-Anderson_ksampResult = namedtuple('Anderson_ksampResult',
-                                  ('statistic', 'critical_values',
-                                   'significance_level'))
+Anderson_ksampResult = _make_tuple_bunch(
+    'Anderson_ksampResult',
+    ['statistic', 'critical_values', 'pvalue'], []
+)
 
 
 def anderson_ksamp(samples, midrank=True):
@@ -2068,15 +2069,17 @@ def anderson_ksamp(samples, midrank=True):
 
     Returns
     -------
-    statistic : float
-        Normalized k-sample Anderson-Darling test statistic.
-    critical_values : array
-        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
-        0.5%, 0.1%.
-    significance_level : float
-        An approximate significance level at which the null hypothesis for the
-        provided samples can be rejected. The value is floored / capped at
-        0.1% / 25%.
+    res : Anderson_ksampResult
+        An object containing attributes:
+
+        statistic : float
+            Normalized k-sample Anderson-Darling test statistic.
+        critical_values : array
+            The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
+            0.5%, 0.1%.
+        pvalue : float
+            The approximate p-value of the test. The value is floored / capped
+            at 0.1% / 25%.
 
     Raises
     ------
@@ -2121,31 +2124,31 @@ def anderson_ksamp(samples, midrank=True):
     >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
+    >>> res = stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(loc=0.5, size=30)])
+    >>> res.statistic, res.pvalue
+    (1.974403288713695, 0.04991293614572478)
+    >>> res.critical_values
+    array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546])
 
     The null hypothesis that the two random samples come from the same
     distribution can be rejected at the 5% level because the returned
     test value is greater than the critical value for 5% (1.961) but
     not at the 2.5% level. The interpolation gives an approximate
-    significance level of 3.2%:
+    p-value of 4.99%.
 
-    >>> stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(loc=0.5, size=30)])
-    (1.974403288713695,
-      array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546]),
-      0.04991293614572478)
-
+    >>> res = stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(size=30), rng.normal(size=20)])
+    >>> res.statistic, res.pvalue
+    (-0.29103725200789504, 0.25)
+    >>> res.critical_values
+    array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
+      4.07210043, 5.56419101])
 
     The null hypothesis cannot be rejected for three samples from an
     identical distribution. The reported p-value (25%) has been capped and
     may not be very accurate (since it corresponds to the value 0.449
-    whereas the statistic is -0.731):
-
-    >>> stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(size=30), rng.normal(size=20)])
-    (-0.29103725200789504,
-      array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
-      4.07210043, 5.56419101]),
-      0.25)
+    whereas the statistic is -0.291).
 
     """
     k = len(samples)
@@ -2204,7 +2207,10 @@ def anderson_ksamp(samples, midrank=True):
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
 
-    return Anderson_ksampResult(A2, critical, p)
+    # create result object with alias for backward compatibility
+    res = Anderson_ksampResult(A2, critical, p)
+    res.significance_level = p
+    return res
 
 
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))

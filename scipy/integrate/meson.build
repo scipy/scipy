@@ -222,7 +222,6 @@ py3.install_sources([
     'lsoda.py',
     'odepack.py',
     'quadpack.py',
-    'setup.py',
     'vode.py',
   ],
   pure: false,

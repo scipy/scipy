@@ -16,6 +16,7 @@ _klass_mapper = {
     'non_central_f': _KlassMap('ncf', ('dfn', 'dfd', 'nc')),
     'non_central_chi_squared': _KlassMap('ncx2', ('df', 'nc')),
     'non_central_t': _KlassMap('nct', ('df', 'nc')),
+    'skew_normal': _KlassMap('skewnorm', ('loc', 'scale', 'a',)),
     'inverse_gaussian': _KlassMap('invgauss', ('mu', 'mean')),
 }
 

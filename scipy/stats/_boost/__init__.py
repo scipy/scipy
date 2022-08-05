@@ -40,6 +40,12 @@ from scipy.stats._boost.nct_ufunc import (
     _nct_skewness, _nct_kurtosis_excess,
 )
 
+from scipy.stats._boost.skewnorm_ufunc import (
+    _skewnorm_pdf, _skewnorm_cdf, _skewnorm_sf, _skewnorm_ppf,
+    _skewnorm_isf, _skewnorm_mean, _skewnorm_variance,
+    _skewnorm_skewness, _skewnorm_kurtosis_excess,
+)
+
 from scipy.stats._boost.invgauss_ufunc import (
     _invgauss_pdf, _invgauss_cdf, _invgauss_sf, _invgauss_ppf,
     _invgauss_isf, _invgauss_mean, _invgauss_variance,
