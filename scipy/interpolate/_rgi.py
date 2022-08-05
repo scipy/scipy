@@ -332,7 +332,7 @@ class RegularGridInterpolator:
         elif method in self._SPLINE_METHODS:
             if is_method_changed:
                 self._validate_grid_dimensions(self.grid, method)
-            result = self._evaluate_spline(self.values.T, xi, method)
+            result = self._evaluate_spline(self.values, xi, method)
 
         if not self.bounds_error and self.fill_value is not None:
             result[out_of_bounds] = self.fill_value
@@ -408,7 +408,7 @@ class RegularGridInterpolator:
         first_values = _eval_func(self.grid[last_dim],
                                   values,
                                   xi[:, last_dim],
-                                  k)
+                                  k, axis=last_dim)
 
         # the rest of the dimensions have to be on a per point-in-xi basis
         shape = (m, *self.values.shape[len(self.grid):])
@@ -417,27 +417,27 @@ class RegularGridInterpolator:
             # Main process: Apply 1D interpolate in each dimension
             # sequentially, starting with the last dimension.
             # These are then "folded" into the next dimension in-place.
-            folded_values = first_values[j]
+            folded_values = first_values[..., j]
             for i in range(last_dim-1, -1, -1):
                 # Interpolate for each 1D from the last dimensions.
                 # This collapses each 1D sequence into a scalar.
                 folded_values = _eval_func(self.grid[i],
                                            folded_values,
                                            xi[j, i],
-                                           k)
+                                           k, axis=i)
             result[j] = folded_values
 
         return result
 
     @staticmethod
-    def _do_spline_fit(x, y, pt, k):
-        local_interp = make_interp_spline(x, y, k=k, axis=0)
+    def _do_spline_fit(x, y, pt, k, axis):
+        local_interp = make_interp_spline(x, y, k=k, axis=axis)
         values = local_interp(pt)
         return values
 
     @staticmethod
-    def _do_pchip(x, y, pt, k):
-        local_interp = PchipInterpolator(x, y, axis=0)
+    def _do_pchip(x, y, pt, k, axis):
+        local_interp = PchipInterpolator(x, y, axis=axis)
         values = local_interp(pt)
         return values
 
