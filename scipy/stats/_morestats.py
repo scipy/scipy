@@ -33,7 +33,7 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot', 'directionalmean'
+           'yeojohnson_normplot', 'directionalmean', 'directionalvar'
            ]
 
 
@@ -3925,20 +3925,33 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     return res
 
 
-def _normalize_along_last_axis(array):
+def _dirstats_preprocessing(samples, normalize, axis):
     """
-    Normalizes an array along the last axis. Serves as
-    convenience function for directional stats functions.
+    Preprocessing of input for directional stats functions. Performs
+    input validation and if necesssary normalization. Used by
+    directionalvar, directionalstd and directionalmean.
 
-    Example:
-    x=np.array([[2., 2., 0.],
-                [5., 0., 0.]])
-    _normalize_along_last_axis(x)
-    array([[sqrt(0.5), sqrt(0.5), 0.],
-            [1., 0., 0.]])
-
+    Parameters
+    ----------
+    samples : array
+        Input array. Must be at least two-dimensional, and the last axis of the
+        input must correspond with the dimensionality of the vector space.
+    axis : int
+        Axis along which the directional mean is computed.
+    normalize: boolean
+        If True, normalize the input to ensure that each observation is a
+        unit vector. It the observations are already unit vectors, consider
+        setting this to False to avoid unnecessary computation.
     """
-    return array/np.linalg.norm(array, axis=-1, keepdims=True)
+    samples = np.asarray(samples)
+    if samples.ndim < 2:
+        raise ValueError("samples must at least be two-dimensional. "
+                         f"Instead samples has shape: {samples.shape!r}")
+    samples = np.moveaxis(samples, axis, 0)
+    if normalize:
+        samples = samples/np.linalg.norm(samples, axis=-1, keepdims=True)
+    return samples
+
 
 def directionalmean(samples, *, axis=0, normalize=True):
     """
@@ -3969,7 +3982,7 @@ def directionalmean(samples, *, axis=0, normalize=True):
 
     See also
     --------
-    circmean: circular mean; i.e. directional mean for 2D *angles*
+    circmean: circular mean; i. e. directional mean for 2D *angles*
 
     Notes
     -----
@@ -4022,13 +4035,60 @@ def directionalmean(samples, *, axis=0, normalize=True):
     array([0.8660254, 0., 0.])
 
     """
-    samples = np.asarray(samples)
-    if samples.ndim < 2:
-        raise ValueError("samples must at least be two-dimensional. "
-                         f"Instead samples has shape: {samples.shape!r}")
-    samples = np.moveaxis(samples, axis, 0)
-    if normalize:
-        samples = _normalize_along_last_axis(samples)
+    samples = _dirstats_preprocessing(samples, normalize, axis)
     mean = np.mean(samples, axis=0)
-    directional_mean = _normalize_along_last_axis(mean)
+    directional_mean = mean/np.linalg.norm(mean, axis=-1, keepdims=True)
     return directional_mean
+
+
+def directionalvar(samples, *, axis=0, normalize=True):
+    """
+    Computes the directional variance of a sample of vectors.
+
+    Parameters
+    ----------
+    samples : array_like
+        Input array. Must be at least two-dimensional, and the last axis of the
+        input must correspond with the dimensionality of the vector space.
+        When the input is exactly two dimensional, this means that each row
+        of the data is a vector observation.
+    axis : int, default: 0
+        Axis along which the directional mean is computed.
+    normalize: boolean, default: True
+        If True, normalize the input to ensure that each observation is a
+        unit vector. It the observations are already unit vectors, consider
+        setting this to False to avoid unnecessary computation.
+
+    Returns
+    -------
+    directionalvar : float
+        Directional variance.
+
+    See also
+    --------
+    circvar: circular variance; i. e. directional variance for 2D *angles*
+
+    Notes
+    -----
+    This uses a definition of directional variance from [1]_.
+
+    This definition is appropriate for *directional* data (i.e. vector data
+    for which the magnitude of each observation is irrelevant) but not
+    for *axial* data (i.e. vector data for which the magnitude and *sign* of
+    each observation is irrelevant).
+
+    References
+    ----------
+    .. [1] Mardia, Jupp. (2000). *Directional Statistics*
+       (p. 163). Wiley.
+
+    Examples
+    --------
+
+    """
+    samples = _dirstats_preprocessing(samples, normalize, axis)
+    n_samples = samples.shape[0]
+    resultant_vector = samples.sum(axis=0)
+    r = np.linalg.norm(resultant_vector)
+
+    return 1 - r/n_samples
