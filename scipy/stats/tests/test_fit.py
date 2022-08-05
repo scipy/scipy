@@ -57,7 +57,7 @@ mm_failing_fits = ['alpha', 'betaprime', 'burr', 'burr12', 'cauchy', 'chi',
 # not sure if these fail, but they caused my patience to fail
 mm_slow_fits = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                 'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
-                'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
+                'kappa4', 'kstwobign', 'recipinvgauss',
                 'truncexpon', 'vonmises', 'vonmises_line']
 
 failing_fits = {"MM": mm_failing_fits + mm_slow_fits, "MLE": mle_failing_fits}
@@ -188,7 +188,7 @@ def cases_test_fit():
                       'alpha', 't', 'crystalball', 'fatiguelife', 'nakagami',
                       'kstwobign', 'gompertz', 'dweibull', 'lomax', 'invgauss',
                       'recipinvgauss', 'chi', 'foldcauchy', 'powernorm',
-                      'gennorm', 'skewnorm', 'randint', 'genextreme'}
+                      'gennorm', 'randint', 'genextreme'}
     xslow_basic_fit = {'nchypergeom_fisher', 'nchypergeom_wallenius',
                        'gausshyper', 'genexpon', 'gengamma', 'genhyperbolic',
                        'geninvgauss', 'tukeylambda', 'skellam', 'ncx2',
