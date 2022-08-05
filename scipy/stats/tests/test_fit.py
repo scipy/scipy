@@ -34,7 +34,6 @@ mle_failing_fits = [
         'pearson3',
         'powerlognorm',
         'truncexpon',
-        'truncpareto',
         'tukeylambda',
         'vonmises',
         'levy_stable',
