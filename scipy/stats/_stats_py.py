@@ -83,8 +83,6 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'brunnermunzel', 'alexandergovern']
 
 
-# This should probably be rewritten to avoid nested TypeErrors in favor of
-# branching based on dtype.
 def _contains_nan(a, nan_policy='propagate', use_summation=True):
     if not isinstance(a, np.ndarray):
         use_summation = False  # some array_likes ignore nans (e.g. pandas)
@@ -92,42 +90,24 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
     if nan_policy not in policies:
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
-    # only inexact (floating/complexfloating) and object arrays support np.nan
-    if not (np.issubdtype(a.dtype, np.inexact)
-            or np.issubdtype(a.dtype, object)):
-        return False, nan_policy
-    try:
+
+    if np.issubdtype(a.dtype, np.inexact):
         # The summation method avoids creating a (potentially huge) array.
-        # But, it will set contains_nan to True for (e.g.) [-inf, ..., +inf].
-        # If this is undesirable, set use_summation to False instead.
         if use_summation:
             with np.errstate(invalid='ignore', over='ignore'):
                 contains_nan = np.isnan(np.sum(a))
         else:
             contains_nan = np.isnan(a).any()
-    except TypeError:
-        # This can happen when attempting to sum things which are not
-        # numbers (e.g. as in the function `mode`). Try an alternative method:
-        try:
-            contains_nan = np.any(np.isnan(a))
-        except TypeError:
-            try:
-                # This can happen when attempting to check nan with np.isnan
-                # for string array (e.g. as in the function `rankdata`).
-                contains_nan = False
-                for el in a.ravel():
-                    # isnan doesn't work on elements of string arrays
-                    if np.issubdtype(type(el), np.number) and np.isnan(el):
-                        contains_nan = True
-                        break
-            except TypeError:
-                # Don't know what to do. Fall back to omitting nan values and
-                # issue a warning.
-                contains_nan = False
-                nan_policy = 'omit'
-                warnings.warn("The input array could not be properly "
-                              "checked for nan values. nan values "
-                              "will be ignored.", RuntimeWarning)
+    elif np.issubdtype(a.dtype, object):
+        contains_nan = False
+        for el in a.ravel():
+            # isnan doesn't work on non-numeric elements
+            if np.issubdtype(type(el), np.number) and np.isnan(el):
+                contains_nan = True
+                break
+    else:
+        # Only `object` and `inexact` arrays can have NaNs
+        contains_nan = False
 
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
@@ -5574,7 +5554,8 @@ def _euclidean_dist(x):
     return cdist(x, x)
 
 
-MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
+MGCResult = _make_tuple_bunch('MGCResult',
+                              ['statistic', 'pvalue', 'mgc_dict'], [])
 
 
 def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
@@ -5645,21 +5626,23 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
 
     Returns
     -------
-    stat : float
-        The sample MGC test statistic within `[-1, 1]`.
-    pvalue : float
-        The p-value obtained via permutation.
-    mgc_dict : dict
-        Contains additional useful additional returns containing the following
-        keys:
+    res : MGCResult
+        An object containing attributes:
 
-            - mgc_map : ndarray
-                A 2D representation of the latent geometry of the relationship.
-                of the relationship.
-            - opt_scale : (int, int)
-                The estimated optimal scale as a `(x, y)` pair.
-            - null_dist : list
-                The null distribution derived from the permuted matrices
+        statistic : float
+            The sample MGC test statistic within `[-1, 1]`.
+        pvalue : float
+            The p-value obtained via permutation.
+        mgc_dict : dict
+            Contains additional useful results:
+
+                - mgc_map : ndarray
+                    A 2D representation of the latent geometry of the
+                    relationship.
+                - opt_scale : (int, int)
+                    The estimated optimal scale as a `(x, y)` pair.
+                - null_dist : list
+                    The null distribution derived from the permuted matrices.
 
     See Also
     --------
@@ -5753,33 +5736,25 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     >>> from scipy.stats import multiscale_graphcorr
     >>> x = np.arange(100)
     >>> y = x
-    >>> stat, pvalue, _ = multiscale_graphcorr(x, y, workers=-1)
-    >>> '%.1f, %.3f' % (stat, pvalue)
-    '1.0, 0.001'
-
-    Alternatively,
-
-    >>> x = np.arange(100)
-    >>> y = x
-    >>> mgc = multiscale_graphcorr(x, y)
-    >>> '%.1f, %.3f' % (mgc.stat, mgc.pvalue)
-    '1.0, 0.001'
+    >>> res = multiscale_graphcorr(x, y)
+    >>> res.statistic, res.pvalue
+    (1.0, 0.001)
 
     To run an unpaired two-sample test,
 
     >>> x = np.arange(100)
     >>> y = np.arange(79)
-    >>> mgc = multiscale_graphcorr(x, y)
-    >>> '%.3f, %.2f' % (mgc.stat, mgc.pvalue)  # doctest: +SKIP
-    '0.033, 0.02'
+    >>> res = multiscale_graphcorr(x, y)
+    >>> res.statistic, res.pvalue  # doctest: +SKIP
+    (0.033258146255703246, 0.023)
 
     or, if shape of the inputs are the same,
 
     >>> x = np.arange(100)
     >>> y = x
-    >>> mgc = multiscale_graphcorr(x, y, is_twosamp=True)
-    >>> '%.3f, %.1f' % (mgc.stat, mgc.pvalue)  # doctest: +SKIP
-    '-0.008, 1.0'
+    >>> res = multiscale_graphcorr(x, y, is_twosamp=True)
+    >>> res.statistic, res.pvalue  # doctest: +SKIP
+    (-0.008021809890200488, 1.0)
 
     """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
@@ -5862,7 +5837,10 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
                 "opt_scale": opt_scale,
                 "null_dist": null_dist}
 
-    return MGCResult(stat, pvalue, mgc_dict)
+    # create result object with alias for backward compatibility
+    res = MGCResult(stat, pvalue, mgc_dict)
+    res.stat = stat
+    return res
 
 
 def _mgc_stat(distx, disty):

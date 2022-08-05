@@ -2798,6 +2798,29 @@ class TestSkewNorm:
             p = stats.skewnorm.sf(-x, -a)
             assert_allclose(p, cdfval, rtol=1e-8)
 
+    def test_fit(self):
+        rng = np.random.default_rng(4609813989115202851)
+
+        a, loc, scale = -2, 3.5, 0.5  # arbitrary, valid parameters
+        dist = stats.skewnorm(a, loc, scale)
+        rvs = dist.rvs(size=100, random_state=rng)
+
+        # test that MLE still honors guesses and fixed parameters
+        a2, loc2, scale2 = stats.skewnorm.fit(rvs, -1.5, floc=3)
+        a3, loc3, scale3 = stats.skewnorm.fit(rvs, -1.6, floc=3)
+        assert loc2 == loc3 == 3  # fixed parameter is respected
+        assert a2 != a3  # different guess -> (slightly) different outcome
+        # quality of fit is tested elsewhere
+
+        # test that MoM honors fixed parameters, accepts (but ignores) guesses
+        a4, loc4, scale4 = stats.skewnorm.fit(rvs, 3, fscale=3, method='mm')
+        assert scale4 == 3
+        # because scale was fixed, only the mean and skewness will be matched
+        dist4 = stats.skewnorm(a4, loc4, scale4)
+        res = dist4.stats(moments='ms')
+        ref = np.mean(rvs), stats.skew(rvs)
+        assert_allclose(res, ref)
+
 
 class TestExpon:
     def test_zero(self):

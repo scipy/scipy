@@ -38,7 +38,7 @@ DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 # For skipping test_cont_basic
 distslow = ['recipinvgauss', 'vonmises', 'kappa4', 'vonmises_line',
             'gausshyper', 'norminvgauss', 'geninvgauss', 'genhyperbolic',
-            'truncnorm', 'skewnorm', 'truncweibull_min']
+            'truncnorm', 'truncweibull_min']
 
 # distxslow are sorted by speed (very slow to slow)
 distxslow = ['studentized_range', 'kstwo', 'ksone', 'wrapcauchy', 'genexpon']
@@ -59,7 +59,7 @@ skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
 # note that this list is used to skip both fit_test and fit_fix tests
 slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                     'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
-                    'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
+                    'kappa4', 'kstwobign', 'recipinvgauss',
                     'trapezoid', 'truncexpon', 'vonmises', 'vonmises_line',
                     'studentized_range']
 # pearson3 fails due to something weird

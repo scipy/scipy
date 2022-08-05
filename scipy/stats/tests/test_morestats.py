@@ -499,6 +499,8 @@ class TestAndersonKSamp:
         attributes = ('statistic', 'critical_values', 'significance_level')
         check_named_results(res, attributes)
 
+        assert_equal(res.significance_level, res.pvalue)
+
 
 class TestAnsari:
 
@@ -885,7 +887,7 @@ class TestBinomTest:
     def test_confidence_intervals1(self, alternative, pval, ci_low, ci_high):
         res = stats.binomtest(20, n=100, p=0.25, alternative=alternative)
         assert_allclose(res.pvalue, pval, rtol=1e-12)
-        assert_equal(res.proportion_estimate, 0.2)
+        assert_equal(res.statistic, 0.2)
         ci = res.proportion_ci(confidence_level=0.95)
         assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-12)
 
@@ -900,7 +902,7 @@ class TestBinomTest:
     def test_confidence_intervals2(self, alternative, pval, ci_low, ci_high):
         res = stats.binomtest(3, n=50, p=0.2, alternative=alternative)
         assert_allclose(res.pvalue, pval, rtol=1e-6)
-        assert_equal(res.proportion_estimate, 0.06)
+        assert_equal(res.statistic, 0.06)
         ci = res.proportion_ci(confidence_level=0.99)
         assert_allclose((ci.low, ci.high), (ci_low, ci_high), rtol=1e-6)
 
@@ -975,7 +977,7 @@ class TestBinomTest:
         # the hypothesized proportion.  When alternative is 'two-sided',
         # the p-value is 1.
         res = stats.binomtest(4, 16, 0.25)
-        assert_equal(res.proportion_estimate, 0.25)
+        assert_equal(res.statistic, 0.25)
         assert_equal(res.pvalue, 1.0)
 
     @pytest.mark.parametrize('k, n', [(0, 0), (-1, 2)])
@@ -998,6 +1000,10 @@ class TestBinomTest:
         res = stats.binomtest(3, n=10, p=0.1)
         with pytest.raises(ValueError, match="method must be"):
             res.proportion_ci(method="plate of shrimp")
+
+    def test_alias(self):
+        res = stats.binomtest(3, n=10, p=0.1)
+        assert_equal(res.proportion_estimate, res.statistic)
 
 
 class TestFligner:
