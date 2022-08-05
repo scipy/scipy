@@ -255,7 +255,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     If there are (nearly) multiple singular values, the corresponding
     individual singular vectors may be unstable, but the whole invariant
     subspace contaning all such singular vectorts is computed accurately
-    as can be measured by angles between subspaces.
+    as can be measured by angles between subspaces via 'subspace_angles'.
 
     >>> from scipy.linalg import subspace_angles as s_a
     >>> rng = np.random.default_rng()
@@ -290,7 +290,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> s_a(vT2.T, vT.T).sum() < 1e-6
     True
 
-    The next example follows that of sklearn.decomposition.TruncatedSVD.
+    The next example follows that of 'sklearn.decomposition.TruncatedSVD'.
 
     >>> rng = np.random.RandomState(0)
     >>> X_dense = rng.random(size=(100, 100))
@@ -300,9 +300,8 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> print(singular_values)
     [ 4.3293...  4.4491...  4.5420...  4.5987... 35.2410...]
 
-    Our final example illustrates a matrix-free call, which is the most
-    memory efficient evaluation, since the transpose of the input matrix
-    is never explicitely constructed.
+    The function can be called without the transpose of the input matrix
+    ever explicitely constructed.
 
     >>> from scipy.linalg import svd
     >>> from scipy.sparse import rand
@@ -314,6 +313,89 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> _, singular_values_svd, _ = svd(G.toarray())
     >>> np.allclose(singular_values_svds, singular_values_svd[-4::-1])
     True
+
+    The most memory efficient efficint scenario is where neither
+    the original matrix, nor its transpose, is explicitely constructed
+    in our final example. The example also illustrates how the smallest
+    singular values and corresponsing vectors are used to approximate
+    pseudo-inverse of a matrix that is only given as a 'LinearOperator',
+    constructed from the numpy function 'np.diff' used colunm-wise to be
+    consistent with the 'LinearOperator' that operates on columns.
+
+    >>> from scipy.sparse.linalg import LinearOperator, aslinearoperator
+    >>> diff0 = lambda a: np.diff(a, axis=0)
+
+    Let us create the matrix from 'diff0' to be used for validation only.
+
+    >>> n = 5  # The dimension of the space.
+    >>> M_from_diff0 = diff0(np.eye(n))
+    >>> print(M_from_diff0)
+    [[-1.  1.  0.  0.  0.]
+     [-0. -1.  1. -0. -0.]
+     [-0. -0. -1.  1. -0.]
+     [-0. -0. -0. -1.  1.]]
+
+    The matrix 'M_from_diff0' is bi-diagonasl and could be alternatively
+    created directly by
+
+    >>> M = - np.eye(n - 1, n)
+    >>> np.fill_diagonal(M[:,1:], 1)
+    >>> np.allclose(M, M_from_diff0)
+    True
+
+    Its transpose is
+
+    >>> print(M.T)
+    [[-1. -0. -0. -0.]
+     [ 1. -1. -0. -0.]
+     [-0.  1. -1. -0.]
+     [-0. -0.  1. -1.]
+     [-0. -0. -0.  1.]]
+
+    The 'LinearOperator' setup needs the option 'rmatmat' of multiplication
+    by the matrix transpose 'M.T', but we want to be matrix-free to save
+    memory, so knowing how the 'M.T' looks like, we manually construct
+    the following function to be used in 'rmatmat=diff0t'.
+
+    >>> def diff0t(a):
+    ...     if a.ndim == 1:
+    ...         a = a[:,np.newaxis]  # Turn 1D into 2D array
+    ...     d = np.zeros((a.shape[0] + 1, a.shape[1]), dtype=a.dtype)
+    ...     d[0, :] = - a[0, :]
+    ...     d[1:-1, :] = a[0:-1, :] - a[1:, :]
+    ...     d[-1, :] = a[-1, :]
+    ...     return d
+
+    We check that our function 'diff0t' for the matrix transpose is valid.
+
+    >>> np.allclose(M.T, diff0t(np.eye(n-1)))
+    True
+
+    Now we setup our matrix-free 'LinearOperator' called 'diff0_func_aslo'
+    and for validation the matrix-based 'diff0_matrix_aslo'.
+
+    >>> def diff0_func_aslo_def(n):
+        return LinearOperator(matvec=diff0,
+    ...                       matmat=diff0,
+    ...                       rmatvec=diff0t,
+    ...                       rmatmat=diff0t,
+    ...                       shape=(n - 1, n))
+    >>> diff0_func_aslo = diff0_func_aslo_def(n)
+    >>> diff0_matrix_aslo = aslinearoperator(M_from_diff0)
+
+    And validate both the matrix and its transpose in 'LinearOperator'.
+
+    >>> np.allclose(diff0_func_aslo(np.eye(n)),
+    ...             diff0_matrix_aslo(np.eye(n)))
+    True
+    >>> np.allclose(diff0_func_aslo.T(np.eye(n-1)),
+    ...             diff0_matrix_aslo.T(np.eye(n-1)))
+    True
+
+    >>> n = 100
+    >>> diff0_func_aslo = diff0_func_aslo_def(n)
+    >>> u, s, vT = svds(diff0_func_aslo, k=3, which='SM')
+
     """
     args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
                solver, random_state)
