@@ -720,6 +720,33 @@ class TestInterpN:
 
         assert_allclose(v, v2, err_msg=method)
 
+    @parametrize_rgi_interp_methods
+    def test_nonscalar_values_2(self, method):
+        # Verify that non-scalar valued values also work : use different
+        # lengths of axes to simplify tracing the internals
+        points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
+                  (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0), 
+                  (0.0, 5.0, 10.0, 15.0, 20, 25.0, 35.0, 36.0),
+                  (0.0, 5.0, 10.0, 15.0, 20, 25.0, 35.0, 36.0, 47)]
+
+        np.random.seed(1234)
+
+        # NB: values has a single length-3 trailing dimension
+        values = np.random.rand(6, 7, 8, 9, 3)
+        sample = np.random.rand(4)   # a single sample point !
+
+        v = interpn(points, values, sample, method=method, bounds_error=False)
+
+        # v has a single sample point *per entry in the trailing dimensions*
+        assert v.shape == (1, 3)
+
+        # check the values, too : manually loop over the trailing dimensions
+        vs = [interpn(points, values[..., j], sample, method=method,
+                      bounds_error=False) for j in range(values.shape[-1])]
+
+        v2 = np.asarray(vs).T  # transpose: otherwise v2.shape == (3, 1)
+        assert_allclose(v, v2, atol=1e-14, err_msg=method)
+
     def test_non_scalar_values_splinef2d(self):
         # Vector-valued splines supported with fitpack
         points, values = self._sample_4d_data()
