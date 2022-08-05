@@ -3929,7 +3929,7 @@ def _dirstats_preprocessing(samples, normalize, axis):
     """
     Preprocessing of input for directional stats functions. Performs
     input validation and if necesssary normalization. Used by
-    directionalvar, directionalstd and directionalmean.
+    directionalvar and directionalmean.
 
     Parameters
     ----------
@@ -4045,6 +4045,10 @@ def directionalvar(samples, *, axis=0, normalize=True):
     """
     Computes the directional variance of a sample of vectors.
 
+    The directional variance serves is a measured of "directional spread" for
+    vector data. It should be used when the magnitude of the vector data
+    is irrelevant.
+
     Parameters
     ----------
     samples : array_like
@@ -4070,7 +4074,9 @@ def directionalvar(samples, *, axis=0, normalize=True):
 
     Notes
     -----
-    This uses a definition of directional variance from [1]_.
+    This uses the following definition of circular variance: ``1-R``, where
+    ``R`` is the mean resultant vector. The returned value is in the
+    range [0, 1], 0 standing for no variance, and 1 for a large variance.
 
     This definition is appropriate for *directional* data (i.e. vector data
     for which the magnitude of each observation is irrelevant) but not
@@ -4079,11 +4085,27 @@ def directionalvar(samples, *, axis=0, normalize=True):
 
     References
     ----------
-    .. [1] Mardia, Jupp. (2000). *Directional Statistics*
-       (p. 163). Wiley.
+    .. [1] Mardia, Jupp. (2000). *Directional Statistics*. Wiley.
 
     Examples
     --------
+    As an example, let us calculate the directional variance for 10 highly
+    concentrated vectors.
+
+    >>> import numpy as np
+    >>> from scipy.stats import directionalvar
+    >>> data = np.array([[0.911, -0.387, 0.14], # first observation
+    ...                  [0.972,0.233, -0.027], # second observation
+    ...                  [0.956, -0.104, -0.273],
+    ...                  [0.889, 0.218, -0.402],
+    ...                  [0.996, 0.076, 0.043],
+    ...                  [0.737, -0.104, -0.668],
+    ...                  [0.987, -0.09, 0.133],
+    ...                  [0.929, 0.127, -0.348],
+    ...                  [0.951, 0.2967, -0.09],
+    ...                  [0.919, -0.142, 0.367]])
+    >>> directionalvar(data)
+    0.06841124416403555
 
     """
     samples = _dirstats_preprocessing(samples, normalize, axis)
