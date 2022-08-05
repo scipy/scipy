@@ -31,6 +31,7 @@ from ._constants import (_XMIN, _EULER, _ZETA3,
 import scipy.stats._boost as _boost
 from scipy.optimize import root_scalar
 from scipy.stats._warnings_errors import FitError
+import scipy.stats as stats
 
 
 def _remove_optimizer_parameters(kwds):
@@ -7822,7 +7823,7 @@ class skew_norm_gen(rv_continuous):
         # Boost is not accurate in left tail when a > 0
         i_small_cdf = (cdf < 1e-6) & (a > 0)
         cdf[i_small_cdf] = super()._cdf(x[i_small_cdf], a[i_small_cdf])
-        return np.clip(cdf, 0 , 1)
+        return np.clip(cdf, 0, 1)
 
     def _ppf(self, x, a):
         return _boost._skewnorm_ppf(x, 0, 1, a)
@@ -7856,6 +7857,73 @@ class skew_norm_gen(rv_continuous):
             output[3] = (2*(np.pi - 3)) * (const**4/(1 - const**2)**2)
 
         return output
+
+    @extend_notes_in_docstring(rv_continuous, notes="""\
+        If ``method='mm'``, parameters fixed by the user are respected, and the
+        remaining parameters are used to match distribution and sample moments
+        where possible. For example, if the user fixes the location with
+        ``floc``, the parameters will only match the distribution skewness and
+        variance to the sample skewness and variance; no attempt will be made
+        to match the means or minimize a norm of the errors.
+        Note that the maximum possible skewness magnitude of a
+        `scipy.stats.skewnorm` distribution is approximately 0.9952717; if the
+        magnitude of the data's sample skewness exceeds this, the returned
+        shape parameter ``a`` will be infinite.
+        \n\n""")
+    def fit(self, data, *args, **kwds):
+        # this extracts fixed shape, location, and scale however they
+        # are specified, and also leaves them in `kwds`
+        data, fa, floc, fscale = _check_fit_input_parameters(self, data,
+                                                             args, kwds)
+
+        # If method is method of moments, we don't need the user's guesses.
+        # If method is "mle", extract the guesses from args and kwds.
+        method = kwds.get("method", "mle").lower()
+        if method == "mm":
+            a, loc, scale = None, None, None
+        else:
+            a = args[0] if len(args) else None
+            loc = kwds.pop('loc', None)
+            scale = kwds.pop('scale', None)
+
+        # See https://en.wikipedia.org/wiki/Skew_normal_distribution for
+        # moment formulas.
+        def skew_d(d):  # skewness in terms of delta
+            return (4-np.pi)/2 * ((d * np.sqrt(2 / np.pi))**3
+                                  / (1 - 2*d**2 / np.pi)**(3/2))
+
+        if fa is None and a is None:  # not fixed and no guess: use MoM
+            # Solve for a that matches sample distribution skewness to sample
+            # skewness.
+            s = stats.skew(data)
+            s_max = skew_d(1)
+            s = np.clip(s, -s_max, s_max)
+            d = root_scalar(lambda d: skew_d(d) - s, bracket=[-1, 1]).root
+            a = np.sqrt(np.divide(d**2, (1-d**2)))*np.sign(s)
+        elif fa is not None:  # fixed: use it
+            a = fa
+        # else: use the user-provided guess
+
+        d = a / np.sqrt(1 + a**2)  # simplifies code to (re)calculate here
+
+        if fscale is None and scale is None:
+            v = np.var(data)
+            scale = np.sqrt(v / (1 - 2*d**2/np.pi))
+        elif fscale is not None:
+            scale = fscale
+
+        if floc is None and loc is None:
+            m = np.mean(data)
+            loc = m - scale*d*np.sqrt(2/np.pi)
+        elif floc is not None:
+            loc = floc
+
+        if method == 'mm':
+            return a, loc, scale
+        else:
+            # At this point, parameter "guesses" may equal the fixed parameters
+            # in kwds. No harm in passing them as guesses, too.
+            return super().fit(data, a, loc=loc, scale=scale, **kwds)
 
 
 skewnorm = skew_norm_gen(name='skewnorm')

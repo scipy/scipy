@@ -59,7 +59,7 @@ skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
 # note that this list is used to skip both fit_test and fit_fix tests
 slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                     'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
-                    'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
+                    'kappa4', 'kstwobign', 'recipinvgauss',
                     'trapezoid', 'truncexpon', 'vonmises', 'vonmises_line',
                     'studentized_range']
 # pearson3 fails due to something weird
