@@ -4118,10 +4118,24 @@ class invgauss_gen(rv_continuous):
         return np.exp(self._logcdf(x, mu))
 
     def _ppf(self, x, mu):
-        return _boost._invgauss_ppf(x, mu, 1)
+        with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+            x, mu = np.broadcast_arrays(x, mu)
+            ppf = _boost._invgauss_ppf(x, mu, 1)
+            i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
+            ppf[i_wt] = _boost._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
+            i_nan = np.isnan(ppf)
+            ppf[i_nan] =  super()._ppf(x[i_nan], mu[i_nan])
+        return ppf
 
     def _isf(self, x, mu):
-        return _boost._invgauss_isf(x, mu, 1)
+        with np.errstate(divide='ignore', over='ignore', invalid='ignore'):
+            x, mu = np.broadcast_arrays(x, mu)
+            isf = _boost._invgauss_isf(x, mu, 1)
+            i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
+            isf[i_wt] = _boost._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
+            i_nan = np.isnan(isf)
+            isf[i_nan] =  super()._isf(x[i_nan], mu[i_nan])
+        return isf
 
     def _stats(self, mu):
         return mu, mu**3.0, 3*np.sqrt(mu), 15*mu
