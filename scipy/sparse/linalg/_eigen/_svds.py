@@ -254,7 +254,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     If there are (nearly) multiple singular values, the corresponding
     individual singular vectors may be unstable, but the whole invariant
-    subspace contaning all such singular vectorts is computed accurately
+    subspace containing all such singular vectors is computed accurately
     as can be measured by angles between subspaces via 'subspace_angles'.
 
     >>> from scipy.linalg import subspace_angles as s_a
@@ -314,13 +314,11 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> np.allclose(singular_values_svds, singular_values_svd[-4::-1])
     True
 
-    The most memory efficient efficint scenario is where neither
-    the original matrix, nor its transpose, is explicitely constructed
-    in our final example. The example also illustrates how the smallest
-    singular values and corresponsing vectors are used to approximate
-    pseudo-inverse of a matrix that is only given as a 'LinearOperator',
-    constructed from the numpy function 'np.diff' used colunm-wise to be
-    consistent with the 'LinearOperator' that operates on columns.
+    The most memory efficient scenario is where neither
+    the original matrix, nor its transpose, is explicitly constructed.
+    Our example computes the smallest singular values and vectors 
+    of 'LinearOperator' constructed from the numpy function 'np.diff' used
+    column-wise to be consistent with 'LinearOperator' operating on columns.
 
     >>> from scipy.sparse.linalg import LinearOperator, aslinearoperator
     >>> diff0 = lambda a: np.diff(a, axis=0)
@@ -343,19 +341,41 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> np.allclose(M, M_from_diff0)
     True
 
-    Its transpose is
+    Its transpose
 
     >>> print(M.T)
-    [[-1. -0. -0. -0.]
-     [ 1. -1. -0. -0.]
-     [-0.  1. -1. -0.]
-     [-0. -0.  1. -1.]
-     [-0. -0. -0.  1.]]
+    [[-1.  0.  0.  0.]
+     [ 1. -1. -0.  0.]
+     [ 0.  1. -1.  0.]
+     [ 0.  0.  1. -1.]
+     [ 0.  0.  0.  1.]]
 
-    The 'LinearOperator' setup needs the option 'rmatmat' of multiplication
-    by the matrix transpose 'M.T', but we want to be matrix-free to save
-    memory, so knowing how the 'M.T' looks like, we manually construct
-    the following function to be used in 'rmatmat=diff0t'.
+    can be viewed as the incidence matrix https://w.wiki/5YXU of
+    a linear graph with 5 vertices and 4 edges. The 5x5 normal matrix
+    'M.T @ M' thus is
+
+    >>> print(M.T @ M)
+    array([[ 1., -1.,  0.,  0.,  0.],
+           [-1.,  2., -1.,  0.,  0.],
+           [ 0., -1.,  2., -1.,  0.],
+           [ 0.,  0., -1.,  2., -1.],
+           [ 0.,  0.,  0., -1.,  1.]])
+
+    the graph Laplacian, while the actually used in 'svds' smaller size
+    4x4 normal matrix 'M @ M.T'
+
+    >>> print(M.T @ M)
+    array([[ 2., -1.,  0.,  0.],
+           [-1.,  2., -1.,  0.],
+           [ 0., -1.,  2., -1.],
+           [ 0.,  0., -1.,  2.]])
+
+    is the so-called edge-based Laplacian; see https://w.wiki/5YXW .
+
+    The 'LinearOperator' setup needs the options 'rmatvec' and 'rmatmat'
+    of multiplication by the matrix transpose 'M.T', but we want to be
+    matrix-free to save memory, so knowing how 'M.T' looks like, we
+    manually construct the following function to be used in 'rmatmat=diff0t'.
 
     >>> def diff0t(a):
     ...     if a.ndim == 1:
@@ -392,10 +412,25 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     ...             diff0_matrix_aslo.T(np.eye(n-1)))
     True
 
+    Having the 'LinearOperator' setup validated, we run the solver.
+
     >>> n = 100
     >>> diff0_func_aslo = diff0_func_aslo_def(n)
     >>> u, s, vT = svds(diff0_func_aslo, k=3, which='SM')
 
+    The singular values squared and the singular vectors are known
+    explicitly; see https://w.wiki/5YX6, since 'diff' corresponds to first
+    derivative, and its smaller size n-1 x n-1 normal matrix
+    'M @ M.T' represent the discrete second derivative with the Dirichlet
+    boundary conditions. We use these analytic expressions for validation.
+
+    >>> se = 2. * np.sin(np.pi * np.arange(1, 4) / (2. * n))
+    >>> ue = np.sqrt(2 / n) * np.sin(np.pi * np.outer(np.arange(1, n),
+    ...                              np.arange(1, 4)) / n)
+    >>> np.allclose(ss, se, atol=1e-3)
+    True
+    >>> print(np.allclose(np.abs(us), np.abs(ue), atol=1e-6))
+    True
     """
     args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
                solver, random_state)
