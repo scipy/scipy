@@ -332,6 +332,15 @@ Quasi-Monte Carlo
 
    stats.qmc
 
+Resampling Methods
+==================
+
+.. autosummary::
+   :toctree: generated/
+
+   bootstrap
+   permutation_test
+   monte_carlo_test
 
 Masked statistics functions
 ===========================
@@ -362,6 +371,7 @@ Transformations
    trim1
    zmap
    zscore
+   gzscore
 
 Statistical distances
 ---------------------
@@ -372,8 +382,16 @@ Statistical distances
    wasserstein_distance
    energy_distance
 
+Sampling
+--------
+
+.. toctree::
+   :maxdepth: 4
+
+   stats.sampling
+
 Random variate generation / CDF Inversion
-=========================================
+-----------------------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -435,8 +453,8 @@ Univariate and multivariate kernel density estimation
 
    gaussian_kde
 
-Warnings used in :mod:`scipy.stats`
------------------------------------
+Warnings / Errors used in :mod:`scipy.stats`
+--------------------------------------------
 
 .. autosummary::
    :toctree: generated/
@@ -453,10 +471,10 @@ from ._warnings_errors import (ConstantInputWarning, NearConstantInputWarning,
 from ._stats_py import *
 from ._variation import variation
 from .distributions import *
-from .morestats import *
+from ._morestats import *
 from ._binomtest import binomtest
 from ._binned_statistic import *
-from .kde import gaussian_kde
+from ._kde import gaussian_kde
 from . import mstats
 from . import qmc
 from ._multivariate import *
@@ -468,6 +486,12 @@ from ._hypotests import *
 from ._rvs_sampling import rvs_ratio_uniforms
 from ._page_trend_test import page_trend_test
 from ._mannwhitneyu import mannwhitneyu
+from ._fit import fit
+
+# Deprecated namespaces, to be removed in v2.0.0
+from . import (
+    biasedurn, kde, morestats, mstats_basic, mstats_extras, mvn, statlib, stats
+)
 
 __all__ = [s for s in dir() if not s.startswith("_")]  # Remove dunders.
 

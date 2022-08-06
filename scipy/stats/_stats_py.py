@@ -8737,9 +8737,6 @@ def combine_pvalues(pvalues, method='fisher', weights=None):
     return SignificanceResult(statistic, pval)
 
 
-
-
-
 def _confint_lowerbound(n, quantile, confidence):
     r"""
     Compute the lower bound for a one-sided confidence interval
@@ -8758,7 +8755,7 @@ def _confint_lowerbound(n, quantile, confidence):
 
     # compute all probabilities from the binomial distribution for
     # the quantile of interest
-    bd = binom(n, quantile)
+    bd = stats.binom(n, quantile)
 
     # the lower bound is the last index before the invert survival
     # function value for the target confidence level
@@ -8800,7 +8797,7 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     Both one-sided and two-sided confidence intervals can be obtained (default
     is one-sided). The function returns two values: either the bounds for the
     two one-sided confidence intervals, or the lower and upper bounds of a
-    two-sided confidence interval. 
+    two-sided confidence interval.
 
     If `x` is the set of samples, the return values are the sample values
     corresponding with the bounds of the confidence interval. If `x` is an
@@ -8822,7 +8819,7 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
         quantile : float The quantile for which we want to compute the
         confidence interval. Must be strictly between 0 and 1. confidence :
         float The desired confidence level of the confidence interval. Must be
-        strictly between 0 and 1. 
+        strictly between 0 and 1.
     type : {'one-sided', 'two-sided'}, optional
         Defines the type of confidence interval computed. Default is
         'one-sided'.
@@ -8871,11 +8868,11 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
        Expectation Distributions for Populations of Unknown Distribution Form,"
        The Annals of Mathematical Statistics, vol. 7, no. 3, pp. 122-128, 1936,
        Accessed: Sep. 18, 2019. [Online]. Available:
-       https://www.jstor.org/stable/2957563. 
+       https://www.jstor.org/stable/2957563.
     .. [2] H. A. David and H. N. Nagaraja, "Order Statistics in Nonparametric
        Inference" in Order Statistics, John Wiley & Sons, Ltd, 2005, pp.
        159-170. Available:
-       https://onlinelibrary.wiley.com/doi/10.1002/0471722162.ch7. 
+       https://onlinelibrary.wiley.com/doi/10.1002/0471722162.ch7.
     .. [3] N. Hutson, A. Hutson, L. Yan, "QuantileNPCI: Nonparametric
        Confidence Intervals for Quantiles," R package,
        https://cran.r-project.org/package=QuantileNPCI
@@ -8895,35 +8892,35 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
     bounds for the confidence intervals. We obtain the same result as in the
     first example.
 
-    >>> N = len(x) lb, ub = confint_quantile(N, 0.75, 0.90) 
-    >>> # Since we pass an interger to the function, we get the CI indexes 
+    >>> N = len(x) lb, ub = confint_quantile(N, 0.75, 0.90)
+    >>> # Since we pass an interger to the function, we get the CI indexes
     >>> print(x[lb], x[ub]) (2, 8)
 
     Generally, the more samples, the narrower the confidence intervals.
 
-    >>> for N in [5,10,100,1000]: 
-    ...     x = np.random.rand(N) 
-    ...     lb, ub = confint_quantile(x, 0.5, 0.95) 
-    ...     med = np.median(sorted(x)) 
-    ...     print('N=%i'%N) 
-    ...     print('lower-bound  %0.2f' % lb)   
-    ...     print('emp. median  %0.2f' % med)  
-    ...     print('upper-bound  %0.2f' % ub) 
-    N=5 
+    >>> for N in [5,10,100,1000]:
+    ...     x = np.random.rand(N)
+    ...     lb, ub = confint_quantile(x, 0.5, 0.95)
+    ...     med = np.median(sorted(x))
+    ...     print('N=%i'%N)
+    ...     print('lower-bound  %0.2f' % lb)
+    ...     print('emp. median  %0.2f' % med)
+    ...     print('upper-bound  %0.2f' % ub)
+    N=5
     lower-bound  0.39  #random
-    emp. median  0.48  #random 
+    emp. median  0.48  #random
     upper-bound  0.96  #random
-    N=10 
-    lower-bound  0.11  #random 
-    emp. median  0.35  #random 
+    N=10
+    lower-bound  0.11  #random
+    emp. median  0.35  #random
     upper-bound  0.71  #random
-    N=100 
-    lower-bound  0.46  #random 
-    emp. median  0.54  #random 
+    N=100
+    lower-bound  0.46  #random
+    emp. median  0.54  #random
     upper-bound  0.63  #random
-    N=1000 
-    lower-bound  0.47  #random 
-    emp. median  0.52  #random 
+    N=1000
+    lower-bound  0.47  #random
+    emp. median  0.52  #random
     upper-bound  0.53  #random
 
     .. versionadded:: 1.6.4
@@ -9004,7 +9001,7 @@ def confint_quantile(x, quantile, confidence, type='one-sided'):
         else:
             x_ub = x[UB]
         return x_lb, x_ub
-        
+
 
 
 #####################################
