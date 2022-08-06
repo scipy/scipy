@@ -1037,7 +1037,7 @@ def lstsq(a, b, cond=None, overwrite_a=False, overwrite_b=False,
     cond : float, optional
         Cutoff for 'small' singular values; used to determine effective
         rank of a. Singular values smaller than
-        ``cond * largest_singular_value`` are considered zero. Default is 
+        ``cond * largest_singular_value`` are considered zero. Default is
         machine precision times `max(M, N)`.
     overwrite_a : bool, optional
         Discard data in `a` (may enhance performance). Default is False.
