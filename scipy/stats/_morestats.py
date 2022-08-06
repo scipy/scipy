@@ -33,7 +33,7 @@ __all__ = ['mvsdist',
            'fligner', 'mood', 'wilcoxon', 'median_test',
            'circmean', 'circvar', 'circstd', 'anderson_ksamp',
            'yeojohnson_llf', 'yeojohnson', 'yeojohnson_normmax',
-           'yeojohnson_normplot'
+           'yeojohnson_normplot', 'directionalmean'
            ]
 
 
@@ -2042,9 +2042,10 @@ def _anderson_ksamp_right(samples, Z, Zstar, k, n, N):
     return A2kN
 
 
-Anderson_ksampResult = namedtuple('Anderson_ksampResult',
-                                  ('statistic', 'critical_values',
-                                   'significance_level'))
+Anderson_ksampResult = _make_tuple_bunch(
+    'Anderson_ksampResult',
+    ['statistic', 'critical_values', 'pvalue'], []
+)
 
 
 def anderson_ksamp(samples, midrank=True):
@@ -2068,15 +2069,17 @@ def anderson_ksamp(samples, midrank=True):
 
     Returns
     -------
-    statistic : float
-        Normalized k-sample Anderson-Darling test statistic.
-    critical_values : array
-        The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
-        0.5%, 0.1%.
-    significance_level : float
-        An approximate significance level at which the null hypothesis for the
-        provided samples can be rejected. The value is floored / capped at
-        0.1% / 25%.
+    res : Anderson_ksampResult
+        An object containing attributes:
+
+        statistic : float
+            Normalized k-sample Anderson-Darling test statistic.
+        critical_values : array
+            The critical values for significance levels 25%, 10%, 5%, 2.5%, 1%,
+            0.5%, 0.1%.
+        pvalue : float
+            The approximate p-value of the test. The value is floored / capped
+            at 0.1% / 25%.
 
     Raises
     ------
@@ -2121,31 +2124,31 @@ def anderson_ksamp(samples, midrank=True):
     >>> import numpy as np
     >>> from scipy import stats
     >>> rng = np.random.default_rng()
+    >>> res = stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(loc=0.5, size=30)])
+    >>> res.statistic, res.pvalue
+    (1.974403288713695, 0.04991293614572478)
+    >>> res.critical_values
+    array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546])
 
     The null hypothesis that the two random samples come from the same
     distribution can be rejected at the 5% level because the returned
     test value is greater than the critical value for 5% (1.961) but
     not at the 2.5% level. The interpolation gives an approximate
-    significance level of 3.2%:
+    p-value of 4.99%.
 
-    >>> stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(loc=0.5, size=30)])
-    (1.974403288713695,
-      array([0.325, 1.226, 1.961, 2.718, 3.752, 4.592, 6.546]),
-      0.04991293614572478)
-
+    >>> res = stats.anderson_ksamp([rng.normal(size=50),
+    ... rng.normal(size=30), rng.normal(size=20)])
+    >>> res.statistic, res.pvalue
+    (-0.29103725200789504, 0.25)
+    >>> res.critical_values
+    array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
+      4.07210043, 5.56419101])
 
     The null hypothesis cannot be rejected for three samples from an
     identical distribution. The reported p-value (25%) has been capped and
     may not be very accurate (since it corresponds to the value 0.449
-    whereas the statistic is -0.731):
-
-    >>> stats.anderson_ksamp([rng.normal(size=50),
-    ... rng.normal(size=30), rng.normal(size=20)])
-    (-0.29103725200789504,
-      array([ 0.44925884,  1.3052767 ,  1.9434184 ,  2.57696569,  3.41634856,
-      4.07210043, 5.56419101]),
-      0.25)
+    whereas the statistic is -0.291).
 
     """
     k = len(samples)
@@ -2204,7 +2207,10 @@ def anderson_ksamp(samples, midrank=True):
         pf = np.polyfit(critical, log(sig), 2)
         p = math.exp(np.polyval(pf, A2))
 
-    return Anderson_ksampResult(A2, critical, p)
+    # create result object with alias for backward compatibility
+    res = Anderson_ksampResult(A2, critical, p)
+    res.significance_level = p
+    return res
 
 
 AnsariResult = namedtuple('AnsariResult', ('statistic', 'pvalue'))
@@ -3923,3 +3929,98 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     if not normalize:
         res *= (high-low)/(2.*pi)  # [1] (2.3.14) w/ (2.3.7)
     return res
+
+
+def directionalmean(samples, *, axis=0, normalize=True):
+    """
+    Computes the directional mean of a sample of vectors.
+
+    The directional mean is a measure of "preferred direction" of vector data.
+    It is analogous to the sample mean, but it is for use when the magnitude of
+    the data is irrelevant (e.g. unit vectors).
+
+    Parameters
+    ----------
+    samples : array_like
+        Input array. Must be at least two-dimensional, and the last axis of the
+        input must correspond with the dimensionality of the vector space.
+        When the input is exactly two dimensional, this means that each row
+        of the data is a vector observation.
+    axis : int, default: 0
+        Axis along which the directional mean is computed.
+    normalize: boolean, default: True
+        If True, normalize the input to ensure that each observation is a
+        unit vector. It the observations are already unit vectors, consider
+        setting this to False to avoid unnecessary computation.
+
+    Returns
+    -------
+    directionalmean : ndarray
+        Directional mean.
+
+    See also
+    --------
+    circmean: circular mean; i.e. directional mean for 2D *angles*
+
+    Notes
+    -----
+    This uses a definition of directional mean from [1]_.
+    Assuming the observations are unit vectors, the calculation is as follows.
+
+    .. code-block:: python
+
+        mean=samples.mean(axis=0)
+        directionalmean = mean/np.linalg.norm(mean)
+
+    This definition is appropriate for *directional* data (i.e. vector data
+    for which the magnitude of each observation is irrelevant) but not
+    for *axial* data (i.e. vector data for which the magnitude and *sign* of
+    each observation is irrelevant).
+
+    References
+    ----------
+    .. [1] Mardia, Jupp. (2000). *Directional Statistics*
+       (p. 163). Wiley.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> from scipy.stats import directionalmean
+    >>> data = np.array([[3, 4],    # first observation, 2D vector space
+    ...                  [6, -8]])  # second observation
+    >>> directionalmean(data)
+    array([1., 0.])
+
+    In contrast, the regular sample mean of the vectors would be influenced
+    by the magnitude of each observation. Furthermore, the result would not be
+    a unit vector.
+
+    >>> data.mean(axis=0)
+    array([4.5, -2.])
+
+    An exemplary use case for `directionalmean` is to find a *meaningful*
+    center for a set of observations on a sphere, e.g. geographical locations.
+
+    >>> data = np.array([[0.8660254, 0.5, 0.],
+    ...                  [0.8660254, -0.5, 0.]])
+    >>> directionalmean(data)
+    array([1., 0., 0.])
+
+    The regular sample mean on the other hand yields a result which does not
+    lie on the surface of the sphere.
+
+    >>> data.mean(axis=0)
+    array([0.8660254, 0., 0.])
+
+    """
+    samples = np.asarray(samples)
+    if samples.ndim < 2:
+        raise ValueError("samples must at least be two-dimensional. "
+                         f"Instead samples has shape: {samples.shape!r}")
+    samples = np.moveaxis(samples, axis, 0)
+    if normalize:
+        vectornorms = np.linalg.norm(samples, axis=-1, keepdims=True)
+        samples = samples/vectornorms
+    mean = np.mean(samples, axis=0)
+    directional_mean = mean / np.linalg.norm(mean, axis=-1, keepdims=True)
+    return directional_mean

@@ -986,9 +986,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
         using `func`. By default it is ``'all'``, in which case, all
         the one hot direction vectors are considered to check `grad`.
         If `func` is a vector valued function then only ``'all'`` can be used.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,

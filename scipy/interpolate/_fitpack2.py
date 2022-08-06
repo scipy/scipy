@@ -24,7 +24,7 @@ import warnings
 from numpy import zeros, concatenate, ravel, diff, array, ones
 import numpy as np
 
-from . import _fitpack_py
+from . import _fitpack_impl
 from . import dfitpack
 
 
@@ -359,7 +359,7 @@ class UnivariateSpline:
                 ext = _extrap_modes[ext]
             except KeyError as e:
                 raise ValueError("Unknown extrapolation mode %s." % ext) from e
-        return _fitpack_py.splev(x, self._eval_args, der=nu, ext=ext)
+        return _fitpack_impl.splev(x, self._eval_args, der=nu, ext=ext)
 
     def get_knots(self):
         """ Return positions of interior knots of the spline.
@@ -546,7 +546,7 @@ class UnivariateSpline:
         :math:`\\cos(x) = \\sin'(x)`.
 
         """
-        tck = _fitpack_py.splder(self._eval_args, n)
+        tck = _fitpack_impl.splder(self._eval_args, n)
         # if self.ext is 'const', derivative.ext will be 'zeros'
         ext = 1 if self.ext == 3 else self.ext
         return UnivariateSpline._from_tck(tck, ext=ext)
@@ -602,7 +602,7 @@ class UnivariateSpline:
         2.2572053268208538
 
         """
-        tck = _fitpack_py.splantider(self._eval_args, n)
+        tck = _fitpack_impl.splantider(self._eval_args, n)
         return UnivariateSpline._from_tck(tck, self.ext)
 
 

@@ -257,7 +257,7 @@ class Data:
 
     """
 
-    def __init__(self, x, y=None, we=None, wd=None, fix=None, meta={}):
+    def __init__(self, x, y=None, we=None, wd=None, fix=None, meta=None):
         self.x = _conv(x)
 
         if not isinstance(self.x, numpy.ndarray):
@@ -269,7 +269,7 @@ class Data:
         self.we = _conv(we)
         self.wd = _conv(wd)
         self.fix = _conv(fix)
-        self.meta = meta
+        self.meta = {} if meta is None else meta
 
     def set_meta(self, **kwds):
         """ Update the metadata dictionary with the keywords and data provided
@@ -355,7 +355,7 @@ class RealData(Data):
     """
 
     def __init__(self, x, y=None, sx=None, sy=None, covx=None, covy=None,
-                 fix=None, meta={}):
+                 fix=None, meta=None):
         if (sx is not None) and (covx is not None):
             raise ValueError("cannot set both sx and covx")
         if (sy is not None) and (covy is not None):
@@ -385,7 +385,7 @@ class RealData(Data):
         self.covx = _conv(covx)
         self.covy = _conv(covy)
         self.fix = _conv(fix)
-        self.meta = meta
+        self.meta = {} if meta is None else meta
 
     def _sd2wt(self, sd):
         """ Convert standard deviation to weights.

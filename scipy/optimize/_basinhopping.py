@@ -421,8 +421,7 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     niter_success : integer, optional
         Stop the run if the global minimum candidate remains the same for this
         number of iterations.
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
 
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
@@ -490,13 +489,13 @@ def basinhopping(func, x0, niter=100, T=1.0, stepsize=0.5,
     This global minimization method has been shown to be extremely efficient
     for a wide variety of problems in physics and chemistry. It is
     particularly useful when the function has many minima separated by large
-    barriers. See the Cambridge Cluster Database
-    http://www-wales.ch.cam.ac.uk/CCD.html for databases of molecular systems
-    that have been optimized primarily using basin-hopping. This database
-    includes minimization problems exceeding 300 degrees of freedom.
+    barriers. See the `Cambridge Cluster Database
+    <https://www-wales.ch.cam.ac.uk/CCD.html>`_ for databases of molecular
+    systems that have been optimized primarily using basin-hopping. This
+    database includes minimization problems exceeding 300 degrees of freedom.
 
-    See the free software program GMIN (http://www-wales.ch.cam.ac.uk/GMIN) for
-    a Fortran implementation of basin-hopping. This implementation has many
+    See the free software program `GMIN <https://www-wales.ch.cam.ac.uk/GMIN>`_
+    for a Fortran implementation of basin-hopping. This implementation has many
     different variations of the procedure described above, including more
     advanced step taking algorithms and alternate acceptance criterion.
 
