@@ -1759,7 +1759,7 @@ For binary variables, we need to set `integrality` and `bounds` using :func:`Bou
 ::
 
     >>> from scipy.optimize import Bounds, LinearConstraint, milp
-    >>> integrality = np.ones_like(weight) # x_i are integers
+    >>> integrality = np.ones_like(weights) # x_i are integers
     >>> bounds = bounds = Bounds(0, 1) # 0 <= x_i <= 1
 
 The knapsack capacity constraint is specified as a :class:`LinearConstraint`:
