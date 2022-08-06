@@ -499,7 +499,6 @@ class TestBSpline:
                 BSpline.design_matrix(x, t, k, extrapolate).toarray()
             )
 
-
     def test_design_matrix_x_shapes(self):
         # test for different `x` shapes
         np.random.seed(1234)
