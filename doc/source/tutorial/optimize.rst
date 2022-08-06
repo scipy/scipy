@@ -1705,3 +1705,83 @@ PETSc [PP]_, and PyAMG [AMG]_:
 
 .. [AMG] PyAMG (algebraic multigrid preconditioners/solvers)
          https://github.com/pyamg/pyamg/issues
+
+.. _tutorial-optimize_milp:
+
+Mixed integer linear programming
+---------------------------------
+
+Knapsack problem example
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The knapsack problem is a well known combinatorial optimization problem.
+When given a set of items, each with a size and a value, it maximizes total values of selected items
+under the condition that the total size is below a certain upper size limit of knapsack,
+
+
+Formally, let
+
+- :math:`x_i` be a boolean variable that indicates whether item :math:`i` is included in the knapsack
+
+- :math:`n` be the total number of items,
+
+- :math:`v_i` be the value of item :math:`i`,
+
+- :math:`s_i` be the size of item :math:`i`
+
+- :math:`C` be the capacity of the knapsack
+
+The problem is formalized in the following:
+
+.. math::
+
+    \max \sum_i^n  v_{i} x_{i}
+
+.. math::
+
+	\text{subject to} \sum_i^n s_{i} x_{i} \leq C,  x_{i} \in {0, 1}
+
+This problem is a typical example of a mixed integer linear programming problem, we can solve it with :func:`milp`.
+
+Consider the following knapsack problem:
+
+There are 8 items, and each size and value is specified as following vectors and the capacity of the knapsack:
+
+::
+
+    >>> import numpy as np
+    >>> sizes = np.array([21, 11, 15, 9, 34, 25, 41, 52])
+    >>> weights = np.array([22, 12, 16, 10, 35, 26, 42, 53])
+    >>> capacity = 100
+
+For binary variables, we need to set `integrality` and `bounds` using :func:`Bounds`.
+
+::
+
+	>>> from scipy.optimize import Bounds, LinearConstraint, milp
+	>>> integrality = np.ones_like(weight) # x_i are integers
+	>>> bounds = bounds = Bounds(0, 1) # 0 <= x_i <= 1
+
+The knapsack capacity constraint is specified as a :class:`LinearConstraint`:
+
+::
+
+    >>> constraints = LinearConstraint(sizes, ub=capacity)
+
+So, let's solve the knapsack problem using :func:`milp` and the above settings:
+
+::
+
+    >>> res = milp(c=-weights, constraints=constraints, integrality=integrality, bounds=bounds)
+
+Note that :func:`milp` minimizing the objective function, but we want to maximize the total value.
+So we set `c` to be negative of the weights. Let's check the result:
+
+::
+
+	>>> res.success
+	True
+	>>> res.x
+	array([1., 1., 0., 1., 1., 1., 0., 0.])
+
+This means that we should select the items 1, 2, 4, 5, 6 to optimize the total value under the conditions.
