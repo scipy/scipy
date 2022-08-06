@@ -1086,13 +1086,8 @@ static PyObject *_sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *arg
             afill = (PyArrayObject *)PyArray_Cast(tmp, typenum);
             Py_DECREF(tmp);
             if (afill == NULL) goto fail;
-            /* Deprecated 2017-07, scipy version 1.0.0 */
-            if (DEPRECATE("could not cast `fillvalue` directly to the output "
-                          "type (it was first converted to complex). "
-                          "This is deprecated and will raise an error in the "
-                          "future.") < 0) {
-                goto fail;
-            }
+            PYERR("could not cast `fillvalue` directly to the output "
+                  "type (it was first converted to complex).");
         }
         if (PyArray_SIZE(afill) != 1) {
             if (PyArray_SIZE(afill) == 0) {
@@ -1100,12 +1095,8 @@ static PyObject *_sigtools_convolve2d(PyObject *NPY_UNUSED(dummy), PyObject *arg
                                 "`fillvalue` cannot be an empty array.");
                 goto fail;
             }
-            /* Deprecated 2017-07, scipy version 1.0.0 */
-            if (DEPRECATE("`fillvalue` must be scalar or an array with "
-                          "one element. "
-                          "This will raise an error in the future.") < 0) {
-                goto fail;
-            }
+            PYERR("`fillvalue` must be scalar or an array with "
+                  "one element.");
         }
     }
     else {
@@ -1418,14 +1409,20 @@ static struct PyModuleDef moduledef = {
     NULL,
     NULL
 };
-PyObject *PyInit__sigtools(void)
-{
-    PyObject *m;
 
-    m = PyModule_Create(&moduledef);
-	import_array();
+PyMODINIT_FUNC
+PyInit__sigtools(void)
+{
+    PyObject *module;
+
+    import_array();
+
+    module = PyModule_Create(&moduledef);
+    if (module == NULL) {
+        return NULL;
+    }
 
     scipy_signal__sigtools_linear_filter_module_init();
 
-    return m;
+    return module;
 }

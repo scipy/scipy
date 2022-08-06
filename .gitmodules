@@ -1,6 +1,3 @@
-[submodule "doc/sphinxext"]
-	path = doc/sphinxext
-	url = https://github.com/numpy/numpydoc.git
 [submodule "doc/source/_static/scipy-mathjax"]
 	path = doc/source/_static/scipy-mathjax
 	url = https://github.com/scipy/scipy-mathjax.git

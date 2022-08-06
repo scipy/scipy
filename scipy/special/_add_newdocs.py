@@ -255,6 +255,37 @@ add_newdoc("wrightomega",
            Function." ACM Transactions on Mathematical Software,
            2012. :doi:`10.1145/2168773.2168779`.
 
+    Examples
+    --------
+    >>> from scipy.special import wrightomega, lambertw
+
+    >>> wrightomega([-2, -1, 0, 1, 2])
+    array([0.12002824, 0.27846454, 0.56714329, 1.        , 1.5571456 ])
+
+    Complex input:
+
+    >>> wrightomega(3 + 5j)
+    (1.5804428632097158+3.8213626783287937j)
+
+    Verify that ``wrightomega(z)`` satisfies ``w + log(w) = z``:
+
+    >>> w = -5 + 4j
+    >>> wrightomega(w + np.log(w))
+    (-5+4j)
+
+    Verify the connection to ``lambertw``:
+
+    >>> z = 0.5 + 3j
+    >>> wrightomega(z)
+    (0.0966015889280649+1.4937828458191993j)
+    >>> lambertw(np.exp(z))
+    (0.09660158892806493+1.4937828458191993j)
+
+    >>> z = 0.5 + 4j
+    >>> wrightomega(z)
+    (-0.3362123489037213+2.282986001579032j)
+    >>> lambertw(np.exp(z), k=1)
+    (-0.33621234890372115+2.282986001579032j)
     """)
 
 
@@ -784,13 +815,6 @@ add_newdoc(
     >>> x, y = 43, 23
     >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
     (960566918219.9999, 960566918219.9999, 960566918220)
-
-    Note that if ``exact=True``, non-integer arguments to  `comb` will be
-    truncated to integers, leading to inaccurate results.
-
-    >>> x, y = 3.9, 2.8
-    >>> (binom(x, y), comb(x, y), comb(x, y, exact=True))
-    (4.2071983565457955, 4.2071983565457955, 3)
 
     `binom` returns ``nan`` when ``x`` is a negative integer, but is otherwise
     defined for negative arguments. `comb` returns 0 whenever one of ``x`` or
@@ -1847,19 +1871,30 @@ add_newdoc("chdtriv",
     """)
 
 add_newdoc("chndtr",
-    """
+    r"""
     chndtr(x, df, nc, out=None)
 
     Non-central chi square cumulative distribution function
 
+    The cumulative distribution function is given by:
+
+    .. math::
+
+        P(\chi^{\prime 2} \vert \nu, \lambda) =\sum_{j=0}^{\infty}
+        e^{-\lambda /2}
+        \frac{(\lambda /2)^j}{j!} P(\chi^{\prime 2} \vert \nu + 2j),
+
+    where :math:`\nu > 0` is the degrees of freedom (``df``) and
+    :math:`\lambda \geq 0` is the non-centrality parameter (``nc``).
+
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral
+        Upper bound of the integral; must satisfy ``x >= 0``
     df : array_like
-        Degrees of freedom
+        Degrees of freedom; must satisfy ``df > 0``
     nc : array_like
-        Non-centrality parameter
+        Non-centrality parameter; must satisfy ``nc >= 0``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -1880,14 +1915,17 @@ add_newdoc("chndtrix",
 
     Inverse to `chndtr` vs `x`
 
+    Calculated using a search to find a value for `x` that produces the
+    desired value of `p`.
+
     Parameters
     ----------
     p : array_like
-        Probability
+        Probability; must satisfy ``0 <= p < 1``
     df : array_like
-        Degrees of freedom
+        Degrees of freedom; must satisfy ``df > 0``
     nc : array_like
-        Non-centrality parameter
+        Non-centrality parameter; must satisfy ``nc >= 0``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -1910,14 +1948,17 @@ add_newdoc("chndtridf",
 
     Inverse to `chndtr` vs `df`
 
+    Calculated using a search to find a value for `df` that produces the
+    desired value of `p`.
+
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral
+        Upper bound of the integral; must satisfy ``x >= 0``
     p : array_like
-        Probability
+        Probability; must satisfy ``0 <= p < 1``
     nc : array_like
-        Non-centrality parameter
+        Non-centrality parameter; must satisfy ``nc >= 0``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -1938,15 +1979,17 @@ add_newdoc("chndtrinc",
 
     Inverse to `chndtr` vs `nc`
 
+    Calculated using a search to find a value for `df` that produces the
+    desired value of `p`.
 
     Parameters
     ----------
     x : array_like
-        Upper bound of the integral
+        Upper bound of the integral; must satisfy ``x >= 0``
     df : array_like
-        Degrees of freedom
+        Degrees of freedom; must satisfy ``df > 0``
     p : array_like
-        Probability
+        Probability; must satisfy ``0 <= p < 1``
     out : ndarray, optional
         Optional output array for the function results
 
@@ -2560,6 +2603,63 @@ add_newdoc(
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
            https://arxiv.org/abs/math/9409227
            https://doi.org/10.1007/BF02198293
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> from scipy.special import elliprc
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> scale = 0.3 + 0.4j
+    >>> elliprc(scale*x, scale*y)
+    (0.5484493976710874-0.4169557678995833j)
+
+    >>> elliprc(x, y)/np.sqrt(scale)
+    (0.5484493976710874-0.41695576789958333j)
+
+    When the two arguments coincide, the integral is particularly
+    simple:
+
+    >>> x = 1.2 + 3.4j
+    >>> elliprc(x, x)
+    (0.4299173120614631-0.3041729818745595j)
+
+    >>> 1/np.sqrt(x)
+    (0.4299173120614631-0.30417298187455954j)
+
+    Another simple case: the first argument vanishes:
+
+    >>> y = 1.2 + 3.4j
+    >>> elliprc(0, y)
+    (0.6753125346116815-0.47779380263880866j)
+
+    >>> np.pi/2/np.sqrt(y)
+    (0.6753125346116815-0.4777938026388088j)
+
+    When `x` and `y` are both positive, we can express
+    :math:`R_C(x,y)` in terms of more elementary functions.  For the
+    case :math:`0 \le x < y`,
+
+    >>> x = 3.2
+    >>> y = 6.
+    >>> elliprc(x, y)
+    0.44942991498453444
+
+    >>> np.arctan(np.sqrt((y-x)/x))/np.sqrt(y-x)
+    0.44942991498453433
+
+    And for the case :math:`0 \le y < x`,
+
+    >>> x = 6.
+    >>> y = 3.2
+    >>> elliprc(x,y)
+    0.4989837501576147
+
+    >>> np.log((np.sqrt(x)+np.sqrt(x-y))/np.sqrt(y))/np.sqrt(x-y)
+    0.49898375015761476
+
     """)
 
 add_newdoc(
@@ -2618,6 +2718,41 @@ add_newdoc(
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
            https://arxiv.org/abs/math/9409227
            https://doi.org/10.1007/BF02198293
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> from scipy.special import elliprd
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> z = 6.
+    >>> scale = 0.3 + 0.4j
+    >>> elliprd(scale*x, scale*y, scale*z)
+    (-0.03703043835680379-0.24500934665683802j)
+
+    >>> elliprd(x, y, z)*np.power(scale, -1.5)
+    (-0.0370304383568038-0.24500934665683805j)
+
+    All three arguments coincide:
+
+    >>> x = 1.2 + 3.4j
+    >>> elliprd(x, x, x)
+    (-0.03986825876151896-0.14051741840449586j)
+
+    >>> np.power(x, -1.5)
+    (-0.03986825876151894-0.14051741840449583j)
+
+    The so-called "second lemniscate constant":
+
+    >>> elliprd(0, 2, 1)/3
+    0.5990701173677961
+
+    >>> from scipy.special import gamma
+    >>> gamma(0.75)**2/np.sqrt(2*np.pi)
+    0.5990701173677959
+
     """)
 
 add_newdoc(
@@ -2674,6 +2809,41 @@ add_newdoc(
            integrals," Numer. Algorithm, vol. 10, no. 1, pp. 13-26, 1995.
            https://arxiv.org/abs/math/9409227
            https://doi.org/10.1007/BF02198293
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> from scipy.special import elliprf
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> z = 6.
+    >>> scale = 0.3 + 0.4j
+    >>> elliprf(scale*x, scale*y, scale*z)
+    (0.5328051227278146-0.4008623567957094j)
+
+    >>> elliprf(x, y, z)/np.sqrt(scale)
+    (0.5328051227278147-0.4008623567957095j)
+
+    All three arguments coincide:
+
+    >>> x = 1.2 + 3.4j
+    >>> elliprf(x, x, x)
+    (0.42991731206146316-0.30417298187455954j)
+
+    >>> 1/np.sqrt(x)
+    (0.4299173120614631-0.30417298187455954j)
+
+    The so-called "first lemniscate constant":
+
+    >>> elliprf(0, 1, 2)
+    1.3110287771460598
+
+    >>> from scipy.special import gamma
+    >>> gamma(0.25)**2/(4*np.sqrt(2*np.pi))
+    1.3110287771460598
+
     """)
 
 add_newdoc(
@@ -2744,6 +2914,34 @@ add_newdoc(
 
     Examples
     --------
+    Basic homogeneity property:
+
+    >>> from scipy.special import elliprg
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> z = 6.
+    >>> scale = 0.3 + 0.4j
+    >>> elliprg(scale*x, scale*y, scale*z)
+    (1.195936862005246+0.8470988320464167j)
+
+    >>> elliprg(x, y, z)*np.sqrt(scale)
+    (1.195936862005246+0.8470988320464165j)
+
+    Simplifications:
+
+    >>> elliprg(0, y, y)
+    1.756203682760182
+
+    >>> 0.25*np.pi*np.sqrt(y)
+    1.7562036827601817
+
+    >>> elliprg(0, 0, z)
+    1.224744871391589
+
+    >>> 0.5*np.sqrt(z)
+    1.224744871391589
+
     The surface area of a triaxial ellipsoid with semiaxes ``a``, ``b``, and
     ``c`` is given by
 
@@ -2853,6 +3051,41 @@ add_newdoc(
            pp. 288-303, 1994.
            https://arxiv.org/abs/math/9310223
            https://doi.org/10.1137/S0036141092228477
+
+    Examples
+    --------
+    Basic homogeneity property:
+
+    >>> from scipy.special import elliprj
+
+    >>> x = 1.2 + 3.4j
+    >>> y = 5.
+    >>> z = 6.
+    >>> p = 7.
+    >>> scale = 0.3 - 0.4j
+    >>> elliprj(scale*x, scale*y, scale*z, scale*p)
+    (0.10834905565679157+0.19694950747103812j)
+
+    >>> elliprj(x, y, z, p)*np.power(scale, -1.5)
+    (0.10834905565679556+0.19694950747103854j)
+
+    Reduction to simpler elliptic integral:
+
+    >>> elliprj(x, y, z, z)
+    (0.08288462362195129-0.028376809745123258j)
+
+    >>> from scipy.special import elliprd
+    >>> elliprd(x, y, z)
+    (0.08288462362195136-0.028376809745123296j)
+
+    All arguments coincide:
+
+    >>> elliprj(x, x, x, x)
+    (-0.03986825876151896-0.14051741840449586j)
+
+    >>> np.power(x, -1.5)
+    (-0.03986825876151894-0.14051741840449583j)
+
     """)
 
 add_newdoc("entr",
@@ -2877,13 +3110,29 @@ add_newdoc("entr",
 
     See Also
     --------
-    kl_div, rel_entr
+    kl_div, rel_entr, scipy.stats.entropy
 
     Notes
     -----
+    .. versionadded:: 0.15.0
+
     This function is concave.
 
-    .. versionadded:: 0.15.0
+    The origin of this function is in convex programming; see [1]_.
+    Given a probability distribution :math:`p_1, \ldots, p_n`,
+    the definition of entropy in the context of *information theory* is
+
+    .. math::
+
+        \sum_{i = 1}^n \mathrm{entr}(p_i).
+
+    To compute the latter quantity, use `scipy.stats.entropy`.
+
+    References
+    ----------
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`https://doi.org/10.1017/CBO9780511804441`
 
     """)
 
@@ -7170,7 +7419,7 @@ add_newdoc("kl_div",
 
     See Also
     --------
-    entr, rel_entr
+    entr, rel_entr, scipy.stats.entropy
 
     Notes
     -----
@@ -7186,9 +7435,9 @@ add_newdoc("kl_div",
 
     References
     ----------
-    .. [1] Grant, Boyd, and Ye, "CVX: Matlab Software for Disciplined Convex
-        Programming", http://cvxr.com/cvx/
-
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`https://doi.org/10.1017/CBO9780511804441`
 
     """)
 
@@ -8975,6 +9224,26 @@ add_newdoc("log_ndtr",
     scipy.stats.norm
     ndtr
 
+    Examples
+    --------
+    >>> from scipy.special import log_ndtr, ndtr
+
+    The benefit of ``log_ndtr(x)`` over the naive implementation
+    ``np.log(ndtr(x))`` is most evident with moderate to large positive
+    values of ``x``:
+
+    >>> x = np.array([6, 7, 9, 12, 15, 25])
+    >>> log_ndtr(x)
+    array([-9.86587646e-010, -1.27981254e-012, -1.12858841e-019,
+           -1.77648211e-033, -3.67096620e-051, -3.05669671e-138])
+
+    The results of the naive calculation for the moderate ``x`` values
+    have only 5 or 6 correct significant digits. For values of ``x``
+    greater than approximately 8.3, the naive expression returns 0:
+
+    >>> np.log(ndtr(x))
+    array([-9.86587701e-10, -1.27986510e-12,  0.00000000e+00,
+            0.00000000e+00,  0.00000000e+00,  0.00000000e+00])
     """)
 
 add_newdoc("ndtri",
@@ -9950,7 +10219,7 @@ add_newdoc("rel_entr",
 
     See Also
     --------
-    entr, kl_div
+    entr, kl_div, scipy.stats.entropy
 
     Notes
     -----
@@ -9960,21 +10229,24 @@ add_newdoc("rel_entr",
 
     The origin of this function is in convex programming; see
     [1]_. Given two discrete probability distributions :math:`p_1,
-    \ldots, p_n` and :math:`q_1, \ldots, q_n`, to get the relative
-    entropy of statistics compute the sum
+    \ldots, p_n` and :math:`q_1, \ldots, q_n`, the definition of relative
+    entropy in the context of *information theory* is
 
     .. math::
 
         \sum_{i = 1}^n \mathrm{rel\_entr}(p_i, q_i).
 
+    To compute the latter quantity, use `scipy.stats.entropy`.
+
     See [2]_ for details.
 
     References
     ----------
-    .. [1] Grant, Boyd, and Ye, "CVX: Matlab Software for Disciplined Convex
-        Programming", http://cvxr.com/cvx/
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`https://doi.org/10.1017/CBO9780511804441`
     .. [2] Kullback-Leibler divergence,
-        https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+           https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 
     """)
 
@@ -10409,6 +10681,59 @@ add_newdoc("spence",
       -\int_0^z \frac{\log(1 - t)}{t}dt;
 
     this is our ``spence(1 - z)``.
+
+    Examples
+    --------
+    >>> from scipy.special import spence
+    >>> import matplotlib.pyplot as plt
+
+    The function is defined for complex inputs:
+
+    >>> spence([1-1j, 1.5+2j, 3j, -10-5j])
+    array([-0.20561676+0.91596559j, -0.86766909-1.39560134j,
+           -0.59422064-2.49129918j, -1.14044398+6.80075924j])
+
+    For complex inputs on the branch cut, which is the negative real axis,
+    the function returns the limit for ``z`` with positive imaginary part.
+    For example, in the following, note the sign change of the imaginary
+    part of the output for ``z = -2`` and ``z = -2 - 1e-8j``:
+
+    >>> spence([-2 + 1e-8j, -2, -2 - 1e-8j])
+    array([2.32018041-3.45139229j, 2.32018042-3.4513923j ,
+           2.32018041+3.45139229j])
+
+    The function returns ``nan`` for real inputs on the branch cut:
+
+    >>> spence(-1.5)
+    nan
+
+    Verify some particular values: ``spence(0) = pi**2/6``,
+    ``spence(1) = 0`` and ``spence(2) = -pi**2/12``.
+
+    >>> spence([0, 1, 2])
+    array([ 1.64493407,  0.        , -0.82246703])
+    >>> np.pi**2/6, -np.pi**2/12
+    (1.6449340668482264, -0.8224670334241132)
+
+    Verify the identity::
+
+        spence(z) + spence(1 - z) = pi**2/6 - log(z)*log(1 - z)
+
+    >>> z = 3 + 4j
+    >>> spence(z) + spence(1 - z)
+    (-2.6523186143876067+1.8853470951513935j)
+    >>> np.pi**2/6 - np.log(z)*np.log(1 - z)
+    (-2.652318614387606+1.885347095151394j)
+
+    Plot the function for positive real input.
+
+    >>> fig, ax = plt.subplots()
+    >>> x = np.linspace(0, 6, 400)
+    >>> ax.plot(x, spence(x))
+    >>> ax.grid()
+    >>> ax.set_xlabel('x')
+    >>> ax.set_title('spence(x)')
+    >>> plt.show()
     """)
 
 add_newdoc("stdtr",

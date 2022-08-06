@@ -34,7 +34,11 @@ The minimum value of this function is 0 which is achieved when
 Note that the Rosenbrock function and its derivatives are included in
 `scipy.optimize`. The implementations shown in the following sections
 provide examples of how to define an objective function as well as its
-jacobian and hessian functions.
+jacobian and hessian functions. Objective functions in `scipy.optimize` 
+expect a numpy array as their first parameter which is to be optimized 
+and must return a float value. The exact calling signature must be
+``f(x, *args)`` where ``x`` represents a numpy array and ``args`` 
+a tuple of additional arguments supplied to the objective function.
 
 Nelder-Mead Simplex algorithm (``method='Nelder-Mead'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -70,6 +74,31 @@ Another optimization algorithm that needs only function calls to find
 the minimum is *Powell*'s method available by setting ``method='powell'`` in
 :func:`minimize`.
 
+To demonstrate how to supply additional arguments to an objective function, 
+let us minimize the Rosenbrock function with an additional scaling factor `a` 
+and an offset `b`:
+
+.. math::
+
+    f\left(\mathbf{x}, a, b\right)=\sum_{i=1}^{N-1}a\left(x_{i+1}-x_{i}^{2}\right)^{2}+\left(1-x_{i}\right)^{2} + b.
+
+Again using the :func:`minimize` routine this can be solved by the following 
+code block for the example parameters `a=0.5` and `b=1`. 
+
+    >>> def rosen_with_args(x, a, b):
+    ...     """The Rosenbrock function with additional arguments"""
+    ...     return sum(a*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0) + b
+
+    >>> x0 = np.array([1.3, 0.7, 0.8, 1.9, 1.2])
+    >>> res = minimize(rosen_with_args, x0, method='nelder-mead', 
+    ...		       args=(0.5, 1.), options={'xatol': 1e-8, 'disp': True})
+    Optimization terminated successfully.
+             Current function value: 1.000000
+             Iterations: 319
+             Function evaluations: 525
+
+    >>> print(res.x)
+    [1.         1.         1.         1.         0.99999999]
 
 Broyden-Fletcher-Goldfarb-Shanno algorithm (``method='BFGS'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -118,12 +147,39 @@ through the ``jac`` parameter as illustrated below.
     ...                options={'disp': True})
     Optimization terminated successfully.
              Current function value: 0.000000
-             Iterations: 51                     # may vary
-             Function evaluations: 63
-             Gradient evaluations: 63
+             Iterations: 25                     # may vary
+             Function evaluations: 30
+             Gradient evaluations: 30
     >>> res.x
     array([1., 1., 1., 1., 1.])
 
+Another way to supply gradient information is to write a single 
+function which returns both the objective and the gradient: this is 
+indicated by setting ``jac=True``. In this case, the Python function 
+to be optimized must return a tuple whose first value is the objective 
+and whose second value represents the gradient. For this example, the 
+objective can be specified in the following way:
+
+    >>> def rosen_and_der(x):
+    ...	    objective = sum(100.0*(x[1:]-x[:-1]**2.0)**2.0 + (1-x[:-1])**2.0)
+    ...     xm = x[1:-1]
+    ...     xm_m1 = x[:-2]
+    ...     xm_p1 = x[2:]
+    ...     der = np.zeros_like(x)
+    ...     der[1:-1] = 200*(xm-xm_m1**2) - 400*(xm_p1 - xm**2)*xm - 2*(1-xm)
+    ...     der[0] = -400*x[0]*(x[1]-x[0]**2) - 2*(1-x[0])
+    ...     der[-1] = 200*(x[-1]-x[-2]**2)
+    ...     return objective, der
+
+    >>> res = minimize(rosen_and_der, x0, method='BFGS', jac=True,
+    ...                options={'disp': True})
+             Current function value: 0.000000
+             Iterations: 25                     # may vary
+             Function evaluations: 30
+             Gradient evaluations: 30    
+
+Supplying objective and gradient in a single function can help to avoid 
+redundant computations and therefore speed up the optimization significantly.
 
 Newton-Conjugate-Gradient algorithm (``method='Newton-CG'``)
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -720,6 +776,7 @@ This function looks like an egg carton::
    >>> plt.show()
 
 .. plot:: tutorial/examples/optimize_global_2.py
+   :alt: "A 3-D plot shown from a three-quarter view. The function is very noisy with dozens of valleys and peaks. There is no clear min or max discernable from this view and it's not possible to see all the local peaks and valleys from this view." 
    :align: center
    :include-source: 0
 
@@ -795,6 +852,7 @@ We'll now plot all found minima on a heatmap of the function::
 
 .. plot:: tutorial/examples/optimize_global_1.py
    :align: center
+   :alt: "This X-Y plot is a heatmap with the Z value denoted with the lowest points as black and the highest values as white. The image resembles a chess board rotated 45 degrees but heavily smoothed. A red dot is located at many of the minima on the grid resulting from the SHGO optimizer. SHGO shows the global minima as a red X in the top right. A local minima found with dual annealing is a white circle marker in the top left. A different local minima found with basinhopping is a yellow marker in the top center. The code is plotting the differential evolution result as a cyan circle, but it is not visible on the plot. At a glance it's not clear which of these valleys is the true global minima."
    :include-source: 0
 
 Least-squares minimization (:func:`least_squares`)
@@ -864,6 +922,7 @@ The code below implements least-squares estimation of :math:`\mathbf{x}` and
 finally plots the original data and the fitted model function:
 
 .. plot::
+    :alt: "This code plots an X-Y time-series. The series starts in the lower left at (0, 0) and rapidly trends up to the maximum of 0.2 then flattens out. The fitted model is shown as a smooth orange trace and is well fit to the data."
 
     >>> from scipy.optimize import least_squares
 
@@ -1195,6 +1254,7 @@ exactly, forms an approximation for it.
 The problem we have can now be solved as follows:
 
 .. plot::
+    :alt: "This code generates a 2-D heatmap with Z values from 0 to 1. The graph resembles a smooth, dark blue-green, U shape, with an open yellow top. The right, bottom, and left edges have a value near zero and the top has a value close to 1. The center of the solution space has a value close to 0.8."
 
     import numpy as np
     from scipy.optimize import root

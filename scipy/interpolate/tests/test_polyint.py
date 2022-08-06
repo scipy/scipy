@@ -6,6 +6,7 @@ from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
     assert_allclose, assert_equal, assert_)
 from pytest import raises as assert_raises
+import pytest
 
 from scipy.interpolate import (
     KroghInterpolator, krogh_interpolate,
@@ -280,6 +281,10 @@ class TestKrogh:
         cmplx2 = (KroghInterpolator(x, y.real).derivatives(0) +
                   1j*KroghInterpolator(x, y.imag).derivatives(0))
         assert_allclose(cmplx, cmplx2, atol=1e-15)
+
+    def test_high_degree_warning(self):
+        with pytest.warns(UserWarning, match="40 degrees provided,"):
+            KroghInterpolator(np.arange(40), np.ones(40))
 
 
 class TestTaylor:

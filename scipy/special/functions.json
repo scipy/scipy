@@ -413,7 +413,7 @@
     },
     "erfc": {
         "_faddeeva.h++": {
-            "faddeeva_erfc": "D->D"
+            "faddeeva_erfc_complex": "D->D"
         },
         "cephes.h": {
             "erfc": "d->d"
@@ -953,10 +953,8 @@
     },
     "log_ndtr": {
         "_faddeeva.h++": {
-            "faddeeva_log_ndtr": "D->D"
-        },
-        "cephes.h": {
-            "log_ndtr": "d->d"
+            "faddeeva_log_ndtr": "d->d",
+            "faddeeva_log_ndtr_complex": "D->D"
         }
     },
     "loggamma": {

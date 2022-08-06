@@ -11,8 +11,8 @@
 #  http://math.nist.gov/MatrixMarket/
 #
 import os
-import sys
 
+import numpy as np
 from numpy import (asarray, real, imag, conj, zeros, ndarray, concatenate,
                    ones, can_cast)
 
@@ -26,6 +26,7 @@ def asstr(s):
     if isinstance(s, bytes):
         return s.decode('latin1')
     return str(s)
+
 
 def mminfo(source):
     """
@@ -51,6 +52,29 @@ def mminfo(source):
         Either 'real', 'complex', 'pattern', or 'integer'.
     symmetry : str
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
+
+    Examples
+    --------
+    >>> from io import StringIO
+    >>> from scipy.io import mminfo
+
+    >>> text = '''%%MatrixMarket matrix coordinate real general
+    ...  5 5 7
+    ...  2 3 1.0
+    ...  3 4 2.0
+    ...  3 5 3.0
+    ...  4 1 4.0
+    ...  4 2 5.0
+    ...  4 3 6.0
+    ...  4 4 7.0
+    ... '''
+
+
+    ``mminfo(source)`` returns the number of rows, number of columns,
+    format, field type and symmetry attribute of the source file.
+
+    >>> mminfo(StringIO(text))
+    (5, 5, 7, 'coordinate', 'real', 'general')
     """
     return MMFile.info(source)
 
@@ -72,6 +96,35 @@ def mmread(source):
     a : ndarray or coo_matrix
         Dense or sparse matrix depending on the matrix format in the
         Matrix Market file.
+
+    Examples
+    --------
+    >>> from io import StringIO
+    >>> from scipy.io import mmread
+
+    >>> text = '''%%MatrixMarket matrix coordinate real general
+    ...  5 5 7
+    ...  2 3 1.0
+    ...  3 4 2.0
+    ...  3 5 3.0
+    ...  4 1 4.0
+    ...  4 2 5.0
+    ...  4 3 6.0
+    ...  4 4 7.0
+    ... '''
+
+    ``mmread(source)`` returns the data as sparse matrix in COO format.
+
+    >>> m = mmread(StringIO(text))
+    >>> m
+    <5x5 sparse matrix of type '<class 'numpy.float64'>'
+    with 7 stored elements in COOrdinate format>
+    >>> m.A
+    array([[0., 0., 0., 0., 0.],
+           [0., 0., 1., 0., 0.],
+           [0., 0., 0., 2., 3.],
+           [4., 5., 6., 7., 0.],
+           [0., 0., 0., 0., 0.]])
     """
     return MMFile().read(source)
 
@@ -79,7 +132,7 @@ def mmread(source):
 
 
 def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
-    """
+    r"""
     Writes the sparse or dense array `a` to Matrix Market file-like `target`.
 
     Parameters
@@ -98,6 +151,93 @@ def mmwrite(target, a, comment='', field=None, precision=None, symmetry=None):
         Either 'general', 'symmetric', 'skew-symmetric', or 'hermitian'.
         If symmetry is None the symmetry type of 'a' is determined by its
         values.
+
+    Returns
+    -------
+    None
+
+    Examples
+    --------
+    >>> from io import BytesIO
+    >>> import numpy as np
+    >>> from scipy.sparse import coo_matrix
+    >>> from scipy.io import mmwrite
+
+    Write a small NumPy array to a matrix market file.  The file will be
+    written in the ``'array'`` format.
+
+    >>> a = np.array([[1.0, 0, 0, 0], [0, 2.5, 0, 6.25]])
+    >>> target = BytesIO()
+    >>> mmwrite(target, a)
+    >>> print(target.getvalue().decode('latin1'))
+    %%MatrixMarket matrix array real general
+    %
+    2 4
+    1.0000000000000000e+00
+    0.0000000000000000e+00
+    0.0000000000000000e+00
+    2.5000000000000000e+00
+    0.0000000000000000e+00
+    0.0000000000000000e+00
+    0.0000000000000000e+00
+    6.2500000000000000e+00
+
+    Add a comment to the output file, and set the precision to 3.
+
+    >>> target = BytesIO()
+    >>> mmwrite(target, a, comment='\n Some test data.\n', precision=3)
+    >>> print(target.getvalue().decode('latin1'))
+    %%MatrixMarket matrix array real general
+    %
+    % Some test data.
+    %
+    2 4
+    1.000e+00
+    0.000e+00
+    0.000e+00
+    2.500e+00
+    0.000e+00
+    0.000e+00
+    0.000e+00
+    6.250e+00
+
+    Convert to a sparse matrix before calling ``mmwrite``.  This will
+    result in the output format being ``'coordinate'`` rather than
+    ``'array'``.
+
+    >>> target = BytesIO()
+    >>> mmwrite(target, coo_matrix(a), precision=3)
+    >>> print(target.getvalue().decode('latin1'))
+    %%MatrixMarket matrix coordinate real general
+    %
+    2 4 3
+    1 1 1.00e+00
+    2 2 2.50e+00
+    2 4 6.25e+00
+
+    Write a complex Hermitian array to a matrix market file.  Note that
+    only six values are actually written to the file; the other values
+    are implied by the symmetry.
+
+    >>> z = np.array([[3, 1+2j, 4-3j], [1-2j, 1, -5j], [4+3j, 5j, 2.5]])
+    >>> z
+    array([[ 3. +0.j,  1. +2.j,  4. -3.j],
+           [ 1. -2.j,  1. +0.j, -0. -5.j],
+           [ 4. +3.j,  0. +5.j,  2.5+0.j]])
+
+    >>> target = BytesIO()
+    >>> mmwrite(target, z, precision=2)
+    >>> print(target.getvalue().decode('latin1'))
+    %%MatrixMarket matrix array complex hermitian
+    %
+    3 3
+    3.00e+00 0.00e+00
+    1.00e+00 -2.00e+00
+    4.00e+00 3.00e+00
+    1.00e+00 0.00e+00
+    0.00e+00 5.00e+00
+    2.50e+00 0.00e+00
+
     """
     MMFile().write(target, a, comment, field, precision, symmetry)
 
@@ -158,7 +298,8 @@ class MMFile:
     FIELD_REAL = 'real'
     FIELD_COMPLEX = 'complex'
     FIELD_PATTERN = 'pattern'
-    FIELD_VALUES = (FIELD_INTEGER, FIELD_UNSIGNED, FIELD_REAL, FIELD_COMPLEX, FIELD_PATTERN)
+    FIELD_VALUES = (FIELD_INTEGER, FIELD_UNSIGNED, FIELD_REAL, FIELD_COMPLEX,
+                    FIELD_PATTERN)
 
     @classmethod
     def _validate_field(self, field):
@@ -382,8 +523,10 @@ class MMFile:
             else:
                 if issymm and aij != aji:
                     issymm = False
-                if isskew and aij != -aji:
-                    isskew = False
+                with np.errstate(over="ignore"):
+                    # This can give a warning for uint dtypes, so silence that
+                    if isskew and aij != -aji:
+                        isskew = False
                 if isherm and aij != conj(aji):
                     isherm = False
             if not (issymm or isskew or isherm):
@@ -738,7 +881,7 @@ class MMFile:
         self.__class__._validate_symmetry(symmetry)
 
         # write initial header line
-        data = '%%MatrixMarket matrix {0} {1} {2}\n'.format(rep, field, symmetry)
+        data = f'%%MatrixMarket matrix {rep} {field} {symmetry}\n'
         stream.write(data.encode('latin1'))
 
         # write comments
@@ -753,7 +896,8 @@ class MMFile:
             data = '%i %i\n' % (rows, cols)
             stream.write(data.encode('latin1'))
 
-            if field in (self.FIELD_INTEGER, self.FIELD_REAL, self.FIELD_UNSIGNED):
+            if field in (self.FIELD_INTEGER, self.FIELD_REAL,
+                         self.FIELD_UNSIGNED):
                 if symmetry == self.SYMMETRY_GENERAL:
                     for j in range(cols):
                         for i in range(rows):
@@ -815,7 +959,8 @@ class MMFile:
                 for r, c in zip(coo.row+1, coo.col+1):
                     data = "%i %i\n" % (r, c)
                     stream.write(data.encode('latin1'))
-            elif field in (self.FIELD_INTEGER, self.FIELD_REAL, self.FIELD_UNSIGNED):
+            elif field in (self.FIELD_INTEGER, self.FIELD_REAL,
+                           self.FIELD_UNSIGNED):
                 for r, c, d in zip(coo.row+1, coo.col+1, coo.data):
                     data = ("%i %i " % (r, c)) + (template % d)
                     stream.write(data.encode('latin1'))
@@ -849,14 +994,3 @@ def _is_fromfile_compatible(stream):
 
     bad_cls = tuple(bad_cls)
     return not isinstance(stream, bad_cls)
-
-
-# -----------------------------------------------------------------------------
-if __name__ == '__main__':
-    import time
-    for filename in sys.argv[1:]:
-        print('Reading', filename, '...', end=' ')
-        sys.stdout.flush()
-        t = time.time()
-        mmread(filename)
-        print('took %s seconds' % (time.time() - t))
