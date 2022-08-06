@@ -438,8 +438,7 @@ class TestBSpline:
         '''
         def run_design_matrix_tests(n, k, bc_type):
             '''
-            To avoid repetition of the code the following function is
-            provided.
+            To avoid repetition of code the following function is provided.
             '''
             np.random.seed(1234)
             x = np.sort(np.random.random_sample(n) * 40 - 20)
@@ -471,6 +470,35 @@ class TestBSpline:
         n = 5  # smaller `n` to test `k > n` case
         for k in range(2, 7):
             run_design_matrix_tests(n, k, "periodic")
+
+    @pytest.mark.parametrize('extrapolate', [False, True, 'periodic'])
+    @pytest.mark.parametrize('order', range(5))
+    def test_design_matrix_same_as_BSpline_call(self, extrapolate, order):
+        """Test that design_matrix(x) is equivalent to BSpline(..)(x)."""
+        np.random.seed(1234)
+        x = np.random.random_sample(10 * (order + 1))
+        xmin, xmax = np.amin(x), np.amax(x)
+        k = order
+        t = np.r_[np.linspace(xmin - 2, xmin - 1, order),
+                  np.linspace(xmin, xmax, 2 * (order + 1)),
+                  np.linspace(xmax + 1, xmax + 2, order)]
+        c = np.eye(len(t) - k - 1)
+        bspline = BSpline(t, c, k, extrapolate)
+        assert_allclose(
+            bspline(x), BSpline.design_matrix(x, t, k, extrapolate).toarray()
+        )
+
+        # extrapolation regime
+        x = np.array([xmin - 10, xmin - 1, xmax + 1.5, xmax + 10])
+        if not extrapolate:
+            with pytest.raises(ValueError):
+                BSpline.design_matrix(x, t, k, extrapolate)
+        else:
+            assert_allclose(
+                bspline(x),
+                BSpline.design_matrix(x, t, k, extrapolate).toarray()
+            )
+
 
     def test_design_matrix_x_shapes(self):
         # test for different `x` shapes
