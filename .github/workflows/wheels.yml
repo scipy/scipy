@@ -126,7 +126,7 @@ jobs:
           # CIBW_BEFORE_BUILD_WINDOWS: "pip install delvewheel"
           # CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair -w {dest_dir} {wheel}"
 
-      - uses: actions/upload-artifact@v3
+      - uses: kittaakos/upload-artifact-as-is@v0
+        # upload the wheels with their actual wheel name
         with:
-          name: scipy-wheels
           path: ./wheelhouse/*.whl
