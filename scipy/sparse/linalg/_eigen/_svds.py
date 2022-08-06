@@ -355,20 +355,20 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     'M.T @ M' thus is
 
     >>> print(M.T @ M)
-    array([[ 1., -1.,  0.,  0.,  0.],
-           [-1.,  2., -1.,  0.,  0.],
-           [ 0., -1.,  2., -1.,  0.],
-           [ 0.,  0., -1.,  2., -1.],
-           [ 0.,  0.,  0., -1.,  1.]])
+   [[ 1., -1.,  0.,  0.,  0.],
+    [-1.,  2., -1.,  0.,  0.],
+    [ 0., -1.,  2., -1.,  0.],
+    [ 0.,  0., -1.,  2., -1.],
+    [ 0.,  0.,  0., -1.,  1.]]
 
     the graph Laplacian, while the actually used in 'svds' smaller size
     4x4 normal matrix 'M @ M.T'
 
-    >>> print(M.T @ M)
-    array([[ 2., -1.,  0.,  0.],
-           [-1.,  2., -1.,  0.],
-           [ 0., -1.,  2., -1.],
-           [ 0.,  0., -1.,  2.]])
+    >>> print(M @ M.T)
+    [[ 2., -1.,  0.,  0.],
+     [-1.,  2., -1.,  0.],
+     [ 0., -1.,  2., -1.],
+     [ 0.,  0., -1.,  2.]]
 
     is the so-called edge-based Laplacian; see https://w.wiki/5YXW .
 
