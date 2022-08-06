@@ -331,9 +331,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> M_from_diff0 = diff0(np.eye(n))
     >>> print(M_from_diff0)
     [[-1.  1.  0.  0.  0.]
-     [-0. -1.  1. -0. -0.]
-     [-0. -0. -1.  1. -0.]
-     [-0. -0. -0. -1.  1.]]
+     [ 0. -1.  1.  0.  0.]
+     [ 0.  0. -1.  1.  0.]
+     [ 0.  0.  0. -1.  1.]]
 
     The matrix 'M_from_diff0' is bi-diagonasl and could be alternatively
     created directly by
@@ -375,11 +375,11 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     and for validation the matrix-based 'diff0_matrix_aslo'.
 
     >>> def diff0_func_aslo_def(n):
-        return LinearOperator(matvec=diff0,
-    ...                       matmat=diff0,
-    ...                       rmatvec=diff0t,
-    ...                       rmatmat=diff0t,
-    ...                       shape=(n - 1, n))
+            return LinearOperator(matvec=diff0,
+    ...                           matmat=diff0,
+    ...                           rmatvec=diff0t,
+    ...                           rmatmat=diff0t,
+    ...                           shape=(n - 1, n))
     >>> diff0_func_aslo = diff0_func_aslo_def(n)
     >>> diff0_matrix_aslo = aslinearoperator(M_from_diff0)
 
