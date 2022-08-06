@@ -355,11 +355,11 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     'M.T @ M' thus is
 
     >>> print(M.T @ M)
-   [[ 1., -1.,  0.,  0.,  0.],
-    [-1.,  2., -1.,  0.,  0.],
-    [ 0., -1.,  2., -1.,  0.],
-    [ 0.,  0., -1.,  2., -1.],
-    [ 0.,  0.,  0., -1.,  1.]]
+    [[ 1., -1.,  0.,  0.,  0.],
+     [-1.,  2., -1.,  0.,  0.],
+     [ 0., -1.,  2., -1.,  0.],
+     [ 0.,  0., -1.,  2., -1.],
+     [ 0.,  0.,  0., -1.,  1.]]
 
     the graph Laplacian, while the actually used in 'svds' smaller size
     4x4 normal matrix 'M @ M.T'
