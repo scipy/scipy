@@ -316,7 +316,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     The most memory efficient scenario is where neither
     the original matrix, nor its transpose, is explicitly constructed.
-    Our example computes the smallest singular values and vectors 
+    Our example computes the smallest singular values and vectors
     of 'LinearOperator' constructed from the numpy function 'np.diff' used
     column-wise to be consistent with 'LinearOperator' operating on columns.
 
