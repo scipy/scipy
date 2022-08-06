@@ -1739,7 +1739,7 @@ The problem is formalized in the following:
 
 .. math::
 
-	\text{subject to} \sum_i^n s_{i} x_{i} \leq C,  x_{i} \in {0, 1}
+    \text{subject to} \sum_i^n s_{i} x_{i} \leq C,  x_{i} \in {0, 1}
 
 This problem is a typical example of a mixed integer linear programming problem, we can solve it with :func:`milp`.
 
@@ -1758,9 +1758,9 @@ For binary variables, we need to set `integrality` and `bounds` using :func:`Bou
 
 ::
 
-	>>> from scipy.optimize import Bounds, LinearConstraint, milp
-	>>> integrality = np.ones_like(weight) # x_i are integers
-	>>> bounds = bounds = Bounds(0, 1) # 0 <= x_i <= 1
+    >>> from scipy.optimize import Bounds, LinearConstraint, milp
+    >>> integrality = np.ones_like(weight) # x_i are integers
+    >>> bounds = bounds = Bounds(0, 1) # 0 <= x_i <= 1
 
 The knapsack capacity constraint is specified as a :class:`LinearConstraint`:
 
@@ -1779,9 +1779,9 @@ So we set `c` to be negative of the weights. Let's check the result:
 
 ::
 
-	>>> res.success
-	True
-	>>> res.x
-	array([1., 1., 0., 1., 1., 1., 0., 0.])
+    >>> res.success
+    True
+    >>> res.x
+    array([1., 1., 0., 1., 1., 1., 0., 0.])
 
 This means that we should select the items 1, 2, 4, 5, 6 to optimize the total value under the conditions.
