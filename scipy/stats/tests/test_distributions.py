@@ -2821,6 +2821,23 @@ class TestSkewNorm:
         ref = np.mean(rvs), stats.skew(rvs)
         assert_allclose(res, ref)
 
+        # Test behavior when skew of data is beyond maximum of skewnorm
+        rvs = stats.pareto.rvs(1, size=100, random_state=rng)
+
+        # MLE still works
+        res = stats.skewnorm.fit(rvs)
+        assert np.all(np.isfinite(res))
+
+        # MoM fits variance and skewness
+        a5, loc5, scale5 = stats.skewnorm.fit(rvs, method='mm')
+        assert np.isinf(a5)
+        # distribution infrastruction doesn't allow infinite shape parameters
+        # into _stats; it just bypasses it and produces NaNs. Calculate
+        # moments manually.
+        m, v = np.mean(rvs), np.var(rvs)
+        assert_allclose(m, loc5 + scale5 * np.sqrt(2/np.pi))
+        assert_allclose(v, scale5**2 * (1 - 2 / np.pi))
+
 
 class TestExpon:
     def test_zero(self):
