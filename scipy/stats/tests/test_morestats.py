@@ -2555,10 +2555,6 @@ class TestDirectionalFuncs:
     def test_directionalfuncs_correctness(self):
         # Data from Fisher: Dispersion on a sphere, 1953 and
         # Mardia and Jupp, Directional Statistics.
-        # For x coordinate, result for directional mean does not agree with
-        # Mardia & Jupp, probably due to rounding errors in reference, that's
-        # why the first entry of the spherical mean reference is different
-        # than in the book.
 
         decl = -np.deg2rad(np.array([343.2, 62., 36.9, 27., 359.,
                                      5.7, 50.4, 357.6, 44.]))
@@ -2570,9 +2566,9 @@ class TestDirectionalFuncs:
                         axis=1)
 
         directional_mean = stats.directionalmean(data)
-        mean_rounded = np.round(directional_mean, 3)
+        mean_rounded = np.round(directional_mean, 4)
 
-        reference_mean = np.array([0.298, -0.135, -0.945])
+        reference_mean = np.array([0.2984, -0.1346, -0.9449]) # Fisher
         assert_allclose(mean_rounded, reference_mean)
 
         expected_var = 0.025335389565304012
