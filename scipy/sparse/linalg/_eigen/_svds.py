@@ -375,7 +375,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     and for validation the matrix-based 'diff0_matrix_aslo'.
 
     >>> def diff0_func_aslo_def(n):
-            return LinearOperator(matvec=diff0,
+    ...     return LinearOperator(matvec=diff0,
     ...                           matmat=diff0,
     ...                           rmatvec=diff0t,
     ...                           rmatmat=diff0t,
