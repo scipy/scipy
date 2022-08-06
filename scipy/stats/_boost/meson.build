@@ -60,8 +60,16 @@ ncx2_ufunc = py3.extension_module('ncx2_ufunc',
   subdir: 'scipy/stats/_boost'
 )
 
-ncf_ufunc = py3.extension_module('nct_ufunc',
+nct_ufunc = py3.extension_module('nct_ufunc',
   nct_ufunc_pyx,
+  include_directories: [include, inc_np, inc_boost],
+  cpp_args: [cpp_args, cython_cpp_args],
+  install: true,
+  subdir: 'scipy/stats/_boost'
+)
+
+skewnorm_ufunc = py3.extension_module('skewnorm_ufunc',
+  skewnorm_ufunc_pyx,
   include_directories: [include, inc_np, inc_boost],
   cpp_args: [cpp_args, cython_cpp_args],
   install: true,

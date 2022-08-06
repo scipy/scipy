@@ -9,8 +9,7 @@ from pytest import raises as assert_raises
 
 from scipy.interpolate import (RegularGridInterpolator, interpn,
                                RectBivariateSpline,
-                               NearestNDInterpolator, LinearNDInterpolator,
-                               CloughTocher2DInterpolator)
+                               NearestNDInterpolator, LinearNDInterpolator)
 
 from scipy.sparse._sputils import matrix
 
@@ -437,56 +436,6 @@ class TestRegularGridInterpolator:
 
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], interp(z[~i]))
-
-    def test_broadcastable_input(self):
-        # input data
-        np.random.seed(0)
-        x = np.random.random(10)
-        y = np.random.random(10)
-        z = np.hypot(x, y)
-
-        # x-y grid for interpolation
-        X = np.linspace(min(x), max(x))
-        Y = np.linspace(min(y), max(y))
-        X, Y = np.meshgrid(X, Y)
-        XY = np.vstack((X.ravel(), Y.ravel())).T
-
-        for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
-                             CloughTocher2DInterpolator):
-            interp = interpolator(list(zip(x, y)), z)
-            # single array input
-            interp_points0 = interp(XY)
-            # tuple input
-            interp_points1 = interp((X, Y))
-            interp_points2 = interp((X, 0.0))
-            # broadcastable input
-            interp_points3 = interp(X, Y)
-            interp_points4 = interp(X, 0.0)
-
-            assert_equal(interp_points0.size ==
-                         interp_points1.size ==
-                         interp_points2.size ==
-                         interp_points3.size ==
-                         interp_points4.size, True)
-
-    def test_read_only(self):
-        # input data
-        np.random.seed(0)
-        xy = np.random.random((10, 2))
-        x, y = xy[:, 0], xy[:, 1]
-        z = np.hypot(x, y)
-
-        # interpolation points
-        XY = np.random.random((50, 2))
-
-        xy.setflags(write=False)
-        z.setflags(write=False)
-        XY.setflags(write=False)
-
-        for interpolator in (NearestNDInterpolator, LinearNDInterpolator,
-                             CloughTocher2DInterpolator):
-            interp = interpolator(xy, z)
-            interp(XY)
 
     def test_descending_points(self):
         def val_func_3d(x, y, z):
