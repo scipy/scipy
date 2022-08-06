@@ -272,11 +272,11 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     The angles between the individual exact and computed singular vectors
     are not so small.
 
-    >>> s_a(u2[:, :1], u[:, :1]) + s_a(u2[:, 1:], u[:, 1:]) > 5e-3
+    >>> s_a(u2[:, :1], u[:, :1]) + s_a(u2[:, 1:], u[:, 1:]) > 1e-3
     True
 
     >>> (s_a(vT2[:1, :].T, vT[:1, :].T) +
-    ...  s_a(vT2[1:, :].T, vT[1:, :].T)) > 5e-3
+    ...  s_a(vT2[1:, :].T, vT[1:, :].T)) > 1e-3
     True
 
     As opposed to the angles between the 2-dimentional invariant subspaces
@@ -297,7 +297,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> X_dense[:, 2 * np.arange(50)] = 0
     >>> X = csr_matrix(X_dense)
     >>> _, singular_values, _ = svds(X, k=5)
-    >>> print(singular_values)
+    >>> singular_values
     [ 4.3293...  4.4491...  4.5420...  4.5987... 35.2410...]
 
     The function can be called without the transpose of the input matrix
@@ -327,48 +327,48 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     >>> n = 5  # The dimension of the space.
     >>> M_from_diff0 = diff0(np.eye(n))
-    >>> print(M_from_diff0)
-    [[-1.  1.  0.  0.  0.]
-     [ 0. -1.  1.  0.  0.]
-     [ 0.  0. -1.  1.  0.]
-     [ 0.  0.  0. -1.  1.]]
+    >>> M_from_diff0
+    [[-1  1  0  0  0]
+     [ 0 -1  1  0  0]
+     [ 0  0 -1  1  0]
+     [ 0  0  0 -1  1]]
 
     The matrix 'M_from_diff0' is bi-diagonasl and could be alternatively
     created directly by
 
-    >>> M = - np.eye(n - 1, n)
+    >>> M = - np.eye(n - 1, n, dtype=int)
     >>> np.fill_diagonal(M[:,1:], 1)
     >>> np.allclose(M, M_from_diff0)
     True
 
     Its transpose
 
-    >>> print(M.T)
-    [[-1.  0.  0.  0.]
-     [ 1. -1. -0.  0.]
-     [ 0.  1. -1.  0.]
-     [ 0.  0.  1. -1.]
-     [ 0.  0.  0.  1.]]
+    >>> M.T
+    [[-1  0  0  0]
+     [ 1 -1 -0  0]
+     [ 0  1 -1  0]
+     [ 0  0  1 -1]
+     [ 0  0  0  1]]
 
     can be viewed as the incidence matrix https://w.wiki/5YXU of
     a linear graph with 5 vertices and 4 edges. The 5x5 normal matrix
     'M.T @ M' thus is
 
-    >>> print(M.T @ M)
-    [[ 1., -1.,  0.,  0.,  0.],
-     [-1.,  2., -1.,  0.,  0.],
-     [ 0., -1.,  2., -1.,  0.],
-     [ 0.,  0., -1.,  2., -1.],
-     [ 0.,  0.,  0., -1.,  1.]]
+    >>> M.T @ M
+    [[ 1 -1  0  0  0]
+     [-1  2 -1  0  0]
+     [ 0 -1  2 -1  0]
+     [ 0  0 -1  2 -1]
+     [ 0  0  0 -1  1]]
 
     the graph Laplacian, while the actually used in 'svds' smaller size
     4x4 normal matrix 'M @ M.T'
 
-    >>> print(M @ M.T)
-    [[ 2., -1.,  0.,  0.],
-     [-1.,  2., -1.,  0.],
-     [ 0., -1.,  2., -1.],
-     [ 0.,  0., -1.,  2.]]
+    >>> M @ M.T
+    [[ 2 -1  0  0]
+     [-1  2 -1  0]
+     [ 0 -1  2 -1]
+     [ 0  0 -1  2]]
 
     is the so-called edge-based Laplacian; see https://w.wiki/5YXW .
 
@@ -427,9 +427,9 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> se = 2. * np.sin(np.pi * np.arange(1, 4) / (2. * n))
     >>> ue = np.sqrt(2 / n) * np.sin(np.pi * np.outer(np.arange(1, n),
     ...                              np.arange(1, 4)) / n)
-    >>> np.allclose(ss, se, atol=1e-3)
+    >>> np.allclose(s, se, atol=1e-3)
     True
-    >>> print(np.allclose(np.abs(us), np.abs(ue), atol=1e-6))
+    >>> print(np.allclose(np.abs(u), np.abs(ue), atol=1e-6))
     True
     """
     args = _iv(A, k, ncv, tol, which, v0, maxiter, return_singular_vectors,
