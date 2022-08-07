@@ -345,7 +345,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     >>> print(M.T)
     [[-1  0  0  0]
-     [ 1 -1 -0  0]
+     [ 1 -1  0  0]
      [ 0  1 -1  0]
      [ 0  0  1 -1]
      [ 0  0  0  1]]
