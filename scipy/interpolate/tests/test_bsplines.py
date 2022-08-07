@@ -472,16 +472,16 @@ class TestBSpline:
             run_design_matrix_tests(n, k, "periodic")
 
     @pytest.mark.parametrize('extrapolate', [False, True, 'periodic'])
-    @pytest.mark.parametrize('order', range(5))
-    def test_design_matrix_same_as_BSpline_call(self, extrapolate, order):
+    @pytest.mark.parametrize('degree', range(5))
+    def test_design_matrix_same_as_BSpline_call(self, extrapolate, degree):
         """Test that design_matrix(x) is equivalent to BSpline(..)(x)."""
         np.random.seed(1234)
-        x = np.random.random_sample(10 * (order + 1))
+        x = np.random.random_sample(10 * (degree + 1))
         xmin, xmax = np.amin(x), np.amax(x)
-        k = order
-        t = np.r_[np.linspace(xmin - 2, xmin - 1, order),
-                  np.linspace(xmin, xmax, 2 * (order + 1)),
-                  np.linspace(xmax + 1, xmax + 2, order)]
+        k = degree
+        t = np.r_[np.linspace(xmin - 2, xmin - 1, degree),
+                  np.linspace(xmin, xmax, 2 * (degree + 1)),
+                  np.linspace(xmax + 1, xmax + 2, degree)]
         c = np.eye(len(t) - k - 1)
         bspline = BSpline(t, c, k, extrapolate)
         assert_allclose(
