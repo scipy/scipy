@@ -3,6 +3,7 @@
 """
 import numpy as np
 from scipy.sparse import issparse
+from scipy.sparse.linalg import svds
 import scipy.sparse as sp
 
 from numpy import Inf, sqrt, abs
@@ -60,7 +61,7 @@ def norm(x, ord=None, axis=None):
     0      abs(x).sum(axis=axis)
     1      max(sum(abs(x), axis=0))
     -1     min(sum(abs(x), axis=0))
-    2      Not implemented
+    2      Spectral norm - the largest singular value
     -2     Not implemented
     other  Not implemented
     =====  ============================
@@ -101,7 +102,8 @@ def norm(x, ord=None, axis=None):
     7
     >>> norm(b, -1)
     6
-
+    >>> norm(b, 2)
+    7.3484...
     """
     if not issparse(x):
         raise TypeError("input is not sparse. use numpy.linalg.norm")
@@ -134,8 +136,8 @@ def norm(x, ord=None, axis=None):
         if row_axis % nd == col_axis % nd:
             raise ValueError('Duplicate axes given.')
         if ord == 2:
-            raise NotImplementedError
-            #return _multi_svd_norm(x, row_axis, col_axis, amax)
+            _ s, _= svds(x, k=1)
+            return s
         elif ord == -2:
             raise NotImplementedError
             #return _multi_svd_norm(x, row_axis, col_axis, amin)
