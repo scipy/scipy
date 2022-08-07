@@ -113,6 +113,7 @@ look at its histogram:
 
 .. plot:: tutorial/stats/plots/hinv_plot.py
    :align: center
+   :alt: " "
    :include-source: 0
 
 Given the derivative of the PDF w.r.t the variate (i.e. ``x``), we can use

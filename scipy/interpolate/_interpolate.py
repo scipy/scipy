@@ -1333,6 +1333,58 @@ class PPoly(_PPolyBase):
             If bool, determines whether to extrapolate to out-of-bounds points
             based on first and last intervals, or to return NaNs.
             If 'periodic', periodic extrapolation is used. Default is True.
+
+        Examples
+        --------
+        Construct an interpolating spline and convert it to a `PPoly` instance 
+
+        >>> from scipy.interpolate import splrep, PPoly
+        >>> x = np.linspace(0, 1, 11)
+        >>> y = np.sin(2*np.pi*x)
+        >>> tck = splrep(x, y, s=0)
+        >>> p = PPoly.from_spline(tck)
+        >>> isinstance(p, PPoly)
+        True
+
+        Note that this function only supports 1D splines out of the box.
+
+        If the ``tck`` object represents a parametric spline (e.g. constructed
+        by `splprep` or a `BSpline` with ``c.ndim > 1``), you will need to loop
+        over the dimensions manually.
+
+        >>> from scipy.interpolate import splprep, splev
+        >>> t = np.linspace(0, 1, 11)
+        >>> x = np.sin(2*np.pi*t)
+        >>> y = np.cos(2*np.pi*t)
+        >>> (t, c, k), u = splprep([x, y], s=0)
+
+        Note that ``c`` is a list of two arrays of length 11.
+
+        >>> unew = np.arange(0, 1.01, 0.01)
+        >>> out = splev(unew, (t, c, k))
+
+        To convert this spline to the power basis, we convert each
+        component of the list of b-spline coefficients, ``c``, into the
+        corresponding cubic polynomial.
+
+        >>> polys = [PPoly.from_spline((t, cj, k)) for cj in c]
+        >>> polys[0].c.shape
+        (4, 14)
+
+        Note that the coefficients of the polynomials `polys` are in the
+        power basis and their dimensions reflect just that: here 4 is the order
+        (degree+1), and 14 is the number of intervals---which is nothing but
+        the length of the knot array of the original `tck` minus one.
+
+        Optionally, we can stack the components into a single `PPoly` along
+        the third dimension:
+
+        >>> cc = np.dstack([p.c for p in polys])    # has shape = (4, 14, 2)
+        >>> poly = PPoly(cc, polys[0].x)
+        >>> np.allclose(poly(unew).T,     # note the transpose to match `splev`
+        ...             out, atol=1e-15)
+        True
+
         """
         if isinstance(tck, BSpline):
             t, c, k = tck.tck

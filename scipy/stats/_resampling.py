@@ -132,7 +132,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
 
 
 def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
-                  n_resamples, batch, method, random_state):
+                  n_resamples, batch, method, bootstrap_result, random_state):
     """Input validation and standardization for `bootstrap`."""
 
     if vectorized not in {True, False, None}:
@@ -188,8 +188,8 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     confidence_level_float = float(confidence_level)
 
     n_resamples_int = int(n_resamples)
-    if n_resamples != n_resamples_int or n_resamples_int <= 0:
-        raise ValueError("`n_resamples` must be a positive integer.")
+    if n_resamples != n_resamples_int or n_resamples_int < 0:
+        raise ValueError("`n_resamples` must be a non-negative integer.")
 
     if batch is None:
         batch_iv = batch
@@ -207,11 +207,23 @@ def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
     if not paired and n_samples > 1 and method == 'bca':
         raise ValueError(message)
 
+    message = "`bootstrap_result` must have attribute `bootstrap_distribution'"
+    if (bootstrap_result is not None
+            and not hasattr(bootstrap_result, "bootstrap_distribution")):
+        raise ValueError(message)
+
+    message = ("Either `bootstrap_result.bootstrap_distribution.size` or "
+               "`n_resamples` must be positive.")
+    if ((not bootstrap_result or
+         not bootstrap_result.bootstrap_distribution.size)
+            and n_resamples_int == 0):
+        raise ValueError(message)
+
     random_state = check_random_state(random_state)
 
     return (data_iv, statistic, vectorized, paired, axis_int,
             confidence_level_float, n_resamples_int, batch_iv,
-            method, random_state)
+            method, bootstrap_result, random_state)
 
 
 fields = ['confidence_interval', 'bootstrap_distribution', 'standard_error']
@@ -220,7 +232,7 @@ BootstrapResult = make_dataclass("BootstrapResult", fields)
 
 def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
               vectorized=None, paired=False, axis=0, confidence_level=0.95,
-              method='BCa', random_state=None):
+              method='BCa', bootstrap_result=None, random_state=None):
     r"""
     Compute a two-sided bootstrap confidence interval of a statistic.
 
@@ -291,6 +303,12 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
         bootstrap confidence interval (``'BCa'``).
         Note that only ``'percentile'`` and ``'basic'`` support multi-sample
         statistics at this time.
+    bootstrap_result : BootstrapResult, optional
+        Provide the result object returned by a previous call to `bootstrap`
+        to include the previous bootstrap distribution in the new bootstrap
+        distribution. This can be used, for example, to change
+        `confidence_level`, change `method`, or see the effect of performing
+        additional resampling without repeating computations.
     random_state : {None, int, `numpy.random.Generator`,
                     `numpy.random.RandomState`}, optional
 
@@ -506,17 +524,41 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     >>> print(res.confidence_interval)
     ConfidenceInterval(low=0.9950085825848624, high=0.9971212407917498)
 
+    The result object can be passed back into `bootstrap` to perform additional
+    resampling:
+
+    >>> len(res.bootstrap_distribution)
+    9999
+    >>> res = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
+    ...                 n_resamples=1001, random_state=rng,
+    ...                 bootstrap_result=res)
+    >>> len(res.bootstrap_distribution)
+    11000
+
+    or to change the confidence interval options:
+
+    >>> res2 = bootstrap((x, y), my_statistic, vectorized=False, paired=True,
+    ...                  n_resamples=0, random_state=rng, bootstrap_result=res,
+    ...                  method='percentile', confidence_level=0.9)
+    >>> np.testing.assert_equal(res2.bootstrap_distribution,
+    ...                         res.bootstrap_distribution)
+    >>> res.confidence_interval
+    ConfidenceInterval(low=0.9950035351407804, high=0.9971170323404578)
+
+    without repeating computation of the original bootstrap distribution.
+
     """
     # Input validation
     args = _bootstrap_iv(data, statistic, vectorized, paired, axis,
                          confidence_level, n_resamples, batch, method,
-                         random_state)
-    data, statistic, vectorized, paired, axis = args[:5]
-    confidence_level, n_resamples, batch, method, random_state = args[5:]
+                         bootstrap_result, random_state)
+    data, statistic, vectorized, paired, axis, confidence_level = args[:6]
+    n_resamples, batch, method, bootstrap_result, random_state = args[6:]
 
-    theta_hat_b = []
+    theta_hat_b = ([] if bootstrap_result is None
+                   else [bootstrap_result.bootstrap_distribution])
 
-    batch_nominal = batch or n_resamples
+    batch_nominal = batch or n_resamples or 1
 
     for k in range(0, n_resamples, batch_nominal):
         batch_actual = min(batch_nominal, n_resamples-k)

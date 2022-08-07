@@ -48,6 +48,12 @@ all_methods = [
     ("SimpleRatioUniforms", {"dist": StandardNormal(), "mode": 0})
 ]
 
+if (sys.implementation.name == 'pypy'
+        and sys.implementation.version < (7, 3, 10)):
+    # changed in PyPy for v7.3.10
+    floaterr = r"unsupported operand type for float\(\): 'list'"
+else:
+    floaterr = r"must be real number, not list"
 # Make sure an internal error occurs in UNU.RAN when invalid callbacks are
 # passed. Moreover, different generators throw different error messages.
 # So, in case of an `UNURANError`, we do not validate the error message.
@@ -55,7 +61,7 @@ bad_pdfs_common = [
     # Negative PDF
     (lambda x: -x, UNURANError, r"..."),
     # Returning wrong type
-    (lambda x: [], TypeError, r"must be real number, not list"),
+    (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
     (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
     # Infinite value returned => Overflow error.
@@ -75,7 +81,7 @@ bad_dpdf_common = [
     # NaN value => internal error in UNU.RAN
     (lambda x: np.nan, UNURANError, r"..."),
     # Returning wrong type
-    (lambda x: [], TypeError, r"must be real number, not list"),
+    (lambda x: [], TypeError, floaterr),
     # Undefined name inside the function
     (lambda x: foo, NameError, r"name 'foo' is not defined"),  # type: ignore[name-defined]  # noqa
     # signature of dPDF wrong
