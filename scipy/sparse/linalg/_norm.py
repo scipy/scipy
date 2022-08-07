@@ -103,7 +103,9 @@ def norm(x, ord=None, axis=None):
     >>> norm(b, -1)
     6
 
-    >>> from scipy.sparse import diags
+    The matrix 2-norm or the spectral norm is the largest singular
+    value, computed approximately and with limitations.
+
     >>> b = diags([-1, 1], [0, 1], shape=(9, 10))
     >>> norm(b, 2)
     1.9753...
