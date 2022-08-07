@@ -17,17 +17,13 @@
 
 import cython
 from libc.math cimport (cos, exp, floor, fmax, fmin, log, log10, pow, sin,
-                        sqrt, M_PI)
+                        sqrt, M_PI, isnan, isinf)
 
 cdef extern from "cephes/lanczos.h":
     double lanczos_g
 
 cdef extern from "cephes/polevl.h":
     double polevl(double x, const double coef[], int N) nogil
-
-cdef extern from "_c99compat.h":
-    int sc_isnan(double x) nogil
-    int sc_isinf(double x) nogil
 
 from ._cephes cimport lgam, rgamma, zeta, sinpi, cospi, lanczos_sum_expg_scaled
 from ._digamma cimport digamma
@@ -812,17 +808,17 @@ cdef inline double wright_bessel_scalar(double a, double b, double x) nogil:
         double xk_k, res
         int order
 
-    if sc_isnan(a) or sc_isnan(b) or sc_isnan(x):
+    if isnan(a) or isnan(b) or isnan(x):
         return nan
     elif a < 0 or b < 0 or x < 0:
         sf_error.error("wright_bessel", sf_error.DOMAIN, NULL)
         return nan
-    elif sc_isinf(x):
-        if sc_isinf(a) or sc_isinf(b):
+    elif isinf(x):
+        if isinf(a) or isinf(b):
             return nan
         else:
             return inf
-    elif sc_isinf(a) or sc_isinf(b):
+    elif isinf(a) or isinf(b):
         return nan  # or 0
     elif a >= rgamma_zero or b >= rgamma_zero:
         sf_error.error("wright_bessel", sf_error.OVERFLOW, NULL)

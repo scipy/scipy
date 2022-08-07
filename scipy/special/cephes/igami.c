@@ -5,7 +5,6 @@
  *  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
  */
 #include "mconf.h"
-#include "_c99compat.h"
 
 static double find_inverse_s(double, double);
 static double didonato_SN(double, double, unsigned, double);

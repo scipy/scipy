@@ -40,7 +40,7 @@ cdef extern from *:
 # ===================
 
 cdef extern from "ckdtree_decl.h":
-    int ckdtree_isinf(np.float64_t x) nogil
+    int isinf(np.float64_t x) nogil
 
     struct ckdtreenode:
         np.intp_t split_dim
@@ -1373,9 +1373,9 @@ cdef class cKDTree:
         n_queries = real_r.shape[0]
 
         # Internally, we represent all distances as distance ** p
-        if not ckdtree_isinf(p):
+        if not isinf(p):
             for i in range(n_queries):
-                if not ckdtree_isinf(real_r[i]):
+                if not isinf(real_r[i]):
                     real_r[i] = real_r[i] ** p
 
         if weights is None:

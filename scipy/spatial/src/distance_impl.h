@@ -31,8 +31,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-#include "_c99compat.h"
-
 
 static NPY_INLINE void
 _row_norms(const double *X, npy_intp num_rows, const npy_intp num_cols, double *norms_buff){
@@ -630,7 +628,7 @@ pdist_minkowski(const double *X, double *dm, npy_intp num_rows,
     if (p == 2.0) {
         return pdist_euclidean_double(X, dm, num_rows, num_cols);
     }
-    if (sc_isinf(p)) {
+    if (isinf(p)) {
         return pdist_chebyshev_double(X, dm, num_rows, num_cols);
     }
 
@@ -650,7 +648,7 @@ pdist_weighted_minkowski(const double *X, double *dm, npy_intp num_rows,
 {
     npy_intp i, j;
 
-    if (sc_isinf(p)) {
+    if (isinf(p)) {
         return pdist_weighted_chebyshev(X, dm, num_rows, num_cols, w);
     }
 
@@ -854,7 +852,7 @@ cdist_minkowski(const double *XA, const double *XB, double *dm,
     if (p == 2.0) {
         return cdist_euclidean_double(XA, XB, dm, num_rowsA, num_rowsB, num_cols);
     }
-    if (sc_isinf(p)) {
+    if (isinf(p)) {
         return cdist_chebyshev_double(XA, XB, dm, num_rowsA, num_rowsB, num_cols);
     }
 
@@ -876,7 +874,7 @@ cdist_weighted_minkowski(const double *XA, const double *XB, double *dm,
 {
     npy_intp i, j;
 
-    if (sc_isinf(p)) {
+    if (isinf(p)) {
         return cdist_weighted_chebyshev(XA, XB, dm, num_rowsA, num_rowsB, num_cols, w);
     }
 
