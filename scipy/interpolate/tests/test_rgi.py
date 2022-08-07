@@ -16,10 +16,6 @@ from scipy.sparse._sputils import matrix
 parametrize_rgi_interp_methods = pytest.mark.parametrize(
     "method", ['linear', 'nearest', 'slinear', 'cubic', 'quintic', 'pchip']
 )
-parametrize_interpolators = pytest.mark.parametrize(
-    "interpolator", [NearestNDInterpolator, LinearNDInterpolator,
-                     CloughTocher2DInterpolator]
-)
 
 class TestRegularGridInterpolator:
     def _get_sample_4d(self):
@@ -439,54 +435,6 @@ class TestRegularGridInterpolator:
         assert_equal(res[i], np.nan)
         assert_equal(res[~i], interp(z[~i]))
 
-    @parametrize_interpolators
-    def test_broadcastable_input(self, interpolator):
-        # input data
-        np.random.seed(0)
-        x = np.random.random(10)
-        y = np.random.random(10)
-        z = np.hypot(x, y)
-
-        # x-y grid for interpolation
-        X = np.linspace(min(x), max(x))
-        Y = np.linspace(min(y), max(y))
-        X, Y = np.meshgrid(X, Y)
-        XY = np.vstack((X.ravel(), Y.ravel())).T
-
-        interp = interpolator(list(zip(x, y)), z)
-        # single array input
-        interp_points0 = interp(XY)
-        # tuple input
-        interp_points1 = interp((X, Y))
-        interp_points2 = interp((X, 0.0))
-        # broadcastable input
-        interp_points3 = interp(X, Y)
-        interp_points4 = interp(X, 0.0)
-
-        assert_equal(interp_points0.size ==
-                     interp_points1.size ==
-                     interp_points2.size ==
-                     interp_points3.size ==
-                     interp_points4.size, True)
-
-    @parametrize_interpolators
-    def test_read_only(self, interpolator):
-        # input data
-        np.random.seed(0)
-        xy = np.random.random((10, 2))
-        x, y = xy[:, 0], xy[:, 1]
-        z = np.hypot(x, y)
-
-        # interpolation points
-        XY = np.random.random((50, 2))
-
-        xy.setflags(write=False)
-        z.setflags(write=False)
-        XY.setflags(write=False)
-
-        interp = interpolator(xy, z)
-        interp(XY)
-
     def test_descending_points(self):
         def val_func_3d(x, y, z):
             return 2 * x ** 3 + 3 * y ** 2 - z
@@ -728,11 +676,11 @@ class TestInterpN:
                   (0.0, 5.0, 10.0, 15.0, 20, 25.0, 35.0, 36.0),
                   (0.0, 5.0, 10.0, 15.0, 20, 25.0, 35.0, 36.0, 47)]
 
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
 
         # NB: values has a single length-3 trailing dimension
-        values = np.random.rand(6, 7, 8, 9, 3)
-        sample = np.random.rand(4)   # a single sample point !
+        values = rng.random((6, 7, 8, 9, 3))
+        sample = rng.random(4)   # a single sample point !
 
         v = interpn(points, values, sample, method=method, bounds_error=False)
 
