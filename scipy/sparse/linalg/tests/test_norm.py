@@ -39,9 +39,9 @@ class TestNorm:
         assert_allclose(spnorm(self.b, -np.inf), 2)
         assert_allclose(spnorm(self.b, 1), 7)
         assert_allclose(spnorm(self.b, -1), 6)
+        assert_allclose(spnorm(self.b, 2), 7.348469228349534)
 
         # _multi_svd_norm is not implemented for sparse matrix
-        assert_raises(NotImplementedError, spnorm, self.b, 2)
         assert_raises(NotImplementedError, spnorm, self.b, -2)
 
     def test_matrix_norm_axis(self):
