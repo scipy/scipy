@@ -679,6 +679,7 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
     ``x`` ranging from 0 to 2 and ``y`` ranging from 0 to 1.
     That is, :math:`\\int^{x=2}_{x=0} \\int^{y=1}_{y=0} x y^2 \\,dy \\,dx`.
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> f = lambda y, x: x*y**2
     >>> integrate.dblquad(f, 0, 2, 0, 1)
@@ -699,6 +700,15 @@ def dblquad(func, a, b, gfun, hfun, args=(), epsabs=1.49e-8, epsrel=1.49e-8):
         (0.33333333333333337, 5.551115123125783e-15)
     >>> integrate.dblquad(f, 0, 1, lambda x: x, lambda x: 2-x, args=(3,))
         (0.9999999999999999, 1.6653345369377348e-14)
+
+    Compute the two-dimensional Gaussian Integral, which is the integral of the
+    Gaussian function :math:`f(x,y) = e^{-(x^{2} + y^{2})}`, over
+    :math:`(-\\infty,+\\infty)`. That is, compute the integral
+    :math:`\\iint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2})} \\,dy\\,dx`.
+
+    >>> f = lambda x, y: np.exp(-(x ** 2 + y ** 2))
+    >>> integrate.dblquad(f, -np.inf, np.inf, -np.inf, np.inf)
+        (3.141592653589777, 2.5173086737433208e-08)
 
     """
 
@@ -803,6 +813,7 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
     That is, :math:`\\int^{x=2}_{x=1} \\int^{y=3}_{y=2} \\int^{z=1}_{z=0} x y z
     \\,dz \\,dy \\,dx`.
 
+    >>> import numpy as np
     >>> from scipy import integrate
     >>> f = lambda z, y, x: x*y*z
     >>> integrate.tplquad(f, 1, 2, 2, 3, 0, 1)
@@ -825,6 +836,16 @@ def tplquad(func, a, b, gfun, hfun, qfun, rfun, args=(), epsabs=1.49e-8,
         (0.125, 5.527033708952211e-15)
     >>> integrate.tplquad(f, 0, 1, 0, 1, 0, 1, args=(3,))
         (0.375, 1.6581101126856635e-14)
+
+    Compute the three-dimensional Gaussian Integral, which is the integral of
+    the Gaussian function :math:`f(x,y,z) = e^{-(x^{2} + y^{2} + z^{2})}`, over
+    :math:`(-\\infty,+\\infty)`. That is, compute the integral
+    :math:`\\iiint^{+\\infty}_{-\\infty} e^{-(x^{2} + y^{2} + z^{2})} \\,dz
+    \\,dy\\,dx`.
+
+    >>> f = lambda x, y, z: np.exp(-(x ** 2 + y ** 2 + z ** 2))
+    >>> integrate.tplquad(f, -np.inf, np.inf, -np.inf, np.inf, -np.inf, np.inf)
+        (5.568327996830833, 4.4619078828029765e-08)
 
     """
     # f(z, y, x)
