@@ -482,6 +482,65 @@ class TestRegularGridInterpolator:
                                          method=method, bounds_error=False)
         assert np.isnan(interp([10]))
 
+    @parametrize_rgi_interp_methods
+    def test_nonscalar_values(self, method):
+        # Verify that non-scalar valued values also works
+        points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5)] * 2 + [
+            (0.0, 5.0, 10.0, 15.0, 20, 25.0)
+        ] * 2
+
+        rng = np.random.default_rng(1234)
+        values = rng.random((6, 6, 6, 6, 8))
+        sample = rng.random((7, 11, 4))
+
+        interp = RegularGridInterpolator(points, values, method=method,
+                                         bounds_error=False)
+        v = interp(sample)
+        assert_equal(v.shape, (7, 11, 8), err_msg=method)
+
+        vs = []
+        for j in range(8):
+            interp = RegularGridInterpolator(points, values[..., j],
+                                             method=method,
+                                             bounds_error=False)
+            vs.append(interp(sample))
+        v2 = np.array(vs).transpose(1, 2, 0)
+
+        assert_allclose(v, v2, err_msg=method)
+
+    @parametrize_rgi_interp_methods
+    def test_nonscalar_values_2(self, method):
+        # Verify that non-scalar valued values also work : use different
+        # lengths of axes to simplify tracing the internals
+        points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
+                  (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0),
+                  (0.0, 5.0, 10.0, 15.0, 20, 25.0, 35.0, 36.0),
+                  (0.0, 5.0, 10.0, 15.0, 20, 25.0, 35.0, 36.0, 47)]
+
+        rng = np.random.default_rng(1234)
+
+        # NB: values has a single length-3 trailing dimension
+        values = rng.random((6, 7, 8, 9, 3))
+        sample = rng.random(4)   # a single sample point !
+
+        interp = RegularGridInterpolator(points, values, method=method,
+                                         bounds_error=False)
+        v = interp(sample)
+
+        # v has a single sample point *per entry in the trailing dimensions*
+        assert v.shape == (1, 3)
+
+        # check the values, too : manually loop over the trailing dimensions
+        vs = []
+        for j in range(values.shape[-1]):
+            interp = RegularGridInterpolator(points, values[..., j],
+                                             method=method,
+                                             bounds_error=False)
+            vs.append(interp(sample))
+
+        v2 = np.asarray(vs).T  # transpose: otherwise v2.shape == (3, 1)
+        assert_allclose(v, v2, atol=1e-14, err_msg=method)
+
 
 class MyValue:
     """
@@ -672,7 +731,7 @@ class TestInterpN:
         # Verify that non-scalar valued values also work : use different
         # lengths of axes to simplify tracing the internals
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
-                  (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0), 
+                  (0.0, 0.5, 1.0, 1.5, 2.0, 2.5, 3.0),
                   (0.0, 5.0, 10.0, 15.0, 20, 25.0, 35.0, 36.0),
                   (0.0, 5.0, 10.0, 15.0, 20, 25.0, 35.0, 36.0, 47)]
 
