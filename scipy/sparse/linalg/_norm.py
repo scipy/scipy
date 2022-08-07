@@ -102,8 +102,11 @@ def norm(x, ord=None, axis=None):
     7
     >>> norm(b, -1)
     6
+
+    >>> from scipy.sparse import diags
+    >>> b = diags([-1, 1], [0, 1], shape=(9, 10))
     >>> norm(b, 2)
-    7.3484...
+    1.9753...
     """
     if not issparse(x):
         raise TypeError("input is not sparse. use numpy.linalg.norm")
