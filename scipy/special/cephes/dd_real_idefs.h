@@ -50,21 +50,15 @@ dd_lo(const double2 a)
 }
 
 static NPY_INLINE int
-dd_isnan(const double2 a)
-{
-    return (DD_ISNAN(a.x[0]) || DD_ISNAN(a.x[1]));
-}
-
-static NPY_INLINE int
 dd_isfinite(const double2 a)
 {
-    return DD_ISFINITE(a.x[0]);
+    return isfinite(a.x[0]);
 }
 
 static NPY_INLINE int
 dd_isinf(const double2 a)
 {
-    return DD_ISINF(a.x[0]);
+    return isinf(a.x[0]);
 }
 
 static NPY_INLINE int

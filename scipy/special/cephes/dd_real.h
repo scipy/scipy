@@ -63,15 +63,6 @@ extern "C" {
 #endif
 #endif
 
-/* Define this macro to be the isfinite(x) function. */
-#define DD_ISFINITE isfinite
-
-/* Define this macro to be the isinf(x) function. */
-#define DD_ISINF isinf
-
-/* Define this macro to be the isnan(x) function. */
-#define DD_ISNAN isnan
-
 #ifdef __cplusplus
 #define DD_STATIC_CAST(T, X) (static_cast<T>(X))
 #else
