@@ -289,19 +289,70 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
 def _root_scalar_brentq_doc():
     r"""
+    Find a root of a function in a bracketing interval using Brent's method.
+
+    Uses the classic Brent's method to find a zero of the function `f` on
+    the sign changing interval [a , b]. Generally considered the best of the
+    rootfinding routines here. It is a safe version of the secant method that
+    uses inverse quadratic extrapolation. Brent's method combines root
+    bracketing, interval bisection, and inverse quadratic interpolation. It is
+    sometimes known as the van Wijngaarden-Dekker-Brent method. Brent (1973)
+    claims convergence is guaranteed for functions computable within [a,b].
+
+    [Brent1973]_ provides the classic description of the algorithm. Another
+    description can be found in a recent edition of Numerical Recipes, including
+    [PressEtal1992]_. A third description is at
+    http://mathworld.wolfram.com/BrentsMethod.html. It should be easy to
+    understand the algorithm just by reading our code. Our code diverges a bit
+    from standard presentations: we choose a different formula for the
+    extrapolation step.
+
     Options
     -------
+    bracket : A sequence of 2 floats
+        An interval bracketing a root. f(x, *args) must have different signs at
+        the two endpoints.
     args : tuple, optional
         Extra arguments passed to the objective function.
     xtol : float, optional
-        Tolerance (absolute) for termination.
+        Tolerance (absolute) for termination. The computed root ``x0`` will
+        satisfy ``np.allclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+        exact root.
     rtol : float, optional
-        Tolerance (relative) for termination.
+        Tolerance (relative) for termination. The computed root ``x0`` will
+        satisfy ``np.allclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+        exact root. The parameter cannot be smaller than its default value of
+        ``4*np.finfo(float).eps``.
     maxiter : int, optional
         Maximum number of iterations.
     options: dict, optional
         Specifies any method-specific options not covered above
 
+    Returns
+    -------
+    sol : RootResults
+        The solution represented as a ``RootResults`` object.
+        Important attributes are: ``root`` the solution , ``converged`` a
+        boolean flag indicating if the algorithm exited successfully and
+        ``flag`` which describes the cause of the termination. See
+        `RootResults` for a description of other attributes.
+
+    Notes
+    -----
+    `f` must be continuous.  f(a) and f(b) must have opposite signs.
+
+    References
+    ----------
+    .. [Brent1973]
+       Brent, R. P.,
+       *Algorithms for Minimization Without Derivatives*.
+       Englewood Cliffs, NJ: Prentice-Hall, 1973. Ch. 3-4.
+
+    .. [PressEtal1992]
+       Press, W. H.; Flannery, B. P.; Teukolsky, S. A.; and Vetterling, W. T.
+       *Numerical Recipes in FORTRAN: The Art of Scientific Computing*, 2nd ed.
+       Cambridge, England: Cambridge University Press, pp. 352-355, 1992.
+       Section 9.3:  "Van Wijngaarden-Dekker-Brent Method."
     """
     pass
 
@@ -444,18 +495,40 @@ def _root_scalar_ridder_doc():
 
 def _root_scalar_bisect_doc():
     r"""
+    Find root of a function within an interval using bisection.
+
+    Basic bisection routine to find a zero of the function `f` between the
+    arguments `a` and `b` with `bracket = (a, b)`. `f(a)` and `f(b)` cannot have
+    the same signs.  Slow but sure.
+
     Options
     -------
+    bracket : A sequence of 2 floats
+        An interval bracketing a root. f(x, *args) must have different signs at
+        the two endpoints.
     args : tuple, optional
         Extra arguments passed to the objective function.
     xtol : float, optional
-        Tolerance (absolute) for termination.
+        Tolerance (absolute) for termination. The computed root ``x0`` will
+        satisfy ``np.allclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+        exact root.
     rtol : float, optional
-        Tolerance (relative) for termination.
+        Tolerance (relative) for termination. The computed root ``x0`` will
+        satisfy ``np.allclose(x, x0, atol=xtol, rtol=rtol)``, where ``x`` is the
+        exact root. The parameter cannot be smaller than its default value of
+        ``4*np.finfo(float).eps``.
     maxiter : int, optional
         Maximum number of iterations.
     options: dict, optional
         Specifies any method-specific options not covered above.
 
+    Returns
+    -------
+    sol : RootResults
+        The solution represented as a ``RootResults`` object.
+        Important attributes are: ``root`` the solution , ``converged`` a
+        boolean flag indicating if the algorithm exited successfully and
+        ``flag`` which describes the cause of the termination. See
+        `RootResults` for a description of other attributes.
     """
     pass
