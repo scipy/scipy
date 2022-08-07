@@ -1,6 +1,7 @@
 """Test functions for the sparse.linalg.norm module
 """
 
+import pytest
 import numpy as np
 from numpy.linalg import norm as npnorm
 from numpy.testing import assert_allclose, assert_equal
