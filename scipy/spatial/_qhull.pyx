@@ -1821,7 +1821,7 @@ class Delaunay(_QhullUser):
            [ 0.5       ,  0.5       ,  0.        ]])
 
     The coordinates for the first point are all positive, meaning it
-    is indeed inside the triangle. The third point is on a vertex,
+    is indeed inside the triangle. The third point is on an edge,
     hence its null third coordinate.
 
     """

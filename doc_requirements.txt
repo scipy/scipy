@@ -2,7 +2,6 @@
 #       in sync with the doc dependencies in pyproject.toml
 Sphinx!=4.1.0
 pydata-sphinx-theme>=0.9.0
-sphinx-panels>=0.5.2
-sphinx-tabs
+sphinx-design>=0.2.0
 numpydoc
 matplotlib>2

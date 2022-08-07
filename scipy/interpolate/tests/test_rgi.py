@@ -9,8 +9,7 @@ from pytest import raises as assert_raises
 
 from scipy.interpolate import (RegularGridInterpolator, interpn,
                                RectBivariateSpline,
-                               NearestNDInterpolator, LinearNDInterpolator,
-                               CloughTocher2DInterpolator)
+                               NearestNDInterpolator, LinearNDInterpolator)
 
 from scipy.sparse._sputils import matrix
 

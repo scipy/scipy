@@ -15,6 +15,7 @@ the organization section.
    conduct/code_of_conduct
    hacking
    dev_quickstart
+   contributor/development_workflow
    contributor/contributor_toc
 
 .. toctree::

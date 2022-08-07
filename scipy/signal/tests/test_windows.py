@@ -34,6 +34,7 @@ window_funcs = [
     ('exponential', ()),
     ('taylor', ()),
     ('tukey', (0.5,)),
+    ('lanczos', ()),
     ]
 
 
@@ -635,6 +636,39 @@ class TestDPSS:
         assert_raises(ValueError, windows.dpss, -1, 1, 3)  # negative M
 
 
+class TestLanczos:
+
+    def test_basic(self):
+        # Analytical results:
+        # sinc(x) = sinc(-x)
+        # sinc(pi) = 0, sinc(0) = 1
+        # Hand computation on WolframAlpha:
+        # sinc(2 pi / 3) = 0.413496672
+        # sinc(pi / 3) = 0.826993343
+        # sinc(3 pi / 5) = 0.504551152
+        # sinc(pi / 5) = 0.935489284
+        assert_allclose(windows.lanczos(6, sym=False),
+                        [0., 0.413496672,
+                         0.826993343, 1., 0.826993343,
+                         0.413496672],
+                        atol=1e-9)
+        assert_allclose(windows.lanczos(6),
+                        [0., 0.504551152,
+                         0.935489284, 0.935489284,
+                         0.504551152, 0.],
+                        atol=1e-9)
+        assert_allclose(windows.lanczos(7, sym=True),
+                        [0., 0.413496672,
+                         0.826993343, 1., 0.826993343,
+                         0.413496672, 0.],
+                        atol=1e-9)
+
+    def test_array_size(self):
+        for n in [0, 10, 11]:
+            assert_equal(len(windows.lanczos(n, sym=False)), n)
+            assert_equal(len(windows.lanczos(n, sym=True)), n)
+
+
 class TestGetWindow:
 
     def test_boxcar(self):
@@ -695,6 +729,15 @@ class TestGetWindow:
                         [0.4, 0.6072949, 0.9427051, 0.9427051, 0.6072949])
         assert_allclose(get_window(('general_hamming', 0.7), 5, fftbins=False),
                         [0.4, 0.7, 1.0, 0.7, 0.4])
+
+    def test_lanczos(self):
+        assert_allclose(get_window('lanczos', 6),
+                        [0., 0.413496672, 0.826993343, 1., 0.826993343,
+                         0.413496672], atol=1e-9)
+        assert_allclose(get_window('lanczos', 6, fftbins=False),
+                        [0., 0.504551152, 0.935489284, 0.935489284,
+                         0.504551152, 0.], atol=1e-9)
+        assert_allclose(get_window('lanczos', 6), get_window('sinc', 6))
 
 
 def test_windowfunc_basics():
@@ -776,7 +819,10 @@ def test_not_needs_params():
                    'poisson',
                    'tukey',
                    'tuk',
-                   'triangle']:
+                   'triangle',
+                   'lanczos',
+                   'sinc',
+                   ]:
         win = get_window(winstr, 7)
         assert_equal(len(win), 7)
 
@@ -790,3 +836,17 @@ def test_deprecation():
 def test_deprecated_pickleable():
     dep_hann2 = pickle.loads(pickle.dumps(dep_hann))
     assert_(dep_hann2 is dep_hann)
+
+
+def test_symmetric():
+
+    for win in [windows.lanczos]:
+        # Even sampling points
+        w = win(4096)
+        error = np.max(np.abs(w-np.flip(w)))
+        assert_equal(error, 0.0)
+
+        # Odd sampling points
+        w = win(4097)
+        error = np.max(np.abs(w-np.flip(w)))
+        assert_equal(error, 0.0)

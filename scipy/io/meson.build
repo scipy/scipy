@@ -19,7 +19,7 @@ _test_fortran = py3.extension_module('_test_fortran',
   c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
   fortran_args: fortran_ignore_warnings,
   include_directories: [incdir_numpy, incdir_f2py],
-  dependencies: [py3_dep, lapack, fortranobject_dep],
+  dependencies: [lapack, fortranobject_dep],
   install: true,
   link_language: 'fortran',
   subdir: 'scipy/io'
