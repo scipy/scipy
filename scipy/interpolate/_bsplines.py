@@ -424,8 +424,6 @@ class BSpline:
         # of knots.
         if len(t) < 2 * k + 2:
             raise ValueError(f"Length t is not enough for k={k}.")
-        if not np.isfinite(t).all():
-            raise ValueError("Knots should not have nans or infs.")
 
         if extrapolate == 'periodic':
             # With periodic extrapolation we map x to the segment
