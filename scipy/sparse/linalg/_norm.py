@@ -141,7 +141,7 @@ def norm(x, ord=None, axis=None):
         if ord == 2:
             # Only solver="lobpcg" supports all numpy dtypes
             _, s, _ = svds(x, k=1, solver="lobpcg")
-            return s
+            return s[0]
         elif ord == -2:
             raise NotImplementedError
             #return _multi_svd_norm(x, row_axis, col_axis, amin)
