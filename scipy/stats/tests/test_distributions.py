@@ -13,7 +13,7 @@ import platform
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose, assert_, assert_warns,
-                           assert_array_less, suppress_warnings)
+                           assert_array_less, suppress_warnings, IS_PYPY)
 import pytest
 from pytest import raises as assert_raises
 
@@ -119,7 +119,7 @@ def test_vonmises_numerical():
 #     num = mpmath.exp(kappa*mpmath.cos(x))
 #     den = 2 * mpmath.pi * mpmath.besseli(0, kappa)
 #     return num/den
-#
+
 @pytest.mark.parametrize('x, kappa, expected_pdf',
                          [(0.1, 0.01, 0.16074242744907072),
                           (0.1, 25.0, 1.7515464099118245),
@@ -130,6 +130,35 @@ def test_vonmises_numerical():
 def test_vonmises_pdf(x, kappa, expected_pdf):
     pdf = stats.vonmises.pdf(x, kappa)
     assert_allclose(pdf, expected_pdf, rtol=1e-15)
+
+
+def test_vonmises_rvs_gh4598():
+    # check that random variates wrap around as discussed in gh-4598
+    seed = abs(hash('von_mises_rvs'))
+    rng1 = np.random.default_rng(seed)
+    rng2 = np.random.default_rng(seed)
+    rng3 = np.random.default_rng(seed)
+    rvs1 = stats.vonmises(1, loc=0, scale=1).rvs(random_state=rng1)
+    rvs2 = stats.vonmises(1, loc=2*np.pi, scale=1).rvs(random_state=rng2)
+    rvs3 = stats.vonmises(1, loc=0,
+                          scale=(2*np.pi/abs(rvs1)+1)).rvs(random_state=rng3)
+    assert_allclose(rvs1, rvs2, atol=1e-15)
+    assert_allclose(rvs1, rvs3, atol=1e-15)
+
+
+# Expected values of the vonmises LOGPDF were computed
+# using wolfram alpha:
+# kappa * cos(x) - log(2*pi*I0(kappa))
+@pytest.mark.parametrize('x, kappa, expected_logpdf',
+                         [(0.1, 0.01, -1.8279520246003170),
+                          (0.1, 25.0, 0.5604990605420549),
+                          (0.1, 800, -1.5734567947337514),
+                          (2.0, 0.01, -1.8420635346185686),
+                          (2.0, 25.0, -34.7182759850871489),
+                          (2.0, 800, -1130.4942582548682739)])
+def test_vonmises_logpdf(x, kappa, expected_logpdf):
+    logpdf = stats.vonmises.logpdf(x, kappa)
+    assert_allclose(logpdf, expected_logpdf, rtol=1e-15)
 
 
 def _assert_less_or_close_loglike(dist, data, func, **kwds):
@@ -1009,6 +1038,16 @@ class TestTruncnorm:
             assert_almost_equal(stats.truncnorm.pdf(xvals, low, high),
                                 stats.truncnorm.pdf(xvals2, -high, -low)[::-1])
 
+    def test_cdf_tail_15110_14753(self):
+        # Check accuracy issues reported in gh-14753 and gh-155110
+        # Ground truth values calculated using Wolfram Alpha, e.g.
+        # (CDF[NormalDistribution[0,1],83/10]-CDF[NormalDistribution[0,1],8])/
+        #     (1 - CDF[NormalDistribution[0,1],8])
+        assert_allclose(stats.truncnorm(13., 15.).cdf(14.),
+                        0.9999987259565643)
+        assert_allclose(stats.truncnorm(8, np.inf).cdf(8.3),
+                        0.9163220907327540)
+
     def _test_moments_one_range(self, a, b, expected, rtol=1e-7):
         m0, v0, s0, k0 = expected[:4]
         m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
@@ -1017,62 +1056,52 @@ class TestTruncnorm:
         assert_allclose(s, s0, rtol=rtol)
         assert_allclose(k, k0, rtol=rtol)
 
-    @pytest.mark.xfail_on_32bit("reduced accuracy with 32bit platforms.")
-    def test_moments(self):
-        # Values validated by changing TRUNCNORM_TAIL_X so as to evaluate
-        # using both the _norm_XXX() and _norm_logXXX() functions, and by
-        # removing the _stats and _munp methods in truncnorm tp force
-        # numerical quadrature.
-        # For m,v,s,k expect k to have the largest error as it is
-        # constructed from powers of lower moments
+    # Test data for the truncnorm stats() method.
+    # The data in each row is:
+    #   a, b, mean, variance, skewness, excess kurtosis. Generated using
+    # https://gist.github.com/WarrenWeckesser/636b537ee889679227d53543d333a720
+    _truncnorm_stats_data = [
+        [-30, 30,
+         0.0, 1.0, 0.0, 0.0],
+        [-10, 10,
+         0.0, 1.0, 0.0, -1.4927521335810455e-19],
+        [-3, 3,
+         0.0, 0.9733369246625415, 0.0, -0.17111443639774404],
+        [-2, 2,
+         0.0, 0.7737413035499232, 0.0, -0.6344632828703505],
+        [0, np.inf,
+         0.7978845608028654,
+         0.3633802276324187,
+         0.995271746431156,
+         0.8691773036059741],
+        [-np.inf, 0,
+         -0.7978845608028654,
+         0.3633802276324187,
+         -0.995271746431156,
+         0.8691773036059741],
+        [-1, 3,
+         0.282786110727154,
+         0.6161417353578293,
+         0.5393018494027877,
+         -0.20582065135274694],
+        [-3, 1,
+         -0.282786110727154,
+         0.6161417353578293,
+         -0.5393018494027877,
+         -0.20582065135274694],
+        [-10, -9,
+         -9.108456288012409,
+         0.011448805821636248,
+         -1.8985607290949496,
+         5.0733461105025075],
+    ]
+    _truncnorm_stats_data = np.array(_truncnorm_stats_data)
 
-        self._test_moments_one_range(-30, 30, [0, 1, 0.0, 0.0])
-        self._test_moments_one_range(-10, 10, [0, 1, 0.0, 0.0])
-        self._test_moments_one_range(-3, 3, [0.0, 0.9733369246625415,
-                                             0.0, -0.1711144363977444])
-        self._test_moments_one_range(-2, 2, [0.0, 0.7737413035499232,
-                                             0.0, -0.6344632828703505])
-
-        self._test_moments_one_range(0, np.inf, [0.7978845608028654,
-                                                 0.3633802276324186,
-                                                 0.9952717464311565,
-                                                 0.8691773036059725])
-        self._test_moments_one_range(-np.inf, 0, [-0.7978845608028654,
-                                                  0.3633802276324186,
-                                                  -0.9952717464311565,
-                                                  0.8691773036059725])
-
-        self._test_moments_one_range(-1, 3, [0.2827861107271540,
-                                             0.6161417353578292,
-                                             0.5393018494027878,
-                                             -0.2058206513527461])
-        self._test_moments_one_range(-3, 1, [-0.2827861107271540,
-                                             0.6161417353578292,
-                                             -0.5393018494027878,
-                                             -0.2058206513527461])
-
-        self._test_moments_one_range(-10, -9, [-9.1084562880124764,
-                                               0.0114488058210104,
-                                               -1.8985607337519652,
-                                               5.0733457094223553])
-        self._test_moments_one_range(-20, -19, [-19.0523439459766628,
-                                                0.0027250730180314,
-                                                -1.9838694022629291,
-                                                5.8717850028287586],
-                                     rtol=1e-5)
-        self._test_moments_one_range(-30, -29, [-29.0344012377394698,
-                                                0.0011806603928891,
-                                                -1.9930304534611458,
-                                                5.8854062968996566],
-                                     rtol=1e-6)
-        self._test_moments_one_range(-40, -39, [-39.0256074199326264,
-                                                0.0006548826719649,
-                                                -1.9963146354109957,
-                                                5.6167758371700494])
-        self._test_moments_one_range(39, 40, [39.0256074199326264,
-                                              0.0006548826719649,
-                                              1.9963146354109957,
-                                              5.6167758371700494])
+    @pytest.mark.parametrize("case", _truncnorm_stats_data)
+    def test_moments(self, case):
+        a, b, m0, v0, s0, k0 = case
+        m, v, s, k = stats.truncnorm.stats(a, b, moments='mvsk')
+        assert_allclose([m, v, s, k], [m0, v0, s0, k0], atol=1e-17)
 
     def test_9902_moments(self):
         m, v = stats.truncnorm.stats(0, np.inf, moments='mv')
@@ -1785,11 +1814,11 @@ class TestPearson3:
         # The first moment is equal to the loc, which defaults to zero
         moment = stats.pearson3.moment(1, 2)
         assert_equal(moment, 0)
-        assert_equal(type(moment), float)
+        assert isinstance(moment, np.number)
 
         moment = stats.pearson3.moment(1, 0.000001)
         assert_equal(moment, 0)
-        assert_equal(type(moment), float)
+        assert isinstance(moment, np.number)
 
 
 class TestKappa4:
@@ -2818,6 +2847,29 @@ class TestSkewNorm:
             mom = stats.skewnorm.moment(order, a)
             assert_allclose(mom, expected, rtol=1e-14)
 
+    def test_fit(self):
+        rng = np.random.default_rng(4609813989115202851)
+
+        a, loc, scale = -2, 3.5, 0.5  # arbitrary, valid parameters
+        dist = stats.skewnorm(a, loc, scale)
+        rvs = dist.rvs(size=100, random_state=rng)
+
+        # test that MLE still honors guesses and fixed parameters
+        a2, loc2, scale2 = stats.skewnorm.fit(rvs, -1.5, floc=3)
+        a3, loc3, scale3 = stats.skewnorm.fit(rvs, -1.6, floc=3)
+        assert loc2 == loc3 == 3  # fixed parameter is respected
+        assert a2 != a3  # different guess -> (slightly) different outcome
+        # quality of fit is tested elsewhere
+
+        # test that MoM honors fixed parameters, accepts (but ignores) guesses
+        a4, loc4, scale4 = stats.skewnorm.fit(rvs, 3, fscale=3, method='mm')
+        assert scale4 == 3
+        # because scale was fixed, only the mean and skewness will be matched
+        dist4 = stats.skewnorm(a4, loc4, scale4)
+        res = dist4.stats(moments='ms')
+        ref = np.mean(rvs), stats.skew(rvs)
+        assert_allclose(res, ref)
+
 
 class TestExpon:
     def test_zero(self):
@@ -3160,6 +3212,7 @@ class TestBeta:
         a, b = 0.2, 3
         assert_equal(stats.beta.pdf(0, a, b), np.inf)
 
+    @pytest.mark.xfail(IS_PYPY, reason="Does not convert boost warning")
     def test_boost_eval_issue_14606(self):
         q, a, b = 0.995, 1.0e11, 1.0e13
         with pytest.warns(RuntimeWarning):
@@ -4242,6 +4295,7 @@ class TestFitMethod:
         assert_raises(ValueError, stats.uniform.fit, x, floc=2.0)
         assert_raises(ValueError, stats.uniform.fit, x, fscale=5.0)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize("method", ["MLE", "MM"])
     def test_fshapes(self, method):
         # take a beta distribution, with shapes='a, b', and make sure that
@@ -5976,6 +6030,29 @@ def test_levy_sf():
     assert_allclose(y, expected, rtol=1e-14)
 
 
+# The expected values for levy.isf(p) were calculated with mpmath.
+# For loc=0 and scale=1, the inverse SF can be computed with
+#
+#     import mpmath
+#
+#     def levy_invsf(p):
+#         return 1/(2*mpmath.erfinv(p)**2)
+#
+# For example, with mpmath.mp.dps set to 60, float(levy_invsf(1e-20))
+# returns 6.366197723675814e+39.
+#
+@pytest.mark.parametrize('p, expected_isf',
+                         [(1e-20, 6.366197723675814e+39),
+                          (1e-8, 6366197723675813.0),
+                          (0.375, 4.185810119346273),
+                          (0.875, 0.42489442055310134),
+                          (0.999, 0.09235685880262713),
+                          (0.9999999962747097, 0.028766845244146945)])
+def test_levy_isf(p, expected_isf):
+    x = stats.levy.isf(p)
+    assert_allclose(x, expected_isf, atol=5e-15)
+
+
 def test_levy_l_sf():
     # Test levy_l.sf for small arguments.
     x = np.array([-0.016, -0.01, -0.005, -0.0015])
@@ -6135,6 +6212,21 @@ def test_ncx2_gh8665():
                    0.0000000000000000, 0.0000000000000000, 0.0000000000000000,
                    0.0000000000000000]
     assert_allclose(sf, sf_expected, atol=1e-12)
+
+
+def test_ncx2_gh11777():
+    # regression test for gh-11777:
+    # At high values of degrees of freedom df, ensure the pdf of ncx2 does
+    # not get clipped to zero when the non-centrality parameter is
+    # sufficiently less than df
+    df = 6700
+    nc = 5300
+    x = np.linspace(stats.ncx2.ppf(0.001, df, nc),
+                    stats.ncx2.ppf(0.999, df, nc), num=10000)
+    ncx2_pdf = stats.ncx2.pdf(x, df, nc)
+    gauss_approx = stats.norm.pdf(x, df + nc, np.sqrt(2 * df + 4 * nc))
+    # use huge tolerance as we're only looking for obvious discrepancy
+    assert_allclose(ncx2_pdf, gauss_approx, atol=1e-4)
 
 
 def test_foldnorm_zero():
@@ -6807,6 +6899,29 @@ class TestHistogram:
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
 
 
+def test_histogram_non_uniform():
+    # Tests rv_histogram works even for non-uniform bin widths
+    counts, bins = ([1, 1], [0, 1, 1001])
+
+    dist = stats.rv_histogram((counts, bins), density=False)
+    np.testing.assert_allclose(dist.pdf([0.5, 200]), [0.5, 0.0005])
+    assert dist.median() == 1
+
+    dist = stats.rv_histogram((counts, bins), density=True)
+    np.testing.assert_allclose(dist.pdf([0.5, 200]), 1/1001)
+    assert dist.median() == 1001/2
+
+    # Omitting density produces a warning for non-uniform bins...
+    message = "Bin widths are not constant. Assuming..."
+    with assert_warns(RuntimeWarning, match=message):
+        dist = stats.rv_histogram((counts, bins))
+        assert dist.median() == 1001/2  # default is like `density=True`
+
+    # ... but not for uniform bins
+    dist = stats.rv_histogram((counts, [0, 1, 2]))
+    assert dist.median() == 1
+
+
 class TestLogUniform:
     def test_alias(self):
         # This test makes sure that "reciprocal" and "loguniform" are
@@ -7086,7 +7201,7 @@ def test_rvs_no_size_error():
 
     rvs_no_size = rvs_no_size_gen(name='rvs_no_size')
 
-    with assert_raises(TypeError, match=re.escape("_rvs() got an unexpected")):
+    with assert_raises(TypeError, match=r"_rvs\(\) got (an|\d) unexpected"):
         rvs_no_size.rvs()
 
 

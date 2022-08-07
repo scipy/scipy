@@ -5,6 +5,8 @@ import sys
 import operator
 import numpy as np
 from scipy._lib._util import prod
+import scipy.sparse as sp
+
 
 __all__ = ['upcast', 'getdtype', 'getdata', 'isscalarlike', 'isintlike',
            'isshape', 'issequence', 'isdense', 'ismatrix', 'get_sum_dtype']
@@ -357,7 +359,6 @@ def is_pydata_spmatrix(m):
 # Numpy versions of these functions raise deprecation warnings, the
 # ones below do not.
 
-
 def matrix(*args, **kwargs):
     return np.array(*args, **kwargs).view(np.matrix)
 
@@ -366,3 +367,33 @@ def asmatrix(data, dtype=None):
     if isinstance(data, np.matrix) and (dtype is None or data.dtype == dtype):
         return data
     return np.asarray(data, dtype=dtype).view(np.matrix)
+
+###############################################################################
+
+
+def _todata(s: 'sp.spmatrix') -> np.ndarray:
+    """Access nonzero values, possibly after summing duplicates.
+
+    Parameters
+    ----------
+    s : sparse matrix
+        Input sparse matrix.
+
+    Returns
+    -------
+    data: ndarray
+      Nonzero values of the array, with shape (s.nnz,)
+
+    """
+    if isinstance(s, sp._data._data_matrix):
+        return s._deduped_data()
+
+    if isinstance(s, sp.dok_matrix):
+        return np.fromiter(s.values(), dtype=s.dtype, count=s.nnz)
+
+    if isinstance(s, sp.lil_matrix):
+        data = np.empty(s.nnz, dtype=s.dtype)
+        sp._csparsetools.lil_flatten_to_array(s.data, data)
+        return data
+
+    return s.tocoo()._deduped_data()

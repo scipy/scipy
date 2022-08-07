@@ -185,6 +185,7 @@ class BSpline:
     functions active on the base interval.
 
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
     >>> fig, ax = plt.subplots()
     >>> xx = np.linspace(1.5, 4.5, 50)
     >>> ax.plot(xx, [bspline(x, t, c ,k) for x in xx], 'r-', lw=3, label='naive')
@@ -331,7 +332,7 @@ class BSpline:
         return cls.construct_fast(t, c, k, extrapolate)
 
     @classmethod
-    def design_matrix(cls, x, t, k):
+    def design_matrix(cls, x, t, k, extrapolate=False):
         """
         Returns a design matrix as a CSR format sparse array.
 
@@ -343,19 +344,26 @@ class BSpline:
             Sorted 1D array of knots.
         k : int
             B-spline degree.
+        extrapolate : bool or 'periodic', optional
+            Whether to extrapolate based on the first and last intervals
+            or raise an error. If 'periodic', periodic extrapolation is used.
+            Default is False.
+
+            .. versionadded:: 1.10.0
 
         Returns
         -------
         design_matrix : `csr_array` object
-            Sparse matrix in CSR format where in each row all the basis
-            elements are evaluated at the certain point (first row - x[0],
-            ..., last row - x[-1]).
+            Sparse matrix in CSR format where each row contains all the basis
+            elements of the input row (first row = basis elements of x[0],
+            ..., last row = basis elements x[-1]).
 
         Examples
         --------
         Construct a design matrix for a B-spline
 
         >>> from scipy.interpolate import make_interp_spline, BSpline
+        >>> import numpy as np
         >>> x = np.linspace(0, np.pi * 2, 4)
         >>> y = np.sin(x)
         >>> k = 3
@@ -402,21 +410,35 @@ class BSpline:
         x = _as_float_array(x, True)
         t = _as_float_array(t, True)
 
+        if extrapolate != 'periodic':
+            extrapolate = bool(extrapolate)
+
+        if k < 0:
+            raise ValueError("Spline order cannot be negative.")
         if t.ndim != 1 or np.any(t[1:] < t[:-1]):
             raise ValueError(f"Expect t to be a 1-D sorted array_like, but "
                              f"got t={t}.")
         # There are `nt - k - 1` basis elements in a BSpline built on the
         # vector of knots with length `nt`, so to have at least `k + 1` basis
-        # element we need to have at least `2 * k + 2` elements in the vector
+        # elements we need to have at least `2 * k + 2` elements in the vector
         # of knots.
         if len(t) < 2 * k + 2:
             raise ValueError(f"Length t is not enough for k={k}.")
-        # Checks from `find_interval` function
-        if (min(x) < t[k]) or (max(x) > t[t.shape[0] - k - 1]):
+
+        if extrapolate == 'periodic':
+            # With periodic extrapolation we map x to the segment
+            # [t[k], t[n]].
+            n = t.size - k - 1
+            x = t[k] + (x - t[k]) % (t[n] - t[k])
+            extrapolate = False
+        elif not extrapolate and (
+            (min(x) < t[k]) or (max(x) > t[t.shape[0] - k - 1])
+        ):
+            # Checks from `find_interval` function
             raise ValueError(f'Out of bounds w/ x = {x}.')
 
         n, nt = x.shape[0], t.shape[0]
-        data, idx = _bspl._make_design_matrix(x, t, k)
+        data, idx = _bspl._make_design_matrix(x, t, k, extrapolate)
         return csr_array((data, idx), (n, nt - k - 1))
 
     def __call__(self, x, nu=0, extrapolate=None):
@@ -1143,7 +1165,7 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
     --------
 
     Use cubic interpolation on Chebyshev nodes:
-
+    >>> import numpy as np
     >>> def cheb_nodes(N):
     ...     jj = 2.*np.arange(N) + 1
     ...     x = np.cos(np.pi * jj / 2 / N)[::-1]
@@ -1414,7 +1436,7 @@ def make_lsq_spline(x, y, t, k=3, w=None, axis=0, check_finite=True):
     Examples
     --------
     Generate some noisy data:
-
+    >>> import numpy as np
     >>> rng = np.random.default_rng()
     >>> x = np.linspace(-3, 3, 50)
     >>> y = np.exp(-x**2) + 0.1 * rng.standard_normal(50)

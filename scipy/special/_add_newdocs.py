@@ -3110,13 +3110,29 @@ add_newdoc("entr",
 
     See Also
     --------
-    kl_div, rel_entr
+    kl_div, rel_entr, scipy.stats.entropy
 
     Notes
     -----
+    .. versionadded:: 0.15.0
+
     This function is concave.
 
-    .. versionadded:: 0.15.0
+    The origin of this function is in convex programming; see [1]_.
+    Given a probability distribution :math:`p_1, \ldots, p_n`,
+    the definition of entropy in the context of *information theory* is
+
+    .. math::
+
+        \sum_{i = 1}^n \mathrm{entr}(p_i).
+
+    To compute the latter quantity, use `scipy.stats.entropy`.
+
+    References
+    ----------
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`https://doi.org/10.1017/CBO9780511804441`
 
     """)
 
@@ -7403,7 +7419,7 @@ add_newdoc("kl_div",
 
     See Also
     --------
-    entr, rel_entr
+    entr, rel_entr, scipy.stats.entropy
 
     Notes
     -----
@@ -7419,9 +7435,9 @@ add_newdoc("kl_div",
 
     References
     ----------
-    .. [1] Grant, Boyd, and Ye, "CVX: Matlab Software for Disciplined Convex
-        Programming", http://cvxr.com/cvx/
-
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`https://doi.org/10.1017/CBO9780511804441`
 
     """)
 
@@ -10203,7 +10219,7 @@ add_newdoc("rel_entr",
 
     See Also
     --------
-    entr, kl_div
+    entr, kl_div, scipy.stats.entropy
 
     Notes
     -----
@@ -10213,21 +10229,24 @@ add_newdoc("rel_entr",
 
     The origin of this function is in convex programming; see
     [1]_. Given two discrete probability distributions :math:`p_1,
-    \ldots, p_n` and :math:`q_1, \ldots, q_n`, to get the relative
-    entropy of statistics compute the sum
+    \ldots, p_n` and :math:`q_1, \ldots, q_n`, the definition of relative
+    entropy in the context of *information theory* is
 
     .. math::
 
         \sum_{i = 1}^n \mathrm{rel\_entr}(p_i, q_i).
 
+    To compute the latter quantity, use `scipy.stats.entropy`.
+
     See [2]_ for details.
 
     References
     ----------
-    .. [1] Grant, Boyd, and Ye, "CVX: Matlab Software for Disciplined Convex
-        Programming", http://cvxr.com/cvx/
+    .. [1] Boyd, Stephen and Lieven Vandenberghe. *Convex optimization*.
+           Cambridge University Press, 2004.
+           :doi:`https://doi.org/10.1017/CBO9780511804441`
     .. [2] Kullback-Leibler divergence,
-        https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
+           https://en.wikipedia.org/wiki/Kullback%E2%80%93Leibler_divergence
 
     """)
 

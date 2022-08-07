@@ -5,7 +5,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from decimal import Decimal
 from itertools import product
 from math import gcd
-import warnings
 
 import pytest
 from pytest import raises as assert_raises

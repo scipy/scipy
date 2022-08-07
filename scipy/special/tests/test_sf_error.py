@@ -1,7 +1,7 @@
 import sys
 import warnings
 
-from numpy.testing import assert_, assert_equal
+from numpy.testing import assert_, assert_equal, IS_PYPY
 import pytest
 from pytest import raises as assert_raises
 
@@ -67,6 +67,7 @@ def test_seterr():
         sc.seterr(**entry_err)
 
 
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
 def test_sf_error_special_refcount():
     # Regression test for gh-16233.
     # Check that the reference count of scipy.special is not increased

@@ -166,7 +166,8 @@ rich_click.OPTION_GROUPS = {
     "dev.py test": [
         {
             "name": "Options",
-            "options": ["--help", "--verbose", "--parallel", "--coverage"],
+            "options": ["--help", "--verbose", "--parallel", "--coverage",
+                        "--durations"],
         },
         {
             "name": "Options: test selection",
@@ -402,7 +403,7 @@ class Build(Task):
     debug = Option(
         ['--debug', '-d'], default=False, is_flag=True, help="Debug build")
     parallel = Option(
-        ['--parallel', '-j'], default=1, metavar='PARALLEL',
+        ['--parallel', '-j'], default=1, metavar='N_JOBS',
         help="Number of parallel jobs for build and testing")
     show_build_log = Option(
         ['--show-build-log'], default=False, is_flag=True,
@@ -627,7 +628,8 @@ class Test(Task):
 
     $ python dev.py test -s {SAMPLE_SUBMODULE}
     $ python dev.py test -t scipy.optimize.tests.test_minimize_constrained
-    $ python dev.py test -s stats -- --tb=line
+    $ python dev.py test -s cluster -m full --durations 20
+    $ python dev.py test -s stats -- --tb=line  # `--` passes next args to pytest
     ```
     """
     ctx = CONTEXT
@@ -638,11 +640,15 @@ class Test(Task):
     # removed doctests as currently not supported by _lib/_testutils.py
     # doctests = Option(['--doctests'], default=False)
     coverage = Option(
-        ['--coverage'], default=False, is_flag=True,
+        ['--coverage', '-c'], default=False, is_flag=True,
         help=("report coverage of project code. "
               "HTML output goes under build/coverage"))
+    durations = Option(
+        ['--durations', '-d'], default=None, metavar="NUM_TESTS",
+        help="Show timing for the given number of slowest tests"
+    )
     submodule = Option(
-        ['--submodule', '-s'], default=None, metavar='SUBMODULE',
+        ['--submodule', '-s'], default=None, metavar='MODULE_NAME',
         help="Submodule whose tests to run (cluster, constants, ...)")
     tests = Option(
         ['--tests', '-t'], default=None, multiple=True, metavar='TESTS',
@@ -652,11 +658,13 @@ class Test(Task):
         help=("'fast', 'full', or something that could be passed to "
               "`pytest -m` as a marker expression"))
     parallel = Option(
-        ['--parallel', '-j'], default=1, metavar='PARALLEL',
+        ['--parallel', '-j'], default=1, metavar='N_JOBS',
         help="Number of parallel jobs for testing"
     )
+    # Argument can't have `help=`; used to consume all of `-- arg1 arg2 arg3`
     pytest_args = Argument(
-        ['pytest_args'], nargs=-1, metavar='PYTEST-ARGS', required=False)
+        ['pytest_args'], nargs=-1, metavar='PYTEST-ARGS', required=False
+    )
 
     TASK_META = {
         'task_dep': ['build'],
@@ -681,6 +689,9 @@ class Test(Task):
             extra_argv += ['--cov-report=html:' + str(dst_dir)]
             shutil.copyfile(dirs.root / '.coveragerc',
                             dirs.site / '.coveragerc')
+
+        if args.durations:
+            extra_argv += ['--durations', args.durations]
 
         # convert options to test selection
         if args.submodule:
@@ -944,7 +955,7 @@ TARGETS: Sphinx build targets [default: 'html']
         help='List doc targets',
     )
     parallel = Option(
-        ['--parallel', '-j'], default=1, metavar='PARALLEL',
+        ['--parallel', '-j'], default=1, metavar='N_JOBS',
         help="Number of parallel jobs"
     )
 

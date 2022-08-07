@@ -22,16 +22,17 @@ jobs:
     if: "github.repository == 'scipy/scipy' || github.repository == ''"
     runs-on: windows-2019
     steps:
-      - name: Set up Python
-        uses: actions/setup-python@v3
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          submodules: recursive
+      - name: Setup Python
+        uses: actions/setup-python@v4
         with:
           python-version: '3.9'
           architecture: 'x64'
-      - name: Checkout
-        uses: actions/checkout@v3
-      - name: show-python-version
-        run: |
-          python --version
+          cache: 'pip'
+          cache-dependency-path: 'environment.yml'
       - name: install-rtools
         run: |
           choco install rtools --no-progress
@@ -55,7 +56,6 @@ jobs:
           echo "PKG_CONFIG_PATH=c:\opt\openblas\if_32\64\lib\pkgconfig;" >> $env:GITHUB_ENV
       - name: meson-configure
         run: |
-          git submodule update --init --recursive
           meson build --prefix=$PWD\build
       - name: meson-build
         run: |

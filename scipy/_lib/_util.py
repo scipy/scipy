@@ -40,6 +40,7 @@ def _lazywhere(cond, arrays, f, fillvalue=None, f2=None):
 
     Examples
     --------
+    >>> import numpy as np
     >>> a, b = np.array([1, 2, 3, 4]), np.array([5, 6, 7, 8])
     >>> def f(a, b):
     ...     return a*b
@@ -86,6 +87,7 @@ def _lazyselect(condlist, choicelist, arrays, default=0):
 
     Examples
     --------
+    >>> import numpy as np
     >>> x = np.arange(6)
     >>> np.select([x <3, x > 3], [x**2, x**3], default=0)
     array([  0,   1,   4,   0,  64, 125])
@@ -176,9 +178,7 @@ def check_random_state(seed):
 
     Parameters
     ----------
-    seed : {None, int, `numpy.random.Generator`,
-            `numpy.random.RandomState`}, optional
-
+    seed : {None, int, `numpy.random.Generator`, `numpy.random.RandomState`}, optional
         If `seed` is None (or `np.random`), the `numpy.random.RandomState`
         singleton is used.
         If `seed` is an int, a new ``RandomState`` instance is used,
@@ -545,6 +545,7 @@ def _first_nonnan(a, axis):
 
     Examples
     --------
+    >>> import numpy as np
     >>> nan = np.nan
     >>> a = np.array([[ 3.,  3., nan,  3.],
                       [ 1., nan,  2.,  4.],
@@ -585,13 +586,13 @@ def _nan_allsame(a, axis, keepdims=False):
 
     Examples
     --------
-    >>> a
-    array([[ 3.,  3., nan,  3.],
-           [ 1., nan,  2.,  4.],
-           [nan, nan,  9., -1.],
-           [nan,  5.,  4.,  3.],
-           [ 2.,  2.,  2.,  2.],
-           [nan, nan, nan, nan]])
+    >>> import numpy as np
+    >>> a = np.array([[ 3.,  3., nan,  3.],
+                      [ 1., nan,  2.,  4.],
+                      [nan, nan,  9., -1.],
+                      [nan,  5.,  4.,  3.],
+                      [ 2.,  2.,  2.,  2.],
+                      [nan, nan, nan, nan]])
     >>> _nan_allsame(a, axis=1, keepdims=True)
     array([[ True],
            [False],

@@ -47,9 +47,9 @@ account and then create your local repository via::
 
 Next, set up your development environment.
 
-.. tabs::
+.. tab-set::
 
-    .. tab:: conda
+    .. tab-item:: conda
 
         With ``conda`` installed (through
         `Miniforge or Mambaforge <https://github.com/conda-forge/miniforge>`_,
@@ -66,7 +66,7 @@ Next, set up your development environment.
         Your command prompt now lists the name of your new environment, like so
         ``(scipy-dev)$``.
 
-    .. tab:: pip+venv
+    .. tab-item:: pip+venv
 
         **With** :ref:`system-level dependencies <system-level>` **installed**, execute
         the following commands at the terminal from the base directory of your
@@ -95,7 +95,9 @@ If you run into a build issue, or need more detailed build documentation
 including building on Windows, see :ref:`building`.
 
 Some of the tests in SciPy are very slow and need to be separately
-enabled. See :ref:`runtests` for details.
+enabled. See :ref:`the-dev-py-interface` for details.
+
+For a complete setup walkthrough, see :ref:`development-workflow`.
 
 Other workflows
 ===============

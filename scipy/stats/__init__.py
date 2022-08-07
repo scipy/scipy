@@ -142,6 +142,7 @@ Continuous distributions
    triang            -- Triangular
    truncexpon        -- Truncated Exponential
    truncnorm         -- Truncated Normal
+   truncpareto       -- Truncated Pareto
    truncweibull_min  -- Truncated minimum Weibull distribution
    tukeylambda       -- Tukey-Lambda
    uniform           -- Uniform
@@ -301,6 +302,7 @@ Statistical tests
    jarque_bera
    page_trend_test
    tukey_hsd
+   poisson_means_test
 
 .. autosummary::
    :toctree: generated/
@@ -403,12 +405,13 @@ Distribution Fitting
 
    fit
 
-Circular statistical functions
-------------------------------
+Directional statistical functions
+---------------------------------
 
 .. autosummary::
    :toctree: generated/
 
+   directionalmean
    circmean
    circvar
    circstd

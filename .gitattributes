@@ -6,8 +6,6 @@
 .circleci/* export-ignore
 .github/* export-ignore
 ci/* export-ignore
-doc/* export-ignore
-doc/source/_static/scipy-mathjax/* export-ignore
 .coveragerc export-ignore
 .git* export-ignore
 *.yml export-ignore

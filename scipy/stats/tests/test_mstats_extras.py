@@ -139,6 +139,9 @@ class TestQuantiles:
         # Test actual values for good measure
         assert_almost_equal(hd_std_errs, [0.0379258, 0.0380656, 0.0380013])
 
+        two_data_points = ms.hdquantiles_sd([1, 2])
+        assert_almost_equal(two_data_points, [0.5, 0.5, 0.5])
+
     def test_mquantiles_cimj(self):
         # Only test that code runs, implementation not checked for correctness
         ci_lower, ci_upper = ms.mquantiles_cimj(self.data)
