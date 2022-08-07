@@ -953,7 +953,7 @@ class TestInterp:
     def test_broken_x(self, k):
         x = [0, 1, 1, 2, 3, 4]      # duplicates
         y = [0, 1, 2, 3, 4, 5]
-        with assert_raises(ValueError, match="Expect x to not have duplicates"):
+        with assert_raises(ValueError, match="x to not have duplicates"):
             make_interp_spline(x, y, k=k)
 
         x = [0, 2, 1, 3, 4, 5]      # unsorted
