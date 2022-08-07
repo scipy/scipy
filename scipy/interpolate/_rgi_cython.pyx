@@ -46,13 +46,11 @@ cdef int find_interval_ascending(const double *x,
         Suitable interval or -1 if nan.
 
     """
-    cdef int interval, high, low, mid
-    cdef double a, b
-
-    a = x[0]
-    b = x[nx-1]
-
-    interval = prev_interval
+    cdef:
+        int high, low, mid
+        int interval = prev_interval
+        double a = x[0]
+        double b = x[nx - 1]
     if interval < 0 or interval >= nx:
         interval = 0
 
@@ -134,18 +132,24 @@ def evaluate_linear(values, indices, norm_distances, out_of_bounds):
 @cython.wraparound(False)
 @cython.boundscheck(True)
 @cython.cdivision(True)
+@cython.initializedcheck(False)
 def find_indices(tuple grid not None, double[:, :] xi):
-    cdef long i, j, I, J, grid_i_size
-    cdef double denom, value
-    cdef long[:,::1] indices
-    cdef double[:,::1] norm_distances
-    cdef double[::1] grid_i
+    cdef:
+        long i, j, grid_i_size
+        double denom, value
+        double[::1] grid_i
 
-    cdef int index = 0
-    # find relevant edges between which xi are situated
-    indices = np.empty_like(xi, dtype=int)
-    # compute distance to lower edge in unity units
-    norm_distances = np.zeros_like(xi, dtype=float)
+        # Axes to iterate over
+        long I = xi.shape[0]
+        long J = xi.shape[1]
+
+        int index = 0
+
+        # Indices of relevant edges between which xi are situated
+        long[:,::1] indices = np.empty_like(xi, dtype=int)
+
+        # Distances to lower edge in unity units
+        double[:,::1] norm_distances = np.zeros_like(xi, dtype=float)
 
     # iterate through dimensions
     for i in range(I):
@@ -155,10 +159,12 @@ def find_indices(tuple grid not None, double[:, :] xi):
         if grid_i_size == 1:
             # special case length-one dimensions
             for j in range(J):
-                indices[i, j] = -1    # Should equal 0. Setting it to -1 is a hack: evaluate_linear looks at indices [i, i+1]
-                                      # which both end up =0 with wraparound. 
-                                      # Conclusion: change -1 to 0 here together with refactoring evaluate_linear, which
-                                      # will also need to special-case length-one axes
+                # Should equal 0. Setting it to -1 is a hack: evaluate_linear 
+                # looks at indices [i, i+1] which both end up =0 with wraparound. 
+                # Conclusion: change -1 to 0 here together with refactoring
+                # evaluate_linear, which will also need to special-case
+                # length-one axes
+                indices[i, j] = -1
                 # norm_distances[i, j] is already zero
         else:
             for j in range(J):
