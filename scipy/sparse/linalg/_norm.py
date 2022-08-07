@@ -136,7 +136,7 @@ def norm(x, ord=None, axis=None):
         if row_axis % nd == col_axis % nd:
             raise ValueError('Duplicate axes given.')
         if ord == 2:
-            _ s, _= svds(x, k=1)
+            _, s, _ = svds(x, k=1)
             return s
         elif ord == -2:
             raise NotImplementedError
