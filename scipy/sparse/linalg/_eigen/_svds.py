@@ -297,7 +297,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     >>> X_dense[:, 2 * np.arange(50)] = 0
     >>> X = csr_matrix(X_dense)
     >>> _, singular_values, _ = svds(X, k=5)
-    >>> singular_values
+    >>> print(singular_values)
     [ 4.3293...  4.4491...  4.5420...  4.5987... 35.2410...]
 
     The function can be called without the transpose of the input matrix
@@ -327,7 +327,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     >>> n = 5  # The dimension of the space.
     >>> M_from_diff0 = diff0(np.eye(n))
-    >>> M_from_diff0
+    >>> print(M_from_diff0.astype(int))
     [[-1  1  0  0  0]
      [ 0 -1  1  0  0]
      [ 0  0 -1  1  0]
@@ -343,7 +343,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
 
     Its transpose
 
-    >>> M.T
+    >>> print(M.T)
     [[-1  0  0  0]
      [ 1 -1 -0  0]
      [ 0  1 -1  0]
@@ -354,7 +354,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     a linear graph with 5 vertices and 4 edges. The 5x5 normal matrix
     'M.T @ M' thus is
 
-    >>> M.T @ M
+    >>> print(M.T @ M)
     [[ 1 -1  0  0  0]
      [-1  2 -1  0  0]
      [ 0 -1  2 -1  0]
@@ -364,7 +364,7 @@ def svds(A, k=6, ncv=None, tol=0, which='LM', v0=None,
     the graph Laplacian, while the actually used in 'svds' smaller size
     4x4 normal matrix 'M @ M.T'
 
-    >>> M @ M.T
+    >>> print(M @ M.T)
     [[ 2 -1  0  0]
      [-1  2 -1  0]
      [ 0 -1  2 -1]
