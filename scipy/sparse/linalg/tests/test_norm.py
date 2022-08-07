@@ -39,7 +39,8 @@ class TestNorm:
         assert_allclose(spnorm(self.b, -np.inf), 2)
         assert_allclose(spnorm(self.b, 1), 7)
         assert_allclose(spnorm(self.b, -1), 6)
-        assert_allclose(spnorm(self.b, 2), 7.348469228349534)
+        # Only floating or complex floating dtype supported by svds.
+        assert_allclose(spnorm(self.b.astype(np.float64), 2), 7.348469228349534)
 
         # _multi_svd_norm is not implemented for sparse matrix
         assert_raises(NotImplementedError, spnorm, self.b, -2)
