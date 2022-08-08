@@ -8507,7 +8507,6 @@ class truncpareto_gen(rv_continuous):
 
         def fallback(data, *args, **kwargs):
             # Should any issue arise, default to the general fit method.
-            print("fellback")
             return super(truncpareto_gen, self).fit(data, *args, **kwargs)
 
         parameters = _check_fit_input_parameters(self, data, args, kwargs)
@@ -8520,7 +8519,8 @@ class truncpareto_gen(rv_continuous):
                 and fshape_c is not None
                 and floc is not None
                 and fscale is not None):
-            raise ValueError("All parameters fixed. There is nothing to optimize.")
+            raise ValueError("All parameters fixed."
+                             "There is nothing to optimize.")
         elif fshape_c is None and floc is None and fscale is None:
             get_c = get_c_std
             get_scale = get_scale_std
@@ -8538,7 +8538,8 @@ class truncpareto_gen(rv_continuous):
                 rbrack = mn_inf
                 i = 0
                 lbrack = rbrack - 1
-                while (lbrack > -np.inf) and (cond_b(lbrack)*cond_b(rbrack) >= 0):
+                while ((lbrack > -np.inf)
+                       and (cond_b(lbrack)*cond_b(rbrack) >= 0)):
                     i += 1
                     lbrack = rbrack - 2**i
                 if not lbrack > -np.inf:
@@ -8552,7 +8553,8 @@ class truncpareto_gen(rv_continuous):
                 rbrack = res.root - 1e-3  # grad_loc is numerically ill-behaved
                 lbrack = rbrack - 1
                 i = 0
-                while (lbrack > -np.inf) and (dL_dLoc(lbrack)*dL_dLoc(rbrack) >= 0):
+                while ((lbrack > -np.inf)
+                       and (dL_dLoc(lbrack)*dL_dLoc(rbrack) >= 0)):
                     i += 1
                     lbrack = rbrack - 2**i
                 if not lbrack > -np.inf:
@@ -8567,7 +8569,8 @@ class truncpareto_gen(rv_continuous):
 
                 std_data = (data - loc)/scale
                 # The expression of b relies on b being bounded above.
-                up_bound_b = min(1/log_mean(std_data), 1/(harm_mean(std_data)-1))
+                up_bound_b = min(1/log_mean(std_data),
+                                 1/(harm_mean(std_data)-1))
                 if not (shape_b < up_bound_b):
                     return fallback(data, *args, **kwargs)
             else:
@@ -8584,7 +8587,8 @@ class truncpareto_gen(rv_continuous):
                     lbrack = rbrack - 2**i
                 if not lbrack > -np.inf:
                     return fallback(data, *args, **kwargs)
-                res = root_scalar(dL_dLoc, (fshape_b,), bracket=(lbrack, rbrack))
+                res = root_scalar(dL_dLoc, (fshape_b,),
+                                  bracket=(lbrack, rbrack))
                 if not res.converged:
                     return fallback(data, *args, **kwargs)
                 loc = res.root
@@ -8653,7 +8657,8 @@ class truncpareto_gen(rv_continuous):
                 # Should test1 pass, and test2 fail, we assume floc and fscale
                 # are sensible and override the fixed c when raising the exc.
                 if data.max() > fshape_c*fscale + floc:
-                    raise FitDataError("pareto", lower=1, upper=get_c_x011())
+                    raise FitDataError("truncpareto", lower=1,
+                                       upper=get_c_x011())
                 shape_c = fshape_c
                 loc = floc
                 scale = fscale
