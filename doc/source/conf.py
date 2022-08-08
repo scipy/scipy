@@ -155,6 +155,9 @@ for key in (
 warnings.filterwarnings(  # matplotlib<->pyparsing issue
     'ignore', message="Exception creating Regex for oneOf.*",
     category=SyntaxWarning)
+warnings.filterwarnings(  # sphinx_design <0.2.1
+    'ignore', message=r"nodes.Node.traverse() is obsoleted by Node.findall().",
+    category=PendingDeprecationWarning)
 # warnings in examples (mostly) that we allow
 # TODO: eventually these should be eliminated!
 for key in (
