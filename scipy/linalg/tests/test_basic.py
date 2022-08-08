@@ -1267,6 +1267,14 @@ class TestLstsq:
             assert_(rank == 0, 'expected rank 0')
             assert_equal(s, np.empty((0,)))
 
+    def test_effective_rank(self):
+        m = np.eye(4)
+        # rank deficient after gh-16786
+        m[-1, -1] = 7e-16
+        n = np.array([2, 3, 4, 5])
+        actual_rank = lstsq(m, n)[2]
+        assert actual_rank == 3
+
 
 class TestPinv:
     def setup_method(self):
