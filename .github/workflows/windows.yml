@@ -56,7 +56,7 @@ jobs:
           echo "PKG_CONFIG_PATH=c:\opt\openblas\if_32\64\lib\pkgconfig;" >> $env:GITHUB_ENV
       - name: meson-configure
         run: |
-          meson build --prefix=$PWD\build
+          meson setup build --prefix=$PWD\build
       - name: meson-build
         run: |
           ninja -j 2 -C build
