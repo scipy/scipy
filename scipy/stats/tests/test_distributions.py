@@ -5120,6 +5120,29 @@ class TestWeibull:
         ls = stats.weibull_max.logsf(-1e-9, 2, scale=3)
         assert_allclose(ls, np.log(-special.expm1(-1/9000000000000000000)))
 
+    def test_fit_min(self):
+        rng = np.random.default_rng(5985959307161735394)
+
+        c, loc, scale = 2, 3.5, 0.5  # arbitrary, valid parameters
+        dist = stats.weibull_min(c, loc, scale)
+        rvs = dist.rvs(size=100, random_state=rng)
+
+        # test that MLE still honors guesses and fixed parameters
+        c2, loc2, scale2 = stats.weibull_min.fit(rvs, 1.5, floc=3)
+        c3, loc3, scale3 = stats.weibull_min.fit(rvs, 1.6, floc=3)
+        assert loc2 == loc3 == 3  # fixed parameter is respected
+        assert c2 != c3  # different guess -> (slightly) different outcome
+        # quality of fit is tested elsewhere
+
+        # test that MoM honors fixed parameters, accepts (but ignores) guesses
+        c4, loc4, scale4 = stats.weibull_min.fit(rvs, 3, fscale=3, method='mm')
+        assert scale4 == 3
+        # because scale was fixed, only the mean and skewness will be matched
+        dist4 = stats.weibull_min(c4, loc4, scale4)
+        res = dist4.stats(moments='ms')
+        ref = np.mean(rvs), stats.skew(rvs)
+        assert_allclose(res, ref)
+
 
 class TestTruncWeibull(object):
 
