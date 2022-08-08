@@ -509,7 +509,8 @@ class TestRegularGridInterpolator:
         assert_allclose(v, v2, err_msg=method)
 
     @parametrize_rgi_interp_methods
-    def test_nonscalar_values_2(self, method):
+    @pytest.mark.parametrize("num_trailing_dims", range(1,5))
+    def test_nonscalar_values_2(self, method, num_trailing_dims):
         # Verify that non-scalar valued values also work : use different
         # lengths of axes to simplify tracing the internals
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
@@ -519,8 +520,9 @@ class TestRegularGridInterpolator:
 
         rng = np.random.default_rng(1234)
 
+        trailing_points = [3 + i for i in range(num_trailing_dims)]
         # NB: values has a single length-3 trailing dimension
-        values = rng.random((6, 7, 8, 9, 3))
+        values = rng.random((6, 7, 8, 9, *trailing_points))
         sample = rng.random(4)   # a single sample point !
 
         interp = RegularGridInterpolator(points, values, method=method,
@@ -528,7 +530,7 @@ class TestRegularGridInterpolator:
         v = interp(sample)
 
         # v has a single sample point *per entry in the trailing dimensions*
-        assert v.shape == (1, 3)
+        assert v.shape == (1, *trailing_points)
 
         # check the values, too : manually loop over the trailing dimensions
         vs = []
@@ -537,8 +539,10 @@ class TestRegularGridInterpolator:
                                              method=method,
                                              bounds_error=False)
             vs.append(interp(sample))
-
-        v2 = np.asarray(vs).T  # transpose: otherwise v2.shape == (3, 1)
+        n = 1 + num_trailing_dims
+        axes = tuple(range(n))
+        axx = axes[1:] + axes[:1]
+        v2 = np.asarray(vs).transpose(axx)  # transpose: otherwise v2.shape == (3, 1)
         assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
 
