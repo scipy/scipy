@@ -274,12 +274,6 @@ ufuncs_cxx_sources = [
 ]
 
 
-if is_windows
-  use_math_defines = ['-D_USE_MATH_DEFINES']
-else
-  use_math_defines = []
-endif
-
 cephes_lib = static_library('cephes',
   cephes_sources,
   c_args: use_math_defines,
@@ -366,7 +360,7 @@ py3.extension_module('_ufuncs',
     ufuncs_sources,
     uf_cython_gen.process(cython_special[0]),  # _ufuncs.pyx
   ],
-  c_args: [cython_c_args, use_math_defines, c_undefined_ok],
+  c_args: [cython_c_args, c_undefined_ok],
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies: [
     lapack,
@@ -406,7 +400,7 @@ py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources,
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
-  cpp_args: [cython_c_args, use_math_defines],
+  cpp_args: cython_cpp_args,
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies: [npymath_lib, ellint_dep],
   install: true,
@@ -431,7 +425,7 @@ py3.extension_module('cython_special',
     'specfun_wrappers.c',
     'sf_error.c'
   ],
-  c_args: [cython_c_args, use_math_defines, c_undefined_ok],
+  c_args: [cython_c_args, c_undefined_ok],
   include_directories: [inc_np, '../_lib', '../_build_utils/src', 'cephes'],
   dependencies: [npymath_lib, lapack],
   link_with: [
