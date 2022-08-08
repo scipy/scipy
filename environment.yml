@@ -46,4 +46,4 @@ dependencies:
   - rich-click
   - click
   - doit>=0.36.0
-  - pydevtool==0.2.0
+  - pydevtool
