@@ -142,8 +142,8 @@ dodoFile = "dev.py"
 skip = "cp36-* cp37-* pp* *_ppc64le *_i686 *_s390x *-musllinux*"
 build-verbosity = "3"
 before-build = "bash {project}/tools/wheels/cibw_before_build.sh {project}"
-before-test = "pip install -r {project}/test_requirements.txt"
-test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
+# before-test = "pip install -r {project}/test_requirements.txt"
+# test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux2014"
@@ -157,6 +157,15 @@ test-skip = "*_arm64 *_universal2:arm64"
 
 [tool.cibuildwheel.windows]
 
-#[[tool.cibuildwheel.overrides]]
-#select = "*-win32"
-#environment = { CFLAGS="-m32", LDFLAGS="-m32" }
+[[tool.cibuildwheel.overrides]]
+select = "*-win32"
+# don't use double backslash for path separators, they don't get passed
+# to the build correctly
+# use cmake detection for openBLAS because the built-in pkg-config is defective
+environment = { CXXFLAGS="-m32", CFLAGS="-m32", LDFLAGS="-m32", CMAKE_PREFIX_PATH="c:/opt/openblas/if_32/32" }
+
+[[tool.cibuildwheel.overrides]]
+select = "*-win_amd64"
+# can use pkg-config detection for win_amd64 because the installed rtools
+# provide a working pkg-config
+environment = { PKG_CONFIG_PATH="c:/opt/openblas/if_32/64/lib/pkgconfig" }
