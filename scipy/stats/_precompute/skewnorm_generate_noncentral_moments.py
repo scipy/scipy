@@ -13,14 +13,14 @@ from sympy.stats import Normal, cdf
 
 num_moments = 20
 
-x, t, δ = symbols('x t δ')
+x, t, d = symbols('x t d')
 
 X = Normal('x', 0, 1)
 
 # M is the moment generating function for the skew-normal distribution.
 # See, for example, https://en.wikipedia.org/wiki/Skew_normal_distribution;
 # here we set the location xi to 0 and the scale omega to 1.
-M = 2*exp(t**2/2)*cdf(X)(δ*t)
+M = 2*exp(t**2/2)*cdf(X)(d*t)
 
 moments = [1]
 dM = M
