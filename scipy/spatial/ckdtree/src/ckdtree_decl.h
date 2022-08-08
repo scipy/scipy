@@ -12,7 +12,6 @@
 #define CKDTREE_PREFETCH(x, rw, loc)  NPY_PREFETCH(x, rw, loc)
 
 #define ckdtree_intp_t npy_intp
-#define isinf(x)   isinf(x)
 #define ckdtree_fmin(x, y)   fmin(x, y)
 #define ckdtree_fmax(x, y)   fmax(x, y)
 #define ckdtree_fabs(x)   fabs(x)

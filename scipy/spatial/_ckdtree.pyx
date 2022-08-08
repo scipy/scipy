@@ -16,6 +16,7 @@ from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 from libcpp.vector cimport vector
 from libcpp.algorithm cimport sort
 from libcpp cimport bool
+from libc.math cimport isinf
 
 cimport cython
 import os
@@ -40,8 +41,6 @@ cdef extern from *:
 # ===================
 
 cdef extern from "ckdtree_decl.h":
-    int isinf(np.float64_t x) nogil
-
     struct ckdtreenode:
         np.intp_t split_dim
         np.intp_t children
