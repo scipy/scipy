@@ -2295,11 +2295,6 @@ class weibull_min_gen(rv_continuous):
             gamma3 = sc.gamma(1+3/c)
             num = 2 * gamma1**3 - 3*gamma1*gamma2 + gamma3
             den = (gamma2 - gamma1**2)**(3/2)
-            # num1 = 2*gamma(1+1/k)**3 - 3*gamma(1+1/k)*gamma(1+2/k)
-            # den1 = (gamma(1+2/k) - gamma(1+1/k)**2)**(3/2)
-            # num2 = gamma(1+3/k)
-            # den2 = (gamma(1+2/k) - gamma(1+1/k)**2)**(3/2)
-            # return num1/den1 + num2/den2
             return num / den
 
         if fc is None and c is None:  # not fixed and no guess: use MoM
@@ -2310,7 +2305,7 @@ class weibull_min_gen(rv_continuous):
             # parmaeters outside this range - and not just in this method.
             # We could probably improve the situation by doing everything
             # in the log space, but that is for another time.
-            c = root_scalar(lambda c: skew(c) - s, bracket=[0.02, 1e5]).root
+            c = root_scalar(lambda c: skew(c) - s, bracket=[0.02, 5e5]).root
         elif fc is not None:  # fixed: use it
             c = fc
 
