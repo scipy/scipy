@@ -718,9 +718,9 @@ class TestInterpN:
             (0.0, 5.0, 10.0, 15.0, 20, 25.0)
         ] * 2
 
-        np.random.seed(1234)
-        values = np.random.rand(6, 6, 6, 6, 8)
-        sample = np.random.rand(7, 11, 4)
+        rng = np.random.default_rng(1234)
+        values = rng.random((6, 6, 6, 6, 8))
+        sample = rng.random((7, 11, 4))
 
         v = interpn(points, values, sample, method=method,
                     bounds_error=False)
