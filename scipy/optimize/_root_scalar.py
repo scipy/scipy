@@ -138,119 +138,27 @@ def root_scalar(f, args=(), method=None, bracket=None,
     select one of the derivative-based methods.
     If no method is judged applicable, it will raise an Exception.
 
-    Arguments for each method are as follows.
+    Arguments for each method are as follows (x=required, o=optional).
 
-    .. list-table:: x=required, o=optional
-       :header-rows: 1
-
-       * - method 
-         - f
-         - args
-         - bracket
-         - x0
-         - x1
-         - fprime
-         - fprime2
-         - xtol
-         - rtol
-         - maxiter
-         - options
-       * - :ref:`bisect <optimize.root_scalar-bisect>`
-         - x
-         - o
-         - x
-         -  
-         -  
-         -  
-         -  
-         - o
-         - o
-         - o
-         - o
-       * - :ref:`brentq <optimize.root_scalar-brentq>`
-         - x
-         - o
-         - x
-         - 
-         - 
-         - 
-         - 
-         - o
-         - o
-         - o
-         - o
-       * - :ref:`brenth <optimize.root_scalar-brenth>`
-         - x
-         - o
-         - x
-         - 
-         - 
-         - 
-         - 
-         - o
-         - o
-         - o
-         - o
-       * - :ref:`ridder <optimize.root_scalar-ridder>`
-         - x
-         - o
-         - x
-         - 
-         - 
-         - 
-         - 
-         - o
-         - o
-         - o
-         - o
-       * - :ref:`toms748 <optimize.root_scalar-toms748>`
-         - x
-         - o
-         - x
-         - 
-         - 
-         - 
-         - 
-         - o
-         - o
-         - o
-         - o
-       * - :ref:`newton <optimize.root_scalar-newton>`
-         - x
-         - o
-         - 
-         - x
-         - 
-         - x
-         - 
-         - o
-         - o
-         - o
-         - o
-       * - :ref:`secant <optimize.root_scalar-secant>`
-         - x
-         - o
-         - 
-         - x
-         - x
-         - 
-         - 
-         - o
-         - o
-         - o
-         - o
-       * - :ref:`halley <optimize.root_scalar-halley>`
-         - x
-         - o
-         - 
-         - x
-         - 
-         - x
-         - x
-         - o
-         - o
-         - o
-         - o
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    |                    method                     | f | args | bracket | x0 | x1 | fprime | fprime2 | xtol | rtol | maxiter | options |
+    +===============================================+===+======+=========+====+====+========+=========+======+======+=========+=========+
+    | :ref:`bisect <optimize.root_scalar-bisect>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`brentq <optimize.root_scalar-brentq>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`brenth <optimize.root_scalar-brenth>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`ridder <optimize.root_scalar-ridder>`   | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`toms748 <optimize.root_scalar-toms748>` | x |  o   |    x    |    |    |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`newton <optimize.root_scalar-newton>`   | x |  o   |         | x  |    |   x    |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`secant <optimize.root_scalar-secant>`   | x |  o   |         | x  | x  |        |         |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
+    | :ref:`halley <optimize.root_scalar-halley>`   | x |  o   |         | x  |    |   x    |    x    |  o   |  o   |    o    |   o     |
+    +-----------------------------------------------+---+------+---------+----+----+--------+---------+------+------+---------+---------+
 
     Examples
     --------
