@@ -61,7 +61,7 @@ def norm(x, ord=None, axis=None):
     0      abs(x).sum(axis=axis)
     1      max(sum(abs(x), axis=0))
     -1     min(sum(abs(x), axis=0))
-    2      Spectral norm - the largest singular value
+    2      Spectral norm (the largest singular value)
     -2     Not implemented
     other  Not implemented
     =====  ============================
