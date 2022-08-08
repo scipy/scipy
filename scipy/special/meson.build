@@ -274,12 +274,6 @@ ufuncs_cxx_sources = [
 ]
 
 
-if is_windows
-  use_math_defines = ['-D_USE_MATH_DEFINES']
-else
-  use_math_defines = []
-endif
-
 cephes_lib = static_library('cephes',
   cephes_sources,
   c_args: use_math_defines,
@@ -407,7 +401,7 @@ py3.extension_module('_ufuncs_cxx',
   [ufuncs_cxx_sources,
     uf_cython_gen_cpp.process(cython_special[2]),  # _ufuncs_cxx.pyx
     ],
-  cpp_args: [cython_c_args, use_math_defines],
+  cpp_args: cython_cpp_args,
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
   dependencies: [py3_dep, npymath_lib, ellint_dep],
   install: true,

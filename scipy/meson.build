@@ -286,10 +286,19 @@ fortran_ignore_warnings = ff.get_supported_arguments(
  _fflag_Wno_tabs,
 )
 
+# Deal with M_PI & friends; add `use_math_defines` to c_args or cpp_args
+# Cython doesn't always get this right itself (see, e.g., gh-16800), so
+# explicitly add the define as a compiler flag for Cython-generated code.
+if is_windows
+  use_math_defines = ['-D_USE_MATH_DEFINES']
+else
+  use_math_defines = []
+endif
+
 # Suppress warning for deprecated Numpy API.
 # (Suppress warning messages emitted by #warning directives).
 # Replace with numpy_nodepr_api after Cython 3.0 is out
-cython_c_args += ['-Wno-cpp']
+cython_c_args += ['-Wno-cpp', use_math_defines]
 cython_cpp_args = cython_c_args
 
 # Ordering of subdirs: special and linalg come first, because other submodules
