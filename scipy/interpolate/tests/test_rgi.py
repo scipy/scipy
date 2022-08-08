@@ -521,7 +521,7 @@ class TestRegularGridInterpolator:
         rng = np.random.default_rng(1234)
 
         trailing_points = [3 + i for i in range(num_trailing_dims)]
-        # NB: values has a single length-3 trailing dimension
+        # NB: values has a `num_trailing_dims` trailing dimension
         values = rng.random((6, 7, 8, 9, *trailing_points))
         sample = rng.random(4)   # a single sample point !
 
@@ -539,10 +539,12 @@ class TestRegularGridInterpolator:
                                              method=method,
                                              bounds_error=False)
             vs.append(interp(sample))
-        n = 1 + num_trailing_dims
-        axes = tuple(range(n))
+        
+        # need to transpose otherwise first dimension is in the wrong place
+        axes = tuple(range(1 + num_trailing_dims))
         axx = axes[1:] + axes[:1]
-        v2 = np.asarray(vs).transpose(axx)  # transpose: otherwise v2.shape == (3, 1)
+        v2 = np.asarray(vs).transpose(axx)
+        
         assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
 
