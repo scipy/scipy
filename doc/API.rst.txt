@@ -125,7 +125,7 @@ change is made.
 
 * `scipy.optimize`
 
-  - `scipy.optimize.cython_optimize
+  - `scipy.optimize.cython_optimize`
 
 * `scipy.signal`
 
