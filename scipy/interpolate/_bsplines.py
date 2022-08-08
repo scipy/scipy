@@ -1263,9 +1263,17 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     y = np.moveaxis(y, axis, 0)    # now internally interp axis is zero
 
+    # sanity check the input
     if bc_type == 'periodic' and not np.allclose(y[0], y[-1], atol=1e-15):
         raise ValueError("First and last points does not match while "
                          "periodic case expected")
+    if x.size != y.shape[0]:
+        raise ValueError('Shapes of x {} and y {} are incompatible'
+                         .format(x.shape, y.shape))
+    if np.any(x[1:] == x[:-1]):
+        raise ValueError("Expect x to not have duplicates")
+    if x.ndim != 1 or np.any(x[1:] < x[:-1]):
+        raise ValueError("Expect x to be a 1D strictly increasing sequence.")
 
     # special-case k=0 right away
     if k == 0:
@@ -1311,17 +1319,10 @@ def make_interp_spline(x, y, k=3, t=None, bc_type=None, axis=0,
 
     t = _as_float_array(t, check_finite)
 
-    if x.ndim != 1 or np.any(x[1:] < x[:-1]):
-        raise ValueError("Expect x to be a 1-D sorted array_like.")
-    if np.any(x[1:] == x[:-1]):
-        raise ValueError("Expect x to not have duplicates")
     if k < 0:
         raise ValueError("Expect non-negative k.")
     if t.ndim != 1 or np.any(t[1:] < t[:-1]):
         raise ValueError("Expect t to be a 1-D sorted array_like.")
-    if x.size != y.shape[0]:
-        raise ValueError('Shapes of x {} and y {} are incompatible'
-                         .format(x.shape, y.shape))
     if t.size < x.size + k + 1:
         raise ValueError('Got %d knots, need at least %d.' %
                          (t.size, x.size + k + 1))
