@@ -7887,7 +7887,7 @@ class skew_norm_gen(rv_continuous):
         # MoM won't provide a good guess. Get out early.
         s = stats.skew(data)
         s_max = skew_d(1)
-        if np.abs(s) >= s_max and method == "mle":
+        if abs(s) >= s_max and method == "mle" and fa is None and not args:
             return super().fit(data, *args, **kwds)
 
         # If method is method of moments, we don't need the user's guesses.
