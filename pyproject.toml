@@ -141,21 +141,24 @@ dodoFile = "dev.py"
 [tool.cibuildwheel]
 skip = "cp36-* cp37-* pp* *_ppc64le *_i686 *_s390x *-musllinux*"
 build-verbosity = "3"
-before-build = "bash {project}/tools/wheels/cibw_before_build.sh {project}"
-# before-test = "pip install -r {project}/test_requirements.txt"
-# test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
+before-test = "pip install -r {project}/test_requirements.txt"
+test-command = "bash {project}/tools/wheels/cibw_test_command.sh {project}"
 
 [tool.cibuildwheel.linux]
 manylinux-x86_64-image = "manylinux2014"
 manylinux-aarch64-image = "manylinux2014"
+before-build = "bash {project}/tools/wheels/cibw_before_build_linux.sh {project}"
 test-skip = "*_aarch64"
 
 [tool.cibuildwheel.macos]
 # If universal2 wheels are wanted use delocate-fuse
 # TODO figure out arm64 cross compilation
+before-build = "bash {project}/tools/wheels/cibw_before_build_macos.sh {project}"
 test-skip = "*_arm64 *_universal2:arm64"
 
 [tool.cibuildwheel.windows]
+before-build = "bash {project}/tools/wheels/cibw_before_build_win.sh {project}"
+repair-wheel-command = "bash ./tools/wheels/repair_windows.sh {wheel} {dest_dir}"
 
 [[tool.cibuildwheel.overrides]]
 select = "*-win32"
