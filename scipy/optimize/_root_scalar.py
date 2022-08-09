@@ -315,15 +315,13 @@ def root_scalar(f, args=(), method=None, bracket=None,
 
 def _root_scalar_brentq_doc():
     r"""
-    Find a root of a function in a bracketing interval using Brent's method.
-    See :ref:`brentq <optimize.zeros.brentq>` for more details.
-
     Options
     -------
-    bracket : A sequence of 2 floats
-        An interval bracketing a root.
     args : tuple, optional
         Extra arguments passed to the objective function.
+    bracket: A sequence of 2 floats, optional
+        An interval bracketing a root.  `f(x, *args)` must have different
+        signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
     rtol : float, optional
@@ -333,14 +331,6 @@ def _root_scalar_brentq_doc():
     options: dict, optional
         Specifies any method-specific options not covered above
 
-    Returns
-    -------
-    sol : RootResults
-        The solution represented as a ``RootResults`` object.
-
-    Notes
-    -----
-    `f` must be continuous.  f(a) and f(b) must have opposite signs.
     """
     pass
 
@@ -351,6 +341,9 @@ def _root_scalar_brenth_doc():
     -------
     args : tuple, optional
         Extra arguments passed to the objective function.
+    bracket: A sequence of 2 floats, optional
+        An interval bracketing a root.  `f(x, *args)` must have different
+        signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
     rtol : float, optional
@@ -369,6 +362,9 @@ def _root_scalar_toms748_doc():
     -------
     args : tuple, optional
         Extra arguments passed to the objective function.
+    bracket: A sequence of 2 floats, optional
+        An interval bracketing a root.  `f(x, *args)` must have different
+        signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
     rtol : float, optional
@@ -468,6 +464,9 @@ def _root_scalar_ridder_doc():
     -------
     args : tuple, optional
         Extra arguments passed to the objective function.
+    bracket: A sequence of 2 floats, optional
+        An interval bracketing a root.  `f(x, *args)` must have different
+        signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
     rtol : float, optional
@@ -483,15 +482,13 @@ def _root_scalar_ridder_doc():
 
 def _root_scalar_bisect_doc():
     r"""
-    Find root of a function within an interval using bisection.
-    See :ref:`bisect <optimize.zeros.bisect>` for more details.
-
     Options
     -------
-    bracket : A sequence of 2 floats
-        An interval bracketing a root.
     args : tuple, optional
         Extra arguments passed to the objective function.
+    bracket: A sequence of 2 floats, optional
+        An interval bracketing a root.  `f(x, *args)` must have different
+        signs at the two endpoints.
     xtol : float, optional
         Tolerance (absolute) for termination.
     rtol : float, optional
@@ -501,9 +498,5 @@ def _root_scalar_bisect_doc():
     options: dict, optional
         Specifies any method-specific options not covered above.
 
-    Returns
-    -------
-    sol : RootResults
-        The solution represented as a ``RootResults`` object.
     """
     pass
