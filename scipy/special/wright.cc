@@ -74,7 +74,7 @@
 
 #include <Python.h>
 extern "C" {
-#include <numpy/npy_math.h>
+#include <math.h>
 #include "sf_error.h"
 #include "_round.h"
 }
@@ -84,7 +84,6 @@ extern "C" {
 
 using std::complex;
 
-#define NaN NPY_NAN
 #define TWOITERTOL DBL_EPSILON
 
 const complex<double> I(0.0, 1.0);
@@ -94,7 +93,7 @@ int
 wright::wrightomega_ext(complex<double> z, complex<double> *w,
 			complex<double> *cond)
 {
-  double pi = NPY_PI, s = 1.0;
+  double pi = M_PI, s = 1.0;
   double x, y, ympi, yppi, near;
   complex<double> e, r, pz, wp1, t, fac;
 
@@ -114,7 +113,7 @@ wright::wrightomega_ext(complex<double> z, complex<double> *w,
   /*****************************/
   if(isnan(x) || isnan(y))
     {
-      *w = complex<double>(NaN, NaN);
+      *w = complex<double>(NAN, NAN);
       return 0;
     }
   /*********************************/

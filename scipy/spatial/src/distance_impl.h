@@ -32,6 +32,8 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#include <math.h>
+
 static NPY_INLINE void
 _row_norms(const double *X, npy_intp num_rows, const npy_intp num_cols, double *norms_buff){
     /* Compute the row norms. */
