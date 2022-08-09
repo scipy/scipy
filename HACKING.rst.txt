@@ -286,7 +286,7 @@ improvements, and submit your first PR!
 
 .. _Pytest: https://pytest.org/
 
-.. _mailing lists: https://projects.scipy.org/scipylib/mailing-lists.html
+.. _mailing lists: https://scipy.org/community/#scipy-mailing-list
 
 .. _Spyder: https://www.spyder-ide.org/
 
