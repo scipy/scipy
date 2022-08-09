@@ -50,7 +50,7 @@ are:
 
 Furthermore of course one needs C, C++ and Fortran compilers to build SciPy,
 but those we don't consider to be dependencies and are therefore not discussed
-here.  For details, see https://scipy.github.io/devdocs/building/.
+here.  For details, see https://scipy.github.io/devdocs/dev/contributor/building.html.
 
 When a package provides useful functionality and it's proposed as a new
 dependency, consider also if it makes sense to vendor (i.e. ship a copy of it with
@@ -134,7 +134,7 @@ Building binary installers
 
    This section is only about building SciPy binary installers to *distribute*.
    For info on building SciPy on the same machine as where it will be used, see
-   `this scipy.org page <https://scipy.github.io/devdocs/building/>`_.
+   `this scipy.org page <https://scipy.github.io/devdocs/dev/contributor/building.html>`_.
 
 There are a number of things to take into consideration when building binaries
 and distributing them on PyPI or elsewhere.
@@ -161,7 +161,7 @@ and distributing them on PyPI or elsewhere.
   That method will likely be used for SciPy itself once it's clear that the
   maintenance of that toolchain is sustainable long-term.  See the MingwPy_
   project and `this thread
-  <https://mail.scipy.org/pipermail/numpy-discussion/2015-October/074056.html>`_ for
+  <https://mail.python.org/pipermail/numpy-discussion/2015-October/074056.html>`_ for
   details.
 - The other way to produce 64-bit Windows installers is with ``icc``, ``ifort``
   plus ``MKL`` (or ``MSVC`` instead of ``icc``).  For Intel toolchain
@@ -208,7 +208,7 @@ Wheelhouse_, see at the wheel_ and Wheelhouse_ docs.
 .. _mpmath: http://mpmath.org
 .. _Cython: https://cython.org
 .. _pybind11: https://github.com/pybind/pybind11
-.. _setuptools: https://bitbucket.org/pypa/setuptools
+.. _setuptools: https://github.com/pypa/setuptools
 .. _wheel: https://wheel.readthedocs.io/
 .. _pip: https://pip.pypa.io/en/stable/
 .. _Python Packaging User Guide: https://packaging.python.org
