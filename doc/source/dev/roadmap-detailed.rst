@@ -106,7 +106,7 @@ SciPy binaries are quite large (e.g. an unzipped manylinux wheel for 1.7.3 is
 example for use in AWS Lambda, which has a 250 MB size limit. We aim to keep
 binary size as low as possible; when adding new compiled extensions, this needs
 checking. Stripping of debug symbols in ``multibuild`` can perhaps be improved
-(see `this issue <https://github.com/matthew-brett/multibuild/issues/162>`__).
+(see `this issue <https://github.com/multi-build/multibuild/issues/162>`__).
 An effort should be made to slim down where possible, and not add new large
 files. In the future, things that are being considered (very tentatively) and
 may help are separating out the bundled` ``libopenblas`` and removing support
