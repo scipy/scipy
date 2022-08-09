@@ -21,7 +21,7 @@ on:
   #        │  │ │ ┌───────────── month (1 - 12 or JAN-DEC)
   #        │  │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
   #        │  │ │ │ │
-  - cron: "42 1 * * 4"
+  - cron: "42 9 * * 4"
   # push:
   pull_request:
       types: [labeled, opened, synchronize, reopened]
@@ -55,15 +55,15 @@ jobs:
 
   build_wheels:
     name: Build wheel for ${{ matrix.python }}-${{ matrix.buildplat[1] }} ${{ matrix.buildplat[2] }}
-    # needs: get_commit_message
-    #    if: >-
-    #      contains(needs.get_commit_message.outputs.message, '[wheel build]') ||
-    #      github.event_name == 'schedule' ||
-    #      github.event_name == 'workflow_dispatch' ||
-    #      (github.event_name == 'pull_request' &&
-    #      (contains(github.event.pull_request.labels.*.name, '36 - Build') ||
-    #      contains(github.event.pull_request.labels.*.name, '14 - Release'))) ||
-    #      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && ( ! endsWith(github.ref, 'dev0')))
+    needs: get_commit_message
+    if: >-
+      contains(needs.get_commit_message.outputs.message, '[wheel build]') ||
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' ||
+#      (github.event_name == 'pull_request' &&
+#      (contains(github.event.pull_request.labels.*.name, '36 - Build') ||
+#      contains(github.event.pull_request.labels.*.name, '14 - Release'))) ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') && ( ! endsWith(github.ref, 'dev0')))
     runs-on: ${{ matrix.buildplat[0] }}
 
     strategy:
@@ -76,16 +76,16 @@ jobs:
         # should also be able to do multi-archs on a single entry, e.g.
         # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
-        # - [ubuntu-20.04, manylinux*, x86_64]
-        # - [ubuntu-20.04, manylinux*, aarch64]
+        - [ubuntu-20.04, manylinux*, x86_64]
+        - [ubuntu-20.04, manylinux*, aarch64]
         # - [macos-11, macosx*, x86_64]
         - [windows-2019, win*, AMD64]
         # - [windows-2019, win*, x86]
         python: ["cp38", "cp39", "cp310"] #, "cp39", "cp310", "cp38", "cp310", "pp38" "pp39"]
     env:
       IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
-      # IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
-      # IS_SCHEDULE_DISPATCH: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
+      IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
+      IS_SCHEDULE_DISPATCH: ${{ github.event_name == 'schedule' || github.event_name == 'workflow_dispatch' }}
 
     steps:
       - name: Checkout scipy
@@ -130,10 +130,28 @@ jobs:
           CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
-          # CIBW_BEFORE_BUILD_WINDOWS: "pip install delvewheel"
-          CIBW_REPAIR_WHEEL_COMMAND_WINDOWS: "delvewheel repair --no-mangle-all --add-path c:/opt/openblas/openblas_dll -w {dest_dir} {wheel}"
 
       - uses: kittaakos/upload-artifact-as-is@v0
         # upload the wheels with their actual wheel name
         with:
           path: ./wheelhouse/*.whl
+
+        # TODO uncomment when those responsible for uploading
+        # nightly/release wheels want to make this script live.
+#
+#      - name: Upload wheels
+#        if: success()
+#        shell: bash
+#        env:
+#          SCIPY_STAGING_UPLOAD_TOKEN: ${{ secrets.SCIPY_STAGING_UPLOAD_TOKEN }}
+#          SCIPY_NIGHTLY_UPLOAD_TOKEN: ${{ secrets.SCIPY_STAGING_UPLOAD_TOKEN }}
+#        run: |
+#          source tools/wheels/upload_wheels.sh
+#          set_upload_vars
+#          # trigger an upload to
+#          # https://anaconda.org/scipy-wheels-nightly/scipy
+#          # for cron jobs or "Run workflow" (restricted to main branch).
+#          # Tags will upload to
+#          # https://anaconda.org/multibuild-wheels-staging/scipy
+#          # The tokens were originally generated at anaconda.org
+#          upload_wheels
