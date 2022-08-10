@@ -17,6 +17,8 @@ from .HighsIO cimport (
     kWarning,
 )
 from .HConst cimport (
+    HIGHS_CONST_INF,
+
     HighsModelStatus,
     HighsModelStatusNOTSET,
     HighsModelStatusLOAD_ERROR,
@@ -676,12 +678,23 @@ def _highs_wrapper(
     cdef HighsBasis basis
     cdef double[:, ::1] marg_bnds = np.zeros((2, numcol))  # marg_bnds[0, :]: lower
 
-    # If the status is bad, don't look up the solution
-    mipFailCondition =  model_status not in {
+    # Failure modes:
+    #     LP: if we have anything other than an Optimal status, it
+    #         is unsafe (and unhelpful) to read any results
+    #    MIP: has a non-Optimal status or has timed out/reached max iterations
+    #             1) If not Optimal/TimedOut/MaxIter status, there is no solution
+    #             2) If TimedOut/MaxIter status, there may be a feasible solution.
+    #                if the objective function value is not Infinity, then the
+    #                current solution is feasible and can be returned.  Else, there
+    #                is no solution.
+    mipFailCondition = model_status not in {
         HighsModelStatusOPTIMAL,
         HighsModelStatusREACHED_TIME_LIMIT,
         HighsModelStatusREACHED_ITERATION_LIMIT,
-    }
+    } or (model_status in {
+        HighsModelStatusREACHED_TIME_LIMIT,
+        HighsModelStatusREACHED_ITERATION_LIMIT,
+    } and (info.objective_function_value == HIGHS_CONST_INF))
     lpFailCondition = model_status != HighsModelStatusOPTIMAL
     if (highs.getLp().isMip() and mipFailCondition) or (not highs.getLp().isMip() and lpFailCondition):
         return {

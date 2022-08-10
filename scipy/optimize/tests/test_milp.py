@@ -97,6 +97,8 @@ def test_result():
     assert not res.success
     msg = "Time limit reached. (HiGHS Status 13:"
     assert res.message.startswith(msg)
+    assert (res.fun is res.mip_dual_bound is res.mip_gap
+            is res.mip_node_count is res.x is None)
 
     res = milp(1, bounds=(1, -1))
     assert res.status == 2
@@ -292,7 +294,7 @@ def test_milp_timeout_16545():
         integrality=integrality,
         bounds=variable_bounds,
         constraints=constraints,
-        options={"time_limit": .01, "disp": True}
+        options={"time_limit": .01}
     )
     msg = "Time limit reached. (HiGHS Status 13:"
     assert res.message.startswith(msg)
