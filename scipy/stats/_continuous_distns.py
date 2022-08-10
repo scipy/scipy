@@ -2276,18 +2276,9 @@ class weibull_min_gen(rv_continuous):
         # are specified, and also leaves them in `kwds`
         data, fc, floc, fscale = _check_fit_input_parameters(self, data,
                                                              args, kwds)
-
-        # If method is method of moments, we don't need the user's guesses.
-        # If method is "mle", extract the guesses from args and kwds.
         method = kwds.get("method", "mle").lower()
-        if method == "mm":
-            c, loc, scale = None, None, None
-        else:
-            c = args[0] if len(args) else None
-            loc = kwds.pop('loc', None)
-            scale = kwds.pop('scale', None)
 
-        # See https://en.wikipedia.org/wiki/Skew_normal_distribution for
+        # See https://en.wikipedia.org/wiki/Weibull_distribution#Moments for
         # moment formulas.
         def skew(c):
             gamma1 = sc.gamma(1+1/c)
@@ -2297,15 +2288,32 @@ class weibull_min_gen(rv_continuous):
             den = (gamma2 - gamma1**2)**(3/2)
             return num / den
 
+        # For c in [1e2, 3e4], population skewness appears to approach
+        # asymptote near -1.139, but past c > 3e4, skewness begins to vary
+        # wildly, and MoM won't provide a good guess. Get out early.
+        s = stats.skew(data)
+        s_min = skew(1e4)
+        if s < s_min and method == "mle" and fc is None and not args:
+            return super().fit(data, *args, **kwds)
+
+        # If method is method of moments, we don't need the user's guesses.
+        # If method is "mle", extract the guesses from args and kwds.
+        if method == "mm":
+            c, loc, scale = None, None, None
+        else:
+            c = args[0] if len(args) else None
+            loc = kwds.pop('loc', None)
+            scale = kwds.pop('scale', None)
+
         if fc is None and c is None:  # not fixed and no guess: use MoM
             # Solve for c that matches sample distribution skewness to sample
             # skewness.
-            s = stats.skew(data)
             # we start having numerical issues with `weibull_min` with
-            # parmaeters outside this range - and not just in this method.
+            # parameters outside this range - and not just in this method.
             # We could probably improve the situation by doing everything
             # in the log space, but that is for another time.
-            c = root_scalar(lambda c: skew(c) - s, bracket=[0.02, 5e5]).root
+            c = root_scalar(lambda c: skew(c) - s, bracket=[0.02, 5e5],
+                            method='bisect').root
         elif fc is not None:  # fixed: use it
             c = fc
 
