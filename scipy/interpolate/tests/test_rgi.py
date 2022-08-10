@@ -506,7 +506,7 @@ class TestRegularGridInterpolator:
             vs.append(interp(sample))
         v2 = np.array(vs).transpose(1, 2, 0)
 
-        assert_allclose(v, v2, err_msg=method)
+        assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
     @parametrize_rgi_interp_methods
     @pytest.mark.parametrize("num_trailing_dims", range(1, 5))
@@ -730,7 +730,7 @@ class TestInterpN:
                       bounds_error=False) for j in range(8)]
         v2 = np.array(vs).transpose(1, 2, 0)
 
-        assert_allclose(v, v2, err_msg=method)
+        assert_allclose(v, v2, atol=1e-14,err_msg=method)
 
     @parametrize_rgi_interp_methods
     @pytest.mark.parametrize("num_trailing_dims", range(1, 5))
