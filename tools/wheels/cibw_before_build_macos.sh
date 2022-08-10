@@ -19,6 +19,7 @@ if [[ $RUNNER_OS == "macOS" && $PLATFORM == "macosx-arm64" ]]; then
 fi
 
 # Install GFortran
+
 #    GFORTRAN=$(type -p gfortran-9)
 #    sudo ln -s $GFORTRAN /usr/local/bin/gfortran
 # same version of gfortran as the openblas-libs and scipy-wheel builds
@@ -41,9 +42,8 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
     # the FC variable
     export PLAT=arm64
     install_arm64_cross_gfortran
+    export FC=$FC_ARM64
+    export PATH=$FC_LOC:$PATH
+    sudo ln -s $FC $FC_LOC/gfortran
+    which gfortran
 fi
-
-#    # Manually symlink gfortran-4.9 to plain gfortran for f2py.
-#    # No longer needed after Feb 13 2020 as gfortran is already present
-#    # and the attempted link errors. Keep this for future reference.
-#    # ln -s /usr/local/bin/gfortran-4.9 /usr/local/bin/gfortran
