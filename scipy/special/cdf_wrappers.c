@@ -29,25 +29,24 @@
  */
 
 #define CDFLIB_CALL2(func, name, a, b, result, return_bound)            \
-    if (isnan(p) || isnan(q) || isnan(a) || isnan(b) || \
-        isnan(bound)) {                                             \
-        return NAN;                                                 \
+    if (isnan(p) || isnan(q) || isnan(a) || isnan(b) || isnan(bound)) { \
+        return NAN;                                                     \
     }                                                                   \
     func(&which, &p, &q, &a, &b, &status, &bound);                      \
     return get_result(name, status, bound, result, return_bound)
 
 #define CDFLIB_CALL3(func, name, a, b, c, result, return_bound)         \
-    if (isnan(p) || isnan(q) || isnan(a) || isnan(b) || \
-        isnan(c) || isnan(bound)) {                             \
-        return NAN;                                                 \
+    if (isnan(p) || isnan(q) || isnan(a) || isnan(b) ||                 \
+        isnan(c) || isnan(bound)) {                                     \
+        return NAN;                                                     \
     }                                                                   \
     func(&which, &p, &q, &a, &b, &c, &status, &bound);                  \
     return get_result(name, status, bound, result, return_bound)
 
 #define CDFLIB_CALL4(func, name, a, b, c, d, result, return_bound)      \
-    if (isnan(p) || isnan(q) || isnan(a) || isnan(b) || \
-        isnan(c) || isnan(d) || isnan(bound)) {             \
-        return NAN;                                                 \
+    if (isnan(p) || isnan(q) || isnan(a) || isnan(b) ||                 \
+        isnan(c) || isnan(d) || isnan(bound)) {                         \
+        return NAN;                                                     \
     }                                                                   \
     func(&which, &p, &q, &a, &b, &c, &d, &status, &bound);              \
     return get_result(name, status, bound, result, return_bound)
