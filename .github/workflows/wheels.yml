@@ -21,7 +21,7 @@ on:
   #        │  │ │ ┌───────────── month (1 - 12 or JAN-DEC)
   #        │  │ │ │ ┌───────────── day of the week (0 - 6 or SUN-SAT)
   #        │  │ │ │ │
-  - cron: "42 9 * * 4"
+  - cron: "9  9 * * 6"
   # push:
   pull_request:
       types: [labeled, opened, synchronize, reopened]
@@ -75,9 +75,15 @@ jobs:
         # so easier to separate out here.
         - [ubuntu-20.04, manylinux*, x86_64]
         - [ubuntu-20.04, manylinux*, aarch64]
-        # - [macos-11, macosx*, x86_64]
+
+        # can't create macos_arm64 until it's possible to create a meson cross-file
+        # When the macos-10.15 image is retired the gfortran/openblas chain will have to be
+        # reworked because the gfortran compiler currently used in CI doesn't work in 11.0.
+        # This will require a more recent gfortran (gfortran-9 is present on the macOS-11.0
+        # image), and will require that the prebuilt openBLAS is updated.
+        - [macos-10.15, macosx*, x86_64]
+
         - [windows-2019, win*, AMD64]
-        # - [windows-2019, win*, x86]
         python: ["cp38", "cp39", "cp310"] #, "cp39", "cp310", "cp38", "cp310", "pp38" "pp39"]
     env:
       IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
