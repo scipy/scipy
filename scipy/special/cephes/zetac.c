@@ -231,7 +231,7 @@ double riemann_zeta(double x)
 /*
  * Compute zetac for positive arguments
  */
-static NPY_INLINE double zetac_positive(double x)
+static inline double zetac_positive(double x)
 {
     int i;
     double a, b, s, w;
@@ -298,7 +298,7 @@ static NPY_INLINE double zetac_positive(double x)
  * Compute zetac for small negative x. We can't use the reflection
  * formula because to double precision 1 - x = 1 and zetac(1) = inf.
  */
-static NPY_INLINE double zetac_smallneg(double x)
+static inline double zetac_smallneg(double x)
 {
     return polevl(x, TAYLOR0, 9);
 }
@@ -308,7 +308,7 @@ static NPY_INLINE double zetac_smallneg(double x)
  * Compute zetac using the reflection formula (see DLMF 25.4.2) plus
  * the Lanczos approximation for Gamma to avoid overflow.
  */
-static NPY_INLINE double zeta_reflection(double x)
+static inline double zeta_reflection(double x)
 {
     double base, large_term, small_term, hx, x_shift;
 
