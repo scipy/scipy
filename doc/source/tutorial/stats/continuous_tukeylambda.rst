@@ -4,6 +4,8 @@
 Tukey-Lambda Distribution
 =========================
 
+There is one shape parameter :math:`\lambda`.  The support is :math:`x\in\mathbb{R}`.
+
 .. math::
    :nowrap:
 

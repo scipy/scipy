@@ -5,7 +5,6 @@
  *  LICENSE_1_0.txt or copy at https://www.boost.org/LICENSE_1_0.txt)
  */
 #include "mconf.h"
-#include "_c99compat.h"
 
 static double find_inverse_s(double, double);
 static double didonato_SN(double, double, unsigned, double);
@@ -264,7 +263,7 @@ double igami(double a, double p)
 	return NPY_NAN;
     }
     else if ((a < 0) || (p < 0) || (p > 1)) {
-	mtherr("gammaincinv", DOMAIN);
+	sf_error("gammaincinv", SF_ERROR_DOMAIN, NULL);
     }
     else if (p == 0.0) {
 	return 0.0;
@@ -308,7 +307,7 @@ double igamci(double a, double q)
 	return NPY_NAN;
     }
     else if ((a < 0.0) || (q < 0.0) || (q > 1.0)) {
-	mtherr("gammainccinv", DOMAIN);
+	sf_error("gammainccinv", SF_ERROR_DOMAIN, NULL);
     }
     else if (q == 0.0) {
 	return NPY_INFINITY;

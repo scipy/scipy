@@ -6,9 +6,9 @@
 
    see qh-stat_r.htm and stat_r.h
 
-   Copyright (c) 1993-2015 The Geometry Center.
-   $Id: //main/2015/qhull/src/libqhull_r/stat_r.c#5 $$Change: 2062 $
-   $DateTime: 2016/01/17 13:13:18 $$Author: bbarber $
+   Copyright (c) 1993-2019 The Geometry Center.
+   $Id: //main/2019/qhull/src/libqhull_r/stat_r.c#7 $$Change: 2712 $
+   $DateTime: 2019/06/28 12:57:00 $$Author: bbarber $
 */
 
 #include "qhull_ra.h"
@@ -30,13 +30,13 @@ void qh_allstatA(qhT *qh) {
    /* zdef_(type,name,doc,average) */
   zzdef_(zdoc, Zdoc2, "precision statistics", -1);
   zdef_(zinc, Znewvertex, NULL, -1);
-  zdef_(wadd, Wnewvertex, "ave. distance of a new vertex to a facet(!0s)", Znewvertex);
+  zdef_(wadd, Wnewvertex, "ave. distance of a new vertex to a facet", Znewvertex);
   zzdef_(wmax, Wnewvertexmax, "max. distance of a new vertex to a facet", -1);
   zdef_(wmax, Wvertexmax, "max. distance of an output vertex to a facet", -1);
   zdef_(wmin, Wvertexmin, "min. distance of an output vertex to a facet", -1);
   zdef_(wmin, Wmindenom, "min. denominator in hyperplane computation", -1);
 
-  qh->qhstat.precision= qh->qhstat.next;  /* call qh_precision for each of these */
+  qh->qhstat.precision= qh->qhstat.next;  /* usually call qh_joggle_restart, printed if Q0 or QJn */
   zzdef_(zdoc, Zdoc3, "precision problems (corrected unless 'Q0' or an error)", -1);
   zzdef_(zinc, Zcoplanarridges, "coplanar half ridges in output", -1);
   zzdef_(zinc, Zconcaveridges, "concave half ridges in output", -1);
@@ -47,14 +47,16 @@ void qh_allstatA(qhT *qh) {
   zzdef_(zinc, Znearlysingular, "nearly singular or axis-parallel hyperplanes", -1);
   zzdef_(zinc, Zback0, "zero divisors during back substitute", -1);
   zzdef_(zinc, Zgauss0, "zero divisors during gaussian elimination", -1);
-  zzdef_(zinc, Zmultiridge, "ridges with multiple neighbors", -1);
+  zzdef_(zinc, Zmultiridge, "dupridges with multiple neighbors", -1);
+  zzdef_(zinc, Zflipridge, "dupridges with flip facet into good neighbor", -1);
+  zzdef_(zinc, Zflipridge2, "dupridges with flip facet into good flip neighbor", -1);
 }
 void qh_allstatB(qhT *qh) {
   zzdef_(zdoc, Zdoc1, "summary information", -1);
   zdef_(zinc, Zvertices, "number of vertices in output", -1);
   zdef_(zinc, Znumfacets, "number of facets in output", -1);
   zdef_(zinc, Znonsimplicial, "number of non-simplicial facets in output", -1);
-  zdef_(zinc, Znowsimplicial, "number of simplicial facets that were merged", -1);
+  zdef_(zinc, Znowsimplicial, "simplicial facets that were non-simplicial", -1);
   zdef_(zinc, Znumridges, "number of ridges in output", -1);
   zdef_(zadd, Znumridges, "average number of ridges per facet", Znumfacets);
   zdef_(zmax, Zmaxridges, "maximum number of ridges", -1);
@@ -69,12 +71,12 @@ void qh_allstatB(qhT *qh) {
   zzdef_(zinc, Zsetplane, "facets created altogether", -1);
   zdef_(zinc, Ztotridges, "ridges created altogether", -1);
   zdef_(zinc, Zpostfacets, "facets before post merge", -1);
-  zdef_(zadd, Znummergetot, "average merges per facet(at most 511)", Znumfacets);
-  zdef_(zmax, Znummergemax, "  maximum merges for a facet(at most 511)", -1);
+  zdef_(zadd, Znummergetot, "average merges per facet (at most 511)", Znumfacets);
+  zdef_(zmax, Znummergemax, "  maximum merges for a facet (at most 511)", -1);
   zdef_(zinc, Zangle, NULL, -1);
-  zdef_(wadd, Wangle, "average angle(cosine) of facet normals for all ridges", Zangle);
-  zdef_(wmax, Wanglemax, "  maximum angle(cosine) of facet normals across a ridge", -1);
-  zdef_(wmin, Wanglemin, "  minimum angle(cosine) of facet normals across a ridge", -1);
+  zdef_(wadd, Wangle, "average cosine (angle) of facet normals for all ridges", Zangle);
+  zdef_(wmax, Wanglemax, "  maximum cosine of facet normals (flatest) across a ridge", -1);
+  zdef_(wmin, Wanglemin, "  minimum cosine of facet normals (sharpest) across a ridge", -1);
   zdef_(wadd, Wareatot, "total area of facets", -1);
   zdef_(wmax, Wareamax, "  maximum facet area", -1);
   zdef_(wmin, Wareamin, "  minimum facet area", -1);
@@ -93,18 +95,20 @@ void qh_allstatC(qhT *qh) {
   zdef_(zmax, Zvisvertexmax, "    maximum", -1);
   zdef_(zinc, Ztothorizon, "ave. horizon facets per iteration", Zprocessed);
   zdef_(zadd, Znewfacettot,  "ave. new or merged facets per iteration", Zprocessed);
-  zdef_(zmax, Znewfacetmax,  "    maximum(includes initial simplex)", -1);
+  zdef_(zmax, Znewfacetmax,  "    maximum (includes initial simplex)", -1);
   zdef_(wadd, Wnewbalance, "average new facet balance", Zprocessed);
   zdef_(wadd, Wnewbalance2, "  standard deviation", -1);
   zdef_(wadd, Wpbalance, "average partition balance", Zpbalance);
   zdef_(wadd, Wpbalance2, "  standard deviation", -1);
-  zdef_(zinc, Zpbalance, "  number of trials", -1);
+  zdef_(zinc, Zpbalance,  "  count", -1);
   zdef_(zinc, Zsearchpoints, "searches of all points for initial simplex", -1);
-  zdef_(zinc, Zdetsimplex, "determinants computed(area & initial hull)", -1);
-  zdef_(zinc, Znoarea, "determinants not computed because vertex too low", -1);
-  zdef_(zinc, Znotmax, "points ignored(!above max_outside)", -1);
-  zdef_(zinc, Znotgood, "points ignored(!above a good facet)", -1);
-  zdef_(zinc, Znotgoodnew, "points ignored(didn't create a good new facet)", -1);
+  zdef_(zinc, Zdetfacetarea, "determinants for facet area", -1);
+  zdef_(zinc, Znoarea, "  determinants not computed because vertex too low", -1);
+  zdef_(zinc, Zdetsimplex, "determinants for initial hull or voronoi vertices", -1);
+  zdef_(zinc, Znotmax, "points ignored (!above max_outside)", -1);
+  zdef_(zinc, Zpinchedapex, "points ignored (pinched apex)", -1);
+  zdef_(zinc, Znotgood, "points ignored (!above a good facet)", -1);
+  zdef_(zinc, Znotgoodnew, "points ignored (didn't create a good new facet)", -1);
   zdef_(zinc, Zgoodfacet, "good facets found", -1);
   zzdef_(zinc, Znumvisibility, "distance tests for facet visibility", -1);
   zdef_(zinc, Zdistvertex, "distance tests to report minimum vertex", -1);
@@ -117,7 +121,7 @@ void qh_allstatD(qhT *qh) {
   zdef_(zmax, Zvisit2max, "  max visit_id/2", -1);
   zdef_(zmax, Zvvisit2max, "  max vertex_visit/2", -1);
 
-  zdef_(zdoc, Zdoc4, "partitioning statistics(see previous for outer planes)", -1);
+  zdef_(zdoc, Zdoc4, "partitioning statistics (see previous for outer planes)", -1);
   zzdef_(zadd, Zdelvertextot, "total vertices deleted", -1);
   zdef_(zmax, Zdelvertexmax, "    maximum vertices deleted per iteration", -1);
   zdef_(zinc, Zfindbest, "calls to findbest", -1);
@@ -133,13 +137,15 @@ void qh_allstatD(qhT *qh) {
   zdef_(zadd, Zfindhorizontot, " ave. facets tested", Zfindhorizon);
   zdef_(zmax, Zfindhorizonmax, " max. facets tested", -1);
   zdef_(zinc, Zfindjump,       " ave. clearly better", Zfindhorizon);
-  zdef_(zinc, Zparthorizon, " horizon facets better than bestfacet", -1);
+  zdef_(zinc, Znewbesthorizon, " new bestfacets during qh_findbesthorizon", -1);
   zdef_(zinc, Zpartangle, "angle tests for repartitioned coplanar points", -1);
-  zdef_(zinc, Zpartflip, "  repartitioned coplanar points for flipped orientation", -1);
+  zdef_(zinc, Zpartcorner, "  repartitioned coplanar points above a corner facet", -1);
+  zdef_(zinc, Zparthidden, "  repartitioned coplanar points above a hidden facet", -1);
+  zdef_(zinc, Zparttwisted, "  repartitioned coplanar points above a twisted facet", -1);
 }
 void qh_allstatE(qhT *qh) {
   zdef_(zinc, Zpartinside, "inside points", -1);
-  zdef_(zinc, Zpartnear, "  inside points kept with a facet", -1);
+  zdef_(zinc, Zpartnear, "  near inside points kept with a facet", -1);
   zdef_(zinc, Zcoplanarinside, "  inside points that were coplanar with a facet", -1);
   zdef_(zinc, Zbestlower, "calls to findbestlower", -1);
   zdef_(zinc, Zbestlowerv, "  with search of vertex neighbors", -1);
@@ -154,7 +160,7 @@ void qh_allstatE(qhT *qh) {
   zdef_(zinc, Zdistgood, "distance tests for checking good point", -1);
   zdef_(zinc, Zdistio, "distance tests for output", -1);
   zdef_(zinc, Zdiststat, "distance tests for statistics", -1);
-  zdef_(zinc, Zdistplane, "total number of distance tests", -1);
+  zzdef_(zinc, Zdistplane, "total number of distance tests", -1);
   zdef_(zinc, Ztotpartcoplanar, "partitions of coplanar points or deleted vertices", -1);
   zzdef_(zinc, Zpartcoplanar, "   distance tests for these partitions", -1);
   zdef_(zinc, Zcomputefurthest, "distance tests for computing furthest", -1);
@@ -163,7 +169,7 @@ void qh_allstatE2(qhT *qh) {
   zdef_(zdoc, Zdoc5, "statistics for matching ridges", -1);
   zdef_(zinc, Zhashlookup, "total lookups for matching ridges of new facets", -1);
   zdef_(zinc, Zhashtests, "average number of tests to match a ridge", Zhashlookup);
-  zdef_(zinc, Zhashridge, "total lookups of subridges(duplicates and boundary)", -1);
+  zdef_(zinc, Zhashridge, "total lookups of subridges (duplicates and boundary)", -1);
   zdef_(zinc, Zhashridgetest, "average number of tests per subridge", Zhashridge);
   zdef_(zinc, Zdupsame, "duplicated ridges in same merge cycle", -1);
   zdef_(zinc, Zdupflip, "duplicated ridges with flipped facets", -1);
@@ -173,10 +179,13 @@ void qh_allstatE2(qhT *qh) {
   zdef_(zinc, Zbestcentrum, "best merges used centrum instead of vertices",-1);
   zzdef_(zinc, Zbestdist, "distance tests for best merge", -1);
   zzdef_(zinc, Zcentrumtests, "distance tests for centrum convexity", -1);
+  zzdef_(zinc, Zvertextests, "distance tests for vertex convexity", -1);
   zzdef_(zinc, Zdistzero, "distance tests for checking simplicial convexity", -1);
   zdef_(zinc, Zcoplanarangle, "coplanar angles in getmergeset", -1);
-  zdef_(zinc, Zcoplanarcentrum, "coplanar centrums in getmergeset", -1);
+  zdef_(zinc, Zcoplanarcentrum, "coplanar centrums or vertices in getmergeset", -1);
   zdef_(zinc, Zconcaveridge, "concave ridges in getmergeset", -1);
+  zdef_(zinc, Zconcavecoplanarridge, "concave-coplanar ridges in getmergeset", -1);
+  zdef_(zinc, Ztwistedridge, "twisted ridges in getmergeset", -1);
 }
 void qh_allstatF(qhT *qh) {
   zdef_(zdoc, Zdoc7, "statistics for merging", -1);
@@ -187,8 +196,8 @@ void qh_allstatF(qhT *qh) {
   zdef_(zadd, Zmergesetmax, "  maximum additional in one pass", -1);
   zdef_(zadd, Zmergeinittot2, "initial non-convex ridges for post merging", -1);
   zdef_(zadd, Zmergesettot2, "  additional non-convex ridges", -1);
-  zdef_(wmax, Wmaxoutside, "max distance of vertex or coplanar point above facet(w/roundoff)", -1);
-  zdef_(wmin, Wminvertex, "max distance of merged vertex below facet(or roundoff)", -1);
+  zdef_(wmax, Wmaxoutside, "max distance of vertex or coplanar point above facet (w/roundoff)", -1);
+  zdef_(wmin, Wminvertex, "max distance of vertex below facet (or roundoff)", -1);
   zdef_(zinc, Zwidefacet, "centrums frozen due to a wide merge", -1);
   zdef_(zinc, Zwidevertices, "centrums frozen due to extra vertices", -1);
   zzdef_(zinc, Ztotmerge, "total number of facets or cycles of facets merged", -1);
@@ -197,6 +206,7 @@ void qh_allstatF(qhT *qh) {
   zzdef_(zinc, Zcyclehorizon, "cycles of facets merged into coplanar horizon", -1);
   zzdef_(zadd, Zcyclefacettot, "  ave. facets per cycle", Zcyclehorizon);
   zdef_(zmax, Zcyclefacetmax, "  max. facets", -1);
+  zdef_(zinc, Zmergeintocoplanar, "new facets merged into coplanar horizon", -1);
   zdef_(zinc, Zmergeintohorizon, "new facets merged into horizon", -1);
   zdef_(zinc, Zmergenew, "new facets merged", -1);
   zdef_(zinc, Zmergehorizon, "horizon facets merged into new facets", -1);
@@ -204,7 +214,8 @@ void qh_allstatF(qhT *qh) {
   zdef_(zinc, Zcyclevertex, "vertices deleted by merging into coplanar horizon", -1);
   zdef_(zinc, Zdegenvertex, "vertices deleted by degenerate facet", -1);
   zdef_(zinc, Zmergeflipdup, "merges due to flipped facets in duplicated ridge", -1);
-  zdef_(zinc, Zneighbor, "merges due to redundant neighbors", -1);
+  zdef_(zinc, Zredundant, "merges due to redundant neighbors", -1);
+  zdef_(zinc, Zredundantmerge, "  detected by qh_test_nonsimplicial_merge instead of qh_test_redundant_neighbors", -1);
   zdef_(zadd, Ztestvneighbor, "non-convex vertex neighbors", -1);
 }
 void qh_allstatG(qhT *qh) {
@@ -217,6 +228,9 @@ void qh_allstatG(qhT *qh) {
   zdef_(zinc, Zconcave, "merges due to concave facets", -1);
   zdef_(wadd, Wconcavetot, "  average merge distance", Zconcave);
   zdef_(wmax, Wconcavemax, "  maximum merge distance", -1);
+  zdef_(zinc, Zconcavecoplanar, "merges due to concave-coplanar facets", -1);
+  zdef_(wadd, Wconcavecoplanartot, "  average merge distance", Zconcavecoplanar);
+  zdef_(wmax, Wconcavecoplanarmax, "  maximum merge distance", -1);
   zdef_(zinc, Zavoidold, "coplanar/concave merges due to avoiding old merge", -1);
   zdef_(wadd, Wavoidoldtot, "  average merge distance", Zavoidold);
   zdef_(wmax, Wavoidoldmax, "  maximum merge distance", -1);
@@ -226,23 +240,31 @@ void qh_allstatG(qhT *qh) {
   zdef_(zinc, Zflipped, "merges due to removing flipped facets", -1);
   zdef_(wadd, Wflippedtot, "  average merge distance", Zflipped);
   zdef_(wmax, Wflippedmax, "  maximum merge distance", -1);
-  zdef_(zinc, Zduplicate, "merges due to duplicated ridges", -1);
+  zdef_(zinc, Zduplicate, "merges due to dupridges", -1);
   zdef_(wadd, Wduplicatetot, "  average merge distance", Zduplicate);
   zdef_(wmax, Wduplicatemax, "  maximum merge distance", -1);
+  zdef_(zinc, Ztwisted, "merges due to twisted facets", -1);
+  zdef_(wadd, Wtwistedtot, "  average merge distance", Ztwisted);
+  zdef_(wmax, Wtwistedmax, "  maximum merge distance", -1);
 }
 void qh_allstatH(qhT *qh) {
-  zdef_(zdoc, Zdoc8, "renamed vertex statistics", -1);
+  zdef_(zdoc, Zdoc8, "statistics for vertex merges", -1);
+  zzdef_(zinc, Zpinchduplicate, "merge pinched vertices for a duplicate ridge", -1);
+  zzdef_(zinc, Zpinchedvertex, "merge pinched vertices for a dupridge", -1);
   zdef_(zinc, Zrenameshare, "renamed vertices shared by two facets", -1);
   zdef_(zinc, Zrenamepinch, "renamed vertices in a pinched facet", -1);
   zdef_(zinc, Zrenameall, "renamed vertices shared by multiple facets", -1);
   zdef_(zinc, Zfindfail, "rename failures due to duplicated ridges", -1);
-  zdef_(zinc, Zdupridge, "  duplicate ridges detected", -1);
+  zdef_(zinc, Znewvertexridge, "  found new vertex in ridge", -1);
   zdef_(zinc, Zdelridge, "deleted ridges due to renamed vertices", -1);
   zdef_(zinc, Zdropneighbor, "dropped neighbors due to renamed vertices", -1);
-  zdef_(zinc, Zdropdegen, "degenerate facets due to dropped neighbors", -1);
+  zdef_(zinc, Zdropdegen, "merge degenerate facets due to dropped neighbors", -1);
   zdef_(zinc, Zdelfacetdup, "  facets deleted because of no neighbors", -1);
   zdef_(zinc, Zremvertex, "vertices removed from facets due to no ridges", -1);
   zdef_(zinc, Zremvertexdel, "  deleted", -1);
+  zdef_(zinc, Zretryadd, "retry qh_addpoint after merge pinched vertex", -1);
+  zdef_(zadd, Zretryaddtot, "  tot. merge pinched vertex due to dupridge", -1);
+  zdef_(zmax, Zretryaddmax, "  max. merge pinched vertex for a qh_addpoint", -1);
   zdef_(zinc, Zintersectnum, "vertex intersections for locating redundant vertices", -1);
   zdef_(zinc, Zintersectfail, "intersections failed to find a redundant vertex", -1);
   zdef_(zinc, Zintersect, "intersections found redundant vertices", -1);
@@ -252,7 +274,7 @@ void qh_allstatH(qhT *qh) {
   zdef_(zadd, Zvertexridgetot, "  ave. number of ridges per tested vertex", Zvertexridge);
   zdef_(zmax, Zvertexridgemax, "  max. number of ridges per tested vertex", -1);
 
-  zdef_(zdoc, Zdoc10, "memory usage statistics(in bytes)", -1);
+  zdef_(zdoc, Zdoc10, "memory usage statistics (in bytes)", -1);
   zdef_(zadd, Zmemfacets, "for facets and their normals, neighbor and vertex sets", -1);
   zdef_(zadd, Zmemvertices, "for vertices and their neighbor sets", -1);
   zdef_(zadd, Zmempoints, "for input points, outside and coplanar sets, and qhT",-1);
@@ -260,7 +282,7 @@ void qh_allstatH(qhT *qh) {
 } /* allstat */
 
 void qh_allstatI(qhT *qh) {
-  qh->qhstat.vridges= qh->qhstat.next;
+  qh->qhstat.vridges= qh->qhstat.next; /* printed in qh_produce_output2 if non-zero Zridge or Zridgemid */
   zzdef_(zdoc, Zdoc11, "Voronoi ridge statistics", -1);
   zzdef_(zinc, Zridge, "non-simplicial Voronoi vertices for all ridges", -1);
   zzdef_(wadd, Wridge, "  ave. distance to ridge", Zridge);
@@ -275,13 +297,13 @@ void qh_allstatI(qhT *qh) {
   zzdef_(wadd, Wridge0, "  ave. angle to ridge", Zridge0);
   zzdef_(wmax, Wridge0max, "  max. angle to ridge", -1);
 
-  zdef_(zdoc, Zdoc12, "Triangulation statistics(Qt)", -1);
+  zdef_(zdoc, Zdoc12, "Triangulation statistics ('Qt')", -1);
   zdef_(zinc, Ztricoplanar, "non-simplicial facets triangulated", -1);
-  zdef_(zadd, Ztricoplanartot, "  ave. new facets created(may be deleted)", Ztricoplanar);
+  zdef_(zadd, Ztricoplanartot, "  ave. new facets created (may be deleted)", Ztricoplanar);
   zdef_(zmax, Ztricoplanarmax, "  max. new facets created", -1);
-  zdef_(zinc, Ztrinull, "null new facets deleted(duplicated vertex)", -1);
-  zdef_(zinc, Ztrimirror, "mirrored pairs of new facets deleted(same vertices)", -1);
-  zdef_(zinc, Ztridegen, "degenerate new facets in output(same ridge)", -1);
+  zdef_(zinc, Ztrinull, "null new facets deleted (duplicated vertex)", -1);
+  zdef_(zinc, Ztrimirror, "mirrored pairs of new facets deleted (same vertices)", -1);
+  zdef_(zinc, Ztridegen, "degenerate new facets in output (same ridge)", -1);
 } /* allstat */
 
 /*-<a                             href="qh-stat_r.htm#TOC"
@@ -313,7 +335,7 @@ void qh_collectstatistics(qhT *qh) {
 
   qh->old_randomdist= qh->RANDOMdist;
   qh->RANDOMdist= False;
-  zval_(Zmempoints)= qh->num_points * qh->normal_size + sizeof(qhT);
+  zval_(Zmempoints)= qh->num_points * qh->normal_size + (int)sizeof(qhT);
   zval_(Zmemfacets)= 0;
   zval_(Zmemridges)= 0;
   zval_(Zmemvertices)= 0;
@@ -331,6 +353,11 @@ void qh_collectstatistics(qhT *qh) {
     wmax_(Wmaxoutside, qh->max_outside);
   if (qh->MERGING)
     wmin_(Wminvertex, qh->min_vertex);
+  if (!qh_checklists(qh, qh->facet_list)) {
+    qh_fprintf(qh, qh->ferr, 6373, "qhull internal error: qh_checklists failed on qh_collectstatistics\n");
+    if (!qh->ERREXITcalled)
+      qh_errexit(qh, qh_ERRqhull, NULL, NULL);
+  }
   FORALLfacets
     facet->seen= False;
   if (qh->DELAUNAY) {
@@ -364,17 +391,17 @@ void qh_collectstatistics(qhT *qh) {
       zadd_(Znumridges, sizridges);
       zmax_(Zmaxridges, sizridges);
     }
-    zadd_(Zmemfacets, sizeof(facetT) + qh->normal_size + 2*sizeof(setT)
+    zadd_(Zmemfacets, (int)sizeof(facetT) + qh->normal_size + 2*(int)sizeof(setT)
        + SETelemsize * (sizneighbors + sizvertices));
     if (facet->ridges) {
       zadd_(Zmemridges,
-         sizeof(setT) + SETelemsize * sizridges + sizridges *
-         (sizeof(ridgeT) + sizeof(setT) + SETelemsize * (qh->hull_dim-1))/2);
+        (int)sizeof(setT) + SETelemsize * sizridges + sizridges *
+         ((int)sizeof(ridgeT) + (int)sizeof(setT) + SETelemsize * (qh->hull_dim-1))/2);
     }
     if (facet->outsideset)
-      zadd_(Zmempoints, sizeof(setT) + SETelemsize * qh_setsize(qh, facet->outsideset));
+      zadd_(Zmempoints, (int)sizeof(setT) + SETelemsize * qh_setsize(qh, facet->outsideset));
     if (facet->coplanarset)
-      zadd_(Zmempoints, sizeof(setT) + SETelemsize * qh_setsize(qh, facet->coplanarset));
+      zadd_(Zmempoints, (int)sizeof(setT) + SETelemsize * qh_setsize(qh, facet->coplanarset));
     if (facet->seen) /* Delaunay upper envelope */
       continue;
     facet->seen= True;
@@ -400,12 +427,12 @@ void qh_collectstatistics(qhT *qh) {
   FORALLvertices {
     if (vertex->deleted)
       continue;
-    zadd_(Zmemvertices, sizeof(vertexT));
+    zadd_(Zmemvertices, (int)sizeof(vertexT));
     if (vertex->neighbors) {
       sizneighbors= qh_setsize(qh, vertex->neighbors);
       zadd_(Znumvneighbors, sizneighbors);
       zmax_(Zmaxvneighbors, sizneighbors);
-      zadd_(Zmemvertices, sizeof(vertexT) + SETelemsize * sizneighbors);
+      zadd_(Zmemvertices, (int)sizeof(vertexT) + SETelemsize * sizneighbors);
     }
   }
   qh->RANDOMdist= qh->old_randomdist;
@@ -419,15 +446,16 @@ void qh_collectstatistics(qhT *qh) {
     initialize statistics
 
   notes:
-  NOerrors -- qh_initstatistics can not use qh_errexit(), qh_fprintf, or qh.ferr
-  On first call, only qhmem.ferr is defined.  qh_memalloc is not setup.
-  Also invoked by QhullQh().
+    NOerrors -- qh_initstatistics can not use qh_errexit(), qh_fprintf, or qh.ferr
+    On first call, only qhmem.ferr is defined.  qh_memalloc is not setup.
+    Also invoked by QhullQh().
 */
 void qh_initstatistics(qhT *qh) {
   int i;
   realT realx;
   int intx;
 
+  qh_allstatistics(qh);
   qh->qhstat.next= 0;
   qh_allstatA(qh);
   qh_allstatB(qh);
@@ -440,14 +468,14 @@ void qh_initstatistics(qhT *qh) {
   qh_allstatH(qh);
   qh_allstatI(qh);
   if (qh->qhstat.next > (int)sizeof(qh->qhstat.id)) {
-    qh_fprintf(qh, qh->qhmem.ferr, 6184, "qhull error (qh_initstatistics): increase size of qhstat.id[].\n\
-      qhstat.next %d should be <= sizeof(qh->qhstat.id) %d\n", qh->qhstat.next, (int)sizeof(qh->qhstat.id));
+    qh_fprintf_stderr(6184, "qhull internal error (qh_initstatistics): increase size of qhstat.id[].  qhstat.next %d should be <= sizeof(qh->qhstat.id) %d\n", 
+          qh->qhstat.next, (int)sizeof(qh->qhstat.id));
 #if 0 /* for locating error, Znumridges should be duplicated */
     for(i=0; i < ZEND; i++) {
       int j;
       for(j=i+1; j < ZEND; j++) {
         if (qh->qhstat.id[i] == qh->qhstat.id[j]) {
-          qh_fprintf(qh, qh->qhmem.ferr, 6185, "qhull error (qh_initstatistics): duplicated statistic %d at indices %d and %d\n",
+          qh_fprintf_stderr(6185, "qhull error (qh_initstatistics): duplicated statistic %d at indices %d and %d\n",
               qh->qhstat.id[i], i, j);
         }
       }
@@ -476,7 +504,7 @@ void qh_initstatistics(qhT *qh) {
 /*-<a                             href="qh-stat_r.htm#TOC"
   >-------------------------------</a><a name="newstats">-</a>
 
-  qh_newstats(qh, )
+  qh_newstats(qh )
     returns True if statistics for zdoc
 
   returns:
@@ -542,23 +570,27 @@ void qh_printallstatistics(qhT *qh, FILE *fp, const char *string) {
 */
 void qh_printstatistics(qhT *qh, FILE *fp, const char *string) {
   int i, k;
-  realT ave;
+  realT ave; /* ignored */
 
-  if (qh->num_points != qh->num_vertices) {
-    wval_(Wpbalance)= 0;
-    wval_(Wpbalance2)= 0;
+  if (qh->num_points != qh->num_vertices || zval_(Zpbalance) == 0) {
+    wval_(Wpbalance)= 0.0;
+    wval_(Wpbalance2)= 0.0;
   }else
-    wval_(Wpbalance2)= qh_stddev(zval_(Zpbalance), wval_(Wpbalance),
+    wval_(Wpbalance2)= qh_stddev(qh, zval_(Zpbalance), wval_(Wpbalance),
                                  wval_(Wpbalance2), &ave);
-  wval_(Wnewbalance2)= qh_stddev(zval_(Zprocessed), wval_(Wnewbalance),
+  if (zval_(Zprocessed) == 0)
+    wval_(Wnewbalance2)= 0.0;
+  else
+    wval_(Wnewbalance2)= qh_stddev(qh, zval_(Zprocessed), wval_(Wnewbalance),
                                  wval_(Wnewbalance2), &ave);
   qh_fprintf(qh, fp, 9350, "\n\
 %s\n\
- qhull invoked by: %s | %s\n%s with options:\n%s\n", string, qh->rbox_command,
-     qh->qhull_command, qh_version, qh->qhull_options);
+qhull invoked by: %s | %s\n  %s with options:\n%s\n", 
+    string, qh->rbox_command, qh->qhull_command, qh_version, qh->qhull_options);
+
   qh_fprintf(qh, fp, 9351, "\nprecision constants:\n\
- %6.2g max. abs. coordinate in the (transformed) input('Qbd:n')\n\
- %6.2g max. roundoff error for distance computation('En')\n\
+ %6.2g max. abs. coordinate in the (transformed) input ('Qbd:n')\n\
+ %6.2g max. roundoff error for distance computation ('En')\n\
  %6.2g max. roundoff error for angle computations\n\
  %6.2g min. distance for outside points ('Wn')\n\
  %6.2g min. distance for visible facets ('Vn')\n\
@@ -581,7 +613,7 @@ void qh_printstatistics(qhT *qh, FILE *fp, const char *string) {
   qh_fprintf(qh, fp, 9357, "\
  %6.2g max. distance for merging two simplicial facets\n\
  %6.2g max. roundoff error for arithmetic operations\n\
- %6.2g min. denominator for divisions\n\
+ %6.2g min. denominator for division\n\
   zero diagonal for Gauss: ", qh->ONEmerge, REALepsilon, qh->MINdenom);
   for(k=0; k < qh->hull_dim; k++)
     qh_fprintf(qh, fp, 9358, "%6.2e ", qh->NEARzero[k]);
@@ -601,7 +633,6 @@ void qh_printstatistics(qhT *qh, FILE *fp, const char *string) {
     nop if id >= ZEND, printed, or same as initial value
 */
 void qh_printstatlevel(qhT *qh, FILE *fp, int id) {
-#define NULLfield "       "
 
   if (id >= ZEND || qh->qhstat.printed[id])
     return;
@@ -653,7 +684,7 @@ void qh_printstats(qhT *qh, FILE *fp, int idx, int *nextindex) {
 /*-<a                             href="qh-stat_r.htm#TOC"
   >-------------------------------</a><a name="stddev">-</a>
 
-  qh_stddev(num, tot, tot2, ave )
+  qh_stddev(qh, num, tot, tot2, ave )
     compute the standard deviation and average from statistics
 
     tot2 is the sum of the squares
@@ -664,19 +695,33 @@ void qh_printstats(qhT *qh, FILE *fp, int idx, int *nextindex) {
       == tot2 - 2 tot tot/num + tot tot/num
       == tot2 - tot ave
 */
-realT qh_stddev(int num, realT tot, realT tot2, realT *ave) {
+realT qh_stddev(qhT *qh, int num, realT tot, realT tot2, realT *ave) {
   realT stddev;
 
+  if (num <= 0) {
+    qh_fprintf(qh, qh->ferr, 7101, "qhull warning (qh_stddev): expecting num > 0.  Got num %d, tot %4.4g, tot2 %4.4g.  Returning 0.0\n",
+      num, tot, tot2);
+    return 0.0;
+  }
   *ave= tot/num;
-  stddev= sqrt(tot2/num - *ave * *ave);
+  stddev= sqrt(fabs(tot2/num - *ave * *ave));
   return stddev;
 } /* stddev */
-
+#else
+realT qh_stddev(qhT *qh, int num, realT tot, realT tot2, realT *ave) { /* for qhull_r-exports.def */
+  QHULL_UNUSED(qh)
+  QHULL_UNUSED(num)
+  QHULL_UNUSED(tot)
+  QHULL_UNUSED(tot2)
+  QHULL_UNUSED(ave)
+    
+  return 0.0;
+}
 #endif /* qh_KEEPstatistics */
 
 #if !qh_KEEPstatistics
 void    qh_collectstatistics(qhT *qh) {}
-void    qh_printallstatistics(qhT *qh, FILE *fp, char *string) {};
-void    qh_printstatistics(qhT *qh, FILE *fp, char *string) {}
+void    qh_printallstatistics(qhT *qh, FILE *fp, const char *string) {}
+void    qh_printstatistics(qhT *qh, FILE *fp, const char *string) {}
 #endif
 

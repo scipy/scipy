@@ -131,10 +131,6 @@ double hyp1f1_wrap(double a, double b, double x) {
    double outy;
 
    F_FUNC(chgm,CHGM)(&a, &b, &x, &outy);
-   if (outy == 1e300) {
-     sf_error("hyp1f1", SF_ERROR_OVERFLOW, NULL);
-     outy = NPY_INFINITY;
-   }
    return outy;
 }
 

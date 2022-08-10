@@ -77,7 +77,7 @@
 
 /* Chebyshev coefficients for x(K1(x) - log(x/2) I1(x))
  * in the interval [0,2].
- * 
+ *
  * lim(x->0){ x(K1(x) - log(x/2) I1(x)) } = 1.
  */
 
@@ -136,11 +136,11 @@ double x;
     double y, z;
 
     if (x == 0.0) {
-	mtherr("k1", SING);
+	sf_error("k1", SF_ERROR_SINGULAR, NULL);
 	return NPY_INFINITY;
     }
     else if (x < 0.0) {
-	mtherr("k1", DOMAIN);
+	sf_error("k1", SF_ERROR_DOMAIN, NULL);
 	return NPY_NAN;
     }
     z = 0.5 * x;
@@ -163,11 +163,11 @@ double x;
     double y;
 
     if (x == 0.0) {
-	mtherr("k1e", SING);
+	sf_error("k1e", SF_ERROR_SINGULAR, NULL);
 	return NPY_INFINITY;
     }
     else if (x < 0.0) {
-	mtherr("k1e", DOMAIN);
+	sf_error("k1e", SF_ERROR_DOMAIN, NULL);
 	return NPY_NAN;
     }
 

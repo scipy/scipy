@@ -1,6 +1,6 @@
 """Revised simplex method for linear programming
 
-The *revised simplex* method uses the method decribed in [1]_, except
+The *revised simplex* method uses the method described in [1]_, except
 that a factorization [2]_ of the basis matrix, rather than its inverse,
 is efficiently maintained and used to solve the linear systems at each
 iteration of the algorithm.
@@ -17,20 +17,19 @@ References
 """
 # Author: Matt Haberland
 
-from __future__ import division, absolute_import, print_function
 import numpy as np
+from numpy.linalg import LinAlgError
+
 from scipy.linalg import solve
-from .optimize import _check_unknown_options
+from ._optimize import _check_unknown_options
 from ._bglu_dense import LU
 from ._bglu_dense import BGLU as BGLU
-from scipy.linalg import LinAlgError
-from numpy.linalg.linalg import LinAlgError as LinAlgError2
 from ._linprog_util import _postsolve
-from .optimize import OptimizeResult
+from ._optimize import OptimizeResult
 
 
-def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
-               _T_o=[], disp=False):
+def _phase_one(A, b, x0, callback, postsolve_args, maxiter, tol, disp,
+               maxupdate, mast, pivot):
     """
     The purpose of phase one is to find an initial basic feasible solution
     (BFS) to the original problem.
@@ -57,9 +56,12 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
 
     # solve auxiliary problem
     phase_one_n = n
-    x, basis, status, iter_k = _phase_two(c, A, x, basis, maxiter,
-                                          tol, maxupdate, mast, pivot,
-                                          0, callback, _T_o, disp, phase_one_n)
+    iter_k = 0
+    x, basis, status, iter_k = _phase_two(c, A, x, basis, callback,
+                                          postsolve_args,
+                                          maxiter, tol, disp,
+                                          maxupdate, mast, pivot,
+                                          iter_k, phase_one_n)
 
     # check for infeasibility
     residual = c.dot(x)
@@ -85,7 +87,7 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
                 keep_rows[pertinent_row] = False
             else:
                 basis[basis == basis_column] = new_basis_column
-        except (LinAlgError, LinAlgError2):
+        except LinAlgError:
             status = 4
 
     # form solution to original problem
@@ -93,7 +95,6 @@ def _phase_one(A, b, x0, maxiter, tol, maxupdate, mast, pivot, callback=None,
     basis = basis[keep_rows]
     x = x[:n]
     m = A.shape[0]
-
     return x, basis, A, b, residual, status, iter_k
 
 
@@ -135,10 +136,10 @@ def _get_more_basis_columns(A, basis):
 def _generate_auxiliary_problem(A, b, x0, tol):
     """
     Modifies original problem to create an auxiliary problem with a trivial
-    intial basic feasible solution and an objective that minimizes
+    initial basic feasible solution and an objective that minimizes
     infeasibility in the original problem.
 
-    Conceptually this is done by stacking an identity matrix on the right of
+    Conceptually, this is done by stacking an identity matrix on the right of
     the original constraint matrix, adding artificial variables to correspond
     with each of these new columns, and generating a cost vector that is all
     zeros except for ones corresponding with each of the new variables.
@@ -238,7 +239,7 @@ def _generate_auxiliary_problem(A, b, x0, tol):
 def _select_singleton_columns(A, b):
     """
     Finds singleton columns for which the singleton entry is of the same sign
-    as the right hand side; these columns are eligible for inclusion in an
+    as the right-hand side; these columns are eligible for inclusion in an
     initial basis. Determines the rows in which the singleton entries are
     located. For each of these rows, returns the indices of the one singleton
     column and its corresponding row.
@@ -308,8 +309,30 @@ def _display_iter(phase, iteration, slack, con, fun):
     print(fmt.format(phase, iteration, slack, np.linalg.norm(con), fun))
 
 
-def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
-               callback=None, _T_o=[], disp=False, phase_one_n=None):
+def _display_and_callback(phase_one_n, x, postsolve_args, status,
+                          iteration, disp, callback):
+    if phase_one_n is not None:
+        phase = 1
+        x_postsolve = x[:phase_one_n]
+    else:
+        phase = 2
+        x_postsolve = x
+    x_o, fun, slack, con = _postsolve(x_postsolve,
+                                      postsolve_args)
+
+    if callback is not None:
+        res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
+                              'con': con, 'nit': iteration,
+                              'phase': phase, 'complete': False,
+                              'status': status, 'message': "",
+                              'success': False})
+        callback(res)
+    if disp:
+        _display_iter(phase, iteration, slack, con, fun)
+
+
+def _phase_two(c, A, x, b, callback, postsolve_args, maxiter, tol, disp,
+               maxupdate, mast, pivot, iteration=0, phase_one_n=None):
     """
     The heart of the simplex method. Beginning with a basic feasible solution,
     moves to adjacent basic feasible solutions successively lower reduced cost.
@@ -332,27 +355,11 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
     else:
         B = LU(A, b)
 
-    for iteration in range(iteration, iteration + maxiter):
+    for iteration in range(iteration, maxiter):
 
         if disp or callback is not None:
-            if phase_one_n is not None:
-                phase = 1
-                x_postsolve = x[:phase_one_n]
-            else:
-                phase = 2
-                x_postsolve = x
-            x_o, fun, slack, con, _, _ = _postsolve(x_postsolve, *_T_o,
-                                                    tol=tol)
-
-            if callback is not None:
-                res = OptimizeResult({'x': x_o, 'fun': fun, 'slack': slack,
-                                      'con': con, 'nit': iteration,
-                                      'phase': phase, 'complete': False,
-                                      'status': 0, 'message': "",
-                                      'success': False})
-                callback(res)
-            else:
-                _display_iter(phase, iteration, slack, con, fun)
+            _display_and_callback(phase_one_n, x, postsolve_args, status,
+                                  iteration, disp, callback)
 
         bl = np.zeros(len(a), dtype=bool)
         bl[b] = 1
@@ -392,15 +399,24 @@ def _phase_two(c, A, x, b, maxiter, tol, maxupdate, mast, pivot, iteration=0,
         x[b] = x[b] - th_star*u     # take step
         x[j] = th_star
         B.update(ab[i][l], j)       # modify basis
-        b = B.b                     # similar to b[ab[i][l]] = j
+        b = B.b                     # similar to b[ab[i][l]] =
+
     else:
+        # If the end of the for loop is reached (without a break statement),
+        # then another step has been taken, so the iteration counter should
+        # increment, info should be displayed, and callback should be called.
+        iteration += 1
         status = 1
+        if disp or callback is not None:
+            _display_and_callback(phase_one_n, x, postsolve_args, status,
+                                  iteration, disp, callback)
 
     return x, b, status, iteration
 
 
-def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
-                maxupdate=10, mast=False, pivot="mrc", _T_o=[], disp=False,
+def _linprog_rs(c, c0, A, b, x0, callback, postsolve_args,
+                maxiter=5000, tol=1e-12, disp=False,
+                maxupdate=10, mast=False, pivot="mrc",
                 **unknown_options):
     """
     Solve the following linear programming problem via a two-phase
@@ -411,20 +427,22 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
         subject to:  A @ x == b
                      0 <= x < oo
 
+    User-facing documentation is in _linprog_doc.py.
+
     Parameters
     ----------
-    c : 1D array
+    c : 1-D array
         Coefficients of the linear objective function to be minimized.
     c0 : float
         Constant term in objective function due to fixed (and eliminated)
         variables. (Currently unused.)
-    A : 2D array
-        2D array which, when matrix-multiplied by ``x``, gives the values of
+    A : 2-D array
+        2-D array which, when matrix-multiplied by ``x``, gives the values of
         the equality constraints at ``x``.
-    b : 1D array
-        1D array of values representing the RHS of each equality constraint
+    b : 1-D array
+        1-D array of values representing the RHS of each equality constraint
         (row) in ``A_eq``.
-    x0 : 1D array, optional
+    x0 : 1-D array, optional
         Starting values of the independent variables, which will be refined by
         the optimization algorithm. For the revised simplex method, these must
         correspond with a basic feasible solution.
@@ -433,7 +451,7 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
         iteration of the algorithm. The callback function must accept a single
         `scipy.optimize.OptimizeResult` consisting of the following fields:
 
-            x : 1D array
+            x : 1-D array
                 Current solution vector.
             fun : float
                 Current value of the objective function ``c @ x``.
@@ -441,11 +459,11 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
                 True only when an algorithm has completed successfully,
                 so this is always False as the callback function is called
                 only while the algorithm is still iterating.
-            slack : 1D array
+            slack : 1-D array
                 The values of the slack variables. Each slack variable
                 corresponds to an inequality constraint. If the slack is zero,
                 the corresponding constraint is active.
-            con : 1D array
+            con : 1-D array
                 The (nominally zero) residuals of the equality constraints,
                 that is, ``b - A_eq @ x``.
             phase : int
@@ -457,6 +475,9 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
                 The number of iterations performed.
             message : str
                 A string descriptor of the exit status of the optimization.
+    postsolve_args : tuple
+        Data needed by _postsolve to convert the solution to the standard-form
+        problem into the solution to the original problem.
 
     Options
     -------
@@ -466,6 +487,9 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
         The tolerance which determines when a solution is "close enough" to
         zero in Phase 1 to be considered a basic feasible solution or close
         enough to positive to serve as an optimal solution.
+    disp : bool
+        Set to ``True`` if indicators of optimization status are to be printed
+        to the console each iteration.
     maxupdate : int
         The maximum number of updates performed on the LU factorization.
         After this many updates is reached, the basis matrix is factorized
@@ -483,13 +507,14 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
     pivot : "mrc" or "bland"
         Pivot rule: Minimum Reduced Cost (default) or Bland's rule. Choose
         Bland's rule if iteration limit is reached and cycling is suspected.
-    disp : bool
-        Set to ``True`` if indicators of optimization status are to be printed
-        to the console each iteration.
+    unknown_options : dict
+        Optional arguments not used by this particular solver. If
+        `unknown_options` is non-empty a warning is issued listing all
+        unused options.
 
     Returns
     -------
-    x : 1D array
+    x : 1-D array
         Solution vector.
     status : int
         An integer representing the exit status of the optimization::
@@ -530,23 +555,18 @@ def _linprog_rs(c, c0, A, b, x0=None, callback=None, maxiter=5000, tol=1e-12,
                 "solution. "
                 ]
 
-    # _T_o contains information for postsolve needed for callback function
-    # callback function also needs `complete` argument
-    # I add `complete = False` here for convenience
-    _T_o = list(_T_o)
-    _T_o.insert(-1, False)
-
     if A.size == 0:  # address test_unbounded_below_no_presolve_corrected
         return np.zeros(c.shape), 5, messages[5], 0
 
     x, basis, A, b, residual, status, iteration = (
-        _phase_one(A, b, x0, maxiter, tol, maxupdate,
-                   mast, pivot, callback, _T_o, disp))
+        _phase_one(A, b, x0, callback, postsolve_args,
+                   maxiter, tol, disp, maxupdate, mast, pivot))
 
     if status == 0:
-        x, basis, status, iteration = _phase_two(c, A, x, basis,
-                                                 maxiter, tol, maxupdate,
-                                                 mast, pivot, iteration,
-                                                 callback, _T_o, disp)
+        x, basis, status, iteration = _phase_two(c, A, x, basis, callback,
+                                                 postsolve_args,
+                                                 maxiter, tol, disp,
+                                                 maxupdate, mast, pivot,
+                                                 iteration)
 
     return x, status, messages[status].format(residual, tol), iteration

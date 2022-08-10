@@ -86,7 +86,7 @@ double exp10(double x)
     }
 
     if (x < -MAXL10) {		/* Would like to use MINLOG but can't */
-	mtherr("exp10", UNDERFLOW);
+	sf_error("exp10", SF_ERROR_UNDERFLOW, NULL);
 	return (0.0);
     }
 

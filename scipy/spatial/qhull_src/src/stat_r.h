@@ -6,9 +6,9 @@
 
    see qh-stat_r.htm and stat_r.c
 
-   Copyright (c) 1993-2015 The Geometry Center.
-   $Id: //main/2015/qhull/src/libqhull_r/stat_r.h#4 $$Change: 2062 $
-   $DateTime: 2016/01/17 13:13:18 $$Author: bbarber $
+   Copyright (c) 1993-2019 The Geometry Center.
+   $Id: //main/2019/qhull/src/libqhull_r/stat_r.h#3 $$Change: 2711 $
+   $DateTime: 2019/06/27 22:34:56 $$Author: bbarber $
 
    recompile qhull if you change this file
 
@@ -21,7 +21,7 @@
 #ifndef qhDEFstat
 #define qhDEFstat 1
 
-/* Depends on realT.  Do not include libqhull_r to avoid circular dependency */
+/* Depends on realT.  Do not include "libqhull_r" to avoid circular dependency */
 
 #ifndef DEFqhT
 #define DEFqhT 1
@@ -37,7 +37,9 @@ typedef struct qhstatT qhstatT; /* Defined here */
   >-------------------------------</a><a name="KEEPstatistics">-</a>
 
   qh_KEEPstatistics
-    0 turns off statistic gathering (except zzdef/zzinc/zzadd/zzval/wwval)
+    0 turns off statistic reporting and gathering (except zzdef/zzinc/zzadd/zzval/wwval)
+
+  set qh_KEEPstatistics in user_r.h to 0 to turn off statistics
 */
 #ifndef qh_KEEPstatistics
 #define qh_KEEPstatistics 1
@@ -85,8 +87,12 @@ enum qh_statistics {     /* alphabetical after Z/W */
     Zconcave,
     Wconcavemax,
     Wconcavetot,
-    Zconcaveridges,
+    Zconcavecoplanar,
+    Wconcavecoplanarmax,
+    Wconcavecoplanartot,
+    Zconcavecoplanarridge,
     Zconcaveridge,
+    Zconcaveridges,
     Zcoplanar,
     Wcoplanarmax,
     Wcoplanartot,
@@ -109,6 +115,7 @@ enum qh_statistics {     /* alphabetical after Z/W */
     Zdelridge,
     Zdelvertextot,
     Zdelvertexmax,
+    Zdetfacetarea,
     Zdetsimplex,
     Zdistcheck,
     Zdistconvex,
@@ -136,12 +143,13 @@ enum qh_statistics {     /* alphabetical after Z/W */
     Zduplicate,
     Wduplicatemax,
     Wduplicatetot,
-    Zdupridge,
     Zdupsame,
     Zflipped,
     Wflippedmax,
     Wflippedtot,
     Zflippedfacets,
+    Zflipridge,
+    Zflipridge2,
     Zfindbest,
     Zfindbestmax,
     Zfindbesttot,
@@ -184,6 +192,7 @@ enum qh_statistics {     /* alphabetical after Z/W */
     Zmergeinittot,
     Zmergeinitmax,
     Zmergeinittot2,
+    Zmergeintocoplanar,
     Zmergeintohorizon,
     Zmergenew,
     Zmergesettot,
@@ -196,14 +205,16 @@ enum qh_statistics {     /* alphabetical after Z/W */
     Zminnorm,
     Zmultiridge,
     Znearlysingular,
-    Zneighbor,
+    Zredundant,
     Wnewbalance,
     Wnewbalance2,
+    Znewbesthorizon,
     Znewfacettot,
     Znewfacetmax,
     Znewvertex,
     Wnewvertex,
     Wnewvertexmax,
+    Znewvertexridge,
     Znoarea,
     Znonsimplicial,
     Znowsimplicial,
@@ -221,25 +232,33 @@ enum qh_statistics {     /* alphabetical after Z/W */
     Zonehorizon,
     Zpartangle,
     Zpartcoplanar,
-    Zpartflip,
-    Zparthorizon,
+    Zpartcorner,
+    Zparthidden,
     Zpartinside,
     Zpartition,
     Zpartitionall,
     Zpartnear,
+    Zparttwisted,
     Zpbalance,
     Wpbalance,
     Wpbalance2,
+    Zpinchduplicate,
+    Zpinchedapex,
+    Zpinchedvertex,
     Zpostfacets,
     Zpremergetot,
     Zprocessed,
     Zremvertex,
     Zremvertexdel,
+    Zredundantmerge,
     Zrenameall,
     Zrenamepinch,
     Zrenameshare,
     Zretry,
     Wretrymax,
+    Zretryadd,
+    Zretryaddmax,
+    Zretryaddtot,
     Zridge,
     Wridge,
     Wridgemax,
@@ -269,6 +288,11 @@ enum qh_statistics {     /* alphabetical after Z/W */
     Ztridegen,
     Ztrimirror,
     Ztrinull,
+    Ztwisted,
+    Wtwistedtot,
+    Wtwistedmax,
+    Ztwistedridge,
+    Zvertextests,
     Wvertexmax,
     Wvertexmin,
     Zvertexridge,
@@ -310,12 +334,15 @@ enum qh_statistics {     /* for zzdef etc. macros */
   Zdelvertextot,
   Zdistcheck,
   Zdistconvex,
+  Zdistplane,
   Zdistzero,
   Zdoc1,
   Zdoc2,
   Zdoc3,
   Zdoc11,
   Zflippedfacets,
+  Zflipridge,
+  Zflipridge2,
   Zgauss0,
   Zminnorm,
   Zmultiridge,
@@ -325,6 +352,8 @@ enum qh_statistics {     /* for zzdef etc. macros */
   Zpartcoplanar,
   Zpartition,
   Zpartitionall,
+  Zpinchduplicate,
+  Zpinchedvertex,
   Zprocessed,
   Zretry,
   Zridge,
@@ -342,7 +371,8 @@ enum qh_statistics {     /* for zzdef etc. macros */
   Zsetplane,
   Ztotcheck,
   Ztotmerge,
-    ZEND};
+  Zvertextests,
+  ZEND};
 #endif
 
 /*-<a                             href="qh-stat_r.htm#TOC"
@@ -485,21 +515,25 @@ union intrealT {
 
 struct qhstatT {
   intrealT   stats[ZEND];     /* integer and real statistics */
-  unsigned   char id[ZEND+10]; /* id's in print order */
-  const char *doc[ZEND];       /* array of documentation strings */
+  unsigned char id[ZEND+10];  /* id's in print order */
+  const char *doc[ZEND];      /* array of documentation strings */
   short int  count[ZEND];     /* -1 if none, else index of count to use */
   char       type[ZEND];      /* type, see ztypes above */
   char       printed[ZEND];   /* true, if statistic has been printed */
   intrealT   init[ZTYPEend];  /* initial values by types, set initstatistics */
 
   int        next;            /* next index for zdef_ */
-  int        precision;       /* index for precision problems */
-  int        vridges;         /* index for Voronoi ridges */
+  int        precision;       /* index for precision problems, printed on qh_errexit and qh_produce_output2/Q0/QJn */
+  int        vridges;         /* index for Voronoi ridges, printed on qh_produce_output2 */
   int        tempi;
   realT      tempr;
 };
 
 /*========== function prototypes ===========*/
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 void    qh_allstatA(qhT *qh);
 void    qh_allstatB(qhT *qh);
@@ -520,6 +554,10 @@ void    qh_printallstatistics(qhT *qh, FILE *fp, const char *string);
 void    qh_printstatistics(qhT *qh, FILE *fp, const char *string);
 void    qh_printstatlevel(qhT *qh, FILE *fp, int id);
 void    qh_printstats(qhT *qh, FILE *fp, int idx, int *nextindex);
-realT   qh_stddev(int num, realT tot, realT tot2, realT *ave);
+realT   qh_stddev(qhT *qh, int num, realT tot, realT tot2, realT *ave);
+
+#ifdef __cplusplus
+} /* extern "C" */
+#endif
 
 #endif   /* qhDEFstat */

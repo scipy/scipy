@@ -159,7 +159,7 @@ C
         J = J - 1
    60 CONTINUE
 C
-C        W1 equals (1-W) claculated to avoid excessive rounding error
+C        W1 equals (1-W) calculated to avoid excessive rounding error
 C        for W very near 1 (a potential problem in very large samples)
 C
       SSASSX = SQRT(SSA * SSX)

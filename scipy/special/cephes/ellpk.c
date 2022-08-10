@@ -99,7 +99,7 @@ double x;
 {
 
     if (x < 0.0) {
-	mtherr("ellpk", DOMAIN);
+	sf_error("ellpk", SF_ERROR_DOMAIN, NULL);
 	return (NPY_NAN);
     }
 
@@ -115,7 +115,7 @@ double x;
     }
     else {
 	if (x == 0.0) {
-	    mtherr("ellpk", SING);
+	    sf_error("ellpk", SF_ERROR_SINGULAR, NULL);
 	    return (NPY_INFINITY);
 	}
 	else {

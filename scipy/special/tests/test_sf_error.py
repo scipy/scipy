@@ -1,9 +1,7 @@
-from __future__ import division, print_function, absolute_import
-
+import sys
 import warnings
 
-from numpy.testing import assert_, assert_equal
-from scipy._lib._numpy_compat import suppress_warnings
+from numpy.testing import assert_, assert_equal, IS_PYPY
 import pytest
 from pytest import raises as assert_raises
 
@@ -47,14 +45,14 @@ def _check_action(fun, args, action):
 def test_geterr():
     err = sc.geterr()
     for key, value in err.items():
-        assert_(key in _sf_error_code_map.keys())
+        assert_(key in _sf_error_code_map)
         assert_(value in _sf_error_actions)
 
 
 def test_seterr():
     entry_err = sc.geterr()
     try:
-        for category in _sf_error_code_map.keys():
+        for category, error_code in _sf_error_code_map.items():
             for action in _sf_error_actions:
                 geterr_olderr = sc.geterr()
                 seterr_olderr = sc.seterr(**{category: action})
@@ -64,11 +62,22 @@ def test_seterr():
                 geterr_olderr.pop(category)
                 newerr.pop(category)
                 assert_(geterr_olderr == newerr)
-                _check_action(_sf_error_test_function,
-                              (_sf_error_code_map[category],),
-                               action)
+                _check_action(_sf_error_test_function, (error_code,), action)
     finally:
         sc.seterr(**entry_err)
+
+
+@pytest.mark.skipif(IS_PYPY, reason="Test not meaningful on PyPy")
+def test_sf_error_special_refcount():
+    # Regression test for gh-16233.
+    # Check that the reference count of scipy.special is not increased
+    # when a SpecialFunctionError is raised.
+    refcount_before = sys.getrefcount(sc)
+    with sc.errstate(all='raise'):
+        with pytest.raises(sc.SpecialFunctionError, match='domain error'):
+            sc.ndtri(2.0)
+    refcount_after = sys.getrefcount(sc)
+    assert refcount_after == refcount_before
 
 
 def test_errstate_pyx_basic():
@@ -96,13 +105,11 @@ def test_errstate_cpp_basic():
 
 
 def test_errstate():
-    for category in _sf_error_code_map.keys():
+    for category, error_code in _sf_error_code_map.items():
         for action in _sf_error_actions:
             olderr = sc.geterr()
             with sc.errstate(**{category: action}):
-                _check_action(_sf_error_test_function,
-                              (_sf_error_code_map[category],),
-                              action)
+                _check_action(_sf_error_test_function, (error_code,), action)
             assert_equal(olderr, sc.geterr())
 
 

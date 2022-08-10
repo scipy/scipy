@@ -1,4 +1,4 @@
-      subroutine fprota(cos,sin,a,b)
+      recursive subroutine fprota(cos,sin,a,b)
 c  subroutine fprota applies a givens rotation to a and b.
 c  ..
 c  ..scalar arguments..

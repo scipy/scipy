@@ -1,16 +1,15 @@
-from __future__ import division, print_function, absolute_import
-
 from os import path
 import warnings
 
-DATA_PATH = path.join(path.dirname(__file__), 'data')
-
 import numpy as np
 from numpy.testing import (assert_equal, assert_array_equal,
-    assert_)
-from scipy._lib._numpy_compat import suppress_warnings
+                           assert_, suppress_warnings)
+import pytest
 
-from scipy.io.idl import readsav
+from scipy.io import readsav
+from scipy.io import _idl
+
+DATA_PATH = path.join(path.dirname(__file__), 'data')
 
 
 def object_array(*args):
@@ -440,3 +439,12 @@ def test_invalid_pointer():
                                   "heap: variable will be set to None"))
     assert_identical(s['a'], np.array([None, None]))
 
+
+def test_attrdict():
+    d = _idl.AttrDict({'one': 1})
+    assert d['one'] == 1
+    assert d.one == 1
+    with pytest.raises(KeyError):
+        d['two']
+    with pytest.raises(AttributeError, match='has no attribute'):
+        d.two

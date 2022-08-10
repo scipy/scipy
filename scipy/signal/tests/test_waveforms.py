@@ -1,11 +1,9 @@
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_equal,
                            assert_, assert_allclose, assert_array_equal)
 from pytest import raises as assert_raises
 
-import scipy.signal.waveforms as waveforms
+import scipy.signal._waveforms as waveforms
 
 
 # These chirp_* functions are the instantaneous frequencies of the signals
@@ -38,7 +36,7 @@ def compute_frequency(t, theta):
     """
     Compute theta'(t)/(2*pi), where theta'(t) is the derivative of theta(t).
     """
-    # Assume theta and t are 1D numpy arrays.
+    # Assume theta and t are 1-D NumPy arrays.
     # Assume that t is uniformly spaced.
     dt = t[1] - t[0]
     f = np.diff(theta)/(2*np.pi) / dt
@@ -46,7 +44,7 @@ def compute_frequency(t, theta):
     return tf, f
 
 
-class TestChirp(object):
+class TestChirp:
 
     def test_linear_at_zero(self):
         w = waveforms.chirp(t=0, f0=1.0, f1=2.0, t1=1.0, method='linear')
@@ -221,7 +219,7 @@ class TestChirp(object):
         assert_equal(int_result, float_result, err_msg=err_msg)
 
 
-class TestSweepPoly(object):
+class TestSweepPoly:
 
     def test_sweep_poly_quad1(self):
         p = np.poly1d([1.0, 0.0, 1.0])
@@ -289,7 +287,7 @@ class TestSweepPoly(object):
         assert_(abserr < 1e-6)
 
 
-class TestGaussPulse(object):
+class TestGaussPulse:
 
     def test_integer_fc(self):
         float_result = waveforms.gausspulse('cutoff', fc=1000.0)
@@ -316,7 +314,7 @@ class TestGaussPulse(object):
         assert_equal(int_result, float_result, err_msg=err_msg)
 
 
-class TestUnitImpulse(object):
+class TestUnitImpulse:
 
     def test_no_index(self):
         assert_array_equal(waveforms.unit_impulse(7), [1, 0, 0, 0, 0, 0, 0])

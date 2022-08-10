@@ -1,21 +1,56 @@
-*********************
-SciPy Developer Guide
-*********************
+.. _scipy-development:
 
-.. include:: decisions.rst
+Developer Documentation
+-----------------------
 
-.. include:: newfeatures.rst
+Below you will find general information about contributing.
+For an overview of where help or new features are desired or planned, see
+the roadmap. And for a more detailed look at how the SciPy project works, see
+the organization section.
 
-.. include:: github.rst
+.. toctree::
+   :maxdepth: 1
+   :caption: Contributing Information
 
-.. include:: licensing.rst
+   conduct/code_of_conduct
+   hacking
+   dev_quickstart
+   contributor/development_workflow
+   contributor/contributor_toc
 
-.. include:: versioning.rst
+.. toctree::
+   :maxdepth: 1
+   :caption: Roadmap
 
-.. include:: deprecations.rst
+   roadmap
+   roadmap-detailed
+   toolchain
 
-.. include:: distributing.rst
+.. toctree::
+   :maxdepth: 1
+   :caption: SciPy Organization
 
-.. include:: releasing.rst
+   core-dev/index
+   api-dev/api-dev-toc
+   governance
 
-.. include:: modules.rst
+.. This toctree defines previous/next for contributor guide documents
+.. toctree::
+   :hidden:
+
+   contributor/development_workflow
+   contributor/pep8
+   contributor/rendering_documentation
+   contributor/runtests
+   contributor/benchmarking
+   contributor/cython
+   contributor/public_cython_api
+   contributor/adding_new
+   contributor/continuous_integration
+   contributor/using_act
+
+.. These files are not intended to be in any toctree. because they have not
+   been maintained.They should only be reached via the contributor guide if
+   they are specifically sought, not via next/previous links.
+..   dev/gitwash/gitwash
+..   dev/contributor/compiled_code

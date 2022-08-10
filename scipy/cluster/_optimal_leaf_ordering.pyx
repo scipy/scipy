@@ -32,6 +32,7 @@ from libc.stdlib cimport malloc, free
 
 from scipy.spatial.distance import squareform, is_valid_y, is_valid_dm
 
+np.import_array()
 
 @cython.profile(False)
 @cython.boundscheck(False)
@@ -122,15 +123,15 @@ cdef inline void _sort_M_slice(float[:, ::1] M,
                                float* vals, int* idx,
                                int dim1_min, int dim1_max, int dim2_val):
     """
-    Simultaneously sort indices and values of M[{m}, u] using 
+    Simultaneously sort indices and values of M[{m}, u] using
     `_simultaneous_sort`
 
     This is equivalent to :
        m_sort = M[dim1_min:dim1_max, dim2_val].argsort()
        m_iter = np.arange(dim1_min, dim1_max)[m_sort]
 
-    but much faster because we don't have to pay the numpy overhead. This 
-    matters a lot for the sorting of M[{k}, w] which is executed many times. 
+    but much faster because we don't have to pay the numpy overhead. This
+    matters a lot for the sorting of M[{k}, w] which is executed many times.
     """
     cdef int i
     for i in range(0, dim1_max - dim1_min):
@@ -145,12 +146,12 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
                            double[:, ::1] sorted_D,
                            int[:, ::1] cluster_ranges):
     """
-    Implements the Optimal Leaf Ordering algorithm described in 
+    Implements the Optimal Leaf Ordering algorithm described in
     "Fast Optimal leaf ordering for hierarchical clustering"
         Ziv Bar-Joseph, David K. Gifford, Tommi S. Jaakkola
         Bioinformatics, 2001, :doi:`10.1093/bioinformatics/17.suppl_1.S22`
 
-    `sorted_Z` : Linkage list, with 'height' column removed. 
+    `sorted_Z` : Linkage list, with 'height' column removed.
 
     """
     cdef int n_points = len(sorted_Z) + 1
@@ -160,16 +161,16 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
         float[:, ::1] M = np.zeros((n_points, n_points), dtype=np.float32)
         # (n x n x 2) booleans
         int[:, :, :] swap_status = np.zeros((n_points, n_points, 2),
-                                            dtype=np.int32)
-        int[:] must_swap = np.zeros((len(sorted_Z),), dtype=np.int32)
+                                            dtype=np.intc)
+        int[:] must_swap = np.zeros((len(sorted_Z),), dtype=np.intc)
 
-        int i, v_l, v_r, v_size, 
+        int i, v_l, v_r, v_size,
         int v_l_min, v_l_max, v_r_min, v_r_max
 
-        int* u_clusters
-        int* m_clusters
-        int* w_clusters
-        int* k_clusters
+        int u_clusters[2]
+        int m_clusters[2]
+        int w_clusters[2]
+        int k_clusters[2]
         int total_u_clusters, total_w_clusters
 
         int u, w, m, k
@@ -186,8 +187,8 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
         float cur_min_M, current_M
         int best_m, best_k
 
-        int best_u, best_w
-        
+        int best_u = 0, best_w = 0
+
     for i in range(len(sorted_Z)):
         # Iterate over the linkage list instead of recursion.
         #     v_l = sorted_Z[i, 0]
@@ -230,13 +231,6 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
         v_l_min = cluster_ranges[v_l, 0]; v_l_max = cluster_ranges[v_l, 1]
         v_r_min = cluster_ranges[v_r, 0]; v_r_max = cluster_ranges[v_r, 1]
 
-
-        # Store the index of the clusters used to search for u, m, w, k. 
-        u_clusters = <int*>malloc(sizeof(int) * 2)
-        m_clusters = <int*>malloc(sizeof(int) * 2)
-        w_clusters = <int*>malloc(sizeof(int) * 2)
-        k_clusters = <int*>malloc(sizeof(int) * 2)
-
         if v_l < n_points:
             # V_l is a singleton, so U = M = V_L.
             total_u_clusters = 1
@@ -245,7 +239,7 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
             # would get longer for no speed gain.
             u_clusters[0] = v_l
             m_clusters[0] = v_l
-            
+
         else:
             total_u_clusters = 2
 
@@ -262,17 +256,15 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
             # V_r is a singleton, so W = K = V_R.
             w_clusters[0] = v_r
             k_clusters[0] = v_r
-            
+
         else:
             total_w_clusters = 2
 
             # First look for W from V_RR and L from V_RL
-            w_clusters = <int*>malloc(sizeof(int) * 2)
             w_clusters[0] = sorted_Z[v_r - n_points, 1]
             w_clusters[1] = sorted_Z[v_r - n_points, 0]
 
             # Next look for W from V_RL and L from V_RR
-            k_clusters = <int*>malloc(sizeof(int) * 2)
             k_clusters[0] = sorted_Z[v_r - n_points, 0]
             k_clusters[1] = sorted_Z[v_r - n_points, 1]
 
@@ -301,19 +293,25 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
                 for m in range(m_min, m_max):
                     for k in range(k_min, k_max):
                         if sorted_D[m, k] < min_km_dist:
-                            min_km_dist = sorted_D[m, k] 
+                            min_km_dist = sorted_D[m, k]
 
+                m_vals = <float*>malloc(sizeof(float) * (m_max - m_min))
+                m_idx = <int*>malloc(sizeof(int) * (m_max - m_min))
+                k_vals = <float*>malloc(sizeof(float) * (k_max - k_min))
+                k_idx = <int*>malloc(sizeof(int) * (k_max - k_min))
+                if not m_vals or not m_idx or not k_vals or not k_idx:
+                    free(m_vals)
+                    free(m_idx)
+                    free(k_vals)
+                    free(k_idx)
+                    raise MemoryError("failed to allocate memory in identify_swaps().")
 
                 for u in range(u_min, u_max):
                     # Sort the values of M[{m}, u]
-                    m_vals = <float*>malloc(sizeof(float) * (m_max - m_min))
-                    m_idx = <int*>malloc(sizeof(int) * (m_max - m_min))
                     _sort_M_slice(M, m_vals, m_idx, m_min, m_max, u)
 
                     for w in range(w_min, w_max):
                         # Sort the values of M[{k}, w]
-                        k_vals = <float*>malloc(sizeof(float) * (k_max - k_min))
-                        k_idx = <int*>malloc(sizeof(int) * (k_max - k_min))
                         _sort_M_slice(M, k_vals, k_idx, k_min, k_max, w)
 
                         # Set initial value for cur_min_M.
@@ -354,19 +352,12 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
                         swap_status[u, w, 1] = swap_R
                         swap_status[w, u, 1] = swap_R
 
-                        # We are getting a fresh `w` so need to resort M[{k}, w]
-                        free(k_vals)
-                        free(k_idx)
-
-                    # We are getting a fresh `u` so need to resort M[{m}, u]
-                    free(m_vals)
-                    free(m_idx)
-
-        # We are about to get fresh clusters.
-        free(u_clusters)
-        free(m_clusters)
-        free(w_clusters)
-        free(k_clusters)
+                # We are getting a fresh `w` and `u` so need to resort
+                # M[{k}, w] and M[{m}, u]
+                free(m_vals)
+                free(m_idx)
+                free(k_vals)
+                free(k_idx)
 
         # We are now ready to find the best minimal value for M[{u}, {w}]
         cur_min_M = 1073741824.0 #2^30
@@ -389,16 +380,16 @@ cdef int[:] identify_swaps(int[:, ::1] sorted_Z,
 
 def optimal_leaf_ordering(Z, D):
     """
-    Compute the optimal leaf order for Z (according to D) and return an 
-    optimally sorted Z. 
+    Compute the optimal leaf order for Z (according to D) and return an
+    optimally sorted Z.
 
-    We start by sorting and relabelling Z and D according to the current leaf 
+    We start by sorting and relabelling Z and D according to the current leaf
     order in Z.
-    
+
     This is because when everything is sorted each cluster (including
     singletons) can be defined by its range over (0...n_points).
 
-    This is used extensively to loop efficiently over the various arrays in the 
+    This is used extensively to loop efficiently over the various arrays in the
     algorithm.
 
     """
@@ -434,7 +425,7 @@ def optimal_leaf_ordering(Z, D):
             v_l = original_order_to_sorted_order[int(v_l)]
         if v_r < n_points:
             v_r = original_order_to_sorted_order[int(v_r)]
-        
+
         sorted_Z.append([v_l, v_r, v_size])
     sorted_Z = np.array(sorted_Z).astype(np.int32).copy(order='C')
 
@@ -443,7 +434,7 @@ def optimal_leaf_ordering(Z, D):
     sorted_D = sorted_D[sorted_leaves, :]
     sorted_D = sorted_D[:, sorted_leaves].copy(order='C')
 
-    # Defines the range of each cluster over (0... n_points) as explained above. 
+    # Defines the range of each cluster over (0... n_points) as explained above.
     cluster_ranges = np.zeros((n_clusters, 2))
     cluster_ranges[np.arange(n_points), 0] = np.arange(n_points)
     cluster_ranges[np.arange(n_points), 1] = np.arange(n_points) + 1
@@ -453,7 +444,7 @@ def optimal_leaf_ordering(Z, D):
         cluster_ranges[v, 1] = cluster_ranges[v_r, 1]
     cluster_ranges = cluster_ranges.astype(np.int32).copy(order='C')
 
-    # Get Swaps 
+    # Get Swaps
     must_swap = identify_swaps(sorted_Z, sorted_D, cluster_ranges)
 
     # To 'rotate' around the axis of a node, we need to consider the left-right
@@ -481,7 +472,7 @@ def optimal_leaf_ordering(Z, D):
                     * np.array(must_swap).reshape(-1, 1))
     final_swap = applied_swap.sum(axis=0) % 2
 
-    # Create a new linkage matrix by applying swaps where needed. 
+    # Create a new linkage matrix by applying swaps where needed.
     swapped_Z = []
     for i, (in_l, in_r, h, v_size) in enumerate(Z):
         if final_swap[i]:
@@ -489,11 +480,8 @@ def optimal_leaf_ordering(Z, D):
             out_r = in_l
         else:
             out_r = in_r
-            out_l = in_l   
+            out_l = in_l
         swapped_Z.append((out_l, out_r, h, v_size))
     swapped_Z = np.array(swapped_Z)
 
     return swapped_Z
-
-
-

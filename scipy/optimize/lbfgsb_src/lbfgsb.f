@@ -1415,6 +1415,8 @@ c       the derivative f1 and the vector p = W'd (for theta = 1).
       nfree = n + 1
       nbreak = 0
       ibkmin = 0
+      tl = 0
+      tu = 0
       bkmin = zero
       col2 = 2*col
       f1 = zero
@@ -2456,6 +2458,10 @@ c     This subroutine calls subroutine dcsrch from the Minpack2 library
 c       to perform the line search.  Subroutine dscrch is safeguarded so
 c       that all trial points lie within the feasible region.
 c
+c     Be mindful that the dcsrch subroutine being called is a copy in
+c       this file (lbfgsb.f) and NOT in the Minpack2 copy distributed
+c       by scipy.
+c      
 c     Subprograms called:
 c
 c       Minpack2 Library ... dcsrch.
@@ -2555,8 +2561,11 @@ c                               Line search is impossible.
          if (stp .eq. one) then
             call dcopy(n,z,1,x,1)
          else
+c        take step and prevent rounding error beyond bound
             do 41 i = 1, n
                x(i) = stp*d(i) + t(i)
+               if (nbd(i).eq.1.or.nbd(i).eq.2) x(i) = max(x(i), l(i))
+               if (nbd(i).eq.2.or.nbd(i).eq.3) x(i) = min(x(i), u(i))
   41        continue
          endif
       else
@@ -2852,8 +2861,6 @@ c     ************
             if (info .eq. -8) write (0,9018)
             if (info .eq. -9) write (0,9019)
          endif
-         if (iprint .ge. 1) write (6,3007) cachyt,sbtime,lnscht
-         write (6,3008) time
       endif
 
  1004 format (/,a4, 1p, 6(1x,d11.4),/,(4x,1p,6(1x,d11.4)))
@@ -2895,8 +2902,9 @@ c     ************
      +'   may possibly be caused by a bad search direction.')
  9018 format (/,' The triangular system is singular.')
  9019 format (/,
-     +' Line search cannot locate an adequate point after 20 function',/
-     +,'  and gradient evaluations.  Previous x, f and g restored.',/,
+     +' Line search cannot locate an adequate point after MAXLS',/
+     +,'  function and gradient evaluations.',/
+     +,'  Previous x, f and g restored.',/,
      +' Possible causes: 1 error in function or gradient evaluation;',/,
      +'                  2 rounding error dominate computation.')
 
@@ -2939,6 +2947,11 @@ c     ************
       sbgnrm = zero
       do 15 i = 1, n
         gi = g(i)
+        if (gi.ne.gi) then
+c          NaN value in gradient: propagate it
+           sbgnrm = gi
+           return
+        endif
         if (nbd(i) .ne. 0) then
            if (gi .lt. zero) then
               if (nbd(i) .ge. 2) gi = max((x(i)-u(i)),gi)

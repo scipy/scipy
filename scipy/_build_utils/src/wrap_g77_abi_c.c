@@ -1,4 +1,4 @@
-#include "cblas.h"
+#include "npy_cblas.h"
 
 #define WRAP_F77(a) a##_
 

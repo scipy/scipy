@@ -34,6 +34,7 @@
 #include "numpy/ndarrayobject.h"
 
 #include "sparsetools.h"
+#include "util.h"
 
 #define MAX_ARGS 16
 
@@ -135,7 +136,6 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         int n_supported_typenums;
         int cur_typenum;
         PyObject *arg;
-        PyArray_Descr *dtype;
 
         if (j >= MAX_ARGS) {
             PyErr_SetString(PyExc_ValueError,
@@ -214,9 +214,9 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         }
 
         /* Find a compatible supported data type */
-        dtype = PyArray_DESCR(arg_arrays[j]);
+
         for (k = 0; k < n_supported_typenums; ++k) {
-            if (PyArray_CanCastSafely(dtype->type_num, supported_typenums[k]) &&
+            if (PyArray_CanCastSafely(PyArray_TYPE((PyArrayObject *)arg_arrays[j]), supported_typenums[k]) &&
                 (cur_typenum == -1 || PyArray_CanCastSafely(cur_typenum, supported_typenums[k])))
             {
                 cur_typenum = supported_typenums[k];
@@ -266,16 +266,7 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
             /* Integer scalars */
             PY_LONG_LONG value;
 
-#if PY_VERSION_HEX >= 0x03000000
             value = PyLong_AsLongLong(arg_arrays[j]);
-#else
-            if (PyInt_Check(arg_arrays[j])) {
-                value = PyInt_AsLong(arg_arrays[j]);
-            }
-            else {
-                value = PyLong_AsLongLong(arg_arrays[j]);
-            }
-#endif
             if (PyErr_Occurred()) {
                 goto fail;
             }
@@ -319,10 +310,10 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
 
             /* Cast if necessary */
             arg = arg_arrays[j];
-            if (PyArray_EquivTypenums(PyArray_DESCR(arg)->type_num, cur_typenum)) {
+            if (PyArray_EquivTypenums(PyArray_TYPE((PyArrayObject *)arg), cur_typenum)) {
                 /* No cast needed. */
             }
-            else if (!is_output[j] || PyArray_CanCastSafely(cur_typenum, PyArray_DESCR(arg)->type_num)) {
+            else if (!is_output[j] || PyArray_CanCastSafely(cur_typenum, PyArray_TYPE((PyArrayObject *)arg))) {
                 /* Cast needed. Output arrays require safe cast back. */
                 arg_arrays[j] = c_array_from_object(arg, cur_typenum, is_output[j]);
                 Py_DECREF(arg);
@@ -339,11 +330,11 @@ call_thunk(char ret_spec, const char *spec, thunk_t *thunk, PyObject *args)
         }
 
         /* Grab value */
-        arg_list[j] = PyArray_DATA(arg_arrays[j]);
+        arg_list[j] = PyArray_DATA((PyArrayObject *)arg_arrays[j]);
 
         /* Find maximum array size */
-        if (PyArray_SIZE(arg_arrays[j]) > max_array_size) {
-            max_array_size = PyArray_SIZE(arg_arrays[j]);
+        if (PyArray_SIZE((PyArrayObject *)arg_arrays[j]) > max_array_size) {
+            max_array_size = PyArray_SIZE((PyArrayObject *)arg_arrays[j]);
         }
     }
 
@@ -447,7 +438,7 @@ fail:
         }
         #ifdef HAVE_WRITEBACKIFCOPY
             if (is_output[j] && arg_arrays[j] != NULL && PyArray_Check(arg_arrays[j])) {
-                PyArray_ResolveWritebackIfCopy((PyArrayObject *)arg_arrays[j]); 
+                PyArray_ResolveWritebackIfCopy((PyArrayObject *)arg_arrays[j]);
             }
         #endif
         Py_XDECREF(arg_arrays[j]);
@@ -477,23 +468,7 @@ static void *allocate_std_vector_typenum(int typenum)
     }
 
     try {
-        PROCESS(NPY_BOOL, npy_bool_wrapper);
-        PROCESS(NPY_BYTE, npy_byte);
-        PROCESS(NPY_UBYTE, npy_ubyte);
-        PROCESS(NPY_SHORT, npy_short);
-        PROCESS(NPY_USHORT, npy_ushort);
-        PROCESS(NPY_INT, npy_int);
-        PROCESS(NPY_UINT, npy_uint);
-        PROCESS(NPY_LONG, npy_long);
-        PROCESS(NPY_ULONG, npy_ulong);
-        PROCESS(NPY_LONGLONG, npy_longlong);
-        PROCESS(NPY_ULONGLONG, npy_ulonglong);
-        PROCESS(NPY_FLOAT, npy_float);
-        PROCESS(NPY_DOUBLE, npy_double);
-        PROCESS(NPY_LONGDOUBLE, npy_longdouble);
-        PROCESS(NPY_CFLOAT, npy_cfloat_wrapper);
-        PROCESS(NPY_CDOUBLE, npy_cdouble_wrapper);
-        PROCESS(NPY_CLONGDOUBLE, npy_clongdouble_wrapper);
+        SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
     } catch (std::exception &e) {
         /* failed */
     }
@@ -510,25 +485,10 @@ static void free_std_vector_typenum(int typenum, void *p)
 #define PROCESS(ntype, ctype)                                   \
     if (PyArray_EquivTypenums(typenum, ntype)) {                \
         delete ((std::vector<ctype>*)p);                        \
+        return;                                                 \
     }
 
-    PROCESS(NPY_BOOL, npy_bool_wrapper);
-    PROCESS(NPY_BYTE, npy_byte);
-    PROCESS(NPY_UBYTE, npy_ubyte);
-    PROCESS(NPY_SHORT, npy_short);
-    PROCESS(NPY_USHORT, npy_ushort);
-    PROCESS(NPY_INT, npy_int);
-    PROCESS(NPY_UINT, npy_uint);
-    PROCESS(NPY_LONG, npy_long);
-    PROCESS(NPY_ULONG, npy_ulong);
-    PROCESS(NPY_LONGLONG, npy_longlong);
-    PROCESS(NPY_ULONGLONG, npy_ulonglong);
-    PROCESS(NPY_FLOAT, npy_float);
-    PROCESS(NPY_DOUBLE, npy_double);
-    PROCESS(NPY_LONGDOUBLE, npy_longdouble);
-    PROCESS(NPY_CFLOAT, npy_cfloat_wrapper);
-    PROCESS(NPY_CDOUBLE, npy_cdouble_wrapper);
-    PROCESS(NPY_CLONGDOUBLE, npy_clongdouble_wrapper);
+    SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
 
 #undef PROCESS
 }
@@ -541,30 +501,14 @@ static PyObject *array_from_std_vector_and_free(int typenum, void *p)
         npy_intp length = v->size();                            \
         PyObject *obj = PyArray_SimpleNew(1, &length, typenum); \
         if (length > 0) {                                       \
-            memcpy(PyArray_DATA(obj), &((*v)[0]),               \
+            memcpy(PyArray_DATA((PyArrayObject *)obj), &((*v)[0]), \
                    sizeof(ctype)*length);                       \
         }                                                       \
         delete v;                                               \
         return obj;                                             \
     }
 
-    PROCESS(NPY_BOOL, npy_bool_wrapper);
-    PROCESS(NPY_BYTE, npy_byte);
-    PROCESS(NPY_UBYTE, npy_ubyte);
-    PROCESS(NPY_SHORT, npy_short);
-    PROCESS(NPY_USHORT, npy_ushort);
-    PROCESS(NPY_INT, npy_int);
-    PROCESS(NPY_UINT, npy_uint);
-    PROCESS(NPY_LONG, npy_long);
-    PROCESS(NPY_ULONG, npy_ulong);
-    PROCESS(NPY_LONGLONG, npy_longlong);
-    PROCESS(NPY_ULONGLONG, npy_ulonglong);
-    PROCESS(NPY_FLOAT, npy_float);
-    PROCESS(NPY_DOUBLE, npy_double);
-    PROCESS(NPY_LONGDOUBLE, npy_longdouble);
-    PROCESS(NPY_CFLOAT, npy_cfloat_wrapper);
-    PROCESS(NPY_CDOUBLE, npy_cdouble_wrapper);
-    PROCESS(NPY_CLONGDOUBLE, npy_clongdouble_wrapper);
+    SPTOOLS_FOR_EACH_DATA_TYPE_CODE(PROCESS)
 
 #undef PROCESS
 
@@ -577,17 +521,17 @@ static PyObject *c_array_from_object(PyObject *obj, int typenum, int is_output)
 {
     if (!is_output) {
         if (typenum == -1) {
-            return PyArray_FROM_OF(obj, NPY_C_CONTIGUOUS|NPY_NOTSWAPPED);
+            return PyArray_FROM_OF(obj, NPY_ARRAY_C_CONTIGUOUS|NPY_ARRAY_NOTSWAPPED);
         }
         else {
-            return PyArray_FROM_OTF(obj, typenum, NPY_C_CONTIGUOUS|NPY_NOTSWAPPED);
+            return PyArray_FROM_OTF(obj, typenum, NPY_ARRAY_C_CONTIGUOUS|NPY_ARRAY_NOTSWAPPED);
         }
     }
     else {
         #ifdef HAVE_WRITEBACKIFCOPY
-            int flags = NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_ARRAY_WRITEBACKIFCOPY|NPY_NOTSWAPPED;
+            int flags = NPY_ARRAY_C_CONTIGUOUS|NPY_ARRAY_WRITEABLE|NPY_ARRAY_WRITEBACKIFCOPY|NPY_ARRAY_NOTSWAPPED;
         #else
-            int flags = NPY_C_CONTIGUOUS|NPY_WRITEABLE|NPY_UPDATEIFCOPY|NPY_NOTSWAPPED;
+            int flags = NPY_ARRAY_C_CONTIGUOUS|NPY_ARRAY_WRITEABLE|NPY_UPDATEIFCOPY|NPY_ARRAY_NOTSWAPPED;
         #endif
         if (typenum == -1) {
             return PyArray_FROM_OF(obj, flags);
@@ -607,7 +551,6 @@ extern "C" {
 
 #include "sparsetools_impl.h"
 
-#if PY_VERSION_HEX >= 0x03000000
 static struct PyModuleDef moduledef = {
     PyModuleDef_HEAD_INIT,
     "_sparsetools",
@@ -620,22 +563,11 @@ static struct PyModuleDef moduledef = {
     NULL
 };
 
-PyObject *PyInit__sparsetools(void)
+PyMODINIT_FUNC
+PyInit__sparsetools(void)
 {
-    PyObject *m;
-    m = PyModule_Create(&moduledef);
     import_array();
-    return m;
+    return PyModule_Create(&moduledef);
 }
-#else
-PyMODINIT_FUNC init_sparsetools(void) {
-    PyObject *m;
-    m = Py_InitModule("_sparsetools", sparsetools_methods);
-    import_array();
-    if (m == NULL) {
-        Py_FatalError("can't initialize module _sparsetools");
-    }
-}
-#endif
 
 } /* extern "C" */

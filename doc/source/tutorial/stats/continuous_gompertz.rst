@@ -9,7 +9,9 @@ For :math:`x\geq0` and :math:`c>0` . In JKB the two shape parameters :math:`b,a`
 .. math::
    :nowrap:
 
-    \begin{eqnarray*} f\left(x;c\right) & = & ce^{x}\exp\left[-c\left(e^{x}-1\right)\right]\\ F\left(x;c\right) & = & 1-\exp\left[-c\left(e^{x}-1\right)\right]\\ G\left(q;c\right) & = & \log\left[1-\frac{1}{c}\log\left(1-q\right)\right]\end{eqnarray*}
+    \begin{eqnarray*} f\left(x;c\right) & = & ce^{x}\exp\left(-c\left(e^{x}-1\right)\right)\\
+    F\left(x;c\right) & = & 1-\exp\left(-c\left(e^{x}-1\right)\right)\\
+    G\left(q;c\right) & = & \log\left(1-\frac{1}{c}\log\left(1-q\right)\right)\end{eqnarray*}
 
 .. math::
 

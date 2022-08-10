@@ -1,19 +1,18 @@
-from __future__ import division, print_function, absolute_import
 
+import pytest
 import numpy as np
 from numpy import arange, add, array, eye, copy, sqrt
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_array_almost_equal, assert_allclose)
 from pytest import raises as assert_raises
 
-from scipy._lib.six import xrange
-
-from scipy import fftpack
+from scipy.fft import fft
 from scipy.special import comb
 from scipy.linalg import (toeplitz, hankel, circulant, hadamard, leslie, dft,
                           companion, tri, triu, tril, kron, block_diag,
                           helmert, hilbert, invhilbert, pascal, invpascal,
-                          fiedler, fiedler_companion, eigvals)
+                          fiedler, fiedler_companion, eigvals,
+                          convolution_matrix)
 from numpy.linalg import cond
 
 
@@ -23,7 +22,7 @@ def get_mat(n):
     return data
 
 
-class TestTri(object):
+class TestTri:
     def test_basic(self):
         assert_equal(tri(4), array([[1, 0, 0, 0],
                                     [1, 1, 0, 0],
@@ -40,9 +39,9 @@ class TestTri(object):
                                          [1, 1, 1, 1],
                                          [1, 1, 1, 1]]))
         assert_equal(tri(4, k=-1), array([[0, 0, 0, 0],
-                                         [1, 0, 0, 0],
-                                         [1, 1, 0, 0],
-                                         [1, 1, 1, 0]]))
+                                          [1, 0, 0, 0],
+                                          [1, 1, 0, 0],
+                                          [1, 1, 1, 0]]))
 
     def test_2d(self):
         assert_equal(tri(4, 3), array([[1, 0, 0],
@@ -63,7 +62,7 @@ class TestTri(object):
                                              [1, 1, 0]]))
 
 
-class TestTril(object):
+class TestTril:
     def test_basic(self):
         a = (100*get_mat(5)).astype('l')
         b = a.copy()
@@ -86,7 +85,7 @@ class TestTril(object):
         assert_equal(tril(a, k=-2), b)
 
 
-class TestTriu(object):
+class TestTriu:
     def test_basic(self):
         a = (100*get_mat(5)).astype('l')
         b = a.copy()
@@ -109,7 +108,7 @@ class TestTriu(object):
         assert_equal(triu(a, k=-2), b)
 
 
-class TestToeplitz(object):
+class TestToeplitz:
 
     def test_basic(self):
         y = toeplitz([1, 2, 3])
@@ -156,7 +155,7 @@ class TestToeplitz(object):
         assert_array_equal(t, [[1, 2, 3]])
 
 
-class TestHankel(object):
+class TestHankel:
     def test_basic(self):
         y = hankel([1, 2, 3])
         assert_array_equal(y, [[1, 2, 3], [2, 3, 0], [3, 0, 0]])
@@ -164,13 +163,13 @@ class TestHankel(object):
         assert_array_equal(y, [[1, 2, 3], [2, 3, 4], [3, 4, 5]])
 
 
-class TestCirculant(object):
+class TestCirculant:
     def test_basic(self):
         y = circulant([1, 2, 3])
         assert_array_equal(y, [[1, 3, 2], [2, 1, 3], [3, 2, 1]])
 
 
-class TestHadamard(object):
+class TestHadamard:
 
     def test_basic(self):
 
@@ -190,7 +189,7 @@ class TestHadamard(object):
         assert_raises(ValueError, hadamard, 5)
 
 
-class TestLeslie(object):
+class TestLeslie:
 
     def test_bad_shapes(self):
         assert_raises(ValueError, leslie, [[1, 1], [2, 2]], [3, 4, 5])
@@ -206,7 +205,7 @@ class TestLeslie(object):
         assert_array_equal(a, expected)
 
 
-class TestCompanion(object):
+class TestCompanion:
 
     def test_bad_shapes(self):
         assert_raises(ValueError, companion, [[1, 1], [2, 2]])
@@ -314,7 +313,7 @@ class TestKron:
         assert_array_equal(a, expected)
 
 
-class TestHelmert(object):
+class TestHelmert:
 
     def test_orthogonality(self):
         for n in range(1, 7):
@@ -328,12 +327,12 @@ class TestHelmert(object):
             H_full = helmert(n, full=True)
             H_partial = helmert(n)
             for U in H_full[1:, :].T, H_partial.T:
-                C = np.eye(n) - np.ones((n, n)) / n
+                C = np.eye(n) - np.full((n, n), 1 / n)
                 assert_allclose(U.dot(U.T), C)
                 assert_allclose(U.T.dot(U), np.eye(n-1), atol=1e-12)
 
 
-class TestHilbert(object):
+class TestHilbert:
 
     def test_basic(self):
         h3 = array([[1.0, 1/2., 1/3.],
@@ -347,7 +346,7 @@ class TestHilbert(object):
         assert_equal(h0.shape, (0, 0))
 
 
-class TestInvHilbert(object):
+class TestInvHilbert:
 
     def test_basic(self):
         invh1 = array([[1]])
@@ -501,12 +500,12 @@ class TestInvHilbert(object):
              -1129631016152221783200, 1098252376814660067000,
              -753830033789944188000, 346146444087219270000,
              -95382575704033754400, 11922821963004219300]
-            ])
+        ])
         assert_array_equal(invhilbert(17, exact=True), invh17)
         assert_allclose(invhilbert(17), invh17.astype(float), rtol=1e-12)
 
     def test_inverse(self):
-        for n in xrange(1, 10):
+        for n in range(1, 10):
             a = hilbert(n)
             b = invhilbert(n)
             # The Hilbert matrix is increasingly badly conditioned,
@@ -515,7 +514,7 @@ class TestInvHilbert(object):
             assert_allclose(a.dot(b), eye(n), atol=1e-15*c, rtol=1e-15*c)
 
 
-class TestPascal(object):
+class TestPascal:
 
     cases = [
         (1, array([[1]]), array([[1]])),
@@ -553,7 +552,7 @@ class TestPascal(object):
 
     def test_big(self):
         p = pascal(50)
-        assert_equal(p[-1, -1], comb(98, 49, exact=True))
+        assert p[-1, -1] == comb(98, 49, exact=True)
 
     def test_threshold(self):
         # Regression test.  An early version of `pascal` returned an
@@ -563,7 +562,7 @@ class TestPascal(object):
         p = pascal(34)
         assert_equal(2*p.item(-1, -2), p.item(-1, -1), err_msg="n = 34")
         p = pascal(35)
-        assert_equal(2*p.item(-1, -2), p.item(-1, -1), err_msg="n = 35")
+        assert_equal(2.*p.item(-1, -2), 1.*p.item(-1, -1), err_msg="n = 35")
 
 
 def test_invpascal():
@@ -607,7 +606,7 @@ def test_dft():
     x = array([0, 1, 2, 3, 4, 5, 0, 1])
     m = dft(8)
     mx = m.dot(x)
-    fx = fftpack.fft(x)
+    fx = fft(x)
     assert_array_almost_equal(mx, fx)
 
 
@@ -640,3 +639,52 @@ def test_fiedler_companion():
     fc = fiedler_companion([1., -16., 86., -176., 105.])
     assert_array_almost_equal(eigvals(fc),
                               np.array([7., 5., 3., 1.]))
+
+
+class TestConvolutionMatrix:
+    """
+    Test convolution_matrix vs. numpy.convolve for various parameters.
+    """
+
+    def create_vector(self, n, cpx):
+        """Make a complex or real test vector of length n."""
+        x = np.linspace(-2.5, 2.2, n)
+        if cpx:
+            x = x + 1j*np.linspace(-1.5, 3.1, n)
+        return x
+
+    def test_bad_n(self):
+        # n must be a positive integer
+        with pytest.raises(ValueError, match='n must be a positive integer'):
+            convolution_matrix([1, 2, 3], 0)
+
+    def test_bad_first_arg(self):
+        # first arg must be a 1d array, otherwise ValueError
+        with pytest.raises(ValueError, match='one-dimensional'):
+            convolution_matrix(1, 4)
+
+    def test_empty_first_arg(self):
+        # first arg must have at least one value
+        with pytest.raises(ValueError, match=r'len\(a\)'):
+            convolution_matrix([], 4)
+
+    def test_bad_mode(self):
+        # mode must be in ('full', 'valid', 'same')
+        with pytest.raises(ValueError, match='mode.*must be one of'):
+            convolution_matrix((1, 1), 4, mode='invalid argument')
+
+    @pytest.mark.parametrize('cpx', [False, True])
+    @pytest.mark.parametrize('na', [1, 2, 9])
+    @pytest.mark.parametrize('nv', [1, 2, 9])
+    @pytest.mark.parametrize('mode', [None, 'full', 'valid', 'same'])
+    def test_against_numpy_convolve(self, cpx, na, nv, mode):
+        a = self.create_vector(na, cpx)
+        v = self.create_vector(nv, cpx)
+        if mode is None:
+            y1 = np.convolve(v, a)
+            A = convolution_matrix(a, nv)
+        else:
+            y1 = np.convolve(v, a, mode)
+            A = convolution_matrix(a, nv, mode)
+        y2 = A @ v
+        assert_array_almost_equal(y1, y2)

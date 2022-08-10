@@ -1,4 +1,3 @@
-from __future__ import division, print_function, absolute_import
 from itertools import groupby
 from warnings import warn
 import numpy as np
@@ -43,9 +42,11 @@ def warn_extraneous(extraneous):
 
 def validate_tol(rtol, atol, n):
     """Validate tolerance values."""
-    if rtol < 100 * EPS:
-        warn("`rtol` is too low, setting to {}".format(100 * EPS))
-        rtol = 100 * EPS
+
+    if np.any(rtol < 100 * EPS):
+        warn("At least one element of `rtol` is too small. "
+             f"Setting `rtol = np.maximum(rtol, {100 * EPS})`.")
+        rtol = np.maximum(rtol, 100 * EPS)
 
     atol = np.asarray(atol)
     if atol.ndim > 0 and atol.shape != (n,):
@@ -76,11 +77,12 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
     y0 : ndarray, shape (n,)
         Initial value of the dependent variable.
     f0 : ndarray, shape (n,)
-        Initial value of the derivative, i. e. ``fun(t0, y0)``.
+        Initial value of the derivative, i.e., ``fun(t0, y0)``.
     direction : float
         Integration direction.
     order : float
-        Method order.
+        Error estimator order. It means that the error controlled by the
+        algorithm is proportional to ``step_size ** (order + 1)`.
     rtol : float
         Desired relative tolerance.
     atol : float
@@ -119,7 +121,7 @@ def select_initial_step(fun, t0, y0, f0, direction, order, rtol, atol):
     return min(100 * h0, h1)
 
 
-class OdeSolution(object):
+class OdeSolution:
     """Continuous ODE solution.
 
     It is organized as a collection of `DenseOutput` objects which represent
@@ -200,7 +202,7 @@ class OdeSolution(object):
         -------
         y : ndarray, shape (n_states,) or (n_states, n_points)
             Computed values. Shape depends on whether `t` is a scalar or a
-            1-d array.
+            1-D array.
         """
         t = np.asarray(t)
 
@@ -258,7 +260,7 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
     difference significantly separated from its round-off error which
     approximately equals ``EPS * np.abs(f)``. It reduces a possibility of a
     huge error and assures that the estimated derivative are reasonably close
-    to the true values (i.e. the finite difference approximation is at least
+    to the true values (i.e., the finite difference approximation is at least
     qualitatively reflects the structure of the true Jacobian).
 
     Parameters
@@ -273,7 +275,7 @@ def num_jac(fun, t, y, f, threshold, factor, sparsity=None):
         Value of the right hand side at (t, y).
     threshold : float
         Threshold for `y` value used for computing the step size as
-        ``factor * np.maximum(np.abs(y), threshold)``. Typically the value of
+        ``factor * np.maximum(np.abs(y), threshold)``. Typically, the value of
         absolute tolerance (atol) for a solver should be passed as `threshold`.
     factor : ndarray with shape (n,) or None
         Factor to use for computing the step size. Pass None for the very

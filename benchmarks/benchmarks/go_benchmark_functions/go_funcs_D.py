@@ -1,6 +1,4 @@
 # -*- coding: utf-8 -*-
-from __future__ import division, print_function, absolute_import
-
 import numpy as np
 from numpy import abs, cos, exp, arange, pi, sin, sqrt, sum, zeros, tanh
 from numpy.testing import assert_almost_equal
@@ -8,8 +6,7 @@ from .go_benchmark import Benchmark
 
 
 class Damavandi(Benchmark):
-
-    """
+    r"""
     Damavandi objective function.
 
     This class defines the Damavandi [1]_ global optimization problem. This is a
@@ -68,8 +65,7 @@ class Damavandi(Benchmark):
 
 
 class Deb01(Benchmark):
-
-    """
+    r"""
     Deb 1 objective function.
 
     This class defines the Deb 1 [1]_ global optimization problem. This is a
@@ -108,8 +104,7 @@ class Deb01(Benchmark):
 
 
 class Deb03(Benchmark):
-
-    """
+    r"""
     Deb 3 objective function.
 
     This class defines the Deb 3 [1]_ global optimization problem. This is a
@@ -150,8 +145,7 @@ class Deb03(Benchmark):
 
 
 class Decanomial(Benchmark):
-
-    """
+    r"""
     Decanomial objective function.
 
     This class defines the Decanomial function global optimization problem. This
@@ -194,8 +188,7 @@ class Decanomial(Benchmark):
 
 
 class Deceptive(Benchmark):
-
-    """
+    r"""
     Deceptive objective function.
 
     This class defines the Deceptive [1]_ global optimization problem. This is a
@@ -274,8 +267,7 @@ class Deceptive(Benchmark):
 
 
 class DeckkersAarts(Benchmark):
-
-    """
+    r"""
     Deckkers-Aarts objective function.
 
     This class defines the Deckkers-Aarts [1]_ global optimization problem. This
@@ -315,8 +307,7 @@ class DeckkersAarts(Benchmark):
 
 
 class DeflectedCorrugatedSpring(Benchmark):
-
-    """
+    r"""
     DeflectedCorrugatedSpring objective function.
 
     This class defines the Deflected Corrugated Spring [1]_ function global
@@ -364,8 +355,7 @@ class DeflectedCorrugatedSpring(Benchmark):
 
 
 class DeVilliersGlasser01(Benchmark):
-
-    """
+    r"""
     DeVilliers-Glasser 1 objective function.
 
     This class defines the DeVilliers-Glasser 1 [1]_ function global optimization
@@ -410,8 +400,7 @@ class DeVilliersGlasser01(Benchmark):
 
 
 class DeVilliersGlasser02(Benchmark):
-
-    """
+    r"""
     DeVilliers-Glasser 2 objective function.
 
     This class defines the DeVilliers-Glasser 2 [1]_ function global optimization problem. This
@@ -458,8 +447,7 @@ class DeVilliersGlasser02(Benchmark):
 
 
 class DixonPrice(Benchmark):
-
-    """
+    r"""
     Dixon and Price objective function.
 
     This class defines the Dixon and Price global optimization problem. This
@@ -504,8 +492,7 @@ class DixonPrice(Benchmark):
 
 
 class Dolan(Benchmark):
-
-    """
+    r"""
     Dolan objective function.
 
     This class defines the Dolan [1]_ global optimization problem. This
@@ -519,7 +506,7 @@ class Dolan(Benchmark):
 
     with :math:`x_i \in [-100, 100]` for :math:`i = 1, ..., 5`.
 
-    *Global optimum*: :math:`f(x_i) = 10^{-5}` for 
+    *Global optimum*: :math:`f(x_i) = 10^{-5}` for
     :math:`x = [8.39045925, 4.81424707, 7.34574133, 68.88246895, 3.85470806]`
 
     .. [1] Gavana, A. Global Optimization Benchmarks and AMPGO retrieved 2015
@@ -547,8 +534,7 @@ class Dolan(Benchmark):
 
 
 class DropWave(Benchmark):
-
-    """
+    r"""
     DropWave objective function.
 
     This class defines the DropWave [1]_ global optimization problem. This is a

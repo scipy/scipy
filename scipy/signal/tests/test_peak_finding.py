@@ -1,5 +1,3 @@
-from __future__ import division, print_function, absolute_import
-
 import copy
 
 import numpy as np
@@ -12,7 +10,6 @@ from numpy.testing import (
 import pytest
 from pytest import raises, warns
 
-from scipy._lib.six import xrange
 from scipy.signal._peak_finding import (
     argrelmax,
     argrelmin,
@@ -23,6 +20,7 @@ from scipy.signal._peak_finding import (
     find_peaks_cwt,
     _identify_ridge_lines
 )
+from scipy.signal.windows import gaussian
 from scipy.signal._peak_finding_utils import _local_maxima_1d, PeakPropertyWarning
 
 
@@ -72,7 +70,7 @@ def _gen_ridge_line(start_locs, max_locs, length, distances, gaps):
         raise ValueError('Cannot generate ridge line according to constraints')
     dist_int = length / len(distances) - 1
     gap_int = length / len(gaps) - 1
-    for ind in xrange(1, length):
+    for ind in range(1, length):
         nextcol = locs[ind - 1, 1]
         nextrow = locs[ind - 1, 0] + 1
         if (ind % dist_int == 0) and (len(distances) > 0):
@@ -86,7 +84,7 @@ def _gen_ridge_line(start_locs, max_locs, length, distances, gaps):
     return [locs[:, 0], locs[:, 1]]
 
 
-class TestLocalMaxima1d(object):
+class TestLocalMaxima1d:
 
     def test_empty(self):
         """Test with empty signal."""
@@ -137,7 +135,7 @@ class TestLocalMaxima1d(object):
         """Test input validation and raised exceptions."""
         with raises(ValueError, match="wrong number of dimensions"):
             _local_maxima_1d(np.ones((1, 1)))
-        with raises(ValueError, match="expected 'float64_t'"):
+        with raises(ValueError, match="expected 'const float64_t'"):
             _local_maxima_1d(np.ones(1, dtype=int))
         with raises(TypeError, match="list"):
             _local_maxima_1d([1., 2.])
@@ -145,22 +143,22 @@ class TestLocalMaxima1d(object):
             _local_maxima_1d(None)
 
 
-class TestRidgeLines(object):
+class TestRidgeLines:
 
     def test_empty(self):
         test_matr = np.zeros([20, 100])
-        lines = _identify_ridge_lines(test_matr, 2*np.ones(20), 1)
+        lines = _identify_ridge_lines(test_matr, np.full(20, 2), 1)
         assert_(len(lines) == 0)
 
     def test_minimal(self):
         test_matr = np.zeros([20, 100])
         test_matr[0, 10] = 1
-        lines = _identify_ridge_lines(test_matr, 2*np.ones(20), 1)
+        lines = _identify_ridge_lines(test_matr, np.full(20, 2), 1)
         assert_(len(lines) == 1)
 
         test_matr = np.zeros([20, 100])
         test_matr[0:2, 10] = 1
-        lines = _identify_ridge_lines(test_matr, 2*np.ones(20), 1)
+        lines = _identify_ridge_lines(test_matr, np.full(20, 2), 1)
         assert_(len(lines) == 1)
 
     def test_single_pass(self):
@@ -170,7 +168,7 @@ class TestRidgeLines(object):
         length = 12
         line = _gen_ridge_line([0, 25], test_matr.shape, length, distances, gaps)
         test_matr[line[0], line[1]] = 1
-        max_distances = max(distances)*np.ones(20)
+        max_distances = np.full(20, max(distances))
         identified_lines = _identify_ridge_lines(test_matr, max_distances, max(gaps) + 1)
         assert_array_equal(identified_lines, [line])
 
@@ -182,7 +180,7 @@ class TestRidgeLines(object):
         line = _gen_ridge_line([0, 25], test_matr.shape, length, distances, gaps)
         test_matr[line[0], line[1]] = 1
         max_dist = 3
-        max_distances = max_dist*np.ones(20)
+        max_distances = np.full(20, max_dist)
         #This should get 2 lines, since the distance is too large
         identified_lines = _identify_ridge_lines(test_matr, max_distances, max(gaps) + 1)
         assert_(len(identified_lines) == 2)
@@ -203,7 +201,7 @@ class TestRidgeLines(object):
         line = _gen_ridge_line([0, 25], test_matr.shape, length, distances, gaps)
         test_matr[line[0], line[1]] = 1
         max_dist = 6
-        max_distances = max_dist*np.ones(20)
+        max_distances = np.full(20, max_dist)
         #This should get 2 lines, since the gap is too large
         identified_lines = _identify_ridge_lines(test_matr, max_distances, max_gap)
         assert_(len(identified_lines) == 2)
@@ -224,7 +222,7 @@ class TestRidgeLines(object):
         line = _gen_ridge_line([0, 25], test_matr.shape, length, distances, gaps)
         test_matr[line[0], line[1]] = 1
         max_dist = 1
-        max_distances = max_dist*np.ones(50)
+        max_distances = np.full(50, max_dist)
         #This should get 3 lines, since the gaps are too large
         identified_lines = _identify_ridge_lines(test_matr, max_distances, max_gap)
         assert_(len(identified_lines) == 3)
@@ -237,7 +235,7 @@ class TestRidgeLines(object):
             np.testing.assert_array_less(np.abs(agaps), max(gaps) + 0.1)
 
 
-class TestArgrel(object):
+class TestArgrel:
 
     def test_empty(self):
         # Regression test for gh-2832.
@@ -313,14 +311,14 @@ class TestArgrel(object):
         test_data_2 = np.vstack([test_data, test_data[rot_range]])
         rel_max_rows, rel_max_cols = argrelmax(test_data_2, axis=1, order=1)
 
-        for rw in xrange(0, test_data_2.shape[0]):
+        for rw in range(0, test_data_2.shape[0]):
             inds = (rel_max_rows == rw)
 
             assert_(len(rel_max_cols[inds]) == len(act_locs))
             assert_((act_locs == (rel_max_cols[inds] - rot_factor*rw)).all())
 
 
-class TestPeakProminences(object):
+class TestPeakProminences:
 
     def test_empty(self):
         """
@@ -400,13 +398,13 @@ class TestPeakProminences(object):
         Verify that exceptions and warnings are raised.
         """
         # x with dimension > 1
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             peak_prominences([[0, 1, 1, 0]], [1, 2])
         # peaks with dimension > 1
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             peak_prominences([0, 1, 1, 0], [[1, 2]])
         # x with dimension < 1
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             peak_prominences(3, [0,])
 
         # empty x with supplied
@@ -437,7 +435,7 @@ class TestPeakProminences(object):
             peak_prominences([0, 1, 1, 1, 0], [2], wlen=2)
 
 
-class TestPeakWidths(object):
+class TestPeakWidths:
 
     def test_empty(self):
         """
@@ -491,16 +489,16 @@ class TestPeakWidths(object):
         """
         Verify that argument validation works as intended.
         """
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             # x with dimension > 1
             peak_widths(np.zeros((3, 4)), np.ones(3))
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             # x with dimension < 1
             peak_widths(3, [0])
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             # peaks with dimension > 1
             peak_widths(np.arange(10), np.ones((3, 2), dtype=np.intp))
-        with raises(ValueError, match='1D array'):
+        with raises(ValueError, match='1-D array'):
             # peaks with dimension < 1
             peak_widths(np.arange(10), 3)
         with raises(ValueError, match='not a valid index'):
@@ -602,7 +600,7 @@ def test_unpack_condition_args():
         _unpack_condition_args((None, amin_true), np.arange(11), peaks)
 
 
-class TestFindPeaks(object):
+class TestFindPeaks:
 
     # Keys of optionally returned properties
     property_keys = {'peak_heights', 'left_thresholds', 'right_thresholds',
@@ -747,9 +745,9 @@ class TestFindPeaks(object):
         """
         Test exceptions raised by function.
         """
-        with raises(ValueError, match="1D array"):
+        with raises(ValueError, match="1-D array"):
             find_peaks(np.array(1))
-        with raises(ValueError, match="1D array"):
+        with raises(ValueError, match="1-D array"):
             find_peaks(np.ones((2, 2)))
         with raises(ValueError, match="distance"):
             find_peaks(np.arange(10), distance=-1)
@@ -772,8 +770,28 @@ class TestFindPeaks(object):
         for key in ("left_bases", "right_bases", "left_ips", "right_ips"):
             assert_equal(props[key], peaks)
 
+    @pytest.mark.parametrize("kwargs", [
+        {},
+        {"distance": 3.0},
+        {"prominence": (None, None)},
+        {"width": (None, 2)},
 
-class TestFindPeaksCwt(object):
+    ])
+    def test_readonly_array(self, kwargs):
+        """
+        Test readonly arrays are accepted.
+        """
+        x = np.linspace(0, 10, 15)
+        x_readonly = x.copy()
+        x_readonly.flags.writeable = False
+
+        peaks, _ = find_peaks(x)
+        peaks_readonly, _ = find_peaks(x_readonly, **kwargs)
+
+        assert_allclose(peaks, peaks_readonly)
+
+
+class TestFindPeaksCwt:
 
     def test_find_peaks_exact(self):
         """
@@ -822,3 +840,48 @@ class TestFindPeaksCwt(object):
         widths = np.arange(10, 50)
         found_locs = find_peaks_cwt(test_data, widths, min_snr=5, noise_perc=30)
         np.testing.assert_equal(len(found_locs), 0)
+
+    def test_find_peaks_with_non_default_wavelets(self):
+        x = gaussian(200, 2)
+        widths = np.array([1, 2, 3, 4])
+        a = find_peaks_cwt(x, widths, wavelet=gaussian)
+
+        np.testing.assert_equal(np.array([100]), a)
+
+    def test_find_peaks_window_size(self):
+        """
+        Verify that window_size is passed correctly to private function and
+        affects the result.
+        """
+        sigmas = [2.0, 2.0]
+        num_points = 1000
+        test_data, act_locs = _gen_gaussians_even(sigmas, num_points)
+        widths = np.arange(0.1, max(sigmas), 0.2)
+        noise_amp = 0.05
+        np.random.seed(18181911)
+        test_data += (np.random.rand(num_points) - 0.5)*(2*noise_amp)
+
+        # Possibly contrived negative region to throw off peak finding
+        # when window_size is too large
+        test_data[250:320] -= 1
+
+        found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=3,
+                                    min_length=None, window_size=None)
+        with pytest.raises(AssertionError):
+            assert found_locs.size == act_locs.size
+
+        found_locs = find_peaks_cwt(test_data, widths, gap_thresh=2, min_snr=3,
+                                    min_length=None, window_size=20)
+        assert found_locs.size == act_locs.size
+
+    def test_find_peaks_with_one_width(self):
+        """
+        Verify that the `width` argument
+        in `find_peaks_cwt` can be a float
+        """
+        xs = np.arange(0, np.pi, 0.05)
+        test_data = np.sin(xs)
+        widths = 1
+        found_locs = find_peaks_cwt(test_data, widths)
+
+        np.testing.assert_equal(found_locs, 32)

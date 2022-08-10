@@ -1,5 +1,3 @@
-from __future__ import division, absolute_import, print_function
-
 import math
 
 import numpy.linalg as nl
@@ -8,12 +6,10 @@ import numpy as np
 from numpy.testing import assert_
 from numpy.random import rand
 
-try:
-    import scipy.linalg as sl
-except ImportError:
-    pass
+from .common import Benchmark, safe_import
 
-from .common import Benchmark
+with safe_import():
+    import scipy.linalg as sl
 
 
 def random(size):
@@ -37,14 +33,14 @@ class Bench(Benchmark):
             # skip: slow, and not useful to benchmark numpy
             raise NotImplementedError()
 
-        a = random([size,size])
+        a = random([size, size])
         # larger diagonal ensures non-singularity:
         for i in range(size):
-            a[i,i] = 10*(.1+a[i,i])
+            a[i, i] = 10*(.1+a[i, i])
         b = random([size])
 
         if contig != 'contig':
-            a = a[-1::-1,-1::-1]  # turn into a non-contiguous array
+            a = a[-1::-1, -1::-1]  # turn into a non-contiguous array
             assert_(not a.flags['CONTIGUOUS'])
 
         self.a = a
@@ -55,6 +51,14 @@ class Bench(Benchmark):
             nl.solve(self.a, self.b)
         else:
             sl.solve(self.a, self.b)
+
+    def time_solve_triangular(self, size, contig, module):
+        # treats self.a as a lower-triangular matrix by ignoring the strictly
+        # upper-triangular part
+        if module == 'numpy':
+            pass
+        else:
+            sl.solve_triangular(self.a, self.b, lower=True)
 
     def time_inv(self, size, contig, module):
         if module == 'numpy':
@@ -144,22 +148,22 @@ class Lstsq(Benchmark):
             # skip: slow, and not useful to benchmark numpy
             raise NotImplementedError()
 
-        np.random.seed(1234)
+        rng = np.random.default_rng(1234)
         n = math.ceil(2./3. * size)
         k = math.ceil(1./2. * size)
         m = size
 
         if dtype is np.complex128:
-            A = ((10 * np.random.rand(m,k) - 5) +
-                 1j*(10 * np.random.rand(m,k) - 5))
-            temp = ((10 * np.random.rand(k,n) - 5) +
-                    1j*(10 * np.random.rand(k,n) - 5))
-            b = ((10 * np.random.rand(m,1) - 5) +
-                 1j*(10 * np.random.rand(m,1) - 5))
+            A = ((10 * rng.random((m,k)) - 5) +
+                 1j*(10 * rng.random((m,k)) - 5))
+            temp = ((10 * rng.random((k,n)) - 5) +
+                    1j*(10 * rng.random((k,n)) - 5))
+            b = ((10 * rng.random((m,1)) - 5) +
+                 1j*(10 * rng.random((m,1)) - 5))
         else:
-            A = (10 * np.random.rand(m,k) - 5)
-            temp = 10 * np.random.rand(k,n) - 5
-            b = 10 * np.random.rand(m,1) - 5
+            A = (10 * rng.random((m,k)) - 5)
+            temp = 10 * rng.random((k,n)) - 5
+            b = 10 * rng.random((m,1)) - 5
 
         self.A = A.dot(temp)
         self.b = b
@@ -229,5 +233,16 @@ class SpecialMatrices(Benchmark):
     def time_toeplitz(self, size):
         sl.toeplitz(self.x)
 
-    def time_tri(self, size):
-        sl.tri(size)
+
+class GetFuncs(Benchmark):
+    def setup(self):
+        self.x = np.eye(1)
+
+    def time_get_blas_funcs(self):
+        sl.blas.get_blas_funcs('gemm', dtype=float)
+
+    def time_get_blas_funcs_2(self):
+        sl.blas.get_blas_funcs(('gemm', 'axpy'), (self.x, self.x))
+
+    def time_small_cholesky(self):
+        sl.cholesky(self.x)

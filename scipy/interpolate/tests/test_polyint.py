@@ -1,21 +1,19 @@
-from __future__ import division, print_function, absolute_import
-
 import warnings
-
+import io
 import numpy as np
 
 from numpy.testing import (
     assert_almost_equal, assert_array_equal, assert_array_almost_equal,
     assert_allclose, assert_equal, assert_)
 from pytest import raises as assert_raises
+import pytest
 
 from scipy.interpolate import (
     KroghInterpolator, krogh_interpolate,
     BarycentricInterpolator, barycentric_interpolate,
-    approximate_taylor_polynomial, pchip, PchipInterpolator,
-    pchip_interpolate, Akima1DInterpolator, CubicSpline, make_interp_spline)
-
-from scipy._lib.six import xrange
+    approximate_taylor_polynomial, CubicHermiteSpline, pchip,
+    PchipInterpolator, pchip_interpolate, Akima1DInterpolator, CubicSpline,
+    make_interp_spline)
 
 
 def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
@@ -27,12 +25,16 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
     s.insert(axis % (len(y_shape)+1), 0)
     y = np.random.rand(*((6,) + y_shape)).transpose(s)
 
-    # Cython code chokes on y.shape = (0, 3) etc, skip them
+    # Cython code chokes on y.shape = (0, 3) etc., skip them
     if y.size == 0:
         return
 
     xi = np.zeros(x_shape)
-    yi = interpolator_cls(x, y, axis=axis, **extra_args)(xi)
+    if interpolator_cls is CubicHermiteSpline:
+        dydx = np.random.rand(*((6,) + y_shape)).transpose(s)
+        yi = interpolator_cls(x, y, dydx, axis=axis, **extra_args)(xi)
+    else:
+        yi = interpolator_cls(x, y, axis=axis, **extra_args)(xi)
 
     target_shape = ((deriv_shape or ()) + y.shape[:axis]
                     + x_shape + y.shape[axis:][1:])
@@ -40,7 +42,12 @@ def check_shape(interpolator_cls, x_shape, y_shape, deriv_shape=None, axis=0,
 
     # check it works also with lists
     if x_shape and y.size > 0:
-        interpolator_cls(list(x), list(y), axis=axis, **extra_args)(list(xi))
+        if interpolator_cls is CubicHermiteSpline:
+            interpolator_cls(list(x), list(y), list(dydx), axis=axis,
+                             **extra_args)(list(xi))
+        else:
+            interpolator_cls(list(x), list(y), axis=axis,
+                             **extra_args)(list(xi))
 
     # check also values
     if xi.size > 0 and deriv_shape is None:
@@ -60,8 +67,8 @@ def test_shapes():
     def spl_interp(x, y, axis):
         return make_interp_spline(x, y, axis=axis)
 
-    for ip in [KroghInterpolator, BarycentricInterpolator, pchip,
-               Akima1DInterpolator, CubicSpline, spl_interp]:
+    for ip in [KroghInterpolator, BarycentricInterpolator, CubicHermiteSpline,
+               pchip, Akima1DInterpolator, CubicSpline, spl_interp]:
         for s1 in SHAPES:
             for s2 in SHAPES:
                 for axis in range(-len(s2), len(s2)):
@@ -132,19 +139,21 @@ def test_deriv_shapes():
                     check_shape(ip, s1, s2, (), axis)
 
 
-def _check_complex(ip):
+def test_complex():
     x = [1, 2, 3, 4]
     y = [1, 2, 1j, 3]
-    p = ip(x, y)
-    assert_allclose(y, p(x))
 
-
-def test_complex():
     for ip in [KroghInterpolator, BarycentricInterpolator, pchip, CubicSpline]:
-        _check_complex(ip)
+        p = ip(x, y)
+        assert_allclose(y, p(x))
+
+    dydx = [0, -1j, 2, 3j]
+    p = CubicHermiteSpline(x, y, dydx)
+    assert_allclose(y, p(x))
+    assert_allclose(dydx, p(x, 1))
 
 
-class TestKrogh(object):
+class TestKrogh:
     def setup_method(self):
         self.true_poly = np.poly1d([-2,3,1,5,-4])
         self.test_xs = np.linspace(-1,1,100)
@@ -163,14 +172,14 @@ class TestKrogh(object):
     def test_derivatives(self):
         P = KroghInterpolator(self.xs,self.ys)
         D = P.derivatives(self.test_xs)
-        for i in xrange(D.shape[0]):
+        for i in range(D.shape[0]):
             assert_almost_equal(self.true_poly.deriv(i)(self.test_xs),
                                 D[i])
 
     def test_low_derivatives(self):
         P = KroghInterpolator(self.xs,self.ys)
         D = P.derivatives(self.test_xs,len(self.xs)+2)
-        for i in xrange(D.shape[0]):
+        for i in range(D.shape[0]):
             assert_almost_equal(self.true_poly.deriv(i)(self.test_xs),
                                 D[i])
 
@@ -178,24 +187,16 @@ class TestKrogh(object):
         P = KroghInterpolator(self.xs,self.ys)
         m = 10
         r = P.derivatives(self.test_xs,m)
-        for i in xrange(m):
+        for i in range(m):
             assert_almost_equal(P.derivative(self.test_xs,i),r[i])
 
     def test_high_derivative(self):
         P = KroghInterpolator(self.xs,self.ys)
-        for i in xrange(len(self.xs),2*len(self.xs)):
+        for i in range(len(self.xs), 2*len(self.xs)):
             assert_almost_equal(P.derivative(self.test_xs,i),
                                 np.zeros(len(self.test_xs)))
 
     def test_hermite(self):
-        xs = [0,0,0,1,1,1,2]
-        ys = [self.true_poly(0),
-              self.true_poly.deriv(1)(0),
-              self.true_poly.deriv(2)(0),
-              self.true_poly(1),
-              self.true_poly.deriv(1)(1),
-              self.true_poly.deriv(2)(1),
-              self.true_poly(2)]
         P = KroghInterpolator(self.xs,self.ys)
         assert_almost_equal(self.true_poly(self.test_xs),P(self.test_xs))
 
@@ -203,10 +204,10 @@ class TestKrogh(object):
         xs = [0, 1, 2]
         ys = np.array([[0,1],[1,0],[2,1]])
         P = KroghInterpolator(xs,ys)
-        Pi = [KroghInterpolator(xs,ys[:,i]) for i in xrange(ys.shape[1])]
+        Pi = [KroghInterpolator(xs,ys[:,i]) for i in range(ys.shape[1])]
         test_xs = np.linspace(-1,3,100)
         assert_almost_equal(P(test_xs),
-                np.rollaxis(np.asarray([p(test_xs) for p in Pi]),-1))
+                            np.asarray([p(test_xs) for p in Pi]).T)
         assert_almost_equal(P.derivatives(test_xs),
                 np.transpose(np.asarray([p.derivatives(test_xs) for p in Pi]),
                     (1,2,0)))
@@ -281,18 +282,22 @@ class TestKrogh(object):
                   1j*KroghInterpolator(x, y.imag).derivatives(0))
         assert_allclose(cmplx, cmplx2, atol=1e-15)
 
+    def test_high_degree_warning(self):
+        with pytest.warns(UserWarning, match="40 degrees provided,"):
+            KroghInterpolator(np.arange(40), np.ones(40))
 
-class TestTaylor(object):
+
+class TestTaylor:
     def test_exponential(self):
         degree = 5
         p = approximate_taylor_polynomial(np.exp, 0, degree, 1, 15)
-        for i in xrange(degree+1):
+        for i in range(degree+1):
             assert_almost_equal(p(0),1)
             p = p.deriv()
         assert_almost_equal(p(0),0)
 
 
-class TestBarycentric(object):
+class TestBarycentric:
     def setup_method(self):
         self.true_poly = np.poly1d([-2, 3, 1, 5, -4])
         self.test_xs = np.linspace(-1, 1, 100)
@@ -321,12 +326,12 @@ class TestBarycentric(object):
     def test_vector(self):
         xs = [0, 1, 2]
         ys = np.array([[0, 1], [1, 0], [2, 1]])
-        BI = BarycentricInterpolator 
+        BI = BarycentricInterpolator
         P = BI(xs, ys)
-        Pi = [BI(xs, ys[:, i]) for i in xrange(ys.shape[1])]
+        Pi = [BI(xs, ys[:, i]) for i in range(ys.shape[1])]
         test_xs = np.linspace(-1, 3, 100)
         assert_almost_equal(P(test_xs),
-                np.rollaxis(np.asarray([p(test_xs) for p in Pi]), -1))
+                            np.asarray([p(test_xs) for p in Pi]).T)
 
     def test_shapes_scalarvalue(self):
         P = BarycentricInterpolator(self.xs, self.ys)
@@ -352,8 +357,39 @@ class TestBarycentric(object):
         values = barycentric_interpolate(self.xs, self.ys, self.test_xs)
         assert_almost_equal(P(self.test_xs), values)
 
+    def test_int_input(self):
+        x = 1000 * np.arange(1, 11)  # np.prod(x[-1] - x[:-1]) overflows
+        y = np.arange(1, 11)
+        value = barycentric_interpolate(x, y, 1000 * 9.5)
+        assert_almost_equal(value, 9.5)
 
-class TestPCHIP(object):
+    def test_large_chebyshev(self):
+        # The weights for Chebyshev points of the second kind have analytically
+        # solvable weights. Naive calculation of barycentric weights will fail
+        # for large N because of numerical underflow and overflow. We test
+        # correctness for large N against analytical Chebyshev weights.
+
+        # Without capacity scaling or permutation, n=800 fails,
+        # With just capacity scaling, n=1097 fails
+        # With both capacity scaling and random permutation, n=30000 succeeds
+        n = 800
+        j = np.arange(n + 1).astype(np.float64)
+        x = np.cos(j * np.pi / n)
+
+        # See page 506 of Berrut and Trefethen 2004 for this formula
+        w = (-1) ** j
+        w[0] *= 0.5
+        w[-1] *= 0.5
+
+        P = BarycentricInterpolator(x)
+
+        # It's okay to have a constant scaling factor in the weights because it
+        # cancels out in the evaluation of the polynomial.
+        factor = P.wi[0]
+        assert_almost_equal(P.wi / (2 * factor), w)
+
+
+class TestPCHIP:
     def _make_random(self, npts=20):
         np.random.seed(1234)
         xi = np.sort(np.random.random(npts))
@@ -370,7 +406,7 @@ class TestPCHIP(object):
                 y1, y2 = y2, y1
             xp = np.linspace(x1, x2, 10)
             yp = p(xp)
-            assert_(((y1 <= yp) & (yp <= y2)).all())
+            assert_(((y1 <= yp + 1e-15) & (yp <= y2 + 1e-15)).all())
 
     def test_monotone(self):
         # PCHIP should preserve monotonicty
@@ -399,7 +435,6 @@ class TestPCHIP(object):
         # http://nag.com/numeric/cl/nagdoc_cl25/html/e01/e01bec.html
         # suggested in gh-5326 as a smoke test for the way the derivatives
         # are computed (see also gh-3453)
-        from scipy._lib.six import StringIO
         dataStr = '''
           7.99   0.00000E+0
           8.09   0.27643E-4
@@ -411,7 +446,7 @@ class TestPCHIP(object):
          15.00   0.99992E+0
          20.00   0.99999E+0
         '''
-        data = np.loadtxt(StringIO(dataStr))
+        data = np.loadtxt(io.StringIO(dataStr))
         pch = pchip(data[:,0], data[:,1])
 
         resultStr = '''
@@ -427,7 +462,7 @@ class TestPCHIP(object):
           18.7990       1.0000
           20.0000       1.0000
         '''
-        result = np.loadtxt(StringIO(resultStr))
+        result = np.loadtxt(io.StringIO(resultStr))
         assert_allclose(result[:,1], pch(result[:,0]), rtol=0., atol=5e-5)
 
     def test_endslopes(self):
@@ -480,7 +515,8 @@ class TestPCHIP(object):
         r = p.roots()
         assert_allclose(r, 0.5)
 
-class TestCubicSpline(object):
+
+class TestCubicSpline:
     @staticmethod
     def check_correctness(S, bc_start='not-a-knot', bc_end='not-a-knot',
                           tol=1e-14):
@@ -598,6 +634,27 @@ class TestCubicSpline(object):
         S = CubicSpline(x, y, bc_type='periodic')
         assert_almost_equal(S(1), S(1 + 2 * np.pi), decimal=15)
 
+    def test_second_derivative_continuity_gh_11758(self):
+        # gh-11758: C2 continuity fail
+        x = np.array([0.9, 1.3, 1.9, 2.1, 2.6, 3.0, 3.9, 4.4, 4.7, 5.0, 6.0,
+                      7.0, 8.0, 9.2, 10.5, 11.3, 11.6, 12.0, 12.6, 13.0, 13.3])
+        y = np.array([1.3, 1.5, 1.85, 2.1, 2.6, 2.7, 2.4, 2.15, 2.05, 2.1,
+                      2.25, 2.3, 2.25, 1.95, 1.4, 0.9, 0.7, 0.6, 0.5, 0.4, 1.3])
+        S = CubicSpline(x, y, bc_type='periodic', extrapolate='periodic')
+        self.check_correctness(S, 'periodic', 'periodic')
+
+    def test_three_points(self):
+        # gh-11758: Fails computing a_m2_m1
+        # In this case, s (first derivatives) could be found manually by solving
+        # system of 2 linear equations. Due to solution of this system,
+        # s[i] = (h1m2 + h2m1) / (h1 + h2), where h1 = x[1] - x[0], h2 = x[2] - x[1],
+        # m1 = (y[1] - y[0]) / h1, m2 = (y[2] - y[1]) / h2
+        x = np.array([1.0, 2.75, 3.0])
+        y = np.array([1.0, 15.0, 1.0])
+        S = CubicSpline(x, y, bc_type='periodic')
+        self.check_correctness(S, 'periodic', 'periodic')
+        assert_allclose(S.derivative(1)(x), np.array([-48.0, -48.0, -48.0]))
+
     def test_dtypes(self):
         x = np.array([0, 1, 2, 3], dtype=int)
         y = np.array([-5, 2, 3, 1], dtype=int)
@@ -662,3 +719,34 @@ class TestCubicSpline(object):
         # periodic condition, y[-1] must be equal to y[0]:
         assert_raises(ValueError, CubicSpline, x, y, 0, 'periodic', True)
 
+
+def test_CubicHermiteSpline_correctness():
+    x = [0, 2, 7]
+    y = [-1, 2, 3]
+    dydx = [0, 3, 7]
+    s = CubicHermiteSpline(x, y, dydx)
+    assert_allclose(s(x), y, rtol=1e-15)
+    assert_allclose(s(x, 1), dydx, rtol=1e-15)
+
+
+def test_CubicHermiteSpline_error_handling():
+    x = [1, 2, 3]
+    y = [0, 3, 5]
+    dydx = [1, -1, 2, 3]
+    assert_raises(ValueError, CubicHermiteSpline, x, y, dydx)
+
+    dydx_with_nan = [1, 0, np.nan]
+    assert_raises(ValueError, CubicHermiteSpline, x, y, dydx_with_nan)
+
+
+def test_roots_extrapolate_gh_11185():
+    x = np.array([0.001, 0.002])
+    y = np.array([1.66066935e-06, 1.10410807e-06])
+    dy = np.array([-1.60061854, -1.600619])
+    p = CubicHermiteSpline(x, y, dy)
+
+    # roots(extrapolate=True) for a polynomial with a single interval
+    # should return all three real roots
+    r = p.roots(extrapolate=True)
+    assert_equal(p.c.shape[1], 1)
+    assert_equal(r.size, 3)

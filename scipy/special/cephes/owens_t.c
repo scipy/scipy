@@ -12,7 +12,6 @@
  * Journal of Statistical Software, 5 (5), 1-25
  */
 #include "mconf.h"
-#include "_c99compat.h"
 
 static const int SELECT_METHOD[] = {
     0, 0, 1, 12, 12, 12, 12, 12, 12, 12, 12, 15, 15, 15, 8,
@@ -333,7 +332,7 @@ double owens_t(double h, double a) {
 
     if (fabs_a == NPY_INFINITY) {
 	/* See page 13 in the paper */
-	result = owens_t_norm2(h);
+	result = 0.5 * owens_t_norm2(h);
     }
     else if (h == NPY_INFINITY) {
 	result = 0;
