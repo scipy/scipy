@@ -5,7 +5,7 @@
 #
 import warnings
 from collections.abc import Iterable
-from functools import wraps, lru_cache
+from functools import wraps, cached_property
 import ctypes
 
 import numpy as np
@@ -7859,15 +7859,14 @@ class skew_norm_gen(rv_continuous):
 
         return output
 
-    # For odd order, the noncentral moments for the skew-normal distribution
+    # For odd order, the each noncentral moment of the skew-normal distribution
     # with location 0 and scale 1 can be expressed as a polynomial in delta,
     # where delta = a/sqrt(1 + a**2) and `a` is the skew-normal shape
-    # parameter.  The dictionary skewnorm_odd_moments holds coefficents for
-    # that polynomial for orders up to 19.  The dict is wrapped in a cached
-    # function to reduce the impact of the creation of the dict on import
-    # time.
-    @lru_cache
-    def _get_skewnorm_odd_moments(self):
+    # parameter.  The dictionary _skewnorm_odd_moments defines those
+    # polynomials for orders up to 19.  The dict is implemented as a cached
+    # property to reduce the impact of the creation of the dict on import time.
+    @cached_property
+    def _skewnorm_odd_moments(self):
         skewnorm_odd_moments = {
             1: Polynomial([1]),
             3: Polynomial([3, -1]),
@@ -7897,7 +7896,7 @@ class skew_norm_gen(rv_continuous):
             # Use the precomputed polynomials that were derived from the
             # moment generating function.
             delta = a/np.sqrt(1 + a**2)
-            return (delta * self._get_skewnorm_odd_moments()[order](delta**2)
+            return (delta * self._skewnorm_odd_moments[order](delta**2)
                     * _SQRT_2_OVER_PI)
         else:
             # For even order, the moment is just (order-1)!!, where !! is the
