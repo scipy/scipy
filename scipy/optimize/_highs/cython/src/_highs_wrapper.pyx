@@ -669,8 +669,6 @@ def _highs_wrapper(
 
     # Extract what we need from the solution
     cdef HighsModelStatus model_status = highs.getModelStatus()
-    cdef HighsModelStatus scaled_model_status = highs.getModelStatus(True)
-    cdef HighsModelStatus unscaled_model_status = model_status
 
     # We might need an info object if we can look up the solution and a place to put solution
     cdef HighsInfo info = highs.getHighsInfo() # it should always be safe to get the info object
@@ -679,11 +677,17 @@ def _highs_wrapper(
     cdef double[:, ::1] marg_bnds = np.zeros((2, numcol))  # marg_bnds[0, :]: lower
 
     # If the status is bad, don't look up the solution
-    if model_status != HighsModelStatusOPTIMAL:
+    mipFailCondition =  model_status not in {
+        HighsModelStatusOPTIMAL,
+        HighsModelStatusREACHED_TIME_LIMIT,
+        HighsModelStatusREACHED_ITERATION_LIMIT,
+    }
+    lpFailCondition = model_status != HighsModelStatusOPTIMAL
+    if (highs.getLp().isMip() and mipFailCondition) or (not highs.getLp().isMip() and lpFailCondition):
         return {
             'status': <int> model_status,
             'message': f'model_status is {highs.modelStatusToString(model_status).decode()}; '
-                       f'primal_status is {utilBasisStatusToString(<HighsBasisStatus> info.primal_solution_status)}',
+                       f'primal_status is {utilBasisStatusToString(<HighsBasisStatus> info.primal_solution_status).decode()}',
             'simplex_nit': info.simplex_iteration_count,
             'ipm_nit': info.ipm_iteration_count,
             'fun': None,
@@ -705,7 +709,6 @@ def _highs_wrapper(
         res = {
             'status': <int> model_status,
             'message': highs.modelStatusToString(model_status).decode(),
-            'unscaled_status': <int> unscaled_model_status,
 
             # Primal solution
             'x': [solution.col_value[ii] for ii in range(numcol)],
