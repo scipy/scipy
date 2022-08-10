@@ -360,6 +360,12 @@ def test_pdf_logpdf():
     logpdf2 = gkde.logpdf(xs)
     assert_almost_equal(logpdf, logpdf2, decimal=12)
 
+    # There are more points than data
+    gkde = stats.gaussian_kde(xs)
+    pdf = np.log(gkde.evaluate(xn))
+    pdf2 = gkde.logpdf(xn)
+    assert_almost_equal(pdf, pdf2, decimal=12)
+
 
 def test_pdf_logpdf_weighted():
     np.random.seed(1)
@@ -379,7 +385,13 @@ def test_pdf_logpdf_weighted():
     logpdf2 = gkde.logpdf(xs)
     assert_almost_equal(logpdf, logpdf2, decimal=12)
 
-    
+    # There are more points than data
+    gkde = stats.gaussian_kde(xs, weights=np.random.rand(len(xs)))
+    pdf = np.log(gkde.evaluate(xn))
+    pdf2 = gkde.logpdf(xn)
+    assert_almost_equal(pdf, pdf2, decimal=12)
+
+
 def test_pdf_logpdf_marginal():
     np.random.seed(1)
     n_basesample = 50
@@ -393,13 +405,13 @@ def test_pdf_logpdf_marginal():
     pdf = gkde.pdf_marginal(xs[:1], np.arange(1))
     pdf2 = np.exp(gkde.logpdf_marginal(xs[:1], np.arange(1)))
     assert_almost_equal(pdf, pdf2, decimal=12)
-    
+
     pdf = gkde.pdf_marginal(xs, np.arange(n_dim))
     pdf2 = gkde.pdf(xs)
     assert_almost_equal(pdf, pdf2, decimal=12)
 
-    
-def test_pdf_logpdf_weighted():
+
+def test_pdf_logpdf_marginal_weighted():
     np.random.seed(1)
     n_basesample = 50
     n_sample = 25
@@ -407,12 +419,12 @@ def test_pdf_logpdf_weighted():
     xn = np.random.randn(n_dim, n_basesample)
     xs = np.random.randn(n_dim, n_sample)
     wn = np.random.rand(n_basesample)
-   
+
     gkde = stats.gaussian_kde(xn, weights=wn)
     logpdf = np.log(gkde.pdf_marginal(xs[:5], np.arange(5)))
     logpdf2 = gkde.logpdf_marginal(xs[:5], np.arange(5))
     assert_almost_equal(logpdf, logpdf2, decimal=12)
-    
+
 
 @pytest.mark.xslow
 def test_logpdf_overflow():

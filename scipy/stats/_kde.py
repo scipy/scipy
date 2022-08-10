@@ -668,7 +668,7 @@ class gaussian_kde:
         points = atleast_2d(x)
         ax = atleast_1d(axis)
 
-        if not np.issubtype(ax.dtype, np.exact):
+        if not np.issubdtype(ax.dtype, np.integer):
             msg = "elements of axis should be intergers"
             raise ValueError(msg)
 
@@ -717,7 +717,7 @@ class gaussian_kde:
         points = atleast_2d(x)
         ax = atleast_1d(axis)
 
-        if not np.issubtype(ax.dtype, np.exact):
+        if not np.issubdtype(ax.dtype, np.integer):
             msg = "elements of axis should be intergers"
             raise ValueError(msg)
 
@@ -752,6 +752,8 @@ class gaussian_kde:
         energy = sum(diff * icd, axis=0) / 2
         result = logsumexp(-energy.T, b = self.weights / norm_factor,
             axis = 1)
+
+        return result
 
     @property
     def weights(self):
