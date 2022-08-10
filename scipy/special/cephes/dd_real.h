@@ -40,8 +40,6 @@
 #include <limits.h>
 #include <math.h>
 
-#include "_c99compat.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -64,15 +62,6 @@ extern "C" {
 #define DD_FMS(A, B, C) fma((A), (B), (-C))
 #endif
 #endif
-
-/* Define this macro to be the isfinite(x) function. */
-#define DD_ISFINITE sc_isfinite
-
-/* Define this macro to be the isinf(x) function. */
-#define DD_ISINF sc_isinf
-
-/* Define this macro to be the isnan(x) function. */
-#define DD_ISNAN sc_isnan
 
 #ifdef __cplusplus
 #define DD_STATIC_CAST(T, X) (static_cast<T>(X))

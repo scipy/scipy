@@ -12,7 +12,6 @@
  * Journal of Statistical Software, 5 (5), 1-25
  */
 #include "mconf.h"
-#include "_c99compat.h"
 
 static const int SELECT_METHOD[] = {
     0, 0, 1, 12, 12, 12, 12, 12, 12, 12, 12, 15, 15, 15, 8,

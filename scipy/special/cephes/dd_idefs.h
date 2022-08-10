@@ -21,6 +21,8 @@
 #ifndef  _DD_IDEFS_H_
 #define  _DD_IDEFS_H_ 1
 
+#include <numpy/npy_common.h>
+
 #include <float.h>
 #include <limits.h>
 #include <math.h>
