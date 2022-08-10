@@ -1,4 +1,4 @@
-from scipy import stats, linalg
+from scipy import stats, linalg, integrate
 import numpy as np
 from numpy.testing import (assert_almost_equal, assert_,
     assert_array_almost_equal, assert_array_almost_equal_nulp, assert_allclose)
@@ -424,6 +424,81 @@ def test_pdf_logpdf_marginal_weighted():
     logpdf = np.log(gkde.pdf_marginal(xs[:5], np.arange(5)))
     logpdf2 = gkde.logpdf_marginal(xs[:5], np.arange(5))
     assert_almost_equal(logpdf, logpdf2, decimal=12)
+
+
+def test_old_pr_vs_new():
+    np.random.seed(1)
+    n_basesample = 50
+    n_sample = 25
+    n_dim = 10
+    xn = np.random.randn(n_dim, n_basesample)
+    xs = np.random.randn(n_dim, n_sample)
+
+    # Old PR
+    gkde = stats.gaussian_kde(xn)
+    pdf = gkde.pdf_marginal(xs[:1], np.arange(1))
+
+    # New PR
+    marginal = gkde.marginalize(axis=0)
+    pdf2 = marginal.pdf(xs[:1])
+
+    assert_allclose(pdf, pdf2)
+
+
+def test_marginal_1_axis():
+    rng = np.random.default_rng(6111799263660870475)
+    n_data = 50
+    n_dim = 10
+    dataset = rng.normal(size=(n_dim, n_data))
+    points = np.random.randn(n_dim, 3)  # evaluation point
+
+    axis = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9])  # dimensions to keep
+
+    kde = stats.gaussian_kde(dataset)
+    marginal = kde.marginalize(axis)
+    pdf = marginal.pdf(points[axis])
+
+    def marginal_pdf_single(point):
+        def f(x):
+            x = np.concatenate(([x], point[axis]))
+            return kde.pdf(x)[0]
+        return integrate.quad(f, -np.inf, np.inf)[0]
+
+    def marginal_pdf(points):
+        return np.apply_along_axis(marginal_pdf_single, axis=0, arr=points)
+
+    ref = marginal_pdf(points)
+
+    assert_allclose(pdf, ref, rtol=1e-6)
+
+
+@pytest.mark.slow
+def test_marginal_2_axis():
+    rng = np.random.default_rng(6111799263660870475)
+    n_data = 30
+    n_dim = 4
+    dataset = rng.normal(size=(n_dim, n_data))
+    points = np.random.randn(n_dim, 3)  # evaluation point
+
+    axis = np.array([1, 3])  # dimensions to keep
+
+    kde = stats.gaussian_kde(dataset)
+    marginal = kde.marginalize(axis)
+    pdf = marginal.pdf(points[axis])
+
+    def marginal_pdf(points):
+        def marginal_pdf_single(point):
+            def f(y, x):
+                w, z = point[axis]
+                x = np.array([x, w, y, z])
+                return kde.pdf(x)[0]
+            return integrate.dblquad(f, -np.inf, np.inf, -np.inf, np.inf)[0]
+
+        return np.apply_along_axis(marginal_pdf_single, axis=0, arr=points)
+
+    ref = marginal_pdf(points)
+
+    assert_allclose(pdf, ref, rtol=1e-6)
 
 
 @pytest.mark.xslow

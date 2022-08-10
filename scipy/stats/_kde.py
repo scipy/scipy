@@ -686,7 +686,7 @@ class gaussian_kde:
                 m = 1
             else:
                 msg = "points have dimension %s, axis has dimension %s" % \
-                (d, ax.size)
+                    (d, ax.size)
 
         cov = self.covariance[ax[:, newaxis], ax]
         dataset = self.dataset[ax]
@@ -735,7 +735,7 @@ class gaussian_kde:
                 m = 1
             else:
                 msg = "points have dimension %s, axis has dimension %s" % \
-                (d, ax.size)
+                    (d, ax.size)
 
         cov = self.covariance[ax[:, newaxis], ax]
         dataset = self.dataset[ax]
@@ -750,10 +750,40 @@ class gaussian_kde:
             icd = linalg.solve(cov, diff, assume_a='pos')
 
         energy = sum(diff * icd, axis=0) / 2
-        result = logsumexp(-energy.T, b = self.weights / norm_factor,
-            axis = 1)
+        result = logsumexp(-energy.T, b=self.weights / norm_factor, axis=1)
 
         return result
+
+    def marginalize(self, axis):
+        """Generate a marginal KDE distribution
+
+        Parameters
+        ----------
+        axis : int or 1-d array_like
+            Axis (axes) along which the margins are to be computed.
+
+        Returns
+        -------
+        marginal_kde : gaussian_kde
+            An object representing the marginal distribution.
+
+        Notes
+        -----
+        .. versionadded:: 1.10.0
+
+        """
+
+        ax = np.atleast_1d(axis)
+
+        if not np.issubdtype(ax.dtype, np.integer):
+            msg = "Elements of `axis` must be integers."
+            raise ValueError(msg)
+
+        dataset = self.dataset[ax]
+        weights = self.weights
+
+        return gaussian_kde(dataset, bw_method=self.covariance_factor(),
+                            weights=weights)
 
     @property
     def weights(self):
