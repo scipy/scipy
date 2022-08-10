@@ -509,8 +509,7 @@ class TestRegularGridInterpolator:
         assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
     @parametrize_rgi_interp_methods
-    @pytest.mark.parametrize("num_trailing_dims", range(1, 5))
-    def test_nonscalar_values_2(self, method, num_trailing_dims):
+    def test_nonscalar_values_2(self, method):
         # Verify that non-scalar valued values also work : use different
         # lengths of axes to simplify tracing the internals
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
@@ -520,6 +519,7 @@ class TestRegularGridInterpolator:
 
         rng = np.random.default_rng(1234)
 
+        num_trailing_dims = 2
         trailing_points = [3 + i for i in range(num_trailing_dims)]
         # NB: values has a `num_trailing_dims` trailing dimension
         values = rng.random((6, 7, 8, 9, *trailing_points))
@@ -533,18 +533,14 @@ class TestRegularGridInterpolator:
         assert v.shape == (1, *trailing_points)
 
         # check the values, too : manually loop over the trailing dimensions
-        vs = []
-        for j in range(values.shape[-1]):
-            interp = RegularGridInterpolator(points, values[..., j],
-                                             method=method,
-                                             bounds_error=False)
-            vs.append(interp(sample))
-
-        # need to transpose otherwise first dimension is in the wrong place
-        axes = tuple(range(1 + num_trailing_dims))
-        axx = axes[1:] + axes[:1]
-        v2 = np.asarray(vs).transpose(axx)
-
+        vs = np.empty((values.shape[-2:]))
+        for i in range(values.shape[-2]):
+            for j in range(values.shape[-1]):
+                interp = RegularGridInterpolator(points, values[..., i, j],
+                                                 method=method,
+                                                 bounds_error=False)
+                vs[i, j] = interp(sample)
+        v2 = np.expand_dims(vs, axis=0)
         assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
 
@@ -730,11 +726,10 @@ class TestInterpN:
                       bounds_error=False) for j in range(8)]
         v2 = np.array(vs).transpose(1, 2, 0)
 
-        assert_allclose(v, v2, atol=1e-14,err_msg=method)
+        assert_allclose(v, v2, atol=1e-14, err_msg=method)
 
     @parametrize_rgi_interp_methods
-    @pytest.mark.parametrize("num_trailing_dims", range(1, 5))
-    def test_nonscalar_values_2(self, method, num_trailing_dims):
+    def test_nonscalar_values_2(self, method):
         # Verify that non-scalar valued values also work : use different
         # lengths of axes to simplify tracing the internals
         points = [(0.0, 0.5, 1.0, 1.5, 2.0, 2.5),
@@ -744,6 +739,7 @@ class TestInterpN:
 
         rng = np.random.default_rng(1234)
 
+        num_trailing_dims = 2
         trailing_points = [3 + i for i in range(num_trailing_dims)]
         # NB: values has a `num_trailing_dims` trailing dimension
         values = rng.random((6, 7, 8, 9, *trailing_points))
@@ -755,15 +751,12 @@ class TestInterpN:
         assert v.shape == (1, *trailing_points)
 
         # check the values, too : manually loop over the trailing dimensions
-        vs = [interpn(points, values[..., j], sample, method=method,
-                      bounds_error=False) for j in range(values.shape[-1])]
+        vs = [[
+                interpn(points, values[..., i, j], sample, method=method,
+                        bounds_error=False) for i in range(values.shape[-2])
+              ] for j in range(values.shape[-1])]
 
-        # need to transpose otherwise first dimension is in the wrong place
-        axes = tuple(range(1 + num_trailing_dims))
-        axx = axes[1:] + axes[:1]
-        v2 = np.asarray(vs).transpose(axx)
-
-        assert_allclose(v, v2, atol=1e-14, err_msg=method)
+        assert_allclose(v, np.asarray(vs).T, atol=1e-14, err_msg=method)
 
     def test_non_scalar_values_splinef2d(self):
         # Vector-valued splines supported with fitpack
