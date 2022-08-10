@@ -97,8 +97,6 @@ def test_result():
     assert not res.success
     msg = "Time limit reached. (HiGHS Status 13:"
     assert res.message.startswith(msg)
-    assert (res.fun is res.mip_dual_bound is res.mip_gap
-            is res.mip_node_count is res.x is None)
 
     res = milp(1, bounds=(1, -1))
     assert res.status == 2
@@ -271,3 +269,31 @@ def test_infeasible_prob_16609():
     res = milp(c, integrality=integrality, bounds=bounds,
                constraints=constraints)
     np.testing.assert_equal(res.status, 2)
+
+
+def test_milp_timeout_16545():
+    # Ensure solution is not thrown away if MILP solver times out
+    # -- see gh-16545
+    np.random.seed(16545)
+    A = np.zeros((100, 100))
+    for c in range(100):
+        for v in range(100):
+            A[c, v] = np.random.randint(0, 5)
+    b_lb = [-1 * np.inf for c in range(100)]
+    b_ub = [25 for c in range(100)]
+    constraints = LinearConstraint(A, b_lb, b_ub)
+    variable_lb = [0 for v in range(100)]
+    variable_ub = [1 for v in range(100)]
+    variable_bounds = Bounds(variable_lb, variable_ub)
+    integrality = [1 for v in range(100)]
+    c_vector = 100 * [-1]
+    res = milp(
+        c_vector,
+        integrality=integrality,
+        bounds=variable_bounds,
+        constraints=constraints,
+        options={"time_limit": .01, "disp": True}
+    )
+    msg = "Time limit reached. (HiGHS Status 13:"
+    assert res.message.startswith(msg)
+    assert res["x"] is not None
