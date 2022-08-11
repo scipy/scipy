@@ -491,12 +491,12 @@ class TestRegularGridInterpolator:
 
         rng = np.random.default_rng(1234)
         values = rng.random((6, 6, 6, 6, 8))
-        sample = rng.random((7, 11, 4))
+        sample = rng.random((7, 3, 4))
 
         interp = RegularGridInterpolator(points, values, method=method,
                                          bounds_error=False)
         v = interp(sample)
-        assert_equal(v.shape, (7, 11, 8), err_msg=method)
+        assert_equal(v.shape, (7, 3, 8), err_msg=method)
 
         vs = []
         for j in range(8):
@@ -715,11 +715,11 @@ class TestInterpN:
 
         rng = np.random.default_rng(1234)
         values = rng.random((6, 6, 6, 6, 8))
-        sample = rng.random((7, 11, 4))
+        sample = rng.random((7, 3, 4))
 
         v = interpn(points, values, sample, method=method,
                     bounds_error=False)
-        assert_equal(v.shape, (7, 11, 8), err_msg=method)
+        assert_equal(v.shape, (7, 3, 8), err_msg=method)
 
         vs = [interpn(points, values[..., j], sample, method=method,
                       bounds_error=False) for j in range(8)]
