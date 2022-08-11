@@ -47,6 +47,10 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
     export FC=$FC_ARM64
     export PATH=$FC_LOC:$PATH
 
+    xcrun --show-sdk-version
+    xcrun --show-sdk-path
+    xcodebuild -showsdks
+
     export FFLAGS=" -arch arm64 $FFLAGS"
     export LDFLAGS=" -L/opt/arm64-builds/lib -arch arm64 $FC_ARM64_LDFLAGS $LDFLAGS"
     sudo ln -s $FC $FC_LOC/gfortran
