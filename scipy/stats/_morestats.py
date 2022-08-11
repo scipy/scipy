@@ -3756,6 +3756,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     126.66666666666666
 
     Plot and compare the results of *circmean* and the regular *mean*.
+
     >>> plt.plot(np.cos(np.linspace(0, 2*np.pi, 500),
     ...          np.sin(np.linspace(0, 2*np.pi, 500),
     ...          c='k')
