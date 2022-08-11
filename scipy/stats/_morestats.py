@@ -3765,6 +3765,7 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     ...             label='circmean')
     >>> plt.scatter(np.cos(mean), np.sin(mean), c='r', label='mean')
     >>> plt.legend()
+    >>> plt.show()
 
     """
     samples, sin_samp, cos_samp, nmask = _circfuncs_common(samples, high, low,
