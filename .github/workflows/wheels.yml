@@ -54,7 +54,7 @@ jobs:
           echo github.ref ${{ github.ref }}
 
   build_wheels:
-    name: Build wheel for ${{ matrix.python }}-${{ matrix.buildplat[1] }} ${{ matrix.buildplat[2] }}
+    name: Build wheel for ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }} ${{ matrix.buildplat[2] }}
     needs: get_commit_message
     if: >-
       contains(needs.get_commit_message.outputs.message, '[wheel build]') ||
@@ -73,18 +73,26 @@ jobs:
         # should also be able to do multi-archs on a single entry, e.g.
         # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
-        - [ubuntu-20.04, manylinux*, x86_64]
-        - [ubuntu-20.04, manylinux*, aarch64]
+        #- [ubuntu-20.04, manylinux*, x86_64]
+        #- [ubuntu-20.04, manylinux*, aarch64]
 
-        # can't create macos_arm64 until it's possible to create a meson cross-file
-        # When the macos-10.15 image is retired the gfortran/openblas chain will have to be
-        # reworked because the gfortran compiler currently used in CI doesn't work in 11.0.
-        # This will require a more recent gfortran (gfortran-9 is present on the macOS-11.0
-        # image), and will require that the prebuilt openBLAS is updated.
-        - [macos-10.15, macosx*, x86_64]
+        # When the macos-10.15 image is retired the gfortran/openblas chain
+        # will have to be reworked because the gfortran compiler currently used
+        # in CI doesn't work in the macos-11.0 image. This will require a more
+        # recent gfortran (gfortran-9 is present on the macOS-11.0 image), and
+        # will require that the prebuilt openBLAS is updated.
+        # create macos_arm64 outside cibuildwheel until it's possible to pass
+        # configuration details to the build frontend.
+        # - [macos-10.15, macosx*, x86_64]
+        - [macos-11, macosx*, arm64]
+        # - [windows-2019, win*, AMD64]
 
-        - [windows-2019, win*, AMD64]
-        python: ["cp38", "cp39", "cp310"] #, "cp39", "cp310", "cp38", "cp310", "pp38" "pp39"]
+        python: [["cp38", "3.8"], ["cp39", "3.9"], ["cp310", "3.10"]] #, "cp39", "cp310", "cp38", "cp310", "pp38" "pp39"]
+        # python[0] is used to specify the python versions made by cibuildwheel
+        # python[1] is installed for the separate macosx_arm64 build. Once
+        # cibuildwheel can do the macosx_arm64 cross build we can get rid of
+        # this duplication and just have ["cp38", "cp39"]. The actions/setup-python
+        # can only use the latter.
     env:
       IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}
       IS_PUSH: ${{ github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v') }}
@@ -97,10 +105,9 @@ jobs:
           submodules: true
           fetch-depth: 0
 
-      # Used to push the built wheels
       - uses: actions/setup-python@v3
         with:
-          python-version: '3.x'
+          python-version: ${{ matrix.python[1]}}
 
       - name: win_amd64 - install rtools
         run: |
@@ -129,10 +136,39 @@ jobs:
 
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.8.1
+        # build all wheels here, but the macosx_arm64 job in its own entry
+        # cibuildwheel is currently unable to pass configuration flags to
+        # build frontend, which is required to specify cross-compile.
+        if: >-
+          ( ! contains(matrix.buildplat[2], 'arm64' ) )
         env:
-          CIBW_BUILD: ${{ matrix.python }}-${{ matrix.buildplat[1] }}
+          CIBW_BUILD: ${{ matrix.python[0] }}-${{ matrix.buildplat[1] }}
           CIBW_ARCHS: ${{ matrix.buildplat[2] }}
           CIBW_ENVIRONMENT_PASS_LINUX: RUNNER_OS
+
+      - name: Build macosx_arm64
+        if: ${{ matrix.buildplat[1] == 'macosx*' && matrix.buildplat[2] == 'arm64' }}
+        run: |
+          export PLAT="arm64"
+          export _PYTHON_HOST_PLATFORM="macosx-11.0-arm64"
+          export CROSS_COMPILE=1
+          export MACOSX_DEPLOYMENT_TARGET=11.0
+          export SDKROOT=/Applications/Xcode_12.4.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX11.1.sdk
+          export ARCHFLAGS=" -arch arm64 "
+          pip install meson cython pybind11 pythran ninja oldest-supported-numpy numpy build delocate meson-python
+          bash tools/wheels/cibw_before_build_macos.sh $(pwd)
+          export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
+          export PKG_CONFIG=/usr/local/bin/pkg-config
+          export CFLAGS=" -arch arm64 $CFLAGS"
+          export CXXFLAGS=" -arch arm64 $CXXFLAGS"
+          export LD_LIBRARY_PATH="/opt/arm64-builds/lib:$FC_LIBDIR:$LD_LIBRARY_PATH"
+          meson setup --cross-file $(pwd)/tools/wheels/cross_arm64.txt build
+          python -m pip wheel -w dist -vvv --config-settings builddir=build .
+          rm dist/numpy*.whl
+          # FC_LIBDIR should be set in gfortran_utils.sh
+          export DYLD_LIBRARY_PATH=/opt/gfortran-darwin-arm64/lib/gcc/arm64-apple-darwin20.0.0/10.2.1:/opt/arm64-builds/lib
+          delocate-listdeps dist/scipy*.whl
+          delocate-wheel --require-archs=arm64 -k -w wheelhouse dist/scipy*.whl
 
       - uses: kittaakos/upload-artifact-as-is@v0
         # upload the wheels with their actual wheel name

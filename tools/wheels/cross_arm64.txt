@@ -1,0 +1,12 @@
+[binaries]
+c = ['clang', '-arch', 'arm64']
+cpp = ['clang++', '-arch', 'arm64']
+strip = ['strip']
+fortran = ['/opt/gfortran-darwin-arm64/bin/arm64-apple-darwin20.0.0-gfortran']
+pkg-config = '/usr/local/bin/pkg-config'
+
+[host_machine]
+system = 'Darwin'
+cpu_family = 'aarch64'
+cpu = 'arm64'
+endian = 'little'
