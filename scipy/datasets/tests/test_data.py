@@ -3,7 +3,10 @@ from scipy.datasets._fetchers import data
 from scipy.datasets import ascent, face, electrocardiogram
 from numpy.testing import assert_equal, assert_almost_equal, suppress_warnings
 import os
+import pytest
 
+
+data_dir = data.path
 
 # https://github.com/scipy/scipy/pull/15607#issuecomment-1176457275
 # TODO: Remove warning filter after next certifi release
@@ -19,37 +22,52 @@ def _has_hash(path, expected_hash):
     return pooch.file_hash(path) == expected_hash
 
 
-def test_download_all():
-    # This test requires INTERNET CONNECTION
-    data_dir = data.path
-    for dataset in registry:
-        data.fetch(dataset)
+class TestDatasets:
 
-    assert len(os.listdir(data_dir)) >= len(registry)
+    @pytest.fixture(scope='module', autouse=True)
+    def test_download_all(self):
+        # This fixture requires INTERNET CONNECTION
 
+        # test_setup phase
+        for dataset in registry:
+            data.fetch(dataset)
 
-def test_ascent():
-    assert_equal(ascent().shape, (512, 512))
+        yield
 
-    # hash check
-    assert _has_hash(os.path.join(data.path, "ascent.dat"),
-                     registry["ascent.dat"])
+        # test_teardown phase
 
+        # TODO: Clear all cache from test_download_all
+        # and then test downloading all the datasets
+        # individually through test_<dataset-name> methods instead
 
-def test_face():
-    assert_equal(face().shape, (768, 1024, 3))
+        # See case 2 for more details in the following gh-comment
+        # https://github.com/scipy/scipy/pull/15607#discussion_r943557161
 
-    # hash check
-    assert _has_hash(os.path.join(data.path, "face.dat"), registry["face.dat"])
+    def test_existence_all(self):
+        assert len(os.listdir(data_dir)) >= len(registry)
 
+    def test_ascent(self):
+        assert_equal(ascent().shape, (512, 512))
 
-def test_electrocardiogram():
-    # Test shape, dtype and stats of signal
-    ecg = electrocardiogram()
-    assert_equal(ecg.dtype, float)
-    assert_equal(ecg.shape, (108000,))
-    assert_almost_equal(ecg.mean(), -0.16510875)
-    assert_almost_equal(ecg.std(), 0.5992473991177294)
+        # hash check
+        assert _has_hash(os.path.join(data_dir, "ascent.dat"),
+                         registry["ascent.dat"])
 
-    # hash check
-    assert _has_hash(os.path.join(data.path, "ecg.dat"), registry["ecg.dat"])
+    def test_face(self):
+        assert_equal(face().shape, (768, 1024, 3))
+
+        # hash check
+        assert _has_hash(os.path.join(data_dir, "face.dat"),
+                         registry["face.dat"])
+
+    def test_electrocardiogram(self):
+        # Test shape, dtype and stats of signal
+        ecg = electrocardiogram()
+        assert_equal(ecg.dtype, float)
+        assert_equal(ecg.shape, (108000,))
+        assert_almost_equal(ecg.mean(), -0.16510875)
+        assert_almost_equal(ecg.std(), 0.5992473991177294)
+
+        # hash check
+        assert _has_hash(os.path.join(data_dir, "ecg.dat"),
+                         registry["ecg.dat"])
