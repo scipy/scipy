@@ -1,0 +1,11 @@
+[binaries]
+c = 'clang'
+cpp = 'clang++'
+fortran = 'gfortran'
+pkg-config = '/usr/local/bin/pkg-config'
+
+[host_machine]
+system = 'Darwin'
+cpu_family = 'aarch64'
+cpu = 'arm64'
+endian = 'little'

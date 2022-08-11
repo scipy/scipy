@@ -73,17 +73,17 @@ jobs:
         # should also be able to do multi-archs on a single entry, e.g.
         # [windows-2019, win*, "AMD64 x86"]. However, those two require a different compiler setup
         # so easier to separate out here.
-        - [ubuntu-20.04, manylinux*, x86_64]
-        - [ubuntu-20.04, manylinux*, aarch64]
+        # - [ubuntu-20.04, manylinux*, x86_64]
+        # - [ubuntu-20.04, manylinux*, aarch64]
 
         # can't create macos_arm64 until it's possible to create a meson cross-file
         # When the macos-10.15 image is retired the gfortran/openblas chain will have to be
         # reworked because the gfortran compiler currently used in CI doesn't work in 11.0.
         # This will require a more recent gfortran (gfortran-9 is present on the macOS-11.0
         # image), and will require that the prebuilt openBLAS is updated.
-        - [macos-10.15, macosx*, x86_64]
-
-        - [windows-2019, win*, AMD64]
+        #- [macos-10.15, macosx*, x86_64]
+        - [macos-10.15, macosx*, arm64]
+        #- [windows-2019, win*, AMD64]
         python: ["cp38", "cp39", "cp310"] #, "cp39", "cp310", "cp38", "cp310", "pp38" "pp39"]
     env:
       IS_32_BIT: ${{ matrix.buildplat[2] == 'x86' }}

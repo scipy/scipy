@@ -38,12 +38,22 @@ otool -L /usr/local/gfortran/lib/libgfortran.3.dylib
 # arm64 stuff from gfortran_utils
 if [[ $PLATFORM == "macosx-arm64" ]]; then
     source $PROJECT_DIR/tools/wheels/gfortran_utils.sh
+    export MACOSX_DEPLOYMENT_TARGET=11.0
+
     # The install script requires the PLAT variable in order to set
     # the FC variable
     export PLAT=arm64
     install_arm64_cross_gfortran
     export FC=$FC_ARM64
     export PATH=$FC_LOC:$PATH
+
+    export FFLAGS=" -arch arm64 $FFLAGS"
+    export LDFLAGS=" -L/opt/arm64-builds/lib -arch arm64 $FC_ARM64_LDFLAGS $LDFLAGS"
     sudo ln -s $FC $FC_LOC/gfortran
     which gfortran
+    gfortran -v $PROJECT_DIR/tools/wheels/test.f
+
+    pip install meson
+    meson setup --cross-file $PROJECT_DIR/tools/wheels/cross_arm64.txt build
+    cat $PROJECT_DIR/build/meson-logs/meson-log.txt
 fi
