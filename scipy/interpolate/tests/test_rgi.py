@@ -519,8 +519,7 @@ class TestRegularGridInterpolator:
 
         rng = np.random.default_rng(1234)
 
-        num_trailing_dims = 2
-        trailing_points = [3 + i for i in range(num_trailing_dims)]
+        trailing_points = (3, 2)
         # NB: values has a `num_trailing_dims` trailing dimension
         values = rng.random((6, 7, 8, 9, *trailing_points))
         sample = rng.random(4)   # a single sample point !
@@ -739,8 +738,7 @@ class TestInterpN:
 
         rng = np.random.default_rng(1234)
 
-        num_trailing_dims = 2
-        trailing_points = [3 + i for i in range(num_trailing_dims)]
+        trailing_points = (3, 2)
         # NB: values has a `num_trailing_dims` trailing dimension
         values = rng.random((6, 7, 8, 9, *trailing_points))
         sample = rng.random(4)   # a single sample point !
