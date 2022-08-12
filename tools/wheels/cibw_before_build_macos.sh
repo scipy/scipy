@@ -8,6 +8,11 @@ printenv
 cat $PROJECT_DIR/tools/wheels/LICENSE_osx.txt >> $PROJECT_DIR/LICENSE.txt
 
 # Install Openblas
+curl -L https://anaconda.org/multibuild-wheels-staging/openblas-libs/v0.3.20-140-gbfd9c1b5/download/openblas-v0.3.20-140-gbfd9c1b5-macosx_11_0_arm64-gf_f26990f.tar.gz -o openblas.tar.gz
+pushd /
+sudo tar -xzf openblas.tar.gz
+popd
+
 basedir=$(python tools/openblas_support.py)
 cp -r $basedir/lib/* /usr/local/lib
 cp $basedir/include/* /usr/local/include
@@ -57,9 +62,10 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
     #    gfortran -v $PROJECT_DIR/tools/wheels/test.f
 
     pip install meson cython pybind11 pythran
-    export CMAKE_PREFIX_PATH=/opt/arm64-builds
+#    export CMAKE_PREFIX_PATH=/opt/arm64-builds
+    export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
     export PKG_CONFIG=/usr/local/bin/pkg-config
-    export CMAKE=/usr/local/bin/cmake
+#    export CMAKE=/usr/local/bin/cmake
 
     meson setup --cross-file $PROJECT_DIR/tools/wheels/cross_arm64.txt build
 fi
