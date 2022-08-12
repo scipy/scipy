@@ -47,11 +47,8 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
     export FC=$FC_ARM64
     export PATH=$FC_LOC:$PATH
 
-    xcrun --show-sdk-version
-    xcrun --show-sdk-path
-    xcodebuild -showsdks
+    # required so that gfortran knows where to find the linking libraries.
     export SDKROOT=$(xcrun --show-sdk-path)
-
 
     export FFLAGS=" -arch arm64 $FFLAGS"
     export LDFLAGS=" -L/opt/arm64-builds/lib -arch arm64 $FC_ARM64_LDFLAGS $LDFLAGS"
