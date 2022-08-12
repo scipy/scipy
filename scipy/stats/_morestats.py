@@ -3843,6 +3843,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     --------
     >>> import numpy as np
     >>> from scipy.stats import circvar
+    >>> import matplotlib.pyplot as plt
     >>> samples_1 = np.array([0.072, -0.158, 0.077, 0.108, 0.286,
     ...                       0.133, -0.473, -0.001, -0.348, 0.131])
     >>> samples_2 = np.array([0.111, -0.879, 0.078, 0.733, 0.421,
@@ -3864,6 +3865,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     >>> right.set_title(f"circular variance: {np.round(circvar_2, 2)!r}")
     >>> right.axis('equal')
     >>> right.axis('off')
+    >>> plt.show()
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
@@ -3941,6 +3943,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     --------
     >>> import numpy as np
     >>> from scipy.stats import circstd
+    >>> import matplotlib.pyplot as plt
     >>> samples_1 = np.array([0.072, -0.158, 0.077, 0.108, 0.286,
     ...                       0.133, -0.473, -0.001, -0.348, 0.131])
     >>> samples_2 = np.array([0.111, -0.879, 0.078, 0.733, 0.421,
@@ -3962,6 +3965,7 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     >>> right.set_title(f"circular std: {np.round(circstd_2, 2)!r}")
     >>> right.axis('equal')
     >>> right.axis('off')
+    >>> plt.show()
 
     """
     samples, sin_samp, cos_samp, mask = _circfuncs_common(samples, high, low,
