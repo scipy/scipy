@@ -257,6 +257,7 @@ add_newdoc("wrightomega",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import wrightomega, lambertw
 
     >>> wrightomega([-2, -1, 0, 1, 2])
@@ -319,6 +320,7 @@ add_newdoc("agm",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import agm
     >>> a, b = 24.0, 6.0
     >>> agm(a, b)
@@ -405,6 +407,7 @@ add_newdoc("airy",
     --------
     Compute the Airy functions on the interval [-15, 5].
 
+    >>> import numpy as np
     >>> from scipy import special
     >>> x = np.linspace(-15, 5, 201)
     >>> ai, aip, bi, bip = special.airy(x)
@@ -465,6 +468,7 @@ add_newdoc("airye",
     --------
     We can compute exponentially scaled Airy functions and their derivatives:
 
+    >>> import numpy as np
     >>> from scipy.special import airye
     >>> import matplotlib.pyplot as plt
     >>> z = np.linspace(0, 50, 500)
@@ -987,6 +991,7 @@ add_newdoc("bei",
     --------
     It can be expressed using Bessel functions.
 
+    >>> import numpy as np
     >>> import scipy.special as sc
     >>> x = np.array([1.0, 2.0, 3.0, 4.0])
     >>> sc.jv(0, x * np.exp(3 * np.pi * 1j / 4)).imag
@@ -1067,6 +1072,7 @@ add_newdoc("ber",
     --------
     It can be expressed using Bessel functions.
 
+    >>> import numpy as np
     >>> import scipy.special as sc
     >>> x = np.array([1.0, 2.0, 3.0, 4.0])
     >>> sc.jv(0, x * np.exp(3 * np.pi * 1j / 4)).real
@@ -1704,6 +1710,7 @@ add_newdoc("chdtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It can be expressed in terms of the regularized lower incomplete
@@ -1762,6 +1769,7 @@ add_newdoc("chdtrc",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It can be expressed in terms of the regularized upper incomplete
@@ -2028,6 +2036,7 @@ add_newdoc("cosdg",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using cosine directly.
@@ -2064,6 +2073,7 @@ add_newdoc("cosm1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than computing ``cos(x) - 1`` directly for
@@ -2101,6 +2111,7 @@ add_newdoc("cotdg",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using cotangent directly.
@@ -2146,6 +2157,7 @@ add_newdoc("dawsn",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-15, 15, num=1000)
@@ -2229,6 +2241,7 @@ add_newdoc("ellipe",
     This function is used in finding the circumference of an
     ellipse with semi-major axis `a` and semi-minor axis `b`.
 
+    >>> import numpy as np
     >>> from scipy import special
 
     >>> a = 3.5
@@ -2608,6 +2621,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprc
 
     >>> x = 1.2 + 3.4j
@@ -2723,6 +2737,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprd
 
     >>> x = 1.2 + 3.4j
@@ -2814,6 +2829,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprf
 
     >>> x = 1.2 + 3.4j
@@ -2916,6 +2932,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprg
 
     >>> x = 1.2 + 3.4j
@@ -3056,6 +3073,7 @@ add_newdoc(
     --------
     Basic homogeneity property:
 
+    >>> import numpy as np
     >>> from scipy.special import elliprj
 
     >>> x = 1.2 + 3.4j
@@ -3177,6 +3195,7 @@ add_newdoc("erf",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
@@ -3216,6 +3235,7 @@ add_newdoc("erfc",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
@@ -3260,6 +3280,7 @@ add_newdoc("erfi",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
@@ -3305,6 +3326,7 @@ add_newdoc("erfcx",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(-3, 3)
@@ -3351,6 +3373,7 @@ add_newdoc(
     --------
     1) evaluating a float number
 
+    >>> import numpy as np
     >>> from scipy import special
     >>> special.erfinv(0.5)
     0.4769362762044698
@@ -3403,6 +3426,7 @@ add_newdoc(
     --------
     1) evaluating a float number
 
+    >>> import numpy as np
     >>> from scipy import special
     >>> special.erfcinv(0.5)
     0.4769362762044698
@@ -3716,6 +3740,7 @@ add_newdoc("eval_chebys",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     They are a scaled version of the Chebyshev polynomials of the
@@ -3776,6 +3801,7 @@ add_newdoc("eval_chebyc",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     They are a scaled version of the Chebyshev polynomials of the
@@ -3930,6 +3956,7 @@ add_newdoc("eval_legendre",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import eval_legendre
 
     Evaluate the zero-order Legendre polynomial at x = 0
@@ -4253,6 +4280,7 @@ add_newdoc("exp1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It has a pole at 0.
@@ -4304,6 +4332,7 @@ add_newdoc("exp10",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import exp10
 
     >>> exp10(3)
@@ -4335,6 +4364,7 @@ add_newdoc("exp2",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import exp2
 
     >>> exp2(3)
@@ -4399,6 +4429,7 @@ add_newdoc("expi",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is related to `exp1`.
@@ -4470,6 +4501,7 @@ add_newdoc('expit',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import expit, logit
 
     >>> expit([-np.inf, -1.5, 0, 1.5, np.inf])
@@ -4519,6 +4551,7 @@ add_newdoc("expm1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import expm1
 
     >>> expm1(1.0)
@@ -4582,6 +4615,7 @@ add_newdoc("expn",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     Its domain is nonnegative n and x.
@@ -4645,6 +4679,7 @@ add_newdoc("exprel",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import exprel
 
     >>> exprel(0.01)
@@ -4917,6 +4952,7 @@ add_newdoc("fresnel",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     As z goes to infinity along the real axis, S and C converge to 0.5.
@@ -4984,6 +5020,7 @@ add_newdoc("gamma",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import gamma, factorial
 
     >>> gamma([0, 0.5, 1, 5])
@@ -5324,6 +5361,7 @@ add_newdoc("gammaln",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It has two positive zeros.
@@ -5396,6 +5434,7 @@ add_newdoc("gammasgn",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is 1 for `x > 0`.
@@ -5980,6 +6019,7 @@ add_newdoc("hyp0f1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is one when `z` is zero.
@@ -6051,6 +6091,7 @@ add_newdoc("hyp1f1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is one when `x` is zero:
@@ -6143,6 +6184,7 @@ add_newdoc("hyp2f1",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It has poles when `c` is a negative integer.
@@ -6229,6 +6271,7 @@ add_newdoc("hyperu",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It has a branch cut along the negative `x` axis.
@@ -7248,6 +7291,7 @@ add_newdoc("kei",
     It can be expressed using the modified Bessel function of the
     second kind.
 
+    >>> import numpy as np
     >>> import scipy.special as sc
     >>> x = np.array([1.0, 2.0, 3.0, 4.0])
     >>> sc.kv(0, x * np.exp(np.pi * 1j / 4)).imag
@@ -7352,6 +7396,7 @@ add_newdoc("ker",
     It can be expressed using the modified Bessel function of the
     second kind.
 
+    >>> import numpy as np
     >>> import scipy.special as sc
     >>> x = np.array([1.0, 2.0, 3.0, 4.0])
     >>> sc.kv(0, x * np.exp(np.pi * 1j / 4)).real
@@ -7491,6 +7536,7 @@ add_newdoc("kn",
     --------
     Plot the function of several orders for real input:
 
+    >>> import numpy as np
     >>> from scipy.special import kn
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 5, 1000)
@@ -7595,6 +7641,7 @@ add_newdoc("kolmogorov",
     --------
     Show the probability of a gap at least as big as 0, 0.5 and 1.0.
 
+    >>> import numpy as np
     >>> from scipy.special import kolmogorov
     >>> from scipy.stats import kstwobign
     >>> kolmogorov([0, 0.5, 1.0])
@@ -7715,6 +7762,7 @@ add_newdoc("kv",
     --------
     Plot the function of several orders for real input:
 
+    >>> import numpy as np
     >>> from scipy.special import kv
     >>> import matplotlib.pyplot as plt
     >>> x = np.linspace(0, 5, 1000)
@@ -7807,6 +7855,7 @@ add_newdoc("log1p",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using ``log(1 + x)`` directly for ``x``
@@ -7864,6 +7913,7 @@ add_newdoc('log_expit',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import log_expit, expit
 
     >>> log_expit([-3.0, 0.25, 2.5, 5.0])
@@ -7928,6 +7978,7 @@ add_newdoc('logit',
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import logit, expit
 
     >>> logit([0, 0.25, 0.5, 0.75, 1])
@@ -8712,6 +8763,7 @@ add_newdoc("ncfdtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
@@ -8989,6 +9041,7 @@ add_newdoc("nctdtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> from scipy import stats
     >>> import matplotlib.pyplot as plt
@@ -9226,6 +9279,7 @@ add_newdoc("log_ndtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import log_ndtr, ndtr
 
     The benefit of ``log_ndtr(x)`` over the naive implementation
@@ -9662,6 +9716,7 @@ add_newdoc("pdtr",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is a cumulative distribution function, so it converges to 1
@@ -10477,6 +10532,7 @@ add_newdoc("sindg",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using sine directly.
@@ -10532,6 +10588,7 @@ add_newdoc("smirnov",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import smirnov
 
     Show the probability of a gap at least as big as 0, 0.5 and 1.0 for a sample of size 5
@@ -10684,6 +10741,7 @@ add_newdoc("spence",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import spence
     >>> import matplotlib.pyplot as plt
 
@@ -10900,6 +10958,7 @@ add_newdoc("tandg",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     It is more accurate than using tangent directly.
@@ -10964,6 +11023,7 @@ add_newdoc("wofz",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import special
     >>> import matplotlib.pyplot as plt
 
@@ -11297,6 +11357,7 @@ add_newdoc("zetac",
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.special import zetac, zeta
 
     Some special values:
@@ -11593,6 +11654,7 @@ add_newdoc("ndtri_exp",
 
     Examples
     --------
+    >>> import numpy as np
     >>> import scipy.special as sc
 
     `ndtri_exp` agrees with the naive implementation when the latter does
