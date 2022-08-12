@@ -59,7 +59,7 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
     pip install meson cython pybind11 pythran
     export CMAKE_PREFIX_PATH=/opt/arm64-builds
     export PKG_CONFIG=/usr/local/bin/pkg-config
-    which cmake
+    export CMAKE=/usr/local/bin/cmake
 
     meson setup --cross-file $PROJECT_DIR/tools/wheels/cross_arm64.txt build
 fi
