@@ -320,6 +320,7 @@ def differential_evolution(func, bounds, args=(), strategy='best1bin',
     Let us consider the problem of minimizing the Rosenbrock function. This
     function is implemented in `rosen` in `scipy.optimize`.
 
+    >>> import numpy as np
     >>> from scipy.optimize import rosen, differential_evolution
     >>> bounds = [(0,2), (0, 2), (0, 2), (0, 2), (0, 2)]
     >>> result = differential_evolution(rosen, bounds)

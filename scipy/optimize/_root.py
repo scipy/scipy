@@ -136,6 +136,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
     ...     return [x[0]  + 0.5 * (x[0] - x[1])**3 - 1.0,
     ...             0.5 * (x[1] - x[0])**3 + x[1]]
 
+    >>> import numpy as np
     >>> def jac(x):
     ...     return np.array([[1 + 1.5 * (x[0] - x[1])**2,
     ...                       -1.5 * (x[0] - x[1])**2],
@@ -163,6 +164,7 @@ def root(fun, x0, args=(), method='hybr', jac=None, tol=None, callback=None,
 
     The solution can be found using the ``method='krylov'`` solver:
 
+    >>> import numpy as np
     >>> from scipy import optimize
     >>> # parameters
     >>> nx, ny = 75, 75

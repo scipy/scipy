@@ -210,6 +210,7 @@ def newton(func, x0, fprime=None, args=(), tol=1.48e-8, maxiter=50,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import optimize
     >>> import matplotlib.pyplot as plt
 

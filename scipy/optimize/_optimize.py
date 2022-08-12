@@ -314,6 +314,7 @@ def rosen(x):
     Examples
     --------
     >>> from scipy.optimize import rosen
+    >>> import numpy as np
     >>> X = 0.1 * np.arange(10)
     >>> rosen(X)
     76.56
@@ -357,6 +358,7 @@ def rosen_der(x):
     Examples
     --------
     >>> from scipy.optimize import rosen_der
+    >>> import numpy as np
     >>> X = 0.1 * np.arange(9)
     >>> rosen_der(X)
     array([ -2. ,  10.6,  15.6,  13.4,   6.4,  -3. , -12.4, -19.4,  62. ])
@@ -395,6 +397,7 @@ def rosen_hess(x):
     Examples
     --------
     >>> from scipy.optimize import rosen_hess
+    >>> import numpy as np
     >>> X = 0.1 * np.arange(4)
     >>> rosen_hess(X)
     array([[-38.,   0.,   0.,   0.],
@@ -437,6 +440,7 @@ def rosen_hess_prod(x, p):
     Examples
     --------
     >>> from scipy.optimize import rosen_hess_prod
+    >>> import numpy as np
     >>> X = 0.1 * np.arange(9)
     >>> p = 0.5 * np.arange(9)
     >>> rosen_hess_prod(X, p)
@@ -942,6 +946,7 @@ def approx_fprime(xk, f, epsilon=_epsilon, *args):
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy import optimize
     >>> def func(x, c0, c1):
     ...     "Coordinate vector `x` should be an array of size two."
@@ -1015,6 +1020,7 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
     ...     return x[0]**2 - 0.5 * x[1]**3
     >>> def grad(x):
     ...     return [2 * x[0], -1.5 * x[1]**2]
+    >>> import numpy as np
     >>> from scipy.optimize import check_grad
     >>> check_grad(func, grad, [1.5, -1.5])
     2.9802322387695312e-08  # may vary
@@ -1186,6 +1192,7 @@ def fmin_bfgs(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf,
 
     Examples
     --------
+    >>> import numpy as np
     >>> from scipy.optimize import fmin_bfgs
     >>> def quadratic_cost(x, Q):
     ...     return x @ Q @ x
@@ -1486,6 +1493,7 @@ def fmin_cg(f, x0, fprime=None, args=(), gtol=1e-5, norm=Inf, epsilon=_epsilon,
     ``a*u**2 + b*u*v + c*v**2 + d*u + e*v + f`` for given values
     of the parameters and an initial guess ``(u, v) = (0, 0)``.
 
+    >>> import numpy as np
     >>> args = (2, 3, 7, 8, 9, 10)  # parameter values
     >>> def f(x, *args):
     ...     u, v = x
@@ -2742,6 +2750,7 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     This function can find a downward convex region of a function:
 
     >>> import matplotlib.pyplot as plt
+    >>> import numpy as np
     >>> from scipy.optimize import bracket
     >>> def f(x):
     ...     return 10*x**2 + 3*x + 5
@@ -3430,6 +3439,7 @@ def brute(func, ranges, args=(), Ns=20, full_output=0, finish=fmin,
     ``(z, *params)``, where ``z = (x, y)``,  and ``params`` and the functions
     are as defined below.
 
+    >>> import numpy as np
     >>> params = (2, 3, 7, 8, 9, 10, 44, -1, 2, 26, 1, -2, 0.5)
     >>> def f1(z, *params):
     ...     x, y = z

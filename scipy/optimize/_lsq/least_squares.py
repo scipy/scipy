@@ -584,6 +584,7 @@ def least_squares(
     In this example we find a minimum of the Rosenbrock function without bounds
     on independent variables.
 
+    >>> import numpy as np
     >>> def fun_rosenbrock(x):
     ...     return np.array([10 * (x[1] - x[0]**2), (1 - x[0])])
 
@@ -638,6 +639,7 @@ def least_squares(
     estimate it by finite differences and provide the sparsity structure of
     Jacobian to significantly speed up this process.
 
+    >>> import numpy as np
     >>> from scipy.sparse import lil_matrix
     >>> def sparsity_broyden(n):
     ...     sparsity = lil_matrix((n, n), dtype=int)
@@ -744,6 +746,7 @@ def least_squares(
     We wrap it into a function of real variables that returns real residuals
     by simply handling the real and imaginary parts as independent variables:
 
+    >>> import numpy as np
     >>> def f_wrap(x):
     ...     fx = f(x[0] + 1j*x[1])
     ...     return np.array([fx.real, fx.imag])
