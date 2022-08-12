@@ -3836,7 +3836,7 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     References
     ----------
-    ..[1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
+    .. [1] Fisher, N.I. *Statistical analysis of circular data*. Cambridge
           University Press, 1993.
 
     Examples
