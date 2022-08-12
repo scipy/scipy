@@ -53,10 +53,11 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
     export FFLAGS=" -arch arm64 $FFLAGS"
     export LDFLAGS=" -L/opt/arm64-builds/lib -arch arm64 $FC_ARM64_LDFLAGS $LDFLAGS"
     sudo ln -s $FC $FC_LOC/gfortran
-    which gfortran
-    gfortran -v $PROJECT_DIR/tools/wheels/test.f
+    #    which gfortran
+    #    gfortran -v $PROJECT_DIR/tools/wheels/test.f
 
-    pip install meson
+    pip install meson, cython, pybind11, pythran
     meson setup --cross-file $PROJECT_DIR/tools/wheels/cross_arm64.txt build
-    cat $PROJECT_DIR/build/meson-logs/meson-log.txt
+
+    #    cat $PROJECT_DIR/build/meson-logs/meson-log.txt
 fi
