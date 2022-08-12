@@ -24,6 +24,14 @@ def central_diff_weights(Np, ndiv=1):
     If weights are in the vector w, then
     derivative is w[0] * f(x-ho*dx) + ... + w[-1] * f(x+h0*dx)
 
+    .. deprecated:: 1.10.0
+        `central_diff_weights` has been deprecated from
+        `scipy.misc.central_diff_weights` in SciPy 1.10.0 and
+        it will be completely removed in SciPy 2.0.0.
+        You may consider using
+        findiff: https://github.com/maroba/findiff or
+        numdifftools: https://github.com/pbrod/numdifftools
+
     Parameters
     ----------
     Np : int
@@ -89,6 +97,13 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
 
     Given a function, use a central difference formula with spacing `dx` to
     compute the nth derivative at `x0`.
+
+    .. deprecated:: 1.10.0
+        `derivative` has been deprecated from `scipy.misc.derivative`
+        in SciPy 1.10.0 and it will be completely removed in SciPy 2.0.0.
+        You may consider using
+        findiff: https://github.com/maroba/findiff or
+        numdifftools: https://github.com/pbrod/numdifftools
 
     Parameters
     ----------
@@ -167,6 +182,12 @@ def ascent():
     The image is derived from accent-to-the-top.jpg at
     http://www.public-domain-image.com/people-public-domain-images-pictures/
 
+    .. deprecated:: 1.10.0
+        `ascent` has been deprecated from `scipy.misc.ascent`
+        in SciPy 1.10.0 and it will be completely removed in SciPy 1.12.0.
+        Dataset methods have moved into the `scipy.datasets` module.
+        Use `scipy.datasets.ascent` instead.
+
     Parameters
     ----------
     None
@@ -208,6 +229,12 @@ def face(gray=False):
     Get a 1024 x 768, color image of a raccoon face.
 
     raccoon-procyon-lotor.jpg at http://www.public-domain-image.com
+
+    .. deprecated:: 1.10.0
+        `face` has been deprecated from `scipy.misc.face`
+        in SciPy 1.10.0 and it will be completely removed in SciPy 1.12.0.
+        Dataset methods have moved into the `scipy.datasets` module.
+        Use `scipy.datasets.face` instead.
 
     Parameters
     ----------
@@ -259,6 +286,13 @@ def electrocardiogram():
 
     The returned signal is a 5 minute long electrocardiogram (ECG), a medical
     recording of the heart's electrical activity, sampled at 360 Hz.
+
+    .. deprecated:: 1.10.0
+        `electrocardiogram` has been deprecated from
+        `scipy.misc.electrocardiogram` in SciPy 1.10.0 and it will be
+        completely removed in SciPy 1.12.0.
+        Dataset methods have moved into the `scipy.datasets` module.
+        Use `scipy.datasets.electrocardiogram` instead.
 
     Returns
     -------
