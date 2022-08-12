@@ -59,6 +59,9 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
     pip install meson cython pybind11 pythran
     export PKG_CONFIG=/usr/local/bin/pkg-config
     export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
+    ls -al /opt/arm64-builds/lib
+    ls -al /opt/arm64-builds/lib/pkgconfig
+
     pkg-config --libs openblas
     meson setup --cross-file $PROJECT_DIR/tools/wheels/cross_arm64.txt build
 fi
