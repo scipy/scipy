@@ -1,4 +1,4 @@
-set -xe
+#set -xe
 
 PROJECT_DIR="$1"
 PLATFORM=$(PYTHONPATH=tools python -c "import openblas_support; print(openblas_support.get_plat())")
@@ -56,10 +56,9 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
     #    which gfortran
     #    gfortran -v $PROJECT_DIR/tools/wheels/test.f
 
-    which pkg-config
     pip install meson cython pybind11 pythran
     export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkg-config:$PKG_CONFIG_PATH
     meson setup --cross-file $PROJECT_DIR/tools/wheels/cross_arm64.txt build
 
-    #    cat $PROJECT_DIR/build/meson-logs/meson-log.txt
+    cat $PROJECT_DIR/build/meson-logs/meson-log.txt
 fi
