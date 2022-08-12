@@ -56,6 +56,7 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
     #    which gfortran
     #    gfortran -v $PROJECT_DIR/tools/wheels/test.f
 
+    which pkg-config
     pip install meson cython pybind11 pythran
     export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkg-config:$PKG_CONFIG_PATH
     meson setup --cross-file $PROJECT_DIR/tools/wheels/cross_arm64.txt build
