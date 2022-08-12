@@ -3746,25 +3746,26 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     >>> import numpy as np
     >>> from scipy.stats import circmean
     >>> import matplotlib.pyplot as plt
-    >>> angles=np.deg2rad(np.array([20, 30, 330]))
-    >>> circmean=circmean(angles)
+    >>> angles = np.deg2rad(np.array([20, 30, 330]))
+    >>> circmean = circmean(angles)
     >>> np.rad2deg(circmean)
     7.294976657784009
 
-    >>> mean=angles.mean()
+    >>> mean = angles.mean()
     >>> np.rad2deg(mean)
     126.66666666666666
 
-    Plot and compare the results of *circmean* and the regular *mean*.
+    Plot and compare the circular mean against the arithmetic mean.
 
     >>> plt.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
     ...          np.sin(np.linspace(0, 2*np.pi, 500)),
     ...          c='k')
-    >>> plt.scatter(np.cos(angles) , np.sin(angles), c='k')
+    >>> plt.scatter(np.cos(angles), np.sin(angles), c='k')
     >>> plt.scatter(np.cos(circmean), np.sin(circmean), c='b',
     ...             label='circmean')
     >>> plt.scatter(np.cos(mean), np.sin(mean), c='r', label='mean')
     >>> plt.legend()
+    >>> plt.axis('equal')
     >>> plt.show()
 
     """
