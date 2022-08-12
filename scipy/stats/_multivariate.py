@@ -111,45 +111,6 @@ def _pinv_1d(v, eps=1e-5):
     return np.array([0 if abs(x) <= eps else 1/x for x in v], dtype=float)
 
 
-def _compute_sqrt_cov_using_svd(cov, tol=1e-8):
-    """
-    Compute a matrix `A` such that `A @ A.T == cov` using the singular value
-    decomposition (SVD).
-    Parameters
-    ------
-    cov : array_like
-        Covariance matrix (2-D).
-    tol : float, optional
-        Tolerance when checking whether the matrix is positive semi-definite.
-        Note that `cov` is cast to double before checking the tolerance.
-    Returns
-    -------
-    numpy.ndarray
-        Matrix `A` such that `A @ A.T == cov`.
-    Note
-    ----
-    This function is mainly intended for use by the multivariate normal
-    distribution, or distributions which produce samples by generating a
-    multivariate normal sample as an intermediate step (e.g. multivariate t
-    distribution). Although other methods to compute the square root (such as
-    an eigenvalue or Cholesky decomposition) could potentially be faster, we
-    use the SVD to maintain backward compatibility. In effect, this method
-    performs part of the computation in
-    `numpy.random.RandomState.multivariate_normal` (which is in turn equivalent
-    to `numpy.random.Generator.multivariate_normal`).
-    """
-    # Cast to double to ensure `tol` remains meaningful.
-    cov = cov.astype(np.double)
-    u, s, v = np.linalg.svd(cov)
-    # Check if the matrix is positive semi-definite. If so, v.T should be close
-    # (up to round-off error) to u if the singular value of the corresponding
-    # row isn't zero. Note that this also checks whether `cov` is symmetric.
-    if not np.allclose((v.T * s) @ v, cov, rtol=tol, atol=tol):
-        warnings.warn(
-            "covariance is not positive semi-definite", RuntimeWarning)
-    return u * np.sqrt(s)
-
-
 class _PSD:
     """
     Compute coordinated functions of a symmetric positive semidefinite matrix.
@@ -225,47 +186,205 @@ class _PSD:
         return self._pinv
 
 
-class _CovInfo:
-    """ Class which stores information for a covariance matrix. """
-    def __init__(self, sqrt_cov, sqrt_inv_cov, log_det_cov, rank,
-                 cov=None, inverse_cov=None):
-        """
-        Parameters
-        ----------
-        sqrt_cov: numpy.ndarray
-            An array A such that A @ A.T equals the covariance matrix.
-        sqrt_inv_cov: numpy.ndarray
-            An array A such that A @ A.T equals the inverse of the covariance
-            (or the precision) matrix.
-        log_det_cov: float
-            Log of the determinant of the covariance.
-        cov: numpy.ndarray, optional
-            The actual covariance matrix, if known.
-        inverse_cov: numpy.ndarray, optional
-            The inverse of the covariance matrix, if known.
+def _compute_psd_eigensystem(matrix, allow_singular=False):
+    """ Compute the eigenvalue decomposition of a positive semi-definite
+    matrix. Small enough eigenvalues are reduced to zeroes.
 
-        """
-        self.sqrt_cov = sqrt_cov
-        self.sqrt_inv_cov = sqrt_inv_cov
-        self.log_det_cov = log_det_cov
-        self.rank = rank
+    Parameters
+    ----------
+    matrix : array_like
+        Symmetric positive semidefinite matrix (2-D).
+    allow_singular : bool, optional
+       Signifies whether singular covariances are permissible. Defaults to
+       True.
+
+    Returns
+    -------
+    eigvals: ndarray
+        1D array containing eigenvalues.
+    eigvecs: ndarray
+        2D array containing eigenvectors.
+    rank: int
+        The numerical rank of the matrix.
+
+    Raises
+    ------
+    ValueError
+        If the input matrix is not positive semi-definite.
+    numpy.linalg.LinAlgError
+        If the input matrix is singular but `allow_singular` is False.
+    """
+    all_eigvals, eigvecs = scipy.linalg.eigh(
+        matrix,
+        lower=True,
+        check_finite=True,
+    )
+    eps = _eigvalsh_to_eps(all_eigvals)
+    if np.min(all_eigvals) < -eps:
+        raise ValueError('the input matrix must be positive semidefinite')
+    # Replace small eigenvalues with zero.
+    eigvals = np.where(all_eigvals > eps, all_eigvals, 0.)
+    rank = np.count_nonzero(eigvals)
+    if rank < len(eigvals) and not allow_singular:
+        raise np.linalg.LinAlgError('singular matrix')
+    return eigvals, eigvecs, rank
+
+
+class EigSvdCovInfo:
+    """ A class to hold properties of a covariance matrix commonly required by
+    multivariate probability distributions, computed directly from the
+    covariance matrix.
+
+    Parameters
+    ----------
+    cov : array_like
+        Symmetric positive semidefinite covariance matrix (2-D).
+    allow_singular : bool, optional
+       Signifies whether singular covariances are permissible. Defaults to
+       True.
+
+    Note
+    ----
+    This class uses the eigenvalue decomposition to compute a matrix square
+    root of the covariance. Separately, it uses the SVD decomposition to
+    compute a matrix square root of the inverse covariance (or the precision)
+    matrix.
+
+    Square roots of the covariance and its inverse are computed using different
+    algorithms so that random variates generated using these square roots
+    remain backwards compatible. (Before the introduction of this class,
+    multivariate_normal random variates were delegated to numpy, which uses SVD
+    under the hood.)
+
+    """
+    def __init__(self, cov, allow_singular=True):
         self._cov = cov
-        self._inverse_cov = inverse_cov
+        self._singular_vecs = self._singular_vals = None
+        self._eigvals, self._eigvecs, self.rank = _compute_psd_eigensystem(
+            cov,
+            allow_singular=allow_singular
+        )
+        self._eigvals_pinv = np.array(
+            [1 / d if d > 0 else 0 for d in self._eigvals],
+            dtype=float
+        )
+
+    @cached_property
+    def sqrt_cov(self):
+        """ A matrix C such that C @ C.T equals the covariance matrix. """
+        self._ensure_svd_factors()
+        return self._singular_vecs * np.sqrt(self._singular_vals)
+
+    @cached_property
+    def sqrt_inv_cov(self):
+        """ A matrix M such that M @ M.T equals the inverse covariance matrix.
+        """
+        return np.multiply(self._eigvecs, np.sqrt(self._eigvals_pinv))
+
+    @cached_property
+    def log_det_cov(self):
+        """ Natural logarithm of the determinant of the covariance matrix. """
+        nonzero_eigvals = self._eigvals[self._eigvals > 0]
+        return np.sum(np.log(nonzero_eigvals))
+
+    @cached_property
+    def rank(self):
+        """ Numerical rank of the covariance matrix. """
+        return self._rank
 
     @cached_property
     def cov(self):
-        """ Returns the covariance matrix, computing it from its factors if
-        necessary. """
-        if self._cov is None:
-            return self.sqrt_cov @ self.sqrt_cov.T
+        """ The covariance matrix. """
         return self._cov
 
     @cached_property
     def inverse_cov(self):
-        """ Returns the covariance matrix, computing it from its factors if
-        necessary. """
-        if self._inverse_cov is None:
-            return self.sqrt_inv_cov @ self.sqrt_inv_cov.T
+        """ The inverse covariance matrix computed from its square root
+        factors. """
+        return self.sqrt_inv_cov @ self.sqrt_inv_cov.T
+
+    def _ensure_svd_factors(self):
+        if self._singular_vecs is not None and self._singular_vals is not None:
+            # We've already computed the SVD, there's nothing to do.
+            return
+        # Cast to double to ensure tolerances remains meaningful.
+        cov = self._cov.astype(np.double)
+        u, s, v = np.linalg.svd(cov)
+        if not np.allclose((v.T * s) @ v, cov, rtol=1e-8, atol=1e-8):
+            warnings.warn(
+                "covariance is not positive semi-definite",
+                RuntimeWarning
+            )
+        self._singular_vecs = u
+        self._singular_vals = s
+
+
+class InvEigCovInfo:
+    """ A class to hold properties of a covariance matrix commonly required by
+    multivariate probability distributions, computed from the inverse
+    covariance matrix.
+
+    Parameters
+    ----------
+    inverse_cov : array_like
+        Symmetric positive semidefinite inverse covariance matrix (2-D).
+    allow_singular : bool, optional
+       Signifies whether singular covariances are permissible. Defaults to
+       True.
+
+    Note
+    ----
+    This class uses the eigenvalue decomposition to compute a matrix square
+    root of the covariance and its inverse.
+
+    """
+    def __init__(self, inverse_cov, allow_singular=True):
+        self._inverse_cov = inverse_cov
+        self._eigvals, self._eigvecs, self._rank = _compute_psd_eigensystem(
+            inverse_cov,
+            allow_singular=allow_singular
+        )
+        self._eigvals_pinv = np.array(
+            [1 / d if d > 0 else 0 for d in self._eigvals],
+            dtype=float
+        )
+
+    @cached_property
+    def sqrt_cov(self):
+        """ A matrix C such that C @ C.T equals the covariance matrix. """
+        return np.multiply(
+            self._eigvecs,
+            np.sqrt(self._eigvals_pinv)
+        )
+
+    @cached_property
+    def sqrt_inv_cov(self):
+        """ A matrix M such that M @ M.T equals the inverse covariance matrix.
+        """
+        return np.multiply(
+            self._eigvecs,
+            np.sqrt(self._eigvals)
+        )
+
+    @cached_property
+    def log_det_cov(self):
+        """ Natural log of the determinant of the covariance matrix. """
+        nonzero_eigvals = self._eigvals[self._eigvals > 0]
+        return -np.sum(np.log(nonzero_eigvals))
+
+    @cached_property
+    def rank(self):
+        """ Numerical rank of the covariance matrix. """
+        return self._rank
+
+    @cached_property
+    def cov(self):
+        """ The covariance matrix computed from its square root factors. """
+        return self.sqrt_cov @ self.sqrt_cov.T
+
+    @cached_property
+    def inverse_cov(self):
+        """ The inverse covariance matrix. """
         return self._inverse_cov
 
 
@@ -542,24 +661,14 @@ class multivariate_normal_gen(multi_rv_generic):
             # We're forced to use the SVD to compute the square root of the
             # covariance to ensure random variates remain backwards compatible
             # with numpy.
-            sqrt_cov = _compute_sqrt_cov_using_svd(cov)
-            _psd = _PSD(cov, allow_singular=allow_singular)
-            return _CovInfo(
-                sqrt_cov, _psd.U, _psd.log_pdet, _psd.rank,
-                cov=cov
-            )
-        elif inverse_cov is not None:
-            _psd = _PSD(inverse_cov, allow_singular=allow_singular)
-            return _CovInfo(
-                _psd.U, _psd.A, -_psd.log_pdet, _psd.rank,
-                inverse_cov=inverse_cov
-            )
-        else:
-            # Be defensive.
-            raise ValueError(
-                "Must specify either covariance or inverse covariance to"
-                " create _CovInfo"
-            )
+            return EigSvdCovInfo(cov, allow_singular=allow_singular)
+        if inverse_cov is not None:
+            return InvEigCovInfo(inverse_cov, allow_singular=allow_singular)
+        # Be defensive.
+        raise ValueError(
+            "Must specify either covariance or inverse covariance to"
+            " create covariance info"
+        )
 
     def _logpdf(self, x, mean, sqrt_inv_cov, log_det_cov, rank):
         """Log of the multivariate normal probability density function.
