@@ -9,12 +9,12 @@ cat $PROJECT_DIR/tools/wheels/LICENSE_osx.txt >> $PROJECT_DIR/LICENSE.txt
 
 # Install Openblas
 basedir=$(python tools/openblas_support.py)
-cp -R $basedir/lib/ /usr/local/lib
+cp -r $basedir/lib/* /usr/local/lib
 cp $basedir/include/* /usr/local/include
 if [[ $RUNNER_OS == "macOS" && $PLATFORM == "macosx-arm64" ]]; then
     sudo mkdir -p /opt/arm64-builds/lib /opt/arm64-builds/include
     sudo chown -R $USER /opt/arm64-builds
-    cp -R $basedir/lib/ /opt/arm64-builds
+    cp -r $basedir/lib/* /opt/arm64-builds/lib
     cp $basedir/include/* /opt/arm64-builds/include
 fi
 
@@ -57,10 +57,8 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
     #    gfortran -v $PROJECT_DIR/tools/wheels/test.f
 
     pip install meson cython pybind11 pythran
+    export CMAKE_PREFIX_PATH=/opt/arm64-builds
     export PKG_CONFIG=/usr/local/bin/pkg-config
-    export PKG_CONFIG_PATH=/opt/arm64-builds/lib/pkgconfig
-    ls -al /opt/arm64-builds/lib
-    ls -al /opt/arm64-builds/lib/pkgconfig
 
     pkg-config --libs openblas
     meson setup --cross-file $PROJECT_DIR/tools/wheels/cross_arm64.txt build
