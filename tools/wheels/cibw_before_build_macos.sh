@@ -9,12 +9,12 @@ cat $PROJECT_DIR/tools/wheels/LICENSE_osx.txt >> $PROJECT_DIR/LICENSE.txt
 
 # Install Openblas
 basedir=$(python tools/openblas_support.py)
-cp -r $basedir/lib/* /usr/local/lib
+cp -R $basedir/lib/ /usr/local/lib
 cp $basedir/include/* /usr/local/include
 if [[ $RUNNER_OS == "macOS" && $PLATFORM == "macosx-arm64" ]]; then
     sudo mkdir -p /opt/arm64-builds/lib /opt/arm64-builds/include
     sudo chown -R $USER /opt/arm64-builds
-    cp -r $basedir/lib/* /opt/arm64-builds/lib
+    cp -R $basedir/lib/ /opt/arm64-builds
     cp $basedir/include/* /opt/arm64-builds/include
 fi
 
