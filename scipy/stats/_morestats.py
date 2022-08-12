@@ -3757,8 +3757,8 @@ def circmean(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
 
     Plot and compare the results of *circmean* and the regular *mean*.
 
-    >>> plt.plot(np.cos(np.linspace(0, 2*np.pi, 500),
-    ...          np.sin(np.linspace(0, 2*np.pi, 500),
+    >>> plt.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...          np.sin(np.linspace(0, 2*np.pi, 500)),
     ...          c='k')
     >>> plt.scatter(np.cos(angles) , np.sin(angles), c='k')
     >>> plt.scatter(np.cos(circmean), np.sin(circmean), c='b',
