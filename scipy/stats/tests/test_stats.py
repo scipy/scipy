@@ -3263,6 +3263,45 @@ class TestStudentTest:
         assert_allclose(p, self.P1_1_g)
         assert_allclose(t, self.T1_1)
 
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    def test_1samp_ci_1d(self, alternative):
+        rng = np.random.default_rng(8066178009154342972)
+        n = 10
+        x = rng.normal(size=n, loc=1.5, scale=2)
+        popmean = rng.normal()  # this shouldn't affect confidence interval
+        # Reference values generated with R t.test:
+        # options(digits=16)
+        # x = c(2.75532884,  0.93892217,  0.94835861,  1.49489446, -0.62396595,
+        #      -1.88019867, -1.55684465,  4.88777104,  5.15310979,  4.34656348)
+        # t.test(x, conf.level=0.85, alternative='l')
+
+        ref = {'two-sided': [0.3594423211709136, 2.9333455028290860],
+               'greater': [0.7470806207371626, np.inf],
+               'less': [-np.inf, 2.545707203262837]}
+        res = stats.ttest_1samp(x, popmean=popmean, alternative=alternative,
+                                confidence_level=0.85)
+        assert_allclose(res.confidence_interval, ref[alternative])
+        assert_equal(res.df, n-1)
+
+    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
+    @pytest.mark.parametrize("axis", [0, 1])
+    def test_1samp_ci_nd(self, alternative, axis):
+        rng = np.random.default_rng(8066178009154342972)
+        x = rng.normal(size=(4, 5), loc=1.5, scale=2)
+
+        def reference_1d(x):
+            res = stats.ttest_1samp(x, 0, alternative=alternative)
+            return res.confidence_interval.low, res.confidence_interval.high
+        x_reshape = np.moveaxis(x, axis, 0)
+        ref_low, ref_high = np.apply_along_axis(reference_1d, 0, x_reshape)
+
+        res = stats.ttest_1samp(x, 0, axis=axis, alternative=alternative)
+
+        assert_allclose(res.confidence_interval.low, ref_low)
+        assert_allclose(res.confidence_interval.high, ref_high)
+        assert_equal(res.confidence_interval.low.shape, ref_low.shape)
+        assert_equal(res.confidence_interval.high.shape, ref_high.shape)
+
 
 class TestPercentileOfScore:
 

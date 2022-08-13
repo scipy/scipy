@@ -6023,11 +6023,13 @@ def _two_sample_transform(u, v):
 #       INFERENTIAL STATISTICS      #
 #####################################
 
-Ttest_1sampResult = namedtuple('Ttest_1sampResult', ('statistic', 'pvalue'))
+Ttest_1sampResult = _make_tuple_bunch('Ttest_1sampResult',
+                                      ['statistic', 'pvalue'],
+                                      ['df', 'confidence_interval'])
 
 
 def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
-                alternative="two-sided"):
+                alternative="two-sided", *, confidence_level=0.95):
     """Calculate the T-test for the mean of ONE group of scores.
 
     This is a test for the null hypothesis that the expected value
@@ -6063,7 +6065,10 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
         * 'greater': the mean of the underlying distribution of the sample is
           greater than the given population mean (`popmean`)
 
-        .. versionadded:: 1.6.0
+    confidence_level : float, optional
+        The confidence level for the calculation of the confidence interval
+        of the true mean, that is, the population mean of the distribution
+        underlying the sample. Default is 0.95.
 
     Returns
     -------
@@ -6071,6 +6076,10 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
         t-statistic.
     pvalue : float or array
         Two-sided p-value.
+    df : float or array
+        The number of degrees of freedom used in calculation of the
+        t-statistic; this is one less than the size of the sample
+        (``a.shape[axis]``).
 
     Notes
     -----
@@ -6146,7 +6155,8 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     n = a.shape[axis]
     df = n - 1
 
-    d = np.mean(a, axis) - popmean
+    mean = np.mean(a, axis)
+    d = mean - popmean
     v = _var(a, axis, ddof=1)
     denom = np.sqrt(v / n)
 
@@ -6154,7 +6164,29 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
         t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t, alternative)
 
-    return Ttest_1sampResult(t, prob)
+    low, high = _t_confidence_interval(df, confidence_level, alternative)
+    low = low * denom + mean
+    high = high * denom + mean
+    ci = ConfidenceInterval(low=low, high=high)
+
+    return Ttest_1sampResult(t, prob, df=df, confidence_interval=ci)
+
+
+def _t_confidence_interval(df, confidence_level, alternative):
+    if alternative == 'less':
+        p = confidence_level
+        low, high = np.broadcast_arrays(-np.inf, special.stdtrit(df, p))
+    elif alternative == 'greater':
+        p = 1 - confidence_level
+        low, high = np.broadcast_arrays(special.stdtrit(df, p), np.inf)
+    elif alternative == 'two-sided':
+        tail_probability = (1 - confidence_level)/2
+        p = tail_probability, 1-tail_probability
+        low, high = special.stdtrit(df, p)
+    else:
+        raise ValueError("alternative must be "
+                         "'less', 'greater' or 'two-sided'")
+    return low[()], high[()]
 
 
 def _ttest_finish(df, t, alternative):
