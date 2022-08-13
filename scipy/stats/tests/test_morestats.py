@@ -2568,7 +2568,7 @@ class TestDirectionalFuncs:
         directional_mean = stats.directionalmean(data)
         mean_rounded = np.round(directional_mean, 4)
 
-        reference_mean = np.array([0.2984, -0.1346, -0.9449]) # Fisher
+        reference_mean = np.array([0.2984, -0.1346, -0.9449])
         assert_allclose(mean_rounded, reference_mean)
 
         expected_var = 0.025335389565304012
@@ -2625,30 +2625,16 @@ class TestDirectionalFuncs:
         with pytest.raises(ValueError, match=re.escape(message)):
             test_func(data)
 
-    def test_directionalfuncs_normalize(self):
-        # test that unit vectors get properly normalized before
-        # directional stats calculations
+    @pytest.mark.parametrize("test_func", [stats.directionalmean,
+                                           stats.directionalvar])
+    def test_directionalfuncs_normalize(self, test_func):
+        # test that directional stats calculations yield same results
+        # for unnormalized input with normalize=True and normalized
+        # input with normalize=False
         data = np.array([[0.8660254, 0.5, 0.],
                          [1.7320508, -1., 0.]])
-        expected_mean = np.array([1., 0., 0.])
-        directional_mean = stats.directionalmean(data)
-        assert_allclose(expected_mean, directional_mean)
-        expected_var = 0.13397459716167093
-        directional_var = stats.directionalvar(data)
-        assert_allclose(expected_var, directional_var)
-
-    def test_directionalmean_normalize_false(self):
-        # test that for already normalized unit vectors
-        # normalize=False returns same result as default
-        data = np.array([[0.8660254, 0.5, 0.],
-                         [0.8660254, -0.5, 0]])
-        expected = np.array([1., 0., 0.])
-        directional_mean_default = stats.directionalmean(data)
-        directional_mean = stats.directionalmean(data,
-                                                 normalize=False)
-        assert_allclose(expected, directional_mean)
-        assert_allclose(directional_mean_default, directional_mean)
-
-        directional_var_default = stats.directionalvar(data)
-        directional_var = stats.directionalvar(data, normalize=False)
-        assert_allclose(directional_var, directional_var_default)
+        res = test_func(data, normalize=True)
+        normalized_data = data / np.linalg.norm(data, axis=-1,
+                                                keepdims=True)
+        ref = test_func(normalized_data, normalize=False)
+        assert_allclose(res, ref)
