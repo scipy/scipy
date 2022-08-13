@@ -484,15 +484,15 @@ class Random(Benchmark):
 
 
 class Argmax(Benchmark):
-    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo']]
-    param_names = ['density', 'format']
+    params = [[0.01, 0.1, 0.5], ['csr', 'csc', 'coo'], [True, False]]
+    param_names = ['density', 'format', 'explicit']
 
-    def setup(self, density, format):
+    def setup(self, density, format, explicit):
         n = 1000
 
         warnings.simplefilter('ignore', SparseEfficiencyWarning)
 
         self.X = sparse.rand(n, n, format=format, density=density)
 
-    def time_argmax(self, density, format):
-        self.X.argmax()
+    def time_argmax(self, density, format, explicit):
+        self.X.argmax(explicit=explicit)
