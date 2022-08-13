@@ -301,6 +301,30 @@ class TestAnderson:
         assert_array_less(A1, crit1[-2:])
         assert_(A2 > crit2[-1])
 
+    def test_weibull_min(self):
+        # From Richard A. Lockhart and Michael A. Stephens "Estimation and Tests of
+        #             Fit for the Three-Parameter Weibull Distribution"
+        #             Journal of the Royal Statistical Society.Series B(Methodological)
+        #             Vol. 56, No. 3 (1994), pp. 491-500
+        x1 = np.array([225, 171, 198, 189, 189, 135, 162, 135, 117, 162])
+        x2 = np.array([74, 57, 48, 29, 502, 12, 70, 21, 29, 386,
+                       59, 27, 153, 26, 326])
+        A1, crit1, sig1 = stats.anderson(x1, 'weibull_min')
+        A2, crit2, sig2 = stats.anderson(x2, 'weibull_min')
+
+        assert_(A1 < crit1[0])
+        assert_(A2 > crit2[0])
+
+    def test_weibull_error(self):
+        # Check for helpful error message when Anderson test for Weibull fails
+        rng = np.random.default_rng(2044208699473992917)
+        c, loc, scale = 5, 0, 1
+        x = stats.weibull_min.rvs(c, loc, scale, size=100, random_state=rng)
+        message = "An error occured while fitting the Weibull distribution..."
+        with (pytest.raises(ValueError, match=message),
+              pytest.raises(FloatingPointError)):
+            stats.anderson(x, 'weibull_min')
+
 
 class TestAndersonKSamp:
     def test_example1a(self):

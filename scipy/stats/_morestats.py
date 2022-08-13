@@ -1829,6 +1829,113 @@ _Avals_gumbel = array([0.474, 0.637, 0.757, 0.877, 1.038])
 #             on the Empirical Distribution Function.", Biometrika,
 #             Vol. 66, Issue 3, Dec. 1979, pp 591-595.
 _Avals_logistic = array([0.426, 0.563, 0.660, 0.769, 0.906, 1.010])
+# From Richard A. Lockhart and Michael A. Stephens "Estimation and Tests of
+#             Fit for the Three-Parameter Weibull Distribution"
+#             Journal of the Royal Statistical Society.Series B(Methodological)
+#             Vol. 56, No. 3 (1994), pp. 491-500, table 1. Keys are c*100
+_Avals_weibull = {0: array([0.292, 0.395, 0.467, 0.522,
+                            0.617, 0.711, 0.836, 0.931]),
+                  5: array([0.295, 0.399, 0.471, 0.527,
+                            0.623, 0.719, 0.845, 0.941]),
+                  10: array([0.298, 0.403, 0.476, 0.534,
+                             0.631, 0.728, 0.856, 0.954]),
+                  15: array([0.301, 0.408, 0.483, 0.541,
+                             0.640, 0.738, 0.869, 0.969]),
+                  20: array([0.305, 0.414, 0.490, 0.549,
+                             0.650, 0.751, 0.885, 0.986]),
+                  25: array([0.309, 0.421, 0.498, 0.559,
+                             0.662, 0.765, 0.902, 1.007]),
+                  30: array([0.314, 0.429, 0.508, 0.570,
+                             0.676, 0.782, 0.923, 1.030]),
+                  35: array([0.320, 0.438, 0.519, 0.583,
+                             0.692, 0.802, 0.947, 1.057]),
+                  40: array([0.327, 0.448, 0.532, 0.598,
+                             0.711, 0.824, 0.974, 1.089]),
+                  45: array([0.334, 0.469, 0.547, 0.615,
+                             0.732, 0.850, 1.006, 1.125]),
+                  50: array([0.342, 0.472, 0.563, 0.636,
+                             0.757, 0.879, 1.043, 1.167])}
+
+
+def _weibull_fit_check(params, x):
+    # Refine the fit returned by `weibull_min.fit` to ensure that the first
+    # order necessary conditions are satisfied. If not, raise an error.
+
+    n = len(x)
+    c, u, s = params
+    x0 = np.min(x)
+
+    def get_scale(c, u):
+        # partial w.r.t. scale solved in terms of shape and location
+        return ((x-u)**c/n).sum()**(1/c)
+
+    def dnllf_dc(c, u, s):
+        # partial w.r.t. shape c
+        t11 = n/c
+        t12 = -n*math.log(s)
+        t13 = np.log(x - u).sum()
+        t14a = (x - u)/s
+        t14 = -(t14a**c * np.log(t14a)).sum()
+        t1 = -(t11 + t12 + t13 + t14)
+        return t1
+
+    def dnllf_du(c, u, s):
+        # partial w.r.t. location
+        t21 = -((c-1)/(x-u)).sum()
+        t22 = (c*(x-u)**(c-1)/s**c).sum()
+        t2 = -(t21 + t22)
+        return t2
+
+    def dnllf(params):
+        # partial derivatives of the NLLF w.r.t. parameters, i.e.
+        # first order necessary conditions for MLE fit
+        c, u = params
+        s = get_scale(c, u)
+        return [dnllf_dc(c, u, s), dnllf_du(c, u, s)]
+
+    def _weibull_bias_reduction(c, u, s):
+        x0, n = np.min(x), len(x)
+        eps = 1e-10 * max(1, x0)
+        u_last = u
+
+        for i in range(1000):
+            k = 1 / c
+            u = x0 - s / n**k
+            c = optimize.root(dnllf_dc, c, args=(u, s)).x[0]
+            s = get_scale(c, u)
+            if np.abs(u_last - u) < eps:
+                return c, u, s
+            u_last = u
+        else:
+            message = ('Formally, the maximum likelihood estimate of the '
+                       '`weibull_min` parameters from the sample `x` are '
+                       '`c = 0, loc=min(x), scale=1.` '
+                       'This estimate is biased, and the bias reduction '
+                       'procedure failed to converge, so `anderson` cannot '
+                       'continue.')
+            raise ValueError(message)
+
+    if np.allclose(u, x0) and dnllf_du(c, u, s) < 0:
+        return _weibull_bias_reduction(c, u, s)
+    try:
+        with np.errstate(over='raise', invalid='raise'):
+            res = optimize.root(dnllf, params[:-1])
+        if not res.success:
+            message = ("Solution of MLE first-order conditions failed: "
+                       f"{res.message}")
+            raise ValueError(message)
+    except (FloatingPointError, ValueError) as e:
+        message = ("An error occured while fitting the Weibull distribution "
+                   "to the data, so `anderson` cannot continue. "
+                   "Maximum likelihood estimation is known to "
+                   "be challenging for the Weibull distribution because the "
+                   "maximum log-likehood can be infinite. Consider "
+                   "alternative methods for fitting and tests of fit.")
+        raise ValueError(message) from e
+
+    c, u = res.x
+    s = get_scale(c, u)
+    return c, u, s
 
 
 AndersonResult = namedtuple('AndersonResult', ('statistic',
@@ -1843,14 +1950,14 @@ def anderson(x, dist='norm'):
     drawn from a population that follows a particular distribution.
     For the Anderson-Darling test, the critical values depend on
     which distribution is being tested against.  This function works
-    for normal, exponential, logistic, or Gumbel (Extreme Value
+    for normal, exponential, Weibull, logistic, or Gumbel (Extreme Value
     Type I) distributions.
 
     Parameters
     ----------
     x : array_like
         Array of sample data.
-    dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r', 'extreme1'}, optional
+    dist : {'norm', 'expon', 'logistic', 'gumbel', 'gumbel_l', 'gumbel_r', 'extreme1', 'weibull_min'}, optional
         The type of distribution to test against.  The default is 'norm'.
         The names 'extreme1', 'gumbel_l' and 'gumbel' are synonyms for the
         same distribution.
@@ -1881,6 +1988,8 @@ def anderson(x, dist='norm'):
         25%, 10%, 5%, 2.5%, 1%, 0.5%
     Gumbel
         25%, 10%, 5%, 2.5%, 1%
+    Weibull_min
+        50%, 25%, 15%, 10%, 5%, 2.5%, 1%, 0.5%
 
     If the returned statistic is larger than these critical values then
     for the corresponding significance level, the null hypothesis that
@@ -1904,12 +2013,16 @@ def anderson(x, dist='norm'):
     .. [6] Stephens, M. A. (1979). Tests of Fit for the Logistic Distribution
            Based on the Empirical Distribution Function, Biometrika, Vol. 66,
            pp. 591-595.
+    .. [7] Richard A. Lockhart and Michael A. Stephens "Estimation and Tests of
+           Fit for the Three-Parameter Weibull Distribution"
+           Journal of the Royal Statistical Society.Series B(Methodological)
+           Vol. 56, No. 3 (1994), pp. 491-500, Table 0. Keys in dict is C*100
 
-    """
-    if dist not in ['norm', 'expon', 'gumbel', 'gumbel_l',
-                    'gumbel_r', 'extreme1', 'logistic']:
-        raise ValueError("Invalid distribution; dist must be 'norm', "
-                         "'expon', 'gumbel', 'extreme1' or 'logistic'.")
+    """  # noqa
+    dists = {'norm', 'expon', 'gumbel', 'gumbel_l', 'gumbel_r',
+             'extreme1', 'logistic', 'weibull_min'}
+    if dist not in dists:
+        raise ValueError(f"Invalid distribution; dist must be in {dists}.")
     y = sort(x)
     xbar = np.mean(x, axis=0)
     N = len(y)
@@ -1949,6 +2062,14 @@ def anderson(x, dist='norm'):
         logsf = distributions.gumbel_r.logsf(w)
         sig = array([25, 10, 5, 2.5, 1])
         critical = around(_Avals_gumbel / (1.0 + 0.2/sqrt(N)), 3)
+    elif dist == 'weibull_min':
+        c, loc, scale = distributions.weibull_min.fit(y)
+        c, loc, scale = _weibull_fit_check((c, loc, scale), y)
+        logcdf = distributions.weibull_min.logcdf(x=y, c=c, loc=loc, scale=scale)
+        logsf = distributions.weibull_min.logsf(x=y, c=c, loc=loc, scale=scale)
+        shape_for_critical = min(5 * round(np.round(np.divide(1.0, c) * 100) / 5), 50)
+        sig = array([0.5, 0.75, 0.85, 0.9, 0.95, 0.975, 0.99, 0.995])
+        critical = _Avals_weibull[shape_for_critical]
     else:  # (dist == 'gumbel') or (dist == 'gumbel_l') or (dist == 'extreme1')
         xbar, s = distributions.gumbel_l.fit(x)
         w = (y - xbar) / s
