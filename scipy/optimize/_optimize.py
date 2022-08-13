@@ -313,8 +313,8 @@ def rosen(x):
 
     Examples
     --------
-    >>> from scipy.optimize import rosen
     >>> import numpy as np
+    >>> from scipy.optimize import rosen
     >>> X = 0.1 * np.arange(10)
     >>> rosen(X)
     76.56
@@ -357,8 +357,8 @@ def rosen_der(x):
 
     Examples
     --------
-    >>> from scipy.optimize import rosen_der
     >>> import numpy as np
+    >>> from scipy.optimize import rosen_der
     >>> X = 0.1 * np.arange(9)
     >>> rosen_der(X)
     array([ -2. ,  10.6,  15.6,  13.4,   6.4,  -3. , -12.4, -19.4,  62. ])
@@ -396,8 +396,8 @@ def rosen_hess(x):
 
     Examples
     --------
-    >>> from scipy.optimize import rosen_hess
     >>> import numpy as np
+    >>> from scipy.optimize import rosen_hess
     >>> X = 0.1 * np.arange(4)
     >>> rosen_hess(X)
     array([[-38.,   0.,   0.,   0.],
@@ -439,8 +439,8 @@ def rosen_hess_prod(x, p):
 
     Examples
     --------
-    >>> from scipy.optimize import rosen_hess_prod
     >>> import numpy as np
+    >>> from scipy.optimize import rosen_hess_prod
     >>> X = 0.1 * np.arange(9)
     >>> p = 0.5 * np.arange(9)
     >>> rosen_hess_prod(X, p)
