@@ -6800,7 +6800,7 @@ class pareto_gen(rv_continuous):
             # set brackets for `root_scalar` to use when optimizing over the
             # scale such that a root is likely between them. Use user supplied
             # guess or default 1.
-            brack_start = kwds.get('scale', 1)
+            brack_start = float(kwds.get('scale', 1))
             lbrack, rbrack = brack_start / 2, brack_start * 2
             # if a root is not between the brackets, iteratively expand them
             # until they include a sign change, checking after each bracket is
@@ -8541,7 +8541,7 @@ class truncpareto_gen(rv_continuous):
                 while ((lbrack > -np.inf)
                        and (cond_b(lbrack)*cond_b(rbrack) >= 0)):
                     i += 1
-                    lbrack = rbrack - 2**i
+                    lbrack = rbrack - np.power(2., i)
                 if not lbrack > -np.inf:
                     return fallback(data, *args, **kwargs)
                 res = root_scalar(cond_b, bracket=(lbrack, rbrack))
@@ -8556,7 +8556,7 @@ class truncpareto_gen(rv_continuous):
                 while ((lbrack > -np.inf)
                        and (dL_dLoc(lbrack)*dL_dLoc(rbrack) >= 0)):
                     i += 1
-                    lbrack = rbrack - 2**i
+                    lbrack = rbrack - np.power(2., i)
                 if not lbrack > -np.inf:
                     return fallback(data, *args, **kwargs)
                 res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
