@@ -3935,19 +3935,23 @@ def _dirstats_preprocessing(samples, normalize, axis):
     """
     Preprocessing of input for directional stats functions. Performs
     input validation and if necesssary normalization. Used by
-    directionalvar and directionalmean.
+    directionalvar and directionalmean. Returns the sample mean
+    of the vector samples.
 
     Parameters
     ----------
     samples : array
-        Input array. Must be at least two-dimensional, and the last axis of the
-        input must correspond with the dimensionality of the vector space.
+        Input array.
     axis : int
         Axis along which the directional mean is computed.
     normalize: boolean
         If True, normalize the input to ensure that each observation is a
-        unit vector. It the observations are already unit vectors, consider
-        setting this to False to avoid unnecessary computation.
+        unit vector.
+
+    Returns
+    -------
+    sample_mean: array
+
     """
     samples = np.asarray(samples)
     if samples.ndim < 2:
@@ -3956,7 +3960,8 @@ def _dirstats_preprocessing(samples, normalize, axis):
     samples = np.moveaxis(samples, axis, 0)
     if normalize:
         samples = samples/np.linalg.norm(samples, axis=-1, keepdims=True)
-    return samples
+    sample_mean = np.mean(samples, axis=0)
+    return sample_mean
 
 
 def directionalmean(samples, *, axis=0, normalize=True):
@@ -4041,9 +4046,9 @@ def directionalmean(samples, *, axis=0, normalize=True):
     array([0.8660254, 0., 0.])
 
     """
-    samples = _dirstats_preprocessing(samples, normalize, axis)
-    mean = np.mean(samples, axis=0)
-    directional_mean = mean/np.linalg.norm(mean, axis=-1, keepdims=True)
+    mean_vector = _dirstats_preprocessing(samples, normalize, axis)
+    directional_mean = mean_vector/np.linalg.norm(mean_vector, axis=-1,
+                                                  keepdims=True)
     return directional_mean
 
 
@@ -4081,8 +4086,8 @@ def directionalvar(samples, *, axis=0, normalize=True):
     Notes
     -----
     This uses the following definition of circular variance: ``1-R``, where
-    ``R`` is the mean resultant vector. The returned value is in the
-    range [0, 1], 0 standing for no variance, and 1 for a large variance.
+    ``R`` is the magnitude of the mean resultant vector. The returned value is
+    in the range [0, 1], 0 standing for no variance, and 1 for a large variance.
 
     This definition is appropriate for *directional* data (i.e. vector data
     for which the magnitude of each observation is irrelevant) but not
@@ -4114,8 +4119,6 @@ def directionalvar(samples, *, axis=0, normalize=True):
     0.06841124416403555
 
     """
-    samples = _dirstats_preprocessing(samples, normalize, axis)
-    n_samples = samples.shape[0]
-    resultant_vector = samples.sum(axis=0)
-    r = np.linalg.norm(resultant_vector)
-    return 1 - r/n_samples
+    mean_vector = _dirstats_preprocessing(samples, normalize, axis)
+    r = np.linalg.norm(mean_vector)
+    return 1 - r
