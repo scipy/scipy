@@ -4087,7 +4087,8 @@ def directionalvar(samples, *, axis=0, normalize=True):
     -----
     This uses the following definition of circular variance: ``1-R``, where
     ``R`` is the magnitude of the mean resultant vector. The returned value is
-    in the range [0, 1], 0 standing for no variance, and 1 for a large variance.
+    in the range [0, 1], 0 standing for no variance, and 1 for a large
+    variance.
 
     This definition is appropriate for *directional* data (i.e. vector data
     for which the magnitude of each observation is irrelevant) but not
