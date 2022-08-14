@@ -1016,11 +1016,11 @@ def check_grad(func, grad, x0, *args, epsilon=_epsilon,
 
     Examples
     --------
+    >>> import numpy as np
     >>> def func(x):
     ...     return x[0]**2 - 0.5 * x[1]**3
     >>> def grad(x):
     ...     return [2 * x[0], -1.5 * x[1]**2]
-    >>> import numpy as np
     >>> from scipy.optimize import check_grad
     >>> check_grad(func, grad, [1.5, -1.5])
     2.9802322387695312e-08  # may vary
@@ -2749,8 +2749,8 @@ def bracket(func, xa=0.0, xb=1.0, args=(), grow_limit=110.0, maxiter=1000):
     --------
     This function can find a downward convex region of a function:
 
-    >>> import matplotlib.pyplot as plt
     >>> import numpy as np
+    >>> import matplotlib.pyplot as plt
     >>> from scipy.optimize import bracket
     >>> def f(x):
     ...     return 10*x**2 + 3*x + 5
