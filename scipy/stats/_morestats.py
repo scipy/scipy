@@ -3850,21 +3850,20 @@ def circvar(samples, high=2*pi, low=0, axis=None, nan_policy='propagate'):
     ...                       0.104, -0.136, -0.867,  0.012,  0.105])
     >>> circvar_1 = circvar(samples_1)
     >>> circvar_2 = circvar(samples_2)
+
+    Plot the samples.
+
     >>> fig, (left, right) = plt.subplots(ncols=2)
-    >>> left.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
-    ...           np.sin(np.linspace(0, 2*np.pi, 500)),
-    ...           c='k')
+    >>> for image in (left, right):
+    ...     image.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...                np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...                c='k')
+    ...     image.axis('equal')
+    ...     image.axis('off')
     >>> left.scatter(np.cos(samples_1), np.sin(samples_1), c='k', s=15)
     >>> left.set_title(f"circular variance: {np.round(circvar_1, 2)!r}")
-    >>> left.axis('equal')
-    >>> left.axis('off')
-    >>> right.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
-    ...            np.sin(np.linspace(0, 2*np.pi, 500)),
-    ...            c='k')
     >>> right.scatter(np.cos(samples_2), np.sin(samples_2), c='k', s=15)
     >>> right.set_title(f"circular variance: {np.round(circvar_2, 2)!r}")
-    >>> right.axis('equal')
-    >>> right.axis('off')
     >>> plt.show()
 
     """
@@ -3951,20 +3950,23 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     >>> circstd_1 = circstd(samples_1)
     >>> circstd_2 = circstd(samples_2)
     >>> fig, (left, right) = plt.subplots(ncols=2)
-    >>> left.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
-    ...           np.sin(np.linspace(0, 2*np.pi, 500)),
-    ...           c='k')
+
+    Plot the samples.
+
+    >>> fig, (left, right) = plt.subplots(ncols=2)
+    >>> for image in (left, right):
+    ...     image.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
+    ...                np.sin(np.linspace(0, 2*np.pi, 500)),
+    ...                c='k')
+    ...     image.axis('equal')
+    ...     image.axis('off')
     >>> left.scatter(np.cos(samples_1), np.sin(samples_1), c='k', s=15)
     >>> left.set_title(f"circular std: {np.round(circstd_1, 2)!r}")
-    >>> left.axis('equal')
-    >>> left.axis('off')
     >>> right.plot(np.cos(np.linspace(0, 2*np.pi, 500)),
     ...            np.sin(np.linspace(0, 2*np.pi, 500)),
     ...            c='k')
     >>> right.scatter(np.cos(samples_2), np.sin(samples_2), c='k', s=15)
     >>> right.set_title(f"circular std: {np.round(circstd_2, 2)!r}")
-    >>> right.axis('equal')
-    >>> right.axis('off')
     >>> plt.show()
 
     """
