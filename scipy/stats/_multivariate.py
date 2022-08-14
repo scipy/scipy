@@ -169,11 +169,7 @@ class _PSD:
 
         # Initialize the eagerly precomputed attributes.
         self.rank = len(d)
-        # A matrix `U` such that `U @ U.T == M^(-1)`
         self.U = U
-        s_trunc = np.where(s > eps, s, 0.)
-        # A matrix `A` such that `A @ A.T == M`
-        self.A = np.multiply(u, np.sqrt(s_trunc))
         self.log_pdet = np.sum(np.log(d))
 
         # Initialize an attribute to be lazily computed.
@@ -195,8 +191,7 @@ def _compute_psd_eigensystem(matrix, allow_singular=False):
     matrix : array_like
         Symmetric positive semidefinite matrix (2-D).
     allow_singular : bool, optional
-       Signifies whether singular covariances are permissible. Defaults to
-       True.
+       Signifies whether the input `matrix` can be singular. Defaults to True.
 
     Returns
     -------
@@ -329,8 +324,8 @@ class InvEigCovInfo:
     inverse_cov : array_like
         Symmetric positive semidefinite inverse covariance matrix (2-D).
     allow_singular : bool, optional
-       Signifies whether singular covariances are permissible. Defaults to
-       True.
+       Signifies whether singular inverse covariances are permissible. Defaults
+       to True.
 
     Note
     ----
@@ -572,30 +567,25 @@ class multivariate_normal_gen(multi_rv_generic):
                                           allow_singular=allow_singular,
                                           seed=seed, inverse_cov=inverse_cov)
 
-    def _process_parameters(self, dim, mean, cov, inverse_cov):
+    def _process_parameters(self, mean, cov, inverse_cov, allow_singular=True):
         """
         Infer dimensionality from mean or covariance matrix, ensure that
         mean and covariance are full vector resp. matrix.
         """
         # Try to infer dimensionality
-        if dim is None:
-            if mean is None:
-                if cov is None and inverse_cov is None:
+        if mean is None:
+            if cov is None and inverse_cov is None:
+                dim = 1
+            else:
+                cov_shaped = cov if cov is not None else inverse_cov
+                cov_shaped = np.asarray(cov_shaped, dtype=float)
+                if cov_shaped.ndim < 2:
                     dim = 1
                 else:
-                    cov_shaped = cov if cov is not None else inverse_cov
-                    cov_shaped = np.asarray(cov_shaped, dtype=float)
-                    if cov_shaped.ndim < 2:
-                        dim = 1
-                    else:
-                        dim = cov_shaped.shape[0]
-            else:
-                mean = np.asarray(mean, dtype=float)
-                dim = mean.size
+                    dim = cov_shaped.shape[0]
         else:
-            if not np.isscalar(dim):
-                raise ValueError("Dimension of random variable must be "
-                                 "a scalar.")
+            mean = np.asarray(mean, dtype=float)
+            dim = mean.size
 
         # Check input sizes and return full arrays for mean and cov if
         # necessary
@@ -611,10 +601,16 @@ class multivariate_normal_gen(multi_rv_generic):
             cov = 1.0
         if cov is not None:
             cov = self._process_cov_shaped(mean, dim, cov, 'cov')
+            # We're forced to use the SVD to compute the square root of the
+            # covariance to ensure random variates remain backwards compatible
+            # with numpy.
+            cov_info = EigSvdCovInfo(cov, allow_singular=allow_singular)
         else:
             inverse_cov = self._process_cov_shaped(
                 mean, dim, inverse_cov, 'inverse_cov')
-        return dim, mean, cov, inverse_cov
+            cov_info = InvEigCovInfo(
+                inverse_cov, allow_singular=allow_singular)
+        return dim, mean, cov_info
 
     def _process_cov_shaped(self, mean, dim, cov_shaped, name):
         out = np.asarray(cov_shaped, dtype=float)
@@ -655,20 +651,6 @@ class multivariate_normal_gen(multi_rv_generic):
                 x = x[np.newaxis, :]
 
         return x
-
-    def _create_cov_info(self, cov, inverse_cov, allow_singular=True):
-        if cov is not None:
-            # We're forced to use the SVD to compute the square root of the
-            # covariance to ensure random variates remain backwards compatible
-            # with numpy.
-            return EigSvdCovInfo(cov, allow_singular=allow_singular)
-        if inverse_cov is not None:
-            return InvEigCovInfo(inverse_cov, allow_singular=allow_singular)
-        # Be defensive.
-        raise ValueError(
-            "Must specify either covariance or inverse covariance to"
-            " create covariance info"
-        )
 
     def _logpdf(self, x, mean, sqrt_inv_cov, log_det_cov, rank):
         """Log of the multivariate normal probability density function.
@@ -718,11 +700,9 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov, inverse_cov = self._process_parameters(
-            None, mean, cov, inverse_cov)
+        dim, mean, cov_info = self._process_parameters(
+            mean, cov, inverse_cov, allow_singular=allow_singular)
         x = self._process_quantiles(x, dim)
-        cov_info = self._create_cov_info(
-            cov, inverse_cov, allow_singular=allow_singular)
         out = self._logpdf(
             x, mean, cov_info.sqrt_inv_cov, cov_info.log_det_cov,
             cov_info.rank)
@@ -747,11 +727,9 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        dim, mean, cov, inverse_cov = self._process_parameters(
-            None, mean, cov, inverse_cov)
+        dim, mean, cov_info = self._process_parameters(
+            mean, cov, inverse_cov, allow_singular=allow_singular)
         x = self._process_quantiles(x, dim)
-        cov_info = self._create_cov_info(
-            cov, inverse_cov, allow_singular=allow_singular)
         out = np.exp(self._logpdf(
             x, mean, cov_info.sqrt_inv_cov,
             cov_info.log_det_cov, cov_info.rank))
@@ -819,11 +797,9 @@ class multivariate_normal_gen(multi_rv_generic):
         .. versionadded:: 1.0.0
 
         """
-        dim, mean, cov, inverse_cov = self._process_parameters(
-            None, mean, cov, inverse_cov)
+        dim, mean, cov_info = self._process_parameters(
+            mean, cov, inverse_cov, allow_singular=allow_singular)
         x = self._process_quantiles(x, dim)
-        cov_info = self._create_cov_info(
-            cov, inverse_cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
         # Use `cov_info.cov` instead of `cov` because `cov` could be `None`.
@@ -859,11 +835,9 @@ class multivariate_normal_gen(multi_rv_generic):
         .. versionadded:: 1.0.0
 
         """
-        dim, mean, cov, inverse_cov = self._process_parameters(
-            None, mean, cov, inverse_cov)
+        dim, mean, cov_info = self._process_parameters(
+            mean, cov, inverse_cov, allow_singular)
         x = self._process_quantiles(x, dim)
-        cov_info = self._create_cov_info(
-            cov, inverse_cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * dim
         out = self._cdf(x, mean, cov_info.cov, maxpts, abseps, releps)
@@ -900,10 +874,9 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        _, mean, cov, inverse_cov = self._process_parameters(
-            None, mean, cov, inverse_cov)
+        _, mean, cov_info = self._process_parameters(
+            mean, cov, inverse_cov, allow_singular=True)
         random_state = self._get_random_state(random_state)
-        cov_info = self._create_cov_info(cov, inverse_cov)
         return self._rvs(mean, cov_info.sqrt_cov, size, random_state)
 
     def entropy(self, mean=None, cov=1, inverse_cov=None):
@@ -923,13 +896,12 @@ class multivariate_normal_gen(multi_rv_generic):
         %(_mvn_doc_callparams_note)s
 
         """
-        _, mean, cov, inverse_cov = self._process_parameters(
-            None, mean, cov, inverse_cov)
+        _, mean, cov_info = self._process_parameters(
+            mean, cov, inverse_cov)
         if cov is not None:
             # Use numpy for backwards compatibility.
-            _, logdet = np.linalg.slogdet(2 * np.pi * np.e * cov)
+            _, logdet = np.linalg.slogdet(2 * np.pi * np.e * cov_info.cov)
             return 0.5 * logdet
-        cov_info = self._create_cov_info(cov, inverse_cov)
         return 0.5 * (cov_info.rank * (1 + _LOG_2PI) + cov_info.log_det_cov)
 
 
@@ -985,10 +957,8 @@ class multivariate_normal_frozen(multi_rv_frozen):
 
         """
         self._dist = multivariate_normal_gen(seed)
-        self.dim, self.mean, cov, inverse_cov = self._dist._process_parameters(
-            None, mean, cov, inverse_cov)
-        self.cov_info = self._dist._create_cov_info(
-            cov, inverse_cov, allow_singular=allow_singular)
+        self.dim, self.mean, self.cov_info = self._dist._process_parameters(
+            mean, cov, inverse_cov, allow_singular=allow_singular)
         if not maxpts:
             maxpts = 1000000 * self.dim
         self.maxpts = maxpts
