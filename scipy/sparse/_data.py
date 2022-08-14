@@ -278,6 +278,7 @@ class _minmax_mixin:
             else:
                 zero = self.dtype.type(0)
                 mat = self.tocoo()
+                mat.sum_duplicates()
                 am = op(mat.data)
                 if explicit:
                     return am
