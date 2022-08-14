@@ -5,9 +5,10 @@ Miscellaneous routines (:mod:`scipy.misc`)
 
 .. currentmodule:: scipy.misc
 
-..note::
-    This module is deprecated and will be completely
-    removed in SciPy v2.0.0.
+.. note::
+
+   This module is deprecated and will be completely
+   removed in SciPy v2.0.0.
 
 Various utilities that don't have another home.
 
