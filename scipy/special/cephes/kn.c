@@ -99,17 +99,17 @@ double x;
     if (n > MAXFAC) {
       overf:
 	sf_error("kn", SF_ERROR_OVERFLOW, NULL);
-	return (NPY_INFINITY);
+	return (INFINITY);
     }
 
     if (x <= 0.0) {
 	if (x < 0.0) {
 	    sf_error("kn", SF_ERROR_DOMAIN, NULL);
-	    return NPY_NAN;
+	    return NAN;
 	}
 	else {
 	    sf_error("kn", SF_ERROR_SINGULAR, NULL);
-	    return NPY_INFINITY;
+	    return INFINITY;
 	}
     }
 
@@ -214,7 +214,7 @@ double x;
     fn = 1.0;
     t = 1.0;
     s = t;
-    nkf = NPY_INFINITY;
+    nkf = INFINITY;
     i = 0;
     do {
 	z = pn - pk * pk;
