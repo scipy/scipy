@@ -3,18 +3,19 @@ Functions which are common and require SciPy Base and Level 1 SciPy
 (special, linalg)
 """
 
-import numpy as np
+from scipy._lib.deprecation import _deprecated
 from numpy import arange, newaxis, hstack, prod, array, frombuffer, load
+
 
 __all__ = ['central_diff_weights', 'derivative', 'ascent', 'face',
            'electrocardiogram']
 
 
-@np.deprecate(message="scipy.misc.central_diff_weights is deprecated in "
-                      "SciPy v1.10.0; and will be completely removed in "
-                      "SciPy v2.0.0. You may consider using "
-                      "findiff: https://github.com/maroba/findiff or "
-                      "numdifftools: https://github.com/pbrod/numdifftools")
+@_deprecated(msg="scipy.misc.central_diff_weights is deprecated in "
+                 "SciPy v1.10.0; and will be completely removed in "
+                 "SciPy v2.0.0. You may consider using "
+                 "findiff: https://github.com/maroba/findiff or "
+                 "numdifftools: https://github.com/pbrod/numdifftools")
 def central_diff_weights(Np, ndiv=1):
     """
     Return weights for an Np-point central derivative.
@@ -86,11 +87,11 @@ def central_diff_weights(Np, ndiv=1):
     return w
 
 
-@np.deprecate(message="scipy.misc.derivative is deprecated in "
-                      "SciPy v1.10.0; and will be completely removed in "
-                      "SciPy v2.0.0. You may consider using "
-                      "findiff: https://github.com/maroba/findiff or "
-                      "numdifftools: https://github.com/pbrod/numdifftools")
+@_deprecated(msg="scipy.misc.derivative is deprecated in "
+                 "SciPy v1.10.0; and will be completely removed in "
+                 "SciPy v2.0.0. You may consider using "
+                 "findiff: https://github.com/maroba/findiff or "
+                 "numdifftools: https://github.com/pbrod/numdifftools")
 def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     """
     Find the nth derivative of a function at a point.
@@ -171,10 +172,10 @@ def derivative(func, x0, dx=1.0, n=1, args=(), order=3):
     return val / prod((dx,)*n,axis=0)
 
 
-@np.deprecate(message="scipy.misc.ascent has been deprecated in SciPy v1.10.0;"
-                      " and will be completely removed in SciPy v1.12.0. "
-                      "Dataset methods have moved into the scipy.datasets "
-                      "module. Use scipy.datasets.ascent instead.")
+@_deprecated(msg="scipy.misc.ascent has been deprecated in SciPy v1.10.0;"
+                 " and will be completely removed in SciPy v1.12.0. "
+                 "Dataset methods have moved into the scipy.datasets "
+                 "module. Use scipy.datasets.ascent instead.")
 def ascent():
     """
     Get an 8-bit grayscale bit-depth, 512 x 512 derived image for easy use in demos
@@ -220,10 +221,10 @@ def ascent():
     return ascent
 
 
-@np.deprecate(message="scipy.misc.face has been deprecated in SciPy v1.10.0; "
-                      "and will be completely removed in SciPy v1.12.0. "
-                      "Dataset methods have moved into the scipy.datasets "
-                      "module. Use scipy.datasets.face instead.")
+@_deprecated(msg="scipy.misc.face has been deprecated in SciPy v1.10.0; "
+                 "and will be completely removed in SciPy v1.12.0. "
+                 "Dataset methods have moved into the scipy.datasets "
+                 "module. Use scipy.datasets.face instead.")
 def face(gray=False):
     """
     Get a 1024 x 768, color image of a raccoon face.
@@ -275,11 +276,11 @@ def face(gray=False):
     return face
 
 
-@np.deprecate(message="scipy.misc.electrocardiogram has been "
-                      "deprecated in SciPy v1.10.0; and will "
-                      "be completely removed in SciPy v1.12.0. "
-                      "Dataset methods have moved into the scipy.datasets "
-                      "module. Use scipy.datasets.electrocardiogram instead.")
+@_deprecated(msg="scipy.misc.electrocardiogram has been "
+                 "deprecated in SciPy v1.10.0; and will "
+                 "be completely removed in SciPy v1.12.0. "
+                 "Dataset methods have moved into the scipy.datasets "
+                 "module. Use scipy.datasets.electrocardiogram instead.")
 def electrocardiogram():
     """
     Load an electrocardiogram as an example for a 1-D signal.
