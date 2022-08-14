@@ -310,8 +310,8 @@ class BSpline:
         Construct a quadratic B-spline on ``[0, 1, 1, 2]``, and compare
         to its explicit form:
 
-        >>> t = [-1, 0, 1, 1, 2]
-        >>> b = BSpline.basis_element(t[1:])
+        >>> t = [0, 1, 1, 2]
+        >>> b = BSpline.basis_element(t)
         >>> def f(x):
         ...     return np.where(x < 1, x*x, (2. - x)**2)
 

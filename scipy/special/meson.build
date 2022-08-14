@@ -402,7 +402,7 @@ py3.extension_module('_ufuncs_cxx',
     ],
   cpp_args: cython_cpp_args,
   include_directories: [inc_np, '../_lib', '../_build_utils/src'],
-  dependencies: [npymath_lib, ellint_dep],
+  dependencies: [ellint_dep],
   install: true,
   subdir: 'scipy/special'
 )

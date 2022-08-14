@@ -101,9 +101,9 @@ extern const double2 DD_C_NAN;
 extern const double2 DD_C_INF;
 extern const double2 DD_C_NEGINF;
 #else
-#define DD_C_NAN (dd_create(NPY_NAN, NPY_NAN))
-#define DD_C_INF (dd_create(NPY_INFINITY, NPY_INFINITY))
-#define DD_C_NEGINF (dd_create(-NPY_INFINITY, -NPY_INFINITY))
+#define DD_C_NAN (dd_create(NAN, NAN))
+#define DD_C_INF (dd_create(INFINITY, INFINITY))
+#define DD_C_NEGINF (dd_create(-INFINITY, -INFINITY))
 #endif
 
 
