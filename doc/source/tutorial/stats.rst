@@ -382,8 +382,7 @@ i.e., the percent point function, requires a different definition:
 
     ppf(q) = min{x : cdf(x) >= q, x integer}
 
-For further info, see the docs `here
-<https://docs.scipy.org/doc/scipy/reference/tutorial/stats/discrete.html#percent-point-function-inverse-cdf>`__.
+For further info, see the docs :ref:`here<discrete-ppf>`.
 
 
 We can look at the hypergeometric distribution as an example

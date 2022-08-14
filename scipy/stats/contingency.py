@@ -11,6 +11,7 @@ Functions for creating and analyzing contingency tables.
 
    chi2_contingency
    relative_risk
+   odds_ratio
    crosstab
    association
 
@@ -26,11 +27,12 @@ import numpy as np
 from ._stats_py import power_divergence
 from ._relative_risk import relative_risk
 from ._crosstab import crosstab
+from ._odds_ratio import odds_ratio
 from scipy._lib._bunch import _make_tuple_bunch
 
 
 __all__ = ['margins', 'expected_freq', 'chi2_contingency', 'crosstab',
-           'association', 'relative_risk']
+           'association', 'relative_risk', 'odds_ratio']
 
 
 def margins(a):
