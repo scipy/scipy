@@ -568,6 +568,33 @@ def linprog(c, A_ub=None, b_ub=None, A_eq=None, b_eq=None,
     array([10., -3.])
     >>> res.message
     'Optimization terminated successfully. (HiGHS Status 7: Optimal)'
+
+    The marginals (AKA dual values / shadow prices / Lagrange multipliers)
+    and residuals (slacks) are also available.
+
+    >>> res.ineqlin
+     marginals: array([-0., -1.])
+      residual: array([39.,  0.])
+
+    For example, because the marginal associated with the second inequality
+    constraint is -1, we expect the optimal value of the objective function
+    to decrease by ``eps`` if we add a small amount ``eps`` to the right hand
+    side of the second inequality constraint:
+
+    >>> eps = 0.05
+    >>> b[1] += eps
+    >>> linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds]).fun
+    -22.05
+
+    Also, because the residual on the first inequality constraint is 39, we
+    can decrease the right hand side of the first constraint by 39 without
+    affecting the optimal solution.
+
+    >>> b = [6, 4]  # reset to original values
+    >>> b[0] -= 39
+    >>> linprog(c, A_ub=A, b_ub=b, bounds=[x0_bounds, x1_bounds]).fun
+    -22.0
+
     """
 
     meth = method.lower()

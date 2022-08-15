@@ -664,3 +664,42 @@ class Somersd(Benchmark):
 
     def time_somersd(self, n_size):
         res = stats.somersd(self.x, self.y)
+
+
+class KolmogorovSmirnov(Benchmark):
+    param_names = ['alternative', 'mode', 'size']
+    # No auto since it defaults to exact for 20 samples
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['exact', 'approx', 'asymp'],
+        [19, 20, 21]
+    ]
+
+    def setup(self, alternative, mode, size):
+        np.random.seed(12345678)
+        a = stats.norm.rvs(size=20)
+        self.a = a
+
+    def time_ks(self, alternative, mode, size):
+        stats.kstest(self.a, 'norm', alternative=alternative,
+                     mode=mode, N=size)
+
+
+class KolmogorovSmirnovTwoSamples(Benchmark):
+    param_names = ['alternative', 'mode', 'size']
+    # No auto since it defaults to exact for 20 samples
+    params = [
+        ['two-sided', 'less', 'greater'],
+        ['exact', 'asymp'],
+        [(21, 20), (20, 20)]
+    ]
+
+    def setup(self, alternative, mode, size):
+        np.random.seed(12345678)
+        a = stats.norm.rvs(size=size[0])
+        b = stats.norm.rvs(size=size[1])
+        self.a = a
+        self.b = b
+
+    def time_ks2(self, alternative, mode, size):
+        stats.ks_2samp(self.a, self.b, alternative=alternative, mode=mode)

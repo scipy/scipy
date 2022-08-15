@@ -13,7 +13,7 @@ import platform
 from numpy.testing import (assert_equal, assert_array_equal,
                            assert_almost_equal, assert_array_almost_equal,
                            assert_allclose, assert_, assert_warns,
-                           assert_array_less, suppress_warnings)
+                           assert_array_less, suppress_warnings, IS_PYPY)
 import pytest
 from pytest import raises as assert_raises
 
@@ -2798,6 +2798,29 @@ class TestSkewNorm:
             p = stats.skewnorm.sf(-x, -a)
             assert_allclose(p, cdfval, rtol=1e-8)
 
+    def test_fit(self):
+        rng = np.random.default_rng(4609813989115202851)
+
+        a, loc, scale = -2, 3.5, 0.5  # arbitrary, valid parameters
+        dist = stats.skewnorm(a, loc, scale)
+        rvs = dist.rvs(size=100, random_state=rng)
+
+        # test that MLE still honors guesses and fixed parameters
+        a2, loc2, scale2 = stats.skewnorm.fit(rvs, -1.5, floc=3)
+        a3, loc3, scale3 = stats.skewnorm.fit(rvs, -1.6, floc=3)
+        assert loc2 == loc3 == 3  # fixed parameter is respected
+        assert a2 != a3  # different guess -> (slightly) different outcome
+        # quality of fit is tested elsewhere
+
+        # test that MoM honors fixed parameters, accepts (but ignores) guesses
+        a4, loc4, scale4 = stats.skewnorm.fit(rvs, 3, fscale=3, method='mm')
+        assert scale4 == 3
+        # because scale was fixed, only the mean and skewness will be matched
+        dist4 = stats.skewnorm(a4, loc4, scale4)
+        res = dist4.stats(moments='ms')
+        ref = np.mean(rvs), stats.skew(rvs)
+        assert_allclose(res, ref)
+
 
 class TestExpon:
     def test_zero(self):
@@ -3140,6 +3163,7 @@ class TestBeta:
         a, b = 0.2, 3
         assert_equal(stats.beta.pdf(0, a, b), np.inf)
 
+    @pytest.mark.xfail(IS_PYPY, reason="Does not convert boost warning")
     def test_boost_eval_issue_14606(self):
         q, a, b = 0.995, 1.0e11, 1.0e13
         with pytest.warns(RuntimeWarning):
@@ -4222,6 +4246,7 @@ class TestFitMethod:
         assert_raises(ValueError, stats.uniform.fit, x, floc=2.0)
         assert_raises(ValueError, stats.uniform.fit, x, fscale=5.0)
 
+    @pytest.mark.slow
     @pytest.mark.parametrize("method", ["MLE", "MM"])
     def test_fshapes(self, method):
         # take a beta distribution, with shapes='a, b', and make sure that
@@ -6825,6 +6850,29 @@ class TestHistogram:
                         stats.norm.entropy(loc=1.0, scale=2.5), rtol=0.05)
 
 
+def test_histogram_non_uniform():
+    # Tests rv_histogram works even for non-uniform bin widths
+    counts, bins = ([1, 1], [0, 1, 1001])
+
+    dist = stats.rv_histogram((counts, bins), density=False)
+    np.testing.assert_allclose(dist.pdf([0.5, 200]), [0.5, 0.0005])
+    assert dist.median() == 1
+
+    dist = stats.rv_histogram((counts, bins), density=True)
+    np.testing.assert_allclose(dist.pdf([0.5, 200]), 1/1001)
+    assert dist.median() == 1001/2
+
+    # Omitting density produces a warning for non-uniform bins...
+    message = "Bin widths are not constant. Assuming..."
+    with assert_warns(RuntimeWarning, match=message):
+        dist = stats.rv_histogram((counts, bins))
+        assert dist.median() == 1001/2  # default is like `density=True`
+
+    # ... but not for uniform bins
+    dist = stats.rv_histogram((counts, [0, 1, 2]))
+    assert dist.median() == 1
+
+
 class TestLogUniform:
     def test_alias(self):
         # This test makes sure that "reciprocal" and "loguniform" are
@@ -7104,7 +7152,7 @@ def test_rvs_no_size_error():
 
     rvs_no_size = rvs_no_size_gen(name='rvs_no_size')
 
-    with assert_raises(TypeError, match=re.escape("_rvs() got an unexpected")):
+    with assert_raises(TypeError, match=r"_rvs\(\) got (an|\d) unexpected"):
         rvs_no_size.rvs()
 
 

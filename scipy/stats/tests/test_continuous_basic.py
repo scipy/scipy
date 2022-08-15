@@ -3,6 +3,7 @@ import numpy.testing as npt
 import pytest
 from pytest import raises as assert_raises
 from scipy.integrate import IntegrationWarning
+import itertools
 
 from scipy import stats
 from .common_tests import (check_normalization, check_moment, check_mean_expect,
@@ -35,10 +36,9 @@ not for numerically exact results.
 DECIMAL = 5  # specify the precision of the tests  # increased from 0 to 5
 
 # For skipping test_cont_basic
-# distslow are sorted by speed (very slow to slow)
 distslow = ['recipinvgauss', 'vonmises', 'kappa4', 'vonmises_line',
             'gausshyper', 'norminvgauss', 'geninvgauss', 'genhyperbolic',
-            'truncnorm']
+            'truncnorm', 'truncweibull_min']
 
 # distxslow are sorted by speed (very slow to slow)
 distxslow = ['studentized_range', 'kstwo', 'ksone', 'wrapcauchy', 'genexpon']
@@ -59,7 +59,7 @@ skip_fit_test_mle = ['exponpow', 'exponweib', 'gausshyper', 'genexpon',
 # note that this list is used to skip both fit_test and fit_fix tests
 slow_fit_test_mm = ['argus', 'exponpow', 'exponweib', 'gausshyper', 'genexpon',
                     'genhalflogistic', 'halfgennorm', 'gompertz', 'johnsonsb',
-                    'kappa4', 'kstwobign', 'recipinvgauss', 'skewnorm',
+                    'kappa4', 'kstwobign', 'recipinvgauss',
                     'trapezoid', 'truncexpon', 'vonmises', 'vonmises_line',
                     'studentized_range']
 # pearson3 fails due to something weird
@@ -117,13 +117,21 @@ fails_cmplx = set(['argus', 'beta', 'betaprime', 'chi', 'chi2', 'cosine',
                    'tukeylambda', 'vonmises', 'vonmises_line',
                    'rv_histogram_instance', 'truncnorm', 'studentized_range'])
 
-_h = np.histogram([1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
-                   6, 6, 6, 7, 7, 7, 8, 8, 9], bins=8)
-histogram_test_instance = stats.rv_histogram(_h)
+# rv_histogram instances, with uniform and non-uniform bins;
+# stored as (dist, arg) tuples for cases_test_cont_basic
+# and cases_test_moments.
+histogram_test_instances = []
+case1 = {'a': [1, 2, 2, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5, 5, 6,
+               6, 6, 6, 7, 7, 7, 8, 8, 9], 'bins': 8}  # equal width bins
+case2 = {'a': [1, 1], 'bins': [0, 1, 10]}  # unequal width bins
+for case, density in itertools.product([case1, case2], [True, False]):
+    _hist = np.histogram(**case, density=density)
+    _rv_hist = stats.rv_histogram(_hist, density=density)
+    histogram_test_instances.append((_rv_hist, tuple()))
 
 
 def cases_test_cont_basic():
-    for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
+    for distname, arg in distcont[:] + histogram_test_instances:
         if distname == 'levy_stable':
             continue
         elif distname in distslow:
@@ -250,7 +258,7 @@ def cases_test_moments():
     fail_normalization = set()
     fail_higher = set(['ncf'])
 
-    for distname, arg in distcont[:] + [(histogram_test_instance, tuple())]:
+    for distname, arg in distcont[:] + histogram_test_instances:
         if distname == 'levy_stable':
             continue
 
@@ -857,7 +865,7 @@ def test_kappa3_array_gh13582():
     npt.assert_allclose(res, res2)
 
 
-@pytest.mark.timeout(120)
+@pytest.mark.xslow
 def test_kappa4_array_gh13582():
     h = np.array([-0.5, 2.5, 3.5, 4.5, -3])
     k = np.array([-0.5, 1, -1.5, 0, 3.5])

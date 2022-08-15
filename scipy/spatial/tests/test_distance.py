@@ -43,7 +43,8 @@ import warnings
 from numpy.linalg import norm
 from numpy.testing import (verbose, assert_,
                            assert_array_equal, assert_equal,
-                           assert_almost_equal, assert_allclose)
+                           assert_almost_equal, assert_allclose,
+                           break_cycles, IS_PYPY)
 import pytest
 from pytest import raises as assert_raises
 
@@ -656,6 +657,9 @@ class TestCdist:
             # references, the arrays should be deallocated.
             weak_refs = [weakref.ref(v) for v in (x1, x2, out)]
             del x1, x2, out
+
+            if IS_PYPY:
+                break_cycles()
             assert all(weak_ref() is None for weak_ref in weak_refs)
 
 
