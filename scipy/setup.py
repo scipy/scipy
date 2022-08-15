@@ -7,6 +7,7 @@ def configuration(parent_package='',top_path=None):
     config.add_subpackage('_lib')
     config.add_subpackage('cluster')
     config.add_subpackage('constants')
+    config.add_subpackage('datasets')
     config.add_subpackage('fft')
     config.add_subpackage('fftpack')
     config.add_subpackage('integrate')
