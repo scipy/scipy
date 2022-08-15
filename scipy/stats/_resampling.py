@@ -149,7 +149,7 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
     alpha_1 = ndtr(z0_hat + num1/(1 - a_hat*num1))
     num2 = z0_hat + z_1alpha
     alpha_2 = ndtr(z0_hat + num2/(1 - a_hat*num2))
-    return alpha_1, alpha_2
+    return alpha_1, alpha_2, a_hat  # return a_hat for testing
 
 
 def _bootstrap_iv(data, statistic, vectorized, paired, axis, confidence_level,
@@ -593,7 +593,7 @@ def bootstrap(data, statistic, *, n_resamples=9999, batch=None,
     alpha = (1 - confidence_level)/2
     if method == 'bca':
         interval = _bca_interval(data, statistic, axis=-1, alpha=alpha,
-                                 theta_hat_b=theta_hat_b, batch=batch)
+                                 theta_hat_b=theta_hat_b, batch=batch)[:2]
         percentile_fun = _percentile_along_axis
     else:
         interval = alpha, 1-alpha

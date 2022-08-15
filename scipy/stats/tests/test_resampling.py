@@ -272,6 +272,31 @@ def test_multisample_BCa_against_R():
     assert abs(diff_bca) < 0.03
 
 
+def test_BCa_acceleration_against_reference():
+    # Compare the (deterministic) acceleration parameter for a multi-sample
+    # problem against a reference value. The example is from [1], but Efron's
+    # value seems inaccurate. Straightorward code for computing the
+    # reference acceleration (0.011008228344026734) is available at:
+    # https://github.com/scipy/scipy/pull/16455#issuecomment-1193400981
+
+    y = np.array([10, 27, 31, 40, 46, 50, 52, 104, 146])
+    z = np.array([16, 23, 38, 94, 99, 141, 197])
+
+    def statistic(z, y, axis=0):
+        return np.mean(z, axis=axis) - np.mean(y, axis=axis)
+
+    data = [z, y]
+    res = stats.bootstrap(data, statistic)
+
+    axis = -1
+    alpha = 0.95
+    theta_hat_b = res.bootstrap_distribution
+    batch = 100
+    _, _, a_hat = _resampling._bca_interval(data, statistic, axis, alpha,
+                                            theta_hat_b, batch)
+    assert_allclose(a_hat, 0.011008228344026734)
+
+
 @pytest.mark.parametrize("method, expected",
                          tests_against_itself_1samp.items())
 def test_bootstrap_against_itself_1samp(method, expected):
