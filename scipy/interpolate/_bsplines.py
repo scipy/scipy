@@ -10,7 +10,6 @@ from . import _fitpack_impl
 from . import _fitpack as _dierckx
 from scipy._lib._util import prod
 from scipy.special import poch
-from scipy.sparse import csr_array
 from itertools import combinations
 
 __all__ = ["BSpline", "make_interp_spline", "make_lsq_spline"]
