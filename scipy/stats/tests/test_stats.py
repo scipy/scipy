@@ -3284,28 +3284,6 @@ class TestStudentTest:
         assert_allclose(ci, ref[alternative])
         assert_equal(res.df, n-1)
 
-    @pytest.mark.parametrize("alternative", ['two-sided', 'less', 'greater'])
-    @pytest.mark.parametrize("axis", [0, 1])
-    def test_1samp_ci_nd(self, alternative, axis):
-        # test confidence interval with multi-dimensional array input
-        rng = np.random.default_rng(8066178009154342972)
-        x = rng.normal(size=(4, 5), loc=1.5, scale=2)
-
-        def reference_1d(x):
-            res = stats.ttest_1samp(x, 0, alternative=alternative)
-            ci = res.confidence_interval()
-            return ci.low, ci.high
-        x_reshape = np.moveaxis(x, axis, 0)
-        ref_low, ref_high = np.apply_along_axis(reference_1d, 0, x_reshape)
-
-        res = stats.ttest_1samp(x, 0, axis=axis, alternative=alternative)
-        ci = res.confidence_interval()
-
-        assert_allclose(ci.low, ref_low)
-        assert_allclose(ci.high, ref_high)
-        assert_equal(ci.low.shape, ref_low.shape)
-        assert_equal(ci.high.shape, ref_high.shape)
-
     def test_1samp_ci_iv(self):
         # test `confidence_interval` method input validation
         res = stats.ttest_1samp(np.arange(10), 0)
@@ -5202,7 +5180,7 @@ def test_ttest_1samp_new():
     assert_almost_equal(t1[0,0],t3, decimal=14)
     assert_equal(t1.shape, (n1,n3))
 
-    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1,n2,1)), axis=2)  # noqa
+    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1,n2,1)),axis=2)  # noqa
     t2,p2 = stats.ttest_1samp(rvn1[:,:,:], 1,axis=2)
     t3,p3 = stats.ttest_1samp(rvn1[0,0,:], 1)
     assert_array_almost_equal(t1,t2, decimal=14)

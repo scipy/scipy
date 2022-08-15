@@ -6040,7 +6040,7 @@ class Ttest_1sampResult(TTestResultBase):
     df : float or array
         The number of degrees of freedom used in calculation of the
         t-statistic; this is one less than the size of the sample
-        (``a.shape[axis]``).
+        (``a.shape[axis]-1`` if there are no masked elements or omitted NaNs).
 
     Methods
     -------
@@ -6083,8 +6083,8 @@ class Ttest_1sampResult(TTestResultBase):
 
 def pack_Ttest_Result(statistic, pvalue, df, alternative, standard_error,
                       estimate):
-    # this could be any number of dimensions (including 0d), but only one
-    # unique value
+    # this could be any number of dimensions (including 0d), but there is
+    # at most one unique value
     alternative = np.atleast_1d(alternative).ravel()
     alternative = alternative[0] if alternative.size else np.nan
     return Ttest_1sampResult(statistic, pvalue, df=df, alternative=alternative,
@@ -6223,7 +6223,7 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     uniform distribution, which *does* have a population mean of 0.5, we would
     mistakenly reject the null hypothesis for one of them.
 
-    `ttest_1samp` can also computer a confidence interval around the population
+    `ttest_1samp` can also compute a confidence interval around the population
     mean.
 
     >>> rvs = stats.norm.rvs(size=50, random_state=rng)
