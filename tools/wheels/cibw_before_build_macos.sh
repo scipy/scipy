@@ -15,6 +15,8 @@ cp $basedir/include/* /usr/local/include
 if [[ $RUNNER_OS == "macOS" && $PLATFORM == "macosx-arm64" ]]; then
   # this version of openblas has the pkg-config file included. The version
   # obtained from the openblas_support.py doesn't.
+  # Problems were experienced with meson->cmake detection of openblas when
+  # trying to cross compile.
   curl -L https://anaconda.org/multibuild-wheels-staging/openblas-libs/v0.3.20-140-gbfd9c1b5/download/openblas-v0.3.20-140-gbfd9c1b5-macosx_11_0_arm64-gf_f26990f.tar.gz -o openblas.tar.gz
   sudo tar -xv -C / -f openblas.tar.gz
 
@@ -62,6 +64,9 @@ if [[ $PLATFORM == "macosx-arm64" ]]; then
     export LDFLAGS=" $FC_ARM64_LDFLAGS $LDFLAGS -L/opt/arm64-builds/lib -arch arm64"
     sudo ln -s $FC $FC_LOC/gfortran
     echo $(type -p gfortran)
+
+    # having a test fortran program has helped in debugging problems with the
+    # compiler environment.
     $FC $FFLAGS $PROJECT_DIR/tools/wheels/test.f $LDFLAGS
     ls -al *.out
     otool -L a.out
