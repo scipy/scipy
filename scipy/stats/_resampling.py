@@ -122,8 +122,8 @@ def _bca_interval(data, statistic, axis, alpha, theta_hat_b, batch):
         theta_hat_i = []
         for jackknife_sample in _jackknife_resample(sample, batch):
             samples[j] = jackknife_sample
-            samples = _broadcast_arrays(samples, axis=-1)
-            theta_hat_i.append(statistic(*samples, axis=-1))
+            broadcasted = _broadcast_arrays(samples, axis=-1)
+            theta_hat_i.append(statistic(*broadcasted, axis=-1))
         theta_hat_ji.append(theta_hat_i)
 
     theta_hat_ji = [np.concatenate(theta_hat_i, axis=-1)

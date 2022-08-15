@@ -214,6 +214,64 @@ tests_against_itself_1samp = {"basic": 1780,
                               "BCa": 1784}
 
 
+def test_multisample_BCa_against_R():
+    # Because bootstrap is stochastic, it's tricky to test against reference
+    # behavior. Here, we show that SciPy's BCa CI matches R wboot's BCa CI
+    # much more closely than the other SciPy CIs do.
+
+    # arbitrary skewed data
+    x = [0.75859206, 0.5910282, -0.4419409, -0.36654601,
+         0.34955357, -1.38835871, 0.76735821]
+    y = [1.41186073, 0.49775975, 0.08275588, 0.24086388,
+         0.03567057, 0.52024419, 0.31966611, 1.32067634]
+
+    # a multi-sample statistic for which the BCa CI tends to be different
+    # from the other CIs
+    def statistic(x, y, axis):
+        s1 = stats.skew(x, axis=axis)
+        s2 = stats.skew(y, axis=axis)
+        return s1 - s2
+
+    # compute confidence intervals using each method
+    rng = np.random.default_rng(468865032284792692)
+
+    res_basic = stats.bootstrap((x, y), statistic, method='basic',
+                                batch=100, random_state=rng)
+    res_percent = stats.bootstrap((x, y), statistic, method='percentile',
+                                  batch=100, random_state=rng)
+    res_bca = stats.bootstrap((x, y), statistic, method='bca',
+                              batch=100, random_state=rng)
+
+    # compute midpoints so we can compare just one number for each
+    mid_basic = np.mean(res_basic.confidence_interval)
+    mid_percent = np.mean(res_percent.confidence_interval)
+    mid_bca = np.mean(res_bca.confidence_interval)
+
+    # reference for BCA CI computed using R wboot package:
+    # library(wBoot)
+    # library(moments)
+
+    # x = c(0.75859206, 0.5910282, -0.4419409, -0.36654601,
+    #       0.34955357, -1.38835871,  0.76735821)
+    # y = c(1.41186073, 0.49775975, 0.08275588, 0.24086388,
+    #       0.03567057, 0.52024419, 0.31966611, 1.32067634)
+
+    # twoskew <- function(x1, y1) {skewness(x1) - skewness(y1)}
+    # boot.two.bca(x, y, skewness, conf.level = 0.95,
+    #              R = 9999, stacked = FALSE)
+    mid_wboot = -1.5519
+
+    # compute percent difference relative to wboot BCA method
+    diff_basic = (mid_basic - mid_wboot)/abs(mid_wboot)
+    diff_percent = (mid_percent - mid_wboot)/abs(mid_wboot)
+    diff_bca = (mid_bca - mid_wboot)/abs(mid_wboot)
+
+    # SciPy's BCa CI midpoint is much closer than that of the other methods
+    assert diff_basic < -0.15
+    assert diff_percent > 0.15
+    assert abs(diff_bca) < 0.03
+
+
 @pytest.mark.parametrize("method, expected",
                          tests_against_itself_1samp.items())
 def test_bootstrap_against_itself_1samp(method, expected):
