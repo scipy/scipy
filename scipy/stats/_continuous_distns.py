@@ -5508,67 +5508,56 @@ class lognorm_gen(rv_continuous):
         this function uses explicit formulas for the maximum likelihood
         estimation of the log-normal shape and scale parameters, so the
         `optimizer`, `loc` and `scale` keyword arguments are ignored.
+        If the location is free, a likelihood maximum is found by
+        setting its partial derivative wrt to location to 0, and
+        solving by substituting the analytical expressions of shape
+        and scale (or provided parameters).
+        See, e.g., equation 3.1 in
+        A. Clifford Cohen & Betty Jones Whitten (1980)
+        Estimation in the Three-Parameter Lognormal Distribution,
+        Journal of the American Statistical Association, 75:370, 399-404
+        https://doi.org/10.2307/2287466
         \n\n""")
     def fit(self, data, *args, **kwds):
-        floc = kwds.get('floc', None)
+        parameters = _check_fit_input_parameters(self, data, args, kwds)
+        data, fshape, floc, fscale = parameters
+
+        def get_shape_scale(loc):
+            if fshape is None or fscale is None:
+                lndata = np.log(data - loc)
+            scale = fscale or np.exp(lndata.mean())
+            shape = fshape or np.sqrt(np.mean((lndata - np.log(scale))**2))
+            return shape, scale
+
+        def dL_dLoc(loc):
+            shape, scale = get_shape_scale(loc)
+            shifted = data - loc
+            return np.sum((1 + np.log(shifted/scale)/shape**2)/shifted)
+
         if floc is None:
-            # fall back on the default fit method.
-            return super().fit(data, *args, **kwds)
+            rbrack = np.nextafter(min(data), -np.inf)
+            lbrack = rbrack - 1
+            i = 0
 
-        f0 = (kwds.get('f0', None) or kwds.get('fs', None) or
-              kwds.get('fix_s', None))
-        fscale = kwds.get('fscale', None)
-
-        if len(args) > 1:
-            raise TypeError("Too many input arguments.")
-        for name in ['f0', 'fs', 'fix_s', 'floc', 'fscale', 'loc', 'scale',
-                     'optimizer', 'method']:
-            kwds.pop(name, None)
-        if kwds:
-            raise TypeError("Unknown arguments: %s." % kwds)
-
-        # Special case: loc is fixed.  Use the maximum likelihood formulas
-        # instead of the numerical solver.
-
-        if f0 is not None and fscale is not None:
-            # This check is for consistency with `rv_continuous.fit`.
-            raise ValueError("All parameters fixed. There is nothing to "
-                             "optimize.")
-
-        data = np.asarray(data)
-
-        if not np.isfinite(data).all():
-            raise ValueError("The data contains non-finite values.")
-
-        floc = float(floc)
-        if floc != 0:
-            # Shifting the data by floc. Don't do the subtraction in-place,
-            # because `data` might be a view of the input array.
-            data = data - floc
-        if np.any(data <= 0):
-            raise FitDataError("lognorm", lower=floc, upper=np.inf)
-        lndata = np.log(data)
-
-        # Three cases to handle:
-        # * shape and scale both free
-        # * shape fixed, scale free
-        # * shape free, scale fixed
-
-        if fscale is None:
-            # scale is free.
-            scale = np.exp(lndata.mean())
-            if f0 is None:
-                # shape is free.
-                shape = lndata.std()
-            else:
-                # shape is fixed.
-                shape = float(f0)
+            while ((lbrack > -np.inf)
+                   and (dL_dLoc(lbrack)*dL_dLoc(rbrack) >= 0)):
+                i += 1
+                lbrack = rbrack - np.power(2., i)
+            if not lbrack > -np.inf:
+                return super().fit(data, *args, **kwds)
+            res = root_scalar(dL_dLoc, bracket=(lbrack, rbrack))
+            if not res.converged:
+                return super().fit(data, *args, **kwds)
+            loc = res.root
         else:
-            # scale is fixed, shape is free
-            scale = float(fscale)
-            shape = np.sqrt(((lndata - np.log(scale))**2).mean())
+            if floc >= np.min(data):
+                raise FitDataError("lognorm", lower=0., upper=np.inf)
+            loc = floc
 
-        return shape, floc, scale
+        shape, scale = get_shape_scale(loc)
+        if not (self._argcheck(shape) and scale > 0):
+            return super().fit(data, *args, **kwds)
+        return shape, loc, scale
 
 
 lognorm = lognorm_gen(a=0.0, name='lognorm')

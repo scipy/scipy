@@ -497,7 +497,7 @@ class BinnedStatisticDD(Benchmark):
 
 class ContinuousFitAnalyticalMLEOverride(Benchmark):
     # list of distributions to time
-    dists = ["pareto", "laplace", "rayleigh",
+    dists = ["pareto", "laplace", "rayleigh", "lognorm",
              "invgauss", "gumbel_r", "gumbel_l"]
     # add custom values for rvs and fit, if desired, for any distribution:
     # key should match name in dists and value should be list of loc, scale,
@@ -537,7 +537,9 @@ class ContinuousFitAnalyticalMLEOverride(Benchmark):
         # with keys from self.fnames and values from parameter_values
         self.fixed = dict(zip(compress(self.fnames, relevant_parameters),
                           compress(param_values, relevant_parameters)))
-        self.data = self.distn.rvs(*param_values, size=1000)
+        # shapes need to come before loc and scale
+        self.data = self.distn.rvs(*param_values[2:], *param_values[:2],
+                                   size=1000)
 
     def time_fit(self, dist_name, loc_fixed, scale_fixed, shape1_fixed,
                  shape2_fixed, shape3_fixed):
