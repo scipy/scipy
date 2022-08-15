@@ -437,9 +437,7 @@ class BSpline:
             # Checks from `find_interval` function
             raise ValueError(f'Out of bounds w/ x = {x}.')
 
-        n, nt = x.shape[0], t.shape[0]
-        data, idx = _bspl._make_design_matrix(x, t, k, extrapolate)
-        return csr_array((data, idx), (n, nt - k - 1))
+        return _bspl._make_design_matrix(x, t, k, extrapolate)
 
     def __call__(self, x, nu=0, extrapolate=None):
         """

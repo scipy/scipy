@@ -4,8 +4,9 @@ Routines for evaluating and manipulating B-splines.
 """
 
 import numpy as np
-cimport numpy as cnp
+from scipy.sparse import csr_array
 
+cimport numpy as cnp
 cimport cython
 from libc.math cimport NAN
 
@@ -434,18 +435,19 @@ def _make_design_matrix(const double[::1] x,
 
     Returns
     -------
-    data, (row_idx, col_idx)
-        Constructor parameters for a CSR matrix: in each row all the basis
+    design matrix
+        Design matrix as CSR matrix: in each row all the basis
         elements are evaluated at the certain point (first row - x[0],
         ..., last row - x[-1]).
     """
     cdef:
-        cnp.npy_intp i, ind
+        cnp.npy_intp i, j, ind
         cnp.npy_intp n = x.shape[0]
         double[::1] work = np.empty(2*k+2, dtype=float)
         double[::1] data = np.zeros(n * (k + 1), dtype=float)
-        cnp.ndarray[long, ndim=1] row_ind = np.zeros(n * (k + 1), dtype=int)
-        cnp.ndarray[long, ndim=1] col_ind = np.zeros(n * (k + 1), dtype=int)
+        # TODO: When should we switch to int64?
+        cnp.npy_int32[::1] indptr = np.arange(0, (n + 1) * (k + 1), k + 1, dtype=np.int32)
+        cnp.npy_int32[::1] indices = np.zeros(n * (k + 1), dtype=np.int32)
         double xval
     ind = k
     for i in range(n):
@@ -457,9 +459,13 @@ def _make_design_matrix(const double[::1] x,
         ind = find_interval(t, k, xval, ind, extrapolate)
         _deBoor_D(&t[0], xval, k, ind, 0, &work[0])
 
-        data[(k + 1) * i : (k + 1) * (i + 1)] = work[:k + 1]
-        row_ind[(k + 1) * i : (k + 1) * (i + 1)] = i
-        col_ind[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(
-            ind - k, ind + 1, dtype=int)
+        # data[(k + 1) * i : (k + 1) * (i + 1)] = work[:k + 1]
+        # indices[(k + 1) * i : (k + 1) * (i + 1)] = np.arange(ind - k, ind + 1)
+        for j in range((k + 1)):
+            data[(k + 1) * i + j] = work[j]
+            indices[(k + 1) * i + j] = ind - k + j
 
-    return np.asarray(data), (row_ind, col_ind)
+    return csr_array(
+        (np.asarray(data), np.asarray(indices), np.asarray(indptr)),
+        shape=(n, t.shape[0] - k - 1),
+    )
