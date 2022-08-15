@@ -4124,7 +4124,7 @@ class invgauss_gen(rv_continuous):
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
             ppf[i_wt] = _boost._invgauss_isf(1-x[i_wt], mu[i_wt], 1)
             i_nan = np.isnan(ppf)
-            ppf[i_nan] =  super()._ppf(x[i_nan], mu[i_nan])
+            ppf[i_nan] = super()._ppf(x[i_nan], mu[i_nan])
         return ppf
 
     def _isf(self, x, mu):
@@ -4134,7 +4134,7 @@ class invgauss_gen(rv_continuous):
             i_wt = x > 0.5  # "wrong tail" - sometimes too inaccurate
             isf[i_wt] = _boost._invgauss_ppf(1-x[i_wt], mu[i_wt], 1)
             i_nan = np.isnan(isf)
-            isf[i_nan] =  super()._isf(x[i_nan], mu[i_nan])
+            isf[i_nan] = super()._isf(x[i_nan], mu[i_nan])
         return isf
 
     def _stats(self, mu):
