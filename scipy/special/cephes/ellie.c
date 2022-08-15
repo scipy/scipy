@@ -64,9 +64,9 @@ double ellie(double phi, double m)
     int d, mod, sign;
 
     if (cephes_isnan(phi) || cephes_isnan(m))
-        return NPY_NAN;
+        return NAN;
     if (m > 1.0)
-        return NPY_NAN;
+        return NAN;
     if (cephes_isinf(phi))
         return phi;
     if (cephes_isinf(m))

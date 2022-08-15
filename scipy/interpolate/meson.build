@@ -97,7 +97,6 @@ interpnd = py3.extension_module('interpnd',
   spt_cython_gen.process('interpnd.pyx'),
   c_args: ['-Wno-discarded-qualifiers', cython_c_args],
   include_directories: [incdir_numpy],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/interpolate'
 )
@@ -106,7 +105,6 @@ py3.extension_module('_ppoly',
   linalg_cython_gen.process('_ppoly.pyx'),
   c_args: cython_c_args,
   include_directories: [incdir_numpy],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/interpolate'
 )
@@ -115,7 +113,6 @@ _bspl = py3.extension_module('_bspl',
   cython_gen.process('_bspl.pyx'),
   c_args: cython_c_args,
   include_directories: ['src/', incdir_numpy],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/interpolate'
 )
@@ -126,7 +123,6 @@ _fitpack = py3.extension_module('_fitpack',
   c_args: numpy_nodepr_api,
   link_with: [fitpack_lib],
   include_directories: ['src/', incdir_numpy],
-  dependencies: [py3_dep],
   link_language: 'fortran',
   install: true,
   subdir: 'scipy/interpolate'
@@ -143,7 +139,7 @@ dfitpack = py3.extension_module('dfitpack',
   dfitpack_module,
   c_args: [numpy_nodepr_api, '-Wno-unused-variable'],
   include_directories: [incdir_numpy, incdir_f2py],
-  dependencies: [py3_dep, lapack, fortranobject_dep],
+  dependencies: [lapack, fortranobject_dep],
   link_with: [fitpack_lib],
   install: true,
   link_language: 'fortran',
@@ -171,7 +167,6 @@ if use_pythran
       Wno_unused_but_set
     ] + cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
-    dependencies: [py3_dep],
     install: true,
     subdir: 'scipy/interpolate'
   )

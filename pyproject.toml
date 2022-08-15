@@ -10,7 +10,7 @@
 [build-system]
 build-backend = 'mesonpy'
 requires = [
-    "meson-python>=0.7.0",
+    "meson-python>=0.8.0",
     "Cython>=0.29.21",
     "pybind11>=2.4.3",
     "pythran>=0.11.0",
@@ -53,6 +53,8 @@ requires = [
 
 [project]
 name = "SciPy"
+# TODO: add `license-files` once PEP 639 is accepted (see meson-python#88)
+#       at that point, no longer include them in `py3.install_sources()`
 license = {file = "LICENSE.txt"}
 description = "Fundamental algorithms for scientific computing in Python"
 maintainers = [
@@ -100,6 +102,7 @@ test = [
     "gmpy2",
     "threadpoolctl",
     "scikit-umfpack",
+    "pooch",
 ]
 doc = [
     "sphinx!=4.1.0",

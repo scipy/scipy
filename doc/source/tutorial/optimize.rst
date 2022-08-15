@@ -776,6 +776,7 @@ This function looks like an egg carton::
    >>> plt.show()
 
 .. plot:: tutorial/examples/optimize_global_2.py
+   :alt: "A 3-D plot shown from a three-quarter view. The function is very noisy with dozens of valleys and peaks. There is no clear min or max discernable from this view and it's not possible to see all the local peaks and valleys from this view." 
    :align: center
    :include-source: 0
 
@@ -851,6 +852,7 @@ We'll now plot all found minima on a heatmap of the function::
 
 .. plot:: tutorial/examples/optimize_global_1.py
    :align: center
+   :alt: "This X-Y plot is a heatmap with the Z value denoted with the lowest points as black and the highest values as white. The image resembles a chess board rotated 45 degrees but heavily smoothed. A red dot is located at many of the minima on the grid resulting from the SHGO optimizer. SHGO shows the global minima as a red X in the top right. A local minima found with dual annealing is a white circle marker in the top left. A different local minima found with basinhopping is a yellow marker in the top center. The code is plotting the differential evolution result as a cyan circle, but it is not visible on the plot. At a glance it's not clear which of these valleys is the true global minima."
    :include-source: 0
 
 Least-squares minimization (:func:`least_squares`)
@@ -920,6 +922,7 @@ The code below implements least-squares estimation of :math:`\mathbf{x}` and
 finally plots the original data and the fitted model function:
 
 .. plot::
+    :alt: "This code plots an X-Y time-series. The series starts in the lower left at (0, 0) and rapidly trends up to the maximum of 0.2 then flattens out. The fitted model is shown as a smooth orange trace and is well fit to the data."
 
     >>> from scipy.optimize import least_squares
 
@@ -1251,6 +1254,7 @@ exactly, forms an approximation for it.
 The problem we have can now be solved as follows:
 
 .. plot::
+    :alt: "This code generates a 2-D heatmap with Z values from 0 to 1. The graph resembles a smooth, dark blue-green, U shape, with an open yellow top. The right, bottom, and left edges have a value near zero and the top has a value close to 1. The center of the solution space has a value close to 0.8."
 
     import numpy as np
     from scipy.optimize import root

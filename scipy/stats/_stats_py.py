@@ -83,8 +83,6 @@ __all__ = ['find_repeats', 'gmean', 'hmean', 'pmean', 'mode', 'tmean', 'tvar',
            'brunnermunzel', 'alexandergovern']
 
 
-# This should probably be rewritten to avoid nested TypeErrors in favor of
-# branching based on dtype.
 def _contains_nan(a, nan_policy='propagate', use_summation=True):
     if not isinstance(a, np.ndarray):
         use_summation = False  # some array_likes ignore nans (e.g. pandas)
@@ -92,42 +90,24 @@ def _contains_nan(a, nan_policy='propagate', use_summation=True):
     if nan_policy not in policies:
         raise ValueError("nan_policy must be one of {%s}" %
                          ', '.join("'%s'" % s for s in policies))
-    # only inexact (floating/complexfloating) and object arrays support np.nan
-    if not (np.issubdtype(a.dtype, np.inexact)
-            or np.issubdtype(a.dtype, object)):
-        return False, nan_policy
-    try:
+
+    if np.issubdtype(a.dtype, np.inexact):
         # The summation method avoids creating a (potentially huge) array.
-        # But, it will set contains_nan to True for (e.g.) [-inf, ..., +inf].
-        # If this is undesirable, set use_summation to False instead.
         if use_summation:
             with np.errstate(invalid='ignore', over='ignore'):
                 contains_nan = np.isnan(np.sum(a))
         else:
             contains_nan = np.isnan(a).any()
-    except TypeError:
-        # This can happen when attempting to sum things which are not
-        # numbers (e.g. as in the function `mode`). Try an alternative method:
-        try:
-            contains_nan = np.any(np.isnan(a))
-        except TypeError:
-            try:
-                # This can happen when attempting to check nan with np.isnan
-                # for string array (e.g. as in the function `rankdata`).
-                contains_nan = False
-                for el in a.ravel():
-                    # isnan doesn't work on elements of string arrays
-                    if np.issubdtype(type(el), np.number) and np.isnan(el):
-                        contains_nan = True
-                        break
-            except TypeError:
-                # Don't know what to do. Fall back to omitting nan values and
-                # issue a warning.
-                contains_nan = False
-                nan_policy = 'omit'
-                warnings.warn("The input array could not be properly "
-                              "checked for nan values. nan values "
-                              "will be ignored.", RuntimeWarning)
+    elif np.issubdtype(a.dtype, object):
+        contains_nan = False
+        for el in a.ravel():
+            # isnan doesn't work on non-numeric elements
+            if np.issubdtype(type(el), np.number) and np.isnan(el):
+                contains_nan = True
+                break
+    else:
+        # Only `object` and `inexact` arrays can have NaNs
+        contains_nan = False
 
     if contains_nan and nan_policy == 'raise':
         raise ValueError("The input contains nan values")
@@ -1297,8 +1277,8 @@ def skew(a, axis=0, bias=True, nan_policy='propagate'):
     Returns
     -------
     skewness : ndarray
-        The skewness of values along an axis, returning 0 where all values are
-        equal.
+        The skewness of values along an axis, returning NaN where all values
+        are equal.
 
     Notes
     -----
@@ -1406,8 +1386,8 @@ def kurtosis(a, axis=0, fisher=True, bias=True, nan_policy='propagate'):
     Returns
     -------
     kurtosis : array
-        The kurtosis of values along an axis. If all values are equal,
-        return -3 for Fisher's definition and 0 for Pearson's definition.
+        The kurtosis of values along an axis, returning NaN where all values
+        are equal.
 
     References
     ----------
@@ -4577,6 +4557,8 @@ def fisher_exact(table, alternative='two-sided'):
     chi2_contingency : Chi-square test of independence of variables in a
         contingency table.  This can be used as an alternative to
         `fisher_exact` when the numbers in the table are large.
+    contingency.odds_ratio : Compute the odds ratio (sample or conditional
+        MLE) for a 2x2 contingency table.
     barnard_exact : Barnard's exact test, which is a more powerful alternative
         than Fisher's exact test for 2x2 contingency tables.
     boschloo_exact : Boschloo's exact test, which is a more powerful alternative
@@ -4676,10 +4658,12 @@ def fisher_exact(table, alternative='two-sided'):
 
     *Odds ratio*
 
-    The calculated odds ratio is different from the one R uses. This SciPy
-    implementation returns the (more common) "unconditional Maximum
-    Likelihood Estimate", while R uses the "conditional Maximum Likelihood
-    Estimate".
+    The calculated odds ratio is different from the value computed by the
+    R function ``fisher.test``.  This implementation returns the "sample"
+    or "unconditional" maximum likelihood estimate, while ``fisher.test``
+    in R uses the conditional maximum likelihood estimate.  To compute the
+    conditional maximum likelihood estimate of the odds ratio, use
+    `scipy.stats.contingency.odds_ratio`.
 
     Examples
     --------
@@ -5558,7 +5542,8 @@ def _euclidean_dist(x):
     return cdist(x, x)
 
 
-MGCResult = namedtuple('MGCResult', ('stat', 'pvalue', 'mgc_dict'))
+MGCResult = _make_tuple_bunch('MGCResult',
+                              ['statistic', 'pvalue', 'mgc_dict'], [])
 
 
 def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
@@ -5629,21 +5614,23 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
 
     Returns
     -------
-    stat : float
-        The sample MGC test statistic within `[-1, 1]`.
-    pvalue : float
-        The p-value obtained via permutation.
-    mgc_dict : dict
-        Contains additional useful additional returns containing the following
-        keys:
+    res : MGCResult
+        An object containing attributes:
 
-            - mgc_map : ndarray
-                A 2D representation of the latent geometry of the relationship.
-                of the relationship.
-            - opt_scale : (int, int)
-                The estimated optimal scale as a `(x, y)` pair.
-            - null_dist : list
-                The null distribution derived from the permuted matrices
+        statistic : float
+            The sample MGC test statistic within `[-1, 1]`.
+        pvalue : float
+            The p-value obtained via permutation.
+        mgc_dict : dict
+            Contains additional useful results:
+
+                - mgc_map : ndarray
+                    A 2D representation of the latent geometry of the
+                    relationship.
+                - opt_scale : (int, int)
+                    The estimated optimal scale as a `(x, y)` pair.
+                - null_dist : list
+                    The null distribution derived from the permuted matrices.
 
     See Also
     --------
@@ -5737,33 +5724,25 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
     >>> from scipy.stats import multiscale_graphcorr
     >>> x = np.arange(100)
     >>> y = x
-    >>> stat, pvalue, _ = multiscale_graphcorr(x, y, workers=-1)
-    >>> '%.1f, %.3f' % (stat, pvalue)
-    '1.0, 0.001'
-
-    Alternatively,
-
-    >>> x = np.arange(100)
-    >>> y = x
-    >>> mgc = multiscale_graphcorr(x, y)
-    >>> '%.1f, %.3f' % (mgc.stat, mgc.pvalue)
-    '1.0, 0.001'
+    >>> res = multiscale_graphcorr(x, y)
+    >>> res.statistic, res.pvalue
+    (1.0, 0.001)
 
     To run an unpaired two-sample test,
 
     >>> x = np.arange(100)
     >>> y = np.arange(79)
-    >>> mgc = multiscale_graphcorr(x, y)
-    >>> '%.3f, %.2f' % (mgc.stat, mgc.pvalue)  # doctest: +SKIP
-    '0.033, 0.02'
+    >>> res = multiscale_graphcorr(x, y)
+    >>> res.statistic, res.pvalue  # doctest: +SKIP
+    (0.033258146255703246, 0.023)
 
     or, if shape of the inputs are the same,
 
     >>> x = np.arange(100)
     >>> y = x
-    >>> mgc = multiscale_graphcorr(x, y, is_twosamp=True)
-    >>> '%.3f, %.1f' % (mgc.stat, mgc.pvalue)  # doctest: +SKIP
-    '-0.008, 1.0'
+    >>> res = multiscale_graphcorr(x, y, is_twosamp=True)
+    >>> res.statistic, res.pvalue  # doctest: +SKIP
+    (-0.008021809890200488, 1.0)
 
     """
     if not isinstance(x, np.ndarray) or not isinstance(y, np.ndarray):
@@ -5846,7 +5825,10 @@ def multiscale_graphcorr(x, y, compute_distance=_euclidean_dist, reps=1000,
                 "opt_scale": opt_scale,
                 "null_dist": null_dist}
 
-    return MGCResult(stat, pvalue, mgc_dict)
+    # create result object with alias for backward compatibility
+    res = MGCResult(stat, pvalue, mgc_dict)
+    res.stat = stat
+    return res
 
 
 def _mgc_stat(distx, disty):
@@ -7635,11 +7617,6 @@ def _count_paths_outside_method(m, n, g, h):
         The number of paths that go low.
         The calculation may overflow - check for a finite answer.
 
-    Raises
-    ------
-    FloatingPointError: Raised if the intermediate computation goes outside
-    the range of a float.
-
     Notes
     -----
     Count the integer lattice paths from (0, 0) to (m, n), which at some
@@ -7675,31 +7652,23 @@ def _count_paths_outside_method(m, n, g, h):
     # B is an array just holding a few values of B(x,y), the ones needed.
     # B[j] == B(x_j, j)
     if lxj == 0:
-        return np.round(special.binom(m + n, n))
+        return special.binom(m + n, n)
     B = np.zeros(lxj)
     B[0] = 1
     # Compute the B(x, y) terms
-    # The binomial coefficient is an integer, but special.binom()
-    # may return a float. Round it to the nearest integer.
     for j in range(1, lxj):
-        Bj = np.round(special.binom(xj[j] + j, j))
-        if not np.isfinite(Bj):
-            raise FloatingPointError()
+        Bj = special.binom(xj[j] + j, j)
         for i in range(j):
-            bin = np.round(special.binom(xj[j] - xj[i] + j - i, j-i))
+            bin = special.binom(xj[j] - xj[i] + j - i, j-i)
             Bj -= bin * B[i]
         B[j] = Bj
-        if not np.isfinite(Bj):
-            raise FloatingPointError()
     # Compute the number of path extensions...
     num_paths = 0
     for j in range(lxj):
-        bin = np.round(special.binom((m-xj[j]) + (n - j), n-j))
+        bin = special.binom((m-xj[j]) + (n - j), n-j)
         term = B[j] * bin
-        if not np.isfinite(term):
-            raise FloatingPointError()
         num_paths += term
-    return np.round(num_paths)
+    return num_paths
 
 
 def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
@@ -7718,29 +7687,29 @@ def _attempt_exact_2kssamp(n1, n2, g, d, alternative):
         return True, d, 1.0
     saw_fp_error, prob = False, np.nan
     try:
-        if alternative == 'two-sided':
-            if n1 == n2:
-                prob = _compute_prob_outside_square(n1, h)
-            else:
-                prob = _compute_outer_prob_inside_method(n1, n2, g, h)
-        else:
-            if n1 == n2:
-                # prob = binom(2n, n-h) / binom(2n, n)
-                # Evaluating in that form incurs roundoff errors
-                # from special.binom. Instead calculate directly
-                jrange = np.arange(h)
-                prob = np.prod((n1 - jrange) / (n1 + jrange + 1.0))
-            else:
-                with np.errstate(over='raise'):
-                    num_paths = _count_paths_outside_method(n1, n2, g, h)
-                bin = special.binom(n1 + n2, n1)
-                if not np.isfinite(bin) or not np.isfinite(num_paths)\
-                        or num_paths > bin:
-                    saw_fp_error = True
+        with np.errstate(invalid="raise", over="raise"):
+            if alternative == 'two-sided':
+                if n1 == n2:
+                    prob = _compute_prob_outside_square(n1, h)
                 else:
-                    prob = num_paths / bin
+                    prob = _compute_outer_prob_inside_method(n1, n2, g, h)
+            else:
+                if n1 == n2:
+                    # prob = binom(2n, n-h) / binom(2n, n)
+                    # Evaluating in that form incurs roundoff errors
+                    # from special.binom. Instead calculate directly
+                    jrange = np.arange(h)
+                    prob = np.prod((n1 - jrange) / (n1 + jrange + 1.0))
+                else:
+                    with np.errstate(over='raise'):
+                        num_paths = _count_paths_outside_method(n1, n2, g, h)
+                    bin = special.binom(n1 + n2, n1)
+                    if num_paths > bin or np.isinf(bin):
+                        saw_fp_error = True
+                    else:
+                        prob = num_paths / bin
 
-    except FloatingPointError:
+    except (FloatingPointError, OverflowError):
         saw_fp_error = True
 
     if saw_fp_error:

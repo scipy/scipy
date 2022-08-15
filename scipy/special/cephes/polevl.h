@@ -61,9 +61,9 @@
 #ifndef CEPHES_POLEV
 #define CEPHES_POLEV
 
-#include <numpy/npy_common.h>
+#include <math.h>
 
-static NPY_INLINE double polevl(double x, const double coef[], int N)
+static inline double polevl(double x, const double coef[], int N)
 {
     double ans;
     int i;
@@ -86,7 +86,7 @@ static NPY_INLINE double polevl(double x, const double coef[], int N)
  * Otherwise same as polevl.
  */
 
-static NPY_INLINE double p1evl(double x, const double coef[], int N)
+static inline double p1evl(double x, const double coef[], int N)
 {
     double ans;
     const double *p;
@@ -105,7 +105,7 @@ static NPY_INLINE double p1evl(double x, const double coef[], int N)
 
 /* Evaluate a rational function. See [1]. */
 
-static NPY_INLINE double ratevl(double x, const double num[], int M,
+static inline double ratevl(double x, const double num[], int M,
                                           const double denom[], int N)
 {
     int i, dir;

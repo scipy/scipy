@@ -21,7 +21,6 @@ sigtools = py3.extension_module('_sigtools',
   ],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/signal'
 )
@@ -41,7 +40,6 @@ if use_pythran
       '-Wno-cpp', '-Wno-int-in-bool-context'
     ] + cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
-    dependencies: [py3_dep],
     install: true,
     subdir: 'scipy/signal'
   )
@@ -60,7 +58,6 @@ if use_pythran
       '-Wno-cpp', '-Wno-int-in-bool-context'
     ] + cpp_args_pythran,
     include_directories: [incdir_pythran, incdir_numpy],
-    dependencies: [py3_dep],
     install: true,
     subdir: 'scipy/signal'
   )
@@ -69,7 +66,6 @@ else
     [cython_gen.process('_max_len_seq_inner.pyx')],
     c_args: cython_c_args,
     include_directories: [inc_np],
-    dependencies: [py3_dep],
     install: true,
     subdir: 'scipy/signal'
   )
@@ -78,7 +74,6 @@ else
     [cython_gen.process('_spectral.pyx')],
     c_args: cython_c_args,
     include_directories: [inc_np],
-    dependencies: [py3_dep],
     install: true,
     subdir: 'scipy/signal'
   )
@@ -95,7 +90,6 @@ foreach pyx_file: pyx_files
     cython_gen.process(pyx_file[1]),
     c_args: cython_c_args,
     include_directories: [inc_np],
-    dependencies: [py3_dep],
     install: true,
     subdir: 'scipy/signal'
   )
@@ -111,7 +105,6 @@ spline = py3.extension_module('_spline',
   ['_splinemodule.c', bspline_util],
   c_args: numpy_nodepr_api,
   include_directories: [inc_np],
-  dependencies: [py3_dep],
   install: true,
   subdir: 'scipy/signal'
 )
