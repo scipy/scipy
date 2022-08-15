@@ -17,6 +17,7 @@ cimport cython
 from . cimport _qhull
 from . cimport setlist
 from libc cimport stdlib
+from libc.math cimport NAN
 from scipy._lib.messagestream cimport MessageStream
 
 import os
@@ -26,8 +27,6 @@ import warnings
 
 np.import_array()
 
-cdef extern from "numpy/npy_math.h":
-    double nan "NPY_NAN"
 
 __all__ = ['Delaunay', 'ConvexHull', 'QhullError', 'Voronoi', 'HalfspaceIntersection', 'tsearch']
 
@@ -1147,7 +1146,7 @@ def _get_barycentric_transforms(np.ndarray[np.double_t, ndim=2] points,
             if info != 0:
                 for i in range(ndim+1):
                     for j in range(ndim):
-                        Tinvs[isimplex,i,j] = nan
+                        Tinvs[isimplex,i,j] = NAN
 
     return Tinvs
 

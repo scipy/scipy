@@ -42,7 +42,9 @@ References
 cimport cython
 from numpy cimport npy_cdouble
 from libc.stdint cimport uint64_t, UINT64_MAX
-from libc.math cimport exp, fabs, M_PI, M_1_PI, log1p, pow, sin, trunc
+from libc.math cimport (
+    exp, fabs, M_PI, M_1_PI, log1p, pow, sin, trunc, NAN, INFINITY
+)
 
 from . cimport sf_error
 from ._cephes cimport Gamma, gammasgn, lanczos_sum_expg_scaled, lgam
@@ -59,11 +61,6 @@ from ._complexstuff cimport (
 
 cdef extern from "cephes/lanczos.h":
     double lanczos_g
-
-cdef extern from "numpy/npy_math.h":
-    double NPY_NAN
-    double NPY_INFINITY
-
 
 cdef extern from 'specfun_wrappers.h':
     npy_cdouble chyp2f1_wrap(
@@ -109,7 +106,7 @@ cdef inline double complex hyp2f1_complex(
             return 1.0 + 0.0j
         else:
             # Returning real part NAN and imaginary part 0 follows mpmath.
-            return zpack(NPY_NAN, 0)
+            return zpack(NAN, 0)
     # Diverges when c is a non-positive integer unless a is an integer with
     # c <= a <= 0 or b is an integer with c <= b <= 0, (or z equals 0 with
     # c != 0) Cases z = 0, a = 0, or b = 0 have already been handled. We follow
@@ -118,7 +115,7 @@ cdef inline double complex hyp2f1_complex(
     if c_non_pos_int and not (
             a_neg_int and c <= a < 0 or b_neg_int and c <= b < 0
     ):
-        return NPY_INFINITY + 0.0j
+        return INFINITY + 0.0j
     # Diverges as real(z) -> 1 when c < a + b.
     # Todo: Actually check for overflow instead of using a fixed tolerance for
     # all parameter combinations like in the Fortran original. This will have to
@@ -132,7 +129,7 @@ cdef inline double complex hyp2f1_complex(
             fabs(1 - z.real) < EPS and z.imag == 0 and c - a - b < 0 and
             not c_non_pos_int
     ):
-        return NPY_INFINITY + 0.0j
+        return INFINITY + 0.0j
     # Gauss's Summation Theorem for z = 1; c - a - b > 0 (DLMF 15.4.20).
     if z == 1.0 and c - a - b > 0 and not c_non_pos_int:
         return four_gammas(c, c - a - b, c - a, c - b)
@@ -160,7 +157,7 @@ cdef inline double complex hyp2f1_complex(
             )
         else:
             sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
-            return zpack(NPY_NAN, NPY_NAN)
+            return zpack(NAN, NAN)
     # If one of c - a or c - b is a negative integer, reduces to evaluating
     # a polynomial through an Euler hypergeometric transformation.
     # (DLMF 15.8.1)
@@ -176,7 +173,7 @@ cdef inline double complex hyp2f1_complex(
             return result
         else:
             sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
-            return zpack(NPY_NAN, NPY_NAN)
+            return zpack(NAN, NAN)
     # |z| < 0, real(z) >= 0. Use defining Taylor series.
     # --------------------------------------------------------------------------
     if modulus_z < 0.9 and z.real >= 0:
@@ -278,7 +275,7 @@ cdef inline double complex hyp2f1_series(
         # early_stop has been set to True.
         if early_stop:
             sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
-            result = zpack(NPY_NAN, NPY_NAN)
+            result = zpack(NAN, NAN)
     return result
 
 @cython.cdivision(True)
@@ -319,7 +316,7 @@ cdef inline double complex hyp2f1_lopez_temme_series(
             break
     else:
         sf_error.error("hyp2f1", sf_error.NO_RESULT, NULL)
-        result = zpack(NPY_NAN, NPY_NAN)
+        result = zpack(NAN, NAN)
     return result
 
 
@@ -397,7 +394,7 @@ cdef inline double four_gammas_lanczos(
     if u == trunc(u) and u <= 0 or v == trunc(v) and v <= 0:
         # Return nan if numerator has pole. Diverges to +- infinity
         # depending on direction so value is undefined.
-        return NPY_NAN
+        return NAN
     if w == trunc(w) and w <= 0 or x == trunc(x) and x <= 0:
         # Return 0 if denominator has pole but not numerator.
         return 0
