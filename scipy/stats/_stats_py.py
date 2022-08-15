@@ -6081,6 +6081,23 @@ class Ttest_1sampResult(TTestResultBase):
         return ConfidenceInterval(low=low, high=high)
 
 
+def pack_Ttest_Result(statistic, pvalue, df, alternative, standard_error,
+                      estimate):
+    # this could be any number of dimensions (including 0d), but only one
+    # unique value
+    alternative = np.atleast_1d(alternative).ravel()
+    alternative = alternative[0] if alternative.size else np.nan
+    return Ttest_1sampResult(statistic, pvalue, df=df, alternative=alternative,
+                             standard_error=standard_error, estimate=estimate)
+
+
+def unpack_Ttest_Result(res):
+    return (res.statistic, res.pvalue, res.df, res._alternative,
+            res._standard_error, res._estimate)
+
+
+@_axis_nan_policy_factory(pack_Ttest_Result, default_axis=0, n_samples=2,
+                          result_to_tuple=unpack_Ttest_Result, n_outputs=6)
 def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
                 alternative="two-sided"):
     """Calculate the T-test for the mean of ONE group of scores.
@@ -6238,17 +6255,11 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
     """
     a, axis = _chk_asarray(a, axis)
 
-    contains_nan, nan_policy = _contains_nan(a, nan_policy)
-
-    if contains_nan and nan_policy == 'omit':
-        a = ma.masked_invalid(a)
-        return mstats_basic.ttest_1samp(a, popmean, axis, alternative)
-
     n = a.shape[axis]
     df = n - 1
 
     mean = np.mean(a, axis)
-    d = mean - popmean
+    d = mean - popmean[..., 0]  # popmean is an array because of decorator
     v = _var(a, axis, ddof=1)
     denom = np.sqrt(v / n)
 
@@ -6256,7 +6267,11 @@ def ttest_1samp(a, popmean, axis=0, nan_policy='propagate',
         t = np.divide(d, denom)
     t, prob = _ttest_finish(df, t, alternative)
 
-    return Ttest_1sampResult(t, prob, df=df, alternative=alternative,
+    # when nan_policy='omit', `df` can be different for different axis-slices
+    df = np.broadcast_to(df, t.shape)
+    # _axis_nan_policy decorator doesn't play well with strings
+    alternative_num = {"less": -1, "two-sided": 0, "greater": 1}[alternative]
+    return Ttest_1sampResult(t, prob, df=df, alternative=alternative_num,
                              standard_error=denom, estimate=mean)
 
 
@@ -6267,16 +6282,21 @@ def _t_confidence_interval(df, t, confidence_level, alternative):
         message = "`confidence_level` must be a number between 0 and 1."
         raise ValueError(message)
 
-    if alternative == 'less':
+    if alternative < 0:  # 'less'
         p = confidence_level
         low, high = np.broadcast_arrays(-np.inf, special.stdtrit(df, p))
-    elif alternative == 'greater':
+    elif alternative > 0:  # 'greater'
         p = 1 - confidence_level
         low, high = np.broadcast_arrays(special.stdtrit(df, p), np.inf)
-    elif alternative == 'two-sided':
+    elif alternative == 0:  # 'two-sided'
         tail_probability = (1 - confidence_level)/2
         p = tail_probability, 1-tail_probability
+        # axis of p must be the zeroth and orthogonal to all the rest
+        p = np.reshape(p, [2] + [1]*np.asarray(df).ndim)
         low, high = special.stdtrit(df, p)
+    else:
+        p, nans = np.broadcast_arrays(t, np.nan)
+        low, high = nans, nans
 
     return low[()], high[()]
 

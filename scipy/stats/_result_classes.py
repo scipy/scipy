@@ -17,11 +17,13 @@ Result classes
    PearsonRResult
    FitResult
    OddsRatioResult
+   Ttest_1sampResult
 
 """
 
 __all__ = ['BinomTestResult', 'RelativeRiskResult', 'TukeyHSDResult',
-           'PearsonRResult', 'FitResult', 'OddsRatioResult']
+           'PearsonRResult', 'FitResult', 'OddsRatioResult',
+           'Ttest_1sampResult']
 
 
 from ._binomtest import BinomTestResult
