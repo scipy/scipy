@@ -3,14 +3,12 @@
 # floating point), it's possible to compute them with greater accuracy
 # than sin(z), cos(z).
 #
-from libc.math cimport sin, cos, sinh, cosh, exp, fabs, fmod, M_PI
+from libc.math cimport (
+    sin, cos, sinh, cosh, exp, fabs, fmod, copysign, M_PI, INFINITY
+)
 
 from ._cephes cimport sinpi as dsinpi, cospi as dcospi
 from ._complexstuff cimport number_t, double_complex, zpack
-
-cdef extern from "numpy/npy_math.h":
-    double npy_copysign(double x, double y) nogil
-    double NPY_INFINITY
 
 
 cdef inline double complex csinpi(double complex z) nogil:
@@ -35,16 +33,16 @@ cdef inline double complex csinpi(double complex z) nogil:
     # so we can compute exp(y/2), scale by the right factor of sin/cos
     # and then multiply by exp(y/2) to avoid overflow.
     exphpiy = exp(abspiy/2)
-    if exphpiy == NPY_INFINITY:
+    if exphpiy == INFINITY:
         if sinpix == 0:
             # Preserve the sign of zero
-            coshfac = npy_copysign(0.0, sinpix)
+            coshfac = copysign(0.0, sinpix)
         else:
-            coshfac = npy_copysign(NPY_INFINITY, sinpix)
+            coshfac = copysign(INFINITY, sinpix)
         if cospix == 0:
-            sinhfac = npy_copysign(0.0, cospix)
+            sinhfac = copysign(0.0, cospix)
         else:
-            sinhfac = npy_copysign(NPY_INFINITY, cospix)
+            sinhfac = copysign(INFINITY, cospix)
         return zpack(coshfac, sinhfac)
 
     coshfac = 0.5*sinpix*exphpiy
@@ -67,15 +65,15 @@ cdef inline double complex ccospi(double complex z) nogil:
 
     # See csinpi(z) for an idea of what's going on here
     exphpiy = exp(abspiy/2)
-    if exphpiy == NPY_INFINITY:
+    if exphpiy == INFINITY:
         if sinpix == 0:
-            coshfac = npy_copysign(0.0, cospix)
+            coshfac = copysign(0.0, cospix)
         else:
-            coshfac = npy_copysign(NPY_INFINITY, cospix)
+            coshfac = copysign(INFINITY, cospix)
         if cospix == 0:
-            sinhfac = npy_copysign(0.0, sinpix)
+            sinhfac = copysign(0.0, sinpix)
         else:
-            sinhfac = npy_copysign(NPY_INFINITY, sinpix)
+            sinhfac = copysign(INFINITY, sinpix)
         return zpack(coshfac, sinhfac)
 
     coshfac = 0.5*cospix*exphpiy

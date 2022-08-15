@@ -55,6 +55,7 @@
 
 #include <Python.h>
 #include <numpy/npy_math.h>
+#include <math.h>
 
 #include "cephes_names.h"
 #include "cephes.h"
@@ -97,8 +98,8 @@
 #endif
 #endif
 #ifndef cephes_isnan
-#define cephes_isnan(x) npy_isnan(x)
-#define cephes_isinf(x) npy_isinf(x)
+#define cephes_isnan(x) isnan(x)
+#define cephes_isinf(x) isinf(x)
 #define cephes_isfinite(x) npy_isfinite(x)
 #endif
 
