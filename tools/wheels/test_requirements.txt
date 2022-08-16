@@ -6,4 +6,5 @@ asv
 mpmath
 gmpy2
 threadpoolctl
+pooch
 #scikit-umfpack
