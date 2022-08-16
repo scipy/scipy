@@ -3949,7 +3949,6 @@ def circstd(samples, high=2*pi, low=0, axis=None, nan_policy='propagate', *,
     ...                       0.104, -0.136, -0.867,  0.012,  0.105])
     >>> circstd_1 = circstd(samples_1)
     >>> circstd_2 = circstd(samples_2)
-    >>> fig, (left, right) = plt.subplots(ncols=2)
 
     Plot the samples.
 
