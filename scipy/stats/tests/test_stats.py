@@ -5173,7 +5173,7 @@ def test_ttest_1samp_new():
     assert_almost_equal(t1[0,0],t3, decimal=14)
     assert_equal(t1.shape, (n2,n3))
 
-    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1, 1, n3)),axis=1)
+    t1,p1 = stats.ttest_1samp(rvn1[:,:,:], np.ones((n1, 1, n3)),axis=1)  # noqa
     t2,p2 = stats.ttest_1samp(rvn1[:,:,:], 1,axis=1)
     t3,p3 = stats.ttest_1samp(rvn1[0,:,0], 1)
     assert_array_almost_equal(t1,t2, decimal=14)
@@ -5232,6 +5232,7 @@ def test_ttest_1samp_new():
     pc = converter(tr, pr, "less")
     assert_allclose(p, pc)
     assert_allclose(t, tr)
+
 
 def test_ttest_1samp_popmean_array():
     # when popmean.shape[axis] != 1, raise an error
