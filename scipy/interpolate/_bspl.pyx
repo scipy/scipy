@@ -4,9 +4,8 @@ Routines for evaluating and manipulating B-splines.
 """
 
 import numpy as np
-from scipy.sparse import csr_array
-
 cimport numpy as cnp
+
 cimport cython
 from libc.math cimport NAN
 
@@ -435,10 +434,16 @@ def _make_design_matrix(const double[::1] x,
 
     Returns
     -------
-    design matrix
-        Design matrix as CSR array: in each row all the basis
-        elements are evaluated at the certain point (first row - x[0],
-        ..., last row - x[-1]).
+    data
+        The data array of a CSR array of the b-spline design matrix.
+        In each row all the basis elements are evaluated at the certain point
+        (first row - x[0], ..., last row - x[-1]).
+    
+    indices
+        The indices array of a CSR array of the b-spline design matrix.
+
+    indptr
+        The indptr array of a CSR array of the b-spline design matrix.
     """
     cdef:
         cnp.npy_intp i, j, m, ind
@@ -466,7 +471,4 @@ def _make_design_matrix(const double[::1] x,
             data[m] = work[j]
             indices[m] = ind - k + j
 
-    return csr_array(
-        (np.asarray(data), np.asarray(indices), np.asarray(indptr)),
-        shape=(n, t.shape[0] - k - 1),
-    )
+    return np.asarray(data), np.asarray(indices), np.asarray(indptr)

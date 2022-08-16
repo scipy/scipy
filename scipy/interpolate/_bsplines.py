@@ -9,6 +9,7 @@ from . import _bspl
 from . import _fitpack_impl
 from . import _fitpack as _dierckx
 from scipy._lib._util import prod
+from scipy.sparse import csr_array
 from scipy.special import poch
 from itertools import combinations
 
@@ -436,7 +437,14 @@ class BSpline:
             # Checks from `find_interval` function
             raise ValueError(f'Out of bounds w/ x = {x}.')
 
-        return _bspl._make_design_matrix(x, t, k, extrapolate)
+        data, indices, indptr = _bspl._make_design_matrix(
+            x, t, k, extrapolate
+        )
+        return csr_array(
+            (data, indices, indptr),
+            shape=(x.shape[0], t.shape[0] - k - 1)
+        )
+        
 
     def __call__(self, x, nu=0, extrapolate=None):
         """
