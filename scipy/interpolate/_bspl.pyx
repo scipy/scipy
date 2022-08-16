@@ -7,14 +7,12 @@ import numpy as np
 cimport numpy as cnp
 
 cimport cython
+from libc.math cimport NAN
 
 cnp.import_array()
 
 cdef extern from "src/__fitpack.h":
     void _deBoor_D(const double *t, double x, int k, int ell, int m, double *result) nogil
-
-cdef extern from "numpy/npy_math.h":
-    double nan "NPY_NAN"
 
 ctypedef double complex double_complex
 
@@ -146,7 +144,7 @@ def evaluate_spline(const double[::1] t,
             if interval < 0:
                 # xval was nan etc
                 for jp in range(c.shape[1]):
-                    out[ip, jp] = nan
+                    out[ip, jp] = NAN
                 continue
 
             # Evaluate (k+1) b-splines which are non-zero on the interval.

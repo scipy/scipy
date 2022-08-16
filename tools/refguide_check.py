@@ -72,6 +72,7 @@ PUBLIC_SUBMODULES = [
     'cluster.hierarchy',
     'cluster.vq',
     'constants',
+    'datasets',
     'fft',
     'fftpack',
     'fftpack.convolve',

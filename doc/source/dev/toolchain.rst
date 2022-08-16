@@ -372,6 +372,7 @@ There are some additional optional dependencies.
 =============== ======== ==========================================
 mpmath          Recent    http://mpmath.org/
 scikit-umfpack  Recent    https://pypi.org/project/scikit-umfpack/
+pooch           Recent    https://pypi.org/project/pooch/
 =============== ======== ==========================================
 
 
