@@ -278,6 +278,12 @@ class RegularGridInterpolator:
         values_x : ndarray, shape xi.shape[:-1] + values.shape[ndim:]
             Interpolated values at `xi`.
 
+        Notes
+        -----
+        In the case that ``xi.ndims == 1`` a new axis is inserted into
+        the 0 position of returned array so the shape is instead
+        ``(1,) + values.shape[ndim:]``.
+
         Examples
         --------
         Here we define a nearest-neighbor interpolator of a simple function
@@ -538,6 +544,10 @@ def interpn(points, values, xi, method="linear", bounds_error=True,
     -----
 
     .. versionadded:: 0.14
+
+    In the case that ``xi.ndims == 1`` a new axis is inserted into
+    the 0 position of returned array so the shape is instead
+    ``(1,) + values.shape[ndim:]``.
 
     Examples
     --------
